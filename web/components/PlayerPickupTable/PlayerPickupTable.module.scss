@@ -249,6 +249,12 @@ $selected-border-width: 2px; // The width of the indicator
   .label {
     text-align: left;
   }
+
+  // Five positions need 240px at a 6px gap; at 10px the G label scrolled out of the 246px row.
+  .positionCheckboxGroup {
+    gap: 6px;
+    justify-content: space-between;
+  }
 }
 
 .filterRowTeam {
@@ -1153,6 +1159,15 @@ $selected-border-width: 2px; // The width of the indicator
   .filterRow { min-width: 0; }
   .filterContainer, .metricFilterContainer, .buttonReset { flex-shrink: 0; }
   .metricPresetButtons { flex-wrap: wrap; flex-shrink: 1; max-width: 100%; }
+  // Desktop sidebar: All / Skaters / Goalies / None as one row of four equal buttons.
+  @media (min-width: v.$breakpoint-desktop) {
+    .metricPresetButtons {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      width: 100%;
+    }
+    .metricPresetButtons button { padding-inline: 6px; }
+  }
   .skaterGoalieRow { flex-wrap: wrap; }
   .skaterMetricsColumn, .goalieMetricsColumn { flex-basis: 200px; }
   .skaterSubGroupsRow, .goalieSubGroupsRow { flex-wrap: wrap; }
@@ -1252,6 +1267,15 @@ $selected-border-width: 2px; // The width of the indicator
   align-items: center;
   gap: v.$space-sm;
   flex: 0 0 auto;
+}
+
+// Error message with its Retry button centred beneath it.
+.errorState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: v.$space-sm;
+  padding-bottom: v.$space-md;
 }
 
 .toolbarButton {

@@ -13,3 +13,10 @@
 | /game-grid | Weekly key dots (.matchupKey) | ~~#00f5a0/#ff557c differ from the sparkline's tokens.~~ $success-color / $danger-color | Done | 2 |
 | /game-grid | private ramp (GameGrid, OpportunitySparkline, PlayerPickupTable, palette, DateRangeTeamGrid) | ~~24 unnamed hex values, 54+ uses.~~ Named in GameGrid/_surfaces.scss (CSS byte-identical) | Done | 2 |
 | /game-grid | date-range error notices | ~~Tailwind red rgba(239,68,68).~~ rgba($danger-color) | Done | 2 |
+| /game-grid | excluded-day header dates (.masterDayHeaderExcluded) | ~~#656565 at 2.5:1.~~ opacity .7 + $text-primary date, ≥4.5:1 | Done | 3 |
+| /game-grid | GP / OFF header ink (.masterBlueHeader) | ~~#0fc0f6 on #0f5f83 3.3:1.~~ $color-blue-100, 5.7:1 | Done | 3 |
+| /game-grid | sort header focus (.masterSortButton) | ~~3% tint focus, invisible.~~ 2px inset primary ring | Done | 3 |
+| /game-grid drawer | positions row (.filterRowPositions) | ~~G label scrolled out (255 in 246px).~~ gap 6px | Done | 3 |
+| /game-grid drawer | Score uses presets (.inBottomDrawer) | ~~None wrapped alone.~~ 4 equal columns (TJ edit) | Done | 3 |
+| /game-grid drawer | error state (PlayerPickupTable.tsx .errorState) | ~~Retry left, message centred.~~ centred column | Done | 3 |
+| /game-grid drawer | populated BPA table | Not verified: player data fails to load on the isolated dev server. | Not verified | 3 |
