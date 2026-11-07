@@ -1,6 +1,7 @@
 import {
   assessNstRequestPlan,
   canBurstNstRequests,
+  canUseNstSemiBurst,
   NST_MIN_REQUEST_INTERVAL_MS,
   selectNstSafeInterval
 } from "./nstRateLimitPolicy";
@@ -66,17 +67,20 @@ function resolveSharedSmallDateBurstPlan(options: {
 export function resolveGoalieNstRequestPlan(options: {
   queuedDates: number;
   totalQueuedUrls: number;
+  /** Complete preflight-missing cohort, frozen across continuation; not maxUrls. */
+  plannedRequestCount?: number;
   maxPendingUrls: number;
   explicitRequestIntervalMs?: number;
 }) {
-  const requestCountBudget = Math.min(
-    options.totalQueuedUrls,
-    options.maxPendingUrls
-  );
+  const requestCount = options.plannedRequestCount ?? options.totalQueuedUrls;
+  if (!Number.isSafeInteger(requestCount) || requestCount < 0 || requestCount > options.totalQueuedUrls) {
+    throw new Error("Invalid complete goalie request count.");
+  }
+  const requestCountBudget = Math.min(requestCount, options.maxPendingUrls);
   const sharedPlan = resolveSharedSmallDateBurstPlan({
     jobName: "update-nst-goalies",
     queuedDates: options.queuedDates,
-    requestCount: options.totalQueuedUrls,
+    requestCount,
     safeIntervalMs: NST_GOALIES_REQUEST_INTERVAL_MS,
     explicitRequestIntervalMs: options.explicitRequestIntervalMs
   });
@@ -84,6 +88,7 @@ export function resolveGoalieNstRequestPlan(options: {
   return {
     queuedDates: options.queuedDates,
     totalQueuedUrls: options.totalQueuedUrls,
+    plannedRequestCount: requestCount,
     urlsPerDate: GOALIE_URLS_PER_DATE,
     requestCountBudget,
     requestIntervalMs: sharedPlan.requestIntervalMs,
@@ -166,9 +171,12 @@ export function resolveNstGamelogRequestPlan(options: {
   requestCount: number;
 }) {
   // requestCount covers the complete job; dispatch enforces shared headroom.
-  const burstAllowed = canBurstNstRequests(options.requestCount);
+  const semiBurstAllowed = options.queuedDates >= 1 && options.queuedDates <= 2 &&
+    canUseNstSemiBurst(options.requestCount);
+  const burstAllowed = canBurstNstRequests(options.requestCount) || semiBurstAllowed;
   return {
     ...options,
+    semiBurstAllowed,
     burstAllowed,
     requestIntervalMs: burstAllowed ? 0 : NST_SAFE_INTERVAL_MS
   };

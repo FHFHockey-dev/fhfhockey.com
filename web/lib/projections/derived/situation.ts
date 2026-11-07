@@ -24,6 +24,17 @@ export function parseSituationDigits(
   return { awayGoalie, awaySkaters, homeSkaters, homeGoalie };
 }
 
+/**
+ * Strength from the scoring/shooting team's point of view.
+ *
+ * A pulled goalie is replaced by an extra attacker, so each side's skater count
+ * is reduced by one when its goalie digit is 0 before comparing. That keeps the
+ * NHL convention: a 6v5 extra-attacker goal is even strength, a 6v4 goal scored
+ * during a 5v4 penalty is still a power-play goal, and a goal into a shorthanded
+ * team's empty net (5v5 on the clock, opponent goalie pulled) is a power-play
+ * goal. Shootout events are not strength events at all; callers must drop them
+ * with `isShootoutPlay` before calling this.
+ */
 export function strengthForTeam(
   digits: SituationDigits,
   teamId: number,
@@ -34,9 +45,35 @@ export function strengthForTeam(
     throw new Error("Situation team is not part of the scheduled game");
   }
   const isHome = teamId === homeTeamId;
-  const mySkaters = isHome ? digits.homeSkaters : digits.awaySkaters;
-  const oppSkaters = isHome ? digits.awaySkaters : digits.homeSkaters;
+  const homeEffective = digits.homeSkaters - (digits.homeGoalie === 1 ? 0 : 1);
+  const awayEffective = digits.awaySkaters - (digits.awayGoalie === 1 ? 0 : 1);
+  const mySkaters = isHome ? homeEffective : awayEffective;
+  const oppSkaters = isHome ? awayEffective : homeEffective;
   if (mySkaters > oppSkaters) return "pp";
   if (mySkaters < oppSkaters) return "pk";
   return "es";
+}
+
+/** NHL game id digits 5-6: 01 preseason, 02 regular season, 03 playoffs. */
+function gameTypeFromGameId(gameId: number): number {
+  return Math.floor(gameId / 10_000) % 100;
+}
+
+/**
+ * Shootout attempts are not goals, shots or assists in NHL scoring, so every
+ * strength bucket must skip them. Preseason and regular-season games go to a
+ * shootout after one overtime period (period 5); playoff period 5 is overtime.
+ */
+export function isShootoutPlay(play: {
+  gameid: number;
+  periodnumber: number | null;
+  periodtype: string | null;
+}): boolean {
+  if (play.periodtype === "SO") return true;
+  const gameType = gameTypeFromGameId(play.gameid);
+  return (
+    (gameType === 1 || gameType === 2) &&
+    play.periodnumber != null &&
+    play.periodnumber >= 5
+  );
 }

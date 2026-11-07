@@ -1,3 +1,4 @@
+import { assertNstJobActive, markNstJobUncertain, withNstJobLifecycle } from "lib/nst/jobLifecycle.server";
 // pages/api/v1/db/update-nst-last-ten.ts
 
 import {
@@ -299,6 +300,7 @@ async function getLatestDateSupabase(): Promise<string | null> {
   let latestDate: string | null = null;
 
   for (const table of tableNames) {
+    assertNstJobActive();
     const { data, error } = await supabase
       .from(table)
       .select("date_scraped")
@@ -307,6 +309,7 @@ async function getLatestDateSupabase(): Promise<string | null> {
       .maybeSingle();
 
     if (error) {
+      markNstJobUncertain();
       continue;
     }
 
@@ -566,6 +569,7 @@ async function fetchAndParseData(
         error.message
       );
       if (attempt === retries) {
+        markNstJobUncertain();
         console.error(
           `Failed to fetch data from ${url} after ${retries} attempts.`
         );
@@ -604,7 +608,10 @@ async function getPlayerIdByName(
 
   const { data, error } = await query.limit(1).maybeSingle();
 
-  if (error) return null;
+  if (error) {
+    markNstJobUncertain();
+    return null;
+  }
   if (!data) {
     troublesomePlayers.push(`${fullName} (${position})`);
     return null;
@@ -614,6 +621,7 @@ async function getPlayerIdByName(
 }
 
 async function upsertData(datasetType: string, dataRows: any[]) {
+  assertNstJobActive();
   if (dataRows.length === 0) {
     console.warn(`No data rows to upsert for datasetType "${datasetType}".`);
     return;
@@ -634,7 +642,9 @@ async function upsertData(datasetType: string, dataRows: any[]) {
     .from(tableName)
     .upsert(dataRows, { onConflict: "player_id,date_scraped" });
 
+  if (process.env.NST_JOB_LIFECYCLE_ENABLED === "true" && error !== null) markNstJobUncertain();
   if (error) {
+    markNstJobUncertain();
     console.error(
       `Error upserting data into ${tableName}:`,
       error.details || error.message
@@ -663,6 +673,7 @@ async function checkDataExists(
     .limit(1);
 
   if (error) {
+    markNstJobUncertain();
     console.error(
       `Error checking data existence in ${tableName}:`,
       error.message
@@ -801,6 +812,7 @@ async function processUrlsSequentially(
   }
 
   for (let i = 0; i < urlsQueue.length; i++) {
+    assertNstJobActive();
     const { datasetType, url, date, seasonId } = urlsQueue[i];
     console.log(
       `\nProcessing URL ${i + 1}/${totalUrls}: ${datasetType} for date ${date}`
@@ -831,6 +843,7 @@ async function processUrlsSequentially(
           rowsUpserted = dataRows.length;
         }
       } catch (error) {
+        markNstJobUncertain();
         console.error(`Error processing URL ${url}:`, error);
       }
     } else {
@@ -943,6 +956,7 @@ async function main() {
       );
     }
   } catch (error: any) {
+    markNstJobUncertain();
     console.error("An error occurred:", error.message);
   }
 }
@@ -966,6 +980,6 @@ async function handler(
 }
 
 export default withOperationalRouteAuth(
-  handler,
+  withNstJobLifecycle(handler, "update-nst-last-ten", req => req.method !== "POST"),
   operationalRouteContracts.updateNstLastTen,
 );

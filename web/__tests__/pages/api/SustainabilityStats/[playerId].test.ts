@@ -1,4 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { withNstJobDispatch } from "lib/nst/jobLifecycle.server";
 
 const { fetchNstTextWithCacheByUrlMock, getPlayerMock } = vi.hoisted(() => ({
   fetchNstTextWithCacheByUrlMock: vi.fn(),
@@ -33,6 +34,32 @@ function createMockRes() {
 describe("/api/SustainabilityStats/[playerId]", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+  afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); });
+
+  it("holds the whole parallel read when one source fails while the other is still active", async () => {
+    vi.stubEnv("NST_JOB_LIFECYCLE_ENABLED", "true");
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://offline.invalid");
+    vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "fixture");
+    const calls: string[] = [];
+    vi.stubGlobal("fetch", vi.fn(async (url, init) => {
+      const name = String(url).split("/").at(-1)!; calls.push(name);
+      return new Response(JSON.stringify({ status: name.includes("begin") ? "started" : "held", token: JSON.parse(init!.body as string).p_token }));
+    }));
+    getPlayerMock.mockResolvedValue({ fullName: "Fixture", teamName: "Toronto Maple Leafs", teamId: 10 });
+    let release!: () => void; let attempts = 0;
+    fetchNstTextWithCacheByUrlMock.mockImplementation(() => withNstJobDispatch(async () => {
+      if (++attempts === 1) throw new Error("fixture source failed");
+      await new Promise<void>(resolve => { release = resolve; });
+      return { text: "<body></body>" };
+    }));
+    const res = createMockRes();
+    await handler({ query: { playerId: "fixture" }, body: { Season: "20262027" } } as any, res);
+    expect(attempts).toBe(2);
+    expect(res.statusCode).toBe(503);
+    expect(calls).toEqual(["nst_job_begin_v1", "nst_job_hold_v1"]);
+    release();
+    await Promise.resolve();
   });
 
   it("preserves representative playerteams skater metrics through the migrated NST client", async () => {

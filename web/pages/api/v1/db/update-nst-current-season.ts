@@ -1,3 +1,5 @@
+import { withNstJobLifecycle } from "lib/nst/jobLifecycle.server";
+import type { NstRequestControl } from "lib/nst/requestBudget";
 // pages/api/v1/db/update-nst-current-season.ts
 
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
@@ -358,7 +360,8 @@ async function fetchAndParseAllPlayersData(
   seasonId: string,
   strength: string,
   playerMap: Map<string, number>,
-  retries: number = 3
+  retries: number = 3,
+  requestControl?: NstRequestControl
 ): Promise<any[]> {
   const headerMapper = getHeaderMapper(reportType);
   const tableName = getTableNameFromReportType(reportType);
@@ -368,7 +371,7 @@ async function fetchAndParseAllPlayersData(
         `fetching data for ${ReportType[reportType]} (Strength: ${strength}, Season: ${seasonId}) - Attempt ${attempt}`
       );
       await waitForNextNstRequestSlot();
-      const { text } = await fetchNstTextByUrl(url, { timeoutMs: 60000 });
+      const { text } = await fetchNstTextByUrl(url, { timeoutMs: 60000, requestControl });
       lastNstRequestCompletedAt = Date.now();
       if (!text) {
         console.warn(`Attempt ${attempt}: No data received from URL: ${url}`);
@@ -664,6 +667,9 @@ async function main(outcome: IngestionOutcome) {
       requestCount: strengthsToProcess.length * reportsToProcess.length
     });
     currentNstRequestIntervalMs = nstRequestPlan.requestIntervalMs;
+    const requestControl: NstRequestControl = { deadlineAt: startTime + 220_000,
+      maxAttempts: nstRequestPlan.requestCount * 9, attemptsStarted: 0,
+      minIntervalMs: nstRequestPlan.requestIntervalMs, plannedRequestCount: nstRequestPlan.requestCount };
 
     // 4. Loop through reports and strengths (Outer loop now runs only once)
     for (const strength of strengthsToProcess) {
@@ -689,7 +695,9 @@ async function main(outcome: IngestionOutcome) {
           reportType,
           currentSeasonId,
           strength,
-          playerMap
+          playerMap,
+          3,
+          requestControl
         );
 
         // Upsert Data
@@ -769,4 +777,5 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   }
 }
 
-export default adminOnly(withCronJobAudit(withNhlOffSeasonSkip(handler as any)));
+export default adminOnly(withNstJobLifecycle(withCronJobAudit(withNhlOffSeasonSkip(handler as any)), "update-nst-current-season", req => req.method !== "GET",
+  { auditUnadmitted: respond => withCronJobAudit(respond) }));

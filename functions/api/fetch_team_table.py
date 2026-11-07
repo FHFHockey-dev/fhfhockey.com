@@ -2,6 +2,9 @@
 # functions/api/fetch_team_table.py
 
 import requests
+from lib.nst_admission import nst_get, nst_job, nst_parent_job, NstAdmissionError
+from contextlib import nullcontext
+import time
 from bs4 import BeautifulSoup
 import argparse
 import os
@@ -92,13 +95,14 @@ def validate_percentage(value):
 
 def fetch_team_table(from_season='20242025', thru_season='20242025',
                     stype='2', sit='pk', score='all', rate='n',
-                    team='all', loc='B', gpf='410', fd='', td=''):
+                    team='all', loc='B', gpf='410', fd='', td='',
+                    planned_requests=None, admission_budget_ms=220000):
     result = {
         "debug": {},
         "data": []
     }
 
-    ensure_loaded_for(["NST_KEY"])
+    ensure_loaded_for(["NST_KEY", "NEXT_PUBLIC_SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"])
     nst_key = (os.environ.get("NST_KEY") or "").strip()
     if not nst_key:
         return _error_result(
@@ -128,7 +132,9 @@ def fetch_team_table(from_season='20242025', thru_season='20242025',
 
     try:
         # Fetch the team table page
-        response = requests.get(url, headers=headers, timeout=10)
+        response = nst_get(url, headers=headers, timeout=10,
+            planned_requests=planned_requests, min_interval_ms=0 if planned_requests else 21000,
+            deadline_at=time.monotonic() + admission_budget_ms / 1000)
         response.raise_for_status()
 
         # Parse the HTML content
@@ -200,6 +206,10 @@ def fetch_team_table(from_season='20242025', thru_season='20242025',
         result["data"] = rows
 
 
+    except NstAdmissionError:
+        return _error_result(result, code="admission_deferred",
+            message="Shared NST admission unavailable within this request budget; no provider dispatch occurred.",
+            status_code=503)
     except requests.exceptions.Timeout as timeout_err:
         return _error_result(
             result,
@@ -273,14 +283,14 @@ def _get_current_and_last_season_ids() -> Tuple[str, str]:
         return fallback_current, fallback_last
 
 
-def _handle_fetch_team_table_request():
+def _handle_fetch_team_table_request(default_season=None):
     denied = require_team_table_caller()
     if denied is not None:
         return jsonify(denied.payload), denied.status_code
 
     # Accept explicit query params; if missing, derive from DB seasons
-    from_season = request.args.get('from_season')
-    thru_season = request.args.get('thru_season')
+    from_season = request.args.get('from_season', default_season)
+    thru_season = request.args.get('thru_season', default_season)
     stype = request.args.get('stype', '2')
     sit = request.args.get('sit')
     score = request.args.get('score', 'all')
@@ -302,19 +312,34 @@ def _handle_fetch_team_table_request():
         from_season = from_season or current_sid
         thru_season = thru_season or current_sid
 
-    result = fetch_team_table(
-    from_season=from_season,
-    thru_season=thru_season,
-        stype=stype,
-        sit=sit,
-        score=score,
-        rate=rate,
-        team=team,
-        loc=loc,
-        gpf=gpf,
-        fd=fd,
-        td=td
-    )
+    try:
+        count = int(request.headers.get("X-NST-Planned-Requests", "0"))
+        planned_requests = count if 1 <= count <= 78 else None
+        admission_budget_ms = min(7000, max(1, int(request.headers.get("X-NST-Admission-Budget-Ms", "7000"))))
+    except ValueError:
+        planned_requests, admission_budget_ms = None, 7000
+    parent_token = request.headers.get("X-NST-Job-Token")
+    if os.environ.get("NST_JOB_LIFECYCLE_ENABLED") == "true" and not parent_token:
+        return jsonify({"error": {"code": "missing_parent_job", "message": "An enclosing NST job token is required."}, "data": []}), 503
+    try:
+        with nst_parent_job(parent_token, time.monotonic() + 20) if parent_token else nullcontext():
+            result = fetch_team_table(
+                from_season=from_season,
+                thru_season=thru_season,
+                stype=stype,
+                sit=sit,
+                score=score,
+                rate=rate,
+                team=team,
+                loc=loc,
+                gpf=gpf,
+                fd=fd,
+                td=td,
+                planned_requests=planned_requests,
+                admission_budget_ms=admission_budget_ms
+            )
+    except NstAdmissionError:
+        return jsonify({"error": {"code": "invalid_parent_job", "message": "NST parent job could not be verified."}, "data": []}), 503
 
     payload = result.payload
     # Attach debug hint about resolved seasons when defaults were used
@@ -352,17 +377,21 @@ if __name__ == "__main__":
     parser.add_argument('--td', default='', help='TD')
     
     args = parser.parse_args()
-    
-    fetch_team_table(
-        from_season=args.from_season,
-        thru_season=args.thru_season,
-        stype=args.stype,
-        sit=args.sit,
-        score=args.score,
-        rate=args.rate,
-        team=args.team,
-        loc=args.loc,
-        gpf=args.gpf,
-        fd=args.fd,
-        td=args.td
-    )
+
+    ensure_loaded_for(["NST_KEY", "NEXT_PUBLIC_SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"])
+    with nst_job("functions/fetch_team_table"):
+        result = fetch_team_table(
+            from_season=args.from_season,
+            thru_season=args.thru_season,
+            stype=args.stype,
+            sit=args.sit,
+            score=args.score,
+            rate=args.rate,
+            team=args.team,
+            loc=args.loc,
+            gpf=args.gpf,
+            fd=args.fd,
+            td=args.td
+        )
+        if result.status_code >= 400:
+            raise NstAdmissionError("Team-table CLI outcome was not successful.")

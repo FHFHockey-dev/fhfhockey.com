@@ -1,3 +1,14 @@
+# Shared NST admission: this manual/compatibility path uses the same global budget.
+from pathlib import Path as _NstPath
+import sys as _nst_sys
+_nst_root = next((_parent / "functions" for _parent in _NstPath(__file__).resolve().parents
+                  if (_parent / "functions/lib/nst_admission.py").is_file()), None)
+if _nst_root is None:
+    raise RuntimeError("NST shared admission helper unavailable")
+if str(_nst_root) not in _nst_sys.path:
+    _nst_sys.path.insert(0, str(_nst_root))
+from lib.nst_admission import nst_get, nst_job_scope, assert_nst_job_active, mark_nst_job_uncertain
+
 # LEGACY MANUAL SCRIPT
 # This file is not part of the production NST migration path.
 # Canonical production ownership for goalie `playerteams.php` ingestion now lives in:
@@ -215,6 +226,7 @@ def normalize_name(name: str) -> str:
 troublesome_players: List[str] = []
 
 def get_goalie_id_by_name(fullName: str, team: str) -> Optional[int]:
+    assert_nst_job_active()
     mappedName = goalie_name_mapping.get(fullName, {"fullName": fullName})["fullName"]
     normalized_fullName = normalize_name(mappedName)
     goaliePosition = "G"  # Ensure we only get goalies
@@ -226,6 +238,7 @@ def get_goalie_id_by_name(fullName: str, team: str) -> Optional[int]:
             troublesome_players.append(f"{fullName} ({team})")
             return None
     except Exception as e:
+        mark_nst_job_uncertain()
         print(f"Error fetching goalie ID for {fullName}: {e}")
         troublesome_players.append(f"{fullName} ({team})")
         return None
@@ -237,16 +250,19 @@ def print_delay_countdown():
     print("\nDelay complete.")
 
 def check_data_exists(dataset_type: str, date: str) -> bool:
+    assert_nst_job_active()
     """Check if data already exists in the database for the given dataset type and date."""
     table_name = get_table_name(dataset_type)
     try:
         response = supabase.table(table_name).select("id").eq("date_scraped", date).limit(1).execute()
         return len(response.data) > 0
     except Exception as e:
+        mark_nst_job_uncertain()
         print(f"Error checking if data exists: {e}")
         return False
 
 def process_url(url_info: Dict, current_url_num: int, total_urls: int, date_counts: Dict[str, Dict[str, int]]):
+    assert_nst_job_active()
     dataset_type = url_info["datasetType"]
     url = url_info["url"]
     date = url_info["date"]
@@ -257,7 +273,7 @@ def process_url(url_info: Dict, current_url_num: int, total_urls: int, date_coun
         print(f"Data already exists for {dataset_type} on {date}. Skipping.")
         return
     try:
-        response = requests.get(url)
+        response = nst_get(url)
         if response.status_code == 200:
             data_rows = parse_html(response.text, dataset_type, date, season_id)
             if data_rows:
@@ -271,15 +287,22 @@ def process_url(url_info: Dict, current_url_num: int, total_urls: int, date_coun
                     row["player_id"] = goalie_id
                     data_rows_with_ids.append(row)
                 table_name = get_table_name(dataset_type)
+                assert_nst_job_active()
                 res = supabase.table(table_name).upsert(data_rows_with_ids, on_conflict=["player_id", "date_scraped"]).execute()
+                if getattr(res, "error", None):
+                    mark_nst_job_uncertain()
+                    return
                 print(f"Upserted {len(data_rows_with_ids)} rows into {table_name}.")
             else:
                 print("No rows parsed.")
         else:
+            mark_nst_job_uncertain()
             print(f"Failed to fetch {url}: Status Code {response.status_code}")
     except Exception as e:
+        mark_nst_job_uncertain()
         print(f"Error processing URL {url}: {e}")
 
+@nst_job_scope("legacy/nst_gamelog_goalie_scraper")
 def main():
     start_time = time.time()
     # For example purposes, assume season_id "20242025" and season start "2024-10-01"
@@ -309,6 +332,7 @@ def main():
     total_urls = len(urls_queue)
     print(f"Total URLs to process: {total_urls}")
     for i, url_info in enumerate(urls_queue):
+        assert_nst_job_active()
         if i > 0:
             print(f"\nWaiting {DELAY_SECONDS} seconds before next request...")
             print_delay_countdown()

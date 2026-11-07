@@ -12,6 +12,8 @@
  * - rolling_resume_from: update-rolling-player-averages reports
  *   resume.nextResumeFrom / runSummary.nextResumeFrom; the next call passes
  *   resumeFrom=<n>, with the scope pinned from resume.request.
+ * - goalie_url_cursor: goalies return a frozen resume.request.query with a URL
+ *   cursor and resumeScope; admission deferral waits without replaying writes.
  * - next_start_date: the route reports unfinished work (complete=false or
  *   stoppedEarly=true) and nextStartDate; the next call passes startDate.
  * - projection_resume: run-projection-v2 for one date. 200 success completes;
@@ -22,13 +24,14 @@
  * - once: one call; 2xx without success=false completes.
  *
  * The contract lives here, not on the job row: route_runner_jobs.contract
- * only accepts the first four values, so newer contracts are stored as null
+ * only accepts the legacy values listed below, so newer contracts are stored as null
  * (store.ts) and the tick always reads spec.contract.
  */
 
 export type RouteRunnerContract =
   | "nst_resume"
   | "rolling_resume_from"
+  | "goalie_url_cursor"
   | "next_start_date"
   | "projection_resume"
   | "once";
@@ -120,11 +123,14 @@ export const ROUTE_RUNNER_ROUTES = {
   },
   "/api/v1/db/update-nst-goalies": {
     label: "NST goalies",
-    contract: "next_start_date",
+    contract: "goalie_url_cursor",
+    deadlineParam: "deadlineAt",
+    deadlineHeadroomMs: 20_000,
+    runnerParams: ["deadlineAt"],
     example:
       "/api/v1/db/update-nst-goalies?runMode=incremental&startDate=2025-10-07&overwrite=no",
     notes:
-      "Processes a bounded chunk of URLs and answers stoppedEarly=true with nextStartDate; the runner continues with startDate=nextStartDate. With overwrite=yes a chunk smaller than one date (10 URLs) cannot advance; three identical steps in a row stop the job."
+      "Continues with the exact scoped URL cursor query returned by the route. A shared-admission pause waits with that frozen scope; audit/output uncertainty stops for review. One-URL chunks can advance within a date, including overwrite=yes."
   },
   "/api/v1/db/update-nst-current-season": {
     label: "NST current season",

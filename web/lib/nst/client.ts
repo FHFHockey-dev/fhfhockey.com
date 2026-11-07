@@ -1,6 +1,8 @@
 // @ts-expect-error memory-cache has no declarations in this project
 import cacheData from "memory-cache";
 import { NstExecutionLimitError, withNstRequestBudget, type NstRequestControl } from "./requestBudget";
+import { admitSharedNstAttempt, NstSharedAdmissionError } from "./sharedAdmission";
+import { NstJobLifecycleError } from "./jobLifecycle.server";
 import { NST_MIN_REQUEST_INTERVAL_MS } from "lib/cron/nstRateLimitPolicy";
 
 export const NST_BASE_URL = "https://data.naturalstattrick.com";
@@ -28,8 +30,8 @@ export class NstResponseError extends Error {
   }
 }
 
-export function isNstConfigError(error: unknown): error is NstConfigError {
-  return error instanceof NstConfigError;
+export function isNstConfigError(error: unknown): error is NstConfigError | NstSharedAdmissionError {
+  return error instanceof NstConfigError || error instanceof NstSharedAdmissionError;
 }
 
 export function isNstResponseError(error: unknown): error is NstResponseError {
@@ -218,7 +220,8 @@ async function executeNstUrl(
 ): Promise<NstRequestResult> {
   const headers = getNstHeaders(options);
   const control = options.requestControl!;
-  return withNstRequestBudget(url.toString(), control, async () => {
+  return withNstRequestBudget(url.toString(), control, () => admitSharedNstAttempt(
+    control.deadlineAt - (options.timeoutMs ?? NST_DEFAULT_TIMEOUT_MS) - 5_000, async () => {
     const controller = new AbortController();
     const timeoutMs = Math.min(options.timeoutMs ?? NST_DEFAULT_TIMEOUT_MS, control.deadlineAt - Date.now());
     const timeout = setTimeout(() => controller.abort(), timeoutMs);
@@ -237,7 +240,7 @@ async function executeNstUrl(
     } finally {
       clearTimeout(timeout);
     }
-  });
+  }, control));
 }
 
 async function executeNstRequest(options: NstRequestOptions): Promise<NstRequestResult> {
@@ -265,7 +268,7 @@ function withRequestControl<T extends Omit<NstRequestOptions, "path" | "query">>
 
 function shouldRetry(response: Response | null, error: unknown): boolean {
   if (error) {
-    if (error instanceof NstExecutionLimitError || isNstConfigError(error)) return false;
+    if (error instanceof NstExecutionLimitError || error instanceof NstJobLifecycleError || isNstConfigError(error)) return false;
     if (isNstResponseError(error)) {
       return error.status >= 500;
     }

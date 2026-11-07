@@ -85,7 +85,7 @@ async function run(query: Record<string, string> = {}) {
     status(code: number) { this.statusCode = code; return this; },
     json(body: Record<string, unknown>) { this.body = body; return this; },
   };
-  const pending = handler({ query, supabase: createDatabase() } as never, res as never);
+  const pending = handler({ method: "GET", query, supabase: createDatabase() } as never, res as never);
   await vi.runAllTimersAsync();
   await pending;
   return res;
@@ -148,11 +148,31 @@ describe("NST team stats current-season refresh", () => {
     expect(state.upserts).toEqual([]);
   });
 
+  it("passes the enclosing lifecycle token to the proxy and finishes after persisted output", async () => {
+    vi.stubEnv("NST_JOB_LIFECYCLE_ENABLED", "true");
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://offline.invalid"); vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "fixture");
+    const sourceFetch = fetchMock.getMockImplementation()!; let token = ""; const lifecycle: string[] = [];
+    fetchMock.mockImplementation(async (url: string, options: RequestInit) => {
+      if (String(url).includes("/rest/v1/rpc/")) {
+        const name = String(url).split("/").at(-1)!; const args = JSON.parse(options.body as string); lifecycle.push(name);
+        token = args.p_token;
+        if (name === "nst_job_finish_v1") expect(state.upserts.length).toBeGreaterThan(0);
+        return { ok: true, json: async () => ({ status: name.includes("begin") ? "started" : name.includes("finish") ? "finished" : "held", token }) };
+      }
+      expect(options.headers).toMatchObject({ "X-NST-Job-Token": token });
+      return sourceFetch(url);
+    });
+    const res = await run(); expect(res.statusCode).toBe(200);
+    expect(lifecycle).toEqual(["nst_job_begin_v1", "nst_job_finish_v1"]);
+  });
+
   it("sends the shared credential only in server request headers", async () => {
     const res = await run();
     expect(fetchMock).toHaveBeenCalled();
     for (const [url, options] of fetchMock.mock.calls) {
-      expect(options).toMatchObject({ headers: { Authorization: "Bearer test-team-table-secret" } });
+      expect(options).toMatchObject({ headers: { Authorization: "Bearer test-team-table-secret",
+        "X-NST-Planned-Requests": expect.any(String), "X-NST-Admission-Budget-Ms": "7000" } });
+      expect(Number(options.headers["X-NST-Planned-Requests"])).toBeGreaterThan(0);
       expect(options.signal).toBeInstanceOf(AbortSignal);
       expect(url).not.toContain("test-team-table-secret");
     }

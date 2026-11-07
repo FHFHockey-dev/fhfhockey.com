@@ -1,3 +1,4 @@
+import { assertNstJobActive, markNstJobUncertain, withNstJobLifecycle } from "lib/nst/jobLifecycle.server";
 // /pages/api/v1/db/check-missing-goalie-data.ts
 
 import {
@@ -179,7 +180,10 @@ async function getGoalieIdByName(
     .eq("position", goaliePosition)
     .limit(1)
     .maybeSingle();
-  if (error) return null;
+  if (error) {
+    markNstJobUncertain();
+    return null;
+  }
   if (!data) {
     troublesomePlayers.push(`${fullName} (${position})`);
     return null;
@@ -295,6 +299,7 @@ async function fetchAndParseData(
         error.message
       );
       if (attempt === retries) {
+        markNstJobUncertain();
         console.error(
           `Failed to fetch data from ${url} after ${retries} attempts.`
         );
@@ -307,6 +312,7 @@ async function fetchAndParseData(
 }
 
 async function upsertData(datasetType: string, dataRows: any[]) {
+  assertNstJobActive();
   if (dataRows.length === 0) {
     console.warn(`No data rows to upsert for datasetType "${datasetType}".`);
     return;
@@ -333,10 +339,13 @@ async function upsertData(datasetType: string, dataRows: any[]) {
   console.log(
     `Upserting ${dataRowsWithPlayerIds.length} rows into table "${tableName}".`
   );
+  assertNstJobActive();
   const { error } = await supabase
     .from(tableName)
     .upsert(dataRowsWithPlayerIds, { onConflict: "player_id,date_scraped" });
+  if (process.env.NST_JOB_LIFECYCLE_ENABLED === "true" && error !== null) markNstJobUncertain();
   if (error) {
+    markNstJobUncertain();
     console.error(
       `Error upserting into ${tableName}:`,
       error.details || error.message
@@ -363,6 +372,7 @@ async function checkDataExists(
     .eq("date_scraped", date)
     .limit(1);
   if (error) {
+    markNstJobUncertain();
     console.error(`Error checking data in ${tableName}:`, error.message);
     return false;
   }
@@ -420,11 +430,13 @@ async function checkMissingDatesAndFetch() {
   // Iterate over each dataset type (each goalie table)
   const datasetTypes = Object.keys(goalieTableMapping);
   for (const datasetType of datasetTypes) {
+    assertNstJobActive();
     const tableName = getGoalieTableName(datasetType);
     const { data, error } = await supabase
       .from(tableName)
       .select("date_scraped");
     if (error) {
+      markNstJobUncertain();
       console.error(`Error fetching dates from ${tableName}:`, error.message);
       continue;
     }
@@ -451,6 +463,7 @@ async function checkMissingDatesAndFetch() {
 
   // Process each missing URL sequentially with a delay
   for (let i = 0; i < missingUrlsQueue.length; i++) {
+    assertNstJobActive();
     const { datasetType, url, date, seasonId } = missingUrlsQueue[i];
     console.log(`\nFetching missing data for ${datasetType} on ${date}`);
     await processSingleUrl({ datasetType, url, date, seasonId });
@@ -486,6 +499,6 @@ const handler = async function handler(
 };
 
 export default withOperationalRouteAuth(
-  handler,
+  withNstJobLifecycle(handler, "check-missing-goalie-data", req => req.method !== "POST"),
   operationalRouteContracts.checkMissingGoalieData,
 );

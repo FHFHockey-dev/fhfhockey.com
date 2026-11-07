@@ -17,7 +17,7 @@ import {
 describe("nstRateLimitPolicy", () => {
   it("exports the published NST key-budget windows", () => {
     expect(NST_RATE_LIMIT_WINDOWS).toEqual([
-      { label: "1m_burst", windowMs: 60_000, maxRequests: 40 },
+      { label: "1m_burst", windowMs: 60_000, maxRequests: 39 },
       { label: "5m_burst", windowMs: 300_000, maxRequests: 80 },
       { label: "15m_burst", windowMs: 900_000, maxRequests: 100 },
       { label: "1h_standard", windowMs: 3_600_000, maxRequests: 180 }

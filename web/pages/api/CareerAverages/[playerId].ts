@@ -1,3 +1,4 @@
+import { withNstJobLifecycle } from "lib/nst/jobLifecycle.server";
 import type { NextApiRequest, NextApiResponse } from "next";
 import { HTMLElement, parse } from "node-html-parser";
 
@@ -24,7 +25,7 @@ type Response = {
   data?: Data;
 };
 
-export default async function handler(
+async function handler(
   req: NextApiRequest,
   res: NextApiResponse<Response>
 ) {
@@ -246,3 +247,5 @@ async function getStats(playerId: string) {
   };
   return data;
 }
+
+export default withNstJobLifecycle(handler, "CareerAverages/[playerId]", undefined, { lazy: true });
