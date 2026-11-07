@@ -804,7 +804,13 @@ function GameGridInternal({
             <span
               className={styles.legendSwatch + " " + styles.legendOffNight}
             ></span>{" "}
-            Off-night (≤8 GP)
+            Light (≤6 GP)
+          </li>
+          <li>
+            <span
+              className={styles.legendSwatch + " " + styles.legendMid}
+            ></span>{" "}
+            Mid (7–8 GP)
           </li>
           <li>
             <span

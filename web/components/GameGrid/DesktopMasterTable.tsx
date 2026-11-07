@@ -1107,7 +1107,6 @@ export default function DesktopMasterTable({
                 style={{ left: `${stickyTeamOffset}px` }}
               >
                 <span className={styles.masterAverageTitle}>GP/Day</span>
-                <span className={styles.masterAverageSubtitle}>AVG</span>
               </td>
               {dayKeys.map((day, index) => (
                 <td
