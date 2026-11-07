@@ -1,0 +1,11 @@
+--- a/web/lib/buyLowSellHigh/currentProcessEvidence.server.test.ts
++++ b/web/lib/buyLowSellHigh/currentProcessEvidence.server.test.ts
+@@ -97,7 +97,7 @@
+   });
+   it("preserves literal zeros and raw bytes with exact synthetic acceptance", () => {
+     const f = fixture(), before = Uint8Array.from(f.requestBytes); const a = evaluate(f), b = evaluate(f);
+-    expect(a).toEqual(b); expect(f.requestBytes).toEqual(before);
++    expect(a).toEqual(b); expect(Array.from(f.requestBytes)).toEqual(Array.from(before));
+     expect(a.coverage.individualQualified).toBe(1); expect(a.coverage.onIceQualified).toBe(1);
+     expect(a.records[0].record.counts.shots).toBe(0); expect(a.records[0].individual.observed[0]).toMatchObject({ ixg: 0 });
+     expect(a.records[0].individual.provenance.availableAtUTC).toBe("2026-11-01T19:15:00.000Z");

@@ -1,0 +1,27 @@
+[
+  {
+    "file": "web/components/WiGO/PlayerRatingsDisplay.tsx",
+    "check": "TypeScript syntax/transpile (not semantic typecheck)",
+    "diagnostics": []
+  },
+  {
+    "file": "web/components/WiGO/PlayerRatingsDisplay.test.tsx",
+    "check": "TypeScript syntax/transpile (not semantic typecheck)",
+    "diagnostics": []
+  },
+  {
+    "file": "web/e2e/wigo-one-page.spec.ts",
+    "check": "TypeScript syntax/transpile (not semantic typecheck)",
+    "diagnostics": []
+  },
+  {
+    "file": "web/styles/wigoCharts.module.scss",
+    "check": "Sass compile",
+    "cssBytes": 62400
+  },
+  {
+    "file": "web/components/WiGO/PlayerRatingsDisplay.module.scss",
+    "check": "Sass compile",
+    "cssBytes": 4692
+  }
+]

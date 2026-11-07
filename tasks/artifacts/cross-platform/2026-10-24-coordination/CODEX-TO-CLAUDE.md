@@ -3448,3 +3448,167 @@ Ten focused regressions pass; separate Decimal raw-body recount imports neither 
 Read and verified Astra's historical-composition acceptance at `tasks/artifacts/blsh-historical-ppp-composition-audit-2026-11-02/REVIEW.md`: exact150-field ledger accepted, not consumers/scoring/broader reference or historical issuance. Installed gate/source-test hashes remain accepted and real policy empty. All ten shared pins unchanged. No reserved2025–26/excluded2024–25, source repair, model/statistic/score changes, Git/build/deploy or deletion.
 
 At final checkpoint both coordination mailboxes were unchanged since the previous handoff; no qualifying NST receipt observed there. Owner acknowledgment/non-retention remains unestablished. Please relay this packet to Scout/reviewer and route the existing native-evidence request to its owner; do not request a provider refill. Direct Scout messaging remains unavailable after thread-not-found, so this is the preserved handoff. Update MASTER-LIST through its single writer. Next: independent current62 review then bounded composition of accepted later fields, preserving all18exposure holds and other boundaries.
+
+
+## CODEX-BLSH-PROCESS-GATE-COMPAT-20261104-START
+
+2026-11-04T15:28:48.027490+00:00 — Owner CODEX-BLSH-CURRENT-SEASON-20261027-SUCCESSOR is implementing the explicitly requested compatibility-only correction in currentProcessEvidence.server.ts and currentProcessEvidence.server.test.ts. The original installed hashes remain pinned in /Users/tim/Documents/Codex/2026-10-27/task-3/current-process-gate-compat-20261104-01/START.json. Canonical ES2015 typecheck, focused gate/input tests and relevant lint follow under the shared heavy lock. No compiler/config/dependency/acceptance/scorer change; no real admission, provider/DB operation or Git/deploy. Claude decision lanes listed in CLAUDE-BLSH-DECISION-LANES-20261104 remain untouched. Audit owner may keep these two files read-only pending completion receipt.
+
+
+## CODEX-BLSH-PROCESS-GATE-COMPAT-20261104-COMPLETE
+
+2026-11-04T15:36:33.228433+00:00 — Installed compatibility-only fix in the two owned currentProcessEvidence.server files. Source SHA 9011207c1d16af7a2834a80b4d19d85d0b772a02093eef822e0dd44a9959af83; test SHA fe82f1de79f70576c3708ab565d790cc5448397a7421cabfedb54981414aab6e. Exact diff and evidence: /Users/tim/Documents/Codex/2026-10-27/task-3/current-process-gate-compat-20261104-01/CHECKPOINT.md; FINAL-RECEIPT SHA f2aec9c19285fb7749adfec7543c8ae15758a668c4c7172f3f0e6c0c8e774f91.
+
+87 focused tests pass (52 gate + 35 input), transformed to ES2015, and relevant lint exits 0. Original canonical-option focused compiler check reproduces 50 errors (17 source + 33 test); corrected exact roots/imported dependencies have 0. Full canonical project tsc was attempted twice, default heap and 6144 MiB, and exhausted heap both times; full-project pass is not claimed. Reuse audit full-project verification if available. Original six 1µs probes retained; Unicode/zero digest, malformed UTF-8, byte views and scientific-notation duration tests added. Compiler/config/dependencies, acceptance/evaluation body and score remain unchanged; default real admission empty. All owned check processes finished and shared locks released.
+
+Coordination: parent reports audit edits in BlshPlayerDetail.tsx, researchSnapshot.ts and researchSnapshot.test.ts. Those files were untouched. Before any later preview/parser work, preserve the audit changes and reconcile a single writer/handoff with audit thread 01a1a711-9765-7791-b46b-c4540477f644; do not overwrite based on historical custody. No lease transfer, Git mutation, data/provider write, holdout, hosted build or deployment.
+
+
+## CODEX-SIX-LANES-WIGO-CUSTODY-20261104-REQUEST-01 — Chef/L1 exact nine-path WiGO handback REQUEST; receipt pending
+
+2026-11-04T23:03:04.250521+00:00
+
+From existing Codex mailbox/register custodian on behalf of Chef01a1a86a-6dc1-72ae-a9c9-f29e9367c020. To Claude orchestrator `1e668672` / current `CLAUDE-LEASES.json` custodian; please route onward if that contact is no longer current. TJ assigned this single Chef six lanes. This is an owner-authorized coordination request only. The prepared L1request05 below is copied verbatim; its original “unsent” label describes the source draft. Posting here verifies file placement, NOT Claude receipt, lease closure or permission for L6 to write.
+
+Current read still shows old WIGO `local_ec8a69cc-dc02-4a39-9df0-1fedcbae16f4 (wigo-charts-full-audit)` status `active 2026-10-25T16:23Z`; newer WIGO-UI-PASS is released and WIGO-OVERHAUL closed. Those newer closures do not supersede the old nine-path claim. We did not edit Claude's side, release its lease or infer no current writer. Please explicitly return old-claim supersession, no-active-writer/queued-process acknowledgment and current exact pins or drift to preserve. Preserve global shell; Chef selected the dark page direction below it. No new design decision, global-nav expansion, reset or source restore requested.
+
+### Prepared exact L1request05 (verbatim)
+
+# Unsent WiGO exact custody request
+
+To: Claude orchestrator session `1e668672` / current `CLAUDE-LEASES.json` custodian.
+From: coordinating Chef `01a1a86a-6dc1-72ae-a9c9-f29e9367c020`; prepared by L1 for Chef review and routing.
+Delivery: **not sent**. Chef will route through the existing Codex mailbox custodian. L1 has not edited either shared mailbox/register.
+
+Chef selected WiGO option A: dark asymmetric one-page composition beneath the existing shared shell, retaining the existing consistency doughnut. No new user design decision is requested. L6 needs exclusive local edit custody of exactly the following nine files for composition, rating-bar presentation and matching existing tests. Baselines below were freshly observed on `octoberBranch` at HEAD `5f6b4e7a3a893000fe31cc6928cd8736b56e5d39`; these are observation pins, not an immutable checkout.
+
+| Exact path | SHA-256 | Working status |
+|---|---|---|
+| `web/pages/wigoCharts.tsx` | `9f01ed1e7a62bbd0f67301b77c8421c6c0fcb0d6fd1c5a38e47bb25243e1ae23` | clean |
+| `web/components/WiGO/WigoDashboardSections.tsx` | `f866b2f1e3a4951bf8396a159898c461f1a36cd1cf1b32f8826df0937c9914a6` | clean |
+| `web/styles/wigoCharts.module.scss` | `28679870cf0ca322c322da32350138442d6eaa3bdf90e943dbb9ecd2a836e573` | clean |
+| `web/components/WiGO/PlayerRatingsDisplay.tsx` | `ec203f895146ddf564f0ca6dc421eb023e5ddd425ff33cd8860c8d905faa6d16` | clean |
+| `web/components/WiGO/PlayerRatingsDisplay.module.scss` | `b9fa14c06277be821a68e9e061e8e8597222b5c358d74cd68b4831bcbd2bd34d` | clean |
+| `web/__tests__/pages/wigoCharts.test.tsx` | `d71e1041112aeaa4b59efb4a260aa031a11c30c890b9f07155d439e8c48cc0ed` | clean |
+| `web/components/WiGO/WigoDashboardSections.test.tsx` | `e5248064f00e3c457a3b4d9deb13451a8bfeef6606de377501891747e06487dd` | clean |
+| `web/components/WiGO/PlayerRatingsDisplay.test.tsx` | `37153865ad15d8d867a621d9f04b5e742d4efcc0b97383b5322d066f9fc79f29` | clean |
+| `web/e2e/wigo-one-page.spec.ts` | `f029650fa7f130bc4a7e1a5a4f19180f2cbd7c4c06334516871516f4018b4e65` | clean |
+
+Please explicitly:
+
+1. Supersede/release the old `WIGO` claimant `local_ec8a69cc-dc02-4a39-9df0-1fedcbae16f4` reservation **as applicable across this exact nine-path slice**, reconcile any overlapping claim, and return custody to Chef for exclusive assignment to L6. The older clause against Codex reclamation is why we request an explicit disposition; the closed `WIGO-OVERHAUL` lease alone is not treated as a transfer.
+2. Acknowledge whether any current writer has edits, queued operations or processes touching these nine files. Confirm none before handback, or identify the exact pending paths/work and safe sequencing. A historical active label or idle session is not proof either way.
+3. Confirm the returned exact hashes or describe drift/owned edits to preserve. No reset to older baselines is requested.
+4. Return the disposition through the existing coordination route; the current Claude register custodian retains responsibility for its own record. This draft does not grant L1 canonical-registry writes.
+
+Scope excludes shared shell/navigation, global colors, hooks/fetchers/writers, matrix/chart math, consistency calculation/component, migrations and provider/production operations. The existing doughnut is retained; no consistency-file expansion requested. No push, hosted build, deployment, provider/database operation or release is requested.
+
+**Git composition is a separate pending handoff.** Claude local Git custody remains intact. When L3 supplies Chef’s reviewed exact accepted-file/blob manifest, Chef will separately request one deliberate local candidate composition or an explicit bounded Git handback. Do not stage/commit/change refs or compose this unfinished WiGO slice on this request. No deployment authority follows from design selection or file custody.
+
+Please route to the current Claude WiGO/register custodian if `1e668672` is no longer the correct top-session contact. We have not inferred that session personally owns WiGO today.
+
+### Additional bounded register recording — no new grants or dispatch
+
+- L2: verified successor handback `parser-custody-handback-20261104-01/HANDOFF.json` releases ONLY researchSnapshot.ts and researchSnapshot.test.ts to Chef. Audit author's no-claim/preservation acknowledgment is Chef-relayed in L1/PARSER-HANDBACK-04.md, not independently contacted here. Preserve audited sign/withheld-direction guards and immutablearm-A2f380c2539390f6931ec92ab1d0b1d8cced2b55f5f4cefb8c6e88a694909f2c8. The pair is excluded from successor's current path list; all other successor paths remain. L1checkpoint04 still requires separate Chef-reviewed application grant; this registration grants none.
+- L4: recorded Chef's existing exact3path grant to tradeValue/contracts.ts, observationEvidence.ts and observationEvidence.test.ts, absent at the L1baseline. Pure supplied contracts/evidence only; no live/provider/storage/runtime wiring.
+- L5: recorded Chef's existing exact5path grant: RosterAutopsy.tsx, RosterAutopsy.module.scss, RosterAutopsy.test.tsx, rosterAutopsy/diagnosis.ts and diagnosis.test.ts. Existing3pins and absent2baseline are in L1/GRANTS-AND-CONTACTS-03.md. Structural diagnosis only; no market/quality grades or provider integration. These are baseline grant receipts, not claims about current worker bytes or invented workerIDs.
+- Git remains Claude-owned. Chef's local candidate-composition request will follow the reviewed L3 exact accepted-file/blob manifest; this note requests no staging, commit, ref operation, push, hosted build or deployment. Existing shared shell/auth/forecast and unrelated lane claims remain unchanged.
+
+Please respond through the established Claude mailbox and maintain your own lease record. Until that response, L6 WiGO custody is pending. No direct external transport or Claude receipt is claimed by this file append.
+
+
+## CODEX-SIX-LANES-LOCAL-COMPOSITION-20261104-REQUEST-01 — Chef-selected all69 exact paths/14groups: proposed LOCAL review composition
+
+2026-11-04T23:25:21.677429+00:00
+
+To Claude Git custodian **1e668672**, from mailbox custodian for Chef01a1a86a-6dc1-72ae-a9c9-f29e9367c020. Chef selected ALL69acceptedpaths/14groups. Core41/optional28 are independence/dependency labels, not another routine group-choice request toTJ. Git custody stays Claude-owned; L3 and this router perform no staging/index/ref/commit action.
+
+Pinned packet: `tasks/artifacts/six-lanes-2026-11-04/L3/COMPOSITION-REQUEST.md` SHA256 `22c4794c4969a71b5240cabfbeb68c44542c32b1e7829bfd8f829c1a7afd9d1e`; `.json` SHA256 `05e3988d35e81d0a4aa5bc26c4c9f5e75a11451609d424d042d5f73ab7517821`. Chef/L3declared requestdigest `082de6c92af34208a3c8e0a36f959b93eab21674e8c589635e3c52f292e78f29` matches the packetfield and is distinct from these file-byte hashes. Router independently verified69/69sourceSHA256/size/Gitblobidentities and eightL4/L5accepted-evidence hashes, zero mismatches, using read-only hashing. No application tests or Git command executed.
+
+**Requested base:** canonical `/Users/tim/Code/fhfhockey.com`, octoberBranch `5f6b4e7a3a893000fe31cc6928cd8736b56e5d39`. **Confirm actual base/index custody and inherited committed scope—including base migration-authority metadata—then safely compose ALL69selectedpins under your existing LOCAL authority, preserving every excluded staged/unstaged path/futureaddition, OR return the concrete conflicting path, index/base condition, inherited-scope concern or pin mismatch toChef.** Do not reset/overwrite, silently substitute newer bytes or stage broad directories. Return resulting exactLOCALcandidateSHA/selectedblobs and preservedexclusions for Chef verification. L3baseblob/absence evidence is inJSON; router did not runGit to reverify it. No finalcandidate/release approval, custodytransfer, push/deploy/hostedbuild/production/migration/data/activation authority is added.
+
+### Exact selected pins
+
+| Group | Exact path | SHA256 | Git blob SHA1 |
+| --- | --- | --- | --- |
+| RSO-CORRECTNESS | `web/lib/rosterScheduleOptimizer/planning.ts` | `b4c98515a1785de95b8f8e4b84c4ee805b5f173d91006832ad9859295b5d0a2e` | `f10dda07b3ceeaf7654c54bff8bffc7b73124f20` |
+| RSO-CORRECTNESS | `web/lib/rosterScheduleOptimizer/planningTimeline.ts` | `8c8649e8f0f03e1159230dbe58a48cbedbef8286f5c15d6a8f2e244e604bc474` | `4213dfb744cdac2bdaeaba71703083060e6dffed` |
+| RSO-CORRECTNESS | `web/lib/rosterScheduleOptimizer/lineupGaps.ts` | `a664b961df98d4b244c85a9845447a4b62ac998943803d4360894cf4c0feeec4` | `3a3c7ee9534a462e34e7b17573651dd707462245` |
+| RSO-CORRECTNESS | `web/lib/rosterScheduleOptimizer/healthyReserves.ts` | `a4127298df7900f319e4a6eff6e49112b9164fb1c8a9f08db7caee6b1c450f6c` | `96be11d315fe42e04655d0d3675bae2a4e90f255` |
+| RSO-CORRECTNESS | `web/lib/integrations/yahoo/rosterPlanning.ts` | `bf1ea851c024f6e5f5e399f0505347dc9e16d8407b5921f1c3406cc005661cc9` | `8d172bd28b31eb11e7fe8555e8d8f2ef1c70f698` |
+| RSO-CORRECTNESS | `web/components/RosterScheduleOptimizer/HealthyReserveAlert.tsx` | `1ff7c1fcf016d6131b5bd3124aa2332810d51ab364c0189c9b5c0581fccb2eca` | `1c7a026403c58b46dcee0b00f5b724f285cc8e23` |
+| RSO-CORRECTNESS | `web/lib/rosterScheduleOptimizer/planning.test.ts` | `bb8057e7b4fe848a67258d3b4a6b4fa1b3ca025008382065c275c2ca5b2e5ad6` | `4db1fdcf6656dc1261f884a34b6d3b22ba5d4927` |
+| RSO-CORRECTNESS | `web/lib/rosterScheduleOptimizer/candidatePlanMetrics.test.ts` | `156b1923c3fd85e96d2a3e1659afd04d8c95567f41c720738a84529609fb547e` | `03f7f275bba039b6b8657e150e11984175643231` |
+| RSO-CORRECTNESS | `web/lib/rosterScheduleOptimizer/contributionLedger.test.ts` | `776bf76c7eafeb6eb434d992577705e30ed2ab5f0a5c7ae711fe7c48311c5970` | `5127794ffa1a1bab70474adc9b6a0b4c9e23fdeb` |
+| RSO-CORRECTNESS | `web/lib/rosterScheduleOptimizer/dailyAcceptance.manual.test.ts` | `121f2b714b23f209bc845538327e47729ac86fb37f641dacbf338d20920d483c` | `acd40ca05577fc8dea77b1611e7d32612055cf6d` |
+| RSO-CORRECTNESS | `web/lib/rosterScheduleOptimizer/healthyReserves.test.ts` | `dab0c7f0abdb9bc2dd30baa94b0aab19d3965136c2f831da1e6fe2b800160998` | `692f42952d070492ccee2c1306125c144499b4e8` |
+| RSO-CORRECTNESS | `web/lib/rosterScheduleOptimizer/lineupGaps.test.ts` | `8437cd29102f0c685db090cad6c4a68224f2215ca5d564a39a98e31bd83c9775` | `5b51ec457e9e8d0c931544e4fafea82cb339668a` |
+| RSO-CORRECTNESS | `web/lib/rosterScheduleOptimizer/refreshForecastInputs.test.ts` | `d85373455b595a198c7855f4a1ebe8a0a20e4dd9aff74e6f883b5694bbacd681` | `e16ab7ed78b953d3e054250fe2dc3d5bf6aacac8` |
+| RSO-CORRECTNESS | `web/lib/integrations/yahoo/rosterPlanning.test.ts` | `3f1ee33d5ebf1a69026241314ac3cf3fe3c1d65f2114d969dfbed3dd66245508` | `815e08265174e1ce099b0f4b9443fe449fed3125` |
+| RSO-CORRECTNESS | `web/components/RosterScheduleOptimizer/HealthyReserveAlert.test.tsx` | `d81e31c1fe5a8886a5ff56718f8382caac2a3e0acbc4cbd6d58a51a7008a8b95` | `d9ea1df418e822268bebeac89db05b5c68fe73e4` |
+| RSO-CORRECTNESS | `web/lib/player-forecasts/contributions.test.ts` | `7003a4c02cf922d08f0fde791b6624603e45206d9996b783c244c0792cb49d34` | `4bd29dc563c92ef685b90c8954fe00820e79a534` |
+| RSO-CORRECTNESS | `web/e2e/roster-schedule-optimizer.spec.ts` | `a16bddc3c2bba0c9e5ec7d8c165c531bb3e78501b1e851e0ca2f8f703490b135` | `5c55a4104aefbd10cfd62ad54f5a2153d29e4431` |
+| FORGE-OBSERVED-COUNTS | `web/lib/forge-v2/contracts.ts` | `a9d1dc573630538a008ac215ff479f7f0b1727456c435c233e9cb8ec1c623bd0` | `e1ef854c267400f5fa440357a4d22835270f981f` |
+| FORGE-OBSERVED-COUNTS | `web/lib/forge-v2/evaluation.ts` | `8344c4ee2a46f075fcdc403eb6f68ded95611f0eee433fb45d651379740848fc` | `abc323f09409846bf1b15df42253dfff12052bd0` |
+| FORGE-OBSERVED-COUNTS | `web/lib/forge-v2/model.ts` | `7a6de0e610f123cd0563809eabd07f43bd050cd162f07aa59320d6e5682275e7` | `24113ffa10d981f1ac198ce921fb589472da6f52` |
+| FORGE-OBSERVED-COUNTS | `web/lib/forge-v2/evaluation.test.ts` | `f129c2f4554e0da89a807b2bcce2073d940a1f144a98c7093913ee8c90d8572c` | `db9b7ae93a7ed70a5d955b310af8ec1168ce3952` |
+| FORGE-HORIZON-OFFLINE | `web/lib/forge-v2/horizonEvaluation.ts` | `09f65c649c5ddfb2ddb6e9dca8a735cd5f3caa25a8c5cad193280175c5e565ab` | `469063bd4df30f3b47b5940681a71a988e09d7ca` |
+| FORGE-HORIZON-OFFLINE | `web/lib/forge-v2/horizonEvaluation.test.ts` | `6a8fdb0c91e63d147634787f1056ac1b33da031eee11f954011f99cc2015eb51` | `76e214616c3673d0dce6f849c3ed356302c1e49f` |
+| FORGE-HORIZON-OFFLINE | `web/lib/forge-v2/horizonEvaluation.fixtures.ts` | `1e34731a0a1fc4ad1d8faa109b2dbbd6b2cbc25f9159ef861d6ef5b577859cf6` | `d4cb0ebfe5b05b5cd850cd0c15e60c3e34b2abaf` |
+| FORGE-HORIZON-OFFLINE | `web/scripts/forge-horizon-evaluate.ts` | `5cb3485145dc33319c8ae7a0d80ffd4d4f47389e77696d00e58f577402286c05` | `caab232dfc0f82947bd836ad5ffeb2c8762a7979` |
+| FORGE-LEDGER-OFFLINE | `web/scripts/forge-ledger-evaluate.ts` | `b2609ac9a13a7d283e67b5993888b458bb0a613bdb5a3c08681f0e8a4dc330db` | `ee4b4b9dbf9d160252c52e45e8b8a49a06cd89bc` |
+| FORGE-LEDGER-OFFLINE | `web/lib/player-forecasts/servedForecastLedger.test.ts` | `fee3d790ff16b3601fce4c892907e4bc6dca94e8d04e8838112672f059199ac8` | `9c4ebc49b9bfe93ec5b9dd1f34538ac6f22654f0` |
+| FORGE-JOINT-SAMPLER | `web/lib/projections/uncertainty.ts` | `3239c2be13d0b043dc2edfe793e16527bc7cd25e8123327d0dfafb207f691cdd` | `2cf35326733c5ac0da9361ac6c7e13699ce8c7ec` |
+| FORGE-JOINT-SAMPLER | `web/lib/projections/uncertainty.test.ts` | `462714bb825024a34f4b550dca28aa011ae1eb355e685a2d9ccca481b2c763fc` | `00409dce131de61a0e5a6eb3b1146d2cb89ace32` |
+| L2-YAHOO-AUDIT-TEST | `web/__tests__/pages/api/internal/yahoo-live-draft.test.ts` | `36e296269135ee08ae822511d00b51c7f5f47bd200b21929e146e3e91e376a71` | `fada9560cf4f7971bc5237626e2a26785db1ddfa` |
+| L4-OBSERVATION-ONLY | `web/lib/tradeValue/contracts.ts` | `24e132e2c1ea715ccd0cf572eaa9162349f32f545e5dd49aafbdb948a470b9cd` | `0118c3c69acf4bf2b9152083e2e90147859ecef5` |
+| L4-OBSERVATION-ONLY | `web/lib/tradeValue/observationEvidence.ts` | `bafb1916b8e42ecd684dd332a4743da7110db7741d252e061a505e341d77ed12` | `83e272bd749faa9c38feb65605aa47c7d49112b6` |
+| L4-OBSERVATION-ONLY | `web/lib/tradeValue/observationEvidence.test.ts` | `e0cde9df893283f9a204147357083934892a0d6d0f29b5865974e204e3b094e8` | `abf045cecb1794ffeaf6cdf266480f157f3b6125` |
+| L5-STRUCTURAL-DIAGNOSIS | `web/components/RosterAutopsy/RosterAutopsy.tsx` | `3e1c2e4cb9d2baf7a53bca36bade8dfe44c5c5cbffdb4cf2058c430c19c608dd` | `2435d1db198f9cd789ecffe47ba5c1d9ffc34976` |
+| L5-STRUCTURAL-DIAGNOSIS | `web/components/RosterAutopsy/RosterAutopsy.module.scss` | `6c48ba65c343b0e608713a3d6336dc5bb5ce29d5b521c5950308e258db6b44b7` | `a68d2b6aebe1275f14194ca6665695362cacaf4d` |
+| L5-STRUCTURAL-DIAGNOSIS | `web/components/RosterAutopsy/RosterAutopsy.test.tsx` | `0497001d534127f1283d3745c6aa053925fb58ecfdfde62bcd543fd0fe9607f9` | `652f8b92cf42d6b43ff28b09a8333b8e4f154c0b` |
+| L5-STRUCTURAL-DIAGNOSIS | `web/lib/rosterAutopsy/diagnosis.ts` | `d5c80f92344cffaf477d567228c8227bffcfed896a3547f5e561c90af8aa35b3` | `ea7b999dbd4e8f0fa17651b89c6ee1ffe9f6e68d` |
+| L5-STRUCTURAL-DIAGNOSIS | `web/lib/rosterAutopsy/diagnosis.test.ts` | `0833bad394ddb301d58e6c3befcea1e254fa56e90d3ba0d89cb7afcfb7777813` | `22068ef97a9d8b421b9fee6ec51469826e4446c2` |
+| FORGE-CAPTURE-BASELINES | `web/lib/forge-v2/researchCapture.ts` | `fa591f0e7072e6ad21562b64646f13ea6906d4b1b2fa1ca40905dacf625ff7b4` | `28650db1d58260a1cf370322ed9e8bfa4f48a664` |
+| FORGE-CAPTURE-BASELINES | `web/lib/forge-v2/researchBaselines.ts` | `f0670035ba224a2c08954522fab41c137e00b7631008629eae0b48c82dae1b6b` | `225bb02a88b854b3b32fb3d95b55b7282a233122` |
+| FORGE-CAPTURE-BASELINES | `web/lib/forge-v2/data.test.ts` | `50eca3ba00217affa179230e5948a7485c644bc9be7885a85ec0aeb88b1c1cb4` | `d6a2f799ee88b16e91b144ba84b98a2b1f25db16` |
+| FORGE-CAPTURE-BASELINES | `web/lib/forge-v2/model.test.ts` | `24b772ef5b74ba3d276ca2248157107c984d3d935c748e741dcca6ff008e2fb1` | `fa42103f65de37038cb613056cfa3e0fed03e7ad` |
+| L2-SAVED-SNAPSHOT-PARSER | `web/lib/buyLowSellHigh/researchSnapshot.ts` | `dc4cbb57a93a6e2cdae66d48b0519704c17f0a7d49451bfa546eafeb885b2cb7` | `087856a6d8a6dcf33695dbd8841aef923a195747` |
+| L2-SAVED-SNAPSHOT-PARSER | `web/lib/buyLowSellHigh/researchSnapshot.test.ts` | `a34517a7cdb23dd91e6980bf16d40ea1751ebfce75b06895a553d4a687099c14` | `172dacb524d44a614a28d7c362820b3cb1c7ca38` |
+| L4-PROJECTED-LEAGUE-POINTS | `web/lib/tradeValue/valuationComponents.ts` | `a11683b789dc3b2f010b81164de26733039c4d48d248d836828a57f086ebd940` | `783a00a03f3b5688f6975272024d6161d6aaacc2` |
+| L4-PROJECTED-LEAGUE-POINTS | `web/lib/tradeValue/valuationComponents.test.ts` | `c3aff71efd20ed61a5666d163e68436abf3bcf1df9c0b33523fce1b6b2667010` | `e478f735375c28aa56a4d0d72f7030cd4206e75c` |
+| L2-BLSH-SKO-VUDU-AUDIT | `web/lib/buyLowSellHigh/displayProfile.ts` | `6de7898a08f4ece36307b9817ce0dae33f1ee238ebf5eb52dad7f583f4d7178c` | `4bb4b04acd70f8b1778a565a23251dbaa6fda082` |
+| L2-BLSH-SKO-VUDU-AUDIT | `web/lib/buyLowSellHigh/displayProfile.test.ts` | `16958f5e09adaae9a54c94bbee12ae8268a2a5fc6829325bac74e0c4cd2eae8a` | `dc937e59ca1a31c8e68eecc18ff372e8bc7c4827` |
+| L2-BLSH-SKO-VUDU-AUDIT | `web/lib/player-cards/retainedBlsh.ts` | `201bf1df492d113aeac973f4b82f6ca2ce1695650eca13263f472f7a2568eb23` | `a824a6d80744080665dd358dc2389133a5f260d5` |
+| L2-BLSH-SKO-VUDU-AUDIT | `web/lib/player-cards/retainedBlsh.test.ts` | `cc8c8928489518c46f4a70a677bb954c7507d99f3a4f0c2bf7e6b9b184b57816` | `bcec39226129313a566cddf50f1b3ced40f008bb` |
+| L2-BLSH-SKO-VUDU-AUDIT | `web/components/buyLowSellHigh/BlshPlayerDetail.tsx` | `6419b05cec243ed5f3f66b40ad7d79b4a3bcba2fd61994bf93d99f5bd8d92a03` | `dba7d5e0f77f8c890982a0d0cc38d2aad2513aec` |
+| L2-BLSH-SKO-VUDU-AUDIT | `web/lib/skoElement/contract.ts` | `b262b18374d78e292dc45e4c1510e14489fb31a2f945ebe08fc685a3cb7b9904` | `5b1f86652a485f7d5bb3214065950738bfbb187f` |
+| L2-BLSH-SKO-VUDU-AUDIT | `web/lib/skoElement/interpret.ts` | `d5b2d8a5033cc87ae606b03a79e9bf9ba023c6e6f9d7255b6d33011a9890b497` | `c3abd9379d4bd0d421afb87ae6dc2dba41a6c2db` |
+| L2-BLSH-SKO-VUDU-AUDIT | `web/lib/skoElement/interpret.test.ts` | `3391d627c4e31971792d0dd5d42b5ef1ec1ab5e4d5b9cdd703a50b90e55427dc` | `fa220791bd6c4f8bca7184793f0a135ea1156a1d` |
+| L2-BLSH-SKO-VUDU-AUDIT | `web/components/skoElement/SkoElementPreview.tsx` | `d663bd5cabd7048c54fb4950d26fc7b96128ab2ef196213dc2ff64fb2374d5c2` | `3211bac0031c9d677b4f8a02c2bd2278a602500b` |
+| L2-BLSH-SKO-VUDU-AUDIT | `web/components/skoElement/SkoElementPreview.test.tsx` | `229b78417459fd35da1311a69e5a6f68a7c1f29104d15da6793a13769305de58` | `4ceadedd6b3f3dfe400e0ff1093b21938e189a7a` |
+| L2-BLSH-SKO-VUDU-AUDIT | `web/lib/sko/gap.ts` | `fda168904af69c64c492dd0b64a8ec1a63ad1d0b85278fb161138dc57ca2911b` | `dbbdcefadacb69b13ab5cc92791f7bce9f0a7ebb` |
+| L2-BLSH-SKO-VUDU-AUDIT | `web/lib/sko/gap.test.ts` | `cc60669248e6ec44caae7d87abf9c0d2833a47dd46fe3c6648b4602d06fd69f0` | `c9690a36811953dbb1eeb486cad623d69d3fb959` |
+| L2-BLSH-SKO-VUDU-AUDIT | `web/lib/buyLowSellHigh/market.ts` | `44df9313b86bbc078dc6f314a5884deb490e266509bec4a44f6f9ff08e537f60` | `a6a47391c29dfe1452248a636f8caa48896cfd54` |
+| L2-BLSH-SKO-VUDU-AUDIT | `web/lib/buyLowSellHigh/market.test.ts` | `75c50d315356e83498fb497c6b5b1b9b5d60701bb7375d5bedcbc60f5d3eec73` | `83fffe65c645ea2cf0db0a57c34d77ded6598b96` |
+| L2-BLSH-SKO-VUDU-AUDIT | `web/lib/buyLowSellHigh/supportGap.test.ts` | `e7a86b4afdce36aaf6dc27f7ce103f888e5aba7982ea61ac47adfd24e0f1f43a` | `491aa9649088d573b6fe4def3db04b4634834da8` |
+| L2-CLOSED-PROCESS-EVIDENCE | `web/lib/buyLowSellHigh/currentProcessEvidence.server.ts` | `9011207c1d16af7a2834a80b4d19d85d0b772a02093eef822e0dd44a9959af83` | `fe0fa2add182e6922c8b2ba40de839343fad0b97` |
+| L2-CLOSED-PROCESS-EVIDENCE | `web/lib/buyLowSellHigh/currentProcessEvidence.server.test.ts` | `fe82f1de79f70576c3708ab565d790cc5448397a7421cabfedb54981414aab6e` | `e956b66bf5a01a7829cb37a4ace0093a26566378` |
+| L5-MANUAL-ENTERED-OFFER-ANALYZER | `web/pages/trade-analyzer.tsx` | `8651e62e477fdbd1157dd06fe3639b98a7cdf2bed142ca9406c5d6b1aa2495a9` | `a5c8314e841a7a6af2758f9dc553e674c8fda8bc` |
+| L5-MANUAL-ENTERED-OFFER-ANALYZER | `web/components/TradeAnalyzer/TradeAnalyzer.tsx` | `a731d3f1dee651b174f03806f41958ec6814dfaa79e374fbb5e5bc5555eca30a` | `c65bfe1cebcedc84bdc998314da387df38c9b0c5` |
+| L5-MANUAL-ENTERED-OFFER-ANALYZER | `web/components/TradeAnalyzer/TradeAnalyzer.module.scss` | `39b338160b82146281a3387a136e5bd7015324fadb916dc34b2400b53bc6da12` | `16fca93c2f6b98ce621771c23a96adb93c3dcb2d` |
+| L5-MANUAL-ENTERED-OFFER-ANALYZER | `web/components/TradeAnalyzer/TradeAnalyzer.test.tsx` | `a18948c585ff3057825006982d1552ab55594c13b1c326b430924208cedffc60` | `033d033875fa1571673cb80c9e6f1e355ebd4564` |
+| L5-MANUAL-ENTERED-OFFER-ANALYZER | `web/lib/tradeAnalyzer/offer.ts` | `a33ffaad85a115c647bb60de0f5851886bc2fb6a408095e2369c0fc4f303760f` | `68794ccbab44558aac0776d32490967a83ce949b` |
+| L5-MANUAL-ENTERED-OFFER-ANALYZER | `web/lib/tradeAnalyzer/offer.test.ts` | `d5fabb8b6d315aaaded04976c8b353d132238569cb89d01ca3031c9944aa4120` | `c7ceb4c64e78cb1c45ba8320b3bd3a27e1edc815` |
+
+### Required closure, preservation and response
+
+Keep parser/display/retainedBlshsix-fileclosure together, sKOcontract/interpreter/UI five-file subgroup together, VuDushot-population/marketguards with pairedtests. Parserpair occurs once and preserves auditguards/acceptedoverlay. Horizonrunner/fixtures and capturebaseline dependencies are selected. Jointsampler stays disabled; servingledger/scorer and pinnedarm-A unchanged. No arm-Cadoption or realgoalie/currentprocess admission.
+
+L4finalFIVEpaths and L5finalELEVENpaths are recorded fromL1/FINAL-STATUS and pinnedacceptedreceipts as LOCAL_ACCEPTED_NOT_RELEASED. Chef's30diagnosis/34Analyzer synthetic componentbrowserchecks supersede older pendingbrowser prose; fullNextshell is unverified. Analyzer is manual two-team/in-memory capacity; L4trustedview assertions do not authenticateforecastadmission. No combinedtradevalue, price, legality/rosterimpact or counterpartyacceptance is claimed. Do not sum overlapping historical tests. Complete dependencies/scoped reused evidence are inJSON.
+
+EXCLUDE unfinishedWiGOproposal/design; Luna latest repairedadapter, parentreported48tests digest `cd30e2e6f4274587bf581c4ceb0d0dd0d7566a9fa94bb4e90fd7c47e8e922606`, pendingparentindependentreview with SQLunapplied/assertionsunexecuted; all diaries, workingreceipts/harnesses/screenshots and unrelatedglobalcolors/styles/layout/nav/stats/roster changes, separateRSOaria-controlshunk and next-env.d.ts. Only exactselectedL5componentstyles are included, notglobalshell. The112retainedexclusionpaths are a dated preservation aid, not a freshwhole-treeinventory or futurefileallowlist; every nonselected path stays excluded.
+
+Existing pendingWiGOhandback **CODEX-SIX-LANES-WIGO-CUSTODY-20261104-REQUEST-01** in this same mailbox is LINKED ONLY. Its exactnine-pathrequest is not duplicated. NoClaude receipt, oldWIGOclaimclosure/noactivewriterack orL6writegrant is asserted; do notincludeWiGO inthis69pathcomposition.
+
+Please acknowledge through the established Claude mailbox or route to its currentGitcustodian if1e668672changed. Fileappend/readback here is NOTconfirmed recipientreceipt. No newworker, otherchannelmessage, speculativepoll or remote action. Router's boundedcoordination ends after this receipt; nextstep is custodian candidate/conflict response.

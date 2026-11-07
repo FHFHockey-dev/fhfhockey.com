@@ -1,0 +1,154 @@
+{
+  "head": "5f6b4e7a3a893000fe31cc6928cd8736b56e5d39",
+  "scope": "inclusion proposal, not custody or release approval",
+  "groups": {
+    "parser_card_consistency": [
+      {
+        "path": "web/lib/buyLowSellHigh/researchSnapshot.ts",
+        "sha256": "dc4cbb57a93a6e2cdae66d48b0519704c17f0a7d49451bfa546eafeb885b2cb7",
+        "status": "M web/lib/buyLowSellHigh/researchSnapshot.ts",
+        "diff_from_head_sha256": "e001e6fcda071ae72168ccf96014da95ed803a0b18b3bc6295c3f242e38d3c82",
+        "matches_preflight": false
+      },
+      {
+        "path": "web/lib/buyLowSellHigh/researchSnapshot.test.ts",
+        "sha256": "a34517a7cdb23dd91e6980bf16d40ea1751ebfce75b06895a553d4a687099c14",
+        "status": "M web/lib/buyLowSellHigh/researchSnapshot.test.ts",
+        "diff_from_head_sha256": "9232f1589523bdda3e15b3eb17a09652a9ee17150f0d9e03cce7f8db4d2bf9f3",
+        "matches_preflight": false
+      },
+      {
+        "path": "web/lib/buyLowSellHigh/displayProfile.ts",
+        "sha256": "6de7898a08f4ece36307b9817ce0dae33f1ee238ebf5eb52dad7f583f4d7178c",
+        "status": "M web/lib/buyLowSellHigh/displayProfile.ts",
+        "diff_from_head_sha256": "f9bda090770f3730ce1215699549f24e11cf2c9df13b2c4d5d36ceab3ef76d10",
+        "matches_preflight": true
+      },
+      {
+        "path": "web/lib/buyLowSellHigh/displayProfile.test.ts",
+        "sha256": "16958f5e09adaae9a54c94bbee12ae8268a2a5fc6829325bac74e0c4cd2eae8a",
+        "status": "M web/lib/buyLowSellHigh/displayProfile.test.ts",
+        "diff_from_head_sha256": "00bb88406e4e4461dbc4ee077ea464e26b6e7a21d530fcf8149916fd467c946e",
+        "matches_preflight": true
+      },
+      {
+        "path": "web/lib/player-cards/retainedBlsh.ts",
+        "sha256": "201bf1df492d113aeac973f4b82f6ca2ce1695650eca13263f472f7a2568eb23",
+        "status": "M web/lib/player-cards/retainedBlsh.ts",
+        "diff_from_head_sha256": "0495d5ec83b0eb31575cc8731c2c097a8c373b67315a1064bdc05108497151d1",
+        "matches_preflight": true
+      },
+      {
+        "path": "web/lib/player-cards/retainedBlsh.test.ts",
+        "sha256": "cc8c8928489518c46f4a70a677bb954c7507d99f3a4f0c2bf7e6b9b184b57816",
+        "status": "M web/lib/player-cards/retainedBlsh.test.ts",
+        "diff_from_head_sha256": "f345ea15d67943abaff531769ebb86590364012d61fcaa118eba46c11fad6fdd",
+        "matches_preflight": true
+      }
+    ],
+    "independent_blsh_detail": [
+      {
+        "path": "web/components/buyLowSellHigh/BlshPlayerDetail.tsx",
+        "sha256": "6419b05cec243ed5f3f66b40ad7d79b4a3bcba2fd61994bf93d99f5bd8d92a03",
+        "status": "M web/components/buyLowSellHigh/BlshPlayerDetail.tsx",
+        "diff_from_head_sha256": "8990e89ebf8236ce9348e5141c95bedf12eb62eabe3b93198cbe78ef2ebefa44",
+        "matches_preflight": true
+      }
+    ],
+    "coupled_sko_vudu_contract_and_ui": [
+      {
+        "path": "web/lib/skoElement/contract.ts",
+        "sha256": "b262b18374d78e292dc45e4c1510e14489fb31a2f945ebe08fc685a3cb7b9904",
+        "status": "M web/lib/skoElement/contract.ts",
+        "diff_from_head_sha256": "d63f36fe104d03b8988a0c6fd62615470c0a9d8eea11d3744abf4ae4259e55ff",
+        "matches_preflight": true
+      },
+      {
+        "path": "web/lib/skoElement/interpret.ts",
+        "sha256": "d5b2d8a5033cc87ae606b03a79e9bf9ba023c6e6f9d7255b6d33011a9890b497",
+        "status": "M web/lib/skoElement/interpret.ts",
+        "diff_from_head_sha256": "7a815ebb8767feadc574bf60593fd05628ad8c7f5f40eaee756d03b764ccbae5",
+        "matches_preflight": true
+      },
+      {
+        "path": "web/lib/skoElement/interpret.test.ts",
+        "sha256": "3391d627c4e31971792d0dd5d42b5ef1ec1ab5e4d5b9cdd703a50b90e55427dc",
+        "status": "M web/lib/skoElement/interpret.test.ts",
+        "diff_from_head_sha256": "d5f418fa6e8f14815de348d6a874fa6b26d8967f4bd3146158e92a4f55ef458d",
+        "matches_preflight": true
+      },
+      {
+        "path": "web/components/skoElement/SkoElementPreview.tsx",
+        "sha256": "d663bd5cabd7048c54fb4950d26fc7b96128ab2ef196213dc2ff64fb2374d5c2",
+        "status": "M web/components/skoElement/SkoElementPreview.tsx",
+        "diff_from_head_sha256": "791815d36cc22a2c8ba89ab0b8a778382a7592480baac64cc5d0a819bdc3bd25",
+        "matches_preflight": true
+      },
+      {
+        "path": "web/components/skoElement/SkoElementPreview.test.tsx",
+        "sha256": "229b78417459fd35da1311a69e5a6f68a7c1f29104d15da6793a13769305de58",
+        "status": "M web/components/skoElement/SkoElementPreview.test.tsx",
+        "diff_from_head_sha256": "6ad5101c1bbec77db1931e480803bbc83475ab4f794738bfd3a57520edaea131",
+        "matches_preflight": true
+      }
+    ],
+    "independent_vudu_population": [
+      {
+        "path": "web/lib/sko/gap.ts",
+        "sha256": "fda168904af69c64c492dd0b64a8ec1a63ad1d0b85278fb161138dc57ca2911b",
+        "status": "M web/lib/sko/gap.ts",
+        "diff_from_head_sha256": "8afb4b000647fd9b88ea4f6301f8a1cdec8a24f7dcfe6c985d55425ac58ab418",
+        "matches_preflight": true
+      },
+      {
+        "path": "web/lib/sko/gap.test.ts",
+        "sha256": "cc60669248e6ec44caae7d87abf9c0d2833a47dd46fe3c6648b4602d06fd69f0",
+        "status": "M web/lib/sko/gap.test.ts",
+        "diff_from_head_sha256": "8f04d465f3f9c8be8e1fbd8b0f9600b50d305f7df12876c45546e79cf9738dd6",
+        "matches_preflight": true
+      }
+    ],
+    "independent_market_guard": [
+      {
+        "path": "web/lib/buyLowSellHigh/market.ts",
+        "sha256": "44df9313b86bbc078dc6f314a5884deb490e266509bec4a44f6f9ff08e537f60",
+        "status": "M web/lib/buyLowSellHigh/market.ts",
+        "diff_from_head_sha256": "e55f15bc7b678978d1ebd0a32fea9346f96ff3ad73233c85a37a7c221a2a6c94",
+        "matches_preflight": true
+      },
+      {
+        "path": "web/lib/buyLowSellHigh/market.test.ts",
+        "sha256": "75c50d315356e83498fb497c6b5b1b9b5d60701bb7375d5bedcbc60f5d3eec73",
+        "status": "M web/lib/buyLowSellHigh/market.test.ts",
+        "diff_from_head_sha256": "b01db6f286f9ce9b9587ce43c10202a49726b2ae229a09fe72945bb576031472",
+        "matches_preflight": true
+      }
+    ],
+    "support_invariant_regression": [
+      {
+        "path": "web/lib/buyLowSellHigh/supportGap.test.ts",
+        "sha256": "e7a86b4afdce36aaf6dc27f7ce103f888e5aba7982ea61ac47adfd24e0f1f43a",
+        "status": "M web/lib/buyLowSellHigh/supportGap.test.ts",
+        "diff_from_head_sha256": "b6619a8578c09049e75239b7005d675d4c893e115f740fe29b505b750bd9841a",
+        "matches_preflight": true
+      }
+    ],
+    "separate_closed_process_evidence": [
+      {
+        "path": "web/lib/buyLowSellHigh/currentProcessEvidence.server.ts",
+        "sha256": "9011207c1d16af7a2834a80b4d19d85d0b772a02093eef822e0dd44a9959af83",
+        "status": "?? web/lib/buyLowSellHigh/currentProcessEvidence.server.ts",
+        "diff_from_head_sha256": null,
+        "matches_preflight": true
+      },
+      {
+        "path": "web/lib/buyLowSellHigh/currentProcessEvidence.server.test.ts",
+        "sha256": "fe82f1de79f70576c3708ab565d790cc5448397a7421cabfedb54981414aab6e",
+        "status": "?? web/lib/buyLowSellHigh/currentProcessEvidence.server.test.ts",
+        "diff_from_head_sha256": null,
+        "matches_preflight": true
+      }
+    ]
+  },
+  "audit_patch_sha256": "50753d8c719012bbacf2503c03d57f17b97b3877a220088d93ac18950f9dfea9"
+}

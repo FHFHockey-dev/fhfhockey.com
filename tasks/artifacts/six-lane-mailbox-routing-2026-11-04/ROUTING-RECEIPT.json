@@ -1,0 +1,117 @@
+{
+  "at_utc": "2026-11-04T23:03:04.250521+00:00",
+  "entry_id": "CODEX-SIX-LANES-WIGO-CUSTODY-20261104-REQUEST-01",
+  "mailbox_path": "tasks/artifacts/cross-platform/2026-10-24-coordination/CODEX-TO-CLAUDE.md",
+  "request_source": {
+    "path": "tasks/artifacts/six-lanes-2026-11-04/L1/WIGO-CUSTODY-REQUEST-05.md",
+    "sha256": "dbe0175bce522cd759033b826d192fae96d2df1e3cc53b59fd5734823768d5d6"
+  },
+  "l1_request_verbatim_in_append": true,
+  "exact_wigo_paths": [
+    {
+      "path": "web/pages/wigoCharts.tsx",
+      "l1_observed_sha256": "9f01ed1e7a62bbd0f67301b77c8421c6c0fcb0d6fd1c5a38e47bb25243e1ae23",
+      "l1_observed_working_status": "clean"
+    },
+    {
+      "path": "web/components/WiGO/WigoDashboardSections.tsx",
+      "l1_observed_sha256": "f866b2f1e3a4951bf8396a159898c461f1a36cd1cf1b32f8826df0937c9914a6",
+      "l1_observed_working_status": "clean"
+    },
+    {
+      "path": "web/styles/wigoCharts.module.scss",
+      "l1_observed_sha256": "28679870cf0ca322c322da32350138442d6eaa3bdf90e943dbb9ecd2a836e573",
+      "l1_observed_working_status": "clean"
+    },
+    {
+      "path": "web/components/WiGO/PlayerRatingsDisplay.tsx",
+      "l1_observed_sha256": "ec203f895146ddf564f0ca6dc421eb023e5ddd425ff33cd8860c8d905faa6d16",
+      "l1_observed_working_status": "clean"
+    },
+    {
+      "path": "web/components/WiGO/PlayerRatingsDisplay.module.scss",
+      "l1_observed_sha256": "b9fa14c06277be821a68e9e061e8e8597222b5c358d74cd68b4831bcbd2bd34d",
+      "l1_observed_working_status": "clean"
+    },
+    {
+      "path": "web/__tests__/pages/wigoCharts.test.tsx",
+      "l1_observed_sha256": "d71e1041112aeaa4b59efb4a260aa031a11c30c890b9f07155d439e8c48cc0ed",
+      "l1_observed_working_status": "clean"
+    },
+    {
+      "path": "web/components/WiGO/WigoDashboardSections.test.tsx",
+      "l1_observed_sha256": "e5248064f00e3c457a3b4d9deb13451a8bfeef6606de377501891747e06487dd",
+      "l1_observed_working_status": "clean"
+    },
+    {
+      "path": "web/components/WiGO/PlayerRatingsDisplay.test.tsx",
+      "l1_observed_sha256": "37153865ad15d8d867a621d9f04b5e742d4efcc0b97383b5322d066f9fc79f29",
+      "l1_observed_working_status": "clean"
+    },
+    {
+      "path": "web/e2e/wigo-one-page.spec.ts",
+      "l1_observed_sha256": "f029650fa7f130bc4a7e1a5a4f19180f2cbd7c4c06334516871516f4018b4e65",
+      "l1_observed_working_status": "clean"
+    }
+  ],
+  "route": {
+    "to": "Claude orchestrator1e668672 / currentCLAUDE-LEASEScustodian",
+    "contact_status": "Evidence-backed contact label, not verified routable CodexchatID; request includes route-onward instruction",
+    "delivery_status": "APPENDED_AND_READ_BACK_IN_CODEX_MAILBOX; Claude receipt/no-active-writer acknowledgment NOT observed"
+  },
+  "custody_check": {
+    "current_owner": "01a16e4f-a250-727a-aeb5-2e42da87500f",
+    "pending_canonical_operation": null
+  },
+  "parser_pair_recorded": {
+    "at_utc": "2026-11-04T23:03:04.250521+00:00",
+    "source_receipt": {
+      "path": "/Users/tim/Documents/Codex/2026-10-27/task-3/parser-custody-handback-20261104-01/HANDOFF.json",
+      "sha256": "86848480a6e66dc2688caf99ebedd709fcef2f58b62ba793f09a6069476399d3",
+      "receipt_at_utc": "2026-11-04T22:56:18.175159+00:00"
+    },
+    "l1_receipt": {
+      "path": "tasks/artifacts/six-lanes-2026-11-04/L1/PARSER-HANDBACK-04.md",
+      "sha256": "03ab76a0f7c27f22b34f020e4502ac91736a4c3247357c0f1e0495dd8805d841"
+    },
+    "released_paths": [
+      "web/lib/buyLowSellHigh/researchSnapshot.ts",
+      "web/lib/buyLowSellHigh/researchSnapshot.test.ts"
+    ],
+    "receipt_observation_pins": {
+      "web/lib/buyLowSellHigh/researchSnapshot.ts": "76721610cf1be0f699279696603517c1b92547d1e85944e150098370a31babd3",
+      "web/lib/buyLowSellHigh/researchSnapshot.test.ts": "3cd79a94f1ff6b896c48cd41dd59a1e0a3ea9a33fe54abdc378927071e6ab69c"
+    },
+    "release_to_chef": "01a1a86a-6dc1-72ae-a9c9-f29e9367c020",
+    "successor_disposition": "Verified exact two-path release; no pending pair edits/task-owned process. All other successor paths retained.",
+    "audit_author": {
+      "thread": "01a1a711-9765-7791-b46b-c4540477f644",
+      "disposition": "No claim; preserve uncommitted sign-consistency and withheld-direction guards and pinned arm-A artifact",
+      "provenance": "Chef-relayed final response recorded in L1; not a direct author receipt read by this custodian"
+    },
+    "application_status": "L1 checkpoint04 records L2 isolated preparation only, application grant separate after Chef reviews patch. This entry grants no application or L2 dispatch.",
+    "preserve_snapshot": {
+      "path": "web/lib/buyLowSellHigh/research-snapshots/2026-10-28.arm-a-canonical-repaired.v2.json",
+      "sha256": "2f380c2539390f6931ec92ab1d0b1d8cced2b55f5f4cefb8c6e88a694909f2c8"
+    },
+    "scope": "Additive mapper-v3 parser/test compatibility only; no capture, score, membership/adoption/policy/snapshot/server/UI/process-evidence changes"
+  },
+  "existing_grant_ids": [
+    "CODEX-SIX-LANES-L4-20261104-RECORDED",
+    "CODEX-SIX-LANES-L5-20261104-RECORDED"
+  ],
+  "no_Claude_side_write": true,
+  "no_L1_source_receipt_write": true,
+  "hashes": {
+    "codex_register_before": "fadfdc1a09c8d022c91613085f4064ffa8482ae680d2602953834307db2cd142",
+    "codex_register_after": "fbe9f2a3e389ea81d6fa30ee769f4254ec0ebd871bf0d5cb0c0c39c51d7d07a3",
+    "claude_register_at_read": "c5544b32d2a0801a3ce97b4e3ff67fa74ef2127d6a83fb4b6d0356cff6283c00",
+    "mailbox_before": "7ab981af8e3d743d43a9d5131b89c0aa00c6000fee68d28d391ea873db700cd0",
+    "mailbox_after_append_observation": "ce9fc8ee881ee227e0028d5ff24c178d684562574563f946f2cd53725c9e4d18"
+  },
+  "operations": {
+    "application_or_git_or_production_or_tests_or_worker_operations": 0,
+    "communication": "Authorized established mailbox append only"
+  },
+  "status": "Bounded coordination complete; external acknowledgment and L6handback pending"
+}

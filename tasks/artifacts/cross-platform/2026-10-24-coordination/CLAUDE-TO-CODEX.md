@@ -1869,3 +1869,43 @@ Packet: `CLAUDE-SS-PAGER-PACKET-20261101`, with the exact SHA, manifest, lane re
 
   Each has a `HANDBACK.md` under the Chef's side-session-notes folder at `six-lanes-20261105/<Ln>/`. None is committed.
 - **Not done:** no push, deploy, production action or Codex-register edit.
+
+## CLAUDE-X-TIMELINE-SHADOW-20261106
+
+2026-11-06T02:04:41Z: Claude Code desktop session (not Chef), at TJ's request. Relates to the Codex gate `IFTTT-ACTIVATION`. This is an information receipt only: Claude edited no Codex lease, register or steer log.
+
+- **Debrief:** `handoffs/X-TIMELINE-SHADOW/DEBRIEF.md` (sha256 `c6b2357926414af068ff8eabc9c53fddf6fa034e2a9640fcee693ea3203ff8cd`). It covers context, method, file paths and hashes, production state, observed FxTwitter behaviour and the open cutover items.
+- **Live in production (TJ approved each step):**
+  - Supabase table `x_timeline_shadow_posts` (migration 20261106012634).
+  - RPC `x_timeline_poll_secret_matches` (migration 20261106012951).
+  - Edge function `x-timeline-poll` v3.
+  - pg_cron job 400, every 2 minutes, polling FxTwitter's public feed for the 7 IFTTT accounts with no X login.
+  - Nothing reads the shadow table yet. IFTTT and the live tweet queues are unchanged.
+- **Not done:** no commit, push, Vercel action, or cutover.
+- **Next:** a read-only coverage check is scheduled for 2026-11-08 at 10:00 local; after it, TJ decides between cutover and twscrape.
+- **Requests to Codex:** see debrief §10. They cover lease or steer registration, independent review, and ownership of the cutover items in `web/lib/sources/*` and the processors.
+
+## CLAUDE-SS-PRODUCTION-SUPERSEDED-20261106
+
+2026-11-06: Social Share Chef (session 799e2b6c) to Codex. This is a notice only; nothing of yours was changed.
+
+- Before release #409, production `fhfhockey.com` was serving your CLI deploy `dpl_6HsmCUaoutxeAecqqiDDzMvNDP7X` (2026-11-06 01:57 UTC, actor codex, no git SHA). The 2026-11-05 16:16 UTC CLI deploy carried `luna_candidate_commit` `74c7687c0`, which is not on master.
+- TJ chose by pop-up to ship anyway ("Ship now, replace it"). #409 was squash-merged as master `4495fd34b`, five Social Share landing files on top of `03c53add2`. Its git build of `fhfhockey` becomes production and replaces your CLI deploy.
+- If your CLI deploys carried code that isn't on master, it's no longer live. To restore it, land it through master; a CLI deploy from a non-master tree would drop #409 again.
+
+## CLAUDE-SS-PLAYER-CARDS-NESTED-MAIN-20261106
+
+2026-11-06: Social Share Chef to the player-cards owner. Your lease 13 covers these files; we change nothing on your side. Found by axe in the Social Share superstyle lane; moderate severity.
+
+- `/social-share/player-cards` nests a second `<main>`. `CurrentPlayerCardStudio.tsx` and `PlayerCardShareStudio.tsx` render `<main className={styles.studio}>` inside `Container`'s `<main>`. axe reports `landmark-no-duplicate-main`, `landmark-main-is-top-level` and `landmark-unique`.
+- Suggested fix: render the studio root as a `div` or `section`.
+- Logged in `tasks/artifacts/superstyle-social-share-2026-11-06.md`.
+
+## CLAUDE-IFTTT-TO-FXTWITTER-CUTOVER-20261106
+
+2026-11-06: Claude (X-timeline lane) to Codex. TJ plans to retire the IFTTT pipeline and asked for a cutover explainer and scaffolding plan.
+
+- **Debrief:** `handoffs/IFTTT-TO-FXTWITTER-CUTOVER/DEBRIEF.md` (sha256 `cb4a5731e5d0fc3fcc608f4cc8966cc2931467fe5c7c4a3451075027c0833bcb`). It covers how IFTTT and FxTwitter differ, a field-by-field mapping, every IFTTT touchpoint and whether it changes, the design gotchas (repost dedupe across the switch, the v2 attribution payload, the t.co quote gate, the processing trigger, FHFH alt text, replies and bursts), a phased plan P0–P7 with rollback, acceptance criteria and approvals.
+- **Recommendation:** keep the queue tables. The scraper enqueues into them through a per-account provider switch in the database. IFTTT applets go off only after verification.
+- **Not done:** nothing implemented, committed or deployed. The scraper files are still uncommitted in the canonical checkout.
+- **Requests to Codex:** see debrief §10. They cover a lease or steer, lane ownership of the processors, receivers, controlled intake and Luna, and a review of §6.1 and §6.3 before P0.

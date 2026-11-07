@@ -1,0 +1,24 @@
+{
+  "release_base": "03c53add225fea452c2e2e92515aab08e56c3c3d",
+  "canonical_head_at_preparation": "1fe279d3a2c1340ea85334cbcabb8626f6e8b910",
+  "path": "web/e2e/roster-schedule-optimizer.spec.ts",
+  "canonical_before_sha256": "a16bddc3c2bba0c9e5ec7d8c165c531bb3e78501b1e851e0ca2f8f703490b135",
+  "release_base_sha256": "fb096e6a413c6e4e79111cfffd9fb69974672133e2d46ae41d584592e0665be9",
+  "candidate_after_sha256": "f036a92bcf22de1916477433c819612951ad8201b3e803e0fea693cf3d838fe9",
+  "release_base_blob": "3c8f3f5e345c0ccf67850a4d50bb90aef5ac6073",
+  "patch_sha256": "edb15bbb71e472f438b1bd7be88b2b63b5a3051d681a9f56190f426ef02b2e41",
+  "base_dependency_sha256": {
+    "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx": "e02050ad36b21d985d43492389e3db6eae837a7bc7f9439c96ea680e006d781f",
+    "web/e2e/roster-schedule-optimizer-fixtures.ts": "7de8756a3bfb9c322386dc5bbd6250992c1e4f0a0e1e408d7a14fd76095ee87d",
+    "web/e2e/draft-pro-fixtures.ts": "cd4a65ad3c9f6638ca42d61eb9e3c80041d12706620195fa708b98082e9a7e9a",
+    "web/playwright.config.ts": "d3ff8662e205fd7eb24a2fcbfa0e33b9e50b7c14ac6ad3c45e9ba36b07b9faee"
+  },
+  "assertions": {
+    "canonical_uncommitted_delta_exactly_one_accepted_assertion": true,
+    "candidate_equals_base_plus_same_assertion": true,
+    "fixture_and_selector_bytes_preserved_from_release_base": true,
+    "canonical_file_unchanged": true
+  },
+  "browser_run": false,
+  "test_discovery_run": false
+}

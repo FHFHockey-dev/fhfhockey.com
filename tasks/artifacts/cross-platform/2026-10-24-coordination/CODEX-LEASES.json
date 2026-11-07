@@ -1,7 +1,7 @@
 {
   "type": "scope_reservations_not_claim_of_active_editing",
   "owner": "Scout / Codex",
-  "as_of_utc": "2026-11-01T17:46:57.639167+00:00",
+  "as_of_utc": "2026-11-04T23:25:21.677429+00:00",
   "reserved_path_patterns": [
     "web/lib/projections/**",
     "web/lib/player-forecasts/**",
@@ -4633,8 +4633,6 @@
         "web/components/buyLowSellHigh/BuyLowSellHighPreview.tsx",
         "web/components/buyLowSellHigh/BuyLowSellHighPreview.test.tsx",
         "web/components/buyLowSellHigh/BlshPlayerDetail.tsx",
-        "web/lib/buyLowSellHigh/researchSnapshot.ts",
-        "web/lib/buyLowSellHigh/researchSnapshot.test.ts",
         "web/lib/buyLowSellHigh/researchSnapshot.server.ts",
         "web/lib/buyLowSellHigh/researchSnapshot.server.test.ts",
         "web/lib/buyLowSellHigh/research-snapshots/2024-04-18.v1.json",
@@ -4723,6 +4721,58 @@
           "independentReview": "tasks/artifacts/blsh-provenance-precision-rereview-2026-11-01/REVIEW.md",
           "competingActiveOwners": [],
           "limits": "Preserve frozen score/holdout and all unrelated work; no production/DB/provider action, Git/push/build/deploy/delete. Default real admission empty."
+        }
+      ],
+      "historical_source_paths_before_parser_handback_20261104": [
+        "web/pages/buy-low-sell-high/preview.tsx",
+        "web/components/buyLowSellHigh/BuyLowSellHighPreview.tsx",
+        "web/components/buyLowSellHigh/BuyLowSellHighPreview.test.tsx",
+        "web/components/buyLowSellHigh/BlshPlayerDetail.tsx",
+        "web/lib/buyLowSellHigh/researchSnapshot.ts",
+        "web/lib/buyLowSellHigh/researchSnapshot.test.ts",
+        "web/lib/buyLowSellHigh/researchSnapshot.server.ts",
+        "web/lib/buyLowSellHigh/researchSnapshot.server.test.ts",
+        "web/lib/buyLowSellHigh/research-snapshots/2024-04-18.v1.json",
+        "web/lib/buyLowSellHigh/currentInput.ts",
+        "web/lib/buyLowSellHigh/currentInput.test.ts",
+        "tasks/diaries/2026-10-27-codex-blsh-current-input.md",
+        "web/lib/buyLowSellHigh/research-snapshots/2026-10-28.arm-a-canonical-repaired.v2.json",
+        "web/lib/buyLowSellHigh/currentProcessEvidence.server.ts",
+        "web/lib/buyLowSellHigh/currentProcessEvidence.server.test.ts"
+      ],
+      "partial_handbacks": [
+        {
+          "at_utc": "2026-11-04T23:03:04.250521+00:00",
+          "source_receipt": {
+            "path": "/Users/tim/Documents/Codex/2026-10-27/task-3/parser-custody-handback-20261104-01/HANDOFF.json",
+            "sha256": "86848480a6e66dc2688caf99ebedd709fcef2f58b62ba793f09a6069476399d3",
+            "receipt_at_utc": "2026-11-04T22:56:18.175159+00:00"
+          },
+          "l1_receipt": {
+            "path": "tasks/artifacts/six-lanes-2026-11-04/L1/PARSER-HANDBACK-04.md",
+            "sha256": "03ab76a0f7c27f22b34f020e4502ac91736a4c3247357c0f1e0495dd8805d841"
+          },
+          "released_paths": [
+            "web/lib/buyLowSellHigh/researchSnapshot.ts",
+            "web/lib/buyLowSellHigh/researchSnapshot.test.ts"
+          ],
+          "receipt_observation_pins": {
+            "web/lib/buyLowSellHigh/researchSnapshot.ts": "76721610cf1be0f699279696603517c1b92547d1e85944e150098370a31babd3",
+            "web/lib/buyLowSellHigh/researchSnapshot.test.ts": "3cd79a94f1ff6b896c48cd41dd59a1e0a3ea9a33fe54abdc378927071e6ab69c"
+          },
+          "release_to_chef": "01a1a86a-6dc1-72ae-a9c9-f29e9367c020",
+          "successor_disposition": "Verified exact two-path release; no pending pair edits/task-owned process. All other successor paths retained.",
+          "audit_author": {
+            "thread": "01a1a711-9765-7791-b46b-c4540477f644",
+            "disposition": "No claim; preserve uncommitted sign-consistency and withheld-direction guards and pinned arm-A artifact",
+            "provenance": "Chef-relayed final response recorded in L1; not a direct author receipt read by this custodian"
+          },
+          "application_status": "L1 checkpoint04 records L2 isolated preparation only, application grant separate after Chef reviews patch. This entry grants no application or L2 dispatch.",
+          "preserve_snapshot": {
+            "path": "web/lib/buyLowSellHigh/research-snapshots/2026-10-28.arm-a-canonical-repaired.v2.json",
+            "sha256": "2f380c2539390f6931ec92ab1d0b1d8cced2b55f5f4cefb8c6e88a694909f2c8"
+          },
+          "scope": "Additive mapper-v3 parser/test compatibility only; no capture, score, membership/adoption/policy/snapshot/server/UI/process-evidence changes"
         }
       ]
     },
@@ -5451,6 +5501,229 @@
       "independent_review": "tasks/artifacts/nst-independent-review-2026-11-01/re-review/REVIEW.md",
       "rollout_preflight": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/rollout-approval-20261101/APPROVAL-PACKET.md",
       "default_privilege_receipt": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/default-privilege-apply-20261101/RESULT.md"
+    },
+    {
+      "id": "CODEX-SIX-LANES-L4-20261104-RECORDED",
+      "at": "2026-11-04T23:03:04.250521+00:00",
+      "status": "LOCAL_ACCEPTED_NOT_RELEASED \u2014 exact Chef-final scope; selected for proposed LOCAL review composition only",
+      "owner_lane": "L4",
+      "owner_thread": null,
+      "owner_identity_note": "Execution thread not supplied by cited grant receipt; no identity invented",
+      "grantor_thread": "01a1a86a-6dc1-72ae-a9c9-f29e9367c020",
+      "source_paths": [
+        "web/lib/tradeValue/contracts.ts",
+        "web/lib/tradeValue/observationEvidence.ts",
+        "web/lib/tradeValue/observationEvidence.test.ts",
+        "web/lib/tradeValue/valuationComponents.ts",
+        "web/lib/tradeValue/valuationComponents.test.ts"
+      ],
+      "grant_baseline_sha256": {
+        "web/lib/tradeValue/contracts.ts": null,
+        "web/lib/tradeValue/observationEvidence.ts": null,
+        "web/lib/tradeValue/observationEvidence.test.ts": null
+      },
+      "baseline_context": "L1delta02/grant03 at observed5f6b4e7a; null means absent then, not absence or latest bytes now",
+      "source_receipt": {
+        "path": "tasks/artifacts/six-lanes-2026-11-04/L1/FINAL-STATUS.md",
+        "sha256": "c55043f6c377fd25d7025015bc8e127de46d84f7a40e91f837367332bb537b18",
+        "provenance": "Chef-final grants/local acceptance recorded by L1, not new execution or release"
+      },
+      "scope": "Observation contracts and trusted-input projected-points helper only; no runtime caller/combinedtradevalue/sourceadmission",
+      "limits": "Preserve concurrent owned work and global shell; no Git/production/data/worker operation authorized by registration",
+      "previous_record_before_final_acceptance_20261104": {
+        "at": "2026-11-04T23:03:04.250521+00:00",
+        "status": "EXISTING_CHEF_GRANT_RECORDED \u2014 not a new dispatch or expanded lease",
+        "source_paths": [
+          "web/lib/tradeValue/contracts.ts",
+          "web/lib/tradeValue/observationEvidence.ts",
+          "web/lib/tradeValue/observationEvidence.test.ts"
+        ],
+        "source_receipt": {
+          "path": "tasks/artifacts/six-lanes-2026-11-04/L1/GRANTS-AND-CONTACTS-03.md",
+          "sha256": "be22751893d761e59b3e93bfc6a5a7ade50eb7962244fb7476a08be1eace227e"
+        },
+        "scope": "Pure contracts/observation-evidence slice only; no provider collection/storage/runtime wiring/existing-source write"
+      },
+      "final_recorded_at": "2026-11-04T23:25:21.677429+00:00",
+      "accepted_source_sha256": {
+        "web/lib/tradeValue/contracts.ts": "24e132e2c1ea715ccd0cf572eaa9162349f32f545e5dd49aafbdb948a470b9cd",
+        "web/lib/tradeValue/observationEvidence.ts": "bafb1916b8e42ecd684dd332a4743da7110db7741d252e061a505e341d77ed12",
+        "web/lib/tradeValue/observationEvidence.test.ts": "e0cde9df893283f9a204147357083934892a0d6d0f29b5865974e204e3b094e8",
+        "web/lib/tradeValue/valuationComponents.ts": "a11683b789dc3b2f010b81164de26733039c4d48d248d836828a57f086ebd940",
+        "web/lib/tradeValue/valuationComponents.test.ts": "c3aff71efd20ed61a5666d163e68436abf3bcf1df9c0b33523fce1b6b2667010"
+      },
+      "accepted_git_blob_sha1": {
+        "web/lib/tradeValue/contracts.ts": "0118c3c69acf4bf2b9152083e2e90147859ecef5",
+        "web/lib/tradeValue/observationEvidence.ts": "83e272bd749faa9c38feb65605aa47c7d49112b6",
+        "web/lib/tradeValue/observationEvidence.test.ts": "abf045cecb1794ffeaf6cdf266480f157f3b6125",
+        "web/lib/tradeValue/valuationComponents.ts": "783a00a03f3b5688f6975272024d6161d6aaacc2",
+        "web/lib/tradeValue/valuationComponents.test.ts": "e478f735375c28aa56a4d0d72f7030cd4206e75c"
+      },
+      "acceptance_scope": [
+        {
+          "id": "L4-OBSERVATION-ONLY",
+          "acceptance": "Chef accepted observation-only trio",
+          "reused_evidence": "APP-CHECKS.json: 12 Vitest tests, targeted lint, isolated strict TypeScript passed. Source fields are assertions, not authenticated proof; no valuation/roster-impact exports.",
+          "dependencies": [
+            "Trusted upstream adapter still required before real observations/source-use claims; no runtime wiring"
+          ]
+        },
+        {
+          "id": "L4-PROJECTED-LEAGUE-POINTS",
+          "acceptance": "Chef inspected installed helper/receipt and accepted pure trusted-input projected-points slice",
+          "reused_evidence": "VALUATION-APP-CHECKS.json:9 focused Vitest tests, targeted lint and focused TypeScript using actual app tsconfig ES2015 with zero diagnostics passed. Observation trio unchanged per manifest. L3 verified only these two pins/base file identities; no rerun or other group repin.",
+          "dependencies": [
+            "Result type from accepted L4 observation contracts.ts; retain original observation trio separately",
+            "Existing committed admitted gameExpectations/contribution path, TradeScoring type and scoreBoardStats; supplied view itself is not proof of admission",
+            "No production caller, combined trade value, roster impact, pricing or counterparty acceptance included"
+          ]
+        }
+      ],
+      "accepted_evidence": [
+        {
+          "path": "tasks/artifacts/six-lanes-2026-11-04/L4/APP-MANIFEST.json",
+          "sha256": "565a3ec68edbfcae6658f4073b889ff766caec1ac24d6924d5f040ed703d47c4",
+          "scope": "Frozen observation trio"
+        },
+        {
+          "path": "tasks/artifacts/six-lanes-2026-11-04/L4/APP-CHECKS.json",
+          "sha256": "280a8b937cac750057bb4ca585cd5e002df1e625f2c0e22b9e7df833c609d44e",
+          "scope": "12 tests/lint/isolated types"
+        },
+        {
+          "path": "tasks/artifacts/six-lanes-2026-11-04/L4/VALUATION-APP-MANIFEST.json",
+          "sha256": "a05bfc0618a50cb80d19a1dc83c7cf4a8196f0d3ceb66183cdc32adfdb1de75d",
+          "scope": "Projected-points-only trusted-input pair; no caller/combined value"
+        },
+        {
+          "path": "tasks/artifacts/six-lanes-2026-11-04/L4/VALUATION-APP-CHECKS.json",
+          "sha256": "8cd6dc6e50afa4a063a148e4c0287b62635f3a4d547bbfee14660e8568132e5d",
+          "scope": "9 tests/lint/actual app ES2015 focused types"
+        }
+      ]
+    },
+    {
+      "id": "CODEX-SIX-LANES-L5-20261104-RECORDED",
+      "at": "2026-11-04T23:03:04.250521+00:00",
+      "status": "LOCAL_ACCEPTED_NOT_RELEASED \u2014 exact Chef-final scope; selected for proposed LOCAL review composition only",
+      "owner_lane": "L5",
+      "owner_thread": null,
+      "owner_identity_note": "Execution thread not supplied by cited grant receipt; no identity invented",
+      "grantor_thread": "01a1a86a-6dc1-72ae-a9c9-f29e9367c020",
+      "source_paths": [
+        "web/components/RosterAutopsy/RosterAutopsy.tsx",
+        "web/components/RosterAutopsy/RosterAutopsy.module.scss",
+        "web/components/RosterAutopsy/RosterAutopsy.test.tsx",
+        "web/lib/rosterAutopsy/diagnosis.ts",
+        "web/lib/rosterAutopsy/diagnosis.test.ts",
+        "web/pages/trade-analyzer.tsx",
+        "web/components/TradeAnalyzer/TradeAnalyzer.tsx",
+        "web/components/TradeAnalyzer/TradeAnalyzer.module.scss",
+        "web/components/TradeAnalyzer/TradeAnalyzer.test.tsx",
+        "web/lib/tradeAnalyzer/offer.ts",
+        "web/lib/tradeAnalyzer/offer.test.ts"
+      ],
+      "grant_baseline_sha256": {
+        "web/components/RosterAutopsy/RosterAutopsy.tsx": "06318a79f1277c128b86a082ee6332aeb832184932b1c7475744fec896d430fb",
+        "web/components/RosterAutopsy/RosterAutopsy.module.scss": "fffb6f7eef01d4c6ef995c1ab380f5c5f1649816b7a6e7da9c9c3c8b62e582a2",
+        "web/components/RosterAutopsy/RosterAutopsy.test.tsx": "7fd1372bd591343fa55dae7726036308582b968410538c45a3a8c71aba0cea92",
+        "web/lib/rosterAutopsy/diagnosis.ts": null,
+        "web/lib/rosterAutopsy/diagnosis.test.ts": null
+      },
+      "baseline_context": "L1delta02/grant03 at observed5f6b4e7a; null means absent then, not absence or latest bytes now",
+      "source_receipt": {
+        "path": "tasks/artifacts/six-lanes-2026-11-04/L1/FINAL-STATUS.md",
+        "sha256": "c55043f6c377fd25d7025015bc8e127de46d84f7a40e91f837367332bb537b18",
+        "provenance": "Chef-final grants/local acceptance recorded by L1, not new execution or release"
+      },
+      "scope": "Structural diagnosis plus exactsix-file manual/in-memory two-team offer Analyzer; no quality/legality/impact/provider/persistence claims; full Next shell unverified",
+      "limits": "Preserve concurrent owned work and global shell; no Git/production/data/worker operation authorized by registration",
+      "previous_record_before_final_acceptance_20261104": {
+        "at": "2026-11-04T23:03:04.250521+00:00",
+        "status": "EXISTING_CHEF_GRANT_RECORDED \u2014 not a new dispatch or expanded lease",
+        "source_paths": [
+          "web/components/RosterAutopsy/RosterAutopsy.tsx",
+          "web/components/RosterAutopsy/RosterAutopsy.module.scss",
+          "web/components/RosterAutopsy/RosterAutopsy.test.tsx",
+          "web/lib/rosterAutopsy/diagnosis.ts",
+          "web/lib/rosterAutopsy/diagnosis.test.ts"
+        ],
+        "source_receipt": {
+          "path": "tasks/artifacts/six-lanes-2026-11-04/L1/GRANTS-AND-CONTACTS-03.md",
+          "sha256": "be22751893d761e59b3e93bfc6a5a7ade50eb7962244fb7476a08be1eace227e"
+        },
+        "scope": "RosterAutopsy structural diagnosis only; preserve foundation, no market/quality grades or provider integration"
+      },
+      "final_recorded_at": "2026-11-04T23:25:21.677429+00:00",
+      "accepted_source_sha256": {
+        "web/components/RosterAutopsy/RosterAutopsy.tsx": "3e1c2e4cb9d2baf7a53bca36bade8dfe44c5c5cbffdb4cf2058c430c19c608dd",
+        "web/components/RosterAutopsy/RosterAutopsy.module.scss": "6c48ba65c343b0e608713a3d6336dc5bb5ce29d5b521c5950308e258db6b44b7",
+        "web/components/RosterAutopsy/RosterAutopsy.test.tsx": "0497001d534127f1283d3745c6aa053925fb58ecfdfde62bcd543fd0fe9607f9",
+        "web/lib/rosterAutopsy/diagnosis.ts": "d5c80f92344cffaf477d567228c8227bffcfed896a3547f5e561c90af8aa35b3",
+        "web/lib/rosterAutopsy/diagnosis.test.ts": "0833bad394ddb301d58e6c3befcea1e254fa56e90d3ba0d89cb7afcfb7777813",
+        "web/pages/trade-analyzer.tsx": "8651e62e477fdbd1157dd06fe3639b98a7cdf2bed142ca9406c5d6b1aa2495a9",
+        "web/components/TradeAnalyzer/TradeAnalyzer.tsx": "a731d3f1dee651b174f03806f41958ec6814dfaa79e374fbb5e5bc5555eca30a",
+        "web/components/TradeAnalyzer/TradeAnalyzer.module.scss": "39b338160b82146281a3387a136e5bd7015324fadb916dc34b2400b53bc6da12",
+        "web/components/TradeAnalyzer/TradeAnalyzer.test.tsx": "a18948c585ff3057825006982d1552ab55594c13b1c326b430924208cedffc60",
+        "web/lib/tradeAnalyzer/offer.ts": "a33ffaad85a115c647bb60de0f5851886bc2fb6a408095e2369c0fc4f303760f",
+        "web/lib/tradeAnalyzer/offer.test.ts": "d5fabb8b6d315aaaded04976c8b353d132238569cb89d01ca3031c9944aa4120"
+      },
+      "accepted_git_blob_sha1": {
+        "web/components/RosterAutopsy/RosterAutopsy.tsx": "2435d1db198f9cd789ecffe47ba5c1d9ffc34976",
+        "web/components/RosterAutopsy/RosterAutopsy.module.scss": "a68d2b6aebe1275f14194ca6665695362cacaf4d",
+        "web/components/RosterAutopsy/RosterAutopsy.test.tsx": "652f8b92cf42d6b43ff28b09a8333b8e4f154c0b",
+        "web/lib/rosterAutopsy/diagnosis.ts": "ea7b999dbd4e8f0fa17651b89c6ee1ffe9f6e68d",
+        "web/lib/rosterAutopsy/diagnosis.test.ts": "22068ef97a9d8b421b9fee6ec51469826e4446c2",
+        "web/pages/trade-analyzer.tsx": "a5c8314e841a7a6af2758f9dc553e674c8fda8bc",
+        "web/components/TradeAnalyzer/TradeAnalyzer.tsx": "c65bfe1cebcedc84bdc998314da387df38c9b0c5",
+        "web/components/TradeAnalyzer/TradeAnalyzer.module.scss": "16fca93c2f6b98ce621771c23a96adb93c3dcb2d",
+        "web/components/TradeAnalyzer/TradeAnalyzer.test.tsx": "033d033875fa1571673cb80c9e6f1e355ebd4564",
+        "web/lib/tradeAnalyzer/offer.ts": "68794ccbab44558aac0776d32490967a83ce949b",
+        "web/lib/tradeAnalyzer/offer.test.ts": "c7ceb4c64e78cb1c45ba8320b3bd3a27e1edc815"
+      },
+      "acceptance_scope": [
+        {
+          "id": "L5-STRUCTURAL-DIAGNOSIS",
+          "acceptance": "Chef accepted structural diagnosis; Chef-run synthetic component browser follow-up passed30 checks",
+          "reused_evidence": "Prior26 tests/3 files, scoped TypeScript, lint, synthetic component/Sass compile passed. Chef-run updated browser-result.json:30 checks at1440/390/320 including keyboard/edit/reload/RTL/200% CSS zoom passed; no page errors or external requests. Chef inspected desktop/390 screenshots. Full Next app shell remains outside scope. No browser rerun by L3.",
+          "dependencies": [
+            "Existing committed rosterAutopsy/manual.ts and route/import/storage model; no L4 numerical contract or Analyzer required",
+            "Synthetic component browser scope only; full Next shell and unrelated global style integration remain outside acceptance"
+          ]
+        },
+        {
+          "id": "L5-MANUAL-ENTERED-OFFER-ANALYZER",
+          "acceptance": "Chef inspected corrected accessible-name changes and accepted six-file slice for LOCAL candidate preparation; Chef-run unchanged synthetic harness34 checks passed",
+          "reused_evidence": "L5 original9 model tests and corrected5 component tests pass (do not add overlapping original component count); corrected scoped TypeScript/lint pass. Chef-run synthetic component browser34 recorded checks incl compile/error checks pass at1440/390/320, keyboard/drop/edit/reload/RTL/200% CSS zoom; no page errors/external requests, desktop/mobile screenshots inspected. NOT full Next shell; no persistence or transaction.",
+          "dependencies": [
+            "Result/Asset type-only imports from accepted L4 observation contracts.ts; include observation dependency if choosing Analyzer",
+            "Existing app route infrastructure; no navigation/auth/shared producer changes",
+            "No qualified forecast/league-value/roster-impact or counterparty acceptance claim; corresponding panels remain unavailable"
+          ]
+        }
+      ],
+      "accepted_evidence": [
+        {
+          "path": "tasks/artifacts/six-lanes-2026-11-04/L5/IMPLEMENTATION.md",
+          "sha256": "42259df3ca06ce233d392c3ac0329dac27404b65b094fa509dd29d1124bfe8da",
+          "scope": "Structural diagnosis26 tests/types/lint; initial browser block superseded by Chef-run result"
+        },
+        {
+          "path": "tasks/artifacts/six-lanes-2026-11-04/L5/browser-result.json",
+          "sha256": "8bea061da9834afe1bb175461f1ad3d9cb2986168db1a344b4b117830f06701c",
+          "scope": "Chef-run30 component browser checks pass; fullNextRoute false"
+        },
+        {
+          "path": "tasks/artifacts/six-lanes-2026-11-04/L5/ANALYZER-IMPLEMENTATION.md",
+          "sha256": "34b56d40fb69be9c8413b8f1b6d0fb2d5c384906271c78bfb870899bd07b64e7",
+          "scope": "Final six-file corrected Analyzer pins/types/lint; pending-browser prose superseded by Chef acceptance/result"
+        },
+        {
+          "path": "tasks/artifacts/six-lanes-2026-11-04/L5/analyzer-browser-result.json",
+          "sha256": "4e72738e35705bbd9f1c0b654fe6f954de08c34745309571d1383c8e6db0d8f4",
+          "scope": "Chef-run34 recorded component browser checks pass; fullNextRoute false"
+        }
+      ]
     }
   ],
   "completed_exact_file_leases": [
@@ -7714,5 +7987,159 @@
       "handoff": "tasks/artifacts/player-cards-2026-10-29/production-chart-17/HANDOFF.md",
       "updated_at": "2026-10-29T19:32:00.881467+00:00"
     }
-  ]
+  ],
+  "six_lane_coordination_20261104": {
+    "at_utc": "2026-11-04T23:03:04.250521+00:00",
+    "chef_thread": "01a1a86a-6dc1-72ae-a9c9-f29e9367c020",
+    "scope": "One bounded mailbox/register update; no old implementation restart",
+    "mailbox_entry_id": "CODEX-SIX-LANES-WIGO-CUSTODY-20261104-REQUEST-01",
+    "route": {
+      "to": "Claude orchestrator1e668672 / currentCLAUDE-LEASEScustodian",
+      "contact_status": "Evidence-backed contact label, not verified routable CodexchatID; request includes route-onward instruction",
+      "delivery_status": "APPENDED_AND_READ_BACK_IN_CODEX_MAILBOX; Claude receipt/no-active-writer acknowledgment NOT observed"
+    },
+    "l6_wigo_request": {
+      "source": {
+        "path": "tasks/artifacts/six-lanes-2026-11-04/L1/WIGO-CUSTODY-REQUEST-05.md",
+        "sha256": "dbe0175bce522cd759033b826d192fae96d2df1e3cc53b59fd5734823768d5d6"
+      },
+      "exact_paths": [
+        {
+          "path": "web/pages/wigoCharts.tsx",
+          "l1_observed_sha256": "9f01ed1e7a62bbd0f67301b77c8421c6c0fcb0d6fd1c5a38e47bb25243e1ae23",
+          "l1_observed_working_status": "clean"
+        },
+        {
+          "path": "web/components/WiGO/WigoDashboardSections.tsx",
+          "l1_observed_sha256": "f866b2f1e3a4951bf8396a159898c461f1a36cd1cf1b32f8826df0937c9914a6",
+          "l1_observed_working_status": "clean"
+        },
+        {
+          "path": "web/styles/wigoCharts.module.scss",
+          "l1_observed_sha256": "28679870cf0ca322c322da32350138442d6eaa3bdf90e943dbb9ecd2a836e573",
+          "l1_observed_working_status": "clean"
+        },
+        {
+          "path": "web/components/WiGO/PlayerRatingsDisplay.tsx",
+          "l1_observed_sha256": "ec203f895146ddf564f0ca6dc421eb023e5ddd425ff33cd8860c8d905faa6d16",
+          "l1_observed_working_status": "clean"
+        },
+        {
+          "path": "web/components/WiGO/PlayerRatingsDisplay.module.scss",
+          "l1_observed_sha256": "b9fa14c06277be821a68e9e061e8e8597222b5c358d74cd68b4831bcbd2bd34d",
+          "l1_observed_working_status": "clean"
+        },
+        {
+          "path": "web/__tests__/pages/wigoCharts.test.tsx",
+          "l1_observed_sha256": "d71e1041112aeaa4b59efb4a260aa031a11c30c890b9f07155d439e8c48cc0ed",
+          "l1_observed_working_status": "clean"
+        },
+        {
+          "path": "web/components/WiGO/WigoDashboardSections.test.tsx",
+          "l1_observed_sha256": "e5248064f00e3c457a3b4d9deb13451a8bfeef6606de377501891747e06487dd",
+          "l1_observed_working_status": "clean"
+        },
+        {
+          "path": "web/components/WiGO/PlayerRatingsDisplay.test.tsx",
+          "l1_observed_sha256": "37153865ad15d8d867a621d9f04b5e742d4efcc0b97383b5322d066f9fc79f29",
+          "l1_observed_working_status": "clean"
+        },
+        {
+          "path": "web/e2e/wigo-one-page.spec.ts",
+          "l1_observed_sha256": "f029650fa7f130bc4a7e1a5a4f19180f2cbd7c4c06334516871516f4018b4e65",
+          "l1_observed_working_status": "clean"
+        }
+      ],
+      "request": "Explicit oldWIGOclaimsupersession plus no-active-writer/queued-operation acknowledgment and returned pins across EXACTnine paths before L6exclusiveassignment",
+      "old_claimant": "local_ec8a69cc-dc02-4a39-9df0-1fedcbae16f4 (wigo-charts-full-audit)",
+      "old_claim_status_at_read": "active 2026-10-25T16:23Z",
+      "old_claim_released_by_this_update": false,
+      "claude_registry_changed": false,
+      "status": "PENDING_CLAUDE_DISPOSITION \u2014 L1draft and append are not a handback",
+      "design": "Chef-selected dark asymmetric page beneath existing sharedshell; retain consistencydoughnut, no globalnav/shell/maths/hooks/fetchers/writers expansion"
+    },
+    "l2_parser_pair": {
+      "at_utc": "2026-11-04T23:03:04.250521+00:00",
+      "source_receipt": {
+        "path": "/Users/tim/Documents/Codex/2026-10-27/task-3/parser-custody-handback-20261104-01/HANDOFF.json",
+        "sha256": "86848480a6e66dc2688caf99ebedd709fcef2f58b62ba793f09a6069476399d3",
+        "receipt_at_utc": "2026-11-04T22:56:18.175159+00:00"
+      },
+      "l1_receipt": {
+        "path": "tasks/artifacts/six-lanes-2026-11-04/L1/PARSER-HANDBACK-04.md",
+        "sha256": "03ab76a0f7c27f22b34f020e4502ac91736a4c3247357c0f1e0495dd8805d841"
+      },
+      "released_paths": [
+        "web/lib/buyLowSellHigh/researchSnapshot.ts",
+        "web/lib/buyLowSellHigh/researchSnapshot.test.ts"
+      ],
+      "receipt_observation_pins": {
+        "web/lib/buyLowSellHigh/researchSnapshot.ts": "76721610cf1be0f699279696603517c1b92547d1e85944e150098370a31babd3",
+        "web/lib/buyLowSellHigh/researchSnapshot.test.ts": "3cd79a94f1ff6b896c48cd41dd59a1e0a3ea9a33fe54abdc378927071e6ab69c"
+      },
+      "release_to_chef": "01a1a86a-6dc1-72ae-a9c9-f29e9367c020",
+      "successor_disposition": "Verified exact two-path release; no pending pair edits/task-owned process. All other successor paths retained.",
+      "audit_author": {
+        "thread": "01a1a711-9765-7791-b46b-c4540477f644",
+        "disposition": "No claim; preserve uncommitted sign-consistency and withheld-direction guards and pinned arm-A artifact",
+        "provenance": "Chef-relayed final response recorded in L1; not a direct author receipt read by this custodian"
+      },
+      "application_status": "L1 checkpoint04 records L2 isolated preparation only, application grant separate after Chef reviews patch. This entry grants no application or L2 dispatch.",
+      "preserve_snapshot": {
+        "path": "web/lib/buyLowSellHigh/research-snapshots/2026-10-28.arm-a-canonical-repaired.v2.json",
+        "sha256": "2f380c2539390f6931ec92ab1d0b1d8cced2b55f5f4cefb8c6e88a694909f2c8"
+      },
+      "scope": "Additive mapper-v3 parser/test compatibility only; no capture, score, membership/adoption/policy/snapshot/server/UI/process-evidence changes"
+    },
+    "existing_l4_l5_grants": [
+      "CODEX-SIX-LANES-L4-20261104-RECORDED",
+      "CODEX-SIX-LANES-L5-20261104-RECORDED"
+    ],
+    "git": "Claude-owned; later exact local candidate composition only after Chef-reviewed L3file/blobmanifest and separate request; no push/deploy authority",
+    "source_records": [
+      {
+        "path": "tasks/artifacts/six-lanes-2026-11-04/L1/WIGO-CUSTODY-REQUEST-05.md",
+        "sha256": "dbe0175bce522cd759033b826d192fae96d2df1e3cc53b59fd5734823768d5d6"
+      },
+      {
+        "path": "tasks/artifacts/six-lanes-2026-11-04/L1/PARSER-HANDBACK-04.md",
+        "sha256": "03ab76a0f7c27f22b34f020e4502ac91736a4c3247357c0f1e0495dd8805d841"
+      },
+      {
+        "path": "tasks/artifacts/six-lanes-2026-11-04/L1/GRANTS-AND-CONTACTS-03.md",
+        "sha256": "be22751893d761e59b3e93bfc6a5a7ade50eb7962244fb7476a08be1eace227e"
+      }
+    ],
+    "final_local_composition_request": {
+      "at_utc": "2026-11-04T23:25:21.677429+00:00",
+      "mailbox_entry_id": "CODEX-SIX-LANES-LOCAL-COMPOSITION-20261104-REQUEST-01",
+      "to": "ClaudeGitcustodian1e668672",
+      "base_sha": "5f6b4e7a3a893000fe31cc6928cd8736b56e5d39",
+      "chef_packet_digest_sha256": "082de6c92af34208a3c8e0a36f959b93eab21674e8c589635e3c52f292e78f29",
+      "packet_json": {
+        "path": "tasks/artifacts/six-lanes-2026-11-04/L3/COMPOSITION-REQUEST.json",
+        "sha256": "05e3988d35e81d0a4aa5bc26c4c9f5e75a11451609d424d042d5f73ab7517821"
+      },
+      "packet_markdown": {
+        "path": "tasks/artifacts/six-lanes-2026-11-04/L3/COMPOSITION-REQUEST.md",
+        "sha256": "22c4794c4969a71b5240cabfbeb68c44542c32b1e7829bfd8f829c1a7afd9d1e"
+      },
+      "selected_paths": 69,
+      "groups": 14,
+      "source_sha_size_blob_verified": 69,
+      "L4_final_paths": 5,
+      "L5_final_paths": 11,
+      "status": "LOCAL_COMPOSITION_REQUEST_ONLY; no final candidate/custody transfer/release",
+      "recipient_acknowledgment": "NOT_OBSERVED; append/readback only",
+      "pending_wigo_request": "CODEX-SIX-LANES-WIGO-CUSTODY-20261104-REQUEST-01",
+      "excluded_luna_digest": "cd30e2e6f4274587bf581c4ceb0d0dd0d7566a9fa94bb4e90fd7c47e8e922606",
+      "gate": "Custodian confirms base/index/inheritedscope and composes all69 within existinglocal authority or returns concrete conflict; no remote grant"
+    },
+    "final_grants": {
+      "L4": 5,
+      "L5": 11,
+      "status": "LOCAL_ACCEPTED_NOT_RELEASED",
+      "source": "tasks/artifacts/six-lanes-2026-11-04/L1/FINAL-STATUS.md"
+    }
+  }
 }

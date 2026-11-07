@@ -1,0 +1,66 @@
+{
+  "status": "repair_ready_for_Chef_browser_rerun",
+  "checks_run_after_repair": false,
+  "changed_paths": [
+    "web/styles/wigoCharts.module.scss"
+  ],
+  "files": [
+    {
+      "path": "web/pages/wigoCharts.tsx",
+      "pre_repair_sha256": "9f01ed1e7a62bbd0f67301b77c8421c6c0fcb0d6fd1c5a38e47bb25243e1ae23",
+      "current_sha256": "9f01ed1e7a62bbd0f67301b77c8421c6c0fcb0d6fd1c5a38e47bb25243e1ae23",
+      "changed_by_repair": false
+    },
+    {
+      "path": "web/components/WiGO/WigoDashboardSections.tsx",
+      "pre_repair_sha256": "f866b2f1e3a4951bf8396a159898c461f1a36cd1cf1b32f8826df0937c9914a6",
+      "current_sha256": "f866b2f1e3a4951bf8396a159898c461f1a36cd1cf1b32f8826df0937c9914a6",
+      "changed_by_repair": false
+    },
+    {
+      "path": "web/styles/wigoCharts.module.scss",
+      "pre_repair_sha256": "972059dd5b6550f884ffed620d0622e1f8effe06fc32a652352f37fa0bc88ddf",
+      "current_sha256": "225cf5064bed2573fcf0d982d24101733a148b24a3d7baab64d13cbf8a60d9e5",
+      "changed_by_repair": true
+    },
+    {
+      "path": "web/components/WiGO/PlayerRatingsDisplay.tsx",
+      "pre_repair_sha256": "64b7f51a39a48828db6a631d54f15666c9d06ccb42a4fb24d92fce1da2983e84",
+      "current_sha256": "64b7f51a39a48828db6a631d54f15666c9d06ccb42a4fb24d92fce1da2983e84",
+      "changed_by_repair": false
+    },
+    {
+      "path": "web/components/WiGO/PlayerRatingsDisplay.module.scss",
+      "pre_repair_sha256": "fa386829bf5a61a796c596f834c8f2bd3eebf78b792e2c3d3c1d46c9d7ec8c43",
+      "current_sha256": "fa386829bf5a61a796c596f834c8f2bd3eebf78b792e2c3d3c1d46c9d7ec8c43",
+      "changed_by_repair": false
+    },
+    {
+      "path": "web/__tests__/pages/wigoCharts.test.tsx",
+      "pre_repair_sha256": "d71e1041112aeaa4b59efb4a260aa031a11c30c890b9f07155d439e8c48cc0ed",
+      "current_sha256": "d71e1041112aeaa4b59efb4a260aa031a11c30c890b9f07155d439e8c48cc0ed",
+      "changed_by_repair": false
+    },
+    {
+      "path": "web/components/WiGO/WigoDashboardSections.test.tsx",
+      "pre_repair_sha256": "e5248064f00e3c457a3b4d9deb13451a8bfeef6606de377501891747e06487dd",
+      "current_sha256": "e5248064f00e3c457a3b4d9deb13451a8bfeef6606de377501891747e06487dd",
+      "changed_by_repair": false
+    },
+    {
+      "path": "web/components/WiGO/PlayerRatingsDisplay.test.tsx",
+      "pre_repair_sha256": "1a557d3f1479e364b6ee4d735eae9fe964cfc11a044a38894e824dfb154c68e3",
+      "current_sha256": "1a557d3f1479e364b6ee4d735eae9fe964cfc11a044a38894e824dfb154c68e3",
+      "changed_by_repair": false
+    },
+    {
+      "path": "web/e2e/wigo-one-page.spec.ts",
+      "pre_repair_sha256": "cc42bb7444a801b168f3bc0d8901b7806cc540d3bdb703b8135b31e245cf39b8",
+      "current_sha256": "cc42bb7444a801b168f3bc0d8901b7806cc540d3bdb703b8135b31e245cf39b8",
+      "changed_by_repair": false
+    }
+  ],
+  "repair_patch_sha256": "695be84ef5074fbcc47d42552af38531e3dd09e9b1646ca3e091e96c4f60eab5",
+  "prior_chef_browser_evidence": "/Users/tim/Documents/Codex/2026-11-04/task-7/wigo-runtime-check/canonical-browser",
+  "prior_result": "1280x800 populated dashboard genuine overflow, no page errors; 12 cases not run"
+}

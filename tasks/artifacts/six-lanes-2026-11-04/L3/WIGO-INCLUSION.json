@@ -1,0 +1,1443 @@
+{
+  "candidate": "fefcdbced64c57691a4b61c7c6610e4c5a8a4e2d",
+  "base": "03c53add225fea452c2e2e92515aab08e56c3c3d",
+  "files": [
+    {
+      "path": "web/__tests__/pages/wigoCharts.test.tsx",
+      "current_sha256": "d71e1041112aeaa4b59efb4a260aa031a11c30c890b9f07155d439e8c48cc0ed",
+      "candidate_sha256": "d71e1041112aeaa4b59efb4a260aa031a11c30c890b9f07155d439e8c48cc0ed",
+      "base_sha256": "d71e1041112aeaa4b59efb4a260aa031a11c30c890b9f07155d439e8c48cc0ed",
+      "current_matches_candidate": true,
+      "candidate_matches_base": true
+    },
+    {
+      "path": "web/components/CategoryCoverageChart/index.ts",
+      "current_sha256": "1b28fa4936c743d437a45d4a579db123c1c3bc9e75c929efc116013cf6eadd7f",
+      "candidate_sha256": "1b28fa4936c743d437a45d4a579db123c1c3bc9e75c929efc116013cf6eadd7f",
+      "base_sha256": "1b28fa4936c743d437a45d4a579db123c1c3bc9e75c929efc116013cf6eadd7f",
+      "current_matches_candidate": true,
+      "candidate_matches_base": true
+    },
+    {
+      "path": "web/components/Layout/Header/index.ts",
+      "current_sha256": "5eb6a7b1416f1ec191d24fc297b212296b91ea2275fd184bd4c95c56f4ec66e7",
+      "candidate_sha256": "5eb6a7b1416f1ec191d24fc297b212296b91ea2275fd184bd4c95c56f4ec66e7",
+      "base_sha256": "5eb6a7b1416f1ec191d24fc297b212296b91ea2275fd184bd4c95c56f4ec66e7",
+      "current_matches_candidate": true,
+      "candidate_matches_base": true
+    },
+    {
+      "path": "web/components/Layout/Layout.module.scss",
+      "current_sha256": "027e22cc39bff08b9d09540788b40d613bb34693e892c0c27a34ec3ede67fa2c",
+      "candidate_sha256": "027e22cc39bff08b9d09540788b40d613bb34693e892c0c27a34ec3ede67fa2c",
+      "base_sha256": "027e22cc39bff08b9d09540788b40d613bb34693e892c0c27a34ec3ede67fa2c",
+      "current_matches_candidate": true,
+      "candidate_matches_base": true
+    },
+    {
+      "path": "web/components/Layout/Layout.tsx",
+      "current_sha256": "55f5e70011f25c80914ed2e1a26850fb082934b0014bd69255d62e805d864d7c",
+      "candidate_sha256": "55f5e70011f25c80914ed2e1a26850fb082934b0014bd69255d62e805d864d7c",
+      "base_sha256": "55f5e70011f25c80914ed2e1a26850fb082934b0014bd69255d62e805d864d7c",
+      "current_matches_candidate": true,
+      "candidate_matches_base": true
+    },
+    {
+      "path": "web/components/Layout/NavbarItems/NavbarItemsData.ts",
+      "current_sha256": "5afbc7fcf3ac231889c018b31271579cecf0d651b378cb3e9bffab119183cec2",
+      "candidate_sha256": "5afbc7fcf3ac231889c018b31271579cecf0d651b378cb3e9bffab119183cec2",
+      "base_sha256": "5afbc7fcf3ac231889c018b31271579cecf0d651b378cb3e9bffab119183cec2",
+      "current_matches_candidate": true,
+      "candidate_matches_base": true
+    },
+    {
+      "path": "web/components/Layout/index.ts",
+      "current_sha256": "a2d82c635147bccec1ef85c08d8726bfd76bf92cc22e1c1a1d70ed466495c322",
+      "candidate_sha256": "a2d82c635147bccec1ef85c08d8726bfd76bf92cc22e1c1a1d70ed466495c322",
+      "base_sha256": "a2d82c635147bccec1ef85c08d8726bfd76bf92cc22e1c1a1d70ed466495c322",
+      "current_matches_candidate": true,
+      "candidate_matches_base": true
+    },
+    {
+      "path": "web/components/SocialMedias/index.ts",
+      "current_sha256": "65b74eb7d5c37e7a35f8cf42423e217760a6e621bde73461f753c6716e87b8cf",
+      "candidate_sha256": "65b74eb7d5c37e7a35f8cf42423e217760a6e621bde73461f753c6716e87b8cf",
+      "base_sha256": "65b74eb7d5c37e7a35f8cf42423e217760a6e621bde73461f753c6716e87b8cf",
+      "current_matches_candidate": true,
+      "candidate_matches_base": true
+    },
+    {
+      "path": "web/components/TeamLandingPage/teamLandingPage.scss",
+      "current_sha256": "715c16a13b288507aec503f860f657d18ee6430520f3a1c1df4202c08971657a",
+      "candidate_sha256": "715c16a13b288507aec503f860f657d18ee6430520f3a1c1df4202c08971657a",
+      "base_sha256": "715c16a13b288507aec503f860f657d18ee6430520f3a1c1df4202c08971657a",
+      "current_matches_candidate": true,
+      "candidate_matches_base": true
+    },
+    {
+      "path": "web/components/WiGO/ConsistencyChart.tsx",
+      "current_sha256": "ca53e6523a480ff9385c10e09d6a19860323a5249185c838c4af9d1bbfa6e809",
+      "candidate_sha256": "16c7d4d0785822eee789d657bd6f5d48dd14e8f94214547154bb2caccfa8f2ff",
+      "base_sha256": "16c7d4d0785822eee789d657bd6f5d48dd14e8f94214547154bb2caccfa8f2ff",
+      "current_matches_candidate": false,
+      "candidate_matches_base": true
+    },
+    {
+      "path": "web/components/WiGO/GameScoreSection.tsx",
+      "current_sha256": "9d783eed301f0459a5f86f3cadaf9acff91b8e290c0def40fa0a051ce47c6c7d",
+      "candidate_sha256": "9d783eed301f0459a5f86f3cadaf9acff91b8e290c0def40fa0a051ce47c6c7d",
+      "base_sha256": "9d783eed301f0459a5f86f3cadaf9acff91b8e290c0def40fa0a051ce47c6c7d",
+      "current_matches_candidate": true,
+      "candidate_matches_base": true
+    },
+    {
+      "path": "web/components/WiGO/NameSearchBar.tsx",
+      "current_sha256": "618814f1794de6b5e56a31646c7354fee340f42b609af48591090c339bfb19fe",
+      "candidate_sha256": "618814f1794de6b5e56a31646c7354fee340f42b609af48591090c339bfb19fe",
+      "base_sha256": "618814f1794de6b5e56a31646c7354fee340f42b609af48591090c339bfb19fe",
+      "current_matches_candidate": true,
+      "candidate_matches_base": true
+    },
+    {
+      "path": "web/components/WiGO/OpponentGamelog.tsx",
+      "current_sha256": "70d1ddd621fb8b3a627f57a6d0f6439f843a738d76e6b1e32c73e0df7565c09c",
+      "candidate_sha256": "70d1ddd621fb8b3a627f57a6d0f6439f843a738d76e6b1e32c73e0df7565c09c",
+      "base_sha256": "70d1ddd621fb8b3a627f57a6d0f6439f843a738d76e6b1e32c73e0df7565c09c",
+      "current_matches_candidate": true,
+      "candidate_matches_base": true
+    },
+    {
+      "path": "web/components/WiGO/PerGameStatsTable.tsx",
+      "current_sha256": "de7772934d17003f263dac420bc2baabc2071fe24b7ee026767d54f0ddff3df3",
+      "candidate_sha256": "de7772934d17003f263dac420bc2baabc2071fe24b7ee026767d54f0ddff3df3",
+      "base_sha256": "de7772934d17003f263dac420bc2baabc2071fe24b7ee026767d54f0ddff3df3",
+      "current_matches_candidate": true,
+      "candidate_matches_base": true
+    },
+    {
+      "path": "web/components/WiGO/PlayerHeader.tsx",
+      "current_sha256": "74736551d087fe52a9190ac11e1b4d336e89b040d629a9fd7ce24c9765bfe938",
+      "candidate_sha256": "74736551d087fe52a9190ac11e1b4d336e89b040d629a9fd7ce24c9765bfe938",
+      "base_sha256": "74736551d087fe52a9190ac11e1b4d336e89b040d629a9fd7ce24c9765bfe938",
+      "current_matches_candidate": true,
+      "candidate_matches_base": true
+    },
+    {
+      "path": "web/components/WiGO/PlayerRatingsDisplay.module.scss",
+      "current_sha256": "fa386829bf5a61a796c596f834c8f2bd3eebf78b792e2c3d3c1d46c9d7ec8c43",
+      "candidate_sha256": "d3210584897b30f6e8bf884e3ea4125b77c8d3fe03a4b7c130f6080cad3393bc",
+      "base_sha256": "d3210584897b30f6e8bf884e3ea4125b77c8d3fe03a4b7c130f6080cad3393bc",
+      "current_matches_candidate": false,
+      "candidate_matches_base": true
+    },
+    {
+      "path": "web/components/WiGO/PlayerRatingsDisplay.test.tsx",
+      "current_sha256": "1a557d3f1479e364b6ee4d735eae9fe964cfc11a044a38894e824dfb154c68e3",
+      "candidate_sha256": "37153865ad15d8d867a621d9f04b5e742d4efcc0b97383b5322d066f9fc79f29",
+      "base_sha256": "37153865ad15d8d867a621d9f04b5e742d4efcc0b97383b5322d066f9fc79f29",
+      "current_matches_candidate": false,
+      "candidate_matches_base": true
+    },
+    {
+      "path": "web/components/WiGO/PlayerRatingsDisplay.tsx",
+      "current_sha256": "64b7f51a39a48828db6a631d54f15666c9d06ccb42a4fb24d92fce1da2983e84",
+      "candidate_sha256": "0ab25eba63700cbd988eae69ceb5bb7bf8cb44b9945f4db24188a47ee40a630a",
+      "base_sha256": "0ab25eba63700cbd988eae69ceb5bb7bf8cb44b9945f4db24188a47ee40a630a",
+      "current_matches_candidate": false,
+      "candidate_matches_base": true
+    },
+    {
+      "path": "web/components/WiGO/PpgLineChart.tsx",
+      "current_sha256": "64e342c6e2735a2561c7a030921424f13d4aa0b66c026beaa32c1b84dfd13df2",
+      "candidate_sha256": "64e342c6e2735a2561c7a030921424f13d4aa0b66c026beaa32c1b84dfd13df2",
+      "base_sha256": "64e342c6e2735a2561c7a030921424f13d4aa0b66c026beaa32c1b84dfd13df2",
+      "current_matches_candidate": true,
+      "candidate_matches_base": true
+    },
+    {
+      "path": "web/components/WiGO/RateStatPercentiles.tsx",
+      "current_sha256": "2eeca7df55ea2bb2d20cd96ac6b8e92dc5ea6733e3d4a20bafac6ad7c7f356fb",
+      "candidate_sha256": "2eeca7df55ea2bb2d20cd96ac6b8e92dc5ea6733e3d4a20bafac6ad7c7f356fb",
+      "base_sha256": "2eeca7df55ea2bb2d20cd96ac6b8e92dc5ea6733e3d4a20bafac6ad7c7f356fb",
+      "current_matches_candidate": true,
+      "candidate_matches_base": true
+    },
+    {
+      "path": "web/components/WiGO/TeamPerformanceDrivers.tsx",
+      "current_sha256": "0fabe320fa512e29526644582864c96f1db8a1a84385e88dd322e199c717a2ea",
+      "candidate_sha256": "0fabe320fa512e29526644582864c96f1db8a1a84385e88dd322e199c717a2ea",
+      "base_sha256": "0fabe320fa512e29526644582864c96f1db8a1a84385e88dd322e199c717a2ea",
+      "current_matches_candidate": true,
+      "candidate_matches_base": true
+    },
+    {
+      "path": "web/components/WiGO/ToiLineChart.tsx",
+      "current_sha256": "53b725b24fab38e6cfda739450e563c464d446a4979d63dfcaa5990e1fd9184e",
+      "candidate_sha256": "53b725b24fab38e6cfda739450e563c464d446a4979d63dfcaa5990e1fd9184e",
+      "base_sha256": "53b725b24fab38e6cfda739450e563c464d446a4979d63dfcaa5990e1fd9184e",
+      "current_matches_candidate": true,
+      "candidate_matches_base": true
+    },
+    {
+      "path": "web/components/WiGO/WigoComparisonMatrix.tsx",
+      "current_sha256": "5e439280ad7f6ba7a5719c1452f80ef4bd4f615cbfa780abf50e7f9f464b4e68",
+      "candidate_sha256": "618b4c0aeef1fc31653200d70f1501a81f12f542c8d54031f2c4548ee9117587",
+      "base_sha256": "618b4c0aeef1fc31653200d70f1501a81f12f542c8d54031f2c4548ee9117587",
+      "current_matches_candidate": false,
+      "candidate_matches_base": true
+    },
+    {
+      "path": "web/components/WiGO/WigoDashboardSections.test.tsx",
+      "current_sha256": "e5248064f00e3c457a3b4d9deb13451a8bfeef6606de377501891747e06487dd",
+      "candidate_sha256": "e5248064f00e3c457a3b4d9deb13451a8bfeef6606de377501891747e06487dd",
+      "base_sha256": "e5248064f00e3c457a3b4d9deb13451a8bfeef6606de377501891747e06487dd",
+      "current_matches_candidate": true,
+      "candidate_matches_base": true
+    },
+    {
+      "path": "web/components/WiGO/WigoDashboardSections.tsx",
+      "current_sha256": "f866b2f1e3a4951bf8396a159898c461f1a36cd1cf1b32f8826df0937c9914a6",
+      "candidate_sha256": "f866b2f1e3a4951bf8396a159898c461f1a36cd1cf1b32f8826df0937c9914a6",
+      "base_sha256": "f866b2f1e3a4951bf8396a159898c461f1a36cd1cf1b32f8826df0937c9914a6",
+      "current_matches_candidate": true,
+      "candidate_matches_base": true
+    },
+    {
+      "path": "web/components/WiGO/WigoHelp.tsx",
+      "current_sha256": "8acfb6dce7d4b3166dd0bd48f862af1e903f752a64679c719d4aeb8e8f1094d1",
+      "candidate_sha256": "8acfb6dce7d4b3166dd0bd48f862af1e903f752a64679c719d4aeb8e8f1094d1",
+      "base_sha256": "8acfb6dce7d4b3166dd0bd48f862af1e903f752a64679c719d4aeb8e8f1094d1",
+      "current_matches_candidate": true,
+      "candidate_matches_base": true
+    },
+    {
+      "path": "web/components/WiGO/WigoSectionCard.tsx",
+      "current_sha256": "63baf86644cd43d622b811823012678c1c0ed374d6f9eb9f281bf556bdf5e13a",
+      "candidate_sha256": "63baf86644cd43d622b811823012678c1c0ed374d6f9eb9f281bf556bdf5e13a",
+      "base_sha256": "63baf86644cd43d622b811823012678c1c0ed374d6f9eb9f281bf556bdf5e13a",
+      "current_matches_candidate": true,
+      "candidate_matches_base": true
+    },
+    {
+      "path": "web/components/WiGO/_scale.scss",
+      "current_sha256": "9ddaf1edb39da591e534295377a048031a1e95c34a80880f5c29587adaa53cd4",
+      "candidate_sha256": "0527beba75e3518f3beeaa031f356c89ecd7f3dde98e6e7a62d8e30288439c46",
+      "base_sha256": "0527beba75e3518f3beeaa031f356c89ecd7f3dde98e6e7a62d8e30288439c46",
+      "current_matches_candidate": false,
+      "candidate_matches_base": true
+    },
+    {
+      "path": "web/components/WiGO/errorMessages.ts",
+      "current_sha256": "95757b696cff820f479a0bd575b67d5eb4c9e9bf8a7572df9cc266da8f338a1c",
+      "candidate_sha256": "95757b696cff820f479a0bd575b67d5eb4c9e9bf8a7572df9cc266da8f338a1c",
+      "base_sha256": "95757b696cff820f479a0bd575b67d5eb4c9e9bf8a7572df9cc266da8f338a1c",
+      "current_matches_candidate": true,
+      "candidate_matches_base": true
+    },
+    {
+      "path": "web/components/WiGO/playerBiography.ts",
+      "current_sha256": "3401976f091c05e62beb96585a449dbff96d868fcb5e7bcbb95c290e761710df",
+      "candidate_sha256": "3401976f091c05e62beb96585a449dbff96d868fcb5e7bcbb95c290e761710df",
+      "base_sha256": "3401976f091c05e62beb96585a449dbff96d868fcb5e7bcbb95c290e761710df",
+      "current_matches_candidate": true,
+      "candidate_matches_base": true
+    },
+    {
+      "path": "web/components/WiGO/queryDefaults.ts",
+      "current_sha256": "07cdeb30e9665c61aa0b889252811a71de54737d40468e4eb1cfe2dedbdca981",
+      "candidate_sha256": "07cdeb30e9665c61aa0b889252811a71de54737d40468e4eb1cfe2dedbdca981",
+      "base_sha256": "07cdeb30e9665c61aa0b889252811a71de54737d40468e4eb1cfe2dedbdca981",
+      "current_matches_candidate": true,
+      "candidate_matches_base": true
+    },
+    {
+      "path": "web/components/WiGO/statMetadata.ts",
+      "current_sha256": "8ef22249e8066164e3bf1ce13fe4693f3e37fba9d907cc881c1af8c9c2b435d3",
+      "candidate_sha256": "8ef22249e8066164e3bf1ce13fe4693f3e37fba9d907cc881c1af8c9c2b435d3",
+      "base_sha256": "8ef22249e8066164e3bf1ce13fe4693f3e37fba9d907cc881c1af8c9c2b435d3",
+      "current_matches_candidate": true,
+      "candidate_matches_base": true
+    },
+    {
+      "path": "web/components/WiGO/tableUtils.ts",
+      "current_sha256": "7f7af544bb67bbe4e4df7d71bd61e80d03521c9f3ed62bb015c08066982eadfa",
+      "candidate_sha256": "7f7af544bb67bbe4e4df7d71bd61e80d03521c9f3ed62bb015c08066982eadfa",
+      "base_sha256": "7f7af544bb67bbe4e4df7d71bd61e80d03521c9f3ed62bb015c08066982eadfa",
+      "current_matches_candidate": true,
+      "candidate_matches_base": true
+    },
+    {
+      "path": "web/components/WiGO/types.ts",
+      "current_sha256": "42a5f4d80eee7f2ebb35d82a154f24734b0768dea89b542f31394918e53aabf4",
+      "candidate_sha256": "42a5f4d80eee7f2ebb35d82a154f24734b0768dea89b542f31394918e53aabf4",
+      "base_sha256": "42a5f4d80eee7f2ebb35d82a154f24734b0768dea89b542f31394918e53aabf4",
+      "current_matches_candidate": true,
+      "candidate_matches_base": true
+    },
+    {
+      "path": "web/contexts/AuthProviderContext/index.tsx",
+      "current_sha256": "b23762a634269bc6b69e64493b23a9fe66f3ce97041b25c8e01da0b0eb1d64bc",
+      "candidate_sha256": "b23762a634269bc6b69e64493b23a9fe66f3ce97041b25c8e01da0b0eb1d64bc",
+      "base_sha256": "b23762a634269bc6b69e64493b23a9fe66f3ce97041b25c8e01da0b0eb1d64bc",
+      "current_matches_candidate": true,
+      "candidate_matches_base": true
+    },
+    {
+      "path": "web/e2e/fixtures/wigo/wigoFixtures.ts",
+      "current_sha256": "e6fd06ae9f9f306a2acbb2b0b8213fae92d3ac57dd182f0b9a02e032d07e72d9",
+      "candidate_sha256": "e6fd06ae9f9f306a2acbb2b0b8213fae92d3ac57dd182f0b9a02e032d07e72d9",
+      "base_sha256": "e6fd06ae9f9f306a2acbb2b0b8213fae92d3ac57dd182f0b9a02e032d07e72d9",
+      "current_matches_candidate": true,
+      "candidate_matches_base": true
+    },
+    {
+      "path": "web/e2e/wigo-one-page.spec.ts",
+      "current_sha256": "cc42bb7444a801b168f3bc0d8901b7806cc540d3bdb703b8135b31e245cf39b8",
+      "candidate_sha256": "f029650fa7f130bc4a7e1a5a4f19180f2cbd7c4c06334516871516f4018b4e65",
+      "base_sha256": "f029650fa7f130bc4a7e1a5a4f19180f2cbd7c4c06334516871516f4018b4e65",
+      "current_matches_candidate": false,
+      "candidate_matches_base": true
+    },
+    {
+      "path": "web/hooks/useCurrentSeason.ts",
+      "current_sha256": "cb4be75a737cf2a9aea9781d76e62efca677efa8289a2e4727d8760e4a4ed041",
+      "candidate_sha256": "cb4be75a737cf2a9aea9781d76e62efca677efa8289a2e4727d8760e4a4ed041",
+      "base_sha256": "cb4be75a737cf2a9aea9781d76e62efca677efa8289a2e4727d8760e4a4ed041",
+      "current_matches_candidate": true,
+      "candidate_matches_base": true
+    },
+    {
+      "path": "web/hooks/useWigoPlayerDashboard.ts",
+      "current_sha256": "9f073ae64d69a899467866bfcf825a2c0042125ede533f754397ed96678c391b",
+      "candidate_sha256": "9f073ae64d69a899467866bfcf825a2c0042125ede533f754397ed96678c391b",
+      "base_sha256": "9f073ae64d69a899467866bfcf825a2c0042125ede533f754397ed96678c391b",
+      "current_matches_candidate": true,
+      "candidate_matches_base": true
+    },
+    {
+      "path": "web/lib/seo.js",
+      "current_sha256": "111c7150078315f844834f447137c2da30ec6cce306348692d5d3f850b679451",
+      "candidate_sha256": "111c7150078315f844834f447137c2da30ec6cce306348692d5d3f850b679451",
+      "base_sha256": "111c7150078315f844834f447137c2da30ec6cce306348692d5d3f850b679451",
+      "current_matches_candidate": true,
+      "candidate_matches_base": true
+    },
+    {
+      "path": "web/next-seo.config.js",
+      "current_sha256": "a0c22045646bc0bb255732a088773fcaf0f1e3606c52de54083f0f0fa4a6725a",
+      "candidate_sha256": "a0c22045646bc0bb255732a088773fcaf0f1e3606c52de54083f0f0fa4a6725a",
+      "base_sha256": "a0c22045646bc0bb255732a088773fcaf0f1e3606c52de54083f0f0fa4a6725a",
+      "current_matches_candidate": true,
+      "candidate_matches_base": true
+    },
+    {
+      "path": "web/next.config.js",
+      "current_sha256": "45d31d338d7b3b1ab83ff0acd195bbf3c1b06146dfb67fcb38ab3e61489674ec",
+      "candidate_sha256": "45d31d338d7b3b1ab83ff0acd195bbf3c1b06146dfb67fcb38ab3e61489674ec",
+      "base_sha256": "45d31d338d7b3b1ab83ff0acd195bbf3c1b06146dfb67fcb38ab3e61489674ec",
+      "current_matches_candidate": true,
+      "candidate_matches_base": true
+    },
+    {
+      "path": "web/package.json",
+      "current_sha256": "fc904bdc9e3a058e753f764166c949ca1c2ece5dd30c3336c5a996c2f32b85ba",
+      "candidate_sha256": "fc904bdc9e3a058e753f764166c949ca1c2ece5dd30c3336c5a996c2f32b85ba",
+      "base_sha256": "fc904bdc9e3a058e753f764166c949ca1c2ece5dd30c3336c5a996c2f32b85ba",
+      "current_matches_candidate": true,
+      "candidate_matches_base": true
+    },
+    {
+      "path": "web/pages/_app.tsx",
+      "current_sha256": "930f0761a9d01f877f94dffae2c1ca8b224ed0362e7a28cad0054d0c22484d19",
+      "candidate_sha256": "930f0761a9d01f877f94dffae2c1ca8b224ed0362e7a28cad0054d0c22484d19",
+      "base_sha256": "930f0761a9d01f877f94dffae2c1ca8b224ed0362e7a28cad0054d0c22484d19",
+      "current_matches_candidate": true,
+      "candidate_matches_base": true
+    },
+    {
+      "path": "web/pages/wigoCharts.tsx",
+      "current_sha256": "9f01ed1e7a62bbd0f67301b77c8421c6c0fcb0d6fd1c5a38e47bb25243e1ae23",
+      "candidate_sha256": "9f01ed1e7a62bbd0f67301b77c8421c6c0fcb0d6fd1c5a38e47bb25243e1ae23",
+      "base_sha256": "9f01ed1e7a62bbd0f67301b77c8421c6c0fcb0d6fd1c5a38e47bb25243e1ae23",
+      "current_matches_candidate": true,
+      "candidate_matches_base": true
+    },
+    {
+      "path": "web/playwright.config.ts",
+      "current_sha256": "d3ff8662e205fd7eb24a2fcbfa0e33b9e50b7c14ac6ad3c45e9ba36b07b9faee",
+      "candidate_sha256": "d3ff8662e205fd7eb24a2fcbfa0e33b9e50b7c14ac6ad3c45e9ba36b07b9faee",
+      "base_sha256": "d3ff8662e205fd7eb24a2fcbfa0e33b9e50b7c14ac6ad3c45e9ba36b07b9faee",
+      "current_matches_candidate": true,
+      "candidate_matches_base": true
+    },
+    {
+      "path": "web/public/fonts/social-share/RobotoCondensed-Variable.ttf",
+      "current_sha256": "dace262afcee68a5276f200d8026c57221735c0118ab5fda8c2c0d3dc409a8d0",
+      "candidate_sha256": "dace262afcee68a5276f200d8026c57221735c0118ab5fda8c2c0d3dc409a8d0",
+      "base_sha256": "dace262afcee68a5276f200d8026c57221735c0118ab5fda8c2c0d3dc409a8d0",
+      "current_matches_candidate": true,
+      "candidate_matches_base": true
+    },
+    {
+      "path": "web/styles/Home.module.scss",
+      "current_sha256": "043ab9ea258c7f7a61fbc816bcdc14828d1934996b968a7b2341cdfefecfc62c",
+      "candidate_sha256": "043ab9ea258c7f7a61fbc816bcdc14828d1934996b968a7b2341cdfefecfc62c",
+      "base_sha256": "043ab9ea258c7f7a61fbc816bcdc14828d1934996b968a7b2341cdfefecfc62c",
+      "current_matches_candidate": true,
+      "candidate_matches_base": true
+    },
+    {
+      "path": "web/styles/globals.css",
+      "current_sha256": "259d29e45e50436eb6190b6faabd14984de5b83bb4e8386204ce44493423999c",
+      "candidate_sha256": "259d29e45e50436eb6190b6faabd14984de5b83bb4e8386204ce44493423999c",
+      "base_sha256": "259d29e45e50436eb6190b6faabd14984de5b83bb4e8386204ce44493423999c",
+      "current_matches_candidate": true,
+      "candidate_matches_base": true
+    },
+    {
+      "path": "web/styles/vars.scss",
+      "current_sha256": "e0731cbc4b6959427f1fbc2d56be1db89fedaef6abc90cf5da9e90b90497bff0",
+      "candidate_sha256": "a9ba48f903a782517b26ffe57452892074fd4642a7e896302d574d6e151a103d",
+      "base_sha256": "a9ba48f903a782517b26ffe57452892074fd4642a7e896302d574d6e151a103d",
+      "current_matches_candidate": false,
+      "candidate_matches_base": true
+    },
+    {
+      "path": "web/styles/wigoCharts.module.scss",
+      "current_sha256": "97db5872e028c39814ff5142ab45dcd83938b3543efa3a0cc4a3c08bddd8421c",
+      "candidate_sha256": "fefdcffa2cc511ed3fdbac15dde6afcce961a93af88c7796a14967a0f2162036",
+      "base_sha256": "fefdcffa2cc511ed3fdbac15dde6afcce961a93af88c7796a14967a0f2162036",
+      "current_matches_candidate": false,
+      "candidate_matches_base": true
+    },
+    {
+      "path": "web/tsconfig.json",
+      "current_sha256": "bf729d54eb8c1f8647c54f2406025cfce9e02c0b33b2a427032a83a1a963207b",
+      "candidate_sha256": "bf729d54eb8c1f8647c54f2406025cfce9e02c0b33b2a427032a83a1a963207b",
+      "base_sha256": "bf729d54eb8c1f8647c54f2406025cfce9e02c0b33b2a427032a83a1a963207b",
+      "current_matches_candidate": true,
+      "candidate_matches_base": true
+    },
+    {
+      "path": "web/utils/calculateWigoRatings.ts",
+      "current_sha256": "7d932c1d4212d95b31a98de6be2d5fd18eb959bffff9c298bd1afc7cf325d4ce",
+      "candidate_sha256": "7d932c1d4212d95b31a98de6be2d5fd18eb959bffff9c298bd1afc7cf325d4ce",
+      "base_sha256": "7d932c1d4212d95b31a98de6be2d5fd18eb959bffff9c298bd1afc7cf325d4ce",
+      "current_matches_candidate": true,
+      "candidate_matches_base": true
+    },
+    {
+      "path": "web/utils/fetchWigoPlayerStats.ts",
+      "current_sha256": "aa4e7165e41705d033abb2f923b8210c3198594d9ae98a689a110835ee71f4c0",
+      "candidate_sha256": "aa4e7165e41705d033abb2f923b8210c3198594d9ae98a689a110835ee71f4c0",
+      "base_sha256": "aa4e7165e41705d033abb2f923b8210c3198594d9ae98a689a110835ee71f4c0",
+      "current_matches_candidate": true,
+      "candidate_matches_base": true
+    },
+    {
+      "path": "web/utils/fetchWigoRatingStats.ts",
+      "current_sha256": "82ed538a65bba9add4b4f75c3b2b793130b389de8ff8a894f1efc648f550b032",
+      "candidate_sha256": "82ed538a65bba9add4b4f75c3b2b793130b389de8ff8a894f1efc648f550b032",
+      "base_sha256": "82ed538a65bba9add4b4f75c3b2b793130b389de8ff8a894f1efc648f550b032",
+      "current_matches_candidate": true,
+      "candidate_matches_base": true
+    },
+    {
+      "path": "web/vitest.config.mts",
+      "current_sha256": "567626533274d2161441206f5f616ecdc7f2212c0d2a2450816954d6aeb0af3b",
+      "candidate_sha256": "567626533274d2161441206f5f616ecdc7f2212c0d2a2450816954d6aeb0af3b",
+      "base_sha256": "567626533274d2161441206f5f616ecdc7f2212c0d2a2450816954d6aeb0af3b",
+      "current_matches_candidate": true,
+      "candidate_matches_base": true
+    },
+    {
+      "path": "web/components/Layout/Header/Header.module.scss",
+      "current_sha256": "68fea9cc5fff421aee83626d8b1ad521be1e7f1eebce0df3aef983786264199f",
+      "reason": "bounded component-direct style or actual Header/MobileMenu shell closure",
+      "candidate_sha256": "68fea9cc5fff421aee83626d8b1ad521be1e7f1eebce0df3aef983786264199f",
+      "base_sha256": "68fea9cc5fff421aee83626d8b1ad521be1e7f1eebce0df3aef983786264199f",
+      "current_matches_candidate": true,
+      "candidate_matches_base": true
+    },
+    {
+      "path": "web/components/Layout/Header/Header.tsx",
+      "current_sha256": "cc3ec636dbf4131a32ed1e324aa75bd006140e4d7ee8f33ac66dd21f1e44514b",
+      "reason": "bounded component-direct style or actual Header/MobileMenu shell closure",
+      "candidate_sha256": "cc3ec636dbf4131a32ed1e324aa75bd006140e4d7ee8f33ac66dd21f1e44514b",
+      "base_sha256": "cc3ec636dbf4131a32ed1e324aa75bd006140e4d7ee8f33ac66dd21f1e44514b",
+      "current_matches_candidate": true,
+      "candidate_matches_base": true
+    },
+    {
+      "path": "web/components/Layout/MobileMenu/MobileMenu.module.scss",
+      "current_sha256": "2aeb7f44c482943e417bbf99ba1a495777cbaa8d4492d8406d38c4fd26629963",
+      "reason": "bounded component-direct style or actual Header/MobileMenu shell closure",
+      "candidate_sha256": "aa62af2f008d4d40e1ee7b9b3d8d91178651baf5feaf55b5b7821ee9eec337a6",
+      "base_sha256": "aa62af2f008d4d40e1ee7b9b3d8d91178651baf5feaf55b5b7821ee9eec337a6",
+      "current_matches_candidate": false,
+      "candidate_matches_base": true
+    },
+    {
+      "path": "web/components/Layout/MobileMenu/MobileMenu.tsx",
+      "current_sha256": "2865f82f899f4217983087237da389039abfbf4b0acc4a4541b731ba35ea94e9",
+      "reason": "bounded component-direct style or actual Header/MobileMenu shell closure",
+      "candidate_sha256": "2865f82f899f4217983087237da389039abfbf4b0acc4a4541b731ba35ea94e9",
+      "base_sha256": "2865f82f899f4217983087237da389039abfbf4b0acc4a4541b731ba35ea94e9",
+      "current_matches_candidate": true,
+      "candidate_matches_base": true
+    },
+    {
+      "path": "web/components/Layout/MobileMenu/index.ts",
+      "current_sha256": "013e63a1ec71bcb2688c20c9a584eba180863e1760bb20e2bb3aac0c3f534d70",
+      "reason": "bounded component-direct style or actual Header/MobileMenu shell closure",
+      "candidate_sha256": "013e63a1ec71bcb2688c20c9a584eba180863e1760bb20e2bb3aac0c3f534d70",
+      "base_sha256": "013e63a1ec71bcb2688c20c9a584eba180863e1760bb20e2bb3aac0c3f534d70",
+      "current_matches_candidate": true,
+      "candidate_matches_base": true
+    },
+    {
+      "path": "web/components/Layout/NavbarItems/NavbarItems.module.scss",
+      "current_sha256": "07251c55fe425b281f93ae82c60836a4d4621733b8a7731706f291d4866d4af6",
+      "reason": "bounded component-direct style or actual Header/MobileMenu shell closure",
+      "candidate_sha256": "07251c55fe425b281f93ae82c60836a4d4621733b8a7731706f291d4866d4af6",
+      "base_sha256": "07251c55fe425b281f93ae82c60836a4d4621733b8a7731706f291d4866d4af6",
+      "current_matches_candidate": true,
+      "candidate_matches_base": true
+    },
+    {
+      "path": "web/components/Layout/NavbarItems/NavbarItems.tsx",
+      "current_sha256": "7ec94c2a1c8667da42d5a0dae24798990e17fd18deaefa72f7feed009eda9ef7",
+      "reason": "bounded component-direct style or actual Header/MobileMenu shell closure",
+      "candidate_sha256": "7ec94c2a1c8667da42d5a0dae24798990e17fd18deaefa72f7feed009eda9ef7",
+      "base_sha256": "7ec94c2a1c8667da42d5a0dae24798990e17fd18deaefa72f7feed009eda9ef7",
+      "current_matches_candidate": true,
+      "candidate_matches_base": true
+    },
+    {
+      "path": "web/components/Layout/NavbarItems/index.ts",
+      "current_sha256": "6fadf023f803ab1dfd3aaa8ecde7675631cb6055f4f87fa0c67be6764edcfc42",
+      "reason": "bounded component-direct style or actual Header/MobileMenu shell closure",
+      "candidate_sha256": "6fadf023f803ab1dfd3aaa8ecde7675631cb6055f4f87fa0c67be6764edcfc42",
+      "base_sha256": "6fadf023f803ab1dfd3aaa8ecde7675631cb6055f4f87fa0c67be6764edcfc42",
+      "current_matches_candidate": true,
+      "candidate_matches_base": true
+    },
+    {
+      "path": "web/components/Layout/NavigationIcon.tsx",
+      "current_sha256": "6b0a064c6bd8566ef9ed229c10a8f29d29a598440022da9af0d5bcbb1090609e",
+      "reason": "bounded component-direct style or actual Header/MobileMenu shell closure",
+      "candidate_sha256": "6b0a064c6bd8566ef9ed229c10a8f29d29a598440022da9af0d5bcbb1090609e",
+      "base_sha256": "6b0a064c6bd8566ef9ed229c10a8f29d29a598440022da9af0d5bcbb1090609e",
+      "current_matches_candidate": true,
+      "candidate_matches_base": true
+    },
+    {
+      "path": "web/components/WiGO/NameSearchBar.module.scss",
+      "current_sha256": "e0ca8404900a32a12ac5a18006cfeb882696abad877b87899cfd3ffa44edd8a9",
+      "reason": "bounded component-direct style or actual Header/MobileMenu shell closure",
+      "candidate_sha256": "e0ca8404900a32a12ac5a18006cfeb882696abad877b87899cfd3ffa44edd8a9",
+      "base_sha256": "e0ca8404900a32a12ac5a18006cfeb882696abad877b87899cfd3ffa44edd8a9",
+      "current_matches_candidate": true,
+      "candidate_matches_base": true
+    },
+    {
+      "path": "web/components/WiGO/OpponentGameLog.module.scss",
+      "current_sha256": "1f59cb526908669bec6911c782478fb8c515f1aad0f3eb743540b4d197db8fde",
+      "reason": "bounded component-direct style or actual Header/MobileMenu shell closure",
+      "candidate_sha256": "1f59cb526908669bec6911c782478fb8c515f1aad0f3eb743540b4d197db8fde",
+      "base_sha256": "1f59cb526908669bec6911c782478fb8c515f1aad0f3eb743540b4d197db8fde",
+      "current_matches_candidate": true,
+      "candidate_matches_base": true
+    },
+    {
+      "path": "web/components/WiGO/PerGameStatsTable.module.scss",
+      "current_sha256": "b88545df5353205b764f08be767da12dcb585812a9d9dcdca875403ce95b6ae1",
+      "reason": "bounded component-direct style or actual Header/MobileMenu shell closure",
+      "candidate_sha256": "61b279dbdf374e86aaef0e6fb4d839753d053525e3c736598e6338c813389d18",
+      "base_sha256": "61b279dbdf374e86aaef0e6fb4d839753d053525e3c736598e6338c813389d18",
+      "current_matches_candidate": false,
+      "candidate_matches_base": true
+    },
+    {
+      "path": "web/components/WiGO/TeamPerformanceDrivers.module.scss",
+      "current_sha256": "b9aa517f5f4b29da1ef6ac98ddfb3dcdec71056f4fa5b205bbeac3e010be130d",
+      "reason": "bounded component-direct style or actual Header/MobileMenu shell closure",
+      "candidate_sha256": "b188fed9441fdb0129a8c61b46f5995de8e9276d260d352fd2b0e0a82b60346e",
+      "base_sha256": "b188fed9441fdb0129a8c61b46f5995de8e9276d260d352fd2b0e0a82b60346e",
+      "current_matches_candidate": false,
+      "candidate_matches_base": true
+    },
+    {
+      "path": "web/pages/_document.tsx",
+      "current_sha256": "09929f353a013c70fdd897a5dfb35c9a8b6c2b39a6aaeb6f919328329bbae3a4",
+      "reason": "bounded component-direct style or actual Header/MobileMenu shell closure",
+      "candidate_sha256": "09929f353a013c70fdd897a5dfb35c9a8b6c2b39a6aaeb6f919328329bbae3a4",
+      "base_sha256": "09929f353a013c70fdd897a5dfb35c9a8b6c2b39a6aaeb6f919328329bbae3a4",
+      "current_matches_candidate": true,
+      "candidate_matches_base": true
+    },
+    {
+      "path": "web/e2e/fixtures/wigo/schema.json",
+      "current_sha256": "7bc709d053d4a894e7484f7ff9c630b46dbf7c73d26d35d2ebbf6cdfe30bc940",
+      "reason": "direct synthetic fixture schema dependency; content not inspected",
+      "candidate_sha256": "7bc709d053d4a894e7484f7ff9c630b46dbf7c73d26d35d2ebbf6cdfe30bc940",
+      "base_sha256": "7bc709d053d4a894e7484f7ff9c630b46dbf7c73d26d35d2ebbf6cdfe30bc940",
+      "current_matches_candidate": true,
+      "candidate_matches_base": true
+    }
+  ],
+  "direct_edges": [
+    {
+      "from": "web/pages/wigoCharts.tsx",
+      "specifier": "react",
+      "to": null,
+      "shell": false
+    },
+    {
+      "from": "web/pages/wigoCharts.tsx",
+      "specifier": "next/router",
+      "to": null,
+      "shell": false
+    },
+    {
+      "from": "web/pages/wigoCharts.tsx",
+      "specifier": "clsx",
+      "to": null,
+      "shell": false
+    },
+    {
+      "from": "web/pages/wigoCharts.tsx",
+      "specifier": "styles/wigoCharts.module.scss",
+      "to": "web/styles/wigoCharts.module.scss",
+      "shell": false
+    },
+    {
+      "from": "web/pages/wigoCharts.tsx",
+      "specifier": "components/WiGO/types",
+      "to": "web/components/WiGO/types.ts",
+      "shell": false
+    },
+    {
+      "from": "web/pages/wigoCharts.tsx",
+      "specifier": "components/WiGO/WigoDashboardSections",
+      "to": "web/components/WiGO/WigoDashboardSections.tsx",
+      "shell": false
+    },
+    {
+      "from": "web/pages/wigoCharts.tsx",
+      "specifier": "hooks/useWigoPlayerDashboard",
+      "to": "web/hooks/useWigoPlayerDashboard.ts",
+      "shell": false
+    },
+    {
+      "from": "web/pages/wigoCharts.tsx",
+      "specifier": "components/WiGO/tableUtils",
+      "to": "web/components/WiGO/tableUtils.ts",
+      "shell": false
+    },
+    {
+      "from": "web/components/WiGO/WigoDashboardSections.tsx",
+      "specifier": "react",
+      "to": null,
+      "shell": false
+    },
+    {
+      "from": "web/components/WiGO/WigoDashboardSections.tsx",
+      "specifier": "next/dynamic",
+      "to": null,
+      "shell": false
+    },
+    {
+      "from": "web/components/WiGO/WigoDashboardSections.tsx",
+      "specifier": "next/image",
+      "to": null,
+      "shell": false
+    },
+    {
+      "from": "web/components/WiGO/WigoDashboardSections.tsx",
+      "specifier": "components/WiGO/OpponentGamelog",
+      "to": "web/components/WiGO/OpponentGamelog.tsx",
+      "shell": false
+    },
+    {
+      "from": "web/components/WiGO/WigoDashboardSections.tsx",
+      "specifier": "components/WiGO/PerGameStatsTable",
+      "to": "web/components/WiGO/PerGameStatsTable.tsx",
+      "shell": false
+    },
+    {
+      "from": "web/components/WiGO/WigoDashboardSections.tsx",
+      "specifier": "components/WiGO/PlayerHeader",
+      "to": "web/components/WiGO/PlayerHeader.tsx",
+      "shell": false
+    },
+    {
+      "from": "web/components/WiGO/WigoDashboardSections.tsx",
+      "specifier": "./playerBiography",
+      "to": "web/components/WiGO/playerBiography.ts",
+      "shell": false
+    },
+    {
+      "from": "web/components/WiGO/WigoDashboardSections.tsx",
+      "specifier": "components/WiGO/PlayerRatingsDisplay",
+      "to": "web/components/WiGO/PlayerRatingsDisplay.tsx",
+      "shell": false
+    },
+    {
+      "from": "web/components/WiGO/WigoDashboardSections.tsx",
+      "specifier": "components/WiGO/NameSearchBar",
+      "to": "web/components/WiGO/NameSearchBar.tsx",
+      "shell": false
+    },
+    {
+      "from": "web/components/WiGO/WigoDashboardSections.tsx",
+      "specifier": "./WigoSectionCard",
+      "to": "web/components/WiGO/WigoSectionCard.tsx",
+      "shell": false
+    },
+    {
+      "from": "web/components/WiGO/WigoDashboardSections.tsx",
+      "specifier": "./WigoHelp",
+      "to": "web/components/WiGO/WigoHelp.tsx",
+      "shell": false
+    },
+    {
+      "from": "web/components/WiGO/WigoDashboardSections.tsx",
+      "specifier": "utils/calculateWigoRatings",
+      "to": "web/utils/calculateWigoRatings.ts",
+      "shell": false
+    },
+    {
+      "from": "web/components/WiGO/WigoDashboardSections.tsx",
+      "specifier": "./WigoComparisonMatrix",
+      "to": "web/components/WiGO/WigoComparisonMatrix.tsx",
+      "shell": false
+    },
+    {
+      "from": "web/components/WiGO/WigoDashboardSections.tsx",
+      "specifier": "components/WiGO/TeamPerformanceDrivers",
+      "to": "web/components/WiGO/TeamPerformanceDrivers.tsx",
+      "shell": false
+    },
+    {
+      "from": "web/components/WiGO/WigoDashboardSections.tsx",
+      "specifier": "components/WiGO/tableUtils",
+      "to": "web/components/WiGO/tableUtils.ts",
+      "shell": false
+    },
+    {
+      "from": "web/components/WiGO/WigoDashboardSections.tsx",
+      "specifier": "components/WiGO/types",
+      "to": "web/components/WiGO/types.ts",
+      "shell": false
+    },
+    {
+      "from": "web/components/WiGO/WigoDashboardSections.tsx",
+      "specifier": "styles/wigoCharts.module.scss",
+      "to": "web/styles/wigoCharts.module.scss",
+      "shell": false
+    },
+    {
+      "from": "web/components/WiGO/WigoDashboardSections.tsx",
+      "specifier": "utils/fetchWigoPlayerStats",
+      "to": "web/utils/fetchWigoPlayerStats.ts",
+      "shell": false
+    },
+    {
+      "from": "web/components/WiGO/WigoDashboardSections.tsx",
+      "specifier": "components/WiGO/GameScoreSection",
+      "to": "web/components/WiGO/GameScoreSection.tsx",
+      "shell": false
+    },
+    {
+      "from": "web/components/WiGO/WigoDashboardSections.tsx",
+      "specifier": "components/WiGO/ToiLineChart",
+      "to": "web/components/WiGO/ToiLineChart.tsx",
+      "shell": false
+    },
+    {
+      "from": "web/components/WiGO/WigoDashboardSections.tsx",
+      "specifier": "components/WiGO/PpgLineChart",
+      "to": "web/components/WiGO/PpgLineChart.tsx",
+      "shell": false
+    },
+    {
+      "from": "web/components/WiGO/WigoDashboardSections.tsx",
+      "specifier": "components/WiGO/RateStatPercentiles",
+      "to": "web/components/WiGO/RateStatPercentiles.tsx",
+      "shell": false
+    },
+    {
+      "from": "web/components/WiGO/WigoDashboardSections.tsx",
+      "specifier": "components/CategoryCoverageChart",
+      "to": "web/components/CategoryCoverageChart/index.ts",
+      "shell": false
+    },
+    {
+      "from": "web/components/WiGO/WigoDashboardSections.tsx",
+      "specifier": "components/WiGO/ConsistencyChart",
+      "to": "web/components/WiGO/ConsistencyChart.tsx",
+      "shell": false
+    },
+    {
+      "from": "web/styles/wigoCharts.module.scss",
+      "specifier": "sass:color",
+      "to": null,
+      "shell": false
+    },
+    {
+      "from": "web/styles/wigoCharts.module.scss",
+      "specifier": "styles/vars",
+      "to": "web/styles/vars.scss",
+      "shell": false
+    },
+    {
+      "from": "web/styles/wigoCharts.module.scss",
+      "specifier": "sass:math",
+      "to": null,
+      "shell": false
+    },
+    {
+      "from": "web/styles/wigoCharts.module.scss",
+      "specifier": "components/WiGO/scale",
+      "to": "web/components/WiGO/_scale.scss",
+      "shell": false
+    },
+    {
+      "from": "web/components/WiGO/PlayerRatingsDisplay.tsx",
+      "specifier": "react",
+      "to": null,
+      "shell": false
+    },
+    {
+      "from": "web/components/WiGO/PlayerRatingsDisplay.tsx",
+      "specifier": "@tanstack/react-query",
+      "to": null,
+      "shell": false
+    },
+    {
+      "from": "web/components/WiGO/PlayerRatingsDisplay.tsx",
+      "specifier": "utils/fetchWigoRatingStats",
+      "to": "web/utils/fetchWigoRatingStats.ts",
+      "shell": false
+    },
+    {
+      "from": "web/components/WiGO/PlayerRatingsDisplay.tsx",
+      "specifier": "utils/calculateWigoRatings",
+      "to": "web/utils/calculateWigoRatings.ts",
+      "shell": false
+    },
+    {
+      "from": "web/components/WiGO/PlayerRatingsDisplay.tsx",
+      "specifier": "./PlayerRatingsDisplay.module.scss",
+      "to": "web/components/WiGO/PlayerRatingsDisplay.module.scss",
+      "shell": false
+    },
+    {
+      "from": "web/components/WiGO/PlayerRatingsDisplay.tsx",
+      "specifier": "./errorMessages",
+      "to": "web/components/WiGO/errorMessages.ts",
+      "shell": false
+    },
+    {
+      "from": "web/components/WiGO/PlayerRatingsDisplay.tsx",
+      "specifier": "./tableUtils",
+      "to": "web/components/WiGO/tableUtils.ts",
+      "shell": false
+    },
+    {
+      "from": "web/components/WiGO/PlayerRatingsDisplay.tsx",
+      "specifier": "hooks/useCurrentSeason",
+      "to": "web/hooks/useCurrentSeason.ts",
+      "shell": false
+    },
+    {
+      "from": "web/components/WiGO/PlayerRatingsDisplay.tsx",
+      "specifier": "components/WiGO/queryDefaults",
+      "to": "web/components/WiGO/queryDefaults.ts",
+      "shell": false
+    },
+    {
+      "from": "web/components/WiGO/PlayerRatingsDisplay.module.scss",
+      "specifier": "styles/vars",
+      "to": "web/styles/vars.scss",
+      "shell": false
+    },
+    {
+      "from": "web/components/WiGO/PlayerRatingsDisplay.module.scss",
+      "specifier": "sass:color",
+      "to": null,
+      "shell": false
+    },
+    {
+      "from": "web/components/WiGO/PlayerRatingsDisplay.module.scss",
+      "specifier": "components/WiGO/scale",
+      "to": "web/components/WiGO/_scale.scss",
+      "shell": false
+    },
+    {
+      "from": "web/__tests__/pages/wigoCharts.test.tsx",
+      "specifier": "react",
+      "to": null,
+      "shell": false
+    },
+    {
+      "from": "web/__tests__/pages/wigoCharts.test.tsx",
+      "specifier": "@testing-library/react",
+      "to": null,
+      "shell": false
+    },
+    {
+      "from": "web/__tests__/pages/wigoCharts.test.tsx",
+      "specifier": "vitest",
+      "to": null,
+      "shell": false
+    },
+    {
+      "from": "web/__tests__/pages/wigoCharts.test.tsx",
+      "specifier": "pages/wigoCharts",
+      "to": "web/pages/wigoCharts.tsx",
+      "shell": false
+    },
+    {
+      "from": "web/components/WiGO/WigoDashboardSections.test.tsx",
+      "specifier": "react",
+      "to": null,
+      "shell": false
+    },
+    {
+      "from": "web/components/WiGO/WigoDashboardSections.test.tsx",
+      "specifier": "@testing-library/react",
+      "to": null,
+      "shell": false
+    },
+    {
+      "from": "web/components/WiGO/WigoDashboardSections.test.tsx",
+      "specifier": "vitest",
+      "to": null,
+      "shell": false
+    },
+    {
+      "from": "web/components/WiGO/WigoDashboardSections.test.tsx",
+      "specifier": "./WigoDashboardSections",
+      "to": "web/components/WiGO/WigoDashboardSections.tsx",
+      "shell": false
+    },
+    {
+      "from": "web/components/WiGO/WigoDashboardSections.test.tsx",
+      "specifier": "./types",
+      "to": "web/components/WiGO/types.ts",
+      "shell": false
+    },
+    {
+      "from": "web/components/WiGO/PlayerRatingsDisplay.test.tsx",
+      "specifier": "react",
+      "to": null,
+      "shell": false
+    },
+    {
+      "from": "web/components/WiGO/PlayerRatingsDisplay.test.tsx",
+      "specifier": "@tanstack/react-query",
+      "to": null,
+      "shell": false
+    },
+    {
+      "from": "web/components/WiGO/PlayerRatingsDisplay.test.tsx",
+      "specifier": "@testing-library/react",
+      "to": null,
+      "shell": false
+    },
+    {
+      "from": "web/components/WiGO/PlayerRatingsDisplay.test.tsx",
+      "specifier": "vitest",
+      "to": null,
+      "shell": false
+    },
+    {
+      "from": "web/components/WiGO/PlayerRatingsDisplay.test.tsx",
+      "specifier": "components/WiGO/types",
+      "to": "web/components/WiGO/types.ts",
+      "shell": false
+    },
+    {
+      "from": "web/components/WiGO/PlayerRatingsDisplay.test.tsx",
+      "specifier": "./PlayerRatingsDisplay",
+      "to": "web/components/WiGO/PlayerRatingsDisplay.tsx",
+      "shell": false
+    },
+    {
+      "from": "web/components/WiGO/PlayerRatingsDisplay.test.tsx",
+      "specifier": "utils/calculateWigoRatings",
+      "to": "web/utils/calculateWigoRatings.ts",
+      "shell": false
+    },
+    {
+      "from": "web/e2e/wigo-one-page.spec.ts",
+      "specifier": "@playwright/test",
+      "to": null,
+      "shell": false
+    },
+    {
+      "from": "web/e2e/wigo-one-page.spec.ts",
+      "specifier": "../components/WiGO/statMetadata",
+      "to": "web/components/WiGO/statMetadata.ts",
+      "shell": false
+    },
+    {
+      "from": "web/e2e/wigo-one-page.spec.ts",
+      "specifier": "./fixtures/wigo/wigoFixtures",
+      "to": "web/e2e/fixtures/wigo/wigoFixtures.ts",
+      "shell": false
+    },
+    {
+      "from": "web/pages/_app.tsx",
+      "specifier": "next/head",
+      "to": null,
+      "shell": true
+    },
+    {
+      "from": "web/pages/_app.tsx",
+      "specifier": "next/dynamic",
+      "to": null,
+      "shell": true
+    },
+    {
+      "from": "web/pages/_app.tsx",
+      "specifier": "@vercel/analytics/react",
+      "to": null,
+      "shell": true
+    },
+    {
+      "from": "web/pages/_app.tsx",
+      "specifier": "@vercel/speed-insights/next",
+      "to": null,
+      "shell": true
+    },
+    {
+      "from": "web/pages/_app.tsx",
+      "specifier": "next/app",
+      "to": null,
+      "shell": true
+    },
+    {
+      "from": "web/pages/_app.tsx",
+      "specifier": "contexts/AuthProviderContext/index",
+      "to": "web/contexts/AuthProviderContext/index.tsx",
+      "shell": true
+    },
+    {
+      "from": "web/pages/_app.tsx",
+      "specifier": "next-seo",
+      "to": null,
+      "shell": true
+    },
+    {
+      "from": "web/pages/_app.tsx",
+      "specifier": "next-seo.config",
+      "to": "web/next-seo.config.js",
+      "shell": true
+    },
+    {
+      "from": "web/pages/_app.tsx",
+      "specifier": "lib/seo",
+      "to": "web/lib/seo.js",
+      "shell": true
+    },
+    {
+      "from": "web/pages/_app.tsx",
+      "specifier": "@tanstack/react-query",
+      "to": null,
+      "shell": true
+    },
+    {
+      "from": "web/pages/_app.tsx",
+      "specifier": "../components/Layout",
+      "to": "web/components/Layout/index.ts",
+      "shell": true
+    },
+    {
+      "from": "web/pages/_app.tsx",
+      "specifier": "../styles/globals.css",
+      "to": "web/styles/globals.css",
+      "shell": true
+    },
+    {
+      "from": "web/pages/_app.tsx",
+      "specifier": "../styles/vars.scss",
+      "to": "web/styles/vars.scss",
+      "shell": true
+    },
+    {
+      "from": "web/pages/_app.tsx",
+      "specifier": "../styles/Home.module.scss",
+      "to": "web/styles/Home.module.scss",
+      "shell": true
+    },
+    {
+      "from": "web/pages/_app.tsx",
+      "specifier": "components/TeamLandingPage/teamLandingPage.scss",
+      "to": "web/components/TeamLandingPage/teamLandingPage.scss",
+      "shell": true
+    },
+    {
+      "from": "web/pages/_app.tsx",
+      "specifier": "notistack",
+      "to": null,
+      "shell": true
+    },
+    {
+      "from": "web/components/Layout/index.ts",
+      "specifier": "./Layout",
+      "to": "web/components/Layout/Layout.tsx",
+      "shell": true
+    },
+    {
+      "from": "web/components/Layout/Layout.tsx",
+      "specifier": "react",
+      "to": null,
+      "shell": true
+    },
+    {
+      "from": "web/components/Layout/Layout.tsx",
+      "specifier": "next/router",
+      "to": null,
+      "shell": true
+    },
+    {
+      "from": "web/components/Layout/Layout.tsx",
+      "specifier": "next/link",
+      "to": null,
+      "shell": true
+    },
+    {
+      "from": "web/components/Layout/Layout.tsx",
+      "specifier": "./Header",
+      "to": "web/components/Layout/Header/index.ts",
+      "shell": true
+    },
+    {
+      "from": "web/components/Layout/Layout.tsx",
+      "specifier": "components/SocialMedias",
+      "to": "web/components/SocialMedias/index.ts",
+      "shell": true
+    },
+    {
+      "from": "web/components/Layout/Layout.tsx",
+      "specifier": "./Layout.module.scss",
+      "to": "web/components/Layout/Layout.module.scss",
+      "shell": true
+    },
+    {
+      "from": "web/components/Layout/Layout.tsx",
+      "specifier": "./NavbarItems/NavbarItemsData",
+      "to": "web/components/Layout/NavbarItems/NavbarItemsData.ts",
+      "shell": true
+    },
+    {
+      "from": "web/components/Layout/Layout.module.scss",
+      "specifier": "styles/vars",
+      "to": "web/styles/vars.scss",
+      "shell": true
+    }
+  ],
+  "kind": "bounded-read-only-WiGO-candidate-dependency-assessment",
+  "at_utc": "2026-11-05T01:23:08.374771+00:00",
+  "current_head_observed_at_start": "a2b72850cbd522b3dd7bfe616bd25d7c01ae8f0c",
+  "candidate_status": "NO_COMPOSITION_OR_INTEGRATION_TEST; nine-file canonical pin set not dependency-equivalent to exact candidate",
+  "targets": [
+    {
+      "path": "web/pages/wigoCharts.tsx",
+      "sha256": "9f01ed1e7a62bbd0f67301b77c8421c6c0fcb0d6fd1c5a38e47bb25243e1ae23",
+      "candidate_sha256": "9f01ed1e7a62bbd0f67301b77c8421c6c0fcb0d6fd1c5a38e47bb25243e1ae23",
+      "base_sha256": "9f01ed1e7a62bbd0f67301b77c8421c6c0fcb0d6fd1c5a38e47bb25243e1ae23",
+      "disposition": "already_identical_no_addition",
+      "accepted_into_candidate": false
+    },
+    {
+      "path": "web/components/WiGO/WigoDashboardSections.tsx",
+      "sha256": "f866b2f1e3a4951bf8396a159898c461f1a36cd1cf1b32f8826df0937c9914a6",
+      "candidate_sha256": "f866b2f1e3a4951bf8396a159898c461f1a36cd1cf1b32f8826df0937c9914a6",
+      "base_sha256": "f866b2f1e3a4951bf8396a159898c461f1a36cd1cf1b32f8826df0937c9914a6",
+      "disposition": "already_identical_no_addition",
+      "accepted_into_candidate": false
+    },
+    {
+      "path": "web/styles/wigoCharts.module.scss",
+      "sha256": "97db5872e028c39814ff5142ab45dcd83938b3543efa3a0cc4a3c08bddd8421c",
+      "candidate_sha256": "fefdcffa2cc511ed3fdbac15dde6afcce961a93af88c7796a14967a0f2162036",
+      "base_sha256": "fefdcffa2cc511ed3fdbac15dde6afcce961a93af88c7796a14967a0f2162036",
+      "disposition": "proposed_exact_overlay_not_composed",
+      "accepted_into_candidate": false
+    },
+    {
+      "path": "web/components/WiGO/PlayerRatingsDisplay.tsx",
+      "sha256": "64b7f51a39a48828db6a631d54f15666c9d06ccb42a4fb24d92fce1da2983e84",
+      "candidate_sha256": "0ab25eba63700cbd988eae69ceb5bb7bf8cb44b9945f4db24188a47ee40a630a",
+      "base_sha256": "0ab25eba63700cbd988eae69ceb5bb7bf8cb44b9945f4db24188a47ee40a630a",
+      "disposition": "proposed_exact_overlay_not_composed",
+      "accepted_into_candidate": false
+    },
+    {
+      "path": "web/components/WiGO/PlayerRatingsDisplay.module.scss",
+      "sha256": "fa386829bf5a61a796c596f834c8f2bd3eebf78b792e2c3d3c1d46c9d7ec8c43",
+      "candidate_sha256": "d3210584897b30f6e8bf884e3ea4125b77c8d3fe03a4b7c130f6080cad3393bc",
+      "base_sha256": "d3210584897b30f6e8bf884e3ea4125b77c8d3fe03a4b7c130f6080cad3393bc",
+      "disposition": "proposed_exact_overlay_not_composed",
+      "accepted_into_candidate": false
+    },
+    {
+      "path": "web/__tests__/pages/wigoCharts.test.tsx",
+      "sha256": "d71e1041112aeaa4b59efb4a260aa031a11c30c890b9f07155d439e8c48cc0ed",
+      "candidate_sha256": "d71e1041112aeaa4b59efb4a260aa031a11c30c890b9f07155d439e8c48cc0ed",
+      "base_sha256": "d71e1041112aeaa4b59efb4a260aa031a11c30c890b9f07155d439e8c48cc0ed",
+      "disposition": "already_identical_no_addition",
+      "accepted_into_candidate": false
+    },
+    {
+      "path": "web/components/WiGO/WigoDashboardSections.test.tsx",
+      "sha256": "e5248064f00e3c457a3b4d9deb13451a8bfeef6606de377501891747e06487dd",
+      "candidate_sha256": "e5248064f00e3c457a3b4d9deb13451a8bfeef6606de377501891747e06487dd",
+      "base_sha256": "e5248064f00e3c457a3b4d9deb13451a8bfeef6606de377501891747e06487dd",
+      "disposition": "already_identical_no_addition",
+      "accepted_into_candidate": false
+    },
+    {
+      "path": "web/components/WiGO/PlayerRatingsDisplay.test.tsx",
+      "sha256": "1a557d3f1479e364b6ee4d735eae9fe964cfc11a044a38894e824dfb154c68e3",
+      "candidate_sha256": "37153865ad15d8d867a621d9f04b5e742d4efcc0b97383b5322d066f9fc79f29",
+      "base_sha256": "37153865ad15d8d867a621d9f04b5e742d4efcc0b97383b5322d066f9fc79f29",
+      "disposition": "proposed_exact_overlay_not_composed",
+      "accepted_into_candidate": false
+    },
+    {
+      "path": "web/e2e/wigo-one-page.spec.ts",
+      "sha256": "cc42bb7444a801b168f3bc0d8901b7806cc540d3bdb703b8135b31e245cf39b8",
+      "candidate_sha256": "f029650fa7f130bc4a7e1a5a4f19180f2cbd7c4c06334516871516f4018b4e65",
+      "base_sha256": "f029650fa7f130bc4a7e1a5a4f19180f2cbd7c4c06334516871516f4018b4e65",
+      "disposition": "proposed_exact_overlay_not_composed",
+      "accepted_into_candidate": false
+    }
+  ],
+  "proposed_overlay_files": [
+    {
+      "path": "web/styles/wigoCharts.module.scss",
+      "sha256": "97db5872e028c39814ff5142ab45dcd83938b3543efa3a0cc4a3c08bddd8421c",
+      "candidate_sha256": "fefdcffa2cc511ed3fdbac15dde6afcce961a93af88c7796a14967a0f2162036",
+      "base_sha256": "fefdcffa2cc511ed3fdbac15dde6afcce961a93af88c7796a14967a0f2162036",
+      "disposition": "proposed_exact_overlay_not_composed",
+      "accepted_into_candidate": false
+    },
+    {
+      "path": "web/components/WiGO/PlayerRatingsDisplay.tsx",
+      "sha256": "64b7f51a39a48828db6a631d54f15666c9d06ccb42a4fb24d92fce1da2983e84",
+      "candidate_sha256": "0ab25eba63700cbd988eae69ceb5bb7bf8cb44b9945f4db24188a47ee40a630a",
+      "base_sha256": "0ab25eba63700cbd988eae69ceb5bb7bf8cb44b9945f4db24188a47ee40a630a",
+      "disposition": "proposed_exact_overlay_not_composed",
+      "accepted_into_candidate": false
+    },
+    {
+      "path": "web/components/WiGO/PlayerRatingsDisplay.module.scss",
+      "sha256": "fa386829bf5a61a796c596f834c8f2bd3eebf78b792e2c3d3c1d46c9d7ec8c43",
+      "candidate_sha256": "d3210584897b30f6e8bf884e3ea4125b77c8d3fe03a4b7c130f6080cad3393bc",
+      "base_sha256": "d3210584897b30f6e8bf884e3ea4125b77c8d3fe03a4b7c130f6080cad3393bc",
+      "disposition": "proposed_exact_overlay_not_composed",
+      "accepted_into_candidate": false
+    },
+    {
+      "path": "web/components/WiGO/PlayerRatingsDisplay.test.tsx",
+      "sha256": "1a557d3f1479e364b6ee4d735eae9fe964cfc11a044a38894e824dfb154c68e3",
+      "candidate_sha256": "37153865ad15d8d867a621d9f04b5e742d4efcc0b97383b5322d066f9fc79f29",
+      "base_sha256": "37153865ad15d8d867a621d9f04b5e742d4efcc0b97383b5322d066f9fc79f29",
+      "disposition": "proposed_exact_overlay_not_composed",
+      "accepted_into_candidate": false
+    },
+    {
+      "path": "web/e2e/wigo-one-page.spec.ts",
+      "sha256": "cc42bb7444a801b168f3bc0d8901b7806cc540d3bdb703b8135b31e245cf39b8",
+      "candidate_sha256": "f029650fa7f130bc4a7e1a5a4f19180f2cbd7c4c06334516871516f4018b4e65",
+      "base_sha256": "f029650fa7f130bc4a7e1a5a4f19180f2cbd7c4c06334516871516f4018b4e65",
+      "disposition": "proposed_exact_overlay_not_composed",
+      "accepted_into_candidate": false
+    }
+  ],
+  "unchanged_targets": [
+    {
+      "path": "web/pages/wigoCharts.tsx",
+      "sha256": "9f01ed1e7a62bbd0f67301b77c8421c6c0fcb0d6fd1c5a38e47bb25243e1ae23",
+      "candidate_sha256": "9f01ed1e7a62bbd0f67301b77c8421c6c0fcb0d6fd1c5a38e47bb25243e1ae23",
+      "base_sha256": "9f01ed1e7a62bbd0f67301b77c8421c6c0fcb0d6fd1c5a38e47bb25243e1ae23",
+      "disposition": "already_identical_no_addition",
+      "accepted_into_candidate": false
+    },
+    {
+      "path": "web/components/WiGO/WigoDashboardSections.tsx",
+      "sha256": "f866b2f1e3a4951bf8396a159898c461f1a36cd1cf1b32f8826df0937c9914a6",
+      "candidate_sha256": "f866b2f1e3a4951bf8396a159898c461f1a36cd1cf1b32f8826df0937c9914a6",
+      "base_sha256": "f866b2f1e3a4951bf8396a159898c461f1a36cd1cf1b32f8826df0937c9914a6",
+      "disposition": "already_identical_no_addition",
+      "accepted_into_candidate": false
+    },
+    {
+      "path": "web/__tests__/pages/wigoCharts.test.tsx",
+      "sha256": "d71e1041112aeaa4b59efb4a260aa031a11c30c890b9f07155d439e8c48cc0ed",
+      "candidate_sha256": "d71e1041112aeaa4b59efb4a260aa031a11c30c890b9f07155d439e8c48cc0ed",
+      "base_sha256": "d71e1041112aeaa4b59efb4a260aa031a11c30c890b9f07155d439e8c48cc0ed",
+      "disposition": "already_identical_no_addition",
+      "accepted_into_candidate": false
+    },
+    {
+      "path": "web/components/WiGO/WigoDashboardSections.test.tsx",
+      "sha256": "e5248064f00e3c457a3b4d9deb13451a8bfeef6606de377501891747e06487dd",
+      "candidate_sha256": "e5248064f00e3c457a3b4d9deb13451a8bfeef6606de377501891747e06487dd",
+      "base_sha256": "e5248064f00e3c457a3b4d9deb13451a8bfeef6606de377501891747e06487dd",
+      "disposition": "already_identical_no_addition",
+      "accepted_into_candidate": false
+    }
+  ],
+  "unaccepted_current_only_dependencies": [
+    {
+      "path": "web/components/WiGO/WigoComparisonMatrix.tsx",
+      "current_sha256": "5e439280ad7f6ba7a5719c1452f80ef4bd4f615cbfa780abf50e7f9f464b4e68",
+      "candidate_sha256": "618b4c0aeef1fc31653200d70f1501a81f12f542c8d54031f2c4548ee9117587",
+      "base_sha256": "618b4c0aeef1fc31653200d70f1501a81f12f542c8d54031f2c4548ee9117587",
+      "disposition": "review_required_coupled_css_class_change",
+      "reason": "Candidate line463 reads styles.statsTableNote; proposed stylesheet renames/removes .statsTableNote and defines .bandNote. Canonical current file changes this one reference to bandNote. Missing owner/Chef acceptance for this extra path, or separately reviewed compatibility alternative, blocks claiming canonical-equivalent phone rendering.",
+      "accepted_for_inclusion": false
+    },
+    {
+      "path": "web/components/WiGO/ConsistencyChart.tsx",
+      "current_sha256": "ca53e6523a480ff9385c10e09d6a19860323a5249185c838c4af9d1bbfa6e809",
+      "candidate_sha256": "16c7d4d0785822eee789d657bd6f5d48dd14e8f94214547154bb2caccfa8f2ff",
+      "base_sha256": "16c7d4d0785822eee789d657bd6f5d48dd14e8f94214547154bb2caccfa8f2ff",
+      "disposition": "review_required_for_canonical_visual_equivalence",
+      "reason": "Current Cardio row is inserted after0Pts and adds consistencySubItem/arrow; candidate keeps appended row/unindented markup. Proposed main stylesheet styles that new class, but candidate never supplies it. Not a missing import/compile symbol; canonical ordering/subset presentation is not reproduced by9 alone.",
+      "accepted_for_inclusion": false
+    },
+    {
+      "path": "web/components/WiGO/PerGameStatsTable.module.scss",
+      "current_sha256": "b88545df5353205b764f08be767da12dcb585812a9d9dcdca875403ce95b6ae1",
+      "candidate_sha256": "61b279dbdf374e86aaef0e6fb4d839753d053525e3c736598e6338c813389d18",
+      "base_sha256": "61b279dbdf374e86aaef0e6fb4d839753d053525e3c736598e6338c813389d18",
+      "disposition": "review_required_for_canonical_visual_equivalence",
+      "reason": "Current numeric cells use correct Roboto Condensed family, tabular figures and zero letter-spacing; candidate retains previous family/spacing. Candidate component imports its own stylesheet; canonical geometry/font evidence is not exact evidence for candidate style bytes.",
+      "accepted_for_inclusion": false
+    },
+    {
+      "path": "web/components/WiGO/TeamPerformanceDrivers.module.scss",
+      "current_sha256": "b9aa517f5f4b29da1ef6ac98ddfb3dcdec71056f4fa5b205bbeac3e010be130d",
+      "candidate_sha256": "b188fed9441fdb0129a8c61b46f5995de8e9276d260d352fd2b0e0a82b60346e",
+      "base_sha256": "b188fed9441fdb0129a8c61b46f5995de8e9276d260d352fd2b0e0a82b60346e",
+      "disposition": "review_required_for_canonical_visual_equivalence",
+      "reason": "Current driver fonts/gaps and >=1800x1000 font/card sizing differ from candidate. Canonical large-screen acceptance uses these current bytes; no extra path acceptance inferred.",
+      "accepted_for_inclusion": false
+    },
+    {
+      "path": "web/components/WiGO/_scale.scss",
+      "current_sha256": "9ddaf1edb39da591e534295377a048031a1e95c34a80880f5c29587adaa53cd4",
+      "candidate_sha256": "0527beba75e3518f3beeaa031f356c89ecd7f3dde98e6e7a62d8e30288439c46",
+      "base_sha256": "0527beba75e3518f3beeaa031f356c89ecd7f3dde98e6e7a62d8e30288439c46",
+      "disposition": "keep_candidate_exclude_unused_additions",
+      "reason": "Current adds compare-left/compare-right only; selected styles reference neither. All selected s.$ tokens exist in candidate/base. No need to include current token additions.",
+      "accepted_for_inclusion": false
+    },
+    {
+      "path": "web/styles/vars.scss",
+      "current_sha256": "e0731cbc4b6959427f1fbc2d56be1db89fedaef6abc90cf5da9e90b90497bff0",
+      "candidate_sha256": "a9ba48f903a782517b26ffe57452892074fd4642a7e896302d574d6e151a103d",
+      "base_sha256": "a9ba48f903a782517b26ffe57452892074fd4642a7e896302d574d6e151a103d",
+      "disposition": "keep_candidate_exclude_unused_addition",
+      "reason": "Current adds text-on-primary only; selected styles reference none of it and all their v.$ tokens exist in candidate/base. No new global token required.",
+      "accepted_for_inclusion": false
+    },
+    {
+      "path": "web/components/Layout/MobileMenu/MobileMenu.module.scss",
+      "current_sha256": "2aeb7f44c482943e417bbf99ba1a495777cbaa8d4492d8406d38c4fd26629963",
+      "candidate_sha256": "aa62af2f008d4d40e1ee7b9b3d8d91178651baf5feaf55b5b7821ee9eec337a6",
+      "base_sha256": "aa62af2f008d4d40e1ee7b9b3d8d91178651baf5feaf55b5b7821ee9eec337a6",
+      "disposition": "keep_candidate_exclude_unrelated_shell_style",
+      "reason": "Current menu colors/borders/radii differ; Header loads MobileMenu, but this shell change is not required to resolve selected WiGO imports. Excluded from inclusion proposal. Exact candidate browser check must use candidate shell.",
+      "accepted_for_inclusion": false
+    }
+  ],
+  "sass_static_closure": {
+    "style_paths": [
+      "web/styles/wigoCharts.module.scss",
+      "web/components/WiGO/PlayerRatingsDisplay.module.scss"
+    ],
+    "scale_tokens_used": [
+      "accent",
+      "bad",
+      "ink",
+      "ink-muted",
+      "ink-strong",
+      "on-accent",
+      "radius-card",
+      "radius-round",
+      "radius-small",
+      "text-11",
+      "text-12",
+      "text-14",
+      "text-16",
+      "text-20",
+      "warn",
+      "weight-bold",
+      "weight-regular"
+    ],
+    "vars_tokens_used": [
+      "background-dark",
+      "background-header",
+      "background-light",
+      "background-medium",
+      "border-color",
+      "border-color-primary",
+      "border-color-secondary",
+      "border-primary",
+      "border-subtle",
+      "breakpoint-tablet",
+      "color-grey-medium",
+      "danger-color",
+      "focus-color",
+      "font-family-numbers",
+      "font-family-primary",
+      "font-size-base",
+      "page-max-width",
+      "primary-color",
+      "space-lg",
+      "space-md",
+      "space-sm",
+      "space-xs",
+      "success-color",
+      "text-primary",
+      "warning-color"
+    ],
+    "all_tokens_exist_at_candidate_and_base": true,
+    "meaning": "Static identifier check only; no Sass compile or app/browser check run"
+  },
+  "canonical_evidence": {
+    "source": "/Users/tim/Documents/Codex/2026-11-04/task-7/wigo-runtime-check/FINAL-VERIFICATION.json",
+    "sha256": "d8886e52422f0d7702fa39df3ac15bfa8f58e1b385acc42b5289c0908e33b0e2",
+    "pins_source": "tasks/artifacts/six-lanes-2026-11-04/L6/integration/matrix-width-repair/PINS.json",
+    "pins_sha256": "bf46988f42faeb02c3bd2c71f613b52a79d7d98bd199cb6f4f16d8d24b6309c5",
+    "distinct_cases_pass": 13,
+    "single_final_all13_run": false,
+    "exact_candidate_integration_tested": false,
+    "limit": "Canonical passing evidence uses current-only component/style and shell bytes beyond nine pins; no inheritance of those changes accepted here"
+  },
+  "explicit_exclusions": [
+    "Luna",
+    "Stats.module.scss",
+    "toenail changes",
+    "cron/Yahoo slices",
+    "Unreviewed current-only dependency overlays",
+    "Global shell/token changes not required by selected WiGO imports"
+  ],
+  "owner_decision_needed": "Chef/L6 must review/lease exact missing WigoComparisonMatrix class coupling and decide whether ConsistencyChart/PerGameStatsTable.module.scss/TeamPerformanceDrivers.module.scss belong in intended canonical-equivalent visual slice, or explicitly accept retained candidate behavior and test that exact smaller slice. No whole-branch inheritance.",
+  "smallest_verification_plan": [
+    "Before any checks, resolve exact extra-file scope with Chef/L6 and have Git custodian prepare only approved overlays against fefcdbced64c57691a4b61c7c6610e4c5a8a4e2d in existing candidate export; L3 must not edit export or Git state",
+    "Compile selected Sass using candidate vars/_scale, then run only PlayerRatingsDisplay.test.tsx initially; additional page/section tests only if their unchanged source/import contracts are modified",
+    "Run exact candidate synthetic full-page Playwright subset sequentially:1280x800 compact fit,1920x1080 large fit,phone comparison390px,1280x700 flow; add long-name case only if selected typography differs from accepted scope or a fit check fails",
+    "Use fixture/schema bytes pinned identical to candidate/base, block external/API traffic as fixture suite defines; isolated Next output and owned server; no live data/production/providers",
+    "If above passes and unchanged scopes/pins justify reuse, retain prior unaffected canonical13-case evidence with explicit limits; do not rerun full suite/build or claim exact integration before actual execution"
+  ],
+  "checks_performed": "Git object/current SHA comparisons for9 targets and bounded direct imports/styles/shell/config/assets/fixtures; consequential current-only hunks inspected; static Sass token and CSS-class seam checks. No tests/compile/server/Git mutation/provider/data-row/reserved-file reads."
+}

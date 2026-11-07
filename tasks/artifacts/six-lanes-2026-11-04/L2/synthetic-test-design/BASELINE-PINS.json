@@ -1,0 +1,43 @@
+{
+  "candidate": "d95331f5ae476b1ee7466dcd89f31cbdb6992326",
+  "files": [
+    {
+      "path": "web/lib/buyLowSellHigh/researchSnapshot.test.ts",
+      "canonical_sha256": "a34517a7cdb23dd91e6980bf16d40ea1751ebfce75b06895a553d4a687099c14",
+      "candidate_sha256": "a34517a7cdb23dd91e6980bf16d40ea1751ebfce75b06895a553d4a687099c14",
+      "identical": true
+    },
+    {
+      "path": "web/lib/buyLowSellHigh/displayProfile.test.ts",
+      "canonical_sha256": "7d0391a76bcbfbf19cb3876df813166dd9eef0e94c35c9fdb22afc5ac98e475a",
+      "candidate_sha256": "7d0391a76bcbfbf19cb3876df813166dd9eef0e94c35c9fdb22afc5ac98e475a",
+      "identical": true
+    },
+    {
+      "path": "web/lib/buyLowSellHigh/supportGap.test.ts",
+      "canonical_sha256": "e7a86b4afdce36aaf6dc27f7ce103f888e5aba7982ea61ac47adfd24e0f1f43a",
+      "candidate_sha256": "e7a86b4afdce36aaf6dc27f7ce103f888e5aba7982ea61ac47adfd24e0f1f43a",
+      "identical": true
+    },
+    {
+      "path": "web/lib/buyLowSellHigh/researchSnapshot.ts",
+      "canonical_sha256": "dc4cbb57a93a6e2cdae66d48b0519704c17f0a7d49451bfa546eafeb885b2cb7",
+      "candidate_sha256": "dc4cbb57a93a6e2cdae66d48b0519704c17f0a7d49451bfa546eafeb885b2cb7",
+      "identical": true
+    },
+    {
+      "path": "web/lib/buyLowSellHigh/displayProfile.ts",
+      "canonical_sha256": "6de7898a08f4ece36307b9817ce0dae33f1ee238ebf5eb52dad7f583f4d7178c",
+      "candidate_sha256": "6de7898a08f4ece36307b9817ce0dae33f1ee238ebf5eb52dad7f583f4d7178c",
+      "identical": true
+    },
+    {
+      "path": "web/lib/buyLowSellHigh/supportGap.ts",
+      "canonical_sha256": "d8b8d42a3ed7a6a66b7d7402ac62ea433c6a77702f086309fd21568ee27a5618",
+      "candidate_sha256": "d8b8d42a3ed7a6a66b7d7402ac62ea433c6a77702f086309fd21568ee27a5618",
+      "identical": true
+    }
+  ],
+  "proposed_new_path": "web/lib/buyLowSellHigh/__fixtures__/syntheticProfiles.ts",
+  "new_path_absent": true
+}

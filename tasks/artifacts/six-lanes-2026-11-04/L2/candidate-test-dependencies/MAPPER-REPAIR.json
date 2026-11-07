@@ -1,0 +1,10 @@
+{
+  "fixture_path": "web/lib/buyLowSellHigh/__fixtures__/display-profiles.jsonl",
+  "fixture_sha256": "bed954ae624b1877c67fa80c5b5615c471b408655367a5e7805f9be37c32ba33",
+  "fixture_bytes": 143457,
+  "test_path": "web/lib/buyLowSellHigh/displayProfile.test.ts",
+  "test_before_sha256": "16958f5e09adaae9a54c94bbee12ae8268a2a5fc6829325bac74e0c4cd2eae8a",
+  "test_after_sha256": "7d0391a76bcbfbf19cb3876df813166dd9eef0e94c35c9fdb22afc5ac98e475a",
+  "mapper_sha256_unchanged": "6de7898a08f4ece36307b9817ce0dae33f1ee238ebf5eb52dad7f583f4d7178c",
+  "scope": "exact opaque fixture copy and one constant only; local verification, not publication clearance"
+}
