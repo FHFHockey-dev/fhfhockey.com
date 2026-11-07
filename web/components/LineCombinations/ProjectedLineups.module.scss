@@ -1,4 +1,11 @@
 @use "styles/vars";
+@use "styles/panel";
+
+// Flat 4px accent rule; the left radius matches the rule so the inner edge stays straight (no toenail).
+@mixin accent-note($color) {
+  border-left: vars.$radius-xs solid $color;
+  border-radius: vars.$radius-xs vars.$radius-sm vars.$radius-sm vars.$radius-xs;
+}
 
 // Snapshot UI (entry lineup + updates sidebar) and the legacy projected view.
 // Colours, spacing and radii come from styles/vars; no local literals.
@@ -19,11 +26,8 @@
 // ---- Panels ----
 .entry,
 .rail {
+  @include panel.panel-shell($padding: vars.$space-md, $variant: flat, $overflow: visible);
   min-width: 0;
-  padding: vars.$space-md;
-  border: vars.$border-subtle;
-  border-radius: vars.$radius-card;
-  background: vars.$surface-1;
 }
 .entryTitle { font-size: vars.$font-size-lg; line-height: 1.3; }
 
@@ -42,11 +46,11 @@
 .group { margin-top: vars.$space-md; }
 .groupTitle {
   padding-bottom: vars.$space-xs;
-  border-bottom: 1px solid vars.$border-soft;
+  @include panel.panel-divider;
   color: vars.$primary-color;
   font-size: vars.$font-size-sm;
   font-weight: vars.$font-weight-semibold;
-  letter-spacing: 0.06em;
+  letter-spacing: vars.$mobile-letter-spacing-wide;
   text-transform: uppercase;
 }
 
@@ -60,7 +64,7 @@
   grid-template-columns: 72px minmax(0, 1fr);
   gap: vars.$space-sm;
   padding: vars.$space-sm 0;
-  border-bottom: 1px solid vars.$border-soft;
+  @include panel.panel-divider;
   &:last-child { border-bottom: 0; }
 }
 .unitLabel { color: vars.$text-secondary; font-size: vars.$font-size-sm; font-weight: vars.$font-weight-semibold; line-height: 1.5; }
@@ -91,12 +95,10 @@
 span.source { color: vars.$text-secondary; text-decoration: none; }
 .tier { margin-left: vars.$space-sm; color: vars.$text-secondary; font-size: vars.$font-size-xs; font-weight: vars.$font-weight-regular; }
 
-// Accent note: 4px flat rule, radius matched so the inner edge stays straight (no toenail).
 .notice {
+  @include accent-note(vars.$primary-color);
   margin: vars.$space-sm 0;
   padding: vars.$space-sm vars.$space-md;
-  border-left: 4px solid vars.$primary-color;
-  border-radius: 4px 6px 6px 4px;
   background: vars.$surface-2;
   font-size: vars.$font-size-sm;
   line-height: 1.5;
@@ -139,7 +141,7 @@ span.source { color: vars.$text-secondary; text-decoration: none; }
   border-radius: vars.$radius-xs;
 }
 
-.collapsible { border-bottom: 1px solid vars.$border-soft; &:last-child { border-bottom: 0; } }
+.collapsible { @include panel.panel-divider; &:last-child { border-bottom: 0; } }
 .collapsibleTitle { margin: 0; }
 .sectionToggle {
   @include vars.reset-button;
@@ -161,7 +163,7 @@ span.source { color: vars.$text-secondary; text-decoration: none; }
 .report,
 .feedItem {
   padding: vars.$space-sm 0 vars.$space-md;
-  border-bottom: 1px solid vars.$border-soft;
+  @include panel.panel-divider;
   &:last-child { border-bottom: 0; }
 }
 .claim {
@@ -226,9 +228,8 @@ span.source { color: vars.$text-secondary; text-decoration: none; }
 .stateWarn,
 .stateEmpty {
   margin: vars.$space-md 0;
+  @include accent-note(vars.$border-secondary);
   padding: vars.$space-sm vars.$space-md;
-  border-left: 4px solid vars.$border-secondary;
-  border-radius: 4px 6px 6px 4px;
   background: vars.$surface-1;
   font-size: vars.$font-size-sm;
   line-height: 1.5;
