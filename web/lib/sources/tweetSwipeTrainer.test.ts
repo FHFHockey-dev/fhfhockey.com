@@ -132,6 +132,9 @@ describe("parseTweetForTrainer", () => {
     if (result.goalies.length < 2) expect(labels).toContain("Text lists 2 goalies, 1 placed");
     // Header and team words never become names.
     expect(result.players.map((player) => player.raw)).not.toContain("Oilers");
+    // Goalies listed on one comma line read as the goalie block too (starter, backup, extra).
+    const commaList = parse(["#Oilers lines", "Hyman - McDavid - Draisaitl", "", "Nurse - Bouchard", "", "Skinner, Soup, Kulak"].join("\n"));
+    expect(commaList.goalieLines.map((line) => line.raw)).toEqual(["Skinner", "Soup", "Kulak"]);
   });
 
   it("rates full-name matches as certain", () => {

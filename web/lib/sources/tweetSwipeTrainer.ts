@@ -417,14 +417,15 @@ function listLineTokens(line: string): string[] | null {
 
 /**
  * Names a lineup lists that the parser never read: every list-line token that matches no player it saw, e.g. a
- * nickname like "UPL". Each comes back with whether it sits in the goalie block (the one-name lines after the last
- * skater line), so a goalie-scoped alias can apply to it.
+ * nickname like "UPL". Each comes back with whether it sits in the goalie block: the list lines after the last
+ * dashed skater line, one name a line ("UPL", "Ellis") or comma-separated ("Ullmark, Ersson, Johansson").
  */
 function listedNames(text: string, teams: TeamDirectoryEntry[]): { tokens: Array<{ raw: string; goalie: boolean }>; goalieTokens: string[] } {
-  const lines = text.split("\n").map(listLineTokens);
+  const rawLines = text.split("\n");
+  const lines = rawLines.map(listLineTokens);
   let lastSkaterLine = -1;
   lines.forEach((tokens, index) => {
-    if (tokens && tokens.length >= 2) lastSkaterLine = index;
+    if (tokens && tokens.length >= 2 && /[-–—/]/.test(rawLines[index]!)) lastSkaterLine = index;
   });
   const teamWords = new Set(
     teams.flatMap((team) => [team.name, team.shortName, team.location, team.abbreviation]).filter((word): word is string => Boolean(word)).map(normalizeIdentityName)
@@ -433,11 +434,12 @@ function listedNames(text: string, teams: TeamDirectoryEntry[]): { tokens: Array
   const tokens: Array<{ raw: string; goalie: boolean }> = [];
   let inGoalieBlock = lastSkaterLine >= 0;
   lines.forEach((lineTokens, index) => {
-    // The goalie block ends at the first line after it that isn't a one-name line (blank lines don't end it).
-    if (index > lastSkaterLine && !(lineTokens && lineTokens.length === 1) && text.split("\n")[index]!.trim()) inGoalieBlock = false;
+    // The goalie block ends at the first line after it that isn't a list of names (blank lines don't end it).
+    const goalieList = Boolean(lineTokens) && (lineTokens!.length === 1 || !/[-–—/]/.test(rawLines[index]!));
+    if (index > lastSkaterLine && !goalieList && rawLines[index]!.trim()) inGoalieBlock = false;
     for (const raw of lineTokens ?? []) {
       if (teamWords.has(normalizeIdentityName(raw))) continue;
-      const goalie = inGoalieBlock && index > lastSkaterLine && lineTokens!.length === 1;
+      const goalie = inGoalieBlock && index > lastSkaterLine && goalieList;
       if (goalie) goalieTokens.push(raw);
       tokens.push({ raw, goalie });
     }
@@ -600,7 +602,8 @@ export function scoreTrainerConfidence(parse: Omit<TrainerParse, "confidence">):
     if (unmatchedGoalies.length) {
       penalize(`Goalie line not matched (${unmatchedGoalies.join(", ")})`, -10 * unmatchedGoalies.length);
     }
-    if (goalieLines.length >= 2 && parse.goalies.length < 2) {
+    // Starter, backup and an extra: up to three goalie spots.
+    if (goalieLines.length >= 2 && parse.goalies.length < Math.min(goalieLines.length, 3)) {
       penalize(`Text lists ${goalieLines.length} goalies, ${parse.goalies.length} placed`, -10);
     }
   }

@@ -20,6 +20,7 @@ import {
   assignCardNameOnce,
   CONTEXT_LABELS,
   CONTEXT_ORDER,
+  offRosterNote,
   positionGroupFor,
   resolveCardName,
   SCOPE_LABELS,
@@ -32,7 +33,8 @@ import styles from "./TweetSwipeTrainer.module.scss";
 
 const FORWARD_LINES = 4;
 const DEFENSE_PAIRS = 3;
-const GOALIE_ROLES = ["Starter", "Backup"] as const;
+// Starter, backup and an extra (third) goalie when a lineup lists one.
+const GOALIE_ROLES = ["Starter", "Backup", "Extra"] as const;
 // Slots read left to right as the tweet lists them, which beat writers write as LW-C-RW and LD-RD.
 const FORWARD_SPOTS = ["LW", "C", "RW"] as const;
 const DEFENSE_SPOTS = ["LD", "RD"] as const;
@@ -126,7 +128,7 @@ function ResolveRow(props: {
         unresolvedId: refused?.unresolvedId ?? queued?.id ?? null,
         positionGroup: scoped ? scopeFor(chosen)?.group ?? null : null
       });
-      props.onResolved(props.raw, chosen, message);
+      props.onResolved(props.raw, chosen, `${message}${offRosterNote(chosen, props.card)}`);
     } catch (saveError) {
       if (saveError instanceof AliasRefusedError && saveError.canAssignOnce) {
         setRefused({ unresolvedId: saveError.unresolvedId, player: chosen, scoped });

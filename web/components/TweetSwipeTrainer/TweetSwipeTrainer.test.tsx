@@ -404,6 +404,22 @@ describe("TweetSwipeTrainer", () => {
     expect((screen.getByLabelText("Backup goalie") as HTMLInputElement).value).toBe("Soup");
   });
 
+  it("shows the full lineup skeleton and fills an empty line spot from a dropped line", async () => {
+    render(<TweetSwipeTrainer />);
+    await screen.findByText(/card 1 of 2/);
+    // 4 lines x 3, 3 pairs x 2 and three goalie spots are always there, filled or not.
+    for (const label of ["Line 1 LW", "Line 4 RW", "Pair 1 LD", "Pair 3 RD", "Starter goalie", "Backup goalie", "Extra goalie"]) {
+      expect(screen.getByRole("button", { name: `Search a player for ${label}` })).toBeTruthy();
+    }
+    fireEvent.click(screen.getAllByRole("button", { name: /^Pick Zach Hyman to place/ })[0]!);
+    fireEvent.click(screen.getByRole("button", { name: "Line 1 LW: place Zach Hyman here" }));
+    fireEvent.click(screen.getAllByRole("button", { name: /^Pick Connor McDavid to place/ })[0]!);
+    fireEvent.click(screen.getByRole("button", { name: "Line 1 C: place Connor McDavid here" }));
+    fireEvent.click(screen.getAllByRole("button", { name: /Save with placements/ })[0]!);
+    await waitFor(() => expect(posts()).toHaveLength(1));
+    expect(posts()[0]!.body.correction.forwards).toEqual([[{ playerId: 1, name: "Zach Hyman" }, { playerId: 2, name: "Connor McDavid" }]]);
+  });
+
   it("finds a player the parser never named from an empty spot's search", async () => {
     render(<TweetSwipeTrainer />);
     await screen.findByText(/card 1 of 2/);

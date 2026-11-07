@@ -1295,3 +1295,29 @@
     border-color: v.$primary-color;
   }
 }
+
+// One spot in a lineup card's skeleton: who sits there, then the spot to fill or swap into.
+.skeletonSpot {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: v.$space-xs;
+  min-width: 0;
+}
+
+// Line and pair spots share a narrow grid column, so an empty spot and its Search link fill the column on one row.
+.lineGrid .skeletonSpot {
+  width: 100%;
+  flex-wrap: nowrap;
+}
+
+.lineGrid .spotSearch {
+  flex: 1 1 auto;
+  flex-wrap: nowrap;
+  min-width: 0;
+}
+
+.lineGrid .placeSpot {
+  flex: 1 1 auto;
+  min-width: 0;
+}

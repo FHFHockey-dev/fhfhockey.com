@@ -26,6 +26,16 @@ export const CONTEXT_ORDER: TrainerContext[] = ["warmup", "game", "practice", "p
 export const SCOPE_LABELS: Record<TrainerScope, string> = { full: "Full lineup", partial: "Partial lineup", change: "Change only" };
 export const SCOPE_ORDER: TrainerScope[] = ["full", "partial", "change"];
 
+/**
+ * The parser only matches a team's tweet against that team's roster. When the chosen player isn't on it in our data
+ * (a trade or signing the nightly roster sync hasn't picked up), a saved alias can't take effect yet: say so.
+ */
+export function offRosterNote(player: TrainerPlayerOption, card: TrainerCard): string {
+  if (card.parse.teamId == null || player.team_id === card.parse.teamId) return "";
+  const team = card.parse.teamAbbreviation ?? "this team";
+  return ` Our roster data doesn't list ${player.fullName} with ${team} yet, so the card can't match the name until the nightly roster sync adds him to ${team}.`;
+}
+
 /** "vs BOS · 2026-11-06", "vs BOS", "2026-11-06" or "No game named". */
 export function gameLabel(game: TrainerGameBinding | null | undefined, teams: TrainerTeamOption[] | undefined): string {
   if (!game) return "No game named";
