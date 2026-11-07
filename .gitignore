@@ -135,3 +135,8 @@ robots.txt
 /tasks/artifacts/player-cards-evolution-2026-10-31/integration-preview.html
 /tasks/artifacts/player-cards-evolution-2026-10-31/pre-current-box-20261101/preview.html
 /tasks/artifacts/player-cards-evolution-2026-10-31/preview.html
+
+# Root output/ acceptance runs untracked 2026-11-07 (CR-REL-03; local copies kept). imagegen, navigation-mockups and player-resolution-* stay tracked.
+/output/ui-acceptance-20261002/
+/output/underlying-stats-320px-20261002/
+/output/navigation-verification/
