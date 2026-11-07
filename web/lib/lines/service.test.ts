@@ -96,7 +96,7 @@ describe("shared game/team response", () => {
       provenance: { relayTweetId: "777", originalTweetId: "800", attributionStatus: "resolved" as const } }],
   ])("no relay handle appears anywhere in the public JSON (%s)", async (_name, fields) => {
     const db = serviceDatabase();
-    const text = "RT @GameDayLines: Lightning warmup lines: Mikheyev-Point-Kucherv via @DFOFantasy https://x.com/CcCMiddleton/status/9";
+    const text = "RT @GameDayLines: Lightning warmup lines: Mikheyev-Point-Kucherv via @DFOFantasy and DFO_Fantasy https://x.com/CcCMiddleton/status/9";
     const relay = fixtureClaim("relay", { ...fields, text, relayAccount: "gamedaylines", reviewReasons: ["extraction:missing_player:GameDayGoalies"],
       decisionEvidence: { producerVersion: "t", decisionId: "d", sourceReferences: ["source:https://x.com/NHL_Rosters/status/5"], binding: [], phase: [] },
       publicationEvidence: ["relay:GameDayNewsNHL"] });

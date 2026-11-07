@@ -5,10 +5,8 @@ import type { AuthorityTier } from "./types";
  * Relay accounts (TJ sourcing rule, 2026-11-06): never a source or original author, never shown. The source is the
  * nested or quoted original; a relay post with no identified original is evidence at the lowest weight only.
  */
-export const RELAY_ACCOUNTS = ["dfofantasy", "nhl_rosters", "cccmiddleton", "gamedaylines", "gamedaynewsnhl", "gamedaygoalies"];
+export const RELAY_ACCOUNTS = ["dfofantasy", "dfo_fantasy", "nhl_rosters", "cccmiddleton", "gamedaylines", "gamedaynewsnhl", "gamedaygoalies"];
 const RELAYS = new Set(RELAY_ACCOUNTS);
-/** @deprecated FHFHockey is allowed again (2026-11-06); kept empty so existing imports still compile. */
-export const EXCLUDED_AUTHORS: string[] = [];
 /** Authors whose own posts count as evidence but never as confirmation unless they quote an original. */
 export const NO_CONFIRMATION_AUTHORS = ["fhfhockey"];
 /** Below every tier: an unattributed relay post fills a unit only when nothing better applies. */
