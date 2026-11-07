@@ -4,9 +4,11 @@ import { lineTestDatabase } from "./testDatabase";
 vi.mock("lib/sources/tweetProjectionStorage", () => ({ projectionReportFromSource: (source: any) => structuredClone(source.metadata.testReport) }));
 vi.mock("./gameState", async (load) => ({ ...await load<object>(), observeLineGame: async (game: any) => game }));
 import { decideBinding, decideContext, produceLineEvidence } from "./decisions";
-import { AUTHORITY_SEED, authorityTier, authorityWeight, RELAY_ACCOUNTS, RELAY_ONLY_WEIGHT, sourceAttribution } from "./authority";
+import { AUTHORITY_SEED, authorityTier, authorityWeight, RELAY_ACCOUNTS, RELAY_ONLY_WEIGHT, sourceAttribution, TEAM_ACCOUNTS } from "./authority";
+import clubLedger from "./fixtures/clubHandles.ledger.json";
+import { teamsInfo } from "lib/teamsInfo";
 import { readReviewedDecision } from "./trainerDecisions";
-import { detectTweetLineContext } from "lib/sources/tweetInterpretation";
+import { detectTweetLineContext, extractTweetUnitChanges, lineupChangeEvents } from "lib/sources/tweetInterpretation";
 import { processLineSnapshotEvidence } from "./processor";
 import type { LineGame } from "./types";
 
@@ -153,6 +155,43 @@ describe("decision producer through the processor", () => {
     expect(resolved.ppSwap).toMatchObject({ playersIn: [101, 102], playersOut: [103, 104] });
     expect(resolved.reviewReasons.some((reason: string) => reason.startsWith("identity:"))).toBe(false);
   });
+  const roster = players.map((player) => ({ playerId: player.id, fullName: player.fullName, lastName: player.lastName, position: "C" }));
+  const changeReport = (text: string) => ({ interpretation: { version: "test", units: [], relationships: [], unresolved: [], certainty: "reported", context: "unknown", changes: extractTweetUnitChanges(text, roster) } });
+  it("an in-game 'X in for Y' becomes an IGA swap claim with no line number and no destination for the player out", async () => {
+    const text = "Second period: Krebs in for Doan";
+    const db = database();
+    await processLineSnapshotEvidence(db, [source(text, { report: changeReport(text) })], [BUF], now);
+    const rows = db.tables.line_claim_revisions!.map((row: any) => row.payload);
+    expect(rows).toHaveLength(1);
+    const claim = rows[0]!;
+    expect(claim).toMatchObject({ kind: "iga", phase: "in_game", context: "game", unit: null, identityStatus: "resolved_at_event" });
+    // Exact shape: the players and the words, no line number, unit or destination.
+    expect(claim.relationship).toEqual({ kind: "substitution", playerIds: [102, 104], evidence: { start: 15, end: 32, text: "Krebs in for Doan" } });
+    expect(claim.lineupChange).toEqual({ kind: "in_for", playersIn: [102], playersOut: [104], source: "parser:in_for", names: { 102: "Josh Krebs", 104: "Josh Doan" } });
+    expect(claim.ppSwap).toBeUndefined();
+    expect(claim.reviewReasons).not.toContain("incomplete_replacement");
+    // Nothing is placed into a line: the entry lineup gets no unit from a swap.
+    expect(db.tables.line_entry_revisions!.every((row: any) => row.payload.units.length === 0)).toBe(true);
+  });
+  it("a pregame IN/OUT list is an entry-phase change, never an IGA, and keeps unresolved names out of the ids", async () => {
+    const text = "Lineup changes vs. BOS:\n\nIN - Josh Krebs\nOUT - Kuluch";
+    const db = database();
+    await processLineSnapshotEvidence(db, [source(text, { report: changeReport(text) })], [BUF], now);
+    const claim = db.tables.line_claim_revisions!.map((row: any) => row.payload).find((row: any) => row.lineupChange)!;
+    expect(claim.kind).not.toBe("iga"); expect(claim.unit).toBeNull();
+    expect(claim.lineupChange).toMatchObject({ kind: "lineup_in_out", playersIn: [102], playersOut: [] });
+    expect(claim.identityStatus).toBe("unresolved");
+  });
+  it("lineup changes give game-scoped participation events; PP changes give none", () => {
+    const text = "#GoHabsGo lineup changes vs. TOR on Saturday: \n\nIN - Josh Krebs\nOUT - Josh Doan (personal)";
+    const events = lineupChangeEvents(text, extractTweetUnitChanges(text, roster));
+    expect(events).toMatchObject([
+      { playerId: 102, kind: "participation", state: "observed", availability: "available", availabilityScope: "game", modality: "affirmative", evidence: { text: "IN - Josh Krebs" } },
+      { playerId: 104, kind: "participation", availability: "out", availabilityScope: "game", evidence: { text: "OUT - Josh Doan (personal)" } }]);
+    for (const event of events) expect(text.slice(event.evidence.start, event.evidence.end)).toBe(event.evidence.text);
+    expect(lineupChangeEvents("Krebs draws in tonight", extractTweetUnitChanges("Krebs draws into the lineup tonight", roster))).toHaveLength(1);
+    expect(lineupChangeEvents(SABRES, extractTweetUnitChanges(SABRES, roster))).toEqual([]);
+  });
   it("prefers Lane D's sourceProvenance and its first-sighting clock", async () => {
     const text = "PP1 tonight: Kulich Krebs McLeod Doan";
     const units = { interpretation: { version: "test", unresolved: [], certainty: "reported", context: "unknown", relationships: [],
@@ -233,5 +272,20 @@ describe("relay sourcing rule (TJ, 2026-11-06)", () => {
     const quoting = database();
     await processLineSnapshotEvidence(quoting, [post("FHFHockey", { quote: { id: "800", author: "BuffaloSabres" } })], [BUF], now);
     expect(quoting.tables.line_claim_revisions![0]!.payload.certainty).toBe("confirmed");
+  });
+});
+
+describe("club handles (ledger, checked live 2026-11-07)", () => {
+  it("has exactly one live official account per club, matching the ledger", () => {
+    const teams = clubLedger.teams as Record<string, { handle: string; screenName: string; userId: string; name: string }>;
+    expect(Object.keys(teams).sort()).toEqual(Object.keys(teamsInfo).sort());
+    expect([...TEAM_ACCOUNTS].sort()).toEqual(Object.values(teams).map((team) => team.handle).sort());
+    for (const [abbreviation, team] of Object.entries(teams)) {
+      expect(team.screenName.toLowerCase(), abbreviation).toBe(team.handle);
+      expect(team.userId, abbreviation).toMatch(/^\d+$/);
+      expect(authorityTier(team.screenName), abbreviation).toBe("team");
+    }
+    // Seed handles that were wrong: not found, or an unofficial lookalike.
+    for (const handle of ["mnwild", "nhlcanes"]) expect(authorityTier(handle)).toBe("unknown");
   });
 });

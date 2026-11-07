@@ -44,6 +44,8 @@ export type LineClaim = {
   authorityTier?: AuthorityTier; originalAuthor?: string | null; relayAccount?: string | null;
   /** A partial PP change (players in for players out). Resolved ids only; applied to a base unit in reconcile. */
   ppSwap?: { unitNumber: 1 | 2; playersIn: number[]; playersOut: number[]; source: string; names?: Record<string, string> };
+  /** A lineup change ("X in for Y", draws in/out, IN/OUT list). Players only: no line number and no destination for a displaced player. */
+  lineupChange?: { kind: "in_for" | "draws_in" | "draws_out" | "lineup_in_out"; playersIn: number[]; playersOut: number[]; source: string; names?: Record<string, string> };
 };
 export type SelectedLineUnit = { unit: TweetUnit; claims: LineClaim[]; designation: "reported" | "projected" | "confirmed" | "carried"; originGameId: number | null };
 export type LineConflict = { unitKey: string; claimIds: string[]; reason: string };

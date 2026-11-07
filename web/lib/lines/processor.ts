@@ -113,13 +113,23 @@ export async function processLineSnapshotEvidence(supabase: any, sources: Parsed
         }
       }
       // Parser PP changes (Lane D): a swap on an explicitly numbered unit, unless a reviewed key already covers it.
+      const lineupChanges = new Map<string, Omit<PPSwap, "unitNumber"> & { kind: NonNullable<LineClaim["lineupChange"]>["kind"] }>();
       if (!upstream) for (const change of report.interpretation.changes ?? []) {
-        const unitNumber = change.number;
-        if (change.kind !== "pp_replace" || change.situation !== "pp" || !change.explicitNumber || (unitNumber !== 1 && unitNumber !== 2)) continue;
-        if ([...swaps.values()].some((swap) => swap.unitNumber === unitNumber)) continue;
         const side = (name: "in" | "out", resolved: typeof change.playersIn) => [...resolved.map((player) => ({ playerId: player.playerId, name: player.name, span: player.evidence })),
           ...change.unresolved.filter((item) => item.side === name).map((item) => ({ playerId: null, name: item.text, span: { start: item.start, end: item.end, text: item.text } }))]
           .sort((a, b) => (a.span?.start ?? 0) - (b.span?.start ?? 0));
+        // Lineup changes: who is in and who is out, nothing more. The kind (IGA or entry) is the producer's phase decision.
+        if (change.situation === "lineup" && change.kind !== "pp_replace") {
+          const relationship = { kind: "substitution" as const, playerIds: [], situation: null, number: null, certainty: "reported" as const, evidence: change.evidence, reviewReason: "incomplete_replacement" as const };
+          (report.interpretation.relationships ??= []).push(relationship);
+          const key = relationshipClaimKey(relationship);
+          (context.claimEvidence ??= {})[key] = produced.decide(key, null);
+          lineupChanges.set(key, { kind: change.kind, playersIn: side("in", change.playersIn), playersOut: side("out", change.playersOut), source: `parser:${change.kind}` });
+          continue;
+        }
+        const unitNumber = change.number;
+        if (change.kind !== "pp_replace" || change.situation !== "pp" || !change.explicitNumber || (unitNumber !== 1 && unitNumber !== 2)) continue;
+        if ([...swaps.values()].some((swap) => swap.unitNumber === unitNumber)) continue;
         const relationship = { kind: "substitution" as const, playerIds: [], situation: "pp" as const, number: unitNumber, certainty: "reported" as const, evidence: change.evidence, reviewReason: "incomplete_replacement" as const };
         (report.interpretation.relationships ??= []).push(relationship);
         const key = relationshipClaimKey(relationship);
@@ -146,6 +156,22 @@ export async function processLineSnapshotEvidence(supabase: any, sources: Parsed
         if (!source.observedAt) claim.reviewReasons.push("ingestion_time_unresolved");
         if ((instant(claim.time.ingestedAt) ?? Infinity) > (instant(now) ?? -Infinity)) claim.reviewReasons.push("ingestion_not_yet_available");
         if ((instant(claim.time.interpretedAt) ?? Infinity) > (instant(now) ?? -Infinity)) claim.reviewReasons.push("interpretation_not_yet_available");
+        const lineupChange = lineupChanges.get(key);
+        if (lineupChange) {
+          const players = [...lineupChange.playersIn, ...lineupChange.playersOut];
+          const resolution = resolveEventUnit({ situation: "scratch", number: null, explicitNumber: false, complete: false, group: null,
+            players: players.map((player) => ({ playerId: player.playerId ?? 0, name: player.name })), evidence: players.map((player) => player.span ?? { start: 0, end: 0, text: player.name }) },
+          { teamId, effectiveAt: claim.time.effectiveAt, players: playerDirectory, memberships, aliases });
+          const resolved = resolution.unit.players;
+          const ids = (from: number, to: number) => resolved.slice(from, to).map((player) => player.playerId).filter((id) => id > 0);
+          const playersIn = ids(0, lineupChange.playersIn.length), playersOut = ids(lineupChange.playersIn.length, players.length);
+          claims.push({ ...claim, id: evidenceKey([claim.id, resolution, lineupChange]), identityStatus: resolution.reasons.length ? "unresolved" : "resolved_at_event", identityEvidence: resolution.evidence,
+            relationship: claim.relationship ? { ...claim.relationship, playerIds: [...playersIn, ...playersOut] } : null,
+            lineupChange: { kind: lineupChange.kind, playersIn, playersOut, source: lineupChange.source,
+              names: Object.fromEntries(resolved.filter((player) => player.playerId > 0).map((player) => [String(player.playerId), player.name])) },
+            reviewReasons: [...claim.reviewReasons.filter((reason) => reason !== "event_membership_unverified" && reason !== "incomplete_replacement"), ...resolution.reasons] });
+          continue;
+        }
         const swap = swaps.get(key);
         if (swap) {
           const players = [...swap.playersIn, ...swap.playersOut];

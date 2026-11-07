@@ -1,6 +1,6 @@
 import { extractTweetPlayerEvents, type TweetPlayerEvent } from "./tweetPlayerEvents";
 import type { PlayerSlotRole } from "./playerIdentity";
-import { identityMentionPresent, interpretTweetUnits, playerPositionRole, segmentPlayerRow, surnameMentionPresent, tweetPipelineFlags, type TweetInterpretation } from "./tweetInterpretation";
+import { identityMentionPresent, interpretTweetUnits, lineupChangeEvents, playerPositionRole, segmentPlayerRow, surnameMentionPresent, tweetPipelineFlags, type TweetInterpretation } from "./tweetInterpretation";
 import type {
   GameDayTweetsClassification,
   RosterNameEntry,
@@ -1470,7 +1470,7 @@ function buildStructuredContent(args: {
   const eventPlayers = interpretation ? (args.eventPlayers ?? args.rosterEntries).filter((player) =>
     surnameMentionPresent(args.text, player.lastName) || [player.fullName, ...(player.aliases ?? [])].some((name) => identityMentionPresent(args.text, name))) : [];
   const playerEvents = interpretation ? extractTweetPlayerEvents({ text: args.text, players: eventPlayers, publishedAt: args.publishedAt ?? null,
-    includeClaimAnchors: process.env.TWEET_CLAIMS_MODE === "shadow" }) : [];
+    includeClaimAnchors: process.env.TWEET_CLAIMS_MODE === "shadow" }).concat(lineupChangeEvents(args.text, interpretation.changes)) : [];
   const participationObservations = interpretation ? [] : extractTweetPlayerEvents({ text: args.text, players: args.rosterEntries, publishedAt: args.publishedAt ?? null })
     .filter((event) => event.kind === "participation" && event.state === "observed" && event.modality === "negated");
   let goalieStates: RowGoalieState[] | null = null;

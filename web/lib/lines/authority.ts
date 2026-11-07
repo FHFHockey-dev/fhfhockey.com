@@ -12,10 +12,13 @@ export const NO_CONFIRMATION_AUTHORS = ["fhfhockey"];
 /** Below every tier: an unattributed relay post fills a unit only when nothing better applies. */
 export const RELAY_ONLY_WEIGHT = 0.5;
 
-/** Official NHL club accounts (lowercase handles). Exact handles are worth re-checking as clubs rebrand. */
-const TEAM_ACCOUNTS = ["njdevils", "nyislanders", "nyrangers", "nhlflyers", "penguins", "nhlbruins", "buffalosabres", "canadiensmtl", "senators",
-  "mapleleafs", "canes", "nhlcanes", "flapanthers", "tblightning", "capitals", "nhlblackhawks", "detroitredwings", "predsnhl", "stlouisblues", "nhlflames",
-  "avalanche", "edmontonoilers", "canucks", "anaheimducks", "dallasstars", "lakings", "sanjosesharks", "bluejacketsnhl", "mnwild", "nhljets",
+/**
+ * Official NHL club accounts (lowercase handles), one per club, each checked live on 2026-11-07:
+ * see fixtures/clubHandles.ledger.json. Re-check the ledger when a club rebrands.
+ */
+export const TEAM_ACCOUNTS = ["njdevils", "nyislanders", "nyrangers", "nhlflyers", "penguins", "nhlbruins", "buffalosabres", "canadiensmtl", "senators",
+  "mapleleafs", "canes", "flapanthers", "tblightning", "capitals", "nhlblackhawks", "detroitredwings", "predsnhl", "stlouisblues", "nhlflames",
+  "avalanche", "edmontonoilers", "canucks", "anaheimducks", "dallasstars", "lakings", "sanjosesharks", "bluejacketsnhl", "minnesotawild", "nhljets",
   "utahmammoth", "goldenknights", "seattlekraken"];
 
 /**

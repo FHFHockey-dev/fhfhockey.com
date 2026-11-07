@@ -1706,3 +1706,36 @@ describe("goalie slots in a listed lineup (tweet 2118850118849864168)", () => {
     expect(toLinesCccRow({ source: parsed, rosterEntries: aliased })).toMatchObject({ goalie_1_player_id: 8480045, goalie_2_player_id: 8481551 });
   });
 });
+
+describe("lineup changes become player events (Owen Beck had 0 events, 2026-11-07)", () => {
+  it("parses DFO IN/OUT into game-scoped participation events and persists them to tweet_player_events", async () => {
+    vi.stubEnv("TWEET_PIPELINE_INTERPRETATION_ENABLED", "true");
+    vi.stubEnv("TWEET_PIPELINE_PUBLISHING_ENABLED", "true");
+    vi.stubEnv("TWEET_CLAIMS_MODE", "");
+    try {
+      const { persistTweetProjectionReports } = await import("./tweetProjectionStorage");
+      const teams = buildTeamDirectory([{ id: 8, name: "Montreal Canadiens", abbreviation: "MTL", logo: "/teamLogos/MTL.png" }]);
+      const rosterByTeam = new Map([[8, [{ playerId: 8484838, fullName: "Owen Beck", lastName: "Beck", position: "C", teamId: 8 },
+        { playerId: 8476981, fullName: "Josh Anderson", lastName: "Anderson", position: "R", teamId: 8 }]]]);
+      const text = "#GoHabsGo lineup changes vs. TOR on Saturday: \n\nIN - Owen Beck\nOUT - Josh Anderson (personal) https://x.com/mndamico/status/2119116982951784842";
+      const source = buildLinesCccSourceFromIftttEvent({ snapshotDate: "2026-11-07", teams, rosterByTeam, gameIdByTeamId: new Map([[8, 2026020200]]),
+        event: { id: "beck", source: "ifttt", source_account: "DFOFantasy", username: "DFOFantasy", text, tweet_id: "2119116982951784900",
+          link_to_tweet: "https://x.com/DFOFantasy/status/2119116982951784900", tweet_created_at: "2026-11-07T15:00:00Z", received_at: "2026-11-07T15:01:00Z",
+          created_at_label: null, raw_payload: { text } } });
+      const events = (source.metadata!.interpretation as any).events;
+      expect(events).toEqual(expect.arrayContaining([
+        expect.objectContaining({ playerId: 8484838, kind: "participation", availability: "available", availabilityScope: "game", evidence: expect.objectContaining({ text: "IN - Owen Beck" }) }),
+        expect.objectContaining({ playerId: 8476981, kind: "participation", availability: "out", availabilityScope: "game" }),
+      ]));
+      const rows: any[] = [];
+      const database = { from: (table: string) => ({
+        upsert: async (values: any[]) => { if (table === "tweet_player_events") rows.push(...values); return { error: null }; },
+        select: () => { const query: any = { eq: () => query, order: () => query, range: async () => ({ data: [], error: null }) }; return query; },
+      }) };
+      await persistTweetProjectionReports(database, [source]);
+      expect(rows.map((row) => [row.player_id, row.availability, row.payload.kind])).toEqual(expect.arrayContaining([
+        [8484838, "available", "participation"], [8476981, "out", "participation"]]));
+      expect(rows.every((row) => row.event_key.endsWith(":participation"))).toBe(true);
+    } finally { vi.unstubAllEnvs(); }
+  });
+});

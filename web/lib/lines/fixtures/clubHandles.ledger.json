@@ -1,0 +1,263 @@
+{
+  "checkedAt": "2026-11-07",
+  "provider": "https://api.fxtwitter.com/2/profile/<ScreenName> (case-sensitive: a lowercase handle can 404)",
+  "note": "Official NHL club X accounts, each looked up live. Replaced from the memory seed: mnwild (not found) -> minnesotawild; removed nhlcanes (unverified, 598 followers; the club is @Canes).",
+  "teams": {
+    "NJD": {
+      "handle": "njdevils",
+      "screenName": "NJDevils",
+      "userId": "40878677",
+      "name": "New Jersey Devils",
+      "verification": "organization",
+      "followers": 725268
+    },
+    "NYI": {
+      "handle": "nyislanders",
+      "screenName": "NYIslanders",
+      "userId": "16651754",
+      "name": "New York Islanders",
+      "verification": "individual",
+      "followers": 559065
+    },
+    "NYR": {
+      "handle": "nyrangers",
+      "screenName": "NYRangers",
+      "userId": "20264905",
+      "name": "New York Rangers",
+      "verification": "organization",
+      "followers": 1689762
+    },
+    "PHI": {
+      "handle": "nhlflyers",
+      "screenName": "NHLFlyers",
+      "userId": "19618527",
+      "name": "Philadelphia Flyers",
+      "verification": "organization",
+      "followers": 1415030
+    },
+    "PIT": {
+      "handle": "penguins",
+      "screenName": "penguins",
+      "userId": "15020865",
+      "name": "Pittsburgh Penguins",
+      "verification": "organization",
+      "followers": 1719935
+    },
+    "BOS": {
+      "handle": "nhlbruins",
+      "screenName": "NHLBruins",
+      "userId": "44166798",
+      "name": "Boston Bruins",
+      "verification": "organization",
+      "followers": 1535470
+    },
+    "BUF": {
+      "handle": "buffalosabres",
+      "screenName": "BuffaloSabres",
+      "userId": "22536395",
+      "name": "Buffalo Sabres",
+      "verification": "organization",
+      "followers": 871719
+    },
+    "MTL": {
+      "handle": "canadiensmtl",
+      "screenName": "CanadiensMTL",
+      "userId": "19678937",
+      "name": "Canadiens Montréal",
+      "verification": "organization",
+      "followers": 1473870
+    },
+    "OTT": {
+      "handle": "senators",
+      "screenName": "Senators",
+      "userId": "43885373",
+      "name": "Ottawa Senators",
+      "verification": "organization",
+      "followers": 566775
+    },
+    "TOR": {
+      "handle": "mapleleafs",
+      "screenName": "MapleLeafs",
+      "userId": "55594930",
+      "name": "Toronto Maple Leafs",
+      "verification": "organization",
+      "followers": 1880336
+    },
+    "CAR": {
+      "handle": "canes",
+      "screenName": "Canes",
+      "userId": "19673276",
+      "name": "Carolina Hurricanes",
+      "verification": "organization",
+      "followers": 577848
+    },
+    "FLA": {
+      "handle": "flapanthers",
+      "screenName": "FlaPanthers",
+      "userId": "29460627",
+      "name": "Florida Panthers",
+      "verification": "organization",
+      "followers": 534780
+    },
+    "TBL": {
+      "handle": "tblightning",
+      "screenName": "TBLightning",
+      "userId": "28173550",
+      "name": "Tampa Bay Lightning",
+      "verification": "organization",
+      "followers": 800214
+    },
+    "WSH": {
+      "handle": "capitals",
+      "screenName": "Capitals",
+      "userId": "14801539",
+      "name": "Washington Capitals",
+      "verification": "organization",
+      "followers": 742233
+    },
+    "CHI": {
+      "handle": "nhlblackhawks",
+      "screenName": "NHLBlackhawks",
+      "userId": "14498484",
+      "name": "Chicago Blackhawks",
+      "verification": "organization",
+      "followers": 2195068
+    },
+    "DET": {
+      "handle": "detroitredwings",
+      "screenName": "DetroitRedWings",
+      "userId": "16826656",
+      "name": "Detroit Red Wings",
+      "verification": "organization",
+      "followers": 1173555
+    },
+    "NSH": {
+      "handle": "predsnhl",
+      "screenName": "PredsNHL",
+      "userId": "29264626",
+      "name": "Nashville Predators",
+      "verification": "organization",
+      "followers": 608440
+    },
+    "STL": {
+      "handle": "stlouisblues",
+      "screenName": "StLouisBlues",
+      "userId": "22976125",
+      "name": "St. Louis Blues",
+      "verification": "organization",
+      "followers": 796504
+    },
+    "CGY": {
+      "handle": "nhlflames",
+      "screenName": "NHLFlames",
+      "userId": "27487343",
+      "name": "Calgary Flames",
+      "verification": "organization",
+      "followers": 641805
+    },
+    "COL": {
+      "handle": "avalanche",
+      "screenName": "Avalanche",
+      "userId": "26577824",
+      "name": "Colorado Avalanche",
+      "verification": "organization",
+      "followers": 686560
+    },
+    "EDM": {
+      "handle": "edmontonoilers",
+      "screenName": "EdmontonOilers",
+      "userId": "15361389",
+      "name": "Edmonton Oilers",
+      "verification": "individual",
+      "followers": 948394
+    },
+    "VAN": {
+      "handle": "canucks",
+      "screenName": "Canucks",
+      "userId": "17093604",
+      "name": "Vancouver Canucks",
+      "verification": "individual",
+      "followers": 1023191
+    },
+    "ANA": {
+      "handle": "anaheimducks",
+      "screenName": "AnaheimDucks",
+      "userId": "19835035",
+      "name": "Anaheim Ducks",
+      "verification": "individual",
+      "followers": 575857
+    },
+    "DAL": {
+      "handle": "dallasstars",
+      "screenName": "DallasStars",
+      "userId": "29304837",
+      "name": "Dallas Stars",
+      "verification": "organization",
+      "followers": 1050754
+    },
+    "LAK": {
+      "handle": "lakings",
+      "screenName": "LAKings",
+      "userId": "19013887",
+      "name": "LA Kings",
+      "verification": "organization",
+      "followers": 1002770
+    },
+    "SJS": {
+      "handle": "sanjosesharks",
+      "screenName": "SanJoseSharks",
+      "userId": "27961547",
+      "name": "San Jose Sharks",
+      "verification": "organization",
+      "followers": 778307
+    },
+    "CBJ": {
+      "handle": "bluejacketsnhl",
+      "screenName": "BlueJacketsNHL",
+      "userId": "23783692",
+      "name": "Columbus Blue Jackets",
+      "verification": "organization",
+      "followers": 491010
+    },
+    "MIN": {
+      "handle": "minnesotawild",
+      "screenName": "minnesotawild",
+      "userId": "17374906",
+      "name": "Minnesota Wild",
+      "verification": "organization",
+      "followers": 718789
+    },
+    "WPG": {
+      "handle": "nhljets",
+      "screenName": "NHLJets",
+      "userId": "308556440",
+      "name": "Winnipeg Jets",
+      "verification": "individual",
+      "followers": 554642
+    },
+    "UTA": {
+      "handle": "utahmammoth",
+      "screenName": "utahmammoth",
+      "userId": "1778101138421850112",
+      "name": "Utah Mammoth",
+      "verification": "individual",
+      "followers": 68586
+    },
+    "VGK": {
+      "handle": "goldenknights",
+      "screenName": "GoldenKnights",
+      "userId": "743155992997691392",
+      "name": "Vegas Golden Knights",
+      "verification": "organization",
+      "followers": 556656
+    },
+    "SEA": {
+      "handle": "seattlekraken",
+      "screenName": "SeattleKraken",
+      "userId": "960923246341234688",
+      "name": "Seattle Kraken",
+      "verification": "organization",
+      "followers": 380475
+    }
+  }
+}

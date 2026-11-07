@@ -217,8 +217,9 @@ export async function persistTweetProjectionReports(supabase: any, sources: Pars
   })), { onConflict: "report_key", ignoreDuplicates: true });
   if (error) throw error;
   const events = reports.flatMap((report) => report.publishedAt ? (report.interpretation.events ?? [])
-    .filter((event) => event.kind === "injury").map((event) => ({
-      event_key: `${report.key}:${event.playerId}:${event.evidence.start}`, player_id: event.playerId,
+    // Lineup in/out participation is game-scoped, so the injury prior-status read above never sees it.
+    .filter((event) => event.kind === "injury" || event.kind === "participation" && event.availabilityScope === "game").map((event) => ({
+      event_key: `${report.key}:${event.playerId}:${event.evidence.start}${event.kind === "injury" ? "" : `:${event.kind}`}`, player_id: event.playerId,
       published_at: report.publishedAt, availability: event.availability, payload: event,
     })) : []);
   if (events.length) {
