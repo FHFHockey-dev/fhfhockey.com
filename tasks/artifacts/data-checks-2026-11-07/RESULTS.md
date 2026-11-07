@@ -126,3 +126,74 @@ All ten tables stopped at 11-03, except `5v5_counts`, which reached 11-04. There
 On 11-06, one goalie has no PP row. The PP tables usually run lower, because a goalie who faced no power play gets no row. The table the card reads, `all_counts`, is complete.
 
 No rows dated 11-07 were written. All 30 combinations are present, and no table/date is missing.
+
+## 7. Power-play data gaps (diagnosis only, 2026-11-07)
+
+This is a read-only diagnosis that TJ approved by pop-up. I made no code or data changes. The queries are Q17–Q23 in the diary.
+
+### Gap 1: `forge_player_game_strength` PP goals and assists are inflated. FORGE is wrong; NHL is right.
+
+**Evidence.** For McDavid and Draisaitl in EDM games 2026020133–2026020260, `skatersGameStats` (the NHL boxscore plus landing data) agrees with `wgo_skater_stats` on every game. The forge table differs in only three games, and the PBP goal events explain each one:
+
+| Game | Event | `situationCode` | What forge did | What NHL does |
+|---|---|---|---|---|
+| 163 | McDavid goal, P3 18:32 | `1560` (EDM at home with the goalie pulled, 6v5) | Counted a PP goal | Counts an even-strength goal |
+| 239 | McDavid shootout goal, period 5 | `0101` | Counted a PP goal | Doesn't count it as a goal at all; the boxscore shows 0 goals |
+| 260 | Draisaitl goal with a McDavid assist, P3 19:15 | `1560` | Counted a PP goal and a PP assist | Counts both at even strength |
+
+**Root cause.** In `web/lib/projections/derived/situation.ts`, `strengthForTeam` returns `"pp"` whenever a team has more skaters than its opponent. It ignores the goalie digits, so:
+
+- An extra attacker with the goalie pulled (6v5, or 5v4 at 4-on-4 with the goalie pulled) counts as a power play.
+- Shootout attempts, recorded as 1v0, count as power-play goals and shots.
+
+`web/lib/projections/derived/buildStrengthTablesV2.ts` (`preparePlayerGameStrengthV2`, around lines 264–298) applies that result to shots, goals and both assists. The writer route is `/api/v1/db/build-projection-derived-v2`, stage `projection_derived_build` of the rolling FORGE pipeline. It also feeds `forge_team_game_strength`.
+
+**Scope.** Every team and every season in the table, since the start (the 2025-26 rows from 2025-10-01 onward).
+
+| Season | Forge PPG | NHL PPG | Forge PPA | NHL PPA | Player-games that differ |
+|---|---|---|---|---|---|
+| 2025-26 | 985 | 789 | 1,689 | 1,520 | 359 |
+| 2026-27 (to 11-05) | 448 | 368 | 782 | 705 | 157 |
+
+The 2026-27 regular-season PBP shows exactly where the extra goals come from. Forge's rule labels 450 goals as PP:
+
+- 37 are shootout goals.
+- 46 are extra-attacker goals.
+- **367** remain. That matches NHL's 368.
+
+Preseason adds 20 extra-attacker goals out of 83.
+
+**Fix outline (not done).**
+1. Skip shootout periods for regular-season games (period ≥ 5, game type 02).
+2. Take the goalie digit into account. One approach: compare skaters minus pulled goalies on each side, so a 6v5 with your own goalie pulled counts as ES. The other is to classify a pulled goalie as ES, or as its own empty-net bucket.
+3. Rebuild the derived tables.
+
+PP TOI (`toi_pp_seconds`) comes from `shift_charts.total_pp_toi`, a separate builder, so this bug doesn't touch it.
+
+**Readers affected:**
+- FORGE player and team projections (PP scoring rates)
+- `/splits` (`lib/splits/splitsServer.ts`)
+- `PowerPlayCombos`
+- the Lines superstyle PPP figures
+
+**Owner:** the FORGE derived builder. Scout keeps the FORGE release, so this needs routing.
+
+### Gap 2: `skatersGameStats.powerPlayToi` is always "00:00". It is a placeholder, and the NHL source has no PP TOI.
+
+**Root cause.** `web/pages/api/v1/db/update-stats/[gameId].ts:671-672` hardcodes `powerPlayToi: "00:00"` and `shorthandedToi: "00:00"` under the comment "Defaults for stats needing other data sources", and `faceoffs` is hardcoded to `"0/0"` the same way. This dates from commit 2b260940f (2025-04-08). The NHL boxscore skater payload stored in `nhl_api_game_payloads_raw` has no PP or SH TOI field. Its keys are assists, blockedShots, faceoffWinningPctg, giveaways, goals, hits, name, pim, playerId, plusMinus, points, position, powerPlayGoals, shifts, sog, sweaterNumber, takeaways and toi. Team PP TOI is scraped from HTML separately (around line 486).
+
+**Scope.**
+- Every row from 2015-16 through 2026-27 is `"00:00"`, apart from 2022-23 (35% zero) and 2023-24 (53% zero), which an older writer filled in partly.
+- 11,844 rows so far this season, all `"00:00"`.
+- `faceoffs` is `"0/0"` on the same rows.
+
+**Readers affected:** `/api/toi` → `components/TimeOnIceChart`, whose PP TOI share is always 0. `percentile-rank` imports only `getInterval` from that route.
+
+**Fix outline (not done).** Get player-game PP TOI from a source that has it:
+- `powerPlayCombinations.PPTOI`, which now matches NHL.com after today's rerun;
+- `wgo_skater_stats.pp_toi`;
+- or `forge_player_game_strength.toi_pp_seconds`.
+
+That can happen in the update-stats writer, or `/api/toi` can read one of these directly. Otherwise, mark the columns as not populated.
+
+**Owner:** the game-stats ingestion route `update-stats/[gameId].ts` plus the `/api/toi` reader. Ownership is not settled.

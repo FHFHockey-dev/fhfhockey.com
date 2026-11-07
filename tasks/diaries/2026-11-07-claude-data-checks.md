@@ -136,3 +136,26 @@ Q16 coverage: count(*), count(distinct player_id) for season 20262027 in candida
   per-60 from rates view (league min 1 h TOI; hdcf_per_60 → ihdcf_per_60), hdca_per_60 = hdca*3600/toi_seconds_oi.
   Position filter via WGO player_id/position_code. Errors/missing → unranked ("No comparison data").
 - Next: wire into PlayerRadarChart.tsx once toenail lane (local_a6ce3579) commits it.
+
+## Ticket (Chef, 11-07): PP data gaps diagnosis (read-only)
+- forge_player_game_strength writer: build-projection-derived-v2 → lib/projections/derived/buildStrengthTablesV2.ts;
+  goal strength = situation.ts strengthForTeam (skater count only; pulled goalie 6v5 → "pp" — hypothesis).
+Q17 skatersGameStats columns (information_schema).
+Q18 McDavid/Draisaitl per game 2026020133..2026020260: forge goals_pp/assists_pp vs skatersGameStats PP fields.
+Q19 pbp_plays goals in those games where McDavid scored/assisted: situationcode, eventownerteamid, home/away.
+- Q18: skatersGameStats == WGO on every McDavid/Draisaitl row; forge differs in 163, 239, 260. powerPlayToi "00:00" on all.
+- Q19: diffs = goals at situationcode 1560 (home goalie pulled, 6v5 → "pp") and shootout goal period 5 "0101".
+Q20 league-wide 2026-27: forge sum(goals_pp), sum(assists_pp) vs skatersGameStats sum(powerPlayGoals),
+    sum(powerPlayPoints - powerPlayGoals) per season since the table starts; count of mismatched player-games.
+Q21 pbp goals 2026-27 with a pulled goalie (digit 0) or period>=5, by category.
+Q22 skatersGameStats powerPlayToi distribution ('00:00' share) by season, and shorthandedToi.
+- Q20: forge vs skatersGameStats PPG 2025 prefix 985 vs 789, 2026 prefix 448 vs 368 (incl. preseason rows).
+- Q21: 2026-27 regular PBP goals by forge rule: 450 "pp" = 37 shootout + 46 extra-attacker + 367 true (NHL 368).
+  Preseason: 83 = 20 extra-attacker + 63 true.
+- Gap 2 writer: pages/api/v1/db/update-stats/[gameId].ts:671-672 hardcodes powerPlayToi/shorthandedToi "00:00"
+  (since 2b260940f, 2025-04-08); team PP TOI is scraped from HTML separately (:486).
+Q23 `select endpoint/kind columns of nhl_api_game_payloads_raw` + for one 2026 game the jsonb_object_keys of the
+    first boxscore skater (keys only, no values).
+- Q23: boxscore skater keys have no PP/SH TOI. skatersGameStats powerPlayToi "00:00" on 100% of rows every season
+  except 2022 (35%) / 2023 (53%); faceoffs "0/0" likewise. Reader: /api/toi → TimeOnIceChart.
+- RESULTS.md §7 written. Diagnosis done; no code/data changes.
