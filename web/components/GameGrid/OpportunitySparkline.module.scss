@@ -118,7 +118,7 @@ $matchup-colors: (
   border: 1px solid rgba(v.$color-white, 0.12);
   border-radius: v.$border-radius-md;
   background: gg.$panel;
-  box-shadow: 0 14px 28px rgba(v.$color-black, 0.4), 0 0 18px rgba(v.$primary-color, 0.12);
+  box-shadow: 0 14px 28px rgba(v.$color-black, 0.4);
   color: v.$text-primary;
   font-family: v.$font-family-primary, sans-serif;
   font-size: 0.72rem;

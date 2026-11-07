@@ -197,12 +197,7 @@
   display: none;
 }
 
-.bottomDrawerBadge {
-  font-family: v.$font-family-accent, v.$font-family-primary, sans-serif;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  font-weight: 600;
-  margin-right: v.$space-sm;
+.bottomDrawerInitial {
   color: v.$secondary-color;
 }
 
@@ -214,38 +209,14 @@
     right: 0;
     bottom: 0;
     height: 64px;
-    background: linear-gradient(
-      180deg,
-      rgba(v.$secondary-color, 0.16),
-      rgba(v.$color-black, 0.92) 55%
-    );
-    border-top: 1px solid rgba(v.$secondary-color, 0.4);
-    box-shadow:
-      0 -18px 40px rgba(v.$color-black, 0.6),
-      0 -2px 22px rgba(v.$secondary-color, 0.22);
+    // Flat chrome (was a cyan-to-black wash with a cyan glow and a gradient "neon rail");
+    // the handle row carries the blue.
+    background: v.$chrome-bg;
+    border-top: 2px solid rgba(v.$secondary-color, 0.55);
+    box-shadow: 0 -18px 40px rgba(v.$color-black, 0.6);
     z-index: 60;
-    backdrop-filter: blur(10px);
     overflow: hidden;
     transition: height v.$transition-duration v.$ease-desktop-standard;
-
-    // neon rail across the top edge
-    &::before {
-      content: "";
-      position: absolute;
-      left: 0;
-      right: 0;
-      top: 0;
-      height: 2px;
-      background: linear-gradient(
-        90deg,
-        rgba(v.$primary-color, 0),
-        rgba(v.$primary-color, 0.85),
-        rgba(v.$secondary-color, 0.85),
-        rgba(v.$secondary-color, 0)
-      );
-      box-shadow: 0 0 18px rgba(v.$secondary-color, 0.3);
-      pointer-events: none;
-    }
   }
 
   .bottomDrawerOpen {
@@ -262,28 +233,13 @@
     padding: 0 v.$space-lg;
     border: 0;
     border-top: 0;
-    background: linear-gradient(
-      135deg,
-      rgba(v.$color-white, 0.06),
-      rgba(v.$color-white, 0.02)
-    );
+    background: v.$chrome-active-mobile;
     color: v.$text-color-primary;
     cursor: pointer;
-    transition:
-      transform 0.15s v.$ease-desktop-emphasized,
-      box-shadow 0.15s v.$ease-desktop-emphasized,
-      background 0.15s v.$ease-desktop-emphasized;
+    transition: background-color 0.15s v.$ease-desktop-emphasized;
 
     &:hover {
-      box-shadow:
-        0 0 0 1px rgba(v.$secondary-color, 0.22) inset,
-        0 12px 30px rgba(v.$color-black, 0.35),
-        0 0 22px rgba(v.$secondary-color, 0.18);
-      background: linear-gradient(
-        135deg,
-        rgba(v.$secondary-color, 0.14),
-        rgba(v.$color-white, 0.03)
-      );
+      background: color.mix(v.$secondary-color, v.$chrome-active-mobile, 12%);
     }
 
     &:focus-visible {
@@ -293,6 +249,7 @@
   }
 
   .bottomDrawerTitle {
+    color: v.$color-white;
     font-family: v.$font-family-accent, v.$font-family-primary, sans-serif;
     text-transform: uppercase;
     letter-spacing: 0.08em;
@@ -593,13 +550,18 @@
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    border-radius: v.$border-radius-sm;
-    transition: all 0.2s ease;
+    // Nested radius: 8px inner + 4px .dateNav padding = its 12px outer radius.
+    border-radius: v.$border-radius-md;
+    background-image: none;
+    transition: background-color 0.15s ease, color 0.15s ease;
+
+    // Hover is a flat blue step: no glow, no gradient overlay from the shared button block.
+    &::before { display: none; }
 
     &:hover:not(:disabled) {
       color: v.$color-white;
       background-color: rgba(v.$primary-color, 0.3);
-      box-shadow: 0 8px 16px rgba(v.$primary-color, 0.22);
+      box-shadow: none;
     }
 
     &:disabled {
@@ -689,9 +651,6 @@
   text-align: left;
   margin: 0;
   width: 100%;
-  text-shadow:
-    0 0 12px rgba(v.$primary-color, 0.15),
-    0 0 24px rgba(v.$secondary-color, 0.08);
 }
 
 // --- New header enhancements ---
@@ -728,7 +687,6 @@
   width: auto;
   max-width: 28rem;
   line-height: 1.45;
-  filter: drop-shadow(0 0 4px rgba(v.$color-white, 0.4));
 
   .noWrap {
     white-space: nowrap;
@@ -772,6 +730,12 @@
     color: v.$surface-1 !important;
 
     .weekScoreHelpIcon { color: v.$surface-1 !important; }
+  }
+
+  // PREV / NEXT hover onto a dark blue fill, where the dark ink above drops to ~2:1; white is ~9:1.
+  .dateNav .dateButtonPrev:hover:not(:disabled),
+  .dateNav .dateButtonNext:hover:not(:disabled) {
+    color: v.$color-white !important;
   }
 
   @media (max-width: 1100px) {
@@ -960,7 +924,7 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
   border-radius: v.$border-radius-sm;
-  transition: all 0.2s ease;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 
   &:hover {
     color: v.$primary-color;
@@ -982,6 +946,13 @@
 // .modeButton:not(.modeButtonActive):focus-visible {
 //   // keep (covered by .modeButton hover above)
 // }
+
+// Nested radius: 8px inner + 4px toggle padding = the 12px outer radius (the WEEK SCORE pill,
+// which extends .modeButtonActive outside the toggle, keeps its own corner).
+.modeToggle .modeButton,
+.modeToggle .modeButtonActive {
+  border-radius: v.$border-radius-md;
+}
 
 .weekRange {
   display: inline-flex;
@@ -1249,6 +1220,7 @@
 
 .weekScoreHelpPill {
   @extend .modeButtonActive;
+  border-radius: v.$border-radius-md; // matches the 8px buttons in the 7 / 10-day toggle beside it
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -2615,15 +2587,18 @@
   height: 40px;
   padding: 0 v.$space-lg;
   border-radius: v.$border-radius-md;
-  background: linear-gradient(to right, v.$primary-color, v.$secondary-color);
-  color: v.$color-white;
-  border: 1px solid rgba(v.$primary-color, 0.45);
+  // Flat primary with dark ink (white on this blue is 2.7-2.9:1), like the drawer buttons.
+  background: v.$primary-color;
+  color: v.$text-on-primary;
+  font-family: v.$font-family-condensed, sans-serif;
+  font-weight: 700;
+  border: 1px solid v.$primary-color;
   text-transform: uppercase;
   letter-spacing: 0.08em;
+  transition: background-color 0.15s ease;
 
   &:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 8px 16px rgba(v.$primary-color, 0.22);
+    background: color.adjust(v.$primary-color, $lightness: 6%);
   }
 }
 
@@ -2648,9 +2623,6 @@
   overflow-wrap: anywhere;
   text-align: center;
   color: gg.$summary-ink;
-  text-shadow:
-    0 0 10px rgba(v.$secondary-color, 0.18),
-    0 1px 2px rgba(v.$color-black, 0.45);
 
   @media (max-width: v.$breakpoint-mobile-max) {
     font-size: 0.66rem;

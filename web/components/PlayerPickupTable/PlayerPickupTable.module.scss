@@ -762,36 +762,18 @@ $selected-border-width: 2px; // The width of the indicator
     color: v.$text-secondary;
     border: 1px solid rgba(v.$color-white, 0.15);
     backdrop-filter: blur(12px);
-    transition: all v.$transition-duration v.$transition-easing;
+    transition:
+      background-color v.$transition-duration v.$transition-easing,
+      color v.$transition-duration v.$transition-easing,
+      border-color v.$transition-duration v.$transition-easing;
     position: relative;
     overflow: hidden;
 
-    &::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(
-        135deg,
-        rgba(v.$secondary-color, 0.1),
-        rgba(v.$primary-color, 0.05)
-      );
-      opacity: 0;
-      transition: opacity v.$transition-duration v.$transition-easing;
-    }
+    // Hover is a flat lighter surface and a cyan edge: no glow, no gradient overlay.
     &:hover:not(:disabled) {
-      background: linear-gradient(
-        135deg,
-        rgba(v.$color-white, 0.12),
-        rgba(v.$color-white, 0.08)
-      );
+      background: rgba(v.$color-white, 0.1);
       color: v.$text-color-primary;
       border-color: rgba(v.$secondary-color, 0.3);
-      box-shadow:
-        0 10px 15px rgba(v.$color-black, 0.1),
-        0 0 20px rgba(v.$secondary-color, 0.2);
-      &::before {
-        opacity: 1;
-      }
     }
     &:active:not(:disabled) {
       transform: translateY(0);

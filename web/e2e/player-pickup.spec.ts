@@ -25,9 +25,9 @@ test("candidate drawer preserves readable provider positions and honest availabi
     await page.setViewportSize({ width, height });
     await page.goto("/game-grid/7-Day-Forecast?startDate=2026-10-01&endDate=2026-10-07");
     await expect(page.getByRole("heading", { name: "Game Grid", exact: true })).toBeVisible();
-    const drawer = page.getByRole("region", { name: "Player candidates", exact: true });
+    const drawer = page.getByRole("region", { name: "Best Players Available", exact: true });
     if (await drawer.isVisible()) {
-      const handle = drawer.getByRole("button", { name: /Player Candidates/ });
+      const handle = drawer.getByRole("button", { name: /^Best Players Available/ });
       if (await handle.getAttribute("aria-expanded") === "false") await handle.click();
     }
     await expect(page.getByRole("heading", { name: "Best Players Available", exact: true }).first()).toBeVisible();
@@ -113,8 +113,8 @@ for (const width of [1180, 390]) {
       : route.fulfill({ json: { data: { leagueName: "Fixture League", teamName: "Fixture Team", gameKey: "477", season: 2026,
         fetchedAt: "2026-10-01T12:00:00Z", rosteredPlayerKeys: ["477.p.1"], roster: [{ key: "477.p.1", name: "Rostered Fixture", position: "C" }] } } }));
     await page.goto("/game-grid/7-Day-Forecast?startDate=2026-10-01&endDate=2026-10-07");
-    const drawer = page.getByRole("region", { name: "Player candidates", exact: true });
-    const handle = await drawer.isVisible() ? drawer.getByRole("button", { name: /Player Candidates/ })
+    const drawer = page.getByRole("region", { name: "Best Players Available", exact: true });
+    const handle = await drawer.isVisible() ? drawer.getByRole("button", { name: /^Best Players Available/ })
       : page.getByRole("button", { name: "Best Players Available", exact: true });
     if (await handle.getAttribute("aria-expanded") === "false") await handle.click();
     await expect(page.getByText(/Fixture League · Fixture Team · Synced/)).toBeVisible();

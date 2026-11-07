@@ -24,3 +24,10 @@
 | /game-grid | WEEK SCORE popover (GameGrid.tsx) | ~~Raw formula and internal notes.~~ Plain three-paragraph explanation; dialog "How Week Score works" | Done | 4 |
 | /game-grid | ATK/DEF meter tooltips (RatingMeter.tsx) | ~~"Opp defense · 97th pct (xGA/GP, inverted)".~~ Spelled out | Done | 4 |
 | /game-grid | Info panel (DesktopMasterTable.tsx) | ~~Nine formula paragraphs, ISO dates.~~ Phone panels' plain wording; unused constants removed | Done | 4 |
+| /game-grid | drawer bar (.bottomDrawer*, GameGrid.tsx) | ~~Cyan wash, glows, gradient neon rail; "POOL \| Player Candidates".~~ Flat blue handle, neutral body; "Best Players Available" (B, P, A blue; TJ edit); e2e selectors updated | Done | 5 |
+| /game-grid | title / subtitle / WEEK badge glows | ~~Text-shadow and drop-shadow glows.~~ Removed (matches mobile) | Done | 5 |
+| /game-grid | ATK/DEF meter fills (RatingMeter.module.scss) | ~~6px neon glow ×64.~~ Removed (also 390) | Done | 5 |
+| /game-grid | hover states (week nav, 7/10, presets, sparkline card, date-range submit) | ~~Coloured glows, gradient overlays, transition:all.~~ Flat colour steps; submit flat primary + dark ink | Done | 5 |
+| /game-grid | nested radii (week nav, 7/10 toggle, WEEK SCORE) | ~~4px buttons in 12px/4px-padded pills.~~ 8px (TJ edit); rule added to /superstyle skill | Done | 5 |
+| /game-grid | PREV/NEXT hover ink | ~~Near-black on dark blue hover, 1.7:1.~~ White 9.8:1 | Done | 5 |
+| /game-grid e2e | web/e2e/player-pickup.spec.ts | Pre-existing failures: line 37 expects "Availability in your league…" (signed-out copy changed by d3e76b3a0), connected-pool test fails on premium-auth fixture (line 120). Not fixed here; for Chef. | Other lane / follow-up | 5 |

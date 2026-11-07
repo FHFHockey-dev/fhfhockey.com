@@ -1549,7 +1549,7 @@ function GameGridInternal({
         ]
           .filter(Boolean)
           .join(" ")}
-        aria-label="Player candidates"
+        aria-label="Best Players Available"
       >
         <button
           type="button"
@@ -1558,11 +1558,11 @@ function GameGridInternal({
           aria-expanded={isBottomDrawerOpen}
           aria-controls="gg-bottom-drawer-content"
         >
+          {/* B, P and A in blue (BPA is standard fantasy shorthand), the rest white */}
           <span className={styles.bottomDrawerTitle}>
-            <span className={styles.bottomDrawerBadge} aria-hidden="true">
-              POOL |
-            </span>
-            Player Candidates
+            <span className={styles.bottomDrawerInitial}>B</span>est{" "}
+            <span className={styles.bottomDrawerInitial}>P</span>layers{" "}
+            <span className={styles.bottomDrawerInitial}>A</span>vailable
           </span>
           <span className={styles.bottomDrawerHint}>
             {isBottomDrawerOpen ? "Close" : "Open"}
