@@ -124,6 +124,14 @@ describe("shared contribution resolver", () => {
     expect(resolved.allowedUses.totals).toBe(true);
   });
 
+  it("RSO research E: weights conditional five by .8 once and preserves unconditional four", () => {
+    const participation = { ...participationIdentity, basis: "appearance" as const, probability: 0.8,
+      revisionId: "participation-1", cutoffAt: "2026-09-29T00:00:00Z", expiresAt: "2026-10-09T00:00:00Z" };
+    const args = { game, targetKey: "GOALS", now: "2026-10-01T00:00:00Z", participation };
+    expect(resolveContribution({ ...args, detailed: { ...source, mean: 5 } }).unconditionalMean).toBe(4);
+    expect(resolveContribution({ ...args, detailed: { ...source, mean: 4, basis: "unconditional_game", participationIntegrated: true } }).unconditionalMean).toBe(4);
+  });
+
   it("rejects ambiguous legacy adjustments and unreleased, stale or mismatched sources", () => {
     const now = "2026-10-01T00:00:00Z";
     for (const changed of [

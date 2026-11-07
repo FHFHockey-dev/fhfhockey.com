@@ -333,6 +333,17 @@ export function assertComponent(value: Component<number>, probability = false): 
   } else if (!Number.isFinite(value.value) || value.value < 0 || (probability && value.value > 1)) throw new Error("Invalid component value");
 }
 
+/** Observed labels have integer support; forecast expectations may be fractional. */
+export function assertObservedCounts(values: CategoryMeans): void {
+  for (const category of CATEGORIES) {
+    const value = values?.[category];
+    assertComponent(value);
+    if (value.state === "available" && !Number.isSafeInteger(value.value)) throw new Error("Invalid count outcome");
+  }
+  const { G, A, PPP } = values;
+  if (G.state === "available" && A.state === "available" && PPP.state === "available" && PPP.value > G.value + A.value) throw new Error("PPP exceeds G+A");
+}
+
 export function assertSource(source: SourceReference, cutoffAt?: Instant): void {
   if (!source || !source.id || !source.revision || !source.source || !/^[a-f0-9]{64}$/.test(source.sha256)) throw new Error("Incomplete source reference");
   const received = instant(source.firstReceivedAt);

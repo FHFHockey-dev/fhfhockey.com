@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { evaluateRetainedLedger } from "../../scripts/forge-ledger-evaluate";
 import type { GameForecast } from "lib/rosterScheduleOptimizer/planningTypes";
 import { devigTwoWayAmerican, devigYesOnly } from "lib/projections/utils/devig";
 import { getModelLineProbabilities } from "lib/projections/utils/market-output-builders";
@@ -36,6 +37,63 @@ const input = (): BuildLedgerInput => ({
   teamWin: new Map([["100:1", 0.6]]),
 });
 const find = (rows: LedgerRow[], player: number, source: string) => rows.find(row => row.player_id === player && row.source === source);
+
+describe("read-only retained ledger adapter", () => {
+  const retained = () => buildLedgerRows(input()).rows.map(row => ({ ...row, created_at: NOW.toISOString() }));
+  it("preserves unknown population rows and refuses invented H10/H20 trajectories", () => {
+    const rows = retained(), report = evaluateRetainedLedger(rows, "2026-10-22T12:00:00Z");
+    expect(report.population.acceptedRows).toBe(rows.length);
+    expect(report.population.bySource.reduce((sum, row) => sum + row.unknownAppearance, 0)).toBe(rows.length);
+    expect(report.population.independentEligiblePopulation).toBeNull();
+    expect(report.horizons.slice(1)).toEqual([10, 20].map(horizon => ({ horizon, status: "unavailable", reason: "no_frozen_cumulative_window_in_served_ledger" })));
+    expect(rows.every(row => row.dressed === null)).toBe(true);
+  });
+  it("excludes future canaries and postgame captures with explicit reasons", () => {
+    const rows = retained();
+    rows[0].cutoff_at = "2026-10-22T00:00:00Z";
+    rows[1].created_at = "2026-10-22T00:00:00Z";
+    const report = evaluateRetainedLedger(rows, "2026-10-23T00:00:00Z");
+    expect(report.population.excluded).toEqual([{ index: 0, reason: "not_retained_pregame" }, { index: 1, reason: "not_retained_pregame" }]);
+  });
+  it("masks immature labels without changing retained forecasts or supplied records", () => {
+    const rows = retained();
+    Object.assign(rows[0], { settled_at: "2026-10-24T00:00:00Z", dressed: true, act_goals: 4 });
+    const report = evaluateRetainedLedger(rows, "2026-10-22T12:00:00Z");
+    expect(report.population.outcomeUnavailable[0].reason).toBe("invalid_or_immature_settlement");
+    expect(report.population.bySource.every(row => row.knownAppearance === 0)).toBe(true);
+    expect(rows[0].act_goals).toBe(4);
+  });
+  it("retains proven DNP separately from unknowns and never fills a missing count", () => {
+    const rows = retained();
+    Object.assign(rows[0], { settled_at: "2026-10-22T06:00:00Z", dressed: false, act_goals: 0, act_hits: null });
+    const report = evaluateRetainedLedger(rows, "2026-10-22T12:00:00Z");
+    expect(report.population.bySource.reduce((sum, row) => sum + row.knownDnp, 0)).toBe(1);
+    expect(rows[0].act_hits).toBeNull();
+  });
+  it("quarantines invalid observed counts without repairing labels", () => {
+    const rows = retained();
+    Object.assign(rows[0], { settled_at: "2026-10-22T06:00:00Z", dressed: true, act_goals: 0.5 });
+    expect(evaluateRetainedLedger(rows, "2026-10-22T12:00:00Z").population.outcomeUnavailable[0].reason).toBe("invalid_observed_counts");
+    expect(rows[0].act_goals).toBe(0.5);
+    // Two observed ledger accounting failures, without inferring a corrected GA.
+    for (const [saves, goalsAgainst, shotsAgainst] of [[25, 6, 30], [29, 4, 32]]) {
+      Object.assign(rows[0], { player_class: "goalie", act_goals: null, act_saves: saves, act_goals_against: goalsAgainst, act_shots_against: shotsAgainst });
+      expect(evaluateRetainedLedger(rows, "2026-10-22T12:00:00Z").population.outcomeUnavailable[0].reason).toBe("invalid_observed_counts");
+      expect(rows[0].act_goals_against).toBe(goalsAgainst);
+    }
+  });
+  it("quarantines incoherent point means while retaining their population and known outcomes", () => {
+    const rows = retained();
+    Object.assign(rows[0], { player_class: "goalie", exp_shots_against: 13.5833, exp_saves: 11, exp_goals_against: 2.6667,
+      dressed: true, settled_at: "2026-10-22T06:00:00Z" });
+    const result = evaluateRetainedLedger(rows, "2026-10-22T12:00:00Z");
+    expect(result.population.forecastUnavailable).toEqual([{ index: 0, reason: "invalid_prediction_accounting" }]);
+    expect(result.population.acceptedRows).toBe(rows.length);
+    expect(result.population.bySource.reduce((sum, row) => sum + row.knownAppearance, 0)).toBe(1);
+    rows[0].exp_goals_against = 2.5834;
+    expect(evaluateRetainedLedger(rows, "2026-10-22T12:00:00Z").population.forecastUnavailable).toEqual([]);
+  });
+});
 
 describe("buildLedgerRows", () => {
   const { rows, skippedGameIds } = buildLedgerRows(input());

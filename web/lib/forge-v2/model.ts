@@ -1,4 +1,4 @@
-import { Appearance, CATEGORIES, Categories, CategoryMeans, Component, SourceReference, Target, available, unavailable, assertTarget, assertSource, instant } from "./contracts";
+import { Appearance, CATEGORIES, Categories, CategoryMeans, Component, SourceReference, Target, available, unavailable, assertTarget, assertSource, assertObservedCounts, instant } from "./contracts";
 import { DEFAULT_SCORING, scoreMeans, targetKey } from "./identity";
 import { contentHash } from "./hash.server";
 
@@ -71,12 +71,7 @@ function validateExample(row: ModelExample): void {
   if (instant(row.inputCutoffAt) >= instant(row.gameStartAt) || instant(row.outcomeAvailableAt) <= instant(row.gameStartAt)) throw new Error("Invalid example chronology");
   row.sources.forEach(s => assertSource(s, row.inputCutoffAt));
   assertSource(row.outcomeSource, row.outcomeAvailableAt);
-  for (const category of CATEGORIES) {
-    const value = row.values[category];
-    if (!value || (value.state === "available" && (!Number.isInteger(value.value) || value.value < 0))) throw new Error("Invalid count outcome");
-  }
-  const { G, A, PPP } = row.values;
-  if (G.state === "available" && A.state === "available" && PPP.state === "available" && PPP.value > G.value + A.value) throw new Error("PPP exceeds G+A");
+  assertObservedCounts(row.values);
 }
 
 /** Only caller-supplied admitted data is read; final periods are never consumed. */
