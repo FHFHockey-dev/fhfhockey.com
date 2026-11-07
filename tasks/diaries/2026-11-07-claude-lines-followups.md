@@ -42,6 +42,13 @@ Q2: payload of the latest line_entry_revisions row with goalie units (slot order
 - Fix: the refresh also checks wrapper enriched/raw text. The test fails on HEAD and passes now. Wider vitest 1484 pass; typecheck 0; eslint 0.
 - TJ pop-ups: delete both evidence rows (approved), but the SQL prompt was declined, so nothing ran (read-back: rows 1/1, triggers O). TJ: "I'll run it myself", so the SQL is in tasks/artifacts/lines-ahl-wolfpack-2026-11-07/delete-bad-claim.sql. lines_ccc row marked rejected_non_nhl / explicit_non_nhl_league_marker (done, read back).
 
+## Chef ticket 3: reporter handle on validated goalie/injury rows (fe7eb77be)
+- tweetProjectionStorage wrote validated_events rows with source_account null. sourceObservations groups reporters by source_account || source_key, so every validated report counted as one "validated_events" reporter.
+- Fix: validatedEventReporter = the handle from verifiedOriginalTweetUrl(report.originalUrl); relay or pending original -> null; quote posts -> null (capturePlayerForecastSourceRows credits the quoted author). Scout's sourceObservations.ts untouched.
+- Gotcha: my first version used sourceAttribution (sourceHandle) and credited "relayreporter" on a post whose URL is GameDayGoalies with attribution pending. The writer test "keeps direct pending attribution unresolved" caught it; switched to the verified original URL.
+- Updated deliberately: projectedLineups.test goalie/injury children now expect "reporter"; PP stays null. Social-share tests already cover both a named reporter (reporter0/reporter1 conflict) and the null fallback; unchanged.
+- vitest lib/sources+lines+socialShare+player-forecasts+update-lines-ccc/line-sources: 4011 pass / 39 skip; typecheck 0; eslint 0.
+
 ## Next
 - After tonight's games (~05:00Z 11-08): rerun Q1; if claims > 0, Q2 for goalie slot order; GET /api/v1/lines/projected and /lines/<team> (<=5 sequential reads); write receipt tasks/artifacts/lines-p3-game-night-2026-11-08.md (MTL 189/187/191).
 - If claims stay 0 after game night: diagnose processor (projectionReportFromSource null? units empty?) before P4.
