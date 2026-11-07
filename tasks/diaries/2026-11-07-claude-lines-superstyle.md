@@ -25,14 +25,24 @@ Own: `web/pages/lines/**`, `web/styles/Lines.module.scss` (Lines-only), Lines co
   - N6 `LineShareBars.module.scss` (flat section).
   - Checks: LinemateMatrix vitest 12/12, typecheck exit 0, scss pure OK ×3.
 
+- Pass 1 committed b63467acd.
+- Pass 2 (design-system), all approved:
+  - N4 `Line.module.scss` card frames → `$border-control`.
+  - N8 `CategoryTitle.module.scss` + `Line.module.scss` tokens.
+  - N12 PANEL_SURFACE reuse in `[abbreviation].tsx`.
+  - N13 (TJ request mid-pass): PP units as team cards (3F top, D bottom, centred), PP1/PP2/PP3, PP stats over the EV cards' 10 games (`statsGameIds` added to `LineCombinations/utilities.ts` and passed by the page).
+  - TJ confirmed the EV grid already reads F F F | D D / F F F | G G at 1440.
+  - Data mismatch (forge vs NHL PP points; empty powerPlayToi) sent to Chef.
+  - Checks: tests 63/63 (PP, LineCombinations, pages/lines), typecheck exit 0, scss pure OK.
+
 ## Coverage ledger
 | page \ pass | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 |
-| /lines | ✓ | ✓ | | | | | | |
-| /lines/EDM (+TBL fixture) | ✓ | ✓ | | | | | | |
-| /lines/line-combo (+fixture) | ✓ | ✓ | | | | | | |
+| /lines | ✓ | ✓ | ✓ | | | | | |
+| /lines/EDM (+TBL fixture) | ✓ | ✓ | ✓ | | | | | |
+| /lines/line-combo (+fixture) | ✓ | ✓ | ✓ | | | | | |
 
 ## Next
-- Pass 2 (design-system): N4 card frames, N8 literals.
+- Pass 3 (a11y): N5 card label sizes (8px / goalie 6.6px), then axe + focus re-run incl. the PP cards.
 
 ## Gotchas
 - Superstyle scripts default BASE_URL :3000; set BASE_URL=http://localhost:3110.

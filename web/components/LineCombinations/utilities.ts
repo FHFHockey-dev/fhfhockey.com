@@ -14,6 +14,8 @@ export type LineCombinations = {
     teamId: number;
     seasonId: number;
   };
+  /** The games the card stats are totalled over (the team's last 10 with line data). */
+  statsGameIds: number[];
   promotions: LineChangeInfo[];
   demotions: LineChangeInfo[];
   forwards: {
@@ -335,6 +337,8 @@ export async function getLineCombinations(
       sourceTeamId: currentLine.teamId,
       sourceSeasonId: currentLine.seasonId
     });
+
+    result.statsGameIds = lineCombinations.map((game: any) => game.gameId);
 
     // Assign game info
     result.game = {

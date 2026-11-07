@@ -109,7 +109,7 @@ export default function TeamLC({
   const downloadImage = () => {
     if (lineComboRef.current === null) return;
 
-    toPng(lineComboRef.current, { backgroundColor: "#1a1c21" })
+    toPng(lineComboRef.current, { backgroundColor: PANEL_SURFACE })
       .then((dataUrl) => {
         const link = document.createElement("a");
         const dateLabel = lastUpdated
@@ -323,6 +323,7 @@ export default function TeamLC({
                 gameId={lineCombinations.game.id}
                 seasonId={lineCombinations.game.seasonId}
                 teamAbbreviation={sourceTeamMeta?.abbreviation}
+                statsGameIds={lineCombinations.statsGameIds}
               />
             </div>
           ) : null}
