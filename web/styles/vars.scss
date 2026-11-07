@@ -293,6 +293,15 @@ $schedule-red: #b64343; // replaces heavy / worst-accent base
 $rank-good: $primary-color; // ranking positive extreme (was distinct cyan variants)
 $rank-bad: #9e3a3a; // toned red for negative extreme (replaces #6a2c2c/#421515)
 
+// Player performance tiers (elite → poor): player page insight values, calendar
+// tiers and trend chips. Keep coloured: values carry the good/bad read.
+$player-tier-elite: #10b981;
+$player-tier-excellent: #22c55e;
+$player-tier-good: #84cc16;
+$player-tier-average: #eab308;
+$player-tier-below-average: #f97316;
+$player-tier-poor: #ef4444;
+
 // Opacity ramp for fills (limit to a few consistent steps)
 $fill-opacity-subtle: 0.15;
 $fill-opacity: 0.25;

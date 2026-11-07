@@ -177,6 +177,71 @@ describe("PlayerRadarChart", () => {
     ]);
   });
 
+  it("derives FO% from faceoff wins and losses and skips tiny league samples", async () => {
+    installQueryMock({
+      // The view stores per-game averages.
+      playerRow: { player_id: 8478402, total_fow: 9, total_fol: 6 },
+      cohortRows: [
+        { total_fow: 9, total_fol: 6 },
+        { total_fow: 7.5, total_fol: 7.5 },
+        { total_fow: 6, total_fol: 9 },
+        { total_fow: 10.5, total_fol: 4.5 },
+        { total_fow: 0.4, total_fol: 0.1 },
+      ],
+    });
+
+    render(
+      <PlayerRadarChart
+        player={{ id: 8478402, fullName: "Skater", position: "C" }}
+        gameLog={[{ date: "2026-01-01", games_played: 1, fow_percentage: 0.6 }]}
+        selectedStats={["fow_percentage"]}
+        isGoalie={false}
+        seasonId={20252026}
+      />,
+    );
+
+    await waitFor(() => expect(chartPercentiles()).toEqual([50]));
+    expect(screen.getAllByText("60.0%").length).toBeGreaterThan(0);
+    expect(queryTraces[1].calls.slice(0, 2)).toEqual([
+      ["select", "total_fow,total_fol"],
+      ["not", "total_fow", "is", null],
+    ]);
+  });
+
+  it.each([
+    ["shooting_percentage", "goals,shots", { goals: 0.5, shots: 2.5 }, [
+      { goals: 0.5, shots: 2.5 },
+      { goals: 0.2, shots: 2 },
+      { goals: 0.1, shots: 2 },
+      { goals: 0.9, shots: 3 },
+      { goals: 0.5, shots: 0.5 },
+    ], "20.0%"],
+    ["sat_pct", "sat_for,sat_against", { sat_for: 15, sat_against: 10 }, [
+      { sat_for: 15, sat_against: 10 },
+      { sat_for: 10, sat_against: 10 },
+      { sat_for: 9, sat_against: 12 },
+      { sat_for: 18, sat_against: 9 },
+      { sat_for: 4, sat_against: 1 },
+    ], "60.0%"],
+  ])("derives %s from its per-game parts", async (stat, select, playerRow, cohortRows, shown) => {
+    installQueryMock({ playerRow: { player_id: 1, ...playerRow }, cohortRows });
+
+    render(
+      <PlayerRadarChart
+        player={{ id: 1, fullName: "Skater", position: "C" }}
+        gameLog={[{ date: "2026-01-01", games_played: 1, [stat]: 1 }]}
+        selectedStats={[stat]}
+        isGoalie={false}
+        seasonId={20252026}
+      />,
+    );
+
+    // Two of the four real-sample rows are worse; the tiny-sample row is skipped.
+    await waitFor(() => expect(chartPercentiles()).toEqual([50]));
+    expect(screen.getAllByText(shown).length).toBeGreaterThan(0);
+    expect(queryTraces[1].calls[0]).toEqual(["select", select]);
+  });
+
   it("starts every stat's league read before any of them returns", async () => {
     let releaseGoals!: () => void;
     const goalsResult = new Promise<QueryResult>((resolve) => {

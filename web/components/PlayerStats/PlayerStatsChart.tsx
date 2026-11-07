@@ -52,6 +52,31 @@ const formatForUnit = (unit: ChartUnit, value: number, stat: string) => {
   return formatPlayerStat(value, stat);
 };
 
+/**
+ * Spoken summary for a chart canvas (react-chartjs-2 renders role="img"):
+ * each line's latest value and range over the games shown.
+ */
+const chartSummary = (
+  title: string,
+  datasets: { label: string; statKey: string; data: (number | null)[] }[],
+  format: (value: number, stat: string) => string
+) => {
+  const lines = datasets.flatMap(({ label, statKey, data }) => {
+    const values = data.filter((value): value is number => value !== null);
+    if (values.length === 0) return [];
+    const latest = values[values.length - 1];
+    return [
+      `${label} latest ${format(latest, statKey)}, high ${format(
+        Math.max(...values),
+        statKey
+      )}, low ${format(Math.min(...values), statKey)}`
+    ];
+  });
+  return lines.length === 0
+    ? `${title}: no values in this range`
+    : `${title}: ${lines.join("; ")}`;
+};
+
 const tickForUnit = (unit: ChartUnit, value: number) => {
   if (unit === "toi") return formatMinutes(value);
   if (unit === "percent") return `${value}%`;
@@ -226,7 +251,13 @@ function UnitChart({
         <span>{meta.axis}</span>
       </div>
       <div className={`${styles.chartWrapper} ${styles.unitChart}`}>
-        <Line data={data as any} options={options as any} />
+        <Line
+          data={data as any}
+          options={options as any}
+          aria-label={chartSummary(meta.label, data.datasets as any, (value, stat) =>
+            formatForUnit(unit, value, stat)
+          )}
+        />
       </div>
     </section>
   );
@@ -375,7 +406,15 @@ function RelativeChart({
         </span>
       </div>
       <div className={`${styles.chartWrapper} ${styles.unitChart}`}>
-        <Line data={data as any} options={options as any} />
+        <Line
+          data={data as any}
+          options={options as any}
+          aria-label={chartSummary(
+            "Relative to season average (100 = season average)",
+            data.datasets as any,
+            (value) => String(Math.round(value))
+          )}
+        />
       </div>
     </section>
   );

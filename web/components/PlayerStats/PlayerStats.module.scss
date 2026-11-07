@@ -31,15 +31,25 @@ $perf-elite: #5598e7;
 // PLACEHOLDERS & EXTENSIONS
 // =============================================================================
 
-// Dense data card (RSO metric language): neutral surface, full border in the
-// card's tone with a 6px left rail; the left corners match the rail so its
-// inner edge stays flat.
+// Dense data card (RSO metric language): neutral surface and border; the
+// card's tone lives only in a 6px filled left rail (fhfh-styles §2.7).
 %card-base {
   --card-tone: #{v.$draft-border};
-  padding: v.$space-xs v.$space-sm;
-  border: 1px solid var(--card-tone);
-  border-left-width: 6px;
-  border-radius: 6px v.$radius-md v.$radius-md 6px;
+  padding: v.$space-xs v.$space-sm v.$space-xs calc(#{v.$space-sm} + 5px);
+  position: relative;
+  border: 1px solid v.$draft-border;
+  border-radius: v.$radius-md;
+  &::before {
+    content: "";
+    position: absolute;
+    top: -1px;
+    bottom: -1px;
+    left: -1px;
+    width: 6px;
+    border-radius: v.$radius-md 0 0 v.$radius-md;
+    background: var(--card-tone);
+    pointer-events: none;
+  }
   background: v.$draft-surface-raised;
 }
 
@@ -59,56 +69,56 @@ $perf-elite: #5598e7;
 
 // Performance color modifiers
 %performance-elite {
-  background: rgba(16, 185, 129, 0.15);
-  border-left-color: #10b981;
+  background: rgba(v.$player-tier-elite, 0.15);
+  --card-tone: #{v.$player-tier-elite};
   .summaryValue,
   .insightValue {
-    color: #10b981;
+    color: v.$player-tier-elite;
   }
 }
 
 %performance-excellent {
-  background: rgba(34, 197, 94, 0.12);
-  border-left-color: #22c55e;
+  background: rgba(v.$player-tier-excellent, 0.12);
+  --card-tone: #{v.$player-tier-excellent};
   .summaryValue,
   .insightValue {
-    color: #22c55e;
+    color: v.$player-tier-excellent;
   }
 }
 
 %performance-good {
-  background: rgba(132, 204, 22, 0.12);
-  border-left-color: #84cc16;
+  background: rgba(v.$player-tier-good, 0.12);
+  --card-tone: #{v.$player-tier-good};
   .summaryValue,
   .insightValue {
-    color: #84cc16;
+    color: v.$player-tier-good;
   }
 }
 
 %performance-average {
-  background: rgba(234, 179, 8, 0.12);
-  border-left-color: #eab308;
+  background: rgba(v.$player-tier-average, 0.12);
+  --card-tone: #{v.$player-tier-average};
   .summaryValue,
   .insightValue {
-    color: #eab308;
+    color: v.$player-tier-average;
   }
 }
 
 %performance-below-average {
-  background: rgba(249, 115, 22, 0.12);
-  border-left-color: #f97316;
+  background: rgba(v.$player-tier-below-average, 0.12);
+  --card-tone: #{v.$player-tier-below-average};
   .summaryValue,
   .insightValue {
-    color: #f97316;
+    color: v.$player-tier-below-average;
   }
 }
 
 %performance-poor {
-  background: rgba(239, 68, 68, 0.12);
-  border-left-color: #ef4444;
+  background: rgba(v.$player-tier-poor, 0.12);
+  --card-tone: #{v.$player-tier-poor};
   .summaryValue,
   .insightValue {
-    color: #ef4444;
+    color: v.$player-tier-poor;
   }
 }
 
@@ -558,9 +568,9 @@ $perf-elite: #5598e7;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid rgba(148, 163, 184, 0.2);
+  border: 1px solid v.$draft-border;
   border-radius: 6px;
-  background: #1f2937;
+  background: v.$draft-surface-raised;
   color: v.$text-primary;
   font-size: 0.95rem;
   font-weight: 800;
@@ -573,8 +583,8 @@ $perf-elite: #5598e7;
       rgba(18, 85, 175, calc(0.15 + (var(--lcpg-share, 0) * 0.75))),
       rgba(18, 85, 175, calc(0.15 + (var(--lcpg-share, 0) * 0.75)))
     ),
-    #1f2937;
-  border-color: rgba(96, 165, 250, 0.5);
+    v.$draft-surface-raised;
+  border-color: rgba(v.$primary-color, 0.5);
 }
 
 .lcpgCompact {
@@ -689,7 +699,7 @@ $perf-elite: #5598e7;
 .controlHeader {
   font-family: v.$font-family-accent;
   font-size: v.$font-size-lg;
-  font-weight: 700;
+  font-weight: 400; // Train One has one weight
   color: v.$secondary-color;
   text-transform: uppercase;
   letter-spacing: 0.1em;
@@ -730,7 +740,7 @@ $perf-elite: #5598e7;
     &:focus {
       outline: none;
       border-color: v.$primary-color;
-      box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.2);
+      box-shadow: 0 0 0 2px rgba(v.$primary-color, 0.2);
     }
   }
 }
@@ -944,7 +954,7 @@ $perf-elite: #5598e7;
       font-size: v.$font-size-xs;
     }
     &.highlight {
-      background: rgba(14, 165, 233, 0.1);
+      background: rgba(v.$primary-color, 0.1);
       color: v.$text-primary;
     }
   }
@@ -1160,7 +1170,7 @@ $perf-elite: #5598e7;
       color: v.$text-secondary;
       cursor: pointer;
       font-size: 14px;
-      transition: all 0.2s ease;
+      transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
       flex-shrink: 0;
 
       .infoIcon {
@@ -1176,7 +1186,7 @@ $perf-elite: #5598e7;
         font-weight: 600;
         font-style: italic;
         line-height: 1;
-        transition: all 0.2s ease;
+        transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
       }
 
       &:hover {
@@ -1295,16 +1305,16 @@ $perf-elite: #5598e7;
         padding: v.$space-xs v.$space-sm;
         border-radius: v.$border-radius-sm;
         border: 1px solid transparent;
-        transition: all 0.2s ease;
+        transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
         min-width: 60px;
         text-align: center;
 
         // Color coding based on performance
         &.elite {
-          background-color: rgba(16, 185, 129, 0.25);
-          color: #10b981;
-          border-color: rgba(16, 185, 129, 0.5);
-          box-shadow: 0 1px 3px rgba(16, 185, 129, 0.3);
+          background-color: rgba(v.$player-tier-elite, 0.25);
+          color: v.$player-tier-elite;
+          border-color: rgba(v.$player-tier-elite, 0.5);
+          box-shadow: 0 1px 3px rgba(v.$player-tier-elite, 0.3);
         }
 
         &.good {
@@ -1320,9 +1330,9 @@ $perf-elite: #5598e7;
         }
 
         &.belowAverage {
-          background-color: rgba(249, 115, 22, 0.25);
-          color: #f97316;
-          border-color: rgba(249, 115, 22, 0.4);
+          background-color: rgba(v.$player-tier-below-average, 0.25);
+          color: v.$player-tier-below-average;
+          border-color: rgba(v.$player-tier-below-average, 0.4);
         }
 
         &.poor {
@@ -1338,15 +1348,15 @@ $perf-elite: #5598e7;
         padding: v.$space-xs v.$space-sm;
         border-radius: v.$border-radius-sm;
         border: 1px solid transparent;
-        transition: all 0.2s ease;
+        transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
         min-width: 50px;
         text-align: center;
 
         // Same color coding as nhlRank
         &.elite {
-          background-color: rgba(16, 185, 129, 0.25);
-          color: #10b981;
-          border-color: rgba(16, 185, 129, 0.5);
+          background-color: rgba(v.$player-tier-elite, 0.25);
+          color: v.$player-tier-elite;
+          border-color: rgba(v.$player-tier-elite, 0.5);
         }
 
         &.good {
@@ -1362,9 +1372,9 @@ $perf-elite: #5598e7;
         }
 
         &.belowAverage {
-          background-color: rgba(249, 115, 22, 0.25);
-          color: #f97316;
-          border-color: rgba(249, 115, 22, 0.4);
+          background-color: rgba(v.$player-tier-below-average, 0.25);
+          color: v.$player-tier-below-average;
+          border-color: rgba(v.$player-tier-below-average, 0.4);
         }
 
         &.poor {
@@ -1485,17 +1495,17 @@ $perf-elite: #5598e7;
   min-width: 35px;
   text-align: center;
   cursor: help;
-  transition: all 0.2s ease;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
 
   // Enhanced percentile color scheme
   &.elite {
-    background-color: rgba(16, 185, 129, 0.2);
-    color: #10b981;
-    border: 1px solid rgba(16, 185, 129, 0.4);
-    box-shadow: 0 1px 3px rgba(16, 185, 129, 0.2);
+    background-color: rgba(v.$player-tier-elite, 0.2);
+    color: v.$player-tier-elite;
+    border: 1px solid rgba(v.$player-tier-elite, 0.4);
+    box-shadow: 0 1px 3px rgba(v.$player-tier-elite, 0.2);
 
     &:hover {
-      background-color: rgba(16, 185, 129, 0.3);
+      background-color: rgba(v.$player-tier-elite, 0.3);
       transform: scale(1.05);
     }
   }
@@ -1523,12 +1533,12 @@ $perf-elite: #5598e7;
   }
 
   &.belowAverage {
-    background-color: rgba(249, 115, 22, 0.2);
-    color: #f97316;
-    border: 1px solid rgba(249, 115, 22, 0.3);
+    background-color: rgba(v.$player-tier-below-average, 0.2);
+    color: v.$player-tier-below-average;
+    border: 1px solid rgba(v.$player-tier-below-average, 0.3);
 
     &:hover {
-      background-color: rgba(249, 115, 22, 0.3);
+      background-color: rgba(v.$player-tier-below-average, 0.3);
       transform: scale(1.05);
     }
   }
@@ -1569,26 +1579,26 @@ $perf-elite: #5598e7;
 
   &:hover {
     transform: scale(1.2);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 2px 8px rgba(v.$color-black, 0.3);
     z-index: 10;
   }
   &.level-0 {
     background: v.$background-medium;
   }
   &.level-1 {
-    background: rgba(14, 165, 233, 0.3);
+    background: rgba(v.$primary-color, 0.3);
   }
   &.level-2 {
-    background: rgba(14, 165, 233, 0.5);
+    background: rgba(v.$primary-color, 0.5);
   }
   &.level-3 {
-    background: rgba(14, 165, 233, 0.7);
+    background: rgba(v.$primary-color, 0.7);
   }
   &.level-4 {
-    background: rgba(14, 165, 233, 0.9);
+    background: rgba(v.$primary-color, 0.9);
   }
   &.level-5 {
-    background: rgba(14, 165, 233, 1);
+    background: rgba(v.$primary-color, 1);
   }
 }
 
@@ -1706,6 +1716,11 @@ $perf-elite: #5598e7;
   font-variant-numeric: tabular-nums;
   color: v.$color-white;
 }
+// The value carries the good/bad read in the card's tone (teal 7.2:1, coral 5.6:1).
+.insightCard.positive .insightValue,
+.insightCard.negative .insightValue {
+  color: var(--card-tone);
+}
 
 .summaryDescription,
 .insightDescription {
@@ -1752,11 +1767,22 @@ $perf-elite: #5598e7;
 .streak {
   --card-tone: #{v.$color-neutral-400};
   text-align: center;
-  padding: v.$space-xs v.$space-sm;
+  padding: v.$space-xs v.$space-sm v.$space-xs calc(#{v.$space-sm} + 5px);
   min-width: 80px;
-  border: 1px solid var(--card-tone);
-  border-left-width: 6px;
-  border-radius: 6px v.$radius-md v.$radius-md 6px;
+  position: relative;
+  border: 1px solid v.$draft-border;
+  border-radius: v.$radius-md;
+  &::before {
+    content: "";
+    position: absolute;
+    top: -1px;
+    bottom: -1px;
+    left: -1px;
+    width: 6px;
+    border-radius: v.$radius-md 0 0 v.$radius-md;
+    background: var(--card-tone);
+    pointer-events: none;
+  }
   background: v.$draft-surface-raised;
   color: var(--card-tone);
 
@@ -1843,7 +1869,7 @@ $perf-elite: #5598e7;
           cursor: help;
           font-size: 12px;
           font-weight: bold;
-          transition: all 0.2s ease;
+          transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
           &:hover {
             background: v.$primary-color;
             color: v.$text-button;
@@ -1955,7 +1981,7 @@ $perf-elite: #5598e7;
           font-weight: 500;
           min-width: 140px;
           cursor: pointer;
-          transition: all 0.2s ease;
+          transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
 
           &:focus {
             outline: none;
@@ -2043,6 +2069,31 @@ $perf-elite: #5598e7;
     }
   }
 
+  // Wider screens: the active and previous month; the toggle reveals the rest.
+  .monthToggleRow {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: v.$space-xs;
+  }
+
+  .monthToggle {
+    @extend %base-button;
+    padding: v.$space-xxs v.$space-sm;
+    font-size: v.$font-size-xs;
+  }
+
+  @media (min-width: calc(#{v.$screen-small-max} + 1px)) {
+    .calendarGrid:not(.showAllMonths) .calendarMonth:not(.recentMonth) {
+      display: none;
+    }
+  }
+
+  @media (max-width: v.$screen-small-max) {
+    .monthToggleRow {
+      display: none;
+    }
+  }
+
   .monthNavButton {
     @extend %base-button;
     padding: v.$space-xs v.$space-md;
@@ -2114,13 +2165,13 @@ $perf-elite: #5598e7;
       justify-content: center;
       border-radius: v.$border-radius-sm;
       cursor: pointer;
-      transition: all 0.2s ease;
+      transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
       background: v.$background-dark;
       border: 1px solid v.$border-secondary;
       &:hover {
         transform: scale(1.05);
         z-index: 10;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        box-shadow: 0 2px 8px rgba(v.$color-black, 0.2);
       }
       &:focus-visible {
         outline: 2px solid v.$secondary-color;
@@ -2132,12 +2183,12 @@ $perf-elite: #5598e7;
         background: transparent;
       }
       &.missedGameDay {
-        background: rgba(239, 68, 68, 0.15) !important;
-        border: 2px solid #ef4444 !important;
+        background: rgba(v.$player-tier-poor, 0.15) !important;
+        border: 2px solid v.$player-tier-poor !important;
         opacity: 0.8;
         &:hover {
           opacity: 1;
-          border-color: #dc2626 !important;
+          border-color: color.adjust(v.$player-tier-poor, $lightness: -8%) !important;
         }
       }
       &.futureGameDay {
@@ -2272,7 +2323,7 @@ $perf-elite: #5598e7;
       }
 
       .missedGameLabel {
-        color: #ef4444;
+        color: v.$player-tier-poor;
         font-size: v.$font-size-xs;
         font-weight: 600;
         text-transform: uppercase;
@@ -2352,12 +2403,12 @@ $perf-elite: #5598e7;
   }
 
   .errorMessage {
-    background: rgba(239, 68, 68, 0.1);
-    border: 1px solid #ef4444;
+    background: rgba(v.$player-tier-poor, 0.1);
+    border: 1px solid v.$player-tier-poor;
     border-radius: v.$border-radius-md;
     padding: v.$space-md;
     margin-top: v.$space-md;
-    color: #ef4444;
+    color: v.$player-tier-poor;
     font-size: v.$font-size-sm;
   }
   .playoffIndicator {
@@ -2535,7 +2586,7 @@ $perf-elite: #5598e7;
             border-radius: clamp(1px, 0.15vw, 2px); // Responsive border radius
             cursor: pointer;
             border: 1px solid rgba(v.$border-secondary, 0.3);
-            transition: all 0.2s ease;
+            transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
             position: relative;
             flex-shrink: 0;
             margin: 0;
@@ -2545,7 +2596,7 @@ $perf-elite: #5598e7;
             &:hover {
               transform: scale(1.1);
               z-index: 10;
-              box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+              box-shadow: 0 2px 8px rgba(v.$color-black, 0.3);
             }
 
             // Performance level colors
@@ -2586,14 +2637,14 @@ $perf-elite: #5598e7;
             }
 
             &.noData {
-              background-color: rgba(42, 42, 42, 0.45);
+              background-color: rgba(v.$background-light, 0.45);
               border-color: rgba(v.$border-secondary, 0.5);
               opacity: 0.6;
             }
 
             &.missed {
-              background-color: rgba(239, 68, 68, 0.15);
-              border: 1px solid rgba(239, 68, 68, 0.45);
+              background-color: rgba(v.$player-tier-poor, 0.15);
+              border: 1px solid rgba(v.$player-tier-poor, 0.45);
               position: relative;
 
               &::after {
@@ -2641,7 +2692,7 @@ $perf-elite: #5598e7;
             }
 
             &.missed.playoff {
-              border: 1px solid rgba(239, 68, 68, 0.45);
+              border: 1px solid rgba(v.$player-tier-poor, 0.45);
               box-shadow: 0 0 0 1px rgba(v.$warning-color, 0.3);
             }
           }
@@ -2711,8 +2762,8 @@ $perf-elite: #5598e7;
             flex-shrink: 0;
 
             &.missed {
-              background-color: rgba(239, 68, 68, 0.15);
-              border: 2px solid #ef4444;
+              background-color: rgba(v.$player-tier-poor, 0.15);
+              border: 2px solid v.$player-tier-poor;
 
               &::after {
                 content: "";
@@ -2870,7 +2921,7 @@ $perf-elite: #5598e7;
           border-radius: 2px; // Small radius for crisp squares
           cursor: pointer;
           border: 1px solid rgba(v.$border-secondary, 0.3);
-          transition: all 0.2s ease;
+          transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
           position: relative;
           flex-shrink: 0;
           margin: 0;
@@ -2879,7 +2930,7 @@ $perf-elite: #5598e7;
           &:hover {
             transform: scale(1.15);
             z-index: 10;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 2px 8px rgba(v.$color-black, 0.3);
           }
 
           // Performance level colors
@@ -2920,14 +2971,14 @@ $perf-elite: #5598e7;
           }
 
           &.noData {
-            background-color: rgba(42, 42, 42, 0.45);
+            background-color: rgba(v.$background-light, 0.45);
             border-color: rgba(v.$border-secondary, 0.5);
             opacity: 0.6;
           }
 
           &.missed {
-            background-color: rgba(239, 68, 68, 0.15);
-            border: 1px solid rgba(239, 68, 68, 0.45);
+            background-color: rgba(v.$player-tier-poor, 0.15);
+            border: 1px solid rgba(v.$player-tier-poor, 0.45);
             position: relative;
 
             &::after {
@@ -2975,7 +3026,7 @@ $perf-elite: #5598e7;
           }
 
           &.missed.playoff {
-            border: 1px solid rgba(239, 68, 68, 0.45);
+            border: 1px solid rgba(v.$player-tier-poor, 0.45);
             box-shadow: 0 0 0 1px rgba(v.$warning-color, 0.3);
           }
         }
@@ -3044,8 +3095,8 @@ $perf-elite: #5598e7;
             flex-shrink: 0;
 
             &.missed {
-              background-color: rgba(239, 68, 68, 0.15);
-              border: 2px solid #ef4444;
+              background-color: rgba(v.$player-tier-poor, 0.15);
+              border: 2px solid v.$player-tier-poor;
 
               &::after {
                 content: "";
