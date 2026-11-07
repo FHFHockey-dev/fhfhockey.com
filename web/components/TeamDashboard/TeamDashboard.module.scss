@@ -91,7 +91,7 @@
 
 // Base card styles (shared properties only)
 %baseCard {
-  background: rgba(0, 0, 0, 0.05);
+  background: rgba(v.$color-black, 0.05);
   border: 1px solid color-mix(in srgb, v.$border-primary 30%, transparent 70%);
   border-radius: v.$border-radius-md;
   overflow: hidden;
@@ -118,9 +118,9 @@
     border-color: color-mix(in srgb, v.$primary-color 50%, transparent 50%);
     transform: translateY(-1px);
     box-shadow:
-      0 4px 20px rgba(0, 0, 0, 0.1),
+      0 4px 20px rgba(v.$color-black, 0.1),
       0 0 0 1px color-mix(in srgb, v.$primary-color 20%, transparent 80%);
-    background: rgba(255, 255, 255, 0.02);
+    background: rgba(v.$color-white, 0.02);
   }
 }
 
@@ -130,7 +130,7 @@
   height: 100%; // Fill sidebar height
   display: flex;
   flex-direction: column;
-  background: rgba(0, 0, 0, 0.05);
+  background: rgba(v.$color-black, 0.05);
   border-right: 2px solid
     color-mix(
       in srgb,
@@ -219,7 +219,7 @@
   .metricsSection {
     flex: 0 0 auto; // Natural size for metrics
     padding: v.$space-sm 0 v.$space-sm 0;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    border-top: 1px solid rgba(v.$color-white, 0.1);
     // No overflow restrictions - let content expand naturally
   }
 }
@@ -434,7 +434,7 @@
     transform: translateY(-1px);
     background: color-mix(in srgb, v.$background-lighter 80%, transparent 20%);
     border-color: color-mix(in srgb, v.$primary-color 40%, transparent 60%);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 8px rgba(v.$color-black, 0.1);
 
     &::before {
       transform: scaleX(1);
@@ -1177,7 +1177,7 @@
   width: 18px;
   height: 18px;
   border-radius: v.$border-radius-sm;
-  border: 1px solid #fff;
+  border: 1px solid v.$color-white;
   margin-right: v.$space-md;
   margin-left: v.$space-sm;
 }
@@ -1202,7 +1202,7 @@
 
 .metricsSection {
   padding: v.$space-sm 0;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid rgba(v.$color-white, 0.1);
 }
 
 /* ==========================================================================
@@ -1409,16 +1409,16 @@
 .goaltendingCard {
   // Add subtle inner shadow for depth
   box-shadow:
-    inset 2px 0 4px rgba(0, 0, 0, 0.1),
-    0 4px 20px rgba(0, 0, 0, 0.05);
+    inset 2px 0 4px rgba(v.$color-black, 0.1),
+    0 4px 20px rgba(v.$color-black, 0.05);
 
   // Enhance hover effects for sidebars
   &:hover {
     transform: none; // Remove translateY for sidebars
     background: color-mix(in srgb, v.$background-lighter 25%, transparent 75%);
     box-shadow:
-      inset 2px 0 6px rgba(0, 0, 0, 0.15),
-      0 6px 25px rgba(0, 0, 0, 0.1);
+      inset 2px 0 6px rgba(v.$color-black, 0.15),
+      0 6px 25px rgba(v.$color-black, 0.1);
   }
 
   // Sidebar-specific header styling
