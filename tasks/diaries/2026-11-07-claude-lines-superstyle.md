@@ -35,14 +35,19 @@ Own: `web/pages/lines/**`, `web/styles/Lines.module.scss` (Lines-only), Lines co
   - Data mismatch (forge vs NHL PP points; empty powerPlayToi) sent to Chef.
   - Checks: tests 63/63 (PP, LineCombinations, pages/lines), typecheck exit 0, scss pure OK.
 
+- Pass 2 committed 60f3d57f3.
+- Pass 3 (a11y):
+  - axe 0 on all 3 pages at both viewports (incl. the PP cards); focus clean (only nextjs-portal, the dev overlay).
+  - N5 approved: `PlayerCard.module.scss` labels 10px, values 700; `CategoryTitle` small 10px; `SkaterCard.tsx` phone labels HIT/BLK.
+
 ## Coverage ledger
 | page \ pass | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 |
-| /lines | ✓ | ✓ | ✓ | | | | | |
-| /lines/EDM (+TBL fixture) | ✓ | ✓ | ✓ | | | | | |
-| /lines/line-combo (+fixture) | ✓ | ✓ | ✓ | | | | | |
+| /lines | ✓ | ✓ | ✓ | ✓ | | | | |
+| /lines/EDM (+TBL fixture) | ✓ | ✓ | ✓ | ✓ | | | | |
+| /lines/line-combo (+fixture) | ✓ | ✓ | ✓ | ✓ | | | | |
 
 ## Next
-- Pass 3 (a11y): N5 card label sizes (8px / goalie 6.6px), then axe + focus re-run incl. the PP cards.
+- Pass 4 (copy): N7 line-share description, promotion-arrow alt text, copy-extract sweep.
 
 ## Gotchas
 - Superstyle scripts default BASE_URL :3000; set BASE_URL=http://localhost:3110.

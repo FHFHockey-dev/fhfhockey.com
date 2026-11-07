@@ -23,15 +23,15 @@ const LARGE_STATS_CONFIG = [
   { key: "PlusMinus", label: "+/-" }
 ] as const;
 
-// For small devices
+// For small devices: three-letter labels so four columns fit at 10px on a ~110px card.
 const SMALL_STATS_CONFIG = [
   { key: "Goals", label: "G" },
   { key: "Assists", label: "A" },
   { key: "PTS", label: "PTS" },
   { key: "PPP", label: "PPP" },
   { key: "Shots", label: "SOG" },
-  { key: "Hits", label: "HITS" },
-  { key: "Blocks", label: "BLKS" },
+  { key: "Hits", label: "HIT" },
+  { key: "Blocks", label: "BLK" },
   { key: "PlusMinus", label: "+/-" }
 ] as const;
 
