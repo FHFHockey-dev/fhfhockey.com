@@ -83,9 +83,9 @@
 .chipPractice { border-color: vars.$color-gold-400; color: vars.$color-gold-400; }
 .chipCarried { border-color: vars.$color-violet-400; color: vars.$color-violet-400; }
 .chipDerived { border-color: vars.$color-blue-400; color: vars.$color-blue-100; }
-.chips { display: flex; flex-wrap: wrap; gap: vars.$space-xs; margin: vars.$space-xs 0; padding: 0; list-style: none; }
 
 .sourceLine { margin: vars.$space-xs 0 0; font-size: vars.$font-size-sm; line-height: 1.5; }
+.groupSource { margin: 0 0 vars.$space-xs; color: vars.$text-secondary; font-size: vars.$font-size-sm; line-height: 1.5; }
 .sourceItem { margin-right: vars.$space-md; }
 .source { margin-right: vars.$space-xs; color: vars.$text-link; text-decoration: underline; }
 span.source { color: vars.$text-secondary; text-decoration: none; }
@@ -261,5 +261,6 @@ span.source { color: vars.$text-secondary; text-decoration: none; }
 
 @media (max-width: 799px) {
   .layout { grid-template-columns: minmax(0, 1fr); }
+  .unitRow { grid-template-columns: 52px minmax(0, 1fr); }
   .tabPanel { max-height: none; overflow: visible; }
 }

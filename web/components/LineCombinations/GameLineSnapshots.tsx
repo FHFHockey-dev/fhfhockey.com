@@ -2,7 +2,7 @@ import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode 
 import type { EntryRevision, EntryView, GameLinesResponse, GameTeamLines, LineClaim, LineGame, PPDecision, PPEndReason, SelectedLineUnit } from "lib/lines/types";
 import type { TweetUnit } from "lib/sources/tweetInterpretation";
 import SourceFeed from "./SourceFeed";
-import { formatTime, gameLabel, reviewReasonsCopy, revisionReasonCopy } from "./reviewReasonCopy";
+import { ORIGINAL_SOURCE_PENDING, formatTime, gameLabel, originalPostUrl, reviewReasonsCopy, revisionReasonCopy, shortDate, sourceAuthor } from "./reviewReasonCopy";
 import styles from "./ProjectedLineups.module.scss";
 
 export { gameLabel } from "./reviewReasonCopy";
@@ -52,14 +52,18 @@ function unitLabel(unit: TweetUnit): string {
     case "injury": return "Injured";
   }
 }
-function names(unit: TweetUnit): string { return unit.players.map((player) => player.name).join(" — "); }
-function authorOf(claim: LineClaim): string | null { return claim.originalAuthor ?? claim.author; }
+/** Player names joined by dashes; lines wrap only between players, never inside a name (non-breaking spaces). */
+function names(unit: TweetUnit): string { return unit.players.map((player) => player.name.trim().replace(/\s+/g, "\u00a0")).join("\u00a0— "); }
+/** Original author only; a relay account is never shown as the source. */
+function authorOf(claim: LineClaim): string | null { return sourceAuthor(claim.originalAuthor !== undefined ? claim.originalAuthor : claim.author); }
 
 function Source({ claim }: { claim: LineClaim }) {
   const author = authorOf(claim);
-  return claim.sourceUrl
-    ? <a className={styles.source} href={claim.sourceUrl} target="_blank" rel="noreferrer">{author ? `@${author}` : "Original post"}</a>
-    : <span className={styles.source}>{author ? `@${author}` : "Source pending"}</span>;
+  const href = author ? originalPostUrl(author, claim.provenance?.originalTweetId, claim.sourceUrl) : null;
+  if (!author) return <span className={styles.source}>{ORIGINAL_SOURCE_PENDING}</span>;
+  return href
+    ? <a className={styles.source} href={href} target="_blank" rel="noreferrer">@{author}</a>
+    : <span className={styles.source}>@{author}</span>;
 }
 function ClaimTime({ claim }: { claim: LineClaim }) {
   const value = claim.time.originalPublishedAt;
@@ -77,7 +81,8 @@ function unitStatus(selection: SelectedLineUnit, games: LineGame[], decision?: P
     return { label: `Carried forward from ${origin ? gameLabel(origin) : "an earlier game"}`, tone: "carried" };
   }
   if (selection.claims.some((claim) => claim.context === "practice")) return { label: "Practice report, not game-confirmed", tone: "practice" };
-  if (selection.designation === "confirmed") return { label: "Confirmed", tone: "confirmed" };
+  // Goalie lists confirm who dressed, never who starts.
+  if (selection.designation === "confirmed") return { label: selection.unit.situation === "goalie" ? "Tandem confirmed" : "Confirmed", tone: "confirmed" };
   if (selection.designation === "projected") return { label: "Projected", tone: "projected" };
   return { label: "Reported", tone: "reported" };
 }
@@ -91,7 +96,7 @@ function endReasonCopy(reason: PPEndReason): string {
   return `not reaffirmed in ${reason.gamesElapsed} team games`;
 }
 
-function UnitRow({ selection, games, decision }: { selection: SelectedLineUnit; games: LineGame[]; decision?: PPDecision }) {
+function UnitRow({ selection, games, decision, hideSource = false }: { selection: SelectedLineUnit; games: LineGame[]; decision?: PPDecision; hideSource?: boolean }) {
   const unit = selection.unit;
   const status = unitStatus(selection, games, decision);
   const derivation = decision?.derivation;
@@ -104,11 +109,11 @@ function UnitRow({ selection, games, decision }: { selection: SelectedLineUnit; 
       <p className={styles.meta}>
         <span className={[styles.chip, TONE_CLASS[status.tone]].filter(Boolean).join(" ")}>{status.label}</span>
         {!unit.complete && <span className={styles.chip}>Partial</span>}
+        {unit.situation === "goalie" && <span className={styles.chip}>Starter not confirmed</span>}
       </p>
-      {unit.situation === "goalie" && <p className={styles.muted}>Listed order only; the starter isn&apos;t confirmed.</p>}
       {derivation && (base.length || swap.length)
         ? <p className={styles.sourceLine}>{!!base.length && <>Base unit: <Sources claims={base} /></>}{!!swap.length && <> Swap: <Sources claims={swap} /></>}</p>
-        : <p className={styles.sourceLine}><Sources claims={selection.claims} /></p>}
+        : !hideSource && <p className={styles.sourceLine}><Sources claims={selection.claims} /></p>}
     </div>
   </li>;
 }
@@ -131,8 +136,12 @@ const ES_GROUPS: Array<{ title: string; match: (unit: TweetUnit) => boolean }> =
 function EsGroups({ units, games }: { units: SelectedLineUnit[]; games: LineGame[] }) {
   return <>{ES_GROUPS.map((group) => {
     const rows = units.filter((selection) => group.match(selection.unit));
+    // When every row comes from the same report(s), name the source once under the group heading.
+    const signature = (selection: SelectedLineUnit) => selection.claims.map((claim) => claim.id).sort().join("|");
+    const shared = rows.length > 1 && !!rows[0]!.claims.length && rows.every((selection) => signature(selection) === signature(rows[0]!)) ? rows[0]!.claims : null;
     return rows.length ? <Group key={group.title} title={group.title}>
-      <ul className={styles.units}>{rows.map((selection, index) => <UnitRow key={`${selection.unit.situation}:${selection.unit.number}:${index}`} selection={selection} games={games} />)}</ul>
+      {shared && <p className={styles.groupSource}>Source: <Sources claims={shared} /></p>}
+      <ul className={styles.units}>{rows.map((selection, index) => <UnitRow key={`${selection.unit.situation}:${selection.unit.number}:${index}`} selection={selection} games={games} hideSource={!!shared} />)}</ul>
     </Group> : null;
   })}</>;
 }
@@ -174,7 +183,7 @@ function Entry({ team, games, entryView }: { team: GameTeamLines; games: LineGam
     {!esUnits.length && !fallback && <p className={styles.muted}>No game-entry lineup has been reported yet.</p>}
     <EsGroups units={esUnits} games={games} />
     {!!entry?.conflicts.length && <p className={styles.notice}>Sources disagree on part of this lineup. Those units stay out until it&apos;s settled.</p>}
-    {fallback && <Group title={`Previous game's lineup · ${fallback.date}`}>
+    {fallback && <Group title={`Previous game's lineup · ${shortDate(fallback.date)}`}>
       <p className={styles.muted}>From {fallbackGame ? gameLabel(fallbackGame) : "the previous game"}. Nothing has been reported for this game yet.</p>
       <ul className={styles.units}>{fallback.entry.units.map((selection, index) => <UnitRow key={`${selection.unit.situation}:${selection.unit.number}:${index}`} selection={selection} games={games} />)}</ul>
     </Group>}
@@ -193,23 +202,24 @@ function Entry({ team, games, entryView }: { team: GameTeamLines; games: LineGam
 const KIND_COPY: Record<LineClaim["kind"], string> = { entry: "Lineup report", iga: "In-game change", pp: "Power play", entry_correction: "Lineup correction", retraction: "Retraction" };
 const RELATION_COPY: Record<string, string> = { continuity: "Together", substitution: "Substitution", swap: "Swap", alternatives: "Alternating" };
 
-function ClaimRow({ claim, games }: { claim: LineClaim; games: LineGame[] }) {
+function ClaimRow({ claim, games, selectedGameId }: { claim: LineClaim; games: LineGame[]; selectedGameId: number | null }) {
   const unit = claim.unit;
   const subject = unit ? unitLabel(unit) : claim.relationship ? RELATION_COPY[claim.relationship.kind] ?? "Line note" : "Line note";
   const phase = claim.phase === "pregame" ? "Before the game" : claim.phase === "in_game" ? "During the game" : "Timing unclear";
   const game = claim.binding.status === "bound" ? games.find((candidate) => candidate.id === claim.gameId) : null;
-  const applies = claim.binding.status === "bound" ? (game ? `Applies to ${gameLabel(game)}` : "Applies to this game") : "Game not identified";
+  const applies = claim.binding.status !== "bound" ? "Game not identified"
+    : claim.gameId === selectedGameId || !game ? "This game" : `Applies to ${gameLabel(game)}`;
+  const observed = claim.binding.status === "bound" && claim.phase === "in_game" && !claim.reviewReasons.length && claim.accepted;
   const review = reviewReasonsCopy(claim.reviewReasons);
   const designation = claim.context === "practice" ? "Practice report, not game-confirmed"
     : claim.certainty === "confirmed" && claim.confirmationEvidence.length ? "Confirmed" : claim.certainty === "projected" ? "Projected" : "Reported";
   const label = `${KIND_COPY[claim.kind]} · ${subject}`;
   return <div role="group" aria-label={label} className={styles.claim}>
-    <p className={styles.claimTitle}>{label}{unit && !unit.complete && <span className={styles.chip}>Partial</span>}</p>
+    <p className={styles.claimTitle}>{label}{unit && !unit.complete && <span className={styles.chip}>Partial</span>}
+      {observed && <span className={[styles.chip, styles.chipConfirmed].join(" ")}>Observed in game</span>}</p>
     {unit && <p className={styles.players}>{names(unit)}</p>}
     {claim.relationship && <p className={styles.players}>{claim.relationship.evidence.text}</p>}
-    <p className={styles.muted}>{phase} · {applies}</p>
-    {claim.binding.status === "bound" && claim.phase === "in_game" && !claim.reviewReasons.length && claim.accepted && <p className={styles.muted}>Observed in game</p>}
-    <p className={styles.muted}>{designation}</p>
+    <p className={styles.muted}>{phase} · {applies} · {designation}</p>
     {!!review.length && <div className={styles.review}><p>Needs review</p><ul>{review.map((line) => <li key={line}>{line}</li>)}</ul></div>}
     {(claim.supersedes.length > 0 || claim.retracts.length > 0) && <p className={styles.notice}>Corrects an earlier report. The original stays in the history.</p>}
   </div>;
@@ -218,7 +228,7 @@ function ClaimRow({ claim, games }: { claim: LineClaim; games: LineGame[] }) {
 function captureTime(claims: LineClaim[]): number { return Date.parse(claims[0]!.time.originalPublishedAt ?? claims[0]!.time.ingestedAt) || 0; }
 
 /** Interpreted reports. Every report renders; the panel scrolls instead of paging. */
-function UpdateList({ team, games }: { team: GameTeamLines; games: LineGame[] }) {
+function UpdateList({ team, games, selectedGameId }: { team: GameTeamLines; games: LineGame[]; selectedGameId: number | null }) {
   const [history, setHistory] = useState(false);
   const claims = history ? team.history : team.observations;
   const groups = new Map<string, LineClaim[]>();
@@ -236,7 +246,7 @@ function UpdateList({ team, games }: { team: GameTeamLines; games: LineGame[] })
         const claim = group[0]!;
         return <li key={claim.captureId} className={styles.report}>
           <p className={styles.itemTitle}><Source claim={claim} /> <ClaimTime claim={claim} /></p>
-          {group.map((item) => <ClaimRow key={item.id} claim={item} games={games} />)}
+          {group.map((item) => <ClaimRow key={item.id} claim={item} games={games} selectedGameId={selectedGameId} />)}
           <p className={styles.muted}>Received {formatTime(claim.time.ingestedAt)}</p>
           <details className={styles.rawDetails}><summary>Source text</summary><p className={styles.rawText}>{claim.text}</p></details>
         </li>;
@@ -249,7 +259,7 @@ function UpdateList({ team, games }: { team: GameTeamLines; games: LineGame[] })
 }
 
 type TabKey = "updates" | "feed";
-function Sidebar({ team, games }: { team: GameTeamLines; games: LineGame[] }) {
+function Sidebar({ team, games, selectedGameId }: { team: GameTeamLines; games: LineGame[]; selectedGameId: number | null }) {
   const narrow = useNarrow();
   const base = useId();
   const [tab, setTab] = useState<TabKey>("updates");
@@ -258,7 +268,7 @@ function Sidebar({ team, games }: { team: GameTeamLines; games: LineGame[] }) {
   const updateCount = new Set(team.observations.map((claim) => claim.captureId)).size;
   const feed = team.feed ?? [];
   const sections: Array<{ key: TabKey; label: string; body: ReactNode }> = [
-    { key: "updates", label: `In-game updates (${updateCount})`, body: <UpdateList team={team} games={games} /> },
+    { key: "updates", label: `In-game updates (${updateCount})`, body: <UpdateList team={team} games={games} selectedGameId={selectedGameId} /> },
     { key: "feed", label: `Source feed (${feed.length})`, body: <SourceFeed items={feed} games={games} teamAbbreviation={team.abbreviation} /> },
   ];
   const label = `${team.abbreviation} updates and sources`;
@@ -300,14 +310,14 @@ export default function GameLineSnapshots({ data, onGameChange }: { data: GameLi
         {!game && <option value="">No live or upcoming game</option>}
         {data.games.map((candidate) => <option value={candidate.id} key={candidate.id}>{gameLabel(candidate)}</option>)}
       </select></div>
-      {game && <p className={styles.muted}>{gameLabel(game)} · {PHASE_COPY[game.phase]}
-        {game.observedAt && <> · State checked <time dateTime={game.observedAt}>{formatTime(game.observedAt)}</time></>}</p>}
+      {game && <p className={styles.muted}>{PHASE_COPY[game.phase]}
+        {game.observedAt && <> · checked <time dateTime={game.observedAt}>{formatTime(game.observedAt)}</time></>}</p>}
     </header>
     {!game && <p role="status" className={styles.stateEmpty}>No live or upcoming game for this team.{data.games.length ? " Earlier games are in the list above." : ""}</p>}
     {game?.phase === "unknown" && <p role="status" className={styles.stateWarn}>We can&apos;t read the game state right now, so the lineup isn&apos;t locked yet.</p>}
     {data.teams.map((team) => <section aria-label={`${team.abbreviation} lines`} key={`${game?.id}:${team.teamId}`} className={styles.layout}>
       <Entry team={team} games={data.games} entryView={data.entryView} />
-      <Sidebar team={team} games={data.games} />
+      <Sidebar team={team} games={data.games} selectedGameId={game?.id ?? null} />
     </section>)}
   </section>;
 }

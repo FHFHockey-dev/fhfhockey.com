@@ -31,7 +31,7 @@ describe("game Lines presentation", () => {
     expect(within(ppRow).queryByText("Observed in game")).toBeNull();
     expect(within(ppRow).getByText("We haven't checked these players against the game roster yet.")).toBeTruthy();
     expect(within(ppRow).queryByText(/event_membership_unverified/)).toBeNull();
-    expect(within(ppRow).getByText("During the game · Applies to 2026-10-01 · TBL at NYR")).toBeTruthy();
+    expect(within(ppRow).getByText("During the game · This game · Reported")).toBeTruthy();
     expect(within(rail).getAllByText("Mixed source evidence")).toHaveLength(1);
   });
   it("shows the entering-game heading, grouped entry units, supported IGA prose, source and separate PP groups", () => {
@@ -46,6 +46,34 @@ describe("game Lines presentation", () => {
     expect(screen.getByText(/Holmberg\/Point\/Guentzel together/)).toBeTruthy();
     expect(screen.getAllByRole("link", { name: "@fixtureauthor" }).length).toBeGreaterThan(0);
     expect(within(main).getByText("No PP2 report yet.")).toBeTruthy();
+  });
+  it("names a source shared by every row once per group", () => {
+    const data = fixtureResponse(0); const entry = data.teams[0]!.entry!;
+    data.teams[0]!.entry = { ...entry, units: [entry.units[0]!, { ...entry.units[0]!, unit: fixtureUnit(["Hagel", "Cirelli", "Guentzel"], "es_forward", 2) }] };
+    render(<GameLineSnapshots data={data} />);
+    const forwards = screen.getByRole("region", { name: "Forwards" });
+    expect(within(forwards).getAllByRole("link", { name: "@fixtureauthor" })).toHaveLength(1);
+    expect(within(forwards).getByText(/^Source:/)).toBeTruthy();
+  });
+  it("never shows a relay account as the source and links to the quoted original", () => {
+    const data = fixtureResponse(0); const entry = data.teams[0]!.entry!;
+    const relayed = fixtureClaim("relayed", { author: "GameDayLines", originalAuthor: "TBLightning", sourceUrl: "https://x.com/GameDayLines/status/1",
+      provenance: { relayTweetId: "1", originalTweetId: "42", attributionStatus: "resolved" } });
+    const unattributed = fixtureClaim("unattributed", { author: "CcCMiddleton", originalAuthor: "CcCMiddleton", sourceUrl: "https://x.com/CcCMiddleton/status/2" });
+    data.teams[0]!.entry = { ...entry, units: [{ ...entry.units[0]!, claims: [relayed] }, { ...entry.units[0]!, unit: fixtureUnit(["Hedman", "Cernak"], "es_defense", 1), claims: [unattributed] }] };
+    data.teams[0]!.ppDefaults = [];
+    render(<GameLineSnapshots data={data} />);
+    const main = entryPanel();
+    expect(within(main).getByRole("link", { name: "@TBLightning" }).getAttribute("href")).toBe("https://x.com/TBLightning/status/42");
+    expect(within(main).getByText("Original source not identified")).toBeTruthy();
+    expect(within(main).queryByText(/GameDayLines|CcCMiddleton/i)).toBeNull();
+    expect(main.querySelector('a[href*="GameDayLines"], a[href*="CcCMiddleton"]')).toBeNull();
+  });
+  it("wraps unit names only between players", () => {
+    const data = fixtureResponse(0); const entry = data.teams[0]!.entry!;
+    data.teams[0]!.entry = { ...entry, units: [{ ...entry.units[0]!, unit: fixtureUnit(["Jake Guentzel", "Anthony Cirelli"]) }] };
+    render(<GameLineSnapshots data={data} />);
+    expect(within(entryPanel()).getByText("Jake Guentzel — Anthony Cirelli").textContent).toBe("Jake\u00a0Guentzel\u00a0— Anthony\u00a0Cirelli");
   });
   it("lists each PP unit once even when the entry also carries it", () => {
     const data = fixtureResponse(0);
@@ -129,7 +157,7 @@ describe("game Lines presentation", () => {
     const carried = reconcilePP({ game: fixtureNext, games: data.games, teamId: 14, claims: [prior], now: fixtureNow, carryForward: true });
     data.teams[0]!.ppDefaults = carried;
     const view = render(<GameLineSnapshots data={data} />);
-    expect(screen.getByText("Carried forward from 2026-10-01 · TBL at NYR")).toBeTruthy();
+    expect(screen.getByText("Carried forward from Oct 1 · TBL at NYR")).toBeTruthy();
     data.teams[0]!.ppDefaults = reconcilePP({ game: fixtureNext, games: data.games, teamId: 14, claims: [prior, replacement], previous: carried, now: "2026-10-03T22:30:00Z", carryForward: true });
     view.rerender(<GameLineSnapshots data={data} />);
     const entry = entryPanel("TBL · Expected game-entry lineup");
@@ -175,6 +203,12 @@ describe("game Lines presentation", () => {
     const entry = entryPanel();
     expect(entry.compareDocumentPosition(toggle) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
+  it("names another game only when a claim is bound to a game other than the selected one", () => {
+    const data = fixtureResponse(0);
+    data.teams[0]!.observations = [fixtureClaim("other-game", { kind: "iga", phase: "pregame", unit: null, gameId: fixtureNext.id })];
+    render(<GameLineSnapshots data={data} />);
+    expect(within(updatesPanel()).getByText("Before the game · Applies to Oct 3 · TBL at NYR · Reported")).toBeTruthy();
+  });
   it("marks partial units and keeps unassigned numbers unassigned", () => {
     const data = fixtureResponse(0);
     const partial = { ...fixtureUnit(["Hagel", "Cirelli"], "es_forward", null), complete: false };
@@ -196,7 +230,7 @@ describe("game Lines presentation", () => {
     data.teams[0]!.entry = null;
     data.teams[0]!.ppDefaults = reconcilePP({ game: fixtureNext, games: data.games, teamId: 14, claims: [fixturePP(1), fixturePP(2)], now: fixtureNow, carryForward: true });
     render(<GameLineSnapshots data={data} />);
-    expect(screen.getAllByText("Carried forward from 2026-10-01 · TBL at NYR")).toHaveLength(2);
+    expect(screen.getAllByText("Carried forward from Oct 1 · TBL at NYR")).toHaveLength(2);
     expect(screen.getByText(/Carried units come from an earlier game/)).toBeTruthy();
   });
   it("shows a previous-game fallback and never confirms goalie order", () => {
@@ -205,7 +239,16 @@ describe("game Lines presentation", () => {
     data.teams[0]!.fallback = { gameId: fixtureGame.id, date: fixtureGame.date, entry: { ...previous, units: [{ ...previous.units[0]!, unit: fixtureUnit(["Vasilevskiy", "Hildeby"], "goalie") }] } };
     render(<GameLineSnapshots data={data} />);
     expect(screen.getByRole("heading", { name: /Previous game's lineup/ })).toBeTruthy();
-    expect(screen.getByText("Listed order only; the starter isn't confirmed.")).toBeTruthy();
+    expect(screen.getByText("Starter not confirmed")).toBeTruthy();
+  });
+  it("says a confirmed goalie list confirms the tandem, not the starter", () => {
+    const data = fixtureResponse(0); const entry = data.teams[0]!.entry!;
+    data.teams[0]!.entry = { ...entry, units: [{ ...entry.units[0]!, unit: fixtureUnit(["Vasilevskiy", "Johansson"], "goalie"), designation: "confirmed" }] };
+    render(<GameLineSnapshots data={data} />);
+    const goalies = screen.getByRole("region", { name: "Goalies" });
+    expect(within(goalies).getByText("Tandem confirmed")).toBeTruthy();
+    expect(within(goalies).getByText("Starter not confirmed")).toBeTruthy();
+    expect(within(goalies).queryByText("Confirmed")).toBeNull();
   });
   it("retains frozen entry if refresh lacks a correction chain, accepts a valid correction and keeps revision reasons", () => {
     const previous = fixtureResponse(); const incoming = fixtureResponse();

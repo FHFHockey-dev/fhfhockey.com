@@ -1,4 +1,5 @@
 import type { AuthorityTier, ClaimContext, LineGame } from "lib/lines/types";
+import { EXCLUDED_AUTHORS, RELAY_ACCOUNTS } from "lib/lines/authority";
 
 // Plain-language copy for the engine's raw review reason codes (lib/lines).
 // Fans never see the codes themselves; unknown codes fall back to a generic line.
@@ -71,7 +72,12 @@ export function reviewReasonsCopy(codes: string[]): string[] {
 
 // ---- Shared display copy for the snapshot UI (entry panel, IGA rail, source feed) ----
 
-export function gameLabel(game: LineGame): string { return `${game.date} · ${game.awayAbbreviation} at ${game.homeAbbreviation}`; }
+/** Site date style for a game day ("Nov 6"). Game dates are calendar days, so format in UTC to avoid a day shift. */
+export function shortDate(date: string): string {
+  const day = new Date(`${date}T12:00:00Z`);
+  return Number.isNaN(day.getTime()) ? date : day.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+}
+export function gameLabel(game: LineGame): string { return `${shortDate(game.date)} · ${game.awayAbbreviation} at ${game.homeAbbreviation}`; }
 
 export function formatTime(value: string): string {
   const date = new Date(value);
@@ -100,3 +106,29 @@ const REVISION_COPY: Record<string, string> = {
   "Entry evidence retracted": "Retracted by the original source",
 };
 export function revisionReasonCopy(reason: string): string { return REVISION_COPY[reason] ?? reviewReasonCopy(reason); }
+
+// ---- Attribution (TJ, 2026-11-06): the source is always the original author of the quoted post. ----
+// Relay accounts (DFOFantasy, NHL_Rosters, CcCMiddleton, GameDayLines, GameDayNewsNHL, GameDayGoalies)
+// and excluded accounts are never shown as a source, even when the data names them as the author.
+const HIDDEN_AUTHORS = new Set([...RELAY_ACCOUNTS, ...EXCLUDED_AUTHORS, "dfo_fantasy"]);
+const handleOf = (value: string | null | undefined) => value?.replace(/^@/, "").trim().toLowerCase() || null;
+const urlHandle = (url: string | null | undefined) => handleOf(url?.match(/^https?:\/\/(?:www\.)?(?:x|twitter)\.com\/([^/?#]+)\//i)?.[1]);
+
+export const ORIGINAL_SOURCE_PENDING = "Original source not identified";
+
+/** The handle to show as the source, or null when only a relay or excluded account is known. */
+export function sourceAuthor(handle: string | null | undefined): string | null {
+  const normal = handleOf(handle);
+  return normal && !HIDDEN_AUTHORS.has(normal) ? handle!.replace(/^@/, "").trim() : null;
+}
+
+/** A link to the original post: the original id or URL first, else a source URL that is not a relay's. */
+export function originalPostUrl(author: string | null, original: string | null | undefined, url: string | null | undefined): string | null {
+  if (!author) return null;
+  if (original && /^\d+$/.test(original)) return `https://x.com/${author}/status/${original}`;
+  for (const candidate of [original, url]) {
+    const handle = urlHandle(candidate);
+    if (candidate && handle && !HIDDEN_AUTHORS.has(handle)) return candidate;
+  }
+  return null;
+}
