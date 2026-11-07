@@ -14,6 +14,7 @@ import {
   cronClassificationFromAuditDetails,
   withCronJobAudit,
 } from "lib/cron/withCronJobAudit";
+import { isEmptyQueueProcessorRun } from "lib/cron/emptyQueueRun";
 import {
   NHL_SEASONAL_GAME_DATA,
   withNhlOffSeasonSkip,
@@ -291,6 +292,31 @@ describe("withCronJobAudit", () => {
     await wrapped(req, res);
 
     expect(insertMock.mock.calls[0][0].status).toBe("success");
+  });
+
+  it("writes no audit row for an empty queue poll and flushes the response unchanged", async () => {
+    const empty = { success: true, summary: { eventsLoaded: 0, eventsProcessed: 0, eventsRejected: 0,
+      eventsDeferred: 0, rowsUpserted: 0, lineCombinationSync: { written: 0, failures: [] } } };
+    const res = createMockRes();
+    await withCronJobAudit(async (_req, out) => out.json(empty), { skipAuditWhenNoOp: isEmptyQueueProcessorRun })(createMockReq(), res);
+    expect(insertMock).not.toHaveBeenCalled();
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toEqual(empty);
+  });
+
+  it("keeps audit rows for queue polls that did work, failed, or reported a gate state", async () => {
+    const skip = { skipAuditWhenNoOp: isEmptyQueueProcessorRun };
+    const bodies = [
+      { success: true, summary: { eventsLoaded: 2, eventsProcessed: 2, rowsUpserted: 1 } },
+      { success: true, summary: { eventsLoaded: 0, eventsProcessed: 0, rowsUpserted: 0, lineCombinationSync: { written: 3, failures: [] } } },
+      { success: false, summary: { eventsLoaded: 0, eventsProcessed: 0 } },
+      { success: true, mode: "claim_shadow_stopped", summary: { eventsLoaded: 0, eventsProcessed: 0 } },
+    ];
+    for (const body of bodies) await withCronJobAudit(async (_req, out) => out.json(body), skip)(createMockReq(), createMockRes());
+    await withCronJobAudit(async (_req, out) => out.status(500).json(bodies[0]), { skipAuditWhenNoOp: () => true })(createMockReq(), createMockRes());
+    await withCronJobAudit(async () => { throw new Error("boom"); }, { skipAuditWhenNoOp: () => true })(createMockReq(), createMockRes());
+    await withCronJobAudit(async (_req, out) => out.json({ success: true }), { skipAuditWhenNoOp: () => true, includeFinalAuditReceipt: true })(createMockReq(), createMockRes());
+    expect(insertMock).toHaveBeenCalledTimes(bodies.length + 3);
   });
 
   it("can omit inferred row metrics for an observability-only report", async () => {

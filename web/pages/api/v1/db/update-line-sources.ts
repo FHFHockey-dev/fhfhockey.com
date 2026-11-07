@@ -3,7 +3,9 @@ import { persistTweetProjectionReports, enrichTweetInjuryHistory } from "lib/sou
 import { admitTweetClaimEvaluationIntake, tweetClaimEvaluationIntakeWindow } from "lib/sources/tweetClaimEvaluationIntake";
 import { processTweetClaimShadowBatch } from "lib/sources/tweetClaimRegistry";
 import { processLineSnapshotEvidence } from "lib/lines/processor";
+import { lineSnapshotFlags } from "lib/lines/types";
 import { rosterSeasonForDate } from "lib/sources/playerIdentity";
+import { isEmptyQueueProcessorRun } from "lib/cron/emptyQueueRun";
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import { withCronJobTiming } from "lib/cron/timingContract";
 import { ForecastScheduleError } from "lib/player-forecasts/scopeReads";
@@ -1014,5 +1016,8 @@ export default withCronJobAudit(
   }),
   {
     jobName: "/api/v1/db/update-line-sources",
+    // Snapshot reconciliation can write on an empty queue without appearing
+    // in the processor summary, so keep those receipts while it is enabled.
+    skipAuditWhenNoOp: (body) => !lineSnapshotFlags().observations && isEmptyQueueProcessorRun(body),
   },
 );

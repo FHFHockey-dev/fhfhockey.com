@@ -15,7 +15,8 @@ import {
   type SlowJobWarning,
 } from "lib/cron/cronReportFlags";
 import { type CronJobTimingRecord } from "lib/cron/timingContract";
-import { readReportSource, reportRowIdentity, formatReportTime, REPORT_PAGE_SIZE } from "lib/cron/reportSource";
+import { readReportSource, reportRowIdentity, formatReportTime, describeSourceError, REPORT_PAGE_SIZE } from "lib/cron/reportSource";
+import { resolveScheduledHttpUrl } from "lib/cron/scheduledHttpUrl";
 import { extractAuditTimingRecord } from "lib/cron/cronReportTiming";
 import { readReportMetrics, repositoryExecutionLimitMs, isNearRepositoryLimit, reportedRuntimeBudgetMs } from "lib/cron/reportMetrics";
 import { buildSqlCronTimingObservation } from "lib/cron/sqlTiming";
@@ -38,6 +39,7 @@ const REPORT_WINDOW_MS = 24 * 60 * 60 * 1000;
 const SUCCESS_HISTORY_WINDOW_MS = 30 * REPORT_WINDOW_MS;
 const SUCCESS_HISTORY_MAX_PAGES = 8;
 const SUCCESS_HISTORY_BUDGET_MS = 15_000;
+const SUCCESS_HISTORY_MAX_JOBS = 60;
 // Repository policy, not proof of a deployed override. Leave time after reads
 // for assembly/rendering, email acceptance and the outer audit/response.
 // These are reserved headroom, not independently enforced phase timeouts.
@@ -966,7 +968,7 @@ function parseRowsAffectedFromReturnMessage(
   return null;
 }
 
-function parseCronInvocation(sqlText: string | null): {
+function parseCronInvocation(sqlText: string | null, scheduledAt?: string | null): {
   method: ScheduleMethod;
   url: string | null;
   route: string | null;
@@ -984,7 +986,7 @@ function parseCronInvocation(sqlText: string | null): {
     : "SQL";
 
   const urlMatch = sqlText.match(/url\s*:?=\s*'([^']+)'/i);
-  const url = urlMatch?.[1] ?? null;
+  const url = (scheduledAt ? resolveScheduledHttpUrl(sqlText, scheduledAt) : null) ?? urlMatch?.[1] ?? null;
   const { route, routePath } = parseUrlPieces(url);
 
   return {
@@ -1036,7 +1038,7 @@ function expectedRunAtWithinWindow(
     candidate.setUTCDate(candidate.getUTCDate() - 1);
   }
 
-  return candidate.getTime() >= since.getTime()
+  return candidate.getTime() >= since.getTime() && recurringSlotMatches({ cronExpression } as ScheduledCronJob, candidate.getTime())
     ? candidate.toISOString()
     : null;
 }
@@ -1079,9 +1081,10 @@ async function loadScheduledCronJobs(
     const name = match[1]?.trim() ?? "";
     const cronExpression = match[2]?.trim() ?? "";
     const body = match[3]?.trim() ?? "";
-    const invocation = parseCronInvocation(body);
     const scheduleTimeDisplay = formatScheduleTime(cronExpression);
     const expectedRunAt = expectedRunAtWithinWindow(cronExpression, since, now);
+    const literalRoute = parseCronInvocation(body).route;
+    const invocation = parseCronInvocation(body, expectedRunAt);
     const sqlText =
       invocation.method === "SQL"
         ? truncateText(body.replace(/\s+/g, " ").trim(), 180)
@@ -1097,6 +1100,8 @@ async function loadScheduledCronJobs(
       url: invocation.url,
       route: invocation.route,
       routePath: invocation.routePath,
+      literalRoute,
+      command: body,
       sqlText,
       expectedRunAt,
       sortOrder: index,
@@ -1110,7 +1115,7 @@ async function loadScheduledCronJobs(
       const cronExpression = String(entry.schedule ?? "").trim();
       const entryRoute = typeof entry.route === "string" ? entry.route : null;
       const entryUrl = typeof entry.url === "string" ? entry.url : entryRoute;
-      const entryInvocation = parseUrlPieces(entryUrl);
+      const literalInvocation = parseUrlPieces(entryUrl);
       const entryMethod =
         entry.method === "GET" ||
         entry.method === "POST" ||
@@ -1125,6 +1130,13 @@ async function loadScheduledCronJobs(
         ) ??
         sqlDefinitions.find((candidate) => candidate.name === name) ??
         null;
+      const expectedRunAt = expectedRunAtWithinWindow(cronExpression, since, now);
+      // JSON stores the first SQL literal for dynamic date URLs. Only replace
+      // that exact prefix using the matching definition, never a different
+      // inventory operation or an arbitrary query observed on the route.
+      const resolvedUrl = definition && definition.literalRoute === literalInvocation.route
+        ? parseCronInvocation(definition.command, expectedRunAt).url ?? entryUrl : entryUrl;
+      const entryInvocation = parseUrlPieces(resolvedUrl);
 
       return {
         jobid: entry.jobid ?? null,
@@ -1133,17 +1145,17 @@ async function loadScheduledCronJobs(
         cronExpression,
         scheduleTimeDisplay: formatScheduleTime(cronExpression),
         method: entryMethod ?? definition?.method ?? "UNKNOWN",
-        url: entryUrl ?? definition?.url ?? null,
+        url: resolvedUrl ?? definition?.url ?? null,
         route: entryInvocation.route ?? definition?.route ?? null,
         routePath: entryInvocation.routePath ?? definition?.routePath ?? null,
         sqlText: definition?.sqlText ?? null,
-        expectedRunAt: expectedRunAtWithinWindow(cronExpression, since, now),
+        expectedRunAt,
         sortOrder: index,
       };
     })
     .filter((job) => job.name && job.cronExpression);
 
-  const rawJobs = jsonJobs.length > 0 ? jsonJobs : sqlDefinitions;
+  const rawJobs = /```json\s*/i.test(markdown) ? jsonJobs : sqlDefinitions;
 
   const dedupedJobs = rawJobs.filter((job, index, jobs) => {
     const signature = [
@@ -1221,7 +1233,10 @@ function candidateMatchesSchedule(
 
   // Query parameters identify operations sharing a path (forecast horizons,
   // recurring count-limited lines versus the daily all operation).
-  if (job.route && candidate.route && job.routePath === candidate.routePath &&
+  // An exact pg_cron jobid identifies the job even if the inventory route has
+  // drifted from the live command's query string.
+  const sameJobId = candidate.jobid != null && candidate.jobid === job.jobid;
+  if (!sameJobId && job.route && candidate.route && job.routePath === candidate.routePath &&
       canonicalRoute(job.route) !== canonicalRoute(candidate.route)) return false;
 
   const candidateMethod = candidate.method?.toUpperCase() ?? null;
@@ -1269,9 +1284,14 @@ function cronTimeFieldMatches(expression: string, value: number): boolean {
 }
 
 function recurringSlotMatches(job: ScheduledCronJob, slot: number): boolean {
-  const [minutes, hours] = job.cronExpression.split(/\s+/);
+  const [minutes, hours, monthDay = "*", month = "*", weekDay = "*"] = job.cronExpression.split(/\s+/);
   const date = new Date(slot);
-  return cronTimeFieldMatches(minutes, date.getUTCMinutes()) && cronTimeFieldMatches(hours, date.getUTCHours());
+  const dayMatches = cronTimeFieldMatches(monthDay, date.getUTCDate());
+  const weekMatches = cronTimeFieldMatches(weekDay, date.getUTCDay()) ||
+    (date.getUTCDay() === 0 && cronTimeFieldMatches(weekDay, 7));
+  const calendarMatches = monthDay === "*" || weekDay === "*" ? dayMatches && weekMatches : dayMatches || weekMatches;
+  return cronTimeFieldMatches(minutes, date.getUTCMinutes()) && cronTimeFieldMatches(hours, date.getUTCHours()) &&
+    cronTimeFieldMatches(month, date.getUTCMonth() + 1) && calendarMatches;
 }
 
 function latestRequiredRecurringSlot(job: ScheduledCronJob, since: Date, until: Date): string | null {
@@ -1412,6 +1432,22 @@ function buildRunDigestFromAudit(
   };
 }
 
+// Supabase Edge Functions are invoked through pg_net and write no
+// cron_job_audit row; their own health is reported separately.
+function isEdgeFunctionRoute(routePath: string | null): boolean {
+  return routePath?.startsWith("/functions/v1/") ?? false;
+}
+
+// pg_net's net.http_* returns one row (the queued request id), so pg_cron
+// records "1 row". That proves the request was queued, not what it returned.
+function describeCronReturnMessage(row: RunRow): string | null {
+  const message = row.returnMessage ? sanitizeErrorMessage(row.returnMessage, 240) : null;
+  if (!message || row.method === "SQL" || row.status !== "success" || !/^\d+ rows?$/i.test(message.trim())) return message;
+  return isEdgeFunctionRoute(row.routePath)
+    ? "pg_cron queued this Supabase Edge Function request; the function writes no cron_job_audit row, so its result is not in this report."
+    : "pg_cron queued the HTTP request, but no cron_job_audit row from the route matched it, so the route's result is unknown.";
+}
+
 function buildRunDigestFromCron(
   row: RunRow,
   lastKnownSuccessDisplay: string | null = null
@@ -1446,9 +1482,7 @@ function buildRunDigestFromCron(
     timingProvenance: cronTimingProvenance(row),
     runtimeBudgetMs: null,
     observationKind: "extra",
-    reason: row.returnMessage
-      ? sanitizeErrorMessage(row.returnMessage, 240)
-      : null,
+    reason: describeCronReturnMessage(row),
     lastKnownSuccessDisplay,
     failedRowSamples: [],
     optimizationDenotation,
@@ -1592,7 +1626,7 @@ function collectMissingObservationWarnings(job: {
     ]
       .filter((source): source is string => Boolean(source))
       .join(" and ");
-    warnings.push(`Telemetry source unavailable: ${unavailableSources}.`);
+    warnings.push(`Telemetry source unavailable: ${unavailableSources}. Jobs that need it to confirm a run show as unknown.`);
   }
 
   return warnings;
@@ -1604,7 +1638,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   const sourceBudgetMs = Math.max(0, (repositoryLimitMs ?? 0) -
     Object.values(REPORT_PHASE_RESERVES_MS).reduce((sum, reserve) => sum + reserve, 0));
   const sourceDeadlineAt = now.getTime() + sourceBudgetMs;
-  const sourceOptions = { deadlineAt: sourceDeadlineAt, requestTimeoutMs: REPORT_REQUEST_TIMEOUT_MS };
+  const sourceOptions = { deadlineAt: sourceDeadlineAt, requestTimeoutMs: REPORT_REQUEST_TIMEOUT_MS, countMode: "per-pass" as const };
   const sinceDate = new Date(now.getTime() - REPORT_WINDOW_MS);
   const since = sinceDate.toISOString();
   // Read alongside the telemetry sources; a slow lookup degrades to "unknown",
@@ -1626,27 +1660,31 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   let auditEmailResult: any = null;
   const errors: string[] = [];
 
-  const runSource = await readReportSource<any>((from, to, signal) => supabase
+  // Start both core sources together so a slow run-history read cannot spend
+  // the entire shared budget before route audit observations are attempted.
+  const [runSource, auditSource] = await Promise.all([
+    readReportSource<any>((from, to, signal, query) => supabase
     .from("cron_job_report")
-    .select("jobid, runid, jobname, scheduled_time, status, return_message, end_time, sql_text", { count: "exact" })
+    .select("jobid, runid, jobname, scheduled_time, status, return_message, end_time, sql_text", { count: query.count })
     .gte("scheduled_time", since).lte("scheduled_time", until)
     .order("scheduled_time", { ascending: true }).order("runid", { ascending: true })
     .range(from, to).abortSignal(signal),
-    (row) => String(row.runid), REPORT_PAGE_SIZE, 40, sourceBudgetMs, sourceOptions);
-  const auditSource = await readReportSource<any>((from, to, signal) => supabase
+    (row) => String(row.runid), REPORT_PAGE_SIZE, 40, sourceBudgetMs, sourceOptions),
+    readReportSource<any>((from, to, signal, query) => supabase
     .from("cron_job_audit")
-    .select("job_name, run_time, rows_affected, status, details", { count: "exact" })
+    .select("job_name, run_time, rows_affected, status, details", { count: query.count })
     .gte("run_time", since).lte("run_time", until)
     .order("run_time", { ascending: true }).order("job_name", { ascending: true })
     .order("status", { ascending: true }).order("rows_affected", { ascending: true })
     .order("details", { ascending: true }).range(from, to)
-    .abortSignal(signal), reportRowIdentity, REPORT_PAGE_SIZE, 40, sourceBudgetMs, sourceOptions);
+    .abortSignal(signal), reportRowIdentity, REPORT_PAGE_SIZE, 40, sourceBudgetMs, sourceOptions),
+  ]);
   const runs = runSource.rows;
   const audits = auditSource.rows;
   const runErr = runSource.error;
   const auditErr = auditSource.error;
   for (const [name, source] of [["cron_job_report", runSource], ["cron_job_audit", auditSource]] as const) {
-    if (!source.complete) errors.push(`Incomplete ${name}: ${sanitizeErrorMessage(source.error) ?? "Unknown source error"}. ${source.rows.length} observations retained; totals unknown.`);
+    if (!source.complete) errors.push(`Incomplete ${name}: ${describeSourceError(sanitizeErrorMessage(source.error)) ?? "Unknown source error"}. Read stopped after ${source.rows.length.toLocaleString("en-US")} rows; totals unknown.`);
   }
 
   let scheduledJobs: ScheduledCronJob[] = [];
@@ -1672,6 +1710,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     });
   }
 
+  const notDueJobs = scheduledJobs.filter((job) =>
+    !job.expectedRunAt && !latestRequiredRecurringSlot(job, sinceDate, now));
+  scheduledJobs = scheduledJobs.filter((job) => !notDueJobs.includes(job));
   const seasonWindow = await seasonWindowPromise;
   const gameDataRoutes = new Set(audits.flatMap((row) => {
     if (cronClassificationFromAuditDetails(row.details) !== NHL_SEASONAL_GAME_DATA) return [];
@@ -1698,12 +1739,31 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   // write counts, schedule assignments, or the 24-hour telemetry denominator.
   const needsSuccessHistory = auditRows.some((row) => classifyAuditStatus(row) === "failure") ||
     runs.some((row) => normalizeStatus(row.status) === "failure");
+  // Only failing jobs without a success in this window need the 30-day
+  // lookback. Reading every success instead pulled ~270k mostly empty-poll
+  // rows and never completed within its page budget.
+  const windowSuccesses = buildLastKnownSuccessMap(auditRows, true);
+  const successHistoryJobNames = Array.from(new Set([
+    ...auditRows.filter((row) => classifyAuditStatus(row) === "failure" && !windowSuccesses.has(auditSuccessKey({
+      jobName: row.jobName, method: row.parsed.method, route: row.parsed.route, routePath: row.parsed.routePath })))
+      // The wrapper's default job name is the route path, so try both.
+      .flatMap((row) => [row.jobName, row.parsed.routePath].filter((value): value is string => Boolean(value))),
+    ...runs.filter((row) => normalizeStatus(row.status) === "failure").flatMap((row) => {
+      const invocation = parseCronInvocation((row.sql_text ?? null) as string | null);
+      const name = String(row.jobname ?? "");
+      return windowSuccesses.has(auditSuccessKey({ jobName: name, ...invocation })) ? []
+        : [name, invocation.routePath].filter((value): value is string => Boolean(value));
+    }),
+  ]));
+  const successHistoryJobsTruncated = successHistoryJobNames.length > SUCCESS_HISTORY_MAX_JOBS;
+  successHistoryJobNames.length = Math.min(successHistoryJobNames.length, SUCCESS_HISTORY_MAX_JOBS);
   const successHistorySince = needsSuccessHistory
     ? new Date(now.getTime() - SUCCESS_HISTORY_WINDOW_MS).toISOString() : since;
-  const successHistorySource = needsSuccessHistory ? await readReportSource<any>((from, to, signal) => supabase
+  const successHistorySource = successHistoryJobNames.length > 0 ? await readReportSource<any>((from, to, signal, query) => supabase
     .from("cron_job_audit")
-    .select("job_name, run_time, rows_affected, status, details", { count: "exact" })
+    .select("job_name, run_time, rows_affected, status, details", { count: query.count })
     .gte("run_time", successHistorySince).lte("run_time", since)
+    .in("job_name", successHistoryJobNames)
     .in("status", ["success", "succeeded", "ok", "passed"])
     .order("run_time", { ascending: false }).order("job_name", { ascending: true })
     .order("status", { ascending: true }).order("rows_affected", { ascending: true })
@@ -1712,8 +1772,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     SUCCESS_HISTORY_MAX_PAGES, SUCCESS_HISTORY_BUDGET_MS, sourceOptions) : null;
   const successHistory = {
     since: successHistorySince, until,
-    complete: auditSource.complete && (successHistorySource?.complete ?? true),
-    error: sanitizeErrorMessage(successHistorySource?.error ?? auditSource.error),
+    complete: auditSource.complete && !successHistoryJobsTruncated && (successHistorySource?.complete ?? true),
+    error: describeSourceError(sanitizeErrorMessage(successHistorySource?.error ?? auditSource.error)) ??
+      (successHistoryJobsTruncated ? `Lookback limited to ${SUCCESS_HISTORY_MAX_JOBS} failing jobs` : null),
   };
   const lastKnownSuccessMap = buildLastKnownSuccessMap([
     ...auditRows, ...(successHistorySource?.rows ?? []).map(toAuditRow),
@@ -1726,7 +1787,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
   const runRows: RunRow[] = (runs ?? []).map((row: any) => {
     const invocation = parseCronInvocation(
-      (row.sql_text ?? null) as string | null
+      (row.sql_text ?? null) as string | null, row.scheduled_time
     );
     const timing = invocation.method === "SQL" ? buildSqlCronTimingObservation({
       jobname: (row.jobname ?? null) as string | null,
@@ -1893,9 +1954,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       const message =
         lastAudit?.parsed.responseMessage ??
         lastAudit?.detailsMessage ??
-        (lastRun?.returnMessage
-          ? sanitizeErrorMessage(lastRun.returnMessage, 240)
-          : null) ??
+        (lastRun ? describeCronReturnMessage(lastRun) : null) ??
         null;
 
       const why =
@@ -1978,7 +2037,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       }
       if (!lastAudit && !lastRun && !hasFullCoverageForMissing) {
         notes.push(
-          "Telemetry is incomplete, so missing-run status could not be determined."
+          "No receipt was read for this slot, but telemetry is incomplete, so it may still have run."
         );
       }
       if (lastStatus === "success" && (failedRowsLast ?? 0) > 0) {
@@ -2091,8 +2150,19 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         })
       )
     );
+  const edgeFunctionDispatches = Array.from(runRows
+    .filter((row) => !matchedRunIds.has(row.id) && isEdgeFunctionRoute(row.routePath))
+    .reduce((byJob, row) => {
+      const entry = byJob.get(row.jobName) ?? { jobName: row.jobName, route: row.route, queued: 0, failed: 0, latestAt: null as string | null };
+      if (row.status === "success") entry.queued++;
+      else if (row.status === "failure") entry.failed++;
+      if (!entry.latestAt || Date.parse(row.time) > Date.parse(entry.latestAt)) entry.latestAt = row.time;
+      return byJob.set(row.jobName, entry);
+    }, new Map<string, { jobName: string; route: string | null; queued: number; failed: number; latestAt: string | null }>())
+    .values());
   const unmatchedCronRuns = runRows
-    .filter((row) => !matchedRunIds.has(row.id))
+    // A queued Edge Function request is summarized above; failed dispatches stay alerts.
+    .filter((row) => !matchedRunIds.has(row.id) && !(isEdgeFunctionRoute(row.routePath) && row.status === "success"))
     .map((row) =>
       buildRunDigestFromCron(
         row,
@@ -2339,6 +2409,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
                   ? `⚠️ Daily Cron Report — ${counts.jobsDisabledLast} quarantined`
                   : `✅ Daily Cron Report — ${counts.jobsOkLast}/${counts.scheduledJobs} jobs ok`,
         react: CronAuditEmail({
+          edgeFunctionDispatches,
           audits: [...auditBriefings, ...notableUnscheduledRuns],
           sinceDate: since,
           untilDate: until,
@@ -2449,6 +2520,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     successHistory,
     totalsComplete: runSource.complete && auditSource.complete,
     countScope: "observed",
+    scheduleInventory: { denominatorScope: "pg_cron entries enabled in repository inventory and due in this window",
+      notDueJobs: notDueJobs.map((job) => ({ name: job.name, schedule: job.cronExpression })), edgeFunctionDispatches },
     rowMetricScope: "Confirmed writes in latest scheduled receipts; partial coverage, never generic affected/attempted counts",
     totals: {
       auditRuns: auditSource.complete ? counts.auditRuns : null,

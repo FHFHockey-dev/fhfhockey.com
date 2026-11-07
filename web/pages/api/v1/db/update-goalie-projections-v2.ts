@@ -48,6 +48,22 @@ export async function upsertGoalieProjectionRows(
   updates: any[],
   chunkSize = 1000
 ) {
+  if (!Number.isSafeInteger(chunkSize) || chunkSize <= 0) {
+    throw new Error("Goalie projection chunk size must be a positive integer.");
+  }
+  // Validate the complete write set before splitting it: otherwise a duplicate
+  // across chunks silently overwrites the first team's row instead of failing.
+  const identities = new Set<string>();
+  for (const row of updates) {
+    if (!Number.isSafeInteger(row.game_id) || row.game_id <= 0
+      || !Number.isSafeInteger(row.player_id) || row.player_id <= 0) {
+      throw new Error("Goalie projection has an invalid game/player identity.");
+    }
+    const key = `${row.game_id}:${row.player_id}`;
+    if (identities.has(key)) throw new Error(`Duplicate goalie projection identity: ${key}. No rows written.`);
+    identities.add(key);
+  }
+
   let rowsUpserted = 0;
   const failures: Array<{
     stage: "goalie_start_projections_upsert";
@@ -80,6 +96,79 @@ export async function upsertGoalieProjectionRows(
     failedRows: failures.reduce((sum, failure) => sum + failure.rows, 0),
     failures
   };
+}
+
+/** Remove only rejected source candidates, after a complete replacement write.
+ * The old team is part of every predicate: a traded goalie's valid new-team row
+ * can share the game/player conflict key and must never be removed. */
+export async function pruneIneligibleGoalieProjectionRows(
+  client: Pick<typeof supabase, "from">,
+  rejected: Array<{ game_id: number; team_id: number; player_id: number }>,
+) {
+  let rowsRemoved = 0;
+  const failures: Array<{ stage: "goalie_start_projections_prune"; batchIndex: number; rows: number; error: string }> = [];
+  const unique = [...new Map(rejected.map(row => [`${row.game_id}:${row.team_id}:${row.player_id}`, row])).values()];
+  for (const row of unique) {
+    if (![row.game_id, row.team_id, row.player_id].every(id => Number.isSafeInteger(id) && id > 0)) {
+      throw new Error("Invalid rejected goalie identity. No rows removed.");
+    }
+  }
+  for (const [batchIndex, row] of unique.entries()) {
+    const { error, count } = await client.from("goalie_start_projections" as any)
+      .delete({ count: "exact" }).eq("game_id", row.game_id).eq("team_id", row.team_id).eq("player_id", row.player_id);
+    if (error || count === null || count === undefined) {
+      failures.push({ stage: "goalie_start_projections_prune", batchIndex, rows: 1,
+        error: error?.message ?? "Goalie stale-row removal count was not acknowledged." });
+      break;
+    }
+    rowsRemoved += count;
+  }
+  return { rowsRemoved, failures };
+}
+
+/** Current roster membership is a team-identity filter, not a new goalie model.
+ * Query all candidate players, including their new team when it has no game in
+ * this window. Missing membership excludes a historical candidate; conflicting
+ * current memberships fail closed rather than picking a home/away winner. */
+async function fetchCurrentGoalieTeams(playerIds: number[], seasonId: number) {
+  if (!Number.isSafeInteger(seasonId) || seasonId <= 0) throw new Error("Invalid goalie roster season.");
+  const membership = new Map<number, number>();
+  for (let offset = 0; offset < playerIds.length; offset += 100) {
+    const ids = playerIds.slice(offset, offset + 100);
+    const { data, error, count } = await supabase.from("rosters")
+      .select("playerId,teamId", { count: "exact" })
+      .eq("seasonId", seasonId).eq("is_current", true).in("playerId", ids).limit(500);
+    if (error) throw error;
+    if (!Array.isArray(data) || count === null || data.length !== count) {
+      throw new Error("Current goalie roster membership was incomplete.");
+    }
+    for (const row of data) {
+      if (!ids.includes(row.playerId) || !Number.isSafeInteger(row.teamId) || row.teamId <= 0
+        || membership.has(row.playerId) && membership.get(row.playerId) !== row.teamId) {
+        throw new Error(`Current goalie roster membership is ambiguous or invalid for player ${row.playerId}.`);
+      }
+      membership.set(row.playerId, row.teamId);
+    }
+  }
+  return membership;
+}
+
+/** Historical refreshes must not apply today's roster retroactively. The latest
+ * observed game at or before that date supplies identity only, not start odds. */
+export function historicalGoalieTeams(teamLogs: Record<number, any[]>, date: string) {
+  const latest = new Map<number, { date: string; teamId: number | null }>();
+  for (const [team, logs] of Object.entries(teamLogs)) {
+    for (const log of logs) {
+      if (log.gameDate > date) continue;
+      const previous = latest.get(log.playerId);
+      if (!previous || log.gameDate > previous.date) {
+        latest.set(log.playerId, { date: log.gameDate, teamId: Number(team) });
+      } else if (log.gameDate === previous.date && previous.teamId !== Number(team)) {
+        previous.teamId = null;
+      }
+    }
+  }
+  return new Map([...latest].map(([playerId, value]) => [playerId, value.teamId]));
 }
 
 const handler = async (
@@ -210,7 +299,7 @@ const handler = async (
       // Fetch everything from season start up to today (or lastDateToProcess to be safe, but today is fine)
       params.append(
         "cayenneExp",
-        `franchiseId=${franchiseId} and gameDate>="${seasonStartDate}" and ${buildNhlStatsScoringGameTypeCayenne()}`
+        `franchiseId=${franchiseId} and gameDate>="${seasonStartDate}" and gameDate<="${today}" and ${buildNhlStatsScoringGameTypeCayenne()}`
       );
 
       const queryString = params.toString().replace(/\+/g, "%20");
@@ -236,17 +325,31 @@ const handler = async (
       (teamId) => (teamLogsMap[teamId]?.length ?? 0) === 0
     ).length;
 
+    if (failedTeamLogFetches > 0 || missingTeamMetadata > 0) {
+      throw new Error(`Goalie inputs incomplete: ${failedTeamLogFetches} team log fetches failed; ${missingTeamMetadata} teams lack metadata. No rows written.`);
+    }
+    const candidateIds = [...new Set(Object.values(teamLogsMap).flat().map(log => log.playerId))];
+    const currentTeams = filteredGames.some(game => game.date >= today)
+      ? await fetchCurrentGoalieTeams(candidateIds, Number(currentSeason.id))
+      : new Map<number, number>();
+    let excludedHistoricalCandidates = 0;
+
     console.log("Finished fetching team logs. Starting processing...");
 
     let totalUpserted = 0;
     let failedRows = 0;
-    let databaseWriteFailures: Awaited<
-      ReturnType<typeof upsertGoalieProjectionRows>
-    >["failures"] = [];
+    let rowsRemoved = 0;
+    let databaseWriteFailures: Array<
+      Awaited<ReturnType<typeof upsertGoalieProjectionRows>>["failures"][number]
+      | Awaited<ReturnType<typeof pruneIneligibleGoalieProjectionRows>>["failures"][number]
+    > = [];
     const updates: any[] = [];
+    const rejected: Array<{ game_id: number; team_id: number; player_id: number }> = [];
+    const missingGameTeams: Array<{ gameId: number; teamId: number }> = [];
 
     // 5. Process Games
     for (const game of filteredGames) {
+      const eligibleTeams = game.date >= today ? currentTeams : historicalGoalieTeams(teamLogsMap, game.date);
       for (const type of ["home", "away"] as const) {
         const teamId = type === "home" ? game.homeTeamId : game.awayTeamId;
         const allLogs = teamLogsMap[teamId] || [];
@@ -261,9 +364,6 @@ const handler = async (
 
         const logsForStats = allLogs.filter(
           (log: any) => log.gameDate <= game.date
-        );
-        const currentLogs = allLogs.filter(
-          (log: any) => log.gameDate === game.date
         );
 
         // Calculate Season Stats
@@ -309,9 +409,18 @@ const handler = async (
           }
         });
 
+        const rowsBeforeTeam = updates.length;
         for (const playerIdStr in playerStats) {
           const stats = playerStats[playerIdStr];
           const playerId = parseInt(playerIdStr);
+          if (eligibleTeams.get(playerId) === null) {
+            throw new Error(`Ambiguous historical goalie team for player ${playerId} on ${game.date}. No rows written.`);
+          }
+          if (eligibleTeams.get(playerId) !== teamId) {
+            excludedHistoricalCandidates += 1;
+            rejected.push({ game_id: game.id, team_id: teamId, player_id: playerId });
+            continue;
+          }
 
           const seasonPct =
             totalSeasonGames > 0 ? stats.seasonStarts / totalSeasonGames : 0;
@@ -336,7 +445,17 @@ const handler = async (
             confirmed_status: false
           });
         }
+        if (updates.length === rowsBeforeTeam) missingGameTeams.push({ gameId: game.id, teamId });
       }
+    }
+    if (missingGameTeams.length > 0) {
+      return res.status(422).json({
+        success: false,
+        error: "No eligible goalie history for one or more game teams. No rows written.",
+        missingGameTeams: missingGameTeams.slice(0, 20),
+        missingGameTeamCount: missingGameTeams.length,
+        updates: 0,
+      });
     }
 
     // 6. Batch Upsert
@@ -346,6 +465,11 @@ const handler = async (
       totalUpserted = upsertResult.rowsUpserted;
       failedRows = upsertResult.failedRows;
       databaseWriteFailures = upsertResult.failures;
+      if (databaseWriteFailures.length === 0 && rejected.length > 0) {
+        const pruned = await pruneIneligibleGoalieProjectionRows(supabase, rejected);
+        rowsRemoved = pruned.rowsRemoved;
+        databaseWriteFailures.push(...pruned.failures);
+      }
     }
 
     const statusCode = databaseWriteFailures.length > 0
@@ -359,14 +483,16 @@ const handler = async (
       message:
         databaseWriteFailures.length === 0
           ? `Updated projections. Total upserted: ${totalUpserted}`
-          : `Goalie projection writes were incomplete: ${totalUpserted} upserted, ${failedRows} failed.`,
+          : `Goalie projection writes were incomplete: ${totalUpserted} upserted, ${failedRows} failed; ${databaseWriteFailures.length} write/reconciliation failures.`,
       updates: totalUpserted,
+      rowsRemoved,
       failedRows,
       failures: databaseWriteFailures.slice(0, 10),
       ownershipDecision: GOALIE_START_TABLE_OWNERSHIP,
       observability: {
         goalieRowsProcessed: totalUpserted,
         databaseWriteFailures: databaseWriteFailures.length,
+        excludedHistoricalCandidates,
         dataQualityWarnings: [
           ...(filteredGames.length > 0 && totalUpserted === 0
             ? [

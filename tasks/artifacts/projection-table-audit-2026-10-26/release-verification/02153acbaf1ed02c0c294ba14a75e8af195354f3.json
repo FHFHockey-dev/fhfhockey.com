@@ -12,7 +12,7 @@
     "tree": "c241fb10d5f60e4147ff3d76bd9d7c8468ab1981"
   },
   "verifierSha256": "2da61a46b89df70669c454f08fbefd3a0803655a92226f0c8020aad9b9d3c456",
-  "closureWalkerSha256": "e33ccacb21dca88ef2d163dab5f16ec0c50bb817373b9ab000c2ac8e29df5bad",
+  "closureWalkerSha256": "b7ec38db70612782bf45edf0086aa54cdb62dfea6de6cbac901dc13a2e3af2a2",
   "roots": [
     "lib/projections/run-forge-projections.ts",
     "lib/projections/starterBoardQueue.ts",

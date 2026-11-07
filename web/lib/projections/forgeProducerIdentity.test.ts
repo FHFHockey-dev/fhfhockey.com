@@ -80,6 +80,27 @@ describe("FORGE producer closure identity", () => {
     expect(identity({ ...base, "lib/root.ts": `${base["lib/root.ts"]}import "lib/unrelated";\n` }).closureSha256).not.toBe(first.closureSha256);
   });
 
+  it("keeps the accuracy writer hashed but excludes only its exact downstream admission edge", () => {
+    const accuracy = "pages/api/v1/db/run-projection-accuracy.ts";
+    const admission = "lib/projections/externalInputProof.ts";
+    const allowlist = "lib/projections/verifiedForgeReleases.ts";
+    const files = { ...base, "lib/root.ts": `import "../${accuracy.replace(/\.ts$/, "")}";`,
+      [accuracy]: 'import "lib/projections/externalInputProof"; export const updateCalibration = 1;',
+      [admission]: 'import "./verifiedForgeReleases";', [allowlist]: "export const verified = [];" };
+    const first = identity(files);
+    expect(first.scan.modules).toContain(accuracy);
+    expect(first.scan.modules).not.toContain(admission);
+    expect(first.scan.modules).not.toContain(allowlist);
+    expect(identity({ ...files, [accuracy]: `${files[accuracy]} export const changed = true;` }).closureSha256).not.toBe(first.closureSha256);
+    expect(identity({ ...files, [admission]: `${files[admission]} export const changed = true;`,
+      [allowlist]: "export const verified = [1];" }).closureSha256).toBe(first.closureSha256);
+    const direct = identity({ ...files, "lib/root.ts": `${files["lib/root.ts"]} import "lib/projections/externalInputProof";` });
+    expect(direct.scan.findings).toContainEqual(expect.objectContaining({ kind: "admission_module_in_closure", file: admission }));
+    const alternate = identity({ ...files, "lib/root.ts": `${files["lib/root.ts"]} import "./helper";`,
+      "lib/helper.ts": 'import "lib/projections/externalInputProof";' });
+    expect(alternate.scan.findings).toContainEqual(expect.objectContaining({ kind: "admission_module_in_closure", file: admission }));
+  });
+
   it("is defined by next.config.js only in a production build's server bundles, from source, never from an env label", () => {
     const web = resolve(__dirname, "../..");
     // A stand-in webpack: records what each compiler would define.

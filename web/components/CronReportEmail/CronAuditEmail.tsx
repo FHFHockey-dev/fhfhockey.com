@@ -36,6 +36,7 @@ interface AuditEntry {
 
 interface CronAuditEmailProps {
   audits: AuditEntry[];
+  edgeFunctionDispatches?: Array<{ jobName: string; route: string | null; queued: number; failed: number; latestAt: string | null }>;
   sinceDate: string;
   untilDate?: string;
   totalsComplete?: boolean;
@@ -85,7 +86,7 @@ const LABEL_ORDER = ["MISSING", "PARTIAL", "NEAR LIMIT", "NEAR BUDGET", "CONTINU
 
 type FailureGroup = { jobName: string; rows: AuditEntry[]; latest: AuditEntry; lastSuccess: string | null; recovered: boolean };
 
-export const CronAuditEmail: React.FC<CronAuditEmailProps> = ({ audits, sinceDate, untilDate, totalsComplete = true, fetchErrors = [], successHistory, summary }) => {
+export const CronAuditEmail: React.FC<CronAuditEmailProps> = ({ audits, sinceDate, untilDate, totalsComplete = true, fetchErrors = [], successHistory, summary, edgeFunctionDispatches = [] }) => {
   const globalWarnings = Array.from(new Set([
     ...fetchErrors,
     ...audits.flatMap((row) => row.missingObservationWarnings ?? []).filter((warning) => warning.includes("Telemetry source unavailable")),
@@ -199,6 +200,12 @@ export const CronAuditEmail: React.FC<CronAuditEmailProps> = ({ audits, sinceDat
       </div>)}
     </> : null}
 
+    {edgeFunctionDispatches.length > 0 ? <div style={{ ...muted, marginTop: 18 }}>
+      <strong>Supabase Edge Functions queued by pg_cron</strong>
+      <div>pg_cron confirms each request was queued. These functions write no cron_job_audit row, so their results are not counted here.</div>
+      {edgeFunctionDispatches.map((entry) => <div key={entry.jobName} style={{ overflowWrap: "anywhere", color: entry.failed > 0 ? red : undefined }}>
+        {entry.jobName} · {entry.queued.toLocaleString("en-US")} queued{entry.failed > 0 ? ` · ${entry.failed} failed to queue` : ""}{entry.latestAt ? ` · latest ${localOf(formatReportTime(entry.latestAt))}` : ""}</div>)}
+    </div> : null}
     <p style={{ ...muted, marginTop: 18 }}>{healthyCount} healthy job{healthyCount === 1 ? "" : "s"}; not listed individually.</p>
     {audits.length === 0 ? <p>No job observations available.</p> : null}
 

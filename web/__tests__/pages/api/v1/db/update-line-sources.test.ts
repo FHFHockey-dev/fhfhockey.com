@@ -545,6 +545,22 @@ describe("/api/v1/db/update-line-sources", () => {
     ]);
   });
 
+  it.each([true, false])("keeps empty-queue snapshot work audited when observations are enabled: %s", async (enabled) => {
+    vi.stubEnv("LINES_OBSERVATIONS_ENABLED", String(enabled));
+    createSupabaseMocks([]);
+    mocks.syncLineCombinationSourceWinners.mockResolvedValue({ sourceRows: 0, eligibleWinners: 0, written: 0, failures: [] });
+    const reconcile = vi.spyOn(lineProcessor, "processLineSnapshotEvidence")
+      .mockResolvedValue({ enabled, claims: 0, reconciled: enabled ? 2 : 0 });
+    try {
+      const res = createMockRes();
+      await handler(createMockReq(), res);
+      expect(res.body.summary).toMatchObject({ eventsLoaded: 0, eventsProcessed: 0, rowsUpserted: 0,
+        lineCombinationSync: { written: 0, failures: [] } });
+      expect(reconcile).toHaveBeenCalledWith(expect.anything(), [], [8, 14]);
+      expect(mocks.auditInsert).toHaveBeenCalledTimes(enabled ? 1 : 0);
+    } finally { reconcile.mockRestore(); }
+  });
+
   it("avoids empty-queue roster work while retaining scheduled reconciliation and audit", async () => {
     createSupabaseMocks([]);
     const reconcile = vi.spyOn(lineProcessor, "processLineSnapshotEvidence").mockResolvedValue({ enabled: true, claims: 0, reconciled: 2 });

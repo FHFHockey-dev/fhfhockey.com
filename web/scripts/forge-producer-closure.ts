@@ -177,6 +177,12 @@ export function scanForgeClosure(webRoot: string, roots: string[], options: ts.C
         return;
       }
       if (resolved.isExternalLibraryImport || resolved.resolvedFileName.includes("/node_modules/")) return;
+      // Accuracy is a downstream consumer, but remains hashed because it also
+      // updates run calibration metrics. Only this exact admission-read edge is
+      // outside producer identity: hashing its allowlist would be self-referential.
+      // Admission reached from any other producer import still fails below.
+      if (rel(file) === "pages/api/v1/db/run-projection-accuracy.ts"
+        && rel(resolved.resolvedFileName) === "lib/projections/externalInputProof.ts") return;
       if (PROVIDER_CONFIG_PATH.test(rel(resolved.resolvedFileName))) {
         findings.push({ file: rel(file), line: at(node), kind: "provider_config_import", text: specifier });
       }

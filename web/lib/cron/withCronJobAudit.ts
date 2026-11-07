@@ -264,6 +264,9 @@ export function withCronJobAudit(
     // Limit persisted response data to safe primitive summary fields. The API
     // response and outcome inference still use the complete handler result.
     responsePreviewKeys?: readonly string[];
+    // Empty successful queue polls add no useful execution evidence.
+    // Work, failures, continuations and explicit final receipts remain audited.
+    skipAuditWhenNoOp?: (body: unknown) => boolean;
   }
 ): (req: any, res: any) => Promise<void> {
   return async (req: NextApiRequest, res: NextApiResponse) => {
@@ -360,6 +363,9 @@ export function withCronJobAudit(
     }
 
     let finalAuditStatus: "persisted" | "failed" = "persisted";
+    const auditSkipped = thrown == null && !plannedContinuation && !inferredFailure &&
+      statusCode >= 200 && statusCode < 300 && !opts?.includeFinalAuditReceipt &&
+      opts?.skipAuditWhenNoOp?.(capturedBody) === true;
 
     const auditBody = opts?.responsePreviewKeys == null
       ? capturedBody
@@ -403,7 +409,7 @@ export function withCronJobAudit(
     };
 
     try {
-      try {
+      if (!auditSkipped) try {
         const { error: auditInsertError } = await supabase
           .from("cron_job_audit")
           .insert(row as any);
