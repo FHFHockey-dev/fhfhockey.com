@@ -1735,8 +1735,12 @@ export function refreshLinesCccSourceFromPrimaryText(args: {
   const nonNhlHandleMatch = detectNonNhlHandle({
     sourceHandles,
   });
-  const detectedNonNhlLeague =
-    detectNonNhlLeague(text) ?? nonNhlHandleMatch?.league ?? null;
+  // An explicit league label on the relaying wrapper ("AHL Wolf Pack lines") still governs when the primary text is
+  // the quoted original, which may carry only an NHL affiliate's tag (#NYR).
+  const textLeague = [text, args.source.enrichedText, args.source.rawText]
+    .map((value) => (value ? detectNonNhlLeague(value) : null))
+    .find((league) => league != null) ?? null;
+  const detectedNonNhlLeague = textLeague ?? nonNhlHandleMatch?.league ?? null;
   const team = detectedNonNhlLeague
     ? null
     : resolveLinesCccTeam({
@@ -1767,7 +1771,7 @@ export function refreshLinesCccSourceFromPrimaryText(args: {
       ? null
       : nhlFilterStatus === "rejected_non_nhl"
         ? detectedNonNhlLeague === nonNhlHandleMatch?.league &&
-          !detectNonNhlLeague(text)
+          !textLeague
           ? "minor_league_source_handle"
           : "explicit_non_nhl_league_marker"
         : labelMatchedTeams.length > 1

@@ -1739,3 +1739,25 @@ describe("lineup changes become player events (Owen Beck had 0 events, 2026-11-0
     } finally { vi.unstubAllEnvs(); }
   });
 });
+
+describe("league label on the wrapper of a quoted post (tweet 2119183971926130848, 2026-11-07)", () => {
+  it("keeps an AHL-labelled wrapper rejected when the quoted original carries only the NHL affiliate's tag", () => {
+    const teams = buildTeamDirectory([{ id: 3, name: "New York Rangers", abbreviation: "NYR", logo: "/teamLogos/NYR.png" }]);
+    const rosterByTeam = new Map([[3, [{ playerId: 8480000, fullName: "Victor Mancini", lastName: "Mancini", position: "D", teamId: 3 }]]]);
+    const wrapper = "AHL Wolf Pack lines\nAHL Wolf Pack Starting Goalie: Callum Tung https://x.com/TheKeeganJarvis/status/2119182685557977428";
+    const quoted = "Wolf Pack lines tonight at Syracuse:\n\nMcConnell-Barker - Gawdin - Raddysh\nTerrance - Dowling - Greentree\nBlidh - Pärssinen - Aspinall\nNachbaur - Vanroboys - Lamb\n\nVaakanainen - Del Gaizo\nFortescue - Iorio\nDorrington - Frisch \n\nTung\nMartin\n\n#HFDvsSYR | #NYR";
+    const source = buildLinesCccSourceFromIftttEvent({ snapshotDate: "2026-11-07", teams, rosterByTeam, gameIdByTeamId: new Map([[3, 2026020267]]),
+      event: { id: "wolfpack", source: "fxtwitter", source_account: "CcCMiddleton", username: "CcCMiddleton", text: wrapper, tweet_id: "2119183971926130848",
+        link_to_tweet: "https://x.com/CcCMiddleton/status/2119183971926130848", tweet_created_at: "2026-11-07T21:40:00Z", created_at_label: null,
+        received_at: "2026-11-07T21:44:06Z", raw_payload: {} } });
+    expect(source).toMatchObject({ nhlFilterStatus: "rejected_non_nhl", team: null });
+    // Before the fix the quoted-text refresh re-ran the league check on the quote alone and accepted it as NYR.
+    const refreshed = refreshLinesCccSourceFromPrimaryText({ teams, rosterByTeam,
+      source: { ...source, primaryTextSource: "quoted_oembed", quotedRawText: quoted, quotedAuthorHandle: "TheKeeganJarvis", quotedTweetId: "2119182685557977428" } });
+    expect(refreshed).toMatchObject({ nhlFilterStatus: "rejected_non_nhl", nhlFilterReason: "explicit_non_nhl_league_marker", team: null });
+    // The same quote relayed without a league label still resolves to the NHL club.
+    const plain = refreshLinesCccSourceFromPrimaryText({ teams, rosterByTeam,
+      source: { ...source, rawText: "Rangers lines https://x.com/x/status/1", enrichedText: null, primaryTextSource: "quoted_oembed", quotedRawText: quoted } });
+    expect(plain.nhlFilterStatus).not.toBe("rejected_non_nhl");
+  });
+});
