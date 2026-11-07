@@ -1256,11 +1256,14 @@ function extractGoalieNameFromKeywordLine(args: {
 }
 
 export type RowGoalieState = {
+  /** Roster name, or the literal text of a goalie slot that did not resolve (it keeps its slot, id null). */
   name: string;
-  playerId: number;
-  /** Event state, or the row's own ✅/🅿️ marker, or "listed" for an unmarked goalie row. */
-  state: "confirmed" | "likely" | "projected" | "observed" | "listed" | "ruled_out";
+  playerId: number | null;
+  /** Event state, the row's own ✅/🅿️ marker, "listed" for an unmarked goalie row, "unresolved" for an unknown name. */
+  state: "confirmed" | "likely" | "projected" | "observed" | "listed" | "unresolved" | "ruled_out";
   role: "starter" | "backup" | null;
+  /** The goalie row's position in the tweet's list (1 = starter, 2 = backup), when it came from one. */
+  slot: number | null;
   observation: TweetPlayerEvent["observation"] | null;
   source: "event" | "unit";
   /** False when the goalie is ruled out: kept for evidence, never stored as goalie_1/goalie_2. */
@@ -1270,9 +1273,10 @@ export type RowGoalieState = {
 const GOALIE_STATE_RANK: Record<string, number> = { confirmed: 0, likely: 1, projected: 2 };
 
 /**
- * Row goalies from the interpretation: confirmed starters first, then likely, projected and warmup/first-off
- * observations, then goalie rows, then backups. A ruled-out goalie is never a row goalie; every goalie's state is
- * kept in `states` so a projected start is not read as a confirmed one.
+ * Row goalies from the interpretation, in this order: explicit confirmed or likely starts; then the tweet's goalie
+ * rows in slot order (first listed = starter, second = backup), where an unresolved name keeps its slot as a
+ * literal with no id; then projected starts and warmup/first-off observations; then backups. A ruled-out goalie is
+ * never a row goalie. Every goalie's state is kept in `states` so a projected start is not read as a confirmed one.
  */
 export function buildRowGoalies(args: { interpretation: TweetInterpretation; events: TweetPlayerEvent[]; rosterEntries: RosterNameEntry[] }) {
   const goalieEntry = (playerId: number) => args.rosterEntries.find((entry) => entry.playerId === playerId && entry.position === "G");
@@ -1285,20 +1289,33 @@ export function buildRowGoalies(args: { interpretation: TweetInterpretation; eve
     .sort((left, right) => rank(left.event) - rank(right.event) || left.index - right.index).map(({ event }) => event);
   const backups = live.filter((event) => event.goalieRole === "backup");
   const states: RowGoalieState[] = [];
-  const add = (state: Omit<RowGoalieState, "stored" | "name">) => {
+  const add = (state: Omit<RowGoalieState, "stored" | "name"> & { name?: string }) => {
+    if (state.playerId == null) {
+      if (state.name) states.push({ ...state, name: state.name, stored: true });
+      return;
+    }
     const entry = goalieEntry(state.playerId);
     if (!entry || states.some((existing) => existing.playerId === state.playerId)) return;
     states.push({ ...state, name: entry.fullName, stored: !ruledOut.has(state.playerId) });
   };
   const eventState = (event: TweetPlayerEvent): RowGoalieState["state"] =>
     event.state === "confirmed" || event.state === "likely" || event.state === "projected" || event.state === "observed" || event.state === "ruled_out" ? event.state : "projected";
-  for (const event of starters) add({ playerId: event.playerId, state: eventState(event), role: event.goalieRole ?? "starter", observation: event.observation ?? null, source: "event" });
-  for (const unit of args.interpretation.units) {
-    if (unit.situation !== "goalie" || !unit.complete) continue;
-    for (const player of unit.players) add({ playerId: player.playerId, state: unit.sourceMarker?.certainty ?? "listed", role: null, observation: null, source: "unit" });
+  const fromEvent = (event: TweetPlayerEvent, role: RowGoalieState["role"]) =>
+    add({ playerId: event.playerId, state: eventState(event), role, slot: null, observation: event.observation ?? null, source: "event" });
+  for (const event of starters) if (rank(event) < 2) fromEvent(event, event.goalieRole ?? "starter");
+  const slots = [
+    ...args.interpretation.units.filter((unit) => unit.situation === "goalie" && unit.complete)
+      .flatMap((unit) => unit.players.map((player) => ({ slot: unit.number, playerId: player.playerId as number | null, name: undefined as string | undefined, state: (unit.sourceMarker?.certainty ?? "listed") as RowGoalieState["state"] }))),
+    ...args.interpretation.unresolved.filter((entry) => entry.situation === "goalie" && entry.number != null)
+      .map((entry) => ({ slot: entry.number!, playerId: null, name: entry.text, state: "unresolved" as const })),
+  ].sort((left, right) => (left.slot ?? Infinity) - (right.slot ?? Infinity));
+  const listed = slots.filter((slot) => slot.slot != null).length > 1;
+  for (const { slot, playerId, name, state } of slots) {
+    add({ playerId, name, state, role: listed && slot === 1 ? "starter" : listed && slot === 2 ? "backup" : null, slot, observation: null, source: "unit" });
   }
-  for (const event of backups) add({ playerId: event.playerId, state: eventState(event), role: "backup", observation: event.observation ?? null, source: "event" });
-  for (const event of events) if (ruledOut.has(event.playerId)) add({ playerId: event.playerId, state: "ruled_out", role: event.goalieRole ?? null, observation: event.observation ?? null, source: "event" });
+  for (const event of starters) if (rank(event) >= 2) fromEvent(event, event.goalieRole ?? "starter");
+  for (const event of backups) fromEvent(event, "backup");
+  for (const event of events) if (ruledOut.has(event.playerId)) add({ playerId: event.playerId, state: "ruled_out", role: event.goalieRole ?? null, slot: null, observation: event.observation ?? null, source: "event" });
   return { goalies: states.filter((state) => state.stored).map((state) => state.name), states };
 }
 

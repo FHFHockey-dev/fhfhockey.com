@@ -273,6 +273,10 @@ export function interpretTweetUnits(text: string, roster: PlayerIdentity[]): Twe
   let pending: TweetUnit | null = null;
   let offset = 0;
   const ordinals = new Map<string, number>();
+  // Goalie rows are slots: the first listed goalie is the starter and the second the backup, even when a name
+  // in an earlier slot does not resolve.
+  const goalieSlots = new Map<string | null, number>();
+  const nextGoalieSlot = () => { const slot = (goalieSlots.get(group) ?? 0) + 1; goalieSlots.set(group, slot); return slot; };
   let sawStructure = /\b(lines?|lineup|pairings?|units?|rushes|camp|morning skate)\b/i.test(text)
     || text.split("\n").filter((line) => /^[\p{L}.'’\s–—/-]+$/u.test(line) && /[-–—/]/.test(line)).length > 1;
   const flush = () => { if (pending) result.units.push(pending); pending = null; };
@@ -323,7 +327,12 @@ export function interpretTweetUnits(text: string, roster: PlayerIdentity[]): Twe
     if (/^(?:RT\s+@|#|@|https?:)/i.test(line)) { flush(); continue; }
     const extras = line.match(/^(.+?)\s+(?:are|is)\s+(?:the\s+)?extras?[.!]?$/i);
     if (extras) line = extras[1]!.trim();
-    const lineSituation = extras ? "scratch" : situation;
+    // After the even-strength rows, a lone one-name line ("UPL", "Ellis") is a goalie slot unless it names a skater.
+    const implicitGoalie = !extras && situation == null && sawStructure && line.length <= 40 && !PROSE.test(line)
+      && /^[\p{L}.'’]+(?: [\p{L}.'’]+){0,2}$/u.test(line)
+      && result.units.some((unit) => unit.group === group && (unit.situation === "es_forward" || unit.situation === "es_defense"))
+      && (segmentPlayerRow(line, roster)?.every((hit) => playerPositionRole(hit.player) === "goalie") ?? true);
+    const lineSituation = extras ? "scratch" : implicitGoalie ? "goalie" : situation;
     const slashParts = line.includes("/") ? line.split(/\s*\/\s*/).map((part) => segmentPlayerRow(part, roster)) : null;
     // One resolved player per slash slot is a row delimiter. Multiple players in
     // one slot remain alternatives, rather than being merged into a full unit.
@@ -371,7 +380,7 @@ export function interpretTweetUnits(text: string, roster: PlayerIdentity[]): Twe
       flush();
       if (sawStructure && lineSituation === "goalie" && /^[\p{L}.'’\s-]+$/u.test(line) && line.length < 90) {
         const start = lineStart + rawLine.indexOf(line);
-        result.unresolved.push({ start, end: start + line.length, text: line, situation: "goalie", reason: "missing_player", candidates: [] });
+        result.unresolved.push({ start, end: start + line.length, text: line, situation: "goalie", number: nextGoalieSlot(), reason: "missing_player", candidates: [] });
       }
       if (sawStructure && slashParts && !simpleSlash && lineSituation !== "scratch" && line.length < 90) {
         result.relationships ??= [];
@@ -450,7 +459,7 @@ export function interpretTweetUnits(text: string, roster: PlayerIdentity[]): Twe
     }
     sawStructure = true;
     if (!explicitEsHeading) sectionRole = kind;
-    result.units.push({ situation: kind, number: rowKind === kind ? ordinals.get(`${group}:${kind}`)! : result.units.filter((unit) => unit.situation === kind && unit.group === group).length + 1,
+    result.units.push({ situation: kind, number: kind === "goalie" ? nextGoalieSlot() : rowKind === kind ? ordinals.get(`${group}:${kind}`)! : result.units.filter((unit) => unit.situation === kind && unit.group === group).length + 1,
       explicitNumber, players, evidence, group, complete: true, ...(sourceMarker ? { sourceMarker } : {}) });
     if (rowKind) { number = null; explicitNumber = false; }
   }

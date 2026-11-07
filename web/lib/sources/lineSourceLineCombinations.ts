@@ -85,10 +85,14 @@ export function buildLineCombinationSourceMutation(
     observedAt: row.tweet_posted_at ?? row.observed_at,
   };
 
+  // goalie_1 is the starter slot. When it is unresolved (name kept, id null) the backup must not move up.
+  const orderedGoalies = (): number[] =>
+    Number.isFinite(row.goalie_1_player_id)
+      ? [row.goalie_1_player_id, row.goalie_2_player_id].filter((id): id is number => Number.isFinite(id))
+      : [];
+
   if (row.classification === "goalie_start") {
-    const goalies = [row.goalie_1_player_id, row.goalie_2_player_id].filter(
-      (id): id is number => Number.isFinite(id),
-    );
+    const goalies = orderedGoalies();
     if (goalies.length === 0) return null;
     return { ...base, forwards: null, defensemen: null, goalies };
   }
@@ -113,9 +117,7 @@ export function buildLineCombinationSourceMutation(
   ]);
   if (forwards?.length !== 12 || defensemen?.length !== 6) return null;
 
-  const goalies = [row.goalie_1_player_id, row.goalie_2_player_id].filter(
-    (id): id is number => Number.isFinite(id),
-  );
+  const goalies = orderedGoalies();
   return {
     ...base,
     forwards,

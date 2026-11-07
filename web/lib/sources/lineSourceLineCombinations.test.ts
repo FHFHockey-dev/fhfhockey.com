@@ -105,6 +105,11 @@ describe("tweet-derived lineCombinations mutations", () => {
     expect(mutations.map((mutation) => mutation.sourceCaptureKey)).toEqual(["gdl-complete"]);
   });
 
+  it("never moves a backup into an unresolved starter slot", () => {
+    expect(buildLineCombinationSourceMutation(row({ goalie_1_player_id: null, goalie_2_player_id: 20 }))?.goalies).toBeNull();
+    expect(buildLineCombinationSourceMutation(row({ classification: "goalie_start", goalie_1_player_id: null, goalie_2_player_id: 20 }))).toBeNull();
+  });
+
   it("writes nothing for a bucket with no complete lineup", () => {
     expect(selectLineCombinationSourceMutations([
       row({ capture_key: "partial-a", tweet_id: "100", line_4_player_ids: null }),
