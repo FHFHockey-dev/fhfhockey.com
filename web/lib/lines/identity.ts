@@ -18,7 +18,8 @@ export function resolveEventUnit(unit: TweetUnit, args: { teamId: number; effect
     const raw = unit.evidence[index]?.text ?? player.name;
     const result = resolvePlayerIdentity(raw, roster, args.teamId);
     if (result.status !== "matched") { reasons.push(`identity:${raw}:${result.status}`); return player; }
-    if (result.player.playerId !== player.playerId) { reasons.push(`identity:${raw}:interpretation_mismatch`); return player; }
+    // playerId 0 marks a name the interpretation left unassigned (a swap literal); only an assigned id can mismatch.
+    if (player.playerId > 0 && result.player.playerId !== player.playerId) { reasons.push(`identity:${raw}:interpretation_mismatch`); return player; }
     evidence.push(...members.filter((row) => row.playerId === player.playerId && row.teamId === args.teamId).map((row) => row.evidenceId));
     if (result.basis === "alias") evidence.push(...args.aliases.filter((alias) => alias.playerId === player.playerId && normalizeIdentityName(alias.raw) === normalizeIdentityName(raw)).map((alias) => alias.evidenceId));
     return { playerId: result.player.playerId, name: result.player.fullName };

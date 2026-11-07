@@ -3,15 +3,9 @@
 .wrapper {
   margin-top: vars.$space-lg;
   padding: vars.$space-md vars.$space-lg;
-  border-radius: vars.$border-radius-lg;
-  border: 1px solid vars.$border-secondary;
-  background: linear-gradient(
-    135deg,
-    rgba(vars.$background-light, 0.92),
-    rgba(vars.$background-medium, 0.88)
-  );
-  box-shadow: vars.$desktop-panel-shadow;
-  backdrop-filter: blur(12px);
+  border-radius: vars.$radius-card;
+  border: vars.$border-subtle;
+  background: vars.$surface-1;
   color: vars.$text-primary;
 }
 
@@ -26,8 +20,7 @@
   margin: 0;
   font-family: vars.$font-family-primary;
   font-size: vars.$font-size-lg;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
+  font-weight: 700;
 }
 
 .context {
@@ -36,10 +29,18 @@
   color: vars.$text-secondary;
 }
 
-.gameId {
-  color: vars.$primary-color;
-  font-family: vars.$font-family-numbers;
-  letter-spacing: 0.08em;
+.legend {
+  display: inline-flex;
+  align-items: center;
+  gap: vars.$space-xs;
+}
+
+.legendSwatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  background: rgba(vars.$primary-color, 0.2);
+  border: 1px solid rgba(vars.$primary-color, 0.6);
 }
 
 .status,
@@ -98,7 +99,6 @@
 
 .unitRowExpanded {
   border-color: vars.$primary-color;
-  box-shadow: 0 0 24px rgba(vars.$primary-color, 0.22);
 }
 
 .unitSummary {
@@ -116,15 +116,13 @@
 
 .unitLabel {
   font-size: vars.$font-size-sm;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
+  font-weight: 700;
   color: vars.$text-primary;
 }
 
 .unitMeta {
   font-size: vars.$font-size-xs;
   color: vars.$text-secondary;
-  font-family: vars.$font-family-numbers;
 }
 
 .chevron {
@@ -155,8 +153,6 @@
   background: rgba(vars.$background-dark, 0.82);
   border: 1px solid rgba(vars.$border-secondary, 0.6);
   font-size: vars.$font-size-xs;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
   transition: border-color 180ms ease;
   width: 100%;
   justify-content: space-between;
@@ -171,7 +167,6 @@
   font-family: vars.$font-family-numbers;
   color: vars.$primary-color;
   font-size: vars.$font-size-xs;
-  letter-spacing: 0.08em;
 }
 
 .playerName {
@@ -215,8 +210,6 @@
   gap: vars.$space-sm;
   font-size: vars.$font-size-xs;
   color: vars.$text-secondary;
-  letter-spacing: 0.06em;
-  font-family: vars.$font-family-numbers;
 }
 
 .historyDate {

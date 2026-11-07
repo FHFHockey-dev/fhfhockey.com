@@ -7,6 +7,8 @@ import {
   buildTeamDirectory,
   classifyGameDayTweet,
   extractStructuredPlayerGroupsFromText,
+  resolveTweetNameToRosterEntry,
+  rosterNamesHaveRole,
   extractStructuredNameGroupsFromTweet,
   findGameDayTweetKeywordHits,
   matchRosterNamesInTweet,
@@ -702,6 +704,24 @@ Fowler`;
     });
   });
 
+  it("reads a shared surname by its slot in structured groups", () => {
+    const roster = [
+      { playerId: 1, fullName: "Jesper Bratt", lastName: "Bratt", position: "L", teamId: 1 },
+      { playerId: 2, fullName: "Jack Hughes", lastName: "Hughes", position: "C", teamId: 1 },
+      { playerId: 3, fullName: "Timo Meier", lastName: "Meier", position: "R", teamId: 1 },
+      { playerId: 4, fullName: "Luke Hughes", lastName: "Hughes", position: "D", teamId: 1 },
+      { playerId: 5, fullName: "Dougie Hamilton", lastName: "Hamilton", position: "D", teamId: 1 },
+      { playerId: 6, fullName: "Matthew Tkachuk", lastName: "Tkachuk", position: "L", teamId: 1 },
+      { playerId: 7, fullName: "Brady Tkachuk", lastName: "Tkachuk", position: "L", teamId: 1 },
+    ];
+    const result = extractStructuredPlayerGroupsFromText("Bratt-Hughes-Meier\nHughes-Hamilton\nTkachuk-Bratt-Meier", roster);
+    expect(result.forwards.map((line) => line.map((name) => resolveTweetNameToRosterEntry(name, roster, "es_forward")?.playerId))).toEqual([[1, 2, 3]]);
+    expect(result.defensePairs.map((pair) => pair.map((name) => resolveTweetNameToRosterEntry(name, roster, "es_defense")?.playerId))).toEqual([[4, 5]]);
+    expect(rosterNamesHaveRole(["Hughes", "Hamilton"], roster, "es_defense")).toBe(true);
+    expect(rosterNamesHaveRole(["Tkachuk", "Bratt", "Meier"], roster, "es_forward")).toBe(false);
+    expect(resolveTweetNameToRosterEntry("Hughes", roster)).toBeNull();
+  });
+
   it("prefers initial-qualified last names before ambiguous bare last names", () => {
     expect(validateLineupNames(["E. Lindholm", "H. Lindholm"], bruinsRoster)).toMatchObject({
       matchedPlayerIds: [201, 202],
@@ -863,5 +883,22 @@ Fowler`;
         "2026-04-21T15:00:00.000Z"
       )?.sourceName
     ).toBe("goalie_start_projections");
+  });
+});
+
+describe("classifyGameDayTweet row types (Lines IGA audit fixes)", () => {
+  it("does not read roster transactions as injuries", () => {
+    for (const text of ["Minnesota has recalled Mason Shaw from Iowa", "Pittsburgh has assigned Jake Livanavage to Wilkes-Barre/Scranton",
+      "Arsenii Sergeev has been assigned to the @AHLWranglers", "The Sabres have signed Josh Doan to a two-year extension", "Columbus has promoted Jack Williams"]) {
+      expect(classifyGameDayTweet(text)).not.toBe("injury");
+    }
+    expect(classifyGameDayTweet("The Blackhawks have placed Bowen Byram on IR and recalled Dillon Boucher")).toBe("injury");
+    expect(classifyGameDayTweet("Slavin left with an injury and is day-to-day")).toBe("injury");
+  });
+
+  it("keeps a power play as a sub-unit of a full lineup", () => {
+    const lineup = "Sabres lineup tonight\nKulich - Krebs - Doan\nThompson - Norris - Tuch\nQuinn - McLeod - Benson\nZucker - Greenway - Malenstyn\n\nPower - Dahlin\nSamuelsson - Byram\nBryson - Timmins\n\nPP1: Thompson - Tuch - Norris - Quinn - Dahlin\nLuukkonen";
+    expect(classifyGameDayTweet(lineup)).toBe("lineup");
+    expect(classifyGameDayTweet("Sabres power play units\nPP1: Thompson - Tuch - Norris - Quinn - Dahlin\nPP2: Kulich - Krebs - Doan - Benson - Power")).toBe("power_play");
   });
 });

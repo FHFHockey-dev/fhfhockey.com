@@ -54,9 +54,9 @@ describe("LineShareBars", () => {
       />
     );
 
-    expect(screen.getByText("Recent Line Share")).toBeTruthy();
+    expect(screen.getByText("Recent line share")).toBeTruthy();
     expect(screen.getByText("L1")).toBeTruthy();
     expect(screen.getByText("L2")).toBeTruthy();
-    expect(screen.getAllByText(/Timeshare|Goal Share/).length).toBeGreaterThan(1);
+    expect(screen.getAllByText(/Ice time share|Goal share/).length).toBeGreaterThan(1);
   });
 });

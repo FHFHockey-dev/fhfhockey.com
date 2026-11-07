@@ -20,6 +20,30 @@
   margin: 0 auto;
 }
 
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: vars.$space-xs vars.$space-md;
+  margin: vars.$space-sm auto 0;
+  padding: 0 vars.$space-sm;
+  font-size: vars.$font-size-xs;
+  color: vars.$text-secondary;
+  text-align: center;
+}
+
+.legendKey {
+  display: inline-flex;
+  align-items: center;
+  gap: vars.$space-xs;
+}
+
+.legendSwatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}
+
 .status,
 .statusError,
 .emptyState {
@@ -65,6 +89,7 @@
 
   // #__next > div > div.ShiftChart_shiftChartContainer__CgnMf > div:nth-child(3) > div > div.LinemateMatrix_gridWrapper__d0Bm9 > section:nth-child(2) > h4
 
+  h3,
   h4 {
     font-family: vars.$font-family-accent;
     color: vars.$color-white;
@@ -74,6 +99,11 @@
     font-weight: 900;
     text-transform: uppercase;
     letter-spacing: -0.075em;
+  }
+
+  // h3 keeps the h4 rhythm (browser default h4 block margin).
+  h3 {
+    margin-block: 1.33em;
   }
 
   .grid {
@@ -169,7 +199,7 @@
     justify-content: flex-start;
     margin-bottom: 12px;
     flex-wrap: wrap;
-    h4 { flex: 1; min-width: 90px; font-family: vars.$font-family-primary; font-weight: 650; font-size: 0.875rem; letter-spacing: 0; line-height: 1.3; margin: 0; }
+    h3, h4 { flex: 1; min-width: 90px; font-family: vars.$font-family-primary; font-weight: 650; font-size: 0.875rem; letter-spacing: 0; line-height: 1.3; margin: 0; }
   }
   .grid { width: 100%; border-width: 1px; border-radius: 4px; }
   .gridWrapper { gap: 16px; padding: 0; }
@@ -230,5 +260,28 @@
     .cell { border-width: .5px; }
     .cell:focus-visible { outline: 2px solid #fff; outline-offset: 0; z-index: 2; }
     .comparisonBar { flex: 0 0 auto; font-size: 11px; margin: 0; }
+  }
+}
+
+// Opt-in (wideNames): room for full names such as "R. Nugent-Hopkins".
+.container.wideNames {
+  max-width: 580px;
+  --player-info-size: 132px;
+  @media only screen and (max-width: vars.$screen-small-max) {
+    --player-info-size: 120px;
+  }
+}
+
+// Opt-in (controlsAlign="start"): mode select and legend line up with a left-aligned section heading.
+.controlsStart {
+  .selectWrapper {
+    margin: 0;
+  }
+
+  .legend {
+    justify-content: flex-start;
+    margin-left: 0;
+    padding: 0;
+    text-align: left;
   }
 }

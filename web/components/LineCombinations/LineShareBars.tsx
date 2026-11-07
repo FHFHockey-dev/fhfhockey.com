@@ -37,9 +37,9 @@ export default function LineShareBars({ lines }: LineShareBarsProps) {
   const totalGoals = lineRows.reduce((sum, line) => sum + line.goals, 0);
 
   return (
-    <section className={styles.wrapper}>
+    <section className={styles.wrapper} aria-labelledby="line-share-title">
       <header className={styles.header}>
-        <h3 className={styles.title}>Recent Line Share</h3>
+        <h3 id="line-share-title" className={styles.title}>Recent line share</h3>
         <p className={styles.description}>
           Last tracked sample share for forward-line ice time and goal production.
         </p>
@@ -61,7 +61,7 @@ export default function LineShareBars({ lines }: LineShareBarsProps) {
 
               <div className={styles.metricBlock}>
                 <div className={styles.metricHeader}>
-                  <span>Timeshare</span>
+                  <span>Ice time share</span>
                   <strong>{(toiShare * 100).toFixed(1)}%</strong>
                 </div>
                 <div className={styles.track}>
@@ -74,7 +74,7 @@ export default function LineShareBars({ lines }: LineShareBarsProps) {
 
               <div className={styles.metricBlock}>
                 <div className={styles.metricHeader}>
-                  <span>Goal Share</span>
+                  <span>Goal share</span>
                   <strong>{(goalShare * 100).toFixed(1)}%</strong>
                 </div>
                 <div className={styles.track}>

@@ -1,4 +1,4 @@
-import { identityMentionPresent } from "./tweetInterpretation";
+import { identityMentionPresent, surnameReadsAsPhrase } from "./tweetInterpretation";
 import { normalizeIdentityName, resolvePlayerIdentity, type PlayerIdentity, type PlayerIdentityResolution } from "./playerIdentity";
 
 export type InjuryEventState = "new_injury" | "ongoing" | "setback" | "possible_return" | "confirmed_return" | "unknown";
@@ -109,6 +109,9 @@ function injuryEffectiveDate(text: string, publishedAt: string | null): string |
   return date.getUTCMonth() === month && date.getUTCDate() === Number(match[2]) ? date.toISOString().slice(0, 10) : null;
 }
 
+const GOALIE_SLOT_AFTER = /^\s*(?:(?:is|will be)\s+)?(?:in (?:net|goal)|(?:will |to )?start(?:s|ing)?\s+(?:in (?:net|goal)|tonight|today|tomorrow|vs\.?|against)\b|gets? the (?:start|nod)|(?:is\s+)?(?:the\s+)?(?:starter|backup)\b|backs? (?:him|her|them) up)/i;
+const GOALIE_SLOT_BEFORE = /\b(?:in (?:net|goal)|starting goal(?:ie|tender)|starter|backup|goalies?)\s*(?:for [^:\n]{1,25})?\s*[:\-–—]?\s*$/i;
+
 export function extractTweetPlayerEvents(args: {
   text: string; players: PlayerIdentity[]; publishedAt: string | null;
   priorStatus?: Map<number, "injured" | "healthy">;
@@ -142,11 +145,15 @@ export function extractTweetPlayerEvents(args: {
         // A lower-case noun inside prose is not evidence of a surname subject.
         const rawMention = args.text.slice(start, end);
         if (!/\s/.test(name) && rawMention === rawMention.toLocaleLowerCase() && /\p{L}/u.test(rawMention)) continue;
-        if (resolution.status !== "matched") {
+        if (name === player.lastName && surnameReadsAsPhrase(name, args.text.slice(end))) continue;
+        // A shared name directly tied to the net is the namesake who plays goal.
+        const slotted = resolution.status === "ambiguous" && (GOALIE_SLOT_AFTER.test(args.text.slice(end, end + 40)) || GOALIE_SLOT_BEFORE.test(args.text.slice(Math.max(0, start - 40), start)))
+          ? resolvePlayerIdentity(name, args.players, undefined, "goalie") : resolution;
+        if (slotted.status !== "matched" || (slotted !== resolution && slotted.player.playerId !== player.playerId)) {
           unresolvedMentions.push({ start, end });
           continue;
         }
-        if (!mentions.some((entry) => entry.player.playerId === player.playerId && start >= entry.start && start < entry.end)) mentions.push({ player, start, end, basis: resolution.basis });
+        if (!mentions.some((entry) => entry.player.playerId === player.playerId && start >= entry.start && start < entry.end)) mentions.push({ player, start, end, basis: slotted.basis });
       }
     }
   }

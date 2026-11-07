@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { trustworthyState } from "./gameState";
-import { instant, LINE_SELECTOR_VERSION, unitKey, type EntryRevision, type LineClaim, type LineConflict, type LineGame, type PPDecision, type SelectedLineUnit } from "./types";
+import type { EventMembership } from "./identity";
+import { instant, LINE_SELECTOR_VERSION, unitKey, type EntryRevision, type LineClaim, type LineConflict, type LineGame, type PPDecision, type PPDerivation, type PPEndReason, type SelectedLineUnit } from "./types";
 
 export function evidenceKey(value: unknown): string { return createHash("sha256").update(JSON.stringify(value)).digest("hex"); }
 const claimTime = (claim: LineClaim) => instant(claim.time.effectiveAt) ?? instant(claim.time.originalPublishedAt);
@@ -22,12 +23,28 @@ export function mayReplace(claim: LineClaim, target: LineClaim): boolean {
     && (claim.relationAuthority === "reviewed" || claim.relationAuthority === "original_author" && !!claim.author && claim.author === target.author);
 }
 
+const statusId = (value: string | null | undefined) => value?.match(/\/status\/(\d+)/)?.[1] ?? value ?? null;
+/**
+ * One identity per original post. IFTTT keys a repost on the relay wrapper id, FxTwitter on the
+ * original id (keeping the wrapper id): any claim naming a relay id that another claim resolved
+ * collapses onto that original, so a relay never counts as independent confirmation.
+ */
+export function captureIdentity(claims: LineClaim[]): (claim: LineClaim) => string {
+  const originalsByRelay = new Map<string, string>();
+  for (const claim of claims) {
+    const relay = claim.provenance?.relayTweetId, original = statusId(claim.provenance?.originalTweetId ?? claim.originalIdentity);
+    if (relay && original && relay !== original) originalsByRelay.set(relay, original);
+  }
+  return (claim) => {
+    const relay = claim.provenance?.relayTweetId ?? null, original = statusId(claim.provenance?.originalTweetId ?? claim.originalIdentity);
+    return (relay ? originalsByRelay.get(relay) : undefined) ?? (original ? originalsByRelay.get(original) : undefined) ?? original ?? relay ?? claim.captureId;
+  };
+}
+
 /** Keep relay/version history in storage; only one interpretation contributes per original unit. */
 export function activeLineClaims(claims: LineClaim[]): LineClaim[] {
   const versions = new Map<string, LineClaim>();
-  const originalsByRelay = new Map(claims.filter((claim) => claim.originalIdentity && claim.provenance?.relayTweetId)
-    .map((claim) => [claim.provenance!.relayTweetId!, claim.originalIdentity!]));
-  const identity = (claim: LineClaim) => claim.originalIdentity ?? originalsByRelay.get(claim.provenance?.relayTweetId ?? "") ?? claim.provenance?.relayTweetId ?? claim.captureId;
+  const identity = captureIdentity(claims);
   for (const claim of [...claims].sort((a, b) => (instant(b.time.interpretedAt) ?? 0) - (instant(a.time.interpretedAt) ?? 0) || a.id.localeCompare(b.id))) {
     const key = `${claim.teamId}:${identity(claim)}:${claim.unit ? unitKey(claim.unit) : claim.relationship ? evidenceKey(claim.relationship) : claim.kind}`;
     if (!versions.has(key)) versions.set(key, claim);
@@ -50,7 +67,12 @@ function validUnitClaim(claim: LineClaim): boolean {
     && new Set(claim.unit.players.map((player) => player.playerId)).size === claim.unit.players.length;
 }
 
-const specificity = (claim: LineClaim) => claim.specificity === "warmup" ? 2 : claim.specificity === "game" ? 1 : 0;
+/** Context ranking: warmup > game > practice > projected. Claims stored before `context` rank by specificity. */
+export function contextRank(claim: LineClaim): number {
+  const context = claim.context ?? (claim.specificity === "warmup" ? "warmup" : claim.specificity === "game" ? "game" : "practice");
+  return { warmup: 3, game: 2, practice: 1, projected: 0 }[context];
+}
+const specificity = contextRank;
 function selectUnits(claims: LineClaim[], priority: (claim: LineClaim) => LineClaim = (claim) => claim): { units: SelectedLineUnit[]; conflicts: LineConflict[] } {
   const groups = new Map<string, LineClaim[]>();
   for (const claim of claims.filter(validUnitClaim)) {
@@ -128,32 +150,94 @@ export function reconcileEntry(args: { game: LineGame; teamId: number; claims: L
     selectorVersion: LINE_SELECTOR_VERSION, createdAt: now, reason, correctionClaimIds, evidenceClaims };
 }
 
-export function reconcilePP(args: { game: LineGame; teamId: number; games: LineGame[]; claims: LineClaim[]; previous?: PPDecision[]; now: string; carryForward: boolean }): PPDecision[] {
+const ppUnit = (claim: LineClaim, number: number) => validUnitClaim(claim) && claim.unit!.situation === "pp" && claim.unit!.explicitNumber && claim.unit!.number === number
+  && claim.unit!.complete && claim.unit!.players.length === 5 && claim.unit!.group == null;
+const ppSwap = (claim: LineClaim, number: number) => eligibleClaim(claim) && !claim.unit && claim.ppSwap?.unitNumber === number
+  && claim.ppSwap.playersIn.length > 0 && claim.ppSwap.playersIn.length === claim.ppSwap.playersOut.length
+  && [...claim.ppSwap.playersIn, ...claim.ppSwap.playersOut].every((id) => Number.isSafeInteger(id) && id > 0);
+export const PP_STALE_GAMES = 3;
+
+/** Apply the newest swap to an accepted 5-player base. Nothing is invented: a swap that does not fit leaves the base. */
+function deriveSwap(base: SelectedLineUnit, swaps: LineClaim[]): { selection: SelectedLineUnit; derivation: PPDerivation } | null {
+  const baseTime = Math.max(...base.claims.map((claim) => claimTime(claim) ?? -Infinity));
+  const swap = swaps.filter((claim) => (claimTime(claim) ?? -Infinity) >= baseTime)
+    .sort((a, b) => (claimTime(b) ?? 0) - (claimTime(a) ?? 0) || a.id.localeCompare(b.id))[0];
+  if (!swap) return null;
+  const ids = base.unit.players.map((player) => player.playerId);
+  const { playersIn, playersOut } = swap.ppSwap!;
+  if (!playersOut.every((id) => ids.includes(id)) || playersIn.some((id) => ids.includes(id))) return null;
+  const players = base.unit.players.map((player) => {
+    const index = playersOut.indexOf(player.playerId);
+    return index < 0 ? player : { playerId: playersIn[index]!, name: swap.ppSwap!.names?.[String(playersIn[index])] ?? `Player ${playersIn[index]}` };
+  });
+  return { selection: { unit: { ...base.unit, players, evidence: [...swap.relationship ? [swap.relationship.evidence] : []] }, claims: [...base.claims, swap], designation: "projected", originGameId: base.originGameId },
+    derivation: { baseClaimIds: base.claims.map((claim) => claim.id).sort(), swapClaimIds: [swap.id], playersIn, playersOut } };
+}
+
+export function reconcilePP(args: { game: LineGame; teamId: number; games: LineGame[]; claims: LineClaim[]; previous?: PPDecision[]; now: string; carryForward: boolean; memberships?: EventMembership[] }): PPDecision[] {
   const { game, teamId, now } = args;
   const games = new Map(args.games.map((candidate) => [candidate.id, candidate]));
+  const dateOf = (claim: LineClaim) => games.get(claim.gameId!)!.date;
   const active = activeLineClaims(args.claims.filter((claim) => claim.teamId === teamId && availableAt(claim, now)
     && (claim.gameId === game.id && claim.phase === "pregame" && claim.kind !== "retraction" || (claimTime(claim) ?? Infinity) <= (instant(now) ?? -Infinity))))
-    .filter((claim) => validUnitClaim(claim) && claim.kind === "pp"
-    && claim.unit!.situation === "pp" && claim.unit!.explicitNumber && [1, 2].includes(claim.unit!.number ?? 0)
-    && claim.unit!.complete && claim.unit!.players.length === 5 && claim.unit!.group == null && games.get(claim.gameId!)?.scheduleIdentity === claim.binding.scheduleIdentity
-    && availableAt(claim, now) && (claim.time.effectiveUntil == null || (instant(claim.time.effectiveUntil) ?? -Infinity) > instant(now)!)
+    .filter((claim) => eligibleClaim(claim) && claim.kind === "pp" && !!games.get(claim.gameId!) && games.get(claim.gameId!)!.scheduleIdentity === claim.binding.scheduleIdentity
+    && (claim.time.effectiveUntil == null || (instant(claim.time.effectiveUntil) ?? -Infinity) > instant(now)!)
     && (claim.gameId === game.id && claim.phase === "pregame" || (claimTime(claim) ?? Infinity) <= instant(now)!));
+  // Scratches / ruled-out reports, from any eligible claim kind.
+  const absences = activeLineClaims(args.claims.filter((claim) => claim.teamId === teamId && availableAt(claim, now) && eligibleClaim(claim)
+    && !!claim.unit && ["scratch", "injury"].includes(claim.unit.situation) && (claimTime(claim) ?? Infinity) <= (instant(now) ?? -Infinity)));
+  const at = instant(game.scheduledStart) ?? instant(`${game.date}T12:00:00Z`)!;
+  const teamGames = args.games.filter((candidate) => [candidate.homeTeamId, candidate.awayTeamId].includes(teamId) && candidate.phase !== "postponed");
   return [1, 2].map((number) => {
-    const current = active.filter((claim) => claim.gameId === game.id && claim.unit!.number === number && ["pregame", "in_game"].includes(claim.phase));
-    const carried = args.carryForward ? active.filter((claim) => claim.unit!.number === number && claim.gameId !== game.id && claim.phase === "in_game"
-      && !!games.get(claim.gameId!) && games.get(claim.gameId!)!.date < game.date) : [];
-    carried.sort((a, b) => games.get(b.gameId!)!.date.localeCompare(games.get(a.gameId!)!.date) || (claimTime(b) ?? 0) - (claimTime(a) ?? 0));
-    const origin = carried[0]?.gameId;
-    const selected = selectUnits(current.length ? current : carried.filter((claim) => claim.gameId === origin));
-    let selection = selected.units[0] ?? null;
-    if (selection && !current.length) selection = { ...selection, designation: "carried" };
-    const conflict = selected.conflicts[0] ?? null;
+    const current = active.filter((claim) => claim.gameId === game.id && ppUnit(claim, number) && ["pregame", "in_game"].includes(claim.phase));
+    const swaps = active.filter((claim) => claim.gameId === game.id && ppSwap(claim, number));
+    let selected = selectUnits(current);
+    let selection: SelectedLineUnit | null = selected.units[0] ?? null;
+    let conflict = selected.conflicts[0] ?? null;
+    let endReason: PPEndReason | null = null, derivation: PPDerivation | null = null;
+    let reason = conflict ? "Conflicting PP evidence" : current.length ? "Applicable game-specific PP evidence" : "No applicable PP evidence";
+    if (!current.length && args.carryForward) {
+      const carried = active.filter((claim) => ppUnit(claim, number) && claim.gameId !== game.id && claim.phase === "in_game" && dateOf(claim) < game.date)
+        .sort((a, b) => dateOf(b).localeCompare(dateOf(a)) || (claimTime(b) ?? 0) - (claimTime(a) ?? 0));
+      const origin = carried[0];
+      if (origin) {
+        selected = selectUnits(carried.filter((claim) => claim.gameId === origin.gameId));
+        conflict = selected.conflicts[0] ?? null;
+        const base = selected.units[0];
+        if (conflict) reason = "Conflicting PP evidence";
+        if (base) {
+          const signatureOf = signature(base.claims[0]!);
+          const newest = Math.max(...base.claims.map((claim) => claimTime(claim) ?? -Infinity));
+          const later = active.filter((claim) => claim.gameId !== origin.gameId && claim.gameId !== game.id && dateOf(claim) > dateOf(origin) && dateOf(claim) < game.date
+            && (ppUnit(claim, number) || ppSwap(claim, number)));
+          const superseding = later.filter((claim) => !ppUnit(claim, number) || signature(claim) !== signatureOf);
+          const anchor = [dateOf(origin), ...later.filter((claim) => !superseding.includes(claim)).map(dateOf)].sort().at(-1)!;
+          const elapsed = teamGames.filter((candidate) => candidate.date > anchor && candidate.date < game.date).length;
+          const absent = base.unit.players.flatMap((player) => {
+            const reports = absences.filter((claim) => (claimTime(claim) ?? -Infinity) > newest && claim.unit!.players.some((candidate) => candidate.playerId === player.playerId));
+            if (reports.length) return [{ playerId: player.playerId, evidence: reports.map((claim) => `claim:${claim.id}`) }];
+            const rows = args.memberships?.filter((row) => row.playerId === player.playerId) ?? [];
+            const onTeam = rows.some((row) => row.teamId === teamId && (instant(row.from) ?? Infinity) <= at && (!row.until || (instant(row.until) ?? -Infinity) > at));
+            return rows.length && !onTeam ? [{ playerId: player.playerId, evidence: rows.map((row) => row.evidenceId) }] : [];
+          });
+          if (superseding.length) endReason = { kind: "superseded", claimIds: superseding.map((claim) => claim.id).sort(), detail: "A newer report for this unit replaced the carried unit" };
+          else if (absent.length) endReason = { kind: "player_unavailable", playerIds: absent.map((item) => item.playerId), evidence: [...new Set(absent.flatMap((item) => item.evidence))], detail: "A carried player was ruled out, scratched or left the roster" };
+          else if (elapsed >= PP_STALE_GAMES) endReason = { kind: "stale", gamesElapsed: elapsed, detail: `${elapsed} team games passed without reaffirmation` };
+          if (endReason) { selection = null; reason = `Carried PP ended: ${endReason.detail}`; }
+          else { selection = { ...base, designation: "carried" }; reason = "Carried forward from accepted in-game PP evidence"; }
+        }
+      }
+    }
+    if (swaps.length && !conflict) {
+      const derived = selection ? deriveSwap(selection, swaps) : null;
+      if (derived) { selection = derived.selection; derivation = derived.derivation; reason = "PP swap applied to the accepted base unit"; }
+      else if (!selection) reason = "PP swap observed; no accepted base unit to apply it to";
+    }
     const previous = args.previous?.find((decision) => decision.unitNumber === number);
-    const fingerprint = evidenceKey([game.id, teamId, number, selection, conflict, LINE_SELECTOR_VERSION]);
-    if (previous && evidenceKey([game.id, teamId, number, previous.selection, previous.conflict, previous.selectorVersion]) === fingerprint) return previous;
+    const fingerprint = evidenceKey([game.id, teamId, number, selection, conflict, endReason, derivation, LINE_SELECTOR_VERSION]);
+    if (previous && evidenceKey([game.id, teamId, number, previous.selection, previous.conflict, previous.endReason ?? null, previous.derivation ?? null, previous.selectorVersion]) === fingerprint) return previous;
     const id = evidenceKey([fingerprint, previous?.id ?? null]);
     return { id, revision: (previous?.revision ?? 0) + 1, gameId: game.id, teamId, unitNumber: number, selection, conflict, replacesId: previous?.id ?? null,
-      reason: conflict ? "Conflicting PP evidence" : current.length ? "Applicable game-specific PP evidence" : selection ? "Carried forward from accepted in-game PP evidence" : "No applicable PP evidence",
-      decidedAt: now, selectorVersion: LINE_SELECTOR_VERSION };
+      reason, decidedAt: now, selectorVersion: LINE_SELECTOR_VERSION, endReason, derivation };
   });
 }

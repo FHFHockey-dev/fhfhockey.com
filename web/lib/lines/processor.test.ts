@@ -39,12 +39,13 @@ describe("gated source processor integration", () => {
     expect(claim.time.originalPublishedAt).toBeNull(); expect(claim.reviewReasons).toContain("ingestion_time_unresolved");
     expect(db.tables.line_entry_revisions![0]!.payload.units).toHaveLength(0);
   });
-  it("does not invent classifier binding or phase when the producer contract is absent", async () => {
+  it("produces phase from text spans but never invents binding when no upstream contract exists", async () => {
     vi.stubEnv("LINES_OBSERVATIONS_ENABLED", "true"); const db = processorDatabase(); const input = source();
     delete input.metadata.lineEvidence;
     await processLineSnapshotEvidence(db, [input], [14], fixtureNow);
     const claim = db.tables.line_claim_revisions![0]!.payload;
-    expect(claim.phase).toBe("unknown"); expect(claim.binding.status).toBe("unresolved");
+    expect(claim.phase).toBe("pregame"); expect(claim.context).toBe("warmup"); expect(claim.contextEvidence[0].text).toBe("Warmup");
+    expect(claim.binding.status).toBe("unresolved"); expect(claim.reviewReasons).toContain("binding_decision_unverified");
     expect(claim.reviewReasons).toContain("original_provenance_unverified");
     expect(db.tables.line_entry_revisions![0]!.payload.units).toHaveLength(0);
   });

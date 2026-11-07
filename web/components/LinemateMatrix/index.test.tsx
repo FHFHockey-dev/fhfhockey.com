@@ -154,6 +154,63 @@ describe("LinemateMatrix", () => {
     expect(screen.queryByRole("tooltip")).toBeNull();
   });
 
+  it("shows only the requested team when teamId is set, and both teams by default", () => {
+    const home = [player(10, "C"), player(11, "D")];
+    const away = [player(20, "C"), player(21, "D")].map(p => ({ ...p, teamId: 2 }));
+    const props = {
+      gameInfo: [{ id: 1, name: "Home" }, { id: 2, name: "Away" }],
+      rosters: { 1: home, 2: away },
+      toiData: { 1: Object.values(diagonalToi(home, { 10: 100, 11: 100 })), 2: Object.values(diagonalToi(away, { 20: 100, 21: 100 })) },
+      mode: "line-combination" as const,
+      onModeChanged: () => {},
+    };
+
+    const { container, unmount } = render(<LinemateMatrixView {...props} />);
+    expect(screen.getByText("Home")).toBeTruthy();
+    expect(screen.getByText("Away")).toBeTruthy();
+    expect([...container.querySelectorAll("section[id^='linemate-matrix-']")].map(s => s.id))
+      .toEqual(["linemate-matrix-1", "linemate-matrix-2"]);
+    unmount();
+
+    const filtered = render(<LinemateMatrixView {...props} teamId={2} />);
+    expect(screen.queryByText("Home")).toBeNull();
+    expect(screen.getByText("Away")).toBeTruthy();
+    expect([...filtered.container.querySelectorAll("section[id^='linemate-matrix-']")].map(s => s.id))
+      .toEqual(["linemate-matrix-2"]);
+    filtered.unmount();
+
+    render(<LinemateMatrixView {...props} teamId={99} />);
+    expect(screen.getByText("No shared ice time for this team in that game.")).toBeTruthy();
+    expect(screen.queryByText("Home")).toBeNull();
+  });
+
+  it("keeps h4 team headings and an unlabelled, centred grid by default", () => {
+    const home = [player(10, "C"), player(11, "D")];
+    const { container } = render(<LinemateMatrixView gameInfo={[{ id: 1, name: "Home" }, { id: 2, name: "Away" }]}
+      rosters={{ 1: home, 2: [] }} toiData={{ 1: Object.values(diagonalToi(home, { 10: 100, 11: 100 })), 2: [] }}
+      mode="line-combination" onModeChanged={() => {}} />);
+    expect(screen.getByRole("heading", { level: 4, name: "Home" })).toBeTruthy();
+    expect(screen.queryByRole("heading", { level: 3 })).toBeNull();
+    expect(screen.queryByRole("img")).toBeNull();
+    expect(container.innerHTML).not.toMatch(/controlsStart|wideNames/);
+  });
+
+  it("supports h3 headings, a labelled grid, wide names and start-aligned controls when asked", () => {
+    const home = [player(10, "C"), player(11, "D")].map(p => ({ ...p, fullName: `Full ${p.name}` }));
+    const { container } = render(<LinemateMatrixView gameInfo={[{ id: 1, name: "Home" }, { id: 2, name: "Away" }]}
+      rosters={{ 1: home, 2: [] }} toiData={{ 1: Object.values(diagonalToi(home, { 10: 100, 11: 100 })), 2: [] }}
+      mode="line-combination" onModeChanged={() => {}} teamId={1}
+      headingLevel="h3" labelGrid wideNames controlsAlign="start" />);
+    expect(screen.getByRole("heading", { level: 3, name: "Home" })).toBeTruthy();
+    expect(screen.queryByRole("heading", { level: 4 })).toBeNull();
+    const grid = screen.getByRole("img");
+    expect(grid.getAttribute("aria-label")).toBe(
+      "Home shared ice time matrix, 2 skaters in line combination order: Full Player 10, Full Player 11. Brighter cells mean more shared ice time."
+    );
+    expect(container.querySelector("section#linemate-matrix-1")?.className).toMatch(/wideNames/);
+    expect(container.firstElementChild?.className).toMatch(/controlsStart/);
+  });
+
   it("keeps the standalone loading wrapper and its missing-game status", () => {
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
