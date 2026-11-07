@@ -89,10 +89,12 @@
   line-height: 1.4;
 }
 .chipConfirmed { border-color: vars.$color-teal-500; color: vars.$color-mint-300; }
-.chipProjected { border-color: vars.$primary-color; color: vars.$color-blue-300; }
+// A derived PP unit is a projection built from a swap: same blue as Projected. Four hues pass the
+// dataviz validator on #1a1d21 (normal ΔE ≥ 15.6, CVD ≥ 12.3); a pale-ice fifth failed against mint.
+.chipProjected,
+.chipDerived { border-color: vars.$primary-color; color: vars.$color-blue-300; }
 .chipPractice { border-color: vars.$color-gold-400; color: vars.$color-gold-400; }
 .chipCarried { border-color: vars.$color-violet-400; color: vars.$color-violet-400; }
-.chipDerived { border-color: vars.$color-blue-400; color: vars.$color-blue-100; }
 
 .sourceLine { margin: vars.$space-xs 0 0; font-size: vars.$font-size-sm; line-height: 1.5; }
 .groupSource { margin: 0 0 vars.$space-xs; color: vars.$text-secondary; font-size: vars.$font-size-sm; line-height: 1.5; }
