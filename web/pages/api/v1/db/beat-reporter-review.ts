@@ -16,7 +16,8 @@ const PAGE_SIZE = 1000;
 const MAX_PAGES = 6;
 /** One- and two-post accounts are noise for a one-at-a-time review. */
 const MIN_POSTS = 3;
-const CACHE_MS = 10 * 60 * 1000;
+/** The stored posts are re-read at most once a day (TJ, 2026-11-07); decisions apply immediately regardless. */
+const CACHE_MS = 24 * 60 * 60 * 1000;
 const COLUMNS = [
   "source_handle", "source_url", "tweet_url", "tweet_id", "quoted_tweet_id", "quoted_tweet_url", "quoted_author_handle", "quoted_author_name",
   "author_name", "primary_text_source", "raw_text", "enriched_text", "team_abbreviation", "classification", "snapshot_date",
