@@ -286,6 +286,23 @@ describe("/api/v1/db/update-nst-goalies", () => {
         nextCursor: outcome === "deferred" ? 0 : 1, requiresReview: false, finalAudit: { status: "persisted" } });
       else expect(result.body.lifecycle.requiresReview).toBe(true);
     });
+  it.each(["refused", "unreachable"])("audits a lifecycle admission failure before any work: %s", async mode => {
+    vi.stubEnv("NST_JOB_LIFECYCLE_ENABLED", "true");
+    const rpcNames: string[] = [];
+    vi.stubGlobal("fetch", vi.fn(async (url) => {
+      rpcNames.push(String(url).split("/").at(-1)!);
+      if (mode === "unreachable") throw new Error("Lifecycle RPC unreachable");
+      return new Response(JSON.stringify({ status: "busy" }));
+    }));
+    const result = await invoke({ maxUrls: "1" });
+    expect(result.statusCode).toBe(503);
+    expect(result.body).toMatchObject({ success: false, lifecycle: { status: "unacknowledged", requiresReview: true } });
+    expect(rpcNames).toEqual(["nst_job_begin_v1"]);
+    expect(fetchNstTextByUrlMock).not.toHaveBeenCalled();
+    expect(auditInsertMock).toHaveBeenCalledTimes(1);
+    expect(auditInsertMock.mock.calls[0][0]).toMatchObject({ status: "failure",
+      details: expect.objectContaining({ statusCode: 503 }) });
+  });
 
   it("excludes the current New York date from provider work", async () => {
     vi.setSystemTime(new Date("2026-11-01T13:00:00Z"));

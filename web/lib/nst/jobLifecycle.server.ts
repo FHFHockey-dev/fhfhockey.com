@@ -115,18 +115,24 @@ export function withGoalieJob<T>(token: string, deadlineAt: number, work: () => 
   });
 }
 
+type ApiHandler = (req: import("next").NextApiRequest, res: import("next").NextApiResponse) => Promise<unknown>;
+
 /** Enclose authenticated JSON routes outside their audit wrapper. Delay the
- * response until the lifecycle receipt is acknowledged, preserving audit data. */
+ * response until the lifecycle receipt is acknowledged, preserving audit data.
+ * `auditUnadmitted` wraps the 503 sent when admission fails before the handler
+ * (and so its inner audit wrapper) ran, so that refusal is still audited. */
 export function withNstJobLifecycle(
-  handler: (req: import("next").NextApiRequest, res: import("next").NextApiResponse) => Promise<unknown>,
+  handler: ApiHandler,
   owner: string,
   skip?: (req: import("next").NextApiRequest) => boolean,
-  options?: { lazy?: boolean; settled?: (body: any, statusCode: number) => boolean },
+  options?: { lazy?: boolean; settled?: (body: any, statusCode: number) => boolean;
+    auditUnadmitted?: (respond: ApiHandler) => ApiHandler },
 ) {
   return async (req: import("next").NextApiRequest, res: import("next").NextApiResponse) => {
     if (process.env.NST_JOB_LIFECYCLE_ENABLED !== "true" || skip?.(req)) return handler(req, res);
     const originalJson = res.json;
     let captured = false;
+    let invoked = false;
     let body: any;
     res.json = ((value: unknown) => { captured = true; body = value; return res; }) as typeof res.json;
     try {
@@ -137,16 +143,18 @@ export function withNstJobLifecycle(
         // this invocation's acknowledged I/O. Only their explicit classifier
         // may accept those outcomes; all other callers keep the strict default.
         (options?.settled ? options.settled(body, res.statusCode)
-          : body?.success !== false && body?.retrySafe !== false) }, async () => { await handler(req, res); });
+          : body?.success !== false && body?.retrySafe !== false) }, async () => { invoked = true; await handler(req, res); });
       res.json = originalJson;
       return res.json(body);
     } catch {
       res.json = originalJson;
       if (res.headersSent) return;
-      return res.status(503).json({ success: false, operationStatus: "failed", retrySafe: false,
+      const failure = { success: false, operationStatus: "failed", retrySafe: false,
         lifecycle: { status: "unacknowledged", requiresReview: true },
         error: "NST job lifecycle requires reconciliation before retrying.",
-        ...(captured ? { operationResponse: body } : {}) });
+        ...(captured ? { operationResponse: body } : {}) };
+      const respond: ApiHandler = async (_req, response) => response.status(503).json(failure);
+      return (!invoked && options?.auditUnadmitted ? options.auditUnadmitted(respond) : respond)(req, res);
     } finally { res.json = originalJson; }
   };
 }

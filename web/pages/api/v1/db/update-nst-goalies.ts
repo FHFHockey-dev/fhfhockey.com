@@ -955,7 +955,8 @@ export default adminOnly(withNstJobLifecycle(
   withCronJobAudit(withNhlOffSeasonSkip(handler as any), { includeFinalAuditReceipt: true }),
   "update-nst-goalies",
   req => req.method !== "GET" || req.query.prepareCatchup === "true" || typeof req.query.catchupScope === "string",
-  { settled: (body, status) => {
+  { auditUnadmitted: respond => withCronJobAudit(respond),
+    settled: (body, status) => {
     if (body?.finalAudit?.owner !== "withCronJobAudit" || body.finalAudit.status !== "persisted") return false;
     if (body.success === true && body.skipped === true && body.reason === "nhl_off_season") return true;
     if (body.requiresReview !== false) return false;
