@@ -293,12 +293,16 @@
 }
 
 // /lines/line-combo/[gameId]: same 90% workspace with an h1 and game context.
+// Sticky-safe <main>: clip instead of the shared Container's overflow-x: hidden,
+// which would make <main> a scroll container and stop position: sticky.
 .gamePage {
   width: 100%;
   max-width: vars.$page-max-width;
   margin-inline: auto;
   padding-left: 0 !important;
   padding-right: 0 !important;
+  overflow-x: clip !important;
+  overflow-y: visible !important;
   display: flex;
   flex-direction: column;
   gap: vars.$space-md;

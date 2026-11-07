@@ -2,12 +2,17 @@
 
 // One <main>: the page Container. The workspace is capped at 90% and centred; the
 // Container's mobile bottom padding (bottom nav clearance) is kept.
+// Sticky-safe: the shared Container sets overflow-x: hidden, which makes <main> a
+// scroll container and stops position: sticky inside it. clip still cuts any
+// sideways overflow but creates no scroller.
 .container {
   width: 100%;
   max-width: v.$page-max-width;
   margin-inline: auto;
   padding-left: 0 !important;
   padding-right: 0 !important;
+  overflow-x: clip !important;
+  overflow-y: visible !important;
   display: flex;
   flex-direction: column;
   gap: v.$space-md;
