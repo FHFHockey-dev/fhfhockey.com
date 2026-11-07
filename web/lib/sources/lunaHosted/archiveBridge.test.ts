@@ -90,7 +90,7 @@ describe("truthful private archive bridge", () => {
     const draft = prepareArchivedLunaDraft({ enabled: true, ...f, archive });
     expect(draft.status).toBe("prepared_for_owner_review"); if (draft.status !== "prepared_for_owner_review") throw new Error();
     const job = draft.draft.envelope;
-    query("insert into luna_hosted.policy values(true,'synthetic-roundtrip',false,false,clock_timestamp()-interval '1 minute',clock_timestamp()+interval '1 hour',1,233000000,0)");
+    query("insert into luna_hosted.policy values(true,'synthetic-roundtrip',false,false,clock_timestamp()-interval '1 minute',clock_timestamp()+interval '1 hour',1,234000000,0)");
     const approvalId = "00000000-0000-4000-8000-000000000004";
     query("insert into luna_capture.approvals(id,receipt_id,job_id,worker_approval_id,input_json,input_hash,receipt_json,receipt_hash,reference_hash,provenance_ref) values (" +
       [approvalId, archive.receipt.id, job.id, "synthetic-roundtrip", job.inputJson, job.inputHash, job.receiptJson, job.receiptHash, job.referenceHash, job.provenanceRef].map(literal).join(",") + ")");
