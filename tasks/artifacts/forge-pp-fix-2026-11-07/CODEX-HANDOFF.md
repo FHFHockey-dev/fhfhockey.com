@@ -49,7 +49,7 @@ Before you change anything or write to production, tell me which files, logs or 
 This happened at the first connection check, before any write. `SUPABASE_DB_URL` in `web/.env.local` points at the direct host `db.fyhftlxokyjtpndbkfse.supabase.co:5432`, and `dig` returns only an AAAA record for it: there's no IPv4 address. The Supavisor pooler hosts `aws-0-us-east-1.pooler.supabase.com` and `aws-1-us-east-1.pooler.supabase.com` both resolve to IPv4, but nobody has confirmed which one serves this project. The supabase-js REST client in the same script works, because it uses HTTPS and `NEXT_PUBLIC_SUPABASE_URL`.
 
 Options to weigh (pick the safest one that works and explain why):
-- the session pooler, port 5432 with user `postgres.<project-ref>`, for the read-only count. Get the exact string from the dashboard or from TJ; don't guess credentials;
+- the session pooler, port 5432 with user `postgres.<project-ref>`, for the read-only count. Get the exact string from the dashboard or from TJ; don't guess credentials. (Chef note, 2026-11-07: the Claude data-checks lane ran its read-only `pg_stat_activity` guard successfully through the IPv4 pooler `aws-0-us-east-1` on this Mac; see `tasks/diaries/2026-11-07-claude-data-checks.md` line ~171.);
 - an existing read-only RPC or view that exposes the connection count;
 - or another bounded guard.
 
