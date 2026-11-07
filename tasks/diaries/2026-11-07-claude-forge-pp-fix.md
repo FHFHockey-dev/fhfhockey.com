@@ -55,3 +55,15 @@ Source diagnosis: tasks/artifacts/data-checks-2026-11-07/RESULTS.md §7 (23d53b9
 - My RC was merged into Chef's combined NST+FORGE candidate 457de21bf (gated by Chef).
 - Next: wait for Chef's release signal, then run the 2026-27 rebuild with a local script, one date at a time
   09-19..11-06, stopping on the first failure. Check the connection count first and wait if it is > 40, with a short gap between dates.
+- Rebuild script ready (not run): scratchpad rebuild-forge-derived-2026-27.ts. It mirrors processProjectionDerivedGame
+  with the lib exports and checks pg_stat_activity through SUPABASE_DB_URL before each date (waits while > 40, gives up after 20 waits).
+  It leaves a 3s gap between dates, skips projection_inputs_unavailable like the route, and stops on the first failure. The range is
+  hard-bounded to 09-19..11-06. --plan checked locally in the RC export: 49 calendar dates, no DB calls.
+  Run plan: export the released SHA, copy the script into web/scripts, and run it in the background with logs to the scratchpad.
+- Release #415 is live (master a68f9b3d2; derived + toi files are identical to my RC). Clean export at scratchpad
+  rel-a68f9b3d2 with the script copied in and env from web/.env.local via DOTENV_CONFIG_PATH. --plan with env: 49 dates, OK.
+  Holding writes until Chef says "go" (data-checks rolling rebuild still running).
+go from TJ in chat 2026-11-07T23:46:03Z; rebuild started
+- Rebuild attempt 23:46Z stopped before any write: the pg guard hit getaddrinfo ENOTFOUND on db.<ref>.supabase.co
+  (IPv6-only host, no A record). TJ (pop-up) chose a Codex handoff for the guard fix and the backfill:
+  tasks/artifacts/forge-pp-fix-2026-11-07/CODEX-HANDOFF.md (+ script + REBUILD-SIZING.md). Lane is parked here.
