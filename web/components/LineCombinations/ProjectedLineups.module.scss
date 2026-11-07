@@ -29,6 +29,17 @@
   @include panel.panel-shell($padding: vars.$space-md, $variant: flat, $overflow: visible);
   min-width: 0;
 }
+
+// Desktop: the sidebar follows the lineup, pinned under the sticky site header (68px desktop bar),
+// and its list scrolls inside instead of leaving an empty column beside a long lineup.
+// Needs the Lines shells' overflow-x: clip (Lane C 7af32ee7d); overflow-x: hidden would disable it.
+.rail {
+  position: sticky;
+  top: calc(68px + #{vars.$space-md});
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 68px - #{vars.$space-md * 2});
+}
 // The lineup is the page's primary block: same display face and scale as the page's other section titles.
 .entryTitle {
   font-family: vars.$font-family-condensed;
@@ -143,7 +154,8 @@ span.source { color: vars.$text-secondary; text-decoration: none; }
   &:hover:not([aria-selected="true"]) { background: vars.$surface-2; color: vars.$text-primary; }
 }
 .tabPanel {
-  max-height: 80vh;
+  flex: 1 1 auto;
+  min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
   border-radius: vars.$radius-xs;
@@ -285,5 +297,6 @@ span.source { color: vars.$text-secondary; text-decoration: none; }
   .layout { grid-template-columns: minmax(0, 1fr); }
   .entryTitle { font-size: vars.$font-size-xl; }
   .unitRow { grid-template-columns: 52px minmax(0, 1fr); }
-  .tabPanel { max-height: none; overflow: visible; }
+  .rail { position: static; display: block; max-height: none; }
+  .tabPanel { overflow: visible; }
 }
