@@ -458,9 +458,6 @@ export default function StatsPage({
                       role="listitem"
                       className={`${styles.quickStatCard} ${stat.category ? styles[stat.category] : ""}`}
                     >
-                      <div className={styles.quickStatIcon} aria-hidden="true">
-                        <div className={styles.iconInner}></div>
-                      </div>
                       <div className={styles.quickStatContent}>
                         <div
                           className={styles.quickStatValue}

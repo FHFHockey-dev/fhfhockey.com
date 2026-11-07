@@ -24,9 +24,15 @@ const Segment: React.FC<SegmentProps> = ({
 }) => {
   if (flexValue <= 0) return null;
   return (
-    <div className={styles.segmentContainer} style={{ flex: flexValue }}>
+    <div
+      className={styles.segmentContainer}
+      style={{ flex: flexValue }}
+      title={`${label}: ${flexValue}`}
+    >
       <div className={styles.segmentCore} style={{ backgroundColor: color }}>
-        <span className={styles.segmentLabel}>{label}</span>
+        <span className={styles.segmentLabel} data-chars={label.length}>
+          {label}
+        </span>
       </div>
       {!isFirst && (
         <div

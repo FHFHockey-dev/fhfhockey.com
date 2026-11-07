@@ -77,11 +77,21 @@
 .quickStatCard.goaltending {
   border-left: 4px solid v.$color-brand-yellow;
 }
-.quickStatCard.goaltending .iconInner {
-  background: v.$color-brand-yellow;
-}
 .quickStatCard.league {
   border-left: 4px solid v.$warning-color;
+}
+// Hover recolours the outline only; the category rail keeps its colour.
+.quickStatCard.scoring:hover,
+.quickStatCard.scoring:focus-visible {
+  border-left-color: v.$primary-color;
+}
+.quickStatCard.goaltending:hover,
+.quickStatCard.goaltending:focus-visible {
+  border-left-color: v.$color-brand-yellow;
+}
+.quickStatCard.league:hover,
+.quickStatCard.league:focus-visible {
+  border-left-color: v.$warning-color;
 }
 // Flat left rule: the left radius matches the 4px rule width.
 .quickStatCard.scoring,
@@ -99,9 +109,7 @@
 .mobileLeaderboardCard:hover,
 .mobileLeaderboardCard:focus-visible {
   background: v.$surface-2;
-  transform: translateY(-2px);
   border-color: v.$border-accent;
-  box-shadow: v.$shadow-hover;
 }
 
 .quickStatCard:active,
@@ -149,15 +157,6 @@
   transform: translateY(0);
 }
 
-.leaderRow:first-child {
-  border-left: 4px solid v.$primary-color;
-}
-.leaderRow:nth-child(2) {
-  border-left: 4px solid v.$secondary-color;
-}
-.leaderRow:nth-child(3) {
-  border-left: 4px solid v.$warning-color;
-}
 
 .mobileLeaderItem {
   background: v.$surface-1;
@@ -207,6 +206,11 @@
   border-left: 6px solid v.$color-white;
   border-radius: inherit;
   pointer-events: none;
+
+  // Desktop pills use a 4px radius, so the rule drops to 4px to match it.
+  @media (min-width: v.$breakpoint-tablet-min) {
+    border-left-width: 4px;
+  }
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -214,9 +218,6 @@
     transition:
       color 0.4s ease,
       transform 0.4s ease;
-  }
-  .quickStatCard:hover .quickStatValue {
-    transform: translateY(-2px);
   }
 }
 
@@ -470,11 +471,19 @@
   background: v.$background-medium;
 }
 
+// The hero holds only the title and the tiles: no stray heading or grid margins.
+.quickStatsSection .sectionTitle {
+  margin-top: 0;
+}
+.quickStatsSection .quickStatsGrid {
+  margin-bottom: 0;
+}
+
 .sectionTitle {
   color: v.$text-primary;
   // Mobile-first typography
   font-size: v.$mobile-font-size-md;
-  font-weight: 600;
+  font-weight: 400; // Train One has one weight; heavier is faux-bold
   margin-bottom: v.$mobile-space-md;
   font-family: v.$font-family-accent;
   text-transform: uppercase;
@@ -515,7 +524,9 @@
   padding: v.$mobile-card-padding;
   background: v.$background-medium;
   border: 1px solid v.$border-secondary;
-  transition: all v.$mobile-animation-normal ease;
+  transition:
+    background-color v.$mobile-animation-normal ease,
+    border-color v.$mobile-animation-normal ease;
   position: relative;
   overflow: hidden;
   display: flex;
@@ -528,34 +539,14 @@
   @media (min-width: v.$breakpoint-tablet-min) {
     padding: v.$space-md;
     gap: v.$space-sm;
-    transition: all 0.2s ease;
   }
 
   &:hover {
-    transform: translateY(-1px);
+    transform: none;
     border-color: v.$border-accent;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    box-shadow: none;
   }
 
-}
-
-.quickStatIcon {
-  width: 32px;
-  height: 32px;
-  border-radius: v.$border-radius-sm;
-  background: v.$background-dark;
-  border: 1px solid v.$border-primary;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-
-  .iconInner {
-    width: 12px;
-    height: 12px;
-    background: v.$primary-color;
-    border-radius: 50%;
-  }
 }
 
 .quickStatContent {
@@ -672,7 +663,7 @@
   color: v.$text-secondary;
   border: 1px solid v.$border-primary;
   font-weight: 500;
-  transition: all 0.2s ease;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
 
   // Mobile-first: Enhanced touch targets and spacing
   @media (max-width: v.$breakpoint-mobile-max) {
@@ -848,11 +839,8 @@
   overflow: hidden;
   backdrop-filter: blur(6px) saturate(130%);
   // Fallback gradient uses team CSS vars directly (no mixing in Sass)
-  background: linear-gradient(
-    180deg,
-    var(--team-primary, #{v.$background-medium}) 0%,
-    var(--team-secondary, #{v.$background-dark}) 100%
-  );
+  // Flat surface at rest; the team-colour stripes still reveal on hover.
+  background: var(--team-primary, #{v.$surface-1});
   transition:
     background 400ms ease,
     border-color 260ms ease;
@@ -992,7 +980,7 @@
   &::after {
     opacity: 0.6;
     transform: translateX(5%) translateY(5%);
-    transition: all 0.8s ease-in-out;
+    transition: transform 0.8s ease-in-out, opacity 0.8s ease-in-out;
   }
 
   &::after {
@@ -1006,7 +994,7 @@
   &::after {
     opacity: 0.7;
     transform: translateX(-8%) translateY(-8%);
-    transition: all 0.8s ease-in-out;
+    transition: transform 0.8s ease-in-out, opacity 0.8s ease-in-out;
   }
 
   &::after {
@@ -1021,7 +1009,7 @@
   left: v.$space-lg;
   transform: translateY(-50%); // half in / half out effect (legend style)
   color: v.$text-primary;
-  font-weight: 600;
+  font-weight: 400; // Train One has one weight
   font-size: v.$font-size-lg;
   margin: 0;
   padding: 0 v.$space-sm;
@@ -1039,10 +1027,6 @@
   -webkit-backdrop-filter: blur(4px) saturate(140%);
   // border: 1px solid rgba(255, 255, 255, 0.06);
   // border-radius: v.$border-radius-sm;
-  box-shadow: 0 2px 6px -2px rgba(0, 0, 0, 0.6);
-  text-shadow:
-    0 2px 4px rgba(0, 0, 0, 0.7),
-    0 3px 10px rgba(0, 0, 0, 0.35);
 }
 
 .titleAccent {
@@ -1143,7 +1127,7 @@
   align-items: center;
   justify-content: center;
 
-  transition: all 0.2s ease;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .teamAbbreviation {
@@ -1222,11 +1206,10 @@
 .card {
   background: v.$background-medium;
   padding: v.$space-xxs v.$space-md v.$space-md v.$space-md;
-  transition: all 0.2s ease;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
   position: relative;
   height: fit-content;
   width: 100%;
-  border-bottom: 1px solid v.$border-primary;
 
   // Mobile: Reduce height and padding for condensed display
   @media (max-width: v.$breakpoint-mobile-max) {
@@ -1376,7 +1359,7 @@
   background: v.$background-dark;
   border: 1px solid v.$border-primary;
   border-radius: v.$border-radius-sm;
-  transition: all 0.2s ease;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
   position: relative;
 
   // Mobile: Reduce margins and padding for condensed display
@@ -1387,30 +1370,14 @@
     min-height: auto;
   }
 
-  // nth-of-type skips the card's h2 title, so rows 1-5 line up with the mobile colours.
-  &:nth-of-type(1) {
-    border-left: 4px solid #10b981;
-  }
-
-  &:nth-of-type(2) {
-    border-left: 4px solid #22c55e;
-  }
-
-  &:nth-of-type(3) {
-    border-left: 4px solid #84cc16;
-  }
-
-  &:nth-of-type(4) {
-    border-left: 4px solid #f59e0b;
-  }
-
-  &:nth-of-type(5) {
-    border-left: 4px solid #ef4444;
-  }
+  // Every row is a leader: gold rail for #1, neutral rail for the rest.
+  // nth-of-type skips the card's h2 title.
+  border-left: 4px solid v.$border-secondary;
 
   &:hover {
     background: v.$background-light;
     border-color: v.$border-accent;
+    border-left-color: v.$border-secondary;
     transform: translateX(2px);
 
     // Mobile: Reduce transform for better performance
@@ -1418,6 +1385,12 @@
       transform: translateX(1px);
     }
   }
+}
+
+.leaderRow:nth-of-type(1),
+.leaderRow:nth-of-type(1):hover,
+.leaderRow:nth-of-type(1):focus-visible {
+  border-left-color: v.$color-brand-yellow;
 }
 
 .leaderRowExpanded {
@@ -1536,7 +1509,7 @@
   border-radius: v.$border-radius-sm;
   border: 1px solid v.$border-primary;
   overflow: hidden;
-  transition: all 0.2s ease;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
 
   // Mobile: Reduce height for more compact display
   @media (max-width: v.$breakpoint-mobile-max) {
@@ -1553,7 +1526,7 @@
   position: relative;
   height: 20px;
   display: flex;
-  transition: all 0.2s ease;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
 
   // Mobile: Adjust height to match container
   @media (max-width: v.$breakpoint-mobile-max) {
@@ -1571,6 +1544,8 @@
   height: 20px;
   position: relative;
   border-right: 1px solid rgba(0, 0, 0, 0.2);
+  // Lets the label hide itself when its segment is too narrow to hold it.
+  container-type: inline-size;
 
   // Mobile: Adjust height to match container
   @media (max-width: v.$breakpoint-mobile-max) {
@@ -1632,6 +1607,24 @@
   @media (max-width: v.$breakpoint-mobile-max) {
     font-size: v.$mobile-font-size-xxs;
     top: 50%; // Adjust position for smaller height
+  }
+}
+
+// A label wider than its segment spills over the next part; the segment's
+// title tooltip still names it.
+@container (max-width: 10px) {
+  .segmentLabel[data-chars="1"] {
+    display: none;
+  }
+}
+@container (max-width: 22px) {
+  .segmentLabel[data-chars="2"] {
+    display: none;
+  }
+}
+@container (max-width: 28px) {
+  .segmentLabel[data-chars="3"] {
+    display: none;
   }
 }
 
@@ -1909,7 +1902,7 @@
   // Flat left rule: the left radius matches the 4px rule width.
   border-radius: 4px v.$border-radius-md v.$border-radius-md 4px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  transition: all v.$mobile-animation-fast ease;
+  transition: background-color v.$mobile-animation-fast ease, border-color v.$mobile-animation-fast ease, color v.$mobile-animation-fast ease, box-shadow v.$mobile-animation-fast ease;
 
   &:active {
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
@@ -1994,36 +1987,24 @@
   background: v.$background-dark;
   border: 1px solid v.$border-primary;
   border-radius: v.$border-radius-sm;
-  transition: all v.$mobile-animation-fast ease;
+  transition: background-color v.$mobile-animation-fast ease, border-color v.$mobile-animation-fast ease, color v.$mobile-animation-fast ease, box-shadow v.$mobile-animation-fast ease;
   min-height: v.$touch-target-min;
   color: inherit;
   text-decoration: none;
 
+  border-left: 4px solid v.$border-secondary;
+
   &:hover {
     background: v.$background-light;
     border-color: v.$border-accent;
+    border-left-color: v.$border-secondary;
     transform: translateX(2px);
   }
 
-  &:first-child {
-    border-left: 4px solid #10b981;
-  }
-
-  &:nth-child(2) {
-    border-left: 4px solid #22c55e;
-  }
-
-  &:nth-child(3) {
-    border-left: 4px solid #84cc16;
-  }
-
-  // Additional ranking colors for horizontal display
-  &:nth-child(4) {
-    border-left: 4px solid #f59e0b;
-  }
-
-  &:nth-child(5) {
-    border-left: 4px solid #ef4444;
+  // Gold rail for the #1 leader only.
+  &:first-child,
+  &:first-child:hover {
+    border-left-color: v.$color-brand-yellow;
   }
 }
 
@@ -2184,27 +2165,8 @@
   border: 1px solid v.$border-primary;
   border-radius: v.$border-radius-sm;
   min-height: v.$touch-target-min;
-  // Randomize border colors for more realistic skeleton
-  &:nth-child(1) {
-    border-left: 3px solid
-      color-mix(in srgb, #10b981 50%, v.$background-dark 50%);
-  }
-  &:nth-child(2) {
-    border-left: 3px solid
-      color-mix(in srgb, #22c55e 50%, v.$background-dark 50%);
-  }
-  &:nth-child(3) {
-    border-left: 3px solid
-      color-mix(in srgb, #84cc16 50%, v.$background-dark 50%);
-  }
-  &:nth-child(4) {
-    border-left: 3px solid
-      color-mix(in srgb, #f59e0b 50%, v.$background-dark 50%);
-  }
-  &:nth-child(5) {
-    border-left: 3px solid
-      color-mix(in srgb, #ef4444 50%, v.$background-dark 50%);
-  }
+  // Same 4px neutral rail as the loaded rows (rule width = left radius).
+  border-left: 4px solid v.$border-secondary;
 }
 
 .mobileLeaderInfoSkeleton {
@@ -2553,13 +2515,13 @@
     // Mobile: Simplified transforms for better performance
     @media (max-width: v.$breakpoint-mobile-max) {
       transform: translateX(0%) translateY(0%);
-      transition: all v.$mobile-animation-normal ease-in-out;
+      transition: transform v.$mobile-animation-normal ease-in-out, opacity v.$mobile-animation-normal ease-in-out;
     }
 
     // Desktop: Full complexity transforms
     @media (min-width: v.$breakpoint-tablet-min) {
       transform: translateX(5%) translateY(5%);
-      transition: all 0.8s ease-in-out;
+      transition: transform 0.8s ease-in-out, opacity 0.8s ease-in-out;
     }
   }
 
@@ -2585,13 +2547,13 @@
     // Mobile: Simplified alternate transforms
     @media (max-width: v.$breakpoint-mobile-max) {
       transform: translateX(-2%) translateY(-2%);
-      transition: all v.$mobile-animation-normal ease-in-out;
+      transition: transform v.$mobile-animation-normal ease-in-out, opacity v.$mobile-animation-normal ease-in-out;
     }
 
     // Desktop: Full complexity alternate transforms
     @media (min-width: v.$breakpoint-tablet-min) {
       transform: translateX(-8%) translateY(-8%);
-      transition: all 0.8s ease-in-out;
+      transition: transform 0.8s ease-in-out, opacity 0.8s ease-in-out;
     }
   }
 

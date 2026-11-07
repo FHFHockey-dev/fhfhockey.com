@@ -80,6 +80,7 @@ describe("GoalieShareChart complete page sets", () => {
     for (const span of ["L10", "L20", "L30", "Season"]) {
       fireEvent.click(screen.getByRole("button", { name: span }));
       expect(screen.queryAllByTestId("chart")).toHaveLength(0);
+      expect(screen.getByRole("button", { name: span }).getAttribute("aria-pressed")).toBe("true");
     }
     expect(mocks.fetch).toHaveBeenCalledTimes(calls);
   });
