@@ -1,0 +1,6 @@
+.env
+accounts.db
+accounts.db-*
+user_ids.json
+.venv/
+__pycache__/

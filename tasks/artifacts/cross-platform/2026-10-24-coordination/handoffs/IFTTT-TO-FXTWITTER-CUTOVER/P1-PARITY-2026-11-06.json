@@ -1,0 +1,4632 @@
+{
+  "generatedAt": "2026-11-06T18:15:14.014Z",
+  "summary": {
+    "since": "2026-11-06T01:30:00Z",
+    "shadowRows": 199,
+    "iftttRows": 79,
+    "pairs": 78,
+    "pairedByTweetId": 36,
+    "pairedByRtText": 42,
+    "unpairedShadow": 121,
+    "unpairedIfttt": 1,
+    "identicalExtraction": 78,
+    "typeDiffers": 0,
+    "categoryDiffers": 0,
+    "playersDiffer": 0,
+    "slotsDiffer": 0,
+    "iftttTruncated": 0,
+    "shadowMorePlayers": 0,
+    "shadowFewerPlayers": 0,
+    "repostsCreditedIfttt": 0,
+    "repostsCreditedShadow": 42,
+    "reposts": 42,
+    "quotes": 10,
+    "quotesCarried": 10,
+    "byAccount": {
+      "dfofantasy": {
+        "pairs": 28,
+        "identical": 28,
+        "unpairedShadow": 20,
+        "unpairedIfttt": 0
+      },
+      "nhl_rosters": {
+        "pairs": 7,
+        "identical": 7,
+        "unpairedShadow": 20,
+        "unpairedIfttt": 0
+      },
+      "ccc": {
+        "pairs": 5,
+        "identical": 5,
+        "unpairedShadow": 20,
+        "unpairedIfttt": 1
+      },
+      "gamedaylines": {
+        "pairs": 13,
+        "identical": 13,
+        "unpairedShadow": 20,
+        "unpairedIfttt": 0
+      },
+      "gamedaynewsnhl": {
+        "pairs": 19,
+        "identical": 19,
+        "unpairedShadow": 20,
+        "unpairedIfttt": 0
+      },
+      "gamedaygoalies": {
+        "pairs": 6,
+        "identical": 6,
+        "unpairedShadow": 21,
+        "unpairedIfttt": 0
+      }
+    }
+  },
+  "results": [
+    {
+      "sourceKey": "dfofantasy",
+      "postKind": "quote",
+      "pairedBy": "tweet_id",
+      "shadowTweetId": "2118523774014530047",
+      "iftttTweetId": "2118523774014530047",
+      "iftttTextLength": 113,
+      "shadowTextLength": 139,
+      "iftttTruncated": false,
+      "ifttt": {
+        "type": "goalie",
+        "category": "GOALIE START",
+        "subcategory": "CONFIRMED STARTER",
+        "team": "NSH",
+        "players": 1,
+        "confidence": 100
+      },
+      "shadow": {
+        "type": "goalie",
+        "category": "GOALIE START",
+        "subcategory": "CONFIRMED STARTER",
+        "team": "NSH",
+        "players": 1,
+        "confidence": 100
+      },
+      "comparison": {
+        "correct": true,
+        "typeMatch": true,
+        "categoryMatch": true,
+        "playersMatch": true,
+        "slotsMatch": true
+      },
+      "attribution": {
+        "ifttt": {
+          "relationship": "unresolved",
+          "original": null
+        },
+        "shadow": {
+          "relationship": "unresolved",
+          "original": null
+        }
+      },
+      "shadowQuote": true,
+      "iftttText": "🥅: Justus Annunen (NSH) ✅ will start Thursday @ COL.\n\n2-1-0 | 3.89 GAA | .846 SV% | 0 SO https://t.co/S31mHU4UwI",
+      "shadowText": "🥅: Justus Annunen (NSH) ✅ will start Thursday @ COL.\n\n2-1-0 | 3.89 GAA | .846 SV% | 0 SO https://x.com/PredsNHL/status/2118523662190223538"
+    },
+    {
+      "sourceKey": "gamedaygoalies",
+      "postKind": "repost",
+      "pairedBy": "rt_text",
+      "shadowTweetId": "2118523591864221942",
+      "iftttTweetId": "2118523831078007089",
+      "iftttTextLength": 160,
+      "shadowTextLength": 160,
+      "iftttTruncated": false,
+      "ifttt": {
+        "type": "goalie",
+        "category": "GOALIE START",
+        "subcategory": null,
+        "team": "COL",
+        "players": 1,
+        "confidence": 90
+      },
+      "shadow": {
+        "type": "goalie",
+        "category": "GOALIE START",
+        "subcategory": null,
+        "team": "COL",
+        "players": 1,
+        "confidence": 90
+      },
+      "comparison": {
+        "correct": true,
+        "typeMatch": true,
+        "categoryMatch": true,
+        "playersMatch": true,
+        "slotsMatch": true
+      },
+      "attribution": {
+        "ifttt": {
+          "relationship": "unresolved",
+          "original": null
+        },
+        "shadow": {
+          "relationship": "retweet",
+          "original": "brooksbratten"
+        }
+      },
+      "shadowQuote": false,
+      "iftttText": "RT @brooksbratten: Justus Annunen & Mackenzie Blackwood lead their respective clubs to the frozen sheet for warmups. #Preds & Avalanche to come from Colorado...",
+      "shadowText": "RT @brooksbratten: Justus Annunen & Mackenzie Blackwood lead their respective clubs to the frozen sheet for warmups. #Preds & Avalanche to come from Colorado..."
+    },
+    {
+      "sourceKey": "gamedaylines",
+      "postKind": "repost",
+      "pairedBy": "rt_text",
+      "shadowTweetId": "2118523462319026686",
+      "iftttTweetId": "2118523995872231781",
+      "iftttTextLength": 116,
+      "shadowTextLength": 116,
+      "iftttTruncated": false,
+      "ifttt": {
+        "type": "line_combination",
+        "category": "LINE COMBINATION",
+        "subcategory": "FORWARD LINES",
+        "team": "NYR",
+        "players": 5,
+        "confidence": 43
+      },
+      "shadow": {
+        "type": "line_combination",
+        "category": "LINE COMBINATION",
+        "subcategory": "FORWARD LINES",
+        "team": "NYR",
+        "players": 5,
+        "confidence": 43
+      },
+      "comparison": {
+        "correct": true,
+        "typeMatch": true,
+        "categoryMatch": true,
+        "playersMatch": true,
+        "slotsMatch": true
+      },
+      "attribution": {
+        "ifttt": {
+          "relationship": "unresolved",
+          "original": null
+        },
+        "shadow": {
+          "relationship": "retweet",
+          "original": "colinsnewsday"
+        }
+      },
+      "shadowQuote": false,
+      "iftttText": "RT @ColinSNewsday: First three shifts of the third period:\nGabe-Mika-Laf\nKartye-JT-Bjorkstrand\nCuylle-Laba-Dorofeyev",
+      "shadowText": "RT @ColinSNewsday: First three shifts of the third period:\nGabe-Mika-Laf\nKartye-JT-Bjorkstrand\nCuylle-Laba-Dorofeyev"
+    },
+    {
+      "sourceKey": "dfofantasy",
+      "postKind": "post",
+      "pairedBy": "tweet_id",
+      "shadowTweetId": "2118525380453892488",
+      "iftttTweetId": "2118525380453892488",
+      "iftttTextLength": 197,
+      "shadowTextLength": 197,
+      "iftttTruncated": false,
+      "ifttt": {
+        "type": "line_combination",
+        "category": "LINE COMBINATION",
+        "subcategory": "FORWARD LINES",
+        "team": "COL",
+        "players": 19,
+        "confidence": 85
+      },
+      "shadow": {
+        "type": "line_combination",
+        "category": "LINE COMBINATION",
+        "subcategory": "FORWARD LINES",
+        "team": "COL",
+        "players": 19,
+        "confidence": 85
+      },
+      "comparison": {
+        "correct": true,
+        "typeMatch": true,
+        "categoryMatch": true,
+        "playersMatch": true,
+        "slotsMatch": true
+      },
+      "attribution": {
+        "ifttt": {
+          "relationship": "unresolved",
+          "original": null
+        },
+        "shadow": {
+          "relationship": "unresolved",
+          "original": null
+        }
+      },
+      "shadowQuote": false,
+      "iftttText": "#GoAvsGo Lineup vs. NSH\n\nLehkonen - MacKinnon - Necas\nLandeskog - Kadri - Roy\nSchwartz - Nelson - Hughes\nKelly - Svechkov - O'Connor\n\nKulak - Makar\nToews - Malinski\nJuulsen - Burns\n\n🥅: Blackwood ✅",
+      "shadowText": "#GoAvsGo Lineup vs. NSH\n\nLehkonen - MacKinnon - Necas\nLandeskog - Kadri - Roy\nSchwartz - Nelson - Hughes\nKelly - Svechkov - O'Connor\n\nKulak - Makar\nToews - Malinski\nJuulsen - Burns\n\n🥅: Blackwood ✅"
+    },
+    {
+      "sourceKey": "gamedaylines",
+      "postKind": "repost",
+      "pairedBy": "rt_text",
+      "shadowTweetId": "2118525210169393475",
+      "iftttTweetId": "2118525532157718847",
+      "iftttTextLength": 168,
+      "shadowTextLength": 168,
+      "iftttTruncated": false,
+      "ifttt": {
+        "type": "line_combination",
+        "category": "LINE COMBINATION",
+        "subcategory": "DEFENSE PAIRS",
+        "team": "COL",
+        "players": 7,
+        "confidence": 62
+      },
+      "shadow": {
+        "type": "line_combination",
+        "category": "LINE COMBINATION",
+        "subcategory": "DEFENSE PAIRS",
+        "team": "COL",
+        "players": 7,
+        "confidence": 62
+      },
+      "comparison": {
+        "correct": true,
+        "typeMatch": true,
+        "categoryMatch": true,
+        "playersMatch": true,
+        "slotsMatch": true
+      },
+      "attribution": {
+        "ifttt": {
+          "relationship": "unresolved",
+          "original": null
+        },
+        "shadow": {
+          "relationship": "retweet",
+          "original": "evanrawal"
+        }
+      },
+      "shadowQuote": false,
+      "iftttText": "RT @evanrawal: Avalanche will roll with same lines as last game, but changes to the defense to start.\n\nKulak - Makar\nToews - Malinski\nJuulsen - Burns\n\nBlackwood in net.",
+      "shadowText": "RT @evanrawal: Avalanche will roll with same lines as last game, but changes to the defense to start.\n\nKulak - Makar\nToews - Malinski\nJuulsen - Burns\n\nBlackwood in net."
+    },
+    {
+      "sourceKey": "gamedaylines",
+      "postKind": "repost",
+      "pairedBy": "rt_text",
+      "shadowTweetId": "2118525120075755876",
+      "iftttTweetId": "2118525625283780794",
+      "iftttTextLength": 208,
+      "shadowTextLength": 208,
+      "iftttTruncated": false,
+      "ifttt": {
+        "type": "line_combination",
+        "category": "LINE COMBINATION",
+        "subcategory": "FORWARD LINES",
+        "team": "NSH",
+        "players": 17,
+        "confidence": 36
+      },
+      "shadow": {
+        "type": "line_combination",
+        "category": "LINE COMBINATION",
+        "subcategory": "FORWARD LINES",
+        "team": "NSH",
+        "players": 17,
+        "confidence": 36
+      },
+      "comparison": {
+        "correct": true,
+        "typeMatch": true,
+        "categoryMatch": true,
+        "playersMatch": true,
+        "slotsMatch": true
+      },
+      "attribution": {
+        "ifttt": {
+          "relationship": "unresolved",
+          "original": null
+        },
+        "shadow": {
+          "relationship": "retweet",
+          "original": "brooksbratten"
+        }
+      },
+      "shadowQuote": false,
+      "iftttText": "RT @brooksbratten: #Preds lineup in warmups:   \n\nStamkos-O'Reilly-Bourque \nForsberg-Wright-Hoglander \nSchaefer-Kerfoot-Pinchuk \nColton-Drury-Edstrom  \n\nJosi-Wilsby \nSkjei-Perbix \nHunt-Struble  \n\nAnnunen\nSaros",
+      "shadowText": "RT @brooksbratten: #Preds lineup in warmups:   \n\nStamkos-O'Reilly-Bourque \nForsberg-Wright-Hoglander \nSchaefer-Kerfoot-Pinchuk \nColton-Drury-Edstrom  \n\nJosi-Wilsby \nSkjei-Perbix \nHunt-Struble  \n\nAnnunen\nSaros"
+    },
+    {
+      "sourceKey": "ccc",
+      "postKind": "quote",
+      "pairedBy": "tweet_id",
+      "shadowTweetId": "2118526109264539958",
+      "iftttTweetId": "2118526109264539958",
+      "iftttTextLength": 91,
+      "shadowTextLength": 122,
+      "iftttTruncated": false,
+      "ifttt": {
+        "type": "goalie",
+        "category": "GOALIE START",
+        "subcategory": "CONFIRMED STARTER",
+        "team": "NSH",
+        "players": 1,
+        "confidence": 100
+      },
+      "shadow": {
+        "type": "goalie",
+        "category": "GOALIE START",
+        "subcategory": "CONFIRMED STARTER",
+        "team": "NSH",
+        "players": 1,
+        "confidence": 100
+      },
+      "comparison": {
+        "correct": true,
+        "typeMatch": true,
+        "categoryMatch": true,
+        "playersMatch": true,
+        "slotsMatch": true
+      },
+      "attribution": {
+        "ifttt": {
+          "relationship": "unresolved",
+          "original": null
+        },
+        "shadow": {
+          "relationship": "unresolved",
+          "original": null
+        }
+      },
+      "shadowQuote": true,
+      "iftttText": "Predators lines\nConfirmed Predators Starting Goalie: Justus Annunen https://t.co/t3LzPuZ79j",
+      "shadowText": "Predators lines\nConfirmed Predators Starting Goalie: Justus Annunen https://x.com/brooksbratten/status/2118525120075755876"
+    },
+    {
+      "sourceKey": "dfofantasy",
+      "postKind": "post",
+      "pairedBy": "tweet_id",
+      "shadowTweetId": "2118526391088226425",
+      "iftttTweetId": "2118526391088226425",
+      "iftttTextLength": 193,
+      "shadowTextLength": 193,
+      "iftttTruncated": false,
+      "ifttt": {
+        "type": "line_combination",
+        "category": "LINE COMBINATION",
+        "subcategory": "FORWARD LINES",
+        "team": "NSH",
+        "players": 16,
+        "confidence": 52
+      },
+      "shadow": {
+        "type": "line_combination",
+        "category": "LINE COMBINATION",
+        "subcategory": "FORWARD LINES",
+        "team": "NSH",
+        "players": 16,
+        "confidence": 52
+      },
+      "comparison": {
+        "correct": true,
+        "typeMatch": true,
+        "categoryMatch": true,
+        "playersMatch": true,
+        "slotsMatch": true
+      },
+      "attribution": {
+        "ifttt": {
+          "relationship": "unresolved",
+          "original": null
+        },
+        "shadow": {
+          "relationship": "unresolved",
+          "original": null
+        }
+      },
+      "shadowQuote": false,
+      "iftttText": "#Preds Lineup @ COL\n\nStamkos - O'Reilly - Bourque\nForsberg - Wright - Hoglander\nColton - Drury - Edstrom\nSchaefer - Kerfoot - Pinchuk\n\nJosi - Wilsby\nSkjei - Perbix\nHunt - Struble\n\n🥅: Annunen ✅",
+      "shadowText": "#Preds Lineup @ COL\n\nStamkos - O'Reilly - Bourque\nForsberg - Wright - Hoglander\nColton - Drury - Edstrom\nSchaefer - Kerfoot - Pinchuk\n\nJosi - Wilsby\nSkjei - Perbix\nHunt - Struble\n\n🥅: Annunen ✅"
+    },
+    {
+      "sourceKey": "ccc",
+      "postKind": "repost",
+      "pairedBy": "rt_text",
+      "shadowTweetId": "2118529262177403361",
+      "iftttTweetId": "2118534197514252688",
+      "iftttTextLength": 50,
+      "shadowTextLength": 50,
+      "iftttTruncated": false,
+      "ifttt": {
+        "type": "other",
+        "category": "OTHER",
+        "subcategory": "UNSUPPORTED FORMAT",
+        "team": null,
+        "players": 0,
+        "confidence": 15
+      },
+      "shadow": {
+        "type": "other",
+        "category": "OTHER",
+        "subcategory": "UNSUPPORTED FORMAT",
+        "team": null,
+        "players": 0,
+        "confidence": 15
+      },
+      "comparison": {
+        "correct": true,
+        "typeMatch": true,
+        "categoryMatch": true,
+        "playersMatch": true,
+        "slotsMatch": true
+      },
+      "attribution": {
+        "ifttt": {
+          "relationship": "unresolved",
+          "original": null
+        },
+        "shadow": {
+          "relationship": "retweet",
+          "original": "avalanche"
+        }
+      },
+      "shadowQuote": false,
+      "iftttText": "RT @Avalanche: Game 1️⃣7️⃣ https://t.co/hGoXVcTgli",
+      "shadowText": "RT @Avalanche: Game 1️⃣7️⃣ https://t.co/hGoXVcTgli"
+    },
+    {
+      "sourceKey": "gamedaylines",
+      "postKind": "repost",
+      "pairedBy": "rt_text",
+      "shadowTweetId": "2118541543477043483",
+      "iftttTweetId": "2118542303988232230",
+      "iftttTextLength": 152,
+      "shadowTextLength": 152,
+      "iftttTruncated": false,
+      "ifttt": {
+        "type": "line_combination",
+        "category": "LINE COMBINATION",
+        "subcategory": null,
+        "team": "VGK",
+        "players": 3,
+        "confidence": 28
+      },
+      "shadow": {
+        "type": "line_combination",
+        "category": "LINE COMBINATION",
+        "subcategory": null,
+        "team": "VGK",
+        "players": 3,
+        "confidence": 28
+      },
+      "comparison": {
+        "correct": true,
+        "typeMatch": true,
+        "categoryMatch": true,
+        "playersMatch": true,
+        "slotsMatch": true
+      },
+      "attribution": {
+        "ifttt": {
+          "relationship": "unresolved",
+          "original": null
+        },
+        "shadow": {
+          "relationship": "retweet",
+          "original": "dannywebster21"
+        }
+      },
+      "shadowQuote": false,
+      "iftttText": "RT @DannyWebster21: The third period for Connelly-Eichel-Stone, per @NatStatTrick:\n\nCF: 7-1\nShots: 4-0\nGoals: 1-0\nScoring chances: 5-0\nHigh-dangers: 3-0",
+      "shadowText": "RT @DannyWebster21: The third period for Connelly-Eichel-Stone, per @NatStatTrick:\n\nCF: 7-1\nShots: 4-0\nGoals: 1-0\nScoring chances: 5-0\nHigh-dangers: 3-0"
+    },
+    {
+      "sourceKey": "gamedaynewsnhl",
+      "postKind": "repost",
+      "pairedBy": "rt_text",
+      "shadowTweetId": "2118543195399225356",
+      "iftttTweetId": "2118543466854769050",
+      "iftttTextLength": 111,
+      "shadowTextLength": 111,
+      "iftttTruncated": false,
+      "ifttt": {
+        "type": "other",
+        "category": "OTHER",
+        "subcategory": "AMBIGUOUS",
+        "team": null,
+        "players": 0,
+        "confidence": 15
+      },
+      "shadow": {
+        "type": "other",
+        "category": "OTHER",
+        "subcategory": "AMBIGUOUS",
+        "team": null,
+        "players": 0,
+        "confidence": 15
+      },
+      "comparison": {
+        "correct": true,
+        "typeMatch": true,
+        "categoryMatch": true,
+        "playersMatch": true,
+        "slotsMatch": true
+      },
+      "attribution": {
+        "ifttt": {
+          "relationship": "unresolved",
+          "original": null
+        },
+        "shadow": {
+          "relationship": "retweet",
+          "original": "marklazerus"
+        }
+      },
+      "shadowQuote": false,
+      "iftttText": "RT @MarkLazerus: Nothing definitive, but Jeff Blashill doesn't expect Patrick Kane to play Saturday in Raleigh.",
+      "shadowText": "RT @MarkLazerus: Nothing definitive, but Jeff Blashill doesn't expect Patrick Kane to play Saturday in Raleigh."
+    },
+    {
+      "sourceKey": "gamedaynewsnhl",
+      "postKind": "repost",
+      "pairedBy": "rt_text",
+      "shadowTweetId": "2118543882312958399",
+      "iftttTweetId": "2118544859686744459",
+      "iftttTextLength": 152,
+      "shadowTextLength": 179,
+      "iftttTruncated": false,
+      "ifttt": {
+        "type": "other",
+        "category": "OTHER",
+        "subcategory": "AMBIGUOUS",
+        "team": null,
+        "players": 0,
+        "confidence": 15
+      },
+      "shadow": {
+        "type": "other",
+        "category": "OTHER",
+        "subcategory": "AMBIGUOUS",
+        "team": null,
+        "players": 0,
+        "confidence": 15
+      },
+      "comparison": {
+        "correct": true,
+        "typeMatch": true,
+        "categoryMatch": true,
+        "playersMatch": true,
+        "slotsMatch": true
+      },
+      "attribution": {
+        "ifttt": {
+          "relationship": "unresolved",
+          "original": null
+        },
+        "shadow": {
+          "relationship": "retweet",
+          "original": "sethrorabaugh"
+        }
+      },
+      "shadowQuote": true,
+      "iftttText": "RT @SethRorabaugh: After the game, Crosby indicated he was fine in regard to this sequence. Called it \"just a bit of a stinger.\" https://t.co/LJlDoegL6H",
+      "shadowText": "RT @SethRorabaugh: After the game, Crosby indicated he was fine in regard to this sequence. Called it \"just a bit of a stinger.\" https://x.com/TVASports/status/2118508371238113368"
+    },
+    {
+      "sourceKey": "dfofantasy",
+      "postKind": "post",
+      "pairedBy": "tweet_id",
+      "shadowTweetId": "2118545403612438887",
+      "iftttTweetId": "2118545403612438887",
+      "iftttTextLength": 119,
+      "shadowTextLength": 119,
+      "iftttTruncated": false,
+      "ifttt": {
+        "type": "other",
+        "category": "OTHER",
+        "subcategory": "MULTI TEAM ROUNDUP",
+        "team": null,
+        "players": 0,
+        "confidence": 15
+      },
+      "shadow": {
+        "type": "other",
+        "category": "OTHER",
+        "subcategory": "MULTI TEAM ROUNDUP",
+        "team": null,
+        "players": 0,
+        "confidence": 15
+      },
+      "comparison": {
+        "correct": true,
+        "typeMatch": true,
+        "categoryMatch": true,
+        "playersMatch": true,
+        "slotsMatch": true
+      },
+      "attribution": {
+        "ifttt": {
+          "relationship": "unresolved",
+          "original": null
+        },
+        "shadow": {
+          "relationship": "unresolved",
+          "original": null
+        }
+      },
+      "shadowQuote": false,
+      "iftttText": "Ben Hutton: Signing: 1-year, $900,000 contract with the New York Islanders. Expires 2027 (UFA). https://t.co/xo5hAiMg33",
+      "shadowText": "Ben Hutton: Signing: 1-year, $900,000 contract with the New York Islanders. Expires 2027 (UFA). https://t.co/xo5hAiMg33"
+    },
+    {
+      "sourceKey": "gamedaynewsnhl",
+      "postKind": "repost",
+      "pairedBy": "rt_text",
+      "shadowTweetId": "2118545441742828029",
+      "iftttTweetId": "2118545699717673053",
+      "iftttTextLength": 294,
+      "shadowTextLength": 294,
+      "iftttTruncated": false,
+      "ifttt": {
+        "type": "other",
+        "category": "OTHER",
+        "subcategory": "AMBIGUOUS",
+        "team": "WPG",
+        "players": 1,
+        "confidence": 100
+      },
+      "shadow": {
+        "type": "other",
+        "category": "OTHER",
+        "subcategory": "AMBIGUOUS",
+        "team": "WPG",
+        "players": 1,
+        "confidence": 100
+      },
+      "comparison": {
+        "correct": true,
+        "typeMatch": true,
+        "categoryMatch": true,
+        "playersMatch": true,
+        "slotsMatch": true
+      },
+      "attribution": {
+        "ifttt": {
+          "relationship": "unresolved",
+          "original": null
+        },
+        "shadow": {
+          "relationship": "retweet",
+          "original": "wiebesworld"
+        }
+      },
+      "shadowQuote": false,
+      "iftttText": "RT @WiebesWorld: Not much of an update from #NHLJets HC Scott Arniel on D Haydn Fleury leaving the game after blocking a shot with his hand. \"That will kind of be a wait and see on that one.\" Jets are off Friday, so there probably won't be an update until Saturday when they're ba",
+      "shadowText": "RT @WiebesWorld: Not much of an update from #NHLJets HC Scott Arniel on D Haydn Fleury leaving the game after blocking a shot with his hand. \"That will kind of be a wait and see on that one.\" Jets are off Friday, so there probably won't be an update until Saturday when they're ba"
+    },
+    {
+      "sourceKey": "nhl_rosters",
+      "postKind": "post",
+      "pairedBy": "tweet_id",
+      "shadowTweetId": "2118703124865319192",
+      "iftttTweetId": "2118703124865319192",
+      "iftttTextLength": 84,
+      "shadowTextLength": 84,
+      "iftttTruncated": false,
+      "ifttt": {
+        "type": "other",
+        "category": "OTHER",
+        "subcategory": "MULTI TEAM ROUNDUP",
+        "team": null,
+        "players": 0,
+        "confidence": 15
+      },
+      "shadow": {
+        "type": "other",
+        "category": "OTHER",
+        "subcategory": "MULTI TEAM ROUNDUP",
+        "team": null,
+        "players": 0,
+        "confidence": 15
+      },
+      "comparison": {
+        "correct": true,
+        "typeMatch": true,
+        "categoryMatch": true,
+        "playersMatch": true,
+        "slotsMatch": true
+      },
+      "attribution": {
+        "ifttt": {
+          "relationship": "unresolved",
+          "original": null
+        },
+        "shadow": {
+          "relationship": "unresolved",
+          "original": null
+        }
+      },
+      "shadowQuote": false,
+      "iftttText": "Ben Hutton will wear #71 with the New York Islanders. #Isles https://t.co/YCm4AGLqkf",
+      "shadowText": "Ben Hutton will wear #71 with the New York Islanders. #Isles https://t.co/YCm4AGLqkf"
+    },
+    {
+      "sourceKey": "nhl_rosters",
+      "postKind": "post",
+      "pairedBy": "tweet_id",
+      "shadowTweetId": "2118704878239535506",
+      "iftttTweetId": "2118704878239535506",
+      "iftttTextLength": 75,
+      "shadowTextLength": 75,
+      "iftttTruncated": false,
+      "ifttt": {
+        "type": "injury",
+        "category": "INJURY",
+        "subcategory": null,
+        "team": "TOR",
+        "players": 2,
+        "confidence": 86
+      },
+      "shadow": {
+        "type": "injury",
+        "category": "INJURY",
+        "subcategory": null,
+        "team": "TOR",
+        "players": 2,
+        "confidence": 86
+      },
+      "comparison": {
+        "correct": true,
+        "typeMatch": true,
+        "categoryMatch": true,
+        "playersMatch": true,
+        "slotsMatch": true
+      },
+      "attribution": {
+        "ifttt": {
+          "relationship": "unresolved",
+          "original": null
+        },
+        "shadow": {
+          "relationship": "unresolved",
+          "original": null
+        }
+      },
+      "shadowQuote": false,
+      "iftttText": "Columbus has recalled Steven Lorentz and Jack Williams from Cleveland. #CBJ",
+      "shadowText": "Columbus has recalled Steven Lorentz and Jack Williams from Cleveland. #CBJ"
+    },
+    {
+      "sourceKey": "dfofantasy",
+      "postKind": "repost",
+      "pairedBy": "rt_text",
+      "shadowTweetId": "2118713315795087614",
+      "iftttTweetId": "2118713379024167350",
+      "iftttTextLength": 171,
+      "shadowTextLength": 171,
+      "iftttTruncated": false,
+      "ifttt": {
+        "type": "goalie",
+        "category": "GOALIE START",
+        "subcategory": "CONFIRMED STARTER",
+        "team": null,
+        "players": 0,
+        "confidence": 15
+      },
+      "shadow": {
+        "type": "goalie",
+        "category": "GOALIE START",
+        "subcategory": "CONFIRMED STARTER",
+        "team": null,
+        "players": 0,
+        "confidence": 15
+      },
+      "comparison": {
+        "correct": true,
+        "typeMatch": true,
+        "categoryMatch": true,
+        "playersMatch": true,
+        "slotsMatch": true
+      },
+      "attribution": {
+        "ifttt": {
+          "relationship": "unresolved",
+          "original": null
+        },
+        "shadow": {
+          "relationship": "retweet",
+          "original": "brock_seguin"
+        }
+      },
+      "shadowQuote": false,
+      "iftttText": "RT @Brock_Seguin: The @DFOFantasy Show LIVE Weekend Preview and Q & A starts at 10:00am \n\nIf you have questions, I've got answers! See you there. \n\nhttps://t.co/ImXdZLzosy",
+      "shadowText": "RT @Brock_Seguin: The @DFOFantasy Show LIVE Weekend Preview and Q & A starts at 10:00am \n\nIf you have questions, I've got answers! See you there. \n\nhttps://t.co/ImXdZLzosy"
+    },
+    {
+      "sourceKey": "dfofantasy",
+      "postKind": "post",
+      "pairedBy": "tweet_id",
+      "shadowTweetId": "2118720742871167084",
+      "iftttTweetId": "2118720742871167084",
+      "iftttTextLength": 75,
+      "shadowTextLength": 75,
+      "iftttTruncated": false,
+      "ifttt": {
+        "type": "other",
+        "category": "OTHER",
+        "subcategory": "AMBIGUOUS",
+        "team": null,
+        "players": 0,
+        "confidence": 15
+      },
+      "shadow": {
+        "type": "other",
+        "category": "OTHER",
+        "subcategory": "AMBIGUOUS",
+        "team": null,
+        "players": 0,
+        "confidence": 15
+      },
+      "comparison": {
+        "correct": true,
+        "typeMatch": true,
+        "categoryMatch": true,
+        "playersMatch": true,
+        "slotsMatch": true
+      },
+      "attribution": {
+        "ifttt": {
+          "relationship": "unresolved",
+          "original": null
+        },
+        "shadow": {
+          "relationship": "unresolved",
+          "original": null
+        }
+      },
+      "shadowQuote": false,
+      "iftttText": "LIVE Fantasy Hockey Weekend Preview + Q&A! | Week 6 https://t.co/IcD0thw5e8",
+      "shadowText": "LIVE Fantasy Hockey Weekend Preview + Q&A! | Week 6 https://t.co/IcD0thw5e8"
+    },
+    {
+      "sourceKey": "gamedaynewsnhl",
+      "postKind": "repost",
+      "pairedBy": "rt_text",
+      "shadowTweetId": "2118720376293482625",
+      "iftttTweetId": "2118721424592609636",
+      "iftttTextLength": 96,
+      "shadowTextLength": 96,
+      "iftttTruncated": false,
+      "ifttt": {
+        "type": "other",
+        "category": "OTHER",
+        "subcategory": "AMBIGUOUS",
+        "team": null,
+        "players": 0,
+        "confidence": 15
+      },
+      "shadow": {
+        "type": "other",
+        "category": "OTHER",
+        "subcategory": "AMBIGUOUS",
+        "team": null,
+        "players": 0,
+        "confidence": 15
+      },
+      "comparison": {
+        "correct": true,
+        "typeMatch": true,
+        "categoryMatch": true,
+        "playersMatch": true,
+        "slotsMatch": true
+      },
+      "attribution": {
+        "ifttt": {
+          "relationship": "unresolved",
+          "original": null
+        },
+        "shadow": {
+          "relationship": "retweet",
+          "original": "georgerichards"
+        }
+      },
+      "shadowQuote": false,
+      "iftttText": "RT @GeorgeRichards: Niko Mikkola on the ice for the #FlaPanthers after leaving game on Wednesday",
+      "shadowText": "RT @GeorgeRichards: Niko Mikkola on the ice for the #FlaPanthers after leaving game on Wednesday"
+    },
+    {
+      "sourceKey": "gamedaynewsnhl",
+      "postKind": "repost",
+      "pairedBy": "rt_text",
+      "shadowTweetId": "2118721378455077100",
+      "iftttTweetId": "2118722174202896793",
+      "iftttTextLength": 316,
+      "shadowTextLength": 368,
+      "iftttTruncated": false,
+      "ifttt": {
+        "type": "other",
+        "category": "OTHER",
+        "subcategory": "NON NHL",
+        "team": null,
+        "players": 0,
+        "confidence": 15
+      },
+      "shadow": {
+        "type": "other",
+        "category": "OTHER",
+        "subcategory": "NON NHL",
+        "team": null,
+        "players": 0,
+        "confidence": 15
+      },
+      "comparison": {
+        "correct": true,
+        "typeMatch": true,
+        "categoryMatch": true,
+        "playersMatch": true,
+        "slotsMatch": true
+      },
+      "attribution": {
+        "ifttt": {
+          "relationship": "unresolved",
+          "original": null
+        },
+        "shadow": {
+          "relationship": "retweet",
+          "original": "rustymac26"
+        }
+      },
+      "shadowQuote": true,
+      "iftttText": "RT @rustymac26: Robby Fabbri signs a PTO with the #Isles AHL Affiliate, the Hamilton Hammers.\n\nHe played 21 NHL games last year, 15 with the #STLBlues and 6 with the #MNWild. 2 goals, 5 points.\n\nFabbri also played three AHL Games with the Charlotte Checkers.\n\nBefore that, he hadn",
+      "shadowText": "RT @rustymac26: Robby Fabbri signs a PTO with the #Isles AHL Affiliate, the Hamilton Hammers.\n\nHe played 21 NHL games last year, 15 with the #STLBlues and 6 with the #MNWild. 2 goals, 5 points.\n\nFabbri also played three AHL Games with the Charlotte Checkers.\n\nBefore that, he hadn"
+    },
+    {
+      "sourceKey": "dfofantasy",
+      "postKind": "quote",
+      "pairedBy": "tweet_id",
+      "shadowTweetId": "2118728428081881280",
+      "iftttTweetId": "2118728428081881280",
+      "iftttTextLength": 131,
+      "shadowTextLength": 161,
+      "iftttTruncated": false,
+      "ifttt": {
+        "type": "goalie",
+        "category": "GOALIE START",
+        "subcategory": "EXPECTED STARTER",
+        "team": "BUF",
+        "players": 1,
+        "confidence": 90
+      },
+      "shadow": {
+        "type": "goalie",
+        "category": "GOALIE START",
+        "subcategory": "EXPECTED STARTER",
+        "team": "BUF",
+        "players": 1,
+        "confidence": 90
+      },
+      "comparison": {
+        "correct": true,
+        "typeMatch": true,
+        "categoryMatch": true,
+        "playersMatch": true,
+        "slotsMatch": true
+      },
+      "attribution": {
+        "ifttt": {
+          "relationship": "unresolved",
+          "original": null
+        },
+        "shadow": {
+          "relationship": "unresolved",
+          "original": null
+        }
+      },
+      "shadowQuote": true,
+      "iftttText": "🥅: Ukko-Pekka Luukkonen (BUF) 🅿️ is expected to start Friday vs. CBJ.\n\n4-3-3 | 3.40 GAA | .874 SV% | 0 SO https://t.co/NWckzYPyME",
+      "shadowText": "🥅: Ukko-Pekka Luukkonen (BUF) 🅿️ is expected to start Friday vs. CBJ.\n\n4-3-3 | 3.40 GAA | .874 SV% | 0 SO https://x.com/engelheather/status/2118728271642923510"
+    },
+    {
+      "sourceKey": "gamedaylines",
+      "postKind": "repost",
+      "pairedBy": "rt_text",
+      "shadowTweetId": "2118729228132794843",
+      "iftttTweetId": "2118729727028670804",
+      "iftttTextLength": 262,
+      "shadowTextLength": 262,
+      "iftttTruncated": false,
+      "ifttt": {
+        "type": "line_combination",
+        "category": "LINE COMBINATION",
+        "subcategory": "PRACTICE LINES",
+        "team": "WSH",
+        "players": 22,
+        "confidence": 71
+      },
+      "shadow": {
+        "type": "line_combination",
+        "category": "LINE COMBINATION",
+        "subcategory": "PRACTICE LINES",
+        "team": "WSH",
+        "players": 22,
+        "confidence": 71
+      },
+      "comparison": {
+        "correct": true,
+        "typeMatch": true,
+        "categoryMatch": true,
+        "playersMatch": true,
+        "slotsMatch": true
+      },
+      "attribution": {
+        "ifttt": {
+          "relationship": "unresolved",
+          "original": null
+        },
+        "shadow": {
+          "relationship": "retweet",
+          "original": "sammisilber"
+        }
+      },
+      "shadowQuote": false,
+      "iftttText": "RT @sammisilber: Same Caps lines at practice:\n\nOvechkin-Sourdif-Beauvillier\nTuch-Strome-Kyrou\nA. Protas-Dubois-Wilson\nJenner-I. Protas-Leonard\nFrank/Miroshnichenko\n\nChychrun-Roy\nFehervary-Liljegren\nHutson-St. Ivany\nSandin (non-contact)\n\nThompson\nLindgren\nPoirier",
+      "shadowText": "RT @sammisilber: Same Caps lines at practice:\n\nOvechkin-Sourdif-Beauvillier\nTuch-Strome-Kyrou\nA. Protas-Dubois-Wilson\nJenner-I. Protas-Leonard\nFrank/Miroshnichenko\n\nChychrun-Roy\nFehervary-Liljegren\nHutson-St. Ivany\nSandin (non-contact)\n\nThompson\nLindgren\nPoirier"
+    },
+    {
+      "sourceKey": "gamedaygoalies",
+      "postKind": "repost",
+      "pairedBy": "rt_text",
+      "shadowTweetId": "2118727470493155634",
+      "iftttTweetId": "2118730040208994800",
+      "iftttTextLength": 99,
+      "shadowTextLength": 99,
+      "iftttTruncated": false,
+      "ifttt": {
+        "type": "goalie",
+        "category": "GOALIE START",
+        "subcategory": null,
+        "team": null,
+        "players": 0,
+        "confidence": 15
+      },
+      "shadow": {
+        "type": "goalie",
+        "category": "GOALIE START",
+        "subcategory": null,
+        "team": null,
+        "players": 0,
+        "confidence": 15
+      },
+      "comparison": {
+        "correct": true,
+        "typeMatch": true,
+        "categoryMatch": true,
+        "playersMatch": true,
+        "slotsMatch": true
+      },
+      "attribution": {
+        "ifttt": {
+          "relationship": "unresolved",
+          "original": null
+        },
+        "shadow": {
+          "relationship": "retweet",
+          "original": "rachelmlenzi"
+        }
+      },
+      "shadowQuote": false,
+      "iftttText": "RT @rachelmlenzi: UPL is in the starter’s net for the morning skate #sabres https://t.co/S2VNvX7WJs",
+      "shadowText": "RT @rachelmlenzi: UPL is in the starter’s net for the morning skate #sabres https://t.co/S2VNvX7WJs"
+    },
+    {
+      "sourceKey": "dfofantasy",
+      "postKind": "post",
+      "pairedBy": "tweet_id",
+      "shadowTweetId": "2118731134423175195",
+      "iftttTweetId": "2118731134423175195",
+      "iftttTextLength": 114,
+      "shadowTextLength": 114,
+      "iftttTruncated": false,
+      "ifttt": {
+        "type": "other",
+        "category": "OTHER",
+        "subcategory": "NON NHL",
+        "team": null,
+        "players": 0,
+        "confidence": 15
+      },
+      "shadow": {
+        "type": "other",
+        "category": "OTHER",
+        "subcategory": "NON NHL",
+        "team": null,
+        "players": 0,
+        "confidence": 15
+      },
+      "comparison": {
+        "correct": true,
+        "typeMatch": true,
+        "categoryMatch": true,
+        "playersMatch": true,
+        "slotsMatch": true
+      },
+      "attribution": {
+        "ifttt": {
+          "relationship": "unresolved",
+          "original": null
+        },
+        "shadow": {
+          "relationship": "unresolved",
+          "original": null
+        }
+      },
+      "shadowQuote": false,
+      "iftttText": "Jake Livanavage: Send Down: Livanavage has been reassigned to Wilkes-Barre/Scranton (AHL). https://t.co/vPdhSBAllF",
+      "shadowText": "Jake Livanavage: Send Down: Livanavage has been reassigned to Wilkes-Barre/Scranton (AHL). https://t.co/vPdhSBAllF"
+    },
+    {
+      "sourceKey": "gamedaynewsnhl",
+      "postKind": "repost",
+      "pairedBy": "rt_text",
+      "shadowTweetId": "2118726806144532567",
+      "iftttTweetId": "2118731141998064032",
+      "iftttTextLength": 172,
+      "shadowTextLength": 172,
+      "iftttTruncated": false,
+      "ifttt": {
+        "type": "injury",
+        "category": "INJURY",
+        "subcategory": null,
+        "team": "MTL",
+        "players": 1,
+        "confidence": 90
+      },
+      "shadow": {
+        "type": "injury",
+        "category": "INJURY",
+        "subcategory": null,
+        "team": "MTL",
+        "players": 1,
+        "confidence": 90
+      },
+      "comparison": {
+        "correct": true,
+        "typeMatch": true,
+        "categoryMatch": true,
+        "playersMatch": true,
+        "slotsMatch": true
+      },
+      "attribution": {
+        "ifttt": {
+          "relationship": "unresolved",
+          "original": null
+        },
+        "shadow": {
+          "relationship": "retweet",
+          "original": "ericengels"
+        }
+      },
+      "shadowQuote": false,
+      "iftttText": "RT @EricEngels: From Kent Hughes: An update on Ivan Demidov, and on the Canadiens’ policy regarding injury information: (cc @PFrioletRDS) @Sportsnet https://t.co/5GY47Uvi7T",
+      "shadowText": "RT @EricEngels: From Kent Hughes: An update on Ivan Demidov, and on the Canadiens’ policy regarding injury information: (cc @PFrioletRDS) @Sportsnet https://t.co/5GY47Uvi7T"
+    },
+    {
+      "sourceKey": "gamedaylines",
+      "postKind": "repost",
+      "pairedBy": "rt_text",
+      "shadowTweetId": "2118730752959631395",
+      "iftttTweetId": "2118731491396161824",
+      "iftttTextLength": 256,
+      "shadowTextLength": 256,
+      "iftttTruncated": false,
+      "ifttt": {
+        "type": "line_combination",
+        "category": "LINE COMBINATION",
+        "subcategory": "PRACTICE LINES",
+        "team": "BUF",
+        "players": 20,
+        "confidence": 87
+      },
+      "shadow": {
+        "type": "line_combination",
+        "category": "LINE COMBINATION",
+        "subcategory": "PRACTICE LINES",
+        "team": "BUF",
+        "players": 20,
+        "confidence": 87
+      },
+      "comparison": {
+        "correct": true,
+        "typeMatch": true,
+        "categoryMatch": true,
+        "playersMatch": true,
+        "slotsMatch": true
+      },
+      "attribution": {
+        "ifttt": {
+          "relationship": "unresolved",
+          "original": null
+        },
+        "shadow": {
+          "relationship": "retweet",
+          "original": "engelheather"
+        }
+      },
+      "shadowQuote": false,
+      "iftttText": "RT @engelheather: How they’re lining up:\n\nBenson-Krebs-Thompson \nDoan-Östlund-Quinn\nKulich-Norris-Zucker\nMalenstyn-Kozak-Carrick\n\nRyan McLeod did not take any rushes\n\nDahlin-Samuelsson \nZellweger-Power\nCrevier, Metsa and Timmins all rotated with each other",
+      "shadowText": "RT @engelheather: How they’re lining up:\n\nBenson-Krebs-Thompson \nDoan-Östlund-Quinn\nKulich-Norris-Zucker\nMalenstyn-Kozak-Carrick\n\nRyan McLeod did not take any rushes\n\nDahlin-Samuelsson \nZellweger-Power\nCrevier, Metsa and Timmins all rotated with each other"
+    },
+    {
+      "sourceKey": "gamedaynewsnhl",
+      "postKind": "repost",
+      "pairedBy": "rt_text",
+      "shadowTweetId": "2118732167505424553",
+      "iftttTweetId": "2118732390831116756",
+      "iftttTextLength": 122,
+      "shadowTextLength": 122,
+      "iftttTruncated": false,
+      "ifttt": {
+        "type": "line_combination",
+        "category": "LINE COMBINATION",
+        "subcategory": "PRACTICE LINES",
+        "team": null,
+        "players": 0,
+        "confidence": 15
+      },
+      "shadow": {
+        "type": "line_combination",
+        "category": "LINE COMBINATION",
+        "subcategory": "PRACTICE LINES",
+        "team": null,
+        "players": 0,
+        "confidence": 15
+      },
+      "comparison": {
+        "correct": true,
+        "typeMatch": true,
+        "categoryMatch": true,
+        "playersMatch": true,
+        "slotsMatch": true
+      },
+      "attribution": {
+        "ifttt": {
+          "relationship": "unresolved",
+          "original": null
+        },
+        "shadow": {
+          "relationship": "retweet",
+          "original": "markhmasters"
+        }
+      },
+      "shadowQuote": false,
+      "iftttText": "RT @markhmasters: John Tavares takes the ice in a regular sweater for Leafs practice \n\n@TSN_Sports https://t.co/pCqTpGLcGy",
+      "shadowText": "RT @markhmasters: John Tavares takes the ice in a regular sweater for Leafs practice \n\n@TSN_Sports https://t.co/pCqTpGLcGy"
+    },
+    {
+      "sourceKey": "dfofantasy",
+      "postKind": "post",
+      "pairedBy": "tweet_id",
+      "shadowTweetId": "2118732234798895500",
+      "iftttTweetId": "2118732234798895500",
+      "iftttTextLength": 94,
+      "shadowTextLength": 94,
+      "iftttTruncated": false,
+      "ifttt": {
+        "type": "line_combination",
+        "category": "LINE COMBINATION",
+        "subcategory": "PRACTICE LINES",
+        "team": null,
+        "players": 0,
+        "confidence": 15
+      },
+      "shadow": {
+        "type": "line_combination",
+        "category": "LINE COMBINATION",
+        "subcategory": "PRACTICE LINES",
+        "team": null,
+        "players": 0,
+        "confidence": 15
+      },
+      "comparison": {
+        "correct": true,
+        "typeMatch": true,
+        "categoryMatch": true,
+        "playersMatch": true,
+        "slotsMatch": true
+      },
+      "attribution": {
+        "ifttt": {
+          "relationship": "unresolved",
+          "original": null
+        },
+        "shadow": {
+          "relationship": "unresolved",
+          "original": null
+        }
+      },
+      "shadowQuote": false,
+      "iftttText": "Tyler Kleven: Injury: Kleven (illness) returned to practice on Friday. https://t.co/8wq0xSCBsa",
+      "shadowText": "Tyler Kleven: Injury: Kleven (illness) returned to practice on Friday. https://t.co/8wq0xSCBsa"
+    },
+    {
+      "sourceKey": "nhl_rosters",
+      "postKind": "post",
+      "pairedBy": "tweet_id",
+      "shadowTweetId": "2118733349611249913",
+      "iftttTweetId": "2118733349611249913",
+      "iftttTextLength": 77,
+      "shadowTextLength": 77,
+      "iftttTruncated": false,
+      "ifttt": {
+        "type": "injury",
+        "category": "INJURY",
+        "subcategory": null,
+        "team": "PIT",
+        "players": 0,
+        "confidence": 60
+      },
+      "shadow": {
+        "type": "injury",
+        "category": "INJURY",
+        "subcategory": null,
+        "team": "PIT",
+        "players": 0,
+        "confidence": 60
+      },
+      "comparison": {
+        "correct": true,
+        "typeMatch": true,
+        "categoryMatch": true,
+        "playersMatch": true,
+        "slotsMatch": true
+      },
+      "attribution": {
+        "ifttt": {
+          "relationship": "unresolved",
+          "original": null
+        },
+        "shadow": {
+          "relationship": "unresolved",
+          "original": null
+        }
+      },
+      "shadowQuote": false,
+      "iftttText": "Pittsburgh has assigned Jake Livanavage to Wilkes-Barre/Scranton. #LetsGoPens",
+      "shadowText": "Pittsburgh has assigned Jake Livanavage to Wilkes-Barre/Scranton. #LetsGoPens"
+    },
+    {
+      "sourceKey": "nhl_rosters",
+      "postKind": "post",
+      "pairedBy": "tweet_id",
+      "shadowTweetId": "2118733161576505643",
+      "iftttTweetId": "2118733161576505643",
+      "iftttTextLength": 62,
+      "shadowTextLength": 62,
+      "iftttTruncated": false,
+      "ifttt": {
+        "type": "other",
+        "category": "OTHER",
+        "subcategory": "NON NHL",
+        "team": null,
+        "players": 0,
+        "confidence": 15
+      },
+      "shadow": {
+        "type": "other",
+        "category": "OTHER",
+        "subcategory": "NON NHL",
+        "team": null,
+        "players": 0,
+        "confidence": 15
+      },
+      "comparison": {
+        "correct": true,
+        "typeMatch": true,
+        "categoryMatch": true,
+        "playersMatch": true,
+        "slotsMatch": true
+      },
+      "attribution": {
+        "ifttt": {
+          "relationship": "unresolved",
+          "original": null
+        },
+        "shadow": {
+          "relationship": "unresolved",
+          "original": null
+        }
+      },
+      "shadowQuote": false,
+      "iftttText": "Robby Fabbri has signed a PTO with the Hamilton Hammers (AHL).",
+      "shadowText": "Robby Fabbri has signed a PTO with the Hamilton Hammers (AHL)."
+    },
+    {
+      "sourceKey": "nhl_rosters",
+      "postKind": "post",
+      "pairedBy": "tweet_id",
+      "shadowTweetId": "2118736949368459372",
+      "iftttTweetId": "2118736949368459372",
+      "iftttTextLength": 52,
+      "shadowTextLength": 52,
+      "iftttTruncated": false,
+      "ifttt": {
+        "type": "injury",
+        "category": "INJURY",
+        "subcategory": null,
+        "team": "MIN",
+        "players": 1,
+        "confidence": 90
+      },
+      "shadow": {
+        "type": "injury",
+        "category": "INJURY",
+        "subcategory": null,
+        "team": "MIN",
+        "players": 1,
+        "confidence": 90
+      },
+      "comparison": {
+        "correct": true,
+        "typeMatch": true,
+        "categoryMatch": true,
+        "playersMatch": true,
+        "slotsMatch": true
+      },
+      "attribution": {
+        "ifttt": {
+          "relationship": "unresolved",
+          "original": null
+        },
+        "shadow": {
+          "relationship": "unresolved",
+          "original": null
+        }
+      },
+      "shadowQuote": false,
+      "iftttText": "Minnesota has recalled Mason Shaw from Iowa. #mnwild",
+      "shadowText": "Minnesota has recalled Mason Shaw from Iowa. #mnwild"
+    },
+    {
+      "sourceKey": "nhl_rosters",
+      "postKind": "post",
+      "pairedBy": "tweet_id",
+      "shadowTweetId": "2118737234480542139",
+      "iftttTweetId": "2118737234480542139",
+      "iftttTextLength": 67,
+      "shadowTextLength": 67,
+      "iftttTruncated": false,
+      "ifttt": {
+        "type": "injury",
+        "category": "INJURY",
+        "subcategory": null,
+        "team": "MIN",
+        "players": 1,
+        "confidence": 90
+      },
+      "shadow": {
+        "type": "injury",
+        "category": "INJURY",
+        "subcategory": null,
+        "team": "MIN",
+        "players": 1,
+        "confidence": 90
+      },
+      "comparison": {
+        "correct": true,
+        "typeMatch": true,
+        "categoryMatch": true,
+        "playersMatch": true,
+        "slotsMatch": true
+      },
+      "attribution": {
+        "ifttt": {
+          "relationship": "unresolved",
+          "original": null
+        },
+        "shadow": {
+          "relationship": "unresolved",
+          "original": null
+        }
+      },
+      "shadowQuote": false,
+      "iftttText": "Minnesota has assigned Rasmus Kumpulainen to Lukko (Liiga). #mnwild",
+      "shadowText": "Minnesota has assigned Rasmus Kumpulainen to Lukko (Liiga). #mnwild"
+    },
+    {
+      "sourceKey": "gamedaynewsnhl",
+      "postKind": "repost",
+      "pairedBy": "rt_text",
+      "shadowTweetId": "2118737283381936218",
+      "iftttTweetId": "2118737594511130727",
+      "iftttTextLength": 153,
+      "shadowTextLength": 184,
+      "iftttTruncated": false,
+      "ifttt": {
+        "type": "line_combination",
+        "category": "LINE COMBINATION",
+        "subcategory": "PRACTICE LINES",
+        "team": "NYI",
+        "players": 1,
+        "confidence": 35
+      },
+      "shadow": {
+        "type": "line_combination",
+        "category": "LINE COMBINATION",
+        "subcategory": "PRACTICE LINES",
+        "team": "NYI",
+        "players": 1,
+        "confidence": 35
+      },
+      "comparison": {
+        "correct": true,
+        "typeMatch": true,
+        "categoryMatch": true,
+        "playersMatch": true,
+        "slotsMatch": true
+      },
+      "attribution": {
+        "ifttt": {
+          "relationship": "unresolved",
+          "original": null
+        },
+        "shadow": {
+          "relationship": "retweet",
+          "original": "agrossnewsday"
+        }
+      },
+      "shadowQuote": true,
+      "iftttText": "RT @AGrossNewsday: Mathew Barzal just stepped onto the ice as #Isles warm up for practice. Also still in red, non-contact jersey. https://t.co/3ZZljvG0kv",
+      "shadowText": "RT @AGrossNewsday: Mathew Barzal just stepped onto the ice as #Isles warm up for practice. Also still in red, non-contact jersey. https://x.com/AGrossNewsday/status/2118736778345562606"
+    },
+    {
+      "sourceKey": "gamedaylines",
+      "postKind": "repost",
+      "pairedBy": "rt_text",
+      "shadowTweetId": "2118736848419971274",
+      "iftttTweetId": "2118737747699777968",
+      "iftttTextLength": 230,
+      "shadowTextLength": 230,
+      "iftttTruncated": false,
+      "ifttt": {
+        "type": "line_combination",
+        "category": "LINE COMBINATION",
+        "subcategory": "FORWARD LINES",
+        "team": "OTT",
+        "players": 20,
+        "confidence": 60
+      },
+      "shadow": {
+        "type": "line_combination",
+        "category": "LINE COMBINATION",
+        "subcategory": "FORWARD LINES",
+        "team": "OTT",
+        "players": 20,
+        "confidence": 60
+      },
+      "comparison": {
+        "correct": true,
+        "typeMatch": true,
+        "categoryMatch": true,
+        "playersMatch": true,
+        "slotsMatch": true
+      },
+      "attribution": {
+        "ifttt": {
+          "relationship": "unresolved",
+          "original": null
+        },
+        "shadow": {
+          "relationship": "retweet",
+          "original": "sungarrioch"
+        }
+      },
+      "shadowQuote": false,
+      "iftttText": "RT @SunGarrioch: Today's alignment #Sens No Greig\n\nCousins-Stutzle-Zetterlund\nTomasino-Pinto-Batherson\nAmadio-Cozens-Giroux\nBlais-Halliday-Hodgson\n\nSanderson-Zub\nChabot-Spence\nKleven-Matinpalo/Yakemchuk\n\nUllmark, Ersson, Johansson",
+      "shadowText": "RT @SunGarrioch: Today's alignment #Sens No Greig\n\nCousins-Stutzle-Zetterlund\nTomasino-Pinto-Batherson\nAmadio-Cozens-Giroux\nBlais-Halliday-Hodgson\n\nSanderson-Zub\nChabot-Spence\nKleven-Matinpalo/Yakemchuk\n\nUllmark, Ersson, Johansson"
+    },
+    {
+      "sourceKey": "gamedaynewsnhl",
+      "postKind": "repost",
+      "pairedBy": "rt_text",
+      "shadowTweetId": "2118731705632555008",
+      "iftttTweetId": "2118738623487213742",
+      "iftttTextLength": 203,
+      "shadowTextLength": 203,
+      "iftttTruncated": false,
+      "ifttt": {
+        "type": "goalie",
+        "category": "GOALIE START",
+        "subcategory": null,
+        "team": "BUF",
+        "players": 3,
+        "confidence": 90
+      },
+      "shadow": {
+        "type": "goalie",
+        "category": "GOALIE START",
+        "subcategory": null,
+        "team": "BUF",
+        "players": 3,
+        "confidence": 90
+      },
+      "comparison": {
+        "correct": true,
+        "typeMatch": true,
+        "categoryMatch": true,
+        "playersMatch": true,
+        "slotsMatch": true
+      },
+      "attribution": {
+        "ifttt": {
+          "relationship": "unresolved",
+          "original": null
+        },
+        "shadow": {
+          "relationship": "retweet",
+          "original": "matthewfairburn"
+        }
+      },
+      "shadowQuote": false,
+      "iftttText": "RT @MatthewFairburn: Looks like Jiri Kulich could be going in for Ryan McLeod tonight. McLeod wasn’t working on either of the top two PK units at morning skate. Ukko-Pekka Luukkonen in the starter’s net.",
+      "shadowText": "RT @MatthewFairburn: Looks like Jiri Kulich could be going in for Ryan McLeod tonight. McLeod wasn’t working on either of the top two PK units at morning skate. Ukko-Pekka Luukkonen in the starter’s net."
+    },
+    {
+      "sourceKey": "gamedaynewsnhl",
+      "postKind": "repost",
+      "pairedBy": "rt_text",
+      "shadowTweetId": "2118738075614597262",
+      "iftttTweetId": "2118738807562674548",
+      "iftttTextLength": 60,
+      "shadowTextLength": 60,
+      "iftttTruncated": false,
+      "ifttt": {
+        "type": "other",
+        "category": "OTHER",
+        "subcategory": "AMBIGUOUS",
+        "team": null,
+        "players": 0,
+        "confidence": 15
+      },
+      "shadow": {
+        "type": "other",
+        "category": "OTHER",
+        "subcategory": "AMBIGUOUS",
+        "team": null,
+        "players": 0,
+        "confidence": 15
+      },
+      "comparison": {
+        "correct": true,
+        "typeMatch": true,
+        "categoryMatch": true,
+        "playersMatch": true,
+        "slotsMatch": true
+      },
+      "attribution": {
+        "ifttt": {
+          "relationship": "unresolved",
+          "original": null
+        },
+        "shadow": {
+          "relationship": "retweet",
+          "original": "jamesoncoop"
+        }
+      },
+      "shadowQuote": false,
+      "iftttText": "RT @JamesonCoop: Mikkola is fine.\n\n“Just a bruise,” he said.",
+      "shadowText": "RT @JamesonCoop: Mikkola is fine.\n\n“Just a bruise,” he said."
+    },
+    {
+      "sourceKey": "dfofantasy",
+      "postKind": "repost",
+      "pairedBy": "rt_text",
+      "shadowTweetId": "2118739345418985639",
+      "iftttTweetId": "2118739493146722328",
+      "iftttTextLength": 246,
+      "shadowTextLength": 246,
+      "iftttTruncated": false,
+      "ifttt": {
+        "type": "line_combination",
+        "category": "LINE COMBINATION",
+        "subcategory": "PRACTICE LINES",
+        "team": "CBJ",
+        "players": 0,
+        "confidence": 45
+      },
+      "shadow": {
+        "type": "line_combination",
+        "category": "LINE COMBINATION",
+        "subcategory": "PRACTICE LINES",
+        "team": "CBJ",
+        "players": 0,
+        "confidence": 45
+      },
+      "comparison": {
+        "correct": true,
+        "typeMatch": true,
+        "categoryMatch": true,
+        "playersMatch": true,
+        "slotsMatch": true
+      },
+      "attribution": {
+        "ifttt": {
+          "relationship": "unresolved",
+          "original": null
+        },
+        "shadow": {
+          "relationship": "retweet",
+          "original": "jamesoncoop"
+        }
+      },
+      "shadowQuote": false,
+      "iftttText": "RT @JamesonCoop: Maurice says Barkov and Marchand are traveling on this road trip. Neither expected to play, but could join morning skate in Columbus. Not a lot of practices this month, so Maurice wants to find time to get them on ice with group.",
+      "shadowText": "RT @JamesonCoop: Maurice says Barkov and Marchand are traveling on this road trip. Neither expected to play, but could join morning skate in Columbus. Not a lot of practices this month, so Maurice wants to find time to get them on ice with group."
+    },
+    {
+      "sourceKey": "dfofantasy",
+      "postKind": "quote",
+      "pairedBy": "tweet_id",
+      "shadowTweetId": "2118739671702454645",
+      "iftttTweetId": "2118739671702454645",
+      "iftttTextLength": 110,
+      "shadowTextLength": 140,
+      "iftttTruncated": false,
+      "ifttt": {
+        "type": "goalie",
+        "category": "GOALIE START",
+        "subcategory": "CONFIRMED STARTER",
+        "team": "CGY",
+        "players": 1,
+        "confidence": 100
+      },
+      "shadow": {
+        "type": "goalie",
+        "category": "GOALIE START",
+        "subcategory": "CONFIRMED STARTER",
+        "team": "CGY",
+        "players": 1,
+        "confidence": 100
+      },
+      "comparison": {
+        "correct": true,
+        "typeMatch": true,
+        "categoryMatch": true,
+        "playersMatch": true,
+        "slotsMatch": true
+      },
+      "attribution": {
+        "ifttt": {
+          "relationship": "unresolved",
+          "original": null
+        },
+        "shadow": {
+          "relationship": "unresolved",
+          "original": null
+        }
+      },
+      "shadowQuote": true,
+      "iftttText": "🥅: Dustin Wolf (CGY) ✅ will start Friday vs. ANA.\n\n3-4-1 | 3.71 GAA | .870 SV% | 0 SO https://t.co/t6S483o3pL",
+      "shadowText": "🥅: Dustin Wolf (CGY) ✅ will start Friday vs. ANA.\n\n3-4-1 | 3.71 GAA | .870 SV% | 0 SO https://x.com/SteinbergYYC/status/2118738959094427870"
+    },
+    {
+      "sourceKey": "gamedaynewsnhl",
+      "postKind": "repost",
+      "pairedBy": "rt_text",
+      "shadowTweetId": "2118739701108461654",
+      "iftttTweetId": "2118739905652342838",
+      "iftttTextLength": 115,
+      "shadowTextLength": 115,
+      "iftttTruncated": false,
+      "ifttt": {
+        "type": "line_combination",
+        "category": "LINE COMBINATION",
+        "subcategory": "PRACTICE LINES",
+        "team": "DET",
+        "players": 1,
+        "confidence": 35
+      },
+      "shadow": {
+        "type": "line_combination",
+        "category": "LINE COMBINATION",
+        "subcategory": "PRACTICE LINES",
+        "team": "DET",
+        "players": 1,
+        "confidence": 35
+      },
+      "comparison": {
+        "correct": true,
+        "typeMatch": true,
+        "categoryMatch": true,
+        "playersMatch": true,
+        "slotsMatch": true
+      },
+      "attribution": {
+        "ifttt": {
+          "relationship": "unresolved",
+          "original": null
+        },
+        "shadow": {
+          "relationship": "retweet",
+          "original": "helenestjames"
+        }
+      },
+      "shadowQuote": false,
+      "iftttText": "RT @HeleneStJames: John Gibson back at practice with Red Wings after leaving Tuesday's game with lower-body injury.",
+      "shadowText": "RT @HeleneStJames: John Gibson back at practice with Red Wings after leaving Tuesday's game with lower-body injury."
+    },
+    {
+      "sourceKey": "gamedaynewsnhl",
+      "postKind": "repost",
+      "pairedBy": "rt_text",
+      "shadowTweetId": "2118739345418985639",
+      "iftttTweetId": "2118740075148402999",
+      "iftttTextLength": 246,
+      "shadowTextLength": 246,
+      "iftttTruncated": false,
+      "ifttt": {
+        "type": "line_combination",
+        "category": "LINE COMBINATION",
+        "subcategory": "PRACTICE LINES",
+        "team": "CBJ",
+        "players": 0,
+        "confidence": 45
+      },
+      "shadow": {
+        "type": "line_combination",
+        "category": "LINE COMBINATION",
+        "subcategory": "PRACTICE LINES",
+        "team": "CBJ",
+        "players": 0,
+        "confidence": 45
+      },
+      "comparison": {
+        "correct": true,
+        "typeMatch": true,
+        "categoryMatch": true,
+        "playersMatch": true,
+        "slotsMatch": true
+      },
+      "attribution": {
+        "ifttt": {
+          "relationship": "unresolved",
+          "original": null
+        },
+        "shadow": {
+          "relationship": "retweet",
+          "original": "jamesoncoop"
+        }
+      },
+      "shadowQuote": false,
+      "iftttText": "RT @JamesonCoop: Maurice says Barkov and Marchand are traveling on this road trip. Neither expected to play, but could join morning skate in Columbus. Not a lot of practices this month, so Maurice wants to find time to get them on ice with group.",
+      "shadowText": "RT @JamesonCoop: Maurice says Barkov and Marchand are traveling on this road trip. Neither expected to play, but could join morning skate in Columbus. Not a lot of practices this month, so Maurice wants to find time to get them on ice with group."
+    },
+    {
+      "sourceKey": "dfofantasy",
+      "postKind": "post",
+      "pairedBy": "tweet_id",
+      "shadowTweetId": "2118740309446418551",
+      "iftttTweetId": "2118740309446418551",
+      "iftttTextLength": 96,
+      "shadowTextLength": 96,
+      "iftttTruncated": false,
+      "ifttt": {
+        "type": "line_combination",
+        "category": "LINE COMBINATION",
+        "subcategory": "PRACTICE LINES",
+        "team": null,
+        "players": 0,
+        "confidence": 15
+      },
+      "shadow": {
+        "type": "line_combination",
+        "category": "LINE COMBINATION",
+        "subcategory": "PRACTICE LINES",
+        "team": null,
+        "players": 0,
+        "confidence": 15
+      },
+      "comparison": {
+        "correct": true,
+        "typeMatch": true,
+        "categoryMatch": true,
+        "playersMatch": true,
+        "slotsMatch": true
+      },
+      "attribution": {
+        "ifttt": {
+          "relationship": "unresolved",
+          "original": null
+        },
+        "shadow": {
+          "relationship": "unresolved",
+          "original": null
+        }
+      },
+      "shadowQuote": false,
+      "iftttText": "John Gibson: Injury: Gibson (lower-body) returned to practice on Friday. https://t.co/K7zEWKYbIt",
+      "shadowText": "John Gibson: Injury: Gibson (lower-body) returned to practice on Friday. https://t.co/K7zEWKYbIt"
+    },
+    {
+      "sourceKey": "ccc",
+      "postKind": "quote",
+      "pairedBy": "tweet_id",
+      "shadowTweetId": "2118740517886509076",
+      "iftttTweetId": "2118740517886509076",
+      "iftttTextLength": 59,
+      "shadowTextLength": 89,
+      "iftttTruncated": false,
+      "ifttt": {
+        "type": "goalie",
+        "category": "GOALIE START",
+        "subcategory": "CONFIRMED STARTER",
+        "team": "CGY",
+        "players": 1,
+        "confidence": 100
+      },
+      "shadow": {
+        "type": "goalie",
+        "category": "GOALIE START",
+        "subcategory": "CONFIRMED STARTER",
+        "team": "CGY",
+        "players": 1,
+        "confidence": 100
+      },
+      "comparison": {
+        "correct": true,
+        "typeMatch": true,
+        "categoryMatch": true,
+        "playersMatch": true,
+        "slotsMatch": true
+      },
+      "attribution": {
+        "ifttt": {
+          "relationship": "unresolved",
+          "original": null
+        },
+        "shadow": {
+          "relationship": "unresolved",
+          "original": null
+        }
+      },
+      "shadowQuote": true,
+      "iftttText": "Flames Starting Goalie: Dustin Wolf https://t.co/Fo750pWUYr",
+      "shadowText": "Flames Starting Goalie: Dustin Wolf https://x.com/SteinbergYYC/status/2118738959094427870"
+    },
+    {
+      "sourceKey": "gamedaylines",
+      "postKind": "repost",
+      "pairedBy": "rt_text",
+      "shadowTweetId": "2118739790627569827",
+      "iftttTweetId": "2118740698753388623",
+      "iftttTextLength": 262,
+      "shadowTextLength": 262,
+      "iftttTruncated": false,
+      "ifttt": {
+        "type": "line_combination",
+        "category": "LINE COMBINATION",
+        "subcategory": "PRACTICE LINES",
+        "team": "NYI",
+        "players": 21,
+        "confidence": 79
+      },
+      "shadow": {
+        "type": "line_combination",
+        "category": "LINE COMBINATION",
+        "subcategory": "PRACTICE LINES",
+        "team": "NYI",
+        "players": 21,
+        "confidence": 79
+      },
+      "comparison": {
+        "correct": true,
+        "typeMatch": true,
+        "categoryMatch": true,
+        "playersMatch": true,
+        "slotsMatch": true
+      },
+      "attribution": {
+        "ifttt": {
+          "relationship": "unresolved",
+          "original": null
+        },
+        "shadow": {
+          "relationship": "retweet",
+          "original": "stefen_rosner"
+        }
+      },
+      "shadowQuote": false,
+      "iftttText": "RT @stefen_rosner: #Isles Friday practice lines @bullsmithsli:\n\nHeineman-Horvat-Palmieri\nPalat-Schenn-Eklund\nHolmstrom-Pageau-Duclair\nMacLean-Cizikas-Chaffee\n\nStanley-Schaefer\nPelech-DeAngelo\nHutton-Kessel\nE: Mayfield-Pulock (red non contact)\n \nSorokin \nVarlamov",
+      "shadowText": "RT @stefen_rosner: #Isles Friday practice lines @bullsmithsli:\n\nHeineman-Horvat-Palmieri\nPalat-Schenn-Eklund\nHolmstrom-Pageau-Duclair\nMacLean-Cizikas-Chaffee\n\nStanley-Schaefer\nPelech-DeAngelo\nHutton-Kessel\nE: Mayfield-Pulock (red non contact)\n \nSorokin \nVarlamov"
+    },
+    {
+      "sourceKey": "gamedaynewsnhl",
+      "postKind": "repost",
+      "pairedBy": "rt_text",
+      "shadowTweetId": "2118739509408055601",
+      "iftttTweetId": "2118740433081893164",
+      "iftttTextLength": 282,
+      "shadowTextLength": 312,
+      "iftttTruncated": false,
+      "ifttt": {
+        "type": "injury",
+        "category": "INJURY",
+        "subcategory": null,
+        "team": "CGY",
+        "players": 2,
+        "confidence": 80
+      },
+      "shadow": {
+        "type": "injury",
+        "category": "INJURY",
+        "subcategory": null,
+        "team": "CGY",
+        "players": 2,
+        "confidence": 80
+      },
+      "comparison": {
+        "correct": true,
+        "typeMatch": true,
+        "categoryMatch": true,
+        "playersMatch": true,
+        "slotsMatch": true
+      },
+      "attribution": {
+        "ifttt": {
+          "relationship": "unresolved",
+          "original": null
+        },
+        "shadow": {
+          "relationship": "retweet",
+          "original": "steinbergyyc"
+        }
+      },
+      "shadowQuote": true,
+      "iftttText": "RT @SteinbergYYC: Brennan Othmann on the ice for morning skate. He's missed the last four games with an upper body injury. Doesn't sound like he's quite ready to return, but still a good sign.\n\nJonathan Huberdeau also out there with a regular jersey. #Flames https://t.co/KjFXn2Hy",
+      "shadowText": "RT @SteinbergYYC: Brennan Othmann on the ice for morning skate. He's missed the last four games with an upper body injury. Doesn't sound like he's quite ready to return, but still a good sign.\n\nJonathan Huberdeau also out there with a regular jersey. #Flames https://x.com/Steinbe"
+    },
+    {
+      "sourceKey": "gamedaygoalies",
+      "postKind": "repost",
+      "pairedBy": "rt_text",
+      "shadowTweetId": "2118738959094427870",
+      "iftttTweetId": "2118740200897798287",
+      "iftttTextLength": 67,
+      "shadowTextLength": 67,
+      "iftttTruncated": false,
+      "ifttt": {
+        "type": "goalie",
+        "category": "GOALIE START",
+        "subcategory": null,
+        "team": "CGY",
+        "players": 1,
+        "confidence": 90
+      },
+      "shadow": {
+        "type": "goalie",
+        "category": "GOALIE START",
+        "subcategory": null,
+        "team": "CGY",
+        "players": 1,
+        "confidence": 90
+      },
+      "comparison": {
+        "correct": true,
+        "typeMatch": true,
+        "categoryMatch": true,
+        "playersMatch": true,
+        "slotsMatch": true
+      },
+      "attribution": {
+        "ifttt": {
+          "relationship": "unresolved",
+          "original": null
+        },
+        "shadow": {
+          "relationship": "retweet",
+          "original": "steinbergyyc"
+        }
+      },
+      "shadowQuote": false,
+      "iftttText": "RT @SteinbergYYC: Dustin Wolf starting tonight vs. Anaheim. #Flames",
+      "shadowText": "RT @SteinbergYYC: Dustin Wolf starting tonight vs. Anaheim. #Flames"
+    },
+    {
+      "sourceKey": "gamedaylines",
+      "postKind": "repost",
+      "pairedBy": "rt_text",
+      "shadowTweetId": "2118741232050385240",
+      "iftttTweetId": "2118742027366220103",
+      "iftttTextLength": 304,
+      "shadowTextLength": 304,
+      "iftttTruncated": false,
+      "ifttt": {
+        "type": "line_combination",
+        "category": "LINE COMBINATION",
+        "subcategory": "PRACTICE LINES",
+        "team": "TOR",
+        "players": 22,
+        "confidence": 85
+      },
+      "shadow": {
+        "type": "line_combination",
+        "category": "LINE COMBINATION",
+        "subcategory": "PRACTICE LINES",
+        "team": "TOR",
+        "players": 22,
+        "confidence": 85
+      },
+      "comparison": {
+        "correct": true,
+        "typeMatch": true,
+        "categoryMatch": true,
+        "playersMatch": true,
+        "slotsMatch": true
+      },
+      "attribution": {
+        "ifttt": {
+          "relationship": "unresolved",
+          "original": null
+        },
+        "shadow": {
+          "relationship": "retweet",
+          "original": "markhmasters"
+        }
+      },
+      "shadowQuote": false,
+      "iftttText": "RT @markhmasters: Leafs lines at practice \n\nCowan - Matthews - Roslovic \nTavares - Paul - Nylander\nJoshua - Sissons - McKenna\nDuhaime - Blueger - MacEwen\nLettieri\n\nMcCabe - Raddysh\nRielly - Tanev\nEkman-Larsson - Stecher\nMermis\n\nBobrovsky \nStolarz\n\nHost Habs tomorrow \n\n@TSN_Sports",
+      "shadowText": "RT @markhmasters: Leafs lines at practice \n\nCowan - Matthews - Roslovic \nTavares - Paul - Nylander\nJoshua - Sissons - McKenna\nDuhaime - Blueger - MacEwen\nLettieri\n\nMcCabe - Raddysh\nRielly - Tanev\nEkman-Larsson - Stecher\nMermis\n\nBobrovsky \nStolarz\n\nHost Habs tomorrow \n\n@TSN_Sports"
+    },
+    {
+      "sourceKey": "dfofantasy",
+      "postKind": "post",
+      "pairedBy": "tweet_id",
+      "shadowTweetId": "2118742440408662074",
+      "iftttTweetId": "2118742440408662074",
+      "iftttTextLength": 110,
+      "shadowTextLength": 110,
+      "iftttTruncated": false,
+      "ifttt": {
+        "type": "injury",
+        "category": "INJURY",
+        "subcategory": null,
+        "team": "BUF",
+        "players": 1,
+        "confidence": 90
+      },
+      "shadow": {
+        "type": "injury",
+        "category": "INJURY",
+        "subcategory": null,
+        "team": "BUF",
+        "players": 1,
+        "confidence": 90
+      },
+      "comparison": {
+        "correct": true,
+        "typeMatch": true,
+        "categoryMatch": true,
+        "playersMatch": true,
+        "slotsMatch": true
+      },
+      "attribution": {
+        "ifttt": {
+          "relationship": "unresolved",
+          "original": null
+        },
+        "shadow": {
+          "relationship": "unresolved",
+          "original": null
+        }
+      },
+      "shadowQuote": false,
+      "iftttText": "Jiri Kulich: Injury: Kulich (concussion) is expected to return vs. Columbus on Friday. https://t.co/KYwPtc9ExW",
+      "shadowText": "Jiri Kulich: Injury: Kulich (concussion) is expected to return vs. Columbus on Friday. https://t.co/KYwPtc9ExW"
+    },
+    {
+      "sourceKey": "dfofantasy",
+      "postKind": "post",
+      "pairedBy": "tweet_id",
+      "shadowTweetId": "2118743579841769597",
+      "iftttTweetId": "2118743579841769597",
+      "iftttTextLength": 116,
+      "shadowTextLength": 116,
+      "iftttTruncated": false,
+      "ifttt": {
+        "type": "injury",
+        "category": "SCRATCHES",
+        "subcategory": "CONFIRMED SCRATCH",
+        "team": "CBJ",
+        "players": 0,
+        "confidence": 70
+      },
+      "shadow": {
+        "type": "injury",
+        "category": "SCRATCHES",
+        "subcategory": "CONFIRMED SCRATCH",
+        "team": "CBJ",
+        "players": 0,
+        "confidence": 70
+      },
+      "comparison": {
+        "correct": true,
+        "typeMatch": true,
+        "categoryMatch": true,
+        "playersMatch": true,
+        "slotsMatch": true
+      },
+      "attribution": {
+        "ifttt": {
+          "relationship": "unresolved",
+          "original": null
+        },
+        "shadow": {
+          "relationship": "unresolved",
+          "original": null
+        }
+      },
+      "shadowQuote": false,
+      "iftttText": "Ryan McLeod: Line Change: McLeod is expected to be a healthy scratch vs. Columbus on Friday. https://t.co/Al5aCqSRh3",
+      "shadowText": "Ryan McLeod: Line Change: McLeod is expected to be a healthy scratch vs. Columbus on Friday. https://t.co/Al5aCqSRh3"
+    },
+    {
+      "sourceKey": "gamedaylines",
+      "postKind": "repost",
+      "pairedBy": "rt_text",
+      "shadowTweetId": "2118730263647699028",
+      "iftttTweetId": "2118743746271658231",
+      "iftttTextLength": 87,
+      "shadowTextLength": 87,
+      "iftttTruncated": false,
+      "ifttt": {
+        "type": "line_combination",
+        "category": "LINE COMBINATION",
+        "subcategory": "POWER PLAY",
+        "team": "BUF",
+        "players": 4,
+        "confidence": 38
+      },
+      "shadow": {
+        "type": "line_combination",
+        "category": "LINE COMBINATION",
+        "subcategory": "POWER PLAY",
+        "team": "BUF",
+        "players": 4,
+        "confidence": 38
+      },
+      "comparison": {
+        "correct": true,
+        "typeMatch": true,
+        "categoryMatch": true,
+        "playersMatch": true,
+        "slotsMatch": true
+      },
+      "attribution": {
+        "ifttt": {
+          "relationship": "unresolved",
+          "original": null
+        },
+        "shadow": {
+          "relationship": "retweet",
+          "original": "pham1717"
+        }
+      },
+      "shadowQuote": false,
+      "iftttText": "RT @pham1717: Kuluch and Krebs are now on tge No. 2 power play unit for McLeod and Doan",
+      "shadowText": "RT @pham1717: Kuluch and Krebs are now on tge No. 2 power play unit for McLeod and Doan"
+    },
+    {
+      "sourceKey": "gamedaynewsnhl",
+      "postKind": "repost",
+      "pairedBy": "rt_text",
+      "shadowTweetId": "2118743217730634118",
+      "iftttTweetId": "2118743492910530933",
+      "iftttTextLength": 146,
+      "shadowTextLength": 146,
+      "iftttTruncated": false,
+      "ifttt": {
+        "type": "other",
+        "category": "OTHER",
+        "subcategory": "AMBIGUOUS",
+        "team": null,
+        "players": 0,
+        "confidence": 15
+      },
+      "shadow": {
+        "type": "other",
+        "category": "OTHER",
+        "subcategory": "AMBIGUOUS",
+        "team": null,
+        "players": 0,
+        "confidence": 15
+      },
+      "comparison": {
+        "correct": true,
+        "typeMatch": true,
+        "categoryMatch": true,
+        "playersMatch": true,
+        "slotsMatch": true
+      },
+      "attribution": {
+        "ifttt": {
+          "relationship": "unresolved",
+          "original": null
+        },
+        "shadow": {
+          "relationship": "retweet",
+          "original": "pham1717"
+        }
+      },
+      "shadowQuote": false,
+      "iftttText": "RT @pham1717: Timmins is also in for Crevier. Ruff said he's very coachable and it may only be a one game thing in a seven man rotation on defense",
+      "shadowText": "RT @pham1717: Timmins is also in for Crevier. Ruff said he's very coachable and it may only be a one game thing in a seven man rotation on defense"
+    },
+    {
+      "sourceKey": "ccc",
+      "postKind": "quote",
+      "pairedBy": "tweet_id",
+      "shadowTweetId": "2118744004435263664",
+      "iftttTweetId": "2118744004435263664",
+      "iftttTextLength": 62,
+      "shadowTextLength": 91,
+      "iftttTruncated": false,
+      "ifttt": {
+        "type": "goalie",
+        "category": "GOALIE START",
+        "subcategory": "CONFIRMED STARTER",
+        "team": "MIN",
+        "players": 1,
+        "confidence": 100
+      },
+      "shadow": {
+        "type": "goalie",
+        "category": "GOALIE START",
+        "subcategory": "CONFIRMED STARTER",
+        "team": "MIN",
+        "players": 1,
+        "confidence": 100
+      },
+      "comparison": {
+        "correct": true,
+        "typeMatch": true,
+        "categoryMatch": true,
+        "playersMatch": true,
+        "slotsMatch": true
+      },
+      "attribution": {
+        "ifttt": {
+          "relationship": "unresolved",
+          "original": null
+        },
+        "shadow": {
+          "relationship": "unresolved",
+          "original": null
+        }
+      },
+      "shadowQuote": true,
+      "iftttText": "Wild Starting Goalie: Jesper Wallstedt https://t.co/pDGGsjFvwt",
+      "shadowText": "Wild Starting Goalie: Jesper Wallstedt https://x.com/RussoHockey/status/2118743474597966029"
+    },
+    {
+      "sourceKey": "gamedaynewsnhl",
+      "postKind": "repost",
+      "pairedBy": "rt_text",
+      "shadowTweetId": "2118743372198461570",
+      "iftttTweetId": "2118744104733687834",
+      "iftttTextLength": 149,
+      "shadowTextLength": 149,
+      "iftttTruncated": false,
+      "ifttt": {
+        "type": "injury",
+        "category": "INJURY",
+        "subcategory": "OUT",
+        "team": "TBL",
+        "players": 0,
+        "confidence": 70
+      },
+      "shadow": {
+        "type": "injury",
+        "category": "INJURY",
+        "subcategory": "OUT",
+        "team": "TBL",
+        "players": 0,
+        "confidence": 70
+      },
+      "comparison": {
+        "correct": true,
+        "typeMatch": true,
+        "categoryMatch": true,
+        "playersMatch": true,
+        "slotsMatch": true
+      },
+      "attribution": {
+        "ifttt": {
+          "relationship": "unresolved",
+          "original": null
+        },
+        "shadow": {
+          "relationship": "retweet",
+          "original": "russohockey"
+        }
+      },
+      "shadowQuote": false,
+      "iftttText": "RT @RussoHockey: Folignos out tonight, possible to play tomorrow vs. Tampa Bay. All five injured guys will travel, as @JoeSmithNHL reported yesterday",
+      "shadowText": "RT @RussoHockey: Folignos out tonight, possible to play tomorrow vs. Tampa Bay. All five injured guys will travel, as @JoeSmithNHL reported yesterday"
+    },
+    {
+      "sourceKey": "gamedaygoalies",
+      "postKind": "repost",
+      "pairedBy": "rt_text",
+      "shadowTweetId": "2118743474597966029",
+      "iftttTweetId": "2118743954707595565",
+      "iftttTextLength": 59,
+      "shadowTextLength": 59,
+      "iftttTruncated": false,
+      "ifttt": {
+        "type": "goalie",
+        "category": "GOALIE START",
+        "subcategory": "CONFIRMED STARTER",
+        "team": "MIN",
+        "players": 2,
+        "confidence": 93
+      },
+      "shadow": {
+        "type": "goalie",
+        "category": "GOALIE START",
+        "subcategory": "CONFIRMED STARTER",
+        "team": "MIN",
+        "players": 2,
+        "confidence": 93
+      },
+      "comparison": {
+        "correct": true,
+        "typeMatch": true,
+        "categoryMatch": true,
+        "playersMatch": true,
+        "slotsMatch": true
+      },
+      "attribution": {
+        "ifttt": {
+          "relationship": "unresolved",
+          "original": null
+        },
+        "shadow": {
+          "relationship": "retweet",
+          "original": "russohockey"
+        }
+      },
+      "shadowQuote": false,
+      "iftttText": "RT @RussoHockey: Wallstedt starts tonight, Pickard tomorrow",
+      "shadowText": "RT @RussoHockey: Wallstedt starts tonight, Pickard tomorrow"
+    },
+    {
+      "sourceKey": "dfofantasy",
+      "postKind": "quote",
+      "pairedBy": "tweet_id",
+      "shadowTweetId": "2118745016659292160",
+      "iftttTweetId": "2118745016659292160",
+      "iftttTextLength": 285,
+      "shadowTextLength": 315,
+      "iftttTruncated": false,
+      "ifttt": {
+        "type": "goalie",
+        "category": "GOALIE START",
+        "subcategory": "CONFIRMED STARTER",
+        "team": "MIN",
+        "players": 2,
+        "confidence": 100
+      },
+      "shadow": {
+        "type": "goalie",
+        "category": "GOALIE START",
+        "subcategory": "CONFIRMED STARTER",
+        "team": "MIN",
+        "players": 2,
+        "confidence": 100
+      },
+      "comparison": {
+        "correct": true,
+        "typeMatch": true,
+        "categoryMatch": true,
+        "playersMatch": true,
+        "slotsMatch": true
+      },
+      "attribution": {
+        "ifttt": {
+          "relationship": "unresolved",
+          "original": null
+        },
+        "shadow": {
+          "relationship": "unresolved",
+          "original": null
+        }
+      },
+      "shadowQuote": true,
+      "iftttText": "#MnWild have announced their starters for the weekend. \n\n🥅: Jesper Wallstedt (MIN) ✅ will start Friday vs. SJS (11/06). \n\n10-2-3 | 2.06 GAA | .920 SV% | 0 SO\n\n&\n\n🥅: Calvin Pickard (MIN) ✅ will start Friday vs. TBL. (11/07).\n\n1-1-0 | 3.50 GAA | .833 SV% | 0 SO https://t.co/vOKIn",
+      "shadowText": "#MnWild have announced their starters for the weekend. \n\n🥅: Jesper Wallstedt (MIN) ✅ will start Friday vs. SJS (11/06). \n\n10-2-3 | 2.06 GAA | .920 SV% | 0 SO\n\n&\n\n🥅: Calvin Pickard (MIN) ✅ will start Friday vs. TBL. (11/07).\n\n1-1-0 | 3.50 GAA | .833 SV% | 0 SO https://x.com/Wild"
+    },
+    {
+      "sourceKey": "dfofantasy",
+      "postKind": "post",
+      "pairedBy": "tweet_id",
+      "shadowTweetId": "2118746534191972819",
+      "iftttTweetId": "2118746534191972819",
+      "iftttTextLength": 155,
+      "shadowTextLength": 155,
+      "iftttTruncated": false,
+      "ifttt": {
+        "type": "injury",
+        "category": "INJURY",
+        "subcategory": null,
+        "team": "MIN",
+        "players": 1,
+        "confidence": 80
+      },
+      "shadow": {
+        "type": "injury",
+        "category": "INJURY",
+        "subcategory": null,
+        "team": "MIN",
+        "players": 1,
+        "confidence": 80
+      },
+      "comparison": {
+        "correct": true,
+        "typeMatch": true,
+        "categoryMatch": true,
+        "playersMatch": true,
+        "slotsMatch": true
+      },
+      "attribution": {
+        "ifttt": {
+          "relationship": "unresolved",
+          "original": null
+        },
+        "shadow": {
+          "relationship": "unresolved",
+          "original": null
+        }
+      },
+      "shadowQuote": false,
+      "iftttText": "Marcus Foligno: Injury: Marcus Foligno (lower-body) will remain out on Friday but has a chance to return vs. Tampa Bay on Saturday. https://t.co/Er1XYHgi1m",
+      "shadowText": "Marcus Foligno: Injury: Marcus Foligno (lower-body) will remain out on Friday but has a chance to return vs. Tampa Bay on Saturday. https://t.co/Er1XYHgi1m"
+    },
+    {
+      "sourceKey": "dfofantasy",
+      "postKind": "post",
+      "pairedBy": "tweet_id",
+      "shadowTweetId": "2118747046928924942",
+      "iftttTweetId": "2118747046928924942",
+      "iftttTextLength": 151,
+      "shadowTextLength": 151,
+      "iftttTruncated": false,
+      "ifttt": {
+        "type": "injury",
+        "category": "INJURY",
+        "subcategory": null,
+        "team": "MIN",
+        "players": 1,
+        "confidence": 80
+      },
+      "shadow": {
+        "type": "injury",
+        "category": "INJURY",
+        "subcategory": null,
+        "team": "MIN",
+        "players": 1,
+        "confidence": 80
+      },
+      "comparison": {
+        "correct": true,
+        "typeMatch": true,
+        "categoryMatch": true,
+        "playersMatch": true,
+        "slotsMatch": true
+      },
+      "attribution": {
+        "ifttt": {
+          "relationship": "unresolved",
+          "original": null
+        },
+        "shadow": {
+          "relationship": "unresolved",
+          "original": null
+        }
+      },
+      "shadowQuote": false,
+      "iftttText": "Nick Foligno: Injury: Nick Foligno (upper-body) will remain out on Friday but has a chance to return on Saturday vs. Tampa Bay. https://t.co/IdOKSIkAkd",
+      "shadowText": "Nick Foligno: Injury: Nick Foligno (upper-body) will remain out on Friday but has a chance to return on Saturday vs. Tampa Bay. https://t.co/IdOKSIkAkd"
+    },
+    {
+      "sourceKey": "dfofantasy",
+      "postKind": "post",
+      "pairedBy": "tweet_id",
+      "shadowTweetId": "2118747649948197150",
+      "iftttTweetId": "2118747649948197150",
+      "iftttTextLength": 122,
+      "shadowTextLength": 122,
+      "iftttTruncated": false,
+      "ifttt": {
+        "type": "injury",
+        "category": "INJURY",
+        "subcategory": null,
+        "team": "MIN",
+        "players": 1,
+        "confidence": 90
+      },
+      "shadow": {
+        "type": "injury",
+        "category": "INJURY",
+        "subcategory": null,
+        "team": "MIN",
+        "players": 1,
+        "confidence": 90
+      },
+      "comparison": {
+        "correct": true,
+        "typeMatch": true,
+        "categoryMatch": true,
+        "playersMatch": true,
+        "slotsMatch": true
+      },
+      "attribution": {
+        "ifttt": {
+          "relationship": "unresolved",
+          "original": null
+        },
+        "shadow": {
+          "relationship": "unresolved",
+          "original": null
+        }
+      },
+      "shadowQuote": false,
+      "iftttText": "Filip Gustavsson: Injury: Gustavsson (hip) will travel with Minnesota on their upcoming road trip. https://t.co/jGI9X6cXbP",
+      "shadowText": "Filip Gustavsson: Injury: Gustavsson (hip) will travel with Minnesota on their upcoming road trip. https://t.co/jGI9X6cXbP"
+    },
+    {
+      "sourceKey": "dfofantasy",
+      "postKind": "post",
+      "pairedBy": "tweet_id",
+      "shadowTweetId": "2118748280700228075",
+      "iftttTweetId": "2118748280700228075",
+      "iftttTextLength": 118,
+      "shadowTextLength": 118,
+      "iftttTruncated": false,
+      "ifttt": {
+        "type": "injury",
+        "category": "INJURY",
+        "subcategory": null,
+        "team": "BUF",
+        "players": 1,
+        "confidence": 80
+      },
+      "shadow": {
+        "type": "injury",
+        "category": "INJURY",
+        "subcategory": null,
+        "team": "BUF",
+        "players": 1,
+        "confidence": 80
+      },
+      "comparison": {
+        "correct": true,
+        "typeMatch": true,
+        "categoryMatch": true,
+        "playersMatch": true,
+        "slotsMatch": true
+      },
+      "attribution": {
+        "ifttt": {
+          "relationship": "unresolved",
+          "original": null
+        },
+        "shadow": {
+          "relationship": "unresolved",
+          "original": null
+        }
+      },
+      "shadowQuote": false,
+      "iftttText": "Conor Timmins: Injury: Timmins (lower-body) will make his season debut vs. Columbus on Friday. https://t.co/LrZITOowB6",
+      "shadowText": "Conor Timmins: Injury: Timmins (lower-body) will make his season debut vs. Columbus on Friday. https://t.co/LrZITOowB6"
+    },
+    {
+      "sourceKey": "dfofantasy",
+      "postKind": "post",
+      "pairedBy": "tweet_id",
+      "shadowTweetId": "2118748932109197599",
+      "iftttTweetId": "2118748932109197599",
+      "iftttTextLength": 109,
+      "shadowTextLength": 109,
+      "iftttTruncated": false,
+      "ifttt": {
+        "type": "injury",
+        "category": "SCRATCHES",
+        "subcategory": "CONFIRMED SCRATCH",
+        "team": "CBJ",
+        "players": 0,
+        "confidence": 70
+      },
+      "shadow": {
+        "type": "injury",
+        "category": "SCRATCHES",
+        "subcategory": "CONFIRMED SCRATCH",
+        "team": "CBJ",
+        "players": 0,
+        "confidence": 70
+      },
+      "comparison": {
+        "correct": true,
+        "typeMatch": true,
+        "categoryMatch": true,
+        "playersMatch": true,
+        "slotsMatch": true
+      },
+      "attribution": {
+        "ifttt": {
+          "relationship": "unresolved",
+          "original": null
+        },
+        "shadow": {
+          "relationship": "unresolved",
+          "original": null
+        }
+      },
+      "shadowQuote": false,
+      "iftttText": "Louis Crevier: Line Change: Crevier will be a healthy scratch vs. Columbus on Friday. https://t.co/THs6A6mhmq",
+      "shadowText": "Louis Crevier: Line Change: Crevier will be a healthy scratch vs. Columbus on Friday. https://t.co/THs6A6mhmq"
+    },
+    {
+      "sourceKey": "dfofantasy",
+      "postKind": "quote",
+      "pairedBy": "tweet_id",
+      "shadowTweetId": "2118751197473784294",
+      "iftttTweetId": "2118751197473784294",
+      "iftttTextLength": 108,
+      "shadowTextLength": 137,
+      "iftttTruncated": false,
+      "ifttt": {
+        "type": "goalie",
+        "category": "GOALIE START",
+        "subcategory": "CONFIRMED STARTER",
+        "team": "CBJ",
+        "players": 1,
+        "confidence": 100
+      },
+      "shadow": {
+        "type": "goalie",
+        "category": "GOALIE START",
+        "subcategory": "CONFIRMED STARTER",
+        "team": "CBJ",
+        "players": 1,
+        "confidence": 100
+      },
+      "comparison": {
+        "correct": true,
+        "typeMatch": true,
+        "categoryMatch": true,
+        "playersMatch": true,
+        "slotsMatch": true
+      },
+      "attribution": {
+        "ifttt": {
+          "relationship": "unresolved",
+          "original": null
+        },
+        "shadow": {
+          "relationship": "unresolved",
+          "original": null
+        }
+      },
+      "shadowQuote": true,
+      "iftttText": "🥅: Jet Greaves (CBJ) ✅ will start Friday @ BUF.\n\n2-5-0 | 3.11 GAA | .883 SV% | 1 SO https://t.co/Q0Vo567wXZ",
+      "shadowText": "🥅: Jet Greaves (CBJ) ✅ will start Friday @ BUF.\n\n2-5-0 | 3.11 GAA | .883 SV% | 1 SO https://x.com/mark_scheig/status/2118751085267460402"
+    },
+    {
+      "sourceKey": "ccc",
+      "postKind": "quote",
+      "pairedBy": "tweet_id",
+      "shadowTweetId": "2118752268002701773",
+      "iftttTweetId": "2118752268002701773",
+      "iftttTextLength": 65,
+      "shadowTextLength": 94,
+      "iftttTruncated": false,
+      "ifttt": {
+        "type": "goalie",
+        "category": "GOALIE START",
+        "subcategory": "CONFIRMED STARTER",
+        "team": "CBJ",
+        "players": 1,
+        "confidence": 100
+      },
+      "shadow": {
+        "type": "goalie",
+        "category": "GOALIE START",
+        "subcategory": "CONFIRMED STARTER",
+        "team": "CBJ",
+        "players": 1,
+        "confidence": 100
+      },
+      "comparison": {
+        "correct": true,
+        "typeMatch": true,
+        "categoryMatch": true,
+        "playersMatch": true,
+        "slotsMatch": true
+      },
+      "attribution": {
+        "ifttt": {
+          "relationship": "unresolved",
+          "original": null
+        },
+        "shadow": {
+          "relationship": "unresolved",
+          "original": null
+        }
+      },
+      "shadowQuote": true,
+      "iftttText": "Blue Jackets Starting Goalie: Jet Greaves https://t.co/Zmtc7hIfxJ",
+      "shadowText": "Blue Jackets Starting Goalie: Jet Greaves https://x.com/mark_scheig/status/2118751085267460402"
+    },
+    {
+      "sourceKey": "nhl_rosters",
+      "postKind": "post",
+      "pairedBy": "tweet_id",
+      "shadowTweetId": "2118754664552570919",
+      "iftttTweetId": "2118754664552570919",
+      "iftttTextLength": 86,
+      "shadowTextLength": 86,
+      "iftttTruncated": false,
+      "ifttt": {
+        "type": "injury",
+        "category": "SCRATCHES",
+        "subcategory": "CONFIRMED SCRATCH",
+        "team": null,
+        "players": 0,
+        "confidence": 15
+      },
+      "shadow": {
+        "type": "injury",
+        "category": "SCRATCHES",
+        "subcategory": "CONFIRMED SCRATCH",
+        "team": null,
+        "players": 0,
+        "confidence": 15
+      },
+      "comparison": {
+        "correct": true,
+        "typeMatch": true,
+        "categoryMatch": true,
+        "playersMatch": true,
+        "slotsMatch": true
+      },
+      "attribution": {
+        "ifttt": {
+          "relationship": "unresolved",
+          "original": null
+        },
+        "shadow": {
+          "relationship": "unresolved",
+          "original": null
+        }
+      },
+      "shadowQuote": false,
+      "iftttText": "Ryan McLeod will be a healthy scratch tonight. #LetsGoBuffalo \nhttps://t.co/UVESDt0yXW",
+      "shadowText": "Ryan McLeod will be a healthy scratch tonight. #LetsGoBuffalo \nhttps://t.co/UVESDt0yXW"
+    },
+    {
+      "sourceKey": "dfofantasy",
+      "postKind": "post",
+      "pairedBy": "tweet_id",
+      "shadowTweetId": "2118755062361272499",
+      "iftttTweetId": "2118755062361272499",
+      "iftttTextLength": 128,
+      "shadowTextLength": 128,
+      "iftttTruncated": false,
+      "ifttt": {
+        "type": "line_combination",
+        "category": "LINE COMBINATION",
+        "subcategory": "PRACTICE LINES",
+        "team": "UTA",
+        "players": 0,
+        "confidence": 35
+      },
+      "shadow": {
+        "type": "line_combination",
+        "category": "LINE COMBINATION",
+        "subcategory": "PRACTICE LINES",
+        "team": "UTA",
+        "players": 0,
+        "confidence": 35
+      },
+      "comparison": {
+        "correct": true,
+        "typeMatch": true,
+        "categoryMatch": true,
+        "playersMatch": true,
+        "slotsMatch": true
+      },
+      "attribution": {
+        "ifttt": {
+          "relationship": "unresolved",
+          "original": null
+        },
+        "shadow": {
+          "relationship": "unresolved",
+          "original": null
+        }
+      },
+      "shadowQuote": false,
+      "iftttText": "Ridly Greig: Injury: Greig (undisclosed) missed practice on Friday and is doubtful vs. Utah on Saturday. https://t.co/Pe7o1i7PzN",
+      "shadowText": "Ridly Greig: Injury: Greig (undisclosed) missed practice on Friday and is doubtful vs. Utah on Saturday. https://t.co/Pe7o1i7PzN"
+    },
+    {
+      "sourceKey": "gamedaylines",
+      "postKind": "repost",
+      "pairedBy": "rt_text",
+      "shadowTweetId": "2118754062128517401",
+      "iftttTweetId": "2118755623156502972",
+      "iftttTextLength": 150,
+      "shadowTextLength": 150,
+      "iftttTruncated": false,
+      "ifttt": {
+        "type": "line_combination",
+        "category": "LINE COMBINATION",
+        "subcategory": "POWER PLAY",
+        "team": "TOR",
+        "players": 10,
+        "confidence": 38
+      },
+      "shadow": {
+        "type": "line_combination",
+        "category": "LINE COMBINATION",
+        "subcategory": "POWER PLAY",
+        "team": "TOR",
+        "players": 10,
+        "confidence": 38
+      },
+      "comparison": {
+        "correct": true,
+        "typeMatch": true,
+        "categoryMatch": true,
+        "playersMatch": true,
+        "slotsMatch": true
+      },
+      "attribution": {
+        "ifttt": {
+          "relationship": "unresolved",
+          "original": null
+        },
+        "shadow": {
+          "relationship": "retweet",
+          "original": "davidalter"
+        }
+      },
+      "shadowQuote": false,
+      "iftttText": "RT @davidalter: Leafs PP Units Nov. 6/26\n\nRaddysh\nNylander-Roslovic-Matthews\nTavares\n\nRielly\nOEL-Cowan-McKenna\nPaul\n\n@Ozoon_CA https://t.co/C2OguRSZIG",
+      "shadowText": "RT @davidalter: Leafs PP Units Nov. 6/26\n\nRaddysh\nNylander-Roslovic-Matthews\nTavares\n\nRielly\nOEL-Cowan-McKenna\nPaul\n\n@Ozoon_CA https://t.co/C2OguRSZIG"
+    },
+    {
+      "sourceKey": "gamedaynewsnhl",
+      "postKind": "repost",
+      "pairedBy": "rt_text",
+      "shadowTweetId": "2118754634101817761",
+      "iftttTweetId": "2118755446710505888",
+      "iftttTextLength": 261,
+      "shadowTextLength": 261,
+      "iftttTruncated": false,
+      "ifttt": {
+        "type": "injury",
+        "category": "INJURY",
+        "subcategory": "OUT",
+        "team": "OTT",
+        "players": 2,
+        "confidence": 95
+      },
+      "shadow": {
+        "type": "injury",
+        "category": "INJURY",
+        "subcategory": "OUT",
+        "team": "OTT",
+        "players": 2,
+        "confidence": 95
+      },
+      "comparison": {
+        "correct": true,
+        "typeMatch": true,
+        "categoryMatch": true,
+        "playersMatch": true,
+        "slotsMatch": true
+      },
+      "attribution": {
+        "ifttt": {
+          "relationship": "unresolved",
+          "original": null
+        },
+        "shadow": {
+          "relationship": "retweet",
+          "original": "tsn1200"
+        }
+      },
+      "shadowQuote": false,
+      "iftttText": "RT @TSN1200: Travis Gree:\n\nRidly Greig is out day to day.  Won't play tomorrow but won't be out for an extended period.\n\nUllmark looked good this morning.  When asked about the possibility of him playing tomorrow he said he'd have to talk with the medical team.",
+      "shadowText": "RT @TSN1200: Travis Gree:\n\nRidly Greig is out day to day.  Won't play tomorrow but won't be out for an extended period.\n\nUllmark looked good this morning.  When asked about the possibility of him playing tomorrow he said he'd have to talk with the medical team."
+    },
+    {
+      "sourceKey": "gamedaygoalies",
+      "postKind": "repost",
+      "pairedBy": "rt_text",
+      "shadowTweetId": "2118752921831784676",
+      "iftttTweetId": "2118755840404623603",
+      "iftttTextLength": 199,
+      "shadowTextLength": 199,
+      "iftttTruncated": false,
+      "ifttt": {
+        "type": "other",
+        "category": "OTHER",
+        "subcategory": "MULTI TEAM ROUNDUP",
+        "team": null,
+        "players": 0,
+        "confidence": 15
+      },
+      "shadow": {
+        "type": "other",
+        "category": "OTHER",
+        "subcategory": "MULTI TEAM ROUNDUP",
+        "team": null,
+        "players": 0,
+        "confidence": 15
+      },
+      "comparison": {
+        "correct": true,
+        "typeMatch": true,
+        "categoryMatch": true,
+        "playersMatch": true,
+        "slotsMatch": true
+      },
+      "attribution": {
+        "ifttt": {
+          "relationship": "unresolved",
+          "original": null
+        },
+        "shadow": {
+          "relationship": "retweet",
+          "original": "dmaetzmedia"
+        }
+      },
+      "shadowQuote": false,
+      "iftttText": "RT @DMaetzMedia: Per Rick Bowness, Jet Greaves gets the net tonight for #CBJ.  Jack Williams and Steven Lorentz are here in Buffalo but Bowness says any roster changes would be “game-time decisions.”",
+      "shadowText": "RT @DMaetzMedia: Per Rick Bowness, Jet Greaves gets the net tonight for #CBJ.  Jack Williams and Steven Lorentz are here in Buffalo but Bowness says any roster changes would be “game-time decisions.”"
+    },
+    {
+      "sourceKey": "dfofantasy",
+      "postKind": "post",
+      "pairedBy": "tweet_id",
+      "shadowTweetId": "2118755655163216276",
+      "iftttTweetId": "2118755655163216276",
+      "iftttTextLength": 110,
+      "shadowTextLength": 110,
+      "iftttTruncated": false,
+      "ifttt": {
+        "type": "line_combination",
+        "category": "LINE COMBINATION",
+        "subcategory": "PRACTICE LINES",
+        "team": null,
+        "players": 0,
+        "confidence": 15
+      },
+      "shadow": {
+        "type": "line_combination",
+        "category": "LINE COMBINATION",
+        "subcategory": "PRACTICE LINES",
+        "team": null,
+        "players": 0,
+        "confidence": 15
+      },
+      "comparison": {
+        "correct": true,
+        "typeMatch": true,
+        "categoryMatch": true,
+        "playersMatch": true,
+        "slotsMatch": true
+      },
+      "attribution": {
+        "ifttt": {
+          "relationship": "unresolved",
+          "original": null
+        },
+        "shadow": {
+          "relationship": "unresolved",
+          "original": null
+        }
+      },
+      "shadowQuote": false,
+      "iftttText": "Matthew Kessel: Injury: Kessel (upper-body) left Friday's practice and did not return. https://t.co/A734tGZm9Q",
+      "shadowText": "Matthew Kessel: Injury: Kessel (upper-body) left Friday's practice and did not return. https://t.co/A734tGZm9Q"
+    },
+    {
+      "sourceKey": "dfofantasy",
+      "postKind": "post",
+      "pairedBy": "tweet_id",
+      "shadowTweetId": "2118756031031574591",
+      "iftttTweetId": "2118756031031574591",
+      "iftttTextLength": 112,
+      "shadowTextLength": 112,
+      "iftttTruncated": false,
+      "ifttt": {
+        "type": "injury",
+        "category": "INJURY",
+        "subcategory": null,
+        "team": "OTT",
+        "players": 1,
+        "confidence": 80
+      },
+      "shadow": {
+        "type": "injury",
+        "category": "INJURY",
+        "subcategory": null,
+        "team": "OTT",
+        "players": 1,
+        "confidence": 80
+      },
+      "comparison": {
+        "correct": true,
+        "typeMatch": true,
+        "categoryMatch": true,
+        "playersMatch": true,
+        "slotsMatch": true
+      },
+      "attribution": {
+        "ifttt": {
+          "relationship": "unresolved",
+          "original": null
+        },
+        "shadow": {
+          "relationship": "unresolved",
+          "original": null
+        }
+      },
+      "shadowQuote": false,
+      "iftttText": "Linus Ullmark: Injury: Ullmark (lower-body) has a chance to return vs. Utah on Saturday. https://t.co/cTi99FAzmK",
+      "shadowText": "Linus Ullmark: Injury: Ullmark (lower-body) has a chance to return vs. Utah on Saturday. https://t.co/cTi99FAzmK"
+    },
+    {
+      "sourceKey": "gamedaynewsnhl",
+      "postKind": "repost",
+      "pairedBy": "rt_text",
+      "shadowTweetId": "2118752921831784676",
+      "iftttTweetId": "2118755971057263074",
+      "iftttTextLength": 199,
+      "shadowTextLength": 199,
+      "iftttTruncated": false,
+      "ifttt": {
+        "type": "other",
+        "category": "OTHER",
+        "subcategory": "MULTI TEAM ROUNDUP",
+        "team": null,
+        "players": 0,
+        "confidence": 15
+      },
+      "shadow": {
+        "type": "other",
+        "category": "OTHER",
+        "subcategory": "MULTI TEAM ROUNDUP",
+        "team": null,
+        "players": 0,
+        "confidence": 15
+      },
+      "comparison": {
+        "correct": true,
+        "typeMatch": true,
+        "categoryMatch": true,
+        "playersMatch": true,
+        "slotsMatch": true
+      },
+      "attribution": {
+        "ifttt": {
+          "relationship": "unresolved",
+          "original": null
+        },
+        "shadow": {
+          "relationship": "retweet",
+          "original": "dmaetzmedia"
+        }
+      },
+      "shadowQuote": false,
+      "iftttText": "RT @DMaetzMedia: Per Rick Bowness, Jet Greaves gets the net tonight for #CBJ.  Jack Williams and Steven Lorentz are here in Buffalo but Bowness says any roster changes would be “game-time decisions.”",
+      "shadowText": "RT @DMaetzMedia: Per Rick Bowness, Jet Greaves gets the net tonight for #CBJ.  Jack Williams and Steven Lorentz are here in Buffalo but Bowness says any roster changes would be “game-time decisions.”"
+    },
+    {
+      "sourceKey": "gamedaygoalies",
+      "postKind": "repost",
+      "pairedBy": "rt_text",
+      "shadowTweetId": "2118751952553042097",
+      "iftttTweetId": "2118756091874132160",
+      "iftttTextLength": 104,
+      "shadowTextLength": 104,
+      "iftttTruncated": false,
+      "ifttt": {
+        "type": "line_combination",
+        "category": "LINE COMBINATION",
+        "subcategory": "PRACTICE LINES",
+        "team": null,
+        "players": 0,
+        "confidence": 15
+      },
+      "shadow": {
+        "type": "line_combination",
+        "category": "LINE COMBINATION",
+        "subcategory": "PRACTICE LINES",
+        "team": null,
+        "players": 0,
+        "confidence": 15
+      },
+      "comparison": {
+        "correct": true,
+        "typeMatch": true,
+        "categoryMatch": true,
+        "playersMatch": true,
+        "slotsMatch": true
+      },
+      "attribution": {
+        "ifttt": {
+          "relationship": "unresolved",
+          "original": null
+        },
+        "shadow": {
+          "relationship": "retweet",
+          "original": "stefen_rosner"
+        }
+      },
+      "shadowQuote": false,
+      "iftttText": "RT @stefen_rosner: Sorokin off first at #Isles practice.\n\nExpecting him to start vs. #NJDevils tomorrow.",
+      "shadowText": "RT @stefen_rosner: Sorokin off first at #Isles practice.\n\nExpecting him to start vs. #NJDevils tomorrow."
+    },
+    {
+      "sourceKey": "dfofantasy",
+      "postKind": "post",
+      "pairedBy": "tweet_id",
+      "shadowTweetId": "2118756659283816768",
+      "iftttTweetId": "2118756659283816768",
+      "iftttTextLength": 120,
+      "shadowTextLength": 120,
+      "iftttTruncated": false,
+      "ifttt": {
+        "type": "injury",
+        "category": "INJURY",
+        "subcategory": null,
+        "team": "TOR",
+        "players": 1,
+        "confidence": 80
+      },
+      "shadow": {
+        "type": "injury",
+        "category": "INJURY",
+        "subcategory": null,
+        "team": "TOR",
+        "players": 1,
+        "confidence": 80
+      },
+      "comparison": {
+        "correct": true,
+        "typeMatch": true,
+        "categoryMatch": true,
+        "playersMatch": true,
+        "slotsMatch": true
+      },
+      "attribution": {
+        "ifttt": {
+          "relationship": "unresolved",
+          "original": null
+        },
+        "shadow": {
+          "relationship": "unresolved",
+          "original": null
+        }
+      },
+      "shadowQuote": false,
+      "iftttText": "John Tavares: Injury: Tavares (lower-body) has a good chance to return vs. Montreal on Saturday. https://t.co/2sjF5hlZL4",
+      "shadowText": "John Tavares: Injury: Tavares (lower-body) has a good chance to return vs. Montreal on Saturday. https://t.co/2sjF5hlZL4"
+    },
+    {
+      "sourceKey": "gamedaylines",
+      "postKind": "repost",
+      "pairedBy": "rt_text",
+      "shadowTweetId": "2118756257934754214",
+      "iftttTweetId": "2118756402713993615",
+      "iftttTextLength": 244,
+      "shadowTextLength": 244,
+      "iftttTruncated": false,
+      "ifttt": {
+        "type": "line_combination",
+        "category": "LINE COMBINATION",
+        "subcategory": "FORWARD LINES",
+        "team": "DET",
+        "players": 18,
+        "confidence": 66
+      },
+      "shadow": {
+        "type": "line_combination",
+        "category": "LINE COMBINATION",
+        "subcategory": "FORWARD LINES",
+        "team": "DET",
+        "players": 18,
+        "confidence": 66
+      },
+      "comparison": {
+        "correct": true,
+        "typeMatch": true,
+        "categoryMatch": true,
+        "playersMatch": true,
+        "slotsMatch": true
+      },
+      "attribution": {
+        "ifttt": {
+          "relationship": "unresolved",
+          "original": null
+        },
+        "shadow": {
+          "relationship": "retweet",
+          "original": "ansarkhanmlive"
+        }
+      },
+      "shadowQuote": false,
+      "iftttText": "RT @AnsarKhanMLive: Looks like no changes to #ReeWings lines:\nDeBrincat-Finnie-Arvidsson\nMBN-Copp-Raymond\nRasmussen-Compher-Danielson\nMazur-Dries-Kolesar\nLeonard\nChiarot-Seider\nWallinder-Faulk\nEnglund-Anton Johansson\nJBD https://t.co/Oyy18EWwHl",
+      "shadowText": "RT @AnsarKhanMLive: Looks like no changes to #ReeWings lines:\nDeBrincat-Finnie-Arvidsson\nMBN-Copp-Raymond\nRasmussen-Compher-Danielson\nMazur-Dries-Kolesar\nLeonard\nChiarot-Seider\nWallinder-Faulk\nEnglund-Anton Johansson\nJBD https://t.co/Oyy18EWwHl"
+    },
+    {
+      "sourceKey": "gamedaylines",
+      "postKind": "repost",
+      "pairedBy": "rt_text",
+      "shadowTweetId": "2118749922241503252",
+      "iftttTweetId": "2118756650618429575",
+      "iftttTextLength": 158,
+      "shadowTextLength": 158,
+      "iftttTruncated": false,
+      "ifttt": {
+        "type": "line_combination",
+        "category": "LINE COMBINATION",
+        "subcategory": "POWER PLAY",
+        "team": "NYI",
+        "players": 10,
+        "confidence": 38
+      },
+      "shadow": {
+        "type": "line_combination",
+        "category": "LINE COMBINATION",
+        "subcategory": "POWER PLAY",
+        "team": "NYI",
+        "players": 10,
+        "confidence": 38
+      },
+      "comparison": {
+        "correct": true,
+        "typeMatch": true,
+        "categoryMatch": true,
+        "playersMatch": true,
+        "slotsMatch": true
+      },
+      "attribution": {
+        "ifttt": {
+          "relationship": "unresolved",
+          "original": null
+        },
+        "shadow": {
+          "relationship": "retweet",
+          "original": "stefen_rosner"
+        }
+      },
+      "shadowQuote": false,
+      "iftttText": "RT @stefen_rosner: #Isles changing some PP personnel: QB-LW-RW-B-N\n\nPP1: Schaefer-Eklund-Holmstrom-Horvat-Schenn\nPP2: DeAngelo-Heineman-Duclair-Palat-Palmieri",
+      "shadowText": "RT @stefen_rosner: #Isles changing some PP personnel: QB-LW-RW-B-N\n\nPP1: Schaefer-Eklund-Holmstrom-Horvat-Schenn\nPP2: DeAngelo-Heineman-Duclair-Palat-Palmieri"
+    },
+    {
+      "sourceKey": "dfofantasy",
+      "postKind": "repost",
+      "pairedBy": "rt_text",
+      "shadowTweetId": "2118757118140399846",
+      "iftttTweetId": "2118757282100174881",
+      "iftttTextLength": 300,
+      "shadowTextLength": 300,
+      "iftttTruncated": false,
+      "ifttt": {
+        "type": "other",
+        "category": "OTHER",
+        "subcategory": "AMBIGUOUS",
+        "team": "DET",
+        "players": 5,
+        "confidence": 94
+      },
+      "shadow": {
+        "type": "other",
+        "category": "OTHER",
+        "subcategory": "AMBIGUOUS",
+        "team": "DET",
+        "players": 5,
+        "confidence": 94
+      },
+      "comparison": {
+        "correct": true,
+        "typeMatch": true,
+        "categoryMatch": true,
+        "playersMatch": true,
+        "slotsMatch": true
+      },
+      "attribution": {
+        "ifttt": {
+          "relationship": "unresolved",
+          "original": null
+        },
+        "shadow": {
+          "relationship": "retweet",
+          "original": "ansarkhanmlive"
+        }
+      },
+      "shadowQuote": false,
+      "iftttText": "RT @AnsarKhanMLive: #RedWings McLellan said he’s not sure yet of Gibson’s status so Postava will make the trip to Colorado and then they’ll reassess if they need to send him back to @griffinshockey \nAlbert Johansson also will make the trip. Kasper and Appleton expected to be read",
+      "shadowText": "RT @AnsarKhanMLive: #RedWings McLellan said he’s not sure yet of Gibson’s status so Postava will make the trip to Colorado and then they’ll reassess if they need to send him back to @griffinshockey \nAlbert Johansson also will make the trip. Kasper and Appleton expected to be read"
+    },
+    {
+      "sourceKey": "gamedaynewsnhl",
+      "postKind": "repost",
+      "pairedBy": "rt_text",
+      "shadowTweetId": "2118757118140399846",
+      "iftttTweetId": "2118757416900981231",
+      "iftttTextLength": 300,
+      "shadowTextLength": 300,
+      "iftttTruncated": false,
+      "ifttt": {
+        "type": "other",
+        "category": "OTHER",
+        "subcategory": "AMBIGUOUS",
+        "team": "DET",
+        "players": 5,
+        "confidence": 94
+      },
+      "shadow": {
+        "type": "other",
+        "category": "OTHER",
+        "subcategory": "AMBIGUOUS",
+        "team": "DET",
+        "players": 5,
+        "confidence": 94
+      },
+      "comparison": {
+        "correct": true,
+        "typeMatch": true,
+        "categoryMatch": true,
+        "playersMatch": true,
+        "slotsMatch": true
+      },
+      "attribution": {
+        "ifttt": {
+          "relationship": "unresolved",
+          "original": null
+        },
+        "shadow": {
+          "relationship": "retweet",
+          "original": "ansarkhanmlive"
+        }
+      },
+      "shadowQuote": false,
+      "iftttText": "RT @AnsarKhanMLive: #RedWings McLellan said he’s not sure yet of Gibson’s status so Postava will make the trip to Colorado and then they’ll reassess if they need to send him back to @griffinshockey \nAlbert Johansson also will make the trip. Kasper and Appleton expected to be read",
+      "shadowText": "RT @AnsarKhanMLive: #RedWings McLellan said he’s not sure yet of Gibson’s status so Postava will make the trip to Colorado and then they’ll reassess if they need to send him back to @griffinshockey \nAlbert Johansson also will make the trip. Kasper and Appleton expected to be read"
+    },
+    {
+      "sourceKey": "gamedaynewsnhl",
+      "postKind": "repost",
+      "pairedBy": "rt_text",
+      "shadowTweetId": "2118758822315741449",
+      "iftttTweetId": "2118759344061956501",
+      "iftttTextLength": 95,
+      "shadowTextLength": 95,
+      "iftttTruncated": false,
+      "ifttt": {
+        "type": "injury",
+        "category": "INJURY",
+        "subcategory": null,
+        "team": "TOR",
+        "players": 1,
+        "confidence": 90
+      },
+      "shadow": {
+        "type": "injury",
+        "category": "INJURY",
+        "subcategory": null,
+        "team": "TOR",
+        "players": 1,
+        "confidence": 90
+      },
+      "comparison": {
+        "correct": true,
+        "typeMatch": true,
+        "categoryMatch": true,
+        "playersMatch": true,
+        "slotsMatch": true
+      },
+      "attribution": {
+        "ifttt": {
+          "relationship": "unresolved",
+          "original": null
+        },
+        "shadow": {
+          "relationship": "retweet",
+          "original": "davidalter"
+        }
+      },
+      "shadowQuote": false,
+      "iftttText": "RT @davidalter: Jim Hiller says all signs point to John Tavares returning tomorrow. \n\n@Ozoon_CA",
+      "shadowText": "RT @davidalter: Jim Hiller says all signs point to John Tavares returning tomorrow. \n\n@Ozoon_CA"
+    },
+    {
+      "sourceKey": "dfofantasy",
+      "postKind": "post",
+      "pairedBy": "tweet_id",
+      "shadowTweetId": "2118761633225039951",
+      "iftttTweetId": "2118761633225039951",
+      "iftttTextLength": 125,
+      "shadowTextLength": 125,
+      "iftttTruncated": false,
+      "ifttt": {
+        "type": "other",
+        "category": "OTHER",
+        "subcategory": "MULTI TEAM ROUNDUP",
+        "team": null,
+        "players": 0,
+        "confidence": 15
+      },
+      "shadow": {
+        "type": "other",
+        "category": "OTHER",
+        "subcategory": "MULTI TEAM ROUNDUP",
+        "team": null,
+        "players": 0,
+        "confidence": 15
+      },
+      "comparison": {
+        "correct": true,
+        "typeMatch": true,
+        "categoryMatch": true,
+        "playersMatch": true,
+        "slotsMatch": true
+      },
+      "attribution": {
+        "ifttt": {
+          "relationship": "unresolved",
+          "original": null
+        },
+        "shadow": {
+          "relationship": "unresolved",
+          "original": null
+        }
+      },
+      "shadowQuote": false,
+      "iftttText": "Ben Hutton: Line Change: Hutton has a chance to make his Islanders' debut on Saturday vs. New Jersey. https://t.co/pUQDUxoAtt",
+      "shadowText": "Ben Hutton: Line Change: Hutton has a chance to make his Islanders' debut on Saturday vs. New Jersey. https://t.co/pUQDUxoAtt"
+    },
+    {
+      "sourceKey": "dfofantasy",
+      "postKind": "quote",
+      "pairedBy": "tweet_id",
+      "shadowTweetId": "2118767136718102767",
+      "iftttTweetId": "2118767136718102767",
+      "iftttTextLength": 113,
+      "shadowTextLength": 141,
+      "iftttTruncated": false,
+      "ifttt": {
+        "type": "goalie",
+        "category": "GOALIE START",
+        "subcategory": "CONFIRMED STARTER",
+        "team": "SJS",
+        "players": 1,
+        "confidence": 100
+      },
+      "shadow": {
+        "type": "goalie",
+        "category": "GOALIE START",
+        "subcategory": "CONFIRMED STARTER",
+        "team": "SJS",
+        "players": 1,
+        "confidence": 100
+      },
+      "comparison": {
+        "correct": true,
+        "typeMatch": true,
+        "categoryMatch": true,
+        "playersMatch": true,
+        "slotsMatch": true
+      },
+      "attribution": {
+        "ifttt": {
+          "relationship": "unresolved",
+          "original": null
+        },
+        "shadow": {
+          "relationship": "unresolved",
+          "original": null
+        }
+      },
+      "shadowQuote": true,
+      "iftttText": "🥅: Yaroslav Askarov (SJS) ✅ will start Friday @ MIN.\n\n4-7-0 | 3.29 GAA | .887 SV% | 0 SO https://t.co/KOpNgaoKM8",
+      "shadowText": "🥅: Yaroslav Askarov (SJS) ✅ will start Friday @ MIN.\n\n4-7-0 | 3.29 GAA | .887 SV% | 0 SO https://x.com/Sheng_Peng/status/2118766801584865596"
+    }
+  ],
+  "unpairedShadow": [
+    {
+      "sourceKey": "dfofantasy",
+      "tweetId": "2118492491695390737",
+      "postKind": "post",
+      "firstSeenAt": "2026-11-06T01:32:02.528509+00:00",
+      "createdAt": "2026-11-05T23:55:44+00:00",
+      "text": "#TexasHockey Lineup @ CBJ\n\nBenn - Johnston - Rantanen\nRobertson - Hintz - Hyry\nKiviranta - Hryckowian - Seguin\nPerron - Faksa - Blackwell\n\nHarley - Lindell\nBichsel - Lundkvist\nTaylor - Myers\n\n🥅: DeSm"
+    },
+    {
+      "sourceKey": "dfofantasy",
+      "tweetId": "2118491168405381592",
+      "postKind": "post",
+      "firstSeenAt": "2026-11-06T01:32:02.528509+00:00",
+      "createdAt": "2026-11-05T23:50:28+00:00",
+      "text": "#STLBlues Lineup @ NJD\n\nHolloway - Thomas - Snuggerud\nNeighbours - Dvorsky - Buchnevich\nMcMichael - McTavish - Kaskimaki\nToropchenko - Suter - Johnston\n\nBroberg - Carlo\nFowler - Jiříček\nParayko - Barr"
+    },
+    {
+      "sourceKey": "dfofantasy",
+      "tweetId": "2118490934099030094",
+      "postKind": "post",
+      "firstSeenAt": "2026-11-06T01:32:02.528509+00:00",
+      "createdAt": "2026-11-05T23:49:33+00:00",
+      "text": "#CBJ Lineup vs. DAL\n\nKnies - Fantilli - Johnson\nNichushkin - Monahan - Garland\nSillinger - Coyle - Olivier\nLomberg - Del Bel Belluz - Voronkov\n\nWerenski - Severson\nProvorov - Mateychuk\nChristiansen - "
+    },
+    {
+      "sourceKey": "dfofantasy",
+      "tweetId": "2118490532305404414",
+      "postKind": "post",
+      "firstSeenAt": "2026-11-06T01:32:02.528509+00:00",
+      "createdAt": "2026-11-05T23:47:57+00:00",
+      "text": "#Canucks Lineup @ WPG\n\nDeBrusk - Pettersson - Boeser\nOhgren - Rossi - Lekkerimaki\nO'Connor - Quillan - Karlsson\nCotter - Sasson - Gallagher\n\nPettersson - Hronek\nBuium - Brisebois\nOleksiak - Mancini\n\n\ud83e"
+    },
+    {
+      "sourceKey": "dfofantasy",
+      "tweetId": "2118490384544284842",
+      "postKind": "post",
+      "firstSeenAt": "2026-11-06T01:32:02.528509+00:00",
+      "createdAt": "2026-11-05T23:47:21+00:00",
+      "text": "#LGRW Lineup vs. VGK\n\nDeBrincat - Finnie - Arvidsson\nMBN - Copp - Raymond\nRasmussen - Compher - Danielson\nMazur - Dries - Kolesar\n\nChiarot - Seider\nWallinder - Faulk\nEnglund - An. Johansson\n\n🥅: Taras"
+    },
+    {
+      "sourceKey": "dfofantasy",
+      "tweetId": "2118489962681086194",
+      "postKind": "post",
+      "firstSeenAt": "2026-11-06T01:32:02.528509+00:00",
+      "createdAt": "2026-11-05T23:45:41+00:00",
+      "text": "#Isles Lineup vs. CAR\n\nHolmstrom - Horvat - Palmieri\nHeineman - Schenn - Eklund\nPalat - Pageau - Duclair\nMacLean - Cizikas - Chaffee\n\nStanley - Schaefer\nPelech - DeAngelo\nKessel - Mayfield\n\n🥅: Varlam"
+    },
+    {
+      "sourceKey": "dfofantasy",
+      "tweetId": "2118489844007514520",
+      "postKind": "post",
+      "firstSeenAt": "2026-11-06T01:32:02.528509+00:00",
+      "createdAt": "2026-11-05T23:45:13+00:00",
+      "text": "#GoHabsGo Lineup vs. UTA\n\nCaufield - Suzuki - Slafkovsky\nKreider - Evans - Anderson\nBolduc - Danault - Texier\nNewhook - Kapanen - Dach\n\nHutson - Dobson\nGuhle - Carrier\nXhekaj - Engstrom\n\n🥅: Dobes ✅"
+    },
+    {
+      "sourceKey": "dfofantasy",
+      "tweetId": "2118489760826314989",
+      "postKind": "post",
+      "firstSeenAt": "2026-11-06T01:32:02.528509+00:00",
+      "createdAt": "2026-11-05T23:44:53+00:00",
+      "text": "#LetsGoPens Lineup vs. BOS\n\nNovak - Crosby - Rakell\nChinakhov - Kindel - Malkin\nKoivunen - Lapierre - Brazeau\nDewar - Lizotte - Robertson\n\nGirard - Karlsson\nStastney - Korczak\nCarlile - Letang\n\n🥅: Si"
+    },
+    {
+      "sourceKey": "dfofantasy",
+      "tweetId": "2118508370227286519",
+      "postKind": "post",
+      "firstSeenAt": "2026-11-06T01:32:02.528509+00:00",
+      "createdAt": "2026-11-06T00:58:50+00:00",
+      "text": "#FlyTogether Lineup @ EDM\n\nKillorn - Carlsson - Caulfield\nGauthier - Granlund - Sennecke\nMyatovic - Washe - Colangelo\nMalott - McQueen - Nesterenko\n\nLacombe - Helleson\nMitchell - Luneau\nMintyukov - Wa"
+    },
+    {
+      "sourceKey": "dfofantasy",
+      "tweetId": "2118489485289697495",
+      "postKind": "post",
+      "firstSeenAt": "2026-11-06T01:32:02.528509+00:00",
+      "createdAt": "2026-11-05T23:43:47+00:00",
+      "text": "#LetsGoFlyers Lineup @ NYR\n\nZegras - Dvorak - Konecny\nMartone - Knuble - Tippett\nFoerster - Cates - Michkov\nBarkey - Couturier - Acciari\n\nSanheim - Drysdale\nYork - Bonk\nSeeler - Benoit\n\n🥅: Woll ✅"
+    },
+    {
+      "sourceKey": "dfofantasy",
+      "tweetId": "2118489396672618559",
+      "postKind": "post",
+      "firstSeenAt": "2026-11-06T01:32:02.528509+00:00",
+      "createdAt": "2026-11-05T23:43:26+00:00",
+      "text": "#Blackhawks Lineup @ TBL\n\nBertuzzi - Bedard - Kantserov\nMoore - Nazar - Donato\nMangiapane - Frondell - Teravainen\nSmith - Greene - Boucher\n\nVlasic - Cole\nKaiser - Levshunov\nDel Mastro - Rinzel\n\n🥅: Sö"
+    },
+    {
+      "sourceKey": "dfofantasy",
+      "tweetId": "2118502784387404157",
+      "postKind": "quote",
+      "firstSeenAt": "2026-11-06T01:32:02.528509+00:00",
+      "createdAt": "2026-11-06T00:36:38+00:00",
+      "text": "🥅: Laurent Brossoit (ANA) ✅ will start Thursday @ EDM.\n\n2-0-0 | 3.51 GAA | .848 SV% | 0 SO https://x.com/ZachCav/status/2118502417490907295"
+    },
+    {
+      "sourceKey": "dfofantasy",
+      "tweetId": "2118495423623319646",
+      "postKind": "quote",
+      "firstSeenAt": "2026-11-06T01:32:02.528509+00:00",
+      "createdAt": "2026-11-06T00:07:23+00:00",
+      "text": "EBUG backup in Edmonton tonight with Tristan Jarry sick. \n\nBrett Epp is 29 and from Edmonton. He last played in 2024-25, when he went 3-9-1 with a 3.90 GAA and .888 SV% in 14 games for Grant MacEwan C"
+    },
+    {
+      "sourceKey": "dfofantasy",
+      "tweetId": "2118489223791583603",
+      "postKind": "post",
+      "firstSeenAt": "2026-11-06T01:32:02.528509+00:00",
+      "createdAt": "2026-11-05T23:42:45+00:00",
+      "text": "#NJDevils Lineup vs. STL\n\nMeier - Hischier - Evangelista\nGritsyuk - Hughes - Bratt\nMantha - Rodrigues - Boqvist\nLombardi - Glass - Brown\n\nHughes - Pesce\nSiegenthaler - Hamilton\nChisholm - Kovacevic\n\n\ud83e"
+    },
+    {
+      "sourceKey": "dfofantasy",
+      "tweetId": "2118488994749055341",
+      "postKind": "post",
+      "firstSeenAt": "2026-11-06T01:32:02.528509+00:00",
+      "createdAt": "2026-11-05T23:41:50+00:00",
+      "text": "#CarolinaCulture Lineup @ NYI\n\nCarrier - Aho - Svechnikov\nEhlers - Stankoven - Blake\nHall - Jankowski - Jarvis\nRobinson - Kotkaniemi - Martinook\n\nSlavin - Chatfield\nMiller - Walker\nGostisbehere - Vali"
+    },
+    {
+      "sourceKey": "dfofantasy",
+      "tweetId": "2118488438961795153",
+      "postKind": "post",
+      "firstSeenAt": "2026-11-06T01:32:02.528509+00:00",
+      "createdAt": "2026-11-05T23:39:38+00:00",
+      "text": "#GoBolts Lineup vs. CHI\n\nGuentzel - Point - Kucherov\nHagel - Cirelli - Goncalves\nMikheyev - Girgensons - Holmberg\nViel - Geekie\n\nMoser - Crozier\nMcDonagh - Cernak\nHedman - Carlson\nD'Astous\n\n🥅: Vasile"
+    },
+    {
+      "sourceKey": "dfofantasy",
+      "tweetId": "2118508415597302132",
+      "postKind": "post",
+      "firstSeenAt": "2026-11-06T01:32:02.528509+00:00",
+      "createdAt": "2026-11-06T00:59:00+00:00",
+      "text": "#LetsGoOilers Lineup vs. ANA\n\nPodkolzin - McDavid - Draisaitl\nDach - Nugent-Hopkins - Kapanen\nFormenton - Dickinson - Joseph\nJones - Michaels - Hallander\n\nEkholm - Bouchard\nShea - Murphy\nMukhamadullin"
+    },
+    {
+      "sourceKey": "dfofantasy",
+      "tweetId": "2118488318002520423",
+      "postKind": "post",
+      "firstSeenAt": "2026-11-06T01:32:02.528509+00:00",
+      "createdAt": "2026-11-05T23:39:09+00:00",
+      "text": "#NYR Lineup vs. PHI\n\nDorofeyev - Zibanejad - Lafrenière\nKartye - Miller - Perreault\nTolvanen - Cuylle - Bjorkstrand\nChmelar - Laba - Rempe\n\nGavrikov - Fox\nPettersson - Schneider\nSmits - Morrow\n\n🥅: Ga"
+    },
+    {
+      "sourceKey": "dfofantasy",
+      "tweetId": "2118488238159761771",
+      "postKind": "post",
+      "firstSeenAt": "2026-11-06T01:32:02.528509+00:00",
+      "createdAt": "2026-11-05T23:38:50+00:00",
+      "text": "#NHLBruins Lineup @ PIT\n\nPeterka - Zacha - Pastrnak\nKhusnutdinov - Minten - Geekie\nMittelstadt - Lindholm - Hagens\nJeannot - Kuraly - Kastelic\n\nLindholm - McAvoy\nZadorov - Borgen\nBrunet - Lohrei\n\n🥅: "
+    },
+    {
+      "sourceKey": "dfofantasy",
+      "tweetId": "2118488133008588837",
+      "postKind": "post",
+      "firstSeenAt": "2026-11-06T01:32:02.528509+00:00",
+      "createdAt": "2026-11-05T23:38:25+00:00",
+      "text": "#GoJetsGo Lineup vs. VAN\n\nConnor - Scheifele - Vilardi\nPerfetti - Yager - Mercer\nIafallo - Lowry - Björck\nKoepke - Barron - Rosen\n\nSamberg - Pionk\nFerraro - DeMelo\nFleury - Bauer\n\n🥅: Skinner ✅"
+    },
+    {
+      "sourceKey": "nhl_rosters",
+      "tweetId": "2117277112390590886",
+      "postKind": "post",
+      "firstSeenAt": "2026-11-06T01:32:03.829064+00:00",
+      "createdAt": "2026-11-02T15:26:15+00:00",
+      "text": "Philadelphia has assigned Alex Bump to Lehigh Valley. #LetsGoFlyers"
+    },
+    {
+      "sourceKey": "nhl_rosters",
+      "tweetId": "2116970614762172772",
+      "postKind": "repost",
+      "firstSeenAt": "2026-11-06T01:32:03.829064+00:00",
+      "createdAt": "2026-11-01T19:08:20+00:00",
+      "text": "RT @PuckPedia: Waivers today:\n\nDylan McIlrath #ALLCAPS\n\nJensen cleared from yesterday\n\nhttps://t.co/k50BcfyDLZ"
+    },
+    {
+      "sourceKey": "nhl_rosters",
+      "tweetId": "2118403018353725461",
+      "postKind": "repost",
+      "firstSeenAt": "2026-11-06T01:32:03.829064+00:00",
+      "createdAt": "2026-11-05T18:00:12+00:00",
+      "text": "RT @NHLFlames: Arsenii Sergeev has been assigned to the @AHLWranglers. https://t.co/csFXCF9APJ"
+    },
+    {
+      "sourceKey": "nhl_rosters",
+      "tweetId": "2118391910721073633",
+      "postKind": "repost",
+      "firstSeenAt": "2026-11-06T01:32:03.829064+00:00",
+      "createdAt": "2026-11-05T17:16:03+00:00",
+      "text": "RT @jprutherford: Per Monty:\n\n— Parayko in for Lindstein tonight\n— Binnington in net"
+    },
+    {
+      "sourceKey": "nhl_rosters",
+      "tweetId": "2118394104585547996",
+      "postKind": "repost",
+      "firstSeenAt": "2026-11-06T01:32:03.829064+00:00",
+      "createdAt": "2026-11-05T17:24:47+00:00",
+      "text": "RT @MikeHeika: DeSmith in goal\n\nHeiskanen not ready\n\nTaylor in\n\nSteel out for personal reasons. Blackwell in\n\nKiviranta moves to Johnston line."
+    },
+    {
+      "sourceKey": "nhl_rosters",
+      "tweetId": "2118387874194436571",
+      "postKind": "post",
+      "firstSeenAt": "2026-11-06T01:32:03.829064+00:00",
+      "createdAt": "2026-11-05T17:00:01+00:00",
+      "text": "A quick update:\n\nHoping to ramp up my activity on here again shortly. I lost my Mom suddenly last week, after losing my Dad earlier this year. It's been a tough year personally, but we carry on."
+    },
+    {
+      "sourceKey": "nhl_rosters",
+      "tweetId": "2118381059343867991",
+      "postKind": "repost",
+      "firstSeenAt": "2026-11-06T01:32:03.829064+00:00",
+      "createdAt": "2026-11-05T16:32:56+00:00",
+      "text": "RT @AnsarKhanMLive: #RedWings McLellan: Gibson (lower body injury) still being evaluated and day to day. Albert Johansson hasn’t resumed skating and will remain out for a while. They expect Kasper and"
+    },
+    {
+      "sourceKey": "nhl_rosters",
+      "tweetId": "2118376813017657588",
+      "postKind": "repost",
+      "firstSeenAt": "2026-11-06T01:32:03.829064+00:00",
+      "createdAt": "2026-11-05T16:16:04+00:00",
+      "text": "RT @PensInsideScoop: Dan Muse confirmed that Arturs Silovs starts in goal and that Evgeni Malkin, who missed the last game with a lower-body injury, is available for tonight."
+    },
+    {
+      "sourceKey": "nhl_rosters",
+      "tweetId": "2118352632242921544",
+      "postKind": "repost",
+      "firstSeenAt": "2026-11-06T01:32:03.829064+00:00",
+      "createdAt": "2026-11-05T14:39:59+00:00",
+      "text": "RT @Aportzline: #CBJ roster moves on Wednesday - Danton Heinen and Emil Andrae on waivers, Steven Lorentz and Jack Williams pulled from a @monstershockey game - are related to an Isac Lindeström retur"
+    },
+    {
+      "sourceKey": "nhl_rosters",
+      "tweetId": "2118362549708374080",
+      "postKind": "repost",
+      "firstSeenAt": "2026-11-06T01:32:03.829064+00:00",
+      "createdAt": "2026-11-05T15:19:23+00:00",
+      "text": "RT @MitchellClinton: Josh Morrissey remains in non-contact with the #NHLJets morning skate set to start in a few minutes.\n\nBrayden Yager is on the ice after his recall."
+    },
+    {
+      "sourceKey": "nhl_rosters",
+      "tweetId": "2117636895605924070",
+      "postKind": "repost",
+      "firstSeenAt": "2026-11-06T01:32:03.829064+00:00",
+      "createdAt": "2026-11-03T15:15:54+00:00",
+      "text": "RT @DallasStars: We have recalled Trey Taylor from the @TexasStars. https://t.co/OctAzl02EQ"
+    },
+    {
+      "sourceKey": "nhl_rosters",
+      "tweetId": "2117615980306166201",
+      "postKind": "repost",
+      "firstSeenAt": "2026-11-06T01:32:03.829064+00:00",
+      "createdAt": "2026-11-03T13:52:47+00:00",
+      "text": "RT @penguins: Defenseman Jake Livanavage has been recalled from @WBSPenguins (AHL). https://t.co/vnHzlUZs8a"
+    },
+    {
+      "sourceKey": "nhl_rosters",
+      "tweetId": "2117469877506072641",
+      "postKind": "repost",
+      "firstSeenAt": "2026-11-06T01:32:03.829064+00:00",
+      "createdAt": "2026-11-03T04:12:14+00:00",
+      "text": "RT @kalenalumpkins: Jeff Blashill says Patrick Kane will miss “the next couple of games, for sure” with an upper body injury"
+    },
+    {
+      "sourceKey": "nhl_rosters",
+      "tweetId": "2117303223308738768",
+      "postKind": "repost",
+      "firstSeenAt": "2026-11-06T01:32:03.829064+00:00",
+      "createdAt": "2026-11-02T17:10:00+00:00",
+      "text": "RT @Avalanche: We have recalled Keaton Middleton from the Colorado Eagles. https://t.co/fe5YkjDHtM"
+    },
+    {
+      "sourceKey": "nhl_rosters",
+      "tweetId": "2117308049685922063",
+      "postKind": "post",
+      "firstSeenAt": "2026-11-06T01:32:03.829064+00:00",
+      "createdAt": "2026-11-02T17:29:11+00:00",
+      "text": "Remi Poirier will wear #1 with Washington. #ALLCAPS https://t.co/h12VvTtGQ7"
+    },
+    {
+      "sourceKey": "nhl_rosters",
+      "tweetId": "2117293805183668445",
+      "postKind": "post",
+      "firstSeenAt": "2026-11-06T01:32:03.829064+00:00",
+      "createdAt": "2026-11-02T16:32:35+00:00",
+      "text": "Shane Wright will wear #15 with Nashville. #Preds https://t.co/AMgrB1UZGq"
+    },
+    {
+      "sourceKey": "nhl_rosters",
+      "tweetId": "2117282127850918116",
+      "postKind": "repost",
+      "firstSeenAt": "2026-11-06T01:32:03.829064+00:00",
+      "createdAt": "2026-11-02T15:46:11+00:00",
+      "text": "RT @PenguinsPR: Kaedan Korczak (lower body) and Evgeni Malkin (lower body) are day-to-day and will not practice today.\n\nElmer Soderblom's status has been changed to week-to-week. https://t.co/Q4u7T7Mf"
+    },
+    {
+      "sourceKey": "nhl_rosters",
+      "tweetId": "2117108345702424843",
+      "postKind": "repost",
+      "firstSeenAt": "2026-11-06T01:32:03.829064+00:00",
+      "createdAt": "2026-11-02T04:15:38+00:00",
+      "text": "RT @ZachCav: Joel Quenneville on Ducks goalie rotation with Laurent Brossoit picking up the win: \n\n\"I'm not sure how that's going to go. In the short term, I see us going on the trip with three goalie"
+    },
+    {
+      "sourceKey": "nhl_rosters",
+      "tweetId": "2117275972844265545",
+      "postKind": "repost",
+      "firstSeenAt": "2026-11-06T01:32:03.829064+00:00",
+      "createdAt": "2026-11-02T15:21:43+00:00",
+      "text": "RT @GeorgeRichards: Jacob Markstrom could be back for #FlaPanthers tonight - he’s first off"
+    },
+    {
+      "sourceKey": "nhl_rosters",
+      "tweetId": "2117277024385696047",
+      "postKind": "post",
+      "firstSeenAt": "2026-11-06T01:32:03.829064+00:00",
+      "createdAt": "2026-11-02T15:25:54+00:00",
+      "text": "Pittsburgh has recalled Justin Brazeau from his conditioning loan with Wilkes-Barre Scranton. #LetsGoPens"
+    },
+    {
+      "sourceKey": "ccc",
+      "tweetId": "2118488883541524849",
+      "postKind": "quote",
+      "firstSeenAt": "2026-11-06T01:32:04.579959+00:00",
+      "createdAt": "2026-11-05T23:41:24+00:00",
+      "text": "Penguins lines https://x.com/penguins/status/2118487865680142800"
+    },
+    {
+      "sourceKey": "ccc",
+      "tweetId": "2118496394092958195",
+      "postKind": "quote",
+      "firstSeenAt": "2026-11-06T01:32:04.579959+00:00",
+      "createdAt": "2026-11-06T00:11:14+00:00",
+      "text": "Blue Jackets lines\n\nKnies-Fantilli-Johnson\nNichushkin-LDBB-Garland\nSillinger-Coyle-Olivier\nLomberg-Monahan-Heinen\n\nWerenski-Severson\nProvorov-Mateychuk\nChristiansen-Fabbro\n\nTalbot https://x.com/Aportz"
+    },
+    {
+      "sourceKey": "ccc",
+      "tweetId": "2118492941597700322",
+      "postKind": "quote",
+      "firstSeenAt": "2026-11-06T01:32:04.579959+00:00",
+      "createdAt": "2026-11-05T23:57:31+00:00",
+      "text": "Blues lines https://x.com/mikemorrealeNHL/status/2118491922759049315"
+    },
+    {
+      "sourceKey": "ccc",
+      "tweetId": "2118509392815665541",
+      "postKind": "quote",
+      "firstSeenAt": "2026-11-06T01:32:04.579959+00:00",
+      "createdAt": "2026-11-06T01:02:53+00:00",
+      "text": "Ducks lines https://x.com/AnaheimDucks/status/2118507405969621195"
+    },
+    {
+      "sourceKey": "ccc",
+      "tweetId": "2118504186602291575",
+      "postKind": "quote",
+      "firstSeenAt": "2026-11-06T01:32:04.579959+00:00",
+      "createdAt": "2026-11-06T00:42:12+00:00",
+      "text": "projected Oilers lines\nconfirmed Oilers Starting Goalie: Matt Tomkins https://x.com/EdmontonOilers/status/2118493663793955107"
+    },
+    {
+      "sourceKey": "ccc",
+      "tweetId": "2118502641865281576",
+      "postKind": "quote",
+      "firstSeenAt": "2026-11-06T01:32:04.579959+00:00",
+      "createdAt": "2026-11-06T00:36:04+00:00",
+      "text": "confirmed Ducks Starting Goalie: Laurent Brossoit https://x.com/ZachCav/status/2118502417490907295"
+    },
+    {
+      "sourceKey": "ccc",
+      "tweetId": "2118490309957124323",
+      "postKind": "repost",
+      "firstSeenAt": "2026-11-06T01:32:04.579959+00:00",
+      "createdAt": "2026-11-05T23:47:04+00:00",
+      "text": "RT @utahmammoth: Projected lineup. ⬇️ https://t.co/lR1cZ9r8ZC"
+    },
+    {
+      "sourceKey": "ccc",
+      "tweetId": "2118496632048329143",
+      "postKind": "quote",
+      "firstSeenAt": "2026-11-06T01:32:04.579959+00:00",
+      "createdAt": "2026-11-06T00:12:11+00:00",
+      "text": "Golden Knights lines https://x.com/DannyWebster21/status/2118493606462063059"
+    },
+    {
+      "sourceKey": "ccc",
+      "tweetId": "2118489394797826481",
+      "postKind": "quote",
+      "firstSeenAt": "2026-11-06T01:32:04.579959+00:00",
+      "createdAt": "2026-11-05T23:43:26+00:00",
+      "text": "Canucks lines https://x.com/BatchHockey/status/2118488894463467873"
+    },
+    {
+      "sourceKey": "ccc",
+      "tweetId": "2118489196231081992",
+      "postKind": "quote",
+      "firstSeenAt": "2026-11-06T01:32:04.579959+00:00",
+      "createdAt": "2026-11-05T23:42:38+00:00",
+      "text": "Red Wings lines\nconfirmed Red Wings Starting Goalie: Daniil Tarasov https://x.com/AnsarKhanMLive/status/2118488861277905195"
+    },
+    {
+      "sourceKey": "ccc",
+      "tweetId": "2118489063514837172",
+      "postKind": "quote",
+      "firstSeenAt": "2026-11-06T01:32:04.579959+00:00",
+      "createdAt": "2026-11-05T23:42:07+00:00",
+      "text": "Jets lines\nconfirmed Jets Starting Goalie: Stuart Skinner https://x.com/WpgJetsPR/status/2118488878202097713"
+    },
+    {
+      "sourceKey": "ccc",
+      "tweetId": "2118488724472541605",
+      "postKind": "quote",
+      "firstSeenAt": "2026-11-06T01:32:04.579959+00:00",
+      "createdAt": "2026-11-05T23:40:46+00:00",
+      "text": "Blackhawks lines https://x.com/kalenalumpkins/status/2118488157868134712"
+    },
+    {
+      "sourceKey": "ccc",
+      "tweetId": "2118488621003207101",
+      "postKind": "quote",
+      "firstSeenAt": "2026-11-06T01:32:04.579959+00:00",
+      "createdAt": "2026-11-05T23:40:21+00:00",
+      "text": "Devils lines https://x.com/NJDevils/status/2118488355168026936"
+    },
+    {
+      "sourceKey": "ccc",
+      "tweetId": "2118488552229183725",
+      "postKind": "quote",
+      "firstSeenAt": "2026-11-06T01:32:04.579959+00:00",
+      "createdAt": "2026-11-05T23:40:05+00:00",
+      "text": "Hurricanes lines https://x.com/WaltRuff/status/2118488380271104350"
+    },
+    {
+      "sourceKey": "ccc",
+      "tweetId": "2118487989156511882",
+      "postKind": "quote",
+      "firstSeenAt": "2026-11-06T01:32:04.579959+00:00",
+      "createdAt": "2026-11-05T23:37:50+00:00",
+      "text": "Islanders lines https://x.com/AGrossNewsday/status/2118487589573255333"
+    },
+    {
+      "sourceKey": "ccc",
+      "tweetId": "2118487906117702040",
+      "postKind": "quote",
+      "firstSeenAt": "2026-11-06T01:32:04.579959+00:00",
+      "createdAt": "2026-11-05T23:37:31+00:00",
+      "text": "Canadiens lines\nconfirmed Canadiens Starting Goalie: Jakub Dobes https://x.com/JFChaumontLNH/status/2118487599769952520"
+    },
+    {
+      "sourceKey": "ccc",
+      "tweetId": "2118487781278425442",
+      "postKind": "quote",
+      "firstSeenAt": "2026-11-06T01:32:04.579959+00:00",
+      "createdAt": "2026-11-05T23:37:01+00:00",
+      "text": "Flyers lines\nconfirmed Flyers Starting Goalie: Joseph Woll https://x.com/ByJonBailey/status/2118487615758541240"
+    },
+    {
+      "sourceKey": "ccc",
+      "tweetId": "2118487621324382556",
+      "postKind": "quote",
+      "firstSeenAt": "2026-11-06T01:32:04.579959+00:00",
+      "createdAt": "2026-11-05T23:36:23+00:00",
+      "text": "Lightning lines https://x.com/BenjaminJReport/status/2118487196948955365"
+    },
+    {
+      "sourceKey": "ccc",
+      "tweetId": "2118487555373219998",
+      "postKind": "quote",
+      "firstSeenAt": "2026-11-06T01:32:04.579959+00:00",
+      "createdAt": "2026-11-05T23:36:07+00:00",
+      "text": "Rangers lines\nconfirmed Rangers Starting Goalie: Dylan Garand https://x.com/Peter_Baugh/status/2118487233669816477"
+    },
+    {
+      "sourceKey": "ccc",
+      "tweetId": "2118487340796850330",
+      "postKind": "quote",
+      "firstSeenAt": "2026-11-06T01:32:04.579959+00:00",
+      "createdAt": "2026-11-05T23:35:16+00:00",
+      "text": "Bruins lines https://x.com/NHLBruins/status/2118487273482113032"
+    },
+    {
+      "sourceKey": "gamedaylines",
+      "tweetId": "2118507405969621195",
+      "postKind": "repost",
+      "firstSeenAt": "2026-11-06T01:32:05.302457+00:00",
+      "createdAt": "2026-11-06T00:55:00+00:00",
+      "text": "RT @AnaheimDucks: Here's who we fly with. \n\n#FlyTogether | https://t.co/LPx9UkOCKm https://t.co/qjXAX7eXBb"
+    },
+    {
+      "sourceKey": "gamedaylines",
+      "tweetId": "2118505049177665884",
+      "postKind": "repost",
+      "firstSeenAt": "2026-11-06T01:32:05.302457+00:00",
+      "createdAt": "2026-11-06T00:45:38+00:00",
+      "text": "RT @MarkLazerus: Bedard getting a spin with Frondell and Mangiapane late in the first."
+    },
+    {
+      "sourceKey": "gamedaylines",
+      "tweetId": "2118497988960293124",
+      "postKind": "repost",
+      "firstSeenAt": "2026-11-06T01:32:05.302457+00:00",
+      "createdAt": "2026-11-06T00:17:35+00:00",
+      "text": "RT @DannyWebster21: Connelly on PP2 with Bowman and Karlsson. https://x.com/DannyWebster21/status/2118497282480025978"
+    },
+    {
+      "sourceKey": "gamedaylines",
+      "tweetId": "2118498304611000440",
+      "postKind": "repost",
+      "firstSeenAt": "2026-11-06T01:32:05.302457+00:00",
+      "createdAt": "2026-11-06T00:18:50+00:00",
+      "text": "RT @RyanHockeyGuy: Olofsson right back to the top power play unit. It makes sense."
+    },
+    {
+      "sourceKey": "gamedaylines",
+      "tweetId": "2118493663793955107",
+      "postKind": "repost",
+      "firstSeenAt": "2026-11-06T01:32:05.302457+00:00",
+      "createdAt": "2026-11-06T00:00:23+00:00",
+      "text": "RT @EdmontonOilers: Matt Tomkins will start between the pipes, while Brett Epp will serve as the emergency backup goaltender as the #Oilers take on the Ducks. \n\n@PlayAlbertaCA  | #LetsGoOilers https:/"
+    },
+    {
+      "sourceKey": "gamedaylines",
+      "tweetId": "2118493606462063059",
+      "postKind": "repost",
+      "firstSeenAt": "2026-11-06T01:32:05.302457+00:00",
+      "createdAt": "2026-11-06T00:00:10+00:00",
+      "text": "RT @DannyWebster21: VGK lines and pairs in Detroit:\n\nHowden-Eichel-Stone\nBarbashev-Karlsson-Marner\nConnelly-Hertl-Olofsson\nBowman-Dowd-Gatcomb\n\nMcNabb-Theodore\nLauzon-Andersson\nHanifin-Coghlan\n\nHart"
+    },
+    {
+      "sourceKey": "gamedaylines",
+      "tweetId": "2118492993233797139",
+      "postKind": "repost",
+      "firstSeenAt": "2026-11-06T01:32:05.302457+00:00",
+      "createdAt": "2026-11-05T23:57:43+00:00",
+      "text": "RT @jprutherford: #stlblues projected lineup at New Jersey:\n\nHolloway-Thomas-Snuggerud\nMcMichael-McTavish-Kaskimaki\nNeighbours-Dvorsky-Buchnevich\nToropchenko-Suter-Johnston\n\nBroberg-Carlo\nBarron-Paray"
+    },
+    {
+      "sourceKey": "gamedaylines",
+      "tweetId": "2118487273482113032",
+      "postKind": "repost",
+      "firstSeenAt": "2026-11-06T01:32:05.302457+00:00",
+      "createdAt": "2026-11-05T23:35:00+00:00",
+      "text": "RT @NHLBruins: A look at tonight's lineup ⤵️ https://t.co/PquX51fuAy"
+    },
+    {
+      "sourceKey": "gamedaylines",
+      "tweetId": "2118488380271104350",
+      "postKind": "repost",
+      "firstSeenAt": "2026-11-06T01:32:05.302457+00:00",
+      "createdAt": "2026-11-05T23:39:24+00:00",
+      "text": "RT @WaltRuff: Taylor Hall appears set to return to the #Canes' lineup for the first time in 23 days @ NYI —\n\nCarrier - Aho - Svechnikov\nEhlers - Stankoven - Blake\nHall - Jankowski - Jarvis\nRobinson - "
+    },
+    {
+      "sourceKey": "gamedaylines",
+      "tweetId": "2118488894463467873",
+      "postKind": "repost",
+      "firstSeenAt": "2026-11-06T01:32:05.302457+00:00",
+      "createdAt": "2026-11-05T23:41:26+00:00",
+      "text": "RT @BatchHockey: Projected #Canucks lines vs. @NHLJets \n\nDeBrusk. EP40. Boeser.\nÖhgren. Rossi. Lekkerimäki.\nO’Connor. Quillan. Karlsson.\nCotter. Sasson. Gallagher.\n\nEP25. Hronek.\nBuium. Brisebois.\nOle"
+    },
+    {
+      "sourceKey": "gamedaylines",
+      "tweetId": "2118488861277905195",
+      "postKind": "repost",
+      "firstSeenAt": "2026-11-06T01:32:05.302457+00:00",
+      "createdAt": "2026-11-05T23:41:18+00:00",
+      "text": "RT @AnsarKhanMLive: #RedWings wearing their Hometown Remix jerseys for the first time vs. Vegas. Lines in warmups:\nDeBrincat-Finnie-Arvidsson\nMBN-Copp-Raymond\nRasmussen-Compher-Danielson\nMazur-Dries-K"
+    },
+    {
+      "sourceKey": "gamedaylines",
+      "tweetId": "2118488355168026936",
+      "postKind": "repost",
+      "firstSeenAt": "2026-11-06T01:32:05.302457+00:00",
+      "createdAt": "2026-11-05T23:39:18+00:00",
+      "text": "RT @NJDevils: We’re not changing our tune. https://t.co/3L5XPxHa6s"
+    },
+    {
+      "sourceKey": "gamedaylines",
+      "tweetId": "2118487865680142800",
+      "postKind": "repost",
+      "firstSeenAt": "2026-11-06T01:32:05.302457+00:00",
+      "createdAt": "2026-11-05T23:37:21+00:00",
+      "text": "RT @penguins: Tonight's lineup.\n#LetsGoPens https://t.co/dl3PZOKbC2"
+    },
+    {
+      "sourceKey": "gamedaylines",
+      "tweetId": "2118487686445187500",
+      "postKind": "repost",
+      "firstSeenAt": "2026-11-06T01:32:05.302457+00:00",
+      "createdAt": "2026-11-05T23:36:38+00:00",
+      "text": "RT @BenPopeCST: Blackhawks lines in warmups at Lightning:\n\nKantserov-Bedard-Bertuzzi\nMangiapane-Frondell-Teravainen\nMoore-Nazar-Donato\nSmith-Greene-Boucher\n\nVlasic-Cole\nKaiser-Levshunov\nDel Mastro-Rin"
+    },
+    {
+      "sourceKey": "gamedaylines",
+      "tweetId": "2118487599769952520",
+      "postKind": "repost",
+      "firstSeenAt": "2026-11-06T01:32:05.302457+00:00",
+      "createdAt": "2026-11-05T23:36:18+00:00",
+      "text": "RT @JFChaumontLNH: La formation du CH pour l'échauffement avant le match contre le Mammoth. \n\nCaufield-Suzuki-Slafkovsky\nBolduc-Danault-Texier\nKreider-Evans-Anderson\nNewhook-Kapanen-Dach\n\nGuhle-Carrie"
+    },
+    {
+      "sourceKey": "gamedaylines",
+      "tweetId": "2118487561979011554",
+      "postKind": "repost",
+      "firstSeenAt": "2026-11-06T01:32:05.302457+00:00",
+      "createdAt": "2026-11-05T23:36:09+00:00",
+      "text": "RT @stefen_rosner: #Isles lines vs. #CarolinaCulture @bullsmithsli: \n\nHolmstrom-Horvat-Palmieri\nHeineman-Schenn-Eklund\nPalat-Pageau-Duclair\nMacLean-Cizikas-Chaffee\n\nStanley-Schaefer\nPelech-DeAngelo\nKe"
+    },
+    {
+      "sourceKey": "gamedaylines",
+      "tweetId": "2118487491044864418",
+      "postKind": "repost",
+      "firstSeenAt": "2026-11-06T01:32:05.302457+00:00",
+      "createdAt": "2026-11-05T23:35:52+00:00",
+      "text": "RT @SGNolan: #Flyers warmup lines vs. NYR:\n\nZegras - Dvorak - Konecny\nMartone - Knuble - Tippett\nFoerster - Cates - Michkov\nBarkey - Couturier - Acciari\n\nSanheim - Drysdale\nYork - Bonk \nSeeler - Benoi"
+    },
+    {
+      "sourceKey": "gamedaylines",
+      "tweetId": "2118487342189252972",
+      "postKind": "repost",
+      "firstSeenAt": "2026-11-06T01:32:05.302457+00:00",
+      "createdAt": "2026-11-05T23:35:16+00:00",
+      "text": "RT @MitchellClinton: #NHLJets line rushes (no Salomonsson, Rosen in, Bauer moves back to defence):\n\nConnor-Scheifele-Vilardi\nPerfetti-Yager-Mercer\nIafallo-Lowry-Bjorck\nKoepke-Barron-Rosen\n\nSamberg-Pio"
+    },
+    {
+      "sourceKey": "gamedaylines",
+      "tweetId": "2118487196948955365",
+      "postKind": "repost",
+      "firstSeenAt": "2026-11-06T01:32:05.302457+00:00",
+      "createdAt": "2026-11-05T23:34:41+00:00",
+      "text": "RT @BenjaminJReport: Tonight’s #GoBolts warmup lines as 28 returns:\n\nGuentzel-Point-Kucherov\nHagel-Cirelli-Goncalves\nMikheyev-Girgensons-Holmberg\nViel-Geekie\n\nMoser-Crozier\nMcDonagh-Cernak\nHedman-Carl"
+    },
+    {
+      "sourceKey": "gamedaylines",
+      "tweetId": "2118498192551460951",
+      "postKind": "repost",
+      "firstSeenAt": "2026-11-06T01:32:05.302457+00:00",
+      "createdAt": "2026-11-06T00:18:23+00:00",
+      "text": "RT @Diandra_loux: The #GoBolts are getting a power play \n\nPP1: Point, D'Astous, Point, Kucherov, Guentzel & Calson (left)"
+    },
+    {
+      "sourceKey": "gamedaynewsnhl",
+      "tweetId": "2118513130624225668",
+      "postKind": "repost",
+      "firstSeenAt": "2026-11-06T01:32:05.981826+00:00",
+      "createdAt": "2026-11-06T01:17:45+00:00",
+      "text": "RT @BagleyKSLsports: Nate Schmidt will not return to tonight’s game (upper body)."
+    },
+    {
+      "sourceKey": "gamedaynewsnhl",
+      "tweetId": "2118493663793955107",
+      "postKind": "repost",
+      "firstSeenAt": "2026-11-06T01:32:05.981826+00:00",
+      "createdAt": "2026-11-06T00:00:23+00:00",
+      "text": "RT @EdmontonOilers: Matt Tomkins will start between the pipes, while Brett Epp will serve as the emergency backup goaltender as the #Oilers take on the Ducks. \n\n@PlayAlbertaCA  | #LetsGoOilers https:/"
+    },
+    {
+      "sourceKey": "gamedaynewsnhl",
+      "tweetId": "2118422837866442789",
+      "postKind": "repost",
+      "firstSeenAt": "2026-11-06T01:32:05.981826+00:00",
+      "createdAt": "2026-11-05T19:18:57+00:00",
+      "text": "RT @vzmercogliano: A few housekeeping items from #NYR:\n\n- James Reimer is being placed on waivers but still back up tonight\n\n- Joonas Korpisalo will take over as the second goalie on the roster starti"
+    },
+    {
+      "sourceKey": "gamedaynewsnhl",
+      "tweetId": "2118475992247447555",
+      "postKind": "repost",
+      "firstSeenAt": "2026-11-06T01:32:05.981826+00:00",
+      "createdAt": "2026-11-05T22:50:10+00:00",
+      "text": "RT @GlobeKPD: DiPietro in net.\nKuraly in for *Poitras, 4C.\nBrunet in for Aspirot at left D.\nBob's your uncle.\n\n*Poitras, on trip, had surgery Friday to adjust his Bowman-broken nose."
+    },
+    {
+      "sourceKey": "gamedaynewsnhl",
+      "tweetId": "2118491001014603852",
+      "postKind": "repost",
+      "firstSeenAt": "2026-11-06T01:32:05.981826+00:00",
+      "createdAt": "2026-11-05T23:49:48+00:00",
+      "text": "RT @BrianHedger: The Jackets are scratching Gudbranson for the second straight game, so Voronkov heads back into the lineup after being scratched for the past three."
+    },
+    {
+      "sourceKey": "gamedaynewsnhl",
+      "tweetId": "2118487790165876797",
+      "postKind": "repost",
+      "firstSeenAt": "2026-11-06T01:32:05.981826+00:00",
+      "createdAt": "2026-11-05T23:37:03+00:00",
+      "text": "RT @AGrossNewsday: For Hurricanes, Taylor Hall, who has missed nine games with an upper-body issue, participated in line rushes."
+    },
+    {
+      "sourceKey": "gamedaynewsnhl",
+      "tweetId": "2118486634580603268",
+      "postKind": "repost",
+      "firstSeenAt": "2026-11-06T01:32:05.981826+00:00",
+      "createdAt": "2026-11-05T23:32:27+00:00",
+      "text": "RT @Gabby_Shirley_: Girgensons has taken the ice for warmups after missing the past 3 games with a lower body injury"
+    },
+    {
+      "sourceKey": "gamedaynewsnhl",
+      "tweetId": "2118486347694711185",
+      "postKind": "repost",
+      "firstSeenAt": "2026-11-06T01:32:05.981826+00:00",
+      "createdAt": "2026-11-05T23:31:19+00:00",
+      "text": "RT @WiebesWorld: I don’t see D Elias Salomonsson as the #NHLJets come out for the pre-game warmup. Sounds like it’s an illness for Salomonsson. I do see Isak Rosen out there, so the Jets are likely to"
+    },
+    {
+      "sourceKey": "gamedaynewsnhl",
+      "tweetId": "2118409281942995327",
+      "postKind": "repost",
+      "firstSeenAt": "2026-11-06T01:32:05.981826+00:00",
+      "createdAt": "2026-11-05T18:25:05+00:00",
+      "text": "RT @SteinbergYYC: Calgary has activated Devin Cooley off injured reserve.\n\nCooley is ready to return after missing four games with a lower body injury. Arsenii Sergeev was returned to the AHL Wrangler"
+    },
+    {
+      "sourceKey": "gamedaynewsnhl",
+      "tweetId": "2118463954817368573",
+      "postKind": "repost",
+      "firstSeenAt": "2026-11-06T01:32:05.981826+00:00",
+      "createdAt": "2026-11-05T22:02:20+00:00",
+      "text": "RT @AGrossNewsday: #Isles sign D Ben Hutton to a one-year deal off his PTO."
+    },
+    {
+      "sourceKey": "gamedaynewsnhl",
+      "tweetId": "2118459255691030985",
+      "postKind": "repost",
+      "firstSeenAt": "2026-11-06T01:32:05.981826+00:00",
+      "createdAt": "2026-11-05T21:43:40+00:00",
+      "text": "RT @BComptonNHL: Hurricanes coach Rod Brind’Amour “hopeful” Taylor Hall will play tonight. Has missed nine games. #Canes #Isles"
+    },
+    {
+      "sourceKey": "gamedaynewsnhl",
+      "tweetId": "2118431653249135037",
+      "postKind": "repost",
+      "firstSeenAt": "2026-11-06T01:32:05.981826+00:00",
+      "createdAt": "2026-11-05T19:53:59+00:00",
+      "text": "RT @GlobeKPD: Bruins opted out of their morning skate here in PIT.  Marco Sturm will apprisem edia of linuep changes, including 51Poitras availability, roughly 90 mins prior to 7:08 puck drop."
+    },
+    {
+      "sourceKey": "gamedaynewsnhl",
+      "tweetId": "2118419618494922922",
+      "postKind": "repost",
+      "firstSeenAt": "2026-11-06T01:32:05.981826+00:00",
+      "createdAt": "2026-11-05T19:06:10+00:00",
+      "text": "RT @Aportzline: #CBJ Danton Heinen and Emil Andrae both cleared waivers."
+    },
+    {
+      "sourceKey": "gamedaynewsnhl",
+      "tweetId": "2118420001304805498",
+      "postKind": "repost",
+      "firstSeenAt": "2026-11-06T01:32:05.981826+00:00",
+      "createdAt": "2026-11-05T19:07:41+00:00",
+      "text": "RT @SWhyno: #NYR put goaltender James Reimer on waivers."
+    },
+    {
+      "sourceKey": "gamedaynewsnhl",
+      "tweetId": "2118420643251446074",
+      "postKind": "repost",
+      "firstSeenAt": "2026-11-06T01:32:05.981826+00:00",
+      "createdAt": "2026-11-05T19:10:14+00:00",
+      "text": "RT @DannyWebster21: Ryan Craig tells those in Detroit Victor Olofsson will return to the lineup tonight. Will skate with Hertl and Connelly."
+    },
+    {
+      "sourceKey": "gamedaynewsnhl",
+      "tweetId": "2118401644471726422",
+      "postKind": "repost",
+      "firstSeenAt": "2026-11-06T01:32:05.981826+00:00",
+      "createdAt": "2026-11-05T17:54:44+00:00",
+      "text": "RT @JoeSmithNHL: Brock Faber is expected to join #mnwild on next week’s trip (along with Foligno’s and Spurgeon and Gustavsson). \n\nFaber return date a “moving target.” Cleared to play by docs. Just a "
+    },
+    {
+      "sourceKey": "gamedaynewsnhl",
+      "tweetId": "2118400270497697917",
+      "postKind": "repost",
+      "firstSeenAt": "2026-11-06T01:32:05.981826+00:00",
+      "createdAt": "2026-11-05T17:49:17+00:00",
+      "text": "RT @JoeSmithNHL: Hynes said Spurgeon, Faber won’t play this weekend. They’ll see on Foligno’s"
+    },
+    {
+      "sourceKey": "gamedaynewsnhl",
+      "tweetId": "2118399378931212621",
+      "postKind": "repost",
+      "firstSeenAt": "2026-11-06T01:32:05.981826+00:00",
+      "createdAt": "2026-11-05T17:45:44+00:00",
+      "text": "RT @JoeSmithNHL: Eriksson Ek was just maintenance day. He will play tomorrow"
+    },
+    {
+      "sourceKey": "gamedaynewsnhl",
+      "tweetId": "2118399294898110749",
+      "postKind": "repost",
+      "firstSeenAt": "2026-11-06T01:32:05.981826+00:00",
+      "createdAt": "2026-11-05T17:45:24+00:00",
+      "text": "RT @jprutherford: Monty on Kaskimaki: \"We're looking for some new offense, maybe a spark. Maybe Kaskimaki is a good fit with McT and McMichael. (We're putting) a known defensive player on that line - "
+    },
+    {
+      "sourceKey": "gamedaynewsnhl",
+      "tweetId": "2118510682585158001",
+      "postKind": "repost",
+      "firstSeenAt": "2026-11-06T01:32:05.981826+00:00",
+      "createdAt": "2026-11-06T01:08:01+00:00",
+      "text": "RT @amandacstein: Timo Meier is going to get 2, 5 and 10 for that. https://x.com/amandacstein/status/2118510446219313394"
+    },
+    {
+      "sourceKey": "gamedaygoalies",
+      "tweetId": "2118502417490907295",
+      "postKind": "repost",
+      "firstSeenAt": "2026-11-06T01:32:06.830314+00:00",
+      "createdAt": "2026-11-06T00:35:10+00:00",
+      "text": "RT @ZachCav: Laurent Brossoit confirmed as the Anaheim Ducks starting goalie tonight in Edmonton, per @AlexisDownie_ on @DucksStream.\n\n@SportingTrib | #FlyTogether"
+    },
+    {
+      "sourceKey": "gamedaygoalies",
+      "tweetId": "2118486124293431434",
+      "postKind": "repost",
+      "firstSeenAt": "2026-11-06T01:32:06.830314+00:00",
+      "createdAt": "2026-11-05T23:30:26+00:00",
+      "text": "RT @CanucksInsider: Leevi Meriläinen skates out first in Winnipeg, he is your starting goaltender against the Jets."
+    },
+    {
+      "sourceKey": "gamedaygoalies",
+      "tweetId": "2118486641602109837",
+      "postKind": "repost",
+      "firstSeenAt": "2026-11-06T01:32:06.830314+00:00",
+      "createdAt": "2026-11-05T23:32:29+00:00",
+      "text": "RT @DannyWebster21: Carter Hart leads the Golden Knights out for warmups."
+    },
+    {
+      "sourceKey": "gamedaygoalies",
+      "tweetId": "2118424067653128297",
+      "postKind": "repost",
+      "firstSeenAt": "2026-11-06T01:32:06.830314+00:00",
+      "createdAt": "2026-11-05T19:23:50+00:00",
+      "text": "RT @ZachCav: Per https://t.co/vEEh6cvPZu in Edmonton, “Ducks coach Joel Quenneville said there will be no lineup changes from their last game.”\n\nExpect Laurent Brossoit to start his third straight gam"
+    },
+    {
+      "sourceKey": "gamedaygoalies",
+      "tweetId": "2118486186863763666",
+      "postKind": "repost",
+      "firstSeenAt": "2026-11-06T01:32:06.830314+00:00",
+      "createdAt": "2026-11-05T23:30:41+00:00",
+      "text": "RT @kalenalumpkins: Arvid Söderblom will start for the Hawks tonight"
+    },
+    {
+      "sourceKey": "gamedaygoalies",
+      "tweetId": "2118486426727911569",
+      "postKind": "repost",
+      "firstSeenAt": "2026-11-06T01:32:06.830314+00:00",
+      "createdAt": "2026-11-05T23:31:38+00:00",
+      "text": "RT @MinkePxP: Cam Talbot leads the #CBJ out on the ice, and opposing him is Casey DeSmith for the #TexasHockey"
+    },
+    {
+      "sourceKey": "gamedaygoalies",
+      "tweetId": "2118485758046876054",
+      "postKind": "repost",
+      "firstSeenAt": "2026-11-06T01:32:06.830314+00:00",
+      "createdAt": "2026-11-05T23:28:58+00:00",
+      "text": "RT @CatherineBogart: Sebastian Cossa leads Utah out for warmups in Montréal. #TusksUp"
+    },
+    {
+      "sourceKey": "gamedaygoalies",
+      "tweetId": "2118485762316640271",
+      "postKind": "repost",
+      "firstSeenAt": "2026-11-06T01:32:06.830314+00:00",
+      "createdAt": "2026-11-05T23:28:59+00:00",
+      "text": "RT @JamesNicholsNHL: Hellebuyck vs. Binnington\n\nWarmups underway.\n\n#NJDevils #STLBlues"
+    },
+    {
+      "sourceKey": "gamedaygoalies",
+      "tweetId": "2118485777134797289",
+      "postKind": "repost",
+      "firstSeenAt": "2026-11-06T01:32:06.830314+00:00",
+      "createdAt": "2026-11-05T23:29:03+00:00",
+      "text": "RT @Gabby_Shirley_: Vasilevskiy is the #Bolts starting goaltender tonight"
+    },
+    {
+      "sourceKey": "gamedaygoalies",
+      "tweetId": "2118485785649287644",
+      "postKind": "repost",
+      "firstSeenAt": "2026-11-06T01:32:06.830314+00:00",
+      "createdAt": "2026-11-05T23:29:05+00:00",
+      "text": "RT @ethan_sears: Semyon Varlamov leads the Islanders out for warmups against Carolina. Brandon Bussi for the Canes."
+    },
+    {
+      "sourceKey": "gamedaygoalies",
+      "tweetId": "2118459106117730305",
+      "postKind": "repost",
+      "firstSeenAt": "2026-11-06T01:32:06.830314+00:00",
+      "createdAt": "2026-11-05T21:43:04+00:00",
+      "text": "RT @stefen_rosner: LI native Brandon Bussi starts for #CarolinaCulture  tonight vs. #Isles Semyon Varlamov."
+    },
+    {
+      "sourceKey": "gamedaygoalies",
+      "tweetId": "2118377918787436560",
+      "postKind": "quote",
+      "firstSeenAt": "2026-11-06T01:32:06.830314+00:00",
+      "createdAt": "2026-11-05T16:20:28+00:00",
+      "text": "MTL: Jakub Dobes is starting today. https://x.com/PFrioletRDS/status/2118376914947821927"
+    },
+    {
+      "sourceKey": "gamedaygoalies",
+      "tweetId": "2118398306254721088",
+      "postKind": "repost",
+      "firstSeenAt": "2026-11-06T01:32:06.830314+00:00",
+      "createdAt": "2026-11-05T17:41:28+00:00",
+      "text": "RT @jessemontano: Looks like Blackwood will get the start tonight for the Avs with Nashville in town"
+    },
+    {
+      "sourceKey": "gamedaygoalies",
+      "tweetId": "2118394104585547996",
+      "postKind": "repost",
+      "firstSeenAt": "2026-11-06T01:32:06.830314+00:00",
+      "createdAt": "2026-11-05T17:24:47+00:00",
+      "text": "RT @MikeHeika: DeSmith in goal\n\nHeiskanen not ready\n\nTaylor in\n\nSteel out for personal reasons. Blackwell in\n\nKiviranta moves to Johnston line."
+    },
+    {
+      "sourceKey": "gamedaygoalies",
+      "tweetId": "2118391910721073633",
+      "postKind": "repost",
+      "firstSeenAt": "2026-11-06T01:32:06.830314+00:00",
+      "createdAt": "2026-11-05T17:16:03+00:00",
+      "text": "RT @jprutherford: Per Monty:\n\n— Parayko in for Lindstein tonight\n— Binnington in net"
+    },
+    {
+      "sourceKey": "gamedaygoalies",
+      "tweetId": "2118380407049564302",
+      "postKind": "repost",
+      "firstSeenAt": "2026-11-06T01:32:06.830314+00:00",
+      "createdAt": "2026-11-05T16:30:21+00:00",
+      "text": "RT @JHallNBCS: Joseph Woll first goalie off the ice, so looks like he’ll be in net tonight for Flyers."
+    },
+    {
+      "sourceKey": "gamedaygoalies",
+      "tweetId": "2118376823834751087",
+      "postKind": "repost",
+      "firstSeenAt": "2026-11-06T01:32:06.830314+00:00",
+      "createdAt": "2026-11-05T16:16:06+00:00",
+      "text": "RT @Aportzline: #CBJ Cam Talbot starts vs. #TexasHockey."
+    },
+    {
+      "sourceKey": "gamedaygoalies",
+      "tweetId": "2118486319932248574",
+      "postKind": "repost",
+      "firstSeenAt": "2026-11-06T01:32:06.830314+00:00",
+      "createdAt": "2026-11-05T23:31:12+00:00",
+      "text": "RT @JG_PxP: Arturs Silovs & Michael DiPietro lead the @penguins and @NHLBruins onto the ice for warmup. \n\n⏰: 7P\n📍: @PPGPaintsArena \n📺: @SNPittsburgh \n📱/💻: SNP360 https://t.co/41k4oehc8L"
+    },
+    {
+      "sourceKey": "gamedaygoalies",
+      "tweetId": "2118381304001843501",
+      "postKind": "repost",
+      "firstSeenAt": "2026-11-06T01:32:06.830314+00:00",
+      "createdAt": "2026-11-05T16:33:55+00:00",
+      "text": "RT @EdmontonJack: Not a bad week for Matt Tomkins—a win at the World’s Most Famous Arena Sunday night, starting in his hometown four days later. \n\nWe’ll have it on @Sportsnet tonight w/@LouDeBrusk & @"
+    },
+    {
+      "sourceKey": "gamedaygoalies",
+      "tweetId": "2118475992247447555",
+      "postKind": "repost",
+      "firstSeenAt": "2026-11-06T01:32:06.830314+00:00",
+      "createdAt": "2026-11-05T22:50:10+00:00",
+      "text": "RT @GlobeKPD: DiPietro in net.\nKuraly in for *Poitras, 4C.\nBrunet in for Aspirot at left D.\nBob's your uncle.\n\n*Poitras, on trip, had surgery Friday to adjust his Bowman-broken nose."
+    },
+    {
+      "sourceKey": "gamedaygoalies",
+      "tweetId": "2118766801584865596",
+      "postKind": "repost",
+      "firstSeenAt": "2026-11-06T18:14:17.064852+00:00",
+      "createdAt": "2026-11-06T18:05:44+00:00",
+      "text": "RT @Sheng_Peng: Askarov starts tonight against Wild.\n\nFun match-up! 2020 No. 11 pick Askarov vs. 2021 No. 20 Wallstedt"
+    }
+  ],
+  "unpairedIfttt": [
+    {
+      "sourceKey": "ccc",
+      "tweetId": "2118526534642553031",
+      "receivedAt": "2026-11-06T02:15:27.859031+00:00",
+      "text": "@CurtisAcker Ah well I tried!"
+    }
+  ]
+}
