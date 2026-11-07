@@ -62,7 +62,7 @@ export const POSITION_MISMATCH_PENALTY = 40;
 
 /** Score bands: at or above HIGH is "likely correct"; below MID is red. Amber is in between. */
 export const CONFIDENCE_BANDS = { high: 85, mid: 60 } as const;
-export const TRAINER_CONFIDENCE_VERSION = "trainer-2026-11-06.3";
+export const TRAINER_CONFIDENCE_VERSION = "trainer-2026-11-06.4";
 
 export type SlotRole = "forward" | "defense" | "goalie";
 
@@ -118,6 +118,11 @@ export type TrainerParse = {
   imageOnly: boolean;
   /** Names the interpretation path could not resolve (production runs that path). */
   unresolvedCount: number;
+  /**
+   * A lineup's trailing one-name lines after the skater lines ("UPL", then "Ellis"): the goalies as the tweet lists
+   * them, starter first, with the player each matched (null when nobody did).
+   */
+  goalieLines: Array<{ raw: string; playerId: number | null }>;
   publishedAtKnown: boolean;
   /** Answer-key v2 fields, as the trainer reads them from the tweet (see TrainerExtraction). */
   context: TrainerContext | null;
@@ -391,6 +396,66 @@ function orderedPowerPlayUnits(metadata: Record<string, unknown> | null | undefi
     .map((unit) => unit.names.slice(0, 5));
 }
 
+// Words that head a list line rather than name a player.
+const LIST_STOPWORDS = new Set([
+  "scratches", "scratched", "scratch", "goalies", "goalie", "injured", "out", "healthy", "tbd", "forwards", "defense",
+  "defence", "lines", "pairs", "pp", "pp1", "pp2", "pk", "pk1", "pk2", "f", "d", "g", "ir", "ltir", "rt"
+]);
+const NAME_WORD = /^\p{Lu}[\p{L}'’.]*$/u;
+
+/** A list line's name tokens ("Benson-Krebs-Thompson", "UPL"), or null when the line isn't a list of names. */
+function listLineTokens(line: string): string[] | null {
+  const cleaned = line.replace(/^RT\s+@\w+:\s*/i, "").replace(/https?:\/\/\S+/g, "").trim();
+  if (!cleaned || cleaned.includes(":") || cleaned.startsWith("#")) return null;
+  const tokens = cleaned.split(/\s*[-–—/,]\s*/).map((token) => token.trim()).filter(Boolean);
+  const isName = (token: string) => {
+    const words = token.split(/\s+/);
+    return words.length <= 3 && words.every((word) => NAME_WORD.test(word) && !LIST_STOPWORDS.has(word.toLowerCase()));
+  };
+  return tokens.length && tokens.every(isName) ? tokens : null;
+}
+
+/**
+ * Names a lineup lists that the parser never read: every list-line token that matches no player it saw, e.g. a
+ * nickname like "UPL". Each comes back with whether it sits in the goalie block (the one-name lines after the last
+ * skater line), so a goalie-scoped alias can apply to it.
+ */
+function listedNames(text: string, teams: TeamDirectoryEntry[]): { tokens: Array<{ raw: string; goalie: boolean }>; goalieTokens: string[] } {
+  const lines = text.split("\n").map(listLineTokens);
+  let lastSkaterLine = -1;
+  lines.forEach((tokens, index) => {
+    if (tokens && tokens.length >= 2) lastSkaterLine = index;
+  });
+  const teamWords = new Set(
+    teams.flatMap((team) => [team.name, team.shortName, team.location, team.abbreviation]).filter((word): word is string => Boolean(word)).map(normalizeIdentityName)
+  );
+  const goalieTokens: string[] = [];
+  const tokens: Array<{ raw: string; goalie: boolean }> = [];
+  let inGoalieBlock = lastSkaterLine >= 0;
+  lines.forEach((lineTokens, index) => {
+    // The goalie block ends at the first line after it that isn't a one-name line (blank lines don't end it).
+    if (index > lastSkaterLine && !(lineTokens && lineTokens.length === 1) && text.split("\n")[index]!.trim()) inGoalieBlock = false;
+    for (const raw of lineTokens ?? []) {
+      if (teamWords.has(normalizeIdentityName(raw))) continue;
+      const goalie = inGoalieBlock && index > lastSkaterLine && lineTokens!.length === 1;
+      if (goalie) goalieTokens.push(raw);
+      tokens.push({ raw, goalie });
+    }
+  });
+  return { tokens, goalieTokens };
+}
+
+/** Whether a token names a player already seen: its words appear in a seen name, or a seen name appears in it. */
+function nameSeen(raw: string, seen: TrainerPlayerMatch[]): boolean {
+  const token = ` ${normalizeIdentityName(raw)} `;
+  return seen.some((match) =>
+    [match.raw, match.fullName ?? ""].some((name) => {
+      const known = normalizeIdentityName(name);
+      return Boolean(known) && (` ${known} `.includes(token) || token.includes(` ${known} `));
+    })
+  );
+}
+
 function dedupePlayers(matches: TrainerPlayerMatch[]): TrainerPlayerMatch[] {
   const seen = new Map<string, TrainerPlayerMatch>();
   for (const match of matches) {
@@ -526,6 +591,18 @@ export function scoreTrainerConfidence(parse: Omit<TrainerParse, "confidence">):
     );
     const unplaced = parse.players.filter((player) => player.playerId != null && !placed.has(player.playerId)).length;
     if (unplaced) penalize(`${unplaced} named player${unplaced === 1 ? "" : "s"} not placed`, -Math.min(25, unplaced * 5));
+  }
+
+  // The goalie block: a goalie line nobody matched ("UPL"), or a second listed goalie with no backup placed.
+  if (isLineup && !isPowerPlay) {
+    const goalieLines = parse.goalieLines ?? [];
+    const unmatchedGoalies = goalieLines.filter((line) => line.playerId == null).map((line) => line.raw);
+    if (unmatchedGoalies.length) {
+      penalize(`Goalie line not matched (${unmatchedGoalies.join(", ")})`, -10 * unmatchedGoalies.length);
+    }
+    if (goalieLines.length >= 2 && parse.goalies.length < 2) {
+      penalize(`Text lists ${goalieLines.length} goalies, ${parse.goalies.length} placed`, -10);
+    }
   }
 
   const matched = parse.players.filter((player) => player.playerId != null);
@@ -709,7 +786,19 @@ export function parseTweetForTrainer(args: {
   });
   const unmatched = (source.unmatchedNames ?? []).map((raw) => matchFromIdentity(raw, roster));
   const slotPlayers = [...forwards, ...defensePairs, ...powerPlay].filter((line) => line.kept).flatMap((line) => line.slots);
-  const players = dedupePlayers([...slotPlayers, ...goalies, ...extras, ...mentioned, ...unmatched, ...unresolvedNames]);
+  const seenSoFar = [...slotPlayers, ...goalies, ...extras, ...mentioned, ...unmatched, ...unresolvedNames];
+  // Lineups list names one per spot; any listed name the parser never read is surfaced so it can be fixed.
+  const lineupLike = !isImageOnlyTweet(text, args.input.hasMedia) && (forwards.length > 0 || defensePairs.length > 0);
+  const listed = lineupLike ? listedNames(text, args.teams) : { tokens: [], goalieTokens: [] };
+  const droppedSlots = [...forwards, ...defensePairs].filter((line) => !line.kept).flatMap((line) => line.slots);
+  const missed = listed.tokens
+    .filter((token) => !nameSeen(token.raw, [...seenSoFar, ...droppedSlots]))
+    .map((token) => matchFromIdentity(token.raw, roster, token.goalie ? "goalie" : null));
+  const players = dedupePlayers([...seenSoFar, ...missed]);
+  const goalieLines = listed.goalieTokens.map((raw) => {
+    const match = [...goalies, ...missed, ...seenSoFar].find((entry) => nameSeen(raw, [entry]));
+    return { raw, playerId: match?.playerId ?? null };
+  });
 
   const phraseHits = phraseHitsFor(text);
   const imageOnly = isImageOnlyTweet(text, args.input.hasMedia);
@@ -746,6 +835,7 @@ export function parseTweetForTrainer(args: {
     phraseHits,
     imageOnly,
     unresolvedCount: interpretationUnresolved.length,
+    goalieLines,
     publishedAtKnown: Boolean(args.input.publishedAt),
     context: readContext({ type, text, classification, interpretation }),
     scope: readScope({ type, subcategory, forwards, defensePairs, powerPlay, swaps: powerPlaySwaps }),

@@ -212,6 +212,8 @@ function SlotInput(props: {
   placing: string | null;
   onChange: (value: string) => void;
   onPlace: (name: string) => void;
+  /** Picks this spot's name up to move it; another spot then takes it (a filled spot swaps). */
+  onMove?: () => void;
 }) {
   const [over, setOver] = useState(false);
   const input = useRef<HTMLInputElement>(null);
@@ -243,7 +245,7 @@ function SlotInput(props: {
   ]
     .filter(Boolean)
     .join(" ");
-  return (
+  const field = (
     <PlayerCombobox
       inputRef={input}
       className={className}
@@ -282,6 +284,28 @@ function SlotInput(props: {
         }
       }}
     />
+  );
+  if (!props.onMove || !props.value.trim() || props.placing) return field;
+  return (
+    <>
+      {field}
+      <button
+        type="button"
+        draggable
+        className={styles.moveButton}
+        aria-label={`Move ${props.value}`}
+        title="Move to another spot (click, then the spot; or drag)"
+        onClick={props.onMove}
+        onDragStart={(event) => {
+          event.dataTransfer.setData(TRAY_TYPE, props.value);
+          event.dataTransfer.setData("text/plain", props.value);
+          event.dataTransfer.effectAllowed = "move";
+          props.onMove?.();
+        }}
+      >
+        ⇄
+      </button>
+    </>
   );
 }
 
@@ -361,6 +385,8 @@ export default function CorrectionEditor(props: {
     return startLayout === "players" ? [] : hidden.map((slot) => slot.name);
   });
   const [placing, setPlacing] = useState<string | null>(null);
+  // The spot a name was picked up from with Move, so dropping it on a filled spot swaps the two.
+  const [movingFrom, setMovingFrom] = useState<Target | null>(null);
   // Names resolved here: raw text -> the player's full name, so the tray and every spot follow the fix.
   const [renamed, setRenamed] = useState<Record<string, string>>({});
   const [notes, setNotes] = useState("");
@@ -458,7 +484,11 @@ export default function CorrectionEditor(props: {
   /** Puts a tray name in a spot. Whatever was there goes back to the tray; the name leaves any other spot. */
   function place(target: Target, name: string) {
     const previous = valueAt(target);
-    if (previous.trim() && key(previous) !== key(name)) setBumped((list) => [...list, previous]);
+    // Moved from a fixed spot (a line, pair, PP or goalie spot): the two swap. Otherwise the old name goes to the tray.
+    const from = movingFrom && key(valueAt(movingFrom)) === key(name) && ["forward", "pair", "pp", "goalie"].includes(movingFrom.kind) ? movingFrom : null;
+    const swapBack = Boolean(from) && previous.trim() !== "" && key(previous) !== key(name);
+    if (previous.trim() && key(previous) !== key(name) && !swapBack) setBumped((list) => [...list, previous]);
+    setMovingFrom(null);
     // A name can only sit in one spot.
     setForwards((rows) => rows.map((cells) => cells.map((cell) => (key(cell) === key(name) ? "" : cell))));
     setPairs((rows) => rows.map((cells) => cells.map((cell) => (key(cell) === key(name) ? "" : cell))));
@@ -467,6 +497,7 @@ export default function CorrectionEditor(props: {
     for (const setList of [setExtraForwards, setExtraDefensemen, setExtras]) setList((list) => list.filter((cell) => key(cell) !== key(name)));
     setSwaps((drafts) => drafts.map((draft) => ({ in: draft.in.filter((cell) => key(cell) !== key(name)), out: draft.out.filter((cell) => key(cell) !== key(name)) })));
     write(target, name);
+    if (swapBack && from) write(from, previous);
     setPlacing(null);
   }
 
@@ -637,6 +668,10 @@ export default function CorrectionEditor(props: {
       placing={placing}
       onChange={(next) => write(target, next)}
       onPlace={(name) => place(target, name)}
+      onMove={() => {
+        setPlacing(valueAt(target));
+        setMovingFrom(target);
+      }}
     />
   );
 

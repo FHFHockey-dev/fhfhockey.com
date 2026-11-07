@@ -1263,3 +1263,35 @@
     }
   }
 }
+
+// An empty card spot with its roster search, or the search field itself.
+.spotSearch {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: v.$space-xs v.$space-sm;
+
+  .slotInput {
+    flex: 0 1 220px;
+  }
+}
+
+// Picks a filled editor spot's name up to move or swap it.
+.moveButton {
+  @include focus-visible;
+  flex: 0 0 auto;
+  min-width: 28px;
+  min-height: 36px;
+  margin-left: v.$space-xs;
+  border: 1px solid v.$border-primary;
+  border-radius: v.$radius-control;
+  background: transparent;
+  color: v.$text-secondary;
+  font: inherit;
+  cursor: grab;
+
+  &:hover {
+    color: v.$color-white;
+    border-color: v.$primary-color;
+  }
+}

@@ -122,6 +122,18 @@ describe("parseTweetForTrainer", () => {
     expect(compareExtraction(extraction, { ...extraction, powerPlay: [extraction.powerPlay[0]!] }).correct).toBe(false);
   });
 
+  it("surfaces a listed name the parser never read, and docks a goalie block it didn't fill", () => {
+    // "Soup" is a nickname nobody matches; "Skinner" is the backup the tweet lists second.
+    const result = parse(["#Oilers warmup lines", "Hyman - McDavid - Draisaitl", "Perry - Henrique - Arvidsson", "", "Nurse - Bouchard", "Ekholm - Kulak", "", "Soup", "Skinner"].join("\n"));
+    expect(result.players.find((player) => player.raw === "Soup")).toMatchObject({ playerId: null });
+    expect(result.goalieLines).toEqual([{ raw: "Soup", playerId: null }, { raw: "Skinner", playerId: 6 }]);
+    const labels = result.confidence.signals.map((signal) => signal.label);
+    expect(labels).toContain("Goalie line not matched (Soup)");
+    if (result.goalies.length < 2) expect(labels).toContain("Text lists 2 goalies, 1 placed");
+    // Header and team words never become names.
+    expect(result.players.map((player) => player.raw)).not.toContain("Oilers");
+  });
+
   it("rates full-name matches as certain", () => {
     const result = parse("Oilers lines\nZach Hyman - Connor McDavid - Leon Draisaitl\nDarnell Nurse - Evan Bouchard\nMattias Ekholm - Brett Kulak");
     const slots = result.forwards.filter((line) => line.kept).flatMap((line) => line.slots);

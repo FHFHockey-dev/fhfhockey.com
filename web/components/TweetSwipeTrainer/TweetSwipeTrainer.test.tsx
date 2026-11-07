@@ -17,7 +17,9 @@ const teams = buildTeamDirectory([{ id: 22, name: "Edmonton Oilers", abbreviatio
 const roster: RosterNameEntry[] = [
   { playerId: 1, fullName: "Zach Hyman", lastName: "Hyman", position: "L", teamId: 22 },
   { playerId: 2, fullName: "Connor McDavid", lastName: "McDavid", position: "C", teamId: 22 },
-  { playerId: 3, fullName: "Leon Draisaitl", lastName: "Draisaitl", position: "C", teamId: 22 }
+  { playerId: 3, fullName: "Leon Draisaitl", lastName: "Draisaitl", position: "C", teamId: 22 },
+  { playerId: 6, fullName: "Stuart Skinner", lastName: "Skinner", position: "G", teamId: 22 },
+  { playerId: 7, fullName: "Calvin Pickard", lastName: "Pickard", position: "G", teamId: 22 }
 ];
 
 function cardFor(key: string, text: string): TrainerCard {
@@ -346,6 +348,69 @@ describe("TweetSwipeTrainer", () => {
       powerPlay: [],
       powerPlaySwaps: [{ unit: 2, in: [{ playerId: 1, name: "Zach Hyman" }], out: [{ playerId: 2, name: "Connor McDavid" }] }]
     });
+  });
+
+  it("moves a parser goalie from Starter to Backup, places an unmatched listed goalie, swaps, and saves both", async () => {
+    // The tweet lists "Soup" (a nickname nobody matches) then Skinner; the parser reads only Skinner, as the starter.
+    const goalieCard = cardFor("row-g", "Oilers lines\nHyman - McDavid - Draisaitl\n\nSoup\nSkinner");
+    expect(goalieCard.parse.goalies.map((goalie) => goalie.fullName)).toEqual(["Stuart Skinner"]);
+    const base = fetchSpy.getMockImplementation()!;
+    fetchSpy.mockImplementation(async (url: string, init?: RequestInit) => {
+      const response = await base(url, init);
+      if (init?.method === "POST") return response;
+      const body = await response.json();
+      return { ok: true, json: async () => ({ ...body, cards: [goalieCard] }) };
+    });
+    render(<TweetSwipeTrainer />);
+    await screen.findByText(/card 1 of 1/);
+    // Skinner moves from Starter to Backup.
+    fireEvent.click(screen.getByRole("button", { name: /^Pick Stuart Skinner to place/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Backup goalie: place Stuart Skinner here" }));
+    // The unmatched "Soup" is shown as a name and goes to Starter.
+    fireEvent.click(screen.getByRole("button", { name: /^Pick Soup to place/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Starter goalie: place Soup here" }));
+    // Moving a goalie onto the other goalie spot swaps the two, and back again.
+    fireEvent.click(screen.getByRole("button", { name: /^Pick Soup to place/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Backup goalie: place Soup here, swapping with Stuart Skinner" }));
+    fireEvent.click(screen.getByRole("button", { name: /^Pick Soup to place/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Starter goalie: place Soup here, swapping with Stuart Skinner" }));
+    fireEvent.click(screen.getAllByRole("button", { name: /Save with placements/ })[0]!);
+    await waitFor(() => expect(posts()).toHaveLength(1));
+    expect(posts()[0]!.body.correction.goalies).toEqual([{ playerId: null, name: "Soup" }, { playerId: 6, name: "Stuart Skinner" }]);
+  });
+
+  it("moves names between editor spots, swapping when the target is filled", async () => {
+    const goalieCard = cardFor("row-g", "Oilers lines\nHyman - McDavid - Draisaitl\n\nSoup\nSkinner");
+    const base = fetchSpy.getMockImplementation()!;
+    fetchSpy.mockImplementation(async (url: string, init?: RequestInit) => {
+      const response = await base(url, init);
+      if (init?.method === "POST") return response;
+      const body = await response.json();
+      return { ok: true, json: async () => ({ ...body, cards: [goalieCard] }) };
+    });
+    render(<TweetSwipeTrainer />);
+    await screen.findByText(/card 1 of 1/);
+    fireEvent.keyDown(window, { key: "ArrowLeft" });
+    expect(((await screen.findByLabelText("Starter goalie")) as HTMLInputElement).value).toBe("Stuart Skinner");
+    // Skinner moves to Backup; "Soup" from the tray takes Starter.
+    fireEvent.click(screen.getByRole("button", { name: "Move Stuart Skinner" }));
+    fireEvent.click(screen.getByLabelText(/^Backup goalie: place Stuart Skinner here/));
+    fireEvent.click(within(screen.getByRole("group", { name: "Names to place" })).getByRole("button", { name: "Soup" }));
+    fireEvent.click(screen.getByLabelText(/^Starter goalie: place Soup here/));
+    // Moving Soup onto the filled Backup spot swaps the two.
+    fireEvent.click(screen.getByRole("button", { name: "Move Soup" }));
+    fireEvent.click(screen.getByLabelText(/^Backup goalie: place Soup here/));
+    expect((screen.getByLabelText("Starter goalie") as HTMLInputElement).value).toBe("Stuart Skinner");
+    expect((screen.getByLabelText("Backup goalie") as HTMLInputElement).value).toBe("Soup");
+  });
+
+  it("finds a player the parser never named from an empty spot's search", async () => {
+    render(<TweetSwipeTrainer />);
+    await screen.findByText(/card 1 of 2/);
+    fireEvent.click(screen.getByRole("button", { name: "Search a player for Backup goalie" }));
+    fireEvent.change(screen.getByLabelText("Search a player for Backup goalie"), { target: { value: "Pick" } });
+    fireEvent.click(await screen.findByRole("option", { name: /Calvin Pickard/ }));
+    expect(screen.getByRole("button", { name: "Remove Calvin Pickard from backup goalie" })).toBeTruthy();
   });
 
   it("says what to do next when a type has nothing left to label", async () => {

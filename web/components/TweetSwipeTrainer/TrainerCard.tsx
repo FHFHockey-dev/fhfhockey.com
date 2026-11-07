@@ -217,6 +217,11 @@ export type CardPlacements = {
   backup: TrainerSlotValue | null;
   extraForwards: TrainerSlotValue[];
   extraDefensemen: TrainerSlotValue[];
+  /**
+   * Set once a goalie was moved on the card: starter and backup then replace the parser's goalies (null = empty).
+   * Until then they only fill spots the parser left empty.
+   */
+  goaliesSet?: boolean;
 };
 
 /** A power-play tweet: its spots are PP1 and PP2. (The lib has the same check; it can't load in the browser.) */
@@ -226,7 +231,8 @@ export const EMPTY_PLACEMENTS: CardPlacements = { starter: null, backup: null, e
 
 export function hasPlacements(placements: CardPlacements | undefined): boolean {
   return Boolean(
-    placements && (placements.starter || placements.backup || placements.extraForwards.length || placements.extraDefensemen.length)
+    placements &&
+      (placements.goaliesSet || placements.starter || placements.backup || placements.extraForwards.length || placements.extraDefensemen.length)
   );
 }
 
@@ -235,8 +241,8 @@ const slotKey = (slot: TrainerSlotValue) => (slot.playerId != null ? `id:${slot.
 /** The parser's answer plus the card placements: what "Save with placements" stores and where the editor starts. */
 export function mergePlacements(extraction: TrainerExtraction, placements: CardPlacements | undefined): TrainerExtraction {
   if (!placements || !hasPlacements(placements)) return extraction;
-  const starter = extraction.goalies[0] ?? placements.starter;
-  const backup = extraction.goalies[1] ?? placements.backup;
+  const starter = placements.goaliesSet ? placements.starter : extraction.goalies[0] ?? placements.starter;
+  const backup = placements.goaliesSet ? placements.backup : extraction.goalies[1] ?? placements.backup;
   const goalies = [starter, backup].filter((slot): slot is TrainerSlotValue => Boolean(slot));
   const extraForwards = [...(extraction.extraForwards ?? []), ...placements.extraForwards];
   const extraDefensemen = [...(extraction.extraDefensemen ?? []), ...placements.extraDefensemen];
@@ -322,20 +328,62 @@ function PlayerChip(props: {
   );
 }
 
-/** A spot the parser left empty: click it (with a name picked) or drop a name on it. */
+/**
+ * A spot to fill: click it (with a name picked) or drop a name on it. An empty spot can also search the roster for a
+ * player the parser never named. Beside a filled spot it offers to swap the picked name in.
+ */
 function PlaceSpot(props: {
   label: string;
   picked: TrainerPlayerMatch | null;
   onPlace: (slot: TrainerSlotValue) => void;
+  /** Who sits there now; the picked name swaps with them. */
+  occupant?: string | null;
+  /** For the roster search on an empty spot. */
+  players?: TrainerPlayerOption[];
+  teamId?: number | null;
+  teamLabel?: string | null;
 }) {
   const [over, setOver] = useState(false);
+  const [searching, setSearching] = useState(false);
+  const [query, setQuery] = useState("");
   const pickedName = props.picked ? props.picked.fullName ?? props.picked.raw : null;
+  if (props.occupant && !pickedName) return null;
+  if (searching && props.players) {
+    return (
+      <span className={styles.spotSearch}>
+        <PlayerCombobox
+          value={query}
+          onChange={(value) => {
+            setQuery(value);
+            const player = props.players!.find((candidate) => candidate.fullName === value);
+            if (player) {
+              props.onPlace({ playerId: player.id, name: player.fullName });
+              setSearching(false);
+              setQuery("");
+            }
+          }}
+          players={props.players}
+          teamId={props.teamId ?? null}
+          teamLabel={props.teamLabel ?? null}
+          ariaLabel={`Search a player for ${props.label}`}
+          placeholder="Search players"
+          className={styles.slotInput}
+          inputProps={{ autoFocus: true, onKeyDown: (event) => event.key === "Escape" && setSearching(false) }}
+        />
+        <button type="button" className={styles.linkButton} onClick={() => setSearching(false)}>Cancel</button>
+      </span>
+    );
+  }
   const classes = [styles.placeSpot, pickedName ? styles.placeSpotReady : "", over ? styles.placeSpotOver : ""].filter(Boolean).join(" ");
-  return (
+  const spot = (
     <button
       type="button"
       className={classes}
-      aria-label={pickedName ? `${props.label}: place ${pickedName} here` : `${props.label}: empty. Pick a name first, or drag one here`}
+      aria-label={
+        pickedName
+          ? `${props.label}: place ${pickedName} here${props.occupant ? `, swapping with ${props.occupant}` : ""}`
+          : `${props.label}: empty. Pick a name first, or drag one here`
+      }
       onClick={() => {
         if (props.picked) props.onPlace({ playerId: props.picked.playerId, name: pickedName! });
       }}
@@ -353,8 +401,17 @@ function PlaceSpot(props: {
         props.onPlace(JSON.parse(data) as TrainerSlotValue);
       }}
     >
-      {pickedName ? `Place ${pickedName}` : "Empty"}
+      {pickedName ? (props.occupant ? `Swap in ${pickedName}` : `Place ${pickedName}`) : "Empty"}
     </button>
+  );
+  if (props.occupant || !props.players || pickedName) return spot;
+  return (
+    <span className={styles.spotSearch}>
+      {spot}
+      <button type="button" className={styles.linkButton} onClick={() => setSearching(true)} aria-label={`Search a player for ${props.label}`}>
+        Search
+      </button>
+    </span>
   );
 }
 
@@ -432,34 +489,70 @@ export default function TrainerCard(props: {
   const placements = props.placements ?? EMPTY_PLACEMENTS;
   const sameName = (left: TrainerSlotValue, right: TrainerSlotValue) => slotKey(left) === slotKey(right);
   const asSlot = (match: TrainerPlayerMatch): TrainerSlotValue => ({ playerId: match.playerId, name: match.fullName ?? match.raw });
+  // Who sits in each goalie spot: the parser's goalies until one is moved on the card, then the card's.
+  const goalieAt = (spot: "starter" | "backup"): TrainerSlotValue | null => {
+    if (placements.goaliesSet) return placements[spot];
+    const parsed = card.parse.goalies[spot === "starter" ? 0 : 1];
+    return parsed ? asSlot(parsed) : placements[spot];
+  };
   const placedIn = (match: TrainerPlayerMatch): string | null => {
     const slot = asSlot(match);
-    if (placements.starter && sameName(placements.starter, slot)) return "Starter";
-    if (placements.backup && sameName(placements.backup, slot)) return "Backup";
+    const starter = goalieAt("starter");
+    const backup = goalieAt("backup");
+    if (starter && sameName(starter, slot)) return "Starter";
+    if (backup && sameName(backup, slot)) return "Backup";
     if (placements.extraForwards.some((entry) => sameName(entry, slot))) return "Extra F";
     if (placements.extraDefensemen.some((entry) => sameName(entry, slot))) return "Extra D";
     return null;
   };
-  /** Places a name in one spot; it leaves any other spot it was in. */
-  function place(spot: keyof CardPlacements, slot: TrainerSlotValue) {
+  type Spot = "starter" | "backup" | "extraForwards" | "extraDefensemen";
+  /**
+   * Places a name in one spot; it leaves any other spot it was in. Moving a goalie onto the other goalie spot swaps
+   * the two (Ellis from Starter to Backup puts whoever was Backup in Starter).
+   */
+  function place(spot: Spot, slot: TrainerSlotValue) {
     const without = (list: TrainerSlotValue[]) => list.filter((entry) => !sameName(entry, slot));
+    const starter = goalieAt("starter");
+    const backup = goalieAt("backup");
+    const from = starter && sameName(starter, slot) ? "starter" : backup && sameName(backup, slot) ? "backup" : null;
+    const goalies = { starter, backup };
+    if (from) goalies[from] = null;
+    if (spot === "starter" || spot === "backup") {
+      const occupant = goalies[spot];
+      goalies[spot] = slot;
+      if (from && occupant && !sameName(occupant, slot)) goalies[from] = occupant;
+    }
     const next: CardPlacements = {
-      starter: placements.starter && sameName(placements.starter, slot) ? null : placements.starter,
-      backup: placements.backup && sameName(placements.backup, slot) ? null : placements.backup,
+      ...goalies,
+      // Goalie spots now follow the card, so a moved parser goalie isn't drawn back into its old spot.
+      goaliesSet: placements.goaliesSet || Boolean(from) || card.parse.goalies.length > 0 && (spot === "starter" || spot === "backup"),
       extraForwards: without(placements.extraForwards),
       extraDefensemen: without(placements.extraDefensemen)
     };
-    if (spot === "starter" || spot === "backup") next[spot] = slot;
-    else next[spot] = [...next[spot], slot];
+    if (spot === "extraForwards" || spot === "extraDefensemen") next[spot] = [...next[spot], slot];
     props.onPlacementsChange?.(next);
     setPicked(null);
   }
-  function unplace(spot: keyof CardPlacements, slot: TrainerSlotValue) {
-    const next = { ...placements };
-    if (spot === "starter" || spot === "backup") next[spot] = null;
-    else next[spot] = placements[spot].filter((entry) => !sameName(entry, slot));
-    props.onPlacementsChange?.(next);
+  function unplace(spot: Spot, slot: TrainerSlotValue) {
+    if (spot === "starter" || spot === "backup") {
+      props.onPlacementsChange?.({ ...placements, starter: goalieAt("starter"), backup: goalieAt("backup"), [spot]: null, goaliesSet: true });
+      return;
+    }
+    props.onPlacementsChange?.({ ...placements, [spot]: placements[spot].filter((entry) => !sameName(entry, slot)) });
   }
+  // A placed or parsed name in a spot, as a match the pick state and chips understand.
+  const matchFor = (slot: TrainerSlotValue): TrainerPlayerMatch =>
+    card.parse.players.find((match) => sameName(asSlot(match), slot)) ??
+    card.parse.goalies.find((match) => sameName(asSlot(match), slot)) ?? {
+      raw: slot.name,
+      playerId: slot.playerId,
+      fullName: slot.playerId != null ? slot.name : null,
+      position: null,
+      basis: slot.playerId != null ? "full_name" : "missing",
+      confidence: slot.playerId != null ? 100 : 0,
+      positionFits: null,
+      candidateIds: []
+    };
   const pick = (match: TrainerPlayerMatch) =>
     setPicked((current) => (current && sameName(asSlot(current), asSlot(match)) ? null : match));
   const isPicked = (match: TrainerPlayerMatch) => Boolean(picked && sameName(asSlot(picked), asSlot(match)));
@@ -481,7 +574,8 @@ export default function TrainerCard(props: {
         (player) =>
           // Anyone already shown in a line, kept or dropped, isn't repeated here.
           ![...parse.forwards, ...parse.defensePairs, ...parse.powerPlay].some((line) => line.slots.some((slot) => slot.playerId != null && slot.playerId === player.playerId)) &&
-          !parse.goalies.some((goalie) => goalie.playerId === player.playerId) &&
+          // A parser goalie moved out of both goalie spots comes back here to be placed again.
+          !(parse.goalies.some((goalie) => goalie.playerId === player.playerId) && placedIn(player)) &&
           !parse.extras.some((extra) => extra.playerId === player.playerId)
       )
     : parse.players;
@@ -610,7 +704,7 @@ export default function TrainerCard(props: {
                 </button>
               </>
             ) : (
-              "Missed a backup, extra forward or extra defenseman? Click a dropped or other name, then its dotted spot."
+              "Missed or misplaced a goalie or extra? Click a name (goalies too), then its spot; a filled goalie spot swaps. Search finds anyone the parser missed."
             )}
           </p>
         ) : null}
@@ -629,20 +723,33 @@ export default function TrainerCard(props: {
             {/* Always shown on lineups, so a missed starter, backup or extra is visible, not just absent. */}
             <div className={styles.slotGroup}>
               <h3 className={styles.slotTitle}>Goalies</h3>
-              {(["Starter", "Backup"] as const).map((role, index) => {
-                const goalie = parse.goalies[index];
+              {(["Starter", "Backup"] as const).map((role) => {
                 const spot = role === "Starter" ? "starter" : "backup";
-                const placed = placements[spot];
+                const occupant = goalieAt(spot);
+                const match = occupant ? matchFor(occupant) : null;
                 return (
                   <div key={role} className={`${styles.slotRow} ${styles.slotRowRole}`}>
                     <span className={styles.slotLabel}>{role}</span>
                     <div className={styles.slotChips}>
-                      {goalie ? (
-                        <PlayerChip match={goalie} onFix={() => openFix(goalie)} />
-                      ) : placed ? (
-                        <PlacedName slot={placed} where={`${role.toLowerCase()} goalie`} onRemove={() => unplace(spot, placed)} />
-                      ) : (
-                        <PlaceSpot label={`${role} goalie`} picked={picked} onPlace={(slot) => place(spot, slot)} />
+                      {occupant && match ? (
+                        // A goalie in a spot can be picked (or dragged) and moved; the other goalie spot swaps.
+                        <PlayerChip match={match} onFix={() => openFix(match)} onPick={() => pick(match)} picked={isPicked(match)} />
+                      ) : null}
+                      {occupant ? (
+                        <button type="button" className={styles.placedRemove} aria-label={`Remove ${occupant.name} from ${role.toLowerCase()} goalie`} onClick={() => unplace(spot, occupant)}>
+                          ×
+                        </button>
+                      ) : null}
+                      {occupant && picked && sameName(asSlot(picked), occupant) ? null : (
+                        <PlaceSpot
+                          label={`${role} goalie`}
+                          picked={picked}
+                          occupant={occupant?.name ?? null}
+                          onPlace={(slot) => place(spot, slot)}
+                          players={props.players}
+                          teamId={parse.teamId}
+                          teamLabel={parse.teamAbbreviation}
+                        />
                       )}
                     </div>
                   </div>
@@ -662,7 +769,14 @@ export default function TrainerCard(props: {
                   {placements[spot].map((slot) => (
                     <PlacedName key={slotKey(slot)} slot={slot} where={title.toLowerCase()} onRemove={() => unplace(spot, slot)} />
                   ))}
-                  <PlaceSpot label={title} picked={picked} onPlace={(slot) => place(spot, slot)} />
+                  <PlaceSpot
+                    label={title}
+                    picked={picked}
+                    onPlace={(slot) => place(spot, slot)}
+                    players={props.players}
+                    teamId={parse.teamId}
+                    teamLabel={parse.teamAbbreviation}
+                  />
                 </div>
               </div>
             ))}
