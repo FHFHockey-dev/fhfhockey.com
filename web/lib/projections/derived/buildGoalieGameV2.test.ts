@@ -19,6 +19,8 @@ function play(
   return {
     id: 1,
     gameid: game.id,
+    periodnumber: 1,
+    periodtype: "REG",
     situationcode: "1551",
     typedesckey: "shot-on-goal",
     eventownerteamid: game.homeTeamId,
@@ -58,6 +60,27 @@ describe("goalie game preparation", () => {
         }),
       ],
     });
+  });
+
+  it("skips shootout attempts so they never reach shots against", () => {
+    const result = prepareGoalieGameV2({
+      game,
+      plays: [
+        play(),
+        play({
+          id: 2,
+          typedesckey: "goal",
+          periodnumber: 5,
+          periodtype: "SO",
+          situationcode: "0101",
+          eventownerteamid: game.awayTeamId,
+          goalieinnetid: 30,
+        }),
+      ],
+    });
+    expect(result.rows).toEqual([
+      expect.objectContaining({ goalie_id: 20, shots_against: 1 }),
+    ]);
   });
 
   it("returns an explicit justified not_observed outcome for an empty-net-only scope", () => {

@@ -16,7 +16,11 @@ import {
   SHIFT_CHART_STRENGTH_SELECT,
   type ShiftChartStrengthRow,
 } from "../shiftChartCompleteness";
-import { parseSituationDigits, strengthForTeam } from "./situation";
+import {
+  isShootoutPlay,
+  parseSituationDigits,
+  strengthForTeam,
+} from "./situation";
 
 export type ProjectionDerivedGame = {
   id: number;
@@ -28,6 +32,8 @@ export type ProjectionDerivedGame = {
 export type ProjectionDerivedPbpPlayRow = {
   id: number;
   gameid: number;
+  periodnumber: number | null;
+  periodtype: string | null;
   situationcode: string | null;
   typedesckey: string | null;
   eventownerteamid: number | null;
@@ -201,6 +207,8 @@ function validatePlayerSources(args: {
     const goalPlay = isGoal(play.typedesckey);
     if (
       play.eventownerteamid == null ||
+      !Number.isSafeInteger(play.periodnumber) ||
+      (play.periodnumber as number) <= 0 ||
       parseSituationDigits(play.situationcode) == null ||
       (goalPlay ? play.scoringplayerid == null : play.shootingplayerid == null)
     ) {
@@ -239,7 +247,7 @@ export async function preparePlayerGameStrengthV2(args: {
       supabase
         .from("pbp_plays")
         .select(
-          "id,gameid,situationcode,typedesckey,eventownerteamid,shootingplayerid,scoringplayerid,assist1playerid,assist2playerid,goalieinnetid",
+          "id,gameid,periodnumber,periodtype,situationcode,typedesckey,eventownerteamid,shootingplayerid,scoringplayerid,assist1playerid,assist2playerid,goalieinnetid",
         )
         .eq("gameid", game.id)
         .order("id", { ascending: true })
@@ -264,6 +272,8 @@ export async function preparePlayerGameStrengthV2(args: {
   for (const play of plays) {
     const teamId = play.eventownerteamid;
     if (teamId == null || !isShotForProjection(play.typedesckey)) continue;
+    // Shootout attempts are not NHL shots, goals or assists.
+    if (isShootoutPlay(play)) continue;
     const digits = parseSituationDigits(play.situationcode);
     if (digits == null) {
       throw new Error(`Countable PBP event is incomplete for game ${game.id}`);

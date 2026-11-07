@@ -85,45 +85,14 @@ export default async function handler(
       EndTime,
       player.position
     );
-
-    const teamData = player.teamId
-      ? await getTeamData(playerData.map((data) => data.gameId))
-      : [];
-
-    const temp: Record<
-      DateString,
-      {
-        toi?: string;
-        powerPlayToi?: string;
-        teamPowerPlayToi: string;
-        date: DateString;
-      }
-    > = {};
-    teamData.forEach((item) => {
-      const date = item.date;
-      temp[date] = { teamPowerPlayToi: item.powerPlayToi, date };
-    });
-    playerData.forEach((item) => {
-      const date = item.date;
-      temp[date].toi = item.toi;
-      temp[date].powerPlayToi = item.powerPlayToi;
-    });
-    const result: {
-      toi: number;
-      powerPlayToi: number;
-      powerPlayToiShare: number;
-      date: DateString;
-    }[] = Object.values(temp).map((item) => ({
-      toi: item.toi ? parseTime(item.toi) : 0,
-      powerPlayToi: item.powerPlayToi ? parseTime(item.powerPlayToi) : 0,
-      powerPlayToiShare: item.powerPlayToi
-        ? parseTime(item.teamPowerPlayToi) === 0
-          ? 0
-          : (parseTime(item.powerPlayToi) / parseTime(item.teamPowerPlayToi)) *
-            100
-        : 0,
-      date: item.date,
-    }));
+    const gameIds = playerData.map((data) => data.gameId);
+    // skatersGameStats.powerPlayToi is a "00:00" placeholder (the NHL boxscore
+    // has no PP TOI), so PP TOI comes from the FORGE shift-chart split.
+    const [forgeRows, teamData] = await Promise.all([
+      getForgePowerPlayToi(PlayerId, gameIds),
+      getTeamData(gameIds),
+    ]);
+    const result = buildToiSeries(playerData, forgeRows, teamData);
 
     res.status(200).json({
       success: true,
@@ -134,6 +103,56 @@ export default async function handler(
     console.error(e);
     res.status(400).json({ message: e.message, success: false });
   }
+}
+
+export type ToiPlayerGame = { toi: string; date: DateString; gameId: number };
+export type ToiForgeGame = {
+  game_id: number;
+  team_id: number;
+  toi_pp_seconds: number | null;
+};
+export type ToiTeamGame = {
+  powerPlayToi: string;
+  gameId: number;
+  teamId: number;
+};
+
+/**
+ * One point per player game, in date order. PP TOI is the player's FORGE
+ * `toi_pp_seconds`; the share divides it by the PP TOI of the team the player
+ * dressed for in that game (not the opponent's row for the same game).
+ */
+export function buildToiSeries(
+  playerGames: ToiPlayerGame[],
+  forgeGames: ToiForgeGame[],
+  teamGames: ToiTeamGame[]
+): Data {
+  const forgeByGame = new Map(forgeGames.map((row) => [row.game_id, row]));
+  const teamPpByGameTeam = new Map(
+    teamGames.map((row) => [`${row.gameId}:${row.teamId}`, row.powerPlayToi])
+  );
+  return [...playerGames]
+    .sort((a, b) => compareAsc(new Date(a.date), new Date(b.date)))
+    .map((game) => {
+      const forge = forgeByGame.get(game.gameId);
+      const powerPlayToi =
+        forge?.toi_pp_seconds != null && forge.toi_pp_seconds > 0
+          ? forge.toi_pp_seconds / 60
+          : 0;
+      const teamPp = forge
+        ? teamPpByGameTeam.get(`${game.gameId}:${forge.team_id}`)
+        : undefined;
+      const teamPowerPlayToi = teamPp ? parseTime(teamPp) : 0;
+      return {
+        toi: game.toi ? parseTime(game.toi) : 0,
+        powerPlayToi,
+        powerPlayToiShare:
+          teamPowerPlayToi > 0
+            ? Math.min((powerPlayToi / teamPowerPlayToi) * 100, 100)
+            : 0,
+        date: game.date,
+      };
+    });
 }
 
 /**
@@ -161,7 +180,7 @@ async function getData(
 ) {
   const { data } = await supabase
     .from("skatersGameStats")
-    .select("toi, powerPlayToi, games!inner(date,id)")
+    .select("toi, games!inner(date,id)")
     .eq("playerId", PlayerId)
     .eq("position", position)
     .gte("games.date", StartTime)
@@ -171,7 +190,6 @@ async function getData(
   const result = data!
     .map((item) => ({
       toi: item.toi,
-      powerPlayToi: item.powerPlayToi,
       date: item.games!.date,
       gameId: item.games!.id,
     }))
@@ -180,7 +198,22 @@ async function getData(
   return result;
 }
 
+async function getForgePowerPlayToi(
+  PlayerId: number,
+  gameIds: number[]
+): Promise<ToiForgeGame[]> {
+  if (gameIds.length === 0) return [];
+  const { data } = await supabase
+    .from("forge_player_game_strength")
+    .select("game_id, team_id, toi_pp_seconds")
+    .eq("player_id", PlayerId)
+    .in("game_id", gameIds)
+    .throwOnError();
+  return data ?? [];
+}
+
 async function getTeamData(gameIds: number[]) {
+  if (gameIds.length === 0) return [];
   const { data } = await supabase
     .from("teamGameStats")
     .select("teamId, powerPlayToi, games!inner(date,id)")
