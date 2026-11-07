@@ -92,8 +92,11 @@
   background: vars.$primary-color;
 }
 
+// Chart slot 3, not $success-color: status colours are reserved for state, and
+// #00ff99 sat outside the dark-mode lightness band. #14a2d2 vs #9b59b6 on $surface-1
+// passes every validate_palette check (normal ΔE 21.3, deutan 8.5, tritan 21.4).
 .fillGoals {
-  background: vars.$success-color;
+  background: vars.$chart-color-3;
 }
 
 @media screen and (max-width: vars.$breakpoint-tablet) {

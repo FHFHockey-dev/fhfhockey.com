@@ -94,3 +94,8 @@ New findings:
 | /lines | meta description (`index.tsx`) | ~~C7. "NHL Line Combinations" repeated the title.~~ Now describes the page. | Done | 4 |
 | /lines/[team] | L1–L4 codes (`LineShareBars.module.scss`) | ~~N14. Uppercase with 0.12em tracking ("L 1").~~ Bold, untracked. Other slop-audit hits: site 700 headings (kept, brand); SurfaceWorkflowLinks (shared, not Lines). | Done | 5 |
 | /lines/[team] | page title (`[abbreviation].tsx`) | ~~N15. Generic h1 "NHL LINE COMBINATIONS" on every team page (2 huge lines on phones).~~ Per-team "EDM LINES", the same pattern as line-combo. Index unchanged. | Done | 6 |
+| /lines/[team] | Goal share bars (`LineShareBars.module.scss`) | ~~N16. `$success-color` (a reserved status colour, too bright on dark).~~ `$chart-color-3`; the validator passes all checks against the primary blue. | Done | 7 |
+| line-combo, /lines/[team] | shared-ice matrix palette (`LinemateMatrix`, shared with /shiftChart) | Amber #EFA00B fails the dark lightness band (L 0.77) at full intensity; CVD/normal/contrast pass. Kept: TJ approved leaving the shared palette as is (2026-11-07). | Declined (TJ) | 7 |
+
+### Final sweep (2026-11-07)
+axe 0 on /lines, /lines/EDM, line-combo/2026020252 and the enabled-state fixture (/lines/TBL, line-combo/2026020150) at 390/1440. Toenails 0. Every focus stop visible. slop-audit: only site-standard 700 weights and the shared SurfaceWorkflowLinks footer (not Lines). Every row is Done, except one declined by TJ (matrix amber) and one owned by another lane (PP data sources).
