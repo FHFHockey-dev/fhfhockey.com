@@ -1,5 +1,6 @@
 // Modernized GameGrid Styles
 @use "styles/vars" as v;
+@use "./surfaces" as gg;
 @use "sass:color";
 @use "./utils/opponentMetricPalette" as opponentPalette;
 @use "sass:math";
@@ -78,7 +79,7 @@
   width: 100%;
   min-height: 0;
   border-radius: 0;
-  background: #1d2127;
+  background: gg.$panel;
   border: 1px solid rgba(v.$color-white, 0.06);
   box-shadow:
     0 18px 44px rgba(v.$color-black, 0.32),
@@ -104,7 +105,7 @@
     0 0 0 1px rgba(v.$color-white, 0.03) inset,
     0 0 28px rgba(v.$primary-color, 0.08);
   border-radius: 0;
-  background: #20242a;
+  background: gg.$sticky;
 
   @media (min-width: v.$breakpoint-desktop) {
     height: auto;
@@ -130,7 +131,7 @@
   width: 100%;
   min-height: 0;
   border-radius: 0;
-  background: #1d2127;
+  background: gg.$panel;
   border: 1px solid rgba(v.$color-white, 0.06);
   box-shadow:
     0 18px 44px rgba(v.$color-black, 0.32),
@@ -169,7 +170,7 @@
   border-radius: 0;
   overflow: hidden;
   // border: 1px solid rgba(v.$color-white, 0.06);
-  background: #14181e;
+  background: gg.$canvas;
   // box-shadow:
   //   0 20px 44px rgba(v.$color-black, 0.32),
   //   0 0 0 1px rgba(v.$color-white, 0.04) inset,
@@ -358,7 +359,7 @@
   min-height: 0;
 
   border: 1px solid rgba(v.$color-white, 0.1);
-  background: #1d2127;
+  background: gg.$panel;
   box-shadow:
     v.$box-shadow-default,
     inset -10px 0 0 rgba(v.$secondary-color, 0.85),
@@ -381,7 +382,7 @@
   min-height: 0;
   border-radius: 0;
   border: 1px solid rgba(v.$color-white, 0.1);
-  background: #1d2127;
+  background: gg.$panel;
   box-shadow:
     v.$box-shadow-default,
     inset 10px 0 0 rgba(v.$primary-color, 0.85),
@@ -570,7 +571,7 @@
   display: flex;
   align-items: center;
   gap: v.$space-sm;
-  background: #1d2127;
+  background: gg.$panel;
   border-radius: v.$border-radius-lg;
   padding: 4px;
   border: 1px solid rgba(v.$secondary-color, 0.22);
@@ -998,7 +999,7 @@
   font-weight: 600;
   letter-spacing: 0.02em;
   font-family: v.$font-family-numbers, v.$font-family-primary, sans-serif;
-  background: #1d2127;
+  background: gg.$panel;
   color: v.$color-white;
   border: 1px solid rgba(v.$color-white, 0.08);
   backdrop-filter: blur(8px);
@@ -1275,7 +1276,7 @@
   overscroll-behavior: contain;
   padding: 12px 14px;
   border: 1px solid rgba(v.$secondary-color, 0.22);
-  background: #1d2127;
+  background: gg.$panel;
   color: v.$text-primary;
   box-shadow:
     0 14px 28px rgba(v.$color-black, 0.34),
@@ -1379,7 +1380,7 @@
   top: 0;
   z-index: 40;
   overflow: hidden;
-  background: rgba(27, 32, 38, 0.96);
+  background: rgba(gg.$sticky-glass, 0.96);
   border-bottom: 1px solid rgba(v.$color-white, 0.18);
   box-shadow: 0 14px 28px rgba(v.$color-black, 0.34);
   backdrop-filter: blur(10px);
@@ -1414,7 +1415,7 @@
     top: calc(var(--master-table-sticky-top) + var(--master-group-row-height));
     z-index: 8;
     padding: 0;
-    background-color: #26292d;
+    background-color: gg.$header;
     border-bottom: 1px solid rgba(v.$color-white, 0.06);
     text-transform: uppercase;
     letter-spacing: 0.04em;
@@ -1428,7 +1429,7 @@
     padding: 2px 10px;
     text-align: center;
     border-bottom: 1px solid rgba(v.$color-white, 0.04);
-    background: #1d2128;
+    background: gg.$table-cell;
     min-width: 80px;
     font-family: v.$font-family-numbers, v.$font-family-primary, sans-serif;
   }
@@ -1439,11 +1440,11 @@
   }
 
   tbody tr:nth-child(even) td {
-    background: #20252d;
+    background: gg.$row-zebra;
   }
 
   tbody tr:hover td {
-    background: #242a31;
+    background: gg.$row-hover;
   }
 
   td[data-intensity="low"] {
@@ -1524,7 +1525,7 @@
 
 .masterSectionBanner {
   height: var(--master-group-row-height);
-  background: #14181e !important;
+  background: gg.$canvas !important;
   text-align: center;
   border-right: 1px solid rgba(v.$color-white, 0.05);
   border-bottom: 1px solid rgba(v.$color-white, 0.05);
@@ -1532,12 +1533,12 @@
 
 .masterSectionBannerMetrics {
   border-right: 2px solid rgba(v.$secondary-color, 0.55) !important;
-  background: #1d2329 !important;
+  background: gg.$metrics-banner !important;
 }
 
 .masterSectionBannerFourWeek {
   border-left: 2px solid rgba(v.$secondary-color, 0.55) !important;
-  background: #1c2530 !important;
+  background: gg.$four-week !important;
 }
 
 .masterSectionBannerCollapsed {
@@ -1547,7 +1548,7 @@
 }
 
 .masterSectionBannerSummary {
-  background: #10384e !important;
+  background: gg.$summary-banner !important;
   border-right: 0 !important;
 }
 
@@ -1656,25 +1657,25 @@
 }
 
 .masterMetricGoodStrong {
-  color: #7cffcb;
+  color: gg.$rank-ink-best;
   background-color: rgba(v.$schedule-green, 0.16) !important;
   font-weight: 700;
 }
 
 .masterMetricGoodSoft {
-  color: #f2cf63;
+  color: gg.$rank-ink-good;
   background-color: rgba(v.$schedule-yellow, 0.15) !important;
   font-weight: 700;
 }
 
 .masterMetricBadSoft {
-  color: #ffad5a;
+  color: gg.$rank-ink-fair;
   background-color: rgba(v.$color-orange-400, 0.15) !important;
   font-weight: 700;
 }
 
 .masterMetricBadStrong {
-  color: #ff8f8f;
+  color: gg.$rank-ink-worst;
   background-color: rgba(v.$schedule-red, 0.15) !important;
   font-weight: 700;
 }
@@ -1682,13 +1683,13 @@
 .masterStickyCol {
   position: sticky;
   z-index: 3;
-  background: #20242a !important;
+  background: gg.$sticky !important;
 }
 
 .masterStickyMetric {
   position: sticky;
   z-index: 5 !important;
-  background: #1d2128 !important;
+  background: gg.$table-cell !important;
   box-shadow: 1px 0 0 rgba(v.$color-white, 0.05);
 }
 
@@ -1723,7 +1724,7 @@
   min-width: 0;
   width: auto;
   z-index: 5 !important;
-  background: #262d36 !important;
+  background: gg.$team-header !important;
 }
 
 .masterStickyTeamCol {
@@ -1758,7 +1759,7 @@
   width: auto;
   font-family: v.$font-family-accent, v.$font-family-primary, sans-serif;
   letter-spacing: 0.08em;
-  background: #262d36 !important;
+  background: gg.$team-header !important;
 }
 
 .masterTeamIdentity {
@@ -1868,13 +1869,13 @@
   width: auto;
   min-width: 0 !important;
   max-width: none;
-  background: #1c2530 !important;
+  background: gg.$four-week !important;
   border-left: 2px solid rgba(v.$secondary-color, 0.55);
   border-right: 1px solid rgba(v.$color-blue-300, 0.12);
 }
 
 .masterAverageLabel {
-  color: #bfe7f8;
+  color: gg.$average-label-ink;
   text-align: center;
   vertical-align: middle;
 }
@@ -1896,18 +1897,18 @@
 }
 
 .masterBlueHeader {
-  background: #0f5f83 !important;
-  color: #0fc0f6 !important;
+  background: gg.$summary-header !important;
+  color: gg.$summary-ink !important;
 }
 
 .masterScoreHeader {
-  background: #77cfff !important;
-  color: #173448 !important;
+  background: gg.$score-header !important;
+  color: gg.$score-header-ink !important;
   border-right: 0 !important;
 }
 
 .masterFourWeekHeader {
-  background: #1c2530 !important;
+  background: gg.$four-week !important;
   color: rgba(v.$color-white, 0.92) !important;
   border-left: 1px solid rgba(v.$color-blue-300, 0.18);
 }
@@ -1917,7 +1918,7 @@
 }
 
 .masterFourWeekLeadCell {
-  background: #1a242e !important;
+  background: gg.$four-week-lead !important;
   border-left: 2px solid rgba(v.$secondary-color, 0.55);
   border-right: 1px solid rgba(v.$color-blue-300, 0.18);
 }
@@ -1942,7 +1943,7 @@
 }
 
 .masterFourWeekCell {
-  background: #1c2530 !important;
+  background: gg.$four-week !important;
   border-right: 1px solid rgba(v.$color-blue-300, 0.18);
 }
 
@@ -1953,7 +1954,7 @@
 
 // 4WK Value shares the opponent-metric rank palette (top/bottom 5 strong, 6–10 soft).
 .masterFourWeekValueCell {
-  background: #1c2530 !important;
+  background: gg.$four-week !important;
   font-family: v.$font-family-numbers;
   font-weight: 700;
   text-align: center;
@@ -2017,18 +2018,18 @@
 
 .masterScoreBest {
   background: rgba(v.$schedule-green, 0.17) !important;
-  color: #7cffcb !important;
+  color: gg.$rank-ink-best !important;
   box-shadow: inset 0 0 0 1px rgba(v.$schedule-green, 0.62);
 }
 
 .masterScoreWorst {
   background: rgba(v.$schedule-red, 0.17) !important;
-  color: #ff8f8f !important;
+  color: gg.$rank-ink-worst !important;
   box-shadow: inset 0 0 0 1px rgba(v.$schedule-red, 0.62);
 }
 
 .masterTotalsRow td {
-  background: #14465b !important;
+  background: gg.$totals-row !important;
   color: rgba(v.$color-white, 0.92);
   border-top: 2px solid rgba(v.$color-white, 0.16);
   border-bottom: 2px solid rgba(v.$color-white, 0.16);
@@ -2141,25 +2142,25 @@
 
 // Shared matchup cell intensity fill backgrounds (when there IS a game)
 .masterTable tbody td.cellInnerBorder.off-night-day {
-  background: color.mix(v.$schedule-green, #14181e, 12%) !important;
+  background: color.mix(v.$schedule-green, gg.$canvas, 12%) !important;
 }
 .masterTable tbody td.cellInnerBorder.medium-heavy-day {
-  background: color.mix(v.$schedule-yellow, #14181e, 10%) !important;
+  background: color.mix(v.$schedule-yellow, gg.$canvas, 10%) !important;
 }
 .masterTable tbody td.cellInnerBorder.heavy-day {
-  background: color.mix(v.$schedule-red, #14181e, 12%) !important;
+  background: color.mix(v.$schedule-red, gg.$canvas, 12%) !important;
 }
 
 .masterTable tbody tr:nth-child(even) td.cellInnerBorder.off-night-day {
-  background: color.mix(v.$schedule-green, #14181e, 16%) !important;
+  background: color.mix(v.$schedule-green, gg.$canvas, 16%) !important;
 }
 
 .masterTable tbody tr:nth-child(even) td.cellInnerBorder.medium-heavy-day {
-  background: color.mix(v.$schedule-yellow, #14181e, 14%) !important;
+  background: color.mix(v.$schedule-yellow, gg.$canvas, 14%) !important;
 }
 
 .masterTable tbody tr:nth-child(even) td.cellInnerBorder.heavy-day {
-  background: color.mix(v.$schedule-red, #14181e, 16%) !important;
+  background: color.mix(v.$schedule-red, gg.$canvas, 16%) !important;
 }
 
 .cellInnerBorder.off-night-day {
@@ -2570,9 +2571,9 @@
   grid-column: 1 / -1;
   padding: v.$space-sm;
   border-radius: v.$border-radius-md;
-  border: 1px solid rgba(239, 68, 68, 0.35);
-  background: rgba(239, 68, 68, 0.12);
-  color: #ffd0d0;
+  border: 1px solid rgba(v.$danger-color, 0.35);
+  background: rgba(v.$danger-color, 0.12);
+  color: gg.$error-ink;
   font-size: v.$font-size-sm;
 }
 
@@ -2638,7 +2639,7 @@
   white-space: normal;
   overflow-wrap: anywhere;
   text-align: center;
-  color: #0fc0f6;
+  color: gg.$summary-ink;
   text-shadow:
     0 0 10px rgba(v.$secondary-color, 0.18),
     0 1px 2px rgba(v.$color-black, 0.45);
@@ -3896,7 +3897,7 @@
       }
 
       .excludedOverlay {
-        background-color: rgba(80, 80, 80, 0.4);
+        background-color: rgba(v.$border-secondary, 0.4);
         color: v.$text-color-secondary;
         position: absolute;
         inset: 0;
@@ -5108,11 +5109,11 @@
 // Keep the adjoining metric panels unchanged while darkening the schedule.
 .masterTable {
   tbody td:not(.masterMetricCell):not(.masterFourWeekCell):not(.masterFourWeekLeadCell):not(.masterCollapseSpacer):not([data-intensity]) {
-    background-color: #14181e;
+    background-color: gg.$canvas;
   }
 
   tbody tr:nth-child(even) td:not(.masterMetricCell):not(.masterFourWeekCell):not(.masterFourWeekLeadCell):not(.masterCollapseSpacer):not([data-intensity]) {
-    background-color: #171c22;
+    background-color: gg.$canvas-zebra;
   }
 
   .masterMetricCell.masterGroupEdge,
@@ -5214,8 +5215,9 @@
 .matchupKey {
   display: flex; align-items: center; justify-content: center; gap: 3px;
   margin-top: 4px; font-size: .52rem; letter-spacing: 0; text-transform: none;
-  i { width: 4px; height: 4px; border-radius: 50%; background: #00f5a0; }
-  i:last-child { background: #ff557c; }
+  // Same tokens as the sparkline's easier / harder stops.
+  i { width: 4px; height: 4px; border-radius: 50%; background: v.$success-color; }
+  i:last-child { background: v.$danger-color; }
 }
 .masterMetricHeader .masterSortButton { padding-inline: 2px; font-size: .75rem; }
 .masterMetricHeader .masterMetricEyebrow { font-size: .52rem; letter-spacing: 0; }

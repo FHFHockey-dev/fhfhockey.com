@@ -1,5 +1,6 @@
 @use "sass:color";
 @use "styles/vars" as v;
+@use "./surfaces" as gg;
 
 // Neon sparkline recipe mirrors TransactionTrends (.sparkPath / .sparkArea),
 // with per-week matchup colors (green / yellow / red) on the gradient stops and dots.
@@ -116,7 +117,7 @@ $matchup-colors: (
   overflow: hidden;
   border: 1px solid rgba(v.$color-white, 0.12);
   border-radius: v.$border-radius-md;
-  background: #1d2127;
+  background: gg.$panel;
   box-shadow: 0 14px 28px rgba(v.$color-black, 0.4), 0 0 18px rgba(v.$primary-color, 0.12);
   color: v.$text-primary;
   font-family: v.$font-family-primary, sans-serif;

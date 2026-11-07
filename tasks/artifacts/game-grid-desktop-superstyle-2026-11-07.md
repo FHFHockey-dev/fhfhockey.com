@@ -10,3 +10,6 @@
 | /game-grid @1024 10-day | master table | 10-day still overflows 40px at 1024 (days at 50px min). Lowering min to 46 offered. | Declined by TJ (approved without the Edit) | 1 |
 | /game-grid @1024 | header subtitle (GameGrid.tsx, .titleBlock/.subTitle) | ~~Title width:100% squeezed subtitle to 358px; "OFF-"/"NIGHTS" split.~~ Title sizes to text ≥981px; "off-nights" nowrap | Done | 1 |
 | /game-grid @1024 | legend (.legendMeta) | ~~2-2-1 wrap orphaned "Bottom 10 score".~~ Days column + score column below 1200px | Done | 1 |
+| /game-grid | Weekly key dots (.matchupKey) | ~~#00f5a0/#ff557c differ from the sparkline's tokens.~~ $success-color / $danger-color | Done | 2 |
+| /game-grid | private ramp (GameGrid, OpportunitySparkline, PlayerPickupTable, palette, DateRangeTeamGrid) | ~~24 unnamed hex values, 54+ uses.~~ Named in GameGrid/_surfaces.scss (CSS byte-identical) | Done | 2 |
+| /game-grid | date-range error notices | ~~Tailwind red rgba(239,68,68).~~ rgba($danger-color) | Done | 2 |

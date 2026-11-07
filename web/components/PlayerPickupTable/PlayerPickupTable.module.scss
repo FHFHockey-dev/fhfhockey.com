@@ -1,5 +1,6 @@
 @use "sass:color";
 @use "styles/vars" as v; // Use an alias for brevity
+@use "../GameGrid/surfaces" as gg;
 @use "sass:math";
 @use "styles/panel" as panel;
 
@@ -1860,22 +1861,22 @@ $selected-border-width: 2px; // The width of the indicator
 
 .yahooContext {
   padding: 12px 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+  border-bottom: 1px solid rgba(v.$color-white, 0.16);
   font-size: 0.85rem;
 
   p { margin: 0 0 8px; }
-  a { color: #77cfff; margin-right: 12px; }
+  a { color: gg.$score-header; margin-right: 12px; }
   button {
     margin: 0 8px 8px 0;
     padding: 6px 10px;
-    border: 1px solid rgba(255, 255, 255, 0.25);
+    border: 1px solid rgba(v.$color-white, 0.25);
     border-radius: 4px;
-    background: #20252d;
+    background: gg.$row-zebra;
     color: inherit;
     cursor: pointer;
-    &[aria-pressed="true"] { border-color: #77cfff; background: #10384e; }
+    &[aria-pressed="true"] { border-color: gg.$score-header; background: gg.$summary-banner; }
     &:disabled { opacity: 0.5; cursor: wait; }
-    &:focus-visible { outline: 2px solid #77cfff; outline-offset: 2px; }
+    &:focus-visible { outline: 2px solid gg.$score-header; outline-offset: 2px; }
   }
   summary { cursor: pointer; }
 }
