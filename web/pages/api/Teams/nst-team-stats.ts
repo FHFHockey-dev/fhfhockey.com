@@ -1155,4 +1155,5 @@ async function handler(req: any, res: NextApiResponse) {
   return workHandler(req, res);
 }
 
-export default adminOnly(withNstJobLifecycle(withCronJobAudit(handler), "nst-team-stats", req => req.method !== "GET"));
+export default adminOnly(withNstJobLifecycle(withCronJobAudit(handler), "nst-team-stats", req => req.method !== "GET",
+  { auditUnadmitted: respond => withCronJobAudit(respond) }));

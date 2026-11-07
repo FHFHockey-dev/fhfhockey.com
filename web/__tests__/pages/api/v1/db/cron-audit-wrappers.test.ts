@@ -379,7 +379,14 @@ describe("scoped cron auth ordering", () => {
       expect(exported && ts.isCallExpression(exported), route).toBe(true);
       if (!exported || !ts.isCallExpression(exported)) continue;
       expect(exported.expression.getText(ast), route).toBe("adminOnly");
-      const audited = exported.arguments[0];
+      let audited = exported.arguments[0];
+      // The NST job lifecycle may sit between auth and audit only when it
+      // audits its own pre-handler admission refusal.
+      if (audited && ts.isCallExpression(audited) && audited.expression.getText(ast) === "withNstJobLifecycle") {
+        expect(audited.arguments.slice(3).some(arg => ts.isObjectLiteralExpression(arg) &&
+          arg.properties.some(p => p.name?.getText(ast) === "auditUnadmitted")), route).toBe(true);
+        audited = audited.arguments[0];
+      }
       expect(audited && ts.isCallExpression(audited), route).toBe(true);
       if (!audited || !ts.isCallExpression(audited)) continue;
       expect(audited.expression.getText(ast), route).toBe("withCronJobAudit");

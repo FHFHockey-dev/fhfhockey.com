@@ -777,4 +777,5 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   }
 }
 
-export default adminOnly(withNstJobLifecycle(withCronJobAudit(withNhlOffSeasonSkip(handler as any)), "update-nst-current-season", req => req.method !== "GET"));
+export default adminOnly(withNstJobLifecycle(withCronJobAudit(withNhlOffSeasonSkip(handler as any)), "update-nst-current-season", req => req.method !== "GET",
+  { auditUnadmitted: respond => withCronJobAudit(respond) }));
