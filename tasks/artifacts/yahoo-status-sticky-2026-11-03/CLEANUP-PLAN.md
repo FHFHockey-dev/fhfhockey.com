@@ -1,6 +1,6 @@
 # Stale Yahoo status cleanup plan (not run)
 
-Finding `CLAUDE-SS-YAHOO-STATUS-STICKY-20261103`. Fix: writer `status_observed` marker plus migration `supabase/migrations/20261104011912_clear_stale_yahoo_player_status.sql`. Step 2 (the migration) was applied on 2026-11-04 with TJ's approval; nothing else below has been run. Every write step needs TJ's pop-up approval.
+Finding `CLAUDE-SS-YAHOO-STATUS-STICKY-20261103`. Fix: writer `status_observed` marker plus migration `supabase/migrations/20261104011912_clear_stale_yahoo_player_status.sql`. Step 2 (the migration) was applied on 2026-11-04 with TJ's approval; steps 3-5 are now done too (step 5 recorded below, 2026-11-07). Every write step needs TJ's pop-up approval.
 
 ## What the stale rows look like
 
@@ -97,6 +97,15 @@ order by last_updated;
 ```
 
 If the run was partial (HTTP 207, with `providerOmitted` or `deferredRows` above 0), the residual rows keep their old flag until the next complete run. No manual clear is needed.
+
+**Step 5 result (2026-11-07, data-checks lane, SELECT only).** Run used: the 08:40:01 UTC 11-07 `update-yahoo-players` run (audit status `partial` only because of 1,031 `ownershipOmitted`; `providerOmitted` 0, `deferredRows` 0, 1,610 of 1,610 upserted). The writer (#407) has been live since 11-04, so this is the fourth full run after the fix.
+
+- Coverage: 1,610 of 1,610 game-477 rows refreshed by the run; residual flags on unrefreshed rows: 0.
+- Distribution: NA 791, none 694, IR 66, IR-LT 18, IR-NR 18, DTD 13, O 10 (11-04 before: NA 888, none 410, DTD 118, IR 102, O 40, IR-NR 28, IR-LT 22).
+- Charlie McAvoy and Connor Bedard: status, status_full and injury_note all null.
+- NA stays high because Yahoo reports NA for players not on an active NHL roster; it is a real Yahoo value, not a stale flag.
+
+Step 5 is closed. Older games (465, 453) are untouched, as planned.
 
 ### 6. Rollback
 Re-create the previous definition, `20260723113533` plus the `20260725200808` repair, with a new migration. Cleared flags only come back if Yahoo reports them again. The step 1 snapshot can restore the old values, but it shouldn't be used that way: those values were stale.

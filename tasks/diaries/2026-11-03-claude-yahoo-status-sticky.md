@@ -39,3 +39,7 @@ Writer + RPC migration (not applied) + stale-row cleanup plan (not run). Started
 Waiting on TJ: migration apply (step 2 of CLEANUP-PLAN), writer release, then step 5 verification SELECTs. Keep this diary until the lane closes.
 
 - Chef outcome (2026-11-07): migration applied as 20261104011912; writer shipped in #407 (9eb3de632). Left: step 5 verification SELECTs (stale flags cleared after an update-yahoo-players run) were not run by the Chef. Keep until that check is recorded.
+
+- Step 5 (2026-11-07, data-checks lane, SELECT only): 11-07 08:40 UTC run refreshed 1,610/1,610 game-477 rows, 0 residual
+  flags; DTD 118→13, IR 102→66, O 40→10; McAvoy and Bedard clear. Recorded in CLEANUP-PLAN.md. Lane done; this diary
+  can be retired by Chef once the commit lands.

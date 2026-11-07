@@ -1160,7 +1160,7 @@
       "deploymentState": "unknown",
       "migrationClass": "feature",
       "rolloutGate": "x-timeline-poll email watchdog (TJ chose the Supabase watchdog, 2026-11-06). TJ applies it by hand in the SQL editor, with Vault secrets resend_api_key and x_timeline_alert_recipient.",
-      "stateEvidence": "Not in Production schema_migrations (readback 2026-11-06). TJ ran this file's SQL in the Supabase SQL editor about 19:25 UTC on 2026-11-06, scheduled cron 'x-timeline-watchdog' (*/5) and sent a test email (Resend 200). Readback: function security definer with empty search_path, execute for service_role only; dry run clean. Mark applied only after an approved `supabase migration repair --status applied 20261106210000`. Receipt: tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/IFTTT-TO-FXTWITTER-CUTOVER/DEBRIEF.md."
+      "stateEvidence": "Not in Production schema_migrations (readback 2026-11-06). TJ ran this file's SQL in the Supabase SQL editor about 19:25 UTC on 2026-11-06, scheduled cron 'x-timeline-watchdog' (*/5) and sent a test email (Resend 200). Readback: function security definer with empty search_path, execute for service_role only; dry run clean. Mark applied only after an approved `supabase migration repair --status applied 20261106210000`. Receipt: tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/IFTTT-TO-FXTWITTER-CUTOVER/DEBRIEF.md. Readback 2026-11-07 21:25 UTC (data-checks lane, SELECT only): still not in schema_migrations; public.x_timeline_watchdog present, security definer, search_path empty, execute service_role only (anon false); cron 'x-timeline-watchdog' jobid 401 */5 active."
     },
     {
       "order": 116,
@@ -1170,7 +1170,7 @@
       "deploymentState": "pending",
       "migrationClass": "feature",
       "rolloutGate": "High-visibility watchdog emails (TJ asked for warning emojis on errors, 2026-11-06). TJ applies it by hand in the SQL editor.",
-      "stateEvidence": "Not applied as of 2026-11-06 19:45 UTC. TJ approved the email design. No IFTTT fallback step (TJ is removing IFTTT). Verified locally on PostgreSQL 15 with stand-ins for pg_net and Vault: all 28 scenario checks pass (scratchpad pgtest/scenarios.sql). Receipt: tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/IFTTT-TO-FXTWITTER-CUTOVER/DEBRIEF.md."
+      "stateEvidence": "Not applied as of 2026-11-06 19:45 UTC. TJ approved the email design. No IFTTT fallback step (TJ is removing IFTTT). Verified locally on PostgreSQL 15 with stand-ins for pg_net and Vault: all 28 scenario checks pass (scratchpad pgtest/scenarios.sql). Receipt: tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/IFTTT-TO-FXTWITTER-CUTOVER/DEBRIEF.md. Readback 2026-11-07 21:25 UTC (data-checks lane, SELECT only): still not applied. Not in schema_migrations; public.x_timeline_watchdog_label is absent and the live x_timeline_watchdog has no 'test_alert' mode or 🚨 subject, so the live body is still the 20261106210000 one."
     },
     {
       "order": 117,
@@ -1180,7 +1180,7 @@
       "deploymentState": "unknown",
       "migrationClass": "performance",
       "rolloutGate": "Adds cron_job_audit_run_time_idx (run_time, job_name, status, rows_affected) + ANALYZE so the daily cron report's 24h window read stops hitting the 8 s statement timeout. TJ applies by hand in the SQL editor after a pop-up approval; the CONCURRENTLY variant is in the file header.",
-      "stateEvidence": "Not in Production schema_migrations (readback 2026-11-06). Applied by hand 2026-11-06 with TJ's pop-up approval (cron-report lane 1), as create index concurrently if not exists + analyze. Readback by the X-timeline Chef: cron_job_audit_run_time_idx valid and ready, 25 MB, definition matches the file. Mark applied only after an approved `supabase migration repair --status applied 20261106233000`."
+      "stateEvidence": "Not in Production schema_migrations (readback 2026-11-06). Applied by hand 2026-11-06 with TJ's pop-up approval (cron-report lane 1), as create index concurrently if not exists + analyze. Readback by the X-timeline Chef: cron_job_audit_run_time_idx valid and ready, 25 MB, definition matches the file. Mark applied only after an approved `supabase migration repair --status applied 20261106233000`. Readback 2026-11-07 21:25 UTC (data-checks lane, SELECT only): still not in schema_migrations; cron_job_audit_run_time_idx valid and ready, definition (run_time, job_name, status, rows_affected) matches the file."
     },
     {
       "order": 118,
