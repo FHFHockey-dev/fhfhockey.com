@@ -787,10 +787,10 @@
       "path": "supabase/migrations/20261002134400_game_line_snapshots.sql",
       "sha256": "041a78fd056c53f1624706f18a9f239f05b460456ba0da2fd3f7c4323fd0866a",
       "sourceStatus": "source-authorized",
-      "deploymentState": "unknown",
+      "deploymentState": "applied",
       "migrationClass": "feature",
-      "rolloutGate": "Retained source under the 2026-10-12 repository reconciliation authorization. Separate explicit migration approval is required; no hosted migration is authorized or run.",
-      "stateEvidence": "No exact hosted applied-state receipt was inspected during repository reconciliation. Source presence does not establish deployment state."
+      "rolloutGate": "Lines snapshot evidence store (entry lineup, in-game updates, PP decisions). Applied with TJ's pop-up approval in the Lines IGA Chef session (P1). Reads and writes stay off until LINES_OBSERVATIONS_ENABLED / LINES_ENTRY_SERVING_ENABLED / LINES_PP_CARRY_FORWARD_ENABLED are set.",
+      "stateEvidence": "Production schema_migrations version 20261002134400 (game_line_snapshots), applied verbatim 2026-11-07 after a read-only pre-check showed none of its objects present. Readback: the 6 line_* tables exist with RLS on and the immutable_evidence trigger; anon has no select; service_role has insert and no update; append_line_decisions executes for service_role only."
     },
     {
       "order": 79,
