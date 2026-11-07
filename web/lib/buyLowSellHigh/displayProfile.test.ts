@@ -1,5 +1,5 @@
 // @vitest-environment node
-/** Display mapper tests on real saved profiles (unmodified lines from the pinned dry-run-v4 A + overlay file),
+/** Authored synthetic defaults plus lazy retained empirical checks (BLSH_RETAINED_TEST_ROOT),
  * plus an opt-in step that packages the provisional candidate snapshot.
  *
  * BLSH_DISPLAY_OUT  optional: a new candidate path inside display-snapshot-v2/; writes the candidate and a receipt beside it.
@@ -7,12 +7,14 @@
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { basename, dirname, join } from "node:path";
-import { describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
+import { retainedBytes, retainedEnabled, retainedSuite } from "./__fixtures__/retainedData";
+import { syntheticProfile } from "./__fixtures__/syntheticProfiles";
 import type { Profile } from "./currentWindows";
 import { RETAINED_BLSH_SHA256, retainedBlshEvidence } from "../player-cards/retainedBlsh";
 import {
   BLSH_LIST_TOP_N, buildDisplaySnapshot, HEADLINE_TRACK_CONFLICT_LIST_WITHHELD, HEADLINE_TRACK_UNAVAILABLE_LIST_WITHHELD, INSUFFICIENT_PERSONAL_HISTORY_LIST_WITHHELD,
-  listWithheldReason, NO_PERSONAL_HISTORY_LIST_WITHHELD, OPPORTUNITY_NOT_ATTACHED, PERSONAL_HISTORY_UNAVAILABLE_LIST_WITHHELD, reasonText, SHORT_WINDOW_LIST_WITHHELD, toDisplayProfile,
+  listWithheldReason, personalHistoryReason, NO_PERSONAL_HISTORY_LIST_WITHHELD, OPPORTUNITY_NOT_ATTACHED, PERSONAL_HISTORY_UNAVAILABLE_LIST_WITHHELD, reasonText, SHORT_WINDOW_LIST_WITHHELD, toDisplayProfile,
   type MappedProfile, type ReferencePolicy,
 } from "./displayProfile";
 import { compareOpportunity, OPPORTUNITY_VERSION, PERSISTENCE_NOTE, summarizeOpportunityHistory, type OpportunityGame } from "./opportunity";
@@ -20,7 +22,6 @@ import { currentResearchLists, currentStateLabel } from "./researchSnapshot";
 
 const ROOT = join(__dirname, "../../..");
 const ARTIFACTS = join(ROOT, "tasks/artifacts/blsh-independent-review-2026-10-28");
-const FIXTURE = join(ARTIFACTS, "display-snapshot-v2/fixtures/PROFILES-FIXTURE.jsonl");
 const SOURCE = join(ARTIFACTS, "dry-run-v4/PROFILES-A_development_reference__official_receipt_overlay.jsonl");
 const SUMMARY = join(ARTIFACTS, "dry-run-v4/SUMMARY.json");
 const PINS = {
@@ -35,7 +36,7 @@ const readPinned = (path: string, pin: string) => {
   return bytes.toString("utf8");
 };
 const lines = (text: string) => text.split("\n").filter(Boolean).map(l => JSON.parse(l) as Profile);
-const fixtures = lines(readPinned(FIXTURE, PINS.fixture));
+let fixtures: Profile[];
 const byId = (id: number) => structuredClone(fixtures.find(p => p.playerId === id)!);
 const CASES = { burns: 8470613, thin: 8475413, sh: 8471215, wilson: 8475253, unavailable: 8473419, conflicting: 8474563, zeroShot: 8475795, stale: 8475718, oldest: 8478173, short: 8473422 };
 const R1 = { rank: 1, positionRank: 1 };
@@ -50,8 +51,18 @@ const snapshot = (profiles: Profile[], o: Partial<Parameters<typeof buildDisplay
 });
 const strings = (v: unknown): string[] => (typeof v === "string" ? [v] : Array.isArray(v) ? v.flatMap(strings) : v && typeof v === "object" ? Object.values(v).flatMap(strings) : []);
 
+describe.skipIf(!retainedEnabled)(retainedSuite, () => {
+  beforeAll(() => { fixtures = lines(retainedBytes("profiles").toString("utf8")); });
 describe("displayProfile: handoff v2 mapping on real saved profiles", () => {
-  const snap = snapshot(fixtures);
+  it("distinguishes unknown source coverage from confirmed no personal history", () => {
+    const p = byId(CASES.wilson);
+    p.reference.historyStatus = "unknown";
+    expect(personalHistoryReason(p)).toBe(PERSONAL_HISTORY_UNAVAILABLE_LIST_WITHHELD);
+    p.reference.historyStatus = "confirmed_none";
+    expect(personalHistoryReason(p)).toBe(NO_PERSONAL_HISTORY_LIST_WITHHELD);
+  });
+  let snap: ReturnType<typeof snapshot>;
+  beforeAll(() => { snap = snapshot(fixtures); });
   const get = (id: number) => snap.profiles.find(p => p.playerId === id)!;
 
   it("keeps every profile and gives every recorded reason a text", () => {
@@ -193,7 +204,8 @@ describe("displayProfile: handoff v2 mapping on real saved profiles", () => {
     expect(p.result.researchList).not.toBeNull();
     return p;
   };
-  const ordered = snapshot([...fixtures.filter(f => f.playerId !== CASES.thin && f.playerId !== CASES.zeroShot), eligibleCopy(CASES.thin), eligibleCopy(CASES.zeroShot)]);
+  let ordered: ReturnType<typeof snapshot>;
+  beforeAll(() => { ordered = snapshot([...fixtures.filter(f => f.playerId !== CASES.thin && f.playerId !== CASES.zeroShot), eligibleCopy(CASES.thin), eligibleCopy(CASES.zeroShot)]); });
   const inOrdered = (id: number) => ordered.profiles.find(p => p.playerId === id)!;
   it("withholds direction below the provisional 20-game history cutoff, listed or not, and keeps unknown apart from zero", () => {
     const below = gatedSnapshot(withHistory(19, true)), at = gatedSnapshot(withHistory(20, true));
@@ -282,7 +294,8 @@ describe("displayProfile: decision-3 opportunity comparisons as provisional cont
     return p;
   };
   const shown = (p: MappedProfile) => snapshot([...fixtures.filter(f => f.playerId !== p.playerId), p]).profiles.find(x => x.playerId === p.playerId)!;
-  const base = snapshot(fixtures).profiles.find(x => x.playerId === CASES.burns)!;
+  let base: ReturnType<typeof toDisplayProfile>;
+  beforeAll(() => { base = snapshot(fixtures).profiles.find(x => x.playerId === CASES.burns)!; });
 
   it("shows an explicit unavailable state when nothing is attached, never zeros", () => {
     const snap = snapshot(fixtures);
@@ -323,14 +336,6 @@ describe("displayProfile: decision-3 opportunity comparisons as provisional cont
     for (const p of [against, thin]) expect(p.score).toEqual(base.score);
     // A profile outside the lists gets the comparisons but no list check.
     expect(shown(attach(CASES.conflicting, 3)).opportunity).toMatchObject({ status: "available", listCheck: null });
-  });
-  it("gives every opportunity reason code a written text", () => {
-    const codes = ["no_personal_history", "insufficient_personal_history", "track_unavailable_in_history", "observed_production_unavailable", "window_games_unavailable", "unestimated_scale",
-      "no_strength_split_for_track", "window_toi_unavailable", "window_pp_toi_unavailable", "history_toi_unavailable", "pp_split_inputs_unavailable", "no_non_pp_exposure",
-      "pp_rate_unsupported_without_cohort", "split_rates_unavailable", "toi_unavailable", "comparisons_agree", "both_balanced", "opportunity_explains_per_game_gap",
-      "adjusted_within_balanced_band", "opposite_directions_role_persistence_unknown", "per_game_at_baseline_rates_shifted", "adjusted_unavailable_per_game_only",
-      "adjusted_unavailable_balanced", "adjusted_unavailable_opportunity_may_explain", "adjusted_unavailable_opportunity_unknown", "per_game_unavailable"];
-    expect(codes.filter(c => reasonText(c)!.startsWith("Unavailable: " + c))).toEqual([]);
   });
   it("fails closed on a result that does not match the scored window or claims a forecast", () => {
     const moved = attach(CASES.burns, 3);
@@ -378,6 +383,8 @@ describe("displayProfile: fails closed instead of displaying drifted values", ()
   });
 });
 
+});
+
 const out = process.env.BLSH_DISPLAY_OUT;
 describe.skipIf(!out)("displayProfile: provisional A + official-overlay candidate snapshot (opt-in, local)", () => {
   it("packages all 725 saved profiles without recomputing a score", () => {
@@ -417,4 +424,160 @@ describe.skipIf(!out)("displayProfile: provisional A + official-overlay candidat
       canonicalTarget: "web/lib/buyLowSellHigh/research-snapshots/2026-10-26.arm-a-official-overlay.v2.json (Codex installs and pins; not written here)",
     }, null, 2) + "\n", { flag: "wx" });
   }, 300_000);
+});
+
+describe("displayProfile: authored synthetic defaults (no retained data)", () => {
+  it.each(["BL", "SH"] as const)("preserves independently calculated %s arithmetic", side => {
+    const p = syntheticProfile(900001, side), before = JSON.stringify(p), shown = toDisplayProfile(p, R1, RECORDED);
+    // Diagonal covariance [4,1,1] and equal track weights: standardized gaps are +/-[1,1,1].
+    // Their joint standardized sum is +/-sqrt(3), giving the literal bounded index below.
+    const sign = side === "BL" ? 1 : -1;
+    expect(shown.score.normalizedGap).toBeCloseTo(sign * 1.7320508075688772, 12);
+    expect(shown.score.value).toBeCloseTo(sign * 63.39745962155614, 12);
+    expect(shown.tracks.map(t => t.observed)).toEqual(side === "BL" ? [8, 2, 0] : [12, 4, 2]);
+    expect(shown.tracks.map(t => t.supportConditioned)).toEqual([10, 3, 1]);
+    expect(shown.tracks.map(t => t.gap)).toEqual([2 * sign, sign, sign]);
+    expect(shown.tracks.map(t => t.componentSum)).toEqual([2 * sign, sign, sign]);
+    expect(shown.score.list).toBe(side); expect(shown.evidence.calibratedProbability).toBeNull();
+    expect(shown.evidence.reference.estimatorWeight).toBe(0.8);
+    expect(shown.opportunity).toMatchObject({ status: "unavailable", reason: OPPORTUNITY_NOT_ATTACHED, tracks: [] });
+    expect(JSON.stringify(p)).toBe(before);
+  });
+  it.each([0, 19, 20])("enforces the personal-history boundary at %i", n => {
+    const p = syntheticProfile(); p.reference.personalN = n; p.result.productionAxis.personal_n = n;
+    if (!n) { p.reference.sourceIds = []; p.reference.dates = []; p.reference.historyStatus = "confirmed_none"; }
+    const shown = toDisplayProfile(p, n >= 20 ? R1 : null, RECORDED);
+    expect(shown.score.list).toBe(n >= 20 ? "BL" : null);
+    expect(shown.score.reason).toBe(n === 0 ? NO_PERSONAL_HISTORY_LIST_WITHHELD : n < 20 ? INSUFFICIENT_PERSONAL_HISTORY_LIST_WITHHELD : null);
+  });
+  it("keeps unknown history distinct from zero and prioritizes it over short windows", () => {
+    const p = syntheticProfile(); p.reference.personalN = 0; p.reference.historyStatus = "unknown"; p.result.productionAxis.personal_n = 0;
+    p.window.appearances = 4;
+    expect(toDisplayProfile(p, null, RECORDED).score.reason).toBe(PERSONAL_HISTORY_UNAVAILABLE_LIST_WITHHELD);
+    p.reference.personalN = 50; p.result.productionAxis.personal_n = 50;
+    expect(toDisplayProfile(p, null, RECORDED).score.reason).toBe(SHORT_WINDOW_LIST_WITHHELD);
+  });
+  it("withholds contradictory, balanced, nonfinite and absent headlines", () => {
+    for (const side of ["BL", "SH"] as const) {
+      for (const gap of [side === "BL" ? -1 : 1, 0, NaN]) {
+        const p = syntheticProfile(900001, side); p.explanation.tracks[0].gap = gap;
+        expect(listWithheldReason(p)).toBe(Number.isNaN(gap) ? HEADLINE_TRACK_UNAVAILABLE_LIST_WITHHELD : HEADLINE_TRACK_CONFLICT_LIST_WITHHELD);
+      }
+    }
+    const p = syntheticProfile(); p.explanation.tracks = p.explanation.tracks.slice(1);
+    expect(listWithheldReason(p)).toBe(HEADLINE_TRACK_UNAVAILABLE_LIST_WITHHELD);
+  });
+  it("withholds thin direction in cards and rejects assigning it a list rank", () => {
+    const p = syntheticProfile(); p.reference.personalN = 19; p.result.productionAxis.personal_n = 19;
+    expect(() => toDisplayProfile(p, R1, RECORDED)).toThrow("withheld profile has no rank");
+    const s = snapshot([p]), { profiles, ...metadata } = s;
+    expect(profiles[0].score).toMatchObject({ gapSign: "buy_low_evidence", list: null, directionWithheldReason: INSUFFICIENT_PERSONAL_HISTORY_LIST_WITHHELD });
+    const card = retainedBlshEvidence({ id: p.playerId, team: p.team! }, s.seasonId, { profile: profiles[0], metadata, snapshotSHA256: RETAINED_BLSH_SHA256, reviewReference: "Synthetic contract" });
+    expect(card.direction).toBe("unknown");
+  });
+  it("keeps a measured zero numeric, an absent score unavailable, and stale windows withheld", () => {
+    const zero = toDisplayProfile(syntheticProfile(), R1, RECORDED);
+    expect(zero.tracks[2].observed).toBe(0); expect(zero.score.value).not.toBeNull();
+    const missing = toDisplayProfile(syntheticProfile(900002, "BL", { available: false }), null, RECORDED);
+    expect(missing.score).toMatchObject({ value: null, status: "unavailable", list: null, rank: null });
+    expect(missing.score.reasonText).toMatch(/^Score unavailable/);
+    expect(missing.evidence).toMatchObject({ tier: null, tierLabel: "Unavailable: no score" });
+    expect(missing.tracks).toEqual([]);
+    const stale = toDisplayProfile(syntheticProfile(900003, "BL", { fresh: false }), null, RECORDED);
+    expect(stale.score).toMatchObject({ list: null, rank: null }); expect(stale.score.value).not.toBeNull();
+    expect(stale.evidence.window).toMatchObject({ fresh: false, lastGameDaysBeforeRecordedThrough: 9, recordedThroughDate: RECORDED });
+    expect(stale.evidence.window.freshnessText).toMatch(/stale window; withheld from lists$/);
+  });
+  it("renders zero shots as zero and missing shots as unavailable context", () => {
+    const zero = toDisplayProfile(syntheticProfile(900001, "BL", { shots: 0 }), R1, RECORDED);
+    const missing = toDisplayProfile(syntheticProfile(900002, "BL", { shots: null }), R1, RECORDED);
+    expect(zero.context.signals.find(c => c.metric === "shots_per_60")).toMatchObject({ current: 0, status: "available" });
+    expect(missing.context.signals.find(c => c.metric === "shots_per_60")).toMatchObject({ current: null, status: "unavailable" });
+    expect(zero.score.value).toBe(missing.score.value);
+  });
+  it("counts games only for slot coverage notes", () => {
+    const p = syntheticProfile();
+    p.coverage = [{ component: "current_window_slot", reason: "missing_measurement_or_exposure", count: 2 },
+      { component: "personal_reference", reason: "no_personal_history_cohort", count: 1 }];
+    const notes = toDisplayProfile(p, R1, RECORDED).coverage.notes.filter(n => n.source === "slot");
+    expect(notes.map(n => [n.component, n.games])).toEqual([["current_window_slot", 2], ["personal_reference", null]]);
+  });
+  it("orders by headline gap even when the combined index orders the other way", () => {
+    const highIndex = syntheticProfile(900001, "BL", { observed: [9, 0, -2] });
+    const bigHeadline = syntheticProfile(900002, "BL", { observed: [6, 3, 1] }); bigHeadline.position = "D";
+    expect(highIndex.result.value!).toBeGreaterThan(bigHeadline.result.value!);
+    const s = snapshot([highIndex, bigHeadline]);
+    expect(currentResearchLists(s).BL.map(p => p.playerId)).toEqual([900002, 900001]);
+    expect(currentResearchLists(s).BL.map(p => p.score.headline!.gap)).toEqual([4, 1]);
+    expect(s.profiles.every(p => p.score.positionRank === 1)).toBe(true);
+    expect(s.profiles[0].tracks.map(t => t.role)).toEqual(["headline", "supporting", "supporting"]);
+  });
+  it("preserves absent context as unavailable, not zero", () => {
+    const p = toDisplayProfile(syntheticProfile(), R1, RECORDED);
+    expect(p.coverage.context.reference).toMatchObject({ verified: false, reason: "reference_window_not_supplied" });
+    expect(p.context.signals.every(c => c.scoreInput === false && c.interpretation === "hypothesis")).toBe(true);
+    expect(p.coverage.notes.every(n => n.text.length > 0)).toBe(true);
+  });
+  it.each(["component", "normalization", "claims", "rank", "context"])("rejects synthetic %s drift", kind => {
+    const p = syntheticProfile();
+    if (kind === "component") p.explanation.tracks[0].components[0].value++;
+    if (kind === "normalization") p.explanation.normalizedGap!++;
+    if (kind === "claims") Object.assign(p.explanation.claims, { forecast: true });
+    if (kind === "context") p.explanation.coverage = p.explanation.coverage.filter(n => n.component !== "reference_window_context");
+    expect(() => toDisplayProfile(p, kind === "rank" ? null : R1, RECORDED)).toThrow();
+  });
+  it("keeps both position lists contiguous, deterministic, and capped at 25", () => {
+    const profiles = Array.from({ length: 27 }, (_, i) => { const p = syntheticProfile(900001 + i); p.position = "D"; return p; });
+    profiles.push(syntheticProfile(900100), syntheticProfile(900101, "SH"));
+    const s = snapshot(profiles.reverse());
+    const ds = s.profiles.filter(p => p.position === "D").sort((a, b) => a.score.positionRank! - b.score.positionRank!);
+    expect(ds.map(p => p.playerId)).toEqual(Array.from({ length: 27 }, (_, i) => 900001 + i));
+    expect(ds.map(p => p.score.positionRank)).toEqual(Array.from({ length: 27 }, (_, i) => i + 1));
+    expect(ds.filter(p => p.score.positionTopN)).toHaveLength(25);
+    expect(s.counts).toMatchObject({ profiles: 29, BL: 28, SH: 1, withheld: 0 });
+  });
+  it.each(["arm", "duplicate", "chronology"])("rejects synthetic snapshot %s drift", kind => {
+    const p = syntheticProfile();
+    expect(() => snapshot(kind === "duplicate" ? [p, p] : [p], kind === "arm" ? { referencePolicy: { ...POLICY, arm: "B_development_plus_2026_prefix" } } : kind === "chronology" ? { packagedAtUTC: "2026-10-27T00:00:00Z" } : {})).toThrow();
+  });
+  it("gives every opportunity reason code a written text", () => {
+    const codes = ["no_personal_history", "insufficient_personal_history", "track_unavailable_in_history", "observed_production_unavailable", "window_games_unavailable", "unestimated_scale",
+      "no_strength_split_for_track", "window_toi_unavailable", "window_pp_toi_unavailable", "history_toi_unavailable", "pp_split_inputs_unavailable", "no_non_pp_exposure",
+      "pp_rate_unsupported_without_cohort", "split_rates_unavailable", "toi_unavailable", "comparisons_agree", "both_balanced", "opportunity_explains_per_game_gap",
+      "adjusted_within_balanced_band", "opposite_directions_role_persistence_unknown", "per_game_at_baseline_rates_shifted", "adjusted_unavailable_per_game_only",
+      "adjusted_unavailable_balanced", "adjusted_unavailable_opportunity_may_explain", "adjusted_unavailable_opportunity_unknown", "per_game_unavailable"];
+    expect(codes.filter(c => reasonText(c)!.startsWith("Unavailable: " + c))).toEqual([]);
+  });
+  it.each([0.1, 3])("keeps opportunity level %s provisional and outside the list calculation", level => {
+    const p = syntheticProfile(), base = toDisplayProfile(p, R1, RECORDED);
+    const history: OpportunityGame[] = Array.from({ length: 40 }, (_, i) => ({ seconds: 1200, ppSeconds: 120,
+      goals: 1, assists: 1, ppPoints: 0, tracks: [8, 2, 0].map(v => (v / 5 + 1) * level * (1 + 0.3 * ((i % 3) - 1))) }));
+    p.opportunity = compareOpportunity(summarizeOpportunityHistory(history), { games: 5, seconds: 3600, ppSeconds: 600, observed: [8, 2, 0] }, { headlineTrack: 0 });
+    const shown = toDisplayProfile(p, R1, RECORDED);
+    expect(shown.score).toEqual(base.score);
+    expect(shown.opportunity).toMatchObject({ status: "available", affectsLists: false, provisional: true, forecast: false, trusted: false, calibratedProbability: null });
+    const c = shown.opportunity.tracks[0].perGame;
+    // 40-game repeating factor has mean .9925; five games times baseline mean.
+    expect(c.expected).toBeCloseTo(12.9025 * level, 10);
+    expect(c.gap).toBeCloseTo(8 - 12.9025 * level, 10);
+    const s = snapshot([p]), { profiles, ...metadata } = s;
+    const card = retainedBlshEvidence({ id: p.playerId, team: p.team! }, s.seasonId, { profile: profiles[0], metadata, snapshotSHA256: RETAINED_BLSH_SHA256, reviewReference: "Synthetic unit contract only" });
+    expect(card.retained?.profile).toEqual(profiles[0]);
+    expect(shown.opportunity.tracks[2].adjusted).toMatchObject({ available: false, reason: "no_strength_split_for_track", expected: null, gap: null, z: null, direction: null });
+    expect(shown.opportunity.changes!.toi).toMatchObject({ baseline: 1200, current: 720 });
+    expect(shown.opportunity.changes!.pp).toMatchObject({ baseline: 120, current: 120 });
+    expect(shown.opportunity.listCheck).toMatchObject({ state: level < 1 ? "contradicts" : "agrees", applied: false });
+    for (const kind of ["observed", "forecast", "unavailable zero"]) {
+      const corrupt = structuredClone(p);
+      if (kind === "observed") corrupt.opportunity.tracks[0].perGame.observed!++;
+      if (kind === "forecast") Object.assign(corrupt.opportunity, { forecast: true });
+      if (kind === "unavailable zero") corrupt.opportunity.tracks[2].adjusted.gap = 0;
+      expect(() => toDisplayProfile(corrupt, R1, RECORDED)).toThrow();
+    }
+    p.opportunity = compareOpportunity(summarizeOpportunityHistory(history.slice(0, 10)), { games: 5, seconds: 3600, ppSeconds: 600, observed: [8, 2, 0] }, { headlineTrack: 0 });
+    const thin = toDisplayProfile(p, R1, RECORDED);
+    expect(thin.score).toEqual(base.score);
+    expect(thin.opportunity.listCheck).toMatchObject({ state: "unavailable", applied: false });
+    expect(thin.opportunity.tracks.every(t => t.perGame.reason === "insufficient_personal_history" && t.perGame.expected === null && t.adjusted.expected === null)).toBe(true);
+  });
 });

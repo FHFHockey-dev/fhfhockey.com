@@ -57,7 +57,7 @@ export function retainedBlshEvidence(player: { id: number; team: string }, seaso
   if (!s.provisional || !s.exploratory || s.productionAdopted || s.trusted || s.confidenceProbability !== null || s.issuedAtUTC !== null || p.claims.forecast || p.claims.marketValue || p.claims.trusted || p.score.calibratedProbability !== null) return unavailable("Saved research flags cannot be promoted to forecast or market claims.");
   const w = p.evidence.window, ref = p.evidence.reference;
   if (!Number.isFinite(Date.parse(s.asOfUTC)) || !Number.isSafeInteger(w.games) || w.games < 1 || w.dates.length !== w.games || w.sourceIds.length !== w.games || new Set(w.sourceIds).size !== w.games || w.dates.some(d => !/^\d{4}-\d{2}-\d{2}$/.test(d) || d > s.eventThroughDate) || p.tracks.length !== 3 || p.tracks.some(t => ![t.observed, t.supportConditioned, t.gap].every(Number.isFinite))) return unavailable("Saved research window or production/support values are unavailable.");
-  const direction = p.score.gapSign === "buy_low_evidence" ? "positive" : p.score.gapSign === "sell_high_evidence" ? "negative" : p.score.gapSign === "balanced" ? "level" : "unknown";
+  const direction = p.score.directionWithheldReason ? "unknown" : p.score.gapSign === "buy_low_evidence" ? "positive" : p.score.gapSign === "sell_high_evidence" ? "negative" : p.score.gapSign === "balanced" ? "level" : "unknown";
   const uniqueNotes = [...new Set(p.coverage.notes.map(n => n.text))];
   let provenance: NonNullable<CardEvidence["retained"]>["provenance"];
   if (input.provenance) {
@@ -75,7 +75,7 @@ export function retainedBlshEvidence(player: { id: number; team: string }, seaso
   }
   return { status: "exploratory", heading: "BLSH · retained provisional research", direction, receipt: null, market: "Market reference unavailable", retained: { snapshotSHA256: input.snapshotSHA256, reviewReference: input.reviewReference, asOfUTC: s.asOfUTC, eventThroughDate: s.eventThroughDate, dates: [...w.dates], methodVersion: s.scoreVersion, profile: JSON.parse(JSON.stringify(p)), limits: [...s.limits], provenance, currentBoxes: retainedBoxEvidence(input, provenance) }, lines: [
     `Separate saved window: ${w.dates[0]} to ${w.dates.at(-1)}; ${w.games} recorded game rows, ${w.minutes ?? "unknown"} minutes. NHL controls do not change this evidence window.`,
-    `${p.score.statusLabel}; ${direction} support gap.`,
+    p.score.directionWithheldText ?? `${p.score.statusLabel}; ${direction} support gap.`,
     ...p.tracks.map(t => `${t.label}: recorded ${t.observed.toFixed(2)}; support-conditioned ${t.supportConditioned.toFixed(2)}; gap ${t.gap.toFixed(2)} (window totals).`),
     `Opportunity: ${p.context.opportunity.map(o => `${o.label} ${o.current === null ? "unavailable" : o.current.toFixed(2)} ${o.units}`).join("; ")}.`,
     `Reference: ${ref.personalGames} games; age ${ref.ageDays ?? "unknown"} days; stale development history. ${p.evidence.tierNote}.`,

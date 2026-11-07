@@ -84,6 +84,18 @@ describe("market reference comparability", () => {
     expect(compareMarketReference({ ...expected, value: null }, reference, options)).toMatchObject({ reason: "expected_unavailable" });
   });
 
+  it.each([NaN, Infinity, -Infinity])("withholds nonfinite expectations and freshness limits (%s)", value => {
+    expect(compareMarketReference({ ...expected, value }, reference, options)).toMatchObject({ status: "unavailable", reason: "expected_unavailable" });
+    expect(compareMarketReference(expected, reference, { ...options, maxAgeHours: value })).toMatchObject({ status: "unavailable", reason: "invalid_freshness_limit" });
+  });
+
+  it("rejects invalid common horizons, scoring and overflow while preserving a measured zero", () => {
+    expect(compareMarketReference({ ...expected, horizonGames: 0 }, { ...reference, horizonGames: 0 }, options)).toMatchObject({ reason: "invalid_horizon" });
+    expect(compareMarketReference({ ...expected, scoringBasis: "" }, { ...reference, scoringBasis: "" }, options)).toMatchObject({ reason: "missing_scoring_basis" });
+    expect(compareMarketReference({ ...expected, value: Number.MAX_VALUE }, { ...reference, value: -Number.MAX_VALUE }, options)).toMatchObject({ reason: "invalid_gap" });
+    expect(compareMarketReference({ ...expected, value: 0 }, { ...reference, value: 0 }, options)).toMatchObject({ status: "comparable", gap: 0 });
+  });
+
   it("never changes the shared interpretation when a quote changes", () => {
     const frozen = deepFreeze(structuredClone(records)) as InterpretationRecord[];
     const before = structuredClone(frozen);

@@ -140,11 +140,122 @@ const utc = (v: unknown): v is string => typeof v === "string" && /(?:Z|[+-]\d{2
 const hash = (v: unknown) => typeof v === "string" && /^[a-f0-9]{64}$/.test(v);
 const currentStates = ["concordant_research_candidate", "conflicting_baseline_and_support", "support_direction_without_baseline_concordance", "balanced_model_estimate", "unavailable"];
 
+/** Check the supplied mapper-v3 display contract; never change membership, ranks or scores. */
+function validateMapperV3(s: DisplaySnapshot): void {
+  const text = (v: unknown) => typeof v === "string" && v.trim().length > 0;
+  const finite = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v);
+  const same = (a: unknown, b: unknown): boolean => {
+    if (isRecord(a) && isRecord(b)) return Object.keys(a).length === Object.keys(b).length && Object.keys(a).every(k => same(a[k], b[k]));
+    return a === b;
+  };
+  const trackNames = ["fantasy_points", "goals_plus_assists", "wigo_game_score"];
+  const states = ["agrees", "qualified", "balanced", "contradicts", "withheld", "unavailable"];
+  const historyReasons = ["no_personal_history_list_withheld", "personal_history_unavailable_list_withheld", "insufficient_personal_history_list_withheld"];
+  requireValue(s.lists?.topN === 25 && s.lists.minPersonalGames === 20 && s.lists.minPersonalGamesProvisional === true && s.lists.windowGames === 5
+    && Array.isArray(s.lists.positionGroups) && s.lists.positionGroups.join(",") === "F,D", "v3 list policy");
+  requireValue(s.headline?.track === "fantasy_points" && s.headline.scoring === "FHFH Standard" && text(s.headline.label)
+    && Array.isArray(s.headline.supportingTracks) && s.headline.supportingTracks.join(",") === trackNames.slice(1).join(",")
+    && text(s.headline.listOrder) && text(s.headline.combinedIndexNote), "v3 headline policy");
+  for (const p of s.profiles) {
+    const { score, evidence } = p, h = score.headline;
+    const fp = p.tracks.find(t => t.track === "fantasy_points");
+    requireValue(p.tracks.every(t => t.role === (t.track === "fantasy_points" ? "headline" : "supporting")), "v3 track roles");
+    if (score.value === null || !fp) requireValue(h === null, "v3 unavailable headline");
+    else requireValue(h && h.track === "fantasy_points" && h.scoring === "FHFH Standard" && text(h.label)
+      && [h.observed, h.expected, h.referenceAtCurrentTOI, h.gap].every(finite)
+      && close(h.observed, fp.observed) && close(h.expected, fp.supportConditioned)
+      && close(h.referenceAtCurrentTOI, fp.referenceAtCurrentTOI) && close(h.gap, fp.gap), "v3 headline matches track");
+    const withheld = score.directionWithheldReason;
+    requireValue(withheld === null || historyReasons.includes(withheld), "v3 direction reason");
+    requireValue((withheld !== null) === (score.gapSignLabel === "Direction withheld: insufficient personal history")
+      && (withheld === null ? score.directionWithheldText === null : text(score.directionWithheldText)), "v3 direction disclosure");
+    if (score.value === null) requireValue(withheld === null, "v3 unavailable direction");
+    else if (!Number.isSafeInteger(evidence.reference.personalGames) || evidence.reference.personalGames < 20) requireValue(withheld !== null, "v3 thin history direction");
+    if (score.list !== null) {
+      requireValue(Number.isSafeInteger(evidence.reference.personalGames) && evidence.reference.personalGames >= 20
+        && Number.isSafeInteger(evidence.window.games) && evidence.window.games >= 5 && h && (score.list === "BL" ? h.gap > 0 : h.gap < 0)
+        && withheld === null && score.reason === null, "v3 list gates");
+      requireValue((p.position === "F" || p.position === "D") && Number.isSafeInteger(score.positionRank) && score.positionRank! > 0
+        && score.positionTopN === (score.positionRank! <= 25), "v3 position rank");
+    } else requireValue(score.positionRank === null && score.positionTopN === false, "v3 withheld position rank");
+    if (score.reason === "no_personal_history_list_withheld") requireValue(evidence.reference.personalGames === 0 && evidence.reference.dates.length === 0, "v3 no-history reason");
+    if (score.reason === "insufficient_personal_history_list_withheld") requireValue(evidence.reference.personalGames > 0 && evidence.reference.personalGames < 20, "v3 thin-history reason");
+    if (score.reason === "short_window_list_withheld") requireValue(evidence.window.games < 5 && withheld === null, "v3 short-window reason");
+    if (score.reason === "headline_track_conflict_list_withheld") requireValue(h && withheld === null && evidence.window.games >= 5
+      && (score.gapSign === "buy_low_evidence" ? h.gap <= 0 : score.gapSign === "sell_high_evidence" && h.gap >= 0), "v3 headline-conflict reason");
+    if (score.reason === "headline_track_unavailable_list_withheld") requireValue(h === null && withheld === null, "v3 missing-headline reason");
+    const o = p.opportunity;
+    requireValue(o && o.provisional === true && o.affectsLists === false && o.retrospective === true && o.forecast === false
+      && o.trusted === false && o.calibratedProbability === null, "v3 opportunity claims");
+    if (o.status === "unavailable") {
+      requireValue(o.reason === "opportunity_not_attached" && text(o.reasonText) && o.version === null && Array.isArray(o.tracks)
+        && o.tracks.length === 0 && o.headline === null && o.changes === null && o.listCheck === null, "v3 unattached opportunity");
+      continue;
+    }
+    requireValue(o.status === "available" && o.reason === null && o.reasonText === null && o.version === "blsh-opportunity-split-v1"
+      && Array.isArray(o.tracks) && o.tracks.length === 3 && o.tracks.every((t, i) => t.track === trackNames[i]), "v3 attached opportunity");
+    for (const t of o.tracks) {
+      for (const [c, kind] of [[t.perGame, "per_game_baseline"], [t.adjusted, "opportunity_adjusted"]] as const) {
+        requireValue(c && c.kind === kind && typeof c.available === "boolean" && finiteOrNull(c.observed) && finiteOrNull(c.scale), "v3 opportunity comparison");
+        if (c.available) requireValue(c.reason === null && c.reasonText === null && [c.observed, c.expected, c.gap, c.scale, c.z].every(finite)
+          && ["buy_low_evidence", "sell_high_evidence", "balanced"].includes(c.direction!) && text(c.directionLabel)
+          && c.scale! > 0 && close(c.observed! - c.expected!, c.gap!) && close(c.z!, c.gap! / c.scale!)
+          && (c.direction === "balanced" || c.direction === "buy_low_evidence" && c.z! < 0
+            || c.direction === "sell_high_evidence" && c.z! > 0), "v3 available opportunity values");
+        else requireValue(text(c.reason) && text(c.reasonText) && c.expected === null && c.gap === null && c.z === null
+          && c.direction === null && c.directionLabel === null, "v3 unavailable opportunity values");
+        const scored = p.tracks.find(scoredTrack => scoredTrack.track === t.track);
+        if (c.observed !== null && scored) requireValue(close(c.observed, scored.observed), "v3 opportunity window");
+      }
+      const a = t.assessment;
+      requireValue(a && ["buy_low_evidence", "sell_high_evidence", "balanced", "withheld", "unavailable"].includes(a.direction)
+        && typeof a.qualified === "boolean" && typeof a.conflict === "boolean" && text(a.reason) && text(a.reasonText)
+        && text(a.text) && text(a.directionLabel) && finiteOrNull(a.opportunityEffect), "v3 opportunity assessment");
+    }
+    requireValue(same(o.headline, o.tracks[0].assessment), "v3 opportunity headline");
+    requireValue(o.changes && [o.changes.toi, o.changes.pp].every(c => c && [c.baseline, c.current, c.delta, c.deltaPct].every(finiteOrNull)
+      && Array.isArray(c.impact) && c.impact.length === 3 && c.impact.every(finiteOrNull)), "v3 opportunity changes");
+    if (score.list === null) requireValue(o.listCheck === null, "v3 unlisted opportunity check");
+    else {
+      const a = o.headline!, want = score.list === "BL" ? "buy_low_evidence" : "sell_high_evidence";
+      const state = a.direction === want ? (a.qualified ? "qualified" : "agrees")
+        : a.direction === "buy_low_evidence" || a.direction === "sell_high_evidence" ? "contradicts" : a.direction;
+      requireValue(o.listCheck?.state === state && o.listCheck.applied === false && text(o.listCheck.text), "v3 provisional list check");
+    }
+  }
+  for (const side of ["BL", "SH"] as const) {
+    const rows = s.profiles.filter(p => p.score.list === side);
+    const byRank = new Map(rows.map(p => [p.score.rank!, p]));
+    const positions = { F: 0, D: 0 };
+    let previous: DisplayProfile | undefined;
+    for (let rank = 1; rank <= rows.length; rank++) {
+      const p = byRank.get(rank)!;
+      requireValue(p && p.score.positionRank === ++positions[p.position as "F" | "D"], "v3 contiguous position order");
+      if (previous) {
+        const priorGap = (side === "BL" ? 1 : -1) * previous.score.headline!.gap;
+        const gap = (side === "BL" ? 1 : -1) * p.score.headline!.gap;
+        requireValue(priorGap > gap || priorGap === gap && previous.playerId < p.playerId, "v3 supplied headline rank order");
+      }
+      previous = p;
+    }
+    for (const pos of ["F", "D"] as const) requireValue(s.counts.byPosition?.[pos]?.[side] === positions[pos], "v3 position counts");
+  }
+  const reasonCounts = {
+    withheldNoPersonalHistory: historyReasons[0], withheldPersonalHistoryUnavailable: historyReasons[1], withheldInsufficientPersonalHistory: historyReasons[2],
+    withheldShortWindow: "short_window_list_withheld", withheldHeadlineConflict: "headline_track_conflict_list_withheld", withheldHeadlineUnavailable: "headline_track_unavailable_list_withheld",
+  } as const;
+  for (const key of Object.keys(reasonCounts) as (keyof typeof reasonCounts)[]) requireValue(s.counts[key] === s.profiles.filter(p => p.score.reason === reasonCounts[key]).length, "v3 withheld reason counts");
+  requireValue(s.counts.directionWithheld === s.profiles.filter(p => p.score.directionWithheldReason !== null).length
+    && s.counts.opportunityAttached === s.profiles.filter(p => p.opportunity.status === "available").length, "v3 direction/opportunity counts");
+  for (const state of states) requireValue(s.counts.opportunityListCheck?.[state] === s.profiles.filter(p => p.opportunity.listCheck?.state === state).length, "v3 opportunity check counts");
+}
+
 /** Validate saved display values only. No ranking, estimation or missing-value substitution. */
 export function parseCurrentResearchSnapshot(input: unknown): DisplaySnapshot {
   requireValue(isRecord(input), "object required");
   const s = input as DisplaySnapshot;
   requireValue(s.schemaVersion === BLSH_CURRENT_SNAPSHOT_VERSION && s.scoreVersion === BLSH_SCORE_VERSION, "current version");
+  requireValue(["blsh-display-profile-v1", "blsh-display-profile-v3"].includes(s.mapperVersion), "supported mapper version");
   requireValue(s.scope === "current_season_research" && s.seasonId === 20262027 && ["2026-10-26", "2026-10-28"].includes(s.eventThroughDate), "frozen current scope");
   requireValue(s.provisional === true && s.exploratory === true && s.trusted === false && s.productionAdopted === false && s.confidenceProbability === null && s.issuedAtUTC === null, "current research only");
   requireValue(utc(s.asOfUTC) && utc(s.packagedAtUTC) && Date.parse(s.packagedAtUTC) > Date.parse(s.asOfUTC) && s.eventThroughDate <= s.asOfUTC.slice(0, 10), "capture/packaging chronology");
@@ -161,6 +272,8 @@ export function parseCurrentResearchSnapshot(input: unknown): DisplaySnapshot {
     requireValue(score.version === s.scoreVersion && score.trusted === false && score.calibratedProbability === null && evidence.calibratedProbability === null, "profile research semantics");
     requireValue(isRecord(p.claims) && ["luckIdentified", "marketValue", "forecast", "trusted"].every(k => p.claims[k as keyof typeof p.claims] === false) && p.streak === null, "no unsupported claims or streak");
     requireValue(currentStates.includes(score.status) && finiteOrNull(score.value) && finiteOrNull(score.normalizedGap) && finiteOrNull(score.baselineNormalizedGap), "current score state");
+    requireValue(score.gapSign === (score.value === null ? null : score.value > 0 ? "buy_low_evidence" : score.value < 0 ? "sell_high_evidence" : "balanced"), "current gap sign");
+    requireValue(!score.directionWithheldReason || score.list === null, "withheld direction cannot be listed");
     requireValue(typeof w.fresh === "boolean" && w.recordedThroughDate === s.eventThroughDate, "recorded-through freshness anchor");
     for (const member of [w, ref]) {
       requireValue(Array.isArray(member.dates) && Array.isArray(member.sourceIds) && member.dates.length === member.sourceIds.length, "current window membership");
@@ -198,6 +311,7 @@ export function parseCurrentResearchSnapshot(input: unknown): DisplaySnapshot {
   for (const side of ["BL", "SH"] as const) for (let rank = 1; rank <= ranks[side].size; rank++) requireValue(ranks[side].has(rank), "contiguous current ranks");
   const counts = s.counts;
   requireValue(counts.profiles === s.profiles.length && counts.BL === ranks.BL.size && counts.SH === ranks.SH.size && counts.withheld === s.profiles.length - ranks.BL.size - ranks.SH.size && counts.numeric === s.profiles.filter(p => p.score.value !== null).length && counts.unavailableTier === s.profiles.filter(p => p.evidence.tier === null).length, "saved population counts");
+  if (s.mapperVersion === "blsh-display-profile-v3") validateMapperV3(s);
   safeNumbers(s);
   return s;
 }

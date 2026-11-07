@@ -121,6 +121,7 @@ export function CurrentBlshPlayerDetail({ id, profile: p, snapshot, onClose }: {
   const heading = useRef<HTMLHeadingElement>(null);
   useEffect(() => { heading.current?.focus(); }, [p.playerId]);
   const w = p.evidence.window, ref = p.evidence.reference;
+  const headline = p.tracks.find(track => track.track === "fantasy_points");
   return <section id={id} className={`${shared.detail} ${styles.detail}`} aria-labelledby={`${id}-heading`}
     onKeyDown={e => { if (e.key === "Escape") { e.stopPropagation(); onClose(); } }}>
     <div className={styles.detailHeader}>
@@ -129,6 +130,8 @@ export function CurrentBlshPlayerDetail({ id, profile: p, snapshot, onClose }: {
       <button type="button" className={`${shared.smallButton} ${styles.touchButton}`} onClick={onClose}>Close<span className={shared.visuallyHidden}> details for {p.displayName}</span></button>
     </div>
     <div className={shared.panel}><h3>Production reference and underlying support</h3>
+      {headline ? <p><strong>FHFH Standard points: observed {numberText(headline.observed)}; historical comparison at current TOI {numberText(headline.referenceAtCurrentTOI)}; support comparison {numberText(headline.supportConditioned)} (gap {numberText(headline.gap, 2, true)}).</strong></p> : <p>FHFH Standard points comparison unavailable.</p>}
+      {p.score.directionWithheldText ? <p>{p.score.directionWithheldText}</p> : null}
       <p className={shared.muted}>The index combines the production tracks below. Index values are not fantasy points or per-game averages.</p>
       <ul className={shared.list}>
         <li>Support-adjusted research index: {numberText(p.score.value, 2, true)}. {p.score.statusLabel}.</li>
@@ -137,6 +140,11 @@ export function CurrentBlshPlayerDetail({ id, profile: p, snapshot, onClose }: {
         {p.score.reasonText ? <li>{p.score.reasonText}</li> : null}
         <li>{p.evidence.tierLabel}. {p.evidence.tierNote}. The reference is stale; this snapshot remains provisional.</li>
       </ul>
+    </div>
+    <div className={shared.panel}><h3>What would change this assessment?</h3>
+      <p>Check whether total and PP minutes, shot activity and chance quality persist, and whether missing or revised source records change the comparison. A supported increase is not an automatic sell; falling production with deteriorating support is not an automatic buy.</p>
+      <p>Market reference unavailable: these are research candidates, not demonstrated discounts or premiums. League scoring, an attainable offer and roster consequences still need a separate comparison.</p>
+      <p className={shared.muted}>Opportunity is provisional context and does not change list membership or rank. PP minutes alone do not establish PP share, a lasting promotion or a medical explanation.</p>
     </div>
     <div className={shared.grid}>
       <div className={shared.panel}><h3>Evidence quantity</h3>

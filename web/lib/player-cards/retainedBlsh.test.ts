@@ -1,12 +1,20 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
+import { retainedBytes, retainedEnabled, retainedSuite } from "../buyLowSellHigh/__fixtures__/retainedData";
 import { createHash } from "node:crypto";
-import { resolve } from "node:path";
 import type { DisplaySnapshot } from "../buyLowSellHigh/displayProfile";
 import { RETAINED_BLSH_SHA256, RETAINED_BLSH_SIDECAR_SHA256, RETAINED_BLSH_PROVENANCE_REVIEW_SHA256, RETAINED_BLSH_BOX_PINS, retainedBlshEvidence, type RetainedBlshInput } from "./retainedBlsh";
 const player = { id: 8476453, team: "TBL" };
 const fixture = (): RetainedBlshInput => ({ snapshotSHA256: RETAINED_BLSH_SHA256, reviewReference: "Synthetic unit contract; actual bytes verified separately by owner reader", metadata: { schemaVersion: "fhfh.blsh.current-research-snapshot.v2", scoreVersion: "support-conditioned-production-gap-v1", seasonId: 20262027, provisional: true, exploratory: true, productionAdopted: false, trusted: false, confidenceProbability: null, issuedAtUTC: null, asOfUTC: "2026-10-29T18:41:12Z", eventThroughDate: "2026-10-28", limits: ["Synthetic test; stale development reference"] }, profile: { playerId: player.id, team: player.team, score: { version: "support-conditioned-production-gap-v1", gapSign: "buy_low_evidence", statusLabel: "Direction agrees", calibratedProbability: null }, evidence: { window: { games: 1, dates: ["2026-10-24"], sourceIds: [123], minutes: 20 }, reference: { personalGames: 50, ageDays: 900 }, tierNote: "Coverage is not confidence" }, tracks: ["FP", "G+A", "Game Score"].map(label => ({ label, observed: 2, supportConditioned: 3, gap: 1 })), coverage: { notes: [{ text: "Source revision unverified" }] }, context: { opportunity: [{ label: "TOI", current: 1200, units: "seconds/appearance" }] }, claims: { forecast: false, marketValue: false, trusted: false } } } as unknown as RetainedBlshInput);
 describe("retained BLSH card evidence", () => {
+  it("preserves a withheld direction even when the saved gap is positive or negative", () => {
+    for (const gapSign of ["buy_low_evidence", "sell_high_evidence"] as const) {
+      const f = fixture();
+      Object.assign(f.profile.score, { gapSign, directionWithheldReason: "insufficient_personal_history_list_withheld", directionWithheldText: "Direction withheld: insufficient personal history" });
+      const result = retainedBlshEvidence(player, 20262027, f);
+      expect(result.direction).toBe("unknown");
+      expect(result.lines).toContain("Direction withheld: insufficient personal history");
+    }
+  });
   const withProvenance = () => {
     const f = fixture();
     f.provenance = { version: "fhfh.blsh.player-card-research-provenance.v1", sidecarSHA256: RETAINED_BLSH_SIDECAR_SHA256, snapshotSHA256: RETAINED_BLSH_SHA256, independentReviewPending: true, generatedAtUTC: "2026-11-01T16:32:16.987Z", asOfUTC: f.metadata.asOfUTC, eventThroughDate: f.metadata.eventThroughDate, maxCaptureAgeHours: 24, playerId: player.id, team: player.team, season: 20262027, rows: [{ sourceId: 123, gameId: 2026020177, playerId: player.id, season: 20262027, date: "2026-10-24", team: "TBL", regularSeasonCalendarMatched: true, finalityEstablished: false }], limitations: ["No NST model revision receipt"] };
@@ -129,9 +137,26 @@ describe("retained BLSH card evidence", () => {
     const other = fixture(); other.profile.tracks[1].gap = NaN;
     expect(retainedBlshEvidence(player, 20262027, other).status).toBe("unavailable");
   });
-  it("keeps saved window age separate from missing production and preserves raw diagnostics", () => {
-    const bytes = readFileSync(resolve(process.cwd(), "lib/buyLowSellHigh/research-snapshots/2026-10-28.arm-a-canonical-repaired.v2.json"));
-    expect(createHash("sha256").update(bytes).digest("hex")).toBe(RETAINED_BLSH_SHA256);
+  it("separates synthetic age diagnostics from missing support without mutating evidence", () => {
+    for (const age of [1, 11]) {
+      const f = fixture();
+      Object.assign(f.profile.evidence.window, { lastGameDaysBeforeRecordedThrough: age, fresh: false,
+        recordedThroughDate: "2026-10-28", freshnessText: "Synthetic stale window diagnostic" });
+      const before = JSON.stringify(f.profile), result = retainedBlshEvidence(player, 20262027, f);
+      expect(result.status).toBe("exploratory");
+      expect(result.lines.join(" ")).not.toContain("stale window");
+      expect(result.retained?.profile).toEqual(f.profile);
+      expect(JSON.stringify(f.profile)).toBe(before);
+      f.profile.tracks = [];
+      const missing = JSON.stringify(f.profile), unavailable = retainedBlshEvidence(player, 20262027, f);
+      expect(unavailable.status).toBe("unavailable");
+      expect(unavailable.lines.join(" ")).not.toContain("stale window");
+      expect(JSON.stringify(f.profile)).toBe(missing);
+    }
+  });
+  it.skipIf(!retainedEnabled)(`${retainedSuite}: keeps saved window age separate from missing production and preserves raw diagnostics`, () => {
+    const bytes = retainedBytes("repaired");
+    expect(createHash("sha256").update(new Uint8Array(bytes)).digest("hex")).toBe(RETAINED_BLSH_SHA256);
     const { profiles, ...metadata } = JSON.parse(bytes.toString()) as DisplaySnapshot;
     const input = (profile: DisplaySnapshot["profiles"][number]): RetainedBlshInput => ({ profile, metadata, snapshotSHA256: RETAINED_BLSH_SHA256, reviewReference: "Pinned research review; no current admission" });
     const render = (p: DisplaySnapshot["profiles"][number]) => {

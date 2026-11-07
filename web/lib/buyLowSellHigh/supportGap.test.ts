@@ -1,8 +1,9 @@
 // @vitest-environment node
-import { createReadStream, existsSync, readFileSync, writeFileSync } from "node:fs";
+import { createReadStream, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { retainedBytes } from "./__fixtures__/retainedData";
 import { createInterface } from "node:readline";
-import { describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
 import {
   PROCESS, SHRINK, attributionOf, conditionalDelta, covarianceGeometry, explainSupportGap, fitPrior, rankTwoLists, score, scoreAndAttribute,
   type ExplanationContext, type ProductionAxis, type ScoringModel, type SupportGapExplanation, type SupportGapResult, type TrainingBlock, type WindowEvidence,
@@ -154,6 +155,14 @@ describe("supportGap score", () => {
     expect(s.researchList).toBe("BL");
     expect(s.individualFinishingOrSOGGate).toBe(false);
   });
+  it("does not mechanically sell an established finisher above ordinary xG when their own production and support are unchanged", () => {
+    // Production comes from the player's prior level; ordinary individual xG stays low in both blocks.
+    const p = { ...production(), value: 0, expected_totals: [20, 8, 5], raw_observed: [20, 8, 5] };
+    const s = evaluate({ p, w: [1, 2, 3], h: [1, 2, 3] });
+    expect(s.value).toBe(0);
+    expect(s.researchList).toBeNull();
+    expect(s.expectedSupport).toEqual(p.expected_totals);
+  });
   it("keeps peripheral-driven production visible", () => {
     const s = evaluate({ p: { ...production(), raw_observed: [14, 3, 1] }, w: [0, 2, 3], h: [0, 2, 3] });
     expect(s.value!).toBeLessThan(0);
@@ -227,7 +236,12 @@ describe("supportGap score", () => {
 /** Opt-in replay of the frozen v1 run (2,772 origins). Set BLSH_V1_RUN_DIR to its `run-guarded-v1` folder.
  * Optional BLSH_PARITY_RECEIPT writes the measured differences as JSON. */
 const runDir = process.env.BLSH_V1_RUN_DIR;
-describe.skipIf(!runDir || !existsSync(join(runDir, "CANDIDATES.jsonl")))("supportGap parity with frozen v1 run", () => {
+describe.skipIf(runDir === undefined)("supportGap parity with frozen v1 run (requires BLSH_V1_RUN_DIR and BLSH_RETAINED_TEST_ROOT)", () => {
+  let retainedHistorical: string;
+  beforeAll(() => {
+    if (!runDir?.trim()) throw new Error("BLSH_V1_RUN_DIR must name a retained run directory");
+    retainedHistorical = retainedBytes("historical").toString("utf8"); // Fail before the expensive replay.
+  });
   type Saved = Record<string, any>;
   const lines = async function* (file: string) {
     for await (const line of createInterface({ input: createReadStream(join(runDir!, file)), crlfDelay: Infinity })) if (line.trim()) yield JSON.parse(line) as Saved;
@@ -297,8 +311,7 @@ describe.skipIf(!runDir || !existsSync(join(runDir, "CANDIDATES.jsonl")))("suppo
       const ids = (rows: Saved[]) => rows.map(x => x.player_id ?? x.playerId);
       listOrder[date] = { BL: JSON.stringify(ours.BL.map(x => x.playerId)) === JSON.stringify(ids(saved.BL)), SH: JSON.stringify(ours.SH.map(x => x.playerId)) === JSON.stringify(ids(saved.SH)) };
     }
-    const snapshotPath = join(__dirname, "research-snapshots", "2024-04-18.v1.json");
-    const snapshot = JSON.parse(readFileSync(snapshotPath, "utf8"));
+    const snapshot = JSON.parse(retainedHistorical);
     const ourLists = rankTwoLists(bySnapshot.get("2024-04-18") ?? []);
     const ourRank = new Map<number, [string, number]>();
     (["BL", "SH"] as const).forEach(side => ourLists[side].forEach((x, i) => ourRank.set(x.playerId, [side, i + 1])));
@@ -630,7 +643,8 @@ describe("supportGap explanation: context arithmetic and coverage", () => {
 
 /** Opt-in: every saved numeric v1 origin, rescored with its saved model, must reconcile exactly.
  * Context windows are null here, so this checks arithmetic only; real-window checks live in the dry run. */
-describe.skipIf(!runDir || !existsSync(join(runDir, "MODELS.jsonl")))("supportGap explanation reconciles on the frozen v1 run", () => {
+describe.skipIf(runDir === undefined)("supportGap explanation reconciles on the frozen v1 run (requires BLSH_V1_RUN_DIR)", () => {
+  beforeAll(() => { if (!runDir?.trim()) throw new Error("BLSH_V1_RUN_DIR must name a retained run directory"); });
   it("adds every component back to the gap and every track back to the score for all numeric origins", async () => {
     const read = async function* (file: string) {
       for await (const line of createInterface({ input: createReadStream(join(runDir!, file)), crlfDelay: Infinity })) if (line.trim()) yield JSON.parse(line);

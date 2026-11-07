@@ -229,11 +229,13 @@ const comparison = (c: Comparison): DisplayComparison => ({
 });
 
 /** Why the direction is withheld for lack of personal history, or null at or above the provisional cutoff.
- * Only zero reference games is confirmed zero; any other missing or unusable count is unknown history. */
+ * Prefer the assembler's coverage status; an empty source slice alone cannot establish no history. */
 export function personalHistoryReason(p: Profile): string | null {
   const n = p.reference.personalN, axisN = p.result.productionAxis.personal_n;
   if (!Number.isSafeInteger(n) || n < 0 || (axisN !== undefined && axisN !== n)) return PERSONAL_HISTORY_UNAVAILABLE_LIST_WITHHELD;
-  if (n === 0) return p.reference.sourceIds.length === 0 ? NO_PERSONAL_HISTORY_LIST_WITHHELD : PERSONAL_HISTORY_UNAVAILABLE_LIST_WITHHELD;
+  if (n === 0) return p.reference.historyStatus === "confirmed_none" ? NO_PERSONAL_HISTORY_LIST_WITHHELD
+    : p.reference.historyStatus === "unknown" ? PERSONAL_HISTORY_UNAVAILABLE_LIST_WITHHELD
+      : p.reference.sourceIds.length === 0 ? NO_PERSONAL_HISTORY_LIST_WITHHELD : PERSONAL_HISTORY_UNAVAILABLE_LIST_WITHHELD;
   return n < BLSH_MIN_PERSONAL_GAMES ? INSUFFICIENT_PERSONAL_HISTORY_LIST_WITHHELD : null;
 }
 /** Headline (FHFH Standard) gap, support-conditioned minus observed: positive is buy-low. Null when missing, never 0. */
