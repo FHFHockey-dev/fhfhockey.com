@@ -35,6 +35,13 @@ Q2: payload of the latest line_entry_revisions row with goalie units (slot order
 - Bios checked live. TJ pop-up: "None of those", so only penguinspr is team. chgo_blackhawks (CHGO Sports, independent media), canucksinsider and pensinsidescoop stay beat.
 - lib/lines tests 138/138; typecheck exit 0; eslint 0.
 
+## Chef ticket 2: AHL Wolf Pack accepted as NYR (d28c4a76c)
+- Trace (read-only): lines_ccc_ifttt_events 646d925c (fxtwitter, CcCMiddleton). The wrapper says "AHL Wolf Pack lines / AHL Wolf Pack Starting Goalie: Callum Tung"; the quote by TheKeeganJarvis (2119182685557977428) says "Wolf Pack lines tonight at Syracuse: ... #HFDvsSYR | #NYR", with no league marker.
+  -> the first pass (buildLinesCccSourceFromIftttEvent, wrapper text) gives rejected_non_nhl; refreshLinesCccSourceFromPrimaryText re-runs the league check on the quoted text only, so the AHL label is dropped there and #NYR resolves to NYR. lines_ccc row: primary_text_source quoted_oembed, status accepted.
+  -> 1 claim f2006d68… (es_defense #2, team 3, game null, 5 review reasons, never eligible), capture 124f265b…; no entry/PP/relation refs.
+- Fix: the refresh also checks wrapper enriched/raw text. The test fails on HEAD and passes now. Wider vitest 1484 pass; typecheck 0; eslint 0.
+- TJ pop-ups: delete both evidence rows (approved), but the SQL prompt was declined, so nothing ran (read-back: rows 1/1, triggers O). TJ: "I'll run it myself", so the SQL is in tasks/artifacts/lines-ahl-wolfpack-2026-11-07/delete-bad-claim.sql. lines_ccc row marked rejected_non_nhl / explicit_non_nhl_league_marker (done, read back).
+
 ## Next
 - After tonight's games (~05:00Z 11-08): rerun Q1; if claims > 0, Q2 for goalie slot order; GET /api/v1/lines/projected and /lines/<team> (<=5 sequential reads); write receipt tasks/artifacts/lines-p3-game-night-2026-11-08.md (MTL 189/187/191).
 - If claims stay 0 after game night: diagnose processor (projectionReportFromSource null? units empty?) before P4.
