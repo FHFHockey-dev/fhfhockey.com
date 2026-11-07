@@ -285,6 +285,14 @@ export function sizeMasterTableColumns({ metricColumns, dayCount, fourWeekCollap
     flex.forEach((spec, index) => { widths[index] -= (widths[index] - spec.min) * share; });
   }
 
+  // Narrower than its column (side groups collapsed): widen the side and summary columns so the
+  // table spans the same width as the header and controls above it; team and days stay pinned.
+  const spare = containerWidth > 0 ? available - sum(widths) : 0;
+  if (spare > 0) {
+    const total = sum(widths);
+    widths.forEach((width, index) => { widths[index] = width + spare * (width / total); });
+  }
+
   // Still too wide (e.g. 7 days at 1024px): narrow the day columns toward their minimum
   // before falling back to a horizontal scroll, so the 4-week columns stay on screen.
   const shortfall = Math.round(sum(widths) - available);
@@ -705,7 +713,7 @@ export default function DesktopMasterTable({
             aria-expanded={opponentExpanded}
             aria-label={opponentExpanded ? "Collapse opponent details" : "Expand opponent details"}
           >
-            <span>Opponent strength</span>
+            <span>Opponents</span>
             <span className={styles.masterGroupChevron} aria-hidden="true">{opponentExpanded ? "◂" : "▸"}</span>
           </button>
         </th>

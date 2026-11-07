@@ -1526,6 +1526,9 @@
 
 .masterSectionBannerStart {
   border-top-left-radius: 24px !important;
+
+  // Keep the label clear of the 24px corner.
+  .masterGroupDisclosure { padding-left: 16px; }
 }
 
 .masterSectionBannerEnd {
@@ -1539,9 +1542,9 @@
   width: 100%;
   min-height: var(--master-group-row-height);
   padding: 0 10px;
-  font-size: 0.54rem;
+  font-size: 0.6875rem; // 11px floor for table labels (was 8.6px)
   line-height: 1;
-  letter-spacing: 0.22em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: rgba(v.$color-blue-100, 0.9);
 }
@@ -1588,7 +1591,7 @@
 }
 
 .masterMetricEyebrow {
-  font-size: 0.52rem;
+  font-size: 0.625rem;
   line-height: 1;
   letter-spacing: 0.14em;
   color: rgba(v.$color-blue-100, 0.92);
@@ -1820,7 +1823,7 @@
 }
 
 .masterDayDate {
-  font-size: 0.6rem;
+  font-size: 0.6875rem;
   color: v.$text-secondary;
   font-family: v.$font-family-primary, sans-serif;
 }
@@ -5115,9 +5118,9 @@
   background: transparent;
   color: rgba(v.$color-blue-100, 0.9);
   font: inherit;
-  font-size: 0.54rem;
+  font-size: 0.6875rem;
   line-height: 1;
-  letter-spacing: 0.22em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   white-space: nowrap;
   cursor: pointer;
@@ -5191,15 +5194,22 @@
   }
 }
 .masterTrendLabel { flex-direction: column; gap: 2px; }
-.masterTrendLabel small { display: block; font-size: .52rem; line-height: 1.4; color: rgba(v.$color-blue-100, .92); }
+.masterTrendLabel small { display: block; font-size: .625rem; line-height: 1.4; color: rgba(v.$color-blue-100, .92); }
 .matchupKey {
   display: flex; align-items: center; justify-content: center; gap: 3px;
-  margin-top: 4px; font-size: .52rem; letter-spacing: 0; text-transform: none;
+  margin-top: 4px; font-size: .625rem; letter-spacing: 0; text-transform: none;
   // Same tokens as the sparkline's easier / harder stops.
   i { width: 4px; height: 4px; border-radius: 50%; background: v.$success-color; }
   i:last-child { background: v.$danger-color; }
 }
 .masterMetricHeader .masterSortButton { padding-inline: 2px; font-size: .75rem; }
-.masterMetricHeader .masterMetricEyebrow { font-size: .52rem; letter-spacing: 0; }
+.masterMetricHeader .masterMetricEyebrow { font-size: .625rem; letter-spacing: 0; }
 
 .masterGroupDisclosure { padding-inline: 6px; gap: 6px; letter-spacing: .1em; }
+// Narrow desktops: 10px banners with tighter tracking and 9px eyebrows keep the 60px rating columns and
+// the group banners inside their cells.
+@media (max-width: 1199px) {
+  .masterSectionLabel,
+  .masterGroupDisclosure { font-size: .625rem; letter-spacing: 0.04em; padding-inline: 6px; gap: 4px; }
+  .masterMetricHeader .masterMetricEyebrow { font-size: .5625rem; }
+}

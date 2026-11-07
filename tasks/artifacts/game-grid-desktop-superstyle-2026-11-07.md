@@ -31,3 +31,5 @@
 | /game-grid | nested radii (week nav, 7/10 toggle, WEEK SCORE) | ~~4px buttons in 12px/4px-padded pills.~~ 8px (TJ edit); rule added to /superstyle skill | Done | 5 |
 | /game-grid | PREV/NEXT hover ink | ~~Near-black on dark blue hover, 1.7:1.~~ White 9.8:1 | Done | 5 |
 | /game-grid e2e | web/e2e/player-pickup.spec.ts | Pre-existing failures: line 37 expects "Availability in your league…" (signed-out copy changed by d3e76b3a0), connected-pool test fails on premium-auth fixture (line 120). Not fixed here; for Chef. | Other lane / follow-up | 5 |
+| /game-grid | table header labels (.masterSectionLabel, eyebrows, key, day dates) | ~~8.3–9.6px labels.~~ 10–11px (narrower below 1200); "Opponent strength" → "Opponents", clear of the 24px corner (TJ caught the clip) | Done | 6 |
+| /game-grid | table width (sizeMasterTableColumns) | ~~1200px table inside a 1296px column at 1440.~~ Side/summary columns take the spare; edges match the header card at 1024/1440/1920 | Done | 6 |

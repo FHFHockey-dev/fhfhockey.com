@@ -94,7 +94,8 @@ describe("Game Grid sortable column headers", () => {
         const flexMinimums = sum(metricColumns.map((spec) => spec.min)) + 40 + 40 + 56 + (fourWeekCollapsed ? 56 + 78 : 48 + 48 + 50 + 56 + 78);
         if (flexMinimums + sum(originalGrid) <= containerWidth) {
           expect(grid).toEqual(originalGrid);
-          expect(sum(widths)).toBeLessThanOrEqual(containerWidth);
+          // Spare width goes to the side and summary columns, so the table spans its column.
+          expect(sum(widths)).toBe(containerWidth);
         } else {
           // Day columns narrow (never below their minimum) before the table scrolls.
           expect(grid[0]).toBe(originalGrid[0]);
