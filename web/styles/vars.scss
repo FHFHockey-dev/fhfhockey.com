@@ -464,6 +464,7 @@ $radius-md: 10px;
 $radius-lg: 16px;
 $radius-control: $radius-sm;
 $radius-card: $radius-md;
+$radius-pill: 999px; // fully rounded pills and bars
 $radius-panel: $radius-md;
 $radius-feature: $radius-lg;
 $control-height-sm: 32px;
@@ -471,7 +472,6 @@ $control-height-xs: 24px;
 $control-checkbox-size: 18px;
 $control-height-md: 34px;
 $control-height-lg: 44px;
-$radius-pill: 999px; // fully rounded pills and bars
 $blur-backdrop-strong: 28px;
 $blur-backdrop-soft: 12px;
 

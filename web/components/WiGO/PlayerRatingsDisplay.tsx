@@ -117,25 +117,32 @@ const PlayerRatingsDisplay: React.FC<PlayerRatingsProps> = ({
         </div>
       );
 
-    // Each rating is a 0–100 semicircle gauge; the notch at the top marks 50, the cohort middle.
-    const renderBox = (label: string, rating: number | null, isAll = false) => {
+    // The visible value and labeled bar share the same 0–100 rating; missing data has no meter.
+    const renderBox = (family: string, label: string, rating: number | null, isAll = false) => {
       const { color } = getColorForRating(rating);
       const fill = rating == null || isNaN(rating) ? 0 : Math.max(0, Math.min(100, rating));
       return (
         <div className={styles.ratingBox}>
-          <span className={styles.ratingGauge}>
-            <svg viewBox="0 0 100 54" preserveAspectRatio="xMidYMax meet" aria-hidden="true">
-              <path className={styles.gaugeTrack} d="M 8 50 A 42 42 0 0 1 92 50" pathLength={100} />
-              {fill > 0 && (
-                <path d="M 8 50 A 42 42 0 0 1 92 50" pathLength={100} className={styles.gaugeFill} stroke={color} strokeDasharray={`${fill} 100`} />
-              )}
-              <line className={styles.gaugeMid} x1="50" y1="2" x2="50" y2="15" />
-            </svg>
-            {isAll ? renderAllValue(rating, { color }) : (
-              <span className={styles.ratingValue} style={{ color }}>{formatRating(rating)}</span>
+          <span className={styles.ratingLabel}>{label}</span>
+          <span className={styles.ratingTrack}>
+            {rating !== null && !isNaN(rating) && (
+              <meter
+                role="meter"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={fill}
+                className={styles.ratingMeter}
+                min={0}
+                max={100}
+                value={fill}
+                aria-label={`${family} ${label}`}
+                style={{ "--rating-color": color } as React.CSSProperties}
+              />
             )}
           </span>
-          <span className={styles.ratingLabel}>{label}</span>
+          {isAll ? renderAllValue(rating, {}) : (
+            <span className={styles.ratingValue}>{formatRating(rating)}</span>
+          )}
         </div>
       );
     };
@@ -146,27 +153,27 @@ const PlayerRatingsDisplay: React.FC<PlayerRatingsProps> = ({
         <div className={styles.ratingSection}>
           <h3 className={styles.ratingTitle}>Offense</h3>
           <div className={styles.ratingsBoxes}>
-            {renderBox("All", ratings.offense.as, true)}
-            {renderBox("Even", ratings.offense.es)}
-            {renderBox("PP", ratings.offense.pp)}
+            {renderBox("Offense", "All", ratings.offense.as, true)}
+            {renderBox("Offense", "Even", ratings.offense.es)}
+            {renderBox("Offense", "PP", ratings.offense.pp)}
           </div>
         </div>
 
         <div className={styles.ratingSection}>
           <h3 className={styles.ratingTitle}>Overall</h3>
           <div className={styles.ratingsBoxes}>
-            {renderBox("All", ratings.overall.as, true)}
-            {renderBox("Even", ratings.overall.es)}
-            {renderBox("Special", ratings.overall.st)}
+            {renderBox("Overall", "All", ratings.overall.as, true)}
+            {renderBox("Overall", "Even", ratings.overall.es)}
+            {renderBox("Overall", "Special", ratings.overall.st)}
           </div>
         </div>
 
         <div className={styles.ratingSection}>
           <h3 className={styles.ratingTitle}>Defense</h3>
           <div className={styles.ratingsBoxes}>
-            {renderBox("All", ratings.defense.as, true)}
-            {renderBox("Even", ratings.defense.es)}
-            {renderBox("PK", ratings.defense.pk)}
+            {renderBox("Defense", "All", ratings.defense.as, true)}
+            {renderBox("Defense", "Even", ratings.defense.es)}
+            {renderBox("Defense", "PK", ratings.defense.pk)}
           </div>
         </div>
       </div>

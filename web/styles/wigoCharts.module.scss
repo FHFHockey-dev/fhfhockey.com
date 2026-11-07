@@ -1309,6 +1309,23 @@
 
 // The comparison band (one-page and phone). Scoped to its panel rather than to
 // the one-page class, so the phone tab draws the same band (U10).
+@font-face {
+  font-family: "WiGO Matrix";
+  src: url("/fonts/social-share/RobotoCondensed-Variable.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+// Keep the compact 36-column band independent of external font availability.
+// The existing bundled face is the same condensed family intended below.
+@media (min-width: 1280px) and (max-width: 1399px) {
+  .wigoDashHeader:global(.wigo-one-page.wigo-fit) .comparisonMatrix {
+    --wigo-band-pad: 1px;
+    font-family: "WiGO Matrix", v.$font-family-primary;
+  }
+}
+
 .comparisonMatrixPanel {
   // One band: periods as rows, 36 metric columns sized to content. The wrapper
   // scrolls sideways only if a freak value would otherwise overprint (E-01).
@@ -1702,17 +1719,37 @@
     --wigo-data-size: 11px;
     --wigo-emphasis-size: 16px;
   }
-  // TJ's grid (2026-11-01): the radar is a near-square two rows tall on the
-  // right, the doughnut sits under identity, rate percentiles span pace and the
-  // list; then the full-width band and one row of four charts.
+  // Dark asymmetric workspace: selected-stat detail is the focal plot;
+  // the complete horizontal comparison matrix anchors the bottom.
   .wigoDashboardContent {
+    background: #111b20;
+    font-variant-numeric: tabular-nums;
     grid-template-areas:
       "#{wigo-areas(context 20)}"
-      "#{wigo-areas(identity 4, pace 4, sched 3, ratings 4, radar 5)}"
-      "#{wigo-areas(prod 4, pace 4, sched 3, ratings 4, radar 5)}"
-      "#{wigo-areas(consist 4, pct 7, drivers 4, radar 5)}"
-      "#{wigo-areas(matrix 20)}"
-      "#{wigo-areas(selected 5, toi 5, ppg 5, gs 5)}";
+      "#{wigo-areas(identity 4, selected 8, ratings 4, radar 4)}"
+      "#{wigo-areas(prod 4, selected 8, ratings 4, radar 4)}"
+      "#{wigo-areas(pace 4, toi 4, ppg 4, gs 4, radar 4)}"
+      "#{wigo-areas(sched 4, consist 4, pct 8, drivers 4)}"
+      "#{wigo-areas(matrix 20)}";
+  }
+  .headerRowWrapper,
+  .identitySummary,
+  .opponentLogContainer,
+  .ratingsContainer,
+  .teamDriversSummary,
+  .consistencyRatingContainer,
+  .percentileChartContainer,
+  .selectedStatPanel,
+  .rateStatBarPercentilesContainer,
+  .toiChartContainer,
+  .ppgChartContainer,
+  .gameScoreContainer {
+    background: #17272e;
+    border-color: #34464e;
+    color: #edf3f5;
+  }
+  .selectedStatPanel {
+    border-color: #427184;
   }
   .identitySummary,
   .opponentLogContainer,
@@ -1763,7 +1800,7 @@
     height: calc(var(--wigo-fit-height) - 4px);
     // Tiers key off height as well as width: a 1440 laptop window is about
     // 790 tall and keeps these 1280 rows.
-    grid-template-rows: auto 90px 66px 156px auto minmax(150px, 1fr);
+    grid-template-rows: auto 90px 66px minmax(130px, 1fr) 188px auto;
   }
 }
 
@@ -1772,10 +1809,65 @@
     --wigo-data-size: 12px;
     --wigo-emphasis-size: 16px;
     .wigoDashboardContent {
-      grid-template-rows: auto 106px 72px 178px auto minmax(180px, 1fr);
+      grid-template-rows: auto 106px 72px minmax(170px, 1fr) 210px auto;
     }
     .comparisonMatrix {
       --wigo-band-pad: 2px;
+    }
+  }
+}
+
+// Short, wide windows use the compact type tier. Reserve the matrix's full
+// intrinsic height rather than letting its flexible band lose the DIFF row.
+@media (min-width: 1400px) and (max-height: 859px) {
+  .wigoDashHeader:global(.wigo-one-page.wigo-fit) {
+    .wigoDashboardContent {
+      grid-template-rows: auto 80px 60px minmax(130px, 1fr) 188px max-content;
+    }
+  }
+}
+
+// The narrow desktop panels need room for their complete labels, not a
+// single-line header competing with the plot controls.
+.wigoDashHeader:global(.wigo-one-page.wigo-fit) {
+  .wigoDashboardContent [data-coverage="C05"] table {
+    thead th,
+    tbody th,
+    tbody td {
+      width: 32%;
+      padding: 0 2px;
+      &:first-child {
+        width: 36%;
+      }
+    }
+    thead th {
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+  }
+
+  // A table's caption sits outside its height. Natural table height keeps
+  // the schedule caption and every game inside the taller context row.
+  .opponentLogContainer table {
+    height: auto;
+  }
+
+  .toiChartContainer,
+  .ppgChartContainer,
+  .gameScoreContainer {
+    .chartHeader {
+      flex-wrap: wrap;
+      row-gap: 2px;
+      h3 {
+        flex: 1 0 auto;
+      }
+      :global(.wigo-trend-legend) {
+        order: 3;
+        flex: 1 0 100%;
+        margin-right: 0;
+        white-space: normal;
+        line-height: 1.15;
+      }
     }
   }
 }
@@ -2065,13 +2157,13 @@
     }
     // Large screens: the top-row panels grow their content instead of leaving it small in a big cell.
     .identitySummary {
-      grid-template-columns: 96px minmax(0, 1fr);
-      column-gap: 16px;
+      grid-template-columns: 80px minmax(0, 1fr);
+      column-gap: 12px;
       padding: 8px 12px;
     }
     .playerHeaderContainer {
-      width: 96px;
-      height: 112px;
+      width: 80px;
+      height: 96px;
     }
     .playerName:not([data-name-length="long"]) {
       font-size: 28px;

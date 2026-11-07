@@ -57,10 +57,20 @@ const VIEW_LABEL: Record<ModelClass, string> = { F: "Forwards", D: "Defense", G:
 
 function SkaterDetail({ record, target }: { record: InterpretationRecord; target: SkaterTarget }) {
   const opportunity = record.opportunity!;
+  const reference = record.personalReferenceWindow;
   return (
     <>
       <div className={styles.panel}>
-        <h3>Explanation</h3>
+        <h3>Current production versus this player’s prior block</h3>
+        <p>Personal reference: {reference.startDate ?? "unavailable"} to {reference.endDate ?? "unavailable"}; {reference.appearances} appearances in {reference.teamGames} team games, {reference.unknownGames} unknown. These games precede the current window.</p>
+        <ul className={styles.list}>{record.metrics.map(metric => <li key={metric.target}>
+          {metric.label}: current {formatMeasured(metric.observedPerTeamGame)} versus prior {formatMeasured(metric.personalReference.perTeamGame)} per team game
+          (change {formatMeasured(metric.personalReference.changePerTeamGame, 2, true)}); per appearance {formatMeasured(metric.observedPerAppearance)} versus {formatMeasured(metric.personalReference.perAppearance)}.
+        </li>)}</ul>
+        <p className={styles.muted}>A short prior block is an observed comparison, not an established talent estimate. A supported breakout is not an automatic sell; a persistent downturn is not an automatic buy.</p>
+      </div>
+      <div className={styles.panel}>
+        <h3>Forecast comparison and current support</h3>
         <ul className={styles.list}>{record.explanations.map(item => <li key={item.id}>{item.text}</li>)}</ul>
       </div>
       <div className={styles.tableWrap}>
@@ -113,15 +123,20 @@ function GoalieTable({ records }: { records: InterpretationRecord[] }) {
   return (
     <div className={styles.tableWrap}>
       <table className={styles.table} aria-label="VuDu goalie context">
-        <thead><tr><th>Goalie</th><th>Recent SV% (saves / shots)</th><th>Recent GAA (60 × GA / min)</th>
+        <thead><tr><th>Goalie and evidence window</th><th>Recent SV% (saves / shots)</th><th>Recent GAA (60 × GA / min)</th><th>Personal prior block</th><th>Observed job share</th>
           <th>Expected SV% (ratio of expected totals)</th><th>Expected GAA</th><th>Expected starts</th><th>Gap status</th></tr></thead>
         <tbody>{records.map(record => {
           const goalie = record.goalie!;
           return (
             <tr key={record.identity.playerId}>
-              <th scope="row">{record.identity.name} <span className={styles.muted}>{record.identity.team}</span></th>
+              <th scope="row">{record.identity.name} <span className={styles.muted}>{record.identity.team}</span>
+                <span className={styles.muted}>{record.recentWindow.startDate} to {record.recentWindow.endDate}; {goalie.observed.appearances} appearances, {goalie.observed.minutes ?? "unknown"} minutes. Evidence: {record.freshness.evidenceStatus}. Forecast: {record.freshness.forecastStatus}.</span></th>
               <td className={styles.num}>{percent(goalie.observed.savePercentage.value)} <span className={styles.muted}>{goalie.observed.saves ?? "?"}/{goalie.observed.shotsAgainst ?? "?"}</span></td>
               <td className={styles.num}>{formatMeasured(goalie.observed.goalsAgainstAverage)}</td>
+              <td>{record.personalReferenceWindow.startDate ?? "Unavailable"} to {record.personalReferenceWindow.endDate ?? "unavailable"}; {goalie.personalReference.appearances} appearances.
+                SV% {percent(goalie.personalReference.savePercentage.value)}; GAA {formatMeasured(goalie.personalReference.goalsAgainstAverage)}.</td>
+              <td>Starts {formatMeasured(goalie.observed.starts, 0)}; relief {formatMeasured(goalie.observed.reliefAppearances, 0)}.
+                Start share {percent(goalie.observed.startShare.value)} versus prior {percent(goalie.personalReference.startShare.value)}.</td>
               <td className={styles.num}>{percent(goalie.expected.savePercentage.value)}</td>
               <td className={styles.num}>{formatMeasured(goalie.expected.goalsAgainstAverage)}</td>
               <td className={styles.num}>{formatMeasured(goalie.expected.expectedStarts)}</td>
@@ -129,6 +144,7 @@ function GoalieTable({ records }: { records: InterpretationRecord[] }) {
             </tr>);
         })}</tbody>
       </table>
+      <p className={styles.muted}>Results and job share are separate observations. Appearances do not establish starts. Small samples limit the comparison; quality-adjusted shot-stopping, team environment and timestamped starter announcements are unavailable here. A change in starts can alter fantasy volume without a change in save percentage. No hot-hand boost or workload penalty is applied.</p>
     </div>
   );
 }
@@ -149,7 +165,7 @@ export default function SkoElementPreview({ state, onStateChange, invalid = [] }
     <div className={styles.container}>
       <header>
         <h1 className={styles.title}>The Sko Element</h1>
-        <p className={styles.subtitle}>Diagnostic sustainability view: recent production, FORGE expected production and the gap between them, kept separate from opportunity and evidence quality. No predictive score is shown.</p>
+        <p className={styles.subtitle}>Current production versus the player’s own prior block, with opportunity and evidence quality shown separately. FORGE provides an additional forecast comparison. No predictive score is shown.</p>
       </header>
       <p className={styles.fixtureBanner} role="note">{FIXTURE_DISCLAIMER}</p>
       {invalid.length ? <p className={styles.warn} role="alert">Ignored invalid link settings: {invalid.join(", ")}.</p> : null}
@@ -190,7 +206,7 @@ export default function SkoElementPreview({ state, onStateChange, invalid = [] }
         <div className={styles.tableWrap}>
           <table className={styles.table} aria-label={`${VIEW_LABEL[state.view]} sustainability scan`}>
             <thead><tr>
-              <th>Player</th><th>Recent per team game</th><th>Expected per team game</th><th>Gap (expected − recent)</th>
+              <th>Player</th><th>Recent per team game</th><th>Personal prior per team game</th><th>Expected per team game</th><th>Gap (expected − recent)</th>
               <th>Opportunity</th><th className={styles.hideNarrow}>Observed SD</th><th>Evidence</th><th><span className={styles.visuallyHidden}>Details</span></th>
             </tr></thead>
             <tbody>{visible.map(record => {
@@ -200,6 +216,7 @@ export default function SkoElementPreview({ state, onStateChange, invalid = [] }
                 <tr key={record.identity.playerId}>
                   <th scope="row">{record.identity.name}<br /><span className={styles.muted}>{record.identity.team} · {record.identity.eligibility.join("/")}</span></th>
                   <td className={styles.num}>{formatMeasured(metric.observedPerTeamGame)}</td>
+                  <td className={styles.num}>{formatMeasured(metric.personalReference.perTeamGame)}</td>
                   <td className={styles.num}>{formatMeasured(metric.expectedPerTeamGame)}</td>
                   <td className={`${styles.num} ${styles[metric.direction]}`}>
                     {formatMeasured(metric.gapPerTeamGame, 2, true)}<br /><span>{DIRECTION_TEXT[metric.direction]}</span>
