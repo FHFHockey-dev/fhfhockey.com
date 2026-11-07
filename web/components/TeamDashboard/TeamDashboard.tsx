@@ -1836,21 +1836,27 @@ export function TeamDashboard({
           <div className={styles.cardHeader}>
             <h3>
               Advanced Analytics
-              <span
+              <button
+                type="button"
                 className={styles.infoIcon}
+                aria-label="About these numbers"
                 title={`5v5 ${includePlayoffs ? "season + playoffs" : "regular season"} averages ${gameRecordsCount === null ? "unavailable: incomplete game sample" : `based on ${gameRecordsCount} game records`}. Data includes: Expected Goals For/Against, Corsi, HDCF, PDO, and shooting percentages at even strength.`}
               >
                 &#9432;
-              </span>
+              </button>
             </h3>
             <div className={styles.cardToggle}>
               <button
+                type="button"
+                aria-pressed={!includePlayoffs}
                 className={`${styles.toggleButton} ${!includePlayoffs ? styles.active : ""}`}
                 onClick={() => setIncludePlayoffs(false)}
               >
                 Regular Season
               </button>
               <button
+                type="button"
+                aria-pressed={includePlayoffs}
                 className={`${styles.toggleButton} ${includePlayoffs ? styles.active : ""}`}
                 onClick={() => setIncludePlayoffs(true)}
               >

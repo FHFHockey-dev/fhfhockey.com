@@ -143,7 +143,7 @@
 
 .teamName {
   font-size: 2.2rem;
-  font-weight: 700;
+  font-weight: 400; // Train One has one weight
   font-family: v.$font-family-accent, sans-serif;
   text-transform: uppercase;
   letter-spacing: 0.15em;
@@ -611,7 +611,7 @@
 .rinkLabel {
   font-family: v.$font-family-accent, sans-serif;
   font-size: 1.25rem;
-  font-weight: 700;
+  font-weight: 400; // Train One has one weight
   color: v.$color-white;
   letter-spacing: 0.08em;
   margin-bottom: 0.5rem;
@@ -630,7 +630,7 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
   font-size: v.$font-size-sm;
-  font-weight: 700;
+  font-weight: 400; // Train One has one weight
   border-radius: v.$border-radius-md;
   padding: v.$space-xs v.$space-md;
   background-color: transparent;
@@ -694,7 +694,7 @@
 .seasonStatsHeaderLeft {
   font-family: v.$font-family-accent, sans-serif;
   font-size: 1.5rem;
-  font-weight: 700;
+  font-weight: 400; // Train One has one weight
   color: v.$secondary-color;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -712,7 +712,7 @@
 .seasonStatsHeaderRight {
   font-family: v.$font-family-accent, sans-serif;
   font-size: 1.5rem;
-  font-weight: 700;
+  font-weight: 400; // Train One has one weight
   color: v.$secondary-color;
   letter-spacing: 0.08em;
   text-transform: uppercase;

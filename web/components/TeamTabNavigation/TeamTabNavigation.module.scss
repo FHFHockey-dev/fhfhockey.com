@@ -82,7 +82,7 @@
   border: none;
   padding: 0.25rem 1.25rem;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease, opacity 0.3s ease;
   border-bottom: 2px solid transparent;
   color: rgba(v.$color-white, 0.8);
   font-family: v.$font-family-primary;
@@ -130,7 +130,7 @@
   font-weight: inherit;
   letter-spacing: 0.05em;
   color: var(--tab-label-color, var(--team-accent-color)); // 4.5:1-safe accent, set in TeamTabNavigation.tsx
-  font-weight: 900;
+  font-weight: 400; // Train One has one weight
   font-family: v.$font-family-accent;
 }
 
@@ -151,11 +151,7 @@
 }
 
 .tabContent {
-  background: linear-gradient(
-    135deg,
-    v.$background-dark 0%,
-    v.$background-light 100%
-  );
+  background: v.$background-dark;
   min-height: calc(100vh - 200px);
   border-top: 5px solid var(--secondary-color);
   position: relative;
@@ -176,10 +172,6 @@
     font-weight: 700;
     margin-bottom: 0.5rem;
     color: v.$text-primary;
-    background: linear-gradient(45deg, v.$secondary-color, #00ff87);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
   }
 
   p {
@@ -249,7 +241,7 @@
   .seasonStatsHeaderRight {
     font-family: v.$font-family-accent;
     font-size: 1.5rem;
-    font-weight: 700;
+    font-weight: 400; // Train One has one weight
     color: v.$secondary-color;
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -354,7 +346,7 @@
     text-transform: uppercase;
     letter-spacing: 0.05em;
     font-size: 0.9rem;
-    font-weight: 700;
+    font-weight: 400; // Train One has one weight
     border-radius: 0.5rem;
     padding: 0.5rem 1rem;
     background-color: transparent;
@@ -365,7 +357,7 @@
     margin: 0.5rem auto 1.5rem auto;
     display: inline-block;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
 
     &:hover:not(:disabled) {
       background-color: rgba(v.$secondary-color, 0.2);
