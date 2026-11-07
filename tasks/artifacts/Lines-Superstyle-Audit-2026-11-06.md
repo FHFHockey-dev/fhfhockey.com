@@ -59,3 +59,30 @@ Evidence came from the local axe-core scan, `focus.cjs`, `toenails.cjs`, `slop-a
 - The projected-lineup *enabled* state (feature off at capture), loading and error states.
 - On phones, the demotion arrows, chevrons and title icon didn't render in the full-page capture. These are probably lazy `next/legacy/image` loads below the fold, not a bug. Recheck in a scrolled capture.
 - 31 other teams. Contrast and name-wrap findings were sampled on EDM only.
+
+## Re-audit and edit pass (2026-11-07)
+
+Diary: `tasks/diaries/2026-11-07-claude-lines-superstyle.md`. Scanned on the isolated dev server (:3110). The enabled state uses Lane B's synthetic snapshot fixture via Playwright interception; production still returns `enabled:false` until `LINES_ENTRY_SERVING_ENABLED` (P4) is flipped.
+
+**Status of the 11-06 rows.** Lanes B and C (master #413) closed every High, Medium and Low row above. Each was re-checked in code and in captures. Two leftovers remain on `/lines/line-combo/[gameId]`: name truncation and the centred mode select. Lane C fixed both on the team page only; they're tracked as N1 below.
+
+Baseline scans:
+- axe: 0 violations on all 3 routes at 390/1440, plus the fixture state (/lines/TBL, line-combo/2026020150).
+- toenails: clean everywhere.
+- focus: every stop has an indicator.
+
+New findings:
+
+| page | element (file) | finding and suggested fix | sev | pass |
+|---|---|---|---|---|
+| /lines/line-combo | matrix props (`pages/lines/line-combo/[gameId].tsx`) | ~~N1. Names truncate; controls centred under a left h2; grids unlabelled.~~ Passes `wideNames labelGrid controlsAlign="start"`. Only "Brandsegg-Nygård" still clips. axe 0 → 0. | Done | 1 |
+| /lines/line-combo 1440 | matrix layout | ~~N2. Matrices stacked in one centred column at 1440.~~ New opt-in `sideBySide` prop on LinemateMatrix (default off; /shiftChart and Replay unchanged), passed by line-combo: side by side from 1024px. Page 3344 → 2240px tall. | Done | 1 |
+| /lines/[team] | gap between lineup and power play (`[abbreviation].module.scss` .lineup; `PowerPlayCombos.module.scss` .wrapper) | ~~N3. Dark band and 40px gap above the PP panel.~~ `.lineup` fill removed; PP margin zeroed on this page. Gap is now 16px. | Done | 1 |
+| /lines/[team] | player card frames (`Line.module.scss`) | N4. 2px pure-white card frames at 1440 (1.33px plus hairline white dividers on phones) are the brightest edges on the page. §7.3 asks for restrained neutral borders. Use a neutral token edge, keeping the navy team fill. | Medium | 2 |
+| /lines/[team] | card stat labels (`PlayerCard.module.scss`) | N5. Labels (GOALS, SOG, SV%…) are 0.5rem (8px), below the ~10.4px floor for meta labels in §8.5. Values use weight 900 (faux-bold) with -0.05em tracking. Raise labels to `$font-size-xxs` (10px) and set values to 700 with normal tracking. | Medium | 3 |
+| /lines/[team] | Recent line share (`LineShareBars.module.scss/.tsx`) | ~~N6. Panel nested inside the lines panel; oversized description on phones.~~ Section with a `$border-soft` divider; title `$font-size-md`/700, description `$font-size-sm` secondary. | Done | 1 |
+| /lines/[team] | Line share copy (`LineShareBars.tsx`) | N7. "Last tracked sample share for forward-line ice time and goal production." is unclear. Use "Each forward line's share of ice time and goals over the last 10 games." | Low | 4 |
+| /lines/[team] | literals (`CategoryTitle.module.scss`, `Line.module.scss`) | N8. `#ffffff`, `white`, `rgba(255,255,255,.5)`, 0.33px/0.5px hairlines, px spacing. Map to tokens. | Low | 2 |
+| /lines | news flag chip (`styles/Lines.module.scss`) | N9. Tracked caps at 0.08em on content-level chips, with literal `999px`, `0.65rem` and `2px` padding. Use `$radius-pill`, `$font-size-xxs` and the letter-spacing token. | Low | 5 |
+| /lines/[team] | team logo strip (`TeamSelect.module.scss`, shared with /drm) | N10. A 20px white drop-shadow glow on hover/active logos (§2.6 "glow on every … active state"), plus rgba white literals. Replace the glow with a `$primary-color` underline or ring. Shared component: check /drm too. | Low | 5 |
+| /lines/[team] | Line share bar tracks (`LineShareBars.module.scss`) | N11. The bar track `rgba($background-dark,.65)` is invisible on `$surface-1`, so bar length has no 100% reference. Add a visible track (or a 0–100 scale) and swap the literal `999px` for `$radius-pill`. | Low | 7 |

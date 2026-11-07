@@ -1,10 +1,9 @@
 @use "styles/vars";
 
+// A section of the lines panel, not a panel inside it: a divider above, no second frame.
 .wrapper {
-  padding: vars.$space-md vars.$space-lg;
-  border-radius: vars.$radius-card;
-  border: vars.$border-subtle;
-  background: vars.$background-dark;
+  padding-top: vars.$space-lg;
+  border-top: 1px solid vars.$border-soft;
 }
 
 .header {
@@ -19,8 +18,15 @@
   margin: 0;
 }
 
+.title {
+  font-family: vars.$font-family-primary;
+  font-size: vars.$font-size-md;
+  font-weight: 700;
+}
+
 .description {
   color: vars.$text-secondary;
+  font-size: vars.$font-size-sm;
 }
 
 .rows {

@@ -56,11 +56,17 @@
     color: v.$text-secondary;
   }
 
+  // No fill: a background here showed through the gaps between panels as a dark band.
+  // Save image passes its own backgroundColor to toPng.
   .lineup {
     display: flex;
     flex-direction: column;
     gap: v.$space-md;
-    background: v.$background-dark;
+  }
+
+  // PowerPlayCombos carries its own margin-top; the .lineup gap already spaces it.
+  .powerPlay > * {
+    margin-top: 0;
   }
 
   // Team header: flat panel with a team-colour rail (no toenail: a straight ::before bar
