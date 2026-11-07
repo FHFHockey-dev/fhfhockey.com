@@ -117,7 +117,7 @@ span.source { color: vars.$text-secondary; text-decoration: none; }
   gap: vars.$space-xxs;
   margin-bottom: vars.$space-md;
   padding: vars.$space-xxs;
-  border: vars.$border-subtle;
+  border: vars.$border-control;
   border-radius: vars.$radius-control;
   background: vars.$surface-0;
 }
@@ -200,7 +200,7 @@ span.source { color: vars.$text-secondary; text-decoration: none; }
   min-height: vars.$touch-target-min;
   margin: 0 0 vars.$space-md;
   padding: vars.$space-xs vars.$space-md;
-  border: vars.$border-subtle;
+  border: vars.$border-control;
   border-radius: vars.$radius-control;
   background: vars.$surface-2;
   color: inherit;
@@ -216,7 +216,7 @@ span.source { color: vars.$text-secondary; text-decoration: none; }
     max-width: 100%;
     min-height: vars.$touch-target-min;
     padding: vars.$space-sm vars.$space-md;
-    border: vars.$border-subtle;
+    border: vars.$border-control;
     border-radius: vars.$radius-control;
     background: vars.$surface-2;
     color: inherit;
@@ -258,7 +258,18 @@ span.source { color: vars.$text-secondary; text-decoration: none; }
   outline: 2px solid vars.$primary-color;
   outline-offset: 2px;
 }
-.snapshots summary { cursor: pointer; line-height: 1.5; }
+.snapshots summary {
+  display: flex;
+  align-items: center;
+  gap: vars.$space-xs;
+  min-height: vars.$touch-target-inline; // WCAG 2.5.8 target size
+  list-style: none;
+  cursor: pointer;
+  line-height: 1.5;
+  &::before { content: "▸"; color: vars.$primary-color; }
+  &::-webkit-details-marker { display: none; }
+}
+.snapshots details[open] > summary::before { content: "▾"; }
 
 @media (max-width: 799px) {
   .layout { grid-template-columns: minmax(0, 1fr); }

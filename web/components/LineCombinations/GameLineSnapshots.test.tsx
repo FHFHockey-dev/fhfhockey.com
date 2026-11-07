@@ -51,7 +51,7 @@ describe("game Lines presentation", () => {
     const data = fixtureResponse(0); const entry = data.teams[0]!.entry!;
     data.teams[0]!.entry = { ...entry, units: [entry.units[0]!, { ...entry.units[0]!, unit: fixtureUnit(["Hagel", "Cirelli", "Guentzel"], "es_forward", 2) }] };
     render(<GameLineSnapshots data={data} />);
-    const forwards = screen.getByRole("region", { name: "Forwards" });
+    const forwards = screen.getByRole("group", { name: "Forwards" });
     expect(within(forwards).getAllByRole("link", { name: "@fixtureauthor" })).toHaveLength(1);
     expect(within(forwards).getByText(/^Source:/)).toBeTruthy();
   });
@@ -74,6 +74,11 @@ describe("game Lines presentation", () => {
     data.teams[0]!.entry = { ...entry, units: [{ ...entry.units[0]!, unit: fixtureUnit(["Jake Guentzel", "Anthony Cirelli"]) }] };
     render(<GameLineSnapshots data={data} />);
     expect(within(entryPanel()).getByText("Jake Guentzel — Anthony Cirelli").textContent).toBe("Jake\u00a0Guentzel\u00a0— Anthony\u00a0Cirelli");
+  });
+  it("labels lineup groups without adding landmarks", () => {
+    render(<GameLineSnapshots data={fixtureResponse(0)} />);
+    expect(screen.queryByRole("region", { name: "Forwards" })).toBeNull();
+    expect(screen.getByRole("group", { name: "Forwards" })).toBeTruthy();
   });
   it("lists each PP unit once even when the entry also carries it", () => {
     const data = fixtureResponse(0);
@@ -245,7 +250,7 @@ describe("game Lines presentation", () => {
     const data = fixtureResponse(0); const entry = data.teams[0]!.entry!;
     data.teams[0]!.entry = { ...entry, units: [{ ...entry.units[0]!, unit: fixtureUnit(["Vasilevskiy", "Johansson"], "goalie"), designation: "confirmed" }] };
     render(<GameLineSnapshots data={data} />);
-    const goalies = screen.getByRole("region", { name: "Goalies" });
+    const goalies = screen.getByRole("group", { name: "Goalies" });
     expect(within(goalies).getByText("Tandem confirmed")).toBeTruthy();
     expect(within(goalies).getByText("Starter not confirmed")).toBeTruthy();
     expect(within(goalies).queryByText("Confirmed")).toBeNull();

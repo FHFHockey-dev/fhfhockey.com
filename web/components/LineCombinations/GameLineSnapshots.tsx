@@ -120,10 +120,12 @@ function UnitRow({ selection, games, decision, hideSource = false }: { selection
 
 function Group({ title, children }: { title: string; children: ReactNode }) {
   const id = useId();
-  return <section className={styles.group} aria-labelledby={id}>
+  // A labelled group, not a landmark: the h3 already gives navigation, and region names like
+  // "Forwards" would collide with the legacy grid's sections on the team page.
+  return <div role="group" className={styles.group} aria-labelledby={id}>
     <h3 id={id} className={styles.groupTitle}>{title}</h3>
     {children}
-  </section>;
+  </div>;
 }
 
 const ES_GROUPS: Array<{ title: string; match: (unit: TweetUnit) => boolean }> = [
