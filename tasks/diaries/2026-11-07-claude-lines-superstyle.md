@@ -48,12 +48,19 @@ Own: `web/pages/lines/**`, `web/styles/Lines.module.scss` (Lines-only), Lines co
 
 ## Coverage ledger
 | page \ pass | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 |
-| /lines | ✓ | ✓ | ✓ | ✓ | ✓ | | | |
-| /lines/EDM (+TBL fixture) | ✓ | ✓ | ✓ | ✓ | ✓ | | | |
-| /lines/line-combo (+fixture) | ✓ | ✓ | ✓ | ✓ | ✓ | | | |
+| /lines | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | | |
+| /lines/EDM (+TBL fixture) | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | | |
+| /lines/line-combo (+fixture) | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | | |
 
 ## Next
-- Pass 5 (unslop): N9 news-flag chip tracked caps, N10 TeamSelect glow (shared with /drm).
+- Pass 4 committed 2caeb7926.
+- Pass 5 (unslop), coded but not yet shown to TJ; the DB was down, so no captures:
+  - N9 `styles/Lines.module.scss` chip: no tracked caps, tokens; `index.tsx` sentenceCase().
+  - N10 `TeamSelect.module.scss`: the glow is replaced by a hover surface step plus an active inset 3px primary bar. Shared with /drm, so capture /drm too.
+  - N11 (pass 7, prepared early) `LineShareBars.module.scss`: visible track.
+  - Background waiter bn49glne2 polls /lines/EDM every 2 min until it returns 200.
+- DB back 18:20. Pass 5 approved: N9, N10, N14 (L1–L4 untracked), N11 (track). slop-audit leftovers are brand 700 weights and the shared SurfaceWorkflowLinks.
+- (old resume note) capture N9 (/lines desktop + mobile chips), N10 (/lines/EDM strip + /drm), N11 → pop-ups → close pass 5 → pass 6 (frontend-design) → 7 (dataviz) → final sweep.
 
 ## Gotchas
 - Superstyle scripts default BASE_URL :3000; set BASE_URL=http://localhost:3110.
