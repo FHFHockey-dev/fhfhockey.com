@@ -91,3 +91,13 @@ Planned Q11 (30 combos): per table × date 11-04..11-06: rows, goalies matching 
 - NST writer fix still unreleased → gap regrows daily (NST lane, Claude-owned).
 - PP derived rebuilds 09-29..10-30 unsized; inspect 10-27 (238/250) and 10-22 (272/280).
 - Loud-alerts migration unapplied; ledger repair for 210000/233000 needs approval.
+
+## Checkpoint: TJ confirmed in this session ("Run both"): apply loud alerts + 2 ledger rows
+- Method: psql (SUPABASE_DB_URL, not echoed), one transaction: \i 20261106220000 file (sha c8556d20… matches
+  registry) + insert schema_migrations rows 20261106210000/220000/233000 (version, name, created_by).
+- psql failed (db host IPv6-only, no DNS here); nothing ran. Applied instead via Supabase connector execute_sql, one
+  transaction (file body verbatim + 3 ledger inserts), about 22:15 UTC. Readback: md5(prosrc) watchdog 4ded5d0a…,
+  label 823e0673… = file bodies; secdef/search_path/grants correct; test_alert present; ledger has all 3; cron 401
+  runs 22:10-22:20 succeeded. Registry 115-117 → applied; counts 119/82 applied/28 unknown/9 pending; summary line
+  updated (exact format the test checks). supportedBaselineMigration 21/21.
+- Gotcha: the summary sentence is asserted verbatim by the test; don't add clauses.

@@ -4,7 +4,7 @@ These are production checks, mostly read-only: SELECTs through the Supabase plug
 
 | # | Check | Result |
 |---|---|---|
-| 1 | Hand-applied migrations | No change in state. The registry evidence was refreshed and the test passes (21/21). |
+| 1 | Hand-applied migrations | Loud alerts applied and both ledger rows inserted (TJ pop-up, follow-up below). All three are now `applied`, and the test passes 21/21. |
 | 2 | Yahoo sticky status, step 5 | Passed and closed. |
 | 3 | Luna in production | Confirmed. |
 | 4 | `rosters.official_seen_at` | **Waiting.** The first nightly run is at 02:00 UTC on 11-08. |
@@ -24,6 +24,18 @@ I added the readback to `stateEvidence` for rows 115–117 in `migration-authori
 **Open items for TJ:**
 - Loud alerts are still not applied.
 - The other two need an approved `supabase migration repair --status applied` before they can be marked applied.
+
+### Follow-up, 2026-11-07 about 22:15 UTC (TJ pop-up approval)
+
+- **Approval:** TJ approved this through Chef and confirmed it by pop-up in this session ("Run both").
+- **How it ran:** psql could not reach the database host from here (it is IPv6-only and the name did not resolve), so nothing ran that way. I ran it instead through the Supabase connector as one transaction: the migration file's SQL exactly as written, plus `schema_migrations` rows for 20261106210000, 20261106220000 and 20261106233000. For 210000 and 233000 that is a ledger row only, with no schema change.
+- **Readback:**
+  - The `prosrc` md5 of `x_timeline_watchdog` (`4ded5d0a…`) and `x_timeline_watchdog_label` (`823e0673…`) match the function bodies in the file.
+  - Both functions have an empty `search_path`. The watchdog is security definer. Only service_role can execute them; anon and authenticated cannot.
+  - `test_alert` mode is present.
+  - The ledger has all three rows.
+  - Cron 401 runs at 22:10, 22:15 and 22:20 succeeded.
+- **Registry:** rows 115–117 are now `applied`. The counts are 119 total, 82 applied, 28 unknown and 9 pending, and the test and the summary are updated to match. `supportedBaselineMigration` passes 21/21.
 
 ## 2. Yahoo sticky status, step 5
 
