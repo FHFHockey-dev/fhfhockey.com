@@ -30,6 +30,11 @@ Q2: payload of the latest line_entry_revisions row with goalie units (slot order
 - Prod env: LINES_OBSERVATIONS_ENABLED=true (plain), TWEET_PIPELINE_INTERPRETATION_ENABLED and _PUBLISHING_ENABLED present (sensitive, values not read).
 - Item 8: #414 READY (dpl_Eq1QaL9X, 00ea36b39); 040c59341 content in master (via bf5d36294). TJ pop-up: "Dismiss all 3". UPDATE lineup_unresolved_player_names set status='ignored' on b733f310/44ef8dd0/d18b9430 (status=pending guard): 3 rows, read back ignored 21:43:22Z.
 
+## Chef ticket 1: beat reporters (0c9aa09f3)
+- AUTHORITY_SEED: BEAT_REPORTER_HANDLES (170) as beat, then club + TEAM_RUN_ACCOUNTS as team.
+- Bios checked live. TJ pop-up: "None of those", so only penguinspr is team. chgo_blackhawks (CHGO Sports, independent media), canucksinsider and pensinsidescoop stay beat.
+- lib/lines tests 138/138; typecheck exit 0; eslint 0.
+
 ## Next
 - After tonight's games (~05:00Z 11-08): rerun Q1; if claims > 0, Q2 for goalie slot order; GET /api/v1/lines/projected and /lines/<team> (<=5 sequential reads); write receipt tasks/artifacts/lines-p3-game-night-2026-11-08.md (MTL 189/187/191).
 - If claims stay 0 after game night: diagnose processor (projectionReportFromSource null? units empty?) before P4.
