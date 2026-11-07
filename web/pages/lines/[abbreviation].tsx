@@ -5,6 +5,7 @@ import React, { useMemo, useRef } from "react";
 import { useRouter } from "next/router";
 import { NextSeo } from "next-seo";
 import type { GetStaticPaths, GetStaticProps } from "next";
+import { PHASE_PRODUCTION_BUILD } from "next/constants";
 import { toPng } from "html-to-image";
 
 import PageTitle from "components/PageTitle";
@@ -81,13 +82,16 @@ type Props = {
 
   lineCombinations: LineCombinations | null;
   lastUpdated: string | null;
+  /** The lines query failed (as opposed to the team having no game data yet). */
+  loadError?: boolean;
 };
 
 export default function TeamLC({
   teamName,
   teams,
   lineCombinations,
-  lastUpdated
+  lastUpdated,
+  loadError = false
 }: Props) {
   const router = useRouter();
   const { abbreviation } = router.query;
@@ -171,8 +175,9 @@ export default function TeamLC({
             {teamName} last-game lineup
           </h2>
           <p className={styles.emptyNote}>
-            No completed game with shift data yet. Lines appear here after the
-            team&apos;s next completed game.
+            {loadError
+              ? "Lines couldn't load right now. This page retries within a minute."
+              : "No completed game with shift data yet. Lines appear here after the team's next completed game."}
           </p>
         </section>
       </Container>
@@ -414,13 +419,27 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
 
     // Instead of returning notFound immediately, check if this is a data availability issue
     const errorMessage = error?.toString() || "";
-    if (errorMessage.includes("Cannot find at least 2 games")) {
-      // Return notFound but allow ISR to retry later as more data becomes available
+    const noGameData = errorMessage.includes("Cannot find at least 2 games");
+    if (noGameData) {
       console.warn(
-        `Insufficient line combination data for ${mappedAbbreviation} at build time. Will retry on-demand.`
+        `Insufficient line combination data for ${mappedAbbreviation}. Will retry on-demand.`
       );
+    } else if (process.env.NEXT_PHASE !== PHASE_PRODUCTION_BUILD) {
+      // A query failure (timeout, aborted transaction) is not "no games yet". Throwing
+      // during ISR revalidation keeps the last good page instead of caching an empty
+      // state over it. At build time, fall through so one flaky query can't fail the build.
+      throw error;
     }
-    return { props: { teamName: team.name, teams, lineCombinations: null, lastUpdated: null }, revalidate: 60 };
+    return {
+      props: {
+        teamName: team.name,
+        teams,
+        lineCombinations: null,
+        lastUpdated: null,
+        loadError: !noGameData
+      },
+      revalidate: 60
+    };
   }
 };
 

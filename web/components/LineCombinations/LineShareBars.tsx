@@ -41,7 +41,7 @@ export default function LineShareBars({ lines }: LineShareBarsProps) {
       <header className={styles.header}>
         <h3 id="line-share-title" className={styles.title}>Recent line share</h3>
         <p className={styles.description}>
-          Last tracked sample share for forward-line ice time and goal production.
+          Each forward line's share of ice time and goals over the last 10 games.
         </p>
       </header>
 

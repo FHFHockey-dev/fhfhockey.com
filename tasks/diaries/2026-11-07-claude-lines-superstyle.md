@@ -40,14 +40,20 @@ Own: `web/pages/lines/**`, `web/styles/Lines.module.scss` (Lines-only), Lines co
   - axe 0 on all 3 pages at both viewports (incl. the PP cards); focus clean (only nextjs-portal, the dev overlay).
   - N5 approved: `PlayerCard.module.scss` labels 10px, values 700; `CategoryTitle` small 10px; `SkaterCard.tsx` phone labels HIT/BLK.
 
+- Pass 3 committed 93c8528b2.
+- Pass 4 (copy), all approved:
+  - C1 error vs no-data in team getStaticProps (+2 tests in `__tests__/pages/lines/abbreviation-header.test.tsx`).
+  - N7 line-share copy; C6 arrow alt; C7 /lines meta description.
+  - Supabase degraded from ~18:05 ("transaction is aborted"/timeouts; :3000 and :3110 both slow). Told Chef and paused page requests; N7/C7 approved without screenshots.
+
 ## Coverage ledger
 | page \ pass | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 |
-| /lines | ✓ | ✓ | ✓ | ✓ | | | | |
-| /lines/EDM (+TBL fixture) | ✓ | ✓ | ✓ | ✓ | | | | |
-| /lines/line-combo (+fixture) | ✓ | ✓ | ✓ | ✓ | | | | |
+| /lines | ✓ | ✓ | ✓ | ✓ | ✓ | | | |
+| /lines/EDM (+TBL fixture) | ✓ | ✓ | ✓ | ✓ | ✓ | | | |
+| /lines/line-combo (+fixture) | ✓ | ✓ | ✓ | ✓ | ✓ | | | |
 
 ## Next
-- Pass 4 (copy): N7 line-share description, promotion-arrow alt text, copy-extract sweep.
+- Pass 5 (unslop): N9 news-flag chip tracked caps, N10 TeamSelect glow (shared with /drm).
 
 ## Gotchas
 - Superstyle scripts default BASE_URL :3000; set BASE_URL=http://localhost:3110.

@@ -48,7 +48,7 @@ function Lines({
     <Container className={styles.lineCombinations}>
       <NextSeo
         title="FHFH | NHL Line Combinations"
-        description="NHL Line Combinations"
+        description="Latest NHL line combinations for all 32 teams, with each night's line promotions and demotions."
       />
 
       <PageTitle>
