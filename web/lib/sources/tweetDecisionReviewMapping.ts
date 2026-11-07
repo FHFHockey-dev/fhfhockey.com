@@ -1,3 +1,4 @@
+import { reviewReceiptLineage } from "./lunaHosted/archiveReceipt";
 import { createHash } from "node:crypto";
 import { isDeepStrictEqual } from "node:util";
 import { isNewsRelayAccount } from "lib/newsFeed";
@@ -67,8 +68,9 @@ function sourceReasons(packet: TweetReviewPacket) {
   if (packet.version !== TWEET_REVIEW_PACKET_VERSION) reasons.push("packet_version_mismatch");
   if (packet.mode !== "review_only" || packet.canPublish !== false || packet.canChangeStatus !== false
     || packet.providerDispatchEnabled !== false) reasons.push("invalid_review_authority");
-  if (!["line_source_ifttt_events", "lines_ccc_ifttt_events"].includes(r.eventTable) || !text(r.id) || !text(r.eventId)
-    || s.retainedSourceId !== `${r.eventTable}:${r.eventId}` || s.sourceTextVersionId !== sourceClaimTextVersionId(s.retainedSourceId, s.text)
+  const lineage = reviewReceiptLineage(r);
+  reasons.push(...lineage.holds);
+  if (s.retainedSourceId !== lineage.retainedSourceId || s.sourceTextVersionId !== sourceClaimTextVersionId(s.retainedSourceId, s.text)
     || !text(s.text) || s.text !== r.inputRow.text || s.sourceTextIsUntrustedData !== true) reasons.push("retained_source_mismatch");
   const published = clock(s.publishedAt), ingested = clock(s.ingestedAt);
   if (published === null || ingested === null || published > ingested || ingested !== clock(r.receivedAt)) reasons.push("source_clock_unresolved");

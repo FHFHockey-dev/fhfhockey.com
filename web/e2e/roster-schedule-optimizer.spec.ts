@@ -85,7 +85,8 @@ test("connected refresh fixtures preserve nonzero intent through offline, cooldo
   // A false navigator.onLine pauses timed polling but never blocks an explicit refresh (the flag can be wrong).
   await network(false); await page.clock.fastForward(5 * 60_000); await expect(page.getByRole("button", { name: "Refresh provider" })).toBeEnabled(); expect(reads).toBe(2);
   await network(true); await visibility("hidden"); await visibility("visible"); await page.getByRole("button", { name: "Refresh provider" }).click(); await expect(page.getByText(/Provider refresh is paused until/)).toBeVisible(); expect(reads).toBe(2);
-  await page.clock.fastForward(15 * 60_000 + 1000); await expect.poll(() => reads).toBe(3);
+  // Yahoo upkeep with the diet flag off runs every 30 minutes (FULL_SNAPSHOT_REFRESH_INTERVAL, 10-29).
+  await page.clock.fastForward(30 * 60_000 + 1000); await expect.poll(() => reads).toBe(3);
   await page.getByRole("button", { name: "Undo" }).click(); await expect.poll(async () => (await saved()).intent.goalieCoverage).toBe(workspace.intent.goalieCoverage); expect((await saved()).intent).toMatchObject({ steps: workspace.intent.steps, protectedPlayerIds: workspace.intent.protectedPlayerIds, goalieCoverage: workspace.intent.goalieCoverage });
   await page.reload(); await expect.poll(() => reads).toBe(4); expect((await saved()).intent.steps).toEqual(workspace.intent.steps); expect((await saved()).context.asOf).toBe("2026-10-11T12:01:00Z");
   await page.screenshot({ path: testInfo.outputPath("rso-refresh-fixture.png") });
@@ -160,7 +161,7 @@ test("manual workspace retains reviewed intent, protections and locks through re
 test("mobile tabs keep selection and expose the matchup and player details", async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/roster-schedule-optimizer");
-  await expect(page.getByRole("region", { name: "Itinerary" })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Week" })).toBeVisible();
   await page.getByRole("navigation", { name: "Workspace views" }).getByRole("button", { name: "Roster" }).click();
   await openDisclosure(page, "Add or import roster");
   await page.getByRole("textbox", { name: "Paste roster names" }).fill("Alpha Center");
@@ -245,7 +246,7 @@ test("readiness controls reach existing inputs across the required viewports", a
     await page.getByRole("button", { name: "Review rules", exact: true }).focus();
     await page.keyboard.press("Enter");
     await expect(page.locator("#rso-rule-settings > summary")).toBeFocused();
-    const confirm = page.getByRole("button", { name: "Confirm planning inputs", exact: true });
+    const confirm = page.getByRole("region", { name: "Roster and setup" }).getByRole("button", { name: "Confirm planning inputs", exact: true });
     await expect(confirm).toBeVisible();
     await expect(confirm).toBeEnabled();
     await confirm.focus();
@@ -275,7 +276,7 @@ test("streams A to B to C through successive conditional acquisitions and keeps 
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/roster-schedule-optimizer");
   await showScheduleView(page, "itinerary");
-  const stream = page.getByRole("region", { name: "Itinerary" }).getByRole("table").first();
+  const stream = page.getByRole("region", { name: "Week" }).getByRole("table").first();
   await expect(stream).toContainText("Alpha Center");
   await expect(stream).toContainText("Bravo Center");
   await expect(stream).toContainText("Charlie Center");
@@ -284,15 +285,15 @@ test("streams A to B to C through successive conditional acquisitions and keeps 
   await expect(stream.getByRole("row", { name: /C#1/ }).getByRole("cell").nth(2)).toContainText("Conditional add");
   await expect(page.getByRole("region", { name: "Plan summary" }).getByRole("article").filter({ has: page.getByText("Active games", { exact: true }) }).locator("strong")).toHaveText("3 / 3");
   await openPlanDetails(page);
-  await expect(page.getByRole("region", { name: "Itinerary" }).getByText("ADD Bravo Center", { exact: true })).toBeVisible();
-  await expect(page.getByRole("region", { name: "Itinerary" }).getByText("ADD Charlie Center", { exact: true })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Week" }).getByText("ADD Bravo Center", { exact: true })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Week" }).getByText("ADD Charlie Center", { exact: true })).toBeVisible();
   const nextAction = page.getByText("Next selected action: ADD Bravo Center", { exact: true });
   await expect(nextAction).toBeVisible();
   await expect(page.getByText("Review inputs and rule checks before acting.", { exact: false })).toBeVisible();
   await showScheduleView(page, "player");
   await openPlanningSetup(page);
   await page.getByText("League rules and scoring").click();
-  await page.getByRole("button", { name: "Confirm planning inputs", exact: true }).click();
+  await page.getByRole("region", { name: "Roster and setup" }).getByRole("button", { name: "Confirm planning inputs", exact: true }).click();
   await openPlanDetails(page);
   await expect(page.getByText("Recheck availability and clearance before this conditional move.", { exact: false })).toBeVisible();
   await page.evaluate(() => {
@@ -304,7 +305,7 @@ test("streams A to B to C through successive conditional acquisitions and keeps 
   await openPlanDetails(page);
   await openPlanningSetup(page);
   await page.getByText("League rules and scoring").click();
-  await page.getByRole("button", { name: "Confirm planning inputs", exact: true }).click();
+  await page.getByRole("region", { name: "Roster and setup" }).getByRole("button", { name: "Confirm planning inputs", exact: true }).click();
   await expect(page.getByText("Review inputs and rule checks before acting.", { exact: false })).toBeVisible();
   await expect(page.getByText("Recheck availability and clearance before this conditional move.", { exact: false })).toHaveCount(0);
   await page.getByText("Scoring, budgets, and lock windows", { exact: true }).click();
@@ -314,7 +315,7 @@ test("streams A to B to C through successive conditional acquisitions and keeps 
     await page.screenshot({ path: testInfo.outputPath(`roster-optimizer-stream-${width}.png`), fullPage: true });
   }
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.getByRole("navigation", { name: "Workspace views" }).getByRole("button", { name: "Itinerary", exact: true }).click();
+  await page.getByRole("navigation", { name: "Workspace views" }).getByRole("button", { name: "Week", exact: true }).click();
   await openPlanDetails(page);
   await nextAction.scrollIntoViewIfNeeded();
   await expect(nextAction).toBeInViewport();
@@ -335,7 +336,7 @@ test("weekly lock keeps one fixed occupant across a window, including a confirme
   await routeCurrentPlanning(page, (route) => route.fulfill({ json: { success: true, data: { players, games, forecasts, evidence: {} } } }));
   await page.goto("/roster-schedule-optimizer");
   await showScheduleView(page, "itinerary");
-  const row = page.getByRole("region", { name: "Itinerary" }).getByRole("table").first().getByRole("row", { name: /C#1/ });
+  const row = page.getByRole("region", { name: "Week" }).getByRole("table").first().getByRole("row", { name: /C#1/ });
   await expect(row.getByRole("cell").nth(0)).toContainText("Alpha Center");
   await expect(row.getByRole("cell").nth(1)).toContainText("Alpha Center");
   await expect(row).not.toContainText("Bravo Center");
@@ -378,7 +379,7 @@ for (const { candidateShots, candidateLock, label } of [
     await page.setViewportSize({ width, height });
     await page.goto("/roster-schedule-optimizer");
     await openPlanDetails(page);
-    const itinerary = page.getByRole("region", { name: "Itinerary", exact: true });
+    const itinerary = page.getByRole("region", { name: "Week", exact: true });
     const gains = page.getByText("Selected plan · category gains", { exact: true }).locator("..");
     await gains.locator(":scope > summary").focus();
     await page.keyboard.press("Enter");
@@ -668,8 +669,8 @@ test("shows sequential stream occupants with real games and retains workspace la
   await page.getByText("League rules and scoring").click();
   await page.getByLabel("C", { exact: true }).fill("1");
   await showScheduleView(page, "itinerary");
-  await expect(page.getByRole("region", { name: "Itinerary" }).getByRole("table").first()).toContainText("Alpha Center");
-  await expect(page.getByRole("region", { name: "Itinerary" }).getByRole("table").first()).toContainText("Bravo Center");
+  await expect(page.getByRole("region", { name: "Week" }).getByRole("table").first()).toContainText("Alpha Center");
+  await expect(page.getByRole("region", { name: "Week" }).getByRole("table").first()).toContainText("Bravo Center");
   await showScheduleView(page, "player");
   await page.getByText("Scoring, budgets, and lock windows", { exact: true }).click({ timeout: 10000 });
   await expectDesktopFrameVisible(page);
@@ -687,7 +688,7 @@ test("dense roster keeps schedule views and their scrollbars inside the desktop 
   await routeCurrentPlanning(page, (route) => route.fulfill({ json: { success: true, data: { players, games, forecasts: [], evidence: {} } } }));
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/roster-schedule-optimizer");
-  const itinerary = page.getByRole("region", { name: "Itinerary", exact: true });
+  const itinerary = page.getByRole("region", { name: "Week", exact: true });
   await showScheduleView(page, "itinerary");
   await expect(itinerary.getByRole("table")).toContainText("Roster Player 1");
   for (const [width, height] of [[1440, 900], [1920, 1080]]) {
@@ -732,7 +733,7 @@ test("Yahoo timeout retains schedule analysis and matchup-week navigation withou
   await expect(page.getByText("Yahoo roster/settings reads timed out after retrying.")).toBeVisible();
   await expect(page.getByText("Retained roster · roster, locks & availability unverified.", { exact: true })).toBeVisible();
   await showScheduleView(page, "itinerary");
-  await expect(page.getByRole("region", { name: "Itinerary", exact: true }).getByRole("table")).toContainText("Alpha Center");
+  await expect(page.getByRole("region", { name: "Week", exact: true }).getByRole("table")).toContainText("Alpha Center");
   await openDisclosure(page, "Find & filter");
   await page.getByRole("button", { name: "All players", exact: true }).click();
   const candidateBrowser = page.getByRole("region", { name: "Candidate browser" });
@@ -745,10 +746,10 @@ test("Yahoo timeout retains schedule analysis and matchup-week navigation withou
   await page.getByRole("button", { name: "Previous matchup week" }).click();
   await expect(page.getByLabel("From", { exact: true })).toHaveValue("2026-09-29");
   await expect(page.getByLabel("Through", { exact: true })).toHaveValue("2026-10-04");
-  await expect(page.getByRole("region", { name: "Itinerary", exact: true }).getByRole("table")).toContainText("Alpha Center");
+  await expect(page.getByRole("region", { name: "Week", exact: true }).getByRole("table")).toContainText("Alpha Center");
   await page.getByRole("button", { name: "Next matchup week" }).click();
   await expect(page.getByLabel("From", { exact: true })).toHaveValue("2026-10-05");
-  await expect(page.getByRole("region", { name: "Itinerary", exact: true }).getByRole("table")).toContainText("Alpha Center");
+  await expect(page.getByRole("region", { name: "Week", exact: true }).getByRole("table")).toContainText("Alpha Center");
   await openDisclosure(page, "Find & filter");
   await page.getByRole("button", { name: "All players", exact: true }).click();
   await expect(candidateBrowser.getByRole("button", { name: /^Preview swap/ })).toHaveCount(0);
@@ -797,7 +798,7 @@ test("mixed Kaprizov coverage stays unresolved until complete evidence supports 
     await readiness.locator(":scope > summary").focus();
     await page.keyboard.press("Enter");
     await page.getByRole("button", { name: "Review rules", exact: true }).click();
-    await page.getByRole("button", { name: "Confirm planning inputs", exact: true }).focus();
+    await page.getByRole("region", { name: "Roster and setup" }).getByRole("button", { name: "Confirm planning inputs", exact: true }).focus();
     await page.keyboard.press("Space");
     await openDisclosure(page, /^League rules and scoring$/);
     await expect(page.getByText("Inputs reviewed for this session. Unknown values still need verification.", { exact: false })).toBeVisible();
@@ -853,7 +854,7 @@ test("weekly LW/RW and UTIL bench explanations preserve midpoint locks through w
     await expect(bench).toContainText("RW#1: Matthew Knies → Drake Batherson");
     await expect(bench.getByRole("list", { name: "Changed assignments" })).not.toContainText("UTIL#1");
     await showScheduleView(page, "player");
-    const center = page.getByRole("region", { name: "Itinerary" }).getByRole("row").filter({ hasText: "Locked Center" });
+    const center = page.getByRole("region", { name: "Week" }).getByRole("row").filter({ hasText: "Locked Center" });
     await expect(center.getByRole("button", { name: "Schedule details for Locked Center, UTIL#1, league positions C, Fantasy assigned", exact: true })).toBeVisible();
     if (pass === 0) await page.reload();
     await openPlanDetails(page);
@@ -883,7 +884,7 @@ test("manual league eligibility must be confirmed and survives a reload", async 
   }
   await expectQualityReadiness(page, true);
   await showScheduleView(page, "itinerary");
-  await expect(page.getByRole("region", { name: "Itinerary" }).getByRole("table").first()).toContainText("Alpha Center");
+  await expect(page.getByRole("region", { name: "Week" }).getByRole("table").first()).toContainText("Alpha Center");
   await page.reload();
   await expectQualityReadiness(page, true);
   const retained = await page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1:anonymous")!).manualPlayers);
@@ -1115,7 +1116,7 @@ test("conflicting forecasts keep capacity planning and show the affected target"
   await page.goto("/roster-schedule-optimizer");
   await expectQualityReadiness(page, false);
   await showScheduleView(page, "itinerary");
-  await expect(page.getByRole("region", { name: "Itinerary" }).getByRole("table").first()).toContainText(/Alpha Center|Bravo Center/);
+  await expect(page.getByRole("region", { name: "Week" }).getByRole("table").first()).toContainText(/Alpha Center|Bravo Center/);
   await page.getByRole("button", { name: "Matchup", exact: true }).click();
   await page.getByText(/Forecast coverage ·/).click();
   await expect(page.getByText(/Alpha Center · game alpha · GOALS: conflicting forecast/)).toBeVisible();
@@ -1147,7 +1148,7 @@ test("points goalie coverage survives worker reload and benches harmful starts o
   page.on("pageerror", error => errors.push(error.message));
   await page.goto("/roster-schedule-optimizer");
   await openPlanDetails(page);
-  const itinerary = page.getByRole("region", { name: "Itinerary" });
+  const itinerary = page.getByRole("region", { name: "Week" });
   const minimum = page.getByRole("button", { name: /^Goalie starts / });
   const expectCoverage = async () => {
     await showScheduleView(page, "position");
@@ -1272,7 +1273,7 @@ test(`unapproved retained inputs stay denied across worker reload, account save 
   }
 
   await showScheduleView(page, "itinerary");
-  await expect(page.getByRole("region", { name: "Itinerary" }).getByRole("table").first()).toContainText("Alpha Center");
+  await expect(page.getByRole("region", { name: "Week" }).getByRole("table").first()).toContainText("Alpha Center");
   await page.reload();
   await openPlanDetails(page);
   await expectQualityReadiness(page, false);
@@ -1698,7 +1699,7 @@ test("Audit1 native candidate Worker finds complete swaps before any plan is sel
   await expect(card).toContainText("Owned Weak");
   await expect(card.getByRole("button", { name: /^Preview swap: add Strongest Last Candidate, drop Owned Weak$/ })).toBeDisabled();
   await page.getByText("League rules and scoring", { exact: true }).click();
-  await page.getByRole("button", { name: "Confirm planning inputs" }).click();
+  await page.getByRole("region", { name: "Roster and setup" }).getByRole("button", { name: "Confirm planning inputs", exact: true }).click();
   await page.getByText("League rules and scoring", { exact: true }).click();
   await expect(card.getByRole("button", { name: /^Preview swap: add Strongest Last Candidate, drop Owned Weak$/ })).toBeEnabled();
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1:anonymous")!).intent.steps)).toEqual([]);
@@ -1829,7 +1830,8 @@ for (const count of [19, 20, 29]) test(`compact layout accounts for ${count} slo
     expect(group.renderedLabel?.width).toBeGreaterThan(0); expect(group.renderedLabel?.height).toBeGreaterThanOrEqual(11);
     expect(group.renderedLabel?.fontSize).toBe("12px");
     expect(group.renderedLabel?.transform).toBe(["UTIL", "BENCH"].includes(group.position!) ? "matrix(0, -1, 1, 0, 0, 0)" : "none");
-    expect(group.renderedLabel!.color).toBe(group.renderedLabel!.panelColor);
+    // Band labels use $on-accent (neutral-950) since the 10-29 UI pass, not the panel surface.
+    expect(group.renderedLabel!.color).toBe("rgb(16, 18, 20)");
     expect(group.renderedLabel!.left).toBeGreaterThanOrEqual(group.renderedLabel!.bandLeft);
     expect(group.renderedLabel!.right).toBeLessThanOrEqual(group.renderedLabel!.bandRight);
     expect(group.renderedLabel!.top).toBeGreaterThanOrEqual(group.renderedLabel!.bandTop);
@@ -2035,7 +2037,7 @@ test("compact day and bench controls preserve saved intent and keyboard selectio
   await writeFile(testInfo.outputPath("compact-bench-viewport-metrics.json"), JSON.stringify(viewportMetrics, null, 2));
   await page.screenshot({ path: testInfo.outputPath("compact-keyboard-focus.png") });
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.getByRole("navigation", { name: "Workspace views" }).getByRole("button", { name: "Itinerary", exact: true }).click();
+  await page.getByRole("navigation", { name: "Workspace views" }).getByRole("button", { name: "Week", exact: true }).click();
   await page.getByRole("region", { name: "Player weekly schedule scroll area" }).evaluate(node => { node.scrollTop = node.scrollHeight; });
   await expect(table.locator('tbody[data-position="BENCH"] tr[data-player-id]').last()).toBeVisible();
   await expect(capacityDisclosure).toBeVisible();
@@ -2058,9 +2060,9 @@ test.extend({ hasTouch: true })("compact short desktop and mobile retain rows, d
   for (const [width, height] of [[375, 812], [390, 844], [1024, 768], [320, 844], [720, 450]]) {
     await page.setViewportSize({ width, height });
     const tabs = page.getByRole("navigation", { name: "Workspace views" });
-    for (const [name, region] of [["Roster", "Roster and setup"], ["Candidates", "Candidates and detail"], ["Matchup", "Matchup"], ["Itinerary", "Itinerary"]]) {
+    for (const [name, region] of [["Roster", "Roster and setup"], ["Candidates", "Candidates and detail"], ["Matchup", "Matchup"], ["Week", "Week"]]) {
       await tabs.getByRole("button", { name, exact: true }).click();
-      for (const label of ["Roster and setup", "Candidates and detail", "Matchup", "Itinerary"]) {
+      for (const label of ["Roster and setup", "Candidates and detail", "Matchup", "Week"]) {
         expect(await page.getByRole("region", { name: label, exact: true }).isVisible()).toBe(label === region);
       }
     }
@@ -2318,10 +2320,10 @@ test.extend({ hasTouch: true })("compact partial and unavailable evidence retain
     for (const width of [390, 320]) {
       await page.setViewportSize({ width, height: 844 });
       const tabs = page.getByRole("navigation", { name: "Workspace views" });
-      await expect(page.getByRole("region", { name: "Itinerary", exact: true })).toBeVisible();
-      for (const [name, region] of [["Roster", "Roster and setup"], ["Candidates", "Candidates and detail"], ["Matchup", "Matchup"], ["Itinerary", "Itinerary"]]) {
+      await expect(page.getByRole("region", { name: "Week", exact: true })).toBeVisible();
+      for (const [name, region] of [["Roster", "Roster and setup"], ["Candidates", "Candidates and detail"], ["Matchup", "Matchup"], ["Week", "Week"]]) {
         await tabs.getByRole("button", { name, exact: true }).tap();
-        for (const label of ["Roster and setup", "Candidates and detail", "Matchup", "Itinerary"]) {
+        for (const label of ["Roster and setup", "Candidates and detail", "Matchup", "Week"]) {
           expect(await page.getByRole("region", { name: label, exact: true }).isVisible()).toBe(label === region);
         }
         expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);

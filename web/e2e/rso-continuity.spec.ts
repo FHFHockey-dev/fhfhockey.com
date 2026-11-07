@@ -211,7 +211,7 @@ test("5. mobile 375 px keeps the workspace in frame and its controls keyboard-re
     if (box && box.right > 0) expect(box.right, `${label} focus is off-screen at 375 px`).toBeLessThanOrEqual(375 + 1);
   }
   const labels = [...reached];
-  for (const name of ["Itinerary", "Roster", "Candidates", "Matchup"]) expect(labels.some(label => label.endsWith(`:${name}`)), `${name} not keyboard-reachable; reached ${labels.length}`).toBe(true);
+  for (const name of ["Week", "Roster", "Candidates", "Matchup"]) expect(labels.some(label => label.endsWith(`:${name}`)), `${name} not keyboard-reachable; reached ${labels.length}`).toBe(true);
   // Undo has no history here: disabled (so not a tab stop) with its reason exposed to assistive tech.
   await expect(page.getByRole("button", { name: "Undo" })).toBeDisabled();
   await expect(page.getByRole("button", { name: "Undo" })).toHaveAccessibleDescription("No edits to undo.");
@@ -259,7 +259,8 @@ test("6b. missing and failed planning reads show their state instead of a plan",
   await page.goto("/roster-schedule-optimizer");
   await expect(page.getByText("Add your players to begin schedule analysis.")).toBeAttached();
   await expect(page.getByText("0 players", { exact: true })).toBeVisible();
-  await expect(page.getByText("Add or import roster", { exact: true })).toBeVisible();
+  // The roster form summary and the empty-roster call to action both say this.
+  await expect(page.getByText("Add or import roster", { exact: true }).first()).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath("case6b-missing.png") });
 
   const players = roster();

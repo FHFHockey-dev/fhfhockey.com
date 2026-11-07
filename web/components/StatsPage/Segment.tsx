@@ -3,6 +3,10 @@
 import React from "react";
 import styles from "styles/Stats.module.scss";
 
+// Validated categorical slots for the 3-part leader bars (G/A1/A2, ESG/PPG/SHG,
+// B/S/H) on the dark rows: brand blue, amber, violet. No status red for a series.
+export const PART_COLORS = ["#1590c4", "#c98500", "#9085e9"] as const;
+
 interface SegmentProps {
   flexValue: number;
   color: string;

@@ -153,7 +153,7 @@
   background: v.$draft-surface;
   border: 1px solid var(--metric-color);
   border-left-width: 6px;
-  border-radius: v.$radius-md;
+  border-radius: 6px v.$radius-md v.$radius-md 6px;
 }
 
 .metric[data-tone="volume"] { --metric-color: #{v.$color-teal-500}; }

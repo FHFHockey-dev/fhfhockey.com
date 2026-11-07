@@ -3,9 +3,9 @@ import { identityDigest } from "./playerIdentitySnapshot";
 export const LUNA_MODEL = "gpt-6-luna";
 export const LUNA_ENDPOINTS = { responses: "https://api.openai.com/v1/responses", decisions: "https://api.openai.com/v1/decisions" } as const;
 export type LunaEndpoint = keyof typeof LUNA_ENDPOINTS;
-// Full 1.05M context at long-input rates + 2048 output tokens, regional premium.
+// Current full-context ceiling at published long-context rates + 2048 output tokens, regional premium.
 // Explicit caching without breakpoints disables caching; unexpected cache usage is held.
-export const LUNA_RESERVATION_NANO_USD = 233_000_000;
+export const LUNA_RESERVATION_NANO_USD = 234_000_000;
 export const LUNA_MAX_OUTPUT_TOKENS = 2048;
 export type LunaReceipt = { body: any; requestId: string | null; endpoint: LunaEndpoint; chargeNanoUsd: number };
 export interface LunaAdmissionStore {
@@ -14,7 +14,7 @@ export interface LunaAdmissionStore {
   uncertain(key: string, requestId?: string | null): Promise<void>;
 }
 
-/** Standard rates checked 2026-10-23. Conservative regional ceiling, not invoice attribution. */
+/** Rates published 2026-11-05. Conservative regional ceiling, not invoice attribution. */
 export function priceLunaUsage(body: any, endpoint: LunaEndpoint): number {
   const input = body?.usage?.input_tokens, output = endpoint === "decisions" ? 0 : body?.usage?.output_tokens;
   const details = body?.usage?.input_tokens_details;
@@ -23,7 +23,8 @@ export function priceLunaUsage(body: any, endpoint: LunaEndpoint): number {
     || (details?.cached_tokens ?? 0) !== 0 || (details?.cache_write_tokens ?? 0) !== 0
     || (body.service_tier != null && body.service_tier !== "default")) throw new Error("luna_usage_unresolved");
   const long = input > 272_000;
-  return Math.ceil((input * (long ? 200 : 100) + output * (long ? 750 : 500)) * 1.1);
+  const rawNanoUsd = input * (long ? 200 : 100) + output * (long ? 1_000 : 500);
+  return Math.floor((rawNanoUsd * 11 + 9) / 10); // exact ceiling of the 10% regional uplift using safe integers.
 }
 
 /** No environment/key lookup, redirect, SDK retries, tools, or implicit endpoint. */

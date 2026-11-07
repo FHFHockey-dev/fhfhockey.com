@@ -4,7 +4,7 @@ import React from "react";
 import Link from "next/link";
 import styles from "styles/Stats.module.scss";
 import { SkaterStat } from "lib/NHL/statsPageTypes";
-import Segment from "./Segment";
+import Segment, { PART_COLORS } from "./Segment";
 import LeaderboardHeadshot from "./LeaderboardHeadshot";
 
 interface LeaderboardCategoryProps {
@@ -34,21 +34,21 @@ const LeaderboardCategory: React.FC<LeaderboardCategoryProps> = ({
             <div className={styles.angledBarContainer}>
               <Segment
                 flexValue={goalsFlex}
-                color="#07aae2"
+                color={PART_COLORS[0]}
                 label="G"
                 isFirst={true}
                 isLast={false}
               />
               <Segment
                 flexValue={primaryFlex}
-                color="#F0AD4E"
+                color={PART_COLORS[1]}
                 label="A1"
                 isFirst={false}
                 isLast={false}
               />
               <Segment
                 flexValue={secondaryFlex}
-                color="#D9534F"
+                color={PART_COLORS[2]}
                 label="A2"
                 isFirst={false}
                 isLast={true}
@@ -64,21 +64,21 @@ const LeaderboardCategory: React.FC<LeaderboardCategoryProps> = ({
             <div className={styles.angledBarContainer}>
               <Segment
                 flexValue={esg}
-                color="#07aae2"
+                color={PART_COLORS[0]}
                 label="ESG"
                 isFirst={true}
                 isLast={false}
               />
               <Segment
                 flexValue={ppg}
-                color="#F0AD4E"
+                color={PART_COLORS[1]}
                 label="PPG"
                 isFirst={false}
                 isLast={false}
               />
               <Segment
                 flexValue={shg}
-                color="#D9534F"
+                color={PART_COLORS[2]}
                 label="SHG"
                 isFirst={false}
                 isLast={true}
@@ -98,7 +98,7 @@ const LeaderboardCategory: React.FC<LeaderboardCategoryProps> = ({
             <div className={styles.angledBarContainer}>
               <Segment
                 flexValue={pppGoals}
-                color="#07aae2"
+                color={PART_COLORS[0]}
                 label="G"
                 isFirst={true}
                 isLast={false}
@@ -107,14 +107,14 @@ const LeaderboardCategory: React.FC<LeaderboardCategoryProps> = ({
                 <>
                   <Segment
                     flexValue={primaryAssists}
-                    color="#F0AD4E"
+                    color={PART_COLORS[1]}
                     label="A1"
                     isFirst={false}
                     isLast={false}
                   />
                   <Segment
                     flexValue={secondaryAssists}
-                    color="#D9534F"
+                    color={PART_COLORS[2]}
                     label="A2"
                     isFirst={false}
                     isLast={true}

@@ -207,8 +207,12 @@ function quoteSummary(row: ShadowPostRow): Record<string, unknown> | null {
   };
 }
 
-/** A pending row for the live queue, in the shape the IFTTT receiver writes (lineSourceIftttReceiver.ts). */
-export function toQueueRow(row: ShadowPostRow, table: QueueTable): Record<string, unknown> {
+/**
+ * A pending row for the live queue, in the shape the IFTTT receiver writes (lineSourceIftttReceiver.ts). `firstSeenAt`
+ * is the shadow row's first_seen_at, kept as raw_payload.first_seen_at so the Lines engine can date the post by when
+ * the scraper first saw it rather than by the queue insert (received_at).
+ */
+export function toQueueRow(row: ShadowPostRow, table: QueueTable, firstSeenAt: string | null = null): Record<string, unknown> {
   return {
     source: "fxtwitter",
     ...(table === "lines_ccc_ifttt_events" ? {} : { source_group: row.source_group, source_key: row.source_key }),
@@ -221,7 +225,8 @@ export function toQueueRow(row: ShadowPostRow, table: QueueTable): Record<string
     tweet_created_at: row.tweet_created_at,
     created_at_label: row.tweet_created_at,
     processing_status: "pending",
-    raw_payload: { provider: "fxtwitter", fx: row.raw_payload, quote: quoteSummary(row), ...toV2Payload(row) },
+    raw_payload: { provider: "fxtwitter", fx: row.raw_payload, quote: quoteSummary(row), ...toV2Payload(row),
+      ...(firstSeenAt ? { first_seen_at: firstSeenAt } : {}) },
   };
 }
 
@@ -237,6 +242,33 @@ export function rowsToEnqueue(
   if (!Number.isFinite(since)) return [];
   const seenAt = new Map(firstSeen.map((entry) => [entry.tweet_id, Date.parse(entry.first_seen_at)]));
   return rows.filter((row) => (seenAt.get(row.tweet_id) ?? -Infinity) >= since);
+}
+
+/**
+ * A social_share_x_posts row for one of @FHFHockey's own posts, replacing the IFTTT trigger "New photo or video by you"
+ * (web/pages/api/v1/sources/ifttt/FHFHockey-post.ts): own posts and quotes that carry media; reposts never. posted_at is
+ * the post's own X timestamp. alt_text is the first media alt text that starts with "FHFH " (the one the card matcher
+ * reads), else the first alt text; matched_card comes from `matchCard`, the shared copy of postedWeek's matcher. The
+ * caller upserts on tweet_id ignoring duplicates, so a post IFTTT already stored keeps its row. Null when not eligible.
+ */
+export function toSocialShareRow(
+  account: PolledAccount, row: ShadowPostRow, matchCard: (altText: string | null) => string | null,
+): Record<string, unknown> | null {
+  if (account.sourceGroup !== "social_share" || !same(row.source_account, account.handle)) return null;
+  if ((row.post_kind !== "post" && row.post_kind !== "quote") || !row.has_media) return null;
+  if (!same(handle((row.raw_payload as Status).author?.screen_name), account.handle)) return null;
+  const altText = row.media_alt_texts.find((alt) => /^\s*FHFH\s/.test(alt)) ?? row.media_alt_texts[0] ?? null;
+  return {
+    tweet_id: row.tweet_id,
+    post_link: row.link_to_tweet,
+    username: account.handle,
+    posted_at: row.tweet_created_at,
+    created_at_label: row.tweet_created_at,
+    post_text: row.full_text,
+    alt_text: altText,
+    matched_card: matchCard(altText),
+    raw_payload: { provider: "fxtwitter", fx: row.raw_payload },
+  };
 }
 
 /** True for a repost that arrived as the wrapper (see mapFxStatus): its id and text are the wrapper's. */

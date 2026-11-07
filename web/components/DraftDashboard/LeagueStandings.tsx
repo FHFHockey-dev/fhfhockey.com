@@ -9,6 +9,10 @@ import {
 } from "lib/draftDashboard/categoryStandings";
 import styles from "./LeagueStandings.module.scss";
 
+// Tooltip name for a category key: "GOALS_AGAINST_GOALIE" -> "goals against".
+const statTitle = (key: string) =>
+  key.replace(/_(GOALIE|SKATER)$/, "").toLowerCase().replace(/^pp_/, "power-play_").replaceAll("_", " ");
+
 interface LeagueStandingsProps {
   scheduleMetrics?: PlayerScheduleMetrics;
   schedulePeriod?: string;
@@ -131,7 +135,7 @@ export default function LeagueStandings({
                 >
                   <button
                     type="button"
-                    title={key}
+                    title={`Sort by ${statTitle(key)}`}
                     onClick={() => changeSort(key)}
                   >
                     {STATS_MASTER_LIST.find((stat) => stat.key === key)

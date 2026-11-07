@@ -241,64 +241,25 @@ describe("StatsPage team logos", () => {
 });
 
 describe("StatsPage mobile team grid", () => {
-  it("morphs through one stable passive scroll listener and cancels pending work", async () => {
+  it("shows the teams as the collapsed logo strip on mobile and does not morph on scroll", async () => {
     Object.defineProperty(window, "innerWidth", {
       configurable: true,
       value: 430,
     });
-
-    let nextFrameId = 0;
-    const callbacks = new Map<number, FrameRequestCallback>();
-    vi.spyOn(window, "requestAnimationFrame").mockImplementation((callback) => {
-      nextFrameId += 1;
-      callbacks.set(nextFrameId, callback);
-      return nextFrameId;
-    });
-    const cancelFrame = vi
-      .spyOn(window, "cancelAnimationFrame")
-      .mockImplementation((frameId) => {
-        callbacks.delete(frameId);
-      });
     const addEventListener = vi.spyOn(window, "addEventListener");
 
-    const { unmount } = render(<StatsPage {...emptyStatsProps} teams={[]} />);
+    render(<StatsPage {...emptyStatsProps} teams={[]} />);
     const mobileTeamList = await screen.findByTestId("mobile-team-list");
 
-    const runLatestFrame = () => {
-      const frameId = nextFrameId;
-      const callback = callbacks.get(frameId);
-      expect(callback).toBeDefined();
-      callbacks.delete(frameId);
-      act(() => callback?.(frameId));
-    };
-
-    Object.defineProperty(window, "scrollY", {
-      configurable: true,
-      value: 100,
-    });
-    fireEvent.scroll(window);
-    runLatestFrame();
     await waitFor(() =>
       expect(mobileTeamList.getAttribute("data-grid-state")).toBe("collapsed"),
     );
 
-    Object.defineProperty(window, "scrollY", {
-      configurable: true,
-      value: 0,
-    });
+    Object.defineProperty(window, "scrollY", { configurable: true, value: 0 });
     fireEvent.scroll(window);
-    runLatestFrame();
-    await waitFor(() =>
-      expect(mobileTeamList.getAttribute("data-grid-state")).toBe("expanded"),
-    );
-
+    expect(mobileTeamList.getAttribute("data-grid-state")).toBe("collapsed");
     expect(
       addEventListener.mock.calls.filter(([event]) => event === "scroll"),
-    ).toHaveLength(1);
-
-    fireEvent.scroll(window);
-    const pendingFrameId = nextFrameId;
-    unmount();
-    expect(cancelFrame).toHaveBeenCalledWith(pendingFrameId);
+    ).toHaveLength(0);
   });
 });

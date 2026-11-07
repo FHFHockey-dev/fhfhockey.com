@@ -130,7 +130,7 @@ describe("PlayerRadarChart", () => {
         seasonId={20252026}
       />,
     );
-    fireEvent.click(screen.getByTitle("Show calculation methods"));
+    fireEvent.click(screen.getByRole("button", { name: "How rankings are calculated" }));
   }
 
   function chartPercentiles() {
@@ -348,7 +348,7 @@ describe("PlayerRadarChart", () => {
         seasonId={20252026}
       />,
     );
-    fireEvent.click(screen.getByTitle("Show calculation methods"));
+    fireEvent.click(screen.getByRole("button", { name: "How rankings are calculated" }));
 
     await waitFor(() => expect(screen.getByText("1st / 2")).toBeTruthy());
     expect(chartPercentiles()).toEqual([50]);
@@ -388,7 +388,7 @@ describe("PlayerRadarChart", () => {
       filterCohort: true,
     });
     render(<PlayerRadarChart {...scopeProps} player={{ ...scopeProps.player, position: isGoalie ? "G" : "C" }} selectedStats={[stat]} isGoalie={isGoalie} />);
-    fireEvent.click(screen.getByTitle("Show calculation methods"));
+    fireEvent.click(screen.getByRole("button", { name: "How rankings are calculated" }));
 
     await waitFor(() => expect(screen.getByText("1st / 2")).toBeTruthy());
     expect(chartPercentiles()).toEqual([50]);
@@ -446,7 +446,7 @@ describe("PlayerRadarChart", () => {
       },
     });
     render(<PlayerRadarChart {...scopeProps} selectedStats={["points", "shots", "hits"]} />);
-    fireEvent.click(screen.getByTitle("Show calculation methods"));
+    fireEvent.click(screen.getByRole("button", { name: "How rankings are calculated" }));
 
     await waitFor(() => expect(screen.queryByText("Calculating...")).toBeNull());
     expect(chartPercentiles()).toEqual([50, null, 67]);
@@ -472,7 +472,7 @@ describe("PlayerRadarChart", () => {
   it.each([null, { points: null }])("shows unavailable rankings when the selected-season player row is missing (%j)", async (playerRow) => {
     installQueryMock({ playerRow, cohortRows: [{ points: 1 }, { points: 2 }] });
     render(<PlayerRadarChart {...scopeProps} />);
-    fireEvent.click(screen.getByTitle("Show calculation methods"));
+    fireEvent.click(screen.getByRole("button", { name: "How rankings are calculated" }));
 
     await waitFor(() => expect(screen.queryByText("Calculating...")).toBeNull());
     expect(screen.queryByTestId("radar-chart")).toBeNull();

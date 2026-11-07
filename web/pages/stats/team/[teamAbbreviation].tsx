@@ -139,7 +139,7 @@ export default function TeamStatsPage({
   };
 
   return (
-    <div
+    <main
       className={
         styles.teamStatsPageContainer +
         (teamColors ? " " + styles.hasTeamColors : "")
@@ -167,7 +167,7 @@ export default function TeamStatsPage({
           <div className={styles.teamDetails}>
             <div className={styles.teamInfo}>
               <div className={styles.teamName}>
-                {teamName}
+                <h1 className={styles.teamNameHeading}>{teamName}</h1>
                 {teams.length > 0 && (
                   <TeamDropdown teams={teams} currentTeam={teamAbbreviation} />
                 )}
@@ -248,14 +248,16 @@ export default function TeamStatsPage({
           showAllSeasons={showAllSeasons}
           onToggleAllSeasons={() => setShowAllSeasons((v) => !v)}
         />
-        <SurfaceWorkflowLinks
-          eyebrow="Team workflow"
-          title={`Keep exploring ${teamAbbreviation}`}
-          description="Move between this team dashboard, deployment, matchup, schedule, and trend context without switching to a legacy team route."
-          links={getTeamSurfaceLinks(teamAbbreviation)}
-        />
+        <div className={styles.workflowLinks}>
+          <SurfaceWorkflowLinks
+            eyebrow="Team workflow"
+            title={`Keep exploring ${teamAbbreviation}`}
+            description="Open this team's splits, lines, starters, schedule and trends."
+            links={getTeamSurfaceLinks(teamAbbreviation)}
+          />
+        </div>
       </div>
-    </div>
+    </main>
   );
 }
 

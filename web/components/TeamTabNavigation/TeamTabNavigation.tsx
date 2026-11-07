@@ -10,6 +10,7 @@ import { ShotVisualization } from "../ShotVisualization/ShotVisualization";
 import { ShotDataFilters } from "../../hooks/useShotData";
 import { LineCombinationsGrid } from "../LineCombinations/LineCombinationsGrid";
 import { teamsInfo } from "../../lib/teamsInfo";
+import { contrast } from "lib/socialShare/teamNeon";
 import { TeamScheduleCalendar } from "../TeamScheduleCalendar/TeamScheduleCalendar";
 import { useTeamSchedule } from "hooks/useTeamSchedule";
 
@@ -245,8 +246,31 @@ export function TeamTabNavigation({
 }: TeamTabNavigationProps) {
   const [activeTab, setActiveTab] = useState<TabKey>("dashboard");
   const router = useRouter();
+  const tabBarRef = useRef<HTMLDivElement>(null);
+
+  // On phones the tab bar scrolls sideways; keep the active tab in view
+  // (horizontal only, so the page itself never jumps).
+  useEffect(() => {
+    const bar = tabBarRef.current;
+    const active = bar?.querySelector<HTMLElement>(`[data-tab="${activeTab}"]`);
+    if (!bar || !active) return;
+    const left = active.offsetLeft;
+    const right = left + active.offsetWidth;
+    if (left < bar.scrollLeft || right > bar.scrollLeft + bar.clientWidth) {
+      bar.scrollLeft = Math.max(0, left - 16);
+    }
+  }, [activeTab]);
 
   const teamInfo = teamsInfo[teamAbbrev];
+  // Active-tab text sits on the jersey-coloured bar: use the team primary when it
+  // reads (WCAG 4.5:1), otherwise white or black, whichever contrasts more.
+  const tabBarColor = teamInfo?.jersey || "#ffffff";
+  const primaryColor = teamInfo?.primaryColor || "#1976d2";
+  const readableOnBar = (color: string) => contrast(color, tabBarColor) >= 4.5
+    ? color
+    : contrast("#ffffff", tabBarColor) >= contrast("#000000", tabBarColor) ? "#ffffff" : "#000000";
+  const activeTabColor = readableOnBar(primaryColor);
+  const tabLabelColor = readableOnBar(teamInfo?.accent || "#ff9800");
 
   // Fetch team schedule data with corrected parameters
   const {
@@ -528,13 +552,16 @@ export function TeamTabNavigation({
     <>
       {/* Tab Navigation */}
       <div
+        ref={tabBarRef}
         className={styles.tabNavigation}
         style={
           {
             "--team-primary-color": teamInfo?.primaryColor || "#1976d2",
             "--team-secondary-color": teamInfo?.secondaryColor || "#424242",
             "--team-jersey-color": teamInfo?.jersey || "#ffffff",
-            "--team-accent-color": teamInfo?.accent || "#ff9800"
+            "--team-accent-color": teamInfo?.accent || "#ff9800",
+            "--tab-active-color": activeTabColor,
+            "--tab-label-color": tabLabelColor
           } as React.CSSProperties
         }
       >
@@ -542,6 +569,7 @@ export function TeamTabNavigation({
           {TABS.map((tab) => (
             <button
               key={tab.key}
+              data-tab={tab.key}
               onClick={() => handleTabClick(tab.key)}
               className={`${styles.tabButton} ${
                 activeTab === tab.key ? styles.active : ""

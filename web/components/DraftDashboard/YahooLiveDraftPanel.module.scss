@@ -394,8 +394,8 @@
 
 .infoNotice {
   padding: v.$space-sm v.$space-md;
-  border-left: 3px solid rgba(v.$primary-color, 0.6);
-  border-radius: v.$radius-sm;
+  border-left: 4px solid rgba(v.$primary-color, 0.6);
+  border-radius: 4px v.$radius-sm v.$radius-sm 4px;
   color: v.$text-secondary;
   background: rgba(v.$primary-color, 0.06);
   font-size: v.$font-size-sm;

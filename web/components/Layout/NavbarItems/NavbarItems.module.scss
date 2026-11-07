@@ -4,7 +4,7 @@
   --navbar-accent: #{v.$primary-color};
   min-width: 0;
   font-family: v.$font-family-primary;
-  color: #f4f6f8;
+  color: v.$chrome-text;
   ul {
     list-style: none;
     margin: 0;
@@ -45,13 +45,13 @@
   letter-spacing: 0.04em;
   cursor: pointer;
   &:hover {
-    background: #20282e;
+    background: v.$chrome-link-hover;
   }
   &[aria-current],
   &.active {
     border-bottom-color: var(--navbar-accent);
     color: var(--navbar-accent);
-    background: #122a34;
+    background: v.$chrome-active;
   }
 }
 .trigger {
@@ -60,7 +60,7 @@
     height: 15px;
   }
   &[aria-expanded="true"] {
-    background: #20282e;
+    background: v.$chrome-link-hover;
     svg {
       transform: rotate(180deg);
     }
@@ -75,7 +75,7 @@
   padding: 20px;
   border: 1px solid #36434c;
   border-radius: 0 0 10px 10px;
-  background: #181e22;
+  background: v.$chrome-menu-bg;
   box-shadow: 0 14px 28px #0006;
   max-height: calc(100dvh - 80px);
   overflow-y: auto;
@@ -91,7 +91,7 @@
 }
 .groupTitle {
   margin: 0 0 12px;
-  color: #b5c1cc;
+  color: v.$chrome-label;
   font-size: 13px;
   font-weight: 600;
   letter-spacing: 0.05em;
@@ -121,16 +121,16 @@
   }
   small {
     display: block;
-    color: #b5c1cc;
+    color: v.$chrome-label;
     font-size: 14px;
     line-height: 1.4;
     margin-top: 3px;
   }
   &:hover {
-    background: #263139;
+    background: v.$chrome-hover;
   }
   &[aria-current] {
-    background: #12303d;
+    background: v.$chrome-active-mobile;
     border-inline-start-color: var(--navbar-accent);
     strong {
       color: var(--navbar-accent);

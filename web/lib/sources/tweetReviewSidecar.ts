@@ -1,3 +1,4 @@
+import { reviewReceiptLineage, type ArchiveReviewReceipt } from "./lunaHosted/archiveReceipt";
 import { isDeepStrictEqual } from "node:util";
 import { timestampMicros } from "lib/projections/evidenceTime";
 import { getPrimaryTextForSource, type ParsedLinesCccSource } from "./linesCccIngestion";
@@ -6,7 +7,7 @@ import { tweetClaimAttribution } from "./tweetSourceDirectory";
 import type { TweetClaimEnvelope } from "./tweetClaimExtraction";
 
 export const TWEET_REVIEW_PACKET_VERSION = "ifttt-review-sidecar-v1";
-export type TweetReviewReceipt = {
+export type TweetReviewReceipt = ArchiveReviewReceipt | {
   id: string;
   eventTable: "line_source_ifttt_events" | "lines_ccc_ifttt_events";
   eventId: string;
@@ -63,7 +64,9 @@ export function prepareTweetReviewPacket(args: {
   const rawTextBound = text === receipt.inputRow.text && source.primaryTextSource !== "quoted_oembed";
   const originalResolved = wrapperBound && rawTextBound && attribution.status === "resolved";
   const publishedAt = originalResolved ? attribution.originalPublishedAt : null;
-  const sourceHolds: string[] = [];
+  const lineage = receipt.eventTable === "luna_capture.receipts" ? reviewReceiptLineage(receipt)
+    : { retainedSourceId: `${receipt.eventTable}:${receipt.eventId}`, holds: [] as string[] };
+  const sourceHolds: string[] = [...lineage.holds];
   if (!text) sourceHolds.push("source_text_missing");
   if (!wrapperBound) sourceHolds.push("retained_wrapper_url_mismatch_or_missing");
   if (!rawTextBound) sourceHolds.push("selected_text_requires_retained_enrichment_proof");
@@ -72,7 +75,7 @@ export function prepareTweetReviewPacket(args: {
   else if (timestampMicros(publishedAt) === null) sourceHolds.push("publication_time_invalid");
   else if (timestampMicros(publishedAt)! > timestampMicros(receipt.receivedAt)!) sourceHolds.push("publication_after_ingestion");
 
-  const retainedSourceId = `${receipt.eventTable}:${receipt.eventId}`;
+  const retainedSourceId = lineage.retainedSourceId;
   const sourceTextVersionId = sourceClaimTextVersionId(retainedSourceId, text);
   const overflow = claims.length > 99;
   const seen = new Set<string>();

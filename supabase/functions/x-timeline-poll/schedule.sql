@@ -20,3 +20,14 @@ select cron.schedule(
   $$
 );
 -- Stop: select cron.unschedule('x-timeline-poll');
+
+-- Email watchdog (migration 20261106210000_x_timeline_watchdog): every 5 minutes, reads the poller's results and
+-- emails TJ through Resend on an outage, a stall or a recovery. Needs Vault 'resend_api_key' and
+-- 'x_timeline_alert_recipient', added by TJ.
+select cron.schedule('x-timeline-watchdog', '*/5 * * * *', $$select public.x_timeline_watchdog()$$);
+-- Stop: select cron.unschedule('x-timeline-watchdog');
+
+-- Poller run history for the cron report (migration 20261106201221_x_timeline_poll_runs, cron-report lane 2): every
+-- 15 minutes, copies the poller's results and the job's runs before pg_net's ~6 h retention drops them.
+select cron.schedule('x-timeline-poll-capture', '*/15 * * * *', $$select public.x_timeline_capture_poll_runs()$$);
+-- Stop: select cron.unschedule('x-timeline-poll-capture');

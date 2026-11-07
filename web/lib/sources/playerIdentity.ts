@@ -10,6 +10,8 @@ export type PlayerIdentity = {
   /** Aliases that apply only when the tweet puts the name in this kind of slot. */
   roleAliases?: Array<{ alias: string; role: PlayerSlotRole }>;
   registryId?: number;
+  /** Listed on the team's latest official NHL roster refresh (rosters.official_seen_at). Breaks same-name ties only. */
+  onOfficialRoster?: boolean;
 };
 
 /** The kind of slot a tweet put a name in: a forward line, a defence pair or the net. */
@@ -37,6 +39,22 @@ export function breakIdentityTieByRole(candidates: PlayerIdentity[], role: Playe
   if (teamId == null || candidates.some((player) => player.teamId !== teamId || !positionSlotRole(player.position))) return null;
   const fits = candidates.filter((player) => positionSlotRole(player.position) === role);
   return fits.length === 1 ? fits[0]! : null;
+}
+
+/**
+ * Settles a same-team tie by slot first, then by the official roster: of the candidates that fit the
+ * slot, the one player on the team's latest official refresh wins. Training-camp leftovers keep
+ * is_current, so a candidate never (or no longer) listed never wins by default.
+ */
+export function breakIdentityTie(candidates: PlayerIdentity[], role: PlayerSlotRole | null | undefined): PlayerIdentity | null {
+  const byRole = breakIdentityTieByRole(candidates, role);
+  if (byRole || candidates.length < 2) return byRole;
+  const teamId = candidates[0]!.teamId;
+  if (teamId == null || candidates.some((player) => player.teamId !== teamId)) return null;
+  const pool = role && candidates.every((player) => positionSlotRole(player.position))
+    ? candidates.filter((player) => positionSlotRole(player.position) === role) : candidates;
+  const listed = pool.filter((player) => player.onOfficialRoster === true);
+  return listed.length === 1 ? listed[0]! : null;
 }
 
 export type PlayerIdentityResolution =
@@ -83,7 +101,7 @@ export function resolvePlayerIdentity(
     const scoped = teamId == null ? candidates : candidates.filter((player) => player.teamId === teamId);
     if (scoped.length === 1) return { status: "matched", player: scoped[0]!, basis };
     if (scoped.length > 1) {
-      const fit = breakIdentityTieByRole(scoped, role);
+      const fit = breakIdentityTie(scoped, role);
       return fit ? { status: "matched", player: fit, basis } : { status: "ambiguous", candidates: scoped };
     }
     return { status: "conflicting_membership", candidates };

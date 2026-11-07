@@ -30,7 +30,8 @@
 .itineraryPanel .panelHead > .assignmentBadge { display: inline; }
 .scheduleControlDisclosure { font-size: s.$text-xs; }
 .scheduleControlDisclosure > summary { display: flex; align-items: center; min-height: 32px; cursor: pointer; color: s.$ink-muted; }
-.scheduleControlDisclosure[open] { flex-basis: 100%; overflow-x: auto; }
+/* An open disclosure takes a full row; ordering it last keeps the legend's info icon on the first line instead of a row of its own. */
+.scheduleControlDisclosure[open] { flex-basis: 100%; overflow-x: auto; order: 1; }
 .scheduleControlDisclosure .dayControls { position: static; }
 .scheduleControlDisclosure .daySummary { margin: 0; }
 .workspaceFooter { display: flex; align-items: start; gap: v.$space-sm; flex-shrink: 0; font-size: s.$text-sm; }
@@ -55,7 +56,7 @@
 .controls label, .settingsGrid label, .field { display: flex; flex-direction: column; gap: v.$space-xs; color: s.$ink-muted; font-size: s.$text-sm; }
 .controls input { max-width: 132px; }
 .controls label:nth-child(2) input { max-width: 105px; }
-.notice { padding: 5px 8px; max-height: 64px; overflow: auto; flex-shrink: 0; border: v.$border-subtle; border-left: 4px solid v.$warning-color; border-radius: s.$radius-small; background: v.$draft-surface; font-size: s.$text-sm; line-height: 1.4; }
+.notice { padding: 5px 8px; max-height: 64px; overflow: auto; flex-shrink: 0; border: v.$border-subtle; border-left: 4px solid v.$warning-color; border-radius: 4px s.$radius-small s.$radius-small 4px; background: v.$draft-surface; font-size: s.$text-sm; line-height: 1.4; }
 .metrics { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: v.$space-sm; }
 .metrics article { position: relative; min-width: 0; display: flex; flex-direction: column; gap: 2px; padding: v.$space-sm v.$space-md; background: v.$draft-surface; border: 1px solid v.$draft-border; border-radius: s.$radius-card; }
 .metrics span { color: s.$ink-muted; letter-spacing: .04em; text-transform: uppercase; font-size: s.$text-sm; }
@@ -581,7 +582,11 @@ details.alternative .candidateRow button { width: auto; }
 .objectiveSwitch button { min-height: 26px; padding: 2px 8px; border: 0; background: transparent; color: s.$ink-muted; font-size: s.$text-xs; white-space: nowrap; }
 .objectiveSwitch button[aria-pressed="true"] { background: v.$primary-color; color: s.$on-accent; font-weight: s.$weight-bold; }
 .objectiveSwitch button:disabled { opacity: .45; cursor: not-allowed; }
-.confirmGate { display: flex; flex-wrap: wrap; align-items: center; gap: v.$space-xs v.$space-sm; margin-bottom: v.$space-sm; padding: 5px 8px; border: v.$border-subtle; border-left: 4px solid v.$warning-color; border-radius: s.$radius-small; background: v.$draft-surface; font-size: s.$text-sm; line-height: 1.4; }
+/* First visit with no manual roster: one clear next step instead of an empty grid. */
+.emptyRoster { display: grid; justify-items: start; gap: 6px; margin-bottom: v.$space-sm; padding: 12px 14px; border: 1px solid rgba(v.$primary-color, 0.45); border-radius: s.$radius-card; background: rgba(v.$primary-color, 0.06); color: s.$ink; font-size: s.$text-sm; line-height: 1.4; }
+.emptyRoster strong { color: s.$ink-strong; font-size: s.$text-md; }
+.emptyRoster button { min-height: 36px; margin-top: 4px; padding: 6px 14px; border: 0; border-radius: s.$radius-small; background: v.$primary-color; color: v.$text-on-primary; font-weight: s.$weight-bold; cursor: pointer; }
+.confirmGate { display: flex; flex-wrap: wrap; align-items: center; gap: v.$space-xs v.$space-sm; margin-bottom: v.$space-sm; padding: 5px 8px; border: v.$border-subtle; border-left: 4px solid v.$warning-color; border-radius: 4px s.$radius-small s.$radius-small 4px; background: v.$draft-surface; font-size: s.$text-sm; line-height: 1.4; }
 // UI pass step 1: the command bar reads as three clusters. Context (league, sync, refresh, week) is one joined
 // control; secondary actions are quiet so Save stands out; success messages fade out as a toast.
 .navContext { display: flex; align-items: stretch; flex-shrink: 0; min-width: 0; border: 1px solid v.$draft-border; border-radius: s.$radius-small; background: v.$draft-input; }
@@ -597,7 +602,7 @@ details.alternative .candidateRow button { width: auto; }
 @keyframes rsoSpin { to { transform: rotate(360deg); } }
 .navBar .commandActions button:not(.primaryAction) { border-color: transparent; background: transparent; color: s.$ink-muted; }
 .navBar .commandActions button:not(.primaryAction):hover:not(:disabled) { border-color: v.$draft-border; color: s.$ink; }
-.toastSlot { padding: v.$space-sm 12px; border: 1px solid v.$draft-border; border-left: 3px solid v.$success-color; border-radius: s.$radius-small; background: v.$draft-surface-raised; box-shadow: v.$shadow-panel; color: s.$ink; font-size: s.$text-sm; line-height: 1.4; animation: rsoToast 7s ease forwards; position: fixed; right: v.$space-md; bottom: calc(#{v.$space-md} + var(--toast-row, 0) * 52px); z-index: v.$z-desktop-toast; max-width: min(380px, calc(100vw - 32px)); }
+.toastSlot { padding: v.$space-sm 12px; border: 1px solid v.$draft-border; border-left: 4px solid v.$success-color; border-radius: 4px s.$radius-small s.$radius-small 4px; background: v.$draft-surface-raised; box-shadow: v.$shadow-panel; color: s.$ink; font-size: s.$text-sm; line-height: 1.4; animation: rsoToast 7s ease forwards; position: fixed; right: v.$space-md; bottom: calc(#{v.$space-md} + var(--toast-row, 0) * 52px); z-index: v.$z-desktop-toast; max-width: min(380px, calc(100vw - 32px)); }
 .toastSlot[hidden] { display: none; }
 // Hovering a toast holds it so a longer message can be read.
 .toastSlot:hover { animation-play-state: paused; }
@@ -640,7 +645,7 @@ details.alternative .candidateRow button { width: auto; }
 .summaryFoot .comparison p { gap: 4px; padding: 1px 5px; white-space: nowrap; }
 // UI pass step 4: Best Fit reads top-down as one confirm bar, one toolbar (segmented sort, then Find & filter),
 // one quiet slot for status lines, then the cards.
-.candidatePanel .confirmGate { position: sticky; top: 0; z-index: 2; flex-wrap: nowrap; margin-bottom: 6px; padding: 4px 6px 4px 8px; border-left-width: 3px; }
+.candidatePanel .confirmGate { position: sticky; top: 0; z-index: 2; flex-wrap: nowrap; margin-bottom: 6px; padding: 4px 6px 4px 8px; }
 .candidatePanel .confirmGate > span { flex: 1 1 auto; min-width: 0; }
 .candidatePanel .confirmGate button { flex: none; min-height: 26px; padding: 2px 10px; font-size: s.$text-sm; }
 .candidateToolbar { align-items: flex-start; margin-bottom: 4px; }
