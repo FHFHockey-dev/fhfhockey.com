@@ -31,3 +31,5 @@ G2 (coloured text labels): done. Start/Sit status chips are its own, so unchange
 
 ## SS-1103-G3 (2026-11-03)
 - e9c7eb902: the records read alone is caught (riskyStartsWithRecords); a build error now throws. 67/67 riskyStarts tests, eslint 0, typecheck clean for these files. Not pushed.
+
+- Chef outcome (2026-11-07): this lane's work shipped in #402 (f17bea20d), #403 (295b384da) and #404 (354336347). Lane closed; diary can be retired.

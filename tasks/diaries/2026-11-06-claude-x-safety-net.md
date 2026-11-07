@@ -52,3 +52,7 @@ not edited; patch + hand-over in the shared notes folder `…/side-session-notes
   goalie post exists; not URL cache, not a reply). TJ pop-up: Pi cross-check every 15 min for switched accounts
   (`crossCheck` in x_timeline_account_health; fallback.py reads due ∪ crossCheck, max 7/run). Watchdog signal:
   shadow rows with raw_payload->>'provider'='twscrape' while the poller is ok for that account.
+
+## Superseded 2026-11-07
+Layer 3 host is now GitHub Actions (see 2026-11-07-claude-x-fallback-gha.md); the Pi/systemd plan and the
+index.ts.proposed step above no longer apply. Layer 2 stays unused (tasks/DO-LATER.md).

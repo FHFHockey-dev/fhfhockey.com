@@ -6,3 +6,5 @@
 - **Checks:** 17 Team Stream tests, 1,312 Social Share tests pass; typecheck exit 0; eslint clean; scss pure; e2e passes on a scratch clone (:3130, stopped). Granlund's L5/FP/ixG/TOI matched a SELECT spot-check exactly.
 - **Next:** Chef's integration and release gate. No push, no build.
 - **Gotchas:** studio URL must carry the edition's settings or export holds ("Settings changed"); zsh needs arrays for pathspec lists; real-data harness = Vitest in the scratch clone (`// @vitest-environment node`, public client, env read in-process).
+
+- Chef outcome (2026-11-07): released as #410 (master 4cd22f493). Lane closed; diary can be retired.

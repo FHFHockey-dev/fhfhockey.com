@@ -11,3 +11,5 @@
 - Full findings: side-session notes folder, `ifttt-route-health.md`.
 - **401 diagnosis (orchestrator 1e668672):** 401s began 17:32-17:34Z on the 10-30 deployment, before #402 code shipped, so not a code regression. Applets for ccc, gamedaynewsnhl, gamedaygoalies send a value their deployed var doesn't hold. Vercel: gamedaynewsnhl and gamedaygoalies vars last updated July; ccc updated 20:42Z, after the latest production deploy (20:08Z). No secret values read.
 - **Deploy:** TJ's two dashboard redeploys were CANCELED by the Ignored Build Step. With TJ's approval, one CLI deploy of the exact 295b384da tree: cG8Vbf, READY 20:58:04Z, aliases assigned. Next: confirm first POST on ccc, gamedaynewsnhl and gamedaygoalies returns 200.
+
+- Chef outcome (2026-11-07): routes and the shared-secret fallback shipped in #402 and the CLI deploy of the 295b384da tree. Lane closed; diary can be retired.

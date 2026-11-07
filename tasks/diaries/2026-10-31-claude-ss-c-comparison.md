@@ -16,3 +16,5 @@
 - **Next step:** the lead runs the E2E at 13.0, which includes the fill check.
 - **Blockers:** none. TJ decided 5.6 stays open until TJ adds candidates, and discovery stays blocked.
 - **Gotcha:** default-heap `tsc` crashes; use `NODE_OPTIONS=--max-old-space-size=8192`.
+
+- Chef outcome (2026-11-07): this lane's work shipped in #402 (f17bea20d), #403 (295b384da) and #404 (354336347). Lane closed; diary can be retired.

@@ -30,3 +30,5 @@
 - Typecheck: exit 0 after commit 1; final run exit 2 only in untracked web/components/TweetSwipeTrainer/ (other lane).
 - Commit 2: ce7809fe6 (7 files). Server stopped by PID (68697, 68696, 68671); :3000 (30210) untouched. No push.
 - State: done; reported to Chef. Keep this diary until the Chef accepts the run.
+
+- Chef outcome (2026-11-07): accepted; both commits (3d4efa8cd, ce7809fe6) released in #412 (master c09aa95ac). Diary can be retired.

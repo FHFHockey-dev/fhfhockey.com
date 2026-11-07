@@ -13,3 +13,5 @@
 - **F5:** `gameCoverage` checks skater rows per team game; one aggregate read shows 226 of 226 games with both sides, so no false partial today. `slateCoverage` in Standouts still has the defect.
 - **SS-1103-A:** late newest nights end the card at the last complete night with a page note; older gaps stay partial. My tests pass; whole-project tsc fails only in files I did not touch.
 - **Blockers:** none.
+
+- Chef outcome (2026-11-07): this lane's work shipped in #402 (f17bea20d), #403 (295b384da) and #404 (354336347). Lane closed; diary can be retired.

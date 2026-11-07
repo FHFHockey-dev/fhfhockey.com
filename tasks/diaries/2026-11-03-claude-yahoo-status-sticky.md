@@ -37,3 +37,5 @@ Writer + RPC migration (not applied) + stale-row cleanup plan (not run). Started
 
 ## Next
 Waiting on TJ: migration apply (step 2 of CLEANUP-PLAN), writer release, then step 5 verification SELECTs. Keep this diary until the lane closes.
+
+- Chef outcome (2026-11-07): migration applied as 20261104011912; writer shipped in #407 (9eb3de632). Left: step 5 verification SELECTs (stale flags cleared after an update-yahoo-players run) were not run by the Chef. Keep until that check is recorded.

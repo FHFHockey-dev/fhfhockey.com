@@ -22,3 +22,5 @@
 **SS-1103-H (2026-11-03):** the pager now takes its cutoff from the edition's `generatedAt`, so the spec's fixture edition is pinned to 2026-11-01 (cutoff Oct 31, the calendar mock's CUTOFF), with expiry still ten minutes from now. 8 of 8 passed on isolated port 3110 after the other session's schedule spec finished. Spec-only commit; this diary note is uncommitted by the ticket's rule.
 
 **Next:** Chef renders on real data.
+
+- Chef outcome (2026-11-07): this lane's work shipped in #402 (f17bea20d), #403 (295b384da) and #404 (354336347). Lane closed; diary can be retired.

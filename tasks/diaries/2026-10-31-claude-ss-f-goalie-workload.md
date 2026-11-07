@@ -42,3 +42,5 @@ Lead's real Week 4 render showed 1 goalie. Added `minStartsWeek` and `minStartsR
 ## 2026-11-03: Late feed rule
 
 Applied `completeThrough` to Busy and Quiet and Rescue through a shared `cutLateNights`; Ratio Impact has no team-games reason. Six old tests had their gap on the newest night, so they now use an older gap. Gotcha: another session's Playwright run shares `.next-playwright` and killed my server on 3147; wait for it to finish. The spec's Refresh lines belong to ss-contract.
+
+- Chef outcome (2026-11-07): this lane's work shipped in #402 (f17bea20d), #403 (295b384da) and #404 (354336347). Lane closed; diary can be retired.

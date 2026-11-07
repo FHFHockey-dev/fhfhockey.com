@@ -7,3 +7,5 @@
 - Blockers: none. `tsc` reports one error in the untracked Player Cards file `web/lib/player-cards/retainedBlsh.test.ts`, another lane's.
 - Gotchas: jsdom has no `AbortSignal.timeout`, so the calendar fetch uses `bounded` from `lib/socialShare/export`. A label wrapping a select takes the option text into its accessible name, so specs find the select through `period-control`.
 - Decisions: one-day custom ranges are refused, as Goalie of the Period already did. Period select loads at once except for Custom, which waits for Refresh.
+
+- Chef outcome (2026-11-07): this lane's work shipped in #402 (f17bea20d), #403 (295b384da) and #404 (354336347). Lane closed; diary can be retired.

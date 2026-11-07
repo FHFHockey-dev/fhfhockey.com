@@ -10,3 +10,5 @@
 - Blockers: migration, env secret, release and applet await TJ.
 - Recheck (AUDIT-RECHECK 2, 3, 4, 5, 7) fixed. Staleness rule: no delivery for over 72 hours, empty days from the last delivery's date on read no record. Undated migration 20261101233000 not applied; the base table is applied with 0 rows.
 - Second recheck (AUDIT-RECHECK-2, three items) fixed. Live delivery = dated, received 0 to 6 hours after its time. Empty past day is missed only after a later live delivery, else no record. No schema change.
+
+- Chef outcome (2026-11-07): posted-source intake (social_share_x_posts, applied 20261101171113) shipped in #402 (f17bea20d) and the audit rechecks in #403/#404. Lane closed; diary can be retired.

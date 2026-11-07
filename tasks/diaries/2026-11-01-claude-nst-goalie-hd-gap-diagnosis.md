@@ -8,3 +8,5 @@
 - Next: TJ decides on the Codex fix. The writer can fall behind again until it ships.
 - Blockers: Vercel logs and deployments return 403 for this team; no `vercel` CLI. Unaudited runs can't be fully explained.
 - Gotchas: never backfill with `datasetType=allCounts` alone, because `getLatestDateSupabase` would skip the other 9 tables permanently. Codex's guarded route is uncommitted in the working tree, so don't touch it. The Supabase connector drops parallel queries; the plugin connector worked.
+
+- Chef outcome (2026-11-07): diagnosis delivered; the fix belongs to Codex (NST lane) and the 37-request backfill still awaits TJ. Keep until Codex closes it.
