@@ -1,0 +1,20 @@
+
+  ...c153kbd_vhg6cfbn8bm0000gn/T/forge-continuation-8504f834/check.cjs  39.4kb
+
+⚡ Done in 3ms
+{
+  "status": "SYNTHETIC_CHRONOLOGY_PASSED",
+  "codeCandidate": "7113329d2c24b8629f54484df37441f95a63d853",
+  "meanFittedAt": "2030-01-20T12:00:00.000Z",
+  "meanAvailableAt": "2030-01-21T12:00:00.000Z",
+  "intervalCalibrationStartAt": "2030-01-25T12:00:00.000Z",
+  "intervalCalibrationEndAt": "2030-03-01T12:00:00.000Z",
+  "calibratorAvailableAt": "2030-03-03T12:00:00.000Z",
+  "calibrationRows": 32,
+  "pastSelectedModelRefused": true,
+  "preCalibratorCutoffRefused": true,
+  "postAvailabilityIntervalsReproduced": true,
+  "scientificallyQualified": false,
+  "originalIssuedEvidence": false,
+  "protectedLabelsOpened": false
+}

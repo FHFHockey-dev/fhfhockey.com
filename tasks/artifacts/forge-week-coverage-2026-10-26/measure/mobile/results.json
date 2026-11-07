@@ -1,0 +1,47 @@
+{
+  "measuredAt": "2026-10-26T17:48:12.372Z",
+  "fixture": "typical 7-day full coverage (forgeReservePayload.fixture.ts)",
+  "bounds": {
+    "decodeMs": 2000,
+    "saveReopenMs": 4000,
+    "heapUsedMb": 250
+  },
+  "results": [
+    {
+      "profile": "mobile (Pixel 7, 4x CPU throttle)",
+      "rows": 3196,
+      "responseBytes": 2140749,
+      "parseMs": 12,
+      "expandMs": 23,
+      "saveMs": 178,
+      "reopenMs": 29,
+      "savedPackedBytes": 2140875,
+      "reopenedUnpackedBytes": 6082622,
+      "roundTripExact": true,
+      "heapUsedMb": {
+        "baseline": 0.5,
+        "afterDecode": 10.4,
+        "afterSaveReopen": 21.2
+      },
+      "heapAllocatedMbMax": 31.4
+    },
+    {
+      "profile": "desktop (no throttle)",
+      "rows": 3196,
+      "responseBytes": 2140749,
+      "parseMs": 3,
+      "expandMs": 5,
+      "saveMs": 43,
+      "reopenMs": 7,
+      "savedPackedBytes": 2140875,
+      "reopenedUnpackedBytes": 6082622,
+      "roundTripExact": true,
+      "heapUsedMb": {
+        "baseline": 0.5,
+        "afterDecode": 8,
+        "afterSaveReopen": 20.5
+      },
+      "heapAllocatedMbMax": 33.2
+    }
+  ]
+}

@@ -66,6 +66,17 @@
 .sectionHeading h2 { margin-top: 3px; font-size: 1.35rem; }
 .sectionHeading > span { color: var(--autopsy-muted); font-size: 0.85rem; }
 .intro { margin-top: 12px !important; color: var(--autopsy-muted); font-size: 0.9rem; }
+.diagnosisGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+  gap: 24px;
+  margin-top: 20px;
+  h3 { font-size: 1.05rem; }
+  ul, ol { display: grid; gap: 12px; margin: 12px 0 0; padding-inline-start: 20px; }
+  li, p { overflow-wrap: anywhere; color: var(--autopsy-muted); font-size: 0.9rem; line-height: 1.5; }
+  section > p { margin-top: 12px; }
+  a { display: inline-flex; align-items: center; min-height: 44px; color: #91e2f8; font-weight: 700; }
+}
 .importRow { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; margin-top: 16px; }
 .importRow span, .note, .footerNote { color: var(--autopsy-muted); font-size: 0.82rem; }
 .importRow a { display: inline-flex; align-items: center; min-height: 44px; color: #91e2f8; font-size: 0.85rem; }

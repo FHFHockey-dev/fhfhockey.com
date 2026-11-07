@@ -1,0 +1,47 @@
+[
+ {
+  "name": "goalie-default",
+  "enabled": true,
+  "png": true,
+  "feedback": "PNG downloaded: 1080 × 1080.",
+  "status": "",
+  "fit": [],
+  "phone": 375
+ },
+ {
+  "name": "goalie-week4",
+  "enabled": true,
+  "png": true,
+  "feedback": "PNG downloaded: 1080 × 1080.",
+  "status": "",
+  "fit": [],
+  "phone": 375
+ },
+ {
+  "name": "goalie-month-oct",
+  "enabled": true,
+  "png": true,
+  "feedback": "PNG downloaded: 1080 × 1080.",
+  "status": "",
+  "fit": [],
+  "phone": 375
+ },
+ {
+  "name": "gsax-default",
+  "enabled": true,
+  "png": true,
+  "feedback": "PNG downloaded: 1080 × 1080.",
+  "status": "",
+  "fit": [],
+  "phone": 375
+ },
+ {
+  "name": "gsax-l10",
+  "enabled": true,
+  "png": true,
+  "feedback": "PNG downloaded: 1080 × 1080.",
+  "status": "",
+  "fit": [],
+  "phone": 375
+ }
+]

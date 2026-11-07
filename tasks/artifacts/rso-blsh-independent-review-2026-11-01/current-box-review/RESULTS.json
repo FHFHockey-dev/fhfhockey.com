@@ -1,0 +1,45 @@
+{
+  "allFrozenInputAndFinalFilePinsMatch": true,
+  "testsPassed": 10,
+  "sourceRows": 3407,
+  "targetGames": 201,
+  "authenticatedBodies": 183,
+  "bodyBytes": 2441578,
+  "identityFinalityTeam": 2827,
+  "exposureMatched": 2774,
+  "fullyMatchedFiveCountsAndExposure": 2728,
+  "missingBoxRows": 580,
+  "missingBoxGames": 18,
+  "TOIDifferenceRows": 53,
+  "countDifferenceRows": 47,
+  "TOIAndCountOverlapRows": 1,
+  "uniqueDifferenceRows": 99,
+  "discrepancyFields": 103,
+  "countFields": {
+    "hits": 15,
+    "shots": 23,
+    "goals": 2,
+    "assists": 4,
+    "toi_per_game": 53,
+    "blocked_shots": 6
+  },
+  "PPP": {
+    "match": 2182,
+    "unknown_PP_assists_not_supplied": 645
+  },
+  "zeroShotSourceRowsExposureQualified": 787,
+  "previousFinalityRowsReconfirmed": 657,
+  "additionalFinalityRows": 2170,
+  "missingByDate": {
+    "2026-10-01": 1,
+    "2026-10-08": 3,
+    "2026-10-19": 36,
+    "2026-10-27": 396,
+    "2026-10-28": 144
+  },
+  "CSVMatchesJSONAndRawEvidence": true,
+  "noSourceRowDropped": true,
+  "currentCaptureAndBoxRevisionsUnadjudicated": true,
+  "providerRequests": 0,
+  "holdoutReads": 0
+}

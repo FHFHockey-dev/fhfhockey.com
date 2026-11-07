@@ -1,0 +1,81 @@
+{
+  "status": "PASS",
+  "hostedCalls": 0,
+  "checks": [
+    {
+      "name": "Missing shared admission prerequisite rolls back migration",
+      "status": "PASS"
+    },
+    {
+      "name": "Exact migration, RLS and least privileges",
+      "status": "PASS"
+    },
+    {
+      "name": "Default disabled control dispatches nothing",
+      "status": "PASS"
+    },
+    {
+      "name": "Idempotent enqueue, scope collision, aperture and missing finality",
+      "status": "PASS"
+    },
+    {
+      "name": "Two workers serialize on actual PostgreSQL lock; one reservation",
+      "status": "PASS"
+    },
+    {
+      "name": "Ten dataset commits, valid empty, idempotency and no unverified refund",
+      "status": "PASS"
+    },
+    {
+      "name": "Receipt failure rolls back output in same transaction",
+      "status": "PASS"
+    },
+    {
+      "name": "All-counts exact keys, missing fields, duplicates and unknown columns rejected",
+      "status": "PASS"
+    },
+    {
+      "name": "Expired/held claim survives day rollover and new cohort",
+      "status": "PASS"
+    },
+    {
+      "name": "Worker windows, conservative 24-unit/60-reservation cap and seven-step limit",
+      "status": "PASS"
+    },
+    {
+      "name": "Attested no-game day creates no job; changed WGO evidence blocks commit",
+      "status": "PASS"
+    },
+    {
+      "name": "Official OFF evidence atomically prepares five days and reuses one cohort/job",
+      "status": "PASS"
+    },
+    {
+      "name": "Partial/changed/unfinal/stale source rolls back all evidence and disabled producer rejects",
+      "status": "PASS"
+    },
+    {
+      "name": "Explicit empty official slate creates ten no-game receipts without a runner job",
+      "status": "PASS"
+    },
+    {
+      "name": "Durable progress distinguishes two stalled windows, progress, hold and unknown activation",
+      "status": "PASS"
+    },
+    {
+      "name": "Shared lifecycle token fence, direct/goalie exclusion, cooldown and persistent expiry hold",
+      "status": "PASS"
+    },
+    {
+      "name": "Legacy mode records untracked use; enforcement and qualification are separate",
+      "status": "PASS"
+    }
+  ],
+  "migrationSha256": "bd1b96f31b1b15236595556bd8da52f5c1e122b29a7a465f9aa5bc57c7baf702",
+  "clockFixture": "Only clock_timestamp() in function bodies replaced for deterministic windows; exact definitions restored and compared.",
+  "postgresVersion": "15.19 (Homebrew)",
+  "exactFunctionDefinitionsRestored": true,
+  "serverStopped": true,
+  "disposableDataRemoved": true,
+  "ownedLockReleased": true
+}

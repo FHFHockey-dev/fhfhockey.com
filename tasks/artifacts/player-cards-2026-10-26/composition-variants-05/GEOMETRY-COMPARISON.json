@@ -1,0 +1,56 @@
+{
+  "originalGeometry": {
+    "x": "600",
+    "y": "4",
+    "width": "600",
+    "height": "337.5",
+    "preserveAspectRatio": "xMidYMin meet"
+  },
+  "variants": [
+    {
+      "style": "posterized-team-colors",
+      "heroRect": {
+        "x": "600",
+        "y": "4",
+        "width": "600",
+        "height": "337.5",
+        "preserveAspectRatio": "xMidYMin meet"
+      },
+      "clip": {
+        "width": 1200,
+        "height": 338
+      },
+      "logo": {
+        "x": 840,
+        "y": -100,
+        "width": 480,
+        "height": 480,
+        "rightOverhang": 120
+      },
+      "playerGeometryMatchesOriginal": true
+    },
+    {
+      "style": "pixelated-team-colors",
+      "heroRect": {
+        "x": "600",
+        "y": "4",
+        "width": "600",
+        "height": "337.5",
+        "preserveAspectRatio": "xMidYMin meet"
+      },
+      "clip": {
+        "width": 1200,
+        "height": 338
+      },
+      "logo": {
+        "x": 840,
+        "y": -100,
+        "width": 480,
+        "height": 480,
+        "rightOverhang": 120
+      },
+      "playerGeometryMatchesOriginal": true
+    }
+  ],
+  "unchangedAlpha": true
+}

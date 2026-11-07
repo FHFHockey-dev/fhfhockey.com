@@ -12,6 +12,15 @@ import {
 } from "lib/sources/tweetPatternReview";
 import { buildRosterEventsFromReviewedTweet } from "lib/projections/rosterEvents";
 import { fetchLinesCccTweetOEmbedAttempt } from "lib/sources/linesCccIngestion";
+import { TRAINER_TYPE_ORDER, type TrainerExtraction, type TrainerType } from "lib/sources/tweetSwipeTrainer";
+import {
+  clearTrainerContextCache,
+  fetchTrainerQueue,
+  loadTrainerContext,
+  queueTrainerAliasName,
+  refreshTrainerCard,
+  saveTrainerVerdict
+} from "lib/sources/tweetSwipeTrainerServer";
 import adminOnly from "utils/adminOnlyMiddleware";
 
 type ReviewStatus = "pending" | "reviewed" | "ignored";
@@ -879,6 +888,10 @@ async function handleGet(req: any, res: NextApiResponse) {
     });
   }
 
+  if (parseString(req.query.mode) === "trainer") {
+    return handleTrainerGet(req, res);
+  }
+
   const limit = parseLimit(req.query.limit);
   const status = parseStatus(req.query.status);
   const sort = parseSort(req.query.sort);
@@ -929,9 +942,71 @@ async function handleGet(req: any, res: NextApiResponse) {
   });
 }
 
+function parseTrainerType(value: unknown): TrainerType | "auto" {
+  return TRAINER_TYPE_ORDER.includes(value as TrainerType) || value === "other" ? (value as TrainerType) : "auto";
+}
+
+async function handleTrainerGet(req: any, res: NextApiResponse) {
+  // After an alias fix the cached rosters are stale; reload so the next cards use the new alias.
+  if (parseString(req.query.fresh)) clearTrainerContextCache();
+  const excludeKeys = (parseString(req.query.exclude) ?? "").split(",").map((key) => key.trim()).filter(Boolean).slice(-200);
+  const [queue, players, context] = await Promise.all([
+    fetchTrainerQueue({
+      supabase: req.supabase,
+      type: parseTrainerType(parseString(req.query.type)),
+      limit: Math.min(parseLimit(req.query.limit, 10), 30),
+      excludeKeys
+    }),
+    fetchRosterPlayers(req.supabase),
+    loadTrainerContext(req.supabase, null)
+  ]);
+  // Teams for the correction editor's Team picker (the parser sometimes misses the team).
+  const teams = context.teams
+    .map((team) => ({ id: team.id, abbreviation: team.abbreviation, name: team.name }))
+    .sort((left, right) => left.name.localeCompare(right.name));
+  return res.json({ success: true, ...queue, players, teams, categoryOptions: TWEET_PATTERN_CATEGORY_OPTIONS });
+}
+
+async function handleTrainerPost(action: string, body: Record<string, unknown>, req: any, res: NextApiResponse) {
+  const reviewItemId = parseString(body.reviewItemId);
+  const shadowPostId = parseString(body.shadowPostId);
+  if (!reviewItemId && !shadowPostId) {
+    return res.status(400).json({ success: false, message: "Missing reviewItemId or shadowPostId." });
+  }
+  if (action === "trainer-reparse") {
+    const card = await refreshTrainerCard({ supabase: req.supabase, reviewItemId, shadowPostId });
+    return res.json({ success: true, card });
+  }
+  if (action === "trainer-verdict") {
+    const verdict = body.verdict === "correct" || body.verdict === "wrong" ? body.verdict : null;
+    if (!verdict) return res.status(400).json({ success: false, message: "Verdict must be correct or wrong." });
+    const correction = body.correction && typeof body.correction === "object" ? (body.correction as TrainerExtraction) : null;
+    if (verdict === "wrong" && !correction) {
+      return res.status(400).json({ success: false, message: "A wrong verdict needs the corrected answer." });
+    }
+    const saved = await saveTrainerVerdict({
+      supabase: req.supabase, reviewItemId, shadowPostId, verdict, correction, notes: parseString(body.notes)
+    });
+    return res.json({ success: true, ...saved, message: verdict === "correct" ? "Saved as correct." : "Saved your correction." });
+  }
+  const rawName = parseString(body.rawName);
+  const reason = body.reason === "trainer_near_match" || body.reason === "trainer_unmatched" ? body.reason : "trainer_wrong_match";
+  if (!rawName) return res.status(400).json({ success: false, message: "Missing rawName." });
+  const teamId = Number(body.teamId);
+  const queued = await queueTrainerAliasName({
+    supabase: req.supabase, reviewItemId, shadowPostId, rawName,
+    teamId: Number.isSafeInteger(teamId) && teamId > 0 ? teamId : null, reason
+  });
+  return res.json({ success: true, ...queued });
+}
+
 async function handlePost(req: any, res: NextApiResponse) {
   const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body ?? {};
   const action = parseString(body.action) ?? "save";
+
+  if (action === "trainer-verdict" || action === "trainer-queue-alias" || action === "trainer-reparse") {
+    return handleTrainerPost(action, body, req, res);
+  }
 
   if (action === "sync") {
     const syncSummary = await syncTweetPatternReviewItems({

@@ -1,0 +1,23 @@
+{
+  "checks": [
+    "Actual served09HTMLhash, interactivevariableoutline/customcolor/reorder, both combinedstylePNGhashes/geometry/logo verified; desktop390pxphone",
+    "Actual served retainedNHLHTMLhash; bothcategoriesPNGhashes matchqualifiedcaptures; source/time/10GP/rankunavailablelabels anddesktopphone"
+  ],
+  "pngs": [
+    {
+      "style": "posterized-team-colors",
+      "matchedOfflineExport": true
+    },
+    {
+      "style": "pixelated-team-colors",
+      "matchedOfflineExport": true
+    }
+  ],
+  "retainedFormatPNGsVerified": 2,
+  "externalAttempts": [],
+  "pageErrors": [],
+  "pid": 69351,
+  "customizerUrl": "http://127.0.0.1:3125/player-cards/customizer?checkpoint=editor09",
+  "retainedUrl": "http://127.0.0.1:3125/player-cards/nhl-retained?checkpoint=snapshot02",
+  "remoteAvailabilityClaimed": false
+}

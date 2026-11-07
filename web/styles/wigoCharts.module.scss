@@ -8,7 +8,7 @@
 
 /* Main Dashboard Layout */
 .wigoDashHeader {
-  margin-bottom: 25px;
+  margin-bottom: 24px;
   display: flex;
   flex-direction: column;
   width: 100%;
@@ -116,9 +116,6 @@
   .playerHeaderContainer {
     height: auto;
     min-height: 180px;
-  }
-  .combinedStatsTableContainer {
-    overflow-x: auto;
   }
 
 }
@@ -326,7 +323,7 @@
 .playerName {
   display: flex;
   flex-direction: column;
-  margin: 5px 0;
+  margin: 4px 0;
   color: s.$ink;
   font-family: "Roboto Condensed", v.$font-family-primary;
   font-size: clamp(20px, 1.6vw, 28px);
@@ -485,10 +482,15 @@
     align-items: center;
     justify-content: space-between;
     padding: 2px 0;
-    border-bottom: 1px solid #3a3a3a;
+    border-bottom: 1px solid v.$border-primary;
     &:last-child {
       border-bottom: none;
     }
+  }
+  .consistencySubItem .consistencyLabel,
+  .consistencySubItem .consistencyValue,
+  .consistencySubItem .consistencyCount {
+    color: s.$ink-muted;
   }
   .consistencyColorSwatch {
     display: inline-block;
@@ -498,7 +500,7 @@
     margin-right: 8px;
     flex-shrink: 0;
     background-color: color.adjust(v.$background-dark, $lightness: -1%);
-    border: 1px solid #777;
+    border: 1px solid v.$color-grey-medium;
   }
   .consistencySwatch {
     display: inline-block;
@@ -525,7 +527,7 @@
   .consistencyCount {
     color: s.$ink-muted;
     font-size: s.$text-11;
-    margin-left: 5px;
+    margin-left: 4px;
     white-space: nowrap;
     width: 50%;
     text-align: right;
@@ -616,361 +618,7 @@
   flex-shrink: 0;
 }
 
-.rateStatBarPercentilesComponent {
-  @include internal-flex-column;
-  padding: 0;
-  flex: 1 1 auto; // Allows growing and shrinking
-  height: 100%;
-  min-height: 250px;
-  max-height: 250px;
-}
-
 // Timeframe Comparison Components
-.timeframeComparisonWrapper {
-  @include internal-flex-column;
-  min-height: 0;
-  > div {
-    width: 100%;
-  }
-}
-
-.combinedStatsTableContainer {
-  @include internal-flex-column;
-  padding: 0;
-  min-height: 0;
-  overflow: hidden;
-  flex: 1 1 auto;
-  height: auto;
-  background-color: color.adjust(v.$background-dark, $lightness: -1%);
-}
-
-/* VERTICAL Table Styling */
-.statsTableContainer {
-  height: 100%;
-  width: 100%;
-  overflow: auto;
-
-  &::-webkit-scrollbar {
-    height: 6px;
-    width: 6px;
-  }
-  &::-webkit-scrollbar-thumb {
-    background-color: v.$primary-color;
-    border-radius: s.$radius-small;
-  }
-  &::-webkit-scrollbar-track {
-    background-color: v.$background-medium;
-  }
-  scrollbar-width: thin;
-  scrollbar-color: v.$primary-color v.$background-medium;
-}
-
-.statsTable {
-  border-collapse: separate;
-  border-spacing: 0;
-  width: 100%;
-  height: 100%;
-  table-layout: fixed;
-  min-width: 600px;
-
-  // Styling variables
-  $highlight-border-width: 3px; // Better visibility with radius
-  $left-highlight-color: #07aae2; // Blue
-  $right-highlight-color: #ffcd56; // Yellow
-  $default-border-color: v.$border-color-secondary;
-  $corner-radius: v.$border-radius-sm; // e.g., 4px or 6px
-
-  th,
-  td {
-    padding: 0 v.$space-sm * 0.5;
-    font-size: s.$text-12;
-    height: 34px;
-    font-weight: s.$weight-regular;
-    font-family: v.$font-family-numbers, "Roboto Condensed", sans-serif;
-    font-variant-numeric: tabular-nums;
-    vertical-align: middle;
-    white-space: nowrap;
-    text-align: right;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    // border: 1px solid $default-border-color; // Default thin borders
-    position: relative; // Base for z-index
-    opacity: 1;
-  }
-
-  td {
-    height: 24px;
-    border-bottom: 1px solid rgba(v.$color-white, 0.035);
-  }
-
-  // Base Header Styles
-  th {
-    background-color: color.adjust(
-      v.$background-dark,
-      $lightness: -5%
-    ); // Darkened for visual separation  box-sizing: border-box;
-    color: s.$ink-muted;
-    font-weight: s.$weight-bold;
-    font-size: s.$text-12;
-    border-bottom: 3px solid v.$primary-color; // Default thick primary bottom border
-    position: sticky;
-    top: 0;
-    z-index: 1; // Headers above base data cells & highlight borders
-  }
-
-  // Sticky First Column Styles
-  th:first-child,
-  td:first-child {
-    width: 100px;
-    min-width: 75px;
-    text-align: left;
-    font-weight: s.$weight-bold;
-    color: s.$ink;
-    position: sticky;
-    left: 0;
-    border-right: 2px solid v.$border-color; // Specific thick right border
-    padding-left: v.$space-sm;
-  }
-  th:first-child {
-    z-index: 2; // Top-left sticky header highest
-  }
-
-  // Last Column (DIFF) Styles
-  th:last-child,
-  td:last-child {
-    width: 65px;
-    min-width: 65px;
-    font-weight: s.$weight-bold;
-  }
-
-  // DIFF Cell Content Styles
-  .diffCell span {
-    display: block;
-    font-weight: s.$weight-bold;
-  }
-  .diffPositive {
-    color: s.$good;
-  }
-  .diffNegative {
-    color: s.$bad;
-  }
-  .diffNeutral {
-    color: s.$ink;
-  }
-
-  // Highlight Styles
-
-  // Base highlight (L/R Borders + Background + Reset T/B)
-  th.highlightedLeft,
-  td.highlightedLeft {
-    border-left: $highlight-border-width solid $left-highlight-color;
-    border-right: $highlight-border-width solid $left-highlight-color;
-    // Resets T/B borders to default before specific overrides
-    border-bottom: 0px solid $default-border-color;
-    border-top: 0px solid $default-border-color;
-    background-color: rgba(
-      color.adjust($left-highlight-color, $lightness: -5%),
-      0.2
-    );
-  }
-
-  th.highlightedRight,
-  td.highlightedRight {
-    border-left: $highlight-border-width solid $right-highlight-color;
-    border-right: $highlight-border-width solid $right-highlight-color;
-    // Resets T/B borders to default before specific overrides
-    border-bottom: 0px solid $default-border-color;
-    border-top: 0px solid $default-border-color;
-    background-color: rgba(
-      color.adjust($right-highlight-color, $lightness: -5%),
-      0.25
-    );
-    z-index: 0; // Highlights below sticky elements
-  }
-
-  // Top Border Override (Applied to highlighted HEADER cells only)
-  th.highlightedLeft {
-    border-top: $highlight-border-width solid $left-highlight-color;
-    // Overrides the thick primary bottom border from base 'th' rule
-    border-bottom: 3px solid v.$primary-color !important; // Important used for specificity if needed
-    z-index: 5; // Higher or equivalent to base th
-    background-color: color.adjust($left-highlight-color, $lightness: -30%);
-    color: s.$ink-strong;
-  }
-  th.highlightedRight {
-    border-top: $highlight-border-width solid $right-highlight-color;
-    // Overrides the thick primary bottom border from base 'th' rule
-    border-bottom: 3px solid v.$primary-color !important; // Important used for specificity if needed
-    z-index: 5; // Higher or equivalent to base th
-    background-color: color.adjust($right-highlight-color, $lightness: -47%);
-    color: s.$ink-strong;
-  }
-
-  // Bottom Border Override (Applied to highlighted cells in the LAST ROW - Requires isLastRow logic in React)
-  // These rules rely on the td having the highlight class already
-  td.highlightCornerBottomLeft, // Applied by React logic using isLastRow
-  td.highlightCornerBottomRight {
-    // Applied by React logic using isLastRow
-    border-bottom-width: $highlight-border-width;
-    // Color inherited from .highlightedLeft or .highlightedRight border rules
-  }
-  td.highlightCornerBottomLeft {
-    border-bottom-color: $left-highlight-color;
-  }
-  td.highlightCornerBottomRight {
-    border-bottom-color: $right-highlight-color;
-  }
-
-  // Corner Radius Styles
-  // These rely on React adding the specific corner classes
-  .highlightCornerTopLeft {
-    border-top-left-radius: $corner-radius;
-    border-top-right-radius: $corner-radius;
-  }
-  .highlightCornerTopRight {
-    border-top-right-radius: $corner-radius;
-    border-top-left-radius: $corner-radius;
-  }
-  .highlightCornerBottomLeft {
-    border-bottom-left-radius: $corner-radius;
-    border-bottom-right-radius: $corner-radius;
-  }
-  .highlightCornerBottomRight {
-    border-bottom-right-radius: $corner-radius;
-    border-bottom-left-radius: $corner-radius;
-  }
-
-  // Adjacent Column Cleanup
-  // Prevents double borders between adjacent highlighted columns
-  th.highlightedLeft + th.highlightedRight,
-  td.highlightedLeft + td.highlightedRight,
-  th.highlightedRight + th.highlightedLeft,
-  td.highlightedRight + td.highlightedLeft {
-    border-left-width: 0;
-  }
-
-  tr {
-    height: 24px;
-
-    // Other Styles within .statsTable
-    // (Row striping, hover, stat label cell, expand button, chart row, etc.)
-    &:nth-child(even) {
-      background-color: color.adjust(v.$background-light, $lightness: -1%);
-    }
-
-    &:nth-child(odd) {
-      background-color: color.adjust(v.$background-light, $lightness: -3%);
-    }
-  }
-
-  tr:hover > td:first-child {
-    border-top: 1px solid v.$focus-color;
-    border-bottom: 1px solid v.$focus-color;
-    background-color: color.change(
-      color.adjust(v.$focus-color, $lightness: -5%),
-      $alpha: 0.2
-    );
-  }
-  tr:hover > td:not(:first-child) {
-    background-color: color.change(
-      color.adjust(v.$focus-color, $lightness: -5%),
-      $alpha: 0.2
-    );
-    border-top: 1px solid v.$focus-color;
-    border-bottom: 1px solid v.$focus-color;
-    cursor: default;
-    color: v.$focus-color;
-    font-weight: s.$weight-bold;
-  }
-  .statLabelCell {
-    vertical-align: middle;
-  }
-  .statLabelContent {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: v.$space-sm;
-    width: 100%;
-  }
-  button.expandButton {
-    background: color.adjust(v.$border-color-primary, $lightness: -10%);
-    color: s.$accent;
-    border: 2px solid color.adjust(v.$border-color-primary, $lightness: -2%);
-    border-radius: s.$radius-small; // Button radius maintained
-    cursor: pointer;
-    font-size: s.$text-11;
-    font-weight: s.$weight-bold;
-    line-height: 1;
-    padding: 1px 2px;
-    min-width: 16px;
-    flex-shrink: 0;
-    margin-right: 5px;
-    &:hover {
-      background: #555;
-    }
-    &[aria-expanded="true"] {
-      background-color: v.$primary-color;
-      border-color: color.adjust(v.$primary-color, $lightness: -15%);
-      color: s.$ink-strong;
-      border-radius: s.$radius-small; // Button radius maintained
-      cursor: pointer;
-      font-size: s.$text-12;
-      font-weight: s.$weight-bold;
-      line-height: 1.2;
-      padding: 1px 4px;
-      min-width: 21px;
-      flex-shrink: 0;
-      margin-right: 5px;
-    }
-    // Misplaced z-index rules removed from here
-  }
-
-  // Chart Row Styling
-  .chartRowExpanded {
-    td {
-      // Targets the single cell spanning columns in the chart row
-      padding: v.$space-sm v.$space-sm; // Padding around the chart
-      background-color: color.adjust(v.$background-dark, $lightness: -1%);
-
-      border-top: 8px solid color.adjust(v.$background-dark, $lightness: 3%) !important;
-      border-bottom: 8px solid color.adjust(v.$background-dark, $lightness: 3%) !important;
-      // Removes sticky positioning if inherited
-      border-right: none; // Right border removal
-      position: static;
-      left: auto;
-      text-align: left; // Text align reset if needed
-
-      &:hover {
-        background-color: color.adjust(
-          v.$background-dark,
-          $lightness: -1%
-        ) !important;
-        cursor: default; // Prevents pointer on hover
-        // Repeats border styles to prevent row hover effect application
-        border-top: 8px solid color.adjust(v.$background-dark, $lightness: 3%) !important;
-        border-bottom: 8px solid
-          color.adjust(v.$background-dark, $lightness: 3%) !important;
-      }
-    }
-  }
-
-  .chartWrapper {
-    // Wrapper div inside the chart row's cell
-    width: 100%;
-    height: auto; // Chart determines height
-    h4 {
-      // Chart title styling added in StatsTable
-      margin-top: 0;
-      margin-bottom: v.$space-sm;
-      text-align: center;
-      color: s.$ink;
-      font-size: s.$text-14;
-      font-weight: s.$weight-bold;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-    }
-  }
-}
 
 .gameLogChartContainer {
   .averageToggleButtons {
@@ -1120,14 +768,6 @@
 
 /* Player Header Internal Styles */
 
-.chartRowExpanded {
-  padding: v.$space-md;
-  border-top: 2px solid v.$border-color-primary;
-  background-color: color.adjust(v.$background-dark, $lightness: -1%);
-  margin-top: v.$space-xs;
-  width: 100%;
-  box-sizing: border-box;
-}
 /* Transposed Table Styling */
 
 /* GameLogChart Internal Styles */
@@ -1184,7 +824,7 @@
     background-color: color.adjust(v.$background-dark, $lightness: -10%);
     border: 1px solid v.$border-color;
     border-radius: s.$radius-small;
-    margin-left: 5px;
+    margin-left: 4px;
     transition:
       background-color 0.2s ease,
       border-color 0.2s ease;
@@ -1192,8 +832,8 @@
       margin-left: 0;
     }
     &:hover:not(:disabled) {
-      background-color: #444;
-      border-color: #777;
+      background-color: v.$border-primary;
+      border-color: v.$color-grey-medium;
     }
     &:disabled {
       opacity: 0.6;
@@ -1669,6 +1309,23 @@
 
 // The comparison band (one-page and phone). Scoped to its panel rather than to
 // the one-page class, so the phone tab draws the same band (U10).
+@font-face {
+  font-family: "WiGO Matrix";
+  src: url("/fonts/social-share/RobotoCondensed-Variable.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+// Keep the compact 36-column band independent of external font availability.
+// The existing bundled face is the same condensed family intended below.
+@media (min-width: 1280px) and (max-width: 1399px) {
+  .wigoDashHeader:global(.wigo-one-page.wigo-fit) .comparisonMatrix {
+    --wigo-band-pad: 1px;
+    font-family: "WiGO Matrix", v.$font-family-primary;
+  }
+}
+
 .comparisonMatrixPanel {
   // One band: periods as rows, 36 metric columns sized to content. The wrapper
   // scrolls sideways only if a freak value would otherwise overprint (E-01).
@@ -1798,7 +1455,7 @@
     font-weight: s.$weight-bold;
   }
   .periodMarker {
-    margin-left: 3px;
+    margin-left: 4px;
     font-size: inherit;
   }
   .matrixCaption {
@@ -1937,7 +1594,7 @@
       margin: 0;
     }
     .consistencyItem {
-      gap: 3px;
+      gap: 4px;
       padding: 2px 0;
     }
   }
@@ -2062,17 +1719,37 @@
     --wigo-data-size: 11px;
     --wigo-emphasis-size: 16px;
   }
-  // TJ's grid (2026-11-01): the radar is a near-square two rows tall on the
-  // right, the doughnut sits under identity, rate percentiles span pace and the
-  // list; then the full-width band and one row of four charts.
+  // Dark asymmetric workspace: selected-stat detail is the focal plot;
+  // the complete horizontal comparison matrix anchors the bottom.
   .wigoDashboardContent {
+    background: #111b20;
+    font-variant-numeric: tabular-nums;
     grid-template-areas:
       "#{wigo-areas(context 20)}"
-      "#{wigo-areas(identity 4, pace 4, sched 3, ratings 4, radar 5)}"
-      "#{wigo-areas(prod 4, pace 4, sched 3, ratings 4, radar 5)}"
-      "#{wigo-areas(consist 4, pct 7, drivers 4, radar 5)}"
-      "#{wigo-areas(matrix 20)}"
-      "#{wigo-areas(selected 5, toi 5, ppg 5, gs 5)}";
+      "#{wigo-areas(identity 4, selected 8, ratings 4, radar 4)}"
+      "#{wigo-areas(prod 4, selected 8, ratings 4, radar 4)}"
+      "#{wigo-areas(pace 4, toi 4, ppg 4, gs 4, radar 4)}"
+      "#{wigo-areas(sched 4, consist 4, pct 8, drivers 4)}"
+      "#{wigo-areas(matrix 20)}";
+  }
+  .headerRowWrapper,
+  .identitySummary,
+  .opponentLogContainer,
+  .ratingsContainer,
+  .teamDriversSummary,
+  .consistencyRatingContainer,
+  .percentileChartContainer,
+  .selectedStatPanel,
+  .rateStatBarPercentilesContainer,
+  .toiChartContainer,
+  .ppgChartContainer,
+  .gameScoreContainer {
+    background: #17272e;
+    border-color: #34464e;
+    color: #edf3f5;
+  }
+  .selectedStatPanel {
+    border-color: #427184;
   }
   .identitySummary,
   .opponentLogContainer,
@@ -2123,7 +1800,7 @@
     height: calc(var(--wigo-fit-height) - 4px);
     // Tiers key off height as well as width: a 1440 laptop window is about
     // 790 tall and keeps these 1280 rows.
-    grid-template-rows: auto 90px 66px 156px auto minmax(150px, 1fr);
+    grid-template-rows: auto 90px 66px minmax(130px, 1fr) 188px auto;
   }
 }
 
@@ -2132,10 +1809,65 @@
     --wigo-data-size: 12px;
     --wigo-emphasis-size: 16px;
     .wigoDashboardContent {
-      grid-template-rows: auto 106px 72px 178px auto minmax(180px, 1fr);
+      grid-template-rows: auto 106px 72px minmax(170px, 1fr) 210px auto;
     }
     .comparisonMatrix {
       --wigo-band-pad: 2px;
+    }
+  }
+}
+
+// Short, wide windows use the compact type tier. Reserve the matrix's full
+// intrinsic height rather than letting its flexible band lose the DIFF row.
+@media (min-width: 1400px) and (max-height: 859px) {
+  .wigoDashHeader:global(.wigo-one-page.wigo-fit) {
+    .wigoDashboardContent {
+      grid-template-rows: auto 80px 60px minmax(130px, 1fr) 188px max-content;
+    }
+  }
+}
+
+// The narrow desktop panels need room for their complete labels, not a
+// single-line header competing with the plot controls.
+.wigoDashHeader:global(.wigo-one-page.wigo-fit) {
+  .wigoDashboardContent [data-coverage="C05"] table {
+    thead th,
+    tbody th,
+    tbody td {
+      width: 32%;
+      padding: 0 2px;
+      &:first-child {
+        width: 36%;
+      }
+    }
+    thead th {
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+  }
+
+  // A table's caption sits outside its height. Natural table height keeps
+  // the schedule caption and every game inside the taller context row.
+  .opponentLogContainer table {
+    height: auto;
+  }
+
+  .toiChartContainer,
+  .ppgChartContainer,
+  .gameScoreContainer {
+    .chartHeader {
+      flex-wrap: wrap;
+      row-gap: 2px;
+      h3 {
+        flex: 1 0 auto;
+      }
+      :global(.wigo-trend-legend) {
+        order: 3;
+        flex: 1 0 100%;
+        margin-right: 0;
+        white-space: normal;
+        line-height: 1.15;
+      }
     }
   }
 }
@@ -2239,7 +1971,7 @@
     > span {
       flex-direction: row;
       align-items: baseline;
-      gap: 3px;
+      gap: 4px;
       padding: 0;
       border: 0;
       font-family: v.$font-family-primary;
@@ -2335,7 +2067,7 @@
   .percentileTile {
     position: relative;
     grid-template-columns: minmax(0, 1fr) auto auto;
-    column-gap: 5px;
+    column-gap: 4px;
     padding: 0 2px 2px;
     border: 0;
     border-radius: 0;
@@ -2363,7 +2095,7 @@
     }
   }
   .selectedStatPanel .averageToggleButtons {
-    gap: 2px 3px;
+    gap: 2px 4px;
     margin-bottom: 2px;
   }
   .selectedStatPanel .avgButton {
@@ -2422,6 +2154,42 @@
     }
     .comparisonMatrix {
       --wigo-band-pad: 3px;
+    }
+    // Large screens: the top-row panels grow their content instead of leaving it small in a big cell.
+    .identitySummary {
+      grid-template-columns: 80px minmax(0, 1fr);
+      column-gap: 12px;
+      padding: 8px 12px;
+    }
+    .playerHeaderContainer {
+      width: 80px;
+      height: 96px;
+    }
+    .playerName:not([data-name-length="long"]) {
+      font-size: 28px;
+    }
+    .playerTeam,
+    .playerRole {
+      font-size: s.$text-14;
+    }
+    .playerMetaGrid > span {
+      font-size: s.$text-16;
+    }
+    .playerMetaGrid small {
+      font-size: s.$text-12;
+    }
+    .consistencyRatingContainer {
+      .consistencyChartArea {
+        flex-basis: 46%;
+      }
+      .consistencyLabel,
+      .consistencyValue,
+      .consistencyCount {
+        font-size: s.$text-14;
+      }
+      .consistencyItem {
+        line-height: 1.5;
+      }
     }
   }
 }
@@ -2511,26 +2279,9 @@
     flex: none;
     height: 416px;
   }
-  .statsTable {
-    td.highlightedLeft {
-      border-left-width: 1px;
-      border-right-width: 1px;
-      background-color: rgba(v.$primary-color, 0.08);
-    }
-    td.highlightedRight {
-      border-left-width: 1px;
-      border-right-width: 1px;
-      background-color: rgba(v.$warning-color, 0.08);
-    }
-    min-width: 700px;
-    th:first-child,
-    td:first-child {
-      width: 112px;
-    }
-  }
 }
 
-.statsTableNote {
+.bandNote {
   flex-shrink: 0;
   margin: 0;
   padding: v.$space-xs v.$space-sm;
@@ -2671,6 +2422,7 @@
   }
   .radarContext {
     color: s.$ink-muted;
+    font-size: s.$text-11;
     white-space: nowrap;
   }
 
@@ -2792,10 +2544,6 @@
       min-width: 28px;
       min-height: 28px;
     }
-    .statsTable button.expandButton {
-      min-width: 24px;
-      min-height: 24px;
-    }
     .chartToolbar .toggleButtons button:disabled {
       opacity: 1;
       border-color: v.$primary-color;
@@ -2874,10 +2622,9 @@
       left: 52px;
     }
   }
-  // Phone Percentiles tab (U11): the ratings card has a header now, so it
-  // needs the room for three rows of boxes.
+  // Phone Percentiles tab: header plus three rows of rating gauges.
   .ratingsContainer {
-    height: 260px;
+    height: 372px;
   }
   .selectedStatPanel {
     height: 280px;

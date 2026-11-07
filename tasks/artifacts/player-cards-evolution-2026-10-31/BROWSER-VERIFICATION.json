@@ -1,0 +1,38 @@
+{
+  "checks": [
+    "Retained raw totals, 5/11 season overlap, manifest, 1440/390/320 reflow, >=44px control, keyboard focus, 200% zoom and RTL reflow",
+    "Same-snapshot bars/radar PNGs, 1200x1020 dimensions, prepared-share byte equality, stale-share clearing, L5/L10/L20/calendar and known-short controls",
+    "Goalie selection/unknown forecast/no-source export block, empty-search recovery, both approved artwork treatments",
+    "Preserved original editor still renders all four retained formats with the saved capture"
+  ],
+  "exports": [
+    {
+      "file": "synthetic-bars.png",
+      "sha256": "ee3f8bba38182e9186ccac5ba9a50535a19aed1859f9745cec17eb96ea68c861"
+    },
+    {
+      "file": "synthetic-radar.png",
+      "sha256": "86c260063383a88b6111ba0deef79ab3b485751464eb3061ef068c5977da57bd"
+    },
+    {
+      "file": "posterized-team-colors.png",
+      "sha256": "e0b2f40167471adf16ad2ef21f7d2c7f5d855baa70931bae5265b365fc101b00",
+      "protectedArtworkRegionMatches17": true
+    },
+    {
+      "file": "pixelated-team-colors.png",
+      "sha256": "03fe1e24eff22c69398be7d69716601e2bfb0f51c106c83b6ff81c24ff22766e",
+      "protectedArtworkRegionMatches17": true
+    }
+  ],
+  "externalRequests": [],
+  "pageErrors": [],
+  "assetReads": [
+    "/player-cards/hero-samples/8476453.png",
+    "/teamLogos/TBL.png",
+    "/teamLogos/TBL.png",
+    "/player-cards/hero-samples/8476453.png",
+    "/teamLogos/TBL.png"
+  ],
+  "providerRequests": 0
+}

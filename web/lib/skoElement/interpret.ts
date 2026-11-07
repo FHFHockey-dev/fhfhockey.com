@@ -1,6 +1,6 @@
 import {
   SKATER_TARGETS, SKO_CONTRACT_VERSION, TARGET_LABELS,
-  type ForgeForecastInput, type GapDirection, type GoalieInterpretation, type HorizonGames, type InterpretationConfig,
+  type ForgeForecastInput, type GapDirection, type GoalieInterpretation, type GoalieResults, type HorizonGames, type InterpretationConfig,
   type InterpretationRecord, type Measured, type MetricInterpretation, type ObservedEvidence, type ObservedTeamGame,
   type OpportunityBlock, type OpportunityInterpretation, type SkaterTarget,
 } from "./contract";
@@ -33,11 +33,17 @@ export function normalizeTeamGames(evidence: ObservedEvidence, asOfMs: number) {
   let excludedFutureRows = 0, invalidRows = 0, duplicateRows = 0;
   const byId = new Map<string, ObservedTeamGame>();
   const conflicts = new Set<string>();
-  for (const row of evidence.teamGames) {
-    if (!row?.gameId || !DATE.test(row.date) || !validTime(row.availableAt) || !STATUSES.has(row.status) || hasNegative(row)) {
+  for (const inputRow of evidence.teamGames) {
+    if (!inputRow?.gameId || !DATE.test(inputRow.date) || !validTime(inputRow.availableAt) || !STATUSES.has(inputRow.status)) {
       invalidRows++; continue;
     }
+    let row = inputRow;
     if (Date.parse(row.availableAt) > asOfMs || Date.parse(`${row.date}T00:00:00Z`) > asOfMs) { excludedFutureRows++; continue; }
+    if (hasNegative(row)) {
+      invalidRows++;
+      // Keep the known game in the window; dropping it would backfill an older game and hide missingness.
+      row = { ...row, status: "unknown", stats: {}, toiMinutes: null, ppToiMinutes: null, onIceGoalsFor: null, goalie: undefined };
+    }
     const previous = byId.get(row.gameId);
     if (!previous) { byId.set(row.gameId, row); continue; }
     const { availableAt: _a, ...left } = previous;
@@ -140,24 +146,43 @@ function interpretOpportunity(recentGames: ObservedTeamGame[], priorGames: Obser
   };
 }
 
-function interpretGoalie(recentGames: ObservedTeamGame[], forecast: ForgeForecastInput, horizonOk: boolean): GoalieInterpretation {
-  const appeared = recentGames.filter(game => game.status === "appeared");
+function goalieResults(games: ObservedTeamGame[]): GoalieResults {
+  const appeared = games.filter(game => game.status === "appeared");
+  const invalid = appeared.some(({ goalie: g }) => g && (
+    [g.saves, g.shotsAgainst, g.goalsAgainst].some(v => v != null && (!Number.isSafeInteger(v) || v < 0))
+    || finite(g.saves) && finite(g.shotsAgainst) && g.saves > g.shotsAgainst
+    || finite(g.goalsAgainst) && finite(g.shotsAgainst) && g.goalsAgainst > g.shotsAgainst
+    || finite(g.saves) && finite(g.goalsAgainst) && finite(g.shotsAgainst) && g.saves + g.goalsAgainst !== g.shotsAgainst
+    || g.minutes === 0 && ((g.shotsAgainst ?? 0) > 0 || (g.goalsAgainst ?? 0) > 0)));
+  const reason = games.some(g => g.status === "unknown") ? "unknown_team_game_status"
+    : invalid ? "inconsistent_goalie_primitives" : !appeared.length ? "no_appearances" : null;
   const sum = (key: "saves" | "shotsAgainst" | "goalsAgainst" | "minutes") =>
-    appeared.length && appeared.every(game => finite(game.goalie?.[key])) ? appeared.reduce((total, game) => total + game.goalie![key]!, 0) : null;
+    !reason && appeared.every(game => finite(game.goalie?.[key])) ? appeared.reduce((total, game) => total + game.goalie![key]!, 0) : null;
   const saves = sum("saves"), shotsAgainst = sum("shotsAgainst"), goalsAgainst = sum("goalsAgainst"), minutes = sum("minutes");
   const ratio = (numerator: number | null, denominator: number | null, multiplier: number) =>
-    !appeared.length ? na("no_appearances") : numerator === null || denominator === null ? na("incomplete_primitives")
+    reason ? na(reason) : numerator === null || denominator === null ? na("incomplete_primitives")
       : denominator <= 0 ? na("zero_denominator") : ok(multiplier * numerator / denominator);
+  const participationKnown = games.length > 0 && !games.some(g => g.status === "unknown")
+    && appeared.every(g => g.goalie?.appearanceType === "start" || g.goalie?.appearanceType === "relief");
+  const starts = participationKnown ? ok(appeared.filter(g => g.goalie?.appearanceType === "start").length) : na("start_relief_evidence_unavailable");
+  return { appearances: appeared.length, saves, shotsAgainst, goalsAgainst, minutes,
+    savePercentage: ratio(saves, shotsAgainst, 1), goalsAgainstAverage: ratio(goalsAgainst, minutes, 60), starts,
+    reliefAppearances: starts.value === null ? na(starts.reason!) : ok(appeared.length - starts.value),
+    startShare: starts.value === null ? na(starts.reason!) : ok(starts.value / games.length) };
+}
+
+function interpretGoalie(recentGames: ObservedTeamGame[], priorGames: ObservedTeamGame[], forecast: ForgeForecastInput, horizonOk: boolean, expired: boolean): GoalieInterpretation {
   const expectedRatio = (key: string) => {
     if (!horizonOk) return na("horizon_mismatch");
+    if (expired) return na("forecast_expired");
     const value = forecast.player.ratios[key];
-    return !value ? na("not_supplied") : value.value === null ? na(value.reason ?? "unavailable") : ok(value.value);
+    return !value ? na("not_supplied") : value.value === null ? na(value.reason ?? "unavailable")
+      : !finite(value.value) || value.value < 0 || key === "SAVE_PERCENTAGE" && value.value > 1 ? na("invalid_forecast_ratio") : ok(value.value);
   };
   return {
-    observed: { appearances: appeared.length, saves, shotsAgainst, goalsAgainst, minutes,
-      savePercentage: ratio(saves, shotsAgainst, 1), goalsAgainstAverage: ratio(goalsAgainst, minutes, 60) },
+    observed: goalieResults(recentGames), personalReference: goalieResults(priorGames),
     expected: { savePercentage: expectedRatio("SAVE_PERCENTAGE"), goalsAgainstAverage: expectedRatio("GOALS_AGAINST_AVERAGE"),
-      expectedStarts: !horizonOk ? na("horizon_mismatch") : finite(forecast.player.expectedStarts) ? ok(forecast.player.expectedStarts) : na("start_participation_unavailable"),
+      expectedStarts: !horizonOk ? na("horizon_mismatch") : expired ? na("forecast_expired") : finite(forecast.player.expectedStarts) ? ok(forecast.player.expectedStarts) : na("start_participation_unavailable"),
       interpretation: "ratio_of_expected_totals" },
     gap: { status: "pending_goalie_adapter", reason: "VuDu gaps await an accepted goalie adapter and goalie evidence; ratios are shown as context only." },
   };
@@ -205,8 +230,16 @@ export function interpretPlayer(input: InterpretInput): InterpretationRecord {
     const appeared = recentGames.filter(game => game.status === "appeared");
     const observedPerAppearance = !appeared.length ? na("no_appearances")
       : appeared.every(game => finite(game.stats[target])) ? ok(mean(appeared.map(game => game.stats[target] as number))) : na("missing_stat");
+    const priorTeamGame = perTeamGameValues(priorGames, target);
+    const priorAppeared = priorGames.filter(game => game.status === "appeared");
+    const priorPerTeamGame = priorTeamGame.values ? ok(mean(priorTeamGame.values)) : na(priorTeamGame.reason!);
+    const priorPerAppearance = !priorAppeared.length ? na("no_appearances")
+      : priorAppeared.every(game => finite(game.stats[target])) ? ok(mean(priorAppeared.map(game => game.stats[target] as number))) : na("missing_stat");
+    const personalReference = { perTeamGame: priorPerTeamGame, perAppearance: priorPerAppearance,
+      changePerTeamGame: observedPerTeamGame.value !== null && priorPerTeamGame.value !== null
+        ? ok(observedPerTeamGame.value - priorPerTeamGame.value) : na(observedPerTeamGame.reason ?? priorPerTeamGame.reason ?? "unavailable") };
     const expected = expectedPerTeamGame(forecast, horizon, target, expiry.status === "expired");
-    const conditional = horizonOk && forecast.player.games.length
+    const conditional = expiry.status === "expired" ? na("forecast_expired") : horizonOk && forecast.player.games.length
       && forecast.player.games.every(game => finite(game.targets[target]?.conditional))
       ? ok(mean(forecast.player.games.map(game => game.targets[target].conditional as number))) : na(horizonOk ? "conditional_not_permitted_or_missing" : "horizon_mismatch");
     const gap = evidenceStatus !== "fresh" ? na(`${evidenceStatus}_evidence`)
@@ -221,7 +254,7 @@ export function interpretPlayer(input: InterpretInput): InterpretationRecord {
           : ok(expected.value - prior.value);
     }
     return {
-      target, label: TARGET_LABELS[target], unit: "count", observedPerTeamGame, observedPerAppearance,
+      target, label: TARGET_LABELS[target], unit: "count", observedPerTeamGame, observedPerAppearance, personalReference,
       expectedPerTeamGame: expected, expectedPerAppearanceConditional: conditional, gapPerTeamGame: gap, direction: direction(gap),
       outlookChangePerTeamGame: outlook,
       observedVariability: !teamGame.values ? na(teamGame.reason!) : teamGame.values.length < 2 ? na("fewer_than_two_team_games") : ok(sampleSd(teamGame.values)),
@@ -249,7 +282,7 @@ export function interpretPlayer(input: InterpretInput): InterpretationRecord {
   })();
 
   const opportunity = isGoalie ? null : interpretOpportunity(recentGames, priorGames, evidence, config, asOfMs);
-  const goalie = isGoalie ? interpretGoalie(recentGames, forecast, horizonOk) : null;
+  const goalie = isGoalie ? interpretGoalie(recentGames, priorGames, forecast, horizonOk, expiry.status === "expired") : null;
   const player = forecast.player;
   const horizonReason = !horizonOk ? "horizon_mismatch" : !player.horizonComplete ? "incomplete_horizon" : null;
 
@@ -272,6 +305,7 @@ export function interpretPlayer(input: InterpretInput): InterpretationRecord {
     text: `IPP ${fmt(ipp.observed.value, 3)} versus the ${evidence.modelClass === "F" ? "forward" : "defense"} reference ${fmt(ipp.reference.value, 3)} (${signed(ipp.deviation.value)}), all situations. IPP overlaps with points; it is not an independent vote.` });
 
   const limitations = [...new Set([
+    "The personal comparison uses the preceding disjoint block, not a career or prior-season estimate. Short history and role or team changes can make it unrepresentative.",
     "Expected values are FORGE game expectations passed through unchanged; no SKO score or weights are applied.",
     "Gap direction is descriptive. It is not a buy/sell instruction, a probability or a quality rating; a level gap does not mean low volatility.",
     "Predictive spread and mean uncertainty are not supplied by FORGE game expectations v1.",
@@ -305,6 +339,9 @@ export function interpretPlayer(input: InterpretInput): InterpretationRecord {
       startDate: recentGames[0]?.date ?? null, endDate: recentGames.at(-1)?.date ?? null,
       rule: `last ${k} completed team games available at as-of`,
     },
+    personalReferenceWindow: { teamGames: priorGames.length, appearances: priorGames.filter(g => g.status === "appeared").length,
+      unknownGames: priorGames.filter(g => g.status === "unknown").length, startDate: priorGames[0]?.date ?? null,
+      endDate: priorGames.at(-1)?.date ?? null, method: "preceding_disjoint_team_game_block" },
     forecastTotals: Object.fromEntries(Object.entries(player.totals).map(([key, total]) =>
       [key, { expected: total.expected, unit: total.unit, reason: total.reason }])),
     metrics, ipp, opportunity, goalie,

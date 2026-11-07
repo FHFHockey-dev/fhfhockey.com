@@ -1,0 +1,24 @@
+# Completed retained-source comparison
+
+All four paths now have outputs for all ten groups (12 posts), with no missing group output. This completes the bounded comparison and its source-based analysis. It does not establish production readiness or a universal factual winner.
+
+| Path | Complete / missing groups | Recorded result | API cost attribution |
+| --- | --- | --- | --- |
+| Rules | 10 / 0 | 24 proposals; six empty groups in this projection | $0 |
+| Rules + Decisions | 10 / 0 | Ten checks: four nonempty-set support checks and six source-relevance checks | $0.000982850 |
+| Luna extraction | 10 / 0 | 51 claims and one revision after recorded numeric-only alignment | $0.004942715 shared extraction |
+| Luna + Decisions | 10 / 0 | Ten selected full checks; eleven checker calls incurred including the S10 diagnostic | $0.006386465 including shared extraction and all checks |
+
+Extraction is billed once and shared across its two paths; do not sum those attributions. The selected ten extraction checks attribute $0.006270085 including extraction. The superseded partial S10 check remains charged at $0.000116380.
+
+There were **31 actual sample calls: ten Responses and 21 Decisions**, with no automatic retries. The original 13-call pass cost ceiling was $0.003096446; the 17-call continuation was $0.004149229; the single S10 diagnostic was $0.000123640. **Sample total: $0.007369315.** These are conservative usage-priced ceilings, not final invoices.
+
+Across the entire experiment, known ceilings total **$0.007782393**. The original uncertain $0.254394800 reservation remains untouched. Aggregate exposure is **$0.262177193** against the **$0.52** cap, leaving $0.257822807 unreserved. Peak exposure while a call was reserved was $0.518504664. All new calls settled; the sole unsettled row remains the original `lindgren-0`. No further paid calls are planned. Exact accounting is in [cost-and-ledger-reconciliation.json](cost-and-ledger-reconciliation.json) and [all-authentic-call-usage.json](all-authentic-call-usage.json).
+
+The saved S01–S04 outputs were reused unchanged. S05's saved extraction was also reused: the v2 adapter disambiguates an exact repeated parenthetical only when it immediately follows one uniquely named subject in the same retained original. It does not guess from nearest offsets, another proposal or a benchmark answer. S10 reused its extraction; v3 applies unique literal-quote alignment to the revision after checking the retained quoted lineage. Only numeric evidence offsets changed in aligned bodies. Semantic fields, prompts, sources and verifier questions were not tuned. Server-enforced output caps for the remaining extraction calls were 8,192 tokens for S08, 4,096 for S06/S07/S10 and 2,048 for S09; full input-context reservations remained charged before dispatch. The original partial pass and failures remain immutable evidence; completion here does not retroactively change their status.
+
+The [assistant analysis](ASSISTANT-ANALYSIS.md) identifies useful detail recovery alongside concrete evidence/qualifier errors, missing coverage and typed replacement/correction gaps. It is explicitly separate from human gold. The owner's S01-P003 Sorokin ruling is preserved; P004 remains ungraded. The [three-item human queue](FOCUSED-HUMAN-QUEUE.md) asks only unresolved goalie-category encoding questions. The [complete neutral sheet](COMPLETE-BLINDED-SHEET.md) retains raw and aligned variants; its arm mapping stays in the private artifact.
+
+Verification completed: 13 distinct continuation controls passed across the initial 11 successes and two corrected/new targeted checks; all six diagnostic controls passed. The initial continuation assertion read the wrong ledger tuple index. Its first targeted rerun was blocked by a working-directory/pin-update mistake; the corrected target passed. Original failure logs are preserved. These were local harness corrections, not claims of production behavior. Final offline verification checks accounting, exact saved response/semantic preservation, source/runtime pins, coverage and the focused queue. No full compiler, broad application suite or new independent review was run for this offline reporting increment.
+
+The 12 retained posts were previously exposed development data. Lexical scores remain diagnostic-only; no semantic accuracy percentage is claimed. Decisions scores concern whole sets and do not repair extraction, prove completeness or supply independent corroboration. Genuine future evaluation, canonical identities, durable native application and all existing production/rollout gates remain open. No production writes, ingestion, dispatch, replay, scheduler activation, deployment or credential change occurred in this comparison. Only task artifacts and the explicitly authorized experiment-budget ledger changed.

@@ -1,3 +1,14 @@
+# Shared NST admission: this manual/compatibility path uses the same global budget.
+from pathlib import Path as _NstPath
+import sys as _nst_sys
+_nst_root = next((_parent / "functions" for _parent in _NstPath(__file__).resolve().parents
+                  if (_parent / "functions/lib/nst_admission.py").is_file()), None)
+if _nst_root is None:
+    raise RuntimeError("NST shared admission helper unavailable")
+if str(_nst_root) not in _nst_sys.path:
+    _nst_sys.path.insert(0, str(_nst_root))
+from lib.nst_admission import nst_get, nst_job_scope, assert_nst_job_active, mark_nst_job_uncertain
+
 # LEGACY MANUAL SCRIPT
 # This file is not part of the production NST migration path.
 # Canonical production ownership for skater `playerteams.php` ingestion now lives in:
@@ -251,6 +262,7 @@ def get_table_name(dataset_type: str) -> str:
     return mapping.get(dataset_type, "unknown_table")
 
 async def get_latest_date_supabase() -> Optional[str]:
+    assert_nst_job_active()
     """Retrieves the latest date_scraped from all relevant Supabase tables."""
     table_names = [
         "nst_gamelog_as_counts",
@@ -282,6 +294,7 @@ async def get_latest_date_supabase() -> Optional[str]:
                 if not latest_date or table_latest_datetime > latest_date:
                     latest_date = table_latest_datetime
         except Exception as e:
+            mark_nst_job_uncertain()
             print(f"Error fetching latest date from {table}: {e}")
             continue
 
@@ -467,6 +480,7 @@ def parse_html(html_content: str, dataset_type: str, date: str, season_id: str) 
     return data_rows_collected
 
 async def get_player_id_by_name(full_name: str, position: str) -> Optional[int]:
+    assert_nst_job_active()
     """Retrieves the player ID from Supabase based on full name and position."""
     mapped_name = player_name_mapping.get(full_name, {"fullName": full_name})["fullName"]
     normalized_full_name = normalize_name(mapped_name)
@@ -485,11 +499,13 @@ async def get_player_id_by_name(full_name: str, position: str) -> Optional[int]:
             troublesome_players.append(f"{full_name} ({position})")
             return None
     except Exception as e:
+        mark_nst_job_uncertain()
         print(f"Error fetching player ID for {full_name}: {e}")
         troublesome_players.append(f"{full_name} ({position})")
         return None
 
 async def upsert_data(dataset_type: str, data_rows: List[Dict]):
+    assert_nst_job_active()
     """Upserts data rows into the corresponding Supabase table."""
     if not data_rows:
         return 0
@@ -532,13 +548,19 @@ async def upsert_data(dataset_type: str, data_rows: List[Dict]):
     # ────────────────────────────────────────────────────────────────
 
     try:
+        assert_nst_job_active()
         response = supabase.table(table_name).upsert(data_rows, on_conflict=["player_id", "date_scraped"]).execute()
+        if getattr(response, "error", None):
+            mark_nst_job_uncertain()
+            return 0
         return len(data_rows)
     except Exception as e:
+        mark_nst_job_uncertain()
         print(f"Error upserting data into {table_name}: {e}")
         return 0
 
 async def check_data_exists(dataset_type: str, date: str) -> bool:
+    assert_nst_job_active()
     """Checks if data already exists for the specific dataset type and date."""
     table_name = get_table_name(dataset_type)
     if table_name == "unknown_table":
@@ -548,10 +570,12 @@ async def check_data_exists(dataset_type: str, date: str) -> bool:
         response = supabase.table(table_name).select("player_id").eq("date_scraped", date).limit(1).execute()
         return len(response.data) > 0
     except Exception as e:
+        mark_nst_job_uncertain()
         print(f"Error checking data existence: {e}")
         return False
 
 async def process_url(url_info: Dict, current_url_num: int, total_urls: int, date_counts: Dict[str, Dict[str, int]]):
+    assert_nst_job_active()
     """Process a single URL with proper rate limiting."""
     dataset_type = url_info['datasetType']
     url = url_info['url']
@@ -575,7 +599,7 @@ async def process_url(url_info: Dict, current_url_num: int, total_urls: int, dat
     if not data_exists:
         try:
             # Make the request to fetch data
-            response = requests.get(url)
+            response = nst_get(url)
             if response.status_code == 200:
                 # Parse HTML and extract data
                 data_rows = parse_html(response.text, dataset_type, date, season_id)
@@ -598,8 +622,10 @@ async def process_url(url_info: Dict, current_url_num: int, total_urls: int, dat
                 # Upsert to database
                 rows_upserted = await upsert_data(dataset_type, data_rows_with_ids)
             else:
+                mark_nst_job_uncertain()
                 print(f"Failed to fetch {url}: Status Code {response.status_code}")
         except Exception as e:
+            mark_nst_job_uncertain()
             print(f"Error processing URL {url}: {e}")
     else:
         print(f"Data already exists for {dataset_type} on date {date}. Skipping.")
@@ -633,6 +659,7 @@ async def process_url(url_info: Dict, current_url_num: int, total_urls: int, dat
         "rows_upserted": rows_upserted
     }
 
+@nst_job_scope("legacy/nst_gamelog_scraper")
 async def main():
     """Main function to orchestrate scraping and upserting."""
     start_time = time.time()
@@ -697,6 +724,7 @@ async def main():
 
         # Process URLs sequentially with proper rate limiting
         for i, url_info in enumerate(unique_urls_queue):
+            assert_nst_job_active()
             # Apply wait time between requests (except for the first one)
             if i > 0:
                 print(f"\nWaiting {DELAY_SECONDS} seconds before next request...")
@@ -717,4 +745,5 @@ async def main():
                 print(f"- {player}")
     
     except Exception as e:
+        mark_nst_job_uncertain()
         print(f"An error occurred in main(): {e}")

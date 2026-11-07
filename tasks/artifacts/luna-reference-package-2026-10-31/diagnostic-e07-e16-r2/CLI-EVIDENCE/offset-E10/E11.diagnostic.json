@@ -1,0 +1,23 @@
+{
+  "policy": "luna-exposed-diagnostic-collection-v2",
+  "originalReviewHash": "e7ae1c8980144d60a6774a94f2546843b6810f44a6506390b5dd5e0d1c84cfc7",
+  "rawGrade": {
+    "identity": true,
+    "goalie": true,
+    "decisions": true,
+    "labelMatch": true
+  },
+  "originalStatus": "review_only",
+  "originalHolds": [
+    "human_review_required",
+    "no_publication_authority"
+  ],
+  "canPublish": false,
+  "canApply": false,
+  "canChangeStatus": false,
+  "candidateUsedForGradeOrAdvance": false,
+  "outcome": "recorded_pass",
+  "mayAdvanceDiagnosticSequence": true,
+  "reason": "original_grade_pass",
+  "decisionsDisposition": "completed_and_bound"
+}

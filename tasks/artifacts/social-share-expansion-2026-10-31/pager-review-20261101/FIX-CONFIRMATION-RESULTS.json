@@ -1,0 +1,90 @@
+{
+  "generatedAt": "2026-11-01T21:11:07.809Z",
+  "observedCandidate": "e152ce5bca1aa77e29a43acd33eb7e9ae0d0ac62",
+  "method": "Offline real TypeScript component hook harness plus pure functions/builders. External IO unavailable; fixture completed-team evidence supplied. No actual browser, authenticated endpoint or real-data capture.",
+  "checks": [
+    {
+      "name": "F2 fixed: failed refresh advances using the edition cutoff and discloses retained rows",
+      "status": "passed"
+    },
+    {
+      "name": "F2 fixed: later calendar cutoff does not advance a pre-midnight edition",
+      "status": "passed"
+    },
+    {
+      "name": "Explicit week remains pinned when edition cutoff advances",
+      "status": "passed"
+    },
+    {
+      "name": "Edition cutoff handles spring/fall DST, leap day and year boundary",
+      "status": "passed"
+    },
+    {
+      "name": "F3 fixed: calendar evidence retains played dates independently of skater rows",
+      "status": "passed"
+    },
+    {
+      "name": "Missing-feed date remains between its played neighbors",
+      "status": "passed"
+    },
+    {
+      "name": "Missing skater feed is partial with explicit reason and zero coverage, not an off day",
+      "status": "passed"
+    }
+  ],
+  "F2": {
+    "before": "Week 4 · Oct 19 to Oct 25",
+    "failedRefresh": "Week 5 · Oct 26 to Nov 1",
+    "failedRefreshAlert": true,
+    "crossMidnightPager": "Week 4 · Oct 19 to Oct 25"
+  },
+  "F3": {
+    "dates": [
+      "2026-10-27",
+      "2026-10-30",
+      "2026-10-31"
+    ],
+    "slates": {
+      "previous": "2026-10-27",
+      "next": "2026-10-31",
+      "first": "2026-07-01",
+      "last": "2026-10-31"
+    },
+    "state": "partial",
+    "reasons": [
+      "Skater data is missing for Oct 31: games were played, but no skater rows have been reported.",
+      "2 completed team games on this slate have no player rows."
+    ],
+    "coverage": {
+      "observed": 0,
+      "expected": 2,
+      "missing": 2,
+      "unit": "team games"
+    }
+  },
+  "pins": {
+    "web/lib/socialShare/modules/shared/periodWindow.ts": "1601313b43db7652b348f7f78329934cd69e47a353b34c1db913bb884ba80105",
+    "web/lib/socialShare/modules/shared/categoryCounts.ts": "92a4e82037e4a793e29f342dbc49d448ccf605b502d0e6152330ba6c36a6e890",
+    "web/lib/socialShare/modules/shared/definitions.ts": "c63abb0c32414dac8a683371b5f48a8e2b9c53d4cb5f612c9144b932e5466f85",
+    "web/lib/rosterScheduleOptimizer/planningDates.ts": "b1d7454aad1238671be337b64120e33f2331ef2f8261e390d52b5ac17d9dd4c8",
+    "web/lib/socialShare/types.ts": "1831ff0bcf344332dcebe07bc42db4e1d0f6d69aa00e15a1a847b95f4fd95a68",
+    "web/lib/socialShare/modules/teamGames.ts": "5a3b0b626fedebb9512ecdc01c7ebaed1d9db494304c44abafec8a55e4a77b80",
+    "web/lib/socialShare/schedule.ts": "f6047772763a790e6a052393debcde0b41e088936f450629c56986952ca2222a",
+    "web/lib/teamsInfo.ts": "645f33ed7272e728b6ac1436754a13126ee25eb2eb6bc598fcefed3acc8e1584",
+    "web/lib/socialShare/modules/contract.ts": "1ddfa1230204268382a11a728c24a81b2d928a72c309635c57ce2699b1a9c4bf",
+    "web/lib/socialShare/modules/shared/goalieInventory.sources.ts": "ed6c69a0b7c711377007b8d3fc7701f34f4be183052cb707dc7715153a680bee",
+    "web/lib/socialShare/modules/shared/goalieInventory.ts": "71f91597d272dad777d01db09d1162e287c052d162c80de7bc9e3137197d14a8",
+    "web/lib/socialShare/modules/shared/goalieLedger.ts": "6c0c05818e858596dd39ee38fb7d9a366a19c23a3021e9c2363a611edc31cdf8",
+    "web/components/SocialShare/PeriodControl.tsx": "43077bb8684a6528d6935848f0d2ec6a07d01b28e30763a90706f20b41298f96",
+    "web/lib/socialShare/modules/lastNightsStandouts.ts": "45ebb649df273d66149b85bfaefe7b861d0e779b844f513623f2ea4ad708db77",
+    "web/lib/rankings/skaterDeploymentAggregation.ts": "37aae79b797332fd725f9aeb654dedfeac8e6df4f1f869f1874f2f46af21ec01",
+    "web/lib/supabase/Upserts/rollingPlayerLineContextContract.ts": "b7b95f027ae4be972a5c894d8d561247db1cd5aa91721ee0703004f4c5972379",
+    "web/lib/socialShare/modules/goalieGsax.ts": "6934cfbf7ff56ffc1700ac17569c9298a388b031cc0dfc7629e00f0d408eca9f",
+    "web/lib/socialShare/modules/creaseShift.ts": "9b1ab34ca906f34d5501c16bdd778ef965d101f214e882e11a60c194dd88601b",
+    "web/lib/socialShare/teamNeon.ts": "f693ab1a6663f7215b6a02324f8525e7631d98acd4b89a619ff0917b49112fb5",
+    "web/lib/socialShare/modules/shared/goalieBoards.ts": "2a1b6162b260be2cb3a4211e6de85793932c5f65605a705f2cc86c3cb148946b",
+    "web/lib/socialShare/modules/roleWatch.ts": "fb6422c2031df200dc1ee2c00c06b3ed43950bc451b07045359b994e02bcde58",
+    "web/lib/socialShare/modules/shared/skaterAppearances.ts": "378baa29124232cb8aecacdd2981e0a89c7b8115cb8bffe5e0433583dad94421",
+    "web/lib/socialShare/modules/whatChanged.ts": "e23a7f29ca86ea7168f4295bc6e66f1096b7827f3599e654e322b126bba8f872"
+  }
+}

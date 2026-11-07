@@ -1,0 +1,16 @@
+{
+  "command": "node --max-old-space-size=8192 node_modules/typescript/bin/tsc --noEmit --incremental false --extendedDiagnostics",
+  "cwd": "web",
+  "exitCode": 2,
+  "heapFailureResolved": true,
+  "diagnosticCount": 6,
+  "diagnostics": [
+    "lib/socialShare/modules/contract.test.ts(26,157): error TS2352: Conversion of type '{ x: string; pos?: undefined; since?: undefined; other?: undefined; } | { pos: string; x?: undefined; since?: undefined; other?: undefined; } | { since: string; x?: undefined; pos?: undefined; other?: undefined; } | { ...; }' to type 'Record<string, string>' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.",
+    "lib/socialShare/modules/contract.test.ts(71,34): error TS2740: Type '{ id: string; isPreloading: boolean; exports: any; require: Require; filename: string; loaded: boolean; parent: Module | null | undefined; children: Module[]; path: string; paths: string[]; }' is missing the following properties from type 'AnyShareModule': title, summary, group, basis, and 5 more.",
+    "lib/socialShare/modules/server.ts(18,5): error TS2322: Type '{ state: ShareDataState; reasons: string[]; evidence: SharePostEvidence; data: any; teams: string[]; expiresAt: string; schemaVersion: 1; id: string; post: string; generatedAt: string; timeZone: string; settings: any; fixture: boolean; }' is not assignable to type 'SharePostSnapshot'.",
+    "lib/socialShare/modules/server.ts(21,5): error TS2322: Type '{ state: \"missing\"; reasons: string[]; evidence: SharePostEvidence; data: null; teams: never[]; expiresAt: null; schemaVersion: 1; id: string; post: string; generatedAt: string; timeZone: string; settings: any; fixture: boolean; }' is not assignable to type 'SharePostSnapshot'.",
+    "lib/socialShare/modules/shared/goalieInventory.sources.ts(16,278): error TS2339: Property 'player_forecast_goalie_start_observations' does not exist on type '{ draft_pro_drafts: { Row: { id: string; user_id: string; season: string; name: string; status: string; schema_version: number; lock_version: number; snapshot: Json; snapshot_bytes: number; created_at: string; updated_at: string; }; Insert: { ...; }; Update: { ...; }; Relationships: []; }; ... 316 more ...; yahoo_po...'.",
+    "lib/socialShare/modules/shared/goalieInventory.sources.ts(19,73): error TS2339: Property 'player_forecast_goalie_start_observations' does not exist on type '{ draft_pro_drafts: { Row: { id: string; user_id: string; season: string; name: string; status: string; schema_version: number; lock_version: number; snapshot: Json; snapshot_bytes: number; created_at: string; updated_at: string; }; Insert: { ...; }; Update: { ...; }; Relationships: []; }; ... 316 more ...; yahoo_po...'."
+  ],
+  "sourceLogSHA256": "d18286b179c8974bc91a402980072a902593f386e292b778502ab4db02f36990"
+}

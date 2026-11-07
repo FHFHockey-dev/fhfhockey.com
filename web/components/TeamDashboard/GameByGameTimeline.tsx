@@ -9,6 +9,7 @@ interface GameData {
   opponent_abbrev: string;
   is_home: boolean;
   result: "W" | "L" | "OTL";
+  decided?: "OT" | "SO";
   goals_for: number;
   goals_against: number;
   shots_for: number;
@@ -65,6 +66,8 @@ export function GameByGameTimeline({
             wins,
             losses,
             ot_losses,
+            wins_in_regulation,
+            wins_in_shootout,
             shots_for_per_game,
             shots_against_per_game,
             power_play_pct,
@@ -193,12 +196,23 @@ export function GameByGameTimeline({
             result = "L";
           }
 
+          // Shootout goals aren't in goals_for/against, so a tied score means a shootout.
+          const tied = (currentGame.goals_for || 0) === (currentGame.goals_against || 0);
+          let decided: GameData["decided"];
+          if (result === "W") {
+            if (currentGame.wins_in_shootout === 1 || tied) decided = "SO";
+            else if (currentGame.wins_in_regulation === 0) decided = "OT";
+          } else if (result === "OTL") {
+            decided = tied ? "SO" : "OT";
+          }
+
           processedGames.push({
             date: currentGame.date,
             opponent_team_id: opponentId,
             opponent_abbrev: opponentInfo?.abbreviation || "UNK",
             is_home: isHome,
             result,
+            decided,
             goals_for: currentGame.goals_for || 0,
             goals_against: currentGame.goals_against || 0,
             shots_for: Math.round(currentGame.shots_for_per_game || 0),
@@ -315,7 +329,7 @@ export function GameByGameTimeline({
               key={`${game.date}-${game.opponent_team_id}`}
               aria-controls={isSelected ? detailsId : undefined}
               aria-expanded={isSelected}
-              aria-label={`${isSelected ? "Hide" : "Show"} details for ${format(parseISO(game.date), "MMMM d, yyyy")}, ${game.is_home ? "versus" : "at"} ${game.opponent_abbrev}, final score ${game.goals_for} to ${game.goals_against}`}
+              aria-label={`${isSelected ? "Hide" : "Show"} details for ${format(parseISO(game.date), "MMMM d, yyyy")}, ${game.is_home ? "versus" : "at"} ${game.opponent_abbrev}, final score ${game.goals_for} to ${game.goals_against}${game.decided === "SO" ? " in a shootout" : game.decided === "OT" ? " in overtime" : ""}`}
               className={`${styles.gameCardAndBar} ${getResultClass(game.result)} ${isSelected ? styles.selected : ""}`}
               onClick={() => setSelectedGame(isSelected ? null : game)}
             >
@@ -328,6 +342,9 @@ export function GameByGameTimeline({
                 </span>
                 <span className={styles.gameScore}>
                   {game.goals_for}-{game.goals_against}
+                  {game.decided && (
+                    <span className={styles.decidedTag}>{game.decided}</span>
+                  )}
                 </span>
 
                 <span className={styles.gameMatchup}>

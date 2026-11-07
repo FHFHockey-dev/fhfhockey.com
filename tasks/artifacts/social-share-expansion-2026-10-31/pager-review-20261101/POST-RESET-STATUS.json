@@ -1,0 +1,17 @@
+{
+  "observedAt": "2026-11-01T22:27:37.050499+00:00",
+  "ownerSession": "799e2b6c-f303-4317-8af1-8a92ac6bcb75",
+  "latestOwnerAssistant": {
+    "timestamp": "2026-11-01T21:05:48.084Z",
+    "error": "rate_limit",
+    "stopReason": "stop_sequence"
+  },
+  "ownerTranscriptSha256": "54e372bbb87c279da5d0d3d3b4b5a89e5dcf2d2704cb79f9c4af3ba6890c6dfb",
+  "packetHeadingPresent": false,
+  "mailboxSha256": "51c1b10bdbaf84b9711b6aa89893858a3344e94016dff3de40766f3dbed1cd1f",
+  "knownCodeCandidate": "e152ce5bca1aa77e29a43acd33eb7e9ae0d0ac62",
+  "codeDisposition": "two P2 reproductions pass;128 targeted tests and7 independent checks previously passed;no new code delta",
+  "pendingAction": "Resume identified Claude owner or identify a replacement owner, then deliver integrated pinned packet and real-calendar recapture",
+  "status": "pending owner resumption/evidence, no denied or uncertain mutation",
+  "monitor": "event watch from22:21:59UTC through this status;no owner or mailbox write observed"
+}

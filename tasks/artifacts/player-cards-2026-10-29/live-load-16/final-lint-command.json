@@ -1,0 +1,12 @@
+{
+  "command": [
+    "npx",
+    "--no-install",
+    "eslint",
+    "components/player-cards/CurrentPlayerCardStudio.tsx",
+    "components/player-cards/CurrentPlayerCardStudio.test.tsx"
+  ],
+  "exitCode": 0,
+  "elapsedSeconds": 1.484,
+  "sharedSlot": "parent verify token"
+}

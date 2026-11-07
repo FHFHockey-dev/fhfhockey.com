@@ -1,0 +1,17 @@
+{
+  "check": "browser",
+  "command": [
+    "node",
+    "node_modules/@playwright/test/cli.js",
+    "test",
+    "e2e/forge-v2.spec.ts",
+    "--project=chromium",
+    "--workers=1",
+    "--output=/Users/tim/Code/fhfhockey.com/tasks/artifacts/forge-v2-independent-test-2026-10-30/browser-results"
+  ],
+  "cwd": "/tmp/forge-v2-independent-hkh8ulbm/web",
+  "exit": 0,
+  "durationSeconds": 5.654364109039307,
+  "environment": "allowlisted; no inherited credentials; no env files copied",
+  "log": "browser.log"
+}

@@ -1,0 +1,12 @@
+{
+  "command": [
+    "npx",
+    "--no-install",
+    "tsc",
+    "--noEmit",
+    "-p",
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-26/observed-view-01/final-tsconfig.json"
+  ],
+  "exitCode": 0,
+  "seconds": 1.27
+}

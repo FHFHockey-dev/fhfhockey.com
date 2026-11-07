@@ -1,0 +1,153 @@
+[
+  {
+    "name": "UTC",
+    "exitCode": 0,
+    "result": {
+      "TZ": "UTC",
+      "originalP2": {
+        "startChart": "capture_time_missing_or_invalid",
+        "rso": "capture_time_missing_or_invalid"
+      },
+      "originalP3": "settlement_capture_time_invalid",
+      "validOffsetRetained": "2026-11-02T18:00:00.123456-05:00",
+      "invalidDatesRejected": 5,
+      "leapDayAccepted": true,
+      "microsecondFutureRejected": "settlement_source_from_future",
+      "microsecondEqualityAccepted": true,
+      "downstreamPrecision": {
+        "preIssueReadback": {
+          "issuedAt": "2026-11-02T22:05:00.000002Z",
+          "observedAt": "2026-11-02T22:05:00.000001Z",
+          "summary": {
+            "pass": true,
+            "issued": 1,
+            "coverage": {
+              "start_chart": {
+                "issued": 1,
+                "matched": 1,
+                "readbacks": 1
+              }
+            },
+            "settled": 0,
+            "sealedRows": 0,
+            "sealed": {
+              "from": "2026-10-23",
+              "to": "2026-10-30"
+            },
+            "tolerance": 0.0001,
+            "findingCodes": {}
+          }
+        },
+        "postStartSettlement": {
+          "scheduledAt": "2026-11-03T00:00:00Z",
+          "recordedAt": "2026-11-03T00:00:00.000001Z",
+          "adapterActual": 3,
+          "summary": {
+            "pass": false,
+            "issued": 1,
+            "coverage": {
+              "rso": {
+                "issued": 1,
+                "matched": 1,
+                "readbacks": 1
+              },
+              "start_chart": {
+                "issued": 1,
+                "matched": 1,
+                "readbacks": 1
+              }
+            },
+            "settled": 0,
+            "sealedRows": 0,
+            "sealed": {
+              "from": "2026-10-23",
+              "to": "2026-10-30"
+            },
+            "tolerance": 0.0001,
+            "findingCodes": {
+              "settlement_before_game": 1
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "America/New_York",
+    "exitCode": 0,
+    "result": {
+      "TZ": "America/New_York",
+      "originalP2": {
+        "startChart": "capture_time_missing_or_invalid",
+        "rso": "capture_time_missing_or_invalid"
+      },
+      "originalP3": "settlement_capture_time_invalid",
+      "validOffsetRetained": "2026-11-02T18:00:00.123456-05:00",
+      "invalidDatesRejected": 5,
+      "leapDayAccepted": true,
+      "microsecondFutureRejected": "settlement_source_from_future",
+      "microsecondEqualityAccepted": true,
+      "downstreamPrecision": {
+        "preIssueReadback": {
+          "issuedAt": "2026-11-02T22:05:00.000002Z",
+          "observedAt": "2026-11-02T22:05:00.000001Z",
+          "summary": {
+            "pass": true,
+            "issued": 1,
+            "coverage": {
+              "start_chart": {
+                "issued": 1,
+                "matched": 1,
+                "readbacks": 1
+              }
+            },
+            "settled": 0,
+            "sealedRows": 0,
+            "sealed": {
+              "from": "2026-10-23",
+              "to": "2026-10-30"
+            },
+            "tolerance": 0.0001,
+            "findingCodes": {}
+          }
+        },
+        "postStartSettlement": {
+          "scheduledAt": "2026-11-03T00:00:00Z",
+          "recordedAt": "2026-11-03T00:00:00.000001Z",
+          "adapterActual": 3,
+          "summary": {
+            "pass": false,
+            "issued": 1,
+            "coverage": {
+              "rso": {
+                "issued": 1,
+                "matched": 1,
+                "readbacks": 1
+              },
+              "start_chart": {
+                "issued": 1,
+                "matched": 1,
+                "readbacks": 1
+              }
+            },
+            "settled": 0,
+            "sealedRows": 0,
+            "sealed": {
+              "from": "2026-10-23",
+              "to": "2026-10-30"
+            },
+            "tolerance": 0.0001,
+            "findingCodes": {
+              "settlement_before_game": 1
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "loader",
+    "exitCode": 1,
+    "error": "AssertionError [ERR_ASSERTION]: Values have same structure but are not reference-equal:\n\n{\n  HOME: '/Users/tim',\n  LANG: 'C.UTF-8',\n  NODE_OPTIONS: '--require=/Users/tim/Code/fhfhockey.com/tasks/artifacts/rso-settlement-audit-2026-11-01/network-deny.cjs',\n  PATH: '/Library/Frameworks/Python.framework/Versions/3.13/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/pkg/env/global/bin:/Library/Apple/usr/bin:/Users/tim/.codex/tmp/arg0-macos/codex-arg00Ik5Kp:/Applications/ChatGPT.app/Contents/Resources/codex-cli/codex-path:/Users/tim/.local/bin:/Users/tim/.unity/bin:/opt/homebrew/opt/libpq/bin:/opt/anaconda3/bin:/opt/anaconda3/condabin:/Library/Frameworks/Python.framework/Versions/3.13/bin:/Users/tim/.lmstudio/bin',\n  TMPDIR: '/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/',\n  TS_NODE_COMPILER_OPTIONS: '{\"module\":\"CommonJS\",\"moduleResolution\":\"node\"}',\n  TS_NODE_TRANSPILE_ONLY: '0',\n  TZ: 'UTC',\n  __CF_USER_TEXT_ENCODING: '0x1F5:0x0:0x0'\n}\n\n    at file:///Users/tim/Code/fhfhockey.com/tasks/artifacts/rso-settlement-audit-2026-11-01/timestamp-rereview/loader-probe.mjs:16:8 {\n  generatedMessage: true,\n  code: 'ERR_ASSERTION',\n  actual: {\n    HOME: '/Users/tim',\n    LANG: 'C.UTF-8',\n    PATH: '/Library/Frameworks/Python.framework/Versions/3.13/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/pkg/env/global/bin:/Library/Apple/usr/bin:/Users/tim/.codex/tmp/arg0-macos/codex-arg00Ik5Kp:/Applications/Chat"
+  }
+]

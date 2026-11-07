@@ -1,0 +1,12 @@
+{
+  "at": "2026-10-31T21:17:58.317499+00:00",
+  "beforeSha256": "e992f8e85a70e3c4c46630904ff6b278cbbd67f96c4886d357e453f0bf268c7e",
+  "afterSha256": "c774c66b1f1de8649eec1237856c814f916321cfa52642a4397a99a7bc12c593",
+  "changedFields": [
+    "approvedPolicyId",
+    "enabled",
+    "blockedReason"
+  ],
+  "existingAttemptsPreserved": true,
+  "authorization": "Parent execution instruction after independent acceptance; exact frozen E02-E16 plan only."
+}

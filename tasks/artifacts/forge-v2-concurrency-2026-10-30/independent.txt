@@ -1,0 +1,14 @@
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.7 /private/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/forge-v2-concurrency-8iniyhsd/web
+
+stdout | lib/forge-v2/independent-concurrency.test.ts > concurrent older preparation must not replace a newer corrected read head
+Independent race evidence {"olderRejected":"prepared_context_predecessor_or_time_conflict","newer":"2026-01-14T04:00:00.000Z","lastInserted":"2026-01-14T04:00:00.000Z","expectedOutcome":"independent-new-correction","servedOutcome":"independent-new-correction"}
+
+ ✓ lib/forge-v2/independent-concurrency.test.ts > concurrent older preparation must not replace a newer corrected read head 2400ms
+
+ Test Files  1 passed (1)
+      Tests  1 passed (1)
+   Start at  08:27:32
+   Duration  2.66s (transform 105ms, setup 3ms, collect 135ms, tests 2.40s, environment 0ms, prepare 33ms)
+

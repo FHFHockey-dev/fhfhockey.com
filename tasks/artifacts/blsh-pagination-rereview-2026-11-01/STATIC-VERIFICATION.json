@@ -1,0 +1,11 @@
+{
+  "staticStatus": "PASS",
+  "onlyPaginationHandlerChanged": true,
+  "embeddedDataByteIdentical": true,
+  "verifiedPins": 56,
+  "independentBrowserStatus": "DENIED_BY_AUTO_REVIEW",
+  "originalPreserved": true,
+  "newCandidateSHA256": "097c0d2f399b094c04014b17da105bef074abb36f137da6d9624db42d2614b9b",
+  "retainedProducerBrowserResult": "PASS",
+  "lockExists": false
+}

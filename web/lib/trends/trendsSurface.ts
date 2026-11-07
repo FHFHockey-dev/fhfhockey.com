@@ -1,3 +1,4 @@
+import type { GoalieTrendCategoryId } from "./goalieMetricConfig";
 import type { SkaterTrendCategoryId, SkaterWindowSize } from "./skaterMetricConfig";
 
 export type LockedPlayerBaselineMode = "season" | "3ya" | "career" | "all";
@@ -30,8 +31,11 @@ export const LOCKED_PLAYER_BASELINES = [
   description: string;
 }>;
 
-export const DEFERRED_PLAYER_BASELINE_NOTE =
-  "Last Year stays out of strong v1 until a dedicated last-year rolling baseline is exposed as a stable source contract.";
+// Reader-facing summary of the baselines the trend views compare against.
+export const describeLockedBaselines = () =>
+  `Compared with ${new Intl.ListFormat("en", { type: "conjunction" }).format(
+    LOCKED_PLAYER_BASELINES.map((baseline) => baseline.label)
+  )} baselines`;
 
 export const PLAYER_QUICK_VIEWS = [
   {
@@ -114,6 +118,58 @@ export const isPlayerQuickViewId = (value: unknown): value is PlayerQuickViewId 
   typeof value === "string" &&
   PLAYER_QUICK_VIEWS.some((view) => view.id === value);
 
+// The scan's headline figure is the stat itself (percentiles saturate at 100 for
+// every leader). TOI fields arrive as seconds per game.
+const formatClock = (seconds: number) => {
+  const whole = Math.round(seconds);
+  return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, "0")}`;
+};
+
+export const formatPercentileOrdinal = (percentile: number): string => {
+  const n = Math.round(percentile);
+  const lastTwo = n % 100;
+  const suffix =
+    lastTwo >= 11 && lastTwo <= 13
+      ? "th"
+      : ({ 1: "st", 2: "nd", 3: "rd" } as Record<number, string>)[n % 10] ?? "th";
+  return `${n}${suffix}`;
+};
+
+export const formatRecentFormValue = (
+  categoryId: SkaterTrendCategoryId,
+  value: number | null
+): { value: string; unit: string } | null => {
+  if (value === null || !Number.isFinite(value)) return null;
+  switch (categoryId) {
+    case "timeOnIce":
+      return { value: formatClock(value), unit: "TOI/GP" };
+    case "powerPlayTime":
+      return { value: formatClock(value), unit: "PP TOI/GP" };
+    case "shotsPer60":
+      return { value: value.toFixed(1), unit: "shots/60" };
+    case "ixgPer60":
+      return { value: value.toFixed(2), unit: "ixG/60" };
+  }
+};
+
+export const formatGoalieTrendValue = (
+  categoryId: GoalieTrendCategoryId,
+  value: number | null
+): { value: string; unit: string } | null => {
+  if (value === null || !Number.isFinite(value)) return null;
+  switch (categoryId) {
+    case "savePct":
+      // Hockey style: .921, not 92.1% or 0.921.
+      return { value: value.toFixed(3).replace(/^0(?=\.)/, ""), unit: "SV%" };
+    case "qualityStartsPct":
+      return { value: `${Math.round(value * 100)}%`, unit: "QS" };
+    case "goalsAgainstAvg":
+      return { value: value.toFixed(2), unit: "GAA" };
+    case "saveVolume":
+      return { value: value.toFixed(1), unit: "saves/GP" };
+  }
+};
+
 export const buildSkaterRecentSummaryCards = ({
   categories,
   playerMetadata,
@@ -155,17 +211,26 @@ export const buildSkaterRecentSummaryCards = ({
       label: meta.label,
       description: meta.description,
       windowLabel: formatSkaterTrendWindowLabel(windowSize),
-      leaders: (category?.rankings ?? []).slice(0, 3).map((row) => {
-        const player = playerMetadata[String(row.playerId)];
-        return {
-          playerId: row.playerId,
-          fullName: player?.fullName ?? `Player ${row.playerId}`,
-          teamAbbrev: player?.teamAbbrev ?? null,
-          position: player?.position ?? null,
-          percentile: row.percentile,
-          delta: row.delta,
-          latestValue: row.latestValue ?? null
-        };
-      })
+      // Percentiles tie at 100 for many leaders; break ties on the stat itself so
+      // each card reads highest first.
+      leaders: [...(category?.rankings ?? [])]
+        .sort(
+          (a, b) =>
+            b.percentile - a.percentile ||
+            (b.latestValue ?? -Infinity) - (a.latestValue ?? -Infinity)
+        )
+        .slice(0, 3)
+        .map((row) => {
+          const player = playerMetadata[String(row.playerId)];
+          return {
+            playerId: row.playerId,
+            fullName: player?.fullName ?? `Player ${row.playerId}`,
+            teamAbbrev: player?.teamAbbrev ?? null,
+            position: player?.position ?? null,
+            percentile: row.percentile,
+            delta: row.delta,
+            latestValue: row.latestValue ?? null
+          };
+        })
     };
   });

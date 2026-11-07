@@ -1,0 +1,15 @@
+{
+  "extends": "../../../../../web/tsconfig.json",
+  "include": [
+    "../../../../../web/next-bootstrap.d.ts",
+    "../../../../../web/yahoo-fantasy.d.ts",
+    "../../../../../web/lib/rosterScheduleOptimizer/planning.ts",
+    "../../../../../web/lib/rosterScheduleOptimizer/planningTypes.ts",
+    "../../../../../web/lib/rosterScheduleOptimizer/candidatePlanMetrics.ts",
+    "../../../../../web/lib/rosterScheduleOptimizer/candidatePlanMetrics.test.ts",
+    "../../../../../web/lib/rosterScheduleOptimizer/planning.test.ts",
+    "../../../../../web/lib/rosterScheduleOptimizer/benchDecisions.ts",
+    "../../../../../web/components/RosterScheduleOptimizer/CategoryGains.tsx"
+  ],
+  "compilerOptions": { "incremental": false }
+}

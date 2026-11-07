@@ -1,0 +1,33 @@
+[
+  {
+    "hash": "7270c5fa8947367d749d52bb2b0917adc03760b9785b59b7fdbb3e9d5955576d",
+    "reservedNanoUsd": 233000000,
+    "state": "settled",
+    "receipt": {
+      "body": {
+        "id": "synthetic-E13-responses",
+        "model": "gpt-6-luna",
+        "usage": {
+          "input_tokens": 100,
+          "output_tokens": 50
+        },
+        "status": "completed",
+        "output": [
+          {
+            "type": "message",
+            "role": "assistant",
+            "content": [
+              {
+                "type": "output_text",
+                "text": "{\"identity\":{\"version\":\"tweet-identity-proposal-v1\",\"requestHash\":\"57260f52e175407e5081670e2beef9c0129f5b9ba74f800640aea6ffa670c501\",\"directoryHash\":\"88dbd1e19c22a04fba95f07d049c38af533b548723bd17106f639191667ae16f\",\"occurrences\":[{\"occurrenceId\":\"subject-4\",\"status\":\"matched\",\"canonicalId\":\"nhl:900001\",\"evidence\":{\"start\":4,\"end\":16,\"text\":\"Avery Keeper\"},\"identityConfidence\":\"tentative\"}]},\"goalieStatuses\":[]}"
+              }
+            ]
+          }
+        ]
+      },
+      "requestId": "offline-cli-E13-responses",
+      "endpoint": "responses",
+      "chargeNanoUsd": 38500
+    }
+  }
+]

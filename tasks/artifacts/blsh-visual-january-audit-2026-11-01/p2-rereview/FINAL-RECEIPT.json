@@ -1,0 +1,65 @@
+{
+  "disposition": "P2_CLOSED_CURRENT_PREVIEW_NO_NEW_FINDINGS",
+  "sourceAndSnapshotPinsMatch": true,
+  "historicalSnapshotUnchanged": true,
+  "focusedTestsPassed": 14,
+  "focusedTestsSkipped": 58,
+  "independentRenderedProfiles": [
+    8473994,
+    8475253
+  ],
+  "allSavedAgeLabelsChecked": 729,
+  "recentUnavailableLabelsCorrected": 137,
+  "holdoutReads": 0,
+  "productionRequests": 0,
+  "sourceEdits": 0,
+  "deployments": 0,
+  "ownHeavyLockReleased": true,
+  "remainingScope": "Frozen diagnostic/upstream mapper wording remains; operational/source/utility/forecast gates unchanged",
+  "files": {
+    "8475253.html": {
+      "bytes": 25397,
+      "sha256": "1a6fb88069457b5fad13af1928a2dc96ab2d0173eb9dfbc21ef3aecc7fdb6b62"
+    },
+    "RENDER-RESULT.json": {
+      "bytes": 1142,
+      "sha256": "6c91b640dfc6c7f1a203f8a0130034f70d1cf6baec4e7fc583d50f4ee60bd394"
+    },
+    "8473994.html": {
+      "bytes": 16849,
+      "sha256": "3aec2acc8867d35c570fd588a9233828e330846e3c42599e211d74a749ef4025"
+    },
+    "TEST-RESULT.json": {
+      "bytes": 261,
+      "sha256": "e9ea6058626b0d55693fb287277f511b2ecdcab02e293e906d16390f91991970"
+    },
+    "REVIEW.md": {
+      "bytes": 4792,
+      "sha256": "036a28c0f8ca87b849d34c9b9a38e8295444aada4c5b0c1cde250039a01e29d2"
+    },
+    "PIN-RESULT.json": {
+      "bytes": 109,
+      "sha256": "8afe4118768fd7ebec47698878fffff01b14d2e3edd3b9d84ad60702eb5a11ab"
+    },
+    "tests/stderr.log": {
+      "bytes": 198,
+      "sha256": "9080d14597e3a6aa0f954011f285d2a5906c0364a140e69626f6d5b841add44c"
+    },
+    "tests/RETAINED-VITEST-DIRECTORIES.json": {
+      "bytes": 147,
+      "sha256": "b116149f6590b44e2960f0d7a05b988e5508dd4172e771b5374043aca79e2b91"
+    },
+    "tests/VITEST-RESULTS.json": {
+      "bytes": 22310,
+      "sha256": "9a906534fafacaaf10ad89d320a53a6b1aecc3ae39a3c8dda131d0964c95561b"
+    },
+    "tests/stdout.log": {
+      "bytes": 808,
+      "sha256": "986fc208da9841de475841648f84ed280f386064c7ad0667944cba13e85081f2"
+    },
+    "RELEASED-HEAVY-LOCK/owner.json": {
+      "bytes": 103,
+      "sha256": "3c9d237a5e1c8b4484d1c19595ed7246fa07139370a92170f945c1135e895f51"
+    }
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "extends": "../tsconfig.json",
+  "include": [
+    "replay.ts",
+    "../../../../web/next-bootstrap.d.ts",
+    "../../../../web/yahoo-fantasy.d.ts",
+    "../../../../web/lib/sources/tweetLunaEvidenceBinding.ts",
+    "../../../../web/lib/sources/tweetLunaReview.test.ts"
+  ],
+  "exclude": ["../../../../web/node_modules", "../../../../web/.next"]
+}

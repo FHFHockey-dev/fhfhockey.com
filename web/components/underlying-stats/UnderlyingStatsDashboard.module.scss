@@ -744,6 +744,24 @@ $accent: v.$color-brand-yellow;
   box-shadow: inset 3px 0 0 $accent;
 }
 
+// The inset shadow curves on the rounded power-leader card, so it gets a straight
+// 4px stripe instead, with left corners matched to the stripe.
+.powerLeader.itemActive {
+  border-radius: 4px v.$radius-panel v.$radius-panel 4px;
+
+  &:not(:focus-visible) {
+    box-shadow: none;
+  }
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 4px;
+    background: $accent;
+  }
+}
+
 @media (max-width: 1279px) {
   .commandTopline {
     grid-template-columns: 1fr;

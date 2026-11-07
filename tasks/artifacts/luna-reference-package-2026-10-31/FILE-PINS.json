@@ -1,0 +1,18 @@
+{
+  "deliverables": {
+    "web/lib/sources/tweetLunaReference.ts": "797de71c9c60c8fa3e8a745778327dc414942d0ad570208726ce486ce4837911",
+    "web/lib/sources/tweetLunaReference.md": "e741ca4306388b132fa26ec28f209921e24a1b0530a2e733b3f9e50f24d29059",
+    "web/lib/sources/tweetLunaReview.ts": "bb238ce00c6e996717cd8acf7ab637dea58706f9604dfa371c305cae34c9347e",
+    "web/lib/sources/tweetLunaReview.test.ts": "1bd2d16f3e66b5e41265679a6f5ce4c46f98733c25e682d56db5ce619bdfeea2",
+    "web/lib/sources/fixtures/tweetLunaSyntheticCases.ts": "6900b1bcea94d8cc89ffcaaa22c6fe0bf315b5486a4d2793db1aec0df2082da6"
+  },
+  "protected": {
+    "web/lib/sources/tweetLunaTransport.ts": "6f67f0e819766eb8b7e712114f063681833ea87266b08443701231461e4d12d1",
+    "web/lib/sources/tweetLunaLocalStore.ts": "52977c7949d2f60ee4274da0c7d1e0583bc8c5c1324bb6ffb187a32037a2d543",
+    "web/scripts/review-ifttt-luna.ts": "b3407da148f11fe4dd3185e8521f3c1c9b4688232acbff675c9d104902cec8e8",
+    "web/lib/sources/fixtures/tweetLunaAdjudicatedLibrary.json": "e787036b54c89f8fa06e4b28032c8895fbbed81feef1fa04e357435f3229726a",
+    "web/lib/sources/decisionsReference/adapter.mjs": "055bc80ccf9874de8a976da6106bc34af15e424d6b905d39fccf57ecfd2b92a1",
+    "web/lib/sources/tweetIdentityProposal.ts": "a73df0483313bc75e94b36bc3fcf9087e1adb7d96afd0895db7a9c8bad7c9a27",
+    "web/lib/sources/tweetPlayerEvents.ts": "14c421d37506f33df08cac5914e30c38a578b2588ae46f3c6e461b70efadc88c"
+  }
+}

@@ -220,7 +220,7 @@ export default function PlayerStatsPage({
         description={`Detailed hockey statistics for ${player.fullName}`}
       />
 
-      <div className={shell.workspace}>
+      <main className={shell.workspace}>
         <PlayerIdentityBar
           player={player}
           teamLabel={teamLabel}
@@ -414,7 +414,7 @@ export default function PlayerStatsPage({
             </div>
           )}
         </div>
-      </div>
+      </main>
     </>
   );
 }

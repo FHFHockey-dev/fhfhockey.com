@@ -1,0 +1,21 @@
+{
+  "sourceSha256": "60e0ee8f6004d07182c6999fbe34534a2cceb9530cafbd1a0bb868b0fd5ff51c",
+  "project": "fyhftlxokyjtpndbkfse",
+  "database": "postgres",
+  "executionRole": "postgres",
+  "applyToolSuccess": true,
+  "noAutomaticDataApiGrants": true,
+  "noGlobalPublicFunctionExecute": true,
+  "otherCreatorDefaultsUnchanged": true,
+  "existingPublicObjectAclFingerprintUnchanged": true,
+  "nstControlsStillAbsent": true,
+  "history": [
+    {
+      "name": "data_api_explicit_default_privileges",
+      "version": "20261101183548"
+    }
+  ],
+  "beforeAt": "2026-11-01 18:35:14.45908+00",
+  "afterAt": "2026-11-01 18:36:05.678327+00",
+  "status": "APPLIED_VERIFIED_STOPPED_BEFORE_NST"
+}

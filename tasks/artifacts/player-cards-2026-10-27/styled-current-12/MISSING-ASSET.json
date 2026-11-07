@@ -1,0 +1,13 @@
+{
+  "playerId": 8476453,
+  "team": "TBL",
+  "currentImageState": "unavailable",
+  "path": "/Users/tim/Documents/FHFH-local-image-tests/2026-10-25-birefnet-roster805/outputs/8476453/alpha.png",
+  "exists": true,
+  "productAcceptance": null,
+  "visualReview": "NOT_VISUALLY_REVIEWED",
+  "notUsedOrPromoted": true,
+  "nextBoundary": "Independent exact-source visual acceptance plus hash/identity/team review before any source registry/public asset addition; no new image fetch needed",
+  "bytes": 1302004,
+  "alphaSha256": "2010d97f1e1c631f7ccf154d991517f3b6923df7739d756e39ed06140aa1f278"
+}

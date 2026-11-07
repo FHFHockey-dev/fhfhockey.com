@@ -20,8 +20,8 @@
 
     .spanButton {
       @include v.button-style;
-      background: v.$primary-color;
-      color: v.$text-button;
+      background: transparent;
+      color: v.$text-primary;
       border: 1px solid v.$primary-color;
       padding: v.$space-xs v.$space-md;
       font-weight: 500;
@@ -34,14 +34,12 @@
       cursor: pointer;
 
       &:hover:not(.active) {
-        background: color.adjust(v.$primary-color, $lightness: -10%);
-        border-color: color.adjust(v.$primary-color, $lightness: -10%);
+        background: rgba(v.$primary-color, 0.16);
       }
 
       &.active {
-        background: color.adjust(v.$primary-color, $lightness: -15%);
-        border-color: v.$text-primary;
-        border-width: 1px;
+        background: v.$primary-color;
+        color: v.$text-on-primary;
         font-weight: 600;
       }
     }
@@ -129,14 +127,20 @@
   }
 
   .chartsTable {
+    display: block;
     width: 100%;
     border-collapse: collapse;
 
-    // Team cells wrap to fit the column instead of overflowing it.
-    tbody tr {
+    // One grid for every team cell: the table's fixed rows dissolve
+    // (display: contents) so cells flow evenly with no half-empty rows.
+    tbody {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
       width: 100%;
+    }
+
+    tbody tr {
+      display: contents;
 
       td {
         min-width: 0;
@@ -144,7 +148,7 @@
         padding: 0;
 
         &:empty {
-          background: v.$background-dark;
+          display: none;
         }
       }
     }
@@ -192,7 +196,7 @@
     flex-direction: row;
     justify-content: space-between;
     align-items: center;
-    gap: v.$space-xs;
+    gap: 2px;
     padding: 0 v.$space-sm;
   }
 
@@ -206,15 +210,19 @@
   }
 
   .teamName {
-    font-size: v.$font-size-sm;
+    font-size: v.$font-size-xs;
     font-weight: 600;
     color: v.$text-primary;
     text-transform: uppercase;
-    letter-spacing: 0.1em;
+    letter-spacing: 0;
     font-family: v.$font-family-accent;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
     margin: 0;
     flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     text-align: center;
   }
 
@@ -223,8 +231,10 @@
     color: v.$text-primary;
     font-weight: 600;
     display: flex;
+    flex: none;
     align-items: center;
-    gap: 2px;
+    gap: 4px;
+    white-space: nowrap;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
 
     .statsLabel {
@@ -239,9 +249,8 @@
   .chartContainer {
     padding: v.$space-sm;
     width: 100%;
-    max-width: 160px;
     box-sizing: border-box;
-    height: 120px;
+    height: 190px;
     margin: 0 auto v.$space-sm auto;
     display: flex;
     align-items: center;
@@ -256,8 +265,13 @@
       width: 100%;
     }
 
+    // Mobile shows one team at a time, so its cell takes the whole row.
     .chartsTable {
       width: 100%;
+
+      tbody {
+        grid-template-columns: 1fr;
+      }
     }
 
     .teamChartCard {
@@ -327,8 +341,8 @@
     }
 
     .chartContainer {
-      width: 140px;
-      height: 100px;
+      width: 100%;
+      height: 170px;
       padding: v.$space-xs;
     }
 

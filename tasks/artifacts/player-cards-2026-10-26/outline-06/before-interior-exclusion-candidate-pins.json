@@ -1,0 +1,110 @@
+{
+  "priorTeamColors": {
+    "bytes": 3132147,
+    "sha256": "e2b037f6b82d444f099e9cbfefbc555a673e1131496bea084158771830625c5f"
+  },
+  "priorPortraits": {
+    "bytes": 2440289,
+    "sha256": "5f5dc01034d10b0314317ed3dca3fdf8c5bcb0274761eec6ec8fa9201fe2dd3f"
+  },
+  "priorHero": {
+    "bytes": 3123706,
+    "sha256": "ecd560310b358ebd0521574967a480cab1521946c9d42d5f33341fcc57a5187a"
+  },
+  "priorFunctional": {
+    "bytes": 318626,
+    "sha256": "6c29f6eb3dc6ffc9a6a8a546423f78ac3e6e5e1e7265129475724422d3aad9b5"
+  },
+  "priorEditorial": {
+    "bytes": 314484,
+    "sha256": "f65ce654f1e1e7ab226aa01e95617d925608d8d590fbd65d5bbaa85b324e05a5"
+  },
+  "observedEvidence": {
+    "bytes": 9655,
+    "sha256": "b2ece36cf4c62e41562495fcabe4e6f36d02d6d159523b0364b8fc455607fbd6"
+  },
+  "priorComposition02": {
+    "bytes": 1597033,
+    "sha256": "5a65a4cf33e2ab86db9b8365179a1e44c559a8fa74dad065e888c9efa31d569c"
+  },
+  "preview.html": {
+    "bytes": 3434963,
+    "sha256": "60d0a4de745b16d6a94ef9d8c103a46fab1b35353068a58dc7158f7ff55987ab"
+  },
+  "comparison.html": {
+    "bytes": 3055179,
+    "sha256": "cfb0dd83abc3a2b786d92d2e59e41392147bd2201ac564ffece81e8105a1987f"
+  },
+  "serve-preview.mjs": {
+    "bytes": 3822,
+    "sha256": "fe907b6204d3dc9460437c08e6f0500edce3b22b9953cb0c1c12ecbe2d24f5ea"
+  },
+  "comparison.png": {
+    "bytes": 876798,
+    "sha256": "f4326d1048fb78ab4bdc41339ec8b6229758c4f4cb736d51b45fdde4ff861bc0"
+  },
+  "original-placement-card.png": {
+    "bytes": 614664,
+    "sha256": "10bb4a91caaf0f8fa2f36cd34505c3523f8cf062939a23ed96133f33779f8d91"
+  },
+  "posterized-team-colors-card.png": {
+    "bytes": 606267,
+    "sha256": "8d7e952ee20d5b755c745109a9cbbfe5a4671d33be9e570aa62d53d8c76523d5"
+  },
+  "pixelated-team-colors-card.png": {
+    "bytes": 544356,
+    "sha256": "487b987b009306c5c5508c00d77ae291d74b35ad1bb15ce21013732f1ca00d2c"
+  },
+  "posterized-team-colors-stage1.png": {
+    "bytes": 133910,
+    "sha256": "9208257eedd8928207084f2f90dc27b59c150ef657b82ad991b444f4f1aa0171"
+  },
+  "pixelated-team-colors-stage1.png": {
+    "bytes": 108702,
+    "sha256": "fa02883af1253ee9c6d06afd4537a93944a08cb65b05fd81999fa7de274972e8"
+  },
+  "posterized-team-colors-phone-card.png": {
+    "bytes": 67480,
+    "sha256": "681a611ad2330c87f80c2c731f8f2ae5bd7494823a72272cce769844a0e7fcf3"
+  },
+  "pixelated-team-colors-phone-card.png": {
+    "bytes": 61134,
+    "sha256": "5139bec4255b4210fb6c37bb0dc88ee15567da0590dbdeb4c3389a1f78e3c0fb"
+  },
+  "tor-posterized-card.png": {
+    "bytes": 616442,
+    "sha256": "57c8100b8ee2d9b92479193ac473a246c4fb07ca791a2f23cffdbc15d9c33fcc"
+  },
+  "tor-pixelated-card.png": {
+    "bytes": 562569,
+    "sha256": "2bf882dfa6c772f1c74eadd2b304d3f5a8f493e85980470ef81a05aff9d5d14e"
+  },
+  "social-square.png": {
+    "bytes": 626782,
+    "sha256": "392b8f3d735203235e1d033f6b67ef536a0b2928706be6c46834bd04fe40f18b"
+  },
+  "partial-card.png": {
+    "bytes": 623728,
+    "sha256": "8ebadba95416d201c4684fbbd2795f707a8542b837c3abf986ef453e76b727bf"
+  },
+  "priorComposition03": {
+    "bytes": 2186609,
+    "sha256": "6ab6b59a6ad34e193e73348b54cf96fcd73b2116f1d07110f32b2433a43d4ff1"
+  },
+  "priorComposition04": {
+    "bytes": 2970642,
+    "sha256": "7312a49a98b2edc111c1b298db9e68e0d4bad166df906a5227c1e8240e299dd5"
+  },
+  "priorStudio04": {
+    "bytes": 3426994,
+    "sha256": "64e7157b24935152a6c761a8a858fd6eb0d9bc408f532dfa1cfef47f64a8a002"
+  },
+  "priorComposition05": {
+    "bytes": 3011124,
+    "sha256": "7feabe950f22f4aae229b0b28362a824793902b87c9084bea9ce0c8c12a06a93"
+  },
+  "priorStudio05": {
+    "bytes": 3427192,
+    "sha256": "c4b67da6bd5d7a786f0b46e4bb522e406fee543ba614b5d4a5db424c0746e57e"
+  }
+}

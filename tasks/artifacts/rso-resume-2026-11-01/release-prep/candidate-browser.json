@@ -1,0 +1,27 @@
+{
+  "startedAt": "2026-11-01T16:39:16.872216+00:00",
+  "finishedAt": "2026-11-01T16:39:27.555809+00:00",
+  "exitCode": 1,
+  "timedOut": false,
+  "command": [
+    "node",
+    "node_modules/@playwright/test/cli.js",
+    "test",
+    "--config",
+    "/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-rso-release-20261101-r33fu3cl/web/.rso-verification-playwright.config.ts",
+    "e2e/rso-continuity.spec.ts",
+    "e2e/roster-schedule-optimizer.spec.ts",
+    "--grep",
+    "1\\. a nonzero selected-move refresh|manual workspace retains reviewed intent",
+    "--workers=1",
+    "--retries=0",
+    "--reporter=line",
+    "--output",
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/rso-resume-2026-11-01/release-prep/browser-output"
+  ],
+  "cwd": "/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-rso-release-20261101-r33fu3cl/web",
+  "candidateTree": "3dfa4f910b36dad47ea265cef9f1041b794ee915",
+  "environment": "curated inert values; no environment files",
+  "network": "Node loopback-only guard plus test browser interception",
+  "log": "candidate-browser.log"
+}

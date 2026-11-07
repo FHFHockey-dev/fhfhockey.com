@@ -1,0 +1,31 @@
+{
+  "state": "completed_disabled",
+  "currentReviewedPinsMatched": 263,
+  "priorArtifactsPreserved": 249,
+  "applicationChanges": false,
+  "supervisorScenariosPassed": 6,
+  "scopedTypeScriptExitCode": 0,
+  "pythonSyntax": "passed",
+  "finalReconciliationExitCode": 0,
+  "trustedCheckpointCount": 10,
+  "originalSevenReceiptsPreserved": true,
+  "historicalLedgerUnchanged": true,
+  "newCalls": 10,
+  "cumulativeCalls": 17,
+  "originalPasses": 7,
+  "originalFailures": 3,
+  "withheldDecisions": [
+    "E10",
+    "E11"
+  ],
+  "candidatesApplied": 0,
+  "retries": 0,
+  "newUncertainOutcomes": 0,
+  "productionActions": 0,
+  "jsonFilesParsedBeforeManifest": 89,
+  "secretPatternScan": "passed; no contents emitted",
+  "whitespace": "passed",
+  "frozenPlanSha256": "af1499f51ffd1baba22aee3fbefd20a0bc1919b12bbc972289bcf0f7d5d431b5",
+  "preparationManifestSha256": "a198008bd70525a4f70f30b7d283db46e5834623dad7c1b180494c79c1a544e1",
+  "finalLedgerSha256": "59723f8818c00c1ce84eb88fc0a5d57cf4458065b9d9996622c962d9f7a9b24a"
+}

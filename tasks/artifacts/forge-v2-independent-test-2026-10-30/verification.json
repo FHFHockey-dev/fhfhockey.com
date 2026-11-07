@@ -1,0 +1,276 @@
+{
+  "disposition": "CHANGES_REQUIRED_P2_CONCURRENT_PREPARATION",
+  "commits": {
+    "7113329d2": "7113329d2c24b8629f54484df37441f95a63d853",
+    "156030056": "156030056f62836f4b0a42f4c9064e8ddb057002",
+    "514614ed7": "514614ed79a75498c81ad1df0c812150d51a46b0",
+    "HEAD": "514614ed79a75498c81ad1df0c812150d51a46b0"
+  },
+  "branch": "octoberBranch",
+  "sourcePathsChangedDuringTest": [],
+  "existingV2UniqueTestsPassed": 183,
+  "independentPriorDefectRegressionsPassed": 5,
+  "newFailingReproductions": 2,
+  "newUniqueProductFindings": 1,
+  "browserCasesPassed": 4,
+  "metadataTestsPassed": 11,
+  "chronology": "passed: 32 synthetic calibration rows; model/calibrator early-use refused",
+  "testsAreSynthetic": true,
+  "scientificallyQualified": false,
+  "checks": [
+    {
+      "name": "suite",
+      "check": "suite",
+      "command": [
+        "node",
+        "node_modules/vitest/vitest.mjs",
+        "run",
+        "--reporter=verbose"
+      ],
+      "cwd": "/tmp/forge-v2-independent-hkh8ulbm/web",
+      "exit": 1,
+      "durationSeconds": 14.329112768173218,
+      "environment": "allowlisted; no inherited credentials; no env files copied",
+      "log": "suite.log",
+      "retainedLogSha256": "d8f826f312276d81b8188c5c7c5334a7f0edd300ab08d99158c901d8a970c7a0"
+    },
+    {
+      "name": "native-first",
+      "check": "native",
+      "command": [
+        "node",
+        "node_modules/vitest/vitest.mjs",
+        "run",
+        "lib/forge-v2/history.test.ts",
+        "--reporter=verbose"
+      ],
+      "cwd": "/tmp/forge-v2-independent-hkh8ulbm/web",
+      "exit": 1,
+      "durationSeconds": 1.1675939559936523,
+      "environment": "allowlisted; no inherited credentials; no env files copied",
+      "log": "native.log",
+      "retainedLogSha256": "02032038dab03ed2961e84706fd8345d09212319425265a85807909b9fed8a09"
+    },
+    {
+      "name": "native-locale-failure",
+      "check": "native",
+      "command": [
+        "node",
+        "node_modules/vitest/vitest.mjs",
+        "run",
+        "lib/forge-v2/history.test.ts",
+        "--reporter=verbose"
+      ],
+      "cwd": "/tmp/forge-v2-independent-hkh8ulbm/web",
+      "exit": 1,
+      "durationSeconds": 1.1823899745941162,
+      "environment": "allowlisted; no inherited credentials; no env files copied",
+      "log": "native.log",
+      "retainedLogSha256": "01efc19854f815483b6ef945447976251ae8f3da91f3e4f7d48447960da648b9"
+    },
+    {
+      "name": "native",
+      "check": "native",
+      "command": [
+        "node",
+        "node_modules/vitest/vitest.mjs",
+        "run",
+        "lib/forge-v2/history.test.ts",
+        "--reporter=verbose"
+      ],
+      "cwd": "/tmp/forge-v2-independent-hkh8ulbm/web",
+      "exit": 0,
+      "durationSeconds": 2.2228832244873047,
+      "environment": "allowlisted; no inherited credentials; no env files copied",
+      "log": "native.log",
+      "retainedLogSha256": "a5efe7ea0f29bd2a228821c337e57c49a4a8420593cb5bbec196bcb0efa41b85"
+    },
+    {
+      "name": "outside",
+      "check": "outside",
+      "command": [
+        "node",
+        "node_modules/vitest/vitest.mjs",
+        "run",
+        "outside-",
+        "--reporter=verbose"
+      ],
+      "cwd": "/tmp/forge-v2-independent-hkh8ulbm/web",
+      "exit": 1,
+      "durationSeconds": 1.5194509029388428,
+      "environment": "allowlisted; no inherited credentials; no env files copied",
+      "log": "outside.log",
+      "retainedLogSha256": "cb3dd08d2944754ea4171ae1438d64dd033577e3831c5cab8fefc7bd49157f08"
+    },
+    {
+      "name": "adverse",
+      "check": "adverse",
+      "command": [
+        "node",
+        "node_modules/vitest/vitest.mjs",
+        "run",
+        "independent-",
+        "--reporter=verbose"
+      ],
+      "cwd": "/tmp/forge-v2-independent-hkh8ulbm/web",
+      "exit": 0,
+      "durationSeconds": 1.7708358764648438,
+      "environment": "allowlisted; no inherited credentials; no env files copied",
+      "log": "adverse.log",
+      "retainedLogSha256": "2883f04f58926a6f3fa13129470eba0f7ef6354b6191904c0af48de890ba1873"
+    },
+    {
+      "name": "browser-sandbox",
+      "check": "browser",
+      "command": [
+        "node",
+        "node_modules/@playwright/test/cli.js",
+        "test",
+        "e2e/forge-v2.spec.ts",
+        "--project=chromium",
+        "--workers=1",
+        "--output=/Users/tim/Code/fhfhockey.com/tasks/artifacts/forge-v2-independent-test-2026-10-30/browser-results"
+      ],
+      "cwd": "/tmp/forge-v2-independent-hkh8ulbm/web",
+      "exit": 1,
+      "durationSeconds": 2.98691987991333,
+      "environment": "allowlisted; no inherited credentials; no env files copied",
+      "log": "browser.log",
+      "retainedLogSha256": "b6797c9b288bc361d5f5056706cc7c2b51e1ba86154621300504b3293e05d9a0"
+    },
+    {
+      "name": "browser",
+      "check": "browser",
+      "command": [
+        "node",
+        "node_modules/@playwright/test/cli.js",
+        "test",
+        "e2e/forge-v2.spec.ts",
+        "--project=chromium",
+        "--workers=1",
+        "--output=/Users/tim/Code/fhfhockey.com/tasks/artifacts/forge-v2-independent-test-2026-10-30/browser-results"
+      ],
+      "cwd": "/tmp/forge-v2-independent-hkh8ulbm/web",
+      "exit": 0,
+      "durationSeconds": 5.654364109039307,
+      "environment": "allowlisted; no inherited credentials; no env files copied",
+      "log": "browser.log",
+      "retainedLogSha256": "5db7a0754c02af7ffc6522373158ee6db85450b615dddde8c04735a2d333f5cd"
+    },
+    {
+      "name": "concurrency",
+      "check": "concurrency",
+      "command": [
+        "node",
+        "node_modules/vitest/vitest.mjs",
+        "run",
+        "independent-concurrency.test.ts",
+        "--reporter=verbose"
+      ],
+      "cwd": "/tmp/forge-v2-independent-hkh8ulbm/web",
+      "exit": 1,
+      "durationSeconds": 2.720283031463623,
+      "environment": "allowlisted; no inherited credentials; no env files copied",
+      "log": "concurrency.log",
+      "retainedLogSha256": "de524a21aba18301ed9fe03f5cc265b62f76e8d02d08238e21dd1fcd9ce366fe"
+    },
+    {
+      "name": "native-race",
+      "check": "native-race",
+      "command": [
+        "node",
+        "node_modules/vitest/vitest.mjs",
+        "run",
+        "independent-native-race.test.ts",
+        "-t",
+        "independent:",
+        "--reporter=verbose"
+      ],
+      "cwd": "/tmp/forge-v2-independent-hkh8ulbm/web",
+      "exit": 1,
+      "durationSeconds": 1.2276198863983154,
+      "environment": "allowlisted; no inherited credentials; no env files copied",
+      "log": "native-race.log",
+      "retainedLogSha256": "5dc96c6d22eae6a2b065f72f16048cc3533840c7d18d8ee5b3f4f16dfa710d03"
+    },
+    {
+      "name": "intake",
+      "check": "intake",
+      "command": [
+        "python3",
+        "-m",
+        "unittest",
+        "-v",
+        "test_intake_check.py"
+      ],
+      "cwd": "/tmp/forge-v2-independent-hkh8ulbm/tasks/artifacts/forge-v2-remediation-2026-10-30",
+      "exit": 0,
+      "durationSeconds": 0.2234959602355957,
+      "environment": "allowlisted; no inherited credentials; no env files copied",
+      "log": "intake.log",
+      "retainedLogSha256": "488569387f2f9574a7e749271aef99f7ebc131f7ecc2891d53dd080b3d647ca3"
+    },
+    {
+      "name": "chronology-build",
+      "check": "chronology-build",
+      "command": [
+        "/tmp/forge-v2-independent-hkh8ulbm/web/node_modules/.bin/esbuild",
+        "../tasks/artifacts/forge-v2-remediation-2026-10-30/chronology-check.ts",
+        "--bundle",
+        "--platform=node",
+        "--format=cjs",
+        "--outfile=/tmp/forge-v2-independent-hkh8ulbm/chronology.cjs"
+      ],
+      "cwd": "/tmp/forge-v2-independent-hkh8ulbm/web",
+      "exit": 0,
+      "durationSeconds": 0.02543497085571289,
+      "environment": "allowlisted; no inherited credentials; no env files copied",
+      "log": "chronology-build.log",
+      "retainedLogSha256": "41509085f91ca31e76d930c56c72ed501857730965123e15709e7078d5f67891"
+    },
+    {
+      "name": "chronology",
+      "check": "chronology",
+      "command": [
+        "node",
+        "/tmp/forge-v2-independent-hkh8ulbm/chronology.cjs"
+      ],
+      "cwd": "/tmp/forge-v2-independent-hkh8ulbm/web",
+      "exit": 0,
+      "durationSeconds": 0.05778908729553223,
+      "environment": "allowlisted; no inherited credentials; no env files copied",
+      "log": "chronology.log",
+      "retainedLogSha256": "3d564e571883fb8257da03b74e6910076eac4d6c62146607ea20f41615bc5586"
+    }
+  ],
+  "limitations": [
+    "Existing suite initial run: 173 passed, ten native tests skipped because native beforeAll failed; later all thirteen native/artifact tests passed; unique total is 183, not 186",
+    "Unchanged historical outside reproductions: three passed; two failed due obsolete store/bundle contracts; interface-adapted requirement tests all five passed",
+    "Native PostgreSQL issuance\u2192prepared repository and in-memory issued queue\u2192HTTP API\u2192Chromium are separate checks; no single native-PostgreSQL-to-Chromium run",
+    "No real-data fitting, untouched evaluation, source rights/official-appearance validation, prospective production issuance, production capacity, 200% zoom or RTL",
+    "No full app build, repo-wide suites, lint/typecheck, or repeated v1/RSO consumer suite; product files unchanged",
+    "Existing 514614ed7 capacity script not rerun; native synthetic pagination and archive exercised, no representative capacity claim"
+  ],
+  "safety": {
+    "productEdits": 0,
+    "commits": 0,
+    "pushes": 0,
+    "remoteDeployments": 0,
+    "hostedChanges": 0,
+    "liveCredentialUse": false,
+    "productionRequests": 0,
+    "protectedDataAccess": false,
+    "cloudTransfers": 0,
+    "publicGateEnabled": false
+  },
+  "blockers": {
+    "pendingApproval": [],
+    "deniedActions": [],
+    "uncertainOutcomes": [],
+    "resolvedExecutionRestrictions": [
+      "PostgreSQL shared memory sandbox: authorized escalation; LC_ALL=C fixed stripped-environment startup",
+      "Loopback server sandbox: authorized escalation, four browser cases then passed"
+    ],
+    "remaining": "One reproduced P2 code defect; science/release gates remain explicitly untested and unapproved"
+  }
+}

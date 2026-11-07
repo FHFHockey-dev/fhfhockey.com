@@ -1,0 +1,68 @@
+{
+  "fixtureOnly": true,
+  "checks": [
+    {
+      "name": "touch import copies manual RSO roster",
+      "result": true
+    },
+    {
+      "name": "retained RSO points have historical disclosure",
+      "result": true
+    },
+    {
+      "name": "RSO workspace unchanged",
+      "result": true
+    },
+    {
+      "name": "reimport disabled when roster exists",
+      "result": true
+    },
+    {
+      "name": "touch can add a player past fixed navigation",
+      "result": true
+    },
+    {
+      "name": "coverage remains reachable with 20 players",
+      "result": true
+    },
+    {
+      "name": "no uncaught browser errors",
+      "result": true
+    }
+  ],
+  "externalRequestsBlocked": [
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://img.buymeacoffee.com/button-api/",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://cdn.vercel-insights.com/v1/script.debug.js",
+    "GET https://va.vercel-scripts.com/v1/speed-insights/script.debug.js",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://img.buymeacoffee.com/button-api/",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://cdn.vercel-insights.com/v1/script.debug.js",
+    "GET https://va.vercel-scripts.com/v1/speed-insights/script.debug.js"
+  ],
+  "localApiRequestsBlocked": [],
+  "pageErrors": [],
+  "longRoster": {
+    "coverageDocumentTop": 5474,
+    "viewportHeight": 844,
+    "documentHeight": 6922,
+    "scrollToCoverage": 5064
+  },
+  "result": "passed"
+}

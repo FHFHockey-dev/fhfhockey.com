@@ -1,0 +1,11 @@
+import { writeFileSync } from "node:fs";
+import { readCurrentBlshSnapshot, CURRENT_SNAPSHOT_SHA256 } from "../../../web/lib/buyLowSellHigh/researchSnapshot.server";
+import { retainedBlshEvidence } from "../../../web/lib/player-cards/retainedBlsh";
+const {profiles,...metadata}=readCurrentBlshSnapshot();
+const profile=profiles.find(p=>p.playerId===8476453)!;
+const input={profile,metadata,snapshotSHA256:CURRENT_SNAPSHOT_SHA256,reviewReference:"tasks/artifacts/blsh-snapshot-coordination-2026-10-29/INSTALLATION-AND-NEXT-SLICE.md; portable-install-01/INSTALLATION-RECEIPT.json"};
+const result=retainedBlshEvidence({id:8476453,team:"TBL"},20262027,input);
+if(result.status!=="exploratory")throw new Error(result.lines.join(" "));
+writeFileSync("../tasks/artifacts/player-cards-evolution-2026-10-31/retained-blsh-input.json",JSON.stringify(input,null,2)+"\n");
+writeFileSync("../tasks/artifacts/player-cards-evolution-2026-10-31/BLSH-QUALIFICATION.json",JSON.stringify({state:"verified_retained_research_only",snapshotSHA256:CURRENT_SNAPSHOT_SHA256,profiles:profiles.length,season:metadata.seasonId,asOfUTC:metadata.asOfUTC,through:metadata.eventThroughDate,sourceRowsAreNotNhlGameIds:profile.evidence.window.sourceIds,playerId:profile.playerId,team:profile.team,window:profile.evidence.window,tracks:profile.tracks.map(t=>({label:t.label,observed:t.observed,supportConditioned:t.supportConditioned,gap:t.gap})),currentBinding:false,reason:"Separate source window/cutoff; source-row to NHL-game mapping absent. Retrospective research, not current advice."},null,2)+"\n");
+console.log("Owner reader hash/size/parser and retained card mapping passed; no provider calls.");

@@ -787,10 +787,10 @@
       "path": "supabase/migrations/20261002134400_game_line_snapshots.sql",
       "sha256": "041a78fd056c53f1624706f18a9f239f05b460456ba0da2fd3f7c4323fd0866a",
       "sourceStatus": "source-authorized",
-      "deploymentState": "unknown",
+      "deploymentState": "applied",
       "migrationClass": "feature",
-      "rolloutGate": "Retained source under the 2026-10-12 repository reconciliation authorization. Separate explicit migration approval is required; no hosted migration is authorized or run.",
-      "stateEvidence": "No exact hosted applied-state receipt was inspected during repository reconciliation. Source presence does not establish deployment state."
+      "rolloutGate": "Lines snapshot evidence store (entry lineup, in-game updates, PP decisions). Applied with TJ's pop-up approval in the Lines IGA Chef session (P1). Reads and writes stay off until LINES_OBSERVATIONS_ENABLED / LINES_ENTRY_SERVING_ENABLED / LINES_PP_CARRY_FORWARD_ENABLED are set.",
+      "stateEvidence": "Production schema_migrations version 20261002134400 (game_line_snapshots), applied verbatim 2026-11-07 after a read-only pre-check showed none of its objects present. Readback: the 6 line_* tables exist with RLS on and the immutable_evidence trigger; anon has no select; service_role has insert and no update; append_line_decisions executes for service_role only."
     },
     {
       "order": 79,
@@ -897,10 +897,10 @@
       "path": "supabase/migrations/20261020224500_data_api_explicit_default_privileges.sql",
       "sha256": "60e0ee8f6004d07182c6999fbe34534a2cceb9530cafbd1a0bb868b0fd5ff51c",
       "sourceStatus": "source-authorized",
-      "deploymentState": "pending",
+      "deploymentState": "applied",
       "migrationClass": "security",
-      "rolloutGate": "Drafted 2026-10-20 for ticket D4 (Supabase stops auto-granting new public objects on 2026-10-30). Revokes the baseline's replayable ALTER DEFAULT PRIVILEGES for postgres in public (ALL on tables, sequences and functions to anon, authenticated and service_role) and postgres's global PUBLIC EXECUTE default on new functions. Existing objects are unchanged; every later migration must grant explicitly (the IFTTT SQL6-SQL8 drafts already do). Apply before or with 20261020224600; hosted apply needs TJ's separate explicit approval and no migration command was run.",
-      "stateEvidence": "Local source only; no hosted ledger or apply receipt. Disposable PostgreSQL 17.11 Unix-socket replay of the full ledger chain with Supabase role/extension stand-ins: tasks/artifacts/d4-grants-2026-10-20/ (harness, receipts). Takes order 89 because authority orders must be contiguous, so the IFTTT SQL6-SQL8 drafts noted on orders 87-88 move to 91-93."
+      "rolloutGate": "Drafted 2026-10-20 for ticket D4 (Supabase stops auto-granting new public objects on 2026-10-30). Revokes the baseline's replayable ALTER DEFAULT PRIVILEGES for postgres in public (ALL on tables, sequences and functions to anon, authenticated and service_role) and postgres's global PUBLIC EXECUTE default on new functions. Existing objects are unchanged; every later migration must grant explicitly (the IFTTT SQL6-SQL8 drafts already do). Apply before or with 20261020224600; applied 2026-11-01 with TJ's explicit approval, as step 1 of the NST goalie writer rollout packet.",
+      "stateEvidence": "Production schema_migrations version 20261101183548 name data_api_explicit_default_privileges (the apply tool generated the version; the repository file keeps 20261020224500). Applied 2026-11-01 18:35 UTC by Codex; readback 18:36 UTC found postgres public defaults no longer auto-grant and existing public ACLs unchanged. Readback 2026-11-04 UTC: the ledger statement matches this file byte for byte (md5 fe541ddbab9c39041dd8eee7ebafab29, 1,934 bytes). Receipt: tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/default-privilege-apply-20261101/RESULT.md. Local replay: tasks/artifacts/d4-grants-2026-10-20/."
     },
     {
       "order": 90,
@@ -1024,6 +1024,16 @@
     },
     {
       "order": 102,
+      "path": "supabase/migrations/20261029184950_preserve_wgo_skater_on_ice_goals.sql",
+      "sha256": "082b049ede20dd315963c279d71d03b8c1e1e7d6dcc2c539a08192c99d16e75a",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "pending",
+      "migrationClass": "feature",
+      "rolloutGate": "Codex cron-report triage, wgo_null_preservation (commit bbc707815, not released; its message says the work needs its migrations first): a BEFORE UPDATE trigger, public.preserve_wgo_skater_on_ice_goals, keeps the six known ES/PP/SH on-ice goals for and against on the same game row when an upstream refill sends NULL; non-NULL corrections win. Hosted apply needs TJ's separate explicit approval; no migration command was run.",
+      "stateEvidence": "Not in production schema_migrations on 2026-11-04 UTC (SELECT readback); public.preserve_wgo_skater_on_ice_goals() absent. Committed sha256 matches the Codex frozen hash in CODEX-LEASES.json (wgo_null_preservation)."
+    },
+    {
+      "order": 103,
       "path": "supabase/migrations/20261029235656_forge_v2_immutable_history.sql",
       "sha256": "63de96ba1b44316ebd25028fc7149c0e04d9046af5ed1d90919a13a4aee9bfca",
       "sourceStatus": "source-authorized",
@@ -1033,7 +1043,17 @@
       "stateEvidence": "Not in production schema_migrations on 2026-11-01; no forge_v2 tables."
     },
     {
-      "order": 103,
+      "order": 104,
+      "path": "supabase/migrations/20261101161622_nst_goalie_catchup_v1.sql",
+      "sha256": "d99730b43d2658861259e81f01c687217e161a38c293843de0192dc1fd69e291",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "pending",
+      "migrationClass": "feature",
+      "rolloutGate": "Codex NST goalie catch-up checkpoint (CODEX-NST-GOALIE-CHECKPOINT-SQL-20261101, commit bbc707815, not released): checkpoint tables and RPCs for the NST goalie catch-up lane, with no schedule or activation. It raises an exception unless shared NST admission v1 (public.nst_admit_attempt_v1) is installed first; that function is absent in production and has no file in supabase/migrations. Hosted apply needs TJ's separate explicit approval; no migration command was run.",
+      "stateEvidence": "Not in production schema_migrations on 2026-11-04 UTC (SELECT readback); public.nst_goalie_cohorts absent. Committed sha256 matches current_sha256 in CODEX-LEASES.json lease CODEX-NST-GOALIE-CHECKPOINT-SQL-20261101. Rollout packet: tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/rollout-approval-20261101/APPROVAL-PACKET.md."
+    },
+    {
+      "order": 105,
       "path": "supabase/migrations/20261101171113_social_share_x_posts.sql",
       "sha256": "1502938fec170281009fc3ac5e6dc1e42fabfef5245a7e0aba5d2c3e98d822d4",
       "sourceStatus": "source-authorized",
@@ -1043,7 +1063,7 @@
       "stateEvidence": "Production schema_migrations version 20261101171113; readback 2026-11-01."
     },
     {
-      "order": 104,
+      "order": 106,
       "path": "supabase/migrations/20261101174349_social_share_x_posts_undated.sql",
       "sha256": "b66393e96ff2f3c74a34eea32c5d07880d6fab83f788d936f250584b516ee7ad",
       "sourceStatus": "source-authorized",
@@ -1053,7 +1073,27 @@
       "stateEvidence": "Production schema_migrations version 20261101174349; readback 2026-11-01."
     },
     {
-      "order": 105,
+      "order": 107,
+      "path": "supabase/migrations/20261104010705_nst_gamelog_season_indexes.sql",
+      "sha256": "7e2667944a8a646b02d0e89cee119ef51fa065ef1586600be12da1817cc62ef8",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "applied",
+      "migrationClass": "feature",
+      "rolloutGate": "WiGO P-1 (TJ: \"Apply P-1 now\"): season indexes on the NST gamelog tables so the ES, PP and PK percentile views stop timing out. Applied with TJ's explicit approval.",
+      "stateEvidence": "Production schema_migrations version 20261104010705; applied 2026-11-04 01:07 UTC (commit a0d2a7ef4), readback 2026-11-04. Receipt: tasks/artifacts/wigo-charts-overhaul-2026-11-01/P1-P2-MIGRATIONS.md."
+    },
+    {
+      "order": 108,
+      "path": "supabase/migrations/20261104011002_nst_percentile_as_from_gamelogs.sql",
+      "sha256": "d265200a5dce00dc59a74e113a7b65e14d3f53aa900d53e502b4b166ec4e3151",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "applied",
+      "migrationClass": "feature",
+      "rolloutGate": "WiGO P-2 (TJ: \"Yes, apply P-2\"): AS percentile views built from the gamelogs; legacy snapshot tables kept for rollback. Applied with TJ's explicit approval.",
+      "stateEvidence": "Production schema_migrations version 20261104011002; applied about 01:10 UTC on 2026-11-04 (commit 79c7de7b2), readback 2026-11-04. A duplicate apply failed (42P07) and rolled back (commit 6dd622eb9), so it ran once. Receipt: tasks/artifacts/wigo-charts-overhaul-2026-11-01/P1-P2-MIGRATIONS.md."
+    },
+    {
+      "order": 109,
       "path": "supabase/migrations/20261104011912_clear_stale_yahoo_player_status.sql",
       "sha256": "e64b3bfddaf0ba0879be411f8a69804529ced36458c31fa3dd3881f110a34b9b",
       "sourceStatus": "source-authorized",
@@ -1063,7 +1103,7 @@
       "stateEvidence": "Production schema_migrations version 20261104011912; readback 2026-11-04: writer md5 4fc52baa55922a78f18353c1f1fe02c0 (was 178d877fe2e1d29c37b94832c5f42c60), status_observed marker present, execute for service_role only. Lane receipt: tasks/artifacts/yahoo-status-sticky-2026-11-03/."
     },
     {
-      "order": 106,
+      "order": 110,
       "path": "supabase/migrations/20261106012634_x_timeline_shadow_posts.sql",
       "sha256": "3fde8b95a482bc0b0ded53fbafdb941fa78ed3e6f3498e3d8c75c2e577350cee",
       "sourceStatus": "source-authorized",
@@ -1073,7 +1113,7 @@
       "stateEvidence": "Production schema_migrations version 20261106012634 (x_timeline_shadow_posts); readback 2026-11-06. Service role only, RLS on. Receipt: tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/X-TIMELINE-SHADOW/DEBRIEF.md."
     },
     {
-      "order": 107,
+      "order": 111,
       "path": "supabase/migrations/20261106012951_x_timeline_poll_secret_check.sql",
       "sha256": "b45b5efe9f00685e02485da612e2efd812b9826f79e56916a3654e4266b4a4a9",
       "sourceStatus": "source-authorized",
@@ -1083,7 +1123,7 @@
       "stateEvidence": "Production schema_migrations version 20261106012951 (x_timeline_poll_secret_check); readback 2026-11-06. Execute for service_role only. Receipt: tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/X-TIMELINE-SHADOW/DEBRIEF.md."
     },
     {
-      "order": 108,
+      "order": 112,
       "path": "supabase/migrations/20261106200000_tweet_intake_providers.sql",
       "sha256": "0b6d0eb310823242a1778d92d28dffe66fe2955914cb4115597d2cd8ab787195",
       "sourceStatus": "source-authorized",
@@ -1091,6 +1131,56 @@
       "migrationClass": "feature",
       "rolloutGate": "IFTTT to FxTwitter cutover switch (TJ approved applying it 2026-11-06; the apply_migration tool was declined, so TJ ran the SQL by hand). Seeds all accounts as 'ifttt'.",
       "stateEvidence": "Not in Production schema_migrations (readback 2026-11-06). TJ ran this file's SQL in the Supabase SQL editor about 18:05 UTC on 2026-11-06; readback showed 7 rows all 'ifttt', RLS on, service_role-only grants and the touch trigger. Mark applied only after an approved `supabase migration repair --status applied 20261106200000`. Receipt: tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/IFTTT-TO-FXTWITTER-CUTOVER/DEBRIEF.md."
+    },
+    {
+      "order": 113,
+      "path": "supabase/migrations/20261106201221_x_timeline_poll_runs.sql",
+      "sha256": "c62595ffa88bfb4b2661fca3809ad6c6b7a178eb1a3677a78cafe50c3cdf63ec",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "applied",
+      "migrationClass": "feature",
+      "rolloutGate": "Per-account x-timeline-poll run history (public.x_timeline_poll_runs, with v6 via/gap columns), the x-timeline-poll job run copy (public.x_timeline_poll_job_runs) and daily tweet-review backlog snapshots (public.tweet_review_backlog_snapshots), captured every 15 minutes by public.x_timeline_capture_poll_runs() for the cron report (cron-report lane 2). TJ applies by hand in the SQL editor after a pop-up approval.",
+      "stateEvidence": "Production schema_migrations version 20261106201221 (x_timeline_poll_runs); applied about 20:12 UTC on 2026-11-06 with TJ's approval (cron-report lane 2, Supabase MCP apply_migration). The file was renamed from 20261106230000 to match the ledger (commit bfc6036e4). Readback: three tables with RLS on and service_role grants, function security definer with an empty search_path, cron 'x-timeline-poll-capture' jobid 402 */15 active."
+    },
+    {
+      "order": 114,
+      "path": "supabase/migrations/20261106204707_lineup_player_name_alias_position_group.sql",
+      "sha256": "44e9197c679dc7f987c7c822e9508d14e5948195d718deabf243734183758154",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "applied",
+      "migrationClass": "feature",
+      "rolloutGate": "Position-scoped tweet-name aliases (F/D/G) for the swipe trainer's surname-collision fix (position-aware-names session, started by swipe-trainer). Applied with TJ's approval in that session.",
+      "stateEvidence": "Production schema_migrations version 20261106204707 (lineup_player_name_alias_position_group); readback 2026-11-06 by the X-timeline Chef: column lineup_player_name_aliases.position_group (text) with check constraint F/D/G present."
+    },
+    {
+      "order": 115,
+      "path": "supabase/migrations/20261106210000_x_timeline_watchdog.sql",
+      "sha256": "c0d21785ec3006ee5333069fe6cadfd5dab42ff273a245970aaff5b415da230d",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "unknown",
+      "migrationClass": "feature",
+      "rolloutGate": "x-timeline-poll email watchdog (TJ chose the Supabase watchdog, 2026-11-06). TJ applies it by hand in the SQL editor, with Vault secrets resend_api_key and x_timeline_alert_recipient.",
+      "stateEvidence": "Not in Production schema_migrations (readback 2026-11-06). TJ ran this file's SQL in the Supabase SQL editor about 19:25 UTC on 2026-11-06, scheduled cron 'x-timeline-watchdog' (*/5) and sent a test email (Resend 200). Readback: function security definer with empty search_path, execute for service_role only; dry run clean. Mark applied only after an approved `supabase migration repair --status applied 20261106210000`. Receipt: tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/IFTTT-TO-FXTWITTER-CUTOVER/DEBRIEF.md."
+    },
+    {
+      "order": 116,
+      "path": "supabase/migrations/20261106220000_x_timeline_watchdog_loud_alerts.sql",
+      "sha256": "c8556d20c6d4dc565718a4faa14e4f4cf99867f3e877d26e70b8a4d12e3e3ac1",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "pending",
+      "migrationClass": "feature",
+      "rolloutGate": "High-visibility watchdog emails (TJ asked for warning emojis on errors, 2026-11-06). TJ applies it by hand in the SQL editor.",
+      "stateEvidence": "Not applied as of 2026-11-06 19:45 UTC. TJ approved the email design. No IFTTT fallback step (TJ is removing IFTTT). Verified locally on PostgreSQL 15 with stand-ins for pg_net and Vault: all 28 scenario checks pass (scratchpad pgtest/scenarios.sql). Receipt: tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/IFTTT-TO-FXTWITTER-CUTOVER/DEBRIEF.md."
+    },
+    {
+      "order": 117,
+      "path": "supabase/migrations/20261106233000_cron_job_audit_report_index.sql",
+      "sha256": "b6750726e446b7bcf9262b7e05d569ee6adf91676f58cb70ca1fd4df5f89effe",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "unknown",
+      "migrationClass": "performance",
+      "rolloutGate": "Adds cron_job_audit_run_time_idx (run_time, job_name, status, rows_affected) + ANALYZE so the daily cron report's 24h window read stops hitting the 8 s statement timeout. TJ applies by hand in the SQL editor after a pop-up approval; the CONCURRENTLY variant is in the file header.",
+      "stateEvidence": "Not in Production schema_migrations (readback 2026-11-06). Applied by hand 2026-11-06 with TJ's pop-up approval (cron-report lane 1), as create index concurrently if not exists + analyze. Readback by the X-timeline Chef: cron_job_audit_run_time_idx valid and ready, 25 MB, definition matches the file. Mark applied only after an approved `supabase migration repair --status applied 20261106233000`."
     }
   ],
   "sourceExtensionApproval": {

@@ -1,0 +1,16 @@
+{
+  "extends": "../../../../web/tsconfig.json",
+  "include": [
+    "../../../../web/next-bootstrap.d.ts",
+    "../../../../web/yahoo-fantasy.d.ts",
+    "../../../../web/components/GoalieShareChart/index.tsx",
+    "../../../../web/components/GoalieShareChart/GoalieShareChart.test.ts",
+    "../../../../web/components/GoalieShareChart/GoalieShareChart.pagination.test.tsx",
+    "../../../../web/lib/goalieWorkload.ts",
+    "../../../../web/lib/projections/goalie/workloadEvidence.ts",
+    "../../../../web/lib/projections/goalie/workloadEvidence.test.ts"
+  ],
+  "compilerOptions": {
+    "incremental": false
+  }
+}

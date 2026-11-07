@@ -1,0 +1,269 @@
+{
+  "renderVersion": "fhfh-current-card-v2",
+  "card": {
+    "id": "nhl-8484387-20262027-10-2026-10-29T19:21:36.021Z-2026020199.2026020188.2026020168.2026020152.2026020138.2026020128.2026020110.2026020094.2026020086.2026020070",
+    "source": "nhl-current",
+    "state": "ready",
+    "player": {
+      "id": 8484387,
+      "name": "Matvei Michkov",
+      "team": "PHI",
+      "position": "R"
+    },
+    "request": {
+      "playerId": 8484387,
+      "season": 20262027,
+      "count": 10
+    },
+    "observedAt": "2026-10-29T19:21:36.021Z",
+    "sample": {
+      "gp": 10,
+      "toiSeconds": 9659,
+      "sourceDates": [
+        "2026-10-28",
+        "2026-10-27",
+        "2026-10-24",
+        "2026-10-21",
+        "2026-10-19",
+        "2026-10-17",
+        "2026-10-15",
+        "2026-10-13",
+        "2026-10-11",
+        "2026-10-10"
+      ],
+      "utcDates": [
+        "2026-10-28",
+        "2026-10-27",
+        "2026-10-24",
+        "2026-10-21",
+        "2026-10-19",
+        "2026-10-17",
+        "2026-10-15",
+        "2026-10-13",
+        "2026-10-11",
+        "2026-10-10"
+      ],
+      "gameIds": [
+        2026020199,
+        2026020188,
+        2026020168,
+        2026020152,
+        2026020138,
+        2026020128,
+        2026020110,
+        2026020094,
+        2026020086,
+        2026020070
+      ]
+    },
+    "values": {
+      "atoi": 16.098333333333333,
+      "shots60": 5.590640853090382,
+      "goals60": 2.6089657314421784,
+      "points60": 3.3543845118542293,
+      "goals": 7,
+      "assists": 2,
+      "points": 9,
+      "shots": 15,
+      "shootingPct": 46.666666666666664
+    },
+    "issues": [],
+    "rankReason": "Rank and percentile unavailable: no verified all-NHL same-definition population for this window.",
+    "evidence": {
+      "version": "nhl-basic-skater-v1",
+      "sourcePaths": [
+        "/v1/player/8484387/landing",
+        "/v1/player/8484387/game-log/20262027/2",
+        "/v1/club-schedule-season/PHI/20262027"
+      ],
+      "seasonGp": 15,
+      "selectedGames": [
+        {
+          "gameId": 2026020199,
+          "providerDate": "2026-10-28",
+          "utcStart": "2026-10-28T23:30:00Z",
+          "team": "PHI",
+          "finalStatusAtObservation": "OFF",
+          "toiSeconds": 1026,
+          "goals": 1,
+          "assists": 0,
+          "points": 1,
+          "shots": 1
+        },
+        {
+          "gameId": 2026020188,
+          "providerDate": "2026-10-27",
+          "utcStart": "2026-10-27T23:00:00Z",
+          "team": "PHI",
+          "finalStatusAtObservation": "OFF",
+          "toiSeconds": 1295,
+          "goals": 0,
+          "assists": 0,
+          "points": 0,
+          "shots": 1
+        },
+        {
+          "gameId": 2026020168,
+          "providerDate": "2026-10-24",
+          "utcStart": "2026-10-24T17:00:00Z",
+          "team": "PHI",
+          "finalStatusAtObservation": "OFF",
+          "toiSeconds": 1095,
+          "goals": 2,
+          "assists": 0,
+          "points": 2,
+          "shots": 3
+        },
+        {
+          "gameId": 2026020152,
+          "providerDate": "2026-10-21",
+          "utcStart": "2026-10-21T23:30:00Z",
+          "team": "PHI",
+          "finalStatusAtObservation": "OFF",
+          "toiSeconds": 1082,
+          "goals": 0,
+          "assists": 1,
+          "points": 1,
+          "shots": 2
+        },
+        {
+          "gameId": 2026020138,
+          "providerDate": "2026-10-19",
+          "utcStart": "2026-10-19T23:00:00Z",
+          "team": "PHI",
+          "finalStatusAtObservation": "OFF",
+          "toiSeconds": 877,
+          "goals": 2,
+          "assists": 0,
+          "points": 2,
+          "shots": 2
+        },
+        {
+          "gameId": 2026020128,
+          "providerDate": "2026-10-17",
+          "utcStart": "2026-10-17T23:00:00Z",
+          "team": "PHI",
+          "finalStatusAtObservation": "OFF",
+          "toiSeconds": 869,
+          "goals": 1,
+          "assists": 1,
+          "points": 2,
+          "shots": 3
+        },
+        {
+          "gameId": 2026020110,
+          "providerDate": "2026-10-15",
+          "utcStart": "2026-10-15T23:30:00Z",
+          "team": "PHI",
+          "finalStatusAtObservation": "OFF",
+          "toiSeconds": 820,
+          "goals": 1,
+          "assists": 0,
+          "points": 1,
+          "shots": 1
+        },
+        {
+          "gameId": 2026020094,
+          "providerDate": "2026-10-13",
+          "utcStart": "2026-10-13T23:00:00Z",
+          "team": "PHI",
+          "finalStatusAtObservation": "OFF",
+          "toiSeconds": 886,
+          "goals": 0,
+          "assists": 0,
+          "points": 0,
+          "shots": 0
+        },
+        {
+          "gameId": 2026020086,
+          "providerDate": "2026-10-11",
+          "utcStart": "2026-10-11T23:00:00Z",
+          "team": "PHI",
+          "finalStatusAtObservation": "OFF",
+          "toiSeconds": 774,
+          "goals": 0,
+          "assists": 0,
+          "points": 0,
+          "shots": 0
+        },
+        {
+          "gameId": 2026020070,
+          "providerDate": "2026-10-10",
+          "utcStart": "2026-10-10T17:00:00Z",
+          "team": "PHI",
+          "finalStatusAtObservation": "OFF",
+          "toiSeconds": 935,
+          "goals": 0,
+          "assists": 0,
+          "points": 0,
+          "shots": 2
+        }
+      ],
+      "actualEndTimesSupplied": false
+    },
+    "historyStatement": "Season game-log appearance count reconciled with NHL season totals; no career-history claim.",
+    "finalityStatement": "NHL FINAL/OFF at observation; actual game-end timestamps are not supplied. Current window only; no historical cutoff claim."
+  },
+  "format": "rates-opportunity",
+  "artwork": {
+    "state": "unavailable",
+    "reason": "A verified matching player image is unavailable.",
+    "playerId": 8484387,
+    "team": "PHI"
+  },
+  "selectedMetrics": [
+    "atoi",
+    "shots60",
+    "goals60",
+    "points60",
+    "shootingPct"
+  ],
+  "definitions": {
+    "atoi": {
+      "label": "Ice time / game",
+      "unit": "time",
+      "definition": "NHL game-log TOI seconds / appearances / 60"
+    },
+    "shots60": {
+      "label": "Shots /60",
+      "unit": "rate",
+      "definition": "NHL shots on goal × 3600 / NHL game-log TOI seconds"
+    },
+    "goals60": {
+      "label": "Goals /60",
+      "unit": "rate",
+      "definition": "NHL goals × 3600 / NHL game-log TOI seconds"
+    },
+    "points60": {
+      "label": "Points /60",
+      "unit": "rate",
+      "definition": "NHL points × 3600 / NHL game-log TOI seconds"
+    },
+    "goals": {
+      "label": "Goals",
+      "unit": "count",
+      "definition": "Sum of NHL game-log goals in selected appearances"
+    },
+    "assists": {
+      "label": "Assists",
+      "unit": "count",
+      "definition": "Sum of NHL game-log assists in selected appearances"
+    },
+    "points": {
+      "label": "Points",
+      "unit": "count",
+      "definition": "Sum of NHL game-log points in selected appearances"
+    },
+    "shots": {
+      "label": "Shots on goal",
+      "unit": "count",
+      "definition": "Sum of NHL game-log shots in selected appearances"
+    },
+    "shootingPct": {
+      "label": "Shooting% · actual",
+      "unit": "percent",
+      "definition": "NHL goals / shots on goal × 100; zero shots is undefined"
+    }
+  },
+  "inputHashScope": "Source paths and displayed normalized game inputs; no raw-response hash or exact end-time claim"
+}

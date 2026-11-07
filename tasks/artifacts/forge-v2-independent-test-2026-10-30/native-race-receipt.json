@@ -1,0 +1,17 @@
+{
+  "check": "native-race",
+  "command": [
+    "node",
+    "node_modules/vitest/vitest.mjs",
+    "run",
+    "independent-native-race.test.ts",
+    "-t",
+    "independent:",
+    "--reporter=verbose"
+  ],
+  "cwd": "/tmp/forge-v2-independent-hkh8ulbm/web",
+  "exit": 1,
+  "durationSeconds": 1.2276198863983154,
+  "environment": "allowlisted; no inherited credentials; no env files copied",
+  "log": "native-race.log"
+}

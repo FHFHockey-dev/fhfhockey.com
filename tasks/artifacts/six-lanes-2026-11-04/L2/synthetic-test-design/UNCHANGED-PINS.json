@@ -1,0 +1,13 @@
+{
+  "runtime": {
+    "web/lib/buyLowSellHigh/researchSnapshot.ts": "dc4cbb57a93a6e2cdae66d48b0519704c17f0a7d49451bfa546eafeb885b2cb7",
+    "web/lib/buyLowSellHigh/displayProfile.ts": "6de7898a08f4ece36307b9817ce0dae33f1ee238ebf5eb52dad7f583f4d7178c",
+    "web/lib/buyLowSellHigh/supportGap.ts": "d8b8d42a3ed7a6a66b7d7402ac62ea433c6a77702f086309fd21568ee27a5618"
+  },
+  "retained": {
+    "web/lib/buyLowSellHigh/research-snapshots/2024-04-18.v1.json": "5177a5c6775db42f84302850522e6f3bc9f405227225a0e77455eca2ffc0aea8",
+    "web/lib/buyLowSellHigh/research-snapshots/2026-10-26.arm-a-official-overlay.v2.json": "b06c7f6e2a0086115193871d4ecde5da4b6566c9bb6b93c2de0045136fd96f5d",
+    "web/lib/buyLowSellHigh/research-snapshots/2026-10-28.arm-a-canonical-repaired.v2.json": "2f380c2539390f6931ec92ab1d0b1d8cced2b55f5f4cefb8c6e88a694909f2c8",
+    "web/lib/buyLowSellHigh/__fixtures__/display-profiles.jsonl": "bed954ae624b1877c67fa80c5b5615c471b408655367a5e7805f9be37c32ba33"
+  }
+}

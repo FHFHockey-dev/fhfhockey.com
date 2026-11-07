@@ -1,0 +1,27 @@
+[
+  {
+    "path": "web/scripts/fetch_team_table.py",
+    "lifecycleHooks": [],
+    "status": "UNQUALIFIED_LEGACY_ENTRYPOINT_NOT_MODIFIED"
+  },
+  {
+    "path": "web/pages/api/ThreeYearAverages/nstgamelog.py",
+    "lifecycleHooks": [],
+    "status": "UNQUALIFIED_LEGACY_ENTRYPOINT_NOT_MODIFIED"
+  },
+  {
+    "path": "web/pages/api/ThreeYearAverages/nsttest.py",
+    "lifecycleHooks": [],
+    "status": "UNQUALIFIED_LEGACY_ENTRYPOINT_NOT_MODIFIED"
+  },
+  {
+    "path": "web/pages/api/v1/db/nst_gamelog_scraper.py",
+    "lifecycleHooks": [],
+    "status": "UNQUALIFIED_LEGACY_ENTRYPOINT_NOT_MODIFIED"
+  },
+  {
+    "path": "web/pages/api/v1/db/nst_gamelog_goalie_scraper.py",
+    "lifecycleHooks": [],
+    "status": "UNQUALIFIED_LEGACY_ENTRYPOINT_NOT_MODIFIED"
+  }
+]

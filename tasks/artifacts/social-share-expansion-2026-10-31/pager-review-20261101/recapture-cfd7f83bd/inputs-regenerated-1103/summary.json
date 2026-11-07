@@ -1,0 +1,77 @@
+[
+ {
+  "name": "off-night-next",
+  "post": "off-night-edge",
+  "query": {
+   "period": "matchup",
+   "week": "6"
+  },
+  "ms": 2857,
+  "requests": 14,
+  "errors": [],
+  "rows": {
+   "yahoo_matchup_weeks": 27,
+   "/v1/schedule/2026-11-02": 0,
+   "games": 146,
+   "yahoo_players": 1608,
+   "yahoo_nhl_player_map_read": 2373,
+   "wgo_skater_stats": 5255
+  },
+  "state": "ready",
+  "reasons": [],
+  "sample": "2026-10-13 to 2026-11-02: 710 skaters; picks played in the last 14 days; HOT means L5 fantasy points per game at least 1.25× his earlier games in this span and at or above his position's median, and comes first; then L5 fantasy points per game × ice time; under 5 complete games is a short sample, used last; ownership among qualified skaters: 261 known, 41 unknown, 0 stale",
+  "cohort": "Top 16 of 32 teams with games (also tied at the last rank: WPG); skaters at or under 50% rostered, unknown % excluded",
+  "err": null
+ },
+ {
+  "name": "off-night-w4",
+  "post": "off-night-edge",
+  "query": {
+   "period": "matchup",
+   "week": "4"
+  },
+  "ms": 1221,
+  "requests": 14,
+  "errors": [],
+  "rows": {
+   "yahoo_matchup_weeks": 27,
+   "/v1/schedule/2026-10-19": 0,
+   "games": 146,
+   "yahoo_players": 1608,
+   "wgo_skater_stats": 5255,
+   "yahoo_nhl_player_map_read": 2373
+  },
+  "state": "ready",
+  "reasons": [],
+  "sample": "2026-10-13 to 2026-11-02: 710 skaters; picks played in the last 14 days; HOT means L5 fantasy points per game at least 1.25× his earlier games in this span and at or above his position's median, and comes first; then L5 fantasy points per game × ice time; under 5 complete games is a short sample, used last; ownership among qualified skaters: 258 known, 44 unknown, 0 stale",
+  "cohort": "Top 16 of 32 teams with games (also tied at the last rank: WPG); skaters at or under 50% rostered, unknown % excluded",
+  "err": null
+ },
+ {
+  "name": "risky-next",
+  "post": "risky-starts",
+  "query": {
+   "period": "matchup",
+   "week": "6"
+  },
+  "ms": 998,
+  "requests": 9,
+  "errors": [],
+  "rows": {
+   "yahoo_matchup_weeks": 27,
+   "games": 285,
+   "wgo_team_stats": 470,
+   "nst_team_gamelogs_as_counts": 470,
+   "wgo_goalie_stats": 380,
+   "player_forecast_goalie_start_observations": 18,
+   "player_forecast_observation_conflicts": 0,
+   "game_prediction_market_odds_snapshots": 39,
+   "/v1/partner-game/US/now": 0
+  },
+  "state": "ready",
+  "reasons": [],
+  "sample": "2026-11-03 to 2026-11-08: 94 upcoming team games; rates are season to date through 2026-11-02. Unknown means no current observation, not that the goalie is not starting. Observations cover part of the slate. Reports aren't separated by reporter, so conflicts between sources can't be detected. No source link or expiry exists for these reports. Moneylines and totals are market lines, the book's own prices, not FHFH numbers. NHL.com's feed covers only its current odds date, so a later game shows no line. Goalie labels: a source's report for this game shows as Projected or Confirmed, and the other goalie as Backup. With no report, Likely Starter has the most starts in the team's last 10 games; a tie goes to the most starts in its last 3, then the better win share in decisions against this opponent, this season and last (NHL.com goalie game stats). Split means still tied. In a back-to-back, when this game is against the weaker opponent by season goal differential per game, from NHL.com team game stats, both goalies show which game of the back-to-back it is instead. A source's account shows only when its report names one. Reading the card: blue marks a flagged pairing, a longer bar is the stronger side, and 1ST is the league's highest value. Moneylines and totals are DraftKings market lines, shown only when one exists.",
+  "cohort": "94 team-nights in the window; ranks over all 32 teams. These signals are correlated: shots, xG and chances overlap, and penalties feed all three. Each lens stands alone, flags are never added across lenses, and no win or start odds are given. All situations (shots, xG, chances); PP and PK as labeled. Sources: NHL schedule through 2026-11-08 · NHL.com team game stats through 2026-11-02 · NST team game logs (all situations) through 2026-11-02 (updated Nov 3, 4:55 AM ET) · NHL.com goalie game stats through 2026-11-02 · Goalie start observations through 2026-11-03 (updated Nov 3, 12:29 PM ET) · DraftKings market lines (stored) through 2026-11-03 (updated Nov 3, 12:34 PM ET) · NHL.com partner odds (DraftKings) through 2026-11-03 (updated Nov 3, 12:30 PM ET) · Yahoo matchup weeks.",
+  "err": null
+ }
+]

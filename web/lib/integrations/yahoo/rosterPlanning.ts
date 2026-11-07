@@ -272,6 +272,14 @@ export function yahooPlanningAcquisitions(args: {
 
 export type YahooReportedRule = { rule: string; field: string; present: boolean; reportedValue: string | number | boolean | null; verified: boolean };
 
+/** The shared draft parser recognizes season formats that this short-horizon planner cannot model. */
+export function yahooPlanningFormatLimitations(payload: unknown): string[] {
+  const format = text(yahooValue(payload, "scoring_type"))?.toLowerCase();
+  return format === "roto" || format === "point"
+    ? ["Season-long points and rotisserie planning are unsupported: position caps, credited usage, cap-day scoring and standings utility are not modeled."]
+    : [];
+}
+
 /**
  * League rules Yahoo reports in league settings and the owned team's metadata, each as present / reportedValue /
  * verified (like the weekly add limit). Only an exact, recognised value from a fresh, scoped read is verified;
@@ -506,7 +514,7 @@ export async function loadYahooPlanningSnapshot(args: {
   const settings = parseYahooBoardSettings(settingsResponse.payload);
   const daily = settings.rosterType === "date" || settings.rosterType === null && ["intraday", "tomorrow"].includes(settings.weeklyDeadline ?? "");
   const mode = daily ? "daily" : settings.rosterType === "week" ? "weekly" : "unsupported";
-  const unsupported: string[] = [];
+  const unsupported = yahooPlanningFormatLimitations(settingsResponse.payload);
   if (!settings.scoringTypeRecognized || settings.unsupportedStatIds.length || settings.unsupportedRosterSlots.length) unsupported.push("Some league scoring or roster rules are unsupported.");
   if (!providerTimeZone && !args.timeZone) unsupported.push("Verify the league time zone before time-sensitive planning.");
   if (mode === "weekly") unsupported.push("Supply verified weekly lineup windows; the roster response alone does not establish their exact locks.");

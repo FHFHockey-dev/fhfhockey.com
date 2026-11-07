@@ -1,0 +1,52 @@
+{
+  "at": "2026-11-01T16:44:47.502907+00:00",
+  "sourcePins": [
+    {
+      "path": "web/lib/player-forecasts/rsoUsePolicy.ts",
+      "sha256": "8299f6ff97d1ae8bf3836f1202b0eb82586cea4abf70b642a612e03c861d7aad"
+    },
+    {
+      "path": "web/lib/player-forecasts/rsoUsePolicy.test.ts",
+      "sha256": "bda984e71954a157f644e84e8a7fbb5b89b27a3b7f790e18c633e51b5f9f6a90"
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/planningReproducibility.test.ts",
+      "sha256": "7aa609b962ce392342bb272c57bc1609225ac686ad93e1807428906fce381198"
+    },
+    {
+      "path": "web/e2e/roster-schedule-optimizer.spec.ts",
+      "sha256": "fb096e6a413c6e4e79111cfffd9fb69974672133e2d46ae41d584592e0665be9"
+    }
+  ],
+  "selectedBase": "4965a872a9746b6129c9ac589c200560d01a1e23",
+  "candidateTree": "a77527cdc29fd994bc0e28a4b2d5ec1b87acbe14",
+  "candidateCommit": null,
+  "producerClosure": "7083dee0a966654e413bbb673daa07a9b50d938312e9807276014921f2991368",
+  "isolatedTests": {
+    "files": 7,
+    "passed": 400,
+    "result": "candidate-tests.json"
+  },
+  "browser": {
+    "distinctCasesPassed": 2,
+    "caseExecutions": 3,
+    "initial": "candidate-browser.json",
+    "manualAfterLocatorFix": "manual-browser.json",
+    "scope": "fixtures only; not live Yahoo/personal acceptance"
+  },
+  "originalScopedTypeAndLint": "passed; reused ../participation-replay/EVIDENCE.json",
+  "newE2eLint": "passed",
+  "fourFileDiffCheck": "passed",
+  "port3162Listening": false,
+  "ownHeavyLockRetained": false,
+  "sourceWriter": "released_to_parent",
+  "productionBuilds": 0,
+  "remoteBuilds": 0,
+  "deployments": 0,
+  "productionRequests": 0,
+  "providerRequests": 0,
+  "databaseRequests": 0,
+  "gitMutations": 0,
+  "pendingToolApproval": false,
+  "uncertainActions": false
+}

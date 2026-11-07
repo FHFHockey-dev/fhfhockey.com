@@ -1,5 +1,9 @@
 import importlib
+import ast
+from pathlib import Path
 import socket
+import sys
+from types import SimpleNamespace
 from unittest.mock import Mock
 
 import pytest
@@ -8,6 +12,59 @@ import requests
 
 CALLER_SECRET = "test-caller-secret"
 PROVIDER_KEY = "test-provider-key"
+
+
+@pytest.mark.parametrize("outcome", ["success", "loader-failure", "output-failure"])
+def test_cli_bootstraps_before_real_lifecycle(monkeypatch, local_only, outcome):
+    # Execute the actual __main__ body with fixture environment/I/O. Importing
+    # or running this test never reads a local env file or contacts a service.
+    module = team_table_module
+    admission = importlib.import_module("lib.nst_admission")
+    events = []
+    for key in ("NST_KEY", "NEXT_PUBLIC_SUPABASE_URL", "SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"):
+        monkeypatch.delenv(key, raising=False)
+    monkeypatch.setenv("NST_JOB_LIFECYCLE_ENABLED", "true")
+    monkeypatch.setattr(sys, "argv", ["fetch_team_table.py", "--sit", "5v5", "--rate", "n"])
+
+    def bootstrap(keys):
+        events.append("bootstrap")
+        assert keys == ["NST_KEY", "NEXT_PUBLIC_SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+        if outcome == "loader-failure":
+            raise RuntimeError("Fixture bootstrap failed")
+        monkeypatch.setenv("NST_KEY", "fixture-provider")
+        monkeypatch.setenv("NEXT_PUBLIC_SUPABASE_URL", "https://offline.invalid")
+        monkeypatch.setenv("SUPABASE_SERVICE_ROLE_KEY", "fixture-service")
+
+    def post(url, **kwargs):
+        name = url.rsplit("/", 1)[-1]
+        events.append(name)
+        assert kwargs["headers"]["apikey"] == "fixture-service"
+        assert url.startswith("https://offline.invalid/rest/v1/rpc/")
+        assert name in ("nst_job_begin_v1", "nst_job_finish_v1", "nst_job_hold_v1")
+        return SimpleNamespace(status_code=200, json=lambda: {
+            "status": "started" if "begin" in name else "finished" if "finish" in name else "held",
+            "token": kwargs["json"]["p_token"],
+        })
+
+    def fetch(**_kwargs):
+        admission.assert_nst_job_active()
+        events.append("fetch-and-output")
+        return SimpleNamespace(status_code=503 if outcome == "output-failure" else 200)
+
+    monkeypatch.setattr(admission.requests, "post", post)
+    tree = ast.parse(Path(module.__file__).read_text())
+    main = next(node for node in tree.body if isinstance(node, ast.If) and
+                isinstance(node.test, ast.Compare) and getattr(node.test.left, "id", None) == "__name__")
+    namespace = {**vars(module), "__name__": "__main__", "ensure_loaded_for": bootstrap, "fetch_team_table": fetch}
+    code = compile(ast.Module(body=[main], type_ignores=[]), module.__file__, "exec")
+    if outcome == "success":
+        exec(code, namespace)
+    else:
+        with pytest.raises(RuntimeError):
+            exec(code, namespace)
+    assert events == (["bootstrap"] if outcome == "loader-failure" else
+        ["bootstrap", "nst_job_begin_v1", "fetch-and-output",
+         "nst_job_finish_v1" if outcome == "success" else "nst_job_hold_v1"])
 
 
 @pytest.fixture(autouse=True)
@@ -37,6 +94,7 @@ def local_only(monkeypatch):
     if postgres.psycopg is not None:
         monkeypatch.setattr(postgres.psycopg, "connect", db_connect)
 
+    monkeypatch.setattr(importlib.import_module("lib.nst_admission"), "admit_nst_attempt", lambda dispatch, **_kwargs: dispatch())
     global team_table_module, standalone_app, aggregate_app
     team_table_module = importlib.import_module("api.fetch_team_table")
     aggregate_module = importlib.import_module("api.index")
@@ -281,3 +339,59 @@ def test_parser_exception_is_a_named_bad_gateway(monkeypatch):
 
     assert payload["error"]["code"] == "parse_error"
     assert payload["data"] == []
+
+
+def test_authenticated_proxy_passes_complete_plan_and_bounded_admission_budget(monkeypatch, local_only):
+    provider=Mock(status_code=200,text=TEAM_TABLE_HTML)
+    get=Mock(return_value=provider);monkeypatch.setattr(team_table_module,"nst_get",get)
+    result=standalone_app.test_client().get("/api/fetch_team_table?"+QUERY,headers={
+        "Authorization":f"Bearer {CALLER_SECRET}","X-NST-Planned-Requests":"40","X-NST-Admission-Budget-Ms":"999999"})
+    assert result.status_code==200
+    options=get.call_args.kwargs
+    assert options["planned_requests"]==40 and options["min_interval_ms"]==0
+    import time
+    assert 0 < options["deadline_at"]-time.monotonic() <=7
+    assert options["timeout"]==10
+
+
+def test_proxy_budget_deferral_is_explicit_and_not_empty_success(monkeypatch, local_only):
+    from lib.nst_admission import NstAdmissionError
+    get=Mock(side_effect=NstAdmissionError("fixture budget cannot fit deadline"));monkeypatch.setattr(team_table_module,"nst_get",get)
+    response=standalone_app.test_client().get("/api/fetch_team_table?"+QUERY,headers={"Authorization":f"Bearer {CALLER_SECRET}"})
+    assert response.status_code==503
+    assert response.get_json()["error"]["code"]=="admission_deferred"
+    assert response.get_json()["data"]==[]
+
+
+def test_enforced_proxy_requires_parent_before_provider(local_only, monkeypatch):
+    monkeypatch.setenv("NST_JOB_LIFECYCLE_ENABLED", "true")
+    responses = _responses(QUERY)
+    payload = _assert_same_json_response(responses, 503)
+    assert payload["error"]["code"] == "missing_parent_job"
+    local_only["provider_get"].assert_not_called()
+
+
+def test_authenticated_proxy_reuses_parent_without_settlement(local_only, monkeypatch):
+    admission = importlib.import_module("lib.nst_admission")
+    token = "00000000-0000-4000-8000-000000000001"
+    monkeypatch.setenv("NST_JOB_LIFECYCLE_ENABLED", "true")
+    def source(**kwargs):
+        assert admission._job.get()["token"] == token
+        return team_table_module.TeamTableResult({"data":[],"debug":{}},200)
+    monkeypatch.setattr(team_table_module,"fetch_team_table",source)
+    response = standalone_app.test_client().get("/api/fetch_team_table?"+QUERY,
+        headers={"Authorization":"Bearer "+CALLER_SECRET,"X-NST-Job-Token":token})
+    assert response.status_code == 200
+    assert admission._job.get() is None
+    local_only["provider_get"].assert_not_called()
+
+
+def test_aggregate_preserves_legacy_season_defaults(local_only, monkeypatch):
+    source = Mock(return_value=team_table_module.TeamTableResult({"data":[],"debug":{}},200))
+    monkeypatch.setattr(team_table_module,"fetch_team_table",source)
+    response = aggregate_app.test_client().get("/fetch_team_table?sit=all&rate=n",
+        headers={"Authorization":"Bearer "+CALLER_SECRET})
+    assert response.status_code == 200
+    assert source.call_args.kwargs["from_season"] == "20242025"
+    assert source.call_args.kwargs["thru_season"] == "20242025"
+    local_only["season_lookup"].assert_not_called()

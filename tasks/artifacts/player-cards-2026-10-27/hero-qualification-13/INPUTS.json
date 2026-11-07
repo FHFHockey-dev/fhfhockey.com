@@ -1,0 +1,173 @@
+{
+  "manifest.json": {
+    "path": "/Users/tim/Documents/FHFH-local-image-tests/2026-10-25-birefnet-roster805/manifest.json",
+    "sha256": "4cac57ecdbee629bd82b017a624ecbbe342aa9b43b450588b84dad506c2ad43c",
+    "selectedRecord": {
+      "id": 8476453,
+      "name": "Nikita Kucherov",
+      "position": "R",
+      "roster_team": "TBL",
+      "sweater": 86,
+      "source_url": "https://assets.nhle.com/mugs/actionshots/1296x729/8476453.jpg",
+      "landing_record": {
+        "id": 8476453,
+        "source_url": "https://api-web.nhle.com/v1/player/8476453/landing",
+        "fetched_at": "2026-10-24T20:21:59.751271+00:00",
+        "hero_image": "https://assets.nhle.com/mugs/actionshots/1296x729/8476453.jpg",
+        "status": "found",
+        "payload_sha256": "512f708f7576c77b32fca47e5eb30641e16771eff0c0ad2482a3058ec5675e95"
+      },
+      "reuse_reviewed_result": false,
+      "cached_source": {
+        "path": "/Users/tim/Documents/FHFH-local-image-tests/2026-10-24-birefnet-validation/originals/8476453.jpg",
+        "sha256": "3036cb4ec324cc902ab2d797f4e69b58347c85909d6ce92daab01b7123f0711b"
+      }
+    }
+  },
+  "player-image-candidates.json": {
+    "path": "/Users/tim/Documents/FHFH-local-image-tests/2026-10-25-birefnet-roster805/player-image-candidates.json",
+    "sha256": "b1e592d1ffbf02390a2fd7e73a0c2baf0d539017546e80adb4c728365251dda9",
+    "selectedRecord": {
+      "id": 8476453,
+      "name": "Nikita Kucherov",
+      "position": "R",
+      "roster_team": "TBL",
+      "sweater": 86,
+      "source_url": "https://assets.nhle.com/mugs/actionshots/1296x729/8476453.jpg",
+      "status": "PROCESSED",
+      "source_sha256": "3036cb4ec324cc902ab2d797f4e69b58347c85909d6ce92daab01b7123f0711b",
+      "alpha_sha256": "2010d97f1e1c631f7ccf154d991517f3b6923df7739d756e39ed06140aa1f278",
+      "dimensions": [
+        1296,
+        729
+      ],
+      "inference_seconds": 4.845846083000652,
+      "automatic_flags": [],
+      "error": null,
+      "exception": null,
+      "product_acceptance": null,
+      "visual_review": {
+        "status": "NOT_VISUALLY_REVIEWED"
+      }
+    }
+  },
+  "outputs/8476453/result.json": {
+    "path": "/Users/tim/Documents/FHFH-local-image-tests/2026-10-25-birefnet-roster805/outputs/8476453/result.json",
+    "sha256": "959d5ee0b31274de0182a184278e99e3b91eecd68ab86dc2318cc77693646c69",
+    "record": {
+      "id": 8476453,
+      "name": "Nikita Kucherov",
+      "source_url": "https://assets.nhle.com/mugs/actionshots/1296x729/8476453.jpg",
+      "started_at": "2026-10-25T04:20:29.473612+00:00",
+      "visual_review": "NOT_VISUALLY_REVIEWED",
+      "automatic_flags": [],
+      "source_format": "JPEG",
+      "dimensions": [
+        1296,
+        729
+      ],
+      "source_sha256": "3036cb4ec324cc902ab2d797f4e69b58347c85909d6ce92daab01b7123f0711b",
+      "source_bytes": 650303,
+      "decoded_rgb_sha256": "2dd312c729c7d6742edba42be59ba058e25273c4c96388e1b450787806204a72",
+      "inference_seconds": 4.845846083000652,
+      "warnings": [],
+      "alpha_coverage": 0.11893194634964183,
+      "alpha_nonzero_fraction": 0.12568587105624143,
+      "significant_component_pixels": [
+        112365
+      ],
+      "source_frame_edges_with_alpha": {
+        "top": false,
+        "bottom": false,
+        "left": false,
+        "right": false
+      },
+      "status": "PROCESSED",
+      "rgb_preserved_exactly": true,
+      "output_sha256": {
+        "header-checkerboard.png": "6585ef269f115e988c3533d96afe4c9915ef18ddafa78c203018755dbc3a5ba9",
+        "header-dark.png": "53099f7ff45295520fa15e25f1ed83e0f42ade7ef7f22fb4a03c3c006a476d4c",
+        "alpha.png": "2010d97f1e1c631f7ccf154d991517f3b6923df7739d756e39ed06140aa1f278",
+        "header-original.png": "f3738b5701a16f65853c621c012295fabcfda991bb43a7fecae40308fddafa1c",
+        "header-light.png": "27c1821b70f19a9c0ddfdecb51ae1d3dbf0b0083ed0a06a87c3776cc46ffb1fe",
+        "mask.png": "9d46256b6f1d201a562d1811885982e5b27b87423a21fbb6a83443b32a962fa5"
+      },
+      "completed_at": "2026-10-25T04:20:34.410788+00:00"
+    }
+  },
+  "records/8476453.json": {
+    "path": "/Users/tim/Documents/FHFH-local-image-tests/2026-10-25-birefnet-roster805/records/8476453.json",
+    "sha256": "69bd6e91a29e3d4cc9e4ece69d2f16dcfd53fe764391078f14d6eff729edec16",
+    "record": {
+      "id": 8476453,
+      "name": "Nikita Kucherov",
+      "source_url": "https://assets.nhle.com/mugs/actionshots/1296x729/8476453.jpg",
+      "started_at": "2026-10-25T04:20:29.473612+00:00",
+      "visual_review": "NOT_VISUALLY_REVIEWED",
+      "automatic_flags": [],
+      "source_format": "JPEG",
+      "dimensions": [
+        1296,
+        729
+      ],
+      "source_sha256": "3036cb4ec324cc902ab2d797f4e69b58347c85909d6ce92daab01b7123f0711b",
+      "source_bytes": 650303,
+      "decoded_rgb_sha256": "2dd312c729c7d6742edba42be59ba058e25273c4c96388e1b450787806204a72",
+      "inference_seconds": 4.845846083000652,
+      "warnings": [],
+      "alpha_coverage": 0.11893194634964183,
+      "alpha_nonzero_fraction": 0.12568587105624143,
+      "significant_component_pixels": [
+        112365
+      ],
+      "source_frame_edges_with_alpha": {
+        "top": false,
+        "bottom": false,
+        "left": false,
+        "right": false
+      },
+      "status": "PROCESSED",
+      "rgb_preserved_exactly": true,
+      "output_sha256": {
+        "header-checkerboard.png": "6585ef269f115e988c3533d96afe4c9915ef18ddafa78c203018755dbc3a5ba9",
+        "header-dark.png": "53099f7ff45295520fa15e25f1ed83e0f42ade7ef7f22fb4a03c3c006a476d4c",
+        "alpha.png": "2010d97f1e1c631f7ccf154d991517f3b6923df7739d756e39ed06140aa1f278",
+        "header-original.png": "f3738b5701a16f65853c621c012295fabcfda991bb43a7fecae40308fddafa1c",
+        "header-light.png": "27c1821b70f19a9c0ddfdecb51ae1d3dbf0b0083ed0a06a87c3776cc46ffb1fe",
+        "mask.png": "9d46256b6f1d201a562d1811885982e5b27b87423a21fbb6a83443b32a962fa5"
+      },
+      "completed_at": "2026-10-25T04:20:34.422715+00:00"
+    }
+  },
+  "originalDownloadReceipt": {
+    "path": "/Users/tim/Documents/FHFH-local-image-tests/2026-10-24-birefnet-validation/download-receipts.json",
+    "sha256": "04372181994cc0e16f3e3dc3df09c4c2707365a0d1b1df0034387e71977fbe18",
+    "selectedRecord": {
+      "id": 8476453,
+      "name": "Nikita Kucherov",
+      "position": "R",
+      "roster_team": "TBL",
+      "sweater": 86,
+      "source_url": "https://assets.nhle.com/mugs/actionshots/1296x729/8476453.jpg",
+      "scan_record": {
+        "id": 8476453,
+        "source_url": "https://api-web.nhle.com/v1/player/8476453/landing",
+        "fetched_at": "2026-10-24T20:21:59.751271+00:00",
+        "hero_image": "https://assets.nhle.com/mugs/actionshots/1296x729/8476453.jpg",
+        "status": "found",
+        "payload_sha256": "512f708f7576c77b32fca47e5eb30641e16771eff0c0ad2482a3058ec5675e95"
+      },
+      "baseline_reuse": false,
+      "path": "/Users/tim/Documents/FHFH-local-image-tests/2026-10-24-birefnet-validation/originals/8476453.jpg",
+      "source_sha256": "3036cb4ec324cc902ab2d797f4e69b58347c85909d6ce92daab01b7123f0711b",
+      "bytes": 650303,
+      "dimensions": [
+        1296,
+        729
+      ],
+      "mode": "RGB",
+      "format": "JPEG",
+      "download_seconds": 0.17207154200150399
+    }
+  }
+}

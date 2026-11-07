@@ -41,6 +41,27 @@ describe("bounded cron report source", () => {
     expect(reportRowIdentity({ b: 1, a: { y: 3, x: 2 } })).toBe(reportRowIdentity({ a: { x: 2, y: 3 }, b: 1 }));
   });
 
+  it("counts once per pass while retaining full row-image verification", async () => {
+    const requested: unknown[] = [];
+    const result = await readReportSource(async (from, to, _signal, query) => {
+      requested.push(query.count);
+      return { data: fixture.slice(0, 1200).slice(from, to + 1), count: query.count ? 1200 : null, error: null };
+    }, (row) => String(row.id), 500, 40, 15000, { countMode: "per-pass" });
+    expect(result.complete).toBe(true);
+    expect(result.rows).toHaveLength(1200);
+    expect(requested).toEqual(["exact", undefined, undefined, "exact", undefined, undefined]);
+  });
+
+  it("detects count drift between passes when intermediate page counts are omitted", async () => {
+    let calls = 0;
+    const result = await readReportSource(async (from, to, _signal, query) => {
+      calls++;
+      return { data: fixture.slice(0, 2).slice(from, to + 1), count: query.count ? calls > 2 ? 3 : 2 : null, error: null };
+    }, (row) => String(row.id), 1, 40, 15000, { countMode: "per-pass" });
+    expect(result.complete).toBe(false);
+    expect(result.error).toContain("Source count changed");
+  });
+
   it("deduplicates stable run IDs and fails closed on overlapping pages", async () => {
     const result = await readReportSource(async (from, to) => page(fixture.slice(0, 501))(Math.max(0, from - 1), to - (from > 0 ? 1 : 0)), (row) => String(row.id));
     expect(result.complete).toBe(false);

@@ -1,0 +1,46 @@
+{
+  "at": "2026-11-01T19:50:19.512523+00:00",
+  "state": "TESTED_ISOLATED_SUPPLEMENT_NOT_APPLIED",
+  "headObserved": "2aa77ee0aa4c2a4866c7338be463200338bf3a4b",
+  "activeCandidateTreeUnchanged": "9820a239181765a7eae2597c32c0f380c0260b5a",
+  "sourcePins": [
+    {
+      "path": "tasks/artifacts/rso-wave2-2026-10-25/FORGE-QUAL/tooling/check-readbacks.mjs",
+      "originalSha256": "1788c6549ae6f3a8bf3a24c6cfd82599fb349ef89fafc39f5528cd2277235e2e",
+      "proposedSha256": "510a4d925a912d6511783fd9d8c10918dc90b5482622584144a519a2e4c50374"
+    },
+    {
+      "path": "tasks/artifacts/rso-wave2-2026-10-25/FORGE-QUAL/tooling/check-readbacks.test.mjs",
+      "originalSha256": "479edbef96b5af789dd8809f04b8809d885c93fc9a2c423e513308ebf6b28230",
+      "proposedSha256": "2c7900a05d96927991e4879f40698754755c3fe6d33a4d8c79767056564352f8"
+    }
+  ],
+  "scopeSha256": "16b7092bea0ba307d07c1b8de3c4559533cc3a044a3af4264abd80dd397ffbe5",
+  "protocolHash": "49ae034acc864a291393dc27e86cc745697ca83e18cc2f9666508f07db46a4ef",
+  "tests": {
+    "baseline": {
+      "passed": 14,
+      "failed": 5,
+      "log": "baseline-tests.log"
+    },
+    "patched": {
+      "passed": 19,
+      "failed": 0,
+      "log": "tests.log"
+    },
+    "patchCheck": {
+      "exitCode": 0,
+      "log": "patch-check.log"
+    }
+  },
+  "limits": {
+    "canonicalFilesChanged": false,
+    "candidateChanged": false,
+    "scopeIdentityPinned": false,
+    "qualificationApproved": false,
+    "newLiveInputsRead": false,
+    "networkRequests": 0,
+    "builds": 0,
+    "gitMutations": 0
+  }
+}

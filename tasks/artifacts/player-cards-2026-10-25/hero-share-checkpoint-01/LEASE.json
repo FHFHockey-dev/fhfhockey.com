@@ -1,0 +1,83 @@
+{
+  "id": "CODEX-PLAYER-CARDS-HERO-SHARE-20261025",
+  "at": "2026-10-25T04:37:53.177782+00:00",
+  "owner_thread": "01a16ec2-f81c-717b-8961-8c3832fdc00f",
+  "source": "Owner handed existing task back; parent resumed Astra for hero header and social-share integration; exact worker request verified",
+  "status": "Granted for bounded local implementation; independent review before release inclusion",
+  "source_paths": [
+    "web/components/player-cards/EditorialPlayerCard.tsx",
+    "web/components/player-cards/HeroPlayerCard.tsx",
+    "web/components/player-cards/PlayerCardShareStudio.tsx",
+    "web/components/player-cards/PlayerCardShareStudio.module.scss",
+    "web/components/player-cards/PlayerCardShareStudio.test.tsx",
+    "web/lib/player-cards/shareExport.ts",
+    "web/lib/player-cards/shareExport.test.ts",
+    "web/pages/social-share/player-cards.tsx",
+    "web/lib/player-cards/reviewedHeroSamples.ts",
+    "web/public/player-cards/hero-samples/8479318.png",
+    "web/public/player-cards/hero-samples/8478864.png",
+    "web/components/SocialShare/SocialShare.tsx"
+  ],
+  "baseline_sha256": {
+    "web/components/player-cards/EditorialPlayerCard.tsx": "053d67ea06e1be6ba336db2afa35eaa04a7ec72b3e599f3d166e0c0d898d8a29",
+    "web/components/player-cards/HeroPlayerCard.tsx": null,
+    "web/components/player-cards/PlayerCardShareStudio.tsx": null,
+    "web/components/player-cards/PlayerCardShareStudio.module.scss": null,
+    "web/components/player-cards/PlayerCardShareStudio.test.tsx": null,
+    "web/lib/player-cards/shareExport.ts": null,
+    "web/lib/player-cards/shareExport.test.ts": null,
+    "web/pages/social-share/player-cards.tsx": null,
+    "web/lib/player-cards/reviewedHeroSamples.ts": null,
+    "web/public/player-cards/hero-samples/8479318.png": null,
+    "web/public/player-cards/hero-samples/8478864.png": null,
+    "web/components/SocialShare/SocialShare.tsx": "ff809aa03f785462d53ec50a94e4580efecb7fb6b39e1ded2d37d37c76ffb5c4"
+  },
+  "artifact_root": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/",
+  "scope": "Optional Editorial header/provenance preserving default output; new Hero renderer, share studio, scoped export helper/tests and dedicated static page using existing access/cache contract",
+  "read_only_dependencies": [
+    "web/components/SocialShare/SocialShareAccessGate.tsx",
+    "web/contexts/AuthProviderContext/index.tsx",
+    "web/lib/socialShare/access.ts",
+    "web/components/player-cards/EditorialPlayerCard.test.tsx"
+  ],
+  "excluded": [
+    "web/pages/social-share/[format].tsx",
+    "shared auth, role, API, existing export or Library implementations"
+  ],
+  "resource": "Conditional only-owned 127.0.0.1:3125 handoff after offline QA; current observed PID98041 matches recorded owner. Reverify exact process/command and free port at handoff; preserve prior routes. No other port/process ownership.",
+  "release_boundary": "Qualified card source in pushed a7f695460fad8363a8fd099fb15a06ec91b4ae09 remains immutable; new work is a separate reviewed follow-on. No automatic source inclusion, push, deploy, paid processing, external image/download/upload or auth actions.",
+  "model": "GPT-6 Astra requested by parent; actual runtime telemetry not independently exposed",
+  "reviewed_local_asset_copy": {
+    "at": "2026-10-25T04:38:54.711767+00:00",
+    "assets": [
+      {
+        "path": "web/public/player-cards/hero-samples/8479318.png",
+        "source_path": "/Users/tim/Documents/FHFH-local-image-tests/2026-10-24-birefnet-validation/outputs/8479318/alpha.png",
+        "sha256": "713a4923cf4742cefbbc09a647a249f98c095edea8eb92f7bda028929e0db065",
+        "bytes": 1152357,
+        "dimensions": [
+          1296,
+          729
+        ]
+      },
+      {
+        "path": "web/public/player-cards/hero-samples/8478864.png",
+        "source_path": "/Users/tim/Documents/FHFH-local-image-tests/2026-10-24-birefnet-validation/outputs/8478864/alpha.png",
+        "sha256": "4199308c2f56a9ac0244697e7162f42283f1a5c247b656fb7c9278597b3ee18c",
+        "bytes": 929229,
+        "dimensions": [
+          1296,
+          729
+        ]
+      }
+    ],
+    "scope": "Byte-identical copies for the locally reviewed candidate; no new image processing, download, upload or public deployment. Source and synthetic-stat provenance remain separate. Existing acceptance label is supplied local validation evidence, not independent legal/rights or live-data approval."
+  },
+  "navigation_link_exception": {
+    "at": "2026-10-25T04:49:49.633939+00:00",
+    "path": "web/components/SocialShare/SocialShare.tsx",
+    "scope": "One minimal existing studio header/navigation link to /social-share/player-cards, plus required Next Link import only; preserve all existing rendering, state, date/source/export/auth behavior and styles. Return minimal patch with before/after hashes.",
+    "frozen_release_sha256": "7eb85f640d2087cfeed0c2e48301ff643f7738f21e85516e18354b03d539d857",
+    "integration_warning": "Canonical file differs from frozen release due accepted release fixes. Reintegrate the link patch into released source; never replace the release file wholesale with the older canonical baseline. New link accompanies reviewed card follow-on, not current memory-only release repair."
+  }
+}

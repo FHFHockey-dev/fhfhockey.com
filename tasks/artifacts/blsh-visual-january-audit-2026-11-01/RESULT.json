@@ -1,0 +1,63 @@
+{
+  "state": "PASS_FROZEN_ARITHMETIC_AND_LINEAGE_WITH_SEPARATE_DISPLAY_FINDING",
+  "pinChecks": 66,
+  "uniquePinnedFiles": 58,
+  "summary": {
+    "profiles": 824,
+    "numeric": 816,
+    "lists": {
+      "SH": 251,
+      "BL": 336,
+      "withheld": 237
+    },
+    "zeroShot": {
+      "profiles": 42,
+      "numeric": 41,
+      "listed": 16
+    },
+    "variants": 3883,
+    "numericComparisons": 3811,
+    "signChanges": 534,
+    "emptyUnavailable": 34
+  },
+  "checks": {
+    "block_seconds": 5216,
+    "block_process": 15648,
+    "block_outcome": 15648,
+    "donor_rate": 1659,
+    "donor_weight": 305075,
+    "coefficient_algebra": 7416,
+    "window_seconds": 4707,
+    "native_actual": 14121,
+    "native_baseline": 14121,
+    "native_support": 14121,
+    "native_gap": 28242,
+    "native_per60": 28242,
+    "normalized_gap": 4627,
+    "normalized_baseline": 4627,
+    "bounded_index": 4627,
+    "component_sum": 2448,
+    "normalization_weight": 2448
+  },
+  "maximumAbsoluteResiduals": {
+    "block_seconds": 0.0,
+    "block_process": 1.7763568394002505e-15,
+    "block_outcome": 3.552713678800501e-15,
+    "donor_rate": 2.168404344971009e-18,
+    "donor_weight": 8.673617379884035e-19,
+    "coefficient_algebra": 2.220446049250313e-15,
+    "window_seconds": 0.0,
+    "native_actual": 7.105427357601002e-15,
+    "native_baseline": 0.0,
+    "native_support": 3.552713678800501e-15,
+    "native_gap": 7.105427357601002e-15,
+    "native_per60": 7.105427357601002e-15,
+    "normalized_gap": 8.881784197001252e-16,
+    "normalized_baseline": 1.3322676295501878e-15,
+    "bounded_index": 4.085620730620576e-14,
+    "component_sum": 1.887379141862766e-15,
+    "normalization_weight": 1.1102230246251565e-16
+  },
+  "recentProfilesLabeledStale": 137,
+  "scope": "Existing frozen outputs only; no new origin, fitting, source editing, network, holdout or production access."
+}

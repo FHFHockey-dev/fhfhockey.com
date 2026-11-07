@@ -1,0 +1,14 @@
+{
+  "version": "luna-evaluation-qualification-pins-v1",
+  "authority": "offline proposal only; no data acquisition, API call or production authority",
+  "files": {
+    "PLAN.md": "731f86255fee9d667e2db7316cb94f6c45d86280132d951d16ec39c245d461d5",
+    "QUALIFICATION.json": "3b15777c20a54dd9dcf5f182d1d77f327183c342b6a573a07362a24fff1fb314",
+    "VERIFICATION.json": "77d8891e963d60693bc1897b0cfa3dbb01d3dc29a6f67325e3045f55382e0de0",
+    "human-review.template.json": "b96b6e10662ead1a650bb041a5c239685bb3332d212b6071819bdf54a5af34b8",
+    "intake.template.json": "9007b14e0398bbe040ab557740389e04e666e699dfa5d5389a073bda1b6afd7b"
+  },
+  "realLedgerSha256": "59723f8818c00c1ce84eb88fc0a5d57cf4458065b9d9996622c962d9f7a9b24a",
+  "priorExecutionManifestSha256": "fbd7426f4703aab655a2097ce6700084a7f24b965349ec619fcb7c5a6b3e33b1",
+  "diaryExcluded": true
+}

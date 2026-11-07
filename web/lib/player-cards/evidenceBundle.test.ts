@@ -54,6 +54,36 @@ function deepFreeze<T>(value: T): T {
 }
 
 describe("evidence bundle: explicitly qualified synthetic positive", () => {
+  it("retains separately admitted source dates and minute precision without inventing endedAt", () => {
+    const w = world();
+    w.input.players[0].frame.appearances[0].sourceDate = "2026-10-13";
+    w.history[0].subject.appearances = w.history[0].subject.appearances.map((game, i) => i === 0 ? { ...game, sourceDate: "2026-10-13" } : game);
+    for (const receipt of w.finality) {
+      const { endedAt: _exact, ...subject } = receipt.subject;
+      receipt.subject = { ...subject, sourceClass: "official-game-report-minute", endMinute: { startInclusive: `${subject.date}T22:30:00Z`, endExclusive: `${subject.date}T22:31:00Z`, timezone: "UTC", clockBasis: "explicit-24h" } };
+    }
+    const result = run(w);
+    expect(result.state).toBe("eligible");
+    expect(result.card!.selection.games.every(game => game.completion.status === "verified-final" && !!game.completion.completedDuring && !game.completion.completedAt)).toBe(true);
+    w.input.players[0].frame.appearances[0].sourceDate = "2026-10-12";
+    expect(codes(run(w))).toContain("history-conflict");
+  });
+  it("withholds unresolved end clocks and rejects falsely precise authority labels", () => {
+    const w = world(), receipt = w.finality[0], { endedAt: _exact, ...subject } = receipt.subject;
+    receipt.subject = { ...subject, sourceClass: "official-game-report-minute", endMinute: { startInclusive: `${subject.date}T22:30:00Z`, endExclusive: `${subject.date}T22:31:00Z`, timezone: "UTC", clockBasis: "unresolved" } };
+    expect(codes(run(w))).toContain("finality-clock-ambiguous");
+    expect(run(w).state).toBe("incomplete");
+    receipt.subject.endMinute!.clockBasis = "explicit-24h"; receipt.subject.sourceClass = "official-game-end";
+    expect(codes(run(w))).toContain("finality-precision");
+  });
+  it("keeps a report captured inside its end minute incomplete rather than inventing order", () => {
+    const w = world(), receipt = w.finality[0], { endedAt: _exact, ...subject } = receipt.subject;
+    receipt.capturedAt = `${subject.date}T22:30:30Z`;
+    receipt.subject = { ...subject, sourceClass: "official-game-report-minute", endMinute: { startInclusive: `${subject.date}T22:30:00Z`, endExclusive: `${subject.date}T22:31:00Z`, timezone: "UTC", clockBasis: "explicit-24h" } };
+    const result = run(w);
+    expect(result.state).toBe("incomplete"); expect(codes(result)).toContain("finality-capture-ambiguous");
+    expect(codes(result)).not.toContain("finality-time");
+  });
   it("is eligible only when every claim resolves to a matching retained receipt", () => {
     const result = run(world());
     expect(result.issues).toEqual([]);

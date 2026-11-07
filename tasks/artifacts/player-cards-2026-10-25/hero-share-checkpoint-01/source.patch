@@ -1,0 +1,444 @@
+--- a/web/components/player-cards/EditorialPlayerCard.tsx
++++ b/web/components/player-cards/EditorialPlayerCard.tsx
+@@ -36,7 +36,8 @@
+ }
+ 
+ /** First visual checkpoint only; consumes the accepted synthetic snapshot unchanged. */
+-export default function EditorialPlayerCard({ snapshot, svgRef }: { snapshot: FlowSnapshot; svgRef?: React.Ref<SVGSVGElement> }) {
++export default function EditorialPlayerCard({ snapshot, svgRef, header, headerHeight = 218, artworkDescription }: { snapshot: FlowSnapshot; svgRef?: React.Ref<SVGSVGElement>; header?: React.ReactNode; headerHeight?: number; artworkDescription?: string }) {
++  const extraHeight = header ? headerHeight - 218 : 0;
+   const reading = (id: MetricId) => snapshot.readings.find(row => row.id === id)!;
+   const sample = snapshot.sample, period = snapshot.settings.period;
+   const season = String(snapshot.settings.season);
+@@ -48,13 +49,14 @@
+   }).join(". ")}`;
+   const names = snapshot.player.name.split(" ");
+   const longName = snapshot.player.name.length > 24;
+-  return <svg ref={svgRef} viewBox="0 0 1200 900" width="1200" height="900" xmlns="http://www.w3.org/2000/svg" role="img" aria-label={description} data-snapshot-id={snapshot.id} data-renderer="fhfh-editorial-checkpoint-01">
++  return <svg ref={svgRef} viewBox={`0 0 1200 ${900 + extraHeight}`} width="1200" height={900 + extraHeight} xmlns="http://www.w3.org/2000/svg" role="img" aria-label={description} data-snapshot-id={snapshot.id} data-renderer="fhfh-editorial-checkpoint-01">
+     <title>FHFH player report · {snapshot.player.name} · synthetic fixture</title>
+-    <desc>{description}. Bars and percentile numbers describe numeric magnitude, not quality or a forecast. Proposed competition ranks and midrank percentiles.</desc>
+-    <rect width="1200" height="900" fill="#F2F1EB" />
++    <desc>{artworkDescription ? `${artworkDescription}. ` : ""}{description}. Bars and percentile numbers describe numeric magnitude, not quality or a forecast. Proposed competition ranks and midrank percentiles.</desc>
++    <rect width="1200" height={900 + extraHeight} fill="#F2F1EB" />
+     <rect width="1200" height="218" fill="#1A1D21" />
+     <rect width="9" height="218" fill="#07AAE2" />
+     <g fontFamily="Arial, sans-serif" style={{ fontVariantNumeric: "tabular-nums" }}>
++      {header ?? <>
+       <text x="40" y="45" fontSize="27" fontWeight="900" letterSpacing="2" fill="#07AAE2">FHFH</text>
+       <text x="134" y="44" fontSize="17" letterSpacing="3" fill="#C6C9CA">/ PLAYER REPORT</text>
+       <text x="1160" y="44" textAnchor="end" fontSize="18" fontWeight="700" letterSpacing="1.5" fill="#80DFFF">SYNTHETIC FIXTURE</text>
+@@ -65,6 +67,8 @@
+       {period.mode === "appearances" ? <text x="1160" y="149" textAnchor="end" fontSize="24" fontWeight="700" letterSpacing="1" fill="#F2F1EB">OWN LAST {period.count}</text> : <text x="1160" y="136" textAnchor="end" fontSize="19" fontWeight="700" fill="#F2F1EB"><tspan x="1160">{period.start} →</tspan><tspan x="1160" dy="25">{period.end} · UTC</tspan></text>}
+       <text x="1160" y="190" textAnchor="end" fontSize="23" fill="#C6C9CA">{strengthLabel(snapshot)}</text>
+ 
++      </>}
++      <g transform={extraHeight ? `translate(0 ${extraHeight})` : undefined}>
+       <g fill="#1A1D21">
+         <text x="40" y="258" fontSize="18" fontWeight="700" letterSpacing="1.6">STATISTICAL PROFILE</text>
+         <text x="620" y="258" textAnchor="end" fontSize="18" fontWeight="700">ACTUAL</text>
+@@ -115,6 +119,7 @@
+         <text x="40" y="861" fontSize="17">Source: synthetic fixture · Updated {snapshot.capturedAt.slice(0, 16).replace("T", " ")} UTC · Cutoff {snapshot.settings.cutoff.slice(0, 16).replace("T", " ")} UTC</text>
+         <text x="40" y="885" fontSize="16">Proposed: season-only, {snapshot.settings.shortSamplePolicy === "allow-known-short-proposed" ? "known-short allowed" : "full-N required"}, competition ties, midrank percentile · Numeric magnitude ≠ quality · fhfhockey.com</text>
+       </g>
++      </g>
+     </g>
+   </svg>;
+ }
+--- /dev/null
++++ b/web/components/player-cards/HeroPlayerCard.tsx
+@@ -0,0 +1,60 @@
++import React, { useId } from "react";
++import { teamsInfo } from "../../lib/teamsInfo";
++import type { FlowSnapshot } from "../../lib/player-cards/interactionSnapshot";
++import { periodLabel, strengthLabel } from "./InteractiveCard";
++import EditorialPlayerCard from "./EditorialPlayerCard";
++
++export type HeroSample = {
++  id: number; name: string; team: string; position: string; sweater: number;
++  sourceUrl: string; sourceWidth: number; sourceHeight: number; capturedAt: string;
++  sourceSha256: string; alphaSha256: string; acceptance: "accepted";
++  localPath: string;
++};
++export type PreparedHero = HeroSample & { dataUrl: string };
++export type CardShareFormat = "landscape" | "social-square";
++
++export default function HeroPlayerCard({ snapshot, hero, format, svgRef }: {
++  snapshot: FlowSnapshot; hero: PreparedHero; format: CardShareFormat; svgRef?: React.Ref<SVGSVGElement>;
++}) {
++  const uid = useId().replace(/:/g, ""), palette = teamsInfo[hero.team];
++  if (String(hero.id) !== snapshot.player.id || !palette || hero.acceptance !== "accepted") throw new Error("Artwork identity is not verified for this card.");
++  const square = format === "social-square", height = square ? 1200 : 1020;
++  const names = hero.name.split(" "), first = names.shift()!, last = names.join(" ");
++  const header = <g>
++    <defs>
++      <linearGradient id={`${uid}-team`}><stop stopColor={palette.darkColor || palette.primaryColor} /><stop offset="1" stopColor={palette.primaryColor} /></linearGradient>
++      <linearGradient id={`${uid}-shade`}><stop stopColor="#101214" stopOpacity=".9" /><stop offset=".62" stopColor="#101214" stopOpacity=".2" /><stop offset="1" stopColor="#101214" stopOpacity="0" /></linearGradient>
++      <clipPath id={`${uid}-crop`}><rect width="1200" height="338" /></clipPath>
++    </defs>
++    <g clipPath={`url(#${uid}-crop)`}>
++      <rect width="1200" height="338" fill={`url(#${uid}-team)`} />
++      <path d="M700 0H850L630 338H480Z" fill={palette.secondaryColor} opacity=".35" />
++      <path d="M1040 0H1090L870 338H820Z" fill={palette.jersey} opacity=".6" />
++      <rect width="1200" height="338" fill={`url(#${uid}-shade)`} />
++      <image data-hero-image="true" href={hero.dataUrl} x="600" y="4" width="600" height={600 * hero.sourceHeight / hero.sourceWidth} preserveAspectRatio="xMidYMin meet" />
++      <rect y="299" width="1200" height="39" fill="#101214" fillOpacity=".93" />
++    </g>
++    <g fill="#F2F1EB" fontFamily="Arial, sans-serif">
++      <text x="40" y="42" fontSize="24" fontWeight="900" letterSpacing="2" fill="#07AAE2">FHFH</text>
++      <text x="132" y="42" fontSize="16" letterSpacing="2">/ PLAYER REPORT</text>
++      <text x="40" y="101" fontSize="44" fontWeight="700">{first.toUpperCase()}</text>
++      <text x="36" y="184" fontSize={last.length > 10 ? 66 : 86} fontWeight="900" letterSpacing="-3">{last.toUpperCase()}</text>
++      <text x="40" y="225" fontSize="25">{palette.name} · {hero.position} · #{hero.sweater}</text>
++      <text x="40" y="268" fontSize="23" fill="#BEEFFF">{String(snapshot.settings.season).slice(0,4)}–{String(snapshot.settings.season).slice(6)} · {periodLabel(snapshot)} · {strengthLabel(snapshot)}</text>
++      <text x="40" y="325" fontSize="19" fontWeight="700" letterSpacing="1" fill="#80DFFF">ILLUSTRATIVE STATS · NOT {hero.name.toUpperCase()}’S RESULTS</text>
++      <text x="1160" y="325" textAnchor="end" fontSize="16">NHL photo · local cutout</text>
++    </g>
++  </g>;
++  return <svg ref={svgRef} xmlns="http://www.w3.org/2000/svg" viewBox={`0 0 1200 ${height}`} width="1200" height={height} role="img"
++    aria-label={`${hero.name}. NHL action photo with locally removed background. Illustrative synthetic statistics, not this player's actual results. ${snapshot.sample.gp === null ? "GP unverified" : `${snapshot.sample.gp} fixture appearances`}. ${snapshot.readings.map(r => r.reason || "").filter(Boolean).join(". ")}`}
++    data-snapshot-id={snapshot.id} data-artwork-hash={hero.alphaSha256} data-share-format={format}>
++    <title>{hero.name} · FHFH artwork study · illustrative statistics</title>
++    <desc>Source photo: {hero.sourceUrl}. Captured {hero.capturedAt}. Team and jersey identity from that captured source. No live statistics or ranking coverage claimed.</desc>
++    <rect width="1200" height={height} fill="#101214" />
++    {square && <g fill="#F2F1EB" fontFamily="Arial, sans-serif"><text x="40" y="48" fontSize="22" letterSpacing="2">FHFH / SOCIAL SHARE</text><text x="1160" y="48" textAnchor="end" fontSize="18" fill="#80DFFF">ARTWORK CHECKPOINT</text></g>}
++    <svg x="0" y={square ? 76 : 0} width="1200" height="1020" viewBox="0 0 1200 1020" aria-hidden="true">
++      <EditorialPlayerCard snapshot={snapshot} header={header} headerHeight={338} artworkDescription={`Photo ${hero.sourceUrl}; reviewed local cutout ${hero.alphaSha256}; statistics are fabricated`} />
++    </svg>
++    {square && <g fontFamily="Arial, sans-serif"><text x="40" y="1136" fontSize="22" fill="#F2F1EB">Real player photography. Fabricated statistical profile.</text><text x="40" y="1170" fontSize="18" fill="#B6B9BC">Photo source: NHL · reviewed cutout · live data and premium features remain inactive</text><text x="1160" y="1170" textAnchor="end" fontSize="19" fill="#07AAE2">FHFHOCKEY.COM</text></g>}
++  </svg>;
++}
+--- /dev/null
++++ b/web/components/player-cards/PlayerCardShareStudio.tsx
+@@ -0,0 +1,74 @@
++import React, { useEffect, useMemo, useRef, useState } from "react";
++import HeroPlayerCard, { type HeroSample, type PreparedHero, type CardShareFormat } from "./HeroPlayerCard";
++import { REVIEWED_HERO_SAMPLES } from "../../lib/player-cards/reviewedHeroSamples";
++import { prepareHero, rasterizePlayerCard, saveCardFile, shareCardFile } from "../../lib/player-cards/shareExport";
++import { adaptLocalSnapshot } from "../../lib/player-cards/adapter";
++import { buildInteractionFixture, type FixtureScenario } from "../../lib/player-cards/interactionFixtures";
++import { displaySnapshot, flowSettings, INITIAL_FLOW } from "../../lib/player-cards/interactionSnapshot";
++import { EDITORIAL_METRICS } from "./EditorialPlayerCard";
++import { METRICS } from "../../lib/player-cards/registry";
++import { formatMetric } from "./PlayerCard";
++import styles from "./PlayerCardShareStudio.module.scss";
++
++export default function PlayerCardShareStudio({ samples = REVIEWED_HERO_SAMPLES, loadArtwork = prepareHero, rasterize = rasterizePlayerCard }: {
++  samples?: readonly HeroSample[]; loadArtwork?: typeof prepareHero; rasterize?: typeof rasterizePlayerCard;
++}) {
++  const [playerId, setPlayerId] = useState(samples[0]?.id), [format, setFormat] = useState<CardShareFormat>("landscape");
++  const [scenario, setScenario] = useState<FixtureScenario>("complete"), [hero, setHero] = useState<PreparedHero | null>(null);
++  const [error, setError] = useState(""), [retry, setRetry] = useState(0), [busy, setBusy] = useState(false), [status, setStatus] = useState("");
++  const [prepared, setPrepared] = useState<{ key: string; file: File } | null>(null);
++  const busyRef = useRef(false), svgRef = useRef<SVGSVGElement>(null);
++  const sample = samples.find(row => row.id === playerId);
++  useEffect(() => {
++    let active = true; setHero(null); setError(""); setPrepared(null);
++    if (!sample) { setError("No reviewed artwork is available."); return; }
++    loadArtwork(sample).then(value => { if (active) setHero(value); }, reason => { if (active) setError(reason instanceof Error ? reason.message : "Artwork unavailable."); });
++    return () => { active = false; };
++  }, [sample, retry, loadArtwork]);
++  const snapshot = useMemo(() => {
++    if (!sample) return null;
++    const result = adaptLocalSnapshot(buildInteractionFixture(flowSettings(INITIAL_FLOW), scenario, 1001), 1001);
++    if (result.state === "rejected") return null;
++    const fixture = displaySnapshot(result);
++    return { ...fixture, id: `art-study-${sample.id}-${fixture.id}`, player: { id: String(sample.id), name: sample.name, team: sample.team, position: sample.position } };
++  }, [sample, scenario]);
++  const readyHero = hero?.id === sample?.id ? hero : null;
++  const key = `${snapshot?.id}:${format}:${readyHero?.alphaSha256}`;
++  const exportable = !!snapshot && !!readyHero && snapshot.sample.gp !== null && snapshot.sample.toiSeconds !== null && snapshot.readings.some(r => r.state === "valid");
++  function changed() { setPrepared(null); setStatus(""); }
++  async function createImage(social: boolean) {
++    if (busyRef.current || !exportable || !snapshot || !readyHero || !svgRef.current) return;
++    busyRef.current = true; setBusy(true); setStatus("Preparing the displayed image…");
++    try {
++      const blob = await rasterize(svgRef.current, snapshot, readyHero, format);
++      const file = new File([blob], `fhfh-${sample!.id}-illustrative-${format}.png`, { type: "image/png" });
++      if (social) { setPrepared({ key, file }); setStatus("Image ready. Choose Share prepared image to open your device’s share options."); }
++      else { saveCardFile(file, file.name); setStatus("PNG saved from the displayed snapshot."); }
++    } catch (reason) { setStatus(reason instanceof Error ? reason.message : "Export failed. Please retry."); }
++    finally { busyRef.current = false; setBusy(false); }
++  }
++  async function sharePrepared() {
++    if (busyRef.current || !prepared || prepared.key !== key) return;
++    busyRef.current = true; setBusy(true);
++    try {
++      const outcome = await shareCardFile(prepared.file);
++      setStatus(outcome === "cancelled" ? "Sharing cancelled. Nothing was posted." : outcome === "downloaded" ? "This browser cannot share image files. PNG downloaded for manual posting." : "Image handed to your device’s share destination.");
++    } catch (reason) { setStatus(reason instanceof Error ? reason.message : "Sharing failed. Use Download PNG instead."); }
++    finally { busyRef.current = false; setBusy(false); }
++  }
++  return <main className={styles.studio}>
++    <header className={styles.heading}><div><p className={styles.eyebrow}>FHFH / SHARE STUDIO</p><h1>Player cards</h1><p>Reviewed NHL photography with illustrative statistics. The numbers below do not describe the pictured player.</p></div><a href="/social-share/game-grid">Schedule share studio →</a></header>
++    <div className={styles.controls}>
++      <label>Reviewed artwork<select aria-label="Reviewed artwork" value={playerId} disabled={busy} onChange={e => { changed(); setPlayerId(Number(e.target.value)); }}>{samples.map(row => <option key={row.id} value={row.id}>{row.name} · {row.team}</option>)}</select></label>
++      <label>Image format<select aria-label="Image format" value={format} disabled={busy} onChange={e => { changed(); setFormat(e.target.value as CardShareFormat); }}><option value="landscape">Landscape card</option><option value="social-square">Social square</option></select></label>
++      <label>Statistics preview<select aria-label="Statistics preview" value={scenario} disabled={busy} onChange={e => { changed(); setScenario(e.target.value as FixtureScenario); }}><option value="complete">Illustrative profile</option><option value="metric-gap">Missing metric input</option><option value="history-gap">Unverified appearance history</option></select></label>
++      <button disabled={busy || !exportable} onClick={() => void createImage(false)}>Download PNG</button>
++      <button disabled={busy || !exportable} onClick={() => void createImage(true)}>Social Share</button>
++      {prepared?.key === key && <button disabled={busy} onClick={() => void sharePrepared()}>Share prepared image</button>}
++    </div>
++    {error ? <p role="alert">{error} <button onClick={() => setRetry(n => n + 1)}>Retry artwork</button></p> : !readyHero ? <p role="status">Preparing reviewed artwork…</p> : null}
++    {snapshot && readyHero && <section className={styles.artwork} aria-label="Player card preview"><HeroPlayerCard snapshot={snapshot} hero={readyHero} format={format} svgRef={svgRef} /></section>}
++    <p role="status" aria-live="polite">{status || (snapshot?.sample.gp === null ? "GP unverified. Export unavailable until sample context is verified." : scenario === "metric-gap" ? "Missing metric inputs remain unavailable on the card and export." : "Live statistics and premium activation remain off.")}</p>
++    {snapshot && readyHero && <details><summary>Card values and provenance</summary><p>Photo: NHL action-image URL captured {sample!.capturedAt.slice(0, 10)}. Team and jersey identity reflect that capture. Local background removal; no generated identity. Statistical source: fabricated fixture player1001, separate from the photographed player.</p><p><a href={sample!.sourceUrl} target="_blank" rel="noreferrer">Recorded photo source</a></p><ul>{EDITORIAL_METRICS.map(id => { const row = snapshot.readings.find(v => v.id === id)!; return <li key={id}>{METRICS.find(v => v.id === id)!.help}: {formatMetric(id, row.value)} · {row.rank ? `${row.rank.tied ? "T-" : ""}${row.rank.ordinal}/${row.rank.population} · ${row.rank.percentile.toFixed(1)} percentile` : row.reason || row.rankReason}</li>; })}</ul><button disabled={busy} onClick={() => saveCardFile(new Blob([JSON.stringify({ snapshot, selectedMetrics: EDITORIAL_METRICS, format, artwork: { ...readyHero, dataUrl: undefined }, statistics: { origin: "synthetic", fixturePlayerId: 1001, representsPicturedPlayer: false }, liveActivation: false, premiumActivation: false }, null, 2)], { type: "application/json" }), "fhfh-player-card-manifest.json")}>Download manifest</button></details>}
++  </main>;
++}
+--- /dev/null
++++ b/web/components/player-cards/PlayerCardShareStudio.module.scss
+@@ -0,0 +1,15 @@
++.studio { max-width: 1280px; margin: auto; padding: 32px; color: #f2f1eb; background: #101214; font-family: Arial, sans-serif; -webkit-font-smoothing: antialiased;
++  a { color: #80dfff; } button, select { font: inherit; min-height: 44px; border: 1px solid #62666b; border-radius: 3px; padding: 10px 14px; background: #25292e; color: #f2f1eb; }
++  button { cursor: pointer; } button:disabled { opacity: .5; cursor: default; }
++  :focus-visible { outline: 3px solid #80dfff; outline-offset: 3px; }
++  details { border-top: 1px solid #555; margin-top: 18px; padding-top: 18px; font-size: 16px; line-height: 1.6; } summary { min-height: 44px; cursor: pointer; }
++}
++.heading { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-bottom: 24px;
++  h1 { font-size: 32px; margin: 6px 0; } p { max-width: 720px; line-height: 1.5; } a { white-space: nowrap; }
++}
++.eyebrow { color: #80dfff; font-size: 12px; font-weight: 700; letter-spacing: 2px; }
++.controls { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; margin-bottom: 24px;
++  label { display: grid; gap: 6px; font-size: 13px; } button:last-child { border-color: #07aae2; }
++}
++.artwork { box-shadow: 0 15px 40px #0004; > svg { display: block; width: 100%; height: auto; } }
++@media(max-width: 760px) { .studio { padding: 16px 12px; } .heading { display: block; h1 { font-size: 26px; } } .controls { gap: 8px; label { width: 100%; } } }
+--- /dev/null
++++ b/web/components/player-cards/PlayerCardShareStudio.test.tsx
+@@ -0,0 +1,54 @@
++import React from "react";
++import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
++import { afterEach, expect, it, vi } from "vitest";
++import PlayerCardShareStudio from "./PlayerCardShareStudio";
++import { REVIEWED_HERO_SAMPLES } from "../../lib/player-cards/reviewedHeroSamples";
++import type { HeroSample, PreparedHero } from "./HeroPlayerCard";
++
++afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
++const loaded = async (sample: HeroSample): Promise<PreparedHero> => ({ ...sample, dataUrl: "data:image/png;base64,AA==" });
++const ready = () => waitFor(() => expect(screen.getByRole("button", { name: "Social Share" }).hasAttribute("disabled")).toBe(false));
++
++it("shows actual photo identity, explicit fictional statistics and same-snapshot landscape/square compositions", async () => {
++  const { container } = render(<PlayerCardShareStudio loadArtwork={loaded} />); await ready();
++  const first = container.querySelector("svg")!;
++  expect(first.getAttribute("aria-label")).toContain("not this player's actual results");
++  expect(first.textContent).toContain("AUSTON"); expect(first.textContent).toContain("MATTHEWS");
++  const id = first.dataset.snapshotId;
++  fireEvent.change(screen.getByLabelText("Image format"), { target: { value: "social-square" } });
++  expect(container.querySelector("svg")!.getAttribute("viewBox")).toBe("0 0 1200 1200");
++  expect(container.querySelector("svg")!.dataset.snapshotId).toBe(id);
++});
++it("ignores an older artwork load that resolves after a new player selection", async () => {
++  const pending: { sample: HeroSample; resolve: (hero: PreparedHero) => void }[] = [];
++  const loader = (sample: HeroSample) => new Promise<PreparedHero>(resolve => pending.push({ sample, resolve }));
++  const { container } = render(<PlayerCardShareStudio loadArtwork={loader} />);
++  fireEvent.change(screen.getByLabelText("Reviewed artwork"), { target: { value: REVIEWED_HERO_SAMPLES[1].id } });
++  await act(async () => pending[1].resolve(await loaded(pending[1].sample))); await ready();
++  await act(async () => pending[0].resolve(await loaded(pending[0].sample)));
++  expect(container.querySelector("svg")!.textContent).toContain("KAPRIZOV");
++  expect(container.querySelector("svg")!.dataset.artworkHash).toBe(REVIEWED_HERO_SAMPLES[1].alphaSha256);
++});
++it("blocks missing artwork, retries it, and keeps verified partial/unknown-stat states honest", async () => {
++  let fail = true;
++  const loader = async (sample: HeroSample) => { if (fail) throw new Error("Artwork unavailable"); return loaded(sample); };
++  const { container } = render(<PlayerCardShareStudio loadArtwork={loader} />);
++  await screen.findByRole("alert"); expect(screen.getByRole("button", { name: "Download PNG" }).hasAttribute("disabled")).toBe(true);
++  fail = false; fireEvent.click(screen.getByRole("button", { name: "Retry artwork" })); await ready();
++  fireEvent.change(screen.getByLabelText("Statistics preview"), { target: { value: "metric-gap" } });
++  expect(container.querySelector('[data-metric-id="ixg60"] [data-unavailable]')!.textContent).toContain("Missing source");
++  fireEvent.change(screen.getByLabelText("Statistics preview"), { target: { value: "history-gap" } });
++  expect(container.querySelector("svg")!.getAttribute("aria-label")).toContain("GP unverified");
++  expect(screen.getByRole("button", { name: "Download PNG" }).hasAttribute("disabled")).toBe(true);
++});
++it("freezes selection during preparation, suppresses repeated clicks and invalidates a prepared file after changes", async () => {
++  let finish!: (blob: Blob) => void;
++  const rasterize = vi.fn(() => new Promise<Blob>(resolve => { finish = resolve; }));
++  render(<PlayerCardShareStudio loadArtwork={loaded} rasterize={rasterize} />); await ready();
++  fireEvent.click(screen.getByRole("button", { name: "Social Share" })); fireEvent.click(screen.getByRole("button", { name: "Social Share" }));
++  expect(rasterize).toHaveBeenCalledTimes(1); expect(screen.getByLabelText("Reviewed artwork").hasAttribute("disabled")).toBe(true);
++  await act(async () => finish(new Blob(["png"], { type: "image/png" })));
++  expect(screen.getByRole("button", { name: "Share prepared image" })).toBeTruthy();
++  fireEvent.change(screen.getByLabelText("Image format"), { target: { value: "social-square" } });
++  expect(screen.queryByRole("button", { name: "Share prepared image" })).toBeNull();
++});
+--- /dev/null
++++ b/web/lib/player-cards/shareExport.ts
+@@ -0,0 +1,60 @@
++import type { FlowSnapshot } from "./interactionSnapshot";
++import type { CardShareFormat, HeroSample, PreparedHero } from "../../components/player-cards/HeroPlayerCard";
++
++export async function prepareHero(sample: HeroSample): Promise<PreparedHero> {
++  if (sample.acceptance !== "accepted" || !/^\/player-cards\/hero-samples\/\d+\.png$/.test(sample.localPath)) throw new Error("Reviewed local artwork required.");
++  const response = await fetch(sample.localPath);
++  if (!response.ok) throw new Error("Reviewed artwork unavailable. Please retry.");
++  const bytes = await response.arrayBuffer();
++  const hash = [...new Uint8Array(await crypto.subtle.digest("SHA-256", bytes))].map(n => n.toString(16).padStart(2, "0")).join("");
++  if (hash !== sample.alphaSha256) throw new Error("Artwork changed since review. Export blocked.");
++  const dataUrl = await new Promise<string>((resolve, reject) => {
++    const reader = new FileReader(); reader.onload = () => resolve(String(reader.result)); reader.onerror = () => reject(new Error("Artwork could not be read.")); reader.readAsDataURL(new Blob([bytes], { type: "image/png" }));
++  });
++  const image = new Image(); image.src = dataUrl; await image.decode();
++  if (image.naturalWidth !== sample.sourceWidth || image.naturalHeight !== sample.sourceHeight) throw new Error("Artwork dimensions do not match the reviewed source.");
++  return { ...sample, dataUrl };
++}
++
++export function assertCardExport(svg: SVGSVGElement, snapshot: FlowSnapshot, hero: PreparedHero, format: CardShareFormat) {
++  if (snapshot.source !== "synthetic" || snapshot.player.id !== String(hero.id) || svg.dataset.snapshotId !== snapshot.id || svg.dataset.artworkHash !== hero.alphaSha256 || svg.dataset.shareFormat !== format) throw new Error("The displayed card changed. Retry this snapshot.");
++  if (snapshot.sample.gp === null || snapshot.sample.toiSeconds === null || !snapshot.readings.some(r => r.state === "valid")) throw new Error("Verified sample context is required to export.");
++  const images = [...svg.querySelectorAll("image")];
++  if (images.length !== 1 || images[0].getAttribute("href") !== hero.dataUrl || !hero.dataUrl.startsWith("data:image/png;base64,")) throw new Error("Embedded reviewed artwork is required to export.");
++}
++
++export async function rasterizePlayerCard(svg: SVGSVGElement, snapshot: FlowSnapshot, hero: PreparedHero, format: CardShareFormat): Promise<Blob> {
++  assertCardExport(svg, snapshot, hero, format);
++  const width = 1200, height = format === "social-square" ? 1200 : 1020;
++  const copy = svg.cloneNode(true) as SVGSVGElement;
++  copy.setAttribute("width", String(width)); copy.setAttribute("height", String(height)); copy.removeAttribute("class"); copy.removeAttribute("style");
++  const url = URL.createObjectURL(new Blob([new XMLSerializer().serializeToString(copy)], { type: "image/svg+xml" }));
++  try {
++    return await new Promise<Blob>((resolve, reject) => {
++      const timer = setTimeout(() => reject(new Error("PNG creation timed out. Please retry.")), 10000);
++      const image = new Image(); image.onerror = () => { clearTimeout(timer); reject(new Error("PNG artwork could not be decoded.")); };
++      image.onload = () => {
++        try {
++          assertCardExport(svg, snapshot, hero, format);
++          const canvas = document.createElement("canvas"); canvas.width = width; canvas.height = height;
++          const context = canvas.getContext("2d"); if (!context) throw new Error("Canvas is unavailable.");
++          context.drawImage(image, 0, 0);
++          canvas.toBlob(blob => { clearTimeout(timer); try { assertCardExport(svg, snapshot, hero, format); if (!blob) throw new Error("PNG export failed."); resolve(blob); } catch (error) { reject(error); } }, "image/png");
++        } catch (error) { clearTimeout(timer); reject(error); }
++      }; image.src = url;
++    });
++  } finally { URL.revokeObjectURL(url); }
++}
++
++export function saveCardFile(blob: Blob, filename: string) {
++  const url = URL.createObjectURL(blob), anchor = document.createElement("a"); anchor.href = url; anchor.download = filename; anchor.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
++}
++
++/** Opens the device share sheet only on a user click. No automatic social posting. */
++export async function shareCardFile(file: File): Promise<"shared" | "downloaded" | "cancelled"> {
++  if (navigator.share && navigator.canShare?.({ files: [file] })) {
++    try { await navigator.share({ files: [file], title: "FHFH player card · illustrative statistics" }); return "shared"; }
++    catch (error) { if (typeof error === "object" && error !== null && "name" in error && error.name === "AbortError") return "cancelled"; throw error; }
++  }
++  saveCardFile(file, file.name); return "downloaded";
++}
+--- /dev/null
++++ b/web/lib/player-cards/shareExport.test.ts
+@@ -0,0 +1,42 @@
++import React from "react";
++import { cleanup, render } from "@testing-library/react";
++import { afterEach, expect, it, vi } from "vitest";
++import { assertCardExport, prepareHero, shareCardFile } from "./shareExport";
++import { REVIEWED_HERO_SAMPLES } from "./reviewedHeroSamples";
++import { displaySnapshot, flowSettings, INITIAL_FLOW } from "./interactionSnapshot";
++import { adaptLocalSnapshot } from "./adapter";
++import { buildInteractionFixture } from "./interactionFixtures";
++import HeroPlayerCard from "../../components/player-cards/HeroPlayerCard";
++
++afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
++function card() {
++  const sample = REVIEWED_HERO_SAMPLES[0], hero = { ...sample, dataUrl: "data:image/png;base64,AA==" };
++  const result = adaptLocalSnapshot(buildInteractionFixture(flowSettings(INITIAL_FLOW), "complete", 1001), 1001);
++  if (result.state === "rejected") throw new Error(result.reason);
++  const snapshot = { ...displaySnapshot(result), player: { id: String(sample.id), name: sample.name, position: sample.position, team: sample.team } };
++  const { container } = render(React.createElement(HeroPlayerCard, { snapshot, hero, format: "landscape" }));
++  return { svg: container.querySelector("svg")!, snapshot, hero };
++}
++it("blocks changed snapshot, artwork identity, external images and unverified GP before export", () => {
++  const { svg, snapshot, hero } = card(); expect(() => assertCardExport(svg, snapshot, hero, "landscape")).not.toThrow();
++  expect(() => assertCardExport(svg, { ...snapshot, id: "changed" }, hero, "landscape")).toThrow("changed");
++  expect(() => assertCardExport(svg, snapshot, { ...hero, id: 4 }, "landscape")).toThrow("changed");
++  expect(() => assertCardExport(svg, { ...snapshot, sample: { ...snapshot.sample, gp: null } }, hero, "landscape")).toThrow("sample context");
++  svg.querySelector("image")!.setAttribute("href", "https://example.invalid/image.png"); expect(() => assertCardExport(svg, snapshot, hero, "landscape")).toThrow("Embedded");
++});
++it("only permits the known local asset namespace before any artwork fetch", async () => {
++  const fetcher = vi.fn(); vi.stubGlobal("fetch", fetcher);
++  await expect(prepareHero({ ...REVIEWED_HERO_SAMPLES[0], localPath: "https://example.invalid/hero.png" })).rejects.toThrow("Reviewed local artwork"); expect(fetcher).not.toHaveBeenCalled();
++});
++it("opens only a supported native share and treats cancellation as cancellation without downloading", async () => {
++  const share = vi.fn().mockRejectedValue(new DOMException("cancelled", "AbortError"));
++  vi.stubGlobal("navigator", { canShare: () => true, share });
++  const click = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
++  const file = new File(["png"], "card.png", { type: "image/png" });
++  expect(await shareCardFile(file)).toBe("cancelled"); expect(share).toHaveBeenCalledWith(expect.objectContaining({ files: [file] })); expect(click).not.toHaveBeenCalled();
++});
++it("falls back to a local PNG download when file sharing is unsupported", async () => {
++  vi.stubGlobal("navigator", {}); vi.stubGlobal("URL", { createObjectURL: () => "blob:fixture", revokeObjectURL: vi.fn() });
++  const click = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
++  expect(await shareCardFile(new File(["png"], "card.png", { type: "image/png" }))).toBe("downloaded"); expect(click).toHaveBeenCalledOnce();
++});
+--- /dev/null
++++ b/web/pages/social-share/player-cards.tsx
+@@ -0,0 +1,14 @@
++import type { GetServerSideProps } from "next";
++import { NextSeo } from "next-seo";
++import Container from "components/Layout/Container";
++import SocialShareAccessGate from "components/SocialShare/SocialShareAccessGate";
++import PlayerCardShareStudio from "components/player-cards/PlayerCardShareStudio";
++import { SOCIAL_SHARE_CACHE_CONTROL } from "lib/socialShare/access";
++
++export default function PlayerCardsSharePage() {
++  return <Container contentVariant="full"><NextSeo title="Player cards | FHFH Share studio" noindex nofollow /><SocialShareAccessGate><PlayerCardShareStudio /></SocialShareAccessGate></Container>;
++}
++export const getServerSideProps: GetServerSideProps = async ({ res }) => {
++  res.setHeader("X-Robots-Tag", "noindex, nofollow"); res.setHeader("Cache-Control", SOCIAL_SHARE_CACHE_CONTROL);
++  return { props: {} };
++};
+--- /dev/null
++++ b/web/lib/player-cards/reviewedHeroSamples.ts
+@@ -0,0 +1,35 @@
++import type { HeroSample } from "../../components/player-cards/HeroPlayerCard";
++
++// Dated local artwork samples accepted by TJ. No live player-stat or current-roster claim.
++export const REVIEWED_HERO_SAMPLES: readonly HeroSample[] = [
++  {
++    "id": 8479318,
++    "name": "Auston Matthews",
++    "team": "TOR",
++    "position": "C",
++    "sweater": 34,
++    "sourceUrl": "https://assets.nhle.com/mugs/actionshots/1296x729/8479318.jpg",
++    "sourceWidth": 1296,
++    "sourceHeight": 729,
++    "capturedAt": "2026-10-24T20:23:53.965681+00:00",
++    "sourceSha256": "8f91559bcfedf1b96eaa4a273c03b8ffd5357b3bc749dbabb5e0c40bfa706a04",
++    "alphaSha256": "713a4923cf4742cefbbc09a647a249f98c095edea8eb92f7bda028929e0db065",
++    "acceptance": "accepted",
++    "localPath": "/player-cards/hero-samples/8479318.png"
++  },
++  {
++    "id": 8478864,
++    "name": "Kirill Kaprizov",
++    "team": "MIN",
++    "position": "L",
++    "sweater": 97,
++    "sourceUrl": "https://assets.nhle.com/mugs/actionshots/1296x729/8478864.jpg",
++    "sourceWidth": 1296,
++    "sourceHeight": 729,
++    "capturedAt": "2026-10-24T20:23:46.847896+00:00",
++    "sourceSha256": "e06883cc7ce495affd87dadabf39ecfffbb0688691c70b8d833ab20e7f7b2973",
++    "alphaSha256": "4199308c2f56a9ac0244697e7162f42283f1a5c247b656fb7c9278597b3ee18c",
++    "acceptance": "accepted",
++    "localPath": "/player-cards/hero-samples/8478864.png"
++  }
++];
+--- a/web/components/SocialShare/SocialShare.tsx
++++ b/web/components/SocialShare/SocialShare.tsx
+@@ -1,6 +1,7 @@
+ /* eslint-disable @next/next/no-img-element -- Native owned SVG is decoded and embedded by html-to-image for exact PNG exports. */
+ import { useCallback, useEffect, useRef, useState } from "react";
+ import { useRouter } from "next/router";
++import Link from "next/link";
+ import { useAuth } from "contexts/AuthProviderContext";
+ import { SCHEDULE_FORMATS, type SharePlayerLayer, type SharePlayerRecent, type SocialShareFormat, type SocialShareSnapshot, type ShareTeam, type ShareTeamRow } from "lib/socialShare/types";
+ import { calendarWeekStart, selectScheduleDates, weekDates } from "lib/socialShare/schedule";
+@@ -610,7 +611,7 @@
+   };
+ 
+   return <div className={styles.page}>
+-    <header className={styles.heading}><div><p className={styles.eyebrow}>FHFH / Share studio</p><h1>{labels[format]}</h1></div><span className={styles.scope}>{!supported ? "Source qualification pending" : format === "tuesday-trends" ? "Rolling game metrics · Yahoo ownership · NHL schedule" : "Schedule only · NHL schedule source"}</span></header>
++    <header className={styles.heading}><div><p className={styles.eyebrow}>FHFH / Share studio</p><h1>{labels[format]}</h1><p><Link href="/social-share/player-cards" prefetch={false}>Player cards · visual preview</Link></p></div><span className={styles.scope}>{!supported ? "Source qualification pending" : format === "tuesday-trends" ? "Rolling game metrics · Yahoo ownership · NHL schedule" : "Schedule only · NHL schedule source"}</span></header>
+     {!supported ? <section className={styles.panel}><h2>Source qualification required</h2><p>This format is blocked until current-season player data, dated ownership evidence, participation and provider rights qualify. No player rankings are available.</p><a href="/social-share/game-grid">Open the schedule studio</a></section> : <>
+       <section className={styles.panel} aria-label="Schedule settings">
+         <div className={styles.controls}>

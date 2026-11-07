@@ -1,0 +1,41 @@
+{
+  "at": "2026-11-01T17:03:25.110903+00:00",
+  "command": [
+    "npm",
+    "test",
+    "--",
+    "--run",
+    "lib/player-cards/sharedGoalieOutlook.test.ts",
+    "lib/player-cards/analysisSnapshot.test.ts",
+    "lib/player-cards/ranking.test.ts"
+  ],
+  "cwd": "web",
+  "exitCode": 0,
+  "sourcePinsBefore": {
+    "web/components/player-cards/PlayerAnalysisCard.tsx": "2d705ef3df7851e54a52668a614eb72e70b321a147f16b97efb6cbd33186b7d5",
+    "web/components/player-cards/PlayerAnalysisStudio.module.scss": "80e4d29db119dcc35c78d617b35becb84e5778880361b323cd4d9969a2d1dc3f",
+    "web/components/player-cards/PlayerAnalysisStudio.test.tsx": "0ba20372d191f55dd5398af9854f98d30e85edf0df513124b4f3c61809be76bb",
+    "web/components/player-cards/PlayerAnalysisStudio.tsx": "aa1f1751a5826e66026c1ef8dbf9b30fb1c560075cd7139be734df77cbf6116f",
+    "web/lib/player-cards/analysisEvidence.test.ts": "d10d3d3b09f172c4bc82b6842880950514e51db27c73b09eb0b36ab6908bc2b4",
+    "web/lib/player-cards/analysisEvidence.ts": "0d051d6e2dea02c5f39c10962e0cc508d83cc9d797042e60d540744956f17a56",
+    "web/lib/player-cards/analysisExport.ts": "2c24fca5de8a7f9f42cfe411722140282c01c94158a7dc917daa1e3df3018ea9",
+    "web/lib/player-cards/analysisFixtures.ts": "80ff3110c833784e3df2a99ea6500a2454149ad775b044bc62c4dcb9433b16ac",
+    "web/lib/player-cards/analysisSnapshot.test.ts": "bdba55e1c118c67a048e068c89d17829ed26f2d90be90ab482acaed5dd7257bd",
+    "web/lib/player-cards/analysisSnapshot.ts": "d42dd329a4510f9899618f8509cec6feddcdca9d8c7f07a2c93a6e91bb2cfe24",
+    "web/lib/player-cards/goalieOutlook.test.ts": "f7e943496b5b6988346a8af76dfe72cbdb00e9b652d8ae5fde7d820c8d9830aa",
+    "web/lib/player-cards/goalieOutlook.ts": "26d6db7f6d0b86548cfc7faa592520741bc23b70a892e2ca7b1aba9a1f993726",
+    "web/lib/player-cards/retainedBlsh.test.ts": "0c8e3e5a60ff946d66603d784782b1c286ae378b2fe4d2000c5eafb83981e351",
+    "web/lib/player-cards/retainedBlsh.ts": "c90be0b59c68fcc0392e45a95305b148caa5ea6a1cf43669bdd69e47ef562b14",
+    "web/lib/player-cards/sharedGoalieOutlook.test.ts": "5ed60a472ef85210384708810cdaf7d0c0090b7a2f51c233e93d6ec72d95d454",
+    "web/lib/player-cards/sharedGoalieOutlook.ts": "41146367aad54526b93b58a6abec98037b194ef8d0495a977e8b7881fefd58ed",
+    "web/lib/socialShare/modules/shared/goalieInventory.ts": "71f91597d272dad777d01db09d1162e287c052d162c80de7bc9e3137197d14a8",
+    "web/lib/socialShare/modules/shared/goalieInventory.sources.ts": "b4cc525f00effac9db1c168e1605d991f2775962386a8596eae045ca476be331",
+    "web/lib/socialShare/modules/shared/goalieInventory.fixture.ts": "eff494e85274d90f250aaa1ae0520b881b34fe71954b4e29f560ed4e5a8a39ec",
+    "web/lib/player-cards/ranking.ts": "813a18860ac97ce19bceeb01f014541644b9a4d002c34ac7a0d95c09ef6b5338",
+    "web/lib/player-cards/ranking.test.ts": "b6177f53c26acde7f03e9afcdc5a3bbe4cdf2be071aea5a6e8be455e7375c027"
+  },
+  "sourcesUnchangedDuringCheck": true,
+  "afterChanges": {},
+  "log": "source-qualification-tests-20261101.log",
+  "productionProviderDatabaseCalls": 0
+}

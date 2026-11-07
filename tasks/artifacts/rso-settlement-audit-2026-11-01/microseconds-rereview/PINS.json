@@ -1,0 +1,21 @@
+{
+  "/Users/tim/Code/fhfhockey.com/tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-readbacks/tooling/check-readbacks.mjs": "d4b95c100a69d60ce3aea845ed7b4990b43b22c0a6ca5eac8f4d59519a146add",
+  "/Users/tim/Code/fhfhockey.com/tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-readbacks/tooling/check-readbacks.test.mjs": "4a5ad746e1231e0be099c810ce75a23db0fb6dc496c10cd887cc43fe505c8e23",
+  "/Users/tim/Code/fhfhockey.com/tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-readbacks/source.patch": "e2ef1e35fd12889838c8ed9c4a2fe6ac85dc72f9715fcde84440954514f87e08",
+  "/Users/tim/Code/fhfhockey.com/tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/normalize-readbacks.ts": "70047390e3ff235582d982960b28d8f7ef2aa172eabcba624a2bdd1b2fb08805",
+  "/Users/tim/Code/fhfhockey.com/tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/normalize-readbacks.test.ts": "19cfa0e00459e8f3251489fd3916b6f5c2323021b7569a94d09e1293955af0ab",
+  "/Users/tim/Code/fhfhockey.com/tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/normalize-settlement.mjs": "47fb525903fbb24da2d280669fad8f3a3964b8b8d588b407a9135b6e8d032880",
+  "/Users/tim/Code/fhfhockey.com/tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/normalize-settlement.test.mjs": "2b948522e473d184c93d0a540daf1858e558656bf54b73060fcf9c0a0865f858",
+  "/Users/tim/Code/fhfhockey.com/tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/timestamp-parser.cjs": "fe98301ad8b5ee3ce54dec29370087f0f54eac794684e87605da756692e3c16b",
+  "/Users/tim/Code/fhfhockey.com/web/lib/projections/evidenceTime.ts": "c818c021a2857607055d60454ecf03ac39fb27298719726662652d8321e42a00",
+  "/Users/tim/Code/fhfhockey.com/tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/inspect-issued-packet.mjs": "a2e003361d75cee8b768f8bc46cd0bcd6d4bbb05f946604193c201ecf8564730",
+  "/Users/tim/Code/fhfhockey.com/tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/inspect-issued-packet.test.mjs": "f4cc19fc4be359cadf432be62a10163275d88ede4bbf9a820f3453f6b27ff74d",
+  "/Users/tim/Code/fhfhockey.com/tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/inspect-identity.mjs": "5f562165df446c276824d1b7ed5d2f07e84d25570ee316e1317c37ad52c1312b",
+  "/Users/tim/Code/fhfhockey.com/web/lib/rosterScheduleData/planningDataTransport.ts": "8d92ae6d13e4b10947c189a10fe095a06e25e63974d64b41e2c38303992f3947",
+  "/Users/tim/Code/fhfhockey.com/tasks/artifacts/rso-wave2-2026-10-25/FORGE-QUAL/scope.json": "16b7092bea0ba307d07c1b8de3c4559533cc3a044a3af4264abd80dd397ffbe5",
+  "/Users/tim/Code/fhfhockey.com/tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-readbacks/microseconds-review/HANDOFF.md": "5c45b21f74fa450b99fd20020513614fa33d93e04829b44c2c0e34d4b3bcc4f6",
+  "/Users/tim/Code/fhfhockey.com/tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-readbacks/microseconds-review/EVIDENCE.json": "c40a22ec195b2fe8ec12d7dc83547d9414aa2c30c7708ccb3845086a892aa9f1",
+  "/Users/tim/Code/fhfhockey.com/tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-readbacks/microseconds-review/before-check-readbacks.mjs": "0432b1455b0f5b7826ed9182d79e7a034b624520cd3f39af00572c166ea135c6",
+  "/Users/tim/Code/fhfhockey.com/tasks/artifacts/rso-wave2-2026-10-25/FORGE-QUAL/tooling/check-readbacks.mjs": "1788c6549ae6f3a8bf3a24c6cfd82599fb349ef89fafc39f5528cd2277235e2e",
+  "/Users/tim/Code/fhfhockey.com/tasks/artifacts/rso-wave2-2026-10-25/FORGE-QUAL/tooling/check-readbacks.test.mjs": "479edbef96b5af789dd8809f04b8809d885c93fc9a2c423e513308ebf6b28230"
+}

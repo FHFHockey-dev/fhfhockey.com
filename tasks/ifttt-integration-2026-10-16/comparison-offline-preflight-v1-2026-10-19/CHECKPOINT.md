@@ -1,0 +1,30 @@
+# Offline comparison preflight v1
+
+**Offline-ready for review; not authorized or wired for a paid run.** Only this additive task directory was edited. Original benchmark, packet, annotations, producer dependencies and live budget ledger remain unchanged. No API/credential operation, provider spending, production write, deployment, full suite or aggregate compiler was performed.
+
+## Selected candidate
+
+Use the current source files and **prepared/** only. prepared-initial/ and prepared-binding-increment/ preserve earlier local sealing checkpoints and are evidence, not selected request plans. manifest.json pins every retained artifact; prepared/producer-pins.json pins 16 source/reference paths. prepared/preserved-inputs.json pins all 36 benchmark/packet/annotation/live-ledger inputs.
+
+- preflight.py: source-only allowlist, equal retained context, ten complete grouped requests, strict per-record normalization, explicit unique-quote alignment, verifier binding/relevance, deterministic polynomial matching and four-arm scoring. Exact request/context/version matching is required for reuse. No matching paid pilot output exists for these inputs.
+- accounting.py: **disposable-copy-only** sequential accounting under the existing $0.52 aggregate. Preserves prior $0.2543948 unknown and $0.254807878 exposure, whole-call reservations, one in flight, at most 10 extraction +20 verifier calls, no retries/resends, priced usage/latency capture and fail-closed uncertainty. It refuses the canonical live path and does not clear its blocked state. Verifier templates, context and exact proposal sets are fenced to retained rules or committed extraction output.
+- rules-group.test.ts: unchanged actual repository rules, including its four-file pure dependency closure, using only the same available retained hints supplied to Luna. Missing rosters remain empty; numeric IDs never become canonical claims. fetch is denied.
+- artifacts/offline-rehearsal.json: actual local rules with model/verifier outputs explicitly absent. Missing outputs retain the ten-group/50-unit denominators; they are not measured model performance.
+
+## Verification
+
+**32 Python controls +13 TypeScript/repository-rules cases passed: 45 distinct cases.** Earlier successful 27/30-case runs and original/final rule outputs remain retained; repeats are not extra cases. Final rule output is byte-identical to the original export. No test/compiler failure occurred in this increment.
+
+Controls cover two posts per family, S10 retained correction plus actual local suppression of an A-derived regular-PP interpretation, 19 lineup units beyond the old 16-unit matching limit, missing/foreign/duplicate records, uncertain timing and duration strengthening, source-only request generation without gold access, raw versus aligned spans, unsupported bindings, exact reuse exclusion, changed verifier/proposal rejection, two concurrent reservation owners, sent/unknown recovery refusal, conservative early budget stop, strict usage categories, and the finite 30-stage cap. The 50/50 scorer positive is explicitly a synthetic oracle fixture, never a candidate/model result or reuse artifact.
+
+The local actual-rules rehearsal gives strict source-unit TP19/FP5/FN31 out of50, with24 proposals held and zero locally eligible/published. This reflects limited retained identity hints and the frozen strict matching contract; it does not establish a general model comparison or factual accuracy rate. Approved hockey-category projections are separately credited rather than mislabeled as unsupported additions. Canonical identity, independent truth and owner publication readiness remain ungraded.
+
+## Limits and next boundary
+
+1. **Maximum proposed calls remains30, all currently unexecuted.** No token probes, paid judge or prompt tuning. Request templates are generic; no owner annotations or gold answers enter producer/verifier inputs. The same unverified retained hint context is passed to both producers; seven of twelve source records lack those hints. Do not interpret this as a fully roster-backed production benchmark.
+2. No tighter input token bound was invented. Full-context reserves remain $0.2603084 per extraction (8192 output-token cap) and $0.231 per one-question verifier. After only $0.004883722 in new prior settled charges a later full-context extraction may refuse. The current cap can therefore stop a pass well before ten groups, despite the earlier illustrative $0.015–$0.037 expected cost. Tests explicitly verify early refusal without reducing any ceiling. Tighter independently established bounds or separately approved changed scope/budget would be needed to guarantee completion; no such change is made here.
+3. Matching is deterministic and conservative: normalized lexical values, source identity/evidence and frozen legacy event projections. Semantic paraphrases outside that contract remain field mismatches; no hidden LLM adjudication or automatic claim of semantic equivalence. Source-contract mismatches, approved category projections and unproved external additions have separate columns. Literal team-field coverage is reported separately from canonical binding.
+4. S10 reduction changes only local interpretation state, retaining every raw claim/source. No native retraction/compensation or publication occurs. All eligibility remains held for unresolved external identity/game context. Actual API latency/usage is absent; local parser timings are retained separately, and accounting fixture latencies are synthetic controls.
+5. A later paid run still requires owner authorization for the exact sealed payloads/destination, a separately reviewed transport/live-ledger integration, current-account billing assumptions and an independent review if required by the parent. Offline fixture scope is deliberately not a production or paid-run bypass. The owner's “Sounds good” is not recorded as authorization for calls.
+
+All checks finished; no test/compiler/database process remains active. No task messages or other external communications were sent from this increment.

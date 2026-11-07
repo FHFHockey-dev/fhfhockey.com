@@ -1,0 +1,101 @@
+{
+  "at": "2026-11-01T21:28:46.482359+00:00",
+  "files": [
+    {
+      "path": "tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-readbacks/tooling/check-readbacks.mjs",
+      "sha256": "d4b95c100a69d60ce3aea845ed7b4990b43b22c0a6ca5eac8f4d59519a146add"
+    },
+    {
+      "path": "tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-readbacks/tooling/check-readbacks.test.mjs",
+      "sha256": "4a5ad746e1231e0be099c810ce75a23db0fb6dc496c10cd887cc43fe505c8e23"
+    },
+    {
+      "path": "tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-readbacks/source.patch",
+      "sha256": "e2ef1e35fd12889838c8ed9c4a2fe6ac85dc72f9715fcde84440954514f87e08"
+    },
+    {
+      "path": "tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/normalize-readbacks.ts",
+      "sha256": "70047390e3ff235582d982960b28d8f7ef2aa172eabcba624a2bdd1b2fb08805"
+    },
+    {
+      "path": "tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/normalize-readbacks.test.ts",
+      "sha256": "19cfa0e00459e8f3251489fd3916b6f5c2323021b7569a94d09e1293955af0ab"
+    },
+    {
+      "path": "tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/normalize-settlement.mjs",
+      "sha256": "47fb525903fbb24da2d280669fad8f3a3964b8b8d588b407a9135b6e8d032880"
+    },
+    {
+      "path": "tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/normalize-settlement.test.mjs",
+      "sha256": "2b948522e473d184c93d0a540daf1858e558656bf54b73060fcf9c0a0865f858"
+    },
+    {
+      "path": "tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/timestamp-parser.cjs",
+      "sha256": "fe98301ad8b5ee3ce54dec29370087f0f54eac794684e87605da756692e3c16b"
+    },
+    {
+      "path": "web/lib/projections/evidenceTime.ts",
+      "sha256": "c818c021a2857607055d60454ecf03ac39fb27298719726662652d8321e42a00"
+    }
+  ],
+  "canonicalHeldToolingUnchanged": true,
+  "appParserUnchanged": true,
+  "patchApplyCheck": {
+    "exitCode": 0,
+    "installed": false,
+    "when": "previous packaging invocation before its CLI path-alias harness failure"
+  },
+  "retainedLayoutProbe": {
+    "export": "/private/tmp/fhfh-rso-start-chart-iaqz7l__",
+    "cwd": "/tmp",
+    "command": [
+      "/usr/local/bin/node",
+      "/private/tmp/fhfh-rso-start-chart-iaqz7l__/tasks/artifacts/rso-wave2-2026-10-25/FORGE-QUAL/tooling/check-readbacks.mjs",
+      "--issued",
+      "/private/tmp/fhfh-rso-start-chart-iaqz7l__/tasks/artifacts/rso-wave2-2026-10-25/FORGE-QUAL/tooling/fixtures/issued.json",
+      "--rso",
+      "/private/tmp/fhfh-rso-start-chart-iaqz7l__/tasks/artifacts/rso-wave2-2026-10-25/FORGE-QUAL/tooling/fixtures/rso.json",
+      "--start-chart",
+      "/private/tmp/fhfh-rso-start-chart-iaqz7l__/tasks/artifacts/rso-wave2-2026-10-25/FORGE-QUAL/tooling/fixtures/start-chart.json",
+      "--settlement",
+      "/private/tmp/fhfh-rso-start-chart-iaqz7l__/tasks/artifacts/rso-wave2-2026-10-25/FORGE-QUAL/tooling/fixtures/settlement.json",
+      "--scope",
+      "/private/tmp/fhfh-rso-start-chart-iaqz7l__/tasks/artifacts/rso-wave2-2026-10-25/FORGE-QUAL/tooling/fixtures/scope.json"
+    ],
+    "exitCode": 0,
+    "summary": {
+      "pass": true,
+      "issued": 2,
+      "coverage": {
+        "rso": {
+          "issued": 2,
+          "matched": 2,
+          "readbacks": 2
+        },
+        "start_chart": {
+          "issued": 2,
+          "matched": 2,
+          "readbacks": 2
+        }
+      },
+      "settled": 2,
+      "sealedRows": 0,
+      "sealed": {
+        "from": "2026-10-23",
+        "to": "2026-10-30",
+        "rule": "no issued-row, readback or outcome reads for these dates; never used to choose target, threshold or method"
+      },
+      "tolerance": 0.0001,
+      "findingCodes": {},
+      "scopeHash": "5fd2a13809287b64aa1e9acdf1dd4ccfb9076c5d5656f4c73679f7a6d6e47ce9",
+      "protocolHash": "49ae034acc864a291393dc27e86cc745697ca83e18cc2f9666508f07db46a4ef"
+    },
+    "reversePatchCheck": 0
+  },
+  "distinctTestsPassed": 87,
+  "testExecutionsPassed": 153,
+  "extraRetainedLayoutCliPassed": true,
+  "beforeFailuresReproduced": 8,
+  "readbackTypechecked": true,
+  "adapterSourceChanges": false
+}

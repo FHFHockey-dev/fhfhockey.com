@@ -1,0 +1,12 @@
+[
+  {
+    "path": "web/components/player-cards/CurrentPlayerCardStudio.tsx",
+    "sha256": "62c51a3b88d034a75211784f495bf735fbd962a72265492bec5aed4438f5774c",
+    "bytes": 13336
+  },
+  {
+    "path": "web/components/player-cards/CurrentPlayerCardStudio.test.tsx",
+    "sha256": "c228ac4609e13bd89754fcafb7f0e3788b55d4d01460fc3bf58ebdd02029e8ce",
+    "bytes": 13312
+  }
+]

@@ -1,0 +1,115 @@
+{
+  "schemaVersion": "forge-v2-real-data-readiness-v1",
+  "date": "2026-10-30",
+  "status": "BLOCKED_SOURCE_CLEARANCE_AND_LOCAL_ADAPTER",
+  "executionAuthorized": false,
+  "scientificallyQualified": false,
+  "evidenceReferences": [
+    "tasks/artifacts/forge-v2-remediation-2026-10-30/CRITICAL-PATH.md",
+    "tasks/artifacts/forge-v2-remediation-2026-10-30/execution-prerequisites.json",
+    "tasks/artifacts/forge-v2-remediation-2026-10-30/protocol-methods-draft.json",
+    "tasks/artifacts/forge-v2-remediation-2026-10-30/open-task-reassessment.json",
+    "tasks/artifacts/forge-v2-remediation-2026-10-30/capacity-plan.json",
+    "tasks/artifacts/forge-v2-remediation-2026-10-30/continuation-capacity-receipt.json",
+    "tasks/artifacts/forge-v2-remediation-2026-10-30/intake_check.py",
+    "tasks/artifacts/forge-v2-implementation-2026-10-29/source-audit.json"
+  ],
+  "sourceDisposition": {
+    "clearedSourceIdentified": false,
+    "meaning": "No inspected evidence establishes v2 clearance; this is not proof that captures do not exist. Legacy code and audit identify candidate mappings, not admitted datasets.",
+    "namedSourceOwner": null,
+    "namedCustodian": null,
+    "rights": "No provider intended-use rights approval verified. Endpoint accessibility, private research contract and source enums do not transfer v2 permission.",
+    "custody": "Signed exposure/allocation register absent. Keep whole-game revisions together, preserve actual first receipt/publication/correction clocks and all past actors/purposes/trials. 2024\u201325 excluded; 2025\u201326 reserved; 2022\u201324 not automatically cleared. Later captures remain retrospective reconstructions."
+  },
+  "firstRehearsal": {
+    "purpose": "One offline ingestion, official-appearance semantics and as-of replay smoke, before any model accuracy work. No fitting, candidate selection, calibration, predictive scoring or scientific qualification.",
+    "stageOne": "Metadata-only intake, rights/custodian verification and exact file hash allowlist. No payload opening on metadata arrival alone.",
+    "stageTwo": "Only after scoped local row-read permission and reviewed adapter: admit one ordinary appearance case with its schedule/affiliation/receipt evidence, preserve missingness, replay two fixed cutoffs surrounding first receipt to demonstrate unavailable-before/available-after. Do not infer historical publication from reconstruction.",
+    "followOn": "Up to one approved case each for credited zero-minute/penalty-only, dressed-unused, verified nonappearance, ambiguous/incomplete feed and game not played, in the same finite packet. Ordinary case alone cannot close official-appearance semantic validation.",
+    "acceptance": [
+      "Exact byte hash and parsed hash distinguished; identity/units and original clocks retained.",
+      "Unavailable/missing remains unavailable, never zero. PIM is penalty minutes; credited zero-minute case must not be discarded by positive-TOI legacy logic.",
+      "Incomplete feed cannot establish nonappearance. Opportunity denominator is independent of successful forecast rows.",
+      "Retain all cases, refusals, timings and reconstruction classification; no serving or qualification flag changes."
+    ]
+  },
+  "minimalArtifactRequest": {
+    "now": "Return metadata only for ONE existing, expressly nonprotected ordinary-appearance packet; if absent, say absent without acquiring it. Identify source owner/custodian and permission for isolated local v2 semantic/replay use.",
+    "required": [
+      "Exact dataset/capture IDs, canonical player/game/team IDs, UTC period and intended purpose; no guessed identities.",
+      "Original-byte SHA-256 and manifest SHA-256, byte/row/game counts, local paths, media/schema versions; enumerate all files including schedule/affiliation dependencies.",
+      "Rights evidence reference and authorized owner attestation covering this use; signed custody/exposure register with all actors, access dates, purposes, trials, allocation and whole-game grouping.",
+      "Publication if known, first receipt, effective time, correction chain and finality/completeness evidence references.",
+      "Exact schema paths, units and official credit rule for seven categories and TOI; schedule/start and affiliation mapping. Missing fields explicitly unavailable.",
+      "Explicit permission for later payload inspection and proposed local caps; no protected numerical labels in metadata."
+    ],
+    "laterOptionalCases": "Request metadata identifying at most one existing nonprotected packet for each of the five edge dispositions; original bytes only after clearance. Do not fabricate an official rare case or synthesize it as real."
+  },
+  "sourceMappings": {
+    "G_A_SOG_HIT_BLK_PIM": "baselineSourceLineage.ts maps goals/assists/sog or shots/hits/blockedShots/pim; pim is minutes. Actual provider version/path/credit semantics require owner proof.",
+    "PPP": "nativePowerPlayPoints.ts reconciles final landing scoring and boxscore PP goals/assists; historical observed outcome, not pregame feature.",
+    "appearance": "Legacy baselineAppearanceFromBoxscore/nativeParticipationFrame use positive TOI; cannot directly supply v2 official-appearance labels.",
+    "schedule_affiliation": "Need accepted revision hashes, canonical team/game IDs, effective versus receipt times, actual-start proof and complete affiliation coverage.",
+    "future_model_features": "Draft last20/365day minimum5 history, opponent SOG-against, own total/PP TOI, home and previous team-game actual-end mappings are unvalidated; not needed for first semantic smoke and must not enlarge it."
+  },
+  "proposedCaps": {
+    "status": "PROVISIONAL_STOPPING_LIMITS_NOT_APPROVAL_OR_MEASURED_REAL_CAPACITY",
+    "networkRequests": 0,
+    "remoteWrites": 0,
+    "providerAcquisition": 0,
+    "paidSpend": 0,
+    "concurrency": 1,
+    "automaticRetries": 0,
+    "initialCases": 1,
+    "maximumCasesAfterExplicitScopeExtension": 6,
+    "replayCutoffsPerCase": 2,
+    "metadataBytes": 1048576,
+    "totalAdmittedPayloadBytes": 10485760,
+    "maximumLocalOutputBytes": 16777216,
+    "wallSeconds": 30,
+    "driverCpuSeconds": 10,
+    "driverRssMiB": 512,
+    "modelFits": 0,
+    "databaseRequired": false,
+    "basis": "Retained synthetic local fixture measured 1.688s elapsed, Node user/system CPU 0.319608/0.033697s, maxRSS 163408 KiB, 3030 history rows / 6895856 serialized bytes. Proposed caps provide bounded headroom for a much smaller parser smoke, not scaling evidence. PostgreSQL child resources were excluded from that measurement.",
+    "enforcement": "Implement pre-read byte/allowlist checks, bounded row iteration, output accounting and watchdog/resource instrumentation before run. Stop on first integrity/cap breach; retain failure and do not auto-expand or retry."
+  },
+  "infrastructure": {
+    "availableEvidence": "Canonical local checkout, Python metadata validator, TypeScript pure contracts/data/schedule code, fixture harness and retained native local database capacity receipt. Current runtime/service availability not re-probed. No remote infrastructure required.",
+    "constraints": "Use file-backed isolated local output; do not import operational skater-stage/server orchestration or call ingestion routes. Existing pipeline accepts fixture/reconstruction only; live prospective producer still absent. Concurrency repair/retest belongs to Chef and is not certified by this document."
+  },
+  "commandsAfterMetadataArrives": [
+    {
+      "cwd": "/Users/tim/Code/fhfhockey.com",
+      "command": "python3 tasks/artifacts/forge-v2-remediation-2026-10-30/intake_check.py /absolute/path/to/owner-supplied-metadata.json",
+      "precondition": "Metadata only, <=1 MiB, shaped to intake-template.json; replace placeholder with actual approved local metadata path.",
+      "meaning": "Validator opens metadata only, exit2 means issues. Full-program validator may retain unrelated scientific/shadow gaps; do not fabricate fields to make it pass. Success still means review required, not permission."
+    }
+  ],
+  "missingImplementation": [
+    "Focused file-only real-source parser/adapter with schema and unit mappings, original-byte verification and explicit official-credit labels.",
+    "Bounded local CLI for exact allowlisted packet and fixed cutoffs; no existing real-data rehearsal command established in inspected evidence. Do not run legacy replay or provider routes as substitute.",
+    "Case-specific expected semantic assertions, immutable receipt/report output, integrity rejection and resource-stop enforcement.",
+    "Chef concurrency fix and regression evidence before any storage/queue-backed rehearsal; first file-only parser smoke does not certify those paths."
+  ],
+  "outstandingDecisions": [
+    "Named source owner/custodian and authentic rights/custody references.",
+    "Exact nonprotected existing packet and local row-read authorization; metadata approval does not authorize acquisition.",
+    "Provider schema/official credit/PIM/completeness mapping approval.",
+    "Accept exact local caps/output path and pin adapter/code/input hashes before execution.",
+    "Independent reviewed development registration and staged mean/calibration chronology required later for fitting; final freeze and untouched approval remain separate."
+  ],
+  "actionsThisWorker": {
+    "metadataAndSourceTextRead": true,
+    "realRowsRead": 0,
+    "testsRun": 0,
+    "externalCalls": 0,
+    "deployments": 0,
+    "productionRequests": 0,
+    "writes": "This readiness JSON and own diary only.",
+    "blockerStatus": "Not attempted: local real-data rehearsal, because source clearance, row-read authorization and adapter are absent. No action denied, submitted for approval or uncertain."
+  },
+  "authorizationInterpretation": "Use existing valid task/source/custodian authority when it covers the exact packet and local use; do not request the same authorization twice. No such packet-specific rights/custody evidence was established here. This preparation request does not authorize protected access, provider acquisition, production jobs or publication.",
+  "fullGoalPreserved": "The one-case ingestion smoke is the smallest first real-data check, not a substitute for the original full-v2 objective or for real development/calibration/untouched/prospective scientific tests. All original fifteen gates and NEW-07/08 remain open."
+}

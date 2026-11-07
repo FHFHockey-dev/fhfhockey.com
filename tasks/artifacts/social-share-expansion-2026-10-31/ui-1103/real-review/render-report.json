@@ -1,0 +1,154 @@
+[
+ {
+  "name": "risky-default",
+  "post": "risky-starts",
+  "editionCutoff": "2026-11-02",
+  "weekCalls": [
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   }
+  ],
+  "pager": null,
+  "enabled": true,
+  "png": true
+ },
+ {
+  "name": "start-sit-default",
+  "post": "start-sit",
+  "editionCutoff": "2026-11-02",
+  "weekCalls": [
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   }
+  ],
+  "pager": null,
+  "enabled": true,
+  "png": true
+ },
+ {
+  "name": "off-night-default",
+  "post": "off-night-edge",
+  "editionCutoff": "2026-11-02",
+  "weekCalls": [
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   }
+  ],
+  "pager": null,
+  "enabled": true,
+  "png": true
+ },
+ {
+  "name": "off-night-w7",
+  "post": "off-night-edge",
+  "editionCutoff": "2026-11-02",
+  "weekCalls": [
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   },
+   {
+    "status": 200
+   }
+  ],
+  "pager": {
+   "initial": {
+    "label": "Week 7 · Nov 9 to Nov 15",
+    "prior": "Prior week, week 6",
+    "priorEnabled": true,
+    "next": "Next week, week 8",
+    "nextEnabled": true,
+    "urlWeek": "7",
+    "skipped": [],
+    "refreshFailed": 0,
+    "unreadable": 0
+   },
+   "afterPrior": {
+    "label": "Week 6 · Nov 2 to Nov 8",
+    "prior": "Prior week, week 5",
+    "priorEnabled": true,
+    "next": "Next week, week 7",
+    "nextEnabled": true,
+    "urlWeek": "6",
+    "skipped": [],
+    "refreshFailed": 0,
+    "unreadable": 0
+   },
+   "thenBackNext": {
+    "label": "Week 7 · Nov 9 to Nov 15",
+    "prior": "Prior week, week 6",
+    "priorEnabled": true,
+    "next": "Next week, week 8",
+    "nextEnabled": true,
+    "urlWeek": "7",
+    "skipped": [],
+    "refreshFailed": 0,
+    "unreadable": 0
+   }
+  },
+  "enabled": true,
+  "png": true
+ },
+ {
+  "name": "what-changed-default",
+  "post": "what-changed",
+  "editionCutoff": "2026-11-02",
+  "weekCalls": [],
+  "pager": null,
+  "enabled": true,
+  "png": true
+ },
+ {
+  "name": "role-watch-default",
+  "post": "role-watch",
+  "editionCutoff": "2026-11-02",
+  "weekCalls": [],
+  "pager": null,
+  "enabled": true,
+  "png": true
+ },
+ {
+  "name": "standouts-default",
+  "post": "last-nights-standouts",
+  "editionCutoff": "2026-11-02",
+  "weekCalls": [],
+  "pager": null,
+  "enabled": false,
+  "png": false
+ },
+ {
+  "name": "standouts-goalies",
+  "post": "last-nights-standouts",
+  "editionCutoff": "2026-11-02",
+  "weekCalls": [],
+  "pager": null,
+  "enabled": true,
+  "png": true
+ }
+]

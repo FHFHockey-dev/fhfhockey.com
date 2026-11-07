@@ -19,6 +19,6 @@ describe("CategoryCoverageChart sample label", () => {
     });
     render(<CategoryCoverageChart playerId={8483428} timeOption="SEASON" compact />);
     expect(screen.getByTestId("radar")).toBeTruthy();
-    expect(screen.getByText("2 GP · vs 644 skaters with 5+ GP")).toBeTruthy();
+    expect(screen.getByText("2 GP vs 644 skaters with 5+ GP")).toBeTruthy();
   });
 });

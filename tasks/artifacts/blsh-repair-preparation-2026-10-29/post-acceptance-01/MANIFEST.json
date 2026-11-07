@@ -1,0 +1,23 @@
+{
+  "status": "PREPARATION_ONLY_NO_EXECUTABLE_GRANTS_OR_PRODUCTION_ACTIONS",
+  "reviewerThread": "01a17f0c-f75e-73ac-a6d3-f22a2deab0d4",
+  "completedReviewTurn": "01a18825-fb51-7454-a964-2ad436b20cdd",
+  "acceptancePath": "/Users/tim/Documents/Codex/2026-10-27/task-4/writer-review-04/ACCEPTANCE.json",
+  "acceptanceSHA256": "8d546991dd598debe52f8056ee49df27ded4420b2cade74631904e16bf0e332a",
+  "sourceBoundsSHA256": "c790d5eba2516e1bac751758c136f82f18540080af43c7f71fc63ce563264467",
+  "changedJSONFields": [
+    "setupSQLSHA256"
+  ],
+  "journalDecision": "PENDING_OWNER_SELECTION_NO_DIRECTORY_CREATED",
+  "windowConfirmed": false,
+  "files": {
+    "READINESS.md": {
+      "sha256": "0ce4ab8b3a5ae2d23eebeab96315f8c75b76ba135a6b5de8fcef4eb61d4622ad",
+      "bytes": 7062
+    },
+    "EXECUTION-BOUNDS.reference-only.json": {
+      "sha256": "a2078a77fbf17de775a08a7c9a7a3595882fe549c106fcefb3c55c3c00191b8c",
+      "bytes": 1515
+    }
+  }
+}

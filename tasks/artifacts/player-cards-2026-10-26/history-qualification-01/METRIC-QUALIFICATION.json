@@ -1,0 +1,131 @@
+{
+  "sourceFiles": [
+    "web/lib/player-cards/registry.ts",
+    "web/lib/player-cards/aggregation.ts",
+    "web/pages/api/v1/db/update-nst-gamelog.ts"
+  ],
+  "metrics": [
+    {
+      "metricId": "atoi",
+      "implementedFormula": "I.toi / official appearances",
+      "semanticRequirement": "TOI selected strength; full official appearances including zero exposure",
+      "fieldMappingInspectedLocally": true,
+      "providerDefinitionAdmitted": false,
+      "storedZeroDistinctFromPlaceholder": false,
+      "fullNhlPopulationVerified": false,
+      "limitation": "Current ingestion maps dash placeholder to0; stored rows cannot reconstruct that distinction. Public NST glossary blocked by robots; no workaround attempted."
+    },
+    {
+      "metricId": "sog60",
+      "implementedFormula": "3600*I.shots/I.toi",
+      "semanticRequirement": "Shots and selected-strength exposure",
+      "fieldMappingInspectedLocally": true,
+      "providerDefinitionAdmitted": false,
+      "storedZeroDistinctFromPlaceholder": false,
+      "fullNhlPopulationVerified": false,
+      "limitation": "Current ingestion maps dash placeholder to0; stored rows cannot reconstruct that distinction. Public NST glossary blocked by robots; no workaround attempted."
+    },
+    {
+      "metricId": "icf60",
+      "implementedFormula": "3600*I.icf/I.toi",
+      "semanticRequirement": "NST individual attempt/event universe",
+      "fieldMappingInspectedLocally": true,
+      "providerDefinitionAdmitted": false,
+      "storedZeroDistinctFromPlaceholder": false,
+      "fullNhlPopulationVerified": false,
+      "limitation": "Current ingestion maps dash placeholder to0; stored rows cannot reconstruct that distinction. Public NST glossary blocked by robots; no workaround attempted."
+    },
+    {
+      "metricId": "iscf60",
+      "implementedFormula": "3600*I.iscfs/I.toi",
+      "semanticRequirement": "NST scoring-chance definition/event universe",
+      "fieldMappingInspectedLocally": true,
+      "providerDefinitionAdmitted": false,
+      "storedZeroDistinctFromPlaceholder": false,
+      "fullNhlPopulationVerified": false,
+      "limitation": "Current ingestion maps dash placeholder to0; stored rows cannot reconstruct that distinction. Public NST glossary blocked by robots; no workaround attempted."
+    },
+    {
+      "metricId": "ixg60",
+      "implementedFormula": "3600*I.ixg/I.toi",
+      "semanticRequirement": "NST xG model/version/event universe",
+      "fieldMappingInspectedLocally": true,
+      "providerDefinitionAdmitted": false,
+      "storedZeroDistinctFromPlaceholder": false,
+      "fullNhlPopulationVerified": false,
+      "limitation": "Current ingestion maps dash placeholder to0; stored rows cannot reconstruct that distinction. Public NST glossary blocked by robots; no workaround attempted."
+    },
+    {
+      "metricId": "cf60",
+      "implementedFormula": "3600*O.cf/O.toi",
+      "semanticRequirement": "On-ice attempts and same exposure",
+      "fieldMappingInspectedLocally": true,
+      "providerDefinitionAdmitted": false,
+      "storedZeroDistinctFromPlaceholder": false,
+      "fullNhlPopulationVerified": false,
+      "limitation": "Current ingestion maps dash placeholder to0; stored rows cannot reconstruct that distinction. Public NST glossary blocked by robots; no workaround attempted."
+    },
+    {
+      "metricId": "scf60",
+      "implementedFormula": "3600*O.scf/O.toi",
+      "semanticRequirement": "NST on-ice scoring-chance definition",
+      "fieldMappingInspectedLocally": true,
+      "providerDefinitionAdmitted": false,
+      "storedZeroDistinctFromPlaceholder": false,
+      "fullNhlPopulationVerified": false,
+      "limitation": "Current ingestion maps dash placeholder to0; stored rows cannot reconstruct that distinction. Public NST glossary blocked by robots; no workaround attempted."
+    },
+    {
+      "metricId": "xgf60",
+      "implementedFormula": "3600*O.xgf/O.toi",
+      "semanticRequirement": "NST on-ice xG model/event universe",
+      "fieldMappingInspectedLocally": true,
+      "providerDefinitionAdmitted": false,
+      "storedZeroDistinctFromPlaceholder": false,
+      "fullNhlPopulationVerified": false,
+      "limitation": "Current ingestion maps dash placeholder to0; stored rows cannot reconstruct that distinction. Public NST glossary blocked by robots; no workaround attempted."
+    },
+    {
+      "metricId": "xgPct",
+      "implementedFormula": "100*O.xgf/(O.xgf+O.xga)",
+      "semanticRequirement": "Same NST model for both components",
+      "fieldMappingInspectedLocally": true,
+      "providerDefinitionAdmitted": false,
+      "storedZeroDistinctFromPlaceholder": false,
+      "fullNhlPopulationVerified": false,
+      "limitation": "Current ingestion maps dash placeholder to0; stored rows cannot reconstruct that distinction. Public NST glossary blocked by robots; no workaround attempted."
+    },
+    {
+      "metricId": "ipp",
+      "implementedFormula": "100*I.total_points/O.gf",
+      "semanticRequirement": "Individual/on-ice groups on identical games and strength",
+      "fieldMappingInspectedLocally": true,
+      "providerDefinitionAdmitted": false,
+      "storedZeroDistinctFromPlaceholder": false,
+      "fullNhlPopulationVerified": false,
+      "limitation": "Current ingestion maps dash placeholder to0; stored rows cannot reconstruct that distinction. Public NST glossary blocked by robots; no workaround attempted."
+    },
+    {
+      "metricId": "shPct",
+      "implementedFormula": "100*I.goals/I.shots",
+      "semanticRequirement": "Zero denominator distinct from impossible positive goals/zero shots",
+      "fieldMappingInspectedLocally": true,
+      "providerDefinitionAdmitted": false,
+      "storedZeroDistinctFromPlaceholder": false,
+      "fullNhlPopulationVerified": false,
+      "limitation": "Current ingestion maps dash placeholder to0; stored rows cannot reconstruct that distinction. Public NST glossary blocked by robots; no workaround attempted."
+    },
+    {
+      "metricId": "oiShPct",
+      "implementedFormula": "100*O.gf/O.sf",
+      "semanticRequirement": "On-ice goals/shots on identical games and strength",
+      "fieldMappingInspectedLocally": true,
+      "providerDefinitionAdmitted": false,
+      "storedZeroDistinctFromPlaceholder": false,
+      "fullNhlPopulationVerified": false,
+      "limitation": "Current ingestion maps dash placeholder to0; stored rows cannot reconstruct that distinction. Public NST glossary blocked by robots; no workaround attempted."
+    }
+  ],
+  "newSourceDataReads": 0,
+  "inferenceLimit": "Mapping/formulas are code contracts, not verified provider/model definitions or population membership."
+}

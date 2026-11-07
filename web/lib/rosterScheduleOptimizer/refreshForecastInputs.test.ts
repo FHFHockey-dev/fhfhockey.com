@@ -117,10 +117,10 @@ describe("shared forecast reload for the owned roster", () => {
     const legacy = withSchedule(null);
     expect(legacy).toMatchObject({ comparisonEligible: true, projectedValue: 10 });
     expect(legacy.limitations).toContain("Schedule evidence has no observation time, so its freshness was not rechecked at planning time. Reload the schedule to confirm it.");
-    // A witness observed after an older planning clock (a restored manual workspace, client clock skew) has not expired.
+    // An earlier decision cannot use later evidence, even when that evidence has not expired.
     const newer = withSchedule("2026-10-14T06:00:00Z");
-    expect(newer).toMatchObject({ comparisonEligible: true, projectedValue: 10 });
-    expect(newer.limitations.some(line => line.startsWith("Schedule evidence"))).toBe(false);
+    expect(newer).toMatchObject({ comparisonEligible: false, projectedValue: null });
+    expect(newer.limitations).toContain("Schedule evidence was observed after the planning time; reload inputs for this decision.");
     // An expired observation still blocks.
     expect(withSchedule("2026-10-12T00:00:00Z")).toMatchObject({ comparisonEligible: false, projectedValue: null });
   });

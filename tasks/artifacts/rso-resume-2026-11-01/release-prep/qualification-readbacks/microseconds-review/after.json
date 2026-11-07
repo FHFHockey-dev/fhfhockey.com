@@ -1,0 +1,134 @@
+{
+  "at": "2026-11-01T21:27:09.060242+00:00",
+  "checks": [
+    {
+      "name": "checker-UTC",
+      "exitCode": 0,
+      "counts": {
+        "tests": 28,
+        "pass": 28,
+        "fail": 0
+      },
+      "log": "checker-UTC.log",
+      "command": [
+        "/usr/local/bin/node",
+        "--test",
+        "/Users/tim/Code/fhfhockey.com/tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-readbacks/tooling/check-readbacks.test.mjs"
+      ]
+    },
+    {
+      "name": "readback-UTC",
+      "exitCode": 0,
+      "counts": {
+        "tests": 19,
+        "pass": 19,
+        "fail": 0
+      },
+      "log": "readback-UTC.log",
+      "command": [
+        "/usr/local/bin/node",
+        "-r",
+        "ts-node/register",
+        "-r",
+        "tsconfig-paths/register",
+        "--test",
+        "/Users/tim/Code/fhfhockey.com/tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/normalize-readbacks.test.ts"
+      ]
+    },
+    {
+      "name": "settlement-UTC",
+      "exitCode": 0,
+      "counts": {
+        "tests": 19,
+        "pass": 19,
+        "fail": 0
+      },
+      "log": "settlement-UTC.log",
+      "command": [
+        "/usr/local/bin/node",
+        "--test",
+        "/Users/tim/Code/fhfhockey.com/tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/normalize-settlement.test.mjs"
+      ]
+    },
+    {
+      "name": "checker-America-New_York",
+      "exitCode": 0,
+      "counts": {
+        "tests": 28,
+        "pass": 28,
+        "fail": 0
+      },
+      "log": "checker-America-New_York.log",
+      "command": [
+        "/usr/local/bin/node",
+        "--test",
+        "/Users/tim/Code/fhfhockey.com/tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-readbacks/tooling/check-readbacks.test.mjs"
+      ]
+    },
+    {
+      "name": "readback-America-New_York",
+      "exitCode": 0,
+      "counts": {
+        "tests": 19,
+        "pass": 19,
+        "fail": 0
+      },
+      "log": "readback-America-New_York.log",
+      "command": [
+        "/usr/local/bin/node",
+        "-r",
+        "ts-node/register",
+        "-r",
+        "tsconfig-paths/register",
+        "--test",
+        "/Users/tim/Code/fhfhockey.com/tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/normalize-readbacks.test.ts"
+      ]
+    },
+    {
+      "name": "settlement-America-New_York",
+      "exitCode": 0,
+      "counts": {
+        "tests": 19,
+        "pass": 19,
+        "fail": 0
+      },
+      "log": "settlement-America-New_York.log",
+      "command": [
+        "/usr/local/bin/node",
+        "--test",
+        "/Users/tim/Code/fhfhockey.com/tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/normalize-settlement.test.mjs"
+      ]
+    },
+    {
+      "name": "inspect-identity",
+      "exitCode": 0,
+      "counts": {
+        "tests": 10,
+        "pass": 10,
+        "fail": 0
+      },
+      "log": "inspect-identity.log",
+      "command": [
+        "/usr/local/bin/node",
+        "--test",
+        "/Users/tim/Code/fhfhockey.com/tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/inspect-identity.test.mjs"
+      ]
+    },
+    {
+      "name": "inspect-issued-packet",
+      "exitCode": 0,
+      "counts": {
+        "tests": 11,
+        "pass": 11,
+        "fail": 0
+      },
+      "log": "inspect-issued-packet.log",
+      "command": [
+        "/usr/local/bin/node",
+        "--test",
+        "/Users/tim/Code/fhfhockey.com/tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/inspect-issued-packet.test.mjs"
+      ]
+    }
+  ],
+  "scope": "strict checker chronology and adapter/CLI/import-dependent flows; all synthetic, guarded network"
+}

@@ -12,6 +12,7 @@ import {
   endOfYear
 } from "date-fns";
 import styles from "./PlayerStats.module.scss";
+import { contrast } from "lib/socialShare/teamNeon";
 import { useMissedGames } from "hooks/useMissedGames";
 import {
   PlayerPerformanceHeatmapProps,
@@ -175,16 +176,22 @@ const calculatePerformanceLevel = (
   return "very-poor";
 };
 
+// Day numbers sit on the heat colour, so pick whichever ink reads best.
+const inkOn = (background: string) =>
+  contrast("#ffffff", background) >= contrast("#101214", background) ? "#ffffff" : "#101214";
+
 // Keep existing color and label functions (they work well)
 const getPerformanceColor = (level: PerformanceLevel): string => {
   const colorMap = {
-    elite: "#1a5d1a",
-    excellent: "#2d8f2d",
-    good: "#4fb84f",
-    average: "#85c985",
-    "below-average": "#ffd700",
-    poor: "#ff8c42",
-    "very-poor": "#d32f2f",
+    // Diverging scale: warm below a neutral average, blue above. Mirrors the
+    // $perf-* tokens in PlayerStats.module.scss.
+    elite: "#5598e7",
+    excellent: "#256abf",
+    good: "#184f95",
+    average: "#4b4f55",
+    "below-average": "#8a3b2b",
+    poor: "#c2502f",
+    "very-poor": "#ef7a5a",
     "no-data": "#2a2a2a"
   };
   return colorMap[level];
@@ -330,6 +337,10 @@ function ContributionGraph({
     }> = [];
 
     // Process days into complete weeks (always 7 days each, Monday to Sunday)
+    // Month labels: one per month, on the week where it starts. A label that
+    // would sit within two weeks of the next one is dropped so they don't collide.
+    let lastLabelledMonth: string | undefined;
+    let lastLabelIndex = -1;
     for (let i = 0; i < allDays.length; i += 7) {
       const weekDays = allDays.slice(i, i + 7);
 
@@ -378,13 +389,14 @@ function ContributionGraph({
       if (weekStartDay) {
         const monthName = format(weekStartDay, "MMM");
 
-        // Show month name if this is the first week or if the month changed
-        if (
-          weeks.length === 0 ||
-          (weeks.length > 0 && weeks[weeks.length - 1].monthName !== monthName)
-        ) {
+        if (monthName !== lastLabelledMonth) {
+          if (lastLabelIndex >= 0 && weeks.length - lastLabelIndex < 3) {
+            weeks[lastLabelIndex].monthName = undefined;
+          }
           weekData.monthName = monthName;
           weekData.isFirstWeekOfMonth = true;
+          lastLabelledMonth = monthName;
+          lastLabelIndex = weeks.length;
         }
       }
 
@@ -1264,38 +1276,18 @@ export function PlayerPerformanceHeatmap({
 
           <div className={styles.contributionLegend}>
             <div className={styles.legendSection}>
-              <span className={styles.legendLabel}>Less</span>
+              <span className={styles.legendLabel}>Worse</span>
               <div className={styles.legendScale}>
-                <div
-                  className={styles.scaleItem}
-                  style={{ backgroundColor: "#2a2a2a" }}
-                />
-                <div
-                  className={styles.scaleItem}
-                  style={{ backgroundColor: "#ff8c42" }}
-                />
-                <div
-                  className={styles.scaleItem}
-                  style={{ backgroundColor: "#ffd700" }}
-                />
-                <div
-                  className={styles.scaleItem}
-                  style={{ backgroundColor: "#85c985" }}
-                />
-                <div
-                  className={styles.scaleItem}
-                  style={{ backgroundColor: "#4fb84f" }}
-                />
-                <div
-                  className={styles.scaleItem}
-                  style={{ backgroundColor: "#2d8f2d" }}
-                />
-                <div
-                  className={styles.scaleItem}
-                  style={{ backgroundColor: "#1a5d1a" }}
-                />
+                {(["very-poor", "poor", "below-average", "average", "good", "excellent", "elite"] as const).map((level) => (
+                  <div
+                    key={level}
+                    className={styles.scaleItem}
+                    style={{ backgroundColor: getPerformanceColor(level) }}
+                    title={getPerformanceLevelLabel(level)}
+                  />
+                ))}
               </div>
-              <span className={styles.legendLabel}>More</span>
+              <span className={styles.legendLabel}>Better</span>
             </div>
 
             <div className={styles.legendSpecial}>
@@ -1393,7 +1385,7 @@ export function PlayerPerformanceHeatmap({
               <div
                 className={styles.legendColor}
                 style={{
-                  backgroundColor: "#4fb84f",
+                  backgroundColor: getPerformanceColor("good"),
                   border: "2px solid #eab308",
                   width: 12,
                   height: 12
@@ -1488,6 +1480,9 @@ export function PlayerPerformanceHeatmap({
                               : "transparent",
                         opacity: day.isCurrentMonth ? 1 : 0.3,
                         gridColumnStart: day.gridPosition,
+                        ...(day.game && day.isCurrentMonth && !day.isMissedGame && !day.isFutureGame
+                          ? { "--day-ink": inkOn(getPerformanceColor(day.performanceLevel)) }
+                          : {}),
                         // Upcoming games are dashed so they differ by shape,
                         // not only colour.
                         border: day.isMissedGame

@@ -191,6 +191,45 @@ describe("player alias and membership review", () => {
     await handler(req, res);
     expect(res.statusCode).toBe(409); expect(writes).toEqual([]);
   });
+  it("saves a surname alias that is unique within its team and position group, and refuses it otherwise", async () => {
+    const saveLuke = async (positionGroup: string | undefined, position = "D") => {
+      const fixtureData = datedHughesFixture();
+      Object.assign(fixtureData.selectedPlayer, { id: 8482684, fullName: "Luke Hughes", lastName: "Hughes", position });
+      mocks.roster.mockResolvedValue(new Map([[1, [{ playerId: 8482684 }]]]));
+      fixtureData.req.body = { unresolvedId: "pending", playerId: 8482684, alias: "Hughes", ...(positionGroup ? { positionGroup } : {}) };
+      await handler(fixtureData.req, fixtureData.res);
+      return fixtureData;
+    };
+    const scoped = await saveLuke("D");
+    expect(scoped.res.statusCode).toBe(200);
+    expect(scoped.writes.find((write) => write.table === "lineup_player_name_aliases")?.value).toMatchObject({ alias: "Hughes", player_id: 8482684, team_id: 1, position_group: "D" });
+    // No group: Jack shares the surname on the same team.
+    const blanket = await saveLuke(undefined);
+    expect(blanket.res.statusCode).toBe(409); expect(blanket.writes).toEqual([]);
+    // A group that contradicts the player's position, or is not F/D/G, is refused before writes.
+    for (const group of ["F", "X"]) {
+      const invalid = await saveLuke(group);
+      expect(invalid.res.statusCode).toBe(400); expect(invalid.writes).toEqual([]);
+    }
+    // Two D namesakes on one team stay refused even with a group.
+    const fixtureData = datedHughesFixture();
+    mocks.directory.mockResolvedValue([...identities, { playerId: 9, fullName: "Lane Hughes", lastName: "Hughes", position: "D", teamId: 1 }]);
+    Object.assign(fixtureData.selectedPlayer, { id: 8482684, fullName: "Luke Hughes", lastName: "Hughes", position: "D" });
+    fixtureData.req.body = { unresolvedId: "pending", playerId: 8482684, alias: "Hughes", positionGroup: "D" };
+    await handler(fixtureData.req, fixtureData.res);
+    expect(fixtureData.res.statusCode).toBe(409); expect(fixtureData.writes).toEqual([]);
+  });
+  it("allows a team-scoped surname alias when the namesake plays for another team", async () => {
+    const { req, res, writes, selectedPlayer, unresolved } = datedHughesFixture();
+    mocks.directory.mockResolvedValue([identities[0]!, { ...identities[1]!, teamId: 2 }]);
+    Object.assign(unresolved.metadata, { candidates: [identities[0]!.playerId] });
+    Object.assign(selectedPlayer, { id: 8481559, fullName: "Jack Hughes", lastName: "Hughes", position: "C" });
+    mocks.roster.mockResolvedValue(new Map([[1, [{ playerId: 8481559 }]]]));
+    req.body = { unresolvedId: "pending", playerId: 8481559, alias: "Hughes" };
+    await handler(req, res);
+    expect(res.statusCode).toBe(200);
+    expect(writes.find((write) => write.table === "lineup_player_name_aliases")?.value).toMatchObject({ team_id: 1, position_group: null });
+  });
   it("also rejects blanket shared-surname aliases in the split flow", async () => {
     const { req, res, writes, contextTables } = datedHughesFixture();
     contextTables.players = identities.map((player) => ({ id: player.playerId, fullName: player.fullName, lastName: player.lastName }));

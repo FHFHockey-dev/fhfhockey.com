@@ -1,0 +1,104 @@
+{
+  "version": "player-cards-evolution-local-candidate-v3",
+  "baseHead": "4da60959439043367aaac4d96b57e37a46c2fa43",
+  "currentHead": "884b4839d18d93a0768e3658a262a03c0c56bf5e",
+  "sourceFiles": [
+    {
+      "path": "web/components/player-cards/PlayerAnalysisCard.tsx",
+      "sha256": "cf9579abfa92b946b541172ee2bb762ee595101ad27466bd90fbf036b2b72382",
+      "bytes": 14629,
+      "initialState": "absent"
+    },
+    {
+      "path": "web/components/player-cards/PlayerAnalysisStudio.module.scss",
+      "sha256": "80e4d29db119dcc35c78d617b35becb84e5778880361b323cd4d9969a2d1dc3f",
+      "bytes": 1345,
+      "initialState": "absent"
+    },
+    {
+      "path": "web/components/player-cards/PlayerAnalysisStudio.test.tsx",
+      "sha256": "37e057ce7c65e3c73bd7a6160e65e2dae5fa25b90b13dd475db322c8b7adc74f",
+      "bytes": 11992,
+      "initialState": "absent"
+    },
+    {
+      "path": "web/components/player-cards/PlayerAnalysisStudio.tsx",
+      "sha256": "107278c3bd3bbebf6fd28f2940b46658d90ac1037ce9103e4aa342a29cf5a06b",
+      "bytes": 12766,
+      "initialState": "absent"
+    },
+    {
+      "path": "web/lib/player-cards/analysisEvidence.test.ts",
+      "sha256": "4f6313bbad5dfea6360c6659ca9e85cadf3783cb7f86e4fe89eef993afaed382",
+      "bytes": 7577,
+      "initialState": "absent"
+    },
+    {
+      "path": "web/lib/player-cards/analysisEvidence.ts",
+      "sha256": "e9632bf60feb058fd10a80b03deb88287ce50a4d54311476d39904825ccbd332",
+      "bytes": 13047,
+      "initialState": "absent"
+    },
+    {
+      "path": "web/lib/player-cards/analysisExport.ts",
+      "sha256": "3a1a068fa3398f3d9b9a2b81550f9dfa3917e1f3f44f39b9dd466f2a3bcacc93",
+      "bytes": 3434,
+      "initialState": "absent"
+    },
+    {
+      "path": "web/lib/player-cards/analysisFixtures.ts",
+      "sha256": "80ff3110c833784e3df2a99ea6500a2454149ad775b044bc62c4dcb9433b16ac",
+      "bytes": 4402,
+      "initialState": "absent"
+    },
+    {
+      "path": "web/lib/player-cards/analysisSnapshot.test.ts",
+      "sha256": "2b1d0e8077bf8c59c29e171991d66e25c35a30dab057e396c13ccf7a51674378",
+      "bytes": 8573,
+      "initialState": "absent"
+    },
+    {
+      "path": "web/lib/player-cards/analysisSnapshot.ts",
+      "sha256": "aca542f523cec0bfa2a3f66932db38815712f4986781bfeca797a321e7d49804",
+      "bytes": 15696,
+      "initialState": "absent"
+    },
+    {
+      "path": "web/lib/player-cards/goalieOutlook.test.ts",
+      "sha256": "f7e943496b5b6988346a8af76dfe72cbdb00e9b652d8ae5fde7d820c8d9830aa",
+      "bytes": 2531,
+      "initialState": "absent"
+    },
+    {
+      "path": "web/lib/player-cards/goalieOutlook.ts",
+      "sha256": "26d6db7f6d0b86548cfc7faa592520741bc23b70a892e2ca7b1aba9a1f993726",
+      "bytes": 6265,
+      "initialState": "absent"
+    },
+    {
+      "path": "web/lib/player-cards/retainedBlsh.test.ts",
+      "sha256": "56433315e0322bb90324ae0754cdf21baceb67e2481b78bcd98b71e257f8b52d",
+      "bytes": 14879,
+      "initialState": "absent"
+    },
+    {
+      "path": "web/lib/player-cards/retainedBlsh.ts",
+      "sha256": "328d56eceec9248568f5fb1b08397ede0a7ee6d64d9bbc5facb061d6449f80be",
+      "bytes": 12871,
+      "initialState": "absent"
+    },
+    {
+      "path": "web/lib/player-cards/sharedGoalieOutlook.test.ts",
+      "sha256": "5ed60a472ef85210384708810cdaf7d0c0090b7a2f51c233e93d6ec72d95d454",
+      "bytes": 9472,
+      "initialState": "absent"
+    },
+    {
+      "path": "web/lib/player-cards/sharedGoalieOutlook.ts",
+      "sha256": "41146367aad54526b93b58a6abec98037b194ef8d0495a977e8b7881fefd58ed",
+      "bytes": 6120,
+      "initialState": "absent"
+    }
+  ],
+  "verifiedAt": "2026-11-01T19:30:37.465525+00:00"
+}

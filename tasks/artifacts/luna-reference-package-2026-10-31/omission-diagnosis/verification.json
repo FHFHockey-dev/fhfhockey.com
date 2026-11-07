@@ -1,0 +1,19 @@
+{
+  "at": "2026-10-31T21:01:50.920182+00:00",
+  "focusedTestsPassed": 139,
+  "scopedTypecheckExit": 0,
+  "changedTypeScriptLintExit": 0,
+  "baselineExactSavedReplay": true,
+  "candidateSavedOmissionStillFails": true,
+  "syntheticPositivePassesBothVersions": true,
+  "standaloneMockReportsPassed": 16,
+  "standaloneMockRequests": 20,
+  "newPaidRequests": 0,
+  "newPaidCostNanoUsd": 0,
+  "unchangedPaidArtifacts": 30,
+  "unchangedR2Artifacts": 19,
+  "unchangedProtectedFiles": 7,
+  "paidLedgerSha256": "e992f8e85a70e3c4c46630904ff6b278cbbd67f96c4886d357e453f0bf268c7e",
+  "historicalLedgerSha256": "e8418735afaeff893177e550df6774600c6c6fec4f49c2b01c183712cdc064f2",
+  "noModelImprovementClaim": true
+}

@@ -1,0 +1,20 @@
+{
+  "observedAt": "2026-11-01T20:22:30.575Z",
+  "projectId": "prj_LV0wbwH5gRjOsZlowzEFNGRuX7Lw",
+  "teamId": "team_KVFicHhQJARTbO6wRD2x6jpq",
+  "operation": "GET /v10/projects/{idOrName}/env",
+  "parameters": {
+    "decrypt": false
+  },
+  "status": "DENIED",
+  "httpStatus": 403,
+  "error": "You don't have permission to list the project environment variable.",
+  "requestId": "iad1:cle1:iad1:sfo1::lhznt-1793564418508-81035365a071",
+  "attempts": 1,
+  "individualValueRequests": 0,
+  "valuesRetrieved": 0,
+  "cliFallback": "Unavailable: command -v vercel and /usr/local/bin/vercel, /opt/homebrew/bin/vercel, web/node_modules/.bin/vercel absent. No installation or credential probe attempted.",
+  "actualCurrentConfiguration": null,
+  "actualIssuedModelIdentity": null,
+  "nextStep": "Existing authorized environment owner supplies allowlisted non-secret production configuration receipt and actual captured-live model identity metadata; do not infer either from release SHA or empty query."
+}

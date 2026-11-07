@@ -36,6 +36,89 @@ const sleep = (ms: number) =>
     setTimeout(resolve, ms);
   });
 
+// Card background behind the donuts; slices are separated by it.
+const CHART_SURFACE = "#1a1d21";
+
+// Very dark team colours vanish on the dark card: near-black becomes a mid-grey,
+// and dark blue-led hues (navy, dark teal) get a lighter tint of the same hue.
+// Deep reds keep their true colour; they already read on the card.
+function liftNearBlack(color: string): string {
+  const hex = color.replace("#", "");
+  const full = hex.length === 3 ? hex.split("").map((c) => c + c).join("") : hex;
+  if (!/^[0-9a-f]{6}$/i.test(full)) return color;
+  const [r, g, b] = [0, 2, 4].map((i) => parseInt(full.slice(i, i + 2), 16));
+  if (Math.max(r, g, b) < 48) return "#8a8f98";
+  if (0.2126 * r + 0.7152 * g + 0.0722 * b >= 50 || b <= r) return color;
+  const tint = (c: number) => Math.round(c + (255 - c) * 0.3).toString(16).padStart(2, "0");
+  return `#${tint(r)}${tint(g)}${tint(b)}`;
+}
+
+// Validated dark-mode categorical steps (dataviz reference palette) used once a
+// team's own colours run out.
+const SLICE_FALLBACKS = ["#3987e5", "#d95926", "#199e70", "#c98500", "#9085e9"];
+const MIN_SLICE_DELTA_E = 15; // OKLab x100: slices a full-colour reader can tell apart
+const MIN_SLICE_CONTRAST = 1.4; // against the card: skips only near-invisible colours, keeps dark team primaries
+
+const toLinear = (c: number) => {
+  const v = c / 255;
+  return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
+};
+
+const hexToRgb = (color: string): [number, number, number] | null => {
+  const hex = color.replace("#", "");
+  const full = hex.length === 3 ? hex.split("").map((c) => c + c).join("") : hex;
+  if (!/^[0-9a-f]{6}$/i.test(full)) return null;
+  return [0, 2, 4].map((i) => parseInt(full.slice(i, i + 2), 16)) as [number, number, number];
+};
+
+const toOklab = ([r, g, b]: [number, number, number]) => {
+  const [lr, lg, lb] = [toLinear(r), toLinear(g), toLinear(b)];
+  const l = Math.cbrt(0.4122214708 * lr + 0.5363325363 * lg + 0.0514459929 * lb);
+  const m = Math.cbrt(0.2119034982 * lr + 0.6806995451 * lg + 0.1073969566 * lb);
+  const s = Math.cbrt(0.0883024619 * lr + 0.2817188376 * lg + 0.6299787005 * lb);
+  return [
+    0.2104542553 * l + 0.793617785 * m - 0.0040720468 * s,
+    1.9779984951 * l - 2.428592205 * m + 0.4505937099 * s,
+    0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s
+  ];
+};
+
+const relativeLuminance = (rgb: [number, number, number]) =>
+  0.2126 * toLinear(rgb[0]) + 0.7152 * toLinear(rgb[1]) + 0.0722 * toLinear(rgb[2]);
+
+/**
+ * Slice colours for one team's donut, in order: team colours first, then the
+ * fallbacks, skipping any colour that is too close to one already picked (so
+ * black-and-silver teams don't get two near-identical greys) or too dark to read
+ * on the card.
+ */
+export function pickSliceColors(candidates: string[], count: number, surface: string): string[] {
+  const surfaceRgb = hexToRgb(surface) ?? [26, 29, 33];
+  const surfaceLum = relativeLuminance(surfaceRgb);
+  const pool = [...candidates, ...SLICE_FALLBACKS]
+    .map((color) => ({ color, rgb: hexToRgb(color) }))
+    .filter((entry): entry is { color: string; rgb: [number, number, number] } => {
+      if (!entry.rgb) return false;
+      const lum = relativeLuminance(entry.rgb);
+      const contrast = (Math.max(lum, surfaceLum) + 0.05) / (Math.min(lum, surfaceLum) + 0.05);
+      return contrast >= MIN_SLICE_CONTRAST;
+    })
+    .map((entry) => ({ color: entry.color, lab: toOklab(entry.rgb) }));
+  const picked: Array<{ color: string; lab: number[] }> = [];
+  // Strict floor first; relax only if the pool runs out (5+ goalies on a team).
+  for (const floor of [MIN_SLICE_DELTA_E, 8, 0.01]) {
+    for (const entry of pool) {
+      if (picked.length >= count) break;
+      const tooClose = picked.some(
+        (other) =>
+          Math.hypot(...entry.lab.map((value, i) => (value - other.lab[i]) * 100)) < floor
+      );
+      if (!tooClose) picked.push(entry);
+    }
+  }
+  return picked.map((entry) => entry.color);
+}
+
 function isRateLimitError(error: unknown): boolean {
   return (
     error instanceof Error &&
@@ -228,6 +311,15 @@ const GoalieShareChart: React.FC = () => {
   // when the chosen (or default) team has no appearances in this window.
   const shownTeam = goalieStats[selectedTeam] ? selectedTeam : teamsWithData[0];
 
+  // Text alternative for each donut: the slice labels and games played.
+  const describeShare = (
+    teamName: string,
+    chart: { labels: string[]; datasets: { data: number[] }[] }
+  ) =>
+    `${teamName} goalie share: ${chart.labels
+      .map((label, index) => `${label}, ${chart.datasets[0].data[index]} GP`)
+      .join("; ")}`;
+
   const generateChartData = (teamAbbrev: string) => {
     const teamStats = goalieStats[teamAbbrev];
     if (!teamStats || teamStats.goalies.length === 0) {
@@ -235,24 +327,21 @@ const GoalieShareChart: React.FC = () => {
     }
 
     const teamColors = teamsInfo[teamAbbrev as keyof typeof teamsInfo];
-    // Some team palettes repeat a colour (e.g. white twice), so drop repeats
-    // and top up from the fallback set to keep up to five slices distinct.
-    const colors = [
-      ...(teamColors
-        ? [
-            teamColors.primaryColor,
-            teamColors.secondaryColor,
-            teamColors.jersey,
-            teamColors.accent,
-            teamColors.alt
-          ]
-        : []),
-      "#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0", "#9966FF"
-    ].filter((color, index, all): color is string =>
-      Boolean(color) && all.findIndex((other) => other?.toLowerCase() === color?.toLowerCase()) === index
-    );
-
     const goalies = teamStats.goalies.slice(0, 5); // Limit to top 5 goalies
+    // Team colours first (near-black lifted), skipping repeats and near-repeats.
+    const colors = pickSliceColors(
+      [
+        teamColors?.primaryColor,
+        teamColors?.secondaryColor,
+        teamColors?.jersey,
+        teamColors?.accent,
+        teamColors?.alt
+      ]
+        .filter((color): color is string => Boolean(color))
+        .map(liftNearBlack),
+      goalies.length,
+      CHART_SURFACE
+    );
     const totalAppearances = teamStats.totalAppearances;
 
     return {
@@ -273,7 +362,7 @@ const GoalieShareChart: React.FC = () => {
           backgroundColor: goalies.map(
             (_, index) => colors[index % colors.length]
           ),
-          borderColor: goalies.map((_, index) => colors[index % colors.length]),
+          borderColor: CHART_SURFACE,
           borderWidth: 2,
           hoverBorderWidth: 3
         }
@@ -286,12 +375,13 @@ const GoalieShareChart: React.FC = () => {
     maintainAspectRatio: false,
     plugins: {
       legend: {
-        position: "left" as const,
+        // Below the donut, so "Lastname (54.3%)" gets the full cell width.
+        position: "bottom" as const,
         labels: {
-          boxWidth: 12,
-          padding: 8,
+          boxWidth: 10,
+          padding: 6,
           font: {
-            size: 14,
+            size: 12,
             family: "'Roboto Condensed', sans-serif"
           },
           color: "#ffffff"
@@ -370,11 +460,11 @@ const GoalieShareChart: React.FC = () => {
                               src={`/teamLogos/${teamAbbrev}.png`}
                               alt={`${teamAbbrev} logo`}
                             />
-                            <h4 className={styles.teamName}>
+                            <h3 className={styles.teamName}>
                               {teamInfo?.shortName || teamAbbrev}
-                            </h4>
+                            </h3>
                             <div className={styles.teamStats}>
-                              <span className={styles.statsLabel}>Team GP:</span>
+                              <span className={styles.statsLabel} title="Team games played">GP</span>
                               <span className={styles.statsValue}>
                                 {totalGames}
                               </span>
@@ -385,6 +475,7 @@ const GoalieShareChart: React.FC = () => {
                           <Doughnut
                             data={chartData}
                             options={generateChartOptions(teamAbbrev)}
+                            aria-label={describeShare(teamInfo?.shortName || teamAbbrev, chartData)}
                           />
                         </div>
                       </div>
@@ -444,11 +535,11 @@ const GoalieShareChart: React.FC = () => {
                               src={`/teamLogos/${teamAbbrev}.png`}
                               alt={`${teamAbbrev} logo`}
                             />
-                            <h4 className={styles.teamName}>
+                            <h3 className={styles.teamName}>
                               {teamInfo?.shortName || teamAbbrev}
-                            </h4>
+                            </h3>
                             <div className={styles.teamStats}>
-                              <span className={styles.statsLabel}>Team GP:</span>
+                              <span className={styles.statsLabel} title="Team games played">GP</span>
                               <span className={styles.statsValue}>
                                 {totalGames}
                               </span>
@@ -459,6 +550,7 @@ const GoalieShareChart: React.FC = () => {
                           <Doughnut
                             data={chartData}
                             options={generateChartOptions(teamAbbrev)}
+                            aria-label={describeShare(teamInfo?.shortName || teamAbbrev, chartData)}
                           />
                         </div>
                       </div>

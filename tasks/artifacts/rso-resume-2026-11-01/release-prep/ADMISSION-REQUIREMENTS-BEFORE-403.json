@@ -1,0 +1,22 @@
+{
+  "status": "SELECTED_REPLACEMENT_PENDING_OWNER_HANDOFF",
+  "candidateTree": "9820a239181765a7eae2597c32c0f380c0260b5a",
+  "candidateCommit": null,
+  "selectedBase": "f17bea20d8caa2b6268c318bdb2152d7e2a3b57d",
+  "expectedClosureSha256": "ec5bdab6593f58ec19ad9b250fb645aa377616542e98205150e22f085914968c",
+  "moduleCount": 195,
+  "findings": 0,
+  "verifierSha256": "2da61a46b89df70669c454f08fbefd3a0803655a92226f0c8020aad9b9d3c456",
+  "closureWalkerSha256": "e33ccacb21dca88ef2d163dab5f16ec0c50bb817373b9ab000c2ac8e29df5bad",
+  "preparationReceipt": "after402-candidate-closure.json",
+  "preparationReceiptSha256": "4e6dab63aee4d2119a65e03859f88eba2945fe20e2d8b091c6dde89c973bcca0",
+  "preparationReceiptIsCommitBacked": false,
+  "requiredEntry": {
+    "closureSha256": "ec5bdab6593f58ec19ad9b250fb645aa377616542e98205150e22f085914968c",
+    "commit": null,
+    "receipt": null,
+    "receiptSha256": null,
+    "verifierVersion": "forge-release-sha-verifier-v1"
+  },
+  "nextAction": "Select this replacement batch, coordinate retained Git/PROV-GUARD custody, then commit exact selected tree and run committed verifier. Update old guarded helper manifests only after selection. No push/deploy or native-use review implied."
+}

@@ -1,0 +1,378 @@
+[
+  {
+    "path": "/Users/tim/.codex/worktrees/rso-consolidated-execution/fhfhockey.com",
+    "exists": true
+  },
+  {
+    "path": "/Users/tim/.codex/worktrees/rso-consolidated-execution/fhfhockey.com/tasks/rso-goal-decisions.md",
+    "exists": true
+  },
+  {
+    "path": "/Users/tim/Code/fhfhockey-october",
+    "exists": true
+  },
+  {
+    "path": "/Users/tim/Code/fhfhockey-october/web",
+    "exists": true
+  },
+  {
+    "path": "/Users/tim/Code/fhfhockey.com",
+    "exists": true
+  },
+  {
+    "path": "/Users/tim/Documents/Codex/2026-10-10/task-3/fhfh-schema-usage-repair-evidence.json",
+    "exists": true
+  },
+  {
+    "path": "/Users/tim/Documents/Codex/2026-10-10/task-4/combined-verification.json",
+    "exists": true
+  },
+  {
+    "path": "/tmp/rso-bench-reachability-20261010-w3L2uX/final",
+    "exists": false
+  },
+  {
+    "path": "/tmp/rso-candidate-eligibility-20261010-bcetfocu/CANDIDATE-RECEIPT-v2.json",
+    "exists": false
+  },
+  {
+    "path": "/tmp/rso-capacity-order-count-final-20261010.log",
+    "exists": false
+  },
+  {
+    "path": "/tmp/rso-capacity-order-green-20261010.log",
+    "exists": false
+  },
+  {
+    "path": "/tmp/rso-capacity-order-lint-corrected-20261010.log",
+    "exists": false
+  },
+  {
+    "path": "/tmp/rso-capacity-order-lint-final-20261010.log",
+    "exists": false
+  },
+  {
+    "path": "/tmp/rso-capacity-order-planner-final-20261010.log",
+    "exists": false
+  },
+  {
+    "path": "/tmp/rso-capacity-order-red-20261010.log",
+    "exists": false
+  },
+  {
+    "path": "/tmp/rso-capacity-order-typescript-final-20261010.log",
+    "exists": false
+  },
+  {
+    "path": "/tmp/rso-consolidated-observations-20261010",
+    "exists": false
+  },
+  {
+    "path": "/tmp/rso-consolidated-observations-20261010/bands",
+    "exists": false
+  },
+  {
+    "path": "/tmp/rso-consolidated-observations-20261010/candidates",
+    "exists": false
+  },
+  {
+    "path": "/tmp/rso-consolidated-observations-20261010/category-repair",
+    "exists": false
+  },
+  {
+    "path": "/tmp/rso-consolidated-observations-20261010/compact-followup",
+    "exists": false
+  },
+  {
+    "path": "/tmp/rso-consolidated-observations-20261010/date",
+    "exists": false
+  },
+  {
+    "path": "/tmp/rso-consolidated-observations-20261010/degraded-mobile",
+    "exists": false
+  },
+  {
+    "path": "/tmp/rso-consolidated-observations-20261010/manual-goalie-consumer/runner.log",
+    "exists": false
+  },
+  {
+    "path": "/tmp/rso-consolidated-observations-20261010/provider-identity/IDENTITY-RECEIPT.json",
+    "exists": false
+  },
+  {
+    "path": "/tmp/rso-consolidated-observations-20261010/provider-identity/INTEGRITY.json",
+    "exists": false
+  },
+  {
+    "path": "/tmp/rso-consolidated-observations-20261010/provider",
+    "exists": false
+  },
+  {
+    "path": "/tmp/rso-consolidated-observations-20261010/worker-10",
+    "exists": false
+  },
+  {
+    "path": "/tmp/rso-goalie-windows-browser-final-20261010.log",
+    "exists": false
+  },
+  {
+    "path": "/tmp/rso-goalie-windows-green-20261010.log",
+    "exists": false
+  },
+  {
+    "path": "/tmp/rso-goalie-windows-next-env-before.d.ts",
+    "exists": false
+  },
+  {
+    "path": "/tmp/rso-goalie-windows-partial-final-20261010.log",
+    "exists": false
+  },
+  {
+    "path": "/tmp/rso-goalie-windows-partial-red-20261010.log",
+    "exists": false
+  },
+  {
+    "path": "/tmp/rso-goalie-windows-post-review-typescript-20261010.log",
+    "exists": false
+  },
+  {
+    "path": "/tmp/rso-goalie-windows-red-20261010.log",
+    "exists": false
+  },
+  {
+    "path": "/tmp/rso-manual-context-20261010-xynmo3om/MANUAL-CONTEXT-RECEIPT-v1.json",
+    "exists": false
+  },
+  {
+    "path": "/tmp/rso-marginal-gain-probe-20261010",
+    "exists": false
+  },
+  {
+    "path": "/tmp/rso-marginal-gain-probe-20261010/result-conditional.log",
+    "exists": false
+  },
+  {
+    "path": "/tmp/rso-marginal-gain-probe-20261010/weekly-bench-result.log",
+    "exists": false
+  },
+  {
+    "path": "/tmp/rso-marginal-gain-probe-20261010/weekly-result.log",
+    "exists": false
+  },
+  {
+    "path": "/tmp/rso-native-c2-admission-20261010",
+    "exists": false
+  },
+  {
+    "path": "/tmp/rso-native-c2-implementation-20261010/e4b31ad7e4715eecf207ce059bfd468bc0108796698823e85bda6809845f6e4f-C2-TOI-IMPLEMENTATION-RECEIPT-v2.json",
+    "exists": false
+  },
+  {
+    "path": "/tmp/rso-native-dry-assembly-20261010/accepted-diagnostic-v3/8d78898afec610e3a3fe0f1d6e747ae81fa6fc591d649d9d9b91d56eef7531c4-DRY-ASSEMBLY-RECEIPT-v3.json",
+    "exists": false
+  },
+  {
+    "path": "/tmp/rso-native-engineering-handoff-20261010",
+    "exists": false
+  },
+  {
+    "path": "/tmp/rso-native-point-probe-20261011",
+    "exists": false
+  },
+  {
+    "path": "/tmp/rso-native-skater-participation-research-spec-20261010-v1.md",
+    "exists": false
+  },
+  {
+    "path": "/tmp/rso-october-integration-20261010/FINAL-RECEIPT.json",
+    "exists": false
+  },
+  {
+    "path": "/tmp/rso-october-integration-20261010/REPORT.md",
+    "exists": false
+  },
+  {
+    "path": "/tmp/rso-october-integration-20261010/commits.json",
+    "exists": false
+  },
+  {
+    "path": "/tmp/rso-position-rail-20261010-lbuu8l72",
+    "exists": false
+  },
+  {
+    "path": "/tmp/rso-rejected-step-scout-review-20261010.md",
+    "exists": false
+  },
+  {
+    "path": "/tmp/rso-rp1-research-disposition-20261010/944a690ea726aa2209cebd8266292deeccf8e4c8c76c440dda02f40fd394c16c-RP1-PROPOSAL-SNAPSHOT.md",
+    "exists": false
+  },
+  {
+    "path": "/tmp/rso-rp1-research-disposition-20261010/9d8afc70affb9cad904c0e0d431b3e568e2e066e07398ba3f87ecd7ac66d51c1-RP1-RESEARCH-DISPOSITION-v1.md",
+    "exists": false
+  },
+  {
+    "path": "/tmp/rso-rp1-source-bindings-20261010/game2026020055-availability-manifest-v2.json",
+    "exists": false
+  },
+  {
+    "path": "/tmp/rso-scout-integration-handoff-20261010",
+    "exists": false
+  },
+  {
+    "path": "/tmp/rso-scout-integration-handoff-20261010/EXCLUSION-DISPLAY-COMMIT-CORRESPONDENCE-v1.json",
+    "exists": false
+  },
+  {
+    "path": "/tmp/rso-scout-integration-handoff-20261010/FINAL-TYPESCRIPT-8192-RECEIPT.json",
+    "exists": false
+  },
+  {
+    "path": "/tmp/rso-scout-integration-handoff-20261010/SOURCE-INTAKE-v2-REVIEW.json",
+    "exists": false
+  },
+  {
+    "path": "/tmp/rso-startable-gain-green-20261010.log",
+    "exists": false
+  },
+  {
+    "path": "/tmp/rso-startable-gain-planner-20261010.log",
+    "exists": false
+  },
+  {
+    "path": "/tmp/rso-startable-gain-red-20261010.log",
+    "exists": false
+  },
+  {
+    "path": "/tmp/rso-startable-gain-typescript-20261010.log",
+    "exists": false
+  },
+  {
+    "path": "/tmp/rso-task24-browser-20261010.log",
+    "exists": false
+  },
+  {
+    "path": "/tmp/rso-task24-browser-20261010",
+    "exists": false
+  },
+  {
+    "path": "/tmp/rso-task24-browser-final-20261010.log",
+    "exists": false
+  },
+  {
+    "path": "/tmp/rso-task24-browser-final-20261010",
+    "exists": false
+  },
+  {
+    "path": "/tmp/rso-task24-post-correction-typescript-20261010.log",
+    "exists": false
+  },
+  {
+    "path": "/tmp/rso-task24-scout-correction-20261010/REVIEW.md",
+    "exists": false
+  },
+  {
+    "path": "/tmp/rso-task24-scout-review-20261010/REVIEW.md",
+    "exists": false
+  },
+  {
+    "path": "/tmp/rso-task24-unsupported-owner-green.log",
+    "exists": false
+  },
+  {
+    "path": "/tmp/rso-task24-unsupported-owner-red.log",
+    "exists": false
+  },
+  {
+    "path": "/tmp/rso-task25-scout-review-20261011/REVIEW.md",
+    "exists": false
+  },
+  {
+    "path": "/tmp/rso-task26-scout-review-20261011/REVIEW.md",
+    "exists": false
+  },
+  {
+    "path": "/tmp/rso-task27-scout-review-20261011/REVIEW.md",
+    "exists": false
+  },
+  {
+    "path": "/tmp/rso-task28-scout-review-20261011/REVIEW.md",
+    "exists": false
+  },
+  {
+    "path": "/tmp/rso-task29-scout-review-20261011",
+    "exists": false
+  },
+  {
+    "path": "/tmp/rso-task29-scout-review-20261011/REVIEW.md",
+    "exists": false
+  },
+  {
+    "path": "/tmp/rso-task63-scout-correction-20261011/REVIEW.md",
+    "exists": false
+  },
+  {
+    "path": "/tmp/rso-task63-scout-review-20261011/REVIEW.md",
+    "exists": false
+  },
+  {
+    "path": "/tmp/rso-weekly-bench-component-20261010.log",
+    "exists": false
+  },
+  {
+    "path": "/tmp/rso-weekly-bench-green-20261010.log",
+    "exists": false
+  },
+  {
+    "path": "/tmp/rso-weekly-bench-lint-20261010.log",
+    "exists": false
+  },
+  {
+    "path": "/tmp/rso-weekly-bench-planner-20261010.log",
+    "exists": false
+  },
+  {
+    "path": "/tmp/rso-weekly-bench-red-20261010.log",
+    "exists": false
+  },
+  {
+    "path": "/tmp/rso-weekly-bench-typescript-20261010.log",
+    "exists": false
+  },
+  {
+    "path": "/tmp/rso-weekly-bench-typescript-before-20261010.sha256",
+    "exists": false
+  },
+  {
+    "path": "/tmp/rso-weekly-timeline-green-20261010.log",
+    "exists": false
+  },
+  {
+    "path": "/tmp/rso-weekly-timeline-lint-20261010.log",
+    "exists": false
+  },
+  {
+    "path": "/tmp/rso-weekly-timeline-planner-20261010.log",
+    "exists": false
+  },
+  {
+    "path": "/tmp/rso-weekly-timeline-red-20261010.log",
+    "exists": false
+  },
+  {
+    "path": "/tmp/rso-weekly-timeline-typescript-20261010.log",
+    "exists": false
+  },
+  {
+    "path": "/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/rso-button-feedback-20261010-8ivf7qur",
+    "exists": false
+  },
+  {
+    "path": "/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/rso-exclusion-consumer-20261010-9a8z4lhj",
+    "exists": false
+  },
+  {
+    "path": "/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/rso-manual-public-20261010-lamb41ea/MANUAL-OBSERVATION-RECEIPT-v1.json",
+    "exists": false
+  }
+]

@@ -1,0 +1,65 @@
+{
+  "externalRequests": [],
+  "pageErrors": [],
+  "scenarios": [
+    {
+      "width": 1440,
+      "filter": "all",
+      "count": 740,
+      "finalIndex": 725,
+      "intermediate": {
+        "focused": true,
+        "tag": "H3",
+        "name": "Alex Newhook",
+        "tabindex": "-1",
+        "rowTop": -0.375,
+        "headingTop": 17.234375,
+        "headingBottom": 43.625,
+        "viewport": 1000,
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "nextTab": "Details for Alex Newhook"
+      },
+      "finalFocus": {
+        "focused": true,
+        "tag": "H3",
+        "name": "Yegor Sharangovich",
+        "tabindex": "-1",
+        "rowTop": -0.25,
+        "headingTop": 17.359375,
+        "headingBottom": 43.75,
+        "viewport": 1000,
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "nextTab": "Details for Yegor Sharangovich"
+      },
+      "detailReturnFocus": true,
+      "dimensions": {
+        "width": 1440,
+        "document": 1440
+      }
+    }
+  ],
+  "axe": [],
+  "staticVerification": {
+    "onlyExactPaginationHandlerChanged": true,
+    "embeddedDataByteIdentical": true,
+    "totals": {
+      "players": 740,
+      "selectedRecords": 3461,
+      "fpWindows": 482,
+      "unresolvedPPP": 212,
+      "zeroShotWindows": 20
+    },
+    "scoreAdmission": false
+  },
+  "original": {
+    "focusTag": "BODY",
+    "focusId": "",
+    "statusTop": 0.15625,
+    "firstNewTop": 80673.75,
+    "nextTab": "Details for A.J. Greer"
+  },
+  "state": "FAILED",
+  "failure": "AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:\n\n  assert(state.rowTop>=-1&&state.rowTop<100)\n\n    at continueAt (/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-pagination-rereview-2026-11-01/review.cjs:17:125)\n    at async /Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-pagination-rereview-2026-11-01/review.cjs:45:21"
+}

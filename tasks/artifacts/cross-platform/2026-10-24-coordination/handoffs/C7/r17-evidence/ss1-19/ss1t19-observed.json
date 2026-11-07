@@ -1,0 +1,74 @@
+{
+  "S1": {
+    "counts": {
+      "hot": 7999,
+      "cold": 3449,
+      "none": 8552
+    },
+    "mismatches": 0,
+    "first": [],
+    "STREAK": {
+      "games": 5,
+      "minPreGames": 3,
+      "ppToiMinBaselineSeconds": 30,
+      "hot": {
+        "pointGames": 4,
+        "pointsPerGame": 0.85,
+        "toiRise": 0.15,
+        "ppToiRise": 0.35
+      },
+      "specialists": {
+        "hitsPerGame": 2,
+        "blocksPerGame": 2,
+        "shotsPerGame": 2.5,
+        "ppPointsPerGame": 0.5
+      },
+      "cold": {
+        "pointGames": 1,
+        "pointsPerGame": 0.25,
+        "toiDrop": 0.15,
+        "ppToiDrop": 0.35
+      },
+      "goalie": {
+        "hot": {
+          "qualityStarts": 4,
+          "savePct": 0.93
+        },
+        "cold": {
+          "qualityStarts": 1,
+          "savePct": 0.87
+        }
+      }
+    }
+  },
+  "P1": {
+    "good": [
+      4,
+      966.6666666666666,
+      73.33333333333333,
+      100
+    ],
+    "gap": null,
+    "missing": null,
+    "five": null
+  },
+  "R1": {
+    "a": [
+      1,
+      null
+    ],
+    "b": [
+      null,
+      1
+    ],
+    "logs": [
+      "[social-share] Goalie recent games unavailable: 57014 canceling statement due to statement timeout",
+      "[social-share] Skater recent games unavailable: 42703 column x does not exist"
+    ],
+    "caps": {
+      "lookbackDays": 21,
+      "skaterRowsPerPlayer": 22,
+      "goalieRowsPerPlayer": 22
+    }
+  }
+}

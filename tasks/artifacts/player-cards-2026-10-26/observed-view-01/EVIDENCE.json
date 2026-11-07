@@ -1,0 +1,52 @@
+{
+  "at": "2026-10-26T16:22:43.863563+00:00",
+  "sources": [
+    {
+      "path": "web/components/player-cards/ObservedPlayerCard.test.tsx",
+      "beforeSha256": null,
+      "afterSha256": "e217c9edad47ae3e84b6743e261e3dccd990869565e65fc85d09390d12c538eb",
+      "bytes": 3897
+    },
+    {
+      "path": "web/components/player-cards/ObservedPlayerCard.tsx",
+      "beforeSha256": null,
+      "afterSha256": "05e3389c018f5e38f54b54cde5eb15a9686a13b601624d556c9d3a2a64b8abe2",
+      "bytes": 7304
+    },
+    {
+      "path": "web/lib/player-cards/cardEvidenceVerdict.ts",
+      "beforeSha256": "c181fe190e6831b4804f8ae4233eeeaab16aca0c4f7a7cd3465d61b0e51ecbec",
+      "afterSha256": "9b6f71f71d2eb5baef64509f30d0e12f3c34e08f6ef745c6cbcdb08b5161b88f",
+      "bytes": 5354
+    },
+    {
+      "path": "web/lib/player-cards/observedExport.test.ts",
+      "beforeSha256": null,
+      "afterSha256": "7fe0983a3d0f85479301b050b175055c583319de57f02689f8b1f3f7a9568a7a",
+      "bytes": 2377
+    },
+    {
+      "path": "web/lib/player-cards/observedExport.ts",
+      "beforeSha256": null,
+      "afterSha256": "6ec078118974d42028619b0f000f642feb1460503d4ed49220db788e0c9856fd",
+      "bytes": 1098
+    },
+    {
+      "path": "web/lib/player-cards/observedView.ts",
+      "beforeSha256": null,
+      "afterSha256": "3c1623d0162e780281e21b0bd18b1430b4e177669a6fd964e241cc32fa9c5110",
+      "bytes": 2298
+    },
+    {
+      "path": "web/lib/player-cards/shareExport.ts",
+      "beforeSha256": "fd5d5081e35522cea8b33e5c8d697b0a304fe666de461f0e30967fe2eac4f435",
+      "afterSha256": "608676949169425fc4b35df4829cd841d921d0d5f7e1b16b7e5f074cc546c512",
+      "bytes": 5776
+    }
+  ],
+  "sourcePatchSha256": "dfce9e22b47979832475b342a84c87b28917f5b40d9aa87dde798f05eeeccc2f",
+  "independentReview": "pending for this new slice",
+  "liveActivation": false,
+  "premiumActivation": false,
+  "publicReportReadState": "automatic approval rejected9reportbatch beforeexecution;0newrequests/no retry/bypass"
+}

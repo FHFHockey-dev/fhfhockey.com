@@ -1,0 +1,28 @@
+{
+  "action": "lint",
+  "command": [
+    "npx",
+    "--no-install",
+    "eslint",
+    "lib/player-cards/researchSnapshot.types.ts",
+    "lib/player-cards/researchSnapshot.ts",
+    "lib/player-cards/researchSnapshot.test.ts",
+    "lib/player-cards/researchFixtures.server.ts",
+    "lib/player-cards/researchFixtures.server.test.ts",
+    "lib/player-cards/researchExamples.ts",
+    "lib/player-cards/researchExport.ts",
+    "components/player-cards/ResearchCardEvidence.tsx",
+    "components/player-cards/ResearchPlayerCard.tsx",
+    "components/player-cards/ResearchPlayerCardStudio.tsx",
+    "components/player-cards/ResearchPlayerCardStudio.test.tsx",
+    "pages/api/v1/player-cards/research.ts",
+    "lib/player-cards/currentNhl.ts",
+    "lib/player-cards/currentNhlExport.ts",
+    "components/player-cards/CurrentPlayerCardStudio.tsx",
+    "components/player-cards/CurrentPlayerCardStudio.test.tsx",
+    "pages/social-share/player-cards.tsx"
+  ],
+  "exitCode": 0,
+  "elapsedSeconds": 1.418,
+  "heldBy": "research10 sequential owner slot"
+}

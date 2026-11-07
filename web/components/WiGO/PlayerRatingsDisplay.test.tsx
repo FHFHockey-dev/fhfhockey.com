@@ -58,6 +58,7 @@ describe("PlayerRatingsDisplay", () => {
     await waitFor(() => expect(screen.getByText("Offense")).toBeTruthy());
     expect(screen.queryByText("50.0")).toBeNull();
     expect(screen.getAllByText("-")).toHaveLength(9);
+    expect(screen.queryAllByRole("meter")).toHaveLength(0);
   });
 
   it("explains the blank All ratings when all-situations data is empty, with a season label", async () => {
@@ -229,6 +230,19 @@ describe("PlayerRatingsDisplay", () => {
 
     expect(screen.getAllByText("58.3").length).toBeGreaterThan(0);
     expect(screen.getByText("35.0")).toBeTruthy();
+    const meters = screen.getAllByRole("meter");
+    expect(meters).toHaveLength(9);
+    expect(meters.map((meter) => meter.getAttribute("aria-label"))).toEqual([
+      "Offense All", "Offense Even", "Offense PP",
+      "Overall All", "Overall Even", "Overall Special",
+      "Defense All", "Defense Even", "Defense PK"
+    ]);
+    for (const meter of meters) {
+      expect(meter.getAttribute("min")).toBe("0");
+      expect(meter.getAttribute("max")).toBe("100");
+      expect(Number(meter.getAttribute("value"))).toBeGreaterThanOrEqual(0);
+      expect(Number(meter.getAttribute("value"))).toBeLessThanOrEqual(100);
+    }
   });
 
   it("keeps rendering a defense-first player when power-play offense data is missing", async () => {

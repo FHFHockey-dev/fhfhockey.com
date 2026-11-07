@@ -1,0 +1,14 @@
+{
+  "fixtureOnly": true,
+  "fullNextRoute": false,
+  "compileOnly": true,
+  "checks": [
+    {
+      "name": "actual component and CSS-module/Sass compile",
+      "passed": true
+    }
+  ],
+  "blockedRequests": [],
+  "pageErrors": [],
+  "result": "passed"
+}

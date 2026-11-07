@@ -1,0 +1,9 @@
+{
+  "web/lib/buyLowSellHigh/researchSnapshot.test.ts": "780334394ae3a70b3ef318fc9d5a2935e7533f95107ca55439e57f2877890f08",
+  "web/lib/buyLowSellHigh/displayProfile.test.ts": "ee310ed5997efcec4aa866afb8ea60bf489419aff842aba0a0ec01a6932bcd23",
+  "web/lib/buyLowSellHigh/supportGap.test.ts": "bf324db61a84d17861e15fa7f02993f5388d894321271edd31ae487f042c2c15",
+  "web/lib/player-cards/retainedBlsh.test.ts": "945685b3fe639ea2b26234b05a7bee36e1aadcf0713922c0e298165a40db6fe8",
+  "web/lib/buyLowSellHigh/__fixtures__/syntheticProfiles.ts": "32c843ec291ccbeea48e99c07b46733fe2c00e448ccbb2b8050625f57414cda1",
+  "web/lib/buyLowSellHigh/__fixtures__/syntheticSnapshots.ts": "cb67e51ad7c9dbedafade0cbf9d917f7e4ce4bd6f05095ea97fa6511c682f517",
+  "web/lib/buyLowSellHigh/__fixtures__/retainedData.ts": "6016135aac3658afe0db1ab4cd90b0c6582fb4af12ef25351c685d2349cd27cc"
+}

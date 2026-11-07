@@ -81,7 +81,8 @@
   padding: 6px 2px;
   border: 0;
   border-top: 3px solid transparent;
-  border-radius: 6px;
+  // Top radius matches the 3px active rule so it doesn't curl into a toenail.
+  border-radius: 3px 3px 6px 6px;
   background: transparent;
   color: inherit;
   cursor: pointer;

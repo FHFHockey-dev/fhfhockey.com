@@ -1,0 +1,16 @@
+{
+  "command": [
+    "npx",
+    "--no-install",
+    "eslint",
+    "components/player-cards/ObservedPlayerCard.test.tsx",
+    "components/player-cards/ObservedPlayerCard.tsx",
+    "lib/player-cards/cardEvidenceVerdict.ts",
+    "lib/player-cards/observedExport.test.ts",
+    "lib/player-cards/observedExport.ts",
+    "lib/player-cards/observedView.ts",
+    "lib/player-cards/shareExport.ts"
+  ],
+  "exitCode": 0,
+  "seconds": 0.82
+}

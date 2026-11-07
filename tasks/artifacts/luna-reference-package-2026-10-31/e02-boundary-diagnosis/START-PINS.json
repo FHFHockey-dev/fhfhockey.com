@@ -1,0 +1,8 @@
+{
+  "ledgerSha256": "112b1763f21d3c953386498fd44d0627731625de4c53b34d8e154358baed8b26",
+  "executionManifestSha256": "b0630b486392f7bde2930b986268210b375cf79920c51dd004b532a75f4bc6ed",
+  "originalProposalTextSha256": "152916c970409b56ed1d1e3ac754b0bc1b78d98e12a194d890a00e2350d85c3d",
+  "expectedLabelsManifestSha256": "4bdd7328c3fd201a4c6c6db4ac394161c552ad725221c0982f1ddf9cae1765a6",
+  "attempts": 3,
+  "ledgerEnabled": false
+}

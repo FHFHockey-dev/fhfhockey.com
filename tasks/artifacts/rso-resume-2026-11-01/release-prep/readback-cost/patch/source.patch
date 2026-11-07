@@ -1,0 +1,387 @@
+--- a/web/pages/api/v1/start-chart.ts
++++ b/web/pages/api/v1/start-chart.ts
+@@ -1,6 +1,6 @@
+ import { selectTeamFormGames, type StartChartTeamForm } from "lib/projections/startChartTeamForm";
+ import { starterBoardCanaryGameIds, starterBoardFlags } from "lib/projections/starterBoardFlags";
+-import { loadPlanningInputs } from "lib/rosterScheduleData/planningInputs";
++import { loadPlanningInputs, withinDeadline } from "lib/rosterScheduleData/planningInputs";
+ import { admitConsumerGameRevisions, type AdmittedConsumerSource } from "lib/projections/consumerRevisionAdmission";
+ import { forecastCalendarPolicy } from "lib/player-forecasts/contributions";
+ import { loadGameExpectations } from "lib/player-forecasts/gameExpectationReader";
+@@ -211,6 +211,9 @@
+ const MAX_RESPONSE_CACHE_ENTRIES = 64;
+ const YAHOO_RPC_MISSING_RETRY_MS = 5 * 60_000;
+ const YAHOO_HISTORY_PAGE_SIZE = 1000;
++const YAHOO_HISTORY_MAX_PAGES = 5;
++const YAHOO_OVERLAY_MAX_PLAYERS = 500;
++const OPTIONAL_CONTEXT_READ_MS = 2000;
+ const SUPPORTED_POSITIONS = new Set(["C", "LW", "RW", "D", "G"]);
+ const responseCache = new Map<
+   string,
+@@ -589,58 +592,56 @@
+ async function fetchYahooOwnershipHistory(
+   playerKeys: string[],
+   asOfDate: string,
++  deadline: number,
+ ): Promise<{ rows: YahooOwnershipHistoryRow[]; error: boolean }> {
+   if (playerKeys.length === 0) return { rows: [], error: false };
+-  const exactResponse = await supabase
+-    .from("yahoo_player_ownership_history")
+-    .select("player_key,ownership_date,ownership_pct")
+-    .in("player_key", playerKeys)
+-    .eq("ownership_date", asOfDate)
+-    .order("player_key", { ascending: true });
+-  if (exactResponse.error) return { rows: [], error: true };
+-
+   const latestByKey = new Map<string, YahooOwnershipHistoryRow>();
+-  for (const row of (exactResponse.data ?? []) as YahooOwnershipHistoryRow[]) {
+-    if (finiteOrNull(row.ownership_pct) != null) {
+-      latestByKey.set(row.player_key, row);
+-    }
+-  }
+-  const missingKeys = playerKeys.filter((key) => !latestByKey.has(key));
+-  if (missingKeys.length === 0) {
+-    return { rows: Array.from(latestByKey.values()), error: false };
+-  }
+-
+-  for (let from = 0; ; from += YAHOO_HISTORY_PAGE_SIZE) {
+-    const { data, error } = await supabase
++  return withinDeadline(deadline, async signal => {
++    const exactResponse = await supabase
+       .from("yahoo_player_ownership_history")
+       .select("player_key,ownership_date,ownership_pct")
+-      .in("player_key", missingKeys)
+-      .lte("ownership_date", asOfDate)
+-      .order("ownership_date", { ascending: false })
++      .in("player_key", playerKeys)
++      .eq("ownership_date", asOfDate)
+       .order("player_key", { ascending: true })
+-      .range(from, from + YAHOO_HISTORY_PAGE_SIZE - 1);
+-    if (error) return { rows: [], error: true };
+-    const page = (data ?? []) as YahooOwnershipHistoryRow[];
+-    for (const row of page.sort(
+-      (left, right) =>
+-        right.ownership_date.localeCompare(left.ownership_date) ||
+-        left.player_key.localeCompare(right.player_key),
+-    )) {
+-      if (
+-        finiteOrNull(row.ownership_pct) != null &&
+-        !latestByKey.has(row.player_key)
+-      ) {
++      .limit(YAHOO_OVERLAY_MAX_PLAYERS + 1)
++      .abortSignal(signal);
++    if (signal.aborted || exactResponse.error || !Array.isArray(exactResponse.data)
++      || exactResponse.data.length > YAHOO_OVERLAY_MAX_PLAYERS) throw new Error("Ownership read incomplete");
++    for (const row of exactResponse.data as YahooOwnershipHistoryRow[]) {
++      if (finiteOrNull(row.ownership_pct) != null) {
+         latestByKey.set(row.player_key, row);
+       }
+     }
+-    if (
+-      missingKeys.every((key) => latestByKey.has(key)) ||
+-      page.length < YAHOO_HISTORY_PAGE_SIZE
+-    ) {
+-      break;
++    const missingKeys = playerKeys.filter((key) => !latestByKey.has(key));
++    if (missingKeys.length === 0) return { rows: Array.from(latestByKey.values()), error: false };
++
++    for (let pageIndex = 0; pageIndex < YAHOO_HISTORY_MAX_PAGES; pageIndex++) {
++      const from = pageIndex * YAHOO_HISTORY_PAGE_SIZE;
++      const { data, error } = await supabase
++        .from("yahoo_player_ownership_history")
++        .select("player_key,ownership_date,ownership_pct")
++        .in("player_key", missingKeys)
++        .lte("ownership_date", asOfDate)
++        .order("ownership_date", { ascending: false })
++        .order("player_key", { ascending: true })
++        .range(from, from + YAHOO_HISTORY_PAGE_SIZE - 1)
++        .abortSignal(signal);
++      if (signal.aborted || error || !Array.isArray(data) || data.length > YAHOO_HISTORY_PAGE_SIZE) {
++        throw new Error("Ownership read incomplete");
++      }
++      const page = data as YahooOwnershipHistoryRow[];
++      for (const row of page.sort(
++        (left, right) => right.ownership_date.localeCompare(left.ownership_date) || left.player_key.localeCompare(right.player_key),
++      )) {
++        if (finiteOrNull(row.ownership_pct) != null && !latestByKey.has(row.player_key)) latestByKey.set(row.player_key, row);
++      }
++      if (missingKeys.every((key) => latestByKey.has(key)) || page.length < YAHOO_HISTORY_PAGE_SIZE) {
++        return { rows: Array.from(latestByKey.values()), error: false };
++      }
+     }
+-  }
+-  return { rows: Array.from(latestByKey.values()), error: false };
++    // Keep proven observations, but unresolved players stay unknown when the budget is exhausted.
++    return { rows: Array.from(latestByKey.values()), error: true };
++  }).catch(() => ({ rows: Array.from(latestByKey.values()), error: true }));
+ }
+ 
+ async function fetchYahooPlayersFallback(
+@@ -649,14 +650,18 @@
+   asOfDate: string,
+ ): Promise<{ rows: YahooPlayerRow[]; error: boolean }> {
+   if (yahooPlayerIds.length === 0) return { rows: [], error: false };
+-  const response = await supabase
++  const deadline = Date.now() + OPTIONAL_CONTEXT_READ_MS;
++  const response = await withinDeadline(deadline, signal => supabase
+     .from("yahoo_players")
+     .select(
+       "player_id,player_key,player_name,full_name,eligible_positions,percent_ownership,last_updated",
+     )
+     .eq("season", season)
+-    .in("player_id", yahooPlayerIds.map(String));
+-  if (response.error) return { rows: [], error: true };
++    .in("player_id", yahooPlayerIds.map(String))
++    .limit(YAHOO_OVERLAY_MAX_PLAYERS + 1)
++    .abortSignal(signal)).catch(() => null);
++  if (!response || response.error || !Array.isArray(response.data)
++    || response.data.length > YAHOO_OVERLAY_MAX_PLAYERS) return { rows: [], error: true };
+ 
+   const baseRows = ((response.data ?? []) as YahooBasePlayerRow[]).sort(
+     (left, right) => {
+@@ -680,6 +685,7 @@
+   const history = await fetchYahooOwnershipHistory(
+     selectedRows.map((row) => row.player_key),
+     asOfDate,
++    deadline,
+   );
+   const latestHistoryByKey = new Map<string, { date: string; value: number }>();
+   for (const row of history.rows.sort(
+@@ -703,7 +709,7 @@
+         player_name: row.player_name,
+         full_name: row.full_name,
+         eligible_positions: row.eligible_positions,
+-        percent_ownership: row.percent_ownership,
++        percent_ownership: history.error && !ownership ? null : row.percent_ownership,
+         ownership_timeline: ownership ? [ownership] : [],
+         last_updated: row.last_updated,
+       };
+@@ -1077,31 +1083,46 @@
+ }
+ 
+ async function fetchCtpiRows(
++  seasonId: number,
+   startDate: string,
+   endDate: string,
+   teams: string[],
+ ): Promise<CtpiRow[]> {
+   if (teams.length === 0) return [];
+   const pageSize = 500;
+-  const rows: CtpiRow[] = [];
+-  for (let from = 0; ; from += pageSize) {
+-    const { data, error } = await supabase
+-      .from("team_ctpi_daily")
+-      .select(
+-        "date,team,ctpi_0_to_100,formula_version:payload->>formulaVersion,input_version:payload->>inputVersion,source_game_count:payload->>sourceGameCount,publication_status:payload->>publicationStatus",
+-      )
+-      .gte("date", startDate)
+-      .lte("date", endDate)
+-      .in("team", teams)
+-      .order("date", { ascending: true })
+-      .order("team", { ascending: true })
+-      .range(from, from + pageSize - 1);
+-    if (error) throw error;
+-    const pageRows = (data ?? []) as CtpiRow[];
+-    rows.push(...pageRows);
+-    if (pageRows.length < pageSize) break;
+-  }
+-  return rows;
++  const days = (Date.parse(endDate) - Date.parse(startDate)) / 86400000 + 1;
++  const maximum = days * new Set(teams).size;
++  if (!Number.isSafeInteger(seasonId) || seasonId <= 0 || !Number.isSafeInteger(days) || days < 1 || days > 30
++    || new Set(teams).size > 32) throw new Error("Team form scope invalid");
++  return withinDeadline(Date.now() + OPTIONAL_CONTEXT_READ_MS, async signal => {
++    const rows: CtpiRow[] = [];
++    let expectedCount: number | null = null;
++    for (let from = 0; from < maximum; from += pageSize) {
++      const size = Math.min(pageSize, maximum - from);
++      const { data, error, count } = await supabase
++        .from("team_ctpi_daily")
++        .select(
++          "date,team,ctpi_0_to_100,formula_version:payload->>formulaVersion,input_version:payload->>inputVersion,source_game_count:payload->>sourceGameCount,publication_status:payload->>publicationStatus",
++          { count: "exact" },
++        )
++        .eq("season_id", seasonId)
++        .gte("date", startDate)
++        .lte("date", endDate)
++        .in("team", teams)
++        .order("date", { ascending: true })
++        .order("team", { ascending: true })
++        .range(from, from + size - 1)
++        .abortSignal(signal);
++      if (signal.aborted || error || !Array.isArray(data) || typeof count !== "number" || !Number.isSafeInteger(count)
++        || count < 0 || count > maximum || expectedCount !== null && count !== expectedCount
++        || data.length !== Math.min(size, count - rows.length)) throw new Error("Team form read incomplete");
++      expectedCount = count;
++      rows.push(...data as CtpiRow[]);
++      if (new Set(rows.map(row => `${row.date}|${row.team}`)).size !== rows.length) throw new Error("Team form rows conflict");
++      if (rows.length === count) return rows;
++    }
++    throw new Error("Team form read incomplete");
++  });
+ }
+ 
+ /** The entry never outlives the board's own receipts or the selected native catalog. */
+@@ -1329,6 +1350,7 @@
+       // A pregame Starter Board must therefore stop strictly before the slate.
+       const teamFormThroughDate = getPregameTeamFormThroughDate(resolvedDate);
+       const ctpiPromise = fetchCtpiRows(
++        seasonId,
+         shiftDate(teamFormThroughDate, -29),
+         teamFormThroughDate,
+         slateTeamAbbrevs,
+--- a/web/__tests__/pages/api/v1/start-chart.test.ts
++++ b/web/__tests__/pages/api/v1/start-chart.test.ts
+@@ -659,6 +659,7 @@
+       if (table === "player_forecast_source_observations") return snapshotBuilder();
+       if (table === "team_ctpi_daily") {
+         return createQueryBuilder(() => ({
++          count: 2,
+           data: [
+             {
+               date: "2026-02-01",
+@@ -2247,6 +2248,136 @@
+     });
+   });
+ 
++  describe("bounded context", () => {
++    const serve = async () => {
++      vi.resetModules();
++      const handler = (await import("../../../../pages/api/v1/start-chart")).default;
++      const res = createMockRes();
++      await handler({ method: "GET", query: { date: "2026-02-07" } } as any, res);
++      return res;
++    };
++
++    it("binds CTPI to the resolved season instead of mixing the same team/date", async () => {
++      const prior = fromMock.getMockImplementation()!;
++      let season: number | undefined;
++      fromMock.mockImplementation((table: string) => {
++        if (table !== "team_ctpi_daily") return prior(table);
++        const rows = [20252026, 20242025].map((season_id, index) => ({ season_id,
++          date: "2026-02-01", team: "MTL", ctpi_0_to_100: index ? 99 : 55, ...trustedTeamFormColumns }));
++        const builder = createQueryBuilder(() => {
++          const data = rows.filter(row => season === undefined || row.season_id === season);
++          return { data, count: data.length, error: null };
++        });
++        builder.eq = (column: string, value: number) => { if (column === "season_id") season = value; return builder; };
++        return builder;
++      });
++      const res = await serve();
++      expect(season).toBe(20252026);
++      expect(res.body.ctpi).toEqual([{ date: "2026-02-01", MTL: 55 }]);
++      expect(res.body.players.some((row: any) => row.player_id === 8478402)).toBe(true);
++    });
++
++    it.each(["over_scope", "incomplete_page"])("rejects CTPI %s without hiding forecasts", async problem => {
++      const prior = fromMock.getMockImplementation()!; let reads = 0;
++      fromMock.mockImplementation((table: string) => table === "team_ctpi_daily" ? createQueryBuilder(() => {
++        reads++;
++        return { data: [{ date: "2026-02-01", team: "MTL", ctpi_0_to_100: 55, ...trustedTeamFormColumns }],
++          count: problem === "over_scope" ? 61 : 2, error: null };
++      }) : prior(table));
++      const res = await serve();
++      expect(reads).toBe(1);
++      expect(res.body.ctpi).toEqual([]);
++      expect(res.body.sourceStatus.ctpi.state).toBe("error");
++      expect(res.body.players.some((row: any) => row.player_id === 8478402)).toBe(true);
++    });
++
++    it("stops ownership after five history pages and preserves known zero and unknown", async () => {
++      const prior = fromMock.getMockImplementation()!; let reads = 0, pages = 0;
++      fromMock.mockImplementation((table: string) => {
++        if (table !== "yahoo_player_ownership_history") return prior(table);
++        let exact = false;
++        const builder = createQueryBuilder(() => {
++          reads++;
++          if (exact) return { data: [{ player_key: "449.p.5001", ownership_date: "2026-02-07", ownership_pct: 0 }], error: null };
++          pages++;
++          return { data: pages <= 5 ? Array.from({ length: 1000 }, (_, index) => ({ player_key: "449.p.5002",
++            ownership_date: new Date(Date.UTC(2026, 1, 6 - index - (pages - 1) * 1000)).toISOString().slice(0, 10),
++            ownership_pct: null })) : [], error: null };
++        });
++        builder.eq = () => { exact = true; return builder; };
++        return builder;
++      });
++      const res = await serve();
++      expect(reads).toBe(6); expect(pages).toBe(5);
++      expect(res.body.sourceStatus.ownership.state).toBe("error");
++      expect(res.body.players.find((row: any) => row.player_id === 8478402).percent_ownership).toBe(0);
++      expect(res.body.players.find((row: any) => row.player_id === 9001).percent_ownership).toBeNull();
++      expect(res.body.players.find((row: any) => row.player_id === 8478402).proj_shots).toBe(3.5);
++    });
++
++    it("uses exact-date ownership without historical queries, including observed zero", async () => {
++      const prior = fromMock.getMockImplementation()!; let reads = 0;
++      fromMock.mockImplementation((table: string) => table === "yahoo_player_ownership_history" ? createQueryBuilder(() => {
++        reads++; return { data: [5001, 5002].map(id => ({ player_key: `449.p.${id}`,
++          ownership_date: "2026-02-07", ownership_pct: id === 5001 ? 0 : 41 })), error: null };
++      }) : prior(table));
++      const res = await serve();
++      expect(reads).toBe(1); expect(res.body.sourceStatus.ownership.state).toBe("ready");
++      expect(res.body.players.find((row: any) => row.player_id === 8478402).percent_ownership).toBe(0);
++    });
++
++    it("stops a history error without retry or invented ownership", async () => {
++      const prior = fromMock.getMockImplementation()!; let reads = 0;
++      fromMock.mockImplementation((table: string) => table === "yahoo_player_ownership_history" ? createQueryBuilder(() => {
++        reads++; return { data: [], error: { message: "synthetic error" } };
++      }) : prior(table));
++      const res = await serve();
++      expect(reads).toBe(1); expect(res.body.sourceStatus.ownership.state).toBe("error");
++      expect(res.body.players.find((row: any) => row.player_id === 8478402).percent_ownership).toBeNull();
++      expect(res.body.players.find((row: any) => row.player_id === 8478402).proj_shots).toBe(3.5);
++    });
++
++    it.each(["team_ctpi_daily", "yahoo_player_ownership_history"])("aborts stalled %s at its two-second deadline", async table => {
++      vi.useRealTimers();
++      vi.useFakeTimers({ toFake: ["Date", "setTimeout", "clearTimeout"] });
++      vi.setSystemTime(new Date("2026-02-07T17:00:00Z"));
++      const prior = fromMock.getMockImplementation()!; let signal: AbortSignal | undefined;
++      let release!: (result: QueryResult) => void, reached!: () => void;
++      const started = new Promise<void>(resolve => { reached = resolve; });
++      const pending = new Promise<QueryResult>(resolve => { release = resolve; });
++      fromMock.mockImplementation((name: string) => {
++        if (name !== table) return prior(name);
++        const builder = createQueryBuilder(() => ({ data: [], error: null }));
++        builder.abortSignal = (value: AbortSignal) => { signal = value; return builder; };
++        builder.then = (resolve: (value: QueryResult) => void) => { reached(); return pending.then(resolve); };
++        return builder;
++      });
++      const request = serve(); await started;
++      await vi.advanceTimersByTimeAsync(2001);
++      const wasAborted = signal?.aborted;
++      release({ data: [], count: 0, error: null });
++      const res = await request;
++      expect(wasAborted).toBe(true);
++      expect(res.statusCode).toBe(200);
++      expect(res.body.sourceStatus[table === "team_ctpi_daily" ? "ctpi" : "ownership"].state).toBe("error");
++      expect(res.body.players.some((row: any) => row.player_id === 8478402)).toBe(true);
++    });
++
++    it("rejects an oversized Yahoo fallback before reading ownership history", async () => {
++      const prior = fromMock.getMockImplementation()!; let historyReads = 0;
++      fromMock.mockImplementation((table: string) => {
++        if (table === "yahoo_player_ownership_history") historyReads++;
++        if (table !== "yahoo_players") return prior(table);
++        return createQueryBuilder(() => ({ data: Array.from({ length: 501 }, (_, index) => ({
++          player_id: "5001", player_key: `synthetic.${index}`, last_updated: "2026-02-07T12:00:00Z" })), error: null }));
++      });
++      const res = await serve();
++      expect(historyReads).toBe(0);
++      expect(res.body.sourceStatus.ownership.state).toBe("error");
++      expect(res.body.players.some((row: any) => row.player_id === 8478402)).toBe(true);
++    });
++  });
++
+   it("uses direct latest-on-or-before ownership history when the RPC is absent", async () => {
+     const defaultImplementation = fromMock.getMockImplementation();
+     fromMock.mockImplementation((table: string) => {
+@@ -2379,6 +2510,7 @@
+     fromMock.mockImplementation((table: string) => {
+       if (table === "team_ctpi_daily") {
+         return createQueryBuilder(() => ({
++          count: 1,
+           data: [
+             {
+               date: "2026-02-01",

@@ -1,0 +1,100 @@
+{
+  "card": {
+    "id": "nhl-8476453-20262027-5-2026-10-26T00:00:00.000Z-2026020167.2026020151",
+    "source": "contract-fixture",
+    "state": "ready",
+    "player": {
+      "id": 8476453,
+      "name": "Offline Contract Fixture",
+      "team": "TBL",
+      "position": "R"
+    },
+    "request": {
+      "playerId": 8476453,
+      "season": 20262027,
+      "count": 5
+    },
+    "observedAt": "2026-10-26T00:00:00.000Z",
+    "sample": {
+      "gp": 2,
+      "toiSeconds": 1800,
+      "sourceDates": [
+        "2026-10-23",
+        "2026-10-20"
+      ],
+      "utcDates": [
+        "2026-10-24",
+        "2026-10-21"
+      ],
+      "gameIds": [
+        2026020167,
+        2026020151
+      ]
+    },
+    "values": {
+      "atoi": 15,
+      "shots60": 8,
+      "goals60": 2,
+      "points60": 6,
+      "goals": 1,
+      "assists": 2,
+      "points": 3,
+      "shots": 4,
+      "shootingPct": 25
+    },
+    "issues": [
+      "Known short season sample: 2/5 appearances."
+    ],
+    "rankReason": "Rank and percentile unavailable: no verified all-NHL same-definition population for this window.",
+    "historyStatement": "Season game-log appearance count reconciled with NHL season totals; no career-history claim.",
+    "finalityStatement": "NHL FINAL/OFF at observation; actual game-end timestamps are not supplied. Current window only; no historical cutoff claim."
+  },
+  "format": "rates-opportunity",
+  "definitions": {
+    "atoi": {
+      "label": "Ice time / game",
+      "unit": "time",
+      "definition": "NHL game-log TOI seconds / appearances / 60"
+    },
+    "shots60": {
+      "label": "Shots /60",
+      "unit": "rate",
+      "definition": "NHL shots on goal × 3600 / NHL game-log TOI seconds"
+    },
+    "goals60": {
+      "label": "Goals /60",
+      "unit": "rate",
+      "definition": "NHL goals × 3600 / NHL game-log TOI seconds"
+    },
+    "points60": {
+      "label": "Points /60",
+      "unit": "rate",
+      "definition": "NHL points × 3600 / NHL game-log TOI seconds"
+    },
+    "goals": {
+      "label": "Goals",
+      "unit": "count",
+      "definition": "Sum of NHL game-log goals in selected appearances"
+    },
+    "assists": {
+      "label": "Assists",
+      "unit": "count",
+      "definition": "Sum of NHL game-log assists in selected appearances"
+    },
+    "points": {
+      "label": "Points",
+      "unit": "count",
+      "definition": "Sum of NHL game-log points in selected appearances"
+    },
+    "shots": {
+      "label": "Shots on goal",
+      "unit": "count",
+      "definition": "Sum of NHL game-log shots in selected appearances"
+    },
+    "shootingPct": {
+      "label": "Shooting% · actual",
+      "unit": "percent",
+      "definition": "NHL goals / shots on goal × 100; zero shots is undefined"
+    }
+  }
+}

@@ -1,0 +1,182 @@
+{
+  "at": "2026-10-27T02:13:58.017356+00:00",
+  "branch": "octoberBranch",
+  "head": "7da3e8663338f624564b2bb570e146b4f0b3f2de",
+  "sourcePins": [
+    {
+      "path": "web/lib/player-cards/currentSelection.ts",
+      "bytes": 4833,
+      "sha256": "55ed1a56ff27c852f0fd8dc4fe036edfef5aed4c0fabba61fe00e069e924a2d4"
+    },
+    {
+      "path": "web/lib/player-cards/currentSelection.test.ts",
+      "bytes": 3021,
+      "sha256": "b593f5e777b62fb1d2ff6453babff5c5d0508178e0e3cefddacf60d6c2393d2c"
+    },
+    {
+      "path": "web/pages/player-cards.tsx",
+      "bytes": 369,
+      "sha256": "47a487285a131d98ef415ca059beea128851a0d62593331291442c3e5257b01d"
+    },
+    {
+      "path": "web/lib/player-cards/currentNhl.ts",
+      "bytes": 11719,
+      "sha256": "5a24558df578c03c5eb059726f3bd526e70e42cb028f12e22bdc594846525dd9"
+    },
+    {
+      "path": "web/lib/player-cards/currentNhl.test.ts",
+      "bytes": 5999,
+      "sha256": "c3e329413ac256cf45e218b90fed2543f0453feefdb9fefb14a718ceadee0b97"
+    },
+    {
+      "path": "web/lib/player-cards/currentNhl.server.ts",
+      "bytes": 2933,
+      "sha256": "905cca317479d47609066bf636c209e2e5662a783e334ad66274e6131b9ffbaa"
+    },
+    {
+      "path": "web/lib/player-cards/currentNhl.server.test.ts",
+      "bytes": 4421,
+      "sha256": "105b977fdee0ecc1e5e9023924619d7c7155940240425132def99650fa803dad"
+    },
+    {
+      "path": "web/components/player-cards/CurrentPlayerCard.tsx",
+      "bytes": 5477,
+      "sha256": "14b171578ccb4c158ef7486a1c91240a5034f56d91b622e31a9eca6f8d2f2191"
+    },
+    {
+      "path": "web/components/player-cards/CurrentPlayerCardStudio.tsx",
+      "bytes": 10873,
+      "sha256": "096790931edf5d3152d8470194606397785dc553a883d6cfacb02739ff92481f"
+    },
+    {
+      "path": "web/components/player-cards/CurrentPlayerCardStudio.test.tsx",
+      "bytes": 6423,
+      "sha256": "3b942f47a77c6851257073afedc6dbe21965e7fe494e142f384c6d76d9bc23a7"
+    },
+    {
+      "path": "web/lib/player-cards/currentNhlExport.ts",
+      "bytes": 1453,
+      "sha256": "bcdbb7b40b27434698207f36efc2e26ab40a4beaeb31918acf236a9132c53441"
+    }
+  ],
+  "applicationRoute": "/player-cards",
+  "applicationApi": "/api/v1/player-cards",
+  "localUrl": "http://127.0.0.1:3125/player-cards/current?checkpoint=current11&playerId=8476453&season=20262027&count=10&cardFormat=rates-opportunity",
+  "source": "retained approved official snapshot; live refresh code is wired but no new live calls ran",
+  "versions": {
+    "definitions": "nhl-basic-skater-v1",
+    "render": "fhfh-current-card-v1",
+    "snapshotId": "nhl-8476453-20262027-10-2026-10-27T00:42:33.268Z-2026020177.2026020167.2026020151.2026020123.2026020111.2026020095.2026020081.2026020060.2026020040.2026020024",
+    "observedAt": "2026-10-27T00:42:33.268Z"
+  },
+  "checks": {
+    "unitTests": 27,
+    "unitFiles": 4,
+    "typesPassed": true,
+    "lintPassedZeroWarnings": true,
+    "offlineBrowserGroups": 3,
+    "actualHttpBrowser": {
+      "checks": [
+        "Defaultclient\u2192nativeHTTPloopbackAPI\u2192actualprovider with3capturedreadpaths; noautoload, pastedFHFHURL/Enter;5/10/20andbothformatsreuseonecapture;4selected-onlyPNG/manifestsagreewithindependentrawsums",
+        "NativefilefallbackPNGparity; browserBack/Forwardrestorescontrolsandinvalidatesoldcard/preparedfilewithoutfetch; explicitreloadrequired",
+        "Invalid/foreignURLzeroAPIcalls; uncapturedplayeridentityfailsbeforehistory/schedulefanout; no stalevalues/export/researchUI;390pxnooverflow"
+      ],
+      "exports": [
+        {
+          "count": 10,
+          "format": "rates-opportunity",
+          "sha256": "b7d11ccecb5859fd2e75ec6f84688ed727d20780b690dac09e6983a3927f0287",
+          "selectedGp": 10
+        },
+        {
+          "count": 10,
+          "format": "results-milestones",
+          "sha256": "b90dbe7d638d8e976858b948c334252d2e127e1db2f23102f723fa625f470e09",
+          "selectedGp": 10
+        },
+        {
+          "count": 5,
+          "format": "results-milestones",
+          "sha256": "86ec0e06b728c1eeb16f6c9ef081de3972db15aa7ba7fd31ff1a37e0d13171d0",
+          "selectedGp": 5
+        },
+        {
+          "count": 20,
+          "format": "results-milestones",
+          "sha256": "154f2c52be07174c00000ef2db898e40b19a58ca595b400c22c070e06034802b",
+          "selectedGp": 11
+        }
+      ],
+      "nativeLocalApiCalls": [
+        "?playerId=8476453&season=20262027&count=10",
+        "?playerId=8476453&season=20262027&count=20",
+        "?playerId=8479318&season=20262027&count=20"
+      ],
+      "fixtureProviderPaths": [
+        "/player/8476453/landing",
+        "/player/8476453/game-log/20262027/2",
+        "/club-schedule-season/TBL/20262027",
+        "/player/8476453/landing",
+        "/player/8476453/game-log/20262027/2",
+        "/club-schedule-season/TBL/20262027",
+        "/player/8479318/landing"
+      ],
+      "externalAttempts": [],
+      "pageErrors": [],
+      "liveRequests": 0,
+      "source": "approved retained official capture; nativeHTTPloopbackfixtureendpoint; serveroutboundfetchblocked",
+      "appRoute": "/player-cards",
+      "apiRoute": "/api/v1/player-cards",
+      "url": "http://127.0.0.1:3125/player-cards/current?checkpoint=current11&playerId=8476453&season=20262027&count=10&cardFormat=rates-opportunity",
+      "htmlSha256": "6c35e68f8f55766d01e311c30ba6f5448d67b6fe633ad9821f5aba5bbfb8f8f9",
+      "mobileInputMinHeightPx": 44,
+      "noAutoloadOnPrefilledSelection": true,
+      "transport": "Native same-origin HTTP; browser fetch wrapper only records request and response-header metadata"
+    },
+    "selectedOnlyManifests": 4,
+    "nativePngDimensions": [
+      1200,
+      1020
+    ],
+    "nativeHttpPngHashesMatchOffline": true,
+    "guardedSlotsReleased": true,
+    "scopedDiffCheckPassed": true,
+    "ownSharedSlotReleased": true
+  },
+  "httpServer": {
+    "pid": 76531,
+    "bind": "127.0.0.1:3125",
+    "outboundFetch": "always throws",
+    "api": "loopback-only fixture endpoint invokesactualproviderwithonlyapproved3rawinputs",
+    "bootstrapInputs": 32,
+    "lifecycle": "Detached POSIX session independent of launcher; host/environment shutdown or explicit stop ends it. No automatic restart/system startup; post-turn survival not yet observed."
+  },
+  "captureCallsThisSlice": 0,
+  "captureSource": "current-data-01/approved-snapshot-02/RECEIPT.json:3HTTP200/208934B/503msat00:42:33.268Z, reusedonly",
+  "preserved": {
+    "styling09SourcePins": 13,
+    "parkedResearchCandidatePins": 33,
+    "noBLSHInApp": true
+  },
+  "remaining": [
+    "Name search UI notimplemented; existing805datedidentitycatalognowidentified,noDBreadneededfornextslice",
+    "AdvancedNST/onice/PPPKfields anddefinitions notqualified bybasicNHLcapture; smallhandoffcontract inNEXT-INPUTS.md",
+    "Noall-NHLpopulationranks/N/percentiles; nohistoricalactualend/career-milestoneproof",
+    "Actualdatahero/styling09integrationstillseparate; no unsupportedartworksubstitution",
+    "NoNextglobal_app/AuthGateruntimeQAorproductiondeployment; applicationpublicpageandAPIcompiledscoped, liveexternaltransportonlymocked/captured",
+    "Parentindependentacceptancepending"
+  ],
+  "manualImages": {
+    "viewed": [
+      "served-current-flow-phone.png",
+      "rates-opportunity-L10-served.png"
+    ],
+    "observed": "Final44pxmobileinputs anddesktop-nativeactualvalues/source/unknown-ranklabels readable; cardfinefooterstillneedszoomatphonefitwidth. Noall-textphonelegibilityclaim."
+  },
+  "touchTargetFix": {
+    "reason": "Actual phone screenshot showednativeID/seasoninputsundersized;2owncontrolstylesonly,originalPNG/styling09unchanged",
+    "minHeight": 44,
+    "actualHostedCheckPassed": true,
+    "originalBrowserLocatorFailure": "touch-locator-served.log; exactSeasonlocator corrected withoutweakeningchecks"
+  }
+}

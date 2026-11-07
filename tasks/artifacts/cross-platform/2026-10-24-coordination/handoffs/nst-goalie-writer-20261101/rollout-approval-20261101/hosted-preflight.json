@@ -1,0 +1,5533 @@
+[
+  {
+    "checked_at": "2026-11-01 18:21:28.174104+00",
+    "inspection_role": "postgres",
+    "relations": [
+      {
+        "name": "games",
+        "type": "bigint",
+        "owner": "postgres",
+        "attnum": 1,
+        "attname": "id",
+        "relkind": "r",
+        "attnotnull": true,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "games",
+        "type": "date",
+        "owner": "postgres",
+        "attnum": 2,
+        "attname": "date",
+        "relkind": "r",
+        "attnotnull": true,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "games",
+        "type": "bigint",
+        "owner": "postgres",
+        "attnum": 3,
+        "attname": "seasonId",
+        "relkind": "r",
+        "attnotnull": true,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "games",
+        "type": "timestamp with time zone",
+        "owner": "postgres",
+        "attnum": 4,
+        "attname": "startTime",
+        "relkind": "r",
+        "attnotnull": true,
+        "column_default": "now()",
+        "relrowsecurity": true
+      },
+      {
+        "name": "games",
+        "type": "smallint",
+        "owner": "postgres",
+        "attnum": 5,
+        "attname": "type",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "games",
+        "type": "timestamp with time zone",
+        "owner": "postgres",
+        "attnum": 6,
+        "attname": "created_at",
+        "relkind": "r",
+        "attnotnull": true,
+        "column_default": "now()",
+        "relrowsecurity": true
+      },
+      {
+        "name": "games",
+        "type": "smallint",
+        "owner": "postgres",
+        "attnum": 7,
+        "attname": "homeTeamId",
+        "relkind": "r",
+        "attnotnull": true,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "games",
+        "type": "smallint",
+        "owner": "postgres",
+        "attnum": 8,
+        "attname": "awayTeamId",
+        "relkind": "r",
+        "attnotnull": true,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_5v5_counts",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 1,
+        "attname": "player_id",
+        "relkind": "r",
+        "attnotnull": true,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_5v5_counts",
+        "type": "text",
+        "owner": "postgres",
+        "attnum": 2,
+        "attname": "player_name",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_5v5_counts",
+        "type": "text",
+        "owner": "postgres",
+        "attnum": 3,
+        "attname": "team",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_5v5_counts",
+        "type": "date",
+        "owner": "postgres",
+        "attnum": 4,
+        "attname": "date_scraped",
+        "relkind": "r",
+        "attnotnull": true,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_5v5_counts",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 5,
+        "attname": "season",
+        "relkind": "r",
+        "attnotnull": true,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_5v5_counts",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 6,
+        "attname": "gp",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_5v5_counts",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 7,
+        "attname": "toi",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_5v5_counts",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 8,
+        "attname": "shots_against",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_5v5_counts",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 9,
+        "attname": "saves",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_5v5_counts",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 10,
+        "attname": "goals_against",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_5v5_counts",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 11,
+        "attname": "sv_percentage",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_5v5_counts",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 12,
+        "attname": "gaa",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_5v5_counts",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 13,
+        "attname": "gsaa",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_5v5_counts",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 14,
+        "attname": "xg_against",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_5v5_counts",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 15,
+        "attname": "hd_shots_against",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_5v5_counts",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 16,
+        "attname": "hd_saves",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_5v5_counts",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 17,
+        "attname": "hd_sv_percentage",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_5v5_counts",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 18,
+        "attname": "hd_gaa",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_5v5_counts",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 19,
+        "attname": "hd_gsaa",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_5v5_counts",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 20,
+        "attname": "md_shots_against",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_5v5_counts",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 21,
+        "attname": "md_saves",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_5v5_counts",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 22,
+        "attname": "md_goals_against",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_5v5_counts",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 23,
+        "attname": "md_sv_percentage",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_5v5_counts",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 24,
+        "attname": "md_gaa",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_5v5_counts",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 25,
+        "attname": "md_gsaa",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_5v5_counts",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 26,
+        "attname": "ld_shots_against",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_5v5_counts",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 27,
+        "attname": "ld_sv_percentage",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_5v5_counts",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 28,
+        "attname": "ld_gaa",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_5v5_counts",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 29,
+        "attname": "ld_gsaa",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_5v5_counts",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 30,
+        "attname": "rush_attempts_against",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_5v5_counts",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 31,
+        "attname": "rebound_attempts_against",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_5v5_counts",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 32,
+        "attname": "avg_shot_distance",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_5v5_counts",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 33,
+        "attname": "avg_goal_distance",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_5v5_rates",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 1,
+        "attname": "player_id",
+        "relkind": "r",
+        "attnotnull": true,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_5v5_rates",
+        "type": "text",
+        "owner": "postgres",
+        "attnum": 2,
+        "attname": "player_name",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_5v5_rates",
+        "type": "text",
+        "owner": "postgres",
+        "attnum": 3,
+        "attname": "team",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_5v5_rates",
+        "type": "date",
+        "owner": "postgres",
+        "attnum": 4,
+        "attname": "date_scraped",
+        "relkind": "r",
+        "attnotnull": true,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_5v5_rates",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 5,
+        "attname": "season",
+        "relkind": "r",
+        "attnotnull": true,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_5v5_rates",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 6,
+        "attname": "gp",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_5v5_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 7,
+        "attname": "toi",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_5v5_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 8,
+        "attname": "toi_per_gp",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_5v5_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 9,
+        "attname": "shots_against_per_60",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_5v5_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 10,
+        "attname": "saves_per_60",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_5v5_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 11,
+        "attname": "sv_percentage",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_5v5_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 12,
+        "attname": "gaa",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_5v5_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 13,
+        "attname": "gsaa_per_60",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_5v5_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 14,
+        "attname": "xg_against_per_60",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_5v5_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 15,
+        "attname": "hd_shots_against_per_60",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_5v5_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 16,
+        "attname": "hd_saves_per_60",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_5v5_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 17,
+        "attname": "hd_sv_percentage",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_5v5_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 18,
+        "attname": "hd_gaa",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_5v5_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 19,
+        "attname": "hd_gsaa_per_60",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_5v5_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 20,
+        "attname": "md_shots_against_per_60",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_5v5_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 21,
+        "attname": "md_saves_per_60",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_5v5_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 22,
+        "attname": "md_sv_percentage",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_5v5_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 23,
+        "attname": "md_gaa",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_5v5_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 24,
+        "attname": "md_gsaa_per_60",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_5v5_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 25,
+        "attname": "ld_shots_against_per_60",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_5v5_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 26,
+        "attname": "ld_saves_per_60",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_5v5_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 27,
+        "attname": "ld_sv_percentage",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_5v5_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 28,
+        "attname": "ld_gaa",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_5v5_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 29,
+        "attname": "ld_gsaa_per_60",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_5v5_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 30,
+        "attname": "rush_attempts_against_per_60",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_5v5_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 31,
+        "attname": "rebound_attempts_against_per_60",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_5v5_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 32,
+        "attname": "avg_shot_distance",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_5v5_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 33,
+        "attname": "avg_goal_distance",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_all_counts",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 1,
+        "attname": "player_id",
+        "relkind": "r",
+        "attnotnull": true,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_all_counts",
+        "type": "text",
+        "owner": "postgres",
+        "attnum": 2,
+        "attname": "player_name",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_all_counts",
+        "type": "text",
+        "owner": "postgres",
+        "attnum": 3,
+        "attname": "team",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_all_counts",
+        "type": "date",
+        "owner": "postgres",
+        "attnum": 4,
+        "attname": "date_scraped",
+        "relkind": "r",
+        "attnotnull": true,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_all_counts",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 5,
+        "attname": "season",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_all_counts",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 6,
+        "attname": "gp",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_all_counts",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 7,
+        "attname": "toi",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_all_counts",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 8,
+        "attname": "shots_against",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_all_counts",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 9,
+        "attname": "saves",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_all_counts",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 10,
+        "attname": "goals_against",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_all_counts",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 11,
+        "attname": "sv_percentage",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_all_counts",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 12,
+        "attname": "gaa",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_all_counts",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 13,
+        "attname": "gsaa",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_all_counts",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 14,
+        "attname": "xg_against",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_all_counts",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 15,
+        "attname": "hd_shots_against",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_all_counts",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 16,
+        "attname": "hd_saves",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_all_counts",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 17,
+        "attname": "hd_sv_percentage",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_all_counts",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 18,
+        "attname": "hd_gaa",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_all_counts",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 19,
+        "attname": "hd_gsaa",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_all_counts",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 20,
+        "attname": "md_shots_against",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_all_counts",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 21,
+        "attname": "md_saves",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_all_counts",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 22,
+        "attname": "md_goals_against",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_all_counts",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 23,
+        "attname": "md_sv_percentage",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_all_counts",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 24,
+        "attname": "md_gaa",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_all_counts",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 25,
+        "attname": "md_gsaa",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_all_counts",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 26,
+        "attname": "ld_shots_against",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_all_counts",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 27,
+        "attname": "ld_sv_percentage",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_all_counts",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 28,
+        "attname": "ld_gaa",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_all_counts",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 29,
+        "attname": "ld_gsaa",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_all_counts",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 30,
+        "attname": "rush_attempts_against",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_all_counts",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 31,
+        "attname": "rebound_attempts_against",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_all_counts",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 32,
+        "attname": "avg_shot_distance",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_all_counts",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 33,
+        "attname": "avg_goal_distance",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_all_rates",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 1,
+        "attname": "player_id",
+        "relkind": "r",
+        "attnotnull": true,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_all_rates",
+        "type": "text",
+        "owner": "postgres",
+        "attnum": 2,
+        "attname": "player_name",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_all_rates",
+        "type": "text",
+        "owner": "postgres",
+        "attnum": 3,
+        "attname": "team",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_all_rates",
+        "type": "date",
+        "owner": "postgres",
+        "attnum": 4,
+        "attname": "date_scraped",
+        "relkind": "r",
+        "attnotnull": true,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_all_rates",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 5,
+        "attname": "season",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_all_rates",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 6,
+        "attname": "gp",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_all_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 7,
+        "attname": "toi",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_all_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 8,
+        "attname": "toi_per_gp",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_all_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 9,
+        "attname": "shots_against_per_60",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_all_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 10,
+        "attname": "saves_per_60",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_all_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 11,
+        "attname": "sv_percentage",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_all_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 12,
+        "attname": "gaa",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_all_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 13,
+        "attname": "gsaa_per_60",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_all_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 14,
+        "attname": "xg_against_per_60",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_all_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 15,
+        "attname": "hd_shots_against_per_60",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_all_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 16,
+        "attname": "hd_saves_per_60",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_all_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 17,
+        "attname": "hd_sv_percentage",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_all_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 18,
+        "attname": "hd_gaa",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_all_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 19,
+        "attname": "hd_gsaa_per_60",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_all_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 20,
+        "attname": "md_shots_against_per_60",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_all_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 21,
+        "attname": "md_saves_per_60",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_all_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 22,
+        "attname": "md_sv_percentage",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_all_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 23,
+        "attname": "md_gaa",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_all_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 24,
+        "attname": "md_gsaa_per_60",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_all_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 25,
+        "attname": "ld_shots_against_per_60",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_all_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 26,
+        "attname": "ld_saves_per_60",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_all_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 27,
+        "attname": "ld_sv_percentage",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_all_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 28,
+        "attname": "ld_gaa",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_all_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 29,
+        "attname": "ld_gsaa_per_60",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_all_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 30,
+        "attname": "rush_attempts_against_per_60",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_all_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 31,
+        "attname": "rebound_attempts_against_per_60",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_all_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 32,
+        "attname": "avg_shot_distance",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_all_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 33,
+        "attname": "avg_goal_distance",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_ev_counts",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 1,
+        "attname": "player_id",
+        "relkind": "r",
+        "attnotnull": true,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_ev_counts",
+        "type": "text",
+        "owner": "postgres",
+        "attnum": 2,
+        "attname": "player_name",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_ev_counts",
+        "type": "text",
+        "owner": "postgres",
+        "attnum": 3,
+        "attname": "team",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_ev_counts",
+        "type": "date",
+        "owner": "postgres",
+        "attnum": 4,
+        "attname": "date_scraped",
+        "relkind": "r",
+        "attnotnull": true,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_ev_counts",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 5,
+        "attname": "season",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_ev_counts",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 6,
+        "attname": "gp",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_ev_counts",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 7,
+        "attname": "toi",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_ev_counts",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 8,
+        "attname": "shots_against",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_ev_counts",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 9,
+        "attname": "saves",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_ev_counts",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 10,
+        "attname": "goals_against",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_ev_counts",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 11,
+        "attname": "sv_percentage",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_ev_counts",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 12,
+        "attname": "gaa",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_ev_counts",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 13,
+        "attname": "gsaa",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_ev_counts",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 14,
+        "attname": "xg_against",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_ev_counts",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 15,
+        "attname": "hd_shots_against",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_ev_counts",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 16,
+        "attname": "hd_saves",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_ev_counts",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 17,
+        "attname": "hd_sv_percentage",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_ev_counts",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 18,
+        "attname": "hd_gaa",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_ev_counts",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 19,
+        "attname": "hd_gsaa",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_ev_counts",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 20,
+        "attname": "md_shots_against",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_ev_counts",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 21,
+        "attname": "md_saves",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_ev_counts",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 22,
+        "attname": "md_goals_against",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_ev_counts",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 23,
+        "attname": "md_sv_percentage",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_ev_counts",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 24,
+        "attname": "md_gaa",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_ev_counts",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 25,
+        "attname": "md_gsaa",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_ev_counts",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 26,
+        "attname": "ld_shots_against",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_ev_counts",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 27,
+        "attname": "ld_sv_percentage",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_ev_counts",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 28,
+        "attname": "ld_gaa",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_ev_counts",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 29,
+        "attname": "ld_gsaa",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_ev_counts",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 30,
+        "attname": "rush_attempts_against",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_ev_counts",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 31,
+        "attname": "rebound_attempts_against",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_ev_counts",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 32,
+        "attname": "avg_shot_distance",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_ev_counts",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 33,
+        "attname": "avg_goal_distance",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_ev_rates",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 1,
+        "attname": "player_id",
+        "relkind": "r",
+        "attnotnull": true,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_ev_rates",
+        "type": "text",
+        "owner": "postgres",
+        "attnum": 2,
+        "attname": "player_name",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_ev_rates",
+        "type": "text",
+        "owner": "postgres",
+        "attnum": 3,
+        "attname": "team",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_ev_rates",
+        "type": "date",
+        "owner": "postgres",
+        "attnum": 4,
+        "attname": "date_scraped",
+        "relkind": "r",
+        "attnotnull": true,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_ev_rates",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 5,
+        "attname": "season",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_ev_rates",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 6,
+        "attname": "gp",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_ev_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 7,
+        "attname": "toi",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_ev_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 8,
+        "attname": "toi_per_gp",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_ev_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 9,
+        "attname": "shots_against_per_60",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_ev_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 10,
+        "attname": "saves_per_60",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_ev_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 11,
+        "attname": "sv_percentage",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_ev_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 12,
+        "attname": "gaa",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_ev_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 13,
+        "attname": "gsaa_per_60",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_ev_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 14,
+        "attname": "xg_against_per_60",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_ev_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 15,
+        "attname": "hd_shots_against_per_60",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_ev_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 16,
+        "attname": "hd_saves_per_60",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_ev_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 17,
+        "attname": "hd_sv_percentage",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_ev_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 18,
+        "attname": "hd_gaa",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_ev_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 19,
+        "attname": "hd_gsaa_per_60",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_ev_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 20,
+        "attname": "md_shots_against_per_60",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_ev_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 21,
+        "attname": "md_saves_per_60",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_ev_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 22,
+        "attname": "md_sv_percentage",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_ev_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 23,
+        "attname": "md_gaa",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_ev_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 24,
+        "attname": "md_gsaa_per_60",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_ev_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 25,
+        "attname": "ld_shots_against_per_60",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_ev_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 26,
+        "attname": "ld_saves_per_60",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_ev_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 27,
+        "attname": "ld_sv_percentage",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_ev_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 28,
+        "attname": "ld_gaa",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_ev_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 29,
+        "attname": "ld_gsaa_per_60",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_ev_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 30,
+        "attname": "rush_attempts_against_per_60",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_ev_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 31,
+        "attname": "rebound_attempts_against_per_60",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_ev_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 32,
+        "attname": "avg_shot_distance",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_ev_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 33,
+        "attname": "avg_goal_distance",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pk_counts",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 1,
+        "attname": "player_id",
+        "relkind": "r",
+        "attnotnull": true,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pk_counts",
+        "type": "text",
+        "owner": "postgres",
+        "attnum": 2,
+        "attname": "player_name",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pk_counts",
+        "type": "text",
+        "owner": "postgres",
+        "attnum": 3,
+        "attname": "team",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pk_counts",
+        "type": "date",
+        "owner": "postgres",
+        "attnum": 4,
+        "attname": "date_scraped",
+        "relkind": "r",
+        "attnotnull": true,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pk_counts",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 5,
+        "attname": "season",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pk_counts",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 6,
+        "attname": "gp",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pk_counts",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 7,
+        "attname": "toi",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pk_counts",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 8,
+        "attname": "shots_against",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pk_counts",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 9,
+        "attname": "saves",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pk_counts",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 10,
+        "attname": "goals_against",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pk_counts",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 11,
+        "attname": "sv_percentage",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pk_counts",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 12,
+        "attname": "gaa",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pk_counts",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 13,
+        "attname": "gsaa",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pk_counts",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 14,
+        "attname": "xg_against",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pk_counts",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 15,
+        "attname": "hd_shots_against",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pk_counts",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 16,
+        "attname": "hd_saves",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pk_counts",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 17,
+        "attname": "hd_sv_percentage",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pk_counts",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 18,
+        "attname": "hd_gaa",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pk_counts",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 19,
+        "attname": "hd_gsaa",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pk_counts",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 20,
+        "attname": "md_shots_against",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pk_counts",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 21,
+        "attname": "md_saves",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pk_counts",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 22,
+        "attname": "md_goals_against",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pk_counts",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 23,
+        "attname": "md_sv_percentage",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pk_counts",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 24,
+        "attname": "md_gaa",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pk_counts",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 25,
+        "attname": "md_gsaa",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pk_counts",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 26,
+        "attname": "ld_shots_against",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pk_counts",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 27,
+        "attname": "ld_sv_percentage",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pk_counts",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 28,
+        "attname": "ld_gaa",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pk_counts",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 29,
+        "attname": "ld_gsaa",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pk_counts",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 30,
+        "attname": "rush_attempts_against",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pk_counts",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 31,
+        "attname": "rebound_attempts_against",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pk_counts",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 32,
+        "attname": "avg_shot_distance",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pk_counts",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 33,
+        "attname": "avg_goal_distance",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pk_rates",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 1,
+        "attname": "player_id",
+        "relkind": "r",
+        "attnotnull": true,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pk_rates",
+        "type": "text",
+        "owner": "postgres",
+        "attnum": 2,
+        "attname": "player_name",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pk_rates",
+        "type": "text",
+        "owner": "postgres",
+        "attnum": 3,
+        "attname": "team",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pk_rates",
+        "type": "date",
+        "owner": "postgres",
+        "attnum": 4,
+        "attname": "date_scraped",
+        "relkind": "r",
+        "attnotnull": true,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pk_rates",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 5,
+        "attname": "season",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pk_rates",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 6,
+        "attname": "gp",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pk_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 7,
+        "attname": "toi",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pk_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 8,
+        "attname": "toi_per_gp",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pk_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 9,
+        "attname": "shots_against_per_60",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pk_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 10,
+        "attname": "saves_per_60",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pk_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 11,
+        "attname": "sv_percentage",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pk_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 12,
+        "attname": "gaa",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pk_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 13,
+        "attname": "gsaa_per_60",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pk_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 14,
+        "attname": "xg_against_per_60",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pk_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 15,
+        "attname": "hd_shots_against_per_60",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pk_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 16,
+        "attname": "hd_saves_per_60",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pk_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 17,
+        "attname": "hd_sv_percentage",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pk_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 18,
+        "attname": "hd_gaa",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pk_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 19,
+        "attname": "hd_gsaa_per_60",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pk_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 20,
+        "attname": "md_shots_against_per_60",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pk_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 21,
+        "attname": "md_saves_per_60",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pk_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 22,
+        "attname": "md_sv_percentage",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pk_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 23,
+        "attname": "md_gaa",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pk_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 24,
+        "attname": "md_gsaa_per_60",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pk_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 25,
+        "attname": "ld_shots_against_per_60",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pk_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 26,
+        "attname": "ld_saves_per_60",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pk_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 27,
+        "attname": "ld_sv_percentage",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pk_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 28,
+        "attname": "ld_gaa",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pk_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 29,
+        "attname": "ld_gsaa_per_60",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pk_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 30,
+        "attname": "rush_attempts_against_per_60",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pk_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 31,
+        "attname": "rebound_attempts_against_per_60",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pk_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 32,
+        "attname": "avg_shot_distance",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pk_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 33,
+        "attname": "avg_goal_distance",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pp_counts",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 1,
+        "attname": "player_id",
+        "relkind": "r",
+        "attnotnull": true,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pp_counts",
+        "type": "text",
+        "owner": "postgres",
+        "attnum": 2,
+        "attname": "player_name",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pp_counts",
+        "type": "text",
+        "owner": "postgres",
+        "attnum": 3,
+        "attname": "team",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pp_counts",
+        "type": "date",
+        "owner": "postgres",
+        "attnum": 4,
+        "attname": "date_scraped",
+        "relkind": "r",
+        "attnotnull": true,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pp_counts",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 5,
+        "attname": "season",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pp_counts",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 6,
+        "attname": "gp",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pp_counts",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 7,
+        "attname": "toi",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pp_counts",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 8,
+        "attname": "shots_against",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pp_counts",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 9,
+        "attname": "saves",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pp_counts",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 10,
+        "attname": "goals_against",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pp_counts",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 11,
+        "attname": "sv_percentage",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pp_counts",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 12,
+        "attname": "gaa",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pp_counts",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 13,
+        "attname": "gsaa",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pp_counts",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 14,
+        "attname": "xg_against",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pp_counts",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 15,
+        "attname": "hd_shots_against",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pp_counts",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 16,
+        "attname": "hd_saves",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pp_counts",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 17,
+        "attname": "hd_sv_percentage",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pp_counts",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 18,
+        "attname": "hd_gaa",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pp_counts",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 19,
+        "attname": "hd_gsaa",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pp_counts",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 20,
+        "attname": "md_shots_against",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pp_counts",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 21,
+        "attname": "md_saves",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pp_counts",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 22,
+        "attname": "md_goals_against",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pp_counts",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 23,
+        "attname": "md_sv_percentage",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pp_counts",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 24,
+        "attname": "md_gaa",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pp_counts",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 25,
+        "attname": "md_gsaa",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pp_counts",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 26,
+        "attname": "ld_shots_against",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pp_counts",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 27,
+        "attname": "ld_sv_percentage",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pp_counts",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 28,
+        "attname": "ld_gaa",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pp_counts",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 29,
+        "attname": "ld_gsaa",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pp_counts",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 30,
+        "attname": "rush_attempts_against",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pp_counts",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 31,
+        "attname": "rebound_attempts_against",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pp_counts",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 32,
+        "attname": "avg_shot_distance",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pp_counts",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 33,
+        "attname": "avg_goal_distance",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pp_rates",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 1,
+        "attname": "player_id",
+        "relkind": "r",
+        "attnotnull": true,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pp_rates",
+        "type": "text",
+        "owner": "postgres",
+        "attnum": 2,
+        "attname": "player_name",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pp_rates",
+        "type": "text",
+        "owner": "postgres",
+        "attnum": 3,
+        "attname": "team",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pp_rates",
+        "type": "date",
+        "owner": "postgres",
+        "attnum": 4,
+        "attname": "date_scraped",
+        "relkind": "r",
+        "attnotnull": true,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pp_rates",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 5,
+        "attname": "season",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pp_rates",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 6,
+        "attname": "gp",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pp_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 7,
+        "attname": "toi",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pp_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 8,
+        "attname": "toi_per_gp",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pp_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 9,
+        "attname": "shots_against_per_60",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pp_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 10,
+        "attname": "saves_per_60",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pp_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 11,
+        "attname": "sv_percentage",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pp_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 12,
+        "attname": "gaa",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pp_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 13,
+        "attname": "gsaa_per_60",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pp_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 14,
+        "attname": "xg_against_per_60",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pp_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 15,
+        "attname": "hd_shots_against_per_60",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pp_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 16,
+        "attname": "hd_saves_per_60",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pp_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 17,
+        "attname": "hd_sv_percentage",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pp_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 18,
+        "attname": "hd_gaa",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pp_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 19,
+        "attname": "hd_gsaa_per_60",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pp_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 20,
+        "attname": "md_shots_against_per_60",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pp_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 21,
+        "attname": "md_saves_per_60",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pp_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 22,
+        "attname": "md_sv_percentage",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pp_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 23,
+        "attname": "md_gaa",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pp_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 24,
+        "attname": "md_gsaa_per_60",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pp_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 25,
+        "attname": "ld_shots_against_per_60",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pp_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 26,
+        "attname": "ld_saves_per_60",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pp_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 27,
+        "attname": "ld_sv_percentage",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pp_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 28,
+        "attname": "ld_gaa",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pp_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 29,
+        "attname": "ld_gsaa_per_60",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pp_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 30,
+        "attname": "rush_attempts_against_per_60",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pp_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 31,
+        "attname": "rebound_attempts_against_per_60",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pp_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 32,
+        "attname": "avg_shot_distance",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_gamelog_goalie_pp_rates",
+        "type": "numeric",
+        "owner": "postgres",
+        "attnum": 33,
+        "attname": "avg_goal_distance",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "nst_goalie_claims",
+        "type": null,
+        "owner": null,
+        "attnum": null,
+        "attname": null,
+        "relkind": null,
+        "attnotnull": null,
+        "column_default": null,
+        "relrowsecurity": null
+      },
+      {
+        "name": "nst_goalie_cohort_units",
+        "type": null,
+        "owner": null,
+        "attnum": null,
+        "attname": null,
+        "relkind": null,
+        "attnotnull": null,
+        "column_default": null,
+        "relrowsecurity": null
+      },
+      {
+        "name": "nst_goalie_cohorts",
+        "type": null,
+        "owner": null,
+        "attnum": null,
+        "attname": null,
+        "relkind": null,
+        "attnotnull": null,
+        "column_default": null,
+        "relrowsecurity": null
+      },
+      {
+        "name": "nst_goalie_control",
+        "type": null,
+        "owner": null,
+        "attnum": null,
+        "attname": null,
+        "relkind": null,
+        "attnotnull": null,
+        "column_default": null,
+        "relrowsecurity": null
+      },
+      {
+        "name": "nst_goalie_daily_budget",
+        "type": null,
+        "owner": null,
+        "attnum": null,
+        "attname": null,
+        "relkind": null,
+        "attnotnull": null,
+        "column_default": null,
+        "relrowsecurity": null
+      },
+      {
+        "name": "nst_goalie_day_evidence",
+        "type": null,
+        "owner": null,
+        "attnum": null,
+        "attname": null,
+        "relkind": null,
+        "attnotnull": null,
+        "column_default": null,
+        "relrowsecurity": null
+      },
+      {
+        "name": "nst_goalie_unit_receipts",
+        "type": null,
+        "owner": null,
+        "attnum": null,
+        "attname": null,
+        "relkind": null,
+        "attnotnull": null,
+        "column_default": null,
+        "relrowsecurity": null
+      },
+      {
+        "name": "nst_goalie_units",
+        "type": null,
+        "owner": null,
+        "attnum": null,
+        "attname": null,
+        "relkind": null,
+        "attnotnull": null,
+        "column_default": null,
+        "relrowsecurity": null
+      },
+      {
+        "name": "nst_job_control",
+        "type": null,
+        "owner": null,
+        "attnum": null,
+        "attname": null,
+        "relkind": null,
+        "attnotnull": null,
+        "column_default": null,
+        "relrowsecurity": null
+      },
+      {
+        "name": "nst_jobs",
+        "type": null,
+        "owner": null,
+        "attnum": null,
+        "attname": null,
+        "relkind": null,
+        "attnotnull": null,
+        "column_default": null,
+        "relrowsecurity": null
+      },
+      {
+        "name": "nst_request_admission_state",
+        "type": null,
+        "owner": null,
+        "attnum": null,
+        "attname": null,
+        "relkind": null,
+        "attnotnull": null,
+        "column_default": null,
+        "relrowsecurity": null
+      },
+      {
+        "name": "route_runner_events",
+        "type": "bigint",
+        "owner": "postgres",
+        "attnum": 1,
+        "attname": "id",
+        "relkind": "r",
+        "attnotnull": true,
+        "column_default": "nextval('route_runner_events_id_seq'::regclass)",
+        "relrowsecurity": true
+      },
+      {
+        "name": "route_runner_events",
+        "type": "uuid",
+        "owner": "postgres",
+        "attnum": 2,
+        "attname": "job_id",
+        "relkind": "r",
+        "attnotnull": true,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "route_runner_events",
+        "type": "timestamp with time zone",
+        "owner": "postgres",
+        "attnum": 3,
+        "attname": "at",
+        "relkind": "r",
+        "attnotnull": true,
+        "column_default": "now()",
+        "relrowsecurity": true
+      },
+      {
+        "name": "route_runner_events",
+        "type": "text",
+        "owner": "postgres",
+        "attnum": 4,
+        "attname": "level",
+        "relkind": "r",
+        "attnotnull": true,
+        "column_default": "'info'::text",
+        "relrowsecurity": true
+      },
+      {
+        "name": "route_runner_events",
+        "type": "text",
+        "owner": "postgres",
+        "attnum": 5,
+        "attname": "message",
+        "relkind": "r",
+        "attnotnull": true,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "route_runner_events",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 6,
+        "attname": "step",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "route_runner_events",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 7,
+        "attname": "status_code",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "route_runner_events",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 8,
+        "attname": "rows",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "route_runner_events",
+        "type": "jsonb",
+        "owner": "postgres",
+        "attnum": 9,
+        "attname": "progress",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "route_runner_events",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 10,
+        "attname": "duration_ms",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "route_runner_jobs",
+        "type": "uuid",
+        "owner": "postgres",
+        "attnum": 1,
+        "attname": "id",
+        "relkind": "r",
+        "attnotnull": true,
+        "column_default": "gen_random_uuid()",
+        "relrowsecurity": true
+      },
+      {
+        "name": "route_runner_jobs",
+        "type": "text",
+        "owner": "postgres",
+        "attnum": 2,
+        "attname": "route_path",
+        "relkind": "r",
+        "attnotnull": true,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "route_runner_jobs",
+        "type": "jsonb",
+        "owner": "postgres",
+        "attnum": 3,
+        "attname": "initial_query",
+        "relkind": "r",
+        "attnotnull": true,
+        "column_default": "'{}'::jsonb",
+        "relrowsecurity": true
+      },
+      {
+        "name": "route_runner_jobs",
+        "type": "jsonb",
+        "owner": "postgres",
+        "attnum": 4,
+        "attname": "next_query",
+        "relkind": "r",
+        "attnotnull": true,
+        "column_default": "'{}'::jsonb",
+        "relrowsecurity": true
+      },
+      {
+        "name": "route_runner_jobs",
+        "type": "text",
+        "owner": "postgres",
+        "attnum": 5,
+        "attname": "contract",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "route_runner_jobs",
+        "type": "text",
+        "owner": "postgres",
+        "attnum": 6,
+        "attname": "status",
+        "relkind": "r",
+        "attnotnull": true,
+        "column_default": "'queued'::text",
+        "relrowsecurity": true
+      },
+      {
+        "name": "route_runner_jobs",
+        "type": "uuid",
+        "owner": "postgres",
+        "attnum": 7,
+        "attname": "created_by",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "route_runner_jobs",
+        "type": "timestamp with time zone",
+        "owner": "postgres",
+        "attnum": 8,
+        "attname": "created_at",
+        "relkind": "r",
+        "attnotnull": true,
+        "column_default": "now()",
+        "relrowsecurity": true
+      },
+      {
+        "name": "route_runner_jobs",
+        "type": "timestamp with time zone",
+        "owner": "postgres",
+        "attnum": 9,
+        "attname": "updated_at",
+        "relkind": "r",
+        "attnotnull": true,
+        "column_default": "now()",
+        "relrowsecurity": true
+      },
+      {
+        "name": "route_runner_jobs",
+        "type": "timestamp with time zone",
+        "owner": "postgres",
+        "attnum": 10,
+        "attname": "not_before",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "route_runner_jobs",
+        "type": "timestamp with time zone",
+        "owner": "postgres",
+        "attnum": 11,
+        "attname": "lease_until",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "route_runner_jobs",
+        "type": "timestamp with time zone",
+        "owner": "postgres",
+        "attnum": 12,
+        "attname": "expires_at",
+        "relkind": "r",
+        "attnotnull": true,
+        "column_default": "(now() + '72:00:00'::interval)",
+        "relrowsecurity": true
+      },
+      {
+        "name": "route_runner_jobs",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 13,
+        "attname": "steps",
+        "relkind": "r",
+        "attnotnull": true,
+        "column_default": "0",
+        "relrowsecurity": true
+      },
+      {
+        "name": "route_runner_jobs",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 14,
+        "attname": "kills",
+        "relkind": "r",
+        "attnotnull": true,
+        "column_default": "0",
+        "relrowsecurity": true
+      },
+      {
+        "name": "route_runner_jobs",
+        "type": "bigint",
+        "owner": "postgres",
+        "attnum": 15,
+        "attname": "rows_total",
+        "relkind": "r",
+        "attnotnull": true,
+        "column_default": "0",
+        "relrowsecurity": true
+      },
+      {
+        "name": "route_runner_jobs",
+        "type": "jsonb",
+        "owner": "postgres",
+        "attnum": 16,
+        "attname": "progress",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "route_runner_jobs",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 17,
+        "attname": "last_status_code",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "route_runner_jobs",
+        "type": "text",
+        "owner": "postgres",
+        "attnum": 18,
+        "attname": "last_operation_status",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "route_runner_jobs",
+        "type": "text",
+        "owner": "postgres",
+        "attnum": 19,
+        "attname": "last_error",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "route_runner_jobs",
+        "type": "timestamp with time zone",
+        "owner": "postgres",
+        "attnum": 20,
+        "attname": "finished_at",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "seasons",
+        "type": "bigint",
+        "owner": "postgres",
+        "attnum": 1,
+        "attname": "id",
+        "relkind": "r",
+        "attnotnull": true,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "seasons",
+        "type": "timestamp with time zone",
+        "owner": "postgres",
+        "attnum": 2,
+        "attname": "created_at",
+        "relkind": "r",
+        "attnotnull": true,
+        "column_default": "now()",
+        "relrowsecurity": true
+      },
+      {
+        "name": "seasons",
+        "type": "date",
+        "owner": "postgres",
+        "attnum": 3,
+        "attname": "startDate",
+        "relkind": "r",
+        "attnotnull": true,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "seasons",
+        "type": "date",
+        "owner": "postgres",
+        "attnum": 4,
+        "attname": "endDate",
+        "relkind": "r",
+        "attnotnull": true,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "seasons",
+        "type": "date",
+        "owner": "postgres",
+        "attnum": 5,
+        "attname": "regularSeasonEndDate",
+        "relkind": "r",
+        "attnotnull": true,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "seasons",
+        "type": "smallint",
+        "owner": "postgres",
+        "attnum": 6,
+        "attname": "numberOfGames",
+        "relkind": "r",
+        "attnotnull": true,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "wgo_goalie_stats",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 2,
+        "attname": "goalie_id",
+        "relkind": "r",
+        "attnotnull": true,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "wgo_goalie_stats",
+        "type": "text",
+        "owner": "postgres",
+        "attnum": 3,
+        "attname": "goalie_name",
+        "relkind": "r",
+        "attnotnull": true,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "wgo_goalie_stats",
+        "type": "date",
+        "owner": "postgres",
+        "attnum": 4,
+        "attname": "date",
+        "relkind": "r",
+        "attnotnull": true,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "wgo_goalie_stats",
+        "type": "text",
+        "owner": "postgres",
+        "attnum": 5,
+        "attname": "shoots_catches",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "wgo_goalie_stats",
+        "type": "text",
+        "owner": "postgres",
+        "attnum": 6,
+        "attname": "position_code",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "wgo_goalie_stats",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 7,
+        "attname": "games_played",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "wgo_goalie_stats",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 8,
+        "attname": "games_started",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "wgo_goalie_stats",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 9,
+        "attname": "wins",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "wgo_goalie_stats",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 10,
+        "attname": "losses",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "wgo_goalie_stats",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 11,
+        "attname": "ot_losses",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "wgo_goalie_stats",
+        "type": "double precision",
+        "owner": "postgres",
+        "attnum": 12,
+        "attname": "save_pct",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "wgo_goalie_stats",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 13,
+        "attname": "saves",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "wgo_goalie_stats",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 14,
+        "attname": "goals_against",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "wgo_goalie_stats",
+        "type": "double precision",
+        "owner": "postgres",
+        "attnum": 15,
+        "attname": "goals_against_avg",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "wgo_goalie_stats",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 16,
+        "attname": "shots_against",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "wgo_goalie_stats",
+        "type": "double precision",
+        "owner": "postgres",
+        "attnum": 17,
+        "attname": "time_on_ice",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "wgo_goalie_stats",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 18,
+        "attname": "shutouts",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "wgo_goalie_stats",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 19,
+        "attname": "goals",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "wgo_goalie_stats",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 20,
+        "attname": "assists",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "wgo_goalie_stats",
+        "type": "double precision",
+        "owner": "postgres",
+        "attnum": 21,
+        "attname": "complete_game_pct",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "wgo_goalie_stats",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 22,
+        "attname": "complete_games",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "wgo_goalie_stats",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 23,
+        "attname": "incomplete_games",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "wgo_goalie_stats",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 24,
+        "attname": "quality_start",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "wgo_goalie_stats",
+        "type": "double precision",
+        "owner": "postgres",
+        "attnum": 25,
+        "attname": "quality_starts_pct",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "wgo_goalie_stats",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 26,
+        "attname": "regulation_losses",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "wgo_goalie_stats",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 27,
+        "attname": "regulation_wins",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "wgo_goalie_stats",
+        "type": "double precision",
+        "owner": "postgres",
+        "attnum": 28,
+        "attname": "shots_against_per_60",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "wgo_goalie_stats",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 29,
+        "attname": "games_played_days_rest_0",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "wgo_goalie_stats",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 30,
+        "attname": "games_played_days_rest_1",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "wgo_goalie_stats",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 31,
+        "attname": "games_played_days_rest_2",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "wgo_goalie_stats",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 32,
+        "attname": "games_played_days_rest_3",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "wgo_goalie_stats",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 33,
+        "attname": "games_played_days_rest_4_plus",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "wgo_goalie_stats",
+        "type": "double precision",
+        "owner": "postgres",
+        "attnum": 34,
+        "attname": "save_pct_days_rest_0",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "wgo_goalie_stats",
+        "type": "double precision",
+        "owner": "postgres",
+        "attnum": 35,
+        "attname": "save_pct_days_rest_1",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "wgo_goalie_stats",
+        "type": "double precision",
+        "owner": "postgres",
+        "attnum": 36,
+        "attname": "save_pct_days_rest_2",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "wgo_goalie_stats",
+        "type": "double precision",
+        "owner": "postgres",
+        "attnum": 37,
+        "attname": "save_pct_days_rest_3",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "wgo_goalie_stats",
+        "type": "double precision",
+        "owner": "postgres",
+        "attnum": 38,
+        "attname": "save_pct_days_rest_4_plus",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "wgo_goalie_stats",
+        "type": "integer",
+        "owner": "postgres",
+        "attnum": 39,
+        "attname": "season_id",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "wgo_goalie_stats",
+        "type": "text",
+        "owner": "postgres",
+        "attnum": 40,
+        "attname": "team_abbreviation",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "wgo_goalie_stats",
+        "type": "bigint",
+        "owner": "postgres",
+        "attnum": 41,
+        "attname": "game_id",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "wgo_goalie_stats",
+        "type": "text",
+        "owner": "postgres",
+        "attnum": 42,
+        "attname": "opponent_team_abbrev",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      },
+      {
+        "name": "wgo_goalie_stats",
+        "type": "text",
+        "owner": "postgres",
+        "attnum": 43,
+        "attname": "home_road",
+        "relkind": "r",
+        "attnotnull": false,
+        "column_default": null,
+        "relrowsecurity": true
+      }
+    ],
+    "constraints": [
+      {
+        "conname": "games_awayTeamId_fkey",
+        "contype": "f",
+        "relname": "games",
+        "definition": "FOREIGN KEY (\"awayTeamId\") REFERENCES teams(id)"
+      },
+      {
+        "conname": "games_homeTeamId_fkey",
+        "contype": "f",
+        "relname": "games",
+        "definition": "FOREIGN KEY (\"homeTeamId\") REFERENCES teams(id)"
+      },
+      {
+        "conname": "games_pkey",
+        "contype": "p",
+        "relname": "games",
+        "definition": "PRIMARY KEY (id)"
+      },
+      {
+        "conname": "games_seasonId_fkey",
+        "contype": "f",
+        "relname": "games",
+        "definition": "FOREIGN KEY (\"seasonId\") REFERENCES seasons(id)"
+      },
+      {
+        "conname": "pk_nst_gamelog_goalie_5v5_counts",
+        "contype": "p",
+        "relname": "nst_gamelog_goalie_5v5_counts",
+        "definition": "PRIMARY KEY (player_id, date_scraped)"
+      },
+      {
+        "conname": "pk_nst_gamelog_goalie_5v5_rates",
+        "contype": "p",
+        "relname": "nst_gamelog_goalie_5v5_rates",
+        "definition": "PRIMARY KEY (player_id, date_scraped)"
+      },
+      {
+        "conname": "pk_nst_gamelog_goalie_all_counts",
+        "contype": "p",
+        "relname": "nst_gamelog_goalie_all_counts",
+        "definition": "PRIMARY KEY (player_id, date_scraped)"
+      },
+      {
+        "conname": "unique_all_counts",
+        "contype": "u",
+        "relname": "nst_gamelog_goalie_all_counts",
+        "definition": "UNIQUE (player_id, date_scraped)"
+      },
+      {
+        "conname": "pk_nst_gamelog_goalie_all_rates",
+        "contype": "p",
+        "relname": "nst_gamelog_goalie_all_rates",
+        "definition": "PRIMARY KEY (player_id, date_scraped)"
+      },
+      {
+        "conname": "unique_all_rates",
+        "contype": "u",
+        "relname": "nst_gamelog_goalie_all_rates",
+        "definition": "UNIQUE (player_id, date_scraped)"
+      },
+      {
+        "conname": "pk_nst_gamelog_goalie_ev_counts",
+        "contype": "p",
+        "relname": "nst_gamelog_goalie_ev_counts",
+        "definition": "PRIMARY KEY (player_id, date_scraped)"
+      },
+      {
+        "conname": "unique_ev_counts",
+        "contype": "u",
+        "relname": "nst_gamelog_goalie_ev_counts",
+        "definition": "UNIQUE (player_id, date_scraped)"
+      },
+      {
+        "conname": "pk_nst_gamelog_goalie_ev_rates",
+        "contype": "p",
+        "relname": "nst_gamelog_goalie_ev_rates",
+        "definition": "PRIMARY KEY (player_id, date_scraped)"
+      },
+      {
+        "conname": "unique_ev_rates",
+        "contype": "u",
+        "relname": "nst_gamelog_goalie_ev_rates",
+        "definition": "UNIQUE (player_id, date_scraped)"
+      },
+      {
+        "conname": "pk_nst_gamelog_goalie_pk_counts",
+        "contype": "p",
+        "relname": "nst_gamelog_goalie_pk_counts",
+        "definition": "PRIMARY KEY (player_id, date_scraped)"
+      },
+      {
+        "conname": "unique_pk_counts",
+        "contype": "u",
+        "relname": "nst_gamelog_goalie_pk_counts",
+        "definition": "UNIQUE (player_id, date_scraped)"
+      },
+      {
+        "conname": "pk_nst_gamelog_goalie_pk_rates",
+        "contype": "p",
+        "relname": "nst_gamelog_goalie_pk_rates",
+        "definition": "PRIMARY KEY (player_id, date_scraped)"
+      },
+      {
+        "conname": "unique_pk_rates",
+        "contype": "u",
+        "relname": "nst_gamelog_goalie_pk_rates",
+        "definition": "UNIQUE (player_id, date_scraped)"
+      },
+      {
+        "conname": "pk_nst_gamelog_goalie_pp_counts",
+        "contype": "p",
+        "relname": "nst_gamelog_goalie_pp_counts",
+        "definition": "PRIMARY KEY (player_id, date_scraped)"
+      },
+      {
+        "conname": "unique_pp_counts",
+        "contype": "u",
+        "relname": "nst_gamelog_goalie_pp_counts",
+        "definition": "UNIQUE (player_id, date_scraped)"
+      },
+      {
+        "conname": "pk_nst_gamelog_goalie_pp_rates",
+        "contype": "p",
+        "relname": "nst_gamelog_goalie_pp_rates",
+        "definition": "PRIMARY KEY (player_id, date_scraped)"
+      },
+      {
+        "conname": "unique_pp_rates",
+        "contype": "u",
+        "relname": "nst_gamelog_goalie_pp_rates",
+        "definition": "UNIQUE (player_id, date_scraped)"
+      },
+      {
+        "conname": "route_runner_events_job_id_fkey",
+        "contype": "f",
+        "relname": "route_runner_events",
+        "definition": "FOREIGN KEY (job_id) REFERENCES route_runner_jobs(id) ON DELETE CASCADE"
+      },
+      {
+        "conname": "route_runner_events_level_check",
+        "contype": "c",
+        "relname": "route_runner_events",
+        "definition": "CHECK (level = ANY (ARRAY['info'::text, 'success'::text, 'warn'::text, 'error'::text]))"
+      },
+      {
+        "conname": "route_runner_events_pkey",
+        "contype": "p",
+        "relname": "route_runner_events",
+        "definition": "PRIMARY KEY (id)"
+      },
+      {
+        "conname": "route_runner_jobs_contract_check",
+        "contype": "c",
+        "relname": "route_runner_jobs",
+        "definition": "CHECK (contract = ANY (ARRAY['nst_resume'::text, 'rolling_resume_from'::text, 'next_start_date'::text, 'once'::text]))"
+      },
+      {
+        "conname": "route_runner_jobs_initial_query_check",
+        "contype": "c",
+        "relname": "route_runner_jobs",
+        "definition": "CHECK (jsonb_typeof(initial_query) = 'object'::text)"
+      },
+      {
+        "conname": "route_runner_jobs_next_query_check",
+        "contype": "c",
+        "relname": "route_runner_jobs",
+        "definition": "CHECK (jsonb_typeof(next_query) = 'object'::text)"
+      },
+      {
+        "conname": "route_runner_jobs_pkey",
+        "contype": "p",
+        "relname": "route_runner_jobs",
+        "definition": "PRIMARY KEY (id)"
+      },
+      {
+        "conname": "route_runner_jobs_route_path_check",
+        "contype": "c",
+        "relname": "route_runner_jobs",
+        "definition": "CHECK (route_path ~~ '/api/%'::text)"
+      },
+      {
+        "conname": "route_runner_jobs_status_check",
+        "contype": "c",
+        "relname": "route_runner_jobs",
+        "definition": "CHECK (status = ANY (ARRAY['queued'::text, 'running'::text, 'waiting'::text, 'completed'::text, 'failed'::text, 'cancelled'::text]))"
+      },
+      {
+        "conname": "seasons_pkey",
+        "contype": "p",
+        "relname": "seasons",
+        "definition": "PRIMARY KEY (id)"
+      },
+      {
+        "conname": "unique_goalie_date",
+        "contype": "u",
+        "relname": "wgo_goalie_stats",
+        "definition": "UNIQUE (goalie_id, date)"
+      },
+      {
+        "conname": "wgo_goalie_stats_game_id_required",
+        "contype": "c",
+        "relname": "wgo_goalie_stats",
+        "definition": "CHECK (game_id IS NOT NULL) NOT VALID"
+      },
+      {
+        "conname": "wgo_goalie_stats_game_identity_valid",
+        "contype": "c",
+        "relname": "wgo_goalie_stats",
+        "definition": "CHECK (season_id IS NOT NULL AND season_id = (game_id / 1000000 * 10000 + game_id / 1000000 + 1) AND ((game_id / 10000 % 100::bigint) = ANY (ARRAY[2::bigint, 3::bigint]))) NOT VALID"
+      },
+      {
+        "conname": "wgo_goalie_stats_home_road_valid",
+        "contype": "c",
+        "relname": "wgo_goalie_stats",
+        "definition": "CHECK (home_road IS NULL OR (home_road = ANY (ARRAY['H'::text, 'R'::text]))) NOT VALID"
+      },
+      {
+        "conname": "wgo_goalie_stats_pkey",
+        "contype": "p",
+        "relname": "wgo_goalie_stats",
+        "definition": "PRIMARY KEY (goalie_id, date)"
+      }
+    ],
+    "indexes": [
+      {
+        "indexdef": "CREATE UNIQUE INDEX games_pkey ON public.games USING btree (id)",
+        "indexname": "games_pkey",
+        "tablename": "games"
+      },
+      {
+        "indexdef": "CREATE INDEX idx_games_date ON public.games USING btree (date)",
+        "indexname": "idx_games_date",
+        "tablename": "games"
+      },
+      {
+        "indexdef": "CREATE UNIQUE INDEX pk_nst_gamelog_goalie_5v5_counts ON public.nst_gamelog_goalie_5v5_counts USING btree (player_id, date_scraped)",
+        "indexname": "pk_nst_gamelog_goalie_5v5_counts",
+        "tablename": "nst_gamelog_goalie_5v5_counts"
+      },
+      {
+        "indexdef": "CREATE UNIQUE INDEX pk_nst_gamelog_goalie_5v5_rates ON public.nst_gamelog_goalie_5v5_rates USING btree (player_id, date_scraped)",
+        "indexname": "pk_nst_gamelog_goalie_5v5_rates",
+        "tablename": "nst_gamelog_goalie_5v5_rates"
+      },
+      {
+        "indexdef": "CREATE UNIQUE INDEX pk_nst_gamelog_goalie_all_counts ON public.nst_gamelog_goalie_all_counts USING btree (player_id, date_scraped)",
+        "indexname": "pk_nst_gamelog_goalie_all_counts",
+        "tablename": "nst_gamelog_goalie_all_counts"
+      },
+      {
+        "indexdef": "CREATE UNIQUE INDEX unique_all_counts ON public.nst_gamelog_goalie_all_counts USING btree (player_id, date_scraped)",
+        "indexname": "unique_all_counts",
+        "tablename": "nst_gamelog_goalie_all_counts"
+      },
+      {
+        "indexdef": "CREATE UNIQUE INDEX pk_nst_gamelog_goalie_all_rates ON public.nst_gamelog_goalie_all_rates USING btree (player_id, date_scraped)",
+        "indexname": "pk_nst_gamelog_goalie_all_rates",
+        "tablename": "nst_gamelog_goalie_all_rates"
+      },
+      {
+        "indexdef": "CREATE UNIQUE INDEX unique_all_rates ON public.nst_gamelog_goalie_all_rates USING btree (player_id, date_scraped)",
+        "indexname": "unique_all_rates",
+        "tablename": "nst_gamelog_goalie_all_rates"
+      },
+      {
+        "indexdef": "CREATE UNIQUE INDEX pk_nst_gamelog_goalie_ev_counts ON public.nst_gamelog_goalie_ev_counts USING btree (player_id, date_scraped)",
+        "indexname": "pk_nst_gamelog_goalie_ev_counts",
+        "tablename": "nst_gamelog_goalie_ev_counts"
+      },
+      {
+        "indexdef": "CREATE UNIQUE INDEX unique_ev_counts ON public.nst_gamelog_goalie_ev_counts USING btree (player_id, date_scraped)",
+        "indexname": "unique_ev_counts",
+        "tablename": "nst_gamelog_goalie_ev_counts"
+      },
+      {
+        "indexdef": "CREATE UNIQUE INDEX pk_nst_gamelog_goalie_ev_rates ON public.nst_gamelog_goalie_ev_rates USING btree (player_id, date_scraped)",
+        "indexname": "pk_nst_gamelog_goalie_ev_rates",
+        "tablename": "nst_gamelog_goalie_ev_rates"
+      },
+      {
+        "indexdef": "CREATE UNIQUE INDEX unique_ev_rates ON public.nst_gamelog_goalie_ev_rates USING btree (player_id, date_scraped)",
+        "indexname": "unique_ev_rates",
+        "tablename": "nst_gamelog_goalie_ev_rates"
+      },
+      {
+        "indexdef": "CREATE UNIQUE INDEX pk_nst_gamelog_goalie_pk_counts ON public.nst_gamelog_goalie_pk_counts USING btree (player_id, date_scraped)",
+        "indexname": "pk_nst_gamelog_goalie_pk_counts",
+        "tablename": "nst_gamelog_goalie_pk_counts"
+      },
+      {
+        "indexdef": "CREATE UNIQUE INDEX unique_pk_counts ON public.nst_gamelog_goalie_pk_counts USING btree (player_id, date_scraped)",
+        "indexname": "unique_pk_counts",
+        "tablename": "nst_gamelog_goalie_pk_counts"
+      },
+      {
+        "indexdef": "CREATE UNIQUE INDEX pk_nst_gamelog_goalie_pk_rates ON public.nst_gamelog_goalie_pk_rates USING btree (player_id, date_scraped)",
+        "indexname": "pk_nst_gamelog_goalie_pk_rates",
+        "tablename": "nst_gamelog_goalie_pk_rates"
+      },
+      {
+        "indexdef": "CREATE UNIQUE INDEX unique_pk_rates ON public.nst_gamelog_goalie_pk_rates USING btree (player_id, date_scraped)",
+        "indexname": "unique_pk_rates",
+        "tablename": "nst_gamelog_goalie_pk_rates"
+      },
+      {
+        "indexdef": "CREATE UNIQUE INDEX pk_nst_gamelog_goalie_pp_counts ON public.nst_gamelog_goalie_pp_counts USING btree (player_id, date_scraped)",
+        "indexname": "pk_nst_gamelog_goalie_pp_counts",
+        "tablename": "nst_gamelog_goalie_pp_counts"
+      },
+      {
+        "indexdef": "CREATE UNIQUE INDEX unique_pp_counts ON public.nst_gamelog_goalie_pp_counts USING btree (player_id, date_scraped)",
+        "indexname": "unique_pp_counts",
+        "tablename": "nst_gamelog_goalie_pp_counts"
+      },
+      {
+        "indexdef": "CREATE UNIQUE INDEX pk_nst_gamelog_goalie_pp_rates ON public.nst_gamelog_goalie_pp_rates USING btree (player_id, date_scraped)",
+        "indexname": "pk_nst_gamelog_goalie_pp_rates",
+        "tablename": "nst_gamelog_goalie_pp_rates"
+      },
+      {
+        "indexdef": "CREATE UNIQUE INDEX unique_pp_rates ON public.nst_gamelog_goalie_pp_rates USING btree (player_id, date_scraped)",
+        "indexname": "unique_pp_rates",
+        "tablename": "nst_gamelog_goalie_pp_rates"
+      },
+      {
+        "indexdef": "CREATE INDEX route_runner_events_job_id_id_idx ON public.route_runner_events USING btree (job_id, id)",
+        "indexname": "route_runner_events_job_id_id_idx",
+        "tablename": "route_runner_events"
+      },
+      {
+        "indexdef": "CREATE UNIQUE INDEX route_runner_events_pkey ON public.route_runner_events USING btree (id)",
+        "indexname": "route_runner_events_pkey",
+        "tablename": "route_runner_events"
+      },
+      {
+        "indexdef": "CREATE INDEX route_runner_jobs_active_created_idx ON public.route_runner_jobs USING btree (created_at) WHERE (status = ANY (ARRAY['queued'::text, 'running'::text, 'waiting'::text]))",
+        "indexname": "route_runner_jobs_active_created_idx",
+        "tablename": "route_runner_jobs"
+      },
+      {
+        "indexdef": "CREATE INDEX route_runner_jobs_created_desc_idx ON public.route_runner_jobs USING btree (created_at DESC)",
+        "indexname": "route_runner_jobs_created_desc_idx",
+        "tablename": "route_runner_jobs"
+      },
+      {
+        "indexdef": "CREATE INDEX route_runner_jobs_lease_idx ON public.route_runner_jobs USING btree (lease_until) WHERE (lease_until IS NOT NULL)",
+        "indexname": "route_runner_jobs_lease_idx",
+        "tablename": "route_runner_jobs"
+      },
+      {
+        "indexdef": "CREATE UNIQUE INDEX route_runner_jobs_pkey ON public.route_runner_jobs USING btree (id)",
+        "indexname": "route_runner_jobs_pkey",
+        "tablename": "route_runner_jobs"
+      },
+      {
+        "indexdef": "CREATE UNIQUE INDEX seasons_pkey ON public.seasons USING btree (id)",
+        "indexname": "seasons_pkey",
+        "tablename": "seasons"
+      },
+      {
+        "indexdef": "CREATE INDEX goalie_name_norm_btree ON public.wgo_goalie_stats USING btree (immutable_unaccent(lower(goalie_name)))",
+        "indexname": "goalie_name_norm_btree",
+        "tablename": "wgo_goalie_stats"
+      },
+      {
+        "indexdef": "CREATE INDEX idx_wgo_goalie_stats_date ON public.wgo_goalie_stats USING btree (date DESC)",
+        "indexname": "idx_wgo_goalie_stats_date",
+        "tablename": "wgo_goalie_stats"
+      },
+      {
+        "indexdef": "CREATE INDEX idx_wgo_goalie_stats_game_id ON public.wgo_goalie_stats USING btree (game_id) WHERE (game_id IS NOT NULL)",
+        "indexname": "idx_wgo_goalie_stats_game_id",
+        "tablename": "wgo_goalie_stats"
+      },
+      {
+        "indexdef": "CREATE INDEX idx_wgo_goalie_stats_goalie_season_date_desc ON public.wgo_goalie_stats USING btree (goalie_id, season_id, date DESC)",
+        "indexname": "idx_wgo_goalie_stats_goalie_season_date_desc",
+        "tablename": "wgo_goalie_stats"
+      },
+      {
+        "indexdef": "CREATE INDEX idx_wgo_goalie_stats_team_date_desc ON public.wgo_goalie_stats USING btree (team_abbreviation, date DESC)",
+        "indexname": "idx_wgo_goalie_stats_team_date_desc",
+        "tablename": "wgo_goalie_stats"
+      },
+      {
+        "indexdef": "CREATE UNIQUE INDEX unique_goalie_date ON public.wgo_goalie_stats USING btree (goalie_id, date)",
+        "indexname": "unique_goalie_date",
+        "tablename": "wgo_goalie_stats"
+      },
+      {
+        "indexdef": "CREATE UNIQUE INDEX wgo_goalie_stats_pkey ON public.wgo_goalie_stats USING btree (goalie_id, date)",
+        "indexname": "wgo_goalie_stats_pkey",
+        "tablename": "wgo_goalie_stats"
+      }
+    ],
+    "object_acls": [
+      {
+        "attacl": null,
+        "relacl": [
+          "postgres=arwdDxt/postgres",
+          "anon=arwdDxt/postgres",
+          "authenticated=arwdDxt/postgres",
+          "service_role=arwdDxt/postgres"
+        ],
+        "attname": null,
+        "relname": "games"
+      },
+      {
+        "attacl": null,
+        "relacl": [
+          "postgres=arwdDxt/postgres",
+          "anon=r/postgres",
+          "authenticated=r/postgres",
+          "service_role=arwdDxt/postgres"
+        ],
+        "attname": null,
+        "relname": "nst_gamelog_goalie_5v5_counts"
+      },
+      {
+        "attacl": null,
+        "relacl": [
+          "postgres=arwdDxt/postgres",
+          "anon=r/postgres",
+          "authenticated=r/postgres",
+          "service_role=arwdDxt/postgres"
+        ],
+        "attname": null,
+        "relname": "nst_gamelog_goalie_5v5_rates"
+      },
+      {
+        "attacl": null,
+        "relacl": [
+          "postgres=arwdDxt/postgres",
+          "anon=r/postgres",
+          "authenticated=r/postgres",
+          "service_role=arwdDxt/postgres"
+        ],
+        "attname": null,
+        "relname": "nst_gamelog_goalie_all_counts"
+      },
+      {
+        "attacl": null,
+        "relacl": [
+          "postgres=arwdDxt/postgres",
+          "anon=r/postgres",
+          "authenticated=r/postgres",
+          "service_role=arwdDxt/postgres"
+        ],
+        "attname": null,
+        "relname": "nst_gamelog_goalie_all_rates"
+      },
+      {
+        "attacl": null,
+        "relacl": [
+          "postgres=arwdDxt/postgres",
+          "anon=r/postgres",
+          "authenticated=r/postgres",
+          "service_role=arwdDxt/postgres"
+        ],
+        "attname": null,
+        "relname": "nst_gamelog_goalie_ev_counts"
+      },
+      {
+        "attacl": null,
+        "relacl": [
+          "postgres=arwdDxt/postgres",
+          "anon=r/postgres",
+          "authenticated=r/postgres",
+          "service_role=arwdDxt/postgres"
+        ],
+        "attname": null,
+        "relname": "nst_gamelog_goalie_ev_rates"
+      },
+      {
+        "attacl": null,
+        "relacl": [
+          "postgres=arwdDxt/postgres",
+          "anon=r/postgres",
+          "authenticated=r/postgres",
+          "service_role=arwdDxt/postgres"
+        ],
+        "attname": null,
+        "relname": "nst_gamelog_goalie_pk_counts"
+      },
+      {
+        "attacl": null,
+        "relacl": [
+          "postgres=arwdDxt/postgres",
+          "anon=r/postgres",
+          "authenticated=r/postgres",
+          "service_role=arwdDxt/postgres"
+        ],
+        "attname": null,
+        "relname": "nst_gamelog_goalie_pk_rates"
+      },
+      {
+        "attacl": null,
+        "relacl": [
+          "postgres=arwdDxt/postgres",
+          "anon=r/postgres",
+          "authenticated=r/postgres",
+          "service_role=arwdDxt/postgres"
+        ],
+        "attname": null,
+        "relname": "nst_gamelog_goalie_pp_counts"
+      },
+      {
+        "attacl": null,
+        "relacl": [
+          "postgres=arwdDxt/postgres",
+          "anon=r/postgres",
+          "authenticated=r/postgres",
+          "service_role=arwdDxt/postgres"
+        ],
+        "attname": null,
+        "relname": "nst_gamelog_goalie_pp_rates"
+      },
+      {
+        "attacl": null,
+        "relacl": [
+          "postgres=arwdDxt/postgres",
+          "service_role=arw/postgres"
+        ],
+        "attname": null,
+        "relname": "route_runner_events"
+      },
+      {
+        "attacl": null,
+        "relacl": [
+          "postgres=arwdDxt/postgres",
+          "service_role=arw/postgres"
+        ],
+        "attname": null,
+        "relname": "route_runner_jobs"
+      },
+      {
+        "attacl": null,
+        "relacl": [
+          "postgres=arwdDxt/postgres",
+          "anon=arwdDxt/postgres",
+          "authenticated=arwdDxt/postgres",
+          "service_role=arwdDxt/postgres"
+        ],
+        "attname": null,
+        "relname": "seasons"
+      },
+      {
+        "attacl": null,
+        "relacl": [
+          "postgres=arwdDxt/postgres",
+          "anon=r/postgres",
+          "authenticated=r/postgres",
+          "service_role=arwdDxt/postgres"
+        ],
+        "attname": null,
+        "relname": "wgo_goalie_stats"
+      }
+    ],
+    "policies": [
+      {
+        "cmd": "ALL",
+        "qual": "(EXISTS ( SELECT 1\n   FROM users\n  WHERE ((users.user_id = auth.uid()) AND ((users.role)::text = 'admin'::text))))",
+        "roles": [
+          "authenticated"
+        ],
+        "tablename": "games",
+        "policyname": "Enable ALL for Admins",
+        "with_check": "(EXISTS ( SELECT 1\n   FROM users\n  WHERE ((users.user_id = auth.uid()) AND ((users.role)::text = 'admin'::text))))"
+      },
+      {
+        "cmd": "SELECT",
+        "qual": "true",
+        "roles": [
+          "anon",
+          "authenticated"
+        ],
+        "tablename": "games",
+        "policyname": "Enable read access for all users",
+        "with_check": null
+      },
+      {
+        "cmd": "SELECT",
+        "qual": "true",
+        "roles": [
+          "anon",
+          "authenticated"
+        ],
+        "tablename": "nst_gamelog_goalie_5v5_counts",
+        "policyname": "public_read",
+        "with_check": null
+      },
+      {
+        "cmd": "SELECT",
+        "qual": "true",
+        "roles": [
+          "anon",
+          "authenticated"
+        ],
+        "tablename": "nst_gamelog_goalie_5v5_rates",
+        "policyname": "public_read",
+        "with_check": null
+      },
+      {
+        "cmd": "SELECT",
+        "qual": "true",
+        "roles": [
+          "anon",
+          "authenticated"
+        ],
+        "tablename": "nst_gamelog_goalie_all_counts",
+        "policyname": "public_read",
+        "with_check": null
+      },
+      {
+        "cmd": "SELECT",
+        "qual": "true",
+        "roles": [
+          "anon",
+          "authenticated"
+        ],
+        "tablename": "nst_gamelog_goalie_all_rates",
+        "policyname": "public_read",
+        "with_check": null
+      },
+      {
+        "cmd": "SELECT",
+        "qual": "true",
+        "roles": [
+          "anon",
+          "authenticated"
+        ],
+        "tablename": "nst_gamelog_goalie_ev_counts",
+        "policyname": "public_read",
+        "with_check": null
+      },
+      {
+        "cmd": "SELECT",
+        "qual": "true",
+        "roles": [
+          "anon",
+          "authenticated"
+        ],
+        "tablename": "nst_gamelog_goalie_ev_rates",
+        "policyname": "public_read",
+        "with_check": null
+      },
+      {
+        "cmd": "SELECT",
+        "qual": "true",
+        "roles": [
+          "anon",
+          "authenticated"
+        ],
+        "tablename": "nst_gamelog_goalie_pk_counts",
+        "policyname": "public_read",
+        "with_check": null
+      },
+      {
+        "cmd": "SELECT",
+        "qual": "true",
+        "roles": [
+          "anon",
+          "authenticated"
+        ],
+        "tablename": "nst_gamelog_goalie_pk_rates",
+        "policyname": "public_read",
+        "with_check": null
+      },
+      {
+        "cmd": "SELECT",
+        "qual": "true",
+        "roles": [
+          "anon",
+          "authenticated"
+        ],
+        "tablename": "nst_gamelog_goalie_pp_counts",
+        "policyname": "public_read",
+        "with_check": null
+      },
+      {
+        "cmd": "SELECT",
+        "qual": "true",
+        "roles": [
+          "anon",
+          "authenticated"
+        ],
+        "tablename": "nst_gamelog_goalie_pp_rates",
+        "policyname": "public_read",
+        "with_check": null
+      },
+      {
+        "cmd": "ALL",
+        "qual": "(EXISTS ( SELECT 1\n   FROM users\n  WHERE ((users.user_id = auth.uid()) AND ((users.role)::text = 'admin'::text))))",
+        "roles": [
+          "authenticated"
+        ],
+        "tablename": "seasons",
+        "policyname": "Enable ALL for admins",
+        "with_check": "(EXISTS ( SELECT 1\n   FROM users\n  WHERE ((users.user_id = auth.uid()) AND ((users.role)::text = 'admin'::text))))"
+      },
+      {
+        "cmd": "SELECT",
+        "qual": "true",
+        "roles": [
+          "public"
+        ],
+        "tablename": "seasons",
+        "policyname": "Enable read access for all users",
+        "with_check": null
+      },
+      {
+        "cmd": "SELECT",
+        "qual": "true",
+        "roles": [
+          "anon",
+          "authenticated"
+        ],
+        "tablename": "wgo_goalie_stats",
+        "policyname": "public_read",
+        "with_check": null
+      }
+    ],
+    "roles": [
+      {
+        "rolname": "anon",
+        "rolsuper": false,
+        "rolbypassrls": false
+      },
+      {
+        "rolname": "authenticated",
+        "rolsuper": false,
+        "rolbypassrls": false
+      },
+      {
+        "rolname": "service_role",
+        "rolsuper": false,
+        "rolbypassrls": true
+      }
+    ],
+    "functions": [],
+    "dependencies": [],
+    "triggers": [
+      {
+        "tgname": "after_game_insert",
+        "relname": "games",
+        "definition": "CREATE TRIGGER after_game_insert AFTER INSERT ON games FOR EACH ROW EXECUTE FUNCTION insert_into_statsupdatestatus()"
+      },
+      {
+        "tgname": "set_updated_at",
+        "relname": "route_runner_jobs",
+        "definition": "CREATE TRIGGER set_updated_at BEFORE UPDATE ON route_runner_jobs FOR EACH ROW EXECUTE FUNCTION update_updated_at_column()"
+      }
+    ],
+    "crypto": [
+      {
+        "sha256_function": "sha256(bytea)",
+        "random_uuid_function": "gen_random_uuid()"
+      }
+    ],
+    "default_acls": [
+      {
+        "defaclacl": [
+          "postgres=rwU/postgres",
+          "anon=rwU/postgres",
+          "authenticated=rwU/postgres",
+          "service_role=rwU/postgres"
+        ],
+        "schema_name": "public",
+        "creator_role": "postgres",
+        "defaclobjtype": "S"
+      },
+      {
+        "defaclacl": [
+          "postgres=X/postgres",
+          "anon=X/postgres",
+          "authenticated=X/postgres",
+          "service_role=X/postgres"
+        ],
+        "schema_name": "public",
+        "creator_role": "postgres",
+        "defaclobjtype": "f"
+      },
+      {
+        "defaclacl": [
+          "postgres=arwdDxt/postgres",
+          "anon=arwdDxt/postgres",
+          "authenticated=arwdDxt/postgres",
+          "service_role=arwdDxt/postgres"
+        ],
+        "schema_name": "public",
+        "creator_role": "postgres",
+        "defaclobjtype": "r"
+      },
+      {
+        "defaclacl": [
+          "postgres=rwU/supabase_admin",
+          "anon=rwU/supabase_admin",
+          "authenticated=rwU/supabase_admin",
+          "service_role=rwU/supabase_admin"
+        ],
+        "schema_name": "public",
+        "creator_role": "supabase_admin",
+        "defaclobjtype": "S"
+      },
+      {
+        "defaclacl": [
+          "postgres=X/supabase_admin",
+          "anon=X/supabase_admin",
+          "authenticated=X/supabase_admin",
+          "service_role=X/supabase_admin"
+        ],
+        "schema_name": "public",
+        "creator_role": "supabase_admin",
+        "defaclobjtype": "f"
+      },
+      {
+        "defaclacl": [
+          "postgres=arwdDxt/supabase_admin",
+          "anon=arwdDxt/supabase_admin",
+          "authenticated=arwdDxt/supabase_admin",
+          "service_role=arwdDxt/supabase_admin"
+        ],
+        "schema_name": "public",
+        "creator_role": "supabase_admin",
+        "defaclobjtype": "r"
+      }
+    ]
+  }
+]

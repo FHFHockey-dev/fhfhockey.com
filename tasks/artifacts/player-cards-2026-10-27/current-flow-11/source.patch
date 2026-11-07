@@ -1,0 +1,373 @@
+--- a/web/lib/player-cards/currentSelection.ts
++++ b/web/lib/player-cards/currentSelection.ts
+@@ -0,0 +1,45 @@
++import { parseCurrentNhlRequest, type CurrentNhlCard, type CurrentNhlFormat, type CurrentNhlRequest } from "./currentNhl";
++export type CurrentSelection = { playerId: string; season: string; count: string; cardFormat: CurrentNhlFormat };
++export function selectionFromCard(card: CurrentNhlCard | null): CurrentSelection {
++  const now = new Date(), year = now.getUTCFullYear() - (now.getUTCMonth() < 8 ? 1 : 0);
++  return { playerId: card ? String(card.request.playerId) : "", season: String(card?.request.season || year * 10000 + year + 1), count: String(card?.request.count || 10), cardFormat: "rates-opportunity" };
++}
++export function selectionRequest(selection: CurrentSelection): CurrentNhlRequest {
++  let id = selection.playerId.trim();
++  if (!/^[1-9]\d{6}$/.test(id)) {
++    let url: URL; try { url = new URL(id, "https://fhfhockey.com"); } catch { throw new Error("Enter a valid NHL ID or FHFH player URL."); }
++    const match = url.pathname.match(/^\/stats\/player\/([1-9]\d{6})\/?$/);
++    if (!["https://fhfhockey.com", "https://www.fhfhockey.com"].includes(url.origin) || !match) throw new Error("Enter a valid NHL ID or FHFH player URL.");
++    id = match[1];
++  }
++  return parseCurrentNhlRequest({ playerId: id, season: selection.season, count: selection.count });
++}
++export function readCurrentSelection(search: string, fallback: CurrentSelection): CurrentSelection {
++  const p = new URLSearchParams(search), format = p.get("cardFormat");
++  return { playerId: p.get("playerId") ?? fallback.playerId, season: p.get("season") ?? fallback.season, count: p.get("count") ?? fallback.count, cardFormat: format === "results-milestones" ? format : format === "rates-opportunity" ? format : fallback.cardFormat };
++}
++export function currentSelectionUrl(href: string, selection: CurrentSelection): string {
++  const request = selectionRequest(selection), url = new URL(href);
++  url.searchParams.set("playerId", String(request.playerId)); url.searchParams.set("season", String(request.season)); url.searchParams.set("count", String(request.count)); url.searchParams.set("cardFormat", selection.cardFormat);
++  return url.pathname + url.search + url.hash;
++}
++export function capturedWindow(card: CurrentNhlCard | null, count: number): CurrentNhlCard | null {
++  if (!card?.windows || card.windows.length !== 3 || ![5, 10, 20].includes(count)) return null;
++  const matches = card.windows.filter(view => view.request.count === count), view = matches[0];
++  if (matches.length !== 1 || view.player.id !== card.player.id || view.player.team !== card.player.team || view.request.season !== card.request.season || view.observedAt !== card.observedAt || view.source !== card.source || view.evidence?.version !== card.evidence.version) return null;
++  return { ...view, windows: card.windows };
++}
++/** Validate the small application response before exposing values; source qualification stays server-owned. */
++export function assertCurrentResponse(value: unknown, request: CurrentNhlRequest): asserts value is CurrentNhlCard {
++  const card = value as CurrentNhlCard;
++  if (!card || !["ready", "unavailable"].includes(card.state) || !["nhl-current", "nhl-retained", "contract-fixture"].includes(card.source) || card.player?.id !== request.playerId || !card.player.name || card.request?.playerId !== request.playerId || card.request?.season !== request.season || card.request?.count !== request.count || !Number.isFinite(Date.parse(card.observedAt)) || card.evidence?.version !== "nhl-basic-skater-v1" || !Array.isArray(card.evidence.selectedGames) || !card.values || !card.sample) throw new Error("The returned player, window or source evidence is unverified.");
++  if (card.state === "ready" && (!Number.isInteger(card.sample.gp) || card.sample.gp! < 1 || card.sample.gp! > request.count || !Number.isFinite(card.sample.toiSeconds) || card.sample.toiSeconds! <= 0 || card.evidence.selectedGames.length !== card.sample.gp)) throw new Error("The returned sample is unverified.");
++  for (const id of ["atoi", "shots60", "goals60", "points60", "goals", "assists", "points", "shots", "shootingPct"] as const) if (card.values[id] !== null && (!Number.isFinite(card.values[id]) || card.values[id]! < 0)) throw new Error("A returned metric is unverified.");
++  if (card.windows) {
++    if (!Array.isArray(card.windows) || card.windows.length !== 3 || new Set(card.windows.map(view => view?.request?.count)).size !== 3) throw new Error("Captured appearance windows are inconsistent.");
++    for (const view of card.windows) {
++      if (![5, 10, 20].includes(view.request?.count) || view.observedAt !== card.observedAt || view.source !== card.source || view.player?.team !== card.player.team || "windows" in view) throw new Error("Captured appearance windows are inconsistent.");
++      assertCurrentResponse(view, { ...request, count: view.request.count });
++    }
++  }
++}
+--- a/web/lib/player-cards/currentSelection.test.ts
++++ b/web/lib/player-cards/currentSelection.test.ts
+@@ -0,0 +1,22 @@
++import { expect, it } from "vitest";
++import { assertCurrentResponse, capturedWindow, currentSelectionUrl, readCurrentSelection, selectionRequest } from "./currentSelection";
++import { buildCurrentNhlCard } from "./currentNhl";
++const request = { playerId: 8476453, season: 20262027, count: 5 as const };
++const sources = () => ({ identity: { playerId: 8476453, firstName: { default: "Captured" }, lastName: { default: "Player" }, currentTeamAbbrev: "TBL", position: "R", seasonTotals: [{ season: 20262027, gameTypeId: 2, leagueAbbrev: "NHL", gamesPlayed: 1 }] }, history: { seasonId: 20262027, gameTypeId: 2, gameLog: [{ gameId: 2026020167, gameDate: "2026-10-23", teamAbbrev: "TBL", goals: 1, assists: 0, points: 1, shots: 4, toi: "20:00" }] }, schedule: { games: [{ id: 2026020167, season: 20262027, gameType: 2, gameDate: "2026-10-23", startTimeUTC: "2026-10-24T01:00:00Z", gameState: "OFF", homeTeam: { abbrev: "TBL" }, awayTeam: { abbrev: "COL" } }] }, observedAt: "2026-10-27T00:42:33Z" });
++import { currentNhlManifest } from "./currentNhlExport";
++const selection = { playerId: "8476453", season: "20262027", count: "10", cardFormat: "rates-opportunity" as const };
++it("uses stable IDs/FHFH URLs, preserves unrelated URL fields and refuses foreign or invalid identities", () => {
++  for (const playerId of ["8476453", "/stats/player/8476453", "https://www.fhfhockey.com/stats/player/8476453"]) expect(selectionRequest({ ...selection, playerId }).playerId).toBe(8476453);
++  expect(() => selectionRequest({ ...selection, playerId: "https://other.invalid/stats/player/8476453" })).toThrow("valid NHL ID");
++  expect(() => selectionRequest({ ...selection, count: "100" })).toThrow();
++  const url = currentSelectionUrl("http://localhost/player-cards?keep=1#card", selection); expect(url).toContain("keep=1"); expect(url).toContain("count=10"); expect(url).toContain("#card");
++  expect(readCurrentSelection(url.split("?")[1].split("#")[0], selection)).toEqual(selection);
++});
++it("selects only same-player/season/source/capture windows and manifests only the displayed snapshot", () => {
++  const first = buildCurrentNhlCard(request, sources()), windows = ([5, 10, 20] as const).map(count => buildCurrentNhlCard({ ...request, count }, sources())), bundle = { ...first, windows };
++  assertCurrentResponse(bundle, request); const selected = capturedWindow(bundle, 10)!; expect(selected.request.count).toBe(10);
++  const manifest = currentNhlManifest(selected, "results-milestones"); expect(manifest.card).not.toHaveProperty("windows"); expect(manifest.selectedMetrics).toContain("goals"); expect(manifest.card.evidence.selectedGames).toHaveLength(1);
++  expect(capturedWindow({ ...bundle, windows: windows.map(view => ({ ...view, observedAt: "2020-01-01T00:00:00Z" })) }, 10)).toBeNull();
++  expect(() => assertCurrentResponse({ ...bundle, windows: [windows[0]] }, request)).toThrow("inconsistent");
++  expect(() => assertCurrentResponse({ ...bundle, values: { ...bundle.values, points: Infinity } }, request)).toThrow("metric");
++});
+--- a/web/pages/player-cards.tsx
++++ b/web/pages/player-cards.tsx
+@@ -0,0 +1,6 @@
++import { NextSeo } from "next-seo";
++import CurrentPlayerCardStudio from "components/player-cards/CurrentPlayerCardStudio";
++/** Free standalone entry. No account, entitlement, database or data load is required to open it. */
++export default function PlayerCardsPage() {
++  return <><NextSeo title="Player cards | FHFH" noindex nofollow /><CurrentPlayerCardStudio /></>;
++}
+--- a/web/lib/player-cards/currentNhl.ts
++++ b/web/lib/player-cards/currentNhl.ts
+@@ -15,14 +15,17 @@
+   shootingPct: { label: "Shooting% · actual", unit: "percent", definition: "NHL goals / shots on goal × 100; zero shots is undefined" },
+ } as const;
+ export type CurrentNhlMetric = keyof typeof CURRENT_NHL_DEFINITIONS;
+-export type CurrentNhlCard = {
++export type CurrentNhlGameEvidence = { gameId: number; providerDate: string; utcStart: string; team: string; finalStatusAtObservation: string; toiSeconds: number; goals: number; assists: number; points: number; shots: number };
++export type CurrentNhlSnapshot = {
+   id: string; source: "nhl-current" | "nhl-retained" | "contract-fixture"; state: "ready" | "unavailable";
+   player: { id: number; name: string; team: string; position: string };
+   request: CurrentNhlRequest; observedAt: string;
+   sample: { gp: number | null; toiSeconds: number | null; sourceDates: string[]; utcDates: string[]; gameIds: number[] };
+   values: Record<CurrentNhlMetric, number | null>;
++  evidence: { version: "nhl-basic-skater-v1"; sourcePaths: string[]; seasonGp: number | null; selectedGames: CurrentNhlGameEvidence[]; actualEndTimesSupplied: false };
+   issues: string[]; rankReason: string; historyStatement: string; finalityStatement: string;
+ };
++export type CurrentNhlCard = CurrentNhlSnapshot & { windows?: readonly CurrentNhlSnapshot[] };
+ export const NHL_RANK_REASON = "Rank and percentile unavailable: no verified all-NHL same-definition population for this window.";
+ export function parseCurrentNhlRequest(query: Record<string, unknown>): CurrentNhlRequest {
+   if (![query.playerId, query.season, query.count].every(value => typeof value === "string" || typeof value === "number") || !/^[1-9]\d{6}$/.test(String(query.playerId)) || !/^\d{8}$/.test(String(query.season)) || !["5", "10", "20"].includes(String(query.count))) throw new Error("Choose a valid NHL player ID, season and last 5, 10 or 20 appearances.");
+@@ -48,6 +51,7 @@
+   const card: CurrentNhlCard = {
+     id: "", source: input.source || "nhl-current", state: "unavailable", player: { id: request.playerId, name: `${first} ${last}`, team: identity.currentTeamAbbrev, position: String(identity.position || "Unknown") }, request: { ...request }, observedAt: new Date(observed).toISOString(),
+     sample: { gp: null, toiSeconds: null, sourceDates: [], utcDates: [], gameIds: [] }, values: Object.fromEntries(Object.keys(CURRENT_NHL_DEFINITIONS).map(id => [id, null])) as CurrentNhlCard["values"], issues: [], rankReason: NHL_RANK_REASON,
++    evidence: { version: "nhl-basic-skater-v1", sourcePaths: [`/v1/player/${request.playerId}/landing`, `/v1/player/${request.playerId}/game-log/${request.season}/2`, `/v1/club-schedule-season/${identity.currentTeamAbbrev}/${request.season}`], seasonGp: null, selectedGames: [], actualEndTimesSupplied: false },
+     historyStatement: "Season game-log appearance count reconciled with NHL season totals; no career-history claim.",
+     finalityStatement: "NHL FINAL/OFF at observation; actual game-end timestamps are not supplied. Current window only; no historical cutoff claim.",
+   };
+@@ -59,6 +63,7 @@
+   // A missing row must never turn a short sample into an asserted own-last-N window.
+   const seasonTotals = Array.isArray(identity.seasonTotals) ? identity.seasonTotals.map(record).filter(row => row.season === request.season && row.gameTypeId === 2 && row.leagueAbbrev === "NHL") : [];
+   if (seasonTotals.length !== 1 || !integer(seasonTotals[0].gamesPlayed) || seasonTotals[0].gamesPlayed !== rows.length) return fail("Complete season appearance count is unverified or does not match NHL season totals.");
++  card.evidence.seasonGp = Number(seasonTotals[0].gamesPlayed);
+   const games = schedule.games.map(record), starts = new Map<number, number>();
+   for (const row of rows) {
+     const matches = games.filter(game => game.id === row.gameId), game = matches[0], start = Date.parse(String(game?.startTimeUTC));
+@@ -74,6 +79,8 @@
+     const seconds = toi(row.toi);
+     if (![row.goals, row.assists, row.points, row.shots].every(integer) || row.points !== Number(row.goals) + Number(row.assists) || Number(row.goals) > Number(row.shots) || seconds === null || seconds <= 0) return fail("A selected game has missing or inconsistent counts/exposure. Invalid rows are not pooled.");
+     totals.goals += Number(row.goals); totals.assists += Number(row.assists); totals.points += Number(row.points); totals.shots += Number(row.shots); totals.seconds += seconds;
++    const game = games.find(game => game.id === row.gameId)!;
++    card.evidence.selectedGames.push({ gameId: Number(row.gameId), providerDate: String(row.gameDate), utcStart: String(game.startTimeUTC), team: String(row.teamAbbrev), finalStatusAtObservation: String(game.gameState), toiSeconds: seconds, goals: Number(row.goals), assists: Number(row.assists), points: Number(row.points), shots: Number(row.shots) });
+     card.sample.sourceDates.push(String(row.gameDate)); card.sample.utcDates.push(new Date(start).toISOString().slice(0, 10)); card.sample.gameIds.push(Number(row.gameId));
+   }
+   card.sample.gp = selected.length; card.sample.toiSeconds = totals.seconds; card.state = "ready";
+--- a/web/lib/player-cards/currentNhl.test.ts
++++ b/web/lib/player-cards/currentNhl.test.ts
+@@ -57,3 +57,10 @@
+     const card = buildCurrentNhlCard(request, input); expect(card.state).toBe("ready"); expect(card.sample.gameIds).toEqual([2026020101, 2026020102, 2026020103, 2026020104, 2026020105]);
+   });
+ });
++
++it("retains exact normalized selected-game evidence without claiming raw hashes or actual end times", () => {
++  const card = buildCurrentNhlCard(request, sources());
++  expect(card.evidence.version).toBe("nhl-basic-skater-v1"); expect(card.evidence.seasonGp).toBe(2); expect(card.evidence.actualEndTimesSupplied).toBe(false);
++  expect(card.evidence.selectedGames[0]).toEqual({ gameId: 2026020167, providerDate: "2026-10-23", utcStart: "2026-10-24T01:00:00Z", team: "TBL", finalStatusAtObservation: "OFF", toiSeconds: 1200, goals: 1, assists: 2, points: 3, shots: 4 });
++  expect(card.evidence.sourcePaths).toEqual(["/v1/player/8476453/landing", "/v1/player/8476453/game-log/20262027/2", "/v1/club-schedule-season/TBL/20262027"]);
++});
+--- a/web/lib/player-cards/currentNhl.server.ts
++++ b/web/lib/player-cards/currentNhl.server.ts
+@@ -1,4 +1,4 @@
+-import { buildCurrentNhlCard, parseCurrentNhlRequest, type CurrentNhlRequest } from "./currentNhl";
++import { buildCurrentNhlCard, parseCurrentNhlRequest, type CurrentNhlRequest, type CurrentNhlCard } from "./currentNhl";
+ 
+ export const CURRENT_NHL_LIMITS = { requests: 3, requestMs: 5000, totalMs: 15000, bytesPerResponse: 512 * 1024, retries: 0, redirects: 0 } as const;
+ const origin = "https://api-web.nhle.com/v1";
+@@ -16,7 +16,7 @@
+   } finally { await reader.cancel(); reader.releaseLock(); }
+ }
+ 
+-export async function loadCurrentNhlCard(request: CurrentNhlRequest, read = readCurrentNhlJson, now = () => new Date()) {
++export async function loadCurrentNhlCard(request: CurrentNhlRequest, read = readCurrentNhlJson, now = () => new Date(), source: CurrentNhlCard["source"] = "nhl-current") {
+   parseCurrentNhlRequest(request);
+   const overall = AbortSignal.timeout(CURRENT_NHL_LIMITS.totalMs);
+   const bounded = (path: string) => read(path, AbortSignal.any([overall, AbortSignal.timeout(CURRENT_NHL_LIMITS.requestMs)]));
+@@ -25,5 +25,7 @@
+   if (!identity || typeof identity !== "object" || !("playerId" in identity) || identity.playerId !== request.playerId || typeof team !== "string" || !/^[A-Z]{2,3}$/.test(team)) throw new Error("NHL team identity unavailable.");
+   const history = await bounded(`/player/${request.playerId}/game-log/${request.season}/2`);
+   const schedule = await bounded(`/club-schedule-season/${team}/${request.season}`);
+-  return buildCurrentNhlCard(request, { identity, history, schedule, observedAt: now().toISOString() });
++  const input = { identity, history, schedule, observedAt: now().toISOString(), source };
++  const windows = ([5, 10, 20] as const).map(count => buildCurrentNhlCard({ ...request, count }, input));
++  return { ...windows.find(view => view.request.count === request.count)!, windows };
+ }
+--- a/web/lib/player-cards/currentNhl.server.test.ts
++++ b/web/lib/player-cards/currentNhl.server.test.ts
+@@ -9,7 +9,7 @@
+   const paths: string[] = [], signals: AbortSignal[] = [];
+   const read = vi.fn(async (path: string, signal: AbortSignal) => { paths.push(path); signals.push(signal); return paths.length === 1 ? identity : paths.length === 2 ? { seasonId: 20262027, gameTypeId: 2, gameLog: [] } : { games: [] }; });
+   const card = await loadCurrentNhlCard({ playerId: 8476453, season: 20262027, count: 10 }, read, () => new Date("2026-10-26T00:00:00Z"));
+-  expect(paths).toEqual(["/player/8476453/landing", "/player/8476453/game-log/20262027/2", "/club-schedule-season/TBL/20262027"]); expect(signals.every(signal => signal instanceof AbortSignal)).toBe(true); expect(card.state).toBe("unavailable");
++  expect(paths).toEqual(["/player/8476453/landing", "/player/8476453/game-log/20262027/2", "/club-schedule-season/TBL/20262027"]); expect(signals.every(signal => signal instanceof AbortSignal)).toBe(true); expect(card.state).toBe("unavailable"); expect(card.windows?.map(view => view.request.count)).toEqual([5, 10, 20]); expect(new Set(card.windows?.map(view => view.observedAt)).size).toBe(1);
+ });
+ it("stops on failure and rejects malformed input before the first source read", async () => {
+   const read = vi.fn(async () => { throw new Error("offline"); });
+--- a/web/components/player-cards/CurrentPlayerCard.tsx
++++ b/web/components/player-cards/CurrentPlayerCard.tsx
+@@ -31,6 +31,7 @@
+         <text x="40" y="915">Ranks require all NHL same-definition values · no GP, TOI or position threshold</text>
+         <text x="40" y="949" fill="#744512">{card.state === "unavailable" ? "Inputs unverified · see source explanation below · PNG disabled" : card.issues.length ? card.issues.join(" ") : "Season appearance count reconciled · current window · no career-history claim"}</text>
+         <text x="40" y="985" fontSize="17">Shooting% is an actual percentage. Numeric magnitude does not imply player quality.</text><text x="1160" y="985" textAnchor="end" fontWeight="700">FHFHOCKEY.COM</text>
++        <text x="40" y="1010" fontSize="13">Definitions: {card.evidence.version} · selected game inputs and source paths in snapshot manifest</text>
+       </g>
+     </g>
+   </svg>;
+--- a/web/components/player-cards/CurrentPlayerCardStudio.tsx
++++ b/web/components/player-cards/CurrentPlayerCardStudio.tsx
+@@ -1,41 +1,67 @@
+-import React, { useEffect, useRef, useState } from "react";
++import React, { useCallback, useEffect, useRef, useState } from "react";
+ import CurrentPlayerCard, { currentCardKey } from "./CurrentPlayerCard";
+-import { CURRENT_NHL_DEFINITIONS, CURRENT_NHL_FORMATS, parseCurrentNhlRequest, type CurrentNhlCard, type CurrentNhlFormat, type CurrentNhlRequest } from "../../lib/player-cards/currentNhl";
+-import { rasterizeCurrentNhlCard } from "../../lib/player-cards/currentNhlExport";
++import { CURRENT_NHL_DEFINITIONS, CURRENT_NHL_FORMATS, type CurrentNhlCard, type CurrentNhlFormat, type CurrentNhlRequest } from "../../lib/player-cards/currentNhl";
++import { currentNhlManifest, rasterizeCurrentNhlCard } from "../../lib/player-cards/currentNhlExport";
+ import { saveCardFile } from "../../lib/player-cards/shareExport";
++import { assertCurrentResponse, capturedWindow, currentSelectionUrl, readCurrentSelection, selectionFromCard, selectionRequest, type CurrentSelection } from "../../lib/player-cards/currentSelection";
+ import styles from "./PlayerCardShareStudio.module.scss";
+ 
++const currentInputStyle: React.CSSProperties = { minHeight: 44, width: "100%", padding: 8, font: "inherit", color: "inherit", background: "#25292e", border: "1px solid #62666b", borderRadius: 3 };
++
+ async function loadCurrentCard(request: CurrentNhlRequest, signal: AbortSignal): Promise<CurrentNhlCard> {
+-  const response = await fetch(`/api/v1/player-cards?${new URLSearchParams(Object.fromEntries(Object.entries(request).map(([key, value]) => [key, String(value)])))}`, { signal, cache: "no-store" });
++  const response = await fetch(`/api/v1/player-cards?${new URLSearchParams(Object.fromEntries(Object.entries(request).map(([key, value]) => [key, String(value)])))}`, { signal, credentials: "omit", redirect: "error", cache: "no-store" });
+   if (!response.ok) throw new Error("NHL inputs are unavailable. No substitute values or ranks were loaded.");
+-  return response.json();
++  const text = await response.text();
++  if (text.length > 128 * 1024) throw new Error("NHL card response exceeded its bound.");
++  return JSON.parse(text);
+ }
+ export default function CurrentPlayerCardStudio({ initialCard = null, load = loadCurrentCard, rasterize = rasterizeCurrentNhlCard }: { initialCard?: CurrentNhlCard | null; load?: typeof loadCurrentCard; rasterize?: typeof rasterizeCurrentNhlCard }) {
+-  const year = new Date().getUTCFullYear() - (new Date().getUTCMonth() < 8 ? 1 : 0);
+-  const [playerId, setPlayerId] = useState(String(initialCard?.request.playerId || 8476453)), [season, setSeason] = useState(String(initialCard?.request.season || year * 10000 + year + 1)), [count, setCount] = useState(String(initialCard?.request.count || 10));
+-  const [format, setFormat] = useState<CurrentNhlFormat>("rates-opportunity"), [card, setCard] = useState(initialCard), [loading, setLoading] = useState(false), [busy, setBusy] = useState(false), [status, setStatus] = useState("");
++  const initial = useRef(selectionFromCard(initialCard)).current;
++  const [playerId, setPlayerId] = useState(initial.playerId), [season, setSeason] = useState(initial.season), [count, setCount] = useState(initial.count);
++  const [format, setFormat] = useState<CurrentNhlFormat>(initial.cardFormat), [card, setCard] = useState(initialCard), [loading, setLoading] = useState(false), [busy, setBusy] = useState(false), [status, setStatus] = useState("");
+   const [prepared, setPrepared] = useState<{ key: string; file: File } | null>(null);
+-  const requestRef = useRef<AbortController | null>(null), svgRef = useRef<SVGSVGElement>(null), busyRef = useRef(false);
+-  useEffect(() => () => requestRef.current?.abort(), []);
+-  function changed() { requestRef.current?.abort(); setCard(null); setLoading(false); setPrepared(null); setStatus(""); }
++  const requestRef = useRef<AbortController | null>(null), svgRef = useRef<SVGSVGElement>(null), busyRef = useRef(false), exportGeneration = useRef(0);
++  const changed = useCallback(() => { requestRef.current?.abort(); requestRef.current = null; exportGeneration.current++; setCard(null); setLoading(false); setPrepared(null); setStatus(""); }, []);
++  useEffect(() => {
++    const counter = exportGeneration;
++    const restore = () => {
++      const selection = readCurrentSelection(window.location.search, initial); changed();
++      setPlayerId(selection.playerId); setSeason(selection.season); setCount(selection.count); setFormat(selection.cardFormat);
++      setStatus("Selection restored from the URL. Choose Load NHL results to fetch a new snapshot.");
++    };
++    if (["playerId", "season", "count", "cardFormat"].some(key => new URLSearchParams(window.location.search).has(key))) restore();
++    window.addEventListener("popstate", restore);
++    return () => { window.removeEventListener("popstate", restore); requestRef.current?.abort(); requestRef.current = null; counter.current++; };
++  }, [initial, changed]);
++  function remember(selection: CurrentSelection) {
++    try { const url = currentSelectionUrl(window.location.href, selection); if (url !== window.location.pathname + window.location.search + window.location.hash) window.history.pushState(null, "", url); } catch { /* Invalid drafts stay editable; they never trigger a fetch. */ }
++  }
++  function chooseWindow(value: string) {
++    const selected = capturedWindow(card, Number(value)); changed(); setCount(value);
++    if (selected) { setCard(selected); setStatus("Showing another window from the same verified capture. No source refresh was requested."); }
++    remember({ playerId, season, count: value, cardFormat: format });
++  }
+   async function loadCard() {
+-    requestRef.current?.abort(); const controller = new AbortController(); requestRef.current = controller; setPrepared(null); setCard(null); setStatus(""); setLoading(true);
++    if (busyRef.current || loading) return;
++    changed(); const controller = new AbortController(); requestRef.current = controller; setPrepared(null); setCard(null); setStatus(""); setLoading(true);
+     let timedOut = false;
+     const timeout = setTimeout(() => { timedOut = true; controller.abort(); }, 20000);
+     try {
+-      const request = parseCurrentNhlRequest({ playerId, season, count });
++      const request = selectionRequest({ playerId, season, count, cardFormat: format });
++      setPlayerId(String(request.playerId)); remember({ playerId: String(request.playerId), season, count, cardFormat: format });
+       const result = await load(request, controller.signal);
+       if (controller.signal.aborted) return;
+-      if (result.request.playerId !== request.playerId || result.request.season !== request.season || result.request.count !== request.count) throw new Error("Player or window changed in the returned snapshot.");
++      assertCurrentResponse(result, request);
+       setCard(result);
+     } catch (error) { if (!controller.signal.aborted) setStatus(error instanceof Error ? error.message : "Unable to load this card."); }
+     finally { clearTimeout(timeout); if (requestRef.current === controller) { setLoading(false); if (timedOut) setStatus("NHL request timed out. No substitute values were loaded."); } }
+   }
+   async function createImage(share: boolean) {
+     if (!card || card.state !== "ready" || !svgRef.current || busyRef.current) return;
+-    busyRef.current = true; setBusy(true); setStatus("Preparing the displayed snapshot…");
++    const generation = exportGeneration.current; busyRef.current = true; setBusy(true); setStatus("Preparing the displayed snapshot…");
+     try {
+-      const blob = await rasterize(svgRef.current, card, format), file = new File([blob], `fhfh-${card.player.id}-${format}-${card.source}.png`, { type: "image/png" });
++      const blob = await rasterize(svgRef.current, card, format), file = new File([blob], `fhfh-${card.player.id}-${card.request.season}-L${card.request.count}-${format}-${card.source}.png`, { type: "image/png" });
++      if (generation !== exportGeneration.current) return;
+       if (share) { setPrepared({ key: currentCardKey(card, format), file }); setStatus("Image ready. Share prepared image opens your device’s share options."); }
+       else { saveCardFile(file, file.name); setStatus("PNG saved from the displayed snapshot."); }
+     } catch (error) { setStatus(error instanceof Error ? error.message : "PNG creation failed."); }
+@@ -51,19 +77,20 @@
+     finally { busyRef.current = false; setBusy(false); }
+   }
+   return <main className={styles.studio}>
+-    <header className={styles.heading}><div><p className={styles.eyebrow}>FHFH / SHARE STUDIO</p><h1>Player cards · NHL results</h1><p>Load a current skater snapshot. Basic NHL counts and rates are separate from NST chance and on-ice definitions. No data loads until you choose Load NHL results.</p></div></header>
+-    <div className={styles.controls}>
+-      <label>Player NHL ID<input aria-label="Player NHL ID" inputMode="numeric" value={playerId} disabled={busy} onChange={event => { changed(); setPlayerId(event.target.value); }} /></label>
+-      <label>Season<input aria-label="Season" inputMode="numeric" value={season} disabled={busy} onChange={event => { changed(); setSeason(event.target.value); }} /></label>
+-      <label>Own last appearances<select value={count} disabled={busy} onChange={event => { changed(); setCount(event.target.value); }}>{[5, 10, 20].map(value => <option key={value}>{value}</option>)}</select></label>
+-      <label>Card category<select value={format} disabled={busy} onChange={event => { setFormat(event.target.value as CurrentNhlFormat); setPrepared(null); setStatus(""); }}>{CURRENT_NHL_FORMATS.map(id => <option key={id} value={id}>{id === "rates-opportunity" ? "Rates & Opportunity" : "Results & Milestones"}</option>)}</select></label>
+-      <button disabled={busy || loading} onClick={loadCard}>{loading ? "Loading…" : "Load NHL results"}</button>
+-      <button disabled={busy || card?.state !== "ready"} onClick={() => createImage(false)}>Download PNG</button><button disabled={busy || card?.state !== "ready"} onClick={() => createImage(true)}>Prepare social image</button>
+-      {prepared && <button disabled={busy || !card || prepared.key !== currentCardKey(card, format)} onClick={sharePrepared}>Share prepared image</button>}
+-    </div>
++    <header className={styles.heading}><div><p className={styles.eyebrow}>FHFH / SHARE STUDIO</p><h1>Player cards · NHL results</h1><p>Load a current skater snapshot. Basic NHL counts and rates are separate from NST chance and on-ice definitions. One explicit load captures all three appearance windows. Window and category changes reuse that capture; Load NHL results refreshes it.</p></div></header>
++    <form className={styles.controls} onSubmit={event => { event.preventDefault(); void loadCard(); }}>
++      <label>Player NHL ID<input aria-label="Player NHL ID" style={currentInputStyle} inputMode="text" placeholder="NHL ID or /stats/player/ID" value={playerId} disabled={busy} onChange={event => { changed(); setPlayerId(event.target.value); }} /></label>
++      <label>Season<input aria-label="Season" style={currentInputStyle} inputMode="numeric" value={season} disabled={busy} onChange={event => { changed(); setSeason(event.target.value); }} /></label>
++      <label>Own last appearances<select value={count} disabled={busy} onChange={event => { chooseWindow(event.target.value); }}>{[5, 10, 20].map(value => <option key={value}>{value}</option>)}</select></label>
++      <label>Card category<select value={format} disabled={busy} onChange={event => { const next = event.target.value as CurrentNhlFormat; exportGeneration.current++; setFormat(next); setPrepared(null); setStatus(""); remember({ playerId, season, count, cardFormat: next }); }}>{CURRENT_NHL_FORMATS.map(id => <option key={id} value={id}>{id === "rates-opportunity" ? "Rates & Opportunity" : "Results & Milestones"}</option>)}</select></label>
++      <button type="submit" disabled={busy || loading}>{loading ? "Loading…" : "Load NHL results"}</button>
++      <button type="button" disabled={busy || card?.state !== "ready"} onClick={() => createImage(false)}>Download PNG</button><button type="button" disabled={busy || card?.state !== "ready"} onClick={() => createImage(true)}>Prepare social image</button>
++      {prepared && <button type="button" disabled={busy || !card || prepared.key !== currentCardKey(card, format)} onClick={sharePrepared}>Share prepared image</button>}
++    </form>
++    <p>Paste a stable NHL ID or an existing FHFH /stats/player/ID URL. All Strengths, regular-season skater data only; name search and richer suites require their qualified source interfaces.</p>
+     <p role="status" aria-live="polite">{status || (loading ? "Checking identity, game log and final-game schedule…" : card ? card.source === "contract-fixture" ? "Synthetic contract fixture. Not a real player’s results." : card.source === "nhl-retained" ? "Retained official NHL capture, not a current live response." : "NHL snapshot loaded at the observation time shown on the card." : "Choose a player and load a snapshot.")}</p>
+     {card && <><div className={styles.artwork}><CurrentPlayerCard card={card} format={format} svgRef={svgRef} /></div><div role="note"><p>{card.rankReason}</p>{card.issues.map(issue => <p key={issue}>{issue}</p>)}</div>
+-      <details><summary>Source and metric definitions</summary><p>{card.historyStatement} {card.finalityStatement}</p><p>All Strengths only. Calendar-date windows and strength splits are unavailable in this source adapter.</p>{Object.entries(CURRENT_NHL_DEFINITIONS).map(([id, definition]) => <p key={id}>{definition.label}: {definition.definition}</p>)}<button onClick={() => saveCardFile(new Blob([JSON.stringify({ card, format, definitions: CURRENT_NHL_DEFINITIONS }, null, 2)], { type: "application/json" }), `fhfh-${card.player.id}-${format}-manifest.json`)}>Download snapshot manifest</button></details></>}
++      <details><summary>Source and metric definitions</summary><p>{card.historyStatement} {card.finalityStatement}</p><p>All Strengths only. Calendar-date windows and strength splits are unavailable in this source adapter.</p>{Object.entries(CURRENT_NHL_DEFINITIONS).map(([id, definition]) => <p key={id}>{definition.label}: {definition.definition}</p>)}<button onClick={() => saveCardFile(new Blob([JSON.stringify(currentNhlManifest(card, format), null, 2)], { type: "application/json" }), `fhfh-${card.player.id}-${format}-manifest.json`)}>Download snapshot manifest</button></details></>}
+     <p>Other stat suites remain in the work plan. Sustainability scores, isolated impact, on-ice chance metrics, goalie workload and milestone baselines are not inferred from these counts.</p>
+   </main>;
+ }
+--- a/web/components/player-cards/CurrentPlayerCardStudio.test.tsx
++++ b/web/components/player-cards/CurrentPlayerCardStudio.test.tsx
+@@ -1,10 +1,11 @@
+ import React from "react";
+ import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+-import { expect, it, vi } from "vitest";
++import { afterEach, expect, it, vi } from "vitest";
+ import CurrentPlayerCardStudio from "./CurrentPlayerCardStudio";
+ import CurrentPlayerCard from "./CurrentPlayerCard";
+ import { assertCurrentNhlExport } from "../../lib/player-cards/currentNhlExport";
+ import { buildCurrentNhlCard } from "../../lib/player-cards/currentNhl";
++afterEach(() => window.history.replaceState(null, "", "/"));
+ const fixture = () => buildCurrentNhlCard({ playerId: 8476453, season: 20262027, count: 5 }, {
+   identity: { playerId: 8476453, firstName: { default: "Fixture" }, lastName: { default: "Player" }, currentTeamAbbrev: "TBL", position: "R", seasonTotals: [{ season: 20262027, gameTypeId: 2, leagueAbbrev: "NHL", gamesPlayed: 1 }] },
+   history: { seasonId: 20262027, gameTypeId: 2, gameLog: [{ gameId: 2026020167, gameDate: "2026-10-23", teamAbbrev: "TBL", goals: 1, assists: 0, points: 1, shots: 4, toi: "20:00" }] },
+@@ -31,3 +32,32 @@
+   expect(() => assertCurrentNhlExport(svg, { ...card, values: { ...card.values, goals: 99 } }, "rates-opportunity")).toThrow("snapshot");
+   expect(() => assertCurrentNhlExport(svg, { ...card, state: "unavailable" }, "rates-opportunity")).toThrow("snapshot");
+ });
++
++it("reuses qualified captured windows and categories, with a selected-only reproducibility manifest", async () => {
++  const first = fixture(), windows = ([5, 10, 20] as const).map(count => ({ ...first, request: { ...first.request, count } }));
++  const load = vi.fn(); render(<CurrentPlayerCardStudio initialCard={{ ...first, windows }} load={load} />);
++  fireEvent.change(screen.getByLabelText("Own last appearances"), { target: { value: "10" } });
++  expect(screen.getByRole("img").textContent).toContain("1/10 GP"); expect(load).not.toHaveBeenCalled();
++  fireEvent.change(screen.getByLabelText("Card category"), { target: { value: "results-milestones" } });
++  expect(screen.getByRole("img").querySelector('[data-metric="goals"]')).toBeTruthy(); expect(window.location.search).toContain("cardFormat=results-milestones"); expect(load).not.toHaveBeenCalled();
++});
++it("restores player/window/category on browser navigation without source requests and discards an in-flight export", async () => {
++  const first = fixture(), load = vi.fn(); let finish!: (blob: Blob) => void;
++  const rasterize = vi.fn(() => new Promise<Blob>(resolve => { finish = resolve; }));
++  render(<CurrentPlayerCardStudio initialCard={first} load={load} rasterize={rasterize} />);
++  fireEvent.click(screen.getByRole("button", { name: "Prepare social image" }));
++  window.history.pushState(null, "", "/player-cards?playerId=8479318&season=20262027&count=20&cardFormat=results-milestones");
++  act(() => window.dispatchEvent(new PopStateEvent("popstate")));
++  await act(async () => finish(new Blob(["obsolete PNG"])));
++  expect(screen.queryByRole("img")).toBeNull(); expect(screen.queryByRole("button", { name: "Share prepared image" })).toBeNull(); expect(load).not.toHaveBeenCalled();
++  expect((screen.getByLabelText("Player NHL ID") as HTMLInputElement).value).toBe("8479318"); expect((screen.getByLabelText("Own last appearances") as HTMLSelectElement).value).toBe("20");
++});
++it("accepts a verified FHFH player URL, submits with Enter/form semantics and rejects malformed identity without loading", async () => {
++  const first = fixture(), load = vi.fn(async () => first); render(<CurrentPlayerCardStudio load={load} />);
++  fireEvent.change(screen.getByLabelText("Player NHL ID"), { target: { value: "https://fhfhockey.com/stats/player/8476453" } });
++  fireEvent.change(screen.getByLabelText("Own last appearances"), { target: { value: "5" } });
++  fireEvent.submit(screen.getByRole("button", { name: "Load NHL results" }).closest("form")!);
++  await screen.findByRole("img"); expect(load).toHaveBeenCalledWith(first.request, expect.any(AbortSignal));
++  fireEvent.change(screen.getByLabelText("Player NHL ID"), { target: { value: "https://other.invalid/stats/player/8476453" } });
++  fireEvent.click(screen.getByRole("button", { name: "Load NHL results" })); await screen.findByText("Enter a valid NHL ID or FHFH player URL."); expect(load).toHaveBeenCalledTimes(1);
++});
+--- a/web/lib/player-cards/currentNhlExport.ts
++++ b/web/lib/player-cards/currentNhlExport.ts
+@@ -1,8 +1,14 @@
+ import { rasterizeCardSvg } from "./shareExport";
+ import { currentCardKey } from "../../components/player-cards/CurrentPlayerCard";
+-import type { CurrentNhlCard, CurrentNhlFormat } from "./currentNhl";
++import { CURRENT_NHL_DEFINITIONS, currentNhlRows, type CurrentNhlCard, type CurrentNhlFormat } from "./currentNhl";
+ 
+ export function assertCurrentNhlExport(svg: SVGSVGElement, card: CurrentNhlCard, format: CurrentNhlFormat) {
+-  if (card.state !== "ready" || card.sample.gp === null || card.sample.toiSeconds === null || svg.dataset.currentKey !== currentCardKey(card, format) || svg.dataset.source !== card.source || svg.dataset.cardFormat !== format || svg.querySelector("image")) throw new Error("The qualified displayed snapshot changed or is unavailable. Retry this card.");
++  if (!svg.isConnected || card.state !== "ready" || card.sample.gp === null || card.sample.toiSeconds === null || svg.dataset.currentKey !== currentCardKey(card, format) || svg.dataset.source !== card.source || svg.dataset.cardFormat !== format || svg.querySelector("image")) throw new Error("The qualified displayed snapshot changed or is unavailable. Retry this card.");
+ }
+ export const rasterizeCurrentNhlCard = (svg: SVGSVGElement, card: CurrentNhlCard, format: CurrentNhlFormat): Promise<Blob> => rasterizeCardSvg(svg, () => assertCurrentNhlExport(svg, card, format), 1200, 1020);
++
++/** Selected snapshot only; alternate cached windows never leak into its reproducibility manifest. */
++export function currentNhlManifest(card: CurrentNhlCard, format: CurrentNhlFormat) {
++  const { windows: _windows, ...selected } = card;
++  return { renderVersion: "fhfh-current-card-v1", card: selected, format, selectedMetrics: currentNhlRows(format), definitions: CURRENT_NHL_DEFINITIONS, inputHashScope: "Source paths and selected normalized game inputs; no raw-response hash or exact end-time claim" };
++}

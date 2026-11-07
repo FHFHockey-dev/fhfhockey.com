@@ -1,0 +1,64 @@
+{
+  "pinsVerified": 326,
+  "sharedSourcePinsUnchanged": 10,
+  "capturedWgoRows": 8135,
+  "selectedRows": 3461,
+  "profiles": 740,
+  "newlyBoxedRows": 1432,
+  "newBoxes": 42,
+  "newBoxBytes": 559659,
+  "newOfficialCountTOIOperands": 8592,
+  "newDiscrepancyRowsAndFields": 39,
+  "newDiscrepanciesByField": {
+    "shots": 17,
+    "blocked_shots": 8,
+    "hits": 8,
+    "toi_per_game": 6
+  },
+  "reportPages": 16,
+  "reportRows": 1404,
+  "reportBytes": 821315,
+  "explicitNullRows": 280,
+  "explicitNullCells": 1680,
+  "otherGoalCellsMatch": 6744,
+  "reportExposureDiscrepancies": 6,
+  "PPPAdditionalStates": {
+    "uniquely_implied": 145,
+    "ambiguous": 188,
+    "unknown": 22
+  },
+  "PPPAdditionalZeros": 129,
+  "PPPAdditionalNonzeros": 16,
+  "independentEmpiricalRangesEnumerated": 333,
+  "combinedPPPPartition": {
+    "official_box_zero_assist_match": 2652,
+    "prior_uniquely_derived_match": 116,
+    "unresolved": 407,
+    "new_uniquely_derived_match": 145,
+    "prior_direct_match": 141
+  },
+  "combinedBoxStates": {
+    "identity_team_exposure_qualified": 3409,
+    "held": 52
+  },
+  "identityExposureAndFiveCountsMatch": 3334,
+  "identityExposureFiveCountsAndPPPMatch": 2950,
+  "additionalFullStandardOperandRows": 137,
+  "capturedAtUTC": "2026-11-01T19:57:38.026058+00:00",
+  "boxRetrievalRangeUTC": [
+    "2026-11-01T20:28:31.041167+00:00",
+    "2026-11-01T20:29:53.130114+00:00"
+  ],
+  "reportReceiptRangeUTC": [
+    "2026-11-01T20:19:58.875541+00:00",
+    "2026-11-01T20:20:26.579739+00:00"
+  ],
+  "originalPartialPageCaptureIntervalUTC": [
+    "2026-11-01T20:14:42.694277+00:00",
+    "2026-11-01T20:14:44.874827+00:00"
+  ],
+  "sourcePublicationTimeEstablished": false,
+  "auditProviderRequests": 0,
+  "auditSourceEdits": 0,
+  "auditHoldoutReads": 0
+}

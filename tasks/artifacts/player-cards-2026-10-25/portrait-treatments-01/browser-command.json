@@ -1,0 +1,17 @@
+{
+  "action": "browser",
+  "command": [
+    "node",
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/browser-check.mjs"
+  ],
+  "cwd": "/Users/tim/Code/fhfhockey.com/web",
+  "exitCode": 0,
+  "elapsedSeconds": 2.718,
+  "environmentOverrides": {
+    "npm_config_cache": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/.npm-cache",
+    "npm_config_logs_dir": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/.npm-logs",
+    "NO_UPDATE_NOTIFIER": "1",
+    "NEXT_TELEMETRY_DISABLED": "1"
+  },
+  "lockOwnedAndReleased": true
+}

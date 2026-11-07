@@ -1,0 +1,9 @@
+{
+  "status": "LOCAL_CODE_PINS_ONLY_NOT_APPROVAL",
+  "codeCommit": "7113329d2c24b8629f54484df37441f95a63d853",
+  "codeContentManifest": "source-pins.json",
+  "codeContentManifestSha256": "a26f5a5ea6ed69a4ff9eb9cdd47ecc6994715f7a23b00133f185cd6c26b6c39e",
+  "reviewedProtocolProposalSha256": "6bf518f5cd016fe6c14db886f5f967ecd422119084c7e499d7911bb4b899219a",
+  "qualification": "NO_QUALIFIED_SUBSET",
+  "remainingFields": "All scientific/environment/data/resource/owner/approval fields in protocol-proposal.json still require evidence; no production authority inferred."
+}

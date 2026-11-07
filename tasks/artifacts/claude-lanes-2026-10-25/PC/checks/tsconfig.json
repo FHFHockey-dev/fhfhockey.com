@@ -1,0 +1,1 @@
+{"extends":"../../../../../web/tsconfig.json","compilerOptions":{"incremental":false},"include":["../../../../../web/lib/player-cards/evidenceAdmissions.ts","../../../../../web/lib/player-cards/evidenceLoader.ts","../../../../../web/lib/player-cards/evidenceLoader.test.ts","../../../../../web/lib/player-cards/evidenceBundle.ts"],"exclude":["../../../../../web/node_modules"]}

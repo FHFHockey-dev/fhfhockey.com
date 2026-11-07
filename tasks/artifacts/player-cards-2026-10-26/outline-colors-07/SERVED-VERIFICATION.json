@@ -1,0 +1,12 @@
+{
+  "url": "http://127.0.0.1:3125/player-cards/compositions?checkpoint=colors07",
+  "checkpoint": "colors07",
+  "responseSha256": "9252e96763b5c3e8219c2f2ee3deb3f3934e5425c98a498e910ed39dafa9a624",
+  "servedPNGHashesVerified": 4,
+  "interactiveSourceColorsVerified": 4,
+  "single5pxRing": true,
+  "desktopAndPhoneScreenshots": true,
+  "externalAttempts": [],
+  "pageErrors": [],
+  "remoteAvailabilityClaimed": false
+}

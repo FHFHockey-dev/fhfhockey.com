@@ -1,0 +1,2538 @@
+/* WiGO Charts styling module */
+@import url("https://fonts.googleapis.com/css2?family=Train+One&family=Zen+Tokyo+Zoo&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Train+One&display=swap");
+/* https://docs.microsoft.com/en-us/windows/apps/design/layout/screen-sizes-and-breakpoints-for-responsive-design */
+/* handset */
+/* tablet */
+/* PC*/
+/* WiGO Charts styling module */
+/* Main Dashboard Layout */
+.wigoDashHeader {
+  margin-bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.spanColorBlue {
+  display: inline-block;
+  color: #14a2d2;
+  font-family: "Train One", sans-serif;
+  font-size: 1.8rem;
+  font-weight: 700;
+  vertical-align: baseline;
+}
+
+.wigoDashboardContainer {
+  width: 100%;
+  max-width: 1920px;
+  min-width: 0;
+  margin: 0 auto;
+  padding: 8px;
+}
+
+.wigoDashboardContent {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.72fr) minmax(640px, 1.65fr) minmax(380px, 1.05fr);
+  grid-template-rows: auto minmax(760px, calc(100vh - 150px));
+  grid-template-areas: "context context context" "dossier comparison evidence";
+  gap: 8px;
+  min-width: 0;
+  padding: 8px;
+  border: 1px solid rgb(43.9796610169, 49.0542372881, 55.8203389831);
+  border-radius: 10px;
+  background-color: rgb(19.2576271186, 21.4796610169, 24.4423728814);
+}
+
+/* Hide mobile container by default (desktop/tablet). It will be enabled in the mobile media query below */
+.mobileContainer {
+  display: none;
+}
+
+/* --- Mobile overrides --- */
+@media (max-width: 768px) {
+  .wigoDashboardContainer {
+    padding: 0;
+  }
+  .wigoDashboardContent {
+    display: none;
+  }
+  .mobileContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    width: 100%;
+    padding-bottom: 24px;
+  }
+  .mobileHeaderRow {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 0 16px;
+  }
+  .mobileTabsBar {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    background: rgb(21.5050847458, 23.986440678, 27.2949152542);
+    display: flex;
+    gap: 8px;
+    padding: 8px 16px;
+    overflow-x: auto;
+    border-bottom: 2px solid #505050;
+  }
+  .tabBtn {
+    background: transparent;
+    color: #aaaaaa;
+    border: 1px solid #505050;
+    border-radius: 6px;
+    padding: 6px 10px;
+    white-space: nowrap;
+    font-family: "Roboto Condensed", sans-serif;
+    font-size: 14px;
+  }
+  .activeTab {
+    background: var(--primary-color, #14a2d2);
+    color: #ffffff;
+    border: 1px solid rgb(15.5652173913, 126.0782608696, 163.4347826087);
+    border-radius: 6px;
+    padding: 6px 10px;
+    white-space: nowrap;
+    font-family: "Roboto Condensed", sans-serif;
+    font-size: 14px;
+  }
+  .mobilePanel {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 0 16px;
+  }
+  .playerHeaderContainer {
+    height: auto;
+    min-height: 180px;
+  }
+}
+/* Base Styles for Grid Items */
+/* Wrapper Column Styles */
+.leftColumnWrapper,
+.comparisonColumnWrapper,
+.trendsColumnWrapper {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  border: 1px solid rgb(46.2271186441, 51.5610169492, 58.6728813559);
+  border-radius: 10px;
+  background: rgb(23.7525423729, 26.493220339, 30.1474576271);
+}
+
+.leftColumnWrapper {
+  grid-area: dossier;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #14a2d2 rgb(19.2576271186, 21.4796610169, 24.4423728814);
+}
+
+.comparisonColumnWrapper {
+  grid-area: comparison;
+}
+
+.trendsColumnWrapper {
+  grid-area: evidence;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #14a2d2 rgb(19.2576271186, 21.4796610169, 24.4423728814);
+}
+
+/* Specific Container Styles & Grid Areas (BENTO BOX LAYOUT) */
+.headerRowWrapper {
+  grid-area: context;
+  display: grid;
+  grid-template-columns: auto minmax(260px, 340px) minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  min-height: 52px;
+  width: 100%;
+  padding: 4px 8px;
+  border: 1px solid rgb(46.2271186441, 51.5610169492, 58.6728813559);
+  border-radius: 10px;
+  background: rgb(23.7525423729, 26.493220339, 30.1474576271);
+}
+
+.wigoContextIdentity {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  min-width: 0;
+}
+
+.wigoContextTagline {
+  overflow: hidden;
+  color: #aaaaaa;
+  font-family: "Roboto Condensed", sans-serif;
+  font-size: 11px;
+  font-style: italic;
+  font-weight: 700;
+  letter-spacing: 0.3em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.nameSearchBarContainer {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  height: 38px;
+  overflow: visible !important;
+}
+.nameSearchBarContainer > div {
+  width: 100%;
+  height: 100%;
+}
+
+.selectedPlayerControl {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  height: 38px;
+  padding: 0 4px;
+  justify-self: end;
+}
+.selectedPlayerControl button {
+  margin-left: auto;
+  padding: 4px 6px;
+  border: 0;
+  background: transparent;
+  color: #aaaaaa;
+  cursor: pointer;
+  font-size: 12px;
+}
+.selectedPlayerControl button:hover, .selectedPlayerControl button:focus-visible {
+  color: #14a2d2;
+}
+.selectedPlayerControl button:focus-visible {
+  outline: 1px solid #14a2d2;
+  outline-offset: 2px;
+}
+
+.selectedPlayerThumb {
+  position: relative;
+  align-self: stretch;
+  width: 40px;
+  flex: 0 0 40px;
+}
+.selectedPlayerThumb img {
+  object-fit: contain;
+  object-position: center bottom;
+}
+
+.selectedPlayerText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.selectedPlayerText span {
+  overflow: hidden;
+  color: #aaaaaa;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.noSelectedPlayer {
+  color: #aaaaaa;
+  font-size: 11px;
+}
+
+.playerIdentityCard {
+  display: flex;
+  min-height: 130px;
+  padding: 8px;
+  border-bottom: 1px solid rgb(46.2271186441, 51.5610169492, 58.6728813559);
+  background: linear-gradient(105deg, color-mix(in srgb, var(--primary-color) 24%, transparent), rgb(21.5050847458, 23.986440678, 27.2949152542) 70%);
+}
+
+.playerHeaderContainer {
+  position: relative;
+  z-index: 1;
+  width: 44%;
+  min-width: 104px;
+  overflow: hidden;
+}
+
+.playerIdentityCopy {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+  padding: 8px;
+}
+
+.playerTeam,
+.playerRole {
+  color: #aaaaaa;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.playerName {
+  display: flex;
+  flex-direction: column;
+  margin: 4px 0;
+  color: #cccccc;
+  font-family: "Roboto Condensed", "Roboto Condensed", sans-serif;
+  font-size: clamp(20px, 1.6vw, 28px);
+  font-weight: 700;
+  line-height: 0.92;
+  text-transform: uppercase;
+}
+.playerName span {
+  font-size: 0.58em;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+}
+
+.playerMetaGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  min-height: 52px;
+  border-bottom: 1px solid rgb(46.2271186441, 51.5610169492, 58.6728813559);
+}
+.playerMetaGrid > span {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  border-right: 1px solid #505050;
+  color: #cccccc;
+  font-family: "Martian Mono", monospace;
+  font-size: 11px;
+  white-space: nowrap;
+}
+.playerMetaGrid > span:last-child {
+  border-right: 0;
+}
+.playerMetaGrid small {
+  color: #aaaaaa;
+  font-family: "Roboto Condensed", sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.perGameStatsContainer {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: rgb(23.7525423729, 26.493220339, 30.1474576271);
+  padding: 0 !important;
+  overflow: visible;
+  height: auto;
+  min-height: 316px;
+  flex-shrink: 0;
+  border-bottom: 1px solid rgb(46.2271186441, 51.5610169492, 58.6728813559);
+}
+
+.opponentLogContainer {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: rgb(23.7525423729, 26.493220339, 30.1474576271);
+  padding: 0;
+  height: 150px;
+  flex-shrink: 0;
+  border-bottom: 1px solid rgb(46.2271186441, 51.5610169492, 58.6728813559);
+}
+
+.ratingsContainer {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: rgb(23.7525423729, 26.493220339, 30.1474576271);
+  height: 150px;
+  flex-shrink: 0;
+  border-bottom: 1px solid rgb(46.2271186441, 51.5610169492, 58.6728813559);
+}
+
+.consistencyAndCategoryWrapper {
+  padding: 0;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  height: 185px;
+  min-height: 185px;
+  flex-shrink: 0;
+  border-bottom: 1px solid rgb(46.2271186441, 51.5610169492, 58.6728813559);
+}
+
+.consistencyRatingContainer {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: rgb(23.7525423729, 26.493220339, 30.1474576271);
+  padding: 0;
+  flex: 3 1 0%;
+  min-width: 0;
+}
+.consistencyRatingContainer .chartContainer {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+.consistencyRatingContainer .chartTitle {
+  background-color: rgb(8.9130434783, 72.1956521739, 93.5869565217);
+  padding: 6px 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-bottom: 2px solid rgb(21.8, 21.8, 21.8);
+  text-transform: uppercase;
+}
+.consistencyRatingContainer .chartTitle h3 {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 12px;
+  font-family: "Lucida Sans", "Lucida Grande", sans-serif;
+  color: #cccccc;
+}
+.consistencyRatingContainer .consistencyContent {
+  display: flex;
+  height: 100%;
+  width: 100%;
+  padding: 8px;
+  box-sizing: border-box;
+  gap: 8px;
+  overflow: hidden;
+}
+.consistencyRatingContainer .consistencyChartArea {
+  flex: 1 1 50%;
+  position: relative;
+  min-width: 80px;
+  padding: 8px;
+}
+.consistencyRatingContainer .consistencyListArea {
+  flex: 1 1 30%;
+  overflow-y: auto;
+  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: stretch;
+}
+.consistencyRatingContainer .consistencyListArea ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+}
+.consistencyRatingContainer .consistencyItem {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2px 0;
+  border-bottom: 1px solid #404040;
+}
+.consistencyRatingContainer .consistencyItem:last-child {
+  border-bottom: none;
+}
+.consistencyRatingContainer .consistencySubItem .consistencyLabel,
+.consistencyRatingContainer .consistencySubItem .consistencyValue,
+.consistencyRatingContainer .consistencySubItem .consistencyCount {
+  color: #aaaaaa;
+}
+.consistencyRatingContainer .consistencyColorSwatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-right: 8px;
+  flex-shrink: 0;
+  background-color: rgb(23.7525423729, 26.493220339, 30.1474576271);
+  border: 1px solid #808080;
+}
+.consistencyRatingContainer .consistencySwatch {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 4px;
+  border-radius: 2px;
+  vertical-align: baseline;
+}
+.consistencyRatingContainer .consistencyLabel {
+  color: #cccccc;
+  margin-right: 10px;
+  white-space: nowrap;
+  width: 50%;
+  text-align: left;
+}
+.consistencyRatingContainer .consistencyValue {
+  color: #ffffff;
+  font-weight: 700;
+  text-align: right;
+  width: 50%;
+}
+.consistencyRatingContainer .consistencyCount {
+  color: #aaaaaa;
+  font-size: 11px;
+  margin-left: 4px;
+  white-space: nowrap;
+  width: 50%;
+  text-align: right;
+}
+.consistencyRatingContainer .chartLoadingPlaceholder,
+.consistencyRatingContainer .chartErrorPlaceholder {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  width: 100%;
+  color: #aaaaaa;
+  font-size: 12px;
+  text-align: center;
+  padding: 10px;
+  box-sizing: border-box;
+}
+.consistencyRatingContainer .chartErrorPlaceholder {
+  color: #FF6B6B;
+}
+
+.percentileChartContainer {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: rgb(23.7525423729, 26.493220339, 30.1474576271);
+  padding: 0;
+  min-height: 0;
+  flex: 3 1 0%;
+  min-width: 0;
+  border-left: 1px solid rgb(46.2271186441, 51.5610169492, 58.6728813559);
+}
+.percentileChartContainer .chartTitle {
+  background-color: rgb(8.9130434783, 72.1956521739, 93.5869565217);
+  padding: 6px 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-bottom: 2px solid rgb(21.8, 21.8, 21.8);
+  text-transform: uppercase;
+}
+.percentileChartContainer .chartTitle h3 {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 12px;
+  font-family: "Lucida Sans", "Lucida Grande", sans-serif;
+  color: #cccccc;
+}
+
+.toiChartContainer {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: rgb(23.7525423729, 26.493220339, 30.1474576271);
+  padding: 0;
+  height: 180px;
+  min-height: 180px;
+  flex-shrink: 0;
+  border-bottom: 1px solid rgb(46.2271186441, 51.5610169492, 58.6728813559);
+}
+
+.ppgChartContainer {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: rgb(23.7525423729, 26.493220339, 30.1474576271);
+  padding: 0;
+  height: 155px;
+  min-height: 155px;
+  flex-shrink: 0;
+  border-bottom: 1px solid rgb(46.2271186441, 51.5610169492, 58.6728813559);
+}
+
+.gameScoreContainer {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: rgb(23.7525423729, 26.493220339, 30.1474576271);
+  padding: 0;
+  height: 155px;
+  min-height: 155px;
+  flex-shrink: 0;
+  border-bottom: 1px solid rgb(46.2271186441, 51.5610169492, 58.6728813559);
+}
+
+.rateStatBarPercentilesContainer {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: rgb(23.7525423729, 26.493220339, 30.1474576271);
+  margin-top: 0 !important;
+  padding: 0;
+  height: 205px;
+  min-height: 205px;
+  flex-shrink: 0;
+}
+
+.gameLogChartContainer .averageToggleButtons {
+  display: flex;
+  width: 100%;
+  margin: 0 auto;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: 16px;
+  margin-top: 8px;
+}
+.gameLogChartContainer .avgButton {
+  background-color: rgb(14.7627118644, 16.4661016949, 18.7372881356);
+  border: 1px solid #505050;
+  color: #ffffff;
+  padding: 4px 6px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: "Roboto Condensed", sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0.5px;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+.gameLogChartContainer .avgButton:hover {
+  background-color: hsl(214.2857142857, 11.8644067797%, -88.431372549%);
+  border-color: rgb(255, 193, 8);
+}
+.gameLogChartContainer .avgButton.active {
+  color: #ffffff;
+  font-weight: 700;
+  outline: 1px solid white;
+  outline-offset: 1px;
+}
+
+.chartStatus {
+  padding: 16px;
+  text-align: center;
+  color: #aaaaaa;
+  font-size: 12px;
+  background-color: inherit;
+  min-height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chartTooltip {
+  background-color: rgba(26, 29, 33, 0.95);
+  border: 1px solid #404040;
+  padding: 8px;
+  border-radius: 6px;
+  color: #cccccc;
+  font-size: 14px;
+  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
+}
+.chartTooltip p {
+  margin: 4px 0;
+}
+
+/* GameLogChart Internal Styles */
+/* Player Header Internal Styles */
+.playerHeadshot {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  background-color: var(--primary-color);
+  border-radius: 10px;
+}
+
+.headshotContainer {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  border: 1px solid rgb(59.7118644068, 66.6016949153, 75.7881355932);
+  border-radius: 10px;
+  overflow: hidden;
+  background-color: none;
+}
+
+.teamLogo {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  overflow: visible;
+  justify-content: center;
+  transform: translateX(24%);
+  opacity: 0.25;
+}
+.teamLogo p {
+  color: #cccccc;
+  font-size: 14px;
+  text-align: center;
+}
+
+.teamLogoImage {
+  display: block;
+  object-fit: contain;
+  filter: drop-shadow(3px 3px 0 var(--secondary-color)) drop-shadow(-3px -3px 0 var(--secondary-color)) drop-shadow(3px -3px 0 var(--secondary-color)) drop-shadow(-3px 3px 0 var(--secondary-color));
+}
+
+.headshot {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.headshotImage {
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform: none;
+  object-fit: contain;
+  object-position: left bottom;
+  filter: drop-shadow(0 3px 5px rgba(255, 255, 255, 0.38));
+}
+
+.headshotImage[alt*="Placeholder headshot"] {
+  object-fit: contain;
+  opacity: 0.4;
+  filter: none;
+}
+
+/* Player Header Internal Styles */
+/* Transposed Table Styling */
+/* GameLogChart Internal Styles */
+.chartStatus {
+  padding: 24px;
+  text-align: center;
+  color: #aaaaaa;
+  background-color: inherit;
+}
+
+.chartTooltip {
+  background-color: rgba(26, 29, 33, 0.95);
+  border: 1px solid #404040;
+  padding: 8px;
+  border-radius: 6px;
+  color: #cccccc;
+  font-size: 14px;
+  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
+}
+.chartTooltip p {
+  margin: 4px 0;
+}
+
+/* GameLogChart Internal Styles */
+/* Chart Container Styling (Generic) */
+.chartContainer {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.chartHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 10px;
+  background-color: rgb(14.7627118644, 16.4661016949, 18.7372881356);
+  flex-shrink: 0;
+  border-bottom: 3px solid rgb(32.7423728814, 36.5203389831, 41.5576271186);
+}
+.chartHeader h3 {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: #cccccc;
+  padding: 3px 0 3.5px 0;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+.chartHeader .toggleButtons button {
+  padding: 3px 5px;
+  font-size: 11px;
+  cursor: pointer;
+  color: #aaaaaa;
+  background-color: rgb(3.5254237288, 3.9322033898, 4.4745762712);
+  border: 1px solid #505050;
+  border-radius: 6px;
+  margin-left: 4px;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+.chartHeader .toggleButtons button:first-child {
+  margin-left: 0;
+}
+.chartHeader .toggleButtons button:hover:not(:disabled) {
+  background-color: #404040;
+  border-color: #808080;
+}
+.chartHeader .toggleButtons button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.chartToolbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.chartCanvasContainer {
+  position: relative;
+  width: 100%;
+  flex-grow: 1;
+  overflow: hidden;
+  padding: 8px;
+  box-sizing: border-box;
+}
+
+.sectionCardBodyFlush {
+  padding: 0;
+}
+
+.chartLoadingPlaceholder {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  min-height: 100px;
+  color: #aaaaaa;
+  font-size: 12px;
+  flex-grow: 1;
+  background-color: inherit;
+}
+
+/* Generic Chart Styling */
+/* Rate Stat Percentiles Component Styles */
+.rateStatPercentilesComponent {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  background-color: rgb(23.7525423729, 26.493220339, 30.1474576271);
+}
+
+.mainContentWrapper {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  width: 100%;
+  overflow: hidden;
+}
+
+.percentileFiltersContainer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-direction: column;
+  flex-shrink: 0;
+  flex-basis: 50px;
+  box-sizing: border-box;
+  align-items: stretch;
+  height: 100%;
+  background-color: rgb(14.7627118644, 16.4661016949, 18.7372881356);
+  border-bottom: 3px solid rgb(32.7423728814, 36.5203389831, 41.5576271186);
+}
+
+.filtersTitle {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: #cccccc;
+  padding: 3px 0 3.5px 0;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 10px;
+  background-color: rgb(14.7627118644, 16.4661016949, 18.7372881356);
+  flex-shrink: 0;
+  border-bottom: 3px solid rgb(23.7525423729, 26.493220339, 30.1474576271);
+}
+
+.filterControlsWrapper {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  align-items: flex-start;
+  overflow: hidden;
+}
+
+.strengthSelector {
+  display: flex;
+  flex-direction: row;
+  flex-grow: 1;
+  width: 70%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  min-width: 0;
+  padding: 4px 16px;
+  height: 100%;
+}
+.strengthSelector button {
+  background-color: #14a2d2;
+  color: #ffffff;
+  border: 1px solid #07aae2;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: "Roboto Condensed", sans-serif;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+.strengthSelector button:hover:not(:disabled) {
+  background-color: rgb(22.6304347826, 179.7565217391, 232.8695652174);
+  border-color: rgb(35.7896995708, 193.8927038627, 248.2103004292);
+}
+.strengthSelector button:focus-visible {
+  outline: 3px solid rgb(255, 193, 8);
+  outline-offset: 2px;
+}
+.strengthSelector button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.strengthSelector button {
+  padding: 3px 5px;
+  font-size: 11px;
+  cursor: pointer;
+  color: #aaaaaa;
+  background-color: rgb(3.5254237288, 3.9322033898, 4.4745762712);
+  border: 1px solid #505050;
+  color: #aaaaaa;
+  width: 100%;
+  text-align: center;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+.strengthSelector button.active {
+  background-color: #14a2d2;
+  color: #cccccc;
+  border-color: #14a2d2;
+  font-weight: 700;
+}
+.strengthSelector button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.gpSliderContainer {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  color: #aaaaaa;
+  font-size: 14px;
+  height: 100%;
+  width: 100%;
+  padding: 8px;
+}
+.gpSliderContainer label {
+  white-space: nowrap;
+  font-size: 14px;
+  font-family: "Roboto Condensed", sans-serif;
+  font-weight: 700;
+  text-align: center;
+}
+.gpSliderContainer label .minGpValue {
+  color: #14a2d2;
+  padding-left: 4px;
+}
+.gpSliderContainer input[type=range] {
+  width: 100%;
+  height: auto;
+}
+.gpSliderContainer .gpSlider {
+  appearance: slider-horizontal;
+  -webkit-appearance: slider-horizontal;
+  writing-mode: bt-lr;
+  width: 8px;
+  flex-grow: 1;
+  cursor: pointer;
+  accent-color: #14a2d2;
+  margin: 0;
+  padding: 0;
+  order: 1;
+}
+.gpSliderContainer .gpSlider:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+.gpSliderContainer .gpSlider::-webkit-slider-runnable-track {
+  background: rgb(41.7322033898, 46.5474576271, 52.9677966102);
+  border-radius: 10px;
+  height: 100%;
+  outline: 1px solid #505050;
+}
+.gpSliderContainer .gpSlider::-moz-range-track {
+  background: rgb(19.2576271186, 21.4796610169, 24.4423728814);
+  border-radius: 6px;
+  height: 100%;
+  outline: 1px solid #505050;
+}
+.gpSliderContainer .gpSlider::-webkit-slider-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+  height: 16px;
+  width: 16px;
+  background: #14a2d2;
+  border-radius: 50%;
+  cursor: pointer;
+  margin-top: 0px;
+}
+.gpSliderContainer .gpSlider::-moz-range-thumb {
+  height: 16px;
+  width: 16px;
+  background: #14a2d2;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+}
+.gpSliderContainer .gpSliderMaxLabel {
+  font-size: 14px;
+  color: #14a2d2;
+  width: 20%;
+  text-align: center;
+  order: 2;
+}
+
+.thresholdMessagesContainer {
+  margin-top: auto;
+  flex-shrink: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.thresholdMessage {
+  color: #ffcc33;
+  font-size: 12px;
+  padding: 4px;
+  background-color: rgba(255, 204, 51, 0.1);
+  border: 1px solid rgba(255, 204, 51, 0.3);
+  border-radius: 6px;
+  text-align: left;
+  width: 100%;
+}
+
+.chartAndRanksArea {
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+.percentileChartsContainer {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  box-sizing: border-box;
+  position: relative;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+.percentileChartsContainer > canvas,
+.percentileChartsContainer > div {
+  width: 100% !important;
+  height: 100% !important;
+  position: relative;
+}
+
+/* Rate Stat Percentiles Styles */
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  clip-path: inset(50%);
+  overflow: hidden;
+}
+
+:global(.wigo-one-page).wigoDashHeader {
+  margin: 0;
+}
+:global(.wigo-one-page) .wigoDashboardContainer {
+  max-width: 95%;
+  padding: 6px 0 0;
+}
+:global(.wigo-one-page) .wigoDashboardContent {
+  grid-template-columns: repeat(20, minmax(0, 1fr));
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  min-height: 0;
+  background: #1a1d21;
+}
+:global(.wigo-one-page) .headerRowWrapper {
+  min-height: 0;
+  padding: 0 8px;
+}
+:global(.wigo-one-page) .leftColumnWrapper,
+:global(.wigo-one-page) .trendsColumnWrapper,
+:global(.wigo-one-page) .percentilesBand {
+  display: contents;
+}
+:global(.wigo-one-page) .summaryProduction,
+:global(.wigo-one-page) .consistencyAndCategoryWrapper,
+:global(.wigo-one-page) .comparisonColumnWrapper {
+  display: contents;
+}
+:global(.wigo-one-page) .rateStatBarPercentilesContainer,
+:global(.wigo-one-page) .identitySummary,
+:global(.wigo-one-page) .opponentLogContainer,
+:global(.wigo-one-page) .ratingsContainer,
+:global(.wigo-one-page) .teamDriversSummary,
+:global(.wigo-one-page) .consistencyRatingContainer,
+:global(.wigo-one-page) .percentileChartContainer,
+:global(.wigo-one-page) .comparisonMatrixPanel,
+:global(.wigo-one-page) .selectedStatPanel,
+:global(.wigo-one-page) .percentilesBand,
+:global(.wigo-one-page) .toiChartContainer,
+:global(.wigo-one-page) .ppgChartContainer,
+:global(.wigo-one-page) .gameScoreContainer {
+  min-width: 0;
+  min-height: 0;
+  height: auto;
+  max-height: none;
+  border: 1px solid #505050;
+  border-radius: 6px;
+  background: rgb(19.2576271186, 21.4796610169, 24.4423728814);
+  overflow: visible;
+}
+:global(.wigo-one-page) .playerIdentityCard {
+  padding: 8px;
+  grid-template-columns: 104px minmax(0, 1fr);
+  height: 180px;
+}
+:global(.wigo-one-page) .playerHeaderContainer {
+  width: 104px;
+  height: 142px;
+}
+:global(.wigo-one-page) .playerIdentityCopy {
+  padding: 0;
+}
+:global(.wigo-one-page) .playerName {
+  font-size: 20px;
+  overflow-wrap: anywhere;
+}
+:global(.wigo-one-page) .playerName span {
+  font-size: 16px;
+}
+:global(.wigo-one-page) .playerTeam,
+:global(.wigo-one-page) .playerRole {
+  font-size: 12px;
+}
+:global(.wigo-one-page) .playerMetaGrid {
+  padding: 6px;
+}
+:global(.wigo-one-page) .playerMetaGrid span {
+  font-size: 12px;
+  padding: 0 3px;
+}
+:global(.wigo-one-page) .playerMetaGrid small {
+  font-size: 12px;
+}
+:global(.wigo-one-page) .ratingsContainer {
+  padding: 0;
+}
+:global(.wigo-one-page) .consistencyRatingContainer,
+:global(.wigo-one-page) .percentileChartContainer {
+  width: auto;
+  flex: none;
+}
+:global(.wigo-one-page) .percentileChartContainer .chartTitle {
+  padding: 6px;
+}
+:global(.wigo-one-page) .percentileChartContainer .chartTitle h3 {
+  font-size: 12px;
+  letter-spacing: 0;
+}
+:global(.wigo-one-page) .headerRowWrapper {
+  grid-area: context;
+}
+:global(.wigo-one-page) .identitySummary {
+  grid-area: identity;
+}
+:global(.wigo-one-page) .opponentLogContainer {
+  grid-area: sched;
+}
+:global(.wigo-one-page) .ratingsContainer {
+  grid-area: ratings;
+}
+:global(.wigo-one-page) .teamDriversSummary {
+  grid-area: drivers;
+}
+:global(.wigo-one-page) .consistencyRatingContainer {
+  grid-area: consist;
+}
+:global(.wigo-one-page) .percentileChartContainer {
+  grid-area: radar;
+}
+:global(.wigo-one-page) .comparisonMatrixPanel {
+  grid-area: matrix;
+}
+:global(.wigo-one-page) .selectedStatPanel {
+  grid-area: selected;
+}
+:global(.wigo-one-page) .toiChartContainer {
+  grid-area: toi;
+}
+:global(.wigo-one-page) .ppgChartContainer {
+  grid-area: ppg;
+}
+:global(.wigo-one-page) .gameScoreContainer {
+  grid-area: gs;
+}
+:global(.wigo-one-page) .rateStatBarPercentilesContainer {
+  grid-area: pct;
+}
+:global(.wigo-one-page) .selectedStatPanel {
+  display: flex;
+  flex-direction: column;
+  padding: 4px 6px;
+}
+:global(.wigo-one-page) .selectedStatPanel h3 .gameLogMean {
+  color: #cccccc;
+}
+:global(.wigo-one-page) .selectedStatPanel h3 {
+  font-size: 12px;
+  margin: 0 0 2px;
+  color: #14a2d2;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+:global(.wigo-one-page) .selectedStatPanel h3 span {
+  color: #aaaaaa;
+  font-size: 11px;
+  letter-spacing: 0;
+  text-transform: none;
+}
+:global(.wigo-one-page) .selectedStatPanel .gameLogChartContainer {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+:global(.wigo-one-page) .gameLogChartPlot,
+:global(.wigo-one-page) .selectedStatPanel .chartStatus {
+  flex: 1;
+  min-height: 0;
+}
+:global(.wigo-one-page) .chartContainer,
+:global(.wigo-one-page) .chartCanvasContainer {
+  min-height: 0;
+  overflow: visible;
+}
+:global(.wigo-one-page) .chartCanvasContainer {
+  padding: 4px;
+}
+:global(.wigo-one-page) .chartHeader {
+  padding: 3px 6px;
+  border-bottom-width: 1px;
+}
+:global(.wigo-one-page) .chartHeader h3 {
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  padding: 0;
+}
+:global(.wigo-one-page) .chartHeader .toggleButtons button {
+  font-size: 12px;
+  padding: 1px 4px;
+}
+:global(.wigo-one-page) .chartLoadingPlaceholder {
+  min-height: 0;
+  font-size: 12px;
+}
+:global(.wigo-one-page) .matrixToolbar {
+  height: 40px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 4px 8px;
+  font-size: 12px;
+}
+:global(.wigo-one-page) .matrixToolbar > div {
+  width: 410px;
+}
+:global(.wigo-one-page) .selectedStatPanel .gameLogChartContainer {
+  padding: 0;
+  height: auto;
+}
+:global(.wigo-one-page) .selectedStatPanel .averageToggleButtons {
+  gap: 4px;
+  margin-bottom: 4px;
+  display: flex;
+  flex-wrap: wrap;
+}
+:global(.wigo-one-page) .selectedStatPanel .avgButton {
+  font-size: 12px;
+  padding: 2px 4px;
+}
+
+.comparisonMatrixPanel .matrixBand {
+  flex: 1;
+  min-height: 0;
+  overflow-x: auto;
+  padding: 0 0 2px;
+}
+.comparisonMatrixPanel .comparisonMatrix {
+  --wigo-band-pad: 1.5px;
+  width: 100%;
+  table-layout: auto;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: var(--wigo-data-size);
+  line-height: 1.15;
+  font-family: "Roboto Condensed", sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+.comparisonMatrixPanel .comparisonMatrix th,
+.comparisonMatrixPanel .comparisonMatrix td {
+  padding: 1px var(--wigo-band-pad);
+  text-align: right;
+  border-bottom: 1px solid #505050;
+  white-space: nowrap;
+}
+.comparisonMatrixPanel .comparisonMatrix thead th {
+  background: rgb(14.7627118644, 16.4661016949, 18.7372881356);
+  color: #aaaaaa;
+  font-weight: 700;
+}
+.comparisonMatrixPanel .comparisonMatrix .matrixGroupRow th {
+  text-align: center;
+  color: #cccccc;
+  font-weight: 700;
+  border-bottom: 0;
+}
+.comparisonMatrixPanel .comparisonMatrix .matrixGroupRow td {
+  border-bottom: 0;
+}
+.comparisonMatrixPanel .comparisonMatrix .matrixGroupStart {
+  border-left: 2px solid rgb(19.2576271186, 21.4796610169, 24.4423728814);
+}
+.comparisonMatrixPanel .comparisonMatrix th button {
+  padding: 0;
+  background: none;
+  border: 0;
+  color: #aaaaaa;
+  font: inherit;
+  font-weight: 400;
+  cursor: pointer;
+}
+.comparisonMatrixPanel .comparisonMatrix th button[aria-pressed=true] {
+  color: #ffffff;
+  font-weight: 700;
+}
+.comparisonMatrixPanel .comparisonMatrix th button:hover {
+  color: #14a2d2;
+}
+.comparisonMatrixPanel .comparisonMatrix th button:focus-visible {
+  outline: 2px solid rgb(255, 193, 8);
+  outline-offset: 1px;
+  border-radius: 2px;
+}
+.comparisonMatrixPanel .comparisonMatrix th abbr {
+  text-decoration: none;
+}
+.comparisonMatrixPanel .comparisonMatrix tbody th {
+  font-weight: 400;
+}
+.comparisonMatrixPanel .comparisonMatrix [data-selected] {
+  background-color: rgba(20, 162, 210, 0.16);
+}
+.comparisonMatrixPanel .comparisonMatrix thead [data-selected] {
+  box-shadow: inset 0 -2px #14a2d2;
+}
+.comparisonMatrixPanel .comparisonMatrix tr[data-left] > * {
+  background-color: rgba(20, 162, 210, 0.08);
+}
+.comparisonMatrixPanel .comparisonMatrix tr[data-right] > * {
+  background-color: rgba(255, 204, 51, 0.1);
+}
+.comparisonMatrixPanel .comparisonMatrix tr[data-left] > th {
+  color: #14a2d2;
+  box-shadow: inset 3px 0 #14a2d2;
+}
+.comparisonMatrixPanel .comparisonMatrix tr[data-right] > th {
+  color: #ffcc33;
+  box-shadow: inset 3px 0 #ffcc33;
+}
+.comparisonMatrixPanel .comparisonMatrix tbody tr:hover > * {
+  background-color: rgba(237.5, 177.8846153846, 0, 0.2);
+}
+.comparisonMatrixPanel .matrixPeriodCell {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  text-align: left !important;
+  background: rgb(19.2576271186, 21.4796610169, 24.4423728814);
+}
+.comparisonMatrixPanel thead .matrixPeriodCell {
+  background: rgb(14.7627118644, 16.4661016949, 18.7372881356);
+}
+.comparisonMatrixPanel .comparisonMatrix tr[data-left] > .matrixPeriodCell {
+  background: linear-gradient(rgba(20, 162, 210, 0.08), rgba(20, 162, 210, 0.08)), rgb(19.2576271186, 21.4796610169, 24.4423728814);
+}
+.comparisonMatrixPanel .comparisonMatrix tr[data-right] > .matrixPeriodCell {
+  background: linear-gradient(rgba(255, 204, 51, 0.1), rgba(255, 204, 51, 0.1)), rgb(19.2576271186, 21.4796610169, 24.4423728814);
+}
+.comparisonMatrixPanel .comparisonMatrix tbody tr:hover > .matrixPeriodCell {
+  background: linear-gradient(rgba(255, 193, 8, 0.2), rgba(255, 193, 8, 0.2)), rgb(19.2576271186, 21.4796610169, 24.4423728814);
+}
+.comparisonMatrixPanel .matrixDiffRow > * {
+  border-top: 1px solid #aaaaaa;
+  border-bottom: 0;
+  font-weight: 700;
+}
+.comparisonMatrixPanel .periodMarker {
+  margin-left: 4px;
+  font-size: inherit;
+}
+.comparisonMatrixPanel .matrixCaption {
+  color: #aaaaaa;
+}
+.comparisonMatrixPanel .matrixNotes {
+  color: #cccccc;
+  font-style: italic;
+}
+.comparisonMatrixPanel .matrixDiffCell[data-diff-sign] {
+  color: color-mix(in srgb, var(--diff-color) var(--diff-strength), white);
+}
+.comparisonMatrixPanel .matrixDiffCell[data-diff-sign=negative] {
+  --diff-color: #ff6384;
+}
+.comparisonMatrixPanel .matrixDiffCell[data-diff-sign=positive] {
+  --diff-color: #00ff99;
+}
+
+:global(.wigo-one-page) .trendsColumnWrapper > div {
+  height: 100%;
+  flex-shrink: 1;
+}
+:global(.wigo-one-page) .trendsColumnWrapper .chartContainer {
+  height: 100%;
+  min-height: 0;
+}
+:global(.wigo-one-page) .trendsColumnWrapper .chartCanvasContainer {
+  flex: 1;
+  min-height: 0;
+}
+:global(.wigo-one-page) .percentileDesktop {
+  height: 100%;
+  min-height: 0;
+  padding: 0;
+}
+:global(.wigo-one-page) .percentileDesktop .mainContentWrapper {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+}
+:global(.wigo-one-page) .percentileDesktop .percentileFiltersContainer {
+  padding: 4px 8px;
+  gap: 4px;
+}
+:global(.wigo-one-page) .percentileDesktop .filtersTitle {
+  font-size: 12px;
+  margin: 0;
+  padding: 0;
+}
+:global(.wigo-one-page) .percentileDesktop .filterControlsWrapper {
+  gap: 12px;
+}
+:global(.wigo-one-page) .percentileDesktop .strengthSelector button {
+  font-size: 12px;
+  padding: 2px 10px;
+}
+:global(.wigo-one-page) .percentileDesktop .gpSliderContainer {
+  font-size: 12px;
+  flex: 1;
+  min-width: 0;
+}
+:global(.wigo-one-page) .percentileDesktop .thresholdMessagesContainer {
+  margin: 0;
+}
+:global(.wigo-one-page) .percentileDesktop .thresholdMessage {
+  font-size: 12px;
+  padding: 3px;
+  line-height: 1.2;
+}
+:global(.wigo-one-page) .percentileContext {
+  font-size: 12px;
+}
+:global(.wigo-one-page) .percentileTileGrid {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-rows: repeat(4, minmax(0, 1fr));
+  gap: 4px;
+  padding: 4px;
+}
+:global(.wigo-one-page) .percentileTile {
+  border: 1px solid #505050;
+  border-radius: 6px;
+  padding: 2px 6px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  font-size: 12px;
+}
+:global(.wigo-one-page) .percentileTile strong {
+  font-size: 14px;
+  color: #14a2d2;
+}
+:global(.wigo-one-page) .percentileTile small {
+  font-size: 12px;
+  grid-column: 1/-1;
+}
+:global(.wigo-one-page) .percentileTile meter {
+  width: 100%;
+  height: 8px;
+  grid-column: 1/-1;
+  accent-color: #14a2d2;
+}
+
+:global(.wigo-one-page) .consistencyRatingContainer .chartContainer,
+:global(.wigo-one-page) .consistencyRatingContainer .consistencyContent,
+:global(.wigo-one-page) .consistencyRatingContainer .consistencyListArea {
+  overflow: visible;
+}
+:global(.wigo-one-page) .consistencyRatingContainer .consistencyContent {
+  gap: 4px;
+  padding: 4px;
+  align-items: center;
+}
+:global(.wigo-one-page) .consistencyRatingContainer .consistencyChartArea {
+  padding: 0;
+  min-width: 72px;
+  flex: 0 0 38%;
+}
+:global(.wigo-one-page) .consistencyRatingContainer .consistencyListArea {
+  flex: 1;
+  min-width: 0;
+}
+:global(.wigo-one-page) .consistencyRatingContainer .consistencyLabel,
+:global(.wigo-one-page) .consistencyRatingContainer .consistencyValue,
+:global(.wigo-one-page) .consistencyRatingContainer .consistencyCount {
+  font-size: 12px;
+  width: auto;
+  margin: 0;
+}
+:global(.wigo-one-page) .consistencyRatingContainer .consistencyItem {
+  gap: 4px;
+  padding: 2px 0;
+}
+:global(.wigo-one-page) .playerMetaGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 2px;
+}
+:global(.wigo-one-page) .playerMetaGrid span {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  gap: 2px;
+}
+:global(.wigo-one-page) .playerIdentityCard {
+  height: 198px;
+}
+:global(.wigo-one-page) .chartToolbar button {
+  font-size: 12px;
+  background: #1a1d21;
+  color: #cccccc;
+  border: 1px solid #505050;
+  border-radius: 6px;
+}
+
+:global(.wigo-one-page) .playerName {
+  line-height: 1.1;
+}
+:global(.wigo-one-page) .headshotContainer {
+  overflow: visible;
+}
+:global(.wigo-one-page) .teamLogo {
+  width: 100%;
+  left: 0;
+  transform: none;
+}
+:global(.wigo-one-page) .percentileDesktop {
+  overflow: visible;
+}
+:global(.wigo-one-page) .percentileDesktop .mainContentWrapper,
+:global(.wigo-one-page) .percentileDesktop .filterControlsWrapper {
+  overflow: visible;
+}
+:global(.wigo-one-page) .percentileDesktop .filterControlsWrapper {
+  align-items: center;
+}
+:global(.wigo-one-page) .percentileDesktop .strengthSelector {
+  flex: 0 0 200px;
+  width: auto;
+  padding: 0;
+}
+:global(.wigo-one-page) .percentileDesktop .gpSliderContainer {
+  padding: 0;
+  gap: 6px;
+  width: auto;
+}
+:global(.wigo-one-page) .percentileDesktop .gpSliderContainer label {
+  font-size: 12px;
+}
+:global(.wigo-one-page) .percentileDesktop .gpSliderMaxLabel {
+  width: auto;
+  flex: none;
+  font-size: 12px;
+}
+:global(.wigo-one-page) .percentileDesktop .gpSlider {
+  min-width: 50px;
+}
+:global(.wigo-one-page) .radarContext,
+:global(.wigo-one-page) .consistencyGp {
+  font-size: 12px;
+  letter-spacing: 0;
+  text-transform: none;
+}
+:global(.wigo-one-page) .percentileChartContainer {
+  display: flex;
+  flex-direction: column;
+}
+:global(.wigo-one-page).wigoDashHeader :global(.wigo-trend-legend) {
+  font-size: 12px;
+  text-transform: none;
+  white-space: nowrap;
+}
+
+.selectedStatPanel :global(.recharts-surface) {
+  display: block;
+}
+
+:global(.wigo-one-page) .noSelectedPlayer,
+:global(.wigo-one-page) .wigoContextTagline {
+  font-size: 12px;
+}
+:global(.wigo-one-page) .percentileTile meter::-webkit-meter-bar {
+  background: #1a1d21;
+  border: 1px solid #505050;
+}
+:global(.wigo-one-page) .percentileTile meter::-webkit-meter-optimum-value {
+  background: #14a2d2;
+}
+:global(.wigo-one-page) .percentileTile meter::-moz-meter-bar {
+  background: #14a2d2;
+}
+
+:global(.wigo-one-page).wigoDashHeader {
+  --wigo-data-size: 11px;
+  --wigo-emphasis-size: 16px;
+}
+:global(.wigo-one-page) .wigoDashboardContent {
+  background: #111b20;
+  font-variant-numeric: tabular-nums;
+  grid-template-areas: "context context context context context context context context context context context context context context context context context context context context " "identity identity identity identity selected selected selected selected selected selected selected selected ratings ratings ratings ratings radar radar radar radar " "prod prod prod prod selected selected selected selected selected selected selected selected ratings ratings ratings ratings radar radar radar radar " "pace pace pace pace toi toi toi toi ppg ppg ppg ppg gs gs gs gs radar radar radar radar " "sched sched sched sched consist consist consist consist pct pct pct pct pct pct pct pct drivers drivers drivers drivers " "matrix matrix matrix matrix matrix matrix matrix matrix matrix matrix matrix matrix matrix matrix matrix matrix matrix matrix matrix matrix ";
+}
+:global(.wigo-one-page) .headerRowWrapper,
+:global(.wigo-one-page) .identitySummary,
+:global(.wigo-one-page) .opponentLogContainer,
+:global(.wigo-one-page) .ratingsContainer,
+:global(.wigo-one-page) .teamDriversSummary,
+:global(.wigo-one-page) .consistencyRatingContainer,
+:global(.wigo-one-page) .percentileChartContainer,
+:global(.wigo-one-page) .selectedStatPanel,
+:global(.wigo-one-page) .rateStatBarPercentilesContainer,
+:global(.wigo-one-page) .toiChartContainer,
+:global(.wigo-one-page) .ppgChartContainer,
+:global(.wigo-one-page) .gameScoreContainer {
+  background: #17272e;
+  border-color: #34464e;
+  color: #edf3f5;
+}
+:global(.wigo-one-page) .selectedStatPanel {
+  border-color: #427184;
+}
+:global(.wigo-one-page) .identitySummary,
+:global(.wigo-one-page) .opponentLogContainer,
+:global(.wigo-one-page) .ratingsContainer,
+:global(.wigo-one-page) .teamDriversSummary,
+:global(.wigo-one-page) .consistencyRatingContainer,
+:global(.wigo-one-page) .percentileChartContainer,
+:global(.wigo-one-page) .comparisonMatrixPanel,
+:global(.wigo-one-page) .selectedStatPanel,
+:global(.wigo-one-page) .rateStatBarPercentilesContainer,
+:global(.wigo-one-page) .toiChartContainer,
+:global(.wigo-one-page) .ppgChartContainer,
+:global(.wigo-one-page) .gameScoreContainer {
+  overflow: hidden;
+}
+:global(.wigo-one-page) .comparisonMatrixPanel {
+  display: flex;
+  flex-direction: column;
+  container-type: inline-size;
+}
+:global(.wigo-one-page) .matrixToolbar {
+  height: auto;
+  min-height: 28px;
+  gap: 10px;
+  padding: 2px 8px;
+  font-size: 11px;
+}
+:global(.wigo-one-page) .matrixToolbar > div {
+  width: 300px;
+}
+:global(.wigo-one-page) .identitySummary {
+  position: relative;
+}
+:global(.wigo-one-page) .identitySummary::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3px;
+  border-radius: 6px 6px 0 0;
+  background: var(--primary-color, #14a2d2);
+  pointer-events: none;
+}
+
+:global(.wigo-one-page.wigo-fit) .wigoDashboardContent {
+  height: calc(var(--wigo-fit-height) - 4px);
+  grid-template-rows: auto 90px 66px minmax(130px, 1fr) 156px auto;
+}
+
+@media (min-width: 1400px) and (min-height: 860px) {
+  .wigoDashHeader:global(.wigo-one-page.wigo-fit) {
+    --wigo-data-size: 12px;
+    --wigo-emphasis-size: 16px;
+  }
+  .wigoDashHeader:global(.wigo-one-page.wigo-fit) .wigoDashboardContent {
+    grid-template-rows: auto 106px 72px minmax(170px, 1fr) 178px auto;
+  }
+  .wigoDashHeader:global(.wigo-one-page.wigo-fit) .comparisonMatrix {
+    --wigo-band-pad: 2px;
+  }
+}
+:global(.wigo-one-page.wigo-flow) .wigoDashboardContent {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: none;
+  grid-auto-rows: auto;
+  align-items: start;
+  grid-template-areas: "context context" "identity sched" "prod sched" "consist pace" "pct pct" "ratings drivers" "radar radar" "matrix matrix" "selected toi" "ppg gs";
+}
+:global(.wigo-one-page.wigo-flow) .selectedStatPanel,
+:global(.wigo-one-page.wigo-flow) .toiChartContainer,
+:global(.wigo-one-page.wigo-flow) .ppgChartContainer,
+:global(.wigo-one-page.wigo-flow) .gameScoreContainer {
+  height: 240px;
+}
+:global(.wigo-one-page.wigo-flow) .identitySummary,
+:global(.wigo-one-page.wigo-flow) .productionSnapshot,
+:global(.wigo-one-page.wigo-flow) .ratingsContainer,
+:global(.wigo-one-page.wigo-flow) .teamDriversSummary {
+  align-self: stretch;
+}
+:global(.wigo-one-page.wigo-flow) .consistencyRatingContainer {
+  height: 220px;
+}
+:global(.wigo-one-page.wigo-flow) .percentileChartContainer {
+  height: 320px;
+}
+
+:global(.wigo-one-page) .identitySummary {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr);
+  column-gap: 8px;
+  align-content: center;
+  padding: 4px 6px 2px;
+  background: linear-gradient(105deg, color-mix(in srgb, var(--primary-color) 24%, transparent), rgb(19.2576271186, 21.4796610169, 24.4423728814) 70%);
+}
+:global(.wigo-one-page) .playerIdentityCard {
+  display: contents;
+}
+:global(.wigo-one-page) .playerHeaderContainer {
+  grid-row: 1/span 2;
+  align-self: center;
+  width: 52px;
+  min-width: 0;
+  height: 64px;
+}
+:global(.wigo-one-page) .playerIdentityCopy {
+  padding: 0;
+}
+:global(.wigo-one-page) .playerName {
+  display: block;
+  margin: 1px 0;
+  font-size: var(--wigo-emphasis-size);
+  line-height: 1.1;
+}
+:global(.wigo-one-page) .playerName span {
+  display: inline;
+  margin-right: 0.3em;
+  font-size: inherit;
+}
+:global(.wigo-one-page) .playerName[data-name-length=long] {
+  font-size: 11px;
+  letter-spacing: 0;
+  overflow-wrap: anywhere;
+}
+:global(.wigo-one-page) .playerTeam,
+:global(.wigo-one-page) .playerRole {
+  font-size: 11px;
+  line-height: 1.2;
+  letter-spacing: 0.02em;
+}
+:global(.wigo-one-page) .playerMetaGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 8px;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+}
+:global(.wigo-one-page) .playerMetaGrid > span {
+  flex-direction: row;
+  align-items: baseline;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  font-family: "Roboto Condensed", sans-serif;
+  font-size: var(--wigo-data-size);
+  line-height: 1.15;
+}
+:global(.wigo-one-page) .playerMetaGrid small {
+  font-size: 11px;
+  letter-spacing: 0;
+  color: #aaaaaa;
+}
+
+:global(.wigo-one-page) .chartHeader {
+  flex-wrap: wrap;
+  gap: 0 6px;
+  padding: 2px 6px;
+  border-bottom-width: 1px;
+}
+:global(.wigo-one-page) .chartHeader h3 {
+  padding: 0;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+:global(.wigo-one-page) .chartToolbar {
+  flex-wrap: wrap;
+  gap: 2px 4px;
+  font-size: 11px;
+}
+:global(.wigo-one-page) .chartToolbar button,
+:global(.wigo-one-page) .chartHeader .toggleButtons button {
+  font-size: 11px;
+  padding: 0 4px;
+  line-height: 1.4;
+}
+:global(.wigo-one-page) .chartCanvasContainer {
+  padding: 2px 4px;
+}
+
+:global(.wigo-one-page) .consistencyRatingContainer .consistencyContent {
+  padding: 0 4px;
+}
+:global(.wigo-one-page) .consistencyRatingContainer .consistencyChartArea {
+  min-height: 0;
+  height: 100%;
+  padding: 2px;
+  overflow: hidden;
+}
+:global(.wigo-one-page) .consistencyRatingContainer .consistencyListArea ul {
+  height: auto;
+}
+:global(.wigo-one-page) .consistencyRatingContainer .consistencyItem {
+  margin: 0;
+  padding: 0;
+  line-height: 1.1;
+}
+
+:global(.wigo-one-page) .percentileDesktop {
+  display: flex;
+  flex-direction: column;
+}
+:global(.wigo-one-page) .percentileDesktop .mainContentWrapper {
+  flex: 1;
+  min-height: 0;
+}
+:global(.wigo-one-page) .percentileDesktop .percentileFiltersContainer {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: 10px;
+  row-gap: 1px;
+  padding: 2px 6px 0;
+}
+:global(.wigo-one-page) .percentileDesktop .filtersTitle {
+  flex: 0 0 auto;
+  width: auto;
+  text-align: left;
+}
+:global(.wigo-one-page) .percentileDesktop .filterControlsWrapper {
+  flex: 1 1 0;
+  flex-wrap: nowrap;
+  min-width: 0;
+}
+:global(.wigo-one-page) .percentileDesktop .gpSliderContainer {
+  max-width: 180px;
+}
+:global(.wigo-one-page) .percentileDesktop .percentileStatusRow {
+  flex: 1 0 100%;
+}
+:global(.wigo-one-page) .percentileDesktop .filtersTitle {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+}
+:global(.wigo-one-page) .percentileDesktop .filterControlsWrapper {
+  gap: 2px 10px;
+}
+:global(.wigo-one-page) .percentileDesktop .strengthSelector {
+  flex: 0 0 auto;
+}
+:global(.wigo-one-page) .percentileDesktop .gpSliderContainer {
+  flex: 1 1 120px;
+  min-width: 0;
+}
+:global(.wigo-one-page) .percentileDesktop .gpSlider {
+  min-width: 0;
+  flex: 1;
+}
+:global(.wigo-one-page) .percentileDesktop .strengthSelector button {
+  font-size: 11px;
+  padding: 0 8px;
+  line-height: 1.5;
+}
+:global(.wigo-one-page) .percentileDesktop .gpSliderContainer, :global(.wigo-one-page) .percentileDesktop .gpSliderContainer label, :global(.wigo-one-page) .percentileDesktop .gpSliderMaxLabel {
+  font-size: 11px;
+}
+:global(.wigo-one-page) .percentileDesktop .thresholdMessage {
+  font-size: 11px;
+  padding: 1px 4px;
+  line-height: 1.2;
+}
+:global(.wigo-one-page) .percentileContext {
+  font-size: 11px;
+  line-height: 1.2;
+}
+:global(.wigo-one-page) .percentileTileGrid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: repeat(6, minmax(0, 1fr));
+  grid-auto-flow: column;
+  gap: 1px 8px;
+  padding: 1px 6px 3px;
+}
+:global(.wigo-one-page) .percentileTile {
+  position: relative;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  column-gap: 4px;
+  padding: 0 2px 2px;
+  border: 0;
+  border-radius: 0;
+  font-size: 11px;
+  line-height: 1.2;
+}
+:global(.wigo-one-page) .percentileTile strong {
+  font-size: var(--wigo-data-size);
+}
+:global(.wigo-one-page) .percentileTile small {
+  grid-column: auto;
+  font-size: 11px;
+  color: #aaaaaa;
+}
+:global(.wigo-one-page) .percentileTile meter {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+}
+
+:global(.wigo-one-page) .thresholdChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 4px;
+  margin: 1px 0;
+}
+:global(.wigo-one-page) .thresholdChips .thresholdMessage {
+  width: auto;
+  margin: 0;
+  padding: 0 5px;
+  border-radius: 6px;
+  font-size: 11px;
+  line-height: 1.35;
+}
+:global(.wigo-one-page) .selectedStatPanel .averageToggleButtons {
+  gap: 2px 4px;
+  margin-bottom: 2px;
+}
+:global(.wigo-one-page) .selectedStatPanel .avgButton {
+  font-size: 11px;
+  padding: 0 3px;
+  line-height: 1.45;
+}
+
+:global(.wigo-one-page) .headerRowWrapper {
+  min-height: 0;
+  height: 32px;
+  padding: 1px 6px;
+}
+:global(.wigo-one-page) .wigoContextIdentity {
+  align-items: center;
+  height: 30px;
+}
+:global(.wigo-one-page) .spanColorBlue {
+  font-size: 20px;
+  line-height: 30px;
+}
+:global(.wigo-one-page) .nameSearchBarContainer,
+:global(.wigo-one-page) .selectedPlayerControl {
+  height: 28px;
+}
+:global(.wigo-one-page) .selectedPlayerThumb {
+  width: 28px;
+  flex-basis: 28px;
+}
+
+:global(.wigo-one-page.wigo-fit) .wigoDashboardContent {
+  gap: 4px;
+}
+:global(.wigo-one-page.wigo-fit) .wigoDashboardContainer {
+  padding-top: 4px;
+}
+
+:global(.wigo-one-page) .percentileChartContainer .chartTitle {
+  gap: 8px;
+}
+
+@media (min-width: 1800px) and (min-height: 1000px) {
+  .wigoDashHeader:global(.wigo-one-page.wigo-fit) {
+    --wigo-data-size: 14px;
+    --wigo-emphasis-size: 20px;
+  }
+  .wigoDashHeader:global(.wigo-one-page.wigo-fit) .wigoDashboardContent {
+    grid-template-rows: auto 130px 102px 232px auto minmax(240px, 1fr);
+  }
+  .wigoDashHeader:global(.wigo-one-page.wigo-fit) .comparisonMatrix {
+    --wigo-band-pad: 3px;
+  }
+  .wigoDashHeader:global(.wigo-one-page.wigo-fit) .identitySummary {
+    grid-template-columns: 96px minmax(0, 1fr);
+    column-gap: 16px;
+    padding: 8px 12px;
+  }
+  .wigoDashHeader:global(.wigo-one-page.wigo-fit) .playerHeaderContainer {
+    width: 96px;
+    height: 112px;
+  }
+  .wigoDashHeader:global(.wigo-one-page.wigo-fit) .playerName:not([data-name-length=long]) {
+    font-size: 28px;
+  }
+  .wigoDashHeader:global(.wigo-one-page.wigo-fit) .playerTeam,
+  .wigoDashHeader:global(.wigo-one-page.wigo-fit) .playerRole {
+    font-size: 14px;
+  }
+  .wigoDashHeader:global(.wigo-one-page.wigo-fit) .playerMetaGrid > span {
+    font-size: 16px;
+  }
+  .wigoDashHeader:global(.wigo-one-page.wigo-fit) .playerMetaGrid small {
+    font-size: 12px;
+  }
+  .wigoDashHeader:global(.wigo-one-page.wigo-fit) .consistencyRatingContainer .consistencyChartArea {
+    flex-basis: 46%;
+  }
+  .wigoDashHeader:global(.wigo-one-page.wigo-fit) .consistencyRatingContainer .consistencyLabel,
+  .wigoDashHeader:global(.wigo-one-page.wigo-fit) .consistencyRatingContainer .consistencyValue,
+  .wigoDashHeader:global(.wigo-one-page.wigo-fit) .consistencyRatingContainer .consistencyCount {
+    font-size: 14px;
+  }
+  .wigoDashHeader:global(.wigo-one-page.wigo-fit) .consistencyRatingContainer .consistencyItem {
+    line-height: 1.5;
+  }
+}
+@media (max-width: 768px) {
+  .opponentLogContainer {
+    height: auto;
+  }
+  .consistencyAndCategoryWrapper {
+    flex-direction: column;
+    align-items: stretch;
+    height: auto;
+    min-height: 0;
+    gap: 16px;
+    border-bottom: 0;
+  }
+  .consistencyRatingContainer,
+  .percentileChartContainer {
+    flex: none;
+    width: 100%;
+    border-left: 0;
+  }
+  .consistencyRatingContainer {
+    height: 240px;
+  }
+  .consistencyGp {
+    font-size: 12px;
+  }
+  .percentileChartContainer {
+    height: 300px;
+  }
+  .percentileChartContainer .chartTitle h3 {
+    letter-spacing: 0.06em;
+  }
+  .toiChartContainer,
+  .ppgChartContainer,
+  .gameScoreContainer {
+    height: 260px;
+    min-height: 0;
+  }
+  .chartHeader {
+    flex-wrap: wrap;
+    gap: 4px 8px;
+  }
+  .chartHeader h3 {
+    letter-spacing: 0.06em;
+  }
+  .chartHeader :global(.wigo-trend-legend) {
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  .chartHeader .toggleButtons {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+  }
+  .chartToolbar {
+    flex-wrap: wrap;
+  }
+  .chartToolbar button,
+  .chartToolbar .toggleButtons button {
+    min-height: 32px;
+    margin-left: 0;
+    padding: 2px 8px;
+    border: 1px solid #505050;
+    border-radius: 6px;
+    background-color: rgb(3.5254237288, 3.9322033898, 4.4745762712);
+    color: #aaaaaa;
+    font-size: 12px;
+  }
+  .rateStatBarPercentilesContainer,
+  .rateStatPercentilesComponent,
+  .percentileFiltersContainer,
+  .chartAndRanksArea {
+    height: auto;
+    min-height: 0;
+    flex-basis: auto;
+  }
+  .percentileContext {
+    padding: 0 8px;
+    color: #aaaaaa;
+    font-size: 12px;
+  }
+  .percentileChartsContainer {
+    flex: none;
+    height: 416px;
+  }
+}
+.bandNote {
+  flex-shrink: 0;
+  margin: 0;
+  padding: 4px 8px;
+  color: #aaaaaa;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+@media (max-width: 768px) {
+  .selectedPlayerControl button {
+    min-height: 32px;
+  }
+}
+:global(.wigo-one-page) .chartHeader {
+  justify-content: flex-start;
+  flex-wrap: nowrap;
+  gap: 0 4px;
+}
+:global(.wigo-one-page) .chartHeader .chartToolbar,
+:global(.wigo-one-page) .chartHeader .toggleButtons {
+  display: contents;
+}
+:global(.wigo-one-page) .chartHeader :global(.wigo-trend-legend) {
+  order: 1;
+  margin-right: auto;
+  min-width: 0;
+  white-space: nowrap;
+}
+:global(.wigo-one-page) .chartHeader > button,
+:global(.wigo-one-page) .chartHeader .chartToolbar button,
+:global(.wigo-one-page) .chartHeader .toggleButtons button,
+:global(.wigo-one-page) .chartHeader .chartToolbar details {
+  order: 2;
+  flex: none;
+  white-space: nowrap;
+}
+:global(.wigo-one-page) .chartHeader .toggleButtons button,
+:global(.wigo-one-page) .chartToolbar button {
+  margin: 0;
+  padding: 0 4px;
+  line-height: 16px;
+}
+:global(.wigo-one-page) .chartHeader .toggleButtons button:disabled,
+:global(.wigo-one-page) .chartToolbar button:disabled {
+  opacity: 1;
+  border-color: #14a2d2;
+  background: rgba(20, 162, 210, 0.16);
+  color: #cccccc;
+  cursor: default;
+}
+:global(.wigo-one-page) .selectedStatPanel .averageToggleButtons {
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: space-between;
+  gap: 0 4px;
+}
+:global(.wigo-one-page) .selectedStatPanel .avgButton {
+  padding: 0;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: none;
+  color: #aaaaaa;
+  font-weight: 400;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+:global(.wigo-one-page) .selectedStatPanel .avgButton:hover {
+  background: none;
+  color: #cccccc;
+}
+:global(.wigo-one-page) .selectedStatPanel .avgButton.active {
+  outline: 0;
+}
+:global(.wigo-one-page) .selectedStatPanel .avgButton:focus-visible {
+  outline: 2px solid rgb(255, 193, 8);
+  outline-offset: 1px;
+}
+
+:global(.wigo-one-page) .percentileStatusRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1px 8px;
+  padding: 0 6px;
+}
+:global(.wigo-one-page) .percentileStatusRow .percentileContext {
+  color: #aaaaaa;
+  white-space: nowrap;
+}
+:global(.wigo-one-page) .percentileStatusRow .thresholdChips {
+  margin: 0;
+}
+
+.wigoDashHeader .chartHeader h3,
+.wigoDashHeader .percentileChartContainer .chartTitle h3,
+.wigoDashHeader .selectedStatPanel h3,
+.wigoDashHeader .percentileFiltersContainer .filtersTitle {
+  margin: 0;
+  padding: 0;
+  color: #aaaaaa;
+  font-family: "Roboto Condensed", sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.wigoDashHeader .chartHeader h3 {
+  margin-right: auto;
+}
+.wigoDashHeader .selectedStatPanel h3 span {
+  font-weight: 400;
+}
+.wigoDashHeader .percentileFiltersContainer .filtersTitle {
+  border-bottom: 0;
+}
+.wigoDashHeader .percentileChartContainer .chartTitle {
+  justify-content: space-between;
+  padding: 2px 6px;
+  border-bottom: 1px solid rgb(32.7423728814, 36.5203389831, 41.5576271186);
+  background-color: rgb(14.7627118644, 16.4661016949, 18.7372881356);
+  text-transform: none;
+}
+.wigoDashHeader .radarContext {
+  color: #aaaaaa;
+  font-size: 11px;
+  white-space: nowrap;
+}
+.wigoDashHeader .strengthSelector button {
+  border-radius: 6px;
+}
+.wigoDashHeader .strengthSelector button.active {
+  color: #101214;
+}
+.wigoDashHeader .helpButton,
+.wigoDashHeader .chartToolbar .helpButton {
+  flex: none;
+  min-height: 0;
+  margin: 0;
+  padding: 0 2px;
+  border: 0;
+  background: none;
+  color: #cccccc;
+  font-size: 14px;
+  line-height: 16px;
+  cursor: help;
+}
+.wigoDashHeader .helpButton:hover,
+.wigoDashHeader .chartToolbar .helpButton:hover {
+  background: none;
+  color: #ffffff;
+}
+.wigoDashHeader .helpButton:focus-visible,
+.wigoDashHeader .chartToolbar .helpButton:focus-visible {
+  outline: 2px solid #14a2d2;
+  outline-offset: 1px;
+}
+
+@media (max-width: 768px) {
+  .wigoDashHeader .percentileFiltersContainer .filtersTitle {
+    padding: 6px 10px;
+  }
+  .wigoDashHeader .gpSliderContainer {
+    gap: 6px;
+  }
+}
+.helpPanel {
+  position: fixed;
+  inset: auto;
+  width: min(320px, 100vw - 16px);
+  max-height: calc(100vh - 16px);
+  margin: 0;
+  padding: 10px 12px;
+  overflow-y: auto;
+  border: 1px solid #505050;
+  border-radius: 10px;
+  background: rgb(14.7627118644, 16.4661016949, 18.7372881356);
+  color: #cccccc;
+  font-size: 12px;
+  line-height: 1.4;
+}
+.helpPanel p {
+  margin: 0 0 8px;
+}
+.helpPanel p:last-child {
+  margin-bottom: 0;
+}
+
+.wigoDashHeader .noPlayerMessage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #aaaaaa;
+  font-size: 12px;
+}
+
+@media (max-width: 768px) {
+  .wigoDashHeader .strengthSelector button {
+    min-width: 40px;
+    min-height: 32px;
+  }
+  .wigoDashHeader .filterControlsWrapper {
+    flex-wrap: wrap;
+  }
+  .wigoDashHeader .strengthSelector {
+    flex: 0 0 auto;
+    width: auto;
+    justify-content: flex-start;
+  }
+  .wigoDashHeader .gpSliderContainer {
+    flex: 1 1 100%;
+  }
+  .wigoDashHeader .gpSliderContainer .gpSlider {
+    min-height: 28px;
+  }
+  .wigoDashHeader .gpSliderContainer .gpSlider::-webkit-slider-runnable-track {
+    height: 8px;
+  }
+  .wigoDashHeader .gpSliderContainer .gpSlider::-moz-range-track {
+    height: 8px;
+  }
+  .wigoDashHeader .gpSliderContainer .gpSlider::-webkit-slider-thumb {
+    width: 20px;
+    height: 20px;
+    margin-top: -6px;
+  }
+  .wigoDashHeader .gpSliderContainer .gpSlider::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+  }
+  .wigoDashHeader .helpButton,
+  .wigoDashHeader .chartToolbar .helpButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 28px;
+    min-height: 28px;
+  }
+  .wigoDashHeader .chartToolbar .toggleButtons button:disabled {
+    opacity: 1;
+    border-color: #14a2d2;
+    background: rgba(20, 162, 210, 0.16);
+    color: #cccccc;
+  }
+}
+@media (max-width: 768px) {
+  .comparisonMatrixPanel {
+    display: block;
+  }
+  .comparisonMatrixPanel .matrixToolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 10px;
+    padding: 6px 4px;
+    font-size: 12px;
+  }
+  .comparisonMatrixPanel .bandJump {
+    display: flex;
+    gap: 6px;
+    padding: 0 4px 6px;
+  }
+  .comparisonMatrixPanel .bandJump button {
+    min-height: 32px;
+    padding: 0 12px;
+    border: 1px solid #505050;
+    border-radius: 6px;
+    background: #1a1d21;
+    color: #cccccc;
+    font-size: 12px;
+  }
+  .comparisonMatrixPanel .matrixBand {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+  }
+  .comparisonMatrixPanel .matrixBand[data-at-end] {
+    mask-image: none;
+  }
+  .comparisonMatrixPanel .matrixBand:focus-visible {
+    outline: 2px solid rgb(255, 193, 8);
+    outline-offset: 2px;
+  }
+  .comparisonMatrixPanel .comparisonMatrix {
+    --wigo-band-pad: 6px;
+    width: auto;
+    font-size: 13px;
+  }
+  .comparisonMatrixPanel .comparisonMatrix th,
+  .comparisonMatrixPanel .comparisonMatrix td {
+    height: 28px;
+  }
+  .comparisonMatrixPanel .comparisonMatrix thead tr:last-child th {
+    height: 32px;
+  }
+  .comparisonMatrixPanel .comparisonMatrix th button {
+    min-height: 28px;
+    min-width: 24px;
+  }
+  .comparisonMatrixPanel .matrixPeriodCell {
+    min-width: 45px;
+  }
+  .comparisonMatrixPanel .comparisonMatrix .matrixGroupRow th {
+    text-align: left;
+  }
+  .comparisonMatrixPanel .matrixGroupTitle {
+    position: sticky;
+    left: 52px;
+  }
+  .ratingsContainer {
+    height: 372px;
+  }
+  .selectedStatPanel {
+    height: 280px;
+    display: flex;
+    flex-direction: column;
+    padding: 4px;
+    margin-top: 8px;
+  }
+  .selectedStatPanel h3 {
+    margin: 0 0 4px;
+    font-size: 12px;
+  }
+  .selectedStatPanel .gameLogChartContainer {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .selectedStatPanel .gameLogChartPlot,
+  .selectedStatPanel .chartStatus {
+    flex: 1;
+    min-height: 0;
+  }
+  .selectedStatPanel .averageToggleButtons {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 4px;
+  }
+}

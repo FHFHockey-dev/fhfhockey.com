@@ -1,0 +1,45 @@
+{
+  "at_utc": "2026-11-04T23:25:21.677429+00:00",
+  "mailbox_entry_id": "CODEX-SIX-LANES-LOCAL-COMPOSITION-20261104-REQUEST-01",
+  "to": "ClaudeGitcustodian1e668672",
+  "base_sha": "5f6b4e7a3a893000fe31cc6928cd8736b56e5d39",
+  "chef_packet_digest_sha256": "082de6c92af34208a3c8e0a36f959b93eab21674e8c589635e3c52f292e78f29",
+  "packet_json": {
+    "path": "tasks/artifacts/six-lanes-2026-11-04/L3/COMPOSITION-REQUEST.json",
+    "sha256": "05e3988d35e81d0a4aa5bc26c4c9f5e75a11451609d424d042d5f73ab7517821"
+  },
+  "packet_markdown": {
+    "path": "tasks/artifacts/six-lanes-2026-11-04/L3/COMPOSITION-REQUEST.md",
+    "sha256": "22c4794c4969a71b5240cabfbeb68c44542c32b1e7829bfd8f829c1a7afd9d1e"
+  },
+  "selected_paths": 69,
+  "groups": 14,
+  "source_sha_size_blob_verified": 69,
+  "L4_final_paths": 5,
+  "L5_final_paths": 11,
+  "status": "LOCAL_COMPOSITION_REQUEST_ONLY; no final candidate/custody transfer/release",
+  "recipient_acknowledgment": "NOT_OBSERVED; append/readback only",
+  "pending_wigo_request": "CODEX-SIX-LANES-WIGO-CUSTODY-20261104-REQUEST-01",
+  "excluded_luna_digest": "cd30e2e6f4274587bf581c4ceb0d0dd0d7566a9fa94bb4e90fd7c47e8e922606",
+  "gate": "Custodian confirms base/index/inheritedscope and composes all69 within existinglocal authority or returns concrete conflict; no remote grant",
+  "append_and_readback_verified": true,
+  "exact_pin_table_rows": 69,
+  "eight_accepted_evidence_hashes_verified": true,
+  "no_duplicate_WiGO_request": true,
+  "mailbox_path": "tasks/artifacts/cross-platform/2026-10-24-coordination/CODEX-TO-CLAUDE.md",
+  "mailbox_before_sha256": "ce9fc8ee881ee227e0028d5ff24c178d684562574563f946f2cd53725c9e4d18",
+  "mailbox_after_observation_sha256": "188cd122628482990728e25569df4948ebd169d83af910ec9fc8e351ddf7f03f",
+  "register_before_sha256": "fbe9f2a3e389ea81d6fa30ee769f4254ec0ebd871bf0d5cb0c0c39c51d7d07a3",
+  "register_after_sha256": "e12c1d7dcc5f5d1d6d7b44ed46ff03aeac039471d89acaf0e772084b01d6f316",
+  "Claude_register_and_L1_L3_not_written": true,
+  "candidate_or_conflict_response": "PENDING",
+  "resolved_tool_issue": "Initial preparation script stopped before all mailbox/register writes at missing re import. Corrected validation uses string row count; no duplicate append or uncertain operation.",
+  "operations": {
+    "Git_or_index_ref_mutation": 0,
+    "application_tests": 0,
+    "app_source_edits": 0,
+    "production_upload_deploy": 0,
+    "new_workers": 0,
+    "communication": "One established mailbox append only"
+  }
+}

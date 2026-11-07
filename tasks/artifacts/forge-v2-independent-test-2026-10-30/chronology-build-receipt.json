@@ -1,0 +1,16 @@
+{
+  "check": "chronology-build",
+  "command": [
+    "/tmp/forge-v2-independent-hkh8ulbm/web/node_modules/.bin/esbuild",
+    "../tasks/artifacts/forge-v2-remediation-2026-10-30/chronology-check.ts",
+    "--bundle",
+    "--platform=node",
+    "--format=cjs",
+    "--outfile=/tmp/forge-v2-independent-hkh8ulbm/chronology.cjs"
+  ],
+  "cwd": "/tmp/forge-v2-independent-hkh8ulbm/web",
+  "exit": 0,
+  "durationSeconds": 0.02543497085571289,
+  "environment": "allowlisted; no inherited credentials; no env files copied",
+  "log": "chronology-build.log"
+}

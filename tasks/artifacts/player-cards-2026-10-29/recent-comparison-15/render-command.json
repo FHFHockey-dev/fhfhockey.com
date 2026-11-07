@@ -1,0 +1,10 @@
+{
+  "command": [
+    "node",
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/render-preview.mjs"
+  ],
+  "cwd": "/Users/tim/Code/fhfhockey.com/web",
+  "exitCode": 0,
+  "elapsedSeconds": 0.183,
+  "sharedSlot": "parent run-check.py verify owns token"
+}

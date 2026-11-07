@@ -1,0 +1,39 @@
+{
+  "verifiedAt": "2026-10-31T21:49:37.869178+00:00",
+  "focusedTests": {
+    "passed": 175,
+    "failed": 0
+  },
+  "finalTargetedTests": {
+    "passed": 32,
+    "skipped": 143,
+    "reason": "After test-helper type annotation; production helper unchanged."
+  },
+  "typecheck": {
+    "initial": "failed test literal-widening only; retained typecheck-initial.log",
+    "final": "passed exit0"
+  },
+  "lint": "passed exit0",
+  "savedReplyReplays": 2,
+  "originalHeldResultsReproducedExactly": true,
+  "candidateLabelFieldsMatch": true,
+  "historicalModelFailuresUnchanged": true,
+  "unchangedApplicationPins": 13,
+  "unchangedE03ExecutionArtifacts": 14,
+  "unchangedPreparationArtifacts": 26,
+  "realLedgerUnchanged": true,
+  "realLedgerSha256": "fc59014d3ff7f3abdfdec0703ffa77f80e5d02ef764f19d21cb85fc08adbd8f2",
+  "historicalLedgerUnchanged": true,
+  "cumulativeCalls": 4,
+  "cumulativeMaxCalls": 20,
+  "aggregateExposureNanoUsd": 263950397,
+  "capNanoUsd": 1000000000,
+  "ledgerEnabled": false,
+  "actualProviderRequestsThisPhase": 0,
+  "productionRequests": 0,
+  "builds": 0,
+  "deployments": 0,
+  "independentReview": "pending",
+  "runtimeIntegration": false,
+  "modelAccuracyClaim": false
+}

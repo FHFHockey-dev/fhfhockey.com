@@ -1,0 +1,269 @@
+{
+  "externalRequests": [],
+  "pageErrors": [],
+  "scenarios": [
+    {
+      "width": 1440,
+      "filter": "checked",
+      "count": 482,
+      "finalIndex": 475,
+      "intermediate": {
+        "focused": true,
+        "tag": "H3",
+        "name": "Alexey Toropchenko",
+        "tabindex": "-1",
+        "rowTop": -0.375,
+        "headingTop": 17.234375,
+        "headingBottom": 43.625,
+        "viewport": 1000,
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "nextTab": "Details for Alexey Toropchenko"
+      },
+      "finalFocus": {
+        "focused": true,
+        "tag": "H3",
+        "name": "Zach Dean",
+        "tabindex": "-1",
+        "rowTop": 116.0625,
+        "headingTop": 133.671875,
+        "headingBottom": 160.0625,
+        "viewport": 1000,
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "nextTab": "Details for Zach Dean"
+      },
+      "detailReturnFocus": true,
+      "dimensions": {
+        "width": 1440,
+        "document": 1440
+      }
+    },
+    {
+      "width": 1440,
+      "filter": "review",
+      "count": 258,
+      "finalIndex": 250,
+      "intermediate": {
+        "focused": true,
+        "tag": "H3",
+        "name": "Braden Schneider",
+        "tabindex": "-1",
+        "rowTop": -0.375,
+        "headingTop": 17.234375,
+        "headingBottom": 43.625,
+        "viewport": 1000,
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "nextTab": "Details for Braden Schneider"
+      },
+      "finalFocus": {
+        "focused": true,
+        "tag": "H3",
+        "name": "Yan Kuznetsov",
+        "tabindex": "-1",
+        "rowTop": 4.84375,
+        "headingTop": 22.453125,
+        "headingBottom": 48.84375,
+        "viewport": 1000,
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "nextTab": "Details for Yan Kuznetsov"
+      },
+      "detailReturnFocus": true,
+      "dimensions": {
+        "width": 1440,
+        "document": 1440
+      }
+    },
+    {
+      "width": 1440,
+      "filter": "search-x",
+      "count": 35,
+      "finalIndex": 25,
+      "finalFocus": {
+        "focused": true,
+        "tag": "H3",
+        "name": "Felix Unger Sörum",
+        "tabindex": "-1",
+        "rowTop": -0.375,
+        "headingTop": 17.234375,
+        "headingBottom": 43.625,
+        "viewport": 1000,
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "nextTab": "Details for Felix Unger Sörum"
+      },
+      "detailReturnFocus": true,
+      "dimensions": {
+        "width": 1440,
+        "document": 1440
+      }
+    },
+    {
+      "width": 320,
+      "filter": "all",
+      "count": 740,
+      "finalIndex": 725,
+      "intermediate": {
+        "focused": true,
+        "tag": "H3",
+        "name": "Alex Newhook",
+        "tabindex": "-1",
+        "rowTop": 0.390625,
+        "headingTop": 17.390625,
+        "headingBottom": 43.78125,
+        "viewport": 900,
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "nextTab": "Details for Alex Newhook"
+      },
+      "finalFocus": {
+        "focused": true,
+        "tag": "H3",
+        "name": "Yegor Sharangovich",
+        "tabindex": "-1",
+        "rowTop": 0.078125,
+        "headingTop": 17.078125,
+        "headingBottom": 43.46875,
+        "viewport": 900,
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "nextTab": "Details for Yegor Sharangovich"
+      },
+      "detailReturnFocus": true,
+      "dimensions": {
+        "width": 320,
+        "document": 320
+      }
+    },
+    {
+      "width": 320,
+      "filter": "checked",
+      "count": 482,
+      "finalIndex": 475,
+      "intermediate": {
+        "focused": true,
+        "tag": "H3",
+        "name": "Alexey Toropchenko",
+        "tabindex": "-1",
+        "rowTop": 0.390625,
+        "headingTop": 17.390625,
+        "headingBottom": 43.78125,
+        "viewport": 900,
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "nextTab": "Details for Alexey Toropchenko"
+      },
+      "finalFocus": {
+        "focused": true,
+        "tag": "H3",
+        "name": "Zach Dean",
+        "tabindex": "-1",
+        "rowTop": 0.046875,
+        "headingTop": 17.046875,
+        "headingBottom": 43.4375,
+        "viewport": 900,
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "nextTab": "Details for Zach Dean"
+      },
+      "detailReturnFocus": true,
+      "dimensions": {
+        "width": 320,
+        "document": 320
+      }
+    },
+    {
+      "width": 320,
+      "filter": "review",
+      "count": 258,
+      "finalIndex": 250,
+      "intermediate": {
+        "focused": true,
+        "tag": "H3",
+        "name": "Braden Schneider",
+        "tabindex": "-1",
+        "rowTop": 0.390625,
+        "headingTop": 17.390625,
+        "headingBottom": 43.78125,
+        "viewport": 900,
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "nextTab": "Details for Braden Schneider"
+      },
+      "finalFocus": {
+        "focused": true,
+        "tag": "H3",
+        "name": "Yan Kuznetsov",
+        "tabindex": "-1",
+        "rowTop": -0.28125,
+        "headingTop": 16.71875,
+        "headingBottom": 43.109375,
+        "viewport": 900,
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "nextTab": "Details for Yan Kuznetsov"
+      },
+      "detailReturnFocus": true,
+      "dimensions": {
+        "width": 320,
+        "document": 320
+      }
+    },
+    {
+      "width": 320,
+      "filter": "search-x",
+      "count": 35,
+      "finalIndex": 25,
+      "finalFocus": {
+        "focused": true,
+        "tag": "H3",
+        "name": "Felix Unger Sörum",
+        "tabindex": "-1",
+        "rowTop": 0.390625,
+        "headingTop": 17.390625,
+        "headingBottom": 43.78125,
+        "viewport": 900,
+        "outlineStyle": "solid",
+        "outlineWidth": "2px",
+        "nextTab": "Details for Felix Unger Sörum"
+      },
+      "detailReturnFocus": true,
+      "dimensions": {
+        "width": 320,
+        "document": 320
+      }
+    }
+  ],
+  "axe": [
+    {
+      "label": "final-search-1440",
+      "violations": []
+    },
+    {
+      "label": "final-search-320",
+      "violations": []
+    }
+  ],
+  "staticVerification": {
+    "onlyExactPaginationHandlerChanged": true,
+    "embeddedDataByteIdentical": true,
+    "totals": {
+      "players": 740,
+      "selectedRecords": 3461,
+      "fpWindows": 482,
+      "unresolvedPPP": 212,
+      "zeroShotWindows": 20
+    },
+    "scoreAdmission": false
+  },
+  "resumedAfterOriginalAndDesktopFullPass": true,
+  "zeroShotViews": {
+    "desktop": 20,
+    "narrow": 20,
+    "paginationHidden": true
+  },
+  "authenticatedFiles": 56,
+  "state": "PASS_P2_CLOSED"
+}

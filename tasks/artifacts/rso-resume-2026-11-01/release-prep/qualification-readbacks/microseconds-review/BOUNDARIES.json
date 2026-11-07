@@ -1,0 +1,35 @@
+{
+  "at": "2026-11-01T21:30:46.085718+00:00",
+  "head": "e152ce5bca1aa77e29a43acd33eb7e9ae0d0ac62",
+  "rsoRefs": [
+    "refs/rc/rso-after403-candidate c3897d3273ca46ea25a9f2737f09c835e5ec7325",
+    "refs/rc/rso-rc16 77234b790a9392229b472faec033fb2fef3040af",
+    "refs/rc/rso-rc17 2533ecf1baff4d9ca9742d929df06eab965219e8",
+    "refs/rc/rso-vorp-rc15 54dc346f4b95e1a2abfea11c6f1a366e791b561c"
+  ],
+  "ownerFinalAdmissionResponseReceived": false,
+  "mailboxBytes": 197987,
+  "mailboxSha256": "51c1b10bdbaf84b9711b6aa89893858a3344e94016dff3de40766f3dbed1cd1f",
+  "sourceCandidatePinsUnchanged": true,
+  "admissionDeliveryPinsUnchanged": true,
+  "canonicalStartChartFilesUnchanged": true,
+  "retainedCheckerFilesUnchanged": true,
+  "frozenScientificScopeUnchanged": true,
+  "closedAdapterSourcesUnchanged": true,
+  "authorizedChangedReviewPins": [
+    "tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/normalize-readbacks.test.ts",
+    "tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/normalize-settlement.test.mjs",
+    "tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-readbacks/tooling/check-readbacks.mjs",
+    "tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-readbacks/tooling/check-readbacks.test.mjs"
+  ],
+  "newCoordinationMessageSent": false,
+  "gitMutations": 0,
+  "newRemoteRequests": 0,
+  "productionChanges": 0,
+  "providerRequests": 0,
+  "builds": 0,
+  "deployments": 0,
+  "vercel403Retried": false,
+  "backgroundWatcherRunning": false,
+  "candidateRefVerified": "c3897d3273ca46ea25a9f2737f09c835e5ec7325"
+}

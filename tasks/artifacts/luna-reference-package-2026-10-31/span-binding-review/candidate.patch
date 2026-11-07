@@ -1,0 +1,251 @@
+--- a/web/lib/sources/tweetLunaReview.ts
++++ b/web/lib/sources/tweetLunaReview.ts
+@@ -16,7 +16,7 @@
+ export const LUNA_REVIEW_VERSION = "ifttt-luna-review-v1";
+ export const LUNA_REVIEW_AUTHORITY = { canPublish: false, canWriteAliases: false, canChangeStatus: false, canExecuteReplacement: false } as const;
+ const span = z.object({ start: z.number().int().nonnegative(), end: z.number().int().positive(), text: z.string().min(1) }).strict();
+-const statuses = z.array(z.object({ occurrenceId: z.string(), canonicalId: z.string(),
++export const lunaGoalieStatusesSchema = z.array(z.object({ occurrenceId: z.string(), canonicalId: z.string(),
+   status: z.enum(["confirmed", "ruled_out", "likely", "projected", "unknown"]), evidence: span,
+ }).strict()).max(32);
+ export type LunaReviewInput = {
+@@ -46,7 +46,7 @@
+ 
+ /** Validates a proposal, not truth. Verified 100/0 must come through the existing accepted-evidence workflow. */
+ export function validateLunaGoalieStatuses(request: FixtureIdentityRequest, identity: ReturnType<typeof validateFixtureIdentityProposal>, value: unknown) {
+-  const result = statuses.parse(value);
++  const result = lunaGoalieStatusesSchema.parse(value);
+   if (new Set(result.map(s => s.occurrenceId)).size !== result.length) throw new Error("duplicate_goalie_subject");
+   return result.map(proposal => {
+     const occurrence = request.content.occurrences.find(o => o.id === proposal.occurrenceId);
+--- a/web/lib/sources/tweetLunaReview.test.ts
++++ b/web/lib/sources/tweetLunaReview.test.ts
+@@ -10,6 +10,8 @@
+ import { createLunaEvaluationBatch } from "./fixtures/tweetLunaEvaluation";
+ import { rehearseLunaEvaluation } from "../../scripts/rehearse-luna-evaluation";
+ import { scoreLunaEvaluation } from "./tweetLunaEvaluationScoring";
++import { LUNA_EVIDENCE_BINDING_POLICY, proposeLunaEvidenceBindingReview } from "./tweetLunaEvidenceBinding";
++import type { FixtureIdentityRequest } from "./tweetIdentityProposal";
+ import { buildLunaReferenceInput, getLunaReferencePackage, LUNA_CORRECTION_CATEGORIES, LUNA_REFERENCE_PACKAGE, LUNA_REVIEW_RULES } from "./tweetLunaReference";
+ import { identityDigest } from "./playerIdentitySnapshot";
+ import { extractDurableTweetClaims, TWEET_CLAIM_EXTRACTION_VERSION } from "./tweetClaimExtraction";
+@@ -80,6 +82,106 @@
+   const value = JSON.parse(body.output[0].content[0].text); edit(value); body.output[0].content[0].text = JSON.stringify(value);
+ }
+ 
++describe("offline exact-quote binding review", () => {
++  async function captured(text: string, quote: string, status = "confirmed", editInput?: (input: LunaReviewInput) => void) {
++    const input = fixture(text); input.decisions = false; editInput?.(input);
++    let rawOutputText = "", request: FixtureIdentityRequest | undefined;
++    const h = harness({ mutate: (body, endpoint, wire) => {
++      if (endpoint !== "responses") return;
++      const content = JSON.parse(wire.input).identityRequest;
++      request = { content, hash: identityDigest(content) };
++      changeProposal(body, endpoint, value => { value.goalieStatuses = [{ occurrenceId: "subject", canonicalId: "nhl:8478499",
++        status, evidence: { start: 0, end: 1, text: quote } }]; });
++      rawOutputText = body.output[0].content[0].text;
++    } });
++    const original = await h.run(input);
++    expect(original.status).toBe("held"); expect(h.fetcher).toHaveBeenCalledTimes(1);
++    const args: Parameters<typeof proposeLunaEvidenceBindingReview>[0] = { policy: LUNA_EVIDENCE_BINDING_POLICY, request: request!, rawOutputText };
++    return { original, h, args };
++  }
++
++  it("defaults off without reading source or raw response", () => {
++    const args = { get request(): FixtureIdentityRequest { throw new Error("must_not_read"); },
++      get rawOutputText(): string { throw new Error("must_not_read"); } };
++    expect(proposeLunaEvidenceBindingReview(args)).toMatchObject({ status: "disabled", candidate: null, rawOutputText: null, canApply: false });
++  });
++
++  it.each([
++    ["SYN Jeremy Swayman will not start tonight.", "Jeremy Swayman will not start tonight.", "ruled_out", 4],
++    ["SYN Jeremy Swayman was first goalie off the ice.", "Jeremy Swayman was first goalie off the ice.", "projected", 4],
++    ["🏒 Jeremy Swayman starts tonight.", "Jeremy Swayman starts tonight.", "confirmed", 3],
++    ["Jeremy Swayman will probably be starting tonight.", "Jeremy Swayman will probably be starting tonight.", "likely", 0],
++    ["Warmups: Jeremy Swayman starts tonight.", "Jeremy Swayman starts tonight.", "confirmed", 9],
++  ])("proposes exact coordinates without applying them: %s", async (text, quote, status, start) => {
++    const { args, original, h } = await captured(text, quote, status), before = structuredClone(args), oldReview = structuredClone(original);
++    const result = proposeLunaEvidenceBindingReview(args);
++    expect(result).toMatchObject({ status: "candidate_for_human_review", canApply: false, canPublish: false, canChangeStatus: false,
++      rawOutputText: args.rawOutputText, rawOutputSha256: createHash("sha256").update(args.rawOutputText).digest("hex"),
++      corrections: [{ occurrenceId: "subject", before: { start: 0, end: 1, text: quote }, proposed: { start, end: start + quote.length, text: quote } }] });
++    expect(result.candidate!.goalieStatuses[0]).toMatchObject({ status, verified: false, gameId: null, teamId: null, appliedOverride: null });
++    expect(result.holds).toContain("original_response_remains_held");
++    expect(Object.isFrozen(result.candidate!.goalieStatuses[0]!.evidence)).toBe(true);
++    expect(args).toEqual(before); expect(original).toEqual(oldReview); expect(h.fetcher).toHaveBeenCalledTimes(1);
++    expect(proposeLunaEvidenceBindingReview(args).candidateHash).toBe(result.candidateHash);
++  });
++
++  it.each([
++    ["Jeremy Swayman starts tonight. Jeremy Swayman starts tonight.", "Jeremy Swayman starts tonight.", "confirmed", "binding_quote_ambiguous"],
++    ["Jeremy Swayman starts tonight. aaaa", "aaa", "unknown", "binding_quote_ambiguous"],
++    ["Jeremy Swayman starts tonight.", "Jeremy Swayman STARTS tonight.", "confirmed", "binding_quote_missing"],
++    ["Jeremy Swayman starts tonight.", "Jeremy Swayman  starts tonight.", "confirmed", "binding_quote_missing"],
++    ["Jeremy Swayman starts tonight. Café", "Jeremy Swayman starts tonight. Cafe\u0301", "unknown", "binding_quote_missing"],
++    ["Jeremy Swayman starts tonight 👩‍💻.", "Jeremy Swayman starts tonight 👩", "unknown", "binding_quote_boundary_invalid"],
++    ["It is not true that Jeremy Swayman starts tonight.", "Jeremy Swayman starts tonight.", "confirmed", "goalie_context_unresolved"],
++    ["If cleared, Jeremy Swayman starts tonight.", "Jeremy Swayman starts tonight.", "confirmed", "goalie_context_unresolved"],
++    ["Jeremy Swayman starts tonight unless he fails the fitness test.", "Jeremy Swayman starts tonight", "confirmed", "goalie_context_unresolved"],
++    ["Jeremy Swayman starts tonight. Correction: he will not start.", "Jeremy Swayman starts tonight.", "confirmed", "goalie_conflict_or_correction_unresolved"],
++    ["Jeremy Swayman starts tonight. Jeremy Swayman will not start tonight.", "Jeremy Swayman starts tonight.", "confirmed", "goalie_conflict_or_correction_unresolved"],
++    ["Jeremy Swayman starts tonight. He will not start tonight.", "Jeremy Swayman starts tonight.", "confirmed", "goalie_conflict_or_correction_unresolved"],
++    ["Jeremy Swayman watched Sample Netminder start tonight.", "Sample Netminder start tonight.", "confirmed", "goalie_subject_binding_invalid"],
++    ["Jeremy Swayman says Sample Netminder is likely to start tonight.", "Jeremy Swayman says Sample Netminder is likely to start tonight.", "likely", "goalie_tentative_wording_unsupported"],
++    ["Jeremy Swayman attended warmups.", "Jeremy Swayman attended warmups.", "projected", "goalie_tentative_wording_unsupported"],
++    ["Jeremy Swayman is the backup tonight.", "Jeremy Swayman is the backup tonight.", "likely", "goalie_context_unresolved"],
++  ])("fails closed for unsafe quote/context: %s", async (text, quote, status, reason) => {
++    const { args } = await captured(text, quote, status), before = args.rawOutputText;
++    expect(proposeLunaEvidenceBindingReview(args)).toMatchObject({ status: "held", reason, candidate: null, candidateHash: null, corrections: [], rawOutputText: before });
++  });
++
++  it("does not let unique evidence overlap another supplied subject", async () => {
++    const text = "Jeremy Swayman and Sample Netminder attended warmups.";
++    const { args } = await captured(text, text, "unknown", input => {
++      (input.identity!.evidence as any).players.push({ nhlId: 999, registryId: 2, fullName: "Sample Netminder", lastName: "Netminder",
++        position: "G", provenance: "synthetic", knownAt: "2026-10-01T00:00:00Z" });
++      const start = text.indexOf("Sample Netminder");
++      input.identity!.mentions.push({ id: "second", kind: "name", span: { start, end: start + 16, text: "Sample Netminder" }, teamHint: null, positionHint: null });
++    });
++    expect(proposeLunaEvidenceBindingReview(args)).toMatchObject({ status: "held", reason: "goalie_subject_binding_invalid", candidate: null });
++  });
++
++  it.each(["identity_offset", "candidate_id", "request_hash", "extra_field", "offset_type", "negative_offset", "duplicate_subject", "invalid_second_quote"])("never repairs %s or emits partial candidates", async kind => {
++    const text = "Jeremy Swayman starts tonight.", { args } = await captured(text, text), raw = JSON.parse(args.rawOutputText);
++    if (kind === "identity_offset") raw.identity.occurrences[0].evidence.end--;
++    if (kind === "candidate_id") raw.goalieStatuses[0].canonicalId = "nhl:999";
++    if (kind === "request_hash") raw.identity.requestHash = "changed";
++    if (kind === "extra_field") raw.canPublish = true;
++    if (kind === "offset_type") raw.goalieStatuses[0].evidence.end = "1";
++    if (kind === "negative_offset") raw.goalieStatuses[0].evidence.start = -1;
++    if (kind === "duplicate_subject") raw.goalieStatuses.push(structuredClone(raw.goalieStatuses[0]));
++    if (kind === "invalid_second_quote") raw.goalieStatuses.push({ ...structuredClone(raw.goalieStatuses[0]), occurrenceId: "other",
++      evidence: { start: 0, end: 1, text: "not in original source" } });
++    expect(proposeLunaEvidenceBindingReview({ ...args, rawOutputText: JSON.stringify(raw) })).toMatchObject({ status: "held", candidate: null, corrections: [] });
++  });
++
++  it("returns not_needed for valid original evidence and never fills an omission", async () => {
++    const text = "Jeremy Swayman starts tonight.", { args } = await captured(text, text), raw = JSON.parse(args.rawOutputText);
++    raw.goalieStatuses[0].evidence = { start: 0, end: text.length, text };
++    for (const statuses of [raw.goalieStatuses, []]) {
++      const result = proposeLunaEvidenceBindingReview({ ...args, rawOutputText: JSON.stringify({ ...raw, goalieStatuses: statuses }) });
++      expect(result).toMatchObject({ status: "not_needed", candidate: null, corrections: [] });
++    }
++  });
++});
++
+ describe("bounded retained Luna caller", () => {
+   it("defaults off before reading input or invoking transport", async () => {
+     const h = harness(); const r = await h.run(fixture(), false);
+--- a/web/lib/sources/tweetLunaReference.md
++++ b/web/lib/sources/tweetLunaReference.md
+@@ -34,7 +34,7 @@
+ 
+ Version 4 explicitly asks for both identity and supported goalie wording. A matched goalie with an exact supported predicate should receive its wording proposal unless the existing ambiguity, scope, conflict or correction rules require abstention. Tentative identity confidence, missing team membership, unresolved game binding or pending source/publication acceptance alone do not prohibit that unverified proposal. The nested phrase-rule `requiredEvidence` hints describe relevance/acceptance context, not extra team/game prerequisites for wording extraction. A match alone never forces a non-unknown status. The validator still accepts empty/unknown outputs where the schema permits them; it never generates a goalie answer to fill an omission.
+ 
+-This clarification follows one paid synthetic diagnostic in version 3: the raw model returned the correct fictional identity but no goalie status for a direct starter sentence. Exact offline replay reproduced that result, and a counterfactual carrying the already frozen positive label passed validation/scoring. No harness defect caused the omission. The model's reason is unknown; these prompt ambiguities are plausible contributors, not a proven causal diagnosis. Version 4 has no paid/model validation. Existing source/validator/authority guards and frozen historical labels remain unchanged. E01 is now explicit tuning/regression material, not a holdout.
++This clarification follows one paid synthetic diagnostic in version 3: the raw model returned the correct fictional identity but no goalie status for a direct starter sentence. Exact offline replay reproduced that result, and a counterfactual carrying the already frozen positive label passed validation/scoring. No harness defect caused the omission. The model's reason is unknown; these prompt ambiguities are plausible contributors, not a proven causal diagnosis. Two subsequent version4 synthetic reports (E02/E03) returned the expected ruled-out/projected wording but invalid evidence end offsets; both remain held failures. Existing source/validator/authority guards and frozen historical labels remain unchanged. These exposed cases are tuning/regression material, not a holdout or evidence of real-report accuracy.
+ 
+ First-off supports projected; practice and warmup attendance alone do not establish starts. Explicit starter wording during warmups may pass the existing deterministic wording gate, but remains unverified and game-unbound. S01's reviewed leading-out convention does not override that gate. Tentative proposals require a direct subject-bound likely/probable/probably or expected/projected starting predicate in both the exact evidence and subject sentence. A limited auxiliary grammar accepts ordinary forms such as “will probably be starting” and “probably gets the start,” while holding predicates about a teammate the named subject discusses. Name-only, attendance, backup, negated-start and unrelated probability wording cannot supply likely/projected. First-off evidence must actually contain a first-off predicate directly describing that exact subject. Full-source wording must agree with a definite proposal so a clipped conditional cannot supply certainty.
+ 
+@@ -64,6 +64,18 @@
+ 
+ These are a review-record specification and a correction taxonomy, not a new UI or persistence system. A swipe is field feedback only: no automatic training, alias learning, publication or production authorization. Changes to reference material require explicit review, provenance, a new version/hash, and the offline regression checks. Invalid provider responses remain held; a held artifact must never be treated as an accepted field proposal.
+ 
++## Offline evidence binding review candidate
++
++[`tweetLunaEvidenceBinding.ts`](./tweetLunaEvidenceBinding.ts) exports `proposeLunaEvidenceBindingReview`, a pure offline correction-proposal function. It is not imported by the runtime caller, transport or CLI. Its explicit caller-selected policy is `luna-unique-exact-quote-review-v1`; omitting it leaves the function disabled before reading the request or response. The strict model schema, prompt/version and automatic validation are unchanged. This policy does not grant any dispatch, correction-application or production authority.
++
++The caller supplies the **original prepared dated identity request** and **unaltered model output text** from a retained receipt. The function validates the request/identity binding, parses the existing strict goalie schema, and searches the original source for each exact quote. Missing or multiple matches (including overlapping matches) reject the entire proposal. It never uses the model's wrong coordinates to choose among matches, changes quote text, normalizes case/whitespace/Unicode, repairs identity, fills an omission or changes a status. JavaScript string offsets are UTF-16; the existing exact-span validator also rejects surrogate/grapheme splits.
++
++For a unique match it derives `[start, start + text.length)` and reruns the unchanged goalie validator across all proposals: supplied goalie/subject/candidate binding, overlap, full-source negation/conditions, tentative wording, repeated identities, correction markers and other existing gates. Any failure returns no partial candidate. A valid original needs no correction. Only a changed coordinate pair that survives those gates becomes `candidate_for_human_review`.
++
++The immutable result retains the original model output text verbatim, its UTF-8 SHA256, request/source hashes, exact before/proposed spans and a version-bound candidate hash. Derived statuses stay nested under `candidate`, with `verified:false`, null game/team/override and source/game/conflict holds. `canApply:false`, `original_response_remains_held` and `evidence_binding_human_review_required` prevent this record from purporting to apply a change. The paid evaluation's historical score/result is never replaced by this candidate.
++
++This candidate resolves only quote coordinates. It cannot prove a unique quote expresses the intended claim or resolve complex semantics missed by existing finite wording guards. Source provenance, completed provider receipt, retention/packet lineage, reviewer identity/time/decision and source/game acceptance remain required at any future integration boundary. This module has no acceptance or persistence endpoint, UI, automated training path or consumer that lifts holds. Automatic rebinding would change the acceptance contract and needs separate explicit coordination, independent review, versioning and tests. See the [offline binding-review handoff](../../../tasks/artifacts/luna-reference-package-2026-10-31/span-binding-review/HANDOFF.md).
++
+ ## Local validation
+ 
+ From `web/`, use the task's offline configuration, which disables `.env` loading and inherits a network-denial tripwire:
+@@ -71,7 +83,7 @@
+ ```sh
+ env -i PATH="$PATH" TMPDIR=/tmp NODE_OPTIONS='--require=/Users/tim/Code/fhfhockey.com/tasks/artifacts/luna-reference-package-2026-10-31/deny-network.cjs' ./node_modules/.bin/vitest run --config ../tasks/artifacts/luna-reference-package-2026-10-31/offline.config.mts lib/sources/tweetLunaReview.test.ts
+ ./node_modules/.bin/tsc --noEmit -p ../tasks/artifacts/luna-reference-package-2026-10-31/tsconfig.json
+-./node_modules/.bin/eslint lib/sources/tweetLunaReference.ts lib/sources/tweetLunaGoalieWording.ts lib/sources/tweetLunaReview.ts lib/sources/tweetLunaReview.test.ts lib/sources/tweetLunaEvaluationScoring.ts lib/sources/fixtures/tweetLunaSyntheticCases.ts lib/sources/fixtures/tweetLunaEvaluation.ts scripts/rehearse-luna-evaluation.ts
++./node_modules/.bin/eslint lib/sources/tweetLunaReference.ts lib/sources/tweetLunaGoalieWording.ts lib/sources/tweetLunaReview.ts lib/sources/tweetLunaReview.test.ts lib/sources/tweetLunaEvidenceBinding.ts lib/sources/tweetLunaEvaluationScoring.ts lib/sources/fixtures/tweetLunaSyntheticCases.ts lib/sources/fixtures/tweetLunaEvaluation.ts scripts/rehearse-luna-evaluation.ts
+ ```
+ 
+-See the [omission diagnosis](../../../tasks/artifacts/luna-reference-package-2026-10-31/omission-diagnosis/HANDOFF.md) for the current candidate and exact replay evidence. The [R2 handoff](../../../tasks/artifacts/luna-reference-package-2026-10-31/repair-r2/HANDOFF.md) and [paid outcome](../../../tasks/artifacts/luna-reference-package-2026-10-31/paid-evaluation/HANDOFF.md) retain version3 evidence. The real ledger remains disabled with two calls consumed from the same cumulative20 cap; a new package/batch hash does not authorize another budget or a retry. The historical integration handoff is available via `git show cb8ed5217:tasks/artifacts/luna-review-integration-2026-10-23/HANDOFF.md`; its original worktree file is absent from this checkout.
++See the [omission diagnosis](../../../tasks/artifacts/luna-reference-package-2026-10-31/omission-diagnosis/HANDOFF.md) for the v4 clarification and exact replay evidence. The [R2 handoff](../../../tasks/artifacts/luna-reference-package-2026-10-31/repair-r2/HANDOFF.md) and [initial paid outcome](../../../tasks/artifacts/luna-reference-package-2026-10-31/paid-evaluation/HANDOFF.md) retain version3 evidence; the [E03 outcome](../../../tasks/artifacts/luna-reference-package-2026-10-31/continuation-e03-execution/HANDOFF.md) records the latest paid stop. The real ledger remains disabled with four calls consumed from the same cumulative20 cap; a new package/batch hash or binding-review candidate does not authorize another budget or retry. The historical integration handoff is available via `git show cb8ed5217:tasks/artifacts/luna-review-integration-2026-10-23/HANDOFF.md`; its original worktree file is absent from this checkout.
+--- /dev/null
++++ b/web/lib/sources/tweetLunaEvidenceBinding.ts
+@@ -0,0 +1,70 @@
++import { createHash } from "node:crypto";
++import { z } from "zod";
++import { freezeIdentityValue, identityDigest } from "./playerIdentitySnapshot";
++import { exactIdentitySpan, validateFixtureIdentityProposal, type FixtureIdentityRequest, type IdentitySourceSpan } from "./tweetIdentityProposal";
++import { LUNA_REVIEW_AUTHORITY, lunaGoalieStatusesSchema, validateLunaGoalieStatuses } from "./tweetLunaReview";
++
++export const LUNA_EVIDENCE_BINDING_POLICY = "luna-unique-exact-quote-review-v1";
++const rawProposal = z.object({ identity: z.unknown(), goalieStatuses: lunaGoalieStatusesSchema }).strict();
++const safeReasons = new Set(["binding_quote_missing", "binding_quote_ambiguous", "binding_quote_boundary_invalid",
++  "binding_raw_output_too_large", "duplicate_goalie_subject", "goalie_subject_binding_invalid", "goalie_certainty_inflation",
++  "goalie_definite_wording_unsupported", "goalie_context_unresolved", "goalie_conflict_or_correction_unresolved", "goalie_tentative_wording_unsupported"]);
++
++/** Offline correction proposal only. Never called by the provider/review/CLI path.
++ * A unique exact quote can identify coordinates, not establish semantic truth.
++ * Raw text, original offsets, and historical review outcomes remain unchanged.
++ */
++export function proposeLunaEvidenceBindingReview(args: {
++  policy?: typeof LUNA_EVIDENCE_BINDING_POLICY;
++  request: FixtureIdentityRequest;
++  rawOutputText: string;
++}) {
++  const base = { version: LUNA_EVIDENCE_BINDING_POLICY, ...LUNA_REVIEW_AUTHORITY, canApply: false as const,
++    status: "disabled" as "disabled" | "held" | "not_needed" | "candidate_for_human_review",
++    reason: null as string | null, holds: ["human_review_required", "no_publication_authority"],
++    requestHash: null as string | null, sourceHash: null as string | null,
++    rawOutputText: null as string | null, rawOutputSha256: null as string | null, candidateHash: null as string | null,
++    corrections: [] as { occurrenceId: string; before: IdentitySourceSpan; proposed: IdentitySourceSpan }[],
++    candidate: null as null | { identity: ReturnType<typeof validateFixtureIdentityProposal>; goalieStatuses: ReturnType<typeof validateLunaGoalieStatuses> } };
++  // Policy is a caller decision, never a field read from untrusted model/source text.
++  if (args.policy !== LUNA_EVIDENCE_BINDING_POLICY) return freezeIdentityValue({ ...base, reason: "binding_policy_not_enabled" });
++  try {
++    if (Buffer.byteLength(args.rawOutputText) > 65_536) throw new Error("binding_raw_output_too_large");
++    base.rawOutputText = args.rawOutputText;
++    base.rawOutputSha256 = createHash("sha256").update(args.rawOutputText).digest("hex");
++    const raw = rawProposal.parse(JSON.parse(args.rawOutputText));
++    // Identity offsets/candidates/request hash are never repaired by this policy.
++    const identity = validateFixtureIdentityProposal(args.request, raw.identity);
++    base.requestHash = args.request.hash;
++    base.sourceHash = identityDigest(args.request.content.source);
++    const source = args.request.content.source.text;
++    const corrections: typeof base.corrections = [];
++    const rebound = raw.goalieStatuses.map(proposal => {
++      const text = proposal.evidence.text, start = source.indexOf(text);
++      if (start < 0) throw new Error("binding_quote_missing");
++      // Advance one UTF-16 unit, not the quote length: overlapping matches count.
++      if (source.indexOf(text, start + 1) >= 0) throw new Error("binding_quote_ambiguous");
++      const evidence = { start, end: start + text.length, text };
++      // Reuse surrogate/grapheme checks; never normalize case, whitespace or Unicode.
++      if (!exactIdentitySpan(source, evidence)) throw new Error("binding_quote_boundary_invalid");
++      if (proposal.evidence.start !== evidence.start || proposal.evidence.end !== evidence.end) {
++        corrections.push({ occurrenceId: proposal.occurrenceId, before: proposal.evidence, proposed: evidence });
++      }
++      return { ...proposal, evidence };
++    });
++    // Includes selected goalie/occurrence, overlap, full context, negation, repeated
++    // identity, correction and uncertainty gates. All proposals must pass together.
++    const goalieStatuses = validateLunaGoalieStatuses(args.request, identity, rebound);
++    if (!corrections.length) return freezeIdentityValue({ ...base, status: "not_needed" as const });
++    base.status = "candidate_for_human_review";
++    base.holds.push("original_response_remains_held", "evidence_binding_human_review_required");
++    base.corrections = corrections;
++    base.candidate = { identity, goalieStatuses };
++    base.candidateHash = identityDigest({ version: base.version, requestHash: base.requestHash, sourceHash: base.sourceHash,
++      rawOutputSha256: base.rawOutputSha256, corrections, candidate: base.candidate });
++    return freezeIdentityValue(base);
++  } catch (error) {
++    const reason = error instanceof Error && safeReasons.has(error.message) ? error.message : "binding_invalid_request_or_proposal";
++    return freezeIdentityValue({ ...base, status: "held" as const, reason });
++  }
++}

@@ -1,0 +1,21 @@
+{
+  "at": "2026-11-01T18:14:49.037507+00:00",
+  "checks": [
+    {
+      "check": "tests",
+      "command": [
+        "npm",
+        "test",
+        "--",
+        "--run",
+        "lib/player-cards/retainedBlsh.test.ts",
+        "lib/player-cards/analysisEvidence.test.ts",
+        "components/player-cards/PlayerAnalysisStudio.test.tsx"
+      ],
+      "exitCode": 1,
+      "durationSeconds": 1.3,
+      "log": "window-age-tests-20261101.log"
+    }
+  ],
+  "networkDenied": true
+}

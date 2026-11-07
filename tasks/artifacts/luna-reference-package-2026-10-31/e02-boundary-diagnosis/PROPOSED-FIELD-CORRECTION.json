@@ -1,0 +1,37 @@
+{
+  "version": "luna-offline-field-correction-proposal-v1",
+  "state": "counterfactual_not_applied",
+  "target": "rawResponsesProposal.goalieStatuses[0].evidence.end",
+  "before": 38,
+  "after": 40,
+  "category": "evidence",
+  "originalProposalTextSha256": "152916c970409b56ed1d1e3ac754b0bc1b78d98e12a194d890a00e2350d85c3d",
+  "sourceTextVersion": "tweet-source-claim-v1:text:62d24ca0a28608518e5e70ab29dfd0c7c994f259f9bbf44ae1ef51c6d8670bfe",
+  "packetHash": "395193064ead8f9e7bd185f9e95f0d6a46c06589dc279a7e036abfa2392f85b4",
+  "reviewQueueKey": "b8716b41f53117c1ed925d77f9d9a7c384bd03fa5b3c714ba2a8b79c9088bc9d",
+  "referencePackage": {
+    "version": "luna-hockey-reference-v4",
+    "mode": "rules-and-synthetic-only",
+    "hash": "9b8a10fd458596b75ba2c0900dea1b72b9ec446d5e0e660ca5c18341920abdb3",
+    "rulesVersion": "luna-hockey-rules-v4",
+    "libraryVersion": null
+  },
+  "occurrenceId": "subject-4",
+  "canonicalId": "nhl:900001",
+  "unchangedQuotedText": "Avery Keeper will not start tonight.",
+  "reason": "Exact unique source quotation begins at4 and spans36 UTF-16 units; exclusive end40. Full quote with end38 is inconsistent.",
+  "predeclaredExpectedLabelUnchanged": true,
+  "requiresMoreContextToCalculateBoundary": false,
+  "rawAndRetainedResultsUnmodified": true,
+  "automaticRepairImplemented": false,
+  "humanAcceptance": "pending; this is a diagnostic artifact, not an accepted correction",
+  "canPublish": false,
+  "canChangeStatus": false,
+  "canWriteAliases": false,
+  "trainsModel": false,
+  "remainingAcceptanceHolds": [
+    "human_review_required",
+    "game_and_source_time_binding_required",
+    "conflict_retraction_check_required"
+  ]
+}

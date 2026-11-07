@@ -108,6 +108,15 @@ describe("separate final pregame benchmark", () => {
 });
 
 describe("outcomes, corrections, scoring and metrics", () => {
+  it.each([
+    { PIM: available(0.5) },
+    { G: available(0), A: available(0), PPP: available(1) },
+  ])("rejects impossible observed counts at ingestion and direct settlement: %j", (values) => {
+    const outcome = fixtureOutcome({ values: { ...fixtureOutcome().values, ...values } });
+    expect(() => appendOutcomeRevision([], outcome)).toThrow();
+    expect(() => grade({ outcome })).toThrow();
+  });
+
   it("grades penalty-only official credit and never turns nonappearance/cancellation into zero performance", () => {
     expect(grade()).toMatchObject({ forecast: available(0.5), actual: available(2), error: available(-1.5), participationActual: available(1) });
     for (const appearance of ["dressed_unused", "nonappearance", "ambiguous", "game_not_played"] as const) {

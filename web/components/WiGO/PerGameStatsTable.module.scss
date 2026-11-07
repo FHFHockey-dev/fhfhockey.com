@@ -118,9 +118,10 @@ table.verticalStatsTable {
     &:not(:first-child) {
       color: s.$ink;
       text-align: center;
-      font-family: "roboto-condensed" sans-serif;
+      font-family: "Roboto Condensed", sans-serif;
       font-size: s.$text-11;
-      letter-spacing: 0.15em;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 0;
       width: 35%;
     }
 
@@ -192,9 +193,10 @@ table.verticalStatsTable {
   tbody td.valueCell {
     // Data cells (the numbers)
     color: s.$ink;
-    font-family: "roboto-condensed" sans-serif;
+    font-family: "Roboto Condensed", sans-serif;
     font-size: s.$text-12;
-    letter-spacing: 0.15em;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0;
   }
 }
 

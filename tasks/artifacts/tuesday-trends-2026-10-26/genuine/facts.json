@@ -1,0 +1,112 @@
+{
+  "capturedAt": "2026-10-26T16:00:00.517Z",
+  "finishedAt": "2026-10-26T16:00:04.599Z",
+  "statements": 11,
+  "ceiling": {
+    "statements": 40,
+    "rowsPerStatement": 1000,
+    "concurrency": 2
+  },
+  "maxInFlight": 2,
+  "maxRowsInOneStatement": 1000,
+  "errors": 0,
+  "fact1_rolling": {
+    "rows": 1728,
+    "statements": [
+      {
+        "ms": 3360,
+        "rows": 1000,
+        "contentRange": "0-999/1728"
+      },
+      {
+        "ms": 178,
+        "rows": 728,
+        "contentRange": "1000-1727/1728"
+      }
+    ],
+    "distinctPlayers": 638,
+    "gamesPerPlayer": {
+      "1": 64,
+      "2": 132,
+      "3": 368,
+      "4": 74
+    },
+    "goaliesAmongShortlistedNames": "0 of 53",
+    "nullTeamIds": 0,
+    "newestUpdatedAt": "2026-10-26T10:15:32.129153+00:00",
+    "oldestUpdatedAt": "2026-10-20T08:16:31.874177+00:00",
+    "newestGameDate": "2026-10-25"
+  },
+  "fact2_ownership": {
+    "latestDate": "2026-10-26",
+    "previousDate": "2026-10-21",
+    "rowsPerDate": {
+      "2026-10-21": 566,
+      "2026-10-26": 575
+    },
+    "todayNewYork": "2026-10-26",
+    "nullPct": 0
+  },
+  "fact3_last5": {
+    "latestRows": 638,
+    "seasonPointsNearInteger": "638 of 638",
+    "toiTotalOverAvg": {
+      "equals5": 631,
+      "equalsMinGp5": 576,
+      "checked": 638,
+      "gpUnder5": 66,
+      "gpUnder5Equals_gp": 4
+    }
+  },
+  "fact4_pp": {
+    "gamesQueried": 48,
+    "gamesWithPpRows": 42,
+    "latestGames": 42,
+    "latestGamesWithPpRows": 37,
+    "ppcRows": 1171,
+    "latestRowsPpUnitNull": 184,
+    "latestRowsPpUnitNullWithoutGameRows": 3
+  },
+  "fact5_map": {
+    "valuesQueried": [
+      [
+        "yahoo_player_id=in.(120 values)",
+        "order=yahoo_player_id.asc,nhl_player_id.asc",
+        "offset=0",
+        "limit=240"
+      ]
+    ],
+    "mapRows": 60,
+    "keysWithOneNhlId": 60,
+    "keysWithManyNhlIds": 0,
+    "evRows": 24
+  },
+  "sections": {
+    "hot": {
+      "state": "ready",
+      "reasons": [
+        "Excluded 55 stale, 0 future-dated and 0 team-unknown skaters."
+      ],
+      "listed": 0
+    },
+    "deployment": {
+      "state": "ready",
+      "reasons": [
+        "Excluded 55 stale, 0 future-dated and 0 team-unknown skaters."
+      ],
+      "listed": 8
+    },
+    "rates": {
+      "state": "ready",
+      "reasons": [
+        "Excluded 55 stale, 0 future-dated and 0 team-unknown skaters."
+      ],
+      "listed": 9
+    },
+    "movers": {
+      "state": "ready",
+      "reasons": [],
+      "listed": 10
+    }
+  }
+}

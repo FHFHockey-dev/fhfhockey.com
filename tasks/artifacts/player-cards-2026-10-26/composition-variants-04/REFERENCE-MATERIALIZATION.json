@@ -1,0 +1,36 @@
+{
+  "at": "2026-10-26T18:25:55.640788+00:00",
+  "attemptsPerFile": 1,
+  "results": [
+    {
+      "library_file_id": "libfile_44175f6547ac819184111d9e622eeea8",
+      "file_id": "file_00000000de3481fd9889f8a1570f6698",
+      "version": 0,
+      "file_name": "fhfh-8478864-illustrative-landscape-team-colors.png",
+      "local_path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-26/composition-variants-04/reference/fhfh-8478864-illustrative-landscape-team-colors.png",
+      "exitCode": 1,
+      "readable": false,
+      "error": "library file transfer failed: download failed"
+    },
+    {
+      "library_file_id": "libfile_d0701b91ac748191bc5e21fe1dcdc3d7",
+      "file_id": "file_00000000a3fc81f5952b8f019ec48ecc",
+      "version": 0,
+      "file_name": "download (2).png",
+      "local_path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-26/composition-variants-04/reference/download (2).png",
+      "exitCode": 1,
+      "readable": false,
+      "error": "library file transfer failed: download failed"
+    },
+    {
+      "library_file_id": "libfile_65a9a31ab8788191b3714be3c903dce2",
+      "file_id": "file_00000000ff5481f5adc072abc65c8859",
+      "version": 0,
+      "file_name": "fhfh-8479318-illustrative-landscape-team-colors(1).png",
+      "local_path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-26/composition-variants-04/reference/fhfh-8479318-illustrative-landscape-team-colors(1).png",
+      "exitCode": 1,
+      "readable": false,
+      "error": "library file transfer failed: download failed"
+    }
+  ]
+}

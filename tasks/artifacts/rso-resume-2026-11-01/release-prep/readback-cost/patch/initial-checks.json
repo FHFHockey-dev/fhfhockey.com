@@ -1,0 +1,20 @@
+{
+  "at": "2026-11-01T21:20:30.708262+00:00",
+  "checks": [
+    {
+      "name": "targeted",
+      "exitCode": 1,
+      "command": [
+        "/usr/local/bin/node",
+        "node_modules/vitest/vitest.mjs",
+        "run",
+        "__tests__/pages/api/v1/start-chart.test.ts",
+        "--maxWorkers=1",
+        "--minWorkers=1",
+        "-t",
+        "bounded context"
+      ],
+      "log": "targeted.log"
+    }
+  ]
+}

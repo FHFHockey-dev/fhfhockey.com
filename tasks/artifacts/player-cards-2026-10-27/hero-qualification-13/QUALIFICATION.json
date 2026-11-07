@@ -1,0 +1,86 @@
+{
+  "at": "2026-10-27T02:38:43.409734+00:00",
+  "reviewer": "Codex existing player-card task; routine boundedlocalQA, not independent or ownerpersonalvisualapproval",
+  "scope": "One Kucherovoriginal/alpha/dark/checker/mask and localTBLlogo; no newinference/network/sourcechanges",
+  "identityEvidence": {
+    "visibleOriginal": "KUCHEROV lettering,86jersey,Tampauniform; facepartlyobscured/turned; nofacialrecognitionclaim",
+    "officialRetainedPlayerId": 8476453,
+    "name": "Nikita Kucherov",
+    "team": "TBL",
+    "sweater": 86,
+    "position": "R",
+    "heroImageExact": "https://assets.nhle.com/mugs/actionshots/1296x729/8476453.jpg",
+    "sourceUrlMatches": true
+  },
+  "technical": {
+    "sourcePath": "/Users/tim/Documents/FHFH-local-image-tests/2026-10-25-birefnet-roster805/originals/8476453.jpg",
+    "alphaPath": "/Users/tim/Documents/FHFH-local-image-tests/2026-10-25-birefnet-roster805/outputs/8476453/alpha.png",
+    "sourceSha256": "3036cb4ec324cc902ab2d797f4e69b58347c85909d6ce92daab01b7123f0711b",
+    "alphaSha256": "2010d97f1e1c631f7ccf154d991517f3b6923df7739d756e39ed06140aa1f278",
+    "decodedRgbSha256": "2dd312c729c7d6742edba42be59ba058e25273c4c96388e1b450787806204a72",
+    "sourceDimensions": [
+      1296,
+      729
+    ],
+    "alphaDimensions": [
+      1296,
+      729
+    ],
+    "sourceRgbExactlyPreserved": true,
+    "alphaBounds": [
+      325,
+      63,
+      942,
+      586
+    ],
+    "transparentPixels": 826038,
+    "opaquePixels": 28871,
+    "antialiasedPixels": 89875,
+    "allFourFrameEdgesTransparent": true,
+    "logoPath": "web/public/teamLogos/TBL.png",
+    "logoSha256": "51a484101a24be2f33145a58d1c7855bfc5b408bec39a7195a29aec7aaa6332c",
+    "logoDimensions": [
+      1099,
+      1099
+    ]
+  },
+  "visual": {
+    "scalesViewed": [
+      "1296x729 original/nativealpha/mask",
+      "320x180 dark/checker cardheaders"
+    ],
+    "pass": [
+      "Jerseyname86teamagreewithofficialretainedidentity",
+      "Coherentplayer/stick/gloves/skatesretained",
+      "No crowd,boards,logos,otherplayersorpartialnet retained",
+      "Alphaedgecontinuousatcardscale,noobviousmajorhalosorequipmentloss"
+    ],
+    "limitations": [
+      "Posefacesawayasoriginal; nofacefabrication",
+      "Smallskatelaceedgefidelitynotperfect/noedgepainting",
+      "Localpreviewqualificationonly,notapublicationrightsdetermination"
+    ]
+  },
+  "whyPreviouslyUnreviewed": "805batchgenerated651candidates;only48newcutoutsreceivedvisualQA. Kucherovhad no recordedvisualreview; noexistingrejection/owneronlyapprovalrequirementfound. Batchoriginalstatuspreservedunchanged.",
+  "decision": "QUALIFIED_AND_SERVED_WITH_MATCHING_RETAINED_REAL_STATS",
+  "finalExportReview": {
+    "at": "2026-10-27T02:43:55.954903+00:00",
+    "automated": "PASS3servedbrowsergroups/5PNGs/manifests/3sharebytes; exactownKucherovTBL86id,actualretainedvalues/originalgeometry,portraitstageorder,TBLlogo/3x5pxcontours",
+    "nativePixelInspection": {
+      "at": "2026-10-27T02:45:25.749500+00:00",
+      "viewed": [
+        "team-colors-L10.png",
+        "posterized-team-colors-L10.png",
+        "pixelated-team-colors-L10.png"
+      ],
+      "pass": "OwnKucherov86/sourcepose/equipment retained; distinctcombinedtreatmentsvisible,originalgeometry/TBLbackgroundlogo/contourbands clear;actual20:52/8.63/.86/3.74/10.0%/10GP208.7min andretainedsource/rankunavailablelabels visible",
+      "limitation": "Pixelatedtreatmentintentionallyremovesfinejersey/face detail; originalidentity verifiedseparately. No identitycompletion/redraw."
+    }
+  },
+  "captureDate": {
+    "date": "2026-10-24",
+    "precision": "day",
+    "basis": "Original dated validation batch download-receipts.json, exactmatching sourceSHA; exact download/photographic time not supplied",
+    "notUsedAsImageDownloadTime": "Landingrecord fetched_at2026-10-24T20:21:59.751271 and cutoutprocessingstarted25T04:20 are separate events"
+  }
+}

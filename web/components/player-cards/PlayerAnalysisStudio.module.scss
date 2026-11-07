@@ -1,0 +1,16 @@
+.studio { color: #f2f1eb; background: #171c22; padding: 20px; font-family: Arial, sans-serif; max-width: 1260px; margin-inline: auto; }
+.controls { display: flex; flex-wrap: wrap; gap: 12px; margin-block: 20px 28px; }
+.control { display: grid; gap: 8px; min-width: 140px; flex: 1 1 170px; }
+.studio input, .studio select, .studio button { font: inherit; color: inherit; background: #252d36; border: 1px solid #7c8991; border-radius: 4px; min-height: 44px; padding: 10px; max-width: 100%; }
+.control input, .control select { min-inline-size: 0; inline-size: 100%; }
+.studio button { cursor: pointer; }
+.studio button:disabled { cursor: default; opacity: .55; }
+.studio :focus-visible { outline: 3px solid #80dfff; outline-offset: 3px; }
+.preview { overflow-x: auto; background: #f2f1eb; }
+.preview svg { display: block; width: 100%; height: auto; }
+.details { margin-block-start: 28px; line-height: 1.5; overflow-wrap: anywhere; }
+.metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 290px), 1fr)); gap: 20px; padding: 0; list-style: none; }
+.metrics li { padding: 12px; background: #252d36; }
+.metrics strong { display: block; }
+.notice { border-inline-start: 4px solid #80dfff; padding-inline-start: 12px; line-height: 1.5; }
+@media (max-width: 420px) { .studio { padding: 12px; } .control { flex-basis: 100%; } }

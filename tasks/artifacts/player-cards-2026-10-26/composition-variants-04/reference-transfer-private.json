@@ -1,0 +1,23 @@
+{
+  "status": "Consumed once; no readable files; signed transfer data redacted in place",
+  "transfers": [
+    {
+      "library_file_id": "libfile_44175f6547ac819184111d9e622eeea8",
+      "file_id": "file_00000000de3481fd9889f8a1570f6698",
+      "file_name": "fhfh-8478864-illustrative-landscape-team-colors.png",
+      "version": 0
+    },
+    {
+      "library_file_id": "libfile_d0701b91ac748191bc5e21fe1dcdc3d7",
+      "file_id": "file_00000000a3fc81f5952b8f019ec48ecc",
+      "file_name": "download (2).png",
+      "version": 0
+    },
+    {
+      "library_file_id": "libfile_65a9a31ab8788191b3714be3c903dce2",
+      "file_id": "file_00000000ff5481f5adc072abc65c8859",
+      "file_name": "fhfh-8479318-illustrative-landscape-team-colors(1).png",
+      "version": 0
+    }
+  ]
+}

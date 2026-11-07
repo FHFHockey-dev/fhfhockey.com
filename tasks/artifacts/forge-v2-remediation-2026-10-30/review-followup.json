@@ -1,0 +1,126 @@
+{
+  "schemaVersion": "forge-v2-remediation-review-followup-v1",
+  "pass": 2,
+  "budget": "Final agreed correction pass; no broader re-audit",
+  "disposition": "ACCEPT_LOCAL_REMEDIATION_WITH_EXTERNAL_GATES_OPEN",
+  "initialReview": "independent-review.json remains unchanged as the first-pass receipt",
+  "openMaterialFindings": [],
+  "findingDispositions": [
+    {
+      "id": "R1",
+      "status": "resolved",
+      "evidence": "saveQueueWithRecords binds events to winning queue CAS in one SQL statement; identity collision aborts statement. New receipt commits increment queue revision, so races between receipt probe and expiry fail CAS. Bounded recovery recognizes durable receipts before expiry. Original stale-snapshot reproduction now appends zero events. Native tests cover receipt revision fence, stale capture and collision rollback."
+    },
+    {
+      "id": "R2",
+      "status": "resolved",
+      "evidence": "Primary timing exclusion recomputes eligibility for the same retained vintage and restores selected state only for corrected actual-start exclusions; technical invalidations remain applied. Original reproduction now returns selected with null reason."
+    },
+    {
+      "id": "R3",
+      "status": "resolved",
+      "evidence": "Prior grades obey asOf; matching historical context fingerprint returns exact retained context without advancing current head. Changed preparation inputs reject replay rather than fork it. Latest predecessor is checked; grade IDs include predecessor for artifact-state cycles. Exact-context replay reproduced successfully."
+    },
+    {
+      "id": "R4",
+      "status": "resolved",
+      "evidence": "evaluatePinnedIntervals validates immutable artifact hashes/scope/model/cutoff/protocol without public qualification. Preparation uses registered one-hot category profiles and selected FP profile; unsupported category pins remain unavailable. Lifecycle test asserts populated PIM interval counts, archive/restore reproduction, integrity incidents and restored interval grades. Public reproduceIntervals still requires qualification."
+    }
+  ],
+  "independentExecutedChecks": {
+    "command": "esbuild bundle + Node /tmp/forge-review-followup-check.cjs, under shared heavy lock",
+    "output": "PRIMARY_RESTORE {\"eligible\":null,\"prior\":\"excluded\",\"next\":\"selected\",\"reason\":null}\nSTALE_SNAPSHOT {\"result\":{\"state\":\"claim_conflict\",\"jobs\":[]},\"actualJobStatus\":\"published\",\"appended\":[]}\nHISTORICAL_REPLAY passed\n",
+    "script": "import { selectPrimaryCheckpoints, publicationEligibility } from '/Users/tim/Code/fhfhockey.com/web/lib/forge-v2/evaluation';\nimport { fixturePublished, FIXTURE_CLOCK, FIXTURE_TARGET } from '/Users/tim/Code/fhfhockey.com/web/lib/forge-v2/fixtures';\nimport { issuedLifecycleFixture, FIXTURE_BOUNDS } from '/Users/tim/Code/fhfhockey.com/web/lib/forge-v2/fixtureHarness.server';\nimport { runPreparedQueueBatch } from '/Users/tim/Code/fhfhockey.com/web/lib/forge-v2/pipeline.server';\nimport { preparePlayerReadContext } from '/Users/tim/Code/fhfhockey.com/web/lib/forge-v2/preparation.server';\nimport { mkdtemp, rm } from 'node:fs/promises';\nasync function main() {\n const pub=fixturePublished();\n const epoch={ id:'lock-1', gameId:FIXTURE_TARGET.gameId, adoptedAt:FIXTURE_CLOCK, lockAt:'2026-01-11T23:00:00.000Z', scheduleRevision:'schedule-1', predecessorId:null, reopened:false, actualStartAt:null, timingStatus:'provisional', playBegun:false } as const;\n const episode={...FIXTURE_TARGET,id:'episode-H10-1',horizon:10,episode:1,enteredAt:FIXTURE_CLOCK,exitedAt:'2026-01-02T12:00:00.000Z',scheduleRevision:'schedule-1',affiliationRevision:'affiliation-1'} as const;\n const bad={...epoch,id:'bad-start', predecessorId:epoch.id,adoptedAt:'2026-01-12T12:00:00.000Z',actualStartAt:'2026-01-01T12:00:01.000Z',playBegun:true,timingStatus:'confirmed'} as const;\n const good={...bad,id:'corrected-start',predecessorId:bad.id,adoptedAt:'2026-01-13T12:00:00.000Z',actualStartAt:'2026-01-11T22:30:00.000Z'};\n const args={target:FIXTURE_TARGET,episodes:[episode],publications:[pub],epochs:[epoch,bad],evidenceClass:'fixture' as const,asOf:bad.adoptedAt};\n const prior=selectPrimaryCheckpoints(args);\n const next=selectPrimaryCheckpoints({...args,epochs:[epoch,bad,good],asOf:good.adoptedAt,prior});\n console.log('PRIMARY_RESTORE',JSON.stringify({eligible:publicationEligibility(pub,[epoch,bad,good],good.adoptedAt),prior:prior[9].state,next:next[9].state,reason:next[9].reason}));\n const root=await mkdtemp('/tmp/forge-review-fixture-');\n try { const env=await issuedLifecycleFixture(root);\n const load=env.store.loadQueue.bind(env.store); const real=await load('integrated');\n const published=(real!.state as any).jobs.find((j:any)=>j.status==='published');\n const stale=structuredClone(real!); stale.revision=1;\n stale.state={...(stale.state as any),jobs:[{...published,status:'pending',attempts:0,startedAt:null,leaseUntil:null,finishedAt:null,confirmedAt:null,vintageId:null,reason:null}]};\n let first=true; env.store.loadQueue=async id=>{if(first){first=false;return stale}return load(id)};\n const priorEvents=env.store.ledger.size;\n const result=await runPreparedQueueBatch({store:env.store,artifacts:env.artifacts,queueId:'integrated',prepared:new Map(),bounds:FIXTURE_BOUNDS,clock:()=>new Date(Date.parse(published.lockAt)+1000).toISOString()});\n const appended=[...env.store.ledger.values()].slice(priorEvents).map((r:any)=>r.payload.reason);\n console.log('STALE_SNAPSHOT',JSON.stringify({result,actualJobStatus:published.status,appended})); env.store.loadQueue=load;\n try {await env.materialize(env.originalContext.asOf);console.log('HISTORICAL_REPLAY passed')}catch(e){console.log('HISTORICAL_REPLAY',e.message)}\n } finally {await rm(root,{recursive:true,force:true})}\n}\nmain();\n",
+    "additional": "git diff --check over scoped product paths passed"
+  },
+  "reusedVerification": {
+    "unit": "134 tests / 9 files passed",
+    "native": "13 tests / 1 file passed",
+    "browser": "4 Chromium cases passed, including issued queue\u2192prepared API\u2192connected client desktop/phone and separate synthetic display states",
+    "acceptance": "37 tests / 5 files passed (includes preparation appearance-state branches and data/model/schedule/lifecycle)",
+    "typesAndLint": "Parent reports passed; retained logs empty; exit status not independently observed",
+    "logs": {
+      "unit": {
+        "path": "/tmp/forge-remediation-unit.log",
+        "sha256": "8c12b33ae3c52012268b4858f0085444ec2ba90640e35317ed22b4d2ede0a6a4",
+        "bytes": 2309,
+        "execution": "Parent-executed, reviewed retained log; not independently rerun."
+      },
+      "native": {
+        "path": "/tmp/forge-remediation-native.log",
+        "sha256": "01843b0b3c32b9eed1bd9b91cff20e26bc08f99456b4cc64135156c21320c47f",
+        "bytes": 520,
+        "execution": "Parent-executed, reviewed retained log; not independently rerun."
+      },
+      "browser": {
+        "path": "/tmp/forge-remediation-browser.log",
+        "sha256": "c810c1a108842498563e1cb747b7e6c635f8e100c5fdf3c08bf34330f4a3e636",
+        "bytes": 1515,
+        "execution": "Parent-executed, reviewed retained log; not independently rerun."
+      },
+      "acceptance": {
+        "path": "/tmp/forge-remediation-acceptance.log",
+        "sha256": "5ef5291b26d177505aedb7c27718395a41824ce04ebdba1c361ef045d37acc5a",
+        "bytes": 2822,
+        "execution": "Parent-executed, reviewed retained log; not independently rerun."
+      },
+      "types": {
+        "path": "/tmp/forge-remediation-types.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0,
+        "execution": "Parent-executed, reviewed retained log; not independently rerun.",
+        "limit": "Empty successful-output log alone does not attest exit code; parent reports scoped TypeScript passed."
+      },
+      "lint": {
+        "path": "/tmp/forge-remediation-lint.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0,
+        "execution": "Parent-executed, reviewed retained log; not independently rerun.",
+        "limit": "Empty successful-output log alone does not attest exit code; parent reports scoped lint passed."
+      }
+    }
+  },
+  "integrationAssessment": {
+    "accepted": "Local synthetic queue issuance, immutable artifacts/records, preparation, API projection, connected browser scoring/default reset/accountability and archived-artifact lifecycle have concrete executable coverage. Native PostgreSQL seam separately proves queue\u2192retention\u2192preparation\u2192PostgresContextReader.",
+    "limits": "Browser integration uses a durable-store double, not PostgreSQL. Native storage integration is a separate test. No single native-database-to-Chromium test is claimed. Synthetic display fixtures remain explicitly separate from issuance fixtures and neither supplies scientific qualification."
+  },
+  "scientificAssessment": {
+    "disposition": "NO_QUALIFIED_SUBSET",
+    "protocol": "Still a proposal, not frozen approval or numerical validation. batchSize is now 1 and compatible with concurrency=1.",
+    "remaining": "Original fifteen scientific/external gates remain open: source semantics/rights/custody and actual data allocations, justified/frozen protocol and candidate pins, calibrated participation/intervals, untouched and prospective evaluation, production capacity/shadow authorization, release and RSO activation. No real accuracy or calibration claims established.",
+    "releaseFences": "API enabled:false, page notFound:true, RSO_V2_ADAPTER_ENABLED=false confirmed in source."
+  },
+  "actions": {
+    "productEdits": 0,
+    "productionRequests": 0,
+    "deployments": 0,
+    "protectedLabelsOpened": false,
+    "externalActionState": "not attempted; no denied action or pending approval"
+  },
+  "candidatePins": {
+    "tasks/artifacts/forge-v2-remediation-2026-10-30/protocol-proposal.json": "6bf518f5cd016fe6c14db886f5f967ecd422119084c7e499d7911bb4b899219a",
+    "tasks/artifacts/forge-v2-remediation-2026-10-30/scientific-prerequisites.json": "9440a89703b7e174303cc1fbcb9730bbd7ad36d4c27227ba663735ad2db3ecfc",
+    "web/components/ForgeV2/AccountabilityReport.tsx": "79edff270bd45385d836363a5fd2fd8e0c011f4390b3c7d4ca994a2ac0fcabb0",
+    "web/components/ForgeV2/ConnectedForecastExplorer.tsx": "41a23715f317864120c93941411d4b5a8d8608b96d7f97ac65cb24896aee19c8",
+    "web/components/ForgeV2/ForecastExplorer.test.tsx": "bf8666684cd032adb52cf038966d05b4a4994e4861ba41ed59d7975c7925d377",
+    "web/components/ForgeV2/ForecastExplorer.tsx": "ed899106cf61465408f6bc05520f5b61ca61ec526b1c05bffc9a53bb9129a054",
+    "web/e2e/forge-v2.spec.ts": "002f6f0745c11bb996411bae1e5cc52f1a899b5bf2bc19d71dd6976defe97ed0",
+    "web/lib/forge-v2/api.server.ts": "aa0bebe6d46327b6f7438b493bbaa31fb888472f2a5aea644dd68624926c24c1",
+    "web/lib/forge-v2/contracts.ts": "65cc5698a39620c613db2b3a8270b407c3aff1ec5cffd21931b374e83462b8b1",
+    "web/lib/forge-v2/evaluation.test.ts": "5cc2d1b91941c6ca0c7ed955f64db8a2b9eb784dcb87fe866e661dbb1defbb7a",
+    "web/lib/forge-v2/evaluation.ts": "a5884188e53575423d088893a79b60c1743b326ea3954584aa94d47ea123f8e4",
+    "web/lib/forge-v2/fixtureHarness.server.ts": "578f79d64ef6d40138031891619076418bb45fd9dce73d22942ebfe6f3c6862a",
+    "web/lib/forge-v2/history.server.ts": "e9c15fcf1c50dd6f819a8681e3e741f075fe6ea9ac1c353ba7082a471ac57b38",
+    "web/lib/forge-v2/history.test.ts": "3342b6a1de215cbedeca6cfc43f317cfa4961e93dbc0db1286701f275176b1bb",
+    "web/lib/forge-v2/integration.ts": "e17a16ef8acc7960887e61f8ac25d97069ad6d84560880b03b168745f07e394d",
+    "web/lib/forge-v2/pipeline.server.ts": "673eef2e5e6dbb16148a8814b88bca5e235bc0d9fea51ff89508e09a24b9486e",
+    "web/lib/forge-v2/pipeline.test.ts": "e2f80cfff7c5a5220a0fdb909f66cb8902f36f85c2b742f45e9b454d3f7e52c2",
+    "web/lib/forge-v2/preparation.server.ts": "8591986b0484c72241ed3f119596d7d2602c034ab57b86c56c08322f99888891",
+    "web/lib/forge-v2/preparation.test.ts": "e583e872443fa48eb8213cb67ba504536b1a8bb9638225c556d8b05a59a1eb58",
+    "web/lib/forge-v2/refresh.ts": "f30b80efbbeb9c8074dad599195adac77de6c7f7996516e794ef3be1fe866a75",
+    "web/lib/forge-v2/uncertainty.test.ts": "5670c87f3aa7a8c2f96c3409fe45caeaf970746ab29a8045a37ccc42e351ad81",
+    "web/lib/forge-v2/uncertainty.ts": "829eb077d8c17eb71e311d03130cc7cbec272c9627e1fee7c3041a1ab143aa91",
+    "web/pages/api/v2/forge/[operation].ts": "6716eecf8a621d8da54ed09be654118d5732376c9e380fba320305260e31dbed",
+    "web/pages/forge/v2/index.tsx": "3f8ad933c08c4d093cffb6baeddef1633b1d3b3484082dc11b2e5f9bba3f441d"
+  }
+}

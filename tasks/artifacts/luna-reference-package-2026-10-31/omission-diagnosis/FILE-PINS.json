@@ -1,0 +1,54 @@
+{
+  "version": "luna-reference-v4-offline-candidate-v1",
+  "baseR2ManifestSha256": "9adcd79c7eac81b009289de9804790d242a88df64296d6b91c5d1a32caf4fe96",
+  "changedApplicationFiles": {
+    "web/lib/sources/tweetLunaReference.ts": "9070da4a660da3240ffca1cbe55d0b8e4d411b895ba679d6c24d49695afb4927",
+    "web/lib/sources/tweetLunaReference.md": "0421aeeefa558e38895c4da5d8fe7879972b4328b6f72e1d943b32ce768b1110",
+    "web/lib/sources/tweetLunaReview.test.ts": "400d62a094787c1324fd48e65fd7bfaa639d3e03bf2d994a2aa6a76e76c5d75a"
+  },
+  "unchangedApplicationFiles": {
+    "web/lib/sources/tweetLunaReview.ts": "0aca5d80fd409eb8b1840df65dff37aa5f659dcab664c22b8e14fcc77358b2ce",
+    "web/lib/sources/fixtures/tweetLunaSyntheticCases.ts": "9bc96553a92bdfcfd63ba1ab2235025026e8d88726846183da88d6a31ff52013",
+    "web/lib/sources/tweetLunaGoalieWording.ts": "eb2ceadb1db0d5d16fcab03f2c835ac2d9dce44e4e97853d9fd3159c610b949a",
+    "web/lib/sources/fixtures/tweetLunaEvaluation.ts": "6f441f341627a8296ad0bf7810ee9c72e076bc16b2e9a67ac7afcd92c4dfac09",
+    "web/scripts/rehearse-luna-evaluation.ts": "f510038e837a24ce88df5fe6a9aa00e2e17ed873d871ddcaa3f03456904d6e66",
+    "web/lib/sources/tweetLunaEvaluationScoring.ts": "22797d003c321c3e52ef31945bbc5a4dfb7365ff4dfcfc93454c5bf041f6363d"
+  },
+  "protected": {
+    "web/lib/sources/tweetLunaTransport.ts": "6f67f0e819766eb8b7e712114f063681833ea87266b08443701231461e4d12d1",
+    "web/lib/sources/tweetLunaLocalStore.ts": "52977c7949d2f60ee4274da0c7d1e0583bc8c5c1324bb6ffb187a32037a2d543",
+    "web/scripts/review-ifttt-luna.ts": "b3407da148f11fe4dd3185e8521f3c1c9b4688232acbff675c9d104902cec8e8",
+    "web/lib/sources/fixtures/tweetLunaAdjudicatedLibrary.json": "e787036b54c89f8fa06e4b28032c8895fbbed81feef1fa04e357435f3229726a",
+    "web/lib/sources/decisionsReference/adapter.mjs": "055bc80ccf9874de8a976da6106bc34af15e424d6b905d39fccf57ecfd2b92a1",
+    "web/lib/sources/tweetIdentityProposal.ts": "a73df0483313bc75e94b36bc3fcf9087e1adb7d96afd0895db7a9c8bad7c9a27",
+    "web/lib/sources/tweetPlayerEvents.ts": "14c421d37506f33df08cac5914e30c38a578b2588ae46f3c6e461b70efadc88c"
+  },
+  "artifacts": {
+    "CONTINUATION-GATES.json": "ecceeb606c7957637f7bc1ff0add503da0a284a444529c5d5c2a4e5fa7a702ae",
+    "HANDOFF.md": "dff519e27990e6aabb41ac0f6c69da57450cbc86c00392036b6df377bb15fe69",
+    "START-PINS.json": "ee9c4eb756be09c6865bfc901e4d3e3ae7ad7c6c6381373fc5aa96c3df392548",
+    "baseline/tweetLunaReference.md": "1e26e2166bbeee4bc08b46bb3559eec647b382f2c4752927455b49c40234d026",
+    "baseline/tweetLunaReference.ts": "3076d174851d8acd7fcc099ce9af222c8c28aea752dda4be6e152b1eaac76f8d",
+    "baseline/tweetLunaReview.test.ts": "252423898877e409db5afe45b9e14997b51941c2a2e84c13887747e1517852ad",
+    "baseline-replay.json": "e870803f6cdcfc921c8cddc644d871efcd8cc4183f30f91be367480a86172e3e",
+    "baseline-replay.log": "2884c7b215e33547de4101b6b1708a272305ca1dc31906bd1755085236b5b9cb",
+    "candidate-replay.json": "625972e0f01ba410bb4e7fbeb6028adc6a7c387111ae500e586db5ec99c26485",
+    "candidate-replay.log": "f9dc6a4ff843cb0299412d62da59c39645f071939f7063c39f4b50b5516aad3b",
+    "candidate-vs-r2.patch": "c84427afae3ed079a7e7bf366c7833453877950e95cd015568f50b5eb5dc6000",
+    "lint.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "observed-proposal.json": "0394eb2e185ac06254c4391e6b1e20536ef543ee87d7ee46aecf2541b741cd03",
+    "rehearsal/SYNTHETIC-ONLY-ledger.json": "dee5bc515446c131d605f377965725d0085ae0d531d6890c683b25248359db5d",
+    "rehearsal/batch.json": "2d7ed6d130fbd4fb3debfe3cc01328e8ef004667597547079974fd908504fa10",
+    "rehearsal/rehearsal.json": "1a762ac35ff7a398ff75a9f5ec205a2738957de4e054c33bac49d80c3ff932c8",
+    "rehearsal/requests.json": "5cf3bfae7930a33aff57f9838e9f6e70fd1fa25bcc298b5e04853cb9534cc0f8",
+    "rehearsal/results.json": "ff0375078c65b43694f5825d986cc5ec9ba14791a6012a01207262c2617b4cd8",
+    "rehearsal.log": "f32afd2ee30764bd94b0ee4224df7d0348cfed6ebabf3cadf3a6e0c32a998e02",
+    "replay.ts": "36e0288d2fb5d10e6e77037d4ffcdb3658093ca1409a8b9bf06a20f07e571664",
+    "tests.log": "e64e45a1f3530d5c87f121c5f3360b3fbb87fc6098afc1c08782329d30dc7f12",
+    "typecheck.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "verification.json": "6190524218866013ca253779cea552cfde20beb7c778d8828afbfed4e92fc7fa"
+  },
+  "paidAuthorization": false,
+  "independentReview": "pending",
+  "diaryExcluded": true
+}

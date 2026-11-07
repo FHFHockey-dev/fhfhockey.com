@@ -1,0 +1,218 @@
+{
+  "CODEX-LEASES.json": {
+    "as_of_utc": "2026-11-01T17:46:57.639167+00:00",
+    "matchingClaims": [
+      {
+        "id": "CODEX-NST-GOALIE-WRITER-20261101-PURE",
+        "lane": null,
+        "owner_thread": null,
+        "owner": "Codex task 01a19780-b73c-7334-9e53-4b7fda61201c; parent 01a189f6-9a3a-7235-a989-e1af4f47b014",
+        "status": "ACTIVE_LOCAL_EVIDENCE_LIFECYCLE_REPORT_CONTINUATION",
+        "handoff_at": null,
+        "matches": [
+          "web/lib/nst/goalieCatchup.test.ts",
+          "web/lib/nst/goalieCatchup.ts",
+          "web/lib/nst/goalieFreshness.test.ts",
+          "web/lib/nst/goalieFreshness.ts"
+        ]
+      },
+      {
+        "id": "CODEX-NST-GOALIE-WRITER-20261101-ROUTE",
+        "lane": null,
+        "owner_thread": "01a19780-b73c-7334-9e53-4b7fda61201c",
+        "owner": "Codex task 01a19780-b73c-7334-9e53-4b7fda61201c; parent 01a189f6-9a3a-7235-a989-e1af4f47b014",
+        "status": "FROZEN_LOCAL_ACCEPTED_DEFAULT_PRIVILEGES_APPLIED_NST_PREREQUISITE_APPROVAL_PENDING",
+        "handoff_at": null,
+        "matches": [
+          "web/__tests__/pages/api/v1/db/update-nst-goalies.route.test.ts",
+          "web/lib/cron/nstBurstPlans.test.ts",
+          "web/lib/cron/nstBurstPlans.ts",
+          "web/pages/api/v1/db/update-nst-goalies.ts"
+        ]
+      },
+      {
+        "id": "CODEX-NST-GOALIE-WRITER-20261101-RUNNER",
+        "lane": null,
+        "owner_thread": "01a19780-b73c-7334-9e53-4b7fda61201c",
+        "owner": "Codex task 01a19780-b73c-7334-9e53-4b7fda61201c; parent 01a189f6-9a3a-7235-a989-e1af4f47b014",
+        "status": "FROZEN_LOCAL_ACCEPTED_DEFAULT_PRIVILEGES_APPLIED_NST_PREREQUISITE_APPROVAL_PENDING",
+        "handoff_at": null,
+        "matches": [
+          "web/lib/routeRunner/core.test.ts",
+          "web/lib/routeRunner/core.ts",
+          "web/lib/routeRunner/registry.ts",
+          "web/lib/routeRunner/store.test.ts",
+          "web/lib/routeRunner/store.ts",
+          "web/lib/routeRunner/tick.test.ts",
+          "web/lib/routeRunner/tick.ts"
+        ]
+      },
+      {
+        "id": "CODEX-NST-GOALIE-WRITER-20261101-REPORT",
+        "lane": null,
+        "owner_thread": "01a19780-b73c-7334-9e53-4b7fda61201c",
+        "owner": "Codex task 01a19780-b73c-7334-9e53-4b7fda61201c; parent 01a189f6-9a3a-7235-a989-e1af4f47b014",
+        "status": "FROZEN_LOCAL_ACCEPTED_DEFAULT_PRIVILEGES_APPLIED_NST_PREREQUISITE_APPROVAL_PENDING",
+        "handoff_at": null,
+        "matches": [
+          "web/__tests__/components/CronReportEmail/CronAuditEmail.test.tsx",
+          "web/__tests__/pages/api/v1/db/cron-report.test.ts",
+          "web/components/CronReportEmail/CronAuditEmail.tsx",
+          "web/pages/api/v1/db/cron-report.ts"
+        ]
+      },
+      {
+        "id": "CODEX-NST-GOALIE-FRESHNESS-READER-20261101",
+        "lane": null,
+        "owner_thread": null,
+        "owner": "Codex writer 01a19780-b73c-7334-9e53-4b7fda61201c",
+        "status": "ACTIVE_LOCAL_EVIDENCE_LIFECYCLE_REPORT_CONTINUATION",
+        "handoff_at": null,
+        "matches": [
+          "web/lib/nst/goalieFreshness.server.test.ts",
+          "web/lib/nst/goalieFreshness.server.ts"
+        ]
+      },
+      {
+        "id": "CODEX-NST-GOALIE-CHECKPOINT-ADAPTER-20261101",
+        "lane": null,
+        "owner_thread": null,
+        "owner": "Codex task 01a19780-b73c-7334-9e53-4b7fda61201c",
+        "status": "ACTIVE_LOCAL_EVIDENCE_LIFECYCLE_REPORT_CONTINUATION",
+        "handoff_at": null,
+        "matches": [
+          "web/lib/nst/goalieCatchup.server.test.ts",
+          "web/lib/nst/goalieCatchup.server.ts"
+        ]
+      },
+      {
+        "id": "CODEX-NST-GOALIE-CHECKPOINT-SQL-20261101",
+        "lane": null,
+        "owner_thread": "01a19780-b73c-7334-9e53-4b7fda61201c",
+        "owner": null,
+        "status": "FROZEN_LOCAL_ACCEPTED_DEFAULT_PRIVILEGES_APPLIED_NST_PREREQUISITE_APPROVAL_PENDING",
+        "handoff_at": null,
+        "matches": [
+          "supabase/migrations/20261101161622_nst_goalie_catchup_v1.sql",
+          "supabase/tests/nst_goalie_catchup_v1.py",
+          "supabase/tests/nst_goalie_catchup_v1.sql"
+        ]
+      },
+      {
+        "id": "CODEX-NST-GOALIE-PREPARATION-20261101",
+        "lane": null,
+        "owner_thread": "01a19780-b73c-7334-9e53-4b7fda61201c",
+        "owner": null,
+        "status": "FROZEN_LOCAL_ACCEPTED_DEFAULT_PRIVILEGES_APPLIED_NST_PREREQUISITE_APPROVAL_PENDING",
+        "handoff_at": null,
+        "matches": [
+          "web/lib/nst/goaliePreparation.server.test.ts",
+          "web/lib/nst/goaliePreparation.server.ts"
+        ]
+      },
+      {
+        "id": "CODEX-NST-GOALIE-WRITER-20261101-SHARED-ADMISSION",
+        "lane": null,
+        "owner_thread": "01a19780-b73c-7334-9e53-4b7fda61201c",
+        "owner": "Codex task 01a19780-b73c-7334-9e53-4b7fda61201c; parent 01a189f6-9a3a-7235-a989-e1af4f47b014",
+        "status": "FROZEN_LOCAL_ACCEPTED_DEFAULT_PRIVILEGES_APPLIED_NST_PREREQUISITE_APPROVAL_PENDING",
+        "handoff_at": null,
+        "matches": [
+          "functions/lib/nst_admission.py",
+          "functions/tests/test_nst_admission.py",
+          "web/lib/nst/client.test.ts",
+          "web/lib/nst/client.ts",
+          "web/lib/nst/sharedAdmission.test.ts",
+          "web/lib/nst/sharedAdmission.ts"
+        ]
+      },
+      {
+        "id": "CODEX-NST-GOALIE-LIFECYCLE-20261101",
+        "lane": null,
+        "owner_thread": "01a19780-b73c-7334-9e53-4b7fda61201c",
+        "owner": null,
+        "status": "FROZEN_LOCAL_ACCEPTED_DEFAULT_PRIVILEGES_APPLIED_NST_PREREQUISITE_APPROVAL_PENDING",
+        "handoff_at": null,
+        "matches": [
+          "web/lib/nst/jobLifecycle.server.test.ts",
+          "web/lib/nst/jobLifecycle.server.ts"
+        ]
+      },
+      {
+        "id": "CODEX-NST-GOALIE-WRITER-20261101-ENCLOSING-CALLERS",
+        "lane": null,
+        "owner_thread": "01a19780-b73c-7334-9e53-4b7fda61201c",
+        "owner": "Codex task 01a19780-b73c-7334-9e53-4b7fda61201c; parent 01a189f6-9a3a-7235-a989-e1af4f47b014",
+        "status": "FROZEN_LOCAL_ACCEPTED_DEFAULT_PRIVILEGES_APPLIED_NST_PREREQUISITE_APPROVAL_PENDING",
+        "handoff_at": null,
+        "matches": [
+          "functions/api/fetch_team_table.py",
+          "functions/tests/test_fetch_team_table_contract.py",
+          "web/__tests__/pages/api/Teams/nst-team-stats.route.test.ts",
+          "web/__tests__/pages/api/v1/db/update-nst-current-season.test.ts",
+          "web/__tests__/pages/api/v1/db/update-nst-team-daily.test.ts",
+          "web/pages/api/Teams/nst-team-stats.ts",
+          "web/pages/api/ThreeYearAverages/nstgamelog.py",
+          "web/pages/api/ThreeYearAverages/nsttest.py",
+          "web/pages/api/v1/db/nst_gamelog_goalie_scraper.py",
+          "web/pages/api/v1/db/nst_gamelog_scraper.py",
+          "web/pages/api/v1/db/update-nst-current-season.ts",
+          "web/pages/api/v1/db/update-nst-team-daily.ts",
+          "web/scripts/fetch_team_table.py"
+        ]
+      },
+      {
+        "id": "CODEX-NST-GOALIE-AGGREGATE-PROXY-20261101",
+        "lane": null,
+        "owner_thread": "01a19780-b73c-7334-9e53-4b7fda61201c",
+        "owner": null,
+        "status": "FROZEN_LOCAL_ACCEPTED_DEFAULT_PRIVILEGES_APPLIED_NST_PREREQUISITE_APPROVAL_PENDING",
+        "handoff_at": null,
+        "matches": [
+          "functions/api/index.py"
+        ]
+      },
+      {
+        "id": "CODEX-NST-GOALIE-CALLER-QUALIFICATION-20261101",
+        "lane": null,
+        "owner_thread": "01a19780-b73c-7334-9e53-4b7fda61201c",
+        "owner": null,
+        "status": "FROZEN_LOCAL_ACCEPTED_DEFAULT_PRIVILEGES_APPLIED_NST_PREREQUISITE_APPROVAL_PENDING",
+        "handoff_at": null,
+        "matches": [
+          "functions/tests/test_nst_legacy_lifecycle.py",
+          "web/__tests__/pages/api/SustainabilityStats/[playerId].test.ts",
+          "web/__tests__/pages/api/fetch_team_table.test.ts",
+          "web/lib/api/averages/helpers.ts",
+          "web/lib/nst/callerLifecycle.test.ts",
+          "web/pages/api/Averages/[playerId].ts",
+          "web/pages/api/CareerAverages/[playerId].ts",
+          "web/pages/api/SustainabilityStats/[playerId].ts",
+          "web/pages/api/Teams/[teamAbbreviation].ts",
+          "web/pages/api/ThreeYearAverages/[playerId].ts",
+          "web/pages/api/fetch_team_table.ts",
+          "web/pages/api/v1/db/check-missing-goalie-data.ts",
+          "web/pages/api/v1/db/update-nst-gamelog.ts",
+          "web/pages/api/v1/db/update-nst-last-ten.ts",
+          "web/pages/api/v1/db/update-nst-player-reports.ts",
+          "web/scripts/audit-ctpi-multiseason.ts"
+        ]
+      },
+      {
+        "id": "CODEX-NST-GOALIE-WRITER-20261101-GAMELOG-TEST",
+        "lane": null,
+        "owner_thread": "01a19780-b73c-7334-9e53-4b7fda61201c",
+        "owner": "Codex task 01a19780-b73c-7334-9e53-4b7fda61201c; parent 01a189f6-9a3a-7235-a989-e1af4f47b014",
+        "status": "FROZEN_LOCAL_ACCEPTED_DEFAULT_PRIVILEGES_APPLIED_NST_PREREQUISITE_APPROVAL_PENDING",
+        "handoff_at": null,
+        "matches": [
+          "web/__tests__/pages/api/v1/db/update-nst-gamelog.test.ts"
+        ]
+      }
+    ]
+  },
+  "CLAUDE-LEASES.json": {
+    "as_of_utc": "2026-10-31T18:21:44Z",
+    "matchingClaims": []
+  }
+}

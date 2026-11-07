@@ -1,0 +1,212 @@
+{
+  "schemaVersion": "forge-v2-retained-source-discovery-v1",
+  "status": "CONCRETE_CANDIDATE_FOUND_NOT_ADMITTED_FOR_V2",
+  "branch": "octoberBranch",
+  "observedHead": "8642265443fe85d47f1a5714aeac95cc28b964dd",
+  "scope": "Read-only technical discovery of retained nonprotected current-season examples. No capture, ingestion, fit, qualification or protected-label access.",
+  "candidate": {
+    "id": "pc15-kucherov-2026020177",
+    "playerId": 8476453,
+    "gameId": 2026020177,
+    "seasonId": 20262027,
+    "gameType": 2,
+    "providerGameDate": "2026-10-24",
+    "scheduledStartUtcInRetainedRevision": "2026-10-25T01:00:00Z",
+    "team": {
+      "id": 14,
+      "abbrev": "TBL",
+      "side": "away"
+    },
+    "opponent": {
+      "id": 68,
+      "abbrev": "UTA",
+      "side": "home"
+    },
+    "retainedGameState": "OFF",
+    "retainedScheduleState": "OK",
+    "files": [
+      {
+        "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/current-snapshot-15/game-log.json",
+        "sha256": "9a0cefaa9aade51cf190c0a1bec8493a86759971d3e5aa0cbbe91cdb5d808da2",
+        "bytes": 4932,
+        "url": "https://api-web.nhle.com/v1/player/8476453/game-log/20262027/2",
+        "requestStartedAt": "2026-10-29T17:43:32.592Z",
+        "responseCompletedAt": "2026-10-29T17:43:32.704Z",
+        "hashMatched": true
+      },
+      {
+        "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/current-snapshot-15/team-schedule.json",
+        "sha256": "805f9b3a7cbb898d4896a3ebbf144870a1e812ced44eea1ef49f5e68735a3e14",
+        "bytes": 177781,
+        "url": "https://api-web.nhle.com/v1/club-schedule-season/TBL/20262027",
+        "requestStartedAt": "2026-10-29T17:43:32.704Z",
+        "responseCompletedAt": "2026-10-29T17:43:32.792Z",
+        "hashMatched": true
+      }
+    ],
+    "totalRequiredPayloadBytes": 182713,
+    "excludedFile": "landing.json is not required; not opened because it may contain prior-season career data. No landing-derived claims used."
+  },
+  "sourceAndAuthority": {
+    "captureOwnerThread": "01a16ec2-f81c-717b-8961-8c3832fdc00f",
+    "captureApprovalSourceThread": "01a16eed-60f6-7096-879f-696c469db015",
+    "documentedPriorAuthority": "TJ explicitly requested current player data; bounded ordinary public NHL reads authorized by current delegation. One exact three-GET Kucherov/TBL batch; no retries or redirects.",
+    "approvalRecord": "OWNER-READ-REQUEST.md contains resolved bounded three-GET authority and offline reuse; receipt records successful TLS capture without retries. It is historical authority, not a new fetch instruction.",
+    "newCaptureNeeded": false,
+    "v2IntendedUseApprovalFound": false,
+    "rightsEvidence": "No provider/source intended-use approval reference covering v2 semantic/replay experiments found in this bounded inspected record set; prior card capture/offline UI use is documented. This is missing evidence, not a conclusion that use is unlawful.",
+    "humanCustodianAssignedForV2": null,
+    "existingAuthorityRule": "Reuse any existing valid authority covering these exact hashes and purpose if the owner can identify it; no duplicate permission is required."
+  },
+  "chronologyAndExposure": {
+    "classification": "already_exposed_current_observation; retrospective_reconstruction_only",
+    "firstReceiptOfSelectedRawRevisions": [
+      {
+        "file": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/current-snapshot-15/game-log.json",
+        "completedAt": "2026-10-29T17:43:32.704Z"
+      },
+      {
+        "file": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/current-snapshot-15/team-schedule.json",
+        "completedAt": "2026-10-29T17:43:32.792Z"
+      }
+    ],
+    "publicationClock": null,
+    "doNotInfer": "Response completion is local capture proof for these bytes, not provider publication time, original game-time availability, actual game start/end or historical affiliation. Earlier capture exists and later timestamp does not reset exposure.",
+    "knownPriorExposure": [
+      {
+        "date": "2026-10-27",
+        "evidence": "tasks/artifacts/player-cards-2026-10-26/current-data-01/approved-snapshot-02/HANDOFF.md",
+        "purpose": "earlier 11-game capture used for card provider/UI/export checks; numerical values reported same in PC15 handoff; raw hashes differ for game log and schedule"
+      },
+      {
+        "date": "2026-10-29",
+        "evidence": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/HANDOFF.md",
+        "purpose": "PC15 raw arithmetic, recent/prior comparison, browser and PNG/manifest verification"
+      },
+      {
+        "date": "2026-10-29",
+        "evidence": "tasks/artifacts/player-cards-2026-10-29/production-chart-17/HANDOFF.md",
+        "purpose": "same PC15 capture reused in production-by-game descriptive display"
+      }
+    ],
+    "exposureRegisterComplete": false,
+    "proposedAllocation": "One-game parser/semantic smoke only, explicitly exposed; all revisions of game2026020177 grouped together. Never training/calibration/final/prospective qualification from this authorization.",
+    "holdsPreserved": [
+      "2024-25 excluded",
+      "2025-26 reserved"
+    ],
+    "metadataObservedThisPass": "raw hashes, JSON field names and selected current-season game/team/date/status identities; no numerical category values reported or used for model selection"
+  },
+  "schemaMapping": {
+    "sourceEnvelope": "game-log.json: seasonId=20262027, gameTypeId=2, gameLog array; player identity binds endpoint path because no top-level playerId. Ignore playerStatsSeasons entirely.",
+    "rowSelection": "Exactly one gameLog row with gameId2026020177 and matching teamAbbrev TBL, opponentAbbrev UTA and provider gameDate; require matching schedule games[].id, season, gameType, sides and date. No latest-row guess.",
+    "G": "gameLog[].goals; finite nonnegative safe integer",
+    "A": "gameLog[].assists; finite nonnegative safe integer",
+    "PPP": "gameLog[].powerPlayPoints; finite nonnegative safe integer, distinct from powerPlayGoals; require PPP<=G+A",
+    "SOG": "gameLog[].shots; finite nonnegative safe integer, never infer from percentage",
+    "PIM": "gameLog[].pim; legacy baseline maps to penalty minutes; source credit/unit definition still needs owner evidence before semantic acceptance",
+    "HIT": "Field absent from every inspected gameLog row; unavailable, never zero",
+    "BLK": "Field absent from every inspected gameLog row; unavailable, never zero",
+    "TOI": "gameLog[].toi in m:ss; source parser convention, not official game-credit proof",
+    "schedule": "games[].startTimeUTC is scheduled time as observed; gameState OFF finality is not authoritative actual start/end. Home/away canonical team IDs are available.",
+    "appearance": "Row inclusion/TOI does not independently validate the v2 credited-appearance taxonomy, zero-minute penalty-only, dressed-unused or verified nonappearance. Keep v2 appearance label unqualified/ambiguous unless separate proof supplied.",
+    "affiliation": "Game row team identity available; dated bitemporal affiliation and independent eligible-opportunity census not established. Do not infer complete roster opportunity population."
+  },
+  "minimalProposedTest": {
+    "stage": "offline parser/hash/as-of boundary smoke; not complete official-appearance validation",
+    "requiredArtifacts": "Two source files above plus RECEIPT.json and explicit hash-bound source-use/allocation decision. No landing, live endpoint, DB or external resource.",
+    "rowCaps": {
+      "gameLog": 100,
+      "schedule": 140,
+      "selectedGames": 1
+    },
+    "cutoffs": [
+      "2026-10-29T17:43:32.703Z",
+      "2026-10-29T17:43:32.793Z"
+    ],
+    "expected": "Before both needed responses were received: unavailable. After: identified partial observation may be parsed with missing HIT/BLK and unqualified appearance; never a forecast or qualified label.",
+    "limits": {
+      "networkRequests": 0,
+      "productionWrites": 0,
+      "modelFits": 0,
+      "concurrency": 1,
+      "retries": 0,
+      "inputPayloadBytes": 182713,
+      "metadataBytesMax": 1048576,
+      "outputBytesMax": 1048576,
+      "wallSecondsMax": 30,
+      "rssMiBMax": 512
+    },
+    "measurements": "Actual retained input size182713bytes verified. Runtime/CPU/RSS for this future adapter not measured; caps are proposed stopping limits. No extra infrastructure necessary.",
+    "adapterState": "Not implemented/run against these sources: source-use/allocation decision and semantic boundary still unresolved. Exact schema/pins/test inputs now identified, so no technical file-finding task remains for TJ."
+  },
+  "smallestDecision": {
+    "request": "Confirm existing authority or approve use of ONLY the two pinned PC15 files for one private local FORGE v2 parser/hash/as-of smoke of player8476453/game2026020177, allocated as already-exposed retrospective data. Retain HIT/BLK missing and official-appearance/PIM semantics unqualified pending evidence. No fitting, final evaluation, new captures, live jobs, serving, RSO, publication or spend.",
+    "requiredEvidence": "Source owner/custodian identifies the applicable intended-use rights basis and confirms this game/all revisions are not reserved for an untouched experiment. Prior card approval alone does not establish that allocation.",
+    "decisionOwner": "TJ or the designated source/custody owner; historical capture owner thread is identified above, not assumed to be a named human rights authority.",
+    "afterDecision": "Implement the small file-only adapter against the discovered schema with synthetic adversarial cases; verify byte/identity/date/missingness and before/after receipt cutoffs, then perform only the authorized bounded smoke. Full official semantics require a richer original boxscore/credit case packet, separately admitted.",
+    "status": "not_requested_by_messaging_tool; not_attempted; no denial or uncertain action"
+  },
+  "searchCoverage": [
+    "FORGE v2 source-audit and named baseline/current-roster/participation source mappings",
+    "Repository artifact filenames for forecast/native/receipt/manifest/custody inventories",
+    "Player-card PC15/16/17 handoffs and KEEP-RUNTIME metadata leading to raw PC15 capture",
+    "Earlier approved-snapshot-02 capture receipt and handoff",
+    "Current-season synthetic baseline tests (not real-source proof)",
+    "Relevant coordination metadata preserves protected season holds; no protected numerical datasets opened"
+  ],
+  "verification": {
+    "bothRequiredRawHashes": "passed",
+    "metadataJsonParse": "passed",
+    "sourceFieldPresenceAndSingleGameIdentity": "passed",
+    "applicationTests": "not run; no application code changed",
+    "protectedNumericalDataOpened": false,
+    "sourceFilesModified": false,
+    "newNetworkCalls": 0,
+    "ingestionRuns": 0,
+    "fittingRuns": 0,
+    "qualifiedSubtaskClosures": 0
+  },
+  "metadataAndMappingPins": [
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/current-snapshot-15/RECEIPT.json",
+      "sha256": "cacca1c2bce3d730a429ead8ff2cafd0a671a247ede7aceb2fd5822594683f23"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/OWNER-READ-REQUEST.md",
+      "sha256": "7509f2568e77372321f6e451e657f554246352ac874a501fe0bef7c91bc74fce"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/OWNERSHIP.json",
+      "sha256": "81ed2e5504719a90835284d3f18c199cefe2df12118ff304f4e5be28bf1f105f"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/HANDOFF.md",
+      "sha256": "5848e53c6de605b184f5f7aebf5b13c7eaa05f9e790f282139954c6e8950b3a3"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/current-data-01/approved-snapshot-02/RECEIPT.json",
+      "sha256": "138e559c38fac00c1bcd3fe8503746acd0ebe1bc09a87721ba4d79b15666eadb"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/current-data-01/approved-snapshot-02/HANDOFF.md",
+      "sha256": "53f9f2e9db1387960066183520f13ff3ad34e0f66d1af168bef327479ab1e69c"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-29/production-chart-17/HANDOFF.md",
+      "sha256": "eda8dc4d18f6e1214e03431ad926bd8e5ffeb95125afeda6cce121a1827a33e1"
+    },
+    {
+      "path": "tasks/artifacts/forge-v2-implementation-2026-10-29/source-audit.json",
+      "sha256": "11be74fc432b211dfa62e669a7a0aa72e13cb9e2ffebf4e02fbdd072bc7931f9"
+    },
+    {
+      "path": "web/lib/player-cards/currentNhl.ts",
+      "sha256": "e76894c48f9ad67551515581e48997f2519c7b0796d0a0f2110530252af54161"
+    },
+    {
+      "path": "web/lib/player-forecasts/baselineSourceLineage.ts",
+      "sha256": "c1d492523843b103aafcdb081fe6aafe31651f2a5117a2b77ef60e4e2e604223"
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "startedAt": "2026-10-26T17:26:46.492592+00:00",
+  "approvalEvidence": "APPROVED-REPORT-READ-20261026.json",
+  "executionCount": 1,
+  "retryCount": 0,
+  "overallProcessSeconds": 50,
+  "status": "finished",
+  "exitCode": 0,
+  "finishedAt": "2026-10-26T17:26:48.350880+00:00"
+}

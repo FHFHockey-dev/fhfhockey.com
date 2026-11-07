@@ -1,0 +1,14 @@
+{
+  "action": "types",
+  "command": [
+    "npx",
+    "--no-install",
+    "tsc",
+    "--noEmit",
+    "--project",
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-26/outline-editor-09/tsconfig.json"
+  ],
+  "exitCode": 0,
+  "elapsedSeconds": 1.534,
+  "heldBy": "editor09 qualify parent resource slot"
+}

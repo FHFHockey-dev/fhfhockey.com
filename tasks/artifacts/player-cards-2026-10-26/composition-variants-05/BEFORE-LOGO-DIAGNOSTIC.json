@@ -1,0 +1,37 @@
+{
+  "url": "http://127.0.0.1:3125/player-cards/studio?diagnostic=before05",
+  "responseSha256": "64e7157b24935152a6c761a8a858fd6eb0d9bc408f532dfa1cfef47f64a8a002",
+  "logoBounds": {
+    "x": "840",
+    "y": "-100",
+    "width": "480",
+    "height": "480",
+    "preserveAspectRatio": "xMidYMid meet"
+  },
+  "heroBounds": {
+    "x": "600",
+    "y": "4",
+    "width": "600",
+    "height": "337.5",
+    "preserveAspectRatio": "xMidYMin meet"
+  },
+  "maskStops": [
+    [
+      null,
+      ".75"
+    ],
+    [
+      ".25",
+      null
+    ],
+    [
+      "1",
+      null
+    ]
+  ],
+  "fadeRegionLogoPixels": 13272,
+  "coveredByPlayer": 11994,
+  "visibleOutsidePlayer": 1278,
+  "occludedFraction": 0.9037070524412296,
+  "externalAttempts": []
+}

@@ -1,0 +1,29 @@
+[
+  {
+    "command": [
+      "node",
+      "node_modules/typescript/bin/tsc",
+      "--noEmit",
+      "-p",
+      "/Users/tim/Code/fhfhockey.com/tasks/artifacts/goalie-workload-forge-2026-10-25/tsconfig.json"
+    ],
+    "cwd": "/Users/tim/Code/fhfhockey.com/web",
+    "exitCode": 0,
+    "log": "tasks/artifacts/goalie-workload-forge-2026-10-25/static-1.log"
+  },
+  {
+    "command": [
+      "node",
+      "node_modules/eslint/bin/eslint.js",
+      "components/GoalieShareChart/index.tsx",
+      "components/GoalieShareChart/GoalieShareChart.test.ts",
+      "components/GoalieShareChart/GoalieShareChart.pagination.test.tsx",
+      "lib/goalieWorkload.ts",
+      "lib/projections/goalie/workloadEvidence.ts",
+      "lib/projections/goalie/workloadEvidence.test.ts"
+    ],
+    "cwd": "/Users/tim/Code/fhfhockey.com/web",
+    "exitCode": 0,
+    "log": "tasks/artifacts/goalie-workload-forge-2026-10-25/static-2.log"
+  }
+]

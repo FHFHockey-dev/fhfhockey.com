@@ -1,0 +1,191 @@
+[
+ {
+  "name": "team-games",
+  "enabled": true,
+  "png": true,
+  "feedback": "PNG downloaded: 1080 × 1080.",
+  "status": "",
+  "fit": [],
+  "phone": 375
+ },
+ {
+  "name": "what-changed",
+  "enabled": true,
+  "png": true,
+  "feedback": "PNG downloaded: 1080 × 1080.",
+  "status": "",
+  "fit": [],
+  "phone": 375
+ },
+ {
+  "name": "role-watch",
+  "enabled": true,
+  "png": true,
+  "feedback": "PNG downloaded: 1080 × 1080.",
+  "status": "",
+  "fit": [],
+  "phone": 375
+ },
+ {
+  "name": "bsh-board",
+  "enabled": true,
+  "png": true,
+  "feedback": "PNG downloaded: 1080 × 1080.",
+  "status": "",
+  "fit": [],
+  "phone": 375
+ },
+ {
+  "name": "bsh-risers",
+  "enabled": true,
+  "png": true,
+  "feedback": "PNG downloaded: 1080 × 1080.",
+  "status": "",
+  "fit": [],
+  "phone": 375
+ },
+ {
+  "name": "category-blueprint",
+  "enabled": true,
+  "png": true,
+  "feedback": "PNG downloaded: 1080 × 1080.",
+  "status": "",
+  "fit": [],
+  "phone": 375
+ },
+ {
+  "name": "nightly-floor",
+  "enabled": true,
+  "png": true,
+  "feedback": "PNG downloaded: 1080 × 1080.",
+  "status": "",
+  "fit": [],
+  "phone": 375
+ },
+ {
+  "name": "cardio-masters",
+  "enabled": true,
+  "png": true,
+  "feedback": "PNG downloaded: 1080 × 1080.",
+  "status": "",
+  "fit": [],
+  "phone": 375
+ },
+ {
+  "name": "off-night-rest",
+  "enabled": true,
+  "png": true,
+  "feedback": "PNG downloaded: 1080 × 1080.",
+  "status": "",
+  "fit": [],
+  "phone": 375
+ },
+ {
+  "name": "off-night-weekly",
+  "enabled": true,
+  "png": true,
+  "feedback": "PNG downloaded: 1080 × 1080.",
+  "status": "",
+  "fit": [],
+  "phone": 375
+ },
+ {
+  "name": "crease-shift",
+  "enabled": true,
+  "png": true,
+  "feedback": "PNG downloaded: 1080 × 1080.",
+  "status": "",
+  "fit": [],
+  "phone": 375
+ },
+ {
+  "name": "goalie-week4",
+  "enabled": true,
+  "png": true,
+  "feedback": "PNG downloaded: 1080 × 1080.",
+  "status": "",
+  "fit": [],
+  "phone": 375
+ },
+ {
+  "name": "goalie-week4-worst",
+  "enabled": true,
+  "png": true,
+  "feedback": "PNG downloaded: 1080 × 1080.",
+  "status": "",
+  "fit": [],
+  "phone": 375
+ },
+ {
+  "name": "goalie-month-oct",
+  "enabled": true,
+  "png": true,
+  "feedback": "PNG downloaded: 1080 × 1080.",
+  "status": "",
+  "fit": [],
+  "phone": 375
+ },
+ {
+  "name": "goalie-gsax",
+  "enabled": true,
+  "png": true,
+  "feedback": "PNG downloaded: 1080 × 1080.",
+  "status": "",
+  "fit": [],
+  "phone": 375
+ },
+ {
+  "name": "busy-quiet",
+  "enabled": true,
+  "png": true,
+  "feedback": "PNG downloaded: 1080 × 1080.",
+  "status": "",
+  "fit": [],
+  "phone": 375
+ },
+ {
+  "name": "goalie-rescue",
+  "enabled": true,
+  "png": true,
+  "feedback": "PNG downloaded: 1080 × 1080.",
+  "status": "",
+  "fit": [],
+  "phone": 375
+ },
+ {
+  "name": "ratio-impact",
+  "enabled": true,
+  "png": true,
+  "feedback": "PNG downloaded: 1080 × 1080.",
+  "status": "",
+  "fit": [],
+  "phone": 375
+ },
+ {
+  "name": "risky-starts",
+  "enabled": true,
+  "png": true,
+  "feedback": "PNG downloaded: 1080 × 1080.",
+  "status": "",
+  "fit": [],
+  "phone": 375
+ },
+ {
+  "name": "start-sit",
+  "enabled": true,
+  "png": true,
+  "feedback": "PNG downloaded: 1080 × 1080.",
+  "status": "",
+  "fit": [],
+  "phone": 375
+ },
+ {
+  "name": "player-vs-player",
+  "enabled": false,
+  "png": false,
+  "feedback": "",
+  "status": "blocked: Enter two NHL player ids, or choose a sourced pair.",
+  "fit": [],
+  "phone": 375
+ }
+]

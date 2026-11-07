@@ -1,0 +1,15 @@
+{
+  "id": "CODEX-NST-GOALIE-FRESHNESS-READER-20261101",
+  "owner": "Codex writer 01a19780-b73c-7334-9e53-4b7fda61201c",
+  "status": "ACTIVE_EXACT_LOCAL_PATHS",
+  "paths": [
+    "web/lib/nst/goalieFreshness.server.ts",
+    "web/lib/nst/goalieFreshness.server.test.ts"
+  ],
+  "baseline_sha256": {
+    "web/lib/nst/goalieFreshness.server.ts": null,
+    "web/lib/nst/goalieFreshness.server.test.ts": null
+  },
+  "started_at_utc": "2026-11-01T15:13:45.539928+00:00",
+  "scope": "Bounded DB reader and mocked tests for existing pure freshness assessment. No live reads, schema changes or report integration before handoff."
+}

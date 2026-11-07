@@ -1,0 +1,33 @@
+{
+  "version": "luna-binding-cli-offline-replay-v1",
+  "actualProviderRequests": 0,
+  "credentialsUsed": "synthetic literal only",
+  "realLedgerUnchanged": true,
+  "historicalGradesUnchanged": true,
+  "results": [
+    {
+      "id": "E02",
+      "cliExit": 2,
+      "originalReviewReproducedExactly": true,
+      "originalFailurePreserved": true,
+      "separateBoundCandidate": true,
+      "candidateHash": "0000ef85afe3dfce705b5a355f2e3df0d4c77e32517b6a5b5219d4ead5a4721a",
+      "proposedEnd": 40,
+      "mockCalls": 1,
+      "actualProviderRequests": 0,
+      "humanDecision": "not_recorded"
+    },
+    {
+      "id": "E03",
+      "cliExit": 2,
+      "originalReviewReproducedExactly": true,
+      "originalFailurePreserved": true,
+      "separateBoundCandidate": true,
+      "candidateHash": "355f10b219471c805651282f42ba1919ff0b66921b1af4d8ae74a97e1ab68007",
+      "proposedEnd": 46,
+      "mockCalls": 1,
+      "actualProviderRequests": 0,
+      "humanDecision": "not_recorded"
+    }
+  ]
+}

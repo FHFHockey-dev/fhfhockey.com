@@ -1,0 +1,17 @@
+[
+ {
+  "space": {
+   "emptyPx": 7,
+   "bodyPx": 861,
+   "textOutside": 0,
+   "minFont": 12
+  },
+  "name": "mcm",
+  "enabled": true,
+  "png": true,
+  "feedback": "PNG downloaded: 1080 × 1080.",
+  "status": "",
+  "fit": [],
+  "phone": 375
+ }
+]

@@ -1,0 +1,396 @@
+[
+ {
+  "name": "team-games",
+  "post": "team-games",
+  "query": {},
+  "ms": 371,
+  "requests": 2,
+  "errors": [],
+  "rows": {
+   "wgo_team_stats": 98,
+   "games": 49
+  },
+  "state": "ready",
+  "reasons": [],
+  "sample": "2026-10-24 to 2026-10-30: 98 completed team games",
+  "cohort": "All 32 teams",
+  "err": null
+ },
+ {
+  "name": "what-changed",
+  "post": "what-changed",
+  "query": {},
+  "ms": 1192,
+  "requests": 10,
+  "errors": [],
+  "rows": {
+   "wgo_skater_stats": 7775,
+   "wgo_team_stats": 432,
+   "games": 216
+  },
+  "state": "ready",
+  "reasons": [],
+  "sample": "L5 versus season to date through 2026-10-30. Season values contain the recent games: overlap is shown per player",
+  "cohort": "502 skaters with 10+ season GP: 502 ranked, 0 short sample, 0 below coverage, 461 more not listed",
+  "err": null
+ },
+ {
+  "name": "role-watch",
+  "post": "role-watch",
+  "query": {},
+  "ms": 1324,
+  "requests": 12,
+  "errors": [],
+  "rows": {
+   "wgo_skater_stats": 7775,
+   "wgo_team_stats": 432,
+   "games": 216,
+   "rolling_player_game_metrics": 42,
+   "powerPlayCombinations": 665
+  },
+  "state": "ready",
+  "reasons": [],
+  "sample": "L5 versus the season before it, through 2026-10-30. No game is in both; each row shows its actual samples. Unknown means no source row for that game; Off PP means the game has PP rows and this skater is not on PP1 or PP2",
+  "cohort": "733 skaters this season: 502 with a full L5 and at least 5 baseline games, 231 short sample, 455 more not listed",
+  "err": null
+ },
+ {
+  "name": "bsh-board",
+  "post": "bsh-board",
+  "query": {},
+  "ms": 1156,
+  "requests": 10,
+  "errors": [],
+  "rows": {
+   "wgo_team_stats": 432,
+   "games": 216,
+   "wgo_skater_stats": 7775
+  },
+  "state": "ready",
+  "reasons": [],
+  "sample": "Season through 2026-10-30: 7775 appearances. Window: last 10 appearances. Ranked by BSH per game. A missing component leaves a skater unranked; shot attempts never stand in.",
+  "cohort": "All skaters, 5+ season GP: 633 eligible, 633 ranked, 613 more below the card, 1 tied with the last row",
+  "err": null
+ },
+ {
+  "name": "bsh-risers",
+  "post": "bsh-board",
+  "query": {
+   "view": "risers",
+   "window": "l5"
+  },
+  "ms": 922,
+  "requests": 10,
+  "errors": [],
+  "rows": {
+   "wgo_team_stats": 432,
+   "games": 216,
+   "wgo_skater_stats": 7775
+  },
+  "state": "ready",
+  "reasons": [],
+  "sample": "Season through 2026-10-30: 7775 appearances. Window: last 5 appearances vs the previous 5 appearances. Ranked by the change in BSH per game. Both windows must be full.",
+  "cohort": "All skaters, 5+ season GP: 633 eligible, 502 comparable, 222 risers, 131 short of a full comparison, 27 unchanged, 202 more below the card, 1 tied with the last row",
+  "err": null
+ },
+ {
+  "name": "category-blueprint",
+  "post": "category-blueprint",
+  "query": {},
+  "ms": 1106,
+  "requests": 10,
+  "errors": [],
+  "rows": {
+   "games": 216,
+   "wgo_team_stats": 432,
+   "wgo_skater_stats": 7775
+  },
+  "state": "ready",
+  "reasons": [],
+  "sample": "Season through 2026-10-30: 7775 appearances. Window: last 10 appearances, per game. Ordered by points. Each category ranks alone, and a missing category neither passes nor fails the top-250 filter.",
+  "cohort": "All skaters, 5+ season GP: 633 skaters, 16 in the top 250 of every category",
+  "err": null
+ },
+ {
+  "name": "nightly-floor",
+  "post": "nightly-floor",
+  "query": {},
+  "ms": 1121,
+  "requests": 15,
+  "errors": [],
+  "rows": {
+   "wgo_team_stats": 432,
+   "games": 216,
+   "yahoo_players": 1608,
+   "wgo_skater_stats": 7775,
+   "yahoo_nhl_player_map_read": 2373
+  },
+  "state": "ready",
+  "reasons": [],
+  "sample": "Season through 2026-10-30: 7775 appearances. Window: last 10 appearances. A DNP is not an appearance. A missing stat counts as neither a pass nor a fail.",
+  "cohort": "All skaters, 5+ season GP, 0-100% rostered: 633 eligible, 544 ranked, 89 unknown rostered % excluded, 524 more below the card, 2 tied with the last row",
+  "err": null
+ },
+ {
+  "name": "cardio-masters",
+  "post": "nightly-floor",
+  "query": {
+   "view": "cardio"
+  },
+  "ms": 1029,
+  "requests": 15,
+  "errors": [],
+  "rows": {
+   "wgo_team_stats": 432,
+   "games": 216,
+   "yahoo_players": 1608,
+   "wgo_skater_stats": 7775,
+   "yahoo_nhl_player_map_read": 2373
+  },
+  "state": "ready",
+  "reasons": [],
+  "sample": "Season through 2026-10-30: 7775 appearances. Window: last 10 appearances. A DNP is not an appearance. A missing stat counts as neither a pass nor a fail.",
+  "cohort": "All skaters, 5+ season GP, 0-100% rostered: 633 eligible, 544 ranked, 89 unknown rostered % excluded, 524 more below the card, 16 tied with the last row",
+  "err": null
+ },
+ {
+  "name": "off-night-rest",
+  "post": "off-night-edge",
+  "query": {},
+  "ms": 1031,
+  "requests": 13,
+  "errors": [],
+  "rows": {
+   "/v1/schedule/2026-10-26": 0,
+   "games": 147,
+   "yahoo_players": 1608,
+   "wgo_skater_stats": 5291,
+   "yahoo_nhl_player_map_read": 2373
+  },
+  "state": "ready",
+  "reasons": [],
+  "sample": "2026-10-10 to 2026-10-30: 706 skaters; picks need 5 appearances, active in 14 days, ranked by L5 fantasy points per game × ice time; ownership among qualified skaters: 207 known, 10 unknown, 0 stale",
+  "cohort": "Top 16 of 18 teams with games (also tied at the last rank: TOR, VAN); skaters at or under 50% rostered, unknown % excluded",
+  "err": null
+ },
+ {
+  "name": "off-night-weekly",
+  "post": "off-night-edge",
+  "query": {
+   "dates": "weekly"
+  },
+  "ms": 696,
+  "requests": 13,
+  "errors": [],
+  "rows": {
+   "/v1/schedule/2026-10-26": 0,
+   "games": 147,
+   "yahoo_players": 1608,
+   "wgo_skater_stats": 5291,
+   "yahoo_nhl_player_map_read": 2373
+  },
+  "state": "ready",
+  "reasons": [],
+  "sample": "2026-10-10 to 2026-10-30: 706 skaters; picks need 5 appearances, active in 14 days, ranked by L5 fantasy points per game × ice time; ownership among qualified skaters: 204 known, 14 unknown, 0 stale",
+  "cohort": "Top 16 of 32 teams with games; skaters at or under 50% rostered, unknown % excluded",
+  "err": null
+ },
+ {
+  "name": "crease-shift",
+  "post": "crease-shift",
+  "query": {},
+  "ms": 124,
+  "requests": 3,
+  "errors": [],
+  "rows": {
+   "wgo_goalie_stats": 455,
+   "wgo_team_stats": 432,
+   "games": 216
+  },
+  "state": "ready",
+  "reasons": [],
+  "sample": "Last 10 completed team games per team through 2026-10-30, compared with the 10 games before them. PTS is share change in percentage points; relief is counted apart; describes past starts only",
+  "cohort": "6 of 32 teams ranked; 26 short comparison",
+  "err": null
+ },
+ {
+  "name": "goalie-week4",
+  "post": "goalie-period",
+  "query": {
+   "week": "4"
+  },
+  "ms": 525,
+  "requests": 6,
+  "errors": [],
+  "rows": {
+   "yahoo_matchup_weeks": 27,
+   "wgo_goalie_stats": 99,
+   "wgo_team_stats": 96,
+   "games": 48,
+   "goalie_weekly_aggregates": 225,
+   "league_weekly_goalie_averages": 4
+  },
+  "state": "ready",
+  "reasons": [],
+  "sample": "Week 4, 2026-10-19 to 2026-10-25: 96 official starts in the 1 matchup week used. Week 4: 57 goalies, 96 starts. Comparisons not available: 0. Relief-only goalies, not compared: 1",
+  "cohort": "33 goalies with at least 2 official starts; baselines use every goalie with a start, week by week. Ranked by Category Counts: games net (better minus worse results), then week net, then share better; equal goalies share a rank; lower GAA counts as better. TGV grade (existing method) is a separate method, not applied to Category Counts; Average cannot occur with its three default stats",
+  "err": null
+ },
+ {
+  "name": "goalie-month-oct",
+  "post": "goalie-period",
+  "query": {
+   "period": "month",
+   "month": "2026-10"
+  },
+  "ms": 524,
+  "requests": 6,
+  "errors": [],
+  "rows": {
+   "yahoo_matchup_weeks": 27,
+   "wgo_goalie_stats": 455,
+   "wgo_team_stats": 432,
+   "games": 216,
+   "goalie_weekly_aggregates": 254,
+   "league_weekly_goalie_averages": 5
+  },
+  "state": "ready",
+  "reasons": [],
+  "sample": "October 2026, through 2026-10-30: 432 official starts in the 5 matchup weeks used. Week 1: 50 goalies, 78 starts; Week 2: 57 goalies, 94 starts; Week 3: 59 goalies, 100 starts; Week 4: 57 goalies, 96 starts; Week 5: 47 goalies, 64 starts. Comparisons not available: 0. Relief-only goalies, not compared: 6",
+  "cohort": "45 goalies with at least 5 official starts; baselines use every goalie with a start, week by week. Ranked by Category Counts: games net (better minus worse results), then week net, then share better; equal goalies share a rank; lower GAA counts as better. TGV grade (existing method) is a separate method, not applied to Category Counts; Average cannot occur with its three default stats",
+  "err": null
+ },
+ {
+  "name": "goalie-gsax",
+  "post": "goalie-gsax",
+  "query": {},
+  "ms": 524,
+  "requests": 6,
+  "errors": [],
+  "rows": {
+   "nst_gamelog_goalie_all_counts": 417,
+   "wgo_goalie_stats": 455,
+   "nhl_xg_goalie_game_aggregates": 0,
+   "yahoo_matchup_weeks": 27,
+   "wgo_team_stats": 396,
+   "games": 198
+  },
+  "state": "ready",
+  "reasons": [],
+  "sample": "Week 4, 2026-10-19 to 2026-10-25, NST through 2026-10-27, 3 days behind NHL.com (2026-10-30): 99 of 99 appearances with NST rows. Later appearances not counted: 40. NST rows dropped for no NHL.com appearance that date: 3",
+  "cohort": "58 goalies with at least 1 appearance and 90% NST coverage; 0 unranked. Above 0 means fewer goals allowed than this model expected; one model's context beside SV% and GAA, not comparable across models or strengths, and nothing about the next start. FHFH xG model: unavailable this season, 0 goalie games.",
+  "err": null
+ },
+ {
+  "name": "busy-quiet",
+  "post": "busy-quiet-goalies",
+  "query": {},
+  "ms": 176,
+  "requests": 5,
+  "errors": [],
+  "rows": {
+   "games": 216,
+   "wgo_goalie_stats": 455,
+   "wgo_team_stats": 432,
+   "nst_gamelog_goalie_all_counts": 404,
+   "nst_team_gamelogs_as_counts": 432
+  },
+  "state": "ready",
+  "reasons": [],
+  "sample": "Last 10 appearances through 2026-10-30: 435 appearances, 414 starts, 21 relief. Per start reads official starts only; relief is counted apart. HD SHOTS are shots from the high-danger zone, not chances, shown at 90% coverage, otherwise as covered/expected games. TEAM columns are team totals per team game, including time another goalie was in net. 16 listed appearances shared the net.",
+  "cohort": "62 of 71 goalies with at least 3 official starts in the window",
+  "err": null
+ },
+ {
+  "name": "goalie-rescue",
+  "post": "goalie-rescue",
+  "query": {},
+  "ms": 577,
+  "requests": 8,
+  "errors": [],
+  "rows": {
+   "games": 231,
+   "wgo_team_stats": 432,
+   "yahoo_players": 181,
+   "wgo_goalie_stats": 455,
+   "yahoo_nhl_player_map_read": 150
+  },
+  "state": "ready",
+  "reasons": [],
+  "sample": "Last 10 appearances through 2026-10-30: 26 candidates, 150 starts, 14 relief. Win support: W. Volume: SV, with SA as context. Ratio exposure: SV%, GA, GAA, pooled. One selected category orders the list. Team games left run through 2026-11-01.",
+  "cohort": "26 of 62 goalies with at least 3 official starts at or under 50% rostered; 0 unknown ownership excluded; 21 above the ceiling; 15 excluded by Yahoo status",
+  "err": null
+ },
+ {
+  "name": "ratio-impact",
+  "post": "ratio-impact",
+  "query": {},
+  "ms": 6,
+  "requests": 0,
+  "errors": [],
+  "rows": {},
+  "state": "ready",
+  "reasons": [],
+  "sample": "Hypothetical line: 30 SA, 3 GA, 60:00 TOI. Base: No base entered. Arithmetic on the numbers entered, pooled from summed totals rather than averaged percentages. It predicts nothing and changes no roster. SV% = saves ÷ SA. GAA = GA × 3600 ÷ TOI seconds. A zero or missing denominator shows —.",
+  "cohort": "Entered totals only",
+  "err": null
+ },
+ {
+  "name": "risky-starts",
+  "post": "risky-starts",
+  "query": {},
+  "ms": 441,
+  "requests": 6,
+  "errors": [],
+  "rows": {
+   "games": 264,
+   "wgo_team_stats": 432,
+   "nst_team_gamelogs_as_counts": 432,
+   "wgo_goalie_stats": 412,
+   "player_forecast_goalie_start_observations": 21,
+   "player_forecast_observation_conflicts": 0
+  },
+  "state": "ready",
+  "reasons": [],
+  "sample": "2026-10-31 to 2026-11-06: 84 upcoming team games; rates are season to date through 2026-10-30. Unknown means no current observation, not that the goalie is not starting. Observations cover part of the slate. Reports aren't separated by reporter, so conflicts between sources can't be detected. No source link or expiry exists for these reports. 1 observed goalie has no appearance in their team's last 10 games, so this inventory does not list them.",
+  "cohort": "84 team-nights in the window; ranks over all 32 teams. These signals are correlated: shots, xG and chances overlap, and penalties feed all three. Each lens stands alone, flags are never added across lenses, and no win or start odds are given.",
+  "err": null
+ },
+ {
+  "name": "start-sit",
+  "post": "start-sit",
+  "query": {},
+  "ms": 437,
+  "requests": 6,
+  "errors": [],
+  "rows": {
+   "games": 264,
+   "wgo_team_stats": 432,
+   "nst_team_gamelogs_as_counts": 432,
+   "wgo_goalie_stats": 412,
+   "player_forecast_goalie_start_observations": 21,
+   "player_forecast_observation_conflicts": 0
+  },
+  "state": "ready",
+  "reasons": [],
+  "sample": "2026-10-31 to 2026-11-06: 84 upcoming team games; rates are season to date through 2026-10-30. Unknown means no current observation, not that the goalie is not starting. Observations cover part of the slate. Reports aren't separated by reporter, so conflicts between sources can't be detected. No source link or expiry exists for these reports. 1 observed goalie has no appearance in their team's last 10 games, so this inventory does not list them. No admitted Start Chart start participation is available, so every forecast is unavailable. A raw start_probability is not admitted. Rates are season to date and #1 is the highest value. Volume, ratio and win are separate, correlated lenses, never added, and no win odds are given.",
+  "cohort": "71 goalies with an appearance in their team's last 10 games, on teams scheduled in the window",
+  "err": null
+ },
+ {
+  "name": "player-vs-player",
+  "post": "player-vs-player",
+  "query": {},
+  "ms": 7,
+  "requests": 0,
+  "errors": [],
+  "rows": {},
+  "state": "blocked",
+  "reasons": [
+   "Enter two NHL player ids, or choose a sourced pair."
+  ],
+  "sample": "Not available",
+  "cohort": "Not available",
+  "err": null
+ }
+]

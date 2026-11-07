@@ -1,0 +1,6 @@
+{
+  "exitCode": 0,
+  "stdoutBytes": 0,
+  "acceptedAsPass": false,
+  "reason": "Existing CLI entry guard compares file URL to argv literally; macOS /tmp alias differs from physical /private/tmp. Use the actual resolved file path for this installation-layout probe; no checker behavior changed."
+}

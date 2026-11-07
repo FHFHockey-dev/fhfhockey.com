@@ -1,0 +1,37 @@
+{
+  "initial_web_root_failure": {
+    "command": [
+      "./node_modules/.bin/vite-node",
+      "--config",
+      "vitest.config.mts",
+      "../tasks/artifacts/six-lanes-2026-11-04/L4/valuationAdapter.checks.ts"
+    ],
+    "cwd": "web",
+    "exitCode": 1,
+    "output": "file:///Users/tim/Code/fhfhockey.com/web/node_modules/vite-node/dist/client.mjs:247\n\t\t\t\tconst error = new Error(`Cannot find ${isBareImport(id) ? \"package\" : \"module\"} '${id}'${importer ? ` imported from '${importer}'` : \"\"}`, { cause });\n\t\t\t\t              ^\n\nError: Cannot find module '/@fs//Users/tim/Code/fhfhockey.com/tasks/artifacts/six-lanes-2026-11-04/L4/valuationAdapter.checks.ts'\n    at ViteNodeRunner._fetchModule (file:///Users/tim/Code/fhfhockey.com/web/node_modules/vite-node/dist/client.mjs:247:19)\n    at ViteNodeRunner.directRequest (file:///Users/tim/Code/fhfhockey.com/web/node_modules/vite-node/dist/client.mjs:268:44)\n    at ViteNodeRunner.cachedRequest (file:///Users/tim/Code/fhfhockey.com/web/node_modules/vite-node/dist/client.mjs:189:11)\n    at ViteNodeRunner.executeFile (file:///Users/tim/Code/fhfhockey.com/web/node_modules/vite-node/dist/client.mjs:162:10)\n    at CAC.run (file:///Users/tim/Code/fhfhockey.com/web/node_modules/vite-node/dist/cli.mjs:102:28) {\n  code: 'ERR_MODULE_NOT_FOUND',\n  [cause]: Error: Failed to load url /Users/tim/Code/fhfhockey.com/tasks/artifacts/six-lanes-2026-11-04/L4/valuationAdapter.checks.ts (resolved id: /Users/tim/Code/fhfhockey.com/tasks/artifacts/six-lanes-2026-11-04/L4/valuationAdapter.checks.ts). Does the file exist?\n      at loadAndTransform (file:///Users/tim/Code/fhfhockey.com/web/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:35835:17) {\n    code: 'ERR_LOAD_URL'\n  }\n}\n\nNode.js v22.11.0\n"
+  },
+  "corrected_repository_root": {
+    "command": [
+      "web/node_modules/.bin/vite-node",
+      "--root",
+      ".",
+      "--config",
+      "web/vitest.config.mts",
+      "tasks/artifacts/six-lanes-2026-11-04/L4/valuationAdapter.checks.ts"
+    ],
+    "cwd": "repository root",
+    "exitCode": 1,
+    "output": "node:internal/process/promises:394\n    triggerUncaughtException(err, true /* fromPromise */);\n    ^\n\n[Error: ETIMEDOUT: connection timed out, scandir '/Users/tim/Library/CloudStorage/MacDroid-RetroidPocket5/.Trash'] {\n  errno: -60,\n  code: 'ETIMEDOUT',\n  syscall: 'scandir',\n  path: '/Users/tim/Library/CloudStorage/MacDroid-RetroidPocket5/.Trash'\n}\n\nNode.js v22.11.0\n"
+  },
+  "explicit_alias_config": {
+    "command": [
+      "web/node_modules/.bin/vite-node",
+      "--config",
+      "tasks/artifacts/six-lanes-2026-11-04/L4/valuation-check.config.mts",
+      "tasks/artifacts/six-lanes-2026-11-04/L4/valuationAdapter.checks.ts"
+    ],
+    "cwd": "repository root",
+    "exitCode": 0,
+    "output": "PASS reuse existing scorer under two league profiles\nPASS legitimate zero remains available\nPASS absent view and unknown scored target withhold\nPASS denied comparison, expiry and partial horizon withhold\nPASS cached read cutoff and inconsistent totals withhold\nPASS unsupported scoring/invalid weights do not invent values\nPASS raw points never become VOR, combined value or suggestion guard\n7 synthetic adapter checks passed; no real forecast admission asserted.\n"
+  }
+}

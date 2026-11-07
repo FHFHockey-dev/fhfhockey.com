@@ -1,0 +1,27 @@
+{
+  "at": "2026-10-31T21:32:15.258298+00:00",
+  "applicationFilesUnchanged": 16,
+  "previousImmutableArtifactsMatched": {
+    "repair-r2": 19,
+    "omission-diagnosis": 23,
+    "continuation-v4": 30,
+    "continuation-execution": 13,
+    "e02-boundary-diagnosis": 14
+  },
+  "originalE01NonLedgerArtifactsMatched": 29,
+  "originalE01LedgerStatePreservedInSnapshot": true,
+  "currentThreeAttemptLedgerUnchangedAndDisabled": true,
+  "historicalUncertainLedgerUnchanged": true,
+  "rehearsalReportsPassed": 14,
+  "newMockRequestsInFullScenario": 17,
+  "cumulativeMockAttempts": 20,
+  "request21Rejected": true,
+  "offlineScenariosPassed": 5,
+  "scopedVerifierTypecheckExit": 0,
+  "newPaidCalls": 0,
+  "newPaidCostNanoUsd": 0,
+  "credentialAccesses": 0,
+  "applicationEdits": 0,
+  "deployments": 0,
+  "independentContinuationReview": "pending"
+}

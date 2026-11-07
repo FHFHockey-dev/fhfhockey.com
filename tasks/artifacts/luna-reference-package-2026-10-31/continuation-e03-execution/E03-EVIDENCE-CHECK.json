@@ -1,0 +1,42 @@
+{
+  "checkedAt": "2026-10-31T21:39:58.191935+00:00",
+  "source": "SYN Avery Keeper was first goalie off the ice.",
+  "sourceLengthUtf16": 46,
+  "asciiOnly": true,
+  "requestHash": "cb4ebd599a52911bd995fd7089baf7062544dabdf3efd093e05d7782cf540084",
+  "modelEvidence": {
+    "start": 4,
+    "end": 45,
+    "text": "Avery Keeper was first goalie off the ice."
+  },
+  "actualSlice": "Avery Keeper was first goalie off the ice",
+  "textEqualsSlice": false,
+  "uniqueQuotedTextStart": 4,
+  "quotedTextLengthUtf16": 42,
+  "requiredExclusiveEndForSuppliedQuote": 46,
+  "predeclaredAllowedSpans": [
+    {
+      "start": 4,
+      "end": 46,
+      "text": "Avery Keeper was first goalie off the ice."
+    },
+    {
+      "start": 4,
+      "end": 45,
+      "text": "Avery Keeper was first goalie off the ice"
+    },
+    {
+      "start": 0,
+      "end": 46,
+      "text": "SYN Avery Keeper was first goalie off the ice."
+    },
+    {
+      "start": 0,
+      "end": 45,
+      "text": "SYN Avery Keeper was first goalie off the ice"
+    }
+  ],
+  "proposalWasModified": false,
+  "labelsOrValidatorWereModified": false,
+  "interpretation": "Projected status matches first-off wording. The quote is valid source text, but numeric end45 excludes its final period. Both full and no-period valid spans were already allowed. The returned mixed text/offset pair is invalid."
+}

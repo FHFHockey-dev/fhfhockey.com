@@ -68,13 +68,16 @@ export function rateFromTotals(
   return rate;
 }
 
-/** Additional saves per 100 on-net shots; expectedSaveProb is a 0..1 fraction. */
+/** Additional saves per 100 on-net shots; expectedSaveProb is a 0..1 fraction.
+ * Fenwick/unblocked-attempt expectations cannot be subtracted from ordinary SV%. */
 export function vuduSaveGap({
   expectedSaveProb,
+  expectedShotPopulation,
   recentSaves,
   recentShotsOnNet
 }: {
   expectedSaveProb: MeasuredNumber;
+  expectedShotPopulation: "on_net_shots" | "unblocked_attempts" | "unknown";
   recentSaves: MeasuredNumber;
   recentShotsOnNet: MeasuredNumber;
 }): number | null {
@@ -87,6 +90,7 @@ export function vuduSaveGap({
   if (recentSaves != null && recentSaves < 0) {
     throw new Error("recentSaves must be nonnegative");
   }
+  if (expectedShotPopulation !== "on_net_shots") return null;
   if (recentShotsOnNet === 0) return null;
   if (recentSaves != null && recentShotsOnNet != null && recentSaves > recentShotsOnNet) {
     throw new Error("recentSaves cannot exceed recentShotsOnNet");

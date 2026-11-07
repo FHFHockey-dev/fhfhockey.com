@@ -1,3 +1,4 @@
+import { withNstJobLifecycle } from "lib/nst/jobLifecycle.server";
 import type { NextApiRequest, NextApiResponse } from "next";
 import * as cheerio from "cheerio";
 import { fetchNstTextByUrl } from "lib/nst/client";
@@ -154,4 +155,4 @@ async function handler(
   }
 }
 
-export default adminOnly(handler);
+export default adminOnly(withNstJobLifecycle(handler, "fetch_team_table", req => req.method !== "GET"));

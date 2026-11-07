@@ -1,0 +1,11 @@
+{
+  "observedAt": "2026-10-31T20:54:46.565761+00:00",
+  "method": "One read-only browser reload each of existing credit-grants and organization usage pages; no settings changed.",
+  "promotionalBalanceDisplayedUsd": 85,
+  "promotionalExpiry": "2026-11-13",
+  "purchasedBalanceDisplayedUsd": 10,
+  "requestsDisplayed": 0,
+  "tokensDisplayed": 0,
+  "reportedSpendDisplayedUsd": 0,
+  "interpretation": "Rounded balances and usage lag do not prove zero cost. Provider receipts are authoritative for requests/usage; posted attribution is pending."
+}

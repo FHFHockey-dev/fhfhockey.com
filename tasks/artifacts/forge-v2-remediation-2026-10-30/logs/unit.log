@@ -1,0 +1,34 @@
+
+> web@0.1.0 test
+> vitest --run lib/forge-v2/pipeline.test.ts lib/forge-v2/uncertainty.test.ts lib/forge-v2/refresh.test.ts lib/forge-v2/evaluation.test.ts lib/forge-v2/preparation.test.ts lib/forge-v2/api.test.ts lib/forge-v2/integration.test.ts lib/forge-v2/contracts.test.ts components/ForgeV2/ForecastExplorer.test.tsx --maxWorkers=1 --minWorkers=1
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+ ✓ lib/forge-v2/preparation.test.ts (1 test) 2648ms
+   ✓ issues H10 to H1 through queue, prepares immutable corrections and serves the API without fabricated publications  2648ms
+ ✓ lib/forge-v2/pipeline.test.ts (27 tests) 251ms
+ ✓ lib/forge-v2/refresh.test.ts (34 tests) 22ms
+ ✓ lib/forge-v2/api.test.ts (7 tests) 15ms
+(node:18527) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ components/ForgeV2/ForecastExplorer.test.tsx (22 tests) 1531ms
+   ✓ FORGE forecast explorer > keeps more than 3000 loaded revisions available through bounded table pages  1126ms
+(node:18531) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/forge-v2/evaluation.test.ts (21 tests) 26ms
+(node:18536) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/forge-v2/uncertainty.test.ts (11 tests) 11ms
+(node:18538) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/forge-v2/integration.test.ts (7 tests) 8ms
+(node:18540) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/forge-v2/contracts.test.ts (4 tests) 4ms
+
+ Test Files  9 passed (9)
+      Tests  134 passed (134)
+   Start at  22:44:08
+   Duration  7.06s (transform 330ms, setup 10ms, collect 590ms, tests 4.51s, environment 896ms, prepare 285ms)
+

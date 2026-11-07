@@ -1,0 +1,107 @@
+{
+  "route": "http://127.0.0.1:3135/roster-autopsy",
+  "fixtureOnly": true,
+  "externalRequestsBlocked": [
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://img.buymeacoffee.com/button-api/",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://cdn.vercel-insights.com/v1/script.debug.js",
+    "GET https://va.vercel-scripts.com/v1/speed-insights/script.debug.js",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://img.buymeacoffee.com/button-api/",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://cdn.vercel-insights.com/v1/script.debug.js",
+    "GET https://va.vercel-scripts.com/v1/speed-insights/script.debug.js"
+  ],
+  "localApiRequestsBlocked": [],
+  "pageErrors": [],
+  "checks": [
+    {
+      "name": "route returns HTTP 200",
+      "result": true
+    },
+    {
+      "name": "empty manual workspace visible",
+      "result": true
+    },
+    {
+      "name": "no unsupported quality grade is claimed",
+      "result": true
+    },
+    {
+      "name": "two eligible players fill both slots",
+      "result": true
+    },
+    {
+      "name": "position cards explain overlap",
+      "result": true
+    },
+    {
+      "name": "C and LW show individual coverage",
+      "result": true
+    },
+    {
+      "name": "reserve player excluded from simultaneous total",
+      "result": true
+    },
+    {
+      "name": "reserve count shown",
+      "result": true
+    },
+    {
+      "name": "missing eligibility is marked invalid",
+      "result": true
+    },
+    {
+      "name": "incomplete data prompts review",
+      "result": true
+    },
+    {
+      "name": "roster survives reload",
+      "result": true
+    },
+    {
+      "name": "confirmed slot analysis survives reload",
+      "result": true
+    },
+    {
+      "name": "mobile page has no horizontal overflow",
+      "result": true
+    },
+    {
+      "name": "mobile roster and coverage are reachable",
+      "result": true
+    },
+    {
+      "name": "keyboard reaches positions input",
+      "result": true
+    },
+    {
+      "name": "mobile add button meets 44px target",
+      "result": true
+    },
+    {
+      "name": "no uncaught browser errors",
+      "result": true
+    }
+  ],
+  "mobileDimensions": {
+    "client": 390,
+    "scroll": 390
+  },
+  "result": "passed"
+}

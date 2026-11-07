@@ -1,0 +1,7 @@
+Commands run from `/Users/tim/Code/fhfhockey.com/web`; all stdout/stderr and JSON reports remain in this review root.
+
+1. `IFTTT_POSTGRES_BIN=/opt/homebrew/opt/postgresql@17/bin npm test -- --run ../tasks/ifttt-integration-2026-10-16/review-receiver-intake-bounds-v1/receiver-storage.test.ts ../tasks/ifttt-integration-2026-10-16/review-receiver-intake-bounds-v1/receiver-unit.test.ts ../tasks/ifttt-integration-2026-10-16/review-receiver-intake-bounds-v1/policy.test.ts --no-file-parallelism --config ../tasks/ifttt-integration-2026-10-16/review-receiver-intake-bounds-v1/vitest.review.config.mjs --reporter=default --reporter=json --outputFile=../tasks/ifttt-integration-2026-10-16/review-receiver-intake-bounds-v1/copied104-results.json` →exit0,104pass; copied104.log.
+2. `./node_modules/.bin/tsc --noEmit --project ../tasks/ifttt-integration-2026-10-16/review-receiver-intake-bounds-v1/tsconfig.json` →exit0; scoped-tsc.log.
+3. Same Vitest config/flags with `independent-quota-trigger.test.ts -t 'independent R20'`, output independent-results.json →exit1,two cap-preservation failures/72 inherited skips; independent.log. Each fixture uses synthetic future operator registration; no production policy values or hosted registration.
+
+No successful case repeated, broader suite or full compiler/build/hosted action ran. Failure evidence records full raw/archive/policy/admission readback, not only HTTP status.

@@ -80,14 +80,15 @@ export function lineupGapReport(snapshot: PlanningSnapshot, intent: PlanIntent, 
       : `${kind} for ${[...dates].sort().join(", ")}`).join("; ")}` }));
   // An illegal no-move lineup leaves every contribution unknown in any scoring mode; otherwise an unknown total with
   // no responsible game (schedule, team membership, approved totals) is lineup-wide. Say which, never "unprojected".
-  // The usual illegal case: a reserve spot held by a player without verified eligibility for it (e.g. a healthy IR player).
+  // An ineligible stash blocks additions, not the existing active lineup.
   const reserveIssues = snapshot.roster.filter(entry => ["IR", "IR+", "NA"].includes(entry.position)
     && !(players.get(entry.playerId)?.reserveEligibility ?? []).some(value => value === entry.position));
-  if (!baseline.legal) projectionBlockers.splice(0, projectionBlockers.length, ...(reserveIssues.length
-    ? reserveIssues.map(entry => ({ playerId: entry.playerId, reason: `in ${entry.position} without verified ${entry.position} eligibility, so the lineup fails a rule check; move him to an active or bench spot, or refresh league data` }))
-    : [{ playerId: null, reason: `the no-move lineup fails a rule check${baseline.limitations.length ? ` (${baseline.limitations.slice(0, 3).join(" ")})` : ""}` }]));
+  if (!baseline.legal) projectionBlockers.splice(0, projectionBlockers.length,
+    { playerId: null, reason: `the no-move lineup fails a rule check${baseline.limitations.length ? ` (${baseline.limitations.slice(0, 3).join(" ")})` : ""}` });
   else if (points && baseline.projectedValue === null && !projectionBlockers.length) projectionBlockers.push({ playerId: null,
     reason: `projected points are unknown${baseline.limitations.length ? ` (${baseline.limitations.slice(0, 3).join(" ")})` : ""}` });
+  projectionBlockers.push(...reserveIssues.map(entry => ({ playerId: entry.playerId,
+    reason: `in ${entry.position} without verified ${entry.position} eligibility, which blocks additions; resolve the reserve position or refresh league data` })));
   const unprojected = points ? unknown.filter(player => lacksForecast(player) || blocking.has(player.id)) : unknown;
   const dropRow = drop ? ledger.get(drop.id) : undefined;
   const bestDrop = drop ? { playerId: drop.id, projectedPoints: dropRow?.projectedPoints ?? null,

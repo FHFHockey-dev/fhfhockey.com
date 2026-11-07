@@ -1,0 +1,13 @@
+{
+  "library_file_id": "libfile_fc0ef7a3b4cc8191a604c3de78fb2041",
+  "file_id": "file_000000003b00820eb90a258102dfd651",
+  "version": 0,
+  "expected_bytes": 673212,
+  "prepare": "success; signed transfer",
+  "helper_attempts": 1,
+  "materialize_exit": 1,
+  "error": "library file transfer failed: download failed",
+  "readable_local_bytes": false,
+  "pixels_inspected": false,
+  "continuation": "Explicit owner text only; composition reference unseen; no raw URL retry or bypass"
+}

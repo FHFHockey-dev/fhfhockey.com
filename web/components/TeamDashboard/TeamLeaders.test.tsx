@@ -332,12 +332,12 @@ describe("TeamLeaders", () => {
     );
     rerender(<TeamLeaders teamAbbrev="TOR" seasonId="2025" />);
 
-    await waitFor(() => expect(screen.getAllByText("Beta")).toHaveLength(3));
+    await waitFor(() => expect(screen.getAllByText("Beta")).toHaveLength(4));
     resolveBoston?.({ data: bostonRows, error: null });
     await Promise.resolve();
 
     expect(screen.queryByText("Alpha")).toBeNull();
-    expect(screen.getAllByText("Beta")).toHaveLength(3);
+    expect(screen.getAllByText("Beta")).toHaveLength(4);
   });
 
   it("does not surface a stale failure after the selected team changes", async () => {
@@ -388,12 +388,12 @@ describe("TeamLeaders", () => {
     );
     rerender(<TeamLeaders teamAbbrev="TOR" seasonId="2025" />);
 
-    await waitFor(() => expect(screen.getAllByText("Beta")).toHaveLength(3));
+    await waitFor(() => expect(screen.getAllByText("Beta")).toHaveLength(4));
     resolveBoston?.({ data: null, error: new Error("Stale query failed") });
     await Promise.resolve();
 
     expect(screen.queryByText("Stale query failed")).toBeNull();
-    expect(screen.getAllByText("Beta")).toHaveLength(3);
+    expect(screen.getAllByText("Beta")).toHaveLength(4);
     expect(consoleError).not.toHaveBeenCalled();
   });
 
@@ -404,7 +404,7 @@ describe("TeamLeaders", () => {
     );
 
     await waitFor(() =>
-      expect(screen.getAllByText("No data available")).toHaveLength(3),
+      expect(screen.getAllByText("No data available")).toHaveLength(4),
     );
     expect(fromMock).toHaveBeenCalledTimes(1);
     firstRender.unmount();
@@ -446,7 +446,7 @@ describe("TeamLeaders", () => {
 
     render(<TeamLeaders teamAbbrev="BOS" seasonId="2025" />);
 
-    await waitFor(() => expect(screen.getAllByText("Alpha")).toHaveLength(3));
+    await waitFor(() => expect(screen.getAllByText("Alpha")).toHaveLength(4));
     expect(consoleWarn).toHaveBeenCalledWith(
       "Team leader image metadata is unavailable; using fallback images.",
     );

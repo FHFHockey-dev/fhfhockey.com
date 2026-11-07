@@ -1,3 +1,4 @@
+import { withNstJobLifecycle } from "lib/nst/jobLifecycle.server";
 // pages/api/v1/db/update-nst-gamelog.ts
 
 /**
@@ -3153,4 +3154,17 @@ async function handler(
   }
 }
 
-export default adminOnly(withNhlOffSeasonSkip(handler as any));
+export default adminOnly(withNstJobLifecycle(withNhlOffSeasonSkip(handler as any), "update-nst-gamelog",
+  req => !["GET", "POST"].includes(req.method ?? ""),
+  { settled: (body, status) => {
+    if (body?.success === true && body.skipped === true && body.reason === "nhl_off_season") return true;
+    const progress = body?.nstProgress;
+    if (progress?.auditPersistence !== "confirmed" || progress.sourceOutcomes?.unresolvedCount !== 0) return false;
+    if (status === 200 && body.success === true && progress.stoppedEarly === false) return true;
+    return status === 207 && body.success === false && body.operationStatus === "continuation_required" &&
+      body.resume?.required === true && progress.state === "continuation_required" && progress.stoppedEarly === true &&
+      progress.continuation?.blocked === false && progress.continuation.nextIndex > 0 &&
+      progress.continuation.nextIndex < progress.plannedRequestCount && !progress.sourceDown &&
+      Array.isArray(progress.missingScheduleDates) && progress.missingScheduleDates.length === 0;
+  } },
+));

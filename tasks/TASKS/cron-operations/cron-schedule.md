@@ -418,7 +418,7 @@
     "run_time_utc": "09:55 UTC",
     "active": true,
     "method": "GET",
-    "route": "/api/v1/db/update-lineup-deployment-tallies"
+    "route": "/api/v1/db/update-lineup-deployment-tallies?action=current"
   },
   {
     "jobid": 201,

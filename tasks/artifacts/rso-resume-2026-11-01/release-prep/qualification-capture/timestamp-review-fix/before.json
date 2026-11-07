@@ -1,0 +1,15 @@
+{
+  "at": "2026-11-01T21:00:48.051669+00:00",
+  "checks": [
+    {
+      "check": "readback-before",
+      "exitCode": 1,
+      "log": "readback-before.log"
+    },
+    {
+      "check": "settlement-before",
+      "exitCode": 1,
+      "log": "settlement-before.log"
+    }
+  ]
+}

@@ -92,6 +92,7 @@ export function compareMarketReference(expected: MarketExpectation, reference: M
   options: { asOf: string; maxAgeHours: number }): MarketComparison {
   const unavailable = (reason: string): MarketComparison => ({ status: "unavailable", reason, label: UNAVAILABLE });
   if (!reference) return unavailable("no_reference");
+  if (!Number.isFinite(options.maxAgeHours) || options.maxAgeHours < 0) return unavailable("invalid_freshness_limit");
   if (!reference.source?.trim()) return unavailable("missing_source");
   if (typeof reference.value !== "number" || !Number.isFinite(reference.value)) return unavailable("invalid_value");
   const captured = Date.parse(reference.capturedAt), asOf = Date.parse(options.asOf);
@@ -101,8 +102,11 @@ export function compareMarketReference(expected: MarketExpectation, reference: M
   if (reference.unit !== expected.unit) return unavailable("unit_mismatch");
   if (reference.horizonGames !== expected.horizonGames) return unavailable("horizon_mismatch");
   if (reference.scoringBasis !== expected.scoringBasis) return unavailable("scoring_mismatch");
-  if (expected.value === null) return unavailable("expected_unavailable");
+  if (expected.value === null || !Number.isFinite(expected.value)) return unavailable("expected_unavailable");
+  if (!Number.isSafeInteger(expected.horizonGames) || expected.horizonGames <= 0) return unavailable("invalid_horizon");
+  if (!expected.scoringBasis.trim()) return unavailable("missing_scoring_basis");
   const gap = expected.value - reference.value;
+  if (!Number.isFinite(gap)) return unavailable("invalid_gap");
   const unit = expected.unit === "fantasy_points" ? "fantasy points" : "count";
   return {
     status: "comparable", gap, expected: expected.value, reference,

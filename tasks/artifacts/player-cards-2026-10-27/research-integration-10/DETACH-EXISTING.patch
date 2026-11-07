@@ -1,0 +1,79 @@
+*** Begin Patch
+*** Update File: /Users/tim/Code/fhfhockey.com/web/lib/player-cards/currentNhl.ts
+@@
+-import type { ResearchCardExtension } from "./researchSnapshot.types";
+-
+ /** NHL basic skater results. These definitions are deliberately separate from NST metrics. */
+ export const CURRENT_NHL_FORMATS = ["rates-opportunity", "results-milestones"] as const;
+ export type CurrentNhlFormat = typeof CURRENT_NHL_FORMATS[number];
+@@
+   shootingPct: { label: "Shooting% · actual", unit: "percent", definition: "NHL goals / shots on goal × 100; zero shots is undefined" },
+ } as const;
+ export type CurrentNhlMetric = keyof typeof CURRENT_NHL_DEFINITIONS;
+-export type CurrentNhlCard = ResearchCardExtension & {
++export type CurrentNhlCard = {
+   id: string; source: "nhl-current" | "nhl-retained" | "contract-fixture"; state: "ready" | "unavailable";
+   player: { id: number; name: string; team: string; position: string };
+   request: CurrentNhlRequest; observedAt: string;
+*** Update File: /Users/tim/Code/fhfhockey.com/web/components/player-cards/CurrentPlayerCardStudio.tsx
+@@
+ import { CURRENT_NHL_DEFINITIONS, CURRENT_NHL_FORMATS, parseCurrentNhlRequest, type CurrentNhlCard, type CurrentNhlFormat, type CurrentNhlRequest } from "../../lib/player-cards/currentNhl";
+ import { rasterizeCurrentNhlCard } from "../../lib/player-cards/currentNhlExport";
+ import { saveCardFile } from "../../lib/player-cards/shareExport";
+-import ResearchCardEvidence from "./ResearchCardEvidence";
+ import styles from "./PlayerCardShareStudio.module.scss";
+ 
+ async function loadCurrentCard(request: CurrentNhlRequest, signal: AbortSignal): Promise<CurrentNhlCard> {
+@@
+     <p role="status" aria-live="polite">{status || (loading ? "Checking identity, game log and final-game schedule…" : card ? card.source === "contract-fixture" ? "Synthetic contract fixture. Not a real player’s results." : card.source === "nhl-retained" ? "Retained official NHL capture, not a current live response." : "NHL snapshot loaded at the observation time shown on the card." : "Choose a player and load a snapshot.")}</p>
+     {card && <><div className={styles.artwork}><CurrentPlayerCard card={card} format={format} svgRef={svgRef} /></div><div role="note"><p>{card.rankReason}</p>{card.issues.map(issue => <p key={issue}>{issue}</p>)}</div>
+       <details><summary>Source and metric definitions</summary><p>{card.historyStatement} {card.finalityStatement}</p><p>All Strengths only. Calendar-date windows and strength splits are unavailable in this source adapter.</p>{Object.entries(CURRENT_NHL_DEFINITIONS).map(([id, definition]) => <p key={id}>{definition.label}: {definition.definition}</p>)}<button onClick={() => saveCardFile(new Blob([JSON.stringify({ card, format, definitions: CURRENT_NHL_DEFINITIONS }, null, 2)], { type: "application/json" }), `fhfh-${card.player.id}-${format}-manifest.json`)}>Download snapshot manifest</button></details></>}
+-    {card && <details><summary>Research evidence (optional)</summary><ResearchCardEvidence card={{ player: card.player, eventThroughDate: [...card.sample.sourceDates].sort().at(-1) || null, playerResearchSnapshot: card.playerResearchSnapshot }} /></details>}
+     <p>Other stat suites remain in the work plan. Sustainability scores, isolated impact, on-ice chance metrics, goalie workload and milestone baselines are not inferred from these counts.</p>
+   </main>;
+ }
+*** Update File: /Users/tim/Code/fhfhockey.com/web/lib/player-cards/currentNhlExport.ts
+@@
+ import type { CurrentNhlCard, CurrentNhlFormat } from "./currentNhl";
+ 
+ export function assertCurrentNhlExport(svg: SVGSVGElement, card: CurrentNhlCard, format: CurrentNhlFormat) {
+-  if (card.playerResearchSnapshot) throw new Error("Historical research must use its separately dated research card, not current NHL results.");
+   if (card.state !== "ready" || card.sample.gp === null || card.sample.toiSeconds === null || svg.dataset.currentKey !== currentCardKey(card, format) || svg.dataset.source !== card.source || svg.dataset.cardFormat !== format || svg.querySelector("image")) throw new Error("The qualified displayed snapshot changed or is unavailable. Retry this card.");
+ }
+ export const rasterizeCurrentNhlCard = (svg: SVGSVGElement, card: CurrentNhlCard, format: CurrentNhlFormat): Promise<Blob> => rasterizeCardSvg(svg, () => assertCurrentNhlExport(svg, card, format), 1200, 1020);
+*** Update File: /Users/tim/Code/fhfhockey.com/web/components/player-cards/CurrentPlayerCardStudio.test.tsx
+@@
+   expect(() => assertCurrentNhlExport(svg, { ...card, values: { ...card.values, goals: 99 } }, "rates-opportunity")).toThrow("snapshot");
+   expect(() => assertCurrentNhlExport(svg, { ...card, state: "unavailable" }, "rates-opportunity")).toThrow("snapshot");
+ });
+-it("keeps optional research missing in current results and blocks attaching historical fixtures to their PNG", () => {
+-  const card = fixture(), { container } = render(<CurrentPlayerCardStudio initialCard={card} />);
+-  expect(screen.getByText("Streak research unavailable: no manifest-bound snapshot supplied.")).toBeTruthy(); expect(card).not.toHaveProperty("playerResearchSnapshot");
+-  const svg = container.querySelector("svg")!;
+-  expect(() => assertCurrentNhlExport(svg, { ...card, playerResearchSnapshot: {} as never }, "rates-opportunity")).toThrow("Historical research");
+-});
+*** Update File: /Users/tim/Code/fhfhockey.com/web/pages/social-share/player-cards.tsx
+@@
+ import PlayerCardShareStudio from "components/player-cards/PlayerCardShareStudio";
+ import CurrentPlayerCardStudio from "components/player-cards/CurrentPlayerCardStudio";
+ import { useState } from "react";
+-import dynamic from "next/dynamic";
+ import { SOCIAL_SHARE_CACHE_CONTROL } from "lib/socialShare/access";
+ import { cardEvidenceVerdict, clientEvidence, unclaimedBundle, type ClientEvidence } from "lib/player-cards/cardEvidenceVerdict";
+ import { buildInteractionFixture } from "lib/player-cards/interactionFixtures";
+ import { flowSettings, INITIAL_FLOW } from "lib/player-cards/interactionSnapshot";
+ import { evidenceStatusCopy } from "lib/player-cards/evidenceVerdictCopy";
+ 
+-const ResearchPlayerCardStudio = dynamic(() => import("components/player-cards/ResearchPlayerCardStudio"));
+-
+ // `evidence` is computed server-side and only its state is shipped; it selects fixed preview copy here.
+ export default function PlayerCardsSharePage({ evidence }: { evidence: ClientEvidence }) {
+-  const [mode, setMode] = useState<"nhl" | "artwork" | "research">("nhl");
++  const [mode, setMode] = useState<"nhl" | "artwork">("nhl");
+   const status = evidenceStatusCopy(evidence, "fabricated-preview");
+-  return <Container contentVariant="full"><NextSeo title="Player cards | FHFH Share studio" noindex nofollow /><SocialShareAccessGate><label>Card source <select value={mode} onChange={event => setMode(event.target.value as "nhl" | "artwork" | "research")}><option value="nhl">NHL results</option><option value="artwork">Illustrative artwork study</option><option value="research">Historical research examples · offline</option></select></label>{mode === "nhl" ? <CurrentPlayerCardStudio /> : mode === "research" ? <ResearchPlayerCardStudio /> : <><PlayerCardShareStudio /><p role="status" data-evidence-state={evidence.state}><strong>{status.title}</strong><br />{status.detail}</p></>}</SocialShareAccessGate></Container>;
++  return <Container contentVariant="full"><NextSeo title="Player cards | FHFH Share studio" noindex nofollow /><SocialShareAccessGate><label>Card source <select value={mode} onChange={event => setMode(event.target.value as "nhl" | "artwork")}><option value="nhl">NHL results</option><option value="artwork">Illustrative artwork study</option></select></label>{mode === "nhl" ? <CurrentPlayerCardStudio /> : <><PlayerCardShareStudio /><p role="status" data-evidence-state={evidence.state}><strong>{status.title}</strong><br />{status.detail}</p></>}</SocialShareAccessGate></Container>;
+ }
+ export const getServerSideProps: GetServerSideProps<{ evidence: ClientEvidence }> = async ({ res }) => {
+   res.setHeader("X-Robots-Tag", "noindex, nofollow"); res.setHeader("Cache-Control", SOCIAL_SHARE_CACHE_CONTROL);
+*** End Patch

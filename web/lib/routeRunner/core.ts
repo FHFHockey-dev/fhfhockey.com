@@ -192,7 +192,7 @@ export type StepDecision =
       progressDone?: number;
     }
   | { kind: "complete"; reason: string }
-  | { kind: "wait"; delayMs: number; reason: string }
+  | { kind: "wait"; delayMs: number; reason: string; nextQuery?: RouteQuery }
   | {
       kind: "fail";
       reason: string;
@@ -407,6 +407,104 @@ function classifyRolling(
   };
 }
 
+const GOALIE_QUERY_KEYS = ["runMode", "startDate", "maxDays", "overwrite", "datasetType",
+  "maxUrls", "requestIntervalMs", "cursor", "resumeScope", "plannedUrls"];
+const GOALIE_ADMISSION_WAIT_MS = 60_000;
+
+function urlCursor(value: unknown): number | null {
+  const parsed = typeof value === "number" ? value
+    : typeof value === "string" && /^(0|[1-9]\d*)$/.test(value) ? Number(value) : NaN;
+  return Number.isSafeInteger(parsed) && parsed >= 0 ? parsed : null;
+}
+
+function classifyGoalie(result: StepResult, body: Body | null, sent: RouteQuery): StepDecision {
+  const fail = (reason: string): StepDecision => ({kind:"fail", reason:`Goalie continuation: ${reason}`});
+  if (!body || nonEmptyString(body.error)) return fail("missing result or source error.");
+  if (sent.catchupScope !== undefined || body.checkpointVersion !== undefined) {
+    const raw = asRecord(body.resume?.request?.query);
+    const nextQuery = raw && scalarQuery(raw);
+    if (body.checkpointVersion !== 1 || !/^[a-f0-9]{64}$/.test(sent.catchupScope ?? "") ||
+        Object.keys(sent).some(key => key !== "catchupScope") || body.scope !== sent.catchupScope ||
+        body.requiresReview !== false || body.retrySafe !== true || !nextQuery || !sameQuery(nextQuery, sent) ||
+        !Array.isArray(body.committedUnitKeys) || new Set(body.committedUnitKeys).size !== body.committedUnitKeys.length ||
+        body.committedUnitKeys.some((key: unknown) => typeof key !== "string" || !/^\d{8}\/\d{4}-\d{2}-\d{2}\/(5v5|ev|all|pp|pk)(Counts|Rates)$/.test(key))) {
+      return fail("checkpoint scope or acknowledgement is uncertain.");
+    }
+    if (result.statusCode === 200 && body.status === "complete" && body.success === true && body.complete === true &&
+        body.stoppedEarly === false && body.resume.required === false) return {kind:"complete",reason:"Durable goalie cohort complete."};
+    if (result.statusCode !== 207 || body.operationStatus !== "partial" || body.success !== false || body.complete !== false ||
+        body.stoppedEarly !== true || body.resume.required !== true || !["progress","deferred"].includes(body.status)) {
+      return fail("checkpoint result is not a safe continuation.");
+    }
+    if (body.status === "progress" && body.committedUnitKeys.length === 0) return fail("checkpoint progress has no receipts.");
+    return {kind:"wait",nextQuery,delayMs:GOALIE_ADMISSION_WAIT_MS,
+      reason:"Checkpoint step acknowledged; recheck the durable budget and worker window in one minute."};
+  }
+  const total = urlCursor(body.totalQueuedUrls);
+  if (result.statusCode === 200 && body.success !== false && body.stoppedEarly === false &&
+      body.resume?.required !== true && ((total === 0 && body.pendingUrlsProcessed === 0) ||
+        (body.complete === true && total != null && body.nextCursor === total))) {
+    return {kind:"complete",reason:"Goalie queued execution is complete; source coverage remains unverified."};
+  }
+  if (result.statusCode !== 207 || body.operationStatus !== "partial" || body.success !== false ||
+      body.complete !== false || body.stoppedEarly !== true || body.retrySafe !== true || body.resume?.required !== true) {
+    return fail("unfinished result is not an acknowledged safe continuation.");
+  }
+  const raw = asRecord(body.resume?.request?.query);
+  if (!raw || Object.keys(raw).some(key=>!GOALIE_QUERY_KEYS.includes(key))) return fail("missing query or unapproved field.");
+  const nextQuery = scalarQuery(raw);
+  if (!nextQuery || !/^[a-f0-9]{64}$/.test(nextQuery.resumeScope ?? "")) return fail("invalid scoped query.");
+  if (nextQuery.plannedUrls !== undefined) {
+    const planned = urlCursor(nextQuery.plannedUrls);
+    if (planned == null || total == null || planned > total || body.plannedUrls !== planned) {
+      return fail("whole-job request count is invalid or disagrees with the response.");
+    }
+  }
+  const cursor = urlCursor(nextQuery.cursor);
+  const prior = sent.cursor === undefined ? 0 : urlCursor(sent.cursor);
+  if (cursor == null || prior == null || total == null || cursor < prior || cursor >= total || body.nextCursor !== cursor) {
+    return fail("cursor is missing, rewound, out of range or inconsistent.");
+  }
+  // A resumed scope is immutable. On the first response, accept only the
+  // producer's documented normalization and narrowing of the original aperture.
+  if (sent.resumeScope !== undefined) {
+    if (!sameQuery(dropKeys(nextQuery,["cursor"]),dropKeys(sent,["cursor"]))) return fail("frozen scope changed.");
+  } else {
+    if (prior !== 0) return fail("a nonzero cursor has no prior scope.");
+    const rawMode = sent.runMode?.toLowerCase();
+    const mode = rawMode === "forward" || rawMode === "reverse" ? rawMode : "incremental";
+    const rawOverwrite = sent.overwrite?.toLowerCase();
+    const overwrite = ["yes","true","1"].includes(rawOverwrite ?? "") ? true
+      : ["no","false","0"].includes(rawOverwrite ?? "") ? false : mode !== "incremental";
+    if (nextQuery.runMode !== mode || nextQuery.overwrite !== String(overwrite)) return fail("mode or overwrite changed.");
+    if (!isIsoDate(nextQuery.startDate) || !isIsoDate(body.seasonStartDate) || !isIsoDate(body.regularSeasonEndDate) ||
+        nextQuery.startDate < body.seasonStartDate || nextQuery.startDate > body.regularSeasonEndDate) return fail("invalid date aperture.");
+    if (sent.startDate !== undefined && (!isIsoDate(sent.startDate) ||
+        nextQuery.startDate !== (sent.startDate < body.seasonStartDate ? body.seasonStartDate : sent.startDate))) return fail("start date changed.");
+    const requestedDays = sent.maxDays === undefined ? null : Number.parseInt(sent.maxDays,10);
+    if (requestedDays != null && Number.isFinite(requestedDays) && requestedDays > 0 &&
+        Number(nextQuery.maxDays) > requestedDays) return fail("date aperture expanded.");
+    for (const key of ["maxUrls","requestIntervalMs"]) {
+      const requested = sent[key] === undefined ? NaN : Number.parseInt(sent[key],10);
+      const expected = Number.isFinite(requested) && requested > 0 ? String(requested) : undefined;
+      if (nextQuery[key] !== expected) return fail("request bound changed.");
+    }
+    if (nextQuery.datasetType !== sent.datasetType) return fail("dataset changed.");
+  }
+  if (nextQuery.runMode !== body.runMode || nextQuery.overwrite !== String(body.overwrite) ||
+      (nextQuery.datasetType ?? null) !== body.datasetType || positiveInteger(nextQuery.maxDays) !== body.datesQueued) {
+    return fail("scope disagrees with the returned queue.");
+  }
+  if (cursor === prior) {
+    const progress = Array.isArray(body.urlProgress) ? body.urlProgress : [];
+    if (body.pendingUrlsProcessed !== 0 || body.acknowledgedWriteUrls !== 0 || body.emptyValidUrls !== 0 ||
+        progress.at(-1)?.status !== "deferred") return fail("unchanged cursor has no no-dispatch deferral.");
+    return {kind:"wait",nextQuery,delayMs:GOALIE_ADMISSION_WAIT_MS,
+      reason:"Goalie shared admission deferred this URL; keep its scoped cursor and recheck headroom in one minute."};
+  }
+  return {kind:"continue",nextQuery,progressDone:cursor,reason:`Goalie continuation: cursor ${cursor} of ${total}.`};
+}
+
 function classifyNextStartDate(
   result: StepResult,
   body: Body | null,
@@ -495,6 +593,12 @@ export function classifyStepResult(
   runnerParams: readonly string[] = []
 ): StepDecision {
   const body = asRecord(result.body);
+  const audit = asRecord(body?.finalAudit);
+  if (body?.requiresReview === true || (body && Object.prototype.hasOwnProperty.call(body,"finalAudit") &&
+      (!audit || audit.status !== "persisted" || audit.retrySafe === false || audit.requiresReview === true))) {
+    return {kind:"fail",reason:"Audit/output persistence requires review; automatic continuation is unsafe."};
+  }
+  if (contract === "goalie_url_cursor") return classifyGoalie(result,body,sentQuery);
   if (result.statusCode === 503 && body?.operationStatus === "source_down") {
     return {
       kind: "wait",
@@ -652,6 +756,11 @@ export function extractStepProgress(rawBody: unknown): StepProgress {
   } else if (count(continuation?.nextIndex) != null && count(continuation?.totalUrls) != null) {
     progress.done = count(continuation?.nextIndex);
     progress.total = count(continuation?.totalUrls);
+    progress.unit = "urls";
+    progress.cursor = `cursor ${progress.done}`;
+  } else if (urlCursor(body.nextCursor) != null && urlCursor(body.totalQueuedUrls) != null) {
+    progress.done = body.nextCursor;
+    progress.total = body.totalQueuedUrls;
     progress.unit = "urls";
     progress.cursor = `cursor ${progress.done}`;
   } else if (runSummary && count(runSummary.remainingPlayerCount) != null) {

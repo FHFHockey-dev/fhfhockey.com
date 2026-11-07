@@ -1,0 +1,151 @@
+diff --git a/web/components/RosterScheduleOptimizer/HealthyReserveAlert.test.tsx b/web/components/RosterScheduleOptimizer/HealthyReserveAlert.test.tsx
+index 44e052daa..c494cffd2 100644
+--- a/web/components/RosterScheduleOptimizer/HealthyReserveAlert.test.tsx
++++ b/web/components/RosterScheduleOptimizer/HealthyReserveAlert.test.tsx
+@@ -68,4 +68,15 @@ describe("Healthy reserve alert", () => {
+     rerender(<HealthyReserveAlert nameOf={nameOf} reserves={[]} dtd={[]} />);
+     expect(screen.queryByRole("note")).toBeNull();
+   });
++
++  // TJ 2026-10-25 policy 3: a locked weekly lineup shows no this-week gain.
++  it("says a locked weekly lineup counts from next week instead of showing a this-week gain", () => {
++    const { rerender } = render(<HealthyReserveAlert nameOf={nameOf} reserves={[{ playerId: "d", position: "IR", slotEligible: false,
++      activation: { swapPlayerId: null, projectedPoints: 0, activeGames: 0, nextWindow: true } }]} />);
++    expect(screen.getByText("Weekly lineup is locked — activating him counts from next week").dataset.known).toBe("false");
++    expect(screen.queryByText(/this week/)).toBeNull();
++    rerender(<HealthyReserveAlert nameOf={nameOf} reserves={[{ playerId: "d", position: "IR", slotEligible: false,
++      activation: { swapPlayerId: null, projectedPoints: 3, activeGames: 1, nextWindow: true } }]} />);
++    expect(screen.getByText("Weekly lineup is locked; from next week: +3 projected pts · +1 active game").dataset.known).toBe("true");
++  });
+ });
+diff --git a/web/components/RosterScheduleOptimizer/HealthyReserveAlert.tsx b/web/components/RosterScheduleOptimizer/HealthyReserveAlert.tsx
+index d4c06f88c..c05cb751f 100644
+--- a/web/components/RosterScheduleOptimizer/HealthyReserveAlert.tsx
++++ b/web/components/RosterScheduleOptimizer/HealthyReserveAlert.tsx
+@@ -4,14 +4,17 @@ import styles from "./HealthyReserveAlert.module.scss";
+ const signed = (value: number) => `${value > 0 ? "+" : ""}${Number.isInteger(value) ? value : value.toFixed(1)}`;
+ 
+ /** The planner's gain from activating him, or why there is none to show. */
+-function gainText({ projectedPoints, activeGames }: NonNullable<HealthyReserve["activation"]>) {
++function gainText({ projectedPoints, activeGames, nextWindow }: NonNullable<HealthyReserve["activation"]>) {
++  const positive = (projectedPoints ?? 0) > 0 || (activeGames ?? 0) > 0;
++  // A locked weekly lineup: no gain this week; any known gain comes from later weekly windows.
++  if (nextWindow && !positive) return { known: false, text: "Weekly lineup is locked — activating him counts from next week" };
+   // Both null only when a lineup fails the rule check; unknown points with no added games may still gain points.
+   if (projectedPoints === null && activeGames === null) return { known: false, text: "Gain unknown until the lineup passes the rule check" };
+   if (projectedPoints === null && (activeGames ?? 0) <= 0) return { known: false, text: "No added active games this week" };
+-  if ((projectedPoints ?? 0) <= 0 && (activeGames ?? 0) <= 0) return { known: false, text: "No projected gain this week" };
++  if (!positive) return { known: false, text: "No projected gain this week" };
+   const parts = [...(projectedPoints !== null ? [`${signed(projectedPoints)} projected pts`] : []),
+     ...(activeGames !== null ? [`${signed(activeGames)} active game${Math.abs(activeGames) === 1 ? "" : "s"}`] : [])];
+-  return { known: true, text: `${parts.join(" · ")} this week` };
++  return { known: true, text: nextWindow ? `Weekly lineup is locked; from next week: ${parts.join(" · ")}` : `${parts.join(" · ")} this week` };
+ }
+ 
+ /** "Only k can be activated" when the open spots and swap partners run out before the flagged players do; the helper
+diff --git a/web/lib/rosterScheduleOptimizer/healthyReserves.test.ts b/web/lib/rosterScheduleOptimizer/healthyReserves.test.ts
+index 95a48c746..979cca8d5 100644
+--- a/web/lib/rosterScheduleOptimizer/healthyReserves.test.ts
++++ b/web/lib/rosterScheduleOptimizer/healthyReserves.test.ts
+@@ -202,4 +202,49 @@ describe("healthy reserve players", () => {
+     data.roster = [...data.roster.filter(row => row.playerId !== "d"), { playerId: "d", position: "IR" }];
+     expect(healthyReserves(data, intent).map(row => [row.playerId, row.activation?.projectedPoints ?? null])).toEqual([["f", 6], ["d", null]]);
+   });
++
++  // TJ 2026-10-25 policy 3 (option A): once the current weekly window has locked, activation counts from the next window.
++  const weekly = (data: PlanningSnapshot, asOf: string) => {
++    data.rules = { ...data.rules, lineupMode: "weekly", lineupPeriods: [{ id: "w", start: "2026-10-05T00:00:00Z", end: "2026-10-12T00:00:00Z", lockAt: "2026-10-05T00:00:00Z" }] };
++    data.context = { ...data.context, asOf };
++    data.evidence.schedule = { ...data.evidence.schedule!, asOf };
++    if (asOf > "2026-10-05T00:00:00Z") data.lockedAssignments = ["2026-10-05", "2026-10-06"].flatMap(date => [
++      { date, playerId: "a", slotId: "C#1" }, { date, playerId: "b", slotId: null }]);
++    return data;
++  };
++
++  it("prices no this-week gain once the weekly lineup has locked, and flags the next window", () => {
++    expect(healthyReserves(weekly(snapshot(), "2026-10-05T12:00:00Z"), intent)[0].activation)
++      .toEqual({ swapPlayerId: null, projectedPoints: 0, activeGames: 0, nextWindow: true });
++    // A later window in the horizon still counts: d's 10-13 game.
++    const later = weekly(snapshot(), "2026-10-05T12:00:00Z");
++    later.rules = { ...later.rules, lineupPeriods: [...later.rules.lineupPeriods!, { id: "w2", start: "2026-10-12T00:00:00Z", end: "2026-10-19T00:00:00Z", lockAt: "2026-10-12T00:00:00Z" }],
++      periods: later.rules.periods.map(period => ({ ...period, end: "2026-10-19T00:00:00Z" })) };
++    later.context = { ...later.context, endDate: "2026-10-13" };
++    const game = { ...later.games.find(row => row.id === "D-2026-10-05")!, id: "D-2026-10-13", date: "2026-10-13", startsAt: "2026-10-13T23:00:00Z", scheduleRevision: "schedule-D-2026-10-13" };
++    const source = later.forecasts.find(row => row.playerId === "d" && row.gameId === "D-2026-10-05")!;
++    later.games = [...later.games, game];
++    later.forecasts = [...later.forecasts, { ...source, gameId: game.id, expiresAt: game.startsAt,
++      issuedContext: { ...source.issuedContext!, gameId: game.id, scheduledAt: game.startsAt, scheduleRevision: game.scheduleRevision } }];
++    expect(healthyReserves(later, intent)[0].activation).toEqual({ swapPlayerId: null, projectedPoints: 3, activeGames: 1, nextWindow: true });
++  });
++
++  it("leaves an unlocked weekly window and daily leagues unchanged", () => {
++    expect(healthyReserves(weekly(snapshot(), "2026-10-04T12:00:00Z"), intent)[0].activation).toStrictEqual({ swapPlayerId: null, projectedPoints: 6, activeGames: 2 });
++    const daily = weekly(snapshot(), "2026-10-05T12:00:00Z");
++    daily.rules = { ...daily.rules, lineupMode: "daily" };
++    daily.lockedAssignments = [];
++    expect(healthyReserves(daily, intent)[0].activation).toStrictEqual({ swapPlayerId: null, projectedPoints: 6, activeGames: 2 });
++  });
++
++  it("ranks locked-window activations by their (zero) this-week gain, so ties keep roster order", () => {
++    const open = weekly(snapshot(), "2026-10-04T12:00:00Z");
++    withF(open, "IR+");
++    expect(healthyReserves(open, intent).map(row => [row.playerId, row.activation?.projectedPoints ?? null])).toEqual([["f", 10], ["d", null]]);
++    const locked = weekly(snapshot(), "2026-10-05T12:00:00Z");
++    withF(locked, "IR+");
++    expect(healthyReserves(locked, intent)).toEqual([
++      { playerId: "d", position: "IR", slotEligible: false, activation: { swapPlayerId: null, projectedPoints: 0, activeGames: 0, nextWindow: true } },
++      { playerId: "f", position: "IR+", slotEligible: false, activation: null }]);
++  });
+ });
+diff --git a/web/lib/rosterScheduleOptimizer/healthyReserves.ts b/web/lib/rosterScheduleOptimizer/healthyReserves.ts
+index 55646d2cf..ae0015f71 100644
+--- a/web/lib/rosterScheduleOptimizer/healthyReserves.ts
++++ b/web/lib/rosterScheduleOptimizer/healthyReserves.ts
+@@ -1,7 +1,7 @@
+ import { evaluatePlan } from "./planning";
+-import { localDate } from "./planningDates";
++import { lineupPeriodAtDate, localDate } from "./planningDates";
+ import { expandActiveSlots } from "./slots";
+-import type { PlanEvaluation, PlanIntent, PlanningPlayer, PlanningSnapshot, RosterEntry } from "./planningTypes";
++import type { LockedAssignment, PlanEvaluation, PlanIntent, PlanningPlayer, PlanningSnapshot, RosterEntry } from "./planningTypes";
+ 
+ /** A rostered player Yahoo lists with no injury who still sits in an IR or IR+ slot. */
+ export type HealthyReserve = {
+@@ -14,7 +14,8 @@ export type HealthyReserve = {
+    * lineup; null when the planner can't price both lineups (points gain is points leagues only). */
+   activation: Activation | null;
+ };
+-type Activation = { swapPlayerId: string | null; projectedPoints: number | null; activeGames: number | null };
++/** `nextWindow`: the current weekly lineup has locked, so the gain counts only from the next weekly window. */
++type Activation = { swapPlayerId: string | null; projectedPoints: number | null; activeGames: number | null; nextWindow?: true };
+ type Reserved = RosterEntry & { position: "IR" | "IR+" };
+ 
+ const RESERVE_POSITIONS = new Set(["IR", "IR+", "NA"]);
+@@ -58,7 +59,16 @@ export function healthyReserves(snapshot: PlanningSnapshot, intent: PlanIntent):
+   // Counterfactual: no flagged player plays, as if each were still legally reserved.
+   const base = snapshot.roster.filter(entry => !flagged.has(entry.playerId));
+   const points = snapshot.rules.scoring.mode === "points";
+-  const run = (roster: RosterEntry[]) => evaluatePlan({ ...snapshot, roster }, { ...intent, steps: [] }, points ? "outcome" : "agp", [], false);
++  const run = (roster: RosterEntry[], locks: LockedAssignment[] = []) => evaluatePlan({ ...snapshot, roster,
++    lockedAssignments: [...snapshot.lockedAssignments, ...locks] }, { ...intent, steps: [] }, points ? "outcome" : "agp", [], false);
++  // TJ 2026-10-25 (policy 3, option A): the planner's weekly rule seats only players rostered outside reserve at the
++  // window's lock, so once the current weekly window has locked an activated player sits on the bench until the next
++  // window. Weekly leagues only; the same `asOf > lockAt` test the planner uses for a locked window.
++  const zone = snapshot.context.timeZone, today = localDate(snapshot.context.asOf, zone);
++  const window = snapshot.rules.lineupMode === "weekly" ? lineupPeriodAtDate(today, snapshot.rules.lineupPeriods, zone) : undefined;
++  const lockedDates = window?.lockAt && Date.parse(snapshot.context.asOf) > Date.parse(window.lockAt)
++    ? [...new Set(snapshot.games.map(game => game.date))].filter(date => date >= today
++      && lineupPeriodAtDate(date, snapshot.rules.lineupPeriods, zone)?.id === window.id).sort() : [];
+   const expanded = expandActiveSlots(snapshot.rules.rosterSlots);
+   const openSpots = expanded.activeSlots.length + expanded.benchCapacity - base.filter(entry => !RESERVE_POSITIONS.has(entry.position)).length;
+   let without: PlanEvaluation | undefined;
+@@ -72,7 +82,8 @@ export function healthyReserves(snapshot: PlanningSnapshot, intent: PlanIntent):
+   const activate = (entry: Reserved, swapPlayerId: string | null): Activation => {
+     const roster = [...base.map(row => row.playerId === swapPlayerId ? { ...row, position: entry.position } : row),
+       { playerId: entry.playerId, position: "bench" as const }];
+-    return { swapPlayerId, ...gain(run(roster)) };
++    if (!lockedDates.length) return { swapPlayerId, ...gain(run(roster)) };
++    return { swapPlayerId, ...gain(run(roster, lockedDates.map(date => ({ date, playerId: entry.playerId, slotId: null })))), nextWindow: true };
+   };
+   // Each player's options: an open spot (when any), then each swap partner Yahoo lists for his slot, best gain first.
+   const options = healthy.map(entry => [...(openSpots > 0 ? [activate(entry, null)] : []),

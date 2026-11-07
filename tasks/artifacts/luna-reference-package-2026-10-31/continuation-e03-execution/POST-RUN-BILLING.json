@@ -1,0 +1,20 @@
+{
+  "recordedAt": "2026-10-31T21:39:58.191935+00:00",
+  "source": "Read-only browser credit-grants and all-project/all-key Usage pages after a single post-run reload; no polling or settings changes.",
+  "promotionalDisplayedUsd": 85,
+  "promotionalGrantTotalUsd": 85,
+  "promotionalExpiresOn": "2026-11-13",
+  "purchasedDisplayedUsd": 10,
+  "purchasedGrantTotalUsd": 10,
+  "purchasedExpiresOn": "2027-10-31",
+  "displayedSpentUsd": 0,
+  "responsesRequestsDisplayed": 2,
+  "responsesInputTokensDisplayed": 6039,
+  "decisionsRequestsDisplayed": 1,
+  "decisionsInputTokensDisplayed": 891,
+  "decisionsOutputTokensDisplayed": 0,
+  "providerReceiptsCurrentEvaluation": 4,
+  "providerReceiptsIncludeE03": true,
+  "reportingLagObserved": true,
+  "interpretation": "Usage still reflects E01 plus E02 and has not incorporated E03. Rounded credit balances do not show sub-cent charges. Provider receipts and conservative local pricing remain the accounting evidence; final invoice/grant attribution is not yet reconciled. No zero-cost claim."
+}

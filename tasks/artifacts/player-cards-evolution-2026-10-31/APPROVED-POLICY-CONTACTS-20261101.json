@@ -1,0 +1,51 @@
+{
+  "at": "2026-11-01T17:35:53.574868+00:00",
+  "authority": "Trusted parent-delivered transcript: TJ yes to both ranking policies and both named owner contacts",
+  "policy": {
+    "ties": "competition1,2,2,4",
+    "percentile": "empirical midrank",
+    "knownShort": "include verified complete within-season samples with explicit actual/requestedGP; missing source rows remain unavailable"
+  },
+  "socialShare": {
+    "target": "Claude SS-EXPANSION lead",
+    "channel": "tasks/artifacts/cross-platform/2026-10-24-coordination/CODEX-TO-CLAUDE.md",
+    "entry": "CODEX-PC-AUTHORIZED-RETAINED-INVENTORY-REQUEST-20261101",
+    "state": "written; latest post-rereview mailbox check still has no acknowledgement or retained payload"
+  },
+  "trade": {
+    "targetThread": "01a17f54-333f-7689-8151-b63b4d84b0e2",
+    "tool": "send_message_to_thread",
+    "state": "send confirmed; owner response received and exact local receipt verified",
+    "statusReadback": "Earlier read_thread availability lookup failed after confirmed send; subsequent owner-written local response resolves reply status. No duplicate message sent.",
+    "replyState": "received; no retained successful Yahoo capture, zero real bundles, no canonical-to-NHL bridge",
+    "responsePath": "/Users/tim/Documents/Codex/2026-10-27/task-5/integration_v1/evidence/player-cards-retained-evidence-20261101.json",
+    "responseSHA256": "a710935af442db07ae81e0687a0196cefac67afb85553b97dc667064b2f5ad78",
+    "responseReviewedAt": "2026-11-01T17:38:57.878244+00:00",
+    "attribution": "Specific Yahoo permission and existing logo receipt supplied; agreement records are not a gate. UI/export placement still unapplied.",
+    "verifiedReferencedArtifacts": [
+      {
+        "path": "/Users/tim/Documents/Codex/2026-10-27/task-5/integration_v1/evidence/source-check-20261027T221208Z.json",
+        "sha256": "2342d4b58756faa411c6fd2f771d12a1781c29131788a093e988dbc97724fab7",
+        "bytes": 1104
+      },
+      {
+        "path": "/Users/tim/Documents/Codex/2026-10-27/task-5/integration_v1/evidence/supplied-pid-4681-mapping-summary.json",
+        "sha256": "1370eb20fd85762bef634fd9f2bef3eae7afbff6e32cd2e47534690a806e43c9",
+        "bytes": 596
+      },
+      {
+        "path": "/Users/tim/Documents/Codex/2026-10-27/task-5/PERMISSION-AND-ATTRIBUTION.md",
+        "sha256": "4743529a56a09817556505adc1d20dbf8fdaa40b8123fe8dc9ad0fe947ce5a5f",
+        "bytes": 7447
+      },
+      {
+        "path": "/Users/tim/Code/fhfhockey.com/web/public/pictures/Yahoo_Fantasy.svg",
+        "sha256": "c18837d9ce56596d6ad7e849c81a5066644652d3786ed8bdce989b10153f2947",
+        "bytes": 2925
+      }
+    ]
+  },
+  "bounds": "Already-retained evidence only; no collection, credentials, repairs, deployment or push",
+  "sourcePopulationAdmission": false,
+  "lastCheckedAt": "2026-11-01T19:31:31.078761+00:00"
+}

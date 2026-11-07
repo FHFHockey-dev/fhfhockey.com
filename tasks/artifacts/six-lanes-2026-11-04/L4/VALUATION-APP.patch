@@ -1,0 +1,146 @@
+--- /dev/null
++++ b/web/lib/tradeValue/valuationComponents.ts
+@@ -0,0 +1,68 @@
++import type { GameExpectationsResponse } from "lib/player-forecasts/gameExpectations";
++import type { TradeScoring } from "lib/buyLowSellHigh/trade";
++import { scoreBoardStats } from "lib/projections/starterBoardScoring";
++import type { Result } from "./contracts";
++
++/**
++ * Projected league-points component only; no production caller or combined trade value.
++ * Input must come from the existing admitted consumer -> contribution resolution ->
++ * buildGameExpectations path at asOf. A caller-supplied view is not proof of admission.
++ * This function adds no reads and cannot validate new accepted news or re-admit cached outputs.
++ */
++export function leagueValuationComponents(input: {
++  view: GameExpectationsResponse | null; playerId: string; asOf: string;
++  leagueProfile: { id: string; version: string; origin: "connected" | "manual" | "fhfh_standard" };
++  scoring: TradeScoring | null;
++}) {
++  const unavailable = (reason: string): Result<number> => ({ status: "unavailable", reasons: [reason] });
++  let projectedPoints: Result<number> = unavailable("qualified_forecast_unavailable");
++  const { view, scoring } = input;
++  const asOf = Date.parse(input.asOf);
++  if (!input.leagueProfile.id.trim() || !input.leagueProfile.version.trim()) projectedPoints = unavailable("league_profile_unavailable");
++  else if (!scoring || scoring.mode !== "points") projectedPoints = unavailable("points_scoring_required");
++  else if (!scoring.scoringBasis.trim() || !Object.values(scoring.weights).some(weight => weight !== 0)
++    || Object.values(scoring.weights).some(weight => !Number.isFinite(weight))) projectedPoints = unavailable("invalid_scoring");
++  else if (!view || !Number.isFinite(asOf) || Date.parse(view.readAsOf) !== asOf) projectedPoints = unavailable("current_admitted_view_required");
++  else if (view.scope.mode !== "next_n" || ![5, 10, 20].includes(view.scope.games)) projectedPoints = unavailable("unsupported_horizon");
++  else {
++    const matches = view.players.filter(player => player.playerId === input.playerId);
++    const player = matches.length === 1 ? matches[0] : null;
++    const keys = Object.entries(scoring.weights).filter(([, weight]) => weight !== 0).map(([key]) => key);
++    if (!player || player.nhlPlayerId === null) projectedPoints = unavailable("player_identity_unavailable");
++    else if (!player.horizonComplete || player.requestedGames !== view.scope.games || player.games.length !== view.scope.games
++      || new Set(player.games.map(game => game.gameId)).size !== player.games.length
++      || player.games.some(game => !Number.isFinite(Date.parse(game.scheduledAt)) || Date.parse(game.scheduledAt) <= asOf)) projectedPoints = unavailable("incomplete_horizon");
++    else if (keys.some(key => {
++      const total = player.totals[key];
++      return !total || total.expected === null || !Number.isFinite(total.expected) || total.unit === null
++        || total.coveredGames !== player.games.length || total.requiredGames !== player.games.length
++        || player.games.some(game => {
++          const target = game.targets[key];
++          if (!target || target.basis !== "unconditional_game" || !target.allowedUses.totals || !target.allowedUses.comparison || !target.sourceIds.length
++            || target.unit !== total.unit || target.expected === null || !Number.isFinite(target.expected)) return true;
++          const cutoff = Date.parse(target.cutoffAt ?? ""), issued = Date.parse(target.issuedAt ?? ""), expires = Date.parse(target.expiresAt ?? "");
++          return !Number.isFinite(cutoff) || !Number.isFinite(issued) || !Number.isFinite(expires) || cutoff > issued || issued > asOf || expires <= asOf;
++        })
++        || total.expected !== player.games.reduce((sum, game) => sum + game.targets[key].expected!, 0);
++    })) projectedPoints = unavailable("scored_target_unqualified");
++    else {
++      const scored = scoreBoardStats(Object.fromEntries(keys.map(key => [key, player.totals[key].expected])), scoring.weights);
++      projectedPoints = scored.points !== null && Number.isFinite(scored.points)
++        ? { status: "available", value: scored.points } : unavailable("scored_points_unavailable");
++    }
++  }
++  return {
++    version: "league-valuation-components-v1" as const,
++    leagueProfile: input.leagueProfile,
++    scoringBasis: scoring?.mode === "points" ? scoring.scoringBasis : null,
++    playerId: input.playerId, asOf: input.asOf,
++    horizonTeamGames: view?.scope.mode === "next_n" ? view.scope.games : null,
++    // Existing scorer's four-decimal rounding; not a new utility or blended valuation method.
++    projectedPoints,
++    vor: unavailable("qualified_replacement_level_unavailable"),
++    actualPoints: unavailable("season_actuals_unavailable"), actualRank: unavailable("season_rank_unavailable"),
++    adp: unavailable("dated_adp_unavailable"),
++    combined: unavailable("validated_normalization_and_weights_unavailable"),
++    plausibility: { status: "unavailable" as const, reasons: ["validated_guard_thresholds_unavailable"] },
++  };
++}
+--- /dev/null
++++ b/web/lib/tradeValue/valuationComponents.test.ts
+@@ -0,0 +1,72 @@
++import { describe, expect, it } from "vitest";
++import type { GameExpectationsResponse } from "lib/player-forecasts/gameExpectations";
++import { leagueValuationComponents } from "./valuationComponents";
++
++// Synthetic trusted-adapter inputs exercise arithmetic/withholding, never real admission.
++const asOf = "2026-11-04T12:00:00Z";
++const view: GameExpectationsResponse = {
++  version: "forge-game-expectations-v1", readAsOf: asOf,
++  scope: { seasonId: 2026, startDate: "2026-11-05", endDate: "2026-11-20", timeZone: "America/New_York", mode: "next_n", games: 5 },
++  manifestId: null, baselineChecksum: null, limitations: ["Synthetic adapter check only"],
++  players: [{ playerId: "synthetic-player", nhlPlayerId: 1, teamId: 1, name: "Synthetic", team: "SYN", playerClass: "skater", positions: ["C"],
++    scheduledOpportunities: 5, requestedGames: 5, horizonComplete: true, expectedAppearances: null, expectedStarts: null,
++    games: Array.from({ length: 5 }, (_, i) => ({ gameId: `synthetic-${i}`, date: "2026-11-05", scheduledAt: "2026-11-05T12:00:00Z",
++      team: "SYN", opponent: "OTHER", homeTeam: "SYN", awayTeam: "OTHER", scheduleRevision: "synthetic-schedule", rosterRevision: "synthetic-roster",
++      appearanceProbability: null, startProbability: null, powerPlayRole: { value: null, status: "unavailable", reason: "current_role_evidence_unavailable", source: null }, limitations: [],
++      targets: { GOALS: { expected: 1, conditional: null, basis: "unconditional_game", unit: "count", allowedUses: { assignment: true, totals: true, comparison: true, conditionalTieBreak: false }, sourceKind: null,
++        sourceIds: ["synthetic-source"], methodVersions: ["synthetic-method"], sourceWatermarks: ["synthetic-watermark"], cutoffAt: "2026-11-04T10:00:00Z", issuedAt: "2026-11-04T11:00:00Z", expiresAt: "2026-11-05T12:00:00Z",
++        sources: [], participation: null, participationRevisionId: null, reasons: [], limitations: [] } } })),
++    totals: { GOALS: { expected: 5, coveredSum: 5, coveredGames: 5, requiredGames: 5, unit: "count", reason: null } }, ratios: {} }],
++};
++const input = { view, asOf, playerId: "synthetic-player", leagueProfile: { id: "synthetic-league", version: "v1", origin: "manual" as const },
++  scoring: { mode: "points" as const, scoringBasis: "points:synthetic", weights: { GOALS: 3 } } };
++describe("qualified projected league-points component", () => {
++  it("withholds conditional or unknown target bases", () => {
++    for (const basis of [null, "conditional_appearance", "unrecognized_basis"]) {
++      const changed = structuredClone(view);
++      changed.players[0].games[0].targets.GOALS.basis = basis;
++      expect(leagueValuationComponents({ ...input, view: changed }).projectedPoints).toEqual({ status: "unavailable", reasons: ["scored_target_unqualified"] });
++    }
++  });
++  it("withholds games with invalid, past or cutoff-equal scheduled times", () => {
++    for (const scheduledAt of ["not-a-date", "2026-11-03T12:00:00Z", asOf]) {
++      const changed = structuredClone(view);
++      changed.players[0].games[0].scheduledAt = scheduledAt;
++      expect(leagueValuationComponents({ ...input, view: changed }).projectedPoints).toEqual({ status: "unavailable", reasons: ["incomplete_horizon"] });
++    }
++  });
++  it("reuse existing scorer under two league profiles", () => {
++    expect(leagueValuationComponents(input).projectedPoints).toEqual({ status: "available", value: 15 });
++    expect(leagueValuationComponents({ ...input, scoring: { ...input.scoring, weights: { GOALS: 2 } } }).projectedPoints).toEqual({ status: "available", value: 10 });
++  });
++  it("legitimate zero remains available", () => {
++    const zero = structuredClone(view); zero.players[0].games.forEach(game => { game.targets.GOALS.expected = 0; }); zero.players[0].totals.GOALS.expected = 0;
++    expect(leagueValuationComponents({ ...input, view: zero }).projectedPoints).toEqual({ status: "available", value: 0 });
++  });
++  it("absent view and unknown scored target withhold", () => {
++    expect(leagueValuationComponents({ ...input, view: null }).projectedPoints.status).toBe("unavailable");
++    expect(leagueValuationComponents({ ...input, scoring: { ...input.scoring, weights: { ASSISTS: 2 } } }).projectedPoints.status).toBe("unavailable");
++  });
++  it("denied comparison, expiry and partial horizon withhold", () => {
++    for (const kind of ["permission", "expiry", "horizon"]) {
++      const changed = structuredClone(view);
++      if (kind === "permission") changed.players[0].games[0].targets.GOALS.allowedUses.comparison = false;
++      if (kind === "expiry") changed.players[0].games[0].targets.GOALS.expiresAt = asOf;
++      if (kind === "horizon") changed.players[0].horizonComplete = false;
++      expect(leagueValuationComponents({ ...input, view: changed }).projectedPoints.status).toBe("unavailable");
++    }
++  });
++  it("cached read cutoff and inconsistent totals withhold", () => {
++    const inconsistent = structuredClone(view); inconsistent.players[0].totals.GOALS.expected = 6;
++    expect(leagueValuationComponents({ ...input, view: inconsistent }).projectedPoints.status).toBe("unavailable");
++    expect(leagueValuationComponents({ ...input, asOf: "2026-11-04T13:00:00Z" }).projectedPoints.status).toBe("unavailable");
++  });
++  it("unsupported scoring/invalid weights do not invent values", () => {
++    expect(leagueValuationComponents({ ...input, scoring: { mode: "categories", categories: ["GOALS"] } }).projectedPoints.status).toBe("unavailable");
++    expect(leagueValuationComponents({ ...input, scoring: { ...input.scoring, weights: { GOALS: NaN } } }).projectedPoints.status).toBe("unavailable");
++  });
++  it("raw points never become VOR, combined value or suggestion guard", () => {
++    const result = leagueValuationComponents(input);
++    for (const key of ["vor", "actualPoints", "actualRank", "adp", "combined", "plausibility"] as const) expect(result[key].status).toBe("unavailable");
++  });
++});

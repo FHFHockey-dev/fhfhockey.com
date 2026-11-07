@@ -1,0 +1,97 @@
+{
+  "budget": 5,
+  "requests_attempted": 5,
+  "concurrency": 1,
+  "redirects_followed": 0,
+  "results": [
+    {
+      "label": "homepage",
+      "url": "https://fhfhockey.com/",
+      "started": "2026-10-25T05:00:47.160855+00:00",
+      "status": 200,
+      "expected_status": 200,
+      "passed": true,
+      "seconds": 1.452,
+      "bytes_read": 300751,
+      "body_sha256": "e12858dc374ca0a29887f5ce8e24966e5b1e1c790ca0c1ac7afd9d2bce280d83",
+      "checks": {
+        "fhfh_present": true,
+        "not_next_error_page": true
+      },
+      "cache_control": "public",
+      "vercel_id": "iad1::iad1::q2stt-1792904447342-f65e8ed277c1",
+      "no_credentials_sent": true
+    },
+    {
+      "label": "social studio locked page",
+      "url": "https://fhfhockey.com/social-share/game-grid",
+      "started": "2026-10-25T05:00:48.613266+00:00",
+      "status": 200,
+      "expected_status": 200,
+      "passed": true,
+      "seconds": 0.225,
+      "bytes_read": 20800,
+      "body_sha256": "a8f58f212dd73359d7fb82ec3a5efbcf902e760ef89181595209e5335e38d864",
+      "checks": {
+        "locked_shell": true,
+        "private_cache": true
+      },
+      "cache_control": "private, no-store, max-age=0",
+      "vercel_id": "iad1::iad1::x2spt-1792904448707-f0e75c41167f",
+      "no_credentials_sent": true
+    },
+    {
+      "label": "social API anonymous denial",
+      "url": "https://fhfhockey.com/api/v1/social-share/game-grid",
+      "started": "2026-10-25T05:00:48.839030+00:00",
+      "status": 401,
+      "expected_status": 401,
+      "passed": true,
+      "seconds": 0.153,
+      "bytes_read": 44,
+      "body_sha256": "ce52b06c5e32f31f5eaaf9bf406893c69ec571dad6fb02e0c576b69cc0e02f1e",
+      "checks": {
+        "expected_error": true,
+        "private_cache": true
+      },
+      "cache_control": "private, no-store, max-age=0",
+      "vercel_id": "iad1::iad1::m64tr-1792904448930-525d1df40d75",
+      "no_credentials_sent": true
+    },
+    {
+      "label": "NST function caller denial",
+      "url": "https://functions-fhfhockey.vercel.app/api/fetch_team_table",
+      "started": "2026-10-25T05:00:48.992678+00:00",
+      "status": 401,
+      "expected_status": 401,
+      "passed": true,
+      "seconds": 0.592,
+      "bytes_read": 178,
+      "body_sha256": "c7d328cd831f9862d7735ba14670aae000978ab771756a54086f88d6ef709164",
+      "checks": {
+        "expected_code": true,
+        "configuration_loaded": true
+      },
+      "cache_control": "public, max-age=0, must-revalidate",
+      "vercel_id": "iad1::iad1::dd7gf-1792904449467-03949ec01fc1",
+      "no_credentials_sent": true
+    },
+    {
+      "label": "web NST admission denial",
+      "url": "https://fhfhockey.com/api/Teams/nst-team-stats",
+      "started": "2026-10-25T05:00:49.585362+00:00",
+      "status": 401,
+      "expected_status": 401,
+      "passed": true,
+      "seconds": 1.976,
+      "bytes_read": 43,
+      "body_sha256": "4da31afe1999bd31a16f40018eb96feb22dbb54d2eaae5a9118a939257e6c3be",
+      "checks": {
+        "auth_denial": true
+      },
+      "cache_control": "public, max-age=0, must-revalidate",
+      "vercel_id": "iad1::iad1::ww85k-1792904449669-0906f11f0aa7",
+      "no_credentials_sent": true
+    }
+  ]
+}

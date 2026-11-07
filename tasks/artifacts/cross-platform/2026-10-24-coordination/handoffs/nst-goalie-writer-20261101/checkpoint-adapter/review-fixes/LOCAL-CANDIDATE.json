@@ -1,0 +1,692 @@
+{
+  "atUtc": "2026-11-01T18:11:23.395192+00:00",
+  "branch": "octoberBranch",
+  "headContextOnly": "8a20ff91a8fffe24979ab208248fc06d9196e6aa",
+  "status": "LOCAL_VERIFIED_DISABLED_FOCUSED_REREVIEW_PENDING",
+  "review": "tasks/artifacts/nst-independent-review-2026-11-01/REVIEW.md",
+  "changedSinceReview": [
+    "functions/api/fetch_team_table.py",
+    "functions/tests/test_fetch_team_table_contract.py",
+    "supabase/migrations/20261101161622_nst_goalie_catchup_v1.sql",
+    "supabase/tests/nst_goalie_catchup_v1.py",
+    "web/__tests__/pages/api/v1/db/update-nst-gamelog.test.ts",
+    "web/__tests__/pages/api/v1/db/update-nst-goalies.route.test.ts",
+    "web/lib/nst/goalieFreshness.server.test.ts",
+    "web/lib/nst/jobLifecycle.server.test.ts",
+    "web/lib/nst/jobLifecycle.server.ts",
+    "web/pages/api/v1/db/update-nst-gamelog.ts",
+    "web/pages/api/v1/db/update-nst-goalies.ts"
+  ],
+  "files": [
+    {
+      "path": "functions/api/fetch_team_table.py",
+      "sha256": "a32ea340c1cb5001bb3eaea9dc75b3994ddf783962442a3e704cf3ed79273bbe",
+      "bytes": 14584,
+      "baseline": "/Users/tim/Documents/Codex/2026-10-27/task/nst-enclosing-custody-20261101-01/baseline/functions/api/fetch_team_table.py",
+      "changedSinceBaseline": true,
+      "snapshot": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/review-fixes/candidate/functions/api/fetch_team_table.py",
+      "reviewBaselineSha256": "ee5989a8652a1efc3a98417e7aa974397b32e209792f6d2cdc72148e036a9f93",
+      "changedSinceReview": true
+    },
+    {
+      "path": "functions/api/index.py",
+      "sha256": "c1c8c0c86e54ebc1d17461bd208abe57f28fc712988b2cfedc6895ce90c90d6a",
+      "bytes": 3210,
+      "baseline": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/continuation2/index.py.baseline",
+      "changedSinceBaseline": true,
+      "snapshot": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/review-fixes/candidate/functions/api/index.py",
+      "reviewBaselineSha256": "c1c8c0c86e54ebc1d17461bd208abe57f28fc712988b2cfedc6895ce90c90d6a",
+      "changedSinceReview": false
+    },
+    {
+      "path": "functions/lib/nst_admission.py",
+      "sha256": "5bce5824424cb812544481099c00f675ea9ee40ba31208947c85633b0951fec3",
+      "bytes": 9262,
+      "baseline": "/Users/tim/Documents/Codex/2026-10-27/task/nst-shared-lifecycle-custody-20261101-01/baseline/functions/lib/nst_admission.py",
+      "changedSinceBaseline": true,
+      "snapshot": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/review-fixes/candidate/functions/lib/nst_admission.py",
+      "reviewBaselineSha256": "5bce5824424cb812544481099c00f675ea9ee40ba31208947c85633b0951fec3",
+      "changedSinceReview": false
+    },
+    {
+      "path": "functions/tests/test_fetch_team_table_contract.py",
+      "sha256": "c37e6e3aa65f2e6ab00806ec08a83b497435118fddb655466542761ebbe4fbd5",
+      "bytes": 16972,
+      "baseline": "/Users/tim/Documents/Codex/2026-10-27/task/nst-enclosing-custody-20261101-01/baseline/functions/tests/test_fetch_team_table_contract.py",
+      "changedSinceBaseline": true,
+      "snapshot": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/review-fixes/candidate/functions/tests/test_fetch_team_table_contract.py",
+      "reviewBaselineSha256": "1fd61321f72b17aadcfb0cf8854b97a1be7de7b1f54028273c8abc5cea341adf",
+      "changedSinceReview": true
+    },
+    {
+      "path": "functions/tests/test_nst_admission.py",
+      "sha256": "d90066b28e7e49fcf8c3ad9507f14230f870f594b262c53101b9db7c65ba2dfc",
+      "bytes": 6417,
+      "baseline": "/Users/tim/Documents/Codex/2026-10-27/task/nst-shared-lifecycle-custody-20261101-01/baseline/functions/tests/test_nst_admission.py",
+      "changedSinceBaseline": true,
+      "snapshot": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/review-fixes/candidate/functions/tests/test_nst_admission.py",
+      "reviewBaselineSha256": "d90066b28e7e49fcf8c3ad9507f14230f870f594b262c53101b9db7c65ba2dfc",
+      "changedSinceReview": false
+    },
+    {
+      "path": "functions/tests/test_nst_legacy_lifecycle.py",
+      "sha256": "9c9c63f19d06b22d90157dee851f4096b496cabaca953738e24c857c3b0dff60",
+      "bytes": 8479,
+      "baseline": "new writer file",
+      "changedSinceBaseline": true,
+      "snapshot": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/review-fixes/candidate/functions/tests/test_nst_legacy_lifecycle.py",
+      "reviewBaselineSha256": "9c9c63f19d06b22d90157dee851f4096b496cabaca953738e24c857c3b0dff60",
+      "changedSinceReview": false
+    },
+    {
+      "path": "supabase/migrations/20261101161622_nst_goalie_catchup_v1.sql",
+      "sha256": "d99730b43d2658861259e81f01c687217e161a38c293843de0192dc1fd69e291",
+      "bytes": 48909,
+      "baseline": "new writer file",
+      "changedSinceBaseline": true,
+      "snapshot": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/review-fixes/candidate/supabase/migrations/20261101161622_nst_goalie_catchup_v1.sql",
+      "reviewBaselineSha256": "f28c7923d36de3c2adc1f49cc40c087acdc1067fa66a10068bb88875e4033fa1",
+      "changedSinceReview": true
+    },
+    {
+      "path": "supabase/tests/nst_goalie_catchup_v1.py",
+      "sha256": "d83415bd64cd3af0ed2a447b36d9d8c8da67c0ddb70d4dae3e345248685afd39",
+      "bytes": 30637,
+      "baseline": "new writer file",
+      "changedSinceBaseline": true,
+      "snapshot": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/review-fixes/candidate/supabase/tests/nst_goalie_catchup_v1.py",
+      "reviewBaselineSha256": "f472164df107da8b4778be89261b1f92a2936178731a8bd6608ad22291f55e7b",
+      "changedSinceReview": true
+    },
+    {
+      "path": "supabase/tests/nst_goalie_catchup_v1.sql",
+      "sha256": "b90b817ee59925b429887359f79792dc328e58e2ad5ac18435a7046829d4ea35",
+      "bytes": 1888,
+      "baseline": "new writer file",
+      "changedSinceBaseline": true,
+      "snapshot": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/review-fixes/candidate/supabase/tests/nst_goalie_catchup_v1.sql",
+      "reviewBaselineSha256": "b90b817ee59925b429887359f79792dc328e58e2ad5ac18435a7046829d4ea35",
+      "changedSinceReview": false
+    },
+    {
+      "path": "web/__tests__/components/CronReportEmail/CronAuditEmail.test.tsx",
+      "sha256": "20fd3db26bdfde4e16934b227e0c169b6e3e15a2bbd50591ac89e3dc8e490d70",
+      "bytes": 18590,
+      "baseline": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/integration-baseline/web/__tests__/components/CronReportEmail/CronAuditEmail.test.tsx",
+      "changedSinceBaseline": true,
+      "snapshot": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/review-fixes/candidate/web/__tests__/components/CronReportEmail/CronAuditEmail.test.tsx",
+      "reviewBaselineSha256": "20fd3db26bdfde4e16934b227e0c169b6e3e15a2bbd50591ac89e3dc8e490d70",
+      "changedSinceReview": false
+    },
+    {
+      "path": "web/__tests__/pages/api/SustainabilityStats/[playerId].test.ts",
+      "sha256": "7de63bc311122eb7d212d52bf6c98de40d78946bb278d05270ddf491c3d42303",
+      "bytes": 4756,
+      "baseline": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/caller-qualification/baseline/web/__tests__/pages/api/SustainabilityStats/[playerId].test.ts",
+      "changedSinceBaseline": true,
+      "snapshot": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/review-fixes/candidate/web/__tests__/pages/api/SustainabilityStats/[playerId].test.ts",
+      "reviewBaselineSha256": "7de63bc311122eb7d212d52bf6c98de40d78946bb278d05270ddf491c3d42303",
+      "changedSinceReview": false
+    },
+    {
+      "path": "web/__tests__/pages/api/Teams/nst-team-stats.route.test.ts",
+      "sha256": "231010765f7ac8ad907f9ab1aa4ec2f5cde3383b9eb4b3bf9282576168edfecd",
+      "bytes": 20681,
+      "baseline": "/Users/tim/Documents/Codex/2026-10-27/task/nst-enclosing-custody-20261101-01/baseline/web/__tests__/pages/api/Teams/nst-team-stats.route.test.ts",
+      "changedSinceBaseline": true,
+      "snapshot": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/review-fixes/candidate/web/__tests__/pages/api/Teams/nst-team-stats.route.test.ts",
+      "reviewBaselineSha256": "231010765f7ac8ad907f9ab1aa4ec2f5cde3383b9eb4b3bf9282576168edfecd",
+      "changedSinceReview": false
+    },
+    {
+      "path": "web/__tests__/pages/api/fetch_team_table.test.ts",
+      "sha256": "ca16c9b99213195376febe8f6c503ce13b9db77c743b8c7a17b44a6d88e9b25e",
+      "bytes": 6484,
+      "baseline": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/caller-qualification/baseline/web/__tests__/pages/api/fetch_team_table.test.ts",
+      "changedSinceBaseline": true,
+      "snapshot": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/review-fixes/candidate/web/__tests__/pages/api/fetch_team_table.test.ts",
+      "reviewBaselineSha256": "ca16c9b99213195376febe8f6c503ce13b9db77c743b8c7a17b44a6d88e9b25e",
+      "changedSinceReview": false
+    },
+    {
+      "path": "web/__tests__/pages/api/v1/db/cron-report.test.ts",
+      "sha256": "72b8f2247c71a1721d58d5c8308417240dcb5e35e2215bc6a8b5d6e1bdb57aa2",
+      "bytes": 104005,
+      "baseline": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/integration-baseline/web/__tests__/pages/api/v1/db/cron-report.test.ts",
+      "changedSinceBaseline": true,
+      "snapshot": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/review-fixes/candidate/web/__tests__/pages/api/v1/db/cron-report.test.ts",
+      "reviewBaselineSha256": "72b8f2247c71a1721d58d5c8308417240dcb5e35e2215bc6a8b5d6e1bdb57aa2",
+      "changedSinceReview": false
+    },
+    {
+      "path": "web/__tests__/pages/api/v1/db/update-nst-current-season.test.ts",
+      "sha256": "52bd4e8e31b65aac89cce096b30eb150373d2d7cfc115929b41b4885aa46196d",
+      "bytes": 7004,
+      "baseline": "/Users/tim/Documents/Codex/2026-10-27/task/nst-enclosing-custody-20261101-01/baseline/web/__tests__/pages/api/v1/db/update-nst-current-season.test.ts",
+      "changedSinceBaseline": false,
+      "snapshot": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/review-fixes/candidate/web/__tests__/pages/api/v1/db/update-nst-current-season.test.ts",
+      "reviewBaselineSha256": "52bd4e8e31b65aac89cce096b30eb150373d2d7cfc115929b41b4885aa46196d",
+      "changedSinceReview": false
+    },
+    {
+      "path": "web/__tests__/pages/api/v1/db/update-nst-gamelog.test.ts",
+      "sha256": "b663e4aca25601f377ebc36c3198b250a2ef2b3b92abc8d978bc21f09fcb6b42",
+      "bytes": 75263,
+      "baseline": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/caller-qualification/baseline/web/__tests__/pages/api/v1/db/update-nst-gamelog.test.ts",
+      "changedSinceBaseline": true,
+      "snapshot": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/review-fixes/candidate/web/__tests__/pages/api/v1/db/update-nst-gamelog.test.ts",
+      "reviewBaselineSha256": "bdbf025653e89658605dd08addabb72fe0535516eda93c592a9dc03614d77b28",
+      "changedSinceReview": true
+    },
+    {
+      "path": "web/__tests__/pages/api/v1/db/update-nst-goalies.route.test.ts",
+      "sha256": "2575ad80be9b04fe09e0471349336962848e3f2558a87689afe0fb27b4846fc3",
+      "bytes": 32120,
+      "baseline": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/integration-baseline/web/__tests__/pages/api/v1/db/update-nst-goalies.route.test.ts",
+      "changedSinceBaseline": true,
+      "snapshot": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/review-fixes/candidate/web/__tests__/pages/api/v1/db/update-nst-goalies.route.test.ts",
+      "reviewBaselineSha256": "308209496cb1d533b2deada3cce17442adbc48a12c561c10d5c9adca1bc1ed5d",
+      "changedSinceReview": true
+    },
+    {
+      "path": "web/__tests__/pages/api/v1/db/update-nst-team-daily.test.ts",
+      "sha256": "41591d4095a10e7a7f3c9937276efa02f8ebfb944bb8eae70ebd1e8de645debc",
+      "bytes": 13526,
+      "baseline": "/Users/tim/Documents/Codex/2026-10-27/task/nst-enclosing-custody-20261101-01/baseline/web/__tests__/pages/api/v1/db/update-nst-team-daily.test.ts",
+      "changedSinceBaseline": false,
+      "snapshot": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/review-fixes/candidate/web/__tests__/pages/api/v1/db/update-nst-team-daily.test.ts",
+      "reviewBaselineSha256": "41591d4095a10e7a7f3c9937276efa02f8ebfb944bb8eae70ebd1e8de645debc",
+      "changedSinceReview": false
+    },
+    {
+      "path": "web/components/CronReportEmail/CronAuditEmail.tsx",
+      "sha256": "fb79883381f1fa58ecf268d419db6ecbd465b979bcc104533baa439dafb7f02d",
+      "bytes": 18152,
+      "baseline": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/integration-baseline/web/components/CronReportEmail/CronAuditEmail.tsx",
+      "changedSinceBaseline": true,
+      "snapshot": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/review-fixes/candidate/web/components/CronReportEmail/CronAuditEmail.tsx",
+      "reviewBaselineSha256": "fb79883381f1fa58ecf268d419db6ecbd465b979bcc104533baa439dafb7f02d",
+      "changedSinceReview": false
+    },
+    {
+      "path": "web/lib/api/averages/helpers.ts",
+      "sha256": "da13e740a72277842ac5fc7ae06baaa2312b04e68a0d5ea290c7b891466d5277",
+      "bytes": 4573,
+      "baseline": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/caller-qualification/baseline/web/lib/api/averages/helpers.ts",
+      "changedSinceBaseline": true,
+      "snapshot": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/review-fixes/candidate/web/lib/api/averages/helpers.ts",
+      "reviewBaselineSha256": "da13e740a72277842ac5fc7ae06baaa2312b04e68a0d5ea290c7b891466d5277",
+      "changedSinceReview": false
+    },
+    {
+      "path": "web/lib/cron/nstBurstPlans.test.ts",
+      "sha256": "8bfcfc351db997bbab3c110e24e01f336f8b263ab32c65f0fa232c9f13524c1a",
+      "bytes": 7723,
+      "baseline": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/integration-baseline/web/lib/cron/nstBurstPlans.test.ts",
+      "changedSinceBaseline": true,
+      "snapshot": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/review-fixes/candidate/web/lib/cron/nstBurstPlans.test.ts",
+      "reviewBaselineSha256": "8bfcfc351db997bbab3c110e24e01f336f8b263ab32c65f0fa232c9f13524c1a",
+      "changedSinceReview": false
+    },
+    {
+      "path": "web/lib/cron/nstBurstPlans.ts",
+      "sha256": "a1c7e861420a2b5411b35b3e06d5903df6f76e85ebb78fbda8d0c89893db6584",
+      "bytes": 6562,
+      "baseline": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/integration-baseline/web/lib/cron/nstBurstPlans.ts",
+      "changedSinceBaseline": true,
+      "snapshot": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/review-fixes/candidate/web/lib/cron/nstBurstPlans.ts",
+      "reviewBaselineSha256": "a1c7e861420a2b5411b35b3e06d5903df6f76e85ebb78fbda8d0c89893db6584",
+      "changedSinceReview": false
+    },
+    {
+      "path": "web/lib/nst/callerLifecycle.test.ts",
+      "sha256": "aafbfb9d1aacc50012f21fe1ee68e2488505dc028ca75c3ebddc46cb572a6eda",
+      "bytes": 9734,
+      "baseline": "new writer file",
+      "changedSinceBaseline": true,
+      "snapshot": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/review-fixes/candidate/web/lib/nst/callerLifecycle.test.ts",
+      "reviewBaselineSha256": "aafbfb9d1aacc50012f21fe1ee68e2488505dc028ca75c3ebddc46cb572a6eda",
+      "changedSinceReview": false
+    },
+    {
+      "path": "web/lib/nst/client.test.ts",
+      "sha256": "e5bd6b585d7e0c7a2229726116c2ff6534236660e35a3845ba8864675b0a952d",
+      "bytes": 14547,
+      "baseline": "/Users/tim/Documents/Codex/2026-10-27/task/nst-shared-lifecycle-custody-20261101-01/baseline/web/lib/nst/client.test.ts",
+      "changedSinceBaseline": false,
+      "snapshot": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/review-fixes/candidate/web/lib/nst/client.test.ts",
+      "reviewBaselineSha256": "e5bd6b585d7e0c7a2229726116c2ff6534236660e35a3845ba8864675b0a952d",
+      "changedSinceReview": false
+    },
+    {
+      "path": "web/lib/nst/client.ts",
+      "sha256": "48d82fc40ca06d9abe4675f4a1896add55c4e53d4dee661bbe082d424c944e4f",
+      "bytes": 11733,
+      "baseline": "/Users/tim/Documents/Codex/2026-10-27/task/nst-shared-lifecycle-custody-20261101-01/baseline/web/lib/nst/client.ts",
+      "changedSinceBaseline": true,
+      "snapshot": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/review-fixes/candidate/web/lib/nst/client.ts",
+      "reviewBaselineSha256": "48d82fc40ca06d9abe4675f4a1896add55c4e53d4dee661bbe082d424c944e4f",
+      "changedSinceReview": false
+    },
+    {
+      "path": "web/lib/nst/goalieCatchup.server.test.ts",
+      "sha256": "8678bd9292d470baaefcd1c482c85e5f08ff3814d0c22982f32d655fcf2d055b",
+      "bytes": 16732,
+      "baseline": "new writer file",
+      "changedSinceBaseline": true,
+      "snapshot": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/review-fixes/candidate/web/lib/nst/goalieCatchup.server.test.ts",
+      "reviewBaselineSha256": "8678bd9292d470baaefcd1c482c85e5f08ff3814d0c22982f32d655fcf2d055b",
+      "changedSinceReview": false
+    },
+    {
+      "path": "web/lib/nst/goalieCatchup.server.ts",
+      "sha256": "785613ef42ed577c3ae1267b673e4591d4a7882a51317cd9a413994ec5f9d6fd",
+      "bytes": 15747,
+      "baseline": "new writer file",
+      "changedSinceBaseline": true,
+      "snapshot": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/review-fixes/candidate/web/lib/nst/goalieCatchup.server.ts",
+      "reviewBaselineSha256": "785613ef42ed577c3ae1267b673e4591d4a7882a51317cd9a413994ec5f9d6fd",
+      "changedSinceReview": false
+    },
+    {
+      "path": "web/lib/nst/goalieCatchup.test.ts",
+      "sha256": "f245b2946915df49b7dd8e1bed460a951b7388e0290976b0d1655392df25d9a4",
+      "bytes": 10551,
+      "baseline": "new writer file",
+      "changedSinceBaseline": true,
+      "snapshot": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/review-fixes/candidate/web/lib/nst/goalieCatchup.test.ts",
+      "reviewBaselineSha256": "f245b2946915df49b7dd8e1bed460a951b7388e0290976b0d1655392df25d9a4",
+      "changedSinceReview": false
+    },
+    {
+      "path": "web/lib/nst/goalieCatchup.ts",
+      "sha256": "5e371ce0807553ccedd5250d905fd406a597edb92a57c185c8996d72d16b8f51",
+      "bytes": 11180,
+      "baseline": "new writer file",
+      "changedSinceBaseline": true,
+      "snapshot": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/review-fixes/candidate/web/lib/nst/goalieCatchup.ts",
+      "reviewBaselineSha256": "5e371ce0807553ccedd5250d905fd406a597edb92a57c185c8996d72d16b8f51",
+      "changedSinceReview": false
+    },
+    {
+      "path": "web/lib/nst/goalieFreshness.server.test.ts",
+      "sha256": "1a9e32b5706f38901105278728a41edd4598b3813453f3745c6049298eaf6b61",
+      "bytes": 7769,
+      "baseline": "new writer file",
+      "changedSinceBaseline": true,
+      "snapshot": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/review-fixes/candidate/web/lib/nst/goalieFreshness.server.test.ts",
+      "reviewBaselineSha256": "fe3fd719c7afeb7a4fb3d5b18f59e44d207507a83a26fb067a446ebc5151102c",
+      "changedSinceReview": true
+    },
+    {
+      "path": "web/lib/nst/goalieFreshness.server.ts",
+      "sha256": "f04a5f4b15b17785ecf6c119ba82912581560a7b61ffa7b3333fdd4725c21b51",
+      "bytes": 9660,
+      "baseline": "new writer file",
+      "changedSinceBaseline": true,
+      "snapshot": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/review-fixes/candidate/web/lib/nst/goalieFreshness.server.ts",
+      "reviewBaselineSha256": "f04a5f4b15b17785ecf6c119ba82912581560a7b61ffa7b3333fdd4725c21b51",
+      "changedSinceReview": false
+    },
+    {
+      "path": "web/lib/nst/goalieFreshness.test.ts",
+      "sha256": "0c89578c9e3bd8e2f3d3405e145e66e791bba170be74aaec0bee7bcc90eab2c6",
+      "bytes": 4966,
+      "baseline": "new writer file",
+      "changedSinceBaseline": true,
+      "snapshot": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/review-fixes/candidate/web/lib/nst/goalieFreshness.test.ts",
+      "reviewBaselineSha256": "0c89578c9e3bd8e2f3d3405e145e66e791bba170be74aaec0bee7bcc90eab2c6",
+      "changedSinceReview": false
+    },
+    {
+      "path": "web/lib/nst/goalieFreshness.ts",
+      "sha256": "e530db2b97c15a1c37660315c7c48d0276137cb48e24a058fa55c9c0ca5ac733",
+      "bytes": 5889,
+      "baseline": "new writer file",
+      "changedSinceBaseline": true,
+      "snapshot": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/review-fixes/candidate/web/lib/nst/goalieFreshness.ts",
+      "reviewBaselineSha256": "e530db2b97c15a1c37660315c7c48d0276137cb48e24a058fa55c9c0ca5ac733",
+      "changedSinceReview": false
+    },
+    {
+      "path": "web/lib/nst/goaliePreparation.server.test.ts",
+      "sha256": "ef537192e1e3614061f3927c4d9fca70389a178b0fd4144e918fc1dfc1ed3552",
+      "bytes": 6499,
+      "baseline": "new writer file",
+      "changedSinceBaseline": true,
+      "snapshot": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/review-fixes/candidate/web/lib/nst/goaliePreparation.server.test.ts",
+      "reviewBaselineSha256": "ef537192e1e3614061f3927c4d9fca70389a178b0fd4144e918fc1dfc1ed3552",
+      "changedSinceReview": false
+    },
+    {
+      "path": "web/lib/nst/goaliePreparation.server.ts",
+      "sha256": "9e4289ea88c367e9bb78dde9fc1a41691ccd68080ada5bdafe83b9285fc56a57",
+      "bytes": 9288,
+      "baseline": "new writer file",
+      "changedSinceBaseline": true,
+      "snapshot": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/review-fixes/candidate/web/lib/nst/goaliePreparation.server.ts",
+      "reviewBaselineSha256": "9e4289ea88c367e9bb78dde9fc1a41691ccd68080ada5bdafe83b9285fc56a57",
+      "changedSinceReview": false
+    },
+    {
+      "path": "web/lib/nst/jobLifecycle.server.test.ts",
+      "sha256": "9dcfc2f11e2aba5f507d8bc046f2435a20b275a8be5b5129682f70d2ebbba261",
+      "bytes": 11260,
+      "baseline": "new writer file",
+      "changedSinceBaseline": true,
+      "snapshot": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/review-fixes/candidate/web/lib/nst/jobLifecycle.server.test.ts",
+      "reviewBaselineSha256": "2ff67b83dab12c084e9b48f74fc14b2c55bf8f02f80cd81b34b92de97f702c07",
+      "changedSinceReview": true
+    },
+    {
+      "path": "web/lib/nst/jobLifecycle.server.ts",
+      "sha256": "619c3ed6cc21bd3fb075ba9b178e1dac2f3e2e990585ce398057328bb7b72cf3",
+      "bytes": 8380,
+      "baseline": "new writer file",
+      "changedSinceBaseline": true,
+      "snapshot": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/review-fixes/candidate/web/lib/nst/jobLifecycle.server.ts",
+      "reviewBaselineSha256": "dbf8f42b9e43b29ac6ce47992371571b2ffd859c2a71623af7cc39d374e06f7c",
+      "changedSinceReview": true
+    },
+    {
+      "path": "web/lib/nst/sharedAdmission.test.ts",
+      "sha256": "b3c4adeec26b9528c8cd993069dfed01c741502506f4e2574197a1b50e9cd5db",
+      "bytes": 5539,
+      "baseline": "/Users/tim/Documents/Codex/2026-10-27/task/nst-shared-lifecycle-custody-20261101-01/baseline/web/lib/nst/sharedAdmission.test.ts",
+      "changedSinceBaseline": false,
+      "snapshot": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/review-fixes/candidate/web/lib/nst/sharedAdmission.test.ts",
+      "reviewBaselineSha256": "b3c4adeec26b9528c8cd993069dfed01c741502506f4e2574197a1b50e9cd5db",
+      "changedSinceReview": false
+    },
+    {
+      "path": "web/lib/nst/sharedAdmission.ts",
+      "sha256": "f1c407170c9085c5f57b543c418bb8341859b4034d4f1d9d286bea0afabc36ac",
+      "bytes": 3451,
+      "baseline": "/Users/tim/Documents/Codex/2026-10-27/task/nst-shared-lifecycle-custody-20261101-01/baseline/web/lib/nst/sharedAdmission.ts",
+      "changedSinceBaseline": true,
+      "snapshot": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/review-fixes/candidate/web/lib/nst/sharedAdmission.ts",
+      "reviewBaselineSha256": "f1c407170c9085c5f57b543c418bb8341859b4034d4f1d9d286bea0afabc36ac",
+      "changedSinceReview": false
+    },
+    {
+      "path": "web/lib/routeRunner/core.test.ts",
+      "sha256": "4405ddb4a1a52a05f189684b7a979b3e3d030a4ffc8b41fdf8c336c6cfdc5165",
+      "bytes": 27940,
+      "baseline": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/integration-baseline/web/lib/routeRunner/core.test.ts",
+      "changedSinceBaseline": true,
+      "snapshot": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/review-fixes/candidate/web/lib/routeRunner/core.test.ts",
+      "reviewBaselineSha256": "4405ddb4a1a52a05f189684b7a979b3e3d030a4ffc8b41fdf8c336c6cfdc5165",
+      "changedSinceReview": false
+    },
+    {
+      "path": "web/lib/routeRunner/core.ts",
+      "sha256": "b9da294329d4367440dd686c7f596fc0d1eeb360bcbf0c8650460e74664dfba5",
+      "bytes": 42521,
+      "baseline": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/integration-baseline/web/lib/routeRunner/core.ts",
+      "changedSinceBaseline": true,
+      "snapshot": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/review-fixes/candidate/web/lib/routeRunner/core.ts",
+      "reviewBaselineSha256": "b9da294329d4367440dd686c7f596fc0d1eeb360bcbf0c8650460e74664dfba5",
+      "changedSinceReview": false
+    },
+    {
+      "path": "web/lib/routeRunner/registry.ts",
+      "sha256": "b35c289f6da30ef7401360e585779c9fb9d2ed4427f136552f41a43ef5431329",
+      "bytes": 8770,
+      "baseline": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/integration-baseline/web/lib/routeRunner/registry.ts",
+      "changedSinceBaseline": true,
+      "snapshot": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/review-fixes/candidate/web/lib/routeRunner/registry.ts",
+      "reviewBaselineSha256": "b35c289f6da30ef7401360e585779c9fb9d2ed4427f136552f41a43ef5431329",
+      "changedSinceReview": false
+    },
+    {
+      "path": "web/lib/routeRunner/store.test.ts",
+      "sha256": "aed26247e4dec707af664b6ad24f54c2d293f84c72e850d70b54831b2fd71ad9",
+      "bytes": 6243,
+      "baseline": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/integration-baseline/web/lib/routeRunner/store.test.ts",
+      "changedSinceBaseline": false,
+      "snapshot": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/review-fixes/candidate/web/lib/routeRunner/store.test.ts",
+      "reviewBaselineSha256": "aed26247e4dec707af664b6ad24f54c2d293f84c72e850d70b54831b2fd71ad9",
+      "changedSinceReview": false
+    },
+    {
+      "path": "web/lib/routeRunner/store.ts",
+      "sha256": "895d850d59b632b07017ed6b974e5909e3906320be3eb8a4c2fa367ab7cfb033",
+      "bytes": 9570,
+      "baseline": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/integration-baseline/web/lib/routeRunner/store.ts",
+      "changedSinceBaseline": false,
+      "snapshot": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/review-fixes/candidate/web/lib/routeRunner/store.ts",
+      "reviewBaselineSha256": "895d850d59b632b07017ed6b974e5909e3906320be3eb8a4c2fa367ab7cfb033",
+      "changedSinceReview": false
+    },
+    {
+      "path": "web/lib/routeRunner/tick.test.ts",
+      "sha256": "bb745c65f6cb1b4ce17b67880d3973c07e5b804807cee3034af04508797c3357",
+      "bytes": 14162,
+      "baseline": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/integration-baseline/web/lib/routeRunner/tick.test.ts",
+      "changedSinceBaseline": false,
+      "snapshot": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/review-fixes/candidate/web/lib/routeRunner/tick.test.ts",
+      "reviewBaselineSha256": "bb745c65f6cb1b4ce17b67880d3973c07e5b804807cee3034af04508797c3357",
+      "changedSinceReview": false
+    },
+    {
+      "path": "web/lib/routeRunner/tick.ts",
+      "sha256": "07362d17947ef02c0a989b7df8089c552b3627cbe83840ecdd277afe96e9eb30",
+      "bytes": 14006,
+      "baseline": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/integration-baseline/web/lib/routeRunner/tick.ts",
+      "changedSinceBaseline": false,
+      "snapshot": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/review-fixes/candidate/web/lib/routeRunner/tick.ts",
+      "reviewBaselineSha256": "07362d17947ef02c0a989b7df8089c552b3627cbe83840ecdd277afe96e9eb30",
+      "changedSinceReview": false
+    },
+    {
+      "path": "web/pages/api/Averages/[playerId].ts",
+      "sha256": "f4e74bf73d05eeaf643936af755585a75604fc43c0eccc9fcf6c16b015eba669",
+      "bytes": 1786,
+      "baseline": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/caller-qualification/baseline/web/pages/api/Averages/[playerId].ts",
+      "changedSinceBaseline": true,
+      "snapshot": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/review-fixes/candidate/web/pages/api/Averages/[playerId].ts",
+      "reviewBaselineSha256": "f4e74bf73d05eeaf643936af755585a75604fc43c0eccc9fcf6c16b015eba669",
+      "changedSinceReview": false
+    },
+    {
+      "path": "web/pages/api/CareerAverages/[playerId].ts",
+      "sha256": "8b84f6f1aa628bf5f88618758f903b35b76dd7b5dabedbc09946090cb2a0c6f6",
+      "bytes": 6391,
+      "baseline": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/caller-qualification/baseline/web/pages/api/CareerAverages/[playerId].ts",
+      "changedSinceBaseline": true,
+      "snapshot": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/review-fixes/candidate/web/pages/api/CareerAverages/[playerId].ts",
+      "reviewBaselineSha256": "8b84f6f1aa628bf5f88618758f903b35b76dd7b5dabedbc09946090cb2a0c6f6",
+      "changedSinceReview": false
+    },
+    {
+      "path": "web/pages/api/SustainabilityStats/[playerId].ts",
+      "sha256": "609e22b131c72abe728cd3b7f13c3f82e88ae3c364a5b8c6693db7af1e5df239",
+      "bytes": 6033,
+      "baseline": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/caller-qualification/baseline/web/pages/api/SustainabilityStats/[playerId].ts",
+      "changedSinceBaseline": true,
+      "snapshot": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/review-fixes/candidate/web/pages/api/SustainabilityStats/[playerId].ts",
+      "reviewBaselineSha256": "609e22b131c72abe728cd3b7f13c3f82e88ae3c364a5b8c6693db7af1e5df239",
+      "changedSinceReview": false
+    },
+    {
+      "path": "web/pages/api/Teams/[teamAbbreviation].ts",
+      "sha256": "321b7944ce17b88d92e26700b1c2e5f9629d0addd01c502ff1fde76db3c332c2",
+      "bytes": 5583,
+      "baseline": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/caller-qualification/baseline/web/pages/api/Teams/[teamAbbreviation].ts",
+      "changedSinceBaseline": true,
+      "snapshot": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/review-fixes/candidate/web/pages/api/Teams/[teamAbbreviation].ts",
+      "reviewBaselineSha256": "321b7944ce17b88d92e26700b1c2e5f9629d0addd01c502ff1fde76db3c332c2",
+      "changedSinceReview": false
+    },
+    {
+      "path": "web/pages/api/Teams/nst-team-stats.ts",
+      "sha256": "1839897adeae04304f3dc73040cfc764012ce54d9f76995b4ff89546fa86a66c",
+      "bytes": 36884,
+      "baseline": "/Users/tim/Documents/Codex/2026-10-27/task/nst-enclosing-custody-20261101-01/baseline/web/pages/api/Teams/nst-team-stats.ts",
+      "changedSinceBaseline": true,
+      "snapshot": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/review-fixes/candidate/web/pages/api/Teams/nst-team-stats.ts",
+      "reviewBaselineSha256": "1839897adeae04304f3dc73040cfc764012ce54d9f76995b4ff89546fa86a66c",
+      "changedSinceReview": false
+    },
+    {
+      "path": "web/pages/api/ThreeYearAverages/[playerId].ts",
+      "sha256": "becf2d41562dd67f8826ee64a4513e78fcdf668178c84762697153691a18d8fc",
+      "bytes": 67010,
+      "baseline": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/caller-qualification/baseline/web/pages/api/ThreeYearAverages/[playerId].ts",
+      "changedSinceBaseline": true,
+      "snapshot": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/review-fixes/candidate/web/pages/api/ThreeYearAverages/[playerId].ts",
+      "reviewBaselineSha256": "becf2d41562dd67f8826ee64a4513e78fcdf668178c84762697153691a18d8fc",
+      "changedSinceReview": false
+    },
+    {
+      "path": "web/pages/api/ThreeYearAverages/nstgamelog.py",
+      "sha256": "69dad7b0d1b78b078503694d6bceebd999cb37d33f4f585db90aca97ab572c69",
+      "bytes": 7631,
+      "baseline": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/caller-qualification/baseline/web/pages/api/ThreeYearAverages/nstgamelog.py",
+      "changedSinceBaseline": true,
+      "snapshot": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/review-fixes/candidate/web/pages/api/ThreeYearAverages/nstgamelog.py",
+      "reviewBaselineSha256": "69dad7b0d1b78b078503694d6bceebd999cb37d33f4f585db90aca97ab572c69",
+      "changedSinceReview": false
+    },
+    {
+      "path": "web/pages/api/ThreeYearAverages/nsttest.py",
+      "sha256": "c64b3321c32d94b7242b04a2e2ed4a73b88ebce7624e1a55347a52fa484221d3",
+      "bytes": 4292,
+      "baseline": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/caller-qualification/baseline/web/pages/api/ThreeYearAverages/nsttest.py",
+      "changedSinceBaseline": true,
+      "snapshot": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/review-fixes/candidate/web/pages/api/ThreeYearAverages/nsttest.py",
+      "reviewBaselineSha256": "c64b3321c32d94b7242b04a2e2ed4a73b88ebce7624e1a55347a52fa484221d3",
+      "changedSinceReview": false
+    },
+    {
+      "path": "web/pages/api/fetch_team_table.ts",
+      "sha256": "51907094ae543a54430989c42a605b38db9696e4a9d45200dcb690c0eabba5a9",
+      "bytes": 4061,
+      "baseline": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/caller-qualification/baseline/web/pages/api/fetch_team_table.ts",
+      "changedSinceBaseline": true,
+      "snapshot": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/review-fixes/candidate/web/pages/api/fetch_team_table.ts",
+      "reviewBaselineSha256": "51907094ae543a54430989c42a605b38db9696e4a9d45200dcb690c0eabba5a9",
+      "changedSinceReview": false
+    },
+    {
+      "path": "web/pages/api/v1/db/check-missing-goalie-data.ts",
+      "sha256": "f2457e68de015af4215d27737a6c02b5211edebe9e06de67d507339c4e47f9aa",
+      "bytes": 16059,
+      "baseline": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/caller-qualification/baseline/web/pages/api/v1/db/check-missing-goalie-data.ts",
+      "changedSinceBaseline": true,
+      "snapshot": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/review-fixes/candidate/web/pages/api/v1/db/check-missing-goalie-data.ts",
+      "reviewBaselineSha256": "f2457e68de015af4215d27737a6c02b5211edebe9e06de67d507339c4e47f9aa",
+      "changedSinceReview": false
+    },
+    {
+      "path": "web/pages/api/v1/db/cron-report.ts",
+      "sha256": "445b092fe5dd012ac5b1408e98a7838a37fb42ec056c75493a74540d586419cf",
+      "bytes": 98639,
+      "baseline": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/integration-baseline/web/pages/api/v1/db/cron-report.ts",
+      "changedSinceBaseline": true,
+      "snapshot": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/review-fixes/candidate/web/pages/api/v1/db/cron-report.ts",
+      "reviewBaselineSha256": "445b092fe5dd012ac5b1408e98a7838a37fb42ec056c75493a74540d586419cf",
+      "changedSinceReview": false
+    },
+    {
+      "path": "web/pages/api/v1/db/nst_gamelog_goalie_scraper.py",
+      "sha256": "8baf721d2fc1a6900469c19671144118f51d658d4efa8a25e8d3fb00fadf975d",
+      "bytes": 13607,
+      "baseline": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/caller-qualification/baseline/web/pages/api/v1/db/nst_gamelog_goalie_scraper.py",
+      "changedSinceBaseline": true,
+      "snapshot": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/review-fixes/candidate/web/pages/api/v1/db/nst_gamelog_goalie_scraper.py",
+      "reviewBaselineSha256": "8baf721d2fc1a6900469c19671144118f51d658d4efa8a25e8d3fb00fadf975d",
+      "changedSinceReview": false
+    },
+    {
+      "path": "web/pages/api/v1/db/nst_gamelog_scraper.py",
+      "sha256": "6287368933517de12cc42e380f30db0c9ef905842b6f442442d6bca9dc3fb375",
+      "bytes": 29317,
+      "baseline": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/caller-qualification/baseline/web/pages/api/v1/db/nst_gamelog_scraper.py",
+      "changedSinceBaseline": true,
+      "snapshot": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/review-fixes/candidate/web/pages/api/v1/db/nst_gamelog_scraper.py",
+      "reviewBaselineSha256": "6287368933517de12cc42e380f30db0c9ef905842b6f442442d6bca9dc3fb375",
+      "changedSinceReview": false
+    },
+    {
+      "path": "web/pages/api/v1/db/update-nst-current-season.ts",
+      "sha256": "e01f59a745518125bb88502f5d49bd88fdc51c34f74d9ff50152e3b6ddc5c6bb",
+      "bytes": 26662,
+      "baseline": "/Users/tim/Documents/Codex/2026-10-27/task/nst-enclosing-custody-20261101-01/baseline/web/pages/api/v1/db/update-nst-current-season.ts",
+      "changedSinceBaseline": true,
+      "snapshot": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/review-fixes/candidate/web/pages/api/v1/db/update-nst-current-season.ts",
+      "reviewBaselineSha256": "e01f59a745518125bb88502f5d49bd88fdc51c34f74d9ff50152e3b6ddc5c6bb",
+      "changedSinceReview": false
+    },
+    {
+      "path": "web/pages/api/v1/db/update-nst-gamelog.ts",
+      "sha256": "b2d81075043e45a22bb12ae62be8aff7d804ece1faa64596e322fd328cd5c750",
+      "bytes": 114876,
+      "baseline": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/caller-qualification/baseline/web/pages/api/v1/db/update-nst-gamelog.ts",
+      "changedSinceBaseline": true,
+      "snapshot": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/review-fixes/candidate/web/pages/api/v1/db/update-nst-gamelog.ts",
+      "reviewBaselineSha256": "80a862e32753806ffc0af81f7aafa6fda4587d1c27e95cd7ad82a626e9346163",
+      "changedSinceReview": true
+    },
+    {
+      "path": "web/pages/api/v1/db/update-nst-goalies.ts",
+      "sha256": "6cd5236f10b175055208d8cf59e3da268c7b38074a8c35dbf5d76d5d8f757aef",
+      "bytes": 40486,
+      "baseline": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/integration-baseline/web/pages/api/v1/db/update-nst-goalies.ts",
+      "changedSinceBaseline": true,
+      "snapshot": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/review-fixes/candidate/web/pages/api/v1/db/update-nst-goalies.ts",
+      "reviewBaselineSha256": "53f01de8d9c65bfd44bd7748b49151c37998fc51f70616644bf559182037d8d3",
+      "changedSinceReview": true
+    },
+    {
+      "path": "web/pages/api/v1/db/update-nst-last-ten.ts",
+      "sha256": "36964c97745d560fc0c856006f28708c1c8e259e77564c164e3422d8b86b8236",
+      "bytes": 29356,
+      "baseline": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/caller-qualification/baseline/web/pages/api/v1/db/update-nst-last-ten.ts",
+      "changedSinceBaseline": true,
+      "snapshot": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/review-fixes/candidate/web/pages/api/v1/db/update-nst-last-ten.ts",
+      "reviewBaselineSha256": "36964c97745d560fc0c856006f28708c1c8e259e77564c164e3422d8b86b8236",
+      "changedSinceReview": false
+    },
+    {
+      "path": "web/pages/api/v1/db/update-nst-player-reports.ts",
+      "sha256": "3110a005587c8b42b4ec4257631f552dd82fbda6b7d02445476289d0bceb567b",
+      "bytes": 28578,
+      "baseline": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/caller-qualification/baseline/web/pages/api/v1/db/update-nst-player-reports.ts",
+      "changedSinceBaseline": true,
+      "snapshot": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/review-fixes/candidate/web/pages/api/v1/db/update-nst-player-reports.ts",
+      "reviewBaselineSha256": "3110a005587c8b42b4ec4257631f552dd82fbda6b7d02445476289d0bceb567b",
+      "changedSinceReview": false
+    },
+    {
+      "path": "web/pages/api/v1/db/update-nst-team-daily.ts",
+      "sha256": "8ea8f396d9b327f77e04ce52e8dbbe656a8a53281e54acce0f25bb5741b93602",
+      "bytes": 28262,
+      "baseline": "/Users/tim/Documents/Codex/2026-10-27/task/nst-enclosing-custody-20261101-01/baseline/web/pages/api/v1/db/update-nst-team-daily.ts",
+      "changedSinceBaseline": true,
+      "snapshot": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/review-fixes/candidate/web/pages/api/v1/db/update-nst-team-daily.ts",
+      "reviewBaselineSha256": "8ea8f396d9b327f77e04ce52e8dbbe656a8a53281e54acce0f25bb5741b93602",
+      "changedSinceReview": false
+    },
+    {
+      "path": "web/scripts/audit-ctpi-multiseason.ts",
+      "sha256": "c321bbeb840437f3dfcb7641c885316fd419e4089acda9cdf607e9d3499e1d9d",
+      "bytes": 28811,
+      "baseline": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/caller-qualification/baseline/web/scripts/audit-ctpi-multiseason.ts",
+      "changedSinceBaseline": true,
+      "snapshot": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/review-fixes/candidate/web/scripts/audit-ctpi-multiseason.ts",
+      "reviewBaselineSha256": "c321bbeb840437f3dfcb7641c885316fd419e4089acda9cdf607e9d3499e1d9d",
+      "changedSinceReview": false
+    },
+    {
+      "path": "web/scripts/fetch_team_table.py",
+      "sha256": "b8786b7015b448131716409c665c301ff78df55207b1dbd6ffb261eceaa01123",
+      "bytes": 6974,
+      "baseline": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/caller-qualification/baseline/web/scripts/fetch_team_table.py",
+      "changedSinceBaseline": true,
+      "snapshot": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/review-fixes/candidate/web/scripts/fetch_team_table.py",
+      "reviewBaselineSha256": "b8786b7015b448131716409c665c301ff78df55207b1dbd6ffb261eceaa01123",
+      "changedSinceReview": false
+    }
+  ]
+}

@@ -20,7 +20,7 @@ vi.mock("lib/integrations/yahoo/rosterPlanning", async (original) => ({
   loadYahooPlanningSnapshot: mocks.snapshot,
 }));
 
-import { yahooPlanningReportedRules } from "./rosterPlanning";
+import { yahooPlanningFormatLimitations, yahooPlanningReportedRules } from "./rosterPlanning";
 import { yahooCreditedGoalieAppearances, yahooInjury, yahooPastLineupPoints, yahooPlanningAcquisitions, yahooPlanningCategories, yahooPlanningEditable, yahooPlanningPlayers, yahooPlanningStats, yahooPlanningTeams, yahooStartingStatus } from "./rosterPlanning";
 import type { YahooProviderJsonResult } from "./providerClient";
 import { YahooLiveDraftError } from "./liveDraft";
@@ -43,6 +43,17 @@ beforeEach(() => {
 });
 
 afterEach(() => vi.unstubAllEnvs());
+
+describe("RSO format admission", () => {
+  it.each(["roto", "point"])("rejects %s rather than inventing cap or standings rules", scoring_type => {
+    expect(yahooPlanningFormatLimitations({ settings: { scoring_type } })).toEqual([
+      "Season-long points and rotisserie planning are unsupported: position caps, credited usage, cap-day scoring and standings utility are not modeled.",
+    ]);
+  });
+  it.each(["head", "headone", "headpoint"])("retains %s format admission", scoring_type => {
+    expect(yahooPlanningFormatLimitations({ settings: { scoring_type } })).toEqual([]);
+  });
+});
 
 describe("Yahoo planning parsers", () => {
   function acquisitionInputs() {

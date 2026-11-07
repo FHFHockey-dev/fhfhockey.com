@@ -1,0 +1,6 @@
+{
+  "action": "First own3125handoff",
+  "error": "PermissionError EPERM /bin/ps",
+  "occurredBefore": "Any process signal or newlistener",
+  "resolution": "Same ownershipchecked authorized require_escalated workflow; successful runtime.json"
+}

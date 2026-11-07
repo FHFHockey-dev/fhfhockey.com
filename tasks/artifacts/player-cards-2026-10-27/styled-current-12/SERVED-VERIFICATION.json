@@ -1,0 +1,74 @@
+{
+  "checks": [
+    "Defaultclient→nativeHTTPloopbackAPI→actualprovider with3capturedreadpaths; noautoload, pastedFHFHURL/Enter;5/10/20andbothformatsreuseonecapture;4selected-onlyPNG/manifestsagreewithindependentrawsums",
+    "NativefilefallbackPNGparity; browserBack/Forwardrestorescontrolsandinvalidatesoldcard/preparedfilewithoutfetch; explicitreloadrequired",
+    "Invalid/foreignURLzeroAPIcalls; uncapturedplayeridentityfailsbeforehistory/schedulefanout; no stalevalues/export/researchUI;390pxnooverflow",
+    "Accepted Matthews ID/team only: shared6styles, sequential2pass metadata, sameplayer600/4/600/337.5,logo840/-100/480/480 and exactleftquartermask; customreorder/add/remove/7px,3rings,2nativePNG+manifest+sharesamebytes",
+    "Accepted artwork survives samecapturewindow/category changes withoutfetch; reset/mobile390/nooverflow; selectedKucherovclearsMatthewsimage/controls immediately and returns exactreal5GPstats with explicitfallback"
+  ],
+  "exports": [
+    {
+      "count": 10,
+      "format": "rates-opportunity",
+      "sha256": "f6729dbdc6f95cdbcfce64c9cc76e3f8c2d94ad9053da53443cdbaf71b0b8755",
+      "selectedGp": 10
+    },
+    {
+      "count": 10,
+      "format": "results-milestones",
+      "sha256": "e84bf29b2b063672ce8aa72bbb4f41885b575e6045bd565469c16a082fb1c79e",
+      "selectedGp": 10
+    },
+    {
+      "count": 5,
+      "format": "results-milestones",
+      "sha256": "5c4532f38fa5a933b234713d81ff919ed4d7d2fb3d19d7a59e0ec1bc96ca5b3e",
+      "selectedGp": 5
+    },
+    {
+      "count": 20,
+      "format": "results-milestones",
+      "sha256": "a8908c1d37c0913a73003cd008c9a905f08d83f12c78462c8bee846e83fa1515",
+      "selectedGp": 11
+    },
+    {
+      "kind": "accepted-artwork/synthetic-stats",
+      "style": "posterized-team-colors",
+      "sha256": "512b1c1c53093c5b615e61d897b0d557f3996a255e00d4203e392ac31e227a0a",
+      "outlineWidths": [
+        5,
+        7,
+        5
+      ]
+    },
+    {
+      "kind": "accepted-artwork/synthetic-stats",
+      "style": "pixelated-team-colors",
+      "sha256": "eae27c207dbc522c1b44639f5d17f976dc29bc9795d104cc19733c192195c00e",
+      "outlineWidths": [
+        5,
+        7,
+        5
+      ]
+    }
+  ],
+  "retainedCalls": [
+    "?playerId=8476453&season=20262027&count=10",
+    "?playerId=8476453&season=20262027&count=20",
+    "?playerId=8479318&season=20262027&count=20"
+  ],
+  "nativeLocalApiCalls": [
+    "?playerId=8476453&season=20262027&count=5"
+  ],
+  "fixtureProviderPaths": [
+    "/player/8476453/landing",
+    "/player/8476453/game-log/20262027/2",
+    "/club-schedule-season/TBL/20262027"
+  ],
+  "externalAttempts": [],
+  "pageErrors": [],
+  "liveRequests": 0,
+  "source": "approved retained official capture; nativeHTTPloopbackfixtureendpoint; serveroutboundfetchblocked",
+  "appRoute": "/player-cards",
+  "apiRoute": "/api/v1/player-cards"
+}

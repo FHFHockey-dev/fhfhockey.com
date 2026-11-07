@@ -1,0 +1,25 @@
+{
+  "caseId": "E11",
+  "outcome": "recorded_model_failure",
+  "rawGrade": {
+    "identity": true,
+    "goalie": false,
+    "decisions": false,
+    "labelMatch": false
+  },
+  "reason": "goalie_subject_binding_invalid",
+  "decisionsDisposition": "not_run_original_responses_held",
+  "anchor": {
+    "caseId": "E11",
+    "sha256": "57bbfb7a110aba4f4b095080da675d7cb2cdbda8c3350181043edc175be8c24a"
+  },
+  "candidateAvailable": true,
+  "candidateApplied": false,
+  "callsThisReport": 1,
+  "cumulativeCalls": 12,
+  "exposureNanoUsd": 267563575,
+  "currentChargeNanoUsd": 511281,
+  "ledgerEnabled": true,
+  "blockedReason": null,
+  "proceed": true
+}

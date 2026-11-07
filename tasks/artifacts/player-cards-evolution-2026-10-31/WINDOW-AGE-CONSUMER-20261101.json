@@ -1,0 +1,131 @@
+{
+  "at": "2026-11-01T18:18:03.021344+00:00",
+  "scope": "Consumer wording and regressions only; no mapper/scorer/snapshot/eligibility or card layout change.",
+  "reviewAndProtectedSourcePins": [
+    {
+      "path": "tasks/artifacts/blsh-visual-january-audit-2026-11-01/p2-rereview/REVIEW.md",
+      "sha256": "036a28c0f8ca87b849d34c9b9a38e8295444aada4c5b0c1cde250039a01e29d2"
+    },
+    {
+      "path": "web/lib/buyLowSellHigh/displayProfile.ts",
+      "sha256": "a69438100056f9301f481d2da2704b835998b8b4da0d5a75d9173daf0905d284"
+    },
+    {
+      "path": "web/lib/buyLowSellHigh/researchSnapshot.ts",
+      "sha256": "dabc03430b118adab600decb344b3f5b530092f2485077cfd1a1649710b4b141"
+    },
+    {
+      "path": "web/lib/buyLowSellHigh/research-snapshots/2026-10-28.arm-a-canonical-repaired.v2.json",
+      "sha256": "2f380c2539390f6931ec92ab1d0b1d8cced2b55f5f4cefb8c6e88a694909f2c8"
+    }
+  ],
+  "sourceChanges": [
+    {
+      "path": "web/lib/player-cards/analysisEvidence.ts",
+      "beforeSHA256": "c44f8d606b72daec5cd7b8d816b53c69d97dcf47c82c02a4f90341527d56ce68",
+      "afterSHA256": "e9632bf60feb058fd10a80b03deb88287ce50a4d54311476d39904825ccbd332"
+    },
+    {
+      "path": "web/lib/player-cards/analysisEvidence.test.ts",
+      "beforeSHA256": "d10d3d3b09f172c4bc82b6842880950514e51db27c73b09eb0b36ab6908bc2b4",
+      "afterSHA256": "4f6313bbad5dfea6360c6659ca9e85cadf3783cb7f86e4fe89eef993afaed382"
+    },
+    {
+      "path": "web/lib/player-cards/retainedBlsh.test.ts",
+      "beforeSHA256": "97a399efa0b137cec57968f1e3d88b36d452d363a89c345f91cce65e704dc353",
+      "afterSHA256": "56433315e0322bb90324ae0754cdf21baceb67e2481b78bcd98b71e257f8b52d"
+    }
+  ],
+  "finding": "Card explanatory output did not consume frozen freshnessText. A combined stale/incomplete rejection message could still blur missing production with age; split source-time mismatch from window/support qualification without changing admission conditions.",
+  "actualSavedCases": {
+    "Benn8473994": "1day old window, empty production tracks, unavailable; no false stale-window explanatory label",
+    "recentUnavailableProfiles": 137,
+    "Wilson8475253": "11day old window, retained research still exploratory; raw score43.86735762626921 and stored diagnostics unchanged"
+  },
+  "rawDiagnosticBoundary": "Immutable original freshnessText remains only inside retained raw profile/manifest; not explanatory card copy. Capture age24h, window age7days and production availability are separate.",
+  "checks": {
+    "at": "2026-11-01T18:16:40.914099+00:00",
+    "checks": [
+      {
+        "check": "tests",
+        "command": [
+          "npm",
+          "test",
+          "--",
+          "--run",
+          "lib/player-cards/retainedBlsh.test.ts"
+        ],
+        "exitCode": 0,
+        "durationSeconds": 1.29,
+        "log": "window-age-tests-20261101.log"
+      },
+      {
+        "check": "types",
+        "command": [
+          "/usr/local/bin/node",
+          "node_modules/typescript/bin/tsc",
+          "--noEmit",
+          "--project",
+          "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-evolution-2026-10-31/tsconfig.json"
+        ],
+        "exitCode": 0,
+        "durationSeconds": 4.44,
+        "log": "window-age-types-20261101.log"
+      },
+      {
+        "check": "lint",
+        "command": [
+          "/usr/local/bin/node",
+          "node_modules/eslint/bin/eslint.js",
+          "lib/player-cards/analysisEvidence.ts",
+          "lib/player-cards/analysisEvidence.test.ts",
+          "lib/player-cards/retainedBlsh.test.ts"
+        ],
+        "exitCode": 0,
+        "durationSeconds": 1.55,
+        "log": "window-age-lint-20261101.log"
+      },
+      {
+        "check": "preview",
+        "command": [
+          "/usr/local/bin/node",
+          "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-evolution-2026-10-31/render-preview.mjs"
+        ],
+        "exitCode": 0,
+        "log": "window-age-preview-20261101.log"
+      }
+    ],
+    "networkDenied": true,
+    "priorUnaffectedTests": "second-window-age-tests-20261101.log:29passed; final11test rerun follows test-only nullable-team guard",
+    "networkDeniedAppliesTo": [
+      "tests",
+      "types",
+      "lint"
+    ],
+    "previewMode": "Offline esbuild compilation only; no runtime source calls."
+  },
+  "uniqueAffectedTests": 29,
+  "finalTestOnlyGuardRerun": 11,
+  "initialFailures": [
+    "Initial new test used import.meta URL transformed by jsdom/Vite to non-file scheme; switched to owning web cwd file path.",
+    "Typecheck identified nullable team in new test helper; added explicit non-null guard. All137 target profiles have team."
+  ],
+  "browser": "Not rerun for message-only change with no layout/stylesheet/runtime capture admission change. Existing studio render/export tests passed; earlier actual browser receipts remain historical.",
+  "preservation": {
+    "originalCardFiles": 78,
+    "unchanged": true,
+    "upstreamPinsUnchanged": true
+  },
+  "sourceHandoffs": "P2 review accepted for upstream explanatory views only; downstream acknowledges raw diagnostic boundary via append-only repository mailbox. Retained goalie request still pending in latest incoming mailbox; no editor transfer or new Yahoo data supplied.",
+  "remainingOriginalSubtasks": 12,
+  "operations": {
+    "providerRequests": 0,
+    "databaseRequests": 0,
+    "newCollection": 0,
+    "credentialActions": 0,
+    "productionChanges": 0,
+    "deployments": 0,
+    "pushes": 0,
+    "deniedOrUncertainActions": 0
+  }
+}

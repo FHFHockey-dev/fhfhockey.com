@@ -1,0 +1,10 @@
+[
+  {
+    "check": "old/current SQL receipt rendering",
+    "exitCode": 0
+  },
+  {
+    "check": "CLI old-current AST differential",
+    "exitCode": 0
+  }
+]

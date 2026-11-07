@@ -1,0 +1,26 @@
+{
+  "status": "ADMISSION_INSTALLED_PENDING_OWNER_COMMIT",
+  "candidateTree": "394e3cb70d3e9995e8a1f02f75ba13973320df34",
+  "candidateCommit": "c3897d3273ca46ea25a9f2737f09c835e5ec7325",
+  "selectedBase": "295b384da47f2a4665a76d841d3d1aa701912d8c",
+  "expectedClosureSha256": "ec5bdab6593f58ec19ad9b250fb645aa377616542e98205150e22f085914968c",
+  "moduleCount": 195,
+  "findings": 0,
+  "verifierSha256": "2da61a46b89df70669c454f08fbefd3a0803655a92226f0c8020aad9b9d3c456",
+  "closureWalkerSha256": "e33ccacb21dca88ef2d163dab5f16ec0c50bb817373b9ab000c2ac8e29df5bad",
+  "preparationReceipt": "after402-candidate-closure.json",
+  "preparationReceiptSha256": "4e6dab63aee4d2119a65e03859f88eba2945fe20e2d8b091c6dde89c973bcca0",
+  "preparationReceiptIsCommitBacked": false,
+  "requiredEntry": {
+    "closureSha256": "ec5bdab6593f58ec19ad9b250fb645aa377616542e98205150e22f085914968c",
+    "commit": "c3897d3273ca46ea25a9f2737f09c835e5ec7325",
+    "receipt": "tasks/artifacts/rso-resume-2026-11-01/release-prep/admission/c3897d3273ca46ea25a9f2737f09c835e5ec7325/receipt.json",
+    "receiptSha256": "fe424f17b66c82ca3232d9566a41a7dbafc76400d2f8ea4f007e9afc1758b924",
+    "verifierVersion": "forge-release-sha-verifier-v1",
+    "note": "RSO issued-method lineage and retained participation replay, commit c3897d327: 195-module closure, 0 findings."
+  },
+  "nextAction": "TJ relays RSO-ADMISSION-READY-20261101 to Claude session1e668672. Owner commits only the four listed catalog/receipt paths on c3897d327, returning the exact SHA/tree. No push/build/deploy.",
+  "baselineReconciliation": "after403-reconciliation.json",
+  "commitVerifiedAt": "2026-11-01T20:31:59.539539+00:00",
+  "commitVerification": "Exact tree, four source pins and first parent 295b384 verified read-only"
+}

@@ -1,0 +1,51 @@
+[
+ {
+  "name": "busy-custom",
+  "post": "busy-quiet-goalies",
+  "query": {
+   "period": "custom",
+   "start": "2026-10-15",
+   "end": "2026-10-25"
+  },
+  "ms": 694,
+  "requests": 6,
+  "errors": [],
+  "rows": {
+   "yahoo_matchup_weeks": 27,
+   "wgo_team_stats": 462,
+   "games": 235,
+   "wgo_goalie_stats": 494,
+   "nst_team_gamelogs_as_counts": 154,
+   "nst_gamelog_goalie_all_counts": 143
+  },
+  "state": "ready",
+  "reasons": [],
+  "sample": "Oct 15 to Oct 25: 143 appearances, 142 starts, 1 relief. Per start reads official starts only; relief is counted apart. HD counts shots from the high-danger zone, not chances, shown at 90% coverage, otherwise as a dash. TEAM columns are team totals per team game, including time another goalie was in net. 3 listed appearances shared the net. Min starts counts these dates only and is not lowered for a short range.",
+  "cohort": "50 of 64 goalies with at least 2 official starts in these dates",
+  "err": null
+ },
+ {
+  "name": "rescue-w4",
+  "post": "goalie-rescue",
+  "query": {
+   "period": "matchup",
+   "week": "4"
+  },
+  "ms": 781,
+  "requests": 8,
+  "errors": [],
+  "rows": {
+   "yahoo_matchup_weeks": 27,
+   "games": 235,
+   "wgo_team_stats": 462,
+   "yahoo_players": 181,
+   "wgo_goalie_stats": 494,
+   "yahoo_nhl_player_map_read": 150
+  },
+  "state": "ready",
+  "reasons": [],
+  "sample": "Week 4 · Oct 19 to Oct 25: 11 candidates, 23 starts, 0 relief. Win support: W. Volume: SV, with SA as context. Ratio exposure: SV%, GA, GAA, pooled. One selected category orders the list. GMS LEFT is hidden: it counts the current week's games, and these dates have ended. Min starts counts these dates only and is not lowered for a short range.",
+  "cohort": "11 of 33 goalies with at least 2 official starts in these dates at or under 50% rostered now; 0 unknown ownership excluded; 17 above the ceiling; 5 excluded by Yahoo status",
+  "err": null
+ }
+]

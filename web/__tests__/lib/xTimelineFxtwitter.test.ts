@@ -8,8 +8,11 @@ import {
   queueTableFor,
   rowsToEnqueue,
   toQueueRow,
+  toSocialShareRow,
   toV2Payload,
 } from "../../../supabase/functions/x-timeline-poll/fxtwitter";
+import { ALT_TEXT_RULES as SHARED_RULES, matchPostedCard as sharedMatch } from "../../../supabase/functions/_shared/socialShareCard";
+import { ALT_TEXT_RULES as WEB_RULES, matchPostedCard as webMatch } from "lib/socialShare/postedWeek";
 import { buildLinesCccSourceFromIftttEvent } from "lib/sources/linesCccIngestion";
 import { tweetClaimAttribution } from "lib/sources/tweetSourceDirectory";
 import { quotedTweetFromFxtwitterPayload } from "lib/sources/fxtwitterQueuePayload";
@@ -177,6 +180,10 @@ describe("cutover queue rows", () => {
     });
     // The CCC queue has no source_key/source_group columns.
     expect(toQueueRow(repost(), "lines_ccc_ifttt_events")).not.toHaveProperty("source_key");
+    // The shadow's first sighting rides along when the store knows it, for the Lines engine's ingestion time.
+    expect(row.raw_payload).not.toHaveProperty("first_seen_at");
+    expect(toQueueRow(repost(), "line_source_ifttt_events", "2026-11-06T20:00:07Z").raw_payload)
+      .toMatchObject({ first_seen_at: "2026-11-06T20:00:07Z", provider: "fxtwitter" });
   });
 
   it("gives no v2 payload for own posts or unhydrated wrappers", () => {
@@ -233,6 +240,47 @@ describe("cutover queue rows", () => {
       relationship: "retweet",
       original: { handle: "beatwriter", accountId: "4242", accountKey: "x:id:4242" },
     });
+  });
+});
+
+describe("FHFHockey social-share rows (replacing IFTTT \"New photo or video by you\")", () => {
+  const fhfh = POLLED_ACCOUNTS.find((account) => account.sourceKey === "fhfhockey")!;
+  const own = (fields: Record<string, unknown>) => mapFxStatus(fhfh, status({
+    id: "900", url: "https://x.com/FHFHockey/status/900", text: "Weekend Warriors", author: author("FHFHockey"),
+    media: { all: [{ type: "photo", altText: "Chart image" }, { type: "photo", altText: "FHFH Off-Night Edge, rest of week: BUF" }] },
+    ...fields,
+  }))!;
+
+  it("keeps the shared card matcher identical to postedWeek's", () => {
+    const shape = (rules: readonly (readonly [RegExp, string])[]) => rules.map(([rule, card]) => [String(rule), card]);
+    expect(shape(SHARED_RULES)).toEqual(shape(WEB_RULES));
+    for (const alt of ["FHFH Off-Night Edge, rest of week: BUF", "FHFH GSAx leaders", "Chart image", null, "FHFH nothing"]) {
+      expect(sharedMatch(alt)).toBe(webMatch(alt));
+    }
+  });
+
+  it("writes an own media post with its X timestamp, the FHFH alt text and the matched card", () => {
+    expect(toSocialShareRow(fhfh, own({}), sharedMatch)).toMatchObject({
+      tweet_id: "900", post_link: "https://x.com/FHFHockey/status/900", username: "FHFHockey",
+      posted_at: "2026-11-06T00:17:35.000Z", post_text: "Weekend Warriors",
+      alt_text: "FHFH Off-Night Edge, rest of week: BUF", matched_card: "off-night-rest",
+      raw_payload: { provider: "fxtwitter" },
+    });
+  });
+
+  it("writes quotes with media but never reposts, media-less posts or other accounts", () => {
+    const quote = own({ quote: status({ id: "899", url: "https://x.com/Other/status/899", text: "q", author: author("Other") }) });
+    expect(toSocialShareRow(fhfh, quote, sharedMatch)).toMatchObject({ tweet_id: "900" });
+    const repost = mapFxStatus(fhfh, status({ id: "800", url: "https://x.com/Beat/status/800", text: "x", author: author("Beat"),
+      reposted_by: { screen_name: "FHFHockey" }, media: { all: [{ type: "photo" }] } }))!;
+    expect(toSocialShareRow(fhfh, repost, sharedMatch)).toBeNull();
+    expect(toSocialShareRow(fhfh, own({ media: {} }), sharedMatch)).toBeNull();
+    expect(toSocialShareRow(gdl, own({}), sharedMatch)).toBeNull();
+  });
+
+  it("leaves the card unmatched when no alt text is present, as IFTTT rows are today", () => {
+    expect(toSocialShareRow(fhfh, own({ media: { all: [{ type: "photo" }] } }), sharedMatch))
+      .toMatchObject({ alt_text: null, matched_card: null });
   });
 });
 

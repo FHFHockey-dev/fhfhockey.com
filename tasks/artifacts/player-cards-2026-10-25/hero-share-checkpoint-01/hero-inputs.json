@@ -1,0 +1,42 @@
+[
+  {
+    "player": {
+      "id": 8479318,
+      "name": "Auston Matthews",
+      "position": "C",
+      "roster_team": "TOR",
+      "sweater": 34
+    },
+    "sourceUrl": "https://assets.nhle.com/mugs/actionshots/1296x729/8479318.jpg",
+    "sourceDimensions": [
+      1296,
+      729
+    ],
+    "capturedAt": "2026-10-24T20:23:53.965681+00:00",
+    "sourceSha256": "8f91559bcfedf1b96eaa4a273c03b8ffd5357b3bc749dbabb5e0c40bfa706a04",
+    "alphaPath": "/Users/tim/Documents/FHFH-local-image-tests/2026-10-24-birefnet-validation/outputs/8479318/alpha.png",
+    "alphaSha256": "713a4923cf4742cefbbc09a647a249f98c095edea8eb92f7bda028929e0db065",
+    "acceptance": "ACCEPTED",
+    "pixelsInspected": "Local dark composition and original alpha PNG viewed individually on executor; browser-composed exports also reviewed. Alpha source copied byte-for-byte."
+  },
+  {
+    "player": {
+      "id": 8478864,
+      "name": "Kirill Kaprizov",
+      "position": "L",
+      "roster_team": "MIN",
+      "sweater": 97
+    },
+    "sourceUrl": "https://assets.nhle.com/mugs/actionshots/1296x729/8478864.jpg",
+    "sourceDimensions": [
+      1296,
+      729
+    ],
+    "capturedAt": "2026-10-24T20:23:46.847896+00:00",
+    "sourceSha256": "e06883cc7ce495affd87dadabf39ecfffbb0688691c70b8d833ab20e7f7b2973",
+    "alphaPath": "/Users/tim/Documents/FHFH-local-image-tests/2026-10-24-birefnet-validation/outputs/8478864/alpha.png",
+    "alphaSha256": "4199308c2f56a9ac0244697e7162f42283f1a5c247b656fb7c9278597b3ee18c",
+    "acceptance": "ACCEPTED",
+    "pixelsInspected": "Local dark composition and original alpha PNG viewed individually on executor; browser-composed exports also reviewed. Alpha source copied byte-for-byte."
+  }
+]

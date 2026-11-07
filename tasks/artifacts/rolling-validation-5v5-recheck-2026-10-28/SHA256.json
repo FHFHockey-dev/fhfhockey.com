@@ -1,0 +1,12 @@
+{
+  "ATTEMPT-1.json": "40cfe3cc44c1d2e21b377485abdb58886195ee064aa5dd302768f0e38b666011",
+  "CHECKPOINT.json": "20a6c6330c63aeeea603f40a36802de4073d711520dd7a2eeeeff9f4d2bb5e61",
+  "HANDOFF.md": "77208e3316135e8f552928bf1542226d79f26c14196a984a74e42b21617d30d5",
+  "RESULTS.json": "4b66bd7f76fd26d4b04f03dd01960eba4e1f6cc4c88ae5203defbe1776a43559",
+  "recheck.cjs": "7105e4fb31920b45ef836f792bd7767085788a362391d40be175d95f5d79bb4e",
+  "snapshot/web/lib/api/queryParams.ts": "60148f4671f7e8c411a45cc5db9d32b9ae68fbfbe5b578b7c9a45efe097d9c6d",
+  "snapshot/web/lib/supabase/Upserts/rollingDroppedColumns.ts": "5960da3c1782199103f6e94ac66fcaac306f28fc1f8a1d55437f2df2f3093a11",
+  "snapshot/web/lib/supabase/Upserts/rollingPlayerValidationPayload.test.ts": "c312b820ffb8a3bca609565a7e4f921c8cec576441ec6925a67a8d08a3680c66",
+  "snapshot/web/lib/supabase/Upserts/rollingPlayerValidationPayload.ts": "e1e3357737d5a570522cadc6a999be23a1e2270f5c28d880ea34e7666ad4ae6c",
+  "snapshot/web/pages/api/v1/debug/rolling-player-metrics.ts": "2f97f1bbda7f433fcad160316eb050b0acfebffb7b87acd560ce9d07b01160d0"
+}

@@ -1,0 +1,40 @@
+{
+  "atUtc": "2026-11-01T15:59:14.429554+00:00",
+  "checks": [
+    {
+      "name": "tests",
+      "command": [
+        "npm",
+        "test",
+        "--",
+        "--run",
+        "lib/nst/goalieCatchup.server.test.ts",
+        "--maxWorkers=1",
+        "--minWorkers=1"
+      ],
+      "exitCode": 0
+    },
+    {
+      "name": "types",
+      "command": [
+        "node",
+        "node_modules/typescript/bin/tsc",
+        "--project",
+        "/Users/tim/Code/fhfhockey.com/tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/tsconfig.adapter.json"
+      ],
+      "exitCode": 0
+    },
+    {
+      "name": "lint",
+      "command": [
+        "node",
+        "node_modules/eslint/bin/eslint.js",
+        "lib/nst/goalieCatchup.server.ts",
+        "lib/nst/goalieCatchup.server.test.ts"
+      ],
+      "exitCode": 0
+    }
+  ],
+  "networkGuard": "offline.cjs",
+  "scope": "Unwired checkpoint adapter; mocked transactional store only. No SQL execution, migration, provider or production verification."
+}

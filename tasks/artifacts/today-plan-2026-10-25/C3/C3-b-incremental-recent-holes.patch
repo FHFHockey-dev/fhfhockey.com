@@ -1,0 +1,28 @@
+--- a/web/lib/underlying-stats/playerStatsRefreshWindow.ts
++++ b/web/lib/underlying-stats/playerStatsRefreshWindow.ts
+@@ -9,6 +9,8 @@
+   PLAYER_STATS_SUMMARY_PARTITION_SOURCE_URL_PREFIX,
+ } from "./playerStatsSummaryRefresh";
+ 
++const UNCOVERED_LOOKBACK_DAYS = 7;
++
+ type GameRow = {
+   id: number | string | null;
+   date: string | null;
+@@ -129,9 +131,15 @@
+ 
+   const startDate = latestCoveredDate ?? finishedGames[finishedGames.length - 1]?.date ?? null;
+   const endDate = finishedGames[0]?.date ?? null;
++  // A failed game behind a newer covered game is otherwise never reselected;
++  // retry only those uncovered games, and only within a fixed recent bound.
++  const holeFloor = endDate
++    ? new Date(Date.parse(`${endDate}T12:00:00Z`) - UNCOVERED_LOOKBACK_DAYS * 86400000).toISOString().slice(0, 10)
++    : null;
+ 
+   const selectedGames = finishedGames
+-    .filter((game) => startDate != null && game.date >= startDate)
++    .filter((game) => startDate != null && (game.date >= startDate
++      || (holeFloor != null && game.date >= holeFloor && !summaryGameIds.has(game.id))))
+     .sort((a, b) => a.date.localeCompare(b.date) || a.id - b.id);
+ 
+   return {

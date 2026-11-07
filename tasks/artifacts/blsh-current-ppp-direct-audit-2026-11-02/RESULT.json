@@ -1,0 +1,298 @@
+{
+  "state": "PASS",
+  "tests": 10,
+  "pins": 282,
+  "selectedRecords": 3461,
+  "profiles": 740,
+  "unresolvedPPP": 212,
+  "olderAgreements": 150,
+  "targets": 62,
+  "nativePPPMatches": 62,
+  "zeros": 47,
+  "nonzero": 15,
+  "laterCandidates": 44,
+  "exposureHolds": 18,
+  "olderHeldRecords": 16,
+  "newHeldSourceIds": [
+    5598688,
+    5599832
+  ],
+  "zeroShotRecords": 12,
+  "zeroShotCandidates": 7,
+  "retainedBodies": {
+    "/Users/tim/Documents/Codex/2026-10-27/task-3/source-vintage-20261101-01/live-02/021-2026020156-summary.body.json": {
+      "rows": 36,
+      "game": 2026020156,
+      "observed": "2026-11-01T17:26:25.686519+00:00",
+      "reused": true,
+      "bytes": 18612
+    },
+    "/Users/tim/Documents/Codex/2026-10-27/task-3/source-vintage-20261101-01/live-02/041-2026020167-summary.body.json": {
+      "rows": 36,
+      "game": 2026020167,
+      "observed": "2026-11-01T17:27:25.680057+00:00",
+      "reused": true,
+      "bytes": 18585
+    },
+    "/Users/tim/Documents/Codex/2026-10-27/task-3/source-vintage-20261101-01/live-02/048-2026020171-summary.body.json": {
+      "rows": 36,
+      "game": 2026020171,
+      "observed": "2026-11-01T17:27:46.713122+00:00",
+      "reused": true,
+      "bytes": 18594
+    }
+  },
+  "newReports": 46,
+  "newBytes": 24661,
+  "allOverlappingGoalsAssistsShotsMatch": true,
+  "allComparisonObjectsExactlyRebuilt": true,
+  "csvParity": true,
+  "unchangedFPWindows": 482,
+  "sourceValuesChanged": false,
+  "scoringAdmission": false,
+  "networkRequests": 0,
+  "held": [
+    {
+      "sourceId": 5596264,
+      "captured": 767,
+      "native": "768.0000",
+      "reused": true,
+      "holds": [
+        "prior_exposure_hold_preserved",
+        "direct_exposure_unmatched",
+        "observation_precedes_source_capture"
+      ]
+    },
+    {
+      "sourceId": 5597031,
+      "captured": 1061,
+      "native": "1059.0000",
+      "reused": true,
+      "holds": [
+        "prior_exposure_hold_preserved",
+        "direct_exposure_unmatched",
+        "observation_precedes_source_capture"
+      ]
+    },
+    {
+      "sourceId": 5597261,
+      "captured": 979,
+      "native": "922.0000",
+      "reused": true,
+      "holds": [
+        "prior_exposure_hold_preserved",
+        "direct_exposure_unmatched",
+        "observation_precedes_source_capture"
+      ]
+    },
+    {
+      "sourceId": 5597181,
+      "captured": 1077,
+      "native": "1100.0000",
+      "reused": true,
+      "holds": [
+        "prior_exposure_hold_preserved",
+        "direct_exposure_unmatched",
+        "observation_precedes_source_capture"
+      ]
+    },
+    {
+      "sourceId": 5597275,
+      "captured": 620,
+      "native": "629.0000",
+      "reused": true,
+      "holds": [
+        "prior_exposure_hold_preserved",
+        "direct_exposure_unmatched",
+        "observation_precedes_source_capture"
+      ]
+    },
+    {
+      "sourceId": 5597200,
+      "captured": 1440,
+      "native": "1474.0000",
+      "reused": true,
+      "holds": [
+        "prior_exposure_hold_preserved",
+        "direct_exposure_unmatched",
+        "observation_precedes_source_capture"
+      ]
+    },
+    {
+      "sourceId": 5597294,
+      "captured": 1037,
+      "native": "981.0000",
+      "reused": true,
+      "holds": [
+        "prior_exposure_hold_preserved",
+        "direct_exposure_unmatched",
+        "observation_precedes_source_capture"
+      ]
+    },
+    {
+      "sourceId": 5597170,
+      "captured": 884,
+      "native": "911.0000",
+      "reused": true,
+      "holds": [
+        "prior_exposure_hold_preserved",
+        "direct_exposure_unmatched",
+        "observation_precedes_source_capture"
+      ]
+    },
+    {
+      "sourceId": 5597187,
+      "captured": 1035,
+      "native": "1006.0000",
+      "reused": true,
+      "holds": [
+        "prior_exposure_hold_preserved",
+        "direct_exposure_unmatched",
+        "observation_precedes_source_capture"
+      ]
+    },
+    {
+      "sourceId": 5597309,
+      "captured": 1157,
+      "native": "1175.0000",
+      "reused": true,
+      "holds": [
+        "prior_exposure_hold_preserved",
+        "direct_exposure_unmatched",
+        "observation_precedes_source_capture"
+      ]
+    },
+    {
+      "sourceId": 5597313,
+      "captured": 1135,
+      "native": "1164.0000",
+      "reused": true,
+      "holds": [
+        "prior_exposure_hold_preserved",
+        "direct_exposure_unmatched",
+        "observation_precedes_source_capture"
+      ]
+    },
+    {
+      "sourceId": 5597173,
+      "captured": 1391,
+      "native": "1431.0000",
+      "reused": true,
+      "holds": [
+        "prior_exposure_hold_preserved",
+        "direct_exposure_unmatched",
+        "observation_precedes_source_capture"
+      ]
+    },
+    {
+      "sourceId": 5597189,
+      "captured": 1172,
+      "native": "1115.0000",
+      "reused": true,
+      "holds": [
+        "prior_exposure_hold_preserved",
+        "direct_exposure_unmatched",
+        "observation_precedes_source_capture"
+      ]
+    },
+    {
+      "sourceId": 5597317,
+      "captured": 1149,
+      "native": "1189.0000",
+      "reused": true,
+      "holds": [
+        "prior_exposure_hold_preserved",
+        "direct_exposure_unmatched",
+        "observation_precedes_source_capture"
+      ]
+    },
+    {
+      "sourceId": 5597210,
+      "captured": 1035,
+      "native": "978.0000",
+      "reused": true,
+      "holds": [
+        "prior_exposure_hold_preserved",
+        "direct_exposure_unmatched",
+        "observation_precedes_source_capture"
+      ]
+    },
+    {
+      "sourceId": 5597329,
+      "captured": 1027,
+      "native": "969.0000",
+      "reused": true,
+      "holds": [
+        "prior_exposure_hold_preserved",
+        "direct_exposure_unmatched",
+        "observation_precedes_source_capture"
+      ]
+    },
+    {
+      "sourceId": 5598688,
+      "captured": 1008,
+      "native": "1001.0000",
+      "reused": false,
+      "holds": [
+        "prior_exposure_hold_preserved",
+        "direct_exposure_unmatched"
+      ]
+    },
+    {
+      "sourceId": 5599832,
+      "captured": 1007,
+      "native": "1008.0000",
+      "reused": false,
+      "holds": [
+        "prior_exposure_hold_preserved",
+        "direct_exposure_unmatched"
+      ]
+    }
+  ],
+  "candidateIds": [
+    5587266,
+    5588594,
+    5588451,
+    5589270,
+    5589285,
+    5589288,
+    5589299,
+    5589301,
+    5589212,
+    5589311,
+    5589783,
+    5589792,
+    5589793,
+    5589801,
+    5589802,
+    5589803,
+    5589766,
+    5596246,
+    5596261,
+    5596272,
+    5596302,
+    5597263,
+    5597195,
+    5597269,
+    5597273,
+    5597274,
+    5597283,
+    5597286,
+    5597287,
+    5597289,
+    5597296,
+    5597302,
+    5598399,
+    5598400,
+    5598438,
+    5598405,
+    5598406,
+    5598439,
+    5600700,
+    5600709,
+    5600713,
+    5600780,
+    5600805,
+    5600831
+  ]
+}

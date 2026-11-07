@@ -1,0 +1,112 @@
+{
+  "observed_at_utc": "2026-11-04T22:55:06.904904+00:00",
+  "branch": "octoberBranch",
+  "head": "5f6b4e7a3a893000fe31cc6928cd8736b56e5d39",
+  "not_a_lease": true,
+  "paths": [
+    {
+      "lane": "L4",
+      "path": "web/lib/tradeValue/contracts.ts",
+      "sha256": null,
+      "exists": false,
+      "git_status": "absent"
+    },
+    {
+      "lane": "L4",
+      "path": "web/lib/tradeValue/observationEvidence.ts",
+      "sha256": null,
+      "exists": false,
+      "git_status": "absent"
+    },
+    {
+      "lane": "L4",
+      "path": "web/lib/tradeValue/observationEvidence.test.ts",
+      "sha256": null,
+      "exists": false,
+      "git_status": "absent"
+    },
+    {
+      "lane": "L5",
+      "path": "web/components/RosterAutopsy/RosterAutopsy.tsx",
+      "sha256": "06318a79f1277c128b86a082ee6332aeb832184932b1c7475744fec896d430fb",
+      "exists": true,
+      "git_status": "clean"
+    },
+    {
+      "lane": "L5",
+      "path": "web/components/RosterAutopsy/RosterAutopsy.module.scss",
+      "sha256": "fffb6f7eef01d4c6ef995c1ab380f5c5f1649816b7a6e7da9c9c3c8b62e582a2",
+      "exists": true,
+      "git_status": "clean"
+    },
+    {
+      "lane": "L5",
+      "path": "web/components/RosterAutopsy/RosterAutopsy.test.tsx",
+      "sha256": "7fd1372bd591343fa55dae7726036308582b968410538c45a3a8c71aba0cea92",
+      "exists": true,
+      "git_status": "clean"
+    },
+    {
+      "lane": "L5",
+      "path": "web/lib/rosterAutopsy/diagnosis.ts",
+      "sha256": null,
+      "exists": false,
+      "git_status": "absent"
+    },
+    {
+      "lane": "L5",
+      "path": "web/lib/rosterAutopsy/diagnosis.test.ts",
+      "sha256": null,
+      "exists": false,
+      "git_status": "absent"
+    },
+    {
+      "lane": "L2",
+      "path": "web/lib/buyLowSellHigh/researchSnapshot.ts",
+      "sha256": "76721610cf1be0f699279696603517c1b92547d1e85944e150098370a31babd3",
+      "exists": true,
+      "git_status": " M"
+    },
+    {
+      "lane": "L2",
+      "path": "web/lib/buyLowSellHigh/researchSnapshot.test.ts",
+      "sha256": "3cd79a94f1ff6b896c48cd41dd59a1e0a3ea9a33fe54abdc378927071e6ab69c",
+      "exists": true,
+      "git_status": " M"
+    },
+    {
+      "lane": "L6",
+      "path": "web/pages/wigoCharts.tsx",
+      "sha256": "9f01ed1e7a62bbd0f67301b77c8421c6c0fcb0d6fd1c5a38e47bb25243e1ae23",
+      "exists": true,
+      "git_status": "clean"
+    },
+    {
+      "lane": "L6",
+      "path": "web/styles/wigoCharts.module.scss",
+      "sha256": "28679870cf0ca322c322da32350138442d6eaa3bdf90e943dbb9ecd2a836e573",
+      "exists": true,
+      "git_status": "clean"
+    },
+    {
+      "lane": "L6",
+      "path": "web/__tests__/pages/wigoCharts.test.tsx",
+      "sha256": "d71e1041112aeaa4b59efb4a260aa031a11c30c890b9f07155d439e8c48cc0ed",
+      "exists": true,
+      "git_status": "clean"
+    },
+    {
+      "lane": "L6",
+      "path": "web/e2e/wigo-one-page.spec.ts",
+      "sha256": "f029650fa7f130bc4a7e1a5a4f19180f2cbd7c4c06334516871516f4018b4e65",
+      "exists": true,
+      "git_status": "clean"
+    }
+  ],
+  "coordination_sha256": {
+    "CODEX-LEASES.json": "fadfdc1a09c8d022c91613085f4064ffa8482ae680d2602953834307db2cd142",
+    "CLAUDE-LEASES.json": "c5544b32d2a0801a3ce97b4e3ff67fa74ef2127d6a83fb4b6d0356cff6283c00",
+    "CODEX-TO-CLAUDE.md": "7ab981af8e3d743d43a9d5131b89c0aa00c6000fee68d28d391ea873db700cd0",
+    "CLAUDE-TO-CODEX.md": "0ab01f63d1b7e852caa9872aee2efd680a4ff147d3872894db4e51d107b7b0bb"
+  }
+}

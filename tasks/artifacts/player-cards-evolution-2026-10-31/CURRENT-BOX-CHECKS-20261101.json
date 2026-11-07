@@ -1,0 +1,51 @@
+[
+  {
+    "check": "tests",
+    "command": [
+      "npm",
+      "test",
+      "--",
+      "--run",
+      "lib/player-cards/retainedBlsh.test.ts",
+      "lib/player-cards/analysisEvidence.test.ts",
+      "components/player-cards/PlayerAnalysisStudio.test.tsx"
+    ],
+    "exitCode": 0,
+    "log": "current-box-tests-20261101.log"
+  },
+  {
+    "check": "types",
+    "command": [
+      "/usr/local/bin/node",
+      "node_modules/typescript/bin/tsc",
+      "--noEmit",
+      "--project",
+      "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-evolution-2026-10-31/tsconfig.json"
+    ],
+    "exitCode": 0,
+    "log": "current-box-types-20261101.log"
+  },
+  {
+    "check": "lint",
+    "command": [
+      "/usr/local/bin/node",
+      "node_modules/eslint/bin/eslint.js",
+      "lib/player-cards/analysisEvidence.ts",
+      "lib/player-cards/retainedBlsh.ts",
+      "lib/player-cards/retainedBlsh.test.ts",
+      "components/player-cards/PlayerAnalysisCard.tsx",
+      "components/player-cards/PlayerAnalysisStudio.tsx"
+    ],
+    "exitCode": 0,
+    "log": "current-box-lint-20261101.log"
+  },
+  {
+    "check": "preview",
+    "command": [
+      "/usr/local/bin/node",
+      "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-evolution-2026-10-31/render-preview.mjs"
+    ],
+    "exitCode": 0,
+    "log": "current-box-preview-20261101.log"
+  }
+]

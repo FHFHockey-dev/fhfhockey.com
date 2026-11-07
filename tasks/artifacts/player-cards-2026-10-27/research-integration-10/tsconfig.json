@@ -1,0 +1,21 @@
+{
+  "extends": "../../../../web/tsconfig.json",
+  "compilerOptions": {
+    "incremental": false
+  },
+  "include": [
+    "../../../../web/next-bootstrap.d.ts",
+    "../../../../web/components/player-cards/*.tsx",
+    "../../../../web/lib/player-cards/shareExport*.ts",
+    "preview-entry.tsx",
+    "../../../../web/lib/player-cards/portraitTreatment*.ts",
+    "../../../../web/lib/player-cards/alphaOutline*.ts",
+    "../../../../web/lib/player-cards/outlineStack*.ts",
+    "../../../../web/lib/player-cards/research*.ts",
+    "../../../../web/pages/api/v1/player-cards/research.ts",
+    "../../../../web/pages/social-share/player-cards.tsx"
+  ],
+  "exclude": [
+    "../../../../web/node_modules"
+  ]
+}

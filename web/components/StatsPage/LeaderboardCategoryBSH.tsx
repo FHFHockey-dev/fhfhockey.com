@@ -4,7 +4,7 @@ import React from "react";
 import Link from "next/link";
 import styles from "styles/Stats.module.scss";
 import { SkaterStat } from "lib/NHL/statsPageTypes";
-import Segment from "./Segment";
+import Segment, { PART_COLORS } from "./Segment";
 import LeaderboardHeadshot from "./LeaderboardHeadshot";
 
 interface LeaderboardCategoryBSHProps {
@@ -29,21 +29,21 @@ const LeaderboardCategoryBSH: React.FC<LeaderboardCategoryBSHProps> = ({
             <div className={styles.angledBarContainer}>
               <Segment
                 flexValue={blocks}
-                color="#07aae2"
+                color={PART_COLORS[0]}
                 label="B"
                 isFirst={true}
                 isLast={false}
               />
               <Segment
                 flexValue={shots}
-                color="#F0AD4E"
+                color={PART_COLORS[1]}
                 label="S"
                 isFirst={false}
                 isLast={false}
               />
               <Segment
                 flexValue={hits}
-                color="#D9534F"
+                color={PART_COLORS[2]}
                 label="H"
                 isFirst={false}
                 isLast={true}

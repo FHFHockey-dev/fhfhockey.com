@@ -1,0 +1,36 @@
+{
+  "allInputSourceAndFinalReceiptPinsMatch": true,
+  "tests": {
+    "python": 10,
+    "node": 7,
+    "passed": 17
+  },
+  "baseline": {
+    "rows": 150,
+    "dates": 99,
+    "completeCalendarCensusBodies": 834,
+    "bodyBytes": 11133962,
+    "previousUnknownNowLinked": 133,
+    "officialOverlapMatches": 150,
+    "PPPIndependent": 101,
+    "baselineMembersMeanSDUnchanged": true
+  },
+  "cards": {
+    "profiles": 729,
+    "windowRows": 3407,
+    "individualQualified": 3362,
+    "onIceQualified": 3345,
+    "officialFinalityMatchedRows": 657,
+    "missingGameScoreWindowRows": 138,
+    "zeroShotWindows": 19,
+    "savedSnapshotSHA256": "2f380c2539390f6931ec92ab1d0b1d8cced2b55f5f4cefb8c6e88a694909f2c8",
+    "ageHoursAtBuild": 69.85116343166668,
+    "stale": true,
+    "modelRevisionUnknown": true,
+    "bundleManifestAndArtifactHashesMatched": true,
+    "calendarDoesNotContainTeamOrFinalityFields": true
+  },
+  "currentFinalitySource": "657 matched original qualified proposals and exact receipt metadata; original current-season HTTP bodies not reinterpreted in this review",
+  "zeroProviderCalls": true,
+  "reservedSeasonReads": 0
+}

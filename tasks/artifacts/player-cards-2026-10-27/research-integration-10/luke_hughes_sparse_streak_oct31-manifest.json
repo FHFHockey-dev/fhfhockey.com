@@ -1,0 +1,1361 @@
+{
+  "card": {
+    "player": {
+      "id": 8482684,
+      "name": "Luke Hughes"
+    },
+    "eventThroughDate": "2023-10-31",
+    "playerResearchSnapshot": {
+      "schemaVersion": "fhfh.player-research-snapshot.v1",
+      "playerId": 8482684,
+      "fixtureKind": "historical_development",
+      "usage": {
+        "researchOnly": true,
+        "productionDetectorSelected": false,
+        "trustedForActivation": false
+      },
+      "asOf": {
+        "eventThroughDate": "2023-10-31",
+        "sourceAvailableThroughUTC": null,
+        "retrievedAtUTC": null,
+        "issuedAtUTC": null,
+        "generatedAtUTC": "2026-10-27T00:59:40.135231+00:00",
+        "historicalIssuance": false,
+        "timePrecision": "game_date"
+      },
+      "streak": {
+        "version": "blsh-overnight-three-track-v2",
+        "researchOption": "block5",
+        "productionAdopted": false,
+        "availability": "unavailable",
+        "parameters": {
+          "referenceSlots": 50,
+          "entryAbsZ": 2,
+          "confirmationFreshSlots": 5,
+          "confirmationAbsZ": 2,
+          "exitDirectionalAbsZ": 1,
+          "exitConsecutiveFreshBlocks": 2,
+          "compositeWeights": [
+            0.3333333333333333,
+            0.3333333333333333,
+            0.3333333333333333
+          ],
+          "gapResetDays": 30,
+          "cohortReferenceFallback": false,
+          "shootingGate": false
+        },
+        "tracks": {
+          "fantasy_points": {
+            "status": "unavailable",
+            "availability": "unavailable",
+            "reason": "sparse_reference",
+            "reference": {
+              "kind": "frozen_previous_regular_season",
+              "seasonId": 20222023,
+              "requiredRecordedSlots": 50,
+              "observedRecordedSlots": 2,
+              "status": "sparse_reference",
+              "sourceIds": [
+                3103186,
+                3103333
+              ],
+              "dates": [
+                "2023-04-11",
+                "2023-04-13"
+              ],
+              "rawMean": null,
+              "rawSampleSD": null,
+              "block5SampleSD": null,
+              "cohortFallbackUsed": false
+            },
+            "observation": {
+              "gameDate": "2023-10-29",
+              "sourceId": 3108615,
+              "sourceIndex": 57,
+              "savedPhase": "unavailable",
+              "savedState": "unknown",
+              "contextBoundary": null
+            },
+            "signal": {
+              "savedZ": null,
+              "valuePerGame": 6.2,
+              "windowSourceIds": null,
+              "windowDates": null,
+              "requiredSlots": 5
+            },
+            "episode": null,
+            "lastTransition": null,
+            "lastKnownFlag": null,
+            "issuedAtUTC": null,
+            "timePrecision": "game_date",
+            "retrospectivePhaseLabelsIncluded": false
+          },
+          "raw_points": {
+            "status": "unavailable",
+            "availability": "unavailable",
+            "reason": "sparse_reference",
+            "reference": {
+              "kind": "frozen_previous_regular_season",
+              "seasonId": 20222023,
+              "requiredRecordedSlots": 50,
+              "observedRecordedSlots": 2,
+              "status": "sparse_reference",
+              "sourceIds": [
+                3103186,
+                3103333
+              ],
+              "dates": [
+                "2023-04-11",
+                "2023-04-13"
+              ],
+              "rawMean": null,
+              "rawSampleSD": null,
+              "block5SampleSD": null,
+              "cohortFallbackUsed": false
+            },
+            "observation": {
+              "gameDate": "2023-10-29",
+              "sourceId": 3108615,
+              "sourceIndex": 57,
+              "savedPhase": "unavailable",
+              "savedState": "unknown",
+              "contextBoundary": null
+            },
+            "signal": {
+              "savedZ": null,
+              "valuePerGame": 2,
+              "windowSourceIds": null,
+              "windowDates": null,
+              "requiredSlots": 5
+            },
+            "episode": null,
+            "lastTransition": null,
+            "lastKnownFlag": null,
+            "issuedAtUTC": null,
+            "timePrecision": "game_date",
+            "retrospectivePhaseLabelsIncluded": false
+          },
+          "wigo_game_score": {
+            "status": "unavailable",
+            "availability": "unavailable",
+            "reason": "sparse_reference",
+            "reference": {
+              "kind": "frozen_previous_regular_season",
+              "seasonId": 20222023,
+              "requiredRecordedSlots": 50,
+              "observedRecordedSlots": 2,
+              "status": "sparse_reference",
+              "sourceIds": [
+                3103186,
+                3103333
+              ],
+              "dates": [
+                "2023-04-11",
+                "2023-04-13"
+              ],
+              "rawMean": null,
+              "rawSampleSD": null,
+              "block5SampleSD": null,
+              "cohortFallbackUsed": false
+            },
+            "observation": {
+              "gameDate": "2023-10-29",
+              "sourceId": 3108615,
+              "sourceIndex": 57,
+              "savedPhase": "unavailable",
+              "savedState": "unknown",
+              "contextBoundary": null
+            },
+            "signal": {
+              "savedZ": null,
+              "valuePerGame": 1.625,
+              "windowSourceIds": null,
+              "windowDates": null,
+              "requiredSlots": 5
+            },
+            "episode": null,
+            "lastTransition": null,
+            "lastKnownFlag": null,
+            "issuedAtUTC": null,
+            "timePrecision": "game_date",
+            "retrospectivePhaseLabelsIncluded": false
+          },
+          "composite": {
+            "status": "unavailable",
+            "availability": "unavailable",
+            "reason": "missing_outcome",
+            "reference": {
+              "kind": "frozen_previous_regular_season",
+              "seasonId": 20222023,
+              "requiredRecordedSlots": 50,
+              "observedRecordedSlots": 2,
+              "status": "incomplete_reference",
+              "sourceIds": [
+                3103186,
+                3103333
+              ],
+              "dates": [
+                "2023-04-11",
+                "2023-04-13"
+              ],
+              "rawMean": null,
+              "rawSampleSD": null,
+              "block5SampleSD": null,
+              "cohortFallbackUsed": false
+            },
+            "observation": {
+              "gameDate": "2023-10-29",
+              "sourceId": 3108615,
+              "sourceIndex": 57,
+              "savedPhase": "unavailable",
+              "savedState": "unknown",
+              "contextBoundary": null
+            },
+            "signal": {
+              "savedZ": null,
+              "valuePerGame": null,
+              "windowSourceIds": null,
+              "windowDates": null,
+              "requiredSlots": 5
+            },
+            "episode": null,
+            "lastTransition": null,
+            "lastKnownFlag": null,
+            "issuedAtUTC": null,
+            "timePrecision": "game_date",
+            "retrospectivePhaseLabelsIncluded": false
+          }
+        }
+      },
+      "blshResearch": {
+        "version": "support-conditioned-production-gap-v1",
+        "status": "measured_process",
+        "reason": null,
+        "productionP": -74.53886122642974,
+        "supportDiscrepancy": -73.79833366512916,
+        "direction": "SH",
+        "includedInSavedResearchList": true,
+        "trustedForActivation": false,
+        "confidenceProbability": null,
+        "recommendation": null,
+        "sourceSnapshotDate": "2023-10-31",
+        "sourceCandidate": {
+          "version": "support-conditioned-production-gap-v1",
+          "value": -73.79833366512916,
+          "normalized_gap": -2.8165511583098692,
+          "production_axis": {
+            "player_id": 8482684,
+            "snapshot_date": "2023-10-31",
+            "visible": true,
+            "current_source_ids": [
+              3106150,
+              3107622,
+              3107651,
+              3108080,
+              3108615
+            ],
+            "current_recorded_slots": 5,
+            "current_is_full5": true,
+            "version": "position-exposure-reference-gap-v1",
+            "role_prior": "not_qualified_FD_only",
+            "observed_roster_membership": null,
+            "accepted_comparators": {
+              "A": {
+                "model_version": "skater-personal-finishing-opportunity-r1a",
+                "value": null,
+                "direction": "unavailable",
+                "list_eligible": false
+              },
+              "B": {
+                "model_version": "skater-personal-finishing-opportunity-r1a/trailing50-B-v1",
+                "value": null,
+                "direction": "unavailable",
+                "list_eligible": false
+              }
+            },
+            "value": -74.53886122642974,
+            "direction": "sell_high_evidence",
+            "trusted_list_eligible": false,
+            "raw_observed": [
+              20.2,
+              6,
+              7.2250000000000005
+            ],
+            "confidence_probability": null,
+            "meaning": "retrospective production at recorded TOI versus a prior rate reference",
+            "causal_luck": null,
+            "forecast": false,
+            "finishing_gate": false,
+            "weights": [
+              0.3333333333333333,
+              0.3333333333333333,
+              0.3333333333333333
+            ],
+            "normalized_gap": -2.927554100753902,
+            "tier": "sparse_personal_shrunk",
+            "expected_totals": [
+              8.816660861820642,
+              1.8640594696644255,
+              2.405265713855241
+            ],
+            "gap_means": [
+              -11.383339138179357,
+              -4.135940530335574,
+              -4.81973428614476
+            ],
+            "missing_indices": [],
+            "reference_rate": [
+              0.0014898041334607372,
+              0.0003149813230254183,
+              0.00040643219227023335
+            ],
+            "reference_rate_SE": [
+              0.0003039576909025829,
+              0.00011466310288786999,
+              0.00017309947570757578
+            ],
+            "joint_gap_scale": [
+              3.991332458256274,
+              1.5002994308826338,
+              1.9019884138534175
+            ],
+            "joint_gap_covariance": [
+              [
+                15.930734792330073,
+                5.469527617775907,
+                5.393828294554629
+              ],
+              [
+                5.469527617775907,
+                2.250898382306755,
+                2.1238985658105323
+              ],
+              [
+                5.393828294554629,
+                2.1238985658105323,
+                3.617559926432639
+              ]
+            ],
+            "uncertainty_not_calibrated": true,
+            "personal_weight": 0.25268040459476054,
+            "personal_n": 5,
+            "current_seconds": 5918,
+            "role_adjustment": "none; current TOI is observed opportunity, not a coaching-role claim",
+            "cohort_donors": 184,
+            "cohort_position": "D",
+            "eligible_observed_current": true,
+            "prior_event_cutoff": "2023-10-20",
+            "target_position": "D",
+            "target_position_source": "last known current-window record by retrospective cutoff",
+            "personal_source_ids": [
+              3103186,
+              3103333,
+              3104478,
+              3104554,
+              3105303
+            ],
+            "recorded_personal_slots": 5,
+            "qualified_joint_personal_slots": 5,
+            "reference_estimation_source": "observed_personal_shrunk",
+            "personal_reason": null,
+            "prior_reason": null,
+            "personal_reference_age_days": 4,
+            "personal_reference_span_days": 188,
+            "last_current_record_age_days": 2,
+            "SOG_observed_total": 9,
+            "fitted_prior": {
+              "mu": [
+                0.001523065383285817,
+                0.0002976749048924372,
+                0.0003349297605900426
+              ],
+              "omega": [
+                [
+                  0.0021451462640413913,
+                  0.0007416606280655549,
+                  0.000687752833901048
+                ],
+                [
+                  0.0007416606280655549,
+                  0.00030254015966398853,
+                  0.00026178383356571414
+                ],
+                [
+                  0.000687752833901048,
+                  0.00026178383356571414,
+                  0.0004339572558846418
+                ]
+              ],
+              "signal": [
+                [
+                  1.1967808544639654e-7,
+                  3.9427414979798346e-8,
+                  5.292765125889831e-8
+                ],
+                [
+                  3.9427414979798346e-8,
+                  1.7087821304353304e-8,
+                  2.3746854054355372e-8
+                ],
+                [
+                  5.29276512588983e-8,
+                  2.374685405435537e-8,
+                  4.42865766070166e-8
+                ]
+              ],
+              "mean_cov": [
+                [
+                  8.527443755836257e-10,
+                  2.842293340156516e-10,
+                  3.525158564766079e-10
+                ],
+                [
+                  2.842293340156516e-10,
+                  1.2140274370775647e-10,
+                  1.537491961555762e-10
+                ],
+                [
+                  3.525158564766079e-10,
+                  1.537491961555762e-10,
+                  2.8161670179771223e-10
+                ]
+              ],
+              "variance_component_eigenvalues": [
+                0.05325278539319217,
+                0.1855960939535563,
+                1.7432279143408558
+              ],
+              "donors": 184,
+              "donor_ids": [
+                8474151,
+                8475218,
+                8479371,
+                8471709,
+                8474578,
+                8474600,
+                8477034,
+                8478468,
+                8474565,
+                8476885,
+                8479324,
+                8480434,
+                8480817,
+                8471303,
+                8474166,
+                8474563,
+                8475167,
+                8475188,
+                8477447,
+                8478416,
+                8478911,
+                8479323,
+                8479410,
+                8479984,
+                8479998,
+                8480336,
+                8480727,
+                8482073,
+                8477498,
+                8474602,
+                8475906,
+                8480069,
+                8476854,
+                8476869,
+                8474673,
+                8475197,
+                8475233,
+                8476853,
+                8476979,
+                8477365,
+                8477369,
+                8478038,
+                8478407,
+                8480800,
+                8480887,
+                8470613,
+                8470966,
+                8471677,
+                8473446,
+                8474031,
+                8474568,
+                8475171,
+                8475177,
+                8475179,
+                8475200,
+                8475324,
+                8475718,
+                8475762,
+                8475764,
+                8475790,
+                8476457,
+                8476470,
+                8476473,
+                8476879,
+                8476958,
+                8476967,
+                8477335,
+                8477488,
+                8477495,
+                8477845,
+                8478443,
+                8478882,
+                8478970,
+                8479369,
+                8479388,
+                8479398,
+                8480192,
+                8480796,
+                8480803,
+                8480873,
+                8482964,
+                8478397,
+                8471724,
+                8476906,
+                8477346,
+                8477950,
+                8478500,
+                8482655,
+                8476923,
+                8480839,
+                8480865,
+                8470600,
+                8473507,
+                8475462,
+                8476856,
+                8477969,
+                8478136,
+                8480073,
+                8480878,
+                8480950,
+                8471686,
+                8474027,
+                8474090,
+                8474207,
+                8474612,
+                8474716,
+                8475208,
+                8475690,
+                8475825,
+                8476372,
+                8476429,
+                8476462,
+                8476463,
+                8476525,
+                8476902,
+                8476917,
+                8477384,
+                8477435,
+                8477506,
+                8477507,
+                8477932,
+                8477948,
+                8477986,
+                8478055,
+                8478396,
+                8478399,
+                8478452,
+                8478469,
+                8478507,
+                8479372,
+                8479442,
+                8479980,
+                8480035,
+                8480036,
+                8480058,
+                8480172,
+                8480196,
+                8480807,
+                8480884,
+                8481014,
+                8482105,
+                8482245,
+                8482671,
+                8476874,
+                8477504,
+                8475279,
+                8475455,
+                8476331,
+                8477220,
+                8479425,
+                8480145,
+                8481542,
+                8475181,
+                8475753,
+                8476792,
+                8476892,
+                8478859,
+                8481122,
+                8479976,
+                8474013,
+                8474574,
+                8480246,
+                8480049,
+                8476891,
+                8476931,
+                8475750,
+                8477244,
+                8479439,
+                8480222,
+                8475747,
+                8477499,
+                8479945,
+                8477851,
+                8475625,
+                8478451,
+                8476441,
+                8480043,
+                8479325,
+                8477971,
+                8478013,
+                8476875,
+                8479345,
+                8481072,
+                8481546
+              ]
+            }
+          },
+          "trusted_list_eligible": false,
+          "recommendation": null,
+          "research_list": "SH",
+          "confidence_probability": null,
+          "covariance_not_conditional_calibration": true,
+          "current_process": [
+            0.322406218316999,
+            3.8384589388306862,
+            1.6241973639743157
+          ],
+          "baseline_normalized_gap": -2.927554100753902,
+          "status": "concordant_research_candidate",
+          "evidence_tier": "measured_process_personal_reference",
+          "process": {
+            "delta": [
+              0.045584541275622226,
+              -0.12931843209571436,
+              -1.1835653603025058
+            ],
+            "observed_indices": [
+              0,
+              1,
+              2
+            ],
+            "imputed_indices": [],
+            "modes": [
+              "measured_current_personal_reference",
+              "measured_current_personal_reference",
+              "measured_current_personal_reference"
+            ],
+            "missing_process_covariance": [
+              [
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                0
+              ]
+            ],
+            "outside_prior_span": false,
+            "outside_prior_component_range": false,
+            "missing_variance_is_working_not_calibrated": true
+          },
+          "expected_baseline": [
+            8.816660861820642,
+            1.8640594696644255,
+            2.405265713855241
+          ],
+          "expected_support": [
+            8.987187047329023,
+            1.9050495778414354,
+            2.8592747708628767
+          ],
+          "expected_support_unfloored": [
+            8.987187047329023,
+            1.9050495778414354,
+            2.8592747708628767
+          ],
+          "raw_actual": [
+            20.2,
+            6,
+            7.2250000000000005
+          ],
+          "support_adjustment": [
+            0.17052618550838156,
+            0.04099010817700995,
+            0.45400905700763555
+          ],
+          "physical_floor_indices": [],
+          "missing_process_output_covariance": [
+            [
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0
+            ]
+          ],
+          "missing_process_normalized_variance": 0,
+          "missing_process_variance_not_added_to_baseline": true,
+          "individual_finishing_or_SOG_gate": false,
+          "fresh_proxy": true,
+          "support_correction_zero": false,
+          "fitting_rank": 3,
+          "donor_players": 230
+        },
+        "components": {
+          "families": {
+            "deployment_opportunity": {
+              "status": "available",
+              "personal_comparison_status": "available",
+              "metrics": {
+                "total_TOI": {
+                  "current": "1183.6",
+                  "reference": "1092.4",
+                  "delta": "91.2",
+                  "trend": "up",
+                  "units": "seconds/appearance",
+                  "current_status": "measured",
+                  "personal_comparison_status": "available",
+                  "comparison_limitation": null
+                },
+                "native_ES_TOI": {
+                  "current": "956.4",
+                  "reference": "948.0",
+                  "delta": "8.4",
+                  "trend": "up",
+                  "units": "native stored units/appearance; not exact5v5 certified",
+                  "current_status": "measured",
+                  "personal_comparison_status": "available",
+                  "comparison_limitation": null
+                },
+                "native_PP_TOI": {
+                  "current": "227.2",
+                  "reference": "143.2",
+                  "delta": "84.0",
+                  "trend": "up",
+                  "units": "native stored units/appearance; allocation uncertified",
+                  "current_status": "measured",
+                  "personal_comparison_status": "available",
+                  "comparison_limitation": null
+                }
+              },
+              "source_scope": "WGO all-strength total seconds; ES/PP native context only",
+              "overlap_with_production": true,
+              "independent_luck_vote": false,
+              "numeric_vote_or_weight": null,
+              "causal_role_or_ability_claim": null,
+              "team_context": {
+                "reference_known_teams": [
+                  "NJD"
+                ],
+                "current_known_teams": [
+                  "NJD"
+                ],
+                "incomplete": true,
+                "known_set_changed": false
+              }
+            },
+            "individual_chance_creation": {
+              "status": "available",
+              "personal_comparison_status": "available",
+              "metrics": {
+                "individual_xG_per_appearance": {
+                  "current": "0.106",
+                  "reference": "0.084",
+                  "delta": "0.022",
+                  "trend": "up",
+                  "units": "count/appearance",
+                  "current_status": "measured",
+                  "personal_comparison_status": "available",
+                  "comparison_limitation": null
+                },
+                "individual_xG_per60": {
+                  "current": "0.3224062183169989861439675566",
+                  "reference": "0.2768216770413767850604174295",
+                  "delta": "0.0455845412756222010835501271",
+                  "trend": "up",
+                  "units": "count/60 total minutes",
+                  "current_status": "measured",
+                  "personal_comparison_status": "available",
+                  "comparison_limitation": null
+                },
+                "SOG_activity_per_appearance": {
+                  "current": "1.8",
+                  "reference": "1.4",
+                  "delta": "0.4",
+                  "trend": "up",
+                  "units": "count/appearance",
+                  "current_status": "measured",
+                  "personal_comparison_status": "available",
+                  "comparison_limitation": null
+                },
+                "SOG_activity_per60": {
+                  "current": "5.474822575194322406218316999",
+                  "reference": "4.613694617356279751006957159",
+                  "delta": "0.861127957838042655211359840",
+                  "trend": "up",
+                  "units": "count/60 total minutes",
+                  "current_status": "measured",
+                  "personal_comparison_status": "available",
+                  "comparison_limitation": null
+                },
+                "optional_individual_CF_per_appearance": {
+                  "current": null,
+                  "reference": null,
+                  "delta": null,
+                  "trend": null,
+                  "units": "count/appearance",
+                  "current_status": "unavailable",
+                  "personal_comparison_status": "unavailable",
+                  "comparison_limitation": null
+                },
+                "optional_individual_CF_per60": {
+                  "current": null,
+                  "reference": null,
+                  "delta": null,
+                  "trend": null,
+                  "units": "count/60 total minutes",
+                  "current_status": "unavailable",
+                  "personal_comparison_status": "unavailable",
+                  "comparison_limitation": null
+                },
+                "optional_individual_HDCF_per_appearance": {
+                  "current": null,
+                  "reference": null,
+                  "delta": null,
+                  "trend": null,
+                  "units": "count/appearance",
+                  "current_status": "unavailable",
+                  "personal_comparison_status": "unavailable",
+                  "comparison_limitation": null
+                },
+                "optional_individual_HDCF_per60": {
+                  "current": null,
+                  "reference": null,
+                  "delta": null,
+                  "trend": null,
+                  "units": "count/60 total minutes",
+                  "current_status": "unavailable",
+                  "personal_comparison_status": "unavailable",
+                  "comparison_limitation": null
+                }
+              },
+              "source_scope": "NST individual all-strength xG retained at extraction; WGO SOG/total seconds; optional225 individual counts",
+              "overlap_with_production": true,
+              "independent_luck_vote": false,
+              "numeric_vote_or_weight": null,
+              "SOG_is_activity_not_pure_chance_quality": true,
+              "onice_and_playmaking_context": {
+                "status": "not_qualified_in_current_cache",
+                "source_capability": "legacy schema receipt has on-ice xGF/xGA; retained NST tables support it",
+                "source_unavailable": false,
+                "reason": "no admitted compatible development player-game onice/passing window snapshot"
+              }
+            },
+            "finishing": {
+              "status": "available",
+              "personal_comparison_status": "available",
+              "metrics": {
+                "provider_xG_minus_G": {
+                  "current": "-0.47",
+                  "reference": "-0.58",
+                  "delta": "0.11",
+                  "trend": "up",
+                  "units": "goals/window; window lengths visible",
+                  "current_status": "measured",
+                  "personal_comparison_status": "available",
+                  "comparison_limitation": null
+                },
+                "provider_gap_per_appearance": {
+                  "current": "-0.094",
+                  "reference": "-0.116",
+                  "delta": "0.022",
+                  "trend": "up",
+                  "units": "goals/appearance",
+                  "current_status": "measured",
+                  "personal_comparison_status": "available",
+                  "comparison_limitation": null
+                },
+                "G_per_provider_xG": {
+                  "current": "1.886792452830188679245283019",
+                  "reference": "2.380952380952380952380952381",
+                  "delta": "-0.494159928122192273135669362",
+                  "trend": "down",
+                  "units": "recorded goals/provider xG; unshrunk",
+                  "current_status": "measured",
+                  "personal_comparison_status": "available",
+                  "comparison_limitation": null
+                },
+                "G_per_SOG": {
+                  "current": "0.1111111111111111111111111111",
+                  "reference": "0.1428571428571428571428571429",
+                  "delta": "-0.0317460317460317460317460318",
+                  "trend": "down",
+                  "units": "recorded goals/SOG; not binomial certified",
+                  "current_status": "measured",
+                  "personal_comparison_status": "available",
+                  "comparison_limitation": null
+                }
+              },
+              "source_scope": "NST provider-relative xG versus WGO goals; own recorded conversion context",
+              "overlap_with_production": true,
+              "independent_luck_vote": false,
+              "numeric_vote_or_weight": null,
+              "own_reference_conversion_gap_goals": "0.261904761904761904761904762",
+              "causal_luck": null,
+              "zero_denominator_policy": "ratio unavailable; other families unaffected",
+              "G_exceeds_SOG_review": false,
+              "interpretation_state": "conflicting_finishing_references"
+            },
+            "peripheral_activity": {
+              "status": "available",
+              "personal_comparison_status": "available",
+              "metrics": {
+                "hits_per_appearance": {
+                  "current": "0.4",
+                  "reference": "0.2",
+                  "delta": "0.2",
+                  "trend": "up",
+                  "units": "count/appearance",
+                  "current_status": "measured",
+                  "personal_comparison_status": "available",
+                  "comparison_limitation": null
+                },
+                "hits_per60": {
+                  "current": "1.216627238932071645826292666",
+                  "reference": "0.6590992310508971072867081655",
+                  "delta": "0.5575280078811745385395845005",
+                  "trend": "up",
+                  "units": "count/60 total minutes",
+                  "current_status": "measured",
+                  "personal_comparison_status": "available",
+                  "comparison_limitation": null
+                },
+                "blocks_per_appearance": {
+                  "current": "0.8",
+                  "reference": "0.8",
+                  "delta": "0.0",
+                  "trend": "unchanged",
+                  "units": "count/appearance",
+                  "current_status": "measured",
+                  "personal_comparison_status": "available",
+                  "comparison_limitation": null
+                },
+                "blocks_per60": {
+                  "current": "2.433254477864143291652585333",
+                  "reference": "2.636396924203588429146832662",
+                  "delta": "-0.203142446339445137494247329",
+                  "trend": "down",
+                  "units": "count/60 total minutes",
+                  "current_status": "measured",
+                  "personal_comparison_status": "available",
+                  "comparison_limitation": null
+                },
+                "Standard_FP_contribution": {
+                  "current": "1.40",
+                  "reference": "1.20",
+                  "delta": "0.20",
+                  "trend": "up",
+                  "units": "FP/window; window lengths visible",
+                  "current_status": "measured",
+                  "personal_comparison_status": "available",
+                  "comparison_limitation": null
+                },
+                "Standard_FP_per_appearance": {
+                  "current": "0.28",
+                  "reference": "0.24",
+                  "delta": "0.04",
+                  "trend": "up",
+                  "units": "FP/appearance",
+                  "current_status": "measured",
+                  "personal_comparison_status": "available",
+                  "comparison_limitation": null
+                }
+              },
+              "source_scope": "WGO all-strength hits/blocks; exact existing Standard FP coefficients",
+              "overlap_with_production": true,
+              "independent_luck_vote": false,
+              "numeric_vote_or_weight": null
+            }
+          },
+          "sharedOnice": {
+            "version": "blsh-onice-shared-opportunity-context-v1",
+            "trusted_list_eligible": false,
+            "global_buy_sell_recommendation": null,
+            "support_adjusted_scalar": null,
+            "numeric_vote_or_weight": null,
+            "status": "available",
+            "current": {
+              "requested_source_ids": [
+                3106150,
+                3107622,
+                3107651,
+                3108080,
+                3108615
+              ],
+              "requested_dates": [
+                "2023-10-20",
+                "2023-10-24",
+                "2023-10-25",
+                "2023-10-27",
+                "2023-10-29"
+              ],
+              "expected_slots": 5,
+              "returned_slots": 5,
+              "missing_source_ids": [],
+              "invalid_source_ids": [],
+              "row_provenance": [
+                {
+                  "wgo_source_id": 3106150,
+                  "onice_id": 311814,
+                  "season": 20232024,
+                  "player_id": 8482684,
+                  "date": "2023-10-20",
+                  "transport_status": "RAW_PRESENT_TRANSPORT_SEALED",
+                  "native_rate_exposure_status": "OFFICIAL_SECONDS_CORROBORATED",
+                  "prior_exposure_conflict": false,
+                  "native_TOI_equals_individual": true,
+                  "native_TOI_equals_official": true,
+                  "native_TOI_equals_WGO": true,
+                  "native_TOI_seconds": 1061
+                },
+                {
+                  "wgo_source_id": 3107622,
+                  "onice_id": 311086,
+                  "season": 20232024,
+                  "player_id": 8482684,
+                  "date": "2023-10-24",
+                  "transport_status": "RAW_PRESENT_TRANSPORT_SEALED",
+                  "native_rate_exposure_status": "OFFICIAL_SECONDS_CORROBORATED",
+                  "prior_exposure_conflict": false,
+                  "native_TOI_equals_individual": true,
+                  "native_TOI_equals_official": true,
+                  "native_TOI_equals_WGO": true,
+                  "native_TOI_seconds": 1139
+                },
+                {
+                  "wgo_source_id": 3107651,
+                  "onice_id": 310530,
+                  "season": 20232024,
+                  "player_id": 8482684,
+                  "date": "2023-10-25",
+                  "transport_status": "RAW_PRESENT_TRANSPORT_SEALED",
+                  "native_rate_exposure_status": "OFFICIAL_SECONDS_CORROBORATED",
+                  "prior_exposure_conflict": false,
+                  "native_TOI_equals_individual": true,
+                  "native_TOI_equals_official": true,
+                  "native_TOI_equals_WGO": true,
+                  "native_TOI_seconds": 1436
+                },
+                {
+                  "wgo_source_id": 3108080,
+                  "onice_id": 310097,
+                  "season": 20232024,
+                  "player_id": 8482684,
+                  "date": "2023-10-27",
+                  "transport_status": "RAW_PRESENT_TRANSPORT_SEALED",
+                  "native_rate_exposure_status": "OFFICIAL_SECONDS_CORROBORATED",
+                  "prior_exposure_conflict": false,
+                  "native_TOI_equals_individual": true,
+                  "native_TOI_equals_official": true,
+                  "native_TOI_equals_WGO": true,
+                  "native_TOI_seconds": 1353
+                },
+                {
+                  "wgo_source_id": 3108615,
+                  "onice_id": 309561,
+                  "season": 20232024,
+                  "player_id": 8482684,
+                  "date": "2023-10-29",
+                  "transport_status": "RAW_PRESENT_TRANSPORT_SEALED",
+                  "native_rate_exposure_status": "OFFICIAL_SECONDS_CORROBORATED",
+                  "prior_exposure_conflict": false,
+                  "native_TOI_equals_individual": true,
+                  "native_TOI_equals_official": true,
+                  "native_TOI_equals_WGO": true,
+                  "native_TOI_seconds": 929
+                }
+              ],
+              "exposure_conflict_slots": 0,
+              "exposure_uncorroborated_slots": 0,
+              "count_complete": true,
+              "strict_rate_complete": true,
+              "native_seconds_total": "5918",
+              "all_native_match_WGO": true,
+              "xgf_total": "6.31",
+              "xga_total": "2.67",
+              "count_status": "complete",
+              "count_reasons": [],
+              "xGF60": {
+                "value": "3.838458938830686042581953363",
+                "status": "available",
+                "units": "provider xGF/60 qualified native NST minutes",
+                "reasons": []
+              },
+              "xGA60": {
+                "value": "1.624197363974315647178100710",
+                "status": "available",
+                "units": "provider xGA/60 qualified native NST minutes",
+                "reasons": []
+              },
+              "xGF_share": {
+                "value": "0.7026726057906458797327394209",
+                "status": "available",
+                "units": "fraction of pooled provider on-ice xG",
+                "reasons": [],
+                "exposure_warnings": []
+              },
+              "share_does_not_resolve_exposure_flags": true
+            },
+            "reference": {
+              "requested_source_ids": [
+                3103186,
+                3103333,
+                3104478,
+                3104554,
+                3105303
+              ],
+              "requested_dates": [
+                "2023-04-11",
+                "2023-04-13",
+                "2023-10-12",
+                "2023-10-13",
+                "2023-10-16"
+              ],
+              "expected_slots": 5,
+              "returned_slots": 5,
+              "missing_source_ids": [],
+              "invalid_source_ids": [],
+              "row_provenance": [
+                {
+                  "wgo_source_id": 3103186,
+                  "onice_id": 315083,
+                  "season": 20222023,
+                  "player_id": 8482684,
+                  "date": "2023-04-11",
+                  "transport_status": "RAW_PRESENT_TRANSPORT_SEALED",
+                  "native_rate_exposure_status": "OFFICIAL_SECONDS_CORROBORATED",
+                  "prior_exposure_conflict": false,
+                  "native_TOI_equals_individual": true,
+                  "native_TOI_equals_official": true,
+                  "native_TOI_equals_WGO": true,
+                  "native_TOI_seconds": 675
+                },
+                {
+                  "wgo_source_id": 3103333,
+                  "onice_id": 314622,
+                  "season": 20222023,
+                  "player_id": 8482684,
+                  "date": "2023-04-13",
+                  "transport_status": "RAW_PRESENT_TRANSPORT_SEALED",
+                  "native_rate_exposure_status": "OFFICIAL_SECONDS_CORROBORATED",
+                  "prior_exposure_conflict": false,
+                  "native_TOI_equals_individual": true,
+                  "native_TOI_equals_official": true,
+                  "native_TOI_equals_WGO": true,
+                  "native_TOI_seconds": 1273
+                },
+                {
+                  "wgo_source_id": 3104478,
+                  "onice_id": 313708,
+                  "season": 20232024,
+                  "player_id": 8482684,
+                  "date": "2023-10-12",
+                  "transport_status": "RAW_PRESENT_TRANSPORT_SEALED",
+                  "native_rate_exposure_status": "OFFICIAL_SECONDS_CORROBORATED",
+                  "prior_exposure_conflict": false,
+                  "native_TOI_equals_individual": true,
+                  "native_TOI_equals_official": true,
+                  "native_TOI_equals_WGO": true,
+                  "native_TOI_seconds": 1055
+                },
+                {
+                  "wgo_source_id": 3104554,
+                  "onice_id": 313461,
+                  "season": 20232024,
+                  "player_id": 8482684,
+                  "date": "2023-10-13",
+                  "transport_status": "RAW_PRESENT_TRANSPORT_SEALED",
+                  "native_rate_exposure_status": "OFFICIAL_SECONDS_CORROBORATED",
+                  "prior_exposure_conflict": false,
+                  "native_TOI_equals_individual": true,
+                  "native_TOI_equals_official": true,
+                  "native_TOI_equals_WGO": true,
+                  "native_TOI_seconds": 1210
+                },
+                {
+                  "wgo_source_id": 3105303,
+                  "onice_id": 312810,
+                  "season": 20232024,
+                  "player_id": 8482684,
+                  "date": "2023-10-16",
+                  "transport_status": "RAW_PRESENT_TRANSPORT_SEALED",
+                  "native_rate_exposure_status": "OFFICIAL_SECONDS_CORROBORATED",
+                  "prior_exposure_conflict": false,
+                  "native_TOI_equals_individual": true,
+                  "native_TOI_equals_official": true,
+                  "native_TOI_equals_WGO": true,
+                  "native_TOI_seconds": 1249
+                }
+              ],
+              "exposure_conflict_slots": 0,
+              "exposure_uncorroborated_slots": 0,
+              "count_complete": true,
+              "strict_rate_complete": true,
+              "native_seconds_total": "5462",
+              "all_native_match_WGO": true,
+              "xgf_total": "6.02",
+              "xga_total": "4.26",
+              "count_status": "complete",
+              "count_reasons": [],
+              "xGF60": {
+                "value": "3.967777370926400585865983156",
+                "status": "available",
+                "units": "provider xGF/60 qualified native NST minutes",
+                "reasons": []
+              },
+              "xGA60": {
+                "value": "2.807762724276821677041376785",
+                "status": "available",
+                "units": "provider xGA/60 qualified native NST minutes",
+                "reasons": []
+              },
+              "xGF_share": {
+                "value": "0.5856031128404669260700389105",
+                "status": "available",
+                "units": "fraction of pooled provider on-ice xG",
+                "reasons": [],
+                "exposure_warnings": []
+              },
+              "share_does_not_resolve_exposure_flags": true
+            },
+            "comparisons": {
+              "xGF60": {
+                "current": "3.838458938830686042581953363",
+                "reference": "3.967777370926400585865983156",
+                "delta": "-0.129318432095714543284029793",
+                "trend": "down",
+                "status": "available",
+                "units": "provider xGF/60 qualified native NST minutes"
+              },
+              "xGA60": {
+                "current": "1.624197363974315647178100710",
+                "reference": "2.807762724276821677041376785",
+                "delta": "-1.183565360302506029863276075",
+                "trend": "down",
+                "status": "available",
+                "units": "provider xGA/60 qualified native NST minutes"
+              },
+              "xGF_share": {
+                "current": "0.7026726057906458797327394209",
+                "reference": "0.5856031128404669260700389105",
+                "delta": "0.1170694929501789536627005104",
+                "trend": "up",
+                "status": "available",
+                "units": "fraction of pooled provider on-ice xG"
+              }
+            },
+            "source_scope": "NST configured all-strength shared on-ice opportunity; retained retrospective data",
+            "native_seconds_only_no_substitution": true,
+            "individual_rate_exposure_comparable": true,
+            "freshness": {
+              "appearance_age_days": 2,
+              "recent7_proxy": true,
+              "scope": "historical archival window; not live",
+              "current_display_state": "fresh_comparison_proxy"
+            },
+            "lineage_limits": {
+              "historical_producer_parser_mapping_model_training_revision_original_availability": "unproved",
+              "date_key_is_not_publication_time": true,
+              "special_event_scope": "unproved",
+              "exact5v5_EV_PP_PK": "not established from AS export"
+            },
+            "interpretation": {
+              "shared_team_context": true,
+              "individual_playmaking_identified": false,
+              "causal_luck_identified": false,
+              "independent_of_individual_chances_or_production": false,
+              "counts_rates_share_are_dependent": true,
+              "earlier_family_cache_notes_remain_versioned_history": true,
+              "updates_onice_window_availability_only": true
+            }
+          },
+          "personalHistoryN": 5,
+          "personalWeight": 0.25268040459476054,
+          "cohortWeight": 0.7473195954052394,
+          "processModes": [
+            "measured_current_personal_reference",
+            "measured_current_personal_reference",
+            "measured_current_personal_reference"
+          ],
+          "imputedCurrentIndices": [],
+          "appearanceAgeDays": 2,
+          "freshnessProxy": true,
+          "finishingState": "conflicting_finishing_references",
+          "noShootingGate": true
+        },
+        "windows": {
+          "reference_ids": [
+            3103186,
+            3103333,
+            3104478,
+            3104554,
+            3105303
+          ],
+          "current_ids": [
+            3106150,
+            3107622,
+            3107651,
+            3108080,
+            3108615
+          ],
+          "reference_dates": [
+            "2023-04-11",
+            "2023-04-13",
+            "2023-10-12",
+            "2023-10-13",
+            "2023-10-16"
+          ],
+          "current_dates": [
+            "2023-10-20",
+            "2023-10-24",
+            "2023-10-25",
+            "2023-10-27",
+            "2023-10-29"
+          ]
+        }
+      },
+      "limits": [
+        "retrospective source availability and revisions unproved",
+        "no live issue timestamp",
+        "measured process is not calibrated confidence",
+        "streak and BLSH references/scales are different",
+        "no causal luck, market value, forecast or production activation"
+      ]
+    }
+  },
+  "evidence": {
+    "file": "luke_hughes_sparse_streak_oct31.json",
+    "playerId": 8482684,
+    "eventThroughDate": "2023-10-31",
+    "manifestSha256": "beeb34c351e31b91598ca771518bf93030cc7d6079ba5a5b1eab9925c14d8f0a",
+    "fixtureSha256": "0b9ee98de9bfe39e7f22b477bbdc53600602b3e48e81d06e0a0c7310bd8fdde0",
+    "researchOnly": true,
+    "trustedForActivation": false
+  },
+  "note": "Historical game-date example; packaging is not issuance"
+}

@@ -1,0 +1,33 @@
+[
+  {
+    "hash": "fbe771b131918b3cf739b357ce324baaf38dac818b98fc3100b33b6498c7846c",
+    "reservedNanoUsd": 233000000,
+    "state": "settled",
+    "receipt": {
+      "body": {
+        "id": "synthetic-E09-responses",
+        "model": "gpt-6-luna",
+        "usage": {
+          "input_tokens": 100,
+          "output_tokens": 50
+        },
+        "status": "completed",
+        "output": [
+          {
+            "type": "message",
+            "role": "assistant",
+            "content": [
+              {
+                "type": "output_text",
+                "text": "{\"identity\":{\"version\":\"tweet-identity-proposal-v1\",\"requestHash\":\"191ab6396f59bcc2636dd614664a90bb4fb76e8d10c8802d39fc45bd63c021ee\",\"directoryHash\":\"2990204d39f9f44cca38f0de30d705179a1e3ddd6393ee34927cd3f12f5a1530\",\"occurrences\":[{\"occurrenceId\":\"subject-4\",\"status\":\"ambiguous\",\"canonicalId\":null,\"evidence\":{\"start\":4,\"end\":10,\"text\":\"Keeper\"},\"identityConfidence\":\"unknown\"}]},\"goalieStatuses\":[]}"
+              }
+            ]
+          }
+        ]
+      },
+      "requestId": "offline-cli-E09-responses",
+      "endpoint": "responses",
+      "chargeNanoUsd": 38500
+    }
+  }
+]

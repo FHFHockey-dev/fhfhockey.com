@@ -1,0 +1,4 @@
+{
+  "exitCode": 1,
+  "result": "AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:\n+ actual - expected\n\n+ [\n+   'mkdirSync',\n+   'writeFileSync'\n+ ]\n- []\n    at file:///Users/tim/Code/fhfhockey.com/tasks/artifacts/rso-settlement-audit-2026-11-01/timestamp-rereview/loader-probe.mjs:16:50 {\n  generatedMessage: true,\n  code: 'ERR_ASSERTION',\n  actual: [ 'mkdirSync', 'writeFileSync' ],\n  expected: [],\n  operator: 'deepStrictEqual'\n}\n"
+}

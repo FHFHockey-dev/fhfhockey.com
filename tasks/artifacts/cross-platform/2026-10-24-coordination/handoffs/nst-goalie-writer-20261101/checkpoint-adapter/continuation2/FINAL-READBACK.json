@@ -1,0 +1,10 @@
+{
+  "candidatePinsMatched": 45,
+  "mailboxPrefixAndAppendVerified": true,
+  "jsonValid": true,
+  "diffCheckExitCode": 0,
+  "pgExactHashMatched": true,
+  "postgresScenarios": 17,
+  "ownHeavyLockHeld": false,
+  "productionRequestsThisContinuation": 0
+}

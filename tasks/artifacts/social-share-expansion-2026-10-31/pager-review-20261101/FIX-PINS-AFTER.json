@@ -1,0 +1,19 @@
+{
+  "observedAt": "2026-11-01T21:11:38.851689+00:00",
+  "candidate": "e152ce5bca1aa77e29a43acd33eb7e9ae0d0ac62",
+  "files": {
+    "tasks/artifacts/social-share-expansion-2026-10-31/lanes/b-skater-boards.md": "b3a44bb01962fe670245238c0a94aa2df4a21901387778f0b8394242963bb58d",
+    "web/components/SocialShare/PeriodControl.tsx": "43077bb8684a6528d6935848f0d2ec6a07d01b28e30763a90706f20b41298f96",
+    "web/components/SocialShare/PostStudio.test.tsx": "c9b4cb5ece9dfecd6bf7cf02d7404b8fcd928b5dd94000344bba7c40204a0e18",
+    "web/components/SocialShare/modules/LastNightsStandoutsCard.tsx": "26abfbb6fe8297ae5724115115a5a896bfa945f520f9a286b4df8efe274f500f",
+    "web/components/SocialShare/modules/LastNightsStandoutsPanel.tsx": "2121fa9e68d6ae6cf2ea1e1c61573dd28200bbf07a85992a7d92a23a661ec859",
+    "web/e2e/social-share-last-nights-standouts.spec.ts": "94320e77852c2b1f4cb8652db7bb002177593399246947b4a143a5440cd31d58",
+    "web/lib/socialShare/modules/lastNightsStandouts.sources.ts": "ac5b1ba8669e1d7e4eda329065b4b6265c3fb52d8648487179eacf03a6133b1a",
+    "web/lib/socialShare/modules/lastNightsStandouts.test.ts": "211e319475ceb4920ec3906f6a5e767abdea3bdc1e75ae6d84b84a843a654187",
+    "web/lib/socialShare/modules/lastNightsStandouts.ts": "45ebb649df273d66149b85bfaefe7b861d0e779b844f513623f2ea4ad708db77",
+    "web/lib/socialShare/modules/shared/periodWindow.test.ts": "34733840df209564fdf20b9b904f1cf78a047da7a002a724a67e9af067ee4461",
+    "web/lib/socialShare/modules/shared/periodWindow.ts": "1601313b43db7652b348f7f78329934cd69e47a353b34c1db913bb884ba80105"
+  },
+  "drift": [],
+  "differentFromCommit": []
+}

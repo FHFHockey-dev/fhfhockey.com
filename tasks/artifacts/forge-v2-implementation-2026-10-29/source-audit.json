@@ -1,0 +1,475 @@
+{
+  "schemaVersion": "forge-v2-source-audit-v1",
+  "auditDate": "2026-10-29",
+  "checkout": "/Users/tim/Code/fhfhockey.com",
+  "branch": "octoberBranch",
+  "head": "18e52a481589a314dc6a67663dd98d1fa8c48454",
+  "owner": "source_audit",
+  "diary": "tasks/diaries/2026-10-29-codex-forge-v2-source-audit.md",
+  "classification": "local_source_and_synthetic_fixture_inspection_only",
+  "taskStatus": {
+    "2.1": "code inventory complete within bounded audit; historical completeness, hosted behavior and rights unverified",
+    "2.2": "semantic mismatches and synthetic case located; official source validation blocked",
+    "2.4": "prerequisite gaps recorded; allocation not registered or verified",
+    "6.1": "reuse audit delivered; no adaptation or qualification implemented"
+  },
+  "runtime": {
+    "creationRequested": "gpt-6-astra/high per Chef dispatch",
+    "independentRuntimeAttestation": "unavailable in worker-visible turn context"
+  },
+  "restrictions": {
+    "productionRequests": 0,
+    "databaseCalls": 0,
+    "acquisitionJobs": 0,
+    "testsExecuted": 0,
+    "pushes": 0,
+    "deployments": 0,
+    "protectedDataOpened": false,
+    "legacySourceModified": false
+  },
+  "missingNamedPaths": [
+    "web/lib/player-forecasts/participation.ts"
+  ],
+  "replacementPaths": [
+    "web/lib/player-forecasts/modeledSkaterParticipation.ts",
+    "web/lib/player-forecasts/nativeParticipationFrame.ts"
+  ],
+  "findings": [
+    {
+      "id": "schedule",
+      "scope": "2.1,6.1",
+      "code_proven": [
+        "schedule.ts builds regular-season team ordinals by sorted scheduled start and game ID; next-ten is distinct from its calendar-window helper.",
+        "scopeReads.ts reads games and roster_optimizer_team_games with exact counts, stable identities, deadline and bounds; next-ten mode has no calendar end date and stops reconciliation at ten eligible games.",
+        "Rejects inconsistent sides/status/start, missing receipts and receipts later than now."
+      ],
+      "refs": [
+        {
+          "path": "web/lib/player-forecasts/schedule.ts",
+          "lines": "124-183"
+        },
+        {
+          "path": "web/lib/player-forecasts/scopeReads.ts",
+          "lines": "52-72"
+        },
+        {
+          "path": "web/lib/player-forecasts/scopeReads.ts",
+          "lines": "75-189"
+        }
+      ],
+      "gaps": [
+        "Mutable rows plus fetched_at do not establish original schedule history, publication time, or actual-start authority.",
+        "buildNextTenGameScopes omits the optional scheduleRevision/teamAbbreviation when producing scope objects; do not rely on this projection for complete v2 lineage.",
+        "Pure schedule inputs may lack scheduleEvidence; sorting is not source qualification."
+      ],
+      "adjustment": "V2 requires explicit immutable schedule observation/revision, receivedAt, separate known publication time, actual-start evidence, first horizon episode and shortfall reason. Keep unknown-start postponements outside the active queue with history retained."
+    },
+    {
+      "id": "roster_affiliation",
+      "scope": "2.1,2.4",
+      "code_proven": [
+        "targetRosterObservationFromReceipt validates bounded original NHL roster bytes, SHA-256, exact endpoint, club/season and unique population arrays.",
+        "Target roster continuation explicitly is not a legally effective interval; source receipt capture is used as both availableAt and capturedAt.",
+        "nativeParticipationFrame has a separate dated membership shape with validFrom/validUntil and independent schedule opportunities."
+      ],
+      "refs": [
+        {
+          "path": "web/lib/player-forecasts/targetRosterObservation.ts",
+          "lines": "6-35"
+        },
+        {
+          "path": "web/lib/player-forecasts/targetRosterObservation.ts",
+          "lines": "38-74"
+        },
+        {
+          "path": "web/lib/player-forecasts/nativeParticipationFrame.ts",
+          "lines": "28-45"
+        },
+        {
+          "path": "web/lib/player-forecasts/nativeParticipationFrame.ts",
+          "lines": "203-217"
+        }
+      ],
+      "gaps": [
+        "No real complete injury/reserve/call-up population or bitemporal affiliation history inspected.",
+        "Current roster membership and a season-roster observation do not prove historic or future club eligibility."
+      ],
+      "adjustment": "Preserve canonical NHL and repository ID mapping revisions, effective interval and learned/received time separately; unknown eligibility remains visible. Do not filter the opportunity denominator to players with forecasts or positive minutes."
+    },
+    {
+      "id": "roles",
+      "scope": "2.1",
+      "code_proven": [
+        "Source-line records carry observed_at, tweet_posted_at, source URL/account, parsed units and player IDs/names.",
+        "availableAt uses the later observed/publication time, while sourceTiming retains publication and receipt separately. Invalid validDate input falls back to current wall clock.",
+        "Assignments support lines/pairs/PP/PK, scratches/injuries; interpreted non-game context is excluded and complete interpreted units are selected. Captures write lineup observations and can queue work."
+      ],
+      "refs": [
+        {
+          "path": "web/lib/player-forecasts/sourceObservations.ts",
+          "lines": "10-54"
+        },
+        {
+          "path": "web/lib/player-forecasts/sourceObservations.ts",
+          "lines": "68-85"
+        },
+        {
+          "path": "web/lib/player-forecasts/sourceObservations.ts",
+          "lines": "113-167"
+        },
+        {
+          "path": "web/lib/player-forecasts/sourceObservations.ts",
+          "lines": "434-458"
+        }
+      ],
+      "gaps": [
+        "No retained original role history, parser coverage, rights or factual accuracy established.",
+        "Parsed assignment completeness ratio is not independently verified roster completeness."
+      ],
+      "adjustment": "Consume already accepted bounded evidence through isolated adapters. Preserve parsing uncertainty, source and receipt clocks; never synthesize historical availability from current capture defaults or execute source-observation ingestion for QA."
+    },
+    {
+      "id": "counts_and_units",
+      "scope": "2.1,2.2,6.1",
+      "code_proven": [
+        "baselineSkaterTargets preserves missing fields as null, validates nonnegative integer counts, conflicts in shots and G+A versus points, and maps pim to PENALTY_MINUTES.",
+        "Fields cover goals, assists, sog/shots, hits, blockedShots, pim and optional powerPlayPoints. TOI parsing is seconds; baseline goalie component conversion explicitly uses seconds/60.",
+        "Current-roster assembler validates original NHL boxscore/landing receipt URL, hash, identities, capture before cutoff and after game start; it discloses selected history as unverified."
+      ],
+      "refs": [
+        {
+          "path": "web/lib/player-forecasts/baselineSourceLineage.ts",
+          "lines": "293-315"
+        },
+        {
+          "path": "web/lib/player-forecasts/baselineSourceLineage.ts",
+          "lines": "318-361"
+        },
+        {
+          "path": "web/lib/player-forecasts/currentRosterNativeInputs.ts",
+          "lines": "20-28"
+        },
+        {
+          "path": "web/lib/player-forecasts/currentRosterNativeInputs.ts",
+          "lines": "31-79"
+        },
+        {
+          "path": "web/lib/player-forecasts/currentRosterNativeInputs.ts",
+          "lines": "123-154"
+        }
+      ],
+      "gaps": [
+        "Field mapping does not verify provider PIM credit semantics, revisions, source rights or complete historical coverage.",
+        "Current-club discovery explicitly cannot certify complete traded-player history."
+      ],
+      "adjustment": "Use explicit unit count for G/A/PPP/SOG/HIT/BLK and penalty minutes for PIM, not penalty-event count. Every category retains missingness and source revision; maintain original bytes and hash-algorithm identity."
+    },
+    {
+      "id": "ppp",
+      "scope": "2.1,6.1",
+      "code_proven": [
+        "nativePowerPlayPoints reconciles original final landing scoring with boxscore goals/assists/PP goals and score including shootout adjustment; yields PP goals plus PP assists.",
+        "Its output is private_historical_observed_counts conditioned on positive_minute_historical_appearance."
+      ],
+      "refs": [
+        {
+          "path": "web/lib/player-forecasts/nativePowerPlayPoints.ts",
+          "lines": "22-38"
+        },
+        {
+          "path": "web/lib/player-forecasts/nativePowerPlayPoints.ts",
+          "lines": "65-117"
+        }
+      ],
+      "gaps": [
+        "This is observed outcome derivation, not an as-of predictor or proof that all official-appearance cases are supported."
+      ],
+      "adjustment": "Reuse reconciled counting rules only after v2 identity/receipt/appearance adaptation; avoid confusing PP goals with PPP or this historical result with pregame input."
+    },
+    {
+      "id": "official_appearance",
+      "scope": "2.2",
+      "code_proven": [
+        "modeledSkaterParticipation receipt event is positive_minutes; calibration unavailable; limitations explicitly exclude penalty-only zero-minute PIM.",
+        "baselineAppearanceFromBoxscore returns null at zero TOI. Current-roster inputs mark it observed_zero_minutes and omit the appearance.",
+        "nativeParticipationFrame labels by positive TOI versus zero after validating resolution; zero official TOI and explicit complete nonappearance share the Z disposition.",
+        "Final boxscore validation checks final state, identity, receipt and required arrays; it does not establish authoritative credited-appearance semantics for rare cases."
+      ],
+      "refs": [
+        {
+          "path": "web/lib/player-forecasts/modeledSkaterParticipation.ts",
+          "lines": "16-36"
+        },
+        {
+          "path": "web/lib/player-forecasts/modeledSkaterParticipation.ts",
+          "lines": "104-131"
+        },
+        {
+          "path": "web/lib/player-forecasts/baselineSourceLineage.ts",
+          "lines": "341-361"
+        },
+        {
+          "path": "web/lib/player-forecasts/currentRosterNativeInputs.ts",
+          "lines": "86-105"
+        },
+        {
+          "path": "web/lib/player-forecasts/nativeParticipationFrame.ts",
+          "lines": "226-245"
+        },
+        {
+          "path": "web/lib/player-forecasts/settlement.ts",
+          "lines": "269-287"
+        }
+      ],
+      "gaps": [
+        "No authentic credited zero-minute/penalty-only, dressed-unused, nonappearance or ambiguous-case dossier inspected.",
+        "Absent row in incomplete feed cannot resolve nonappearance. A final-state flag and nonempty arrays are insufficient proof of complete official appearance population."
+      ],
+      "adjustment": "New v2 label definition must separate official_appearance, dressed_unused, verified_nonappearance, ambiguous and game_not_played. Null/missing evidence cannot become zero. Never relabel legacy positive_minutes receipt or basis appearance as qualified official appearance."
+    },
+    {
+      "id": "synthetic_appearance_contract",
+      "scope": "2.2",
+      "code_proven": [
+        "Existing gameContract supports statistical-credit conditioning given game occurrence, separate pDress/pPositiveMinutes/pGamePlayedCredited and conditional/unconditional means.",
+        "Existing synthetic test encodes zero TOI with penalty-minute mean and official credit."
+      ],
+      "refs": [
+        {
+          "path": "web/lib/player-forecasts/gameContract.ts",
+          "lines": "56-85"
+        },
+        {
+          "path": "web/lib/player-forecasts/gameContract.ts",
+          "lines": "227-269"
+        },
+        {
+          "path": "web/lib/player-forecasts/gameContract.test.ts",
+          "lines": "1-5"
+        },
+        {
+          "path": "web/lib/player-forecasts/gameContract.test.ts",
+          "lines": "167-183"
+        }
+      ],
+      "gaps": [
+        "Only synthetic representability was inspected; no source semantic validation, executed test or real probability qualification is claimed.",
+        "Legacy contract headline is unconditional_game and research count-means-only, whereas v2 headline is conditional on official appearance."
+      ],
+      "adjustment": "Use fixture semantics as a test example; retain official source validation as separate open gate. Require explicit conditioning on each mean and participation component."
+    },
+    {
+      "id": "receipt_clocks",
+      "scope": "2.1,2.3,2.4",
+      "code_proven": [
+        "sourceSnapshot canonicalizes JSON object key order, hashes payloads and inserts source observations with observed_at/available_at. Defaults both to current time; explicit caller values remain possible.",
+        "Planned identity verification compares payload/metadata hashes and microsecond clocks.",
+        "gameContract schema carries publication, first receipt, verification and effective timestamps and checks component cutoff eligibility."
+      ],
+      "refs": [
+        {
+          "path": "web/lib/player-forecasts/sourceSnapshot.ts",
+          "lines": "5-47"
+        },
+        {
+          "path": "web/lib/player-forecasts/sourceSnapshot.ts",
+          "lines": "49-89"
+        },
+        {
+          "path": "web/lib/player-forecasts/gameContract.ts",
+          "lines": "37-45"
+        },
+        {
+          "path": "web/lib/player-forecasts/gameContract.ts",
+          "lines": "170-195"
+        }
+      ],
+      "gaps": [
+        "An observation timestamp or caller-provided available_at is not independent historical availability proof.",
+        "Existing schema clocks do not establish that exact v2 output bytes were published before lock."
+      ],
+      "adjustment": "Separate original byte hash from canonical parsed-payload hash; retain observation/publication-if-known/first-receipt/as-of/generation/publication-confirmation/target-start clocks. Classify later captures as reconstruction with real capture timestamps."
+    },
+    {
+      "id": "rights_and_gates",
+      "scope": "2.1,2.4",
+      "code_proven": [
+        "gameContract source shape accepts rightsStatus verified/pending/restricted/unknown and separate accessStatus.",
+        "researchContract.ts contains fixed research/validation contract version hashes and an inference flag; these are declarations for the existing private system.",
+        "Current-roster assembler returns publicUsesApproved:false and forecastIssued:false."
+      ],
+      "refs": [
+        {
+          "path": "web/lib/player-forecasts/gameContract.ts",
+          "lines": "37-45"
+        },
+        {
+          "path": "web/lib/player-forecasts/researchContract.ts",
+          "lines": "1-29"
+        },
+        {
+          "path": "web/lib/player-forecasts/currentRosterNativeInputs.ts",
+          "lines": "150-154"
+        }
+      ],
+      "gaps": [
+        "No actual provider intended-use license/rights approval inspected. Access to public endpoint and a private contract approval do not establish public redistribution permission.",
+        "No v2 scientific or public-use approval transfers from existing research contract hashes or environment flags."
+      ],
+      "adjustment": "Pin dataset/provider/intended-use/owner/rights-evidence reference and explicit unknown state. Keep all real source qualification blocked until reviewed evidence is supplied; do not claim verification from enum presence."
+    },
+    {
+      "id": "native_reuse",
+      "scope": "6.1",
+      "code_proven": [
+        "skater-stage imports a Supabase server client and query/persistence modules; runPerGameSkaterStage is an operational orchestrator.",
+        "Candidate pure functions include TOI normalization, usage allocation, role stability/scenarios and imported scenario/context calculators, but their scientific applicability still requires v2 validation.",
+        "Legacy availability multipliers explicitly are not calibrated participation. Stored output multiplies one target-game stat line by teamHorizonTotalScalar; role blending also receives horizonScalars.",
+        "Stored playerUpsert includes TOI, shots, goals, assists, hits and blocks, with PK heads null and no PIM output."
+      ],
+      "refs": [
+        {
+          "path": "web/lib/projections/stages/skater-stage.ts",
+          "lines": "1-18,255-309,333-344,1008-1075,1272-1292,1331-1348,2332-2336,2769-2785,3203-3232"
+        }
+      ],
+      "gaps": [
+        "No per-horizon/context qualification, official-appearance calibration, PIM model or joint uncertainty is established by this code audit.",
+        "Helpers embedded in operational module should not be imported casually because of its server dependencies."
+      ],
+      "adjustment": "Implement v2 as pure bounded inputs/outputs under its own namespace; reuse only already separable pure calculators after exact unit/conditioning validation. Each game gets its own opponent/home/rest/role context. Never divide/relabel an aggregate horizon output as ten forecasts; never invoke the stage during audit/tests."
+    },
+    {
+      "id": "temporal_allocation",
+      "scope": "2.4 prerequisite",
+      "code_proven": [
+        "This audit read source text and explicit synthetic test code only; no real retained numerical outcomes or protected evaluation files opened."
+      ],
+      "refs": [],
+      "gaps": [
+        "2024\u201325 exclusion and 2025\u201326 reservation are preserved from Chef-provided current lease summary; this worker did not independently inspect lease artifacts.",
+        "No complete exposed-development/calibration/untouched/prospective inventory was furnished or verified. Code dates and literal cohort constants are not exposure receipts."
+      ],
+      "adjustment": "Keep task 2.4 open. Request owner-authenticated metadata-only allocation manifest with dataset hashes, exposed purposes/dates/actors, allowed ranges, custody and target-game grouping. All revisions of a target game must remain in the same temporal/dependence group."
+    }
+  ],
+  "boundedEvidenceRequests": [
+    {
+      "id": "E1",
+      "priority": "before_real_adapters_or_fitting",
+      "request": "Owner-supplied metadata-only inventory of approved schedule, roster/affiliation, role, statistics and outcome captures: source/dataset identifiers, permitted periods, hashes, row/game counts, completeness proofs, first receipt/publication clock coverage, correction policy, owner and intended-use rights evidence. Do not disclose protected labels.",
+      "closes": "2.1 historical coverage and rights gaps"
+    },
+    {
+      "id": "E2",
+      "priority": "before_official_appearance_labels",
+      "request": "Owner-approved nonprotected minimal original-source case packet for credited positive-minute appearance, credited zero-minute penalty-only appearance, dressed-unused, verified nonappearance, ambiguous/incomplete feed and game not played; exact game/player identity, official credit evidence, PIM field units/rule, raw-byte hash, receipt clocks and completeness/revision evidence. No acquisition is authorized by this request.",
+      "closes": "2.2 appearance and PIM semantics"
+    },
+    {
+      "id": "E3",
+      "priority": "before_temporal_allocation",
+      "request": "Custodian metadata manifest for exposed development, calibration, excluded, reserved untouched and prospective datasets; no outcomes. Preserve 2024\u201325 excluded and 2025\u201326 reserved until custodian explicitly resolves usage. Include target-game grouping and prior access/experiment exposures.",
+      "closes": "2.4 allocation registration"
+    },
+    {
+      "id": "E4",
+      "priority": "before_real_schedule_and_affiliation_wiring",
+      "request": "A bounded owner-approved nonprotected original schedule-revision/actual-start and affiliation-change packet with effective versus receipt time, injury/reserve/call-up coverage and trade example; prove the captured opportunity frame independently of successful forecast rows.",
+      "closes": "2.1,4.1\u20134.4 real evidence"
+    }
+  ],
+  "verification": {
+    "passed": [
+      "Canonical checkout/branch/HEAD read",
+      "Assigned output paths checked before creation",
+      "Named source inspection and narrowly followed imports",
+      "Synthetic gameContract test text inspected without execution",
+      "Named legacy source diff stat empty at audit checkpoint"
+    ],
+    "notRun": [
+      "Application/unit suites (read-only audit)",
+      "Hosted source qualification",
+      "Protected evaluation",
+      "Real source completeness/rights verification"
+    ]
+  },
+  "sourceHashes": [
+    {
+      "path": "AGENTS.md",
+      "sha256": "fe2bbd877b66bf1c16e1878efac2ce299b37bbf9baab31ee5008c496e9fb8b0b"
+    },
+    {
+      "path": "mise-en-place.md",
+      "sha256": "29ea87cbf4c9addcf1d6ef6225884606ea3d7f33b36dc19377d8012f2aedd9af"
+    },
+    {
+      "path": "tasks/TASKS/prd-forge-v2-skater-game-forecasts.md",
+      "sha256": "7fe25088be9797eb6976aed6fe30367e52c9bf7dc2b6720c8d329121609ae51c"
+    },
+    {
+      "path": "tasks/tasks-prd-forge-v2-skater-game-forecasts.md",
+      "sha256": "b8747513e0114d1e90b04ecea32b05b8aa7623342461fa1e882dc1cce6a5d21f"
+    },
+    {
+      "path": "web/lib/player-forecasts/baselineSourceLineage.ts",
+      "sha256": "c1d492523843b103aafcdb081fe6aafe31651f2a5117a2b77ef60e4e2e604223"
+    },
+    {
+      "path": "web/lib/player-forecasts/currentRosterNativeInputs.ts",
+      "sha256": "704578c2b1845cbab3f580efa519e2b4ee52869088732091b96719112d286b19"
+    },
+    {
+      "path": "web/lib/player-forecasts/gameContract.test.ts",
+      "sha256": "68cdf53e8b8755baf31acf308866a8ccdfc1535382d1e3946e3866124a34c646"
+    },
+    {
+      "path": "web/lib/player-forecasts/gameContract.ts",
+      "sha256": "40883646c707db254bd48ddf7d87511466e93c83879b2f66939beb4b6e2b1c26"
+    },
+    {
+      "path": "web/lib/player-forecasts/modeledSkaterParticipation.ts",
+      "sha256": "ad9a58bd4c2ed1d473df0f6d8d7f511ae2bc02a3cf17f85ba66fbb08592cd1d7"
+    },
+    {
+      "path": "web/lib/player-forecasts/nativeParticipationFrame.ts",
+      "sha256": "61463830078f933ccb86e709a48e144557ce17802c90f734081f880d06e8f412"
+    },
+    {
+      "path": "web/lib/player-forecasts/nativePowerPlayPoints.ts",
+      "sha256": "7079c0dd49a44267fec9593803ef5884af49abab02760bb754f8b9a66c388e8b"
+    },
+    {
+      "path": "web/lib/player-forecasts/researchContract.ts",
+      "sha256": "10cd27021f157d27adaa42ea7088f43318fa9730df52859d8bf0cb90ca4cbc46"
+    },
+    {
+      "path": "web/lib/player-forecasts/schedule.ts",
+      "sha256": "65bce2663415d34a39e74d18c6250c33ad5ee8658118c0e68049935d90bf8049"
+    },
+    {
+      "path": "web/lib/player-forecasts/scopeReads.ts",
+      "sha256": "804d79e6e67091dd79d485db4835fb2b18f27accf59968ef7c4cad3ed034cdfd"
+    },
+    {
+      "path": "web/lib/player-forecasts/settlement.ts",
+      "sha256": "17538dea898e5e69a25e22a187d6a2de95e48c39e60a747291147c78916905e5"
+    },
+    {
+      "path": "web/lib/player-forecasts/sourceObservations.ts",
+      "sha256": "de7aaaeeadae51bbe9d29b1fef900682070a0a3775285be010cd4ef8edd7490b"
+    },
+    {
+      "path": "web/lib/player-forecasts/sourceSnapshot.ts",
+      "sha256": "7ec78dcefc5dd0d64de52ae6e03172594cf2c8c9232b1d20a0c34e8833de1c82"
+    },
+    {
+      "path": "web/lib/player-forecasts/targetRosterObservation.ts",
+      "sha256": "d77157d4e3915efd4f539669d0ff8cf12494a5aad057579b7eb37ecb30ae6ee6"
+    },
+    {
+      "path": "web/lib/projections/stages/skater-stage.ts",
+      "sha256": "b36f1e0057d00bd38187f6c959c061ae206f0637987a7659ddb191cd314a78e8"
+    }
+  ]
+}

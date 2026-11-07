@@ -1,0 +1,94 @@
+{
+  "version": "luna-unseen-intake-template-v1",
+  "status": "unfilled_not_qualified_not_dispatchable",
+  "isRuntimeRequest": false,
+  "rawContentIncluded": false,
+  "cohortId": null,
+  "custodian": null,
+  "authorizedLocalScopeReference": null,
+  "protectedInputLocation": null,
+  "separateProtectedLabelLocation": null,
+  "selection": {
+    "phase": "two_family_offline_feasibility",
+    "maximumFamilies": 2,
+    "maximumPrimaryPackets": 2,
+    "maximumRetainedRecords": 4,
+    "originalSourceScopes": [],
+    "registeredAt": null,
+    "startsAt": null,
+    "endsAt": null,
+    "selectionRule": null,
+    "missingCoverage": []
+  },
+  "freeze": {
+    "promptReferenceHash": null,
+    "modelSettingsHash": null,
+    "runtimeSchemaHash": null,
+    "scorerHash": null,
+    "rubricHash": null,
+    "exposureInventoryHash": null,
+    "inputManifestHash": null,
+    "sealedLabelManifestHash": null,
+    "frozenBeforeBodyExposureToDevelopmentAgent": false,
+    "frozenBeforePrediction": false,
+    "foundationModelPretrainingExposure": "unknown"
+  },
+  "familyRecordTemplate": {
+    "familyId": null,
+    "primaryRecordId": null,
+    "relatedRecordIds": [],
+    "originalAuthorId": null,
+    "rights": {
+      "status": "unverified",
+      "evidenceReference": null,
+      "verifiedBy": null,
+      "verifiedAt": null,
+      "permittedOperations": [],
+      "retentionLimit": null,
+      "externalProcessor": null,
+      "specificExternalTransferApproved": false
+    },
+    "provenance": {
+      "originalPostId": null,
+      "originalUrl": null,
+      "sourceRevisionId": null,
+      "utf8TextSha256": null,
+      "publicationTime": null,
+      "publicationBasis": null,
+      "timezoneBasis": null,
+      "receivedAt": null,
+      "capturedAt": null,
+      "exportReceiptReference": null,
+      "relayQuoteCorrectionGraphReference": null
+    },
+    "separation": {
+      "originalAuthorExcludedFromDevelopment": null,
+      "lineageAndEventFamilyExcludedFromDevelopment": null,
+      "nearDuplicateCheckReference": null,
+      "unresolvedExposure": [],
+      "qualifiedAsWorkflowUnseen": false
+    },
+    "suppliedContext": {
+      "datedIdentitySnapshotHash": null,
+      "identityKnowledgeTimeBasis": null,
+      "candidateCompleteness": "unknown",
+      "gameBindingEvidenceReference": null,
+      "existingMapperDecisionsEligible": null,
+      "preparedPacketHash": null,
+      "preparedRequestHashes": []
+    },
+    "humanLabels": {
+      "complete": false,
+      "reviewRecordHash": null,
+      "reviewerId": null,
+      "adjudicatorId": null,
+      "blindToPredictionsAndAssistantLabels": false,
+      "unresolvedFields": []
+    },
+    "qualified": false,
+    "exclusionReasons": ["template_only_no_source_or_label"]
+  },
+  "families": [],
+  "providerDispatchEnabled": false,
+  "productionAuthorized": false
+}

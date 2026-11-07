@@ -1,0 +1,186 @@
+{
+  "at": "2026-11-01T22:26:50.009463+00:00",
+  "state": "INDEPENDENT_REVIEW_CLOSED_INSTALLATION_ALLOCATION_PENDING",
+  "review": {
+    "path": "tasks/artifacts/rso-settlement-audit-2026-11-01/microseconds-rereview/REVIEW.md",
+    "sha256": "6da3d26f9e6abdc4af46724c921871a42f04996f79cde2abff0fbc57be9e97f7",
+    "finding": "downstream P2 microsecond ordering closed in isolated candidate; no additional repair defect found"
+  },
+  "reviewInputsVerified": [
+    {
+      "path": "tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-readbacks/tooling/check-readbacks.mjs",
+      "expectedSha256": "d4b95c100a69d60ce3aea845ed7b4990b43b22c0a6ca5eac8f4d59519a146add",
+      "actualSha256": "d4b95c100a69d60ce3aea845ed7b4990b43b22c0a6ca5eac8f4d59519a146add"
+    },
+    {
+      "path": "tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-readbacks/tooling/check-readbacks.test.mjs",
+      "expectedSha256": "4a5ad746e1231e0be099c810ce75a23db0fb6dc496c10cd887cc43fe505c8e23",
+      "actualSha256": "4a5ad746e1231e0be099c810ce75a23db0fb6dc496c10cd887cc43fe505c8e23"
+    },
+    {
+      "path": "tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-readbacks/source.patch",
+      "expectedSha256": "e2ef1e35fd12889838c8ed9c4a2fe6ac85dc72f9715fcde84440954514f87e08",
+      "actualSha256": "e2ef1e35fd12889838c8ed9c4a2fe6ac85dc72f9715fcde84440954514f87e08"
+    },
+    {
+      "path": "tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/normalize-readbacks.ts",
+      "expectedSha256": "70047390e3ff235582d982960b28d8f7ef2aa172eabcba624a2bdd1b2fb08805",
+      "actualSha256": "70047390e3ff235582d982960b28d8f7ef2aa172eabcba624a2bdd1b2fb08805"
+    },
+    {
+      "path": "tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/normalize-readbacks.test.ts",
+      "expectedSha256": "19cfa0e00459e8f3251489fd3916b6f5c2323021b7569a94d09e1293955af0ab",
+      "actualSha256": "19cfa0e00459e8f3251489fd3916b6f5c2323021b7569a94d09e1293955af0ab"
+    },
+    {
+      "path": "tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/normalize-settlement.mjs",
+      "expectedSha256": "47fb525903fbb24da2d280669fad8f3a3964b8b8d588b407a9135b6e8d032880",
+      "actualSha256": "47fb525903fbb24da2d280669fad8f3a3964b8b8d588b407a9135b6e8d032880"
+    },
+    {
+      "path": "tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/normalize-settlement.test.mjs",
+      "expectedSha256": "2b948522e473d184c93d0a540daf1858e558656bf54b73060fcf9c0a0865f858",
+      "actualSha256": "2b948522e473d184c93d0a540daf1858e558656bf54b73060fcf9c0a0865f858"
+    },
+    {
+      "path": "tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/timestamp-parser.cjs",
+      "expectedSha256": "fe98301ad8b5ee3ce54dec29370087f0f54eac794684e87605da756692e3c16b",
+      "actualSha256": "fe98301ad8b5ee3ce54dec29370087f0f54eac794684e87605da756692e3c16b"
+    },
+    {
+      "path": "web/lib/projections/evidenceTime.ts",
+      "expectedSha256": "c818c021a2857607055d60454ecf03ac39fb27298719726662652d8321e42a00",
+      "actualSha256": "c818c021a2857607055d60454ecf03ac39fb27298719726662652d8321e42a00"
+    },
+    {
+      "path": "tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/inspect-issued-packet.mjs",
+      "expectedSha256": "a2e003361d75cee8b768f8bc46cd0bcd6d4bbb05f946604193c201ecf8564730",
+      "actualSha256": "a2e003361d75cee8b768f8bc46cd0bcd6d4bbb05f946604193c201ecf8564730"
+    },
+    {
+      "path": "tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/inspect-issued-packet.test.mjs",
+      "expectedSha256": "f4cc19fc4be359cadf432be62a10163275d88ede4bbf9a820f3453f6b27ff74d",
+      "actualSha256": "f4cc19fc4be359cadf432be62a10163275d88ede4bbf9a820f3453f6b27ff74d"
+    },
+    {
+      "path": "tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/inspect-identity.mjs",
+      "expectedSha256": "5f562165df446c276824d1b7ed5d2f07e84d25570ee316e1317c37ad52c1312b",
+      "actualSha256": "5f562165df446c276824d1b7ed5d2f07e84d25570ee316e1317c37ad52c1312b"
+    },
+    {
+      "path": "web/lib/rosterScheduleData/planningDataTransport.ts",
+      "expectedSha256": "8d92ae6d13e4b10947c189a10fe095a06e25e63974d64b41e2c38303992f3947",
+      "actualSha256": "8d92ae6d13e4b10947c189a10fe095a06e25e63974d64b41e2c38303992f3947"
+    },
+    {
+      "path": "tasks/artifacts/rso-wave2-2026-10-25/FORGE-QUAL/scope.json",
+      "expectedSha256": "16b7092bea0ba307d07c1b8de3c4559533cc3a044a3af4264abd80dd397ffbe5",
+      "actualSha256": "16b7092bea0ba307d07c1b8de3c4559533cc3a044a3af4264abd80dd397ffbe5"
+    },
+    {
+      "path": "tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-readbacks/microseconds-review/HANDOFF.md",
+      "expectedSha256": "5c45b21f74fa450b99fd20020513614fa33d93e04829b44c2c0e34d4b3bcc4f6",
+      "actualSha256": "5c45b21f74fa450b99fd20020513614fa33d93e04829b44c2c0e34d4b3bcc4f6"
+    },
+    {
+      "path": "tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-readbacks/microseconds-review/EVIDENCE.json",
+      "expectedSha256": "c40a22ec195b2fe8ec12d7dc83547d9414aa2c30c7708ccb3845086a892aa9f1",
+      "actualSha256": "c40a22ec195b2fe8ec12d7dc83547d9414aa2c30c7708ccb3845086a892aa9f1"
+    },
+    {
+      "path": "tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-readbacks/microseconds-review/before-check-readbacks.mjs",
+      "expectedSha256": "0432b1455b0f5b7826ed9182d79e7a034b624520cd3f39af00572c166ea135c6",
+      "actualSha256": "0432b1455b0f5b7826ed9182d79e7a034b624520cd3f39af00572c166ea135c6"
+    },
+    {
+      "path": "tasks/artifacts/rso-wave2-2026-10-25/FORGE-QUAL/tooling/check-readbacks.mjs",
+      "expectedSha256": "1788c6549ae6f3a8bf3a24c6cfd82599fb349ef89fafc39f5528cd2277235e2e",
+      "actualSha256": "1788c6549ae6f3a8bf3a24c6cfd82599fb349ef89fafc39f5528cd2277235e2e"
+    },
+    {
+      "path": "tasks/artifacts/rso-wave2-2026-10-25/FORGE-QUAL/tooling/check-readbacks.test.mjs",
+      "expectedSha256": "479edbef96b5af789dd8809f04b8809d885c93fc9a2c423e513308ebf6b28230",
+      "actualSha256": "479edbef96b5af789dd8809f04b8809d885c93fc9a2c423e513308ebf6b28230"
+    }
+  ],
+  "independentValidation": {
+    "distinctTestsPassed": 66,
+    "executionsPassed": 132,
+    "timezones": [
+      "UTC",
+      "America/New_York"
+    ],
+    "boundaryCasesPerTimezone": 15,
+    "invalidClockCasesPerTimezone": 55,
+    "testsRerunThisCheckpoint": false
+  },
+  "installation": {
+    "status": "pending explicit exact-file allocation",
+    "attempted": false,
+    "gitCustodyTransferred": false,
+    "patch": "tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-readbacks/source.patch",
+    "patchSha256": "e2ef1e35fd12889838c8ed9c4a2fe6ac85dc72f9715fcde84440954514f87e08",
+    "files": [
+      {
+        "target": "tasks/artifacts/rso-wave2-2026-10-25/FORGE-QUAL/tooling/check-readbacks.mjs",
+        "originalSha256": "1788c6549ae6f3a8bf3a24c6cfd82599fb349ef89fafc39f5528cd2277235e2e",
+        "proposedSha256": "d4b95c100a69d60ce3aea845ed7b4990b43b22c0a6ca5eac8f4d59519a146add"
+      },
+      {
+        "target": "tasks/artifacts/rso-wave2-2026-10-25/FORGE-QUAL/tooling/check-readbacks.test.mjs",
+        "originalSha256": "479edbef96b5af789dd8809f04b8809d885c93fc9a2c423e513308ebf6b28230",
+        "proposedSha256": "4a5ad746e1231e0be099c810ce75a23db0fb6dc496c10cd887cc43fe505c8e23"
+      }
+    ]
+  },
+  "custodyEvidence": {
+    "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/CLAUDE-LEASES.json",
+    "sha256": "33dd8004f06533ac1a367036f1be7ff61f545119de68c3741af9b4e9442ed029",
+    "selectedRecords": [
+      {
+        "lane": "FORGE-QUAL",
+        "scope": "Read-only audit: FORGE writer -> admission -> RSO/Start Chart consumer qualification plan and draft readback tooling (artifacts only)",
+        "authority": "TJ direct pop-up 2026-10-25 ~23:45Z (RSO wave 2: Yahoo acceptance, continuity E2E, forecast qualification plan, release wave 1)",
+        "write_paths": [],
+        "artifact_dir": "tasks/artifacts/rso-wave2-2026-10-25/FORGE-QUAL/"
+      },
+      {
+        "lane": "RSO-ADMISSION-FILES",
+        "owner": "Codex RSO lane 01a19764-091f-763d-a983-8c692d79200b",
+        "allocated_by": "Claude orchestrator session 1e668672 (started PROV-GUARD)",
+        "scope": "Install the proposed admission entries for candidate c3897d3273ca46ea25a9f2737f09c835e5ec7325; carve-out from idle PROV-GUARD for these two files only",
+        "authority": "TJ relayed Codex's custody request to this session, 2026-11-01",
+        "opened": "2026-11-01T20:29:21Z",
+        "write_paths": [
+          {
+            "path": "web/lib/projections/verifiedForgeReleases.ts",
+            "baseline_sha256": "314d048f083fb917d36718b772a36822d3cff2bf1137be28a85035aefd679cce"
+          },
+          {
+            "path": "web/lib/projections/verifiedForgeReleases.test.ts",
+            "baseline_sha256": "7c04cb6e43a76d70efe38af2b0978c25872bae991eed68ddcabed96d75d53f30"
+          }
+        ],
+        "forbidden": [
+          "git commits, refs or index changes (Claude commits by exact pathspec on request)",
+          "push, hosted build, deployment, activation, provider or database execution"
+        ],
+        "status": "active"
+      }
+    ]
+  },
+  "observedHead": "e152ce5bca1aa77e29a43acd33eb7e9ae0d0ac62",
+  "sourceCandidate": "c3897d3273ca46ea25a9f2737f09c835e5ec7325",
+  "mailbox": {
+    "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/CLAUDE-TO-CODEX.md",
+    "bytes": 197987,
+    "sha256": "51c1b10bdbaf84b9711b6aa89893858a3344e94016dff3de40766f3dbed1cd1f",
+    "newMessageSent": false
+  },
+  "qualificationGranted": false,
+  "productionRequests": 0,
+  "providerRequests": 0,
+  "builds": 0,
+  "deployments": 0,
+  "gitMutations": 0
+}

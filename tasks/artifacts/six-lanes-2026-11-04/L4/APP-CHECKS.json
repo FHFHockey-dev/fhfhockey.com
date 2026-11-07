@@ -1,0 +1,44 @@
+[
+  {
+    "command": [
+      "npm",
+      "test",
+      "--",
+      "--run",
+      "lib/tradeValue/observationEvidence.test.ts"
+    ],
+    "exitCode": 0,
+    "output": "\n> web@0.1.0 test\n> vitest --run lib/tradeValue/observationEvidence.test.ts\n\n\n RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web\n\n(node:14313) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.\n(Use `node --trace-deprecation ...` to show where the warning was created)\n \u2713 lib/tradeValue/observationEvidence.test.ts (12 tests) 3ms\n\n Test Files  1 passed (1)\n      Tests  12 passed (12)\n   Start at  17:56:16\n   Duration  374ms (transform 22ms, setup 3ms, collect 20ms, tests 3ms, environment 156ms, prepare 32ms)\n\n"
+  },
+  {
+    "command": [
+      "./node_modules/.bin/eslint",
+      "lib/tradeValue/contracts.ts",
+      "lib/tradeValue/observationEvidence.ts",
+      "lib/tradeValue/observationEvidence.test.ts"
+    ],
+    "exitCode": 0,
+    "output": ""
+  },
+  {
+    "command": [
+      "./node_modules/.bin/tsc",
+      "--noEmit",
+      "--strict",
+      "--skipLibCheck",
+      "--target",
+      "ES2022",
+      "--module",
+      "ESNext",
+      "--moduleResolution",
+      "bundler",
+      "--types",
+      "node,vitest/globals",
+      "lib/tradeValue/contracts.ts",
+      "lib/tradeValue/observationEvidence.ts",
+      "lib/tradeValue/observationEvidence.test.ts"
+    ],
+    "exitCode": 0,
+    "output": ""
+  }
+]

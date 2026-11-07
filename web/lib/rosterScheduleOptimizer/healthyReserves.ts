@@ -42,7 +42,7 @@ export function dtdReserves(snapshot: PlanningSnapshot): string[] {
   }).map(entry => entry.playerId);
 }
 
-/** Lineup-gap blockers minus those naming a flagged healthy reserve: his alert already says the lineup is illegal and
+/** Lineup-gap blockers minus those naming a flagged healthy reserve: his alert already explains the add blockage and
  * how to move him. Injured-ineligible and lineup-wide blockers stay. */
 export function withoutHealthyReserves<T extends { playerId: string | null }>(blockers: T[], reserves: HealthyReserve[]): T[] {
   const flagged = new Set(reserves.map(reserve => reserve.playerId));

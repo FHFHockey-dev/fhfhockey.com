@@ -1,0 +1,276 @@
+{
+  "state": "TRANSFERRED_LOCAL_EDITING_CUSTODY",
+  "recordedAtUtc": "2026-11-01T15:13:05.521453+00:00",
+  "recordedAtLocal": "2026-11-01T10:13:05.521453-05:00",
+  "localTimezone": "America/New_York",
+  "repository": "/Users/tim/Code/fhfhockey.com",
+  "branch": "octoberBranch",
+  "head": "0a7fb68427d8ad81e4dfb4e99e0fd8e233ddf66e",
+  "fromLease": "CODEX-CRON-TRIAGE-20261027-01",
+  "fromOwnerThread": "01a17d95-8833-7618-ab3c-93e40feaf0dd",
+  "toOwnerThread": "01a19780-b73c-7334-9e53-4b7fda61201c",
+  "toParentThread": "01a189f6-9a3a-7235-a989-e1af4f47b014",
+  "firstSlice": {
+    "id": "CODEX-NST-GOALIE-WRITER-20261101-ROUTE",
+    "paths": [
+      "web/pages/api/v1/db/update-nst-goalies.ts",
+      "web/__tests__/pages/api/v1/db/update-nst-goalies.route.test.ts",
+      "web/lib/cron/nstBurstPlans.ts",
+      "web/lib/cron/nstBurstPlans.test.ts"
+    ],
+    "scope": "Goalie writer integration and goalie request planning/tests only. Shared planner non-goalie exports/accepted behavior must remain compatible."
+  },
+  "secondSlice": [
+    {
+      "id": "CODEX-NST-GOALIE-WRITER-20261101-RUNNER",
+      "paths": [
+        "web/lib/routeRunner/core.ts",
+        "web/lib/routeRunner/core.test.ts",
+        "web/lib/routeRunner/registry.ts",
+        "web/lib/routeRunner/tick.ts",
+        "web/lib/routeRunner/store.ts",
+        "web/lib/routeRunner/store.test.ts",
+        "web/lib/routeRunner/tick.test.ts"
+      ],
+      "scope": "Goalie continuation query/scope contract, idempotent goalie enqueue/progress and goalie bounds only. Other route contracts, generic safety fences and runner UI stay protected."
+    },
+    {
+      "id": "CODEX-NST-GOALIE-WRITER-20261101-REPORT",
+      "paths": [
+        "web/pages/api/v1/db/cron-report.ts",
+        "web/__tests__/pages/api/v1/db/cron-report.test.ts",
+        "web/components/CronReportEmail/CronAuditEmail.tsx",
+        "web/__tests__/components/CronReportEmail/CronAuditEmail.test.tsx"
+      ],
+      "scope": "Independent bounded goalie freshness assessment and existing cron email rendering/tests only. Preserve timeout/truncation/unknown truthfulness, existing recipients/delivery policy and other job assessments."
+    }
+  ],
+  "files": [
+    {
+      "path": "web/pages/api/v1/db/update-nst-goalies.ts",
+      "sha256": "37dfd69a5a98e49e5489e23d58c6a91d95a622ff2c6d87204a959e12ef2d3c5e",
+      "bytes": 31453,
+      "acceptedV4Sha256": "37dfd69a5a98e49e5489e23d58c6a91d95a622ff2c6d87204a959e12ef2d3c5e",
+      "matchesAcceptedV4": true,
+      "matchesHead": false,
+      "previousCustody": "CODEX-CRON-TRIAGE-20261027-01"
+    },
+    {
+      "path": "web/__tests__/pages/api/v1/db/update-nst-goalies.route.test.ts",
+      "sha256": "261d23fb2f8e8027c961810b6816f57bc95a3e7315286bfdcdbac416552e3a34",
+      "bytes": 18738,
+      "acceptedV4Sha256": "261d23fb2f8e8027c961810b6816f57bc95a3e7315286bfdcdbac416552e3a34",
+      "matchesAcceptedV4": true,
+      "matchesHead": false,
+      "previousCustody": "CODEX-CRON-TRIAGE-20261027-01"
+    },
+    {
+      "path": "web/lib/cron/nstBurstPlans.ts",
+      "sha256": "a31d3bb8e598f76a4b21fecb6bdea99eb79d79670d49865657d775ee45b0d214",
+      "bytes": 6201,
+      "acceptedV4Sha256": "a31d3bb8e598f76a4b21fecb6bdea99eb79d79670d49865657d775ee45b0d214",
+      "matchesAcceptedV4": true,
+      "matchesHead": false,
+      "previousCustody": "CODEX-CRON-TRIAGE-20261027-01"
+    },
+    {
+      "path": "web/lib/cron/nstBurstPlans.test.ts",
+      "sha256": "f64e032d85059098b513297ed0a866309eabada6d03b8b282c4be9e24fe8a741",
+      "bytes": 7244,
+      "acceptedV4Sha256": "f64e032d85059098b513297ed0a866309eabada6d03b8b282c4be9e24fe8a741",
+      "matchesAcceptedV4": true,
+      "matchesHead": false,
+      "previousCustody": "CODEX-CRON-TRIAGE-20261027-01"
+    },
+    {
+      "path": "web/lib/routeRunner/core.ts",
+      "sha256": "295dffbf92abb8f134e7b5c4f3745368e29ac07d9621f93cdfb3a85c34b2a1c8",
+      "bytes": 40478,
+      "acceptedV4Sha256": "295dffbf92abb8f134e7b5c4f3745368e29ac07d9621f93cdfb3a85c34b2a1c8",
+      "matchesAcceptedV4": true,
+      "matchesHead": false,
+      "previousCustody": "CODEX-CRON-TRIAGE-20261027-01"
+    },
+    {
+      "path": "web/lib/routeRunner/core.test.ts",
+      "sha256": "bfedcbac2fbc712abb9f17ef69f56fce4968bcf85a42c90b0614f46869794079",
+      "bytes": 25766,
+      "acceptedV4Sha256": "bfedcbac2fbc712abb9f17ef69f56fce4968bcf85a42c90b0614f46869794079",
+      "matchesAcceptedV4": true,
+      "matchesHead": false,
+      "previousCustody": "CODEX-CRON-TRIAGE-20261027-01"
+    },
+    {
+      "path": "web/lib/routeRunner/registry.ts",
+      "sha256": "969a7bece181e4d6c069d2629795be3e75f4fa128e5073973945a87bfc6e59c3",
+      "bytes": 8671,
+      "acceptedV4Sha256": "969a7bece181e4d6c069d2629795be3e75f4fa128e5073973945a87bfc6e59c3",
+      "matchesAcceptedV4": true,
+      "matchesHead": false,
+      "previousCustody": "CODEX-CRON-TRIAGE-20261027-01"
+    },
+    {
+      "path": "web/lib/routeRunner/tick.ts",
+      "sha256": "07362d17947ef02c0a989b7df8089c552b3627cbe83840ecdd277afe96e9eb30",
+      "bytes": 14006,
+      "acceptedV4Sha256": "07362d17947ef02c0a989b7df8089c552b3627cbe83840ecdd277afe96e9eb30",
+      "matchesAcceptedV4": true,
+      "matchesHead": false,
+      "previousCustody": "CODEX-CRON-TRIAGE-20261027-01"
+    },
+    {
+      "path": "web/lib/routeRunner/store.ts",
+      "sha256": "895d850d59b632b07017ed6b974e5909e3906320be3eb8a4c2fa367ab7cfb033",
+      "bytes": 9570,
+      "acceptedV4Sha256": null,
+      "matchesAcceptedV4": false,
+      "matchesHead": true,
+      "previousCustody": "NO_ACTIVE_EXACT_OWNER_FOUND; clean HEAD baseline"
+    },
+    {
+      "path": "web/lib/routeRunner/store.test.ts",
+      "sha256": "aed26247e4dec707af664b6ad24f54c2d293f84c72e850d70b54831b2fd71ad9",
+      "bytes": 6243,
+      "acceptedV4Sha256": null,
+      "matchesAcceptedV4": false,
+      "matchesHead": true,
+      "previousCustody": "NO_ACTIVE_EXACT_OWNER_FOUND; clean HEAD baseline"
+    },
+    {
+      "path": "web/lib/routeRunner/tick.test.ts",
+      "sha256": "bb745c65f6cb1b4ce17b67880d3973c07e5b804807cee3034af04508797c3357",
+      "bytes": 14162,
+      "acceptedV4Sha256": null,
+      "matchesAcceptedV4": false,
+      "matchesHead": true,
+      "previousCustody": "NO_ACTIVE_EXACT_OWNER_FOUND; clean HEAD baseline"
+    },
+    {
+      "path": "web/pages/api/v1/db/cron-report.ts",
+      "sha256": "f3acf1f65d8632316cfb5aa3fe256a4a6e389b25f6fe78abddc12be80abe748a",
+      "bytes": 97975,
+      "acceptedV4Sha256": "f3acf1f65d8632316cfb5aa3fe256a4a6e389b25f6fe78abddc12be80abe748a",
+      "matchesAcceptedV4": true,
+      "matchesHead": false,
+      "previousCustody": "CODEX-CRON-TRIAGE-20261027-01"
+    },
+    {
+      "path": "web/__tests__/pages/api/v1/db/cron-report.test.ts",
+      "sha256": "edbc2c56116f2b8710f9fd86d6389471ef65d94f488f32947ceb703afc21dd02",
+      "bytes": 102868,
+      "acceptedV4Sha256": "edbc2c56116f2b8710f9fd86d6389471ef65d94f488f32947ceb703afc21dd02",
+      "matchesAcceptedV4": true,
+      "matchesHead": false,
+      "previousCustody": "CODEX-CRON-TRIAGE-20261027-01"
+    },
+    {
+      "path": "web/components/CronReportEmail/CronAuditEmail.tsx",
+      "sha256": "ae64203df4e5f97493600c7f3ab666c7e0f09ec8197559f7af7f0155edbcb70b",
+      "bytes": 16592,
+      "acceptedV4Sha256": "ae64203df4e5f97493600c7f3ab666c7e0f09ec8197559f7af7f0155edbcb70b",
+      "matchesAcceptedV4": true,
+      "matchesHead": false,
+      "previousCustody": "CODEX-CRON-TRIAGE-20261027-01"
+    },
+    {
+      "path": "web/__tests__/components/CronReportEmail/CronAuditEmail.test.tsx",
+      "sha256": "14ff19b238f82892f5c2a58af743c26ae069cd4da7fa1b748f6380ef4b6257ee",
+      "bytes": 17323,
+      "acceptedV4Sha256": null,
+      "matchesAcceptedV4": false,
+      "matchesHead": true,
+      "previousCustody": "CODEX-CRON-TRIAGE-20261027-01"
+    }
+  ],
+  "previouslyOwnedTransferCount": 12,
+  "previouslyUnclaimedCleanHeadAllocationCount": 3,
+  "acceptedV4Matches": 11,
+  "cleanHeadNonV4Matches": 4,
+  "competingActiveExactOwnersFound": [],
+  "sourceOwnerNoActiveOperation": {
+    "confirmed": true,
+    "meaning": "This custodian has no active NST requests, jobs, source edits, server, held heavy slot or pending write touching these files. This handoff performs local hashes/coordination only; no global process/backfill idle claim.",
+    "globalException": "TJ is running the existing37request total backfill; it remains external/untouched."
+  },
+  "requestEvidence": {
+    "path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/PURE-IMPLEMENTATION.json",
+    "sha256": "88be5e935d7f9373f07b0d8a272196b0ec272368588f72db287e4bc9b56043ce",
+    "mailboxIds": [
+      "CODEX-NST-GOALIE-WRITER-20261101-CUSTODY",
+      "CODEX-NST-GOALIE-WRITER-20261101-LOCAL-IMPLEMENTATION"
+    ],
+    "followup": "User delegation expands exact runner/report paths and restricts edits to goalie continuation/enqueue/bounds/freshness; no implementation requested of this custodian."
+  },
+  "acceptedPacket": {
+    "root": "/Users/tim/Documents/Codex/2026-10-27/task/review-fixes-v4",
+    "artifactIndexSha256": "693970168512fe62b7139901318d49f12cf2eb286f8374370cb7065a7c263fd4",
+    "artifactsVerified": 13,
+    "pins": {
+      "HANDOFF.md": "5ff65093a1781453d1ef8c4518c4c8e12cfe2998a37a8ab0dd864ac6430092c9",
+      "source-pins-v4.json": "42694b97cc30bbeb7ea7faf6c6380d13403c35013592c7b5f2ce8873b8bd0fc9",
+      "source-complete-v4.patch": "1bb3f7df06747fbaf01c9ce85bab812ed46de3cc883f7cde1ba83a9add0aa09c",
+      "runner-adapter-delta.patch": "a61a9d83c8c81ef9889de25e9e82f50bd32d033ffde36702b36d99f35750b955",
+      "reconstruction-results.json": "5e5a0a1fd738d023a585c8aa0797c43f4bd72d98fdcaa9148375cc621b699752",
+      "reconstructed-full.log": "c70541fdb0f40faa5a514ea24f9a265c74fa1341da77fc0ae5c86ed38360615f",
+      "reconstructed-delta.log": "6335a7eab3a4fa0b98ff43a6b69682182a60659f4e2bb4a3e35055bbc4725509",
+      "checks.json": "59087b76a25ec37b2c93b1cc162e74db0a2d3beb37124cd0f14484eb19956caa",
+      "caller-integration-map.json": "e6ca1037762a76384bcc23ebdebe676d4ee2ad21813fabef28642ce7cbde3238",
+      "failing-integration.log": "77ce9ae76e38c265cf7d75174d626982921e447c72ffc31c2f546fa705e487e1",
+      "finite-acceptance.log": "8bd52852af9474e40f3790954ce76d2ee31f6d0329ddcd92d29d7b8c6db2f71c",
+      "typescript-final.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "eslint.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "disposition": "Immutable. No packet file or historical accepted pin/patch is changed; current successor baselines copied separately."
+  },
+  "restrictions": [
+    "Local editing custody only; no production/provider/NST request, shared job, scheduler activation/change, hosted migration, push or deployment. No tests/build/server started by custodian.",
+    "TJ37totalrequestbackfill retains sharedNSTcapacity. Every attempt/retry/duplicate consumes aggregate budget; no per-process/host splitting. Preserve39/minute,80/5minutes,100/15minutes,180/hour and supported conservative spacing/burst behavior.",
+    "Shared nstBurstPlans consumers include goalies, gamelog, current-season, team-daily and team-stats routes. Goalies changes must preserve other callers/exports, their supported burst/deadline behavior and original whole-job scope; per-step maxUrls does not redefine full-job request count.",
+    "Producer and runner resume-query/manifest scope changes require joint offline integration proof and review; no route-only release presumed safe. Preserve WGO/Yahoo/FORGE replay/uncertain-write fences and all non-goalie route contracts.",
+    "Database shared-admission prerequisite remains database-first; catch-up checkpoint schema and production scheduler/enqueue need separate exact ownership/review/approval. Hosted state is not verified by matching local hashes. Preserve ledger/history and account for old/uncoordinated traffic across the longest rolling hour plus margin before activation.",
+    "Existing v4/split release evidence applies only to unchanged bytes; new behavior requires scoped verification/review. No deployed health/coverage is asserted."
+  ],
+  "excludedRetainedPaths": [
+    "web/pages/db/runner.tsx",
+    "web/lib/cron/reportSource.ts",
+    "web/lib/cron/reportSource.test.ts",
+    "web/lib/cron/withCronJobAudit.ts",
+    "web/lib/cron/withCronJobAudit.test.ts",
+    "web/lib/cron/nstRateLimitPolicy.ts",
+    "web/lib/cron/nstRateLimitPolicy.test.ts",
+    "web/lib/nst/client.ts",
+    "web/lib/nst/client.test.ts",
+    "web/lib/nst/requestBudget.ts",
+    "web/lib/nst/requestBudget.test.ts",
+    "web/lib/nst/sharedAdmission.ts",
+    "web/lib/nst/sharedAdmission.test.ts",
+    "web/pages/api/v1/db/run-rolling-forge-pipeline.ts",
+    "web/lib/rollingForgePipelineRunState.ts"
+  ],
+  "otherExclusions": "All WGO/Yahoo/FORGE source, non-goalie route contracts, runner UI, cards/Claude files, other NST callers/Python workers/proxy, SQL/migration/schedule/config paths and all unlisted files remain outside this handoff. Existing new goalieCatchup/goalieFreshness PURE lease is unchanged.",
+  "canonicalReceipt": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/OWNER-HANDOFF-20261101.json",
+  "previouslyOwnedTransferredPaths": [
+    "web/pages/api/v1/db/update-nst-goalies.ts",
+    "web/__tests__/pages/api/v1/db/update-nst-goalies.route.test.ts",
+    "web/lib/cron/nstBurstPlans.ts",
+    "web/lib/cron/nstBurstPlans.test.ts",
+    "web/lib/routeRunner/core.ts",
+    "web/lib/routeRunner/core.test.ts",
+    "web/lib/routeRunner/registry.ts",
+    "web/lib/routeRunner/tick.ts",
+    "web/pages/api/v1/db/cron-report.ts",
+    "web/__tests__/pages/api/v1/db/cron-report.test.ts",
+    "web/components/CronReportEmail/CronAuditEmail.tsx",
+    "web/__tests__/components/CronReportEmail/CronAuditEmail.test.tsx"
+  ],
+  "previouslyUnclaimedAllocatedPaths": [
+    "web/lib/routeRunner/store.ts",
+    "web/lib/routeRunner/store.test.ts",
+    "web/lib/routeRunner/tick.test.ts"
+  ],
+  "blockedPaths": [],
+  "activeOperationsByTransferringOwner": false,
+  "implementationEditsByTransferringOwner": 0,
+  "productionActions": 0,
+  "scopeDisposition": "First4route/planner paths transferred; second7runner+4report paths transferred/allocated with goalie-only restrictions. All15 current baselines explicit; remaining source custody/holds unchanged."
+}

@@ -1,0 +1,20 @@
+{
+  "atUtc": "2026-11-01T18:15:17.608370+00:00",
+  "candidateManifestSha256": "cec0829dcd184e411aa508a300ea477085d8fecd946100d6ddc339c8c4ccacb3",
+  "currentAndFrozenMismatch": [],
+  "oldFrozenMismatch": [],
+  "files": 67,
+  "changed": [
+    "functions/api/fetch_team_table.py",
+    "functions/tests/test_fetch_team_table_contract.py",
+    "supabase/migrations/20261101161622_nst_goalie_catchup_v1.sql",
+    "supabase/tests/nst_goalie_catchup_v1.py",
+    "web/__tests__/pages/api/v1/db/update-nst-gamelog.test.ts",
+    "web/__tests__/pages/api/v1/db/update-nst-goalies.route.test.ts",
+    "web/lib/nst/goalieFreshness.server.test.ts",
+    "web/lib/nst/jobLifecycle.server.test.ts",
+    "web/lib/nst/jobLifecycle.server.ts",
+    "web/pages/api/v1/db/update-nst-gamelog.ts",
+    "web/pages/api/v1/db/update-nst-goalies.ts"
+  ]
+}

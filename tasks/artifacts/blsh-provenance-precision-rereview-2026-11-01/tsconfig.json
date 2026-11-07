@@ -1,0 +1,31 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "lib": [
+      "ES2022",
+      "DOM"
+    ],
+    "strict": true,
+    "noEmit": false,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "types": [
+      "node"
+    ],
+    "typeRoots": [
+      "/Users/tim/Code/fhfhockey.com/web/node_modules/@types"
+    ],
+    "baseUrl": "/Users/tim/Code/fhfhockey.com/web",
+    "paths": {
+      "vitest": [
+        "node_modules/vitest"
+      ]
+    },
+    "outDir": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-provenance-precision-rereview-2026-11-01/compiled"
+  },
+  "include": [
+    "candidate/*.ts"
+  ]
+}

@@ -1,0 +1,89 @@
+--- previous-reviewed-verifier
++++ E03-subset-verifier
+@@ -13,30 +13,30 @@
+ async function main() {
+   assert.equal(process.argv.length, 2, "no_dispatch_or_other_arguments_supported");
+   const root = resolve(".."), base = join(root, "tasks/artifacts/luna-reference-package-2026-10-31");
+-  const dir = join(base, "continuation-v4"), read = (p: string) => JSON.parse(readFileSync(p, "utf8"));
++  const dir = join(base, "continuation-v4-e03"), read = (p: string) => JSON.parse(readFileSync(p, "utf8"));
+   const sha = (p: string) => createHash("sha256").update(readFileSync(p) as unknown as Uint8Array).digest("hex");
+   const plan = read(join(dir, "PLAN.json")), packets = read(join(dir, "PACKETS.json")), wire = read(join(dir, "REQUESTS.json"));
+-  assert.equal(sha(join(dir, "PLAN.json")), "6898bb4fa8b8683bbd77165fa90f3194b7b0971cb6086f1d5cc8608ebd32b340");
++  assert.equal(sha(join(dir, "PLAN.json")), "4714db6b50a246bc05ca2b7cd8f6f90a45e01d39e3a8627e0fece91da9016946");
+   assert.equal(sha(join(dir, "PACKETS.json")), plan.basePins.packetsSha256);
+   assert.equal(sha(join(dir, "REQUESTS.json")), plan.basePins.requestsSha256);
+   for (const [p, hash] of Object.entries(plan.applicationPins)) assert.equal(sha(join(root, p)), hash);
+   const paidPath = join(root, plan.basePins.realLedgerPath), paidBefore = readFileSync(paidPath);
+   assert.equal(sha(paidPath), plan.basePins.realLedgerSha256);
+   const original = read(paidPath), originalHashes = Object.keys(original.attempts);
+-  assert.equal(original.enabled, false); assert.equal(original.blockedReason, "bounded_evaluation_stopped");
+-  assert.equal(originalHashes.length, 2); assert.equal(original.maxCalls, 20);
++  assert.equal(original.enabled, false); assert.equal(original.blockedReason, "bounded_continuation_stopped");
++  assert.equal(originalHashes.length, 3); assert.equal(original.maxCalls, 20);
+   const history = read(join(base, "paid-evaluation/HISTORICAL-LEDGER-READBACK.json"));
+   assert.equal(sha(history.path), plan.basePins.historicalLedgerSha256);
+   const previousBatch = read(join(base, "omission-diagnosis/rehearsal/batch.json"));
+   const previousWire = read(join(base, "omission-diagnosis/rehearsal/requests.json"));
+   const mockLedger = read(join(base, "omission-diagnosis/rehearsal/SYNTHETIC-ONLY-ledger.json"));
+-  const expectedIds = Array.from({ length: 15 }, (_, i) => `E${String(i + 2).padStart(2, "0")}`);
++  const expectedIds = Array.from({ length: 14 }, (_, i) => `E${String(i + 3).padStart(2, "0")}`);
+   assert.deepEqual(plan.selectedCaseIds, expectedIds);
+   assert.deepEqual(packets.entries.map((e: any) => e.id), expectedIds);
+-  assert.deepEqual(packets.entries, previousBatch.content.entries.slice(1));
+-  assert.deepEqual(wire.requests, previousWire.requests.filter((r: any) => r.caseId !== "E01"));
+-  assert.equal(wire.requests.length, 18); assert.equal(new Set(wire.requests.map((r: any) => r.hash)).size, 18);
+-  assert.equal(wire.requests.filter((r: any) => r.endpoint === "responses").length, 15);
++  assert.deepEqual(packets.entries, previousBatch.content.entries.slice(2));
++  assert.deepEqual(wire.requests, previousWire.requests.filter((r: any) => !["E01", "E02"].includes(r.caseId)));
++  assert.equal(wire.requests.length, 17); assert.equal(new Set(wire.requests.map((r: any) => r.hash)).size, 17);
++  assert.equal(wire.requests.filter((r: any) => r.endpoint === "responses").length, 14);
+   assert.deepEqual(wire.requests.filter((r: any) => r.endpoint === "decisions").map((r: any) => r.caseId), ["E06", "E10", "E11"]);
+   assert.equal(packets.provenance.independentHoldout, false);
+   assert.equal(packets.provenance.split, "exposed_synthetic_development");
+@@ -48,7 +48,7 @@
+   for (const [i, r] of wire.requests.entries()) {
+     assert.equal(r.hash, identityDigest({ endpoint: r.endpoint, body: r.body }));
+     assert.equal(original.attempts[r.hash], undefined);
+-    assert.deepEqual(plan.sequence[i], { sequence: i + 1, cumulativeCallNumber: i + 3,
++    assert.deepEqual(plan.sequence[i], { sequence: i + 1, cumulativeCallNumber: i + 4,
+       caseId: r.caseId, endpoint: r.endpoint, hash: r.hash, bytes: r.bytes });
+     assert.equal(Buffer.byteLength(JSON.stringify(r.body)), r.bytes);
+     assert(r.bytes <= 65_536);
+@@ -60,7 +60,7 @@
+   }
+   const exposure = (ledger: any) => ledger.priorExposureNanoUsd + Object.values(ledger.attempts)
+     .reduce<number>((sum, a: any) => sum + (a.receipt?.chargeNanoUsd ?? a.reservedNanoUsd), 0);
+-  assert.equal(exposure(original), 263_035_195);
++  assert.equal(exposure(original), 263_485_646);
+   assert.equal(plan.budget.maximumAdditionalExposureNanoUsd, original.capNanoUsd - exposure(original));
+   const now = () => "2026-10-31T21:10:00Z", summaries = [], normalResults = [];
+   for (const scenario of ["all-pass", "uncertain-first-call", "label-mismatch-first-report", "disabled-ledger", "insufficient-reservation"]) {
+@@ -79,7 +79,7 @@
+           const body = JSON.parse(String(init?.body)), hash = identityDigest({ endpoint, body });
+           const expected = wire.requests[dispatched.length];
+           assert(expected && expected.caseId === active.id && expected.endpoint === endpoint && expected.hash === hash, "unfrozen_request");
+-          dispatched.push(hash); assert(dispatched.length <= 18);
++          dispatched.push(hash); assert(dispatched.length <= 17);
+           if (scenario === "uncertain-first-call") throw new Error("synthetic_unknown_outcome");
+           const reply = structuredClone(mockLedger.attempts[hash].receipt.body);
+           if (scenario === "label-mismatch-first-report" && endpoint === "responses") {
+@@ -101,7 +101,7 @@
+       if (scenario !== "insufficient-reservation") assert.equal(end.capNanoUsd, original.capNanoUsd);
+       let request21Rejected = false;
+       if (scenario === "all-pass") {
+-        assert.equal(stopped, false); assert.equal(results.length, 15); assert.equal(dispatched.length, 18);
++        assert.equal(stopped, false); assert.equal(results.length, 14); assert.equal(dispatched.length, 17);
+         assert.equal(Object.keys(end.attempts).length, 20); assert.equal(end.blockedReason, null);
+         await assert.rejects(admission.reserve("0".repeat(64), plan.budget.reservationNanoUsd), /luna_budget_exhausted/);
+         request21Rejected = true; normalResults.push(...results);
+@@ -122,8 +122,8 @@
+   }
+   assert.deepEqual(readFileSync(paidPath), paidBefore);
+   assert.equal(sha(history.path), plan.basePins.historicalLedgerSha256);
+-  const output = { version: "luna-v4-continuation-offline-verification-v1", planSha256: sha(join(dir, "PLAN.json")),
+-    allPacketsLabelsBindingsUnchanged: true, excludedE01: true, actualProviderRequests: 0, retries: 0,
++  const output = { version: "luna-v4-e03-continuation-offline-verification-v1", planSha256: sha(join(dir, "PLAN.json")),
++    allPacketsLabelsBindingsUnchanged: true, excludedE01: true, excludedE02: true, actualProviderRequests: 0, retries: 0,
+     realLedgerUnchangedAndDisabled: true, historicalLedgerUnchanged: true, scenarios: summaries };
+   writeFileSync(join(dir, "OFFLINE-VERIFICATION.json"), JSON.stringify(output, null, 2) + "\n", { flag: "wx", mode: 0o600 });
+   writeFileSync(join(dir, "OFFLINE-RESULTS.json"), JSON.stringify(normalResults, null, 2) + "\n", { flag: "wx", mode: 0o600 });

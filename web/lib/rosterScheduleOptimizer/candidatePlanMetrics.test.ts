@@ -538,9 +538,13 @@ describe("complete timed candidate metrics", () => {
     if (problem === "partial schedule") snapshot.evidence.schedule!.completeness = "partial";
     if (problem === "categories") snapshot.rules.scoring = { mode: "categories", weights: {}, categories: [{ key: "GOALS", direction: "higher" }] };
     const metrics = candidateMetrics(snapshot, defaultIntent());
+    if (problem === "unsupported") {
+      expect(metrics.candidates[0].plans).toEqual([]);
+      return;
+    }
     expect(metrics.candidates[0].plans.length).toBeGreaterThan(0);
     expect(metrics.candidates[0].plans.every(row => row.netPoints === null)).toBe(true);
-    if (problem === "unsupported" || problem === "partial schedule") expect(metrics.candidates[0].plans.every(row => row.netAGP === null)).toBe(true);
+    if (problem === "partial schedule") expect(metrics.candidates[0].plans.every(row => row.netAGP === null)).toBe(true);
   });
 
   it("retains AGP-versus-points tradeoffs as separate actual plan pairs", () => {

@@ -1,0 +1,121 @@
+{
+  "schemaVersion": "forge-v2-protocol-methods-draft-v1",
+  "status": "DRAFT_NOT_FROZEN",
+  "date": "2026-10-30",
+  "authority": "Local methods appendix requested by Chef; no independent scientific acceptance, data permission or final threshold justification. Does not modify prior reviewed proposal.",
+  "selectionReconciliation": {
+    "method": "Match current fitCandidate behavior: requested set is all admitted development rows classified official_appearance. A recipe is eligible only when actual and predicted default FP are available for every requested row and requested>0. Compare eligible recipes by exact JavaScript-number MSE ascending; exact equality uses recipeId.localeCompare. No 1e-12 tolerance, no intersection-only eligibility, no filtering requested rows by successful prediction.",
+    "baselineRole": "Last-five and season-rate comparisons remain independent qualification/regression gates on matched cutoff/outcome/profile observations, with requested and paired denominators reported. They do not enter fitCandidate recipe eligibility or tie-breaking.",
+    "runtimePin": "Pin Node/runtime and recipe IDs (ASCII kernel-bw-0.5, kernel-bw-1, kernel-bw-2 or exact registered equivalents) and verify lexical tie behavior; do not silently rename registered recipes.",
+    "failures": "Retain every trial including unsupported recipes. If none has complete requested coverage, no candidate selected; do not trim population after results.",
+    "disposition": "Proposed supersession of earlier draft intersection/tolerance text, requires methodological review before freeze."
+  },
+  "stagedChronology": {
+    "feasibleWithExistingCode": true,
+    "meanFitProtocol": "Use only training and development rows. Existing FitProtocol requires registeredAt < trainEndAt < developmentEndAt < calibrationEndAt < fitAt <= availableAt. Treat its calibrationEndAt as a required metadata boundary enclosing no mean-fit calibration rows; no interval-calibration observations are supplied to this fit. Select means using train+development. Preserve truthful registration/exposure and dependency availability.",
+    "separateIntervalCalibrationProtocol": "After selected model availableAt, collect distinct future observations under separate CalibrationProtocol with registeredAt < startAt < endAt < fittedAt <= availableAt. Every calibration prediction cutoff must be >= selected model availableAt; all its features and fitted dependencies eligible at cutoff. OutcomeAvailableAt must be before endAt and after gameStartAt. Fit interval artifact after endAt; predictions before calibrator availableAt cannot claim that calibrator.",
+    "exampleRelativeOrder": [
+      "D0 development protocol registration before replay cutoffs",
+      "D10 training end",
+      "D20 development end",
+      "D21 empty mean-fit calibration metadata boundary",
+      "D22 selected mean fit and availability",
+      "D23 separate interval protocol registration",
+      "D24 interval observation window begins",
+      "D40 interval observation window ends after all included outcomes received",
+      "D41 interval calibrator fit and availability",
+      "D42 or later final/prospective calibrated forecasts"
+    ],
+    "exampleMeaning": "Ordering illustration only, not actual dates, allocation, sufficient sample duration or authorization. Exact UTC times/hashes require custodian registration; no historical model/backfilled availability proof inferred.",
+    "participation": "fitParticipation still needs its own train/calibration split and genuine fitted/available clocks. Do not assume the empty mean-fit calibration period can calibrate participation. Register/freeze separate participation training/calibration inputs and allow its fitted probability only after availability.",
+    "samePeriodMismatch": "Using interval observations from before selected mean availability would not be as-issued calibration under this path. Earlier proposal needs this staged appendix/review, not relaxed cutoff guards.",
+    "chefPreparation": "Chef supplies executable synthetic chronology scaffold; this artifact does not assert that scaffold has run."
+  },
+  "featureDefinitionsProposal": {
+    "status": "Exact local formulas proposed; provider mappings/units/completeness not validated",
+    "commonHistory": "At target cutoff, choose only complete verified source records first received by cutoff, settled outcomes received strictly before cutoff, excluding target game. Sort game start descending then canonical game ID ascending. Window is at most last20 qualifying games whose starts are within preceding365days; fewer than5 => feature unavailable. Preserve missing category/TOI evidence as unavailable, never skip a required window slot to find an older nonmissing value. No feature search.",
+    "features": {
+      "homeIndicator": {
+        "formula": "1 when as-issued affiliated team equals accepted target home team; 0 when equals target away team; otherwise unavailable.",
+        "requiredFields": [
+          "canonical game/home/away/team IDs",
+          "accepted schedule and affiliation revision hashes",
+          "effective and received timestamps"
+        ]
+      },
+      "restDaysCapped7": {
+        "formula": "min(7,max(0,(target scheduled start - most recent completed affiliated-team regular-season game actual end)/86400000)). Use elapsed fractional UTC days. No earlier completed game with authoritative end within365days => unavailable. Schedule/start revisions are as known at cutoff.",
+        "requiredFields": [
+          "target accepted scheduled start",
+          "previous completed team game identity and authoritative actual end",
+          "game completion and source receipt timestamps"
+        ]
+      },
+      "opponentPriorSogAgainstRate": {
+        "formula": "Arithmetic mean of opponent team SOG-against totals over the common-history last20 completed regular-season games; minimum5. Per team game, not per60 or player rate; complete chosen window required.",
+        "requiredFields": [
+          "opponent team/game IDs",
+          "official SOG-against integer total",
+          "complete final team-game status",
+          "outcome receipt/correction timestamps"
+        ]
+      },
+      "ownPriorToiPerAppearance": {
+        "formula": "Arithmetic mean total TOI minutes over skater last20 verified official appearances under common-history window; minimum5. Include officially credited zero-minute appearances as zero only when source explicitly proves zero.",
+        "requiredFields": [
+          "canonical player/game IDs",
+          "official appearance credit",
+          "total ice time seconds or documented converted duration",
+          "complete finality and receipt/correction evidence"
+        ]
+      },
+      "ownPriorPpToiPerAppearance": {
+        "formula": "Arithmetic mean power-play TOI minutes over exactly the same appearances used for ownPriorToiPerAppearance; complete PP TOI in every selected slot required. Explicit zero is allowed; missing strength splits unavailable.",
+        "requiredFields": [
+          "same appearance identities",
+          "official PP ice-time seconds or documented converted duration",
+          "strength-definition/version",
+          "complete receipt/correction evidence"
+        ]
+      }
+    },
+    "standardization": "Per numeric feature, mean and sample SD computed only on eligible training feature values; zero SD -> scale1. Store counts, means, SDs, unit conversions and artifact hashes. Missing at scoring remains unavailable. Binary home feature follows same standardization unless reviewer preregisters a different rule before development.",
+    "mappingGate": "Owner must map each required field to exact approved provider schema/version and original capture path with unit/finality/completeness evidence. Formula specification does not prove source availability. Missing source end-time or PP splits blocks affected features; no inferred replacement.",
+    "developmentDecision": "The common history minimum5 and windows20/365 are proposals to be reviewed before authorized development. They do not prove predictive utility or override source holds."
+  },
+  "methodologicalDecisionsStillRequired": [
+    {
+      "id": "DEPENDENCE",
+      "decision": "Choose and implement exact dependence estimator, block construction across gaps/seasons, number/effective support, two-way cluster correction and confidence-bound combination. Earlier14/28-day block2000-replicate proposal is not validation.",
+      "allowedPreparation": "Synthetic correlated player/game/slate fixtures and deterministic implementation review without real labels."
+    },
+    {
+      "id": "MULTIPLICITY",
+      "decision": "Choose max-statistic simultaneous bounds OR Holm-adjusted tests before evaluation; specify exact tested family, one-sided hypotheses, zero denominators and sparse-cell dispositions. No choosing favorable method after results.",
+      "allowedPreparation": "Write exact test-family manifest and synthetic known-result arithmetic."
+    },
+    {
+      "id": "BASELINE_INTERVALS",
+      "decision": "Choose reproducible conditional predictive distributions/calibration for last-five and season-rate comparators, discrete quantiles, joint dependence/scoring and finite sparse support. Mean baselines alone do not define intervals.",
+      "allowedPreparation": "Reviewer proposes one exact comparator recipe; then synthetic signed-profile and sparse-support checks. Current interval-width/score ratio gates are not executable until this exists."
+    },
+    {
+      "id": "NUMERICAL_GATES",
+      "decision": "Justify proposed support/power/coverage/regression/missingness tolerances from cleared development evidence, then freeze before untouched outcomes.",
+      "allowedPreparation": "Specify denominator and power-analysis plan; cannot supply evidence without admitted data."
+    }
+  ],
+  "smallestNextActions": [
+    "Chef finish/review synthetic staged chronology scaffold and retain output separately.",
+    "Independent reviewer accept or revise this exact selection/feature specification before development registration.",
+    "Source owner return metadata-only mapping/completeness for required fields; unsupported fields remain unavailable.",
+    "Resolve DEPENDENCE, MULTIPLICITY and BASELINE_INTERVALS in exact reviewed methods before final qualification freeze.",
+    "Custodian approves exact development inputs; only then run finite registered experiments and justify final gates."
+  ],
+  "execution": {
+    "testsRunByThisWorker": 0,
+    "protectedDataRead": false,
+    "externalActions": 0,
+    "protocolFrozen": false
+  }
+}

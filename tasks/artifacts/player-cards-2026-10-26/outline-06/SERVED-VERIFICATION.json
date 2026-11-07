@@ -1,0 +1,15 @@
+{
+  "url": "http://127.0.0.1:3125/player-cards/compositions?checkpoint=outline06",
+  "checkpoint": "outline06",
+  "comparisonBytes": 3055347,
+  "comparisonSha256": "b873b3f1167b1d16d31553cc364817e219a91c96c4823c3735758d0b83efeed3",
+  "latestExportHashesVerified": 2,
+  "servedComparisonScreenshots": [
+    "served-comparison-desktop.png",
+    "served-comparison-phone.png"
+  ],
+  "servedInteractivePipelineAndLogoVerified": 2,
+  "externalAttempts": [],
+  "pageErrors": [],
+  "remoteAvailabilityClaimed": false
+}

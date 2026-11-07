@@ -1,0 +1,32 @@
+{
+  "state": "PASS",
+  "atUTC": "2026-11-02T00:02:06.668Z",
+  "externalRequests": [],
+  "pageErrors": [],
+  "checks": [
+    {
+      "player": "Andreas Englund",
+      "sourceId": 5595443,
+      "shots": 0,
+      "observed": 17,
+      "blshScore": null,
+      "capturedGameScoreTotal": 0.9500000000000001,
+      "capturedGameScoreUnchanged": true
+    },
+    {
+      "player": "Christian Dvorak",
+      "sourceId": 5599478,
+      "capturedFaceoffs": "13/4",
+      "eventFaceoffs": "12/5",
+      "differenceRetained": true
+    }
+  ],
+  "axe": [],
+  "notVerified": [
+    "Real screen-reader speech",
+    "Actual browser zoom (200% text resize tested)",
+    "Other browser engines",
+    "Unchanged pagination runtime (handler bytes authenticated)"
+  ],
+  "browserClosed": true
+}

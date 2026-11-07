@@ -1,0 +1,47 @@
+{
+  "at": "2026-11-01T21:34:17.750245+00:00",
+  "state": "POST_RESET_CHECK_COMPLETE_OWNER_RESPONSE_PENDING",
+  "heading": "RSO-START-CHART-BOUNDS-CUSTODY-REQUEST-20261101",
+  "owner": "Claude1e668672",
+  "mailbox": "tasks/artifacts/cross-platform/2026-10-24-coordination/CODEX-TO-CLAUDE.md",
+  "messageSha256": "f88253bd6f216c69d6614237e9e634a7b3eb948d3f8ab69d5b5215b5a1b63b7a",
+  "messageBytes": 3538,
+  "patchSha256": "12930181540c83c2169b7e1a5d9f606d3501369dd6b9afac38e8d7b6824fffe6",
+  "files": [
+    {
+      "path": "web/pages/api/v1/start-chart.ts",
+      "sha256": "b5bbe2e5b3a64f8368dc409ad11207420af36811c0342e9cbfd49220c3d3f98e",
+      "matchesCandidate": true,
+      "proposedSha256": "e384e12aea45dfccb6fdd9ee619632c36bea573cbb48478905c7e5806ea6fdc1"
+    },
+    {
+      "path": "web/__tests__/pages/api/v1/start-chart.test.ts",
+      "sha256": "9601527da7de26fd44f555af069edd1225eef29695bab3f603c5f298083b5b67",
+      "matchesCandidate": true,
+      "proposedSha256": "fc9a09239f83ad3d4903bd360c6b4e1e9080457adde5f28c0f198a4cdfcf9d32"
+    }
+  ],
+  "userAuthorization": "TJ yes relayed by Scout; exact isolated Start Chart application/transfer request",
+  "ownerResetUtc": "2026-11-01T22:20:00Z",
+  "ownerResetTimezone": "America/New_York",
+  "ownerResetLocal": "2026-11-01T17:20:00-05:00",
+  "responseReceived": false,
+  "canonicalInstalled": false,
+  "gitCustodyTransferred": false,
+  "newRemoteRequests": 0,
+  "builds": 0,
+  "deployments": 0,
+  "followup": {
+    "automationId": "6ae7b06ffed08191a612a058ea81d2f7",
+    "toolConfirmedCreated": true,
+    "toolConfirmedEnabled": true,
+    "scheduledUtc": "2026-11-01T22:21:00Z",
+    "timezone": "Etc/UTC",
+    "timingMode": "exact_schedule",
+    "scope": "One mailbox check after owner reset; verify any explicit admission SHA/limited Start Chart custody transfer before continuing; no duplicate requests or production actions",
+    "nextRunTimeReturned": null,
+    "localCheckCompletedAt": "2026-11-01T22:21:29.137984+00:00",
+    "localCheckResult": "both owner handoffs pending"
+  },
+  "postResetCheck": "POST-RESET-CHECK.json"
+}

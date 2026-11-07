@@ -4,6 +4,7 @@ import { admitTweetClaimEvaluationIntake, tweetClaimEvaluationIntakeWindow } fro
 import { processTweetClaimShadowBatch } from "lib/sources/tweetClaimRegistry";
 import { processLineSnapshotEvidence } from "lib/lines/processor";
 import { rosterSeasonForDate } from "lib/sources/playerIdentity";
+import { isEmptyQueueProcessorRun } from "lib/cron/emptyQueueRun";
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import { withCronJobTiming } from "lib/cron/timingContract";
 import { ForecastScheduleError } from "lib/player-forecasts/scopeReads";
@@ -1014,5 +1015,8 @@ export default withCronJobAudit(
   }),
   {
     jobName: "/api/v1/db/update-line-sources",
+    // The starter board polls this processor every minute; empty polls are
+    // most audit rows and carry no information. Work and failures stay audited.
+    skipAuditWhenNoOp: isEmptyQueueProcessorRun,
   },
 );

@@ -1,0 +1,22 @@
+{
+  "status": "passed",
+  "independentInputRecount": {
+    "sourceRows": 8135,
+    "productionComplete": 7855,
+    "productionIncomplete": 280,
+    "selectedRows": 3461,
+    "profiles": 740,
+    "zeroShotProfiles": 20
+  },
+  "retainedReplayReceiptAuthenticated": true,
+  "retainedClosedReplayFunctionReexecuted": false,
+  "savedReplayAdmissions": {
+    "individual": 0,
+    "onIce": 0
+  },
+  "savedReplayScores": 0,
+  "casesUnchanged": true,
+  "pinsUnchanged": 38,
+  "candidateInstalled": false,
+  "scope": "Retained receipt/code and independent source/context recount; no repeated full gate replay, native source admission, scores or network."
+}

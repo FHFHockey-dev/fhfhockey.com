@@ -1,0 +1,117 @@
+[
+  {
+    "checked_at": "2026-11-01 15:38:13.459543+00",
+    "absent_situation_exposure": [
+      {
+        "date": "2026-10-27",
+        "name": "Connor Hellebuyck",
+        "ev_toi": 54,
+        "all_toi": 60,
+        "goalie_id": 8476945,
+        "situation": "pk",
+        "remaining_toi": 0,
+        "other_special_toi": 6
+      },
+      {
+        "date": "2026-10-30",
+        "name": "Joey Daccord",
+        "ev_toi": 24.483333333333,
+        "all_toi": 29.333333333333,
+        "goalie_id": 8478916,
+        "situation": "pk",
+        "remaining_toi": 0,
+        "other_special_toi": 4.85
+      },
+      {
+        "date": "2026-10-31",
+        "name": "Mackenzie Blackwood",
+        "ev_toi": 54.3,
+        "all_toi": 60,
+        "goalie_id": 8478406,
+        "situation": "pk",
+        "remaining_toi": 0,
+        "other_special_toi": 5.7
+      },
+      {
+        "date": "2026-10-27",
+        "name": "Casey DeSmith",
+        "ev_toi": 54,
+        "all_toi": 60,
+        "goalie_id": 8479193,
+        "situation": "pp",
+        "remaining_toi": 0,
+        "other_special_toi": 6
+      },
+      {
+        "date": "2026-10-29",
+        "name": "Jonas Johansson",
+        "ev_toi": 27.216666666667,
+        "all_toi": 30.9,
+        "goalie_id": 8477992,
+        "situation": "pp",
+        "remaining_toi": -3e-13,
+        "other_special_toi": 3.6833333333333
+      },
+      {
+        "date": "2026-10-29",
+        "name": "Nico Daws",
+        "ev_toi": 16.966666666667,
+        "all_toi": 18.966666666667,
+        "goalie_id": 8482076,
+        "situation": "pp",
+        "remaining_toi": 0,
+        "other_special_toi": 2
+      },
+      {
+        "date": "2026-10-31",
+        "name": "Arsenii Sergeev",
+        "ev_toi": 54.3,
+        "all_toi": 60,
+        "goalie_id": 8482949,
+        "situation": "pp",
+        "remaining_toi": 0,
+        "other_special_toi": 5.7
+      }
+    ],
+    "unexplained_nulls": null,
+    "null_values_with_zero_denominator": 1022,
+    "read_caps": [
+      {
+        "dataset": "nst_gamelog_goalie_5v5_counts",
+        "rowsRead": 82
+      },
+      {
+        "dataset": "nst_gamelog_goalie_5v5_rates",
+        "rowsRead": 82
+      },
+      {
+        "dataset": "nst_gamelog_goalie_all_rates",
+        "rowsRead": 82
+      },
+      {
+        "dataset": "nst_gamelog_goalie_ev_counts",
+        "rowsRead": 82
+      },
+      {
+        "dataset": "nst_gamelog_goalie_ev_rates",
+        "rowsRead": 82
+      },
+      {
+        "dataset": "nst_gamelog_goalie_pk_counts",
+        "rowsRead": 79
+      },
+      {
+        "dataset": "nst_gamelog_goalie_pk_rates",
+        "rowsRead": 79
+      },
+      {
+        "dataset": "nst_gamelog_goalie_pp_counts",
+        "rowsRead": 78
+      },
+      {
+        "dataset": "nst_gamelog_goalie_pp_rates",
+        "rowsRead": 78
+      }
+    ]
+  }
+]

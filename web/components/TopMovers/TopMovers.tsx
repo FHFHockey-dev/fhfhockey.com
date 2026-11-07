@@ -10,8 +10,24 @@ type Mover = {
   current?: number;
 };
 
-const clampWidth = (delta: number) =>
-  Math.min(100, Math.max(12, Math.abs(delta) * 8));
+// Bar = change out of 100% on a grey track. Past 100% the fill loops back from the
+// start in a brighter shade of the same colour (TJ, 2026-11-06).
+function DeltaBar({ delta, tone }: { delta: number; tone: "positive" | "negative" }) {
+  const size = Math.abs(delta);
+  const base = Math.min(size, 100);
+  const lap = Math.min(Math.max(size - 100, 0), 100);
+  return (
+    <span className={styles.deltaTrack} aria-hidden>
+      <span className={`${styles.deltaFill} ${styles[tone]}`} style={{ width: `${base}%` }} />
+      {lap > 0 ? (
+        <span
+          className={`${styles.deltaFill} ${styles.deltaLap} ${styles[tone]}`}
+          style={{ width: `${lap}%` }}
+        />
+      ) : null}
+    </span>
+  );
+}
 
 export default function TopMovers({
   improved,
@@ -48,11 +64,7 @@ export default function TopMovers({
                 />
                 <div className={styles.name}>{m.name}</div>
                 <div className={styles.deltaGroup}>
-                  <div
-                    className={`${styles.deltaBar} ${styles.positive}`}
-                    style={{ width: `${clampWidth(m.delta)}%` }}
-                    aria-hidden
-                  />
+                  <DeltaBar delta={m.delta} tone="positive" />
                   <div className={`${styles.delta} ${styles.positive}`}>
                     ▲{Math.abs(m.delta).toFixed(1)}%
                   </div>
@@ -89,11 +101,7 @@ export default function TopMovers({
                 />
                 <div className={styles.name}>{m.name}</div>
                 <div className={styles.deltaGroup}>
-                  <div
-                    className={`${styles.deltaBar} ${styles.negative}`}
-                    style={{ width: `${clampWidth(m.delta)}%` }}
-                    aria-hidden
-                  />
+                  <DeltaBar delta={m.delta} tone="negative" />
                   <div className={`${styles.delta} ${styles.negative}`}>
                     ▼{Math.abs(m.delta).toFixed(1)}%
                   </div>

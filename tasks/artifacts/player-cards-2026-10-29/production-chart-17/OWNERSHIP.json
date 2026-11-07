@@ -1,0 +1,17 @@
+{
+  "id": "CODEX-PLAYER-CARDS-PRODUCTION17-20261029",
+  "owner_thread": "01a16ec2-f81c-717b-8961-8c3832fdc00f",
+  "at": "2026-10-29T19:25:41.577175+00:00",
+  "source_paths": [
+    "web/lib/player-cards/currentNhl.ts",
+    "web/lib/player-cards/currentNhlExport.ts",
+    "web/components/player-cards/CurrentPlayerCard.tsx",
+    "web/components/player-cards/CurrentPlayerCardStudio.test.tsx",
+    "web/components/player-cards/ProductionGameChart.tsx",
+    "tasks/tasks-prd-shareable-player-cards.md"
+  ],
+  "artifact_root": "tasks/artifacts/player-cards-2026-10-29/production-chart-17",
+  "status": "FROZEN_LOCAL_CHECKPOINT17",
+  "scope": "One data-backed game-by-game production format, current qualified selectedGames only; existing artwork/provider unchanged; offline retained capture verification; no external reads required",
+  "handoff": "tasks/artifacts/player-cards-2026-10-29/production-chart-17/HANDOFF.md"
+}

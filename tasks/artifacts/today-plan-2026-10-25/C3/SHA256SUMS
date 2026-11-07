@@ -1,0 +1,14 @@
+5e4cdd0d42afcc23ccfa71e17530bd2dbffbdf636bded2644bfa1f6700b35fec  ./C3-a-wigo-per-player-quarantine.patch
+3a280e440a576525fa15e1c50c3d8bcbd1b459d5eaddc514d19b99a9771cd91b  ./C3-b-incremental-recent-holes.patch
+b957eceb20f1b206161a2eedd4ee06d478e4b9f0669abd5617d03c929e1f0439  ./C3-d-snapshot-stage-timing.patch
+6989c3a9e73de252688cc57b8d62eed98d2d51cf9b4bd08371c8ea3ca7ad09f4  ./EMAIL-EXCERPT.md
+58693897dad02d6db83bcdc56cdd370cb2732348ccea4efe37ae9e1b63c0398a  ./RECEIPT.md
+f2ed6fd77d30b7a8aac44a586a4c5bbbd669350cc8bdac9af7f13d322c61bce1  ./c3-tests.log
+02b4fadae0bfa5adc24cb287156cc1135a2abf0981f16cb0bfc5dd054fdd4bad  ./c3.vitest.config.mts
+355f4f19e68b3bce5b2507cbd614f8b65642afbeffb10c3da9560df4b05ce0bd  ./patched/calculate-wigo-stats.ts
+9b78c93ed9f4f56de8102601b57a02c9aa3f749059326759b2c2aa2dd4e13000  ./patched/forge-served-forecast-snapshot.ts
+1deaca318a1603290a56813e0ee3f012afec9c69fdb6ada4aadab35a361b397f  ./patched/playerStatsRefreshWindow.ts
+58ab07fe1e8912e1ca834c68aa751b7d74f4769eaa44b32a4dc3f202c6a6a148  ./tests/a-wigo-appearance.test.ts
+623c546dc939e430b8ff090d4afc66e5bebb2363db048513e3df8929c144c6d4  ./tests/b-normalization-writer-busy.test.ts
+b3ab8f96c44d80ea97e305b5deec6cc85d140e5ea1c9790803a89f6c6c142469  ./tests/c-forecast-provenance.test.ts
+18dbcd783f9115ab92ad011704f02d7c66c385ae5b9c5612d3591a7b917d6adf  ./tests/d-planning-read-deadline.test.ts

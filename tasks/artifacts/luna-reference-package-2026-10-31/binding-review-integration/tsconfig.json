@@ -1,0 +1,11 @@
+{
+  "extends": "../tsconfig.json",
+  "include": [
+    "../../../../web/next-bootstrap.d.ts",
+    "../../../../web/yahoo-fantasy.d.ts",
+    "../../../../web/lib/sources/tweetLunaBindingWorkflow.ts",
+    "../../../../web/lib/sources/tweetLunaReview.test.ts",
+    "../../../../web/scripts/review-ifttt-luna.ts"
+  ],
+  "exclude": ["../../../../web/node_modules", "../../../../web/.next"]
+}

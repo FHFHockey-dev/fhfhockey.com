@@ -1,0 +1,32 @@
+[
+  {
+    "path": "web/lib/player-cards/currentNhl.ts",
+    "sha256": "e76894c48f9ad67551515581e48997f2519c7b0796d0a0f2110530252af54161",
+    "bytes": 13330
+  },
+  {
+    "path": "web/lib/player-cards/currentNhlExport.ts",
+    "sha256": "94d0f32f2337c2bb59cce2748f433d1b3b103cffed3ea7d77ca169dc2561a505",
+    "bytes": 2721
+  },
+  {
+    "path": "web/components/player-cards/CurrentPlayerCard.tsx",
+    "sha256": "7e6217dae0ebdc759d318953c1aac25d7b41b0e685a567e8a9065359cb96bca5",
+    "bytes": 8683
+  },
+  {
+    "path": "web/components/player-cards/CurrentPlayerCardStudio.test.tsx",
+    "sha256": "4a748958d132b78ad509dc30510e6b871306e000665952a0d9ac7fda83abd378",
+    "bytes": 16652
+  },
+  {
+    "path": "web/components/player-cards/ProductionGameChart.tsx",
+    "sha256": "428eba85db383569b4f1bf63fd04f09aa0cf02c6919614780b1b0c10e30b45be",
+    "bytes": 3336
+  },
+  {
+    "path": "tasks/tasks-prd-shareable-player-cards.md",
+    "sha256": "34d49ccf20dc7d577e02ace9fbdd2289612a17209416ee60b5c87c934d5a343b",
+    "bytes": 34744
+  }
+]

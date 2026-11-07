@@ -1,0 +1,38 @@
+{
+  "actualProviderRequests": 0,
+  "realLedgerUnchanged": true,
+  "scenarios": [
+    {
+      "scenario": "all-pass",
+      "reportsReached": 13,
+      "attempts": 20,
+      "enabled": false,
+      "reason": "bounded_continuation_completed",
+      "priorReceiptsPreserved": true
+    },
+    {
+      "scenario": "binding-candidate-E06",
+      "reportsReached": 3,
+      "attempts": 7,
+      "enabled": false,
+      "reason": "bounded_continuation_stopped",
+      "priorReceiptsPreserved": true
+    },
+    {
+      "scenario": "uncertain-first",
+      "reportsReached": 1,
+      "attempts": 5,
+      "enabled": false,
+      "reason": "unknown_billed_outcome",
+      "priorReceiptsPreserved": true
+    },
+    {
+      "scenario": "cli-error",
+      "reportsReached": 1,
+      "attempts": 5,
+      "enabled": false,
+      "reason": "bounded_continuation_stopped",
+      "priorReceiptsPreserved": true
+    }
+  ]
+}

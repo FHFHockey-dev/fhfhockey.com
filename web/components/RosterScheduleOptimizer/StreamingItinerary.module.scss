@@ -2,7 +2,7 @@
 @use "scale" as s;
 
 // Day-by-day streaming chain above the lineup views: one row per day, ADD/HOLD per stream spot, ranked options per add.
-.itinerary { display: flex; flex-direction: column; gap: 6px; margin: 0 0 v.$space-sm; padding: 8px 10px; border: v.$border-subtle; border-left: 4px solid v.$primary-color; border-radius: s.$radius-small; background: v.$draft-surface; color: s.$ink; font-size: s.$text-sm; line-height: 1.4; }
+.itinerary { display: flex; flex-direction: column; gap: 6px; margin: 0 0 v.$space-sm; padding: 8px 10px; border: v.$border-subtle; border-left: 4px solid v.$primary-color; border-radius: 4px s.$radius-small s.$radius-small 4px; background: v.$draft-surface; color: s.$ink; font-size: s.$text-sm; line-height: 1.4; }
 .itinerary h3 { margin: 0; color: s.$accent; font: s.$weight-bold s.$text-xs v.$font-family-primary; letter-spacing: .08em; text-transform: uppercase; }
 // The header toggle reads as the heading (global button styles would box it).
 .toggle.toggle { display: inline-flex; align-items: center; gap: 6px; padding: 0 !important; border: 0 !important; background: transparent !important; color: inherit; font: inherit; letter-spacing: inherit; text-transform: inherit; cursor: pointer; }

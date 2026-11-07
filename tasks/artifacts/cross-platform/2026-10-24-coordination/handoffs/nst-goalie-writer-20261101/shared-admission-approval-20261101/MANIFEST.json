@@ -1,0 +1,15 @@
+{
+  "status": "READY_FOR_SEPARATE_SHARED_ADMISSION_APPROVAL_NOT_EXECUTED",
+  "atUtc": "2026-11-01T18:41:16.488487+00:00",
+  "hostedReadOnlyCalls": 1,
+  "productionMutations": 0,
+  "sourcePinsUnchanged": 67,
+  "files": {
+    "APPROVAL.md": "8d771926048431f0636e7e8a28f33198bcdcfaf56e37b80dba6645933f8ee85f",
+    "MAILBOX-RECEIPT.json": "aca1c7497096c0d2115d2ef7da72baa083db4f924943d6818230caa446f6c3a0",
+    "POST-INSTALL-READBACK.sql": "1d7a1319a5f67a378e07227b63f670584d633e681d2d82dabb50d194d0048fe6",
+    "SQL-PINS.json": "3629f352952c717f74a8258fe3a5111a4aaedd42a74340f4f0655a3c8b2b979c",
+    "readiness.json": "f0bfb80f21be51191d51927a4f230a65d2e7218dd4c77fd23a03220d43fd1720",
+    "readiness.sql": "38783dca5fea443f05cb1764403777b514bbd169930d331e1eda591b5d3d7410"
+  }
+}

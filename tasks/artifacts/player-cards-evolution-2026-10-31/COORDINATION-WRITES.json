@@ -1,0 +1,35 @@
+{
+  "mechanism": "Named-lane immutable receipts plus append-only CODEX-TO-CLAUDE.md sections",
+  "incomingMailboxEdited": false,
+  "leasesEdited": false,
+  "acknowledgement": "Claude acknowledged type fixes, frozen goalie v1 and reporter gap; editor custody/BLSH/trade input requests remain pending.",
+  "receipts": [
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/player-cards/PC-EVOLUTION-20261031-OWNER-REQUESTS.md",
+      "sha256": "bd37d928794e750b3dfa2f78ea57713da4a4bb2ca32f8759546b3e6659123cd4"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/player-cards/PC-EVOLUTION-20261031-READY-INTEGRATION.md",
+      "sha256": "80993401eabf9b9a3daec1193703144d9fbc12599fb38e1f9800da085abd40ce"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/player-cards/PC-EVOLUTION-20261031-TYPECHECK.md",
+      "sha256": "8bd4d6182887c9bb41c60a632350c90b984e4bd070bdc22ab929de7bd4d73dee"
+    }
+  ],
+  "latestNotice": {
+    "heading": "PC-EVOLUTION-20261031-TYPECHECK-PASS",
+    "sha256": "f78685400c17f484183666ec1e947418b94c62b0befd95c54615cc40c600a56c",
+    "existingPrefixPreserved": true
+  },
+  "november1Notice": {
+    "heading": "CODEX-PC-EVOLUTION-20261101-ACK-AND-CONSUMER",
+    "sha256": "15ccc50e0ba4cd31edbbd2e93c306ca71706311d7ff0a5dd2b0393a1f4f47cba",
+    "existingPrefixPreserved": true
+  },
+  "blshProvenanceNotice": {
+    "heading": "CODEX-PC-BLSH-PROVENANCE-20261101",
+    "sha256": "a456e5addb43b3b029720711d6d035f69bfa81aaf41298aac9376e6d5c9df869",
+    "existingPrefixPreserved": true
+  }
+}

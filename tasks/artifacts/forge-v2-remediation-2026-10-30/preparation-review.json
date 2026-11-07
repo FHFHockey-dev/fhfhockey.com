@@ -1,0 +1,99 @@
+{
+  "schemaVersion": "forge-v2-preparation-review-v1",
+  "scope": "New continuation preparation only; accepted product candidate7113329d2 unchanged and not re-audited",
+  "disposition": "ACCEPT_LOCAL_PREPARATION_ONLY",
+  "findings": [
+    {
+      "id": "P1",
+      "severity": "P2",
+      "file": "intake_check.py",
+      "symbol": "when",
+      "finding": "Malformed UTC-like2030-01-01Z is marked invalid by required(time) but when returns an offset-naive datetime; chronological comparison raises TypeError rather than producing blocked metadata.",
+      "executedReproduction": "complete_metadata(); allocations[0].startUtc=2030-01-01Z; check=>TypeError: cannot compare offset-naive and offset-aware datetimes",
+      "requiredFix": "Use one aware UTC parser; invalid clocks becomeNone and stay blocked. Add regression.",
+      "status": "resolved",
+      "correctionEvidence": "Independently executed test_malformed_utc_suffix_never_reaches_naive_datetime_comparison passed; full UTC parser shared by validation and comparisons."
+    },
+    {
+      "id": "P2",
+      "severity": "P2",
+      "file": "run_continuation.py",
+      "finding": "TimeoutExpired or checked subprocess launch/build failure bypasses receipt write, leaving an older passed receipt paired with the newly truncated log.",
+      "executedReproduction": "Isolated source copy with own temporary lock and mocked subprocess TimeoutExpired retained prior status passed/exit0 while new log was empty. No real process or database started.",
+      "requiredFix": "Always persist a current failed/timeout receipt on attempted-run exceptions, including current log hash and exception detail; test mocked exception.",
+      "status": "resolved",
+      "correctionEvidence": "Independently executed test_runner_replaces_old_pass_after_timeout_or_launch_failure passed for mocked TimeoutExpired and OSError; current failed receipts replace old success, hash current logs, and remove own test lock."
+    }
+  ],
+  "reviewChecks": {
+    "existingReceiptHashes": "All four intake/chronology/capacity/types log hashes match retained exit0 receipts",
+    "template": "153 issues,15 tasks all incomplete",
+    "priorArtifactPins": "scientific-prerequisites.json and protocol-proposal.json match declared old pins",
+    "productCandidate": "git diff7113329d2 scoped product paths produced no diff",
+    "heavyChecksRerun": false,
+    "externalActions": 0,
+    "protectedDataOpened": false,
+    "independentCorrectionTests": {
+      "command": "PYTHONDONTWRITEBYTECODE=1 python3 -m unittest -v test_intake_check.IntakeTests.test_malformed_utc_suffix_never_reaches_naive_datetime_comparison test_intake_check.IntakeTests.test_runner_replaces_old_pass_after_timeout_or_launch_failure",
+      "result": "2 tests passed in0.008s, exit0",
+      "scope": "Pure metadata and mocked runner tests; no real child workload, database, network or shared heavy lock used."
+    },
+    "reusedTests": "Owner-run intake11 tests passed; chronology/capacity/types retained exit0 receipts reviewed, not rerun.",
+    "finalReceiptVerification": {
+      "intake": {
+        "exit": 0,
+        "status": "passed",
+        "logHashMatches": true
+      },
+      "chronology": {
+        "exit": 0,
+        "status": "passed",
+        "logHashMatches": true
+      },
+      "capacity": {
+        "exit": 0,
+        "status": "passed",
+        "logHashMatches": true
+      },
+      "types": {
+        "exit": 0,
+        "status": "passed",
+        "logHashMatches": true
+      }
+    }
+  },
+  "remaining": "All15 original gates remain open. This receipt approves local preparation integrity only, not methodological choices, scientific adequacy, data access, prospective execution, deployment or full-goal acceptance.",
+  "reviewedAtScope": "Exact artifact hashes below; later scientific-worker edits require hash/diff reconciliation by Chef, not implied approval.",
+  "openMaterialFindings": [],
+  "acceptanceAreas": {
+    "scientificDocuments": "Keep all15 tasks incomplete; DRAFT_NOT_FROZEN, source/custody/threshold/method/source mapping/authority gaps explicit; old proposal preserved. No scientific approval implied.",
+    "chronology": "Source-inspected selected mean model available before separate32-observation calibration window; calibrator becomes available after calibration outcomes; later pinned replay allowed and earlier cutoffs refused. Synthetic only.",
+    "capacity": "Source-inspected isolated new Unix-socket PostgreSQL with listen_addresses empty and no connection URL; fixed25 publication calls,3005bulk fixture rows,16 history pages,1MiB data artifact,10game unqualified projection. Warm local timings, driver-only resource counters and missing hosted/real-model capacity limits explicit.",
+    "intake": "No referenced artifact dereferencing. Even complete declarations retain executionAuthorized=false, scientificallyQualified=false and all tasks incomplete."
+  },
+  "artifactPins": {
+    "intake_check.py": "fd75d523d63ed1a8c26ef99a29359a2cd11f613c812e693f0e5daf01e3d729df",
+    "test_intake_check.py": "ff48a260216642c64e6e619e77015fba7dd09523c9d5393889d08a993dc670e7",
+    "intake-template.json": "f6825994f3a3cb78334e3a8217450bc401e39fb3d0fa1dcc8185250f46a92ab4",
+    "intake-template-report.json": "2148d4423c01a00afefc5f41f0afe74b290d7c0b30b4a552beeb6b18a3054f5d",
+    "chronology-check.ts": "15cb5f15cb5714fb315572a2295d833918d8a215234203508f6c9386134fed55",
+    "capacity-check.ts": "9188854efe849eeef072c3c941cbddbf7605fa5f84e5e13c1517f988e61bce19",
+    "capacity-plan.json": "b98d584be252e4346cf552d6683a60be7611ec79be88a31919b08b29c2e2930e",
+    "run_continuation.py": "f5430770f7ed84f337fcfb6c15ce20577786c61e66feddcf2b1ecaf6a3eb9143",
+    "open-task-reassessment.json": "b9c8d63953a6e3bfb222974cd5da5cdc46dbfc3d630f8b3b235935bd56c89da7",
+    "CRITICAL-PATH.md": "44c2328f983d008dfd6ffd567dd65cc868b80c2d666002a96de041873928792d",
+    "protocol-methods-draft.json": "d048932f84fcb19bcf6885b021a47b4b5e808c5e8d7df8b5917172e18e6d2e5a",
+    "scientific-prerequisites.json": "9440a89703b7e174303cc1fbcb9730bbd7ad36d4c27227ba663735ad2db3ecfc",
+    "protocol-proposal.json": "6bf518f5cd016fe6c14db886f5f967ecd422119084c7e499d7911bb4b899219a",
+    "OWNERSHIP.json": "7fd0a33be481b6359ca322a1c6a00048428392ca5173e28f5729d00fadd51583",
+    "continuation-intake-receipt.json": "8f73e989885e8b10babbb37502edd6f26313d60dd0fb179bb1c91e93cdaaa566",
+    "continuation-intake.txt": "ac8c933d47bdcfa564ffbb3af0b33b0ab3c7c6600fa13bca44777766dc8da3fb",
+    "continuation-chronology-receipt.json": "0c6a275e64a1af7a50be11091f899af2e351da792d6f309a499c40037bdbc486",
+    "continuation-chronology.txt": "69c02c27c0a703a3313bdf08320fb34360c327008a35f9029920307217a39dbf",
+    "continuation-capacity-receipt.json": "d4a5764fc1480b38720ca7174250c9398d6ae9107fa32fb7ef5f32125340964d",
+    "continuation-capacity.txt": "0d8c25afca5203fa91ae82ed75303df4b4462af12151be6822c08460b6832e94",
+    "continuation-types-receipt.json": "2976b3cffa6503c7369e5f52546a0e9506698e6cd51af5ea61c88693d06ed6d1",
+    "continuation-types.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "ownershipNote": "Product candidate7113329d2 source not edited or re-audited. Only preparation-review.json and reviewer diary changed."
+}

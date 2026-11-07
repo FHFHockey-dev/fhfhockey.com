@@ -1,0 +1,191 @@
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+(node:18191) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ❯ lib/rosterScheduleData/forgeDailyBridge.test.ts (65 tests | 5 failed) 59ms
+   ✓ FORGE daily bridge > reuses each skater's latest line for his team's upcoming games only 8ms
+   ✓ FORGE daily bridge > prefers the line FORGE issued for the game itself over a re-aimed line from an earlier game 1ms
+   ✓ FORGE daily bridge > keeps a complete exact-game forecast when the newer game's learned head is missing 1ms
+   ✓ FORGE daily bridge > keeps a skater's own-game line when his team's newer run omits him, withholding only re-aimed copies 1ms
+   ✓ FORGE daily bridge > names the coverage gaps: unknown heads, goalies with no start share, opponents with no team-strength prior 0ms
+   ✓ FORGE daily bridge > normalises start shares that sum to less than one when FORGE has not projected the game 0ms
+   ✓ FORGE daily bridge > keeps FORGE's starter probability for a projected game and splits the rest by start share 0ms
+   ✓ FORGE daily bridge > is empty with a plain reason when no run exists, and trims to the byte budget 0ms
+   ✓ FORGE daily bridge > travels compactly and is rebuilt exactly, leaving anything it cannot rebuild as it is 2ms
+   ✓ FORGE daily bridge > packs bridge rows in every snapshot of a save or backup, restoring them exactly 7ms
+   ✓ FORGE daily bridge > also caps the bytes projections take once rebuilt 0ms
+   ✓ FORGE daily bridge > blank power-play heads > count as zero production by declared policy when FORGE stores 0 s of power-play time 0ms
+   ✓ FORGE daily bridge > blank power-play heads > count as zero production by declared policy when FORGE stores 6 s of power-play time 0ms
+   ✓ FORGE daily bridge > blank power-play heads > stay unknown with 7 s of power-play time 0ms
+   ✓ FORGE daily bridge > blank power-play heads > stay unknown with 120 s of power-play time 0ms
+   ✓ FORGE daily bridge > blank power-play heads > stay unknown with null s of power-play time 0ms
+   ✓ FORGE daily bridge > blank power-play heads > leave a known power-play line standing when only its time is unrecorded, with time on ice unknown 0ms
+   ✓ FORGE daily bridge > blank power-play heads > never rescue a blank even-strength line 0ms
+   ✓ FORGE daily bridge > fills the stats FORGE does not project from blended season rates 0ms
+   ✓ FORGE daily bridge > season-rate supplements > are unknown, never 0, when season totals cannot be read 0ms
+   ✓ FORGE daily bridge > season-rate supplements > are unknown for a skater with no season totals, while a rate read as zero stays 0 0ms
+   ✓ FORGE daily bridge > season-rate supplements > count only the rows that record a stat, leaving it unknown when none do 0ms
+   ✓ FORGE daily bridge > season-rate supplements > withhold a points total that weights an unknown supplement instead of scoring it 0 0ms
+   ✓ FORGE daily bridge > goalie start shares > use rows for the goalie's current team this season 0ms
+   ✓ FORGE daily bridge > goalie start shares > ignore a traded goalie's rows from his old team, even newer ones 0ms
+   ✓ FORGE daily bridge > goalie start shares > ignore rows from another season 0ms
+   ✓ FORGE daily bridge > goalie start shares > leave a goalie with no current-team, current-season row unknown 0ms
+   ✓ FORGE daily bridge > goalie start shares > prefer the row for the game itself, falling back to the latest row for games without one 0ms
+   ✓ FORGE daily bridge > goalie start shares > never scaled up past a teammate whose share is unknown > renormalise when every goalie's share is known 0ms
+   × FORGE daily bridge > goalie start shares > never scaled up past a teammate whose share is unknown > keep a known share as read beside an unknown teammate, scaling down only past 1 5ms
+     → expected [ 1, null ] to deeply equal [ 0.7, null ]
+   ✓ FORGE daily bridge > goalie start shares > never scaled up past a teammate whose share is unknown > leave every start chance unknown when no share is known 0ms
+   × FORGE daily bridge > goalie start shares > never scaled up past a teammate whose share is unknown > split what FORGE's starter leaves without scaling the others up 1ms
+     → expected [ 0.8, 0.2, null ] to deeply equal [ 0.8, 0.15, null ]
+   × FORGE daily bridge > goalie start shares > never scaled up past a teammate whose share is unknown > hand a ruled-out goalie's chance to known teammates only when none is unknown 1ms
+     → expected [ +0, 1, null ] to deeply equal [ +0, 0.3, null ]
+   × FORGE daily bridge > goalie start shares > never scaled up past a teammate whose share is unknown > thin the starter on a back-to-back without handing his chance to known teammates past an unknown one 1ms
+     → expected [ 0.3667, 0.6333, null ] to deeply equal [ 0.33, 0.3, null ]
+   × FORGE daily bridge > goalie start shares > never scaled up past a teammate whose share is unknown > count a goalie with no current NHL team, who keeps the team his latest row names from being scaled up 2ms
+     → expected 1 to be 0.7 // Object.is equality
+   ✓ FORGE daily bridge > goalie start shares > are read with their team, so the bridge can bind them 2ms
+   ✓ FORGE daily bridge > applies accepted IFTTT goalie news over start shares 0ms
+   ✓ FORGE daily bridge > scopes trusted confirmed evidence {} and scales participation only 0ms
+   ✓ FORGE daily bridge > scopes trusted ruled_out evidence {} and scales participation only 0ms
+   ✓ FORGE daily bridge > scopes trusted likely evidence {} and scales participation only 0ms
+   ✓ FORGE daily bridge > scopes trusted projected evidence {} and scales participation only 0ms
+   ✓ FORGE daily bridge > scopes trusted unknown evidence {} and scales participation only 0ms
+   ✓ FORGE daily bridge > scopes trusted confirmed evidence {"accepted":false} and scales participation only 0ms
+   ✓ FORGE daily bridge > scopes trusted confirmed evidence {"expires_at":"2026-10-19T18:00:00.000Z"} and scales participation only 0ms
+   ✓ FORGE daily bridge > scopes trusted confirmed evidence {"available_at":"2026-10-19T19:00:00Z"} and scales participation only 0ms
+   ✓ FORGE daily bridge > scopes trusted confirmed evidence {"game_id":99} and scales participation only 0ms
+   ✓ FORGE daily bridge > scopes trusted confirmed evidence {"team_id":8} and scales participation only 0ms
+   ✓ FORGE daily bridge > scopes trusted confirmed evidence {"player_id":999} and scales participation only 0ms
+   ✓ FORGE daily bridge > moves future games to their opponent with FORGE's team-strength adjustment 1ms
+   ✓ FORGE daily bridge > blends last season into thin early-season team priors, strengthening the opponent effect 0ms
+   ✓ FORGE daily bridge > re-aims home ice and rest with FORGE's rest model, and thins the starter's chance on a back-to-back 0ms
+   ✓ FORGE daily bridge > reads each opponent's tilt toward forwards or defencemen against the league share, shrunk 0ms
+   ✓ FORGE daily bridge > re-aims a skater line by the opponent's positional tilt 0ms
+   ✓ FORGE daily bridge > serves FORGE's paired team win probability, kept apart from each goalie's unconditional wins 0ms
+   ✓ FORGE daily bridge > pairs a one-sided game and moves unprojected games to FORGE's win model, both teams summing to 1 0ms
+   ✓ FORGE daily bridge > keeps the ledger's legacy xG win chance, which bridge forecasts no longer use 0ms
+   ✓ FORGE daily bridge > produces forecasts the planner accepts for league points 11ms
+   ✓ FORGE daily bridge > preserves current bridge values when a Yahoo snapshot carries a Not Starting label 3ms
+   ✓ FORGE daily bridge > reads no null-sha, local or h5 run when only off-release runs exist 0ms
+   ✓ FORGE daily bridge > reads no null-sha, local or h5 run when a newer null or local run shares the released run's date 0ms
+   ✓ FORGE daily bridge > reads no null-sha, local or h5 run when a newer released h5 run shares the released h1 run's date 0ms
+   ✓ FORGE daily bridge > fitting the full response envelope in exact UTF-8 bytes > counts envelope metadata and wire limitations that a row-only tally leaves out 1ms
+   ✓ FORGE daily bridge > fitting the full response envelope in exact UTF-8 bytes > measures non-ASCII names in UTF-8 bytes, not string length 1ms
+   ✓ FORGE daily bridge > fitting the full response envelope in exact UTF-8 bytes > keeps a full payload exactly at the limit and trims one byte past it 0ms
+   ✓ FORGE daily bridge > fitting the full response envelope in exact UTF-8 bytes > drops the bridge when no row fits, and rejects an envelope that cannot fit at all 0ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  lib/rosterScheduleData/forgeDailyBridge.test.ts > FORGE daily bridge > goalie start shares > never scaled up past a teammate whose share is unknown > keep a known share as read beside an unknown teammate, scaling down only past 1
+AssertionError: expected [ 1, null ] to deeply equal [ 0.7, null ]
+
+- Expected
++ Received
+
+  [
+-   0.7,
++   1,
+    null,
+  ]
+
+ ❯ lib/rosterScheduleData/forgeDailyBridge.test.ts:371:56
+    369|       it("keep a known share as read beside an unknown teammate, scali…
+    370|         const pair = run(known([201, 0.7]), players);
+    371|         expect([pair.chance("g1"), pair.chance("g2")]).toEqual([0.7, n…
+       |                                                        ^
+    372|         expect(pair.limitations).toContain(openLine);
+    373|         const trio = run(known([201, 0.6], [202, 0.3]), [...players, g…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/5]⎯
+
+ FAIL  lib/rosterScheduleData/forgeDailyBridge.test.ts > FORGE daily bridge > goalie start shares > never scaled up past a teammate whose share is unknown > split what FORGE's starter leaves without scaling the others up
+AssertionError: expected [ 0.8, 0.2, null ] to deeply equal [ 0.8, 0.15, null ]
+
+- Expected
++ Received
+
+  [
+    0.8,
+-   0.15,
++   0.2,
+    null,
+  ]
+
+ ❯ lib/rosterScheduleData/forgeDailyBridge.test.ts:389:60
+    387|         expect(run(known([202, 0.15]), players, { goalies }).chance("g…
+    388|         const { chance } = run(known([202, 0.15]), [...players, g3], {…
+    389|         expect([chance("g1"), chance("g2"), chance("g3")]).toEqual([0.…
+       |                                                            ^
+    390|       });
+    391| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/5]⎯
+
+ FAIL  lib/rosterScheduleData/forgeDailyBridge.test.ts > FORGE daily bridge > goalie start shares > never scaled up past a teammate whose share is unknown > hand a ruled-out goalie's chance to known teammates only when none is unknown
+AssertionError: expected [ +0, 1, null ] to deeply equal [ +0, 0.3, null ]
+
+- Expected
++ Received
+
+  [
+    0,
+-   0.3,
++   1,
+    null,
+  ]
+
+ ❯ lib/rosterScheduleData/forgeDailyBridge.test.ts:397:60
+    395|         expect(run(known([201, 0.6], [202, 0.3]), players, { goalieNew…
+    396|         const { chance } = run(known([201, 0.6], [202, 0.3]), [...play…
+    397|         expect([chance("g1"), chance("g2"), chance("g3")]).toEqual([0,…
+       |                                                            ^
+    398|       });
+    399| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/5]⎯
+
+ FAIL  lib/rosterScheduleData/forgeDailyBridge.test.ts > FORGE daily bridge > goalie start shares > never scaled up past a teammate whose share is unknown > thin the starter on a back-to-back without handing his chance to known teammates past an unknown one
+AssertionError: expected [ 0.3667, 0.6333, null ] to deeply equal [ 0.33, 0.3, null ]
+
+- Expected
++ Received
+
+  [
+-   0.33,
+-   0.3,
++   0.3667,
++   0.6333,
+    null,
+  ]
+
+ ❯ lib/rosterScheduleData/forgeDailyBridge.test.ts:405:60
+    403|         expect([all.chance("g1"), all.chance("g2")]).toEqual([0.33, 0.…
+    404|         const { chance } = run(known([201, 0.6], [202, 0.3]), [...play…
+    405|         expect([chance("g1"), chance("g2"), chance("g3")]).toEqual([0.…
+       |                                                            ^
+    406|       });
+    407| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/5]⎯
+
+ FAIL  lib/rosterScheduleData/forgeDailyBridge.test.ts > FORGE daily bridge > goalie start shares > never scaled up past a teammate whose share is unknown > count a goalie with no current NHL team, who keeps the team his latest row names from being scaled up
+AssertionError: expected 1 to be 0.7 // Object.is equality
+
+- Expected
++ Received
+
+- 0.7
++ 1
+
+ ❯ lib/rosterScheduleData/forgeDailyBridge.test.ts:412:30
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/5]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  5 failed | 60 passed (65)
+   Start at  19:22:47
+   Duration  707ms (transform 206ms, setup 3ms, collect 281ms, tests 59ms, environment 148ms, prepare 43ms)
+

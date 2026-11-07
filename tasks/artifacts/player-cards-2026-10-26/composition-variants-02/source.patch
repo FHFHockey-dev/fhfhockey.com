@@ -1,0 +1,22 @@
+--- a/web/components/player-cards/HeroPlayerCard.tsx
++++ b/web/components/player-cards/HeroPlayerCard.tsx
+@@ -30,7 +30,7 @@
+       <linearGradient id={`${uid}-shade`}><stop stopColor="#101214" stopOpacity=".9" /><stop offset=".62" stopColor="#101214" stopOpacity=".2" /><stop offset="1" stopColor="#101214" stopOpacity="0" /></linearGradient>
+       <clipPath id={`${uid}-crop`}><rect width="1200" height="338" /></clipPath>
+       {composition && <>
+-        <linearGradient id={`${uid}-logo-fade`}><stop stopColor="white" stopOpacity=".35" /><stop offset=".25" stopColor="white" /><stop offset="1" stopColor="white" /></linearGradient>
++        <linearGradient id={`${uid}-logo-fade`}><stop stopColor="white" stopOpacity=".75" /><stop offset=".25" stopColor="white" /><stop offset="1" stopColor="white" /></linearGradient>
+         <mask id={`${uid}-logo-mask`} maskUnits="objectBoundingBox" maskContentUnits="objectBoundingBox" x="0" y="0" width="1" height="1"><rect width="1" height="1" fill={`url(#${uid}-logo-fade)`} /></mask>
+       </>}
+     </defs>
+--- a/web/lib/player-cards/shareExport.test.ts
++++ b/web/lib/player-cards/shareExport.test.ts
+@@ -40,7 +40,7 @@
+   const svg = container.querySelector("svg")!;
+   expect(() => assertCardExport(svg, snapshot, combined, "landscape")).not.toThrow();
+   expect([...svg.querySelectorAll("image")].map(n => n.dataset)).toMatchObject([{ teamLogo: "true" }, { heroImage: "true" }]);
+-  expect([...svg.querySelectorAll('linearGradient[id$="logo-fade"] stop')].map(n => [n.getAttribute("offset"), n.getAttribute("stop-opacity")])).toEqual([[null, ".35"], [".25", null], ["1", null]]);
++  expect([...svg.querySelectorAll('linearGradient[id$="logo-fade"] stop')].map(n => [n.getAttribute("offset"), n.getAttribute("stop-opacity")])).toEqual([[null, ".75"], [".25", null], ["1", null]]);
+   const logo = svg.querySelector('[data-team-logo="true"]')!;
+   expect(Number(logo.getAttribute("x")) + Number(logo.getAttribute("width"))).toBeGreaterThan(1200);
+   svg.dataset.teamLogoHash = "changed"; expect(() => assertCardExport(svg, snapshot, combined, "landscape")).toThrow("logo");

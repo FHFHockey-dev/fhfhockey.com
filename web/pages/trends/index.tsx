@@ -25,9 +25,11 @@ import {
 } from "lib/trends/goalieMetricConfig";
 import { TRENDS_SURFACE_LINKS } from "lib/navigation/siteSurfaceLinks";
 import {
-  DEFERRED_PLAYER_BASELINE_NOTE,
-  LOCKED_PLAYER_BASELINES,
+  describeLockedBaselines,
   buildSkaterRecentSummaryCards,
+  formatGoalieTrendValue,
+  formatPercentileOrdinal,
+  formatRecentFormValue,
   formatSkaterTrendWindowLabel
 } from "lib/trends/trendsSurface";
 import { useRouter } from "next/router";
@@ -36,13 +38,13 @@ import { getTeamAbbreviationById } from "lib/teamsInfo";
 import { fallbackTeamLogo } from "lib/images";
 import type { DashboardSection } from "lib/dashboard/dataFetchers";
 import {
+  CartesianGrid,
   LineChart,
   Line,
   ResponsiveContainer,
   XAxis,
   YAxis,
-  Tooltip,
-  Legend
+  Tooltip
 } from "recharts";
 import styles from "./dashboard.module.scss";
 
@@ -143,10 +145,6 @@ const getTodayEt = (): string => {
   return `${y}-${m}-${d}`;
 };
 
-const CHART_COLORS = ["#2563eb", "#16a34a", "#f97316", "#ef4444", "#8b5cf6"];
-
-const getChartColor = (index: number): string =>
-  CHART_COLORS[index % CHART_COLORS.length];
 
 const DEFAULT_TEAM_LOGO = fallbackTeamLogo;
 const DEFAULT_PLAYER_IMAGE = DEFAULT_TEAM_LOGO;
@@ -166,6 +164,138 @@ const normalizeDashboardDate = (value: unknown): string | null => {
   return Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== value
     ? null
     : value;
+};
+
+// Trend-line legend/tooltip label: "F. Lastname" (TJ, 2026-11-06), so players who
+// share a last name stay distinct; falls back to the id when metadata is missing.
+const trendLegendName = (fullName: string | undefined, playerId: string | number) => {
+  const parts = fullName?.trim().split(/\s+/) ?? [];
+  if (parts.length === 0) return String(playerId);
+  if (parts.length === 1) return parts[0];
+  return `${parts[0].charAt(0)}. ${parts.slice(1).join(" ")}`;
+};
+
+type TrendTooltipEntry = { dataKey?: string | number; value?: number | string };
+
+// Movement charts as a highlight chart: one line in focus (brand blue), the rest
+// recessive grey, so eight series never read as spaghetti. The name buttons under
+// the chart move the focus (hover previews it). Lines are straight: smoothing
+// invented peaks and dips between games. Module-level so focus survives renders.
+const TrendLineChart = ({
+  data,
+  keys,
+  labelFor,
+  ariaLabel,
+  className
+}: {
+  data: Array<Record<string, number>>;
+  keys: Array<string | number>;
+  labelFor: (key: string) => string;
+  ariaLabel: string;
+  className: string;
+}) => {
+  const [focused, setFocused] = useState<string | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
+  const keyList = keys.map(String);
+  const active =
+    preview ?? (focused && keyList.includes(focused) ? focused : keyList[0]);
+
+  const renderTooltip = ({
+    active: isActive,
+    payload,
+    label
+  }: {
+    active?: boolean;
+    payload?: TrendTooltipEntry[];
+    label?: string | number;
+  }) => {
+    if (!isActive || !payload?.length) return null;
+    const rows = payload
+      .filter((entry) => typeof entry.value === "number")
+      .sort((a, b) => Number(b.value) - Number(a.value));
+    return (
+      <div className={styles.trendTooltip}>
+        <p className={styles.trendTooltipTitle}>Game {label}</p>
+        <ul>
+          {rows.map((entry) => (
+            <li
+              key={String(entry.dataKey)}
+              className={String(entry.dataKey) === active ? styles.trendTooltipActive : undefined}
+            >
+              <span>{labelFor(String(entry.dataKey))}</span>
+              <span>{Math.round(Number(entry.value))}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
+  };
+
+  return (
+    <>
+      <div
+        className={`${className} ${styles.trendChart}`}
+        role="img"
+        aria-label={`${ariaLabel}. Highlighted: ${active ? labelFor(active) : "none"}.`}
+      >
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={data} margin={{ top: 8, right: 12, bottom: 0, left: -16 }}>
+            <CartesianGrid vertical={false} />
+            <XAxis dataKey="gp" tickLine={false} />
+            <YAxis
+              domain={[0, 100]}
+              ticks={[0, 25, 50, 75, 100]}
+              tickLine={false}
+              axisLine={false}
+            />
+            <Tooltip content={renderTooltip} />
+            {keyList
+              .filter((key) => key !== active)
+              .map((key) => (
+                <Line
+                  key={key}
+                  type="linear"
+                  dataKey={key}
+                  dot={false}
+                  activeDot={false}
+                  strokeWidth={1.5}
+                  className={styles.trendLineMuted}
+                  isAnimationActive={false}
+                />
+              ))}
+            {active ? (
+              <Line
+                key={active}
+                type="linear"
+                dataKey={active}
+                dot={false}
+                activeDot={{ r: 4, className: styles.trendDotFocus }}
+                strokeWidth={3}
+                className={styles.trendLineFocus}
+                isAnimationActive={false}
+              />
+            ) : null}
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+      <div className={styles.trendLegend} role="group" aria-label="Highlight a line">
+        {keyList.map((key) => (
+          <button
+            key={key}
+            type="button"
+            aria-pressed={key === active}
+            className={styles.trendLegendButton}
+            onClick={() => setFocused(key)}
+            onMouseEnter={() => setPreview(key)}
+            onMouseLeave={() => setPreview(null)}
+          >
+            <span className={styles.trendLegendSwatch} aria-hidden="true" />
+            {labelFor(key)}
+          </button>
+        ))}
+      </div>
+    </>
+  );
 };
 
 const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
@@ -612,9 +742,44 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
     [teamCategory]
   );
 
-  const ArrowDelta = ({ delta }: { delta: number }) => {
+  // The stat in its own unit with the percentile underneath; falls back to the
+  // percentile alone when the stat is missing.
+  const StatWithPercentile = ({
+    stat,
+    percentile
+  }: {
+    stat: { value: string; unit: string } | null;
+    percentile: number;
+  }) =>
+    stat ? (
+      <span className={styles.summaryLeaderStat}>
+        <span className={styles.summaryLeaderValue}>
+          {stat.value}
+          <span className={styles.summaryLeaderUnit}>{stat.unit}</span>
+        </span>
+        <span className={styles.summaryLeaderPercentile}>
+          {formatPercentileOrdinal(percentile)} pct
+        </span>
+      </span>
+    ) : (
+      <span className={styles.summaryLeaderValue}>{formatPercent(percentile)}</span>
+    );
+
+  // `rankMove` names the movement for readers ("Up 52 spots") where the delta is
+  // a change in rank rather than in the stat beside it.
+  const ArrowDelta = ({ delta, rankMove = false }: { delta: number; rankMove?: boolean }) => {
+    const label = rankMove
+      ? delta === 0
+        ? "No change in rank"
+        : `${delta > 0 ? "Up" : "Down"} ${Math.abs(delta)} spot${Math.abs(delta) === 1 ? "" : "s"} in rank`
+      : undefined;
     if (delta === 0) {
-      return <span className={`${styles.delta} ${styles.deltaNeutral}`}>—</span>;
+      return (
+        <span className={`${styles.delta} ${styles.deltaNeutral}`} title={label}>
+          <span aria-hidden={label ? true : undefined}>—</span>
+          {label && <span className={styles.srOnly}>{label}</span>}
+        </span>
+      );
     }
     const positive = delta > 0;
     const symbol = positive ? "▲" : "▼";
@@ -624,15 +789,69 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
         className={`${styles.delta} ${
           positive ? styles.deltaPositive : styles.deltaNegative
         }`}
+        title={label}
       >
-        <span>{symbol}</span>
-        <span>
+        <span aria-hidden={label ? true : undefined}>{symbol}</span>
+        <span aria-hidden={label ? true : undefined}>
           {prefix}
           {delta}
         </span>
+        {label && <span className={styles.srOnly}>{label}</span>}
       </span>
     );
   };
+
+  // One ranking row for skaters and goalies: squircle headshot with the rank cut
+  // into its top-left corner; name over team · position · rank move; the stat and
+  // its percentile on the right; optional sample context underneath.
+  const PlayerRankingRow = ({
+    row,
+    name,
+    meta,
+    stat,
+    detail = null
+  }: {
+    row: TrendRankingRow;
+    name: string;
+    meta?: { teamAbbrev: string | null; position: string | null; imageUrl: string | null };
+    stat: { value: string; unit: string } | null;
+    detail?: string | null;
+  }) => (
+    <li className={styles.skaterRankingRow}>
+      <div className={styles.rowAvatar}>
+        <div className={styles.skaterHeadshotWrapper}>
+          <Image
+            src={meta?.imageUrl ?? DEFAULT_PLAYER_IMAGE}
+            alt=""
+            className={styles.skaterHeadshot}
+            width={44}
+            height={44}
+            loading="lazy"
+          />
+        </div>
+        <span
+          className={`${styles.rankBadge} ${
+            [styles.rankBadgeGold, styles.rankBadgeSilver, styles.rankBadgeBronze][row.rank - 1] ?? ""
+          }`}
+        >
+          <span className={styles.srOnly}>Rank </span>
+          {row.rank}
+        </span>
+      </div>
+      <p className={styles.skaterName}>{name}</p>
+      <p className={styles.skaterMeta}>
+        <span>
+          {meta?.teamAbbrev ?? "FA"}
+          {meta?.position ? ` · ${meta.position}` : ""}
+        </span>
+        <ArrowDelta delta={row.delta} rankMove />
+      </p>
+      <div className={styles.rowStat}>
+        <StatWithPercentile stat={stat} percentile={row.percentile} />
+      </div>
+      {detail ? <p className={styles.skaterDetail}>{detail}</p> : null}
+    </li>
+  );
 
   const SkaterRankingCard = ({
     rows
@@ -650,40 +869,17 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
         {rows.length === 0 ? (
           <p className={styles.emptyText}>No skater data yet.</p>
         ) : (
-          <ul className={styles.skaterRankingList}>
+          <ul className={styles.skaterRankingList} tabIndex={0} aria-label="Top percentile skaters">
             {rows.map((row) => {
               const meta = playerMetadata[String(row.playerId)];
               return (
-                <li key={row.playerId} className={styles.skaterRankingRow}>
-                  <div className={styles.skaterInfo}>
-                    <span className={styles.rank}>{row.rank}</span>
-                    <div className={styles.skaterHeadshotWrapper}>
-                      <Image
-                        src={meta?.imageUrl ?? DEFAULT_PLAYER_IMAGE}
-                        alt={meta?.fullName ?? `Player ${row.playerId}`}
-                        className={styles.skaterHeadshot}
-                        width={42}
-                        height={42}
-                        loading="lazy"
-                      />
-                    </div>
-                    <div className={styles.skaterText}>
-                      <p className={styles.skaterName}>
-                        {meta?.fullName ?? `Player ${row.playerId}`}
-                      </p>
-                      <p className={styles.skaterMeta}>
-                        {meta?.teamAbbrev ?? "FA"}
-                        {meta?.position ? ` · ${meta.position}` : ""}
-                      </p>
-                    </div>
-                  </div>
-                  <div className={styles.skaterScore}>
-                    <ArrowDelta delta={row.delta} />
-                    <span className={styles.percentile}>
-                      {formatPercent(row.percentile)}
-                    </span>
-                  </div>
-                </li>
+                <PlayerRankingRow
+                  key={row.playerId}
+                  row={row}
+                  name={meta?.fullName ?? `Player ${row.playerId}`}
+                  meta={meta}
+                  stat={formatRecentFormValue(skaterCategory, row.latestValue)}
+                />
               );
             })}
           </ul>
@@ -746,46 +942,29 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
         {rows.length === 0 ? (
           <p className={styles.emptyText}>No goalie data yet.</p>
         ) : (
-          <ul className={styles.skaterRankingList}>
+          <ul className={styles.skaterRankingList} tabIndex={0} aria-label="Top percentile goalies">
             {rows.map((row) => {
               const meta = playerMetadata[String(row.playerId)];
+              // Sample context on its own line so narrow cards don't crush the name.
+              const detail = [
+                row.confidence
+                  ? `${row.confidence.charAt(0).toUpperCase()}${row.confidence.slice(1)} confidence · ${row.sampleSize ?? 0} GP`
+                  : null,
+                row.volatility !== null && row.volatility !== undefined
+                  ? `volatility ${row.volatility.toFixed(1)}`
+                  : null
+              ]
+                .filter(Boolean)
+                .join(" · ");
               return (
-                <li key={row.playerId} className={styles.skaterRankingRow}>
-                  <div className={styles.skaterInfo}>
-                    <span className={styles.rank}>{row.rank}</span>
-                    <div className={styles.skaterHeadshotWrapper}>
-                      <Image
-                        src={meta?.imageUrl ?? DEFAULT_PLAYER_IMAGE}
-                        alt={meta?.fullName ?? `Goalie ${row.playerId}`}
-                        className={styles.skaterHeadshot}
-                        width={42}
-                        height={42}
-                        loading="lazy"
-                      />
-                    </div>
-                    <div className={styles.skaterText}>
-                      <p className={styles.skaterName}>
-                        {meta?.fullName ?? `Goalie ${row.playerId}`}
-                      </p>
-                      <p className={styles.skaterMeta}>
-                        {meta?.teamAbbrev ?? "FA"}
-                        {meta?.position ? ` · ${meta.position}` : ""}
-                        {row.confidence
-                          ? ` · ${row.confidence} confidence (${row.sampleSize ?? 0} GP)`
-                          : ""}
-                        {row.volatility !== null && row.volatility !== undefined
-                          ? ` · volatility ${row.volatility.toFixed(1)}`
-                          : ""}
-                      </p>
-                    </div>
-                  </div>
-                  <div className={styles.skaterScore}>
-                    <ArrowDelta delta={row.delta} />
-                    <span className={styles.percentile}>
-                      {formatPercent(row.percentile)}
-                    </span>
-                  </div>
-                </li>
+                <PlayerRankingRow
+                  key={row.playerId}
+                  row={row}
+                  name={meta?.fullName ?? `Goalie ${row.playerId}`}
+                  meta={meta}
+                  stat={formatGoalieTrendValue(goalieCategory, row.latestValue)}
+                  detail={detail || null}
+                />
               );
             })}
           </ul>
@@ -834,110 +1013,123 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
         <main className={styles.main}>
           <header className={styles.header}>
             <DashboardPillarHero
-              eyebrow="Recent-form pillar"
               title="Trends Dashboard"
+              shortTitle="Trends"
               description={
-                <p>
-                  Use this page to read movement fast across teams, skaters, and
-                  goalies. Underlying-stats still owns deeper team diagnosis;
-                  this surface owns directionality, recent form, risers,
-                  fallers, and the support context around those shifts.
-                </p>
+                <p>Who&rsquo;s heating up and cooling off across teams, skaters and goalies.</p>
               }
-              emphasis="Movement and directionality"
               owns={[
-                "Team, skater, and goalie movement views with rolling recent-form context",
-                "Risers, fallers, and hot/cold states before you drill deeper",
-                "Projection and goalie-start runway that supports the movement read"
+                "Team, skater and goalie movement over the last few games",
+                "Risers, fallers and who's running hot or cold",
+                "Upcoming projections and goalie starts that follow the trends"
               ]}
               defers={[
-                "Full team-strength reads, process-vs-results diagnosis, and schedule texture",
-                "Predictions-vs-actual and candlestick views until the model contracts harden",
-                "Experimental elasticity-band and sustainability prototypes that still belong in the lab"
+                "Full team strength, process vs results and schedule: Underlying Stats",
+                "Predictions vs actual and candlestick views: coming later",
+                "Experimental sustainability and elasticity tools: Trends Sandbox"
               ]}
               surfaceLinks={TRENDS_SURFACE_LINKS.slice(0, 4)}
+              // Player Search sits in the hero's side slot so the first row has no
+              // empty band beside the hero (pass 6, 2026-11-06).
+              actions={
+                <div className={styles.searchPanel}>
+                  <h2 className={styles.srOnly}>Player Search</h2>
+                  <div className={styles.searchBoxButton}>
+                    <form onSubmit={handleSearch} className={styles.searchForm}>
+                      <div className={styles.searchInputWrap}>
+                        <input
+                          ref={inputRef}
+                          type="text"
+                          aria-label="Search players"
+                          placeholder="Player name"
+                          value={query}
+                          onChange={(event) => setQuery(event.target.value)}
+                          onKeyDown={handleSearchKeyDown}
+                          onFocus={() =>
+                            setShowSuggestions(suggestions.length > 0)
+                          }
+                          onBlur={() =>
+                            setTimeout(() => setShowSuggestions(false), 120)
+                          }
+                          className={styles.searchInput}
+                        />
+                        {showSuggestions && suggestions.length > 0 && (
+                          <div className={styles.suggestionPanel}>
+                            {suggestions.map((player, idx) => (
+                              <button
+                                key={player.id}
+                                type="button"
+                                className={`${styles.suggestionItem} ${
+                                  idx === activeIndex ? styles.suggestionActive : ""
+                                }`}
+                                onMouseDown={(event) => {
+                                  event.preventDefault();
+                                  router.push(`/trends/player/${player.id}`);
+                                  setShowSuggestions(false);
+                                }}
+                              >
+                                {player.fullName} · {player.teamAbbrev ?? "FA"} ·{" "}
+                                {player.position ?? "—"}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      <button
+                        type="submit"
+                        className={`${styles.primaryButton} ${styles.iconButton}`}
+                        title="Find player"
+                        aria-busy={searchLoading || undefined}
+                      >
+                        <svg
+                          aria-hidden="true"
+                          viewBox="0 0 24 24"
+                          width="18"
+                          height="18"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                        >
+                          <circle cx="10.5" cy="10.5" r="6.5" />
+                          <path d="M15.5 15.5 20 20" />
+                        </svg>
+                        <span className={styles.srOnly}>
+                          {searchLoading ? "Searching…" : "Find player"}
+                        </span>
+                      </button>
+                    </form>
+                    {searchError && (
+                      <p className={styles.errorText}>{searchError}</p>
+                    )}
+                    {!searchError && results.length > 0 && (
+                      <div className={styles.searchResults}>
+                        {results.map((player) => (
+                          <button
+                            key={player.id}
+                            type="button"
+                            onClick={() =>
+                              router.push(`/trends/player/${player.id}`)
+                            }
+                            className={styles.resultButton}
+                          >
+                            {player.fullName} · {player.teamAbbrev ?? "FA"} ·{" "}
+                            {player.position ?? "—"}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              }
             />
             <div className={styles.headerRail}>
-              <div className={styles.searchPanel}>
-                <div className={styles.panelHeader}>
-                  <h2 className={styles.panelTitle}>Player Search</h2>
-                  <span className={styles.panelMeta}>Trends lookup</span>
-                </div>
-                <div className={styles.searchBoxButton}>
-                  <form onSubmit={handleSearch} className={styles.searchForm}>
-                    <div className={styles.searchInputWrap}>
-                      <input
-                        ref={inputRef}
-                        type="text"
-                        aria-label="Search players"
-                        placeholder="Search by player name"
-                        value={query}
-                        onChange={(event) => setQuery(event.target.value)}
-                        onKeyDown={handleSearchKeyDown}
-                        onFocus={() =>
-                          setShowSuggestions(suggestions.length > 0)
-                        }
-                        onBlur={() =>
-                          setTimeout(() => setShowSuggestions(false), 120)
-                        }
-                        className={styles.searchInput}
-                      />
-                      {showSuggestions && suggestions.length > 0 && (
-                        <div className={styles.suggestionPanel}>
-                          {suggestions.map((player, idx) => (
-                            <button
-                              key={player.id}
-                              type="button"
-                              className={`${styles.suggestionItem} ${
-                                idx === activeIndex ? styles.suggestionActive : ""
-                              }`}
-                              onMouseDown={(event) => {
-                                event.preventDefault();
-                                router.push(`/trends/player/${player.id}`);
-                                setShowSuggestions(false);
-                              }}
-                            >
-                              {player.fullName} · {player.teamAbbrev ?? "FA"} ·{" "}
-                              {player.position ?? "—"}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                    <button type="submit" className={styles.primaryButton}>
-                      {searchLoading ? "Searching…" : "Find Player"}
-                    </button>
-                  </form>
-                  {searchError && (
-                    <p className={styles.errorText}>{searchError}</p>
-                  )}
-                  {!searchError && results.length > 0 && (
-                    <div className={styles.searchResults}>
-                      {results.map((player) => (
-                        <button
-                          key={player.id}
-                          type="button"
-                          onClick={() =>
-                            router.push(`/trends/player/${player.id}`)
-                          }
-                          className={styles.resultButton}
-                        >
-                          {player.fullName} · {player.teamAbbrev ?? "FA"} ·{" "}
-                          {player.position ?? "—"}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-
               <section className={styles.summaryBand}>
                 <div className={styles.summaryBandHeader}>
                   <div>
                     <h2 className={styles.panelTitle}>Recent-Form Scan</h2>
                     <p className={styles.summaryBandCopy}>
-                      Scan deployment, shot pressure, PP usage, and chance
-                      creation before drilling into a player trend page.
+                      Ice time, shots, power-play usage and chance creation over the last few games. Open a player for their full trend.
                     </p>
                   </div>
                   <div className={styles.summaryBandMeta}>
@@ -945,14 +1137,7 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
                       Window {formatSkaterTrendWindowLabel(skaterWindow)}
                     </span>
                     <span className={styles.summaryContract}>
-                      Strong v1 baselines:{" "}
-                      {LOCKED_PLAYER_BASELINES.map((baseline) => baseline.label).join(
-                        ", "
-                      )}
-                      .
-                    </span>
-                    <span className={styles.summaryContract}>
-                      {DEFERRED_PLAYER_BASELINE_NOTE}
+                      {describeLockedBaselines()}
                     </span>
                   </div>
                 </div>
@@ -974,7 +1159,10 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
                       <ul className={styles.summaryLeaderList}>
                         {card.leaders.length === 0 ? (
                           <li className={styles.summaryEmpty}>
-                            No recent trend leaders yet.
+                            {/* Loading reads as loading, not as "no data". */}
+                            {loadingSections.includes("skater") || !data?.skaterTrends
+                              ? "Loading leaders…"
+                              : "No leaders in this window yet."}
                           </li>
                         ) : (
                           card.leaders.map((leader) => (
@@ -997,10 +1185,11 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
                                 </span>
                               </div>
                               <div className={styles.summaryLeaderMetrics}>
-                                <span className={styles.summaryLeaderValue}>
-                                  {formatPercent(leader.percentile)}
-                                </span>
-                                <ArrowDelta delta={leader.delta} />
+                                <StatWithPercentile
+                                  stat={formatRecentFormValue(card.categoryId, leader.latestValue)}
+                                  percentile={leader.percentile}
+                                />
+                                <ArrowDelta delta={leader.delta} rankMove />
                               </div>
                             </li>
                           ))
@@ -1035,15 +1224,8 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
               <div>
                 <h2 className={styles.panelTitle}>Movement Workspace</h2>
                 <p className={styles.summaryBandCopy}>
-                  One working surface for directionality, entity movers, and
-                  the immediate follow-up context once a trend is identified.
+                  Which teams, skaters and goalies are rising or falling, and by how much.
                 </p>
-              </div>
-              <div className={styles.movementHeaderMeta}>
-                <span className={styles.panelMeta}>Date {date}</span>
-                <span className={styles.panelMeta}>
-                  Teams, skaters, and goalies
-                </span>
               </div>
             </div>
 
@@ -1079,17 +1261,12 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
                         Team Directionality: {activeTeamCategory.label}
                       </div>
                       <p className={styles.chartCopy}>
-                        {activeTeamCategory.description}. Stay at the movement
-                        layer here, then hand off to deeper surfaces only after
-                        the trend is clear.
+                        {activeTeamCategory.description}.
                       </p>
                     </div>
                     <div className={styles.chartMetaStack}>
                       <div className={styles.panelMeta}>
                         Rolling percentile by games played
-                      </div>
-                      <div className={styles.panelMeta}>
-                        Recent directionality first
                       </div>
                       <div className={styles.panelMeta}>
                         {data?.teamTrends?.generatedAt
@@ -1117,9 +1294,8 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
 
                   {renderSectionNotice("team", "Team trends")}
                   {sectionErrors.team && teamTrendSeries.series.length === 0 ? (
-                    <p className={styles.errorText}>
-                      Team trend history is unavailable.
-                    </p>
+                    // The section notice above already explains the failure and offers a retry.
+                    null
                   ) : teamTrendSeries.series.length === 0 &&
                     loadingSections.includes("team") ? (
                     <p className={styles.loadingText}>
@@ -1161,33 +1337,28 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
                             Refreshing team trends…
                           </p>
                         )}
-                        <div
+                        <TrendLineChart
                           className={styles.chartBody}
-                          role="img"
-                          aria-label={`${activeTeamCategory.label} team percentile trend lines by games played`}
-                        >
-                          <ResponsiveContainer width="100%" height="100%">
-                            <LineChart data={teamTrendSeries.series}>
-                              <XAxis dataKey="gp" />
-                              <YAxis domain={[0, 100]} />
-                              <Tooltip />
-                              <Legend />
-                              {teamTrendSeries.teams.map((team, idx) => (
-                                <Line
-                                  key={team}
-                                  type="monotone"
-                                  dataKey={team}
-                                  dot={false}
-                                  stroke={getChartColor(idx)}
-                                />
-                              ))}
-                            </LineChart>
-                          </ResponsiveContainer>
-                        </div>
+                          ariaLabel={`${activeTeamCategory.label} team percentile trend lines by games played`}
+                          data={teamTrendSeries.series}
+                          keys={teamTrendSeries.teams}
+                          labelFor={(team) => team}
+                        />
                         <div className={styles.teamRankStrip}>
                           {teamTrendRankings.slice(0, 5).map((row) => (
                             <div key={row.team} className={styles.teamRankCard}>
                               <span className={styles.teamRankLabel}>
+                                <img
+                                  src={data?.teamMeta?.[row.team]?.logo ?? DEFAULT_TEAM_LOGO}
+                                  alt=""
+                                  width={20}
+                                  height={20}
+                                  loading="lazy"
+                                  className={styles.teamRankLogo}
+                                  onError={(event) => {
+                                    event.currentTarget.src = DEFAULT_TEAM_LOGO;
+                                  }}
+                                />
                                 {row.team}
                               </span>
                               <span className={styles.teamRankValue}>
@@ -1204,12 +1375,7 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
                           className={`${styles.panel} ${styles.workspaceRailPanel}`}
                         >
                           <div className={styles.panelHeader}>
-                            <h3 className={styles.panelTitle}>
-                              Team Risers And Fallers
-                            </h3>
-                            <span className={styles.panelMeta}>
-                              {activeTeamCategory.label}
-                            </span>
+                            <h3 className={styles.panelTitle}>Risers And Fallers</h3>
                           </div>
                           <div className={styles.panelBody}>
                             {teamMovementMovers.improved.length === 0 &&
@@ -1232,42 +1398,6 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
                           </div>
                         </section>
 
-                        <section
-                          className={`${styles.panel} ${styles.workspaceRailPanel}`}
-                        >
-                          <div className={styles.panelHeader}>
-                            <h3 className={styles.panelTitle}>Next Surface</h3>
-                            <span className={styles.panelMeta}>
-                              Handoff points
-                            </span>
-                          </div>
-                          <div className={styles.panelBody}>
-                            <p className={styles.summaryBandCopy}>
-                              Use deeper team diagnosis or sustainability only
-                              after the movement read is complete.
-                            </p>
-                            <div className={styles.surfaceLinkList}>
-                              <Link
-                                href="/underlying-stats"
-                                className={styles.surfaceLinkPill}
-                              >
-                                Open Underlying Stats
-                              </Link>
-                              <a
-                                href="#projections"
-                                className={styles.surfaceLinkPill}
-                              >
-                                Projection Runway
-                              </a>
-                              <Link
-                                href="/trendsSandbox"
-                                className={styles.surfaceLinkPill}
-                              >
-                                Open Trends Sandbox
-                              </Link>
-                            </div>
-                          </div>
-                        </section>
                       </div>
                     </div>
                   )}
@@ -1280,9 +1410,7 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
                         Skater Movement: {activeSkaterLabel}
                       </div>
                       <p className={styles.chartCopy}>
-                        Find risers, fallers, and hot recent-form skaters before
-                        handing off to player detail, projections, or later
-                        model work.
+                        Rising and falling skaters by recent form.
                       </p>
                     </div>
                     <div className={styles.chartMetaStack}>
@@ -1369,9 +1497,8 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
 
                   {renderSectionNotice("skater", "Skater trends")}
                   {sectionErrors.skater && skaterTrendSeries.series.length === 0 ? (
-                    <p className={styles.errorText}>
-                      Skater trend history is unavailable.
-                    </p>
+                    // The section notice above already explains the failure and offers a retry.
+                    null
                   ) : skaterTrendSeries.series.length === 0 &&
                     loadingSections.includes("skater") ? (
                     <p className={styles.loadingText}>Loading skater trends…</p>
@@ -1397,28 +1524,15 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
                             Refreshing skater trends…
                           </p>
                         )}
-                        <div
-                          role="img"
-                          aria-label={`${activeSkaterLabel} skater percentile trend lines by games played`}
-                        >
-                          <ResponsiveContainer width="100%" height={260}>
-                            <LineChart data={skaterTrendSeries.series}>
-                            <XAxis dataKey="gp" />
-                            <YAxis domain={[0, 100]} />
-                            <Tooltip />
-                            <Legend />
-                            {skaterTrendSeries.players.map((playerId, idx) => (
-                              <Line
-                                key={playerId}
-                                type="monotone"
-                                dataKey={playerId}
-                                dot={false}
-                                stroke={getChartColor(idx)}
-                              />
-                            ))}
-                            </LineChart>
-                          </ResponsiveContainer>
-                        </div>
+                        <TrendLineChart
+                          className={styles.chartFill}
+                          ariaLabel={`${activeSkaterLabel} skater percentile trend lines by games played`}
+                          data={skaterTrendSeries.series}
+                          keys={skaterTrendSeries.players}
+                          labelFor={(id) =>
+                            trendLegendName(data?.skaterTrends?.playerMetadata?.[id]?.fullName, id)
+                          }
+                        />
                       </div>
                     </div>
                   )}
@@ -1431,16 +1545,12 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
                         Goalie Movement: {activeGoalieLabel}
                       </div>
                       <p className={styles.chartCopy}>
-                        Track recent goalie movement first, then use start
-                        runway and workload context as the follow-up layer.
+                        Rising and falling goalies by recent form.
                       </p>
                     </div>
                     <div className={styles.chartMetaStack}>
                       <div className={styles.panelMeta}>
                         Window {formatSkaterTrendWindowLabel(skaterWindow)}
-                      </div>
-                      <div className={styles.panelMeta}>
-                        Efficiency and workload movement
                       </div>
                     </div>
                   </div>
@@ -1489,9 +1599,8 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
 
                   {renderSectionNotice("goalie", "Goalie trends")}
                   {sectionErrors.goalie && goalieTrendSeries.series.length === 0 ? (
-                    <p className={styles.errorText}>
-                      Goalie trend history is unavailable.
-                    </p>
+                    // The section notice above already explains the failure and offers a retry.
+                    null
                   ) : goalieTrendSeries.series.length === 0 &&
                     loadingSections.includes("goalie") ? (
                     <p className={styles.loadingText}>Loading goalie trends…</p>
@@ -1517,28 +1626,15 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
                             Refreshing goalie trends…
                           </p>
                         )}
-                        <div
-                          role="img"
-                          aria-label={`${activeGoalieLabel} goalie percentile trend lines by games played`}
-                        >
-                          <ResponsiveContainer width="100%" height={260}>
-                            <LineChart data={goalieTrendSeries.series}>
-                            <XAxis dataKey="gp" />
-                            <YAxis domain={[0, 100]} />
-                            <Tooltip />
-                            <Legend />
-                            {goalieTrendSeries.players.map((playerId, idx) => (
-                              <Line
-                                key={playerId}
-                                type="monotone"
-                                dataKey={playerId}
-                                dot={false}
-                                stroke={getChartColor(idx)}
-                              />
-                            ))}
-                            </LineChart>
-                          </ResponsiveContainer>
-                        </div>
+                        <TrendLineChart
+                          className={styles.chartFill}
+                          ariaLabel={`${activeGoalieLabel} goalie percentile trend lines by games played`}
+                          data={goalieTrendSeries.series}
+                          keys={goalieTrendSeries.players}
+                          labelFor={(id) =>
+                            trendLegendName(data?.goalieTrends?.playerMetadata?.[id]?.fullName, id)
+                          }
+                        />
                       </div>
                     </div>
                   )}
@@ -1549,11 +1645,10 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
 
           <section className={styles.surfaceBridgeStrip}>
             <article className={styles.surfaceBridgeCard}>
-              <span className={styles.surfaceBridgeLabel}>Deep team read</span>
+              <span className={styles.surfaceBridgeLabel}>Team deep dive</span>
               <h2 className={styles.panelTitle}>Underlying Stats</h2>
               <p className={styles.summaryBandCopy}>
-                Hand off here when movement needs explanation, schedule texture,
-                or team-level process context.
+                Explain a team&rsquo;s movement with process stats and schedule context.
               </p>
               <Link href="/underlying-stats" className={styles.surfaceLinkPill}>
                 Open Underlying Stats
@@ -1561,15 +1656,14 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
             </article>
 
             <article className={styles.surfaceBridgeCard}>
-              <span className={styles.surfaceBridgeLabel}>Immediate support</span>
-              <h2 className={styles.panelTitle}>Projection And Starts</h2>
+              <span className={styles.surfaceBridgeLabel}>Next games</span>
+              <h2 className={styles.panelTitle}>Projections And Starts</h2>
               <p className={styles.summaryBandCopy}>
-                Use runway and goalie-start support after the movement read, not
-                before it.
+                Upcoming projections and likely goalie starts.
               </p>
               <div className={styles.surfaceLinkList}>
                 <a href="#projections" className={styles.surfaceLinkPill}>
-                  Projection Runway
+                  Projections
                 </a>
                 <a href="#goalie-starts" className={styles.surfaceLinkPill}>
                   Goalie Starts
@@ -1578,11 +1672,10 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
             </article>
 
             <article className={styles.surfaceBridgeCard}>
-              <span className={styles.surfaceBridgeLabel}>Experimental layer</span>
+              <span className={styles.surfaceBridgeLabel}>Experimental</span>
               <h2 className={styles.panelTitle}>Sustainability Lab</h2>
               <p className={styles.summaryBandCopy}>
-                Keep elasticity bands, sustainability meters, and prototype
-                baselines in the lab until the contracts harden.
+                Experimental sustainability and elasticity tools.
               </p>
               <Link href="/trendsSandbox" className={styles.surfaceLinkPill}>
                 Open Trends Sandbox
@@ -1593,20 +1686,14 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
           <section className={styles.supportSection}>
             <div className={styles.summaryBandHeader}>
               <div>
-                <h2 className={styles.panelTitle}>Supporting Runway</h2>
+                <h2 className={styles.panelTitle}>Upcoming Games</h2>
                 <p className={styles.summaryBandCopy}>
-                  These modules support the movement read. They should inform
-                  the next decision after the trend is identified, not obscure
-                  the trend scan itself.
+                  Projections and goalie starts for the next slate.
                 </p>
               </div>
               <div className={styles.summaryBandMeta}>
-                <span className={styles.panelMeta}>
-                  Projections and start context
-                </span>
                 <span className={styles.summaryContract}>
-                  Predictions-vs-actual and candlestick views are explicitly
-                  held for a later implementation pass.
+                  Coming next: predictions vs actual and candlestick views
                 </span>
               </div>
             </div>
@@ -1617,9 +1704,8 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
                 className={`${styles.panel} ${styles.supportPanel}`}
               >
                 <div className={styles.panelHeader}>
-                  <h2 className={styles.panelTitle}>
-                    Projection Runway ({projectionSource.toUpperCase()})
-                  </h2>
+                  {/* The FORGE / Legacy toggle beside the title names the source. */}
+                  <h2 className={styles.panelTitle}>Projections</h2>
                   {data?.recency?.status === "mixed" && (
                     <span className={styles.panelMeta}>Context downgraded</span>
                   )}
@@ -1627,7 +1713,7 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
                     <button
                       type="button"
                       onClick={() => setProjectionSource("forge")}
-                      disabled={projectionSource === "forge"}
+                      aria-pressed={projectionSource === "forge"}
                       className={styles.tabButton}
                     >
                       FORGE
@@ -1635,17 +1721,16 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
                     <button
                       type="button"
                       onClick={() => setProjectionSource("legacy")}
-                      disabled={projectionSource === "legacy"}
+                      aria-pressed={projectionSource === "legacy"}
                       className={styles.tabButton}
                     >
                       Legacy
                     </button>
                   </div>
                 </div>
-                <div className={styles.panelBody}>
+                <div className={styles.panelBody} tabIndex={0} role="region" aria-label="Projections table">
                   <p className={styles.summaryBandCopy}>
-                    Use this after the movement read to see who still has slate
-                    runway.
+                    Projected points and shots for upcoming games.
                   </p>
                   {renderSectionNotice("projection", "Projections")}
                   {sectionErrors.projection && projectionRows.length === 0 ? (
@@ -1668,12 +1753,12 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
                       )}
                       <table className={styles.table}>
                         <caption className={styles.srOnly}>
-                          Projection runway leaders for {date}
+                          Projection leaders for {date}
                         </caption>
                         <thead>
                           <tr>
                             <th className={styles.thLeft}>Player</th>
-                            <th className={styles.thLeft}>Team</th>
+                            <th className={`${styles.thLeft} ${styles.hideOnPhone}`}>Team</th>
                             <th className={styles.thLeft}>Pos</th>
                             <th className={styles.thLeft}>Opp</th>
                             <th className={styles.thRight}>GR</th>
@@ -1685,7 +1770,9 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
                           {visibleProjectionRows.map((row) => (
                             <tr key={row.player_id}>
                               <td className={styles.tdLeft}>{row.player_name}</td>
-                              <td className={styles.tdLeft}>{row.team_name}</td>
+                              <td className={`${styles.tdLeft} ${styles.hideOnPhone}`}>
+                                {row.team_name}
+                              </td>
                               <td className={styles.tdLeft}>{row.position}</td>
                               <td className={styles.tdLeft}>
                                 {row.opponent ?? "—"}
@@ -1713,15 +1800,18 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
                 className={`${styles.panel} ${styles.supportPanel}`}
               >
                 <div className={styles.panelHeader}>
-                  <h2 className={styles.panelTitle}>Goalie Start Runway</h2>
+                  <h2 className={styles.panelTitle}>Goalie Starts</h2>
                   <span className={styles.panelMeta}>
-                    {data?.recency?.status === "mixed" ? "Downgraded" : "Top 8"}
+                    {data?.recency?.status === "mixed"
+                      ? "Downgraded"
+                      : visibleGoalieRows.length
+                        ? `Top ${visibleGoalieRows.length}`
+                        : null}
                   </span>
                 </div>
-                <div className={styles.panelBody}>
+                <div className={styles.panelBody} tabIndex={0} role="region" aria-label="Goalie starts table">
                   <p className={styles.summaryBandCopy}>
-                    Start probability, win runway, and shutout ceiling to
-                    support the goalie movement view.
+                    Start, win and shutout chances for the next slate.
                   </p>
                   {renderSectionNotice("schedule", "Goalie starts")}
                   {sectionErrors.schedule && goalieRows.length === 0 ? (
@@ -1744,7 +1834,7 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
                       )}
                       <table className={styles.table}>
                         <caption className={styles.srOnly}>
-                          Goalie start runway leaders for {date}
+                          Goalie start leaders for {date}
                         </caption>
                         <thead>
                           <tr>
@@ -1759,7 +1849,7 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
                           {visibleGoalieRows.map((row) => (
                             <tr key={row.goalieId}>
                               <td className={styles.tdLeft}>{row.name}</td>
-                              <td className={styles.tdLeft}>
+                              <td className={`${styles.tdLeft} ${styles.noWrap}`}>
                                 {row.team} vs {row.opponent}
                               </td>
                               <td className={styles.tdRight}>
@@ -1786,42 +1876,6 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
                 </div>
               </section>
 
-              <section className={`${styles.panel} ${styles.placeholderPanel}`}>
-                <div className={styles.panelHeader}>
-                  <h2 className={styles.panelTitle}>Predictions Vs Actual</h2>
-                  <span className={styles.panelMeta}>Later implementation</span>
-                </div>
-                <div className={styles.placeholderBody}>
-                  <p className={styles.summaryBandCopy}>
-                    Reserved for model expectation against realized results once
-                    the accuracy contract is promoted into the Trends route.
-                  </p>
-                  <ul className={styles.placeholderList}>
-                    <li>Expected vs realized team trend movement</li>
-                    <li>Skater and goalie hit-rate framing</li>
-                    <li>Model drift by rolling window</li>
-                  </ul>
-                </div>
-              </section>
-
-              <section className={`${styles.panel} ${styles.placeholderPanel}`}>
-                <div className={styles.panelHeader}>
-                  <h2 className={styles.panelTitle}>Candlestick Trend View</h2>
-                  <span className={styles.panelMeta}>Later implementation</span>
-                </div>
-                <div className={styles.placeholderBody}>
-                  <p className={styles.summaryBandCopy}>
-                    Reserved for the candlestick format once open, close, range,
-                    and expectation overlays are finalized for each entity
-                    class.
-                  </p>
-                  <ul className={styles.placeholderList}>
-                    <li>Team percentile candles</li>
-                    <li>Skater metric candles</li>
-                    <li>Goalie efficiency and workload candles</li>
-                  </ul>
-                </div>
-              </section>
             </div>
           </section>
 
@@ -1831,12 +1885,10 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
           >
             <div className={styles.panelHeader}>
               <h2 className={styles.panelTitle}>Goalie Workload Share</h2>
-              <span className={styles.panelMeta}>L10 to season</span>
             </div>
             <div className={styles.goalieShareBody}>
               <p className={styles.summaryBandCopy}>
-                Use the existing goalie-share chart here as the workload context
-                companion to the goalie starts table.
+                How each team splits its starts between goalies.
               </p>
               {showGoalieShare ? (
                 <GoalieShareChart />

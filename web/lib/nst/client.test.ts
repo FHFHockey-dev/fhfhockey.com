@@ -1,3 +1,5 @@
+import { admitSharedNstAttempt } from "./sharedAdmission";
+vi.mock("./sharedAdmission", async (original) => ({ ...await original<typeof import("./sharedAdmission")>(), admitSharedNstAttempt: vi.fn(async (_deadline, dispatch) => dispatch()) }));
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 const { admission } = vi.hoisted(() => ({ admission: vi.fn(async (_url, control, start) => {
@@ -420,4 +422,11 @@ describe("nst client", () => {
     expect(isNstNotFoundError(notFoundError)).toBe(true);
     expect(isNstRateLimitError(notFoundError)).toBe(false);
   });
+  it("reserves provider latency and persistence time before shared admission",async()=>{
+    vi.stubEnv("NST_KEY","fixture");vi.stubGlobal("fetch",vi.fn(async()=>new Response("fixture")));
+    const control={deadlineAt:Date.now()+220000,maxAttempts:1,attemptsStarted:0,minIntervalMs:0,plannedRequestCount:40};
+    await fetchNstTextByUrl(`${NST_BASE_URL}/playerteams.php?deadline=1`,{retries:0,timeoutMs:30000,requestControl:control});
+    expect(admitSharedNstAttempt).toHaveBeenLastCalledWith(control.deadlineAt-35000,expect.any(Function),control);
+  });
+
 });

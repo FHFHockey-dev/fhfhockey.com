@@ -1,0 +1,19 @@
+{
+  "results": [
+    {
+      "suite": "test_compare",
+      "run": 12,
+      "failures": 0,
+      "errors": 0,
+      "success": true
+    },
+    {
+      "suite": "test_check",
+      "run": 8,
+      "failures": 0,
+      "errors": 0,
+      "success": true
+    }
+  ],
+  "networkAttempts": []
+}

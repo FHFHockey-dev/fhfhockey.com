@@ -1,0 +1,10 @@
+{
+  "at": "2026-11-01T19:17:57.299929+00:00",
+  "command": [
+    "/usr/local/bin/node",
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-evolution-2026-10-31/browser-audit-fixes-20261101.mjs"
+  ],
+  "exitCode": 0,
+  "localFileOnly": true,
+  "networkIntercept": "All HTTP(S) aborted; expected requests empty"
+}

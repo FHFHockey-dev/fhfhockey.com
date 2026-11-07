@@ -1129,6 +1129,14 @@
   margin-top: 4px;
 }
 
+// Desktop: chips sit in one row under the SoS pill instead of stacking 3-4
+// deep, which made every rankings row ~115px tall.
+.sosCell .scheduleTexture {
+  flex-wrap: nowrap;
+  gap: 3px;
+  white-space: nowrap;
+}
+
 .scheduleChip {
   display: inline-flex;
   align-items: center;
@@ -1139,7 +1147,7 @@
   border-radius: 999px;
   background: rgba(v.$color-white, 0.03);
   color: v.$text-secondary;
-  font-size: 0.58rem;
+  font-size: 0.66rem;
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -1202,7 +1210,8 @@
 .componentNegative {
   background: rgba(v.$danger-color, 0.14);
   border: 1px solid rgba(v.$danger-color, 0.28);
-  color: v.$danger-color;
+  // A touch lighter than $danger-color so it clears 4.5:1 on the highlighted row too.
+  color: color-mix(in srgb, #{v.$danger-color} 80%, #{v.$color-white});
 }
 
 .componentNeutral {
@@ -1831,4 +1840,197 @@
     gap: v.$space-xs;
   }
 
+}
+
+// Desktop: fit every Advanced column in the page instead of a 2,250px
+// sideways scroll. Headers and long text wrap, cells tighten, and the
+// "Why it's moving" note wraps in a narrower column.
+@media (min-width: v.$breakpoint-desktop) {
+  .tableAdvanced {
+    min-width: 0;
+
+    thead th {
+      padding: 0.5rem 0.3rem;
+      font-size: 0.6rem;
+      letter-spacing: 0.02em;
+      line-height: 1.2;
+      white-space: normal;
+    }
+
+    tbody td {
+      padding: 0.5rem 0.3rem;
+      font-size: 0.8rem;
+    }
+
+    .teamMeta {
+      font-size: 0.62rem;
+      white-space: normal;
+    }
+
+    .sparkline {
+      width: 64px;
+    }
+
+    .metricPopoverSummary {
+      gap: 3px;
+    }
+
+    .metricPopoverIcon {
+      width: 14px;
+      height: 14px;
+    }
+
+    .tierBadge {
+      width: auto;
+      padding: 0 6px;
+    }
+
+    // The two schedule chips stack under the SoS pill to keep this column narrow.
+    .sosCell .scheduleTexture {
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .narrativeCell {
+      min-width: 132px;
+      max-width: 190px;
+    }
+
+    .narrativeLine {
+      white-space: normal;
+    }
+  }
+}
+
+// In the rankings table the value itself opens its popover (it is the
+// <summary>), so the per-cell "i" icon is dropped; a dotted underline marks it.
+.table .metricPopoverIcon {
+  display: none;
+}
+
+.table .metricPopoverSummary > span:first-child {
+  border-bottom: 1px dotted rgba(v.$color-brand-yellow, 0.45);
+}
+
+// Numeric columns read as clean stacks: headers and values share a centre line.
+// Rank, team and the "Why it's moving" note stay left-aligned.
+.table thead th[aria-sort] {
+  text-align: center;
+}
+
+.table thead th.stickyRankHeader,
+.table thead th.stickyTeamHeader {
+  text-align: left;
+}
+
+.table .powerCell,
+.table .trendCell {
+  text-align: center;
+}
+
+// Advanced table: faint bands on alternate column groups (Power/Offense/Defense,
+// SoS Past/Future, PP/PK) so the eye can track across 17 columns. A background
+// image layers over the row's hover/active colour instead of replacing it.
+.tableAdvanced {
+  :is(th, td):nth-child(n + 3):nth-child(-n + 5),
+  :is(th, td):nth-child(n + 8):nth-child(-n + 9),
+  :is(th, td):nth-child(n + 11):nth-child(-n + 12) {
+    background-image: linear-gradient(rgba(v.$color-white, 0.03), rgba(v.$color-white, 0.03));
+  }
+}
+
+// Phones: the Simple table (rank, team, power, trend, SoS future) fits the
+// screen instead of keeping its 900px desktop minimum.
+// Rank through SoS Future fit the first screen; "Why it's moving" is the one
+// column left to the sideways scroll.
+@media (max-width: 767px) {
+  .tableSimple {
+    min-width: 0;
+
+    thead th {
+      padding: 0.5rem 0.3rem;
+      font-size: 0.6rem;
+      letter-spacing: 0.02em;
+      line-height: 1.2;
+      white-space: normal;
+    }
+
+    tbody td {
+      padding: 0.5rem 0.3rem;
+    }
+
+    // Each team is a grid row: the five data columns on top, then the
+    // "Why it's moving" note as a full-width line underneath.
+    thead,
+    tbody {
+      display: block;
+    }
+
+    thead tr,
+    tbody tr {
+      display: grid;
+      grid-template-columns: 54px minmax(0, 1fr) 64px 56px 70px;
+      align-items: center;
+    }
+
+    thead th:last-child {
+      display: none;
+    }
+
+    // Nothing scrolls sideways here, so rank/team stop being sticky.
+    :is(.rankCell, .teamCell, .stickyRankHeader, .stickyTeamHeader) {
+      position: static !important;
+    }
+
+    // Paint each grid row once, on the row: per-cell header, sorted-column,
+    // sticky and pinned-row backgrounds would otherwise tile unevenly.
+    thead tr {
+      background: v.$background-header;
+      border-bottom: 1px solid v.$border-soft;
+    }
+
+    thead th,
+    tbody td {
+      background: transparent !important;
+      box-shadow: none !important;
+    }
+
+    thead th {
+      border-bottom: 0;
+    }
+
+    thead th.stickyRankHeader,
+    thead th.stickyTeamHeader {
+      text-align: center;
+    }
+
+    .teamCell {
+      text-align: center;
+    }
+
+    tbody tr.tableRowActive {
+      background: rgba(v.$primary-color, 0.09);
+    }
+
+    tbody tr {
+      border-bottom: 1px solid rgba(v.$border-soft, 0.9);
+    }
+
+    tbody td {
+      border-bottom: 0;
+    }
+
+    .narrativeCell {
+      grid-column: 1 / -1;
+      min-width: 0;
+      max-width: none;
+      padding-top: 0;
+    }
+
+    .narrativeLine {
+      color: v.$text-secondary;
+      font-size: 0.68rem;
+      white-space: normal;
+    }
+  }
 }

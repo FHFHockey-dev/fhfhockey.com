@@ -1,0 +1,18 @@
+{
+  "at": "2026-11-01T21:06:28.105550+00:00",
+  "state": "OFFLINE_BINDING_PREFLIGHT_TESTED_NO_REAL_INPUTS",
+  "source": "inspect-issued-packet.mjs",
+  "sourceSha256": "a2e003361d75cee8b768f8bc46cd0bcd6d4bbb05f946604193c201ecf8564730",
+  "test": "inspect-issued-packet.test.mjs",
+  "testSha256": "f4cc19fc4be359cadf432be62a10163275d88ede4bbf9a820f3453f6b27ff74d",
+  "parserBridgeSha256": "fe98301ad8b5ee3ce54dec29370087f0f54eac794684e87605da756692e3c16b",
+  "testsPassed": 11,
+  "checks": "timestamp-review-fix/after.json",
+  "log": "timestamp-review-fix/issued-packet.log",
+  "handoff": "ISSUED-PACKET-HANDOFF.md",
+  "actualIssuedIdentity": null,
+  "forecastsCalculated": false,
+  "releaseAttributionProved": false,
+  "qualificationGranted": false,
+  "newLiveDataReads": 0
+}

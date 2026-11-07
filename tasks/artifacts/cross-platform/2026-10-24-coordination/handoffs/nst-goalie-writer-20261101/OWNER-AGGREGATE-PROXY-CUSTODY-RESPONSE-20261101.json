@@ -1,0 +1,33 @@
+{
+  "state": "OUTSIDE_RETAINED_CUSTODY_NO_ACTIVE_RECORDED_OWNER",
+  "recordedAtUtc": "2026-11-01T17:12:50.028693+00:00",
+  "recordedAtLocal": "2026-11-01T12:12:50.028693-05:00",
+  "localTimezone": "America/New_York",
+  "repository": "/Users/tim/Code/fhfhockey.com",
+  "branch": "octoberBranch",
+  "head": "66404db6d1aa0ca372a42158b121059d8baeec9b",
+  "path": "functions/api/index.py",
+  "sha256": "e5eb968e2052b7fc16abfa59eea7eb018038dbe0c93c6de36cab9b19f560f374",
+  "bytes": 4766,
+  "matchesHead": true,
+  "acceptedV4ChangedFilePin": null,
+  "sourceOwnerLease": "CODEX-CRON-TRIAGE-20261027-01",
+  "requestedSuccessor": "01a19780-b73c-7334-9e53-4b7fda61201c",
+  "requestedParent": "01a189f6-9a3a-7235-a989-e1af4f47b014",
+  "recordedOwners": {
+    "CODEX": [],
+    "CLAUDE": []
+  },
+  "disposition": "NOT_TRANSFERRED: outside this source owner retained custody. No retained claim or hold from this task; no active exact/pattern claim found in either inspected registry. This does not prove nobody else edits it. Exact allocation belongs to the active coordinator/successor parent after its normal conflict check.",
+  "sourceOwnerNoActiveOperation": "This custodian has no active edit, pending source write, runtime job, provider request, held heavy slot or process touching this file. No all-process-idle or external-backfill-completion claim.",
+  "requestedScope": "One-file local integration of aggregate /fetch_team_table with the standalone validated parent-token handler/context, preserving public route and authentication. Existing contract tests already belong to successor. Protect home, healthz and SKO endpoints and unrelated authentication/behavior.",
+  "sourceEvidence": [
+    "Aggregate imports fetch_team_table directly and has a duplicate /fetch_team_table handler; its call does not pass planned-request/admission-budget headers or establish the newly added parent-job context.",
+    "Standalone handler currently validates the enclosing token and parent context. The parity failure/provider-attempt fixture is reported by successor, not independently rerun here.",
+    "Aggregate hardcodes season defaults to 20242025, whereas standalone derives missing seasons. Sharing the handler requires explicit compatibility/default coverage; no code is changed by this receipt."
+  ],
+  "remainingAction": "Coordinator/parent allocates this exact unclaimed file locally to successor, or identifies a current conflicting writer. This task cannot release a lease it does not own; no new owner/user approval is requested here.",
+  "constraints": "No global audit changes, provider/production requests, NST jobs, migration application, scheduler changes, Git push or deployment. Preserve activation-disabled qualification requirement and previous exact transfers. No application tests run or source modifications made here.",
+  "registryPreimageSha256": "1743766f1e0adc57ddb4f4a5c83c536795fee727a32b797456888221549af926",
+  "claudeRegistryPreimageSha256": "ae17d08fe15f9a5fdbde2605c7cd3eb412b21798b46d012ed6d17ed0f823fcae"
+}

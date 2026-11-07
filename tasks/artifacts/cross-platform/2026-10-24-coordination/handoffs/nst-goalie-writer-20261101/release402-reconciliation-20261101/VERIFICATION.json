@@ -1,0 +1,19 @@
+{
+  "atUtc": "2026-11-01T19:18:42.518988+00:00",
+  "head": "50f4e9aaede4b2b40b673ea16b73e2be17d6c057",
+  "writerManifestSha256": "cec0829dcd184e411aa508a300ea477085d8fecd946100d6ddc339c8c4ccacb3",
+  "writerFiles": 67,
+  "writerDrift": [],
+  "protectedAuditPinsUnchanged": true,
+  "mailboxPrefixBytes": 561078,
+  "mailboxPrefixSha256": "9c1457d6297cdaa1ee2d70895bca015a99a353dbf8df9854ee5100fce36b394d",
+  "mailboxPrefixPreserved": true,
+  "mailboxSectionLine": 2827,
+  "trackedDirtyPathCount": 135,
+  "productionMutationsThisContinuation": 0,
+  "providerOrApplicationRequests": 0,
+  "buildsOrDeploymentsTriggered": 0,
+  "gitMutations": 0,
+  "remaining": "Shared admission approval pending; later checkpoint/release/operational qualification and approvals remain.",
+  "sharedTreePreservationScope": "No unrelated edits by this lane; no whole-tree byte snapshot. Dirty count128start/135finish, indexempty;67writer+2audit unchanged."
+}

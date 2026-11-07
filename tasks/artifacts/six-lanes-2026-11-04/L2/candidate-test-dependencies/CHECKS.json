@@ -1,0 +1,19 @@
+{
+  "focused": [
+    {
+      "timezone": "UTC",
+      "exit_code": 0,
+      "log": "focused-UTC.log"
+    },
+    {
+      "timezone": "America/New_York",
+      "exit_code": 0,
+      "log": "focused-America_New_York.log"
+    }
+  ],
+  "lint_exit_code": 0,
+  "environment": "empty inherited environment; explicit dummy Supabase values; unchanged canonical Vitest configuration; existing composer network-denial preload; BLSH_DISPLAY_OUT absent",
+  "shared_lock": "atomically acquired and own lock released",
+  "scoped_diff_check": "passed",
+  "final_hash_checks": "five pins plus exact original fixture byte equality passed"
+}

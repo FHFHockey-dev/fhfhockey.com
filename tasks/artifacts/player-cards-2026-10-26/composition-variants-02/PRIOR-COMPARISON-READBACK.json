@@ -1,0 +1,9 @@
+{
+  "at": "2026-10-26T17:48:04.870552+00:00",
+  "url": "http://127.0.0.1:3125/player-cards/compositions",
+  "httpStatus": 200,
+  "bytes": 1597171,
+  "sha256": "391232bc2d2e845dad2f407e55365f40d971249a5b7416abc0d3aa8eaa4f983b",
+  "matchesPriorFrozenComparison": true,
+  "remoteAvailabilityClaimed": false
+}

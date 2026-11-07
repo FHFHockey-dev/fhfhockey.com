@@ -1,6 +1,6 @@
 import type { MetricDefinition, MetricId, Strength } from "./contracts";
 import { METRICS } from "./registry";
-import { instant, type WindowSelection } from "./windows";
+import { instant, completionBounds, type WindowSelection } from "./windows";
 
 type IndividualField = "toi" | "shots" | "icf" | "iscfs" | "ixg" | "total_points" | "goals";
 type OnIceField = "toi" | "cf" | "scf" | "xgf" | "xga" | "gf" | "sf";
@@ -70,7 +70,7 @@ export function aggregateWindow(selection: WindowSelection, records: readonly Ga
     if (rows.length !== 1) return allUnavailable("missing", "Missing or duplicate source row for a selected appearance");
     const row = rows[0];
     const captured = instant(row.capturedAt);
-    const completed = game.completion.status === "verified-final" ? instant(game.completion.completedAt) : null;
+    const completed = completionBounds(game.completion)?.safeAfter ?? null;
     if (row.season !== selection.settings.season || row.date !== game.date || row.strength !== selection.settings.strength || row.sourceDefinition !== source.definition || row.sourceVersion !== source.version || row.state !== "ready" || captured === null || captured > snapshotTime || completed === null || captured < completed || row.toiUnit !== "seconds") return allUnavailable("missing", "Source identity, strength, freshness or selected-game alignment is unverified");
     joined.push(row);
   }

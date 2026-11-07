@@ -1,0 +1,8 @@
+{
+  "at": "2026-11-01T19:28:21.351772+00:00",
+  "check": "Active helper uses selected #402-plus-four-file tree and rejects merged base alone",
+  "exitCode": 1,
+  "expectedRejection": "Wrong candidate tree: observed 92517944c869baef86f6d9a869c5a5ab2992e24a; expected 9820a239181765a7eae2597c32c0f380c0260b5a. Do not substitute HEAD or a tree-only receipt.",
+  "gitMutations": 0,
+  "receiptCreated": false
+}

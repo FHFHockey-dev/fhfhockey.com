@@ -1,0 +1,155 @@
+{
+  "packet": {
+    "version": "ifttt-review-sidecar-v1",
+    "mode": "review_only",
+    "canPublish": false,
+    "canChangeStatus": false,
+    "receiptSnapshot": {
+      "id": "synthetic-receipt-E13",
+      "eventTable": "line_source_ifttt_events",
+      "eventId": "synthetic-event-E13",
+      "receivedAt": "2026-10-16T15:01:00Z",
+      "inputRow": {
+        "tweet_id": "910012",
+        "text": "SYN Avery Keeper started yesterday.",
+        "tweet_created_at": "2026-10-16T15:00:00Z",
+        "link_to_tweet": "https://x.com/LunaFixture/status/910012",
+        "raw_payload": {
+          "text": "SYN Avery Keeper started yesterday.",
+          "provenance": "authored-synthetic-evaluation"
+        }
+      }
+    },
+    "source": {
+      "retainedSourceId": "line_source_ifttt_events:synthetic-event-E13",
+      "sourceTextVersionId": "tweet-source-claim-v1:text:d69d1db68a84dbb41cb8d4a9de3972e8e2323b51b7baedbe7bb639463f492ab0",
+      "originalPostId": "910012",
+      "text": "SYN Avery Keeper started yesterday.",
+      "author": "lunafixture",
+      "url": "https://x.com/LunaFixture/status/910012",
+      "publishedAt": "2026-10-16T15:00:00Z",
+      "ingestedAt": "2026-10-16T15:01:00Z",
+      "sourceTextIsUntrustedData": true,
+      "provenance": {
+        "attribution": {
+          "relay": {
+            "accountKey": "x:handle:lunafixture",
+            "accountId": null,
+            "handle": "lunafixture"
+          },
+          "original": {
+            "accountKey": "x:handle:lunafixture",
+            "accountId": null,
+            "handle": "lunafixture"
+          },
+          "quoted": null,
+          "originalTweetId": "910012",
+          "originalUrl": "https://x.com/LunaFixture/status/910012",
+          "status": "resolved",
+          "originalPublishedAt": "2026-10-16T15:00:00Z",
+          "relationship": "direct",
+          "quoteEndorsement": "not_asserted"
+        },
+        "primaryTextSource": null
+      }
+    },
+    "wholePost": {
+      "proposedChecks": [
+        "relevance"
+      ],
+      "holds": []
+    },
+    "candidateCount": 1,
+    "candidatesOmitted": null,
+    "candidates": [
+      {
+        "observationId": "tweet-observation-v2:8e4399f12f712bf7c2fc95428d0a126bfaf73b982d0f399de3a358878b6e0f34",
+        "extractionVersion": "2026-10-16.4",
+        "canonicalPlayerIds": [],
+        "evidence": {
+          "start": 0,
+          "end": 35,
+          "text": "SYN Avery Keeper started yesterday."
+        },
+        "anchor": null,
+        "scope": {
+          "kind": "game",
+          "teamId": 900009,
+          "gameId": 900000001,
+          "phase": "entry",
+          "group": null
+        },
+        "effectiveAt": "2026-10-16T23:00:00Z",
+        "modality": "projected",
+        "fact": null,
+        "proposedChecks": [
+          "source_support",
+          "wording"
+        ],
+        "holds": [
+          "claim_anchor_missing",
+          "canonical_player_binding_missing",
+          "deterministic_support_unresolved"
+        ]
+      }
+    ],
+    "holds": [],
+    "providerDispatchEnabled": false
+  },
+  "statements": [],
+  "extractionVersion": "2026-10-16.4",
+  "decisions": false,
+  "referenceMode": "rules-and-synthetic-only",
+  "identity": {
+    "evidence": {
+      "version": "saved-public-player-evidence-v1",
+      "cohort": "authored-synthetic-luna-evaluation",
+      "players": [
+        {
+          "nhlId": 900001,
+          "registryId": 1,
+          "fullName": "Avery Keeper",
+          "lastName": "Keeper",
+          "position": "G",
+          "provenance": "invented identity for synthetic evaluation only",
+          "knownAt": "2026-10-01T00:00:00Z"
+        },
+        {
+          "nhlId": 900002,
+          "registryId": 2,
+          "fullName": "Riley Skater",
+          "lastName": "Skater",
+          "position": "C",
+          "provenance": "invented identity for synthetic evaluation only",
+          "knownAt": "2026-10-01T00:00:00Z"
+        }
+      ],
+      "aliases": [],
+      "memberships": [],
+      "completeness": {
+        "status": "partial",
+        "scope": "synthetic candidates only",
+        "omittedRecords": null
+      },
+      "truncated": false
+    },
+    "evaluation": {
+      "mode": "causal_as_of",
+      "sourcePublishedAt": "2026-10-16T15:00:00Z"
+    },
+    "asOf": "2026-10-16T15:02:00Z",
+    "mentions": [
+      {
+        "id": "subject-4",
+        "kind": "name",
+        "span": {
+          "start": 4,
+          "end": 16,
+          "text": "Avery Keeper"
+        },
+        "teamHint": null,
+        "positionHint": null
+      }
+    ]
+  }
+}

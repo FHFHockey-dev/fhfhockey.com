@@ -1,0 +1,15 @@
+{
+  "command": [
+    "npx",
+    "--no-install",
+    "eslint",
+    "lib/player-cards/currentNhl.ts",
+    "lib/player-cards/currentNhlExport.ts",
+    "components/player-cards/CurrentPlayerCard.tsx",
+    "components/player-cards/ProductionGameChart.tsx",
+    "components/player-cards/CurrentPlayerCardStudio.test.tsx"
+  ],
+  "exitCode": 0,
+  "elapsedSeconds": 1.321,
+  "sharedSlot": "parent verify token"
+}

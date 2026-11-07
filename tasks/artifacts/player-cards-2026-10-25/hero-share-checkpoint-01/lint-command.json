@@ -1,0 +1,26 @@
+{
+  "action": "lint",
+  "command": [
+    "npx",
+    "--no-install",
+    "eslint",
+    "components/player-cards/EditorialPlayerCard.tsx",
+    "components/player-cards/HeroPlayerCard.tsx",
+    "components/player-cards/PlayerCardShareStudio.tsx",
+    "components/player-cards/PlayerCardShareStudio.test.tsx",
+    "lib/player-cards/shareExport.ts",
+    "lib/player-cards/shareExport.test.ts",
+    "lib/player-cards/reviewedHeroSamples.ts",
+    "pages/social-share/player-cards.tsx"
+  ],
+  "cwd": "/Users/tim/Code/fhfhockey.com/web",
+  "exitCode": 0,
+  "elapsedSeconds": 1.427,
+  "environmentOverrides": {
+    "npm_config_cache": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/.npm-cache",
+    "npm_config_logs_dir": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/.npm-logs",
+    "NO_UPDATE_NOTIFIER": "1",
+    "NEXT_TELEMETRY_DISABLED": "1"
+  },
+  "lockOwnedAndReleased": true
+}

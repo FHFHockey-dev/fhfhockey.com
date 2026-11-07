@@ -1,0 +1,14 @@
+{
+  "checkedAt": "2026-11-01T20:06:22.803530+00:00",
+  "verdict": "hold",
+  "observedHead": "cc263466a69e9c7c0fe7d7ff3a04f411c30a9c2e",
+  "pendingAction": "Claude to provide integrated frozen candidate, updated lane receipts, F2/F3 dispositions and candidate-bound real period/calendar evidence in CLAUDE-TO-CODEX.md",
+  "reason": "No handoff or acknowledgement received; two P2 correctness findings remain",
+  "incomingMailboxSha256": "cdfb1f7f597f83bc22122a33cf2de0f28188eeea96578fb9a3358f0ce3ea5206",
+  "followupReviewSha256": "8bae950736f1fd7ea0de0b443934501a4b0f334a41d51cf844c7875220154c12",
+  "deniedActions": [],
+  "uncertainMutations": [],
+  "activeReviewerProcesses": 0,
+  "finalReviewOwner": "01a198a0-979b-71c9-a442-3d0218479035",
+  "resume": "Resume this existing thread on handoff; do not start another audit."
+}

@@ -1,0 +1,165 @@
+{
+  "packet": {
+    "version": "ifttt-review-sidecar-v1",
+    "mode": "review_only",
+    "canPublish": false,
+    "canChangeStatus": false,
+    "receiptSnapshot": {
+      "id": "synthetic-receipt-E15",
+      "eventTable": "line_source_ifttt_events",
+      "eventId": "synthetic-event-E15",
+      "receivedAt": "2026-10-16T15:01:00Z",
+      "inputRow": {
+        "tweet_id": "910014",
+        "text": "SYN \ud83c\udfd2 Avery Keeper is likely to start tonight.",
+        "tweet_created_at": "2026-10-16T15:00:00Z",
+        "link_to_tweet": "https://x.com/LunaFixture/status/910014",
+        "raw_payload": {
+          "text": "SYN \ud83c\udfd2 Avery Keeper is likely to start tonight.",
+          "provenance": "authored-synthetic-evaluation"
+        }
+      }
+    },
+    "source": {
+      "retainedSourceId": "line_source_ifttt_events:synthetic-event-E15",
+      "sourceTextVersionId": "tweet-source-claim-v1:text:87d07aeda19337e9ef1628c6625136c3e61927bf026fcea9ef9000ab8c74d396",
+      "originalPostId": "910014",
+      "text": "SYN \ud83c\udfd2 Avery Keeper is likely to start tonight.",
+      "author": "lunafixture",
+      "url": "https://x.com/LunaFixture/status/910014",
+      "publishedAt": "2026-10-16T15:00:00Z",
+      "ingestedAt": "2026-10-16T15:01:00Z",
+      "sourceTextIsUntrustedData": true,
+      "provenance": {
+        "attribution": {
+          "relay": {
+            "accountKey": "x:handle:lunafixture",
+            "accountId": null,
+            "handle": "lunafixture"
+          },
+          "original": {
+            "accountKey": "x:handle:lunafixture",
+            "accountId": null,
+            "handle": "lunafixture"
+          },
+          "quoted": null,
+          "originalTweetId": "910014",
+          "originalUrl": "https://x.com/LunaFixture/status/910014",
+          "status": "resolved",
+          "originalPublishedAt": "2026-10-16T15:00:00Z",
+          "relationship": "direct",
+          "quoteEndorsement": "not_asserted"
+        },
+        "primaryTextSource": null
+      }
+    },
+    "wholePost": {
+      "proposedChecks": [
+        "relevance"
+      ],
+      "holds": []
+    },
+    "candidateCount": 1,
+    "candidatesOmitted": null,
+    "candidates": [
+      {
+        "observationId": "tweet-observation-v2:04757082203b543064672eb6abc62d1b3a780cbe033baf988c23aa12b7375acf",
+        "extractionVersion": "2026-10-16.4",
+        "canonicalPlayerIds": [],
+        "evidence": {
+          "start": 7,
+          "end": 47,
+          "text": "Avery Keeper is likely to start tonight."
+        },
+        "anchor": {
+          "subjectSpan": {
+            "start": 7,
+            "end": 19,
+            "text": "Avery Keeper"
+          },
+          "predicateSpan": {
+            "start": 33,
+            "end": 38,
+            "text": "start"
+          }
+        },
+        "scope": {
+          "kind": "game",
+          "teamId": 900009,
+          "gameId": 900000001,
+          "phase": "entry",
+          "group": null
+        },
+        "effectiveAt": "2026-10-16T23:00:00Z",
+        "modality": "uncertain",
+        "fact": null,
+        "proposedChecks": [
+          "source_support",
+          "wording"
+        ],
+        "holds": [
+          "canonical_player_binding_missing",
+          "deterministic_support_unresolved"
+        ]
+      }
+    ],
+    "holds": [],
+    "providerDispatchEnabled": false
+  },
+  "statements": [],
+  "extractionVersion": "2026-10-16.4",
+  "decisions": false,
+  "referenceMode": "rules-and-synthetic-only",
+  "identity": {
+    "evidence": {
+      "version": "saved-public-player-evidence-v1",
+      "cohort": "authored-synthetic-luna-evaluation",
+      "players": [
+        {
+          "nhlId": 900001,
+          "registryId": 1,
+          "fullName": "Avery Keeper",
+          "lastName": "Keeper",
+          "position": "G",
+          "provenance": "invented identity for synthetic evaluation only",
+          "knownAt": "2026-10-01T00:00:00Z"
+        },
+        {
+          "nhlId": 900002,
+          "registryId": 2,
+          "fullName": "Riley Skater",
+          "lastName": "Skater",
+          "position": "C",
+          "provenance": "invented identity for synthetic evaluation only",
+          "knownAt": "2026-10-01T00:00:00Z"
+        }
+      ],
+      "aliases": [],
+      "memberships": [],
+      "completeness": {
+        "status": "partial",
+        "scope": "synthetic candidates only",
+        "omittedRecords": null
+      },
+      "truncated": false
+    },
+    "evaluation": {
+      "mode": "causal_as_of",
+      "sourcePublishedAt": "2026-10-16T15:00:00Z"
+    },
+    "asOf": "2026-10-16T15:02:00Z",
+    "mentions": [
+      {
+        "id": "subject-7",
+        "kind": "name",
+        "span": {
+          "start": 7,
+          "end": 19,
+          "text": "Avery Keeper"
+        },
+        "teamHint": null,
+        "positionHint": null
+      }
+    ]
+  }
+}

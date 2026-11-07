@@ -198,7 +198,7 @@ function CategoryCoverageChart({
     }} /></div>
       {/* F and D are pooled by design; say so, with the player's own sample (C-28). */}
       {sample && <p className={styles.sampleNote}>
-        {sample.playerGames} GP · vs {sample.cohortSize} skaters with {sample.minGames}+ GP
+        {sample.playerGames} GP vs {sample.cohortSize} skaters with {sample.minGames}+ GP
       </p>}
     </div>;
   }

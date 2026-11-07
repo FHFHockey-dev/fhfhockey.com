@@ -1,0 +1,11 @@
+{
+  "status": "prepared_not_applied_custody_pending",
+  "target": "web/components/player-cards/CurrentPlayerCardStudio.tsx",
+  "beforeSHA256": "9806acf539365419c4afae21b53b7186feb1eb8ae5e5ad4227d8162d11104021",
+  "candidateSHA256": "6ed4445cdbb6b82270333caea57113addb8626fbe33a0a486d1ce51521e4397b",
+  "dependencies": [
+    "web/components/player-cards/PlayerAnalysisStudio.tsx",
+    "web/lib/player-cards/analysisSnapshot.ts"
+  ],
+  "scope": "Opt-in extended views from the existing selected capture and prepared artwork; original four formats/default/search/load/export unchanged; no new provider calls"
+}

@@ -1,0 +1,27 @@
+{
+  "state": "FAILED",
+  "atUTC": "2026-11-02T00:01:20.100Z",
+  "externalRequests": [],
+  "pageErrors": [],
+  "checks": [
+    {
+      "player": "Aaron Ekblad",
+      "sourceId": 5598799,
+      "missing": 6,
+      "observed": 11,
+      "keyboardSequentialTabToInnerDisclosure": true
+    }
+  ],
+  "axe": [
+    {
+      "label": "desktop",
+      "violations": []
+    },
+    {
+      "label": "320px",
+      "violations": []
+    }
+  ],
+  "failure": "AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n+ actual - expected\n\n+ 0.9500000000000001\n- null\n    at /Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-provenance-precision-rereview-2026-11-01/missingness/browser-review.cjs:54:109",
+  "browserClosed": true
+}

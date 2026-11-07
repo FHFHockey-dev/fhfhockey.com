@@ -1,0 +1,119 @@
+{
+  "version": "luna-local-export-selection-v1",
+  "createdAt": "2026-10-31T23:51:06.088258+00:00",
+  "authority": "TJ Any resolves export preference for metadata preparation only; no inferred rights, reviewer acceptance, acquisition, model call or dispatch authority",
+  "mode": "offline metadata-only selection; not an evaluation packet",
+  "selectedExport": {
+    "path": "tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-seeds.json",
+    "sha256": "cafc2d85a65f6aaf3c0674ecb11a11fe7408ba1db70564339595b730d1bbb6c8",
+    "bytes": 176569,
+    "retrievedAtAsRecorded": "2026-10-01T13:02:21.461Z",
+    "methodAsRecorded": "Read-only exact-ID SELECT; provider originals, not independently authenticated author originals",
+    "holdoutStatusAsRecorded": "Unlabeled candidates; must cluster related sources/retweets and annotate before split freeze or tuning",
+    "counts": {
+      "events": 11,
+      "snapshots": 11,
+      "localDiagnosticReplay": 11,
+      "holdoutCandidates": 24
+    }
+  },
+  "intakeBounds": {
+    "desiredOriginalSourceEventFamilies": 2,
+    "maximumRetainedRecordsIncludingRevisions": 4,
+    "metadataCandidateRowsSelected": 2,
+    "sourceBodiesCopied": 0,
+    "relatedRevisionsSelected": 0,
+    "qualifiedFamilies": 0,
+    "qualifiedRecords": 0
+  },
+  "candidateRows": [
+    {
+      "selectionRole": "metadata candidate only; parser category is not a human label",
+      "metadata": {
+        "tweet_id": "2105476883966206037",
+        "source_key": "gamedaygoalies",
+        "source_url": "https://twitter.com/i/web/status/2105476883966206037",
+        "tweet_posted_at": "2026-10-01T01:56:00+00:00",
+        "observed_at": "2026-10-01T01:57:21.695079+00:00",
+        "classification": "goalie_start",
+        "status": "observed"
+      },
+      "originalReporter": null,
+      "sourceEventFamily": null,
+      "rightsEvidence": null,
+      "independentHumanReviewer": null,
+      "qualified": false,
+      "existingExposureSplit": "semantic_holdout_candidate",
+      "relatedRevisionRecordsSelected": 0
+    },
+    {
+      "selectionRole": "metadata candidate only; parser category is not a human label",
+      "metadata": {
+        "tweet_id": "2105476593967894778",
+        "source_key": "gamedaylines",
+        "source_url": "https://twitter.com/i/web/status/2105476593967894778",
+        "tweet_posted_at": "2026-10-01T01:55:00+00:00",
+        "observed_at": "2026-10-01T02:00:55.154525+00:00",
+        "classification": "practice_lines",
+        "status": "observed"
+      },
+      "originalReporter": null,
+      "sourceEventFamily": null,
+      "rightsEvidence": null,
+      "independentHumanReviewer": null,
+      "qualified": false,
+      "existingExposureSplit": "semantic_holdout_candidate",
+      "relatedRevisionRecordsSelected": 0
+    }
+  ],
+  "separationFinding": "Both selected IDs appear in existing labels and the 19-row classifier evaluation path. They are exposed development. gamedaygoalies and gamedaylines are provider/relay source keys, not authenticated distinct original reporters or source-event families.",
+  "labelFinding": {
+    "labelVersion": "2026-10-01.1",
+    "records": 35,
+    "reviewerAsRecorded": "Chef; independent reviewer unavailable under runtime-settings fallback",
+    "canonicalAccuracyDenominator": 0,
+    "independentHumanLabelsEstablished": false,
+    "originalAuthorTimeAuthenticated": false
+  },
+  "alternateInspected": {
+    "path": "web/scripts/output/tweet-news-phrase-audit/tweet-corpus.json",
+    "generatedAtAsRecorded": "2026-07-11T22:03:43.698Z",
+    "records": 6016,
+    "reviewStatusCounts": {
+      "missing": 4055,
+      "pending": 1913,
+      "ignored": 30,
+      "reviewed": 18
+    },
+    "qualification": "No explicit rights, reviewer identity or independent field-label provenance fields found in this export schema; reviewed category is insufficient for the proposed identity/goalie/exact-span/Decisions gold. Not claimed identical to historical 5494-receipt corpus. No report bodies selected or disclosed."
+  },
+  "gaps": [
+    "New-use access, retention, human-annotation and external-processing basis are not established by these export files.",
+    "Original reporter, authenticated original publication clock and full relay/quote/edit/correction family are not established for the two candidate rows.",
+    "Both selected candidates are already development-exposed, so additional permissions or relabeling cannot make them unseen.",
+    "Independent human reviewer and complete source-blind identity, goalie-status, exact UTF-16 evidence and pre-bound Decisions labels are absent.",
+    "Complete dated candidate/game/source policy context and original-author exposure inventory are not established."
+  ],
+  "nextDecision": "Do not ask the owner to pick an export again. Ask only for the person/evidence establishing permitted use and a human reviewer; for an unseen pilot, an already-retained, cleared family outside known development exposure must be located by that custodian or a human-authored synthetic feasibility alternative chosen.",
+  "externalRecipients": {
+    "thisPreparation": "Metadata only was returned to the assistant; raw report bodies were not emitted.",
+    "futureAssistantBodyReview": "Would process report text through OpenAI in this assistant conversation; not automatically covered by local human-only review.",
+    "futureLunaEvaluation": "Would send exact report text, attribution/clocks and supplied dated candidates/bound statements to the configured OpenAI API. Separate data-scope approval, frozen review and execution preflight are still required."
+  },
+  "evidencePins": {
+    "tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-seeds.json": "cafc2d85a65f6aaf3c0674ecb11a11fe7408ba1db70564339595b730d1bbb6c8",
+    "tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-lineage.json": "602896f9666732597190426e1fd7d18e21b7050c9868e4609b3bf1ab86208f15",
+    "tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-holdout-context.json": "f31e5f733784f8e5e19c62eacc3cb2cf4aae0fea24b57b19e7383834ab143221",
+    "web/lib/sources/fixtures/tweetClassificationLabels.json": "150880b7f63bfa1cbd459bb776d4763197392d407a7b2837d11de3c9749b87dd",
+    "web/lib/sources/tweetInterpretation.test.ts": "1e6e3c3f1f0ac56f6a983802943ad780dc1c0b7ac86603b975a6a3c4a2d22acd",
+    "web/scripts/output/tweet-news-phrase-audit/tweet-corpus.json": "712e394fccb1dc2c35024c1b743b4e831a8283950c6770dbb249250d8e801759"
+  },
+  "holds": {
+    "dispatchEnabled": false,
+    "paidCallsAuthorizedByThisArtifact": false,
+    "sourceBodyAccessAuthorizedByThisArtifact": false,
+    "productionAuthorized": false,
+    "priorGradesAuthoritative": true
+  },
+  "status": "metadata selection completed; actual two-family source packet pending qualification, not attempted or denied"
+}

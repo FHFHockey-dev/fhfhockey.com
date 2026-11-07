@@ -1,0 +1,28 @@
+{
+  "action": "lint",
+  "command": [
+    "npx",
+    "--no-install",
+    "eslint",
+    "lib/player-cards/currentNhl.ts",
+    "lib/player-cards/currentNhl.test.ts",
+    "lib/player-cards/currentNhl.server.ts",
+    "lib/player-cards/currentNhl.server.test.ts",
+    "pages/api/v1/player-cards.ts",
+    "components/player-cards/CurrentPlayerCard.tsx",
+    "components/player-cards/CurrentPlayerCardStudio.tsx",
+    "components/player-cards/CurrentPlayerCardStudio.test.tsx",
+    "lib/player-cards/currentNhlExport.ts",
+    "pages/social-share/player-cards.tsx"
+  ],
+  "cwd": "/Users/tim/Code/fhfhockey.com/web",
+  "exitCode": 0,
+  "elapsedSeconds": 1.416,
+  "environmentOverrides": {
+    "npm_config_cache": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-26/current-data-01/.npm-cache",
+    "npm_config_logs_dir": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-26/current-data-01/.npm-logs",
+    "NO_UPDATE_NOTIFIER": "1",
+    "NEXT_TELEMETRY_DISABLED": "1"
+  },
+  "lockOwnedAndReleased": true
+}

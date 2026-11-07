@@ -1,0 +1,31 @@
+{
+  "checks": [
+    "Team Colors remains fresh default; existing four styles retained; logo composition is opt-in",
+    "Native design-coordinate raster has exactly five opaque outward pixels on a straight edge; transparent exterior and interior remain empty",
+    "Both combined treatments: same player/snapshot, pinned embedded MIN logo behind hero, left-quarter fade, landscape PNG/manifest/same-instance share parity, phone390 no overflow",
+    "Genuine 5px outline padded/antialiased, embedded behind unchanged player and above logo; explicit first-stage buffers and subsequent same Team Colors mapper match manifest hashes; original alpha unchanged; distinct combined output; analytics bytes identical",
+    "Explicit combined style persists; second team uses TOR asset/palette; square export; partial source explanation and unknown-GP export block retained"
+  ],
+  "exports": [
+    {
+      "style": "posterized-team-colors",
+      "pngSha256": "90c7b9acbc78e5c27f8b98408bd96b89d173bc7ee155a0ccb1839b53b5245089",
+      "outlineSha256": "860c1b2949082deffee1feb4a57b4428d472c4fd56afa664d1735d9968614745",
+      "portraitSha256": "4d1eb2d09934e9b5bf717f554dcfbd46ad6b17eee21c1cf4faca77fae64d3608",
+      "redPixels": 11858,
+      "logoSha256": "430c6a4073da40b9d2e147c2528dba317f019273390ef2bdd43363895c5e0fc2"
+    },
+    {
+      "style": "pixelated-team-colors",
+      "pngSha256": "1dee405006ef8049b66e7dfd69bf53b0f3d305aace9c9245e7dc7f0587709769",
+      "outlineSha256": "860c1b2949082deffee1feb4a57b4428d472c4fd56afa664d1735d9968614745",
+      "portraitSha256": "8b7008d0722f76782b87acbc07ff07a320e6fec71f350b6407e1b6488cf314b6",
+      "redPixels": 6489,
+      "logoSha256": "430c6a4073da40b9d2e147c2528dba317f019273390ef2bdd43363895c5e0fc2"
+    }
+  ],
+  "analyticsByteDifferences": 0,
+  "externalAttempts": [],
+  "pageErrors": [],
+  "referenceInspected": false
+}

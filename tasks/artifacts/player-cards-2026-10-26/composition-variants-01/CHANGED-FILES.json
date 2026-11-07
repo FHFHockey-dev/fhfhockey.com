@@ -1,0 +1,50 @@
+[
+  {
+    "path": "web/lib/player-cards/portraitTreatment.ts",
+    "beforeSha256": "12826051100dc134e0c39838909ef5ca49f18376ae3f849c99ebe21eb2b3299f",
+    "afterSha256": "ec23203f003317efedc2f80b380518548c2306c3384b9f276fda2e9a94b92657",
+    "bytes": 7294
+  },
+  {
+    "path": "web/lib/player-cards/portraitTreatment.test.ts",
+    "beforeSha256": "921177c59ca88558260fc95b0f4dee62938b49b429f1bf9f6a548747ead78116",
+    "afterSha256": "90b205e1710b0c59e180e6467323b4a2affb951f43b3c7ff13c751d60e336cec",
+    "bytes": 4255
+  },
+  {
+    "path": "web/components/player-cards/HeroPlayerCard.tsx",
+    "beforeSha256": "4305ed15a9113022df9c8e4402d6ba2db1019871d6adfba580a7aa33c8c2e166",
+    "afterSha256": "2b104f9554ad8812e713561166d76d70fb4ab4b52e54ae4a2982b9c30a79ce75",
+    "bytes": 6891
+  },
+  {
+    "path": "web/lib/player-cards/shareExport.ts",
+    "beforeSha256": "608676949169425fc4b35df4829cd841d921d0d5f7e1b16b7e5f074cc546c512",
+    "afterSha256": "4ba56a5b7a907cfc38b2dcbcd10dd6d4b32697aca8e4d03b83e2bea11a74747d",
+    "bytes": 6297
+  },
+  {
+    "path": "web/lib/player-cards/shareExport.test.ts",
+    "beforeSha256": "446b53b6571db6770dabfc5b762863d15850f3f0b2d0aff749c6a71b7148397e",
+    "afterSha256": "a84f39f56f39c8333b4f973b57f4cd90f3ac6611a1cc40b5059784f913ba4661",
+    "bytes": 5568
+  },
+  {
+    "path": "web/components/player-cards/PlayerCardShareStudio.tsx",
+    "beforeSha256": "c96629b6cc07ec8be06aab2804e0e6f3793650b0e3ed71f692591f5cd9969ad9",
+    "afterSha256": "f7c17b8cc5614d9b67e9882fe6c6835168faeb622128d4b510245e2790addc52",
+    "bytes": 10166
+  },
+  {
+    "path": "web/components/player-cards/PlayerCardShareStudio.test.tsx",
+    "beforeSha256": "2fcd04e379852ba7104c03f4ee5df5462ebe3a1de659cf5f2a98d7eaad1afd78",
+    "afterSha256": "fb5287eabc81abd2a521f0c9442633548a5121f01877a2cbab250b2e71fcfe1a",
+    "bytes": 8323
+  },
+  {
+    "path": "web/lib/player-cards/teamLogo.ts",
+    "beforeSha256": null,
+    "afterSha256": "ea27905c906262947faebf75dcc24a9ca42a623b431ed48d20bede3bfafca186",
+    "bytes": 2211
+  }
+]

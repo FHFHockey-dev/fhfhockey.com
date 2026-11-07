@@ -1,3 +1,4 @@
+import { persistManualCronAudit, withManualCronAuditResponse } from "lib/cron/manualCronAudit";
 /**
  * This API route fetches, processes, and stores daily skater statistics from the official NHL API.
  * It is designed to be called by a cron job or manually to populate and maintain a database
@@ -2206,9 +2207,9 @@ async function handler(
     responseBody = details;
     res.status(500).json(responseBody);
   } finally {
-    if (req.query.action) {
-      // Only log cron jobs for actions
-      await supabase.from("cron_job_audit").insert({
+    {
+      // Record manual date/player calls as well as scheduled actions.
+      await persistManualCronAudit(supabase, {
         job_name: jobName,
         status: status,
         rows_affected: totalUpdates,
@@ -2231,4 +2232,4 @@ async function handler(
   }
 }
 
-export default adminOnly(withNhlOffSeasonSkip(handler as any));
+export default adminOnly(withNhlOffSeasonSkip(withManualCronAuditResponse(handler as any)));

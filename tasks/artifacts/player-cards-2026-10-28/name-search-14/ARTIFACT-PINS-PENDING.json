@@ -1,0 +1,157 @@
+[
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-28/name-search-14/CATALOG-INPUT.json",
+    "bytes": 372,
+    "sha256": "5ef5086e83d5a7ee0b04e36b4e4f0c90a93db75be9dcb604783529a2b630ddf6"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-28/name-search-14/EVIDENCE-PENDING.json",
+    "bytes": 1941,
+    "sha256": "39ff6d9f201ce9446a692669b647e2fe91667eae3ffc875bd67a9a50f74018d6"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-28/name-search-14/HANDOFF-PENDING.md",
+    "bytes": 1889,
+    "sha256": "9c6c299937a7809f2aabd2616dc3d2181f902fa1b389d4e34b94f988b77d1bdd"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-28/name-search-14/OWNERSHIP.json",
+    "bytes": 2537,
+    "sha256": "307a693bb6c03bf39754966035e00c360166e9a5c080b2ff9c5e955c98f098f9"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-28/name-search-14/PROTECTED-SOURCE-PINS.json",
+    "bytes": 2206,
+    "sha256": "f2dd7fee13a6c0c770ece62d692fd0d5b8ab7e9cb8d59c65c79c23f994696fa8"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-28/name-search-14/RESOURCE-BLOCKER.json",
+    "bytes": 1210,
+    "sha256": "2133a3f2a163f541b3f606b29e5707c9d72147a0a255aaf180d1b98abfd258f8"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-28/name-search-14/SOURCE-PINS-PENDING.json",
+    "bytes": 1386,
+    "sha256": "c089ddda2a021bec300f9e415c969d6dfaf70dd8cfe300f070c889ee310e7375"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-28/name-search-14/STEER-LEDGER.md",
+    "bytes": 1553,
+    "sha256": "b77a7b8ad6559e86ab7fd560bac6f9189f241e7cea21ce489712c5552cbef36e"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-28/name-search-14/USAGE-CHECKPOINT.json",
+    "bytes": 196,
+    "sha256": "9f9f71a358e89420ba2d4df0ab26699c3d42c405d135ee1792fd2113b39070ba"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-28/name-search-14/before/tasks/tasks-prd-shareable-player-cards.md",
+    "bytes": 28432,
+    "sha256": "b854ef3d75c17281cf33ca642815a7f6ddb7adc5797a3d4b4e412f8a9228b551"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-28/name-search-14/before/web/components/player-cards/CurrentPlayerCardStudio.test.tsx",
+    "bytes": 9483,
+    "sha256": "c23571ab0d50f069c41dc793e64aa3c1d545d784e6346a0c2c9be857b0891f82"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-28/name-search-14/before/web/components/player-cards/CurrentPlayerCardStudio.tsx",
+    "bytes": 12804,
+    "sha256": "5ff673b35518035961011c9e02091ca792d8aab35fa79f9dae9495531ab2f43f"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-28/name-search-14/handoff-preview.py",
+    "bytes": 4995,
+    "sha256": "83ef53c494ef8911daa5a2b4059f8e088af330facbabccdf5372699c289e246f"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-28/name-search-14/offline.setup.ts",
+    "bytes": 392,
+    "sha256": "1f5f36af850464317c4dec5386d3c7bad39dbd625a2cafd5f4751055bbdfe928"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-28/name-search-14/preview-entry.tsx",
+    "bytes": 2749,
+    "sha256": "94aa45ed9c49b78494eccefe2bbac4fecd69d61d6af408065586db41b717ef8e"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-28/name-search-14/preview.css",
+    "bytes": 177,
+    "sha256": "f4c0a5ab2c9608efbd2ff69935d9586a63d0c828743ddd28ea58ba6cc25bc196"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-28/name-search-14/render-preview.mjs",
+    "bytes": 2861,
+    "sha256": "e3c42d90e998d403e58e24be4fb09cad049913cd7128ae4adafd491522211d86"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-28/name-search-14/run-check.py",
+    "bytes": 3317,
+    "sha256": "468bd98df4051c04a094ee9f8feb219c46af7eda7d65268e94aae30711cd8790"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-28/name-search-14/serve-preview.mjs",
+    "bytes": 9881,
+    "sha256": "2a10412c892052ba273c97b0b53fc2da7e3dbdb8e7983b3de9ed6df283f2cedb"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-28/name-search-14/source-files/tasks/tasks-prd-shareable-player-cards.md",
+    "bytes": 29679,
+    "sha256": "ea8095451c50eb96b19ec5b138e77aefb2947814c4cf65484573dc05879a4ee4"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-28/name-search-14/source-files/web/components/player-cards/CurrentPlayerCardStudio.test.tsx",
+    "bytes": 12175,
+    "sha256": "419b546c7a643528a14f82f648e8c446746fa70813153365ceac2fb64b218940"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-28/name-search-14/source-files/web/components/player-cards/CurrentPlayerCardStudio.tsx",
+    "bytes": 13355,
+    "sha256": "753e68ac47cec3f916eb2dd8d7e2ee2391999dccf1a18742d3b8ae4715601c39"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-28/name-search-14/source-files/web/components/player-cards/PlayerLookup.module.scss",
+    "bytes": 867,
+    "sha256": "b476b6ed999bd74ff0d48d904a601e1773e8061ab188daf7c1da864ceabbeed7"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-28/name-search-14/source-files/web/components/player-cards/PlayerLookup.test.tsx",
+    "bytes": 2725,
+    "sha256": "1fbaf73ec6e465a37eec4003ce21a37a9b3c447564fb63848bb3bf1601ca96cf"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-28/name-search-14/source-files/web/components/player-cards/PlayerLookup.tsx",
+    "bytes": 2108,
+    "sha256": "b66e133300009e65e4736a998f062227111b1d4eab7bfbd44e3a183a08fe4984"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-28/name-search-14/source-files/web/lib/player-cards/playerCatalog.test.ts",
+    "bytes": 2016,
+    "sha256": "d6d89b87220d1ba377280500eff6a624a18076fb9141d308c07ec579f7eca0aa"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-28/name-search-14/source-files/web/lib/player-cards/playerCatalog.ts",
+    "bytes": 57404,
+    "sha256": "98d967b1895f574c8e9c4703b1594539b499ccdfb31b38955aaad85456e7bb0b"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-28/name-search-14/source-pending.patch",
+    "bytes": 78273,
+    "sha256": "93a268edf122fe04eb0b4807478dd9af084a440ac1d6c57a6261f35e51460aff"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-28/name-search-14/tsconfig.json",
+    "bytes": 2196,
+    "sha256": "ad8adf4b67a428cc1c76098c272d3e8a0c0e8679f360295445736485dbc1f892"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-28/name-search-14/verify-served.mjs",
+    "bytes": 9276,
+    "sha256": "e1e5f8a0506f2014e4a2626b665d85551bbf541966df624d11f343d8b33ab84a"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-28/name-search-14/vitest.config.mts",
+    "bytes": 669,
+    "sha256": "d1d728870e0c8abe027a00f85815fc24eddaf5517ec0d018303c9449ee60ece4"
+  }
+]

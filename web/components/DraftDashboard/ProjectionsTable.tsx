@@ -126,12 +126,14 @@ const mixRgb = (from: RgbColor, to: RgbColor, amount: number) =>
     Math.round(channel + (to[index] - channel) * amount),
   ).join(", ")})`;
 
+// The bottom quartile holds one red: darker reds fall under 4.5:1 on the
+// table rows, and the quartile is already named in each cell's title.
 const getOffNightRankColor = (rankPercentile: number) => {
   const quartiles: readonly [RgbColor, RgbColor][] = [
     [[22, 163, 74], [163, 230, 53]],
     [[250, 204, 21], [249, 115, 22]],
-    [[249, 115, 22], [239, 68, 68]],
-    [[239, 68, 68], [153, 27, 27]],
+    [[249, 115, 22], [240, 82, 82]],
+    [[240, 82, 82], [240, 82, 82]],
   ];
   const scaled = Math.min(Math.max(rankPercentile, 0), 1) * quartiles.length;
   const quartileIndex = Math.min(Math.floor(scaled), quartiles.length - 1);

@@ -30,7 +30,7 @@ export function buildTimeline(snapshot: PlanningSnapshot, intent: PlanIntent, st
     if (roster.has(entry.playerId)) issues.add(`Duplicate roster player ${entry.playerId}.`);
     const player = snapshot.players.find(candidate => candidate.id === entry.playerId);
     if (!player) issues.add(`Roster player ${entry.playerId} is unresolved.`);
-    else if (isReserve(entry.position) && !player.reserveEligibility.includes(entry.position as typeof reserves[number])) issues.add(`Initial reserve placement for ${entry.playerId} is unverified.`);
+    else if (isReserve(entry.position) && !player.reserveEligibility.includes(entry.position as typeof reserves[number])) warnings.add(`Initial reserve placement for ${entry.playerId} is unverified; additions are blocked until resolved.`);
     roster.set(entry.playerId, { ...entry, since: "0000-01-01T00:00:00Z" });
   }
   const capacity = (candidate = roster) => {
@@ -43,6 +43,7 @@ export function buildTimeline(snapshot: PlanningSnapshot, intent: PlanIntent, st
   };
   capacity();
   const applied = new Set<string>();
+  const droppedPlayers = new Set<string>();
   let waiverSpent = 0, waiverBudgetVerified = true;
   const stepById = new Map(steps.map(step => [step.id, step]));
   if (stepById.size !== steps.length) issues.add("Duplicate plan step identifiers.");
@@ -89,7 +90,12 @@ export function buildTimeline(snapshot: PlanningSnapshot, intent: PlanIntent, st
       if (lockedAt(player.id, step)) { issues.add(`Drop conflicts with locked assignment for ${player.id}.`); return; }
       nextRoster.delete(player.id);
     } else {
+      if (step.reservePosition) { issues.add("Direct-to-reserve additions are unsupported; verify the league setting and use a separately validated roster transition."); return; }
+      if (droppedPlayers.has(player.id)) { issues.add(`Player ${player.id} was dropped in this plan; reacquisition needs new availability and waiver evidence.`); return; }
       if (roster.has(player.id) || intent.excludedPlayerIds.includes(player.id) || !["free_agent", "manager_available", "waivers"].includes(player.availability)) { issues.add(`Player ${player.id} is not verified available.`); return; }
+      if ([...roster.values()].some(member => isReserve(member.position) && !snapshot.players.find(row => row.id === member.playerId)?.reserveEligibility.includes(member.position as typeof reserves[number]))) {
+        issues.add("An ineligible or unverified reserve occupant blocks additions; resolve that roster position first."); return;
+      }
       if (time(step.at) > time(snapshot.context.asOf)) {
         if (!step.conditional) { issues.add(`Future acquisition ${step.id} must be conditional on availability recheck.`); return; }
         warnings.add(`Future availability for ${player.id} must be rechecked before ${step.id}.`);
@@ -127,11 +133,16 @@ export function buildTimeline(snapshot: PlanningSnapshot, intent: PlanIntent, st
       nextRoster.set(player.id, { playerId: player.id, position: "bench", since: step.effectiveAt });
       const period = snapshot.rules.periods.find(item => time(item.start) <= time(step.at) && time(step.at) < time(item.end));
       if (!period) { issues.add(`No acquisition period covers ${step.at}.`); return; }
+      if (player.availability === "waivers" && !(time(period.start) <= time(step.effectiveAt) && time(step.effectiveAt) < time(period.end))) {
+        issues.add("Waiver claim crosses an acquisition reset; the charge period is unverified."); return;
+      }
       nextAcquisitions[period.id] = (acquisitions[period.id] ?? 0) + (snapshot.rules.acquisitionCost ?? 1);
       if (period.remaining === null || period.source === "unknown" || snapshot.rules.acquisitionCost === null) warnings.add(`Acquisition allowance or counting cost for ${period.id} is unverified.`);
       else if (nextAcquisitions[period.id] > period.remaining) { issues.add(`Acquisition allowance exceeded for ${period.id}.`); return; }
     }
     if (!capacity(nextRoster)) return;
+    if (step.type === "drop") droppedPlayers.add(player.id);
+    if (step.type === "add" && step.dropPlayerId) droppedPlayers.add(step.dropPlayerId);
     roster = nextRoster;
     Object.assign(acquisitions, nextAcquisitions);
     waiverSpent = nextWaiverSpent;

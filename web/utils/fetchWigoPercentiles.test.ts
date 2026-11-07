@@ -209,7 +209,7 @@ describe("fetchWigoPercentiles", () => {
 
     expect(result.appliedSeasonId).toBe(20242025);
     expect(result.canonicalPlayerGp).toBe(72);
-    expect(result.fallbackReason).toContain("Showing 20242025 player values and league cohort");
+    expect(result.fallbackReason).toContain("Showing 2024–25 player values and league cohort, not 2025–26");
     expect(result.stats[0]).toEqual(
       expect.objectContaining({
         player_id: 8476453,
@@ -306,7 +306,7 @@ describe("fetchWigoPercentiles", () => {
 
     // Before the fix the 102 inflated the cohort maximum and the incomplete season passed as complete.
     expect(result.appliedSeasonId).toBe(20242025);
-    expect(result.fallbackReason).toContain("Showing 20242025 player values");
+    expect(result.fallbackReason).toContain("Showing 2024–25 player values");
   });
 
   it("propagates source failures instead of interpreting them as an incomplete season", async () => {

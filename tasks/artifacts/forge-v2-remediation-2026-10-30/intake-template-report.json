@@ -1,0 +1,852 @@
+{
+  "schemaVersion": "forge-v2-metadata-intake-report-v1",
+  "status": "BLOCKED_METADATA",
+  "executionAuthorized": false,
+  "scientificallyQualified": false,
+  "referencedArtifactsOpened": 0,
+  "issues": [
+    {
+      "task": "2.2",
+      "path": "cases.official_appearance.owner",
+      "reason": "missing_or_invalid_text"
+    },
+    {
+      "task": "2.2",
+      "path": "cases.official_appearance.rawCaptureSha256",
+      "reason": "missing_or_invalid_hash"
+    },
+    {
+      "task": "2.2",
+      "path": "cases.official_appearance.rightsReceiptSha256",
+      "reason": "missing_or_invalid_hash"
+    },
+    {
+      "task": "2.2",
+      "path": "cases.official_appearance.semanticsReviewSha256",
+      "reason": "missing_or_invalid_hash"
+    },
+    {
+      "task": "2.2",
+      "path": "cases.official_appearance.completeFeedProofSha256",
+      "reason": "missing_or_invalid_hash"
+    },
+    {
+      "task": "2.2",
+      "path": "cases.zero_minute_penalty_credit.owner",
+      "reason": "missing_or_invalid_text"
+    },
+    {
+      "task": "2.2",
+      "path": "cases.zero_minute_penalty_credit.rawCaptureSha256",
+      "reason": "missing_or_invalid_hash"
+    },
+    {
+      "task": "2.2",
+      "path": "cases.zero_minute_penalty_credit.rightsReceiptSha256",
+      "reason": "missing_or_invalid_hash"
+    },
+    {
+      "task": "2.2",
+      "path": "cases.zero_minute_penalty_credit.semanticsReviewSha256",
+      "reason": "missing_or_invalid_hash"
+    },
+    {
+      "task": "2.2",
+      "path": "cases.zero_minute_penalty_credit.completeFeedProofSha256",
+      "reason": "missing_or_invalid_hash"
+    },
+    {
+      "task": "2.2",
+      "path": "cases.dressed_unused.owner",
+      "reason": "missing_or_invalid_text"
+    },
+    {
+      "task": "2.2",
+      "path": "cases.dressed_unused.rawCaptureSha256",
+      "reason": "missing_or_invalid_hash"
+    },
+    {
+      "task": "2.2",
+      "path": "cases.dressed_unused.rightsReceiptSha256",
+      "reason": "missing_or_invalid_hash"
+    },
+    {
+      "task": "2.2",
+      "path": "cases.dressed_unused.semanticsReviewSha256",
+      "reason": "missing_or_invalid_hash"
+    },
+    {
+      "task": "2.2",
+      "path": "cases.dressed_unused.completeFeedProofSha256",
+      "reason": "missing_or_invalid_hash"
+    },
+    {
+      "task": "2.2",
+      "path": "cases.nonappearance.owner",
+      "reason": "missing_or_invalid_text"
+    },
+    {
+      "task": "2.2",
+      "path": "cases.nonappearance.rawCaptureSha256",
+      "reason": "missing_or_invalid_hash"
+    },
+    {
+      "task": "2.2",
+      "path": "cases.nonappearance.rightsReceiptSha256",
+      "reason": "missing_or_invalid_hash"
+    },
+    {
+      "task": "2.2",
+      "path": "cases.nonappearance.semanticsReviewSha256",
+      "reason": "missing_or_invalid_hash"
+    },
+    {
+      "task": "2.2",
+      "path": "cases.nonappearance.completeFeedProofSha256",
+      "reason": "missing_or_invalid_hash"
+    },
+    {
+      "task": "2.2",
+      "path": "cases.ambiguous_incomplete.owner",
+      "reason": "missing_or_invalid_text"
+    },
+    {
+      "task": "2.2",
+      "path": "cases.ambiguous_incomplete.rawCaptureSha256",
+      "reason": "missing_or_invalid_hash"
+    },
+    {
+      "task": "2.2",
+      "path": "cases.ambiguous_incomplete.rightsReceiptSha256",
+      "reason": "missing_or_invalid_hash"
+    },
+    {
+      "task": "2.2",
+      "path": "cases.ambiguous_incomplete.semanticsReviewSha256",
+      "reason": "missing_or_invalid_hash"
+    },
+    {
+      "task": "2.2",
+      "path": "cases.ambiguous_incomplete.completeFeedProofSha256",
+      "reason": "missing_or_invalid_hash"
+    },
+    {
+      "task": "2.2",
+      "path": "cases.game_not_played.owner",
+      "reason": "missing_or_invalid_text"
+    },
+    {
+      "task": "2.2",
+      "path": "cases.game_not_played.rawCaptureSha256",
+      "reason": "missing_or_invalid_hash"
+    },
+    {
+      "task": "2.2",
+      "path": "cases.game_not_played.rightsReceiptSha256",
+      "reason": "missing_or_invalid_hash"
+    },
+    {
+      "task": "2.2",
+      "path": "cases.game_not_played.semanticsReviewSha256",
+      "reason": "missing_or_invalid_hash"
+    },
+    {
+      "task": "2.2",
+      "path": "cases.game_not_played.completeFeedProofSha256",
+      "reason": "missing_or_invalid_hash"
+    },
+    {
+      "task": "2.4",
+      "path": "allocations.training.custodian",
+      "reason": "missing_or_invalid_text"
+    },
+    {
+      "task": "2.4",
+      "path": "allocations.training.datasetSha256",
+      "reason": "missing_or_invalid_hash"
+    },
+    {
+      "task": "2.4",
+      "path": "allocations.training.exposureRegisterSha256",
+      "reason": "missing_or_invalid_hash"
+    },
+    {
+      "task": "2.4",
+      "path": "allocations.training.rightsReceiptSha256",
+      "reason": "missing_or_invalid_hash"
+    },
+    {
+      "task": "2.4",
+      "path": "allocations.training.scopeApprovalSha256",
+      "reason": "missing_or_invalid_hash"
+    },
+    {
+      "task": "2.4",
+      "path": "allocations.training.startUtc",
+      "reason": "missing_or_invalid_time"
+    },
+    {
+      "task": "2.4",
+      "path": "allocations.training.endUtc",
+      "reason": "missing_or_invalid_time"
+    },
+    {
+      "task": "2.4",
+      "path": "allocations.training.seasonIds",
+      "reason": "explicit_seasons_required"
+    },
+    {
+      "task": "2.4",
+      "path": "allocations.training.gameIds",
+      "reason": "complete_game_membership_metadata_required"
+    },
+    {
+      "task": "2.4",
+      "path": "allocations.development.custodian",
+      "reason": "missing_or_invalid_text"
+    },
+    {
+      "task": "2.4",
+      "path": "allocations.development.datasetSha256",
+      "reason": "missing_or_invalid_hash"
+    },
+    {
+      "task": "2.4",
+      "path": "allocations.development.exposureRegisterSha256",
+      "reason": "missing_or_invalid_hash"
+    },
+    {
+      "task": "2.4",
+      "path": "allocations.development.rightsReceiptSha256",
+      "reason": "missing_or_invalid_hash"
+    },
+    {
+      "task": "2.4",
+      "path": "allocations.development.scopeApprovalSha256",
+      "reason": "missing_or_invalid_hash"
+    },
+    {
+      "task": "2.4",
+      "path": "allocations.development.startUtc",
+      "reason": "missing_or_invalid_time"
+    },
+    {
+      "task": "2.4",
+      "path": "allocations.development.endUtc",
+      "reason": "missing_or_invalid_time"
+    },
+    {
+      "task": "2.4",
+      "path": "allocations.development.seasonIds",
+      "reason": "explicit_seasons_required"
+    },
+    {
+      "task": "2.4",
+      "path": "allocations.development.gameIds",
+      "reason": "complete_game_membership_metadata_required"
+    },
+    {
+      "task": "2.4",
+      "path": "allocations.interval_calibration.custodian",
+      "reason": "missing_or_invalid_text"
+    },
+    {
+      "task": "2.4",
+      "path": "allocations.interval_calibration.datasetSha256",
+      "reason": "missing_or_invalid_hash"
+    },
+    {
+      "task": "2.4",
+      "path": "allocations.interval_calibration.exposureRegisterSha256",
+      "reason": "missing_or_invalid_hash"
+    },
+    {
+      "task": "2.4",
+      "path": "allocations.interval_calibration.rightsReceiptSha256",
+      "reason": "missing_or_invalid_hash"
+    },
+    {
+      "task": "2.4",
+      "path": "allocations.interval_calibration.scopeApprovalSha256",
+      "reason": "missing_or_invalid_hash"
+    },
+    {
+      "task": "2.4",
+      "path": "allocations.interval_calibration.startUtc",
+      "reason": "missing_or_invalid_time"
+    },
+    {
+      "task": "2.4",
+      "path": "allocations.interval_calibration.endUtc",
+      "reason": "missing_or_invalid_time"
+    },
+    {
+      "task": "2.4",
+      "path": "allocations.interval_calibration.seasonIds",
+      "reason": "explicit_seasons_required"
+    },
+    {
+      "task": "2.4",
+      "path": "allocations.interval_calibration.gameIds",
+      "reason": "complete_game_membership_metadata_required"
+    },
+    {
+      "task": "2.4",
+      "path": "allocations.untouched_final.custodian",
+      "reason": "missing_or_invalid_text"
+    },
+    {
+      "task": "2.4",
+      "path": "allocations.untouched_final.datasetSha256",
+      "reason": "missing_or_invalid_hash"
+    },
+    {
+      "task": "2.4",
+      "path": "allocations.untouched_final.exposureRegisterSha256",
+      "reason": "missing_or_invalid_hash"
+    },
+    {
+      "task": "2.4",
+      "path": "allocations.untouched_final.rightsReceiptSha256",
+      "reason": "missing_or_invalid_hash"
+    },
+    {
+      "task": "2.4",
+      "path": "allocations.untouched_final.scopeApprovalSha256",
+      "reason": "missing_or_invalid_hash"
+    },
+    {
+      "task": "2.4",
+      "path": "allocations.untouched_final.startUtc",
+      "reason": "missing_or_invalid_time"
+    },
+    {
+      "task": "2.4",
+      "path": "allocations.untouched_final.endUtc",
+      "reason": "missing_or_invalid_time"
+    },
+    {
+      "task": "2.4",
+      "path": "allocations.untouched_final.seasonIds",
+      "reason": "explicit_seasons_required"
+    },
+    {
+      "task": "2.4",
+      "path": "allocations.untouched_final.gameIds",
+      "reason": "complete_game_membership_metadata_required"
+    },
+    {
+      "task": "2.4",
+      "path": "allocations.prospective.custodian",
+      "reason": "missing_or_invalid_text"
+    },
+    {
+      "task": "2.4",
+      "path": "allocations.prospective.datasetSha256",
+      "reason": "missing_or_invalid_hash"
+    },
+    {
+      "task": "2.4",
+      "path": "allocations.prospective.exposureRegisterSha256",
+      "reason": "missing_or_invalid_hash"
+    },
+    {
+      "task": "2.4",
+      "path": "allocations.prospective.rightsReceiptSha256",
+      "reason": "missing_or_invalid_hash"
+    },
+    {
+      "task": "2.4",
+      "path": "allocations.prospective.scopeApprovalSha256",
+      "reason": "missing_or_invalid_hash"
+    },
+    {
+      "task": "2.4",
+      "path": "allocations.prospective.startUtc",
+      "reason": "missing_or_invalid_time"
+    },
+    {
+      "task": "2.4",
+      "path": "allocations.prospective.endUtc",
+      "reason": "missing_or_invalid_time"
+    },
+    {
+      "task": "2.4",
+      "path": "allocations.prospective.seasonIds",
+      "reason": "explicit_seasons_required"
+    },
+    {
+      "task": "2.4",
+      "path": "allocations.prospective.gameIds",
+      "reason": "complete_game_membership_metadata_required"
+    },
+    {
+      "task": "2.5",
+      "path": "chronology.developmentProtocolRegisteredAt",
+      "reason": "missing_or_invalid_time"
+    },
+    {
+      "task": "2.5",
+      "path": "chronology.meanModelAvailableAt",
+      "reason": "missing_or_invalid_time"
+    },
+    {
+      "task": "2.5",
+      "path": "chronology.calibratorAvailableAt",
+      "reason": "missing_or_invalid_time"
+    },
+    {
+      "task": "2.5",
+      "path": "chronology.finalProtocolFrozenAt",
+      "reason": "missing_or_invalid_time"
+    },
+    {
+      "task": "2.5",
+      "path": "chronology.independentReviewSha256",
+      "reason": "missing_or_invalid_hash"
+    },
+    {
+      "task": "2.5",
+      "path": "chronology.developmentJustificationSha256",
+      "reason": "missing_or_invalid_hash"
+    },
+    {
+      "task": "2.2",
+      "path": "evidence.2.2.owner",
+      "reason": "missing_or_invalid_text"
+    },
+    {
+      "task": "2.2",
+      "path": "evidence.2.2.artifactSha256",
+      "reason": "missing_or_invalid_hash"
+    },
+    {
+      "task": "2.2",
+      "path": "evidence.2.2.receiptSha256",
+      "reason": "missing_or_invalid_hash"
+    },
+    {
+      "task": "2.2",
+      "path": "evidence.2.2.evidenceClass",
+      "reason": "needs_source"
+    },
+    {
+      "task": "2.4",
+      "path": "evidence.2.4.owner",
+      "reason": "missing_or_invalid_text"
+    },
+    {
+      "task": "2.4",
+      "path": "evidence.2.4.artifactSha256",
+      "reason": "missing_or_invalid_hash"
+    },
+    {
+      "task": "2.4",
+      "path": "evidence.2.4.receiptSha256",
+      "reason": "missing_or_invalid_hash"
+    },
+    {
+      "task": "2.4",
+      "path": "evidence.2.4.evidenceClass",
+      "reason": "needs_custody"
+    },
+    {
+      "task": "2.5",
+      "path": "evidence.2.5.owner",
+      "reason": "missing_or_invalid_text"
+    },
+    {
+      "task": "2.5",
+      "path": "evidence.2.5.artifactSha256",
+      "reason": "missing_or_invalid_hash"
+    },
+    {
+      "task": "2.5",
+      "path": "evidence.2.5.receiptSha256",
+      "reason": "missing_or_invalid_hash"
+    },
+    {
+      "task": "2.5",
+      "path": "evidence.2.5.evidenceClass",
+      "reason": "needs_protocol"
+    },
+    {
+      "task": "7.1",
+      "path": "evidence.7.1.owner",
+      "reason": "missing_or_invalid_text"
+    },
+    {
+      "task": "7.1",
+      "path": "evidence.7.1.artifactSha256",
+      "reason": "missing_or_invalid_hash"
+    },
+    {
+      "task": "7.1",
+      "path": "evidence.7.1.receiptSha256",
+      "reason": "missing_or_invalid_hash"
+    },
+    {
+      "task": "7.1",
+      "path": "evidence.7.1.evidenceClass",
+      "reason": "needs_development"
+    },
+    {
+      "task": "7.3",
+      "path": "evidence.7.3.owner",
+      "reason": "missing_or_invalid_text"
+    },
+    {
+      "task": "7.3",
+      "path": "evidence.7.3.artifactSha256",
+      "reason": "missing_or_invalid_hash"
+    },
+    {
+      "task": "7.3",
+      "path": "evidence.7.3.receiptSha256",
+      "reason": "missing_or_invalid_hash"
+    },
+    {
+      "task": "7.3",
+      "path": "evidence.7.3.evidenceClass",
+      "reason": "needs_development"
+    },
+    {
+      "task": "8.3",
+      "path": "evidence.8.3.owner",
+      "reason": "missing_or_invalid_text"
+    },
+    {
+      "task": "8.3",
+      "path": "evidence.8.3.artifactSha256",
+      "reason": "missing_or_invalid_hash"
+    },
+    {
+      "task": "8.3",
+      "path": "evidence.8.3.receiptSha256",
+      "reason": "missing_or_invalid_hash"
+    },
+    {
+      "task": "8.3",
+      "path": "evidence.8.3.evidenceClass",
+      "reason": "needs_development"
+    },
+    {
+      "task": "8.5",
+      "path": "evidence.8.5.owner",
+      "reason": "missing_or_invalid_text"
+    },
+    {
+      "task": "8.5",
+      "path": "evidence.8.5.artifactSha256",
+      "reason": "missing_or_invalid_hash"
+    },
+    {
+      "task": "8.5",
+      "path": "evidence.8.5.receiptSha256",
+      "reason": "missing_or_invalid_hash"
+    },
+    {
+      "task": "8.5",
+      "path": "evidence.8.5.evidenceClass",
+      "reason": "needs_development"
+    },
+    {
+      "task": "13.2",
+      "path": "evidence.13.2.owner",
+      "reason": "missing_or_invalid_text"
+    },
+    {
+      "task": "13.2",
+      "path": "evidence.13.2.artifactSha256",
+      "reason": "missing_or_invalid_hash"
+    },
+    {
+      "task": "13.2",
+      "path": "evidence.13.2.receiptSha256",
+      "reason": "missing_or_invalid_hash"
+    },
+    {
+      "task": "13.2",
+      "path": "evidence.13.2.evidenceClass",
+      "reason": "needs_representative_local"
+    },
+    {
+      "task": "13.4",
+      "path": "evidence.13.4.owner",
+      "reason": "missing_or_invalid_text"
+    },
+    {
+      "task": "13.4",
+      "path": "evidence.13.4.artifactSha256",
+      "reason": "missing_or_invalid_hash"
+    },
+    {
+      "task": "13.4",
+      "path": "evidence.13.4.receiptSha256",
+      "reason": "missing_or_invalid_hash"
+    },
+    {
+      "task": "13.4",
+      "path": "evidence.13.4.evidenceClass",
+      "reason": "needs_untouched_final"
+    },
+    {
+      "task": "14.1",
+      "path": "evidence.14.1.owner",
+      "reason": "missing_or_invalid_text"
+    },
+    {
+      "task": "14.1",
+      "path": "evidence.14.1.artifactSha256",
+      "reason": "missing_or_invalid_hash"
+    },
+    {
+      "task": "14.1",
+      "path": "evidence.14.1.receiptSha256",
+      "reason": "missing_or_invalid_hash"
+    },
+    {
+      "task": "14.1",
+      "path": "evidence.14.1.evidenceClass",
+      "reason": "needs_approval"
+    },
+    {
+      "task": "14.2",
+      "path": "evidence.14.2.owner",
+      "reason": "missing_or_invalid_text"
+    },
+    {
+      "task": "14.2",
+      "path": "evidence.14.2.artifactSha256",
+      "reason": "missing_or_invalid_hash"
+    },
+    {
+      "task": "14.2",
+      "path": "evidence.14.2.receiptSha256",
+      "reason": "missing_or_invalid_hash"
+    },
+    {
+      "task": "14.2",
+      "path": "evidence.14.2.evidenceClass",
+      "reason": "needs_prospective_issued"
+    },
+    {
+      "task": "14.3",
+      "path": "evidence.14.3.owner",
+      "reason": "missing_or_invalid_text"
+    },
+    {
+      "task": "14.3",
+      "path": "evidence.14.3.artifactSha256",
+      "reason": "missing_or_invalid_hash"
+    },
+    {
+      "task": "14.3",
+      "path": "evidence.14.3.receiptSha256",
+      "reason": "missing_or_invalid_hash"
+    },
+    {
+      "task": "14.3",
+      "path": "evidence.14.3.evidenceClass",
+      "reason": "needs_qualification"
+    },
+    {
+      "task": "14.4",
+      "path": "evidence.14.4.owner",
+      "reason": "missing_or_invalid_text"
+    },
+    {
+      "task": "14.4",
+      "path": "evidence.14.4.artifactSha256",
+      "reason": "missing_or_invalid_hash"
+    },
+    {
+      "task": "14.4",
+      "path": "evidence.14.4.receiptSha256",
+      "reason": "missing_or_invalid_hash"
+    },
+    {
+      "task": "14.4",
+      "path": "evidence.14.4.evidenceClass",
+      "reason": "needs_release_receipt"
+    },
+    {
+      "task": "14.5",
+      "path": "evidence.14.5.owner",
+      "reason": "missing_or_invalid_text"
+    },
+    {
+      "task": "14.5",
+      "path": "evidence.14.5.artifactSha256",
+      "reason": "missing_or_invalid_hash"
+    },
+    {
+      "task": "14.5",
+      "path": "evidence.14.5.receiptSha256",
+      "reason": "missing_or_invalid_hash"
+    },
+    {
+      "task": "14.5",
+      "path": "evidence.14.5.evidenceClass",
+      "reason": "needs_qualification"
+    },
+    {
+      "task": "14.6",
+      "path": "evidence.14.6.owner",
+      "reason": "missing_or_invalid_text"
+    },
+    {
+      "task": "14.6",
+      "path": "evidence.14.6.artifactSha256",
+      "reason": "missing_or_invalid_hash"
+    },
+    {
+      "task": "14.6",
+      "path": "evidence.14.6.receiptSha256",
+      "reason": "missing_or_invalid_hash"
+    },
+    {
+      "task": "14.6",
+      "path": "evidence.14.6.evidenceClass",
+      "reason": "needs_rso_owner_acceptance"
+    },
+    {
+      "task": "14.1",
+      "path": "shadow.environmentOwner",
+      "reason": "missing_or_invalid_text"
+    },
+    {
+      "task": "14.1",
+      "path": "shadow.environmentId",
+      "reason": "missing_or_invalid_text"
+    },
+    {
+      "task": "14.1",
+      "path": "shadow.approvalSha256",
+      "reason": "missing_or_invalid_hash"
+    },
+    {
+      "task": "14.1",
+      "path": "shadow.reservationReceiptSha256",
+      "reason": "missing_or_invalid_hash"
+    },
+    {
+      "task": "14.1",
+      "path": "shadow.retentionOwner",
+      "reason": "missing_or_invalid_text"
+    },
+    {
+      "task": "14.1",
+      "path": "shadow.maximumAttempts",
+      "reason": "missing_or_invalid_positive"
+    },
+    {
+      "task": "14.1",
+      "path": "shadow.maximumWorkerSeconds",
+      "reason": "missing_or_invalid_positive"
+    },
+    {
+      "task": "14.1",
+      "path": "shadow.maximumRetainedBytes",
+      "reason": "missing_or_invalid_positive"
+    },
+    {
+      "task": "14.1",
+      "path": "shadow.maximumStoreOperations",
+      "reason": "missing_or_invalid_positive"
+    },
+    {
+      "task": "14.1",
+      "path": "shadow.currencyBudget",
+      "reason": "missing_or_invalid_budget"
+    },
+    {
+      "task": "14.1",
+      "path": "shadow.startUtc",
+      "reason": "missing_or_invalid_time"
+    },
+    {
+      "task": "14.1",
+      "path": "shadow.endUtc",
+      "reason": "missing_or_invalid_time"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "2.2",
+      "state": "INCOMPLETE",
+      "metadataIssueCount": 34
+    },
+    {
+      "id": "2.4",
+      "state": "INCOMPLETE",
+      "metadataIssueCount": 49
+    },
+    {
+      "id": "2.5",
+      "state": "INCOMPLETE",
+      "metadataIssueCount": 10
+    },
+    {
+      "id": "7.1",
+      "state": "INCOMPLETE",
+      "metadataIssueCount": 4
+    },
+    {
+      "id": "7.3",
+      "state": "INCOMPLETE",
+      "metadataIssueCount": 4
+    },
+    {
+      "id": "8.3",
+      "state": "INCOMPLETE",
+      "metadataIssueCount": 4
+    },
+    {
+      "id": "8.5",
+      "state": "INCOMPLETE",
+      "metadataIssueCount": 4
+    },
+    {
+      "id": "13.2",
+      "state": "INCOMPLETE",
+      "metadataIssueCount": 4
+    },
+    {
+      "id": "13.4",
+      "state": "INCOMPLETE",
+      "metadataIssueCount": 4
+    },
+    {
+      "id": "14.1",
+      "state": "INCOMPLETE",
+      "metadataIssueCount": 16
+    },
+    {
+      "id": "14.2",
+      "state": "INCOMPLETE",
+      "metadataIssueCount": 4
+    },
+    {
+      "id": "14.3",
+      "state": "INCOMPLETE",
+      "metadataIssueCount": 4
+    },
+    {
+      "id": "14.4",
+      "state": "INCOMPLETE",
+      "metadataIssueCount": 4
+    },
+    {
+      "id": "14.5",
+      "state": "INCOMPLETE",
+      "metadataIssueCount": 4
+    },
+    {
+      "id": "14.6",
+      "state": "INCOMPLETE",
+      "metadataIssueCount": 4
+    }
+  ],
+  "limitation": "Hashes/owner strings are unverified declarations. Custodians must verify actual evidence and permissions. This tool never qualifies models, clears holds, opens data, or executes approvals."
+}

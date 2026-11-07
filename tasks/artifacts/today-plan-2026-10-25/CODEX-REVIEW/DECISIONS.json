@@ -1,0 +1,27 @@
+{
+  "at": "2026-10-25T14:56:45.277578+00:00",
+  "head": "1ee5127dc22c34ef9658f96ed4d72823b1d5ea29",
+  "mailbox_entries": [
+    "CODEX-20261025-080",
+    "CODEX-20261025-081",
+    "CODEX-20261025-082"
+  ],
+  "mailbox_before_sha256": "8fc12ceeac83fa41245d27ecb4d0a71c3b4fe82cec00819b9fc114b09e9db0b3",
+  "mailbox_after_sha256": "b3edb4b1df95054e6f5b1b33661b69b4649353e5b464f787c592077166535b43",
+  "lease_before_sha256": "34c155b9ef4c4cd3a6d5d54540e6e663d5715574e3c23f4245a9022a5f6ce7d9",
+  "lease_after_sha256": "521b1812fb295d27dc70383278690ec07ab601842d422f510652f30ba82ebc05",
+  "prior_mailbox_bytes_preserved": true,
+  "source_applied": false,
+  "canonical_write_gate": "AFTER cleanup coordinator explicit handback only, then fresh HEAD/hash/absence recheck and exact custody. No canonical replay before handback.",
+  "decisions": {
+    "C1": "grant; accepted exact offline patch; replay queued",
+    "C2": "two-path transfer; accepted exact local patch; replay queued; owner visual pending",
+    "C3a": "optional containment accepted; queued",
+    "C3b": "return corrections; exact patch not accepted",
+    "C3c": "retain exclusion; no change",
+    "C3d": "diagnostic patch accepted; queued"
+  },
+  "sequencing_mailbox": "CODEX-20261025-083",
+  "review_writer_state": "FROZEN source/docs writes for cleanup",
+  "final_checkpoint_at": "2026-10-25T14:59:24.884974+00:00"
+}

@@ -1,0 +1,24 @@
+{
+  "extends": "../../../../web/tsconfig.json",
+  "compilerOptions": {
+    "incremental": false
+  },
+  "include": [
+    "../../../../web/lib/player-cards/currentNhl.ts",
+    "../../../../web/lib/player-cards/currentNhl.test.ts",
+    "../../../../web/lib/player-cards/currentNhl.server.ts",
+    "../../../../web/lib/player-cards/currentNhl.server.test.ts",
+    "../../../../web/pages/api/v1/player-cards.ts",
+    "../../../../web/components/player-cards/CurrentPlayerCard.tsx",
+    "../../../../web/components/player-cards/CurrentPlayerCardStudio.tsx",
+    "../../../../web/components/player-cards/CurrentPlayerCardStudio.test.tsx",
+    "../../../../web/lib/player-cards/currentNhlExport.ts",
+    "../../../../web/pages/social-share/player-cards.tsx",
+    "../../../../web/lib/player-cards/currentSelection.ts",
+    "../../../../web/lib/player-cards/currentSelection.test.ts",
+    "../../../../web/pages/player-cards.tsx"
+  ],
+  "exclude": [
+    "../../../../web/node_modules"
+  ]
+}

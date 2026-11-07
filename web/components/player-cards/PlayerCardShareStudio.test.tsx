@@ -4,12 +4,13 @@ import { afterEach, expect, it, vi } from "vitest";
 import PlayerCardShareStudio from "./PlayerCardShareStudio";
 import { REVIEWED_HERO_SAMPLES } from "../../lib/player-cards/reviewedHeroSamples";
 import type { HeroSample, PreparedHero } from "./HeroPlayerCard";
-import { PORTRAIT_VERSION, type PortraitStyle } from "../../lib/player-cards/portraitTreatment";
+import { PORTRAIT_VERSION, COMPOSITION_VERSION, type PortraitStyle } from "../../lib/player-cards/portraitTreatment";
 import type { rasterizePlayerCard } from "../../lib/player-cards/shareExport";
+import { outlineInks, OUTLINE_VERSION } from "../../lib/player-cards/alphaOutline";
 
 afterEach(() => { cleanup(); localStorage.clear(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 const loaded = async (sample: HeroSample): Promise<PreparedHero> => ({ ...sample, dataUrl: "data:image/png;base64,AA==" });
-const treatment = async (hero: PreparedHero, style: PortraitStyle): Promise<PreparedHero> => ({ ...hero, dataUrl: `data:image/png;base64,${style}`, treatment: { style, version: PORTRAIT_VERSION, sourceAlphaSha256: hero.alphaSha256, renderedSha256: "a".repeat(64), width: hero.sourceWidth, height: hero.sourceHeight } });
+const treatment = async (hero: PreparedHero, style: PortraitStyle): Promise<PreparedHero> => ({ ...hero, dataUrl: `data:image/png;base64,${style}`, teamLogo: style.endsWith("-team-colors") ? { team: "TOR", localPath: "/teamLogos/TOR.png", dataUrl: "data:image/png;base64,logo", sha256: "b88d6edb92e4bcca291f7d3a37c1265fee39e1f5ef41650aaa19d8a39ad7e01d" } : undefined, treatment: { style, version: PORTRAIT_VERSION, sourceAlphaSha256: hero.alphaSha256, renderedSha256: "a".repeat(64), width: hero.sourceWidth, height: hero.sourceHeight, composition: style.endsWith("-team-colors") ? { version: COMPOSITION_VERSION, order: [style === "posterized-team-colors" ? "posterized" : "pixelated", "team-colors"], firstStagePreset: style === "posterized-team-colors" ? "five-tone" : "fine", firstPixelSha256: "b".repeat(64), finalPixelSha256: "c".repeat(64) } : undefined } });
 const ready = () => waitFor(() => expect(screen.getByRole("button", { name: "Social Share" }).hasAttribute("disabled")).toBe(false));
 
 it("shows actual photo identity, explicit fictional statistics and same-snapshot landscape/square compositions", async () => {
@@ -76,4 +77,53 @@ it.each(["invalid", "unavailable"])("keeps Team Colors as the default when saved
   const { container } = render(<PlayerCardShareStudio loadArtwork={loaded} treatArtwork={treatment} />); await ready();
   expect((screen.getByLabelText("Portrait style") as HTMLSelectElement).value).toBe("team-colors");
   expect(container.querySelector("image")!.getAttribute("href")).toBe("data:image/png;base64,team-colors");
+});
+it("offers both composition experiments without switching the default and persists an explicit selection", async () => {
+  const first = render(<PlayerCardShareStudio loadArtwork={loaded} treatArtwork={treatment} />); await ready();
+  expect((screen.getByLabelText("Portrait style") as HTMLSelectElement).value).toBe("team-colors");
+  expect(first.container.querySelector('[data-team-logo]')).toBeNull();
+  fireEvent.change(screen.getByLabelText("Portrait style"), { target: { value: "posterized-team-colors" } }); await ready();
+  expect(first.container.querySelector('[data-team-logo]')).toBeTruthy();
+  fireEvent.change(screen.getByLabelText("Portrait style"), { target: { value: "pixelated-team-colors" } }); await ready();
+  expect(first.container.querySelector('svg')!.dataset.portraitKey).toMatch(/^pixelated-team-colors:.*:logo:/);
+  first.unmount(); render(<PlayerCardShareStudio loadArtwork={loaded} treatArtwork={treatment} />); await ready();
+  expect((screen.getByLabelText("Portrait style") as HTMLSelectElement).value).toBe("pixelated-team-colors");
+});
+it("offers distinct source-palette outline colors and invalidates a prepared image after a color change", async () => {
+  const treat = vi.fn<(hero: PreparedHero, style: PortraitStyle, signal?: AbortSignal, ink?: string) => Promise<PreparedHero>>(async (hero, style, _signal, ink = "white") => {
+    const option = outlineInks(hero.team).find(option => option.id === ink)!;
+    return { ...await treatment(hero, style), outline: { version: OUTLINE_VERSION, thickness: 5, scale: 2, padding: 11, width: 1222, height: 697, sourceAlphaSha256: hero.alphaSha256, sha256: (ink === "white" ? "c" : "d").repeat(64), dataUrl: "data:image/png;base64,outline", ink: option.id, color: option.color } };
+  }), rasterize = vi.fn<typeof rasterizePlayerCard>(async () => new Blob(["png"], { type: "image/png" }));
+  render(<PlayerCardShareStudio samples={[REVIEWED_HERO_SAMPLES[1]]} loadArtwork={loaded} treatArtwork={treat} rasterize={rasterize} />); await ready();
+  expect([...(screen.getByLabelText("Outline color") as HTMLSelectElement).options].map(option => option.value)).toEqual(["white", "primary", "jersey", "secondary", "stacked", "custom"]);
+  fireEvent.click(screen.getByRole("button", { name: "Social Share" })); await screen.findByRole("button", { name: "Share prepared image" });
+  fireEvent.change(screen.getByLabelText("Outline color"), { target: { value: "jersey" } }); await ready();
+  expect(screen.queryByRole("button", { name: "Share prepared image" })).toBeNull(); expect(treat.mock.calls.at(-1)?.[3]).toBe("jersey");
+  expect(document.querySelector('[data-player-outline]')?.getAttribute("data-outline-color")).toBe("#A6192E");
+});
+
+it("debounces repeated stack edits, blocks invalid/pending exports and resets the team recipe", async () => {
+  const treat = vi.fn(async (hero: PreparedHero, style: PortraitStyle, _signal?: AbortSignal, _ink?: string, rings?: readonly import("../../lib/player-cards/outlineStack").OutlineRing[]): Promise<PreparedHero> => {
+    const result = await treatment(hero, style);
+    if (!rings?.length) return { ...result, outlineSettings: rings ? [...rings] : undefined };
+    const thickness = rings.reduce((sum, ring) => sum + ring.width, 0), padding = thickness * 2 + 1;
+    return { ...result, outlineSettings: rings ? [...rings] : undefined, outline: { version: OUTLINE_VERSION, thickness, scale: 2 as const, padding, width: 1200 + padding * 2, height: 675 + padding * 2, sourceAlphaSha256: hero.alphaSha256, sha256: "d".repeat(64), dataUrl: "data:image/png;base64,outline", ink: "custom" as const, color: rings[0].color, rings: [...rings] } };
+  }), rasterize = vi.fn<typeof rasterizePlayerCard>(async () => new Blob(["png"]));
+  render(<PlayerCardShareStudio samples={[REVIEWED_HERO_SAMPLES[1]]} loadArtwork={loaded} treatArtwork={treat} rasterize={rasterize} />); await ready();
+  fireEvent.change(screen.getByLabelText("Outline color"), { target: { value: "custom" } }); await ready();
+  fireEvent.click(screen.getByRole("button", { name: "Social Share" })); await screen.findByRole("button", { name: "Share prepared image" });
+  const calls = treat.mock.calls.length;
+  fireEvent.change(screen.getByLabelText("Ring 1 width"), { target: { value: "6" } });
+  fireEvent.change(screen.getByLabelText("Ring 1 width"), { target: { value: "7.5" } });
+  expect(screen.queryByRole("button", { name: "Share prepared image" })).toBeNull();
+  expect(screen.getByRole("button", { name: "Download PNG" }).hasAttribute("disabled")).toBe(true);
+  expect(treat).toHaveBeenCalledTimes(calls); await ready(); expect(treat).toHaveBeenCalledTimes(calls + 1);
+  expect(treat.mock.calls.at(-1)?.[4]?.[0].width).toBe(7.5);
+  fireEvent.change(screen.getByLabelText("Ring 1 width"), { target: { value: "" } });
+  expect(screen.getByRole("alert").textContent).toContain("0.5–12");
+  expect(screen.getByRole("button", { name: "Download PNG" }).hasAttribute("disabled")).toBe(true);
+  fireEvent.click(screen.getByRole("button", { name: "Reset team stack" })); await ready();
+  expect((screen.getByLabelText("Ring 1 width") as HTMLInputElement).value).toBe("5");
+  fireEvent.click(screen.getByRole("button", { name: "Remove ring 3" })); fireEvent.click(screen.getByRole("button", { name: "Remove ring 2" })); fireEvent.click(screen.getByRole("button", { name: "Remove ring 1" })); await ready();
+  expect(document.querySelector('[data-player-outline]')).toBeNull(); expect(treat.mock.calls.at(-1)?.[4]).toEqual([]);
 });

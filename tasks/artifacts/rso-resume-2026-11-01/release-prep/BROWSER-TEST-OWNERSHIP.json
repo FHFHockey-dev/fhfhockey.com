@@ -1,0 +1,13 @@
+{
+  "at": "2026-11-01T16:40:44.507576+00:00",
+  "owner_thread": "01a19764-091f-763d-a983-8c692d79200b",
+  "status": "completed_released_to_parent",
+  "scope": "Manual continuity test locators only; no runtime behavior",
+  "path": "web/e2e/roster-schedule-optimizer.spec.ts",
+  "baselineSha256": "32511ac4e77b8d8c6761c69769ce65d1a18c347516688efd11fa18bdb15d9c67",
+  "matchingClaims": [],
+  "priorDiff": "",
+  "completedAt": "2026-11-01T16:42:40.155776+00:00",
+  "finalSha256": "fb096e6a413c6e4e79111cfffd9fb69974672133e2d46ae41d584592e0665be9",
+  "verification": "manual-browser.json"
+}

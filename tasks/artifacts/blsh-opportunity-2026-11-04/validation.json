@@ -1,0 +1,534 @@
+{
+ "origins": 7587,
+ "players": 667,
+ "cohort": {
+  "F": {
+   "pts": 0.0012696272502929784,
+   "fp": 0.004345955441672942,
+   "goalShare": 0.4230168269230769
+  },
+  "D": {
+   "pts": 0.0012128357540923654,
+   "fp": 0.003905083970964065,
+   "goalShare": 0.2197962154294032
+  }
+ },
+ "tracks": {
+  "fp": {
+   "deltaPP": {
+    "< -60": {
+     "n": 604,
+     "perGame": {
+      "bias": -1.7343,
+      "mae": 4.1647
+     },
+     "totalTOI": {
+      "bias": -0.7678,
+      "mae": 3.7191
+     },
+     "split": {
+      "bias": -0.191,
+      "mae": 3.6549
+     }
+    },
+    "-60..-20": {
+     "n": 1479,
+     "perGame": {
+      "bias": -0.6109,
+      "mae": 3.9141
+     },
+     "totalTOI": {
+      "bias": -0.2922,
+      "mae": 3.7394
+     },
+     "split": {
+      "bias": -0.052,
+      "mae": 3.7164
+     }
+    },
+    "-20..20": {
+     "n": 3926,
+     "perGame": {
+      "bias": -0.1119,
+      "mae": 3.1112
+     },
+     "totalTOI": {
+      "bias": -0.0822,
+      "mae": 3.0239
+     },
+     "split": {
+      "bias": -0.1273,
+      "mae": 3.0031
+     }
+    },
+    "20..60": {
+     "n": 1002,
+     "perGame": {
+      "bias": 0.4775,
+      "mae": 4.2384
+     },
+     "totalTOI": {
+      "bias": 0.0673,
+      "mae": 4.2133
+     },
+     "split": {
+      "bias": -0.3086,
+      "mae": 4.1893
+     }
+    },
+    "> 60": {
+     "n": 576,
+     "perGame": {
+      "bias": 2.2967,
+      "mae": 4.7684
+     },
+     "totalTOI": {
+      "bias": 1.3874,
+      "mae": 4.5555
+     },
+     "split": {
+      "bias": 0.4395,
+      "mae": 4.4695
+     }
+    }
+   },
+   "deltaTOI": {
+    "< -60": {
+     "n": 2151,
+     "perGame": {
+      "bias": -1.3636,
+      "mae": 3.5085
+     },
+     "totalTOI": {
+      "bias": -0.1061,
+      "mae": 3.1272
+     },
+     "split": {
+      "bias": -0.1117,
+      "mae": 3.1179
+     }
+    },
+    "-60..-20": {
+     "n": 1146,
+     "perGame": {
+      "bias": -0.3892,
+      "mae": 3.4756
+     },
+     "totalTOI": {
+      "bias": 0.0206,
+      "mae": 3.3965
+     },
+     "split": {
+      "bias": 0.0372,
+      "mae": 3.381
+     }
+    },
+    "-20..20": {
+     "n": 1260,
+     "perGame": {
+      "bias": -0.0461,
+      "mae": 3.6695
+     },
+     "totalTOI": {
+      "bias": -0.0367,
+      "mae": 3.6656
+     },
+     "split": {
+      "bias": -0.0712,
+      "mae": 3.6127
+     }
+    },
+    "20..60": {
+     "n": 1109,
+     "perGame": {
+      "bias": 0.3418,
+      "mae": 3.6947
+     },
+     "totalTOI": {
+      "bias": -0.0706,
+      "mae": 3.7286
+     },
+     "split": {
+      "bias": -0.1164,
+      "mae": 3.6914
+     }
+    },
+    "> 60": {
+     "n": 1921,
+     "perGame": {
+      "bias": 1.2854,
+      "mae": 3.7801
+     },
+     "totalTOI": {
+      "bias": -0.0119,
+      "mae": 3.7074
+     },
+     "split": {
+      "bias": -0.1726,
+      "mae": 3.6645
+     }
+    }
+   },
+   "kGrid": {
+    "0": {
+     "maeAll": 3.4827,
+     "biasPromo": 0.6306,
+     "biasThinPromo": 1.555,
+     "maeThinPromo": 3.4894
+    },
+    "600": {
+     "maeAll": 3.4736,
+     "biasPromo": 0.526,
+     "biasThinPromo": 0.9283,
+     "maeThinPromo": 3.2415
+    },
+    "1800": {
+     "maeAll": 3.4667,
+     "biasPromo": 0.4628,
+     "biasThinPromo": 0.6656,
+     "maeThinPromo": 3.2093
+    },
+    "3600": {
+     "maeAll": 3.462,
+     "biasPromo": 0.432,
+     "biasThinPromo": 0.5455,
+     "maeThinPromo": 3.2056
+    },
+    "7200": {
+     "maeAll": 3.4602,
+     "biasPromo": 0.422,
+     "biasThinPromo": 0.4674,
+     "maeThinPromo": 3.2033
+    },
+    "nPromo": 575,
+    "nThinPromo": 65
+   },
+   "maeOverall": {
+    "perGame": 3.6263,
+    "totalTOI": 3.4921,
+    "split": 3.462
+   },
+   "zScale": {
+    "sdZa": 1.114,
+    "sdZb": 1.056,
+    "bandShareA": 0.347,
+    "bandShareB": 0.37
+   },
+   "directionCrosstab": {
+    "balanced|balanced": 2133,
+    "balanced|buy": 297,
+    "balanced|sell": 200,
+    "buy|balanced": 369,
+    "buy|buy": 2374,
+    "buy|sell": 2,
+    "sell|balanced": 305,
+    "sell|buy": 2,
+    "sell|sell": 1905
+   },
+   "next10PerGameMinusBaseline": {
+    "balanced|balanced": {
+     "n": 1762,
+     "mean": -0.0364
+    },
+    "balanced|buy": {
+     "n": 246,
+     "mean": 0.0377
+    },
+    "balanced|sell": {
+     "n": 161,
+     "mean": -0.0468
+    },
+    "buy|balanced": {
+     "n": 294,
+     "mean": -0.1939
+    },
+    "buy|buy": {
+     "n": 1958,
+     "mean": -0.1308
+    },
+    "buy|sell": {
+     "n": 2,
+     "mean": -0.1685
+    },
+    "sell|balanced": {
+     "n": 260,
+     "mean": 0.1701
+    },
+    "sell|buy": {
+     "n": 2,
+     "mean": 1.101
+    },
+    "sell|sell": {
+     "n": 1583,
+     "mean": 0.1457
+    }
+   }
+  },
+  "pts": {
+   "deltaPP": {
+    "< -60": {
+     "n": 604,
+     "perGame": {
+      "bias": -0.4455,
+      "mae": 1.4429
+     },
+     "totalTOI": {
+      "bias": -0.2045,
+      "mae": 1.3458
+     },
+     "split": {
+      "bias": 0.0099,
+      "mae": 1.3381
+     }
+    },
+    "-60..-20": {
+     "n": 1479,
+     "perGame": {
+      "bias": -0.1642,
+      "mae": 1.3915
+     },
+     "totalTOI": {
+      "bias": -0.0885,
+      "mae": 1.3634
+     },
+     "split": {
+      "bias": 0.0045,
+      "mae": 1.3562
+     }
+    },
+    "-20..20": {
+     "n": 3926,
+     "perGame": {
+      "bias": -0.0538,
+      "mae": 1.1247
+     },
+     "totalTOI": {
+      "bias": -0.0506,
+      "mae": 1.1126
+     },
+     "split": {
+      "bias": -0.063,
+      "mae": 1.1085
+     }
+    },
+    "20..60": {
+     "n": 1002,
+     "perGame": {
+      "bias": 0.0565,
+      "mae": 1.4575
+     },
+     "totalTOI": {
+      "bias": -0.0457,
+      "mae": 1.4612
+     },
+     "split": {
+      "bias": -0.1763,
+      "mae": 1.4631
+     }
+    },
+    "> 60": {
+     "n": 576,
+     "perGame": {
+      "bias": 0.5812,
+      "mae": 1.5719
+     },
+     "totalTOI": {
+      "bias": 0.359,
+      "mae": 1.5416
+     },
+     "split": {
+      "bias": 0.0292,
+      "mae": 1.5256
+     }
+    }
+   },
+   "deltaTOI": {
+    "< -60": {
+     "n": 2151,
+     "perGame": {
+      "bias": -0.3454,
+      "mae": 1.2341
+     },
+     "totalTOI": {
+      "bias": -0.0626,
+      "mae": 1.1542
+     },
+     "split": {
+      "bias": -0.0566,
+      "mae": 1.1545
+     }
+    },
+    "-60..-20": {
+     "n": 1146,
+     "perGame": {
+      "bias": -0.109,
+      "mae": 1.2512
+     },
+     "totalTOI": {
+      "bias": -0.014,
+      "mae": 1.2361
+     },
+     "split": {
+      "bias": -0.0036,
+      "mae": 1.2408
+     }
+    },
+    "-20..20": {
+     "n": 1260,
+     "perGame": {
+      "bias": -0.0546,
+      "mae": 1.2997
+     },
+     "totalTOI": {
+      "bias": -0.0522,
+      "mae": 1.3001
+     },
+     "split": {
+      "bias": -0.061,
+      "mae": 1.2912
+     }
+    },
+    "20..60": {
+     "n": 1109,
+     "perGame": {
+      "bias": 0.05,
+      "mae": 1.3119
+     },
+     "totalTOI": {
+      "bias": -0.0472,
+      "mae": 1.3221
+     },
+     "split": {
+      "bias": -0.0605,
+      "mae": 1.3151
+     }
+    },
+    "> 60": {
+     "n": 1921,
+     "perGame": {
+      "bias": 0.286,
+      "mae": 1.317
+     },
+     "totalTOI": {
+      "bias": -0.0121,
+      "mae": 1.3252
+     },
+     "split": {
+      "bias": -0.065,
+      "mae": 1.312
+     }
+    }
+   },
+   "kGrid": {
+    "0": {
+     "maeAll": 1.2578,
+     "biasPromo": 0.0862,
+     "biasThinPromo": 0.5395,
+     "maeThinPromo": 1.2509
+    },
+    "600": {
+     "maeAll": 1.2556,
+     "biasPromo": 0.0552,
+     "biasThinPromo": 0.3523,
+     "maeThinPromo": 1.1593
+    },
+    "1800": {
+     "maeAll": 1.2543,
+     "biasPromo": 0.0367,
+     "biasThinPromo": 0.2735,
+     "maeThinPromo": 1.1422
+    },
+    "3600": {
+     "maeAll": 1.2536,
+     "biasPromo": 0.0279,
+     "biasThinPromo": 0.2375,
+     "maeThinPromo": 1.1361
+    },
+    "7200": {
+     "maeAll": 1.2538,
+     "biasPromo": 0.0255,
+     "biasThinPromo": 0.2142,
+     "maeThinPromo": 1.1369
+    },
+    "nPromo": 575,
+    "nThinPromo": 65
+   },
+   "maeOverall": {
+    "perGame": 1.2799,
+    "totalTOI": 1.2586,
+    "split": 1.2536
+   },
+   "zScale": {
+    "sdZa": 1.099,
+    "sdZb": 1.064,
+    "bandShareA": 0.348,
+    "bandShareB": 0.359
+   },
+   "directionCrosstab": {
+    "balanced|balanced": 2295,
+    "balanced|buy": 213,
+    "balanced|sell": 129,
+    "buy|balanced": 225,
+    "buy|buy": 2553,
+    "sell|balanced": 200,
+    "sell|sell": 1972
+   },
+   "next10PerGameMinusBaseline": {
+    "balanced|balanced": {
+     "n": 1920,
+     "mean": -0.0175
+    },
+    "balanced|buy": {
+     "n": 181,
+     "mean": 0.0228
+    },
+    "balanced|sell": {
+     "n": 97,
+     "mean": -0.0198
+    },
+    "buy|balanced": {
+     "n": 183,
+     "mean": -0.0613
+    },
+    "buy|buy": {
+     "n": 2088,
+     "mean": -0.045
+    },
+    "sell|balanced": {
+     "n": 173,
+     "mean": 0.0654
+    },
+    "sell|sell": {
+     "n": 1626,
+     "mean": 0.0368
+    }
+   }
+  }
+ },
+ "persistence": {
+  "ppUp60": {
+   "n": 491,
+   "meanRetained": 0.365,
+   "medianRetained": 0.35,
+   "shareRetainedHalf": 0.369
+  },
+  "ppDown60": {
+   "n": 491,
+   "meanRetained": 0.535,
+   "medianRetained": 0.573,
+   "shareRetainedHalf": 0.558
+  },
+  "toiUp60": {
+   "n": 1630,
+   "meanRetained": 0.501,
+   "medianRetained": 0.504,
+   "shareRetainedHalf": 0.502
+  },
+  "toiDown60": {
+   "n": 1759,
+   "meanRetained": 0.5,
+   "medianRetained": 0.511,
+   "shareRetainedHalf": 0.508
+  }
+ }
+}

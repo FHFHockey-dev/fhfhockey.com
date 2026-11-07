@@ -1,0 +1,98 @@
+from flask import Flask, request, jsonify
+from api.fetch_team_table import _handle_fetch_team_table_request
+from lib.sko_pipeline import trigger_sko_step_forward
+import os
+import secrets
+
+app = Flask(__name__)
+
+@app.route('/')
+def home():
+    return 'Hello, fhfh functions!'
+
+
+@app.route('/healthz')
+def healthz():
+    return jsonify({"ok": True}), 200
+
+
+def _check_auth() -> tuple[bool, str]:
+    """Validate a required bearer token against SKO_PIPELINE_SECRET.
+
+    Returns (ok, message).
+    """
+    expected = (os.environ.get("SKO_PIPELINE_SECRET") or "").strip()
+    if not expected:
+        return False, "pipeline authentication is not configured"
+    auth = request.headers.get("Authorization", "")
+    if not auth.startswith("Bearer "):
+        return False, "missing bearer token"
+    token = auth.split(" ", 1)[1]
+    if not secrets.compare_digest(token, expected):
+        return False, "invalid token"
+    return True, "ok"
+
+
+@app.route('/fetch_team_table', methods=['GET'])
+def fetch_team_table_api():
+    return _handle_fetch_team_table_request(default_season="20242025")
+
+
+@app.route('/sko/pipeline', methods=['POST'])
+def run_sko_pipeline():
+    ok, msg = _check_auth()
+    if not ok:
+        return jsonify({"success": False, "message": msg}), 401
+    payload = dict(request.get_json(silent=True) or {})
+
+    # Allow callers to pass ?step=score or ?steps=backfill,train,score via query string.
+    if 'step' not in payload and 'steps' not in payload:
+        if 'step' in request.args:
+            payload['step'] = request.args['step']
+        elif 'steps' in request.args:
+            payload['steps'] = [value.strip() for value in request.args['steps'].split(',') if value.strip()]
+
+    result = trigger_sko_step_forward(payload)
+    status = 200 if result.get("success") else 500
+    return jsonify(result), status
+
+
+@app.route('/sko/pipeline-step', methods=['POST'])
+def run_sko_pipeline_step():
+    """Lightweight segmented step handler.
+
+    Accepts JSON like { "step": "backfill", ... }. This endpoint should
+    kick off only the requested slice and return quickly so that upstream
+    orchestrators can chain steps without hitting timeouts.
+
+    NOTE: This implementation is a fast placeholder that simply validates
+    input and returns 200. Replace the body where indicated to actually
+    perform work (enqueue a job, call a quick sub-task, etc.).
+    """
+    ok, msg = _check_auth()
+    if not ok:
+        return jsonify({"success": False, "message": msg}), 401
+
+    payload = dict(request.get_json(silent=True) or {})
+    step = (payload.get("step") or "").strip()
+    if not step:
+        return jsonify({"success": False, "message": "Missing 'step' in payload"}), 400
+
+    # Optional: basic allow-list
+    allowed = {"backfill", "train", "score", "upload"}
+    if step not in allowed:
+        return jsonify({
+            "success": False,
+            "message": f"Unknown step '{step}'. Allowed: {sorted(list(allowed))}",
+        }), 400
+
+    return jsonify({
+        "success": False,
+        "message": "SKO pipeline stage execution is not implemented.",
+        "step": step,
+        "implemented": False,
+    }), 501
+
+
+if __name__ == '__main__':
+    app.run(debug=True)

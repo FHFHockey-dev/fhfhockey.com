@@ -9,6 +9,10 @@ import {
 } from "lib/draftDashboard/categoryStandings";
 import styles from "./LeagueStandings.module.scss";
 
+// Tooltip name for a category key: "GOALS_AGAINST_GOALIE" -> "goals against".
+const statTitle = (key: string) =>
+  key.replace(/_(GOALIE|SKATER)$/, "").toLowerCase().replace(/^pp_/, "power-play_").replaceAll("_", " ");
+
 interface LeagueStandingsProps {
   scheduleMetrics?: PlayerScheduleMetrics;
   schedulePeriod?: string;
@@ -43,6 +47,13 @@ export default function LeagueStandings({
   const ranks = useMemo(
     () => rankTeamCategories(teams, categories, leagueType),
     [teams, categories, leagueType],
+  );
+  // A column where every team has the same total (e.g. all 0 before the first
+  // pick) has no leader, so it gets no best-to-lowest tint.
+  const tiedColumns = useMemo(
+    () => new Set(Object.keys(categories).filter((key) =>
+      new Set(teams.map((team) => team.categoryTotals[key] ?? null)).size <= 1)),
+    [teams, categories],
   );
   const values = useMemo(
     () =>
@@ -131,7 +142,7 @@ export default function LeagueStandings({
                 >
                   <button
                     type="button"
-                    title={key}
+                    title={`Sort by ${statTitle(key)}`}
                     onClick={() => changeSort(key)}
                   >
                     {STATS_MASTER_LIST.find((stat) => stat.key === key)
@@ -218,8 +229,8 @@ export default function LeagueStandings({
                       key={key}
                       data-category={key}
                       data-rank={rank}
-                      data-band={rank == null ? undefined : categoryRankBand(rank, teams.length)}
-                      title={`${definition?.displayName || key}: ${rank == null ? "unranked" : `rank ${rank} of ${teams.length}`}${estimated ? " · Estimated" : ""}`}
+                      data-band={rank == null || tiedColumns.has(key) ? undefined : categoryRankBand(rank, teams.length)}
+                      title={`${definition?.displayName || key}: ${rank == null ? "unranked" : tiedColumns.has(key) ? "all teams tied" : `rank ${rank} of ${teams.length}`}${estimated ? " · Estimated" : ""}`}
                     >
                       {value == null ? <span aria-label="Unavailable team rate">N/A</span> : <>
                         {value.toFixed(definition?.decimalPlaces ?? 0)}

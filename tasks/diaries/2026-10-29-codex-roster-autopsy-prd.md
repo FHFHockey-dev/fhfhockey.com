@@ -1,0 +1,15 @@
+# Roster autopsy PRD — 2026-10-29
+
+- Scope: local planning only; produce a source-indexed, evidence-hashed PRD for TJ's roster autopsy concept. No production, communications, database, Git actions, or deletions.
+- Where: canonical checkout `/Users/tim/Code/fhfhockey.com`, `octoberBranch`, base HEAD `c3cf52629fd729a7deb829dcd5aa700a0217623a`; unrelated changes already present.
+- State: beginning bounded review of existing plans, coordination and features. The runtime has not exposed Chef's actual model/reasoning effort; keep this coupled single-document assignment with Chef rather than claiming the required worker hierarchy is verified.
+- Next: establish source and ownership boundaries, then draft the PRD without editing active writers' files.
+- Blockers/approvals: none for local planning. Do not include private league/account data here.
+- Checkpoint: reviewed exact-file coordination and the RSO/BLSH plans. Existing RSO and BLSH source areas are reserved/actively worked; new PRD path has no listed owner. RSO local provider route explicitly rejects authoritative Fantrax in-season roster/availability; Yahoo source has league-roster reads but real full coverage is unverified. Yahoo Trade Market prior attempt stopped on HTTP 429 with zero ingested observations; synthetic fixtures do not prove source selectors or coverage.
+- Decision: treat owner-stated vision and Yahoo permission/logo condition as requirements; mark proposed implementation/thresholds and unknown source rights/coverage separately. Create an independent PRD and detached SHA-256 manifest; do not alter leases or existing plans.
+- Next: specify grade, trade, schedule, data and acceptance contracts and compute source evidence digests.
+- Checkpoint: drafted `tasks/TASKS/prd-roster-autopsy.md` with manual and connected flows, proposed grade and trade algorithms, playoff scheduling, evidence states, data/privacy/access contracts, phased gates and indexed source hashes. RSO's matcher converts nonfinite values to zero for attribution, so the PRD requires an input guard before reuse.
+- Next: review the draft for internal consistency and source/hash accuracy, then write and verify a detached checksum and read back. No production or provider operations performed.
+- Final checkpoint: PRD read back; all local links and 16 indexed evidence hashes matched. Detached `tasks/TASKS/prd-roster-autopsy.sha256` checked successfully for the PRD plus all 16 source files. PRD SHA-256 `8b7f3d3eca6426bbfb59876c27902549c850cbccec1a6503b9ba1e12ea2a59b2`.
+- Outcome: local planning deliverable complete. No application, production, database, provider, external communication, Git mutation or deletion action. Git status and HEAD were inspected read-only. Diary retained because this task explicitly prohibits deletions. External local Trade Market evidence paths are machine-specific; live source coverage, Fantrax roster sync and the proposed grading/trade policies remain unverified or undecided as recorded in the PRD.
+- Next: hand off the PRD and checksum to the parent; any future implementation requires the PRD's ownership and qualification gates.

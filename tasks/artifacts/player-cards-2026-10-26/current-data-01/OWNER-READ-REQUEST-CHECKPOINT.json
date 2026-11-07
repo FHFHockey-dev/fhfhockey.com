@@ -1,0 +1,19 @@
+{
+  "at": "2026-10-26T22:53:11.828207+00:00",
+  "lockPath": "/private/tmp/fhfh-heavy.lock/owner.json",
+  "holder": {
+    "owner": "Codex isolated map worker",
+    "token": "guarded-d474782a-ff2e-472e-a392-97bd102f63c7",
+    "name": "baseline",
+    "createdUtc": "2026-10-26T22:43:50.554115+00:00",
+    "note": "Preserve this owned lease: sandbox denied SIGTERM and Editor outcome is uncertain; do not release until the process is known stopped."
+  },
+  "pidOrThreadInReceipt": false,
+  "sourcePinsReverified": {
+    "currentData": 10,
+    "composition05": 5
+  },
+  "previewPidObserved": 97856,
+  "newReads": 0,
+  "implementationChanges": 0
+}

@@ -55,13 +55,13 @@
 
   &:hover {
     background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(7, 170, 226, 0.5);
+    border-color: rgba(v.$secondary-color, 0.5);
   }
 
   &.active {
-    background: rgba(7, 170, 226, 0.2);
-    border-color: #07aae2;
-    color: #07aae2;
+    background: rgba(v.$secondary-color, 0.2);
+    border-color: v.$secondary-color;
+    color: v.$secondary-color;
     font-weight: 600;
   }
 
@@ -73,7 +73,7 @@
 
 .gameGrid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   grid-template-rows: repeat(2, 1fr);
   gap: 0.5rem;
   margin-bottom: 0.25rem;
@@ -110,38 +110,58 @@
   }
 
   &.win {
-    border-left: 3px solid #00ff87;
+    --result-color: #{v.$success-color};
 
     .gameResult {
-      color: #00ff87;
-      background: rgba(0, 255, 135, 0.1);
-      border: 1px solid rgba(0, 255, 135, 0.2);
+      color: v.$success-color;
+      background: rgba(v.$success-color, 0.1);
+      border: 1px solid rgba(v.$success-color, 0.2);
     }
   }
 
   &.loss {
-    border-left: 3px solid #ff6b6b;
+    --result-color: #{v.$color-coral-500};
 
     .gameResult {
-      color: #ff6b6b;
-      background: rgba(255, 107, 107, 0.1);
-      border: 1px solid rgba(255, 107, 107, 0.2);
+      color: v.$color-coral-500;
+      background: rgba(v.$color-coral-500, 0.1);
+      border: 1px solid rgba(v.$color-coral-500, 0.2);
     }
   }
 
   &.otLoss {
-    border-left: 3px solid #ffb347;
+    --result-color: #{v.$color-gold-400};
 
     .gameResult {
-      color: #ffb347;
-      background: rgba(255, 179, 71, 0.1);
-      border: 1px solid rgba(255, 179, 71, 0.2);
+      color: v.$color-gold-400;
+      background: rgba(v.$color-gold-400, 0.1);
+      border: 1px solid rgba(v.$color-gold-400, 0.2);
+    }
+  }
+
+  // Result rule: a flat bar laid over the card's 2px transparent left edge.
+  // A coloured border-left would miter against the transparent top border and
+  // leave a cut corner, so the bar is a pseudo-element with square inner corners.
+  &.win,
+  &.loss,
+  &.otLoss {
+    border-radius: 4px 6px 6px 4px;
+
+    &::before {
+      content: "";
+      position: absolute;
+      top: -2px;
+      bottom: -2px;
+      left: -2px;
+      width: 4px;
+      border-radius: 4px 0 0 4px;
+      background: var(--result-color);
     }
   }
 
   &.selected {
-    border-color: #07aae2;
-    background: rgba(7, 170, 226, 0.1);
+    border-color: v.$secondary-color;
+    background: rgba(v.$secondary-color, 0.1);
   }
 
   @media (max-width: v.$breakpoint-tablet) {
@@ -219,7 +239,20 @@
   align-items: center;
 }
 
+// OT / SO marker under the score for games decided after regulation.
+.decidedTag {
+  margin-top: 2px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  line-height: 1;
+}
+
+// Spans inside the card button: block display so width/height apply (inline
+// spans ignore them, which left the bar as an empty track).
 .performanceBar {
+  display: block;
   width: 100%;
   height: 5px;
   background: rgba(255, 255, 255, 0.1);
@@ -229,24 +262,25 @@
 }
 
 .performanceFill {
+  display: block;
   height: 100%;
   border-radius: 2px;
   transition: width 0.3s ease;
 
   .excellent & {
-    background: linear-gradient(90deg, #00ff87, #00cc6a);
+    background: v.$success-color;
   }
 
   .good & {
-    background: linear-gradient(90deg, #07aae2, #0591c7);
+    background: v.$secondary-color;
   }
 
   .poor & {
-    background: linear-gradient(90deg, #ffb347, #ff9800);
+    background: v.$color-gold-400;
   }
 
   .terrible & {
-    background: linear-gradient(90deg, #ff6b6b, #ff5252);
+    background: v.$color-coral-500;
   }
 }
 
@@ -332,31 +366,31 @@
   color: #ffffff;
 
   &.win {
-    color: #00ff87;
+    color: v.$success-color;
   }
 
   &.loss {
-    color: #ff6b6b;
+    color: v.$color-coral-500;
   }
 
   &.otLoss {
-    color: #ffb347;
+    color: v.$color-gold-400;
   }
 
   &.excellent {
-    color: #00ff87;
+    color: v.$success-color;
   }
 
   &.good {
-    color: #07aae2;
+    color: v.$secondary-color;
   }
 
   &.poor {
-    color: #ffb347;
+    color: v.$color-gold-400;
   }
 
   &.terrible {
-    color: #ff6b6b;
+    color: v.$color-coral-500;
   }
 }
 
@@ -372,7 +406,7 @@
     width: 24px;
     height: 24px;
     border: 2px solid rgba(255, 255, 255, 0.1);
-    border-top: 2px solid #07aae2;
+    border-top: 2px solid v.$secondary-color;
     border-radius: 50%;
     animation: spin 1s linear infinite;
     margin-bottom: 0.75rem;

@@ -1,0 +1,271 @@
+[
+  {
+    "path": "web/pages/api/v1/db/update-nst-goalies.ts",
+    "commit": "4965a872a9746b6129c9ac589c200560d01a1e23",
+    "exists": true,
+    "sha256": "aeaddea4bd81b246e08ac176468915c1378a4be20dc907ffffd0207df019520e",
+    "lifecycleReferenced": false,
+    "sharedAdmissionReferenced": false,
+    "configuredCrons": null,
+    "evidenceMeaning": "Git commit identified by current production deployment metadata; not a deployed-byte download"
+  },
+  {
+    "path": "web/pages/api/v1/db/update-nst-gamelog.ts",
+    "commit": "4965a872a9746b6129c9ac589c200560d01a1e23",
+    "exists": true,
+    "sha256": "9f6b8f628f2d4be77e3bf15a3d94ee8bceef6b420618034eab5c23162d8db1d4",
+    "lifecycleReferenced": false,
+    "sharedAdmissionReferenced": false,
+    "configuredCrons": null,
+    "evidenceMeaning": "Git commit identified by current production deployment metadata; not a deployed-byte download"
+  },
+  {
+    "path": "web/pages/api/v1/db/update-nst-current-season.ts",
+    "commit": "4965a872a9746b6129c9ac589c200560d01a1e23",
+    "exists": true,
+    "sha256": "01cb818ffa53d4e30fcd594c7cc3ba84d95cfef021dd7873f8f5d037cf67db12",
+    "lifecycleReferenced": false,
+    "sharedAdmissionReferenced": false,
+    "configuredCrons": null,
+    "evidenceMeaning": "Git commit identified by current production deployment metadata; not a deployed-byte download"
+  },
+  {
+    "path": "web/pages/api/v1/db/update-nst-team-daily.ts",
+    "commit": "4965a872a9746b6129c9ac589c200560d01a1e23",
+    "exists": true,
+    "sha256": "abbe2bf9fd887e01334953e84c0f68bbf284c508ae1e3001677619819a799845",
+    "lifecycleReferenced": false,
+    "sharedAdmissionReferenced": false,
+    "configuredCrons": null,
+    "evidenceMeaning": "Git commit identified by current production deployment metadata; not a deployed-byte download"
+  },
+  {
+    "path": "web/pages/api/Teams/nst-team-stats.ts",
+    "commit": "4965a872a9746b6129c9ac589c200560d01a1e23",
+    "exists": true,
+    "sha256": "93189097463995f6c3bf770a4c4f1ab897c5725b3e3af77971e6acac1f7987e3",
+    "lifecycleReferenced": false,
+    "sharedAdmissionReferenced": false,
+    "configuredCrons": null,
+    "evidenceMeaning": "Git commit identified by current production deployment metadata; not a deployed-byte download"
+  },
+  {
+    "path": "web/pages/api/v1/db/run-rolling-forge-pipeline.ts",
+    "commit": "4965a872a9746b6129c9ac589c200560d01a1e23",
+    "exists": true,
+    "sha256": "bb8c0c0e467c164584b22ff154b6cf1f9b645fe11030a32a310a062b71faa55d",
+    "lifecycleReferenced": false,
+    "sharedAdmissionReferenced": false,
+    "configuredCrons": null,
+    "evidenceMeaning": "Git commit identified by current production deployment metadata; not a deployed-byte download"
+  },
+  {
+    "path": "web/lib/nst/client.ts",
+    "commit": "4965a872a9746b6129c9ac589c200560d01a1e23",
+    "exists": true,
+    "sha256": "712eefa3c63b3340770a4d45fb2c97428ffe7ede49a5581f36f75a9c9a3783e9",
+    "lifecycleReferenced": false,
+    "sharedAdmissionReferenced": false,
+    "configuredCrons": null,
+    "evidenceMeaning": "Git commit identified by current production deployment metadata; not a deployed-byte download"
+  },
+  {
+    "path": "web/lib/nst/sharedAdmission.ts",
+    "commit": "4965a872a9746b6129c9ac589c200560d01a1e23",
+    "exists": false,
+    "evidenceMeaning": "Git commit identified by current production deployment metadata; not a deployed-byte download"
+  },
+  {
+    "path": "web/lib/nst/jobLifecycle.server.ts",
+    "commit": "4965a872a9746b6129c9ac589c200560d01a1e23",
+    "exists": false,
+    "evidenceMeaning": "Git commit identified by current production deployment metadata; not a deployed-byte download"
+  },
+  {
+    "path": "web/vercel.json",
+    "commit": "4965a872a9746b6129c9ac589c200560d01a1e23",
+    "exists": true,
+    "sha256": "bcd2cab8174bead693c7a4268ce2dd44ea551c9dfa92736b347868a0ebac2d2b",
+    "lifecycleReferenced": false,
+    "sharedAdmissionReferenced": false,
+    "configuredCrons": [
+      {
+        "path": "/api/internal/starter-board",
+        "schedule": "* * * * *"
+      },
+      {
+        "path": "/api/internal/yahoo-live-draft",
+        "schedule": "* * * * *"
+      },
+      {
+        "path": "/api/internal/patreon-reconcile",
+        "schedule": "11 * * * *"
+      },
+      {
+        "path": "/api/internal/fantrax-sync",
+        "schedule": "17 * * * *"
+      },
+      {
+        "path": "/api/internal/espn-sync",
+        "schedule": "37 * * * *"
+      },
+      {
+        "path": "/api/v1/db/run-rolling-forge-pipeline?mode=daily_incremental&includeDownstream=true&includeAccuracy=false&stopOnFailure=false",
+        "schedule": "5,10,15,20,30,35,40,45,55 10 * * *"
+      },
+      {
+        "path": "/api/v1/sustainability/rebuild-priors?season=current&limit=2000",
+        "schedule": "42 10 * * *"
+      },
+      {
+        "path": "/api/v1/sustainability/rebuild-window-z?season=current&limit=250&offset=0",
+        "schedule": "43 10 * * *"
+      },
+      {
+        "path": "/api/v1/sustainability/rebuild-window-z?season=current&limit=250&offset=250",
+        "schedule": "48 10 * * *"
+      },
+      {
+        "path": "/api/v1/sustainability/rebuild-window-z?season=current&limit=250&offset=500",
+        "schedule": "53 10 * * *"
+      },
+      {
+        "path": "/api/v1/sustainability/rebuild-score?season=current&limit=250&offset=0",
+        "schedule": "0 11 * * *"
+      },
+      {
+        "path": "/api/v1/sustainability/rebuild-score?season=current&limit=250&offset=250",
+        "schedule": "6 11 * * *"
+      },
+      {
+        "path": "/api/v1/sustainability/rebuild-score?season=current&limit=250&offset=500",
+        "schedule": "12 11 * * *"
+      },
+      {
+        "path": "/api/v1/sustainability/rebuild-trend-bands?limit=250&offset=0",
+        "schedule": "18 11 * * *"
+      },
+      {
+        "path": "/api/v1/sustainability/rebuild-trend-bands?limit=250&offset=250",
+        "schedule": "23 11 * * *"
+      },
+      {
+        "path": "/api/v1/sustainability/rebuild-trend-bands?limit=250&offset=500",
+        "schedule": "28 11 * * *"
+      },
+      {
+        "path": "/api/v1/sustainability/rebuild-trend-bands?limit=250&offset=750",
+        "schedule": "33 11 * * *"
+      },
+      {
+        "path": "/api/v1/game-predictions/ingest-espn-odds?fromOffsetDays=0&toOffsetDays=7&maxDates=8",
+        "schedule": "34 11 * * *"
+      },
+      {
+        "path": "/api/v1/game-predictions/ingest-espn-odds?fromOffsetDays=0&toOffsetDays=1&maxDates=2",
+        "schedule": "34 17 * * *"
+      },
+      {
+        "path": "/api/v1/game-predictions/ingest-espn-odds?fromOffsetDays=-1&toOffsetDays=1&maxDates=3",
+        "schedule": "10 21 * * *"
+      },
+      {
+        "path": "/api/v1/game-predictions/forecast?fromOffsetDays=0&toOffsetDays=0&limit=16&maxRuntimeMs=220000",
+        "schedule": "45 11 * * *"
+      },
+      {
+        "path": "/api/v1/db/update-drafted-prospects?scheduled=true",
+        "schedule": "17 */2 * * *"
+      },
+      {
+        "path": "/api/v1/db/replay-player-aliases",
+        "schedule": "*/10 * * * *"
+      },
+      {
+        "path": "/api/v1/db/auto-news-feed-items?limit=300&daysBack=14&perSourceLimit=500",
+        "schedule": "*/30 * * * *"
+      },
+      {
+        "path": "/api/v1/db/refresh-draft-ranker-community?scheduled=true",
+        "schedule": "15 12 * * *"
+      },
+      {
+        "path": "/api/v1/db/draft-ranker-health",
+        "schedule": "45 12 * * *"
+      },
+      {
+        "path": "/api/v1/db/forge-served-forecast-settle",
+        "schedule": "0 11 * * *"
+      },
+      {
+        "path": "/api/v1/db/forge-served-forecast-snapshot",
+        "schedule": "30 12 * * *"
+      },
+      {
+        "path": "/api/v1/db/cron-report",
+        "schedule": "0 13 * * *"
+      },
+      {
+        "path": "/api/v1/db/cron/update-roster-optimizer-schedule-daily",
+        "schedule": "52 8,14 * * *"
+      }
+    ],
+    "evidenceMeaning": "Git commit identified by current production deployment metadata; not a deployed-byte download"
+  },
+  {
+    "path": "functions/api/fetch_team_table.py",
+    "commit": "b3f9a7e25c5e1b82bc74aead8337302177274c9f",
+    "exists": true,
+    "sha256": "8c0090dec39aeb6c36a7608d1090e3ca94cf70f16779d9f422fe00843e1db148",
+    "lifecycleReferenced": false,
+    "sharedAdmissionReferenced": false,
+    "configuredCrons": null,
+    "evidenceMeaning": "Git commit identified by current production deployment metadata; not a deployed-byte download"
+  },
+  {
+    "path": "functions/api/index.py",
+    "commit": "b3f9a7e25c5e1b82bc74aead8337302177274c9f",
+    "exists": true,
+    "sha256": "e5eb968e2052b7fc16abfa59eea7eb018038dbe0c93c6de36cab9b19f560f374",
+    "lifecycleReferenced": false,
+    "sharedAdmissionReferenced": false,
+    "configuredCrons": null,
+    "evidenceMeaning": "Git commit identified by current production deployment metadata; not a deployed-byte download"
+  },
+  {
+    "path": "functions/lib/nst_admission.py",
+    "commit": "b3f9a7e25c5e1b82bc74aead8337302177274c9f",
+    "exists": false,
+    "evidenceMeaning": "Git commit identified by current production deployment metadata; not a deployed-byte download"
+  },
+  {
+    "path": "functions/vercel.json",
+    "commit": "b3f9a7e25c5e1b82bc74aead8337302177274c9f",
+    "exists": true,
+    "sha256": "e019c54a60fb314a8242e6be9f321bfbfda88c7e5771e5586672c5a731e6bedb",
+    "lifecycleReferenced": false,
+    "sharedAdmissionReferenced": false,
+    "configuredCrons": null,
+    "evidenceMeaning": "Git commit identified by current production deployment metadata; not a deployed-byte download"
+  },
+  {
+    "path": "cms/vercel.json",
+    "commit": "4965a872a9746b6129c9ac589c200560d01a1e23",
+    "exists": true,
+    "sha256": "c5e9d87df6482fd2b5473ab9e39f6d74cd40cfc6433452cde9a5ab8bac5db87f",
+    "lifecycleReferenced": false,
+    "sharedAdmissionReferenced": false,
+    "configuredCrons": null,
+    "evidenceMeaning": "Companion config at current web commit only; companion deployment commit not established"
+  },
+  {
+    "path": "vercel.json",
+    "commit": "4965a872a9746b6129c9ac589c200560d01a1e23",
+    "exists": true,
+    "sha256": "c18d6c5262ce3443c70667b03b99b2f7d91d3977b0e522c5eb01077d89f7f961",
+    "lifecycleReferenced": false,
+    "sharedAdmissionReferenced": false,
+    "configuredCrons": null,
+    "evidenceMeaning": "Companion config at current web commit only; companion deployment commit not established"
+  }
+]

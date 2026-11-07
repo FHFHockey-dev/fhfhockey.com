@@ -19,21 +19,25 @@
 
 .header {
   display: grid;
-  grid-template-columns: minmax(0, 1.35fr) minmax(320px, 0.95fr);
+  grid-template-columns: minmax(0, 1fr);
   gap: v.$space-lg;
   align-items: start;
 }
 
+// The rail's children join the header grid: Recent-Form Scan takes its own
+// full-width row under the hero, which holds Player Search (TJ, 2026-11-06).
 .headerRail {
-  display: grid;
-  gap: v.$space-md;
-  min-height: 0;
+  display: contents;
 }
 
-.trendsHeaderSection {
-  display: flex;
-  flex-direction: row;
-  gap: v.$space-sm;
+.headerRail > .summaryBand {
+  grid-column: 1 / -1;
+}
+
+@media (min-width: 1101px) {
+  .headerRail > .summaryBand .summaryBandGrid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 }
 
 .title {
@@ -42,15 +46,6 @@
   letter-spacing: 0.08em;
   color: v.$color-white;
   margin: 0;
-}
-
-.subtitle {
-  margin: 0.35rem 0 0;
-  color: v.$text-secondary;
-  font-size: 0.9rem;
-  justify-content: center;
-  display: flex;
-  align-items: center;
 }
 
 .panel {
@@ -86,32 +81,23 @@
   flex-direction: column;
   gap: v.$space-sm;
   overflow: hidden;
+
+  // Wide tables scroll sideways on narrow screens instead of being clipped.
+  &:has(> .table) {
+    overflow-x: auto;
+  }
 }
 
+// Player Search lives in the hero's side slot, which supplies the box.
 .searchPanel {
-  background: v.$background-medium;
-  border: 1px solid v.$border-secondary;
-  border-radius: v.$border-radius-md;
-  box-shadow: v.$box-shadow-default;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-    background: linear-gradient(
-      135deg,
-      rgba(255, 255, 255, 0.05),
-      rgba(255, 255, 255, 0.02)
-    ),
-    v.$background-medium;
+  display: grid;
+  gap: v.$space-sm;
+  min-width: 0;
 }
 
 .searchBoxButton {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  display: grid;
   gap: v.$space-sm;
-  padding: v.$space-sm v.$space-md;
-  border-bottom: 2px solid v.$border-secondary;
-  background-color: color.adjust(v.$background-dark, $lightness: -3%);
   width: 100%;
 }
 
@@ -127,6 +113,7 @@
 .searchForm {
   display: flex;
   flex-direction: row;
+  align-items: flex-start;
   gap: v.$space-sm;
   width: 100%;
 }
@@ -138,6 +125,7 @@
 
 .searchInput {
   width: 100%;
+  height: v.$control-height-md;
   background: v.$background-dark;
   border: 1px solid v.$border-secondary;
   border-radius: v.$border-radius-sm;
@@ -180,27 +168,46 @@
   color: v.$color-white;
 }
 
+// Canonical compact primary (fhfh-styles §10.5): 2px blue border, low blue fill,
+// white text (11.3:1); no gradient, lift or glow.
 .primaryButton {
-  background: linear-gradient(
-    to right,
-    v.$primary-color,
-    v.$secondary-color
-  );
-  border: none;
+  background: rgba(v.$primary-color, 0.18);
+  border: 2px solid v.$primary-color;
   color: v.$color-white;
   font-family: v.$font-family-accent;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  padding: 0.55rem 0.9rem;
+  // Same height as the search field beside it (TJ, 2026-11-06).
+  height: v.$control-height-md;
+  padding: 0 0.9rem;
+  white-space: nowrap;
   border-radius: v.$border-radius-sm;
   cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  flex: 1;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+  flex: 0 0 auto;
+}
+
+// Square magnifying-glass button for Player Search (TJ, 2026-11-06).
+.iconButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: v.$control-height-md;
+  padding: 0;
+}
+
+.primaryButton[aria-busy="true"] svg {
+  opacity: 0.55;
 }
 
 .primaryButton:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 16px rgba(v.$primary-color, 0.3);
+  background: rgba(v.$primary-color, 0.3);
+}
+
+.primaryButton:focus-visible {
+  outline: 2px solid v.$primary-color;
+  outline-offset: 2px;
 }
 
 .searchResults {
@@ -225,15 +232,6 @@
   border-color: v.$primary-color;
   color: v.$primary-color;
   background: rgba(v.$primary-color, 0.08);
-}
-
-.dashboardGrid {
-  display: grid;
-  grid-template-columns: repeat(11, minmax(0, 1fr));
-  grid-template-rows: repeat(4, minmax(0, 1fr));
-  gap: 0;
-  flex: 1;
-  min-height: 0;
 }
 
 .summaryBand {
@@ -288,20 +286,17 @@
   min-height: 0;
 }
 
-.movementHeaderMeta {
-  display: grid;
-  gap: 0.25rem;
-  justify-items: end;
-  align-content: start;
-}
-
 .movementSectionBody {
+  // minmax(0, 1fr): implicit auto columns grew to content min-width (650px) and clipped off-screen.
+  grid-template-columns: minmax(0, 1fr);
   padding: v.$space-md;
   display: grid;
   gap: v.$space-md;
 }
 
 .movementTabPanel {
+  // minmax(0, 1fr): implicit auto columns grew to content min-width (650px) and clipped off-screen.
+  grid-template-columns: minmax(0, 1fr);
   display: grid;
   gap: v.$space-md;
 }
@@ -315,12 +310,21 @@
 
 .teamWorkspaceGrid {
   display: grid;
-  grid-template-columns: minmax(0, 1.5fr) minmax(300px, 0.85fr);
+  // Wider rail so Most improved / Most degraded sit side by side (TJ, 2026-11-06).
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
   gap: v.$space-md;
   align-items: stretch;
 }
 
+// The chart column stretches (its chart sizes to 100% height); the rail hugs its
+// rows so Risers/Fallers doesn't show an empty band.
+.teamWorkspaceGrid > .workspaceRail {
+  align-self: start;
+}
+
 .workspaceRail {
+  // minmax(0, 1fr): implicit auto columns grew to content min-width (650px) and clipped off-screen.
+  grid-template-columns: minmax(0, 1fr);
   display: grid;
   gap: v.$space-md;
 }
@@ -329,9 +333,10 @@
   min-height: 0;
 }
 
+// Two jump links share the card's action row as equal halves.
 .surfaceLinkList {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: v.$space-sm;
 }
 
@@ -340,8 +345,9 @@
   align-items: center;
   justify-content: center;
   gap: 0.35rem;
-  padding: 0.45rem 0.7rem;
-  border-radius: 999px;
+  min-height: v.$control-height-md;
+  padding: 0 v.$space-sm;
+  border-radius: v.$radius-control;
   border: 1px solid rgba(v.$primary-color, 0.45);
   background: rgba(v.$primary-color, 0.12);
   color: v.$color-white;
@@ -351,14 +357,12 @@
   letter-spacing: 0.06em;
   text-decoration: none;
   text-transform: uppercase;
-  transition: background 0.2s ease, border-color 0.2s ease,
-    transform 0.2s ease;
+  transition: background 0.2s ease, border-color 0.2s ease;
 }
 
 .surfaceLinkPill:hover {
   background: rgba(v.$primary-color, 0.22);
   border-color: rgba(v.$primary-color, 0.7);
-  transform: translateY(-1px);
 }
 
 .surfaceBridgeStrip {
@@ -367,11 +371,18 @@
   gap: v.$space-md;
 }
 
+// Label, title and copy sit at the top of every card; the action row pins to the
+// bottom, so headings and buttons line up across the three cards.
 .surfaceBridgeCard {
   @include v.glass-panel($padding: v.$space-md, $radius: v.$radius-lg);
   display: grid;
+  grid-template-rows: auto auto 1fr auto;
   gap: v.$space-sm;
   min-height: 0;
+
+  > :last-child {
+    align-self: end;
+  }
 }
 
 .surfaceBridgeLabel {
@@ -411,7 +422,7 @@
   color: v.$primary-color;
   border: 1px solid rgba(v.$primary-color, 0.35);
   background: rgba(v.$primary-color, 0.12);
-  border-radius: 999px;
+  border-radius: v.$radius-pill;
   padding: 0.2rem 0.45rem;
   white-space: nowrap;
 }
@@ -467,30 +478,37 @@
 }
 
 .summaryLeaderValue {
+  display: inline-flex;
+  align-items: baseline;
+  gap: v.$space-xs;
   font-family: v.$font-family-numbers;
   font-weight: 700;
+  font-variant-numeric: tabular-nums;
   color: v.$color-white;
+}
+
+.summaryLeaderStat {
+  display: grid;
+  justify-items: end;
+  gap: 2px;
+}
+
+.summaryLeaderPercentile {
+  font-family: v.$font-family-primary;
+  font-size: v.$font-size-xs;
+  color: v.$text-secondary;
+}
+
+.summaryLeaderUnit {
+  font-family: v.$font-family-primary;
+  font-size: v.$font-size-xs;
+  font-weight: 500;
+  color: v.$text-secondary;
 }
 
 .summaryEmpty {
   color: v.$text-secondary;
   font-size: v.$font-size-sm;
-}
-
-.chartPanel {
-  @include v.glass-panel($padding: v.$space-md, $radius: v.$radius-lg);
-  grid-area: 1 / 1 / 2 / 12;
-  display: flex;
-  flex-direction: column;
-  min-height: 220px;
-}
-
-.chartHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: v.$space-sm;
-  margin-bottom: v.$space-sm;
 }
 
 .chartMetaStack {
@@ -550,122 +568,13 @@
   line-height: 1.4;
 }
 
-.topMoversPanel {
-  @include v.glass-panel($padding: v.$space-md, $radius: v.$radius-lg);
-  grid-area: 2 / 6 / 3 / 12;
-  display: flex;
-  flex-direction: column;
-  min-height: 220px;
-}
-
-.topMoversBody {
-  flex: 1;
-  min-height: 0;
-}
-
-.powerPanel,
-.identityPanel {
-  grid-area: 2 / 1 / 5 / 6;
-  min-height: 0;
-}
-
-.powerPanel .panelBody {
-  flex: 1;
-  min-height: 0;
-}
-
-.identityPanelBody {
-  padding: v.$space-sm v.$space-md;
-  display: grid;
-  gap: v.$space-sm;
-}
-
-.identityCard {
-  display: grid;
-  gap: v.$space-xs;
-  padding: v.$space-md;
-  border-radius: v.$border-radius-md;
-  border: 1px solid rgba(v.$border-primary, 0.65);
-  background: rgba(v.$background-dark, 0.7);
-}
-
-.identityCardLabel {
-  color: v.$text-secondary;
-  font-family: v.$font-family-accent;
-  font-size: v.$font-size-xxs;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.identityCardTitle {
-  margin: 0;
-  color: v.$color-white;
-  font-family: v.$font-family-accent;
-  font-size: v.$font-size-md;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.identityCardCopy {
-  margin: 0;
-  color: v.$text-secondary;
-  font-size: v.$font-size-sm;
-  line-height: 1.5;
-}
-
-.identityCardList {
-  margin: 0;
-  padding-left: 1rem;
-  color: v.$text-primary;
-  display: grid;
-  gap: 0.35rem;
-  font-size: v.$font-size-sm;
-  line-height: 1.5;
-}
-
-.identityCardLink {
-  color: v.$primary-color;
-  font-family: v.$font-family-accent;
-  font-size: v.$font-size-xs;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-decoration: none;
-  text-transform: uppercase;
-}
-
-.identityCardLink:hover {
-  color: v.$color-white;
-}
-
-.goaliePanel {
-  grid-area: 4 / 9 / 5 / 12;
-  min-height: 0;
-}
-
-.projectionsPanel {
-  grid-area: 3 / 9 / 4 / 12;
-  min-height: 0;
-}
-
-.projectionsPanel .table th,
-.projectionsPanel .table td {
-  padding: 0.25rem 0.35rem;
-}
-
-.trendsPanel {
-  grid-area: 3 / 6 / 5 / 12;
-  display: flex;
-  flex-direction: column;
-  gap: v.$space-sm;
-  min-height: 0;
-}
-
 .goalieSharePanel {
   margin-top: v.$space-md;
 }
 
 .supportSection {
+  // minmax(0, 1fr): implicit auto columns grew to content min-width (650px) and clipped off-screen.
+  grid-template-columns: minmax(0, 1fr);
   @include v.glass-panel($padding: v.$space-lg, $radius: v.$radius-lg);
   display: grid;
   gap: v.$space-md;
@@ -677,246 +586,22 @@
   gap: v.$space-md;
 }
 
-.supportPanel,
-.placeholderPanel {
+.supportPanel {
   min-height: 0;
 }
 
-.placeholderBody {
-  padding: v.$space-md;
-  display: grid;
-  gap: v.$space-sm;
-}
-
-.placeholderList {
-  margin: 0;
-  padding-left: 1rem;
-  color: v.$text-primary;
-  display: grid;
-  gap: 0.35rem;
-  font-size: v.$font-size-sm;
-  line-height: 1.5;
-}
-
+// The shared chart caps itself at 1200px; centre it so it doesn't hang left of
+// a wider panel.
 .goalieShareBody {
   padding: v.$space-sm v.$space-md v.$space-md;
   display: grid;
   gap: v.$space-sm;
-}
+  justify-items: center;
 
-.powerTableWrapper {
-  @include v.glass-panel(0, v.$border-radius-lg);
-  overflow: hidden;
-  border: 1px solid v.$border-primary;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-}
-
-.powerTableHead {
-  display: grid;
-  grid-template-columns: 70px 2.2fr repeat(3, 1fr) 1.6fr;
-  gap: v.$space-sm;
-  padding: v.$space-sm v.$space-md;
-  background-color: rgba(v.$background-dark, 0.8);
-  border-bottom: 1px solid v.$border-primary;
-  align-items: center;
-
-  span {
-    font-family: v.$font-family-accent;
-    font-size: v.$font-size-xs;
-    color: v.$text-secondary;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    text-align: center;
-
-    &:nth-child(2) {
-      text-align: left;
-    }
+  > .summaryBandCopy,
+  > .loadingText {
+    justify-self: stretch;
   }
-}
-
-.powerTable {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  width: 100%;
-  overflow-y: auto;
-  flex: 1;
-  @include v.custom-scrollbar(v.$primary-color, transparent, 6px);
-}
-
-.powerRow {
-  display: grid;
-  grid-template-columns: 70px 2.2fr repeat(3, 1fr) 1.6fr;
-  gap: v.$space-sm;
-  padding: 2px v.$space-sm;
-  align-items: center;
-  border-bottom: 1px solid rgba(v.$border-primary, 0.5);
-  transition: background-color 0.2s ease;
-  position: relative;
-
-  &:last-child {
-    border-bottom: none;
-  }
-
-  &:hover {
-    background-color: rgba(v.$primary-color, 0.05);
-  }
-}
-
-.powerRank {
-  font-family: v.$font-family-numbers;
-  height: 100%;
-  font-size: 0.7rem;
-  font-weight: 700;
-  color: v.$text-secondary;
-  text-align: center;
-  position: relative;
-  z-index: 2;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-}
-
-.rankLogoWrapper {
-  width: 28px;
-  height: 28px;
-  position: absolute;
-  left: -6px;
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 1;
-}
-
-.rankLogo {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  transform: scale(1.7);
-  transform-origin: left center;
-  -webkit-mask-image: linear-gradient(
-    to right,
-    rgba(0, 0, 0, 1) 0%,
-    rgba(0, 0, 0, 0.5) 50%,
-    rgba(0, 0, 0, 0) 100%
-  );
-  mask-image: linear-gradient(
-    to right,
-    rgba(0, 0, 0, 1) 0%,
-    rgba(0, 0, 0, 0.5) 50%,
-    rgba(0, 0, 0, 0) 100%
-  );
-  -webkit-mask-repeat: no-repeat;
-  mask-repeat: no-repeat;
-  -webkit-mask-size: 100% 100%;
-  mask-size: 100% 100%;
-}
-
-.rankText {
-  position: relative;
-  z-index: 2;
-  text-align: center;
-  padding-left: 35%;
-  width: 100%;
-}
-
-.powerTeamCell {
-  display: flex;
-  align-items: center;
-  gap: v.$space-xs;
-}
-
-.powerTeamText {
-  display: flex;
-  flex-direction: column;
-}
-
-.powerTeamName {
-  font-family: v.$font-family-primary;
-  font-weight: 700;
-  color: v.$text-primary;
-  font-size: v.$font-size-sm;
-  line-height: 1.1;
-}
-
-.powerTeamMeta {
-  font-size: 0.6rem;
-  color: v.$text-secondary;
-}
-
-
-.powerScoreCell {
-  display: flex;
-  justify-content: center;
-}
-
-.driverTag {
-  font-family: v.$font-family-numbers;
-  font-weight: 700;
-  font-size: 1rem;
-  padding: 1px 6px;
-  border-radius: v.$border-radius-sm;
-  min-width: 48px;
-  text-align: center;
-  background: rgba(v.$text-secondary, 0.1);
-  color: v.$text-primary;
-  border: 1px solid rgba(v.$text-secondary, 0.2);
-}
-
-.powerValueCell {
-  display: flex;
-  justify-content: center;
-}
-
-.valuePill {
-  font-family: v.$font-family-numbers;
-  font-size: 1rem;
-  color: v.$text-secondary;
-  padding: 1px 6px;
-  border-radius: 4px;
-  background: rgba(0, 0, 0, 0.2);
-  min-width: 40px;
-  text-align: center;
-}
-
-.compPill {
-  font-family: v.$font-family-primary;
-  font-size: 0.6rem;
-  color: v.$text-secondary;
-  text-align: left;
-}
-
-.tierElite {
-  background: rgba(v.$primary-color, 0.15);
-  color: v.$primary-color;
-  border: 1px solid rgba(v.$primary-color, 0.4);
-  box-shadow: 0 0 10px rgba(v.$primary-color, 0.1);
-}
-
-.tierGood {
-  background-color: rgba(v.$success-color, 0.1);
-  color: v.$success-color;
-  border: 1px solid rgba(v.$success-color, 0.3);
-}
-
-.tierCaution {
-  background-color: rgba(v.$warning-color, 0.1);
-  color: v.$warning-color;
-  border: 1px solid rgba(v.$warning-color, 0.3);
-}
-
-.tierPoor {
-  background-color: rgba(v.$danger-color, 0.1);
-  color: v.$danger-color;
-  border: 1px solid rgba(v.$danger-color, 0.3);
-}
-
-.tierNeutral {
-  background-color: rgba(v.$color-white, 0.1);
-  color: v.$text-secondary;
-  border: 1px solid v.$color-white;
 }
 
 .topTabs {
@@ -936,7 +621,7 @@
   color: v.$text-secondary;
   border-bottom: 2px solid transparent;
   margin-bottom: -1px;
-  transition: all 0.2s ease;
+  transition: color 0.2s ease, border-color 0.2s ease;
 
   &:hover:not([aria-selected="true"]) {
     color: v.$text-primary;
@@ -991,16 +676,6 @@
   margin-left: auto;
 }
 
-.dashboardContent {
-  @include v.component-wrapper;
-  padding: v.$space-lg;
-  background-color: v.$background-medium;
-  min-height: 0;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
 .trendGrid {
   display: grid;
   gap: v.$space-lg;
@@ -1016,6 +691,135 @@
   flex-direction: column;
   gap: v.$space-md;
   min-height: 0;
+}
+
+// Movement charts (TrendLineChart): one focused line in brand blue, the rest
+// recessive; CSS overrides Recharts' stroke attributes.
+.trendLineMuted path {
+  stroke: rgba(v.$text-secondary, 0.38);
+}
+
+.trendLineFocus path {
+  stroke: v.$primary-color;
+}
+
+.trendDotFocus {
+  fill: v.$primary-color;
+  stroke: v.$background-dark;
+  stroke-width: 2px;
+}
+
+// Recessive grid, axes and hover cursor (Recharts' own classes, scoped here).
+.trendChart {
+  :global(.recharts-cartesian-grid line) {
+    stroke: rgba(v.$text-secondary, 0.14);
+  }
+
+  :global(.recharts-cartesian-axis-line) {
+    stroke: rgba(v.$text-secondary, 0.3);
+  }
+
+  :global(.recharts-cartesian-axis-tick-value) {
+    fill: v.$text-secondary;
+    font-size: v.$font-size-xs;
+  }
+
+  :global(.recharts-tooltip-cursor) {
+    stroke: rgba(v.$text-secondary, 0.5);
+  }
+}
+
+.trendTooltip {
+  min-width: 10rem;
+  padding: v.$space-sm;
+  border: v.$border-subtle;
+  border-radius: v.$border-radius-sm;
+  background: v.$background-medium;
+  box-shadow: v.$box-shadow-default;
+  font-size: v.$font-size-xs;
+  color: v.$text-secondary;
+
+  ul {
+    margin: v.$space-xs 0 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 2px;
+  }
+
+  li {
+    display: flex;
+    justify-content: space-between;
+    gap: v.$space-md;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.trendTooltipTitle {
+  margin: 0;
+  color: v.$text-primary;
+  font-weight: 600;
+}
+
+.trendTooltip .trendTooltipActive {
+  color: v.$primary-color;
+  font-weight: 700;
+}
+
+// Name buttons under the chart: the pressed one is the focused line.
+.trendLegend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: v.$space-xs;
+  margin-top: v.$space-sm;
+}
+
+.trendLegendButton {
+  display: inline-flex;
+  align-items: center;
+  gap: v.$space-xs;
+  min-height: 28px;
+  padding: 0 v.$space-sm;
+  border: 1px solid v.$border-secondary;
+  border-radius: v.$radius-control;
+  background: transparent;
+  color: v.$text-secondary;
+  font-size: v.$font-size-xs;
+  cursor: pointer;
+
+  &:hover {
+    color: v.$text-primary;
+    border-color: rgba(v.$primary-color, 0.6);
+  }
+
+  &:focus-visible {
+    outline: 2px solid v.$primary-color;
+    outline-offset: 2px;
+  }
+
+  &[aria-pressed="true"] {
+    border-color: v.$primary-color;
+    color: v.$color-white;
+  }
+}
+
+.trendLegendSwatch {
+  width: 12px;
+  height: 2px;
+  border-radius: 1px;
+  background: rgba(v.$text-secondary, 0.6);
+}
+
+.trendLegendButton[aria-pressed="true"] .trendLegendSwatch {
+  height: 3px;
+  background: v.$primary-color;
+}
+
+// Skater/goalie trend charts fill their card so it matches the ranking list
+// beside it instead of leaving a tall empty band under a 260px chart.
+.chartFill {
+  flex: 1 1 auto;
+  min-height: 260px;
 }
 
 .teamRankStrip {
@@ -1035,12 +839,23 @@
   justify-items: start;
 }
 
+// Solid condensed face: the outlined accent font goes hollow at 12px.
 .teamRankLabel {
-  color: v.$text-secondary;
-  font-size: v.$font-size-xs;
-  font-family: v.$font-family-accent;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+  display: inline-flex;
+  align-items: center;
+  gap: v.$space-xs;
+  color: v.$text-primary;
+  font-size: v.$font-size-sm;
+  font-family: v.$font-family-condensed;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.teamRankLogo {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+  object-fit: contain;
 }
 
 .teamRankValue {
@@ -1048,6 +863,25 @@
   font-family: v.$font-family-numbers;
   font-size: v.$font-size-md;
   font-weight: 700;
+}
+
+// Phones: the five cards become compact rows (team, value, move) instead of
+// five full-width boxes.
+@media (max-width: 600px) {
+  .teamRankStrip {
+    grid-template-columns: minmax(0, 1fr);
+    gap: v.$space-xs;
+  }
+
+  .teamRankCard {
+    grid-template-columns: 4.5rem minmax(0, 1fr) auto;
+    align-items: center;
+    padding: v.$space-xs v.$space-sm;
+  }
+
+  .teamRankValue {
+    font-size: v.$font-size-sm;
+  }
 }
 
 .rankingHeading {
@@ -1086,38 +920,38 @@
   @include v.custom-scrollbar(v.$primary-color, transparent, 6px);
 }
 
+// Ranking row: headshot | name over team · position · move | stat over percentile.
 .skaterRankingRow {
-  display: flex;
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  grid-template-areas:
+    "avatar name stat"
+    "avatar meta stat"
+    "detail detail detail";
+  column-gap: v.$space-md;
+  row-gap: 2px;
   align-items: center;
-  justify-content: space-between;
-  padding: v.$space-sm;
+  padding: v.$space-sm v.$space-md;
   border-radius: v.$border-radius-md;
   background-color: v.$background-medium;
   border: 1px solid v.$border-primary;
 }
 
-.skaterInfo {
-  display: flex;
-  align-items: center;
-  gap: v.$space-md;
-  min-width: 0;
+.rowAvatar {
+  grid-area: avatar;
+  position: relative;
+  width: 44px;
+  height: 44px;
 }
 
-.rank {
-  font-weight: 700;
-  color: v.$text-secondary;
-  width: 24px;
-  text-align: center;
-}
-
+// Squircle headshot.
 .skaterHeadshotWrapper {
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
+  width: 100%;
+  height: 100%;
+  border-radius: 30%;
   overflow: hidden;
   background: v.$background-dark;
   border: 1px solid v.$border-primary;
-  flex-shrink: 0;
 }
 
 .skaterHeadshot {
@@ -1126,13 +960,50 @@
   object-fit: cover;
 }
 
-.skaterText {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
+// The rank sits in a notch cut from the headshot's top-left corner: the ring in
+// the row colour reads as the cut-out.
+.rankBadge {
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  display: grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 3px;
+  border-radius: 7px;
+  background: v.$background-dark;
+  box-shadow: 0 0 0 3px v.$background-medium;
+  color: v.$text-primary;
+  font-family: v.$font-family-numbers;
+  font-size: v.$font-size-xxs;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+// Leaders (ranks 1–3): gold, silver and bronze notches with dark ink (TJ).
+.rankBadgeGold,
+.rankBadgeSilver,
+.rankBadgeBronze {
+  color: v.$color-neutral-950;
+}
+
+.rankBadgeGold {
+  background: v.$medal-gold;
+}
+
+.rankBadgeSilver {
+  background: v.$medal-silver;
+}
+
+.rankBadgeBronze {
+  background: v.$medal-bronze;
 }
 
 .skaterName {
+  grid-area: name;
+  align-self: end;
   margin: 0;
   font-weight: 600;
   white-space: nowrap;
@@ -1141,16 +1012,29 @@
 }
 
 .skaterMeta {
+  grid-area: meta;
+  align-self: start;
+  display: flex;
+  align-items: center;
+  gap: v.$space-sm;
   margin: 0;
   font-size: v.$font-size-sm;
   color: v.$text-secondary;
+  white-space: nowrap;
 }
 
-.skaterScore {
-  display: flex;
-  align-items: center;
-  gap: v.$space-md;
-  font-family: v.$font-family-numbers, monospace;
+.rowStat {
+  grid-area: stat;
+}
+
+// Goalie sample context: a full-width line under the row.
+.skaterDetail {
+  grid-area: detail;
+  margin: v.$space-xs 0 0;
+  padding-top: v.$space-xs;
+  border-top: 1px solid rgba(v.$border-primary, 0.6);
+  font-size: v.$font-size-xs;
+  color: v.$text-secondary;
 }
 
 .delta {
@@ -1173,24 +1057,22 @@
   color: v.$text-secondary;
 }
 
-.percentile {
-  font-size: v.$font-size-base;
-  font-weight: 700;
-  font-family: v.$font-family-numbers, monospace;
-}
-
-.sidePanel {
-  @extend .panel;
-  display: flex;
-  flex-direction: column;
-  gap: v.$space-md;
-}
-
 .tabRow {
   display: flex;
   flex-wrap: wrap;
   gap: v.$space-xs;
 }
+
+// Header toggles stay one row; when the header is too narrow for both, the
+// toggles move under the title instead.
+.panelHeader:has(> .tabRow) {
+  flex-wrap: wrap;
+}
+
+.panelHeader > .tabRow {
+  flex-wrap: nowrap;
+}
+
 
 .tabButton {
   background: transparent;
@@ -1202,19 +1084,45 @@
   letter-spacing: 0.08em;
   padding: 0.35rem 0.6rem;
   cursor: pointer;
+  transition: color 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+
+  &:hover:not([aria-pressed="true"]) {
+    color: v.$text-primary;
+    border-color: rgba(v.$primary-color, 0.6);
+  }
+
+  &:focus-visible {
+    outline: 2px solid v.$primary-color;
+    outline-offset: 2px;
+  }
 }
 
-.tabButton:disabled {
-  border-color: v.$primary-color;
-  color: v.$primary-color;
-  box-shadow: 0 0 12px rgba(v.$primary-color, 0.35);
+// Active source: same fill, border and white text as the other active toggles; no glow.
+.tabButton[aria-pressed="true"] {
+  border: 2px solid v.$primary-color;
+  background-color: v.$primary-color-opaque;
+  color: v.$color-white;
 }
 
+// Names and matchups read in the interface face; only the figures use the
+// numbers face, with tabular digits so columns line up.
 .table {
   width: 100%;
   border-collapse: collapse;
+  font-family: v.$font-family-primary;
+  font-size: v.$font-size-sm;
+}
+
+.table th {
+  color: v.$text-secondary;
+  font-weight: 600;
+}
+
+.table td.tdRight {
   font-family: v.$font-family-numbers;
-  font-size: 0.72rem;
+  font-size: v.$font-size-xs;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .table thead {
@@ -1231,40 +1139,30 @@
   text-align: left;
 }
 
+.noWrap {
+  white-space: nowrap;
+}
+
+// Phones: drop the long team-name column (the opponent column keeps the matchup)
+// and tighten cells so the figures stay on screen.
+@media (max-width: 600px) {
+  .hideOnPhone {
+    display: none;
+  }
+
+  .table th,
+  .table td {
+    padding: 0.4rem 0.3rem;
+  }
+}
+
 .thRight,
 .tdRight {
   text-align: right;
 }
 
 .table tbody tr:nth-child(even) {
-  background: rgba(255, 255, 255, 0.02);
-}
-
-.details summary {
-  cursor: pointer;
-  color: v.$primary-color;
-}
-
-.sparkList {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-}
-
-.sparkRow {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-}
-
-.sparkLabel {
-  font-size: 0.75rem;
-  color: v.$text-secondary;
-}
-
-.sparkLine {
-  min-width: 120px;
+  background: rgba(v.$color-white, 0.02);
 }
 
 .loadingText {
@@ -1274,7 +1172,7 @@
 .refreshText {
   color: v.$secondary-color;
   text-transform: uppercase;
-  font-size: 0.7rem;
+  font-size: v.$font-size-xs;
   letter-spacing: 0.1em;
 }
 
@@ -1297,7 +1195,7 @@
 .retryButton {
   flex: 0 0 auto;
   border: 1px solid v.$secondary-color;
-  border-radius: 999px;
+  border-radius: v.$radius-pill;
   padding: 0.35rem 0.75rem;
   background: transparent;
   color: v.$secondary-color;
@@ -1331,39 +1229,21 @@
   }
 
   .header {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .workspaceIntro,
-  .movementHeaderMeta {
+  .chartMetaStack {
     justify-items: start;
+    text-align: left;
   }
 
   .teamWorkspaceGrid,
   .surfaceBridgeStrip,
   .supportGrid,
   .trendGrid,
-  .teamRankStrip {
-    grid-template-columns: 1fr;
-  }
-
-  .dashboardGrid {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto;
-  }
-
-  .chartPanel,
-  .topMoversPanel,
-  .powerPanel,
-  .identityPanel,
-  .goaliePanel,
-  .projectionsPanel,
-  .trendsPanel {
-    grid-area: auto;
-  }
-
   .temperatureStrip {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -1384,4 +1264,69 @@
   .surfaceLinkPill {
     width: 100%;
   }
+}
+
+// Scrollable regions are keyboard-reachable (tabIndex=0); show where focus is.
+.skaterRankingList:focus-visible,
+.panelBody:focus-visible {
+  outline: 2px solid v.$primary-color;
+  outline-offset: 2px;
+}
+
+// Phones: category buttons become an even 2 × 2 grid and each toggle group
+// (position, window) a full-width row of equal segments, instead of ragged
+// right-aligned wraps. Ranking rows keep name and stat on one line.
+@media (max-width: 600px) {
+  .subTabs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: stretch;
+  }
+
+  .subTab {
+    min-width: 0;
+    padding-inline: v.$space-xs;
+  }
+
+  .skaterControls {
+    grid-column: 1 / -1;
+    display: grid;
+    gap: v.$space-sm;
+    justify-content: stretch;
+    margin-left: 0;
+  }
+
+  .windowToggle {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+  }
+
+  .windowButton,
+  .windowActive {
+    min-width: 0;
+    padding-inline: 2px;
+    white-space: nowrap;
+  }
+
+  .skaterName {
+    font-size: v.$font-size-sm;
+  }
+
+  .skaterRankingRow {
+    grid-template-columns: 40px minmax(0, 1fr) auto;
+    column-gap: v.$space-sm;
+    padding-inline: v.$space-sm;
+  }
+
+  .rowAvatar {
+    width: 40px;
+    height: 40px;
+  }
+
+  // The list heading already names the stat, so the unit gives way to names here.
+  .rowStat .summaryLeaderUnit {
+    display: none;
+  }
+
 }

@@ -1,0 +1,208 @@
+--- /dev/null
++++ b/web/lib/player-cards/nstCapture.ts
+@@ -0,0 +1,102 @@
++import type { LocalCardInput } from "./adapter";
++import type { Components, GameMetricRecord } from "./aggregation";
++import type { CardSettings } from "./contracts";
++import { instant, settingsError, validDate, type AppearanceFrame } from "./windows";
++
++export type NstCaptureBatch = {
++  table: string;
++  toiUnit: "seconds" | "minutes";
++  capturedAt: string;
++  reference: string;
++  readStatus: "ok" | "error";
++  identity: { mode: "row-player-id" } | { mode: "single-player-query"; playerId: number; reference: string };
++  rows: readonly Readonly<Record<string, unknown>>[];
++};
++export type NstCapture = {
++  id: string; capturedAt: string; settings: CardSettings;
++  source: LocalCardInput["source"];
++  population: LocalCardInput["population"];
++  frames: readonly AppearanceFrame[];
++  individual: NstCaptureBatch; onIce: NstCaptureBatch;
++};
++export type CaptureIssue = { group: "individual" | "onIce" | "both"; reason: string; playerId?: number; gameId?: number };
++export type NstCaptureResult = {
++  state: "mapped"; input: LocalCardInput; issues: CaptureIssue[];
++  liveActivation: false; premiumActivation: false;
++} | { state: "rejected"; reason: string; liveActivation: false; premiumActivation: false };
++
++const fields = {
++  individual: ["toi", "shots", "icf", "iscfs", "ixg", "total_points", "goals"],
++  onIce: ["toi", "cf", "scf", "xgf", "xga", "gf", "sf"],
++} as const;
++const suffix = { all: "as", "5v5": "5v5", pp: "pp" } as const;
++const key = (player: number, season: number, date: string) => `${player}:${season}:${date}`;
++const positiveId = (value: unknown): value is number => typeof value === "number" && Number.isSafeInteger(value) && value > 0;
++
++/** Supplied local rows only. A successful read is not proof of history or population coverage. */
++export function mapNstCapture(capture: NstCapture): NstCaptureResult {
++  const reject = (reason: string): NstCaptureResult => ({ state: "rejected", reason, liveActivation: false, premiumActivation: false });
++  const error = settingsError(capture.settings), capturedAt = instant(capture.capturedAt);
++  if (error) return reject(error);
++  if (!capture.id.trim() || capturedAt === null || capturedAt < instant(capture.settings.cutoff)!) return reject("Capture identity/time does not cover the declared cutoff");
++  if (capture.population.scope !== "all-nhl") return reject("Observed captures require an explicitly declared all-NHL population scope");
++  const issues: CaptureIssue[] = [];
++  const indexed = (["individual", "onIce"] as const).map(group => {
++    const batch = capture[group], time = instant(batch.capturedAt);
++    const expected = `nst_gamelog_${suffix[capture.settings.strength]}_counts${group === "onIce" ? "_oi" : ""}`;
++    const fail = (reason: string) => { issues.push({ group, reason }); return { rows: new Map<string, Readonly<Record<string, unknown>>[]>(), time: null }; };
++    if (batch.table !== expected || batch.toiUnit !== "seconds") return fail("Table/strength or seconds unit does not match the selected NST contract");
++    if (batch.readStatus !== "ok" || !batch.reference.trim() || time === null || time > capturedAt) return fail("Source read or capture provenance is unverified");
++    if (batch.identity.mode === "single-player-query" && (!positiveId(batch.identity.playerId) || !batch.identity.reference.trim())) return fail("Single-player query identity receipt is missing");
++    if (!["row-player-id", "single-player-query"].includes(batch.identity.mode)) return fail("Unsupported row identity contract");
++    const rows = new Map<string, Readonly<Record<string, unknown>>[]>();
++    for (const row of batch.rows) {
++      if (!row || typeof row !== "object" || Array.isArray(row)) return fail("Source row is not a count record");
++      const scoped = batch.identity.mode === "single-player-query" ? batch.identity.playerId : null;
++      const playerId = row.player_id === undefined ? scoped : row.player_id;
++      if (!positiveId(playerId) || (scoped !== null && playerId !== scoped) || !positiveId(row.season) || typeof row.date_scraped !== "string" || !validDate(row.date_scraped)) return fail("Source row identity, season or date is invalid/conflicts with the query receipt");
++      const rowKey = key(playerId, row.season, row.date_scraped);
++      rows.set(rowKey, [...(rows.get(rowKey) || []), row]);
++    }
++    return { rows, time };
++  });
++
++  const players = capture.frames.map(frame => {
++    const appearances = frame.appearances.map(game => ({ ...game, completion: { ...game.completion } }));
++    const eligible = appearances.filter(game => game.playerId === frame.playerId && game.season === capture.settings.season && game.gameType === capture.settings.gameType && game.played !== false);
++    const dates = new Map<string, Set<number>>();
++    for (const game of eligible) dates.set(game.date, new Set([...(dates.get(game.date) || []), game.gameId]));
++    const records: GameMetricRecord[] = eligible.map(game => {
++      const components: Components = { toiUnit: "seconds", individual: {}, onIce: {} };
++      const times: number[] = [];
++      const ambiguous = (dates.get(game.date)?.size || 0) > 1;
++      if (ambiguous) issues.push({ group: "both", playerId: frame.playerId, gameId: game.gameId, reason: "Multiple official games share one date; NST date rows cannot identify the game" });
++      if (!ambiguous) (["individual", "onIce"] as const).forEach((group, index) => {
++        const batch = indexed[index], matches = batch.rows.get(key(frame.playerId, game.season, game.date)) || [];
++        const completed = game.completion.status === "verified-final" ? instant(game.completion.completedAt) : null;
++        const issue = (reason: string) => issues.push({ group, playerId: frame.playerId, gameId: game.gameId, reason });
++        if (batch.time === null) return;
++        if (matches.length !== 1) { issue(matches.length ? "Duplicate NST date rows; no row chosen or pooled" : "No captured NST row for this official appearance"); return; }
++        if (completed !== null && batch.time < completed) { issue("Source was captured before the verified game completion"); return; }
++        const row = matches[0];
++        if (row.gp !== 1 && !(row.gp === 0 && fields[group].every(field => row[field] === 0))) { issue("NST row does not establish a single game or explicit zero exposure"); return; }
++        components[group] = Object.fromEntries(fields[group].map(field => {
++          const value = row[field];
++          return [field, typeof value === "number" && Number.isFinite(value) && value >= 0 ? value : null];
++        }));
++        times.push(batch.time);
++      });
++      return { ...components, playerId: frame.playerId, gameId: game.gameId, season: game.season, date: game.date,
++        strength: capture.settings.strength, sourceDefinition: capture.source.definition, sourceVersion: capture.source.version,
++        capturedAt: new Date(times.length ? Math.min(...times) : capturedAt).toISOString(), state: "ready" };
++    });
++    return { frame: { ...frame, appearances }, records };
++  });
++
++  return { state: "mapped", input: {
++    id: capture.id, origin: "local-observed", capturedAt: capture.capturedAt,
++    settings: { ...capture.settings, period: { ...capture.settings.period } },
++    source: { ...capture.source, verifiedMetrics: [...capture.source.verifiedMetrics] },
++    population: { ...capture.population, expectedPlayerIds: [...capture.population.expectedPlayerIds] }, players,
++  }, issues, liveActivation: false, premiumActivation: false };
++}
+--- /dev/null
++++ b/web/lib/player-cards/nstCapture.test.ts
+@@ -0,0 +1,100 @@
++import { describe, expect, it } from "vitest";
++import { mapNstCapture, type NstCapture } from "./nstCapture";
++import { adaptLocalSnapshot } from "./adapter";
++import { METRICS } from "./registry";
++import type { MetricId } from "./contracts";
++
++function fixture(): NstCapture {
++  const appearances = [20, 21].map(day => ({ playerId: 1001, gameId: 2026020000 + day, season: 20262027, gameType: "regular" as const, date: `2026-10-${day}`, played: true, completion: { status: "verified-final" as const, completedAt: `2026-10-${day}T23:00:00Z`, reference: "synthetic final evidence" } }));
++  const rows = appearances.map(game => ({ player_id: 1001, season: game.season, date_scraped: game.date, gp: 1, toi: 1200 }));
++  const batch = { toiUnit: "seconds" as const, capturedAt: "2026-10-24T01:00:00Z", reference: "synthetic capture receipt", readStatus: "ok" as const, identity: { mode: "row-player-id" as const } };
++  return {
++    id: "mapping-contract-fixture", capturedAt: "2026-10-24T02:00:00Z",
++    settings: { season: 20262027, gameType: "regular", strength: "all", cutoff: "2026-10-24T00:00:00Z", period: { mode: "appearances", count: 5 }, seasonPolicy: "season-only-proposed", shortSamplePolicy: "allow-known-short-proposed", rankPolicy: "competition-midrank-proposed" },
++    source: { definition: "synthetic NST definition", version: "test-v1", definitionReference: "synthetic definition receipt", verifiedMetrics: METRICS.map(m => m.id) },
++    population: { scope: "all-nhl", complete: false, expectedPlayerIds: [1001], reference: "Single-player fixture; not a league population" },
++    frames: [{ playerId: 1001, season: 20262027, gameType: "regular", dateBasis: "UTC", completeHistory: true, historyThrough: "2026-10-24T00:00:00Z", historyReference: "synthetic history evidence", appearances }],
++    individual: { ...batch, table: "nst_gamelog_as_counts", rows: rows.map(row => ({ ...row, shots: 4, goals: 1, total_points: 1, icf: 8, iscfs: 3, ixg: .4 })) },
++    onIce: { ...batch, table: "nst_gamelog_as_counts_oi", rows: rows.map(row => ({ ...row, cf: 20, scf: 10, xgf: 1, xga: .5, gf: 2, sf: 15 })) },
++  };
++}
++function mapped(capture = fixture()) {
++  const result = mapNstCapture(capture); if (result.state !== "mapped") throw new Error(result.reason); return result;
++}
++function reading(capture: NstCapture, id: MetricId) {
++  const result = adaptLocalSnapshot(mapped(capture).input, 1001); if (result.state === "rejected") throw new Error(result.reason);
++  return result.readings.find(row => row.id === id)!;
++}
++
++describe("supplied NST capture mapping, with synthetic proof receipts", () => {
++  it("preserves seconds, canonical components and unknown population without mutating or aliasing the capture", () => {
++    const capture = fixture(), before = JSON.stringify(capture), result = mapped(capture);
++    expect(JSON.stringify(capture)).toBe(before); expect(result.issues).toEqual([]);
++    expect(result.input.players[0].records[0].individual.shots).toBe(4);
++    expect(reading(capture, "sog60")).toMatchObject({ value: 12, state: "valid", rank: null });
++    expect(reading(capture, "atoi").value).toBe(20);
++    capture.frames[0].appearances[0].completion = { status: "unverified" };
++    expect(result.input.players[0].frame.appearances[0].completion.status).toBe("verified-final");
++    expect(result.liveActivation).toBe(false); expect(result.premiumActivation).toBe(false);
++  });
++  it("requires an explicit single-player query receipt when row IDs were omitted and rejects conflicting IDs", () => {
++    const capture = fixture(); capture.individual.rows = capture.individual.rows.map(({ player_id: _id, ...row }) => row);
++    expect(reading(capture, "sog60").state).toBe("missing");
++    capture.individual.identity = { mode: "single-player-query", playerId: 1001, reference: "Pinned query WHERE player_id = 1001" };
++    expect(reading(capture, "sog60").value).toBe(12);
++    capture.individual.rows = [{ ...capture.individual.rows[0], player_id: 1002 }, capture.individual.rows[1]];
++    expect(reading(capture, "sog60").state).toBe("missing");
++  });
++  it("refuses wrong strength tables, minutes, failed reads and later capture metadata without suppressing independent groups", () => {
++    for (const change of [{ table: "nst_gamelog_5v5_counts" }, { toiUnit: "minutes" as const }, { readStatus: "error" as const }, { capturedAt: "2026-10-25T00:00:00Z" }]) {
++      const capture = fixture(); Object.assign(capture.individual, change);
++      expect(reading(capture, "sog60").state).toBe("missing"); expect(reading(capture, "xgf60").state).toBe("valid");
++    }
++  });
++  it("joins exact season/date rather than independently selecting latest rows or using prior-season totals", () => {
++    const capture = fixture(); capture.individual.rows = [{ ...capture.individual.rows[0], season: 20252026 }, capture.individual.rows[1]];
++    expect(reading(capture, "sog60").state).toBe("missing");
++    expect(mapped(capture).issues.some(issue => issue.gameId === 2026020020 && issue.reason.includes("No captured"))).toBe(true);
++  });
++  it("preserves independent metrics when one on-ice source row is missing, and does not pool duplicate rows", () => {
++    const capture = fixture(); capture.onIce.rows = capture.onIce.rows.slice(1);
++    expect(reading(capture, "sog60").value).toBe(12); expect(reading(capture, "ipp").state).toBe("missing"); expect(reading(capture, "xgf60").state).toBe("missing");
++    capture.individual.rows = [...capture.individual.rows, capture.individual.rows[0]];
++    expect(reading(capture, "atoi").state).toBe("missing");
++  });
++  it("refuses a date-only join when two official games share the same day", () => {
++    const capture = fixture(); const first = capture.frames[0].appearances[0];
++    capture.frames[0].appearances = [first, { ...first, gameId: first.gameId + 100 }];
++    expect(mapped(capture).issues.filter(issue => issue.reason.includes("Multiple official")).length).toBe(2);
++    expect(reading(capture, "sog60").state).toBe("missing");
++  });
++  it("does not manufacture history, completion or provider-definition evidence", () => {
++    const capture = fixture(); capture.frames[0].completeHistory = false;
++    expect(reading(capture, "sog60").state).toBe("missing");
++    capture.frames[0].completeHistory = true; capture.frames[0].appearances[0].completion = { status: "unverified" };
++    expect(reading(capture, "sog60").state).toBe("missing");
++    const unverified = fixture(); unverified.source.verifiedMetrics = [];
++    expect(reading(unverified, "ixg60").state).toBe("missing");
++  });
++  it("retains explicit zero PP exposure appearances without inventing a defined shooting ratio", () => {
++    const capture = fixture(); capture.settings.strength = "pp";
++    for (const group of ["individual", "onIce"] as const) {
++      capture[group].table = `nst_gamelog_pp_counts${group === "onIce" ? "_oi" : ""}`;
++      capture[group].rows = capture[group].rows.map(row => Object.fromEntries(Object.entries(row).map(([key, value]) => [key, ["player_id", "season", "date_scraped"].includes(key) ? value : 0])));
++    }
++    expect(reading(capture, "atoi")).toMatchObject({ value: 0, state: "valid" }); expect(reading(capture, "shPct").state).toBe("undefined");
++    expect(mapped(capture).input.players[0].frame.appearances).toHaveLength(2);
++  });
++  it("retains missing/nonnumeric fields and impossible per-game ratios for the accepted validity gates", () => {
++    const capture = fixture(); capture.individual.rows = [{ ...capture.individual.rows[0], shots: "4", ixg: null }, capture.individual.rows[1]];
++    expect(reading(capture, "sog60").state).toBe("missing"); expect(reading(capture, "ixg60").state).toBe("missing");
++    capture.individual.rows = [{ ...capture.individual.rows[0], shots: 0, goals: 1 }, capture.individual.rows[1]];
++    expect(reading(capture, "shPct").state).toBe("missing");
++  });
++  it("rejects invalid root scope/time and prevents pre-completion rows being hidden by another group's later capture", () => {
++    const capture = fixture(); capture.individual.capturedAt = "2026-10-20T12:00:00Z";
++    expect(reading(capture, "sog60").state).toBe("missing"); expect(reading(capture, "xgf60").state).toBe("valid");
++    expect(mapNstCapture({ ...capture, capturedAt: "2026-10-23T00:00:00Z" }).state).toBe("rejected");
++    capture.population.scope = "synthetic-all-values"; expect(mapNstCapture(capture).state).toBe("rejected");
++  });
++});

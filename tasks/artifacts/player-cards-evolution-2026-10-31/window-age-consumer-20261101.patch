@@ -1,0 +1,76 @@
+--- before/web/lib/player-cards/analysisEvidence.ts
++++ after/web/lib/player-cards/analysisEvidence.ts
+@@ -40,7 +40,9 @@
+   if (profile.playerId !== snapshot.capture.player.id || receipt.season !== snapshot.capture.season || profile.team !== snapshot.capture.player.team) return unavailable("BLSH player, team or season does not match this card.");
+   if (!receipt.reference.trim() || !hash(receipt.snapshotSHA256) || receipt.methodVersion !== "support-conditioned-production-gap-v1" || profile.score.version !== receipt.methodVersion) return unavailable("BLSH snapshot hash, review or method version is unverified.");
+   if (receipt.strength !== snapshot.capture.strength || !sameIds(receipt.gameIds, snapshot.recent.gameIds) || !Array.isArray(receipt.sourceRows) || receipt.sourceRows.some(r => !Number.isSafeInteger(r.sourceId) || r.sourceId <= 0 || !Number.isSafeInteger(r.gameId) || r.gameId <= 0) || !sameIds(receipt.sourceRows.map(r => r.sourceId), profile.evidence.window.sourceIds) || !sameIds(receipt.sourceRows.map(r => r.gameId), snapshot.recent.gameIds)) return unavailable("BLSH window, source-row-to-NHL-game mapping or strength does not match the displayed games.");
+-  if (!Number.isFinite(Date.parse(receipt.observedAt)) || receipt.observedAt !== snapshot.capture.observedAt || !profile.evidence.window.fresh || !profile.coverage.context.current.verified) return unavailable("BLSH source time or current support is stale, incomplete or incompatible.");
++  if (!Number.isFinite(Date.parse(receipt.observedAt)) || receipt.observedAt !== snapshot.capture.observedAt) return unavailable("BLSH source time does not match the displayed capture.");
++  // The producer's combined `fresh` flag also requires production; it is not a window-age flag.
++  if (!profile.evidence.window.fresh || !profile.coverage.context.current.verified) return unavailable("BLSH production or support is unqualified for this window. Missing production does not establish window age.");
+   if (profile.claims.forecast || profile.claims.marketValue || profile.claims.trusted || profile.score.calibratedProbability !== null) return unavailable("Research-only BLSH claims do not match the reviewed display contract.");
+   if (profile.tracks.some(t => ![t.observed, t.supportConditioned, t.gap].every(Number.isFinite)) || profile.tracks.length !== 3) return unavailable("Player-specific production and support are incomplete.");
+   const sign = profile.score.gapSign;
+--- before/web/lib/player-cards/analysisEvidence.test.ts
++++ after/web/lib/player-cards/analysisEvidence.test.ts
+@@ -27,6 +27,16 @@
+     x.receipt.sourceRows = x.s.recent.gameIds.map(gameId => ({ sourceId: gameId, gameId }));
+     expect(cardBlshEvidence(x.s, x.p, x.receipt).status).toBe("unavailable");
+   });
++  it("does not describe missing production as an old window or a mismatched capture", () => {
++    const { s, p, receipt } = blsh();
++    Object.assign(p.evidence.window, { fresh: false, lastGameDaysBeforeRecordedThrough: 1, freshnessText: "Last game 1 day ago; stale window; withheld from lists" });
++    const before = JSON.stringify(p), r = cardBlshEvidence(s, p, receipt);
++    expect(r.status).toBe("unavailable");
++    expect(r.lines).toEqual(["BLSH production or support is unqualified for this window. Missing production does not establish window age."]);
++    expect(JSON.stringify(p)).toBe(before);
++    receipt.observedAt = "2026-10-01T00:00:00Z";
++    expect(cardBlshEvidence(s, p, receipt).lines).toEqual(["BLSH source time does not match the displayed capture."]);
++  });
+   it("does not turn support or ownership into market value", () => {
+     const expected = { value: 3, unit: "count" as const, scoringBasis: "category:POINTS", horizonGames: 5 }, reference = { value: 2, source: "Manager scenario", kind: "manager_entered" as const, capturedAt: "2026-10-30T12:00:00Z", unit: "count" as const, scoringBasis: "category:POINTS", horizonGames: 5 };
+     expect(cardMarketReference(null, reference, options.asOf, 48).status).toBe("unavailable");
+--- before/web/lib/player-cards/retainedBlsh.test.ts
++++ after/web/lib/player-cards/retainedBlsh.test.ts
+@@ -1,4 +1,8 @@
+ import { describe, expect, it } from "vitest";
++import { readFileSync } from "node:fs";
++import { createHash } from "node:crypto";
++import { resolve } from "node:path";
++import type { DisplaySnapshot } from "../buyLowSellHigh/displayProfile";
+ import { RETAINED_BLSH_SHA256, RETAINED_BLSH_SIDECAR_SHA256, RETAINED_BLSH_PROVENANCE_REVIEW_SHA256, RETAINED_BLSH_BOX_PINS, retainedBlshEvidence, type RetainedBlshInput } from "./retainedBlsh";
+ const player = { id: 8476453, team: "TBL" };
+ const fixture = (): RetainedBlshInput => ({ snapshotSHA256: RETAINED_BLSH_SHA256, reviewReference: "Synthetic unit contract; actual bytes verified separately by owner reader", metadata: { schemaVersion: "fhfh.blsh.current-research-snapshot.v2", scoreVersion: "support-conditioned-production-gap-v1", seasonId: 20262027, provisional: true, exploratory: true, productionAdopted: false, trusted: false, confidenceProbability: null, issuedAtUTC: null, asOfUTC: "2026-10-29T18:41:12Z", eventThroughDate: "2026-10-28", limits: ["Synthetic test; stale development reference"] }, profile: { playerId: player.id, team: player.team, score: { version: "support-conditioned-production-gap-v1", gapSign: "buy_low_evidence", statusLabel: "Direction agrees", calibratedProbability: null }, evidence: { window: { games: 1, dates: ["2026-10-24"], sourceIds: [123], minutes: 20 }, reference: { personalGames: 50, ageDays: 900 }, tierNote: "Coverage is not confidence" }, tracks: ["FP", "G+A", "Game Score"].map(label => ({ label, observed: 2, supportConditioned: 3, gap: 1 })), coverage: { notes: [{ text: "Source revision unverified" }] }, context: { opportunity: [{ label: "TOI", current: 1200, units: "seconds/appearance" }] }, claims: { forecast: false, marketValue: false, trusted: false } } } as unknown as RetainedBlshInput);
+@@ -125,4 +129,32 @@
+     const other = fixture(); other.profile.tracks[1].gap = NaN;
+     expect(retainedBlshEvidence(player, 20262027, other).status).toBe("unavailable");
+   });
++  it("keeps saved window age separate from missing production and preserves raw diagnostics", () => {
++    const bytes = readFileSync(resolve(process.cwd(), "lib/buyLowSellHigh/research-snapshots/2026-10-28.arm-a-canonical-repaired.v2.json"));
++    expect(createHash("sha256").update(bytes).digest("hex")).toBe(RETAINED_BLSH_SHA256);
++    const { profiles, ...metadata } = JSON.parse(bytes.toString()) as DisplaySnapshot;
++    const input = (profile: DisplaySnapshot["profiles"][number]): RetainedBlshInput => ({ profile, metadata, snapshotSHA256: RETAINED_BLSH_SHA256, reviewReference: "Pinned research review; no current admission" });
++    const render = (p: DisplaySnapshot["profiles"][number]) => {
++      if (!p.team) throw new Error("Retained test profile lacks a qualified team");
++      return retainedBlshEvidence({ id: p.playerId, team: p.team }, metadata.seasonId, input(p));
++    };
++    const benn = profiles.find(p => p.playerId === 8473994)!;
++    expect(benn.evidence.window).toMatchObject({ lastGameDaysBeforeRecordedThrough: 1, fresh: false });
++    expect(benn.evidence.window.freshnessText).toContain("stale window");
++    expect(benn.tracks).toEqual([]); expect(render(benn).status).toBe("unavailable");
++    const recentMissing = profiles.filter(p => p.evidence.window.lastGameDaysBeforeRecordedThrough !== null && p.evidence.window.lastGameDaysBeforeRecordedThrough <= 7 && p.score.value === null && !p.evidence.window.fresh);
++    expect(recentMissing).toHaveLength(137);
++    for (const p of recentMissing) {
++      const before = JSON.stringify(p), result = render(p);
++      expect(result.status).toBe("unavailable");
++      expect(result.lines.join(" ")).not.toContain("stale window");
++      expect(JSON.stringify(p)).toBe(before);
++    }
++    const wilson = profiles.find(p => p.playerId === 8475253)!, before = JSON.stringify(wilson), result = render(wilson);
++    expect(wilson.evidence.window.lastGameDaysBeforeRecordedThrough).toBe(11);
++    expect(result.status).toBe("exploratory"); expect(result.lines.join(" ")).not.toContain("stale window");
++    expect(result.retained?.profile).toEqual(wilson); expect(result.retained?.profile.score.value).toBe(43.86735762626921);
++    expect(result.retained?.profile.evidence.window.freshnessText).toBe(wilson.evidence.window.freshnessText);
++    expect(JSON.stringify(wilson)).toBe(before);
++  });
+ });

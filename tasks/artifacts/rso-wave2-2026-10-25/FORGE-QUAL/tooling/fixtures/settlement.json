@@ -1,0 +1,18 @@
+[
+  {
+    "playerId": "fixture-player-1",
+    "gameId": "fixture-game-1",
+    "target": "SHOTS_ON_GOAL",
+    "gameDate": "2026-11-03",
+    "actual": 3,
+    "recordedAt": "2026-11-04T04:00:00Z"
+  },
+  {
+    "playerId": "fixture-player-2",
+    "gameId": "fixture-game-1",
+    "target": "SHOTS_ON_GOAL",
+    "gameDate": "2026-11-03",
+    "actual": 1,
+    "recordedAt": "2026-11-04T04:00:00Z"
+  }
+]

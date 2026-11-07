@@ -1,7 +1,7 @@
 import { fetchNhlPlayerIdentity, importNhlIdentity } from "lib/sources/nhlProspectIdentity";
 import type { NextApiResponse } from "next";
 
-import { fetchPlayerIdentityDirectory, fetchRegisteredPlayerIdentities, normalizeIdentityName, rosterSeasonForDate } from "lib/sources/playerIdentity";
+import { fetchPlayerIdentityDirectory, fetchRegisteredPlayerIdentities, normalizeIdentityName, positionGroupSlotRole, positionSlotRole, rosterSeasonForDate, type PlayerPositionGroup } from "lib/sources/playerIdentity";
 import { fetchRosterEntriesByTeam } from "lib/sources/lineSourceProcessing";
 import { tweetPipelineFlags } from "lib/sources/tweetInterpretation";
 import { normalizePlayerNameAlias } from "lib/sources/playerNameAliases";
@@ -24,11 +24,39 @@ function parseLimit(value: string | string[] | undefined): number {
   return Number.isFinite(parsed) ? Math.min(Math.max(parsed, 1), 200) : 50;
 }
 
-async function hasAmbiguousSurnameAlias(supabase: any, aliases: Array<{ alias: string; lastName?: string }>) {
-  const surnames = aliases.filter((part) => part.lastName && normalizeIdentityName(part.alias) === normalizeIdentityName(part.lastName)).map((part) => normalizeIdentityName(part.alias));
-  if (!surnames.length) return false;
+type SurnameAliasScope = { alias: string; lastName?: string; teamId: number | null; group: PlayerPositionGroup | null; candidateIds?: number[] };
+
+function parsePositionGroup(value: unknown): PlayerPositionGroup | null | undefined {
+  if (value == null || value === "") return null;
+  return value === "F" || value === "D" || value === "G" ? value : undefined;
+}
+
+function groupContradictsPosition(group: PlayerPositionGroup | null, position: string | null | undefined) {
+  const role = positionSlotRole(position);
+  return Boolean(group && role && positionGroupSlotRole(group) !== role);
+}
+
+/**
+ * A surname alias is safe when no other player shares the surname within its
+ * scope: its team (league-wide when unscoped) and, when given, its F/D/G group.
+ */
+async function hasAmbiguousSurnameAlias(supabase: any, aliases: SurnameAliasScope[]) {
+  const surnameAliases = aliases.filter((part) => part.lastName && normalizeIdentityName(part.alias) === normalizeIdentityName(part.lastName));
+  if (!surnameAliases.length) return false;
   const directory = await fetchPlayerIdentityDirectory(supabase);
-  return surnames.some((surname) => directory.filter((identity) => normalizeIdentityName(identity.lastName) === surname).length > 1);
+  return surnameAliases.some((part) => {
+    const role = positionGroupSlotRole(part.group);
+    const inScope = (identity: (typeof directory)[number]) => (part.teamId == null || identity.teamId === part.teamId)
+      && (!role || positionSlotRole(identity.position) === role);
+    const surname = normalizeIdentityName(part.alias);
+    const namesakes = directory.filter((identity) => normalizeIdentityName(identity.lastName) === surname && inScope(identity));
+    // Recorded candidates the directory cannot place still count against the alias.
+    const candidates = (part.candidateIds ?? []).filter((id) => {
+      const identity = directory.find((player) => player.playerId === id);
+      return !identity || inScope(identity);
+    });
+    return namesakes.length > 1 || candidates.length > 1;
+  });
 }
 
 async function buildAliasReviews(supabase: any, rows: any[], players: PlayerOption[]) {
@@ -142,12 +170,13 @@ async function handlePost(req: any, res: NextApiResponse) {
   }
 
   if (action === "split") {
-    const parts: Array<{ playerId: number; alias: string }> = Array.isArray(body.parts)
-      ? body.parts.map((part: any) => ({ playerId: Number(part?.playerId), alias: typeof part?.alias === "string" ? part.alias.trim() : "" }))
+    const parts: Array<{ playerId: number; alias: string; group: PlayerPositionGroup | null | undefined }> = Array.isArray(body.parts)
+      ? body.parts.map((part: any) => ({ playerId: Number(part?.playerId), alias: typeof part?.alias === "string" ? part.alias.trim() : "", group: parsePositionGroup(part?.positionGroup) }))
       : [];
     if (parts.length !== 2 || parts.some((part) => !Number.isSafeInteger(part.playerId) || part.playerId <= 0 || !normalizePlayerNameAlias(part.alias))) {
       return res.status(400).json({ success: false, message: "Choose two players and provide both aliases." });
     }
+    if (parts.some((part) => part.group === undefined)) return res.status(400).json({ success: false, message: "Position group must be F, D or G." });
     if (parts[0].playerId === parts[1].playerId) {
       return res.status(400).json({ success: false, message: "Choose two different players." });
     }
@@ -155,10 +184,13 @@ async function handlePost(req: any, res: NextApiResponse) {
       .select("id, raw_name, team_id, metadata").eq("id", unresolvedId).single();
     if (unresolvedError) throw unresolvedError;
     const playerIds = parts.map((part: any) => Number(part.playerId));
-    const { data: players, error: playersError } = await req.supabase.from("players").select("id, fullName, lastName").in("id", playerIds);
+    const { data: players, error: playersError } = await req.supabase.from("players").select("id, fullName, lastName, position").in("id", playerIds);
     if (playersError) throw playersError;
     if (!players || players.length !== 2) return res.status(400).json({ success: false, message: "Both players must exist." });
-    if (await hasAmbiguousSurnameAlias(req.supabase, parts.map((part) => ({ alias: part.alias, lastName: players.find((player: any) => Number(player.id) === part.playerId)?.lastName })))) {
+    if (parts.some((part) => groupContradictsPosition(part.group ?? null, players.find((player: any) => Number(player.id) === part.playerId)?.position))) {
+      return res.status(400).json({ success: false, message: "A position group must match the player's position." });
+    }
+    if (await hasAmbiguousSurnameAlias(req.supabase, parts.map((part) => ({ alias: part.alias, lastName: players.find((player: any) => Number(player.id) === part.playerId)?.lastName, teamId: unresolved.team_id ?? null, group: part.group ?? null })))) {
       return res.status(409).json({ success: false, message: "Use initials or full names for shared surnames; a split must not learn blanket surname aliases." });
     }
     let membershipConfirmed = true;
@@ -166,7 +198,7 @@ async function handlePost(req: any, res: NextApiResponse) {
       const roster = await fetchRosterEntriesByTeam({ supabase: req.supabase, teamIds: [unresolved.team_id], seasonId: rosterSeasonForDate() });
       membershipConfirmed = playerIds.every((playerId) => (roster.get(unresolved.team_id) ?? []).some((entry) => entry.playerId === playerId));
     }
-    const aliases = parts.map((part: any) => ({ alias: String(part.alias).trim(), normalized_alias: normalizePlayerNameAlias(String(part.alias)), player_id: Number(part.playerId), player_name: players.find((player: any) => Number(player.id) === Number(part.playerId))?.fullName, team_id: unresolved.team_id ?? null, source: "manual", updated_at: new Date().toISOString() }));
+    const aliases = parts.map((part: any) => ({ alias: String(part.alias).trim(), normalized_alias: normalizePlayerNameAlias(String(part.alias)), player_id: Number(part.playerId), player_name: players.find((player: any) => Number(player.id) === Number(part.playerId))?.fullName, team_id: unresolved.team_id ?? null, position_group: part.group ?? null, source: "manual", updated_at: new Date().toISOString() }));
     const { error: aliasError } = await req.supabase.from("lineup_player_name_aliases" as any).upsert(aliases, { onConflict: "normalized_alias,player_id" });
     if (aliasError) throw aliasError;
     const { error: updateError } = await req.supabase.from("lineup_unresolved_player_names" as any).update({
@@ -204,13 +236,16 @@ async function handlePost(req: any, res: NextApiResponse) {
 
   const { data: player, error: playerError } = await req.supabase
     .from("players")
-    .select("id, fullName, lastName")
+    .select("id, fullName, lastName, position")
     .eq("id", playerId)
     .single();
   if (playerError) throw playerError;
 
   const alias = typeof body.alias === "string" && body.alias.trim() ? body.alias.trim() : unresolved.raw_name;
   const normalizedAlias = normalizePlayerNameAlias(alias);
+  const positionGroup = parsePositionGroup(body.positionGroup);
+  if (positionGroup === undefined) return res.status(400).json({ success: false, message: "Position group must be F, D or G." });
+  if (groupContradictsPosition(positionGroup, player.position)) return res.status(400).json({ success: false, message: "A position group must match the player's position." });
 
   if (action === "assign_occurrence") {
     if (!getAliasReviewOccurrence(unresolved)) return res.status(409).json({ success: false, message: "The exact source occurrence is unavailable. Review the ambiguous context before assigning." });
@@ -225,8 +260,9 @@ async function handlePost(req: any, res: NextApiResponse) {
   }
 
   if (player.lastName && normalizeIdentityName(alias) === normalizeIdentityName(player.lastName)) {
-    if ((unresolved.metadata?.candidates?.length ?? 0) > 1 || await hasAmbiguousSurnameAlias(req.supabase, [{ alias, lastName: player.lastName }])) {
-      return res.status(409).json({ success: false, message: "This surname has multiple identities. Assign this occurrence instead of learning a blanket alias." });
+    const candidateIds = (unresolved.metadata?.candidates ?? []).map(Number).filter(Number.isSafeInteger);
+    if (await hasAmbiguousSurnameAlias(req.supabase, [{ alias, lastName: player.lastName, teamId: unresolved.team_id ?? null, group: positionGroup, candidateIds }])) {
+      return res.status(409).json({ success: false, message: "This surname has multiple identities on this team and position group. Assign this occurrence instead of learning a blanket alias." });
     }
   }
 
@@ -259,6 +295,7 @@ async function handlePost(req: any, res: NextApiResponse) {
         player_id: playerId,
         player_name: player.fullName,
         team_id: unresolved.team_id ?? null,
+        position_group: positionGroup,
         source: "manual",
         updated_at: new Date().toISOString()
       },

@@ -1,0 +1,44 @@
+{
+  "checks": [
+    {
+      "selection": "short",
+      "requested": 5,
+      "actual": 3,
+      "policy": {
+        "version": "fhfh-card-rank-policy-2026-11-01",
+        "status": "approved",
+        "ordering": "highest-numeric-first",
+        "ties": "competition",
+        "percentile": "midrank",
+        "shortSeason": "include-verified-complete",
+        "additionalQualifiers": "none"
+      },
+      "rankSourceStillUnavailable": true,
+      "pngSHA256": "57ce2e57da0300db12784a20ae7a5568066b7df910938733cb42d3853970ebe7",
+      "warningRight": 856.6547241210938,
+      "mobile": 320
+    },
+    {
+      "selection": "retained",
+      "requested": 20,
+      "actual": 11,
+      "policy": {
+        "version": "fhfh-card-rank-policy-2026-11-01",
+        "status": "approved",
+        "ordering": "highest-numeric-first",
+        "ties": "competition",
+        "percentile": "midrank",
+        "shortSeason": "include-verified-complete",
+        "additionalQualifiers": "none"
+      },
+      "rankSourceStillUnavailable": true,
+      "pngSHA256": "602fa89088733531ec7f84e3109b7dc041edef8c8cf82da787593038f6d8a8c4",
+      "warningRight": 875.327880859375,
+      "mobile": 320
+    }
+  ],
+  "calendarNotKnownShort": true,
+  "missingCaptureNotKnownShort": true,
+  "requests": [],
+  "errors": []
+}

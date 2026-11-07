@@ -691,6 +691,15 @@ export const TeamPowerRankingsPage: NextPage<PageProps> = ({
     }
   };
 
+  // Phones open in Simple mode: Advanced is a 17-column table that only shows
+  // rank, team and a clipped power score at phone width.
+  useEffect(() => {
+    if (window.matchMedia?.("(max-width: 767px)").matches) {
+      setViewMode("simple");
+      setSortState(DEFAULT_SORTS.simple);
+    }
+  }, []);
+
   const handleSort = (key: SortKey) => {
     if (!SORTABLE_KEYS_BY_MODE[viewMode].includes(key)) {
       return;
@@ -760,9 +769,11 @@ export const TeamPowerRankingsPage: NextPage<PageProps> = ({
       return null;
     }
 
+    // Two chips keep the row short: games in 7d plus the strongest flag
+    // (chips are built in priority order); the tooltip carries the full list.
     return (
-      <div className={styles.scheduleTexture}>
-        {chips.map((chip) => (
+      <div className={styles.scheduleTexture} title={chips.join(" · ")}>
+        {chips.slice(0, 2).map((chip) => (
           <span
             key={`${team.teamAbbr}-${chip}`}
             className={styles.scheduleChip}
@@ -771,6 +782,31 @@ export const TeamPowerRankingsPage: NextPage<PageProps> = ({
           </span>
         ))}
       </div>
+    );
+  };
+
+  // The note's first word is coloured by what the sentence says (the notes come
+  // from fixed templates in lib/underlying-stats/teamRatingNarrative.ts).
+  const getNarrativeToneClass = (line: string): string => {
+    if (/\b(slipped|slipping|cooled|cool off|cools off|fades)\b/i.test(line)) {
+      return styles.trendNegative;
+    }
+    if (/\b(rising|tightened|ticking up|improves?)\b/i.test(line)) {
+      return styles.trendPositive;
+    }
+    return styles.trendNeutral;
+  };
+
+  const renderNarrativeLine = (team: UnderlyingStatsLandingRating) => {
+    const [firstWord, ...rest] = team.narrative[0].split(" ");
+    return (
+      <span
+        className={styles.narrativeLine}
+        title={team.narrative.join(" • ")}
+      >
+        <span className={getNarrativeToneClass(team.narrative[0])}>{firstWord}</span>{" "}
+        {rest.join(" ")}
+      </span>
     );
   };
 
@@ -1374,12 +1410,7 @@ export const TeamPowerRankingsPage: NextPage<PageProps> = ({
                           </td>
                           <td className={styles.narrativeCell}>
                             {team.narrative.length ? (
-                              <span
-                                className={styles.narrativeLine}
-                                title={team.narrative.join(" • ")}
-                              >
-                                {team.narrative[0]}
-                              </span>
+                              renderNarrativeLine(team)
                             ) : (
                               <span className={styles.narrativeEmpty}>
                                 No movement note yet.
@@ -1407,12 +1438,7 @@ export const TeamPowerRankingsPage: NextPage<PageProps> = ({
                           </td>
                           <td className={styles.narrativeCell}>
                             {team.narrative.length ? (
-                              <span
-                                className={styles.narrativeLine}
-                                title={team.narrative.join(" • ")}
-                              >
-                                {team.narrative[0]}
-                              </span>
+                              renderNarrativeLine(team)
                             ) : (
                               <span className={styles.narrativeEmpty}>
                                 No movement note yet.

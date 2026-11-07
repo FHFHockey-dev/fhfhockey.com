@@ -1,0 +1,889 @@
+{
+  "head": "5f6b4e7a3a893000fe31cc6928cd8736b56e5d39",
+  "branch": "octoberBranch",
+  "source_observed_at": "2026-11-04T21:20:58.987335+00:00",
+  "not_a_lease": true,
+  "entries": [
+    {
+      "status": " M",
+      "path": "tasks/artifacts/Toenail-Audit-Visual-Enhancements.md",
+      "sha256": "5a65fc8d2fb9d897feef63853c63442c613755bfb6a3f5a468a332a14a2f0193",
+      "current_sha256": "5a65fc8d2fb9d897feef63853c63442c613755bfb6a3f5a468a332a14a2f0193",
+      "hash_matches_observation": true,
+      "owner": "Claude toenail/design-system author (session identity not established here)",
+      "evidence": "2026-11-04-claude-toenail-sweep diary, post-b4cf80631 token pass",
+      "disposition": "HELD ongoing Claude UI work"
+    },
+    {
+      "status": " M",
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/CLAUDE-TO-CODEX.md",
+      "sha256": "0ab01f63d1b7e852caa9872aee2efd680a4ff147d3872894db4e51d107b7b0bb",
+      "current_sha256": "0ab01f63d1b7e852caa9872aee2efd680a4ff147d3872894db4e51d107b7b0bb",
+      "hash_matches_observation": true,
+      "owner": "Existing platform mailbox custodians; Chef routes requests",
+      "evidence": "mailboxes + CODEX-LEASES current_owner_division_20261025",
+      "disposition": "HELD canonical coordination"
+    },
+    {
+      "status": " M",
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/CODEX-TO-CLAUDE.md",
+      "sha256": "7ab981af8e3d743d43a9d5131b89c0aa00c6000fee68d28d391ea873db700cd0",
+      "current_sha256": "7ab981af8e3d743d43a9d5131b89c0aa00c6000fee68d28d391ea873db700cd0",
+      "hash_matches_observation": true,
+      "owner": "Existing platform mailbox custodians; Chef routes requests",
+      "evidence": "mailboxes + CODEX-LEASES current_owner_division_20261025",
+      "disposition": "HELD canonical coordination"
+    },
+    {
+      "status": " M",
+      "path": "tasks/diaries/2026-10-27-codex-blsh-current-input.md",
+      "sha256": "3955e76506a9866afc1fd0a1d2d33d046bc28c25a93da3d0f6e8d0a48a73c646",
+      "current_sha256": "3955e76506a9866afc1fd0a1d2d33d046bc28c25a93da3d0f6e8d0a48a73c646",
+      "hash_matches_observation": true,
+      "owner": "BLSH current-input successor 01a17e93-6d23-77b3-bb91-c200b28f80fc",
+      "evidence": "CODEX-BLSH-CURRENT-SEASON-20261027-SUCCESSOR; COMPAT-COMPLETE",
+      "disposition": "HELD existing exact owner"
+    },
+    {
+      "status": " M",
+      "path": "tasks/diaries/2026-10-31-claude-social-share-chef.md",
+      "sha256": "37d3c0212a8fd93444f5b40a1682f6fdd3347bd38e321777ae597b443d268260",
+      "current_sha256": "37d3c0212a8fd93444f5b40a1682f6fdd3347bd38e321777ae597b443d268260",
+      "hash_matches_observation": true,
+      "owner": "Claude Social Share orchestrator 799e2b6c",
+      "evidence": "SS-EXPANSION lease",
+      "disposition": "HELD existing owner"
+    },
+    {
+      "status": " M",
+      "path": "web/components/Layout/MobileMenu/MobileMenu.module.scss",
+      "sha256": "2aeb7f44c482943e417bbf99ba1a495777cbaa8d4492d8406d38c4fd26629963",
+      "current_sha256": "2aeb7f44c482943e417bbf99ba1a495777cbaa8d4492d8406d38c4fd26629963",
+      "hash_matches_observation": true,
+      "owner": "Claude toenail/design-system author (session identity not established here)",
+      "evidence": "2026-11-04-claude-toenail-sweep diary, post-b4cf80631 token pass",
+      "disposition": "HELD ongoing Claude UI work"
+    },
+    {
+      "status": " M",
+      "path": "web/components/RosterMatrix/RosterMatrix.module.scss",
+      "sha256": "e84967ea022bece605ae79a82ecde6abfecafb053eee13e739b3d1c948186c15",
+      "current_sha256": "e84967ea022bece605ae79a82ecde6abfecafb053eee13e739b3d1c948186c15",
+      "hash_matches_observation": true,
+      "owner": "Claude toenail/design-system author (session identity not established here)",
+      "evidence": "2026-11-04-claude-toenail-sweep diary, post-b4cf80631 token pass",
+      "disposition": "HELD ongoing Claude UI work"
+    },
+    {
+      "status": " M",
+      "path": "web/components/RosterMatrix/RosterMatrix.tsx",
+      "sha256": "86d69c4ef2b43c24059b6ac07cc387f7da8a4f67001daed4c449a3cc7f62fe67",
+      "current_sha256": "86d69c4ef2b43c24059b6ac07cc387f7da8a4f67001daed4c449a3cc7f62fe67",
+      "hash_matches_observation": true,
+      "owner": "Claude toenail/design-system author (session identity not established here)",
+      "evidence": "2026-11-04-claude-toenail-sweep diary, post-b4cf80631 token pass",
+      "disposition": "HELD ongoing Claude UI work"
+    },
+    {
+      "status": " M",
+      "path": "web/components/RosterScheduleOptimizer/HealthyReserveAlert.test.tsx",
+      "sha256": "d81e31c1fe5a8886a5ff56718f8382caac2a3e0acbc4cbd6d58a51a7008a8b95",
+      "current_sha256": "d81e31c1fe5a8886a5ff56718f8382caac2a3e0acbc4cbd6d58a51a7008a8b95",
+      "hash_matches_observation": true,
+      "owner": "RSO audit author 01a1a701-d4e0-7ec1-814a-28bbce742a38",
+      "evidence": "RSO audit receipt/diary; older RSO-MANUAL/YAHOO-DIET reservations retained",
+      "disposition": "HELD audit slice; shared reservations need reconciliation"
+    },
+    {
+      "status": " M",
+      "path": "web/components/RosterScheduleOptimizer/HealthyReserveAlert.tsx",
+      "sha256": "1ff7c1fcf016d6131b5bd3124aa2332810d51ab364c0189c9b5c0581fccb2eca",
+      "current_sha256": "1ff7c1fcf016d6131b5bd3124aa2332810d51ab364c0189c9b5c0581fccb2eca",
+      "hash_matches_observation": true,
+      "owner": "RSO audit author 01a1a701-d4e0-7ec1-814a-28bbce742a38",
+      "evidence": "RSO audit receipt/diary; older RSO-MANUAL/YAHOO-DIET reservations retained",
+      "disposition": "HELD audit slice; shared reservations need reconciliation"
+    },
+    {
+      "status": " M",
+      "path": "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx",
+      "sha256": "3a133b030bfaa96baa35ad3cbea4238f918f473c417828fd25cb358e7785827c",
+      "current_sha256": "3a133b030bfaa96baa35ad3cbea4238f918f473c417828fd25cb358e7785827c",
+      "hash_matches_observation": true,
+      "owner": "Claude toenail author + RSO audit author, separate hunks",
+      "evidence": "Claude toenail diary: Week/e2e edits vs Codex IR-alert hunk",
+      "disposition": "HELD shared-file/hunk composition; no whole-file allocation"
+    },
+    {
+      "status": " M",
+      "path": "web/components/TeamDashboard/AdvancedL10Metrics.module.scss",
+      "sha256": "dba63ffa0eab4f1e4e968c2645a8e181edff7dff7e52d33b8280e0344868ae49",
+      "current_sha256": "dba63ffa0eab4f1e4e968c2645a8e181edff7dff7e52d33b8280e0344868ae49",
+      "hash_matches_observation": true,
+      "owner": "Claude toenail/design-system author (session identity not established here)",
+      "evidence": "2026-11-04-claude-toenail-sweep diary, post-b4cf80631 token pass",
+      "disposition": "HELD ongoing Claude UI work"
+    },
+    {
+      "status": " M",
+      "path": "web/components/TeamDashboard/GameByGameTimeline.module.scss",
+      "sha256": "8d4d9beb553248d83046115855fc46d25b61bc4992c9e994a2279db28c6b1a32",
+      "current_sha256": "8d4d9beb553248d83046115855fc46d25b61bc4992c9e994a2279db28c6b1a32",
+      "hash_matches_observation": true,
+      "owner": "Claude toenail/design-system author (session identity not established here)",
+      "evidence": "2026-11-04-claude-toenail-sweep diary, post-b4cf80631 token pass",
+      "disposition": "HELD ongoing Claude UI work"
+    },
+    {
+      "status": " M",
+      "path": "web/components/TeamTabNavigation/TeamTabNavigation.module.scss",
+      "sha256": "69f6bc22358e160f81a60401293fc9821ac9e938ccb18c8e16c557ffaa674d1c",
+      "current_sha256": "69f6bc22358e160f81a60401293fc9821ac9e938ccb18c8e16c557ffaa674d1c",
+      "hash_matches_observation": true,
+      "owner": "Claude toenail/design-system author (session identity not established here)",
+      "evidence": "2026-11-04-claude-toenail-sweep diary, post-b4cf80631 token pass",
+      "disposition": "HELD ongoing Claude UI work"
+    },
+    {
+      "status": " M",
+      "path": "web/components/buyLowSellHigh/BlshPlayerDetail.tsx",
+      "sha256": "6419b05cec243ed5f3f66b40ad7d79b4a3bcba2fd61994bf93d99f5bd8d92a03",
+      "current_sha256": "6419b05cec243ed5f3f66b40ad7d79b4a3bcba2fd61994bf93d99f5bd8d92a03",
+      "hash_matches_observation": true,
+      "owner": "Audit author 01a1a711-9765-7791-b46b-c4540477f644; historical preview successor also claims path",
+      "evidence": "BLSH audit diary + COMPAT-COMPLETE explicit reconciliation requirement",
+      "disposition": "HELD overlapping custody; acknowledgment required"
+    },
+    {
+      "status": " M",
+      "path": "web/components/skoElement/SkoElementPreview.test.tsx",
+      "sha256": "229b78417459fd35da1311a69e5a6f68a7c1f29104d15da6793a13769305de58",
+      "current_sha256": "229b78417459fd35da1311a69e5a6f68a7c1f29104d15da6793a13769305de58",
+      "hash_matches_observation": true,
+      "owner": "BLSH audit author 01a1a711-9765-7791-b46b-c4540477f644",
+      "evidence": "BLSH audit receipt/diary; displayProfile historical Claude lists claim",
+      "disposition": "HELD audit slice; exact transfer before edits"
+    },
+    {
+      "status": " M",
+      "path": "web/components/skoElement/SkoElementPreview.tsx",
+      "sha256": "d663bd5cabd7048c54fb4950d26fc7b96128ab2ef196213dc2ff64fb2374d5c2",
+      "current_sha256": "d663bd5cabd7048c54fb4950d26fc7b96128ab2ef196213dc2ff64fb2374d5c2",
+      "hash_matches_observation": true,
+      "owner": "BLSH audit author 01a1a711-9765-7791-b46b-c4540477f644",
+      "evidence": "BLSH audit receipt/diary; displayProfile historical Claude lists claim",
+      "disposition": "HELD audit slice; exact transfer before edits"
+    },
+    {
+      "status": " M",
+      "path": "web/e2e/roster-schedule-optimizer.spec.ts",
+      "sha256": "a16bddc3c2bba0c9e5ec7d8c165c531bb3e78501b1e851e0ca2f8f703490b135",
+      "current_sha256": "a16bddc3c2bba0c9e5ec7d8c165c531bb3e78501b1e851e0ca2f8f703490b135",
+      "hash_matches_observation": true,
+      "owner": "Claude toenail author + RSO audit author, separate hunks",
+      "evidence": "Claude toenail diary: Week/e2e edits vs Codex IR-alert hunk",
+      "disposition": "HELD shared-file/hunk composition; no whole-file allocation"
+    },
+    {
+      "status": " M",
+      "path": "web/lib/buyLowSellHigh/displayProfile.test.ts",
+      "sha256": "16958f5e09adaae9a54c94bbee12ae8268a2a5fc6829325bac74e0c4cd2eae8a",
+      "current_sha256": "16958f5e09adaae9a54c94bbee12ae8268a2a5fc6829325bac74e0c4cd2eae8a",
+      "hash_matches_observation": true,
+      "owner": "BLSH audit author 01a1a711-9765-7791-b46b-c4540477f644",
+      "evidence": "BLSH audit receipt/diary; displayProfile historical Claude lists claim",
+      "disposition": "HELD audit slice; exact transfer before edits"
+    },
+    {
+      "status": " M",
+      "path": "web/lib/buyLowSellHigh/displayProfile.ts",
+      "sha256": "6de7898a08f4ece36307b9817ce0dae33f1ee238ebf5eb52dad7f583f4d7178c",
+      "current_sha256": "6de7898a08f4ece36307b9817ce0dae33f1ee238ebf5eb52dad7f583f4d7178c",
+      "hash_matches_observation": true,
+      "owner": "BLSH audit author 01a1a711-9765-7791-b46b-c4540477f644",
+      "evidence": "BLSH audit receipt/diary; displayProfile historical Claude lists claim",
+      "disposition": "HELD audit slice; exact transfer before edits"
+    },
+    {
+      "status": " M",
+      "path": "web/lib/buyLowSellHigh/market.test.ts",
+      "sha256": "75c50d315356e83498fb497c6b5b1b9b5d60701bb7375d5bedcbc60f5d3eec73",
+      "current_sha256": "75c50d315356e83498fb497c6b5b1b9b5d60701bb7375d5bedcbc60f5d3eec73",
+      "hash_matches_observation": true,
+      "owner": "BLSH audit author 01a1a711-9765-7791-b46b-c4540477f644",
+      "evidence": "BLSH audit receipt/diary; displayProfile historical Claude lists claim",
+      "disposition": "HELD audit slice; exact transfer before edits"
+    },
+    {
+      "status": " M",
+      "path": "web/lib/buyLowSellHigh/market.ts",
+      "sha256": "44df9313b86bbc078dc6f314a5884deb490e266509bec4a44f6f9ff08e537f60",
+      "current_sha256": "44df9313b86bbc078dc6f314a5884deb490e266509bec4a44f6f9ff08e537f60",
+      "hash_matches_observation": true,
+      "owner": "BLSH audit author 01a1a711-9765-7791-b46b-c4540477f644",
+      "evidence": "BLSH audit receipt/diary; displayProfile historical Claude lists claim",
+      "disposition": "HELD audit slice; exact transfer before edits"
+    },
+    {
+      "status": " M",
+      "path": "web/lib/buyLowSellHigh/researchSnapshot.test.ts",
+      "sha256": "3cd79a94f1ff6b896c48cd41dd59a1e0a3ea9a33fe54abdc378927071e6ab69c",
+      "current_sha256": "3cd79a94f1ff6b896c48cd41dd59a1e0a3ea9a33fe54abdc378927071e6ab69c",
+      "hash_matches_observation": true,
+      "owner": "Audit author 01a1a711-9765-7791-b46b-c4540477f644; historical preview successor also claims path",
+      "evidence": "BLSH audit diary + COMPAT-COMPLETE explicit reconciliation requirement",
+      "disposition": "HELD overlapping custody; acknowledgment required"
+    },
+    {
+      "status": " M",
+      "path": "web/lib/buyLowSellHigh/researchSnapshot.ts",
+      "sha256": "76721610cf1be0f699279696603517c1b92547d1e85944e150098370a31babd3",
+      "current_sha256": "76721610cf1be0f699279696603517c1b92547d1e85944e150098370a31babd3",
+      "hash_matches_observation": true,
+      "owner": "Audit author 01a1a711-9765-7791-b46b-c4540477f644; historical preview successor also claims path",
+      "evidence": "BLSH audit diary + COMPAT-COMPLETE explicit reconciliation requirement",
+      "disposition": "HELD overlapping custody; acknowledgment required"
+    },
+    {
+      "status": " M",
+      "path": "web/lib/buyLowSellHigh/supportGap.test.ts",
+      "sha256": "e7a86b4afdce36aaf6dc27f7ce103f888e5aba7982ea61ac47adfd24e0f1f43a",
+      "current_sha256": "e7a86b4afdce36aaf6dc27f7ce103f888e5aba7982ea61ac47adfd24e0f1f43a",
+      "hash_matches_observation": true,
+      "owner": "BLSH audit author 01a1a711-9765-7791-b46b-c4540477f644",
+      "evidence": "BLSH audit receipt/diary; displayProfile historical Claude lists claim",
+      "disposition": "HELD audit slice; exact transfer before edits"
+    },
+    {
+      "status": " M",
+      "path": "web/lib/forge-v2/contracts.ts",
+      "sha256": "a9d1dc573630538a008ac215ff479f7f0b1727456c435c233e9cb8ec1c623bd0",
+      "current_sha256": "a9d1dc573630538a008ac215ff479f7f0b1727456c435c233e9cb8ec1c623bd0",
+      "hash_matches_observation": true,
+      "owner": "November 4 FORGE integrity audit author (thread identity not established here)",
+      "evidence": "forge-provenance receipt + codex-forge-integrity diary",
+      "disposition": "HELD FORGE producer/contracts"
+    },
+    {
+      "status": " M",
+      "path": "web/lib/forge-v2/data.test.ts",
+      "sha256": "c34a02214b36db1cdde96c614b6c7551e100b8ff74557a2a9f03653b01943fdf",
+      "current_sha256": "c34a02214b36db1cdde96c614b6c7551e100b8ff74557a2a9f03653b01943fdf",
+      "hash_matches_observation": true,
+      "owner": "November 4 FORGE integrity audit author (thread identity not established here)",
+      "evidence": "forge-provenance receipt + codex-forge-integrity diary",
+      "disposition": "HELD FORGE producer/contracts"
+    },
+    {
+      "status": " M",
+      "path": "web/lib/forge-v2/evaluation.test.ts",
+      "sha256": "f129c2f4554e0da89a807b2bcce2073d940a1f144a98c7093913ee8c90d8572c",
+      "current_sha256": "f129c2f4554e0da89a807b2bcce2073d940a1f144a98c7093913ee8c90d8572c",
+      "hash_matches_observation": true,
+      "owner": "November 4 FORGE integrity audit author (thread identity not established here)",
+      "evidence": "forge-provenance receipt + codex-forge-integrity diary",
+      "disposition": "HELD FORGE producer/contracts"
+    },
+    {
+      "status": " M",
+      "path": "web/lib/forge-v2/evaluation.ts",
+      "sha256": "8344c4ee2a46f075fcdc403eb6f68ded95611f0eee433fb45d651379740848fc",
+      "current_sha256": "8344c4ee2a46f075fcdc403eb6f68ded95611f0eee433fb45d651379740848fc",
+      "hash_matches_observation": true,
+      "owner": "November 4 FORGE integrity audit author (thread identity not established here)",
+      "evidence": "forge-provenance receipt + codex-forge-integrity diary",
+      "disposition": "HELD FORGE producer/contracts"
+    },
+    {
+      "status": " M",
+      "path": "web/lib/forge-v2/model.test.ts",
+      "sha256": "24b772ef5b74ba3d276ca2248157107c984d3d935c748e741dcca6ff008e2fb1",
+      "current_sha256": "24b772ef5b74ba3d276ca2248157107c984d3d935c748e741dcca6ff008e2fb1",
+      "hash_matches_observation": true,
+      "owner": "November 4 FORGE integrity audit author (thread identity not established here)",
+      "evidence": "forge-provenance receipt + codex-forge-integrity diary",
+      "disposition": "HELD FORGE producer/contracts"
+    },
+    {
+      "status": " M",
+      "path": "web/lib/forge-v2/model.ts",
+      "sha256": "7a6de0e610f123cd0563809eabd07f43bd050cd162f07aa59320d6e5682275e7",
+      "current_sha256": "7a6de0e610f123cd0563809eabd07f43bd050cd162f07aa59320d6e5682275e7",
+      "hash_matches_observation": true,
+      "owner": "November 4 FORGE integrity audit author (thread identity not established here)",
+      "evidence": "forge-provenance receipt + codex-forge-integrity diary",
+      "disposition": "HELD FORGE producer/contracts"
+    },
+    {
+      "status": " M",
+      "path": "web/lib/integrations/yahoo/rosterPlanning.test.ts",
+      "sha256": "3f1ee33d5ebf1a69026241314ac3cf3fe3c1d65f2114d969dfbed3dd66245508",
+      "current_sha256": "3f1ee33d5ebf1a69026241314ac3cf3fe3c1d65f2114d969dfbed3dd66245508",
+      "hash_matches_observation": true,
+      "owner": "RSO audit author 01a1a701-d4e0-7ec1-814a-28bbce742a38",
+      "evidence": "RSO audit receipt/diary; older RSO-MANUAL/YAHOO-DIET reservations retained",
+      "disposition": "HELD audit slice; shared reservations need reconciliation"
+    },
+    {
+      "status": " M",
+      "path": "web/lib/integrations/yahoo/rosterPlanning.ts",
+      "sha256": "bf1ea851c024f6e5f5e399f0505347dc9e16d8407b5921f1c3406cc005661cc9",
+      "current_sha256": "bf1ea851c024f6e5f5e399f0505347dc9e16d8407b5921f1c3406cc005661cc9",
+      "hash_matches_observation": true,
+      "owner": "RSO audit author 01a1a701-d4e0-7ec1-814a-28bbce742a38",
+      "evidence": "RSO audit receipt/diary; older RSO-MANUAL/YAHOO-DIET reservations retained",
+      "disposition": "HELD audit slice; shared reservations need reconciliation"
+    },
+    {
+      "status": " M",
+      "path": "web/lib/player-cards/retainedBlsh.test.ts",
+      "sha256": "cc8c8928489518c46f4a70a677bb954c7507d99f3a4f0c2bf7e6b9b184b57816",
+      "current_sha256": "cc8c8928489518c46f4a70a677bb954c7507d99f3a4f0c2bf7e6b9b184b57816",
+      "hash_matches_observation": true,
+      "owner": "BLSH audit author 01a1a711-9765-7791-b46b-c4540477f644",
+      "evidence": "BLSH audit receipt/diary; displayProfile historical Claude lists claim",
+      "disposition": "HELD audit slice; exact transfer before edits"
+    },
+    {
+      "status": " M",
+      "path": "web/lib/player-cards/retainedBlsh.ts",
+      "sha256": "201bf1df492d113aeac973f4b82f6ca2ce1695650eca13263f472f7a2568eb23",
+      "current_sha256": "201bf1df492d113aeac973f4b82f6ca2ce1695650eca13263f472f7a2568eb23",
+      "hash_matches_observation": true,
+      "owner": "BLSH audit author 01a1a711-9765-7791-b46b-c4540477f644",
+      "evidence": "BLSH audit receipt/diary; displayProfile historical Claude lists claim",
+      "disposition": "HELD audit slice; exact transfer before edits"
+    },
+    {
+      "status": " M",
+      "path": "web/lib/player-forecasts/contributions.test.ts",
+      "sha256": "7003a4c02cf922d08f0fde791b6624603e45206d9996b783c244c0792cb49d34",
+      "current_sha256": "7003a4c02cf922d08f0fde791b6624603e45206d9996b783c244c0792cb49d34",
+      "hash_matches_observation": true,
+      "owner": "RSO audit author 01a1a701-d4e0-7ec1-814a-28bbce742a38",
+      "evidence": "RSO audit receipt/diary; older RSO-MANUAL/YAHOO-DIET reservations retained",
+      "disposition": "HELD audit slice; shared reservations need reconciliation"
+    },
+    {
+      "status": " M",
+      "path": "web/lib/player-forecasts/servedForecastLedger.test.ts",
+      "sha256": "fee3d790ff16b3601fce4c892907e4bc6dca94e8d04e8838112672f059199ac8",
+      "current_sha256": "fee3d790ff16b3601fce4c892907e4bc6dca94e8d04e8838112672f059199ac8",
+      "hash_matches_observation": true,
+      "owner": "November 4 FORGE integrity audit author (thread identity not established here)",
+      "evidence": "forge-provenance receipt + codex-forge-integrity diary",
+      "disposition": "HELD FORGE producer/contracts"
+    },
+    {
+      "status": " M",
+      "path": "web/lib/projections/uncertainty.test.ts",
+      "sha256": "462714bb825024a34f4b550dca28aa011ae1eb355e685a2d9ccca481b2c763fc",
+      "current_sha256": "462714bb825024a34f4b550dca28aa011ae1eb355e685a2d9ccca481b2c763fc",
+      "hash_matches_observation": true,
+      "owner": "November 4 FORGE integrity audit author (thread identity not established here)",
+      "evidence": "forge-provenance receipt + codex-forge-integrity diary",
+      "disposition": "HELD FORGE producer/contracts"
+    },
+    {
+      "status": " M",
+      "path": "web/lib/projections/uncertainty.ts",
+      "sha256": "3239c2be13d0b043dc2edfe793e16527bc7cd25e8123327d0dfafb207f691cdd",
+      "current_sha256": "3239c2be13d0b043dc2edfe793e16527bc7cd25e8123327d0dfafb207f691cdd",
+      "hash_matches_observation": true,
+      "owner": "November 4 FORGE integrity audit author (thread identity not established here)",
+      "evidence": "forge-provenance receipt + codex-forge-integrity diary",
+      "disposition": "HELD FORGE producer/contracts"
+    },
+    {
+      "status": " M",
+      "path": "web/lib/rosterScheduleOptimizer/candidatePlanMetrics.test.ts",
+      "sha256": "156b1923c3fd85e96d2a3e1659afd04d8c95567f41c720738a84529609fb547e",
+      "current_sha256": "156b1923c3fd85e96d2a3e1659afd04d8c95567f41c720738a84529609fb547e",
+      "hash_matches_observation": true,
+      "owner": "RSO audit author 01a1a701-d4e0-7ec1-814a-28bbce742a38",
+      "evidence": "RSO audit receipt/diary; older RSO-MANUAL/YAHOO-DIET reservations retained",
+      "disposition": "HELD audit slice; shared reservations need reconciliation"
+    },
+    {
+      "status": " M",
+      "path": "web/lib/rosterScheduleOptimizer/contributionLedger.test.ts",
+      "sha256": "776bf76c7eafeb6eb434d992577705e30ed2ab5f0a5c7ae711fe7c48311c5970",
+      "current_sha256": "776bf76c7eafeb6eb434d992577705e30ed2ab5f0a5c7ae711fe7c48311c5970",
+      "hash_matches_observation": true,
+      "owner": "RSO audit author 01a1a701-d4e0-7ec1-814a-28bbce742a38",
+      "evidence": "RSO audit receipt/diary; older RSO-MANUAL/YAHOO-DIET reservations retained",
+      "disposition": "HELD audit slice; shared reservations need reconciliation"
+    },
+    {
+      "status": " M",
+      "path": "web/lib/rosterScheduleOptimizer/dailyAcceptance.manual.test.ts",
+      "sha256": "121f2b714b23f209bc845538327e47729ac86fb37f641dacbf338d20920d483c",
+      "current_sha256": "121f2b714b23f209bc845538327e47729ac86fb37f641dacbf338d20920d483c",
+      "hash_matches_observation": true,
+      "owner": "RSO audit author 01a1a701-d4e0-7ec1-814a-28bbce742a38",
+      "evidence": "RSO audit receipt/diary; older RSO-MANUAL/YAHOO-DIET reservations retained",
+      "disposition": "HELD audit slice; shared reservations need reconciliation"
+    },
+    {
+      "status": " M",
+      "path": "web/lib/rosterScheduleOptimizer/healthyReserves.test.ts",
+      "sha256": "dab0c7f0abdb9bc2dd30baa94b0aab19d3965136c2f831da1e6fe2b800160998",
+      "current_sha256": "dab0c7f0abdb9bc2dd30baa94b0aab19d3965136c2f831da1e6fe2b800160998",
+      "hash_matches_observation": true,
+      "owner": "RSO audit author 01a1a701-d4e0-7ec1-814a-28bbce742a38",
+      "evidence": "RSO audit receipt/diary; older RSO-MANUAL/YAHOO-DIET reservations retained",
+      "disposition": "HELD audit slice; shared reservations need reconciliation"
+    },
+    {
+      "status": " M",
+      "path": "web/lib/rosterScheduleOptimizer/healthyReserves.ts",
+      "sha256": "a4127298df7900f319e4a6eff6e49112b9164fb1c8a9f08db7caee6b1c450f6c",
+      "current_sha256": "a4127298df7900f319e4a6eff6e49112b9164fb1c8a9f08db7caee6b1c450f6c",
+      "hash_matches_observation": true,
+      "owner": "RSO audit author 01a1a701-d4e0-7ec1-814a-28bbce742a38",
+      "evidence": "RSO audit receipt/diary; older RSO-MANUAL/YAHOO-DIET reservations retained",
+      "disposition": "HELD audit slice; shared reservations need reconciliation"
+    },
+    {
+      "status": " M",
+      "path": "web/lib/rosterScheduleOptimizer/lineupGaps.test.ts",
+      "sha256": "8437cd29102f0c685db090cad6c4a68224f2215ca5d564a39a98e31bd83c9775",
+      "current_sha256": "8437cd29102f0c685db090cad6c4a68224f2215ca5d564a39a98e31bd83c9775",
+      "hash_matches_observation": true,
+      "owner": "RSO audit author 01a1a701-d4e0-7ec1-814a-28bbce742a38",
+      "evidence": "RSO audit receipt/diary; older RSO-MANUAL/YAHOO-DIET reservations retained",
+      "disposition": "HELD audit slice; shared reservations need reconciliation"
+    },
+    {
+      "status": " M",
+      "path": "web/lib/rosterScheduleOptimizer/lineupGaps.ts",
+      "sha256": "a664b961df98d4b244c85a9845447a4b62ac998943803d4360894cf4c0feeec4",
+      "current_sha256": "a664b961df98d4b244c85a9845447a4b62ac998943803d4360894cf4c0feeec4",
+      "hash_matches_observation": true,
+      "owner": "RSO audit author 01a1a701-d4e0-7ec1-814a-28bbce742a38",
+      "evidence": "RSO audit receipt/diary; older RSO-MANUAL/YAHOO-DIET reservations retained",
+      "disposition": "HELD audit slice; shared reservations need reconciliation"
+    },
+    {
+      "status": " M",
+      "path": "web/lib/rosterScheduleOptimizer/planning.test.ts",
+      "sha256": "bb8057e7b4fe848a67258d3b4a6b4fa1b3ca025008382065c275c2ca5b2e5ad6",
+      "current_sha256": "bb8057e7b4fe848a67258d3b4a6b4fa1b3ca025008382065c275c2ca5b2e5ad6",
+      "hash_matches_observation": true,
+      "owner": "RSO audit author 01a1a701-d4e0-7ec1-814a-28bbce742a38",
+      "evidence": "RSO audit receipt/diary; older RSO-MANUAL/YAHOO-DIET reservations retained",
+      "disposition": "HELD audit slice; shared reservations need reconciliation"
+    },
+    {
+      "status": " M",
+      "path": "web/lib/rosterScheduleOptimizer/planning.ts",
+      "sha256": "b4c98515a1785de95b8f8e4b84c4ee805b5f173d91006832ad9859295b5d0a2e",
+      "current_sha256": "b4c98515a1785de95b8f8e4b84c4ee805b5f173d91006832ad9859295b5d0a2e",
+      "hash_matches_observation": true,
+      "owner": "RSO audit author 01a1a701-d4e0-7ec1-814a-28bbce742a38",
+      "evidence": "RSO audit receipt/diary; older RSO-MANUAL/YAHOO-DIET reservations retained",
+      "disposition": "HELD audit slice; shared reservations need reconciliation"
+    },
+    {
+      "status": " M",
+      "path": "web/lib/rosterScheduleOptimizer/planningTimeline.ts",
+      "sha256": "8c8649e8f0f03e1159230dbe58a48cbedbef8286f5c15d6a8f2e244e604bc474",
+      "current_sha256": "8c8649e8f0f03e1159230dbe58a48cbedbef8286f5c15d6a8f2e244e604bc474",
+      "hash_matches_observation": true,
+      "owner": "RSO audit author 01a1a701-d4e0-7ec1-814a-28bbce742a38",
+      "evidence": "RSO audit receipt/diary; older RSO-MANUAL/YAHOO-DIET reservations retained",
+      "disposition": "HELD audit slice; shared reservations need reconciliation"
+    },
+    {
+      "status": " M",
+      "path": "web/lib/rosterScheduleOptimizer/refreshForecastInputs.test.ts",
+      "sha256": "d85373455b595a198c7855f4a1ebe8a0a20e4dd9aff74e6f883b5694bbacd681",
+      "current_sha256": "d85373455b595a198c7855f4a1ebe8a0a20e4dd9aff74e6f883b5694bbacd681",
+      "hash_matches_observation": true,
+      "owner": "RSO audit author 01a1a701-d4e0-7ec1-814a-28bbce742a38",
+      "evidence": "RSO audit receipt/diary; older RSO-MANUAL/YAHOO-DIET reservations retained",
+      "disposition": "HELD audit slice; shared reservations need reconciliation"
+    },
+    {
+      "status": " M",
+      "path": "web/lib/sko/gap.test.ts",
+      "sha256": "cc60669248e6ec44caae7d87abf9c0d2833a47dd46fe3c6648b4602d06fd69f0",
+      "current_sha256": "cc60669248e6ec44caae7d87abf9c0d2833a47dd46fe3c6648b4602d06fd69f0",
+      "hash_matches_observation": true,
+      "owner": "BLSH audit author 01a1a711-9765-7791-b46b-c4540477f644",
+      "evidence": "BLSH audit receipt/diary; displayProfile historical Claude lists claim",
+      "disposition": "HELD audit slice; exact transfer before edits"
+    },
+    {
+      "status": " M",
+      "path": "web/lib/sko/gap.ts",
+      "sha256": "fda168904af69c64c492dd0b64a8ec1a63ad1d0b85278fb161138dc57ca2911b",
+      "current_sha256": "fda168904af69c64c492dd0b64a8ec1a63ad1d0b85278fb161138dc57ca2911b",
+      "hash_matches_observation": true,
+      "owner": "BLSH audit author 01a1a711-9765-7791-b46b-c4540477f644",
+      "evidence": "BLSH audit receipt/diary; displayProfile historical Claude lists claim",
+      "disposition": "HELD audit slice; exact transfer before edits"
+    },
+    {
+      "status": " M",
+      "path": "web/lib/skoElement/contract.ts",
+      "sha256": "b262b18374d78e292dc45e4c1510e14489fb31a2f945ebe08fc685a3cb7b9904",
+      "current_sha256": "b262b18374d78e292dc45e4c1510e14489fb31a2f945ebe08fc685a3cb7b9904",
+      "hash_matches_observation": true,
+      "owner": "BLSH audit author 01a1a711-9765-7791-b46b-c4540477f644",
+      "evidence": "BLSH audit receipt/diary; displayProfile historical Claude lists claim",
+      "disposition": "HELD audit slice; exact transfer before edits"
+    },
+    {
+      "status": " M",
+      "path": "web/lib/skoElement/interpret.test.ts",
+      "sha256": "3391d627c4e31971792d0dd5d42b5ef1ec1ab5e4d5b9cdd703a50b90e55427dc",
+      "current_sha256": "3391d627c4e31971792d0dd5d42b5ef1ec1ab5e4d5b9cdd703a50b90e55427dc",
+      "hash_matches_observation": true,
+      "owner": "BLSH audit author 01a1a711-9765-7791-b46b-c4540477f644",
+      "evidence": "BLSH audit receipt/diary; displayProfile historical Claude lists claim",
+      "disposition": "HELD audit slice; exact transfer before edits"
+    },
+    {
+      "status": " M",
+      "path": "web/lib/skoElement/interpret.ts",
+      "sha256": "d5b2d8a5033cc87ae606b03a79e9bf9ba023c6e6f9d7255b6d33011a9890b497",
+      "current_sha256": "d5b2d8a5033cc87ae606b03a79e9bf9ba023c6e6f9d7255b6d33011a9890b497",
+      "hash_matches_observation": true,
+      "owner": "BLSH audit author 01a1a711-9765-7791-b46b-c4540477f644",
+      "evidence": "BLSH audit receipt/diary; displayProfile historical Claude lists claim",
+      "disposition": "HELD audit slice; exact transfer before edits"
+    },
+    {
+      "status": " M",
+      "path": "web/next-env.d.ts",
+      "sha256": "ced3cb1bdbb8082cae388902481ba6a8a1e454ec7daed6125b368118f06e4a77",
+      "current_sha256": "ced3cb1bdbb8082cae388902481ba6a8a1e454ec7daed6125b368118f06e4a77",
+      "hash_matches_observation": true,
+      "owner": "UNRESOLVED generated-file custodian",
+      "evidence": "RSO diary says restored baseline; no exclusive owner in inspected receipts",
+      "disposition": "HELD do not include or overwrite without attribution"
+    },
+    {
+      "status": " M",
+      "path": "web/pages/stats/index.tsx",
+      "sha256": "37e4ba34a81147197e39482fcdd494e981005e26a8fa4f813f70f8980bf1dd9b",
+      "current_sha256": "37e4ba34a81147197e39482fcdd494e981005e26a8fa4f813f70f8980bf1dd9b",
+      "hash_matches_observation": true,
+      "owner": "Claude toenail/design-system author (session identity not established here)",
+      "evidence": "2026-11-04-claude-toenail-sweep diary, post-b4cf80631 token pass",
+      "disposition": "HELD ongoing Claude UI work"
+    },
+    {
+      "status": " M",
+      "path": "web/styles/TeamStatsPage.module.scss",
+      "sha256": "9a4a3484990d080b68d7009333f17c2cd25506f427af8d62e9a0444d7773622b",
+      "current_sha256": "9a4a3484990d080b68d7009333f17c2cd25506f427af8d62e9a0444d7773622b",
+      "hash_matches_observation": true,
+      "owner": "Claude toenail/design-system author (session identity not established here)",
+      "evidence": "2026-11-04-claude-toenail-sweep diary, post-b4cf80631 token pass",
+      "disposition": "HELD ongoing Claude UI work"
+    },
+    {
+      "status": "??",
+      "path": "tasks/artifacts/blsh-sko-vudu-audit-2026-11-04.md",
+      "sha256": "c3a4590583dfffbc8c809fe8632ad22ca263c3e1388c9f84816058e89b8f9433",
+      "current_sha256": "c3a4590583dfffbc8c809fe8632ad22ca263c3e1388c9f84816058e89b8f9433",
+      "hash_matches_observation": true,
+      "owner": "BLSH audit author 01a1a711-9765-7791-b46b-c4540477f644",
+      "evidence": "BLSH audit receipt/diary; displayProfile historical Claude lists claim",
+      "disposition": "HELD audit slice; exact transfer before edits"
+    },
+    {
+      "status": "??",
+      "path": "tasks/artifacts/blsh-verification-2026-11-04/",
+      "sha256": null,
+      "current_sha256": null,
+      "hash_matches_observation": null,
+      "owner": "BLSH audit author 01a1a711-9765-7791-b46b-c4540477f644",
+      "evidence": "BLSH audit receipt/diary; displayProfile historical Claude lists claim",
+      "disposition": "HELD audit slice; exact transfer before edits"
+    },
+    {
+      "status": "??",
+      "path": "tasks/artifacts/forge-empirical-2026-11-04.md",
+      "sha256": "0edd0ec26d0e56315b61352dc58f3453fe8f312086292224725a5ce7f78741bf",
+      "current_sha256": "0edd0ec26d0e56315b61352dc58f3453fe8f312086292224725a5ce7f78741bf",
+      "hash_matches_observation": true,
+      "owner": "November 4 FORGE integrity audit author (thread identity not established here)",
+      "evidence": "forge-provenance receipt + codex-forge-integrity diary",
+      "disposition": "HELD FORGE producer/contracts"
+    },
+    {
+      "status": "??",
+      "path": "tasks/artifacts/forge-integrity-2026-11-04.md",
+      "sha256": "e3bdbe88afdc579b893831c2c04a6426fcc8c3b56d2e556ff7d4504f0df2ccb0",
+      "current_sha256": "e3bdbe88afdc579b893831c2c04a6426fcc8c3b56d2e556ff7d4504f0df2ccb0",
+      "hash_matches_observation": true,
+      "owner": "November 4 FORGE integrity audit author (thread identity not established here)",
+      "evidence": "forge-provenance receipt + codex-forge-integrity diary",
+      "disposition": "HELD FORGE producer/contracts"
+    },
+    {
+      "status": "??",
+      "path": "tasks/artifacts/forge-provenance-2026-11-04.md",
+      "sha256": "c0b9cd438f8d4ddba9ba042dc2985ef3ae6670e60e6fe9c4d05b37c16316974d",
+      "current_sha256": "c0b9cd438f8d4ddba9ba042dc2985ef3ae6670e60e6fe9c4d05b37c16316974d",
+      "hash_matches_observation": true,
+      "owner": "November 4 FORGE integrity audit author (thread identity not established here)",
+      "evidence": "forge-provenance receipt + codex-forge-integrity diary",
+      "disposition": "HELD FORGE producer/contracts"
+    },
+    {
+      "status": "??",
+      "path": "tasks/artifacts/rso-audit-2026-11-04.md",
+      "sha256": "1a5c72d153ed6212adad3075ba79eaa82dfb549689965fbc26cc55eb7a24ec18",
+      "current_sha256": "1a5c72d153ed6212adad3075ba79eaa82dfb549689965fbc26cc55eb7a24ec18",
+      "hash_matches_observation": true,
+      "owner": "RSO audit author 01a1a701-d4e0-7ec1-814a-28bbce742a38",
+      "evidence": "RSO audit receipt/diary; older RSO-MANUAL/YAHOO-DIET reservations retained",
+      "disposition": "HELD audit slice; shared reservations need reconciliation"
+    },
+    {
+      "status": "??",
+      "path": "tasks/artifacts/wigo-charts-overhaul-2026-11-01/screens/pc-measurements.json",
+      "sha256": "06bfc8cd591e7062eeb226b02e8fdfab467a007e51c78e8413a06e223cbfe5bf",
+      "current_sha256": "06bfc8cd591e7062eeb226b02e8fdfab467a007e51c78e8413a06e223cbfe5bf",
+      "hash_matches_observation": true,
+      "owner": "Historical Claude WiGO overhaul author; current disposition unconfirmed",
+      "evidence": "WIGO-OVERHAUL closed; older WIGO active",
+      "disposition": "HELD pending old/new WiGO claim reconciliation"
+    },
+    {
+      "status": "??",
+      "path": "tasks/diaries/2026-11-03-claude-yahoo-status-sticky.md",
+      "sha256": "c602c95232f78b26325dc4a85649bb7c2a7df34027b99384290eb8fecae248af",
+      "current_sha256": "c602c95232f78b26325dc4a85649bb7c2a7df34027b99384290eb8fecae248af",
+      "hash_matches_observation": true,
+      "owner": "Claude Yahoo writer local_c4fd32c8 / local_799e2b6c",
+      "evidence": "YAHOO-WRITER explicit TJ transfer + sticky diary",
+      "disposition": "HELD provider writer"
+    },
+    {
+      "status": "??",
+      "path": "tasks/diaries/2026-11-04-claude-blsh-baseline.md",
+      "sha256": "d6a328b2b2ac667e744292eb55832a211a5ff83b775f0b9be268bb86f539d178",
+      "current_sha256": "d6a328b2b2ac667e744292eb55832a211a5ff83b775f0b9be268bb86f539d178",
+      "hash_matches_observation": true,
+      "owner": "Named Claude baseline/lists/opportunity lane",
+      "evidence": "corresponding diary + CLAUDE-BLSH-DECISION-LANES-20261104",
+      "disposition": "HELD existing owner evidence"
+    },
+    {
+      "status": "??",
+      "path": "tasks/diaries/2026-11-04-claude-blsh-lists.md",
+      "sha256": "fef289c443ae88d8fbe67ec918c07639d3b47e465ac988ca1727e4c07b601056",
+      "current_sha256": "fef289c443ae88d8fbe67ec918c07639d3b47e465ac988ca1727e4c07b601056",
+      "hash_matches_observation": true,
+      "owner": "Named Claude baseline/lists/opportunity lane",
+      "evidence": "corresponding diary + CLAUDE-BLSH-DECISION-LANES-20261104",
+      "disposition": "HELD existing owner evidence"
+    },
+    {
+      "status": "??",
+      "path": "tasks/diaries/2026-11-04-claude-blsh-opportunity.md",
+      "sha256": "8a592fcc105ca8d55da4d318552e761a8ed7d9a00d99f52bb41f89b298601aa6",
+      "current_sha256": "8a592fcc105ca8d55da4d318552e761a8ed7d9a00d99f52bb41f89b298601aa6",
+      "hash_matches_observation": true,
+      "owner": "Named Claude baseline/lists/opportunity lane",
+      "evidence": "corresponding diary + CLAUDE-BLSH-DECISION-LANES-20261104",
+      "disposition": "HELD existing owner evidence"
+    },
+    {
+      "status": "??",
+      "path": "tasks/diaries/2026-11-04-claude-toenail-sweep.md",
+      "sha256": "15e29b7be87aa58de23ff7238f8e85377b37c289ce730e84df759314c3d3caca",
+      "current_sha256": "15e29b7be87aa58de23ff7238f8e85377b37c289ce730e84df759314c3d3caca",
+      "hash_matches_observation": true,
+      "owner": "Claude toenail/design-system author (session identity not established here)",
+      "evidence": "2026-11-04-claude-toenail-sweep diary, post-b4cf80631 token pass",
+      "disposition": "HELD ongoing Claude UI work"
+    },
+    {
+      "status": "??",
+      "path": "tasks/diaries/2026-11-04-codex-blsh-sko-vudu-audit.md",
+      "sha256": "c88ae78e447baedf865ddc68254cdcdfb1a1e07ef4e6e8e1fea2c33baca28edc",
+      "current_sha256": "c88ae78e447baedf865ddc68254cdcdfb1a1e07ef4e6e8e1fea2c33baca28edc",
+      "hash_matches_observation": true,
+      "owner": "BLSH audit author 01a1a711-9765-7791-b46b-c4540477f644",
+      "evidence": "BLSH audit receipt/diary; displayProfile historical Claude lists claim",
+      "disposition": "HELD audit slice; exact transfer before edits"
+    },
+    {
+      "status": "??",
+      "path": "tasks/diaries/2026-11-04-codex-forge-integrity.md",
+      "sha256": "e41b922da8ce5833baa0db8f17cddfd52627b2ef066243bbf3da712b1d11334b",
+      "current_sha256": "e41b922da8ce5833baa0db8f17cddfd52627b2ef066243bbf3da712b1d11334b",
+      "hash_matches_observation": true,
+      "owner": "November 4 FORGE integrity audit author (thread identity not established here)",
+      "evidence": "forge-provenance receipt + codex-forge-integrity diary",
+      "disposition": "HELD FORGE producer/contracts"
+    },
+    {
+      "status": "??",
+      "path": "tasks/diaries/2026-11-04-codex-rso-audit.md",
+      "sha256": "553a7eafbeded630af38ef4179032d50c5a56a9ca21345e9d5871c66c9ce67d8",
+      "current_sha256": "553a7eafbeded630af38ef4179032d50c5a56a9ca21345e9d5871c66c9ce67d8",
+      "hash_matches_observation": true,
+      "owner": "RSO audit author 01a1a701-d4e0-7ec1-814a-28bbce742a38",
+      "evidence": "RSO audit receipt/diary; older RSO-MANUAL/YAHOO-DIET reservations retained",
+      "disposition": "HELD audit slice; shared reservations need reconciliation"
+    },
+    {
+      "status": "??",
+      "path": "web/lib/buyLowSellHigh/currentProcessEvidence.server.test.ts",
+      "sha256": "fe82f1de79f70576c3708ab565d790cc5448397a7421cabfedb54981414aab6e",
+      "current_sha256": "fe82f1de79f70576c3708ab565d790cc5448397a7421cabfedb54981414aab6e",
+      "hash_matches_observation": true,
+      "owner": "BLSH current-input successor 01a17e93-6d23-77b3-bb91-c200b28f80fc",
+      "evidence": "CODEX-BLSH-CURRENT-SEASON-20261027-SUCCESSOR; COMPAT-COMPLETE",
+      "disposition": "HELD existing exact owner"
+    },
+    {
+      "status": "??",
+      "path": "web/lib/buyLowSellHigh/currentProcessEvidence.server.ts",
+      "sha256": "9011207c1d16af7a2834a80b4d19d85d0b772a02093eef822e0dd44a9959af83",
+      "current_sha256": "9011207c1d16af7a2834a80b4d19d85d0b772a02093eef822e0dd44a9959af83",
+      "hash_matches_observation": true,
+      "owner": "BLSH current-input successor 01a17e93-6d23-77b3-bb91-c200b28f80fc",
+      "evidence": "CODEX-BLSH-CURRENT-SEASON-20261027-SUCCESSOR; COMPAT-COMPLETE",
+      "disposition": "HELD existing exact owner"
+    },
+    {
+      "status": "??",
+      "path": "web/lib/forge-v2/horizonEvaluation.fixtures.ts",
+      "sha256": "1e34731a0a1fc4ad1d8faa109b2dbbd6b2cbc25f9159ef861d6ef5b577859cf6",
+      "current_sha256": "1e34731a0a1fc4ad1d8faa109b2dbbd6b2cbc25f9159ef861d6ef5b577859cf6",
+      "hash_matches_observation": true,
+      "owner": "November 4 FORGE integrity audit author (thread identity not established here)",
+      "evidence": "forge-provenance receipt + codex-forge-integrity diary",
+      "disposition": "HELD FORGE producer/contracts"
+    },
+    {
+      "status": "??",
+      "path": "web/lib/forge-v2/horizonEvaluation.test.ts",
+      "sha256": "6a8fdb0c91e63d147634787f1056ac1b33da031eee11f954011f99cc2015eb51",
+      "current_sha256": "6a8fdb0c91e63d147634787f1056ac1b33da031eee11f954011f99cc2015eb51",
+      "hash_matches_observation": true,
+      "owner": "November 4 FORGE integrity audit author (thread identity not established here)",
+      "evidence": "forge-provenance receipt + codex-forge-integrity diary",
+      "disposition": "HELD FORGE producer/contracts"
+    },
+    {
+      "status": "??",
+      "path": "web/lib/forge-v2/horizonEvaluation.ts",
+      "sha256": "09f65c649c5ddfb2ddb6e9dca8a735cd5f3caa25a8c5cad193280175c5e565ab",
+      "current_sha256": "09f65c649c5ddfb2ddb6e9dca8a735cd5f3caa25a8c5cad193280175c5e565ab",
+      "hash_matches_observation": true,
+      "owner": "November 4 FORGE integrity audit author (thread identity not established here)",
+      "evidence": "forge-provenance receipt + codex-forge-integrity diary",
+      "disposition": "HELD FORGE producer/contracts"
+    },
+    {
+      "status": "??",
+      "path": "web/lib/forge-v2/researchBaselines.ts",
+      "sha256": "f0670035ba224a2c08954522fab41c137e00b7631008629eae0b48c82dae1b6b",
+      "current_sha256": "f0670035ba224a2c08954522fab41c137e00b7631008629eae0b48c82dae1b6b",
+      "hash_matches_observation": true,
+      "owner": "November 4 FORGE integrity audit author (thread identity not established here)",
+      "evidence": "forge-provenance receipt + codex-forge-integrity diary",
+      "disposition": "HELD FORGE producer/contracts"
+    },
+    {
+      "status": "??",
+      "path": "web/lib/forge-v2/researchCapture.ts",
+      "sha256": "c188d1e13694dc118529177f5d472b7ef5d7135a2fee8d49bd41f6be05ff7e26",
+      "current_sha256": "c188d1e13694dc118529177f5d472b7ef5d7135a2fee8d49bd41f6be05ff7e26",
+      "hash_matches_observation": true,
+      "owner": "November 4 FORGE integrity audit author (thread identity not established here)",
+      "evidence": "forge-provenance receipt + codex-forge-integrity diary",
+      "disposition": "HELD FORGE producer/contracts"
+    },
+    {
+      "status": "??",
+      "path": "web/scripts/forge-horizon-evaluate.ts",
+      "sha256": "5cb3485145dc33319c8ae7a0d80ffd4d4f47389e77696d00e58f577402286c05",
+      "current_sha256": "5cb3485145dc33319c8ae7a0d80ffd4d4f47389e77696d00e58f577402286c05",
+      "hash_matches_observation": true,
+      "owner": "November 4 FORGE integrity audit author (thread identity not established here)",
+      "evidence": "forge-provenance receipt + codex-forge-integrity diary",
+      "disposition": "HELD FORGE producer/contracts"
+    },
+    {
+      "status": "??",
+      "path": "web/scripts/forge-ledger-evaluate.ts",
+      "sha256": "b2609ac9a13a7d283e67b5993888b458bb0a613bdb5a3c08681f0e8a4dc330db",
+      "current_sha256": "b2609ac9a13a7d283e67b5993888b458bb0a613bdb5a3c08681f0e8a4dc330db",
+      "hash_matches_observation": true,
+      "owner": "November 4 FORGE integrity audit author (thread identity not established here)",
+      "evidence": "forge-provenance receipt + codex-forge-integrity diary",
+      "disposition": "HELD FORGE producer/contracts"
+    }
+  ],
+  "source_pins": {
+    "tasks/artifacts/cross-platform/2026-10-24-coordination/CODEX-LEASES.json": {
+      "observed_sha256": "fadfdc1a09c8d022c91613085f4064ffa8482ae680d2602953834307db2cd142",
+      "current_sha256": "fadfdc1a09c8d022c91613085f4064ffa8482ae680d2602953834307db2cd142",
+      "matches": true
+    },
+    "tasks/artifacts/cross-platform/2026-10-24-coordination/CLAUDE-LEASES.json": {
+      "observed_sha256": "c5544b32d2a0801a3ce97b4e3ff67fa74ef2127d6a83fb4b6d0356cff6283c00",
+      "current_sha256": "c5544b32d2a0801a3ce97b4e3ff67fa74ef2127d6a83fb4b6d0356cff6283c00",
+      "matches": true
+    },
+    "tasks/artifacts/rso-audit-2026-11-04.md": {
+      "observed_sha256": "1a5c72d153ed6212adad3075ba79eaa82dfb549689965fbc26cc55eb7a24ec18",
+      "current_sha256": "1a5c72d153ed6212adad3075ba79eaa82dfb549689965fbc26cc55eb7a24ec18",
+      "matches": true
+    },
+    "tasks/artifacts/blsh-sko-vudu-audit-2026-11-04.md": {
+      "observed_sha256": "c3a4590583dfffbc8c809fe8632ad22ca263c3e1388c9f84816058e89b8f9433",
+      "current_sha256": "c3a4590583dfffbc8c809fe8632ad22ca263c3e1388c9f84816058e89b8f9433",
+      "matches": true
+    },
+    "tasks/artifacts/forge-provenance-2026-11-04.md": {
+      "observed_sha256": "c0b9cd438f8d4ddba9ba042dc2985ef3ae6670e60e6fe9c4d05b37c16316974d",
+      "current_sha256": "c0b9cd438f8d4ddba9ba042dc2985ef3ae6670e60e6fe9c4d05b37c16316974d",
+      "matches": true
+    },
+    "tasks/artifacts/trade-value-pipeline-2026-11-04/PLAN.md": {
+      "observed_sha256": "ca9212bfe4eb9bd7f109c8c71ccc577dda2fd56182c9d46fff5172232856a512",
+      "current_sha256": "ca9212bfe4eb9bd7f109c8c71ccc577dda2fd56182c9d46fff5172232856a512",
+      "matches": true
+    },
+    "web/lib/buyLowSellHigh/currentProcessEvidence.server.ts": {
+      "observed_sha256": "9011207c1d16af7a2834a80b4d19d85d0b772a02093eef822e0dd44a9959af83",
+      "current_sha256": "9011207c1d16af7a2834a80b4d19d85d0b772a02093eef822e0dd44a9959af83",
+      "matches": true
+    },
+    "web/lib/buyLowSellHigh/currentProcessEvidence.server.test.ts": {
+      "observed_sha256": "fe82f1de79f70576c3708ab565d790cc5448397a7421cabfedb54981414aab6e",
+      "current_sha256": "fe82f1de79f70576c3708ab565d790cc5448397a7421cabfedb54981414aab6e",
+      "matches": true
+    },
+    "tasks/MASTER-LIST.md": {
+      "observed_sha256": "d334df3387e8863ae559bea8c5cb6bb7f2a2b072f76e32b4d7348f2a85f79190",
+      "current_sha256": "d334df3387e8863ae559bea8c5cb6bb7f2a2b072f76e32b4d7348f2a85f79190",
+      "matches": true
+    }
+  },
+  "new_status_entries_outside_observation": [
+    " M web/components/GoalieShareChart/GoalieShareChart.module.scss",
+    " M web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.module.scss",
+    " M web/components/TeamDashboard/TeamDashboard.module.scss",
+    " M web/styles/Stats.module.scss",
+    " M web/styles/vars.scss",
+    "?? tasks/artifacts/six-lanes-2026-11-04/",
+    "?? tasks/diaries/2026-11-04-codex-six-lanes-l1.md",
+    "?? tasks/diaries/2026-11-04-codex-six-lanes-l2.md",
+    "?? tasks/diaries/2026-11-04-codex-six-lanes-l3.md",
+    "?? tasks/diaries/2026-11-04-codex-six-lanes-l4.md",
+    "?? tasks/diaries/2026-11-04-codex-six-lanes-l5.md",
+    "?? tasks/diaries/2026-11-04-codex-six-lanes-l6.md"
+  ]
+}

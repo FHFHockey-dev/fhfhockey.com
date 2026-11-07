@@ -1,0 +1,10 @@
+// Opens each help disclosure at 1280x800 and reports how much of its popover is visible; also captures the no-player state.
+const { chromium } = require("/Users/tim/Code/fhfhockey.com/web/node_modules/playwright");
+const { installWigoFixtures, SUBJECT_ID } = require("../../wigo-redesign-2026-10-25/fixtures/wigo-fixtures.cjs");
+(async()=>{const b=await chromium.launch();const p=await (await b.newContext({viewport:{width:1280,height:800}})).newPage();await installWigoFixtures(p,()=>{});
+await p.goto(`http://127.0.0.1:3150/wigoCharts?playerId=${SUBJECT_ID}`,{waitUntil:"networkidle"});await p.waitForTimeout(2200);
+const n=await p.locator('[class*="wigoDashHeader"] details > summary').count();
+for(let i=0;i<n;i++){const s=p.locator('[class*="wigoDashHeader"] details > summary').nth(i);await s.click();await p.waitForTimeout(150);
+ const r=await s.evaluate(e=>{const d=e.parentElement;const c=[...d.children].find(x=>x!==e);const body=c||d.querySelector("p");const br=body.getBoundingClientRect();let vis={l:br.left,t:br.top,r:br.right,b:br.bottom};for(let a=body.parentElement;a;a=a.parentElement){const s=getComputedStyle(a);if(s.overflow!=="visible"&&a!==document.documentElement&&a!==document.body){const q=a.getBoundingClientRect();vis={l:Math.max(vis.l,q.left),t:Math.max(vis.t,q.top),r:Math.min(vis.r,q.right),b:Math.min(vis.b,q.bottom)};}}const top=document.elementFromPoint((br.left+br.right)/2,(br.top+br.bottom)/2);const area=(br.right-br.left)*(br.bottom-br.top);const va=Math.max(0,vis.r-vis.l)*Math.max(0,vis.b-vis.t);return {label:e.getAttribute("aria-label")||e.textContent,size:[Math.round(br.width),Math.round(br.height)],pos:[Math.round(br.left),Math.round(br.top)],visiblePct:Math.round(va/area*100),onTop:body.contains(top),offscreen:br.bottom>innerHeight||br.top<0||br.right>innerWidth}});
+ console.log(JSON.stringify(r));await p.screenshot({path:`../screens/help-${i}.png`});await s.click();await p.waitForTimeout(80);}
+await p.goto(`http://127.0.0.1:3150/wigoCharts`,{waitUntil:"networkidle"});await p.waitForTimeout(1500);await p.screenshot({path:"../screens/step10-no-player-1280x800.png"});await b.close();})();

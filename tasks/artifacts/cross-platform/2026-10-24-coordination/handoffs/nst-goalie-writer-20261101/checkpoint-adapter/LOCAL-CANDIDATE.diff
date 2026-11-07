@@ -1,0 +1,2865 @@
+--- a/web/pages/api/v1/db/update-nst-goalies.ts
++++ b/web/pages/api/v1/db/update-nst-goalies.ts
+@@ -1,5 +1,7 @@
+ import { createHash } from "node:crypto";
+ import { NstExecutionLimitError, type NstRequestControl } from "lib/nst/requestBudget";
++import { completedGoalieDate } from "lib/nst/goalieCatchup";
++import { runGoalieCatchupStep, type GoalieSourceResult } from "lib/nst/goalieCatchup.server";
+ // /Users/tim/Desktop/FHFH/fhfhockey.com/web/pages/api/v1/db/update-nst-goalies.ts
+ 
+ /**
+@@ -45,6 +47,11 @@
+  * 4. `datasetType` (optional): Filters the operation to a specific dataset type.
+  *    Useful for debugging or targeting a specific table.
+  *    Example: /api/v1/db/update-nst-goalies?runMode=forward&datasetType=ppRates
++ *
++ * 5. `catchupScope`: Runs one bounded step of a previously persisted checkpoint
++ *    cohort. May only be combined with the runner's `deadlineAt`. Requires the
++ *    checkpoint SQL, final-day evidence and exclusive NST clearance; disabled
++ *    control or missing prerequisites never fall back to legacy provider work.
+  *
+  * --- How It Works ---
+  *
+@@ -259,9 +266,28 @@
+ 
+ const troublesomePlayers: string[] = [];
+ 
++async function boundedGoalieQuery<T>(query: PromiseLike<T>, deadlineAt: number, timeoutMs = 5_000): Promise<T> {
++  const controller = new AbortController();
++  const remaining = Math.min(timeoutMs, deadlineAt - Date.now());
++  if (remaining <= 0) throw new Error("Goalie database deadline exhausted.");
++  const abortable = query as PromiseLike<T> & { abortSignal?: (signal: AbortSignal) => PromiseLike<T> };
++  let timer: ReturnType<typeof setTimeout> | undefined;
++  try {
++    return await Promise.race([
++      abortable.abortSignal ? abortable.abortSignal(controller.signal) : query,
++      new Promise<never>((_, reject) => { timer = setTimeout(() => {
++        controller.abort();
++        reject(new Error("Goalie database acknowledgement timed out."));
++      }, remaining); }),
++    ]);
++  } finally { clearTimeout(timer); }
++}
++
+ async function getGoalieIdByName(
+   fullName: string,
+-  position: string
++  position: string,
++  deadlineAt: number,
++  exactIdentity = false
+ ): Promise<number | null> {
+   const mappedName = goalieNameMapping[fullName]
+     ? goalieNameMapping[fullName].fullName
+@@ -269,13 +295,15 @@
+   const normalizedFullName = normalizeName(mappedName);
+   const goaliePosition = "G"; // Force goalie position
+ 
+-  const { data, error } = await supabase
++  const identityQuery = supabase
+     .from("players")
+-    .select("id")
+-    .ilike("fullName", `%${mappedName}%`)
++    .select("id");
++  const { data, error } = await boundedGoalieQuery((exactIdentity
++    ? identityQuery.eq("fullName", mappedName)
++    : identityQuery.ilike("fullName", `%${mappedName}%`))
+     .eq("position", goaliePosition)
+-    .limit(1)
+-    .maybeSingle();
++    .limit(exactIdentity ? 2 : 1)
++    .maybeSingle(), deadlineAt);
+ 
+   if (error) return null;
+   if (!data) {
+@@ -323,7 +351,8 @@
+   date: string,
+   seasonId: string,
+   retries: number = 1,
+-  requestControl?: NstRequestControl
++  requestControl?: NstRequestControl,
++  proof?: { sourceFingerprint?: string }
+ ): Promise<any[]> {
+   for (let attempt = 1; attempt <= retries; attempt++) {
+     try {
+@@ -346,6 +375,15 @@
+       const mappedHeaders = headers.map((header) =>
+         mapGoalieHeaderToColumn(header, datasetType)
+       );
++      if (proof) {
++        const required = datasetType.endsWith("Counts")
++          ? ["gp", "toi", "shots_against", "saves", "goals_against", "xg_against", "hd_shots_against", "hd_saves"]
++          : ["gp", "toi", "toi_per_gp", "shots_against_per_60", "saves_per_60", "gaa", "xg_against_per_60", "hd_shots_against_per_60", "hd_saves_per_60"];
++        if (required.some(field => !mappedHeaders.includes(field)) || new Set(headers).size !== headers.length) {
++          throw new Error("NST checkpoint headers are incomplete or ambiguous.");
++        }
++        proof.sourceFingerprint = createHash("sha256").update(text).digest("hex");
++      }
+ 
+       const dataRowsCollected: any[] = [];
+       table.find("tbody tr").each((_, tr) => {
+@@ -366,10 +404,12 @@
+               return;
+             }
+             let cellText: string | null = $(td).text().trim();
++            if (proof && cellText === "") cellText = null;
+             if (cellText === "-" || cellText === "\\-") {
+               cellText = null;
+             }
+             if (cellText !== null) {
++              if (proof && !/^-?[\d,]+(?:\.\d+)?%?$/.test(cellText)) throw new Error("NST checkpoint numeric cell is invalid.");
+               const num = Number(cellText.replace(/[^0-9.-]+/g, ""));
+               rowData[column] = isNaN(num) ? cellText : num;
+             } else {
+@@ -418,7 +458,7 @@
+   return [];
+ }
+ 
+-async function upsertData(datasetType: string, dataRows: any[]) {
++async function upsertData(datasetType: string, dataRows: any[], deadlineAt = Date.now() + 20_000) {
+   if (dataRows.length === 0) {
+     console.warn(`No data rows to upsert for datasetType "${datasetType}".`);
+     return;
+@@ -430,7 +470,7 @@
+ 
+   const dataRowsWithPlayerIds: any[] = [];
+   for (const row of dataRows) {
+-    const goalieId = await getGoalieIdByName(row["player_name"], row["team"]);
++    const goalieId = await getGoalieIdByName(row["player_name"], row["team"], deadlineAt);
+     if (!goalieId) {
+       console.warn(
+         `Player ID not found for ${row["player_name"]} (${row["team"]})`
+@@ -445,16 +485,17 @@
+   console.log(
+     `Upserting ${dataRowsWithPlayerIds.length} rows into table "${tableName}".`
+   );
+-  const receipt = await supabase
++  const receipt = await boundedGoalieQuery(supabase
+     .from(tableName)
+-    .upsert(dataRowsWithPlayerIds, { onConflict: "player_id,date_scraped" });
++    .upsert(dataRowsWithPlayerIds, { onConflict: "player_id,date_scraped" }), deadlineAt, 15_000);
+   if (!receipt || receipt.error !== null) throw new Error("Goalie output persistence was not acknowledged; inspect before replaying.");
+   console.log(`Successfully acknowledged goalie upsert into "${tableName}".`);
+ }
+ 
+ async function checkDataExists(
+   datasetType: string,
+-  date: string
++  date: string,
++  deadlineAt = Date.now() + 5_000
+ ): Promise<boolean> {
+   const tableName = getGoalieTableName(datasetType);
+   if (tableName === "unknown_goalie_table") {
+@@ -463,14 +504,13 @@
+     );
+     return false;
+   }
+-  const { data, error } = await supabase
++  const { data, error } = await boundedGoalieQuery(supabase
+     .from(tableName)
+     .select("player_id")
+     .eq("date_scraped", date)
+-    .limit(1);
++    .limit(1), deadlineAt);
+   if (error) {
+-    console.error(`Error checking data in ${tableName}:`, error.message);
+-    return false;
++    throw new Error(`Goalie coverage read failed for ${tableName}; no missing-work assumption is safe.`);
+   }
+   const exists = data && data.length > 0;
+   console.log(`Data existence check for "${tableName}" on ${date}: ${exists}`);
+@@ -505,7 +545,7 @@
+ async function processUrlsSequentially(
+   urlsQueue: { datasetType: string; url: string; date: string; seasonId: string }[],
+   options: { requestIntervalMs: number; maxPendingUrls?: number; overwrite: boolean;
+-    requestControl: NstRequestControl; startIndex: number }
++    requestControl: NstRequestControl; startIndex: number; existing: readonly boolean[] }
+ ) {
+   let pendingProcessedCount = 0;
+   let nextCursor = options.startIndex;
+@@ -521,7 +561,7 @@
+     const startedAt = Date.now();
+     let writeStarted = false;
+     try {
+-      const exists = !options.overwrite && await checkDataExists(datasetType, date);
++      const exists = options.existing[i];
+       let rows: any[] = [];
+       if (!exists) {
+         if (Date.now() + options.requestIntervalMs + 35_000 >= options.requestControl.deadlineAt) {
+@@ -529,7 +569,7 @@
+         }
+         if (options.requestIntervalMs > 0) await delay(options.requestIntervalMs);
+         rows = await fetchAndParseData(url, datasetType, date, seasonId, 1, options.requestControl);
+-        if (rows.length) { writeStarted = true; await upsertData(datasetType, rows); acknowledgedWriteUrls++; }
++        if (rows.length) { writeStarted = true; await upsertData(datasetType, rows, options.requestControl.deadlineAt); acknowledgedWriteUrls++; }
+         else emptyValidUrls++;
+         pendingProcessedCount++;
+       }
+@@ -564,15 +604,18 @@
+     datasetType?: string;
+     cursor?: number;
+     resumeScope?: string;
++    plannedUrls?: number;
++    deadlineAt?: number;
+   } = {}
+ ) {
+   const startedAt = Date.now();
++  const deadlineAt = Math.min(startedAt + 220_000, options.deadlineAt ?? Infinity);
+   try {
+     const runMode = options.runMode ?? "incremental";
+     const overwrite =
+       options.overwrite ?? (runMode === "incremental" ? false : true);
+ 
+-    const seasonInfo = await fetchCurrentSeason();
++    const seasonInfo = await boundedGoalieQuery(fetchCurrentSeason(), deadlineAt);
+     const seasonId = seasonInfo.id.toString();
+     const seasonStartDate = parseISO(seasonInfo.startDate);
+     const regularSeasonEndDateIso =
+@@ -581,16 +624,16 @@
+       throw new Error("Current season is missing a regular-season end date.");
+     }
+     const regularSeasonEndDate = parseISO(regularSeasonEndDateIso);
+-    const today = new Date();
++    const lastCompletedDate = parseISO(completedGoalieDate(new Date()));
+     const scrapingEndDate =
+-      today < regularSeasonEndDate ? today : regularSeasonEndDate;
++      lastCompletedDate < regularSeasonEndDate ? lastCompletedDate : regularSeasonEndDate;
+ 
+     let startDate = seasonStartDate;
+     if (options.startDate) {
+       startDate = parseISO(options.startDate);
+       console.log(`Using explicit startDate ${options.startDate}.`);
+     } else if (runMode === "incremental") {
+-      const latestDateStr = await getLatestDateSupabase();
++      const latestDateStr = await getLatestDateSupabase(deadlineAt);
+       if (latestDateStr) {
+         startDate = parseISO(latestDateStr);
+         console.log(
+@@ -676,12 +719,35 @@
+       }
+     });
+ 
++    const startIndex = options.cursor ?? 0;
++    if (!Number.isSafeInteger(startIndex) || startIndex < 0 || startIndex > urlsQueue.length ||
++        (startIndex > 0 && !options.resumeScope) ||
++        (options.resumeScope !== undefined && options.plannedUrls === undefined) ||
++        (options.resumeScope === undefined && options.plannedUrls !== undefined)) {
++      throw new Error("Goalie continuation needs its acknowledged whole-job request plan; reconcile legacy progress before resuming.");
++    }
++    const existing: boolean[] = Array(urlsQueue.length).fill(false);
++    for (let index = startIndex; index < urlsQueue.length; index++) {
++      if (Date.now() + 35_000 >= deadlineAt) throw new Error("Goalie coverage preflight exceeded its read budget; no provider request started.");
++      existing[index] = !overwrite && await checkDataExists(urlsQueue[index].datasetType, urlsQueue[index].date, deadlineAt);
++    }
++    const pendingUrlsAtStart = existing.slice(startIndex).filter(value => !value).length;
++    const plannedUrls = options.plannedUrls ?? pendingUrlsAtStart;
++    if (!Number.isSafeInteger(plannedUrls) || plannedUrls < pendingUrlsAtStart || plannedUrls > urlsQueue.length) {
++      throw new Error("Goalie pending work no longer fits its acknowledged whole-job plan.");
++    }
++    const scope = createHash("sha256").update(JSON.stringify({ runMode, overwrite, plannedUrls,
++      queue: urlsQueue.map(({date,datasetType})=>[date,datasetType]) })).digest("hex");
++    if (options.resumeScope !== undefined && options.resumeScope !== scope) {
++      throw new Error("Goalie resume cursor/scope does not match the complete queue and request plan.");
++    }
+     const requestedMaxPendingUrls =
+       options.maxPendingUrls ??
+       (runMode === "forward" ? undefined : DEFAULT_MAX_PENDING_URLS_PER_RUN);
+     const preliminaryNstRequestPlan = resolveGoalieNstRequestPlan({
+       queuedDates: datesToScrape.length,
+       totalQueuedUrls: urlsQueue.length,
++      plannedRequestCount: plannedUrls,
+       maxPendingUrls: requestedMaxPendingUrls ?? urlsQueue.length,
+       explicitRequestIntervalMs: options.requestIntervalMs
+     });
+@@ -694,23 +760,20 @@
+     const nstRequestPlan = resolveGoalieNstRequestPlan({
+       queuedDates: datesToScrape.length,
+       totalQueuedUrls: urlsQueue.length,
++      plannedRequestCount: plannedUrls,
+       maxPendingUrls: maxPendingUrls ?? urlsQueue.length,
+       explicitRequestIntervalMs: options.requestIntervalMs
+     });
+     const requestIntervalMs = nstRequestPlan.requestIntervalMs;
+ 
+-    const scope = createHash("sha256").update(JSON.stringify({ runMode, overwrite,
+-      queue: urlsQueue.map(({date,datasetType})=>[date,datasetType]) })).digest("hex");
+-    const startIndex = options.cursor ?? 0;
+-    if (!Number.isSafeInteger(startIndex) || startIndex < 0 || startIndex > urlsQueue.length ||
+-        (startIndex > 0 && options.resumeScope !== scope)) throw new Error("Goalie resume cursor/scope does not match the complete queue.");
+     const result = await processUrlsSequentially(urlsQueue, {
+       requestIntervalMs,
+       maxPendingUrls,
+       overwrite,
+       startIndex,
+-      requestControl: { deadlineAt: startedAt + 220_000, maxAttempts: urlsQueue.length * 3,
+-        attemptsStarted: 0, minIntervalMs: requestIntervalMs, plannedRequestCount: urlsQueue.length }
++      existing,
++      requestControl: { deadlineAt, maxAttempts: Math.max(1, plannedUrls * 3),
++        attemptsStarted: 0, minIntervalMs: requestIntervalMs, plannedRequestCount: plannedUrls }
+     });
+ 
+     if (troublesomePlayers.length > 0) {
+@@ -724,6 +787,7 @@
+     const canResume = result.stoppedEarly && !result.failed;
+     const resumeQuery: Record<string,string> = { runMode, overwrite: String(overwrite),
+       startDate: datesToScrape[0], maxDays: String(datesToScrape.length), cursor: String(result.nextCursor), resumeScope: scope,
++      plannedUrls: String(plannedUrls),
+       ...(options.datasetType ? {datasetType:options.datasetType}:{}),
+       ...(options.maxPendingUrls !== undefined ? {maxUrls:String(options.maxPendingUrls)}:{}),
+       ...(options.requestIntervalMs !== undefined ? {requestIntervalMs:String(options.requestIntervalMs)}:{}) };
+@@ -746,6 +810,8 @@
+       ...(canResume ? { resume: { required: true, request: { query: resumeQuery } } } : {}),
+       pendingUrlsProcessed: result.pendingProcessedCount,
+       totalQueuedUrls: urlsQueue.length,
++      plannedUrls,
++      pendingUrlsAtStart,
+       stoppedEarly: result.stoppedEarly,
+       datesQueued: datesToScrape.length,
+       requestIntervalMs,
+@@ -773,6 +839,39 @@
+     return;
+   }
+   try {
++    if (req.query.catchupScope !== undefined) {
++      const scope = req.query.catchupScope;
++      if (typeof scope !== "string" || !/^[a-f0-9]{64}$/.test(scope) ||
++          Object.keys(req.query).some(key => !["catchupScope", "deadlineAt"].includes(key))) {
++        res.status(400).json({ error: "Invalid checkpoint scope or mixed legacy query." });
++        return;
++      }
++      const deadlineAt = Math.min(Date.now() + 220_000,
++        typeof req.query.deadlineAt === "string" && Number.isFinite(Number(req.query.deadlineAt))
++          ? Number(req.query.deadlineAt) : Infinity);
++      const result = await runGoalieCatchupStep({ client: supabase, scope, deadlineAt,
++        source: async (unit, control, signal): Promise<GoalieSourceResult> => {
++          if (signal.aborted) throw new NstExecutionLimitError("Checkpoint source deadline elapsed.");
++          const season = unit.key.split("/")[0];
++          const proof: { sourceFingerprint?: string } = {};
++          const rows = await fetchAndParseData(constructGoalieUrlsForDate(unit.date, season)[unit.dataset],
++            unit.dataset, unit.date, season, 1, control, proof);
++          for (const row of rows) {
++            if (signal.aborted) throw new Error("Checkpoint source deadline elapsed after dispatch.");
++            const id = await getGoalieIdByName(row.player_name, "G", control.deadlineAt - 20_000, true);
++            if (!id) throw new Error("Goalie identity is missing or ambiguous; review required.");
++            row.player_id = id;
++          }
++          return { rows, parsedRows: rows.length, mappedRows: rows.length, validatedEmpty: rows.length === 0,
++            sourceFingerprint: proof.sourceFingerprint ?? "" };
++        } });
++      const complete = result.status === "complete";
++      res.status(result.requiresReview ? 409 : complete ? 200 : 207).json({ ...result,
++        checkpointVersion: 1, success: complete, complete, operationStatus: result.requiresReview ? "failed" : complete ? "success" : "partial",
++        stoppedEarly: !complete, retrySafe: !result.requiresReview,
++        resume: { required: !complete && !result.requiresReview, request: { query: { catchupScope: scope } } } });
++      return;
++    }
+     const runMode = parseRunMode(req.query.runMode);
+     const overwriteParam = parseBooleanParam(req.query.overwrite);
+     const overwrite =
+@@ -789,6 +888,9 @@
+         : req.query.datasetType,
+       cursor: req.query.cursor === undefined ? undefined : Number(req.query.cursor),
+       resumeScope: typeof req.query.resumeScope === "string" ? req.query.resumeScope : undefined,
++      plannedUrls: req.query.plannedUrls === undefined ? undefined : Number(req.query.plannedUrls),
++      deadlineAt: typeof req.query.deadlineAt === "string" && Number.isFinite(Number(req.query.deadlineAt))
++        ? Number(req.query.deadlineAt) : undefined,
+       startDate: Array.isArray(req.query.startDate)
+         ? req.query.startDate[0]
+         : req.query.startDate
+@@ -801,7 +903,7 @@
+   }
+ }
+ 
+-async function getLatestDateSupabase(): Promise<string | null> {
++async function getLatestDateSupabase(deadlineAt: number): Promise<string | null> {
+   const tableNames = [
+     "nst_gamelog_goalie_5v5_counts",
+     "nst_gamelog_goalie_5v5_rates",
+@@ -816,13 +918,13 @@
+   ];
+   let latestDate: string | null = null;
+   for (const table of tableNames) {
+-    const { data, error } = await supabase
++    const { data, error } = await boundedGoalieQuery(supabase
+       .from(table)
+       .select("date_scraped")
+       .order("date_scraped", { ascending: false })
+       .limit(1)
+-      .maybeSingle();
+-    if (error) continue;
++      .maybeSingle(), deadlineAt);
++    if (error) throw new Error("Goalie high-water read failed; no provider request started.");
+     if (data && data.date_scraped) {
+       if (!latestDate || parseISO(data.date_scraped) > parseISO(latestDate)) {
+         latestDate = data.date_scraped;
+--- a/web/__tests__/pages/api/v1/db/update-nst-goalies.route.test.ts
++++ b/web/__tests__/pages/api/v1/db/update-nst-goalies.route.test.ts
+@@ -1,3 +1,4 @@
++import { GOALIE_DATASETS } from "lib/nst/goalieCatchup";
+ import { createMemoryRouteRunnerStore, makeJob } from "lib/routeRunner/memoryStore.testHelper";
+ import { runRouteRunnerTick } from "lib/routeRunner/tick";
+ const { auditInsertMock } = vi.hoisted(()=>({auditInsertMock:vi.fn(async(_row:any)=>({error:null}))}));
+@@ -10,19 +11,24 @@
+   fetchCurrentSeasonMock,
+   fetchNstTextByUrlMock,
+   isNstConfigErrorMock,
+-  upsertMock
++  upsertMock, existsMock, checkpointRpcMock, exactIdentityMock
+ } = vi.hoisted(() => {
+   process.env.NEXT_PUBLIC_SUPABASE_URL = "https://example.supabase.co";
+   process.env.SUPABASE_SERVICE_ROLE_KEY = "service-role-key";
+ 
++  const existsMock = vi.fn().mockResolvedValue({ data: [], error: null });
+   const upsertMock = vi.fn().mockResolvedValue({ error: null });
+ 
++  const checkpointRpcMock = vi.fn();
++  const exactIdentityMock = vi.fn().mockResolvedValue({ data: { id: 8478402 }, error: null });
+   const supabaseClient = {
++    rpc: checkpointRpcMock,
+     from(table: string) {
+       if (table === "players") {
+         return {
+           select() {
+             return {
++              eq: () => ({ eq: () => ({ limit: () => ({ maybeSingle: exactIdentityMock }) }) }),
+               ilike() {
+                 return {
+                   eq() {
+@@ -49,7 +55,7 @@
+           return {
+             eq() {
+               return {
+-                limit: vi.fn().mockResolvedValue({ data: [], error: null })
++                limit: existsMock
+               };
+             }
+           };
+@@ -66,7 +72,7 @@
+     isNstConfigErrorMock: vi.fn((error: unknown) =>
+       error instanceof Error && error.name === "NstConfigError"
+     ),
+-    upsertMock
++    upsertMock, existsMock, checkpointRpcMock, exactIdentityMock
+   };
+ });
+ 
+@@ -117,6 +123,9 @@
+     vi.useFakeTimers();
+     vi.stubEnv("CRON_SECRET", "unit-test-cron-secret");
+     vi.clearAllMocks();
++    existsMock.mockReset().mockResolvedValue({ data: [], error: null });
++    checkpointRpcMock.mockReset();
++    exactIdentityMock.mockReset().mockResolvedValue({ data: { id: 8478402 }, error: null });
+   });
+ 
+   afterEach(() => { vi.useRealTimers(); vi.unstubAllEnvs(); });
+@@ -229,6 +238,52 @@
+     await vi.runAllTimersAsync();await pending;return res;
+   }
+   const html=`<table><thead><tr><th>Player</th><th>Team</th><th>GP</th></tr></thead><tbody><tr><td>John Goalie</td><td>TOR</td><td>1</td></tr></tbody></table>`;
++  it("excludes the current New York date from provider work", async () => {
++    vi.setSystemTime(new Date("2026-11-01T13:00:00Z"));
++    fetchCurrentSeasonMock.mockResolvedValue({ id: 20262027, startDate: "2026-10-28", endDate: "2027-04-15" });
++    fetchNstTextByUrlMock.mockResolvedValue({ text: html });
++    const result = await invoke({ startDate: "2026-10-28", maxDays: "5", datasetType: "allCounts" });
++    expect(result.body).toMatchObject({ datesQueued: 4, totalQueuedUrls: 4, plannedUrls: 4 });
++    expect(result.body.urlProgress.map((row: any) => row.date)).toEqual(["2026-10-28", "2026-10-29", "2026-10-30", "2026-10-31"]);
++  });
++  it("plans all missing URLs before applying a per-call cap and freezes that plan across continuation", async () => {
++    fetchCurrentSeasonMock.mockResolvedValue({ id: 20252026, startDate: "2025-10-01", endDate: "2025-10-04" });
++    fetchNstTextByUrlMock.mockResolvedValue({ text: html });
++    existsMock.mockResolvedValueOnce({ data: [{ player_id: 1 }], error: null });
++    const first = await invoke({ maxDays: "4", maxUrls: "1" });
++    expect(first.body).toMatchObject({ totalQueuedUrls: 40, plannedUrls: 39, pendingUrlsAtStart: 39, requestIntervalMs: 0, nextCursor: 2 });
++    const second = await invoke(first.body.resume.request.query);
++    expect(second.body).toMatchObject({ plannedUrls: 39, pendingUrlsAtStart: 38, nextCursor: 3 });
++    expect(second.body.resume.request.query.resumeScope).toBe(first.body.resume.request.query.resumeScope);
++  });
++  it("retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining", async () => {
++    fetchCurrentSeasonMock.mockResolvedValue({ id: 20252026, startDate: "2025-10-01", endDate: "2025-10-04" });
++    fetchNstTextByUrlMock.mockResolvedValue({ text: html });
++    const first = await invoke({ maxDays: "4", maxUrls: "1" });
++    const second = await invoke(first.body.resume.request.query);
++    expect(second.body).toMatchObject({ plannedUrls: 40, pendingUrlsAtStart: 39, requestIntervalMs: 21000 });
++  });
++  it.each(["error", "timeout"])("fails closed on a coverage read %s before NST dispatch", async kind => {
++    fetchCurrentSeasonMock.mockResolvedValue({ id: 20252026, startDate: "2025-10-01", endDate: "2025-10-01" });
++    if (kind === "error") existsMock.mockResolvedValue({ data: null, error: { message: "unavailable" } });
++    else existsMock.mockImplementation(() => new Promise(() => {}));
++    const result = await invoke();
++    expect(result.statusCode).toBe(500);
++    expect(fetchNstTextByUrlMock).not.toHaveBeenCalled();
++    expect(upsertMock).not.toHaveBeenCalled();
++  });
++  it("does not start NST when the runner deadline leaves insufficient headroom", async () => {
++    fetchCurrentSeasonMock.mockResolvedValue({ id: 20252026, startDate: "2025-10-01", endDate: "2025-10-01" });
++    const result = await invoke({ deadlineAt: String(Date.now() + 30_000) });
++    expect(result.statusCode).toBe(500);
++    expect(fetchNstTextByUrlMock).not.toHaveBeenCalled();
++  });
++  it.each([{ plannedUrls: "1" }, { cursor: "1", resumeScope: "a".repeat(64) }] as Record<string, string>[])("rejects unscoped or legacy request plans", async query => {
++    fetchCurrentSeasonMock.mockResolvedValue({ id: 20252026, startDate: "2025-10-01", endDate: "2025-10-01" });
++    const result = await invoke(query);
++    expect(result.statusCode).toBe(500);
++    expect(fetchNstTextByUrlMock).not.toHaveBeenCalled();
++  });
+   it.each(["minute headroom","five-minute headroom","late deadline"])("defers %s without dispatch, upsert, completed URL or cursor advance",async(reason)=>{
+     fetchCurrentSeasonMock.mockResolvedValue({id:20252026,startDate:"2025-10-01",endDate:"2025-10-01"});
+     fetchNstTextByUrlMock.mockRejectedValue(new NstExecutionLimitError(reason));
+@@ -364,10 +419,82 @@
+     const memory=createMemoryRouteRunnerStore([job]);
+     const pending=runRouteRunnerTick({store:memory.store,handlers:{[path]:handler},cronSecret:"unit-test-cron-secret",now:Date.now});
+     await vi.runAllTimersAsync();const result=await pending;
+-    expect(result.action).toBe("timed_out");expect(memory.jobs.get(job.id)!.status).toBe("failed");
++    expect(result).toMatchObject({ action: "stepped", outcome: "fail" });expect(memory.jobs.get(job.id)!.status).toBe("failed");
++    expect(Date.now()).toBe(new Date("2026-10-27T10:00:15Z").getTime());
+     expect(upsertMock).toHaveBeenCalledTimes(1);
+     await runRouteRunnerTick({store:memory.store,handlers:{[path]:handler},cronSecret:"unit-test-cron-secret",now:Date.now});
+     expect(upsertMock).toHaveBeenCalledTimes(1);
+   });
+ 
++  function checkpointFixture() {
++    vi.setSystemTime(new Date("2026-11-01T11:10:00Z"));
++    const scope = "a".repeat(64), claimId = "00000000-0000-4000-8000-000000000001";
++    const units = GOALIE_DATASETS.map(dataset => ({ key: `20262027/2026-10-31/${dataset}`, date: "2026-10-31", dataset,
++      state: dataset === "allCounts" ? "pending" : "complete", reason: null }));
++    checkpointRpcMock.mockImplementation(async (name: string, args: any) => {
++      if (name === "nst_goalie_read_state_v1") return { data: { manifest: { version: 1, season: "20262027", sourceVersion: "fixture",
++        scope, startDate: "2026-10-31", endDate: "2026-10-31", plannedRequestCount: 1, nextUnplannedDate: null, units },
++        budget: { utcDate: "2026-11-01", steps: 0, attempts: 0 }, sharedJobActive: false, reviewRequired: false, lastDirectJobFinishedAt: null }, error: null };
++      if (name === "nst_goalie_claim_step_v1") return { data: { status: "claimed", scope, claimId, utcDate: "2026-11-01",
++        unitKeys: args.p_unit_keys, plannedRequestCount: 1, attemptsReserved: 3, deadlineAt: args.p_deadline_at }, error: null };
++      if (name === "nst_goalie_commit_unit_v1") return { data: { status: "committed", scope, claimId, unitKey: args.p_unit_key,
++        receiptId: "00000000-0000-4000-8000-000000000002", sourceFingerprint: args.p_source_fingerprint,
++        completionStatus: "complete", parsedRows: 1, mappedRows: 1, writtenRows: 1, allCountsCoverage: "complete" }, error: null };
++      if (name === "nst_goalie_finish_step_v1") return { data: { status: "finished", scope, claimId, attemptsUsed: 1,
++        attemptsCharged: 3, unusedReleased: 0, committedUnitKeys: args.p_committed_unit_keys }, error: null };
++      if (name === "nst_goalie_hold_step_v1") return { data: { status: "held", scope, claimId }, error: null };
++      throw new Error("unexpected RPC");
++    });
++    const body = `<table><thead><tr><th>Player</th><th>Team</th><th>GP</th><th>TOI</th><th>Shots Against</th><th>Saves</th><th>Goals Against</th><th>xG Against</th><th>HD Shots Against</th><th>HD Saves</th></tr></thead><tbody><tr><td>John Goalie</td><td>TOR</td><td>1</td><td>60</td><td>30</td><td>28</td><td>2</td><td>2.1</td><td>5</td><td>4</td></tr></tbody></table>`;
++    fetchNstTextByUrlMock.mockImplementation(async (_url, options) => { options.requestControl.attemptsStarted++; return { text: body }; });
++    return { scope, body };
++  }
++  async function invokeCheckpoint(query: Record<string, string>) {
++    const res = createMockRes();
++    const pending = handler({ method: "GET", headers: { host: "localhost", authorization: "Bearer unit-test-cron-secret" }, query } as any, res);
++    await vi.runAllTimersAsync(); await pending; return res;
++  }
++  it("uses the actual checkpoint adapter to atomically commit output without legacy upserts", async () => {
++    const { scope } = checkpointFixture(); const res = await invokeCheckpoint({ catchupScope: scope });
++    expect(res.statusCode).toBe(200); expect(res.body).toMatchObject({ checkpointVersion: 1, status: "complete", complete: true });
++    expect(upsertMock).not.toHaveBeenCalled(); expect(fetchCurrentSeasonMock).not.toHaveBeenCalled();
++    const commit = checkpointRpcMock.mock.calls.find(([name]) => name === "nst_goalie_commit_unit_v1")![1];
++    expect(commit.p_rows[0]).toMatchObject({ player_id: 8478402, date_scraped: "2026-10-31", hd_saves: 4 });
++    expect(commit.p_source_fingerprint).toMatch(/^[a-f0-9]{64}$/);
++    expect(fetchNstTextByUrlMock.mock.calls[0][1].requestControl).toMatchObject({ plannedRequestCount: 1, maxAttempts: 3 });
++  });
++  it("runs the checkpoint route through the audited runner and completes its frozen scope", async () => {
++    const { scope } = checkpointFixture();
++    auditInsertMock.mockReset().mockResolvedValue({ error: null });
++    const actual = await vi.importActual<typeof import("lib/cron/withCronJobAudit")>("lib/cron/withCronJobAudit");
++    const path = "/api/v1/db/update-nst-goalies", query = { catchupScope: scope };
++    const job = makeJob({ route_path: path, contract: null, initial_query: query, next_query: query, expires_at: "2026-11-04T11:10:00Z" });
++    const memory = createMemoryRouteRunnerStore([job]);
++    const pending = runRouteRunnerTick({ store: memory.store, handlers: { [path]: actual.withCronJobAudit(handler as any) },
++      cronSecret: "unit-test-cron-secret", now: Date.now });
++    await vi.runAllTimersAsync();
++    expect((await pending).outcome).toBe("complete");
++    expect(memory.jobs.get(job.id)!.status).toBe("completed");
++    expect(fetchNstTextByUrlMock).toHaveBeenCalledTimes(1);
++    expect(upsertMock).not.toHaveBeenCalled();
++  });
++  it("makes no provider call when checkpoint SQL is absent or scope is mixed", async () => {
++    const { scope } = checkpointFixture(); checkpointRpcMock.mockResolvedValue({ data: null, error: { code: "PGRST202" } });
++    expect((await invokeCheckpoint({ catchupScope: scope })).body.status).toBe("deferred");
++    expect((await invokeCheckpoint({ catchupScope: scope, startDate: "2026-10-31" })).statusCode).toBe(400);
++    expect(fetchNstTextByUrlMock).not.toHaveBeenCalled();
++  });
++  it.each(["ambiguous identity", "missing empty headers", "blank core field"])("holds checkpoint source on %s", async kind => {
++    const { scope, body } = checkpointFixture();
++    if (kind === "ambiguous identity") exactIdentityMock.mockResolvedValue({ data: null, error: { code: "PGRST116" } });
++    else fetchNstTextByUrlMock.mockImplementation(async (_url, options) => {
++      options.requestControl.attemptsStarted++;
++      return { text: kind === "missing empty headers" ? "<table><thead><tr><th>Player</th><th>Team</th></tr></thead><tbody></tbody></table>" : body.replace("<td>4</td>", "<td></td>") };
++    });
++    const res = await invokeCheckpoint({ catchupScope: scope });
++    expect(res.statusCode).toBe(409); expect(res.body.requiresReview).toBe(true);
++    expect(checkpointRpcMock.mock.calls.some(([name]) => name === "nst_goalie_commit_unit_v1")).toBe(false);
++    expect(upsertMock).not.toHaveBeenCalled();
++  });
++
+ });
+--- a/web/lib/cron/nstBurstPlans.ts
++++ b/web/lib/cron/nstBurstPlans.ts
+@@ -67,17 +67,20 @@
+ export function resolveGoalieNstRequestPlan(options: {
+   queuedDates: number;
+   totalQueuedUrls: number;
++  /** Complete preflight-missing cohort, frozen across continuation; not maxUrls. */
++  plannedRequestCount?: number;
+   maxPendingUrls: number;
+   explicitRequestIntervalMs?: number;
+ }) {
+-  const requestCountBudget = Math.min(
+-    options.totalQueuedUrls,
+-    options.maxPendingUrls
+-  );
++  const requestCount = options.plannedRequestCount ?? options.totalQueuedUrls;
++  if (!Number.isSafeInteger(requestCount) || requestCount < 0 || requestCount > options.totalQueuedUrls) {
++    throw new Error("Invalid complete goalie request count.");
++  }
++  const requestCountBudget = Math.min(requestCount, options.maxPendingUrls);
+   const sharedPlan = resolveSharedSmallDateBurstPlan({
+     jobName: "update-nst-goalies",
+     queuedDates: options.queuedDates,
+-    requestCount: options.totalQueuedUrls,
++    requestCount,
+     safeIntervalMs: NST_GOALIES_REQUEST_INTERVAL_MS,
+     explicitRequestIntervalMs: options.explicitRequestIntervalMs
+   });
+@@ -85,6 +88,7 @@
+   return {
+     queuedDates: options.queuedDates,
+     totalQueuedUrls: options.totalQueuedUrls,
++    plannedRequestCount: requestCount,
+     urlsPerDate: GOALIE_URLS_PER_DATE,
+     requestCountBudget,
+     requestIntervalMs: sharedPlan.requestIntervalMs,
+--- a/web/lib/cron/nstBurstPlans.test.ts
++++ b/web/lib/cron/nstBurstPlans.test.ts
+@@ -161,6 +161,12 @@
+       requestIntervalMs: 30_000, usedExplicitInterval: true, explicitIntervalRejected: false });
+   });
+ 
++  it("uses the whole pending plan while retaining full queue bounds", () => {
++    expect(resolveGoalieNstRequestPlan({ queuedDates: 4, totalQueuedUrls: 40, plannedRequestCount: 37, maxPendingUrls: 6 })).toMatchObject({ burstAllowed: true, plannedRequestCount: 37 });
++    for (const plannedRequestCount of [-1, 41, NaN, 1.5]) {
++      expect(() => resolveGoalieNstRequestPlan({ queuedDates: 4, totalQueuedUrls: 40, plannedRequestCount, maxPendingUrls: 6 })).toThrow();
++    }
++  });
+   it("does not hide a large goalie backlog behind a small per-run cap", () => {
+     const plan = resolveGoalieNstRequestPlan({
+       queuedDates: 5,
+--- a/web/lib/routeRunner/core.ts
++++ b/web/lib/routeRunner/core.ts
+@@ -408,7 +408,7 @@
+ }
+ 
+ const GOALIE_QUERY_KEYS = ["runMode", "startDate", "maxDays", "overwrite", "datasetType",
+-  "maxUrls", "requestIntervalMs", "cursor", "resumeScope"];
++  "maxUrls", "requestIntervalMs", "cursor", "resumeScope", "plannedUrls"];
+ const GOALIE_ADMISSION_WAIT_MS = 60_000;
+ 
+ function urlCursor(value: unknown): number | null {
+@@ -420,6 +420,26 @@
+ function classifyGoalie(result: StepResult, body: Body | null, sent: RouteQuery): StepDecision {
+   const fail = (reason: string): StepDecision => ({kind:"fail", reason:`Goalie continuation: ${reason}`});
+   if (!body || nonEmptyString(body.error)) return fail("missing result or source error.");
++  if (sent.catchupScope !== undefined || body.checkpointVersion !== undefined) {
++    const raw = asRecord(body.resume?.request?.query);
++    const nextQuery = raw && scalarQuery(raw);
++    if (body.checkpointVersion !== 1 || !/^[a-f0-9]{64}$/.test(sent.catchupScope ?? "") ||
++        Object.keys(sent).some(key => key !== "catchupScope") || body.scope !== sent.catchupScope ||
++        body.requiresReview !== false || body.retrySafe !== true || !nextQuery || !sameQuery(nextQuery, sent) ||
++        !Array.isArray(body.committedUnitKeys) || new Set(body.committedUnitKeys).size !== body.committedUnitKeys.length ||
++        body.committedUnitKeys.some((key: unknown) => typeof key !== "string" || !/^\d{8}\/\d{4}-\d{2}-\d{2}\/(5v5|ev|all|pp|pk)(Counts|Rates)$/.test(key))) {
++      return fail("checkpoint scope or acknowledgement is uncertain.");
++    }
++    if (result.statusCode === 200 && body.status === "complete" && body.success === true && body.complete === true &&
++        body.stoppedEarly === false && body.resume.required === false) return {kind:"complete",reason:"Durable goalie cohort complete."};
++    if (result.statusCode !== 207 || body.operationStatus !== "partial" || body.success !== false || body.complete !== false ||
++        body.stoppedEarly !== true || body.resume.required !== true || !["progress","deferred"].includes(body.status)) {
++      return fail("checkpoint result is not a safe continuation.");
++    }
++    if (body.status === "progress" && body.committedUnitKeys.length === 0) return fail("checkpoint progress has no receipts.");
++    return {kind:"wait",nextQuery,delayMs:GOALIE_ADMISSION_WAIT_MS,
++      reason:"Checkpoint step acknowledged; recheck the durable budget and worker window in one minute."};
++  }
+   const total = urlCursor(body.totalQueuedUrls);
+   if (result.statusCode === 200 && body.success !== false && body.stoppedEarly === false &&
+       body.resume?.required !== true && ((total === 0 && body.pendingUrlsProcessed === 0) ||
+@@ -434,6 +454,12 @@
+   if (!raw || Object.keys(raw).some(key=>!GOALIE_QUERY_KEYS.includes(key))) return fail("missing query or unapproved field.");
+   const nextQuery = scalarQuery(raw);
+   if (!nextQuery || !/^[a-f0-9]{64}$/.test(nextQuery.resumeScope ?? "")) return fail("invalid scoped query.");
++  if (nextQuery.plannedUrls !== undefined) {
++    const planned = urlCursor(nextQuery.plannedUrls);
++    if (planned == null || total == null || planned > total || body.plannedUrls !== planned) {
++      return fail("whole-job request count is invalid or disagrees with the response.");
++    }
++  }
+   const cursor = urlCursor(nextQuery.cursor);
+   const prior = sent.cursor === undefined ? 0 : urlCursor(sent.cursor);
+   if (cursor == null || prior == null || total == null || cursor < prior || cursor >= total || body.nextCursor !== cursor) {
+--- a/web/lib/routeRunner/core.test.ts
++++ b/web/lib/routeRunner/core.test.ts
+@@ -446,6 +446,15 @@
+     expect(classifyStepResult("goalie_url_cursor",result(),sent)).toMatchObject({kind:"continue",nextQuery:{...scope,cursor:"1"},progressDone:1});
+     expect(classifyStepResult("goalie_url_cursor",result(2),{...scope,cursor:"1"})).toMatchObject({kind:"continue",nextQuery:{...scope,cursor:"2"}});
+   });
++  it("acknowledges and freezes the producer's whole-job request count", () => {
++    const answer: any = result(1, { ...scope, cursor: "1", plannedUrls: "10" });
++    answer.body.plannedUrls = 10;
++    expect(classifyStepResult("goalie_url_cursor", answer, sent).kind).toBe("continue");
++    answer.body.plannedUrls = 9;
++    expect(classifyStepResult("goalie_url_cursor", answer, sent).kind).toBe("fail");
++    answer.body.resume.request.query.plannedUrls = "9";
++    expect(classifyStepResult("goalie_url_cursor", answer, { ...scope, cursor: "0", plannedUrls: "10" }).kind).toBe("fail");
++  });
+   it("waits with the frozen query when no URL was dispatched",()=>{
+     expect(classifyStepResult("goalie_url_cursor",result(0),sent)).toMatchObject({kind:"wait",nextQuery:{...scope,cursor:"0"}});
+     const paused=result(1);paused.body.pendingUrlsProcessed=0;paused.body.acknowledgedWriteUrls=0;paused.body.urlProgress=[{status:"deferred"}];
+@@ -476,3 +485,23 @@
+       }
+     });
+ });
++
++
++describe("durable goalie checkpoint continuation", () => {
++  const query = { catchupScope: "a".repeat(64) };
++  const body = { checkpointVersion: 1, scope: query.catchupScope, status: "progress", committedUnitKeys: ["20262027/2026-10-31/allCounts"],
++    requiresReview: false, retrySafe: true, success: false, complete: false, stoppedEarly: true, operationStatus: "partial",
++    resume: { required: true, request: { query } } };
++  it("keeps the same durable scope after acknowledged progress or deferral", () => {
++    expect(classifyStepResult("goalie_url_cursor", { statusCode: 207, body }, query)).toMatchObject({ kind: "wait", nextQuery: query });
++    expect(classifyStepResult("goalie_url_cursor", { statusCode: 207, body: { ...body, status: "deferred", committedUnitKeys: [] } }, query).kind).toBe("wait");
++  });
++  it("accepts durable completion and rejects uncertainty, altered scope or mixed legacy query", () => {
++    expect(classifyStepResult("goalie_url_cursor", { statusCode: 200, body: { ...body, status: "complete", success: true, complete: true,
++      stoppedEarly: false, resume: { ...body.resume, required: false } } }, query).kind).toBe("complete");
++    for (const changed of [{ requiresReview: true }, { scope: "b".repeat(64) }, { committedUnitKeys: [] }, { retrySafe: false }]) {
++      expect(classifyStepResult("goalie_url_cursor", { statusCode: 207, body: { ...body, ...changed } }, query).kind).toBe("fail");
++    }
++    expect(classifyStepResult("goalie_url_cursor", { statusCode: 207, body }, { ...query, startDate: "2026-10-31" }).kind).toBe("fail");
++  });
++});
+--- a/web/lib/routeRunner/registry.ts
++++ b/web/lib/routeRunner/registry.ts
+@@ -124,6 +124,9 @@
+   "/api/v1/db/update-nst-goalies": {
+     label: "NST goalies",
+     contract: "goalie_url_cursor",
++    deadlineParam: "deadlineAt",
++    deadlineHeadroomMs: 20_000,
++    runnerParams: ["deadlineAt"],
+     example:
+       "/api/v1/db/update-nst-goalies?runMode=incremental&startDate=2025-10-07&overwrite=no",
+     notes:
+--- a/web/pages/api/v1/db/cron-report.ts
++++ b/web/pages/api/v1/db/cron-report.ts
+@@ -4,6 +4,7 @@
+ import vercelConfiguration from "../../../../vercel.json";
+ 
+ import { CronAuditEmail } from "components/CronReportEmail/CronAuditEmail";
++import { readGoalieFreshness } from "lib/nst/goalieFreshness.server";
+ import {
+   getBenchmarkAnnotations,
+   hasBenchmarkAnnotationKind,
+@@ -1718,6 +1719,13 @@
+     return { ...auditRow, expectedWorkWarning: expectedWorkWarning(auditRow, seasonWindow, gameDataRoutes) };
+   };
+   const auditRows = audits.map(toAuditRow);
++  // Coverage is independent of writer audit success (or a missing audit).
++  const goalieFreshnessPromise = readGoalieFreshness({ client: supabase, now,
++    season: seasonWindow, sourceDeadlineAt,
++    writerAuditPresent: auditRows.some(row => row.parsed.routePath === "/api/v1/db/update-nst-goalies"),
++    // Durable catch-up receipts must establish no-progress windows before this
++    // signal can be asserted. Age-based escalation remains independently active.
++    noProgressWindows: 0 });
+   const configuredVercelSchedules = Array.from(new Map(vercelConfiguration.crons.map((entry) => {
+     const route = canonicalRoute(entry.path);
+     const schedule = entry.schedule.trim().replace(/\s+/g, " ");
+@@ -1754,6 +1762,7 @@
+   const lastKnownSuccessMap = buildLastKnownSuccessMap([
+     ...auditRows, ...(successHistorySource?.rows ?? []).map(toAuditRow),
+   ], successHistory.complete);
++  const goalieFreshness = await goalieFreshnessPromise;
+   const sourceElapsedMs = Date.now() - now.getTime();
+   const auditGapGraceStartedAt =
+     auditRows
+@@ -2375,8 +2384,11 @@
+                 ? `⚠️ Daily Cron Report — ${counts.jobsUnknownLast} unknown`
+                 : counts.jobsDisabledLast > 0
+                   ? `⚠️ Daily Cron Report — ${counts.jobsDisabledLast} quarantined`
+-                  : `✅ Daily Cron Report — ${counts.jobsOkLast}/${counts.scheduledJobs} jobs ok`,
++                  : ["warning", "critical", "unknown"].includes(goalieFreshness.status)
++                    ? `⚠️ Daily Cron Report — goalie coverage ${goalieFreshness.status}`
++                    : `✅ Daily Cron Report — ${counts.jobsOkLast}/${counts.scheduledJobs} jobs ok`,
+         react: CronAuditEmail({
++          goalieFreshness,
+           configuredVercelSchedules,
+           audits: [...auditBriefings, ...notableUnscheduledRuns],
+           sinceDate: since,
+@@ -2487,6 +2499,7 @@
+     },
+     successHistory,
+     totalsComplete: runSource.complete && auditSource.complete,
++    goalieFreshness,
+     countScope: "observed",
+     scheduleInventory: { denominatorScope: "pg_cron entries enabled in repository inventory and due in this window; hosted activation separately reconciled",
+       notDueJobs: notDueJobs.map((job) => ({ name: job.name, schedule: job.cronExpression })),
+--- a/web/__tests__/pages/api/v1/db/cron-report.test.ts
++++ b/web/__tests__/pages/api/v1/db/cron-report.test.ts
+@@ -12,7 +12,9 @@
+   readFileMock,
+   cronAuditEmailMock,
+   loadNhlSeasonWindowMock,
++  readGoalieFreshnessMock,
+ } = vi.hoisted(() => ({
++  readGoalieFreshnessMock: vi.fn(),
+   cronJobReportSelectMock: vi.fn(),
+   cronJobAuditSelectMock: vi.fn(),
+   cronJobAuditHistorySelectMock: vi.fn(),
+@@ -49,6 +51,8 @@
+   return query;
+ }
+ 
++vi.mock("lib/nst/goalieFreshness.server", () => ({ readGoalieFreshness: readGoalieFreshnessMock }));
++
+ vi.mock("@supabase/supabase-js", () => ({
+   createClient: vi.fn(() => ({
+     from: vi.fn((table: string) => {
+@@ -125,6 +129,16 @@
+ }
+ 
+ describe("/api/v1/db/cron-report", () => {
++  it("reports goalie coverage independently when writer audit receipts are missing", async () => {
++    const coverage = { status: "critical", checkedAt: "2026-03-20T13:00:00Z", cutoffDate: "2026-03-19", expected: 60, matched: 0,
++      missing: [{ season: "20252026", goalieId: 1, date: "2026-03-17", reason: "missing_row" }], oldestGap: "2026-03-17", warnings: ["Writer audit is missing."] };
++    readGoalieFreshnessMock.mockResolvedValue(coverage);
++    const res = createMockRes();
++    await handler({ method: "GET" } as any, res);
++    expect(readGoalieFreshnessMock).toHaveBeenCalledWith(expect.objectContaining({ writerAuditPresent: false, noProgressWindows: 0 }));
++    expect(res.body.goalieFreshness).toEqual(coverage);
++    expect(cronAuditEmailMock).toHaveBeenCalledWith(expect.objectContaining({ goalieFreshness: coverage }));
++  });
+   it("excludes weekly and calendar jobs that are not due without inventing missing runs", async () => {
+     readFileMock.mockResolvedValue(`SELECT cron.schedule('weekly','15 8 * * 0',$$SELECT 1;$$);
+ SELECT cron.schedule('daily','0 8 * * *',$$SELECT 1;$$);`);
+@@ -312,6 +326,7 @@
+ 
+   beforeEach(() => {
+     vi.clearAllMocks();
++    readGoalieFreshnessMock.mockResolvedValue({ status: "not_due", warnings: [], missing: [], cutoffDate: "2026-03-19", expected: null, matched: null });
+     adminAdmissionMock.mockReturnValue(true);
+     cronJobAuditHistorySelectMock.mockResolvedValue({ data: [], error: null });
+     vi.stubGlobal("AbortSignal", { timeout: vi.fn(() => new AbortController().signal) });
+--- a/web/components/CronReportEmail/CronAuditEmail.tsx
++++ b/web/components/CronReportEmail/CronAuditEmail.tsx
+@@ -2,6 +2,7 @@
+ 
+ import { formatExecutionDuration, isNearRepositoryLimit } from "lib/cron/reportMetrics";
+ import { formatReportTime } from "lib/cron/reportSource";
++import type { GoalieFreshness } from "lib/nst/goalieFreshness";
+ 
+ type BenchmarkAnnotation = { kind: string; note: string };
+ 
+@@ -35,6 +36,7 @@
+ }
+ 
+ interface CronAuditEmailProps {
++  goalieFreshness?: GoalieFreshness;
+   audits: AuditEntry[];
+   configuredVercelSchedules?: Array<{ route: string; schedule: string; activation: "unverified"; receiptCount?: number; latestReceiptStatus?: string; latestReceiptAt?: string | null }>;
+   sinceDate: string;
+@@ -86,7 +88,7 @@
+ 
+ type FailureGroup = { jobName: string; rows: AuditEntry[]; latest: AuditEntry; lastSuccess: string | null; recovered: boolean };
+ 
+-export const CronAuditEmail: React.FC<CronAuditEmailProps> = ({ audits, sinceDate, untilDate, totalsComplete = true, fetchErrors = [], successHistory, summary, configuredVercelSchedules = [] }) => {
++export const CronAuditEmail: React.FC<CronAuditEmailProps> = ({ audits, sinceDate, untilDate, totalsComplete = true, fetchErrors = [], successHistory, summary, configuredVercelSchedules = [], goalieFreshness }) => {
+   const globalWarnings = Array.from(new Set([
+     ...fetchErrors,
+     ...audits.flatMap((row) => row.missingObservationWarnings ?? []).filter((warning) => warning.includes("Telemetry source unavailable")),
+@@ -156,7 +158,8 @@
+   const sectionTitle = (title: string) => <h2 style={{ fontSize: 16, margin: "22px 0 10px" }}>{title}</h2>;
+   const hasFailures = summary.auditFailures > 0 || (summary.cronFailures ?? 0) > 0;
+   const allRecovered = hasFailures && openFailures.length === 0 && recovered.length > 0 && !(summary.omittedFailureObservations ?? 0) && !(summary.cronFailures ?? 0);
+-  const headline = allRecovered ? "Earlier failures have recovered." : hasFailures ? "Failures need attention." : audits.length === 0 ? "Execution health is unknown." : !totalsComplete ? "Coverage needs attention." : exceptionLines.length > 0 ? "A few jobs need a look." : "Runs look healthy.";
++  const goalieCoverageNeedsAttention = goalieFreshness && ["warning", "critical", "unknown"].includes(goalieFreshness.status);
++  const headline = hasFailures && !allRecovered ? "Failures need attention." : goalieCoverageNeedsAttention ? "Goalie coverage needs attention." : allRecovered ? "Earlier failures have recovered." : audits.length === 0 ? "Execution health is unknown." : !totalsComplete ? "Coverage needs attention." : exceptionLines.length > 0 ? "A few jobs need a look." : "Runs look healthy.";
+ 
+   return <div style={{ backgroundColor: "#F7F7F2", fontFamily: "Arial, sans-serif", fontSize: 14, lineHeight: 1.5, color: "#202020", maxWidth: 640, margin: "0 auto", padding: 20 }}>
+     <div style={{ borderTop: "4px solid #B45309", paddingTop: 16 }}>
+@@ -173,6 +176,13 @@
+       <strong style={{ fontSize: 13 }}>Telemetry coverage incomplete; totals unknown.</strong>
+       {globalWarnings.map((warning, index) => <div key={index} style={{ fontSize: 12, marginTop: 4 }}>{concise(warning)}</div>)}
+       <div style={{ fontSize: 12, marginTop: 4 }}>Missing receipts do not establish success.</div>
++    </div> : null}
++
++    {goalieFreshness ? <div style={{ margin: "16px 0", fontSize: 13 }}>
++      <strong>NST goalie coverage: {goalieFreshness.status.replace("_", " ").toUpperCase()}</strong>
++      <div>Through {goalieFreshness.cutoffDate}: {number(goalieFreshness.matched)} of {number(goalieFreshness.expected)} retained WGO goalie-games have HD data.</div>
++      {goalieFreshness.missing.length > 0 ? <div style={{ color: red }}>{goalieFreshness.missing.length} missing or incomplete; oldest gap {goalieFreshness.oldestGap}.</div> : null}
++      {goalieFreshness.warnings.map((warning, index) => <div key={index} style={muted}>{warning}</div>)}
+     </div> : null}
+ 
+     {openFailures.length > 0 ? <>
+--- a/web/__tests__/components/CronReportEmail/CronAuditEmail.test.tsx
++++ b/web/__tests__/components/CronReportEmail/CronAuditEmail.test.tsx
+@@ -6,6 +6,17 @@
+ import { CronAuditEmail } from "components/CronReportEmail/CronAuditEmail";
+ 
+ describe("CronAuditEmail", () => {
++  it("shows missing HD coverage independently from execution health", () => {
++    const html = renderToStaticMarkup(<CronAuditEmail audits={[]} sinceDate="2026-11-01T13:00:00Z"
++      summary={{ auditRuns: 0, auditSuccesses: 0, auditFailures: 0, auditUnknown: 0, totalRowsUpserted: 0, totalFailedRows: 0 }}
++      goalieFreshness={{ status: "critical", checkedAt: "2026-11-01T13:00:00Z", cutoffDate: "2026-10-31", expected: 60, matched: 59,
++        missing: [{ season: "20262027", goalieId: 1, date: "2026-10-28", reason: "missing_hd" }], oldestGap: "2026-10-28",
++        latestExpectedDate: "2026-10-31", latestCompleteDate: "2026-10-31", perDate: [], warnings: ["Writer audit is missing."] }} />);
++    expect(html).toContain("NST goalie coverage: CRITICAL");
++    expect(html).toContain("59 of 60 retained WGO goalie-games");
++    expect(html).toContain("oldest gap 2026-10-28");
++    expect(html).toContain("Writer audit is missing.");
++  });
+   it("keeps a planned continuation visible as in progress", () => {
+     const html = renderToStaticMarkup(<CronAuditEmail sinceDate="2026-10-20T00:00:00Z"
+       summary={{ auditRuns: 1, auditSuccesses: 0, auditFailures: 0, auditUnknown: 0, totalRowsUpserted: 1, totalFailedRows: 0 }}
+--- /dev/null
++++ b/web/lib/nst/goalieCatchup.ts
+@@ -0,0 +1,241 @@
++import { createHash } from "node:crypto";
++
++export const GOALIE_DATASETS = [
++  "5v5Counts", "5v5Rates", "evCounts", "evRates", "allCounts",
++  "allRates", "ppCounts", "ppRates", "pkCounts", "pkRates"
++] as const;
++export type GoalieDataset = typeof GOALIE_DATASETS[number];
++
++const DAY_MS = 86_400_000;
++const MAX_DATES = 14;
++const MAX_STEPS = 7;
++const MAX_ATTEMPTS = 60;
++const STEP_MS = 220_000;
++const COOLDOWN_MS = 600_000;
++
++export function goalieDateMillis(date: string): number {
++  const ms = Date.parse(`${date}T00:00:00.000Z`);
++  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !Number.isFinite(ms) ||
++      new Date(ms).toISOString().slice(0, 10) !== date) {
++    throw new Error(`Invalid goalie calendar date: ${date}`);
++  }
++  return ms;
++}
++
++export function completedGoalieDate(now: Date): string {
++  if (!Number.isFinite(now.getTime())) throw new Error("Invalid goalie check time.");
++  const today = new Intl.DateTimeFormat("en-CA", {
++    timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit"
++  }).format(now);
++  return new Date(goalieDateMillis(today) - DAY_MS).toISOString().slice(0, 10);
++}
++
++export type GoalieDayCoverage = {
++  date: string;
++  calendar: "final" | "no_games" | "unknown";
++  allCounts: "complete" | "incomplete" | "unknown";
++};
++
++export type GoalieCompletionReceipt = {
++  season: string;
++  date: string;
++  dataset: GoalieDataset;
++  sourceVersion: string;
++  status: "complete" | "empty_valid";
++  parsedRows: number;
++  mappedRows: number;
++  writtenRows: number;
++  outputAcknowledged: boolean;
++  checkpointAcknowledged: boolean;
++};
++
++export type GoalieWorkHold = {
++  season: string;
++  date: string;
++  dataset: GoalieDataset;
++  reason: string;
++};
++
++export type GoalieWorkUnit = {
++  key: string;
++  date: string;
++  dataset: GoalieDataset;
++  state: "pending" | "complete" | "empty_valid" | "no_games" | "held";
++  reason: string | null;
++};
++
++export type GoalieCatchupManifest = {
++  version: 1;
++  season: string;
++  sourceVersion: string;
++  scope: string;
++  /** Immutable full pending cohort at creation; never substitute a chunk size. */
++  plannedRequestCount: number;
++  startDate: string;
++  endDate: string;
++  nextUnplannedDate: string | null;
++  units: readonly GoalieWorkUnit[];
++};
++
++function receiptState(receipt: GoalieCompletionReceipt): GoalieWorkUnit["state"] {
++  const counts = [receipt.parsedRows, receipt.mappedRows, receipt.writtenRows];
++  if (!receipt.outputAcknowledged || !receipt.checkpointAcknowledged ||
++      counts.some(count => !Number.isSafeInteger(count) || count < 0) ||
++      counts.some(count => count !== counts[0])) return "held";
++  if (receipt.status === "complete" && counts[0] > 0) return "complete";
++  if (receipt.status === "empty_valid" && counts[0] === 0) return "empty_valid";
++  return "held";
++}
++
++/** Pure proposal only. The IO adapter must persist the frozen manifest and
++ * acknowledged receipts; this module does not prove that a database write ran. */
++export function buildGoalieCatchupManifest(input: {
++  season: string;
++  sourceVersion: string;
++  seasonStartDate: string;
++  regularSeasonEndDate: string;
++  startDate: string;
++  now: Date;
++  days: readonly GoalieDayCoverage[];
++  receipts: readonly GoalieCompletionReceipt[];
++  /** Persisted review holds survive daily manifests and source-version changes. */
++  holds: readonly GoalieWorkHold[];
++  readsComplete: boolean;
++}): GoalieCatchupManifest {
++  if (!/^\d{8}$/.test(input.season) || !input.sourceVersion.trim()) {
++    throw new Error("Goalie manifest needs a season and source version.");
++  }
++  const seasonStart = goalieDateMillis(input.seasonStartDate);
++  const seasonEnd = goalieDateMillis(input.regularSeasonEndDate);
++  if (seasonStart > seasonEnd) throw new Error("Invalid goalie season bounds.");
++  const start = Math.max(seasonStart, goalieDateMillis(input.startDate));
++  const eligibleEnd = Math.min(seasonEnd, goalieDateMillis(completedGoalieDate(input.now)));
++  const end = Math.min(eligibleEnd, start + (MAX_DATES - 1) * DAY_MS);
++  const days = new Map<string, GoalieDayCoverage>();
++  for (const day of input.days) {
++    goalieDateMillis(day.date);
++    if (days.has(day.date)) throw new Error("Duplicate goalie calendar observation.");
++    days.set(day.date, day);
++  }
++  const receipts = new Map<string, GoalieCompletionReceipt>();
++  for (const receipt of input.receipts) {
++    if (receipt.season !== input.season || receipt.sourceVersion !== input.sourceVersion) continue;
++    const key = `${receipt.season}/${receipt.date}/${receipt.dataset}`;
++    if (receipts.has(key)) throw new Error("Duplicate goalie completion receipt.");
++    receipts.set(key, receipt);
++  }
++  const holds = new Map<string, GoalieWorkHold>();
++  for (const hold of input.holds) {
++    if (hold.season !== input.season) continue;
++    if (!hold.reason.trim()) throw new Error("Goalie review hold requires a reason.");
++    holds.set(`${hold.season}/${hold.date}/${hold.dataset}`, hold);
++  }
++  const units: GoalieWorkUnit[] = [];
++  for (let ms = start; ms <= end; ms += DAY_MS) {
++    const date = new Date(ms).toISOString().slice(0, 10);
++    const day = days.get(date);
++    for (const dataset of GOALIE_DATASETS) {
++      const key = `${input.season}/${date}/${dataset}`;
++      const receipt = receipts.get(key);
++      const hold = holds.get(key);
++      let state: GoalieWorkUnit["state"] = "pending";
++      let reason: string | null = null;
++      if (hold) {
++        state = "held";
++        reason = hold.reason;
++      } else if (!input.readsComplete || !day || day.calendar === "unknown" || day.allCounts === "unknown") {
++        state = "held";
++        reason = "Calendar or coverage read is incomplete.";
++      } else if (day.calendar === "no_games") {
++        if (day.allCounts === "incomplete") {
++          state = "held";
++          reason = "No-game calendar conflicts with expected goalie appearances.";
++        } else state = "no_games";
++      } else if (receipt) {
++        state = receiptState(receipt);
++        if (state === "held") reason = "Output or completion checkpoint is unacknowledged or inconsistent.";
++        else if (dataset === "allCounts" && day.allCounts !== "complete") state = "pending";
++      }
++      units.push({ key, date, dataset, state, reason });
++    }
++  }
++  const startDate = new Date(start).toISOString().slice(0, 10);
++  const endDate = new Date(end).toISOString().slice(0, 10);
++  const plannedRequestCount = units.filter(unit => unit.state === "pending").length;
++  const scope = createHash("sha256").update(JSON.stringify({
++    version: 1, season: input.season, sourceVersion: input.sourceVersion, startDate, endDate,
++    units: units.map(({ key, state }) => [key, state]), plannedRequestCount
++  })).digest("hex");
++  return { version: 1, season: input.season, sourceVersion: input.sourceVersion, scope,
++    plannedRequestCount, startDate, endDate, units,
++    nextUnplannedDate: end < eligibleEnd ? new Date(end + DAY_MS).toISOString().slice(0, 10) : null };
++}
++
++/** Apply only a durable receipt returned by the caller's persistence adapter.
++ * Ambiguity holds this unit; it cannot silently advance or retry it. */
++export function acknowledgeGoalieUnit(
++  manifest: GoalieCatchupManifest,
++  receipt: GoalieCompletionReceipt,
++  allCountsCoverage: "complete" | "incomplete" | "unknown"
++): GoalieCatchupManifest {
++  const key = `${receipt.season}/${receipt.date}/${receipt.dataset}`;
++  const unit = manifest.units.find(value => value.key === key);
++  if (!unit || receipt.sourceVersion !== manifest.sourceVersion) throw new Error("Receipt is outside the goalie manifest.");
++  if (unit.state !== "pending") throw new Error("Only pending goalie units can be acknowledged; holds need reconciliation.");
++  let state = receiptState(receipt);
++  let reason = state === "held" ? "Output or completion checkpoint is unacknowledged or inconsistent." : null;
++  if (receipt.dataset === "allCounts" && allCountsCoverage !== "complete") {
++    state = "held";
++    reason = "All-counts output does not establish expected goalie coverage.";
++  }
++  return { ...manifest, units: manifest.units.map(value => value.key === key ? { ...value, state, reason } : value) };
++}
++
++export type GoalieDailyBudget = { utcDate: string; steps: number; attempts: number };
++export type GoalieStepDecision =
++  | { allowed: false; reason: string; notBefore: string | null }
++  | { allowed: true; units: readonly GoalieWorkUnit[]; plannedRequestCount: number;
++      minIntervalMs: number; maxAttempts: number; deadlineAt: number };
++
++/** Requires an acknowledged shared daily counter and a separate atomic claim.
++ * These are proposed operating windows; this function activates no scheduler. */
++export function planGoalieCatchupStep(input: {
++  manifest: GoalieCatchupManifest;
++  now: Date;
++  budget: GoalieDailyBudget;
++  sharedJobActive: boolean;
++  lastDirectJobFinishedAt: string | null;
++}): GoalieStepDecision {
++  const now = input.now.getTime();
++  if (!Number.isFinite(now)) throw new Error("Invalid goalie step time.");
++  const pause = (reason: string, at?: number): GoalieStepDecision =>
++    ({ allowed: false, reason, notBefore: at === undefined ? null : new Date(at).toISOString() });
++  const utcDate = input.now.toISOString().slice(0, 10);
++  const { budget, manifest } = input;
++  if (budget.utcDate !== utcDate || !Number.isSafeInteger(budget.steps) || budget.steps < 0 ||
++      !Number.isSafeInteger(budget.attempts) || budget.attempts < 0) return pause("Shared daily budget unavailable.");
++  if (budget.steps >= MAX_STEPS || budget.attempts >= MAX_ATTEMPTS) return pause("Daily goalie budget exhausted.");
++  if (input.sharedJobActive) return pause("Another shared NST job is active.");
++  if (input.lastDirectJobFinishedAt !== null) {
++    const finished = Date.parse(input.lastDirectJobFinishedAt);
++    if (!Number.isFinite(finished)) return pause("Shared NST completion time is unknown.");
++    if (finished + COOLDOWN_MS > now) return pause("Shared NST cooldown.", finished + COOLDOWN_MS);
++  }
++  const midnight = goalieDateMillis(utcDate);
++  const windows = [[510, 515], [670, 770]]; // 08:30–08:35 and 11:10–12:50 UTC.
++  const window = windows.find(([start, end]) => now >= midnight + start * 60_000 && now + STEP_MS <= midnight + end * 60_000);
++  if (!window) {
++    const next = windows.find(([start]) => midnight + start * 60_000 > now);
++    return pause("Outside bounded goalie worker window.", next ? midnight + next[0] * 60_000 : midnight + DAY_MS + 510 * 60_000);
++  }
++  const pending = manifest.units.filter(unit => unit.state === "pending");
++  if (!pending.length) return pause(manifest.units.some(unit => unit.state === "held") ? "Goalie coverage requires review." : "Goalie cohort complete.");
++  if (!Number.isSafeInteger(manifest.plannedRequestCount) || manifest.plannedRequestCount < pending.length) {
++    return pause("Invalid full goalie cohort plan.");
++  }
++  const burst = manifest.plannedRequestCount > 0 && manifest.plannedRequestCount < 40;
++  const units = pending.slice(0, Math.min(burst ? 20 : 6, MAX_ATTEMPTS - budget.attempts));
++  return { allowed: true, units, plannedRequestCount: manifest.plannedRequestCount,
++    minIntervalMs: burst ? 0 : 21_000, maxAttempts: Math.min(units.length * 3, MAX_ATTEMPTS - budget.attempts),
++    deadlineAt: now + STEP_MS };
++}
+--- /dev/null
++++ b/web/lib/nst/goalieCatchup.test.ts
+@@ -0,0 +1,174 @@
++import { describe, expect, it } from "vitest";
++import {
++  acknowledgeGoalieUnit, buildGoalieCatchupManifest, completedGoalieDate,
++  GOALIE_DATASETS, planGoalieCatchupStep,
++  type GoalieCatchupManifest, type GoalieCompletionReceipt
++} from "./goalieCatchup";
++
++const season = "20262027";
++const sourceVersion = "goalie-v1";
++function receipt(date: string, dataset: typeof GOALIE_DATASETS[number], rows = 1): GoalieCompletionReceipt {
++  return { season, sourceVersion, date, dataset, status: rows ? "complete" : "empty_valid",
++    parsedRows: rows, mappedRows: rows, writtenRows: rows,
++    outputAcknowledged: true, checkpointAcknowledged: true };
++}
++function manifest(options: Partial<Parameters<typeof buildGoalieCatchupManifest>[0]> = {}) {
++  return buildGoalieCatchupManifest({ season, sourceVersion, seasonStartDate: "2026-10-07",
++    regularSeasonEndDate: "2027-04-15", startDate: "2026-10-28", now: new Date("2026-11-01T08:30:00Z"),
++    days: ["2026-10-28", "2026-10-29", "2026-10-30", "2026-10-31"].map(date => ({ date, calendar: "final", allCounts: "complete" })),
++    receipts: [], holds: [], readsComplete: true, ...options });
++}
++function step(work: GoalieCatchupManifest, overrides: Partial<Parameters<typeof planGoalieCatchupStep>[0]> = {}) {
++  return planGoalieCatchupStep({ manifest: work, now: new Date("2026-11-01T08:30:00Z"),
++    budget: { utcDate: "2026-11-01", steps: 0, attempts: 0 }, sharedJobActive: false,
++    lastDirectJobFinishedAt: null, ...overrides });
++}
++
++describe("goalie catch-up manifest", () => {
++  it("excludes the current NHL date across UTC midnight and DST", () => {
++    expect(completedGoalieDate(new Date("2026-11-01T01:00:00Z"))).toBe("2026-10-30");
++    expect(completedGoalieDate(new Date("2026-11-01T08:30:00Z"))).toBe("2026-10-31");
++    expect(completedGoalieDate(new Date("2026-11-02T04:30:00Z"))).toBe("2026-10-31");
++    expect(manifest().units).toHaveLength(40);
++    expect(manifest().endDate).toBe("2026-10-31");
++  });
++
++  it("retains old and interior gaps when allCounts is newer", () => {
++    const work = manifest({ receipts: [receipt("2026-10-31", "allCounts"), receipt("2026-10-28", "5v5Counts")] });
++    expect(work.plannedRequestCount).toBe(38);
++    expect(work.units.find(unit => unit.key.endsWith("2026-10-28/evRates"))?.state).toBe("pending");
++    expect(work.units.find(unit => unit.key.endsWith("2026-10-29/allCounts"))?.state).toBe("pending");
++    expect(work.units.find(unit => unit.key.endsWith("2026-10-31/allCounts"))?.state).toBe("complete");
++  });
++
++  it("reopens partial allCounts coverage and persists legitimate PP empty completion", () => {
++    const work = manifest({
++      days: [{ date: "2026-10-28", calendar: "final", allCounts: "incomplete" }],
++      receipts: [receipt("2026-10-28", "allCounts"), receipt("2026-10-28", "ppCounts", 0)]
++    });
++    expect(work.units.find(unit => unit.dataset === "allCounts")?.state).toBe("pending");
++    expect(work.units.find(unit => unit.dataset === "ppCounts")?.state).toBe("empty_valid");
++    expect(work.units.filter(unit => unit.date === "2026-10-29").every(unit => unit.state === "held")).toBe(true);
++  });
++
++  it("does not fetch on incomplete reads or conflicting no-game observations", () => {
++    expect(manifest({ readsComplete: false }).units.every(unit => unit.state === "held")).toBe(true);
++    const work = manifest({ days: [{ date: "2026-10-28", calendar: "no_games", allCounts: "incomplete" }] });
++    expect(work.units.every(unit => unit.state === "held")).toBe(true);
++    const empty = manifest({ days: [{ date: "2026-10-28", calendar: "no_games", allCounts: "complete" }] });
++    expect(empty.units.slice(0, 10).every(unit => unit.state === "no_games")).toBe(true);
++  });
++
++  it("bounds discovery to14dates and retains the next unplanned date", () => {
++    const work = manifest({ startDate: "2026-09-01", now: new Date("2026-11-15T13:00:00Z") });
++    expect(work.startDate).toBe("2026-10-07");
++    expect(work.units).toHaveLength(140);
++    expect(work.endDate).toBe("2026-10-20");
++    expect(work.nextUnplannedDate).toBe("2026-10-21");
++    expect(manifest({ startDate: "2027-05-01" }).units).toHaveLength(0);
++  });
++
++  it("rejects duplicate/malformed evidence instead of choosing an arbitrary receipt", () => {
++    expect(() => manifest({ startDate: "2026-02-30" })).toThrow("Invalid goalie calendar date");
++    const row = receipt("2026-10-28", "allCounts");
++    expect(() => manifest({ receipts: [row, row] })).toThrow("Duplicate goalie completion receipt");
++    const stale = manifest({ receipts: [{ ...row, sourceVersion: "old" }] });
++    expect(stale.plannedRequestCount).toBe(40);
++  });
++
++  it("holds lost output/checkpoint acknowledgement without advancing other work", () => {
++    const original = manifest();
++    const held = acknowledgeGoalieUnit(original, { ...receipt("2026-10-28", "5v5Counts"), checkpointAcknowledged: false }, "complete");
++    expect(held.scope).toBe(original.scope);
++    expect(held.plannedRequestCount).toBe(40);
++    expect(held.units[0].state).toBe("held");
++    const decision = step(held);
++    expect(decision.allowed).toBe(true);
++    if (decision.allowed) expect(decision.units[0].dataset).toBe("5v5Rates");
++    expect(() => acknowledgeGoalieUnit(held, receipt("2026-10-28", "5v5Counts"), "complete")).toThrow("holds need reconciliation");
++    const mismatch = acknowledgeGoalieUnit(original, { ...receipt("2026-10-28", "evCounts"), writtenRows: 0 }, "complete");
++    expect(mismatch.units.find(unit => unit.dataset === "evCounts")?.state).toBe("held");
++  });
++
++  it("holds empty allCounts when expected goalie coverage is still missing", () => {
++    const work = acknowledgeGoalieUnit(manifest(), receipt("2026-10-28", "allCounts", 0), "incomplete");
++    expect(work.units.find(unit => unit.dataset === "allCounts")?.state).toBe("held");
++  });
++
++  it("retains persisted review holds across day and parser-version rollover", () => {
++    const work = manifest({ now: new Date("2026-11-02T08:30:00Z"), sourceVersion: "goalie-v2",
++      receipts: [receipt("2026-10-28", "allCounts")],
++      holds: [{ season, date: "2026-10-28", dataset: "allCounts", reason: "Prior output acknowledgement was lost." }] });
++    expect(work.units.find(unit => unit.key.endsWith("2026-10-28/allCounts"))?.state).toBe("held");
++    const decision = step(work);
++    expect(decision.allowed && decision.units.some(unit => unit.key.endsWith("2026-10-28/allCounts"))).toBe(false);
++  });
++});
++
++describe("bounded goalie worker decisions", () => {
++  it("uses the immutable full job at39/40 boundaries, even after a chunk succeeds", () => {
++    const thirtyNine = manifest({ receipts: [receipt("2026-10-28", "5v5Counts")] });
++    const small = step(thirtyNine);
++    expect(small.allowed && [small.minIntervalMs, small.units.length]).toEqual([0, 20]);
++    const original = manifest();
++    let progressed = original;
++    for (const unit of original.units.slice(0, 6)) progressed = acknowledgeGoalieUnit(progressed, receipt(unit.date, unit.dataset), "complete");
++    const large = step(progressed);
++    expect(large.allowed && [large.minIntervalMs, large.units.length, large.plannedRequestCount]).toEqual([21000, 6, 40]);
++    expect(progressed.scope).toBe(original.scope);
++  });
++
++  it("requires the shared daily counter and caps retries as well as URL count", () => {
++    const work = manifest();
++    expect(step(work, { budget: { utcDate: "2026-10-31", steps: 0, attempts: 0 } }).allowed).toBe(false);
++    expect(step(work, { budget: { utcDate: "2026-11-01", steps: 7, attempts: 0 } }).allowed).toBe(false);
++    expect(step(work, { budget: { utcDate: "2026-11-01", steps: 0, attempts: 60 } }).allowed).toBe(false);
++    const finalAttempt = step(work, { budget: { utcDate: "2026-11-01", steps: 3, attempts: 59 } });
++    expect(finalAttempt.allowed && [finalAttempt.units.length, finalAttempt.maxAttempts]).toEqual([1, 1]);
++  });
++
++  it("honors shared-job exclusion, completion cooldown and end-of-window headroom", () => {
++    const work = manifest();
++    expect(step(work, { sharedJobActive: true }).allowed).toBe(false);
++    expect(step(work, { lastDirectJobFinishedAt: "unknown" }).allowed).toBe(false);
++    const cooldown = step(work, { lastDirectJobFinishedAt: "2026-11-01T08:25:00Z" });
++    expect(!cooldown.allowed && cooldown.notBefore).toBe("2026-11-01T08:35:00.000Z");
++    for (const time of ["08:34", "10:11", "12:49", "23:59"]) {
++      expect(step(work, { now: new Date(`2026-11-01T${time}:00Z`) }).allowed).toBe(false);
++    }
++    expect(step(work, { now: new Date("2026-11-01T11:10:00Z") }).allowed).toBe(true);
++  });
++
++  it("drains a37URLbacklog plus10new per day within two healthy daily windows", () => {
++    const dates = ["2026-10-28", "2026-10-29", "2026-10-30", "2026-10-31", "2026-11-01"];
++    const receipts = GOALIE_DATASETS.slice(0, 3).map(dataset => receipt(dates[0], dataset));
++    const options = { now: new Date("2026-11-02T08:30:00Z"),
++      days: dates.map(date => ({ date, calendar: "final" as const, allCounts: "complete" as const })), receipts };
++    let work = manifest(options);
++    expect(work.plannedRequestCount).toBe(47);
++    let attempts = 0;
++    for (const [index, time] of ["08:30", "11:10", "11:24", "11:38", "11:52", "12:06", "12:20"].entries()) {
++      const decision = step(work, { now: new Date(`2026-11-02T${time}:00Z`), budget: { utcDate: "2026-11-02", steps: index, attempts } });
++      expect(decision.allowed).toBe(true);
++      if (!decision.allowed) throw new Error(decision.reason);
++      for (const unit of decision.units) {
++        const ack = receipt(unit.date, unit.dataset);
++        work = acknowledgeGoalieUnit(work, ack, "complete");
++        receipts.push(ack);
++        attempts++;
++      }
++      expect(decision.minIntervalMs).toBe(21000);
++    }
++    expect(attempts).toBe(42);
++    expect(work.units.filter(unit => unit.state === "pending")).toHaveLength(5);
++    work = manifest({ ...options, now: new Date("2026-11-03T08:30:00Z"), receipts,
++      days: [...options.days, { date: "2026-11-02", calendar: "final", allCounts: "complete" }] });
++    expect(work.plannedRequestCount).toBe(15);
++    const decision = step(work, { now: new Date("2026-11-03T08:30:00Z"), budget: { utcDate: "2026-11-03", steps: 0, attempts: 0 } });
++    expect(decision.allowed).toBe(true);
++    if (!decision.allowed) throw new Error(decision.reason);
++    for (const unit of decision.units) work = acknowledgeGoalieUnit(work, receipt(unit.date, unit.dataset), "complete");
++    expect(work.units.every(unit => unit.state === "complete")).toBe(true);
++    expect(decision.units).toHaveLength(15);
++  });
++});
+--- /dev/null
++++ b/web/lib/nst/goalieFreshness.ts
+@@ -0,0 +1,100 @@
++import { completedGoalieDate, goalieDateMillis } from "./goalieCatchup";
++
++export type ExpectedGoalieGame = { season: string; goalieId: number; date: string };
++export type NstGoalieGame = ExpectedGoalieGame & { hdShotsAgainst: number | null };
++export type GoalieFreshness = {
++  status: "healthy" | "warning" | "critical" | "unknown" | "not_due";
++  checkedAt: string;
++  cutoffDate: string;
++  expected: number | null;
++  matched: number | null;
++  missing: Array<ExpectedGoalieGame & { reason: "missing_row" | "missing_hd" }>;
++  oldestGap: string | null;
++  latestExpectedDate: string | null;
++  latestCompleteDate: string | null;
++  perDate: Array<{ date: string; expected: number; matched: number }>;
++  warnings: string[];
++};
++
++/** Evaluate supplied, completely enumerated snapshots. No database/provider
++ * reads, notification delivery, repair or audit-success inference occurs here. */
++export function assessGoalieFreshness(input: {
++  now: Date;
++  season: string;
++  seasonStartDate: string;
++  regularSeasonEndDate: string;
++  finalGameDates: readonly string[];
++  expected: readonly ExpectedGoalieGame[];
++  observed: readonly NstGoalieGame[];
++  calendarComplete: boolean;
++  wgoComplete: boolean;
++  nstComplete: boolean;
++  noProgressWindows: number;
++  writerAuditPresent: boolean;
++  writerAuditExpected: boolean;
++}): GoalieFreshness {
++  const cutoffDate = [completedGoalieDate(input.now), input.regularSeasonEndDate].sort()[0];
++  const cutoff = goalieDateMillis(cutoffDate);
++  const seasonStart = goalieDateMillis(input.seasonStartDate);
++  if (seasonStart > goalieDateMillis(input.regularSeasonEndDate)) throw new Error("Invalid goalie season bounds.");
++  const floor = Math.max(seasonStart, cutoff - 13 * 86_400_000);
++  const warnings = input.writerAuditPresent || !input.writerAuditExpected ? [] : ["No acknowledged goalie writer audit in the expected window."];
++  const result: GoalieFreshness = { status: "unknown", checkedAt: input.now.toISOString(), cutoffDate,
++    expected: null, matched: null, missing: [], oldestGap: null, latestExpectedDate: null,
++    latestCompleteDate: null, perDate: [], warnings };
++  const unknown = (reason: string): GoalieFreshness => ({ ...result, warnings: [...warnings, reason] });
++  if (!/^\d{8}$/.test(input.season)) return unknown("Goalie season is invalid.");
++  if (!input.calendarComplete || !input.wgoComplete || !input.nstComplete) {
++    return unknown("Calendar, WGO or NST enumeration is incomplete; coverage is unknown.");
++  }
++  if (!Number.isSafeInteger(input.noProgressWindows) || input.noProgressWindows < 0) return unknown("Progress observation is invalid.");
++  const inWindow = (date: string) => { const ms = goalieDateMillis(date); return ms >= floor && ms <= cutoff; };
++  const finalDates = new Set(input.finalGameDates.filter(inWindow));
++  const key = (row: ExpectedGoalieGame) => `${row.season}/${row.date}/${row.goalieId}`;
++  const expected = new Map<string, ExpectedGoalieGame>();
++  for (const row of input.expected) {
++    if (row.season !== input.season || !inWindow(row.date)) continue;
++    if (!Number.isSafeInteger(row.goalieId) || row.goalieId <= 0 || !finalDates.has(row.date)) {
++      return unknown("WGO identity/date conflicts with the final-game calendar.");
++    }
++    expected.set(key(row), row);
++  }
++  if ([...finalDates].some(date => ![...expected.values()].some(row => row.date === date))) {
++    return unknown("WGO has no goalie appearances for a final-game date.");
++  }
++  const observed = new Map<string, NstGoalieGame>();
++  for (const row of input.observed) {
++    if (row.season !== input.season || !inWindow(row.date)) continue;
++    const previous = observed.get(key(row));
++    if (previous && previous.hdShotsAgainst !== row.hdShotsAgainst) return unknown("NST duplicate observations disagree.");
++    if (row.hdShotsAgainst !== null && (!Number.isFinite(row.hdShotsAgainst) || row.hdShotsAgainst < 0)) {
++      return unknown("NST HD observation is invalid.");
++    }
++    observed.set(key(row), row);
++  }
++  const perDate = new Map<string, { date: string; expected: number; matched: number }>();
++  for (const row of expected.values()) {
++    const date = perDate.get(row.date) ?? { date: row.date, expected: 0, matched: 0 };
++    date.expected++;
++    const found = observed.get(key(row));
++    if (!found || found.hdShotsAgainst === null) result.missing.push({ ...row, reason: found ? "missing_hd" : "missing_row" });
++    else date.matched++;
++    perDate.set(row.date, date);
++  }
++  result.perDate = [...perDate.values()].sort((a, b) => a.date.localeCompare(b.date));
++  result.expected = expected.size;
++  result.matched = expected.size - result.missing.length;
++  result.missing.sort((a, b) => a.date.localeCompare(b.date) || a.goalieId - b.goalieId);
++  result.oldestGap = result.missing[0]?.date ?? null;
++  result.latestExpectedDate = result.perDate.at(-1)?.date ?? null;
++  result.latestCompleteDate = result.perDate.filter(day => day.expected === day.matched).at(-1)?.date ?? null;
++  // The report runs at 13:00 UTC, after the proposed catch-up window. Earlier
++  // previews retain all findings without escalating before that window closes.
++  const reportDue = input.now.getUTCHours() >= 13;
++  if (result.missing.length && reportDue) {
++    const oldGap = cutoff - goalieDateMillis(result.oldestGap!) >= 2 * 86_400_000;
++    result.status = oldGap || input.noProgressWindows >= 2 ? "critical" : "warning";
++  } else if (result.missing.length) result.status = "not_due";
++  else result.status = "healthy";
++  return result;
++}
+--- /dev/null
++++ b/web/lib/nst/goalieFreshness.test.ts
+@@ -0,0 +1,84 @@
++import { describe, expect, it } from "vitest";
++import { assessGoalieFreshness, type ExpectedGoalieGame, type NstGoalieGame } from "./goalieFreshness";
++
++const row = (date: string, goalieId = 1): ExpectedGoalieGame => ({ season: "20262027", date, goalieId });
++const nst = (date: string, goalieId = 1, hdShotsAgainst: number | null = 0): NstGoalieGame => ({ ...row(date, goalieId), hdShotsAgainst });
++function assess(overrides: Partial<Parameters<typeof assessGoalieFreshness>[0]> = {}) {
++  return assessGoalieFreshness({ now: new Date("2026-11-01T13:00:00Z"), season: "20262027",
++    seasonStartDate: "2026-10-07", regularSeasonEndDate: "2027-04-15",
++    finalGameDates: ["2026-10-29", "2026-10-30", "2026-10-31"],
++    expected: [row("2026-10-29"), row("2026-10-30"), row("2026-10-31")],
++    observed: [nst("2026-10-29"), nst("2026-10-30"), nst("2026-10-31")],
++    calendarComplete: true, wgoComplete: true, nstComplete: true,
++    noProgressWindows: 0, writerAuditPresent: true, writerAuditExpected: true, ...overrides });
++}
++
++describe("goalie freshness", () => {
++  it("alerts on a missing middle date even when newest dates match", () => {
++    const result = assess({ observed: [nst("2026-10-29"), nst("2026-10-31")] });
++    expect(result.status).toBe("warning");
++    expect(result.latestCompleteDate).toBe(result.latestExpectedDate);
++    expect(result.missing).toEqual([{ ...row("2026-10-30"), reason: "missing_row" }]);
++  });
++
++  it("alerts on partial date coverage and missing HD without treating zero as missing", () => {
++    const result = assess({ expected: [row("2026-10-29"), row("2026-10-30"), row("2026-10-31"), row("2026-10-31", 2)],
++      observed: [nst("2026-10-29"), nst("2026-10-30"), nst("2026-10-31", 1, null)] });
++    expect(result.expected).toBe(4);
++    expect(result.matched).toBe(2);
++    expect(result.missing.map(value => value.reason)).toEqual(["missing_hd", "missing_row"]);
++    expect(result.perDate.at(-1)).toEqual({ date: "2026-10-31", expected: 2, matched: 0 });
++    expect(assess().status).toBe("healthy");
++  });
++
++  it("uses season and goalie identity in the join, not names or date alone", () => {
++    const result = assess({ observed: [nst("2026-10-29"), nst("2026-10-30"), nst("2026-10-31", 2),
++      { ...nst("2026-10-31"), season: "20252026" }] });
++    expect(result.matched).toBe(2);
++    expect(result.missing[0].goalieId).toBe(1);
++  });
++
++  it("returns unknown for truncated/failed reads and stale WGO", () => {
++    for (const field of ["calendarComplete", "wgoComplete", "nstComplete"] as const) {
++      const result = assess({ [field]: false });
++      expect(result.status).toBe("unknown");
++      expect(result.expected).toBeNull();
++    }
++    expect(assess({ expected: [row("2026-10-29"), row("2026-10-30")] }).status).toBe("unknown");
++  });
++
++  it("keeps missing audits separate from independently observed healthy coverage", () => {
++    const result = assess({ writerAuditPresent: false });
++    expect(result.status).toBe("healthy");
++    expect(result.warnings).toContain("No acknowledged goalie writer audit in the expected window.");
++    expect(assess({ writerAuditPresent: false, writerAuditExpected: false }).warnings).toEqual([]);
++  });
++
++  it("escalates persistent gaps or two no-progress windows", () => {
++    expect(assess({ observed: [nst("2026-10-30"), nst("2026-10-31")] }).status).toBe("critical");
++    expect(assess({ observed: [nst("2026-10-29"), nst("2026-10-30")], noProgressWindows: 2 }).status).toBe("critical");
++    expect(assess({ observed: [], now: new Date("2026-11-01T12:40:00Z") }).status).toBe("not_due");
++  });
++
++  it("deduplicates identical keys but rejects conflicting or invalid NST evidence", () => {
++    expect(assess({ observed: [nst("2026-10-29"), nst("2026-10-30"), nst("2026-10-31"), nst("2026-10-31")] }).matched).toBe(3);
++    expect(assess({ observed: [nst("2026-10-31"), nst("2026-10-31", 1, 4)] }).status).toBe("unknown");
++    expect(assess({ observed: [nst("2026-10-31", 1, NaN)] }).status).toBe("unknown");
++  });
++
++  it("does not create no-game/offseason lag or include today's unfinished games", () => {
++    expect(assess({ finalGameDates: [], expected: [], observed: [] }).status).toBe("healthy");
++    const result = assess({ expected: [row("2026-10-29"), row("2026-10-30"), row("2026-10-31"), row("2026-11-01")],
++      finalGameDates: ["2026-10-29", "2026-10-30", "2026-10-31", "2026-11-01"] });
++    expect(result.expected).toBe(3);
++    expect(result.status).toBe("healthy");
++    expect(assess({ now: new Date("2026-11-10T13:00:00Z"), regularSeasonEndDate: "2026-10-31" }).cutoffDate).toBe("2026-10-31");
++  });
++
++  it("ignores out-of-window historical outliers without masking recent gaps", () => {
++    const result = assess({ expected: [row("2026-10-10", 2), row("2026-10-29"), row("2026-10-30"), row("2026-10-31")],
++      finalGameDates: ["2026-10-10", "2026-10-29", "2026-10-30", "2026-10-31"] });
++    expect(result.expected).toBe(3);
++    expect(result.status).toBe("healthy");
++  });
++});
+--- /dev/null
++++ b/web/lib/nst/goalieFreshness.server.ts
+@@ -0,0 +1,88 @@
++import type { SupabaseClient } from "@supabase/supabase-js";
++import { readReportSource, reportRowIdentity } from "lib/cron/reportSource";
++import { completedGoalieDate, goalieDateMillis } from "./goalieCatchup";
++import { assessGoalieFreshness, type GoalieFreshness } from "./goalieFreshness";
++
++type Season = { id: number; startDate: string; regularSeasonEndDate: string };
++type Game = { id: number; date: string };
++type WgoRow = { goalie_id: number; date: string; season_id: number; games_played: number | null };
++type NstRow = { player_id: number; date_scraped: string; season: number; hd_shots_against: number | null };
++
++/** Read-only report adapter. Reads at most two season pages plus four pages
++ * per game/WGO/NST source (including verification passes), inside one15s budget.
++ * Matching row images do not establish a transactional database snapshot. */
++export async function readGoalieFreshness(input: {
++  client: SupabaseClient;
++  now: Date;
++  season: { state: "in_season"; seasonId: number } | { state: "off_season" | "unknown" };
++  sourceDeadlineAt: number;
++  writerAuditPresent: boolean;
++  noProgressWindows: number;
++}): Promise<GoalieFreshness> {
++  const cutoff = completedGoalieDate(input.now);
++  const unavailable = (reason: string, status: "unknown" | "not_due" = "unknown"): GoalieFreshness => ({
++    status, checkedAt: input.now.toISOString(), cutoffDate: cutoff, expected: null, matched: null,
++    missing: [], oldestGap: null, latestExpectedDate: null, latestCompleteDate: null, perDate: [], warnings: [reason]
++  });
++  if (input.season.state === "off_season") return unavailable("Seasonal goalie freshness check is paused.", "not_due");
++  if (input.season.state !== "in_season") return unavailable("Current goalie season is unknown.");
++  const seasonId = input.season.seasonId;
++  const deadlineAt = Math.min(input.sourceDeadlineAt, Date.now() + 15_000);
++  if (deadlineAt <= Date.now()) return unavailable("Goalie freshness read budget is exhausted.");
++  const options = { deadlineAt, requestTimeoutMs: 5_000, countMode: "per-pass" as const };
++  try {
++    const seasons = await readReportSource<Season>((from, to, signal, query) => input.client
++      .from("seasons").select("id,startDate,regularSeasonEndDate", { count: query.count })
++      .eq("id", seasonId).order("id").range(from, to).abortSignal(signal),
++    reportRowIdentity, 1, 2, 15_000, options);
++    if (!seasons.complete || seasons.rows.length !== 1) return unavailable("Season bounds could not be completely read.");
++    const season = seasons.rows[0];
++    const endDate = [cutoff, season.regularSeasonEndDate].sort()[0];
++    const end = goalieDateMillis(endDate);
++    const start = Math.max(goalieDateMillis(season.startDate), end - 13 * 86_400_000);
++    if (start > end) return unavailable("No completed regular-season dates are due.", "not_due");
++    const startDate = new Date(start).toISOString().slice(0, 10);
++    const [games, wgo, nst] = await Promise.all([
++      readReportSource<Game>((from, to, signal, query) => input.client
++        .from("games").select("id,date", { count: query.count }).eq("seasonId", seasonId).eq("type", 2)
++        .gte("date", startDate).lte("date", endDate).order("date").order("id")
++        .range(from, to).abortSignal(signal), reportRowIdentity, 500, 4, 15_000, options),
++      readReportSource<WgoRow>((from, to, signal, query) => input.client
++        .from("wgo_goalie_stats").select("goalie_id,date,season_id,games_played", { count: query.count })
++        .eq("season_id", seasonId).gte("date", startDate).lte("date", endDate)
++        .order("date").order("goalie_id").range(from, to).abortSignal(signal),
++      reportRowIdentity, 500, 4, 15_000, options),
++      readReportSource<NstRow>((from, to, signal, query) => input.client
++        .from("nst_gamelog_goalie_all_counts").select("player_id,date_scraped,season,hd_shots_against", { count: query.count })
++        .eq("season", seasonId).gte("date_scraped", startDate).lte("date_scraped", endDate)
++        .order("date_scraped").order("player_id").range(from, to).abortSignal(signal),
++      reportRowIdentity, 500, 4, 15_000, options)
++    ]);
++    if (![games, wgo, nst].every(source => source.complete)) {
++      return unavailable("Game calendar, WGO or NST reads are incomplete; goalie coverage is unknown.");
++    }
++    if (wgo.rows.some(row => !Number.isSafeInteger(row.games_played) || row.games_played! < 0)) {
++      return unavailable("WGO appearance counts are missing or invalid.");
++    }
++    const appearances = wgo.rows.filter(row => row.games_played! > 0);
++    const scheduledByDate = new Map<string, number>();
++    for (const game of games.rows) scheduledByDate.set(game.date, (scheduledByDate.get(game.date) ?? 0) + 1);
++    // At least one goalie for each team is needed before WGO can support a
++    // comparison. This catches stale/empty dates, not every upstream omission.
++    if ([...scheduledByDate].some(([date, count]) =>
++      new Set(appearances.filter(row => row.date === date).map(row => row.goalie_id)).size < 2 * count)) {
++      return unavailable("WGO appearances do not yet cover the scheduled completed-date slate.");
++    }
++    const result = assessGoalieFreshness({ now: input.now, season: String(seasonId),
++      seasonStartDate: season.startDate, regularSeasonEndDate: season.regularSeasonEndDate,
++      finalGameDates: [...scheduledByDate.keys()],
++      expected: appearances.map(row => ({ season: String(row.season_id), goalieId: row.goalie_id, date: row.date })),
++      observed: nst.rows.map(row => ({ season: String(row.season), goalieId: row.player_id, date: row.date_scraped, hdShotsAgainst: row.hd_shots_against })),
++      calendarComplete: true, wgoComplete: true, nstComplete: true,
++      noProgressWindows: input.noProgressWindows, writerAuditPresent: input.writerAuditPresent, writerAuditExpected: true });
++    result.warnings.push("Coverage compares retained WGO appearances with NST; upstream completeness and game finality are not independently verified.");
++    return result;
++  } catch {
++    return unavailable("Goalie freshness source could not be read or validated.");
++  }
++}
+--- /dev/null
++++ b/web/lib/nst/goalieFreshness.server.test.ts
+@@ -0,0 +1,92 @@
++import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
++import type { SupabaseClient } from "@supabase/supabase-js";
++import { readGoalieFreshness } from "./goalieFreshness.server";
++
++const NOW = new Date("2026-11-01T13:00:00Z");
++function fixture() {
++  const rows: Record<string, any[]> = {
++    seasons: [{ id: 20262027, startDate: "2026-10-07", regularSeasonEndDate: "2027-04-15" }],
++    games: [{ id: 1, date: "2026-10-30" }, { id: 2, date: "2026-10-31" }],
++    wgo_goalie_stats: ["2026-10-30", "2026-10-31"].flatMap(date => [1, 2].map(goalie_id => ({ goalie_id, date, season_id: 20262027, games_played: 1 }))),
++    nst_gamelog_goalie_all_counts: ["2026-10-30", "2026-10-31"].flatMap(date_scraped => [1, 2].map(player_id => ({ player_id, date_scraped, season: 20262027, hd_shots_against: 0 })))
++  };
++  const calls: Array<{ table: string; from: number; to: number; signal: AbortSignal; filters: unknown[] }> = [];
++  const fail = new Set<string>();
++  const hang = new Set<string>();
++  const client = { from(table: string) {
++    let from = 0; let to = 0;
++    const filters: unknown[] = [];
++    const chain = {
++      select: () => chain,
++      eq: (...args: unknown[]) => { filters.push(["eq", ...args]); return chain; },
++      gte: (...args: unknown[]) => { filters.push(["gte", ...args]); return chain; },
++      lte: (...args: unknown[]) => { filters.push(["lte", ...args]); return chain; },
++      order: () => chain,
++      range: (a: number, b: number) => { from = a; to = b; return chain; },
++      abortSignal: (signal: AbortSignal) => {
++        calls.push({ table, from, to, signal, filters });
++        if (hang.has(table)) return new Promise<any>(() => {});
++        return Promise.resolve(fail.has(table) ? { data: null, error: { message: "fixture failure" }, count: null }
++          : { data: (rows[table] ?? []).slice(from, to + 1), error: null, count: (rows[table] ?? []).length });
++      }
++    };
++    return chain;
++  } } as unknown as SupabaseClient;
++  return { rows, calls, fail, hang, client };
++}
++function read(client: SupabaseClient, override: Partial<Parameters<typeof readGoalieFreshness>[0]> = {}) {
++  return readGoalieFreshness({ client, now: NOW, season: { state: "in_season", seasonId: 20262027 },
++    sourceDeadlineAt: NOW.getTime() + 180_000, writerAuditPresent: false, noProgressWindows: 0, ...override });
++}
++
++describe("bounded goalie freshness reads", () => {
++  beforeEach(() => { vi.useFakeTimers(); vi.setSystemTime(NOW); });
++  afterEach(() => { vi.useRealTimers(); });
++
++  it("detects a partial middle date independently of a missing writer audit", async () => {
++    const f = fixture();
++    f.rows.nst_gamelog_goalie_all_counts = f.rows.nst_gamelog_goalie_all_counts.filter(row => row.player_id !== 2 || row.date_scraped !== "2026-10-30");
++    const result = await read(f.client);
++    expect(result.status).toBe("warning");
++    expect(result.expected).toBe(4);
++    expect(result.matched).toBe(3);
++    expect(result.latestCompleteDate).toBe("2026-10-31");
++    expect(result.missing[0]).toMatchObject({ date: "2026-10-30", goalieId: 2 });
++    expect(result.warnings.some(value => value.includes("No acknowledged goalie writer audit"))).toBe(true);
++    expect(f.calls).toHaveLength(8); // Two verified reads per source.
++    expect(f.calls.find(value => value.table === "games")?.filters).toContainEqual(["eq", "type", 2]);
++    expect(f.calls.find(value => value.table === "nst_gamelog_goalie_all_counts")?.filters).toContainEqual(["lte", "date_scraped", "2026-10-31"]);
++  });
++
++  it("returns unknown for stale WGO or any failed source", async () => {
++    const stale = fixture(); stale.rows.wgo_goalie_stats.pop();
++    expect((await read(stale.client)).status).toBe("unknown");
++    const failed = fixture(); failed.fail.add("nst_gamelog_goalie_all_counts");
++    expect((await read(failed.client)).status).toBe("unknown");
++    expect(failed.calls.filter(call => call.table === "nst_gamelog_goalie_all_counts")).toHaveLength(2);
++  });
++
++  it("fails closed at page limits rather than reporting partial enumeration healthy", async () => {
++    const f = fixture();
++    f.rows.nst_gamelog_goalie_all_counts = Array.from({ length: 2001 }, (_, index) => ({ player_id: index + 1, date_scraped: "2026-10-31", season: 20262027, hd_shots_against: 0 }));
++    expect((await read(f.client)).status).toBe("unknown");
++    expect(f.calls.filter(call => call.table === "nst_gamelog_goalie_all_counts")).toHaveLength(4);
++  });
++
++  it("bounds hung reads even if a query ignores AbortSignal", async () => {
++    const f = fixture(); f.hang.add("games");
++    const pending = read(f.client, { sourceDeadlineAt: NOW.getTime() + 7000 });
++    await vi.runAllTimersAsync();
++    expect((await pending).status).toBe("unknown");
++    expect(Date.now() - NOW.getTime()).toBeLessThanOrEqual(7000);
++    expect(f.calls.filter(call => call.table === "games").every(call => call.signal.aborted)).toBe(true);
++  });
++
++  it("avoids IO when the season is paused, unknown, or the report budget is gone", async () => {
++    const f = fixture();
++    expect((await read(f.client, { season: { state: "off_season" } })).status).toBe("not_due");
++    expect((await read(f.client, { season: { state: "unknown" } })).status).toBe("unknown");
++    expect((await read(f.client, { sourceDeadlineAt: NOW.getTime() })).status).toBe("unknown");
++    expect(f.calls).toHaveLength(0);
++  });
++});
+--- /dev/null
++++ b/web/lib/nst/goalieCatchup.server.ts
+@@ -0,0 +1,237 @@
++import { NstExecutionLimitError, type NstRequestControl } from "./requestBudget";
++import {
++  acknowledgeGoalieUnit, GOALIE_DATASETS, goalieDateMillis, planGoalieCatchupStep,
++  type GoalieCatchupManifest, type GoalieCompletionReceipt, type GoalieWorkUnit,
++} from "./goalieCatchup";
++
++/** Adapter for the disabled-by-default transactional checkpoint contract.
++ * The caller supplies its server client and fetch/parse-only source. Never retry a write
++ * after losing its acknowledgement; read/reconcile the durable claim instead. */
++export type GoalieCheckpointClient = {
++  rpc(name: string, args: Record<string, unknown>): PromiseLike<{ data: unknown; error: unknown }>;
++};
++export type GoalieSourceResult = {
++  rows: readonly Record<string, unknown>[];
++  parsedRows: number;
++  mappedRows: number;
++  validatedEmpty: boolean;
++  sourceFingerprint: string;
++};
++export type GoalieCatchupResult = {
++  status: "complete" | "progress" | "deferred" | "held";
++  scope: string;
++  committedUnitKeys: string[];
++  attemptsUsed: number;
++  requiresReview: boolean;
++  holdAcknowledged: boolean | null;
++  reason: string | null;
++};
++
++const HASH = /^[a-f0-9]{64}$/;
++const UUID = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
++const object = (value: unknown): Record<string, any> | null =>
++  value !== null && typeof value === "object" && !Array.isArray(value) ? value as Record<string, any> : null;
++const sameKeys = (left: unknown, right: readonly string[]) => Array.isArray(left) &&
++  left.length === right.length && left.every((key, index) => key === right[index]);
++
++function manifestFrom(value: unknown, scope: string): GoalieCatchupManifest {
++  const manifest = object(value);
++  if (!manifest || manifest.version !== 1 || manifest.scope !== scope || !HASH.test(scope) ||
++      !/^\d{8}$/.test(manifest.season) || typeof manifest.sourceVersion !== "string" || !manifest.sourceVersion.trim() ||
++      !Number.isSafeInteger(manifest.plannedRequestCount) || manifest.plannedRequestCount < 0 ||
++      !Array.isArray(manifest.units) || manifest.units.length > 140) throw new Error("Invalid checkpoint manifest.");
++  const start = goalieDateMillis(manifest.startDate);
++  const end = goalieDateMillis(manifest.endDate);
++  const expectedUnits = Math.max(0, (end - start) / 86_400_000 + 1) * GOALIE_DATASETS.length;
++  if (end - start > 13 * 86_400_000 || manifest.units.length !== expectedUnits ||
++      manifest.plannedRequestCount > manifest.units.length) throw new Error("Invalid checkpoint aperture.");
++  const keys = new Set<string>();
++  for (const unit of manifest.units) {
++    if (!unit || !GOALIE_DATASETS.includes(unit.dataset) ||
++        !["pending", "complete", "empty_valid", "no_games", "held"].includes(unit.state) ||
++        goalieDateMillis(unit.date) < start || goalieDateMillis(unit.date) > end ||
++        unit.key !== `${manifest.season}/${unit.date}/${unit.dataset}` || keys.has(unit.key)) {
++      throw new Error("Invalid checkpoint unit.");
++    }
++    keys.add(unit.key);
++  }
++  if (manifest.units.filter((unit: GoalieWorkUnit) => unit.state === "pending").length > manifest.plannedRequestCount) {
++    throw new Error("Checkpoint expanded its original request plan.");
++  }
++  return manifest as GoalieCatchupManifest;
++}
++
++async function bounded<T>(operation: (signal: AbortSignal) => PromiseLike<T>, deadlineAt: number, now: () => number): Promise<T> {
++  const remaining = deadlineAt - now();
++  if (!Number.isFinite(remaining) || remaining <= 0) throw new Error("Checkpoint deadline exhausted.");
++  const controller = new AbortController();
++  let timer: ReturnType<typeof setTimeout> | undefined;
++  try {
++    return await Promise.race([operation(controller.signal), new Promise<never>((_, reject) => {
++      timer = setTimeout(() => { controller.abort(); reject(new Error("Checkpoint acknowledgement timed out.")); }, remaining);
++    })]);
++  } finally { clearTimeout(timer); }
++}
++
++async function rpc(client: GoalieCheckpointClient, name: string, args: Record<string, unknown>, deadlineAt: number, now: () => number) {
++  const response = await bounded(signal => {
++    const query = client.rpc(name, args) as ReturnType<GoalieCheckpointClient["rpc"]> &
++      { abortSignal?: (signal: AbortSignal) => ReturnType<GoalieCheckpointClient["rpc"]> };
++    return query.abortSignal ? query.abortSignal(signal) : query;
++  }, Math.min(deadlineAt, now() + 5_000), now);
++  const data = object(response?.data);
++  if (response?.error != null || !data) throw new Error("Checkpoint acknowledgement unavailable.");
++  return data;
++}
++
++export async function ensureGoalieCatchupCohort(input: {
++  client: GoalieCheckpointClient; manifest: GoalieCatchupManifest; deadlineAt: number; now?: () => number;
++}): Promise<{ scope: string; jobId: string | null }> {
++  const manifest = manifestFrom(input.manifest, input.manifest.scope);
++  // This one transaction owns both manifest creation and idempotent enqueue.
++  // No separate runner insert is safe after an uncertain response.
++  const receipt = await rpc(input.client, "nst_goalie_ensure_cohort_v1", { p_manifest: manifest }, input.deadlineAt, input.now ?? Date.now);
++  const needsJob = manifest.units.some(unit => unit.state === "pending");
++  if (receipt.status !== "ensured" || receipt.scope !== manifest.scope ||
++      receipt.plannedRequestCount !== manifest.plannedRequestCount ||
++      (needsJob ? typeof receipt.jobId !== "string" || !UUID.test(receipt.jobId) : receipt.jobId !== null)) {
++    throw new Error("Cohort/enqueue receipt is inconsistent; reconcile before retrying.");
++  }
++  return { scope: receipt.scope, jobId: receipt.jobId };
++}
++
++function validateSource(source: GoalieSourceResult, unit: GoalieWorkUnit, manifest: GoalieCatchupManifest) {
++  if (!source || !Array.isArray(source.rows) || source.rows.length > 100 || !HASH.test(source.sourceFingerprint) ||
++      source.parsedRows !== source.rows.length || source.mappedRows !== source.rows.length ||
++      (source.rows.length === 0 && source.validatedEmpty !== true)) throw new Error("Source or identity evidence is incomplete.");
++  const ids = new Set<number>();
++  for (const row of source.rows) {
++    if (!object(row) || !Number.isSafeInteger(row.player_id) || Number(row.player_id) <= 0 ||
++        row.date_scraped !== unit.date || String(row.season) !== manifest.season || ids.has(Number(row.player_id)) ||
++        typeof row.player_name !== "string" || !row.player_name.trim() || typeof row.team !== "string" || !row.team.trim() ||
++        !Number.isSafeInteger(row.gp) || Number(row.gp) <= 0 || typeof row.toi !== "number" || !Number.isFinite(row.toi) || row.toi < 0 ||
++        Object.values(row).some(value => value !== null && typeof value !== "string" &&
++          (typeof value !== "number" || !Number.isFinite(value)))) throw new Error("Output rows have invalid or duplicate identity.");
++    const fields = unit.dataset.endsWith("Counts")
++      ? ["shots_against", "saves", "goals_against", "xg_against", "hd_shots_against", "hd_saves"]
++      : Number(row.toi) > 0 ? ["toi_per_gp", "shots_against_per_60", "saves_per_60", "gaa", "xg_against_per_60", "hd_shots_against_per_60", "hd_saves_per_60"] : [];
++    if (fields.some(field => typeof row[field] !== "number" || !Number.isFinite(row[field]) || Number(row[field]) < 0)) {
++      throw new Error("Source core fields are incomplete.");
++    }
++    ids.add(Number(row.player_id));
++  }
++}
++
++export async function runGoalieCatchupStep(input: {
++  client: GoalieCheckpointClient;
++  scope: string;
++  /** Fetch/parse/map only; this callback must never write output/checkpoints. */
++  source: (unit: GoalieWorkUnit, control: NstRequestControl, signal: AbortSignal) => Promise<GoalieSourceResult>;
++  deadlineAt: number;
++  now?: () => number;
++}): Promise<GoalieCatchupResult> {
++  const now = input.now ?? Date.now;
++  const result: GoalieCatchupResult = { status: "deferred", scope: input.scope, committedUnitKeys: [],
++    attemptsUsed: 0, requiresReview: false, holdAcknowledged: null, reason: null };
++  let manifest: GoalieCatchupManifest;
++  let decision: ReturnType<typeof planGoalieCatchupStep>;
++  try {
++    if (!HASH.test(input.scope)) throw new Error("Invalid cohort scope.");
++    const state = await rpc(input.client, "nst_goalie_read_state_v1", { p_scope: input.scope }, input.deadlineAt, now);
++    manifest = manifestFrom(state.manifest, input.scope);
++    if (!object(state.budget) || typeof state.sharedJobActive !== "boolean" || typeof state.reviewRequired !== "boolean" ||
++        (state.lastDirectJobFinishedAt !== null && typeof state.lastDirectJobFinishedAt !== "string")) throw new Error("Checkpoint state is incomplete.");
++    if (state.reviewRequired) return { ...result, status: "held", requiresReview: true,
++      reason: "A durable claim or unit requires reconciliation, including prior cohorts/days." };
++    decision = planGoalieCatchupStep({ manifest, now: new Date(now()), budget: state.budget,
++      sharedJobActive: state.sharedJobActive, lastDirectJobFinishedAt: state.lastDirectJobFinishedAt });
++  } catch {
++    return { ...result, reason: "Checkpoint state unavailable; no provider work started." };
++  }
++  if (!decision.allowed) return { ...result,
++    status: manifest.units.some(unit => unit.state === "held") ? "held"
++      : decision.reason === "Goalie cohort complete." ? "complete" : "deferred",
++    requiresReview: manifest.units.some(unit => unit.state === "held"), reason: decision.reason };
++
++  let claim: Record<string, any>;
++  const proposedDeadline = Math.min(input.deadlineAt, decision.deadlineAt);
++  try {
++    claim = await rpc(input.client, "nst_goalie_claim_step_v1", { p_scope: input.scope,
++      p_unit_keys: decision.units.map(unit => unit.key), p_max_attempts: decision.maxAttempts,
++      p_deadline_at: new Date(proposedDeadline).toISOString() }, proposedDeadline, now);
++    if (claim.status === "deferred" && claim.scope === input.scope) return { ...result, reason: "Atomic claim deferred; no provider work started." };
++    if (claim.status !== "claimed" || claim.scope !== input.scope || typeof claim.claimId !== "string" || !UUID.test(claim.claimId) ||
++        claim.utcDate !== new Date(now()).toISOString().slice(0, 10) ||
++        !sameKeys(claim.unitKeys, decision.units.map(unit => unit.key)) ||
++        claim.plannedRequestCount !== manifest.plannedRequestCount || claim.attemptsReserved !== decision.maxAttempts ||
++        !Number.isFinite(Date.parse(claim.deadlineAt)) || Date.parse(claim.deadlineAt) > proposedDeadline) throw new Error("Invalid claim receipt.");
++  } catch {
++    return { ...result, status: "held", requiresReview: true, holdAcknowledged: false,
++      reason: "Claim acknowledgement is uncertain; reconcile the durable claim before another attempt." };
++  }
++  const control: NstRequestControl = { deadlineAt: Date.parse(claim.deadlineAt), maxAttempts: claim.attemptsReserved,
++    attemptsStarted: 0, minIntervalMs: decision.minIntervalMs, plannedRequestCount: manifest.plannedRequestCount };
++  const validAccounting = (previous: number) => Number.isSafeInteger(control.attemptsStarted) &&
++    control.attemptsStarted >= previous && control.attemptsStarted <= claim.attemptsReserved &&
++    control.maxAttempts === claim.attemptsReserved && control.plannedRequestCount === manifest.plannedRequestCount &&
++    control.minIntervalMs === decision.minIntervalMs && control.deadlineAt === Date.parse(claim.deadlineAt);
++  const hold = async (reason: string): Promise<GoalieCatchupResult> => {
++    let acknowledged = false;
++    try {
++      const receipt = await rpc(input.client, "nst_goalie_hold_step_v1", { p_scope: input.scope,
++        p_claim_id: claim.claimId, p_reason: reason }, input.deadlineAt, now);
++      acknowledged = receipt.status === "held" && receipt.scope === input.scope && receipt.claimId === claim.claimId;
++    } catch { /* An unacknowledged hold never releases its claim or attempt reservation. */ }
++    return { ...result, status: "held", attemptsUsed: control.attemptsStarted,
++      requiresReview: true, holdAcknowledged: acknowledged, reason };
++  };
++
++  let deferred = false;
++  for (const unit of decision.units) {
++    if (now() + 35_000 >= control.deadlineAt || control.attemptsStarted >= control.maxAttempts) { deferred = true; break; }
++    const previousAttempts = control.attemptsStarted;
++    let source: GoalieSourceResult;
++    try {
++      source = await bounded(signal => input.source(unit, control, signal), control.deadlineAt - 20_000, now);
++      if (!validAccounting(previousAttempts)) throw new Error("Source attempt accounting is invalid.");
++      validateSource(source, unit, manifest);
++    } catch (error) {
++      if (error instanceof NstExecutionLimitError && !error.dispatchStarted && validAccounting(previousAttempts)) { deferred = true; break; }
++      return hold("Source dispatch, parsing or identity evidence is uncertain.");
++    }
++    try {
++      // Output and completion checkpoint must commit in this single RPC.
++      const receipt = await rpc(input.client, "nst_goalie_commit_unit_v1", { p_scope: input.scope,
++        p_claim_id: claim.claimId, p_unit_key: unit.key, p_rows: source.rows,
++        p_source_fingerprint: source.sourceFingerprint, p_validated_empty: source.validatedEmpty,
++        p_parsed_rows: source.parsedRows, p_mapped_rows: source.mappedRows }, control.deadlineAt, now);
++      const status = source.rows.length ? "complete" : "empty_valid";
++      if (receipt.status !== "committed" || receipt.scope !== input.scope || receipt.claimId !== claim.claimId ||
++          receipt.unitKey !== unit.key || receipt.sourceFingerprint !== source.sourceFingerprint ||
++          receipt.completionStatus !== status || !UUID.test(receipt.receiptId ?? "") ||
++          [receipt.parsedRows, receipt.mappedRows, receipt.writtenRows].some(count => count !== source.rows.length) ||
++          (unit.dataset === "allCounts" && receipt.allCountsCoverage !== "complete")) throw new Error("Invalid completion receipt.");
++      const completion: GoalieCompletionReceipt = { season: manifest.season, date: unit.date, dataset: unit.dataset,
++        sourceVersion: manifest.sourceVersion, status, parsedRows: source.parsedRows, mappedRows: source.mappedRows,
++        writtenRows: receipt.writtenRows, outputAcknowledged: true, checkpointAcknowledged: true };
++      manifest = acknowledgeGoalieUnit(manifest, completion, "complete");
++      result.committedUnitKeys.push(unit.key);
++    } catch {
++      return hold("Output/checkpoint acknowledgement is uncertain; do not replay this unit.");
++    }
++  }
++  try {
++    const receipt = await rpc(input.client, "nst_goalie_finish_step_v1", { p_scope: input.scope,
++      p_claim_id: claim.claimId, p_attempts_used: control.attemptsStarted,
++      p_committed_unit_keys: result.committedUnitKeys }, input.deadlineAt, now);
++    if (receipt.status !== "finished" || receipt.scope !== input.scope || receipt.claimId !== claim.claimId ||
++        receipt.attemptsUsed !== control.attemptsStarted || receipt.attemptsCharged !== claim.attemptsReserved || receipt.unusedReleased !== 0 ||
++        !sameKeys(receipt.committedUnitKeys, result.committedUnitKeys)) throw new Error("Invalid budget settlement receipt.");
++  } catch {
++    return hold("Attempt settlement is uncertain; keep the reservation until reconciliation.");
++  }
++  const held = manifest.units.some(unit => unit.state === "held");
++  return { ...result, attemptsUsed: control.attemptsStarted, requiresReview: held,
++    status: deferred ? "deferred" : held ? "held" : manifest.units.some(unit => unit.state === "pending") ? "progress" : "complete",
++    reason: deferred ? "Step budget reached; unstarted units remain pending." : held ? "Persisted units still require review." : null };
++}
+--- /dev/null
++++ b/web/lib/nst/goalieCatchup.server.test.ts
+@@ -0,0 +1,240 @@
++import { afterEach, describe, expect, it, vi } from "vitest";
++import { buildGoalieCatchupManifest, GOALIE_DATASETS, type GoalieCatchupManifest, type GoalieCompletionReceipt, type GoalieWorkUnit } from "./goalieCatchup";
++import { ensureGoalieCatchupCohort, runGoalieCatchupStep, type GoalieCheckpointClient, type GoalieSourceResult } from "./goalieCatchup.server";
++import { NstExecutionLimitError, type NstRequestControl } from "./requestBudget";
++
++const CLAIM = "00000000-0000-4000-8000-000000000001";
++const JOB = "00000000-0000-4000-8000-000000000002";
++const RECEIPT = "00000000-0000-4000-8000-000000000003";
++const FINGERPRINT = "b".repeat(64);
++const NOW = Date.parse("2026-11-01T11:10:00Z");
++
++function manifest(now = NOW, receipts: GoalieCompletionReceipt[] = []) {
++  return buildGoalieCatchupManifest({ season: "20262027", sourceVersion: "fixture-v1", seasonStartDate: "2026-10-27",
++    regularSeasonEndDate: "2027-04-15", startDate: "2026-10-27", now: new Date(now),
++    days: ["2026-10-27", "2026-10-28", "2026-10-29", "2026-10-30", "2026-10-31", "2026-11-01"].map(date => ({ date, calendar: "final", allCounts: "complete" })),
++    receipts, holds: [], readsComplete: true });
++}
++function completion(unit: GoalieWorkUnit): GoalieCompletionReceipt {
++  return { season: "20262027", sourceVersion: "fixture-v1", date: unit.date, dataset: unit.dataset,
++    status: "complete", parsedRows: 1, mappedRows: 1, writtenRows: 1, outputAcknowledged: true, checkpointAcknowledged: true };
++}
++function source(unit: GoalieWorkUnit, control: NstRequestControl): Promise<GoalieSourceResult> {
++  control.attemptsStarted++;
++  return Promise.resolve({ parsedRows: 1, mappedRows: 1, validatedEmpty: false, sourceFingerprint: FINGERPRINT,
++    rows: [{ player_id: 1, player_name: "Fixture Goalie", team: "TOR", date_scraped: unit.date, season: 20262027,
++      gp: 1, toi: 60, shots_against: 20, saves: 19, goals_against: 1, xg_against: 1.1, hd_shots_against: 4, hd_saves: 3,
++      toi_per_gp: 60, shots_against_per_60: 20, saves_per_60: 19, gaa: 1, xg_against_per_60: 1.1,
++      hd_shots_against_per_60: 4, hd_saves_per_60: 3 }] });
++}
++
++/** Model of the required database transactions, not SQL execution evidence. */
++function fixture(initial = manifest()) {
++  const state = { manifest: structuredClone(initial), budget: { utcDate: "2026-11-01", steps: 0, attempts: 0 },
++    sharedJobActive: false, reviewRequired: false, lastDirectJobFinishedAt: null as string | null };
++  let reservation = 0;
++  let active = false;
++  let claimedKeys: string[] = [];
++  let committedKeys: string[] = [];
++  const queued = new Set<string>();
++  const output = new Map<string, readonly Record<string, unknown>[]>();
++  const receipts: GoalieCompletionReceipt[] = [];
++  const faults = { loseClaimAck: false, loseCommitAck: false, loseFinishAck: false, loseHoldAck: false, malformedClaim: false, malformedCommit: false };
++  const rpc = vi.fn(async (name: string, args: Record<string, any>) => {
++    if (name === "nst_goalie_ensure_cohort_v1") {
++      queued.add(args.p_manifest.scope);
++      return { data: { status: "ensured", scope: args.p_manifest.scope, plannedRequestCount: args.p_manifest.plannedRequestCount,
++        jobId: args.p_manifest.units.some((unit: GoalieWorkUnit) => unit.state === "pending") ? JOB : null }, error: null };
++    }
++    if (name === "nst_goalie_read_state_v1") return { data: structuredClone({ ...state, sharedJobActive: active || state.sharedJobActive }), error: null };
++    if (name === "nst_goalie_claim_step_v1") {
++      if (active || state.budget.steps >= 7 || state.budget.attempts + args.p_max_attempts > 60) return { data: { status: "deferred", scope: args.p_scope }, error: null };
++      active = true; reservation = args.p_max_attempts; claimedKeys = [...args.p_unit_keys]; committedKeys = [];
++      state.budget.steps++; state.budget.attempts += reservation;
++      if (faults.loseClaimAck) throw new Error("lost claim acknowledgement");
++      return { data: { status: "claimed", scope: args.p_scope, claimId: CLAIM, utcDate: state.budget.utcDate,
++        deadlineAt: args.p_deadline_at, unitKeys: claimedKeys, plannedRequestCount: state.manifest.plannedRequestCount,
++        attemptsReserved: faults.malformedClaim ? reservation + 1 : reservation }, error: null };
++    }
++    if (name === "nst_goalie_commit_unit_v1") {
++      if (!active || !claimedKeys.includes(args.p_unit_key)) throw new Error("no active unit claim");
++      const unit = state.manifest.units.find(unit => unit.key === args.p_unit_key)!;
++      // One atomic model transition: output and receipt become visible together.
++      output.set(unit.key, args.p_rows);
++      const status = args.p_rows.length ? "complete" : "empty_valid";
++      const receipt = { ...completion(unit), status, parsedRows: args.p_rows.length, mappedRows: args.p_rows.length, writtenRows: args.p_rows.length } as GoalieCompletionReceipt;
++      receipts.push(receipt); committedKeys.push(unit.key);
++      state.manifest = { ...state.manifest, units: state.manifest.units.map(value => value.key === unit.key ? { ...value, state: status } : value) } as GoalieCatchupManifest;
++      if (faults.loseCommitAck) throw new Error("lost output/checkpoint acknowledgement");
++      return { data: { status: "committed", scope: args.p_scope, claimId: CLAIM, unitKey: args.p_unit_key, receiptId: RECEIPT,
++        sourceFingerprint: args.p_source_fingerprint, completionStatus: status, parsedRows: args.p_rows.length,
++        mappedRows: args.p_rows.length, writtenRows: faults.malformedCommit ? -1 : args.p_rows.length, allCountsCoverage: "complete" }, error: null };
++    }
++    if (name === "nst_goalie_hold_step_v1") {
++      if (faults.loseHoldAck) throw new Error("lost hold acknowledgement");
++      state.reviewRequired = true;
++      state.manifest = { ...state.manifest, units: state.manifest.units.map(unit => claimedKeys.includes(unit.key) && unit.state === "pending"
++        ? { ...unit, state: "held", reason: args.p_reason } : unit) };
++      return { data: { status: "held", scope: args.p_scope, claimId: CLAIM }, error: null };
++    }
++    if (name === "nst_goalie_finish_step_v1") {
++      if (faults.loseFinishAck) throw new Error("lost settlement acknowledgement");
++      expect(args.p_committed_unit_keys).toEqual(committedKeys);
++      const unused = 0;
++      state.budget.attempts -= unused; active = false;
++      return { data: { status: "finished", scope: args.p_scope, claimId: CLAIM, attemptsUsed: args.p_attempts_used,
++        attemptsCharged: reservation, unusedReleased: unused, committedUnitKeys: [...committedKeys] }, error: null };
++    }
++    throw new Error(`Unexpected fixture RPC ${name}`);
++  });
++  return { client: { rpc } as GoalieCheckpointClient, rpc, state, faults, queued, output, receipts };
++}
++function execute(f: ReturnType<typeof fixture>, overrides: Partial<Parameters<typeof runGoalieCatchupStep>[0]> = {}) {
++  return runGoalieCatchupStep({ client: f.client, scope: f.state.manifest.scope, source, now: () => NOW, deadlineAt: NOW + 220_000, ...overrides });
++}
++
++afterEach(() => vi.useRealTimers());
++describe("goalie checkpoint adapter", () => {
++  it("requests cohort creation and idempotent enqueue in one transaction", async () => {
++    const f = fixture();
++    const input = { client: f.client, manifest: f.state.manifest, deadlineAt: NOW + 10_000, now: () => NOW };
++    expect(await ensureGoalieCatchupCohort(input)).toEqual({ scope: input.manifest.scope, jobId: JOB });
++    await ensureGoalieCatchupCohort(input);
++    expect(f.queued.size).toBe(1);
++    expect(f.rpc.mock.calls.every(([name]) => name === "nst_goalie_ensure_cohort_v1")).toBe(true);
++  });
++  it("does not dispatch without an acknowledged atomic claim, including racing workers", async () => {
++    const f = fixture(); const fetch = vi.fn(source);
++    const results = await Promise.all([execute(f, { source: fetch }), execute(f, { source: fetch })]);
++    expect(results.map(value => value.status).sort()).toEqual(["deferred", "progress"]);
++    expect(fetch).toHaveBeenCalledTimes(6);
++    expect(f.state.budget).toMatchObject({ steps: 1, attempts: 18 });
++  });
++  it.each(["loseClaimAck", "malformedClaim"] as const)("holds %s without any source dispatch or blind retry", async fault => {
++    const f = fixture(); f.faults[fault] = true; const fetch = vi.fn(source);
++    expect(await execute(f, { source: fetch })).toMatchObject({ status: "held", requiresReview: true, holdAcknowledged: false });
++    expect(await execute(f, { source: fetch })).toMatchObject({ status: "deferred" });
++    expect(fetch).not.toHaveBeenCalled();
++    expect(f.state.budget.attempts).toBe(18);
++  });
++  it.each(["loseCommitAck", "malformedCommit"] as const)("holds %s and never automatically writes that unit twice", async fault => {
++    const f = fixture(); f.faults[fault] = true; const fetch = vi.fn(source);
++    expect(await execute(f, { source: fetch })).toMatchObject({ status: "held", holdAcknowledged: true });
++    expect(f.output.size).toBe(1);
++    await execute(f, { source: fetch });
++    expect(fetch).toHaveBeenCalledTimes(1);
++    expect(f.state.budget.attempts).toBe(18);
++  });
++  it("preserves uncertainty when even the hold acknowledgement is lost", async () => {
++    const f = fixture(); f.faults.loseCommitAck = true; f.faults.loseHoldAck = true;
++    expect(await execute(f)).toMatchObject({ status: "held", requiresReview: true, holdAcknowledged: false });
++    expect(f.state.budget.attempts).toBe(18);
++  });
++  it("commits a validated empty situation receipt durably without inventing output rows", async () => {
++    const first = manifest(); const done = first.units.filter(unit => unit.dataset !== "ppCounts" || unit.date !== "2026-10-27").map(completion);
++    const f = fixture(manifest(NOW, done));
++    const empty = vi.fn(async (_unit: GoalieWorkUnit, control: NstRequestControl) => {
++      control.attemptsStarted++; return { rows: [], parsedRows: 0, mappedRows: 0, validatedEmpty: true, sourceFingerprint: FINGERPRINT };
++    });
++    expect(await execute(f, { source: empty })).toMatchObject({ status: "complete", attemptsUsed: 1 });
++    expect(f.receipts[0]).toMatchObject({ status: "empty_valid", writtenRows: 0 });
++    expect(await execute(f, { source: empty })).toMatchObject({ status: "complete", attemptsUsed: 0 });
++    expect(empty).toHaveBeenCalledTimes(1);
++  });
++  it.each(["identity", "fields", "unvalidated empty", "budget mutation"])("holds invalid %s evidence before an output transaction", async kind => {
++    const f = fixture();
++    const bad = async (unit: GoalieWorkUnit, control: NstRequestControl) => {
++      const data = await source(unit, control);
++      if (kind === "identity") data.rows[0].player_id = null;
++      if (kind === "fields") data.rows[0].hd_shots_against = null;
++      if (kind === "unvalidated empty") { data.rows = []; data.parsedRows = 0; data.mappedRows = 0; }
++      if (kind === "budget mutation") control.maxAttempts++;
++      return data;
++    };
++    expect(await execute(f, { source: bad })).toMatchObject({ status: "held" });
++    expect(f.output.size).toBe(0);
++    expect(f.rpc.mock.calls.some(([name]) => name === "nst_goalie_commit_unit_v1")).toBe(false);
++  });
++  it("settles a proven pre-dispatch deferral without completing the unit", async () => {
++    const f = fixture();
++    const result = await execute(f, { source: async () => { throw new NstExecutionLimitError("shared admission unavailable"); } });
++    expect(result).toMatchObject({ status: "deferred", attemptsUsed: 0, committedUnitKeys: [], requiresReview: false });
++    expect(f.state.budget).toMatchObject({ steps: 1, attempts: 18 });
++    expect(f.state.manifest.units.every(unit => unit.state === "pending")).toBe(true);
++  });
++  it("does not claim completion or refund attempts after uncertain settlement", async () => {
++    const first = manifest(); const done = first.units.slice(1).map(completion);
++    const f = fixture(manifest(NOW, done)); f.faults.loseFinishAck = true;
++    expect(await execute(f)).toMatchObject({ status: "held", requiresReview: true });
++    expect(f.state.budget.attempts).toBe(3);
++    const fetch = vi.fn(source);
++    expect(await execute(f, { source: fetch })).toMatchObject({ status: "held" });
++    expect(fetch).not.toHaveBeenCalled();
++  });
++  it("rejects an allCounts checkpoint that does not acknowledge expected appearance coverage", async () => {
++    const first = manifest(); const done = first.units.filter(unit => unit.dataset !== "allCounts" || unit.date !== "2026-10-27").map(completion);
++    const f = fixture(manifest(NOW, done)); const original = f.rpc.getMockImplementation()!;
++    f.rpc.mockImplementation(async (name, args) => {
++      const reply: any = await original(name, args);
++      if (name === "nst_goalie_commit_unit_v1") reply.data.allCountsCoverage = "unknown";
++      return reply;
++    });
++    expect(await execute(f)).toMatchObject({ status: "held", requiresReview: true, committedUnitKeys: [] });
++  });
++  it("keeps a prior-day global hold across a new cohort and reset daily budget", async () => {
++    const f = fixture(); f.faults.loseCommitAck = true;
++    await execute(f);
++    const tomorrow = NOW + 86_400_000;
++    f.state.manifest = manifest(tomorrow, f.receipts);
++    f.state.budget = { utcDate: "2026-11-02", steps: 0, attempts: 0 };
++    const fetch = vi.fn(source);
++    expect(await execute(f, { source: fetch, now: () => tomorrow, deadlineAt: tomorrow + 220_000 })).toMatchObject({ status: "held", requiresReview: true });
++    expect(fetch).not.toHaveBeenCalled();
++  });
++  it("bounds a hanging provider and retains the entire uncertain reservation", async () => {
++    vi.useFakeTimers(); vi.setSystemTime(NOW);
++    const f = fixture();
++    const pending = execute(f, { now: Date.now, source: async (_unit, control) => { control.attemptsStarted++; return new Promise(() => {}); } });
++    await vi.runAllTimersAsync();
++    expect(await pending).toMatchObject({ status: "held", holdAcknowledged: true });
++    expect(Date.now() - NOW).toBe(200_000);
++    expect(f.state.budget.attempts).toBe(18);
++  });
++  it("bounds a hanging state read and starts no claim/provider call", async () => {
++    vi.useFakeTimers(); vi.setSystemTime(NOW);
++    const f = fixture(); f.rpc.mockImplementation(async () => new Promise(() => {})); const fetch = vi.fn(source);
++    const pending = execute(f, { now: Date.now, source: fetch }); await vi.runAllTimersAsync();
++    expect(await pending).toMatchObject({ status: "deferred", attemptsUsed: 0 });
++    expect(Date.now() - NOW).toBe(5_000); expect(fetch).not.toHaveBeenCalled(); expect(f.rpc).toHaveBeenCalledTimes(1);
++  });
++  it("retains the original large cohort pacing after progress and enforces the conservative daily reservation cap", async () => {
++    const f = fixture(); const fetch = vi.fn(source);
++    for (let i = 0; i < 4; i++) expect((await execute(f, { source: fetch })).status).toBe("progress");
++    expect(await execute(f, { source: fetch })).toMatchObject({ status: "deferred" });
++    expect(f.state.budget).toMatchObject({ steps: 4, attempts: 60 });
++    expect(fetch).toHaveBeenCalledTimes(24);
++    expect(fetch.mock.calls.every(([, control]) => control.plannedRequestCount === 50 && control.minIntervalMs === 21000)).toBe(true);
++  });
++  it("makes bounded progress on 37 backlog plus 10 new/day without unverified refunds", async () => {
++    const seed = manifest(); const old = seed.units.slice(0, 3).map(completion);
++    const f = fixture(manifest(NOW, old)); // 47 pending = 37 backlog + 10 new.
++    for (let i = 0; i < 4; i++) await execute(f);
++    expect(f.state.manifest.units.filter(unit => unit.state === "pending")).toHaveLength(23);
++    const tomorrow = NOW + 86_400_000;
++    f.state.manifest = manifest(tomorrow, [...old, ...f.receipts]);
++    f.state.budget = { utcDate: "2026-11-02", steps: 0, attempts: 0 };
++    expect(f.state.manifest.units.filter(unit => unit.state === "pending")).toHaveLength(33);
++    await execute(f, { now: () => tomorrow, deadlineAt: tomorrow + 220_000 });
++    expect(f.state.manifest.units.filter(unit => unit.state === "pending")).toHaveLength(13);
++    expect(f.state.budget.attempts).toBe(60);
++    expect(await execute(f, { now: () => tomorrow, deadlineAt: tomorrow + 220_000 })).toMatchObject({ status: "deferred" });
++  });
++  it("rejects an incomplete ten-dataset manifest and a missing RPC before provider work", async () => {
++    const f = fixture(); f.state.manifest.units = f.state.manifest.units.slice(1);
++    const fetch = vi.fn(source);
++    expect(await execute(f, { source: fetch })).toMatchObject({ status: "deferred" });
++    f.rpc.mockResolvedValue({ data: null, error: { code: "PGRST202" } } as any);
++    expect(await execute(f, { source: fetch })).toMatchObject({ status: "deferred" });
++    expect(fetch).not.toHaveBeenCalled();
++  });
++});
+--- /dev/null
++++ b/supabase/migrations/20261101161622_nst_goalie_catchup_v1.sql
+@@ -0,0 +1,401 @@
++-- Local candidate only: prerequisite shared NST admission v1 must already exist.
++-- No schedule or activation. Final-game attestations and exclusive-job clearance
++-- require independently verified lifecycle evidence before enabling this lane.
++begin;
++set local lock_timeout = '5s';
++set local statement_timeout = '30s';
++do $$ begin
++  if to_regprocedure('public.nst_admit_attempt_v1(boolean,integer)') is null then
++    raise exception 'Install and verify shared NST admission v1 first';
++  end if;
++end $$;
++
++create table public.nst_goalie_cohorts (
++  scope text primary key check (scope ~ '^[a-f0-9]{64}$'),
++  season integer not null,
++  source_version text not null check (length(source_version) between 1 and 128),
++  start_date date not null,
++  end_date date not null,
++  planned_request_count integer not null check (planned_request_count between 0 and 140),
++  original_manifest jsonb not null check (jsonb_typeof(original_manifest) = 'object'),
++  source_observation jsonb not null check (jsonb_typeof(source_observation) = 'object'),
++  runner_job_id uuid unique references public.route_runner_jobs(id),
++  created_at timestamptz not null default now(),
++  check (end_date <= start_date + 13)
++);
++
++-- Global unit identity outlives a cohort/day/source version. A new cohort must
++-- not erase an existing held state or create an overlapping in-flight unit.
++create table public.nst_goalie_units (
++  unit_key text primary key,
++  season integer not null,
++  game_date date not null,
++  dataset text not null check (dataset in ('5v5Counts','5v5Rates','evCounts','evRates',
++    'allCounts','allRates','ppCounts','ppRates','pkCounts','pkRates')),
++  state text not null check (state in ('pending','in_flight','complete','empty_valid','no_games','held')),
++  source_version text not null,
++  hold_reason text,
++  updated_at timestamptz not null default now(),
++  unique (season, game_date, dataset),
++  check (unit_key = season::text || '/' || to_char(game_date, 'YYYY-MM-DD') || '/' || dataset),
++  check (state <> 'held' or coalesce(length(trim(hold_reason)), 0) > 0)
++);
++create table public.nst_goalie_cohort_units (
++  scope text not null references public.nst_goalie_cohorts(scope),
++  unit_key text not null references public.nst_goalie_units(unit_key),
++  ordinal integer not null check (ordinal between 1 and 140),
++  primary key (scope, unit_key),
++  unique (scope, ordinal)
++);
++
++-- attempts_charged includes outstanding reservations until positively settled.
++-- Reserving is conservative; only an acknowledged finish may refund unused work.
++create table public.nst_goalie_daily_budget (
++  utc_day date primary key,
++  steps integer not null default 0 check (steps between 0 and 7),
++  attempts_charged integer not null default 0 check (attempts_charged between 0 and 60)
++);
++create table public.nst_goalie_claims (
++  claim_id uuid primary key default gen_random_uuid(),
++  scope text not null references public.nst_goalie_cohorts(scope),
++  utc_day date not null references public.nst_goalie_daily_budget(utc_day),
++  state text not null check (state in ('claimed','finished','held')),
++  unit_keys text[] not null check (cardinality(unit_keys) between 1 and 20),
++  attempts_reserved integer not null check (attempts_reserved between 1 and 60),
++  attempts_used integer check (attempts_used between 0 and attempts_reserved),
++  deadline_at timestamptz not null,
++  claimed_at timestamptz not null default now(),
++  finished_at timestamptz,
++  hold_reason text,
++  check (state <> 'held' or coalesce(length(trim(hold_reason)), 0) > 0),
++  check (state <> 'finished' or (attempts_used is not null and finished_at is not null))
++);
++-- Conservative recovery fence: unresolved execution also blocks a new cohort.
++-- Manual reconciliation is required before transitioning held -> finished.
++create unique index nst_goalie_one_unreconciled_claim
++  on public.nst_goalie_claims ((true)) where state in ('claimed','held');
++
++create table public.nst_goalie_unit_receipts (
++  receipt_id uuid primary key default gen_random_uuid(),
++  scope text not null,
++  unit_key text not null,
++  claim_id uuid not null references public.nst_goalie_claims(claim_id),
++  source_version text not null,
++  status text not null check (status in ('complete','empty_valid')),
++  source_fingerprint text not null check (source_fingerprint ~ '^[a-f0-9]{64}$'),
++  output_fingerprint text not null check (output_fingerprint ~ '^[a-f0-9]{64}$'),
++  parsed_rows integer not null check (parsed_rows between 0 and 100),
++  mapped_rows integer not null,
++  written_rows integer not null,
++  observed_at timestamptz not null,
++  committed_at timestamptz not null default now(),
++  foreign key (scope, unit_key) references public.nst_goalie_cohort_units(scope, unit_key),
++  unique (scope, unit_key, source_version),
++  unique (claim_id, unit_key),
++  check (parsed_rows = mapped_rows and mapped_rows = written_rows),
++  check ((status = 'complete' and written_rows > 0) or (status = 'empty_valid' and written_rows = 0))
++);
++
++alter table public.nst_goalie_cohorts enable row level security;
++alter table public.nst_goalie_units enable row level security;
++alter table public.nst_goalie_cohort_units enable row level security;
++alter table public.nst_goalie_daily_budget enable row level security;
++alter table public.nst_goalie_claims enable row level security;
++alter table public.nst_goalie_unit_receipts enable row level security;
++revoke all on public.nst_goalie_cohorts, public.nst_goalie_units, public.nst_goalie_cohort_units,
++  public.nst_goalie_daily_budget, public.nst_goalie_claims, public.nst_goalie_unit_receipts
++  from public, anon, authenticated;
++grant select, insert, update on public.nst_goalie_cohorts, public.nst_goalie_units,
++  public.nst_goalie_cohort_units, public.nst_goalie_daily_budget, public.nst_goalie_claims,
++  public.nst_goalie_unit_receipts to service_role;
++
++
++-- Control is deliberately disabled. A missing lease is unknown occupancy.
++create table public.nst_goalie_control (
++  singleton boolean primary key default true check (singleton),
++  enabled boolean not null default false,
++  exclusive_until timestamptz,
++  last_direct_finished_at timestamptz,
++  clearance_fingerprint text check (clearance_fingerprint ~ '^[a-f0-9]{64}$')
++);
++insert into public.nst_goalie_control(singleton) values(true);
++-- No automatic producer currently establishes these finality attestations.
++-- Schedule dates or a partial WGO response must never populate this table.
++create table public.nst_goalie_day_evidence (
++  season integer not null,
++  game_date date not null,
++  game_ids bigint[] not null,
++  goalie_ids bigint[] not null,
++  source_fingerprint text not null check(source_fingerprint ~ '^[a-f0-9]{64}$'),
++  observed_at timestamptz not null,
++  primary key(season,game_date),
++  check(cardinality(game_ids) <= 32 and cardinality(goalie_ids) <= 100)
++);
++alter table public.nst_goalie_control enable row level security;
++alter table public.nst_goalie_day_evidence enable row level security;
++revoke all on public.nst_goalie_control,public.nst_goalie_day_evidence from public,anon,authenticated;
++-- Activation/evidence writes are deliberately not granted to the runtime role.
++grant select on public.nst_goalie_control,public.nst_goalie_day_evidence to service_role;
++grant update(singleton) on public.nst_goalie_control to service_role;
++
++create function public.nst_goalie_verify_day_v1(p_season integer,p_date date)
++returns jsonb language plpgsql security invoker set search_path=pg_catalog,public as $$
++declare e public.nst_goalie_day_evidence; games bigint[]; goalies bigint[];
++begin
++  select * into strict e from public.nst_goalie_day_evidence where season=p_season and game_date=p_date;
++  select coalesce(array_agg(id order by id),'{}') into games from public.games
++    where "seasonId"=p_season and date=p_date and type=2;
++  select coalesce(array_agg(goalie_id::bigint order by goalie_id),'{}') into goalies from public.wgo_goalie_stats
++    where season_id=p_season and date=p_date and games_played>0;
++  if games is distinct from e.game_ids or goalies is distinct from e.goalie_ids
++    or e.observed_at > clock_timestamp() or p_date >= (clock_timestamp() at time zone 'America/New_York')::date
++    or exists(select 1 from public.wgo_goalie_stats where season_id=p_season and date=p_date and games_played>0
++      and (games_played<>1 or game_id is null or not(game_id=any(games))))
++    or exists(select 1 from unnest(games) g where (select count(distinct goalie_id) from public.wgo_goalie_stats
++      where season_id=p_season and date=p_date and games_played>0 and game_id=g)<2)
++    or cardinality(goalies)<>(select count(distinct x) from unnest(goalies)x)
++  then raise exception 'Final-game/appearance evidence changed or incomplete'; end if;
++  return to_jsonb(e);
++end $$;
++
++create function public.nst_goalie_ensure_cohort_v1(p_manifest jsonb)
++returns jsonb language plpgsql security invoker set search_path=pg_catalog,public as $$
++declare c public.nst_goalie_cohorts; u jsonb; prior public.nst_goalie_units; evidence jsonb='{}';
++  s text=p_manifest->>'scope'; season integer=(p_manifest->>'season')::integer;
++  first_day date=(p_manifest->>'startDate')::date; last_day date=(p_manifest->>'endDate')::date;
++  d date; n integer=0; job uuid; ds text; expected text[]='{}'; actual text[];
++begin
++  -- Serialize ensure/claim across cohorts, including same scope enqueues.
++  perform 1 from public.nst_goalie_control where singleton for update;
++  select * into c from public.nst_goalie_cohorts where scope=s;
++  if found then
++    if c.original_manifest is distinct from p_manifest then raise exception 'Cohort scope collision'; end if;
++    return jsonb_build_object('status','ensured','scope',s,'plannedRequestCount',c.planned_request_count,'jobId',c.runner_job_id);
++  end if;
++  if jsonb_typeof(p_manifest) is distinct from 'object' or s is null or s !~ '^[a-f0-9]{64}$'
++    or p_manifest->>'version' is distinct from '1' or p_manifest->>'season' !~ '^[0-9]{8}$'
++    or coalesce(length(p_manifest->>'sourceVersion'),0) not between 1 and 128
++    or first_day is null or last_day is null or last_day<first_day or last_day>first_day+13
++    or jsonb_typeof(p_manifest->'units') is distinct from 'array'
++  then raise exception 'Invalid cohort manifest'; end if;
++  for d in select generate_series(first_day,last_day,interval '1 day')::date loop
++    evidence=evidence||jsonb_build_object(d::text,public.nst_goalie_verify_day_v1(season,d));
++    foreach ds in array array['5v5Counts','5v5Rates','evCounts','evRates','allCounts','allRates','ppCounts','ppRates','pkCounts','pkRates'] loop
++      expected=array_append(expected,season::text||'/'||d::text||'/'||ds);
++    end loop;
++  end loop;
++  select array_agg(x->>'key' order by ord) into actual from jsonb_array_elements(p_manifest->'units') with ordinality a(x,ord);
++  if actual is distinct from expected or (p_manifest->>'plannedRequestCount')::integer is distinct from
++    (select count(*)::integer from jsonb_array_elements(p_manifest->'units') x where x->>'state'='pending')
++  then raise exception 'Manifest is not the complete ordered aperture'; end if;
++  insert into public.nst_goalie_cohorts(scope,season,source_version,start_date,end_date,planned_request_count,original_manifest,source_observation)
++    values(s,season,p_manifest->>'sourceVersion',first_day,last_day,(p_manifest->>'plannedRequestCount')::integer,p_manifest,evidence);
++  for u in select value from jsonb_array_elements(p_manifest->'units') loop
++    n=n+1;
++    if u->>'key' is distinct from season::text||'/'||(u->>'date')||'/'||(u->>'dataset')
++      or u->>'state' is null or u->>'state' not in ('pending','complete','empty_valid','no_games','held')
++    then raise exception 'Invalid unit'; end if;
++    select * into prior from public.nst_goalie_units where unit_key=u->>'key';
++    if found then
++      if prior.source_version<>p_manifest->>'sourceVersion' then raise exception 'Source-version change requires reconciliation'; end if;
++      if u->>'state'<>'pending' and u->>'state'<>prior.state then raise exception 'Proposal contradicts durable state'; end if;
++      -- Existing holds, active claims and receipts always win over a proposal.
++    else
++      if u->>'state' in ('complete','empty_valid') then raise exception 'No durable completion receipt'; end if;
++      if u->>'state'='no_games' and jsonb_array_length(evidence->(u->>'date')->'game_ids')<>0 then
++        raise exception 'No-games state conflicts with evidence'; end if;
++      insert into public.nst_goalie_units(unit_key,season,game_date,dataset,state,source_version,hold_reason)
++        values(u->>'key',season,(u->>'date')::date,u->>'dataset',u->>'state',p_manifest->>'sourceVersion',u->>'reason');
++    end if;
++    insert into public.nst_goalie_cohort_units(scope,unit_key,ordinal) values(s,u->>'key',n);
++  end loop;
++  if (p_manifest->>'plannedRequestCount')::integer>0 then
++    -- Enqueue is in the same transaction. Disabled-by-default state prevents NST dispatch.
++    insert into public.route_runner_jobs(route_path,initial_query,next_query,contract)
++      values('/api/v1/db/update-nst-goalies',jsonb_build_object('catchupScope',s),jsonb_build_object('catchupScope',s),null) returning id into job;
++    update public.nst_goalie_cohorts set runner_job_id=job where scope=s;
++  end if;
++  return jsonb_build_object('status','ensured','scope',s,'plannedRequestCount',(p_manifest->>'plannedRequestCount')::integer,'jobId',job);
++end $$;
++
++create function public.nst_goalie_read_state_v1(p_scope text)
++returns jsonb language plpgsql security invoker set search_path=pg_catalog,public as $$
++declare c public.nst_goalie_cohorts; ctl public.nst_goalie_control; units jsonb; budget public.nst_goalie_daily_budget;
++  t timestamptz=clock_timestamp(); day date=(t at time zone 'UTC')::date;
++begin
++  select * into strict c from public.nst_goalie_cohorts where scope=p_scope;
++  select * into strict ctl from public.nst_goalie_control where singleton;
++  select * into budget from public.nst_goalie_daily_budget where utc_day=day;
++  select jsonb_agg(jsonb_build_object('key',u.unit_key,'date',u.game_date,'dataset',u.dataset,
++    'state',case when u.state='in_flight' then 'held' else u.state end,'reason',u.hold_reason) order by cu.ordinal)
++    into units from public.nst_goalie_cohort_units cu join public.nst_goalie_units u using(unit_key) where cu.scope=p_scope;
++  return jsonb_build_object('manifest',c.original_manifest||jsonb_build_object('units',units),
++    'budget',jsonb_build_object('utcDate',day,'steps',coalesce(budget.steps,0),'attempts',coalesce(budget.attempts_charged,0)),
++    'sharedJobActive',not ctl.enabled or ctl.exclusive_until is null or ctl.exclusive_until<t+interval '220 seconds'
++      or ctl.clearance_fingerprint is null or ctl.last_direct_finished_at is null
++      or exists(select 1 from public.nst_goalie_claims where state='claimed'),
++    'lastDirectJobFinishedAt',ctl.last_direct_finished_at,
++    'reviewRequired',exists(select 1 from public.nst_goalie_claims where state='held' or (state='claimed' and deadline_at<=t))
++      or exists(select 1 from public.nst_goalie_units where state='held'));
++end $$;
++
++create function public.nst_goalie_claim_step_v1(p_scope text,p_unit_keys text[],p_max_attempts integer,p_deadline_at timestamptz)
++returns jsonb language plpgsql security invoker set search_path=pg_catalog,public as $$
++declare c public.nst_goalie_cohorts; ctl public.nst_goalie_control; b public.nst_goalie_daily_budget;
++  t timestamptz; day date; tm time; expected text[]; cap integer; id uuid; deadline timestamptz;
++  deferred jsonb=jsonb_build_object('status','deferred','scope',p_scope);
++begin
++  perform 1 from public.nst_goalie_control where singleton for update;
++  t=clock_timestamp(); day=(t at time zone 'UTC')::date; tm=(t at time zone 'UTC')::time;
++  select * into strict ctl from public.nst_goalie_control where singleton;
++  select * into strict c from public.nst_goalie_cohorts where scope=p_scope;
++  if not ctl.enabled or ctl.exclusive_until is null or ctl.exclusive_until<t+interval '220 seconds'
++    or ctl.clearance_fingerprint is null or ctl.last_direct_finished_at is null or ctl.last_direct_finished_at>t-interval '10 minutes'
++    or not ((tm>=time '08:30' and tm<=time '08:31:20') or (tm>=time '11:10' and tm<=time '12:46:20'))
++    or exists(select 1 from public.nst_goalie_claims where state in ('claimed','held'))
++    or exists(select 1 from public.nst_goalie_units where state='held') then return deferred; end if;
++  insert into public.nst_goalie_daily_budget(utc_day) values(day) on conflict do nothing;
++  select * into strict b from public.nst_goalie_daily_budget where utc_day=day for update;
++  if b.steps>=7 or b.attempts_charged>=60 then return deferred; end if;
++  cap=least(case when c.planned_request_count between 1 and 39 then 20 else 6 end,60-b.attempts_charged);
++  select array_agg(unit_key order by ordinal) into expected from (
++    select u.unit_key,cu.ordinal from public.nst_goalie_cohort_units cu join public.nst_goalie_units u using(unit_key)
++      where cu.scope=p_scope and u.state='pending' order by cu.ordinal limit cap) q;
++  if expected is null then return deferred; end if;
++  if p_unit_keys is distinct from expected or p_max_attempts is distinct from least(cardinality(expected)*3,60-b.attempts_charged)
++    or p_deadline_at is null or p_deadline_at<t+interval '35 seconds' then raise exception 'Invalid claim proposal'; end if;
++  deadline=least(p_deadline_at,t+interval '220 seconds');
++  insert into public.nst_goalie_claims(scope,utc_day,state,unit_keys,attempts_reserved,deadline_at,claimed_at)
++    values(p_scope,day,'claimed',expected,p_max_attempts,deadline,t) returning claim_id into id;
++  update public.nst_goalie_daily_budget set steps=steps+1,attempts_charged=attempts_charged+p_max_attempts where utc_day=day;
++  update public.nst_goalie_units set state='in_flight',updated_at=t where unit_key=any(expected);
++  return jsonb_build_object('status','claimed','scope',p_scope,'claimId',id,'utcDate',day,'unitKeys',expected,
++    'plannedRequestCount',c.planned_request_count,'attemptsReserved',p_max_attempts,'deadlineAt',deadline);
++end $$;
++
++create function public.nst_goalie_commit_unit_v1(p_scope text,p_claim_id uuid,p_unit_key text,p_rows jsonb,
++  p_source_fingerprint text,p_validated_empty boolean,p_parsed_rows integer,p_mapped_rows integer)
++returns jsonb language plpgsql security invoker set search_path=pg_catalog,public as $$
++declare cl public.nst_goalie_claims; u public.nst_goalie_units; receipt public.nst_goalie_unit_receipts;
++  evidence jsonb; row jsonb; field text; cols text; updates text; table_name text; fields text[];
++  count_rows integer; written integer; ids bigint[]; stored_ids jsonb; output_hash text; t timestamptz=clock_timestamp();
++begin
++  select * into strict cl from public.nst_goalie_claims where claim_id=p_claim_id and scope=p_scope for update;
++  select * into strict u from public.nst_goalie_units where unit_key=p_unit_key;
++  if p_unit_key is null or not(p_unit_key=any(cl.unit_keys)) or jsonb_typeof(p_rows) is distinct from 'array'
++    or p_source_fingerprint is null or p_source_fingerprint !~ '^[a-f0-9]{64}$' then raise exception 'Invalid unit payload'; end if;
++  count_rows=jsonb_array_length(p_rows);
++  if count_rows>100 or p_parsed_rows is distinct from count_rows or p_mapped_rows is distinct from count_rows
++    or (count_rows=0 and p_validated_empty is distinct from true) then raise exception 'Incomplete parse/map evidence'; end if;
++  output_hash=encode(sha256(convert_to(p_rows::text,'UTF8')),'hex');
++  select * into receipt from public.nst_goalie_unit_receipts where claim_id=p_claim_id and unit_key=p_unit_key;
++  if found then
++    if receipt.output_fingerprint<>output_hash or receipt.source_fingerprint<>p_source_fingerprint then
++      raise exception 'Inconsistent duplicate commit'; end if;
++  else
++    if cl.state<>'claimed' or cl.deadline_at<=t or u.state<>'in_flight' then raise exception 'Claim is not live'; end if;
++    evidence=public.nst_goalie_verify_day_v1(u.season,u.game_date);
++    table_name=case u.dataset
++      when '5v5Counts' then 'nst_gamelog_goalie_5v5_counts' when '5v5Rates' then 'nst_gamelog_goalie_5v5_rates'
++      when 'evCounts' then 'nst_gamelog_goalie_ev_counts' when 'evRates' then 'nst_gamelog_goalie_ev_rates'
++      when 'allCounts' then 'nst_gamelog_goalie_all_counts' when 'allRates' then 'nst_gamelog_goalie_all_rates'
++      when 'ppCounts' then 'nst_gamelog_goalie_pp_counts' when 'ppRates' then 'nst_gamelog_goalie_pp_rates'
++      when 'pkCounts' then 'nst_gamelog_goalie_pk_counts' when 'pkRates' then 'nst_gamelog_goalie_pk_rates' end;
++    if table_name is null then raise exception 'Unknown dataset'; end if;
++    for row in select value from jsonb_array_elements(p_rows) loop
++      if jsonb_typeof(row) is distinct from 'object' or row->>'date_scraped' is distinct from u.game_date::text
++        or row->>'season' is distinct from u.season::text or coalesce(row->>'player_id','') !~ '^[1-9][0-9]*$'
++        or row->>'gp' is distinct from '1' or coalesce(length(trim(row->>'player_name')),0)=0
++        or coalesce(length(trim(row->>'team')),0)=0 then raise exception 'Invalid row identity'; end if;
++      fields=array['toi'];
++      if right(u.dataset,6)='Counts' then fields=fields||array['shots_against','saves','goals_against','xg_against','hd_shots_against','hd_saves'];
++      elsif (row->>'toi')::numeric>0 then fields=fields||array['toi_per_gp','shots_against_per_60','saves_per_60','gaa','xg_against_per_60','hd_shots_against_per_60','hd_saves_per_60']; end if;
++      foreach field in array fields loop
++        if jsonb_typeof(row->field) is distinct from 'number' or (row->>field)::numeric<0 then raise exception 'Missing core field %',field; end if;
++      end loop;
++      for field in select jsonb_object_keys(row) loop
++        if not exists(select 1 from pg_attribute where attrelid=format('public.%I',table_name)::regclass
++          and attname=field and attnum>0 and not attisdropped)
++          or jsonb_typeof(row->field) not in ('number','string','null') then raise exception 'Unexpected output field'; end if;
++      end loop;
++    end loop;
++    select coalesce(array_agg((r->>'player_id')::bigint order by (r->>'player_id')::bigint),'{}') into ids from jsonb_array_elements(p_rows) r;
++    if cardinality(ids)<>(select count(distinct x) from unnest(ids)x)
++      or exists(select 1 from unnest(ids)x where not(evidence->'goalie_ids' @> to_jsonb(array[x])))
++      or (u.dataset in ('allCounts','allRates') and to_jsonb(ids) is distinct from evidence->'goalie_ids')
++    then raise exception 'Output identity/appearance coverage incomplete'; end if;
++    if count_rows>0 then
++      select string_agg(format('%I',key),',' order by key),
++        string_agg(format('%I=excluded.%I',key,key),',' order by key) filter(where key not in ('player_id','date_scraped'))
++        into cols,updates from (select distinct jsonb_object_keys(value) key from jsonb_array_elements(p_rows)) k;
++      -- Identifier originates only from the fixed dataset map; every column is
++      -- checked against that table. Bound JSONB never becomes SQL source.
++      execute format('insert into public.%I (%s) select %s from jsonb_populate_recordset(null::public.%I,$1) '
++        ||'on conflict(player_id,date_scraped) do update set %s',table_name,cols,cols,table_name,updates) using p_rows;
++      get diagnostics written=row_count;
++    else written=0; end if;
++    if written<>count_rows then raise exception 'Output count differs'; end if;
++    execute format('select coalesce(jsonb_agg(player_id order by player_id),''[]''::jsonb) from public.%I where date_scraped=$1',table_name)
++      into stored_ids using u.game_date;
++    if stored_ids is distinct from to_jsonb(ids) then raise exception 'Stored output has unexplained extra or missing identities'; end if;
++    insert into public.nst_goalie_unit_receipts(scope,unit_key,claim_id,source_version,status,source_fingerprint,output_fingerprint,
++      parsed_rows,mapped_rows,written_rows,observed_at)
++      values(p_scope,p_unit_key,p_claim_id,u.source_version,case when count_rows=0 then 'empty_valid' else 'complete' end,
++        p_source_fingerprint,output_hash,count_rows,count_rows,written,t) returning * into receipt;
++    update public.nst_goalie_units set state=receipt.status,updated_at=t where unit_key=p_unit_key;
++  end if;
++  return jsonb_build_object('status','committed','scope',p_scope,'claimId',p_claim_id,'unitKey',p_unit_key,
++    'receiptId',receipt.receipt_id,'sourceFingerprint',receipt.source_fingerprint,'completionStatus',receipt.status,
++    'parsedRows',receipt.parsed_rows,'mappedRows',receipt.mapped_rows,'writtenRows',receipt.written_rows,
++    'allCountsCoverage',case when u.dataset='allCounts' then 'complete' else null end);
++end $$;
++
++create function public.nst_goalie_finish_step_v1(p_scope text,p_claim_id uuid,p_attempts_used integer,p_committed_unit_keys text[])
++returns jsonb language plpgsql security invoker set search_path=pg_catalog,public as $$
++declare cl public.nst_goalie_claims; committed text[]; t timestamptz=clock_timestamp();
++begin
++  select * into strict cl from public.nst_goalie_claims where claim_id=p_claim_id and scope=p_scope for update;
++  select coalesce(array_agg(k order by ord),'{}') into committed from unnest(cl.unit_keys) with ordinality q(k,ord)
++    where exists(select 1 from public.nst_goalie_unit_receipts where claim_id=p_claim_id and unit_key=k);
++  if committed is distinct from p_committed_unit_keys or p_attempts_used is null
++    or p_attempts_used<cardinality(committed) or p_attempts_used>cl.attempts_reserved then raise exception 'Settlement evidence inconsistent'; end if;
++  if cl.state='finished' then
++    if cl.attempts_used<>p_attempts_used then raise exception 'Inconsistent duplicate settlement'; end if;
++  else
++    if cl.state<>'claimed' or cl.deadline_at<=t then raise exception 'Claim requires reconciliation'; end if;
++    -- The current shared ledger has no claim IDs. Never refund from a caller
++    -- assertion: retain the full reservation, even when fewer attempts report.
++    update public.nst_goalie_claims set state='finished',attempts_used=p_attempts_used,finished_at=t where claim_id=p_claim_id;
++    update public.nst_goalie_units set state='pending',updated_at=t where unit_key=any(cl.unit_keys) and state='in_flight';
++  end if;
++  return jsonb_build_object('status','finished','scope',p_scope,'claimId',p_claim_id,'attemptsUsed',p_attempts_used,
++    'attemptsCharged',cl.attempts_reserved,'unusedReleased',0,'committedUnitKeys',committed);
++end $$;
++
++create function public.nst_goalie_hold_step_v1(p_scope text,p_claim_id uuid,p_reason text)
++returns jsonb language plpgsql security invoker set search_path=pg_catalog,public as $$
++declare cl public.nst_goalie_claims;
++begin
++  select * into strict cl from public.nst_goalie_claims where claim_id=p_claim_id and scope=p_scope for update;
++  if coalesce(length(trim(p_reason)),0) not between 1 and 1000 then raise exception 'Invalid hold reason'; end if;
++  -- A lost finish acknowledgement must not reopen an already settled claim.
++  -- Still persist a review hold globally because the caller cannot prove it.
++  if cl.state='finished' then
++    update public.nst_goalie_units set state='held',hold_reason=p_reason where unit_key=any(cl.unit_keys);
++  else
++    update public.nst_goalie_claims set state='held',hold_reason=p_reason where claim_id=p_claim_id;
++    update public.nst_goalie_units set state='held',hold_reason=p_reason where unit_key=any(cl.unit_keys) and state='in_flight';
++  end if;
++  return jsonb_build_object('status','held','scope',p_scope,'claimId',p_claim_id);
++end $$;
++
++revoke all on function public.nst_goalie_verify_day_v1(integer,date),public.nst_goalie_ensure_cohort_v1(jsonb),
++  public.nst_goalie_read_state_v1(text),public.nst_goalie_claim_step_v1(text,text[],integer,timestamptz),
++  public.nst_goalie_commit_unit_v1(text,uuid,text,jsonb,text,boolean,integer,integer),
++  public.nst_goalie_finish_step_v1(text,uuid,integer,text[]),public.nst_goalie_hold_step_v1(text,uuid,text)
++  from public,anon,authenticated;
++grant execute on function public.nst_goalie_verify_day_v1(integer,date),public.nst_goalie_ensure_cohort_v1(jsonb),
++  public.nst_goalie_read_state_v1(text),public.nst_goalie_claim_step_v1(text,text[],integer,timestamptz),
++  public.nst_goalie_commit_unit_v1(text,uuid,text,jsonb,text,boolean,integer,integer),
++  public.nst_goalie_finish_step_v1(text,uuid,integer,text[]),public.nst_goalie_hold_step_v1(text,uuid,text) to service_role;
++commit;
+--- /dev/null
++++ b/supabase/tests/nst_goalie_catchup_v1.sql
+@@ -0,0 +1,18 @@
++-- Executed only by the isolated fixture harness.
++do $$ declare p record; t record; begin
++  for p in select oid,proname,prosecdef,proconfig from pg_proc where pronamespace='public'::regnamespace and proname like 'nst_goalie_%_v1' loop
++    assert not p.prosecdef, 'Checkpoint RPC must be SECURITY INVOKER';
++    assert p.proconfig @> array['search_path=pg_catalog, public'];
++    assert not has_function_privilege('anon',p.oid,'execute');
++    assert not has_function_privilege('authenticated',p.oid,'execute');
++    assert has_function_privilege('service_role',p.oid,'execute');
++  end loop;
++  for t in select oid,relrowsecurity from pg_class where relnamespace='public'::regnamespace and relname like 'nst_goalie_%' and relkind='r' loop
++    assert t.relrowsecurity;
++    assert not has_table_privilege('anon',t.oid,'select,insert,update,delete');
++    assert not has_table_privilege('authenticated',t.oid,'select,insert,update,delete');
++  end loop;
++  assert not has_column_privilege('service_role','public.nst_goalie_control','enabled','update');
++  assert not has_table_privilege('service_role','public.nst_goalie_day_evidence','insert');
++  assert (select not enabled from public.nst_goalie_control);
++end $$;
+--- /dev/null
++++ b/supabase/tests/nst_goalie_catchup_v1.py
+@@ -0,0 +1,240 @@
++#!/usr/bin/env python3
++"""Disposable PostgreSQL 15 fixture: Unix socket only, no hosted credentials.
++Loads the exact migration first. Positive time-window tests replace ONLY
++clock_timestamp() in RPC bodies with a fixture clock; the exact definitions are
++restored and compared before shutdown. No production migration runner is used.
++"""
++import argparse
++from concurrent.futures import ThreadPoolExecutor
++from datetime import datetime, timezone
++import hashlib
++import json
++import os
++from pathlib import Path
++import re
++import shutil
++import subprocess
++import tempfile
++import time
++import uuid
++import psycopg2
++from psycopg2.extras import Json
++
++ROOT = Path(__file__).resolve().parents[2]
++MIGRATION = ROOT / 'supabase/migrations/20261101161622_nst_goalie_catchup_v1.sql'
++ADMISSION = Path('/Users/tim/Documents/Codex/2026-10-27/task/accepted-local-handoff/sql/20261027_nst_shared_admission_v1.sql')
++PG = Path('/opt/homebrew/opt/postgresql@15/bin')
++LOCK = Path('/private/tmp/fhfh-heavy.lock')
++DATASETS = ['5v5Counts','5v5Rates','evCounts','evRates','allCounts','allRates','ppCounts','ppRates','pkCounts','pkRates']
++NOW = '2026-11-01T11:10:00Z'
++
++
++def main():
++    parser=argparse.ArgumentParser(description=__doc__)
++    parser.add_argument('--output',type=Path,required=True)
++    args=parser.parse_args(); out=args.output.resolve(); out.mkdir(parents=True,exist_ok=False)
++    token=str(uuid.uuid4()); checks=[]; started=False; c=None; sock=None
++    result={'status':'STARTED','hostedCalls':0,'checks':checks,'migrationSha256':hashlib.sha256(MIGRATION.read_bytes()).hexdigest(),
++        'clockFixture':'Only clock_timestamp() in function bodies replaced for deterministic windows; exact definitions restored and compared.'}
++    try: LOCK.mkdir()
++    except FileExistsError:
++        (out/'RESULT.json').write_text(json.dumps({'status':'BLOCKED_HEAVY_LOCK','testsStarted':False})); return 75
++    (LOCK/'owner.json').write_text(json.dumps({'owner':'NST-GOALIE-LOCAL-PG','pid':os.getpid(),'token':token}))
++    env={k:v for k,v in os.environ.items() if k in ['PATH','HOME','USER','LOGNAME','TMPDIR','LANG'] or k.startswith('LC_')}
++    pgpass=out/'empty.pgpass';pgpass.write_text('');pgpass.chmod(0o600)
++    env.update({'TZ':'UTC','PGPASSFILE':str(pgpass),'PGSERVICEFILE':'/dev/null'})
++    data=out/'pgdata'
++    def command(name,argv):
++        with (out/(name+'.log')).open('w') as log:subprocess.run(argv,env=env,stdout=log,stderr=subprocess.STDOUT,check=True,timeout=30)
++    def connect():
++        assert sock.startswith('/tmp/fhfh-nst-goalie-')
++        conn=psycopg2.connect(host=sock,port=55449,user='fixture_owner',dbname='postgres',passfile=str(pgpass),sslmode='disable',connect_timeout=2,
++            options='-c statement_timeout=5000 -c lock_timeout=3000 -c TimeZone=UTC')
++        conn.autocommit=True;return conn
++    def q(sql,params=None,conn=None):
++        with (conn or c).cursor() as cur:
++            cur.execute(sql,params);return cur.fetchall() if cur.description else None
++    def rpc(name,args,conn=None):return q('select public.'+name+'('+','.join(['%s']*len(args))+')',args,conn)[0][0]
++    def fails(work):
++        try:work()
++        except psycopg2.Error:return
++        raise AssertionError('Expected SQL rejection')
++    def check(name,work):
++        work();checks.append({'name':name,'status':'PASS'});print(name+': PASS',flush=True)
++    def reset():
++        q('reset role; truncate public.nst_goalie_unit_receipts,public.nst_goalie_claims,public.nst_goalie_cohort_units,public.nst_goalie_cohorts,public.nst_goalie_units,public.nst_goalie_daily_budget,public.route_runner_jobs cascade')
++        for table in tables:q('truncate public.'+table)
++        q("update public.fixture_clock set at=%s",[NOW])
++        q("update public.nst_goalie_control set enabled=true,exclusive_until='2026-11-01T13:00Z',last_direct_finished_at='2026-11-01T10:50Z',clearance_fingerprint=repeat('e',64)")
++        q('set role service_role')
++    def manifest(days=1,scope='a'*64):
++        dates=['2026-10-'+str(n) for n in range(27,27+days)]
++        units=[{'key':f'20262027/{d}/{ds}','date':d,'dataset':ds,'state':'pending','reason':None} for d in dates for ds in DATASETS]
++        return {'version':1,'scope':scope,'season':'20262027','sourceVersion':'fixture-v1','startDate':dates[0],'endDate':dates[-1],
++            'plannedRequestCount':len(units),'nextUnplannedDate':None,'units':units}
++    def ensure(m):return rpc('nst_goalie_ensure_cohort_v1',[Json(m)])
++    def claim(m,conn=None):
++        state=rpc('nst_goalie_read_state_v1',[m['scope']],conn); remaining=60-state['budget']['attempts']
++        cap=min(20 if m['plannedRequestCount']<40 else 6,remaining)
++        keys=[x['key'] for x in state['manifest']['units'] if x['state']=='pending'][:cap]
++        return rpc('nst_goalie_claim_step_v1',[m['scope'],keys,min(3*len(keys),remaining),'2026-11-01T11:13:40Z'],conn)
++    def rows(key):
++        ds=key.split('/')[-1];base={'date_scraped':key.split('/')[1],'season':20262027,'gp':1,'toi':60}
++        base.update({'shots_against':20,'saves':19,'goals_against':1,'xg_against':1.1,'hd_shots_against':4,'hd_saves':3} if ds.endswith('Counts') else
++            {'toi_per_gp':60,'shots_against_per_60':20,'saves_per_60':19,'gaa':1,'xg_against_per_60':1.1,'hd_shots_against_per_60':4,'hd_saves_per_60':3})
++        return [{**base,'player_id':i,'player_name':f'Fixture {i}','team':'TOR'} for i in [1,2]]
++    def commit(cl,key,payload=None):
++        payload=rows(key) if payload is None else payload
++        return rpc('nst_goalie_commit_unit_v1',[cl['scope'],cl['claimId'],key,Json(payload),'b'*64,not payload,len(payload),len(payload)])
++    def finish(cl,keys,attempts=None):return rpc('nst_goalie_finish_step_v1',[cl['scope'],cl['claimId'],len(keys) if attempts is None else attempts,keys])
++    try:
++        command('initdb',[str(PG/'initdb'),'-D',str(data),'-A','trust','-U','fixture_owner','--no-locale','--encoding=UTF8'])
++        sock=tempfile.mkdtemp(prefix='fhfh-nst-goalie-',dir='/tmp')
++        command('start',[str(PG/'pg_ctl'),'-D',str(data),'-l',str(out/'postgres.log'),'-o',f"-F -p 55449 -k {sock} -h '' -c shared_buffers=16MB -c max_connections=12",'-w','start']);started=True
++        c=connect();assert q('select inet_server_addr() is null')[0][0]
++        result['postgresVersion']=q('show server_version')[0][0]
++        q('create role anon;create role authenticated;create role service_role bypassrls;grant usage on schema public to service_role')
++        baseline=(ROOT/'supabase/migrations/20260716112908_production_schema_baseline.sql').read_text()
++        tables=['nst_gamelog_goalie_'+re.sub(r'(Counts|Rates)$',lambda m:'_'+m[1].lower(),ds) for ds in DATASETS]
++        for table in tables+['games','wgo_goalie_stats']:
++            match=re.search(r'CREATE TABLE public\.'+table+r' \(\n[\s\S]*?\n\);',baseline);assert match,table
++            q(match[0])
++            if table in tables:q('alter table public.'+table+' add primary key(player_id,date_scraped)')
++            q('grant select,insert,update on public.'+table+' to service_role')
++        identity=(ROOT/'supabase/migrations/20260814020808_harden_wgo_game_identity.sql').read_text()
++        for statement in re.findall(r'alter table public\.wgo_goalie_stats[\s\S]*?;',identity):q(statement)
++        # Reuse the exact accepted runner schema, with its ordinary trigger prerequisite.
++        q("create function public.update_updated_at_column() returns trigger language plpgsql as $$ begin new.updated_at=now(); return new; end $$")
++        q((ROOT/'supabase/migrations/20261022133743_route_runner_tables.sql').read_text())
++        fails(lambda:q(MIGRATION.read_text()));q('rollback')
++        assert q("select to_regclass('public.nst_goalie_cohorts')")[0][0] is None
++        checks.append({'name':'Missing shared admission prerequisite rolls back migration','status':'PASS'})
++        assert hashlib.sha256(ADMISSION.read_bytes()).hexdigest()=='aefd3c20f2ff76328ef8b27e19244e438ad69a22ea1f9b5ef3cc1d6068784dce'
++        q(ADMISSION.read_text());q(MIGRATION.read_text())
++        check('Exact migration, RLS and least privileges',lambda:q((ROOT/'supabase/tests/nst_goalie_catchup_v1.sql').read_text()))
++        exact=dict(q("select proname,pg_get_functiondef(oid) from pg_proc where pronamespace='public'::regnamespace and proname like 'nst_goalie_%_v1'"))
++        q("create table public.fixture_clock(at timestamptz);insert into public.fixture_clock values('2026-11-01T11:10Z');grant select on public.fixture_clock to service_role")
++        q('create function public.fixture_now() returns timestamptz language sql as $$ select at from public.fixture_clock $$')
++        for definition in exact.values():q(definition.replace('clock_timestamp()','public.fixture_now()'))
++        for i in range(27,32):
++            d=f'2026-10-{i}';game=2026020000+i
++            q('insert into public.games(id,date,"seasonId",type,"homeTeamId","awayTeamId") values(%s,%s,20262027,2,1,2)',[game,d])
++            for goalie in [1,2]:q('insert into public.wgo_goalie_stats(goalie_id,goalie_name,date,season_id,games_played,game_id) values(%s,%s,%s,20262027,1,%s)',[goalie,f'Fixture {goalie}',d,game])
++            q("insert into public.nst_goalie_day_evidence values(20262027,%s,%s,%s,repeat('d',64),'2026-11-01T10:00Z')",[d,[game],[1,2]])
++        def disabled():
++            q('set role service_role');m=manifest();ensure(m)
++            assert rpc('nst_goalie_read_state_v1',[m['scope']])['sharedJobActive']
++            assert claim(m)['status']=='deferred'
++        check('Default disabled control dispatches nothing',disabled)
++        def ensure_checks():
++            reset();m=manifest();a=ensure(m);assert ensure(m)==a
++            assert q('select count(*) from public.route_runner_jobs')[0][0]==1
++            altered={**m,'sourceVersion':'changed'};fails(lambda:ensure(altered))
++            missing={**m,'scope':'c'*64,'units':m['units'][:-1]};fails(lambda:ensure(missing))
++            q('reset role;delete from public.nst_goalie_day_evidence where game_date=\'2026-10-27\';set role service_role')
++            fails(lambda:ensure({**m,'scope':'d'*64}))
++            q("reset role;insert into public.nst_goalie_day_evidence values(20262027,'2026-10-27',array[2026020027]::bigint[],array[1,2]::bigint[],repeat('d',64),'2026-11-01T10:00Z')")
++        check('Idempotent enqueue, scope collision, aperture and missing finality',ensure_checks)
++        def concurrency():
++            reset();m=manifest(5);ensure(m);one=connect();two=connect()
++            q('set role service_role',conn=one);q('set role service_role',conn=two);one.autocommit=False
++            try:
++                a=claim(m,one)
++                assert a['status']=='claimed',a
++                q('reset role')  # Fixture owner may inspect both session wait events.
++                with ThreadPoolExecutor(max_workers=1) as pool:
++                    future=pool.submit(claim,m,two);end=time.monotonic()+2;waited=False
++                    while time.monotonic()<end:
++                        if q('select wait_event_type from pg_stat_activity where pid=%s',[two.get_backend_pid()])[0][0]=='Lock':waited=True;break
++                        time.sleep(.02)
++                    assert waited;one.commit();b=future.result(3)
++                assert a['status']=='claimed' and b['status']=='deferred'
++                assert q('select steps,attempts_charged from public.nst_goalie_daily_budget')[0]==(1,18)
++            finally:one.rollback();one.close();two.close()
++        check('Two workers serialize on actual PostgreSQL lock; one reservation',concurrency)
++        def commits():
++            reset();m=manifest();ensure(m);cl=claim(m);key=cl['unitKeys'][0]
++            a=commit(cl,key);assert commit(cl,key)==a
++            changed=rows(key);changed[0]['toi']=59;fails(lambda:commit(cl,key,changed))
++            keys=[key]
++            for k in cl['unitKeys'][1:]:
++                commit(cl,k,[] if k.endswith(('ppCounts','ppRates','pkCounts','pkRates')) else None);keys.append(k)
++            assert q("select count(*) from public.nst_goalie_unit_receipts where status='empty_valid'")[0][0]==4
++            a=finish(cl,keys);assert a['attemptsCharged']==30 and a['unusedReleased']==0
++            assert finish(cl,keys)==a;fails(lambda:finish(cl,keys,11))
++            assert q('select attempts_charged from public.nst_goalie_daily_budget')[0][0]==30
++        check('Ten dataset commits, valid empty, idempotency and no unverified refund',commits)
++        def rollback():
++            reset();m=manifest();ensure(m);cl=claim(m);key=cl['unitKeys'][0]
++            q("reset role;create function public.fixture_reject_receipt() returns trigger language plpgsql as $$ begin raise exception 'fixture rejection'; end $$;create trigger fixture_reject before insert on public.nst_goalie_unit_receipts for each row execute function public.fixture_reject_receipt();set role service_role")
++            fails(lambda:commit(cl,key));assert q('select count(*) from public.nst_gamelog_goalie_5v5_counts')[0][0]==0
++            assert q('select count(*) from public.nst_goalie_unit_receipts')[0][0]==0
++            q('reset role;drop trigger fixture_reject on public.nst_goalie_unit_receipts;set role service_role');commit(cl,key)
++        check('Receipt failure rolls back output in same transaction',rollback)
++        def validation():
++            reset();m=manifest();ensure(m);cl=claim(m);key=cl['unitKeys'][4]
++            fails(lambda:commit(cl,key,rows(key)[:1]));fails(lambda:commit(cl,key,[]))
++            bad=rows(key);bad[0]['hd_saves']=None;fails(lambda:commit(cl,key,bad))
++            bad=rows(key);bad[0]['unexpected']=1;fails(lambda:commit(cl,key,bad))
++            bad=rows(key);bad[1]['player_id']=1;fails(lambda:commit(cl,key,bad))
++            bad=rows(key);bad[0]['gp']=2;fails(lambda:commit(cl,key,bad))
++            assert q('select count(*) from public.nst_goalie_unit_receipts')[0][0]==0
++            q("insert into public.nst_gamelog_goalie_all_counts(player_id,date_scraped,season) values(3,'2026-10-27',20262027)")
++            fails(lambda:commit(cl,key))
++            assert q('select count(*) from public.nst_gamelog_goalie_all_counts')[0][0]==1
++            q("reset role;delete from public.nst_gamelog_goalie_all_counts where player_id=3;set role service_role")
++            commit(cl,key)
++        check('All-counts exact keys, missing fields, duplicates and unknown columns rejected',validation)
++        def expiry():
++            reset();m=manifest();ensure(m);cl=claim(m)
++            q("reset role;update public.fixture_clock set at='2026-11-02T11:10Z';set role service_role")
++            assert rpc('nst_goalie_read_state_v1',[m['scope']])['reviewRequired']
++            fails(lambda:commit(cl,cl['unitKeys'][0]));fails(lambda:finish(cl,[],0))
++            rpc('nst_goalie_hold_step_v1',[m['scope'],cl['claimId'],'Unknown worker outcome'])
++            ensure(manifest(scope='c'*64))
++            assert rpc('nst_goalie_read_state_v1',['c'*64])['reviewRequired']
++            assert q('select attempts_charged from public.nst_goalie_daily_budget')[0][0]==30
++        check('Expired/held claim survives day rollover and new cohort',expiry)
++        def bounds():
++            reset();m=manifest(5);ensure(m)
++            for stamp in ['2026-11-01T08:29Z','2026-11-01T08:31:21Z','2026-11-01T10:10Z','2026-11-01T12:46:21Z']:
++                q('reset role;update public.fixture_clock set at=%s;set role service_role',[stamp]);assert claim(m)['status']=='deferred'
++            q('reset role;update public.fixture_clock set at=%s;set role service_role',[NOW])
++            total=0
++            for _ in range(4):
++                cl=claim(m);assert cl['status']=='claimed';keys=cl['unitKeys']
++                for k in keys:commit(cl,k)
++                finish(cl,keys);total+=len(keys)
++            assert total==24 and claim(m)['status']=='deferred'
++            assert q('select steps,attempts_charged from public.nst_goalie_daily_budget')[0]==(4,60)
++            reset();ensure(m);q("reset role;insert into public.nst_goalie_daily_budget values('2026-11-01',7,0);set role service_role");assert claim(m)['status']=='deferred'
++        check('Worker windows, conservative 24-unit/60-reservation cap and seven-step limit',bounds)
++        def no_games_and_changed_sources():
++            reset();m=manifest();q("reset role;insert into public.nst_goalie_day_evidence values(20262027,'2026-10-26','{}','{}',repeat('d',64),'2026-11-01T10:00Z');set role service_role")
++            m={**m,'startDate':'2026-10-26','endDate':'2026-10-26','plannedRequestCount':0,'units':[{**u,'key':u['key'].replace('27','26',1),'date':'2026-10-26','state':'no_games'} for u in m['units']]}
++            # Replace the date, not the season's 27 suffix.
++            for u in m['units']:u['key']='20262027/2026-10-26/'+u['dataset']
++            assert ensure(m)['jobId'] is None
++            reset();m=manifest();ensure(m);cl=claim(m)
++            q("reset role;update public.wgo_goalie_stats set games_played=2 where date='2026-10-27' and goalie_id=1;set role service_role")
++            fails(lambda:commit(cl,cl['unitKeys'][0]))
++            q("reset role;update public.wgo_goalie_stats set games_played=1 where date='2026-10-27' and goalie_id=1;set role service_role")
++        check('Attested no-game day creates no job; changed WGO evidence blocks commit',no_games_and_changed_sources)
++        q('reset role')
++        for definition in exact.values():q(definition)
++        restored=dict(q("select proname,pg_get_functiondef(oid) from pg_proc where pronamespace='public'::regnamespace and proname like 'nst_goalie_%_v1'"));assert restored==exact
++        result['exactFunctionDefinitionsRestored']=True;result['status']='PASS'
++    except BaseException as error:
++        result['status']='FAIL';result['error']=str(error);raise
++    finally:
++        if c:c.close()
++        if started:
++            command('stop',[str(PG/'pg_ctl'),'-D',str(data),'-m','immediate','-w','stop']);result['serverStopped']=True
++            shutil.rmtree(data);result['disposableDataRemoved']=True
++        if sock:shutil.rmtree(sock)
++        if json.loads((LOCK/'owner.json').read_text()).get('token')==token:
++            (LOCK/'owner.json').unlink();LOCK.rmdir();result['ownedLockReleased']=True
++        (out/'RESULT.json').write_text(json.dumps(result,indent=2)+'\n')
++    return 0
++
++if __name__=='__main__':raise SystemExit(main())

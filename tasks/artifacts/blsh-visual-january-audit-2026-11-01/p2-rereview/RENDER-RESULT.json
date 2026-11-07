@@ -1,0 +1,29 @@
+{
+  "cases": [
+    {
+      "id": 8473994,
+      "name": "Jamie Benn",
+      "originalSavedText": "Last game 1 days before the recorded-through date (2026-10-28); stale window; withheld from lists",
+      "renderedAgeText": "Last game 1 day before the recorded-through date (2026-10-28); within the saved seven-day window-age limit.",
+      "score": null,
+      "list": null,
+      "figureCount": 0,
+      "rawDiagnosticUnchanged": true
+    },
+    {
+      "id": 8475253,
+      "name": "Garrett Wilson",
+      "originalSavedText": "Last game 11 days before the recorded-through date (2026-10-28); stale window; withheld from lists",
+      "renderedAgeText": "Last game 11 days before the recorded-through date (2026-10-28); outside the saved seven-day window-age limit.",
+      "score": 43.86735762626921,
+      "list": null,
+      "figureCount": 3,
+      "rawDiagnosticUnchanged": true
+    }
+  ],
+  "allProfilesAgeLabelChecked": 729,
+  "originalRecentUnavailableCasesCorrected": 137,
+  "snapshotObjectUnchanged": true,
+  "captureAgeStillStale": true,
+  "rawSnapshotSHA256": "2f380c2539390f6931ec92ab1d0b1d8cced2b55f5f4cefb8c6e88a694909f2c8"
+}

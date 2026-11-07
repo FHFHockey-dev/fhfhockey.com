@@ -1,0 +1,48 @@
+import { createRequire } from 'node:module';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import { readFile, writeFile } from 'node:fs/promises';
+import path from 'node:path';
+import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
+const here=path.dirname(fileURLToPath(import.meta.url)), require=createRequire(path.resolve(here,'../../../web/package.json'));
+const {chromium}=require('@playwright/test'), sharp=require('sharp'), sha=b=>createHash('sha256').update(b).digest('hex');
+const checks=[],requests=[],errors=[],exports=[];
+const browser=await chromium.launch({executablePath:'/Applications/Chromium.app/Contents/MacOS/Chromium',headless:true,timeout:10000});
+try {
+ const context=await browser.newContext({acceptDownloads:true,viewport:{width:1440,height:1050}});
+ await context.route(/^https?:/,r=>{requests.push(r.request().url());return r.abort();});
+ const page=await context.newPage();page.setDefaultTimeout(10000);page.on('pageerror',e=>errors.push(e.message));
+ await page.goto(pathToFileURL(path.join(here,'preview.html')).href);
+ const svg=page.locator('svg[data-analysis-key]');await svg.waitFor();
+ async function download(label,file){const [e]=await Promise.all([page.waitForEvent('download'),page.getByRole('button',{name:label,exact:true}).click()]);await e.saveAs(path.join(here,file));return readFile(path.join(here,file));}
+ await page.getByLabel('Player',{exact:true}).selectOption('retained');
+ await page.getByLabel('Analysis view',{exact:true}).selectOption('evidence');
+ const details=page.getByLabel('Readable card details');
+ assert.match(await details.innerText(),/recorded 22.85; support-conditioned 24.94/);
+ assert.match(await svg.textContent(),/RETAINED BLSH/);
+ assert.match(await svg.textContent(),/retained mapping reviewed/);
+ assert.match(await svg.textContent(),/stale capture/);
+ assert.match(await details.innerText(),/Finality evidence for 0\/5 rows/);
+ assert.match(await details.innerText(),/49 of 150 PPP/);
+ assert.match(await svg.textContent(),/2026-10-15/);
+ assert.match(await svg.textContent(),/2026-10-24/);
+ const truncated=await svg.locator('[data-evidence-truncated="true"]').count();
+ await page.screenshot({path:path.join(here,'blsh-provenance-desktop-20261101.png'),fullPage:true});
+ assert.equal(truncated,0,'Essential evidence fits exported card');
+ const png=await download('Download analysis PNG','blsh-provenance-20261101.png');
+ const manifest=JSON.parse(await download('Download analysis manifest','blsh-provenance-manifest-20261101.json'));
+ assert.equal(manifest.presentation.blsh.retained.profile.playerId,8476453);
+ const lineage=manifest.presentation.blsh.retained.provenance;
+ assert.equal(lineage.state,'reviewed-retained-only');assert.equal(lineage.currentBinding,false);assert.equal(lineage.captureStale,true);assert.equal(lineage.sourceMap.rows.length,5);assert.equal(lineage.sourceMap.review.scope,'dated-stale-research-only');
+ assert.deepEqual([...lineage.sourceMap.rows.map(r=>r.gameId)].sort(),[...manifest.presentation.snapshot.recent.gameIds].sort());
+ assert.equal(manifest.presentation.blsh.receipt,null);
+ assert.equal(manifest.presentation.blsh.retained.profile.tracks[0].observed,22.85);
+ await page.getByLabel('Window',{exact:true}).selectOption('10');
+ assert.match(await svg.textContent(),/2026-10-15/);assert.match(await svg.textContent(),/recorded 22.85/);
+ await page.setViewportSize({width:320,height:960});
+ assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+ await page.screenshot({path:path.join(here,'blsh-provenance-mobile-20261101.png'),fullPage:true});
+ assert.deepEqual(errors,[]);assert.deepEqual(requests,[]);
+ await writeFile(path.join(here,'BLSH-PROVENANCE-BROWSER-20261101.json'),JSON.stringify({retainedResearch:true,playerId:8476453,actualOwnerSnapshotValues:true,reviewedRetainedLineage:true,currentBinding:false,staleCaptureExplicit:true,unknownFinalityAndBaselineLimitsPreserved:true,separateWindowPreservedOnNhlWindowChange:true,pngSHA256:sha(png),fullEssentialText:true,mobileWidth:320,requests,errors},null,2)+'\n');
+ console.log('Reviewed stale BLSH provenance visible in PNG/manifest/mobile; no current admission');
+} finally {await browser.close();}

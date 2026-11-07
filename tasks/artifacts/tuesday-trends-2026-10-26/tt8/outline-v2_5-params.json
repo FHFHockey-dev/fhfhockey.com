@@ -1,0 +1,234 @@
+{
+  "trace": 768,
+  "out": 384,
+  "blur": 1.4,
+  "alphaThreshold": 0.2,
+  "colorThreshold": 0.3,
+  "colorGradient": "euclidean RGB",
+  "minInteriorStrokePx": 46,
+  "strokeRadiusPx": 7,
+  "strokeDiameterShareOfLogo": {
+    "v1": 0.0273,
+    "v2": 0.0091,
+    "v2_5": 0.0182
+  },
+  "perTeam": {
+    "DAL": {
+      "colorThreshold": 0.2
+    },
+    "SEA": {
+      "colorThreshold": 0.15,
+      "minInteriorStrokePx": 24
+    },
+    "WPG": {
+      "colorThreshold": 0.2
+    },
+    "MIN": {
+      "colorThreshold": 0.2
+    },
+    "UTA": {
+      "colorThreshold": 0.2
+    }
+  },
+  "audit": {
+    "relaxedColorThreshold": 0.15,
+    "relaxedMinStrokePx": 24,
+    "reachPx": 8,
+    "teams": {
+      "ANA": {
+        "relaxedPx": 14011,
+        "lostPx": 0,
+        "lostShare": 0
+      },
+      "BOS": {
+        "relaxedPx": 13062,
+        "lostPx": 0,
+        "lostShare": 0
+      },
+      "BUF": {
+        "relaxedPx": 45691,
+        "lostPx": 0,
+        "lostShare": 0
+      },
+      "CAR": {
+        "relaxedPx": 9061,
+        "lostPx": 23,
+        "lostShare": 0.003
+      },
+      "CBJ": {
+        "relaxedPx": 12730,
+        "lostPx": 77,
+        "lostShare": 0.006
+      },
+      "CGY": {
+        "relaxedPx": 8948,
+        "lostPx": 0,
+        "lostShare": 0
+      },
+      "CHI": {
+        "relaxedPx": 23044,
+        "lostPx": 635,
+        "lostShare": 0.028
+      },
+      "COL": {
+        "relaxedPx": 13314,
+        "lostPx": 416,
+        "lostShare": 0.031
+      },
+      "DAL": {
+        "relaxedPx": 7185,
+        "lostPx": 0,
+        "lostShare": 0
+      },
+      "DET": {
+        "relaxedPx": 14791,
+        "lostPx": 3,
+        "lostShare": 0
+      },
+      "EDM": {
+        "relaxedPx": 14399,
+        "lostPx": 136,
+        "lostShare": 0.009
+      },
+      "FLA": {
+        "relaxedPx": 14246,
+        "lostPx": 247,
+        "lostShare": 0.017
+      },
+      "LAK": {
+        "relaxedPx": 17071,
+        "lostPx": 0,
+        "lostShare": 0
+      },
+      "MIN": {
+        "relaxedPx": 6624,
+        "lostPx": 0,
+        "lostShare": 0
+      },
+      "MTL": {
+        "relaxedPx": 9343,
+        "lostPx": 0,
+        "lostShare": 0
+      },
+      "NJD": {
+        "relaxedPx": 10690,
+        "lostPx": 0,
+        "lostShare": 0
+      },
+      "NSH": {
+        "relaxedPx": 12153,
+        "lostPx": 0,
+        "lostShare": 0
+      },
+      "NYI": {
+        "relaxedPx": 13029,
+        "lostPx": 0,
+        "lostShare": 0
+      },
+      "NYR": {
+        "relaxedPx": 16472,
+        "lostPx": 0,
+        "lostShare": 0
+      },
+      "OTT": {
+        "relaxedPx": 16692,
+        "lostPx": 0,
+        "lostShare": 0
+      },
+      "PHI": {
+        "relaxedPx": 7944,
+        "lostPx": 0,
+        "lostShare": 0
+      },
+      "PIT": {
+        "relaxedPx": 13801,
+        "lostPx": 26,
+        "lostShare": 0.002
+      },
+      "SEA": {
+        "relaxedPx": 6324,
+        "lostPx": 0,
+        "lostShare": 0
+      },
+      "SJS": {
+        "relaxedPx": 11710,
+        "lostPx": 312,
+        "lostShare": 0.027
+      },
+      "STL": {
+        "relaxedPx": 10776,
+        "lostPx": 0,
+        "lostShare": 0
+      },
+      "TBL": {
+        "relaxedPx": 0,
+        "lostPx": 0,
+        "lostShare": 0
+      },
+      "TOR": {
+        "relaxedPx": 12133,
+        "lostPx": 0,
+        "lostShare": 0
+      },
+      "UTA": {
+        "relaxedPx": 8062,
+        "lostPx": 0,
+        "lostShare": 0
+      },
+      "VAN": {
+        "relaxedPx": 14353,
+        "lostPx": 46,
+        "lostShare": 0.003
+      },
+      "VGK": {
+        "relaxedPx": 11124,
+        "lostPx": 76,
+        "lostShare": 0.007
+      },
+      "WPG": {
+        "relaxedPx": 8272,
+        "lostPx": 30,
+        "lostShare": 0.004
+      },
+      "WSH": {
+        "relaxedPx": 6717,
+        "lostPx": 0,
+        "lostShare": 0
+      }
+    }
+  },
+  "coverage": {
+    "ANA": 0.3509,
+    "BOS": 0.3562,
+    "BUF": 0.3897,
+    "CAR": 0.2274,
+    "CBJ": 0.3352,
+    "CGY": 0.2507,
+    "CHI": 0.3752,
+    "COL": 0.3047,
+    "DAL": 0.2012,
+    "DET": 0.3262,
+    "EDM": 0.3438,
+    "FLA": 0.3395,
+    "LAK": 0.3504,
+    "MIN": 0.1856,
+    "MTL": 0.2685,
+    "NJD": 0.2914,
+    "NSH": 0.2597,
+    "NYI": 0.3464,
+    "NYR": 0.4165,
+    "OTT": 0.2738,
+    "PHI": 0.2013,
+    "PIT": 0.2916,
+    "SEA": 0.2156,
+    "SJS": 0.2143,
+    "STL": 0.241,
+    "TBL": 0.1452,
+    "TOR": 0.2644,
+    "UTA": 0.244,
+    "VAN": 0.3461,
+    "VGK": 0.2676,
+    "WPG": 0.2249,
+    "WSH": 0.2064
+  }
+}

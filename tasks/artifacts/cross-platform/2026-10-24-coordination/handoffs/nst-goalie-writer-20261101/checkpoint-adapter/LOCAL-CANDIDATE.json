@@ -1,0 +1,214 @@
+{
+  "atUtc": "2026-11-01T16:35:48.577751+00:00",
+  "branch": "octoberBranch",
+  "head": "80060f9425917402805ba4149e0c5ee65040f7b9",
+  "status": "LOCAL_CHECKPOINT_INTEGRATED_DISABLED_NOT_RELEASE_READY",
+  "files": [
+    {
+      "path": "web/pages/api/v1/db/update-nst-goalies.ts",
+      "sha256": "5820c7315e9ea6f9cbfc87d859fcfb6d99fdfa80249520ba44446065e3fb151a",
+      "changedSinceHandoff": true
+    },
+    {
+      "path": "web/__tests__/pages/api/v1/db/update-nst-goalies.route.test.ts",
+      "sha256": "bf932bebac9dcaf2b9e141774459f25b2886eeca05bcb9e7f58f8553231f4e03",
+      "changedSinceHandoff": true
+    },
+    {
+      "path": "web/lib/cron/nstBurstPlans.ts",
+      "sha256": "a1c7e861420a2b5411b35b3e06d5903df6f76e85ebb78fbda8d0c89893db6584",
+      "changedSinceHandoff": true
+    },
+    {
+      "path": "web/lib/cron/nstBurstPlans.test.ts",
+      "sha256": "8bfcfc351db997bbab3c110e24e01f336f8b263ab32c65f0fa232c9f13524c1a",
+      "changedSinceHandoff": true
+    },
+    {
+      "path": "web/lib/routeRunner/core.ts",
+      "sha256": "b9da294329d4367440dd686c7f596fc0d1eeb360bcbf0c8650460e74664dfba5",
+      "changedSinceHandoff": true
+    },
+    {
+      "path": "web/lib/routeRunner/core.test.ts",
+      "sha256": "4405ddb4a1a52a05f189684b7a979b3e3d030a4ffc8b41fdf8c336c6cfdc5165",
+      "changedSinceHandoff": true
+    },
+    {
+      "path": "web/lib/routeRunner/registry.ts",
+      "sha256": "b35c289f6da30ef7401360e585779c9fb9d2ed4427f136552f41a43ef5431329",
+      "changedSinceHandoff": true
+    },
+    {
+      "path": "web/lib/routeRunner/tick.ts",
+      "sha256": "07362d17947ef02c0a989b7df8089c552b3627cbe83840ecdd277afe96e9eb30",
+      "changedSinceHandoff": false
+    },
+    {
+      "path": "web/lib/routeRunner/store.ts",
+      "sha256": "895d850d59b632b07017ed6b974e5909e3906320be3eb8a4c2fa367ab7cfb033",
+      "changedSinceHandoff": false
+    },
+    {
+      "path": "web/lib/routeRunner/store.test.ts",
+      "sha256": "aed26247e4dec707af664b6ad24f54c2d293f84c72e850d70b54831b2fd71ad9",
+      "changedSinceHandoff": false
+    },
+    {
+      "path": "web/lib/routeRunner/tick.test.ts",
+      "sha256": "bb745c65f6cb1b4ce17b67880d3973c07e5b804807cee3034af04508797c3357",
+      "changedSinceHandoff": false
+    },
+    {
+      "path": "web/pages/api/v1/db/cron-report.ts",
+      "sha256": "2911416b33febc451ecf09dad8417cecf91b52131ac07b670fe010b8882ff6b7",
+      "changedSinceHandoff": true
+    },
+    {
+      "path": "web/__tests__/pages/api/v1/db/cron-report.test.ts",
+      "sha256": "69ca7f3d0a6e58725c8333e3aa13d536e66113033670a31c5a4084aae67e891e",
+      "changedSinceHandoff": true
+    },
+    {
+      "path": "web/components/CronReportEmail/CronAuditEmail.tsx",
+      "sha256": "ba8a2da325c862af015890893e49d9565a1dc9fe7d0506cd3e8246b9b62fb76e",
+      "changedSinceHandoff": true
+    },
+    {
+      "path": "web/__tests__/components/CronReportEmail/CronAuditEmail.test.tsx",
+      "sha256": "4a308ebc82b088973707f165d6a6293f5ce16491fd8367ed5d8992a4bc1c0444",
+      "changedSinceHandoff": true
+    },
+    {
+      "path": "web/lib/nst/goalieCatchup.ts",
+      "sha256": "5e371ce0807553ccedd5250d905fd406a597edb92a57c185c8996d72d16b8f51",
+      "changedSinceHandoff": true
+    },
+    {
+      "path": "web/lib/nst/goalieCatchup.test.ts",
+      "sha256": "f245b2946915df49b7dd8e1bed460a951b7388e0290976b0d1655392df25d9a4",
+      "changedSinceHandoff": true
+    },
+    {
+      "path": "web/lib/nst/goalieFreshness.ts",
+      "sha256": "265f8762c4809f99e33e0d2739545f299b68fbafc8547c8482b87d67d4c547cf",
+      "changedSinceHandoff": true
+    },
+    {
+      "path": "web/lib/nst/goalieFreshness.test.ts",
+      "sha256": "0c89578c9e3bd8e2f3d3405e145e66e791bba170be74aaec0bee7bcc90eab2c6",
+      "changedSinceHandoff": true
+    },
+    {
+      "path": "web/lib/nst/goalieFreshness.server.ts",
+      "sha256": "edc32b9f62c8fd7ca824be7cc1dda9b7a20bdfc0086e68cd21a0b6d61171ac22",
+      "changedSinceHandoff": true
+    },
+    {
+      "path": "web/lib/nst/goalieFreshness.server.test.ts",
+      "sha256": "6e6b6049c3396a2dadc6c77971ba6c1b6d34c4acde5b3301c53eff4c1c146ed0",
+      "changedSinceHandoff": true
+    },
+    {
+      "path": "web/lib/nst/goalieCatchup.server.ts",
+      "sha256": "ea2c528dd9a96adffaa3558607babd26809c8765b07cf709deaf4ce327789917",
+      "changedSinceHandoff": true
+    },
+    {
+      "path": "web/lib/nst/goalieCatchup.server.test.ts",
+      "sha256": "8678bd9292d470baaefcd1c482c85e5f08ff3814d0c22982f32d655fcf2d055b",
+      "changedSinceHandoff": true
+    },
+    {
+      "path": "supabase/migrations/20261101161622_nst_goalie_catchup_v1.sql",
+      "sha256": "e0a14daec09b80332574952869319a45ed5159f812d56ebe66d14676de3a86fd",
+      "changedSinceHandoff": true
+    },
+    {
+      "path": "supabase/tests/nst_goalie_catchup_v1.sql",
+      "sha256": "35ff9a2f49bfc8f109790fc6fbeeb19a253fe0e3f2966386edf8141301fcca80",
+      "changedSinceHandoff": true
+    },
+    {
+      "path": "supabase/tests/nst_goalie_catchup_v1.py",
+      "sha256": "96a32ed45fd7f8f9a3036a3c01fa71affbcf0764c14843a84da65dd3db52279a",
+      "changedSinceHandoff": true
+    }
+  ],
+  "protectedPins": [
+    {
+      "path": "web/lib/cron/reportSource.test.ts",
+      "sha256": "2ae352f0007c348ef09a8c2215314c683af6aeb50da03170fedfc244249fb545",
+      "unchanged": true
+    },
+    {
+      "path": "web/lib/cron/reportSource.ts",
+      "sha256": "24d69a665896c198e0d68335df9392714a8e57e16b6f158fb08f8e0292a5f5cd",
+      "unchanged": true
+    },
+    {
+      "path": "web/lib/nst/client.test.ts",
+      "sha256": "e5bd6b585d7e0c7a2229726116c2ff6534236660e35a3845ba8864675b0a952d",
+      "unchanged": true
+    },
+    {
+      "path": "web/lib/nst/client.ts",
+      "sha256": "f0978a2ad0bcbb8dc6d8ed8074dce627e94c38d3ebbbb758c6d552b145e904d0",
+      "unchanged": true
+    },
+    {
+      "path": "web/lib/nst/requestBudget.test.ts",
+      "sha256": "8bdc68777001bc9ee6b79bdb6dacbc173090f83e752f736f664a274562ded34a",
+      "unchanged": true
+    },
+    {
+      "path": "web/lib/nst/requestBudget.ts",
+      "sha256": "ccbab70aee15aba93818df4ef42d41195eceb39757af0ad3eef3b3dd15437e5a",
+      "unchanged": true
+    },
+    {
+      "path": "web/lib/nst/sharedAdmission.test.ts",
+      "sha256": "b3c4adeec26b9528c8cd993069dfed01c741502506f4e2574197a1b50e9cd5db",
+      "unchanged": true
+    },
+    {
+      "path": "web/lib/nst/sharedAdmission.ts",
+      "sha256": "c93354c62a3493d119014d2a4e0e9518241a84c30c7cd14794b1561b595af10f",
+      "unchanged": true
+    }
+  ],
+  "verification": {
+    "offlineTests": 108,
+    "scopedTypes": "PASS",
+    "scopedLint": "PASS",
+    "postgresScenarioGroups": 11,
+    "postgresVersion": "15.19 (Homebrew)",
+    "sqlClockFixture": "Only clock_timestamp() in function bodies replaced for deterministic windows; exact definitions restored and compared.",
+    "evidence": [
+      "CHECKPOINT-CHECKS.json",
+      "checkpoint-adapter/pg-check-05/RESULT.json"
+    ]
+  },
+  "changedSincePrevious21FileCandidate": [
+    "web/pages/api/v1/db/update-nst-goalies.ts",
+    "web/__tests__/pages/api/v1/db/update-nst-goalies.route.test.ts",
+    "web/lib/routeRunner/core.ts",
+    "web/lib/routeRunner/core.test.ts"
+  ],
+  "remaining": [
+    "Trusted final-game evidence producer and bounded daily cohort preparer",
+    "Shared NST exclusive-job lifecycle proof and exact custody handoff for its producer",
+    "Durable per-dataset/no-progress report wiring",
+    "Shared admission canonical registration/install readback",
+    "Explicit production migration, deploy and schedule approvals"
+  ],
+  "externalActionsThisContinuation": {
+    "hostedDatabase": 0,
+    "providerNst": 0,
+    "pushes": 0,
+    "remoteBuildsDeployments": 0,
+    "scheduleChanges": 0,
+    "localDisposablePostgresOnly": true
+  },
+  "patchSha256": "c0a724a24d66db539a50a0f70244c01441f34a1224f3029b164e78f2a6f200d2"
+}

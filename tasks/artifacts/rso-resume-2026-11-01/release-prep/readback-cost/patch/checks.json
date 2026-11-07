@@ -1,0 +1,72 @@
+{
+  "at": "2026-11-01T21:21:30.023596+00:00",
+  "checks": [
+    {
+      "name": "before-corrected-timers",
+      "exitCode": 1,
+      "expectedExit": 1,
+      "log": "before-corrected-timers.log",
+      "command": [
+        "/usr/local/bin/node",
+        "node_modules/vitest/vitest.mjs",
+        "run",
+        "__tests__/pages/api/v1/start-chart.test.ts",
+        "--maxWorkers=1",
+        "--minWorkers=1",
+        "-t",
+        "bounded context.*aborts stalled"
+      ]
+    },
+    {
+      "name": "targeted",
+      "exitCode": 0,
+      "command": [
+        "/usr/local/bin/node",
+        "node_modules/vitest/vitest.mjs",
+        "run",
+        "__tests__/pages/api/v1/start-chart.test.ts",
+        "--maxWorkers=1",
+        "--minWorkers=1",
+        "-t",
+        "bounded context"
+      ],
+      "log": "targeted.log"
+    },
+    {
+      "name": "route-suite",
+      "exitCode": 0,
+      "command": [
+        "/usr/local/bin/node",
+        "node_modules/vitest/vitest.mjs",
+        "run",
+        "__tests__/pages/api/v1/start-chart.test.ts",
+        "--maxWorkers=1",
+        "--minWorkers=1"
+      ],
+      "log": "route-suite.log"
+    },
+    {
+      "name": "types",
+      "exitCode": 0,
+      "command": [
+        "/usr/local/bin/node",
+        "node_modules/typescript/bin/tsc",
+        "--noEmit",
+        "--project",
+        "tsconfig.rso-bounds.json"
+      ],
+      "log": "types.log"
+    },
+    {
+      "name": "lint",
+      "exitCode": 0,
+      "command": [
+        "/usr/local/bin/node",
+        "node_modules/eslint/bin/eslint.js",
+        "pages/api/v1/start-chart.ts",
+        "__tests__/pages/api/v1/start-chart.test.ts"
+      ],
+      "log": "lint.log"
+    }
+  ]
+}

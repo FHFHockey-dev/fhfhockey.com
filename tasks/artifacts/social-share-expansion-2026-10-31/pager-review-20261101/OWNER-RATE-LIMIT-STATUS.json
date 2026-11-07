@@ -1,0 +1,17 @@
+{
+  "observedAt": "2026-11-01T21:23:03.073645+00:00",
+  "ownerSession": "799e2b6c-f303-4317-8af1-8a92ac6bcb75",
+  "sourceTranscriptSha256": "54e372bbb87c279da5d0d3d3b4b5a89e5dcf2d2704cb79f9c4af3ba6890c6dfb",
+  "latestAssistant": {
+    "timestamp": "2026-11-01T21:05:48.084Z",
+    "stop_reason": "stop_sequence",
+    "error": "rate_limit",
+    "isApiErrorMessage": true,
+    "text": "You've hit your session limit \u00b7 resets 5:20pm (America/New_York)"
+  },
+  "resetUtc": "2026-11-01T22:20:00Z",
+  "incomingMailboxSha256": "51c1b10bdbaf84b9711b6aa89893858a3344e94016dff3de40766f3dbed1cd1f",
+  "packetHeadingPresent": false,
+  "status": "pending owner final candidate/evidence; no denied or uncertain action",
+  "retainedCaptureFinding": "rr30.test.ts retained snapshots and row counts, not full calendar response; rr30.spec.ts omitted matchup-weeks mock; no replacement capture found in inspected owner scratchpad."
+}

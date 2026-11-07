@@ -1,0 +1,9 @@
+{
+  "path": "web/lib/buyLowSellHigh/currentProcessEvidence.server.test.ts",
+  "before_sha256": "fe82f1de79f70576c3708ab565d790cc5448397a7421cabfedb54981414aab6e",
+  "after_sha256": "0e3a7dfdb02b4e6271ddc14371e8f6fcf39f1ab80929fc503bdfa6f44b584a23",
+  "source_gate_sha256_unchanged": "9011207c1d16af7a2834a80b4d19d85d0b772a02093eef822e0dd44a9959af83",
+  "change": "single equality expression; independent Uint8Array.from before copy and all other bytes preserved",
+  "tests": "canonical focused batch: 81 passed / 1 skipped in each of UTC and America/New_York; lint passed",
+  "mapper_edit": "exact second grant completed; see MAPPER-REPAIR.json"
+}

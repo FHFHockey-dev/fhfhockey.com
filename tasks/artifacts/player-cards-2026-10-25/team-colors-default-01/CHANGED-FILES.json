@@ -1,0 +1,12 @@
+[
+  {
+    "path": "web/components/player-cards/PlayerCardShareStudio.tsx",
+    "before": "703c29716a52c18c3560606155474016351f9e080e46f5e603b9bfb71a5abfb4",
+    "after": "c96629b6cc07ec8be06aab2804e0e6f3793650b0e3ed71f692591f5cd9969ad9"
+  },
+  {
+    "path": "web/components/player-cards/PlayerCardShareStudio.test.tsx",
+    "before": "29e6d762119eb5d68eb2c241d04589f5bb1057dfa373354d224012c7eda93ba8",
+    "after": "2fcd04e379852ba7104c03f4ee5df5462ebe3a1de659cf5f2a98d7eaad1afd78"
+  }
+]

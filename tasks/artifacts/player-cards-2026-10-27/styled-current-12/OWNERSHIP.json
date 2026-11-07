@@ -1,0 +1,87 @@
+{
+  "id": "CODEX-PLAYER-CARDS-STYLED12-20261027",
+  "at": "2026-10-27T02:21:25.365201+00:00",
+  "owner_thread": "01a16ec2-f81c-717b-8961-8c3832fdc00f",
+  "status": "FROZEN delivered styled-current12;29tests/TS/lint0warn/nativeHTTP5groups/6PNGs+manifest+shareparity;parentindependentacceptancepending",
+  "source": "Scout explicit styled-current slice; reuse accepted artwork/header/outline in actual card, exact identity/team matching with unavailable fallback",
+  "source_paths": [
+    "web/components/player-cards/HeroPlayerCard.tsx",
+    "web/components/player-cards/PlayerCardShareStudio.tsx",
+    "web/components/player-cards/CurrentPlayerCard.tsx",
+    "web/components/player-cards/CurrentPlayerCardStudio.tsx",
+    "web/components/player-cards/CurrentPlayerCardStudio.test.tsx",
+    "web/components/player-cards/PlayerHeroHeader.tsx",
+    "web/components/player-cards/PlayerArtworkControls.tsx",
+    "web/components/player-cards/usePlayerArtwork.ts",
+    "web/lib/player-cards/currentNhlExport.ts",
+    "web/lib/player-cards/currentArtwork.ts",
+    "web/lib/player-cards/currentArtwork.test.ts",
+    "web/lib/player-cards/shareExport.ts"
+  ],
+  "baseline": [
+    {
+      "path": "web/components/player-cards/HeroPlayerCard.tsx",
+      "sha256": "ed857fb508b0c389a7616f2f9278560541367997dca7749f300868453d4cb067",
+      "absent": false
+    },
+    {
+      "path": "web/components/player-cards/PlayerCardShareStudio.tsx",
+      "sha256": "e98e7676711491e1b46e471b6fea2ef8e3cdcd42c15bb48430dd226c0f541639",
+      "absent": false
+    },
+    {
+      "path": "web/components/player-cards/CurrentPlayerCard.tsx",
+      "sha256": "14b171578ccb4c158ef7486a1c91240a5034f56d91b622e31a9eca6f8d2f2191",
+      "absent": false
+    },
+    {
+      "path": "web/components/player-cards/CurrentPlayerCardStudio.tsx",
+      "sha256": "096790931edf5d3152d8470194606397785dc553a883d6cfacb02739ff92481f",
+      "absent": false
+    },
+    {
+      "path": "web/components/player-cards/CurrentPlayerCardStudio.test.tsx",
+      "sha256": "3b942f47a77c6851257073afedc6dbe21965e7fe494e142f384c6d76d9bc23a7",
+      "absent": false
+    },
+    {
+      "path": "web/components/player-cards/PlayerHeroHeader.tsx",
+      "sha256": null,
+      "absent": true
+    },
+    {
+      "path": "web/components/player-cards/PlayerArtworkControls.tsx",
+      "sha256": null,
+      "absent": true
+    },
+    {
+      "path": "web/components/player-cards/usePlayerArtwork.ts",
+      "sha256": null,
+      "absent": true
+    },
+    {
+      "path": "web/lib/player-cards/currentNhlExport.ts",
+      "sha256": "bcdbb7b40b27434698207f36efc2e26ab40a4beaeb31918acf236a9132c53441",
+      "absent": false
+    },
+    {
+      "path": "web/lib/player-cards/currentArtwork.ts",
+      "sha256": null,
+      "absent": true
+    },
+    {
+      "path": "web/lib/player-cards/currentArtwork.test.ts",
+      "sha256": null,
+      "absent": true
+    },
+    {
+      "path": "web/lib/player-cards/shareExport.ts",
+      "sha256": "1d34f1188bea70585b5a9c3c9bd8f8de20a85fa14f0b7f6327e63287b8bb30c3",
+      "absent": false
+    }
+  ],
+  "artifact_root": "tasks/artifacts/player-cards-2026-10-27/styled-current-12",
+  "head": "7da3e8663338f624564b2bb570e146b4f0b3f2de",
+  "limits": "No new data/image reads; no qualification promotion; no BLSH/shared/auth/Git/deploy/delete/deps; one heavy job; keep09/11 receipts and current preview",
+  "completedAt": "2026-10-27T02:34:01.738199+00:00"
+}

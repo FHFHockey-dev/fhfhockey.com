@@ -1,0 +1,206 @@
+{
+  "schemaVersion": "fhfh.player-research-snapshot.fixtures.v1",
+  "status": "PACKAGED_AND_READBACK_PASS",
+  "generatedAtUTC": "2026-10-27T00:59:40.135231+00:00",
+  "elapsedSeconds": 1.2913827500015032,
+  "fixtures": [
+    {
+      "file": "matthews_pending_hot.json",
+      "kind": "historical_development",
+      "playerId": 8479318,
+      "eventThroughDate": "2023-12-12",
+      "compositeState": "pending_hot",
+      "blshState": "unavailable",
+      "productionP": null,
+      "supportDiscrepancy": null,
+      "sha256": "1e75d5fc6f0e832c38bfb2217c2203cba165da8cfaea2ac540c6a08ae3ff68e4"
+    },
+    {
+      "file": "matthews_confirmed_hot.json",
+      "kind": "historical_development",
+      "playerId": 8479318,
+      "eventThroughDate": "2023-12-27",
+      "compositeState": "confirmed_hot",
+      "blshState": "unavailable",
+      "productionP": null,
+      "supportDiscrepancy": null,
+      "sha256": "de11254822d4f03338c7d53bfd2d0ccbbea323da4a156614590d867156ae476f"
+    },
+    {
+      "file": "matthews_exited_hot.json",
+      "kind": "historical_development",
+      "playerId": 8479318,
+      "eventThroughDate": "2024-01-16",
+      "compositeState": "exited",
+      "blshState": "unavailable",
+      "productionP": null,
+      "supportDiscrepancy": null,
+      "sha256": "d28cd3f2d51328449f70c088a30b532aa4ea8c61547cf4ffc4076f3cba6b5e56"
+    },
+    {
+      "file": "matthews_confirmed_cold.json",
+      "kind": "historical_development",
+      "playerId": 8479318,
+      "eventThroughDate": "2024-03-16",
+      "compositeState": "confirmed_cold",
+      "blshState": "unavailable",
+      "productionP": null,
+      "supportDiscrepancy": null,
+      "sha256": "4dda87f7468d3804e892cfaf1b2180c551e54849dd5f10643f30d0f4d821a2fd"
+    },
+    {
+      "file": "matthews_apr18.json",
+      "kind": "historical_development",
+      "playerId": 8479318,
+      "eventThroughDate": "2024-04-18",
+      "compositeState": "candidate_cancelled",
+      "blshState": "provisional",
+      "productionP": 35.609261180160125,
+      "supportDiscrepancy": 56.858267515481465,
+      "sha256": "0425657a0ab8604e9afaf9f30b889f37cd4acc61c95499b79d7174cc9c2f8dcb"
+    },
+    {
+      "file": "perbix_low_shot_apr18.json",
+      "kind": "historical_development",
+      "playerId": 8480246,
+      "eventThroughDate": "2024-04-18",
+      "compositeState": "normal",
+      "blshState": "measured_process",
+      "productionP": 54.86873315539758,
+      "supportDiscrepancy": 61.59186369954333,
+      "sha256": "c0d03e28b04ae1ebfd2f489721ac1738b716d634e7b24b955fa0542bd517e2e4"
+    },
+    {
+      "file": "luke_hughes_sparse_streak_oct31.json",
+      "kind": "historical_development",
+      "playerId": 8482684,
+      "eventThroughDate": "2023-10-31",
+      "compositeState": "unavailable",
+      "blshState": "measured_process",
+      "productionP": -74.53886122642974,
+      "supportDiscrepancy": -73.79833366512916,
+      "sha256": "0b9ee98de9bfe39e7f22b477bbdc53600602b3e48e81d06e0a0c7310bd8fdde0"
+    },
+    {
+      "file": "necas_cohort_process_apr18.json",
+      "kind": "historical_development",
+      "playerId": 8480039,
+      "eventThroughDate": "2024-04-18",
+      "compositeState": "normal",
+      "blshState": "provisional",
+      "productionP": 64.1215374976603,
+      "supportDiscrepancy": 68.33456132202546,
+      "sha256": "94de24fff217c82cb1b247c0c72fb2eb48cd567703c14802c79c03978a2f7420"
+    },
+    {
+      "file": "gallagher_imputed_process_apr18.json",
+      "kind": "historical_development",
+      "playerId": 8475848,
+      "eventThroughDate": "2024-04-18",
+      "compositeState": "unavailable",
+      "blshState": "provisional",
+      "productionP": -80.36619470527623,
+      "supportDiscrepancy": -78.6940578720885,
+      "sha256": "6dac1fc47696feaa61113e56372671b160954790d29ec162b58a167490c32b96"
+    },
+    {
+      "file": "sparse_reference.json",
+      "kind": "synthetic_contract",
+      "playerId": 9900001,
+      "eventThroughDate": "2023-10-14",
+      "compositeState": "unavailable",
+      "blshState": "unavailable",
+      "productionP": null,
+      "supportDiscrepancy": null,
+      "sha256": "4cdd36e59033f593977c8f327d828278df929548cd7f358e055c723d9e41a4e1"
+    },
+    {
+      "file": "zero_reference_variance.json",
+      "kind": "synthetic_contract",
+      "playerId": 9900001,
+      "eventThroughDate": "2023-10-14",
+      "compositeState": "unavailable",
+      "blshState": "unavailable",
+      "productionP": null,
+      "supportDiscrepancy": null,
+      "sha256": "6fa996c61adbd498b875a416697d19c42dddfed1fbfddba5008f2f8f02b174e3"
+    },
+    {
+      "file": "missing_GS_no_two_track_composite.json",
+      "kind": "synthetic_contract",
+      "playerId": 9900001,
+      "eventThroughDate": "2023-10-14",
+      "compositeState": "unavailable",
+      "blshState": "unavailable",
+      "productionP": null,
+      "supportDiscrepancy": null,
+      "sha256": "8991b05a8325142c938807a17eceecb6bb454b346289836870148e5bcf913a1f"
+    },
+    {
+      "file": "nonappearance_is_censor_not_zero.json",
+      "kind": "synthetic_contract",
+      "playerId": 9900001,
+      "eventThroughDate": "2023-10-20",
+      "compositeState": "censored",
+      "blshState": "unavailable",
+      "productionP": null,
+      "supportDiscrepancy": null,
+      "sha256": "9551d148b503d248efea5222d75b68a822b2414128f293ad5a5c2f82af1fa32a"
+    },
+    {
+      "file": "zero_shots_broad_profile_retained.json",
+      "kind": "synthetic_contract",
+      "playerId": 9900001,
+      "eventThroughDate": "2023-10-14",
+      "compositeState": "normal",
+      "blshState": "provisional",
+      "productionP": 10.0,
+      "supportDiscrepancy": 12.5,
+      "sha256": "20a696dcfb145782637a9108d2b74dc6d7d85ccc554349e2930e9331dd6df24d"
+    },
+    {
+      "file": "no_current_history.json",
+      "kind": "synthetic_contract",
+      "playerId": 9900001,
+      "eventThroughDate": "2023-10-14",
+      "compositeState": "unavailable",
+      "blshState": "unavailable",
+      "productionP": null,
+      "supportDiscrepancy": null,
+      "sha256": "aba480d4eae3d0093fa0437bd46637eccd02fafd3c31dc7714754a121bd1cb23"
+    }
+  ],
+  "fixtureBytes": 494014,
+  "pointRowsRead": 1576,
+  "sources": {
+    "points": {
+      "path": "/Users/tim/Documents/Codex/2026-10-25/task-2/overnight-three-track-v2/points.parquet",
+      "sha256": "1a85b25cfd97254b3b4004a2443c9141dfd39bd894ebc3f4e5ed35fec2e7c5be"
+    },
+    "references": {
+      "path": "/Users/tim/Documents/Codex/2026-10-25/task-2/overnight-three-track-v2/reference-audits.json",
+      "sha256": "6097f8e3e1eac3c0f6c6032d0893e5e3dc36e864aaf7415ced9853eb12560d4b"
+    },
+    "episodes": {
+      "path": "/Users/tim/Documents/Codex/2026-10-25/task-2/overnight-three-track-v2/episodes.json",
+      "sha256": "8d481fd7d410982e70c1d2cf71bf2c5d18f54be55cf27b7ca9206695bd4a9d11"
+    },
+    "detector_config": {
+      "path": "/Users/tim/Documents/Codex/2026-10-25/task-2/overnight-three-track-v2/config-v2.json",
+      "sha256": "a1f3136651474c985768bc187d492850db4742442b46a5447618fdae85969c0a"
+    },
+    "blsh_candidates": {
+      "path": "/Users/tim/Documents/Codex/2026-10-25/task-2/support-conditioned-ranking-v1/run-guarded-v1/CANDIDATES.jsonl",
+      "sha256": "546e129bb9ae0ac6457d9d5d8c41c9eac7dd3b76b49412201141ea58f88701de"
+    }
+  },
+  "allInputHashesUnchanged": true,
+  "modelOrDetectorRuns": 0,
+  "sourceScoresRecalculated": false,
+  "newRemoteReads": 0,
+  "reservedOutcomes": false,
+  "deletions": 0,
+  "productionDetectorSelected": false,
+  "cancelledViewerTouched": false,
+  "liveIssuanceClaimed": false
+}

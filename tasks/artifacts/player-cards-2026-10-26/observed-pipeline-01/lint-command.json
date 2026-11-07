@@ -1,0 +1,13 @@
+{
+  "command": [
+    "npx",
+    "--no-install",
+    "eslint",
+    "lib/player-cards/cardEvidenceVerdict.ts",
+    "lib/player-cards/cardEvidenceVerdict.test.ts"
+  ],
+  "cwd": "/Users/tim/Code/fhfhockey.com/web",
+  "exitCode": 0,
+  "seconds": 1.207,
+  "noGitDir": true
+}

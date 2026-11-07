@@ -1,0 +1,30 @@
+{
+  "gameId": 2026020167,
+  "identityMatches": true,
+  "reportUrl": "https://www.nhl.com/scores/htmlreports/20262027/GS020167.HTM",
+  "reportGameDate": "2026-10-23",
+  "reportedLocalStart": "7:09 MDT",
+  "reportedLocalEnd": "9:58 MDT",
+  "timezoneEvidence": {
+    "venueTimezone": "America/Denver",
+    "venueUTCOffset": "-06:00",
+    "scheduledStartUTC": "2026-10-24T01:00:00Z"
+  },
+  "inferredActualStartMinuteUTC": "2026-10-24T01:09:00.000Z",
+  "inferredActualEndRangeUTC": {
+    "inclusive": "2026-10-24T03:58:00.000Z",
+    "exclusive": "2026-10-24T03:59:00.000Z"
+  },
+  "precision": "minute; AM/PM inferred using the official scheduled evening start",
+  "assumptionsRequiringReview": [
+    "Actual start no earlier than schedule and at most6hours later",
+    "Game end within12hours of actual start"
+  ],
+  "originalCutoff": "2026-10-24T00:00:00.000Z",
+  "originalCutoffBeforeInferredStart": true,
+  "originalCutoffBeforeInferredEndRange": true,
+  "exactEndSecondVerified": false,
+  "admissionChanged": false,
+  "liveActivation": false,
+  "conclusion": "Official end-time evidence located for one game. Review precision/AM-PM conversion before admission. Do not substitute00seconds or ingestion time as exact end."
+}

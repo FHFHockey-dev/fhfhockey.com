@@ -1,0 +1,9 @@
+# R-PYTHON — approved local implementation
+
+Chef approves the exact seven-file scope and behavior in [R-PYTHON-PROPOSAL.md](R-PYTHON-PROPOSAL.md). Owner `/root/c_patreon`, Sol high; Chef Sol xhigh. The original hard rules apply unchanged. Check current scoped diff before edits and preserve the existing web caller's C-F2 wrapper-order change. No subworkers.
+
+Implement the dedicated NST_TEAM_TABLE_SECRET bearer contract for both Python HTTP entries and their authenticated web caller. Preserve direct CLI/provider helper use, existing valid parameter/parser/result semantics and21second aggregate pacing. Deny before dynamic season/database/provider work; missing required parameters after admission should not discover seasons. Recognize only the two explicit structured caller-auth codes as fatal, avoiding repeated requests. Do not create a generic auth framework or reuse NST_KEY/SKO secrets. No real secret is read, generated or changed.
+
+Extend the exact existing Python/web/outcome tests listed in the proposal. Python fixture must deny unmocked network, env-file loading and DB access before delayed API imports; use synthetic credentials only. **Do not run Python, pytest or Python import/dependency checks:** the user authorized only the three web check entrypoints. Implement the concrete reviewable patch first; Chef will request the exact narrow exception after fixture review. Do not use npm as a workaround to launch Python. No installs, manifests, lockfiles, config/env files, schema, schedulers, Git mutation or hosted/provider calls.
+
+Run only the proposed focused web route/outcome test command under current authorization. Record exact files/hashes, failed/revised attempts and what remains unverified. Python and deployed configuration/release evidence remain explicitly not run. Write the handoff only under this lane. Ownership releases after the bounded implementation handoff; sprint continues, without a timed cutoff.

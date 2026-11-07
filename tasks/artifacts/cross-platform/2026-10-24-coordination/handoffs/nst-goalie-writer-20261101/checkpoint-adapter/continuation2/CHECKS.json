@@ -1,0 +1,74 @@
+{
+  "atUtc": "2026-11-01T17:09:25.457039+00:00",
+  "checks": [
+    {
+      "name": "tests",
+      "command": [
+        "npm",
+        "test",
+        "--",
+        "--run",
+        "lib/nst/goaliePreparation.server.test.ts",
+        "lib/nst/goalieFreshness.server.test.ts",
+        "__tests__/pages/api/v1/db/update-nst-goalies.route.test.ts",
+        "__tests__/pages/api/v1/db/cron-report.test.ts",
+        "__tests__/components/CronReportEmail/CronAuditEmail.test.tsx",
+        "lib/nst/jobLifecycle.server.test.ts",
+        "lib/nst/sharedAdmission.test.ts",
+        "lib/nst/client.test.ts",
+        "lib/nst/goalieCatchup.server.test.ts",
+        "__tests__/pages/api/Teams/nst-team-stats.route.test.ts",
+        "__tests__/pages/api/v1/db/update-nst-current-season.test.ts",
+        "__tests__/pages/api/v1/db/update-nst-team-daily.test.ts",
+        "--maxWorkers=1",
+        "--minWorkers=1"
+      ],
+      "exitCode": 0
+    },
+    {
+      "name": "types",
+      "command": [
+        "node",
+        "node_modules/typescript/bin/tsc",
+        "--project",
+        "/Users/tim/Code/fhfhockey.com/tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/continuation2/tsconfig.json"
+      ],
+      "exitCode": 0
+    },
+    {
+      "name": "lint",
+      "command": [
+        "node",
+        "node_modules/eslint/bin/eslint.js",
+        "lib/nst/goaliePreparation.server.ts",
+        "lib/nst/goaliePreparation.server.test.ts",
+        "lib/nst/goalieFreshness.ts",
+        "lib/nst/goalieFreshness.server.ts",
+        "lib/nst/goalieFreshness.server.test.ts",
+        "pages/api/v1/db/update-nst-goalies.ts",
+        "__tests__/pages/api/v1/db/update-nst-goalies.route.test.ts",
+        "pages/api/v1/db/cron-report.ts",
+        "__tests__/pages/api/v1/db/cron-report.test.ts",
+        "components/CronReportEmail/CronAuditEmail.tsx",
+        "__tests__/components/CronReportEmail/CronAuditEmail.test.tsx",
+        "lib/nst/jobLifecycle.server.ts",
+        "lib/nst/jobLifecycle.server.test.ts",
+        "lib/nst/sharedAdmission.ts",
+        "lib/nst/sharedAdmission.test.ts",
+        "lib/nst/client.ts",
+        "lib/nst/client.test.ts",
+        "lib/nst/goalieCatchup.server.ts",
+        "lib/nst/goalieCatchup.server.test.ts",
+        "pages/api/Teams/nst-team-stats.ts",
+        "__tests__/pages/api/Teams/nst-team-stats.route.test.ts",
+        "pages/api/v1/db/update-nst-current-season.ts",
+        "__tests__/pages/api/v1/db/update-nst-current-season.test.ts",
+        "pages/api/v1/db/update-nst-team-daily.ts",
+        "__tests__/pages/api/v1/db/update-nst-team-daily.test.ts"
+      ],
+      "exitCode": 0
+    }
+  ],
+  "networkGuard": "offline.cjs",
+  "scope": "Owned route/runner/checkpoint adapter integration with mocked I/O; isolated PostgreSQL proof recorded separately. No provider or production verification."
+}

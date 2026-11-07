@@ -35,12 +35,12 @@ export function reportRowIdentity(value: unknown): string {
 }
 
 export async function readReportSource<T>(
-  fetchPage: (from: number, to: number, signal: AbortSignal) => PromiseLike<Page<T>>,
+  fetchPage: (from: number, to: number, signal: AbortSignal, query: { count: "exact" | undefined }) => PromiseLike<Page<T>>,
   identity?: (row: T) => string,
   pageSize = 500,
   maxPages = 40,
   maxMs = 15_000,
-  options: { deadlineAt?: number; requestTimeoutMs?: number } = {},
+  options: { deadlineAt?: number; requestTimeoutMs?: number; countMode?: "each-page" | "per-pass" } = {},
 ): Promise<ReportSource<T>> {
   const result: ReportSource<T> = {
     rows: [], complete: false, enumerationComplete: false, snapshotConsistent: false,
@@ -70,7 +70,7 @@ export async function readReportSource<T>(
         controller.signal.addEventListener("abort", onAbort, { once: true });
         const timer = setTimeout(() => controller.abort(), Math.min(requestTimeoutMs, remainingMs));
         try {
-          page = await Promise.race([fetchPage(offset, offset + pageSize - 1, controller.signal), aborted]);
+          page = await Promise.race([fetchPage(offset, offset + pageSize - 1, controller.signal, { count: options.countMode !== "per-pass" || offset === 0 ? "exact" : undefined }), aborted]);
         } catch (error) {
           page = { data: null, count: null, error: { message: error instanceof Error ? error.message : String(error) } };
         } finally {
@@ -83,7 +83,8 @@ export async function readReportSource<T>(
       if (verifying) result.verificationPages++;
       else result.pages++;
       if (!Array.isArray(page.data)) { result.error = "Source returned no row payload; completeness is unknown"; return result; }
-      const changedCount = result.expectedCount != null && result.expectedCount !== page.count;
+      const countRequired = options.countMode !== "per-pass" || offset === 0;
+      const changedCount = page.count != null && result.expectedCount != null && result.expectedCount !== page.count;
       result.expectedCount ??= page.count;
       for (const [index, row] of page.data.entries()) {
         const fingerprint = reportRowIdentity(row);
@@ -105,18 +106,18 @@ export async function readReportSource<T>(
       }
       offset += page.data.length;
       if (Date.now() >= deadline) { result.error = deadlineError; return result; }
-      if (page.count == null || !Number.isSafeInteger(page.count) || page.count < 0) {
+      if ((countRequired && page.count == null) || (page.count != null && (!Number.isSafeInteger(page.count) || page.count < 0))) {
         result.error = "Exact source count unavailable; completeness is unknown";
         return result;
       }
       if (changedCount) result.error = "Source count changed during reading; concurrent arrivals or retention detected";
       if (result.error) return result;
-      if (offset === page.count) {
+      if (offset === result.expectedCount) {
         if (verifying) { result.complete = true; return result; }
         result.enumerationComplete = true;
         break;
       }
-      if (page.data.length === 0 || offset > page.count) {
+      if (page.data.length === 0 || offset > (result.expectedCount ?? 0)) {
         result.error = "Source ended before its exact count was read";
         return result;
       }
@@ -125,6 +126,15 @@ export async function readReportSource<T>(
   }
   result.error = "Source page budget exceeded before enumeration and verification completed; only observations are available";
   return result;
+}
+
+// Postgres and PostgREST errors arrive in their own words; say what happened.
+export function describeSourceError(error: string | null): string | null {
+  if (!error) return null;
+  if (/canceling statement due to statement timeout/i.test(error)) {
+    return "the database cancelled the read (statement timeout)";
+  }
+  return error;
 }
 
 export function formatReportTime(iso: string): string {

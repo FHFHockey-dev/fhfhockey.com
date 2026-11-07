@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { CardSettings, MetricId } from "./contracts";
 import { METRICS } from "./registry";
-import { selectWindow, type Appearance, type AppearanceFrame } from "./windows";
+import { selectWindow, type Appearance, type AppearanceFrame, type EndMinute } from "./windows";
 import { aggregateWindow, pooledMetric, type Components, type GameMetricRecord } from "./aggregation";
 import { adaptLocalSnapshot, type LocalCardInput } from "./adapter";
 
@@ -21,6 +21,7 @@ function record(appearance: Appearance): GameMetricRecord {
   return { ...components(), playerId: appearance.playerId, gameId: appearance.gameId, season: appearance.season, date: appearance.date, strength: "all", sourceDefinition: source.definition, sourceVersion: source.version, capturedAt: "2026-10-24T01:00:00Z", state: "ready" };
 }
 const metric = (id: MetricId) => METRICS.find(metric => metric.id === id)!;
+const endMinute = (startInclusive = "2026-10-23T23:59:00Z", endExclusive = "2026-10-24T00:00:00Z"): EndMinute => ({ startInclusive, endExclusive, timezone: "UTC", clockBasis: "explicit-24h" });
 function input(): LocalCardInput {
   const players = [1001, 1002].map(id => {
     const games = [game(20, id), game(21, id)];
@@ -74,6 +75,45 @@ describe("supplied official appearance windows with explicit proposed policies",
     const second = selectWindow(frame([game(20, 1002), game(22, 1002)], 1002), settings);
     const first = selectWindow(frame([game(18), game(22)]), settings);
     expect(second.firstDate).not.toBe(first.firstDate); expect(second.settings.cutoff).toBe(first.settings.cutoff);
+  });
+});
+
+describe("minute-precision finality and separate lookup/calendar dates", () => {
+  it("includes only an entire end minute before the cutoff and withholds overlapping cutoffs", () => {
+    const g: Appearance = { ...game(23), completion: { status: "verified-final", completedDuring: endMinute(), reference: "synthetic official minute" } };
+    expect(selectWindow(frame([g]), settings)).toMatchObject({ state: "ready", actualGp: 1 });
+    expect(selectWindow(frame([g]), { ...settings, cutoff: "2026-10-23T23:59:30Z" })).toMatchObject({ state: "missing", reason: expect.stringContaining("overlaps") });
+    expect(selectWindow(frame([g]), { ...settings, cutoff: "2026-10-23T23:59:00Z" }).state).toBe("missing");
+    expect(selectWindow(frame([g]), { ...settings, cutoff: "2026-10-23T23:58:59Z" }).state).toBe("undefined");
+    expect(selectWindow(frame([g]), settings).games[0].completion).not.toHaveProperty("completedAt");
+  });
+  it("rejects unsupported precision, mixed exact/range timestamps and unresolved clock/zone evidence", () => {
+    for (const interval of [endMinute(undefined, "2026-10-24T00:00:01Z"), { ...endMinute(), clockBasis: "unresolved" as const }, { ...endMinute(), timezone: "Not/AZone" }]) {
+      expect(selectWindow(frame([{ ...game(23), completion: { status: "verified-final", completedDuring: interval, reference: "synthetic" } }]), settings).state).toBe("missing");
+    }
+    expect(selectWindow(frame([{ ...game(23), completion: { status: "verified-final", completedAt: "2026-10-23T23:59:30Z", completedDuring: endMinute(), reference: "synthetic" } }]), settings).state).toBe("missing");
+  });
+  it("requires source capture after the whole end minute, not its invented first second", () => {
+    const g: Appearance = { ...game(23), completion: { status: "verified-final", completedDuring: endMinute(), reference: "synthetic" } };
+    const selection = selectWindow(frame([g]), settings), row = record(g);
+    row.capturedAt = "2026-10-23T23:59:30Z";
+    expect(aggregateWindow(selection, [row], source).values.sog60.state).toBe("missing");
+    row.capturedAt = "2026-10-24T00:00:00Z";
+    expect(aggregateWindow(selection, [row], source).values.sog60.value).toBe(12);
+  });
+  it("does not order overlapping end minutes, while adjacent minutes remain ordered", () => {
+    const a: Appearance = { ...game(23), gameId: 1, completion: { status: "verified-final", completedDuring: endMinute(), reference: "synthetic" } };
+    const b: Appearance = { ...a, gameId: 2 };
+    expect(selectWindow(frame([a, b]), settings).state).toBe("missing");
+    b.completion = { status: "verified-final", completedDuring: endMinute("2026-10-23T23:58:00Z", "2026-10-23T23:59:00Z"), reference: "synthetic" };
+    expect(selectWindow(frame([a, b]), settings).games.map(row => row.gameId)).toEqual([1, 2]);
+  });
+  it("filters by UTC calendar day while retaining the provider source day", () => {
+    const g: Appearance = { ...game(24), sourceDate: "2026-10-23", completion: { status: "verified-final", completedDuring: endMinute("2026-10-24T03:58:00Z", "2026-10-24T03:59:00Z"), reference: "synthetic minute" } };
+    const s: CardSettings = { ...settings, cutoff: "2026-10-25T00:00:00Z", period: { mode: "calendar", start: "2026-10-24", end: "2026-10-24", timezone: "UTC" } };
+    const selected = selectWindow({ ...frame([g]), historyThrough: s.cutoff }, s);
+    expect(selected.games[0]).toMatchObject({ date: "2026-10-24", sourceDate: "2026-10-23" });
+    expect(selectWindow({ ...frame([g]), historyThrough: s.cutoff }, { ...s, period: { mode: "calendar", start: "2026-10-23", end: "2026-10-23", timezone: "UTC" } }).state).toBe("undefined");
   });
 });
 

@@ -1,0 +1,236 @@
+{
+  "schemaVersion": "forge-v2-metadata-intake-v1",
+  "note": "Metadata only; leave unknowns null. Do not include raw source rows, labels, credentials, or private account data. Referenced artifacts are never opened.",
+  "codeCommit": "7113329d2c24b8629f54484df37441f95a63d853",
+  "cases": [
+    {
+      "kind": "official_appearance",
+      "owner": null,
+      "rawCaptureSha256": null,
+      "rightsReceiptSha256": null,
+      "semanticsReviewSha256": null,
+      "completeFeedProofSha256": null
+    },
+    {
+      "kind": "zero_minute_penalty_credit",
+      "owner": null,
+      "rawCaptureSha256": null,
+      "rightsReceiptSha256": null,
+      "semanticsReviewSha256": null,
+      "completeFeedProofSha256": null
+    },
+    {
+      "kind": "dressed_unused",
+      "owner": null,
+      "rawCaptureSha256": null,
+      "rightsReceiptSha256": null,
+      "semanticsReviewSha256": null,
+      "completeFeedProofSha256": null
+    },
+    {
+      "kind": "nonappearance",
+      "owner": null,
+      "rawCaptureSha256": null,
+      "rightsReceiptSha256": null,
+      "semanticsReviewSha256": null,
+      "completeFeedProofSha256": null
+    },
+    {
+      "kind": "ambiguous_incomplete",
+      "owner": null,
+      "rawCaptureSha256": null,
+      "rightsReceiptSha256": null,
+      "semanticsReviewSha256": null,
+      "completeFeedProofSha256": null
+    },
+    {
+      "kind": "game_not_played",
+      "owner": null,
+      "rawCaptureSha256": null,
+      "rightsReceiptSha256": null,
+      "semanticsReviewSha256": null,
+      "completeFeedProofSha256": null
+    }
+  ],
+  "allocations": [
+    {
+      "purpose": "training",
+      "custodian": null,
+      "datasetSha256": null,
+      "exposureRegisterSha256": null,
+      "rightsReceiptSha256": null,
+      "scopeApprovalSha256": null,
+      "startUtc": null,
+      "endUtc": null,
+      "seasonIds": [],
+      "gameIds": [],
+      "wholeGames": true
+    },
+    {
+      "purpose": "development",
+      "custodian": null,
+      "datasetSha256": null,
+      "exposureRegisterSha256": null,
+      "rightsReceiptSha256": null,
+      "scopeApprovalSha256": null,
+      "startUtc": null,
+      "endUtc": null,
+      "seasonIds": [],
+      "gameIds": [],
+      "wholeGames": true
+    },
+    {
+      "purpose": "interval_calibration",
+      "custodian": null,
+      "datasetSha256": null,
+      "exposureRegisterSha256": null,
+      "rightsReceiptSha256": null,
+      "scopeApprovalSha256": null,
+      "startUtc": null,
+      "endUtc": null,
+      "seasonIds": [],
+      "gameIds": [],
+      "wholeGames": true
+    },
+    {
+      "purpose": "untouched_final",
+      "custodian": null,
+      "datasetSha256": null,
+      "exposureRegisterSha256": null,
+      "rightsReceiptSha256": null,
+      "scopeApprovalSha256": null,
+      "startUtc": null,
+      "endUtc": null,
+      "seasonIds": [],
+      "gameIds": [],
+      "wholeGames": true
+    },
+    {
+      "purpose": "prospective",
+      "custodian": null,
+      "datasetSha256": null,
+      "exposureRegisterSha256": null,
+      "rightsReceiptSha256": null,
+      "scopeApprovalSha256": null,
+      "startUtc": null,
+      "endUtc": null,
+      "seasonIds": [],
+      "gameIds": [],
+      "wholeGames": true
+    }
+  ],
+  "chronology": {
+    "developmentProtocolRegisteredAt": null,
+    "meanModelAvailableAt": null,
+    "calibratorAvailableAt": null,
+    "finalProtocolFrozenAt": null,
+    "independentReviewSha256": null,
+    "developmentJustificationSha256": null
+  },
+  "evidence": {
+    "2.2": {
+      "owner": null,
+      "artifactSha256": null,
+      "receiptSha256": null,
+      "evidenceClass": null
+    },
+    "2.4": {
+      "owner": null,
+      "artifactSha256": null,
+      "receiptSha256": null,
+      "evidenceClass": null
+    },
+    "2.5": {
+      "owner": null,
+      "artifactSha256": null,
+      "receiptSha256": null,
+      "evidenceClass": null
+    },
+    "7.1": {
+      "owner": null,
+      "artifactSha256": null,
+      "receiptSha256": null,
+      "evidenceClass": null
+    },
+    "7.3": {
+      "owner": null,
+      "artifactSha256": null,
+      "receiptSha256": null,
+      "evidenceClass": null
+    },
+    "8.3": {
+      "owner": null,
+      "artifactSha256": null,
+      "receiptSha256": null,
+      "evidenceClass": null
+    },
+    "8.5": {
+      "owner": null,
+      "artifactSha256": null,
+      "receiptSha256": null,
+      "evidenceClass": null
+    },
+    "13.2": {
+      "owner": null,
+      "artifactSha256": null,
+      "receiptSha256": null,
+      "evidenceClass": null
+    },
+    "13.4": {
+      "owner": null,
+      "artifactSha256": null,
+      "receiptSha256": null,
+      "evidenceClass": null
+    },
+    "14.1": {
+      "owner": null,
+      "artifactSha256": null,
+      "receiptSha256": null,
+      "evidenceClass": null
+    },
+    "14.2": {
+      "owner": null,
+      "artifactSha256": null,
+      "receiptSha256": null,
+      "evidenceClass": null
+    },
+    "14.3": {
+      "owner": null,
+      "artifactSha256": null,
+      "receiptSha256": null,
+      "evidenceClass": null
+    },
+    "14.4": {
+      "owner": null,
+      "artifactSha256": null,
+      "receiptSha256": null,
+      "evidenceClass": null
+    },
+    "14.5": {
+      "owner": null,
+      "artifactSha256": null,
+      "receiptSha256": null,
+      "evidenceClass": null
+    },
+    "14.6": {
+      "owner": null,
+      "artifactSha256": null,
+      "receiptSha256": null,
+      "evidenceClass": null
+    }
+  },
+  "shadow": {
+    "environmentOwner": null,
+    "environmentId": null,
+    "approvalSha256": null,
+    "startUtc": null,
+    "endUtc": null,
+    "maximumAttempts": null,
+    "maximumWorkerSeconds": null,
+    "maximumRetainedBytes": null,
+    "maximumStoreOperations": null,
+    "currencyBudget": null,
+    "reservationReceiptSha256": null,
+    "retentionOwner": null
+  }
+}

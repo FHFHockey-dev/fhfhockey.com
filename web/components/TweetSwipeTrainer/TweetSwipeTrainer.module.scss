@@ -1,0 +1,1323 @@
+@use "styles/panel" as panel;
+@use "styles/vars" as v;
+
+@mixin focus-visible {
+  &:focus-visible {
+    outline: none;
+    box-shadow: v.$focus-ring;
+  }
+}
+
+.page {
+  width: v.$page-max-width;
+  margin: 0 auto;
+  padding: v.$space-sm 0 v.$space-lg;
+  box-sizing: border-box;
+  display: grid;
+  gap: v.$space-sm;
+  color: v.$text-primary;
+  background: v.$surface-0;
+  font-family: v.$font-family-primary;
+  font-size: v.$font-size-base;
+}
+
+.pageHeader {
+  @include panel.panel-shell($radius: v.$radius-panel, $variant: soft);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: v.$space-sm v.$space-md;
+  padding: v.$space-sm v.$space-md;
+}
+
+.titleBlock {
+  flex: 1 1 320px;
+  min-width: 0;
+
+  h1 {
+    margin: 0;
+    font-family: v.$font-family-accent;
+    font-size: v.$font-size-sm;
+    font-weight: 900;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: v.$color-white;
+  }
+
+  p {
+    margin: 2px 0 0;
+    color: v.$text-secondary;
+    font-size: v.$font-size-sm;
+  }
+}
+
+.tally {
+  display: flex;
+  gap: v.$space-md;
+  font-size: v.$font-size-sm;
+  color: v.$text-secondary;
+
+  strong {
+    color: v.$color-white;
+    font-size: v.$font-size-base;
+  }
+}
+
+// Canonical segmented toggle (fhfh-styles §9.5, §10.6): one rail, quiet segments, accent-filled active segment.
+// One row at every width: it scrolls sideways when it doesn't fit (TJ's phone choice), never wraps.
+.typeTabs {
+  display: flex;
+  flex-wrap: nowrap;
+  align-self: start;
+  justify-self: start;
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  gap: 2px;
+  padding: 4px;
+  border: 1px solid rgba(v.$color-white, 0.08);
+  border-radius: v.$border-radius-lg;
+  background: rgba(v.$background-dark, 0.9);
+}
+
+.typeTab {
+  @include focus-visible;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 0 8px;
+  border: 2px solid transparent;
+  border-radius: v.$border-radius-sm;
+  background: transparent;
+  color: v.$secondary-color;
+  font-family: v.$font-family-accent;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  cursor: pointer;
+
+  &:hover {
+    color: v.$primary-color;
+    background: rgba(v.$primary-color, 0.1);
+  }
+}
+
+.typeTabActive,
+.typeTabActive:hover {
+  border-color: v.$primary-color;
+  background: v.$primary-color-opaque;
+  color: v.$color-white;
+}
+
+.typeCount {
+  padding: 1px 6px;
+  border-radius: v.$radius-xs;
+  background: rgba(v.$color-white, 0.08);
+  color: v.$text-primary;
+  font-family: v.$font-family-primary;
+  font-size: v.$font-size-xs;
+  letter-spacing: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.statusMessage {
+  margin: 0;
+  padding: 6px 10px;
+  border: 1px solid rgba(v.$warning-color, 0.3);
+  border-radius: v.$radius-control;
+  background: rgba(v.$warning-color, 0.08);
+  color: v.$warning-color;
+  font-size: v.$font-size-sm;
+}
+
+.stage {
+  width: 100%;
+  display: grid;
+  gap: v.$space-sm;
+}
+
+.queueLine,
+.empty {
+  margin: 0;
+  color: v.$text-secondary;
+  font-size: v.$font-size-sm;
+}
+
+.empty {
+  padding: v.$space-lg;
+  text-align: center;
+}
+
+// Text stays selectable with a mouse; only touch screens swipe (and lose selection while dragging).
+.swipeArea {
+  position: relative;
+  touch-action: pan-y;
+  transition: transform 160ms ease-out;
+
+  &[data-gesture] {
+    transition: none;
+  }
+}
+
+@media (pointer: coarse) {
+  .swipeArea {
+    user-select: none;
+  }
+}
+
+.gestureBadge {
+  position: absolute;
+  top: v.$space-md;
+  z-index: 2;
+  padding: 6px 14px;
+  border: 2px solid currentColor;
+  border-radius: v.$radius-control;
+  background: v.$surface-0;
+  font-size: v.$font-size-md;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+
+.gesture_correct {
+  left: v.$space-md;
+  color: v.$success-color;
+}
+
+.gesture_wrong {
+  right: v.$space-md;
+  color: v.$danger-color;
+}
+
+.gesture_skip {
+  left: 50%;
+  transform: translateX(-50%);
+  color: v.$warning-color;
+}
+
+.card {
+  // Visible overflow so a player search list can open past the card's bottom edge.
+  @include panel.panel-shell($radius: v.$radius-card, $overflow: visible);
+  display: grid;
+  gap: v.$space-sm;
+  padding: v.$space-md;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: v.$space-md;
+}
+
+.byline {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+
+}
+
+// The card's heading (h2 under the page h1), styled as the plain author line.
+.author {
+  margin: 0;
+  color: v.$color-white;
+  font-family: v.$font-family-primary;
+  font-size: v.$font-size-base;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.handle,
+.meta {
+  color: v.$text-secondary;
+  font-size: v.$font-size-xs;
+
+  // Underlined: colour alone only separates it from the meta text by 1.26:1 (WCAG 1.4.1).
+  a {
+    color: v.$primary-color;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+
+    &:hover {
+      color: v.$color-white;
+    }
+  }
+}
+
+.repost {
+  color: v.$secondary-color;
+  font-size: v.$font-size-xs;
+}
+
+.confidence {
+  @include focus-visible;
+  flex: none;
+  display: grid;
+  justify-items: center;
+  min-width: 72px;
+  padding: 6px 8px;
+  border: 1px solid currentColor;
+  border-radius: v.$radius-control;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+}
+
+.confidenceScore {
+  font-size: v.$font-size-xl;
+  font-weight: 600;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.confidenceLabel {
+  font-size: v.$font-size-xs;
+}
+
+.confidence_high,
+.chip_high {
+  color: v.$success-color;
+}
+
+.confidence_mid,
+.chip_mid {
+  color: v.$warning-color;
+}
+
+.confidence_low,
+.chip_low {
+  color: v.$danger-color;
+}
+
+.signals {
+  margin: 0;
+  padding: v.$space-sm;
+  list-style: none;
+  display: grid;
+  gap: 2px;
+  border: v.$border-subtle;
+  border-radius: v.$radius-control;
+  background: v.$surface-0;
+  font-size: v.$font-size-xs;
+
+  li {
+    display: flex;
+    justify-content: space-between;
+    gap: v.$space-md;
+  }
+}
+
+// Canonical accent rail: filled left border, never a hollow curved edge.
+.imageOnly {
+  margin: 0;
+  padding: v.$space-sm 10px;
+  border-left: 4px solid v.$warning-color;
+  border-radius: 4px 6px 6px 4px;
+  background: rgba(v.$warning-color, 0.08);
+  color: v.$warning-color;
+  font-size: v.$font-size-sm;
+}
+
+.tweetText {
+  margin: 0;
+  color: v.$color-white;
+  font-size: v.$font-size-base;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.quoted {
+  margin: 0;
+  padding: v.$space-sm 10px;
+  border-left: 4px solid v.$border-primary;
+  border-radius: 4px 6px 6px 4px;
+  background: v.$surface-0;
+  color: v.$text-primary;
+  font-size: v.$font-size-sm;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.quotedBy {
+  display: block;
+  margin-bottom: 4px;
+  color: v.$text-secondary;
+  font-size: v.$font-size-xs;
+}
+
+.cardBody,
+.tweetColumn,
+.extractionColumn {
+  display: grid;
+  gap: v.$space-sm;
+  align-content: start;
+  min-width: 0;
+}
+
+.extraction {
+  display: grid;
+  gap: v.$space-sm;
+  padding-top: v.$space-sm;
+  border-top: v.$border-subtle;
+}
+
+// Wide screens: the tweet and the parser's reading sit side by side, so checking is a glance, not a scroll.
+@media (min-width: 1100px) {
+  .cardBody {
+    grid-template-columns: minmax(280px, 2fr) minmax(0, 3fr);
+    gap: v.$space-lg;
+  }
+
+  .extractionColumn {
+    padding-left: v.$space-lg;
+    border-left: v.$border-subtle;
+  }
+
+  .extraction {
+    padding-top: 0;
+    border-top: 0;
+  }
+}
+
+.extractionHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+}
+
+.typePill {
+  padding: 2px 8px;
+  border-radius: v.$radius-xs;
+  background: rgba(v.$primary-color, 0.18);
+  color: v.$color-white;
+  font-size: v.$font-size-xs;
+  font-weight: 600;
+}
+
+.categoryText {
+  color: v.$color-white;
+  font-size: v.$font-size-sm;
+  font-weight: 600;
+}
+
+.metaText {
+  margin: 0;
+  color: v.$text-secondary;
+  font-size: v.$font-size-xs;
+}
+
+.swapList {
+  margin: 0;
+  padding-left: v.$space-md;
+  color: v.$text-primary;
+  font-size: v.$font-size-sm;
+}
+
+.slotGroup,
+.editorGroup {
+  display: grid;
+  gap: 6px;
+}
+
+// In-card section labels are content: sentence case, no tracking (the outlined caps stay for page titles).
+.slotTitle {
+  margin: 0;
+  color: v.$text-secondary;
+  font-size: v.$font-size-sm;
+  font-weight: 600;
+}
+
+.slotRow {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr);
+  align-items: start;
+  gap: v.$space-sm;
+}
+
+// Dropped candidate lines read as provisional through a dashed outline, not opacity: faded text failed 4.5:1.
+.slotRowDropped .playerChip {
+  border-style: dashed;
+  background: transparent;
+}
+
+.slotLabel {
+  padding-top: 6px;
+  color: v.$text-secondary;
+  font-size: v.$font-size-xs;
+  font-weight: 600;
+}
+
+// Starter / Backup labels need more room than L1 / D1, at every width.
+.slotRow.slotRowRole {
+  grid-template-columns: 64px minmax(0, 1fr);
+  align-items: center;
+
+  .slotLabel {
+    padding-top: 0;
+  }
+}
+
+// Card placements (TJ): pick a dropped or other name, then a dotted spot. Spots may stay empty.
+.chipPicked,
+.chipPicked:hover {
+  border: 2px solid v.$primary-color;
+  background: v.$primary-color-opaque;
+}
+
+.placedTag {
+  flex: none;
+  padding: 0 6px;
+  white-space: nowrap;
+  border-radius: v.$radius-xs;
+  background: rgba(v.$color-white, 0.08);
+  color: v.$text-primary;
+  font-size: v.$font-size-xs;
+}
+
+.placeSpot {
+  @include focus-visible;
+  min-width: 160px;
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1px dashed v.$border-primary;
+  border-radius: v.$radius-control;
+  background: transparent;
+  color: v.$text-secondary;
+  font: inherit;
+  font-size: v.$font-size-xs;
+  text-align: left;
+  cursor: default;
+}
+
+.placeSpotReady {
+  border-color: v.$primary-color;
+  color: v.$color-white;
+  cursor: pointer;
+
+  &:hover {
+    background: rgba(v.$primary-color, 0.1);
+  }
+}
+
+.placeSpotOver {
+  border-style: solid;
+  border-color: v.$primary-color;
+  background: rgba(v.$primary-color, 0.16);
+}
+
+.placedName {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 0 4px 0 10px;
+  border: 1px solid v.$primary-color;
+  border-radius: v.$radius-control;
+  background: rgba(v.$primary-color, 0.12);
+  color: v.$color-white;
+  font-size: v.$font-size-sm;
+}
+
+.placedRemove {
+  @include focus-visible;
+  min-width: 24px;
+  min-height: 24px;
+  border: 0;
+  border-radius: v.$radius-xs;
+  background: transparent;
+  color: v.$text-primary;
+  font: inherit;
+  font-size: v.$font-size-base;
+  line-height: 1;
+  cursor: pointer;
+
+  &:hover {
+    background: v.$surface-2;
+  }
+}
+
+.pickHint {
+  margin: 0;
+  color: v.$text-secondary;
+  font-size: v.$font-size-xs;
+
+  strong {
+    color: v.$color-white;
+  }
+}
+
+.linkButton {
+  @include focus-visible;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: v.$primary-color;
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.noneFound {
+  margin: 0;
+  color: v.$text-secondary;
+  font-size: v.$font-size-xs;
+  font-style: normal;
+}
+
+.slotChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+// Depth chart: every line and pair sits on the same three columns, so slots line up like a bench whiteboard.
+// Phones keep wrapping chips (see the 640px block).
+.lineGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.lineGrid.lineGridWide {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.lineGrid .playerChip {
+  width: 100%;
+  min-width: 0;
+}
+
+// The name wins the space: the basis words ("surname only") truncate first; the full text is in the title.
+.lineGrid .chipName {
+  flex: 0 0 auto;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lineGrid .chipScore {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.playerChip {
+  @include focus-visible;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 2px 8px;
+  border: 1px solid v.$border-primary;
+  border-radius: v.$radius-control;
+  background: v.$surface-0;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover {
+    border-color: v.$primary-color;
+    background: v.$surface-2;
+  }
+}
+
+.chipName {
+  color: v.$color-white;
+  font-size: v.$font-size-sm;
+}
+
+.chipRaw {
+  color: v.$text-secondary;
+  font-size: v.$font-size-xs;
+}
+
+.chipScore {
+  font-size: v.$font-size-xs;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.chipBasis {
+  font-weight: 400;
+  opacity: 0.85;
+}
+
+.chipFixStrong,
+.queuedName {
+  @include focus-visible;
+  min-height: 26px;
+  padding: 0 8px;
+  border: 1px solid v.$border-primary;
+  border-radius: v.$radius-xs;
+  background: transparent;
+  color: v.$text-primary;
+  font: inherit;
+  font-size: v.$font-size-xs;
+  cursor: pointer;
+
+  &:hover {
+    background: v.$surface-2;
+  }
+}
+
+.chipFixStrong {
+  display: inline-flex;
+  align-items: center;
+  margin-right: -4px;
+}
+
+.chipFixStrong,
+.queuedName {
+  border-color: v.$primary-color;
+  color: v.$color-white;
+  background: rgba(v.$primary-color, 0.16);
+}
+
+.fixPanel,
+.editor {
+  // Visible overflow so player search lists aren't cut at the panel edge.
+  @include panel.panel-shell($radius: v.$radius-card, $variant: soft, $overflow: visible);
+  display: grid;
+  gap: v.$space-sm;
+  padding: v.$space-md;
+}
+
+// Inside the card the editor is a column, not a second panel: no nested border or fill. Stacked (below
+// 1100px) it keeps the same divider from the tweet that the extraction has.
+.extractionColumn > .editor {
+  padding: v.$space-sm 0 0;
+  border: 0;
+  border-top: v.$border-subtle;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+@media (min-width: 1100px) {
+  .extractionColumn > .editor {
+    padding-top: 0;
+    border-top: 0;
+  }
+}
+
+// Player search list: opens under its field, at most 8 players, plus "Search all players".
+.combo {
+  position: relative;
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+
+  > input {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+.comboList {
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 0;
+  z-index: 20;
+  width: max(100%, 240px);
+  max-height: 300px;
+  margin: 0;
+  padding: v.$space-xs;
+  overflow-y: auto;
+  list-style: none;
+  border: v.$border-subtle;
+  border-radius: v.$radius-control;
+  background: v.$surface-1;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45);
+}
+
+.comboOption {
+  display: flex;
+  justify-content: space-between;
+  gap: v.$space-sm;
+  padding: 6px 8px;
+  border-radius: v.$radius-xs;
+  color: v.$color-white;
+  font-size: v.$font-size-sm;
+  cursor: pointer;
+
+  &:hover {
+    background: rgba(v.$primary-color, 0.16);
+  }
+}
+
+.comboOptionActive {
+  background: rgba(v.$primary-color, 0.16);
+}
+
+.comboMeta,
+.comboEmpty {
+  color: v.$text-secondary;
+  font-size: v.$font-size-xs;
+}
+
+.comboEmpty {
+  padding: 6px 8px;
+}
+
+.comboExpand {
+  margin-top: 2px;
+  border-top: v.$border-subtle;
+  border-radius: 0 0 v.$radius-xs v.$radius-xs;
+  color: v.$primary-color;
+  font-weight: 600;
+}
+
+.fixLead,
+.fixHint {
+  margin: 0;
+  font-size: v.$font-size-sm;
+}
+
+.fixHint {
+  color: v.$text-secondary;
+  font-size: v.$font-size-xs;
+}
+
+.fixError {
+  margin: 0;
+  color: v.$danger-color;
+  font-size: v.$font-size-sm;
+}
+
+.fixActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: v.$space-sm;
+}
+
+.fieldLabel {
+  display: grid;
+  gap: 4px;
+  font-size: v.$font-size-xs;
+  color: v.$text-secondary;
+
+  input,
+  select,
+  textarea {
+    min-height: 36px;
+    padding: 6px 8px;
+    border: 1px solid v.$border-primary;
+    border-radius: v.$radius-control;
+    background: v.$surface-0;
+    color: v.$color-white;
+    font: inherit;
+    font-size: v.$font-size-sm;
+
+    &:focus {
+      outline: none;
+      border-color: v.$primary-color;
+      box-shadow: v.$focus-ring;
+    }
+  }
+}
+
+.editorHeader {
+  h2 {
+    margin: 0;
+    color: v.$color-white;
+    font-size: v.$font-size-base;
+  }
+
+  p {
+    margin: 2px 0 0;
+    color: v.$text-secondary;
+    font-size: v.$font-size-sm;
+  }
+}
+
+.editorRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: v.$space-sm;
+}
+
+.editorSlotRow,
+.editorListRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.editorSlotRow .slotLabel {
+  flex: none;
+  align-self: flex-start;
+  width: 28px;
+  padding-top: 10px;
+}
+
+.slotInput {
+  flex: 1 1 150px;
+  min-width: 0;
+  min-height: 36px;
+  padding: 6px 8px;
+  border: 1px solid v.$border-primary;
+  border-radius: v.$radius-control;
+  background: v.$surface-0;
+  color: v.$color-white;
+  font: inherit;
+  font-size: v.$font-size-sm;
+
+  &:focus {
+    outline: none;
+    border-color: v.$primary-color;
+    box-shadow: v.$focus-ring;
+  }
+}
+
+// Editor depth chart (TJ): LW / C / RW (and LD / RD) on fixed columns at every width. Never wraps; on
+// phones the text gets smaller instead.
+.editorGrid {
+  display: grid;
+  grid-template-columns: 28px repeat(3, minmax(0, 1fr));
+  align-items: center;
+  gap: 6px;
+
+  .slotLabel {
+    padding-top: 0;
+  }
+
+  .editorCell {
+    flex: none;
+  }
+}
+
+.editorGrid.editorGridWide {
+  grid-template-columns: 28px repeat(5, minmax(0, 1fr));
+}
+
+.spotHead {
+  color: v.$text-secondary;
+  font-size: v.$font-size-xs;
+  font-weight: 600;
+  text-align: center;
+}
+
+.editorCell {
+  display: flex;
+  flex: 1 1 120px;
+  min-width: 0;
+
+  .slotInput {
+    width: 100%;
+  }
+}
+
+.slotRole {
+  width: 56px;
+  color: v.$text-secondary;
+  font-size: v.$font-size-xs;
+  font-weight: 600;
+}
+
+.addButton {
+  justify-self: start;
+}
+
+// Names the parser saw but didn't place. Pick one (2px accent border), then click or drop it on a spot.
+.tray {
+  display: grid;
+  gap: 6px;
+  padding: v.$space-sm;
+  border: 1px dashed v.$border-primary;
+  border-radius: v.$radius-control;
+}
+
+// Unknown names, resolved in place through the alias tool.
+.resolveGroup {
+  display: grid;
+  gap: v.$space-sm;
+}
+
+.resolveRow {
+  display: grid;
+  gap: 6px;
+  padding: v.$space-sm;
+  border: 1px solid rgba(v.$warning-color, 0.4);
+  border-radius: v.$radius-control;
+}
+
+.resolveLead {
+  margin: 0;
+  color: v.$text-primary;
+  font-size: v.$font-size-sm;
+}
+
+.trayHint {
+  margin: 0;
+  color: v.$text-secondary;
+  font-size: v.$font-size-xs;
+}
+
+.trayChip {
+  @include focus-visible;
+  min-height: 32px;
+  padding: 0 10px;
+  border: 2px solid v.$border-primary;
+  border-radius: v.$radius-control;
+  background: v.$surface-0;
+  color: v.$color-white;
+  font: inherit;
+  font-size: v.$font-size-sm;
+  cursor: grab;
+
+  &:hover {
+    border-color: v.$primary-color;
+  }
+}
+
+.trayItem {
+  display: inline-flex;
+  align-items: stretch;
+  gap: 2px;
+}
+
+.trayRemove {
+  @include focus-visible;
+  min-width: 28px;
+  border: 2px solid v.$border-primary;
+  border-radius: v.$radius-control;
+  background: transparent;
+  color: v.$text-secondary;
+  font: inherit;
+  font-size: v.$font-size-sm;
+  cursor: pointer;
+
+  &:hover {
+    border-color: v.$danger-color;
+    color: v.$color-white;
+  }
+}
+
+.trayChipPicked,
+.trayChipPicked:hover {
+  border-color: v.$primary-color;
+  background: v.$primary-color-opaque;
+}
+
+// While a name is picked, every spot shows it can take it.
+.slotTarget {
+  border-style: dashed;
+  border-color: v.$primary-color;
+  cursor: pointer;
+}
+
+.slotDropOver {
+  border-style: solid;
+  background: rgba(v.$primary-color, 0.16);
+}
+
+.slotInputUnknown {
+  border-color: rgba(v.$warning-color, 0.6);
+}
+
+// Canonical button family (fhfh-styles §9.4, §10.5): compact, 2px border, uppercase accent type.
+// White ink on the 18% accent fill is 11.6:1; the guide's $secondary-color ink is only 4.4:1 there.
+.primaryButton,
+.ghostButton {
+  @include focus-visible;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  min-height: 2.25rem;
+  padding: 0 0.85rem;
+  border: 2px solid;
+  border-radius: v.$radius-control;
+  font: 700 0.78rem/1 v.$font-family-accent;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+}
+
+.primaryButton {
+  border-color: v.$primary-color;
+  background: rgba(v.$primary-color, 0.18);
+  color: v.$color-white;
+
+  &:hover:not(:disabled) {
+    background: rgba(v.$primary-color, 0.3);
+  }
+}
+
+.ghostButton {
+  border-color: v.$border-primary;
+  background: transparent;
+  color: v.$text-primary;
+
+  &:hover:not(:disabled) {
+    border-color: v.$primary-color;
+    background: rgba(v.$primary-color, 0.1);
+  }
+}
+
+// Inline above the card: the site's fixed bottom nav would cover a fixed bar on phones.
+.actionBar {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: v.$space-sm;
+}
+
+@media (min-width: 1100px) {
+  // The side-by-side card fits one screen, so the top verdict row stays in view.
+  .actionBarEnd {
+    display: none;
+  }
+
+  // Desktop is keyboard-first: one compact row (hint left, buttons right) so the chrome stays quieter than the card.
+  .actionBar {
+    grid-template-columns: minmax(0, 1fr) repeat(3, minmax(160px, max-content));
+    align-items: center;
+  }
+
+  .actionBar .actionButton {
+    padding: 0 v.$space-md;
+    white-space: nowrap;
+  }
+
+  .actionBar .keyHint {
+    grid-row: 1;
+    grid-column: 1;
+    text-align: left;
+  }
+
+  .actionWrong {
+    grid-row: 1;
+    grid-column: 2;
+  }
+
+  .actionSkip {
+    grid-row: 1;
+    grid-column: 3;
+  }
+
+  .actionCorrect {
+    grid-row: 1;
+    grid-column: 4;
+  }
+}
+
+.actionButton {
+  @include focus-visible;
+  min-height: 48px;
+  border: 1px solid currentColor;
+  border-radius: v.$radius-control;
+  background: v.$surface-1;
+  font: inherit;
+  font-size: v.$font-size-base;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.5;
+  }
+
+  &:hover {
+    background: v.$surface-2;
+  }
+}
+
+.actionWrong {
+  color: v.$danger-color;
+}
+
+.actionSkip {
+  color: v.$warning-color;
+}
+
+.actionCorrect {
+  color: v.$success-color;
+}
+
+.keyHint {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: v.$text-secondary;
+  font-size: v.$font-size-xs;
+  text-align: center;
+}
+
+@media (max-width: 640px) {
+  // TJ: on phones the trainer may use the full width so the editor's three slots fit on one row.
+  .page {
+    width: 100%;
+    padding-left: v.$space-xs;
+    padding-right: v.$space-xs;
+  }
+
+  .card {
+    padding: v.$space-sm;
+  }
+
+  .editorGrid {
+    grid-template-columns: 16px repeat(3, minmax(0, 1fr));
+    gap: 3px;
+
+    &.editorGridWide {
+      grid-template-columns: 24px repeat(5, minmax(0, 1fr));
+    }
+
+    .slotLabel {
+      font-size: v.$font-size-xs;
+    }
+
+    .slotInput {
+      min-width: 0;
+      padding: 3px;
+      font-size: v.$font-size-xs;
+    }
+  }
+
+  .typeTabs {
+    justify-self: stretch;
+  }
+
+  .lineGrid {
+    display: flex;
+  }
+
+  .lineGrid .playerChip {
+    width: auto;
+  }
+
+  .editorRow {
+    grid-template-columns: 1fr;
+  }
+
+  // Keep the L1/D1 label beside its chips: a line takes two rows on a phone, not three.
+  .slotRow {
+    grid-template-columns: 32px minmax(0, 1fr);
+    gap: 6px;
+  }
+
+  .slotRowDropped {
+    grid-template-columns: 1fr;
+  }
+
+  .chipBasis {
+    display: none;
+  }
+
+  .keyHint {
+    display: none;
+  }
+}
+
+// Touch screens: this is a swipe-first phone tool, so controls grow to 40-44px targets.
+@media (pointer: coarse) {
+  .playerChip,
+  .typeTab,
+  .slotInput,
+  .queuedName,
+  .trayChip,
+  .trayRemove,
+  .placeSpot,
+  .placedName {
+    min-height: 40px;
+  }
+
+  .primaryButton,
+  .ghostButton {
+    min-height: 44px;
+  }
+
+  .fieldLabel {
+    input,
+    select {
+      min-height: 44px;
+    }
+  }
+}
+
+// An empty card spot with its roster search, or the search field itself.
+.spotSearch {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: v.$space-xs v.$space-sm;
+
+  .slotInput {
+    flex: 0 1 220px;
+  }
+}
+
+// Picks a filled editor spot's name up to move or swap it.
+.moveButton {
+  @include focus-visible;
+  flex: 0 0 auto;
+  min-width: 28px;
+  min-height: 36px;
+  margin-left: v.$space-xs;
+  border: 1px solid v.$border-primary;
+  border-radius: v.$radius-control;
+  background: transparent;
+  color: v.$text-secondary;
+  font: inherit;
+  cursor: grab;
+
+  &:hover {
+    color: v.$color-white;
+    border-color: v.$primary-color;
+  }
+}
+
+// One spot in a lineup card's skeleton: who sits there, then the spot to fill or swap into.
+.skeletonSpot {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: v.$space-xs;
+  min-width: 0;
+}
+
+// Line and pair spots share a narrow grid column, so an empty spot and its Search link fill the column on one row.
+.lineGrid .skeletonSpot {
+  width: 100%;
+  flex-wrap: nowrap;
+}
+
+.lineGrid .spotSearch {
+  flex: 1 1 auto;
+  flex-wrap: nowrap;
+  min-width: 0;
+}
+
+.lineGrid .placeSpot {
+  flex: 1 1 auto;
+  min-width: 0;
+}

@@ -1,0 +1,61 @@
+{
+  "scope": "Independent blinded practical-size review of packet-02",
+  "inputDirectory": "/Users/tim/Documents/Codex/2026-10-27/task-3/practical-size-review-20261029-01/packet-02/BLINDED",
+  "inputSha256": {
+    "REVIEW-INSTRUCTIONS.md": "5cce00b1730e2f03a1e064d655016feabc843d7f50c6dd5fd9aae76702ae251c",
+    "CASES-A.json": "cf25eb3045574d5ef3759c90deed4464dc7e1893c464bdec4383a220cd1ff428",
+    "CASES-B.json": "c29c2241178444e1a988e1f3e8064583b2ca9a3873a6fd7fd524025d3973c4f6"
+  },
+  "packetVerification": {
+    "same24CardsDifferentOrder": true,
+    "empirical": 22,
+    "hypothetical": 2
+  },
+  "coordinator": {
+    "priorExposure": "Previously reviewed the proposed rubric, original identities and annotations; coordinator is not a blinded voter.",
+    "actualModel": null,
+    "actualReasoningEffort": null,
+    "runtimeLimitation": "Current runtime model/effort not exposed by environment or list_agents; strict hierarchy unverified."
+  },
+  "reviewers": [
+    {
+      "id": "A",
+      "agentName": "/root/blinded_reviewer_a",
+      "requestedModel": "gpt-6.1-sol",
+      "requestedReasoningEffort": "high",
+      "forkTurns": "none",
+      "actualModel": null,
+      "actualReasoningEffort": null,
+      "verification": "Creation accepted explicit controls but returned only agent name; list_agents confirms running status, not settings.",
+      "allowedInputs": [
+        "REVIEW-INSTRUCTIONS.md",
+        "CASES-A.json"
+      ]
+    },
+    {
+      "id": "B",
+      "agentName": "/root/blinded_reviewer_b",
+      "requestedModel": "gpt-6.1-sol",
+      "requestedReasoningEffort": "high",
+      "forkTurns": "none",
+      "actualModel": null,
+      "actualReasoningEffort": null,
+      "verification": "Creation accepted explicit controls but returned only agent name; list_agents confirms running status, not settings.",
+      "allowedInputs": [
+        "REVIEW-INSTRUCTIONS.md",
+        "CASES-B.json"
+      ]
+    }
+  ],
+  "budget": "Two reviewers, one pass each, bounded output clarification only; no empirical rerun.",
+  "completed": true,
+  "reviewerJudgmentsSealedBeforePrivateKeyRead": true,
+  "reviewerOutputPreservation": "Each worker exclusively created its own unchanged JSON after judgment submission; no reconsideration or other reviewer output supplied.",
+  "preparationReceiptVerification": {
+    "artifacts": 14,
+    "mismatches": 0
+  },
+  "nativeArithmeticMaximumResidual": 8.881784197001252e-16,
+  "decision": "Exact 3 FP and 3 FP/60 meaningfulness boundary not established; no acceptance, tuning, scorer or preview change.",
+  "actualModelEffortVerification": "Unavailable for coordinator and reviewers; requested controls accepted, actual settings and hierarchy remain unverified."
+}

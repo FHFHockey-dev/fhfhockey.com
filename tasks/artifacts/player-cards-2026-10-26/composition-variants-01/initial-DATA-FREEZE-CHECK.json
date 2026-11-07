@@ -1,0 +1,82 @@
+[
+  {
+    "path": "web/lib/player-cards/aggregation.ts",
+    "matches_frozen": false,
+    "authorized_visual_successor": false
+  },
+  {
+    "path": "web/lib/player-cards/domain.test.ts",
+    "matches_frozen": false,
+    "authorized_visual_successor": false
+  },
+  {
+    "path": "web/lib/player-cards/evidenceBundle.test.ts",
+    "matches_frozen": false,
+    "authorized_visual_successor": false
+  },
+  {
+    "path": "web/lib/player-cards/evidenceBundle.ts",
+    "matches_frozen": false,
+    "authorized_visual_successor": false
+  },
+  {
+    "path": "web/lib/player-cards/evidenceLoader.test.ts",
+    "matches_frozen": false,
+    "authorized_visual_successor": false
+  },
+  {
+    "path": "web/lib/player-cards/evidenceLoader.ts",
+    "matches_frozen": false,
+    "authorized_visual_successor": false
+  },
+  {
+    "path": "web/lib/player-cards/nstCapture.test.ts",
+    "matches_frozen": false,
+    "authorized_visual_successor": false
+  },
+  {
+    "path": "web/lib/player-cards/nstCapture.ts",
+    "matches_frozen": false,
+    "authorized_visual_successor": false
+  },
+  {
+    "path": "web/lib/player-cards/windows.ts",
+    "matches_frozen": false,
+    "authorized_visual_successor": false
+  },
+  {
+    "path": "web/components/player-cards/ObservedPlayerCard.test.tsx",
+    "matches_frozen": false,
+    "authorized_visual_successor": false
+  },
+  {
+    "path": "web/components/player-cards/ObservedPlayerCard.tsx",
+    "matches_frozen": false,
+    "authorized_visual_successor": false
+  },
+  {
+    "path": "web/lib/player-cards/cardEvidenceVerdict.ts",
+    "matches_frozen": false,
+    "authorized_visual_successor": false
+  },
+  {
+    "path": "web/lib/player-cards/observedExport.test.ts",
+    "matches_frozen": false,
+    "authorized_visual_successor": false
+  },
+  {
+    "path": "web/lib/player-cards/observedExport.ts",
+    "matches_frozen": false,
+    "authorized_visual_successor": false
+  },
+  {
+    "path": "web/lib/player-cards/observedView.ts",
+    "matches_frozen": false,
+    "authorized_visual_successor": false
+  },
+  {
+    "path": "web/lib/player-cards/shareExport.ts",
+    "matches_frozen": false,
+    "authorized_visual_successor": true
+  }
+]

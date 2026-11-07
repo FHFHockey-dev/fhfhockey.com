@@ -24,8 +24,7 @@ import {
   parseForgeReturnToParam
 } from "lib/dashboard/forgeLinks";
 import {
-  DEFERRED_PLAYER_BASELINE_NOTE,
-  LOCKED_PLAYER_BASELINES,
+  describeLockedBaselines,
   PLAYER_QUICK_VIEWS,
   isLockedPlayerBaselineMode,
   isPlayerQuickViewId,
@@ -1158,11 +1157,7 @@ export default function PlayerTrendPage() {
             </div>
             <div className={styles.quickViewMeta}>
               <span className={styles.quickViewMetaLabel}>
-                Strong v1 baselines:{" "}
-                {LOCKED_PLAYER_BASELINES.map((baseline) => baseline.label).join(", ")}
-              </span>
-              <span className={styles.quickViewMetaLabel}>
-                {DEFERRED_PLAYER_BASELINE_NOTE}
+                {describeLockedBaselines()}
               </span>
             </div>
           </div>

@@ -1,0 +1,259 @@
+{
+  "at": "2026-10-29T17:53:25.903480+00:00",
+  "head": "081fcb849fad94fdc958cf0af86a8b977796d060",
+  "sourcePaths": 9,
+  "checks": {
+    "tests": {
+      "action": "tests",
+      "command": [
+        "npm",
+        "test",
+        "--",
+        "--run",
+        "--config",
+        "../tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/vitest.config.mts"
+      ],
+      "cwd": "/Users/tim/Code/fhfhockey.com/web",
+      "exitCode": 0,
+      "elapsedSeconds": 2.569,
+      "environmentOverrides": {
+        "npm_config_cache": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/.npm-cache",
+        "npm_config_logs_dir": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/.npm-logs",
+        "NO_UPDATE_NOTIFIER": "1",
+        "NEXT_TELEMETRY_DISABLED": "1"
+      },
+      "lockOwnedAndReleased": true
+    },
+    "focused-domain": {
+      "command": [
+        "npm",
+        "test",
+        "--",
+        "--run",
+        "--config",
+        "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/vitest.config.mts",
+        "web/lib/player-cards/currentNhl.test.ts"
+      ],
+      "cwd": "/Users/tim/Code/fhfhockey.com/web",
+      "exitCode": 0,
+      "elapsedSeconds": 0.879,
+      "sharedSlot": "parent run-check.py verify owns token"
+    },
+    "final-types": {
+      "command": [
+        "npx",
+        "--no-install",
+        "tsc",
+        "--noEmit",
+        "--project",
+        "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/tsconfig.json"
+      ],
+      "cwd": "/Users/tim/Code/fhfhockey.com/web",
+      "exitCode": 0,
+      "elapsedSeconds": 1.968,
+      "sharedSlot": "parent run-check.py verify owns token"
+    },
+    "final-lint": {
+      "command": [
+        "npx",
+        "--no-install",
+        "eslint",
+        "lib/player-cards/currentNhl.ts",
+        "lib/player-cards/currentNhl.test.ts",
+        "lib/player-cards/currentSelection.ts",
+        "lib/player-cards/currentSelection.test.ts",
+        "lib/player-cards/currentNhlExport.ts",
+        "components/player-cards/CurrentPlayerCard.tsx",
+        "components/player-cards/CurrentPlayerCardStudio.tsx",
+        "components/player-cards/CurrentPlayerCardStudio.test.tsx"
+      ],
+      "cwd": "/Users/tim/Code/fhfhockey.com/web",
+      "exitCode": 0,
+      "elapsedSeconds": 0.931,
+      "sharedSlot": "parent run-check.py verify owns token"
+    },
+    "render": {
+      "command": [
+        "node",
+        "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/render-preview.mjs"
+      ],
+      "cwd": "/Users/tim/Code/fhfhockey.com/web",
+      "exitCode": 0,
+      "elapsedSeconds": 0.183,
+      "sharedSlot": "parent run-check.py verify owns token"
+    },
+    "browser": {
+      "action": "browser",
+      "command": [
+        "node",
+        "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/browser-check.mjs"
+      ],
+      "cwd": "/Users/tim/Code/fhfhockey.com/web",
+      "exitCode": 0,
+      "elapsedSeconds": 3.447,
+      "environmentOverrides": {
+        "npm_config_cache": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/.npm-cache",
+        "npm_config_logs_dir": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/.npm-logs",
+        "NO_UPDATE_NOTIFIER": "1",
+        "NEXT_TELEMETRY_DISABLED": "1"
+      },
+      "lockOwnedAndReleased": true
+    }
+  },
+  "uniqueFocusedTests": 37,
+  "affectedDomainRerun": 18,
+  "browser": {
+    "checks": [
+      "Actual name\u2192load\u2192one retained provider capture\u2192recent and prior5 independent arithmetic\u2192two combined portrait PNGs; unchanged player/logo/5px stack geometry; native share exact PNG bytes",
+      "L10 insufficient baseline exports explicit missingness; current data retained, format/window transitions reuse capture and clear prepared PNG; ordinary manifests exclude comparison inputs",
+      "390/320 responsive layout, native category control\u226544px; another named selection clears comparison/artwork without fetching"
+    ],
+    "exports": [
+      {
+        "style": "posterized-team-colors",
+        "sha256": "5e9d457f89de9eaa5920e9bc7076941f8810b17aed83b58413a644c0ef6bd88d"
+      },
+      {
+        "style": "pixelated-team-colors",
+        "sha256": "0a0c528588267d93dc0a3e50d42af66958d74f970d78c9299bb1a0af2121b649"
+      }
+    ],
+    "recent": {
+      "values": {
+        "goals": 3,
+        "assists": 3,
+        "points": 6,
+        "shots": 22,
+        "atoi": 20.4,
+        "shots60": 12.941176470588236,
+        "goals60": 1.7647058823529411,
+        "points60": 3.5294117647058822,
+        "shootingPct": 13.636363636363635
+      },
+      "seconds": 6120,
+      "ids": [
+        2026020177,
+        2026020167,
+        2026020151,
+        2026020123,
+        2026020111
+      ]
+    },
+    "previous": {
+      "values": {
+        "goals": 0,
+        "assists": 7,
+        "points": 7,
+        "shots": 8,
+        "atoi": 21.336666666666666,
+        "shots60": 4.499296984846118,
+        "goals60": 0,
+        "points60": 3.936884861740353,
+        "shootingPct": 0
+      },
+      "seconds": 6401,
+      "ids": [
+        2026020095,
+        2026020081,
+        2026020060,
+        2026020040,
+        2026020024
+      ]
+    },
+    "apiCalls": [
+      "?playerId=8476453&season=20262027&count=5"
+    ],
+    "externalAttempts": [],
+    "pageErrors": [],
+    "newLiveRequests": 0
+  },
+  "publicObservation": {
+    "startedAt": "2026-10-29T17:43:32.407Z",
+    "approval": {
+      "sourceThread": "01a16eed-60f6-7096-879f-696c469db015",
+      "scope": "TJ explicitly requested current player data; bounded ordinary public NHL reads authorized by current delegation. One exact three-GET Kucherov/TBL batch; no retries or redirects."
+    },
+    "client": "node:https; rejectUnauthorized:true; no custom trust store",
+    "calls": [
+      {
+        "name": "landing",
+        "url": "https://api-web.nhle.com/v1/player/8476453/landing",
+        "startedAt": "2026-10-29T17:43:32.408Z",
+        "bytes": 26221,
+        "status": "received",
+        "httpStatus": 200,
+        "sha256": "7649c48e6e665288ba88e8679b3e57a08944f2157e6446aa9d7942c0a0675e66",
+        "finishedAt": "2026-10-29T17:43:32.592Z"
+      },
+      {
+        "name": "game-log",
+        "url": "https://api-web.nhle.com/v1/player/8476453/game-log/20262027/2",
+        "startedAt": "2026-10-29T17:43:32.592Z",
+        "bytes": 4932,
+        "status": "received",
+        "httpStatus": 200,
+        "sha256": "9a0cefaa9aade51cf190c0a1bec8493a86759971d3e5aa0cbbe91cdb5d808da2",
+        "finishedAt": "2026-10-29T17:43:32.704Z"
+      },
+      {
+        "name": "team-schedule",
+        "url": "https://api-web.nhle.com/v1/club-schedule-season/TBL/20262027",
+        "startedAt": "2026-10-29T17:43:32.704Z",
+        "bytes": 177781,
+        "status": "received",
+        "httpStatus": 200,
+        "sha256": "805f9b3a7cbb898d4896a3ebbf144870a1e812ced44eea1ef49f5e68735a3e14",
+        "finishedAt": "2026-10-29T17:43:32.792Z"
+      }
+    ],
+    "limits": {
+      "requests": 3,
+      "concurrency": 1,
+      "requestMs": 5000,
+      "totalMs": 15000,
+      "bytesPerResponse": 524288,
+      "totalBytes": 1572864,
+      "gameLogRows": 100,
+      "scheduleRows": 140,
+      "redirects": 0,
+      "retries": 0
+    },
+    "status": "received-and-identity-validated",
+    "totalBytes": 208934,
+    "databaseReads": 0,
+    "remoteWrites": 0,
+    "authOrProfileChanges": 0,
+    "seasonGp": 11,
+    "gameLogRows": 11,
+    "scheduleRows": 88,
+    "actualGameEndsQualified": false,
+    "leagueRanksQualified": false,
+    "finishedAt": "2026-10-29T17:43:32.793Z",
+    "elapsedMs": 386,
+    "callsStarted": 3
+  },
+  "runtime": {
+    "pid": 84959,
+    "bind": "127.0.0.1:3125",
+    "automaticRestart": false
+  },
+  "protectedPreviousSourcePins": 11,
+  "manualPixels": [
+    "pixelated-team-colors.png",
+    "insufficient-L10.png",
+    "phone.png"
+  ],
+  "limits": [
+    "Local saved current observation, not continuous refresh or deployment",
+    "No league population/rank/percentile, NST, PP/PK split, isolated impact, sustainability or milestone claim",
+    "Phone-fit fine source text requires zoom; native export labels readable",
+    "Full Next/shared auth route not hydrated or deployed; existing source provider is used by native local HTTP fixture adapter"
+  ],
+  "firstFailures": [
+    "TS2775 test assertion from dynamic destructuring; changed to static import;18affectedtests+scopedTS/lint pass",
+    "Browser share harness read asynchronous File bytes before completion; explicit wait added;same served browser groups pass"
+  ],
+  "newWorkers": 0,
+  "remoteWrites": 0,
+  "gitMutations": 0
+}

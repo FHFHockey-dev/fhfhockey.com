@@ -1,0 +1,16 @@
+{
+  "at": "2026-11-01T21:19:21.881552+00:00",
+  "exitCode": 1,
+  "command": [
+    "/usr/local/bin/node",
+    "node_modules/vitest/vitest.mjs",
+    "run",
+    "__tests__/pages/api/v1/start-chart.test.ts",
+    "-t",
+    "bounded context",
+    "--maxWorkers=1",
+    "--minWorkers=1"
+  ],
+  "source": "unchanged candidate route plus proposed tests",
+  "log": "before.log"
+}

@@ -17,39 +17,50 @@
 - Do not trigger a remote build, deployment, database operation, or production action.
 - Run the narrowest relevant test first. TypeScript, lint, or browser verification should be added only when justified by the files changed.
 
+## Reconciliation (2026-10-17)
+
+All 31 items were implemented before this checklist was updated; they are now checked against current evidence rather than assumed:
+
+- 1.0–3.5, 4.1, 4.2, 4.4, 5.1–5.4: present in `UnderlyingStatsDashboard.tsx` / `pages/underlying-stats/index.tsx` and covered by `__tests__/pages/underlying-stats/index.test.tsx` (run 2026-10-17).
+- 3.4: arrow/Home/End tab handling is now covered by a unit test and the Playwright landing keyboard spec.
+- 4.3: header trimmed to snapshot date, team count, and data freshness; readiness detail moved inside "About this dashboard".
+- 4.5: unrendered signal-panel data (context, inefficiency, sustainability) removed from `teamLandingDashboard.ts`.
+- 5.5: `e2e/underlying-stats.spec.ts` "Underlying Stats landing layout" passes at 390px and 1440px against the local dev server (no page overflow, keyboard tabs, stacked mobile leaders).
+- 6.0: the mockup prompt was delivered on 2026-10-15; the resulting desktop/mobile mockup is now the approved target and was implemented on 2026-10-17.
+
 ## Tasks
 
-- [ ] 1.0 Establish the safe implementation baseline
-  - [ ] 1.1 Inspect the current diff for the relevant Underlying Stats files and confirm whether another task has started editing them.
-  - [ ] 1.2 Read the existing landing-page test and identify the assertions that intentionally encode the current information hierarchy.
-  - [ ] 1.3 Preserve all existing data contracts, date routing, loading/error behavior, team selection, sorting, and metric explanations.
-- [ ] 2.0 Reorder the beginner-facing landing hierarchy
-  - [ ] 2.1 Move the existing four-link Underlying Stats navigation out of the compact Team Hub treatment and render it as a full-width, evenly divided row immediately above Power Leaders.
-  - [ ] 2.2 Keep exactly the existing destinations and labels: Team Explorer, Skater Stats, Goalie Stats, and xG Lab.
-  - [ ] 2.3 Position Power Leaders as the first substantive hero panel after the compact page header and four-link row.
-  - [ ] 2.4 Avoid duplicate navigation and retain a clear active-page/focus treatment at desktop and mobile widths.
-- [ ] 3.0 Add progressive disclosure for rankings and charts
-  - [ ] 3.1 Create one accessible primary workspace with `Team Rankings` and `Chart` tabs; `Team Rankings` must be selected on first load.
-  - [ ] 3.2 Place the existing detailed team table inside `Team Rankings`, default it to Advanced mode, and show all available teams rather than the 12-row preview.
-  - [ ] 3.3 Place the existing Process Quadrant and Team Movers workspace inside `Chart` without changing its data or pin/preview interactions.
-  - [ ] 3.4 Use real tab semantics, visible focus, selected state, and keyboard-operable controls; do not create display-only tabs.
-  - [ ] 3.5 Keep the existing Simple/Advanced table control available so users can intentionally reduce or expand detail after landing.
-- [ ] 4.0 Remove redundant landing-page density while preserving access
-  - [ ] 4.1 Remove the `signalGrid` panels from the landing flow: What Looks Real, Under the Radar, and Schedule Texture.
-  - [ ] 4.2 Remove the `utilityGrid` from the landing flow after ensuring its useful destinations remain available through the four-link rail or the existing About disclosure.
-  - [ ] 4.3 Reconcile Data Readiness with `commandMeta` so dataset readiness is accessible from the compact header without duplicating snapshot date, latest snapshot, team count, or freshness.
-  - [ ] 4.4 Preserve the existing `UlsStatusPanel` detail behind a compact disclosure or equivalent accessible interaction; do not discard readiness information.
-  - [ ] 4.5 Remove imports, helpers, state, and styles made unreachable by the deliberate panel removals, without unrelated cleanup.
-- [ ] 5.0 Update focused tests and verify the implementation
-  - [ ] 5.1 Update the existing landing-page test to assert the four-link order, Power Leaders-first hierarchy, default Team Rankings tab, Advanced table columns, and all-team rendering.
-  - [ ] 5.2 Test switching to Chart and confirm Process Quadrant and Team Movers appear only in that workspace.
-  - [ ] 5.3 Retain or adapt regression coverage for snapshot changes, failures, sorting, hydration, and team pin/preview behavior.
-  - [ ] 5.4 Run `npm test -- __tests__/pages/underlying-stats/index.test.tsx` from `web/`, then targeted TypeScript/lint checks if warranted.
-  - [ ] 5.5 Verify desktop and mobile behavior in a browser if feasible, including no horizontal overflow and usable tabs/link targets.
-- [ ] 6.0 Produce the next-pass mockup handoff
-  - [ ] 6.1 Inspect the implemented landing page and the original LineupExperts-inspired objectives after Task 5 is complete.
-  - [ ] 6.2 Write a paste-ready ChatGPT prompt for a desktop/mobile mockup that describes the implemented foundation accurately and asks only for visual refinement, not new product scope.
-  - [ ] 6.3 Require realistic desktop/mobile dimensions, the existing FHFH visual system, beginner-friendly hierarchy, and truthful data states.
+- [x] 1.0 Establish the safe implementation baseline
+  - [x] 1.1 Inspect the current diff for the relevant Underlying Stats files and confirm whether another task has started editing them.
+  - [x] 1.2 Read the existing landing-page test and identify the assertions that intentionally encode the current information hierarchy.
+  - [x] 1.3 Preserve all existing data contracts, date routing, loading/error behavior, team selection, sorting, and metric explanations.
+- [x] 2.0 Reorder the beginner-facing landing hierarchy
+  - [x] 2.1 Move the existing four-link Underlying Stats navigation out of the compact Team Hub treatment and render it as a full-width, evenly divided row immediately above Power Leaders.
+  - [x] 2.2 Keep exactly the existing destinations and labels: Team Explorer, Skater Stats, Goalie Stats, and xG Lab.
+  - [x] 2.3 Position Power Leaders as the first substantive hero panel after the compact page header and four-link row.
+  - [x] 2.4 Avoid duplicate navigation and retain a clear active-page/focus treatment at desktop and mobile widths.
+- [x] 3.0 Add progressive disclosure for rankings and charts
+  - [x] 3.1 Create one accessible primary workspace with `Team Rankings` and `Chart` tabs; `Team Rankings` must be selected on first load.
+  - [x] 3.2 Place the existing detailed team table inside `Team Rankings`, default it to Advanced mode, and show all available teams rather than the 12-row preview.
+  - [x] 3.3 Place the existing Process Quadrant and Team Movers workspace inside `Chart` without changing its data or pin/preview interactions.
+  - [x] 3.4 Use real tab semantics, visible focus, selected state, and keyboard-operable controls; do not create display-only tabs.
+  - [x] 3.5 Keep the existing Simple/Advanced table control available so users can intentionally reduce or expand detail after landing.
+- [x] 4.0 Remove redundant landing-page density while preserving access
+  - [x] 4.1 Remove the `signalGrid` panels from the landing flow: What Looks Real, Under the Radar, and Schedule Texture.
+  - [x] 4.2 Remove the `utilityGrid` from the landing flow after ensuring its useful destinations remain available through the four-link rail or the existing About disclosure.
+  - [x] 4.3 Reconcile Data Readiness with `commandMeta` so dataset readiness is accessible from the compact header without duplicating snapshot date, latest snapshot, team count, or freshness.
+  - [x] 4.4 Preserve the existing `UlsStatusPanel` detail behind a compact disclosure or equivalent accessible interaction; do not discard readiness information.
+  - [x] 4.5 Remove imports, helpers, state, and styles made unreachable by the deliberate panel removals, without unrelated cleanup.
+- [x] 5.0 Update focused tests and verify the implementation
+  - [x] 5.1 Update the existing landing-page test to assert the four-link order, Power Leaders-first hierarchy, default Team Rankings tab, Advanced table columns, and all-team rendering.
+  - [x] 5.2 Test switching to Chart and confirm Process Quadrant and Team Movers appear only in that workspace.
+  - [x] 5.3 Retain or adapt regression coverage for snapshot changes, failures, sorting, hydration, and team pin/preview behavior.
+  - [x] 5.4 Run `npm test -- __tests__/pages/underlying-stats/index.test.tsx` from `web/`, then targeted TypeScript/lint checks if warranted.
+  - [x] 5.5 Verify desktop and mobile behavior in a browser if feasible, including no horizontal overflow and usable tabs/link targets.
+- [x] 6.0 Produce the next-pass mockup handoff
+  - [x] 6.1 Inspect the implemented landing page and the original LineupExperts-inspired objectives after Task 5 is complete.
+  - [x] 6.2 Write a paste-ready ChatGPT prompt for a desktop/mobile mockup that describes the implemented foundation accurately and asks only for visual refinement, not new product scope.
+  - [x] 6.3 Require realistic desktop/mobile dimensions, the existing FHFH visual system, beginner-friendly hierarchy, and truthful data states.
 
 ## /goal Work Orders
 

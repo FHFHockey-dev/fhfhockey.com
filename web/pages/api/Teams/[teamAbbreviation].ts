@@ -1,3 +1,4 @@
+import { withNstJobLifecycle } from "lib/nst/jobLifecycle.server";
 // https://github.com/FHFHockey-dev/fhfhockey.com/pull/15#issuecomment-1208254068
 //
 // Legacy compatibility route.
@@ -35,7 +36,7 @@ type Response = {
   data?: Data;
 };
 
-export default async function handler(
+async function handler(
   req: NextApiRequest,
   res: NextApiResponse<Response>
 ) {
@@ -205,3 +206,5 @@ async function getStats(playerId: string) {
   };
   return data;
 }
+
+export default withNstJobLifecycle(handler, "Teams/[teamAbbreviation]", undefined, { lazy: true });

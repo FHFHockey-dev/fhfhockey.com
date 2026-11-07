@@ -1,0 +1,24 @@
+[
+  {
+    "name": "cards",
+    "exit": 0,
+    "network_attempt": false,
+    "command": [
+      "/Users/tim/Code/fhfhockey.com/web/node_modules/.bin/vitest",
+      "run",
+      "--config",
+      "/tmp/fhfh-codex-handoff-review-20261025/cards.config.mjs"
+    ]
+  },
+  {
+    "name": "c3",
+    "exit": 0,
+    "network_attempt": false,
+    "command": [
+      "/Users/tim/Code/fhfhockey.com/web/node_modules/.bin/vitest",
+      "run",
+      "--config",
+      "/tmp/fhfh-codex-handoff-review-20261025/c3.config.mts"
+    ]
+  }
+]

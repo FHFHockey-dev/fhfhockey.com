@@ -1,0 +1,81 @@
+{
+  "identity": {
+    "playerId": 8476453,
+    "firstName": {
+      "default": "Offline"
+    },
+    "lastName": {
+      "default": "Contract Fixture"
+    },
+    "currentTeamAbbrev": "TBL",
+    "position": "R",
+    "seasonTotals": [
+      {
+        "season": 20262027,
+        "gameTypeId": 2,
+        "leagueAbbrev": "NHL",
+        "gamesPlayed": 2
+      }
+    ]
+  },
+  "history": {
+    "seasonId": 20262027,
+    "gameTypeId": 2,
+    "gameLog": [
+      {
+        "gameId": 2026020167,
+        "gameDate": "2026-10-23",
+        "teamAbbrev": "TBL",
+        "goals": 1,
+        "assists": 2,
+        "points": 3,
+        "shots": 4,
+        "toi": "20:00"
+      },
+      {
+        "gameId": 2026020151,
+        "gameDate": "2026-10-20",
+        "teamAbbrev": "TBL",
+        "goals": 0,
+        "assists": 0,
+        "points": 0,
+        "shots": 0,
+        "toi": "10:00"
+      }
+    ]
+  },
+  "schedule": {
+    "games": [
+      {
+        "id": 2026020167,
+        "season": 20262027,
+        "gameType": 2,
+        "gameDate": "2026-10-23",
+        "startTimeUTC": "2026-10-24T01:00:00Z",
+        "gameState": "OFF",
+        "homeTeam": {
+          "abbrev": "COL"
+        },
+        "awayTeam": {
+          "abbrev": "TBL"
+        }
+      },
+      {
+        "id": 2026020151,
+        "season": 20262027,
+        "gameType": 2,
+        "gameDate": "2026-10-20",
+        "startTimeUTC": "2026-10-21T01:00:00Z",
+        "gameState": "FINAL",
+        "homeTeam": {
+          "abbrev": "TBL"
+        },
+        "awayTeam": {
+          "abbrev": "MIN"
+        }
+      }
+    ]
+  },
+  "observedAt": "2026-10-26T00:00:00Z",
+  "source": "contract-fixture"
+}

@@ -1,0 +1,124 @@
+--- before/web/components/player-cards/PlayerAnalysisCard.tsx
++++ after/web/components/player-cards/PlayerAnalysisCard.tsx
+@@ -14,13 +14,20 @@
+ const number = (v: number | null) => v === null ? "—" : Number.isInteger(v) ? String(v) : v.toFixed(2);
+ const categoryMetrics: AnalysisMetric[] = ["goals", "assists", "points", "ppPoints", "shots", "blocks", "hits", "bsh"];
+ function lines(text: string, max = 94): string[] {
+-  const words = text.split(/\s+/), result: string[] = []; let current = "";
+-  for (const word of words) { if (current.length + word.length + 1 > max) { result.push(current); current = word; } else current += `${current ? " " : ""}${word}`; }
++  const result: string[] = []; let current = "";
++  for (const word of text.split(/\s+/).filter(Boolean)) {
++    const characters = Array.from(word);
++    for (let start = 0; start < characters.length; start += max) {
++      const piece = characters.slice(start, start + max).join("");
++      if (current && Array.from(current).length + Array.from(piece).length + 1 > max) { result.push(current); current = ""; }
++      current += `${current ? " " : ""}${piece}`;
++    }
++  }
+   if (current) result.push(current); return result;
+ }
+ function TextLines({ text, y, maxLines = 12 }: { text: string; y: number; maxLines?: number }) {
+   const wrapped = lines(text);
+-  return <text x="40" y={y} fontSize="21" fill="#30383d" data-evidence-truncated={wrapped.length > maxLines ? "true" : undefined}>{wrapped.slice(0, maxLines).map((line, i) => <tspan key={i} x="40" dy={i ? 29 : 0}>{line}{i === maxLines - 1 && wrapped.length > maxLines ? " … (too long to export; narrow the evidence)" : ""}</tspan>)}</text>;
++  return <text x="40" y={y} fontSize="21" fill="#30383d" data-evidence-max-width="1120" data-evidence-truncated={wrapped.length > maxLines ? "true" : undefined}>{wrapped.slice(0, maxLines).map((line, i) => <tspan key={i} x="40" dy={i ? 29 : 0}>{line}{i === maxLines - 1 && wrapped.length > maxLines ? " … (too long to export; narrow the evidence)" : ""}</tspan>)}</text>;
+ }
+ export default function PlayerAnalysisCard({ presentation: p, hero, svgRef }: { presentation: AnalysisPresentation; hero?: PreparedHero | null; svgRef?: React.Ref<SVGSVGElement> }) {
+   const goalie = "goalie" in p, snapshot = "snapshot" in p ? p.snapshot : null;
+@@ -35,6 +42,8 @@
+   const game = goalie ? p.goalie.games[p.gameIndex] : null;
+   const confirmationWarnings = goalie ? p.goalie.sharedProvenance?.confirmationWarnings || [] : [];
+   const warningLines = lines(confirmationWarnings.join(" "), 120);
++  const warningsTooLong = warningLines.length > 2;
++  const displayedWarnings = warningsTooLong ? ["Source warnings are too long for this card. Read the full details; PNG export is unavailable."] : warningLines;
+   const explanation = research && "snapshot" in p ? `${p.blsh.heading}. ${p.blsh.lines.join(" ")}. Observed ${research.asOfUTC}; method ${research.methodVersion}. ${research.provenance?.message || ""} ${research.currentBoxes?.summary || ""}. ${research.currentBoxes?.lines.join(" ") || ""}` : goalie ? [game?.heading, game?.confirmation, game?.forecast, ...confirmationWarnings, ...(game?.dimensions.map(d => `${d.group}: ${d.label}: ${d.text}`) || []), p.goalie.reason].filter(Boolean).join(". ") : `${snapshot!.recent.label}, ${snapshot!.recent.gp} GP, ${snapshot!.settings.basis}, strength ${snapshot!.capture.strength}. ${snapshot!.recent.readings.map(r => `${ANALYSIS_FIELDS[r.metric].label}: ${number(r.value)} ${r.unit}${r.reason ? ` (${r.reason})` : ""}`).join(". ")}. ${snapshot!.disclosure} ${snapshot!.recent.sampleWarning || ""}`;
+   const rows = snapshot ? categoryMetrics.map(m => snapshot.recent.readings.find(r => r.metric === m)!) : [];
+   const maximum = Math.max(1, ...rows.map(r => r.value || 0));
+@@ -67,7 +76,7 @@
+         <text x="40" y="843" fontSize="17">{snapshot!.baseline.reason || (snapshot!.settings.basis === "total" && snapshot!.recent.gp !== snapshot!.baseline.gp ? "Totals have unequal appearance samples; choose per-game or per60 for a change." : "— means missing or unqualified source; changes are descriptive, not a forecast.")}</text>
+       </> : p.view === "evidence" ? <TextLines text={`${p.blsh.heading}. ${p.blsh.lines.join(" ")} ${p.blsh.market}`} y={420} maxLines={14} /> : <TextLines text={`${p.trades.lines.join(" ")} ${p.trades.records.map(r => `${r.attribution}; observed ${r.observedAt}; trade date ${r.tradedAt || "unknown"}; ${r.give.map(a => a.kind === "player" ? a.name : `${a.season} ${a.description}`).join(" + ")} for ${r.receive.map(a => a.kind === "player" ? a.name : `${a.season} ${a.description}`).join(" + ")}; scoring ${r.context.scoring || "unknown"}, roster ${r.context.roster || "unknown"}.`).join(" ")}`} y={420} maxLines={14} />}
+       <rect x="0" y="864" width="1200" height="156" fill="#1A1D21" />
+-      <g fill="#F2F1EB" fontSize="18">{warningLines.length ? <text x="40" y="894" fontSize="17" data-confirmation-warnings="true" data-evidence-truncated={warningLines.length > 2 ? "true" : undefined}>{warningLines.slice(0, 2).map((line, i) => <tspan key={i} x="40" dy={i ? 28 : 0}>{line}{i === 1 && warningLines.length > 2 ? " … (too long to export)" : ""}</tspan>)}</text> : <><text x="40" y="894">{research ? `Saved BLSH window ${research.dates[0]} → ${research.dates.at(-1)} · ${research.dates.length} GP · separate from NHL controls` : goalie ? "Volume upside, ratio exposure and win support are separate dimensions; no combined score." : `${snapshot!.recent.requestedAppearances === null ? `${snapshot!.recent.gp} GP` : `${snapshot!.recent.gp} of ${snapshot!.recent.requestedAppearances} appearances`} · dates ${[...snapshot!.recent.dates].sort().at(0) || "—"} → ${[...snapshot!.recent.dates].sort().at(-1) || "—"} · basis ${snapshot!.settings.basis} · strength ${snapshot!.capture.strength}`}</text>
++      <g fill="#F2F1EB" fontSize="18">{warningLines.length ? <text x="40" y="894" fontSize="17" data-confirmation-warnings="true" data-evidence-max-width="1120" data-evidence-truncated={warningsTooLong ? "true" : undefined}>{displayedWarnings.map((line, i) => <tspan key={i} x="40" dy={i ? 28 : 0}>{line}</tspan>)}</text> : <><text x="40" y="894">{research ? `Saved BLSH window ${research.dates[0]} → ${research.dates.at(-1)} · ${research.dates.length} GP · separate from NHL controls` : goalie ? "Volume upside, ratio exposure and win support are separate dimensions; no combined score." : `${snapshot!.recent.requestedAppearances === null ? `${snapshot!.recent.gp} GP` : `${snapshot!.recent.gp} of ${snapshot!.recent.requestedAppearances} appearances`} · dates ${[...snapshot!.recent.dates].sort().at(0) || "—"} → ${[...snapshot!.recent.dates].sort().at(-1) || "—"} · basis ${snapshot!.settings.basis} · strength ${snapshot!.capture.strength}`}</text>
+         <text x="40" y="922">{research ? research.currentBoxes ? `Stale research · ${research.currentBoxes.summary} · saved values unchanged` : "Stale development reference · exploratory support evidence · no calibrated confidence or trade advice" : goalie ? "Source confirmation and conditional forecast are separate. Partial inputs are not live/complete." : p.view === "comparison" ? snapshot!.disclosure : "BSH = blocks + shots on goal + hits. Missing component → unavailable BSH."}</text></>}
+         <text x="40" y="950">{research ? `BLSH observed: ${research.asOfUTC} · recorded through ${research.eventThroughDate}` : goalie ? `Inventory observed: ${p.goalie.observedAt}` : `Observed: ${snapshot!.capture.observedAt} · rank/N unavailable · all NHL valid values; no GP/TOI/position filter`}</text>
+         <text x="40" y="979">{research ? research.provenance ? `${research.methodVersion} · ${research.provenance.state !== "unavailable" ? `${research.provenance.state === "pending-review" ? "mapping review pending" : "retained mapping reviewed"} · ${research.provenance.captureStale ? "stale capture" : "retained capture"}` : "source mapping unavailable"}` : `Method: ${research.methodVersion} · retained source and complete profile in manifest` : goalie ? p.goalie.sharedProvenance ? `${p.goalie.sharedProvenance.version} fixture · ${p.goalie.sharedProvenance.sourceState} inputs · live producer admission pending.` : "Synthetic consumer proposal; producer interface and real inputs pending." : snapshot!.recent.sampleWarning || "Final status at observation; exact end time unavailable. Field reasons and source definitions in manifest."}</text><text x="40" y="1007" fontSize="16">FHFHOCKEY.COM · {source}</text>
+--- before/web/lib/player-cards/analysisExport.ts
++++ after/web/lib/player-cards/analysisExport.ts
+@@ -18,6 +18,11 @@
+ export function assertAnalysisExport(svg: SVGSVGElement, p: AnalysisPresentation, hero?: PreparedHero | null) {
+   if (!svg.isConnected || svg.dataset.analysisKey !== analysisPresentationKey(p, hero)) throw new Error("Displayed analysis changed; prepare the current snapshot again.");
+   if (svg.querySelector('[data-evidence-truncated="true"]')) throw new Error("Full evidence will not fit in this card. Narrow the supplied evidence before exporting.");
++  for (const text of svg.querySelectorAll<SVGGraphicsElement>("[data-evidence-max-width]")) {
++    if (typeof text.getBBox !== "function") throw new Error("Rendered evidence bounds are unavailable. Prepare the card in a supported browser before exporting.");
++    const box = text.getBBox(), limit = Number(text.getAttribute("data-evidence-max-width"));
++    if (!Number.isFinite(box.width) || box.width <= 0 || !Number.isFinite(limit) || limit <= 0 || box.width > limit) throw new Error("Full evidence will not fit in this card. Narrow the supplied evidence before exporting.");
++  }
+   if (hero) assertReviewedArtwork(svg, hero);
+   else if (svg.querySelector("image") || !svg.querySelector('[data-artwork-unavailable="true"]')) throw new Error("Unavailable artwork cannot contain a substitute image.");
+   if (!canExportAnalysis(p)) throw new Error("snapshot" in p ? "Unqualified capture cannot be exported as analysis." : "Qualified goalie inventory is unavailable.");
+--- before/web/components/player-cards/PlayerAnalysisStudio.test.tsx
++++ after/web/components/player-cards/PlayerAnalysisStudio.test.tsx
+@@ -1,5 +1,5 @@
+ import React from "react";
+-import { afterEach, describe, expect, it, vi } from "vitest";
++import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+ import PlayerAnalysisStudio from "./PlayerAnalysisStudio";
+ import { captureFixture, goalieFixture, sharedGoalieFixture } from "../../lib/player-cards/analysisFixtures";
+@@ -8,7 +8,10 @@
+ import { buildAnalysisSnapshot } from "../../lib/player-cards/analysisSnapshot";
+ import { cardBlshEvidence, cardTradeContext, type CardEvidence } from "../../lib/player-cards/analysisEvidence";
+ import PlayerAnalysisCard, { type AnalysisPresentation } from "./PlayerAnalysisCard";
+-afterEach(cleanup);
++const originalBBox = Object.getOwnPropertyDescriptor(SVGElement.prototype, "getBBox");
++// jsdom has no layout engine; real text widths are exercised by the offline browser check.
++beforeEach(() => Object.defineProperty(SVGElement.prototype, "getBBox", { configurable: true, value: () => ({ x: 40, y: 400, width: 900, height: 29 }) }));
++afterEach(() => { cleanup(); if (originalBBox) Object.defineProperty(SVGElement.prototype, "getBBox", originalBBox); else Reflect.deleteProperty(SVGElement.prototype, "getBBox"); });
+ const skater = () => ({ id: "skater", label: "Fixture skater · TBL · 2026–27", capture: captureFixture() });
+ const goalie = { id: "goalie", label: "Fixture goalie · TBL · 2026–27", goalie: { id: 8476883, name: "Fixture goalie", team: "TBL", season: 20262027 }, inventory: null };
+ describe("analysis studio", () => {
+@@ -60,6 +63,34 @@
+     rerender(<PlayerAnalysisCard presentation={p} />);
+     expect(() => assertAnalysisExport(svg, p)).toThrow(/Full evidence/);
+   });
++  it("rejects the audited unbroken warning URL while preserving full evidence outside the PNG", () => {
++    const input = sharedGoalieFixture(), warning = "https://example.test/" + "w".repeat(300);
++    input.sources[0].reasons = [warning];
++    const p: AnalysisPresentation = { goalie: sharedGoalieOutlook(input, goalieFixture().player, "fixture"), gameIndex: 0 };
++    render(<PlayerAnalysisCard presentation={p} />);
++    const svg = screen.getByRole("img") as unknown as SVGSVGElement;
++    const text = svg.querySelector('[data-confirmation-warnings="true"]')!;
++    expect(text.getAttribute("data-evidence-truncated")).toBe("true");
++    expect(text.textContent).toContain("PNG export is unavailable");
++    expect([...text.querySelectorAll("tspan")].every(line => !!line.textContent)).toBe(true);
++    expect(svg.getAttribute("aria-label")).toContain(warning);
++    expect(analysisManifest(p).presentation.goalie.sharedProvenance.confirmationWarnings).toEqual([warning]);
++    expect(() => assertAnalysisExport(svg, p)).toThrow(/Full evidence/);
++  });
++  it("checks rendered evidence width even when character wrapping does not flag truncation", () => {
++    const input = sharedGoalieFixture(); input.sources[0].reasons = ["W".repeat(120)];
++    const p: AnalysisPresentation = { goalie: sharedGoalieOutlook(input, goalieFixture().player, "fixture"), gameIndex: 0 };
++    render(<PlayerAnalysisCard presentation={p} />);
++    const svg = screen.getByRole("img") as unknown as SVGSVGElement, text = svg.querySelector('[data-confirmation-warnings="true"]')!;
++    expect(svg.querySelector('[data-evidence-truncated="true"]')).toBeNull();
++    for (const width of [1120, 1121, NaN, 0]) {
++      Object.defineProperty(text, "getBBox", { configurable: true, value: () => ({ width }) });
++      if (width === 1120) expect(() => assertAnalysisExport(svg, p)).not.toThrow();
++      else expect(() => assertAnalysisExport(svg, p)).toThrow(/Full evidence/);
++    }
++    Object.defineProperty(text, "getBBox", { configurable: true, value: undefined });
++    expect(() => assertAnalysisExport(svg, p)).toThrow(/bounds are unavailable/);
++  });
+   it("offers explicit optional season comparison, preserves baseline default and makes no requests", () => {
+     const network = vi.spyOn(globalThis, "fetch"); render(<PlayerAnalysisStudio selections={[skater(), goalie]} />);
+     fireEvent.change(screen.getByLabelText("Analysis view"), { target: { value: "comparison" } });
+--- before/tasks/artifacts/player-cards-evolution-2026-10-31/preview-entry.tsx
++++ after/tasks/artifacts/player-cards-evolution-2026-10-31/preview-entry.tsx
+@@ -22,6 +22,6 @@
+  const gapFixture=sharedGoalieFixture();gapFixture.goalies[0].games[0].confirmation={state:"projected",source:"validated_events",observedAt:"2026-10-31T11:00:00Z",sourceUrl:null,expiresAt:null};gapFixture.sources[0].reasons=["Reports aren't separated by reporter, so conflicts between sources can't be detected.","No source link or expiry exists for these reports."];
+  const missingSassonNhl={...captureFixture(0),player:{...f.player,id:sasson.profile.playerId,name:sasson.profile.name,team:sasson.profile.team,position:sasson.profile.position},source:'retained' as const,observedAt:sasson.metadata.asOfUTC,fields:{},games:[],history:{complete:false,seasonAppearances:null,reason:'NHL comparison capture unavailable for this review player.'},finality:'NHL comparison capture unavailable; only separately dated BLSH research supplied.'};
+  const selections=[{id:'retained-sasson',label:'Max Sasson · retained BLSH source differences',capture:missingSassonNhl,retainedBlsh:sasson as RetainedBlshInput},{id:'retained',label:'Nikita Kucherov · retained NHL · 2026–27',capture:analysisCaptureFromNhl(retained),hero:art?artwork.readyHero:null,retainedBlsh:retainedBlsh as RetainedBlshInput},{id:'fixture',label:'Synthetic skater · TBL · 2026–27',capture:f},{id:'short',label:'Synthetic short season · 3 GP',capture:captureFixture(3)},{id:'goalie',label:'Synthetic goalie outlook · TBL',goalie:g.player,inventory:g},{id:'shared-goalie',label:'Synthetic shared goalie inventory · TBL',goalie:g.player,inventory:null,sharedFixture:sharedGoalieFixture()},{id:'shared-goalie-gaps',label:'Synthetic goalie source gaps · TBL',goalie:g.player,inventory:null,sharedFixture:gapFixture},{id:'missing-goalie',label:'Goalie source unavailable · TBL',goalie:{...g.player,id:8473575,name:'Unqualified goalie'},inventory:null}];
+- return <><div style={{padding:16,color:'white',fontFamily:'Arial'}}><button onClick={()=>setBaseline(!baseline)}>{baseline?'Open new analysis':'Open preserved four-format editor'}</button><label style={{padding:12}}><input type="checkbox" checked={art} onChange={e=>setArt(e.target.checked)}/> Show approved retained artwork</label><p>Offline review only. Retained NHL observation is 2026-10-29. All other data are synthetic. No provider route exists.</p>{art&&<PlayerArtworkControls artwork={artwork} team="TBL" busy={false} onChange={()=>{}}/>}</div>{baseline?<CurrentPlayerCardStudio initialCard={retained} load={async()=>retained}/>:<PlayerAnalysisStudio selections={selections}/>}</>;
++ return <><div style={{padding:16,color:'white',fontFamily:'Arial'}}><button onClick={()=>setBaseline(!baseline)}>{baseline?'Open new analysis':'Open preserved four-format editor'}</button><label style={{padding:12}}><input type="checkbox" checked={art} onChange={e=>setArt(e.target.checked)}/> Show approved retained artwork</label><p>Offline review only. Retained NHL observations and BLSH research were captured on 2026-10-29; BLSH includes separately dated box comparisons and remains stale research. Other skater and goalie selections are labeled synthetic fixtures or unavailable. No provider route exists.</p>{art&&<PlayerArtworkControls artwork={artwork} team="TBL" busy={false} onChange={()=>{}}/>}</div>{baseline?<CurrentPlayerCardStudio initialCard={retained} load={async()=>retained}/>:<PlayerAnalysisStudio selections={selections}/>}</>;
+ }
+ createRoot(document.getElementById('root')!).render(<App/>);

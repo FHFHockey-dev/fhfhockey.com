@@ -1,0 +1,10 @@
+[
+  {
+    "check": "enabled-goalie-reproduction",
+    "exitCode": 1
+  },
+  {
+    "check": "Python lifecycle callers",
+    "exitCode": 0
+  }
+]

@@ -1,0 +1,56 @@
+{
+  "checks": [
+    "Defaultclient\u2192nativeHTTPloopbackAPI\u2192actualprovider with3capturedreadpaths; noautoload, pastedFHFHURL/Enter;5/10/20andbothformatsreuseonecapture;4selected-onlyPNG/manifestsagreewithindependentrawsums",
+    "NativefilefallbackPNGparity; browserBack/Forwardrestorescontrolsandinvalidatesoldcard/preparedfilewithoutfetch; explicitreloadrequired",
+    "Invalid/foreignURLzeroAPIcalls; uncapturedplayeridentityfailsbeforehistory/schedulefanout; no stalevalues/export/researchUI;390pxnooverflow"
+  ],
+  "exports": [
+    {
+      "count": 10,
+      "format": "rates-opportunity",
+      "sha256": "b7d11ccecb5859fd2e75ec6f84688ed727d20780b690dac09e6983a3927f0287",
+      "selectedGp": 10
+    },
+    {
+      "count": 10,
+      "format": "results-milestones",
+      "sha256": "b90dbe7d638d8e976858b948c334252d2e127e1db2f23102f723fa625f470e09",
+      "selectedGp": 10
+    },
+    {
+      "count": 5,
+      "format": "results-milestones",
+      "sha256": "86ec0e06b728c1eeb16f6c9ef081de3972db15aa7ba7fd31ff1a37e0d13171d0",
+      "selectedGp": 5
+    },
+    {
+      "count": 20,
+      "format": "results-milestones",
+      "sha256": "154f2c52be07174c00000ef2db898e40b19a58ca595b400c22c070e06034802b",
+      "selectedGp": 11
+    }
+  ],
+  "fixtureProviderPaths": [
+    "/player/8476453/landing",
+    "/player/8476453/game-log/20262027/2",
+    "/club-schedule-season/TBL/20262027",
+    "/player/8476453/landing",
+    "/player/8476453/game-log/20262027/2",
+    "/club-schedule-season/TBL/20262027",
+    "/player/8479318/landing"
+  ],
+  "externalAttempts": [],
+  "pageErrors": [],
+  "liveRequests": 0,
+  "source": "approved retained official capture; nativeHTTPloopbackfixtureendpoint; serveroutboundfetchblocked",
+  "appRoute": "/player-cards",
+  "apiRoute": "/api/v1/player-cards",
+  "nativeLocalApiCalls": [
+    "?playerId=8476453&season=20262027&count=10",
+    "?playerId=8476453&season=20262027&count=20",
+    "?playerId=8479318&season=20262027&count=20"
+  ],
+  "transport": "Native same-origin HTTP; fetch wrapper only records requests/response headers, it does not supply responses",
+  "url": "http://127.0.0.1:3125/player-cards/current?checkpoint=current11",
+  "htmlSha256": "74a301f9bb0f0949cd1ebf261a9f923472625149cb96344241993afb1960de08"
+}

@@ -1,0 +1,234 @@
+{
+  "at": "2026-10-28T04:00:10.689602+00:00",
+  "branch": "octoberBranch",
+  "head": "e4fb6f1467401983abe63d69277b75df151e0395",
+  "state": "VERIFIED_USABLE_LOCAL_CHECKPOINT",
+  "sourcePaths": 8,
+  "applicationPaths": 7,
+  "newFiles": 5,
+  "tests": {
+    "files": 3,
+    "passed": 19,
+    "failed": 0,
+    "note": "A subsequent explicit mock-function signature annotation fixedTypeScript only; no runtimeJSbehavior change."
+  },
+  "commands": {
+    "tests": {
+      "action": "tests",
+      "command": [
+        "npm",
+        "test",
+        "--",
+        "--run",
+        "--config",
+        "../tasks/artifacts/player-cards-2026-10-28/name-search-14/vitest.config.mts"
+      ],
+      "cwd": "/Users/tim/Code/fhfhockey.com/web",
+      "exitCode": 0,
+      "elapsedSeconds": 2.27,
+      "environmentOverrides": {
+        "npm_config_cache": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-28/name-search-14/.npm-cache",
+        "npm_config_logs_dir": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-28/name-search-14/.npm-logs",
+        "NO_UPDATE_NOTIFIER": "1",
+        "NEXT_TELEMETRY_DISABLED": "1"
+      },
+      "lockOwnedAndReleased": true
+    },
+    "types": {
+      "action": "types",
+      "command": [
+        "npx",
+        "--no-install",
+        "tsc",
+        "--noEmit",
+        "--project",
+        "../tasks/artifacts/player-cards-2026-10-28/name-search-14/tsconfig.json"
+      ],
+      "cwd": "/Users/tim/Code/fhfhockey.com/web",
+      "exitCode": 0,
+      "elapsedSeconds": 1.754,
+      "environmentOverrides": {
+        "npm_config_cache": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-28/name-search-14/.npm-cache",
+        "npm_config_logs_dir": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-28/name-search-14/.npm-logs",
+        "NO_UPDATE_NOTIFIER": "1",
+        "NEXT_TELEMETRY_DISABLED": "1"
+      },
+      "lockOwnedAndReleased": true
+    },
+    "lint": {
+      "action": "lint",
+      "command": [
+        "npx",
+        "--no-install",
+        "eslint",
+        "lib/player-cards/playerCatalog.ts",
+        "lib/player-cards/playerCatalog.test.ts",
+        "components/player-cards/PlayerLookup.tsx",
+        "components/player-cards/PlayerLookup.test.tsx",
+        "components/player-cards/CurrentPlayerCardStudio.tsx",
+        "components/player-cards/CurrentPlayerCardStudio.test.tsx"
+      ],
+      "cwd": "/Users/tim/Code/fhfhockey.com/web",
+      "exitCode": 0,
+      "elapsedSeconds": 1.388,
+      "environmentOverrides": {
+        "npm_config_cache": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-28/name-search-14/.npm-cache",
+        "npm_config_logs_dir": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-28/name-search-14/.npm-logs",
+        "NO_UPDATE_NOTIFIER": "1",
+        "NEXT_TELEMETRY_DISABLED": "1"
+      },
+      "lockOwnedAndReleased": true
+    },
+    "render": {
+      "action": "render",
+      "command": [
+        "node",
+        "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-28/name-search-14/render-preview.mjs"
+      ],
+      "cwd": "/Users/tim/Code/fhfhockey.com/web",
+      "exitCode": 0,
+      "elapsedSeconds": 0.198,
+      "environmentOverrides": {
+        "npm_config_cache": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-28/name-search-14/.npm-cache",
+        "npm_config_logs_dir": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-28/name-search-14/.npm-logs",
+        "NO_UPDATE_NOTIFIER": "1",
+        "NEXT_TELEMETRY_DISABLED": "1"
+      },
+      "lockOwnedAndReleased": true
+    },
+    "served": {
+      "action": "served",
+      "command": [
+        "node",
+        "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-28/name-search-14/verify-served.mjs"
+      ],
+      "cwd": "/Users/tim/Code/fhfhockey.com/web",
+      "exitCode": 0,
+      "elapsedSeconds": 2.458,
+      "environmentOverrides": {
+        "npm_config_cache": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-28/name-search-14/.npm-cache",
+        "npm_config_logs_dir": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-28/name-search-14/.npm-logs",
+        "NO_UPDATE_NOTIFIER": "1",
+        "NEXT_TELEMETRY_DISABLED": "1"
+      },
+      "lockOwnedAndReleased": true
+    }
+  },
+  "browser": {
+    "checks": [
+      "Dated805catalogwithoutnetwork/autoselection:duplicateEliasIDs/C-D,accentStutzle,noresults,unsupportedgoalieexplicit;nativeEnterdoesnotload,Tab-result-Enter-Loadfocus;44pxtargets/focus/lookup-onlyaxe0violations",
+      "Keyboardname-ID-nativeHTTPactualprovider/retained3inputs-ownKucherovhero/realstats;2PNGsbyteidentical13/treatments+outlinesunchanged;manifest/share/windowcategorynostalefiles/noadditionalcapture",
+      "390px/320pxreflow/search44pxtouch;namedselectionclearspriorart/stats/sharewithoutfetch;BackrestoresIDandrequiresLoad"
+    ],
+    "exports": [
+      {
+        "style": "team-colors",
+        "sha256": "6b98142939329b8c8333565f74b5eba3a41c4dfce3c2fc3cded2ecfe38811527",
+        "byteIdenticalToCheckpoint13": true
+      },
+      {
+        "style": "pixelated-team-colors",
+        "sha256": "35b4d61650c5dbe120259e274397ebc41ac4091424e72979c6a390247d224aa7",
+        "byteIdenticalToCheckpoint13": true
+      }
+    ],
+    "axe": {
+      "scope": "PlayerLookup fieldset only",
+      "violations": 0,
+      "passes": 18,
+      "incomplete": [],
+      "screenReaderNotRun": true
+    },
+    "apiCalls": [
+      "?playerId=8476453&season=20262027&count=10"
+    ],
+    "providerPaths": [
+      "/player/8476453/landing",
+      "/player/8476453/game-log/20262027/2",
+      "/club-schedule-season/TBL/20262027"
+    ],
+    "externalAttempts": [],
+    "pageErrors": [],
+    "newLiveRequests": 0
+  },
+  "resource": {
+    "at": "2026-10-28T04:00:10.689602+00:00",
+    "allOwnTokensReleased": true,
+    "lastBrowserBatchExitCode": 0,
+    "lastBrowserBatchSeconds": 2.458,
+    "staticPreviewHoldsNoHeavySlot": true,
+    "coordinatorMessageDelivered": {
+      "threadId": "01a16e23-72b5-76ee-8ade-2d209d0e7002",
+      "purpose": "InformwaitingcronandUnity thatourchecksarefinished/recheckandacquire normally; no newslotreservation"
+    },
+    "otherHoldersNotDisturbed": true
+  },
+  "runtime": {
+    "pid": 95367,
+    "bind": "127.0.0.1:3125",
+    "readbacks": [
+      {
+        "route": "/player-cards/current",
+        "status": 200,
+        "path": "tasks/artifacts/player-cards-2026-10-28/name-search-14/preview.html",
+        "bytes": 445507,
+        "sha256": "5e27d049689a04f74916bfbf94c8696122a778b2d53449df5e858444f534302b"
+      },
+      {
+        "route": "/player-cards",
+        "status": 200,
+        "path": "tasks/artifacts/player-cards-2026-10-28/name-search-14/preview.html",
+        "bytes": 445507,
+        "sha256": "5e27d049689a04f74916bfbf94c8696122a778b2d53449df5e858444f534302b"
+      },
+      {
+        "route": "/player-cards/customizer",
+        "status": 200,
+        "path": "tasks/artifacts/player-cards-2026-10-26/outline-editor-09/preview.html",
+        "bytes": 3455216,
+        "sha256": "ca75a7448351ce85abcd833f6f0f40cd54f85911c6ad06a087a81ed6f5b543d9"
+      },
+      {
+        "route": "/player-cards/nhl-retained",
+        "status": 200,
+        "path": "tasks/artifacts/player-cards-2026-10-26/current-data-01/approved-snapshot-02/preview.html",
+        "bytes": 523724,
+        "sha256": "3b6ff7d783576dda860386c0fb47af8c64e6b42fcb1d0b9cecefee98f02a2777"
+      },
+      {
+        "route": "/player-cards/functional",
+        "status": 200,
+        "path": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1/preview.html",
+        "bytes": 318626,
+        "sha256": "6c29f6eb3dc6ffc9a6a8a546423f78ac3e6e5e1e7265129475724422d3aad9b5"
+      }
+    ],
+    "lifecycle": "Detached POSIX session independent of launcher; host/environment shutdown or explicit stop ends it. No automatic restart/system startup; post-turn survival not yet observed."
+  },
+  "protectedPins": 13,
+  "usage": {
+    "usedPercent": 41,
+    "remainingPercent": 59,
+    "windowDurationMins": 10080
+  },
+  "failuresPreserved": [
+    "Initialexecserverdisconnect beforedispatch; noreceipt/log/session foundafterreconnect",
+    "30secheavywaitexit75/novitestchild",
+    "FirstTSfailedbecausemockinferredzeroargumenttuple;typeannotationfixed,firstlogs/commandkept"
+  ],
+  "scopeLimits": [
+    "Dated2026-10-24identitycatalog805isnotfreshcurrentroster orleaguepool",
+    "Real-data QA usesonlyapprovedKucherovcapture00:42:33.268Z2026-10-27;notcurrentlive",
+    "GlobalNext/Authhydration/remoteproduction notrun",
+    "No allNHLranks/NST/milestone/careerproof orremainingstat-suiteacceptance",
+    "Screenreaderexecutionnotrun;axeonlylookupfieldset"
+  ],
+  "manualPixels": {
+    "at": "2026-10-28T04:01:18.242135+00:00",
+    "viewed": [
+      "name-search-desktop.png",
+      "name-search-phone.png"
+    ],
+    "scope": "Native1264pxdesktop and390x844phone screenshots ofactualservedlookup; visiblelabels/catalogdate/exactNHLID/resultfocus/44pxtouch/legiblewrapping. Cardpixels protected byexact13PNGhashes; no redesign."
+  }
+}

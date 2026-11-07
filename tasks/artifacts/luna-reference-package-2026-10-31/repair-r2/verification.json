@@ -1,0 +1,40 @@
+{
+  "node": "22.11.0",
+  "tests": {
+    "status": "passed",
+    "files": 5,
+    "tests": 265,
+    "lunaTests": 136,
+    "coupledTests": 129,
+    "log": "tests.log"
+  },
+  "typescript": {
+    "status": "passed",
+    "exitCode": 0,
+    "config": "../tsconfig.json",
+    "log": "typecheck.log"
+  },
+  "eslint": {
+    "status": "passed",
+    "exitCode": 0,
+    "files": 8,
+    "log": "lint.log"
+  },
+  "standaloneRehearsals": {
+    "baseline": "passed",
+    "equivalentEvidenceAndOrder": "passed",
+    "reportsPerScenario": 16,
+    "responsesPerScenario": 16,
+    "decisionsPerScenario": 4,
+    "batchesAndRequestsIdentical": true,
+    "maxRequestBytes": 14985,
+    "actualPaidRequests": 0,
+    "actualPaidCostNanoUsd": 0
+  },
+  "protectedPins": "7 unchanged",
+  "independentRereview": "pending",
+  "credentialUse": "stopped pending owner confirmation active evaluation key was not exposed or replaced after revocation",
+  "rotationBeforeProduction": "required verified receipt; pending",
+  "realHoldout": "unavailable",
+  "deployment": "not performed; hosted state not inspected"
+}

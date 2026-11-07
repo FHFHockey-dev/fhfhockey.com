@@ -1,0 +1,11 @@
+--- a/web/lib/buyLowSellHigh/displayProfile.test.ts
++++ b/web/lib/buyLowSellHigh/displayProfile.test.ts
+@@ -20,7 +20,7 @@
+ 
+ const ROOT = join(__dirname, "../../..");
+ const ARTIFACTS = join(ROOT, "tasks/artifacts/blsh-independent-review-2026-10-28");
+-const FIXTURE = join(ARTIFACTS, "display-snapshot-v2/fixtures/PROFILES-FIXTURE.jsonl");
++const FIXTURE = join(__dirname, "__fixtures__/display-profiles.jsonl");
+ const SOURCE = join(ARTIFACTS, "dry-run-v4/PROFILES-A_development_reference__official_receipt_overlay.jsonl");
+ const SUMMARY = join(ARTIFACTS, "dry-run-v4/SUMMARY.json");
+ const PINS = {

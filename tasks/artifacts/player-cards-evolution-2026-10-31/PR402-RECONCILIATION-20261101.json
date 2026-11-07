@@ -1,0 +1,27 @@
+{
+  "at": "2026-11-01T19:15:12.489121+00:00",
+  "refs": {
+    "HEAD": "50f4e9aaede4b2b40b673ea16b73e2be17d6c057",
+    "master": "457435eb3010c5b3dd92d2e1a46d9c75d851780a",
+    "origin/master": "f17bea20d8caa2b6268c318bdb2152d7e2a3b57d"
+  },
+  "branch": "octoberBranch",
+  "upstreamPR": {
+    "url": "https://github.com/FHFHockey-dev/fhfhockey.com/pull/402",
+    "merged": true,
+    "mergedAt": "2026-11-01T18:20:47Z",
+    "mergeSHA": "f17bea20d8caa2b6268c318bdb2152d7e2a3b57d",
+    "verifiedBy": "GitHub get_pr_info read-only metadata"
+  },
+  "releaseAncestorOfHead": true,
+  "ownedCandidatePathsPresentInRelease": [],
+  "trackedDependencyDiff": "",
+  "workingSourcePins": {
+    "web/lib/socialShare/modules/shared/goalieInventory.ts": "71f91597d272dad777d01db09d1162e287c052d162c80de7bc9e3137197d14a8",
+    "web/lib/socialShare/modules/shared/goalieInventory.fixture.ts": "eff494e85274d90f250aaa1ae0520b881b34fe71954b4e29f560ed4e5a8a39ec",
+    "web/lib/socialShare/modules/shared/goalieInventory.sources.ts": "b4cc525f00effac9db1c168e1605d991f2775962386a8596eae045ca476be331"
+  },
+  "claudeReceipt": "tasks/diaries/2026-10-31-claude-social-share-chef.md reports release READY/smoke; not independently queried by this worker. PP rerun/derived rebuilds/applet remain open in that receipt.",
+  "disposition": "No branch/ref sync, integration, commit or release attempted. Current octoberBranch already descends from the verified release; local master ref is stale. All78protected working files and shared consumer contract hashes remain unchanged;16new candidate paths absent from release. No scoped dependency difference or custody change found; continue isolated fixes only. Coordinate any future release with parent.",
+  "activation": "No inference of deployment/activation from merge; no production checks performed."
+}

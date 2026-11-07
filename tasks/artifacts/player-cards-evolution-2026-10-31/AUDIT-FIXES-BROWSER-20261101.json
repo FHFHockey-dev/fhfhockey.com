@@ -1,0 +1,92 @@
+{
+  "results": [
+    {
+      "selected": "normal",
+      "accepted": true,
+      "error": null,
+      "truncated": false,
+      "spans": [
+        "Reports aren't separated by reporter, so conflicts between sources can't be detected. No source link or expiry exists",
+        "for these reports."
+      ],
+      "width": 868.265625,
+      "right": 908.265625,
+      "ariaPreservesFullWarning": true,
+      "png": {
+        "filename": "audit-fix-normal-20261101.png",
+        "sha256": "0f16aa2b80f4638fb23c5cd3bd8a7b483174acd63cb73dba16f0abf650f29596",
+        "width": 1200,
+        "height": 1020
+      },
+      "manifestPreservesFullWarning": "[\"Reports aren't separated by reporter, so conflicts between sources can't be detected.\",\"No source link or expiry exists for these reports.\"]"
+    },
+    {
+      "selected": "long-token",
+      "accepted": false,
+      "error": "Full evidence will not fit in this card. Narrow the supplied evidence before exporting.",
+      "truncated": true,
+      "spans": [
+        "Source warnings are too long for this card. Read the full details; PNG export is unavailable."
+      ],
+      "width": 684.15625,
+      "right": 724.15625,
+      "ariaPreservesFullWarning": true,
+      "manifestPreservesFullWarning": "[\"https://example.test/wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww\"]"
+    },
+    {
+      "selected": "wide-token",
+      "accepted": false,
+      "error": "Full evidence will not fit in this card. Narrow the supplied evidence before exporting.",
+      "truncated": false,
+      "spans": [
+        "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW"
+      ],
+      "width": 1925.453125,
+      "right": 1965.453125,
+      "ariaPreservesFullWarning": true,
+      "manifestPreservesFullWarning": "[\"WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW\"]"
+    },
+    {
+      "selected": "wrapped-wide",
+      "accepted": true,
+      "error": null,
+      "truncated": false,
+      "spans": [
+        "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+        "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW"
+      ],
+      "width": 962.734375,
+      "right": 1002.734375,
+      "ariaPreservesFullWarning": true,
+      "png": {
+        "filename": "audit-fix-wrapped-wide-20261101.png",
+        "sha256": "20140e501ce2ecf4b151ab28876528e1896d02ca822956a001712158c21c79ff",
+        "width": 1200,
+        "height": 1020
+      },
+      "manifestPreservesFullWarning": "[\"WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW\"]"
+    },
+    {
+      "selection": "retained",
+      "retainedResearchExported": true,
+      "filename": "audit-fix-retained-20261101.png",
+      "sha256": "ef807d9a6afa3cded087fd5058b30a32df7ab4b19c90d6a00e8253a7986d7cac"
+    },
+    {
+      "selection": "retained-sasson",
+      "retainedResearchExported": true,
+      "filename": "audit-fix-retained-sasson-20261101.png",
+      "sha256": "5ce42944b74c53c27254a051387feb758cac9e248616768fae7f535ff60b1662"
+    }
+  ],
+  "notice": "Offline review only. Retained NHL observations and BLSH research were captured on 2026-10-29; BLSH includes separately dated box comparisons and remains stale research. Other skater and goalie selections are labeled synthetic fixtures or unavailable. No provider route exists.",
+  "mobileWidth": 320,
+  "requests": [],
+  "errors": [],
+  "downloads": [
+    "normal.png",
+    "wrapped-wide.png",
+    "fhfh-analysis-retained.png",
+    "fhfh-analysis-retained-sasson.png"
+  ]
+}

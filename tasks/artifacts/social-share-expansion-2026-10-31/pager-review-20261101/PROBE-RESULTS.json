@@ -1,0 +1,131 @@
+{
+  "generatedAt": "2026-11-01T19:46:49.576Z",
+  "method": "Offline VM executes exact TypeScript; React hook harness models effect dependencies, not a real browser. External IO unavailable. schedule.ts uses exact currentSeason AST node only.",
+  "checks": [
+    {
+      "name": "New York cutoff does not advance at UTC midnight",
+      "status": "passed"
+    },
+    {
+      "name": "New York cutoff advances at local midnight after fall DST",
+      "status": "passed"
+    },
+    {
+      "name": "Spring DST skips an hour without changing calendar date",
+      "status": "passed"
+    },
+    {
+      "name": "Fall DST repeats an hour without changing calendar date",
+      "status": "passed"
+    },
+    {
+      "name": "Leap-day calendar arithmetic is inclusive",
+      "status": "passed"
+    },
+    {
+      "name": "Year boundary labels include both years",
+      "status": "passed"
+    },
+    {
+      "name": "Season identity persists at January and rolls at August",
+      "status": "passed"
+    },
+    {
+      "name": "Inclusive custom leap range has three dates",
+      "status": "passed"
+    },
+    {
+      "name": "Past-only refuses future and unknown weeks",
+      "status": "passed"
+    },
+    {
+      "name": "Matched prior and recent appearances never overlap",
+      "status": "passed"
+    },
+    {
+      "name": "Calendar overlap fails closed and missing dates are disclosed",
+      "status": "passed"
+    },
+    {
+      "name": "F1 owner fix: Monday any-week default now resolves current week",
+      "status": "passed"
+    },
+    {
+      "name": "F2 reproduction: mounted calendar retains old cutoff on parent/post refresh",
+      "status": "passed"
+    },
+    {
+      "name": "F3 reproduction: absent skater rows conceal completed team/goalie data",
+      "status": "passed"
+    }
+  ],
+  "findings": {
+    "F1": {
+      "monday": {
+        "period": {
+          "label": "Week 6 · Nov 2 to Nov 8",
+          "from": "2026-11-02",
+          "through": "2026-11-08",
+          "listedFrom": "2026-11-02",
+          "elapsed": false,
+          "usedCalendar": true,
+          "season": 20262027
+        }
+      }
+    },
+    "F2": {
+      "calendarFetches": 1,
+      "pagerBefore": "Week 4 · Oct 19 to Oct 25",
+      "pagerAfterRefresh": "Week 4 · Oct 19 to Oct 25",
+      "serverResolvedWeek": 5
+    },
+    "F3": {
+      "method": "Exact AST loader functions and no-slate result; fixed scope/label/token dependencies; fake table data contains a completed game and goalie but zero skater rows.",
+      "result": {
+        "state": "missing",
+        "reasons": [
+          "No completed games on Oct 31. Choose another slate."
+        ],
+        "evidence": {},
+        "data": {
+          "applied": "(irrelevant setting token)",
+          "view": "goalies",
+          "slate": "2026-10-31",
+          "slates": {
+            "previous": null,
+            "next": null,
+            "first": "2026-07-01",
+            "last": "2026-10-31"
+          },
+          "games": 0,
+          "skaters": [],
+          "goalies": []
+        },
+        "teams": []
+      },
+      "calls": [
+        "wgo_skater_stats",
+        "wgo_skater_stats",
+        "wgo_skater_stats"
+      ],
+      "fixtureCompletedTeamRows": 2
+    }
+  },
+  "pins": {
+    "web/lib/socialShare/modules/shared/periodWindow.ts": "715136a861581f45659cd49c1d55ff740179a7abbca6efc1892d4d1ec0c69dda",
+    "web/lib/socialShare/modules/shared/categoryCounts.ts": "92a4e82037e4a793e29f342dbc49d448ccf605b502d0e6152330ba6c36a6e890",
+    "web/lib/socialShare/modules/shared/definitions.ts": "c63abb0c32414dac8a683371b5f48a8e2b9c53d4cb5f612c9144b932e5466f85",
+    "web/lib/rosterScheduleOptimizer/planningDates.ts": "b1d7454aad1238671be337b64120e33f2331ef2f8261e390d52b5ac17d9dd4c8",
+    "web/lib/socialShare/types.ts": "1831ff0bcf344332dcebe07bc42db4e1d0f6d69aa00e15a1a847b95f4fd95a68",
+    "web/lib/socialShare/modules/teamGames.ts": "5a3b0b626fedebb9512ecdc01c7ebaed1d9db494304c44abafec8a55e4a77b80",
+    "web/lib/socialShare/schedule.ts": "f6047772763a790e6a052393debcde0b41e088936f450629c56986952ca2222a",
+    "web/lib/teamsInfo.ts": "645f33ed7272e728b6ac1436754a13126ee25eb2eb6bc598fcefed3acc8e1584",
+    "web/lib/socialShare/modules/contract.ts": "1ddfa1230204268382a11a728c24a81b2d928a72c309635c57ce2699b1a9c4bf",
+    "web/lib/socialShare/modules/shared/goalieInventory.sources.ts": "ed6c69a0b7c711377007b8d3fc7701f34f4be183052cb707dc7715153a680bee",
+    "web/lib/socialShare/modules/shared/goalieInventory.ts": "71f91597d272dad777d01db09d1162e287c052d162c80de7bc9e3137197d14a8",
+    "web/lib/socialShare/modules/shared/goalieLedger.ts": "6c0c05818e858596dd39ee38fb7d9a366a19c23a3021e9c2363a611edc31cdf8",
+    "web/components/SocialShare/PeriodControl.tsx": "dc1c09fd6307e3a7f9359b08cc64f5643d1cbcf783640f581f9442d9f2bb6a72",
+    "web/lib/socialShare/modules/lastNightsStandouts.sources.ts": "c6b221bd21e1c3294219e123a32eab41eae8f5285726660afe8daede0503df0b",
+    "web/lib/socialShare/modules/lastNightsStandouts.ts": "93c6b362623932f0ed6735d25cc4a72cda3feec76a5e4fb24f9942b01681186a"
+  }
+}

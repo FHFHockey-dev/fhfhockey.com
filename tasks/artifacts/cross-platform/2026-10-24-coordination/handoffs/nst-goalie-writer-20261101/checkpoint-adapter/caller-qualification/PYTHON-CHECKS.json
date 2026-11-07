@@ -1,0 +1,15 @@
+{
+  "command": [
+    "python3",
+    "-m",
+    "pytest",
+    "-q",
+    "-p",
+    "no:cacheprovider",
+    "tests/test_nst_admission.py",
+    "tests/test_fetch_team_table_contract.py",
+    "tests/test_nst_legacy_lifecycle.py"
+  ],
+  "exitCode": 0,
+  "scope": "Isolated AST legacy functions; mocked lifecycle RPC, provider and database clients"
+}

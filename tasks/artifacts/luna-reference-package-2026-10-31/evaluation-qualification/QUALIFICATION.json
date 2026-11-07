@@ -1,0 +1,174 @@
+{
+  "version": "luna-evaluation-qualification-v1",
+  "inspectedAt": "2026-10-31T23:36:43.350881+00:00",
+  "scope": "Offline documentation and aggregate fixture metadata only; no fresh production/provider/source access, no raw source corpus copied into this package.",
+  "qualifiedExistingSets": 0,
+  "conclusion": "No qualifying unseen independently human-labeled set established in inspected material; not proof none exists elsewhere.",
+  "collections": [
+    {
+      "id": "S01-S10",
+      "counts": {
+        "groups": 10,
+        "posts": 12,
+        "sourceUnits": 50
+      },
+      "exposure": "Previously exposed historical development; used in prompts/reference, comparisons and owner feedback.",
+      "humanLabels": "Groups reviewed by owner; detailed fields assistant-derived. Canonical identity/game/world truth ungraded.",
+      "rights": "No explicit new external-use clearance established in inspected material; local possession is not a grant.",
+      "qualified": false,
+      "missing": [
+        "unseen independent split",
+        "field-level independent human labels",
+        "dated canonical/game evidence",
+        "documented permitted use for new evaluation"
+      ]
+    },
+    {
+      "id": "E01-E16",
+      "counts": {
+        "reports": 16,
+        "paidRequests": 17,
+        "originalPasses": 9,
+        "originalFailures": 7
+      },
+      "exposure": "Exposed assistant-authored synthetic development; previously inspected/tuned/tested.",
+      "humanLabels": "Assistant-authored expected answers; independent code/audit review is not independent human gold.",
+      "rights": "Task-authored synthetic material; no new third-party collection needed, but cannot serve as unseen real evaluation.",
+      "qualified": false,
+      "missing": [
+        "unseen split",
+        "independent human source-based labels",
+        "real-report external validity"
+      ],
+      "reconciliationBasis": "Parent-provided independent audit reconciliation: sixteen exposed synthetic reports, nine original passes/seven failures, seventeen calls; not a new human-label or holdout claim."
+    },
+    {
+      "id": "October-1-classification-pool",
+      "counts": {
+        "seedEvents": 11,
+        "namedHoldoutCandidates": 24,
+        "labelRecords": 35
+      },
+      "exposure": "Labels frozen after initial safety changes; used in classification tests. Label file says not a blind pre-tuning holdout.",
+      "humanLabels": "Chef-only review; independent reviewer unavailable; canonicalAccuracyDenominator=0; one label corrected after diagnostic classification.",
+      "rights": "Provider original exports; no explicit rights scope found in inspected metadata. Original author clock/context not authenticated.",
+      "qualified": false,
+      "missing": [
+        "unseen split",
+        "independent human review",
+        "dated canonical identity",
+        "original-source clock/context",
+        "rights scope"
+      ]
+    },
+    {
+      "id": "October-11-critical-source-families",
+      "counts": {
+        "sourceRecordsInFixture": 7,
+        "prerequisiteFamilies": 3,
+        "provisionalSourceClaims": 7
+      },
+      "exposure": "Previously investigated development families; paid pilot/comparison history exists.",
+      "humanLabels": "Three-family prerequisite explicitly reports zero human-adjudicated and zero untouched holdout examples.",
+      "rights": "Official-oEmbed provenance declared in checkpoint; provenance is not new-use permission. No fresh external authentication performed.",
+      "qualified": false,
+      "missing": [
+        "unseen split",
+        "human labels",
+        "complete relay/revision families",
+        "rights scope",
+        "dated canonical evidence"
+      ]
+    },
+    {
+      "id": "retained-comparison-observations",
+      "counts": {
+        "records": 4
+      },
+      "exposure": "Imported development observations from S04/S06/S10 family material.",
+      "humanLabels": "Fixture explicitly not human gold/canonical identity or game adjudication; comparison uses no approved real directory.",
+      "rights": "Local development input provenance; no new-use clearance established.",
+      "qualified": false,
+      "missing": [
+        "independent split",
+        "human identity/goalie/Decisions labels",
+        "dated candidate directory",
+        "rights scope"
+      ]
+    },
+    {
+      "id": "NX-research-fixtures",
+      "counts": {
+        "cases": 15,
+        "selectedClaimSpans": 40,
+        "textVariants": 29,
+        "indexedFamilies": 19
+      },
+      "exposure": "Imported and tested provisional research derivative.",
+      "humanLabels": "Independent agent review explicitly not human adjudication; metadata/canonical bindings missing; original raw corpus not reauthenticated.",
+      "rights": "Archive hashes establish integrity only; new-use rights not established.",
+      "qualified": false,
+      "missing": [
+        "unseen split",
+        "independent human labels",
+        "complete original provenance/clocks",
+        "dated identity/game bindings",
+        "rights scope"
+      ]
+    },
+    {
+      "id": "5494-discovery-corpus-and-prospective-plan",
+      "counts": {
+        "historicalDiscoveryReceiptsDocumented": 5494,
+        "qualifiedFutureSamplesObservedHere": 0
+      },
+      "exposure": "Discovery corpus explicitly development; prospective cohort described as unactivated in historical documents. Current production not queried.",
+      "humanLabels": "No authenticated future cohort export and complete human labels supplied in inspected local metadata.",
+      "rights": "No approved new export/acquisition scope or rights record established.",
+      "qualified": false,
+      "missing": [
+        "authenticated cohort/export",
+        "permission and bounded source scope",
+        "independent labels",
+        "exposure-separated lineage inventory"
+      ]
+    }
+  ],
+  "sourcePins": {
+    "web/lib/sources/tweetLunaReference.md": "20d3bb649b07fa2124a0bdbe45eb7145babdd125607da60f5b43c6e2f3b5ee99",
+    "web/lib/sources/fixtures/tweetLunaAdjudicatedLibrary.json": "e787036b54c89f8fa06e4b28032c8895fbbed81feef1fa04e357435f3229726a",
+    "web/lib/sources/fixtures/tweetClassificationLabels.json": "150880b7f63bfa1cbd459bb776d4763197392d407a7b2837d11de3c9749b87dd",
+    "web/lib/sources/fixtures/tweetClassificationSeeds.json": "29dec5d67a14a0dc06aa5005343dc7ac671fd0d0cf78cba84e5bf00a78fc1619",
+    "web/lib/sources/fixtures/iftttComparisonObservations.json": "a12f0646e8f640f6eb0ebe5026ee4be31c519257e3fb9731ab586b2214053add",
+    "web/lib/sources/fixtures/tweetIdentityDevelopmentComparison.ts": "112b010711797b15561c0a7fa364776931cafc179c9def76274c9cb4de6a13ec",
+    "web/lib/sources/tweetInterpretation.test.ts": "1e6e3c3f1f0ac56f6a983802943ad780dc1c0b7ac86603b975a6a3c4a2d22acd",
+    "web/lib/sources/tweetLunaEvaluationScoring.ts": "22797d003c321c3e52ef31945bbc5a4dfb7365ff4dfcfc93454c5bf041f6363d",
+    "web/lib/sources/tweetDecisionReviewMapping.ts": "dbb91326550a9a2140139f8399f0ef21fa14fe1bb525a8d9990893090c52b0c0",
+    "web/lib/sources/decisionsReference/adapter.mjs": "055bc80ccf9874de8a976da6106bc34af15e424d6b905d39fccf57ecfd2b92a1",
+    "web/scripts/evaluate-tweet-claims.ts": "672af9835b481682066cd10d919b12073bc089da5804400f478ac9b75baf1849",
+    "tasks/ifttt-integration-2026-10-16/human-adjudicated-benchmark-v1-2026-10-19/BENCHMARK.md": "b684fa6e22ec93079dca56e0279d0d2a447825cb95483fa444c6bd2af2a57051",
+    "tasks/ifttt-integration-2026-10-16/comparison-approved-execution-2026-10-19/RESULT.md": "21b126b9ba7333454b926fa135c91ec97f22ebdb585807d4897fb42512c96c84",
+    "tasks/ifttt-integration-2026-10-16/comparison-prerequisites-2026-10-19/CHECKPOINT.md": "3c5faabf8217d3e4984548e23ca0af5ac8f22349bc968f59a6870083afd75cd1",
+    "tasks/ifttt-integration-2026-10-16/research-fixtures-2026-10-17/INTEGRATION-STATUS.md": "a0ccb6ae7541fd3c258ad8622bbfdba494f388b5002e61326ceb396f31a576cb",
+    "tasks/ifttt-integration-2026-10-16/research-fixtures-2026-10-17/OCT16-ORIGINAL-PACK-INDEPENDENT-REVIEW.md": "e3fc8715ad61f6f5d95f2640c2e5bca0521fe8890e907a99fff92c2b3544228a",
+    "tasks/ifttt-integration-2026-10-16/APPROVAL-PACKAGES.md": "09110c560061aca5f75ab742be9d2aeccc462dd72dd993ac8e9c699588e22e81",
+    "tasks/ifttt-integration-2026-10-16/receiver-intake-bounds-v1/SOURCE-SCOPE-INVENTORY.md": "d6772803df05df70bf52dfa0602137b49c24836501e6192ec0c6a26ccdd2092a",
+    "tasks/artifacts/luna-reference-package-2026-10-31/diagnostic-e07-execution/RESULTS.json": "182fc44fb425acbde4b153b3451856856f234a930c66a4816ebbf5b4fc315345"
+  },
+  "historicalHandoff": "cb8ed5217:tasks/artifacts/luna-review-integration-2026-10-23/HANDOFF.md",
+  "missingReferencedArtifacts": [
+    "tasks/artifacts/luna-review-integration-2026-10-23/HANDOFF.md (recovered read-only at the recorded git revision)",
+    "tasks/ifttt-integration-2026-10-16/human-adjudicated-benchmark-v1-2026-10-19/benchmark.json",
+    "tasks/ifttt-integration-2026-10-16/forward-evaluation-empty.json"
+  ],
+  "missingArtifactsNotInventedOrRecreated": true,
+  "realLedgerSha256": "59723f8818c00c1ce84eb88fc0a5d57cf4458065b9d9996622c962d9f7a9b24a",
+  "ledgerEnabled": false,
+  "cumulativeCalls": 17,
+  "aggregateExposureNanoUsd": 269790750,
+  "newCallsThisTask": 0,
+  "newSourceRecordsAcquired": 0,
+  "rawRecordBodiesCopied": 0,
+  "credentialAccess": false,
+  "productionActions": 0
+}

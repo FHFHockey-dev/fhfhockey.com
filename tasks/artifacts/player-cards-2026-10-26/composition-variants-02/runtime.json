@@ -1,0 +1,52 @@
+{
+  "at": "2026-10-26T17:50:13.550888+00:00",
+  "previousListeners": [
+    "40487"
+  ],
+  "stoppedOwnPid": 40487,
+  "bind": "127.0.0.1:3125",
+  "automaticRestart": false,
+  "systemStartupChanges": false,
+  "verifiedOwnCommand": "/usr/local/bin/node /Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-26/composition-variants-01/serve-preview.mjs",
+  "pid": 55021,
+  "launcherPid": 55003,
+  "startNewSession": true,
+  "stdin": "DEVNULL",
+  "stdoutStderr": "server.log",
+  "execSession": null,
+  "readbacks": [
+    {
+      "url": "http://127.0.0.1:3125/player-cards",
+      "status": 200,
+      "bytes": 3424343,
+      "sha256": "49e287071b186b7c1c1c5387243d04f182fb6d829747c91fe46acb79c8d9c705"
+    },
+    {
+      "url": "http://127.0.0.1:3125/player-cards/compositions",
+      "status": 200,
+      "bytes": 1597033,
+      "sha256": "5a65a4cf33e2ab86db9b8365179a1e44c559a8fa74dad065e888c9efa31d569c"
+    },
+    {
+      "url": "http://127.0.0.1:3125/player-cards/portraits",
+      "status": 200,
+      "bytes": 2440289,
+      "sha256": "5f5dc01034d10b0314317ed3dca3fdf8c5bcb0274761eec6ec8fa9201fe2dd3f"
+    },
+    {
+      "url": "http://127.0.0.1:3125/player-cards/prior-team-colors",
+      "status": 200,
+      "bytes": 3132147,
+      "sha256": "e2b037f6b82d444f099e9cbfefbc555a673e1131496bea084158771830625c5f"
+    },
+    {
+      "url": "http://127.0.0.1:3125/player-cards/observed-evidence",
+      "status": 200,
+      "bytes": 9655,
+      "sha256": "b2ece36cf4c62e41562495fcabe4e6f36d02d6d159523b0364b8fc455607fbd6"
+    }
+  ],
+  "localReadOnlyGets": 5,
+  "upstreamRequests": 0,
+  "lifecycle": "Detached POSIX session, independent of launcher; host/environment shutdown or explicit stop ends process. No automatic restart or system startup."
+}

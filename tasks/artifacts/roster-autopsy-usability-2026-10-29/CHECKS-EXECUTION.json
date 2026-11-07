@@ -1,0 +1,27 @@
+{
+  "phase": "checks",
+  "result": "passed",
+  "checks": [
+    {
+      "log": "SNAPSHOT-BEFORE.log",
+      "exitCode": 0
+    },
+    {
+      "log": "TESTS.log",
+      "exitCode": 0
+    },
+    {
+      "log": "TYPECHECK.log",
+      "exitCode": 0
+    },
+    {
+      "log": "CSS.log",
+      "exitCode": 0
+    },
+    {
+      "log": "SNAPSHOT-AFTER-CHECKS.log",
+      "exitCode": 0
+    }
+  ],
+  "preservedLockReceipt": "/private/tmp/fhfh-autopsy-usability-checks-released-e1bbac69-a815-41c2-9433-85937b3847b7"
+}

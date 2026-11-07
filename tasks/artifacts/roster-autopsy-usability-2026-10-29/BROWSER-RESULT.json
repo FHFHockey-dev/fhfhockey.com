@@ -1,0 +1,176 @@
+{
+  "fixtureOnly": true,
+  "checks": [
+    {
+      "name": "desktop route HTTP 200",
+      "result": true
+    },
+    {
+      "name": "possible duplicate is not preselected",
+      "result": true
+    },
+    {
+      "name": "new player is preselected",
+      "result": true
+    },
+    {
+      "name": "existing slot counts are not preselected for replacement",
+      "result": true
+    },
+    {
+      "name": "review has not modified stored roster",
+      "result": true
+    },
+    {
+      "name": "cancel preserves stored roster",
+      "result": true
+    },
+    {
+      "name": "merge retains manual player and adds selected player",
+      "result": true
+    },
+    {
+      "name": "merge retains current positions and slot count",
+      "result": true
+    },
+    {
+      "name": "source RSO workspace is unchanged",
+      "result": true
+    },
+    {
+      "name": "changed roster requires renewed review",
+      "result": true
+    },
+    {
+      "name": "already imported identity is marked and disabled",
+      "result": true
+    },
+    {
+      "name": "a possible duplicate requires an explicit choice",
+      "result": true
+    },
+    {
+      "name": "explicit slot replacement applies RSO slots",
+      "result": true
+    },
+    {
+      "name": "replaced slots require renewed review",
+      "result": true
+    },
+    {
+      "name": "stale preview cannot apply",
+      "result": true
+    },
+    {
+      "name": "stale review leaves manual edit intact",
+      "result": true
+    },
+    {
+      "name": "desktop has no horizontal page overflow",
+      "result": true
+    },
+    {
+      "name": "phone route HTTP 200",
+      "result": true
+    },
+    {
+      "name": "phone section navigation is visible",
+      "result": true
+    },
+    {
+      "name": "phone navigation stays reachable while scrolling",
+      "result": true
+    },
+    {
+      "name": "phone jump link has at least a 44px target",
+      "result": true
+    },
+    {
+      "name": "phone jump exposes coverage below the fixed navigation",
+      "result": true
+    },
+    {
+      "name": "phone jump moves focus to coverage",
+      "result": true
+    },
+    {
+      "name": "phone return jump exposes the roster",
+      "result": true
+    },
+    {
+      "name": "phone jumps preserve the 20-player roster",
+      "result": true
+    },
+    {
+      "name": "phone has no horizontal page overflow",
+      "result": true
+    },
+    {
+      "name": "phone route HTTP 200",
+      "result": true
+    },
+    {
+      "name": "phone touch applies reviewed merge",
+      "result": true
+    },
+    {
+      "name": "phone merge keeps existing slot count",
+      "result": true
+    },
+    {
+      "name": "no uncaught browser errors",
+      "result": true
+    }
+  ],
+  "externalRequestsBlocked": [
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://img.buymeacoffee.com/button-api/",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://cdn.vercel-insights.com/v1/script.debug.js",
+    "GET https://va.vercel-scripts.com/v1/speed-insights/script.debug.js",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://img.buymeacoffee.com/button-api/",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://cdn.vercel-insights.com/v1/script.debug.js",
+    "GET https://va.vercel-scripts.com/v1/speed-insights/script.debug.js",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://img.buymeacoffee.com/button-api/",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://cdn.vercel-insights.com/v1/script.debug.js",
+    "GET https://va.vercel-scripts.com/v1/speed-insights/script.debug.js"
+  ],
+  "localApiRequestsBlocked": [],
+  "pageErrors": [],
+  "mobileNav": {
+    "initialTop": 56,
+    "scrolledTop": 56,
+    "height": 54
+  },
+  "coverageAfterJump": {
+    "y": 115.875,
+    "scrollY": 5414,
+    "activeId": "autopsy-coverage-heading"
+  },
+  "result": "passed"
+}

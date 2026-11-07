@@ -1,0 +1,157 @@
+{
+  "owner": "Codex FORGE v2 lead / 01a18a10-68f8-7610-bec7-ccfe0f4d0ef5",
+  "branch": "octoberBranch",
+  "base": "18e52a481589a314dc6a67663dd98d1fa8c48454",
+  "startedAt": "2026-10-29T23:50:28.638544+00:00",
+  "authority": "User goal-objective.md: local implementation, verification, exact local commits; no external actions or protected-data access",
+  "chef": {
+    "model": "gpt-6-astra",
+    "effort": "xhigh",
+    "verified": "current session turn_context"
+  },
+  "workerBudget": {
+    "maxTotal": 5,
+    "maxConcurrent": 3,
+    "model": "gpt-6-astra",
+    "effort": "high",
+    "retriesPerBoundedAssignment": 2,
+    "verification": "Focused files only; one heavy process under shared lock"
+  },
+  "documents": [
+    {
+      "source": "/Users/tim/Downloads/PLAN (11).md",
+      "destination": "tasks/TASKS/prd-forge-v2-skater-game-forecasts.md",
+      "sha256": "7fe25088be9797eb6976aed6fe30367e52c9bf7dc2b6720c8d329121609ae51c"
+    },
+    {
+      "source": "/Users/tim/Downloads/PLAN (12).md",
+      "destination": "tasks/tasks-prd-forge-v2-skater-game-forecasts.md",
+      "sha256": "b8747513e0114d1e90b04ecea32b05b8aa7623342461fa1e882dc1cce6a5d21f"
+    }
+  ],
+  "ownedPaths": [
+    "tasks/TASKS/prd-forge-v2-skater-game-forecasts.md",
+    "tasks/tasks-prd-forge-v2-skater-game-forecasts.md",
+    "web/lib/forge-v2/contracts.ts",
+    "web/lib/forge-v2/identity.ts",
+    "web/lib/forge-v2/fixtures.ts",
+    "web/lib/forge-v2/contracts.test.ts",
+    "web/lib/forge-v2/data.ts",
+    "web/lib/forge-v2/data.test.ts",
+    "web/lib/forge-v2/schedule.ts",
+    "web/lib/forge-v2/schedule.test.ts",
+    "web/lib/forge-v2/refresh.ts",
+    "web/lib/forge-v2/refresh.test.ts",
+    "web/lib/forge-v2/model.ts",
+    "web/lib/forge-v2/model.test.ts",
+    "web/lib/forge-v2/participation.ts",
+    "web/lib/forge-v2/uncertainty.ts",
+    "web/lib/forge-v2/uncertainty.test.ts",
+    "web/lib/forge-v2/qualification.ts",
+    "web/lib/forge-v2/history.server.ts",
+    "web/lib/forge-v2/artifacts.server.ts",
+    "web/lib/forge-v2/history.test.ts",
+    "web/lib/forge-v2/evaluation.ts",
+    "web/lib/forge-v2/evaluation.test.ts",
+    "web/lib/forge-v2/api.ts",
+    "web/lib/forge-v2/api.server.ts",
+    "web/lib/forge-v2/api.test.ts",
+    "web/lib/forge-v2/integration.ts",
+    "web/lib/forge-v2/integration.test.ts",
+    "web/lib/forge-v2/operations.ts",
+    "web/lib/forge-v2/lifecycle.test.ts",
+    "web/components/ForgeV2/ForecastExplorer.tsx",
+    "web/components/ForgeV2/ForecastExplorer.module.scss",
+    "web/components/ForgeV2/ForecastExplorer.test.tsx",
+    "web/pages/forge/v2/index.tsx",
+    "web/pages/api/v2/forge/[operation].ts",
+    "web/e2e/forge-v2.spec.ts",
+    "tasks/diaries/2026-10-29-codex-forge-v2-implementation.md",
+    "web/lib/forge-v2/hash.server.ts",
+    "tasks/diaries/2026-10-29-codex-forge-v2-source-audit.md",
+    "tasks/diaries/2026-10-29-codex-forge-v2-schedule-evaluation.md",
+    "tasks/diaries/2026-10-29-codex-forge-v2-model-uncertainty.md",
+    "supabase/migrations/20261029235656_forge_v2_immutable_history.sql",
+    "tasks/diaries/2026-10-29-codex-forge-v2-review.md",
+    "web/lib/forge-v2/pipeline.server.ts",
+    "web/lib/forge-v2/pipeline.test.ts"
+  ],
+  "artifactPaths": [
+    "tasks/artifacts/forge-v2-implementation-2026-10-29/OWNERSHIP.json",
+    "tasks/artifacts/forge-v2-implementation-2026-10-29/source-audit.json",
+    "tasks/artifacts/forge-v2-implementation-2026-10-29/RUNBOOK.md",
+    "tasks/artifacts/forge-v2-implementation-2026-10-29/verification.json",
+    "tasks/artifacts/forge-v2-implementation-2026-10-29/source-pins.json",
+    "tasks/artifacts/forge-v2-implementation-2026-10-29/independent-review.json",
+    "tasks/artifacts/forge-v2-implementation-2026-10-29/review-followup.json",
+    "tasks/artifacts/forge-v2-implementation-2026-10-29/screens/desktop.png",
+    "tasks/artifacts/forge-v2-implementation-2026-10-29/screens/phone.png"
+  ],
+  "existingProtected": "All other existing source, research allocations, v1/RSO, leases/mailboxes and shared config remain read-only. Migrations register exact new filename after workflow inspection. Existing index must be empty for checkpoint.",
+  "workers": [
+    {
+      "task": "source_audit",
+      "modelControl": "gpt-6-astra",
+      "effortControl": "high",
+      "status": "completed and handed off; selected Astra/high, separate runtime attestation unavailable",
+      "paths": [
+        "tasks/artifacts/forge-v2-implementation-2026-10-29/source-audit.json",
+        "tasks/diaries/2026-10-29-codex-forge-v2-source-audit.md"
+      ],
+      "implementationPaths": [
+        "web/lib/forge-v2/data.ts",
+        "web/lib/forge-v2/data.test.ts",
+        "web/lib/forge-v2/refresh.ts",
+        "web/lib/forge-v2/refresh.test.ts"
+      ]
+    },
+    {
+      "task": "schedule_evaluation",
+      "modelControl": "gpt-6-astra",
+      "effortControl": "high",
+      "paths": [
+        "web/lib/forge-v2/schedule.ts",
+        "web/lib/forge-v2/schedule.test.ts",
+        "web/lib/forge-v2/evaluation.ts",
+        "web/lib/forge-v2/evaluation.test.ts"
+      ],
+      "status": "completed and handed off; selected Astra/high, separate runtime attestation unavailable"
+    },
+    {
+      "task": "model_uncertainty",
+      "modelControl": "gpt-6-astra",
+      "effortControl": "high",
+      "paths": [
+        "web/lib/forge-v2/model.ts",
+        "web/lib/forge-v2/model.test.ts",
+        "web/lib/forge-v2/participation.ts",
+        "web/lib/forge-v2/uncertainty.ts",
+        "web/lib/forge-v2/uncertainty.test.ts",
+        "web/lib/forge-v2/qualification.ts",
+        "web/lib/forge-v2/integration.ts",
+        "web/lib/forge-v2/integration.test.ts"
+      ],
+      "status": "completed and handed off; selected Astra/high, separate runtime attestation unavailable"
+    },
+    {
+      "task": "implementation_review",
+      "modelControl": "gpt-6-astra",
+      "effortControl": "high",
+      "status": "completed bounded independent source/native review; original and follow-up reports preserved",
+      "paths": [
+        "tasks/artifacts/forge-v2-implementation-2026-10-29/independent-review.json",
+        "tasks/artifacts/forge-v2-implementation-2026-10-29/review-followup.json",
+        "tasks/diaries/2026-10-29-codex-forge-v2-review.md"
+      ]
+    }
+  ],
+  "migrationWorkflow": "supabase2.90.0 --workdir .. migration new forge_v2_immutable_history from web; new isolated schema only; not applied remotely",
+  "finalLocalState": {
+    "candidate": "43d35f8020d2071e07d08da13f50f1f882277f26",
+    "implementedSubtasks": 48,
+    "gatedSubtasks": 15,
+    "review": "No remaining source blocker in bounded inspected seams; scientific review open",
+    "allWriters": "Workers handed off; lead accepted exact files",
+    "diaries": "Uncommitted working notes retained for open evidence gates"
+  }
+}

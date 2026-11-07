@@ -107,19 +107,18 @@ describe("lineup gap report", () => {
     expect(report.projectionBlockers).toEqual([{ playerId: null, reason: expect.stringMatching(/^the no-move lineup fails a rule check/) }]);
   });
 
-  // TJ 2026-10-22: a healthy player left in IR (no Yahoo IR eligibility) made the no-move lineup illegal.
-  it("names a reserve player without verified eligibility as the reason the lineup fails its rule check", () => {
+  it("names the reserve occupant blocking additions without invalidating the existing lineup", () => {
     const data = snapshot();
     const d = member("d", "C", ["D"], "rostered");
     data.players = [...data.players, d];
     data.roster = [...data.roster, { playerId: "d", position: "IR" }];
     data.rules.rosterSlots = { ...data.rules.rosterSlots, IR: 1 };
     const baseline = evaluatePlan(data, intent, "outcome", [], false);
-    expect(baseline.legal).toBe(false);
+    expect(baseline.legal).toBe(true);
     const report = lineupGapReport(data, intent, baseline);
     expect(report.unprojectedDrops).toEqual([]);
     expect(report.projectionBlockers).toEqual([{ playerId: "d",
-      reason: "in IR without verified IR eligibility, so the lineup fails a rule check; move him to an active or bench spot, or refresh league data" }]);
+      reason: "in IR without verified IR eligibility, which blocks additions; resolve the reserve position or refresh league data" }]);
     data.players = data.players.map(row => row.id === "d" ? { ...row, reserveEligibility: ["IR"] } : row);
     const legal = lineupGapReport(data, intent, evaluatePlan(data, intent, "outcome", [], false));
     expect(legal.projectionBlockers).toEqual([]);

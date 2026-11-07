@@ -1,0 +1,327 @@
+[
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/EVIDENCE.json",
+    "bytes": 12455,
+    "sha256": "57c1a99a4c9220fc8b5380f348f69129d2cd185b4c7e7f788400d1a4139f22a2"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/HANDOFF.md",
+    "bytes": 4266,
+    "sha256": "d8cf834dd1b32b7b9101e1059ccecc1edf2b5f771798e607d1fac457e017c31a"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/INPUTS.json",
+    "bytes": 7240,
+    "sha256": "d20ec9c8316ae454f4cfb3aa28c36c20fad5557617f11f2d81cd1665f23c938b"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/KEEP-RUNTIME.json",
+    "bytes": 8530,
+    "sha256": "5e287acf8d86aca7be663f36f0ac2a2ea206e877996ec3a31d8e65973f844d1d"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/OWNERSHIP.json",
+    "bytes": 1978,
+    "sha256": "4aba449fd5f2af2c1525883db22ea7fb12e6046aeab985cb7648b6ef05d734e0"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/QUALIFICATION.json",
+    "bytes": 3893,
+    "sha256": "5648fbb6dbfadedeccca0aded6516184e305ddc4d586278657924717a3ced099"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/SERVED-VERIFICATION.json",
+    "bytes": 2160,
+    "sha256": "30372dbf7d5d93611fdbfbdc99dc5988907a57be6bce6d989bb7b33ac9f72711"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/SOURCE-PINS.json",
+    "bytes": 857,
+    "sha256": "50e0236e1d0fd46e006019464277bdc92e17a0faf65b27165fb8793195ab451e"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/UNCHANGED12-PINS.json",
+    "bytes": 1896,
+    "sha256": "6e929442a788232286b2014c40590dab5348002a252d94375caf28c859ef74e4"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/before/web/components/player-cards/CurrentPlayerCardStudio.test.tsx",
+    "bytes": 9100,
+    "sha256": "73ead9e4855fa036b802be391cf22c760f9a5a45c0c1ca63c723ad41d4f873fb"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/before/web/lib/player-cards/currentArtwork.test.ts",
+    "bytes": 3751,
+    "sha256": "3791a3dfc175cdfd01201cd185ee75b70dad791756e1ef4bf1d5723f14a8fe37"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/before/web/lib/player-cards/reviewedHeroSamples.ts",
+    "bytes": 1371,
+    "sha256": "1e8fe079c5a29b5d4355b7dfa729acabacb6ff8164a0c52c6ef93b7e2e16af18"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/before/web/lib/player-cards/teamLogo.ts",
+    "bytes": 2211,
+    "sha256": "ea27905c906262947faebf75dcc24a9ca42a623b431ed48d20bede3bfafca186"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/first-tests-command.json",
+    "bytes": 678,
+    "sha256": "33e6b217b2739d139852cd206927cbae7da08dd6137e3c609e99df90f8de2a15"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/first-tests.log",
+    "bytes": 4325,
+    "sha256": "9be8a2fc941b5be2d7be5a1e37f23d009fd9419d3e01cf462b30cea56846aa82"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/first-types-command.json",
+    "bytes": 687,
+    "sha256": "0b751325bb51305a60ea477663f19e4c2b33a4523ff6eda60e8e651912e29f6b"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/first-types.log",
+    "bytes": 75,
+    "sha256": "3f8474678f6c787eed53c258b0c8113e309ef13eb6c77cf44960bdc2b40c5a68"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/handoff-preview.py",
+    "bytes": 4961,
+    "sha256": "cae61d2dab103986bb5821a00b019587687e54809407e8134742a9908ed9de70"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/lint-command.json",
+    "bytes": 764,
+    "sha256": "171155df403099b875ee8e9b1e5be9d332781476d9599c42a3a660d8f4852fac"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/lint.log",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/offline.setup.ts",
+    "bytes": 392,
+    "sha256": "1f5f36af850464317c4dec5386d3c7bad39dbd625a2cafd5f4751055bbdfe928"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/pixelated-team-colors-L10-manifest.json",
+    "bytes": 9899,
+    "sha256": "c6fc43b416d357d12f381a64274d20d78d1e02d6b64d4925de3cfebc6ccf959a"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/pixelated-team-colors-L10-shared.png",
+    "bytes": 601037,
+    "sha256": "35b4d61650c5dbe120259e274397ebc41ac4091424e72979c6a390247d224aa7"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/pixelated-team-colors-L10.png",
+    "bytes": 601037,
+    "sha256": "35b4d61650c5dbe120259e274397ebc41ac4091424e72979c6a390247d224aa7"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/pixelated-team-colors-screen-card.png",
+    "bytes": 371696,
+    "sha256": "08c51a4eee57049ef817440e11f35ed8cee81f5ee82edd146ac102f4c4a44876"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/posterized-team-colors-L10-manifest.json",
+    "bytes": 9906,
+    "sha256": "0da7f5c5359c4a0fd4e268ee2f77f7566714e9650b5c695d6386af22390d0ca1"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/posterized-team-colors-L10-shared.png",
+    "bytes": 649499,
+    "sha256": "e15a973766c1fbaa9df5046287cb868cdcfce25a45414ca10d0e1ed3ab33906a"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/posterized-team-colors-L10.png",
+    "bytes": 649499,
+    "sha256": "e15a973766c1fbaa9df5046287cb868cdcfce25a45414ca10d0e1ed3ab33906a"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/posterized-team-colors-screen-card.png",
+    "bytes": 410777,
+    "sha256": "37e66d6db1db03bf3c10cccfda7061f9ddbca651b8138ef05a9ed8d0525bf99a"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/preview-entry.tsx",
+    "bytes": 2708,
+    "sha256": "a5ee94a25c924957dd97fd9477eb4c3a3ce731d51eee3ff04c94425eb6ead07d"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/preview.css",
+    "bytes": 177,
+    "sha256": "f4c0a5ab2c9608efbd2ff69935d9586a63d0c828743ddd28ea58ba6cc25bc196"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/preview.html",
+    "bytes": 374804,
+    "sha256": "85ebc3dffaa72e01e7c7518ec066450a78d4bf7e48a42bd62cb2d8e5ae01f86b"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/provider-contract.mjs",
+    "bytes": 9911,
+    "sha256": "02fb4b7c52d700d5f95d6b9e42dce2d60237be2f0e72d1f8ba39e40b274b6234"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/provider.mjs",
+    "bytes": 11847,
+    "sha256": "7977097213b9ccece34716332a36e4710dbc33fd353717f954a236387d26a7b3"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/render-command.json",
+    "bytes": 657,
+    "sha256": "3ac76d5132772549f1c6c48b6e636c4d3e9680ac1f3d22ba29a155cc5ae8e8b2"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/render-preview.mjs",
+    "bytes": 2861,
+    "sha256": "e3c42d90e998d403e58e24be4fb09cad049913cd7128ae4adafd491522211d86"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/render.log",
+    "bytes": 261,
+    "sha256": "28fc9f6944d2a9a1ddc2cd35d499c8d0c92db645addf64188cdd51fd0a2b55ee"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/results-L20-manifest.json",
+    "bytes": 10379,
+    "sha256": "4530619c6e13416d196d0447d1e4f4dfe388c6e83e664327240a56baf4f6dbc7"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/results-L20.png",
+    "bytes": 582765,
+    "sha256": "8999449df8ef9b002ac95dd3028adb7add4202a3ba5a44d9ad2b4b21bd52bc43"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/results-L5-manifest.json",
+    "bytes": 7877,
+    "sha256": "878f2cbe5d775e98b414f6813cf659b308398c4a0f11ad3dbe3589c304e0b8fa"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/results-L5.png",
+    "bytes": 586928,
+    "sha256": "b9bd82fe7fbd14ad3dd294ed4ed87801d0f4e9cd1d9484268f138f26422d3f3d"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/run-check.py",
+    "bytes": 3222,
+    "sha256": "b193820fdd2248d5ce93e4286b369ac7e05bd22b4c6da34bac4a61308b6e40c3"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/runtime.json",
+    "bytes": 10470,
+    "sha256": "b8671be751cb82bd67bc923e1f36bc336f482e99f5766eea6fb9856c435375b7"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/serve-preview.mjs",
+    "bytes": 9610,
+    "sha256": "ceeaeeea8196174b0ce1efc6337f0a9ef53707a6faca14bdd70ea0586df056e0"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/served-command.json",
+    "bytes": 656,
+    "sha256": "791d3e6752b5014f6d16dfab16c6354377ee8960ca3a163c5c4122319ba5c539"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/served.log",
+    "bytes": 1779,
+    "sha256": "af6993484e5964a18ef7202581a3af38ed9e1e5452522de8b414a43eb182df19"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/source-files/web/components/player-cards/CurrentPlayerCardStudio.test.tsx",
+    "bytes": 9483,
+    "sha256": "c23571ab0d50f069c41dc793e64aa3c1d545d784e6346a0c2c9be857b0891f82"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/source-files/web/lib/player-cards/currentArtwork.test.ts",
+    "bytes": 4274,
+    "sha256": "6bb47a0f84e5c2c983fd9e4155cc106771a1368da5fd3cfefb3c1a41156f2ae1"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/source-files/web/lib/player-cards/reviewedHeroSamples.ts",
+    "bytes": 2186,
+    "sha256": "b2ed3a541240d600dbbb9fcf10d1bac2ce2db6476484b908f0f3469210cec0cc"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/source-files/web/lib/player-cards/teamLogo.ts",
+    "bytes": 2342,
+    "sha256": "8cc47f9f57feff380c4af32e9bf3b96b5506f1e1c75d29c42cbdbce43295aa47"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/source-files/web/public/player-cards/hero-samples/8476453.png",
+    "bytes": 1302004,
+    "sha256": "2010d97f1e1c631f7ccf154d991517f3b6923df7739d756e39ed06140aa1f278"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/source.patch",
+    "bytes": 5619,
+    "sha256": "3da2500efef2e25125ebc567e0eade04554c87bf58389e068f57ce1a96c9f4b8"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/styled-real-data-desktop.png",
+    "bytes": 641074,
+    "sha256": "7925023de0d378e192e7e6779de67c5b8686e9e61a1cfca5aec9e246db4e06af"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/styled-real-data-phone.png",
+    "bytes": 335423,
+    "sha256": "f20125e552f460bf17f4b8c27bd785d0428d971a7636b06777195202840a42c5"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/team-colors-L10-manifest.json",
+    "bytes": 8973,
+    "sha256": "a457daff51a12ae1595f59af678b7efbe680319491f23cc9fef3fe6ea8e6e03c"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/team-colors-L10-shared.png",
+    "bytes": 654643,
+    "sha256": "6b98142939329b8c8333565f74b5eba3a41c4dfce3c2fc3cded2ecfe38811527"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/team-colors-L10.png",
+    "bytes": 654643,
+    "sha256": "6b98142939329b8c8333565f74b5eba3a41c4dfce3c2fc3cded2ecfe38811527"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/team-colors-screen-card.png",
+    "bytes": 394960,
+    "sha256": "17d94128cd2f590ccaa6f1d35223a5546ed7f5d1c9440d079b5f72e0bf231bb0"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/tests-command.json",
+    "bytes": 678,
+    "sha256": "d98391506a6797c1976b8fd65f6258e59784ba729552af8e25628c40eeacc48f"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/tests.log",
+    "bytes": 1546,
+    "sha256": "33fca442864f87e44cd5e3dd3f776e4a332fb45445a54a67749f4bd79e2103cc"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/tsconfig.json",
+    "bytes": 1789,
+    "sha256": "51cab854eb81854fbf684bebe0612555f257e1dd1fc38c7f9c221334a38d027b"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/types-command.json",
+    "bytes": 687,
+    "sha256": "1e6011d8615cbe805d2cfe76cba91c054955cad70e96d7f3d9f601dd637ad5dd"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/types.log",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/verify-served.mjs",
+    "bytes": 8341,
+    "sha256": "00daad9f60bd904f9cea60f958803b6612e511ea0a7c44779453c81c426cc3aa"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/vitest.config.mts",
+    "bytes": 723,
+    "sha256": "41d473d3362cb927e8dfdc41e6a2b7945de921a41388f56783906fb56cd36bfa"
+  }
+]

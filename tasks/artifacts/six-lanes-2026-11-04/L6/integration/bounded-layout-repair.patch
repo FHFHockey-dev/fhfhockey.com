@@ -1,0 +1,68 @@
+--- a/web/styles/wigoCharts.module.scss
++++ b/web/styles/wigoCharts.module.scss
+@@ -1783,7 +1783,7 @@
+     height: calc(var(--wigo-fit-height) - 4px);
+     // Tiers key off height as well as width: a 1440 laptop window is about
+     // 790 tall and keeps these 1280 rows.
+-    grid-template-rows: auto 90px 66px minmax(130px, 1fr) 156px auto;
++    grid-template-rows: auto 90px 66px minmax(130px, 1fr) 188px auto;
+   }
+ }
+ 
+@@ -1792,10 +1792,55 @@
+     --wigo-data-size: 12px;
+     --wigo-emphasis-size: 16px;
+     .wigoDashboardContent {
+-      grid-template-rows: auto 106px 72px minmax(170px, 1fr) 178px auto;
++      grid-template-rows: auto 106px 72px minmax(170px, 1fr) 210px auto;
+     }
+     .comparisonMatrix {
+       --wigo-band-pad: 2px;
++    }
++  }
++}
++
++// The narrow desktop panels need room for their complete labels, not a
++// single-line header competing with the plot controls.
++.wigoDashHeader:global(.wigo-one-page.wigo-fit) {
++  .wigoDashboardContent [data-coverage="C05"] table {
++    thead th,
++    tbody th,
++    tbody td {
++      width: 32%;
++      padding: 0 2px;
++      &:first-child {
++        width: 36%;
++      }
++    }
++    thead th {
++      white-space: normal;
++      overflow-wrap: anywhere;
++    }
++  }
++
++  // A table's caption sits outside its height. Natural table height keeps
++  // the schedule caption and every game inside the taller context row.
++  .opponentLogContainer table {
++    height: auto;
++  }
++
++  .toiChartContainer,
++  .ppgChartContainer,
++  .gameScoreContainer {
++    .chartHeader {
++      flex-wrap: wrap;
++      row-gap: 2px;
++      h3 {
++        flex: 1 0 auto;
++      }
++      :global(.wigo-trend-legend) {
++        order: 3;
++        flex: 1 0 100%;
++        margin-right: 0;
++        white-space: normal;
++        line-height: 1.15;
++      }
+     }
+   }
+ }

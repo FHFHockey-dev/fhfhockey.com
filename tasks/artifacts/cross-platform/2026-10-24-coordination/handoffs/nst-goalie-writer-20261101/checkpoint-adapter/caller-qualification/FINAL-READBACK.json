@@ -1,0 +1,14 @@
+{
+  "atUtc": "2026-11-01T17:47:31.864398+00:00",
+  "candidatePinsAndSnapshotsMatched": 67,
+  "mailboxPrefixAndAppendVerified": true,
+  "protectedPins": "PROTECTED-PINS.json",
+  "scopedDiffCheckExitCode": 0,
+  "pythonSyntax": "PASS",
+  "ownedHeavyLock": false,
+  "productionRequestsThisContinuation": 0,
+  "deniedActions": 0,
+  "uncertainExternalOutcomes": 0,
+  "reviewPromptSha256": "fa5252d05ca8c25b5fc39eb6b915e68a9aef9c0d16d154148deec474cf068beb",
+  "candidateManifestSha256": "cb9452619d0dfa5c391a4aab17c361221f486679df6726b44dbacab7e33f7603"
+}

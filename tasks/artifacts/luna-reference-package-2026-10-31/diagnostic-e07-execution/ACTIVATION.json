@@ -1,0 +1,17 @@
+{
+  "activatedAt": "2026-10-31T23:19:30.075366+00:00",
+  "parentAuthorizationThread": "01a189f6-9a3a-7235-a989-e1af4f47b014",
+  "independentAcceptanceThread": "01a1936a-45ae-73d0-ae05-fe4339c5a022",
+  "planSha256": "af1499f51ffd1baba22aee3fbefd20a0bc1919b12bbc972289bcf0f7d5d431b5",
+  "preparationManifestSha256": "a198008bd70525a4f70f30b7d283db46e5834623dad7c1b180494c79c1a544e1",
+  "operatorPinsSha256": "94d161b0d946895751f780d0b228da486df75713aa6976b83b8099251bd76fda",
+  "startingLedgerSha256": "2bf56d754b1f98888785b8d7e759d1c701b5541b0fb9e91ade63eff041ff3ceb",
+  "preservedCalls": 7,
+  "startingExposureNanoUsd": 265263690,
+  "setOnly": {
+    "approvedPolicyId": "owner-reviewed-e07-e16-diagnostic-collection-v3",
+    "enabled": true,
+    "blockedReason": null
+  },
+  "scope": "E07-E16 only, max12 new, max19 cumulative, global20-call/$1 caps, zero retries, supervisor-held anchors, no production"
+}

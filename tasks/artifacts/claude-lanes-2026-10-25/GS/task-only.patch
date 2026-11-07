@@ -1,0 +1,177 @@
+diff --git a/web/components/GoalieShareChart/GoalieShareChart.pagination.test.tsx b/web/components/GoalieShareChart/GoalieShareChart.pagination.test.tsx
+index 235f41b17..01bf5d106 100644
+--- a/web/components/GoalieShareChart/GoalieShareChart.pagination.test.tsx
++++ b/web/components/GoalieShareChart/GoalieShareChart.pagination.test.tsx
+@@ -2,10 +2,13 @@ import React from "react";
+ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+ import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+ 
+-const mocks = vi.hoisted(() => ({ fetch: vi.fn() }));
++const mocks = vi.hoisted(() => ({ fetch: vi.fn(), options: null as any }));
+ vi.mock("lib/cors-fetch", () => ({ default: mocks.fetch }));
+ vi.mock("react-chartjs-2", () => ({
+-  Doughnut: ({ data }: any) => <pre data-testid="chart">{JSON.stringify(data)}</pre>
++  Doughnut: ({ data, options }: any) => {
++    mocks.options = options;
++    return <pre data-testid="chart">{JSON.stringify(data)}</pre>;
++  }
+ }));
+ 
+ import GoalieShareChart, { type GoalieGameRow } from "./index";
+@@ -133,6 +136,26 @@ describe("GoalieShareChart complete page sets", () => {
+     expect(screen.getByText(/Share of recorded goalie appearances, including relief/)).toBeTruthy();
+   });
+ 
++  it("adds official starts per team game to the tooltip, and withholds unlabeled starts", async () => {
++    const tooltipLines = (dataIndex: number) =>
++      mocks.options.plugins.tooltip.callbacks.label({ dataIndex, parsed: 1, label: "" });
++    mockPages(() => response({ total: 2, data: [
++      { ...rows[0], gamesStarted: 1 },
++      { ...rows[0], playerId: 2, goalieFullName: "Backup Two", gamesStarted: 0 }
++    ] }));
++    render(<GoalieShareChart />);
++    await finishRequests();
++    expect(tooltipLines(0)).toContain("Starts: 1 of 1 team games");
++    expect(tooltipLines(1)).toContain("Starts: 0 of 1 team games");
++    cleanup();
++
++    mockPages(() => response({ total: 2, data: [rows[0], { ...rows[0], playerId: 2 }] }));
++    render(<GoalieShareChart />);
++    await finishRequests();
++    expect(tooltipLines(0)).toContain("Starts: Unavailable");
++    expect(tooltipLines(0)).toContain("Starter One: 1 appearances");
++  });
++
+   it("recovers within the retry budget and re-slices complete data without fetching", async () => {
+     let attempts = 0;
+     mockPages((start) => start === 100 && attempts++ === 0
+diff --git a/web/components/GoalieShareChart/GoalieShareChart.test.ts b/web/components/GoalieShareChart/GoalieShareChart.test.ts
+index dbd6bff38..615a07bd1 100644
+--- a/web/components/GoalieShareChart/GoalieShareChart.test.ts
++++ b/web/components/GoalieShareChart/GoalieShareChart.test.ts
+@@ -95,4 +95,52 @@ describe("buildGoalieShareByTeam", () => {
+     expect(noExposure.savePct).toBeNull();
+     expect(noExposure.goalsAgainstAverage).toBeNull();
+   });
++
++  it("counts official starts per team game and keeps relief as a measured zero", () => {
++    const stats = buildGoalieShareByTeam([
++      row({ gameId: 1, gamesStarted: 1 }),
++      row({ gameId: 1, playerId: 2, goalieFullName: "Backup Two", gamesStarted: 0 }),
++      row({ gameId: 2, gamesStarted: 1 })
++    ], "Season").PHI;
++    expect(stats.totalGames).toBe(2);
++    expect(stats.totalAppearances).toBe(3);
++    expect(stats.goalies.map(goalie => [goalie.goalieFullName, goalie.gamesPlayed, goalie.gamesStarted])).toEqual([
++      ["Starter One", 2, 2],
++      ["Backup Two", 1, 0]
++    ]);
++  });
++
++  it("counts starts only inside the selected team-game window", () => {
++    const labeled: GoalieGameRow[] = phiGames.map(game => ({ ...game, gamesStarted: 1 }));
++    labeled[0] = { ...labeled[0], gamesStarted: null }; // outside L10
++    expect(buildGoalieShareByTeam(labeled, "L10").PHI.goalies.map(goalie => goalie.gamesStarted)).toEqual([6, 4]);
++    expect(buildGoalieShareByTeam(labeled, "Season").PHI.goalies.map(goalie => goalie.gamesStarted)).toEqual([null, null]);
++  });
++
++  it("keeps a traded goalie's starts with each club", () => {
++    const stats = buildGoalieShareByTeam([
++      row({ gameId: 1, teamAbbrev: "PHI", playerId: 7, gamesStarted: 1 }),
++      row({ gameId: 2, teamAbbrev: "BOS", playerId: 7, gamesStarted: 0 }),
++      row({ gameId: 2, teamAbbrev: "BOS", playerId: 8, gamesStarted: 1 })
++    ], "Season");
++    expect(stats.PHI.goalies[0].gamesStarted).toBe(1);
++    expect(stats.BOS.goalies.find(goalie => goalie.playerId === 7)?.gamesStarted).toBe(0);
++    expect(stats.BOS.goalies.find(goalie => goalie.playerId === 8)?.gamesStarted).toBe(1);
++  });
++
++  it.each([
++    ["a missing label", [{ gamesStarted: 1 }, { gamesStarted: undefined }]],
++    ["a null label", [{ gamesStarted: 1 }, { gamesStarted: null }]],
++    ["a non-binary label", [{ gamesStarted: 1 }, { gamesStarted: 2 }]],
++    ["a fractional label", [{ gamesStarted: 1 }, { gamesStarted: 0.5 }]],
++    ["two starters in one game", [{ gamesStarted: 1 }, { gamesStarted: 1 }]],
++    ["no starter in one game", [{ gamesStarted: 0 }, { gamesStarted: 0 }]]
++  ] as const)("withholds every goalie's starts for %s", (_, labels) => {
++    const stats = buildGoalieShareByTeam([
++      row({ gameId: 1, gamesStarted: 1 }),
++      ...labels.map((label, index) => row({ gameId: 2, playerId: index + 1, ...label }))
++    ], "Season").PHI;
++    expect(stats.goalies.map(goalie => goalie.gamesStarted)).toEqual([null, null]);
++    expect(stats.goalies.map(goalie => goalie.gamesPlayed)).toEqual([2, 1]);
++  });
+ });
+diff --git a/web/components/GoalieShareChart/index.tsx b/web/components/GoalieShareChart/index.tsx
+index ae5e3823c..48a865b84 100644
+--- a/web/components/GoalieShareChart/index.tsx
++++ b/web/components/GoalieShareChart/index.tsx
+@@ -305,6 +305,7 @@ const GoalieShareChart: React.FC = () => {
+                 goalie.goalieFullName || "Unknown Goalie";
+               return [
+                 `${goalieDisplayName}: ${context.parsed} appearances`,
++                `Starts: ${goalie.gamesStarted === null ? "Unavailable" : `${goalie.gamesStarted} of ${teamStats.totalGames} team games`}`,
+                 `Save %: ${goalie.savePct === null ? "Unavailable" : `${(goalie.savePct * 100).toFixed(1)}%`}`,
+                 `GAA: ${goalie.goalsAgainstAverage === null ? "Unavailable" : goalie.goalsAgainstAverage.toFixed(2)}`
+               ];
+@@ -476,7 +477,7 @@ const GoalieShareChart: React.FC = () => {
+ 
+   return (
+     <div className={styles.goalieShareChart}>
+-      <p>Share of recorded goalie appearances, including relief. L10, L20 and L30 use team games. These are past workload shares, not future start probabilities.</p>
++      <p>Share of recorded goalie appearances, including relief. L10, L20 and L30 use team games. Tooltips add official starts when every team game has one recorded starter. These are past workload shares, not future start probabilities.</p>
+       <div className={styles.buttonContainer}>
+         <button
+           className={`${styles.spanButton} ${selectedSpan === "L10" ? styles.active : ""}`}
+diff --git a/web/lib/goalieWorkload.ts b/web/lib/goalieWorkload.ts
+index 4b518d004..e89c42a14 100644
+--- a/web/lib/goalieWorkload.ts
++++ b/web/lib/goalieWorkload.ts
+@@ -9,6 +9,8 @@ export interface GoalieGameRow {
+   playerId: number;
+   goalieFullName: string;
+   gamesPlayed: number;
++  /** NHL's official starter label (1 or 0); a relief appearance is 0. */
++  gamesStarted?: number | null;
+   wins: number;
+   losses: number;
+   otLosses: number;
+@@ -23,6 +25,9 @@ export interface GoalieData {
+   playerId: number;
+   goalieFullName: string;
+   gamesPlayed: number;
++  /** Official starts over the window's team games; null unless every team
++   * game in the window has exactly one labeled starter. */
++  gamesStarted: number | null;
+   timeOnIce: number | null;
+   wins: number;
+   losses: number;
+@@ -69,12 +74,18 @@ export function buildGoalieShareByTeam(rows: readonly GoalieGameRow[], span: Spa
+     const limit = SPAN_GAMES[span];
+     const windowGames = new Set((limit === null ? games : games.slice(-limit)).map(([gameId]) => gameId));
+     const byGoalie = new Map<number, GoalieGameRow[]>();
++    const startersByGame = new Map<number, number>();
++    let startsLabeled = true;
+     for (const row of teamRows) {
+       if (!windowGames.has(row.gameId)) continue;
+       const goalieRows = byGoalie.get(row.playerId) ?? [];
+       goalieRows.push(row);
+       byGoalie.set(row.playerId, goalieRows);
++      if (row.gamesStarted !== 0 && row.gamesStarted !== 1) startsLabeled = false;
++      else startersByGame.set(row.gameId, (startersByGame.get(row.gameId) ?? 0) + row.gamesStarted);
+     }
++    // A missing or doubled starter would misplace a start, so the whole window withholds.
++    const startsComplete = startsLabeled && Array.from(windowGames).every(gameId => startersByGame.get(gameId) === 1);
+     const goalies: GoalieData[] = Array.from(byGoalie, ([playerId, goalieRows]) => {
+       const sum = (read: (row: GoalieGameRow) => number) => goalieRows.reduce((total, row) => total + (read(row) || 0), 0);
+       const completeSum = (read: (row: GoalieGameRow) => number | null) => {
+@@ -92,7 +103,8 @@ export function buildGoalieShareByTeam(rows: readonly GoalieGameRow[], span: Spa
+       const timeOnIce = completeSum(row => row.timeOnIce);
+       return {
+         playerId, goalieFullName: goalieRows[goalieRows.length - 1].goalieFullName,
+-        gamesPlayed: sum(row => row.gamesPlayed), timeOnIce,
++        gamesPlayed: sum(row => row.gamesPlayed),
++        gamesStarted: startsComplete ? sum(row => row.gamesStarted ?? 0) : null, timeOnIce,
+         wins: sum(row => row.wins), losses: sum(row => row.losses), otLosses: sum(row => row.otLosses),
+         savePct: shotsAgainst !== null && shotsAgainst > 0 && saves !== null && saves <= shotsAgainst ? saves / shotsAgainst : null,
+         goalsAgainstAverage: timeOnIce !== null && timeOnIce > 0 && goalsAgainst !== null ? (goalsAgainst * 3600) / timeOnIce : null

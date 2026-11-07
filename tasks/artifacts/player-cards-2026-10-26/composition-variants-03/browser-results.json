@@ -1,0 +1,26 @@
+{
+  "checks": [
+    "Team Colors remains fresh default; existing four styles retained; logo composition is opt-in",
+    "Both combined treatments: same player/snapshot, pinned embedded MIN logo behind hero, left-quarter fade, landscape PNG/manifest/same-instance share parity, phone390 no overflow",
+    "Explicit first-stage buffers and subsequent same Team Colors mapper match manifest hashes; original alpha unchanged; distinct combined output; analytics bytes identical",
+    "Explicit combined style persists; second team uses TOR asset/palette; square export; partial source explanation and unknown-GP export block retained"
+  ],
+  "exports": [
+    {
+      "style": "posterized-team-colors",
+      "pngSha256": "38ec329efcf8974c81966ae7bc6a9ddff0f9aa762076c42969e190048b5ad30c",
+      "portraitSha256": "844e1de6ac29ef0cf3e6860b29e8a0c4ff21c20af478e7efc77e36be91fd4176",
+      "logoSha256": "430c6a4073da40b9d2e147c2528dba317f019273390ef2bdd43363895c5e0fc2"
+    },
+    {
+      "style": "pixelated-team-colors",
+      "pngSha256": "58bb0c960487c82cc8129356aeec552851db925e909485cca10d44f999110548",
+      "portraitSha256": "be73488bac6a934c8ac800cf0244d0884826676a495c264001878be5569566fb",
+      "logoSha256": "430c6a4073da40b9d2e147c2528dba317f019273390ef2bdd43363895c5e0fc2"
+    }
+  ],
+  "analyticsByteDifferences": 0,
+  "externalAttempts": [],
+  "pageErrors": [],
+  "referenceInspected": false
+}

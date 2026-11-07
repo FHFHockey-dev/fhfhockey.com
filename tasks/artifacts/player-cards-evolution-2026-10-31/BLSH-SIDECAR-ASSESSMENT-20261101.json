@@ -1,0 +1,54 @@
+{
+  "scope": "Consumer contract/mapping verification only; not independent scientific acceptance",
+  "inputPins": [
+    {
+      "path": "/Users/tim/Documents/Codex/2026-10-27/task-3/baseline-card-provenance-20261101-01/cards-01/PLAYER-CARDS-PROVENANCE.json",
+      "sha256": "0b98ebc0fa2bbf0554b781d6c7548b820c37768b4868d11784ca837dad070d57",
+      "bytes": 6566654
+    },
+    {
+      "path": "/Users/tim/Code/fhfhockey.com/web/lib/buyLowSellHigh/research-snapshots/2026-10-28.arm-a-canonical-repaired.v2.json",
+      "sha256": "2f380c2539390f6931ec92ab1d0b1d8cced2b55f5f4cefb8c6e88a694909f2c8",
+      "bytes": 9559567
+    },
+    {
+      "path": "/Users/tim/Documents/Codex/2026-10-27/task-3/current-refresh-20261029-01/RAW-wgo.json",
+      "sha256": "9e659ac76dc20fa10b89166a8dc109706df5a7b27469fdc564efdb98db4adc00",
+      "bytes": 4295501
+    },
+    {
+      "path": "/Users/tim/Documents/Codex/2026-10-27/task-3/current-refresh-20261029-01/RAW-calendar.json",
+      "sha256": "e3bf0cadb60880b150c170b65f4cd20fb101f705c72cae62a2c4324ec8ed96a6",
+      "bytes": 13714
+    },
+    {
+      "path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/rso-blsh-independent-review-2026-11-01/PROVENANCE-REVIEW.md",
+      "sha256": "54fbf0418908263ce5a0ed3e2b4812c78d70d152aacc818df0568567aa265701",
+      "bytes": 8505
+    }
+  ],
+  "profilesChecked": 729,
+  "windowRowsChecked": 3407,
+  "finalityEstablishedRows": 657,
+  "selectedPlayerId": 8476453,
+  "selectedGamesMatchRetainedNhl": true,
+  "selectedFinalityEstablishedRows": 0,
+  "nhlObservedAt": "2026-10-29T17:43:32.793Z",
+  "blshObservedAt": "2026-10-29T18:41:12.798646+00:00",
+  "captureAgeHoursAtSidecarBuild": 69.85116343166668,
+  "captureAgeBudgetHours": 24,
+  "independentReviewPending": false,
+  "rawSidecarPendingFlagPreserved": true,
+  "currentBindingAccepted": false,
+  "remainingGates": [
+    "Capture exceeds original24hour budget; event-relative fresh is not clock freshness",
+    "NHL and BLSH capture times differ; no common capture receipt",
+    "Only657of3407rows have finality evidence; selected Kucherov rows have none in this sidecar",
+    "NST model revisions/native metric strength receipts remain unavailable",
+    "Existing editor custody remains pending"
+  ],
+  "safeUse": "Independently reviewed lineage on separately dated stale research only; no advanced-field or observed-current admission",
+  "scoreRecomputations": 0,
+  "databaseCalls": 0,
+  "providerCalls": 0
+}

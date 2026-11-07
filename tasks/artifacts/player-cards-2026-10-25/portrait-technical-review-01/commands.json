@@ -1,0 +1,25 @@
+{
+  "receipts": [
+    {
+      "command": [
+        "npm",
+        "test",
+        "--",
+        "--run",
+        "--config",
+        "../tasks/artifacts/player-cards-2026-10-25/portrait-technical-review-01/vitest.config.mts"
+      ],
+      "exitCode": 0,
+      "elapsedSeconds": 1.162
+    },
+    {
+      "command": [
+        "/usr/local/bin/node",
+        "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-25/portrait-technical-review-01/read-pixels.mjs"
+      ],
+      "exitCode": 0,
+      "elapsedSeconds": 0.202
+    }
+  ],
+  "lockOwnedAndReleased": true
+}

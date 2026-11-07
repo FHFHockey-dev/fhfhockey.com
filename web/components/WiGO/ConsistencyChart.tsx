@@ -90,7 +90,8 @@ const ConsistencyChart: React.FC<ConsistencyChartProps> = ({
       chartBackgroundColors.push(color);
     }
 
-    if (!incompleteCardio) displayData.push({
+    // Cardio games are a subset of 0 Pts, so the row sits under it.
+    if (!incompleteCardio) displayData.splice(1, 0, {
       label: "Cardio",
       percentage: totalGames > 0 ? cardioGameCount / totalGames : 0,
       count: cardioGameCount,
@@ -232,7 +233,7 @@ const ConsistencyChart: React.FC<ConsistencyChartProps> = ({
               {incompleteCardio && <p role="status">Cardio unavailable: incomplete activity stats.</p>}
               <ul>
                 {processedData.map((item) => (
-                  <li key={item.label} className={styles.consistencyItem} title={item.label === "Cardio" ? "Games with zero points, shots, hits and blocks. These also count in the zero-point bucket; Cardio is not a separate doughnut segment." : undefined}>
+                  <li key={item.label} className={`${styles.consistencyItem}${item.label === "Cardio" ? ` ${styles.consistencySubItem}` : ""}`} title={item.label === "Cardio" ? "Games with zero points, shots, hits and blocks. These also count in the zero-point bucket; Cardio is not a separate doughnut segment." : undefined}>
                     {/* Text stays in ink; a swatch carries the segment's colour (dataviz). */}
                     <span className={styles.consistencyLabel}>
                       <span
@@ -240,6 +241,7 @@ const ConsistencyChart: React.FC<ConsistencyChartProps> = ({
                         style={{ background: item.label === "Cardio" ? "transparent" : item.color }}
                         aria-hidden="true"
                       />
+                      {item.label === "Cardio" && <span aria-hidden="true">↳ </span>}
                       {item.label}:
                     </span>
                     <span className={styles.consistencyValue}>

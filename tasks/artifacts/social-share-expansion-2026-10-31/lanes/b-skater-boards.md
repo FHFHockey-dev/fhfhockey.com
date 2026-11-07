@@ -1,0 +1,375 @@
+# Lane B receipt: skater boards (SS 3.0, 7.0)
+
+Posts: `bsh-board`, `category-blueprint`, `nightly-floor` (Cardio Masters is its `cardio` view). Reach each at `/social-share/posts?post=<id>`.
+
+## Subtasks
+
+| Subtask | State | Evidence |
+| --- | --- | --- |
+| 3.1 BSH leaderboard | Done | `bshBoard.test.ts`: missing component unranked, shared ranks and ties below the cut, no shot-attempt substitution, short window count, position and GP, traded skater |
+| 3.2 Risers and fallers | Done | `bshBoard.test.ts`: previous N and season excluding recent, short windows excluded under both, known zero kept, missing baseline unranked, equal changes tie |
+| 3.3 Category Blueprint | Done | `categoryBlueprint.test.ts`: chosen combinations and order, one basis and cohort, missing shown as missing and counted, no score field |
+| 3.4 BSH and Blueprint cards | Done on fixtures | Card tests render through the lazy `card()`. `suggestedUse` is a note and no field is a date. Browser fixture render is the lead's: spec written, `--list` only |
+| 3.5 BSH and Blueprint sources | Done: sample read logged | Reads R2 and R3 below. Ceilings below |
+| 7.1 Strict thresholds | Done | `nightlyFloor.test.ts`: exactly X fails for SOG, hits and blocks; DNP absent; missing neither passes nor fails |
+| 7.2 Views | Done | `nightlyFloor.test.ts`: ≥1 point, Cardio Masters, selected-category zero, zero versus missing |
+| 7.3 Filters | Done | `nightlyFloor.test.ts`: coverage boundary (90% admitted, 80% not), unknown ownership, inclusive range, stated 0 known, ties, empty pool |
+| 7.4 Nightly Floor card | Done on fixtures | Card tests. Browser fixture render is the lead's |
+| 7.5 Bounded read | Done: sample read logged | Read R4 below |
+
+The real reads are samples of 2 players each. The full-season loaders were not run because they exceed the 50-row bound.
+
+## Real reads
+
+Project `fyhftlxokyjtpndbkfse`, 2026-10-31, SELECT only. R2 to R4 ran with the anon key through the real `readSkaterAppearances`, each capped at `limit: 16`, then through the real builders. The key was not printed or stored.
+
+| # | Statement | Tables read | Sample rows | Result |
+| --- | --- | --- | --- | --- |
+| R1 | Coverage, null and join aggregates through MCP `execute_sql` | `wgo_skater_stats`, `wgo_team_stats`, `games`, `yahoo_players`, `yahoo_nhl_player_map_read` | 0 (1 aggregate row) | Passed. 7,775 rows, 432 of 432 team games have skater rows, 216 scheduled, 0 null BSH or category values, positions C, L, R, D, team codes all known |
+| R1b | Pick 6 sample player ids through MCP | `wgo_skater_stats` | 0 (1 aggregate row) | Passed |
+| R2 | BSH: 2 skaters, 2026-10-18 to 10-30 | `wgo_skater_stats` | 11 | Passed. L5 built correctly |
+| R3 | Blueprint: 2 skaters, same dates | `wgo_skater_stats` | 10 | Passed |
+| R4 | Nightly Floor, `cardio`: 2 skaters, same dates, plus their id map and Yahoo rows | `wgo_skater_stats`, `yahoo_nhl_player_map_read`, `yahoo_players` | 12, 4, 2 | Passed. One known at 21%, one unknown shown as unknown |
+| R5 | Independent L5 totals for the same 6 skaters through MCP | `wgo_skater_stats` | 0 (6 aggregate rows) | Passed. BLK, SOG, hits, BSH and zero-point games match the builders exactly |
+
+Sample totals: `wgo_skater_stats` 33, map 4, `yahoo_players` 2. All within 50.
+
+R1 also binds the join: `yahoo_players.player_key` matches the map 1,325 times and bare `player_id` 0 times, and 972 NHL ids hold more than one Yahoo id. `ownershipByPlayer` tries both keys and treats differing values as unknown. 30 of 733 skaters have no map row, so they show unknown.
+
+## For the lead at the render step
+
+The live loaders read more than the 50-row bound, so they are yours to run:
+
+| Read | Ceiling (fails closed above) | Now |
+| --- | --- | --- |
+| `wgo_skater_stats`, season to date | 50,000 | 7,775 |
+| `wgo_team_stats` | 2,700 | 432 |
+| `games` | 1,400 | 216 scheduled to date |
+| `yahoo_players`, Nightly Floor only | 2,500 | 1,608 |
+| `yahoo_nhl_player_map_read`, Nightly Floor only | 3,500 | 2,373 |
+
+Late in the season the appearance read is about 47,000 rows, in pages against the studio's 20-second request timeout. It is untested at that size, so it may need narrowing by then.
+
+## Not verified
+
+- Browser runs. `e2e/social-share-skater-boards.spec.ts` passed `--list` only. It includes a fit check, because a clipped table would lose evidence from the PNG. Row counts (20) are estimated from the CSS, not measured.
+- A real full-pool ranking, for the reason above.
+
+## Behaviour to review
+
+- Default BSH risers and fallers (L10 vs previous 10) need 20 GP. Teams have about 13.5 games now, so that default shows its empty state. L5 vs previous 5 works today.
+- Nightly Floor's default excludes unknown ownership even at 0-100%, per the contract. 757 Yahoo rows are null, and the card prints how many skaters that removes. Task 13.8 already tracks the source gap.
+- Blueprint's "Top N in every category" defaults to 250, and missing categories neither pass nor fail. This default is mine, not the contract's. See "Blueprint default" below.
+
+## Blockers
+
+None for this lane.
+
+Shell issue reported to the lead and fixed at `839aa7af4`: export is now refused when server-scoped settings differ from `snapshot.settings`. These posts keep their own guard, because the card body should not show old data under new labels while the editor is still changing settings. The shell's message appears first.
+
+## Blueprint default (follow-up to the real render)
+
+The first default, Top 100, made an empty post: nobody of 633 skaters was top 100 in points, shots, hits and blocks. Read R6 (MCP `execute_sql`, `wgo_skater_stats`, 0 sample rows, 8 aggregate rows; same rule as the post: season through 2026-10-30, 5+ season GP, L10 per game, competition rank) counted skaters in the top N of every category:
+
+| Top N | PTS, SOG, HITS, BLK | PTS, SOG, HITS | PTS, SOG, BLK | SOG, HITS, BLK | PTS, SOG |
+| --- | --- | --- | --- | --- | --- |
+| 50 | 0 | 1 | 0 | 0 | 27 |
+| 100 | 0 | 2 | 1 | 0 | 64 |
+| 150 | 1 | 9 | 12 | 3 | 90 |
+| 200 | 5 | 32 | 34 | 11 | 167 |
+| 250 | **16** | 53 | 52 | 29 | 191 |
+| 300 | 31 | 83 | 91 | 49 | 238 |
+
+**Decision: keep the four categories and default to Top 250.** That gives 16 skaters today, all shown under the 20-row limit.
+
+- The four categories stay because offense and physical play rarely meet, which is the point of this post. Dropping to PTS and SOG would just list scoring forwards.
+- Top 200 gives 5 and Top 150 gives 1, so a few games could empty the default again. 250 leaves margin.
+- 250 of 633 is about the top 40%, a looser claim than the old default. The card prints the N and the cohort, so the reader can see that.
+- It stays a visible field. No score was added. A strict setting still gets the honest empty state and no export.
+
+The count comes from SQL using the post's rule, not from the loader. The lead's real render is the check that the card shows 16.
+
+## Checks
+
+- `npm test` on the lane's three files plus `PostStudio`, `server` and `contract` tests: passed.
+- eslint on the lane's TypeScript files: clean. The CSS-module pure check on `BshBoardCard.module.scss`: passed.
+- `npx tsc --noEmit` with an 8 GB heap: 0 errors in this lane's files. Errors remain in `modules/contract.test.ts`, `modules/server.ts` and `shared/goalieInventory.sources.ts`, which are not this lane's.
+- `playwright --list`: 6 tests found. Not run in a browser.
+
+Follow-up commit (Blueprint default): 50 tests in the lane's 3 files passed, eslint clean on the changed TypeScript, `--list` found 6 tests, and `tsc` shows 0 errors in this lane's files (3 remain in `creaseShift.test.ts`, not this lane's). No SCSS changed. Not run in a browser.
+
+## Layout pass (TJ's review: less whitespace, less meta text)
+
+- **Rows:** the limit moved from 12 to 20. Rows now share all the body height the legend leaves, so a short board stretches instead of leaving a dead band, and boards over 14 rows use 24px type instead of 28px.
+- **Text:** each card has one legend line. Kept on the card: Nightly Floor's "Exactly X fails", Blueprint's "no combined score", the ranked count, and the per-row MET / KNOWN and MISSING columns.
+- **Moved to `evidence.sample` and `evidence.cohort`:** the DNP rule, the unranked and excluded counts, skaters missing a category, and how many rows sit below the card. These print on the page, not in the PNG.
+- **Risers and fallers:** cells changed from "4.00 was 1.00" to "4.00 1.00", with the earlier value in grey as the legend says.
+- **Fit test:** the spec now fails on clipping, a truncated cell or name, or a dead band over 40px, with a new test at the 20-row limit for each post.
+- **Not measured:** the 20-row fit and the name widths are from the CSS. No browser run; the lead renders on real data.
+- **Checks:** 50 tests in the lane's 3 files passed, eslint clean, the pure check passed, `--list` found 9 tests, and `tsc` exited 0 for the whole app.
+
+## BSH leaders chart and tile (TJ's review: "Add a layered line, with each segment representing B, S and H")
+
+- **Chart:** each leader row has a stacked chart of the window's appearances, oldest to newest: blocks at the bottom, then shots, then hits, with a white top edge at that game's BSH. All rows share one scale.
+- **Colours:** B `#3f9bdc`, S `#c88120`, H `#cf5cad`, with a B, S, H key in the one legend line and the same tints behind the BLK, SOG and HITS columns. The dataviz validator passes them on the post's dark surface.
+- **Tile:** the goalie `HeatTile`, per-game BSH scaling with value, caption "N total". BLK, SOG and HITS each still print total over per game.
+- **Gap versus 0:** a game with a missing component breaks the shape and draws nothing. A known 0 draws on the baseline.
+- **Gaps cannot reach a ranked leader today.** The rule unranks a skater with a missing component in the window, so a gap only appears if that rule changes. The card and tests handle it anyway.
+- **Rows:** leaders go from 20 to 12, because the chart and tile need the height. Risers, fallers, Blueprint and Nightly Floor stay at 20. Skaters below the card are counted in `evidence.cohort`.
+- **PNG:** drawn as inline SVG like the What Changed sparkline. Not measured or exported here; no browser run.
+- **Checks:** 57 tests in the lane's 3 files passed, eslint clean, the pure check passed, `--list` found 9 tests, `tsc` printed no errors.
+
+## BSH risers and fallers, side by side (TJ's review: same visuals)
+
+- **View:** the View field's Risers and Fallers options became one, "Risers and fallers" (`view=movers`). An old `?view=risers` link now returns a 400; these posts have not shipped.
+- **Rows:** 7 a side, about 114px each against about 107px of content (from the CSS, not measured). Rows reuse the What Changed `ChangeSide` layout, so the sides are headed Up and Down. Skaters below the card are counted per side in `evidence.cohort`.
+- **Each row:** a coloured change tile, red or green and scaling with size on one scale across both sides. Below it, BLK, SOG and HITS per game with the earlier value in grey, in the leaders' tints, then the stacked chart.
+- **Chart:** spans the baseline and recent windows, oldest to newest, on one scale across both sides, with a dashed line and a light band from where the recent window starts. With "Season excl. recent" it covers the whole season.
+- **Kept on the card:** "L5 vs previous 5" and the short-comparison count in the one legend line. The full wording stays in the evidence.
+- **Gaps:** a missing component in either window unranks the skater, so no gap reaches this card under the current rule either.
+- **Not measured:** no browser run; the lead renders on real data.
+- **Checks:** 59 tests in the lane's 3 files passed before a final legend-wording edit, and `bshBoard.test.ts` was rerun after it. eslint clean, the pure check passed, `--list` found 10 tests, `tsc` printed no errors (both before that edit).
+
+## Category Blueprint rank colours (TJ's review: add visuals)
+
+- **Scale:** each cell is coloured by its own category rank as a share of the cohort, on one scale for every category: top 5% (strong green), 15%, 30%, 50% (neutral), lower (red). Rank 1 is always the top band, whatever the cohort size.
+- **Unchanged:** value and rank stay printed, rows stay ordered by Category 1, and there is no combined score or summed colour. Up to 20 rows.
+- **Missing:** a dashed outline with "missing" in amber and no fill, so it cannot read as weak.
+- **On the default:** Top 250 of 633 is about the top 39.5%, so every ranked cell falls in the top 50% and red cannot appear. Red needs a looser Top N.
+- **Legend:** "Per game, L10. Rank among 633: top 5% 15% 30% 50% lower. Top 250 in each; no combined score." with colour swatches. One line by estimate, not measured.
+- **Checks:** 63 tests in the lane's 3 files passed, including each band boundary. eslint clean, the pure check passed, `--list` found 10 tests, `tsc` printed no errors. No browser run.
+
+## Nightly Floor and Cardio Masters strip and tile (TJ's review: add visuals)
+
+- **Strip:** one mark per appearance in the window, oldest to newest: a tall bar for met, a low grey bar for not met, a hollow amber box for a missing stat. It applies to all six views, since they share the card.
+- **Same test as the count:** the row stores the `floorOutcome` results as `marks`, and the numerator and denominator are counted from that same list. Exactly X is not met.
+- **Tile:** % on one absolute scale, full strength at 100%, so a colour means the same on every board. Green for SOG, hits, blocks and points.
+- **My call, not in the ticket:** Cardio Masters and zero-category boards use red for the tile and the met marks, because the count is one a skater would rather not have.
+- **Kept:** MET / KNOWN, MISSING, "Exactly X fails" and the ranked count, in one legend line with a mark key.
+- **Rows:** 20 to 14 (about 57px each), so the strip and tile fit. Skaters below the card are counted in `evidence.cohort`.
+- **Spec fixture:** crowded names changed from "Fictional Longname Skater N" to "Fictional Long Name N". 21 to 22 characters is longer than real NHL names as far as I know, but the old 28 no longer fit this card's narrower name column by estimate.
+- **Not measured:** no browser run; the lead renders on real data.
+- **Checks:** 67 tests in the lane's 3 files passed, including met marks equal to the numerator on every view, scoreless marks, the equality boundary and the missing gap. eslint clean, the pure check passed, `--list` found 10 tests, `tsc` printed no errors. The last test expectation was corrected after those three ran.
+
+## BSH segmented bar (TJ's reference; replaces the stacked charts above)
+
+- **Bar:** every leader and riser/faller row has one full-width bar, B then S then H, each section as wide as its share of the total, with its letter centred. Colours `#4DA6DE`, `#E5AE5B`, `#C75B52` are inline on the element, and the BLK, SOG and HITS tiles wear the same tints inline.
+- **Data:** leaders use the shown per-game values; risers and fallers use the recent-window values, and the earlier values stay in the tiles. The per-game series, `recentFrom`, the dashes and their legend wording are gone.
+- **Edges:** a section under 18px hides its letter (at 982px on leaders, 481px on movers). A zero has no section, all zeros give a neutral empty bar, and a missing value gives a dashed amber "missing" bar with no split.
+- **Layout by CSS, not measured:** leaders about 67px a row, a 37px line then a 30px bar line; the BSH tile went to one line. Movers need about 110px of about 114px, so the three tiles went to one line each.
+- **Palette validator:** on the dark surface blue and amber fail the lightness band (0.694, 0.785); CVD, normal-vision and contrast checks pass. These are the ticket's colours and each section carries a direct letter, so I kept them.
+- **Checks:** 68 tests in the lane's 3 files passed, eslint clean, the pure check passed, `tsc` printed no errors, `--list` found 10 tests. No browser run.
+
+## Nightly Floor and Cardio Masters rework (TJ's review)
+
+- **Headline:** `floorHeadline(settings)` gives "GP% WITH 3+ SOG", "GP% WITH 5+ HITS", "GP% WITH 2+ BLK", "GP% WITH 1+ PTS", "GP% WITH 0 PPP" and "CARDIO MASTERS". A threshold that is not whole prints "OVER 2.5". It is wired through the module's `headline`, using the lead's seam in `contract.ts` and `PostStudio.tsx`. The picker and panel keep "Nightly Floor".
+- **Metric label:** 34px line at the top of the board, such as "METRIC: SOG, 3+ per game" or "METRIC: POINTS, exactly 0". The legend went from 19px to 15px on this post only.
+- **Average column:** named per view (SOG/G, HITS/G, BLK/G, PTS/G), known games only, two decimals, "—" with no known game.
+- **MISSING column removed:** a missing game stays as the strip's outlined block and in the legend, MET / KNOWN keeps its denominator, and alt text and the row data keep the count.
+- **Width:** of the 82px freed, the new column takes about 72px and the strip 10px (170px to 180px). More for the strip would clip the 22-character fixture name by estimate.
+- **Not measured:** rows drop to about 54px by CSS; no browser run.
+- **Checks:** 75 tests in the lane's 3 files passed, eslint clean, the pure check passed, `tsc` printed no errors, `--list` found 10 tests.
+- **Headline length (from `54ed1bd11`):** the longest whole-number headline is "GP% WITH 11+ HITS" (17 characters). The field accepts a value like 9.5, which gives "GP% WITH OVER 9.5 HITS" (22), the same length as the longest post title. A new E2E test measures that form on one line; not run here.
+- **Column rename:** "MET / KNOWN" is now "# GP" (values unchanged, such as 9 / 10; the GP column stays). Earlier notes in this receipt use the old name. No other text printed on the PNG says "known".
+
+## Multi Cat Monsters (TJ's rework of Category Blueprint)
+
+**TJ's decision overrides the earlier "no combined score" rule for this card only.** The post id stays `category-blueprint`, so links and the registry hold; the picker now says "Multi Cat Monsters".
+
+- **Headlines:** "MULTI CAT MONSTERS" and "POINTS-FIRST MULTI CAT MONSTERS", from one `view` setting. The category pickers and the top-N gate are gone; min season GP, window and position stay.
+- **Percentile:** the share of the other eligible skaters beaten in that category, with a tie counting as half. Every category averages 50 however many skaters tie, so a category full of ties weighs the same. A lone skater is 50.
+- **Score:** the average of the four percentiles; Points-First is (2×PTS + SOG + HITS + BLK) / 5. A missing category leaves the skater unranked and counted, never zero.
+- **Colour:** inline fills on one scale, 95+, 85+, 70+, 50+, below.
+- **Header risk, by estimate:** the 31-character Points-First headline is about 1,000px at the header's 52px, against about 776px available. It needs a smaller size for long headlines in frozen `PostStudio.tsx`. The E2E test fails if it wraps.
+
+Read for the real-data check, one `SELECT` through MCP `execute_sql` on 2026-11-01:
+
+| # | Statement | Tables read | Rows returned | Result |
+| --- | --- | --- | --- | --- |
+| R6 | L10 percentiles and both scores, top 15 per list, three lists | `wgo_skater_stats` | 0 sample rows (45 per-player aggregate rows) | Passed. 644 eligible at 5+ GP through 2026-10-31 |
+
+Points-First top 15, L10 (SQL using the same formula; the builder itself has not run on the full season):
+
+| RK | Skater | Score | PTS/G | P PTS | P SOG | P HITS | P BLK | Standard rank |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | Rasmus Dahlin D | 86.2 | 0.90 | 87 | 94 | 72 | 91 | 1 |
+| 2 | Seth Jones D | 84.8 | 1.70 | 100 | 93 | 60 | 72 | 3 |
+| 3 | Neal Pionk D | 84.5 | 0.90 | 87 | 87 | 89 | 72 | 2 |
+| 4 | Nick Suzuki C | 84.0 | 1.33 | 98 | 94 | 71 | 59 | 5 |
+| 5 | Tim Stützle C | 81.9 | 1.30 | 97 | 82 | 86 | 47 | 9 |
+| 6 | Drake Batherson R | 80.6 | 1.30 | 97 | 87 | 75 | 47 | 15 |
+| 7 | Brandon Hagel L | 80.3 | 1.30 | 97 | 100 | 40 | 68 | 17 |
+| 8 | Alex Tuch R | 80.2 | 1.00 | 90 | 93 | 60 | 68 | 11 |
+| 9 | Charlie McAvoy D | 80.1 | 0.89 | 85 | 73 | 63 | 94 | 7 |
+| 10 | Brady Tkachuk L | 79.8 | 1.50 | 99 | 98 | 97 | 5 | 18 |
+| 11 | Moritz Seider D | 79.2 | 0.60 | 73 | 71 | 79 | 100 | 4 |
+| 12 | Zach Werenski D | 78.8 | 0.80 | 83 | 94 | 36 | 98 | 10 |
+| 13 | Jake Sanderson D | 78.6 | 1.14 | 94 | 73 | 42 | 90 | 20 |
+| 14 | Jake Neighbours L | 78.6 | 0.80 | 83 | 77 | 96 | 55 | 13 |
+| 15 | Evan Bouchard D | 78.5 | 1.20 | 95 | 90 | 30 | 82 | 23 |
+
+**Verdict: 2x helps but does not fully deliver what TJ described.** It swaps 4 of the standard top 15 and keeps the same top 3, with 2 and 3 reversed. 12 of 15 are P85+ in points, but 8 of 15 are defensemen, and only 8 are P50+ in all four. Tkachuk (P5 blocks) and Bouchard (P30 hits) rank on two or three strong categories. A points floor at P70 changes none of this top 15, because the lowest here is P73; about P85 would remove Seider, Werenski and Neighbours. None added.
+
+**Checks:** 84 tests in the lane's 3 files passed, eslint clean, the pure check passed, `tsc` printed no errors, `--list` found 11 tests. No browser run.
+
+## Multi Cat chips (TJ's review)
+
+- **Chips:** every chip is 104px wide, including a missing one, with the value on the left and a 32px percentile square on the right, so P100 cannot widen a column. Squares line up down each column.
+- **Colour:** the square is a black overlay at 22% on the chip, so it is a darker shade of whichever band it sits on. All set inline.
+- **Changed beyond the ticket:** the 85+ band went from 48% to 42% green, because white text was just under 4.5:1 on it. Dark text on 95+, white on the rest; a test checks both chip and square at 4.5:1 or better against `#1a1d21`.
+- **Legend:** "P = percentile" is now "Square = percentile". Ranking, scoring and the 2x weight are unchanged.
+- **Not measured:** the 32px square fits a cell of about 33px by CSS. The crowded E2E test now checks chip width, square shape and column alignment; not run here.
+- **Checks:** 86 tests in the lane's 3 files passed, eslint clean, the pure check passed, `tsc` printed no errors, `--list` found 11 tests.
+
+## Points-First P85 points floor (TJ approved)
+
+- **Rule:** the Points-First view ranks only skaters at P85 or better in points, from rank 1 among them. Percentiles stay over the whole eligible cohort, and the score formula and the straight view are unchanged. Missing categories stay unranked and are counted apart from those below the floor.
+- **Printed:** "Points P85+ only." in the legend, with the floor and the counts in the evidence and the floor in the alt text.
+- **Real cohort, R7 below:** 96 of 644 eligible skaters clear the floor at L10 through 2026-10-31, which works out to about 0.89+ PTS/G. None of the 644 is missing a category. The highest below the floor is P82.9.
+
+| # | Statement | Tables read | Rows returned | Result |
+| --- | --- | --- | --- | --- |
+| R7 | L10 percentiles, floor count and top 15 at the floor, through MCP `execute_sql` on 2026-11-01 | `wgo_skater_stats` | 0 sample rows (15 per-player aggregate rows) | Passed |
+
+Top 15 now (SQL using the same formula; the builder has not run on the full season): Dahlin, Jones, Pionk, Suzuki, Stützle, Batherson, Hagel, Tuch, McAvoy (P85.2), Tkachuk, Sanderson, Bouchard, Schaefer, Holloway, Benson. Seider, Werenski and Neighbours leave; Schaefer, Holloway and Benson come in. 7 of 15 are defensemen, and 8 of the 15 are below P50 in hits or blocks.
+
+**Checks:** 91 tests in the lane's 3 files passed, eslint clean, `tsc` printed no errors, `--list` found 11 tests. No browser run.
+
+## Last Nights Standouts (TJ's request)
+
+- **Post:** one module, id `last-nights-standouts`, with five views. Under X% and No roster limit are built by hand in the sidebar and start blank. Goalies, Top forwards and Top defensemen rank themselves. The headline is fixed and a banner names the view and the slate date.
+- **Slate:** the newest date with skater rows, through yesterday in New York. A scheduled game with no result or no player rows makes the edition partial, so it cannot export.
+- **Baseline:** each skater's games before the slate, per game; last night is never in it. NHL.com windows must be complete, NST windows need the Min NST coverage field (default 90%), and xG% is pooled. Fewer than Min prior GP (default 3, my addition), a missing baseline or a zero baseline prints "—".
+- **xG and xG%:** xG is What Changed's individual ixG; xG% is its on-ice xGF%. The xG% change is a relative percent like the others: 75.0 against 50.0 prints +50%.
+- **Proposed default sorts, for TJ's review:** forwards and defensemen by points, then SOG, xG, TOI, with a Rank by field, top 8. Goalies by SV%, then saves, among those with 15+ shots against (a field), top 12.
+- **Card limit:** 8 skaters, printed in the sidebar; a ninth is disabled.
+- **Goalies:** no Line or PP chips and no goal line, since those are skater context. Missing GSAx prints "—" and the legend says how many; that does not block export, so a lagging NST table cannot hold the card back.
+- **Line chips will often print "Line —" in the morning:** see R8. `rolling_player_game_metrics` had 92 of 360 rows for 10-31 at read time, 72 of them with a line, while earlier dates are complete. The chip follows the table; PP chips had all 10 games.
+- **Duplicated, not shared:** the NST season read and the Yahoo read are copied into the post's own sources file, because `whatChanged.sources.ts` does not export its reader and this ticket stayed in new files.
+
+| # | Statement | Tables read | Rows returned | Result |
+| --- | --- | --- | --- | --- |
+| R8 | Slate coverage for 2026-10-31 through MCP `execute_sql` on 2026-11-01 | `wgo_skater_stats`, `games`, `wgo_team_stats`, `nst_gamelog_as_counts`, `nst_gamelog_as_counts_oi`, `rolling_player_game_metrics`, `powerPlayCombinations`, `wgo_goalie_stats`, `nst_gamelog_goalie_all_counts` | 0 sample rows (1 aggregate row, then 6 per-date rolling rows) | Passed. 360 skaters, 10 of 10 games, 360 NST matches, 20 goalies with 20 NST rows, rolling 92 rows, 72 with a line, PP rows for 10 of 10 games |
+| R9 | Top 8 forwards by the default sort, with the SOG baseline before the slate | `wgo_skater_stats` | 8 per-player rows | Passed. Baseline and percent arithmetic behave as the builder's on real rows |
+
+R9, for the default: Crosby 1G-2A-3P-1PPP, Anderson 2G-1A-3P, Kucherov 0G-3A-3P, Frondell 2G-0A-2P-1PPP (9 SOG, +484%), Thompson, Stützle, Bedard, Kreider. The loader has not run on the full slate; it is the lead's to run at the render step.
+
+### Last Nights Standouts: defects from the lead's render
+
+- **Lines:** rolling had 92 of 360 rows for 10-31, last written 2026-11-01 08:18 UTC, so that writer had not reached most of the slate. `lineCombinations` (Gamecenter) has all 10 games and all 360 skaters, and matched rolling on 1,764 of 1,764 rows for 10-24 to 10-30. The post now reads last night's line from it. If a game's row is absent, the chip uses the newest earlier rolling line and prints its date, "L2 · Oct 24"; with none it stays "Line —". 353 of 360 skaters had an earlier rolling line.
+- **Load failure:** rolling is read only for players with no line in last night's game, with one retry on 57014. If it still fails those lines stay unknown and the post still loads.
+- **NST dashes:** correct under the rule. NST has 0 rows for 10-05 (144 skater rows, 4 games) and 10-06 (324 rows, 9 games); it has every other date checked from 09-29 to 10-09. Stützle and Cozens have 12 of 14 prior games, 85.7%, under the 90% default. On this slate 27 of the 349 skaters with 3+ prior GP fall short; 26 of them clear at 80%. Thompson has 12 of 13 and passes. Nothing changed; the Min NST coverage field can be lowered, and a backfill of those two dates would close it.
+
+| # | Statement | Tables read | Rows returned | Result |
+| --- | --- | --- | --- | --- |
+| R10 | Rolling, line and earlier-line coverage for the 10-31 slate, through MCP `execute_sql` on 2026-11-01 | `wgo_skater_stats`, `rolling_player_game_metrics`, `lineCombinations` | 0 sample rows (1 aggregate row, then 3 aggregate rows) | Passed |
+| R11 | NST coverage for 5 named skaters | `wgo_skater_stats`, `nst_gamelog_as_counts`, `nst_gamelog_as_counts_oi`, `rolling_player_game_metrics` | 5 per-player rows | Passed |
+| R12 | NST coverage for the slate, and rows per night 09-29 to 10-09 | `wgo_skater_stats`, `nst_gamelog_as_counts`, `games` | 0 sample rows (12 aggregate rows) | Passed |
+
+### Last Nights Standouts: PP chips against NHL.com PP time
+
+- **Not a join bug or the wrong game:** all 268 rows for the slate belong to skaters in that game, written 2026-11-01 00:25 to 08:05 UTC.
+- **`unit` is a rank, not a lineup:** `update-power-play-combinations` sorts a team's skaters by its shift-derived PP time; the top 5 are unit 1, the next 5 unit 2, the rest unit 3.
+- **That time is wrong for some teams:** it is within 2 seconds of NHL.com on 112 of 268 rows. Ottawa's source team PP total is 600s, with no skater above 2:54 on NHL.com; Zub has 3:42 in the source and 0:00 on NHL.com. Edmonton's is 1,380s against a 7:46 NHL.com high. Team totals are whole multiples of 2:00, which suggests full penalty lengths with no early end; that is an inference, not traced in the writer.
+- **Slate counts:** 171 of 360 print Off PP as sourced, and 7 of them have over 1:00 (all unit 3: OTT 2, DET 2, CHI, EDM, SJS). 189 print PP1 or PP2, and 28 have under 0:30 (26 PP2, 2 PP1: Pinto and Zub, both OTT). PP1 holds the team's NHL.com top 5 on 18 teams; OTT has 2 of 5, and CGY has no rows because it had no PP time.
+- **Rule:** a skater's chip prints "PP —" when Off PP has over 1:00 or PP1/PP2 has under 0:30, boundaries allowed. 35 of 360 chips change. No unit is inferred from time.
+- **Left wrong by this rule:** it judges one skater at a time, so a unit that looks plausible stays. Ottawa's Greig still prints PP1 at 1:05 and Giroux PP2 at 2:54. Only a fix in the writer corrects those.
+
+| # | Statement | Tables read | Rows returned | Result |
+| --- | --- | --- | --- | --- |
+| R13 | PP unit against NHL.com PP time per team and overall, slate of 2026-10-31, through MCP `execute_sql` on 2026-11-01 | `wgo_skater_stats`, `powerPlayCombinations` | 0 sample rows (20 + 1 + 20 aggregate rows) | Passed |
+| R14 | Unit rows for Ottawa's game | `wgo_skater_stats`, `powerPlayCombinations` | 18, then 29 rows | Passed |
+
+### Last Nights Standouts: TJ's review
+
+- **Sidebar default:** "Avg % vs STD". The rule: the mean % change across the stats with a baseline, each capped at ±200%, with at least 4 of 7 available; fewer has no average and sorts last. Value and jump sorts stay selectable.
+- **Real order, R15:** Frondell +149, Vlasic +145, Perry +144, Stastney +143, Kolesar +128. Anderson averages −20 and ranks 197 of 321. The cap matters: Carrick's raw mean is +1439, capped +125. 31 of 352 skaters have too few stats, including Stützle (only 3, because of the NST gap on 10-05 and 10-06), so they sort last.
+- **Skater chips:** label and %, then last night and STD. With 5 or more rows all chips are one width. With up to 4 rows they wrap to 4 + 3 and the seventh spans two columns, so it is wider there.
+- **Goalie card:** the same chips, top 8 by GSAx, 15+ shots against; 20 of 20 goalies qualify on 10-31. No NST row ranks below every row. STD is per appearance before the slate, with SV% and GAA pooled. SV% changes in points of save percentage (+.012), GAA and GSAx in goals, the rest in %. Lower GA and GAA are good; SA and TOI are workload and uncoloured. STD needs 3+ prior GP: 17 of 20 goalies have it, so 3 print "—" for STD and change. 19 of 20 meet 90% NST coverage for the GSAx STD.
+
+| # | Statement | Tables read | Rows returned | Result |
+| --- | --- | --- | --- | --- |
+| R15 | Average % change under the rule, top 8 and 3 named skaters, slate of 2026-10-31, through MCP `execute_sql` on 2026-11-01 | `wgo_skater_stats`, `nst_gamelog_as_counts`, `nst_gamelog_as_counts_oi` | 10 per-player rows | Passed. SQL with the same rule; the builder has not run on it |
+| R16 | Goalie counts for the slate | `wgo_goalie_stats`, `nst_gamelog_goalie_all_counts` | 0 sample rows (1 aggregate row) | Passed |
+
+### Last Nights Standouts: average floors and six goalie chips
+
+- **Floors, inclusive, against each skater's STD:** SOG 0.75 (about P10), TOI 10:00 (about P5), iCF 2.0 (between P10 1.6 and P25 2.1), iSCF 0.75 (between P10 0.50 and P25 0.83), xG 0.05 (between P10 0.04 and P25 0.07), xG% 35.0 (about P10), PPTOI 0:30. Percentiles are across the 349 slate skaters with 3+ prior GP. PPTOI's P25 is 4 seconds, since most skaters barely see the power play, so its floor is the 0:30 used for a PP unit, not a percentile.
+- **Rule:** the ±200% cap and the 4-of-7 minimum stay, and the minimum applies after the floor. Chips and the sidebar still print the true %.
+- **Under-50% top 8, before:** Frondell +149, Vlasic +145, Perry +144, Kolesar +128, Christiansen +125, Carrick +125, Kreider +107, Rossi +94.
+- **After:** Frondell +149, Perry +144, Kreider +107, Girard +99, Rossi +94, Holmstrom +79, Novak +79, then Misa and Del Mastro tied at +77.
+- **Who left:** Carrick has no stat above a floor (xG 0.01, TOI 7:39). Vlasic has 3 stats left, Kolesar 2 and Christiansen 1, so none has an average and all sort last. No average rises from 18 to 44 of 233 skaters under 50%. Vlasic is a top-pair defenseman with 6 SOG last night: he misses by staying low in chances, not by low minutes.
+- **Goalie card:** TOI chip removed, six chips share the width. TOI stays on the row and in the alt text. Ranking and the 15+ shots rule are unchanged.
+
+| # | Statement | Tables read | Rows returned | Result |
+| --- | --- | --- | --- | --- |
+| R17 | Baseline percentiles per stat; Under-50% top 8 before and after, through MCP `execute_sql` on 2026-11-01 | `wgo_skater_stats`, `nst_gamelog_as_counts`, `nst_gamelog_as_counts_oi`, `yahoo_nhl_player_map_read`, `yahoo_players` | 0 sample rows (7 aggregate rows), then 19 ranked rows | Passed. SQL with the same rule; the builder has not run on it |
+| R18 | Baselines for 4 named skaters | same skater tables | 4 per-player rows | Passed |
+
+### Last Nights Standouts: audit findings F4, F5, F9 (part)
+
+- **F4:** an unknown GSAx has no rank. Ranked goalies come first; unranked ones only fill what is left of the 8 rows, by SV%, then saves, with no rank number. The count line covers every qualified goalie, shown or not, and is in the alt text.
+- **No GSAx at all:** the card keeps its goalies, unranked, by SV%, then saves, and says "GSAx isn't available for this slate". It claims no GSAx ranking and can still export, because the other five chips are observed and the wording is honest.
+- **F5:** coverage counts team games (game id plus team). A completed team game with no skater rows, or no goalie rows in the goalie view, makes the post partial with a reason and counts as missing. What Changed's helper is not touched; lane A has it.
+- **Team codes checked:** all 32 `team_id` values map through `teamsInfo` to the same codes as `wgo_skater_stats` and `wgo_goalie_stats`, so real slates do not read as missing. R19.
+- **F9, part:** the spec now downloads a real PNG for a built view and for Goalies, and checks the signature, 1080 x 1080, over 50 KB, and the studio's confirmation. Fictional data only.
+
+| # | Statement | Tables read | Rows returned | Result |
+| --- | --- | --- | --- | --- |
+| R19 | Distinct team codes and ids this season, through MCP `execute_sql` on 2026-11-01 | `wgo_skater_stats`, `wgo_goalie_stats`, `wgo_team_stats` | 0 sample rows (3 aggregate rows) | Passed |
+
+### Period control and Standouts slate chooser, `cdd927cfb`, released in 295b384da
+
+- **Boards:** BSH Leaders, Multi Cat Monsters (both views), Nightly Floor and Cardio Masters add Matchup week and Custom range to the shared period control. Recent games stays the default, with L5, L10 or season in `window` and L10 still the default, so old URLs and landing links keep their meaning.
+- **Over chosen dates:** appearances, team games and schedule read those dates only, so percentiles, the P85 floor, min GP and coverage all follow them. The card prints the dates. A week under way counts through the cutoff and says "so far".
+- **Min GP in a period:** `minGpRange` when set. Blank is half the most games anyone played in the dates, rounded up, at most 5.
+- **Movers:** keep their windows. A period on Movers is refused with a reason.
+- **Standouts:** own `slate` field, previous and next buttons and a date field; default is the latest completed slate. Baseline is season per game before the slate. Picks clear on a change, and an old-slate URL round trips. Headline and legend print the date for an older slate, and the legend says ROST is current.
+- **Limit:** the slate buttons and date wait for Refresh post, because a panel's `change` cannot load an edition.
+
+### Review F3: slates come from completed games
+
+- **Evidence:** a date is a slate when `wgo_team_stats` has a result for a regular-season game in `games`. Latest, chosen and neighbouring slates all come from this, never from player rows. Two bounded reads replace the per-date reads and fail closed: at most 1,400 scheduled games and 2,700 team rows, through the cutoff.
+- **True off day:** "No games on Oct 28. Choose another slate." `missing`, off the pager.
+- **Scheduled, no team result:** "1 game was scheduled on Oct 25, but no team result has been reported." `missing`, off the pager, and not called an off day.
+- **Played, no skater rows:** partial, first reason "Skater data is missing for Oct 31: games were played, but no skater rows have been reported." The card says so, export is blocked, the date stays on the pager, and no other source claims a date.
+- **Goalie view:** uses its own rows, so it is ready on that same slate when its sources are complete. No goalie rows gives the same wording for goalies.
+- **Kept:** one missing team on a slate with rows is still partial through per-team-game coverage.
+- **Behaviour change:** a date with skater rows but no team result is no longer a slate. R20 found none this season.
+- **Real result, R20:** through 2026-10-31, team-result evidence and skater rows give the same 33 dates and the same latest slate, 2026-10-31. All 452 team rows are for scheduled regular-season games, with matching dates. No loader or card was rendered on real data for this.
+
+| # | Statement | Tables read | Rows returned | Result |
+| --- | --- | --- | --- | --- |
+| R20 | Slate dates from team results against skater dates, this season through 2026-10-31, through MCP `execute_sql` on 2026-11-01 | `games`, `wgo_team_stats`, `wgo_skater_stats` | 0 sample rows (1 aggregate row) | Passed. 33 and 33, none on one side only |
+
+
+### SS-1103-B: a late team feed no longer blanks Standouts
+
+- **Cause, R21:** the 11-03 `run-fetch-wgo-data` job failed on NHL.com's team power-play fetch, so `wgo_team_stats` had 0 rows for Nov 2. Its 4 scheduled games had 144 skater rows and 8 goalie rows covering all 8 team games, plus 144 NST rows. Since `e152ce5bc` slates came from team results, so Nov 2 read "4 games were scheduled on Nov 2, but no team result has been reported."
+- **Slates:** every date with a scheduled regular-season game in `games`, read once with home and away team ids. `wgo_team_stats` is no longer read.
+- **Available:** a night is complete when the view's own rows cover both sides of every scheduled game: skater rows for the skater views, goalie rows for Goalies. Team results play no part.
+- **Gaps:**
+  - **Some rows missing:** partial, "1 of 2 scheduled team games on this slate have no skater rows."
+  - **No rows:** not available (`missing`, data kept for the chooser), "Skater data is missing for Oct 31: 1 game was scheduled, and no skater rows have been reported." Never an off day, and the date stays on the pager. This is Codex's F3 case.
+  - **True off day:** "No games on Oct 28."
+- **Blank date, TJ's late-feed decision:** if the latest night is incomplete, the loader steps back to the last complete night, at most 7 nights, then shows the latest as it is.
+  - **Dating:** the fallback night carries its date in the headline ("Oct 27 Standouts"), the banner and the legend.
+  - **Notes:** the card says "Oct 31 is still loading, so this is Oct 27.", and the sidebar gives the full reason. It moves to `pageNotes` when ss-contract lands that field.
+- **Bounds:** schedule ≤ 1,400 rows, one night's skater rows ≤ 700 or goalie rows ≤ 60 per step, at most 8 nights read.
+
+| # | Statement | Tables read | Rows returned | Result |
+| --- | --- | --- | --- | --- |
+| R21 | Nov 2 counts: scheduled games, team rows, skater, goalie and NST rows and team games covered, through MCP `execute_sql` on 2026-11-03 | `games`, `wgo_team_stats`, `wgo_skater_stats`, `wgo_goalie_stats`, `nst_gamelog_as_counts` | 0 sample rows (1 aggregate row) | Passed: 4 games, 0 team rows, 144 skater and 8 goalie rows over 8 of 8 team games |
+| R22 | Real loader, three sequential loads through `loadPostSnapshot` with the public client, `generatedAt` 2026-11-03T14:00Z: Top forwards blank, Goalies blank, No roster limit on 2026-11-02 | `games`, `wgo_skater_stats`, `wgo_goalie_stats`, `nst_gamelog_as_counts`, `nst_gamelog_as_counts_oi`, `nst_gamelog_goalie_all_counts`, `lineCombinations`, `powerPlayCombinations`, `yahoo_players`, `yahoo_nhl_player_map_read` | 15, 9 and 15 requests; whole-window rows, in `ui-1103/standouts/load-summary.json`; nothing printed but computed snapshots | All ready on 2026-11-02, coverage 8 of 8, no fallback. GSAx is not on NST yet for Nov 2, so the goalie card says so and is unranked |
+
+Renders, `ui-1103/standouts/`, isolated Playwright on port 3110 with a fictional session: `real-forwards-blank.png`, `real-goalies-blank.png` and `real-all-nov2.png` (8 picks) are real downloads. The fixture previews `fixture-all-late-team-feed-preview.png` and `fixture-goalies-late-team-feed-preview.png` come from the real loader over a fictional Nov 2 with no team results; they are watermarked and refused export. Each also has a studio screenshot, and all five fit with no horizontal scroll at 375px (`render-report.json`).
+
+### SS-1103-B, part 2: page notes and the shared late-feed rule
+
+- **Standouts:** the blank-date fallback now uses `shared/completeThrough.ts` over the nights it read. The note is a page note beside the preview, "Oct 31 is not fully reported yet, so this card ends Oct 27.", never on the PNG; the card keeps the date in its headline, banner and legend. A chosen slate that is partial stays partial, with no note.
+- **BSH Board, Multi Cat Monsters, Nightly Floor:** the shared season read now takes the schedule with both teams. Coverage is skater rows against scheduled team games, so a late team-results feed no longer blocks.
+  - **Late newest nights:** incomplete newest nights are cut, so the board ends at its last complete night and can export, with the same page note.
+  - **Older gaps:** still partial.
+  - **Every night late, or no schedule:** the season is kept as read.
+  - All three boards share one loader path, so they follow one rule; Multi Cat Stars (lane H) reads its own season and is unchanged.
+- **Specs:** the Refresh clicks are gone, as ss-contract's PostStudio now loads on each change. The stale-only assertion after "previous slate" was removed. The skater-board fixture's week 3 moved to 2027, because the pager now takes its cutoff from the edition.

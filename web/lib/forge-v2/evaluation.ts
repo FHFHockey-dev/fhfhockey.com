@@ -1,4 +1,4 @@
-import { CATEGORIES, Component, EvidenceClass, Horizon, HorizonEpisode, Instant, Interval, LockEpoch, OutcomeRevision, PublicAccountability, PublishedVintage, ScoringProfile, Target, available, assertComponent, assertSource, assertTarget, assertVintage, instant, unavailable } from "./contracts";
+import { CATEGORIES, Component, EvidenceClass, Horizon, HorizonEpisode, Instant, Interval, LockEpoch, OutcomeRevision, PublicAccountability, PublishedVintage, ScoringProfile, Target, available, assertObservedCounts, assertSource, assertTarget, assertVintage, instant, unavailable } from "./contracts";
 import { contentHash } from "./hash.server";
 import { scoreMeans, targetKey } from "./identity";
 
@@ -119,7 +119,7 @@ export function selectLockedFinal(input: { target: Target; publications: readonl
 
 export function appendOutcomeRevision(history: readonly OutcomeRevision[], revision: OutcomeRevision): OutcomeRevision[] {
   assertTarget(revision); assertSource(revision.source, revision.recordedAt);
-  CATEGORIES.forEach(category => assertComponent(revision.values[category]));
+  assertObservedCounts(revision.values);
   const duplicate = history.find(row => row.id === revision.id);
   if (duplicate) { if (contentHash(duplicate) !== contentHash(revision)) throw new Error("Outcome identity conflict"); return structuredClone([...history]); }
   const previous = history.filter(row => targetKey(row) === targetKey(revision)).at(-1);
@@ -157,7 +157,7 @@ export interface EvaluationRevision {
 export function settleEvaluation(input: { id: string; selection: Selection; publication: PublishedVintage | null; outcome: OutcomeRevision | null; profile: ScoringProfile; valueKind: EvaluationRevision["valueKind"]; recordedAt: Instant; period: string; rescheduled: boolean; intervals?: Component<Interval[]>; prior?: EvaluationRevision; selectionRevision?: SelectionRevision; priorSelectionRevision?: SelectionRevision; correctionReason?: string; label?: EvaluationRevision["label"] }): EvaluationRevision {
   const { selection, publication, outcome, profile } = input;
   instant(input.recordedAt); assertTarget(selection);
-  if (outcome) { assertSource(outcome.source, input.recordedAt); CATEGORIES.forEach(category => assertComponent(outcome.values[category])); }
+  if (outcome) { assertSource(outcome.source, input.recordedAt); assertObservedCounts(outcome.values); }
   if (publication && (publication.vintage.id !== selection.vintageId || targetKey(publication.vintage) !== targetKey(selection))) throw new Error("Selected vintage mismatch");
   if (outcome && (targetKey(outcome) !== targetKey(selection) || instant(outcome.recordedAt) > instant(input.recordedAt))) throw new Error("Outcome target/clock mismatch");
   const changedSelection = input.prior && input.prior.selection.vintageId !== selection.vintageId;

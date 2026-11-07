@@ -1,0 +1,44 @@
+{
+  "atUtc": "2026-11-01T15:15:27.974240+00:00",
+  "checks": [
+    {
+      "name": "tests",
+      "command": [
+        "npm",
+        "test",
+        "--",
+        "--run",
+        "lib/nst/goalieFreshness.server.test.ts",
+        "--maxWorkers=1",
+        "--minWorkers=1"
+      ],
+      "exitCode": 0
+    },
+    {
+      "name": "types",
+      "command": [
+        "node",
+        "node_modules/typescript/bin/tsc",
+        "--project",
+        "/Users/tim/Code/fhfhockey.com/tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/tsconfig.reader.json"
+      ],
+      "exitCode": 0
+    },
+    {
+      "name": "lint",
+      "command": [
+        "node",
+        "node_modules/eslint/bin/eslint.js",
+        "lib/nst/goalieCatchup.ts",
+        "lib/nst/goalieCatchup.test.ts",
+        "lib/nst/goalieFreshness.ts",
+        "lib/nst/goalieFreshness.test.ts",
+        "lib/nst/goalieFreshness.server.ts",
+        "lib/nst/goalieFreshness.server.test.ts"
+      ],
+      "exitCode": 0
+    }
+  ],
+  "networkGuard": "offline.cjs",
+  "scope": "Bounded freshness reader with mocked IO; scoped types/lint include its six-file closure. No production verification."
+}

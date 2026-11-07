@@ -1,0 +1,118 @@
+{
+  "version": "fhfh-analysis-export-v1",
+  "dimensions": {
+    "width": 1200,
+    "height": 1020
+  },
+  "presentation": {
+    "goalie": {
+      "state": "fixture",
+      "player": {
+        "id": 8476883,
+        "name": "Fixture goalie",
+        "team": "TBL",
+        "season": 20262027
+      },
+      "observedAt": "2026-10-31T12:00:00Z",
+      "reason": "Partial inventory: Synthetic fixture; forecasts unavailable.",
+      "sharedProvenance": {
+        "version": "goalie-inventory-v1",
+        "sourceState": "partial",
+        "sourceNotes": [
+          "Synthetic resolved confirmations: ready; tables player_forecast_goalie_start_observations; as of 2026-10-31T12:00:00Z; updated 2026-10-31T11:00:00Z; Reports aren't separated by reporter, so conflicts between sources can't be detected.; No source link or expiry exists for these reports."
+        ],
+        "confirmationWarnings": [
+          "Reports aren't separated by reporter, so conflicts between sources can't be detected.",
+          "No source link or expiry exists for these reports."
+        ],
+        "recentStarts": {
+          "window": "L10",
+          "teamGames": 10,
+          "starts": 6,
+          "reliefAppearances": 1,
+          "share": 0.6,
+          "complete": true
+        }
+      },
+      "games": [
+        {
+          "id": 2026020200,
+          "heading": "2026-11-01T23:00:00Z · TBL vs TOR · home",
+          "confirmation": "projected · validated_events · 2026-10-31T11:00:00Z · expires not supplied",
+          "forecast": "Start forecast unavailable: No admitted forecast. No odds inferred from appearance share.",
+          "dimensions": [
+            {
+              "label": "Opponent shots for",
+              "group": "Volume upside",
+              "text": "31 shots/GP · L10 · 10 team games"
+            },
+            {
+              "label": "Team shots against",
+              "group": "Volume upside",
+              "text": "29 shots/GP · L10 · 10 team games"
+            },
+            {
+              "label": "Opponent xGF",
+              "group": "Ratio exposure",
+              "text": "3.1 xG/GP · L10 · 10 team games"
+            },
+            {
+              "label": "Team xGA",
+              "group": "Ratio exposure",
+              "text": "Unavailable: missing metric, unit, window or sample."
+            },
+            {
+              "label": "Opponent chances for",
+              "group": "Ratio exposure",
+              "text": "28 /GP · L10 · 10 team games"
+            },
+            {
+              "label": "Team chances against",
+              "group": "Ratio exposure",
+              "text": "25 /GP · L10 · 10 team games"
+            },
+            {
+              "label": "Opponent PP",
+              "group": "Ratio exposure",
+              "text": "21 % · L10 · 10 team games"
+            },
+            {
+              "label": "Team PK",
+              "group": "Ratio exposure",
+              "text": "80 % · L10 · 10 team games"
+            },
+            {
+              "label": "Team penalty exposure",
+              "group": "Ratio exposure",
+              "text": "3.2 /GP · L10 · 10 team games"
+            },
+            {
+              "label": "Team goals for",
+              "group": "Win support",
+              "text": "3.1 /GP · L10 · 10 team games"
+            },
+            {
+              "label": "Opponent goals against",
+              "group": "Win support",
+              "text": "2.9 /GP · L10 · 10 team games"
+            },
+            {
+              "label": "Team goal differential",
+              "group": "Win support",
+              "text": "-0.3 /GP · L10 · 10 team games"
+            }
+          ]
+        }
+      ]
+    },
+    "gameIndex": 0
+  },
+  "comparison": null,
+  "artwork": {
+    "state": "unavailable",
+    "reason": "No qualified matching artwork supplied."
+  },
+  "artworkKey": "image-unavailable",
+  "key": "[{\"goalie\":{\"state\":\"fixture\",\"player\":{\"id\":8476883,\"name\":\"Fixture goalie\",\"team\":\"TBL\",\"season\":20262027},\"observedAt\":\"2026-10-31T12:00:00Z\",\"reason\":\"Partial inventory: Synthetic fixture; forecasts unavailable.\",\"sharedProvenance\":{\"version\":\"goalie-inventory-v1\",\"sourceState\":\"partial\",\"sourceNotes\":[\"Synthetic resolved confirmations: ready; tables player_forecast_goalie_start_observations; as of 2026-10-31T12:00:00Z; updated 2026-10-31T11:00:00Z; Reports aren't separated by reporter, so conflicts between sources can't be detected.; No source link or expiry exists for these reports.\"],\"confirmationWarnings\":[\"Reports aren't separated by reporter, so conflicts between sources can't be detected.\",\"No source link or expiry exists for these reports.\"],\"recentStarts\":{\"window\":\"L10\",\"teamGames\":10,\"starts\":6,\"reliefAppearances\":1,\"share\":0.6,\"complete\":true}},\"games\":[{\"id\":2026020200,\"heading\":\"2026-11-01T23:00:00Z · TBL vs TOR · home\",\"confirmation\":\"projected · validated_events · 2026-10-31T11:00:00Z · expires not supplied\",\"forecast\":\"Start forecast unavailable: No admitted forecast. No odds inferred from appearance share.\",\"dimensions\":[{\"label\":\"Opponent shots for\",\"group\":\"Volume upside\",\"text\":\"31 shots/GP · L10 · 10 team games\"},{\"label\":\"Team shots against\",\"group\":\"Volume upside\",\"text\":\"29 shots/GP · L10 · 10 team games\"},{\"label\":\"Opponent xGF\",\"group\":\"Ratio exposure\",\"text\":\"3.1 xG/GP · L10 · 10 team games\"},{\"label\":\"Team xGA\",\"group\":\"Ratio exposure\",\"text\":\"Unavailable: missing metric, unit, window or sample.\"},{\"label\":\"Opponent chances for\",\"group\":\"Ratio exposure\",\"text\":\"28 /GP · L10 · 10 team games\"},{\"label\":\"Team chances against\",\"group\":\"Ratio exposure\",\"text\":\"25 /GP · L10 · 10 team games\"},{\"label\":\"Opponent PP\",\"group\":\"Ratio exposure\",\"text\":\"21 % · L10 · 10 team games\"},{\"label\":\"Team PK\",\"group\":\"Ratio exposure\",\"text\":\"80 % · L10 · 10 team games\"},{\"label\":\"Team penalty exposure\",\"group\":\"Ratio exposure\",\"text\":\"3.2 /GP · L10 · 10 team games\"},{\"label\":\"Team goals for\",\"group\":\"Win support\",\"text\":\"3.1 /GP · L10 · 10 team games\"},{\"label\":\"Opponent goals against\",\"group\":\"Win support\",\"text\":\"2.9 /GP · L10 · 10 team games\"},{\"label\":\"Team goal differential\",\"group\":\"Win support\",\"text\":\"-0.3 /GP · L10 · 10 team games\"}]}]},\"gameIndex\":0},\"image-unavailable\"]",
+  "disclosure": "Local consumer presentation; qualification and unavailable reasons are retained per field. No source refresh or deployment implied."
+}

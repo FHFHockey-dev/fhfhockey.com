@@ -1,0 +1,17 @@
+[
+ {
+  "space": {
+   "emptyPx": 2,
+   "bodyPx": 845,
+   "textOutside": 0,
+   "minFont": 12
+  },
+  "name": "what-changed",
+  "enabled": true,
+  "png": true,
+  "feedback": "PNG downloaded: 1080 × 1080.",
+  "status": "",
+  "fit": [],
+  "phone": 375
+ }
+]

@@ -1,0 +1,12 @@
+{
+  "command": [
+    "npm",
+    "test",
+    "--",
+    "--run",
+    "lib/player-cards/observedExport.test.ts",
+    "lib/player-cards/shareExport.test.ts"
+  ],
+  "exitCode": 0,
+  "seconds": 1.092
+}

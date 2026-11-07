@@ -1,0 +1,77 @@
+[
+ {
+  "space": {
+   "emptyPx": 12,
+   "bodyPx": 861,
+   "textOutside": 0,
+   "minFont": 12
+  },
+  "name": "bsh-board",
+  "enabled": true,
+  "png": true,
+  "feedback": "PNG downloaded: 1080 × 1080.",
+  "status": "",
+  "fit": [],
+  "phone": 375
+ },
+ {
+  "space": {
+   "emptyPx": 12,
+   "bodyPx": 861,
+   "textOutside": 0,
+   "minFont": 12
+  },
+  "name": "bsh-risers",
+  "enabled": true,
+  "png": true,
+  "feedback": "PNG downloaded: 1080 × 1080.",
+  "status": "",
+  "fit": [],
+  "phone": 375
+ },
+ {
+  "space": {
+   "emptyPx": 12,
+   "bodyPx": 861,
+   "textOutside": 0,
+   "minFont": 14.88
+  },
+  "name": "category-blueprint",
+  "enabled": true,
+  "png": true,
+  "feedback": "PNG downloaded: 1080 × 1080.",
+  "status": "",
+  "fit": [],
+  "phone": 375
+ },
+ {
+  "space": {
+   "emptyPx": 11,
+   "bodyPx": 861,
+   "textOutside": 0,
+   "minFont": 12
+  },
+  "name": "nightly-floor",
+  "enabled": true,
+  "png": true,
+  "feedback": "PNG downloaded: 1080 × 1080.",
+  "status": "",
+  "fit": [],
+  "phone": 375
+ },
+ {
+  "space": {
+   "emptyPx": 11,
+   "bodyPx": 861,
+   "textOutside": 0,
+   "minFont": 12
+  },
+  "name": "cardio-masters",
+  "enabled": true,
+  "png": true,
+  "feedback": "PNG downloaded: 1080 × 1080.",
+  "status": "",
+  "fit": [],
+  "phone": 375
+ }
+]

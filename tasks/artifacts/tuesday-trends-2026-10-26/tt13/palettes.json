@@ -1,0 +1,874 @@
+{
+  "trace": 768,
+  "out": 384,
+  "window": 6,
+  "minVotes": 4,
+  "teams": {
+    "ANA": {
+      "params": {},
+      "palette": [
+        {
+          "original": "#ffffff",
+          "neon": "#ffffff",
+          "logoShare": 0.399,
+          "outlineShare": 0.754
+        },
+        {
+          "original": "#010101",
+          "neon": "#818181",
+          "logoShare": 0.481,
+          "outlineShare": 0.001
+        },
+        {
+          "original": "#cf4520",
+          "neon": "#df522d",
+          "logoShare": 0.054,
+          "outlineShare": 0.169
+        },
+        {
+          "original": "#89734c",
+          "neon": "#967e53",
+          "logoShare": 0.066,
+          "outlineShare": 0.076
+        }
+      ]
+    },
+    "BOS": {
+      "params": {},
+      "palette": [
+        {
+          "original": "#fcb514",
+          "neon": "#fcb514",
+          "logoShare": 0.182,
+          "outlineShare": 0.728
+        },
+        {
+          "original": "#111111",
+          "neon": "#818181",
+          "logoShare": 0.547,
+          "outlineShare": 0
+        },
+        {
+          "original": "#ffffff",
+          "neon": "#ffffff",
+          "logoShare": 0.271,
+          "outlineShare": 0.272
+        }
+      ]
+    },
+    "BUF": {
+      "params": {
+        "stroke": 5,
+        "floor": 5.5
+      },
+      "palette": [
+        {
+          "original": "#002654",
+          "neon": "#3390ff",
+          "logoShare": 0.551,
+          "outlineShare": 0.466
+        },
+        {
+          "original": "#fcb514",
+          "neon": "#fcb514",
+          "logoShare": 0.171,
+          "outlineShare": 0.275
+        },
+        {
+          "original": "#ffffff",
+          "neon": "#ffffff",
+          "logoShare": 0.269,
+          "outlineShare": 0.259
+        }
+      ]
+    },
+    "CAR": {
+      "params": {
+        "stroke": 5.5
+      },
+      "palette": [
+        {
+          "original": "#a4a9ad",
+          "neon": "#a4a9ad",
+          "logoShare": 0.064,
+          "outlineShare": 0.254
+        },
+        {
+          "original": "#111111",
+          "neon": "#818181",
+          "logoShare": 0.291,
+          "outlineShare": 0.356
+        },
+        {
+          "original": "#ce1126",
+          "neon": "#ef394d",
+          "logoShare": 0.3,
+          "outlineShare": 0.362
+        },
+        {
+          "original": "#ffffff",
+          "neon": "#ffffff",
+          "logoShare": 0.345,
+          "outlineShare": 0.029
+        }
+      ]
+    },
+    "CBJ": {
+      "params": {
+        "stroke": 5.5
+      },
+      "palette": [
+        {
+          "original": "#a4a9ad",
+          "neon": "#a4a9ad",
+          "logoShare": 0.197,
+          "outlineShare": 0.247
+        },
+        {
+          "original": "#002654",
+          "neon": "#117dff",
+          "logoShare": 0.463,
+          "outlineShare": 0.414
+        },
+        {
+          "original": "#ce1126",
+          "neon": "#ef394d",
+          "logoShare": 0.192,
+          "outlineShare": 0.339
+        },
+        {
+          "original": "#ffffff",
+          "neon": "#ffffff",
+          "logoShare": 0.148,
+          "outlineShare": 0
+        }
+      ]
+    },
+    "CGY": {
+      "params": {
+        "stroke": 5.5
+      },
+      "palette": [
+        {
+          "original": "#111111",
+          "neon": "#818181",
+          "logoShare": 0.052,
+          "outlineShare": 0.321
+        },
+        {
+          "original": "#f3bc52",
+          "neon": "#f3bc52",
+          "logoShare": 0.22,
+          "outlineShare": 0.323
+        },
+        {
+          "original": "#ce1126",
+          "neon": "#ef394d",
+          "logoShare": 0.727,
+          "outlineShare": 0.356
+        }
+      ]
+    },
+    "CHI": {
+      "params": {},
+      "palette": [
+        {
+          "original": "#000000",
+          "neon": "#818181",
+          "logoShare": 0.411,
+          "outlineShare": 0.14
+        },
+        {
+          "original": "#d87609",
+          "neon": "#d87609",
+          "logoShare": 0.427,
+          "outlineShare": 0.341
+        },
+        {
+          "original": "#00833e",
+          "neon": "#009546",
+          "logoShare": 0.048,
+          "outlineShare": 0.026
+        },
+        {
+          "original": "#ffd100",
+          "neon": "#ffd100",
+          "logoShare": 0.098,
+          "outlineShare": 0.493
+        }
+      ]
+    },
+    "COL": {
+      "params": {
+        "stroke": 4.5,
+        "floor": 8,
+        "colorT": 0.12,
+        "minStroke": 0.015
+      },
+      "palette": [
+        {
+          "original": "#236192",
+          "neon": "#7eb5e0",
+          "logoShare": 0.311,
+          "outlineShare": 0.763
+        },
+        {
+          "original": "#ffffff",
+          "neon": "#ffffff",
+          "logoShare": 0.333,
+          "outlineShare": 0.019
+        },
+        {
+          "original": "#111111",
+          "neon": "#afafaf",
+          "logoShare": 0.034,
+          "outlineShare": 0.04
+        },
+        {
+          "original": "#a2aaad",
+          "neon": "#a8b0b3",
+          "logoShare": 0.061,
+          "outlineShare": 0.034
+        },
+        {
+          "original": "#6f263d",
+          "neon": "#dd9db1",
+          "logoShare": 0.261,
+          "outlineShare": 0.143
+        }
+      ]
+    },
+    "DAL": {
+      "params": {
+        "stroke": 4,
+        "floor": 8
+      },
+      "palette": [
+        {
+          "original": "#006847",
+          "neon": "#00c888",
+          "logoShare": 0.175,
+          "outlineShare": 0.731
+        },
+        {
+          "original": "#ffffff",
+          "neon": "#ffffff",
+          "logoShare": 0.197,
+          "outlineShare": 0.259
+        },
+        {
+          "original": "#8f8f8c",
+          "neon": "#afafac",
+          "logoShare": 0.201,
+          "outlineShare": 0.002
+        },
+        {
+          "original": "#111111",
+          "neon": "#afafaf",
+          "logoShare": 0.427,
+          "outlineShare": 0.008
+        }
+      ]
+    },
+    "DET": {
+      "params": {},
+      "palette": [
+        {
+          "original": "#ce1126",
+          "neon": "#ef394d",
+          "logoShare": 0.566,
+          "outlineShare": 0.996
+        },
+        {
+          "original": "#ffffff",
+          "neon": "#ffffff",
+          "logoShare": 0.434,
+          "outlineShare": 0.004
+        }
+      ]
+    },
+    "EDM": {
+      "params": {
+        "stroke": 5.5
+      },
+      "palette": [
+        {
+          "original": "#ffffff",
+          "neon": "#ffffff",
+          "logoShare": 0.427,
+          "outlineShare": 0.17
+        },
+        {
+          "original": "#031d40",
+          "neon": "#257ef5",
+          "logoShare": 0.539,
+          "outlineShare": 0.801
+        },
+        {
+          "original": "#ff4c00",
+          "neon": "#ff4c00",
+          "logoShare": 0.034,
+          "outlineShare": 0.028
+        }
+      ]
+    },
+    "FLA": {
+      "params": {},
+      "palette": [
+        {
+          "original": "#ffffff",
+          "neon": "#ffffff",
+          "logoShare": 0.115,
+          "outlineShare": 0.182
+        },
+        {
+          "original": "#041e42",
+          "neon": "#297ef2",
+          "logoShare": 0.418,
+          "outlineShare": 0.248
+        },
+        {
+          "original": "#ae8f56",
+          "neon": "#ae8f56",
+          "logoShare": 0.331,
+          "outlineShare": 0.418
+        },
+        {
+          "original": "#c8102e",
+          "neon": "#ef3855",
+          "logoShare": 0.135,
+          "outlineShare": 0.151
+        }
+      ]
+    },
+    "LAK": {
+      "params": {},
+      "palette": [
+        {
+          "original": "#101010",
+          "neon": "#818181",
+          "logoShare": 0.59,
+          "outlineShare": 0.264
+        },
+        {
+          "original": "#ffffff",
+          "neon": "#ffffff",
+          "logoShare": 0.222,
+          "outlineShare": 0.314
+        },
+        {
+          "original": "#acaea9",
+          "neon": "#acaea9",
+          "logoShare": 0.187,
+          "outlineShare": 0.422
+        }
+      ]
+    },
+    "MIN": {
+      "params": {},
+      "palette": [
+        {
+          "original": "#e2d6b5",
+          "neon": "#e2d6b5",
+          "logoShare": 0.131,
+          "outlineShare": 0.314
+        },
+        {
+          "original": "#024930",
+          "neon": "#049461",
+          "logoShare": 0.606,
+          "outlineShare": 0.402
+        },
+        {
+          "original": "#edaa00",
+          "neon": "#edaa00",
+          "logoShare": 0.042,
+          "outlineShare": 0.092
+        },
+        {
+          "original": "#af1e24",
+          "neon": "#e14d53",
+          "logoShare": 0.217,
+          "outlineShare": 0.193
+        }
+      ]
+    },
+    "MTL": {
+      "params": {},
+      "palette": [
+        {
+          "original": "#ffffff",
+          "neon": "#ffffff",
+          "logoShare": 0.343,
+          "outlineShare": 0.197
+        },
+        {
+          "original": "#171f66",
+          "neon": "#6c78de",
+          "logoShare": 0.24,
+          "outlineShare": 0.556
+        },
+        {
+          "original": "#af1e2d",
+          "neon": "#e04d5c",
+          "logoShare": 0.416,
+          "outlineShare": 0.246
+        }
+      ]
+    },
+    "NJD": {
+      "params": {},
+      "palette": [
+        {
+          "original": "#ffffff",
+          "neon": "#ffffff",
+          "logoShare": 0.313,
+          "outlineShare": 0.234
+        },
+        {
+          "original": "#000000",
+          "neon": "#818181",
+          "logoShare": 0.216,
+          "outlineShare": 0.47
+        },
+        {
+          "original": "#ce1126",
+          "neon": "#ef394d",
+          "logoShare": 0.471,
+          "outlineShare": 0.296
+        }
+      ]
+    },
+    "NSH": {
+      "params": {},
+      "palette": [
+        {
+          "original": "#ffffff",
+          "neon": "#ffffff",
+          "logoShare": 0.444,
+          "outlineShare": 0.207
+        },
+        {
+          "original": "#041e42",
+          "neon": "#297ef2",
+          "logoShare": 0.368,
+          "outlineShare": 0.316
+        },
+        {
+          "original": "#ffb81c",
+          "neon": "#ffb81c",
+          "logoShare": 0.188,
+          "outlineShare": 0.476
+        }
+      ]
+    },
+    "NYI": {
+      "params": {},
+      "palette": [
+        {
+          "original": "#ffffff",
+          "neon": "#ffffff",
+          "logoShare": 0.347,
+          "outlineShare": 0.162
+        },
+        {
+          "original": "#00539b",
+          "neon": "#0081f0",
+          "logoShare": 0.354,
+          "outlineShare": 0.135
+        },
+        {
+          "original": "#f47d30",
+          "neon": "#f47d30",
+          "logoShare": 0.299,
+          "outlineShare": 0.704
+        }
+      ]
+    },
+    "NYR": {
+      "params": {
+        "stroke": 4.25
+      },
+      "palette": [
+        {
+          "original": "#0069aa",
+          "neon": "#0086d8",
+          "logoShare": 0.466,
+          "outlineShare": 0.838
+        },
+        {
+          "original": "#ffffff",
+          "neon": "#ffffff",
+          "logoShare": 0.428,
+          "outlineShare": 0.106
+        },
+        {
+          "original": "#d31245",
+          "neon": "#ee3667",
+          "logoShare": 0.105,
+          "outlineShare": 0.056
+        }
+      ]
+    },
+    "OTT": {
+      "params": {},
+      "palette": [
+        {
+          "original": "#ffffff",
+          "neon": "#ffffff",
+          "logoShare": 0.097,
+          "outlineShare": 0.377
+        },
+        {
+          "original": "#000000",
+          "neon": "#818181",
+          "logoShare": 0.338,
+          "outlineShare": 0
+        },
+        {
+          "original": "#b79257",
+          "neon": "#b79257",
+          "logoShare": 0.252,
+          "outlineShare": 0.492
+        },
+        {
+          "original": "#da1a32",
+          "neon": "#e94257",
+          "logoShare": 0.314,
+          "outlineShare": 0.131
+        }
+      ]
+    },
+    "PHI": {
+      "params": {},
+      "palette": [
+        {
+          "original": "#000000",
+          "neon": "#818181",
+          "logoShare": 0.769,
+          "outlineShare": 0.272
+        },
+        {
+          "original": "#ffffff",
+          "neon": "#ffffff",
+          "logoShare": 0.194,
+          "outlineShare": 0.689
+        },
+        {
+          "original": "#f74902",
+          "neon": "#f74902",
+          "logoShare": 0.037,
+          "outlineShare": 0.039
+        }
+      ]
+    },
+    "PIT": {
+      "params": {},
+      "palette": [
+        {
+          "original": "#ffffff",
+          "neon": "#ffffff",
+          "logoShare": 0.377,
+          "outlineShare": 0.808
+        },
+        {
+          "original": "#000000",
+          "neon": "#818181",
+          "logoShare": 0.395,
+          "outlineShare": 0.006
+        },
+        {
+          "original": "#f5b113",
+          "neon": "#f5b113",
+          "logoShare": 0.228,
+          "outlineShare": 0.186
+        }
+      ]
+    },
+    "SEA": {
+      "params": {
+        "minShare": 0.002,
+        "only": {
+          "keep": [
+            [
+              200,
+              16,
+              46
+            ]
+          ],
+          "within": 110,
+          "to": "stroke"
+        }
+      },
+      "palette": [
+        {
+          "original": "#001628",
+          "neon": "#6bcdf4",
+          "logoShare": 0.505,
+          "outlineShare": 0.47
+        },
+        {
+          "original": "#96d8d8",
+          "neon": "#6bcdf4",
+          "logoShare": 0.239,
+          "outlineShare": 0.328
+        },
+        {
+          "original": "#c7102e",
+          "neon": "#ef3856",
+          "logoShare": 0.008,
+          "outlineShare": 0.04
+        },
+        {
+          "original": "#639fb6",
+          "neon": "#6bcdf4",
+          "logoShare": 0.249,
+          "outlineShare": 0.162
+        }
+      ]
+    },
+    "SJS": {
+      "params": {},
+      "palette": [
+        {
+          "original": "#ffffff",
+          "neon": "#ffffff",
+          "logoShare": 0.137,
+          "outlineShare": 0.732
+        },
+        {
+          "original": "#000000",
+          "neon": "#818181",
+          "logoShare": 0.635,
+          "outlineShare": 0.022
+        },
+        {
+          "original": "#ea7200",
+          "neon": "#ea7200",
+          "logoShare": 0.026,
+          "outlineShare": 0.125
+        },
+        {
+          "original": "#006d75",
+          "neon": "#008f99",
+          "logoShare": 0.202,
+          "outlineShare": 0.122
+        }
+      ]
+    },
+    "STL": {
+      "params": {},
+      "palette": [
+        {
+          "original": "#002654",
+          "neon": "#117dff",
+          "logoShare": 0.101,
+          "outlineShare": 0.432
+        },
+        {
+          "original": "#fffefe",
+          "neon": "#fffefe",
+          "logoShare": 0.05,
+          "outlineShare": 0.001
+        },
+        {
+          "original": "#fbb514",
+          "neon": "#fbb514",
+          "logoShare": 0.07,
+          "outlineShare": 0.567
+        },
+        {
+          "original": "#002f87",
+          "neon": "#327aff",
+          "logoShare": 0.779,
+          "outlineShare": 0
+        }
+      ]
+    },
+    "TBL": {
+      "params": {},
+      "palette": [
+        {
+          "original": "#0041a9",
+          "neon": "#287bff",
+          "logoShare": 1,
+          "outlineShare": 1
+        }
+      ]
+    },
+    "TOR": {
+      "params": {
+        "pick": "interior",
+        "interiorColor": "#ffffff",
+        "twoTone": false
+      },
+      "palette": [
+        {
+          "original": "#feffff",
+          "neon": "#feffff",
+          "logoShare": 0.085,
+          "outlineShare": 0.231
+        },
+        {
+          "original": "#00205b",
+          "neon": "#317aff",
+          "logoShare": 0.915,
+          "outlineShare": 0.769
+        }
+      ]
+    },
+    "UTA": {
+      "params": {},
+      "palette": [
+        {
+          "original": "#6cade5",
+          "neon": "#6cade5",
+          "logoShare": 0.229,
+          "outlineShare": 0.764
+        },
+        {
+          "original": "#010101",
+          "neon": "#818181",
+          "logoShare": 0.549,
+          "outlineShare": 0.018
+        },
+        {
+          "original": "#feffff",
+          "neon": "#feffff",
+          "logoShare": 0.221,
+          "outlineShare": 0.219
+        }
+      ]
+    },
+    "VAN": {
+      "params": {},
+      "palette": [
+        {
+          "original": "#97999b",
+          "neon": "#97999b",
+          "logoShare": 0.253,
+          "outlineShare": 0.221
+        },
+        {
+          "original": "#041c2c",
+          "neon": "#1386d2",
+          "logoShare": 0.309,
+          "outlineShare": 0.126
+        },
+        {
+          "original": "#ffffff",
+          "neon": "#ffffff",
+          "logoShare": 0.035,
+          "outlineShare": 0.004
+        },
+        {
+          "original": "#142f61",
+          "neon": "#4d7fda",
+          "logoShare": 0.404,
+          "outlineShare": 0.649
+        }
+      ]
+    },
+    "VGK": {
+      "params": {
+        "colorT": 0.12,
+        "minStroke": 0.015
+      },
+      "palette": [
+        {
+          "original": "#ffffff",
+          "neon": "#ffffff",
+          "logoShare": 0.058,
+          "outlineShare": 0.276
+        },
+        {
+          "original": "#000000",
+          "neon": "#818181",
+          "logoShare": 0.444,
+          "outlineShare": 0
+        },
+        {
+          "original": "#b4975a",
+          "neon": "#b4975a",
+          "logoShare": 0.378,
+          "outlineShare": 0.723
+        },
+        {
+          "original": "#333f42",
+          "neon": "#6c858b",
+          "logoShare": 0.12,
+          "outlineShare": 0
+        }
+      ]
+    },
+    "WPG": {
+      "params": {
+        "pick": "inner",
+        "twoTone": false,
+        "colorT": 0.12,
+        "minStroke": 0.015
+      },
+      "palette": [
+        {
+          "original": "#8e9090",
+          "neon": "#8e9090",
+          "logoShare": 0.165,
+          "outlineShare": 0.36
+        },
+        {
+          "original": "#ffffff",
+          "neon": "#ffffff",
+          "logoShare": 0.304,
+          "outlineShare": 0.171
+        },
+        {
+          "original": "#041e41",
+          "neon": "#297ef2",
+          "logoShare": 0.4,
+          "outlineShare": 0.233
+        },
+        {
+          "original": "#aa172d",
+          "neon": "#e6455d",
+          "logoShare": 0.024,
+          "outlineShare": 0.036
+        },
+        {
+          "original": "#56565a",
+          "neon": "#818186",
+          "logoShare": 0.072,
+          "outlineShare": 0.105
+        },
+        {
+          "original": "#7c303e",
+          "neon": "#c36375",
+          "logoShare": 0.035,
+          "outlineShare": 0.095
+        }
+      ]
+    },
+    "WSH": {
+      "params": {},
+      "palette": [
+        {
+          "original": "#ffffff",
+          "neon": "#ffffff",
+          "logoShare": 0.486,
+          "outlineShare": 0.343
+        },
+        {
+          "original": "#031d40",
+          "neon": "#257ef5",
+          "logoShare": 0.475,
+          "outlineShare": 0.453
+        },
+        {
+          "original": "#cf0a2c",
+          "neon": "#f52d4f",
+          "logoShare": 0.039,
+          "outlineShare": 0.204
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,188 @@
+[
+ {
+  "name": "risky-default",
+  "post": "risky-starts",
+  "query": {},
+  "ms": 901,
+  "requests": 8,
+  "errors": [],
+  "rows": {
+   "games": 292,
+   "wgo_team_stats": 470,
+   "nst_team_gamelogs_as_counts": 470,
+   "wgo_goalie_stats": 380,
+   "player_forecast_goalie_start_observations": 14,
+   "player_forecast_observation_conflicts": 0,
+   "game_prediction_market_odds_snapshots": 27,
+   "/v1/partner-game/US/now": 0
+  },
+  "state": "ready",
+  "reasons": [],
+  "pageNotes": [],
+  "sample": "2026-11-03 to 2026-11-09: 100 upcoming team games; rates are season to date through 2026-11-02. Unknown means no current observation, not that the goalie is not starting. Observations cover part of the slate. Reports aren't separated by reporter, so conflicts between sources can't be detected. No source link or expiry exists for these reports. Moneylines and totals are market lines, the book's own prices, not FHFH numbers. NHL.com's feed covers only its current odds date, so a later game shows no line. Goalie labels: a source's report for this game shows as Projected or Confirmed, and the other goalie as Backup. With no report, Likely Starter has the most starts in the team's last 10 games; a tie goes to the most starts in its last 3, then the better win share in decisions against this opponent, this season and last (NHL.com goalie game stats). Split means still tied. In a back-to-back, when this game is against the weaker opponent by season goal differential per game, from NHL.com team game stats, both goalies show which game of the back-to-back it is instead. A source's account shows only when its report names one. Reading the card: blue marks a flagged pairing, a longer bar is the stronger side, and 1ST is the league's highest value. Moneylines and totals are DraftKings market lines, shown only when one exists.",
+  "cohort": "100 team-nights in the window; ranks over all 32 teams. These signals are correlated: shots, xG and chances overlap, and penalties feed all three. Each lens stands alone, flags are never added across lenses, and no win or start odds are given. All situations (shots, xG, chances); PP and PK as labeled. Sources: NHL schedule through 2026-11-09 · NHL.com team game stats through 2026-11-02 · NST team game logs (all situations) through 2026-11-02 (updated Nov 3, 4:55 AM ET) · NHL.com goalie game stats through 2026-11-02 · Goalie start observations through 2026-11-03 (updated Nov 3, 11:48 AM ET) · DraftKings market lines (stored) through 2026-11-03 (updated Nov 3, 6:34 AM ET) · NHL.com partner odds.",
+  "err": null
+ },
+ {
+  "name": "start-sit-default",
+  "post": "start-sit",
+  "query": {},
+  "ms": 453,
+  "requests": 6,
+  "errors": [],
+  "rows": {
+   "games": 292,
+   "wgo_team_stats": 470,
+   "nst_team_gamelogs_as_counts": 470,
+   "wgo_goalie_stats": 380,
+   "player_forecast_goalie_start_observations": 14,
+   "player_forecast_observation_conflicts": 0
+  },
+  "state": "ready",
+  "reasons": [],
+  "pageNotes": [],
+  "sample": "2026-11-03 to 2026-11-09: 100 upcoming team games; rates are season to date through 2026-11-02. Unknown means no current observation, not that the goalie is not starting. Observations cover part of the slate. Reports aren't separated by reporter, so conflicts between sources can't be detected. No source link or expiry exists for these reports. No admitted Start Chart start participation is available, so every forecast is unavailable. A raw start_probability is not admitted. Rates are season to date and #1 is the highest value. Quality, quantity and win are separate, correlated lenses, never added, and no win odds are given. Status: Confirmed and Projected are what a source reported, Conflicting means conflicting reports, and Unknown means no report, which does not mean not starting. A conditional, uncalibrated Start Chart forecast prints as Cond. forecast only when one qualifies; otherwise the forecast is unavailable.",
+  "cohort": "74 goalies with an appearance in their team's last 10 games, on teams scheduled in the window",
+  "err": null
+ },
+ {
+  "name": "off-night-default",
+  "post": "off-night-edge",
+  "query": {},
+  "ms": 1271,
+  "requests": 13,
+  "errors": [],
+  "rows": {
+   "/v1/schedule/2026-11-02": 0,
+   "games": 146,
+   "yahoo_players": 1608,
+   "yahoo_nhl_player_map_read": 2373,
+   "wgo_skater_stats": 5255
+  },
+  "state": "ready",
+  "reasons": [],
+  "pageNotes": [
+   "Yahoo marks 41 eligible skaters IR, O or NA although each played in one of his team's last 2 games; they stay pickable. Yahoo's writer keeps an old status when Yahoo omits it.",
+   "42 eligible skaters have no Yahoo % rostered: Yahoo has never reported one for them (no history row), so it is unknown, not 0%. They are left out while Include unknown ownership is Off."
+  ],
+  "sample": "2026-10-13 to 2026-11-02: 710 skaters; picks played in the last 14 days; HOT means L5 fantasy points per game at least 1.25× his earlier games in this span and at or above his position's median, and comes first; then L5 fantasy points per game × ice time; under 5 complete games is a short sample, used last; ownership among qualified skaters: 260 known, 42 unknown, 0 stale",
+  "cohort": "Top 16 of 32 teams with games (also tied at the last rank: COL, DAL, DET, EDM, MTL, NSH, NYR, STL, UTA, VAN); skaters at or under 50% rostered, unknown % excluded",
+  "err": null
+ },
+ {
+  "name": "off-night-w7",
+  "post": "off-night-edge",
+  "query": {
+   "period": "matchup",
+   "week": "7"
+  },
+  "ms": 1024,
+  "requests": 14,
+  "errors": [],
+  "rows": {
+   "yahoo_matchup_weeks": 27,
+   "/v1/schedule/2026-11-09": 0,
+   "games": 146,
+   "yahoo_players": 1608,
+   "wgo_skater_stats": 5255,
+   "yahoo_nhl_player_map_read": 2373
+  },
+  "state": "ready",
+  "reasons": [],
+  "pageNotes": [
+   "Yahoo marks 45 eligible skaters IR, O or NA although each played in one of his team's last 2 games; they stay pickable. Yahoo's writer keeps an old status when Yahoo omits it.",
+   "41 eligible skaters have no Yahoo % rostered: Yahoo has never reported one for them (no history row), so it is unknown, not 0%. They are left out while Include unknown ownership is Off."
+  ],
+  "sample": "2026-10-13 to 2026-11-02: 710 skaters; picks played in the last 14 days; HOT means L5 fantasy points per game at least 1.25× his earlier games in this span and at or above his position's median, and comes first; then L5 fantasy points per game × ice time; under 5 complete games is a short sample, used last; ownership among qualified skaters: 267 known, 41 unknown, 0 stale",
+  "cohort": "Top 16 of 32 teams with games (also tied at the last rank: COL, DET, LAK, MIN, MTL, NJD, OTT, STL, TOR, WPG, WSH); skaters at or under 50% rostered, unknown % excluded",
+  "err": null
+ },
+ {
+  "name": "what-changed-default",
+  "post": "what-changed",
+  "query": {},
+  "ms": 1996,
+  "requests": 12,
+  "errors": [],
+  "rows": {
+   "wgo_skater_stats": 8459,
+   "wgo_team_stats": 470,
+   "games": 235,
+   "nst_gamelog_as_counts": 137
+  },
+  "state": "ready",
+  "reasons": [],
+  "pageNotes": [],
+  "sample": "L5 versus season to date through 2026-11-02. Season values contain the recent games: recent games sit inside STD. Tiles show the recent value and its change, each admitted on its own; n/m is games covered when below the minimum. The line is the ranked metric over each player's last 10 appearances, and a gap is a game with no value",
+  "cohort": "526 skaters with 10+ season GP: 526 ranked, 0 short sample, 0 below coverage, 481 more not listed",
+  "err": null
+ },
+ {
+  "name": "role-watch-default",
+  "post": "role-watch",
+  "query": {},
+  "ms": 1827,
+  "requests": 13,
+  "errors": [],
+  "rows": {
+   "wgo_skater_stats": 8459,
+   "wgo_team_stats": 470,
+   "games": 235,
+   "rolling_player_game_metrics": 18,
+   "powerPlayCombinations": 481
+  },
+  "state": "ready",
+  "reasons": [],
+  "pageNotes": [],
+  "sample": "L5 versus the season before it, through 2026-11-02. No game is in both; each row shows its actual samples. Unknown means no source row for that game; Off PP means the game has PP rows and this skater is not on PP1 or PP2. The line is the board's measure over each player's last 10 appearances, and a gap is a game with no value",
+  "cohort": "743 skaters this season: 526 with a full L5 and at least 5 baseline games, 217 short sample, 256 more not listed",
+  "err": null
+ },
+ {
+  "name": "standouts-default",
+  "post": "last-nights-standouts",
+  "query": {},
+  "ms": 2468,
+  "requests": 15,
+  "errors": [],
+  "rows": {
+   "games": 235,
+   "wgo_skater_stats": 2135,
+   "yahoo_nhl_player_map_read": 2373,
+   "yahoo_players": 1608,
+   "nst_gamelog_as_counts": 1900,
+   "nst_gamelog_as_counts_oi": 1839,
+   "lineCombinations": 8,
+   "powerPlayCombinations": 92
+  },
+  "state": "ready",
+  "reasons": [],
+  "pageNotes": [],
+  "sample": "Slate of 2026-11-02, 4 games. Each % compares that game with the skater's own season per game before it, that slate and later games excluded, with 3+ prior GP; xG% is pooled. A zero or missing baseline prints —. PP units are ranked from shift data; PP — means no rows, or NHL.com PP time contradicts the unit. Skaters on this card are chosen by hand",
+  "cohort": "144 skaters on the slate: 96 F, 48 D",
+  "err": null
+ },
+ {
+  "name": "standouts-goalies",
+  "post": "last-nights-standouts",
+  "query": {
+   "view": "goalies"
+  },
+  "ms": 902,
+  "requests": 9,
+  "errors": [],
+  "rows": {
+   "games": 235,
+   "wgo_goalie_stats": 82,
+   "yahoo_players": 1608,
+   "yahoo_nhl_player_map_read": 2373,
+   "nst_gamelog_goalie_all_counts": 66
+  },
+  "state": "ready",
+  "reasons": [],
+  "pageNotes": [],
+  "sample": "Slate of 2026-11-02, 4 games. STD is each goalie's appearances before that slate, that slate and later games excluded, with 3+ prior GP: per appearance, with SV% and GAA pooled. SV% changes in points of save percentage, GAA and GSAx in goals, the rest in %. GSAx is NST xG against less NST goals against; it prints — until NST has that goalie's row",
+  "cohort": "8 goalies on the slate, 0 with NST GSAx",
+  "err": null
+ }
+]

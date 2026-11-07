@@ -1,0 +1,24 @@
+{
+  "applicationPins": {
+    "web/lib/sources/tweetLunaReview.test.ts": "436a4edbb041168deaec555329230ed2628ee0691a7576e7eb15a048d8244b5d",
+    "web/lib/sources/tweetLunaReference.ts": "9070da4a660da3240ffca1cbe55d0b8e4d411b895ba679d6c24d49695afb4927",
+    "web/lib/sources/tweetLunaReference.md": "d866b91b06596f3e1b08716a235e09eaf21d09c2bf2a2aee1cd17b2c7d138f9f",
+    "web/lib/sources/tweetLunaReview.ts": "88eb4a0a182c1a7ad42b63a98cd77dde8cdb18cadeaeb900dd36b6f6d98e2940",
+    "web/lib/sources/fixtures/tweetLunaSyntheticCases.ts": "9bc96553a92bdfcfd63ba1ab2235025026e8d88726846183da88d6a31ff52013",
+    "web/lib/sources/tweetLunaGoalieWording.ts": "eb2ceadb1db0d5d16fcab03f2c835ac2d9dce44e4e97853d9fd3159c610b949a",
+    "web/lib/sources/fixtures/tweetLunaEvaluation.ts": "6f441f341627a8296ad0bf7810ee9c72e076bc16b2e9a67ac7afcd92c4dfac09",
+    "web/scripts/rehearse-luna-evaluation.ts": "f510038e837a24ce88df5fe6a9aa00e2e17ed873d871ddcaa3f03456904d6e66",
+    "web/lib/sources/tweetLunaEvaluationScoring.ts": "22797d003c321c3e52ef31945bbc5a4dfb7365ff4dfcfc93454c5bf041f6363d",
+    "web/lib/sources/tweetLunaTransport.ts": "6f67f0e819766eb8b7e712114f063681833ea87266b08443701231461e4d12d1",
+    "web/lib/sources/tweetLunaLocalStore.ts": "52977c7949d2f60ee4274da0c7d1e0583bc8c5c1324bb6ffb187a32037a2d543",
+    "web/scripts/review-ifttt-luna.ts": "b3407da148f11fe4dd3185e8521f3c1c9b4688232acbff675c9d104902cec8e8",
+    "web/lib/sources/fixtures/tweetLunaAdjudicatedLibrary.json": "e787036b54c89f8fa06e4b28032c8895fbbed81feef1fa04e357435f3229726a",
+    "web/lib/sources/decisionsReference/adapter.mjs": "055bc80ccf9874de8a976da6106bc34af15e424d6b905d39fccf57ecfd2b92a1",
+    "web/lib/sources/tweetIdentityProposal.ts": "a73df0483313bc75e94b36bc3fcf9087e1adb7d96afd0895db7a9c8bad7c9a27",
+    "web/lib/sources/tweetPlayerEvents.ts": "14c421d37506f33df08cac5914e30c38a578b2588ae46f3c6e461b70efadc88c",
+    "web/lib/sources/tweetLunaEvidenceBinding.ts": "b317bce610141ffd1c172615c1f695b5608d9fae4d04bbecbeeef84124c99950"
+  },
+  "realLedgerSha256": "fc59014d3ff7f3abdfdec0703ffa77f80e5d02ef764f19d21cb85fc08adbd8f2",
+  "historicalLedgerSha256": "e8418735afaeff893177e550df6774600c6c6fec4f49c2b01c183712cdc064f2",
+  "acceptedOfflineManifestSha256": "189039ec57eadfd7ee4fa997770a3c01054da39d8b8575640bd81ee104bc81be"
+}

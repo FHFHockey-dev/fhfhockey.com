@@ -1,0 +1,30 @@
+{
+  "base": "b4cf80631b16bab148a0cd1f0e05886090f2673c",
+  "branch": "octoberBranch",
+  "sources": {
+    "tasks/artifacts/trade-value-pipeline-2026-11-04/PLAN.md": "ca9212bfe4eb9bd7f109c8c71ccc577dda2fd56182c9d46fff5172232856a512",
+    "tasks/artifacts/blsh-brief-decisions-2026-11-03/DECISIONS.md": "950a7a0d40f27236557fdacc84b08e20e8842faeb60049a259cdd016c95731b6",
+    "web/lib/player-cards/analysisEvidence.ts": "e9632bf60feb058fd10a80b03deb88287ce50a4d54311476d39904825ccbd332",
+    "web/lib/buyLowSellHigh/market.ts": "44df9313b86bbc078dc6f314a5884deb490e266509bec4a44f6f9ff08e537f60",
+    "web/lib/buyLowSellHigh/trade.ts": "18b9fe9302c5933f3182e2af2fd0ca2e20fa541d361e40606d4fc195a431dce3",
+    "web/lib/integrations/yahoo/yahooIdentity.ts": "1019329b2ccc51a8df19ceec57b301bec9e7029b1dc6a87aad8e52931dc2f76c",
+    "web/lib/projections/verifiedForgeReleases.ts": "70242a513aab76a69af41f4bdd4d64b82f345e4559f7f7014db5216752940325",
+    "tasks/artifacts/cross-platform/2026-10-24-coordination/CODEX-LEASES.json": "fadfdc1a09c8d022c91613085f4064ffa8482ae680d2602953834307db2cd142",
+    "tasks/artifacts/cross-platform/2026-10-24-coordination/CLAUDE-LEASES.json": "c5544b32d2a0801a3ce97b4e3ff67fa74ef2127d6a83fb4b6d0356cff6283c00",
+    "web/lib/projections/externalInputProof.ts": "c285ef41369a3eadc97e96e2b4d5184eee35c869c3605ee392ef25da28679d74",
+    "web/lib/projections/consumerRevisionAdmission.ts": "303a0c9896f6277e8ad8f5f018a7220a61d92e586f4e0610506e782e00ea3f4a"
+  },
+  "writes": [
+    "tasks/artifacts/six-lanes-2026-11-04/L4/contracts.ts",
+    "tasks/artifacts/six-lanes-2026-11-04/L4/checks.ts",
+    "tasks/artifacts/six-lanes-2026-11-04/L4/HANDOFF.md",
+    "tasks/artifacts/six-lanes-2026-11-04/L4/SOURCE-PINS.json",
+    "tasks/diaries/2026-11-04-codex-six-lanes-l4.md"
+  ],
+  "shared_app_files_written": false,
+  "proposed_future_paths": [
+    "web/lib/tradeValue/contracts.ts",
+    "web/lib/tradeValue/observationEvidence.ts",
+    "web/lib/tradeValue/observationEvidence.test.ts"
+  ]
+}

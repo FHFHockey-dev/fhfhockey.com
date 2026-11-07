@@ -1,0 +1,44 @@
+--- a/web/lib/sources/tweetLunaReview.test.ts
++++ b/web/lib/sources/tweetLunaReview.test.ts
+@@ -517,6 +517,41 @@
+       gameId: null, teamId: null, appliedOverride: null, holds: ["human_review_required", "game_and_source_time_binding_required", "conflict_retraction_check_required"] });
+     expect(review).toMatchObject({ canPublish: false, canChangeStatus: false, canWriteAliases: false, canExecuteReplacement: false });
+   });
++  it.each([
++    { name: "observed end38 with full quote", end: 38, period: true, valid: false },
++    { name: "end39 still claiming the period", end: 39, period: true, valid: false },
++    { name: "explicit corrected end40 control", end: 40, period: true, valid: true },
++    { name: "predeclared no-period equivalent", end: 39, period: false, valid: true },
++  ])("distinguishes E02 offset mismatch from a valid evidence variant: $name", async ({ end, period, valid }) => {
++    const entry = createLunaEvaluationBatch().content.entries[1]!;
++    // Exact observed proposal, including the wrong end offset; never repaired in production.
++    const observed = { identity: { version: "tweet-identity-proposal-v1",
++      requestHash: "0863c094821987d26fe02213191ee76b76e5a2a4bb41399684cd674ebea41349",
++      directoryHash: "88dbd1e19c22a04fba95f07d049c38af533b548723bd17106f639191667ae16f",
++      occurrences: [{ occurrenceId: "subject-4", canonicalId: "nhl:900001", status: "matched",
++        evidence: { start: 4, end: 16, text: "Avery Keeper" }, identityConfidence: "strong" }] },
++      goalieStatuses: [{ occurrenceId: "subject-4", canonicalId: "nhl:900001", status: "ruled_out",
++        evidence: { start: 4, end: 38, text: "Avery Keeper will not start tonight." } }] };
++    expect(identityDigest(observed)).toBe("152916c970409b56ed1d1e3ac754b0bc1b78d98e12a194d890a00e2350d85c3d");
++    const source = entry.input.packet.source.text, originalEvidence = observed.goalieStatuses[0]!.evidence;
++    expect(source.length).toBe(40); expect(originalEvidence.text.length).toBe(36);
++    expect(source.slice(4, 38)).toBe("Avery Keeper will not start tonigh");
++    const h = harness({ mutate: (body, endpoint) => {
++      if (endpoint !== "responses") return;
++      const proposal = structuredClone(observed), evidence = proposal.goalieStatuses[0]!.evidence;
++      evidence.end = end; if (!period) evidence.text = evidence.text.slice(0, -1);
++      body.output[0].content[0].text = JSON.stringify(proposal);
++    } });
++    const review = await h.run(entry.input);
++    expect(h.fetcher).toHaveBeenCalledTimes(1);
++    expect(review.identity).toEqual(observed.identity);
++    expect(review.status).toBe(valid ? "review_only" : "held");
++    expect(scoreLunaEvaluation(entry.expected, review).labelMatch).toBe(valid);
++    if (valid) expect(review.goalieStatuses[0]).toMatchObject({ status: "ruled_out", verified: false,
++      gameId: null, teamId: null, appliedOverride: null });
++    else { expect(review.holds).toContain("goalie_subject_binding_invalid"); expect(review.goalieStatuses).toEqual([]); }
++    expect(review).toMatchObject({ canPublish: false, canChangeStatus: false, canWriteAliases: false, canExecuteReplacement: false });
++  });
+   it("compares identity and goalie arrays by occurrence ID while rejecting changed fields and duplicates", async () => {
+     const text = "Jeremy Swayman is likely to start tonight. Sample Netminder is expected to start tonight.", input = fixture(text);
+     input.decisions = false;

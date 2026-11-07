@@ -1,0 +1,94 @@
+
+  ...c153kbd_vhg6cfbn8bm0000gn/T/forge-continuation-_pzky0dc/check.cjs  73.1kb
+
+⚡ Done in 10ms
+{
+  "status": "SYNTHETIC_CAPACITY_MEASURED",
+  "evidenceClass": "fixture",
+  "codeCandidate": "7113329d2c24b8629f54484df37441f95a63d853",
+  "limits": {
+    "maxStatements": 500,
+    "maxWallMs": 90000,
+    "concurrency": 1,
+    "nativeRows": 3030,
+    "artifactPayloadBytes": 1048629,
+    "externalRequests": 0
+  },
+  "measured": {
+    "storageStatements": 130,
+    "publicationMs": {
+      "count": 25,
+      "mean": 1.1081500400000142,
+      "p50": 0.7341250000000628,
+      "p95": 1.8182090000000244,
+      "maximum": 8.430624999999964
+    },
+    "bulkFixtureInsertMs": 777.255583,
+    "historyPageMs": {
+      "count": 16,
+      "mean": 8.266312374999984,
+      "p50": 8.117207999999891,
+      "p95": 11.85333300000002,
+      "maximum": 11.85333300000002
+    },
+    "historyRows": 3030,
+    "historySerializedBytes": 6895856,
+    "relationBytes": [
+      {
+        "relname": "forge_v2_artifacts",
+        "bytes": "16384"
+      },
+      {
+        "relname": "forge_v2_publication_receipts",
+        "bytes": "901120"
+      },
+      {
+        "relname": "forge_v2_records",
+        "bytes": "32768"
+      },
+      {
+        "relname": "forge_v2_vintages",
+        "bytes": "4825088"
+      },
+      {
+        "relname": "forge_v2_work_queue",
+        "bytes": "16384"
+      }
+    ],
+    "artifactMs": {
+      "put": 23.736000000000104,
+      "archive": 10.083624999999984,
+      "archivedRead": 1.5477920000000722,
+      "restore": 7.128291999999874
+    },
+    "unqualifiedTenGameProjectionMs": 16.270874999999933,
+    "unqualifiedTenGamePayloadBytes": 189285,
+    "elapsedMs": 1688.164292,
+    "nodeResourceUsage": {
+      "userCPUTime": 319608,
+      "systemCPUTime": 33697,
+      "maxRSS": 163408,
+      "sharedMemorySize": 0,
+      "unsharedDataSize": 0,
+      "unsharedStackSize": 0,
+      "minorPageFault": 11927,
+      "majorPageFault": 0,
+      "swappedOut": 0,
+      "fsRead": 0,
+      "fsWrite": 0,
+      "ipcSent": 968,
+      "ipcReceived": 951,
+      "signalsCount": 0,
+      "voluntaryContextSwitches": 85,
+      "involuntaryContextSwitches": 2186
+    }
+  },
+  "activationQualified": false,
+  "limitations": [
+    "Local native database, not hosted latency or billing",
+    "25 publication-barrier calls measured separately from 3005 bulk fixture inserts",
+    "1 MiB artifact measures verified I/O only, not calibrated inference",
+    "Ten-game view has unqualified values and is not a qualified full-population payload benchmark",
+    "Real model size, final scope, full-scale browser, remote storage pricing and v1/RSO reservations remain unmeasured"
+  ]
+}

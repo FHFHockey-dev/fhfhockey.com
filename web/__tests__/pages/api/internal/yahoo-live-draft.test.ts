@@ -131,12 +131,20 @@ describe("Yahoo production scheduler", () => {
       responseOutcome: { error: "Yahoo polling coordinator unavailable" } } });
     for (const sensitive of ["private provider detail", "test-secret"]) expect(JSON.stringify(row)).not.toContain(sensitive);
   });
-  it("still answers when the audit insert fails", async () => {
+  it("requires review with HTTP 503 when the audit insert fails", async () => {
     mocks.auditInsert.mockResolvedValue({ error: { message: "audit unavailable" } });
     const error = vi.spyOn(console, "error").mockImplementation(() => {});
     const res = response();
     await handler(request() as any, res as any);
-    expect(res.sent).toHaveBeenCalledExactlyOnceWith({ cycles: 0, attempted: 0, succeeded: 0, failed: 0 });
+    expect(res.statusCode).toBe(503);
+    expect(res.sent).toHaveBeenCalledExactlyOnceWith({
+      cycles: 0, attempted: 0, succeeded: 0, failed: 0,
+      success: false,
+      error: "Audit persistence was not acknowledged. Data writes may have committed; inspect before rerunning.",
+      operationOutcome: { statusCode: 200, success: null },
+      finalAudit: { owner: "withCronJobAudit", status: "failed", retrySafe: false, requiresReview: true },
+    });
+    expect(JSON.stringify(res.sent.mock.calls[0][0])).not.toContain("audit unavailable");
     expect(mocks.auditInsert).toHaveBeenCalledTimes(1);
     error.mockRestore();
   });
@@ -180,13 +188,21 @@ describe("Yahoo production scheduler", () => {
       expect(res.sent).toHaveBeenCalledExactlyOnceWith({ cycles: 0, attempted: 0, succeeded: 0, failed: 0 });
       expect(JSON.parse(auditRow().details.response)).toEqual({ cycles: 0, attempted: 0, succeeded: 0, failed: 0 });
     });
-    it("still answers when the heartbeat insert fails", async () => {
+    it("requires review with HTTP 503 when the heartbeat insert fails", async () => {
       vi.setSystemTime(new Date("2027-07-15T12:00:00Z"));
       mocks.auditInsert.mockResolvedValue({ error: { message: "audit unavailable" } });
       const error = vi.spyOn(console, "error").mockImplementation(() => {});
       const res = response();
       await handler(request() as any, res as any);
-      expect(res.sent).toHaveBeenCalledExactlyOnceWith(suspendedBody);
+      expect(res.statusCode).toBe(503);
+      expect(res.sent).toHaveBeenCalledExactlyOnceWith({
+        ...suspendedBody,
+        success: false,
+        error: "Audit persistence was not acknowledged. Data writes may have committed; inspect before rerunning.",
+        operationOutcome: { statusCode: 200, success: null },
+        finalAudit: { owner: "withCronJobAudit", status: "failed", retrySafe: false, requiresReview: true },
+      });
+      expect(JSON.stringify(res.sent.mock.calls[0][0])).not.toContain("audit unavailable");
       expect(mocks.auditInsert).toHaveBeenCalledTimes(1);
       error.mockRestore();
     });

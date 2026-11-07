@@ -1,0 +1,23 @@
+{
+  "renderer": "sharp/libvips SVG renderer; independent Chromium launch was blocked before navigation",
+  "results": [
+    {
+      "name": "normal",
+      "visiblePixelsBeyondCard": 0,
+      "rightmost": null,
+      "normalRasterDimensions": [
+        1200,
+        1020
+      ]
+    },
+    {
+      "name": "long-token",
+      "visiblePixelsBeyondCard": 16739,
+      "rightmost": 3875,
+      "normalRasterDimensions": [
+        1200,
+        1020
+      ]
+    }
+  ]
+}

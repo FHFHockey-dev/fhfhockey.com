@@ -1,0 +1,52 @@
+{
+  "at": "2026-10-26T15:11:26.131Z",
+  "observedAdmission": {
+    "receiptCount": 5,
+    "kinds": [
+      "game-finality"
+    ],
+    "sourceClasses": [
+      "ingestion-completion"
+    ],
+    "loadIssues": []
+  },
+  "actualGameEndsVerified": false,
+  "historyVerified": false,
+  "metricDefinitionsVerified": false,
+  "populationVerified": false,
+  "currentPageInput": "Existing fabricated fixture; no actual player statistics loaded",
+  "currentPageVerdict": {
+    "state": "incomplete",
+    "metrics": {
+      "atoi": "incomplete",
+      "sog60": "incomplete",
+      "icf60": "incomplete",
+      "iscf60": "incomplete",
+      "ixg60": "incomplete",
+      "cf60": "incomplete",
+      "scf60": "incomplete",
+      "xgf60": "incomplete",
+      "xgPct": "incomplete",
+      "ipp": "incomplete",
+      "shPct": "incomplete",
+      "oiShPct": "incomplete"
+    },
+    "issueCodes": [
+      "appearance-history-missing",
+      "game-finality-missing",
+      "metric-definition-missing",
+      "population-membership-missing"
+    ],
+    "liveActivation": false,
+    "premiumActivation": false
+  },
+  "currentPageProps": {
+    "evidence": {
+      "state": "incomplete"
+    }
+  },
+  "currentExportScope": "Existing shareExport assertCardExport requires snapshot.source === synthetic; this check does not expand that scope",
+  "sourceFilesPreserved": 42,
+  "productionRequests": 0,
+  "providerRequests": 0
+}

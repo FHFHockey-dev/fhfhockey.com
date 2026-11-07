@@ -1,0 +1,18 @@
+{
+  "version": "luna-v4-offline-review-gates-v1",
+  "paidAuthorized": false,
+  "realLedgerMustRemainDisabled": true,
+  "priorBatchRequests": 2,
+  "cumulativeMaxCalls": 20,
+  "maximumRemainingCalls": 18,
+  "maxRetries": 0,
+  "aggregateCapNanoUsd": 1000000000,
+  "aggregateExposureNanoUsd": 263035195,
+  "remainingExposureNanoUsd": 736964805,
+  "historicalUncertainReservationNanoUsd": 254394800,
+  "newPackageIsNotNewBudget": true,
+  "rehearsalIsNotContinuationPlan": true,
+  "independentCandidateAndContinuationReview": "pending",
+  "productionRotationRevocationGate": "pending",
+  "hostedDispatchOrDeploymentAuthorized": false
+}

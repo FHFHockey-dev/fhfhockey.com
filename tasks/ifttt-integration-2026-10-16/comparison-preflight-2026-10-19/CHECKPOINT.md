@@ -1,0 +1,20 @@
+# Review checkpoint — $0.26 paired comparison
+
+**Offline preparation complete; paid execution paused.** No paid/network/provider request, acquisition, migration, ingestion, scheduler, deployment, credential change, staging or commit. Cumulative spend **$0.00**. No denied action, pending provider request or uncertain billed attempt. No test/compiler remains active.
+
+- Protocol: `PROTOCOL.md` and `protocol.json`; exact schema/prompt: `claim-schema.json`, `extraction-prompt.txt`.
+- Software: `comparison.py` (atomic SQLite bundle ledger, strict UTF-16/source validation, common eligibility, one-to-one grading, paired family intervals), `rules-adapter.ts` (actual repository rules), tests/configs, twelve full-post synthetic controls.
+- Evidence: `evidence/python-tests-final.log` **37 pass**, `evidence/rules-tests-final.json` **18 pass**, `evidence/scoped-tsc.log` **exit 0**; `evidence/rules-output-final.json` contains actual rules output. `evidence/offline-report.json` is explicitly synthetic/inconclusive. Full suite/build/PG/hosted checks were not run.
+- Frozen source manifest: `source-pins.json`, SHA256 **`6c38a68216c1c36a619ef6fd14222c4137bd5bf74533c345a8433734e33587c7`**; **13 new owned files + 64 unchanged read-only pins**. All prior accepted64 match. HEAD `d4c7a8229252e60f7d262c909e44f40c13fd4885`, `octoberBranch`. Only this new task root is owned; unrelated dirty `CHEF-REGISTER` preserved. Hold these thirteen paths for independent review; no application runtime/SQL file changed.
+
+**Actual eligible empirical source count: 0.** Twelve synthetic families prove software behavior only. Existing research labels explicitly lack independent/human adjudication and are not an untouched holdout. No claim of 300 labeled posts, future performance or a winning arm is supported. Source fidelity is distinct from real-world hockey truth; missing external player/team/game/time evidence stays ungradable.
+
+**Access:** presence-only checks found no `OPENAI_API_KEY` in current process, `web/.env.local`, or root `.env.local` (also no gateway/base URL entries). No secret values read, no other stores searched, no account access tested. This is a bounded absence finding, not proof that the user has no authorized provider account elsewhere.
+
+**Exact blockers before spending:** (1) no verified complete Decisions input bound/count covering questions and formatting; (2) no verified existing authorized account/schema/rates/premiums/fees; (3) no independently source-adjudicated real family and frozen context/labels; (4) independent acceptance of the statement/eligibility/grading and budget contracts plus a bounded live usage/audit adapter. The Responses input counter is documented; it does not prove Decisions bounds. The retained byte heuristic is not used as a hard guarantee. This candidate deliberately has no paid executor.
+
+Official rates are recorded in `evidence/official-docs.json`. The **conditional** 4096-input/1024-output arithmetic gives $0.002027520 per complete three-call post. The 126-post allocation is only an upper-bound calculation, not a selected cohort or permission to acquire/spend. It is not guaranteed until its assumptions are proved.
+
+**Smallest next step:** after parent review, prepare **one complete real original-source family in development only**, independently review its full-post labels (unknown world fields ungradable), and establish the exact per-call billing envelope/access. Freeze that single paired bundle before any request. Reuse it as the development pilot; no extra schema/pilot calls or automatic retries. Any later untouched holdout needs its own pre-output label/family freeze. This is not a request for another user spending approval.
+
+Independent review should stay bounded to this task root, actual rules/retained reference dependencies, the fifty-five focused cases and concrete negative controls. No paid calls until parent confirms acceptance and these prerequisites resolve. Do not reopen accepted claim/recovery SQL or expand to production validation.

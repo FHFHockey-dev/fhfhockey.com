@@ -1,0 +1,42 @@
+{
+  "state": "TRANSFERRED_LOCAL_EDITING_CUSTODY",
+  "recordedAtUtc": "2026-11-01T17:27:01.998747+00:00",
+  "recordedAtLocal": "2026-11-01T12:27:01.998747-05:00",
+  "localTimezone": "America/New_York",
+  "repository": "/Users/tim/Code/fhfhockey.com",
+  "branch": "octoberBranch",
+  "head": "00c5ea901ea143d73072aad4c2340536d458b302",
+  "fromLease": "CODEX-CRON-TRIAGE-20261027-01",
+  "fromOwnerThread": "01a17d95-8833-7618-ab3c-93e40feaf0dd",
+  "toOwnerThread": "01a19780-b73c-7334-9e53-4b7fda61201c",
+  "toParentThread": "01a189f6-9a3a-7235-a989-e1af4f47b014",
+  "successorLease": "CODEX-NST-GOALIE-WRITER-20261101-GAMELOG-TEST",
+  "files": [
+    {
+      "path": "web/__tests__/pages/api/v1/db/update-nst-gamelog.test.ts",
+      "sha256": "da7b61b89c52007e95608de421f10a644d16a8ac5556d7e5f7e4aa5184891fb9",
+      "acceptedV4Sha256": "da7b61b89c52007e95608de421f10a644d16a8ac5556d7e5f7e4aa5184891fb9",
+      "matchesAcceptedV4": true,
+      "bytes": 72553
+    }
+  ],
+  "scope": "Gamelog enclosing NST lifecycle, settlement/expiry regressions and existing manual audit behavior in this exact test file. Preserve partial/unknown states, safe continuation and unsafe-retry holds. No global audit wrapper changes. The matching route is not owned or transferred by this receipt; recipient lane coordinates its exact allocation separately.",
+  "competingActiveRecordedOwnersFound": [],
+  "sourceOwnerNoActiveOperation": "This custodian has no active edit, pending source write, provider/NST request, runtime job, server or held heavy slot touching the test. No claim that all external processes are idle.",
+  "excluded": "All unlisted files, matching gamelog route allocation, global audit wrapper/tests and manual audit implementation, immutable accepted packet/receipts, provider or production requests, migration applications, schedules, pushes and deployments. Earlier exact custody transfers remain effective.",
+  "activation": "Existing lifecycle activation-disabled requirement remains until all participating callers and companions are integrated and qualified. This is custody evidence, not runtime qualification.",
+  "acceptedPacket": {
+    "root": "/Users/tim/Documents/Codex/2026-10-27/task/review-fixes-v4",
+    "artifactIndexSha256": "693970168512fe62b7139901318d49f12cf2eb286f8374370cb7065a7c263fd4",
+    "artifactsVerified": 13
+  },
+  "localBaseline": "/Users/tim/Documents/Codex/2026-10-27/task/nst-gamelog-test-custody-20261101-01/baseline/web/__tests__/pages/api/v1/db/update-nst-gamelog.test.ts",
+  "checksActuallyRun": [
+    "Exact/pattern custody check in both registries",
+    "Current test SHA256 matches accepted v4 pin",
+    "13 frozen accepted-packet artifact hashes verified"
+  ],
+  "applicationTestsRun": 0,
+  "sourceEditsByThisCustodian": 0,
+  "productionActions": 0
+}

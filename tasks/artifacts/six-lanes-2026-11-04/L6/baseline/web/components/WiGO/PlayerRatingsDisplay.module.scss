@@ -1,0 +1,243 @@
+/* styles/PlayerRatingsDisplay.module.scss */
+@use "styles/vars" as v; // Assuming you have a vars file with colors, spacing, etc.
+@use "sass:color";
+@use "components/WiGO/scale" as s;
+
+// Ratings plus the optional one-line data note under them
+.ratingsFrame {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  height: 100%;
+  min-height: 0;
+}
+
+.ratingsNote {
+  margin: 0;
+  padding: 0 4px;
+  font-size: s.$text-11;
+  line-height: 1.2;
+  color: s.$ink-muted;
+  flex-shrink: 0;
+}
+
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  clip-path: inset(50%);
+  overflow: hidden;
+}
+
+// Main container for the entire ratings display
+.ratingsRoot {
+  display: flex; // Use flexbox to arrange the three main sections
+  justify-content: space-between; // Distribute space between sections
+  gap: 4px;
+  padding: 4px;
+  background-color: color.adjust(
+    v.$background-dark,
+    $lightness: -3%
+  ); // Slightly darker background
+  border-radius: s.$radius-small;
+  flex: 1 1 auto; // Fill the frame above the optional note
+  min-height: 0;
+  box-sizing: border-box;
+  overflow: hidden; // Prevent content overflow
+}
+
+// Styling for each main section (Offense, Overall, Defense)
+.ratingSection {
+  flex: 1; // Make each section take up equal width (THIS HANDLES EQUAL COLUMNS)
+  display: flex;
+  flex-direction: column; // Stack title above boxes
+  min-width: 0; // Prevent flex items from overflowing
+  background-color: v.$background-dark; // Background for the section column
+  border: 1px solid v.$border-color-secondary; // Keep the section border
+  border-radius: s.$radius-small;
+  overflow: hidden; // Hide overflow within the section
+
+  // Offense, Defense, Overall on every layout (Overall is second in the markup).
+  &:nth-child(2) {
+    order: 3;
+  }
+}
+
+// Title for each section (Offense, Overall, Defense)
+.ratingTitle {
+  text-align: center;
+  color: s.$ink;
+  background-color: color.adjust(
+    v.$background-dark,
+    $lightness: -5%
+  ); // Header background
+  padding: 3px 2px;
+  margin: 0;
+  font-size: s.$text-11;
+  font-family: v.$font-family-primary;
+  font-weight: s.$weight-bold;
+  letter-spacing: 0;
+  border-bottom: 1px solid v.$border-color-primary;
+  flex-shrink: 0; // Prevent title from shrinking
+}
+
+// Container for the individual rating boxes within a section
+.ratingsBoxes {
+  display: flex;
+  flex-direction: column; // Stack boxes vertically by default
+  flex-grow: 1; // Allow this container to fill the remaining space
+  padding: 3px;
+  gap: 4px;
+  justify-content: space-evenly; // Distribute space evenly vertically
+  min-height: 0; // Allow flex container to shrink properly if needed
+}
+
+// Styling for each individual rating box (e.g., AS, ES, PP)
+.ratingBox {
+  display: flex;
+  flex-direction: column; // Stack label and value vertically
+  justify-content: center; // Center content vertically
+  align-items: center; // Center content horizontally
+  border-radius: s.$radius-small;
+  padding: 1px;
+  width: 100%; // Fill the column width
+  min-height: 32px;
+  flex-basis: 0;
+  flex-grow: 1;
+  box-sizing: border-box;
+  font-family: "Roboto Condensed", sans-serif;
+  text-align: center;
+  // Add a default transparent border that gets overridden,
+  // ensuring consistent layout even if inline styles fail initially
+  border: 2px solid transparent;
+}
+
+.ratingLabel {
+  font-size: s.$text-11;
+  color: s.$ink-strong; // Default label color
+  font-weight: s.$weight-regular;
+  line-height: 1.1;
+  margin-bottom: 0;
+}
+
+.ratingValue {
+  font-size: s.$text-16;
+  font-weight: s.$weight-bold;
+  color: s.$ink; // Default value color (will be overridden)
+  line-height: 1.2;
+}
+
+// Specific style for the final overall rating box
+.finalRating {
+  // Inherits .ratingBox styles, override specifics
+  // flex-grow: 1.2; // *** REMOVED to prevent overflow in 4-box column ***
+
+  .ratingLabel {
+    color: s.$ink;
+  }
+  .ratingValue {
+    color: s.$ink-strong; // Default final value color (will be overridden)
+    font-size: s.$text-16;
+    font-weight: s.$weight-bold;
+  }
+}
+
+// --- Loading / Error / Placeholder States ---
+.loading,
+.error,
+.noPlayer,
+.calculating,
+.noData {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  min-height: 100px;
+  color: s.$ink-muted;
+  font-style: italic;
+  padding: 16px;
+  box-sizing: border-box;
+  text-align: center;
+}
+
+.error {
+  color: s.$bad;
+}
+
+// The gauge: a 0–100 semicircle with the value in its bowl and a surface-coloured notch at 50.
+.ratingGauge {
+  position: relative;
+  display: flex;
+  flex: 1 1 auto;
+  align-items: flex-end;
+  justify-content: center;
+  width: 100%;
+  min-height: 0;
+
+  svg {
+    display: block;
+    width: 100%;
+    max-width: 112px;
+    height: 100%;
+    overflow: visible;
+  }
+
+  .ratingValue {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    line-height: 1;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.gaugeTrack,
+.gaugeFill {
+  fill: none;
+  stroke-width: 10;
+}
+
+.gaugeTrack {
+  stroke: rgba(255, 255, 255, 0.1);
+}
+
+.gaugeMid {
+  stroke: v.$background-dark;
+  stroke-width: 2;
+}
+
+// One-page dashboard: a 3×3 matrix (Offense / Defense / Overall × three strengths); each cell is a gauge.
+:global(.wigo-one-page) {
+  .ratingsRoot { display: flex; flex-direction: column; gap: 4px; height: 100%; min-height: 0; overflow: visible; padding: 0; }
+  .ratingSection { flex: 1; min-height: 0; display: grid; grid-template-columns: 54px repeat(3, minmax(0, 1fr)); gap: 4px; overflow: visible; border: 0; }
+  .ratingTitle { align-self: center; margin: 0; padding: 0; border: 0; background: none; color: s.$ink-muted; font-size: s.$text-12; font-weight: s.$weight-bold; letter-spacing: 0; text-align: left; text-transform: none; }
+  .ratingsBoxes { display: contents; }
+  .ratingBox {
+    position: relative; display: flex; flex-direction: column; justify-content: center; align-items: center;
+    min-height: 0; padding: 2px 2px 0; border: 0 !important; background: none;
+  }
+  .ratingLabel { font-size: s.$text-11; line-height: 1.1; color: s.$ink-muted; }
+  .ratingValue, .finalRating .ratingValue { font-size: var(--wigo-data-size, 11px); line-height: 1.15; font-weight: s.$weight-bold; }
+}
+
+@media (max-width: v.$breakpoint-tablet) {
+  // The rating colour stays on the value only; the outline is a neutral hairline so nine boxes don't compete.
+  .ratingBox {
+    min-height: 84px;
+    padding: 6px 4px 4px;
+    gap: 2px;
+    border: 1px solid v.$border-color-secondary;
+  }
+}
+
+.noPlayer {
+  min-height: 0;
+  color: s.$ink-muted;
+  font-size: s.$text-12;
+  font-style: normal;
+}

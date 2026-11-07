@@ -1,0 +1,475 @@
+[
+  {
+    "checked_at": "2026-11-01 17:51:22.379084+00",
+    "sample_rows": 94,
+    "receipt_groups": [
+      {
+        "job_name": "/api/Teams/nst-team-stats",
+        "statuses": [
+          "success"
+        ],
+        "first_in_sample": "2026-10-27T09:15:05.920778+00:00",
+        "latest_in_sample": "2026-11-01T09:15:05.413478+00:00",
+        "success_receipts": 6,
+        "receipts_in_bounded_sample": 6
+      },
+      {
+        "job_name": "/api/v1/db/update-nst-current-season",
+        "statuses": [
+          "success"
+        ],
+        "first_in_sample": "2026-10-27T08:46:08.301017+00:00",
+        "latest_in_sample": "2026-11-01T08:46:05.808574+00:00",
+        "success_receipts": 6,
+        "receipts_in_bounded_sample": 6
+      },
+      {
+        "job_name": "/api/v1/db/update-nst-goalies",
+        "statuses": [
+          "success"
+        ],
+        "first_in_sample": "2026-10-30T08:33:52.217231+00:00",
+        "latest_in_sample": "2026-11-01T15:09:08.670742+00:00",
+        "success_receipts": 11,
+        "receipts_in_bounded_sample": 11
+      },
+      {
+        "job_name": "/api/v1/db/update-nst-team-daily",
+        "statuses": [
+          "success"
+        ],
+        "first_in_sample": "2026-10-27T09:57:52.262893+00:00",
+        "latest_in_sample": "2026-11-01T09:57:53.595333+00:00",
+        "success_receipts": 6,
+        "receipts_in_bounded_sample": 6
+      },
+      {
+        "job_name": "daily-cron-report",
+        "statuses": [
+          "success"
+        ],
+        "first_in_sample": "2026-10-27T13:01:28.862949+00:00",
+        "latest_in_sample": "2026-11-01T13:01:25.118148+00:00",
+        "success_receipts": 6,
+        "receipts_in_bounded_sample": 6
+      },
+      {
+        "job_name": "run-rolling-forge-pipeline",
+        "statuses": [
+          "continued",
+          "failure",
+          "success"
+        ],
+        "first_in_sample": "2026-10-27T10:08:21.022508+00:00",
+        "latest_in_sample": "2026-11-01T10:55:27.610477+00:00",
+        "success_receipts": 19,
+        "receipts_in_bounded_sample": 53
+      },
+      {
+        "job_name": "update-nst-gamelog",
+        "statuses": [
+          "success"
+        ],
+        "first_in_sample": "2026-10-27T10:05:47.571472+00:00",
+        "latest_in_sample": "2026-11-01T10:06:02.599784+00:00",
+        "success_receipts": 6,
+        "receipts_in_bounded_sample": 6
+      }
+    ],
+    "latest_receipts": [
+      {
+        "status": "success",
+        "job_name": "/api/v1/db/update-nst-goalies",
+        "run_time": "2026-11-01T15:09:08.670742+00:00",
+        "duration_ms": "126936",
+        "status_code": "200",
+        "rows_affected": null,
+        "trigger_label": null
+      },
+      {
+        "status": "success",
+        "job_name": "/api/v1/db/update-nst-goalies",
+        "run_time": "2026-11-01T15:06:10.819539+00:00",
+        "duration_ms": "128150",
+        "status_code": "200",
+        "rows_affected": null,
+        "trigger_label": null
+      },
+      {
+        "status": "success",
+        "job_name": "/api/v1/db/update-nst-goalies",
+        "run_time": "2026-11-01T15:03:32.771755+00:00",
+        "duration_ms": "148871",
+        "status_code": "200",
+        "rows_affected": null,
+        "trigger_label": null
+      },
+      {
+        "status": "success",
+        "job_name": "/api/v1/db/update-nst-goalies",
+        "run_time": "2026-11-01T15:00:13.0866+00:00",
+        "duration_ms": "130152",
+        "status_code": "200",
+        "rows_affected": null,
+        "trigger_label": null
+      },
+      {
+        "status": "success",
+        "job_name": "/api/v1/db/update-nst-goalies",
+        "run_time": "2026-11-01T14:57:13.067068+00:00",
+        "duration_ms": "131338",
+        "status_code": "200",
+        "rows_affected": null,
+        "trigger_label": null
+      },
+      {
+        "status": "success",
+        "job_name": "/api/v1/db/update-nst-goalies",
+        "run_time": "2026-11-01T14:54:13.771584+00:00",
+        "duration_ms": "130245",
+        "status_code": "200",
+        "rows_affected": null,
+        "trigger_label": null
+      },
+      {
+        "status": "success",
+        "job_name": "/api/v1/db/update-nst-goalies",
+        "run_time": "2026-11-01T14:51:09.658454+00:00",
+        "duration_ms": "128645",
+        "status_code": "200",
+        "rows_affected": null,
+        "trigger_label": null
+      },
+      {
+        "status": "success",
+        "job_name": "/api/v1/db/update-nst-goalies",
+        "run_time": "2026-11-01T14:48:15.397351+00:00",
+        "duration_ms": "134481",
+        "status_code": "200",
+        "rows_affected": null,
+        "trigger_label": null
+      },
+      {
+        "status": "success",
+        "job_name": "/api/v1/db/update-nst-goalies",
+        "run_time": "2026-11-01T14:45:14.334702+00:00",
+        "duration_ms": "132879",
+        "status_code": "200",
+        "rows_affected": null,
+        "trigger_label": null
+      },
+      {
+        "status": "success",
+        "job_name": "/api/v1/db/update-nst-goalies",
+        "run_time": "2026-11-01T14:42:12.761565+00:00",
+        "duration_ms": "130159",
+        "status_code": "200",
+        "rows_affected": null,
+        "trigger_label": null
+      },
+      {
+        "status": "success",
+        "job_name": "daily-cron-report",
+        "run_time": "2026-11-01T13:01:25.118148+00:00",
+        "duration_ms": "36798",
+        "status_code": "200",
+        "rows_affected": null,
+        "trigger_label": null
+      },
+      {
+        "status": "failure",
+        "job_name": "run-rolling-forge-pipeline",
+        "run_time": "2026-11-01T10:55:27.610477+00:00",
+        "duration_ms": "99",
+        "status_code": "207",
+        "rows_affected": null,
+        "trigger_label": null
+      },
+      {
+        "status": "failure",
+        "job_name": "run-rolling-forge-pipeline",
+        "run_time": "2026-11-01T10:45:30.019017+00:00",
+        "duration_ms": "88",
+        "status_code": "207",
+        "rows_affected": null,
+        "trigger_label": null
+      },
+      {
+        "status": "failure",
+        "job_name": "run-rolling-forge-pipeline",
+        "run_time": "2026-11-01T10:40:27.229113+00:00",
+        "duration_ms": "97",
+        "status_code": "207",
+        "rows_affected": null,
+        "trigger_label": null
+      },
+      {
+        "status": "failure",
+        "job_name": "run-rolling-forge-pipeline",
+        "run_time": "2026-11-01T10:35:29.061209+00:00",
+        "duration_ms": "77",
+        "status_code": "207",
+        "rows_affected": null,
+        "trigger_label": null
+      },
+      {
+        "status": "failure",
+        "job_name": "run-rolling-forge-pipeline",
+        "run_time": "2026-11-01T10:30:30.26969+00:00",
+        "duration_ms": "151",
+        "status_code": "207",
+        "rows_affected": null,
+        "trigger_label": null
+      },
+      {
+        "status": "failure",
+        "job_name": "run-rolling-forge-pipeline",
+        "run_time": "2026-11-01T10:20:29.521586+00:00",
+        "duration_ms": "156",
+        "status_code": "207",
+        "rows_affected": null,
+        "trigger_label": null
+      },
+      {
+        "status": "failure",
+        "job_name": "run-rolling-forge-pipeline",
+        "run_time": "2026-11-01T10:15:27.989794+00:00",
+        "duration_ms": "76",
+        "status_code": "207",
+        "rows_affected": null,
+        "trigger_label": null
+      },
+      {
+        "status": "failure",
+        "job_name": "run-rolling-forge-pipeline",
+        "run_time": "2026-11-01T10:10:27.817953+00:00",
+        "duration_ms": "158",
+        "status_code": "207",
+        "rows_affected": null,
+        "trigger_label": null
+      },
+      {
+        "status": "success",
+        "job_name": "update-nst-gamelog",
+        "run_time": "2026-11-01T10:06:02.599784+00:00",
+        "duration_ms": null,
+        "status_code": null,
+        "rows_affected": 6084,
+        "trigger_label": null
+      },
+      {
+        "status": "success",
+        "job_name": "/api/v1/db/update-nst-team-daily",
+        "run_time": "2026-11-01T09:57:53.595333+00:00",
+        "duration_ms": "170289",
+        "status_code": "200",
+        "rows_affected": 20,
+        "trigger_label": null
+      },
+      {
+        "status": "success",
+        "job_name": "/api/Teams/nst-team-stats",
+        "run_time": "2026-11-01T09:15:05.413478+00:00",
+        "duration_ms": "2353",
+        "status_code": "200",
+        "rows_affected": null,
+        "trigger_label": null
+      },
+      {
+        "status": "success",
+        "job_name": "/api/v1/db/update-nst-current-season",
+        "run_time": "2026-11-01T08:46:05.808574+00:00",
+        "duration_ms": "65173",
+        "status_code": "200",
+        "rows_affected": 2104,
+        "trigger_label": null
+      },
+      {
+        "status": "success",
+        "job_name": "daily-cron-report",
+        "run_time": "2026-10-31T13:01:24.664284+00:00",
+        "duration_ms": "35986",
+        "status_code": "200",
+        "rows_affected": null,
+        "trigger_label": null
+      },
+      {
+        "status": "success",
+        "job_name": "run-rolling-forge-pipeline",
+        "run_time": "2026-10-31T10:55:27.33885+00:00",
+        "duration_ms": "186",
+        "status_code": "200",
+        "rows_affected": null,
+        "trigger_label": null
+      },
+      {
+        "status": "success",
+        "job_name": "run-rolling-forge-pipeline",
+        "run_time": "2026-10-31T10:45:27.325533+00:00",
+        "duration_ms": "176",
+        "status_code": "200",
+        "rows_affected": null,
+        "trigger_label": null
+      },
+      {
+        "status": "success",
+        "job_name": "run-rolling-forge-pipeline",
+        "run_time": "2026-10-31T10:40:27.186908+00:00",
+        "duration_ms": "51",
+        "status_code": "200",
+        "rows_affected": null,
+        "trigger_label": null
+      },
+      {
+        "status": "success",
+        "job_name": "run-rolling-forge-pipeline",
+        "run_time": "2026-10-31T10:35:29.226576+00:00",
+        "duration_ms": "276",
+        "status_code": "200",
+        "rows_affected": null,
+        "trigger_label": null
+      },
+      {
+        "status": "continued",
+        "job_name": "run-rolling-forge-pipeline",
+        "run_time": "2026-10-31T10:32:18.323779+00:00",
+        "duration_ms": "108195",
+        "status_code": "207",
+        "rows_affected": null,
+        "trigger_label": null
+      },
+      {
+        "status": "continued",
+        "job_name": "run-rolling-forge-pipeline",
+        "run_time": "2026-10-31T10:23:21.906282+00:00",
+        "duration_ms": "172538",
+        "status_code": "207",
+        "rows_affected": null,
+        "trigger_label": null
+      }
+    ],
+    "runner_columns": [
+      {
+        "data_type": "uuid",
+        "table_name": "route_runner_jobs",
+        "column_name": "id",
+        "is_nullable": "NO"
+      },
+      {
+        "data_type": "text",
+        "table_name": "route_runner_jobs",
+        "column_name": "route_path",
+        "is_nullable": "NO"
+      },
+      {
+        "data_type": "jsonb",
+        "table_name": "route_runner_jobs",
+        "column_name": "initial_query",
+        "is_nullable": "NO"
+      },
+      {
+        "data_type": "jsonb",
+        "table_name": "route_runner_jobs",
+        "column_name": "next_query",
+        "is_nullable": "NO"
+      },
+      {
+        "data_type": "text",
+        "table_name": "route_runner_jobs",
+        "column_name": "contract",
+        "is_nullable": "YES"
+      },
+      {
+        "data_type": "text",
+        "table_name": "route_runner_jobs",
+        "column_name": "status",
+        "is_nullable": "NO"
+      },
+      {
+        "data_type": "uuid",
+        "table_name": "route_runner_jobs",
+        "column_name": "created_by",
+        "is_nullable": "YES"
+      },
+      {
+        "data_type": "timestamp with time zone",
+        "table_name": "route_runner_jobs",
+        "column_name": "created_at",
+        "is_nullable": "NO"
+      },
+      {
+        "data_type": "timestamp with time zone",
+        "table_name": "route_runner_jobs",
+        "column_name": "updated_at",
+        "is_nullable": "NO"
+      },
+      {
+        "data_type": "timestamp with time zone",
+        "table_name": "route_runner_jobs",
+        "column_name": "not_before",
+        "is_nullable": "YES"
+      },
+      {
+        "data_type": "timestamp with time zone",
+        "table_name": "route_runner_jobs",
+        "column_name": "lease_until",
+        "is_nullable": "YES"
+      },
+      {
+        "data_type": "timestamp with time zone",
+        "table_name": "route_runner_jobs",
+        "column_name": "expires_at",
+        "is_nullable": "NO"
+      },
+      {
+        "data_type": "integer",
+        "table_name": "route_runner_jobs",
+        "column_name": "steps",
+        "is_nullable": "NO"
+      },
+      {
+        "data_type": "integer",
+        "table_name": "route_runner_jobs",
+        "column_name": "kills",
+        "is_nullable": "NO"
+      },
+      {
+        "data_type": "bigint",
+        "table_name": "route_runner_jobs",
+        "column_name": "rows_total",
+        "is_nullable": "NO"
+      },
+      {
+        "data_type": "jsonb",
+        "table_name": "route_runner_jobs",
+        "column_name": "progress",
+        "is_nullable": "YES"
+      },
+      {
+        "data_type": "integer",
+        "table_name": "route_runner_jobs",
+        "column_name": "last_status_code",
+        "is_nullable": "YES"
+      },
+      {
+        "data_type": "text",
+        "table_name": "route_runner_jobs",
+        "column_name": "last_operation_status",
+        "is_nullable": "YES"
+      },
+      {
+        "data_type": "text",
+        "table_name": "route_runner_jobs",
+        "column_name": "last_error",
+        "is_nullable": "YES"
+      },
+      {
+        "data_type": "timestamp with time zone",
+        "table_name": "route_runner_jobs",
+        "column_name": "finished_at",
+        "is_nullable": "YES"
+      }
+    ],
+    "job271_is_matview_refresh": true
+  }
+]

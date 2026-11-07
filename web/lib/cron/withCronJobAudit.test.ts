@@ -14,6 +14,7 @@ import {
   cronClassificationFromAuditDetails,
   withCronJobAudit,
 } from "lib/cron/withCronJobAudit";
+import { isEmptyQueueProcessorRun } from "lib/cron/emptyQueueRun";
 import {
   NHL_SEASONAL_GAME_DATA,
   withNhlOffSeasonSkip,
@@ -62,11 +63,51 @@ describe("withCronJobAudit", () => {
   beforeEach(() => {
     process.env.SUPABASE_SERVICE_ROLE_KEY = "test-service-role-key";
     insertMock.mockReset();
-    insertMock.mockResolvedValue({});
+    insertMock.mockResolvedValue({ error: null });
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
+  });
+
+  it("flushes after a bounded audit acknowledgement timeout without retrying an uncertain write", async () => {
+    vi.useFakeTimers();
+    const log = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      insertMock.mockImplementation(() => new Promise(() => {}));
+      const wrapped = withCronJobAudit(async (_req, res) => res.json({ success: true }), { includeFinalAuditReceipt: true });
+      const res = createMockRes(); const pending = wrapped(createMockReq(), res);
+      await vi.advanceTimersByTimeAsync(5000); await pending;
+      expect(insertMock).toHaveBeenCalledTimes(1);
+      expect(res.body.finalAudit.status).toBe("unverified");
+      expect(log).toHaveBeenCalledWith("cron_job_audit insert failed", expect.stringContaining("outcome unverified"));
+    } finally { vi.useRealTimers(); }
+  });
+
+  it.each([
+    ["missing", undefined, "unverified"], ["null", null, "unverified"], ["empty", {}, "unverified"],
+    ["rejected", { error: { message: "fixture rejection" } }, "failed"],
+  ])("requires positive acknowledgement for %s, with or without optional success receipts", async (_name, receipt, expectedStatus) => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    for (const includeFinalAuditReceipt of [false, true]) {
+      insertMock.mockReset().mockResolvedValue(receipt);
+      const res = createMockRes();
+      await withCronJobAudit(async (_req, out) => out.json({ success: true, rowsUpserted: 2 }), { includeFinalAuditReceipt })(createMockReq(), res);
+      expect(insertMock).toHaveBeenCalledTimes(1);
+      expect(res.statusCode).toBe(503);
+      expect(res.body).toMatchObject({ success: false, rowsUpserted: 2,
+        operationOutcome: { statusCode: 200, success: true },
+        finalAudit: { status: expectedStatus, retrySafe: false, requiresReview: true } });
+    }
+  });
+
+  it("keeps a thrown transport acknowledgement uncertain and caller-visible without a retry", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    insertMock.mockRejectedValue(new Error("fixture connection lost")); const res = createMockRes();
+    await withCronJobAudit(async (_req, out) => out.status(207).json({ success: false, rowsUpserted: 2, error: "partial operation" }))(createMockReq(), res);
+    expect(res.statusCode).toBe(503); expect(insertMock).toHaveBeenCalledTimes(1);
+    expect(res.body).toMatchObject({ success: false, error: "partial operation", rowsUpserted: 2,
+      operationOutcome: { statusCode: 207, success: false }, finalAudit: { status: "unverified", retrySafe: false } });
   });
 
   it("adds timing to wrapper-generated 500 responses when the handler throws", async () => {
@@ -293,6 +334,31 @@ describe("withCronJobAudit", () => {
     expect(insertMock.mock.calls[0][0].status).toBe("success");
   });
 
+  it("writes no audit row for an empty queue poll and flushes the response unchanged", async () => {
+    const empty = { success: true, summary: { eventsLoaded: 0, eventsProcessed: 0, eventsRejected: 0,
+      eventsDeferred: 0, rowsUpserted: 0, lineCombinationSync: { written: 0, failures: [] } } };
+    const res = createMockRes();
+    await withCronJobAudit(async (_req, out) => out.json(empty), { skipAuditWhenNoOp: isEmptyQueueProcessorRun })(createMockReq(), res);
+    expect(insertMock).not.toHaveBeenCalled();
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toEqual(empty);
+  });
+
+  it("keeps audit rows for queue polls that did work, failed, or reported a gate state", async () => {
+    const skip = { skipAuditWhenNoOp: isEmptyQueueProcessorRun };
+    const bodies = [
+      { success: true, summary: { eventsLoaded: 2, eventsProcessed: 2, rowsUpserted: 1 } },
+      { success: true, summary: { eventsLoaded: 0, eventsProcessed: 0, rowsUpserted: 0, lineCombinationSync: { written: 3, failures: [] } } },
+      { success: false, summary: { eventsLoaded: 0, eventsProcessed: 0 } },
+      { success: true, mode: "claim_shadow_stopped", summary: { eventsLoaded: 0, eventsProcessed: 0 } },
+    ];
+    for (const body of bodies) await withCronJobAudit(async (_req, out) => out.json(body), skip)(createMockReq(), createMockRes());
+    await withCronJobAudit(async (_req, out) => out.status(500).json(bodies[0]), { skipAuditWhenNoOp: () => true })(createMockReq(), createMockRes());
+    await withCronJobAudit(async () => { throw new Error("boom"); }, { skipAuditWhenNoOp: () => true })(createMockReq(), createMockRes());
+    await withCronJobAudit(async (_req, out) => out.json({ success: true }), { skipAuditWhenNoOp: () => true, includeFinalAuditReceipt: true })(createMockReq(), createMockRes());
+    expect(insertMock).toHaveBeenCalledTimes(bodies.length + 3);
+  });
+
   it("can omit inferred row metrics for an observability-only report", async () => {
     const wrapped = withCronJobAudit(
       async (_req, res) =>
@@ -422,7 +488,7 @@ describe("withCronJobAudit", () => {
     expect(res.headersSent).toBe(false);
     expect(res.body).toBeUndefined();
 
-    resolveInsert?.({});
+    resolveInsert?.({ error: null });
     await pending;
 
     expect(res.headersSent).toBe(true);
@@ -541,7 +607,8 @@ describe("withCronJobAudit", () => {
     await wrapped(createMockReq(), res);
 
     expect(res.body).toMatchObject({
-      success: true,
+      success: false,
+      operationOutcome: { statusCode: 200, success: true },
       finalAudit: {
         owner: "withCronJobAudit",
         status: "failed",
@@ -584,7 +651,7 @@ describe("withCronJobAudit seasonal game-data classification", () => {
 
   beforeEach(() => {
     insertMock.mockReset();
-    insertMock.mockResolvedValue({});
+    insertMock.mockResolvedValue({ error: null });
   });
 
   it("stamps the classification from the actual wrapper chain, whatever the route is called", async () => {

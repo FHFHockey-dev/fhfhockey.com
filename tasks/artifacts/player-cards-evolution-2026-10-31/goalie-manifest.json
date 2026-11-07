@@ -1,0 +1,94 @@
+{
+  "version": "fhfh-analysis-export-v1",
+  "dimensions": {
+    "width": 1200,
+    "height": 1020
+  },
+  "presentation": {
+    "goalie": {
+      "state": "fixture",
+      "player": {
+        "id": 8476883,
+        "name": "Fixture goalie",
+        "team": "TBL",
+        "season": 20262027
+      },
+      "observedAt": "2026-10-31T12:00:00Z",
+      "reason": null,
+      "games": [
+        {
+          "id": 2026020200,
+          "heading": "2026-11-01T23:00:00Z · TBL vs TOR · scheduled",
+          "confirmation": "probable · Synthetic source · 2026-10-31T11:00:00Z",
+          "forecast": "Conditional forecast unavailable; no start odds inferred from workload.",
+          "dimensions": [
+            {
+              "label": "Opponent shots for",
+              "group": "Volume upside",
+              "text": "31 shots/GP · last 5 team games · all · Synthetic matchup · 2026-10-31T11:00:00Z"
+            },
+            {
+              "label": "Team shots against",
+              "group": "Volume upside",
+              "text": "Unavailable: missing, stale or unqualified source dimension."
+            },
+            {
+              "label": "Opponent xGF",
+              "group": "Ratio exposure",
+              "text": "Unavailable: missing, stale or unqualified source dimension."
+            },
+            {
+              "label": "Team xGA",
+              "group": "Ratio exposure",
+              "text": "Unavailable: missing, stale or unqualified source dimension."
+            },
+            {
+              "label": "Opponent chances for",
+              "group": "Ratio exposure",
+              "text": "Unavailable: missing, stale or unqualified source dimension."
+            },
+            {
+              "label": "Team chances against",
+              "group": "Ratio exposure",
+              "text": "Unavailable: missing, stale or unqualified source dimension."
+            },
+            {
+              "label": "Opponent PP",
+              "group": "Ratio exposure",
+              "text": "Unavailable: missing, stale or unqualified source dimension."
+            },
+            {
+              "label": "Team PK",
+              "group": "Ratio exposure",
+              "text": "Unavailable: missing, stale or unqualified source dimension."
+            },
+            {
+              "label": "Team penalty exposure",
+              "group": "Ratio exposure",
+              "text": "Unavailable: missing, stale or unqualified source dimension."
+            },
+            {
+              "label": "Team goals for",
+              "group": "Win support",
+              "text": "Unavailable: missing, stale or unqualified source dimension."
+            },
+            {
+              "label": "Opponent goals against",
+              "group": "Win support",
+              "text": "Unavailable: missing, stale or unqualified source dimension."
+            }
+          ]
+        }
+      ]
+    },
+    "gameIndex": 0
+  },
+  "comparison": null,
+  "artwork": {
+    "state": "unavailable",
+    "reason": "No qualified matching artwork supplied."
+  },
+  "artworkKey": "image-unavailable",
+  "key": "[{\"goalie\":{\"state\":\"fixture\",\"player\":{\"id\":8476883,\"name\":\"Fixture goalie\",\"team\":\"TBL\",\"season\":20262027},\"observedAt\":\"2026-10-31T12:00:00Z\",\"reason\":null,\"games\":[{\"id\":2026020200,\"heading\":\"2026-11-01T23:00:00Z · TBL vs TOR · scheduled\",\"confirmation\":\"probable · Synthetic source · 2026-10-31T11:00:00Z\",\"forecast\":\"Conditional forecast unavailable; no start odds inferred from workload.\",\"dimensions\":[{\"label\":\"Opponent shots for\",\"group\":\"Volume upside\",\"text\":\"31 shots/GP · last 5 team games · all · Synthetic matchup · 2026-10-31T11:00:00Z\"},{\"label\":\"Team shots against\",\"group\":\"Volume upside\",\"text\":\"Unavailable: missing, stale or unqualified source dimension.\"},{\"label\":\"Opponent xGF\",\"group\":\"Ratio exposure\",\"text\":\"Unavailable: missing, stale or unqualified source dimension.\"},{\"label\":\"Team xGA\",\"group\":\"Ratio exposure\",\"text\":\"Unavailable: missing, stale or unqualified source dimension.\"},{\"label\":\"Opponent chances for\",\"group\":\"Ratio exposure\",\"text\":\"Unavailable: missing, stale or unqualified source dimension.\"},{\"label\":\"Team chances against\",\"group\":\"Ratio exposure\",\"text\":\"Unavailable: missing, stale or unqualified source dimension.\"},{\"label\":\"Opponent PP\",\"group\":\"Ratio exposure\",\"text\":\"Unavailable: missing, stale or unqualified source dimension.\"},{\"label\":\"Team PK\",\"group\":\"Ratio exposure\",\"text\":\"Unavailable: missing, stale or unqualified source dimension.\"},{\"label\":\"Team penalty exposure\",\"group\":\"Ratio exposure\",\"text\":\"Unavailable: missing, stale or unqualified source dimension.\"},{\"label\":\"Team goals for\",\"group\":\"Win support\",\"text\":\"Unavailable: missing, stale or unqualified source dimension.\"},{\"label\":\"Opponent goals against\",\"group\":\"Win support\",\"text\":\"Unavailable: missing, stale or unqualified source dimension.\"}]}]},\"gameIndex\":0},\"image-unavailable\"]",
+  "disclosure": "Local consumer presentation; qualification and unavailable reasons are retained per field. No source refresh or deployment implied."
+}

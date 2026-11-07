@@ -256,6 +256,8 @@ export function classifyCronAuditSource(
     return "shared-wrapper";
   }
 
+  if (/\bpersistManualCronAudit\s*\(/.test(source)) return "manual-insert";
+
   if (/\.from\(\s*["']cron_job_audit["']\s*\)\s*\.insert\s*\(/.test(source)) {
     return "manual-insert";
   }
@@ -554,7 +556,7 @@ export function classifyVercelCronSource(source: string, routePath: string) {
     imported("withCronJobAudit", "lib/cron/withCronJobAudit") &&
     createHash("sha256").update(sourceSignature(source)).digest("hex") ===
       "24a6f790f51d2835b6ec914a831c39890e738fbc5038d6f5f230f878c15a1f48";
-  const delegatedAudit = ((routePath === "/api/internal/espn-sync" || routePath === "/api/internal/fantrax-sync") &&
+  const delegatedAudit = (routePath === "/api/internal/starter-board" && bespoke && returnsAuditDelegate(defaultHandler, 5)) || ((routePath === "/api/internal/espn-sync" || routePath === "/api/internal/fantrax-sync") &&
       bespoke && returnsAuditDelegate(defaultHandler, 4)) ||
     (patreonHandler != null && prefixMatches(`if (req.method !== "GET") {
       res.setHeader("Allow", "GET");

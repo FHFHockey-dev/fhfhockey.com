@@ -19,7 +19,7 @@ import {
   readJobProgress,
   requestsFreshnessBypass
 } from "./core";
-import { ROUTE_RUNNER_ROUTES } from "./registry";
+import { ROUTE_RUNNER_ROUTES, storedContract } from "./registry";
 
 const NST = ROUTE_RUNNER_ROUTES["/api/v1/db/update-nst-gamelog"];
 const ROLLING = ROUTE_RUNNER_ROUTES["/api/v1/db/update-rolling-player-averages"];
@@ -60,7 +60,7 @@ describe("parseRunnerInput", () => {
   it("accepts a pasted fhfhockey.com or localhost URL as its path", () => {
     const parsed = parseRunnerInput(" https://fhfhockey.com/api/v1/db/update-wgo-totals?season=20252026 ");
     expect(parsed).toMatchObject({ ok: true, routePath: "/api/v1/db/update-wgo-totals", query: { season: "20252026" } });
-    expect(parseRunnerInput("http://localhost:3000/api/v1/db/update-nst-goalies")).toMatchObject({ ok: true, contract: "next_start_date" });
+    expect(parseRunnerInput("http://localhost:3000/api/v1/db/update-nst-goalies")).toMatchObject({ ok: true, contract: "goalie_url_cursor" });
     expect(parseRunnerInput("https://preview.example/api/v1/db/update-nst-goalies", ["https://preview.example"])).toMatchObject({ ok: true });
   });
 
@@ -426,5 +426,82 @@ describe("progress", () => {
     expect(formatEventLine(events[1])).toBe(
       "10:04:00  step 1  HTTP 207  continuation_required  +38 sources  40/400 urls  200.0s  NST continuation: cursor 40 of 400."
     );
+  });
+});
+
+
+describe("scoped goalie URL continuation",()=>{
+  it("uses a registry-only contract compatible with the legacy nullable database column",()=>{
+    expect(ROUTE_RUNNER_ROUTES["/api/v1/db/update-nst-goalies"].contract).toBe("goalie_url_cursor");
+    expect(storedContract("goalie_url_cursor")).toBeNull();
+    expect(storedContract("next_start_date")).toBe("next_start_date");
+  });
+  const sent={startDate:"2025-10-01",maxDays:"1",maxUrls:"1",overwrite:"yes"};
+  const scope={runMode:"incremental",startDate:"2025-10-01",maxDays:"1",maxUrls:"1",overwrite:"true",resumeScope:"a".repeat(64)};
+  const result=(cursor=1,query:Record<string,unknown>={...scope,cursor:String(cursor)})=>({statusCode:207,body:{success:false,complete:false,stoppedEarly:true,
+    operationStatus:"partial",runMode:"incremental",overwrite:true,datasetType:null,seasonStartDate:"2025-10-01",regularSeasonEndDate:"2025-10-01",
+    datesQueued:1,totalQueuedUrls:10,nextCursor:cursor,pendingUrlsProcessed:cursor===0?0:1,acknowledgedWriteUrls:cursor===0?0:1,
+    emptyValidUrls:0,retrySafe:true,urlProgress:[{status:cursor===0?"deferred":"processed"}],resume:{required:true,request:{query}}}});
+  it("preserves the full returned query and advances a URL cursor",()=>{
+    expect(classifyStepResult("goalie_url_cursor",result(),sent)).toMatchObject({kind:"continue",nextQuery:{...scope,cursor:"1"},progressDone:1});
+    expect(classifyStepResult("goalie_url_cursor",result(2),{...scope,cursor:"1"})).toMatchObject({kind:"continue",nextQuery:{...scope,cursor:"2"}});
+  });
+  it("acknowledges and freezes the producer's whole-job request count", () => {
+    const answer: any = result(1, { ...scope, cursor: "1", plannedUrls: "10" });
+    answer.body.plannedUrls = 10;
+    expect(classifyStepResult("goalie_url_cursor", answer, sent).kind).toBe("continue");
+    answer.body.plannedUrls = 9;
+    expect(classifyStepResult("goalie_url_cursor", answer, sent).kind).toBe("fail");
+    answer.body.resume.request.query.plannedUrls = "9";
+    expect(classifyStepResult("goalie_url_cursor", answer, { ...scope, cursor: "0", plannedUrls: "10" }).kind).toBe("fail");
+  });
+  it("waits with the frozen query when no URL was dispatched",()=>{
+    expect(classifyStepResult("goalie_url_cursor",result(0),sent)).toMatchObject({kind:"wait",nextQuery:{...scope,cursor:"0"}});
+    const paused=result(1);paused.body.pendingUrlsProcessed=0;paused.body.acknowledgedWriteUrls=0;paused.body.urlProgress=[{status:"deferred"}];
+    expect(classifyStepResult("goalie_url_cursor",paused,{...scope,cursor:"1"}).kind).toBe("wait");
+  });
+  it.each(["scope","rewind","extra","nested","overwrite","startDate","maxDays","maxUrls","datasetType","missing","cursor mismatch","unsafe pause"])
+    ("rejects malformed or mismatched %s continuation",kind=>{
+      const answer:any=result(2);const query=answer.body.resume.request.query;
+      if(kind==="scope")query.resumeScope="b".repeat(64);
+      if(kind==="rewind")query.cursor="0";
+      if(kind==="extra")query.unapproved="yes";
+      if(kind==="nested")query.cursor={bad:true};
+      if(kind==="overwrite")query.overwrite="false";
+      if(kind==="startDate")query.startDate="2025-10-02";
+      if(kind==="maxDays")query.maxDays="2";
+      if(kind==="maxUrls")query.maxUrls="2";
+      if(kind==="datasetType")query.datasetType="allCounts";
+      if(kind==="missing")delete answer.body.resume.request.query;
+      if(kind==="cursor mismatch")answer.body.nextCursor=3;
+      if(kind==="unsafe pause"){query.cursor="1";answer.body.nextCursor=1;}
+      expect(classifyStepResult("goalie_url_cursor",answer,{...scope,cursor:"1"}).kind).toBe("fail");
+    });
+  it.each(["goalie_url_cursor","nst_resume","next_start_date","rolling_resume_from","projection_resume","once"])
+    ("makes non-persisted audit/review outcomes terminal before any %s wait or continuation",contract=>{
+      for(const finalAudit of [null,{}, {status:"failed"},{status:"unverified",retrySafe:false},{status:"persisted",requiresReview:true}]){
+        const answer={statusCode:503,body:{...result().body,operationStatus:"source_down",finalAudit}};
+        expect(classifyStepResult(contract as any,answer,sent).kind).toBe("fail");
+      }
+    });
+});
+
+
+describe("durable goalie checkpoint continuation", () => {
+  const query = { catchupScope: "a".repeat(64) };
+  const body = { checkpointVersion: 1, scope: query.catchupScope, status: "progress", committedUnitKeys: ["20262027/2026-10-31/allCounts"],
+    requiresReview: false, retrySafe: true, success: false, complete: false, stoppedEarly: true, operationStatus: "partial",
+    resume: { required: true, request: { query } } };
+  it("keeps the same durable scope after acknowledged progress or deferral", () => {
+    expect(classifyStepResult("goalie_url_cursor", { statusCode: 207, body }, query)).toMatchObject({ kind: "wait", nextQuery: query });
+    expect(classifyStepResult("goalie_url_cursor", { statusCode: 207, body: { ...body, status: "deferred", committedUnitKeys: [] } }, query).kind).toBe("wait");
+  });
+  it("accepts durable completion and rejects uncertainty, altered scope or mixed legacy query", () => {
+    expect(classifyStepResult("goalie_url_cursor", { statusCode: 200, body: { ...body, status: "complete", success: true, complete: true,
+      stoppedEarly: false, resume: { ...body.resume, required: false } } }, query).kind).toBe("complete");
+    for (const changed of [{ requiresReview: true }, { scope: "b".repeat(64) }, { committedUnitKeys: [] }, { retrySafe: false }]) {
+      expect(classifyStepResult("goalie_url_cursor", { statusCode: 207, body: { ...body, ...changed } }, query).kind).toBe("fail");
+    }
+    expect(classifyStepResult("goalie_url_cursor", { statusCode: 207, body }, { ...query, startDate: "2026-10-31" }).kind).toBe("fail");
   });
 });

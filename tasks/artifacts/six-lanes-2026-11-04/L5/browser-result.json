@@ -1,0 +1,129 @@
+{
+  "fixtureOnly": true,
+  "fullNextRoute": false,
+  "checks": [
+    {
+      "name": "1440: diagnosis precedes roster",
+      "passed": true
+    },
+    {
+      "name": "1440: one dual player leaves one simultaneous slot",
+      "passed": true
+    },
+    {
+      "name": "1440: reserves excluded",
+      "passed": true
+    },
+    {
+      "name": "1440: no horizontal overflow",
+      "passed": true
+    },
+    {
+      "name": "1440: keyboard action focuses coverage",
+      "passed": true
+    },
+    {
+      "name": "1440: unknown positions withhold definite gaps",
+      "passed": true
+    },
+    {
+      "name": "1440: review focuses roster",
+      "passed": true
+    },
+    {
+      "name": "1440: complete legal matching fills both slots",
+      "passed": true
+    },
+    {
+      "name": "1440: edited roster retained after reload",
+      "passed": true
+    },
+    {
+      "name": "1440: 200% CSS zoom has no horizontal overflow",
+      "passed": true
+    },
+    {
+      "name": "390: diagnosis precedes roster",
+      "passed": true
+    },
+    {
+      "name": "390: one dual player leaves one simultaneous slot",
+      "passed": true
+    },
+    {
+      "name": "390: reserves excluded",
+      "passed": true
+    },
+    {
+      "name": "390: no horizontal overflow",
+      "passed": true
+    },
+    {
+      "name": "390: keyboard action focuses coverage",
+      "passed": true
+    },
+    {
+      "name": "390: unknown positions withhold definite gaps",
+      "passed": true
+    },
+    {
+      "name": "390: review focuses roster",
+      "passed": true
+    },
+    {
+      "name": "390: complete legal matching fills both slots",
+      "passed": true
+    },
+    {
+      "name": "390: edited roster retained after reload",
+      "passed": true
+    },
+    {
+      "name": "390: RTL mirror has no horizontal overflow",
+      "passed": true
+    },
+    {
+      "name": "320: diagnosis precedes roster",
+      "passed": true
+    },
+    {
+      "name": "320: one dual player leaves one simultaneous slot",
+      "passed": true
+    },
+    {
+      "name": "320: reserves excluded",
+      "passed": true
+    },
+    {
+      "name": "320: no horizontal overflow",
+      "passed": true
+    },
+    {
+      "name": "320: keyboard action focuses coverage",
+      "passed": true
+    },
+    {
+      "name": "320: unknown positions withhold definite gaps",
+      "passed": true
+    },
+    {
+      "name": "320: review focuses roster",
+      "passed": true
+    },
+    {
+      "name": "320: complete legal matching fills both slots",
+      "passed": true
+    },
+    {
+      "name": "320: edited roster retained after reload",
+      "passed": true
+    },
+    {
+      "name": "no uncaught page errors",
+      "passed": true
+    }
+  ],
+  "blockedRequests": [],
+  "pageErrors": [],
+  "result": "passed"
+}

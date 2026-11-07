@@ -1,0 +1,22 @@
+{
+  "checks": [
+    "Real saved NHL input→five chronological point stacks→raw totals/manifest parity; two PNGs; approved artwork header pixels identical15; social File bytes match export",
+    "L10/L20 selected columns, honest11/20 sample; category transitions and window changes reuse one capture; no NHL calls",
+    "390/320 reflow and category target≥44px; live route exposes new category without auto-fetch"
+  ],
+  "exports": [
+    {
+      "style": "posterized-team-colors",
+      "sha256": "630d823a0f19345027dd6ac0d839e8f6e8ab9d5932e579b6c9f7ff9ef40d7dff",
+      "headerPixelsIdentical15": true
+    },
+    {
+      "style": "pixelated-team-colors",
+      "sha256": "f18ee6addb1afc7513710bff51698e0020dfb7d9551dc0883fbd3ac0c9c3f1ca",
+      "headerPixelsIdentical15": true
+    }
+  ],
+  "external": [],
+  "errors": [],
+  "newNhlCalls": 0
+}

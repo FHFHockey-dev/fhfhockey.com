@@ -1,0 +1,67 @@
+{
+  "M1": {
+    "calls": [
+      [
+        "/api/v1/social-share/game-grid?weekStart=2026-10-26&selectedDates=2026-10-27%2C2026-10-28",
+        "Bearer tok-editor-a"
+      ],
+      [
+        "/api/v1/social-share/game-grid?weekStart=2026-10-26&selectedDates=2026-10-27%2C2026-10-28",
+        "Bearer tok-editor-b"
+      ]
+    ]
+  },
+  "M2": {
+    "calls": 2
+  },
+  "M3": {
+    "2026-13-99": {
+      "thrown": "",
+      "url": "/api/v1/social-share/game-grid?weekStart=2026-10-19"
+    },
+    "2026-13-01": {
+      "thrown": "",
+      "url": "/api/v1/social-share/game-grid?weekStart=2026-10-19"
+    },
+    "2026-00-10": {
+      "thrown": "",
+      "url": "/api/v1/social-share/game-grid?weekStart=2026-10-19"
+    },
+    "2026-10-32": {
+      "thrown": "",
+      "url": "/api/v1/social-share/game-grid?weekStart=2026-10-19"
+    },
+    "2026-02-30": {
+      "thrown": "",
+      "url": "/api/v1/social-share/game-grid?weekStart=2026-10-19"
+    },
+    "2026-02-29": {
+      "thrown": "",
+      "url": "/api/v1/social-share/game-grid?weekStart=2026-10-19"
+    },
+    "0000-01-01": {
+      "thrown": "",
+      "url": "/api/v1/social-share/game-grid?weekStart=2026-10-19"
+    },
+    "0001-01-01": {
+      "thrown": "",
+      "url": "/api/v1/social-share/game-grid?weekStart=2026-10-19"
+    },
+    "0999-12-31": {
+      "thrown": "",
+      "url": "/api/v1/social-share/game-grid?weekStart=2026-10-19"
+    },
+    "2026-10-26x": {
+      "thrown": "",
+      "url": "/api/v1/social-share/game-grid?weekStart=2026-10-19"
+    },
+    " 2026-10-26": {
+      "thrown": "",
+      "url": "/api/v1/social-share/game-grid?weekStart=2026-10-19"
+    }
+  },
+  "M4": {
+    "url": "/api/v1/social-share/game-grid?weekStart=2026-10-26",
+    "card": "grid"
+  }
+}

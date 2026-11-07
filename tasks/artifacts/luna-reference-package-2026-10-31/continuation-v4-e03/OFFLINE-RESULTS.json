@@ -1,0 +1,1237 @@
+[
+  {
+    "caseId": "E03",
+    "score": {
+      "identity": true,
+      "goalie": true,
+      "decisions": true,
+      "labelMatch": true
+    },
+    "review": {
+      "version": "ifttt-luna-review-v1",
+      "canPublish": false,
+      "canWriteAliases": false,
+      "canChangeStatus": false,
+      "canExecuteReplacement": false,
+      "status": "review_only",
+      "holds": [
+        "human_review_required",
+        "no_publication_authority"
+      ],
+      "referencePackage": {
+        "version": "luna-hockey-reference-v4",
+        "mode": "rules-and-synthetic-only",
+        "hash": "9b8a10fd458596b75ba2c0900dea1b72b9ec446d5e0e660ca5c18341920abdb3",
+        "rulesVersion": "luna-hockey-rules-v4",
+        "libraryVersion": null
+      },
+      "responsesRequestHash": "c0cf5346d484528baf1dad56ae580f0bd9bbe1414dea29b021049943f30d32a7",
+      "lineage": {
+        "originalPostId": "910002",
+        "author": "lunafixture",
+        "url": "https://x.com/LunaFixture/status/910002",
+        "textVersion": "tweet-source-claim-v1:text:26cc2701f8c5c4de9851842630804fa52d3ac2afd904335669a010ba9f5e42cb",
+        "packetHash": "f83bd9afabb0750d26298d8d2bb6de5f7feae8b5f4679ab902af54946f043e02"
+      },
+      "identity": {
+        "version": "tweet-identity-proposal-v1",
+        "requestHash": "ee16592f1d004d415f6fa8aa7ae6f09f8eae39bb8bab3dffcf8783519d3f4b1b",
+        "directoryHash": "88dbd1e19c22a04fba95f07d049c38af533b548723bd17106f639191667ae16f",
+        "occurrences": [
+          {
+            "occurrenceId": "subject-4",
+            "canonicalId": "nhl:900001",
+            "status": "matched",
+            "evidence": {
+              "start": 4,
+              "end": 16,
+              "text": "Avery Keeper"
+            },
+            "identityConfidence": "tentative"
+          }
+        ]
+      },
+      "goalieStatuses": [
+        {
+          "occurrenceId": "subject-4",
+          "canonicalId": "nhl:900001",
+          "status": "projected",
+          "evidence": {
+            "start": 4,
+            "end": 46,
+            "text": "Avery Keeper was first goalie off the ice."
+          },
+          "verified": false,
+          "gameId": null,
+          "teamId": null,
+          "appliedOverride": null,
+          "policyFloorAfterAcceptance": 0.65,
+          "holds": [
+            "human_review_required",
+            "game_and_source_time_binding_required",
+            "conflict_retraction_check_required"
+          ]
+        }
+      ],
+      "decisionReview": null,
+      "attempts": 1,
+      "requestIds": [
+        "offline-continuation-E03-responses"
+      ],
+      "reviewQueueKey": "ea891eb437eefed4ed513929fc40abdfcf5d1f0fea1272a53878c24402a27df3"
+    }
+  },
+  {
+    "caseId": "E04",
+    "score": {
+      "identity": true,
+      "goalie": true,
+      "decisions": true,
+      "labelMatch": true
+    },
+    "review": {
+      "version": "ifttt-luna-review-v1",
+      "canPublish": false,
+      "canWriteAliases": false,
+      "canChangeStatus": false,
+      "canExecuteReplacement": false,
+      "status": "review_only",
+      "holds": [
+        "human_review_required",
+        "no_publication_authority"
+      ],
+      "referencePackage": {
+        "version": "luna-hockey-reference-v4",
+        "mode": "rules-and-synthetic-only",
+        "hash": "9b8a10fd458596b75ba2c0900dea1b72b9ec446d5e0e660ca5c18341920abdb3",
+        "rulesVersion": "luna-hockey-rules-v4",
+        "libraryVersion": null
+      },
+      "responsesRequestHash": "1eec012cc67c5e84a3e8fbd56ca4246f96e2e734515f5bc4be7499707f55f90b",
+      "lineage": {
+        "originalPostId": "910003",
+        "author": "lunafixture",
+        "url": "https://x.com/LunaFixture/status/910003",
+        "textVersion": "tweet-source-claim-v1:text:cb371591cc5fc12e0a04d30a988e3078d9db8b391dc91f48203856d827bb1697",
+        "packetHash": "f9c4a7dfc42a0cc0ecf281eb9182378f526810b4102a971227c468b7cdc37cc3"
+      },
+      "identity": {
+        "version": "tweet-identity-proposal-v1",
+        "requestHash": "9f0b830701e40a0bf00b98586cde1ae204e99dac7cf10d09c6118e3acba69bda",
+        "directoryHash": "88dbd1e19c22a04fba95f07d049c38af533b548723bd17106f639191667ae16f",
+        "occurrences": [
+          {
+            "occurrenceId": "subject-4",
+            "canonicalId": "nhl:900001",
+            "status": "matched",
+            "evidence": {
+              "start": 4,
+              "end": 16,
+              "text": "Avery Keeper"
+            },
+            "identityConfidence": "tentative"
+          }
+        ]
+      },
+      "goalieStatuses": [],
+      "decisionReview": null,
+      "attempts": 1,
+      "requestIds": [
+        "offline-continuation-E04-responses"
+      ],
+      "reviewQueueKey": "c1871ac1dc1c381d640d49644ff76358291f60e63ab3912bd0a41f2b2fb6960b"
+    }
+  },
+  {
+    "caseId": "E05",
+    "score": {
+      "identity": true,
+      "goalie": true,
+      "decisions": true,
+      "labelMatch": true
+    },
+    "review": {
+      "version": "ifttt-luna-review-v1",
+      "canPublish": false,
+      "canWriteAliases": false,
+      "canChangeStatus": false,
+      "canExecuteReplacement": false,
+      "status": "review_only",
+      "holds": [
+        "human_review_required",
+        "no_publication_authority"
+      ],
+      "referencePackage": {
+        "version": "luna-hockey-reference-v4",
+        "mode": "rules-and-synthetic-only",
+        "hash": "9b8a10fd458596b75ba2c0900dea1b72b9ec446d5e0e660ca5c18341920abdb3",
+        "rulesVersion": "luna-hockey-rules-v4",
+        "libraryVersion": null
+      },
+      "responsesRequestHash": "0f452e6067767a84d30a7d5ecb8d3c8e13a6c61eae1db655806ee59e0294a2cb",
+      "lineage": {
+        "originalPostId": "910004",
+        "author": "lunafixture",
+        "url": "https://x.com/LunaFixture/status/910004",
+        "textVersion": "tweet-source-claim-v1:text:00b0aed9709d6aaea4dd4673e57ea2f512b24219907b5d9751e0943850f85b29",
+        "packetHash": "5e8c010986f814814b955863e454e742d59e1cc27ce19be999cce82b2e455fc7"
+      },
+      "identity": {
+        "version": "tweet-identity-proposal-v1",
+        "requestHash": "cb5f32997d173e7555c914cde412d97aa285d1718fd020896cf8427935f78d1d",
+        "directoryHash": "88dbd1e19c22a04fba95f07d049c38af533b548723bd17106f639191667ae16f",
+        "occurrences": [
+          {
+            "occurrenceId": "subject-4",
+            "canonicalId": "nhl:900001",
+            "status": "matched",
+            "evidence": {
+              "start": 4,
+              "end": 16,
+              "text": "Avery Keeper"
+            },
+            "identityConfidence": "tentative"
+          }
+        ]
+      },
+      "goalieStatuses": [],
+      "decisionReview": null,
+      "attempts": 1,
+      "requestIds": [
+        "offline-continuation-E05-responses"
+      ],
+      "reviewQueueKey": "5652d5eaec121c90af75d5381db472c1b6aaad60857c877a599ddf487b8c8aa4"
+    }
+  },
+  {
+    "caseId": "E06",
+    "score": {
+      "identity": true,
+      "goalie": true,
+      "decisions": true,
+      "labelMatch": true
+    },
+    "review": {
+      "version": "ifttt-luna-review-v1",
+      "canPublish": false,
+      "canWriteAliases": false,
+      "canChangeStatus": false,
+      "canExecuteReplacement": false,
+      "status": "review_only",
+      "holds": [
+        "human_review_required",
+        "no_publication_authority"
+      ],
+      "referencePackage": {
+        "version": "luna-hockey-reference-v4",
+        "mode": "rules-and-synthetic-only",
+        "hash": "9b8a10fd458596b75ba2c0900dea1b72b9ec446d5e0e660ca5c18341920abdb3",
+        "rulesVersion": "luna-hockey-rules-v4",
+        "libraryVersion": null
+      },
+      "responsesRequestHash": "78398a271d89d4e09238112faecceb6b1bdcd7d1efe066276fb7b8afd93ade02",
+      "lineage": {
+        "originalPostId": "910005",
+        "author": "lunafixture",
+        "url": "https://x.com/LunaFixture/status/910005",
+        "textVersion": "tweet-source-claim-v1:text:7332aeea609b6b72b53ca26c2eb347e00fd7f59022f847b9cac87c2a9f3ceaee",
+        "packetHash": "691be91b8043ece6cef4b5b7a58cfc4a80cc887483d1fcaa1f49fafad9df0df4"
+      },
+      "identity": {
+        "version": "tweet-identity-proposal-v1",
+        "requestHash": "78dfee451d97ca1194482377bcd2cdbd49088baa94d57cc78091b94af910a9ed",
+        "directoryHash": "88dbd1e19c22a04fba95f07d049c38af533b548723bd17106f639191667ae16f",
+        "occurrences": [
+          {
+            "occurrenceId": "subject-4",
+            "canonicalId": "nhl:900001",
+            "status": "matched",
+            "evidence": {
+              "start": 4,
+              "end": 16,
+              "text": "Avery Keeper"
+            },
+            "identityConfidence": "tentative"
+          }
+        ]
+      },
+      "goalieStatuses": [
+        {
+          "occurrenceId": "subject-4",
+          "canonicalId": "nhl:900001",
+          "status": "confirmed",
+          "evidence": {
+            "start": 4,
+            "end": 61,
+            "text": "Avery Keeper starts tonight, as confirmed during warmups."
+          },
+          "verified": false,
+          "gameId": null,
+          "teamId": null,
+          "appliedOverride": null,
+          "policyFloorAfterAcceptance": null,
+          "holds": [
+            "human_review_required",
+            "game_and_source_time_binding_required",
+            "conflict_retraction_check_required"
+          ]
+        }
+      ],
+      "decisionReview": {
+        "mode": "review_only",
+        "canPublish": false,
+        "canChangeStatus": false,
+        "providerDispatchEnabled": false,
+        "bindingVersion": "tweet-decision-review-binding-v1",
+        "planHash": "4fb1f51cc317df6b986a0e25b38696d167be4bf2ffb3e2afe576f345bb068bfd",
+        "packetHash": "691be91b8043ece6cef4b5b7a58cfc4a80cc887483d1fcaa1f49fafad9df0df4",
+        "sourceSupportMeaning": "assessment_of_supplied_statement_only",
+        "calibrationStatus": "uncalibrated_shadow_only",
+        "reviewReasons": [
+          "uncalibrated_shadow_only"
+        ],
+        "status": "bound_review",
+        "reason": null,
+        "post": {
+          "status": "scored",
+          "type": "predicate",
+          "probability": 0.95
+        },
+        "claims": [
+          {
+            "candidateIndex": 0,
+            "observationId": "tweet-observation-v2:6d3ee862eae6b942faf8d241e0e9e70918040c6ebb4f54d366b0ba5f57b61456",
+            "playerId": 900001,
+            "statement": "Avery Keeper starts tonight, as confirmed during warmups.",
+            "statementBindingHash": "92afeb5749f985d47822552941a0901d4d938395331d8a5c9dcd2317bcecd0fb",
+            "support": {
+              "status": "scored",
+              "type": "choice",
+              "choice": "supported",
+              "confidence": 1,
+              "probabilities": [
+                {
+                  "value": "supported",
+                  "probability": 1
+                },
+                {
+                  "value": "contradicted",
+                  "probability": 0
+                },
+                {
+                  "value": "insufficient_evidence",
+                  "probability": 0
+                }
+              ]
+            },
+            "wording": {
+              "status": "scored",
+              "type": "choice",
+              "choice": "direct_assertion",
+              "confidence": 1,
+              "probabilities": [
+                {
+                  "value": "conditional",
+                  "probability": 0
+                },
+                {
+                  "value": "expectation",
+                  "probability": 0
+                },
+                {
+                  "value": "speculation",
+                  "probability": 0
+                },
+                {
+                  "value": "opinion",
+                  "probability": 0
+                },
+                {
+                  "value": "direct_assertion",
+                  "probability": 1
+                },
+                {
+                  "value": "unclear",
+                  "probability": 0
+                }
+              ]
+            }
+          }
+        ],
+        "heldCandidates": [],
+        "unboundStatements": []
+      },
+      "attempts": 2,
+      "requestIds": [
+        "offline-continuation-E06-responses",
+        "offline-continuation-E06-decisions"
+      ],
+      "reviewQueueKey": "5dff6fba4b3168944ca1be048d1bd44cdaf1df1b95c4c2a9361b6a4f42c136b0"
+    }
+  },
+  {
+    "caseId": "E07",
+    "score": {
+      "identity": true,
+      "goalie": true,
+      "decisions": true,
+      "labelMatch": true
+    },
+    "review": {
+      "version": "ifttt-luna-review-v1",
+      "canPublish": false,
+      "canWriteAliases": false,
+      "canChangeStatus": false,
+      "canExecuteReplacement": false,
+      "status": "review_only",
+      "holds": [
+        "human_review_required",
+        "no_publication_authority"
+      ],
+      "referencePackage": {
+        "version": "luna-hockey-reference-v4",
+        "mode": "rules-and-synthetic-only",
+        "hash": "9b8a10fd458596b75ba2c0900dea1b72b9ec446d5e0e660ca5c18341920abdb3",
+        "rulesVersion": "luna-hockey-rules-v4",
+        "libraryVersion": null
+      },
+      "responsesRequestHash": "293625fe83c949c430df2a7d100fde9bc2099da2fade5cca12269773f5d5bdca",
+      "lineage": {
+        "originalPostId": "910006",
+        "author": "lunafixture",
+        "url": "https://x.com/LunaFixture/status/910006",
+        "textVersion": "tweet-source-claim-v1:text:a5a3e71af4b83e3866d7bf2fe4162b05012bbd13b68e423d53a01f3526e70811",
+        "packetHash": "dc01084a14ea2ef29db4095769a2784855c22262baff10e3ad4dab8250b3515b"
+      },
+      "identity": {
+        "version": "tweet-identity-proposal-v1",
+        "requestHash": "1b3e48462507cc196c993712009432b64e997ec91dc2ba1576e1b8973d9b4608",
+        "directoryHash": "88dbd1e19c22a04fba95f07d049c38af533b548723bd17106f639191667ae16f",
+        "occurrences": [
+          {
+            "occurrenceId": "subject-4",
+            "canonicalId": "nhl:900001",
+            "status": "matched",
+            "evidence": {
+              "start": 4,
+              "end": 16,
+              "text": "Avery Keeper"
+            },
+            "identityConfidence": "tentative"
+          }
+        ]
+      },
+      "goalieStatuses": [],
+      "decisionReview": null,
+      "attempts": 1,
+      "requestIds": [
+        "offline-continuation-E07-responses"
+      ],
+      "reviewQueueKey": "ed1caf32ee0c42d2e9890c27969a7db3e630ce56ce3d7cf8785edc6342cdb790"
+    }
+  },
+  {
+    "caseId": "E08",
+    "score": {
+      "identity": true,
+      "goalie": true,
+      "decisions": true,
+      "labelMatch": true
+    },
+    "review": {
+      "version": "ifttt-luna-review-v1",
+      "canPublish": false,
+      "canWriteAliases": false,
+      "canChangeStatus": false,
+      "canExecuteReplacement": false,
+      "status": "review_only",
+      "holds": [
+        "human_review_required",
+        "no_publication_authority"
+      ],
+      "referencePackage": {
+        "version": "luna-hockey-reference-v4",
+        "mode": "rules-and-synthetic-only",
+        "hash": "9b8a10fd458596b75ba2c0900dea1b72b9ec446d5e0e660ca5c18341920abdb3",
+        "rulesVersion": "luna-hockey-rules-v4",
+        "libraryVersion": null
+      },
+      "responsesRequestHash": "df679634172cb8c0972e394c3d921aa2485fff424c2c1d2bb99b62a6503b3580",
+      "lineage": {
+        "originalPostId": "910007",
+        "author": "lunafixture",
+        "url": "https://x.com/LunaFixture/status/910007",
+        "textVersion": "tweet-source-claim-v1:text:eb7c0ec6686d571ff0832d6d4d51a3fb7a10281b14855e1c5867892a474a3de6",
+        "packetHash": "32e4dbac2e1ee7a980d483cf5d69a4a7c6536902ee622a31d11a327f232cf6af"
+      },
+      "identity": {
+        "version": "tweet-identity-proposal-v1",
+        "requestHash": "0e82da420c8883394b390f290945682669f5274d7201dc3d793415d71ac704a7",
+        "directoryHash": "88dbd1e19c22a04fba95f07d049c38af533b548723bd17106f639191667ae16f",
+        "occurrences": [
+          {
+            "occurrenceId": "subject-4",
+            "canonicalId": "nhl:900001",
+            "status": "matched",
+            "evidence": {
+              "start": 4,
+              "end": 16,
+              "text": "Avery Keeper"
+            },
+            "identityConfidence": "tentative"
+          }
+        ]
+      },
+      "goalieStatuses": [],
+      "decisionReview": null,
+      "attempts": 1,
+      "requestIds": [
+        "offline-continuation-E08-responses"
+      ],
+      "reviewQueueKey": "932869ea49fdec5c1af5e3801698bdc47245455fded31aa90e3b7334b394d330"
+    }
+  },
+  {
+    "caseId": "E09",
+    "score": {
+      "identity": true,
+      "goalie": true,
+      "decisions": true,
+      "labelMatch": true
+    },
+    "review": {
+      "version": "ifttt-luna-review-v1",
+      "canPublish": false,
+      "canWriteAliases": false,
+      "canChangeStatus": false,
+      "canExecuteReplacement": false,
+      "status": "review_only",
+      "holds": [
+        "identity_abstention_or_widening_requires_review",
+        "human_review_required",
+        "no_publication_authority"
+      ],
+      "referencePackage": {
+        "version": "luna-hockey-reference-v4",
+        "mode": "rules-and-synthetic-only",
+        "hash": "9b8a10fd458596b75ba2c0900dea1b72b9ec446d5e0e660ca5c18341920abdb3",
+        "rulesVersion": "luna-hockey-rules-v4",
+        "libraryVersion": null
+      },
+      "responsesRequestHash": "044e34fd1091d5e4fc5873581ab76bebde1226528f335479ed2abeec711c1c2e",
+      "lineage": {
+        "originalPostId": "910008",
+        "author": "lunafixture",
+        "url": "https://x.com/LunaFixture/status/910008",
+        "textVersion": "tweet-source-claim-v1:text:b4e9a10bd8397b3f60b92f9ac90881d712acb097b97b01486f53e002aaf06f0e",
+        "packetHash": "a1562884e0c6383030e4f761cd600ffddac2697e1d52cdb9c1ece84acba36e93"
+      },
+      "identity": {
+        "version": "tweet-identity-proposal-v1",
+        "requestHash": "191ab6396f59bcc2636dd614664a90bb4fb76e8d10c8802d39fc45bd63c021ee",
+        "directoryHash": "2990204d39f9f44cca38f0de30d705179a1e3ddd6393ee34927cd3f12f5a1530",
+        "occurrences": [
+          {
+            "occurrenceId": "subject-4",
+            "canonicalId": null,
+            "status": "ambiguous",
+            "evidence": {
+              "start": 4,
+              "end": 10,
+              "text": "Keeper"
+            },
+            "identityConfidence": "unknown"
+          }
+        ]
+      },
+      "goalieStatuses": [],
+      "decisionReview": null,
+      "attempts": 1,
+      "requestIds": [
+        "offline-continuation-E09-responses"
+      ],
+      "reviewQueueKey": "9dde2bb1a8aa387a3f354bc70e696c1a4b48443be5e65cc7b9b5014ece4b70fe"
+    }
+  },
+  {
+    "caseId": "E10",
+    "score": {
+      "identity": true,
+      "goalie": true,
+      "decisions": true,
+      "labelMatch": true
+    },
+    "review": {
+      "version": "ifttt-luna-review-v1",
+      "canPublish": false,
+      "canWriteAliases": false,
+      "canChangeStatus": false,
+      "canExecuteReplacement": false,
+      "status": "review_only",
+      "holds": [
+        "human_review_required",
+        "no_publication_authority"
+      ],
+      "referencePackage": {
+        "version": "luna-hockey-reference-v4",
+        "mode": "rules-and-synthetic-only",
+        "hash": "9b8a10fd458596b75ba2c0900dea1b72b9ec446d5e0e660ca5c18341920abdb3",
+        "rulesVersion": "luna-hockey-rules-v4",
+        "libraryVersion": null
+      },
+      "responsesRequestHash": "27acd5acf262d1da81e26bdfb5b162ce897ef12266f13bc3b1004c92f423bc07",
+      "lineage": {
+        "originalPostId": "910009",
+        "author": "lunafixture",
+        "url": "https://x.com/LunaFixture/status/910009",
+        "textVersion": "tweet-source-claim-v1:text:01a53111e20c2c6e92f53659c87a9fe4f0de3d6673d514f95725d2812b0b7a1b",
+        "packetHash": "4b52494ac9d97ef7bd9c8319d8305cbf225f78b21801c7ea961347389ab6e3c5"
+      },
+      "identity": {
+        "version": "tweet-identity-proposal-v1",
+        "requestHash": "613c8c36be12c964f4ef99ee4c37aabf03ddc2826b60f3acc67435c2208a913c",
+        "directoryHash": "88dbd1e19c22a04fba95f07d049c38af533b548723bd17106f639191667ae16f",
+        "occurrences": [
+          {
+            "occurrenceId": "subject-4",
+            "canonicalId": "nhl:900001",
+            "status": "matched",
+            "evidence": {
+              "start": 4,
+              "end": 16,
+              "text": "Avery Keeper"
+            },
+            "identityConfidence": "tentative"
+          }
+        ]
+      },
+      "goalieStatuses": [
+        {
+          "occurrenceId": "subject-4",
+          "canonicalId": "nhl:900001",
+          "status": "confirmed",
+          "evidence": {
+            "start": 4,
+            "end": 32,
+            "text": "Avery Keeper starts tonight."
+          },
+          "verified": false,
+          "gameId": null,
+          "teamId": null,
+          "appliedOverride": null,
+          "policyFloorAfterAcceptance": null,
+          "holds": [
+            "human_review_required",
+            "game_and_source_time_binding_required",
+            "conflict_retraction_check_required"
+          ]
+        }
+      ],
+      "decisionReview": {
+        "mode": "review_only",
+        "canPublish": false,
+        "canChangeStatus": false,
+        "providerDispatchEnabled": false,
+        "bindingVersion": "tweet-decision-review-binding-v1",
+        "planHash": "ce7d5f9c454708e26c4254ed13cd3b3c09e33193412be4fc862f075e02879b9d",
+        "packetHash": "4b52494ac9d97ef7bd9c8319d8305cbf225f78b21801c7ea961347389ab6e3c5",
+        "sourceSupportMeaning": "assessment_of_supplied_statement_only",
+        "calibrationStatus": "uncalibrated_shadow_only",
+        "reviewReasons": [
+          "uncalibrated_shadow_only"
+        ],
+        "status": "bound_review",
+        "reason": null,
+        "post": {
+          "status": "scored",
+          "type": "predicate",
+          "probability": 0.95
+        },
+        "claims": [
+          {
+            "candidateIndex": 0,
+            "observationId": "tweet-observation-v2:da189af884fadcdbdaf877732215b520a95a19133562fd4571cdfb30f029638b",
+            "playerId": 900001,
+            "statement": "Avery Keeper starts tonight.",
+            "statementBindingHash": "cbc44456a436dd35907322e57733a2237beef3dc434359612d1c26c338e2c7a0",
+            "support": {
+              "status": "scored",
+              "type": "choice",
+              "choice": "supported",
+              "confidence": 1,
+              "probabilities": [
+                {
+                  "value": "supported",
+                  "probability": 1
+                },
+                {
+                  "value": "contradicted",
+                  "probability": 0
+                },
+                {
+                  "value": "insufficient_evidence",
+                  "probability": 0
+                }
+              ]
+            },
+            "wording": {
+              "status": "scored",
+              "type": "choice",
+              "choice": "direct_assertion",
+              "confidence": 1,
+              "probabilities": [
+                {
+                  "value": "conditional",
+                  "probability": 0
+                },
+                {
+                  "value": "expectation",
+                  "probability": 0
+                },
+                {
+                  "value": "speculation",
+                  "probability": 0
+                },
+                {
+                  "value": "opinion",
+                  "probability": 0
+                },
+                {
+                  "value": "direct_assertion",
+                  "probability": 1
+                },
+                {
+                  "value": "unclear",
+                  "probability": 0
+                }
+              ]
+            }
+          }
+        ],
+        "heldCandidates": [],
+        "unboundStatements": []
+      },
+      "attempts": 2,
+      "requestIds": [
+        "offline-continuation-E10-responses",
+        "offline-continuation-E10-decisions"
+      ],
+      "reviewQueueKey": "856fd2cbce7a2712037dffcf60db26be5fff359075ea0f747b3418baa88bf42f"
+    }
+  },
+  {
+    "caseId": "E11",
+    "score": {
+      "identity": true,
+      "goalie": true,
+      "decisions": true,
+      "labelMatch": true
+    },
+    "review": {
+      "version": "ifttt-luna-review-v1",
+      "canPublish": false,
+      "canWriteAliases": false,
+      "canChangeStatus": false,
+      "canExecuteReplacement": false,
+      "status": "review_only",
+      "holds": [
+        "human_review_required",
+        "no_publication_authority"
+      ],
+      "referencePackage": {
+        "version": "luna-hockey-reference-v4",
+        "mode": "rules-and-synthetic-only",
+        "hash": "9b8a10fd458596b75ba2c0900dea1b72b9ec446d5e0e660ca5c18341920abdb3",
+        "rulesVersion": "luna-hockey-rules-v4",
+        "libraryVersion": null
+      },
+      "responsesRequestHash": "a7280a4d484075fbfab47f5c18249f4bf0ac33ada7b6e38ae41f8393b8a079a2",
+      "lineage": {
+        "originalPostId": "910010",
+        "author": "lunafixture",
+        "url": "https://x.com/LunaFixture/status/910010",
+        "textVersion": "tweet-source-claim-v1:text:3b4c987a97c5059b9b472b41d20785973f8805de978d7f49b54c8c5ab5750e23",
+        "packetHash": "31e6c0b4dd666ddb991810032ae81b4691540e9196ab012c74c5e129665d9114"
+      },
+      "identity": {
+        "version": "tweet-identity-proposal-v1",
+        "requestHash": "f15a6dfed59cb46168665bced15878bef1d45d0182fc97f8b9d790e7b5425d1e",
+        "directoryHash": "88dbd1e19c22a04fba95f07d049c38af533b548723bd17106f639191667ae16f",
+        "occurrences": [
+          {
+            "occurrenceId": "subject-4",
+            "canonicalId": "nhl:900001",
+            "status": "matched",
+            "evidence": {
+              "start": 4,
+              "end": 16,
+              "text": "Avery Keeper"
+            },
+            "identityConfidence": "tentative"
+          },
+          {
+            "occurrenceId": "subject-33",
+            "canonicalId": "nhl:900002",
+            "status": "matched",
+            "evidence": {
+              "start": 33,
+              "end": 45,
+              "text": "Riley Skater"
+            },
+            "identityConfidence": "tentative"
+          }
+        ]
+      },
+      "goalieStatuses": [
+        {
+          "occurrenceId": "subject-4",
+          "canonicalId": "nhl:900001",
+          "status": "confirmed",
+          "evidence": {
+            "start": 4,
+            "end": 32,
+            "text": "Avery Keeper starts tonight."
+          },
+          "verified": false,
+          "gameId": null,
+          "teamId": null,
+          "appliedOverride": null,
+          "policyFloorAfterAcceptance": null,
+          "holds": [
+            "human_review_required",
+            "game_and_source_time_binding_required",
+            "conflict_retraction_check_required"
+          ]
+        }
+      ],
+      "decisionReview": {
+        "mode": "review_only",
+        "canPublish": false,
+        "canChangeStatus": false,
+        "providerDispatchEnabled": false,
+        "bindingVersion": "tweet-decision-review-binding-v1",
+        "planHash": "2b58a468ba6003c1ffad5d355caba77b00e1386661bf8887c5efec2189b278d0",
+        "packetHash": "31e6c0b4dd666ddb991810032ae81b4691540e9196ab012c74c5e129665d9114",
+        "sourceSupportMeaning": "assessment_of_supplied_statement_only",
+        "calibrationStatus": "uncalibrated_shadow_only",
+        "reviewReasons": [
+          "uncalibrated_shadow_only"
+        ],
+        "status": "bound_review",
+        "reason": null,
+        "post": {
+          "status": "scored",
+          "type": "predicate",
+          "probability": 0.95
+        },
+        "claims": [
+          {
+            "candidateIndex": 0,
+            "observationId": "tweet-observation-v2:7cdc95d10637d6ca5d198ba5bb21fddb08e36ab86302ac469f302f64306a61d7",
+            "playerId": 900001,
+            "statement": "Avery Keeper starts tonight.",
+            "statementBindingHash": "4c23fdfee8a8efc5e37735a640c59b3c6808fa0660f859f3cfe94a8b8da11344",
+            "support": {
+              "status": "scored",
+              "type": "choice",
+              "choice": "supported",
+              "confidence": 1,
+              "probabilities": [
+                {
+                  "value": "supported",
+                  "probability": 1
+                },
+                {
+                  "value": "contradicted",
+                  "probability": 0
+                },
+                {
+                  "value": "insufficient_evidence",
+                  "probability": 0
+                }
+              ]
+            },
+            "wording": {
+              "status": "scored",
+              "type": "choice",
+              "choice": "direct_assertion",
+              "confidence": 1,
+              "probabilities": [
+                {
+                  "value": "conditional",
+                  "probability": 0
+                },
+                {
+                  "value": "expectation",
+                  "probability": 0
+                },
+                {
+                  "value": "speculation",
+                  "probability": 0
+                },
+                {
+                  "value": "opinion",
+                  "probability": 0
+                },
+                {
+                  "value": "direct_assertion",
+                  "probability": 1
+                },
+                {
+                  "value": "unclear",
+                  "probability": 0
+                }
+              ]
+            }
+          }
+        ],
+        "heldCandidates": [],
+        "unboundStatements": []
+      },
+      "attempts": 2,
+      "requestIds": [
+        "offline-continuation-E11-responses",
+        "offline-continuation-E11-decisions"
+      ],
+      "reviewQueueKey": "7380e0d61b747fcfa036d0e7a7665804bd64d81c836fb41a83a342aa1d16b1f0"
+    }
+  },
+  {
+    "caseId": "E12",
+    "score": {
+      "identity": true,
+      "goalie": true,
+      "decisions": true,
+      "labelMatch": true
+    },
+    "review": {
+      "version": "ifttt-luna-review-v1",
+      "canPublish": false,
+      "canWriteAliases": false,
+      "canChangeStatus": false,
+      "canExecuteReplacement": false,
+      "status": "review_only",
+      "holds": [
+        "human_review_required",
+        "no_publication_authority"
+      ],
+      "referencePackage": {
+        "version": "luna-hockey-reference-v4",
+        "mode": "rules-and-synthetic-only",
+        "hash": "9b8a10fd458596b75ba2c0900dea1b72b9ec446d5e0e660ca5c18341920abdb3",
+        "rulesVersion": "luna-hockey-rules-v4",
+        "libraryVersion": null
+      },
+      "responsesRequestHash": "641f76f69a086fc5004b12694d3be6a33b42da17cd5efc9c919b742e80677483",
+      "lineage": {
+        "originalPostId": "910011",
+        "author": "lunafixture",
+        "url": "https://x.com/LunaFixture/status/910011",
+        "textVersion": "tweet-source-claim-v1:text:37f0f8de00ad43b5683fb46bcfc428af525e19aae8fb312ac4136a9d5f14c303",
+        "packetHash": "3e55f47dc517e987715d7a4df81405845b9179167680f79509ae62ad2f3b07af"
+      },
+      "identity": {
+        "version": "tweet-identity-proposal-v1",
+        "requestHash": "57093205abaa9f03319c8587a99ebbb6b4a36733e28866c7a8b47b904ebc81b5",
+        "directoryHash": "88dbd1e19c22a04fba95f07d049c38af533b548723bd17106f639191667ae16f",
+        "occurrences": [
+          {
+            "occurrenceId": "subject-4",
+            "canonicalId": "nhl:900001",
+            "status": "matched",
+            "evidence": {
+              "start": 4,
+              "end": 16,
+              "text": "Avery Keeper"
+            },
+            "identityConfidence": "tentative"
+          },
+          {
+            "occurrenceId": "subject-45",
+            "canonicalId": "nhl:900001",
+            "status": "matched",
+            "evidence": {
+              "start": 45,
+              "end": 57,
+              "text": "Avery Keeper"
+            },
+            "identityConfidence": "tentative"
+          }
+        ]
+      },
+      "goalieStatuses": [],
+      "decisionReview": null,
+      "attempts": 1,
+      "requestIds": [
+        "offline-continuation-E12-responses"
+      ],
+      "reviewQueueKey": "fa144a5fca7c582865fb9d780cbba9c65eb8dfe4066aaee03576d3b9be62f389"
+    }
+  },
+  {
+    "caseId": "E13",
+    "score": {
+      "identity": true,
+      "goalie": true,
+      "decisions": true,
+      "labelMatch": true
+    },
+    "review": {
+      "version": "ifttt-luna-review-v1",
+      "canPublish": false,
+      "canWriteAliases": false,
+      "canChangeStatus": false,
+      "canExecuteReplacement": false,
+      "status": "review_only",
+      "holds": [
+        "human_review_required",
+        "no_publication_authority"
+      ],
+      "referencePackage": {
+        "version": "luna-hockey-reference-v4",
+        "mode": "rules-and-synthetic-only",
+        "hash": "9b8a10fd458596b75ba2c0900dea1b72b9ec446d5e0e660ca5c18341920abdb3",
+        "rulesVersion": "luna-hockey-rules-v4",
+        "libraryVersion": null
+      },
+      "responsesRequestHash": "1f09caf61e7e69f6eaee3baf48e0c2217414228eb7dc0e9d3d950af3aa0fe597",
+      "lineage": {
+        "originalPostId": "910012",
+        "author": "lunafixture",
+        "url": "https://x.com/LunaFixture/status/910012",
+        "textVersion": "tweet-source-claim-v1:text:d69d1db68a84dbb41cb8d4a9de3972e8e2323b51b7baedbe7bb639463f492ab0",
+        "packetHash": "f9d1d2a6d0530a90a3dbb0c16a9f16162bd62251619f154e695f0862d2ea5fe5"
+      },
+      "identity": {
+        "version": "tweet-identity-proposal-v1",
+        "requestHash": "57260f52e175407e5081670e2beef9c0129f5b9ba74f800640aea6ffa670c501",
+        "directoryHash": "88dbd1e19c22a04fba95f07d049c38af533b548723bd17106f639191667ae16f",
+        "occurrences": [
+          {
+            "occurrenceId": "subject-4",
+            "canonicalId": "nhl:900001",
+            "status": "matched",
+            "evidence": {
+              "start": 4,
+              "end": 16,
+              "text": "Avery Keeper"
+            },
+            "identityConfidence": "tentative"
+          }
+        ]
+      },
+      "goalieStatuses": [],
+      "decisionReview": null,
+      "attempts": 1,
+      "requestIds": [
+        "offline-continuation-E13-responses"
+      ],
+      "reviewQueueKey": "77e07766f899d721aa0a6fcaa9ce9bda0e3639b9edf9acdfe2bdcd5940315cd2"
+    }
+  },
+  {
+    "caseId": "E14",
+    "score": {
+      "identity": true,
+      "goalie": true,
+      "decisions": true,
+      "labelMatch": true
+    },
+    "review": {
+      "version": "ifttt-luna-review-v1",
+      "canPublish": false,
+      "canWriteAliases": false,
+      "canChangeStatus": false,
+      "canExecuteReplacement": false,
+      "status": "review_only",
+      "holds": [
+        "human_review_required",
+        "no_publication_authority"
+      ],
+      "referencePackage": {
+        "version": "luna-hockey-reference-v4",
+        "mode": "rules-and-synthetic-only",
+        "hash": "9b8a10fd458596b75ba2c0900dea1b72b9ec446d5e0e660ca5c18341920abdb3",
+        "rulesVersion": "luna-hockey-rules-v4",
+        "libraryVersion": null
+      },
+      "responsesRequestHash": "f0700f0185a6067289710dd200c043f59bd872e24b2467f460902719064cac9d",
+      "lineage": {
+        "originalPostId": "910013",
+        "author": "lunafixture",
+        "url": "https://x.com/LunaFixture/status/910013",
+        "textVersion": "tweet-source-claim-v1:text:5af3575d0b3f07e90a9ea6f6a9252bbd1922f1cdb133722f9add839ff9aa071f",
+        "packetHash": "dd81d2d60c764ed43cc80bd3e287062a4f2903c0aad66b03a4bfb4a3056b7c65"
+      },
+      "identity": {
+        "version": "tweet-identity-proposal-v1",
+        "requestHash": "75d9e3509648187fb6219060f76b736c5de8f21f6193c0d8564438c3be23c0ee",
+        "directoryHash": "88dbd1e19c22a04fba95f07d049c38af533b548723bd17106f639191667ae16f",
+        "occurrences": [
+          {
+            "occurrenceId": "subject-4",
+            "canonicalId": "nhl:900002",
+            "status": "matched",
+            "evidence": {
+              "start": 4,
+              "end": 16,
+              "text": "Riley Skater"
+            },
+            "identityConfidence": "tentative"
+          }
+        ]
+      },
+      "goalieStatuses": [],
+      "decisionReview": null,
+      "attempts": 1,
+      "requestIds": [
+        "offline-continuation-E14-responses"
+      ],
+      "reviewQueueKey": "398095a388ce966d22a431a40f08b7ac9c4ec87c2259b6a80ac32af5ed3d859f"
+    }
+  },
+  {
+    "caseId": "E15",
+    "score": {
+      "identity": true,
+      "goalie": true,
+      "decisions": true,
+      "labelMatch": true
+    },
+    "review": {
+      "version": "ifttt-luna-review-v1",
+      "canPublish": false,
+      "canWriteAliases": false,
+      "canChangeStatus": false,
+      "canExecuteReplacement": false,
+      "status": "review_only",
+      "holds": [
+        "human_review_required",
+        "no_publication_authority"
+      ],
+      "referencePackage": {
+        "version": "luna-hockey-reference-v4",
+        "mode": "rules-and-synthetic-only",
+        "hash": "9b8a10fd458596b75ba2c0900dea1b72b9ec446d5e0e660ca5c18341920abdb3",
+        "rulesVersion": "luna-hockey-rules-v4",
+        "libraryVersion": null
+      },
+      "responsesRequestHash": "61936e37397ed43c8e2bc232926cc4a22106461f0c90b6baa47bbeae6f78ae3d",
+      "lineage": {
+        "originalPostId": "910014",
+        "author": "lunafixture",
+        "url": "https://x.com/LunaFixture/status/910014",
+        "textVersion": "tweet-source-claim-v1:text:87d07aeda19337e9ef1628c6625136c3e61927bf026fcea9ef9000ab8c74d396",
+        "packetHash": "8d49198489690cead09a84381f431312c7c8c40565aed725ab9fc71784386732"
+      },
+      "identity": {
+        "version": "tweet-identity-proposal-v1",
+        "requestHash": "42d471769c81680df36e1f98e50a388b69249623aaac38c94595638bd9778e17",
+        "directoryHash": "88dbd1e19c22a04fba95f07d049c38af533b548723bd17106f639191667ae16f",
+        "occurrences": [
+          {
+            "occurrenceId": "subject-7",
+            "canonicalId": "nhl:900001",
+            "status": "matched",
+            "evidence": {
+              "start": 7,
+              "end": 19,
+              "text": "Avery Keeper"
+            },
+            "identityConfidence": "tentative"
+          }
+        ]
+      },
+      "goalieStatuses": [
+        {
+          "occurrenceId": "subject-7",
+          "canonicalId": "nhl:900001",
+          "status": "likely",
+          "evidence": {
+            "start": 7,
+            "end": 47,
+            "text": "Avery Keeper is likely to start tonight."
+          },
+          "verified": false,
+          "gameId": null,
+          "teamId": null,
+          "appliedOverride": null,
+          "policyFloorAfterAcceptance": 0.8,
+          "holds": [
+            "human_review_required",
+            "game_and_source_time_binding_required",
+            "conflict_retraction_check_required"
+          ]
+        }
+      ],
+      "decisionReview": null,
+      "attempts": 1,
+      "requestIds": [
+        "offline-continuation-E15-responses"
+      ],
+      "reviewQueueKey": "9ce79818be37483706efbb78961aba2583d7ff854da5a74e3de1833a2df41a9d"
+    }
+  },
+  {
+    "caseId": "E16",
+    "score": {
+      "identity": true,
+      "goalie": true,
+      "decisions": true,
+      "labelMatch": true
+    },
+    "review": {
+      "version": "ifttt-luna-review-v1",
+      "canPublish": false,
+      "canWriteAliases": false,
+      "canChangeStatus": false,
+      "canExecuteReplacement": false,
+      "status": "review_only",
+      "holds": [
+        "identity_abstention_or_widening_requires_review",
+        "human_review_required",
+        "no_publication_authority"
+      ],
+      "referencePackage": {
+        "version": "luna-hockey-reference-v4",
+        "mode": "rules-and-synthetic-only",
+        "hash": "9b8a10fd458596b75ba2c0900dea1b72b9ec446d5e0e660ca5c18341920abdb3",
+        "rulesVersion": "luna-hockey-rules-v4",
+        "libraryVersion": null
+      },
+      "responsesRequestHash": "6e3eabefb5a2e31a2044f78b39d925d66fece8ac94ca2362478405b8c5853ffd",
+      "lineage": {
+        "originalPostId": "910015",
+        "author": "lunafixture",
+        "url": "https://x.com/LunaFixture/status/910015",
+        "textVersion": "tweet-source-claim-v1:text:a586b99cef672fea92943f7a20fa4ed17385a4c5c67da24ac43965ea8e1599fd",
+        "packetHash": "e1d753865a2ef7d17fc7f1988bbd07d4202e67fe3a1c0335ed0f3fe806b02866"
+      },
+      "identity": {
+        "version": "tweet-identity-proposal-v1",
+        "requestHash": "d11beb0c6f76b2b9ab8d817ee1d86c87a3bc02d6ceaf21494b7b47932a087e81",
+        "directoryHash": "88dbd1e19c22a04fba95f07d049c38af533b548723bd17106f639191667ae16f",
+        "occurrences": [
+          {
+            "occurrenceId": "subject-4",
+            "canonicalId": null,
+            "status": "missing",
+            "evidence": {
+              "start": 4,
+              "end": 21,
+              "text": "Mystery Netminder"
+            },
+            "identityConfidence": "unknown"
+          }
+        ]
+      },
+      "goalieStatuses": [],
+      "decisionReview": null,
+      "attempts": 1,
+      "requestIds": [
+        "offline-continuation-E16-responses"
+      ],
+      "reviewQueueKey": "86b9014d2d132a3416412ab8062537f4eac27497450157a8ff8cad1066f28236"
+    }
+  }
+]

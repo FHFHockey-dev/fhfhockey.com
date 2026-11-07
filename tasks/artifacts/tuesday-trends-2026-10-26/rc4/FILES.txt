@@ -1,0 +1,10 @@
+web/components/SocialShare/SocialShare.module.scss
+web/components/SocialShare/SocialShare.test.tsx
+web/components/SocialShare/SocialShare.tsx
+web/e2e/social-share.spec.ts
+web/lib/socialShare/trendSources.test.ts
+web/lib/socialShare/trendSources.ts
+web/lib/socialShare/trends.test.ts
+web/lib/socialShare/trends.ts
+web/lib/socialShare/trendsFixture.ts
+web/lib/socialShare/types.ts

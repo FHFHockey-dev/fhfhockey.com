@@ -1,0 +1,24 @@
+{
+  "check": "capacity",
+  "exit": 0,
+  "status": "passed",
+  "commands": [
+    [
+      "/Users/tim/Code/fhfhockey.com/web/node_modules/.bin/esbuild",
+      "/Users/tim/Code/fhfhockey.com/tasks/artifacts/forge-v2-remediation-2026-10-30/capacity-check.ts",
+      "--bundle",
+      "--platform=node",
+      "--format=cjs",
+      "--external:pg",
+      "--outfile=/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/forge-continuation-_pzky0dc/check.cjs"
+    ],
+    [
+      "node",
+      "/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/forge-continuation-_pzky0dc/check.cjs"
+    ]
+  ],
+  "log": "continuation-capacity.txt",
+  "logSha256": "0d8c25afca5203fa91ae82ed75303df4b4462af12151be6822c08460b6832e94",
+  "scientificallyQualified": false,
+  "remoteActions": 0
+}

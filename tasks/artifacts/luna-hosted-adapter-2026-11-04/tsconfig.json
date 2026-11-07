@@ -1,0 +1,5 @@
+{
+  "extends": "../../../web/tsconfig.json",
+  "include": ["../../../web/next-bootstrap.d.ts", "../../../web/yahoo-fantasy.d.ts", "../../../web/lib/sources/lunaHosted/*.ts", "../../../web/pages/api/internal/luna-review.ts"],
+  "exclude": ["../../../web/node_modules", "../../../web/.next"]
+}

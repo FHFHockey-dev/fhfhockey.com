@@ -1,0 +1,11 @@
+{
+  "action": "Apply only approved default-privilege prerequisite",
+  "sourceThread": "01a189f6-9a3a-7235-a989-e1af4f47b014",
+  "humanApproval": "yes",
+  "project": "fyhftlxokyjtpndbkfse",
+  "database": "postgres",
+  "role": "postgres",
+  "sourceFile": "supabase/migrations/20261020224500_data_api_explicit_default_privileges.sql",
+  "sha256": "60e0ee8f6004d07182c6999fbe34534a2cceb9530cafbd1a0bb868b0fd5ff51c",
+  "bounds": "File transaction, lock_timeout=5s, statement_timeout=30s; verify and stop; no NST migrations or operational changes."
+}

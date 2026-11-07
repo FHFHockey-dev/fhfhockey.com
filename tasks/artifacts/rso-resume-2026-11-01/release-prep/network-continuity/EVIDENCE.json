@@ -1,0 +1,73 @@
+{
+  "sourceCommit": "c3897d3273ca46ea25a9f2737f09c835e5ec7325",
+  "sourceTree": "394e3cb70d3e9995e8a1f02f75ba13973320df34",
+  "exportRoot": "/private/tmp/fhfh-rso-offline-vp04syfx",
+  "sourcePins": [
+    {
+      "path": "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx",
+      "sha256": "e02050ad36b21d985d43492389e3db6eae837a7bc7f9439c96ea680e006d781f",
+      "canonicalMatches": true
+    },
+    {
+      "path": "web/__tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx",
+      "sha256": "079b47e0ca1a123e36cc6ab979fb9a33f90016e47b21817150e3581579536223",
+      "canonicalMatches": true
+    },
+    {
+      "path": "web/e2e/rso-continuity.spec.ts",
+      "sha256": "c9d49bcace0ba5c37646dc5e04f5bad70f379a73e1fc0624354b128ef9709d19",
+      "canonicalMatches": true
+    },
+    {
+      "path": "web/e2e/roster-schedule-optimizer-fixtures.ts",
+      "sha256": "7de8756a3bfb9c322386dc5bbd6250992c1e4f0a0e1e408d7a14fd76095ee87d",
+      "canonicalMatches": true
+    },
+    {
+      "path": "web/e2e/fixtures/rso-continuity/index.ts",
+      "sha256": "b119ef90915f04310a3d0e5658799a002959f8b7e6871b6a6a62c3135652d63f",
+      "canonicalMatches": true
+    }
+  ],
+  "initialAttempt": "sandbox denied local socket bind before server, browser, lock or output creation",
+  "environmentFilesIncluded": false,
+  "startedAt": "2026-11-01T23:30:25.161572+00:00",
+  "finishedAt": "2026-11-01T23:30:33.621525+00:00",
+  "command": [
+    "node",
+    "node_modules/@playwright/test/cli.js",
+    "test",
+    "--config",
+    "/private/tmp/fhfh-rso-offline-vp04syfx/web/.rso-verification-playwright.config.ts",
+    "e2e/rso-continuity.spec.ts",
+    "--grep",
+    "7\\. a browser that misreports offline",
+    "--workers=1",
+    "--retries=0",
+    "--reporter=line",
+    "--output",
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/rso-resume-2026-11-01/release-prep/network-continuity/browser-output"
+  ],
+  "cwd": "/private/tmp/fhfh-rso-offline-vp04syfx/web",
+  "exitCode": 0,
+  "timedOut": false,
+  "environment": "curated inert values; no environment files",
+  "network": "Node loopback-only guard and existing browser isolateNetwork/account/provider/data interception",
+  "providerRequests": 0,
+  "databaseRequests": 0,
+  "productionRequests": 0,
+  "deployments": 0,
+  "runtimeSourceChanges": 0,
+  "gitMutations": 0,
+  "distinctCasesPassed": 1,
+  "testDurationSeconds": 8.1,
+  "productionBuilds": 0,
+  "hostedBuilds": 0,
+  "localDevelopmentServersStarted": 1,
+  "ownServerRetained": false,
+  "ownHeavyLockRetained": false,
+  "canonicalSourcePinsUnchanged": true,
+  "initialSandboxBindFailureResolvedByExecutionApproval": true,
+  "pendingToolApproval": false,
+  "liveYahooAcceptance": false
+}

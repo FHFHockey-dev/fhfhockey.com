@@ -9,12 +9,44 @@ import {
   countQuantile,
   overUnderPushProbabilities,
   probabilityOverLine,
+  sampleGoalieShotCounts,
   sampleNegativeBinomial,
   summarizeCountDistribution,
   summarizeStatDistribution
 } from "./uncertainty";
 
 describe("goalie uncertainty scenario mixture", () => {
+  it("keeps the opt-in joint sampler coherent when every shot is a goal", () => {
+    const joint = buildGoalieUncertainty({ shotsAgainst: 1, goalsAllowed: 1, saves: 0 }, 10, undefined, undefined, { jointGoalieCounts: true });
+    expect(joint.saves).toEqual({ p10: 0, p50: 0, p90: 0 });
+    expect(joint.goals_allowed).toEqual(joint.shots_against);
+    expect(joint.count_model_version).toBe("goalie-shots-binomial-ga-v1");
+  });
+
+  it("validates joint final draws and binomial conditional moments independently", () => {
+    const draws = Array.from({ length: 8 }, (_, bits) => {
+      let shot = 0;
+      const draw = sampleGoalieShotCounts(3, 0.5, () => (bits >> shot++ & 1) ? 0.75 : 0.25);
+      expect(draw.shotsAgainst).toBe(draw.goalsAllowed + draw.saves);
+      expect(Object.values(draw).every(value => Number.isInteger(value) && value >= 0)).toBe(true);
+      return draw.goalsAllowed;
+    });
+    expect(draws.reduce((sum, n) => sum + n, 0) / 8).toBe(1.5);
+    expect(draws.reduce((sum, n) => sum + (n - 1.5) ** 2, 0) / 8).toBe(0.75);
+    expect(sampleGoalieShotCounts(0, 0.5, () => 0)).toEqual({ shotsAgainst: 0, goalsAllowed: 0, saves: 0 });
+    expect(() => sampleGoalieShotCounts(2, 1.1, () => 0)).toThrow();
+    expect(() => buildGoalieUncertainty({ shotsAgainst: 1, goalsAllowed: 2, saves: 0 }, 1, undefined, undefined, { jointGoalieCounts: true })).toThrow(/Incoherent/);
+  });
+
+  it.each([1, 10, 20])("preserves joint accounting with NB shots and persistent goalie scenarios over H%s", horizon => {
+    const options = { jointGoalieCounts: true, negativeBinomial: true, position: "G" };
+    const noGoals = buildGoalieUncertainty({ shotsAgainst: 20, goalsAllowed: 0, saves: 20 }, horizon, undefined,
+      [{ weight: 0.5, shotsAgainst: 0, goalsAllowed: 0, saves: 0 }, { weight: 0.5, shotsAgainst: 40, goalsAllowed: 0, saves: 40 }], options);
+    expect(noGoals.goals_allowed).toEqual({ p10: 0, p50: 0, p90: 0 });
+    expect(noGoals.saves).toEqual(noGoals.shots_against);
+    expect(noGoals.saves.p10).toBe(0);
+  });
+
   it("shifts quantiles when starter scenarios are mixed", () => {
     const single = buildGoalieUncertainty({
       shotsAgainst: 30,

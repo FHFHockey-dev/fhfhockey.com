@@ -1,0 +1,6 @@
+// Opens every help note at 390x844 on the tabs that have one and reports whether it fits the window. Fixture-only.
+const { chromium } = require("/Users/tim/Code/fhfhockey.com/web/node_modules/playwright");
+const { installWigoFixtures, SUBJECT_ID } = require("../../wigo-redesign-2026-10-25/fixtures/wigo-fixtures.cjs");
+(async()=>{const b=await chromium.launch();for(const tab of ["overview","trends"]){const p=await (await b.newContext({viewport:{width:390,height:844}})).newPage();await installWigoFixtures(p,()=>{});
+await p.goto(`http://127.0.0.1:3150/wigoCharts?playerId=${SUBJECT_ID}&tab=${tab}`,{waitUntil:"networkidle"});await p.waitForTimeout(2000);
+const all=p.locator('[popovertarget]');const n=await all.count();for(let i=0;i<n;i++){const s=all.nth(i);await s.scrollIntoViewIfNeeded();await s.click({timeout:5000});await p.waitForTimeout(150);const id=await s.getAttribute("popovertarget");const r=await p.locator(`[id="${id}"]`).boundingBox();console.log(tab,await s.getAttribute("aria-label"),r&&[Math.round(r.x),Math.round(r.y),Math.round(r.width),Math.round(r.height)],r&&r.x>=0&&r.y>=0&&r.x+r.width<=390&&r.y+r.height<=844?"fits":"OVERFLOW");await p.keyboard.press("Escape");}}await b.close();})();

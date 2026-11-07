@@ -1,0 +1,11 @@
+{
+  "at": "2026-11-01T18:18:56.179154+00:00",
+  "originalCardFilesVerified": 78,
+  "ownedSourceCopiesVerified": 16,
+  "whitespacePathsVerified": 21,
+  "sourceDeltaReviewed": "window-age-consumer-20261101.patch",
+  "remainingOriginalSubtasks": 12,
+  "extraCompletedRegressions": 4,
+  "noBrowserRerun": true,
+  "noProviderDatabaseDeploymentOrPush": true
+}

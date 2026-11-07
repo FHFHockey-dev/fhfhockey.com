@@ -1,0 +1,78 @@
+{
+  "startedAt": "2026-11-01T20:33:48.462144+00:00",
+  "finishedAt": "2026-11-01T20:33:50.960555+00:00",
+  "candidateCommit": "c3897d3273ca46ea25a9f2737f09c835e5ec7325",
+  "candidateTree": "394e3cb70d3e9995e8a1f02f75ba13973320df34",
+  "overlay": "two proposed admission files only; exact referenced receipts copied",
+  "export": "/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-rso-admission-phwyauxm",
+  "excludedEnvironmentFiles": [
+    "web/.env.development",
+    "web/.env.production",
+    "web/.env.test"
+  ],
+  "entries": [
+    {
+      "closureSha256": "f87dd7079506915fbdb9602d35c3a97270865ae0f4b8813c4456d6d09e96dc92",
+      "commit": "f17bea20d8caa2b6268c318bdb2152d7e2a3b57d",
+      "receipt": "tasks/artifacts/rso-resume-2026-11-01/release-prep/after402-committed-release.json",
+      "receiptSha256": "a9674d30f42b32d88b604a33672e311c74470075da3c9219c1bb613bb2b43b3a",
+      "verifierVersion": "forge-release-sha-verifier-v1",
+      "note": "Released PR #402 PP/IFTTT producer closure, commit f17bea20d: 195-module closure, 0 findings. This does not grant native forecast-use approval."
+    },
+    {
+      "closureSha256": "ec5bdab6593f58ec19ad9b250fb645aa377616542e98205150e22f085914968c",
+      "commit": "c3897d3273ca46ea25a9f2737f09c835e5ec7325",
+      "receipt": "tasks/artifacts/rso-resume-2026-11-01/release-prep/admission/c3897d3273ca46ea25a9f2737f09c835e5ec7325/receipt.json",
+      "receiptSha256": "fe424f17b66c82ca3232d9566a41a7dbafc76400d2f8ea4f007e9afc1758b924",
+      "verifierVersion": "forge-release-sha-verifier-v1",
+      "note": "RSO issued-method lineage and retained participation replay, commit c3897d327: 195-module closure, 0 findings."
+    }
+  ],
+  "checks": [
+    {
+      "label": "tests",
+      "command": [
+        "node",
+        "node_modules/vitest/vitest.mjs",
+        "run",
+        "lib/projections/verifiedForgeReleases.test.ts",
+        "lib/projections/externalInputProof.test.ts",
+        "lib/projections/apiHelpers.runAdmission.test.ts",
+        "--maxWorkers=1",
+        "--minWorkers=1"
+      ],
+      "exitCode": 0,
+      "log": "tests.log"
+    },
+    {
+      "label": "lint",
+      "command": [
+        "node",
+        "node_modules/eslint/bin/eslint.js",
+        "lib/projections/verifiedForgeReleases.ts",
+        "lib/projections/verifiedForgeReleases.test.ts"
+      ],
+      "exitCode": 0,
+      "log": "lint.log"
+    }
+  ],
+  "canonicalAdmissionInstalled": true,
+  "network": "Node loopback-only guard and inert environment",
+  "gitMutations": 0,
+  "productionActions": 0,
+  "installedAt": "2026-11-01T20:35:07.669128+00:00",
+  "canonicalMatchesTestedBytes": true,
+  "canonicalFilePins": [
+    {
+      "path": "web/lib/projections/verifiedForgeReleases.ts",
+      "sha256": "70242a513aab76a69af41f4bdd4d64b82f345e4559f7f7014db5216752940325"
+    },
+    {
+      "path": "web/lib/projections/verifiedForgeReleases.test.ts",
+      "sha256": "e47a37977bca4582d431cc126b1e8ccb4ecb52e57f787ffba6e0b2f05f9639ca"
+    }
+  ],
+  "testsPassed": 102,
+  "finalDiffCheck": "passed",
+  "expectedFinalTree": "125279a5a50d661c4a01d585a4c593693e0ab2f6"
+}

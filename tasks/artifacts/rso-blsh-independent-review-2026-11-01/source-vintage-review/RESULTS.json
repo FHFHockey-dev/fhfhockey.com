@@ -1,0 +1,48 @@
+{
+  "allInputAnalysisFinalAndSharedPinsMatch": true,
+  "testsPassed": 13,
+  "fieldPairs": 103,
+  "rows": 99,
+  "games": 25,
+  "fieldsByType": {
+    "hits": 15,
+    "shots": 23,
+    "goals": 2,
+    "assists": 4,
+    "toi_per_game": 53,
+    "blocked_shots": 6
+  },
+  "rowsByDate": {
+    "2026-10-20": 19,
+    "2026-10-21": 14,
+    "2026-10-22": 24,
+    "2026-10-23": 3,
+    "2026-10-24": 35,
+    "2026-10-25": 2,
+    "2026-10-26": 2
+  },
+  "allOldAndNewBoxAndNativeReportValuesEqual": true,
+  "allSavedWGOValuesDifferentAndStableAcrossTwoCaptures": true,
+  "all103JoinsQualified": true,
+  "unchangedManifestFieldPairs": 6,
+  "oldWGOCapturedAt": "2026-10-28T03:49:19.148Z",
+  "newWGOCapturedAt": "2026-10-29T18:41:12.798646+00:00",
+  "rawNewBodiesVerified": 58,
+  "newBodyBytes": 1024786,
+  "newResponseKinds": {
+    "boxscore": 25,
+    "summary": 21,
+    "realtime": 12
+  },
+  "minimumRecordedDispatchIntervalSeconds": 3.00081,
+  "newObservationRange": [
+    "2026-11-01T17:25:25.496407+00:00",
+    "2026-11-01T17:28:16.830877+00:00"
+  ],
+  "priorFailedTLSAttempts": 1,
+  "totalRetainedDispatchAttempts": 59,
+  "CSVAndRowsReconcile": true,
+  "reviewProviderRequests": 0,
+  "reviewHoldoutReads": 0,
+  "causeAndOriginalCutoffTruthUnresolved": true
+}

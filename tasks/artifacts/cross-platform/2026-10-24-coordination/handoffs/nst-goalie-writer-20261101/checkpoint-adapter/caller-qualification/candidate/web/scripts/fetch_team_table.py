@@ -1,0 +1,191 @@
+# Shared NST admission: this manual/compatibility path uses the same global budget.
+from pathlib import Path as _NstPath
+import sys as _nst_sys
+_nst_root = next((_parent / "functions" for _parent in _NstPath(__file__).resolve().parents
+                  if (_parent / "functions/lib/nst_admission.py").is_file()), None)
+if _nst_root is None:
+    raise RuntimeError("NST shared admission helper unavailable")
+if str(_nst_root) not in _nst_sys.path:
+    _nst_sys.path.insert(0, str(_nst_root))
+from lib.nst_admission import nst_get, nst_job_scope, assert_nst_job_active, mark_nst_job_uncertain
+
+# scripts/fetch_team_table.py
+# /Users/tim/Desktop/FHFH/fhfhockey.com/web/scripts/fetch_team_table.py
+
+import requests
+from bs4 import BeautifulSoup
+import json
+import argparse
+import re
+import sys
+import os
+from pathlib import Path
+
+_FUNCTIONS_ROOT = Path(__file__).resolve().parents[2] / "functions"
+if str(_FUNCTIONS_ROOT) not in sys.path:
+    sys.path.insert(0, str(_FUNCTIONS_ROOT))
+
+from lib.env_loader import ensure_loaded_for
+
+def clean_header(header: str) -> str:
+    """
+    Replace '/60' with '_perSixty' and '%' with 'Pct' in the header names.
+    """
+    header = header.replace('/60', '_perSixty')  # Added underscore
+    header = header.replace('/GP', '_perGame')  # Added underscore
+    header = header.replace('%', 'Pct')
+    return header
+
+def validate_percentage(value):
+    try:
+        num = float(value)
+        if 0 <= num <= 100:
+            return num
+        else:
+            return None
+    except:
+        return None
+
+@nst_job_scope("legacy/fetch_team_table", timeout_seconds=220)
+def fetch_team_table(from_season='20242025', thru_season='20242025',
+                    stype='2', sit='pk', score='all', rate='n',
+                    team='all', loc='B', gpf='410', fd='', td=''):
+    result = {
+        "debug": {},
+        "data": []
+    }
+
+    ensure_loaded_for(["NST_KEY", "NEXT_PUBLIC_SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"])
+    nst_key = (os.environ.get("NST_KEY") or "").strip()
+    if not nst_key:
+        result["debug"]["Error"] = "NST_KEY missing"
+        print(json.dumps(result))
+        sys.exit(1)
+
+    # Construct the URL with query parameters
+    url = (
+        f"https://data.naturalstattrick.com/teamtable.php?"
+        f"fromseason={from_season}&thruseason={thru_season}&"
+        f"stype={stype}&sit={sit}&score={score}&rate={rate}&"
+        f"team={team}&loc={loc}&gpf={gpf}&fd={fd}&td={td}"
+    )
+
+    # Log the URL being fetched
+    result["debug"]["Fetching URL"] = url
+
+    headers = {
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "User-Agent": "fhfhockey/1.0 (+https://fhfhockey.com)",
+        "nst-key": nst_key,
+    }
+
+    try:
+
+        # Fetch the team table page
+        response = nst_get(url, headers=headers, timeout=10)
+        response.raise_for_status()
+
+        # Parse the HTML content
+        soup = BeautifulSoup(response.text, 'html.parser')
+
+        # Locate the table by ID
+        table = soup.find('table', id='teams')
+        if not table:
+            result["debug"]["Error"] = f"No table found for sit={sit}, rate={rate}"
+            print(json.dumps(result))
+            sys.exit(1)  # Exit with non-zero status
+
+        # Extract table headers and clean them
+        headers = []
+        for th in table.find('thead').find_all('th'):
+            raw_header = th.get_text(strip=True)
+            cleaned_header = clean_header(raw_header)
+            headers.append(cleaned_header)
+
+        # Log the table headers
+        result["debug"]["Table headers"] = headers
+
+        # Define necessary columns
+        necessary_columns = {
+            "Team", "GP", "TOI", "W", "L", "OTL", "Points",
+            "CF", "CA", "CFPct", "FF", "FA", "FFPct",
+            "SF", "SA", "SFPct", "GF", "GA", "GFPct",
+            "xGF", "xGA", "xGFPct", "SCF", "SCA", "SCFPct",
+            "HDCF", "HDCA", "HDCFPct", "HDSF", "HDSA", "HDSFPct",
+            "HDGF", "HDGA", "HDGFPct", "SHPct", "SVPct", "PDO"
+        }
+
+        # Extract table rows
+        rows = []
+        for tr in table.find('tbody').find_all('tr'):
+            cells = tr.find_all('td')
+            row = {}
+            row['date'] = fd  # Assign the fetch date
+            row['situation'] = sit  # Assign the situation
+
+            for i, th in enumerate(headers):
+                if th not in necessary_columns:
+                    continue  # Skip unnecessary columns
+                if i < len(cells):
+                    cell_text = cells[i].get_text(strip=True)
+                    # Convert '-' to None
+                    cell_text = cell_text if cell_text != '-' else None
+                    # Validate percentage fields
+                    if th.endswith('Pct'):
+                        cell_text = validate_percentage(cell_text)
+                    row[th] = cell_text
+                else:
+                    # Assign default value if cell is missing
+                    row[th] = None
+
+            if row:  # Ensure row is not empty
+                rows.append(row)
+
+        # Log the number of rows parsed
+        result["debug"]["Number of rows parsed"] = len(rows)
+
+        # Assign the data
+        result["data"] = rows
+
+        # Output the data as JSON
+        print(json.dumps(result))
+
+    except requests.exceptions.HTTPError as http_err:
+        result["debug"]["HTTP error"] = f"HTTP error occurred: {http_err} - Status Code: {response.status_code}"
+        print(json.dumps(result))
+        sys.exit(1)  # Exit with non-zero status
+    except Exception as err:
+        result["debug"]["Exception"] = f"An error occurred: {err}"
+        print(json.dumps(result))
+        sys.exit(1)  # Exit with non-zero status
+
+if __name__ == "__main__":
+    ensure_loaded_for(["NST_KEY", "NEXT_PUBLIC_SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"])
+    parser = argparse.ArgumentParser(description='Fetch team table data.')
+    parser.add_argument('--from_season', default='20242025', help='From season')
+    parser.add_argument('--thru_season', default='20242025', help='Thru season')
+    parser.add_argument('--stype', default='2', help='SType')
+    parser.add_argument('--sit', required=True, help='Situation')
+    parser.add_argument('--score', default='all', help='Score')
+    parser.add_argument('--rate', required=True, help='Rate')
+    parser.add_argument('--team', default='all', help='Team')
+    parser.add_argument('--loc', default='B', help='Location')
+    parser.add_argument('--gpf', default='410', help='GPF')
+    parser.add_argument('--fd', default='', help='FD')
+    parser.add_argument('--td', default='', help='TD')
+    
+    args = parser.parse_args()
+    
+    fetch_team_table(
+        from_season=args.from_season,
+        thru_season=args.thru_season,
+        stype=args.stype,
+        sit=args.sit,
+        score=args.score,
+        rate=args.rate,
+        team=args.team,
+        loc=args.loc,
+        gpf=args.gpf,
+        fd=args.fd,
+        td=args.td
+    )

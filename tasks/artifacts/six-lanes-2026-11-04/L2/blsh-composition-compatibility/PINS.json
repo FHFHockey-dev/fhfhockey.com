@@ -1,0 +1,20 @@
+{
+  "candidate": "d33b122da84f7e36c661484178fb5c837017126d",
+  "release_base": "03c53add225fea452c2e2e92515aab08e56c3c3d",
+  "scope": "proposal only; not applied to canonical or composer export",
+  "detail": {
+    "path": "web/components/buyLowSellHigh/BlshPlayerDetail.tsx",
+    "base_sha256": "8d599804461848e162fa566bea5e571375f45f965bbc54afbbc3b3475613fb3b",
+    "candidate_before_sha256": "6419b05cec243ed5f3f66b40ad7d79b4a3bcba2fd61994bf93d99f5bd8d92a03",
+    "canonical_current_sha256": "6419b05cec243ed5f3f66b40ad7d79b4a3bcba2fd61994bf93d99f5bd8d92a03",
+    "proposed_candidate_after_sha256": "8d599804461848e162fa566bea5e571375f45f965bbc54afbbc3b3475613fb3b"
+  },
+  "preview_test": {
+    "path": "web/components/buyLowSellHigh/BuyLowSellHighPreview.test.tsx",
+    "candidate_before_sha256": "6bf7a3a0e9788564ab4889b5377634be1aefccf730f0c8aa56c187ce643d86c7",
+    "proposed_after_sha256": "4d484b1f6eb8288e304aa22ef046c18256ea4e52fa7cc16e424837f70d225f6c",
+    "hunk": "literal contract sko-interpretation-v0.1 -> v0.2 only"
+  },
+  "patch_sha256": "12e7cb06ca69c1f6e5d36fa1a82e1d25d226653ea4da3349d1fbdd1670dc8b11",
+  "checks_run": "read-only source/diff/pin inspection only; no tests or types"
+}

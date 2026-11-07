@@ -1,0 +1,73 @@
+{
+  "at": "2026-11-01T16:52:50.728792+00:00",
+  "decision": "Use exact reviewed provenance as dated stale research only. It does not satisfy current/live or advanced-metric admission.",
+  "review": {
+    "path": "tasks/artifacts/rso-blsh-independent-review-2026-11-01/PROVENANCE-REVIEW.md",
+    "sha256": "54fbf0418908263ce5a0ed3e2b4812c78d70d152aacc818df0568567aa265701",
+    "scope": "dated-stale-research-only",
+    "ownerReportedTests": 52,
+    "ownerReportedHistoricalLinks": 150,
+    "testsNotRerunByCardWorker": true
+  },
+  "localAssessment": {
+    "profiles": 729,
+    "sourceRows": 3407,
+    "allJoinsCheckedAgainstPinnedWgoAndCalendar": true,
+    "selectedPlayer": 8476453,
+    "selectedGamesMatchRetainedNhl": true,
+    "captureTimesDiffer": true,
+    "captureAgeAtSidecarBuildHours": 69.85116343166668,
+    "maxCaptureAgeHours": 24,
+    "finalityMatchedRows": 657,
+    "selectedFinalityMatchedRows": 0
+  },
+  "implemented": {
+    "paths": [
+      {
+        "path": "web/components/player-cards/PlayerAnalysisCard.tsx",
+        "beforeSHA256": "a1befd8ef948d504842d001fc4079d20a5c23b570f8529d3c12f2cf5142f45d3",
+        "afterSHA256": "2d705ef3df7851e54a52668a614eb72e70b321a147f16b97efb6cbd33186b7d5"
+      },
+      {
+        "path": "web/components/player-cards/PlayerAnalysisStudio.tsx",
+        "beforeSHA256": "46703b934b0147d0f86a3ce0730bc05f212530ac3275eeb333edfd98cb9c442f",
+        "afterSHA256": "aa1f1751a5826e66026c1ef8dbf9b30fb1c560075cd7139be734df77cbf6116f"
+      },
+      {
+        "path": "web/lib/player-cards/analysisEvidence.ts",
+        "beforeSHA256": "81ce56d3a411d6140787aa233248731fd546401d02e317882c4aaca78f13511a",
+        "afterSHA256": "0d051d6e2dea02c5f39c10962e0cc508d83cc9d797042e60d540744956f17a56"
+      },
+      {
+        "path": "web/lib/player-cards/retainedBlsh.test.ts",
+        "beforeSHA256": "76202ca36b06e2ecc63f8681ca8ee5e77f89a44f2038c62cd1ae4f046e53abad",
+        "afterSHA256": "0c8e3e5a60ff946d66603d784782b1c286ae378b2fe4d2000c5eafb83981e351"
+      },
+      {
+        "path": "web/lib/player-cards/retainedBlsh.ts",
+        "beforeSHA256": "ec63580349459ea4964fea0cbcd6640b8b0f67cdf9463b4d7afd5ae6b6714c82",
+        "afterSHA256": "c90be0b59c68fcc0392e45a95305b148caa5ea6a1cf43669bdd69e47ef562b14"
+      }
+    ],
+    "patch": "blsh-provenance-integration-20261101.patch",
+    "behavior": "Optional review-bound source-map metadata, stale-capture and review labels, full provenance/limits in HTML and manifest; invalid or falsely promoted lineage withheld without discarding separately qualified research values; no score recomputation. Saved windows now say recorded game rows rather than asserting universal finality."
+  },
+  "checks": {
+    "tests": "21/21, blsh-sidecar-tests-final-20261101.log",
+    "scopedTypes": "pass, blsh-provenance-types-20261101.log",
+    "scopedLint": "pass, blsh-provenance-lint-20261101.log",
+    "actualOfflineBrowser": "BLSH-PROVENANCE-BROWSER-20261101.json; PNG/manifest, 320px, no HTTP; final PNG visually inspected",
+    "originalCardFilesUnchanged": 78,
+    "editorPatchStillUnapplied": true
+  },
+  "residualGates": {
+    "5.4": "Canonical observed/current-editor binding remains pending exact custody and owner-controlled delivery of the reviewed retained payload. Sidecar identity/source-review gate is cleared for retained use; fresh capture is not required merely to show explicitly stale research.",
+    "currentOrAdvancedClaims": "Not admitted: age exceeds24h, capture clocks differ, universal finality/NST model-publication/native strength receipts absent. Unknowns stay unknown.",
+    "baselineScope": "Independent historical review covers three fixed50-row cases, not all729references;49PPP values rely on WGO. No stronger baseline/causal/forecast/current-streak claim.",
+    "otherTasks": "Original editor/lookup custody, rank policies/population, actual Yahoo trades, goalie input handoff and applied integration review remain as recorded."
+  },
+  "remoteRequests": 0,
+  "databaseWrites": 0,
+  "productionActions": 0,
+  "deniedOrUncertainActions": []
+}

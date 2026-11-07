@@ -1,0 +1,51 @@
+
+> web@0.1.0 test
+> vitest --run lib/socialShare/modules/shared/periodWindow.test.ts lib/socialShare/modules/teamGames.test.ts lib/socialShare/modules/offNightEdge.test.ts lib/socialShare/modules/busyQuiet.test.ts lib/socialShare/modules/goalieRescue.test.ts lib/socialShare/modules/riskyStarts.test.ts lib/socialShare/modules/startSit.test.ts lib/socialShare/modules/multiCatStars.test.ts lib/socialShare/modules/bshBoard.test.ts lib/socialShare/modules/categoryBlueprint.test.ts lib/socialShare/modules/nightlyFloor.test.ts lib/socialShare/modules/contract.test.ts components/SocialShare/PostStudio.test.tsx --maxWorkers=1 --minWorkers=1
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+(node:80160) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ components/SocialShare/PostStudio.test.tsx (16 tests) 1462ms
+   ✓ PostStudio > waits out a font that is not declared yet, and offers a retry if it never loads  1023ms
+(node:80170) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/socialShare/modules/offNightEdge.test.ts (32 tests) 221ms
+(node:80181) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/socialShare/modules/nightlyFloor.test.ts (32 tests) 93ms
+(node:80201) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/socialShare/modules/goalieRescue.test.ts (47 tests) 114ms
+(node:80203) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/socialShare/modules/multiCatStars.test.ts (34 tests) 63ms
+(node:80205) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/socialShare/modules/categoryBlueprint.test.ts (34 tests) 65ms
+(node:80207) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/socialShare/modules/busyQuiet.test.ts (43 tests) 107ms
+(node:80209) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/socialShare/modules/startSit.test.ts (44 tests) 54ms
+(node:80213) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/socialShare/modules/bshBoard.test.ts (42 tests) 61ms
+(node:80215) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/socialShare/modules/shared/periodWindow.test.ts (19 tests) 5ms
+(node:80217) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/socialShare/modules/teamGames.test.ts (7 tests) 5ms
+(node:80219) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/socialShare/modules/contract.test.ts (9 tests) 4ms
+ ✓ lib/socialShare/modules/riskyStarts.test.ts (58 tests) 65ms
+
+ Test Files  13 passed (13)
+      Tests  417 passed (417)
+   Start at  14:42:53
+   Duration  7.82s (transform 821ms, setup 18ms, collect 2.03s, tests 2.32s, environment 1.86s, prepare 418ms)
+

@@ -1,0 +1,22 @@
+{
+  "command": [
+    "npx",
+    "--no-install",
+    "eslint",
+    "components/player-cards/ObservedPlayerCard.test.tsx",
+    "components/player-cards/ObservedPlayerCard.tsx",
+    "lib/player-cards/aggregation.ts",
+    "lib/player-cards/cardEvidenceVerdict.ts",
+    "lib/player-cards/domain.test.ts",
+    "lib/player-cards/evidenceBundle.test.ts",
+    "lib/player-cards/evidenceBundle.ts",
+    "lib/player-cards/evidenceLoader.test.ts",
+    "lib/player-cards/evidenceLoader.ts",
+    "lib/player-cards/nstCapture.test.ts",
+    "lib/player-cards/nstCapture.ts",
+    "lib/player-cards/observedView.ts",
+    "lib/player-cards/windows.ts"
+  ],
+  "exitCode": 0,
+  "seconds": 0.954
+}

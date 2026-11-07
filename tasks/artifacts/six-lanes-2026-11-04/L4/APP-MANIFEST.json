@@ -1,0 +1,16 @@
+{
+  "lane": "L4",
+  "status": "observation-only-v1-frozen-for-L5-review",
+  "head_at_verification": "5f6b4e7a3a893000fe31cc6928cd8736b56e5d39",
+  "branch": "octoberBranch",
+  "checks": "APP-CHECKS.json",
+  "patch": "APP.patch",
+  "files": {
+    "web/lib/tradeValue/contracts.ts": "24e132e2c1ea715ccd0cf572eaa9162349f32f545e5dd49aafbdb948a470b9cd",
+    "web/lib/tradeValue/observationEvidence.ts": "bafb1916b8e42ecd684dd332a4743da7110db7741d252e061a505e341d77ed12",
+    "web/lib/tradeValue/observationEvidence.test.ts": "e0cde9df893283f9a204147357083934892a0d6d0f29b5865974e204e3b094e8"
+  },
+  "no_runtime_wiring": true,
+  "no_valuation_or_roster_exports": true,
+  "permission_fields": "asserted trusted inputs, not authenticated proof"
+}

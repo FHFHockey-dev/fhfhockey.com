@@ -1,0 +1,8 @@
+{
+  "extends": "../tsconfig.json",
+  "include": [
+    "./diagnostic-policy.ts",
+    "./diagnostic-checkpoint.ts",
+    "./verify-continuation.ts"
+  ]
+}

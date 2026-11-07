@@ -1,0 +1,322 @@
+[
+ {
+  "name": "team-games",
+  "enabled": true,
+  "png": true,
+  "feedback": "PNG downloaded: 1080 × 1080.",
+  "status": "",
+  "fit": {
+   "overflow": [],
+   "textLen": 472,
+   "scale": 0.5
+  },
+  "phone": {
+   "docW": 375,
+   "winW": 375
+  }
+ },
+ {
+  "name": "what-changed",
+  "enabled": true,
+  "png": true,
+  "feedback": "PNG downloaded: 1080 × 1080.",
+  "status": "",
+  "fit": {
+   "overflow": [],
+   "textLen": 1237,
+   "scale": 0.5
+  },
+  "phone": {
+   "docW": 375,
+   "winW": 375
+  }
+ },
+ {
+  "name": "role-watch",
+  "enabled": true,
+  "png": true,
+  "feedback": "PNG downloaded: 1080 × 1080.",
+  "status": "",
+  "fit": {
+   "overflow": [],
+   "textLen": 1714,
+   "scale": 0.5
+  },
+  "phone": {
+   "docW": 375,
+   "winW": 375
+  }
+ },
+ {
+  "name": "bsh-board",
+  "enabled": true,
+  "png": true,
+  "feedback": "PNG downloaded: 1080 × 1080.",
+  "status": "",
+  "fit": {
+   "overflow": [],
+   "textLen": 1152,
+   "scale": 0.5
+  },
+  "phone": {
+   "docW": 375,
+   "winW": 375
+  }
+ },
+ {
+  "name": "bsh-risers",
+  "enabled": true,
+  "png": true,
+  "feedback": "PNG downloaded: 1080 × 1080.",
+  "status": "",
+  "fit": {
+   "overflow": [],
+   "textLen": 1694,
+   "scale": 0.5
+  },
+  "phone": {
+   "docW": 375,
+   "winW": 375
+  }
+ },
+ {
+  "name": "category-blueprint",
+  "enabled": false,
+  "png": false,
+  "feedback": "",
+  "status": "Nothing qualifies with these settings.",
+  "fit": {
+   "overflow": [],
+   "textLen": 800,
+   "scale": 0.5
+  },
+  "phone": {
+   "docW": 375,
+   "winW": 375
+  }
+ },
+ {
+  "name": "nightly-floor",
+  "enabled": true,
+  "png": true,
+  "feedback": "PNG downloaded: 1080 × 1080.",
+  "status": "",
+  "fit": {
+   "overflow": [],
+   "textLen": 1337,
+   "scale": 0.5
+  },
+  "phone": {
+   "docW": 375,
+   "winW": 375
+  }
+ },
+ {
+  "name": "cardio-masters",
+  "enabled": true,
+  "png": true,
+  "feedback": "PNG downloaded: 1080 × 1080.",
+  "status": "",
+  "fit": {
+   "overflow": [],
+   "textLen": 1355,
+   "scale": 0.5
+  },
+  "phone": {
+   "docW": 375,
+   "winW": 375
+  }
+ },
+ {
+  "name": "off-night-rest",
+  "enabled": true,
+  "png": true,
+  "feedback": "PNG downloaded: 1080 × 1080.",
+  "status": "",
+  "fit": {
+   "overflow": [],
+   "textLen": 1970,
+   "scale": 0.5
+  },
+  "phone": {
+   "docW": 375,
+   "winW": 375
+  }
+ },
+ {
+  "name": "off-night-weekly",
+  "enabled": true,
+  "png": true,
+  "feedback": "PNG downloaded: 1080 × 1080.",
+  "status": "",
+  "fit": {
+   "overflow": [],
+   "textLen": 2036,
+   "scale": 0.5
+  },
+  "phone": {
+   "docW": 375,
+   "winW": 375
+  }
+ },
+ {
+  "name": "crease-shift",
+  "enabled": true,
+  "png": true,
+  "feedback": "PNG downloaded: 1080 × 1080.",
+  "status": "",
+  "fit": {
+   "overflow": [],
+   "textLen": 1547,
+   "scale": 0.5
+  },
+  "phone": {
+   "docW": 375,
+   "winW": 375
+  }
+ },
+ {
+  "name": "goalie-week4",
+  "enabled": true,
+  "png": true,
+  "feedback": "PNG downloaded: 1080 × 1080.",
+  "status": "",
+  "fit": {
+   "overflow": [],
+   "textLen": 1856,
+   "scale": 0.5
+  },
+  "phone": {
+   "docW": 375,
+   "winW": 375
+  }
+ },
+ {
+  "name": "goalie-month-oct",
+  "enabled": true,
+  "png": true,
+  "feedback": "PNG downloaded: 1080 × 1080.",
+  "status": "",
+  "fit": {
+   "overflow": [],
+   "textLen": 2246,
+   "scale": 0.5
+  },
+  "phone": {
+   "docW": 375,
+   "winW": 375
+  }
+ },
+ {
+  "name": "goalie-gsax",
+  "enabled": true,
+  "png": true,
+  "feedback": "PNG downloaded: 1080 × 1080.",
+  "status": "",
+  "fit": {
+   "overflow": [],
+   "textLen": 1657,
+   "scale": 0.5
+  },
+  "phone": {
+   "docW": 375,
+   "winW": 375
+  }
+ },
+ {
+  "name": "busy-quiet",
+  "enabled": true,
+  "png": true,
+  "feedback": "PNG downloaded: 1080 × 1080.",
+  "status": "",
+  "fit": {
+   "overflow": [],
+   "textLen": 1610,
+   "scale": 0.5
+  },
+  "phone": {
+   "docW": 375,
+   "winW": 375
+  }
+ },
+ {
+  "name": "goalie-rescue",
+  "enabled": true,
+  "png": true,
+  "feedback": "PNG downloaded: 1080 × 1080.",
+  "status": "",
+  "fit": {
+   "overflow": [],
+   "textLen": 1664,
+   "scale": 0.5
+  },
+  "phone": {
+   "docW": 375,
+   "winW": 375
+  }
+ },
+ {
+  "name": "ratio-impact",
+  "enabled": true,
+  "png": true,
+  "feedback": "PNG downloaded: 1080 × 1080.",
+  "status": "",
+  "fit": {
+   "overflow": [],
+   "textLen": 1062,
+   "scale": 0.5
+  },
+  "phone": {
+   "docW": 375,
+   "winW": 375
+  }
+ },
+ {
+  "name": "risky-starts",
+  "enabled": true,
+  "png": true,
+  "feedback": "PNG downloaded: 1080 × 1080.",
+  "status": "",
+  "fit": {
+   "overflow": [],
+   "textLen": 3439,
+   "scale": 0.5
+  },
+  "phone": {
+   "docW": 375,
+   "winW": 375
+  }
+ },
+ {
+  "name": "start-sit",
+  "enabled": true,
+  "png": true,
+  "feedback": "PNG downloaded: 1080 × 1080.",
+  "status": "",
+  "fit": {
+   "overflow": [],
+   "textLen": 3372,
+   "scale": 0.5
+  },
+  "phone": {
+   "docW": 375,
+   "winW": 375
+  }
+ },
+ {
+  "name": "player-vs-player",
+  "enabled": false,
+  "png": false,
+  "feedback": "",
+  "status": "blocked: Enter two NHL player ids, or choose a sourced pair.",
+  "fit": {
+   "overflow": [],
+   "textLen": 427,
+   "scale": 0.5
+  },
+  "phone": {
+   "docW": 375,
+   "winW": 375
+  }
+ }
+]
