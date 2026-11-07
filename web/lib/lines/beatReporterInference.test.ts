@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { candidateConfidence, rankBeatReporterCandidates, rowAuthor, type BeatEvidenceRow } from "./beatReporterInference";
+import { candidateConfidence, findTeamConflicts, rankBeatReporterCandidates, rowAuthor, type BeatEvidenceRow } from "./beatReporterInference";
+import type { BeatReporterReview } from "./beatReporters";
 
 function row(overrides: Partial<BeatEvidenceRow>): BeatEvidenceRow {
   return {
@@ -73,5 +74,28 @@ describe("candidateConfidence", () => {
     expect(candidateConfidence([])).toBe(0);
     expect(candidateConfidence([40])).toBe(1);
     expect(candidateConfidence([15, 15])).toBeLessThan(candidateConfidence([30]));
+  });
+});
+
+describe("findTeamConflicts", () => {
+  const review = (handle: string, teamAbbrevs: string[], verdict: BeatReporterReview["verdict"] = "beat"): BeatReporterReview =>
+    ({ handle, verdict, teamAbbrevs, reviewedAt: "2026-11-07T20:00:00.000Z", evidenceCount: 40 });
+  const after = { snapshot_date: "2026-11-20" };
+
+  it("flags a confirmed reporter whose posts since the review mostly name another team", () => {
+    const rows = [...posts("moved", "NYI", 40), ...posts("moved", "CHI", 5, after), ...posts("moved", "NYI", 1, after)];
+    const [conflict, ...rest] = findTeamConflicts(rows, [review("moved", ["NYI"])]);
+    expect(rest).toEqual([]);
+    expect(conflict).toMatchObject({ handle: "moved", postCount: 6, suggestedTeams: ["CHI"], conflict: { assignedTeams: ["NYI"], postsSince: 6, assignedShare: 0.17 } });
+  });
+
+  it("ignores pre-review posts, small samples, majority-assigned posts and not-beat reviews", () => {
+    const rows = [
+      ...posts("steady", "TOR", 4, after), ...posts("steady", "MTL", 3, after),
+      ...posts("quiet", "BOS", 4, after),
+      ...posts("old", "SEA", 30),
+      ...posts("rejected", "DAL", 10, after)
+    ];
+    expect(findTeamConflicts(rows, [review("steady", ["TOR"]), review("quiet", ["NYR"]), review("old", ["VAN"]), review("rejected", [], "not_beat")])).toEqual([]);
   });
 });

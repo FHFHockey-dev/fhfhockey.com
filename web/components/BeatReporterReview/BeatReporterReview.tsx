@@ -7,7 +7,7 @@ import supabase from "lib/supabase";
 
 import styles from "./BeatReporterReview.module.scss";
 
-type Verdict = "confirm" | "not_beat" | "skip";
+type Verdict = "confirm" | "keep" | "not_beat" | "skip";
 type Drag = { startX: number; startY: number; dx: number; dy: number; pointerId: number };
 const SWIPE_X = 110;
 const SWIPE_UP = 90;
@@ -76,18 +76,19 @@ export default function BeatReporterReview() {
       setAnnouncement(`Skipped @${card.handle}.`);
       return;
     }
-    const chosen = verdict === "confirm" ? teamAbbrevs ?? card.suggestedTeams : [];
+    const chosen = verdict === "keep" ? card.conflict?.assignedTeams ?? [] : verdict === "confirm" ? teamAbbrevs ?? card.suggestedTeams : [];
+    if (verdict === "keep" && !chosen.length) return;
     if (verdict === "confirm" && !chosen.length) { setPicking(true); return; }
     setBusy(true);
     setMessage(null);
     try {
       const payload = await call<{ reviews: Review[] }>({
-        body: { handle: card.handle, verdict: verdict === "confirm" ? "beat" : "not_beat", teamAbbrevs: chosen, evidenceCount: card.postCount }
+        body: { handle: card.handle, verdict: verdict === "not_beat" ? "not_beat" : "beat", teamAbbrevs: chosen, evidenceCount: card.postCount }
       });
       setReviews(payload.reviews);
       setHistory((current) => [...current, { handle: card.handle, index, saved: true }]);
       setIndex((current) => current + 1);
-      setAnnouncement(verdict === "confirm" ? `Confirmed @${card.handle} for ${chosen.join(", ")}.` : `@${card.handle} marked not a beat reporter.`);
+      setAnnouncement(verdict === "not_beat" ? `@${card.handle} marked not a beat reporter.` : `Confirmed @${card.handle} for ${chosen.join(", ")}.`);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Save failed.");
     } finally {
@@ -123,12 +124,13 @@ export default function BeatReporterReview() {
       if (key === "arrowright" || key === "c") { event.preventDefault(); void decide("confirm"); }
       else if (key === "arrowleft" || key === "n") { event.preventDefault(); void decide("not_beat"); }
       else if (key === "w") { event.preventDefault(); setPicking(true); }
+      else if (key === "k" && card?.conflict) { event.preventDefault(); void decide("keep"); }
       else if (key === "arrowup" || key === "s") { event.preventDefault(); void decide("skip"); }
       else if (key === "u" || key === "backspace") { event.preventDefault(); void undo(); }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [decide, picked, picking, undo]);
+  }, [card, decide, picked, picking, undo]);
 
   const onPointerDown = (event: ReactPointerEvent<HTMLElement>) => {
     if (picking || (event.target as HTMLElement).closest("a, button")) return;
@@ -186,8 +188,13 @@ export default function BeatReporterReview() {
             <button type="button" className={styles.ghostButton} onClick={() => setPicking(true)} disabled={busy || !canWrite}>Wrong team <kbd>W</kbd></button>
             <button type="button" className={styles.ghostButton} onClick={() => void decide("skip")} disabled={busy}>Skip <kbd>↑</kbd></button>
             <button type="button" className={styles.primaryButton} onClick={() => void decide("confirm")} disabled={busy || !canWrite || !card.suggestedTeams.length}>
-              Confirm {card.suggestedTeams.join(" + ")} <kbd>→</kbd>
+              {card.conflict ? "Move to" : "Confirm"} {card.suggestedTeams.join(" + ")} <kbd>→</kbd>
             </button>
+            {card.conflict ? (
+              <button type="button" className={styles.ghostButton} onClick={() => void decide("keep")} disabled={busy || !canWrite}>
+                Keep {card.conflict.assignedTeams.join(" + ")} <kbd>K</kbd>
+              </button>
+            ) : null}
           </div>
 
           <section
@@ -211,6 +218,13 @@ export default function BeatReporterReview() {
                 <span className={styles.muted}>confidence</span>
               </div>
             </div>
+
+            {card.conflict ? (
+              <p className={styles.conflict} role="status">
+                Team conflict: confirmed for {card.conflict.assignedTeams.join(" + ")} on {card.conflict.reviewedAt.slice(0, 10)}, but only{" "}
+                {pct(card.conflict.assignedShare)} of {card.conflict.postsSince} team-tagged posts since then are about them. Evidence below is from those posts.
+              </p>
+            ) : null}
 
             <dl className={styles.facts}>
               <div><dt>Inferred team</dt><dd>{card.suggestedTeams.join(" + ") || "None tagged"}</dd></div>

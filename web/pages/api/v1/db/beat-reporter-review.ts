@@ -3,7 +3,7 @@ import path from "path";
 import type { NextApiResponse } from "next";
 
 import { normaliseReview, parseReviews, removeReview, renderReviews, upsertReview } from "lib/lines/beatReporterFile";
-import { CANDIDATE_CLASSIFICATIONS, rankBeatReporterCandidates, type BeatEvidenceRow } from "lib/lines/beatReporterInference";
+import { CANDIDATE_CLASSIFICATIONS, findTeamConflicts, rankBeatReporterCandidates, type BeatEvidenceRow } from "lib/lines/beatReporterInference";
 import { activeTeamAbbreviations } from "lib/teamsInfo";
 import adminOnly from "utils/adminOnlyMiddleware";
 
@@ -34,6 +34,8 @@ async function evidenceRows(supabase: any): Promise<BeatEvidenceRow[]> {
       .from("line_source_snapshots")
       .select(COLUMNS)
       .in("classification", CANDIDATE_CLASSIFICATIONS as unknown as string[])
+      // Newest first: past the cap, the oldest posts drop, never new names or post-review evidence.
+      .order("snapshot_date", { ascending: false })
       .order("capture_key", { ascending: true })
       .range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1);
     if (error) throw new Error(error.message);
@@ -51,7 +53,8 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
     if (req.method === "GET") {
       const reviews = parseReviews(await readSource());
       const rows = await evidenceRows(req.supabase);
-      const candidates = rankBeatReporterCandidates(rows, reviews.map((review) => review.handle), { minPosts: MIN_POSTS });
+      // Team conflicts (a confirmed reporter now posting about another team) come first, then unreviewed authors.
+      const candidates = [...findTeamConflicts(rows, reviews), ...rankBeatReporterCandidates(rows, reviews.map((review) => review.handle), { minPosts: MIN_POSTS })];
       return res.status(200).json({
         success: true, candidates, reviews, rowsRead: rows.length,
         teams: [...activeTeamAbbreviations].sort(),

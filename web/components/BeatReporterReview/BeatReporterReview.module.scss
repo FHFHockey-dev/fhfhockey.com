@@ -151,12 +151,9 @@
 
 .actionBar {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
   gap: v.$space-sm;
 
-  @media (max-width: 700px) {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
 }
 
 .card {
@@ -207,6 +204,15 @@
   font-weight: 700;
   line-height: 1;
   color: v.$primary-color;
+}
+
+.conflict {
+  margin: 0;
+  padding: v.$space-sm v.$space-md;
+  border: 1px solid v.$warning-color;
+  border-radius: v.$radius-md;
+  background: rgba(v.$warning-color, 0.1);
+  font-size: v.$font-size-sm;
 }
 
 .facts {
