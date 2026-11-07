@@ -1,0 +1,348 @@
+@use "styles/panel" as panel;
+@use "styles/vars" as v;
+
+@mixin focus-visible {
+  &:focus-visible {
+    outline: none;
+    box-shadow: v.$focus-ring;
+  }
+}
+
+.page {
+  width: v.$page-max-width;
+  margin: 0 auto;
+  padding: v.$space-sm 0 v.$space-lg;
+  box-sizing: border-box;
+  display: grid;
+  gap: v.$space-sm;
+  color: v.$text-primary;
+  background: v.$surface-0;
+  font-family: v.$font-family-primary;
+  font-size: v.$font-size-base;
+
+  kbd {
+    padding: 0 0.3em;
+    border: 1px solid v.$border-secondary;
+    border-radius: v.$radius-xs;
+    font: 600 0.72rem/1.4 v.$font-family-primary;
+    color: v.$text-secondary;
+  }
+}
+
+.pageHeader {
+  @include panel.panel-shell($radius: v.$radius-panel, $variant: soft);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: v.$space-sm v.$space-md;
+  padding: v.$space-sm v.$space-md;
+}
+
+.titleBlock {
+  flex: 1 1 320px;
+  min-width: 0;
+
+  h1 {
+    margin: 0;
+    font-family: v.$font-family-accent;
+    font-size: v.$font-size-sm;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  p {
+    margin: 2px 0 0;
+    color: v.$text-secondary;
+    font-size: v.$font-size-sm;
+  }
+}
+
+.tally {
+  display: flex;
+  gap: v.$space-md;
+  font-size: v.$font-size-sm;
+  color: v.$text-secondary;
+
+  strong {
+    color: v.$color-white;
+    font-size: v.$font-size-base;
+  }
+}
+
+.notice,
+.hint,
+.muted {
+  margin: 0;
+  color: v.$text-secondary;
+  font-size: v.$font-size-sm;
+}
+
+.error {
+  margin: 0;
+  color: v.$danger-color;
+  font-size: v.$font-size-sm;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+// Canonical button family (fhfh-styles §9.4): compact, 2px border, uppercase accent type.
+.primaryButton,
+.ghostButton,
+.dangerButton {
+  @include focus-visible;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  min-height: 2.25rem;
+  padding: 0 0.85rem;
+  border: 2px solid;
+  border-radius: v.$radius-control;
+  font: 700 0.78rem/1 v.$font-family-accent;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+}
+
+.primaryButton {
+  border-color: v.$primary-color;
+  background: rgba(v.$primary-color, 0.18);
+  color: v.$color-white;
+
+  &:hover:not(:disabled) {
+    background: rgba(v.$primary-color, 0.3);
+  }
+}
+
+.ghostButton {
+  border-color: v.$border-primary;
+  background: transparent;
+  color: v.$text-primary;
+
+  &:hover:not(:disabled) {
+    border-color: v.$primary-color;
+    background: rgba(v.$primary-color, 0.1);
+  }
+}
+
+.dangerButton {
+  border-color: v.$danger-color;
+  background: rgba(v.$danger-color, 0.12);
+  color: v.$color-white;
+
+  &:hover:not(:disabled) {
+    background: rgba(v.$danger-color, 0.24);
+  }
+}
+
+.actionBar {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: v.$space-sm;
+
+  @media (max-width: 700px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.card {
+  @include panel.panel-shell($radius: v.$radius-card);
+  display: grid;
+  gap: v.$space-md;
+  padding: v.$space-md;
+  touch-action: pan-y;
+  user-select: none;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: v.$space-md;
+}
+
+.byline {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.handle {
+  margin: 0;
+  font-size: v.$font-size-lg;
+  color: v.$color-white;
+
+  a {
+    color: inherit;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+.score {
+  display: grid;
+  justify-items: end;
+}
+
+.scoreValue {
+  font-family: v.$font-family-accent;
+  font-size: v.$font-size-xl;
+  font-weight: 700;
+  line-height: 1;
+  color: v.$primary-color;
+}
+
+.facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: v.$space-sm v.$space-lg;
+  margin: 0;
+
+  div {
+    display: grid;
+    gap: 2px;
+  }
+
+  dt {
+    color: v.$text-secondary;
+    font-size: v.$font-size-xs;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  dd {
+    margin: 0;
+    font-weight: 700;
+  }
+}
+
+.teamBars {
+  display: grid;
+  gap: v.$space-xs;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: grid;
+    grid-template-columns: 3rem minmax(0, 1fr) 6rem;
+    align-items: center;
+    gap: v.$space-sm;
+  }
+}
+
+.teamAbbrev {
+  font: 700 v.$font-size-sm v.$font-family-accent;
+  letter-spacing: 0.04em;
+}
+
+.bar {
+  height: 0.5rem;
+  border-radius: v.$radius-pill;
+  background: rgba(v.$color-white, 0.08);
+  overflow: hidden;
+
+  span {
+    display: block;
+    height: 100%;
+    background: v.$primary-color;
+  }
+}
+
+.picker {
+  display: grid;
+  gap: v.$space-sm;
+  padding: v.$space-sm;
+  border: 1px solid v.$border-secondary;
+  border-radius: v.$radius-md;
+}
+
+.teamGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(3.5rem, 1fr));
+  gap: v.$space-xs;
+}
+
+.teamChip {
+  @include focus-visible;
+  min-height: 2rem;
+  border: 1px solid v.$border-secondary;
+  border-radius: v.$radius-control;
+  background: transparent;
+  color: v.$text-primary;
+  font: 700 v.$font-size-sm v.$font-family-accent;
+  cursor: pointer;
+
+  &[aria-pressed="true"] {
+    border-color: v.$primary-color;
+    background: rgba(v.$primary-color, 0.3);
+    color: v.$color-white;
+  }
+}
+
+.pickerActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: v.$space-sm;
+}
+
+.samples {
+  display: grid;
+  gap: v.$space-sm;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sample {
+  display: grid;
+  gap: v.$space-xs;
+  padding: v.$space-sm;
+  border: 1px solid v.$border-subtle;
+  border-radius: v.$radius-md;
+  background: rgba(v.$color-white, 0.02);
+}
+
+.sampleMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: v.$space-sm;
+  color: v.$text-secondary;
+  font-size: v.$font-size-xs;
+  text-transform: capitalize;
+
+  a {
+    color: v.$text-link;
+    text-transform: none;
+  }
+}
+
+.sampleText {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 8;
+  overflow: hidden;
+  font-size: v.$font-size-sm;
+  line-height: 1.45;
+  user-select: text;
+}
