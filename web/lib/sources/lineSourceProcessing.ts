@@ -150,6 +150,8 @@ export async function fetchScheduledGamesForDate(args: {
   );
 }
 
+const OFFICIAL_REFRESH_WINDOW_MS = 12 * 60 * 60 * 1000;
+
 export async function fetchRosterEntriesByTeam(args: {
   supabase: any;
   teamIds: number[];
@@ -159,22 +161,33 @@ export async function fetchRosterEntriesByTeam(args: {
 
   const data = await fetchAllSupabasePages<any>(({ from, to }) => {
     let query = args.supabase.from("rosters")
-      .select("teamId, playerId, is_current, players!inner(fullName, lastName, position)");
+      .select("*, players!inner(fullName, lastName, position)"); // "*": works before and after rosters.official_seen_at
     if (!tweetPipelineFlags().interpretation) query = query.in("teamId", args.teamIds);
     return query.eq("seasonId", args.seasonId).eq("is_current", true)
       .order("teamId", { ascending: true }).order("playerId", { ascending: true }).range(from, to);
   });
 
+  // One nightly refresh stamps every listed membership within minutes; a stamp this far behind the
+  // team's newest one comes from an earlier refresh (the player has since left the official roster).
+  const latestOfficialSeen = new Map<number, number>();
+  for (const row of data ?? []) {
+    const seen = Date.parse((row as any).official_seen_at ?? "");
+    const teamId = Number((row as any).teamId);
+    if (Number.isFinite(seen)) latestOfficialSeen.set(teamId, Math.max(latestOfficialSeen.get(teamId) ?? seen, seen));
+  }
+
   const result = new Map<number, RosterNameEntry[]>();
   for (const row of data ?? []) {
     const teamId = Number((row as any).teamId);
     if (!Number.isFinite(teamId) || !args.teamIds.includes(teamId)) continue;
+    const seen = Date.parse((row as any).official_seen_at ?? "");
     const entry: RosterNameEntry = {
       playerId: Number((row as any).playerId),
       teamId,
       position: (row as any).players?.position ?? null,
       fullName: String((row as any).players?.fullName ?? ""),
       lastName: String((row as any).players?.lastName ?? ""),
+      ...(Number.isFinite(seen) && seen >= latestOfficialSeen.get(teamId)! - OFFICIAL_REFRESH_WINDOW_MS ? { onOfficialRoster: true } : {}),
     };
     if (!result.has(teamId)) {
       result.set(teamId, []);

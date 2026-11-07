@@ -1,5 +1,5 @@
 import type { TweetPlayerEvent } from "./tweetPlayerEvents";
-import { breakIdentityTieByRole, normalizeIdentityName, positionSlotRole, resolvePlayerIdentity, type PlayerIdentity, type PlayerSlotRole } from "./playerIdentity";
+import { breakIdentityTie, normalizeIdentityName, positionSlotRole, resolvePlayerIdentity, type PlayerIdentity, type PlayerSlotRole } from "./playerIdentity";
 
 export const TWEET_INTERPRETATION_VERSION = "2026-11-06.1";
 export type EvidenceSpan = { start: number; end: number; text: string };
@@ -86,9 +86,9 @@ function resolveRowIdentity(rawName: string, roster: PlayerIdentity[], row?: Pla
   const surnames = [...new Map(roster.filter((player) => normalizeIdentityName(player.lastName) === key)
     .map((player) => [player.playerId, player])).values()];
   if (surnames.length > 1) {
-    // A bare surname alias must not outrank another player's surname. Row position
-    // disambiguates only when every candidate has known, matching team membership.
-    const fit = breakIdentityTieByRole(surnames, row);
+    // A bare surname alias must not outrank another player's surname. Row position, then the
+    // latest official roster, disambiguates only when every candidate has the same known team.
+    const fit = breakIdentityTie(surnames, row);
     return fit ? resolvePlayerIdentity(rawName, [fit]) : { status: "ambiguous", candidates: surnames };
   }
   // Full names and initials shared by two players are settled by the slot too.

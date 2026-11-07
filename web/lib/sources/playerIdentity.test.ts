@@ -39,6 +39,50 @@ describe("player identity", () => {
     expect(resolvePlayerIdentity("Hughes", njd.map((player) => ({ ...player, teamId: null })), undefined, "es_forward").status).toBe("ambiguous");
     expect(resolvePlayerIdentity("Hughes", [njd[0]!, { ...njd[1]!, position: null }], undefined, "es_forward").status).toBe("ambiguous");
   });
+  it("breaks a same-team, same-position tie toward the one candidate on the latest official roster", () => {
+    // Alert 2026-11-07: camp leftovers keep is_current, so both namesakes stay on the team (both forwards).
+    const fla = [
+      { playerId: 8481655, fullName: "Cole Schwindt", lastName: "Schwindt", position: "C", teamId: 13, onOfficialRoster: true },
+      { playerId: 8483878, fullName: "Kai Schwindt", lastName: "Schwindt", position: "C", teamId: 13 },
+    ];
+    expect(resolvePlayerIdentity("Schwindt", fla, undefined, "es_forward")).toMatchObject({ status: "matched", basis: "surname", player: { playerId: 8481655 } });
+    expect(resolvePlayerIdentity("Schwindt", fla, 13)).toMatchObject({ status: "matched", player: { playerId: 8481655 } });
+    // The written first name still wins over the official roster.
+    expect(resolvePlayerIdentity("Kai Schwindt", fla, 13, "es_forward")).toMatchObject({ status: "matched", basis: "full_name", player: { playerId: 8483878 } });
+    // Neither or both listed, a different team, or the listed one not fitting the slot: still ambiguous.
+    expect(resolvePlayerIdentity("Schwindt", fla.map(({ onOfficialRoster: _listed, ...player }) => player), undefined, "es_forward").status).toBe("ambiguous");
+    expect(resolvePlayerIdentity("Schwindt", fla.map((player) => ({ ...player, onOfficialRoster: true })), undefined, "es_forward").status).toBe("ambiguous");
+    expect(resolvePlayerIdentity("Schwindt", [fla[0]!, { ...fla[1]!, teamId: 25 }], undefined, "es_forward").status).toBe("ambiguous");
+    expect(resolvePlayerIdentity("Schwindt", fla, undefined, "es_defense").status).toBe("ambiguous");
+    // Position still settles first: the listed defenceman does not take a forward slot from an unlisted forward.
+    const mixed = [{ ...fla[0]!, position: "D" }, fla[1]!];
+    expect(resolvePlayerIdentity("Schwindt", mixed, undefined, "es_forward")).toMatchObject({ status: "matched", player: { playerId: 8483878 } });
+  });
+  it("marks only memberships on the team's latest official refresh, before and after the stamp column exists", async () => {
+    const players = (fullName: string, position: string) => ({ fullName, lastName: fullName.split(" ")[1], position });
+    const rows: any[] = [
+      { teamId: 25, playerId: 8484829, official_seen_at: "2026-11-07T08:00:30Z", players: players("Justin Hryckowian", "C") },
+      { teamId: 25, playerId: 8486130, official_seen_at: "2026-11-02T08:00:10Z", players: players("Dylan Hryckowian", "C") },
+      { teamId: 25, playerId: 8478449, official_seen_at: "2026-11-07T08:01:00Z", players: players("Roope Hintz", "C") },
+      { teamId: 13, playerId: 8481655, official_seen_at: "2026-11-07T08:00:40Z", players: players("Cole Schwindt", "C") },
+      { teamId: 13, playerId: 8483878, official_seen_at: null, players: players("Kai Schwindt", "C") },
+    ];
+    let selected = "";
+    const supabase = { from: () => {
+      const query: any = { select: (columns: string) => { selected = columns; return query; }, eq: () => query, in: () => query, order: () => query,
+        range: async (from: number, to: number) => ({ data: rows.slice(from, to + 1), error: null }) }; return query;
+    } };
+    const roster = await fetchRosterEntriesByTeam({ supabase, teamIds: [13, 25], seasonId: 20262027 });
+    expect(selected.startsWith("*,")).toBe(true);
+    expect(roster.get(25)!.filter((entry) => entry.onOfficialRoster).map((entry) => entry.playerId)).toEqual([8484829, 8478449]);
+    expect(roster.get(13)!.filter((entry) => entry.onOfficialRoster).map((entry) => entry.playerId)).toEqual([8481655]);
+    expect(resolvePlayerIdentity("Hryckowian", roster.get(25)!, undefined, "es_forward")).toMatchObject({ status: "matched", player: { playerId: 8484829 } });
+    // Before the column exists (or before the first stamped refresh) nobody is marked and the tie stays.
+    for (const row of rows) delete row.official_seen_at;
+    const unstamped = await fetchRosterEntriesByTeam({ supabase, teamIds: [25], seasonId: 20262027 });
+    expect(unstamped.get(25)!.some((entry) => "onOfficialRoster" in entry)).toBe(false);
+    expect(resolvePlayerIdentity("Hryckowian", unstamped.get(25)!, undefined, "es_forward").status).toBe("ambiguous");
+  });
   it("applies position-group aliases only in their kind of slot", () => {
     const fla = [
       { playerId: 8479314, fullName: "Matthew Tkachuk", lastName: "Tkachuk", position: "L", teamId: 13 },

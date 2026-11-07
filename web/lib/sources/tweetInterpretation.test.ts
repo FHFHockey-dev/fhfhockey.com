@@ -1010,3 +1010,27 @@ describe("lineup ingestion alert 2026-11-07", () => {
     expect(result.changes).toMatchObject([{ kind: "lineup_in_out", playersIn: [{ playerId: 1 }], playersOut: [{ playerId: 2, evidence: { text: "Josh Anderson" } }], unresolved: [] }]);
   });
 });
+
+describe("camp namesakes (lineup alert 2026-11-07)", () => {
+  // Dylan Hryckowian kept his 09-19 camp membership; only Justin is on the official Dallas roster.
+  const dallas = [
+    [8480027, "Jason Robertson", "L"], [8478449, "Roope Hintz", "C"], [8478864, "Mikko Rantanen", "R"],
+    [8473994, "Jamie Benn", "L"], [8482740, "Wyatt Johnston", "C"], [8475794, "Tyler Seguin", "C"],
+    [8484829, "Justin Hryckowian", "C"], [8486130, "Dylan Hryckowian", "C"], [8483520, "Aatu Hyry", "C"], [8479386, "Sam Steel", "C"],
+  ].map(([playerId, fullName, position]) => ({ playerId: Number(playerId), fullName: String(fullName),
+    lastName: String(fullName).split(" ")[1]!, position: String(position), teamId: 25,
+    ...(playerId === 8486130 ? {} : { onOfficialRoster: true }) }));
+  const text = "Already seeing new top-nine after that PK:\n\nRobertson-Hintz-Rantanen\nBenn-Johnston-Seguin\nHryckowian-Hyry-Steel";
+
+  it("resolves the surname to the namesake on the latest official roster", () => {
+    const result = interpretTweetUnits(text, dallas);
+    expect(result.units.filter((u) => u.situation === "es_forward").map((u) => u.players.map((p) => p.playerId))).toEqual([
+      [8480027, 8478449, 8478864], [8473994, 8482740, 8475794], [8484829, 8483520, 8479386],
+    ]);
+    expect(result.unresolved.some((item) => item.text === "Hryckowian")).toBe(false);
+  });
+  it("keeps the tie when the official roster cannot tell them apart", () => {
+    const result = interpretTweetUnits(text, dallas.map(({ onOfficialRoster: _listed, ...player }) => player));
+    expect(result.unresolved).toEqual(expect.arrayContaining([expect.objectContaining({ text: "Hryckowian", reason: "ambiguous", candidates: [8484829, 8486130] })]));
+  });
+});

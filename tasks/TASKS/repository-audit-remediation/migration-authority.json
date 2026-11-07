@@ -1181,6 +1181,26 @@
       "migrationClass": "performance",
       "rolloutGate": "Adds cron_job_audit_run_time_idx (run_time, job_name, status, rows_affected) + ANALYZE so the daily cron report's 24h window read stops hitting the 8 s statement timeout. TJ applies by hand in the SQL editor after a pop-up approval; the CONCURRENTLY variant is in the file header.",
       "stateEvidence": "Not in Production schema_migrations (readback 2026-11-06). Applied by hand 2026-11-06 with TJ's pop-up approval (cron-report lane 1), as create index concurrently if not exists + analyze. Readback by the X-timeline Chef: cron_job_audit_run_time_idx valid and ready, 25 MB, definition matches the file. Mark applied only after an approved `supabase migration repair --status applied 20261106233000`."
+    },
+    {
+      "order": 118,
+      "path": "supabase/migrations/20261107181046_x_timeline_twscrape_shadow.sql",
+      "sha256": "3da95908ca2c626c311da8eec3704f52b54e185e107c333501d62bf7505581ce",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "applied",
+      "migrationClass": "feature",
+      "rolloutGate": "X intake layer 3 in shadow (TJ, 2026-11-07): x_timeline_ingest_secret_matches, the x_timeline_twscrape_observations shadow table (one row per source_key and tweet_id, the post's X time and the repost time) and its 14-day prune (TJ pop-up 2026-11-07). Nothing production reads changes. Applying it is its own TJ pop-up approval, separate from the ingest deploy, the Vault secret and the master push.",
+      "stateEvidence": "Production schema_migrations version 20261107181046 (x_timeline_twscrape_shadow); applied 2026-11-07 about 18:10 UTC with TJ's pop-up approval (x-fallback-gha session, Supabase MCP apply_migration). The file was renamed from 20261107160000 to match the ledger. Readback: table with RLS on and no policies, service_role SELECT and INSERT only, nothing for anon or authenticated; both functions security definer with an empty search_path, execute for service_role only; 3 indexes; 0 rows. Verified first on local PostgreSQL 15 (applies twice, dedupe, 14-day prune, grants). Vitest web/__tests__/lib/xIntakeSafetyNet.test.ts covers the edge-function handler that writes it, including that shadow mode never writes the line queues, x_timeline_shadow_posts or social_share_x_posts."
+    },
+    {
+      "order": 119,
+      "path": "supabase/migrations/20261107192933_rosters_official_seen_at.sql",
+      "sha256": "9ac1c3e74b7b5dc1490d4f0fdbb924ce4aa72931df330995606a2aa476c25b95",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "applied",
+      "migrationClass": "feature",
+      "rolloutGate": "Additive rosters.official_seen_at, stamped by upsert_current_roster_membership on every nightly update-players upsert (TJ parked ending camp memberships, 2026-11-07). is_current and ended_at are unchanged and no membership ends. Tweet identity reads it only to break same-team, same-name ties. Applied with TJ's pop-up approval (2026-11-07); the stamp fills on the first nightly update-players run after it, and the reader and tie-break ship with the next web/ release.",
+      "stateEvidence": "Production schema_migrations version 20261107192933 (rosters_official_seen_at); applied 2026-11-07 about 19:29 UTC with TJ's pop-up approval (roster-last-seen session, Supabase MCP apply_migration). The file was renamed from 20261107210000 to match the ledger. Readback: rosters.official_seen_at timestamptz present with 0 rows stamped; the function body stamps on insert and conflict; search_path pg_catalog, public, extensions, pg_temp kept; EXECUTE grants unchanged (PUBLIC, anon, authenticated, postgres, service_role). Verified first on local PostgreSQL 15 (applies twice, stamps only listed rows, a team change still ends the old row)."
     }
   ],
   "sourceExtensionApproval": {
