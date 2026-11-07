@@ -57,7 +57,7 @@ export default function Page({ game }: Props) {
         <h2 id="game-shared-ice" className={styles.gameSectionTitle}>
           Shared ice time
         </h2>
-        <LinemateMatrix id={gameId} mode="line-combination" />
+        <LinemateMatrix id={gameId} mode="line-combination" headingLevel="h3" />
       </section>
     </Container>
   );
