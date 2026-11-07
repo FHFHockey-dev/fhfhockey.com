@@ -258,6 +258,8 @@ span.source { color: vars.$text-secondary; text-decoration: none; }
   outline: 2px solid vars.$primary-color;
   outline-offset: 2px;
 }
+// Times line up in the lineup, rail and feed.
+.snapshots time { font-variant-numeric: tabular-nums; }
 .snapshots summary {
   display: flex;
   align-items: center;

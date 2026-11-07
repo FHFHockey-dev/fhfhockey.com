@@ -19,3 +19,5 @@ Scope: the snapshot block (`web/components/LineCombinations/{GameLineSnapshots,P
 | both | disclosure toggles (`ProjectedLineups.module.scss`) | ~~21px targets (2.5.8).~~ 24px with blue ▸/▾ marker. | Done | 3 |
 | both | entry heading, rail intro, group title (`GameLineSnapshots.tsx`) | ~~"Set at …" unexplained; rail intro false before puck drop; "Defence" vs the site's "Defense".~~ "Set at puck drop · …", "In-game changes, newest first. They never change the game-entry lineup.", "Defense". | Done | 4 |
 | both | rail received time (`GameLineSnapshots.tsx`) | ~~"Received" repeated the post time.~~ Shown only when it differs to the minute or the post time is unknown. | Done | 4 |
+| both | group titles (`ProjectedLineups.module.scss`) | slop-audit UPPER+TRACKED ×5: canonical panel-label style (fhfh-styles §4.2), matches the legacy grid labels. Kept. | Done (kept, brand) | 5 |
+| both | timestamps (`ProjectedLineups.module.scss`) | ~~Proportional digits.~~ `tabular-nums` on every `<time>`; near-invisible in Roboto Condensed, kept as a guard. | Done | 5 |
