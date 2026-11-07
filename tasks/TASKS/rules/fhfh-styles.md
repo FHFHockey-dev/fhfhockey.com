@@ -15,6 +15,7 @@ When styling or re-styling a page:
 5. Prefer the structure, density, and reusable UI patterns from `DraftDashboard` and the Forge Dashboard command-center template over decorative effects.
 6. Treat gradients, glow, and blur as optional emphasis tools, not as default background treatments.
 7. Keep the documentation, shared tokens, sandbox page, and production implementation aligned.
+8. Use [brand-style-cheat-sheet.md](brand-style-cheat-sheet.md) as the token quick reference. Its front matter lists every shared token with its real (sass-computed) value. This file stays the implementation spec. Section numbers here are cited from code comments and the superstyle skill, so add new material as new subsections rather than renumbering.
 
 ## 2. Non-Negotiable Rules
 
@@ -25,6 +26,8 @@ When styling or re-styling a page:
 3. Readability, hierarchy, and data scanning take priority over atmosphere.
 4. `DraftDashboard` is the primary visual reference for reusable application UI; Forge Dashboard should use it as the live command-center derivative unless a better canonical site example is explicitly documented.
 5. New page work should extend the system, not invent a parallel one.
+6. Page workspaces never run edge to edge: cap them with `max-width: v.$page-max-width` (90%) and `margin-inline: auto`, even inside `Container contentVariant="full"`.
+7. The site is dark only. There is no light theme to design for or derive.
 
 ### 2.2 Background And Surface Rules
 
@@ -63,7 +66,16 @@ Avoid these as defaults unless a documented exception is justified:
 - **HARD NO — “toenail” accent borders:** do not color only a thin top border
   whose rounded corners leave small curved hooks, claws, or nail-like fragments
   at the ends of a panel. Do not simulate an accent rail by changing one edge
-  of the panel border when the result is a hollow rounded outline.
+  of the panel border when the result is a hollow rounded outline. The same
+  ban covers a coloured `border-left` on a radiused box whose inner edge
+  curves, an inset `box-shadow` stripe on a rounded box, and the diagonal miter
+  where a coloured side border meets neutral top and bottom borders.
+- **Clipped corner radii:** a painted element that fills its parent edge to
+  edge (an `inset: 0` overlay, a full-width inner band) must not carry a radius
+  when the parent's corners are square. Use `border-radius: 0`, or the parent's
+  radius when the parent is rounded.
+- neutral-grey replacements for blue brand chrome (nav rows, grid frames); when
+  flattening a gradient, match its rendered blue with one flat tint
 - gradient-heavy page shells
 - panel backgrounds that look glossy, cloudy, or airbrushed
 - purple-on-black neon treatment as a generic fallback
@@ -121,6 +133,24 @@ Canonical implementation shape:
 }
 ```
 
+Approved left-rule variant for compact cards and notices (TJ, 2026-11-04, Game Grid sign-in card):
+
+```scss
+.noticeCard {
+  border: v.$border-subtle;
+  border-left: 4px solid var(--accent);
+  border-radius: 4px 6px 6px 4px; // left radius = rule width, so the inner edge is flat
+}
+```
+
+- Scale the rule width and the left radius together for larger cards.
+- When the other sides carry a border, the coloured left border miters into
+  them. Lay a `::before` bar over the left edge instead
+  (`top/bottom/left: -<border width>; width: 4px; border-radius: 4px 0 0 4px`)
+  and keep `border-radius: 4px 6px 6px 4px` on the card.
+- Verify the rendered close-up (left width against `border-top-left-radius`, and
+  the miter), not just the SCSS.
+
 ## 3. Codex Role And Output Expectation
 
 Role:
@@ -164,7 +194,7 @@ Page anatomy:
 Surface language:
 
 - Panels use solid dark fills, visible borders, compact radii, and restrained shadow.
-- Panel headers are darker than panel bodies, divided by a clear bottom border, and use uppercase accent typography.
+- Panel headers are a distinct band from the panel body, divided by a clear bottom border, and use uppercase accent typography. (The `panel-header` mixin paints `$background-dark` (#1a1d21), one step lighter than the `$background-medium` (≈#131518) body, so the divider does the separating.)
 - The selected/primary panel earns stronger accent borders and a restrained glow; ordinary panels remain quieter.
 - Card emphasis is structural first: left accent strip, tighter padding, and clear border before glow.
 
@@ -214,8 +244,11 @@ Do not copy these as defaults without judgment:
 
 ## 5. Source Of Truth Files
 
-- Tokens: `web/styles/vars.scss`
+- Tokens: `web/styles/vars.scss` (quick reference with computed values: `tasks/TASKS/rules/brand-style-cheat-sheet.md`)
 - Shared panel helpers: `web/styles/_panel.scss`
+- Shared compact control family: `web/styles/Controls.module.scss` (`.scope.scope`; implements §9.4–§9.6)
+- Global defaults: `web/styles/globals.css` (body `#202020`, Roboto, global input focus outline) and font loading in `web/pages/_document.tsx`
+- Site chrome: `web/components/Layout/Header/Header.module.scss`, `web/components/Layout/NavbarItems/NavbarItems.module.scss`, `web/components/Layout/Layout.module.scss` (footer)
 - Primary canonical UI reference: `web/components/DraftDashboard/*`
 - Primary Forge derivative: `web/pages/forge/dashboard.tsx` and `web/styles/ForgeDashboard.module.scss`
 - Sandbox and showcase surface: `web/pages/cssTestingGrounds.tsx` and `web/pages/cssTestingGrounds.module.scss`
@@ -367,13 +400,20 @@ Use shared tokens before writing local values.
 
 ### 7.1 Core Palette
 
-- Canvas background: `$background-dark` (`#1a1d21`)
-- Panel surface: `$background-medium`
-- Primary accent: `$primary-color` (`#14a2d2`)
+- Body background: `$background-light` (`#202020`), set on `html, body` in `globals.css`
+- Canvas / page shell, panel header and field fill: `$background-dark` (`#1a1d21`)
+- Panel surface: `$background-medium` (≈`#131518`; dark −3% lightness, so it is *darker* than the canvas despite its name)
+- Elevated surface: `$desktop-surface-elevated` (≈`#181a1e`)
+- Desktop site header: `$background-header` (≈`#0f1013`)
+- Draft workspace ramp: `$draft-canvas` ≈`#0d0f11`, `$draft-surface` ≈`#15171b`, `$draft-surface-raised` ≈`#202429`, `$draft-input` ≈`#121416`, `$draft-border` `rgba(167,180,192,.25)`
+- Primary accent: `$primary-color` (`#14a2d2`), also `$text-link`
+- Primary active fill: `$primary-color-opaque` (`rgba(20,163,210,.4)`)
 - Secondary accent: `$secondary-color` (`#07aae2`)
-- Primary text: `$text-primary`
-- Secondary text: `$text-secondary`
+- Warm highlight: `$color-gold-400` (`#ffc857`)
+- Primary text: `$text-primary` (`#cccccc`)
+- Secondary text: `$text-secondary` (`#aaaaaa`)
 - Strong header text: `$color-white`
+- Text on a solid primary fill: `$text-on-primary` (`#101214`, 6.4:1; white is 2.9:1)
 
 Usage rules:
 
@@ -389,6 +429,8 @@ Usage rules:
 3. Accent color should guide attention, not flood the interface.
 4. Buttons, toggles, active states, current-row emphasis, links, and selected cards should all feel related through the same accent family.
 5. Do not introduce arbitrary new accent colors in local modules when the shared accent system already covers the need.
+6. Gold (`$color-gold-400`) is the one sanctioned warm highlight: favourites, compare columns, the rank-1 medal (`$medal-gold`, with `$medal-silver` and `$medal-bronze`), and the `data-control-variant="gold"` control. It is not a link or general button colour. Links use `$text-link` (primary).
+7. `$secondary-color` is only 3.4:1 on the primary active fill, so active text on that fill is `$color-white` (9.2:1).
 
 ### 7.3 Border System
 
@@ -397,16 +439,24 @@ Usage rules:
 3. Border contrast should be clear enough to separate layers, but not so bright that every surface looks outlined in chrome.
 4. Active, selected, or focused states may intensify border color toward the accent family.
 5. Data pages should generally use quieter borders than the most intense dashboard treatments.
-6. Left accent borders are the canonical emphasis treatment for recommendation cards and similar spotlight modules.
+6. Left accent borders are the canonical emphasis treatment for recommendation cards and similar spotlight modules. Build them per §2.7 (filled rail or the approved left rule), never as a toenail.
+7. Border tokens:
+   - `$border-subtle`: `1px solid $border-secondary` (`#505050`), the default panel and card edge.
+   - `$border-soft`: `rgba(#505050, .7)`, for dividers, header bottoms and table rows.
+   - `$border-default`: `1px solid $border-primary` (`#404040`).
+   - `$border-separator`: `2px solid $border-accent` (secondary cyan).
+   - `$border-control`: `1px solid #6b6f75`. Form fields (inputs, selects) must use it, because the border is what marks the field and it has to reach 3:1 (WCAG 1.4.11): 3.35:1 on `$background-dark`, against 2.10:1 for `$border-subtle`.
 
 ### 7.4 State Colors
 
 Use shared semantic colors for meaning, not decorative novelty.
 
-- success / positive outcome: `$success-color`
-- warning / caution / stale context: `$warning-color`
-- danger / error / destructive context: `$danger-color`
-- info / neutral emphasis: `$info-color`
+- success / positive outcome: `$success-color` (`#00ff99`)
+- warning / caution / stale context: `$warning-color` (`#ffcc33`)
+- danger / error / destructive context: `$danger-color` (`#ff6384`), with `$danger-color-dark` (`#670c20`) for fills
+- info / neutral emphasis: `$info-color` (`#3b82f6`)
+- schedule and rank cells: `$schedule-green` / `$schedule-yellow` / `$schedule-red`, `$rank-good` / `$rank-bad`, and the `$fill-opacity-subtle`, `$fill-opacity`, `$fill-opacity-strong`, `$fill-opacity-heavy` ramp (0.15 / 0.25 / 0.4 / 0.6) through `schedule-fill()`
+- Do not use `$error-color`: it aliases the yellow `$focus-color`. Errors take `$danger-color`.
 
 Rules:
 
@@ -414,6 +464,7 @@ Rules:
 2. Warning and danger colors should be used sparingly so alerts retain meaning.
 3. Positive and negative deltas in tables or cards should use a consistent rule set across the site.
 4. State color should usually appear in text, pills, borders, small badges, or accent bars before it appears as a full-surface fill.
+5. Ranked numbers keep their coloured digits (green/yellow/red text) as well as the cell tint. Do not neutralise the text to tint-only (TJ, 2026-11-04).
 
 ### 7.5 Chart Colors
 
@@ -423,6 +474,9 @@ Rules:
 4. Gridlines, axes, legends, and chart annotations should stay subdued and readable against dark surfaces.
 5. Danger, warning, and success chart colors should preserve the same semantic meaning they have elsewhere in the UI.
 6. Avoid over-saturated chart palettes that compete with nearby cards, controls, and table states.
+7. Use the shared palette in order: `$chart-color-1..10` (primary, teal `#4bc0c0`, purple `#9b59b6`, secondary, warning, orange `#ff9f40`, soft green `#98d8a8`, light blue `#66ccff`, text, grey) and the matching `$chart-background-transparent-*` fills. Each is defined once, so never override them locally.
+8. Chart chrome: `$chart-grid-color` (`rgba(#ccc,.1)`), `$chart-tick-color` (`$text-secondary`), `$chart-tooltip-bg` / `-border` / `-text`.
+9. Position-coded series use the position colours in §7.7, not the chart auxiliaries.
 
 ### 7.6 Data-Page Softened Treatment
 
@@ -440,12 +494,17 @@ This does not mean flat and lifeless. It means restrained and consistent.
 
 Use position accents only when the UI benefits from category identity.
 
-- C: `$info-color`
-- LW: `$color-orange`
-- RW: `$color-purple`
-- D: `$color-teal`
-- G: `$success-color`
-- UTIL: `$warning-color`
+Source: the `$draft-position-colors` map in `vars.scss`. Apply it with `@include v.draft-position-colors;` and read `var(--position-color)` from `[data-position]` elements.
+
+- C: `$info-color` (`#3b82f6`)
+- LW: `$color-orange-400` (`#ff9f43`)
+- RW: `$color-violet-400` (`#a78bfa`)
+- D: `$color-brand-primary` (`#07aae2`)
+- G: `$color-teal-500` (`#00c896`)
+- UTIL / UTILITY: `$color-gold-400` (`#ffc857`)
+- FWD: `$info-color`; BENCH: `$color-neutral-400` (`#a7b4c0`)
+
+The older chart auxiliaries (`$color-orange`, `$color-purple`, `$color-teal`) are not position colours. Don't use them for position identity.
 
 Allowed uses:
 
@@ -468,13 +527,50 @@ Do not use position accents for:
 - If a reusable surface/helper pattern is missing, add or refine it in `_panel.scss`.
 - Do not bury canonical values inside feature-local SCSS modules.
 
+### 7.9 Site Chrome Colours
+
+The site header, nav and footer currently use literals rather than tokens. They
+are canonical as rendered, but tokenise them before reusing them elsewhere:
+
+| Role | Value | Where |
+| --- | --- | --- |
+| Chrome surface (mobile header, bottom nav, footer) | `#141719` | Header, Layout modules |
+| Chrome border | `#33414a` | Header, Layout, UserMenu |
+| Chrome text | `#f4f6f8` | Header, NavbarItems |
+| Nav section label / helper | `#b5c1cc` | NavbarItems, Header |
+| Footer text | `#c0cbd3` | Layout |
+| Nav link hover | `#20282e` | NavbarItems |
+| Menu item / utility hover | `#263139` | NavbarItems, Header |
+| Desktop nav active fill | `#122a34` | NavbarItems |
+| Mobile bottom-nav active fill | `#12303d` | Header |
+| Nav dropdown shell | `#181e22` | NavbarItems |
+
+### 7.10 Shape, Spacing, Sizing, Depth And Motion Tokens
+
+- Radius (use for new work): `$radius-xs` 4px, `$radius-sm` 6px (= `$radius-control`), `$radius-md` 10px (= `$radius-card` = `$radius-panel`), `$radius-lg` 16px (= `$radius-feature`), `$radius-pill` 999px. The legacy `$border-radius-sm|md|lg|xl` scale (4 / 8 / 12 / 16) is still common; don't extend it.
+- Spacing: `$space-xxs` 2px, `xs` 4, `sm` 8, `md` 16 (standard unit), `lg` 24 (`$panel-gap`), `xl` 32, `xxl` 48, `xxxl` 64. Mobile scale: `$mobile-space-*` 4 / 8 / 12 / 16 / 20 / 24 / 32 / 40.
+- Control heights: `$control-height-xs` 24, `sm` 32, `md` 34, `lg` 44. Checkbox 18px. Touch targets: `$touch-target-min` 44px, `-small` 36, `-comfortable` 48, `-large` 56, `-inline` 24 (WCAG 2.5.8 inline text buttons).
+- Tables: `$table-header-height` 35px; `$table-cell-padding` `8px 16px`; `$table-cell-padding-compact` `0.7rem 0.72rem` (mobile `0.58rem 0.6rem`). `$site-header-offset` 72px for in-page jump targets.
+- Shadows: `$shadow-panel`, `$shadow-panel-hover`, `$shadow-hover`, `$shadow-focus`. All are dark and ambient; none is a coloured glow.
+- Focus: `$focus-ring-desktop` `0 0 0 2px rgba(primary,.5)`, `$focus-ring-mobile` `0 0 0 3px rgba(primary,.8)`, and the `focus-ring-desktop` / `focus-ring-mobile` mixins.
+- Blur (overlays only): `$blur-backdrop-soft` 12px, `$blur-backdrop-strong` 28px.
+- Motion: `$hover-transition` `0.2s ease`; Controls use 150ms; `$ease-desktop-standard` `cubic-bezier(0.3,0.2,0.2,1)`, `$ease-desktop-emphasized` `cubic-bezier(0.4,0,0.2,1)`.
+- Layers: desktop `$z-desktop-sticky` 30, `-overlay` 400, `-popover` 500, `-dialog` 600, `-toast` 650. Mobile `$mobile-z-index-*` runs 1–60. The site header uses `z-index: 1000`.
+
 ## 8. Typography System
 
 Typography should establish hierarchy quickly and support dense analytics reading. It should feel technical, disciplined, and legible at a glance.
 
+Loading facts (as of 2026-11-07):
+
+- `globals.css` sets the page default to **Roboto** (loaded at 400/500/700). Any element that sets no family renders in Roboto, which is why production scans measure Roboto for long-form copy.
+- **Roboto Condensed** is loaded only at 300 and 400. **Train One** has one weight (400). `font-weight: 600/700` on either renders as browser faux-bold, so build hierarchy from size, case, tracking and colour, not weight.
+- **Martian Mono** is a variable font (100–800). **Tomorrow** (`$font-family-sporty`) is loaded but used in only two modules.
+- Size tokens: `$font-size-xxs` 0.625rem, `xs` 0.75, `sm` 0.875, `base` 1, `md` 1.125, `lg` 1.25, `xl` 1.5, `xxl` 2rem. Weight tokens: `$font-weight-regular|medium|semibold|bold`.
+
 ### 8.1 Accent Font
 
-- Token: `$font-family-accent`
+- Token: `$font-family-accent` (Train One)
 - Use for:
   - page titles
   - panel titles
@@ -489,7 +585,7 @@ Typography should establish hierarchy quickly and support dense analytics readin
 
 ### 8.2 Body Font
 
-- Token: `$font-family-primary`
+- Token: `$font-family-primary` (Roboto Condensed; set it explicitly, because the page default is Roboto)
 - Use for:
   - labels
   - descriptions
@@ -505,7 +601,7 @@ Typography should establish hierarchy quickly and support dense analytics readin
 
 ### 8.3 Numeric / Data Font
 
-- Token: `$font-family-numbers`
+- Token: `$font-family-numbers` (Martian Mono)
 - Use for:
   - table metrics
   - compact stat pills
@@ -677,6 +773,8 @@ Use for validation notes, freshness notes, provenance, or low-priority caveats.
 4. Avoid oversized subtitle copy, bloated panel headers, and decorative letter spacing on body text.
 5. Numeric alignment matters in analytics tables and metric cards; use the numeric font where it improves scanability.
 6. Uppercase is primarily a system-heading and metadata-label tool, not a default for body copy.
+7. Measured calibration points (production, 2026-11-06): nav links are 15px uppercase at 0.04em; shared control labels are 0.625rem uppercase at 0.05em; small uppercase meta labels are about 10.4–11px with 0.6–0.85px tracking; table data in Martian Mono is about 10.9–11.5px; body copy is 14–16px.
+8. In "Best Players Available" headings, only the B, P and A initials take the accent colour. Keep that even when unifying heading styles; other section headings may use the last-word-accent pattern.
 
 ## 9. Canonical Component Families
 
@@ -882,6 +980,18 @@ Rules:
 
 ### 9.4 Buttons
 
+Shared implementation: wrap a control region in the `Controls.module.scss` `.scope.scope` class instead of styling buttons locally. It provides:
+
+- Default buttons, selects, inputs and summaries: `$control-height-sm` (32px; 24px inside `tbody`), `4px 8px` padding, a 1px border, `$radius-control`, the `$draft-input` fill, `$text-primary` text and 150ms transitions. Button labels are Train One `$font-size-xxs`, uppercase, at 0.05em.
+- Hover: primary border, `rgba(primary,.08)` fill, white text.
+- Primary, pressed, expanded or open (`data-control-variant="primary"`, `aria-pressed="true"`, `aria-expanded="true"`, `details[open] > summary`): a 2px primary border, the `$primary-color-opaque` fill and white text.
+- `data-control-variant="gold"`: a 2px gold border and a `rgba(gold,.12)` fill (`.25` when hovered, pressed or checked), with gold text.
+- `data-control-size="icon"`: a square control at the control height.
+- Focus-visible: `outline: 2px solid $primary-color; outline-offset: 2px` plus `$focus-ring-desktop`. Disabled: opacity 0.5.
+- Custom 18px checkboxes, and `accent-color: $primary-color` on range inputs.
+
+`@include v.button-ghost($active)` is the mixin form of the ghost and active states for modules that can't use the scope.
+
 #### Primary Button
 
 - Strong action emphasis
@@ -1021,10 +1131,12 @@ Do not use for:
 Shared traits:
 
 - dark background
-- visible border
+- visible border: `$border-control` (`#6b6f75`, 3:1) on fields, because the edge is what identifies the field
 - compact radius
 - accent focus ring
 - compact sizing for dashboard/data pages
+
+Focus treatments in play: the Controls scope and components use a 2px primary outline plus ring (the canonical one). `globals.css` gives bare `input` and `textarea` a 3px `$focus-color` (yellow `#ffc108`) outline as a fallback. Component rules override it, so don't rely on the yellow fallback in canonical work.
 
 #### Text Input
 
@@ -1331,6 +1443,16 @@ Required shared anatomy:
 }
 ```
 
+### 9.14 Site Chrome (Header, Navigation, Footer)
+
+Production references: `Header.module.scss`, `NavbarItems.module.scss`, `Layout.module.scss`. The colours are the §7.9 literals.
+
+- Desktop (≥1100px): a sticky 64px header on `$background-header`, with a `4px double $color-white` bottom border and a diagonal primary/white/secondary stripe (`::after`, 0.5 opacity). Nav links are Roboto Condensed 15px, uppercase, 0.04em, 64px tall. Hover is `#20282e`. Active is primary text on `#122a34` with a primary bottom rule. Dropdowns are a `#181e22` shell with a soft dark shadow, `#b5c1cc` uppercase 13px section labels and `#263139` item hover.
+- Mobile (<1100px): a sticky 56px bar (`48px 1fr 48px` grid) in `#141719` with a `#33414a` bottom border, and 44px utility hit areas with `#263139` hover. A fixed five-tab bottom nav has 56px tabs and 22px icons. The active tab gets a 3px primary top rule (radius `3px 3px 6px 6px`, so no toenail), a `#12303d` fill and primary text. Content reserves `76px + safe-area` bottom padding.
+- Footer: `#141719` with a `#33414a` top border, `#c0cbd3` text, 24px padding, an inner max width of 1680px, 44px link hit areas and primary link hover.
+- Focus: `2px solid $primary-color` outlines, inset on bars (`outline-offset: -2px/-3px`).
+- This chrome is blue-tinted brand chrome. Restyles keep its blues; flatten gradients to matching flat tints, never to neutral greys.
+
 ## 10. Do / Do Not + SCSS Patterns
 
 Use these as compact execution references when styling a page from this document.
@@ -1349,6 +1471,9 @@ Do not:
 
 ```scss
 .pageShell {
+  width: 100%;
+  max-width: v.$page-max-width; // 90%: never edge to edge
+  margin-inline: auto;
   min-height: 100%;
   padding: 1rem 1rem 1.25rem;
   background: v.$background-dark;
@@ -1426,10 +1551,15 @@ Do:
 Do not:
 
 - replace the accent strip with a full-card gradient
+- give a strip narrower than the card's corner radius a matching radius; that curves its inner edge into a toenail (§2.6)
 
 ```scss
+// The panel clips a straight 4px bar, so the card's rounded corners shape the
+// strip's outer edge and its inner edge stays flat.
 .accentCard {
+  --accent: #{v.$primary-color};
   position: relative;
+  overflow: hidden;
   padding: 0.85rem 0.9rem 0.85rem 1.1rem;
   background: v.$background-medium;
   border: v.$border-subtle;
@@ -1440,11 +1570,13 @@ Do not:
   content: "";
   position: absolute;
   inset: 0 auto 0 0;
-  width: 3px;
-  background: v.$primary-color;
-  border-radius: v.$radius-md 0 0 v.$radius-md;
+  width: 4px;
+  background: var(--accent);
+  pointer-events: none;
 }
 ```
+
+For compact cards, the §2.7 left-rule variant (`border-left: 4px` with `border-radius: 4px 6px 6px 4px`) is the approved alternative.
 
 ### 10.5 Primary Button
 
@@ -1480,6 +1612,8 @@ Do not:
   box-shadow: 0 8px 16px rgba(v.$primary-color, 0.22);
 }
 ```
+
+Prefer the shared Controls scope (§9.4) over a local copy of this pattern. Its primary variant is a 2px primary border, the `$primary-color-opaque` fill and white text, with no hover shadow. Keep the shadow above only where a standalone GameGrid-style action needs it. It must never become a coloured glow on every state.
 
 ### 10.6 Segmented Toggle
 
@@ -1541,8 +1675,8 @@ Do not:
 .field {
   min-height: v.$control-height-md;
   padding: 0 v.$space-sm;
-  border: 2px solid v.$border-secondary;
-  border-radius: v.$border-radius-md;
+  border: v.$border-control; // 3:1 field edge (WCAG 1.4.11)
+  border-radius: v.$radius-control;
   background: v.$background-dark;
   color: v.$text-primary;
 }
@@ -1563,8 +1697,8 @@ Do not:
 .selectLike {
   min-height: v.$control-height-md;
   padding: v.$space-sm 2.5rem v.$space-sm v.$space-md;
-  border: 1px solid rgba(v.$color-white, 0.14);
-  border-radius: v.$border-radius-md;
+  border: v.$border-control;
+  border-radius: v.$radius-control;
   background: color.adjust(v.$background-dark, $lightness: -1%);
   color: v.$text-primary;
 }
@@ -1666,12 +1800,16 @@ Do not:
 ## 11. Layout And Spacing
 
 - Prefer CSS Grid for dashboard and data-page layouts.
-- Keep gaps disciplined and reusable.
+- Cap every page workspace at `v.$page-max-width` (90%), centred. Edge to edge is not allowed.
+- Keep gaps disciplined and reusable: `$panel-gap` (24px) between stacked dashboard panels, and 8–16px (`$space-sm`–`$space-md`) inside dense surfaces.
 - Panels and controls should read as part of one system.
+- Breakpoints: phones up to 640px (`$screen-small-max`), tablets 641–1007px, desktop from 1024px (`$screen-large`). The site navigation switches to its desktop bar at 1100px. Finer mobile steps are 320 / 375 / 414 / 480px.
+- Touch targets are at least `$touch-target-min` (44px) on mobile, or 24px for inline text buttons.
 - On mobile:
   - stack vertically
-  - reduce spacing slightly
+  - reduce spacing slightly (use the `$mobile-space-*` scale)
   - preserve the same hierarchy, not a different visual language
+  - leave room for the fixed bottom nav (`76px + safe-area` bottom padding below 1100px)
 
 ## 12. Implementation Checklist For Codex
 
@@ -1686,6 +1824,10 @@ When styling a page per this document:
 7. Treat glow, blur, and animation as optional emphasis layers.
 8. Preserve accent-color identity where category, status, or position meaning matters.
 9. If an element family is missing from this document, request a site example before finalizing a canonical rule.
+10. Cap the page workspace at `v.$page-max-width` (90%).
+11. Put controls inside the `Controls.module.scss` scope where possible, and use `$border-control` on form fields.
+12. Before closing, sweep the rendered page for toenails, side-border miters and clipped corner radii (§2.6, §2.7), and check contrast: text 4.5:1, field edges and focus indicators 3:1.
+13. After editing any `.module.scss`, confirm every selector is CSS-Modules *pure* (it contains a local class). Vitest stubs CSS, so an impure selector passes tests and only breaks the Next build.
 
 ## 13. Sandbox And Approval Workflow
 
@@ -1791,6 +1933,7 @@ For each new or revised canonical element:
 When a canonical styling decision changes, the following layers must stay aligned:
 
 - `tasks/TASKS/rules/fhfh-styles.md`
+- `tasks/TASKS/rules/brand-style-cheat-sheet.md` (token front matter and quick rules)
 - `web/styles/vars.scss`
 - `web/styles/_panel.scss`
 - `cssTestingGrounds`
@@ -1927,6 +2070,21 @@ The repository and current rendered routes are authoritative reference inputs. R
 | Page-level empty state | Homepage off-season slate and current no-results landing shells | Candidate collected; page-level canon remains Deferred |
 | Inline content callout | Rankings experimental-toolkit roadmap and current source/freshness notes | Candidate collected; content-flow callout canon remains Deferred |
 
+### 14.2 Token Drift Register (2026-11-07)
+
+These are known mismatches between this guide's intent and the shipped code. Each needs a code change, not just a docs change.
+
+| Drift | Detail | Direction |
+| --- | --- | --- |
+| Chrome literals | Header, nav, bottom nav and footer hardcode the §7.9 colours | Promote them to `$chrome-*` tokens in `vars.scss` and swap the literals |
+| Controls field contrast | `Controls.module.scss` gives fields `$border-secondary` (2.1:1) | Switch the field edges to `$border-control` (3.35:1) |
+| Two radius scales | `$radius-*` (4/6/10/16) and `$border-radius-*` (4/8/12/16) both in use (35 vs 41 files) | New work uses `$radius-*`; migrate opportunistically |
+| Two spacing scales | `$space-*` (2/4/8/16/24/32/48/64) and `$mobile-space-*` (4/8/12/16/20/24/32/40) | Keep both; don't add a third |
+| Surface naming | `$background-medium` is darker than `$background-dark`; the body is `$background-light` `#202020` | Document only (renaming would churn about 100 files) |
+| Faux-bold fonts | Roboto Condensed is loaded at 300/400 only; Train One has one weight | Either load Roboto Condensed 600/700 or stop asking for those weights |
+| `$error-color` | Aliases the yellow `$focus-color` | Use `$danger-color` for errors; retire the alias |
+| Position vs chart colours | `$draft-position-colors` differs from the legacy `$color-orange/-purple/-teal` | Position identity uses the map only |
+
 ## 15. Next Expansion Targets
 
 This file structure is now the required framework. Later sub-tasks should expand it by:
@@ -1936,3 +2094,31 @@ This file structure is now the required framework. Later sub-tasks should expand
 3. defining typography, color, and border rules more precisely
 4. adding explicit SCSS examples for each component family
 5. linking every canonical family to sandbox examples and approval workflow
+
+## 16. External Extraction Cross-Check (designmd.me, 2026-11-06)
+
+TJ ran a designmd.me extraction of production (6 pages, from `/draft-dashboard`). It measures rendered values, so it confirms what users see but cannot name tokens or intent. This is how its findings map onto the system:
+
+| designmd token | Value | Actual source | Verdict |
+| --- | --- | --- | --- |
+| `primary` | `#14A2D2` | `$primary-color` | Confirmed |
+| `canvas` | `#202020` | `globals.css` body / `$background-light` | Confirmed; added to §7.1 |
+| `surface` | `#131518` | `$background-medium` | Confirmed; documented as darker than `$background-dark` |
+| `link` | `#FFC857` | `$color-gold-400` | Mislabelled: gold is a highlight (§7.2), links are primary |
+| `body` / `muted` | `#F4F8FB` / `#D9E2EA` | `$color-brand-white` / `$color-neutral-200` | Confirmed as cool UI greys |
+| `success` | `#A7B4C0` | `$color-neutral-400` | Mislabelled: it is a neutral; success is `#00ff99` |
+| `accent-1/4/5`, `link-hover` | `#B5C1CC`, `#122A34`, `#33414A`, `#263139` | Site chrome literals | Real; now §7.9 and the drift register |
+| `accent-3` card, `card-2` violet | `#3B82F6`, `#A78BFA` | C and RW position colours | Not generic card styles; position identity only (§7.7) |
+| Train One badges | 18px | Position and title labels via `$font-family-accent` | Train One is the accent font, not decorative-only |
+| Roboto body, Roboto Condensed headings | various | `globals.css` default + `$font-family-primary` | Confirmed; loading facts added to §8 |
+| Focus `rgb(255,193,8)` 3px on inputs | | `globals.css` / `$focus-color` | Confirmed as the fallback; canonical focus is primary (§9.6) |
+| Card hover glow `0 0 18px` cyan | | Legacy page styles | Rejected as canon: no coloured glow (§2.6) |
+
+Claims that are rejected outright:
+
+- "No status ramp". The semantic tokens exist (§7.4); production simply showed few of them.
+- "Derived light theme". The site is dark only (§2.1).
+- "Spacious, breathing layouts, 48px section bands". This contradicts the density rules (§2.3).
+- "Use primary liberally". The primary is dominant but should guide attention, not flood the page (§7.2).
+
+Adopted from it: the DESIGN.md-style token front matter (now in `brand-style-cheat-sheet.md`), the measured typography calibration points (§8.5), the chrome inventory (§7.9, §9.14) and the drift list (§14.2).
