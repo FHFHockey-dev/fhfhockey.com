@@ -48,9 +48,9 @@ Own: `web/pages/lines/**`, `web/styles/Lines.module.scss` (Lines-only), Lines co
 
 ## Coverage ledger
 | page \ pass | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 |
-| /lines | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | | |
-| /lines/EDM (+TBL fixture) | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | | |
-| /lines/line-combo (+fixture) | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | | |
+| /lines | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | |
+| /lines/EDM (+TBL fixture) | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | |
+| /lines/line-combo (+fixture) | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | |
 
 ## Next
 - Pass 4 committed 2caeb7926.
@@ -60,6 +60,7 @@ Own: `web/pages/lines/**`, `web/styles/Lines.module.scss` (Lines-only), Lines co
   - N11 (pass 7, prepared early) `LineShareBars.module.scss`: visible track.
   - Background waiter bn49glne2 polls /lines/EDM every 2 min until it returns 200.
 - DB back 18:20. Pass 5 approved: N9, N10, N14 (L1–L4 untracked), N11 (track). slop-audit leftovers are brand 700 weights and the shared SurfaceWorkflowLinks.
+- Pass 5 committed 18209edb0. Pass 6 (frontend-design): N15 per-team h1 approved; index and line-combo composition OK as is.
 - (old resume note) capture N9 (/lines desktop + mobile chips), N10 (/lines/EDM strip + /drm), N11 → pop-ups → close pass 5 → pass 6 (frontend-design) → 7 (dataviz) → final sweep.
 
 ## Gotchas

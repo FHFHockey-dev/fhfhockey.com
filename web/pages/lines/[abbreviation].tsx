@@ -144,8 +144,9 @@ export default function TeamLC({
         description={`${teamName} line combinations, power-play units and shared ice time.`}
       />
       <div className={styles.top}>
+        {/* Per-team h1, same pattern as the game page ("VGK at DET LINES"). */}
         <PageTitle className={styles.title}>
-          NHL LINE <PageTitle.Highlight>COMBINATIONS</PageTitle.Highlight>
+          {mappedAbbreviation} <PageTitle.Highlight>LINES</PageTitle.Highlight>
         </PageTitle>
         <Select
           ariaLabel="Team"
