@@ -1,7 +1,7 @@
 import { cleanup, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import SourceFeed from "./SourceFeed";
-import { GENERIC_REVIEW_COPY, formatTime, reviewReasonCopy, reviewReasonsCopy, shortDate, sourceAuthor } from "./reviewReasonCopy";
+import { GENERIC_REVIEW_COPY, formatTime, originalPostUrl, reviewReasonCopy, reviewReasonsCopy, shortDate, sourceAuthor } from "./reviewReasonCopy";
 import { fixtureGame, fixtureNext } from "lib/lines/testFixtures";
 import type { SourceFeedItem } from "lib/lines/types";
 
@@ -78,9 +78,11 @@ describe("review reason copy", () => {
     expect(reviewReasonCopy("Some internal flag sentence")).toBe(GENERIC_REVIEW_COPY);
     expect(reviewReasonsCopy(["x_unknown", "y_unknown"])).toEqual([GENERIC_REVIEW_COPY]);
   });
-  it("hides relay and excluded handles as sources, case-insensitively", () => {
-    for (const handle of ["DFOFantasy", "DFO_Fantasy", "nhl_rosters", "@CcCMiddleton", "GameDayLines", "GameDayNewsNHL", "GameDayGoalies", "FHFHockey"]) expect(sourceAuthor(handle)).toBeNull();
+  it("hides the six relay handles as sources, case-insensitively, and keeps FHFHockey", () => {
+    for (const handle of ["DFOFantasy", "DFO_Fantasy", "nhl_rosters", "@CcCMiddleton", "GameDayLines", "GameDayNewsNHL", "GameDayGoalies"]) expect(sourceAuthor(handle)).toBeNull();
     expect(sourceAuthor("@TBLightning")).toBe("TBLightning");
+    expect(sourceAuthor("FHFHockey")).toBe("FHFHockey");
+    expect(originalPostUrl("FHFHockey", null, "https://x.com/FHFHockey/status/8")).toBe("https://x.com/FHFHockey/status/8");
   });
   it("uses the site's short date style for game days without a time-zone shift", () => {
     expect(shortDate("2026-11-06")).toBe("Nov 6");

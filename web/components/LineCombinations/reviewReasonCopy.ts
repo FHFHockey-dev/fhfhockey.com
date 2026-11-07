@@ -1,5 +1,5 @@
 import type { AuthorityTier, ClaimContext, LineGame } from "lib/lines/types";
-import { EXCLUDED_AUTHORS, RELAY_ACCOUNTS } from "lib/lines/authority";
+import { RELAY_ACCOUNTS } from "lib/lines/authority";
 
 // Plain-language copy for the engine's raw review reason codes (lib/lines).
 // Fans never see the codes themselves; unknown codes fall back to a generic line.
@@ -109,14 +109,14 @@ export function revisionReasonCopy(reason: string): string { return REVISION_COP
 
 // ---- Attribution (TJ, 2026-11-06): the source is always the original author of the quoted post. ----
 // Relay accounts (DFOFantasy, NHL_Rosters, CcCMiddleton, GameDayLines, GameDayNewsNHL, GameDayGoalies)
-// and excluded accounts are never shown as a source, even when the data names them as the author.
-const HIDDEN_AUTHORS = new Set([...RELAY_ACCOUNTS, ...EXCLUDED_AUTHORS, "dfo_fantasy"]);
+// are never shown as a source, even when the data names them as the author. FHFHockey is a normal source (TJ).
+const HIDDEN_AUTHORS = new Set([...RELAY_ACCOUNTS, "dfo_fantasy"]);
 const handleOf = (value: string | null | undefined) => value?.replace(/^@/, "").trim().toLowerCase() || null;
 const urlHandle = (url: string | null | undefined) => handleOf(url?.match(/^https?:\/\/(?:www\.)?(?:x|twitter)\.com\/([^/?#]+)\//i)?.[1]);
 
 export const ORIGINAL_SOURCE_PENDING = "Original source not identified";
 
-/** The handle to show as the source, or null when only a relay or excluded account is known. */
+/** The handle to show as the source, or null when only a relay account is known. */
 export function sourceAuthor(handle: string | null | undefined): string | null {
   const normal = handleOf(handle);
   return normal && !HIDDEN_AUTHORS.has(normal) ? handle!.replace(/^@/, "").trim() : null;
