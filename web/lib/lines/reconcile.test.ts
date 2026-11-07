@@ -118,6 +118,13 @@ describe("entry snapshot reconciliation", () => {
     expect(entry(claims)).toEqual(entry([...claims].reverse()));
   });
 });
+describe("goalie slot order", () => {
+  it("keeps goalie units in list-slot order (number = slot), whatever order the claims arrive in", () => {
+    const goalie = (slot: number, id: number, name: string) => fixtureClaim(`g${slot}`, { unit: { ...fixtureUnit([name], "goalie", slot), players: [{ playerId: id, name }] } });
+    const units = entry([goalie(2, 31, "Ellis"), fixtureClaim(), goalie(1, 30, "Luukkonen")]).units.filter((selection) => selection.unit.situation === "goalie");
+    expect(units.map((selection) => [selection.unit.number, selection.unit.players[0]!.name])).toEqual([[1, "Luukkonen"], [2, "Ellis"]]);
+  });
+});
 describe("independent PP defaults", () => {
   it("explicit expiry constrains current and carried PP decisions", () => {
     const claim = fixturePP(1); claim.time.effectiveUntil = "2026-10-02T00:00:00Z";
