@@ -954,3 +954,59 @@ describe("Lines IGA parser support", () => {
     expect(linked.relationships ?? []).toEqual([]);
   });
 });
+
+describe("lineup ingestion alert 2026-11-07", () => {
+  const roster = (teamId: number, rows: Array<[number, string, string]>) =>
+    rows.map(([playerId, fullName, position]) => ({ playerId, fullName, lastName: fullName.slice(fullName.indexOf(" ") + 1), position, teamId }));
+  const hurricanes = roster(12, [
+    [1, "William Carrier", "L"], [2, "Sebastian Aho", "C"], [3, "Andrei Svechnikov", "R"],
+    [4, "Nikolaj Ehlers", "L"], [5, "Logan Stankoven", "C"], [6, "Jackson Blake", "R"],
+    [7, "Taylor Hall", "L"], [8, "Mark Jankowski", "C"], [9, "Seth Jarvis", "R"],
+    [10, "Eric Robinson", "L"], [11, "Jesperi Kotkaniemi", "C"], [12, "Jordan Martinook", "L"],
+    [13, "Nicolas Deslauriers", "L"], [14, "Jordan Staal", "C"],
+    [20, "Jaccob Slavin", "D"], [21, "Jalen Chatfield", "D"], [22, "K'Andre Miller", "D"], [23, "Sean Walker", "D"],
+    [24, "Shayne Gostisbehere", "D"], [25, "Alexander Nikishin", "D"], [26, "Mike Reilly", "D"], [27, "Juuso Välimäki", "D"],
+    [30, "Pyotr Kochetkov", "G"], [31, "Brandon Bussi", "G"],
+  ]);
+  // Walt Ruff's morning-skate post (x.com/WaltRuff/status/2119090058586157195), relayed by DFOFantasy. Its text
+  // carried a "10-1 start" bullet and a two-forward extras row before the pairs.
+  const carolinaMorningSkate = [
+    "The #Canes debut their Hometown Remix jerseys tonight as they host the Blackhawks at Lenovo Center.", "",
+    "We've got some noteworthy items at morning skate:", "",
+    "• Alexander Nikishin is working next to Shayne Gostisbehere, potentially signaling his season debut.", "",
+    "• Jordan Staal (calf tear) is on the ice with the team for the first time since Oct. 11. He's working as an extra, but it's great to see him out there.", "",
+    "• Pyotr Kochetkov appears in line to start. He'll look to add to his impressive 10-1 start.", "",
+    "Carrier - Aho - Svechnikov", "Ehlers - Stankoven - Blake", "Hall - Jankowski - Jarvis", "Robinson - Kotkaniemi - Martinook",
+    "Deslauriers - Staal", "",
+    "Slavin - Chatfield", "Miller - Walker", "Gostisbehere - Nikishin", "Reilly - Välimäki", "",
+    "Kochetkov | Bussi",
+  ].join("\n");
+  const numbered = (result: ReturnType<typeof interpretTweetUnits>, situation: string) => result.units
+    .filter((unit) => unit.situation === situation).map((unit) => [unit.number, unit.players.map((player) => player.playerId)]);
+
+  it("keeps Carolina's three D pairs in order past a hyphenated prose record and the extras row", () => {
+    const result = interpretTweetUnits(carolinaMorningSkate, hurricanes);
+    expect(numbered(result, "es_forward")).toEqual([[1, [1, 2, 3]], [2, [4, 5, 6]], [3, [7, 8, 9]], [4, [10, 11, 12]]]);
+    expect(numbered(result, "es_defense")).toEqual([[1, [20, 21]], [2, [22, 23]], [3, [24, 25]]]);
+    expect(completeEvenStrengthUnits(result)).toHaveLength(7);
+    // The extras forwards and the extra pair stay out of the lineup.
+    expect(result.excludedUnits?.map((unit) => unit.players.map((player) => player.playerId))).toEqual([[13, 14], [26, 27]]);
+  });
+
+  it("never lets a separated extras row with an unknown name or a forward-defense mix take the first pair", () => {
+    for (const extras of ["Deslauriers - Noname", "Staal - Reilly"]) {
+      const text = ["Canes lines", "Carrier - Aho - Svechnikov", "Ehlers - Stankoven - Blake", "Hall - Jankowski - Jarvis",
+        "Robinson - Kotkaniemi - Martinook", "", extras, "", "Slavin - Chatfield", "Miller - Walker", "Gostisbehere - Nikishin"].join("\n");
+      expect(numbered(interpretTweetUnits(text, hurricanes), "es_defense"), extras).toEqual([[1, [20, 21]], [2, [22, 23]], [3, [24, 25]]]);
+    }
+  });
+
+  it("reads a DFO IN/OUT wrapper as one change, without 'IN' as a player or the reason and link in a name", () => {
+    const canadiens = roster(8, [[1, "Owen Beck", "C"], [2, "Josh Anderson", "R"]]);
+    const text = "#GoHabsGo lineup changes vs. TOR on Saturday: \n\nIN - Owen Beck\nOUT - Josh Anderson (personal) https://x.com/mndamico/status/2119116982951784842";
+    const result = interpretTweetUnits(text, canadiens);
+    expect(result.units).toEqual([]);
+    expect(result.unresolved).toEqual([]);
+    expect(result.changes).toMatchObject([{ kind: "lineup_in_out", playersIn: [{ playerId: 1 }], playersOut: [{ playerId: 2, evidence: { text: "Josh Anderson" } }], unresolved: [] }]);
+  });
+});

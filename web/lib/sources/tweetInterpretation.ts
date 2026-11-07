@@ -165,6 +165,10 @@ const CHANGE_PATTERNS: Array<{ kind: "pp_replace" | "in_for" | "draws_in" | "dra
   { kind: "draws_out", pattern: new RegExp(String.raw`(?<out>${NAME_LIST})\s+(?:will\s+)?(?:draws?|drawing|comes?|coming|goes|going)\s+out\s+of\s+(?:the\s+)?(?:lineup|line-up)\b`, "giu") },
 ];
 const IN_OUT_LINE = /^\s*(IN|OUT)\b\s*[:▲▽△▼⬆⬇↑↓🔼🔽➕➖+\-–—]*\s*(.+?)\s*$/u;
+function isInOutRow(line: string): boolean {
+  const row = line.match(IN_OUT_LINE);
+  return Boolean(row && /[▲▽△▼⬆⬇↑↓🔼🔽➕➖:+\-–—]/u.test(line.slice(0, line.indexOf(row[2]!))));
+}
 
 function unitNumberFrom(unit: string | undefined): { number: number | null; match: RegExpMatchArray | null } {
   if (!unit) return { number: null, match: null };
@@ -238,10 +242,11 @@ export function extractTweetUnitChanges(text: string, roster: PlayerIdentity[]):
     const lineStart = offset;
     offset += rawLine.length + 1;
     const row = rawLine.match(IN_OUT_LINE);
-    if (!row || !/[▲▽△▼⬆⬇↑↓🔼🔽➕➖:+\-–—]/u.test(rawLine.slice(0, rawLine.indexOf(row[2]!)))) continue;
+    if (!row || !isInOutRow(rawLine)) continue;
     listed ??= { kind: "lineup_in_out", scope: "change_only", situation: "lineup", number: null, explicitNumber: false, numberEvidence: null,
       playersIn: [], playersOut: [], unresolved: [], evidence: { start: lineStart, end: lineStart, text: "" } };
-    const name = row[2]!.replace(/\s*\((?:[^)]*)\)\s*$/, "");
+    // A trailing link and a reason are not part of the name: "Josh Anderson (personal) https://x.com/...".
+    const name = row[2]!.replace(/(?:\s+(?:https?:\/\/\S+|pic\.twitter\.com\/\S+))+\s*$/iu, "").replace(/\s*\((?:[^)]*)\)\s*$/, "");
     resolveNameList(name, lineStart + rawLine.indexOf(row[2]!), roster, row[1]!.toUpperCase() === "IN" ? "in" : "out", listed);
     listed.evidence.end = lineStart + rawLine.length;
   }
@@ -325,6 +330,8 @@ export function interpretTweetUnits(text: string, roster: PlayerIdentity[]): Twe
     }
     line = line.replace(/^🥅\s*/u, "");
     if (/^(?:RT\s+@|#|@|https?:)/i.test(line)) { flush(); continue; }
+    // "IN - Name" / "OUT - Name" rows are change records (extractTweetUnitChanges), not units: "IN" is not a player.
+    if (isInOutRow(line)) { flush(); continue; }
     const extras = line.match(/^(.+?)\s+(?:are|is)\s+(?:the\s+)?extras?[.!]?$/i);
     if (extras) line = extras[1]!.trim();
     // After the even-strength rows, a lone one-name line ("UPL", "Ellis") is a goalie slot unless it names a skater.
@@ -350,8 +357,15 @@ export function interpretTweetUnits(text: string, roster: PlayerIdentity[]): Twe
     }
     const roles = hits?.map((hit) => playerPositionRole(hit.player)) ?? [];
     const positiveRole = roles.length && roles.every((role) => role === roles[0]) ? roles[0] : null;
-    const reviewShape: EvenStrengthRow | null = sawStructure && /[-–—/]/.test(line)
+    // Only a row of names has a review shape: prose with a hyphen ("his 10-1 start") is not a pair and takes no slot.
+    const nameRow = /^[\p{L}.'’\s–—/-]+$/u.test(line) && line.length < 90 && !PROSE.test(line);
+    let reviewShape: EvenStrengthRow | null = sawStructure && nameRow && /[-–—/]/.test(line)
       ? line.split(/[-–—/]/).length >= 3 ? "es_forward" : "es_defense" : null;
+    // A two-name row with a forward in it is an extras row ("Deslauriers - Staal"), never a D pair: it claims no D slot.
+    if (reviewShape === "es_defense" && line.split(/[-–—/]/).some((token) => {
+      const resolution = resolvePlayerIdentity(token.trim(), roster);
+      return resolution.status === "matched" && playerPositionRole(resolution.player) === "es_forward";
+    })) reviewShape = null;
     let rowKind: EvenStrengthRow | null = null;
     if (lineSituation !== "pp" && lineSituation !== "pk" && lineSituation !== "scratch" && lineSituation !== "injury") {
       if (explicitEsHeading) rowKind = sectionRole as EvenStrengthRow;

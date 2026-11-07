@@ -829,6 +829,38 @@ function resolveTeamFromRosterDensity(args: {
     : null;
 }
 
+/**
+ * "Cole Reinhardt: Line Change: Reinhardt will draw back into the lineup vs. Washington" is news about the lead player:
+ * the subject is the one team whose roster has that exact full name. A team named only after "vs.", "against", "at" or
+ * "@" is the opponent. Any other team mention (a trade destination, a second team) leaves the existing rules to decide.
+ */
+function resolveTeamFromLeadPlayerItem(args: {
+  text: string;
+  teams: TeamDirectoryEntry[];
+  rosterByTeam: Map<number, RosterNameEntry[]>;
+}): TeamDirectoryEntry | null {
+  const body = args.text.replace(/^RT\s+@[^:]+:\s*/i, "");
+  const lead = body.match(/^([^\n:]{3,40}):\s/)?.[1];
+  if (!lead) return null;
+  const leadKey = normalizeTextKey(lead);
+  const owners = args.teams.filter((team) =>
+    (args.rosterByTeam.get(team.id) ?? []).some((entry) => normalizeTextKey(entry.fullName) === leadKey));
+  if (owners.length !== 1) return null;
+  const subject = owners[0]!;
+  let rest = ` ${normalizeTextKey(body.slice(lead.length + 1))} `;
+  for (const team of args.teams) {
+    if (team.id === subject.id) continue;
+    const labels = [
+      ...buildTeamTextLabels(team),
+      ...Object.entries(NHL_TEXT_HINTS).filter(([, abbreviation]) => abbreviation === team.abbreviation).map(([hint]) => normalizeTextKey(hint)),
+    ].filter(Boolean).sort((left, right) => right.length - left.length).map(escapeRegExp);
+    if (labels.length) rest = rest.replace(new RegExp(`\\s(?:vs|versus|against|at|@)\\s*(?:the\\s+)?(?:${labels.join("|")})(?=\\s)`, "g"), " ");
+  }
+  const otherMention = findLabelMatchedTeams(rest, args.teams).some((team) => team.id !== subject.id)
+    || (findTeamMentionInText(rest, args.teams)?.id ?? subject.id) !== subject.id;
+  return otherMention ? null : subject;
+}
+
 export function resolveLinesCccTeam(args: {
   text: string;
   teams: TeamDirectoryEntry[];
@@ -856,6 +888,8 @@ export function resolveLinesCccTeam(args: {
     if (rosterDensityTeam) {
       return rosterDensityTeam;
     }
+    const leadPlayerTeam = resolveTeamFromLeadPlayerItem({ text: args.text, teams: args.teams, rosterByTeam: args.rosterByTeam });
+    if (leadPlayerTeam) return leadPlayerTeam;
   }
 
   if (tweetPipelineFlags().interpretation && args.rosterByTeam) {
