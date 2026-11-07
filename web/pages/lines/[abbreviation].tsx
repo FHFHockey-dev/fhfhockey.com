@@ -339,6 +339,10 @@ export default function TeamLC({
             id={lineCombinations.game.id}
             mode="line-combination"
             teamId={lineCombinations.game.teamId ?? sourceTeamMeta.id}
+            headingLevel="h3"
+            labelGrid
+            wideNames
+            controlsAlign="start"
           />
         </section>
 

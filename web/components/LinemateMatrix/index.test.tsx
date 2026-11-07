@@ -184,6 +184,33 @@ describe("LinemateMatrix", () => {
     expect(screen.queryByText("Home")).toBeNull();
   });
 
+  it("keeps h4 team headings and an unlabelled, centred grid by default", () => {
+    const home = [player(10, "C"), player(11, "D")];
+    const { container } = render(<LinemateMatrixView gameInfo={[{ id: 1, name: "Home" }, { id: 2, name: "Away" }]}
+      rosters={{ 1: home, 2: [] }} toiData={{ 1: Object.values(diagonalToi(home, { 10: 100, 11: 100 })), 2: [] }}
+      mode="line-combination" onModeChanged={() => {}} />);
+    expect(screen.getByRole("heading", { level: 4, name: "Home" })).toBeTruthy();
+    expect(screen.queryByRole("heading", { level: 3 })).toBeNull();
+    expect(screen.queryByRole("img")).toBeNull();
+    expect(container.innerHTML).not.toMatch(/controlsStart|wideNames/);
+  });
+
+  it("supports h3 headings, a labelled grid, wide names and start-aligned controls when asked", () => {
+    const home = [player(10, "C"), player(11, "D")].map(p => ({ ...p, fullName: `Full ${p.name}` }));
+    const { container } = render(<LinemateMatrixView gameInfo={[{ id: 1, name: "Home" }, { id: 2, name: "Away" }]}
+      rosters={{ 1: home, 2: [] }} toiData={{ 1: Object.values(diagonalToi(home, { 10: 100, 11: 100 })), 2: [] }}
+      mode="line-combination" onModeChanged={() => {}} teamId={1}
+      headingLevel="h3" labelGrid wideNames controlsAlign="start" />);
+    expect(screen.getByRole("heading", { level: 3, name: "Home" })).toBeTruthy();
+    expect(screen.queryByRole("heading", { level: 4 })).toBeNull();
+    const grid = screen.getByRole("img");
+    expect(grid.getAttribute("aria-label")).toBe(
+      "Home shared ice time matrix, 2 skaters in line combination order: Full Player 10, Full Player 11. Brighter cells mean more shared ice time."
+    );
+    expect(container.querySelector("section#linemate-matrix-1")?.className).toMatch(/wideNames/);
+    expect(container.firstElementChild?.className).toMatch(/controlsStart/);
+  });
+
   it("keeps the standalone loading wrapper and its missing-game status", () => {
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
