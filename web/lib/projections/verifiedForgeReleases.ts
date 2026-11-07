@@ -110,6 +110,14 @@ export const VERIFIED_FORGE_PRODUCER_CLOSURES: readonly VerifiedForgeProducerClo
     verifierVersion: "forge-release-sha-verifier-v1",
     note: "Nov 7 deployed producer: 195-module exact commit closure, 0 findings; matches the stored production invocation stamp. Exclusion proof only, not forecast-quality or native-use approval.",
   },
+  {
+    closureSha256: "2676c5366cfc08fa7aaec4a1d4369e6f51caf3018bf2fca3f7d358faceb5c746",
+    commit: "d9fcc711e12d2902cd6b646ce38888a43e606f2b",
+    receipt: "tasks/artifacts/cron-pipeline-repair-2026-11-07/d9fcc711e12d2902cd6b646ce38888a43e606f2b.json",
+    receiptSha256: "1ea3060660de250e22700048d77096b2a7015dfcfc97ddf74474da02efe8730f",
+    verifierVersion: "forge-release-sha-verifier-v1",
+    note: "Isolated cron repair producer: current-team goalie priors and exact-run calibration proof, 195-module commit closure, 0 findings. Exclusion proof only, not forecast-quality or native-use approval.",
+  },
 ];
 
 const FULL_SHA = /^[0-9a-f]{40}$/, SHA256 = /^[0-9a-f]{64}$/;
