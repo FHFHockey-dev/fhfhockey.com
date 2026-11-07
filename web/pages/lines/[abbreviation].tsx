@@ -1,6 +1,5 @@
 import dynamic from "next/dynamic";
 import ProjectedLineups from "components/LineCombinations/ProjectedLineups";
-// C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\pages\lines\[abbreviation].tsx
 
 import React, { useMemo, useRef } from "react";
 import { useRouter } from "next/router";
@@ -23,6 +22,7 @@ import Custom404 from "pages/404";
 import TeamColorProvider, { useTeamColor } from "contexts/TeamColorContext";
 
 import styles from "./[abbreviation].module.scss";
+import { readableInk } from "components/LineCombinations/PlayerCard/teamInk";
 import useScreenSize from "hooks/useScreenSize";
 import { getTeamLogo, getTeams, getCurrentSeason } from "lib/NHL/server";
 import { Team } from "lib/NHL/types";
@@ -80,7 +80,7 @@ type Props = {
   teams: Team[];
 
   lineCombinations: LineCombinations | null;
-  lastUpdated: string;
+  lastUpdated: string | null;
 };
 
 export default function TeamLC({
@@ -108,67 +108,90 @@ export default function TeamLC({
   const lineComboRef = useRef<HTMLDivElement>(null);
   const downloadImage = () => {
     if (lineComboRef.current === null) return;
-    console.log("downloading...");
 
-    toPng(lineComboRef.current, { backgroundColor: "#202020" })
+    toPng(lineComboRef.current, { backgroundColor: "#1a1c21" })
       .then((dataUrl) => {
         const link = document.createElement("a");
-        link.download = `${teamName}-${new Date(
-          lastUpdated
-        ).toLocaleDateString()}-${size.screen}.png`;
+        const dateLabel = lastUpdated
+          ? new Date(lastUpdated).toLocaleDateString()
+          : "latest";
+        link.download = `${teamName}-${dateLabel}-${size.screen}.png`;
         link.href = dataUrl;
         link.click();
       })
       .catch((err) => {
-        console.log(err);
+        console.error(err);
       });
   };
 
+  const selectedGameId =
+    typeof router.query.gameId === "string" &&
+    /^[1-9]\d*$/.test(router.query.gameId)
+      ? Number(router.query.gameId)
+      : undefined;
+
   // NOTE: workaround for weird vercel client side bug
   if (!teams || !sourceTeamMeta) return <Custom404 />;
-  if (!lineCombinations) return <Container className={styles.container}>
-    <h1>{teamName} line combinations</h1>
-    <ProjectedLineups teamId={sourceTeamMeta.id} onGameChange={onGameChange} gameId={typeof router.query.gameId === "string" && /^[1-9]\d*$/.test(router.query.gameId) ? Number(router.query.gameId) : undefined} />
-    <section aria-label="Observed shared ice time"><h2>Observed shared ice time</h2><p>No observed lineup data is available yet.</p></section>
-  </Container>;
+
+  const pageTop = (
+    <>
+      <NextSeo
+        title={`FHFH | ${mappedAbbreviation} Line Combinations`}
+        description={`${teamName} line combinations, power-play units and shared ice time.`}
+      />
+      <div className={styles.top}>
+        <PageTitle className={styles.title}>
+          NHL LINE <PageTitle.Highlight>COMBINATIONS</PageTitle.Highlight>
+        </PageTitle>
+        <Select
+          ariaLabel="Team"
+          className={styles.select}
+          option={abbreviation as string}
+          options={teams.map((team) => ({
+            label: team.abbreviation,
+            value: team.abbreviation
+          }))}
+          onOptionChange={onTeamChange}
+        />
+      </div>
+      <ProjectedLineups
+        teamId={sourceTeamMeta.id}
+        onGameChange={onGameChange}
+        gameId={selectedGameId}
+      />
+    </>
+  );
+
+  if (!lineCombinations) {
+    return (
+      <Container className={styles.container}>
+        {pageTop}
+        <section className={styles.panel} aria-labelledby="lines-observed-empty">
+          <h2 id="lines-observed-empty" className={styles.sectionTitle}>
+            {teamName} last-game lineup
+          </h2>
+          <p className={styles.emptyNote}>
+            No completed game with shift data yet. Lines appear here after the
+            team&apos;s next completed game.
+          </p>
+        </section>
+      </Container>
+    );
+  }
 
   return (
     <TeamColorProvider teamName={teamName}>
-      <TeamSelect
-        className={styles.teamSelect}
-        teams={teams}
-        team={abbreviation as string}
-        onTeamChange={onTeamChange}
-      />
-
       <Container className={styles.container}>
-        <NextSeo
-          title={`FHFH | ${abbreviation} Line Combinations`}
-          description={`${abbreviation} Line Combinations`}
-        />
-        <div className={styles.top}>
-          <PageTitle className={styles.title}>
-            NHL LINE <PageTitle.Highlight>COMBINATIONS</PageTitle.Highlight>
-          </PageTitle>
-          <Select
-            ariaLabel="Team"
-            className={styles.select}
-            option={abbreviation as string}
-            options={teams.map((team) => ({
-              label: team.abbreviation,
-              value: team.abbreviation
-            }))}
-            onOptionChange={onTeamChange}
+        <nav className={styles.teamSelect} aria-label="Teams">
+          <TeamSelect
+            teams={teams}
+            team={abbreviation as string}
+            onTeamChange={onTeamChange}
           />
-        </div>
+        </nav>
+        {pageTop}
 
-        <ProjectedLineups teamId={sourceTeamMeta?.id} onGameChange={onGameChange} gameId={typeof router.query.gameId === "string" && /^[1-9]\d*$/.test(router.query.gameId) ? Number(router.query.gameId) : undefined} />
-        <section aria-label="Observed shared ice time">
-          <h2>Observed shared ice time</h2>
-          <ObservedLinemateMatrix id={lineCombinations.game.id} mode="line-combination" />
-        </section>
-        <h2>Previous lineup and player statistics</h2>
-        <div ref={lineComboRef}>
+        <div ref={lineComboRef} className={styles.lineup}>
           <Header
             sourceUrl={
               `/shiftChart?gameId=${lineCombinations.game.id}` +
@@ -176,11 +199,11 @@ export default function TeamLC({
             }
             teamName={teamName}
             teamAbbreviation={mappedAbbreviation}
-            lastUpdated={lastUpdated || new Date(2022, 10, 1).toString()}
-            onTeamLogoClick={downloadImage}
+            lastUpdated={lastUpdated}
+            onSaveImage={downloadImage}
           />
-          <Container className={styles.mainContent}>
-            <section className={styles.forwards}>
+          <div className={styles.mainContent}>
+            <section className={styles.forwards} aria-label="Forwards">
               <CategoryTitle type="large" className={styles.categoryTitle}>
                 FORWARDS
               </CategoryTitle>
@@ -210,17 +233,8 @@ export default function TeamLC({
               />
             </section>
 
-            <LineShareBars
-              lines={[
-                { label: "L1", players: lineCombinations.forwards.line1 },
-                { label: "L2", players: lineCombinations.forwards.line2 },
-                { label: "L3", players: lineCombinations.forwards.line3 },
-                { label: "L4", players: lineCombinations.forwards.line4 }
-              ]}
-            />
-
             {/* mobile only */}
-            <section className={styles.defense}>
+            <section className={styles.defense} aria-label="Defense">
               <CategoryTitle type="large">DEFENSE</CategoryTitle>
               <Line
                 className={styles.line}
@@ -240,7 +254,7 @@ export default function TeamLC({
             </section>
 
             {/* mobile only */}
-            <section className={styles.goalies}>
+            <section className={styles.goalies} aria-label="Goalies">
               <CategoryTitle type="large">GOALIES</CategoryTitle>
               <Line
                 className={styles.line}
@@ -253,7 +267,10 @@ export default function TeamLC({
               />
             </section>
 
-            <section className={styles.defenseAndGoalies}>
+            <section
+              className={styles.defenseAndGoalies}
+              aria-label="Defense and goalies"
+            >
               <CategoryTitle type="large" className={styles.categoryTitle}>
                 DEFENSE & GOALIES
               </CategoryTitle>
@@ -287,7 +304,18 @@ export default function TeamLC({
                 ]}
               />
             </section>
-          </Container>
+
+            <div className={styles.lineShare}>
+              <LineShareBars
+                lines={[
+                  { label: "L1", players: lineCombinations.forwards.line1 },
+                  { label: "L2", players: lineCombinations.forwards.line2 },
+                  { label: "L3", players: lineCombinations.forwards.line3 },
+                  { label: "L4", players: lineCombinations.forwards.line4 }
+                ]}
+              />
+            </div>
+          </div>
           {lineCombinations.game.teamId ? (
             <div className={styles.powerPlay}>
               <PowerPlayCombos
@@ -298,13 +326,32 @@ export default function TeamLC({
               />
             </div>
           ) : null}
-          <SurfaceWorkflowLinks
-            eyebrow="Deployment workflow"
-            title={`Use ${mappedAbbreviation} lines in context`}
-            description="Carry the current combinations into Team HQ, matchup, schedule, and trend decisions."
-            links={getLinesSurfaceLinks(mappedAbbreviation)}
-          />
         </div>
+
+        <section
+          className={styles.panel}
+          aria-labelledby="lines-shared-ice"
+        >
+          <h2 id="lines-shared-ice" className={styles.sectionTitle}>
+            {teamName} shared ice time, last game
+          </h2>
+          <ObservedLinemateMatrix
+            id={lineCombinations.game.id}
+            mode="line-combination"
+            teamId={lineCombinations.game.teamId ?? sourceTeamMeta.id}
+            headingLevel="h3"
+            labelGrid
+            wideNames
+            controlsAlign="start"
+          />
+        </section>
+
+        <SurfaceWorkflowLinks
+          eyebrow="Deployment workflow"
+          title={`Use ${mappedAbbreviation} lines in context`}
+          description="Carry the current combinations into Team HQ, matchup, schedule, and trend decisions."
+          links={getLinesSurfaceLinks(mappedAbbreviation)}
+        />
       </Container>
     </TeamColorProvider>
   );
@@ -391,71 +438,58 @@ export const getStaticPaths: GetStaticPaths = async () => {
 type HeaderProps = {
   teamName: string;
   teamAbbreviation: string;
-  lastUpdated: string;
+  lastUpdated: string | null;
   sourceUrl: string;
-  onTeamLogoClick: () => void;
+  onSaveImage: () => void;
 };
+
+const PANEL_SURFACE = "#1a1c21"; // v.$surface-1
 
 export function Header({
   teamName,
   teamAbbreviation,
   lastUpdated,
   sourceUrl,
-  onTeamLogoClick
+  onSaveImage
 }: HeaderProps) {
   const names = teamName.split(" ");
-  const abbreviation = teamAbbreviation;
   const color = useTeamColor();
+  const rail = readableInk(PANEL_SURFACE, [color.primary, color.secondary], 3);
+  const highlight = readableInk(PANEL_SURFACE, [color.secondary, color.jersey]);
 
   return (
     <div
       className={styles.header}
-      style={{
-        backgroundColor: color.primary,
-        color: color.secondary
-      }}
+      style={{ "--team-rail": rail } as React.CSSProperties}
     >
       <div className={styles.left}>
         <h2 className={styles.teamName}>
           {names.slice(0, -1).join(" ")}{" "}
-          <span className={styles.highlight}>{names.at(-1)}</span>
+          <span className={styles.highlight} style={{ color: highlight }}>
+            {names.at(-1)}
+          </span>
         </h2>
-        <div className={styles.time}>
-          <a href={sourceUrl} target="_blank" rel="noreferrer">
-            Updated: <TimeAgo date={lastUpdated} />
-          </a>
-        </div>
+        <p className={styles.subtitle}>
+          Last game&apos;s lines · stats from the last 10 games
+        </p>
+        {lastUpdated ? (
+          <p className={styles.time}>
+            <a href={sourceUrl}>
+              Updated <TimeAgo date={lastUpdated} />
+            </a>
+          </p>
+        ) : null}
       </div>
-      <button
-        type="button"
-        className={styles.right}
-        onClick={onTeamLogoClick}
-        aria-label={`Download ${teamName} line combinations image`}
-      >
-        <span className={styles.large}>
-          <img
-            alt={teamName}
-            src={getTeamLogo(teamAbbreviation)}
-            style={{
-              width: 120,
-              height: 72,
-              objectFit: "contain"
-            }}
-          />
-        </span>
-
-        <span className={styles.small}>
-          <img
-            alt={teamName}
-            src={getTeamLogo(teamAbbreviation)}
-            style={{
-              width: 60,
-              height: 35,
-              objectFit: "contain"
-            }}
-          />
-        </span>
-      </button>
+      <div className={styles.right}>
+        <img
+          className={styles.logo}
+          alt=""
+          src={getTeamLogo(teamAbbreviation)}
+        />
+        <button type="button" className={styles.saveButton} onClick={onSaveImage}>
+          Save image
+        </button>
+      </div>
     </div>
   );
 }

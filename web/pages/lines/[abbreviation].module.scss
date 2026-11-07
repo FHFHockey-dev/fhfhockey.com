@@ -1,15 +1,28 @@
 @use "styles/vars" as v;
 
-.teamSelect {
-  display: none;
-  margin: 0 v.$space-md;
-}
-
+// One <main>: the page Container. The workspace is capped at 90% and centred; the
+// Container's mobile bottom padding (bottom nav clearance) is kept.
+// Sticky-safe: the shared Container sets overflow-x: hidden, which makes <main> a
+// scroll container and stops position: sticky inside it. clip still cuts any
+// sideways overflow but creates no scroller.
 .container {
-  padding: 0 !important;
+  width: 100%;
+  max-width: v.$page-max-width;
+  margin-inline: auto;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  overflow-x: clip !important;
+  overflow-y: visible !important;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-md;
+
+  .teamSelect {
+    display: none;
+  }
 
   .top {
-    margin: v.$space-md v.$space-md 0;
+    margin-top: v.$space-md;
     display: flex;
     flex-direction: column;
     gap: v.$space-sm;
@@ -17,11 +30,6 @@
 
     .title {
       margin: 0;
-      font-family: v.$font-family-primary;
-      font-size: clamp(1.25rem, 4vw, 1.75rem);
-      font-weight: 400;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
     }
 
     .select {
@@ -29,100 +37,145 @@
     }
   }
 
+  .panel {
+    padding: v.$space-md;
+    border: v.$border-subtle;
+    border-radius: v.$radius-card;
+    background: v.$surface-1;
+  }
+
+  .sectionTitle {
+    margin: 0;
+    font-family: v.$font-family-primary;
+    font-size: v.$font-size-lg;
+    font-weight: 700;
+  }
+
+  .emptyNote {
+    margin: v.$space-sm 0 0;
+    color: v.$text-secondary;
+  }
+
+  .lineup {
+    display: flex;
+    flex-direction: column;
+    gap: v.$space-md;
+    background: v.$background-dark;
+  }
+
+  // Team header: flat panel with a team-colour rail (no toenail: a straight ::before bar
+  // laid over the left edge, 4px wide, matched to a 4px left radius).
   .header {
-    margin: v.$space-sm v.$space-md 0;
-    padding: v.$space-sm v.$space-md;
-    border-radius: v.$border-radius-lg;
-    border: 1px solid rgba(v.$color-white, 0.35);
-    background: linear-gradient(
-      135deg,
-      rgba(v.$background-dark, 0.85),
-      rgba(v.$background-light, 0.75)
-    );
-    box-shadow: v.$desktop-panel-shadow;
+    position: relative;
+    padding: v.$space-sm v.$space-md v.$space-sm calc(v.$space-md + 4px);
+    border: v.$border-subtle;
+    border-radius: 4px v.$radius-card v.$radius-card 4px;
+    background: v.$surface-1;
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: v.$space-md;
+
+    &::before {
+      content: "";
+      position: absolute;
+      top: -1px;
+      bottom: -1px;
+      left: -1px;
+      width: 4px;
+      border-radius: 4px 0 0 4px;
+      background: var(--team-rail, #{v.$primary-color});
+    }
 
     .left {
       display: flex;
       flex-direction: column;
       gap: v.$space-xxs;
       align-items: flex-start;
+      min-width: 0;
 
       .teamName {
         margin: 0;
         font-family: v.$font-family-primary;
-        font-size: 1.5rem;
-        letter-spacing: 0.18em;
-        text-transform: uppercase;
+        font-size: v.$font-size-lg;
+        font-weight: 400;
+        color: v.$color-white;
 
         .highlight {
-          font-family: v.$font-family-primary;
           font-weight: 700;
         }
       }
 
+      .subtitle,
       .time {
+        margin: 0;
         font-size: v.$font-size-xs;
-        letter-spacing: 0.08em;
+        color: v.$text-secondary;
+      }
+
+      .time a {
+        color: inherit;
+        text-decoration: underline;
+        text-underline-offset: 2px;
 
         &:hover {
           color: v.$primary-color;
+        }
+
+        &:focus-visible {
+          outline: 2px solid v.$primary-color;
+          outline-offset: 2px;
         }
       }
     }
 
     .right {
       display: flex;
-      align-items: center;
-      gap: v.$space-sm;
-      padding: 0;
-      border: 0;
-      background: none;
-      color: inherit;
-      font: inherit;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: v.$space-xs;
+      flex-shrink: 0;
 
-      &:focus-visible {
-        outline: 3px solid v.$focus-color;
-        outline-offset: 2px;
+      .logo {
+        width: 60px;
+        height: 36px;
+        object-fit: contain;
       }
 
-      .small {
-        display: block;
-        height: 35px;
-      }
-
-      .large {
-        display: none;
-      }
-
-      &:hover {
+      .saveButton {
+        padding: v.$space-xs v.$space-sm;
+        border: v.$border-subtle;
+        border-radius: v.$border-radius-sm;
+        background: transparent;
+        color: v.$text-primary;
+        font: inherit;
+        font-size: v.$font-size-xs;
         cursor: pointer;
+
+        &:hover {
+          border-color: v.$primary-color;
+          color: v.$color-white;
+        }
+
+        &:focus-visible {
+          outline: 2px solid v.$primary-color;
+          outline-offset: 2px;
+        }
       }
     }
   }
 
   .mainContent {
-    margin: v.$space-md;
-    margin-top: v.$space-lg;
-    padding: v.$space-lg v.$space-md;
-    border-radius: v.$border-radius-lg;
-    border: 1px solid rgba(v.$border-secondary, 0.6);
-    background: linear-gradient(
-      140deg,
-      rgba(v.$background-medium, 0.88),
-      rgba(v.$background-light, 0.78)
-    );
-    box-shadow: v.$desktop-panel-shadow;
+    padding: v.$space-md v.$space-sm;
+    border: v.$border-subtle;
+    border-radius: v.$radius-card;
+    background: v.$surface-1;
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     gap: v.$space-lg;
 
     .categoryTitle {
       padding-left: 0;
-      font-size: v.$font-size-sm;
-      letter-spacing: 0.18em;
     }
 
     .forwards,
@@ -136,72 +189,62 @@
       display: none;
     }
   }
-
-  .powerPlay {
-    margin: 0 v.$space-md v.$space-xl;
-  }
 }
 
 @media only screen and (min-width: v.$screen-large) {
-  .teamSelect {
-    display: flex;
-    justify-content: flex-end;
-    margin: v.$space-lg auto 0;
-    max-width: 1280px;
-  }
-
   .container {
-    max-width: 1280px;
-    margin: 0 auto;
+    gap: v.$space-lg;
+
+    .teamSelect {
+      display: block;
+      margin-top: v.$space-lg;
+    }
 
     .top {
+      margin-top: 0;
       flex-direction: row;
       align-items: flex-end;
       justify-content: space-between;
-      margin: v.$space-xl v.$space-lg;
-
-      .title {
-        font-size: clamp(2.5rem, 4vw, 3.25rem);
-        font-weight: 300;
-      }
 
       .select {
         display: none;
       }
     }
 
+    .panel {
+      padding: v.$space-lg;
+    }
+
     .header {
-      margin: 0 v.$space-lg;
-      padding: v.$space-md v.$space-xl;
-      border: 1px solid rgba(v.$color-white, 0.4);
+      padding: v.$space-md v.$space-lg v.$space-md calc(v.$space-lg + 4px);
 
-      .left {
-        .teamName {
-          font-size: 2.5rem;
-        }
+      .left .teamName {
+        font-size: 2rem;
+      }
 
-        .time {
-          font-size: v.$font-size-sm;
-        }
+      .left .subtitle,
+      .left .time {
+        font-size: v.$font-size-sm;
       }
 
       .right {
-        .small {
-          display: none;
-        }
+        flex-direction: row;
+        align-items: center;
+        gap: v.$space-md;
 
-        .large {
-          display: block;
+        .logo {
+          width: 120px;
           height: 72px;
         }
       }
     }
 
+    // Forwards and D/G share the row; Line Share spans the full width below them.
     .mainContent {
-      margin: v.$space-xl v.$space-lg 0;
       padding: v.$space-xl;
-      grid-template-columns: minmax(0, 2fr) minmax(0, 1.25fr);
-      align-items: flex-start;
+      grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+      align-items: start;
+      column-gap: v.$space-xl;
 
       .forwards {
         display: flex;
@@ -219,10 +262,10 @@
       .goalies {
         display: none;
       }
-    }
 
-    .powerPlay {
-      margin: v.$space-xl v.$space-lg v.$space-xxl;
+      .lineShare {
+        grid-column: 1 / -1;
+      }
     }
   }
 }

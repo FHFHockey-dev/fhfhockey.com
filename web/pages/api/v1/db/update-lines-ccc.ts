@@ -1,5 +1,6 @@
 import { claimTweetEvents, finishTweetEvents, failTweetEvents } from "lib/sources/tweetProcessingJobs";
 import { persistTweetProjectionReports, enrichTweetInjuryHistory } from "lib/sources/tweetProjectionStorage";
+import { processLineSnapshotEvidence } from "lib/lines/processor";
 import { admitTweetClaimEvaluationIntake, tweetClaimEvaluationIntakeWindow } from "lib/sources/tweetClaimEvaluationIntake";
 import { processTweetClaimShadowBatch } from "lib/sources/tweetClaimRegistry";
 import { rosterSeasonForDate } from "lib/sources/playerIdentity";
@@ -578,6 +579,7 @@ export default withCronJobAudit(
     }
     processingStage = "projection_storage";
     await persistTweetProjectionReports(req.supabase, parsedCandidates);
+    await processLineSnapshotEvidence(req.supabase, parsedCandidates, scheduledTeamIds);
     processingStage = "review_queue";
     const unresolvedNamesQueued = await persistUnresolvedPlayerNames({
       supabase: req.supabase,

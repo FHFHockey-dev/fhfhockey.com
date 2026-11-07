@@ -3,6 +3,7 @@ import clsx from "clsx";
 import supabase from "lib/supabase/client";
 import { useCurrentSeasonQuery } from "hooks/useCurrentSeason";
 import type { Database } from "lib/supabase/database-generated.types";
+import { getTeamAbbreviationById } from "lib/teamsInfo";
 import styles from "./PowerPlayCombos.module.scss";
 
 type RosterRow = Pick<
@@ -36,8 +37,19 @@ type UnitsMap = Record<number, UnitPlayer[]>;
 type UnitHistoryEntry = {
   gameId: number;
   startTime?: string | null;
+  opponent?: string | null;
   players: UnitPlayer[];
 };
+
+type SourceGame = { startTime: string | null; opponent: string | null };
+
+const opponentOf = (
+  game: { homeTeamId: number; awayTeamId: number },
+  teamId: number
+) =>
+  getTeamAbbreviationById(
+    game.homeTeamId === teamId ? game.awayTeamId : game.homeTeamId
+  ) ?? null;
 
 type UnitsHistoryMap = Record<number, UnitHistoryEntry[]>;
 
@@ -79,6 +91,7 @@ export default function PowerPlayCombos({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expandedUnit, setExpandedUnit] = useState<number | null>(null);
+  const [sourceGame, setSourceGame] = useState<SourceGame | null>(null);
 
   const dateFormatter = useMemo(
     () =>
@@ -135,6 +148,12 @@ export default function PowerPlayCombos({
         ) {
           throw new Error("Power play source context does not match the game.");
         }
+        if (!cancelled) {
+          setSourceGame({
+            startTime: currentGame.startTime ?? null,
+            opponent: opponentOf(currentGame, teamId)
+          });
+        }
 
         const { data: rosterData, error: rosterError } = await supabase
           .from("rosters")
@@ -186,7 +205,7 @@ export default function PowerPlayCombos({
             details?.lastName ??
             details?.fullName?.split(" ").slice(-1).at(0) ??
             `Player ${row.playerId}`;
-          const lastName = rawLastName ? rawLastName.toUpperCase() : "";
+          const lastName = rawLastName ?? "";
           const displayName = [initial, lastName]
             .filter(Boolean)
             .join(" ")
@@ -205,7 +224,7 @@ export default function PowerPlayCombos({
 
           return {
             playerId: row.playerId,
-            displayName: displayName || `PLAYER ${row.playerId}`,
+            displayName: displayName || `Player ${row.playerId}`,
             position: normalizedPosition,
             sweaterNumber: sweater,
             ppToi: row.PPTOI ?? 0,
@@ -233,7 +252,7 @@ export default function PowerPlayCombos({
 
           let gamesQuery = supabase
             .from("games")
-            .select("id, startTime")
+            .select("id, startTime, homeTeamId, awayTeamId")
             .or(`homeTeamId.eq.${teamId},awayTeamId.eq.${teamId}`)
             .eq("seasonId", seasonId)
             .neq("id", gameId)
@@ -251,6 +270,8 @@ export default function PowerPlayCombos({
           const previousGames = (previousGamesData ?? []) as {
             id: number;
             startTime: string;
+            homeTeamId: number;
+            awayTeamId: number;
           }[];
           const previousIds = previousGames.map((game) => game.id);
 
@@ -293,6 +314,7 @@ export default function PowerPlayCombos({
                 const entry: UnitHistoryEntry = {
                   gameId: game.id,
                   startTime: game.startTime,
+                  opponent: opponentOf(game, teamId),
                   players: ordered
                 };
 
@@ -395,13 +417,25 @@ export default function PowerPlayCombos({
     return null;
   }
 
+  const describeGame = (startTime?: string | null, opponent?: string | null) =>
+    [
+      startTime ? dateFormatter.format(new Date(startTime)) : null,
+      opponent ? `vs ${opponent}` : null
+    ]
+      .filter(Boolean)
+      .join(" ") || "the latest game";
+
   return (
     <section className={styles.wrapper}>
       <header className={styles.header}>
-        <h3 className={styles.title}>Power Play Units</h3>
+        <h3 className={styles.title}>Power play units</h3>
         <p className={styles.context}>
-          Latest groupings from game&nbsp;
-          <span className={styles.gameId}>#{gameId}</span>
+          Latest groupings from{" "}
+          {describeGame(sourceGame?.startTime, sourceGame?.opponent)}.{" "}
+          <span className={styles.legend}>
+            <span className={styles.legendSwatch} aria-hidden="true" />
+            Blue chips are defensemen.
+          </span>
         </p>
       </header>
 
@@ -432,11 +466,12 @@ export default function PowerPlayCombos({
                   <div className={styles.unitTitleGroup}>
                     <span className={styles.unitLabel}>{unitLabelText}</span>
                     <span className={styles.unitMeta}>
-                      {(units[unit] ?? []).length} skaters
+                      · {(units[unit] ?? []).length}{" "}
+                      {(units[unit] ?? []).length === 1 ? "skater" : "skaters"}
                     </span>
                   </div>
                   <span className={styles.chevron} aria-hidden>
-                    v
+                    ▾
                   </span>
                 </div>
                 <div className={styles.unitPlayers}>
@@ -477,21 +512,15 @@ export default function PowerPlayCombos({
                       </div>
                     ) : (
                       (history[unit] ?? []).map((entry) => {
-                        const formattedDate = entry.startTime
-                          ? dateFormatter.format(new Date(entry.startTime))
-                          : null;
                         return (
                           <div
                             key={entry.gameId}
                             className={styles.historyEntry}
                           >
                             <div className={styles.historyMeta}>
-                              <span>Game #{entry.gameId}</span>
-                              {formattedDate ? (
-                                <span className={styles.historyDate}>
-                                  {formattedDate}
-                                </span>
-                              ) : null}
+                              <span className={styles.historyDate}>
+                                {describeGame(entry.startTime, entry.opponent)}
+                              </span>
                             </div>
                             <div className={styles.historyPlayers}>
                               {entry.players.map((player) => (

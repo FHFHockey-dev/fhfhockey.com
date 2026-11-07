@@ -14,7 +14,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (Number.isNaN(teamId) || Number.isNaN(gameId)) return res.status(400).json({ error: "Invalid team or game ID" });
   try {
     if (lineSnapshotFlags().entryServing) {
-      if (!teamId && !gameId) return res.status(400).json({ error: "A team or game is required" });
+      if (!teamId && !gameId) return res.status(400).json({ error: "A teamId or gameId query parameter is required" });
       const response = await readGameLines(supabase, { teamId, gameId, now: new Date().toISOString() });
       if (gameId && !response.game) return res.status(404).json({ error: "Game not found for this team" });
       res.setHeader("Cache-Control", "public, s-maxage=15, stale-while-revalidate=15");

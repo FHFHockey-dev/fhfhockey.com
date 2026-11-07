@@ -41,5 +41,6 @@ export function fixtureResponse(updates = 1): GameLinesResponse {
     text: `Kucherov with Hagel/Cirelli. Holmberg/Point/Guentzel together. Update ${index + 1}.`, relationship: { kind: "continuity", playerIds: [1, 2, 3], evidence: { start: 0, end: 30, text: "Kucherov with Hagel/Cirelli" } } }));
   return { enabled: true, mode: "snapshots", status: "ready", controls: { observations: true, entryServing: true, carryForward: true }, game: fixtureGame, games: [fixtureGame, fixtureNext],
     teams: [{ teamId: 14, abbreviation: "TBL", entry, entryRevisions: [entry], fallback: null, observations, history: [warmup, ...observations],
-      ppDefaults: reconcilePP({ game: fixtureGame, teamId: 14, games: [fixtureGame, fixtureNext], claims: [fixturePP(1)], now: fixtureNow, carryForward: true }), unresolved: [], conflicts: [] }] };
+      ppDefaults: reconcilePP({ game: fixtureGame, teamId: 14, games: [fixtureGame, fixtureNext], claims: [fixturePP(1)], now: fixtureNow, carryForward: true }), unresolved: [], conflicts: [], feed: [] }],
+    entryView: { mode: "entering", frozenAt: entry.cutoff, basis: "stored" } };
 }

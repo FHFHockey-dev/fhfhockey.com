@@ -1,6 +1,16 @@
 import { fetchAllSupabasePages } from "lib/supabase/pagination";
 import { eligibleClaim, evidenceKey, mayReplace, reconcileEntry, reconcilePP } from "./reconcile";
+import type { EventMembership } from "./identity";
 import { instant, unitKey, type EntryRevision, type LineClaim, type LineGame, type PPDecision } from "./types";
+
+/** Roster intervals for players on in-game PP units, so a carried unit ends when a player leaves the roster. */
+export async function fetchCarryMemberships(supabase: any, claims: LineClaim[]): Promise<EventMembership[]> {
+  const ids = [...new Set(claims.flatMap((claim) => claim.kind === "pp" && claim.phase === "in_game" && claim.unit ? claim.unit.players.map((player) => player.playerId) : []))];
+  if (!ids.length) return [];
+  const rows = await fetchAllSupabasePages<any>(({ from, to }) => supabase.from("rosters").select("playerId,teamId,created_at,ended_at").in("playerId", ids)
+    .order("playerId").order("teamId").order("created_at").range(from, to));
+  return rows.map((row) => ({ playerId: row.playerId, teamId: row.teamId, from: row.created_at, until: row.ended_at, evidenceId: `roster:${row.playerId}:${row.teamId}:${row.created_at}:${row.ended_at ?? "open"}` }));
+}
 
 export async function appendLineEvidence(supabase: any, claims: LineClaim[], games: LineGame[]) {
   // Null ingestion instants remain in the payload; the row's capture clock is this append operation.
@@ -66,7 +76,7 @@ export async function persistLineReconciliation(supabase: any, args: { game: Lin
   for (let attempt = 0; attempt < 2; attempt++) {
     const [claims, previous] = await Promise.all([fetchLineClaims(supabase, [args.teamId], args.now), latestLineDecisions(supabase, args.game.id, args.teamId)]);
     const entry = reconcileEntry({ ...args, claims, previous: previous.entry });
-    const pp = reconcilePP({ ...args, claims, previous: previous.pp });
+    const pp = reconcilePP({ ...args, claims, previous: previous.pp, memberships: args.carryForward ? await fetchCarryMemberships(supabase, claims) : [] });
     const result = await supabase.rpc("append_line_decisions", { p_game_id: args.game.id, p_team_id: args.teamId,
       p_expected_entry_id: previous.entry?.id ?? null, p_entry: entry, p_pp: pp });
     if (result.error) throw result.error;

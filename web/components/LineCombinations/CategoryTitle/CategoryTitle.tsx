@@ -20,7 +20,11 @@ function CategoryTitle({
       })}
     >
       <div className={styles.line} />
-      <h2 className={styles.content}>{children}</h2>
+      {type === "large" ? (
+        <h3 className={styles.content}>{children}</h3>
+      ) : (
+        <p className={styles.content}>{children}</p>
+      )}
       <div className={styles.line} />
     </div>
   );

@@ -349,6 +349,16 @@ type Props = {
   id: number;
   mode: Mode;
   onModeChanged?: (newMode: Mode) => void;
+  /** Show only this team's matrix. Omit to show both teams of the game. */
+  teamId?: number;
+  /** Heading level for each team name (default h4, unchanged for existing callers). */
+  headingLevel?: "h3" | "h4";
+  /** Expose each non-compact grid as one labelled image (role="img" + aria-label listing the skaters). */
+  labelGrid?: boolean;
+  /** Wider player-name column so long names are not truncated. */
+  wideNames?: boolean;
+  /** Align the mode select and legend to the start instead of the centre. */
+  controlsAlign?: "center" | "start";
 };
 
 export const OPTIONS = [
@@ -367,7 +377,12 @@ export const OPTIONS = [
 export default function LinemateMatrix({
   id,
   mode,
-  onModeChanged = () => {}
+  onModeChanged = () => {},
+  teamId,
+  headingLevel,
+  labelGrid,
+  wideNames,
+  controlsAlign
 }: Props) {
   const [activeMode, setActiveMode] = useState<Mode>(mode);
 
@@ -382,7 +397,8 @@ export default function LinemateMatrix({
   };
 
   return <LinemateMatrixView toiData={toiData} rosters={rosters} gameInfo={gameInfo}
-    loading={loading} error={error} mode={activeMode} onModeChanged={handleModeChange} />;
+    loading={loading} error={error} mode={activeMode} onModeChanged={handleModeChange} teamId={teamId}
+    headingLevel={headingLevel} labelGrid={labelGrid} wideNames={wideNames} controlsAlign={controlsAlign} />;
 }
 
 type MatrixViewProps = {
@@ -394,11 +410,22 @@ type MatrixViewProps = {
   mode: Mode;
   onModeChanged: (mode: Mode) => void;
   compact?: boolean;
+  /** Show only this team's matrix. Omit to show both teams of the game. */
+  teamId?: number;
+  /** Heading level for each team name (default h4, unchanged for existing callers). */
+  headingLevel?: "h3" | "h4";
+  /** Expose each non-compact grid as one labelled image (role="img" + aria-label listing the skaters). */
+  labelGrid?: boolean;
+  /** Wider player-name column so long names are not truncated. */
+  wideNames?: boolean;
+  /** Align the mode select and legend to the start instead of the centre. */
+  controlsAlign?: "center" | "start";
 };
 
 export const LinemateMatrixView = memo(function LinemateMatrixView({
   toiData, rosters, gameInfo, loading = false, error = null,
-  mode: activeMode, onModeChanged: handleModeChange, compact = false
+  mode: activeMode, onModeChanged: handleModeChange, compact = false, teamId,
+  headingLevel = "h4", labelGrid = false, wideNames = false, controlsAlign = "center"
 }: MatrixViewProps) {
 
   if (!gameInfo) {
@@ -419,8 +446,12 @@ export const LinemateMatrixView = memo(function LinemateMatrixView({
     );
   }
   const [homeTeam, awayTeam] = gameInfo;
+  const shownTeams =
+    teamId === undefined
+      ? [homeTeam, awayTeam]
+      : gameInfo.filter((team) => team.id === teamId);
   return (
-    <div className={classNames(styles.shell, { [styles.compact]: compact })}>
+    <div className={classNames(styles.shell, { [styles.compact]: compact, [styles.controlsStart]: controlsAlign === "start" })}>
       <div className={styles.selectWrapper}>
         <Select
           ariaLabel="Linemate matrix mode"
@@ -430,6 +461,12 @@ export const LinemateMatrixView = memo(function LinemateMatrixView({
         />
       </div>
       {compact && <p className={styles.fullGameLabel}>Full-game shared ice time · brighter = more TOI</p>}
+      {!compact && <p className={styles.legend}>
+        Brighter cell = more shared ice time.{" "}
+        <span className={styles.legendKey}><span className={styles.legendSwatch} style={{ backgroundColor: getColor("C", "C") }} aria-hidden="true" />forward pairs</span>{" "}
+        <span className={styles.legendKey}><span className={styles.legendSwatch} style={{ backgroundColor: getColor("C", "D") }} aria-hidden="true" />forward–defense</span>{" "}
+        <span className={styles.legendKey}><span className={styles.legendSwatch} style={{ backgroundColor: getColor("D", "D") }} aria-hidden="true" />defense pairs</span>
+      </p>}
       {loading && (
         <div className={styles.status} role="status">
           Updating linemate matrix...
@@ -441,27 +478,26 @@ export const LinemateMatrixView = memo(function LinemateMatrixView({
         </div>
       )}
       <div className={styles.gridWrapper}>
-        <LinemateMatrixInternal
-          key={homeTeam.id}
-          teamId={homeTeam.id}
-          teamName={homeTeam.name}
-          roster={rosters[homeTeam.id]}
-          toiData={toiData[homeTeam.id]}
-          mode={activeMode}
-          compact={compact}
-          logo={homeTeam.logo}
-        />
-
-        <LinemateMatrixInternal
-          key={awayTeam.id}
-          teamId={awayTeam.id}
-          teamName={awayTeam.name}
-          roster={rosters[awayTeam.id]}
-          toiData={toiData[awayTeam.id]}
-          mode={activeMode}
-          compact={compact}
-          logo={awayTeam.logo}
-        />
+        {shownTeams.length === 0 ? (
+          <div className={styles.emptyState}>
+            No shared ice time for this team in that game.
+          </div>
+        ) : null}
+        {shownTeams.map((team) => (
+          <LinemateMatrixInternal
+            key={team.id}
+            teamId={team.id}
+            teamName={team.name}
+            roster={rosters[team.id]}
+            toiData={toiData[team.id]}
+            mode={activeMode}
+            compact={compact}
+            logo={team.logo}
+            headingLevel={headingLevel}
+            labelGrid={labelGrid}
+            wideNames={wideNames}
+          />
+        ))}
       </div>
     </div>
   );
@@ -576,6 +612,9 @@ type LinemateMatrixInternalProps = {
   mode: Mode;
   compact?: boolean;
   logo?: string;
+  headingLevel?: "h3" | "h4";
+  labelGrid?: boolean;
+  wideNames?: boolean;
 };
 
 export const getKey = (p1: number, p2: number) => `${[p1, p2].sort()}`;
@@ -586,8 +625,12 @@ export function LinemateMatrixInternal({
   toiData = [],
   mode,
   compact = false,
-  logo
+  logo,
+  headingLevel = "h4",
+  labelGrid = false,
+  wideNames = false
 }: LinemateMatrixInternalProps) {
+  const TeamHeading = headingLevel;
   const viewportRef = useRef<HTMLDivElement>(null);
   const viewport = useResizeObserver(viewportRef);
   const [selectedCell, setSelectedCell] = useState({ row: -1, col: -1 });
@@ -636,17 +679,17 @@ export function LinemateMatrixInternal({
   }, [table, sortedRoster]);
 
   return (
-    <section id={`linemate-matrix-${teamId}`} className={styles.container}>
+    <section id={`linemate-matrix-${teamId}`} className={classNames(styles.container, { [styles.wideNames]: wideNames })}>
       {compact ? <div className={styles.teamHeading}>
         {logo && <Image src={logo} alt="" width={40} height={40} unoptimized />}
-        <h4>{teamName}</h4>
+        <TeamHeading>{teamName}</TeamHeading>
         {compact && <div className={styles.positionFilters} role="group" aria-label={`${teamName} positions`}>
           {(["All", "F", "D"] as const).map(filter => <button key={filter} type="button"
             aria-pressed={positionFilter === filter}
             aria-label={filter === "F" ? "Forwards" : filter === "D" ? "Defense" : "All skaters"}
             onClick={() => { setPositionFilter(filter); setSelectedCell({ row: -1, col: -1 }); }}>{filter}</button>)}
         </div>}
-      </div> : <h4>{teamName}</h4>}
+      </div> : <TeamHeading>{teamName}</TeamHeading>}
       {sortedRoster.length === 0 ? (
         <div className={styles.emptyState}>No skater TOI available.</div>
       ) : null}
@@ -663,6 +706,10 @@ export function LinemateMatrixInternal({
           }
         } : undefined}
         className={classNames(styles.grid, "content")}
+        {...(labelGrid && !compact && sortedRoster.length > 0 ? {
+          role: "img",
+          "aria-label": `${teamName} shared ice time matrix, ${sortedRoster.length} skaters in ${OPTIONS.find(o => o.value === mode)?.label.toLowerCase() ?? mode} order: ${sortedRoster.map(p => p.fullName ?? p.name).join(", ")}. Brighter cells mean more shared ice time.`
+        } : {})}
         style={{
           gridTemplateRows: `var(--player-info-size) repeat( ${sortedRoster.length}, 1fr)`,
           gridTemplateColumns: `var(--player-info-size) repeat(${sortedRoster.length}, 1fr)`,

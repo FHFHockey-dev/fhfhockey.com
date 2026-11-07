@@ -162,6 +162,23 @@ describe("lineSourceProcessing", () => {
     expect(resolvePlayerIdentity("Trochy", refreshed.get(15)!)).toMatchObject({ status: "missing_player" });
   });
 
+  it("applies a team + position-group alias only on that team and in that kind of slot", async () => {
+    const aliases = [{ alias: "Hughes", player_id: 20, team_id: 1, position_group: "D" }, { alias: "Hughesy", player_id: 5, team_id: null, position_group: null }];
+    const query: any = { select: () => query, or: () => query, order: () => query, range: async () => ({ data: aliases, error: null }) };
+    const loaded = await fetchPlayerNameAliases({ supabase: { from: () => query }, teamIds: [1, 2] });
+    const roster = (teamId: number) => [
+      { playerId: 5, fullName: "Jack Hughes", lastName: "Hughes", position: "C", teamId },
+      { playerId: 20, fullName: "Luke Hughes", lastName: "Hughes", position: null, teamId },
+    ];
+    const enriched = applyPlayerNameAliasesToRosterMap({ rosterByTeam: new Map([[1, roster(1)], [2, roster(2)]]), aliases: loaded });
+    // Luke's position is unknown here, so only the scoped alias can place him in a pair.
+    expect(resolvePlayerIdentity("Hughes", enriched.get(1)!, undefined, "es_defense")).toMatchObject({ status: "matched", basis: "alias", player: { playerId: 20 } });
+    expect(resolvePlayerIdentity("Hughes", enriched.get(1)!, undefined, "es_forward").status).toBe("ambiguous");
+    expect(resolvePlayerIdentity("Hughes", enriched.get(1)!).status).toBe("ambiguous");
+    expect(resolvePlayerIdentity("Hughes", enriched.get(2)!, undefined, "es_defense").status).toBe("ambiguous");
+    expect(resolvePlayerIdentity("Hughesy", enriched.get(2)!)).toMatchObject({ status: "matched", player: { playerId: 5 } });
+  });
+
   it("preserves a resolved receipt when the identical source is queued again", async () => {
     const source = buildRow({ unmatched_names: ["Bunting"] });
     const [pending] = collectUnresolvedNamesFromLineRows([source] as any);

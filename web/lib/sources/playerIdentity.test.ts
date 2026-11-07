@@ -14,6 +14,40 @@ describe("player identity", () => {
     expect(resolvePlayerIdentity("Hughes", players).status).toBe("ambiguous");
     expect(resolvePlayerIdentity("J. Hughes", players)).toMatchObject({ status: "matched", player: { playerId: 1 } });
   });
+  it("breaks a same-team name tie by the slot's position, but not between same-position namesakes", () => {
+    const njd = [
+      { playerId: 8481559, fullName: "Jack Hughes", lastName: "Hughes", position: "C", teamId: 1 },
+      { playerId: 8482684, fullName: "Luke Hughes", lastName: "Hughes", position: "D", teamId: 1 },
+    ];
+    expect(resolvePlayerIdentity("Hughes", njd, undefined, "es_forward")).toMatchObject({ status: "matched", basis: "surname", player: { playerId: 8481559 } });
+    expect(resolvePlayerIdentity("Hughes", njd, undefined, "es_defense")).toMatchObject({ status: "matched", player: { playerId: 8482684 } });
+    expect(resolvePlayerIdentity("Hughes", njd, undefined, "goalie").status).toBe("ambiguous");
+    const van = [
+      { playerId: 8480012, fullName: "Elias Pettersson", lastName: "Pettersson", position: "C", teamId: 23 },
+      { playerId: 8483678, fullName: "Elias Pettersson", lastName: "Pettersson", position: "D", teamId: 23 },
+    ];
+    expect(resolvePlayerIdentity("Elias Pettersson", van).status).toBe("ambiguous");
+    expect(resolvePlayerIdentity("Elias Pettersson", van, 23, "es_defense")).toMatchObject({ status: "matched", basis: "full_name", player: { playerId: 8483678 } });
+    expect(resolvePlayerIdentity("E. Pettersson", van, undefined, "es_forward")).toMatchObject({ status: "matched", basis: "initial", player: { playerId: 8480012 } });
+    const fla = [
+      { playerId: 8479314, fullName: "Matthew Tkachuk", lastName: "Tkachuk", position: "L", teamId: 13 },
+      { playerId: 8480801, fullName: "Brady Tkachuk", lastName: "Tkachuk", position: "L", teamId: 13 },
+    ];
+    expect(resolvePlayerIdentity("Tkachuk", fla, undefined, "es_forward").status).toBe("ambiguous");
+    expect(resolvePlayerIdentity("M. Tkachuk", fla, undefined, "es_forward")).toMatchObject({ status: "matched", player: { playerId: 8479314 } });
+    // Unknown membership or position never lends the slot a tie-break.
+    expect(resolvePlayerIdentity("Hughes", njd.map((player) => ({ ...player, teamId: null })), undefined, "es_forward").status).toBe("ambiguous");
+    expect(resolvePlayerIdentity("Hughes", [njd[0]!, { ...njd[1]!, position: null }], undefined, "es_forward").status).toBe("ambiguous");
+  });
+  it("applies position-group aliases only in their kind of slot", () => {
+    const fla = [
+      { playerId: 8479314, fullName: "Matthew Tkachuk", lastName: "Tkachuk", position: "L", teamId: 13 },
+      { playerId: 9, fullName: "Gus Forsling", lastName: "Forsling", position: "D", teamId: 13, roleAliases: [{ alias: "Goose", role: "es_defense" as const }] },
+    ];
+    expect(resolvePlayerIdentity("Goose", fla, undefined, "es_defense")).toMatchObject({ status: "matched", basis: "alias", player: { playerId: 9 } });
+    expect(resolvePlayerIdentity("Goose", fla, undefined, "es_forward").status).toBe("missing_player");
+    expect(resolvePlayerIdentity("Goose", fla).status).toBe("missing_player");
+  });
   it("preserves compound surnames and distinguishes membership conflicts", () => {
     expect(resolvePlayerIdentity("Dower Nilsson", players)).toMatchObject({ status: "matched", player: { playerId: 3 } });
     expect(resolvePlayerIdentity("Noah Dower Nilsson", players, 1).status).toBe("conflicting_membership");

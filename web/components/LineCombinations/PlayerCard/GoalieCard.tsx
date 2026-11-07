@@ -6,6 +6,7 @@ import { GoalieStats } from "pages/lines/[abbreviation]";
 import { useTeamColor } from "contexts/TeamColorContext";
 
 import styles from "./PlayerCard.module.scss";
+import { readableInk } from "./teamInk";
 import classNames from "classnames";
 
 const UP_ARROW = "/pictures/arrow-up-green.png";
@@ -46,6 +47,11 @@ function GoalieCard({
   const names = playerName.split(" ");
 
   const color = useTeamColor();
+  // A backup with no starts would otherwise show 0-0-0 / .000 / 0.00 as if they were real stats.
+  const hasNoStarts = !rest.season?.GP && !rest.last10Games?.SV;
+  // Per-team ink that reads on the card fill (WCAG 4.5:1), e.g. EDM orange digits on navy fall back to white.
+  const numberInk = readableInk(color.primary, [color.jersey, color.secondary]);
+  const accentInk = readableInk(color.primary, [color.secondary, color.jersey]);
 
   return (
     <article
@@ -55,8 +61,8 @@ function GoalieCard({
       }}
     >
       <div className={styles.top}>
-        <h3 className={styles.names}>
-          <span className={styles.firstName} style={{ color: color.secondary }}>
+        <p className={styles.names}>
+          <span className={styles.firstName} style={{ color: accentInk }}>
             {names[0]}
           </span>
           <Link href={`/stats/player/${rest.playerId}`}>
@@ -75,51 +81,54 @@ function GoalieCard({
               )}
             </span>
           </Link>
-        </h3>
+        </p>
 
-        <div className={styles.sweaterNumber}>
-          <span style={{ color: color.secondary }}>#</span>
-          <span
-            className={styles.number}
-            style={{
-              color: color.jersey,
-              textShadow: `-1px 0 ${color.secondary}, 0 1px ${color.secondary}, 1px 0 ${color.secondary}, 0 -1px ${color.secondary}`
-            }}
-          >
-            {sweaterNumber}
-          </span>
-        </div>
+        {sweaterNumber ? (
+          <div className={styles.sweaterNumber} style={{ color: numberInk }}>
+            <span aria-hidden="true">#</span>
+            <span className={styles.number}>
+              <span className={styles.visuallyHidden}>Number </span>
+              {sweaterNumber}
+            </span>
+          </div>
+        ) : null}
       </div>
-      <CategoryTitle type="small">LAST 10 GP</CategoryTitle>
-      <ClientOnly>
-        <section className={styles.stats}>
-          {LAST10_GP_STATS_CONFIG.map((stat) => (
-            <div key={stat.key} className={styles.stat}>
-              <div className={styles.label}>{stat.label}</div>
-              <div className={styles.value} style={{ color: color.secondary }}>
-                {"format" in stat
-                  ? stat.format(rest.last10Games[stat.key] || 0)
-                  : rest.last10Games[stat.key] || 0}
-              </div>
-            </div>
-          ))}
-        </section>
-      </ClientOnly>
-      <CategoryTitle type="small">SEASON</CategoryTitle>
-      <ClientOnly>
-        <section className={styles.stats}>
-          {SEASON_STATS_CONFIG.map((stat) => (
-            <div key={stat.key} className={styles.stat}>
-              <div className={styles.label}>{stat.label}</div>
-              <div className={styles.value} style={{ color: color.secondary }}>
-                {"format" in stat
-                  ? stat.format(rest.season[stat.key] || 0)
-                  : rest.season[stat.key] || 0}
-              </div>
-            </div>
-          ))}
-        </section>
-      </ClientOnly>
+      {hasNoStarts ? (
+        <p className={styles.noStarts}>No starts yet this season</p>
+      ) : (
+        <>
+          <CategoryTitle type="small">LAST 10</CategoryTitle>
+          <ClientOnly>
+            <section className={styles.stats}>
+              {LAST10_GP_STATS_CONFIG.map((stat) => (
+                <div key={stat.key} className={styles.stat}>
+                  <div className={styles.label}>{stat.label}</div>
+                  <div className={styles.value} style={{ color: accentInk }}>
+                    {"format" in stat
+                      ? stat.format(rest.last10Games[stat.key] || 0)
+                      : rest.last10Games[stat.key] || 0}
+                  </div>
+                </div>
+              ))}
+            </section>
+          </ClientOnly>
+          <CategoryTitle type="small">SEASON</CategoryTitle>
+          <ClientOnly>
+            <section className={styles.stats}>
+              {SEASON_STATS_CONFIG.map((stat) => (
+                <div key={stat.key} className={styles.stat}>
+                  <div className={styles.label}>{stat.label}</div>
+                  <div className={styles.value} style={{ color: accentInk }}>
+                    {"format" in stat
+                      ? stat.format(rest.season[stat.key] || 0)
+                      : rest.season[stat.key] || 0}
+                  </div>
+                </div>
+              ))}
+            </section>
+          </ClientOnly>
+        </>
+      )}
     </article>
   );
 }

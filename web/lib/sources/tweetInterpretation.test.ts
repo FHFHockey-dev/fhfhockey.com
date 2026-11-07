@@ -4,7 +4,7 @@ import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { classifyGameDayTweet } from "./lineupSourceIngestion";
-import { completeEvenStrengthUnits, interpretTweetUnits, requiresRelativeGameDateReview, segmentPlayerRow } from "./tweetInterpretation";
+import { completeEvenStrengthUnits, detectTweetLineContext, extractTweetUnitChanges, interpretTweetUnits, requiresRelativeGameDateReview, segmentPlayerRow } from "./tweetInterpretation";
 import { classifyInjuryEvent, extractInjuryTimeline, extractInjuryTimelines, extractTweetPlayerEvents, injuryAvailability } from "./tweetPlayerEvents";
 import { assignmentsFor } from "../player-forecasts/sourceObservations";
 import { buildLinesCccSourceFromIftttEvent } from "./linesCccIngestion";
@@ -818,5 +818,139 @@ describe("Oct11 verified original regressions", () => {
     const record = original("2108693031641551200");
     expect(interpretTweetUnits(record.text, record.players).units).toEqual([]);
     expect(completeEvenStrengthUnits(interpretTweetUnits(record.text, record.players))).toEqual([]);
+  });
+});
+
+describe("position settles shared names by slot", () => {
+  const roster = (teamId: number, rows: Array<[number, string, string, string]>) => rows.map(([playerId, fullName, lastName, position]) => ({ playerId, fullName, lastName, position, teamId }));
+  const devils = roster(1, [
+    [1, "Jesper Bratt", "Bratt", "L"], [2, "Nico Hischier", "Hischier", "C"], [3, "Timo Meier", "Meier", "R"],
+    [4, "Dawson Mercer", "Mercer", "C"], [5, "Jack Hughes", "Hughes", "C"], [6, "Ondrej Palat", "Palat", "L"],
+    [7, "Paul Cotter", "Cotter", "C"], [8, "Cody Glass", "Glass", "C"], [9, "Connor Brown", "Brown", "R"],
+    [10, "Evgenii Dadonov", "Dadonov", "R"], [11, "Erik Haula", "Haula", "C"], [12, "Stefan Noesen", "Noesen", "R"],
+    [20, "Luke Hughes", "Hughes", "D"], [21, "Dougie Hamilton", "Hamilton", "D"], [22, "Jonas Siegenthaler", "Siegenthaler", "D"],
+    [23, "Brett Pesce", "Pesce", "D"], [24, "Simon Nemec", "Nemec", "D"], [25, "Johnathan Kovacevic", "Kovacevic", "D"],
+    [30, "Jacob Markstrom", "Markstrom", "G"],
+  ]);
+  const devilsText = "Devils lines:\nBratt-Hischier-Meier\nMercer-Hughes-Palat\nCotter-Glass-Brown\nDadonov-Haula-Noesen\nHughes-Hamilton\nSiegenthaler-Pesce\nNemec-Kovacevic\nMarkstrom";
+  const ids = (units: ReturnType<typeof interpretTweetUnits>["units"], situation: string) =>
+    units.filter((unit) => unit.situation === situation).map((unit) => unit.players.map((player) => player.playerId));
+
+  it("reads Hughes as Jack in a forward line and Luke in the first pair, without a blank line between them", () => {
+    const result = interpretTweetUnits(devilsText, devils);
+    expect(ids(result.units, "es_forward")[1]).toEqual([4, 5, 6]);
+    expect(ids(result.units, "es_defense")).toEqual([[20, 21], [22, 23], [24, 25]]);
+    expect(result.unresolved.filter((issue) => issue.reason === "ambiguous")).toEqual([]);
+  });
+
+  it("tells the two Elias Petterssons apart by line versus pair", () => {
+    const canucks = roster(23, [
+      [1, "Jake DeBrusk", "DeBrusk", "L"], [2, "Elias Pettersson", "Pettersson", "C"], [3, "Brock Boeser", "Boeser", "R"],
+      [4, "Quinn Hughes", "Hughes", "D"], [5, "Elias Pettersson", "Pettersson", "D"],
+    ]);
+    const result = interpretTweetUnits("Canucks lines:\nDeBrusk-Elias Pettersson-Boeser\n\nQuinn Hughes-Elias Pettersson", canucks);
+    expect(ids(result.units, "es_forward")).toEqual([[1, 2, 3]]);
+    expect(ids(result.units, "es_defense")).toEqual([[4, 5]]);
+  });
+
+  it("reads a C/G namesake in net as the goalie", () => {
+    const kings = roster(26, [[1, "Jared Slukynsky", "Slukynsky", "C"], [2, "Carter Slukynsky", "Slukynsky", "G"]]);
+    expect(interpretTweetUnits("Kings lines:\nG: Slukynsky", kings).units.filter((unit) => unit.situation === "goalie"))
+      .toMatchObject([{ players: [{ playerId: 2 }] }]);
+    expect(extractTweetPlayerEvents({ text: "Slukynsky starts in net tonight vs. Seattle.", players: kings, publishedAt: null }))
+      .toMatchObject([{ playerId: 2, kind: "goalie" }]);
+  });
+
+  it("keeps a same-position namesake ambiguous unless an initial decides it", () => {
+    const panthers = roster(13, [
+      [1, "Sam Reinhart", "Reinhart", "C"], [2, "Aleksander Barkov", "Barkov", "C"],
+      [3, "Matthew Tkachuk", "Tkachuk", "L"], [4, "Brady Tkachuk", "Tkachuk", "L"],
+    ]);
+    const bare = interpretTweetUnits("Panthers lines:\nReinhart-Barkov-Tkachuk", panthers);
+    expect(ids(bare.units, "es_forward")).toEqual([]);
+    expect(bare.unresolved).toEqual(expect.arrayContaining([expect.objectContaining({ text: "Tkachuk", reason: "ambiguous" })]));
+    expect(ids(interpretTweetUnits("Panthers lines:\nReinhart-Barkov-M. Tkachuk", panthers).units, "es_forward")).toEqual([[1, 2, 3]]);
+  });
+});
+
+describe("Lines IGA parser support", () => {
+  const sabres = [
+    { playerId: 71, fullName: "Jiri Kulich", lastName: "Kulich", position: "C", teamId: 7 },
+    { playerId: 73, fullName: "Ryan McLeod", lastName: "McLeod", position: "C", teamId: 7 },
+    { playerId: 74, fullName: "Josh Doan", lastName: "Doan", position: "R", teamId: 7 },
+    { playerId: 75, fullName: "Peyton Krebs", lastName: "Krebs", position: "C", teamId: 7 },
+    { playerId: 76, fullName: "Owen Power", lastName: "Power", position: "D", teamId: 7 },
+    { playerId: 77, fullName: "Rasmus Dahlin", lastName: "Dahlin", position: "D", teamId: 7 },
+    { playerId: 78, fullName: "Ukko-Pekka Luukkonen", lastName: "Luukkonen", position: "G", teamId: 7 },
+  ];
+  const spansMatch = (text: string, spans: Array<{ start: number; end: number; text: string }>) => {
+    for (const span of spans) expect(text.slice(span.start, span.end)).toBe(span.text);
+  };
+
+  it("marks explicit in-game cues with spans, and never treats 'now' alone as in-game", () => {
+    for (const text of ["Thompson and Tuch have been reunited", "Kulich is skating with Krebs and Doan in the 2nd", "Line change during the game: Kulich up to the top line",
+      "First three shifts of the third period:\nKulich-Krebs-Doan"]) {
+      const reading = detectTweetLineContext(text);
+      expect(reading).toMatchObject({ context: "game", phase: "in_game" });
+      expect(reading.evidence.some((cue) => cue.signal === "in_game")).toBe(true);
+      spansMatch(text, reading.evidence);
+    }
+    const sabresSwap = "Sabres: Kuluch and Krebs are now on tge No. 2 power play unit for McLeod and Doan";
+    expect(detectTweetLineContext(sabresSwap)).toMatchObject({ phase: "unknown", context: null });
+    expect(detectTweetLineContext(`At practice. ${sabresSwap}`)).toMatchObject({ context: "practice", phase: "pregame" });
+    expect(detectTweetLineContext("Kulich back on the second unit in practice, in the 2nd group")).toMatchObject({ context: "practice" });
+    expect(detectTweetLineContext("Kulich moves to the second unit power play tonight vs. Boston")).toMatchObject({ context: "game", phase: "pregame" });
+    expect(detectTweetLineContext("Sabres warmup lines\nKulich-Krebs-Doan")).toMatchObject({ context: "warmup" });
+    expect(detectTweetLineContext("Projected lines for tonight\nKulich-Krebs-Doan")).toMatchObject({ context: "projected" });
+    expect(detectTweetLineContext("Kulich in the second power play unit")).toMatchObject({ phase: "unknown" });
+    expect(interpretTweetUnits(sabresSwap, sabres).lineContext).toMatchObject({ phase: "unknown" });
+  });
+
+  it("records a PP2 swap's in and out players and unit number, keeping the typo unresolved", () => {
+    const text = "Sabres: Kuluch and Krebs are now on tge No. 2 power play unit for McLeod and Doan";
+    const result = interpretTweetUnits(text, sabres);
+    expect(result.units).toEqual([]);
+    expect(result.changes).toMatchObject([{ kind: "pp_replace", scope: "partial", situation: "pp", number: 2, explicitNumber: true,
+      playersIn: [{ playerId: 75 }], playersOut: [{ playerId: 73 }, { playerId: 74 }], unresolved: [{ text: "Kuluch", side: "in", reason: "missing_player" }] }]);
+    const change = result.changes![0]!;
+    spansMatch(text, [change.evidence, change.numberEvidence!, ...change.playersIn.map((player) => player.evidence), ...change.playersOut.map((player) => player.evidence), ...change.unresolved]);
+    expect(result.unresolved).toEqual(expect.arrayContaining([expect.objectContaining({ text: "Kuluch", reason: "missing_player", situation: "pp", number: 2 })]));
+    expect(result.changes![0]!.playersIn.map((player) => player.playerId)).not.toContain(71);
+  });
+
+  it("never invents a unit number, the rest of the unit or a displaced player's destination", () => {
+    const unnumbered = interpretTweetUnits("Sabres: Power play units today. Kulich and Krebs replace McLeod and Doan", sabres);
+    expect(unnumbered.changes).toMatchObject([{ kind: "pp_replace", situation: "pp", number: null, explicitNumber: false, numberEvidence: null,
+      playersIn: [{ playerId: 71 }, { playerId: 75 }], playersOut: [{ playerId: 73 }, { playerId: 74 }] }]);
+    expect(unnumbered.units).toEqual([]);
+    expect(interpretTweetUnits("Sabres: kulich and krebs move to the second power unit for mcleod and doan", sabres).changes)
+      .toMatchObject([{ number: 2, playersIn: [{ playerId: 71 }, { playerId: 75 }], playersOut: [{ playerId: 73 }, { playerId: 74 }] }]);
+    expect(interpretTweetUnits("Kulich moves to the top unit for McLeod", sabres).changes).toMatchObject([{ number: 1, playersIn: [{ playerId: 71 }], playersOut: [{ playerId: 73 }] }]);
+    const inFor = extractTweetUnitChanges("Krebs in for Doan tonight. Luukkonen starts.", sabres);
+    expect(inFor).toMatchObject([{ kind: "in_for", situation: "lineup", number: null, playersIn: [{ playerId: 75 }], playersOut: [{ playerId: 74 }] }]);
+    expect(extractTweetUnitChanges("Line Change: Krebs will draw back into the lineup", sabres)).toMatchObject([{ kind: "draws_in", playersIn: [{ playerId: 75 }], playersOut: [] }]);
+  });
+
+  it("reads DFO IN ▲ / OUT ▽ rows as one change-only record", () => {
+    const text = "#Sabres lineup changes vs. BOS\nIN ▲ Peyton Krebs\nIN ▲ Owen Power\nOUT ▽ Josh Doan\nOUT ▽ Ryan McLeod";
+    const [change] = extractTweetUnitChanges(text, sabres);
+    expect(change).toMatchObject({ kind: "lineup_in_out", scope: "change_only", situation: "lineup", number: null,
+      playersIn: [{ playerId: 75 }, { playerId: 76 }], playersOut: [{ playerId: 74 }, { playerId: 73 }] });
+    expect(change!.evidence.text).toBe("IN ▲ Peyton Krebs\nIN ▲ Owen Power\nOUT ▽ Josh Doan\nOUT ▽ Ryan McLeod");
+    spansMatch(text, [change!.evidence, ...change!.playersIn.map((player) => player.evidence)]);
+  });
+
+  it("reads DFO 🥅: Name ✅ and G: goalie rows and strips media links", () => {
+    const text = "#Sabres Lineup vs. BOS\nKulich - Krebs - Doan\n\nPower - Dahlin\n🥅: Luukkonen ✅";
+    const result = interpretTweetUnits(text, sabres);
+    const goalie = result.units.find((unit) => unit.situation === "goalie");
+    expect(goalie).toMatchObject({ players: [{ playerId: 78 }], complete: true, sourceMarker: { certainty: "confirmed", evidence: { text: "✅" } } });
+    spansMatch(text, [...goalie!.evidence, goalie!.sourceMarker!.evidence]);
+    expect(interpretTweetUnits("Lines\nKulich - Krebs - Doan\n🥅 Luukkonen 🅿️", sabres).units.find((unit) => unit.situation === "goalie"))
+      .toMatchObject({ players: [{ playerId: 78 }], sourceMarker: { certainty: "projected" } });
+    expect(interpretTweetUnits("Lines\nKulich - Krebs - Doan\nG: Luukkonen", sabres).units.find((unit) => unit.situation === "goalie")).toMatchObject({ players: [{ playerId: 78 }] });
+    const linked = interpretTweetUnits("Lines\nKulich - Krebs - Doan\nLuukkonen pic.twitter.com/iVLdaOV5Ir", sabres);
+    expect(linked.units.find((unit) => unit.situation === "goalie")).toMatchObject({ players: [{ playerId: 78 }] });
+    expect(linked.relationships ?? []).toEqual([]);
   });
 });

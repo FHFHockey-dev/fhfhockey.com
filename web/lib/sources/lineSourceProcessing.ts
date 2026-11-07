@@ -223,7 +223,7 @@ export async function fetchPlayerNameAliases(args: {
   teamIds: number[];
 }): Promise<PlayerNameAliasRow[]> {
   return fetchAllSupabasePages<PlayerNameAliasRow>(({ from, to }) => {
-    let query = args.supabase.from("lineup_player_name_aliases").select("alias, player_id, team_id");
+    let query = args.supabase.from("lineup_player_name_aliases").select("*"); // "*": works before and after the position_group migration
     query = args.teamIds.length > 0
       ? query.or(`team_id.is.null,team_id.in.(${args.teamIds.join(",")})`)
       : query.is("team_id", null);
