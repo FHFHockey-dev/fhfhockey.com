@@ -180,6 +180,30 @@ describe("/api/v1/db/cron-report", () => {
     expect(res.body.goalieFreshness).toEqual(coverage);
     expect(cronAuditEmailMock).toHaveBeenCalledWith(expect.objectContaining({ goalieFreshness: coverage }));
   });
+  it.each([
+    { name: "update-player-underlying-stats-yesterday", auditName: "/api/v1/db/update-player-underlying-stats", route: "/api/v1/db/update-player-underlying-stats", schedule: "35 9 * * *", at: "09:35:14.167768", endOffset: "(CURRENT_DATE - INTERVAL '1 day')", endDate: "2026-11-06", suffix: "&warmLandingCache=true", rowsUpserted: 3762 },
+    { name: "game-predictions-score-recent", auditName: "game-predictions-score", route: "/api/v1/game-predictions/score", schedule: "40 11 * * *", at: "11:40:02.727214", endOffset: "CURRENT_DATE", endDate: "2026-11-07", suffix: "", rowsUpserted: null },
+  ])("matches the captured dated receipt under its wrapper alias: $name", async (job) => {
+    vi.setSystemTime(new Date("2026-11-07T13:00:48.194Z"));
+    readFileMock.mockResolvedValue('```json\n' + JSON.stringify([
+      { jobname: job.name, active: true, schedule: job.schedule, method: "GET", route: `${job.route}?startDate=` },
+    ]) + '\n```\n' + `SELECT cron.schedule('${job.name}', '${job.schedule}', $$
+      SELECT net.http_get(url := 'https://fhfhockey.com${job.route}?startDate=' ||
+        to_char((CURRENT_DATE - INTERVAL '1 day')::date, 'YYYY-MM-DD') ||
+        '&endDate=' || to_char(${job.endOffset}::date, 'YYYY-MM-DD') || '${job.suffix}');$$);`);
+    cronJobReportSelectMock.mockResolvedValue({ data: [], error: null });
+    const url = `${job.route}?startDate=2026-11-06&endDate=${job.endDate}${job.suffix}`;
+    cronJobAuditSelectMock.mockResolvedValue({ data: [{ job_name: job.auditName, run_time: `2026-11-07T${job.at}Z`, status: "success", rows_affected: job.rowsUpserted,
+      details: { method: "GET", url, statusCode: 200, response: { success: true, rowsUpserted: job.rowsUpserted } } }], error: null });
+    const res = createMockRes();
+    await handler({ method: "GET" } as any, res);
+    expect(res.body.counts).toMatchObject({ scheduledJobs: 1, jobsOkLast: 1, jobsUnknownLast: 0, jobsMissingLast: 0 });
+    expect(cronAuditEmailMock.mock.calls.at(-1)?.[0].audits).toEqual([
+      expect.objectContaining({ jobName: job.name, route: url, status: "success", observationKind: "scheduled" }),
+    ]);
+  });
+
+
   it("excludes weekly and calendar jobs that are not due without inventing missing runs", async () => {
     readFileMock.mockResolvedValue(`SELECT cron.schedule('weekly','15 8 * * 0',$$SELECT 1;$$);
 SELECT cron.schedule('daily','0 8 * * *',$$SELECT 1;$$);`);
@@ -274,6 +298,116 @@ SELECT cron.schedule('daily','0 8 * * *',$$SELECT 1;$$);`);
     expect(res.body.code).toBe("CRON_SCHEDULE_INVENTORY_EMPTY");
     expect(resendSendMock).not.toHaveBeenCalled();
   });
+
+  it("summarizes queued Edge Function requests and matches a pg_cron jobid despite query drift", async () => {
+    readFileMock.mockResolvedValue('```json\n' + JSON.stringify([{ jobid: 391, jobname: "update-lineup-deployment-tallies",
+      schedule: "55 9 * * *", active: true, method: "GET", route: "/api/v1/db/update-lineup-deployment-tallies" }]) + '\n```');
+    const edgeRun = (minute: string) => ({ jobid: 400, jobname: "x-timeline-poll", scheduled_time: `2026-03-20T11:${minute}:00.000Z`,
+      end_time: `2026-03-20T11:${minute}:00.100Z`, status: "succeeded", return_message: "1 row",
+      sql_text: "select net.http_post(url := 'https://example.supabase.co/functions/v1/x-timeline-poll');" });
+    cronJobReportSelectMock.mockResolvedValue({ data: [
+      { jobid: 391, jobname: "update-lineup-deployment-tallies", scheduled_time: "2026-03-20T09:55:00.000Z",
+        end_time: "2026-03-20T09:55:00.100Z", status: "succeeded", return_message: "1 row",
+        sql_text: "select net.http_get(url := 'https://fhfhockey.com/api/v1/db/update-lineup-deployment-tallies?action=current');" },
+      edgeRun("00"), edgeRun("02"),
+      { jobid: 999, jobname: "unlisted-route", scheduled_time: "2026-03-20T11:30:00.000Z", end_time: "2026-03-20T11:30:00.100Z",
+        status: "succeeded", return_message: "1 row", sql_text: "select net.http_get(url := 'https://fhfhockey.com/api/v1/db/unlisted');" },
+    ], error: null });
+    cronJobAuditSelectMock.mockResolvedValue({ data: [], error: null });
+    const res = createMockRes();
+    await handler({ method: "GET" } as any, res);
+    const props = cronAuditEmailMock.mock.calls.at(-1)?.[0];
+    expect(props.edgeFunctionDispatches).toEqual([expect.objectContaining({ jobName: "x-timeline-poll", queued: 2, failed: 0,
+      latestAt: "2026-03-20T11:02:00.000Z" })]);
+    expect(props.audits.some((entry: any) => entry.jobName === "x-timeline-poll")).toBe(false);
+    const tallies = props.audits.filter((entry: any) => entry.jobName === "update-lineup-deployment-tallies");
+    expect(tallies).toEqual([expect.objectContaining({ observationKind: "scheduled" })]);
+    expect(tallies[0].runTimeDisplay).toContain("2026-03-20T09:55:00.000Z");
+    const unlisted = props.audits.find((entry: any) => entry.jobName === "unlisted-route");
+    expect(unlisted.reason).toContain("pg_cron queued the HTTP request, but no cron_job_audit row");
+    expect(unlisted.reason).not.toBe("1 row");
+    const { CronAuditEmail } = await vi.importActual<typeof import("components/CronReportEmail/CronAuditEmail")>("components/CronReportEmail/CronAuditEmail");
+    const html = renderToStaticMarkup(createElement(CronAuditEmail, props));
+    expect(html).toContain("Supabase Edge Functions queued by pg_cron");
+    expect(html).toContain("x-timeline-poll · 2 queued");
+  });
+
+  it.each(["2026-11-07T13:00:00Z", "2026-11-08T07:00:00Z"])("classifies the 08:05 power-play and 09:55 tally receipts at %s using their scheduled date", async (now) => {
+    vi.setSystemTime(new Date(now));
+    const route = "/api/v1/db/update-power-play-combinations";
+    const command = `SELECT net.http_get(url := 'https://fhfhockey.com${route}?startDate=' ||
+      to_char((CURRENT_DATE - INTERVAL '2 days')::date, 'YYYY-MM-DD') ||
+      '&endDate=' || to_char(CURRENT_DATE::date, 'YYYY-MM-DD'));`;
+    readFileMock.mockResolvedValue('```json\n' + JSON.stringify([
+      { jobid: 388, jobname: "update-power-play-combinations", schedule: "05 8 * * *", active: true, method: "GET", route: `${route}?startDate=` },
+      { jobid: 391, jobname: "update-lineup-deployment-tallies", schedule: "55 9 * * *", active: true, method: "GET", route: "/api/v1/db/update-lineup-deployment-tallies?action=current" },
+      { jobid: 278, jobname: "update-rolling-player-averages", schedule: "15 8 * * 0", active: true, method: "GET", route: "/api/v1/db/update-rolling-player-averages" },
+    ]) + '\n```\n' + `SELECT cron.schedule('update-power-play-combinations', '05 8 * * *', $$${command}$$);`);
+    cronJobReportSelectMock.mockResolvedValue({ data: [
+      { jobid: 388, jobname: "update-power-play-combinations", scheduled_time: "2026-11-07T08:05:00Z", status: "succeeded", return_message: "1 row", sql_text: command },
+      { jobid: 391, jobname: "update-lineup-deployment-tallies", scheduled_time: "2026-11-07T09:55:00Z", status: "succeeded", return_message: "1 row",
+        sql_text: "SELECT net.http_get(url := 'https://fhfhockey.com/api/v1/db/update-lineup-deployment-tallies?action=current');" },
+    ], error: null });
+    cronJobAuditSelectMock.mockResolvedValue({ data: [
+      { job_name: route, run_time: "2026-11-07T08:05:04.204711Z", status: "success", rows_affected: 14,
+        details: { method: "GET", url: `${route}?startDate=2026-11-05&endDate=2026-11-07`, statusCode: 200, durationMs: 2372,
+          response: { success: true, processed: 14, skipped: 12 } } },
+      { job_name: "update-lineup-deployment-tallies", run_time: "2026-11-07T09:55:02.618459Z", status: "success", rows_affected: 2982,
+        details: { method: "GET", url: "/api/v1/db/update-lineup-deployment-tallies?action=current", statusCode: 200, durationMs: 1129,
+          response: { success: true, rowsUpserted: 2982 } } },
+    ], error: null });
+    const res = createMockRes();
+    await handler({ method: "GET" } as any, res);
+    expect(res.body.counts).toMatchObject({ scheduledJobs: 2, jobsOkLast: 2, jobsUnknownLast: 0, jobsMissingLast: 0 });
+    expect(res.body.scheduleInventory.notDueJobs).toEqual([{ name: "update-rolling-player-averages", schedule: "15 8 * * 0" }]);
+    const rows = cronAuditEmailMock.mock.calls.at(-1)?.[0].audits;
+    expect(rows).toHaveLength(2);
+    expect(rows.find((row: any) => row.jobName === "update-power-play-combinations"))
+      .toMatchObject({ status: "success", observationKind: "scheduled", route: `${route}?startDate=2026-11-05&endDate=2026-11-07` });
+    expect(rows.find((row: any) => row.jobName === "update-lineup-deployment-tallies"))
+      .toMatchObject({ status: "success", observationKind: "scheduled", rowsAffected: 2982 });
+  });
+
+  it.each([
+    "startDate=2026-03-17&endDate=2026-03-20",
+    "startDate=2026-03-18&endDate=2026-03-20&dryRun=true",
+  ])("does not use a different date window or probe query as the scheduled receipt: %s", async (query) => {
+    const route = "/api/v1/db/update-power-play-combinations";
+    readFileMock.mockResolvedValue(`SELECT cron.schedule('update-power-play-combinations', '05 8 * * *', $$
+      SELECT net.http_get(url := 'https://fhfhockey.com${route}?startDate=' ||
+        to_char((CURRENT_DATE - INTERVAL '2 days')::date, 'YYYY-MM-DD') ||
+        '&endDate=' || to_char(CURRENT_DATE::date, 'YYYY-MM-DD'));$$);`);
+    cronJobReportSelectMock.mockResolvedValue({ data: [], error: null });
+    cronJobAuditSelectMock.mockResolvedValue({ data: [{ job_name: "update-power-play-combinations", run_time: "2026-03-20T08:05:01Z", status: "success",
+      details: { method: "GET", url: `${route}?${query}`, statusCode: 200 } }], error: null });
+    const res = createMockRes();
+    await handler({ method: "GET" } as any, res);
+    expect(res.body.counts).toMatchObject({ jobsOkLast: 0, jobsMissingLast: 1, unscheduledRuns: 1 });
+  });
+
+  it("retains complete audit observations even when cron history consumes the entire source deadline", async () => {
+    const cron = Array.from({ length: 8000 }, (_, id) => ({ runid: id + 1, jobname: "child-sql",
+      scheduled_time: "2026-03-20T12:00:00.000Z", status: "success", sql_text: "SELECT 1;" }));
+    cronJobReportSelectMock.mockImplementation(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 12_000)); return { data: cron, error: null };
+    });
+    const res = createMockRes();
+    const pending = handler({ method: "GET" } as any, res);
+    await vi.advanceTimersByTimeAsync(0);
+    // The old serial reader never attempted this source until its budget was gone.
+    expect(cronJobAuditSelectMock).toHaveBeenCalledTimes(2);
+    await vi.advanceTimersByTimeAsync(180_000);
+    await pending;
+    expect(res.body.executionBudget.sourceElapsedMs).toBe(180_000);
+    expect(res.body.sources.cron).toMatchObject({ complete: false, enumerationComplete: true });
+    expect(res.body.sources.audit).toMatchObject({ complete: true, pages: 1, verificationPages: 1 });
+    expect(res.body.counts.auditRuns).toBe(1);
+    expect(res.body.totalsComplete).toBe(false);
+    expect(cronAuditEmailMock.mock.calls.at(-1)?.[0].audits[0])
+      .toMatchObject({ status: "unknown", observedExecutionStatus: "success" });
+    expect(resendSendMock.mock.calls[0][0].subject).toContain("incomplete telemetry");
+  });
+
 
   it("rejects admission before audit, telemetry, or email work", async () => {
     adminAdmissionMock.mockReturnValue(false);
