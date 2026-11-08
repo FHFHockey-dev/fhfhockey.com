@@ -159,3 +159,21 @@ Q23 `select endpoint/kind columns of nhl_api_game_payloads_raw` + for one 2026 g
 - Q23: boxscore skater keys have no PP/SH TOI. skatersGameStats powerPlayToi "00:00" on 100% of rows every season
   except 2022 (35%) / 2023 (53%); faceoffs "0/0" likewise. Reader: /api/toi → TimeOnIceChart.
 - RESULTS.md §7 written. Diagnosis done; no code/data changes.
+- Rolling calls 2-10: HTTP 207, 177 players; call 11 (23:03) HTTP 504 (240 s cap). Total 211/752 players, ~15k rows.
+  TJ pop-up: "Continue, smaller budget" → rolling3.sh: resume 8477989, maxRuntimeMs 110000, calls 12..46,
+  one retry on 504, stop on second.
+- ~23:10 UTC Chef URGENT: prod Supabase degraded since ~23:05 UTC. Paused: killed rolling3.sh loop (PID 17121);
+  call 12 was a 504; call 13 (resume 8477989) left to finish/time out by ~23:13, not retried. Resume point
+  8477989, 211/752 done. Do NOT resume without Chef go-ahead. team_unit_toi 1-day dry run on hold.
+- 23:12:29 UTC call 13 ended FUNCTION_INVOCATION_TIMEOUT (504). Zero lane requests in flight. Holding for Chef.
+- Chef relays TJ pop-up "Resume gently now" after the Supabase restart. rolling4.sh: resume 8477989, maxRuntimeMs
+  60000, concurrency 1, 60 s gap, pre-call `select count(*) from pg_stat_activity where datname=current_database()`
+  via IPv4 pooler (aws-0-us-east-1, read-only; first check = 24), wait if > 40, stop on any non-200/207, no retry,
+  checkpoint exit every ~100 players.
+- Gentle leg A (23:26-23:33 UTC): calls 14-17 HTTP 207, activity 24-28, +121 players (~7.8k rows); total 332/752, next 8479941. Leg B started.
+- Leg B (23:35-23:42 UTC): calls 18-21 HTTP 207, activity 23-26, +102 players (~6.6k rows); total 434/752, next 8481186. Leg C started.
+- Leg C (23:45-00:01 UTC): calls 22-26 HTTP 207 (+44 players, slowing: 11,12,11,4,6); call 27 HTTP 504 → STOP, no retry. Total 478/752, resume 8481716. Q24 health: pg_stat_activity state counts + longest active query age (read-only, pooler).
+- 00:02 UTC health read failed (pooler auth timeout 15 s). Reported to Chef; holding. Nothing in flight.
+- Chef: outage root cause = Lines P3 (off since 00:26 UTC). TJ pop-up 'Resume gently now'. rolling5.sh = rolling4 + stop if call > 120 s or < 5 players twice in a row. Resume 8481716, call 28.
+- Guarded leg A (00:30-00:34 UTC): calls 28-29 HTTP 207, activity 10-17, +144 players (~8.3k rows); total 622/752, next 8483490.
+- 00:38 UTC rolling DONE: call 31 HTTP 200. 752/752 players, 47,515 rows (= all window rows). pp_unit vs powerPlayCombinations.unit 6,181/6,181. updated_at not bumped by upserts (no trigger).

@@ -93,7 +93,15 @@ The days still short of 100% are:
 
 These are mostly the kept-unproven rows plus partial shift feeds. Inspect them, worst first: 10-27 and 10-22.
 
-**Not done: derived rebuilds.** `update-rolling-player-averages`, `update-team-unit-toi` and `update-lineup-deployment-tallies` for 09-29 → 10-30 still hold the old values. They are not sized and need their own approval.
+**Derived rebuilds (TJ pop-ups, 2026-11-07/08).**
+
+- **Rolling player averages, 09-29 → 11-06: done.** All 752 players, 47,515 rows upserted to `rolling_player_game_metrics` and `rolling_player_metric_support_payloads`. That equals every row in the window.
+  - **Verification:** `pp_unit` (strength `all`) matches the corrected `powerPlayCombinations.unit` on 6,181 of 6,181 rows.
+  - **Run:** `executionProfile=overnight`, `fastMode`, `skipDiagnostics`, `bypassFreshnessBlockers=true` (approved after the first call hit the freshness gate), one call at a time, following the 207 resume loop through 31 calls between 22:28 and 00:38 UTC.
+  - **Pause:** calls 11–13 and 27 hit 504s during the Supabase incident. Chef traced that incident to Lines P3 reprocessing, not this rebuild. The run was paused and then resumed gently: 60 s budget per call, a 60 s gap between calls, a `pg_stat_activity` check (≤ 40) before each call, and a stop if a call ran over 120 s or processed fewer than 5 players twice in a row.
+  - **Note:** `updated_at` is not bumped by these upserts (the table has no trigger), so don't use it as evidence of a rewrite.
+- **Lineup deployment tallies:** left to the 09:55 UTC cron (`action=current`, which rebuilds the whole season), as TJ chose.
+- **team_unit_toi:** this table has never been populated for 2026-27, so there is nothing stale. The 32-day dry run timed out on `nhl_api_shift_rows`, and a 1-day dry run is next.
 
 ## 6. NST goalie HD/GS
 
