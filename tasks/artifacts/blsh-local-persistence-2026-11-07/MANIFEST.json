@@ -1,0 +1,208 @@
+{
+  "observedHead": "620be8ffefa04670a6eb07bf09db61bae3508104",
+  "branch": "octoberBranch",
+  "timestamp": "2026-11-07T22:30:02.874572+00:00",
+  "scope": "Exact owned files and dependencies in shared dirty checkout; not whole-branch verification. No commits, pushes or deployment by this worker.",
+  "files": [
+    {
+      "path": "web/lib/buyLowSellHigh/storage.ts",
+      "sha256": "ee1dbe605c1103b212f1659b1439caedf23252acb6b45b3f6144b019206cb3c4",
+      "bytes": 6027
+    },
+    {
+      "path": "web/lib/buyLowSellHigh/storage.test.ts",
+      "sha256": "eee5db10d56c89134c18eed26778c3c5a6357b190e3f079bb31f9c464ed703c6",
+      "bytes": 6828
+    },
+    {
+      "path": "web/lib/buyLowSellHigh/useBlshLocalState.ts",
+      "sha256": "4a84f620492520ab9483cf259895ff44f9543702c52f9f84b53381cee4ebad2e",
+      "bytes": 3124
+    },
+    {
+      "path": "web/components/buyLowSellHigh/BlshCandidateLists.tsx",
+      "sha256": "c64ed8194051f481a4eeca3f0f97536618a9ea3a799c0a936450ec79ccc70bbb",
+      "bytes": 17308
+    },
+    {
+      "path": "web/components/buyLowSellHigh/BlshCandidateLists.test.tsx",
+      "sha256": "787988ada70f9b57391a4caf8a1df42739d998271666fd6061c92e4346c53cbf",
+      "bytes": 18857
+    },
+    {
+      "path": "web/components/buyLowSellHigh/BlshCandidateLists.module.scss",
+      "sha256": "920b74bde6f1b55eaca4dfdc104fb22d10e60aaa5aa177691363b48b627a3f0c",
+      "bytes": 1689
+    },
+    {
+      "path": "web/components/blshTrade/BlshTradeComparison.tsx",
+      "sha256": "01b6bbdfba1c0b246abfdcbbea13e05c3dda79f308a28d38e5c6846691171774",
+      "bytes": 24708
+    },
+    {
+      "path": "web/components/blshTrade/BlshTradeComparison.test.tsx",
+      "sha256": "d70910a3d14a4fed85b9e7bdbd46cbcdbfbc0389e024ee532e19d6d7cc0a0887",
+      "bytes": 16785
+    },
+    {
+      "path": "web/components/blshTrade/BlshTrade.module.scss",
+      "sha256": "b853cce71f265e8e56db8045a8c92fc5be76fcd8cc60c4fd03e17baacfe683ba",
+      "bytes": 7294
+    }
+  ],
+  "dependencies": [
+    {
+      "path": "web/components/buyLowSellHigh/BuyLowSellHighPreview.tsx",
+      "sha256": "b3fcf950e56f7cc33bc70ac62e3044414cc194ddb5aed04bf5667e6b715ad685",
+      "bytes": 15824
+    },
+    {
+      "path": "web/components/buyLowSellHigh/BlshPlayerDetail.tsx",
+      "sha256": "6419b05cec243ed5f3f66b40ad7d79b4a3bcba2fd61994bf93d99f5bd8d92a03",
+      "bytes": 21772
+    },
+    {
+      "path": "web/components/blshTrade/fixtureEvidence.ts",
+      "sha256": "49adbe6c9abb878f2a6a2bbaf9c4bde4f90d63f305006e940bfd3366ee8535d4",
+      "bytes": 8675
+    },
+    {
+      "path": "web/components/blshTrade/retrospective.ts",
+      "sha256": "9c5869cce3b6ce1ce961dab2ab9272917a84e5ed0a463e29e280ed5d4185fba1",
+      "bytes": 3887
+    },
+    {
+      "path": "web/lib/buyLowSellHigh/displayProfile.ts",
+      "sha256": "6de7898a08f4ece36307b9817ce0dae33f1ee238ebf5eb52dad7f583f4d7178c",
+      "bytes": 44623
+    },
+    {
+      "path": "web/lib/buyLowSellHigh/researchSnapshot.ts",
+      "sha256": "dc4cbb57a93a6e2cdae66d48b0519704c17f0a7d49451bfa546eafeb885b2cb7",
+      "bytes": 31655
+    },
+    {
+      "path": "web/lib/buyLowSellHigh/trade.ts",
+      "sha256": "18b9fe9302c5933f3182e2af2fd0ca2e20fa541d361e40606d4fc195a431dce3",
+      "bytes": 13527
+    },
+    {
+      "path": "web/lib/buyLowSellHigh/market.ts",
+      "sha256": "44df9313b86bbc078dc6f314a5884deb490e266509bec4a44f6f9ff08e537f60",
+      "bytes": 6848
+    },
+    {
+      "path": "web/lib/skoElement/contract.ts",
+      "sha256": "b262b18374d78e292dc45e4c1510e14489fb31a2f945ebe08fc685a3cb7b9904",
+      "bytes": 11131
+    },
+    {
+      "path": "web/lib/skoElement/fixtures.ts",
+      "sha256": "b4e7e6b31c9fd9d1e541aba1e0f19993caa413bab8112b1cd05bc10e1b7f2fa2",
+      "bytes": 17583
+    },
+    {
+      "path": "web/pages/buy-low-sell-high/trade.tsx",
+      "sha256": "7bc9d950124cc5e60b467ac5ff2dd7efe7769ec73a695c5c1c594ad4213f5a66",
+      "bytes": 1454
+    },
+    {
+      "path": "web/pages/buy-low-sell-high/preview.tsx",
+      "sha256": "92c01d412e1d28eef7fa3e782a7a23847dd1607df512f588a4023d8a2acc2614",
+      "bytes": 1118
+    },
+    {
+      "path": "web/components/blshTrade/retrospective.test.ts",
+      "sha256": "2b588c6bdd8a1ea49eea671414c13d5ee7061695f6451d3ca49f2da7f3b7c4d4",
+      "bytes": 5684
+    }
+  ],
+  "finalVerifiedAtUTC": "2026-11-07T22:32:50.368998+00:00",
+  "artifacts": [
+    {
+      "path": "tasks/artifacts/blsh-local-persistence-2026-11-07/RESULT.md",
+      "sha256": "2576ec2ec40cbd93ca5c9e579b2b2587e055ac6ea65d77e6322524fbf15eae9d",
+      "bytes": 6687
+    },
+    {
+      "path": "tasks/artifacts/blsh-local-persistence-2026-11-07/CHECKS.json",
+      "sha256": "7f804d32184f5572b07865a3750791c1ae4839214030c925fdd6ce4b3bee32e8",
+      "bytes": 85
+    },
+    {
+      "path": "tasks/artifacts/blsh-local-persistence-2026-11-07/tests-candidate.log",
+      "sha256": "4cee87fa5def9a1c9307ff40e07a52843f75160f80080d31de0ad42e0c1c0379",
+      "bytes": 1647
+    },
+    {
+      "path": "tasks/artifacts/blsh-local-persistence-2026-11-07/types-final.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "tasks/artifacts/blsh-local-persistence-2026-11-07/lint-candidate.log",
+      "sha256": "cf2f2e1841f6be8bebbc51d89be96c80ed8cf36bfaa24056748b6ea15a970701",
+      "bytes": 425
+    },
+    {
+      "path": "tasks/artifacts/blsh-local-persistence-2026-11-07/browser.json",
+      "sha256": "f646cc1e6e170a16a38ce7ac1190ad118daf69d9450a818b1a79c01fa881d7a3",
+      "bytes": 6029
+    },
+    {
+      "path": "tasks/artifacts/blsh-local-persistence-2026-11-07/browser-final.log",
+      "sha256": "b1dc63278dbf4ad329e349ffa2e5d5c6d39432e8eeafa7e8d3db3f44d03ddb8f",
+      "bytes": 65
+    },
+    {
+      "path": "tasks/artifacts/blsh-local-persistence-2026-11-07/verify-browser.mjs",
+      "sha256": "589e3e1fc84f9d3d5984d70908313fae8252236e89247bda083f33568719235a",
+      "bytes": 18746
+    },
+    {
+      "path": "tasks/artifacts/blsh-local-persistence-2026-11-07/browser-entry.tsx",
+      "sha256": "5d37ee13a3341c2658d3df60e74f96d209635df6012dce216ddd457b5af2ce03",
+      "bytes": 1538
+    },
+    {
+      "path": "tasks/artifacts/blsh-local-persistence-2026-11-07/browser-router.tsx",
+      "sha256": "dbd3fbaf14acd27512c7c4101d20e648ed877cbccc14ce1d6aba1d8b5fc65806",
+      "bytes": 767
+    },
+    {
+      "path": "tasks/artifacts/blsh-local-persistence-2026-11-07/loopback-only.cjs",
+      "sha256": "41b4926493e231a27dd5c056369ba09b6f366ebffae3192e2e529ed4b34b9b38",
+      "bytes": 1024
+    },
+    {
+      "path": "tasks/artifacts/blsh-local-persistence-2026-11-07/desktop.png",
+      "sha256": "23fed9400345ddff61ceae389b9f69766d91d8425af2307c7bec9dfd9757f153",
+      "bytes": 159170
+    },
+    {
+      "path": "tasks/artifacts/blsh-local-persistence-2026-11-07/mobile.png",
+      "sha256": "802abbd7fe9b91d721029fa5c9d07ca22c3e13e07c17411e0943bd5772256708",
+      "bytes": 94471
+    },
+    {
+      "path": "tasks/artifacts/blsh-local-persistence-2026-11-07/mobile-detail.png",
+      "sha256": "3f950a06902bd37c48a131b7bd10bc2c03579504fd66f93c6fd7d1c41e4091b6",
+      "bytes": 573552
+    },
+    {
+      "path": "tasks/artifacts/blsh-local-persistence-2026-11-07/mobile-list.png",
+      "sha256": "b2ab7975c13ef65eccfbff5b7a5e2d158a8c7cb1050a72a7603b4b5f071a9168",
+      "bytes": 85836
+    },
+    {
+      "path": "tasks/artifacts/blsh-local-persistence-2026-11-07/trade-desktop.png",
+      "sha256": "af2e20db29d778fe3f5662463a96284d4f56e05bfb9fb320f22d0f97ba03cd47",
+      "bytes": 313234
+    },
+    {
+      "path": "tasks/artifacts/blsh-local-persistence-2026-11-07/trade-mobile.png",
+      "sha256": "3386fad6048ba2695886364294b2a1343d70a2fa2b170e5d6eb51eb002ac3e6c",
+      "bytes": 323677
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "startedAt": "2026-11-07T21:53:39.119026+00:00",
+  "finishedAt": "2026-11-07T21:56:07.128623+00:00",
+  "exitCode": 0,
+  "timedOut": false,
+  "command": [
+    "node",
+    "node_modules/@playwright/test/cli.js",
+    "test",
+    "--config",
+    "/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-rso-first-pass-20261107-rq7qrip0/web/.rso-first-pass-playwright.config.ts",
+    "e2e/roster-schedule-optimizer.spec.ts",
+    "e2e/rso-acceptance.spec.ts",
+    "e2e/rso-continuity.spec.ts",
+    "--workers=1",
+    "--retries=0",
+    "--max-failures=1",
+    "--reporter=line",
+    "--output",
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/rso-first-pass-2026-11-07/browser-reviewed-v2-output"
+  ],
+  "candidateTree": "4ba9b5dd1c6feb613f2f8e526fb280bb4b35c54e",
+  "environment": "inert values, no .env files; node loopback guard and browser fixture interception",
+  "log": "browser-reviewed-v2.log",
+  "name": "browser",
+  "passed": 63,
+  "failed": 0,
+  "skipped": 0,
+  "duration": "2.5m",
+  "port3164FreeAfterCleanup": true,
+  "rsoHeavySlotReleased": true
+}

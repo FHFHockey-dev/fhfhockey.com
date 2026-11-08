@@ -1,0 +1,630 @@
+diff --git a/web/components/RosterScheduleOptimizer/HealthyReserveAlert.test.tsx b/web/components/RosterScheduleOptimizer/HealthyReserveAlert.test.tsx
+index c494cffd2..d9ea1df41 100644
+--- a/web/components/RosterScheduleOptimizer/HealthyReserveAlert.test.tsx
++++ b/web/components/RosterScheduleOptimizer/HealthyReserveAlert.test.tsx
+@@ -7,14 +7,14 @@ const names: Record<string, string> = { d: "Back Healthy", e: "Hurt Wing", f: "F
+ const nameOf = (id: string) => names[id] ?? id;
+ 
+ describe("Healthy reserve alert", () => {
+-  it("names the healthy IR player, says the lineup is illegal and shows the gain from activating him", () => {
++  it("names the healthy IR player, explains the add blockage and shows the gain from activating him", () => {
+     const onSelect = vi.fn();
+     render(<HealthyReserveAlert nameOf={nameOf} onSelect={onSelect} reserves={[{ playerId: "d", position: "IR", slotEligible: false,
+       activation: { swapPlayerId: null, projectedPoints: 6.25, activeGames: 2 } }]} />);
+     const alert = screen.getByRole("alert", { name: "Healthy players in IR" });
+     expect(alert.textContent).toContain("Healthy player in IR");
+     expect(alert.textContent).toContain("Back Healthy is in your IR spot, but Yahoo lists no injury.");
+-    expect(alert.textContent).toContain("Yahoo no longer lists him for IR, so the lineup is illegal until he moves.");
++    expect(alert.textContent).toContain("Yahoo no longer lists him for IR, so additions are blocked until that reserve position is resolved. Your existing active lineup can still score.");
+     expect(alert.textContent).toContain("Move him to an open bench or active spot.");
+     expect(screen.getByText("+6.3 projected pts · +2 active games this week").dataset.known).toBe("true");
+     fireEvent.click(screen.getByRole("button", { name: "Back Healthy" }));
+diff --git a/web/components/RosterScheduleOptimizer/HealthyReserveAlert.tsx b/web/components/RosterScheduleOptimizer/HealthyReserveAlert.tsx
+index c05cb751f..1c7a02640 100644
+--- a/web/components/RosterScheduleOptimizer/HealthyReserveAlert.tsx
++++ b/web/components/RosterScheduleOptimizer/HealthyReserveAlert.tsx
+@@ -44,8 +44,8 @@ export default function HealthyReserveAlert({ reserves, dtd = [], nameOf, onSele
+       const name = nameOf(reserve.playerId), activation = reserve.activation, gain = activation && gainText(activation);
+       return <li key={reserve.playerId}>
+         <p>{onSelect ? <button className={styles.name} onClick={() => onSelect(reserve.playerId)}>{name}</button> : <strong className={styles.name}>{name}</strong>} is
+-          in your {reserve.position} spot, but Yahoo lists no injury.{!reserve.slotEligible && <> Yahoo no longer lists him for {reserve.position}, so the
+-          lineup is illegal until he moves.</>}</p>
++          in your {reserve.position} spot, but Yahoo lists no injury.{!reserve.slotEligible && <> Yahoo no longer lists him for {reserve.position}, so
++          additions are blocked until that reserve position is resolved. Your existing active lineup can still score.</>}</p>
+         <p className={styles.action}>{!activation ? "No roster spot is open: drop a player or move an injured one to IR to activate him."
+           : activation.swapPlayerId ? <>Swap him with {nameOf(activation.swapPlayerId)} (Yahoo lists {nameOf(activation.swapPlayerId)} for {reserve.position}).</>
+             : "Move him to an open bench or active spot."}
+diff --git a/web/e2e/roster-schedule-optimizer.spec.ts b/web/e2e/roster-schedule-optimizer.spec.ts
+index 0b9d772e0..5c55a4104 100644
+--- a/web/e2e/roster-schedule-optimizer.spec.ts
++++ b/web/e2e/roster-schedule-optimizer.spec.ts
+@@ -2400,7 +2400,7 @@ test("alerts on a healthy player left in IR and shows what activating him gains"
+   await page.goto("/roster-schedule-optimizer");
+   const alert = page.getByRole("alert", { name: "Healthy players in IR" });
+   await expect(alert).toContainText("Healthy Defender is in your IR spot, but Yahoo lists no injury.");
+-  await expect(alert).toContainText("Yahoo no longer lists him for IR, so the lineup is illegal until he moves.");
++  await expect(alert).toContainText("Yahoo no longer lists him for IR, so additions are blocked until that reserve position is resolved. Your existing active lineup can still score.");
+   await expect(alert).toContainText("Move him to an open bench or active spot.");
+   // This fixture has no current forecast read, so the planner prices games, not points (the unit test covers points).
+   await expect(alert.getByText("+2 active games this week")).toBeVisible();
+diff --git a/web/lib/integrations/yahoo/rosterPlanning.test.ts b/web/lib/integrations/yahoo/rosterPlanning.test.ts
+index 110dbc7e5..815e08265 100644
+--- a/web/lib/integrations/yahoo/rosterPlanning.test.ts
++++ b/web/lib/integrations/yahoo/rosterPlanning.test.ts
+@@ -20,7 +20,7 @@ vi.mock("lib/integrations/yahoo/rosterPlanning", async (original) => ({
+   loadYahooPlanningSnapshot: mocks.snapshot,
+ }));
+ 
+-import { yahooPlanningReportedRules } from "./rosterPlanning";
++import { yahooPlanningFormatLimitations, yahooPlanningReportedRules } from "./rosterPlanning";
+ import { yahooCreditedGoalieAppearances, yahooInjury, yahooPastLineupPoints, yahooPlanningAcquisitions, yahooPlanningCategories, yahooPlanningEditable, yahooPlanningPlayers, yahooPlanningStats, yahooPlanningTeams, yahooStartingStatus } from "./rosterPlanning";
+ import type { YahooProviderJsonResult } from "./providerClient";
+ import { YahooLiveDraftError } from "./liveDraft";
+@@ -44,6 +44,17 @@ beforeEach(() => {
+ 
+ afterEach(() => vi.unstubAllEnvs());
+ 
++describe("RSO format admission", () => {
++  it.each(["roto", "point"])("rejects %s rather than inventing cap or standings rules", scoring_type => {
++    expect(yahooPlanningFormatLimitations({ settings: { scoring_type } })).toEqual([
++      "Season-long points and rotisserie planning are unsupported: position caps, credited usage, cap-day scoring and standings utility are not modeled.",
++    ]);
++  });
++  it.each(["head", "headone", "headpoint"])("retains %s format admission", scoring_type => {
++    expect(yahooPlanningFormatLimitations({ settings: { scoring_type } })).toEqual([]);
++  });
++});
++
+ describe("Yahoo planning parsers", () => {
+   function acquisitionInputs() {
+     const now = new Date("2026-10-01T12:00:00Z");
+diff --git a/web/lib/integrations/yahoo/rosterPlanning.ts b/web/lib/integrations/yahoo/rosterPlanning.ts
+index f7f906524..8d172bd28 100644
+--- a/web/lib/integrations/yahoo/rosterPlanning.ts
++++ b/web/lib/integrations/yahoo/rosterPlanning.ts
+@@ -272,6 +272,14 @@ export function yahooPlanningAcquisitions(args: {
+ 
+ export type YahooReportedRule = { rule: string; field: string; present: boolean; reportedValue: string | number | boolean | null; verified: boolean };
+ 
++/** The shared draft parser recognizes season formats that this short-horizon planner cannot model. */
++export function yahooPlanningFormatLimitations(payload: unknown): string[] {
++  const format = text(yahooValue(payload, "scoring_type"))?.toLowerCase();
++  return format === "roto" || format === "point"
++    ? ["Season-long points and rotisserie planning are unsupported: position caps, credited usage, cap-day scoring and standings utility are not modeled."]
++    : [];
++}
++
+ /**
+  * League rules Yahoo reports in league settings and the owned team's metadata, each as present / reportedValue /
+  * verified (like the weekly add limit). Only an exact, recognised value from a fresh, scoped read is verified;
+@@ -506,7 +514,7 @@ export async function loadYahooPlanningSnapshot(args: {
+   const settings = parseYahooBoardSettings(settingsResponse.payload);
+   const daily = settings.rosterType === "date" || settings.rosterType === null && ["intraday", "tomorrow"].includes(settings.weeklyDeadline ?? "");
+   const mode = daily ? "daily" : settings.rosterType === "week" ? "weekly" : "unsupported";
+-  const unsupported: string[] = [];
++  const unsupported = yahooPlanningFormatLimitations(settingsResponse.payload);
+   if (!settings.scoringTypeRecognized || settings.unsupportedStatIds.length || settings.unsupportedRosterSlots.length) unsupported.push("Some league scoring or roster rules are unsupported.");
+   if (!providerTimeZone && !args.timeZone) unsupported.push("Verify the league time zone before time-sensitive planning.");
+   if (mode === "weekly") unsupported.push("Supply verified weekly lineup windows; the roster response alone does not establish their exact locks.");
+diff --git a/web/lib/rosterScheduleOptimizer/candidatePlanMetrics.test.ts b/web/lib/rosterScheduleOptimizer/candidatePlanMetrics.test.ts
+index 567a473f7..03f7f275b 100644
+--- a/web/lib/rosterScheduleOptimizer/candidatePlanMetrics.test.ts
++++ b/web/lib/rosterScheduleOptimizer/candidatePlanMetrics.test.ts
+@@ -538,9 +538,13 @@ describe("complete timed candidate metrics", () => {
+     if (problem === "partial schedule") snapshot.evidence.schedule!.completeness = "partial";
+     if (problem === "categories") snapshot.rules.scoring = { mode: "categories", weights: {}, categories: [{ key: "GOALS", direction: "higher" }] };
+     const metrics = candidateMetrics(snapshot, defaultIntent());
++    if (problem === "unsupported") {
++      expect(metrics.candidates[0].plans).toEqual([]);
++      return;
++    }
+     expect(metrics.candidates[0].plans.length).toBeGreaterThan(0);
+     expect(metrics.candidates[0].plans.every(row => row.netPoints === null)).toBe(true);
+-    if (problem === "unsupported" || problem === "partial schedule") expect(metrics.candidates[0].plans.every(row => row.netAGP === null)).toBe(true);
++    if (problem === "partial schedule") expect(metrics.candidates[0].plans.every(row => row.netAGP === null)).toBe(true);
+   });
+ 
+   it("retains AGP-versus-points tradeoffs as separate actual plan pairs", () => {
+diff --git a/web/lib/rosterScheduleOptimizer/contributionLedger.test.ts b/web/lib/rosterScheduleOptimizer/contributionLedger.test.ts
+index fac47c34c..5127794ff 100644
+--- a/web/lib/rosterScheduleOptimizer/contributionLedger.test.ts
++++ b/web/lib/rosterScheduleOptimizer/contributionLedger.test.ts
+@@ -54,6 +54,7 @@ describe("roster contribution ledger", () => {
+       { ...snapshot.players[0], id: "off", teamAbbreviation: "BOS" });
+     snapshot.roster.push({ playerId: "reserve", position: "IR" }, { playerId: "off", position: "bench" });
+     snapshot.lockedAssignments = [{ date: "2026-10-05", playerId: "a", slotId: "C#1" }, { date: "2026-10-06", playerId: "c", slotId: null }];
++    snapshot.lockedAssignments.push(...["a", "b", "c"].map(playerId => ({ date: "2026-10-04", playerId, slotId: null })));
+     snapshot.games.push({ ...snapshot.games[0], id: "past", date: "2026-10-04", startsAt: "2026-10-04T10:00:00Z", status: "final" },
+       { ...snapshot.games[0], id: "cancelled", status: "cancelled" });
+     const ledger = contributionLedger(snapshot, evaluate(snapshot), intent);
+@@ -69,6 +70,7 @@ describe("roster contribution ledger", () => {
+     const snapshot = fixture();
+     snapshot.context.asOf = "2026-10-05T12:00:00Z";
+     snapshot.games[0] = { ...snapshot.games[0], status: "final", startsAt: null };
++    snapshot.lockedAssignments = ["a", "b", "c"].map(playerId => ({ date: "2026-10-05", playerId, slotId: null }));
+     const evaluation = evaluate(snapshot);
+     const ledger = contributionLedger(snapshot, evaluation, intent);
+     for (const row of ledger.values()) {
+diff --git a/web/lib/rosterScheduleOptimizer/dailyAcceptance.manual.test.ts b/web/lib/rosterScheduleOptimizer/dailyAcceptance.manual.test.ts
+index 83d301ed3..acd40ca05 100644
+--- a/web/lib/rosterScheduleOptimizer/dailyAcceptance.manual.test.ts
++++ b/web/lib/rosterScheduleOptimizer/dailyAcceptance.manual.test.ts
+@@ -289,6 +289,12 @@ describe("RSO daily beta: manual/free acceptance packet", () => {
+       const over = evaluatePlan(data, intent(), "agp", [claim(7)]);
+       expect(over.legal).toBe(false);
+       expect(over.limitations).toContain("Waiver budget exceeded.");
++      const crossing = evaluatePlan(data, intent(), "outcome", [claim(3)]);
++      expect(crossing.legal).toBe(false);
++      expect(crossing.limitations).toContain("Waiver claim crosses an acquisition reset; the charge period is unverified.");
++      expect(assigned(crossing, TUE)).not.toContain("wv");
++      // A verified period covering submission and clearance supports the conditional claim.
++      data.rules.periods = [{ ...data.rules.periods[0], id: "claim-period", end: zonedMidnight(WED, TZ) }];
+       const within = evaluatePlan(data, intent(), "outcome", [claim(3)]);
+       expect(within).toMatchObject({ legal: true, budgetVerified: true });
+       expect(assigned(within, MON)).not.toContain("wv");
+diff --git a/web/lib/rosterScheduleOptimizer/healthyReserves.test.ts b/web/lib/rosterScheduleOptimizer/healthyReserves.test.ts
+index 979cca8d5..692f42952 100644
+--- a/web/lib/rosterScheduleOptimizer/healthyReserves.test.ts
++++ b/web/lib/rosterScheduleOptimizer/healthyReserves.test.ts
+@@ -55,7 +55,7 @@ describe("healthy reserve players", () => {
+   // TJ 2026-10-22: a player got healthy but stayed in his IR spot; activating him gained projected points, unflagged.
+   it("flags a healthy player left in IR and prices moving him to the open spot", () => {
+     const data = snapshot();
+-    expect(evaluatePlan(data, intent, "outcome", [], false).legal).toBe(false);
++    expect(evaluatePlan(data, intent, "outcome", [], false).legal).toBe(true);
+     expect(healthyReserves(data, intent)).toEqual([{ playerId: "d", position: "IR", slotEligible: false,
+       activation: { swapPlayerId: null, projectedPoints: 6, activeGames: 2 } }]);
+   });
+@@ -107,6 +107,9 @@ describe("healthy reserve players", () => {
+     const started = snapshot();
+     started.context = { ...started.context, asOf: "2026-10-05T23:30:00Z" };
+     started.evidence.schedule = { ...started.evidence.schedule!, asOf: started.context.asOf };
++    expect(healthyReserves(started, intent)[0].activation).toEqual({ swapPlayerId: null, projectedPoints: null, activeGames: null });
++    started.lockedAssignments = [{ date: "2026-10-05", playerId: "a", slotId: "C#1" },
++      { date: "2026-10-05", playerId: "d", slotId: null }];
+     expect(healthyReserves(started, intent)[0].activation).toEqual({ swapPlayerId: null, projectedPoints: 3, activeGames: 1 });
+     const weekly = snapshot();
+     weekly.rules = { ...weekly.rules, lineupMode: "weekly", lineupPeriods: [] };
+diff --git a/web/lib/rosterScheduleOptimizer/healthyReserves.ts b/web/lib/rosterScheduleOptimizer/healthyReserves.ts
+index ae0015f71..96be11d31 100644
+--- a/web/lib/rosterScheduleOptimizer/healthyReserves.ts
++++ b/web/lib/rosterScheduleOptimizer/healthyReserves.ts
+@@ -42,7 +42,7 @@ export function dtdReserves(snapshot: PlanningSnapshot): string[] {
+   }).map(entry => entry.playerId);
+ }
+ 
+-/** Lineup-gap blockers minus those naming a flagged healthy reserve: his alert already says the lineup is illegal and
++/** Lineup-gap blockers minus those naming a flagged healthy reserve: his alert already explains the add blockage and
+  * how to move him. Injured-ineligible and lineup-wide blockers stay. */
+ export function withoutHealthyReserves<T extends { playerId: string | null }>(blockers: T[], reserves: HealthyReserve[]): T[] {
+   const flagged = new Set(reserves.map(reserve => reserve.playerId));
+diff --git a/web/lib/rosterScheduleOptimizer/lineupGaps.test.ts b/web/lib/rosterScheduleOptimizer/lineupGaps.test.ts
+index ebbf46fbe..5b51ec457 100644
+--- a/web/lib/rosterScheduleOptimizer/lineupGaps.test.ts
++++ b/web/lib/rosterScheduleOptimizer/lineupGaps.test.ts
+@@ -107,19 +107,18 @@ describe("lineup gap report", () => {
+     expect(report.projectionBlockers).toEqual([{ playerId: null, reason: expect.stringMatching(/^the no-move lineup fails a rule check/) }]);
+   });
+ 
+-  // TJ 2026-10-22: a healthy player left in IR (no Yahoo IR eligibility) made the no-move lineup illegal.
+-  it("names a reserve player without verified eligibility as the reason the lineup fails its rule check", () => {
++  it("names the reserve occupant blocking additions without invalidating the existing lineup", () => {
+     const data = snapshot();
+     const d = member("d", "C", ["D"], "rostered");
+     data.players = [...data.players, d];
+     data.roster = [...data.roster, { playerId: "d", position: "IR" }];
+     data.rules.rosterSlots = { ...data.rules.rosterSlots, IR: 1 };
+     const baseline = evaluatePlan(data, intent, "outcome", [], false);
+-    expect(baseline.legal).toBe(false);
++    expect(baseline.legal).toBe(true);
+     const report = lineupGapReport(data, intent, baseline);
+     expect(report.unprojectedDrops).toEqual([]);
+     expect(report.projectionBlockers).toEqual([{ playerId: "d",
+-      reason: "in IR without verified IR eligibility, so the lineup fails a rule check; move him to an active or bench spot, or refresh league data" }]);
++      reason: "in IR without verified IR eligibility, which blocks additions; resolve the reserve position or refresh league data" }]);
+     data.players = data.players.map(row => row.id === "d" ? { ...row, reserveEligibility: ["IR"] } : row);
+     const legal = lineupGapReport(data, intent, evaluatePlan(data, intent, "outcome", [], false));
+     expect(legal.projectionBlockers).toEqual([]);
+diff --git a/web/lib/rosterScheduleOptimizer/lineupGaps.ts b/web/lib/rosterScheduleOptimizer/lineupGaps.ts
+index c8da1282c..3a3c7ee95 100644
+--- a/web/lib/rosterScheduleOptimizer/lineupGaps.ts
++++ b/web/lib/rosterScheduleOptimizer/lineupGaps.ts
+@@ -80,14 +80,15 @@ export function lineupGapReport(snapshot: PlanningSnapshot, intent: PlanIntent,
+       : `${kind} for ${[...dates].sort().join(", ")}`).join("; ")}` }));
+   // An illegal no-move lineup leaves every contribution unknown in any scoring mode; otherwise an unknown total with
+   // no responsible game (schedule, team membership, approved totals) is lineup-wide. Say which, never "unprojected".
+-  // The usual illegal case: a reserve spot held by a player without verified eligibility for it (e.g. a healthy IR player).
++  // An ineligible stash blocks additions, not the existing active lineup.
+   const reserveIssues = snapshot.roster.filter(entry => ["IR", "IR+", "NA"].includes(entry.position)
+     && !(players.get(entry.playerId)?.reserveEligibility ?? []).some(value => value === entry.position));
+-  if (!baseline.legal) projectionBlockers.splice(0, projectionBlockers.length, ...(reserveIssues.length
+-    ? reserveIssues.map(entry => ({ playerId: entry.playerId, reason: `in ${entry.position} without verified ${entry.position} eligibility, so the lineup fails a rule check; move him to an active or bench spot, or refresh league data` }))
+-    : [{ playerId: null, reason: `the no-move lineup fails a rule check${baseline.limitations.length ? ` (${baseline.limitations.slice(0, 3).join(" ")})` : ""}` }]));
++  if (!baseline.legal) projectionBlockers.splice(0, projectionBlockers.length,
++    { playerId: null, reason: `the no-move lineup fails a rule check${baseline.limitations.length ? ` (${baseline.limitations.slice(0, 3).join(" ")})` : ""}` });
+   else if (points && baseline.projectedValue === null && !projectionBlockers.length) projectionBlockers.push({ playerId: null,
+     reason: `projected points are unknown${baseline.limitations.length ? ` (${baseline.limitations.slice(0, 3).join(" ")})` : ""}` });
++  projectionBlockers.push(...reserveIssues.map(entry => ({ playerId: entry.playerId,
++    reason: `in ${entry.position} without verified ${entry.position} eligibility, which blocks additions; resolve the reserve position or refresh league data` })));
+   const unprojected = points ? unknown.filter(player => lacksForecast(player) || blocking.has(player.id)) : unknown;
+   const dropRow = drop ? ledger.get(drop.id) : undefined;
+   const bestDrop = drop ? { playerId: drop.id, projectedPoints: dropRow?.projectedPoints ?? null,
+diff --git a/web/lib/rosterScheduleOptimizer/planning.test.ts b/web/lib/rosterScheduleOptimizer/planning.test.ts
+index 3414c3a21..4db1fdcf6 100644
+--- a/web/lib/rosterScheduleOptimizer/planning.test.ts
++++ b/web/lib/rosterScheduleOptimizer/planning.test.ts
+@@ -943,6 +943,10 @@ describe("planning engine", () => {
+   ])("preserves the custom $startDate horizon while including its last actionable day", ({ startDate, asOf }) => {
+     const data = snapshot();
+     data.context = { ...data.context, startDate, asOf };
++    data.lockedAssignments = [
++      { date: "2026-10-05", playerId: "a", slotId: "C#1", source: "provider" },
++      { date: "2026-10-05", playerId: "b", slotId: null, source: "provider" },
++    ];
+     data.games.push({ ...data.games[0], id: "outside-horizon", date: "2026-10-07", startsAt: "2026-10-07T20:00:00Z" });
+     const context = { ...data.context };
+     const result = evaluatePlan(data, intent, "agp");
+@@ -1803,10 +1807,12 @@ describe("games already under way", () => {
+   const today = (evaluation: ReturnType<typeof evaluatePlan>) => evaluation.assignments.filter(row => row.date === "2026-10-05")
+     .map(row => `${row.playerId}@${row.slotId}${row.locked ? ":locked" : ""}`);
+ 
+-  it("keeps a started player in his pre-start slot and closes it to later games", () => {
++  it("keeps inferred started slots for display but cannot certify their legality", () => {
+     expect(today(evaluatePlan(underway("2026-10-05T19:00:00Z"), intent, "agp", [], false))).toEqual(["a@C#1"]);
+     const live = evaluatePlan(underway(), intent, "agp", [], false);
+-    expect(live.legal).toBe(true);
++    expect(live.legal).toBe(false);
++    expect(live.recommendation?.eligible).toBe(false);
++    expect(live.limitations).toContain("Started games lack recorded lineup locks; inferred positions are provisional. Confirm the active and bench assignments before acting.");
+     expect(today(live)).toEqual(["a@C#1:locked"]);
+     // Only the games still to be played count as remaining starts.
+     expect(live.activeGames).toBe(live.assignments.filter(row => row.date !== "2026-10-05").length);
+@@ -1827,13 +1833,228 @@ describe("games already under way", () => {
+     expect(today(held)).toEqual(["a@C#1:locked"]);
+   });
+ 
++  it("applies the lock at the exact game-start instant, not a millisecond later", () => {
++    const result = evaluatePlan(underway("2026-10-05T20:00:00Z"), intent, "agp", [], false);
++    expect(result.legal).toBe(false);
++    expect(today(result)).toEqual(["a@C#1:locked"]);
++    expect(result.activeGames).toBe(result.assignments.filter(row => row.date !== "2026-10-05").length);
++  });
++
+   it("still shows today's locked lineup once every game today has started", () => {
+     const late = evaluatePlan(underway("2026-10-05T23:30:00Z"), intent, "agp", [], false);
+-    expect(late.legal).toBe(true);
++    expect(late.legal).toBe(false);
+     expect(today(late)).toEqual(["a@C#1:locked"]);
+   });
+ });
+ 
++describe("November 4 research regressions", () => {
++  function researchRoster(rows: Array<[string, string[], number[], number]>, slots: Record<string, number>) {
++    const data = snapshot();
++    data.context.endDate = "2026-10-11";
++    data.players = rows.map(([id, positions]) => ({ ...player(id, id), eligiblePositions: positions }));
++    data.roster = rows.map(([id]) => ({ playerId: id, position: "bench" }));
++    data.rules.rosterSlots = slots;
++    data.games = rows.flatMap(([id, , days]) => days.map(day => ({
++      id: `${id}-${day}`, scheduleRevision: `${id}-${day}-v1`, date: `2026-10-${String(day).padStart(2, "0")}`,
++      startsAt: `2026-10-${String(day).padStart(2, "0")}T20:00:00Z`, teamAbbreviation: id,
++      opponent: "OPP", home: true, status: "scheduled" as const,
++    })));
++    data.forecasts = data.games.map(game => issuedForecast(data, game.teamAbbreviation, game.id,
++      { stats: { pts: rows.find(([id]) => id === game.teamAbbreviation)![3] } }));
++    return data;
++  }
++
++  it("A: assigns C-only B and C/LW A to separate eligible slots", () => {
++    const data = researchRoster([["A", ["C", "LW"], [5], 1], ["B", ["C"], [5], 1]], { C: 1, LW: 1 });
++    const result = evaluatePlan(data, intent, "outcome");
++    expect(result.assignments.map(row => [row.playerId, row.slotId]).sort()).toEqual([["A", "LW#1"], ["B", "C#1"]]);
++  });
++
++  it("B: reconciles full-roster displacement to the same optimized 4/32 baseline", () => {
++    const data = researchRoster([
++      ["core", ["LW"], [6, 8, 10], 10], ["expendable", ["LW"], [5], 2],
++      ["X", ["LW"], [6, 8, 10, 11], 3], ["Y", ["LW"], [7, 9, 11], 3],
++    ], { LW: 1, BN: 1 });
++    data.roster = data.roster.slice(0, 2);
++    data.players.slice(2).forEach(row => { row.availability = "free_agent"; });
++    const baseline = evaluatePlan(data, intent, "outcome", [], false);
++    expect(baseline).toMatchObject({ legal: true, activeGames: 4, projectedValue: 32 });
++    for (const [id, starts, points] of [["X", 4, 33], ["Y", 6, 39]] as const) {
++      const plan = evaluatePlan(data, intent, "outcome", [{ id, type: "add", playerId: id, dropPlayerId: "expendable",
++        at: data.context.asOf, effectiveAt: data.context.asOf, conditional: false, dependsOn: [] }], false);
++      expect(plan).toMatchObject({ legal: true, activeGames: starts, projectedValue: points });
++      const value = (rows: typeof plan.assignments) => rows.reduce((total, row) => total + data.forecasts.find(f => f.playerId === row.playerId && f.gameId === row.gameId)!.stats.pts!, 0);
++      expect(value(plan.assignments) - value(baseline.assignments)).toBe(points - 32);
++      expect(plan.activeGames - baseline.activeGames).toBe(starts - 4);
++    }
++    const result = planRoster(data, intent, { maxSteps: 0, maxEvaluations: 1, timeBudgetMs: Infinity });
++    expect(result.selected.assignments).toEqual(result.baseline.assignments);
++    expect(result.selected.projectedValue).toBe(result.baseline.projectedValue);
++  });
++
++  it("C: weekly occupancy persists on off days while daily occupancy can change", () => {
++    const data = researchRoster([["M", ["C"], [5], 1], ["T", ["C"], [6], 1]], { C: 1, BN: 1 });
++    expect(evaluatePlan(data, intent, "agp").activeGames).toBe(2);
++    data.rules.lineupMode = "weekly";
++    data.rules.lineupPeriods = [{ id: "week", start: "2026-10-05T00:00:00Z", end: "2026-10-12T00:00:00Z", lockAt: "2026-10-05T00:00:00Z" }];
++    expect(evaluatePlan(data, intent, "agp")).toMatchObject({ legal: true, activeGames: 1 });
++  });
++
++  it("D: pools goalie numerators and denominators, with explicit zero-exposure unknowns", () => {
++    const data = researchRoster([["A", ["G"], [5], 0], ["B", ["G"], [5], 0]], { G: 2 });
++    data.players.forEach(row => { row.playerClass = "goalie"; });
++    data.rules.scoring = { mode: "categories", weights: {}, categories: [
++      { key: "SV%", direction: "higher", numerator: "SAVES_GOALIE", denominator: "SHOTS_AGAINST_GOALIE" },
++      { key: "GAA", direction: "lower", numerator: "GOALS_AGAINST_GOALIE", denominator: "GOALIE_MINUTES", multiplier: 60 },
++    ] };
++    data.forecasts.forEach(row => { row.stats = row.playerId === "A"
++      ? { SAVES_GOALIE: 27, SHOTS_AGAINST_GOALIE: 30, GOALS_AGAINST_GOALIE: 0, GOALIE_MINUTES: 30 }
++      : { SAVES_GOALIE: 10, SHOTS_AGAINST_GOALIE: 10, GOALS_AGAINST_GOALIE: 3, GOALIE_MINUTES: 60 }; });
++    const result = evaluatePlan(data, intent, "agp");
++    expect(result.categoryResults.map(row => row.own)).toEqual([0.925, 2]);
++    data.forecasts.forEach(row => { row.stats = { SAVES_GOALIE: 0, SHOTS_AGAINST_GOALIE: 0, GOALS_AGAINST_GOALIE: 0, GOALIE_MINUTES: 0 }; });
++    expect(evaluatePlan(data, intent, "agp").categoryResults.map(row => row.own)).toEqual([null, null]);
++  });
++
++  it("E: reads already-unconditional four points once despite .8 appearance metadata", () => {
++    const data = researchRoster([["A", ["C"], [5], 4]], { C: 1 });
++    data.forecasts[0].conditionalStats = { pts: 5 };
++    data.forecasts[0].appearanceProbability = 0.8;
++    expect(evaluatePlan(data, intent, "outcome").projectedValue).toBe(4);
++  });
++
++  it("F: distinguishes a toy threshold probability from expected starts and exclusive events", () => {
++    // Explicit finite outcome spaces, not a calibrated hockey probability model.
++    const independent = [{ count: 0, p: .35 * .45 }, { count: 1, p: .65 * .45 + .35 * .55 }, { count: 2, p: .65 * .55 }];
++    expect(independent.filter(row => 2 + row.count >= 3).reduce((sum, row) => sum + row.p, 0)).toBeCloseTo(.8425);
++    const exclusive = [{ starts: [1, 0], p: .6 }, { starts: [0, 1], p: .4 }];
++    expect(exclusive.filter(row => row.starts.every(Boolean)).reduce((sum, row) => sum + row.p, 0)).toBe(0);
++    const data = researchRoster([["A", ["G"], [5], 1], ["B", ["G"], [6], 1]], { G: 2 });
++    data.players.forEach(row => { row.playerClass = "goalie"; });
++    data.forecasts.forEach((row, index) => { row.startProbability = [.65, .55][index]; });
++    data.rules.goalieMinimum = { required: 3, credited: 2, counts: "appearances", penalty: "none", periodStart: "2026-10-05", periodEnd: "2026-10-12" };
++    expect(evaluatePlan(data, intent, "agp").goalie).toMatchObject({ credited: 2, projected: null, confirmed: 0, risk: true });
++  });
++
++  it.each(["unsupported", "cap"])("does not certify %s rules", kind => {
++    const data = snapshot();
++    if (kind === "unsupported") data.rules.lineupMode = "unsupported";
++    else data.rules.unsupported = ["Position game caps require credited usage and cap-day rules; unsupported."];
++    expect(evaluatePlan(data, intent, "outcome")).toMatchObject({ legal: false, recommendation: { eligible: false } });
++  });
++
++  it("does not use a future schedule observation to certify an earlier decision", () => {
++    const data = snapshot();
++    data.evidence.schedule.asOf = "2026-10-05T00:00:00Z";
++    const result = evaluatePlan(data, intent, "outcome");
++    expect(result.projectedValue).toBeNull();
++    expect(result.recommendation?.eligible).toBe(false);
++    expect(result.limitations).toContain("Schedule evidence was observed after the planning time; reload inputs for this decision.");
++  });
++
++  it("does not reuse pre-drop availability to reacquire a streamed player", () => {
++    const data = snapshot();
++    data.rules.periods[0].remaining = 3;
++    const first = { id: "first", type: "add" as const, playerId: "c", dropPlayerId: "b", at: data.context.asOf, effectiveAt: data.context.asOf, conditional: false, dependsOn: [] };
++    const drop = { id: "drop", type: "drop" as const, playerId: "c", at: "2026-10-05T00:00:00Z", effectiveAt: "2026-10-05T00:00:00Z", conditional: false, dependsOn: ["first"] };
++    const again = { ...first, id: "again", dropPlayerId: undefined, at: "2026-10-06T00:00:00Z", effectiveAt: "2026-10-06T00:00:00Z", conditional: true, dependsOn: ["drop"] };
++    const timeline = buildTimeline(data, intent, [first, drop, again]);
++    expect([...timeline.at(again.effectiveAt).keys()]).toEqual(["a"]);
++    expect(timeline.legal).toBe(false);
++    expect(timeline.acquisitions).toEqual({ p: 1 });
++    expect(timeline.limitations).toContain("Player c was dropped in this plan; reacquisition needs new availability and waiver evidence.");
++  });
++
++  it("rejects cross-reset waiver accounting instead of charging a claim to an assumed period", () => {
++    const data = snapshot();
++    data.players[2].availability = "waivers";
++    data.players[2].waiverClearsAt = "2026-10-06T00:00:00Z";
++    data.rules.waivers = { mode: "priority", remainingBudget: null };
++    data.rules.periods = [
++      { id: "p1", start: data.context.asOf, end: "2026-10-06T00:00:00Z", remaining: 1, source: "manager" },
++      { id: "p2", start: "2026-10-06T00:00:00Z", end: "2026-10-12T00:00:00Z", remaining: 1, source: "manager" },
++    ];
++    const step = { id: "claim", type: "add" as const, playerId: "c", dropPlayerId: "b", at: data.context.asOf,
++      effectiveAt: data.players[2].waiverClearsAt, conditional: true, dependsOn: [] };
++    const crossing = buildTimeline(data, intent, [step]);
++    expect([...crossing.at(step.effectiveAt).keys()]).toEqual(["a", "b"]);
++    expect(crossing.legal).toBe(false);
++    expect(crossing.acquisitions).toEqual({});
++    expect(crossing.limitations).toContain("Waiver claim crosses an acquisition reset; the charge period is unverified.");
++    const samePeriod = buildTimeline(data, intent, [{ ...step, at: step.effectiveAt }]);
++    samePeriod.at(step.effectiveAt);
++    expect(samePeriod.legal).toBe(true);
++    expect(samePeriod.acquisitions).toEqual({ p2: 1 });
++  });
++
++  it("rejects direct-to-reserve additions instead of silently treating them as bench adds", () => {
++    const data = snapshot();
++    const at = data.context.asOf;
++    expect(evaluatePlan(data, intent, "agp", [{ id: "ir", type: "add", playerId: "c", dropPlayerId: "b", reservePosition: "IR", at, effectiveAt: at, conditional: false, dependsOn: [] }]).legal).toBe(false);
++  });
++
++  it("allows an ineligible IR stash and its removal, but blocks adds until it is resolved", () => {
++    const data = snapshot();
++    data.roster[1].position = "IR";
++    data.rules.rosterSlots.IR = 1;
++    expect(evaluatePlan(data, intent, "agp").legal).toBe(true);
++    const at = data.context.asOf;
++    const add = { id: "add", type: "add" as const, playerId: "c", at, effectiveAt: at, conditional: false, dependsOn: [] };
++    const blocked = buildTimeline(data, intent, [add]);
++    expect([...blocked.at(at).keys()]).toEqual(["a", "b"]);
++    expect(blocked.legal).toBe(false);
++    expect(blocked.acquisitions).toEqual({});
++    const drop = { id: "drop", type: "drop" as const, playerId: "b", at, effectiveAt: at, conditional: false, dependsOn: [] };
++    const repaired = buildTimeline(data, intent, [drop, { ...add, dependsOn: [drop.id] }]);
++    expect([...repaired.at(at).keys()]).toEqual(["a", "c"]);
++    expect(repaired.legal).toBe(true);
++    expect(repaired.acquisitions).toEqual({ p: 1 });
++  });
++
++  it("matches tiny exhaustive assignments, including repeated slots, negatives and fixed-objective invariants", () => {
++    // Independent enumerator: no production matcher, slot expansion or assignment helpers.
++    const positions = [["C", "LW"], ["C"], ["LW"], ["C"]];
++    const oracle = (values: number[], slots: string[], excluded: Set<number> = new Set()) => {
++      const visit = (slot: number, used: Set<number>): number => slot === slots.length ? 0
++        : Math.max(visit(slot + 1, used), ...values.flatMap((value, index) =>
++          !used.has(index) && !excluded.has(index) && positions[index].includes(slots[slot])
++            ? [value + visit(slot + 1, new Set([...used, index]))] : []));
++      return visit(0, new Set());
++    };
++    for (let seed = 0; seed < 40; seed++) {
++      const values = positions.map((_, index) => ((seed * (index + 3) + index * 7) % 17) - 8);
++      const data = researchRoster(positions.map((p, index) => [`p${index}`, p, [5], values[index]]), { C: 2, LW: 1, BN: 1 });
++      const result = evaluatePlan(data, intent, "outcome", [], false);
++      const expected = oracle(values, ["C", "C", "LW"]);
++      expect(result.assignmentValue, `seed ${seed}`).toBe(expected);
++      // Validate the assignment witness independently of the solver's legal flag.
++      expect(new Set(result.assignments.map(row => row.playerId)).size).toBe(result.assignments.length);
++      expect(new Set(result.assignments.map(row => row.slotId)).size).toBe(result.assignments.length);
++      for (const row of result.assignments) expect(positions[Number(row.playerId.slice(1))]).toContain(row.slotId.split("#")[0]);
++      const reversed = { ...data, players: [...data.players].reverse(), roster: [...data.roster].reverse(), games: [...data.games].reverse(), forecasts: [...data.forecasts].reverse() };
++      expect(evaluatePlan(reversed, intent, "outcome", [], false).assignments).toEqual(result.assignments);
++      const expanded = evaluatePlan({ ...data, rules: { ...data.rules, rosterSlots: { C: 2, LW: 2, BN: 1 } } }, intent, "outcome", [], false);
++      expect(expanded.assignmentValue).toBeGreaterThanOrEqual(expected);
++      const constrained = evaluatePlan({ ...data, lockedAssignments: [{ date: "2026-10-05", playerId: "p0", slotId: null }] }, intent, "outcome", [], false);
++      expect(constrained.assignmentValue).toBe(oracle(values, ["C", "C", "LW"], new Set([0])));
++      expect(constrained.assignmentValue).toBeLessThanOrEqual(expected);
++    }
++  });
++
++  it("benchmarks one-move search against every legal swap in a tiny candidate universe", () => {
++    const data = researchRoster([["a", ["C"], [5], 2], ["b", ["C"], [5], 1], ["c", ["C"], [5], 5], ["d", ["C"], [5], 4]], { C: 1, BN: 1 });
++    data.roster = data.roster.slice(0, 2);
++    data.players.slice(2).forEach(row => { row.availability = "free_agent"; });
++    const result = planRoster(data, intent, { maxSteps: 1, maxCandidates: 4, beamWidth: 30, maxEvaluations: 500, timeBudgetMs: Infinity });
++    // With one slot on one date, exhaustive ownership enumeration is max(max(roster after each swap)).
++    const value = (id: string) => data.forecasts.find(row => row.playerId === id)!.stats.pts!;
++    const exact = Math.max(2, ...["c", "d"].flatMap(add => ["a", "b"].map(drop =>
++      Math.max(...["a", "b"].filter(id => id !== drop).map(value), value(add)))));
++    expect(Math.max(result.baseline.assignmentValue!, ...result.alternatives.map(plan => plan.assignmentValue!))).toBe(exact);
++    expect(result.alternatives.every(plan => plan.legal)).toBe(true);
++  });
++});
++
+ describe("one retention ordering across drop surfaces (R7)", () => {
+   const withOwnership = (data: PlanningSnapshot, owned: Record<string, number | null>) => {
+     data.players = data.players.map(row => row.id in owned ? { ...row, ownership: owned[row.id] } : row);
+diff --git a/web/lib/rosterScheduleOptimizer/planning.ts b/web/lib/rosterScheduleOptimizer/planning.ts
+index dcd0d5928..f10dda07b 100644
+--- a/web/lib/rosterScheduleOptimizer/planning.ts
++++ b/web/lib/rosterScheduleOptimizer/planning.ts
+@@ -49,7 +49,7 @@ export function sanitizeForecastInputs<T extends ContributionPlanningSnapshot>(s
+ const time = (value: string) => Date.parse(value);
+ const gameTime = (game: PlanningGame, zone: string) => game.startsAt ?? zonedMidnight(game.date, zone);
+ const eligibleGame = (game: PlanningGame, snapshot: PlanningSnapshot) => game.startsAt
+-  ? time(game.startsAt) >= time(snapshot.context.asOf)
++  ? time(game.startsAt) > time(snapshot.context.asOf)
+   : game.date > localDate(snapshot.context.asOf, snapshot.context.timeZone);
+ const preferredGoalieDate = (date: string, intent: PlanIntent) => {
+   const weekday = (new Date(`${date}T12:00:00Z`).getUTCDay() + 6) % 7 + 1;
+@@ -630,6 +630,7 @@ export function scheduleAdmissionProblem(snapshot: PlanningSnapshot): string | n
+   const schedule = snapshot.evidence.schedule;
+   if (schedule?.completeness !== "complete") return "Planning schedule coverage is incomplete or unknown.";
+   const observed = time(schedule.asOf ?? ""), planning = time(snapshot.context.asOf);
++  if (observed > planning) return "Schedule evidence was observed after the planning time; reload inputs for this decision.";
+   if (!Number.isFinite(observed) || !Number.isFinite(planning) || planning - observed < SCHEDULE_WITNESS_TTL_MS) return null;
+   const iso = (value: number) => new Date(value).toISOString();
+   return `Schedule evidence observed ${iso(observed)} expired ${iso(observed + SCHEDULE_WITNESS_TTL_MS)}; planning time is ${iso(planning)}. Reload the schedule; a forecast refresh does not renew it.`;
+@@ -694,7 +695,7 @@ function evaluatePreparedPlan(prepared: ReturnType<typeof prepareEvaluation>, in
+   const startedPlays: Play[] = [], startedRows: PlanningAssignment[] = [];
+   if (snapshot.rules.lineupMode === "daily" && today >= snapshot.context.startDate && today <= snapshot.context.endDate) {
+     const todayGames = snapshot.games.filter(game => game.date === today && ["scheduled", "live", "final"].includes(game.status));
+-    const started = (game: PlanningGame) => game.startsAt ? time(game.startsAt) < time(snapshot.context.asOf) : game.status !== "scheduled";
++    const started = (game: PlanningGame) => game.startsAt ? time(game.startsAt) <= time(snapshot.context.asOf) : game.status !== "scheduled";
+     if (todayGames.some(started)) {
+       const allForecasts = new Map(snapshot.forecasts.map(forecast => [`${forecast.playerId}:${forecast.gameId}`, forecast]));
+       const preStart: Play[] = [];
+@@ -709,6 +710,10 @@ function evaluatePreparedPlan(prepared: ReturnType<typeof prepareEvaluation>, in
+       }
+       const locks = snapshot.lockedAssignments.filter(lock => lock.date === today);
+       const unlocked = startedPlays.some(play => !locks.some(lock => lock.playerId === play.player.id));
++      if (unlocked) {
++        invalidLocks = true;
++        limitations.add("Started games lack recorded lineup locks; inferred positions are provisional. Confirm the active and bench assignments before acting.");
++      }
+       const beforeStart = unlocked ? assign(snapshot, intent, objective, preStart, today, locks, new Set(), applicability, []) : [];
+       for (const play of startedPlays) {
+         const lock = locks.find(item => item.playerId === play.player.id);
+@@ -972,7 +977,7 @@ function evaluatePreparedPlan(prepared: ReturnType<typeof prepareEvaluation>, in
+   if (hasMinimum && (minimum.counts === "unknown" || minimum.penalty === "unknown")) limitations.add("Goalie minimum semantics are incomplete.");
+   if (risk && minimum.penalty === "lose_goalie_categories" && snapshot.rules.scoring.mode === "categories") { matchupKnown = false; limitations.add("Goalie-category forfeiture risk makes the matchup projection incomplete."); }
+   if (totalsUnresolved.length || !opportunitiesComplete) { projectedValue = null; matchupKnown = false; }
+-  const legal = timeline.legal && !invalidLocks && !weeklyEvidenceMissing && snapshot.rules.lineupMode !== "unsupported" && (snapshot.rules.lineupMode !== "weekly" || dates.every(date => !!lineupPeriodForDate(date)?.lockAt)) && !slotDiagnostics.some(item => item.severity === "error");
++  const legal = timeline.legal && !invalidLocks && !weeklyEvidenceMissing && !snapshot.rules.unsupported.length && snapshot.rules.lineupMode !== "unsupported" && (snapshot.rules.lineupMode !== "weekly" || dates.every(date => !!lineupPeriodForDate(date)?.lockAt)) && !slotDiagnostics.some(item => item.severity === "error");
+   if ([...chosen.values()].some(play => ["baseline", "blended"].includes(play.forecast?.sourceKind ?? ""))) limitations.add("Includes provisional baseline estimates; no calibrated uncertainty.");
+   if (conflictingTargets.size) { projectedValue = null; matchupKnown = false; }
+   const assignmentValue = unresolved.length || (scheduledGames > 0 && forecastedOpportunities === 0) ? null
+diff --git a/web/lib/rosterScheduleOptimizer/planningTimeline.ts b/web/lib/rosterScheduleOptimizer/planningTimeline.ts
+index eaffdb66d..4213dfb74 100644
+--- a/web/lib/rosterScheduleOptimizer/planningTimeline.ts
++++ b/web/lib/rosterScheduleOptimizer/planningTimeline.ts
+@@ -30,7 +30,7 @@ export function buildTimeline(snapshot: PlanningSnapshot, intent: PlanIntent, st
+     if (roster.has(entry.playerId)) issues.add(`Duplicate roster player ${entry.playerId}.`);
+     const player = snapshot.players.find(candidate => candidate.id === entry.playerId);
+     if (!player) issues.add(`Roster player ${entry.playerId} is unresolved.`);
+-    else if (isReserve(entry.position) && !player.reserveEligibility.includes(entry.position as typeof reserves[number])) issues.add(`Initial reserve placement for ${entry.playerId} is unverified.`);
++    else if (isReserve(entry.position) && !player.reserveEligibility.includes(entry.position as typeof reserves[number])) warnings.add(`Initial reserve placement for ${entry.playerId} is unverified; additions are blocked until resolved.`);
+     roster.set(entry.playerId, { ...entry, since: "0000-01-01T00:00:00Z" });
+   }
+   const capacity = (candidate = roster) => {
+@@ -43,6 +43,7 @@ export function buildTimeline(snapshot: PlanningSnapshot, intent: PlanIntent, st
+   };
+   capacity();
+   const applied = new Set<string>();
++  const droppedPlayers = new Set<string>();
+   let waiverSpent = 0, waiverBudgetVerified = true;
+   const stepById = new Map(steps.map(step => [step.id, step]));
+   if (stepById.size !== steps.length) issues.add("Duplicate plan step identifiers.");
+@@ -89,7 +90,12 @@ export function buildTimeline(snapshot: PlanningSnapshot, intent: PlanIntent, st
+       if (lockedAt(player.id, step)) { issues.add(`Drop conflicts with locked assignment for ${player.id}.`); return; }
+       nextRoster.delete(player.id);
+     } else {
++      if (step.reservePosition) { issues.add("Direct-to-reserve additions are unsupported; verify the league setting and use a separately validated roster transition."); return; }
++      if (droppedPlayers.has(player.id)) { issues.add(`Player ${player.id} was dropped in this plan; reacquisition needs new availability and waiver evidence.`); return; }
+       if (roster.has(player.id) || intent.excludedPlayerIds.includes(player.id) || !["free_agent", "manager_available", "waivers"].includes(player.availability)) { issues.add(`Player ${player.id} is not verified available.`); return; }
++      if ([...roster.values()].some(member => isReserve(member.position) && !snapshot.players.find(row => row.id === member.playerId)?.reserveEligibility.includes(member.position as typeof reserves[number]))) {
++        issues.add("An ineligible or unverified reserve occupant blocks additions; resolve that roster position first."); return;
++      }
+       if (time(step.at) > time(snapshot.context.asOf)) {
+         if (!step.conditional) { issues.add(`Future acquisition ${step.id} must be conditional on availability recheck.`); return; }
+         warnings.add(`Future availability for ${player.id} must be rechecked before ${step.id}.`);
+@@ -127,11 +133,16 @@ export function buildTimeline(snapshot: PlanningSnapshot, intent: PlanIntent, st
+       nextRoster.set(player.id, { playerId: player.id, position: "bench", since: step.effectiveAt });
+       const period = snapshot.rules.periods.find(item => time(item.start) <= time(step.at) && time(step.at) < time(item.end));
+       if (!period) { issues.add(`No acquisition period covers ${step.at}.`); return; }
++      if (player.availability === "waivers" && !(time(period.start) <= time(step.effectiveAt) && time(step.effectiveAt) < time(period.end))) {
++        issues.add("Waiver claim crosses an acquisition reset; the charge period is unverified."); return;
++      }
+       nextAcquisitions[period.id] = (acquisitions[period.id] ?? 0) + (snapshot.rules.acquisitionCost ?? 1);
+       if (period.remaining === null || period.source === "unknown" || snapshot.rules.acquisitionCost === null) warnings.add(`Acquisition allowance or counting cost for ${period.id} is unverified.`);
+       else if (nextAcquisitions[period.id] > period.remaining) { issues.add(`Acquisition allowance exceeded for ${period.id}.`); return; }
+     }
+     if (!capacity(nextRoster)) return;
++    if (step.type === "drop") droppedPlayers.add(player.id);
++    if (step.type === "add" && step.dropPlayerId) droppedPlayers.add(step.dropPlayerId);
+     roster = nextRoster;
+     Object.assign(acquisitions, nextAcquisitions);
+     waiverSpent = nextWaiverSpent;
+diff --git a/web/lib/rosterScheduleOptimizer/refreshForecastInputs.test.ts b/web/lib/rosterScheduleOptimizer/refreshForecastInputs.test.ts
+index 9d5fd7664..e16ab7ed7 100644
+--- a/web/lib/rosterScheduleOptimizer/refreshForecastInputs.test.ts
++++ b/web/lib/rosterScheduleOptimizer/refreshForecastInputs.test.ts
+@@ -117,10 +117,10 @@ describe("shared forecast reload for the owned roster", () => {
+     const legacy = withSchedule(null);
+     expect(legacy).toMatchObject({ comparisonEligible: true, projectedValue: 10 });
+     expect(legacy.limitations).toContain("Schedule evidence has no observation time, so its freshness was not rechecked at planning time. Reload the schedule to confirm it.");
+-    // A witness observed after an older planning clock (a restored manual workspace, client clock skew) has not expired.
++    // An earlier decision cannot use later evidence, even when that evidence has not expired.
+     const newer = withSchedule("2026-10-14T06:00:00Z");
+-    expect(newer).toMatchObject({ comparisonEligible: true, projectedValue: 10 });
+-    expect(newer.limitations.some(line => line.startsWith("Schedule evidence"))).toBe(false);
++    expect(newer).toMatchObject({ comparisonEligible: false, projectedValue: null });
++    expect(newer.limitations).toContain("Schedule evidence was observed after the planning time; reload inputs for this decision.");
+     // An expired observation still blocks.
+     expect(withSchedule("2026-10-12T00:00:00Z")).toMatchObject({ comparisonEligible: false, projectedValue: null });
+   });

@@ -1,0 +1,40 @@
+[
+  {
+    "name": "integration-planning",
+    "exitCode": 0,
+    "command": [
+      "node",
+      "node_modules/vitest/vitest.mjs",
+      "run",
+      "lib/rosterScheduleOptimizer/planning.test.ts",
+      "--maxWorkers=1",
+      "--reporter=dot",
+      "--reporter=json",
+      "--outputFile.json=/Users/tim/Code/fhfhockey.com/tasks/artifacts/rso-first-pass-2026-11-07/integration-planning-results.json"
+    ],
+    "cwd": "/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-rso-first-pass-20261107-rq7qrip0/web",
+    "candidateTree": "4ba9b5dd1c6feb613f2f8e526fb280bb4b35c54e",
+    "canonicalPathsMatchCandidate": true,
+    "startedAt": "2026-11-07T22:46:18.029797+00:00",
+    "finishedAt": "2026-11-07T22:46:30.415263+00:00",
+    "log": "integration-planning.log",
+    "network": "inert environment and Node loopback guard"
+  },
+  {
+    "name": "integration-lint",
+    "exitCode": 0,
+    "command": [
+      "node",
+      "node_modules/eslint/bin/eslint.js",
+      "lib/rosterScheduleOptimizer/planning.ts",
+      "lib/rosterScheduleOptimizer/planning.test.ts"
+    ],
+    "cwd": "/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-rso-first-pass-20261107-rq7qrip0/web",
+    "candidateTree": "4ba9b5dd1c6feb613f2f8e526fb280bb4b35c54e",
+    "canonicalPathsMatchCandidate": true,
+    "startedAt": "2026-11-07T22:46:30.415930+00:00",
+    "finishedAt": "2026-11-07T22:46:31.989347+00:00",
+    "log": "integration-lint.log",
+    "network": "inert environment and Node loopback guard"
+  }
+]

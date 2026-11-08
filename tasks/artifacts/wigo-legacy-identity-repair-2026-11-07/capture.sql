@@ -1,0 +1,3 @@
+with active as (select distinct player_id from public.wgo_skater_stats_totals where season in ('20262027','20252026') and player_id is not null),
+frames as (select w.* from active a cross join lateral (select * from public.wgo_skater_stats w where w.player_id=a.player_id and games_played=1 order by date desc, game_id desc limit 20) w)
+select id,player_id,player_name,date,season_id,game_id,team_abbrev,opponent_team_abbrev,home_road,games_played,goals,assists,points,shots,plus_minus,penalty_minutes,toi_per_game,md5(to_jsonb(frames)::text) as before_md5,md5((to_jsonb(frames)-'game_id'-'team_abbrev'-'opponent_team_abbrev'-'home_road')::text) as preserved_md5 from frames where game_id is null order by player_id,date,id;

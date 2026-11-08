@@ -1,0 +1,20 @@
+{
+  "observed_at": "2026-11-08T00:19:53.140471Z",
+  "project_ref": "fyhftlxokyjtpndbkfse",
+  "database_status": "ACTIVE_HEALTHY",
+  "dashboard_status": "Healthy",
+  "worker_database_only_restart_verified_at": "2026-11-08T00:13:30.75478Z",
+  "subsequent_restart_started_at": "2026-11-08T00:17:38.122508Z",
+  "worker_restart_submissions": 1,
+  "backend_total": 22,
+  "client_backends": 13,
+  "active_other_clients": 0,
+  "active_long_clients": 0,
+  "route_runner_jobs": [],
+  "matching_cron_jobs": [],
+  "cron_changes": [],
+  "vercel_flag_change": "blocked: MCP 403; prescribed CLI unavailable; parent arranged user action",
+  "vercel_deployments_by_worker": [],
+  "verified_production_sha": "a68f9b3d24aed05da2d0f1c0556185c8a144ba81",
+  "remaining": ["Verify user-applied Production flag false", "Verify or perform exact-SHA deployment when flag outcome confirmed", "Identify intended scheduler jobs before any targeted pause", "Recheck health after effective containment"]
+}

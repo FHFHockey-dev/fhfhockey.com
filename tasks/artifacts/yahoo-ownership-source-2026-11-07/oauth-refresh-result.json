@@ -1,0 +1,18 @@
+{
+  "startedAt": "2026-11-07T20:04:40.123Z",
+  "route": "https://fhfhockey.com/api/v1/db/manual-refresh-yahoo-token",
+  "requests": 1,
+  "newConnection": false,
+  "expandedPermissions": false,
+  "status": "uncertain_transport_outcome_no_retry",
+  "completedAt": "2026-11-07T20:06:40.144Z",
+  "reconciliation": {
+    "requestReachedApplication": true,
+    "requestId": "268bn-1794081893157-e4390662866f",
+    "observedFailure": "Unhandled YahooGlobalCredentialError: Yahoo refreshed credentials are invalid.",
+    "storedCredentialUpdatedAt": "2026-08-13T05:08:50.529+00:00",
+    "newAuditObserved": false,
+    "providerSideRotation": "unknown; original OAuth response status/body unavailable",
+    "retryPerformed": false
+  }
+}

@@ -1,0 +1,153 @@
+{
+  "createdAt": "2026-11-07T21:23:03.128126+00:00",
+  "state": "CANONICAL_INTEGRATED_RELEASE_CANDIDATE_VERIFIED",
+  "baseCommit": "00ea36b39ee0c541fd6050b79703d2c054e97f1d",
+  "baseTree": "58ef502095ef756c7ae073d54e0b92212a108401",
+  "sourceCommit": "2c20b5669c738f13d97daa55e4c93381908120a0",
+  "candidateCommit": null,
+  "candidateTree": "4ba9b5dd1c6feb613f2f8e526fb280bb4b35c54e",
+  "overlayFiles": [
+    {
+      "path": "web/components/RosterScheduleOptimizer/HealthyReserveAlert.test.tsx",
+      "baseBlob": "c494cffd21e056cf71b6f26e338cfdbfe2cc0089",
+      "candidateBlob": "d9ea1df418e822268bebeac89db05b5c68fe73e4",
+      "sha256": "d81e31c1fe5a8886a5ff56718f8382caac2a3e0acbc4cbd6d58a51a7008a8b95"
+    },
+    {
+      "path": "web/components/RosterScheduleOptimizer/HealthyReserveAlert.tsx",
+      "baseBlob": "c05cb751f5431fbcccf9a7fd3c561fa26c98db3f",
+      "candidateBlob": "1c7a026403c58b46dcee0b00f5b724f285cc8e23",
+      "sha256": "1ff7c1fcf016d6131b5bd3124aa2332810d51ab364c0189c9b5c0581fccb2eca"
+    },
+    {
+      "path": "web/e2e/roster-schedule-optimizer.spec.ts",
+      "baseBlob": "0b9d772e0eadf147a863725146c5eab136f3a7cd",
+      "candidateBlob": "5c55a4104aefbd10cfd62ad54f5a2153d29e4431",
+      "sha256": "a16bddc3c2bba0c9e5ec7d8c165c531bb3e78501b1e851e0ca2f8f703490b135"
+    },
+    {
+      "path": "web/lib/integrations/yahoo/rosterPlanning.test.ts",
+      "baseBlob": "110dbc7e5fc16623f731616f241d362e81ff4396",
+      "candidateBlob": "815e08265174e1ce099b0f4b9443fe449fed3125",
+      "sha256": "3f1ee33d5ebf1a69026241314ac3cf3fe3c1d65f2114d969dfbed3dd66245508"
+    },
+    {
+      "path": "web/lib/integrations/yahoo/rosterPlanning.ts",
+      "baseBlob": "f7f906524c71953cdce5926c7017c1de7b79c10a",
+      "candidateBlob": "8d172bd28b31eb11e7fe8555e8d8f2ef1c70f698",
+      "sha256": "bf1ea851c024f6e5f5e399f0505347dc9e16d8407b5921f1c3406cc005661cc9"
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/candidatePlanMetrics.test.ts",
+      "baseBlob": "567a473f7ff988681f6ebec9c10fc8daf67cde12",
+      "candidateBlob": "03f7f275bba039b6b8657e150e11984175643231",
+      "sha256": "156b1923c3fd85e96d2a3e1659afd04d8c95567f41c720738a84529609fb547e"
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/contributionLedger.test.ts",
+      "baseBlob": "fac47c34c29c288d944fd538aeb93116b2083443",
+      "candidateBlob": "5127794ffa1a1bab70474adc9b6a0b4c9e23fdeb",
+      "sha256": "776bf76c7eafeb6eb434d992577705e30ed2ab5f0a5c7ae711fe7c48311c5970"
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/dailyAcceptance.manual.test.ts",
+      "baseBlob": "83d301ed3214732177f6e135894ef01562bdd609",
+      "candidateBlob": "acd40ca05577fc8dea77b1611e7d32612055cf6d",
+      "sha256": "121f2b714b23f209bc845538327e47729ac86fb37f641dacbf338d20920d483c"
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/healthyReserves.test.ts",
+      "baseBlob": "979cca8d526439195b7eda1a0af2131093c892c8",
+      "candidateBlob": "692f42952d070492ccee2c1306125c144499b4e8",
+      "sha256": "dab0c7f0abdb9bc2dd30baa94b0aab19d3965136c2f831da1e6fe2b800160998"
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/healthyReserves.ts",
+      "baseBlob": "ae0015f71d4c7d318c603aa74e6ce5e02fab0dfa",
+      "candidateBlob": "96be11d315fe42e04655d0d3675bae2a4e90f255",
+      "sha256": "a4127298df7900f319e4a6eff6e49112b9164fb1c8a9f08db7caee6b1c450f6c"
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/lineupGaps.test.ts",
+      "baseBlob": "ebbf46fbe72e3c91d97e2b92747072bf6018f6eb",
+      "candidateBlob": "5b51ec457e9e8d0c931544e4fafea82cb339668a",
+      "sha256": "8437cd29102f0c685db090cad6c4a68224f2215ca5d564a39a98e31bd83c9775"
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/lineupGaps.ts",
+      "baseBlob": "c8da1282cf1f2b84b3ae956f1a68495aaa5edfe8",
+      "candidateBlob": "3a3c7ee9534a462e34e7b17573651dd707462245",
+      "sha256": "a664b961df98d4b244c85a9845447a4b62ac998943803d4360894cf4c0feeec4"
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/planning.test.ts",
+      "baseBlob": "3414c3a217f5f431d7c55273c8fa836dcb62664c",
+      "candidateBlob": "37716f6225f89681d1fd6938ec8f7d858953cceb",
+      "sha256": "13c94223ecaf2c70fb6d6ee6a5eec0e2957b040b65c85f174c3cf8647e5184f0"
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/planning.ts",
+      "baseBlob": "dcd0d592874b3d2eb88f8f0b1d2f164b900fd5eb",
+      "candidateBlob": "f7d15914a1fff7c0dfc764a298c56798c27e1d59",
+      "sha256": "c082f0e0b51f355e946e7836d3740f30665e54d0ffdf8809c9d9b7eb67381f57"
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/planningTimeline.ts",
+      "baseBlob": "eaffdb66d8dde58eaa8a465093230d8357380345",
+      "candidateBlob": "4213dfb744cdac2bdaeaba71703083060e6dffed",
+      "sha256": "8c8649e8f0f03e1159230dbe58a48cbedbef8286f5c15d6a8f2e244e604bc474"
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/refreshForecastInputs.test.ts",
+      "baseBlob": "9d5fd766469bf66ce81ac4313daa2409a1e1a12f",
+      "candidateBlob": "e16ab7ed78b953d3e054250fe2dc3d5bf6aacac8",
+      "sha256": "d85373455b595a198c7855f4a1ebe8a0a20e4dd9aff74e6f883b5694bbacd681"
+    }
+  ],
+  "patchSha256": "f4d80f071a4d737ac90b2a872c7ac04ad98aabf5bbb0f555b52273ee937ef003",
+  "exportRoot": "/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-rso-first-pass-20261107-rq7qrip0",
+  "excludedEnvironmentFiles": [
+    "web/.env.production",
+    "web/.env.test",
+    "web/.env.development"
+  ],
+  "excluded": "Mixed-commit Roster Autopsy, Trade Analyzer, Yahoo scheduler assertions, task records and unrelated CSS. Concurrent dirty application files excluded.",
+  "canonicalSourceChanged": true,
+  "gitMutation": "Two working-tree files patched; index, refs and commits unchanged",
+  "checks": {
+    "regressionTestsPassed": 2301,
+    "regressionFilesPassed": 104,
+    "types": "passed",
+    "lint": "passed",
+    "browserTestsPassed": 63,
+    "sourcePinsChecked": 4794,
+    "sourcePinMismatches": 0,
+    "independentReview": "both findings closed; ten focused cases passed"
+  },
+  "updatedAt": "2026-11-07T22:48:39.574289+00:00",
+  "lastVerifiedAt": "2026-11-07T21:57:25.610071+00:00",
+  "browserSetupResolution": "Removed copied nested dependency symlink; unchanged candidate returned HTTP 200; canonical dependencies untouched",
+  "observedCanonicalHeadAtHandoff": "45386c9a26178b33adc816daae8d479152085fa1",
+  "observedReleaseBaseAtHandoff": "00ea36b39ee0c541fd6050b79703d2c054e97f1d",
+  "priorCandidateTree": "50766b2d31d6f5a6b9cbbcc3565be91152080c9e",
+  "candidateRevision": 2,
+  "reviewAmendments": [
+    "Started O/IR occupants require explicit active or bench lock evidence.",
+    "Acquisitions effective at puck drop cannot claim that started game.",
+    "Nine regressions: O/IR missing/active/bench locks and acquisition boundary -1ms/exact/+1ms."
+  ],
+  "browserResult": {
+    "passed": 63,
+    "failed": 0,
+    "skipped": 0,
+    "duration": "2.5m",
+    "receipt": "browser-reviewed-v2.json"
+  },
+  "canonicalSourcePathsChanged": [
+    "web/lib/rosterScheduleOptimizer/planning.ts",
+    "web/lib/rosterScheduleOptimizer/planning.test.ts"
+  ],
+  "integrationReceipt": "CANONICAL-INTEGRATION.json",
+  "integrationChecks": "INTEGRATION-CHECKS.json",
+  "fullVerificationEvidenceReuse": "Exact candidate tree and all 4,794 tracked export files remain unchanged; the 2,301-test, 63-Chromium, type/lint receipts remain applicable. Fresh integration run: 173 planning tests and two-file lint passed."
+}

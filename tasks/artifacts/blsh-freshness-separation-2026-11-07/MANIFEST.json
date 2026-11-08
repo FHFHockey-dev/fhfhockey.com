@@ -1,0 +1,58 @@
+{
+  "web/lib/buyLowSellHigh/currentProcessEvidence.server.ts": {
+    "sha256": "e69db2c0ee67669df2725636dda689f036780d7809f0e2f49ec89ca504eac724",
+    "bytes": 20149
+  },
+  "web/lib/buyLowSellHigh/currentProcessEvidence.server.test.ts": {
+    "sha256": "cc9905ca12e2399fba400ff54e7eccbc821235d38c24df82bcbdfaee2593f7d0",
+    "bytes": 29688
+  },
+  "tasks/artifacts/blsh-freshness-separation-2026-11-07/BASE-PINS.json": {
+    "sha256": "ae55fb45eca1f7719c6b4954071bd848ab4b86c7fdbedd58ca55219d349a39e5",
+    "bytes": 710
+  },
+  "tasks/artifacts/blsh-freshness-separation-2026-11-07/CHECKS.json": {
+    "sha256": "a456e6205e0ee28c8cf7fd9079d105b4f5d07f20eb2e69d642fd9f906c51f83b",
+    "bytes": 614
+  },
+  "tasks/artifacts/blsh-freshness-separation-2026-11-07/HANDOFF.md": {
+    "sha256": "d289f587f64fa7ff9ee86ab6a49170339858b4d1ea31bd76e2f575263d12ebb6",
+    "bytes": 6295
+  },
+  "tasks/artifacts/blsh-freshness-separation-2026-11-07/LEGACY-PARITY.json": {
+    "sha256": "cf38d33390a4f4125de4bda4027be28042eaf04f4252b30a17d6a4bcc3c516a7",
+    "bytes": 10622
+  },
+  "tasks/artifacts/blsh-freshness-separation-2026-11-07/LINT.log": {
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  },
+  "tasks/artifacts/blsh-freshness-separation-2026-11-07/TESTS-New-York.log": {
+    "sha256": "0959c59e301104b6e263badc4b8a48488b445c0c43a3c43cdad0b55261df9ad6",
+    "bytes": 688
+  },
+  "tasks/artifacts/blsh-freshness-separation-2026-11-07/TESTS.log": {
+    "sha256": "02a009f16e5478746096d7ac3709f42a8ed1b80372f83c9456321a7cf35d85b9",
+    "bytes": 600
+  },
+  "tasks/artifacts/blsh-freshness-separation-2026-11-07/TYPES.log": {
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  },
+  "tasks/artifacts/blsh-freshness-separation-2026-11-07/change.patch": {
+    "sha256": "8050cf65dfed93379539bace1a3e09f847cb7a3d67142d5c5303d4b58bb524f6",
+    "bytes": 16576
+  },
+  "tasks/artifacts/blsh-freshness-separation-2026-11-07/compare-legacy.cjs": {
+    "sha256": "427b82c8f26574ab39302fc2a5295513ac29a3ba39a3ab110698357299e2517c",
+    "bytes": 3774
+  },
+  "tasks/artifacts/blsh-freshness-separation-2026-11-07/currentProcessEvidence.server.base.ts": {
+    "sha256": "9011207c1d16af7a2834a80b4d19d85d0b772a02093eef822e0dd44a9959af83",
+    "bytes": 16728
+  },
+  "tasks/artifacts/blsh-freshness-separation-2026-11-07/currentProcessEvidence.server.test.base.ts": {
+    "sha256": "0e3a7dfdb02b4e6271ddc14371e8f6fcf39f1ab80929fc503bdfa6f44b584a23",
+    "bytes": 22204
+  }
+}

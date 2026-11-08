@@ -1,0 +1,12 @@
+# Local integration review
+
+November 7, 2026. Review applies to the exact isolated patch and offline preparation, not live collection or source admission.
+
+- All 20 entries in `MANIFEST.json` match their final bytes. Canonical `web/lib/nst/client.ts` still hashes to `48d82fc40ca06d9abe4675f4a1896add55c4e53d4dee661bbe082d424c944e4f` and has no working-tree modification. `git apply --check` succeeds; the patch was not applied.
+- Read the actual optional-reader diff and preparation code. Bounded mode avoids an unread cloned body, rejects invalid bounds before dispatch, aborts/cancels on overflow and uses the existing non-retryable execution-limit error. Default client/cache behavior remains unchanged. The limit is retained/accepted decoded bytes, not exact transferred bytes.
+- A review issue was corrected: candidate-only tests originally lived under the ordinary `web` test tree. They and their harness now live in this artifact directory; ordinary discovery finds only the independent preparation test. They cannot silently test the unpatched canonical client.
+- Plan wording now distinguishes two provider attempts from potentially repeated shared-admission RPC calls. The existing RPC loop has a deadline but no separate call-count cap. Future execution approval must cover that actual behavior, not an invented two-write budget.
+- Offline packets retain caller-supplied observations as unverified, preserve reported retrieval separately from retention and do not claim authenticated redaction or transport. No NativeReceipt, accepted bundle, source eligibility, score or fresh observation is manufactured.
+- Verification evidence read: 27 preparation tests and 37 isolated client tests passed, including all 23 unchanged original client tests. Focused virtual-source types passed. Lint has zero errors and one non-blocking artifact-config warning. Application-wide types/tests and live transport were not run for this slice. The review reused these focused results rather than repeating successful suites.
+
+No remaining blocker was found for handing back this **unapplied, locally tested preparation**. Real producer integration, actual transport/TLS/redaction provenance, completed-date review, shared-ledger write authorization, semantic field matching and independent source acceptance remain outstanding. The separate seven-day event-age/window-recency compatibility finding must also be addressed before assuming native receipts enable complete current five-game windows.

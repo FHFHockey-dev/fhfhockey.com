@@ -6,11 +6,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const {
   auditInsertMock,
   requireLatestSucceededRunIdMock,
+  requireExternalInputProvenRunMock,
   runProjectionPreflightChecksMock,
   serverSupabaseMock
 } = vi.hoisted(() => ({
   auditInsertMock: vi.fn().mockResolvedValue({ error: null }),
   requireLatestSucceededRunIdMock: vi.fn(),
+  requireExternalInputProvenRunMock: vi.fn(),
   runProjectionPreflightChecksMock: vi.fn(),
   serverSupabaseMock: {} as Record<string, unknown>
 }));
@@ -24,11 +26,20 @@ vi.mock("lib/supabase", () => ({
 }));
 
 vi.mock("lib/supabase/server", () => ({
-  default: serverSupabaseMock
+  default: {
+    from: (table: string) => table === "cron_job_audit"
+      ? { insert: auditInsertMock }
+      : (serverSupabaseMock.from as (table: string) => unknown)(table),
+    rpc: (...args: unknown[]) => (serverSupabaseMock.rpc as (...args: unknown[]) => unknown)(...args)
+  }
 }));
 
 vi.mock("lib/projections/apiHelpers", () => ({
   requireLatestSucceededRunId: requireLatestSucceededRunIdMock
+}));
+
+vi.mock("lib/projections/externalInputProof", () => ({
+  requireExternalInputProvenRun: requireExternalInputProvenRunMock
 }));
 
 vi.mock("../../../../../pages/api/v1/db/run-projection-v2", () => ({
@@ -103,9 +114,7 @@ async function runAccuracyWithTables(tables: Record<string, unknown[]>) {
                   table === "forge_runs"
                     ? {
                         metrics: {
-                          input_provenance: buildForgeInputProvenance({
-                            externalFantasyInputsExcluded: true
-                          })
+                          input_provenance: buildForgeInputProvenance()
                         }
                       }
                     : null,
@@ -147,6 +156,8 @@ async function runAccuracyWithTables(tables: Record<string, unknown[]>) {
 describe("/api/v1/db/run-projection-accuracy", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    requireExternalInputProvenRunMock.mockImplementation(async (runId: string) => ({ runId,
+      proof: { ...buildForgeInputProvenance({ externalFantasyInputsExcluded: true }), basis: "verified_producer_closure" } }));
     runProjectionPreflightChecksMock.mockResolvedValue({
       asOfDate: "2026-03-19",
       bypassed: false,
@@ -244,6 +255,41 @@ describe("/api/v1/db/run-projection-accuracy", () => {
         "Projection freshness checks failed. Resolve upstream dependencies or use bypassPreflight=true to override."
     });
     expect(requireLatestSucceededRunIdMock).not.toHaveBeenCalled();
+  });
+
+  it("accepts exact-run producer proof without requiring a run-start exclusion label", async () => {
+    const { res } = await runAccuracyWithTables({});
+    expect(requireExternalInputProvenRunMock).toHaveBeenCalledWith("run-a08");
+    expect(res.statusCode).toBe(200);
+  });
+
+  it("rejects an unproven latest run before any calibration reads or writes", async () => {
+    requireLatestSucceededRunIdMock.mockResolvedValue("unproven-latest");
+    requireExternalInputProvenRunMock.mockRejectedValue(Object.assign(new Error("Selected projection run lacks external fantasy exclusion provenance."),
+      { statusCode: 422, details: { reason: "external_input_provenance_unproven" } }));
+    serverSupabaseMock.from = vi.fn();
+    serverSupabaseMock.rpc = vi.fn();
+    try {
+      const res = createMockRes();
+      await handler({ method: "GET", query: { date: "2026-03-20", ignoreOffSeason: "true" } } as any, res);
+      expect(res.statusCode).toBe(422);
+      expect(requireExternalInputProvenRunMock).toHaveBeenCalledWith("unproven-latest");
+      expect(serverSupabaseMock.from).not.toHaveBeenCalled();
+      expect(serverSupabaseMock.rpc).not.toHaveBeenCalled();
+    } finally {
+      delete serverSupabaseMock.from;
+      delete serverSupabaseMock.rpc;
+    }
+  });
+
+  it("still rejects legacy rolling-history proof", async () => {
+    requireLatestSucceededRunIdMock.mockResolvedValue("legacy-latest");
+    requireExternalInputProvenRunMock.mockResolvedValue({ runId: "legacy-latest", proof: {
+      external_fantasy_input_contract: "excluded_from_native_inputs_v1", rolling_player_history_contract: null } });
+    const res = createMockRes();
+    await handler({ method: "GET", query: { date: "2026-03-20", ignoreOffSeason: "true" } } as any, res);
+    expect(res.statusCode).toBe(422);
+    expect(res.body.calibrationEligibility.reason).toBe("missing_or_legacy_rolling_history_contract");
   });
 
   it("reports selected-run actual coverage without counting wrong-date projections", () => {

@@ -5,6 +5,7 @@ import type { DisplaySnapshot } from "lib/buyLowSellHigh/displayProfile";
 import styles from "components/skoElement/SkoElement.module.scss";
 import detailStyles from "./BlshPlayerDetail.module.scss";
 import BlshPlayerDetail, { CurrentBlshPlayerDetail } from "./BlshPlayerDetail";
+import BlshCandidateLists from "./BlshCandidateLists";
 
 const PAGE_SIZE = 25;
 const DETAIL_ID = "blsh-player-detail";
@@ -150,6 +151,7 @@ function CurrentPreview({ snapshot }: { snapshot: DisplaySnapshot }) {
     <CaptureAgeNotice snapshot={snapshot} />
     <p className={styles.muted}>Positive = buy-low evidence; negative = sell-high evidence. These are retrospective research comparisons, not measured market discounts or future returns. All trusted flags remain off.</p>
     <p className={styles.muted}>Recorded through {snapshot.eventThroughDate}; captured as of {snapshot.asOfUTC}. The development reference is stale. Player game ages below are relative to this saved cutoff, not today. Coverage tiers describe available evidence, not calibrated confidence.</p>
+    {snapshot.mapperVersion === "blsh-display-profile-v3" ? <BlshCandidateLists snapshot={snapshot} /> : <>
     <label className={styles.control}>Inspect any profile ({snapshot.profiles.length})
       <select ref={selectorRef} value={selected ?? ""} onChange={e => setSelected(e.target.value ? Number(e.target.value) : null)}>
         <option value="">Choose a player</option>
@@ -183,6 +185,7 @@ function CurrentPreview({ snapshot }: { snapshot: DisplaySnapshot }) {
     {rows.length > limit ? <button type="button" className={`${styles.smallButton} ${detailStyles.touchButton}`} onClick={() => setLimit(n => n + PAGE_SIZE)}>Show next {PAGE_SIZE}</button> : null}
     <p className={styles.muted}>Showing {Math.min(rows.length, limit)} of {rows.length}. All {snapshot.profiles.length} captured profiles are available in the selector, including low/zero-shot, conflicting and unavailable cases.</p>
     {selectedProfile ? <CurrentBlshPlayerDetail id={DETAIL_ID} profile={selectedProfile} snapshot={snapshot} onClose={closeDetail} /> : null}
+    </>}
     <details><summary>Versions, provenance and limitations</summary>
       <ul className={styles.list}>
         <li>Contract {snapshot.schemaVersion}; score {snapshot.scoreVersion}; explanation {snapshot.explanationVersion}; assembler {snapshot.assemblerVersion}.</li>

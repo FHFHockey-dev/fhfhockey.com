@@ -33,7 +33,14 @@ const isFhfhStandard = (scoring: TradeScoring) => scoring.mode === "points" && s
 
 export function retrospectiveComparison(give: string[], receive: string[], scoring: TradeScoring,
   evidence: Readonly<Record<string, DisplayProfile | undefined>>): RetrospectiveComparison {
-  const players = [...give, ...receive].map(id => retrospectivePlayer(id, evidence[id]));
+  const players = [...give, ...receive].map(id => retrospectivePlayer(id, Object.prototype.hasOwnProperty.call(evidence, id) ? evidence[id] : undefined));
+  let invalidReason: string | null = null;
+  if (!give.length || !receive.length) invalidReason = "Add at least one player to each side of the trade.";
+  else if (new Set(give).size !== give.length) invalidReason = "A player appears more than once on the give side.";
+  else if (new Set(receive).size !== receive.length) invalidReason = "A player appears more than once on the receive side.";
+  else if (give.some(id => receive.includes(id))) invalidReason = "A player appears on both sides of the trade.";
+  if (invalidReason) return { available: false, reason: invalidReason, players,
+    give: { value: null, missingPlayerIds: [] }, receive: { value: null, missingPlayerIds: [] }, net: null };
   const side = (ids: string[]): Side => {
     const rows = players.filter(player => ids.includes(player.playerId));
     const missing = rows.filter(player => player.recordedPerGame === null).map(player => player.playerId);

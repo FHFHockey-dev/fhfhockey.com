@@ -1,0 +1,84 @@
+{
+  "tool": "Supabase execute_sql",
+  "project_id": "fyhftlxokyjtpndbkfse",
+  "query": "WITH w AS MATERIALIZED (\nSELECT id,player_id,date,game_id,toi_per_game,goals,shots FROM public.wgo_skater_stats\nWHERE season_id=20262027 AND games_played=1 AND date BETWEEN DATE '2026-11-01' AND DATE '2026-11-07'\n), j AS MATERIALIZED (\nSELECT w.*,i.id AS individual_id,i.gp AS individual_gp,i.toi AS individual_toi,i.ixg,i.goals AS individual_goals,i.shots AS individual_shots,\no.id AS on_ice_id,o.gp AS on_ice_gp,o.toi AS on_ice_toi,o.xgf,o.xga\nFROM w\nLEFT JOIN public.nst_gamelog_as_counts i ON i.player_id=w.player_id AND i.date_scraped=w.date AND i.season=20262027\nLEFT JOIN public.nst_gamelog_as_counts_oi o ON o.player_id=w.player_id AND o.date_scraped=w.date AND o.season=20262027\n)\nSELECT jsonb_build_object(\n'observed_at_utc',now(),\n'joined_current_summary',(SELECT jsonb_build_object('wgo_rows',count(*),'individual_matched',count(individual_id),'on_ice_matched',count(on_ice_id),\n'bad_individual_gp',count(*) FILTER (WHERE individual_gp IS DISTINCT FROM 1),\n'bad_on_ice_gp',count(*) FILTER (WHERE on_ice_gp IS DISTINCT FROM 1),\n'nonpositive_or_null_wgo_toi',count(*) FILTER (WHERE toi_per_game IS NULL OR toi_per_game<=0),\n'individual_toi_differences',count(*) FILTER (WHERE individual_toi IS DISTINCT FROM toi_per_game),\n'on_ice_toi_differences',count(*) FILTER (WHERE on_ice_toi IS DISTINCT FROM toi_per_game),\n'null_ixg',count(*) FILTER (WHERE ixg IS NULL),\n'null_xgf',count(*) FILTER (WHERE xgf IS NULL),\n'null_xga',count(*) FILTER (WHERE xga IS NULL),\n'goal_differences',count(*) FILTER (WHERE individual_goals IS DISTINCT FROM goals),\n'shot_differences',count(*) FILTER (WHERE individual_shots IS DISTINCT FROM shots)) FROM j),\n'exposure_differences',(SELECT jsonb_agg(t) FROM (SELECT id,player_id,game_id,date,toi_per_game,individual_id,individual_toi,on_ice_id,on_ice_toi FROM j WHERE individual_toi IS DISTINCT FROM toi_per_game OR on_ice_toi IS DISTINCT FROM toi_per_game ORDER BY date,player_id LIMIT 20)t),\n'latest_nst_audit',(SELECT jsonb_agg(t) FROM (SELECT run_time,status,rows_affected,details->'timing' AS timing,details->'urlsQueued' AS urls_queued,details->'urlsProcessed' AS urls_processed,\ndetails#>'{nstProgress,state}' AS progress_state,details#>'{nstProgress,sourceOutcomes}' AS source_outcomes,\ndetails#>'{nstProgress,networkAttempts}' AS network_attempts,details#>'{nstProgress,plannedRequestCount}' AS planned_request_count,\nARRAY(SELECT jsonb_object_keys(details->'nstProgress')) AS progress_keys\nFROM public.cron_job_audit WHERE run_time >= TIMESTAMPTZ '2026-11-07T00:00:00Z' AND run_time < TIMESTAMPTZ '2026-11-08T00:00:00Z' AND job_name='update-nst-gamelog' ORDER BY run_time DESC LIMIT 1)t)\n) AS evidence;",
+  "results": [
+    {
+      "evidence": {
+        "observed_at_utc": "2026-11-07T22:15:54.282952+00:00",
+        "latest_nst_audit": [
+          {
+            "status": "success",
+            "timing": {
+              "timer": "00:12",
+              "source": "audit",
+              "endedAt": "2026-11-07T10:05:41.073Z",
+              "startedAt": "2026-11-07T10:05:28.743Z",
+              "durationMs": 12330
+            },
+            "run_time": "2026-11-07T10:05:41.085198+00:00",
+            "urls_queued": 20,
+            "progress_keys": [
+              "runId",
+              "scope",
+              "state",
+              "version",
+              "bookmark",
+              "deadlineAt",
+              "sourceDown",
+              "concurrency",
+              "basedOnRunId",
+              "bookmarkRead",
+              "continuation",
+              "deferredUrls",
+              "stoppedEarly",
+              "sourceOutcomes",
+              "networkAttempts",
+              "coordinationScope",
+              "requestIntervalMs",
+              "maxNetworkAttempts",
+              "plannedRequestCount",
+              "missingScheduleDates",
+              "skippedUnstartedDates"
+            ],
+            "rows_affected": 1880,
+            "progress_state": "attempts_finished_coverage_unverified",
+            "urls_processed": 20,
+            "source_outcomes": {
+              "counts": {
+                "unavailable": 0,
+                "rows_persisted": 20,
+                "already_present": 0,
+                "empty_unverified": 0,
+                "fetch_or_write_failed": 0,
+                "parse_or_identity_unresolved": 0
+              },
+              "coverage": "not_verified",
+              "unresolved": [],
+              "unresolvedCount": 0
+            },
+            "network_attempts": 20,
+            "planned_request_count": 20
+          }
+        ],
+        "exposure_differences": null,
+        "joined_current_summary": {
+          "null_ixg": 0,
+          "null_xga": 0,
+          "null_xgf": 0,
+          "wgo_rows": 1368,
+          "bad_on_ice_gp": 0,
+          "on_ice_matched": 1368,
+          "goal_differences": 0,
+          "shot_differences": 0,
+          "bad_individual_gp": 0,
+          "individual_matched": 1368,
+          "on_ice_toi_differences": 0,
+          "individual_toi_differences": 0,
+          "nonpositive_or_null_wgo_toi": 0
+        }
+      }
+    }
+  ],
+  "notes": "Read-only bounded metadata or current-season public sports data; not native-source or BLSH acceptance evidence."
+}

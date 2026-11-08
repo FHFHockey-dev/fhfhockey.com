@@ -2,7 +2,7 @@
 
 Release
 - Curated Claude release on top of master (toenail pages, roster last-seen + parser fix 040c59341, X Layer 3 ingest, chrome tokens, Luna 24 paths, L4/L5). Not a full octoberBranch merge.
-- Claude assumes ownership of ALL open Codex lanes; Codex hands off via CODEX-HANDOFF-PROMPTS.md (this folder).
+- Claude assumes ownership of the open Codex lanes EXCEPT the four Scout retains (cron/FORGE release b4033ad65 + goalie/FORGE recovery, WiGO repair follow-up, Yahoo ownership/refresh, FxTwitter forecast dedupe; hands off sourceObservations.ts + playerForecasts.test.ts). Codex hands off the rest via CODEX-HANDOFF-PROMPTS.md (prompts 0, 5–11).
 - Codex-owned dirty files stay out of this release and are not committed by Claude now.
 - Apply the Luna reservation fix (43b3c87b blobs, 234M) before release.
 - X Layer 3: TJ sets all 4 secrets/variables himself; a new lane walks him through each one. Never set X_TIMELINE_INGEST_LIVE.

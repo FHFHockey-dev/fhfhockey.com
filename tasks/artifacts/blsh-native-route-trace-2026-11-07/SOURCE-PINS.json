@@ -1,0 +1,58 @@
+{
+  "/Users/tim/Code/fhfhockey.com/web/lib/buyLowSellHigh/currentProcessEvidence.server.ts": {
+    "sha256": "9011207c1d16af7a2834a80b4d19d85d0b772a02093eef822e0dd44a9959af83",
+    "bytes": 16728
+  },
+  "/Users/tim/Code/fhfhockey.com/web/lib/nst/client.ts": {
+    "sha256": "48d82fc40ca06d9abe4675f4a1896add55c4e53d4dee661bbe082d424c944e4f",
+    "bytes": 11733
+  },
+  "/Users/tim/Code/fhfhockey.com/web/lib/nst/sharedAdmission.ts": {
+    "sha256": "f1c407170c9085c5f57b543c418bb8341859b4034d4f1d9d286bea0afabc36ac",
+    "bytes": 3451
+  },
+  "/Users/tim/Code/fhfhockey.com/web/lib/nst/requestBudget.ts": {
+    "sha256": "ccbab70aee15aba93818df4ef42d41195eceb39757af0ad3eef3b3dd15437e5a",
+    "bytes": 6944
+  },
+  "/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/update-nst-gamelog.ts": {
+    "sha256": "b2d81075043e45a22bb12ae62be8aff7d804ece1faa64596e322fd328cd5c750",
+    "bytes": 114876
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/nst-lineage-and-gs-alternatives-20261101-01/nst_lineage.py": {
+    "sha256": "14e0816c65fd8988b1401e21952b0873fcb142da6866523f6c87d8f1b72ff4da",
+    "bytes": 8674
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/nst-selected-receipt-intake-20261101-01/intake.py": {
+    "sha256": "7cb3e091200ae35f245e7a4e105696382101879a3f0abb3f6b99cb82f5879b92",
+    "bytes": 8309
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/nst-selected-receipt-intake-20261101-01/run.py": {
+    "sha256": "9e677090f10375f53ec1bdf6d83f25dfbea894831c7422c4c814158dbb0432d3",
+    "bytes": 1947
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/nst-selected-receipt-intake-20261101-01/intake-02/RECEIPT-INTAKE-SCOPES.json": {
+    "sha256": "26a8eb1a74a42ebc03baa57daefd345f0003fa8d3c28121b0843336e6d729e22",
+    "bytes": 1511589
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-refresh-reader-20261101-01/capture_reader.py": {
+    "sha256": "9b5a9550749e5bc962b4a0ee0c73047ad1c01fa008dc9912af907acf7d64d231",
+    "bytes": 15290
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-refresh-reader-20261101-01/qualify_capture.cjs": {
+    "sha256": "a3199b707e9cb49dfb3e7ae23f1a2ae8d3e4b53697b46df0a4bcb37a1132d856",
+    "bytes": 6656
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-refresh-reader-20261101-01/live-read-01/capture/CURRENT-REQUEST.json": {
+    "sha256": "c6d1d13dc7327baa54742c3eb7efe0a1e5d96c6ef6ffefc66de23f4092c12ba2",
+    "bytes": 6786690
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-refresh-reader-20261101-01/live-read-01/capture/RESULT.json": {
+    "sha256": "bbe08e6370fe81345420fb6fe8cd075bc68442aea43b2e548bc90d1b7a555e9b",
+    "bytes": 9084
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-process-provenance-gate-20261101-01/precision-fix-01/replay.cjs": {
+    "sha256": "5086b43acec253c256580c53555179f99aee3836fe1528c909bf52f8baee2822",
+    "bytes": 4024
+  }
+}

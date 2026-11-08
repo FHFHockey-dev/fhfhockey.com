@@ -1,0 +1,65 @@
+{
+  "checkedAt": "2026-11-07T21:00:40.751617+00:00",
+  "candidate": "b4033ad65ffba6835ba0754dd665e5d694301f64",
+  "remoteMaster": "194d55e720f1a715904c252e750d96af9533ef20",
+  "productionFlag": {
+    "key": "LINES_OBSERVATIONS_ENABLED",
+    "value": "true",
+    "source": "TJ confirmation relayed by parent; no environment-variable permission bypass"
+  },
+  "candidateDeploymentsFound": 0,
+  "projects": [
+    {
+      "name": "fhfhockey",
+      "root": "web",
+      "productionBranch": "master",
+      "preview": "Disabled",
+      "node": "22.x",
+      "ignore": "vercel.json: web and cron inventory diff",
+      "expected": "one web production build"
+    },
+    {
+      "name": "cms-fhfhockey",
+      "root": "cms",
+      "productionBranch": "master",
+      "preview": "Disabled",
+      "node": "20.x, deprecated notice",
+      "ignore": "vercel.json: own-root diff",
+      "expected": "ignored/canceled deployment entry"
+    },
+    {
+      "name": "functions-fhfhockey",
+      "root": "functions",
+      "productionBranch": "master",
+      "preview": "Disabled",
+      "node": "20.x, deprecated notice",
+      "ignore": "vercel.json: own-root diff",
+      "expected": "ignored/canceled deployment entry"
+    },
+    {
+      "name": "fhfhockey.com",
+      "root": "repository root",
+      "productionBranch": "master",
+      "preview": "Disabled",
+      "node": "22.x",
+      "ignore": "candidate root vercel.json: exit 0",
+      "expected": "ignored/canceled deployment entry"
+    }
+  ],
+  "evidence": [
+    "Live browser Build and Deployment / Environments pages for all four projects, read-only",
+    "Web/CMS/functions ignored-build override dialogs show source commands",
+    "Existing 194d55e CMS/functions build logs explicitly confirm ignored command exit 0",
+    "Candidate root vercel.json has ignoreCommand exit 0",
+    "No candidate changes in cms, functions, root vercel.json or .github",
+    "Vercel query found zero production deployment records for exact candidate across all four projects",
+    "Bounded SQL verified six Lines tables and append_line_decisions RPC exist"
+  ],
+  "noActions": [
+    "No setting edits",
+    "No environment variable reads through browser",
+    "No deployment or push",
+    "No application/cron invocation",
+    "No database writes"
+  ]
+}

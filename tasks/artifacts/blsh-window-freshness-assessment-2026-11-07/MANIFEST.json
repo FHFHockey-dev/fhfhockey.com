@@ -1,0 +1,32 @@
+[
+  {
+    "path": "tasks/artifacts/blsh-window-freshness-assessment-2026-11-07/recount.py",
+    "bytes": 3408,
+    "sha256": "34e76a07c8869ff2eb4f37a966628d7e00ed891d08525c27651024b8d736a86e"
+  },
+  {
+    "path": "tasks/artifacts/blsh-window-freshness-assessment-2026-11-07/FINDING.md",
+    "bytes": 3794,
+    "sha256": "5364542bcc84aeedb1f750a442772ad8b796c9b62176cb5ec752220c3cd44ebb"
+  },
+  {
+    "path": "tasks/artifacts/blsh-window-freshness-assessment-2026-11-07/RESULT.json",
+    "bytes": 1664,
+    "sha256": "1b380a281230eed28a9547bc323c16c128124d6898008d84491d0f49664d5669"
+  },
+  {
+    "path": "web/lib/buyLowSellHigh/currentProcessEvidence.server.ts",
+    "bytes": 16728,
+    "sha256": "9011207c1d16af7a2834a80b4d19d85d0b772a02093eef822e0dd44a9959af83"
+  },
+  {
+    "path": "web/lib/buyLowSellHigh/currentInput.ts",
+    "bytes": 22852,
+    "sha256": "58a87ea119a98b33d7d67fb6849a269e375c22210610b607dfa30ba034c76232"
+  },
+  {
+    "path": "web/lib/buyLowSellHigh/currentWindows.ts",
+    "bytes": 24041,
+    "sha256": "9fd9a046780c5333dd3e256a11bfd6ffd596338d1bf63c842f253f95cd4375b4"
+  }
+]

@@ -202,3 +202,19 @@ Q30 existing team_unit_toi: game types and snapshot_date values present (2025-26
   rankAgainst(). Tests: 2 NST lower-is-better (pim/hdca), cf_pct + position filter, NST error → "No comparison data";
   ixg game-log no-borrow test now asserts the NST read. Radar 60/60, PlayerStats + helper 156/156, eslint 0,
   typecheck exit 0.
+
+## 11-08: release #416 live (46f971753, includes 4bca8ed17). Chef: prod dry run + sizing + check 4.
+Q31 cron.job_run_details for jobid 6 since 2026-11-08 00:00; cron_job_audit rows for update-players since then.
+Q7 rosters is_current stamp counts; Q32 stamps by team (newest stamp per team, count non-null) for current NHL teams.
+- Check 4: update-players 02:00:00 UTC cron succeeded; audit success dryRun=false 2.85 s. rosters is_current 5227,
+  stamped 795 across 32 teams (02:00:22-24). Cole Schwindt FLA + Justin Hryckowian DAL stamped; Kai/Dylan not
+  (dup older-season rows null; Cole's stale VGK row null). Matches the simulated replay → FLA 15/16→Cole,
+  DAL 16/16→Justin (inference, same inputs). tweet_pattern_review_items mentioning them: pending DAL 19, FLA 4,
+  CAR 1, untagged 51 — resolve only via replay/alias review (write → TJ pop-up).
+- Prod dry run (#416): ?season=20262027&startDate=2026-09-29&endDate=2026-09-29&dryRun=true, conn check first.
+- Prod dry run #416 (activity 20): HTTP 200 2 s, generated 656 (F486 D140 PP30), teamGamesWithoutES 0, partial 0,
+  rowsUpserted 0 — identical to local replay.
+- Sizing: regular-season games with shifts 09-29..11-06 = 264/264 (11-07: 10/12 missing shifts → excluded), 39 dates,
+  max 16 games/day. ~131 rows/game → ~34.6k rows. Route param snapshot_date (route :82) pinned 2026-11-08 on every call.
+- Pop-up TJ with exact plan.
+- TJ pop-up 'Run it as planned'. Pre-check: 0 rows season 20262027. tut-fill.sh started (39 days, snapshot 2026-11-08 pinned).

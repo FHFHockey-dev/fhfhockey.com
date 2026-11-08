@@ -1,0 +1,34 @@
+{
+  "candidate": "local-only Yahoo global refresh hardening",
+  "baseHead": "691819d582a7eec433807e51a17bc04d4ccb85c6",
+  "files": {
+    "web/pages/api/v1/db/manual-refresh-yahoo-token.ts": "740cb616c1b4ce1e511035ea66c7149fc9ba7cd77ae754155b40d63526a20e8c",
+    "web/lib/integrations/yahoo/refreshGlobalCredentials.ts": "772c0136a4d07b7d36cdf739cbe4b6c790803811999f98e8499e82f490224e05",
+    "web/lib/integrations/yahoo/refreshGlobalCredentials.test.ts": "032c51830f9ace3f45cb11ab44f310b50a7677063e5fa7641b505fe282902416",
+    "web/lib/integrations/yahoo/globalCredentials.test.ts": "2f2b19a0f11abf0e1b47fa98e8a1a9b2c4fbb6a490cbee5d054e8da97e8d0f53",
+    "web/__tests__/pages/api/v1/db/cron-auth-boundaries.test.ts": "cdd137ba5469ff81a08623004c425cdfdaec9029b127a67e23abcfc4d57a6f7e"
+  },
+  "checks": {
+    "targetedTests": {
+      "passed": 54,
+      "files": {
+        "lib/integrations/yahoo/refreshGlobalCredentials.test.ts": 22,
+        "lib/integrations/yahoo/globalCredentials.test.ts": 10,
+        "__tests__/pages/api/v1/db/cron-auth-boundaries.test.ts": 22
+      }
+    },
+    "targetedEslint": "passed",
+    "gitDiffCheck": "passed",
+    "npxTscNoEmit": "blocked by default 4GB heap OOM",
+    "npmRunTypecheck": "passed using repository 8GB script"
+  },
+  "externalActionsDuringLocalFix": 0,
+  "deployed": false,
+  "committed": false,
+  "limits": [
+    "No global reauthorization pathway added.",
+    "Prior provider-side token rotation remains unknown.",
+    "Ownership fallback not substantiated or implemented.",
+    "No automatic retry after any refresh failure; storage timeout may complete later."
+  ]
+}

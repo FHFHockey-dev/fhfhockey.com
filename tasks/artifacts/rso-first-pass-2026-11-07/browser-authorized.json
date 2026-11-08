@@ -1,0 +1,7 @@
+{
+  "state": "stopped_for_harness_correction",
+  "exitCode": 130,
+  "reason": "Private export served invalid-hook errors with symlinked node_modules; stopped own wrapper before further repeated tests. Replaced symlink with APFS clone of installed dependencies and cleared only own generated cache. No app source changed.",
+  "log": "browser-authorized.log",
+  "at": "2026-11-07T21:28:35.163662+00:00"
+}

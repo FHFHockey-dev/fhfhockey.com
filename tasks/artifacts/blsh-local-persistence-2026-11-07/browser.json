@@ -1,0 +1,337 @@
+{
+  "status": "passed",
+  "candidateSha256": "daf447b70fd8e08dc88a2e17162e0c1dd04863275cd7e23dbd923acca34e4485",
+  "scope": "Actual preview components/styles, retained candidate and isolated presentation router; not full Next route or deployment",
+  "checks": [
+    "F/D top25 and full lists",
+    "reload preserves presentation query",
+    "stale warning",
+    "withheld filter and pagination",
+    "all 115 no-history and 48 thin-history rows remain filterable",
+    "conflict and stale-window explanations",
+    "detail focus, Escape and close restore",
+    "desktop 1440x1000",
+    "mobile 390x844 without page overflow",
+    "mobile player identity stays visible after detail close",
+    "44px detail targets",
+    "identity-only watchlist add/reload/remove/clear",
+    "two-tab watchlist merging and updates",
+    "v1 read-only migration and clear tombstone",
+    "fixture trade draft save/reload/reset isolation",
+    "unavailable IDs retained and removable",
+    "cross-tab draft conflict without lost edits",
+    "explicit recovery after another tab deletes the draft",
+    "invalid data preserved",
+    "unrelated draft/market reference/RSO key preservation",
+    "trade desktop/mobile without overflow"
+  ],
+  "layout": {
+    "viewport": 390,
+    "width": 390,
+    "listButtons": [
+      {
+        "width": 62.75,
+        "height": 44
+      },
+      {
+        "width": 62.75,
+        "height": 44
+      },
+      {
+        "width": 62.75,
+        "height": 44
+      },
+      {
+        "width": 62.75,
+        "height": 44
+      },
+      {
+        "width": 62.75,
+        "height": 44
+      },
+      {
+        "width": 62.75,
+        "height": 44
+      },
+      {
+        "width": 62.75,
+        "height": 44
+      },
+      {
+        "width": 62.75,
+        "height": 44
+      },
+      {
+        "width": 62.75,
+        "height": 44
+      },
+      {
+        "width": 62.75,
+        "height": 44
+      },
+      {
+        "width": 62.75,
+        "height": 44
+      },
+      {
+        "width": 62.75,
+        "height": 44
+      },
+      {
+        "width": 62.75,
+        "height": 44
+      },
+      {
+        "width": 62.75,
+        "height": 44
+      },
+      {
+        "width": 62.75,
+        "height": 44
+      },
+      {
+        "width": 62.75,
+        "height": 44
+      },
+      {
+        "width": 62.75,
+        "height": 44
+      },
+      {
+        "width": 62.75,
+        "height": 44
+      },
+      {
+        "width": 62.75,
+        "height": 44
+      },
+      {
+        "width": 62.75,
+        "height": 44
+      },
+      {
+        "width": 62.75,
+        "height": 44
+      },
+      {
+        "width": 62.75,
+        "height": 44
+      },
+      {
+        "width": 62.75,
+        "height": 44
+      },
+      {
+        "width": 62.75,
+        "height": 44
+      },
+      {
+        "width": 62.75,
+        "height": 44
+      },
+      {
+        "width": 62.75,
+        "height": 44
+      },
+      {
+        "width": 62.75,
+        "height": 44
+      },
+      {
+        "width": 62.75,
+        "height": 44
+      },
+      {
+        "width": 62.75,
+        "height": 44
+      },
+      {
+        "width": 62.75,
+        "height": 44
+      },
+      {
+        "width": 62.75,
+        "height": 44
+      },
+      {
+        "width": 62.75,
+        "height": 44
+      },
+      {
+        "width": 62.75,
+        "height": 44
+      },
+      {
+        "width": 62.75,
+        "height": 44
+      },
+      {
+        "width": 62.75,
+        "height": 44
+      },
+      {
+        "width": 62.75,
+        "height": 44
+      },
+      {
+        "width": 62.75,
+        "height": 44
+      },
+      {
+        "width": 62.75,
+        "height": 44
+      },
+      {
+        "width": 62.75,
+        "height": 44
+      },
+      {
+        "width": 62.75,
+        "height": 44
+      },
+      {
+        "width": 62.75,
+        "height": 44
+      },
+      {
+        "width": 62.75,
+        "height": 44
+      },
+      {
+        "width": 62.75,
+        "height": 44
+      },
+      {
+        "width": 62.75,
+        "height": 44
+      },
+      {
+        "width": 62.75,
+        "height": 44
+      },
+      {
+        "width": 62.75,
+        "height": 44
+      },
+      {
+        "width": 62.75,
+        "height": 44
+      },
+      {
+        "width": 62.75,
+        "height": 44
+      },
+      {
+        "width": 62.75,
+        "height": 44
+      },
+      {
+        "width": 62.75,
+        "height": 44
+      },
+      {
+        "width": 62.75,
+        "height": 44
+      },
+      {
+        "width": 62.75,
+        "height": 44
+      },
+      {
+        "width": 62.75,
+        "height": 44
+      },
+      {
+        "width": 62.75,
+        "height": 44
+      },
+      {
+        "width": 62.75,
+        "height": 44
+      },
+      {
+        "width": 62.75,
+        "height": 44
+      },
+      {
+        "width": 62.75,
+        "height": 44
+      },
+      {
+        "width": 62.75,
+        "height": 44
+      },
+      {
+        "width": 62.75,
+        "height": 44
+      },
+      {
+        "width": 62.75,
+        "height": 44
+      },
+      {
+        "width": 62.75,
+        "height": 44
+      },
+      {
+        "width": 62.75,
+        "height": 44
+      },
+      {
+        "width": 62.75,
+        "height": 44
+      },
+      {
+        "width": 62.75,
+        "height": 44
+      },
+      {
+        "width": 62.75,
+        "height": 44
+      },
+      {
+        "width": 62.75,
+        "height": 44
+      },
+      {
+        "width": 62.75,
+        "height": 44
+      },
+      {
+        "width": 62.75,
+        "height": 44
+      },
+      {
+        "width": 62.75,
+        "height": 44
+      },
+      {
+        "width": 62.75,
+        "height": 44
+      },
+      {
+        "width": 62.75,
+        "height": 44
+      },
+      {
+        "width": 62.75,
+        "height": 44
+      },
+      {
+        "width": 62.75,
+        "height": 44
+      },
+      {
+        "width": 62.75,
+        "height": 44
+      },
+      {
+        "width": 62.75,
+        "height": 44
+      }
+    ]
+  },
+  "errors": [],
+  "blocked": [],
+  "timestamp": "2026-11-07T22:30:02.147Z"
+}

@@ -3612,3 +3612,38 @@ EXCLUDE unfinishedWiGOproposal/design; Luna latest repairedadapter, parentreport
 Existing pendingWiGOhandback **CODEX-SIX-LANES-WIGO-CUSTODY-20261104-REQUEST-01** in this same mailbox is LINKED ONLY. Its exactnine-pathrequest is not duplicated. NoClaude receipt, oldWIGOclaimclosure/noactivewriterack orL6writegrant is asserted; do notincludeWiGO inthis69pathcomposition.
 
 Please acknowledge through the established Claude mailbox or route to its currentGitcustodian if1e668672changed. Fileappend/readback here is NOTconfirmed recipientreceipt. No newworker, otherchannelmessage, speculativepoll or remote action. Router's boundedcoordination ends after this receipt; nextstep is custodian candidate/conflict response.
+
+
+## CODEX-RSO-FIRST-PASS-20261107-01
+
+2026-11-07T21:23:03.128126+00:00 — Scout RSO lane to the current release owner. TJ approved local implementation in separate RSO and BLSH lanes, without production release until the candidates are reviewed. RSO is preparing an isolated correction candidate on current master `00ea36b39ee0c541fd6050b79703d2c054e97f1d`, containing only the 16 paths pinned in `tasks/artifacts/rso-first-pass-2026-11-07/CANDIDATE.json`. It reuses the committed Nov 4 corrections from `2c20b5669c738f13d97daa55e4c93381908120a0`; no canonical source, shared index, refs or release candidate is changed. Existing #414 styling is retained; unrelated CSS, Roster Autopsy, Trade Analyzer and Yahoo scheduler assertions are excluded. We will verify locally under the shared heavy slot and hand back the exact patch and results. No push, deployment, provider/database action or new native-model approval is authorized. This is a notice, not a request to start external work or a claim of acknowledgement.
+
+
+## CODEX-RSO-FIRST-PASS-20261107-02 — local gates and browser blocker
+
+RSO's isolated #414 + 16-file correction candidate is pinned at tree 50766b2d31d6f5a6b9cbbcc3565be91152080c9e. 104 files / 2,292 tests, full TypeScript and scoped ESLint pass. Browser acceptance remains blocked by local Next SSR React invalid-hook errors; a private dependency copy did not resolve it. No release-ready claim. Own server was stopped, port 3164 verified free and heavy slot released. Evidence and next diagnostic: tasks/artifacts/rso-first-pass-2026-11-07/HANDOFF.md and BROWSER-BLOCKER.md. Canonical app files/index/refs are untouched; no push, deploy or live league reads. This note records state only and does not request an external agent to start work.
+
+
+## CODEX-RSO-FIRST-PASS-20261107-03 — candidate locally verified
+
+Supersedes the browser blocker in -02: all 63 Chromium acceptance cases now pass (2.4 minutes), alongside 104 files / 2,292 regression tests, full TypeScript and scoped lint. The failing isolated setup contained a copied nested node_modules symlink back to canonical dependencies; removing only that copied link resolved duplicate React. No application change was needed. Candidate tree remains 50766b2d31d6f5a6b9cbbcc3565be91152080c9e on #414 base 00ea36b39ee0c541fd6050b79703d2c054e97f1d. All source/patch pins rechecked. Port 3164 is free, heavy slot released. Review handoff: tasks/artifacts/rso-first-pass-2026-11-07/HANDOFF.md. No push, deploy, Git index/ref change or live league access. This note records state, not a request for external agent work.
+
+
+## CODEX-RSO-FIRST-PASS-20261107-04 — v2 supersedes initial candidate
+
+Independent review found and reproduced two gaps in v1: O/IR missing started-game lock bypass, and future acquisition at exact puck drop incorrectly credited. Both are corrected in v2 tree 4ba9b5dd1c6feb613f2f8e526fb280bb4b35c54e, same #414 base; focused REVIEW-CORRECTION.patch changes planning.ts and its tests. Nine new cases showed 3 failures before and all passed after; full 2,301 tests, types and scoped lint pass. Independent re-review cleared both findings with 10 focused cases and validated all pins. Three Chromium suites are rerunning; final state will be recorded in HANDOFF.md. No canonical application source or Git state changed, no release authorized or performed by this lane.
+
+
+## CODEX-RSO-FIRST-PASS-20261107-05 — v2 locally verified, findings closed
+
+V2 tree 4ba9b5dd1c6feb613f2f8e526fb280bb4b35c54e now passes 2,301 tests / 104 files, full TypeScript, scoped ESLint and 63 Chromium cases (2.5m). Independent review closed both lock-boundary findings. Full tracked export check: 4,794 matched, zero mismatches, three environment files deliberately omitted. See tasks/artifacts/rso-first-pass-2026-11-07/HANDOFF.md, REVIEW-RESOLUTION.md and CHECKS.json. Full patch is relative to #414; REVIEW-CORRECTION.patch is the two-file increment to the original corrections. Canonical source/Git/dependencies untouched. Port 3164 free; heavy slot released. No release, push, deployment or live league access authorized/performed by this lane.
+
+
+## CODEX-RSO-FIRST-PASS-20261107-06 — two-file canonical integration scope
+
+2026-11-07T22:45:50.843617+00:00: Scout is applying the independently reviewed v2 incremental correction to exactly web/lib/rosterScheduleOptimizer/planning.ts and planning.test.ts. Both are clean and match the original correction commit's blobs; the patch checks cleanly. Matching historical leases are idle/released, and no current conflicting writer was found. No other source file, shared index/ref, commit, branch, push, deployment or live provider access is in this scope. Fresh read-only GitHub check confirms master remains 00ea36b39 (#414), so the exact 16-file release candidate stays tree 4ba9b5dd1c6feb613f2f8e526fb280bb4b35c54e. The handoff will be recorded as 09-rso.md; this notice does not request external agent work or claim acknowledgement.
+
+
+## CODEX-RSO-FIRST-PASS-20261107-07 — canonical integration complete
+
+2026-11-07T22:48:39.574289+00:00: The reviewed correction is now applied to exactly web/lib/rosterScheduleOptimizer/planning.ts and planning.test.ts in the canonical checkout (55 insertions / 3 deletions). All 16 release-candidate paths match tree 4ba9b5dd1c6feb613f2f8e526fb280bb4b35c54e on current confirmed master #414. Fresh checks: 173 planning tests, two-file lint and 4,794-source-file parity passed. Full 2,301-test/63-Chromium/types/lint evidence remains valid for this unchanged exact tree. Handoff: tasks/artifacts/codex-handoff-2026-11-07/09-rso.md. No unrelated dirty file, index/ref/commit, branch, deployment or live-provider action. Editing/heavy slot released. No new ownership transfer, recipient acknowledgement or release authorization is implied.

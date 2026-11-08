@@ -1,0 +1,10 @@
+# Fresh source readiness investigation
+
+- Scope: read-only source qualification on the canonical Mac checkout, current-season public sports data only. No provider calls, ETL, mutations, scoring, holdout reads, or policy change.
+- Location: octoberBranch, initial HEAD 0c22a9d5b7782513ee22c3c68f3d06dddff9fa5e. Only this new artifact directory is writable for this subtask.
+- Initial checkpoint: read repository instructions, named readiness report, current input and process gate, exact source-owner request, and relevant NST client/writer code. Default server acceptances remain empty.
+- Bounded connected inspection: Supabase plugin on fyhftlxokyjtpndbkfse, schema metadata for the four input tables plus cron_job_audit/source_provenance_snapshots, and narrowly named source tables. No provider requests. Initial multi-statement SELECT returned only its last result; repeated metadata as one SELECT, not an application retry.
+- Finding: WGO and both NST input tables have no capture/update timestamps or native-body receipt columns. The current shared client returns redacted parser-input text but caches only in process memory. Need distinguish current stored rows from native/source freshness.
+- Completed checkpoint: November 1–6 has 1,368 exact player/date matches across WGO and both NST count feeds; positive equal TOI, equal individual goals/shots, and no null ixG/xGF/xGA. Latest November 7 existing NST audit succeeded but explicitly leaves coverage unverified. Exact Crotty/Deslauriers source values remain unchanged.
+- Handoff: FINDINGS.md separates current stored rows, native provenance, source freshness, semantics, integration and empirical validation. Four SELECT-only calls and exact query/results are saved. Source producer/client/progress hashes are unchanged from their prior lineage review. No code/source/policy changes, provider calls or tests. No action denied and no approval requested.
+- Next: existing source owner supplies retained receipt or explicit non-retention; any missing receipt boundary is prepared/reviewed offline before a separately authorized bounded fresh collection. Parent owns further work and user communication.

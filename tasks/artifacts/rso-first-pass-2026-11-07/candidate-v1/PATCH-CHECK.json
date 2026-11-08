@@ -1,0 +1,6 @@
+{
+  "exitCode": 0,
+  "operation": "git apply --reverse --check",
+  "candidateTree": "50766b2d31d6f5a6b9cbbcc3565be91152080c9e",
+  "noFilesChanged": true
+}

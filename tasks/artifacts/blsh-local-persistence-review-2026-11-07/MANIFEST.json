@@ -1,0 +1,68 @@
+{
+  "timestamp": "2026-11-07T22:30:18.949995+00:00",
+  "observedHead": "620be8ffefa04670a6eb07bf09db61bae3508104",
+  "branch": "octoberBranch",
+  "scope": "Final independent source-review pins, not whole-branch or runtime verification. Shared checkout has concurrent unrelated edits. Reviewer changed only its review artifact and diary.",
+  "files": [
+    {
+      "path": "web/lib/buyLowSellHigh/storage.ts",
+      "sha256": "ee1dbe605c1103b212f1659b1439caedf23252acb6b45b3f6144b019206cb3c4",
+      "bytes": 6027
+    },
+    {
+      "path": "web/lib/buyLowSellHigh/storage.test.ts",
+      "sha256": "eee5db10d56c89134c18eed26778c3c5a6357b190e3f079bb31f9c464ed703c6",
+      "bytes": 6828
+    },
+    {
+      "path": "web/lib/buyLowSellHigh/useBlshLocalState.ts",
+      "sha256": "4a84f620492520ab9483cf259895ff44f9543702c52f9f84b53381cee4ebad2e",
+      "bytes": 3124
+    },
+    {
+      "path": "web/components/buyLowSellHigh/BlshCandidateLists.tsx",
+      "sha256": "c64ed8194051f481a4eeca3f0f97536618a9ea3a799c0a936450ec79ccc70bbb",
+      "bytes": 17308
+    },
+    {
+      "path": "web/components/buyLowSellHigh/BlshCandidateLists.test.tsx",
+      "sha256": "787988ada70f9b57391a4caf8a1df42739d998271666fd6061c92e4346c53cbf",
+      "bytes": 18857
+    },
+    {
+      "path": "web/components/buyLowSellHigh/BlshCandidateLists.module.scss",
+      "sha256": "920b74bde6f1b55eaca4dfdc104fb22d10e60aaa5aa177691363b48b627a3f0c",
+      "bytes": 1689
+    },
+    {
+      "path": "web/components/buyLowSellHigh/BuyLowSellHighPreview.tsx",
+      "sha256": "b3fcf950e56f7cc33bc70ac62e3044414cc194ddb5aed04bf5667e6b715ad685",
+      "bytes": 15824
+    },
+    {
+      "path": "web/components/blshTrade/BlshTradeComparison.tsx",
+      "sha256": "01b6bbdfba1c0b246abfdcbbea13e05c3dda79f308a28d38e5c6846691171774",
+      "bytes": 24708
+    },
+    {
+      "path": "web/components/blshTrade/BlshTradeComparison.test.tsx",
+      "sha256": "d70910a3d14a4fed85b9e7bdbd46cbcdbfbc0389e024ee532e19d6d7cc0a0887",
+      "bytes": 16785
+    },
+    {
+      "path": "web/components/blshTrade/BlshTrade.module.scss",
+      "sha256": "b853cce71f265e8e56db8045a8c92fc5be76fcd8cc60c4fd03e17baacfe683ba",
+      "bytes": 7294
+    },
+    {
+      "path": "web/components/blshTrade/retrospective.ts",
+      "sha256": "9c5869cce3b6ce1ce961dab2ab9272917a84e5ed0a463e29e280ed5d4185fba1",
+      "bytes": 3887
+    },
+    {
+      "path": "web/components/blshTrade/retrospective.test.ts",
+      "sha256": "2b588c6bdd8a1ea49eea671414c13d5ee7061695f6451d3ca49f2da7f3b7c4d4",
+      "bytes": 5684
+    }
+  ]
+}

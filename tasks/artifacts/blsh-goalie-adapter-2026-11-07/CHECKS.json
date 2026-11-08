@@ -1,0 +1,31 @@
+{
+  "checkedAt": "2026-11-07T22:18:47.854833+00:00",
+  "documentationWhitespace": "pass",
+  "details": [
+    {
+      "path": "tasks/artifacts/blsh-goalie-adapter-2026-11-07/ASSESSMENT.md",
+      "finalNewline": true,
+      "trailingWhitespaceLines": []
+    },
+    {
+      "path": "tasks/artifacts/blsh-goalie-adapter-2026-11-07/INSPECTION-PINS.json",
+      "finalNewline": true,
+      "trailingWhitespaceLines": []
+    },
+    {
+      "path": "tasks/diaries/2026-11-07-codex-blsh-goalie-adapter.md",
+      "finalNewline": true,
+      "trailingWhitespaceLines": []
+    }
+  ],
+  "applicationTests": "not_run",
+  "lint": "not_run",
+  "typecheck": "not_run",
+  "browser": "not_run",
+  "build": "not_run",
+  "inspectionPinRecheck": {
+    "checkedAt": "2026-11-07T22:19:02.510899+00:00",
+    "files": 20,
+    "driftPaths": []
+  }
+}

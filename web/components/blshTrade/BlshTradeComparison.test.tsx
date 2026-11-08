@@ -1,13 +1,15 @@
 import React from "react";
-import { afterEach, describe, expect, it } from "vitest";
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 
+import { BLSH_FIXTURE_STORAGE_KEY, BLSH_STORAGE_KEY, emptyBlshState } from "lib/buyLowSellHigh/storage";
 import { HORIZON_OPTIONS, type HorizonGames, type InterpretationRecord } from "lib/skoElement/contract";
 import { fixtureRecords } from "lib/skoElement/fixtures";
 import BlshTradeComparison from "./BlshTradeComparison";
 import { FIXTURE_BLSH_EVIDENCE } from "./fixtureEvidence";
 
-afterEach(cleanup);
+beforeEach(() => localStorage.clear());
+afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 
 const recordsByHorizon = Object.fromEntries(HORIZON_OPTIONS.map(horizon => [horizon, fixtureRecords(horizon)])) as Record<HorizonGames, InterpretationRecord[]>;
 const renderView = (give: string[], receive: string[]) => render(
@@ -81,5 +83,141 @@ describe("BlshTradeComparison", () => {
     expect(card("Fixture Forward Six")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Remove Fixture Forward Six" }));
     expect(screen.queryByRole("article", { name: "Fixture Forward Six" })).toBeNull();
+  });
+});
+
+describe("device-local trade selections", () => {
+  it("saves/reloads synthetic selections separately from real data and resets only the fixture draft", async () => {
+    const real = { ...emptyBlshState(), draft: { give: ["real-player"], receive: ["other-real"] } };
+    localStorage.setItem(BLSH_STORAGE_KEY, JSON.stringify(real));
+    let view = renderView(["fx-f5"], ["fx-f3"]);
+    expect(screen.getByText(/Synthetic fixture drafts use separate storage/)).toBeTruthy();
+    expect(localStorage.getItem(BLSH_FIXTURE_STORAGE_KEY)).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Save draft selections" }));
+    await waitFor(() => expect(screen.getByText("Draft selections saved on this device.")).toBeTruthy());
+    view.unmount(); view = renderView([], []);
+    expect(card("Fixture Forward Five")).toBeTruthy(); expect(card("Fixture Forward Three")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Reset draft selections" }));
+    await waitFor(() => expect(screen.queryByRole("article")).toBeNull());
+    expect(JSON.parse(localStorage.getItem(BLSH_FIXTURE_STORAGE_KEY)!).draft).toEqual({ give: [], receive: [] });
+    expect(JSON.parse(localStorage.getItem(BLSH_STORAGE_KEY)!)).toEqual(real);
+    view.unmount(); renderView(["fx-f5"], ["fx-f3"]);
+    expect(screen.queryByRole("article")).toBeNull();
+  });
+  it("keeps unavailable IDs visible and removable, preserving watchlist/references on save/reset", async () => {
+    const watchlist = [{ kind: "research_identity", playerId: "watched", addedAt: "2026-11-07T12:00:00Z" }];
+    const marketReferences = { watched: { source: "Manager", kind: "manager_entered", capturedAt: "2026-11-07T12:00:00Z",
+      horizonGames: 10, scoringBasis: "points:test", unit: "fantasy_points", value: 20 } };
+    localStorage.setItem(BLSH_FIXTURE_STORAGE_KEY, JSON.stringify({ ...emptyBlshState(), watchlist, marketReferences, draft: { give: ["missing-player"], receive: ["fx-f3"] } }));
+    renderView([], []);
+    expect(within(card("missing-player")).getByText("Forecast unavailable")).toBeTruthy();
+    expect(within(result()).getAllByText(/^Withheld/).length).toBe(3);
+    fireEvent.click(screen.getByRole("button", { name: "Remove missing-player" }));
+    expect(screen.getByText(/Selections changed/)).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Save draft selections" }));
+    await waitFor(() => expect(screen.getByText("Draft selections saved on this device.")).toBeTruthy());
+    expect(JSON.parse(localStorage.getItem(BLSH_FIXTURE_STORAGE_KEY)!)).toMatchObject({ watchlist, marketReferences, draft: { give: [], receive: ["fx-f3"] } });
+    fireEvent.click(screen.getByRole("button", { name: "Reset draft selections" }));
+    await waitFor(() => expect(JSON.parse(localStorage.getItem(BLSH_FIXTURE_STORAGE_KEY)!).draft.receive).toEqual([]));
+    expect(JSON.parse(localStorage.getItem(BLSH_FIXTURE_STORAGE_KEY)!)).toMatchObject({ watchlist, marketReferences });
+  });
+  it.each(["constructor", "toString", "__proto__"])("treats persisted %s as an unavailable identity, not an inherited evidence object", async id => {
+    const prototypeBefore = Object.getOwnPropertyDescriptors(Object.prototype);
+    localStorage.setItem(BLSH_FIXTURE_STORAGE_KEY, JSON.stringify({ ...emptyBlshState(), draft: { give: [id], receive: ["fx-f3"] } }));
+    renderView([], []);
+    expect(within(card(id)).getByText("Forecast unavailable")).toBeTruthy();
+    expect(within(card(id)).getByText("No Buy Low / Sell High evidence for this player.")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: `Remove ${id}` }));
+    fireEvent.click(screen.getByRole("button", { name: "Save draft selections" }));
+    await waitFor(() => expect(screen.getByText("Draft selections saved on this device.")).toBeTruthy());
+    expect(JSON.parse(localStorage.getItem(BLSH_FIXTURE_STORAGE_KEY)!).draft.give).toEqual([]);
+    expect(Object.getOwnPropertyDescriptors(Object.prototype)).toEqual(prototypeBefore);
+  });
+  it("rejects newer-tab draft conflicts and explicitly loads them without silently losing edits", async () => {
+    renderView(["fx-f5"], ["fx-f3"]);
+    const elsewhere = { ...emptyBlshState(), draft: { give: ["fx-f1"], receive: ["missing-elsewhere"] } };
+    localStorage.setItem(BLSH_FIXTURE_STORAGE_KEY, JSON.stringify(elsewhere));
+    fireEvent(window, new StorageEvent("storage", { key: BLSH_FIXTURE_STORAGE_KEY }));
+    expect(card("Fixture Forward Five")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Save draft selections" }));
+    await waitFor(() => expect(screen.getByText(/changed in another tab/)).toBeTruthy());
+    expect(JSON.parse(localStorage.getItem(BLSH_FIXTURE_STORAGE_KEY)!)).toEqual(elsewhere);
+    fireEvent.click(screen.getByRole("button", { name: "Load saved draft" }));
+    expect(card("Fixture Forward One")).toBeTruthy(); expect(card("missing-elsewhere")).toBeTruthy();
+    expect(screen.queryByText(/changed in another tab/)).toBeNull();
+    expect(screen.queryByRole("article", { name: "Fixture Forward Five" })).toBeNull();
+  });
+  it("recovers explicitly from another tab deleting the draft without discarding in-memory selections", async () => {
+    localStorage.setItem(BLSH_FIXTURE_STORAGE_KEY, JSON.stringify({ ...emptyBlshState(), draft: { give: ["fx-f5"], receive: ["fx-f3"] } }));
+    renderView([], []);
+    localStorage.removeItem(BLSH_FIXTURE_STORAGE_KEY);
+    fireEvent(window, new StorageEvent("storage", { key: null }));
+    expect(card("Fixture Forward Five")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Reset draft selections" }));
+    await waitFor(() => expect(screen.getByText(/changed in another tab/)).toBeTruthy());
+    expect(card("Fixture Forward Five")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Load saved draft" }).hasAttribute("disabled")).toBe(false);
+    fireEvent.click(screen.getByRole("button", { name: "Load saved draft" }));
+    expect(screen.queryByRole("article")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Reset draft selections" }));
+    await waitFor(() => expect(screen.getByText("Draft selections saved on this device.")).toBeTruthy());
+    expect(JSON.parse(localStorage.getItem(BLSH_FIXTURE_STORAGE_KEY)!).draft).toEqual({ give: [], receive: [] });
+  });
+  it("preserves corrupt data and keeps in-memory comparison usable with blocked storage", () => {
+    localStorage.setItem(BLSH_FIXTURE_STORAGE_KEY, "{");
+    const view = renderView(["fx-f5"], ["fx-f3"]);
+    expect(screen.getByText(/unreadable or from a newer version/)).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Save draft selections" }).hasAttribute("disabled")).toBe(true);
+    expect(localStorage.getItem(BLSH_FIXTURE_STORAGE_KEY)).toBe("{");
+    view.unmount();
+    vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => { throw new Error("blocked"); });
+    renderView(["fx-f5"], []);
+    expect(screen.getByText(/browser blocked local storage/)).toBeTruthy();
+    fireEvent.change(screen.getByLabelText("Add a player you receive"), { target: { value: "fx-f3" } });
+    expect(card("Fixture Forward Three")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Save draft selections" }).hasAttribute("disabled")).toBe(true);
+  });
+  it("never carries a pending fixture save into a real-source editor", async () => {
+    let finish = () => {};
+    vi.stubGlobal("navigator", { locks: { request: (_key: string, write: () => unknown) => new Promise(resolve => { finish = () => resolve(write()); }) } });
+    localStorage.setItem(BLSH_STORAGE_KEY, JSON.stringify({ ...emptyBlshState(), draft: { give: ["real-unavailable"], receive: [] } }));
+    const view = renderView(["fx-f5"], ["fx-f3"]);
+    fireEvent.click(screen.getByRole("button", { name: "Save draft selections" }));
+    const realRecords = Object.fromEntries(HORIZON_OPTIONS.map(horizon => [horizon, recordsByHorizon[horizon].map(record => ({ ...record, fixture: false }))])) as Record<HorizonGames, InterpretationRecord[]>;
+    view.rerender(<BlshTradeComparison recordsByHorizon={realRecords} evidence={{}} />);
+    expect(card("real-unavailable")).toBeTruthy();
+    await act(async () => { finish(); });
+    expect(card("real-unavailable")).toBeTruthy();
+    expect(screen.queryByRole("article", { name: "Fixture Forward Five" })).toBeNull();
+    expect(screen.queryByText("Draft selections saved on this device.")).toBeNull();
+    expect(JSON.parse(localStorage.getItem(BLSH_STORAGE_KEY)!).draft.give).toEqual(["real-unavailable"]);
+    expect(JSON.parse(localStorage.getItem(BLSH_FIXTURE_STORAGE_KEY)!).draft.give).toEqual(["fx-f5"]);
+  });
+  it("does not claim saving success on quota failure", async () => {
+    renderView(["fx-f5"], ["fx-f3"]);
+    vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => { throw new Error("quota"); });
+    fireEvent.click(screen.getByRole("button", { name: "Save draft selections" }));
+    await waitFor(() => expect(screen.getByText("These selections have not been saved.")).toBeTruthy());
+    expect(screen.getByText(/Could not save locally/)).toBeTruthy();
+    expect(localStorage.getItem(BLSH_FIXTURE_STORAGE_KEY)).toBeNull(); expect(card("Fixture Forward Five")).toBeTruthy();
+  });
+  it.each(["fx-d1", "fx-d3"])("withholds signed gap/index for %s history gating", id => {
+    const profile = FIXTURE_BLSH_EVIDENCE[id];
+    renderView([id], ["fx-f3"]);
+    const block = within(card(profile.displayName)).getByRole("region", { name: `Buy Low / Sell High evidence for ${profile.displayName}` });
+    expect(within(block).getByText("Direction withheld: insufficient personal history")).toBeTruthy();
+    expect(within(block).queryByText(/Supporting research index/)).toBeNull();
+    expect(within(block).queryByText(/FHFH Standard recorded-window gap/)).toBeNull();
+  });
+  it("leads with the unchanged retrospective league gap, dates it, and keeps index secondary across scoring changes", () => {
+    renderView(["fx-f5"], ["fx-f3"]);
+    const block = within(card("Fixture Forward Five")).getByRole("region", { name: /Buy Low \/ Sell High evidence/ });
+    expect(within(block).getByText(/FHFH Standard recorded-window gap/).textContent).toContain("-12.10");
+    expect(within(block).getByText(/Supporting research index/).textContent).toContain("-38");
+    expect(within(block).getByText(/recorded games through/).textContent).toContain(FIXTURE_BLSH_EVIDENCE["fx-f5"].evidence.window.recordedThroughDate);
+    const before = block.textContent;
+    fireEvent.click(screen.getByRole("button", { name: "Points weights" }));
+    fireEvent.change(screen.getByLabelText("Goals"), { target: { value: "9" } });
+    expect(block.textContent).toBe(before);
   });
 });

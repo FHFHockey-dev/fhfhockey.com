@@ -1818,6 +1818,55 @@ describe("games already under way", () => {
     expect(live.activeGames).toBe(live.assignments.filter(row => row.date !== "2026-10-05").length);
   });
 
+  describe("injured started-game locks", () => {
+    function injured(status: string, locks: PlanningSnapshot["lockedAssignments"] = []) {
+      const data = underway(undefined, locks);
+      data.evidence.schedule = { ...data.evidence.schedule!, asOf: data.context.asOf };
+      data.players = data.players.map(row => row.id === "a" ? { ...row, injury: { status, label: status, note: null } } : row);
+      return data;
+    }
+
+    it.each(["O", "IR"])("requires a recorded lock for a started %s player", status => {
+      const result = evaluatePlan(injured(status), intent, "agp", [], false);
+      expect(result.legal).toBe(false);
+      expect(result.recommendation?.eligible).toBe(false);
+      expect(result.limitations).toContain("Started games lack recorded lineup locks; inferred positions are provisional. Confirm the active and bench assignments before acting.");
+      expect(today(result)).toEqual(["a@C#1:locked"]);
+      expect(result.activeGames).toBe(1);
+    });
+
+    it.each(["O", "IR"])("preserves an explicit active lock for a started %s player", status => {
+      const result = evaluatePlan(injured(status, [{ date: "2026-10-05", playerId: "a", slotId: "C#1" }]), intent, "agp", [], false);
+      expect(result.legal).toBe(true);
+      expect(today(result)).toEqual(["a@C#1:locked"]);
+      expect(result.activeGames).toBe(1);
+    });
+
+    it.each(["O", "IR"])("opens the slot only with an explicit bench lock for a started %s player", status => {
+      const result = evaluatePlan(injured(status, [{ date: "2026-10-05", playerId: "a", slotId: null }]), intent, "agp", [], false);
+      expect(result.legal).toBe(true);
+      expect(today(result)).toEqual(["b@C#1"]);
+      expect(result.activeGames).toBe(2);
+    });
+  });
+
+  it.each([
+    ["2026-10-05T19:59:59.999Z", 2],
+    ["2026-10-05T20:00:00.000Z", 1],
+    ["2026-10-05T20:00:00.001Z", 1],
+  ])("claims only strictly post-acquisition games at %s", (effectiveAt, expectedGames) => {
+    const data = snapshot();
+    data.roster = [];
+    data.players = data.players.filter(row => row.id === "c");
+    data.games = data.games.filter(game => game.teamAbbreviation === "C");
+    data.forecasts = [];
+    const result = evaluatePlan(data, intent, "agp", [{ id: "add-c", type: "add", playerId: "c",
+      at: effectiveAt, effectiveAt, conditional: true, dependsOn: [] }], false);
+    expect(result.legal).toBe(true);
+    expect(result.activeGames).toBe(expectedGames);
+    expect(result.assignments.some(row => row.gameId === "C0")).toBe(expectedGames === 2);
+  });
+
   it("follows the provider's lock for a started game instead of failing the plan", () => {
     const locked = evaluatePlan(underway(undefined, [{ date: "2026-10-05", playerId: "a", slotId: "C#1" }]), intent, "agp", [], false);
     expect(locked.legal).toBe(true);

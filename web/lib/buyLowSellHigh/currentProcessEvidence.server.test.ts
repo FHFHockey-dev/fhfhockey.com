@@ -92,6 +92,7 @@ describe("current process evidence server boundary (synthetic policy only)", () 
     const out = createCurrentProcessEvidenceGate()(f.requestBytes, AT, f.bundleBytes, f.artifacts);
     expect(out.records[0].rawProcessQualification.individual.qualified).toBe(true);
     expect(out.coverage.individualQualified).toBe(0);
+    expect(out.coverage.sourceObservationIndividualQualified).toBe(0);
     expect(out.records[0].individual.reasons).toContain("native_evidence_not_independently_accepted");
     expect(out.score).toBeNull(); expect(out.productionAdopted).toBe(false);
   });
@@ -219,6 +220,7 @@ function expectBoundaryWithheld(name: BoundaryCase, fraction: string) {
   else {
     const out = run(); expect(out.coverage.individualQualified).toBe(0);
     expect(out.records[0].individual.provenance.state).toBe("withheld");
+    expect(out.records[0].individual.sourceObservation.qualified).toBe(false);
     if (["frame_after", "before_completion", "capture_age"].includes(name)) expect(out.coverage.onIceQualified).toBe(0);
   }
 }
@@ -290,5 +292,110 @@ describe("exact timing boundary regressions", () => {
       s.frame.observedAtUTC = "2026-11-01T19:55:00Z";
     });
     expect(evaluate(f).coverage.individualQualified).toBe(1);
+  });
+});
+
+// Every observation, row and acceptance below is fictional. Rebinding them is
+// fixture construction, never a route for accepting real evidence.
+function windowFixture(dates: string[], change?: (s: ReturnType<typeof seed>, i: number) => void) {
+  const members = dates.map((date, i) => fixture(s => {
+    const gameId = 2026020001 + i;
+    Object.assign(s.request.calendar!.rows[0], { id: gameId, date });
+    Object.assign(s.request.wgo!.rows[0], { id: i + 1, game_id: gameId, date });
+    Object.assign(s.frame, { gameId, date, completedByUTC: `${date}T23:00:00Z` });
+    for (const group of groups) {
+      Object.assign(s.request[group]!.rows[0], { id: i + 1, date_scraped: date });
+      s.receipts[group].url = s.receipts[group].url.replaceAll("2026-10-31", date);
+      Object.assign(s.overrides[group], { wgoSourceId: i + 1, gameId, date });
+    }
+    change?.(s, i);
+  }));
+  const f = members[0], request = structuredClone(f.s.request);
+  request.calendar!.rows = members.flatMap(m => m.s.request.calendar!.rows);
+  request.wgo!.rows = members.flatMap(m => m.s.request.wgo!.rows);
+  request.individual!.rows = members.flatMap(m => m.s.request.individual!.rows);
+  request.onIce!.rows = members.flatMap(m => m.s.request.onIce!.rows);
+  f.requestBytes = bytes(request);
+  f.bundle.sourceRequestSHA256 = sha(f.requestBytes);
+  f.bundle.witnesses = members.flatMap(m => m.bundle.witnesses);
+  f.artifacts = new Map(members.flatMap(m => [...m.artifacts]));
+  f.policy = { acceptances: [{ ...f.policy.acceptances[0], requestSHA256: sha(f.requestBytes), requiredArtifactSHA256: [...f.artifacts.keys()] }] };
+  repack(f);
+  return f;
+}
+const RECENT_WINDOW = ["2026-10-24", "2026-10-25", "2026-10-27", "2026-10-29", "2026-10-31"];
+
+describe("source observation and captured window freshness separation", () => {
+  it("qualifies recent observations of older members without widening v1 admission", () => {
+    const f = windowFixture(RECENT_WINDOW), before = Array.from(f.requestBytes), out = evaluate(f);
+    expect(out.coverage.individualQualified).toBe(4);
+    expect(out.coverage.sourceObservationIndividualQualified).toBe(5);
+    expect(out.coverage.sourceObservationOnIceQualified).toBe(5);
+    expect(out.records[0].individual.qualified).toBe(false);
+    expect(out.records[0].individual.provenance.state).toBe("withheld");
+    expect(out.records[0].individual.sourceObservation).toMatchObject({ qualified: true, reasons: [],
+      provenance: { state: "exact_reviewed_row_provenance", availableAtUTC: "2026-11-01T19:15:00.000Z", originalPublicationUTC: null } });
+    expect(out.capturedWindows[0]).toMatchObject({ sourceIds: [1, 2, 3, 4, 5], dates: RECENT_WINDOW,
+      membershipScope: "last_five_captured_WGO_records", completeLatestFiveEstablished: false, currentUseQualified: false,
+      recency: { state: "recent", latestEventAgeDays: 1, evaluationDate: "2026-11-01" },
+      sourceObservations: { individual: { allMembersQualified: true, qualifiedMembers: 5 } } });
+    expect(out.capturedWindows[0].reasons).toEqual(["latest_five_completed_appearances_not_independently_established"]);
+    expect(Array.from(f.requestBytes)).toEqual(before);
+    expect(out.score).toBeNull(); expect(out.trusted).toBe(false); expect(out.productionAdopted).toBe(false);
+  });
+  it("does not refresh old events when all source observations are fresh", () => {
+    const f = windowFixture(["2026-10-11", "2026-10-13", "2026-10-15", "2026-10-17", "2026-10-24"]);
+    const out = evaluate(f);
+    expect(out.coverage.sourceObservationIndividualQualified).toBe(5);
+    expect(out.coverage.individualQualified).toBe(0);
+    expect(out.capturedWindows[0].recency).toMatchObject({ state: "stale", latestEventAgeDays: 8 });
+    expect(out.capturedWindows[0].currentUseQualified).toBe(false);
+  });
+  it("uses the server UTC day at the inclusive seven-day boundary, not the captured event cutoff", () => {
+    const f = windowFixture(["2026-10-15", "2026-10-17", "2026-10-19", "2026-10-21", "2026-10-25"]);
+    expect(evaluate(f).capturedWindows[0].recency).toMatchObject({ state: "recent", latestEventAgeDays: 7 });
+    const later = createCurrentProcessEvidenceGate(f.policy)(f.requestBytes, "2026-11-01T19:00:00-05:00", f.bundleBytes, f.artifacts);
+    expect(later.eventThroughDate).toBe("2026-10-31");
+    expect(later.coverage.sourceObservationIndividualQualified).toBe(5);
+    expect(later.capturedWindows[0].recency).toMatchObject({ state: "stale", evaluationDate: "2026-11-02", latestEventAgeDays: 8 });
+  });
+  it("keeps recent events separate from stale source observations", () => {
+    const f = windowFixture(RECENT_WINDOW);
+    const out = createCurrentProcessEvidenceGate(f.policy)(f.requestBytes, "2026-11-03T20:00:00Z", f.bundleBytes, f.artifacts);
+    expect(out.capturedWindows[0].recency.state).toBe("recent");
+    expect(out.coverage.sourceObservationIndividualQualified).toBe(0);
+    expect(out.capturedWindows[0].sourceObservations.individual.allMembersQualified).toBe(false);
+    expect(out.capturedWindows[0].currentUseQualified).toBe(false);
+  });
+  it("selects the latest captured slots before qualification and never backfills held members", () => {
+    const f = windowFixture(["2026-10-23", ...RECENT_WINDOW], (s, i) => {
+      if (i === 5) { s.request.individual!.rows[0].ixg = null; s.request.wgo!.rows[0].games_played = 0; }
+    });
+    const out = evaluate(f), window = out.capturedWindows[0];
+    expect(window.sourceIds).toEqual([2, 3, 4, 5, 6]);
+    expect(window.sourceObservations.individual.qualifiedMembers).toBe(4);
+    expect(window.reasons).toContain("captured_member_identity_or_exposure_unqualified");
+    expect(out.records[5].individual.sourceObservation.reasons).toContain("confirmed_nonappearance");
+    expect(out.records[5].individual.sourceObservation.reasons).toContain("missing_or_invalid_ixg");
+  });
+  it("does not present a short captured window as complete", () => {
+    const out = evaluate(windowFixture(RECENT_WINDOW.slice(-4)));
+    expect(out.capturedWindows[0].sourceIds).toHaveLength(4);
+    expect(out.capturedWindows[0].reasons).toContain("fewer_than_five_captured_records");
+    expect(out.capturedWindows[0].completeLatestFiveEstablished).toBe(false);
+  });
+  it("retains exact acceptance, native semantics, exposure and held-out-season boundaries", () => {
+    for (const change of [
+      (s: ReturnType<typeof seed>) => { s.overrides.individual.nativeValuesMatched = false; },
+      (s: ReturnType<typeof seed>) => { s.receipts.individual.TLSVerified = false; },
+      (s: ReturnType<typeof seed>) => { s.frame.totalToiSeconds = 899; },
+      (s: ReturnType<typeof seed>) => { s.overrides.individual.processRowSHA256 = "b".repeat(64); },
+    ]) expect(evaluate(windowFixture(RECENT_WINDOW, change)).coverage.sourceObservationIndividualQualified).toBe(0);
+    const f = windowFixture(RECENT_WINDOW);
+    const closed = createCurrentProcessEvidenceGate()(f.requestBytes, AT, f.bundleBytes, f.artifacts);
+    expect(closed.coverage.sourceObservationIndividualQualified).toBe(0);
+    expect(closed.capturedWindows[0].currentUseQualified).toBe(false);
+    const heldOut = windowFixture(RECENT_WINDOW, s => { s.request.wgo!.rows[0].season_id = 20252026; });
+    expect(() => evaluate(heldOut)).toThrow("Unexpected season; do not consume reserved/reference data");
   });
 });

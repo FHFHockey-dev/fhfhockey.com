@@ -1,0 +1,152 @@
+{
+  "checkedAt": "2026-11-07T21:25:20.609Z",
+  "approved": "b4033ad65ffba6835ba0754dd665e5d694301f64",
+  "current": "00ea36b39ee0c541fd6050b79703d2c054e97f1d",
+  "goalieClosureSha256": "7113e8e0785da65db648366c43bdf8fe00a67b81a0ff82a8fc889165d725a5c1",
+  "findings": [
+    {
+      "file": "lib/projections/seasonBootstrap.ts",
+      "line": 0,
+      "kind": "required_module_absent",
+      "text": ""
+    },
+    {
+      "file": "lib/projections/stages/skater-stage.ts",
+      "line": 0,
+      "kind": "required_module_absent",
+      "text": ""
+    },
+    {
+      "file": "lib/projections/stages/goalie-stage.ts",
+      "line": 0,
+      "kind": "required_module_absent",
+      "text": ""
+    },
+    {
+      "file": "lib/projections/stages/persistence-stage.ts",
+      "line": 0,
+      "kind": "required_module_absent",
+      "text": ""
+    },
+    {
+      "file": "lib/projections/queries/skater-queries.ts",
+      "line": 0,
+      "kind": "required_module_absent",
+      "text": ""
+    },
+    {
+      "file": "lib/projections/queries/run-lifecycle-queries.ts",
+      "line": 0,
+      "kind": "required_module_absent",
+      "text": ""
+    },
+    {
+      "file": "lib/projections/dailyBoardEvidence.ts",
+      "line": 0,
+      "kind": "required_module_absent",
+      "text": ""
+    }
+  ],
+  "files": [
+    {
+      "path": "web/lib/NHL/playoffs.ts",
+      "exportMatchesApproved": true,
+      "matchesNew": true,
+      "sha256": "bc82e147fe19a7fabc8c87eacec1e3bef81e94506cf7e853f687be5c0dd01873"
+    },
+    {
+      "path": "web/lib/cors-fetch.ts",
+      "exportMatchesApproved": true,
+      "matchesNew": true,
+      "sha256": "ea3816ce959f83e41f278b651ecc421bbfbbe1a56a6a3bd7c62161e11ca7d8f4"
+    },
+    {
+      "path": "web/lib/cron/formatDuration.ts",
+      "exportMatchesApproved": true,
+      "matchesNew": true,
+      "sha256": "b65c8b63d988ab1662d76d22669be7c3663fa368eda7b9a5c06545096aa29e43"
+    },
+    {
+      "path": "web/lib/cron/nhlOffSeason.ts",
+      "exportMatchesApproved": true,
+      "matchesNew": true,
+      "sha256": "7b3202d5d4e8006a908ae2cdbeef217949f357499456f99353fd17f902ebd77f"
+    },
+    {
+      "path": "web/lib/cron/timingContract.ts",
+      "exportMatchesApproved": true,
+      "matchesNew": true,
+      "sha256": "ded35e2b2b243ade44b9ea0a4ae1f575f4dccdb6e13c195c81eb844cc9b629ff"
+    },
+    {
+      "path": "web/lib/cron/withCronJobAudit.ts",
+      "exportMatchesApproved": true,
+      "matchesNew": true,
+      "sha256": "7a6c74635a2f8a2b04a3be8b735888f372850c4fad592e55c0556f01c75d1d32"
+    },
+    {
+      "path": "web/lib/projections/compatibilityInventory.ts",
+      "exportMatchesApproved": true,
+      "matchesNew": true,
+      "sha256": "b9db7386cb5b4f0669ed58bde73d1c4d2bba17b08ef072b3d1f260ce9c0ede4f"
+    },
+    {
+      "path": "web/lib/projections/queryCaptureHook.ts",
+      "exportMatchesApproved": true,
+      "matchesNew": true,
+      "sha256": "4965bbd77b263a9a9b4c5d7895cdd55ee3f4f0d487f8a2596c85849209962cda"
+    },
+    {
+      "path": "web/lib/supabase/client.ts",
+      "exportMatchesApproved": true,
+      "matchesNew": true,
+      "sha256": "818aab6190e6a3eed1f8e9b5190ba1da6db6874a05160632c6befa2d5eaf21b2"
+    },
+    {
+      "path": "web/lib/supabase/database-generated.types.ts",
+      "exportMatchesApproved": true,
+      "matchesNew": true,
+      "sha256": "348d1a452d649ca6d4160b7611cd59a7feb30f8e7cc4f6119baabe43f0aaf6b3"
+    },
+    {
+      "path": "web/lib/supabase/index.ts",
+      "exportMatchesApproved": true,
+      "matchesNew": true,
+      "sha256": "5d9cf84ffefe12c1e5e16bef005ee5c66fdbb06505a1a7d3385edb11b3642fe2"
+    },
+    {
+      "path": "web/lib/supabase/server.ts",
+      "exportMatchesApproved": true,
+      "matchesNew": true,
+      "sha256": "fe4c82f9fd5dc0566eb6a5717c445cbb24f5e5b018061cfb1d1b224b57b4a0bc"
+    },
+    {
+      "path": "web/lib/teamsInfo.ts",
+      "exportMatchesApproved": true,
+      "matchesNew": true,
+      "sha256": "645f33ed7272e728b6ac1436754a13126ee25eb2eb6bc598fcefed3acc8e1584"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-goalie-projections-v2.ts",
+      "exportMatchesApproved": true,
+      "matchesNew": true,
+      "sha256": "d9c92995c1da0696dc1e127d2217935599c3cc4f06352f9e2813b9e459e4b5b3"
+    },
+    {
+      "path": "web/utils/adminOnlyMiddleware.ts",
+      "exportMatchesApproved": true,
+      "matchesNew": true,
+      "sha256": "de749fa9e811aacbbd1c85a080140f380fd8c3d3794ad378caa9dd4025f444c5"
+    }
+  ],
+  "environmentReferences": [
+    "CRON_SECRET",
+    "NEXT_PUBLIC_SUPABASE_PUBLIC_KEY",
+    "NEXT_PUBLIC_SUPABASE_URL",
+    "NODE_ENV",
+    "SUPABASE_SERVICE_ROLE_KEY"
+  ],
+  "allMatch": true,
+  "purpose": "Goalie endpoint dependency byte-identity comparison, not a FORGE release-admission scan. Required FORGE module absence is expected for this deliberately narrowed root.",
+  "unexpectedScannerFindings": []
+}

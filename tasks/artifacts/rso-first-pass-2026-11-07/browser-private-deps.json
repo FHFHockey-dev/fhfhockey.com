@@ -1,0 +1,15 @@
+{
+  "state": "blocked_at_next_ssr_startup",
+  "recordedAt": "2026-11-07T21:37:12.343132+00:00",
+  "candidateTree": "50766b2d31d6f5a6b9cbbcc3565be91152080c9e",
+  "observedError": "Invalid hook call; TypeError: Cannot read properties of null (reading 'useEffect')",
+  "where": "GET /roster-schedule-optimizer during Playwright webServer readiness",
+  "termination": "Stopped own wrapper after repeated identical startup errors; no completed process receipt available",
+  "exitCode": null,
+  "appAcceptanceAssertions": "not reached",
+  "port3164": "verified free after cleanup",
+  "heavySlot": "RSO ownership released; BLSH notified",
+  "dependencies": "private APFS copy of installed dependencies; React 18.3.1 and react-dom 18.3.1",
+  "sourceChanges": "none in application source; candidate overlay unchanged",
+  "log": "browser-private-deps.log"
+}

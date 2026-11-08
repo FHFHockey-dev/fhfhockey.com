@@ -1,0 +1,9 @@
+{
+  "candidateTree": "50766b2d31d6f5a6b9cbbcc3565be91152080c9e",
+  "startedAt": "2026-11-07T21:39:59.871227+00:00",
+  "requestBudget": 1,
+  "path": "/roster-schedule-optimizer",
+  "httpStatus": 500,
+  "responseBytes": 5126,
+  "finishedAt": "2026-11-07T21:40:04.146460+00:00"
+}

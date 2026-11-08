@@ -1,0 +1,219 @@
+diff --git a/web/lib/buyLowSellHigh/currentProcessEvidence.server.test.ts b/web/lib/buyLowSellHigh/currentProcessEvidence.server.test.ts
+index 3410b8868..42053df7c 100644
+--- a/web/lib/buyLowSellHigh/currentProcessEvidence.server.test.ts
++++ b/web/lib/buyLowSellHigh/currentProcessEvidence.server.test.ts
+@@ -92,6 +92,7 @@ describe("current process evidence server boundary (synthetic policy only)", ()
+     const out = createCurrentProcessEvidenceGate()(f.requestBytes, AT, f.bundleBytes, f.artifacts);
+     expect(out.records[0].rawProcessQualification.individual.qualified).toBe(true);
+     expect(out.coverage.individualQualified).toBe(0);
++    expect(out.coverage.sourceObservationIndividualQualified).toBe(0);
+     expect(out.records[0].individual.reasons).toContain("native_evidence_not_independently_accepted");
+     expect(out.score).toBeNull(); expect(out.productionAdopted).toBe(false);
+   });
+@@ -219,6 +220,7 @@ function expectBoundaryWithheld(name: BoundaryCase, fraction: string) {
+   else {
+     const out = run(); expect(out.coverage.individualQualified).toBe(0);
+     expect(out.records[0].individual.provenance.state).toBe("withheld");
++    expect(out.records[0].individual.sourceObservation.qualified).toBe(false);
+     if (["frame_after", "before_completion", "capture_age"].includes(name)) expect(out.coverage.onIceQualified).toBe(0);
+   }
+ }
+@@ -292,3 +294,108 @@ describe("exact timing boundary regressions", () => {
+     expect(evaluate(f).coverage.individualQualified).toBe(1);
+   });
+ });
++
++// Every observation, row and acceptance below is fictional. Rebinding them is
++// fixture construction, never a route for accepting real evidence.
++function windowFixture(dates: string[], change?: (s: ReturnType<typeof seed>, i: number) => void) {
++  const members = dates.map((date, i) => fixture(s => {
++    const gameId = 2026020001 + i;
++    Object.assign(s.request.calendar!.rows[0], { id: gameId, date });
++    Object.assign(s.request.wgo!.rows[0], { id: i + 1, game_id: gameId, date });
++    Object.assign(s.frame, { gameId, date, completedByUTC: `${date}T23:00:00Z` });
++    for (const group of groups) {
++      Object.assign(s.request[group]!.rows[0], { id: i + 1, date_scraped: date });
++      s.receipts[group].url = s.receipts[group].url.replaceAll("2026-10-31", date);
++      Object.assign(s.overrides[group], { wgoSourceId: i + 1, gameId, date });
++    }
++    change?.(s, i);
++  }));
++  const f = members[0], request = structuredClone(f.s.request);
++  request.calendar!.rows = members.flatMap(m => m.s.request.calendar!.rows);
++  request.wgo!.rows = members.flatMap(m => m.s.request.wgo!.rows);
++  request.individual!.rows = members.flatMap(m => m.s.request.individual!.rows);
++  request.onIce!.rows = members.flatMap(m => m.s.request.onIce!.rows);
++  f.requestBytes = bytes(request);
++  f.bundle.sourceRequestSHA256 = sha(f.requestBytes);
++  f.bundle.witnesses = members.flatMap(m => m.bundle.witnesses);
++  f.artifacts = new Map(members.flatMap(m => [...m.artifacts]));
++  f.policy = { acceptances: [{ ...f.policy.acceptances[0], requestSHA256: sha(f.requestBytes), requiredArtifactSHA256: [...f.artifacts.keys()] }] };
++  repack(f);
++  return f;
++}
++const RECENT_WINDOW = ["2026-10-24", "2026-10-25", "2026-10-27", "2026-10-29", "2026-10-31"];
++
++describe("source observation and captured window freshness separation", () => {
++  it("qualifies recent observations of older members without widening v1 admission", () => {
++    const f = windowFixture(RECENT_WINDOW), before = Array.from(f.requestBytes), out = evaluate(f);
++    expect(out.coverage.individualQualified).toBe(4);
++    expect(out.coverage.sourceObservationIndividualQualified).toBe(5);
++    expect(out.coverage.sourceObservationOnIceQualified).toBe(5);
++    expect(out.records[0].individual.qualified).toBe(false);
++    expect(out.records[0].individual.provenance.state).toBe("withheld");
++    expect(out.records[0].individual.sourceObservation).toMatchObject({ qualified: true, reasons: [],
++      provenance: { state: "exact_reviewed_row_provenance", availableAtUTC: "2026-11-01T19:15:00.000Z", originalPublicationUTC: null } });
++    expect(out.capturedWindows[0]).toMatchObject({ sourceIds: [1, 2, 3, 4, 5], dates: RECENT_WINDOW,
++      membershipScope: "last_five_captured_WGO_records", completeLatestFiveEstablished: false, currentUseQualified: false,
++      recency: { state: "recent", latestEventAgeDays: 1, evaluationDate: "2026-11-01" },
++      sourceObservations: { individual: { allMembersQualified: true, qualifiedMembers: 5 } } });
++    expect(out.capturedWindows[0].reasons).toEqual(["latest_five_completed_appearances_not_independently_established"]);
++    expect(Array.from(f.requestBytes)).toEqual(before);
++    expect(out.score).toBeNull(); expect(out.trusted).toBe(false); expect(out.productionAdopted).toBe(false);
++  });
++  it("does not refresh old events when all source observations are fresh", () => {
++    const f = windowFixture(["2026-10-11", "2026-10-13", "2026-10-15", "2026-10-17", "2026-10-24"]);
++    const out = evaluate(f);
++    expect(out.coverage.sourceObservationIndividualQualified).toBe(5);
++    expect(out.coverage.individualQualified).toBe(0);
++    expect(out.capturedWindows[0].recency).toMatchObject({ state: "stale", latestEventAgeDays: 8 });
++    expect(out.capturedWindows[0].currentUseQualified).toBe(false);
++  });
++  it("uses the server UTC day at the inclusive seven-day boundary, not the captured event cutoff", () => {
++    const f = windowFixture(["2026-10-15", "2026-10-17", "2026-10-19", "2026-10-21", "2026-10-25"]);
++    expect(evaluate(f).capturedWindows[0].recency).toMatchObject({ state: "recent", latestEventAgeDays: 7 });
++    const later = createCurrentProcessEvidenceGate(f.policy)(f.requestBytes, "2026-11-01T19:00:00-05:00", f.bundleBytes, f.artifacts);
++    expect(later.eventThroughDate).toBe("2026-10-31");
++    expect(later.coverage.sourceObservationIndividualQualified).toBe(5);
++    expect(later.capturedWindows[0].recency).toMatchObject({ state: "stale", evaluationDate: "2026-11-02", latestEventAgeDays: 8 });
++  });
++  it("keeps recent events separate from stale source observations", () => {
++    const f = windowFixture(RECENT_WINDOW);
++    const out = createCurrentProcessEvidenceGate(f.policy)(f.requestBytes, "2026-11-03T20:00:00Z", f.bundleBytes, f.artifacts);
++    expect(out.capturedWindows[0].recency.state).toBe("recent");
++    expect(out.coverage.sourceObservationIndividualQualified).toBe(0);
++    expect(out.capturedWindows[0].sourceObservations.individual.allMembersQualified).toBe(false);
++    expect(out.capturedWindows[0].currentUseQualified).toBe(false);
++  });
++  it("selects the latest captured slots before qualification and never backfills held members", () => {
++    const f = windowFixture(["2026-10-23", ...RECENT_WINDOW], (s, i) => {
++      if (i === 5) { s.request.individual!.rows[0].ixg = null; s.request.wgo!.rows[0].games_played = 0; }
++    });
++    const out = evaluate(f), window = out.capturedWindows[0];
++    expect(window.sourceIds).toEqual([2, 3, 4, 5, 6]);
++    expect(window.sourceObservations.individual.qualifiedMembers).toBe(4);
++    expect(window.reasons).toContain("captured_member_identity_or_exposure_unqualified");
++    expect(out.records[5].individual.sourceObservation.reasons).toContain("confirmed_nonappearance");
++    expect(out.records[5].individual.sourceObservation.reasons).toContain("missing_or_invalid_ixg");
++  });
++  it("does not present a short captured window as complete", () => {
++    const out = evaluate(windowFixture(RECENT_WINDOW.slice(-4)));
++    expect(out.capturedWindows[0].sourceIds).toHaveLength(4);
++    expect(out.capturedWindows[0].reasons).toContain("fewer_than_five_captured_records");
++    expect(out.capturedWindows[0].completeLatestFiveEstablished).toBe(false);
++  });
++  it("retains exact acceptance, native semantics, exposure and held-out-season boundaries", () => {
++    for (const change of [
++      (s: ReturnType<typeof seed>) => { s.overrides.individual.nativeValuesMatched = false; },
++      (s: ReturnType<typeof seed>) => { s.receipts.individual.TLSVerified = false; },
++      (s: ReturnType<typeof seed>) => { s.frame.totalToiSeconds = 899; },
++      (s: ReturnType<typeof seed>) => { s.overrides.individual.processRowSHA256 = "b".repeat(64); },
++    ]) expect(evaluate(windowFixture(RECENT_WINDOW, change)).coverage.sourceObservationIndividualQualified).toBe(0);
++    const f = windowFixture(RECENT_WINDOW);
++    const closed = createCurrentProcessEvidenceGate()(f.requestBytes, AT, f.bundleBytes, f.artifacts);
++    expect(closed.coverage.sourceObservationIndividualQualified).toBe(0);
++    expect(closed.capturedWindows[0].currentUseQualified).toBe(false);
++    const heldOut = windowFixture(RECENT_WINDOW, s => { s.request.wgo!.rows[0].season_id = 20252026; });
++    expect(() => evaluate(heldOut)).toThrow("Unexpected season; do not consume reserved/reference data");
++  });
++});
+diff --git a/web/lib/buyLowSellHigh/currentProcessEvidence.server.ts b/web/lib/buyLowSellHigh/currentProcessEvidence.server.ts
+index fe0fa2add..6b4614e23 100644
+--- a/web/lib/buyLowSellHigh/currentProcessEvidence.server.ts
++++ b/web/lib/buyLowSellHigh/currentProcessEvidence.server.ts
+@@ -164,6 +164,7 @@ export function createCurrentProcessEvidenceGate(policy: ProcessEvidencePolicy =
+       const qualifyGroup = (group: Group) => {
+         const original = row[group]; const reasons = [...globalReasons];
+         let availableAtUTC: string | null = null; let oldestEvidenceAtUTC: string | null = null;
++        let eventRecent = false;
+         try {
+           need(reasons.length === 0, "unaccepted_bundle");
+           const w = witnesses.get(`${record.id}|${group}`); need(w, "no_exact_row_witness");
+@@ -210,25 +211,66 @@ export function createCurrentProcessEvidenceGate(policy: ProcessEvidencePolicy =
+           const maxCaptureAge = duration(request.freshnessPolicy.maxCaptureAgeHours, HOUR_US);
+           const maxEventAge = duration(request.freshnessPolicy.maxEventAgeDays, DAY_US);
+           need(captureTimes.every(t => t <= asOf) &&
+-            asOf - earliest(nativeTime, frameTime, ...captureTimes) <= maxCaptureAge &&
+-            today - time(`${record.date}T00:00:00Z`) <= maxEventAge, "current_use_evidence_stale_or_unknown");
++            asOf - earliest(nativeTime, frameTime, ...captureTimes) <= maxCaptureAge, "current_use_evidence_stale_or_unknown");
++          eventRecent = today - time(`${record.date}T00:00:00Z`) <= maxEventAge;
+         } catch (error) { if (!reasons.length) reasons.push(error instanceof GateFailure ? error.message : "invalid_row_provenance"); }
+-        const provenanceReasons = [...new Set(reasons)].sort();
+-        const scopeReasons = new Set(["unqualified_strength_scope", "unqualified_date_meaning", "unqualified_exposure_unit"]);
+-        const retained = provenanceReasons.length ? original.reasons : original.reasons.filter(reason => !scopeReasons.has(reason));
+-        const combined = [...new Set([...retained, ...provenanceReasons])].sort();
+-        return { qualified: combined.length === 0, reasons: combined,
+-          provenance: { state: provenanceReasons.length ? "withheld" : "exact_reviewed_row_provenance", reasons: provenanceReasons,
+-            availableAtUTC, oldestEvidenceAtUTC, originalPublicationUTC: null,
+-            acceptedReviewSHA256: provenanceReasons.length ? null : acceptance!.reviewSHA256 } };
++        const qualification = (failures: string[]) => {
++          const provenanceReasons = [...new Set(failures)].sort();
++          const scopeReasons = new Set(["unqualified_strength_scope", "unqualified_date_meaning", "unqualified_exposure_unit"]);
++          const retained = provenanceReasons.length ? original.reasons : original.reasons.filter(reason => !scopeReasons.has(reason));
++          const combined = [...new Set([...retained, ...provenanceReasons])].sort();
++          return { qualified: combined.length === 0, reasons: combined,
++            provenance: { state: provenanceReasons.length ? "withheld" : "exact_reviewed_row_provenance", reasons: provenanceReasons,
++              availableAtUTC, oldestEvidenceAtUTC, originalPublicationUTC: null,
++              acceptedReviewSHA256: provenanceReasons.length ? null : acceptance!.reviewSHA256 } };
++        };
++        // Source qualification preserves every integrity/observation check, but an
++        // older event can be valid history in a recent window. This is not window
++        // admission. Keep the existing v1 current-use decision unchanged.
++        const sourceObservation = qualification(reasons);
++        const currentUse = qualification(reasons.length || eventRecent ? reasons : ["current_use_evidence_stale_or_unknown"]);
++        return { ...currentUse, sourceObservation };
+       };
+       return { ...row, individual: { ...row.individual, ...qualifyGroup("individual") }, onIce: { ...row.onIce, ...qualifyGroup("onIce") },
+         rawProcessQualification: { individual: { qualified: row.individual.qualified, reasons: [...row.individual.reasons] },
+           onIce: { qualified: row.onIce.qualified, reasons: [...row.onIce.reasons] } } };
+     });
++    // Diagnostics only: the capture does not prove a complete appearance census.
++    // Select before checking qualification so a held latest row is never replaced
++    // by an older passing one. Anchor recency to server time, not a frozen cutoff.
++    const byPlayer = new Map<number, typeof records>();
++    for (const row of records) {
++      const playerRows = byPlayer.get(row.record.player_id) ?? [];
++      playerRows.push(row); byPlayer.set(row.record.player_id, playerRows);
++    }
++    const evaluationDate = utc(time(evaluatedAtUTC)).slice(0, 10);
++    const capturedWindows = [...byPlayer].map(([playerId, playerRows]) => {
++      const selected = playerRows.slice(-5), latestDate = selected[selected.length - 1].record.date;
++      const validDate = /^\d{4}-\d{2}-\d{2}$/.test(latestDate) && Number.isFinite(Date.parse(latestDate)) &&
++        new Date(latestDate).toISOString().slice(0, 10) === latestDate;
++      const age = validDate ? (Date.parse(evaluationDate) - Date.parse(latestDate)) / 86400000 : null;
++      const recent = age !== null && age >= 0 && age <= request.freshnessPolicy.maxEventAgeDays;
++      const reasons = ["latest_five_completed_appearances_not_independently_established"];
++      if (selected.length !== 5) reasons.push("fewer_than_five_captured_records");
++      if (!selected.every(row => row.identityAndExposure.qualified)) reasons.push("captured_member_identity_or_exposure_unqualified");
++      if (!recent) reasons.push("latest_captured_event_stale_or_unknown");
++      const sourceObservations = Object.fromEntries((["individual", "onIce"] as const).map(group => [group, {
++        qualifiedMembers: selected.filter(row => row[group].sourceObservation.qualified).length,
++        allMembersQualified: selected.every(row => row[group].sourceObservation.qualified),
++      }])) as Record<Group, { qualifiedMembers: number; allMembersQualified: boolean }>;
++      return { playerId, sourceIds: selected.map(row => row.record.id), dates: selected.map(row => row.record.date),
++        membershipScope: "last_five_captured_WGO_records" as const, completeLatestFiveEstablished: false as const,
++        recency: { anchor: "server_evaluation_utc_date" as const, evaluationDate, latestEventDate: latestDate,
++          latestEventAgeDays: age, maxLatestEventAgeDays: request.freshnessPolicy.maxEventAgeDays,
++          state: age === null || age < 0 ? "unknown" : recent ? "recent" : "stale" },
++        sourceObservations, currentUseQualified: false as const, reasons };
++    });
+     return { ...raw, version: "fhfh.blsh.current-process-provenance-gate.v1", sourceRequestAsOfUTC: request.asOfUTC, records,
++      freshnessDiagnosticsVersion: "fhfh.blsh.source-and-window-freshness.v1", capturedWindows,
+       coverage: { ...raw.coverage, individualQualified: records.filter(r => r.individual.qualified).length,
+-        onIceQualified: records.filter(r => r.onIce.qualified).length },
++        onIceQualified: records.filter(r => r.onIce.qualified).length,
++        sourceObservationIndividualQualified: records.filter(r => r.individual.sourceObservation.qualified).length,
++        sourceObservationOnIceQualified: records.filter(r => r.onIce.sourceObservation.qualified).length },
+       rawInputQualificationPreservedSeparately: true, sourceDataChanged: false,
+       score: null, trusted: false, productionAdopted: false };
+   };

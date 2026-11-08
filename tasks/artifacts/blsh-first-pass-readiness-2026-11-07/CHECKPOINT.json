@@ -1,0 +1,116 @@
+{
+  "capturedAt": "2026-11-07T22:35:08.539187+00:00",
+  "branch": "octoberBranch",
+  "head": "80bed9e35d491f218fa30f323cb5e91abde575a0",
+  "status": "local UI, persistence, retrospective guards and additive freshness diagnostics verified; native receipts, complete window membership, operational baseline, real integration and release remain pending",
+  "sourcePins": [
+    {
+      "path": "tasks/artifacts/blsh-first-pass-readiness-2026-11-07/STATUS.md",
+      "bytes": 14358,
+      "sha256": "b47614f2fdd69c26c04cf20e8f911a88e4a58f2de8bc04b33ac1da212713d466"
+    },
+    {
+      "path": "tasks/artifacts/blsh-fresh-source-readiness-2026-11-07/FINDINGS.md",
+      "bytes": 10661,
+      "sha256": "520e532fd82cbc271570dc2e8047f610703a31ddeba26da58da2b5272f5a3933"
+    },
+    {
+      "path": "tasks/artifacts/blsh-goalie-adapter-2026-11-07/ASSESSMENT.md",
+      "bytes": 11018,
+      "sha256": "abc043222a4462fd2c58ab2e80bad8924182dac31ba63fca65aafb40cc32e658"
+    },
+    {
+      "path": "tasks/artifacts/blsh-baseline-2026-11-04/REPORT.md",
+      "bytes": 19571,
+      "sha256": "fc723207f8634b5263d214155c9540fa995c10857305901bc245e38f04438e35"
+    },
+    {
+      "path": "tasks/artifacts/blsh-brief-decisions-2026-11-03/DECISIONS.md",
+      "bytes": 6318,
+      "sha256": "950a7a0d40f27236557fdacc84b08e20e8842faeb60049a259cdd016c95731b6"
+    },
+    {
+      "path": "web/pages/buy-low-sell-high/preview.tsx",
+      "bytes": 1118,
+      "sha256": "92c01d412e1d28eef7fa3e782a7a23847dd1607df512f588a4023d8a2acc2614"
+    },
+    {
+      "path": "web/pages/buy-low-sell-high/trade.tsx",
+      "bytes": 1454,
+      "sha256": "7bc9d950124cc5e60b467ac5ff2dd7efe7769ec73a695c5c1c594ad4213f5a66"
+    },
+    {
+      "path": "web/pages/buyLowSellHigh.js",
+      "bytes": 3971,
+      "sha256": "d0ea21797e0e84801497ccba3887602c94ebfe34f5bde1e53fc1d627eef0f3c1"
+    },
+    {
+      "path": "web/lib/buyLowSellHigh/researchSnapshot.server.ts",
+      "bytes": 2494,
+      "sha256": "dc251e7430085e70bed0a30168a36de24fe11b19d9d1ee6b58fe9ead82bea7a0"
+    },
+    {
+      "path": "web/lib/buyLowSellHigh/currentProcessEvidence.server.ts",
+      "bytes": 20149,
+      "sha256": "e69db2c0ee67669df2725636dda689f036780d7809f0e2f49ec89ca504eac724"
+    },
+    {
+      "path": "tasks/artifacts/blsh-local-persistence-2026-11-07/RESULT.md",
+      "bytes": 6687,
+      "sha256": "2576ec2ec40cbd93ca5c9e579b2b2587e055ac6ea65d77e6322524fbf15eae9d"
+    },
+    {
+      "path": "tasks/artifacts/blsh-local-persistence-2026-11-07/CHECKS.json",
+      "bytes": 85,
+      "sha256": "7f804d32184f5572b07865a3750791c1ae4839214030c925fdd6ce4b3bee32e8"
+    },
+    {
+      "path": "tasks/artifacts/blsh-local-persistence-review-2026-11-07/MANIFEST.json",
+      "bytes": 2554,
+      "sha256": "856db30b093a99348683ed682de9fbd738249898c04e9de4ea1a7f3848c906e7"
+    }
+  ],
+  "notPerformed": [
+    "provider collection",
+    "production write",
+    "reserved holdout read",
+    "empirical rescoring",
+    "runtime activation",
+    "commit",
+    "push",
+    "deployment"
+  ],
+  "candidateManifestChecks": [
+    {
+      "manifest": "tasks/artifacts/blsh-local-persistence-2026-11-07/MANIFEST.json",
+      "files": 9,
+      "drift": [],
+      "sections": [
+        {
+          "section": "files",
+          "count": 9,
+          "drift": []
+        },
+        {
+          "section": "dependencies",
+          "count": 13,
+          "drift": []
+        },
+        {
+          "section": "artifacts",
+          "count": 17,
+          "drift": []
+        }
+      ]
+    },
+    {
+      "manifest": "tasks/artifacts/blsh-local-persistence-review-2026-11-07/MANIFEST.json",
+      "files": 12,
+      "drift": []
+    }
+  ],
+  "capturePreparationUpdateAtUTC": "2026-11-07T23:04:04.202077+00:00",
+  "nativeCapturePreparationManifestSHA256": "2abb5c021e28542841fc4806288d0ffb10c2a21d14eaf51eea6a3afd90271de4",
+  "freshnessReviewUpdateAtUTC": "2026-11-07T23:17:57.118653+00:00",
+  "freshnessReviewManifestSHA256": "1f8a8da8e1f7aa17852bf56642ad3a03c94e528d6e1bf9679378d3c3cc063257"
+}

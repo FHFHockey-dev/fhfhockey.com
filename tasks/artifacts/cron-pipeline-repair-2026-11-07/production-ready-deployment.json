@@ -1,0 +1,44 @@
+{
+  "result": {
+    "deployment": {
+      "id": "dpl_7FQffXR7EjBFtCEocYBi1UY1pKuU",
+      "name": "fhfhockey",
+      "url": "fhfhockey-aubexdsux-fhfhockeydevs-projects.vercel.app",
+      "type": "LAMBDAS",
+      "state": "READY",
+      "createdAt": 1794085666172,
+      "creator": {
+        "uid": "RIjKGS50TnQKekn6kUu1bdJw",
+        "username": "fhfhockey-dev"
+      },
+      "project": {
+        "id": "prj_LV0wbwH5gRjOsZlowzEFNGRuX7Lw",
+        "name": "fhfhockey",
+        "framework": "nextjs"
+      },
+      "meta": {
+        "githubCommitRef": "master",
+        "githubCommitSha": "b4033ad65ffba6835ba0754dd665e5d694301f64",
+        "githubCommitMessage": "fix: retain queue audits when fetched events cannot be claimed",
+        "githubRepo": "fhfhockey.com",
+        "githubOrg": "FHFHockey-dev"
+      },
+      "alias": [
+        "fhfhockey.com",
+        "fhfhockey.vercel.app",
+        "www.fhfhockey.com",
+        "fhfhockey-fhfhockeydevs-projects.vercel.app",
+        "fhfhockey-git-master-fhfhockeydevs-projects.vercel.app"
+      ],
+      "target": "production",
+      "regions": [
+        "iad1"
+      ],
+      "buildingAt": 1794085667330,
+      "ready": 1794085922189,
+      "readyState": "READY",
+      "source": "git",
+      "aliasError": null
+    }
+  }
+}

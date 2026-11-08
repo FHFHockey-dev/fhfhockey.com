@@ -727,6 +727,59 @@ SELECT cron.schedule(
     expect(html).toContain("x-timeline-poll · 2 queued");
   });
 
+  it.each(["2026-11-07T13:00:00Z", "2026-11-08T07:00:00Z"])("classifies the 08:05 power-play and 09:55 tally receipts at %s using their scheduled date", async (now) => {
+    vi.setSystemTime(new Date(now));
+    const route = "/api/v1/db/update-power-play-combinations";
+    const command = `SELECT net.http_get(url := 'https://fhfhockey.com${route}?startDate=' ||
+      to_char((CURRENT_DATE - INTERVAL '2 days')::date, 'YYYY-MM-DD') ||
+      '&endDate=' || to_char(CURRENT_DATE::date, 'YYYY-MM-DD'));`;
+    readFileMock.mockResolvedValue('```json\n' + JSON.stringify([
+      { jobid: 388, jobname: "update-power-play-combinations", schedule: "05 8 * * *", active: true, method: "GET", route: `${route}?startDate=` },
+      { jobid: 391, jobname: "update-lineup-deployment-tallies", schedule: "55 9 * * *", active: true, method: "GET", route: "/api/v1/db/update-lineup-deployment-tallies?action=current" },
+      { jobid: 278, jobname: "update-rolling-player-averages", schedule: "15 8 * * 0", active: true, method: "GET", route: "/api/v1/db/update-rolling-player-averages" },
+    ]) + '\n```\n' + `SELECT cron.schedule('update-power-play-combinations', '05 8 * * *', $$${command}$$);`);
+    cronJobReportSelectMock.mockResolvedValue({ data: [
+      { jobid: 388, jobname: "update-power-play-combinations", scheduled_time: "2026-11-07T08:05:00Z", status: "succeeded", return_message: "1 row", sql_text: command },
+      { jobid: 391, jobname: "update-lineup-deployment-tallies", scheduled_time: "2026-11-07T09:55:00Z", status: "succeeded", return_message: "1 row",
+        sql_text: "SELECT net.http_get(url := 'https://fhfhockey.com/api/v1/db/update-lineup-deployment-tallies?action=current');" },
+    ], error: null });
+    cronJobAuditSelectMock.mockResolvedValue({ data: [
+      { job_name: route, run_time: "2026-11-07T08:05:04.204711Z", status: "success", rows_affected: 14,
+        details: { method: "GET", url: `${route}?startDate=2026-11-05&endDate=2026-11-07`, statusCode: 200, durationMs: 2372,
+          response: { success: true, processed: 14, skipped: 12 } } },
+      { job_name: "update-lineup-deployment-tallies", run_time: "2026-11-07T09:55:02.618459Z", status: "success", rows_affected: 2982,
+        details: { method: "GET", url: "/api/v1/db/update-lineup-deployment-tallies?action=current", statusCode: 200, durationMs: 1129,
+          response: { success: true, rowsUpserted: 2982 } } },
+    ], error: null });
+    const res = createMockRes();
+    await handler({ method: "GET" } as any, res);
+    expect(res.body.counts).toMatchObject({ scheduledJobs: 2, jobsOkLast: 2, jobsUnknownLast: 0, jobsMissingLast: 0 });
+    expect(res.body.scheduleInventory.notDueJobs).toEqual([{ name: "update-rolling-player-averages", schedule: "15 8 * * 0" }]);
+    const rows = cronAuditEmailMock.mock.calls.at(-1)?.[0].audits;
+    expect(rows).toHaveLength(2);
+    expect(rows.find((row: any) => row.jobName === "update-power-play-combinations"))
+      .toMatchObject({ status: "success", observationKind: "scheduled", route: `${route}?startDate=2026-11-05&endDate=2026-11-07` });
+    expect(rows.find((row: any) => row.jobName === "update-lineup-deployment-tallies"))
+      .toMatchObject({ status: "success", observationKind: "scheduled", rowsAffected: 2982 });
+  });
+
+  it.each([
+    "startDate=2026-03-17&endDate=2026-03-20",
+    "startDate=2026-03-18&endDate=2026-03-20&dryRun=true",
+  ])("does not use a different date window or probe query as the scheduled receipt: %s", async (query) => {
+    const route = "/api/v1/db/update-power-play-combinations";
+    readFileMock.mockResolvedValue(`SELECT cron.schedule('update-power-play-combinations', '05 8 * * *', $$
+      SELECT net.http_get(url := 'https://fhfhockey.com${route}?startDate=' ||
+        to_char((CURRENT_DATE - INTERVAL '2 days')::date, 'YYYY-MM-DD') ||
+        '&endDate=' || to_char(CURRENT_DATE::date, 'YYYY-MM-DD'));$$);`);
+    cronJobReportSelectMock.mockResolvedValue({ data: [], error: null });
+    cronJobAuditSelectMock.mockResolvedValue({ data: [{ job_name: "update-power-play-combinations", run_time: "2026-03-20T08:05:01Z", status: "success",
+      details: { method: "GET", url: `${route}?${query}`, statusCode: 200 } }], error: null });
+    const res = createMockRes();
+    await handler({ method: "GET" } as any, res);
+    expect(res.body.counts).toMatchObject({ jobsOkLast: 0, jobsMissingLast: 1, unscheduledRuns: 1 });
+  });
+
   it("includes SKO low-row warnings in the daily operator email", async () => {
     cronJobReportSelectMock.mockResolvedValue({
       data: [
@@ -1884,24 +1937,26 @@ ${JSON.stringify(jobs)}
   it("uses a shared 180-second read allowance and reserves 60 seconds under the 240-second repository limit", async () => {
     for (const mock of [cronJobReportSelectMock, cronJobAuditSelectMock]) {
       mock.mockImplementation(async () => {
-        vi.setSystemTime(Date.now() + 8_000);
+        await new Promise((resolve) => setTimeout(resolve, 8_000));
         return { data: [], error: null };
       });
     }
     const res = createMockRes();
-    await handler({ method: "GET", query: { preview: "json" } } as any, res);
+    const pending = handler({ method: "GET", query: { preview: "json" } } as any, res);
+    await vi.advanceTimersByTimeAsync(16_000);
+    await pending;
     expect(res.body.sources.cron.complete).toBe(true);
     expect(res.body.sources.audit.complete).toBe(true);
     expect(res.body.window.until).toBe("2026-03-20T12:10:00.000Z");
     expect(res.body.executionBudget).toMatchObject({
-      repositoryLimitMs: 240_000, sourceBudgetMs: 180_000, sourceElapsedMs: 32_000,
+      repositoryLimitMs: 240_000, sourceBudgetMs: 180_000, sourceElapsedMs: 16_000,
       sourceDeadlineAt: "2026-03-20T12:13:00.000Z", requestTimeoutMs: 15_000,
       phaseReservesMs: { assemblyAndRender: 20_000, emailDelivery: 20_000, auditAndResponse: 20_000 },
     });
     expect(resendSendMock).not.toHaveBeenCalled();
   });
 
-  it("exhausts one overall source deadline and still sends a truthful partial report", async () => {
+  it("completes both core sources in parallel before the shared deadline", async () => {
     const cron = Array.from({ length: 5000 }, (_, id) => ({
       runid: id + 1, jobname: "child-sql", scheduled_time: "2026-03-20T12:00:00.000Z",
       status: "success", sql_text: "SELECT 1;",
@@ -1911,18 +1966,43 @@ ${JSON.stringify(jobs)}
       status: id < 83 ? "failure" : "success", details: null,
     }));
     cronJobReportSelectMock.mockImplementation(async () => {
-      vi.setSystemTime(Date.now() + 12_000); return { data: cron, error: null };
+      await new Promise((resolve) => setTimeout(resolve, 12_000)); return { data: cron, error: null };
     });
     cronJobAuditSelectMock.mockImplementation(async () => {
-      vi.setSystemTime(Date.now() + 5_000); return { data: audits, error: null };
+      await new Promise((resolve) => setTimeout(resolve, 5_000)); return { data: audits, error: null };
     });
     const res = createMockRes();
-    await handler({ method: "GET" } as any, res);
-    expect(res.body.executionBudget.sourceElapsedMs).toBe(180_000);
+    const pending = handler({ method: "GET" } as any, res);
+    await vi.advanceTimersByTimeAsync(120_000);
+    await pending;
+    expect(res.body.executionBudget.sourceElapsedMs).toBe(120_000);
     expect(res.body.sources.cron.complete).toBe(true);
-    expect(res.body.sources.audit).toMatchObject({ complete: false, enumerationComplete: true, pages: 7, verificationPages: 5 });
+    expect(res.body.sources.audit).toMatchObject({ complete: true, enumerationComplete: true, pages: 7, verificationPages: 7 });
     expect(res.body.counts).toMatchObject({ auditRuns: 6184, auditFailures: 83 });
-    expect(res.body.totals.auditFailures).toBeNull();
+    expect(res.body.totals.auditFailures).toBe(83);
+    expect(resendSendMock.mock.calls[0][0].subject).not.toContain("incomplete telemetry");
+  });
+
+  it("retains complete audit observations even when cron history consumes the entire source deadline", async () => {
+    const cron = Array.from({ length: 8000 }, (_, id) => ({ runid: id + 1, jobname: "child-sql",
+      scheduled_time: "2026-03-20T12:00:00.000Z", status: "success", sql_text: "SELECT 1;" }));
+    cronJobReportSelectMock.mockImplementation(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 12_000)); return { data: cron, error: null };
+    });
+    const res = createMockRes();
+    const pending = handler({ method: "GET" } as any, res);
+    await vi.advanceTimersByTimeAsync(0);
+    // The old serial reader never attempted this source until its budget was gone.
+    expect(cronJobAuditSelectMock).toHaveBeenCalledTimes(2);
+    await vi.advanceTimersByTimeAsync(180_000);
+    await pending;
+    expect(res.body.executionBudget.sourceElapsedMs).toBe(180_000);
+    expect(res.body.sources.cron).toMatchObject({ complete: false, enumerationComplete: true });
+    expect(res.body.sources.audit).toMatchObject({ complete: true, pages: 1, verificationPages: 1 });
+    expect(res.body.counts.auditRuns).toBe(1);
+    expect(res.body.totalsComplete).toBe(false);
+    expect(cronAuditEmailMock.mock.calls.at(-1)?.[0].audits[0])
+      .toMatchObject({ status: "unknown", observedExecutionStatus: "success" });
     expect(resendSendMock.mock.calls[0][0].subject).toContain("incomplete telemetry");
   });
 

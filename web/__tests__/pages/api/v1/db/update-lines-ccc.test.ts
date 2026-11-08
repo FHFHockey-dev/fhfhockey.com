@@ -316,7 +316,7 @@ describe("/api/v1/db/update-lines-ccc", () => {
     const { eventUpdateMock } = createSupabaseMocks({ emptyQueue: true });
     const res = createMockRes();
     await handler(createMockReq(), res);
-    expect(res.body.summary).toMatchObject({ eventsLoaded: 0, rowsUpserted: 0 });
+    expect(res.body.summary).toMatchObject({ eventsFetched: 0, eventsLoaded: 0, rowsUpserted: 0 });
     expect(mocks.getCurrentSeason).not.toHaveBeenCalled();
     expect(mocks.getTeams).not.toHaveBeenCalled();
     expect(eventUpdateMock).not.toHaveBeenCalled();

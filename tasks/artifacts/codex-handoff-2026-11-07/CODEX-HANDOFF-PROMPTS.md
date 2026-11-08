@@ -1,30 +1,36 @@
-# Codex → Claude lane handoff prompts (2026-11-07)
+# Codex → Claude lane handoff prompts (2026-11-07, revised after Scout's ownership update)
 
-TJ decided on 2026-11-07 that Claude (Chef session `local_c4e6c533`) takes ownership of every open Codex lane.
-Paste each prompt below into Codex, one per Codex thread. Prompt 0 goes to the Codex root/coordinator thread first.
-Each prompt writes one handoff file into `tasks/artifacts/codex-handoff-2026-11-07/` and changes nothing else.
+TJ decided on 2026-11-07 that Claude (Chef session `local_c4e6c533`) takes ownership of the open Codex lanes.
+Scout (Codex) then RETAINED four lanes, which are NOT handed over and must not be released or replayed by Claude:
+1. Cron / FORGE release b4033ad65 (on master; Scout watches the deploy). Manual goalie/FORGE recovery stays Scout's.
+2. WiGO historical identity repair (applied; Scout tracks the next natural WiGO run).
+3. Yahoo ownership / refresh (uncertain refresh outcome; no blind retry; local error-handling patch is Scout's).
+4. FxTwitter forecast dedupe — Claude must not edit `web/lib/player-forecasts/sourceObservations.ts` or `playerForecasts.test.ts`.
+No broad Codex stop or transfer is authorized. Prompts 1–4 below are therefore WITHDRAWN; use Prompt 0 and 5–11 only.
+Paste each remaining prompt into Codex, one per Codex thread. Each writes one handoff file into
+`tasks/artifacts/codex-handoff-2026-11-07/` and changes nothing else.
 
-Every handoff file uses the same sections (the shared template is in Prompt 0 and repeated in short form below):
+Every handoff file uses the same sections:
 OBJECTIVE · STATE · FILES · CANDIDATES/REFS · RECEIPTS · CHECKS RUN · PRODUCTION STATE · REMAINING GATES · PENDING TJ APPROVALS · GOTCHAS · DIARIES · LEASES RELEASED
 
 ---
 
-## Prompt 0 — Codex root: inventory every open Codex lane
+## Prompt 0 — Codex root: inventory the lanes being handed to Claude
 
 ```
-TJ has transferred ownership of all open Codex lanes in /Users/tim/Code/fhfhockey.com to Claude (Chef session local_c4e6c533). Your job now is a read-only handoff, not new work.
+TJ has transferred ownership of the open Codex lanes in /Users/tim/Code/fhfhockey.com to Claude (Chef session local_c4e6c533), EXCEPT the four Scout retains: the cron/FORGE release b4033ad65 (and manual goalie/FORGE recovery), the WiGO identity repair follow-up, Yahoo ownership/refresh, and the FxTwitter forecast dedupe. Your job is a read-only handoff of everything else, not new work.
 
-1. Inventory every open Codex thread/lane/worker (including Astra, coordinator 01a16eed-60f6-7096-879f-696c469db015, heavy-slot holders and any task-N workspace under /Users/tim/Documents/Codex/2026-10-* and 2026-11-*). For each: name, workspace path, objective, state (running/idle/blocked/done), open diary path, files it holds a lease on.
-2. Write tasks/artifacts/codex-handoff-2026-11-07/00-CODEX-ROOT-INVENTORY.md with one row per lane and a column saying which of the lane prompts (1–11 in CODEX-HANDOFF-PROMPTS.md) covers it; list any lane none of them covers, with the same details.
-3. Stop starting new Codex work in this repo. Let running workers reach a safe checkpoint, then stop them; do not abandon uncommitted edits — list them instead.
-4. Update CODEX-LEASES.json and append a note to tasks/artifacts/cross-platform/2026-10-24-coordination/CODEX-TO-CLAUDE.md saying all leases transfer to Claude as of the handoff time (UTC).
+1. Inventory every other open Codex thread/lane/worker (including Astra, coordinator 01a16eed-60f6-7096-879f-696c469db015, heavy-slot holders and any task-N workspace under /Users/tim/Documents/Codex/2026-10-* and 2026-11-*). For each: name, workspace path, objective, state (running/idle/blocked/done), open diary path, files it holds a lease on, and whether Scout retains it.
+2. Write tasks/artifacts/codex-handoff-2026-11-07/00-CODEX-ROOT-INVENTORY.md with one row per lane and a column saying which lane prompt (5–11 in CODEX-HANDOFF-PROMPTS.md) covers it; list any transferring lane none of them covers, with the same details.
+3. For transferring lanes only: let running workers reach a safe checkpoint and stop them; do not abandon uncommitted edits, list them instead. Do not stop or change Scout's four retained lanes.
+4. Append a note to tasks/artifacts/cross-platform/2026-10-24-coordination/CODEX-TO-CLAUDE.md listing exactly which leases transfer to Claude and which Scout keeps, with the UTC time. Update CODEX-LEASES.json to match.
 
 Hard rules: no git commits, pushes, branch/worktree changes, deploys, migrations, production reads or writes, cron/endpoint runs, or env changes. Never set GIT_DIR. Do not delete diaries, candidates, refs, bundles or receipts.
 
 Template for every lane handoff file: OBJECTIVE; STATE (done/left, %); FILES (path, sha256, committed SHA or "dirty in working tree" or "candidate-only"); CANDIDATES/REFS (ref, SHA, tree, base, path count, bundle/patch paths); RECEIPTS (paths); CHECKS RUN (command, result, date); PRODUCTION STATE (applied migrations, env flags, deployed functions, data repairs, with receipt paths); REMAINING GATES (exact next steps with done-criteria); PENDING TJ APPROVALS (each as a decision with 2–3 options, recommended first); GOTCHAS; DIARIES (paths); LEASES RELEASED (paths).
 ```
 
-## Prompt 1 — Cron pipeline repair + cron reporting
+## Prompt 1 — Cron pipeline repair + cron reporting  — WITHDRAWN (Scout retains this lane; do not send)
 
 ```
 Read-only handoff to Claude. Lane: cron pipeline repair and cron-report scheduled-URL resolver (diaries tasks/diaries/2026-11-07-codex-cron-pipeline-fix.md and 2026-11-07-codex-cron-reporting.md; final candidate b4033ad65ffba6835ba0754dd665e5d694301f64 on base 194d55e7, 33 paths; artifacts tasks/artifacts/cron-pipeline-repair-2026-11-07/).
@@ -32,7 +38,7 @@ Write tasks/artifacts/codex-handoff-2026-11-07/01-cron-pipeline.md using the tem
 No git mutations, pushes, deploys, production reads/writes or cron runs. Never set GIT_DIR.
 ```
 
-## Prompt 2 — FxTwitter migration verification / forecast assignment dedupe
+## Prompt 2 — FxTwitter migration verification / forecast assignment dedupe  — WITHDRAWN (Scout retains this lane; do not send)
 
 ```
 Read-only handoff to Claude. Lane: FxTwitter migration verification and the DFO duplicate-assignment fix (diary tasks/diaries/2026-11-07-codex-fxtwitter-migration-verification.md; files web/lib/player-forecasts/sourceObservations.ts and playerForecasts.test.ts).
@@ -40,7 +46,7 @@ Write tasks/artifacts/codex-handoff-2026-11-07/02-fxtwitter-forecast-dedupe.md u
 No git mutations, pushes, deploys, production reads/writes, replays. Never set GIT_DIR.
 ```
 
-## Prompt 3 — WiGO legacy identity repair
+## Prompt 3 — WiGO legacy identity repair  — WITHDRAWN (Scout retains this lane; do not send)
 
 ```
 Read-only handoff to Claude. Lane: WiGO legacy identity repair (diary tasks/diaries/2026-11-07-codex-wigo-identity-repair.md; artifacts tasks/artifacts/wigo-legacy-identity-repair-2026-11-07/).
@@ -48,7 +54,7 @@ Write tasks/artifacts/codex-handoff-2026-11-07/03-wigo-identity-repair.md using 
 No git mutations, production reads/writes or recomputes. Never set GIT_DIR.
 ```
 
-## Prompt 4 — Yahoo refresh hardening / WiGO inputs / ownership source
+## Prompt 4 — Yahoo refresh hardening / WiGO inputs / ownership source  — WITHDRAWN (Scout retains this lane; do not send)
 
 ```
 Read-only handoff to Claude. Lane: Yahoo global-credential refresh hardening, WiGO inputs and Yahoo ownership source (diary tasks/diaries/2026-11-07-codex-yahoo-wigo-inputs.md; artifacts tasks/artifacts/yahoo-ownership-source-2026-11-07/; files manual-refresh-yahoo-token.ts, refreshGlobalCredentials helper/test, globalCredentials.test.ts, cron-auth-boundaries.test.ts).
@@ -84,7 +90,7 @@ No git mutations, NST requests, production reads/writes. Never set GIT_DIR.
 
 ```
 Read-only handoff to Claude. Lane: FORGE v2 and projections (diaries 2026-10-29/30-codex-forge-v2-*.md, 2026-11-04-codex-forge-integrity.md, 2026-10-25-codex-goalie-workload-forge.md, 2026-10-29-codex-forge-horizon-inspection.md; web/lib/forge-v2, web/lib/projections, run-projection-accuracy, update-goalie-projections-v2, forge-producer-closure; and the Astra goalie/FORGE/report candidate).
-Write tasks/artifacts/codex-handoff-2026-11-07/08-forge-projections.md using the template in Prompt 0. Include the Astra candidate ref/SHA/paths, which FORGE work is accepted vs unreleased, and the rule that FORGE must never read draft-dashboard PROJECTIONS_* tables.
+Write tasks/artifacts/codex-handoff-2026-11-07/08-forge-projections.md using the template in Prompt 0. Include the Astra candidate ref/SHA/paths, which FORGE work is accepted vs unreleased (excluding the cron/FORGE release b4033ad65 and the manual goalie/FORGE recovery, which Scout keeps), and the rule that FORGE must never read draft-dashboard PROJECTIONS_* tables.
 No git mutations, pushes, deploys, production reads/writes, recomputes. Never set GIT_DIR.
 ```
 

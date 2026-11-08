@@ -1,0 +1,568 @@
+[
+  {
+    "sourceId": 5587266,
+    "state": "later_field_evidence_composed",
+    "admissionHolds": [],
+    "comparisonSHA256": "cdd91fa250adfc113981b0b421a36a467a6fa7865fe9c9ab2d6c82e8745bae49",
+    "scoringAdmission": false,
+    "wholeProfileQualification": false
+  },
+  {
+    "sourceId": 5588451,
+    "state": "later_field_evidence_composed",
+    "admissionHolds": [],
+    "comparisonSHA256": "1a80bd4460c1a4c41c16afc87d6c5baddce6663db71824024ba081d1db120e41",
+    "scoringAdmission": false,
+    "wholeProfileQualification": false
+  },
+  {
+    "sourceId": 5588594,
+    "state": "later_field_evidence_composed",
+    "admissionHolds": [],
+    "comparisonSHA256": "1842aa7618481901130312fe76d9eb0eef0fe731dea9527f73b6af28e6b124f6",
+    "scoringAdmission": false,
+    "wholeProfileQualification": false
+  },
+  {
+    "sourceId": 5589212,
+    "state": "later_field_evidence_composed",
+    "admissionHolds": [],
+    "comparisonSHA256": "ba756c3df62deda5f0835ddf765cb1092dde7b8bce104ac9c116035ce109f1a8",
+    "scoringAdmission": false,
+    "wholeProfileQualification": false
+  },
+  {
+    "sourceId": 5589270,
+    "state": "later_field_evidence_composed",
+    "admissionHolds": [],
+    "comparisonSHA256": "f4e5acefd8c0c1d355cd3cf635fe4cce3bc9b562eb60bac5cbe4dd8d9f5a98e2",
+    "scoringAdmission": false,
+    "wholeProfileQualification": false
+  },
+  {
+    "sourceId": 5589285,
+    "state": "later_field_evidence_composed",
+    "admissionHolds": [],
+    "comparisonSHA256": "080af5782fdfb188f08d0dfef2ecb1b48b28e29a5de22fd6eff889dc9f8d8117",
+    "scoringAdmission": false,
+    "wholeProfileQualification": false
+  },
+  {
+    "sourceId": 5589288,
+    "state": "later_field_evidence_composed",
+    "admissionHolds": [],
+    "comparisonSHA256": "ba37ba0b2cbf3bd1c62d4f58d8cea197ff459c338af351d9165c88e6e206f0a9",
+    "scoringAdmission": false,
+    "wholeProfileQualification": false
+  },
+  {
+    "sourceId": 5589299,
+    "state": "later_field_evidence_composed",
+    "admissionHolds": [],
+    "comparisonSHA256": "fc38f62d46646d7282edc80a4f55385a9fbd542b883f3a22e140d1c7d82dfa5e",
+    "scoringAdmission": false,
+    "wholeProfileQualification": false
+  },
+  {
+    "sourceId": 5589301,
+    "state": "later_field_evidence_composed",
+    "admissionHolds": [],
+    "comparisonSHA256": "baef650ec5aecce265a037fb294ed8aec30d1fa706ba2b0573f0918a8e3572a6",
+    "scoringAdmission": false,
+    "wholeProfileQualification": false
+  },
+  {
+    "sourceId": 5589311,
+    "state": "later_field_evidence_composed",
+    "admissionHolds": [],
+    "comparisonSHA256": "658bc7f2c6fe25f027236104a49885c3b0f1c3926d7abb05a168236b2e4033bf",
+    "scoringAdmission": false,
+    "wholeProfileQualification": false
+  },
+  {
+    "sourceId": 5589766,
+    "state": "later_field_evidence_composed",
+    "admissionHolds": [],
+    "comparisonSHA256": "abcfe728636ea930a87336c065733215ef8320556953e45ab85f6a0b18682d02",
+    "scoringAdmission": false,
+    "wholeProfileQualification": false
+  },
+  {
+    "sourceId": 5589783,
+    "state": "later_field_evidence_composed",
+    "admissionHolds": [],
+    "comparisonSHA256": "16b203ea96e7f964fbd4eca6b2dd365745ac687c91894e36c1ebdda3b29c06b1",
+    "scoringAdmission": false,
+    "wholeProfileQualification": false
+  },
+  {
+    "sourceId": 5589792,
+    "state": "later_field_evidence_composed",
+    "admissionHolds": [],
+    "comparisonSHA256": "25f7b7a9d5130e0812dbbfe50d27eba459e6169395cc14b70c06219942ba9152",
+    "scoringAdmission": false,
+    "wholeProfileQualification": false
+  },
+  {
+    "sourceId": 5589793,
+    "state": "later_field_evidence_composed",
+    "admissionHolds": [],
+    "comparisonSHA256": "6ec752d541f5fc415939ac5deceb18c51a107ccf90f9aa1a8c1214769becf253",
+    "scoringAdmission": false,
+    "wholeProfileQualification": false
+  },
+  {
+    "sourceId": 5589801,
+    "state": "later_field_evidence_composed",
+    "admissionHolds": [],
+    "comparisonSHA256": "268a5d85ac5a532594387049839b0d577d0b44b9d53d8d1ec9f8e14dca3697c4",
+    "scoringAdmission": false,
+    "wholeProfileQualification": false
+  },
+  {
+    "sourceId": 5589802,
+    "state": "later_field_evidence_composed",
+    "admissionHolds": [],
+    "comparisonSHA256": "1bfdf11729ce82499834c36c210543bcaadb0f7ab9920ab6dca4e3eaf0b57f8e",
+    "scoringAdmission": false,
+    "wholeProfileQualification": false
+  },
+  {
+    "sourceId": 5589803,
+    "state": "later_field_evidence_composed",
+    "admissionHolds": [],
+    "comparisonSHA256": "7295268d122a3328a2ca1c341df8822fed0ee9a4a4f102edbed5c7c3078f0092",
+    "scoringAdmission": false,
+    "wholeProfileQualification": false
+  },
+  {
+    "sourceId": 5596246,
+    "state": "later_field_evidence_composed",
+    "admissionHolds": [],
+    "comparisonSHA256": "c54ca677459728c730cb124dc1c9027c914e3abe20513ca54702474cbc1c251d",
+    "scoringAdmission": false,
+    "wholeProfileQualification": false
+  },
+  {
+    "sourceId": 5596261,
+    "state": "later_field_evidence_composed",
+    "admissionHolds": [],
+    "comparisonSHA256": "5a9d531b1e45c854f7ef52bcbe13fcd1f944fdaa3ea1dee65f93e019bae5da26",
+    "scoringAdmission": false,
+    "wholeProfileQualification": false
+  },
+  {
+    "sourceId": 5596264,
+    "state": "held_unchanged",
+    "admissionHolds": [
+      "prior_exposure_hold_preserved",
+      "direct_exposure_unmatched",
+      "observation_precedes_source_capture"
+    ],
+    "comparisonSHA256": "a939ae0a6812ecf55753e9503dbe5df52c85017d9f0a84a5ab947a322e209c01",
+    "scoringAdmission": false,
+    "wholeProfileQualification": false
+  },
+  {
+    "sourceId": 5596272,
+    "state": "later_field_evidence_composed",
+    "admissionHolds": [],
+    "comparisonSHA256": "7e6a74671695b058a757951b9ae9e890a92889925f972767169b70da258218f7",
+    "scoringAdmission": false,
+    "wholeProfileQualification": false
+  },
+  {
+    "sourceId": 5596302,
+    "state": "later_field_evidence_composed",
+    "admissionHolds": [],
+    "comparisonSHA256": "a1b927caccb4241809ba02c028d2d54c85e33cec38cbd4470f787fe503ea4a7d",
+    "scoringAdmission": false,
+    "wholeProfileQualification": false
+  },
+  {
+    "sourceId": 5597031,
+    "state": "held_unchanged",
+    "admissionHolds": [
+      "prior_exposure_hold_preserved",
+      "direct_exposure_unmatched",
+      "observation_precedes_source_capture"
+    ],
+    "comparisonSHA256": "06553c9d83e3c9cff1e507e40f8f41cfa43ce1f44a878942034a0f7dd60ee79d",
+    "scoringAdmission": false,
+    "wholeProfileQualification": false
+  },
+  {
+    "sourceId": 5597170,
+    "state": "held_unchanged",
+    "admissionHolds": [
+      "prior_exposure_hold_preserved",
+      "direct_exposure_unmatched",
+      "observation_precedes_source_capture"
+    ],
+    "comparisonSHA256": "4029269718a4cc60ca3a8b646d13d073b4a1a5fe3a615698cf0125c41d70f404",
+    "scoringAdmission": false,
+    "wholeProfileQualification": false
+  },
+  {
+    "sourceId": 5597173,
+    "state": "held_unchanged",
+    "admissionHolds": [
+      "prior_exposure_hold_preserved",
+      "direct_exposure_unmatched",
+      "observation_precedes_source_capture"
+    ],
+    "comparisonSHA256": "ba7145cd0e7463bf23e8c4d49c377387f861058cf54b3b58a9679f5270faf5af",
+    "scoringAdmission": false,
+    "wholeProfileQualification": false
+  },
+  {
+    "sourceId": 5597181,
+    "state": "held_unchanged",
+    "admissionHolds": [
+      "prior_exposure_hold_preserved",
+      "direct_exposure_unmatched",
+      "observation_precedes_source_capture"
+    ],
+    "comparisonSHA256": "a8a66e87d79290451b683dea36be50f0588f07280c3c80b2de0195f978589c21",
+    "scoringAdmission": false,
+    "wholeProfileQualification": false
+  },
+  {
+    "sourceId": 5597187,
+    "state": "held_unchanged",
+    "admissionHolds": [
+      "prior_exposure_hold_preserved",
+      "direct_exposure_unmatched",
+      "observation_precedes_source_capture"
+    ],
+    "comparisonSHA256": "7dc4c9ed0589b098105b3b895b8d8fe8cd01422e45fc47b3af1f37c94c398fec",
+    "scoringAdmission": false,
+    "wholeProfileQualification": false
+  },
+  {
+    "sourceId": 5597189,
+    "state": "held_unchanged",
+    "admissionHolds": [
+      "prior_exposure_hold_preserved",
+      "direct_exposure_unmatched",
+      "observation_precedes_source_capture"
+    ],
+    "comparisonSHA256": "bae1cf8cd11cc3e22fadcc10076c405fb11fd4d907bbf8ef6fcebf33c66a9059",
+    "scoringAdmission": false,
+    "wholeProfileQualification": false
+  },
+  {
+    "sourceId": 5597195,
+    "state": "later_field_evidence_composed",
+    "admissionHolds": [],
+    "comparisonSHA256": "1e1561c477b28baca824e6f3c05db22b4e3f5b88d31b76444298f65acb747177",
+    "scoringAdmission": false,
+    "wholeProfileQualification": false
+  },
+  {
+    "sourceId": 5597200,
+    "state": "held_unchanged",
+    "admissionHolds": [
+      "prior_exposure_hold_preserved",
+      "direct_exposure_unmatched",
+      "observation_precedes_source_capture"
+    ],
+    "comparisonSHA256": "b978dd0b49d66f47cc7cf34ebddeb7abe08442e84f3a8eda478bec67af5ef341",
+    "scoringAdmission": false,
+    "wholeProfileQualification": false
+  },
+  {
+    "sourceId": 5597210,
+    "state": "held_unchanged",
+    "admissionHolds": [
+      "prior_exposure_hold_preserved",
+      "direct_exposure_unmatched",
+      "observation_precedes_source_capture"
+    ],
+    "comparisonSHA256": "213acd36460bd16d3d04a647d8c979eb48a19c1e4d68542fabc58b78fe1a6c72",
+    "scoringAdmission": false,
+    "wholeProfileQualification": false
+  },
+  {
+    "sourceId": 5597261,
+    "state": "held_unchanged",
+    "admissionHolds": [
+      "prior_exposure_hold_preserved",
+      "direct_exposure_unmatched",
+      "observation_precedes_source_capture"
+    ],
+    "comparisonSHA256": "7f88b77b28ce2512b39f1ef831de8cda2f27d14e75bf400fdd064a3c42cfd8b9",
+    "scoringAdmission": false,
+    "wholeProfileQualification": false
+  },
+  {
+    "sourceId": 5597263,
+    "state": "later_field_evidence_composed",
+    "admissionHolds": [],
+    "comparisonSHA256": "738ea0d25822cd728182dbd02a8d49c9894ee1566b17b813c0adfbeaa14865a4",
+    "scoringAdmission": false,
+    "wholeProfileQualification": false
+  },
+  {
+    "sourceId": 5597269,
+    "state": "later_field_evidence_composed",
+    "admissionHolds": [],
+    "comparisonSHA256": "29e9bfe88d36cc0beca7fec68925bd2953238c9088643484fe50fda82f0b392c",
+    "scoringAdmission": false,
+    "wholeProfileQualification": false
+  },
+  {
+    "sourceId": 5597273,
+    "state": "later_field_evidence_composed",
+    "admissionHolds": [],
+    "comparisonSHA256": "ec011b332d8e2594492e53c0440ee7398c841db27a8aa86cccb5a285053beaaf",
+    "scoringAdmission": false,
+    "wholeProfileQualification": false
+  },
+  {
+    "sourceId": 5597274,
+    "state": "later_field_evidence_composed",
+    "admissionHolds": [],
+    "comparisonSHA256": "6c46cea42e214f58a6877c26be12f22b21401e8ef467fb9f90d689210956f4ac",
+    "scoringAdmission": false,
+    "wholeProfileQualification": false
+  },
+  {
+    "sourceId": 5597275,
+    "state": "held_unchanged",
+    "admissionHolds": [
+      "prior_exposure_hold_preserved",
+      "direct_exposure_unmatched",
+      "observation_precedes_source_capture"
+    ],
+    "comparisonSHA256": "3ecf90bcf795e95a154257e89f6c1dfdab4a18499963bafb8888dade990ab2ac",
+    "scoringAdmission": false,
+    "wholeProfileQualification": false
+  },
+  {
+    "sourceId": 5597283,
+    "state": "later_field_evidence_composed",
+    "admissionHolds": [],
+    "comparisonSHA256": "b356be5ffb3a7c52c0c036b28aa955e0fb70d938e192e249df29b4c6c0809209",
+    "scoringAdmission": false,
+    "wholeProfileQualification": false
+  },
+  {
+    "sourceId": 5597286,
+    "state": "later_field_evidence_composed",
+    "admissionHolds": [],
+    "comparisonSHA256": "f7b8edd2bd8cb22acbc1e110ee2b4dda42f9524c6909e4e2a8aaca71198eef52",
+    "scoringAdmission": false,
+    "wholeProfileQualification": false
+  },
+  {
+    "sourceId": 5597287,
+    "state": "later_field_evidence_composed",
+    "admissionHolds": [],
+    "comparisonSHA256": "d8734d74bfb2e72b81aee926a56443ead0eab155b6546a2a35074f1603e824eb",
+    "scoringAdmission": false,
+    "wholeProfileQualification": false
+  },
+  {
+    "sourceId": 5597289,
+    "state": "later_field_evidence_composed",
+    "admissionHolds": [],
+    "comparisonSHA256": "b77b523fb41cf751432b8337979dcf636b6c7ad94afb31705cc52e96b92c1e8c",
+    "scoringAdmission": false,
+    "wholeProfileQualification": false
+  },
+  {
+    "sourceId": 5597294,
+    "state": "held_unchanged",
+    "admissionHolds": [
+      "prior_exposure_hold_preserved",
+      "direct_exposure_unmatched",
+      "observation_precedes_source_capture"
+    ],
+    "comparisonSHA256": "2e3e539b1eb72597cfcd0554589d039f2ed5ca951a472edbd8f567d9e35eae7d",
+    "scoringAdmission": false,
+    "wholeProfileQualification": false
+  },
+  {
+    "sourceId": 5597296,
+    "state": "later_field_evidence_composed",
+    "admissionHolds": [],
+    "comparisonSHA256": "7452d92d3d9a25876b405d82d7d7701edc87d310412a640aed4f6eefe8e790ed",
+    "scoringAdmission": false,
+    "wholeProfileQualification": false
+  },
+  {
+    "sourceId": 5597302,
+    "state": "later_field_evidence_composed",
+    "admissionHolds": [],
+    "comparisonSHA256": "6202cf476d3904db2fbdc9f0cb4cc4aa877a80f4a32a47197ac9d02f907b05f2",
+    "scoringAdmission": false,
+    "wholeProfileQualification": false
+  },
+  {
+    "sourceId": 5597309,
+    "state": "held_unchanged",
+    "admissionHolds": [
+      "prior_exposure_hold_preserved",
+      "direct_exposure_unmatched",
+      "observation_precedes_source_capture"
+    ],
+    "comparisonSHA256": "69a7b3f976c709a851f31b676cf1f3689cca5d48666b197ea7617caaf52f32aa",
+    "scoringAdmission": false,
+    "wholeProfileQualification": false
+  },
+  {
+    "sourceId": 5597313,
+    "state": "held_unchanged",
+    "admissionHolds": [
+      "prior_exposure_hold_preserved",
+      "direct_exposure_unmatched",
+      "observation_precedes_source_capture"
+    ],
+    "comparisonSHA256": "65a1d8c2914fa8d7329791d14295db3c590532d72d6f1cdab22edfb9bbbc1cff",
+    "scoringAdmission": false,
+    "wholeProfileQualification": false
+  },
+  {
+    "sourceId": 5597317,
+    "state": "held_unchanged",
+    "admissionHolds": [
+      "prior_exposure_hold_preserved",
+      "direct_exposure_unmatched",
+      "observation_precedes_source_capture"
+    ],
+    "comparisonSHA256": "c3ae3b058f844c2f64e74077f32771155669f8d1fae3b4a3dc5a1cc8fc491cb6",
+    "scoringAdmission": false,
+    "wholeProfileQualification": false
+  },
+  {
+    "sourceId": 5597329,
+    "state": "held_unchanged",
+    "admissionHolds": [
+      "prior_exposure_hold_preserved",
+      "direct_exposure_unmatched",
+      "observation_precedes_source_capture"
+    ],
+    "comparisonSHA256": "16541780129c34f33cf8fea3d2686bfac3cc2199a254c747c9f6541cbd891eed",
+    "scoringAdmission": false,
+    "wholeProfileQualification": false
+  },
+  {
+    "sourceId": 5598399,
+    "state": "later_field_evidence_composed",
+    "admissionHolds": [],
+    "comparisonSHA256": "3daeddf4433db949873c0087dbfe2ff50705ab8644c9a1091806b5d586f65592",
+    "scoringAdmission": false,
+    "wholeProfileQualification": false
+  },
+  {
+    "sourceId": 5598400,
+    "state": "later_field_evidence_composed",
+    "admissionHolds": [],
+    "comparisonSHA256": "02c632e68bf2e2a7ae43e7983918c4ade5fa57047ff11d1eb32e5563dd876d49",
+    "scoringAdmission": false,
+    "wholeProfileQualification": false
+  },
+  {
+    "sourceId": 5598405,
+    "state": "later_field_evidence_composed",
+    "admissionHolds": [],
+    "comparisonSHA256": "4fe1b3bf265d593cf9cefea0a39c13f69aab6aa91ddafb12675f9db90f3536b1",
+    "scoringAdmission": false,
+    "wholeProfileQualification": false
+  },
+  {
+    "sourceId": 5598406,
+    "state": "later_field_evidence_composed",
+    "admissionHolds": [],
+    "comparisonSHA256": "f9438c9121b9a1a8cf495a82543ccbce8bde3956befe1b4c258181b0eee68715",
+    "scoringAdmission": false,
+    "wholeProfileQualification": false
+  },
+  {
+    "sourceId": 5598438,
+    "state": "later_field_evidence_composed",
+    "admissionHolds": [],
+    "comparisonSHA256": "960aef1a432f522031c0501ef108aea4da74a1d00e0d2124e504945263e78026",
+    "scoringAdmission": false,
+    "wholeProfileQualification": false
+  },
+  {
+    "sourceId": 5598439,
+    "state": "later_field_evidence_composed",
+    "admissionHolds": [],
+    "comparisonSHA256": "e4dd46b31f46cad2142de93a90ad038434fef0a245d7a5c737faf0f50a079268",
+    "scoringAdmission": false,
+    "wholeProfileQualification": false
+  },
+  {
+    "sourceId": 5598688,
+    "state": "held_unchanged",
+    "admissionHolds": [
+      "prior_exposure_hold_preserved",
+      "direct_exposure_unmatched"
+    ],
+    "comparisonSHA256": "667f82a32630535e751ad0d56337f6d12c521465c0a722a2ed197623732e1340",
+    "scoringAdmission": false,
+    "wholeProfileQualification": false
+  },
+  {
+    "sourceId": 5599832,
+    "state": "held_unchanged",
+    "admissionHolds": [
+      "prior_exposure_hold_preserved",
+      "direct_exposure_unmatched"
+    ],
+    "comparisonSHA256": "2447919dcfe7a1073344d493964cb743ff2234ce39e18e666e054fdde7e426c9",
+    "scoringAdmission": false,
+    "wholeProfileQualification": false
+  },
+  {
+    "sourceId": 5600700,
+    "state": "later_field_evidence_composed",
+    "admissionHolds": [],
+    "comparisonSHA256": "0dcecf7410548545e710249299092647ef2b57ebda984219067cd23036fff3b0",
+    "scoringAdmission": false,
+    "wholeProfileQualification": false
+  },
+  {
+    "sourceId": 5600709,
+    "state": "later_field_evidence_composed",
+    "admissionHolds": [],
+    "comparisonSHA256": "2d45b739ad0ff5a0790071a684b0ef84fb9b64690c5834a30f92ca534872e658",
+    "scoringAdmission": false,
+    "wholeProfileQualification": false
+  },
+  {
+    "sourceId": 5600713,
+    "state": "later_field_evidence_composed",
+    "admissionHolds": [],
+    "comparisonSHA256": "8bdf21302bfd76737f7f80aebe13698040bfd383b4d971aafe8c0577a0d020da",
+    "scoringAdmission": false,
+    "wholeProfileQualification": false
+  },
+  {
+    "sourceId": 5600780,
+    "state": "later_field_evidence_composed",
+    "admissionHolds": [],
+    "comparisonSHA256": "13df49615a5213db8479df1c1e94002f2f5767cb34a4093e8327dad4d94bb4de",
+    "scoringAdmission": false,
+    "wholeProfileQualification": false
+  },
+  {
+    "sourceId": 5600805,
+    "state": "later_field_evidence_composed",
+    "admissionHolds": [],
+    "comparisonSHA256": "e12ba28c5c9088d35c67b7e6122d6f63b10e7de35858bfb8fd1e761cfcc0d780",
+    "scoringAdmission": false,
+    "wholeProfileQualification": false
+  },
+  {
+    "sourceId": 5600831,
+    "state": "later_field_evidence_composed",
+    "admissionHolds": [],
+    "comparisonSHA256": "42b28f2cd21735ca9999a23d308e810a375f6cc4917683868ef507bf02cbc191",
+    "scoringAdmission": false,
+    "wholeProfileQualification": false
+  }
+]

@@ -217,13 +217,14 @@ export default withCronJobAudit(
       reprocess,
       tweetId: requestedTweetId,
     });
+    const eventsFetched = eventRows.length;
     const intake = await admitTweetClaimEvaluationIntake(req.supabase,"lines_ccc_ifttt_events",eventRows);
     if (intake.active && !intake.events.length) return res.json({ success: true,mode: "claim_shadow_stopped",reason: intake.reason,
-      delivery: "not_requested",summary: { eventsLoaded: 0,eventsProcessed: 0 } });
+      delivery: "not_requested",summary: { eventsFetched,eventsLoaded: 0,eventsProcessed: 0 } });
     eventRows = intake.events;
     if (!eventRows.length) {
       return res.json({ success: true, route: "/api/v1/db/update-lines-ccc", date: requestedDate,
-        batchSize, summary: { eventsLoaded: 0, eventsProcessed: 0, eventsRejected: 0, rowsUpserted: 0 },
+        batchSize, summary: { eventsFetched, eventsLoaded: 0, eventsProcessed: 0, eventsRejected: 0, rowsUpserted: 0 },
         message: "No pending source events." });
     }
     const currentSeason = await getCurrentSeason();
@@ -661,6 +662,7 @@ export default withCronJobAudit(
         sourcesProcessed: new Set(
           pendingEvents.map((event) => event.source_account),
         ).size,
+        eventsFetched,
         eventsLoaded: pendingEvents.length,
         tweetsDiscovered: discoveredTweets.length,
         tweetsParsed: parsedCandidates.length,

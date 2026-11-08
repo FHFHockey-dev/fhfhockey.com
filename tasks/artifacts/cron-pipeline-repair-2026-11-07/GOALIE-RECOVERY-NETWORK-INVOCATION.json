@@ -1,0 +1,20 @@
+{
+  "startedAt": "2026-11-07T21:27:22.867Z",
+  "method": "POST",
+  "url": "https://www.fhfhockey.com/api/v1/db/update-goalie-projections-v2?endDate=2026-11-13&limit=7",
+  "currentDeployment": "dpl_Eq1QaL9XDs1Bp3oWd3v9NV3TCEJW",
+  "currentCommit": "00ea36b39ee0c541fd6050b79703d2c054e97f1d",
+  "approvedBehaviorCommit": "b4033ad65ffba6835ba0754dd665e5d694301f64",
+  "applicationInvocationBudget": 1,
+  "priorDispatch": "DNS ENOTFOUND before HTTP; rows unchanged and no matching audit at21:26:57UTC",
+  "status": "RESPONSE_RECEIVED",
+  "finishedAt": "2026-11-07T21:27:23.202Z",
+  "durationMs": 334,
+  "httpStatus": 308,
+  "vercelId": "iad1::xqxl5-1794086843165-9993087e360f",
+  "responseUrl": "https://www.fhfhockey.com/api/v1/db/update-goalie-projections-v2?endDate=2026-11-13&limit=7",
+  "body": {
+    "redirect": "https://fhfhockey.com/api/v1/db/update-goalie-projections-v2?endDate=2026-11-13&limit=7",
+    "status": "308"
+  }
+}

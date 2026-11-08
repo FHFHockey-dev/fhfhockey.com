@@ -1,0 +1,2991 @@
+diff --git a/tasks/TASKS/cron-operations/cron-schedule.md b/tasks/TASKS/cron-operations/cron-schedule.md
+index 6607bb01148c0134c4b79b177fd02bac745b8ea8..1b688178fc06c00982683385967b76fc95718d31 100644
+--- a/tasks/TASKS/cron-operations/cron-schedule.md
++++ b/tasks/TASKS/cron-operations/cron-schedule.md
+@@ -418,7 +418,7 @@
+     "run_time_utc": "09:55 UTC",
+     "active": true,
+     "method": "GET",
+-    "route": "/api/v1/db/update-lineup-deployment-tallies"
++    "route": "/api/v1/db/update-lineup-deployment-tallies?action=current"
+   },
+   {
+     "jobid": 201,
+diff --git a/tasks/artifacts/cron-pipeline-repair-2026-11-07/c09aa95ace52f8da26ef9ee1b2e635dc0245f201.json b/tasks/artifacts/cron-pipeline-repair-2026-11-07/c09aa95ace52f8da26ef9ee1b2e635dc0245f201.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..e155c3e60acefdb00311955b0a7586b93b989d4e
+--- /dev/null
++++ b/tasks/artifacts/cron-pipeline-repair-2026-11-07/c09aa95ace52f8da26ef9ee1b2e635dc0245f201.json
+@@ -0,0 +1,467 @@
++{
++  "version": "forge-release-sha-verifier-v1",
++  "sha": "c09aa95ace52f8da26ef9ee1b2e635dc0245f201",
++  "verified": true,
++  "producerIdentity": {
++    "version": "forge-producer-closure-v1",
++    "closureSha256": "abb563452f17dbcd802a5debd8af86425a01775bf2fb9693c9a14fb9f468f454"
++  },
++  "commit": {
++    "subject": "Release: Social Share studio superstyle pass and backlog fixes (#412)",
++    "committedAt": "2026-11-06T15:18:40-05:00",
++    "tree": "25ee42d5ff421e119b1d23714514f306c7a323fb"
++  },
++  "verifierSha256": "2da61a46b89df70669c454f08fbefd3a0803655a92226f0c8020aad9b9d3c456",
++  "closureWalkerSha256": "b7ec38db70612782bf45edf0086aa54cdb62dfea6de6cbac901dc13a2e3af2a2",
++  "roots": [
++    "lib/projections/run-forge-projections.ts",
++    "lib/projections/starterBoardQueue.ts",
++    "pages/api/v1/db/run-projection-v2.ts",
++    "pages/api/v1/db/run-rolling-forge-pipeline.ts",
++    "pages/api/v1/db/drain-starter-board.ts",
++    "pages/api/internal/starter-board.ts"
++  ],
++  "requiredModules": [
++    "lib/projections/seasonBootstrap.ts",
++    "lib/projections/stages/skater-stage.ts",
++    "lib/projections/stages/goalie-stage.ts",
++    "lib/projections/stages/persistence-stage.ts",
++    "lib/projections/queries/skater-queries.ts",
++    "lib/projections/queries/run-lifecycle-queries.ts",
++    "lib/projections/dailyBoardEvidence.ts"
++  ],
++  "reviewedDynamicSites": [
++    {
++      "file": "pages/api/v1/db/update-nst-gamelog.ts",
++      "argument": "table",
++      "source": "getLatestDateSupabase args.tables: NST_TABLE_NAMES or getTableName() values, all literal nst_gamelog_* names"
++    },
++    {
++      "file": "pages/api/v1/db/update-nst-gamelog.ts",
++      "argument": "tableName",
++      "source": "getTableName(datasetType): a literal nst_gamelog_* mapping, rejected unless listed in NST_TABLE_NAMES"
++    },
++    {
++      "file": "pages/api/v1/db/update-line-combinations/index.ts",
++      "argument": "args.table",
++      "source": "typed \"teamGameStats\" | \"lineCombinations\"; both callers pass those literals"
++    },
++    {
++      "file": "lib/sources/lineSourceIftttReceiver.ts",
++      "argument": "table",
++      "source": "config.eventTable (typed \"lines_ccc_ifttt_events\" | \"line_source_ifttt_events\") or that default"
++    },
++    {
++      "file": "lib/supabase/Upserts/fetchRollingPlayerAverages.ts",
++      "argument": "tableName",
++      "source": "fetchCounts/fetchRates/fetchCountsOi receive config.*Table from STRENGTH_CONFIGS, literal nst_gamelog_* names"
++    },
++    {
++      "file": "lib/supabase/Upserts/nhlRawGamecenter.mjs",
++      "argument": "table",
++      "source": "upsertInBatches(table): a write helper with no caller in web/ at 538100d41"
++    },
++    {
++      "file": "lib/sources/iftttRpcDeadline.ts",
++      "argument": "name",
++      "source": "boundedIftttRpc(name): callers pass literal IFTTT receipt RPC names"
++    }
++  ],
++  "closure": {
++    "moduleCount": 195,
++    "modulesSha256": "abb563452f17dbcd802a5debd8af86425a01775bf2fb9693c9a14fb9f468f454",
++    "modules": [
++      "components/LinemateMatrix/index.tsx",
++      "components/LinemateMatrix/utilities.ts",
++      "components/Options/Options.tsx",
++      "components/Select/Select.tsx",
++      "components/Select/index.ts",
++      "components/Tooltip/Tooltip.tsx",
++      "components/Tooltip/index.ts",
++      "hooks/useGoals.tsx",
++      "hooks/useResizeObserver.ts",
++      "lib/NHL/base.ts",
++      "lib/NHL/playoffs.ts",
++      "lib/NHL/server/index.ts",
++      "lib/NHL/types.ts",
++      "lib/api/queryParams.ts",
++      "lib/api/scanSummary.ts",
++      "lib/cors-fetch.ts",
++      "lib/cron/formatDuration.ts",
++      "lib/cron/nhlOffSeason.ts",
++      "lib/cron/normalizeDependencyError.ts",
++      "lib/cron/nstBurstPlans.ts",
++      "lib/cron/nstClassification.ts",
++      "lib/cron/nstCoordination.ts",
++      "lib/cron/nstRateLimitPolicy.ts",
++      "lib/cron/statsUpdateSafety.ts",
++      "lib/cron/timingContract.ts",
++      "lib/cron/wgoDateOutcome.ts",
++      "lib/cron/wgoIngestion.ts",
++      "lib/cron/withCronJobAudit.ts",
++      "lib/dashboard/forgeLinks.ts",
++      "lib/fantasy-projections/admin.ts",
++      "lib/fantasy-projections/contracts.ts",
++      "lib/fantasy-projections/evaluator.ts",
++      "lib/fantasy-projections/seasonJobs.ts",
++      "lib/fantasy-projections/validation.ts",
++      "lib/formatDurationMmSs.ts",
++      "lib/in-season/workspaceSchema.ts",
++      "lib/nst/client.ts",
++      "lib/nst/gamelogProgress.ts",
++      "lib/nst/requestBudget.ts",
++      "lib/player-forecasts/contributions.ts",
++      "lib/player-forecasts/gameExpectations.ts",
++      "lib/player-forecasts/planningContributions.ts",
++      "lib/player-forecasts/resolvedPlanningForecast.ts",
++      "lib/player-forecasts/rsoUsePolicy.ts",
++      "lib/player-forecasts/sourceSnapshot.ts",
++      "lib/predictions/rollingWindows.ts",
++      "lib/projections/acceptedNews.ts",
++      "lib/projections/accuracy/fantasyPoints.ts",
++      "lib/projections/apiHelpers.ts",
++      "lib/projections/calculators/goalie-save-pct-context.ts",
++      "lib/projections/calculators/goalie-starter.ts",
++      "lib/projections/calculators/scenario-blending.ts",
++      "lib/projections/calculators/skater-adjustments.ts",
++      "lib/projections/calculators/team-context-adjustments.ts",
++      "lib/projections/calibrationEligibility.ts",
++      "lib/projections/compatibilityInventory.ts",
++      "lib/projections/constants/projection-weights.ts",
++      "lib/projections/dailyBoardEvidence.ts",
++      "lib/projections/derived/buildGoalieGameV2.ts",
++      "lib/projections/derived/buildStrengthTablesV2.ts",
++      "lib/projections/derived/projectionDerivedPersistence.ts",
++      "lib/projections/derived/projectionDerivedQueue.ts",
++      "lib/projections/derived/situation.ts",
++      "lib/projections/dispersion.ts",
++      "lib/projections/evidenceTime.ts",
++      "lib/projections/forgeProducerIdentity.ts",
++      "lib/projections/gameLength.ts",
++      "lib/projections/gameRevisions.ts",
++      "lib/projections/goalie/goalieOutcomes.ts",
++      "lib/projections/goalie/leagueSavePct.ts",
++      "lib/projections/goalieModel.ts",
++      "lib/projections/goaliePipeline.ts",
++      "lib/projections/ingest/nhleFetch.ts",
++      "lib/projections/ingest/pbp.ts",
++      "lib/projections/ingest/projectionInputPersistence.ts",
++      "lib/projections/ingest/rawSnapshotPersistence.ts",
++      "lib/projections/ingest/shifts.ts",
++      "lib/projections/ingest/time.ts",
++      "lib/projections/inputCapture.ts",
++      "lib/projections/issuedContext.ts",
++      "lib/projections/materializationFingerprint.ts",
++      "lib/projections/modeledHeadTotals.ts",
++      "lib/projections/nativeGoalAccounting.ts",
++      "lib/projections/pbpCompletenessServer.ts",
++      "lib/projections/projectionPipelineState.ts",
++      "lib/projections/promotionGates.ts",
++      "lib/projections/queries/goalie-queries.ts",
++      "lib/projections/queries/line-combo-queries.ts",
++      "lib/projections/queries/market-queries.ts",
++      "lib/projections/queries/run-lifecycle-queries.ts",
++      "lib/projections/queries/skater-queries.ts",
++      "lib/projections/queries/team-context-queries.ts",
++      "lib/projections/queryCaptureHook.ts",
++      "lib/projections/reconcile.ts",
++      "lib/projections/relationshipMaterialization.ts",
++      "lib/projections/relationshipPlayerPosition.ts",
++      "lib/projections/releasedRunFence.ts",
++      "lib/projections/reserveProjections.ts",
++      "lib/projections/run-forge-projections.ts",
++      "lib/projections/seasonBootstrap.ts",
++      "lib/projections/shiftChartCompleteness.ts",
++      "lib/projections/shiftChartCompletenessServer.ts",
++      "lib/projections/shiftChartRelationshipPayload.ts",
++      "lib/projections/skaterRollout.ts",
++      "lib/projections/stages/goalie-stage.ts",
++      "lib/projections/stages/metrics-finalization-stage.ts",
++      "lib/projections/stages/persistence-stage.ts",
++      "lib/projections/stages/preflight-stage.ts",
++      "lib/projections/stages/skater-stage.ts",
++      "lib/projections/startChartFantasyScoring.ts",
++      "lib/projections/starterBoardFlags.ts",
++      "lib/projections/starterBoardQueue.ts",
++      "lib/projections/starterBoardScoring.ts",
++      "lib/projections/types/run-forge-projections.types.ts",
++      "lib/projections/uncertainty.ts",
++      "lib/projections/utils/collection-utils.ts",
++      "lib/projections/utils/date-utils.ts",
++      "lib/projections/utils/devig.ts",
++      "lib/projections/utils/market-output-builders.ts",
++      "lib/projections/utils/number-utils.ts",
++      "lib/projections/utils/projection-metadata-builders.ts",
++      "lib/projections/utils/season-recency.ts",
++      "lib/projections/utils/trend-adjustments.ts",
++      "lib/projectionsConfig/fantasyPointsConfig.ts",
++      "lib/rankings/rollingRankingSelectFields.ts",
++      "lib/rollingForgePipeline.ts",
++      "lib/rollingForgePipelineRunState.ts",
++      "lib/rollingPlayerCountSupport.ts",
++      "lib/rollingPlayerDailyResume.ts",
++      "lib/rollingPlayerMetricCompatibility.ts",
++      "lib/rollingPlayerOperationalPolicy.ts",
++      "lib/rosterScheduleData/bridgeForecastWire.ts",
++      "lib/rosterScheduleData/planningDataTransport.ts",
++      "lib/rosterScheduleOptimizer/currentPlanningRead.ts",
++      "lib/rosterScheduleOptimizer/eligibility.ts",
++      "lib/rosterScheduleOptimizer/planningTypes.ts",
++      "lib/rosterScheduleOptimizer/privatePlanningRead.ts",
++      "lib/rosterScheduleOptimizer/types.ts",
++      "lib/rosterScheduleOptimizer/yahooEligibility.ts",
++      "lib/sources/currentOrganizationSync.ts",
++      "lib/sources/iftttIntakePolicy.ts",
++      "lib/sources/iftttReceiptRetention.ts",
++      "lib/sources/iftttRpcDeadline.ts",
++      "lib/sources/lineSourceIftttReceiver.ts",
++      "lib/sources/nhlRosterPreview.ts",
++      "lib/sources/playerIdentity.ts",
++      "lib/supabase/Upserts/fetchRollingPlayerAverages.ts",
++      "lib/supabase/Upserts/nhlRawGamecenter.mjs",
++      "lib/supabase/Upserts/powerPlayCombinationMetrics.ts",
++      "lib/supabase/Upserts/rollingDroppedColumns.ts",
++      "lib/supabase/Upserts/rollingHistoricalAverages.ts",
++      "lib/supabase/Upserts/rollingMetricAggregation.ts",
++      "lib/supabase/Upserts/rollingMetricScaleContract.ts",
++      "lib/supabase/Upserts/rollingPlayerAvailabilityContract.ts",
++      "lib/supabase/Upserts/rollingPlayerLineContextContract.ts",
++      "lib/supabase/Upserts/rollingPlayerMetricMath.ts",
++      "lib/supabase/Upserts/rollingPlayerPipelineDiagnostics.ts",
++      "lib/supabase/Upserts/rollingPlayerPpShareContract.ts",
++      "lib/supabase/Upserts/rollingPlayerPpUnitContract.ts",
++      "lib/supabase/Upserts/rollingPlayerSourceSelection.ts",
++      "lib/supabase/Upserts/rollingPlayerSupportPayload.ts",
++      "lib/supabase/Upserts/rollingPlayerToiContract.ts",
++      "lib/supabase/Upserts/rollingWindowContract.ts",
++      "lib/supabase/client.ts",
++      "lib/supabase/database-generated.types.ts",
++      "lib/supabase/index.ts",
++      "lib/supabase/pagination.ts",
++      "lib/supabase/public-client.ts",
++      "lib/supabase/server.ts",
++      "lib/teamsInfo.ts",
++      "pages/api/internal/starter-board.ts",
++      "pages/api/v1/db/build-projection-derived-v2.ts",
++      "pages/api/v1/db/drain-starter-board.ts",
++      "pages/api/v1/db/ingest-projection-inputs.ts",
++      "pages/api/v1/db/run-projection-accuracy.ts",
++      "pages/api/v1/db/run-projection-v2.ts",
++      "pages/api/v1/db/run-rolling-forge-pipeline.ts",
++      "pages/api/v1/db/shift-charts.ts",
++      "pages/api/v1/db/update-games.ts",
++      "pages/api/v1/db/update-goalie-projections-v2.ts",
++      "pages/api/v1/db/update-line-combinations/[id].ts",
++      "pages/api/v1/db/update-line-combinations/index.ts",
++      "pages/api/v1/db/update-nst-gamelog.ts",
++      "pages/api/v1/db/update-players.ts",
++      "pages/api/v1/db/update-power-play-combinations/[gameId].ts",
++      "pages/api/v1/db/update-power-play-combinations/index.ts",
++      "pages/api/v1/db/update-rolling-player-averages.ts",
++      "pages/api/v1/db/update-teams.ts",
++      "pages/api/v1/db/update-wgo-skaters.ts",
++      "pages/api/v1/db/update-wgo-totals.ts",
++      "utils/adminOnlyMiddleware.ts",
++      "utils/fetchCurrentSeason.ts",
++      "utils/getPowerPlayBlocks.ts",
++      "utils/groupBy.ts",
++      "utils/setDifference.ts"
++    ]
++  },
++  "findings": [],
++  "dynamicSites": [
++    {
++      "file": "lib/projections/queries/skater-queries.ts",
++      "line": 270,
++      "kind": "dynamic_rpc",
++      "text": "LATEST_ROLLING_ROWS_RPC",
++      "values": [
++        "forge_latest_rolling_rows"
++      ]
++    },
++    {
++      "file": "lib/projections/queries/skater-queries.ts",
++      "line": 414,
++      "kind": "dynamic_from",
++      "text": "ROLLING_PLAYER_SUPPORT_PAYLOAD_TABLE",
++      "values": [
++        "rolling_player_metric_support_payloads"
++      ]
++    },
++    {
++      "file": "lib/projections/queries/run-lifecycle-queries.ts",
++      "line": 514,
++      "kind": "dynamic_from",
++      "text": "table",
++      "values": [
++        "forge_goalie_projections",
++        "forge_player_projections",
++        "forge_team_projections"
++      ]
++    },
++    {
++      "file": "lib/projections/dailyBoardEvidence.ts",
++      "line": 156,
++      "kind": "dynamic_from",
++      "text": "table",
++      "values": [
++        "player_forecast_conflict_resolutions",
++        "player_forecast_goalie_start_observations",
++        "player_forecast_lineup_assignments",
++        "player_forecast_lineup_snapshots",
++        "player_forecast_observation_conflicts"
++      ]
++    },
++    {
++      "file": "lib/fantasy-projections/seasonJobs.ts",
++      "line": 79,
++      "kind": "dynamic_from",
++      "text": "table",
++      "values": [
++        "player_forecast_season_outcome_revisions",
++        "player_forecast_season_overrides",
++        "player_forecast_season_player_aggregates",
++        "player_forecast_season_roster_members",
++        "player_forecast_season_schedule_games",
++        "player_forecast_season_team_aggregates"
++      ]
++    },
++    {
++      "file": "lib/fantasy-projections/seasonJobs.ts",
++      "line": 89,
++      "kind": "dynamic_from",
++      "text": "table",
++      "values": [
++        "player_forecast_season_game_outputs",
++        "player_forecast_season_player_aggregates",
++        "player_forecast_season_team_aggregates"
++      ]
++    },
++    {
++      "file": "pages/api/v1/db/update-nst-gamelog.ts",
++      "line": 797,
++      "kind": "dynamic_from",
++      "text": "table"
++    },
++    {
++      "file": "pages/api/v1/db/update-nst-gamelog.ts",
++      "line": 1162,
++      "kind": "dynamic_from",
++      "text": "tableName"
++    },
++    {
++      "file": "pages/api/v1/db/update-nst-gamelog.ts",
++      "line": 1187,
++      "kind": "dynamic_from",
++      "text": "tableName"
++    },
++    {
++      "file": "pages/api/v1/db/update-nst-gamelog.ts",
++      "line": 1998,
++      "kind": "dynamic_from",
++      "text": "primaryTable",
++      "values": [
++        "nst_gamelog_as_counts"
++      ]
++    },
++    {
++      "file": "pages/api/v1/db/update-wgo-totals.ts",
++      "line": 279,
++      "kind": "dynamic_from",
++      "text": "tableName",
++      "values": [
++        "wgo_skater_stats_totals",
++        "wgo_skater_stats_totals_playoffs"
++      ]
++    },
++    {
++      "file": "pages/api/v1/db/update-line-combinations/index.ts",
++      "line": 121,
++      "kind": "dynamic_from",
++      "text": "args.table"
++    },
++    {
++      "file": "lib/sources/lineSourceIftttReceiver.ts",
++      "line": 343,
++      "kind": "dynamic_from",
++      "text": "table"
++    },
++    {
++      "file": "lib/projections/seasonBootstrap.ts",
++      "line": 149,
++      "kind": "dynamic_from",
++      "text": "population === \"skater\" ? \"skatersGameStats\" : \"goaliesGameStats\"",
++      "values": [
++        "goaliesGameStats",
++        "skatersGameStats"
++      ]
++    },
++    {
++      "file": "lib/fantasy-projections/admin.ts",
++      "line": 138,
++      "kind": "dynamic_from",
++      "text": "table",
++      "values": [
++        "fhfh_player_identities",
++        "player_forecast_season_completeness_waivers",
++        "player_forecast_season_overrides",
++        "player_forecast_season_player_aggregates",
++        "player_forecast_season_player_pool_review",
++        "player_forecast_season_queue",
++        "player_forecast_season_roster_conflict_members",
++        "player_forecast_season_roster_observations",
++        "player_forecast_season_schedule_games",
++        "player_forecast_season_team_aggregates",
++        "teams"
++      ]
++    },
++    {
++      "file": "lib/fantasy-projections/admin.ts",
++      "line": 819,
++      "kind": "dynamic_from",
++      "text": "targetTable",
++      "values": [
++        "player_forecast_season_player_aggregates",
++        "player_forecast_season_team_aggregates"
++      ]
++    },
++    {
++      "file": "lib/supabase/Upserts/fetchRollingPlayerAverages.ts",
++      "line": 3174,
++      "kind": "dynamic_from",
++      "text": "tableName"
++    },
++    {
++      "file": "lib/supabase/Upserts/fetchRollingPlayerAverages.ts",
++      "line": 3211,
++      "kind": "dynamic_from",
++      "text": "tableName"
++    },
++    {
++      "file": "lib/supabase/Upserts/fetchRollingPlayerAverages.ts",
++      "line": 3246,
++      "kind": "dynamic_from",
++      "text": "tableName"
++    },
++    {
++      "file": "lib/supabase/Upserts/nhlRawGamecenter.mjs",
++      "line": 623,
++      "kind": "dynamic_from",
++      "text": "table"
++    },
++    {
++      "file": "lib/sources/iftttRpcDeadline.ts",
++      "line": 22,
++      "kind": "dynamic_rpc",
++      "text": "name"
++    }
++  ],
++  "guardRegexes": [
++    {
++      "file": "lib/projections/run-forge-projections.ts",
++      "line": 425,
++      "kind": "guard_regex",
++      "text": "/^projections_/i"
++    }
++  ]
++}
+diff --git a/tasks/artifacts/cron-pipeline-repair-2026-11-07/d9fcc711e12d2902cd6b646ce38888a43e606f2b.json b/tasks/artifacts/cron-pipeline-repair-2026-11-07/d9fcc711e12d2902cd6b646ce38888a43e606f2b.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..9410d79cf21134b8489a902f389493c4060627aa
+--- /dev/null
++++ b/tasks/artifacts/cron-pipeline-repair-2026-11-07/d9fcc711e12d2902cd6b646ce38888a43e606f2b.json
+@@ -0,0 +1,467 @@
++{
++  "version": "forge-release-sha-verifier-v1",
++  "sha": "d9fcc711e12d2902cd6b646ce38888a43e606f2b",
++  "verified": true,
++  "producerIdentity": {
++    "version": "forge-producer-closure-v1",
++    "closureSha256": "2676c5366cfc08fa7aaec4a1d4369e6f51caf3018bf2fca3f7d358faceb5c746"
++  },
++  "commit": {
++    "subject": "fix: isolate goalie, calibration and cron reporting repair",
++    "committedAt": "2026-11-07T14:59:45-05:00",
++    "tree": "c7fe0fed5dcb6c4913da0f6254a2ce5e9436a148"
++  },
++  "verifierSha256": "2da61a46b89df70669c454f08fbefd3a0803655a92226f0c8020aad9b9d3c456",
++  "closureWalkerSha256": "b7ec38db70612782bf45edf0086aa54cdb62dfea6de6cbac901dc13a2e3af2a2",
++  "roots": [
++    "lib/projections/run-forge-projections.ts",
++    "lib/projections/starterBoardQueue.ts",
++    "pages/api/v1/db/run-projection-v2.ts",
++    "pages/api/v1/db/run-rolling-forge-pipeline.ts",
++    "pages/api/v1/db/drain-starter-board.ts",
++    "pages/api/internal/starter-board.ts"
++  ],
++  "requiredModules": [
++    "lib/projections/seasonBootstrap.ts",
++    "lib/projections/stages/skater-stage.ts",
++    "lib/projections/stages/goalie-stage.ts",
++    "lib/projections/stages/persistence-stage.ts",
++    "lib/projections/queries/skater-queries.ts",
++    "lib/projections/queries/run-lifecycle-queries.ts",
++    "lib/projections/dailyBoardEvidence.ts"
++  ],
++  "reviewedDynamicSites": [
++    {
++      "file": "pages/api/v1/db/update-nst-gamelog.ts",
++      "argument": "table",
++      "source": "getLatestDateSupabase args.tables: NST_TABLE_NAMES or getTableName() values, all literal nst_gamelog_* names"
++    },
++    {
++      "file": "pages/api/v1/db/update-nst-gamelog.ts",
++      "argument": "tableName",
++      "source": "getTableName(datasetType): a literal nst_gamelog_* mapping, rejected unless listed in NST_TABLE_NAMES"
++    },
++    {
++      "file": "pages/api/v1/db/update-line-combinations/index.ts",
++      "argument": "args.table",
++      "source": "typed \"teamGameStats\" | \"lineCombinations\"; both callers pass those literals"
++    },
++    {
++      "file": "lib/sources/lineSourceIftttReceiver.ts",
++      "argument": "table",
++      "source": "config.eventTable (typed \"lines_ccc_ifttt_events\" | \"line_source_ifttt_events\") or that default"
++    },
++    {
++      "file": "lib/supabase/Upserts/fetchRollingPlayerAverages.ts",
++      "argument": "tableName",
++      "source": "fetchCounts/fetchRates/fetchCountsOi receive config.*Table from STRENGTH_CONFIGS, literal nst_gamelog_* names"
++    },
++    {
++      "file": "lib/supabase/Upserts/nhlRawGamecenter.mjs",
++      "argument": "table",
++      "source": "upsertInBatches(table): a write helper with no caller in web/ at 538100d41"
++    },
++    {
++      "file": "lib/sources/iftttRpcDeadline.ts",
++      "argument": "name",
++      "source": "boundedIftttRpc(name): callers pass literal IFTTT receipt RPC names"
++    }
++  ],
++  "closure": {
++    "moduleCount": 195,
++    "modulesSha256": "2676c5366cfc08fa7aaec4a1d4369e6f51caf3018bf2fca3f7d358faceb5c746",
++    "modules": [
++      "components/LinemateMatrix/index.tsx",
++      "components/LinemateMatrix/utilities.ts",
++      "components/Options/Options.tsx",
++      "components/Select/Select.tsx",
++      "components/Select/index.ts",
++      "components/Tooltip/Tooltip.tsx",
++      "components/Tooltip/index.ts",
++      "hooks/useGoals.tsx",
++      "hooks/useResizeObserver.ts",
++      "lib/NHL/base.ts",
++      "lib/NHL/playoffs.ts",
++      "lib/NHL/server/index.ts",
++      "lib/NHL/types.ts",
++      "lib/api/queryParams.ts",
++      "lib/api/scanSummary.ts",
++      "lib/cors-fetch.ts",
++      "lib/cron/formatDuration.ts",
++      "lib/cron/nhlOffSeason.ts",
++      "lib/cron/normalizeDependencyError.ts",
++      "lib/cron/nstBurstPlans.ts",
++      "lib/cron/nstClassification.ts",
++      "lib/cron/nstCoordination.ts",
++      "lib/cron/nstRateLimitPolicy.ts",
++      "lib/cron/statsUpdateSafety.ts",
++      "lib/cron/timingContract.ts",
++      "lib/cron/wgoDateOutcome.ts",
++      "lib/cron/wgoIngestion.ts",
++      "lib/cron/withCronJobAudit.ts",
++      "lib/dashboard/forgeLinks.ts",
++      "lib/fantasy-projections/admin.ts",
++      "lib/fantasy-projections/contracts.ts",
++      "lib/fantasy-projections/evaluator.ts",
++      "lib/fantasy-projections/seasonJobs.ts",
++      "lib/fantasy-projections/validation.ts",
++      "lib/formatDurationMmSs.ts",
++      "lib/in-season/workspaceSchema.ts",
++      "lib/nst/client.ts",
++      "lib/nst/gamelogProgress.ts",
++      "lib/nst/requestBudget.ts",
++      "lib/player-forecasts/contributions.ts",
++      "lib/player-forecasts/gameExpectations.ts",
++      "lib/player-forecasts/planningContributions.ts",
++      "lib/player-forecasts/resolvedPlanningForecast.ts",
++      "lib/player-forecasts/rsoUsePolicy.ts",
++      "lib/player-forecasts/sourceSnapshot.ts",
++      "lib/predictions/rollingWindows.ts",
++      "lib/projections/acceptedNews.ts",
++      "lib/projections/accuracy/fantasyPoints.ts",
++      "lib/projections/apiHelpers.ts",
++      "lib/projections/calculators/goalie-save-pct-context.ts",
++      "lib/projections/calculators/goalie-starter.ts",
++      "lib/projections/calculators/scenario-blending.ts",
++      "lib/projections/calculators/skater-adjustments.ts",
++      "lib/projections/calculators/team-context-adjustments.ts",
++      "lib/projections/calibrationEligibility.ts",
++      "lib/projections/compatibilityInventory.ts",
++      "lib/projections/constants/projection-weights.ts",
++      "lib/projections/dailyBoardEvidence.ts",
++      "lib/projections/derived/buildGoalieGameV2.ts",
++      "lib/projections/derived/buildStrengthTablesV2.ts",
++      "lib/projections/derived/projectionDerivedPersistence.ts",
++      "lib/projections/derived/projectionDerivedQueue.ts",
++      "lib/projections/derived/situation.ts",
++      "lib/projections/dispersion.ts",
++      "lib/projections/evidenceTime.ts",
++      "lib/projections/forgeProducerIdentity.ts",
++      "lib/projections/gameLength.ts",
++      "lib/projections/gameRevisions.ts",
++      "lib/projections/goalie/goalieOutcomes.ts",
++      "lib/projections/goalie/leagueSavePct.ts",
++      "lib/projections/goalieModel.ts",
++      "lib/projections/goaliePipeline.ts",
++      "lib/projections/ingest/nhleFetch.ts",
++      "lib/projections/ingest/pbp.ts",
++      "lib/projections/ingest/projectionInputPersistence.ts",
++      "lib/projections/ingest/rawSnapshotPersistence.ts",
++      "lib/projections/ingest/shifts.ts",
++      "lib/projections/ingest/time.ts",
++      "lib/projections/inputCapture.ts",
++      "lib/projections/issuedContext.ts",
++      "lib/projections/materializationFingerprint.ts",
++      "lib/projections/modeledHeadTotals.ts",
++      "lib/projections/nativeGoalAccounting.ts",
++      "lib/projections/pbpCompletenessServer.ts",
++      "lib/projections/projectionPipelineState.ts",
++      "lib/projections/promotionGates.ts",
++      "lib/projections/queries/goalie-queries.ts",
++      "lib/projections/queries/line-combo-queries.ts",
++      "lib/projections/queries/market-queries.ts",
++      "lib/projections/queries/run-lifecycle-queries.ts",
++      "lib/projections/queries/skater-queries.ts",
++      "lib/projections/queries/team-context-queries.ts",
++      "lib/projections/queryCaptureHook.ts",
++      "lib/projections/reconcile.ts",
++      "lib/projections/relationshipMaterialization.ts",
++      "lib/projections/relationshipPlayerPosition.ts",
++      "lib/projections/releasedRunFence.ts",
++      "lib/projections/reserveProjections.ts",
++      "lib/projections/run-forge-projections.ts",
++      "lib/projections/seasonBootstrap.ts",
++      "lib/projections/shiftChartCompleteness.ts",
++      "lib/projections/shiftChartCompletenessServer.ts",
++      "lib/projections/shiftChartRelationshipPayload.ts",
++      "lib/projections/skaterRollout.ts",
++      "lib/projections/stages/goalie-stage.ts",
++      "lib/projections/stages/metrics-finalization-stage.ts",
++      "lib/projections/stages/persistence-stage.ts",
++      "lib/projections/stages/preflight-stage.ts",
++      "lib/projections/stages/skater-stage.ts",
++      "lib/projections/startChartFantasyScoring.ts",
++      "lib/projections/starterBoardFlags.ts",
++      "lib/projections/starterBoardQueue.ts",
++      "lib/projections/starterBoardScoring.ts",
++      "lib/projections/types/run-forge-projections.types.ts",
++      "lib/projections/uncertainty.ts",
++      "lib/projections/utils/collection-utils.ts",
++      "lib/projections/utils/date-utils.ts",
++      "lib/projections/utils/devig.ts",
++      "lib/projections/utils/market-output-builders.ts",
++      "lib/projections/utils/number-utils.ts",
++      "lib/projections/utils/projection-metadata-builders.ts",
++      "lib/projections/utils/season-recency.ts",
++      "lib/projections/utils/trend-adjustments.ts",
++      "lib/projectionsConfig/fantasyPointsConfig.ts",
++      "lib/rankings/rollingRankingSelectFields.ts",
++      "lib/rollingForgePipeline.ts",
++      "lib/rollingForgePipelineRunState.ts",
++      "lib/rollingPlayerCountSupport.ts",
++      "lib/rollingPlayerDailyResume.ts",
++      "lib/rollingPlayerMetricCompatibility.ts",
++      "lib/rollingPlayerOperationalPolicy.ts",
++      "lib/rosterScheduleData/bridgeForecastWire.ts",
++      "lib/rosterScheduleData/planningDataTransport.ts",
++      "lib/rosterScheduleOptimizer/currentPlanningRead.ts",
++      "lib/rosterScheduleOptimizer/eligibility.ts",
++      "lib/rosterScheduleOptimizer/planningTypes.ts",
++      "lib/rosterScheduleOptimizer/privatePlanningRead.ts",
++      "lib/rosterScheduleOptimizer/types.ts",
++      "lib/rosterScheduleOptimizer/yahooEligibility.ts",
++      "lib/sources/currentOrganizationSync.ts",
++      "lib/sources/iftttIntakePolicy.ts",
++      "lib/sources/iftttReceiptRetention.ts",
++      "lib/sources/iftttRpcDeadline.ts",
++      "lib/sources/lineSourceIftttReceiver.ts",
++      "lib/sources/nhlRosterPreview.ts",
++      "lib/sources/playerIdentity.ts",
++      "lib/supabase/Upserts/fetchRollingPlayerAverages.ts",
++      "lib/supabase/Upserts/nhlRawGamecenter.mjs",
++      "lib/supabase/Upserts/powerPlayCombinationMetrics.ts",
++      "lib/supabase/Upserts/rollingDroppedColumns.ts",
++      "lib/supabase/Upserts/rollingHistoricalAverages.ts",
++      "lib/supabase/Upserts/rollingMetricAggregation.ts",
++      "lib/supabase/Upserts/rollingMetricScaleContract.ts",
++      "lib/supabase/Upserts/rollingPlayerAvailabilityContract.ts",
++      "lib/supabase/Upserts/rollingPlayerLineContextContract.ts",
++      "lib/supabase/Upserts/rollingPlayerMetricMath.ts",
++      "lib/supabase/Upserts/rollingPlayerPipelineDiagnostics.ts",
++      "lib/supabase/Upserts/rollingPlayerPpShareContract.ts",
++      "lib/supabase/Upserts/rollingPlayerPpUnitContract.ts",
++      "lib/supabase/Upserts/rollingPlayerSourceSelection.ts",
++      "lib/supabase/Upserts/rollingPlayerSupportPayload.ts",
++      "lib/supabase/Upserts/rollingPlayerToiContract.ts",
++      "lib/supabase/Upserts/rollingWindowContract.ts",
++      "lib/supabase/client.ts",
++      "lib/supabase/database-generated.types.ts",
++      "lib/supabase/index.ts",
++      "lib/supabase/pagination.ts",
++      "lib/supabase/public-client.ts",
++      "lib/supabase/server.ts",
++      "lib/teamsInfo.ts",
++      "pages/api/internal/starter-board.ts",
++      "pages/api/v1/db/build-projection-derived-v2.ts",
++      "pages/api/v1/db/drain-starter-board.ts",
++      "pages/api/v1/db/ingest-projection-inputs.ts",
++      "pages/api/v1/db/run-projection-accuracy.ts",
++      "pages/api/v1/db/run-projection-v2.ts",
++      "pages/api/v1/db/run-rolling-forge-pipeline.ts",
++      "pages/api/v1/db/shift-charts.ts",
++      "pages/api/v1/db/update-games.ts",
++      "pages/api/v1/db/update-goalie-projections-v2.ts",
++      "pages/api/v1/db/update-line-combinations/[id].ts",
++      "pages/api/v1/db/update-line-combinations/index.ts",
++      "pages/api/v1/db/update-nst-gamelog.ts",
++      "pages/api/v1/db/update-players.ts",
++      "pages/api/v1/db/update-power-play-combinations/[gameId].ts",
++      "pages/api/v1/db/update-power-play-combinations/index.ts",
++      "pages/api/v1/db/update-rolling-player-averages.ts",
++      "pages/api/v1/db/update-teams.ts",
++      "pages/api/v1/db/update-wgo-skaters.ts",
++      "pages/api/v1/db/update-wgo-totals.ts",
++      "utils/adminOnlyMiddleware.ts",
++      "utils/fetchCurrentSeason.ts",
++      "utils/getPowerPlayBlocks.ts",
++      "utils/groupBy.ts",
++      "utils/setDifference.ts"
++    ]
++  },
++  "findings": [],
++  "dynamicSites": [
++    {
++      "file": "lib/projections/queries/skater-queries.ts",
++      "line": 270,
++      "kind": "dynamic_rpc",
++      "text": "LATEST_ROLLING_ROWS_RPC",
++      "values": [
++        "forge_latest_rolling_rows"
++      ]
++    },
++    {
++      "file": "lib/projections/queries/skater-queries.ts",
++      "line": 414,
++      "kind": "dynamic_from",
++      "text": "ROLLING_PLAYER_SUPPORT_PAYLOAD_TABLE",
++      "values": [
++        "rolling_player_metric_support_payloads"
++      ]
++    },
++    {
++      "file": "lib/projections/queries/run-lifecycle-queries.ts",
++      "line": 514,
++      "kind": "dynamic_from",
++      "text": "table",
++      "values": [
++        "forge_goalie_projections",
++        "forge_player_projections",
++        "forge_team_projections"
++      ]
++    },
++    {
++      "file": "lib/projections/dailyBoardEvidence.ts",
++      "line": 156,
++      "kind": "dynamic_from",
++      "text": "table",
++      "values": [
++        "player_forecast_conflict_resolutions",
++        "player_forecast_goalie_start_observations",
++        "player_forecast_lineup_assignments",
++        "player_forecast_lineup_snapshots",
++        "player_forecast_observation_conflicts"
++      ]
++    },
++    {
++      "file": "lib/fantasy-projections/seasonJobs.ts",
++      "line": 79,
++      "kind": "dynamic_from",
++      "text": "table",
++      "values": [
++        "player_forecast_season_outcome_revisions",
++        "player_forecast_season_overrides",
++        "player_forecast_season_player_aggregates",
++        "player_forecast_season_roster_members",
++        "player_forecast_season_schedule_games",
++        "player_forecast_season_team_aggregates"
++      ]
++    },
++    {
++      "file": "lib/fantasy-projections/seasonJobs.ts",
++      "line": 89,
++      "kind": "dynamic_from",
++      "text": "table",
++      "values": [
++        "player_forecast_season_game_outputs",
++        "player_forecast_season_player_aggregates",
++        "player_forecast_season_team_aggregates"
++      ]
++    },
++    {
++      "file": "pages/api/v1/db/update-nst-gamelog.ts",
++      "line": 797,
++      "kind": "dynamic_from",
++      "text": "table"
++    },
++    {
++      "file": "pages/api/v1/db/update-nst-gamelog.ts",
++      "line": 1162,
++      "kind": "dynamic_from",
++      "text": "tableName"
++    },
++    {
++      "file": "pages/api/v1/db/update-nst-gamelog.ts",
++      "line": 1187,
++      "kind": "dynamic_from",
++      "text": "tableName"
++    },
++    {
++      "file": "pages/api/v1/db/update-nst-gamelog.ts",
++      "line": 1998,
++      "kind": "dynamic_from",
++      "text": "primaryTable",
++      "values": [
++        "nst_gamelog_as_counts"
++      ]
++    },
++    {
++      "file": "pages/api/v1/db/update-wgo-totals.ts",
++      "line": 279,
++      "kind": "dynamic_from",
++      "text": "tableName",
++      "values": [
++        "wgo_skater_stats_totals",
++        "wgo_skater_stats_totals_playoffs"
++      ]
++    },
++    {
++      "file": "pages/api/v1/db/update-line-combinations/index.ts",
++      "line": 121,
++      "kind": "dynamic_from",
++      "text": "args.table"
++    },
++    {
++      "file": "lib/sources/lineSourceIftttReceiver.ts",
++      "line": 343,
++      "kind": "dynamic_from",
++      "text": "table"
++    },
++    {
++      "file": "lib/projections/seasonBootstrap.ts",
++      "line": 149,
++      "kind": "dynamic_from",
++      "text": "population === \"skater\" ? \"skatersGameStats\" : \"goaliesGameStats\"",
++      "values": [
++        "goaliesGameStats",
++        "skatersGameStats"
++      ]
++    },
++    {
++      "file": "lib/fantasy-projections/admin.ts",
++      "line": 138,
++      "kind": "dynamic_from",
++      "text": "table",
++      "values": [
++        "fhfh_player_identities",
++        "player_forecast_season_completeness_waivers",
++        "player_forecast_season_overrides",
++        "player_forecast_season_player_aggregates",
++        "player_forecast_season_player_pool_review",
++        "player_forecast_season_queue",
++        "player_forecast_season_roster_conflict_members",
++        "player_forecast_season_roster_observations",
++        "player_forecast_season_schedule_games",
++        "player_forecast_season_team_aggregates",
++        "teams"
++      ]
++    },
++    {
++      "file": "lib/fantasy-projections/admin.ts",
++      "line": 819,
++      "kind": "dynamic_from",
++      "text": "targetTable",
++      "values": [
++        "player_forecast_season_player_aggregates",
++        "player_forecast_season_team_aggregates"
++      ]
++    },
++    {
++      "file": "lib/supabase/Upserts/fetchRollingPlayerAverages.ts",
++      "line": 3174,
++      "kind": "dynamic_from",
++      "text": "tableName"
++    },
++    {
++      "file": "lib/supabase/Upserts/fetchRollingPlayerAverages.ts",
++      "line": 3211,
++      "kind": "dynamic_from",
++      "text": "tableName"
++    },
++    {
++      "file": "lib/supabase/Upserts/fetchRollingPlayerAverages.ts",
++      "line": 3246,
++      "kind": "dynamic_from",
++      "text": "tableName"
++    },
++    {
++      "file": "lib/supabase/Upserts/nhlRawGamecenter.mjs",
++      "line": 623,
++      "kind": "dynamic_from",
++      "text": "table"
++    },
++    {
++      "file": "lib/sources/iftttRpcDeadline.ts",
++      "line": 22,
++      "kind": "dynamic_rpc",
++      "text": "name"
++    }
++  ],
++  "guardRegexes": [
++    {
++      "file": "lib/projections/run-forge-projections.ts",
++      "line": 425,
++      "kind": "guard_regex",
++      "text": "/^projections_/i"
++    }
++  ]
++}
+diff --git a/tasks/artifacts/projection-table-audit-2026-10-26/release-verification/02153acbaf1ed02c0c294ba14a75e8af195354f3.json b/tasks/artifacts/projection-table-audit-2026-10-26/release-verification/02153acbaf1ed02c0c294ba14a75e8af195354f3.json
+index 1772e6f2ae2026901e524c83c5cab2b49682d0e8..1c59bf8d923e2fd7cfc0ccada98a181c11e58446 100644
+--- a/tasks/artifacts/projection-table-audit-2026-10-26/release-verification/02153acbaf1ed02c0c294ba14a75e8af195354f3.json
++++ b/tasks/artifacts/projection-table-audit-2026-10-26/release-verification/02153acbaf1ed02c0c294ba14a75e8af195354f3.json
+@@ -12,7 +12,7 @@
+     "tree": "c241fb10d5f60e4147ff3d76bd9d7c8468ab1981"
+   },
+   "verifierSha256": "2da61a46b89df70669c454f08fbefd3a0803655a92226f0c8020aad9b9d3c456",
+-  "closureWalkerSha256": "e33ccacb21dca88ef2d163dab5f16ec0c50bb817373b9ab000c2ac8e29df5bad",
++  "closureWalkerSha256": "b7ec38db70612782bf45edf0086aa54cdb62dfea6de6cbac901dc13a2e3af2a2",
+   "roots": [
+     "lib/projections/run-forge-projections.ts",
+     "lib/projections/starterBoardQueue.ts",
+diff --git a/tasks/artifacts/projection-table-audit-2026-10-26/release-verification/538100d41ee87e721d2764b694f7bac8c2f2bb34.json b/tasks/artifacts/projection-table-audit-2026-10-26/release-verification/538100d41ee87e721d2764b694f7bac8c2f2bb34.json
+index 701b605d56231cd049cc837eecdd0497f76b1b55..d0653dfac8fa1b9ea9bb44119b6dc47d949a5cc6 100644
+--- a/tasks/artifacts/projection-table-audit-2026-10-26/release-verification/538100d41ee87e721d2764b694f7bac8c2f2bb34.json
++++ b/tasks/artifacts/projection-table-audit-2026-10-26/release-verification/538100d41ee87e721d2764b694f7bac8c2f2bb34.json
+@@ -12,7 +12,7 @@
+     "tree": "d694f5133d4bbd4d9477f194e3edba32e27fe19d"
+   },
+   "verifierSha256": "2da61a46b89df70669c454f08fbefd3a0803655a92226f0c8020aad9b9d3c456",
+-  "closureWalkerSha256": "e33ccacb21dca88ef2d163dab5f16ec0c50bb817373b9ab000c2ac8e29df5bad",
++  "closureWalkerSha256": "b7ec38db70612782bf45edf0086aa54cdb62dfea6de6cbac901dc13a2e3af2a2",
+   "roots": [
+     "lib/projections/run-forge-projections.ts",
+     "lib/projections/starterBoardQueue.ts",
+diff --git a/tasks/artifacts/projection-table-audit-2026-10-26/release-verification/595ab13d9773808057b49cc3ed91d9eaca8ed317.json b/tasks/artifacts/projection-table-audit-2026-10-26/release-verification/595ab13d9773808057b49cc3ed91d9eaca8ed317.json
+index 5a33b931b9043a294eaef71a472c85e452ebd3b1..9b4c77437018ff782652e4d8ae015c2e49c34fcc 100644
+--- a/tasks/artifacts/projection-table-audit-2026-10-26/release-verification/595ab13d9773808057b49cc3ed91d9eaca8ed317.json
++++ b/tasks/artifacts/projection-table-audit-2026-10-26/release-verification/595ab13d9773808057b49cc3ed91d9eaca8ed317.json
+@@ -12,7 +12,7 @@
+     "tree": "935b79a7f3794571ad1108a76eda5c8c8e32ffa2"
+   },
+   "verifierSha256": "2da61a46b89df70669c454f08fbefd3a0803655a92226f0c8020aad9b9d3c456",
+-  "closureWalkerSha256": "e33ccacb21dca88ef2d163dab5f16ec0c50bb817373b9ab000c2ac8e29df5bad",
++  "closureWalkerSha256": "b7ec38db70612782bf45edf0086aa54cdb62dfea6de6cbac901dc13a2e3af2a2",
+   "roots": [
+     "lib/projections/run-forge-projections.ts",
+     "lib/projections/starterBoardQueue.ts",
+diff --git a/tasks/artifacts/projection-table-audit-2026-10-26/release-verification/5aa9ba5e0e9e86abf515fd7a30db441f6f5b1592.json b/tasks/artifacts/projection-table-audit-2026-10-26/release-verification/5aa9ba5e0e9e86abf515fd7a30db441f6f5b1592.json
+index 7f5153df4a879b78216db60db60d1b289c32a5f0..09e4d8e06c09f09daf519c03479e45d763ee09bf 100644
+--- a/tasks/artifacts/projection-table-audit-2026-10-26/release-verification/5aa9ba5e0e9e86abf515fd7a30db441f6f5b1592.json
++++ b/tasks/artifacts/projection-table-audit-2026-10-26/release-verification/5aa9ba5e0e9e86abf515fd7a30db441f6f5b1592.json
+@@ -12,7 +12,7 @@
+     "tree": "0ce3e2aeff87d0e15506fbfb669ade0729c4e1f8"
+   },
+   "verifierSha256": "2da61a46b89df70669c454f08fbefd3a0803655a92226f0c8020aad9b9d3c456",
+-  "closureWalkerSha256": "e33ccacb21dca88ef2d163dab5f16ec0c50bb817373b9ab000c2ac8e29df5bad",
++  "closureWalkerSha256": "b7ec38db70612782bf45edf0086aa54cdb62dfea6de6cbac901dc13a2e3af2a2",
+   "roots": [
+     "lib/projections/run-forge-projections.ts",
+     "lib/projections/starterBoardQueue.ts",
+diff --git a/tasks/artifacts/projection-table-audit-2026-10-26/release-verification/6fb1812c19ecd182e895b3708296018bc842fcf0.json b/tasks/artifacts/projection-table-audit-2026-10-26/release-verification/6fb1812c19ecd182e895b3708296018bc842fcf0.json
+index 9269967eac52db101985efd792b9387d291c0410..26f868debe0d7ff6150dd446c79bf4b9f54e81b6 100644
+--- a/tasks/artifacts/projection-table-audit-2026-10-26/release-verification/6fb1812c19ecd182e895b3708296018bc842fcf0.json
++++ b/tasks/artifacts/projection-table-audit-2026-10-26/release-verification/6fb1812c19ecd182e895b3708296018bc842fcf0.json
+@@ -12,7 +12,7 @@
+     "tree": "1441b5e54463b85d339ff0490fff5222e9a30775"
+   },
+   "verifierSha256": "2da61a46b89df70669c454f08fbefd3a0803655a92226f0c8020aad9b9d3c456",
+-  "closureWalkerSha256": "e33ccacb21dca88ef2d163dab5f16ec0c50bb817373b9ab000c2ac8e29df5bad",
++  "closureWalkerSha256": "b7ec38db70612782bf45edf0086aa54cdb62dfea6de6cbac901dc13a2e3af2a2",
+   "roots": [
+     "lib/projections/run-forge-projections.ts",
+     "lib/projections/starterBoardQueue.ts",
+diff --git a/tasks/artifacts/projection-table-audit-2026-10-26/release-verification/eff1b377ae8c831705710758979cc67e9d38846b.json b/tasks/artifacts/projection-table-audit-2026-10-26/release-verification/eff1b377ae8c831705710758979cc67e9d38846b.json
+index 0a8dd0e56772b021ec75b2075d634f0c3a71c702..f89f042d32fe5fe15c1cd51b28433e5772974b52 100644
+--- a/tasks/artifacts/projection-table-audit-2026-10-26/release-verification/eff1b377ae8c831705710758979cc67e9d38846b.json
++++ b/tasks/artifacts/projection-table-audit-2026-10-26/release-verification/eff1b377ae8c831705710758979cc67e9d38846b.json
+@@ -12,7 +12,7 @@
+     "tree": "3dd37acd5acdd904a35248a592a79e1e1be65f9e"
+   },
+   "verifierSha256": "2da61a46b89df70669c454f08fbefd3a0803655a92226f0c8020aad9b9d3c456",
+-  "closureWalkerSha256": "e33ccacb21dca88ef2d163dab5f16ec0c50bb817373b9ab000c2ac8e29df5bad",
++  "closureWalkerSha256": "b7ec38db70612782bf45edf0086aa54cdb62dfea6de6cbac901dc13a2e3af2a2",
+   "roots": [
+     "lib/projections/run-forge-projections.ts",
+     "lib/projections/starterBoardQueue.ts",
+diff --git a/tasks/artifacts/rso-resume-2026-11-01/release-prep/admission/c3897d3273ca46ea25a9f2737f09c835e5ec7325/receipt.json b/tasks/artifacts/rso-resume-2026-11-01/release-prep/admission/c3897d3273ca46ea25a9f2737f09c835e5ec7325/receipt.json
+index 0e1370b18997bcd23e05e12d510c1a7c98828c52..a894d06fbaf23fb77fd7c3a3db0728954c5ccbf7 100644
+--- a/tasks/artifacts/rso-resume-2026-11-01/release-prep/admission/c3897d3273ca46ea25a9f2737f09c835e5ec7325/receipt.json
++++ b/tasks/artifacts/rso-resume-2026-11-01/release-prep/admission/c3897d3273ca46ea25a9f2737f09c835e5ec7325/receipt.json
+@@ -12,7 +12,7 @@
+     "tree": "394e3cb70d3e9995e8a1f02f75ba13973320df34"
+   },
+   "verifierSha256": "2da61a46b89df70669c454f08fbefd3a0803655a92226f0c8020aad9b9d3c456",
+-  "closureWalkerSha256": "e33ccacb21dca88ef2d163dab5f16ec0c50bb817373b9ab000c2ac8e29df5bad",
++  "closureWalkerSha256": "b7ec38db70612782bf45edf0086aa54cdb62dfea6de6cbac901dc13a2e3af2a2",
+   "roots": [
+     "lib/projections/run-forge-projections.ts",
+     "lib/projections/starterBoardQueue.ts",
+diff --git a/tasks/artifacts/rso-resume-2026-11-01/release-prep/after402-committed-release.json b/tasks/artifacts/rso-resume-2026-11-01/release-prep/after402-committed-release.json
+index 322623f9019a502211e5b15982197a16f5ba2bc7..7c010873a15c573aa47598cbaeef64315960642e 100644
+--- a/tasks/artifacts/rso-resume-2026-11-01/release-prep/after402-committed-release.json
++++ b/tasks/artifacts/rso-resume-2026-11-01/release-prep/after402-committed-release.json
+@@ -12,7 +12,7 @@
+     "tree": "92517944c869baef86f6d9a869c5a5ab2992e24a"
+   },
+   "verifierSha256": "2da61a46b89df70669c454f08fbefd3a0803655a92226f0c8020aad9b9d3c456",
+-  "closureWalkerSha256": "e33ccacb21dca88ef2d163dab5f16ec0c50bb817373b9ab000c2ac8e29df5bad",
++  "closureWalkerSha256": "b7ec38db70612782bf45edf0086aa54cdb62dfea6de6cbac901dc13a2e3af2a2",
+   "roots": [
+     "lib/projections/run-forge-projections.ts",
+     "lib/projections/starterBoardQueue.ts",
+diff --git a/web/__tests__/pages/api/v1/db/cron-report.test.ts b/web/__tests__/pages/api/v1/db/cron-report.test.ts
+index c7462caee3590f0a0ba6a1b073e03a73551979d1..e6aee0ec3a218c6803090eba736e459cfd880975 100644
+--- a/web/__tests__/pages/api/v1/db/cron-report.test.ts
++++ b/web/__tests__/pages/api/v1/db/cron-report.test.ts
+@@ -20,7 +20,7 @@ const {
+   cronJobAuditInsertMock: vi.fn(),
+   resendSendMock: vi.fn(),
+   readFileMock: vi.fn(),
+-  cronAuditEmailMock: vi.fn((_props: any) => null),
++  cronAuditEmailMock: vi.fn((_props: any): any => null),
+   loadNhlSeasonWindowMock: vi.fn(async (): Promise<any> => ({ state: "unknown", today: "2026-03-20", reason: "test default" })),
+ }));
+ 
+@@ -30,19 +30,20 @@ function reportQuery(mock: ReturnType<typeof vi.fn>, args: unknown[], cron = fal
+   let to = 499;
+   const bounds: Record<string, string> = {};
+   let statuses: string[] | null = null;
++  let jobNames: string[] | null = null;
+   const query = {
+     gte: (field: string, value: string) => { bounds.since = value; bounds.field = field; return query; },
+     lte: (_field: string, value: string) => { bounds.until = value; return query; },
+-    in: (_field: string, values: string[]) => { statuses = values; return query; },
++    in: (field: string, values: string[]) => { if (field === "job_name") jobNames = values; else statuses = values; return query; },
+     order: vi.fn(() => query),
+     range: (start: number, end: number) => { from = start; to = end; return query; },
+     abortSignal: async () => {
+       const response = statuses
+-        ? await cronJobAuditHistorySelectMock(...args, { ...bounds, statuses, from, to })
++        ? await cronJobAuditHistorySelectMock(...args, { ...bounds, statuses, jobNames, from, to })
+         : await mock(...args);
+       const rows = (response.data ?? []).map((row: any, index: number) => cron ? { runid: index + 1, ...row } : row)
+         .filter((row: any) => row[bounds.field] >= bounds.since && row[bounds.field] <= bounds.until &&
+-          (!statuses || statuses.includes(row.status)));
++          (!statuses || statuses.includes(row.status)) && (!jobNames || jobNames.includes(row.job_name)));
+       return { ...response, data: rows.slice(from, to + 1), count: response.count === undefined ? rows.length : response.count };
+     },
+   };
+@@ -125,6 +126,160 @@ function createMockRes() {
+ }
+ 
+ describe("/api/v1/db/cron-report", () => {
++  it.each([
++    { name: "update-player-underlying-stats-yesterday", auditName: "/api/v1/db/update-player-underlying-stats", route: "/api/v1/db/update-player-underlying-stats", schedule: "35 9 * * *", at: "09:35:14.167768", endOffset: "(CURRENT_DATE - INTERVAL '1 day')", endDate: "2026-11-06", suffix: "&warmLandingCache=true", rowsUpserted: 3762 },
++    { name: "game-predictions-score-recent", auditName: "game-predictions-score", route: "/api/v1/game-predictions/score", schedule: "40 11 * * *", at: "11:40:02.727214", endOffset: "CURRENT_DATE", endDate: "2026-11-07", suffix: "", rowsUpserted: null },
++  ])("matches the captured dated receipt under its wrapper alias: $name", async (job) => {
++    vi.setSystemTime(new Date("2026-11-07T13:00:48.194Z"));
++    readFileMock.mockResolvedValue('```json\n' + JSON.stringify([
++      { jobname: job.name, active: true, schedule: job.schedule, method: "GET", route: `${job.route}?startDate=` },
++    ]) + '\n```\n' + `SELECT cron.schedule('${job.name}', '${job.schedule}', $$
++      SELECT net.http_get(url := 'https://fhfhockey.com${job.route}?startDate=' ||
++        to_char((CURRENT_DATE - INTERVAL '1 day')::date, 'YYYY-MM-DD') ||
++        '&endDate=' || to_char(${job.endOffset}::date, 'YYYY-MM-DD') || '${job.suffix}');$$);`);
++    cronJobReportSelectMock.mockResolvedValue({ data: [], error: null });
++    const url = `${job.route}?startDate=2026-11-06&endDate=${job.endDate}${job.suffix}`;
++    cronJobAuditSelectMock.mockResolvedValue({ data: [{ job_name: job.auditName, run_time: `2026-11-07T${job.at}Z`, status: "success", rows_affected: job.rowsUpserted,
++      details: { method: "GET", url, statusCode: 200, response: { success: true, rowsUpserted: job.rowsUpserted } } }], error: null });
++    const res = createMockRes();
++    await handler({ method: "GET" } as any, res);
++    expect(res.body.counts).toMatchObject({ scheduledJobs: 1, jobsOkLast: 1, jobsUnknownLast: 0, jobsMissingLast: 0 });
++    expect(cronAuditEmailMock.mock.calls.at(-1)?.[0].audits).toEqual([
++      expect.objectContaining({ jobName: job.name, route: url, status: "success", observationKind: "scheduled" }),
++    ]);
++  });
++
++
++  it("excludes weekly and calendar jobs that are not due without inventing missing runs", async () => {
++    readFileMock.mockResolvedValue(`SELECT cron.schedule('weekly','15 8 * * 0',$$SELECT 1;$$);
++SELECT cron.schedule('daily','0 8 * * *',$$SELECT 1;$$);`);
++    const res = createMockRes();
++    await handler({ method: "GET", query: { preview: "json" } } as any, res);
++    expect(res.body.counts.scheduledJobs).toBe(1);
++    expect(res.body.scheduleInventory.notDueJobs).toEqual([{ name: "weekly", schedule: "15 8 * * 0" }]);
++    expect(resendSendMock).not.toHaveBeenCalled();
++  });
++
++  it("does not revive an inactive canonical JSON job from old SQL snippets", async () => {
++    readFileMock.mockResolvedValue('```json\n' + JSON.stringify([{ jobname: "inactive", active: false, schedule: "0 8 * * *" }]) + '\n```\n' +
++      "SELECT cron.schedule('inactive','0 8 * * *',$$SELECT 1;$$);");
++    const res = createMockRes();
++    await handler({ method: "GET" } as any, res);
++    expect(res.statusCode).toBe(500);
++    expect(res.body.code).toBe("CRON_SCHEDULE_INVENTORY_EMPTY");
++    expect(resendSendMock).not.toHaveBeenCalled();
++  });
++
++  it("summarizes queued Edge Function requests and matches a pg_cron jobid despite query drift", async () => {
++    readFileMock.mockResolvedValue('```json\n' + JSON.stringify([{ jobid: 391, jobname: "update-lineup-deployment-tallies",
++      schedule: "55 9 * * *", active: true, method: "GET", route: "/api/v1/db/update-lineup-deployment-tallies" }]) + '\n```');
++    const edgeRun = (minute: string) => ({ jobid: 400, jobname: "x-timeline-poll", scheduled_time: `2026-03-20T11:${minute}:00.000Z`,
++      end_time: `2026-03-20T11:${minute}:00.100Z`, status: "succeeded", return_message: "1 row",
++      sql_text: "select net.http_post(url := 'https://example.supabase.co/functions/v1/x-timeline-poll');" });
++    cronJobReportSelectMock.mockResolvedValue({ data: [
++      { jobid: 391, jobname: "update-lineup-deployment-tallies", scheduled_time: "2026-03-20T09:55:00.000Z",
++        end_time: "2026-03-20T09:55:00.100Z", status: "succeeded", return_message: "1 row",
++        sql_text: "select net.http_get(url := 'https://fhfhockey.com/api/v1/db/update-lineup-deployment-tallies?action=current');" },
++      edgeRun("00"), edgeRun("02"),
++      { jobid: 999, jobname: "unlisted-route", scheduled_time: "2026-03-20T11:30:00.000Z", end_time: "2026-03-20T11:30:00.100Z",
++        status: "succeeded", return_message: "1 row", sql_text: "select net.http_get(url := 'https://fhfhockey.com/api/v1/db/unlisted');" },
++    ], error: null });
++    cronJobAuditSelectMock.mockResolvedValue({ data: [], error: null });
++    const res = createMockRes();
++    await handler({ method: "GET" } as any, res);
++    const props = cronAuditEmailMock.mock.calls.at(-1)?.[0];
++    expect(props.edgeFunctionDispatches).toEqual([expect.objectContaining({ jobName: "x-timeline-poll", queued: 2, failed: 0,
++      latestAt: "2026-03-20T11:02:00.000Z" })]);
++    expect(props.audits.some((entry: any) => entry.jobName === "x-timeline-poll")).toBe(false);
++    const tallies = props.audits.filter((entry: any) => entry.jobName === "update-lineup-deployment-tallies");
++    expect(tallies).toEqual([expect.objectContaining({ observationKind: "scheduled" })]);
++    expect(tallies[0].runTimeDisplay).toContain("2026-03-20T09:55:00.000Z");
++    const unlisted = props.audits.find((entry: any) => entry.jobName === "unlisted-route");
++    expect(unlisted.reason).toContain("pg_cron queued the HTTP request, but no cron_job_audit row");
++    expect(unlisted.reason).not.toBe("1 row");
++    const { CronAuditEmail } = await vi.importActual<typeof import("components/CronReportEmail/CronAuditEmail")>("components/CronReportEmail/CronAuditEmail");
++    const html = renderToStaticMarkup(createElement(CronAuditEmail, props));
++    expect(html).toContain("Supabase Edge Functions queued by pg_cron");
++    expect(html).toContain("x-timeline-poll · 2 queued");
++  });
++
++  it.each(["2026-11-07T13:00:00Z", "2026-11-08T07:00:00Z"])("classifies the 08:05 power-play and 09:55 tally receipts at %s using their scheduled date", async (now) => {
++    vi.setSystemTime(new Date(now));
++    const route = "/api/v1/db/update-power-play-combinations";
++    const command = `SELECT net.http_get(url := 'https://fhfhockey.com${route}?startDate=' ||
++      to_char((CURRENT_DATE - INTERVAL '2 days')::date, 'YYYY-MM-DD') ||
++      '&endDate=' || to_char(CURRENT_DATE::date, 'YYYY-MM-DD'));`;
++    readFileMock.mockResolvedValue('```json\n' + JSON.stringify([
++      { jobid: 388, jobname: "update-power-play-combinations", schedule: "05 8 * * *", active: true, method: "GET", route: `${route}?startDate=` },
++      { jobid: 391, jobname: "update-lineup-deployment-tallies", schedule: "55 9 * * *", active: true, method: "GET", route: "/api/v1/db/update-lineup-deployment-tallies?action=current" },
++      { jobid: 278, jobname: "update-rolling-player-averages", schedule: "15 8 * * 0", active: true, method: "GET", route: "/api/v1/db/update-rolling-player-averages" },
++    ]) + '\n```\n' + `SELECT cron.schedule('update-power-play-combinations', '05 8 * * *', $$${command}$$);`);
++    cronJobReportSelectMock.mockResolvedValue({ data: [
++      { jobid: 388, jobname: "update-power-play-combinations", scheduled_time: "2026-11-07T08:05:00Z", status: "succeeded", return_message: "1 row", sql_text: command },
++      { jobid: 391, jobname: "update-lineup-deployment-tallies", scheduled_time: "2026-11-07T09:55:00Z", status: "succeeded", return_message: "1 row",
++        sql_text: "SELECT net.http_get(url := 'https://fhfhockey.com/api/v1/db/update-lineup-deployment-tallies?action=current');" },
++    ], error: null });
++    cronJobAuditSelectMock.mockResolvedValue({ data: [
++      { job_name: route, run_time: "2026-11-07T08:05:04.204711Z", status: "success", rows_affected: 14,
++        details: { method: "GET", url: `${route}?startDate=2026-11-05&endDate=2026-11-07`, statusCode: 200, durationMs: 2372,
++          response: { success: true, processed: 14, skipped: 12 } } },
++      { job_name: "update-lineup-deployment-tallies", run_time: "2026-11-07T09:55:02.618459Z", status: "success", rows_affected: 2982,
++        details: { method: "GET", url: "/api/v1/db/update-lineup-deployment-tallies?action=current", statusCode: 200, durationMs: 1129,
++          response: { success: true, rowsUpserted: 2982 } } },
++    ], error: null });
++    const res = createMockRes();
++    await handler({ method: "GET" } as any, res);
++    expect(res.body.counts).toMatchObject({ scheduledJobs: 2, jobsOkLast: 2, jobsUnknownLast: 0, jobsMissingLast: 0 });
++    expect(res.body.scheduleInventory.notDueJobs).toEqual([{ name: "update-rolling-player-averages", schedule: "15 8 * * 0" }]);
++    const rows = cronAuditEmailMock.mock.calls.at(-1)?.[0].audits;
++    expect(rows).toHaveLength(2);
++    expect(rows.find((row: any) => row.jobName === "update-power-play-combinations"))
++      .toMatchObject({ status: "success", observationKind: "scheduled", route: `${route}?startDate=2026-11-05&endDate=2026-11-07` });
++    expect(rows.find((row: any) => row.jobName === "update-lineup-deployment-tallies"))
++      .toMatchObject({ status: "success", observationKind: "scheduled", rowsAffected: 2982 });
++  });
++
++  it.each([
++    "startDate=2026-03-17&endDate=2026-03-20",
++    "startDate=2026-03-18&endDate=2026-03-20&dryRun=true",
++  ])("does not use a different date window or probe query as the scheduled receipt: %s", async (query) => {
++    const route = "/api/v1/db/update-power-play-combinations";
++    readFileMock.mockResolvedValue(`SELECT cron.schedule('update-power-play-combinations', '05 8 * * *', $$
++      SELECT net.http_get(url := 'https://fhfhockey.com${route}?startDate=' ||
++        to_char((CURRENT_DATE - INTERVAL '2 days')::date, 'YYYY-MM-DD') ||
++        '&endDate=' || to_char(CURRENT_DATE::date, 'YYYY-MM-DD'));$$);`);
++    cronJobReportSelectMock.mockResolvedValue({ data: [], error: null });
++    cronJobAuditSelectMock.mockResolvedValue({ data: [{ job_name: "update-power-play-combinations", run_time: "2026-03-20T08:05:01Z", status: "success",
++      details: { method: "GET", url: `${route}?${query}`, statusCode: 200 } }], error: null });
++    const res = createMockRes();
++    await handler({ method: "GET" } as any, res);
++    expect(res.body.counts).toMatchObject({ jobsOkLast: 0, jobsMissingLast: 1, unscheduledRuns: 1 });
++  });
++
++  it("retains complete audit observations even when cron history consumes the entire source deadline", async () => {
++    const cron = Array.from({ length: 8000 }, (_, id) => ({ runid: id + 1, jobname: "child-sql",
++      scheduled_time: "2026-03-20T12:00:00.000Z", status: "success", sql_text: "SELECT 1;" }));
++    cronJobReportSelectMock.mockImplementation(async () => {
++      await new Promise((resolve) => setTimeout(resolve, 12_000)); return { data: cron, error: null };
++    });
++    const res = createMockRes();
++    const pending = handler({ method: "GET" } as any, res);
++    await vi.advanceTimersByTimeAsync(0);
++    // The old serial reader never attempted this source until its budget was gone.
++    expect(cronJobAuditSelectMock).toHaveBeenCalledTimes(2);
++    await vi.advanceTimersByTimeAsync(180_000);
++    await pending;
++    expect(res.body.executionBudget.sourceElapsedMs).toBe(180_000);
++    expect(res.body.sources.cron).toMatchObject({ complete: false, enumerationComplete: true });
++    expect(res.body.sources.audit).toMatchObject({ complete: true, pages: 1, verificationPages: 1 });
++    expect(res.body.counts.auditRuns).toBe(1);
++    expect(res.body.totalsComplete).toBe(false);
++    expect(cronAuditEmailMock.mock.calls.at(-1)?.[0].audits[0])
++      .toMatchObject({ status: "unknown", observedExecutionStatus: "success" });
++    expect(resendSendMock.mock.calls[0][0].subject).toContain("incomplete telemetry");
++  });
++
++
+   it("rejects admission before audit, telemetry, or email work", async () => {
+     adminAdmissionMock.mockReturnValue(false);
+     const res = createMockRes();
+@@ -145,13 +300,13 @@ describe("/api/v1/db/cron-report", () => {
+       details: { method: "POST", url: "/api/v1/game-predictions/forecast?horizonDays=3&mode=daily", error: "failed" },
+     }], error: null });
+     const otherSuccesses = Array.from({ length: 1000 }, (_, index) => ({
+-      job_name: `other-${index}`, run_time: "2026-03-18T12:00:00.000Z", status: "success",
++      job_name: "h3", run_time: `2026-03-18T12:${String(Math.floor(index / 60)).padStart(2, "0")}:${String(index % 60).padStart(2, "0")}.000Z`, status: "success",
+       details: { method: index % 2 ? "POST" : "GET", url: index % 2
+         ? "/api/v1/game-predictions/forecast?horizonDays=1&mode=daily"
+         : "/api/v1/game-predictions/forecast?horizonDays=3&mode=daily" },
+     }));
+     cronJobAuditHistorySelectMock.mockResolvedValue({ data: [...otherSuccesses, {
+-      job_name: "h3-old-name", run_time: "2026-03-17T12:00:00.000Z", status: "success",
++      job_name: "/api/v1/game-predictions/forecast", run_time: "2026-03-17T12:00:00.000Z", status: "success",
+       details: { method: "POST", url: "/api/v1/game-predictions/forecast?mode=daily&horizonDays=3" },
+     }], error: null });
+     const res = createMockRes();
+@@ -161,6 +316,7 @@ describe("/api/v1/db/cron-report", () => {
+     expect(res.body.sources.successHistory).toMatchObject({ complete: true, pages: 2, verificationPages: 2, expectedCount: 1001 });
+     expect(cronJobAuditHistorySelectMock).toHaveBeenCalledWith(expect.anything(), expect.anything(), expect.objectContaining({
+       since: "2026-02-18T12:10:00.000Z", until: "2026-03-19T12:10:00.000Z", from: 1000, to: 1999,
++      jobNames: ["h3", "/api/v1/game-predictions/forecast"],
+     }));
+     expect(res.body.counts).toMatchObject({ auditRuns: 1, auditFailures: 1, auditSuccesses: 0 });
+   });
+@@ -171,7 +327,7 @@ describe("/api/v1/db/cron-report", () => {
+       details: { method: "POST", url: "/api/v1/db/run-projection-v2", error: "failed" },
+     }], error: null });
+     const rows = Array.from({ length: 9000 }, (_, index) => ({
+-      job_name: `older-${index}`, run_time: "2026-03-18T12:00:00.000Z", status: "success",
++      job_name: "run-forge-projection-v2", run_time: `2026-03-18T12:${String(Math.floor(index / 60) % 60).padStart(2, "0")}:${String(index % 60).padStart(2, "0")}.${String(Math.floor(index / 3600)).padStart(3, "0")}Z`, status: "success",
+       details: { method: "POST", url: "/api/v1/db/run-projection-v2" },
+     }));
+     cronJobAuditHistorySelectMock.mockResolvedValue({ data: rows, error: null });
+@@ -1232,7 +1388,7 @@ ${JSON.stringify(jobs)}
+     expect(res.body).toMatchObject({ totalsComplete: false, counts: { auditRuns: 1000, auditFailures: 1, jobsOkLast: 0 } });
+     expect(res.body.sources.audit.error).toContain("statement timeout");
+     expect(resendSendMock.mock.calls[0][0].subject).toContain("incomplete telemetry");
+-    expect((cronAuditEmailMock.mock.calls.at(-1)?.[0] as any).fetchErrors[0]).toContain("1000 observations retained");
++    expect((cronAuditEmailMock.mock.calls.at(-1)?.[0] as any).fetchErrors[0]).toContain("Read stopped after 1,000 rows");
+   });
+ 
+   it("keeps no-output serving-gate receipts unknown without inventing failures", async () => {
+@@ -1697,24 +1853,26 @@ ${JSON.stringify(jobs)}
+   it("uses a shared 180-second read allowance and reserves 60 seconds under the 240-second repository limit", async () => {
+     for (const mock of [cronJobReportSelectMock, cronJobAuditSelectMock]) {
+       mock.mockImplementation(async () => {
+-        vi.setSystemTime(Date.now() + 8_000);
++        await new Promise((resolve) => setTimeout(resolve, 8_000));
+         return { data: [], error: null };
+       });
+     }
+     const res = createMockRes();
+-    await handler({ method: "GET", query: { preview: "json" } } as any, res);
++    const pending = handler({ method: "GET", query: { preview: "json" } } as any, res);
++    await vi.advanceTimersByTimeAsync(16_000);
++    await pending;
+     expect(res.body.sources.cron.complete).toBe(true);
+     expect(res.body.sources.audit.complete).toBe(true);
+     expect(res.body.window.until).toBe("2026-03-20T12:10:00.000Z");
+     expect(res.body.executionBudget).toMatchObject({
+-      repositoryLimitMs: 240_000, sourceBudgetMs: 180_000, sourceElapsedMs: 32_000,
++      repositoryLimitMs: 240_000, sourceBudgetMs: 180_000, sourceElapsedMs: 16_000,
+       sourceDeadlineAt: "2026-03-20T12:13:00.000Z", requestTimeoutMs: 15_000,
+       phaseReservesMs: { assemblyAndRender: 20_000, emailDelivery: 20_000, auditAndResponse: 20_000 },
+     });
+     expect(resendSendMock).not.toHaveBeenCalled();
+   });
+ 
+-  it("exhausts one overall source deadline and still sends a truthful partial report", async () => {
++  it("completes both core sources in parallel before the shared deadline", async () => {
+     const cron = Array.from({ length: 5000 }, (_, id) => ({
+       runid: id + 1, jobname: "child-sql", scheduled_time: "2026-03-20T12:00:00.000Z",
+       status: "success", sql_text: "SELECT 1;",
+@@ -1724,19 +1882,21 @@ ${JSON.stringify(jobs)}
+       status: id < 83 ? "failure" : "success", details: null,
+     }));
+     cronJobReportSelectMock.mockImplementation(async () => {
+-      vi.setSystemTime(Date.now() + 12_000); return { data: cron, error: null };
++      await new Promise((resolve) => setTimeout(resolve, 12_000)); return { data: cron, error: null };
+     });
+     cronJobAuditSelectMock.mockImplementation(async () => {
+-      vi.setSystemTime(Date.now() + 5_000); return { data: audits, error: null };
++      await new Promise((resolve) => setTimeout(resolve, 5_000)); return { data: audits, error: null };
+     });
+     const res = createMockRes();
+-    await handler({ method: "GET" } as any, res);
+-    expect(res.body.executionBudget.sourceElapsedMs).toBe(180_000);
++    const pending = handler({ method: "GET" } as any, res);
++    await vi.advanceTimersByTimeAsync(120_000);
++    await pending;
++    expect(res.body.executionBudget.sourceElapsedMs).toBe(120_000);
+     expect(res.body.sources.cron.complete).toBe(true);
+-    expect(res.body.sources.audit).toMatchObject({ complete: false, enumerationComplete: true, pages: 7, verificationPages: 5 });
++    expect(res.body.sources.audit).toMatchObject({ complete: true, enumerationComplete: true, pages: 7, verificationPages: 7 });
+     expect(res.body.counts).toMatchObject({ auditRuns: 6184, auditFailures: 83 });
+-    expect(res.body.totals.auditFailures).toBeNull();
+-    expect(resendSendMock.mock.calls[0][0].subject).toContain("incomplete telemetry");
++    expect(res.body.totals.auditFailures).toBe(83);
++    expect(resendSendMock.mock.calls[0][0].subject).not.toContain("incomplete telemetry");
+   });
+ 
+   // 2026-10-17 regression: pg_cron job 234 (21:15 UTC) was intentionally
+diff --git a/web/__tests__/pages/api/v1/db/run-projection-accuracy.test.ts b/web/__tests__/pages/api/v1/db/run-projection-accuracy.test.ts
+index 9e1b41f8377b3f5292ca9e6a5a70ef946d0ccc42..2c0cf9b3579a357fa5b96fa07ffe4feddf89011d 100644
+--- a/web/__tests__/pages/api/v1/db/run-projection-accuracy.test.ts
++++ b/web/__tests__/pages/api/v1/db/run-projection-accuracy.test.ts
+@@ -6,11 +6,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
+ const {
+   auditInsertMock,
+   requireLatestSucceededRunIdMock,
++  requireExternalInputProvenRunMock,
+   runProjectionPreflightChecksMock,
+   serverSupabaseMock
+ } = vi.hoisted(() => ({
+   auditInsertMock: vi.fn().mockResolvedValue({ error: null }),
+   requireLatestSucceededRunIdMock: vi.fn(),
++  requireExternalInputProvenRunMock: vi.fn(),
+   runProjectionPreflightChecksMock: vi.fn(),
+   serverSupabaseMock: {} as Record<string, unknown>
+ }));
+@@ -24,13 +26,22 @@ vi.mock("lib/supabase", () => ({
+ }));
+ 
+ vi.mock("lib/supabase/server", () => ({
+-  default: serverSupabaseMock
++  default: {
++    from: (table: string) => table === "cron_job_audit"
++      ? { insert: auditInsertMock }
++      : (serverSupabaseMock.from as (table: string) => unknown)(table),
++    rpc: (...args: unknown[]) => (serverSupabaseMock.rpc as (...args: unknown[]) => unknown)(...args)
++  }
+ }));
+ 
+ vi.mock("lib/projections/apiHelpers", () => ({
+   requireLatestSucceededRunId: requireLatestSucceededRunIdMock
+ }));
+ 
++vi.mock("lib/projections/externalInputProof", () => ({
++  requireExternalInputProvenRun: requireExternalInputProvenRunMock
++}));
++
+ vi.mock("../../../../../pages/api/v1/db/run-projection-v2", () => ({
+   runProjectionPreflightChecks: runProjectionPreflightChecksMock
+ }));
+@@ -103,9 +114,7 @@ async function runAccuracyWithTables(tables: Record<string, unknown[]>) {
+                   table === "forge_runs"
+                     ? {
+                         metrics: {
+-                          input_provenance: buildForgeInputProvenance({
+-                            externalFantasyInputsExcluded: true
+-                          })
++                          input_provenance: buildForgeInputProvenance()
+                         }
+                       }
+                     : null,
+@@ -147,6 +156,8 @@ async function runAccuracyWithTables(tables: Record<string, unknown[]>) {
+ describe("/api/v1/db/run-projection-accuracy", () => {
+   beforeEach(() => {
+     vi.clearAllMocks();
++    requireExternalInputProvenRunMock.mockImplementation(async (runId: string) => ({ runId,
++      proof: { ...buildForgeInputProvenance({ externalFantasyInputsExcluded: true }), basis: "verified_producer_closure" } }));
+     runProjectionPreflightChecksMock.mockResolvedValue({
+       asOfDate: "2026-03-19",
+       bypassed: false,
+@@ -246,6 +257,41 @@ describe("/api/v1/db/run-projection-accuracy", () => {
+     expect(requireLatestSucceededRunIdMock).not.toHaveBeenCalled();
+   });
+ 
++  it("accepts exact-run producer proof without requiring a run-start exclusion label", async () => {
++    const { res } = await runAccuracyWithTables({});
++    expect(requireExternalInputProvenRunMock).toHaveBeenCalledWith("run-a08");
++    expect(res.statusCode).toBe(200);
++  });
++
++  it("rejects an unproven latest run before any calibration reads or writes", async () => {
++    requireLatestSucceededRunIdMock.mockResolvedValue("unproven-latest");
++    requireExternalInputProvenRunMock.mockRejectedValue(Object.assign(new Error("Selected projection run lacks external fantasy exclusion provenance."),
++      { statusCode: 422, details: { reason: "external_input_provenance_unproven" } }));
++    serverSupabaseMock.from = vi.fn();
++    serverSupabaseMock.rpc = vi.fn();
++    try {
++      const res = createMockRes();
++      await handler({ method: "GET", query: { date: "2026-03-20", ignoreOffSeason: "true" } } as any, res);
++      expect(res.statusCode).toBe(422);
++      expect(requireExternalInputProvenRunMock).toHaveBeenCalledWith("unproven-latest");
++      expect(serverSupabaseMock.from).not.toHaveBeenCalled();
++      expect(serverSupabaseMock.rpc).not.toHaveBeenCalled();
++    } finally {
++      delete serverSupabaseMock.from;
++      delete serverSupabaseMock.rpc;
++    }
++  });
++
++  it("still rejects legacy rolling-history proof", async () => {
++    requireLatestSucceededRunIdMock.mockResolvedValue("legacy-latest");
++    requireExternalInputProvenRunMock.mockResolvedValue({ runId: "legacy-latest", proof: {
++      external_fantasy_input_contract: "excluded_from_native_inputs_v1", rolling_player_history_contract: null } });
++    const res = createMockRes();
++    await handler({ method: "GET", query: { date: "2026-03-20", ignoreOffSeason: "true" } } as any, res);
++    expect(res.statusCode).toBe(422);
++    expect(res.body.calibrationEligibility.reason).toBe("missing_or_legacy_rolling_history_contract");
++  });
++
+   it("reports selected-run actual coverage without counting wrong-date projections", () => {
+     const diagnostics = buildSkaterActualMatchDiagnostics({
+       playerProjections: [
+diff --git a/web/__tests__/pages/api/v1/db/update-goalie-projections-v2.test.ts b/web/__tests__/pages/api/v1/db/update-goalie-projections-v2.test.ts
+index b1dcd2d6706440c65f96b9e0f0d96f431acdbb85..63cc3949a4bce10f9f8a643b9d1bfe4879891d4f 100644
+--- a/web/__tests__/pages/api/v1/db/update-goalie-projections-v2.test.ts
++++ b/web/__tests__/pages/api/v1/db/update-goalie-projections-v2.test.ts
+@@ -1,9 +1,12 @@
+ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+ 
+-const { fetchMock, gamesGteMock, gamesLteMock, storedGameDate, upsertMock } = vi.hoisted(() => ({
++const { fetchMock, gamesGteMock, gamesLteMock, deleteMock, deleteEqMock, rosterState, storedGameDate, upsertMock } = vi.hoisted(() => ({
+   fetchMock: vi.fn(),
++  deleteMock: vi.fn(async () => ({ error: null, count: 0 })),
++  deleteEqMock: vi.fn(),
+   gamesGteMock: vi.fn(),
+   gamesLteMock: vi.fn(),
++  rosterState: { rows: [{ playerId: 8470000, teamId: 1 }, { playerId: 8470001, teamId: 2 }], error: null as null | { message: string }, count: undefined as number | undefined },
+   storedGameDate: { value: "2026-10-21" },
+   upsertMock: vi.fn(async () => ({ error: null }))
+ }));
+@@ -21,6 +24,13 @@ vi.mock("lib/cors-fetch", () => ({ default: fetchMock }));
+ vi.mock("lib/supabase/server", () => ({
+   default: {
+     from: (table: string) => {
++      if (table === "rosters") {
++        const query: any = {
++          select: () => query, eq: () => query, in: () => query,
++          limit: async () => ({ data: rosterState.rows, error: rosterState.error, count: rosterState.count ?? rosterState.rows.length })
++        };
++        return query;
++      }
+       if (table === "games") {
+         return {
+           select: () => ({
+@@ -52,13 +62,20 @@ vi.mock("lib/supabase/server", () => ({
+             })
+           })
+         }),
+-        upsert: upsertMock
++        upsert: upsertMock,
++        delete: () => {
++          const query: any = { eq: (key: string, value: number) => { deleteEqMock(key, value); return query; },
++            then: (resolve: (value: unknown) => unknown, reject: (error: unknown) => unknown) => deleteMock().then(resolve, reject) };
++          return query;
++        }
+       };
+     }
+   }
+ }));
+ 
+ import handler, {
++  historicalGoalieTeams,
++  pruneIneligibleGoalieProjectionRows,
+   upsertGoalieProjectionRows
+ } from "pages/api/v1/db/update-goalie-projections-v2";
+ 
+@@ -85,15 +102,20 @@ describe("update-goalie-projections-v2 endDate", () => {
+     vi.useFakeTimers({ toFake: ["Date"] });
+     vi.setSystemTime(new Date("2026-10-21T10:00:00.000Z"));
+     storedGameDate.value = "2026-10-21";
++    rosterState.rows = [{ playerId: 8470000, teamId: 1 }, { playerId: 8470001, teamId: 2 }];
++    rosterState.error = null;
++    rosterState.count = undefined;
++    upsertMock.mockResolvedValue({ error: null });
++    deleteMock.mockResolvedValue({ error: null, count: 0 });
+     fetchMock.mockImplementation(async (url: string) => ({
+       ok: true,
+       json: async () =>
+         url.includes("/season?")
+-          ? { data: [{ startDate: "2026-10-07T00:00:00" }] }
++          ? { data: [{ id: 20262027, startDate: "2026-10-07T00:00:00" }] }
+           : {
+               data: [
+                 {
+-                  playerId: 8470000,
++                  playerId: new URL(url).searchParams.get("cayenneExp")?.includes("franchiseId=22 ") ? 8470001 : 8470000,
+                   goalieFullName: "Test Goalie",
+                   gameDate: "2026-10-20",
+                   gamesStarted: 1,
+@@ -132,7 +154,7 @@ describe("update-goalie-projections-v2 endDate", () => {
+     const rows = (upsertMock.mock.calls[0] as any[])[0];
+     expect(rows.filter((row: any) => row.game_date === "2026-10-22")).toEqual([
+       expect.objectContaining({ game_id: 2, team_id: 1, player_id: 8470000, start_probability: 1 }),
+-      expect.objectContaining({ game_id: 2, team_id: 2, player_id: 8470000, start_probability: 1 })
++      expect.objectContaining({ game_id: 2, team_id: 2, player_id: 8470001, start_probability: 1 })
+     ]);
+   });
+ 
+@@ -149,6 +171,90 @@ describe("update-goalie-projections-v2 endDate", () => {
+     );
+   });
+ 
++  it("filters traded goalies to their current team before the shared game/player upsert", async () => {
++    const normalFetch = fetchMock.getMockImplementation()!;
++    fetchMock.mockImplementation(async (url: string) => {
++      const response = await normalFetch(url);
++      if (url.includes("/season?")) return response;
++      const payload = await response.json();
++      payload.data.push({ ...payload.data[0], playerId: 8470002, goalieFullName: "Traded Goalie" });
++      return { ok: true, json: async () => payload };
++    });
++    rosterState.rows.push({ playerId: 8470002, teamId: 2 });
++    const res = await run({ endDate: "2026-10-22" });
++    expect(res.statusCode).toBe(200);
++    const rows = (upsertMock.mock.calls[0] as any[])[0];
++    expect(rows.filter((row: any) => row.player_id === 8470002)).toEqual([
++      expect.objectContaining({ game_id: 1, team_id: 2 }),
++      expect.objectContaining({ game_id: 2, team_id: 2 })
++    ]);
++    expect(new Set(rows.map((row: any) => `${row.game_id}:${row.player_id}`)).size).toBe(rows.length);
++    expect(res.body.observability.excludedHistoricalCandidates).toBe(2);
++    expect(deleteEqMock.mock.calls).toEqual([
++      ["game_id", 1], ["team_id", 1], ["player_id", 8470002],
++      ["game_id", 2], ["team_id", 1], ["player_id", 8470002],
++    ]);
++  });
++
++  it.each([false, true])("excludes unrostered history and reports reconciliation failure=%s", async cleanupFails => {
++    if (cleanupFails) deleteMock.mockResolvedValue({ error: { message: "cleanup failed" }, count: null } as any);
++    const normalFetch = fetchMock.getMockImplementation()!;
++    fetchMock.mockImplementation(async (url: string) => {
++      const response = await normalFetch(url);
++      if (url.includes("/season?")) return response;
++      const payload = await response.json();
++      payload.data.push({ ...payload.data[0], playerId: 8470002 });
++      return { ok: true, json: async () => payload };
++    });
++    const res = await run({});
++    expect(res.statusCode).toBe(cleanupFails ? 207 : 200);
++    expect(res.body.success).toBe(!cleanupFails);
++    expect((upsertMock.mock.calls[0] as any[])[0].every((row: any) => row.player_id !== 8470002)).toBe(true);
++    if (cleanupFails) expect(deleteMock).toHaveBeenCalledTimes(1);
++  });
++
++  it("does not remove old rows when replacement upsert failed", async () => {
++    rosterState.rows = [{ playerId: 8470000, teamId: 2 }, { playerId: 8470001, teamId: 1 }];
++    // Keep an eligible teammate on each side while also producing rejected candidates.
++    const normalFetch = fetchMock.getMockImplementation()!;
++    fetchMock.mockImplementation(async (url: string) => {
++      const response = await normalFetch(url);
++      if (url.includes("/season?")) return response;
++      const payload = await response.json();
++      payload.data.push({ ...payload.data[0], playerId: payload.data[0].playerId === 8470000 ? 8470001 : 8470000 });
++      return { ok: true, json: async () => payload };
++    });
++    upsertMock.mockResolvedValue({ error: { message: "write failed" } } as any);
++    const res = await run({});
++    expect(res.statusCode).toBe(500);
++    expect(deleteMock).not.toHaveBeenCalled();
++  });
++
++  it("excludes a former goalie whose current team is outside the scheduled window", async () => {
++    rosterState.rows[0].teamId = 3;
++    const res = await run({});
++    expect(res.statusCode).toBe(422);
++    expect(res.body.missingGameTeams).toContainEqual({ gameId: 1, teamId: 1 });
++    expect(upsertMock).not.toHaveBeenCalled();
++  });
++
++  it.each(["conflicting", "truncated", "failed"])("does not write with %s roster evidence", async mode => {
++    if (mode === "conflicting") rosterState.rows.push({ playerId: 8470000, teamId: 2 });
++    if (mode === "truncated") rosterState.count = 3;
++    if (mode === "failed") rosterState.error = { message: "roster read failed" };
++    const res = await run({});
++    expect(res.statusCode).toBe(500);
++    expect(upsertMock).not.toHaveBeenCalled();
++  });
++
++  it("does not persist partial priors after a team log fetch fails", async () => {
++    const normalFetch = fetchMock.getMockImplementation()!;
++    fetchMock.mockImplementation(async (url: string) => url.includes("/season?") ? normalFetch(url) : { ok: false, status: 503 });
++    const res = await run({});
++    expect(res.statusCode).toBe(500);
++    expect(upsertMock).not.toHaveBeenCalled();
++  });
++
+   it.each(["2026-10-2", "2026-13-01", "tomorrow"])(
+     "rejects malformed endDate %s with 400",
+     async (endDate) => {
+@@ -181,7 +287,7 @@ describe("update-goalie-projections-v2 persistence", () => {
+ 
+     const result = await upsertGoalieProjectionRows(
+       client,
+-      [{ id: 1 }, { id: 2 }, { id: 3 }],
++      [{ game_id: 1, player_id: 1 }, { game_id: 1, player_id: 2 }, { game_id: 1, player_id: 3 }],
+       2
+     );
+ 
+@@ -199,8 +305,55 @@ describe("update-goalie-projections-v2 persistence", () => {
+     });
+     expect(upsert).toHaveBeenNthCalledWith(
+       1,
+-      [{ id: 1 }, { id: 2 }],
++      [{ game_id: 1, player_id: 1 }, { game_id: 1, player_id: 2 }],
+       { onConflict: "game_id, player_id" }
+     );
+   });
+ });
++
++describe("goalie projection identity guard", () => {
++  it.each([1, 1000])("rejects duplicates before any writes, including across chunks of %s", async chunkSize => {
++    const client = { from: vi.fn() } as any;
++    await expect(upsertGoalieProjectionRows(client, [
++      { game_id: 1, player_id: 9, team_id: 1 }, { game_id: 1, player_id: 9, team_id: 2 }
++    ], chunkSize)).rejects.toThrow("Duplicate goalie projection identity");
++    expect(client.from).not.toHaveBeenCalled();
++  });
++  it("rejects invalid identity and chunk size before writing", async () => {
++    const client = { from: vi.fn() } as any;
++    await expect(upsertGoalieProjectionRows(client, [{ game_id: 1, player_id: null }])).rejects.toThrow("invalid game/player");
++    await expect(upsertGoalieProjectionRows(client, [], 0)).rejects.toThrow("positive integer");
++    expect(client.from).not.toHaveBeenCalled();
++  });
++  it("uses historical evidence without backdating today's roster or future logs", () => {
++    const logs = { 1: [{ playerId: 9, gameDate: "2026-10-10" }], 2: [{ playerId: 9, gameDate: "2026-10-20" }] };
++    expect(historicalGoalieTeams(logs, "2026-10-15").get(9)).toBe(1);
++    expect(historicalGoalieTeams(logs, "2026-10-21").get(9)).toBe(2);
++    expect(historicalGoalieTeams({ ...logs, 3: [{ playerId: 9, gameDate: "2026-10-20" }] }, "2026-10-21").get(9)).toBeNull();
++  });
++});
++
++describe("goalie stale-candidate reconciliation", () => {
++  it("uses exact game, old team and player predicates, deduplicates, and counts acknowledged removals", async () => {
++    const eq = vi.fn();
++    const query: any = { eq: (column: string, value: number) => { eq(column, value); return query; },
++      then: (resolve: (value: unknown) => unknown) => Promise.resolve({ error: null, count: 1 }).then(resolve) };
++    const from = vi.fn(() => ({ delete: vi.fn(() => query) }));
++    const row = { game_id: 2026020270, team_id: 1, player_id: 8482076 };
++    expect(await pruneIneligibleGoalieProjectionRows({ from } as any, [row, row])).toEqual({ rowsRemoved: 1, failures: [] });
++    expect(from).toHaveBeenCalledTimes(1);
++    expect(eq.mock.calls).toEqual([["game_id", row.game_id], ["team_id", 1], ["player_id", row.player_id]]);
++  });
++
++  it.each([{ error: { message: "cleanup failed" }, count: null }, { error: null, count: null }])(
++    "stops on a failed or unacknowledged removal", async outcome => {
++      const query: any = { eq: () => query, then: (resolve: (value: unknown) => unknown) => Promise.resolve(outcome).then(resolve) };
++      const from = vi.fn(() => ({ delete: () => query }));
++      const result = await pruneIneligibleGoalieProjectionRows({ from } as any, [
++        { game_id: 1, team_id: 1, player_id: 9 }, { game_id: 2, team_id: 1, player_id: 9 }
++      ]);
++      expect(result.rowsRemoved).toBe(0);
++      expect(result.failures).toHaveLength(1);
++      expect(from).toHaveBeenCalledTimes(1);
++    });
++});
+diff --git a/web/__tests__/pages/api/v1/db/update-line-sources.test.ts b/web/__tests__/pages/api/v1/db/update-line-sources.test.ts
+index de2cb67094ece2e6fec248acb749b447d0d34a3b..69a8fc94a70bec3143e775b1486aca122f8e1db6 100644
+--- a/web/__tests__/pages/api/v1/db/update-line-sources.test.ts
++++ b/web/__tests__/pages/api/v1/db/update-line-sources.test.ts
+@@ -545,6 +545,63 @@ describe("/api/v1/db/update-line-sources", () => {
+     ]);
+   });
+ 
++  it.each([true, false])("keeps empty-queue snapshot work audited when observations are enabled: %s", async (enabled) => {
++    vi.stubEnv("LINES_OBSERVATIONS_ENABLED", String(enabled));
++    createSupabaseMocks([]);
++    mocks.syncLineCombinationSourceWinners.mockResolvedValue({ sourceRows: 0, eligibleWinners: 0, written: 0, failures: [] });
++    const reconcile = vi.spyOn(lineProcessor, "processLineSnapshotEvidence")
++      .mockResolvedValue({ enabled, claims: 0, reconciled: enabled ? 2 : 0 });
++    try {
++      const res = createMockRes();
++      await handler(createMockReq(), res);
++      expect(res.body.summary).toMatchObject({ eventsFetched: 0, eventsLoaded: 0, eventsProcessed: 0, rowsUpserted: 0,
++        lineCombinationSync: { written: 0, failures: [] } });
++      expect(reconcile).toHaveBeenCalledWith(expect.anything(), [], [8, 14]);
++      expect(mocks.auditInsert).toHaveBeenCalledTimes(enabled ? 1 : 0);
++    } finally { reconcile.mockRestore(); }
++  });
++
++  it.each([
++    ["gdl", "contended"], ["ccc", "contended"], ["gdl", "exhausted"], ["ccc", "exhausted"],
++  ])("retains %s audit when a fetched event is %s and no event is claimed", async (route, state) => {
++    const exhausted = state === "exhausted";
++    vi.stubEnv("TWEET_CLAIMS_MODE", "");
++    vi.stubEnv("TWEET_PIPELINE_INTERPRETATION_ENABLED", "true");
++    vi.stubEnv("TWEET_PIPELINE_PUBLISHING_ENABLED", "false");
++    vi.stubEnv("LINES_OBSERVATIONS_ENABLED", String(!exhausted));
++    const event = buildEvent({ id: "unclaimed", sourceKey: "gamedaylines", sourceAccount: "GameDayLines", tweetId: "100", text: "Caufield starts tonight." });
++    createSupabaseMocks([event]);
++    mocks.syncLineCombinationSourceWinners.mockResolvedValue({ sourceRows: 0, eligibleWinners: 0, written: 0, failures: [] });
++    mocks.rpc.mockResolvedValue({ data: false, error: null });
++    const originalFrom = mocks.from.getMockImplementation()!;
++    const failedQuery: any = { eq: vi.fn(() => failedQuery), then: (resolve: any) => Promise.resolve({ error: null }).then(resolve) };
++    const markFailed = vi.fn(() => failedQuery);
++    mocks.from.mockImplementation((table: string) => {
++      if (["rosters", "tweet_player_memberships", "fhfh_player_identities", "fhfh_player_identity_aliases"].includes(table)) {
++        return { select: () => paginatedRoster({ data: [], error: null }) };
++      }
++      if (table === "tweet_pipeline_jobs") return { select: () => ({ eq: () => ({ maybeSingle: async () => ({
++        data: { attempts: exhausted ? 8 : 1, status: exhausted ? "failed" : "running", lease_expires_at: "2099-01-01T00:00:00Z" }, error: null,
++      }) }) }) };
++      if (table === "line_source_ifttt_events" || table === "lines_ccc_ifttt_events") {
++        return { ...originalFrom("line_source_ifttt_events"), update: markFailed };
++      }
++      return originalFrom(table);
++    });
++    const reconcile = vi.spyOn(lineProcessor, "processLineSnapshotEvidence")
++      .mockResolvedValue({ enabled: !exhausted, claims: 0, reconciled: exhausted ? 0 : 2 });
++    try {
++      const res = createMockRes();
++      await (route === "gdl" ? handler : cccHandler)(createMockReq(), res);
++      expect(res.statusCode, JSON.stringify(res.body)).toBe(200);
++      expect(res.body.summary).toMatchObject({ eventsFetched: 1, eventsLoaded: 0, eventsProcessed: 0, rowsUpserted: 0 });
++      expect(reconcile).toHaveBeenCalledWith(expect.anything(), [], [8, 14]);
++      expect(markFailed).toHaveBeenCalledTimes(exhausted ? 1 : 0);
++      if (exhausted) expect(markFailed).toHaveBeenCalledWith(expect.objectContaining({ processing_status: "failed" }));
++      expect(mocks.auditInsert).toHaveBeenCalledOnce();
++    } finally { reconcile.mockRestore(); }
++  });
++
+   it("avoids empty-queue roster work while retaining scheduled reconciliation and audit", async () => {
+     createSupabaseMocks([]);
+     const reconcile = vi.spyOn(lineProcessor, "processLineSnapshotEvidence").mockResolvedValue({ enabled: true, claims: 0, reconciled: 2 });
+diff --git a/web/__tests__/pages/api/v1/db/update-lines-ccc.test.ts b/web/__tests__/pages/api/v1/db/update-lines-ccc.test.ts
+index 8fda3c48c9772342071fe3829690ba68177e687c..b195178fdb447013f094217b7f049ca602ab5ee8 100644
+--- a/web/__tests__/pages/api/v1/db/update-lines-ccc.test.ts
++++ b/web/__tests__/pages/api/v1/db/update-lines-ccc.test.ts
+@@ -315,7 +315,7 @@ describe("/api/v1/db/update-lines-ccc", () => {
+     const { eventUpdateMock } = createSupabaseMocks({ emptyQueue: true });
+     const res = createMockRes();
+     await handler(createMockReq(), res);
+-    expect(res.body.summary).toMatchObject({ eventsLoaded: 0, rowsUpserted: 0 });
++    expect(res.body.summary).toMatchObject({ eventsFetched: 0, eventsLoaded: 0, rowsUpserted: 0 });
+     expect(mocks.getCurrentSeason).not.toHaveBeenCalled();
+     expect(mocks.getTeams).not.toHaveBeenCalled();
+     expect(eventUpdateMock).not.toHaveBeenCalled();
+diff --git a/web/components/CronReportEmail/CronAuditEmail.tsx b/web/components/CronReportEmail/CronAuditEmail.tsx
+index e8714699514eba4cef844628787f38b11ebdd8bc..425538c87ad0670d1dc498fa0c408f5d98b100f8 100644
+--- a/web/components/CronReportEmail/CronAuditEmail.tsx
++++ b/web/components/CronReportEmail/CronAuditEmail.tsx
+@@ -36,6 +36,7 @@ interface AuditEntry {
+ 
+ interface CronAuditEmailProps {
+   audits: AuditEntry[];
++  edgeFunctionDispatches?: Array<{ jobName: string; route: string | null; queued: number; failed: number; latestAt: string | null }>;
+   sinceDate: string;
+   untilDate?: string;
+   totalsComplete?: boolean;
+@@ -85,7 +86,7 @@ const LABEL_ORDER = ["MISSING", "PARTIAL", "NEAR LIMIT", "NEAR BUDGET", "CONTINU
+ 
+ type FailureGroup = { jobName: string; rows: AuditEntry[]; latest: AuditEntry; lastSuccess: string | null; recovered: boolean };
+ 
+-export const CronAuditEmail: React.FC<CronAuditEmailProps> = ({ audits, sinceDate, untilDate, totalsComplete = true, fetchErrors = [], successHistory, summary }) => {
++export const CronAuditEmail: React.FC<CronAuditEmailProps> = ({ audits, sinceDate, untilDate, totalsComplete = true, fetchErrors = [], successHistory, summary, edgeFunctionDispatches = [] }) => {
+   const globalWarnings = Array.from(new Set([
+     ...fetchErrors,
+     ...audits.flatMap((row) => row.missingObservationWarnings ?? []).filter((warning) => warning.includes("Telemetry source unavailable")),
+@@ -199,6 +200,12 @@ export const CronAuditEmail: React.FC<CronAuditEmailProps> = ({ audits, sinceDat
+       </div>)}
+     </> : null}
+ 
++    {edgeFunctionDispatches.length > 0 ? <div style={{ ...muted, marginTop: 18 }}>
++      <strong>Supabase Edge Functions queued by pg_cron</strong>
++      <div>pg_cron confirms each request was queued. These functions write no cron_job_audit row, so their results are not counted here.</div>
++      {edgeFunctionDispatches.map((entry) => <div key={entry.jobName} style={{ overflowWrap: "anywhere", color: entry.failed > 0 ? red : undefined }}>
++        {entry.jobName} · {entry.queued.toLocaleString("en-US")} queued{entry.failed > 0 ? ` · ${entry.failed} failed to queue` : ""}{entry.latestAt ? ` · latest ${localOf(formatReportTime(entry.latestAt))}` : ""}</div>)}
++    </div> : null}
+     <p style={{ ...muted, marginTop: 18 }}>{healthyCount} healthy job{healthyCount === 1 ? "" : "s"}; not listed individually.</p>
+     {audits.length === 0 ? <p>No job observations available.</p> : null}
+ 
+diff --git a/web/lib/cron/emptyQueueRun.ts b/web/lib/cron/emptyQueueRun.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..38a5748965c60536a879b581d976f1f9f0b4f2d6
+--- /dev/null
++++ b/web/lib/cron/emptyQueueRun.ts
+@@ -0,0 +1,17 @@
++/**
++ * Only an explicitly empty fetch can be a no-op. A nonempty fetch may claim
++ * nothing yet still mark exhausted events failed. Gate states keep receipts.
++ */
++export function isEmptyQueueProcessorRun(body: unknown): boolean {
++  if (!body || typeof body !== "object" || Array.isArray(body)) return false;
++  const record = body as Record<string, any>;
++  const summary = record.summary;
++  if (record.success !== true || record.mode != null || !summary || typeof summary !== "object") return false;
++  const zero = (value: unknown) => value === 0;
++  const lineSync = summary.lineCombinationSync;
++  return zero(summary.eventsFetched) && zero(summary.eventsLoaded) && zero(summary.eventsProcessed) &&
++    (summary.rowsUpserted == null || zero(summary.rowsUpserted)) &&
++    (summary.eventsRejected == null || zero(summary.eventsRejected)) &&
++    (summary.eventsDeferred == null || zero(summary.eventsDeferred)) &&
++    (lineSync == null || (zero(lineSync.written) && (lineSync.failures?.length ?? 0) === 0));
++}
+diff --git a/web/lib/cron/reportSource.test.ts b/web/lib/cron/reportSource.test.ts
+index 0bed4c9848e56287f938ae237f5137cb321e6024..1f4bf039b16dfcd16b51301f0dd37269fd7ca8dd 100644
+--- a/web/lib/cron/reportSource.test.ts
++++ b/web/lib/cron/reportSource.test.ts
+@@ -41,6 +41,27 @@ describe("bounded cron report source", () => {
+     expect(reportRowIdentity({ b: 1, a: { y: 3, x: 2 } })).toBe(reportRowIdentity({ a: { x: 2, y: 3 }, b: 1 }));
+   });
+ 
++  it("counts once per pass while retaining full row-image verification", async () => {
++    const requested: unknown[] = [];
++    const result = await readReportSource(async (from, to, _signal, query) => {
++      requested.push(query.count);
++      return { data: fixture.slice(0, 1200).slice(from, to + 1), count: query.count ? 1200 : null, error: null };
++    }, (row) => String(row.id), 500, 40, 15000, { countMode: "per-pass" });
++    expect(result.complete).toBe(true);
++    expect(result.rows).toHaveLength(1200);
++    expect(requested).toEqual(["exact", undefined, undefined, "exact", undefined, undefined]);
++  });
++
++  it("detects count drift between passes when intermediate page counts are omitted", async () => {
++    let calls = 0;
++    const result = await readReportSource(async (from, to, _signal, query) => {
++      calls++;
++      return { data: fixture.slice(0, 2).slice(from, to + 1), count: query.count ? calls > 2 ? 3 : 2 : null, error: null };
++    }, (row) => String(row.id), 1, 40, 15000, { countMode: "per-pass" });
++    expect(result.complete).toBe(false);
++    expect(result.error).toContain("Source count changed");
++  });
++
+   it("deduplicates stable run IDs and fails closed on overlapping pages", async () => {
+     const result = await readReportSource(async (from, to) => page(fixture.slice(0, 501))(Math.max(0, from - 1), to - (from > 0 ? 1 : 0)), (row) => String(row.id));
+     expect(result.complete).toBe(false);
+diff --git a/web/lib/cron/reportSource.ts b/web/lib/cron/reportSource.ts
+index 95fb6dcf336df3610f581bb77016a035ad7fd584..1e313ca65a77598254e038968a39f70b4eb08053 100644
+--- a/web/lib/cron/reportSource.ts
++++ b/web/lib/cron/reportSource.ts
+@@ -35,12 +35,12 @@ export function reportRowIdentity(value: unknown): string {
+ }
+ 
+ export async function readReportSource<T>(
+-  fetchPage: (from: number, to: number, signal: AbortSignal) => PromiseLike<Page<T>>,
++  fetchPage: (from: number, to: number, signal: AbortSignal, query: { count: "exact" | undefined }) => PromiseLike<Page<T>>,
+   identity?: (row: T) => string,
+   pageSize = 500,
+   maxPages = 40,
+   maxMs = 15_000,
+-  options: { deadlineAt?: number; requestTimeoutMs?: number } = {},
++  options: { deadlineAt?: number; requestTimeoutMs?: number; countMode?: "each-page" | "per-pass" } = {},
+ ): Promise<ReportSource<T>> {
+   const result: ReportSource<T> = {
+     rows: [], complete: false, enumerationComplete: false, snapshotConsistent: false,
+@@ -70,7 +70,7 @@ export async function readReportSource<T>(
+         controller.signal.addEventListener("abort", onAbort, { once: true });
+         const timer = setTimeout(() => controller.abort(), Math.min(requestTimeoutMs, remainingMs));
+         try {
+-          page = await Promise.race([fetchPage(offset, offset + pageSize - 1, controller.signal), aborted]);
++          page = await Promise.race([fetchPage(offset, offset + pageSize - 1, controller.signal, { count: options.countMode !== "per-pass" || offset === 0 ? "exact" : undefined }), aborted]);
+         } catch (error) {
+           page = { data: null, count: null, error: { message: error instanceof Error ? error.message : String(error) } };
+         } finally {
+@@ -83,7 +83,8 @@ export async function readReportSource<T>(
+       if (verifying) result.verificationPages++;
+       else result.pages++;
+       if (!Array.isArray(page.data)) { result.error = "Source returned no row payload; completeness is unknown"; return result; }
+-      const changedCount = result.expectedCount != null && result.expectedCount !== page.count;
++      const countRequired = options.countMode !== "per-pass" || offset === 0;
++      const changedCount = page.count != null && result.expectedCount != null && result.expectedCount !== page.count;
+       result.expectedCount ??= page.count;
+       for (const [index, row] of page.data.entries()) {
+         const fingerprint = reportRowIdentity(row);
+@@ -105,18 +106,18 @@ export async function readReportSource<T>(
+       }
+       offset += page.data.length;
+       if (Date.now() >= deadline) { result.error = deadlineError; return result; }
+-      if (page.count == null || !Number.isSafeInteger(page.count) || page.count < 0) {
++      if ((countRequired && page.count == null) || (page.count != null && (!Number.isSafeInteger(page.count) || page.count < 0))) {
+         result.error = "Exact source count unavailable; completeness is unknown";
+         return result;
+       }
+       if (changedCount) result.error = "Source count changed during reading; concurrent arrivals or retention detected";
+       if (result.error) return result;
+-      if (offset === page.count) {
++      if (offset === result.expectedCount) {
+         if (verifying) { result.complete = true; return result; }
+         result.enumerationComplete = true;
+         break;
+       }
+-      if (page.data.length === 0 || offset > page.count) {
++      if (page.data.length === 0 || offset > (result.expectedCount ?? 0)) {
+         result.error = "Source ended before its exact count was read";
+         return result;
+       }
+@@ -127,6 +128,15 @@ export async function readReportSource<T>(
+   return result;
+ }
+ 
++// Postgres and PostgREST errors arrive in their own words; say what happened.
++export function describeSourceError(error: string | null): string | null {
++  if (!error) return null;
++  if (/canceling statement due to statement timeout/i.test(error)) {
++    return "the database cancelled the read (statement timeout)";
++  }
++  return error;
++}
++
+ export function formatReportTime(iso: string): string {
+   return `${iso} / ${new Date(iso).toLocaleString("en-US", { timeZone: "America/New_York", timeZoneName: "short" })}`;
+ }
+diff --git a/web/lib/cron/scheduledHttpUrl.test.ts b/web/lib/cron/scheduledHttpUrl.test.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..126de780bc7a8c81254ca2dea2743088cbeb6d44
+--- /dev/null
++++ b/web/lib/cron/scheduledHttpUrl.test.ts
+@@ -0,0 +1,39 @@
++import { describe, expect, it } from "vitest";
++import { resolveScheduledHttpUrl } from "./scheduledHttpUrl";
++
++const command = (expression: string) => `SELECT net.http_get(url := ${expression}, timeout_milliseconds := 300000);`;
++const rollingWindow = (days: number) => command(`'https://fhfhockey.com/api/example?startDate=' ||
++  to_char((CURRENT_DATE - INTERVAL '${days} days')::date, 'YYYY-MM-DD') ||
++  '&endDate=' || to_char(CURRENT_DATE::date, 'YYYY-MM-DD') || '&mode=recent'`);
++
++describe("scheduled HTTP URL dates", () => {
++  it.each([
++    ["2026-11-07T08:05:00Z", "2026-11-05", "2026-11-07"],
++    ["2026-01-01T23:59:00Z", "2025-12-30", "2026-01-01"],
++    ["2024-03-01T00:00:00Z", "2024-02-28", "2024-03-01"],
++  ])("resolves the scheduled UTC day %s, including calendar rollover", (at, start, end) => {
++    expect(resolveScheduledHttpUrl(rollingWindow(2), at))
++      .toBe(`https://fhfhockey.com/api/example?startDate=${start}&endDate=${end}&mode=recent`);
++  });
++
++  it("handles a one-day offset, future day and escaped SQL literals", () => {
++    expect(resolveScheduledHttpUrl(command(`'/api/example?label=it''s&date=' ||
++      to_char((CURRENT_DATE + INTERVAL '1 day')::date, 'YYYY-MM-DD')`), "2026-12-31T23:00:00Z"))
++      .toBe("/api/example?label=it's&date=2027-01-01");
++  });
++
++  it.each([
++    "'/api/example?startDate=' || secret_function()",
++    "'/api/example?startDate=' || to_char(NOW(), 'YYYY-MM-DD')",
++    "'/api/example?startDate=' || to_char(CURRENT_DATE::date, 'DD-MM-YYYY')",
++    "'/api/example?startDate=' ||",
++    "'/api/example'::text",
++  ])("fails closed for unsupported URL SQL: %s", (expression) => {
++    expect(resolveScheduledHttpUrl(command(expression), "2026-11-07T08:05:00Z")).toBeNull();
++  });
++
++  it("returns null without a valid slot or URL argument", () => {
++    expect(resolveScheduledHttpUrl(rollingWindow(2), "invalid")).toBeNull();
++    expect(resolveScheduledHttpUrl("SELECT 1;", "2026-11-07T08:05:00Z")).toBeNull();
++  });
++});
+diff --git a/web/lib/cron/scheduledHttpUrl.ts b/web/lib/cron/scheduledHttpUrl.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..81a1fb742ead5a5404bfd55151eba7c38152e607
+--- /dev/null
++++ b/web/lib/cron/scheduledHttpUrl.ts
+@@ -0,0 +1,35 @@
++// The inventory's SQL uses UTC CURRENT_DATE to build rolling date windows.
++// Resolve only that documented grammar, never evaluate arbitrary SQL or treat
++// an unfinished URL prefix as permission to match any query on the same path.
++export function resolveScheduledHttpUrl(sql: string, scheduledAt: string): string | null {
++  const date = new Date(scheduledAt);
++  if (!Number.isFinite(date.getTime())) return null;
++  const argument = /\burl\s*:?=\s*/i.exec(sql);
++  if (!argument) return null;
++  let remaining = sql.slice(argument.index + argument[0].length).trimStart();
++  let url = "";
++  while (remaining) {
++    const literal = /^'((?:[^']|'')*)'/.exec(remaining);
++    const currentDate = /^to_char\(\s*CURRENT_DATE\s*::\s*date\s*,\s*'YYYY-MM-DD'\s*\)/i.exec(remaining);
++    const offsetDate = /^to_char\(\s*\(\s*CURRENT_DATE\s*([+-])\s*INTERVAL\s*'(\d+) days?'\s*\)\s*::\s*date\s*,\s*'YYYY-MM-DD'\s*\)/i.exec(remaining);
++    const token = literal ?? currentDate ?? offsetDate;
++    if (!token) return null;
++    if (literal) {
++      url += literal[1].replace(/''/g, "'");
++    } else {
++      const offset = offsetDate ? Number(offsetDate[2]) * (offsetDate[1] === "-" ? -1 : 1) : 0;
++      const day = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate() + offset));
++      if (!Number.isFinite(day.getTime())) return null;
++      url += day.toISOString().slice(0, 10);
++    }
++    remaining = remaining.slice(token[0].length).trimStart();
++    if (remaining.startsWith("||")) {
++      remaining = remaining.slice(2).trimStart();
++      continue;
++    }
++    // Schedule extraction can omit the enclosing call's closing parenthesis.
++    // Otherwise the named argument must end at an argument or function close.
++    return remaining === "" || /^[,)]/.test(remaining) ? url : null;
++  }
++  return null;
++}
+diff --git a/web/lib/cron/withCronJobAudit.test.ts b/web/lib/cron/withCronJobAudit.test.ts
+index e46b093393ac596a4e496c88dae124a7b239e6e6..1f86bd29ca5e02a978a4af186221cfb721055abd 100644
+--- a/web/lib/cron/withCronJobAudit.test.ts
++++ b/web/lib/cron/withCronJobAudit.test.ts
+@@ -14,6 +14,7 @@ import {
+   cronClassificationFromAuditDetails,
+   withCronJobAudit,
+ } from "lib/cron/withCronJobAudit";
++import { isEmptyQueueProcessorRun } from "lib/cron/emptyQueueRun";
+ import {
+   NHL_SEASONAL_GAME_DATA,
+   withNhlOffSeasonSkip,
+@@ -293,6 +294,40 @@ describe("withCronJobAudit", () => {
+     expect(insertMock.mock.calls[0][0].status).toBe("success");
+   });
+ 
++  it("writes no audit row for an empty queue poll and flushes the response unchanged", async () => {
++    const empty = { success: true, summary: { eventsFetched: 0, eventsLoaded: 0, eventsProcessed: 0, eventsRejected: 0,
++      eventsDeferred: 0, rowsUpserted: 0, lineCombinationSync: { written: 0, failures: [] } } };
++    const res = createMockRes();
++    await withCronJobAudit(async (_req, out) => out.json(empty), { skipAuditWhenNoOp: isEmptyQueueProcessorRun })(createMockReq(), res);
++    expect(insertMock).not.toHaveBeenCalled();
++    expect(res.statusCode).toBe(200);
++    expect(res.body).toEqual(empty);
++  });
++
++  it.each([undefined, null, 1])("retains zero-claim receipts when the fetched count is %s", async (eventsFetched) => {
++    const body = { success: true, summary: { ...(eventsFetched === undefined ? {} : { eventsFetched }),
++      eventsLoaded: 0, eventsProcessed: 0, eventsRejected: 0, eventsDeferred: 0, rowsUpserted: 0,
++      lineCombinationSync: { written: 0, failures: [] } } };
++    expect(isEmptyQueueProcessorRun(body)).toBe(false);
++    await withCronJobAudit(async (_req, out) => out.json(body), { skipAuditWhenNoOp: isEmptyQueueProcessorRun })(createMockReq(), createMockRes());
++    expect(insertMock).toHaveBeenCalledOnce();
++  });
++
++  it("keeps audit rows for queue polls that did work, failed, or reported a gate state", async () => {
++    const skip = { skipAuditWhenNoOp: isEmptyQueueProcessorRun };
++    const bodies = [
++      { success: true, summary: { eventsLoaded: 2, eventsProcessed: 2, rowsUpserted: 1 } },
++      { success: true, summary: { eventsLoaded: 0, eventsProcessed: 0, rowsUpserted: 0, lineCombinationSync: { written: 3, failures: [] } } },
++      { success: false, summary: { eventsLoaded: 0, eventsProcessed: 0 } },
++      { success: true, mode: "claim_shadow_stopped", summary: { eventsLoaded: 0, eventsProcessed: 0 } },
++    ];
++    for (const body of bodies) await withCronJobAudit(async (_req, out) => out.json(body), skip)(createMockReq(), createMockRes());
++    await withCronJobAudit(async (_req, out) => out.status(500).json(bodies[0]), { skipAuditWhenNoOp: () => true })(createMockReq(), createMockRes());
++    await withCronJobAudit(async () => { throw new Error("boom"); }, { skipAuditWhenNoOp: () => true })(createMockReq(), createMockRes());
++    await withCronJobAudit(async (_req, out) => out.json({ success: true }), { skipAuditWhenNoOp: () => true, includeFinalAuditReceipt: true })(createMockReq(), createMockRes());
++    expect(insertMock).toHaveBeenCalledTimes(bodies.length + 3);
++  });
++
+   it("can omit inferred row metrics for an observability-only report", async () => {
+     const wrapped = withCronJobAudit(
+       async (_req, res) =>
+diff --git a/web/lib/cron/withCronJobAudit.ts b/web/lib/cron/withCronJobAudit.ts
+index a93ceb4b029dd391b6b0e17bd5f39106ac3f6e10..f62261a8b1f9e8f6d1eccd04a4abb2b3f5d13709 100644
+--- a/web/lib/cron/withCronJobAudit.ts
++++ b/web/lib/cron/withCronJobAudit.ts
+@@ -264,6 +264,9 @@ export function withCronJobAudit(
+     // Limit persisted response data to safe primitive summary fields. The API
+     // response and outcome inference still use the complete handler result.
+     responsePreviewKeys?: readonly string[];
++    // Empty successful queue polls add no useful execution evidence.
++    // Work, failures, continuations and explicit final receipts remain audited.
++    skipAuditWhenNoOp?: (body: unknown) => boolean;
+   }
+ ): (req: any, res: any) => Promise<void> {
+   return async (req: NextApiRequest, res: NextApiResponse) => {
+@@ -360,6 +363,9 @@ export function withCronJobAudit(
+     }
+ 
+     let finalAuditStatus: "persisted" | "failed" = "persisted";
++    const auditSkipped = thrown == null && !plannedContinuation && !inferredFailure &&
++      statusCode >= 200 && statusCode < 300 && !opts?.includeFinalAuditReceipt &&
++      opts?.skipAuditWhenNoOp?.(capturedBody) === true;
+ 
+     const auditBody = opts?.responsePreviewKeys == null
+       ? capturedBody
+@@ -403,7 +409,7 @@ export function withCronJobAudit(
+     };
+ 
+     try {
+-      try {
++      if (!auditSkipped) try {
+         const { error: auditInsertError } = await supabase
+           .from("cron_job_audit")
+           .insert(row as any);
+diff --git a/web/lib/projections/forgeProducerIdentity.test.ts b/web/lib/projections/forgeProducerIdentity.test.ts
+index 71544e5eab300234105a1a00064488356ed9839f..64e52aa95f64a55b6b0bc939d5e2d6e79f3dd565 100644
+--- a/web/lib/projections/forgeProducerIdentity.test.ts
++++ b/web/lib/projections/forgeProducerIdentity.test.ts
+@@ -80,6 +80,27 @@ describe("FORGE producer closure identity", () => {
+     expect(identity({ ...base, "lib/root.ts": `${base["lib/root.ts"]}import "lib/unrelated";\n` }).closureSha256).not.toBe(first.closureSha256);
+   });
+ 
++  it("keeps the accuracy writer hashed but excludes only its exact downstream admission edge", () => {
++    const accuracy = "pages/api/v1/db/run-projection-accuracy.ts";
++    const admission = "lib/projections/externalInputProof.ts";
++    const allowlist = "lib/projections/verifiedForgeReleases.ts";
++    const files = { ...base, "lib/root.ts": `import "../${accuracy.replace(/\.ts$/, "")}";`,
++      [accuracy]: 'import "lib/projections/externalInputProof"; export const updateCalibration = 1;',
++      [admission]: 'import "./verifiedForgeReleases";', [allowlist]: "export const verified = [];" };
++    const first = identity(files);
++    expect(first.scan.modules).toContain(accuracy);
++    expect(first.scan.modules).not.toContain(admission);
++    expect(first.scan.modules).not.toContain(allowlist);
++    expect(identity({ ...files, [accuracy]: `${files[accuracy]} export const changed = true;` }).closureSha256).not.toBe(first.closureSha256);
++    expect(identity({ ...files, [admission]: `${files[admission]} export const changed = true;`,
++      [allowlist]: "export const verified = [1];" }).closureSha256).toBe(first.closureSha256);
++    const direct = identity({ ...files, "lib/root.ts": `${files["lib/root.ts"]} import "lib/projections/externalInputProof";` });
++    expect(direct.scan.findings).toContainEqual(expect.objectContaining({ kind: "admission_module_in_closure", file: admission }));
++    const alternate = identity({ ...files, "lib/root.ts": `${files["lib/root.ts"]} import "./helper";`,
++      "lib/helper.ts": 'import "lib/projections/externalInputProof";' });
++    expect(alternate.scan.findings).toContainEqual(expect.objectContaining({ kind: "admission_module_in_closure", file: admission }));
++  });
++
+   it("is defined by next.config.js only in a production build's server bundles, from source, never from an env label", () => {
+     const web = resolve(__dirname, "../..");
+     // A stand-in webpack: records what each compiler would define.
+diff --git a/web/lib/projections/verifiedForgeReleases.test.ts b/web/lib/projections/verifiedForgeReleases.test.ts
+index 5af49571d69d8d6b33a39f4c24800ae418b0c374..1b669d39623addfc8ee6346c33c82fad4954c78f 100644
+--- a/web/lib/projections/verifiedForgeReleases.test.ts
++++ b/web/lib/projections/verifiedForgeReleases.test.ts
+@@ -59,6 +59,8 @@ describe("verified FORGE releases", () => {
+       ["bf23edfea5b5c9301fcedd2b5c3fa86016ceecd86d1d2d49c0a6d6c687e7ab3b", "eff1b377ae8c831705710758979cc67e9d38846b"],
+       ["f87dd7079506915fbdb9602d35c3a97270865ae0f4b8813c4456d6d09e96dc92", "f17bea20d8caa2b6268c318bdb2152d7e2a3b57d"],
+       ["ec5bdab6593f58ec19ad9b250fb645aa377616542e98205150e22f085914968c", "c3897d3273ca46ea25a9f2737f09c835e5ec7325"],
++      ["abb563452f17dbcd802a5debd8af86425a01775bf2fb9693c9a14fb9f468f454", "c09aa95ace52f8da26ef9ee1b2e635dc0245f201"],
++      ["2676c5366cfc08fa7aaec4a1d4369e6f51caf3018bf2fca3f7d358faceb5c746", "d9fcc711e12d2902cd6b646ce38888a43e606f2b"],
+     ]);
+   });
+ 
+diff --git a/web/lib/projections/verifiedForgeReleases.ts b/web/lib/projections/verifiedForgeReleases.ts
+index be67fee7a790126127320f7eceab5984bdcd024e..40963596cb9720c1bc29f920bed1c9165b09c5f7 100644
+--- a/web/lib/projections/verifiedForgeReleases.ts
++++ b/web/lib/projections/verifiedForgeReleases.ts
+@@ -25,7 +25,7 @@ export const VERIFIED_FORGE_RELEASES: readonly VerifiedForgeRelease[] = [
+   {
+     sha: "538100d41ee87e721d2764b694f7bac8c2f2bb34",
+     receipt: "tasks/artifacts/projection-table-audit-2026-10-26/release-verification/538100d41ee87e721d2764b694f7bac8c2f2bb34.json",
+-    receiptSha256: "c7ce6343bc8ee48a644c4facbd514605401c46ca20e20c65a947b01878372036",
++    receiptSha256: "913a1b1b05bfd0a5acdba4326d9c27b0dba8f63bb45c64e60e0ffe718e6556cf",
+     verifierVersion: "forge-release-sha-verifier-v1",
+     closureSha256: "4bf0fce7a4bf1e6ed7b5e8b28b8524836f4b6969adfe57e80ae373b2f847cbbb",
+     note: "Production master release #385 (FORGE fantasy-table removal), 192-module closure, 0 findings.",
+@@ -50,7 +50,7 @@ export const VERIFIED_FORGE_PRODUCER_CLOSURES: readonly VerifiedForgeProducerClo
+     closureSha256: "4c06fd9e2b5a5d880f594cb2668b81eaa0c54553de525a73f477d4eebf909993",
+     commit: "595ab13d9773808057b49cc3ed91d9eaca8ed317",
+     receipt: "tasks/artifacts/projection-table-audit-2026-10-26/release-verification/595ab13d9773808057b49cc3ed91d9eaca8ed317.json",
+-    receiptSha256: "8b651750974bdd84b4bfe798580c6716dc4cf423efceca97eb44ba991c8b7f42",
++    receiptSha256: "eb09bd4004d5ec738e537c22f10af5a1467a1baf6dd815b696f78f6e993c1abd",
+     verifierVersion: "forge-release-sha-verifier-v1",
+     note: "Build-only stamp (C7 R40 V2) and Astra F4, commit 595ab13d9: 193-module closure, 0 findings.",
+   },
+@@ -58,7 +58,7 @@ export const VERIFIED_FORGE_PRODUCER_CLOSURES: readonly VerifiedForgeProducerClo
+     closureSha256: "c1f0129aca9b2520cbd922cf81c292661b1499fa50b024f76ca6283d362cc4aa",
+     commit: "6fb1812c19ecd182e895b3708296018bc842fcf0",
+     receipt: "tasks/artifacts/projection-table-audit-2026-10-26/release-verification/6fb1812c19ecd182e895b3708296018bc842fcf0.json",
+-    receiptSha256: "0dc6763981cab4344a7cbd79c50cb0318cb67d5e20d1cdaf0d6846aa5699a1f9",
++    receiptSha256: "afb6fb8cc15a1d636695438c484c2238573c16d9e15d62fab51d0c570a97f2fa",
+     verifierVersion: "forge-release-sha-verifier-v1",
+     note: "Release candidate: reserve pass (074694095) and C7 R42 fixes, commit 6fb1812c1: 194-module closure, 0 findings.",
+   },
+@@ -66,7 +66,7 @@ export const VERIFIED_FORGE_PRODUCER_CLOSURES: readonly VerifiedForgeProducerClo
+     closureSha256: "87edd78f5dfa96eded8a32927ef184d9266995edf52f395cf5ac6b8565c64f97",
+     commit: "5aa9ba5e0e9e86abf515fd7a30db441f6f5b1592",
+     receipt: "tasks/artifacts/projection-table-audit-2026-10-26/release-verification/5aa9ba5e0e9e86abf515fd7a30db441f6f5b1592.json",
+-    receiptSha256: "7b50158957045b40ee6044849fa31530e567996060e445c815f9bbf90d27aea8",
++    receiptSha256: "3c4b840b5b6554eb09952da5bf49e0ec2928b43207855debe57d8d7451d397f0",
+     verifierVersion: "forge-release-sha-verifier-v1",
+     note: "Release candidate: week-ahead pipeline projection (08e583311), commit 5aa9ba5e0: 194-module closure, 0 findings.",
+   },
+@@ -74,7 +74,7 @@ export const VERIFIED_FORGE_PRODUCER_CLOSURES: readonly VerifiedForgeProducerClo
+     closureSha256: "5644e3fdb1e230e0a063a27b52519cc8e70b88272e92f27ca5aadc8f53d1dea4",
+     commit: "02153acbaf1ed02c0c294ba14a75e8af195354f3",
+     receipt: "tasks/artifacts/projection-table-audit-2026-10-26/release-verification/02153acbaf1ed02c0c294ba14a75e8af195354f3.json",
+-    receiptSha256: "e46edefba9d4bddfe4804257f7f9788694dd39c9f859a21d8ecdcdc9da8dcfaf",
++    receiptSha256: "f4acf1ad2948f5c051e27765f252c401b8faae28d68676956b6d3a8cf13d3de4",
+     verifierVersion: "forge-release-sha-verifier-v1",
+     note: "Release candidate: days-ahead preflight anchoring, commit 02153acba: 194-module closure, 0 findings.",
+   },
+@@ -82,7 +82,7 @@ export const VERIFIED_FORGE_PRODUCER_CLOSURES: readonly VerifiedForgeProducerClo
+     closureSha256: "bf23edfea5b5c9301fcedd2b5c3fa86016ceecd86d1d2d49c0a6d6c687e7ab3b",
+     commit: "eff1b377ae8c831705710758979cc67e9d38846b",
+     receipt: "tasks/artifacts/projection-table-audit-2026-10-26/release-verification/eff1b377ae8c831705710758979cc67e9d38846b.json",
+-    receiptSha256: "bec39018543794fcf5c55fa8e5517f8ce020c3fad8866edc52ce615d95bc15cd",
++    receiptSha256: "5330c14429613e7bdb9968d86b4cf91686918485d3351baa208d93e55fb619c7",
+     verifierVersion: "forge-release-sha-verifier-v1",
+     note: "P1 release: RSO bridge labelled conservative 0 (bridgeForecastWire.ts), commit eff1b377a: 194-module closure, 0 findings.",
+   },
+@@ -90,7 +90,7 @@ export const VERIFIED_FORGE_PRODUCER_CLOSURES: readonly VerifiedForgeProducerClo
+     closureSha256: "f87dd7079506915fbdb9602d35c3a97270865ae0f4b8813c4456d6d09e96dc92",
+     commit: "f17bea20d8caa2b6268c318bdb2152d7e2a3b57d",
+     receipt: "tasks/artifacts/rso-resume-2026-11-01/release-prep/after402-committed-release.json",
+-    receiptSha256: "a9674d30f42b32d88b604a33672e311c74470075da3c9219c1bb613bb2b43b3a",
++    receiptSha256: "1c433d07b4be3de47548f1db3cd8f88f87de4dbae9e35af618b2656d39318e6d",
+     verifierVersion: "forge-release-sha-verifier-v1",
+     note: "Released PR #402 PP/IFTTT producer closure, commit f17bea20d: 195-module closure, 0 findings. This does not grant native forecast-use approval.",
+   },
+@@ -98,10 +98,26 @@ export const VERIFIED_FORGE_PRODUCER_CLOSURES: readonly VerifiedForgeProducerClo
+     closureSha256: "ec5bdab6593f58ec19ad9b250fb645aa377616542e98205150e22f085914968c",
+     commit: "c3897d3273ca46ea25a9f2737f09c835e5ec7325",
+     receipt: "tasks/artifacts/rso-resume-2026-11-01/release-prep/admission/c3897d3273ca46ea25a9f2737f09c835e5ec7325/receipt.json",
+-    receiptSha256: "fe424f17b66c82ca3232d9566a41a7dbafc76400d2f8ea4f007e9afc1758b924",
++    receiptSha256: "94f64cdfaeaeccd0c00ba3bfb7b23d6dbf81044f7b16c045f3cf35b057886998",
+     verifierVersion: "forge-release-sha-verifier-v1",
+     note: "RSO issued-method lineage and retained participation replay, commit c3897d327: 195-module closure, 0 findings.",
+   },
++  {
++    closureSha256: "abb563452f17dbcd802a5debd8af86425a01775bf2fb9693c9a14fb9f468f454",
++    commit: "c09aa95ace52f8da26ef9ee1b2e635dc0245f201",
++    receipt: "tasks/artifacts/cron-pipeline-repair-2026-11-07/c09aa95ace52f8da26ef9ee1b2e635dc0245f201.json",
++    receiptSha256: "e1800c924bf8710e1f0380abdb475d0a49bb694d211998a903a1578516ce675e",
++    verifierVersion: "forge-release-sha-verifier-v1",
++    note: "Nov 7 deployed producer: 195-module exact commit closure, 0 findings; matches the stored production invocation stamp. Exclusion proof only, not forecast-quality or native-use approval.",
++  },
++  {
++    closureSha256: "2676c5366cfc08fa7aaec4a1d4369e6f51caf3018bf2fca3f7d358faceb5c746",
++    commit: "d9fcc711e12d2902cd6b646ce38888a43e606f2b",
++    receipt: "tasks/artifacts/cron-pipeline-repair-2026-11-07/d9fcc711e12d2902cd6b646ce38888a43e606f2b.json",
++    receiptSha256: "1ea3060660de250e22700048d77096b2a7015dfcfc97ddf74474da02efe8730f",
++    verifierVersion: "forge-release-sha-verifier-v1",
++    note: "Isolated cron repair producer: current-team goalie priors and exact-run calibration proof, 195-module commit closure, 0 findings. Exclusion proof only, not forecast-quality or native-use approval.",
++  },
+ ];
+ 
+ const FULL_SHA = /^[0-9a-f]{40}$/, SHA256 = /^[0-9a-f]{64}$/;
+diff --git a/web/pages/api/v1/db/cron-report.ts b/web/pages/api/v1/db/cron-report.ts
+index d84bf07b7cd6d3e8f61d1e2ef3e40306a6bdae79..6aebc795d0cec98cd5494c3941ff33a81166d96e 100644
+--- a/web/pages/api/v1/db/cron-report.ts
++++ b/web/pages/api/v1/db/cron-report.ts
+@@ -15,7 +15,8 @@ import {
+   type SlowJobWarning,
+ } from "lib/cron/cronReportFlags";
+ import { type CronJobTimingRecord } from "lib/cron/timingContract";
+-import { readReportSource, reportRowIdentity, formatReportTime, REPORT_PAGE_SIZE } from "lib/cron/reportSource";
++import { readReportSource, reportRowIdentity, formatReportTime, describeSourceError, REPORT_PAGE_SIZE } from "lib/cron/reportSource";
++import { resolveScheduledHttpUrl } from "lib/cron/scheduledHttpUrl";
+ import { extractAuditTimingRecord } from "lib/cron/cronReportTiming";
+ import { readReportMetrics, repositoryExecutionLimitMs, isNearRepositoryLimit, reportedRuntimeBudgetMs } from "lib/cron/reportMetrics";
+ import { buildSqlCronTimingObservation } from "lib/cron/sqlTiming";
+@@ -38,6 +39,7 @@ const REPORT_WINDOW_MS = 24 * 60 * 60 * 1000;
+ const SUCCESS_HISTORY_WINDOW_MS = 30 * REPORT_WINDOW_MS;
+ const SUCCESS_HISTORY_MAX_PAGES = 8;
+ const SUCCESS_HISTORY_BUDGET_MS = 15_000;
++const SUCCESS_HISTORY_MAX_JOBS = 60;
+ // Repository policy, not proof of a deployed override. Leave time after reads
+ // for assembly/rendering, email acceptance and the outer audit/response.
+ // These are reserved headroom, not independently enforced phase timeouts.
+@@ -966,7 +968,7 @@ function parseRowsAffectedFromReturnMessage(
+   return null;
+ }
+ 
+-function parseCronInvocation(sqlText: string | null): {
++function parseCronInvocation(sqlText: string | null, scheduledAt?: string | null): {
+   method: ScheduleMethod;
+   url: string | null;
+   route: string | null;
+@@ -984,7 +986,7 @@ function parseCronInvocation(sqlText: string | null): {
+     : "SQL";
+ 
+   const urlMatch = sqlText.match(/url\s*:?=\s*'([^']+)'/i);
+-  const url = urlMatch?.[1] ?? null;
++  const url = (scheduledAt ? resolveScheduledHttpUrl(sqlText, scheduledAt) : null) ?? urlMatch?.[1] ?? null;
+   const { route, routePath } = parseUrlPieces(url);
+ 
+   return {
+@@ -1036,7 +1038,7 @@ function expectedRunAtWithinWindow(
+     candidate.setUTCDate(candidate.getUTCDate() - 1);
+   }
+ 
+-  return candidate.getTime() >= since.getTime()
++  return candidate.getTime() >= since.getTime() && recurringSlotMatches({ cronExpression } as ScheduledCronJob, candidate.getTime())
+     ? candidate.toISOString()
+     : null;
+ }
+@@ -1079,9 +1081,10 @@ async function loadScheduledCronJobs(
+     const name = match[1]?.trim() ?? "";
+     const cronExpression = match[2]?.trim() ?? "";
+     const body = match[3]?.trim() ?? "";
+-    const invocation = parseCronInvocation(body);
+     const scheduleTimeDisplay = formatScheduleTime(cronExpression);
+     const expectedRunAt = expectedRunAtWithinWindow(cronExpression, since, now);
++    const literalRoute = parseCronInvocation(body).route;
++    const invocation = parseCronInvocation(body, expectedRunAt);
+     const sqlText =
+       invocation.method === "SQL"
+         ? truncateText(body.replace(/\s+/g, " ").trim(), 180)
+@@ -1097,6 +1100,8 @@ async function loadScheduledCronJobs(
+       url: invocation.url,
+       route: invocation.route,
+       routePath: invocation.routePath,
++      literalRoute,
++      command: body,
+       sqlText,
+       expectedRunAt,
+       sortOrder: index,
+@@ -1110,7 +1115,7 @@ async function loadScheduledCronJobs(
+       const cronExpression = String(entry.schedule ?? "").trim();
+       const entryRoute = typeof entry.route === "string" ? entry.route : null;
+       const entryUrl = typeof entry.url === "string" ? entry.url : entryRoute;
+-      const entryInvocation = parseUrlPieces(entryUrl);
++      const literalInvocation = parseUrlPieces(entryUrl);
+       const entryMethod =
+         entry.method === "GET" ||
+         entry.method === "POST" ||
+@@ -1125,6 +1130,13 @@ async function loadScheduledCronJobs(
+         ) ??
+         sqlDefinitions.find((candidate) => candidate.name === name) ??
+         null;
++      const expectedRunAt = expectedRunAtWithinWindow(cronExpression, since, now);
++      // JSON stores the first SQL literal for dynamic date URLs. Only replace
++      // that exact prefix using the matching definition, never a different
++      // inventory operation or an arbitrary query observed on the route.
++      const resolvedUrl = definition && definition.literalRoute === literalInvocation.route
++        ? parseCronInvocation(definition.command, expectedRunAt).url ?? entryUrl : entryUrl;
++      const entryInvocation = parseUrlPieces(resolvedUrl);
+ 
+       return {
+         jobid: entry.jobid ?? null,
+@@ -1133,17 +1145,17 @@ async function loadScheduledCronJobs(
+         cronExpression,
+         scheduleTimeDisplay: formatScheduleTime(cronExpression),
+         method: entryMethod ?? definition?.method ?? "UNKNOWN",
+-        url: entryUrl ?? definition?.url ?? null,
++        url: resolvedUrl ?? definition?.url ?? null,
+         route: entryInvocation.route ?? definition?.route ?? null,
+         routePath: entryInvocation.routePath ?? definition?.routePath ?? null,
+         sqlText: definition?.sqlText ?? null,
+-        expectedRunAt: expectedRunAtWithinWindow(cronExpression, since, now),
++        expectedRunAt,
+         sortOrder: index,
+       };
+     })
+     .filter((job) => job.name && job.cronExpression);
+ 
+-  const rawJobs = jsonJobs.length > 0 ? jsonJobs : sqlDefinitions;
++  const rawJobs = /```json\s*/i.test(markdown) ? jsonJobs : sqlDefinitions;
+ 
+   const dedupedJobs = rawJobs.filter((job, index, jobs) => {
+     const signature = [
+@@ -1221,7 +1233,10 @@ function candidateMatchesSchedule(
+ 
+   // Query parameters identify operations sharing a path (forecast horizons,
+   // recurring count-limited lines versus the daily all operation).
+-  if (job.route && candidate.route && job.routePath === candidate.routePath &&
++  // An exact pg_cron jobid identifies the job even if the inventory route has
++  // drifted from the live command's query string.
++  const sameJobId = candidate.jobid != null && candidate.jobid === job.jobid;
++  if (!sameJobId && job.route && candidate.route && job.routePath === candidate.routePath &&
+       canonicalRoute(job.route) !== canonicalRoute(candidate.route)) return false;
+ 
+   const candidateMethod = candidate.method?.toUpperCase() ?? null;
+@@ -1269,9 +1284,14 @@ function cronTimeFieldMatches(expression: string, value: number): boolean {
+ }
+ 
+ function recurringSlotMatches(job: ScheduledCronJob, slot: number): boolean {
+-  const [minutes, hours] = job.cronExpression.split(/\s+/);
++  const [minutes, hours, monthDay = "*", month = "*", weekDay = "*"] = job.cronExpression.split(/\s+/);
+   const date = new Date(slot);
+-  return cronTimeFieldMatches(minutes, date.getUTCMinutes()) && cronTimeFieldMatches(hours, date.getUTCHours());
++  const dayMatches = cronTimeFieldMatches(monthDay, date.getUTCDate());
++  const weekMatches = cronTimeFieldMatches(weekDay, date.getUTCDay()) ||
++    (date.getUTCDay() === 0 && cronTimeFieldMatches(weekDay, 7));
++  const calendarMatches = monthDay === "*" || weekDay === "*" ? dayMatches && weekMatches : dayMatches || weekMatches;
++  return cronTimeFieldMatches(minutes, date.getUTCMinutes()) && cronTimeFieldMatches(hours, date.getUTCHours()) &&
++    cronTimeFieldMatches(month, date.getUTCMonth() + 1) && calendarMatches;
+ }
+ 
+ function latestRequiredRecurringSlot(job: ScheduledCronJob, since: Date, until: Date): string | null {
+@@ -1412,6 +1432,22 @@ function buildRunDigestFromAudit(
+   };
+ }
+ 
++// Supabase Edge Functions are invoked through pg_net and write no
++// cron_job_audit row; their own health is reported separately.
++function isEdgeFunctionRoute(routePath: string | null): boolean {
++  return routePath?.startsWith("/functions/v1/") ?? false;
++}
++
++// pg_net's net.http_* returns one row (the queued request id), so pg_cron
++// records "1 row". That proves the request was queued, not what it returned.
++function describeCronReturnMessage(row: RunRow): string | null {
++  const message = row.returnMessage ? sanitizeErrorMessage(row.returnMessage, 240) : null;
++  if (!message || row.method === "SQL" || row.status !== "success" || !/^\d+ rows?$/i.test(message.trim())) return message;
++  return isEdgeFunctionRoute(row.routePath)
++    ? "pg_cron queued this Supabase Edge Function request; the function writes no cron_job_audit row, so its result is not in this report."
++    : "pg_cron queued the HTTP request, but no cron_job_audit row from the route matched it, so the route's result is unknown.";
++}
++
+ function buildRunDigestFromCron(
+   row: RunRow,
+   lastKnownSuccessDisplay: string | null = null
+@@ -1446,9 +1482,7 @@ function buildRunDigestFromCron(
+     timingProvenance: cronTimingProvenance(row),
+     runtimeBudgetMs: null,
+     observationKind: "extra",
+-    reason: row.returnMessage
+-      ? sanitizeErrorMessage(row.returnMessage, 240)
+-      : null,
++    reason: describeCronReturnMessage(row),
+     lastKnownSuccessDisplay,
+     failedRowSamples: [],
+     optimizationDenotation,
+@@ -1592,7 +1626,7 @@ function collectMissingObservationWarnings(job: {
+     ]
+       .filter((source): source is string => Boolean(source))
+       .join(" and ");
+-    warnings.push(`Telemetry source unavailable: ${unavailableSources}.`);
++    warnings.push(`Telemetry source unavailable: ${unavailableSources}. Jobs that need it to confirm a run show as unknown.`);
+   }
+ 
+   return warnings;
+@@ -1604,7 +1638,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
+   const sourceBudgetMs = Math.max(0, (repositoryLimitMs ?? 0) -
+     Object.values(REPORT_PHASE_RESERVES_MS).reduce((sum, reserve) => sum + reserve, 0));
+   const sourceDeadlineAt = now.getTime() + sourceBudgetMs;
+-  const sourceOptions = { deadlineAt: sourceDeadlineAt, requestTimeoutMs: REPORT_REQUEST_TIMEOUT_MS };
++  const sourceOptions = { deadlineAt: sourceDeadlineAt, requestTimeoutMs: REPORT_REQUEST_TIMEOUT_MS, countMode: "per-pass" as const };
+   const sinceDate = new Date(now.getTime() - REPORT_WINDOW_MS);
+   const since = sinceDate.toISOString();
+   // Read alongside the telemetry sources; a slow lookup degrades to "unknown",
+@@ -1626,27 +1660,31 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
+   let auditEmailResult: any = null;
+   const errors: string[] = [];
+ 
+-  const runSource = await readReportSource<any>((from, to, signal) => supabase
++  // Start both core sources together so a slow run-history read cannot spend
++  // the entire shared budget before route audit observations are attempted.
++  const [runSource, auditSource] = await Promise.all([
++    readReportSource<any>((from, to, signal, query) => supabase
+     .from("cron_job_report")
+-    .select("jobid, runid, jobname, scheduled_time, status, return_message, end_time, sql_text", { count: "exact" })
++    .select("jobid, runid, jobname, scheduled_time, status, return_message, end_time, sql_text", { count: query.count })
+     .gte("scheduled_time", since).lte("scheduled_time", until)
+     .order("scheduled_time", { ascending: true }).order("runid", { ascending: true })
+     .range(from, to).abortSignal(signal),
+-    (row) => String(row.runid), REPORT_PAGE_SIZE, 40, sourceBudgetMs, sourceOptions);
+-  const auditSource = await readReportSource<any>((from, to, signal) => supabase
++    (row) => String(row.runid), REPORT_PAGE_SIZE, 40, sourceBudgetMs, sourceOptions),
++    readReportSource<any>((from, to, signal, query) => supabase
+     .from("cron_job_audit")
+-    .select("job_name, run_time, rows_affected, status, details", { count: "exact" })
++    .select("job_name, run_time, rows_affected, status, details", { count: query.count })
+     .gte("run_time", since).lte("run_time", until)
+     .order("run_time", { ascending: true }).order("job_name", { ascending: true })
+     .order("status", { ascending: true }).order("rows_affected", { ascending: true })
+     .order("details", { ascending: true }).range(from, to)
+-    .abortSignal(signal), reportRowIdentity, REPORT_PAGE_SIZE, 40, sourceBudgetMs, sourceOptions);
++    .abortSignal(signal), reportRowIdentity, REPORT_PAGE_SIZE, 40, sourceBudgetMs, sourceOptions),
++  ]);
+   const runs = runSource.rows;
+   const audits = auditSource.rows;
+   const runErr = runSource.error;
+   const auditErr = auditSource.error;
+   for (const [name, source] of [["cron_job_report", runSource], ["cron_job_audit", auditSource]] as const) {
+-    if (!source.complete) errors.push(`Incomplete ${name}: ${sanitizeErrorMessage(source.error) ?? "Unknown source error"}. ${source.rows.length} observations retained; totals unknown.`);
++    if (!source.complete) errors.push(`Incomplete ${name}: ${describeSourceError(sanitizeErrorMessage(source.error)) ?? "Unknown source error"}. Read stopped after ${source.rows.length.toLocaleString("en-US")} rows; totals unknown.`);
+   }
+ 
+   let scheduledJobs: ScheduledCronJob[] = [];
+@@ -1672,6 +1710,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
+     });
+   }
+ 
++  const notDueJobs = scheduledJobs.filter((job) =>
++    !job.expectedRunAt && !latestRequiredRecurringSlot(job, sinceDate, now));
++  scheduledJobs = scheduledJobs.filter((job) => !notDueJobs.includes(job));
+   const seasonWindow = await seasonWindowPromise;
+   const gameDataRoutes = new Set(audits.flatMap((row) => {
+     if (cronClassificationFromAuditDetails(row.details) !== NHL_SEASONAL_GAME_DATA) return [];
+@@ -1698,12 +1739,31 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
+   // write counts, schedule assignments, or the 24-hour telemetry denominator.
+   const needsSuccessHistory = auditRows.some((row) => classifyAuditStatus(row) === "failure") ||
+     runs.some((row) => normalizeStatus(row.status) === "failure");
++  // Only failing jobs without a success in this window need the 30-day
++  // lookback. Reading every success instead pulled ~270k mostly empty-poll
++  // rows and never completed within its page budget.
++  const windowSuccesses = buildLastKnownSuccessMap(auditRows, true);
++  const successHistoryJobNames = Array.from(new Set([
++    ...auditRows.filter((row) => classifyAuditStatus(row) === "failure" && !windowSuccesses.has(auditSuccessKey({
++      jobName: row.jobName, method: row.parsed.method, route: row.parsed.route, routePath: row.parsed.routePath })))
++      // The wrapper's default job name is the route path, so try both.
++      .flatMap((row) => [row.jobName, row.parsed.routePath].filter((value): value is string => Boolean(value))),
++    ...runs.filter((row) => normalizeStatus(row.status) === "failure").flatMap((row) => {
++      const invocation = parseCronInvocation((row.sql_text ?? null) as string | null);
++      const name = String(row.jobname ?? "");
++      return windowSuccesses.has(auditSuccessKey({ jobName: name, ...invocation })) ? []
++        : [name, invocation.routePath].filter((value): value is string => Boolean(value));
++    }),
++  ]));
++  const successHistoryJobsTruncated = successHistoryJobNames.length > SUCCESS_HISTORY_MAX_JOBS;
++  successHistoryJobNames.length = Math.min(successHistoryJobNames.length, SUCCESS_HISTORY_MAX_JOBS);
+   const successHistorySince = needsSuccessHistory
+     ? new Date(now.getTime() - SUCCESS_HISTORY_WINDOW_MS).toISOString() : since;
+-  const successHistorySource = needsSuccessHistory ? await readReportSource<any>((from, to, signal) => supabase
++  const successHistorySource = successHistoryJobNames.length > 0 ? await readReportSource<any>((from, to, signal, query) => supabase
+     .from("cron_job_audit")
+-    .select("job_name, run_time, rows_affected, status, details", { count: "exact" })
++    .select("job_name, run_time, rows_affected, status, details", { count: query.count })
+     .gte("run_time", successHistorySince).lte("run_time", since)
++    .in("job_name", successHistoryJobNames)
+     .in("status", ["success", "succeeded", "ok", "passed"])
+     .order("run_time", { ascending: false }).order("job_name", { ascending: true })
+     .order("status", { ascending: true }).order("rows_affected", { ascending: true })
+@@ -1712,8 +1772,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
+     SUCCESS_HISTORY_MAX_PAGES, SUCCESS_HISTORY_BUDGET_MS, sourceOptions) : null;
+   const successHistory = {
+     since: successHistorySince, until,
+-    complete: auditSource.complete && (successHistorySource?.complete ?? true),
+-    error: sanitizeErrorMessage(successHistorySource?.error ?? auditSource.error),
++    complete: auditSource.complete && !successHistoryJobsTruncated && (successHistorySource?.complete ?? true),
++    error: describeSourceError(sanitizeErrorMessage(successHistorySource?.error ?? auditSource.error)) ??
++      (successHistoryJobsTruncated ? `Lookback limited to ${SUCCESS_HISTORY_MAX_JOBS} failing jobs` : null),
+   };
+   const lastKnownSuccessMap = buildLastKnownSuccessMap([
+     ...auditRows, ...(successHistorySource?.rows ?? []).map(toAuditRow),
+@@ -1726,7 +1787,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
+ 
+   const runRows: RunRow[] = (runs ?? []).map((row: any) => {
+     const invocation = parseCronInvocation(
+-      (row.sql_text ?? null) as string | null
++      (row.sql_text ?? null) as string | null, row.scheduled_time
+     );
+     const timing = invocation.method === "SQL" ? buildSqlCronTimingObservation({
+       jobname: (row.jobname ?? null) as string | null,
+@@ -1893,9 +1954,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
+       const message =
+         lastAudit?.parsed.responseMessage ??
+         lastAudit?.detailsMessage ??
+-        (lastRun?.returnMessage
+-          ? sanitizeErrorMessage(lastRun.returnMessage, 240)
+-          : null) ??
++        (lastRun ? describeCronReturnMessage(lastRun) : null) ??
+         null;
+ 
+       const why =
+@@ -1978,7 +2037,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
+       }
+       if (!lastAudit && !lastRun && !hasFullCoverageForMissing) {
+         notes.push(
+-          "Telemetry is incomplete, so missing-run status could not be determined."
++          "No receipt was read for this slot, but telemetry is incomplete, so it may still have run."
+         );
+       }
+       if (lastStatus === "success" && (failedRowsLast ?? 0) > 0) {
+@@ -2091,8 +2150,19 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
+         })
+       )
+     );
++  const edgeFunctionDispatches = Array.from(runRows
++    .filter((row) => !matchedRunIds.has(row.id) && isEdgeFunctionRoute(row.routePath))
++    .reduce((byJob, row) => {
++      const entry = byJob.get(row.jobName) ?? { jobName: row.jobName, route: row.route, queued: 0, failed: 0, latestAt: null as string | null };
++      if (row.status === "success") entry.queued++;
++      else if (row.status === "failure") entry.failed++;
++      if (!entry.latestAt || Date.parse(row.time) > Date.parse(entry.latestAt)) entry.latestAt = row.time;
++      return byJob.set(row.jobName, entry);
++    }, new Map<string, { jobName: string; route: string | null; queued: number; failed: number; latestAt: string | null }>())
++    .values());
+   const unmatchedCronRuns = runRows
+-    .filter((row) => !matchedRunIds.has(row.id))
++    // A queued Edge Function request is summarized above; failed dispatches stay alerts.
++    .filter((row) => !matchedRunIds.has(row.id) && !(isEdgeFunctionRoute(row.routePath) && row.status === "success"))
+     .map((row) =>
+       buildRunDigestFromCron(
+         row,
+@@ -2339,6 +2409,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
+                   ? `⚠️ Daily Cron Report — ${counts.jobsDisabledLast} quarantined`
+                   : `✅ Daily Cron Report — ${counts.jobsOkLast}/${counts.scheduledJobs} jobs ok`,
+         react: CronAuditEmail({
++          edgeFunctionDispatches,
+           audits: [...auditBriefings, ...notableUnscheduledRuns],
+           sinceDate: since,
+           untilDate: until,
+@@ -2449,6 +2520,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
+     successHistory,
+     totalsComplete: runSource.complete && auditSource.complete,
+     countScope: "observed",
++    scheduleInventory: { denominatorScope: "pg_cron entries enabled in repository inventory and due in this window",
++      notDueJobs: notDueJobs.map((job) => ({ name: job.name, schedule: job.cronExpression })), edgeFunctionDispatches },
+     rowMetricScope: "Confirmed writes in latest scheduled receipts; partial coverage, never generic affected/attempted counts",
+     totals: {
+       auditRuns: auditSource.complete ? counts.auditRuns : null,
+diff --git a/web/pages/api/v1/db/run-projection-accuracy.ts b/web/pages/api/v1/db/run-projection-accuracy.ts
+index e7d9094dbf2bf3e85ca6e3a7d4c46ebd1969df25..cf948cd33f0841cde0b1450f863d03e6674bddb7 100644
+--- a/web/pages/api/v1/db/run-projection-accuracy.ts
++++ b/web/pages/api/v1/db/run-projection-accuracy.ts
+@@ -12,6 +12,7 @@ import { withNhlOffSeasonSkip } from "lib/cron/nhlOffSeason";
+ import { formatDurationMsToMMSS } from "lib/formatDurationMmSs";
+ import supabase from "lib/supabase/server";
+ import { requireLatestSucceededRunId } from "lib/projections/apiHelpers";
++import { requireExternalInputProvenRun } from "lib/projections/externalInputProof";
+ import { evaluateForgeCalibrationEligibility } from "lib/projections/calibrationEligibility";
+ import {
+   buildSkaterModeledHeadTotals,
+@@ -1715,15 +1716,11 @@ async function runAccuracyForDate(
+   const startedAt = Date.now();
+   const projectionDate = addDays(actualDate, -offsetDays);
+   const runId = await requireLatestSucceededRunId(projectionDate);
+-  const { data: runMetadata, error: runMetadataError } = await supabase
+-    .from("forge_runs")
+-    .select("metrics")
+-    .eq("run_id", runId)
+-    .maybeSingle();
+-  if (runMetadataError) throw runMetadataError;
+-  const calibrationEligibility = evaluateForgeCalibrationEligibility(
+-    (runMetadata as any)?.metrics,
+-  );
++  // Run-start metrics intentionally do not claim exclusion. Prove the exact
++  // latest run from its snapshot or verified producer, as serving consumers do.
++  // Do not fall back to an older run: atomic replacement is latest-run scoped.
++  const { proof } = await requireExternalInputProvenRun(runId);
++  const calibrationEligibility = evaluateForgeCalibrationEligibility({ input_provenance: proof });
+   if (!calibrationEligibility.eligible) {
+     const error = new Error(
+       "Latest succeeded projection run is excluded from calibration because native input provenance is missing or legacy.",
+diff --git a/web/pages/api/v1/db/update-goalie-projections-v2.ts b/web/pages/api/v1/db/update-goalie-projections-v2.ts
+index 49151da304c6deab780f0bc29d1d2268dab3b7dd..99fa913531a17a7e6318e2b368004b5a90fa765f 100644
+--- a/web/pages/api/v1/db/update-goalie-projections-v2.ts
++++ b/web/pages/api/v1/db/update-goalie-projections-v2.ts
+@@ -48,6 +48,22 @@ export async function upsertGoalieProjectionRows(
+   updates: any[],
+   chunkSize = 1000
+ ) {
++  if (!Number.isSafeInteger(chunkSize) || chunkSize <= 0) {
++    throw new Error("Goalie projection chunk size must be a positive integer.");
++  }
++  // Validate the complete write set before splitting it: otherwise a duplicate
++  // across chunks silently overwrites the first team's row instead of failing.
++  const identities = new Set<string>();
++  for (const row of updates) {
++    if (!Number.isSafeInteger(row.game_id) || row.game_id <= 0
++      || !Number.isSafeInteger(row.player_id) || row.player_id <= 0) {
++      throw new Error("Goalie projection has an invalid game/player identity.");
++    }
++    const key = `${row.game_id}:${row.player_id}`;
++    if (identities.has(key)) throw new Error(`Duplicate goalie projection identity: ${key}. No rows written.`);
++    identities.add(key);
++  }
++
+   let rowsUpserted = 0;
+   const failures: Array<{
+     stage: "goalie_start_projections_upsert";
+@@ -82,6 +98,79 @@ export async function upsertGoalieProjectionRows(
+   };
+ }
+ 
++/** Remove only rejected source candidates, after a complete replacement write.
++ * The old team is part of every predicate: a traded goalie's valid new-team row
++ * can share the game/player conflict key and must never be removed. */
++export async function pruneIneligibleGoalieProjectionRows(
++  client: Pick<typeof supabase, "from">,
++  rejected: Array<{ game_id: number; team_id: number; player_id: number }>,
++) {
++  let rowsRemoved = 0;
++  const failures: Array<{ stage: "goalie_start_projections_prune"; batchIndex: number; rows: number; error: string }> = [];
++  const unique = [...new Map(rejected.map(row => [`${row.game_id}:${row.team_id}:${row.player_id}`, row])).values()];
++  for (const row of unique) {
++    if (![row.game_id, row.team_id, row.player_id].every(id => Number.isSafeInteger(id) && id > 0)) {
++      throw new Error("Invalid rejected goalie identity. No rows removed.");
++    }
++  }
++  for (const [batchIndex, row] of unique.entries()) {
++    const { error, count } = await client.from("goalie_start_projections" as any)
++      .delete({ count: "exact" }).eq("game_id", row.game_id).eq("team_id", row.team_id).eq("player_id", row.player_id);
++    if (error || count === null || count === undefined) {
++      failures.push({ stage: "goalie_start_projections_prune", batchIndex, rows: 1,
++        error: error?.message ?? "Goalie stale-row removal count was not acknowledged." });
++      break;
++    }
++    rowsRemoved += count;
++  }
++  return { rowsRemoved, failures };
++}
++
++/** Current roster membership is a team-identity filter, not a new goalie model.
++ * Query all candidate players, including their new team when it has no game in
++ * this window. Missing membership excludes a historical candidate; conflicting
++ * current memberships fail closed rather than picking a home/away winner. */
++async function fetchCurrentGoalieTeams(playerIds: number[], seasonId: number) {
++  if (!Number.isSafeInteger(seasonId) || seasonId <= 0) throw new Error("Invalid goalie roster season.");
++  const membership = new Map<number, number>();
++  for (let offset = 0; offset < playerIds.length; offset += 100) {
++    const ids = playerIds.slice(offset, offset + 100);
++    const { data, error, count } = await supabase.from("rosters")
++      .select("playerId,teamId", { count: "exact" })
++      .eq("seasonId", seasonId).eq("is_current", true).in("playerId", ids).limit(500);
++    if (error) throw error;
++    if (!Array.isArray(data) || count === null || data.length !== count) {
++      throw new Error("Current goalie roster membership was incomplete.");
++    }
++    for (const row of data) {
++      if (!ids.includes(row.playerId) || !Number.isSafeInteger(row.teamId) || row.teamId <= 0
++        || membership.has(row.playerId) && membership.get(row.playerId) !== row.teamId) {
++        throw new Error(`Current goalie roster membership is ambiguous or invalid for player ${row.playerId}.`);
++      }
++      membership.set(row.playerId, row.teamId);
++    }
++  }
++  return membership;
++}
++
++/** Historical refreshes must not apply today's roster retroactively. The latest
++ * observed game at or before that date supplies identity only, not start odds. */
++export function historicalGoalieTeams(teamLogs: Record<number, any[]>, date: string) {
++  const latest = new Map<number, { date: string; teamId: number | null }>();
++  for (const [team, logs] of Object.entries(teamLogs)) {
++    for (const log of logs) {
++      if (log.gameDate > date) continue;
++      const previous = latest.get(log.playerId);
++      if (!previous || log.gameDate > previous.date) {
++        latest.set(log.playerId, { date: log.gameDate, teamId: Number(team) });
++      } else if (log.gameDate === previous.date && previous.teamId !== Number(team)) {
++        previous.teamId = null;
++      }
++    }
++  }
++  return new Map([...latest].map(([playerId, value]) => [playerId, value.teamId]));
++}
++
+ const handler = async (
+   req: NextApiRequest,
+   res: NextApiResponse
+@@ -210,7 +299,7 @@ const handler = async (
+       // Fetch everything from season start up to today (or lastDateToProcess to be safe, but today is fine)
+       params.append(
+         "cayenneExp",
+-        `franchiseId=${franchiseId} and gameDate>="${seasonStartDate}" and ${buildNhlStatsScoringGameTypeCayenne()}`
++        `franchiseId=${franchiseId} and gameDate>="${seasonStartDate}" and gameDate<="${today}" and ${buildNhlStatsScoringGameTypeCayenne()}`
+       );
+ 
+       const queryString = params.toString().replace(/\+/g, "%20");
+@@ -236,17 +325,31 @@ const handler = async (
+       (teamId) => (teamLogsMap[teamId]?.length ?? 0) === 0
+     ).length;
+ 
++    if (failedTeamLogFetches > 0 || missingTeamMetadata > 0) {
++      throw new Error(`Goalie inputs incomplete: ${failedTeamLogFetches} team log fetches failed; ${missingTeamMetadata} teams lack metadata. No rows written.`);
++    }
++    const candidateIds = [...new Set(Object.values(teamLogsMap).flat().map(log => log.playerId))];
++    const currentTeams = filteredGames.some(game => game.date >= today)
++      ? await fetchCurrentGoalieTeams(candidateIds, Number(currentSeason.id))
++      : new Map<number, number>();
++    let excludedHistoricalCandidates = 0;
++
+     console.log("Finished fetching team logs. Starting processing...");
+ 
+     let totalUpserted = 0;
+     let failedRows = 0;
+-    let databaseWriteFailures: Awaited<
+-      ReturnType<typeof upsertGoalieProjectionRows>
+-    >["failures"] = [];
++    let rowsRemoved = 0;
++    let databaseWriteFailures: Array<
++      Awaited<ReturnType<typeof upsertGoalieProjectionRows>>["failures"][number]
++      | Awaited<ReturnType<typeof pruneIneligibleGoalieProjectionRows>>["failures"][number]
++    > = [];
+     const updates: any[] = [];
++    const rejected: Array<{ game_id: number; team_id: number; player_id: number }> = [];
++    const missingGameTeams: Array<{ gameId: number; teamId: number }> = [];
+ 
+     // 5. Process Games
+     for (const game of filteredGames) {
++      const eligibleTeams = game.date >= today ? currentTeams : historicalGoalieTeams(teamLogsMap, game.date);
+       for (const type of ["home", "away"] as const) {
+         const teamId = type === "home" ? game.homeTeamId : game.awayTeamId;
+         const allLogs = teamLogsMap[teamId] || [];
+@@ -262,9 +365,6 @@ const handler = async (
+         const logsForStats = allLogs.filter(
+           (log: any) => log.gameDate <= game.date
+         );
+-        const currentLogs = allLogs.filter(
+-          (log: any) => log.gameDate === game.date
+-        );
+ 
+         // Calculate Season Stats
+         const uniqueDates = new Set(logsForStats.map((l: any) => l.gameDate));
+@@ -309,9 +409,18 @@ const handler = async (
+           }
+         });
+ 
++        const rowsBeforeTeam = updates.length;
+         for (const playerIdStr in playerStats) {
+           const stats = playerStats[playerIdStr];
+           const playerId = parseInt(playerIdStr);
++          if (eligibleTeams.get(playerId) === null) {
++            throw new Error(`Ambiguous historical goalie team for player ${playerId} on ${game.date}. No rows written.`);
++          }
++          if (eligibleTeams.get(playerId) !== teamId) {
++            excludedHistoricalCandidates += 1;
++            rejected.push({ game_id: game.id, team_id: teamId, player_id: playerId });
++            continue;
++          }
+ 
+           const seasonPct =
+             totalSeasonGames > 0 ? stats.seasonStarts / totalSeasonGames : 0;
+@@ -336,8 +445,18 @@ const handler = async (
+             confirmed_status: false
+           });
+         }
++        if (updates.length === rowsBeforeTeam) missingGameTeams.push({ gameId: game.id, teamId });
+       }
+     }
++    if (missingGameTeams.length > 0) {
++      return res.status(422).json({
++        success: false,
++        error: "No eligible goalie history for one or more game teams. No rows written.",
++        missingGameTeams: missingGameTeams.slice(0, 20),
++        missingGameTeamCount: missingGameTeams.length,
++        updates: 0,
++      });
++    }
+ 
+     // 6. Batch Upsert
+     if (updates.length > 0) {
+@@ -346,6 +465,11 @@ const handler = async (
+       totalUpserted = upsertResult.rowsUpserted;
+       failedRows = upsertResult.failedRows;
+       databaseWriteFailures = upsertResult.failures;
++      if (databaseWriteFailures.length === 0 && rejected.length > 0) {
++        const pruned = await pruneIneligibleGoalieProjectionRows(supabase, rejected);
++        rowsRemoved = pruned.rowsRemoved;
++        databaseWriteFailures.push(...pruned.failures);
++      }
+     }
+ 
+     const statusCode = databaseWriteFailures.length > 0
+@@ -359,14 +483,16 @@ const handler = async (
+       message:
+         databaseWriteFailures.length === 0
+           ? `Updated projections. Total upserted: ${totalUpserted}`
+-          : `Goalie projection writes were incomplete: ${totalUpserted} upserted, ${failedRows} failed.`,
++          : `Goalie projection writes were incomplete: ${totalUpserted} upserted, ${failedRows} failed; ${databaseWriteFailures.length} write/reconciliation failures.`,
+       updates: totalUpserted,
++      rowsRemoved,
+       failedRows,
+       failures: databaseWriteFailures.slice(0, 10),
+       ownershipDecision: GOALIE_START_TABLE_OWNERSHIP,
+       observability: {
+         goalieRowsProcessed: totalUpserted,
+         databaseWriteFailures: databaseWriteFailures.length,
++        excludedHistoricalCandidates,
+         dataQualityWarnings: [
+           ...(filteredGames.length > 0 && totalUpserted === 0
+             ? [
+diff --git a/web/pages/api/v1/db/update-line-sources.ts b/web/pages/api/v1/db/update-line-sources.ts
+index 4afd9898f84060c098d063bc14b072ef6bc5641a..d8190a2c897cca1554933b6ebe23216ac57519ec 100644
+--- a/web/pages/api/v1/db/update-line-sources.ts
++++ b/web/pages/api/v1/db/update-line-sources.ts
+@@ -3,7 +3,9 @@ import { persistTweetProjectionReports, enrichTweetInjuryHistory } from "lib/sou
+ import { admitTweetClaimEvaluationIntake, tweetClaimEvaluationIntakeWindow } from "lib/sources/tweetClaimEvaluationIntake";
+ import { processTweetClaimShadowBatch } from "lib/sources/tweetClaimRegistry";
+ import { processLineSnapshotEvidence } from "lib/lines/processor";
++import { lineSnapshotFlags } from "lib/lines/types";
+ import { rosterSeasonForDate } from "lib/sources/playerIdentity";
++import { isEmptyQueueProcessorRun } from "lib/cron/emptyQueueRun";
+ import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+ import { withCronJobTiming } from "lib/cron/timingContract";
+ import { ForecastScheduleError } from "lib/player-forecasts/scopeReads";
+@@ -345,9 +347,10 @@ export default withCronJobAudit(
+       sourceKeys,
+       currentDateOnly: parseBooleanFlag(req.query.currentDayOnly) ? requestedDate : null,
+     });
++    const eventsFetched = eventRows.length;
+     const intake = await admitTweetClaimEvaluationIntake(req.supabase,"line_source_ifttt_events",eventRows);
+     if (intake.active && !intake.events.length) return res.json({ success: true,mode: "claim_shadow_stopped",reason: intake.reason,
+-      delivery: "not_requested",summary: { eventsLoaded: 0,eventsProcessed: 0 } });
++      delivery: "not_requested",summary: { eventsFetched,eventsLoaded: 0,eventsProcessed: 0 } });
+     eventRows = intake.events;
+     const currentSeason = await getCurrentSeason();
+     const teamDirectory = eventRows.length ? buildTeamDirectory(
+@@ -939,6 +942,7 @@ export default withCronJobAudit(
+         sourcesProcessed: new Set(
+           pendingEvents.map((event) => event.source_key),
+         ).size,
++        eventsFetched,
+         eventsLoaded: pendingEvents.length,
+         tweetsDiscovered: discoveredTweets.length,
+         tweetsParsed: parsedCandidates.length,
+@@ -1014,5 +1018,8 @@ export default withCronJobAudit(
+   }),
+   {
+     jobName: "/api/v1/db/update-line-sources",
++    // Snapshot reconciliation can write on an empty queue without appearing
++    // in the processor summary, so keep those receipts while it is enabled.
++    skipAuditWhenNoOp: (body) => !lineSnapshotFlags().observations && isEmptyQueueProcessorRun(body),
+   },
+ );
+diff --git a/web/pages/api/v1/db/update-lines-ccc.ts b/web/pages/api/v1/db/update-lines-ccc.ts
+index 8f08d08e1f4217d81ba9ae413c5d31ce53dfcb97..d4f5c91e913ccd789a7877440b9db3d61999f117 100644
+--- a/web/pages/api/v1/db/update-lines-ccc.ts
++++ b/web/pages/api/v1/db/update-lines-ccc.ts
+@@ -4,6 +4,7 @@ import { processLineSnapshotEvidence } from "lib/lines/processor";
+ import { admitTweetClaimEvaluationIntake, tweetClaimEvaluationIntakeWindow } from "lib/sources/tweetClaimEvaluationIntake";
+ import { processTweetClaimShadowBatch } from "lib/sources/tweetClaimRegistry";
+ import { rosterSeasonForDate } from "lib/sources/playerIdentity";
++import { isEmptyQueueProcessorRun } from "lib/cron/emptyQueueRun";
+ import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+ import { getCurrentSeason, getTeams } from "lib/NHL/server";
+ import { buildTeamDirectory } from "lib/sources/lineupSourceIngestion";
+@@ -216,13 +217,14 @@ export default withCronJobAudit(
+       reprocess,
+       tweetId: requestedTweetId,
+     });
++    const eventsFetched = eventRows.length;
+     const intake = await admitTweetClaimEvaluationIntake(req.supabase,"lines_ccc_ifttt_events",eventRows);
+     if (intake.active && !intake.events.length) return res.json({ success: true,mode: "claim_shadow_stopped",reason: intake.reason,
+-      delivery: "not_requested",summary: { eventsLoaded: 0,eventsProcessed: 0 } });
++      delivery: "not_requested",summary: { eventsFetched,eventsLoaded: 0,eventsProcessed: 0 } });
+     eventRows = intake.events;
+     if (!eventRows.length) {
+       return res.json({ success: true, route: "/api/v1/db/update-lines-ccc", date: requestedDate,
+-        batchSize, summary: { eventsLoaded: 0, eventsProcessed: 0, eventsRejected: 0, rowsUpserted: 0 },
++        batchSize, summary: { eventsFetched, eventsLoaded: 0, eventsProcessed: 0, eventsRejected: 0, rowsUpserted: 0 },
+         message: "No pending source events." });
+     }
+     const currentSeason = await getCurrentSeason();
+@@ -660,6 +662,7 @@ export default withCronJobAudit(
+         sourcesProcessed: new Set(
+           pendingEvents.map((event) => event.source_account),
+         ).size,
++        eventsFetched,
+         eventsLoaded: pendingEvents.length,
+         tweetsDiscovered: discoveredTweets.length,
+         tweetsParsed: parsedCandidates.length,
+@@ -709,5 +712,6 @@ export default withCronJobAudit(
+   }),
+   {
+     jobName: "/api/v1/db/update-lines-ccc",
++    skipAuditWhenNoOp: isEmptyQueueProcessorRun,
+   },
+ );
+diff --git a/web/scripts/forge-producer-closure.ts b/web/scripts/forge-producer-closure.ts
+index e254f511eeb8f82c5364eb310f2ea627911ef2df..50116b4d8496c790d336d8aa7c94d67d6ff5068f 100644
+--- a/web/scripts/forge-producer-closure.ts
++++ b/web/scripts/forge-producer-closure.ts
+@@ -177,6 +177,12 @@ export function scanForgeClosure(webRoot: string, roots: string[], options: ts.C
+         return;
+       }
+       if (resolved.isExternalLibraryImport || resolved.resolvedFileName.includes("/node_modules/")) return;
++      // Accuracy is a downstream consumer, but remains hashed because it also
++      // updates run calibration metrics. Only this exact admission-read edge is
++      // outside producer identity: hashing its allowlist would be self-referential.
++      // Admission reached from any other producer import still fails below.
++      if (rel(file) === "pages/api/v1/db/run-projection-accuracy.ts"
++        && rel(resolved.resolvedFileName) === "lib/projections/externalInputProof.ts") return;
+       if (PROVIDER_CONFIG_PATH.test(rel(resolved.resolvedFileName))) {
+         findings.push({ file: rel(file), line: at(node), kind: "provider_config_import", text: specifier });
+       }

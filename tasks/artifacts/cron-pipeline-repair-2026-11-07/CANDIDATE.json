@@ -1,0 +1,217 @@
+{
+  "status": "PRODUCTION_RELEASED_MANUAL_RECOVERY_PENDING",
+  "base": "194d55e720f1a715904c252e750d96af9533ef20",
+  "producerCommit": "d9fcc711e12d2902cd6b646ce38888a43e606f2b",
+  "finalCommit": "b4033ad65ffba6835ba0754dd665e5d694301f64",
+  "finalTree": "766a20dd8ca872685b88c5f816b022ab912315ef",
+  "localRef": "refs/candidates/cron-pipeline-repair-20261107",
+  "supersedesProvisionalCommit": "a0d4ca104331953157ee9dd5903f26320d31246d",
+  "closureSha256": "2676c5366cfc08fa7aaec4a1d4369e6f51caf3018bf2fca3f7d358faceb5c746",
+  "moduleCount": 195,
+  "findings": [],
+  "admittedReceipt": "tasks/artifacts/cron-pipeline-repair-2026-11-07/d9fcc711e12d2902cd6b646ce38888a43e606f2b.json",
+  "admittedReceiptSha256": "1ea3060660de250e22700048d77096b2a7015dfcfc97ddf74474da02efe8730f",
+  "finalReceipt": "tasks/artifacts/cron-pipeline-repair-2026-11-07/b4033ad65ffba6835ba0754dd665e5d694301f64.json",
+  "finalReceiptSha256": "7ae046a7a4f9e13e9b9d51743203821ecd1b10a7a40438fd3f56794145f3d778",
+  "bundle": "tasks/artifacts/cron-pipeline-repair-2026-11-07/isolated-candidate.bundle",
+  "bundleSha256": "b4f4abf368199f0b1d842169e66fd7313bb7a8ada8c03c858b24b5f8d4b39448",
+  "patch": "tasks/artifacts/cron-pipeline-repair-2026-11-07/isolated-candidate.patch",
+  "patchSha256": "1ac106644f265287298ccd50f92484397608a0a7de0cd089ccc56618a8b34675",
+  "sharedHeadBefore": "691819d582a7eec433807e51a17bc04d4ccb85c6",
+  "sharedHeadAfter": "691819d582a7eec433807e51a17bc04d4ccb85c6",
+  "sharedIndexMatchesBefore": true,
+  "changedPaths": [
+    {
+      "path": "tasks/TASKS/cron-operations/cron-schedule.md",
+      "sha256": "b8197524a89bb8a9135a3552a48433bdba21217b5f1ab4ed8667388b60295f0d",
+      "bytes": 107586
+    },
+    {
+      "path": "tasks/artifacts/cron-pipeline-repair-2026-11-07/c09aa95ace52f8da26ef9ee1b2e635dc0245f201.json",
+      "sha256": "e1800c924bf8710e1f0380abdb475d0a49bb694d211998a903a1578516ce675e",
+      "bytes": 17490
+    },
+    {
+      "path": "tasks/artifacts/cron-pipeline-repair-2026-11-07/d9fcc711e12d2902cd6b646ce38888a43e606f2b.json",
+      "sha256": "1ea3060660de250e22700048d77096b2a7015dfcfc97ddf74474da02efe8730f",
+      "bytes": 17479
+    },
+    {
+      "path": "tasks/artifacts/projection-table-audit-2026-10-26/release-verification/02153acbaf1ed02c0c294ba14a75e8af195354f3.json",
+      "sha256": "f4acf1ad2948f5c051e27765f252c401b8faae28d68676956b6d3a8cf13d3de4",
+      "bytes": 17450
+    },
+    {
+      "path": "tasks/artifacts/projection-table-audit-2026-10-26/release-verification/538100d41ee87e721d2764b694f7bac8c2f2bb34.json",
+      "sha256": "913a1b1b05bfd0a5acdba4326d9c27b0dba8f63bb45c64e60e0ffe718e6556cf",
+      "bytes": 17361
+    },
+    {
+      "path": "tasks/artifacts/projection-table-audit-2026-10-26/release-verification/595ab13d9773808057b49cc3ed91d9eaca8ed317.json",
+      "sha256": "eb09bd4004d5ec738e537c22f10af5a1467a1baf6dd815b696f78f6e993c1abd",
+      "bytes": 17437
+    },
+    {
+      "path": "tasks/artifacts/projection-table-audit-2026-10-26/release-verification/5aa9ba5e0e9e86abf515fd7a30db441f6f5b1592.json",
+      "sha256": "3c4b840b5b6554eb09952da5bf49e0ec2928b43207855debe57d8d7451d397f0",
+      "bytes": 17452
+    },
+    {
+      "path": "tasks/artifacts/projection-table-audit-2026-10-26/release-verification/6fb1812c19ecd182e895b3708296018bc842fcf0.json",
+      "sha256": "afb6fb8cc15a1d636695438c484c2238573c16d9e15d62fab51d0c570a97f2fa",
+      "bytes": 17457
+    },
+    {
+      "path": "tasks/artifacts/projection-table-audit-2026-10-26/release-verification/eff1b377ae8c831705710758979cc67e9d38846b.json",
+      "sha256": "5330c14429613e7bdb9968d86b4cf91686918485d3351baa208d93e55fb619c7",
+      "bytes": 17457
+    },
+    {
+      "path": "tasks/artifacts/rso-resume-2026-11-01/release-prep/admission/c3897d3273ca46ea25a9f2737f09c835e5ec7325/receipt.json",
+      "sha256": "94f64cdfaeaeccd0c00ba3bfb7b23d6dbf81044f7b16c045f3cf35b057886998",
+      "bytes": 17537
+    },
+    {
+      "path": "tasks/artifacts/rso-resume-2026-11-01/release-prep/after402-committed-release.json",
+      "sha256": "1c433d07b4be3de47548f1db3cd8f88f87de4dbae9e35af618b2656d39318e6d",
+      "bytes": 17487
+    },
+    {
+      "path": "web/__tests__/pages/api/v1/db/cron-report.test.ts",
+      "sha256": "a10074fa17e9a9c56961d99febee656f0c39ceb5b5b6b5cf9fb887dc2af69e6d",
+      "bytes": 108258
+    },
+    {
+      "path": "web/__tests__/pages/api/v1/db/run-projection-accuracy.test.ts",
+      "sha256": "2e420ac0046a17e3361afffd9f67edd80417dcb15feb159eee20216a93e31249",
+      "bytes": 19501
+    },
+    {
+      "path": "web/__tests__/pages/api/v1/db/update-goalie-projections-v2.test.ts",
+      "sha256": "122d9d86680b0be00eed7fde1b15c507093b6b35a833e97c3118efac4d2a0982",
+      "bytes": 14692
+    },
+    {
+      "path": "web/__tests__/pages/api/v1/db/update-line-sources.test.ts",
+      "sha256": "2390e9596c3f12a53c1b51a37e40b4e7bd253f07843b43f30fec7edb30d06308",
+      "bytes": 68785
+    },
+    {
+      "path": "web/__tests__/pages/api/v1/db/update-lines-ccc.test.ts",
+      "sha256": "812650b647b366e3facc899c32c6de4cb1c62f57b8594123a5cde4131be1afaa",
+      "bytes": 17986
+    },
+    {
+      "path": "web/components/CronReportEmail/CronAuditEmail.tsx",
+      "sha256": "a836e092b95990086fb4fe92da399db18d641a67174afaf7794ff4f2e37b6425",
+      "bytes": 16540
+    },
+    {
+      "path": "web/lib/cron/emptyQueueRun.ts",
+      "sha256": "9b644efa83c28ca7cbd8a1d9dd176f52055396082a0f3ba2b67ad91a253d57a7",
+      "bytes": 1006
+    },
+    {
+      "path": "web/lib/cron/reportSource.test.ts",
+      "sha256": "2ae352f0007c348ef09a8c2215314c683af6aeb50da03170fedfc244249fb545",
+      "bytes": 14725
+    },
+    {
+      "path": "web/lib/cron/reportSource.ts",
+      "sha256": "18d6c9c34a15121bb541bf0642a02cda8f1a8c5d207b1f2f4590976e0fd343af",
+      "bytes": 7017
+    },
+    {
+      "path": "web/lib/cron/scheduledHttpUrl.test.ts",
+      "sha256": "ab423cee09941e1126e7ebb85e3be00155f5475eb68b9cc66947d6c6ce314d1a",
+      "bytes": 1964
+    },
+    {
+      "path": "web/lib/cron/scheduledHttpUrl.ts",
+      "sha256": "efd0d9a9fcfa68166532f370bee00bdd5838fc521d8c8409597ed1066f88f026",
+      "bytes": 1817
+    },
+    {
+      "path": "web/lib/cron/withCronJobAudit.test.ts",
+      "sha256": "92cc00c781eb3389f83c7cf7f47d6f12b3ba3deaaed01292f0fbdf1b34f35bee",
+      "bytes": 27541
+    },
+    {
+      "path": "web/lib/cron/withCronJobAudit.ts",
+      "sha256": "7a6c74635a2f8a2b04a3be8b735888f372850c4fad592e55c0556f01c75d1d32",
+      "bytes": 15378
+    },
+    {
+      "path": "web/lib/projections/forgeProducerIdentity.test.ts",
+      "sha256": "c576b396aeb0fbdf9e731e07509f51a8c09036284ab7dc707b8acec93e9b7557",
+      "bytes": 8207
+    },
+    {
+      "path": "web/lib/projections/verifiedForgeReleases.test.ts",
+      "sha256": "d23791d0c97798fd0c073763d2cd0eabdd65c825143c7f39b1695115ab9e840c",
+      "bytes": 6303
+    },
+    {
+      "path": "web/lib/projections/verifiedForgeReleases.ts",
+      "sha256": "a2532633144fce76cc675795de9ee9b2320a7592def04724729eb87a7a89c969",
+      "bytes": 8700
+    },
+    {
+      "path": "web/pages/api/v1/db/cron-report.ts",
+      "sha256": "20ceff4ff835f11f95af103a04eb4112ca64b1c619d9c9d51d16508521eff036",
+      "bytes": 100364
+    },
+    {
+      "path": "web/pages/api/v1/db/run-projection-accuracy.ts",
+      "sha256": "a3126b22d85253d855d7ad5d435a7dfea28b4d7f603e85138412a875c5fdede8",
+      "bytes": 92436
+    },
+    {
+      "path": "web/pages/api/v1/db/update-goalie-projections-v2.ts",
+      "sha256": "d9c92995c1da0696dc1e127d2217935599c3cc4f06352f9e2813b9e459e4b5b3",
+      "bytes": 21447
+    },
+    {
+      "path": "web/pages/api/v1/db/update-line-sources.ts",
+      "sha256": "a36a4ea7cc2f9517622a4acb96dbd41fb56f1cf26fbda9dfd9de13584bafa4eb",
+      "bytes": 37814
+    },
+    {
+      "path": "web/pages/api/v1/db/update-lines-ccc.ts",
+      "sha256": "d20bc719cb812195199e8a3b1fef3be47d8f4978f18564b76fea22e7b4506d61",
+      "bytes": 26677
+    },
+    {
+      "path": "web/scripts/forge-producer-closure.ts",
+      "sha256": "b7ec38db70612782bf45edf0086aa54cdb62dfea6de6cbac901dc13a2e3af2a2",
+      "bytes": 17199
+    }
+  ],
+  "verification": {
+    "focusedTests": {
+      "passed": 424,
+      "files": 14,
+      "log": "tasks/artifacts/cron-pipeline-repair-2026-11-07/final-tests.log"
+    },
+    "scopedEslint": "passed",
+    "diffCheck": "passed",
+    "independentReview": "approved b4033ad65ffba6835ba0754dd665e5d694301f64; zero-claim audit blocker closed",
+    "wholeWebTypecheck": "passed (npm run typecheck, exact candidate export, exit 0)",
+    "fullSuite": "not run",
+    "productionBuild": "passed, dpl_7FQffXR7EjBFtCEocYBi1UY1pKuU, exact b4033, READY"
+  },
+  "externalActions": {
+    "pushes": 1,
+    "deploymentEntries": 4,
+    "applicationBuilds": 1,
+    "ignoredOrCanceledCompanions": 3,
+    "directApplicationRequests": 0,
+    "manualProductionWrites": 0,
+    "productionCronInvocations": 0
+  },
+  "releaseGates": [
+    "Separate fresh bounded manual recovery approval including complete cleanup predicates, runtime/call limits and affected dates/game IDs"
+  ],
+  "deploymentPreflight": "FLAG-AND-DEPLOYMENT-PREFLIGHT.json",
+  "releaseExecution": "RELEASE-EXECUTION.json"
+}

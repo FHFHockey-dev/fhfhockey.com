@@ -1,0 +1,87 @@
+--- a/web/lib/nst/client.ts
++++ b/web/lib/nst/client.ts
+@@ -55,6 +55,10 @@
+   query?: Record<string, string | number | boolean | null | undefined>;
+   timeoutMs?: number;
+   retries?: number;
++  /** Opt-in bound on accepted decoded body bytes, NOT received/network bytes.
++   * Consumes the original response body. Use returned text, not response.text().
++   */
++  maxResponseBytes?: number;
+   headers?: Record<string, string>;
+   allowQueryKeyFallback?: boolean;
+   requestControl?: NstRequestControl;
+@@ -212,6 +216,39 @@
+     `${normalizePath(parsed.pathname)}${rawSearch}`,
+     `${NST_BASE_URL}/`
+   );
++}
++
++/** No tee/clone in bounded mode: unread clone buffers would defeat the bound.
++ * The transport can prefetch bytes or deliver one oversized chunk before we
++ * cancel. Only retained/accepted decoded body bytes are bounded, not exact
++ * received or downloaded bytes.
++ */
++async function readBoundedNstText(response: Response, maximum: number, controller: AbortController): Promise<string> {
++  if (!response.body) return "";
++  const reader = response.body.getReader();
++  const chunks: Uint8Array[] = [];
++  let total = 0;
++  try {
++    while (true) {
++      const { done, value } = await reader.read();
++      if (done) break;
++      if (value.byteLength > maximum - total) {
++        throw new NstExecutionLimitError("NST response byte limit reached.", true);
++      }
++      total += value.byteLength;
++      chunks.push(value.slice());
++    }
++    const bytes = new Uint8Array(total);
++    let offset = 0;
++    for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength; }
++    return new TextDecoder().decode(bytes);
++  } catch (error) {
++    controller.abort();
++    void reader.cancel().catch(() => {});
++    throw error;
++  } finally {
++    reader.releaseLock();
++  }
+ }
+ 
+ async function executeNstUrl(
+@@ -235,7 +272,9 @@
+         throw new NstResponseError({ status: response.status, redactedUrl });
+       }
+       // Keep the abort timer active through body consumption, not only headers.
+-      const text = await response.clone().text();
++      const text = options.maxResponseBytes === undefined
++        ? await response.clone().text()
++        : await readBoundedNstText(response, options.maxResponseBytes, controller);
+       return { response, url: url.toString(), redactedUrl, text };
+     } finally {
+       clearTimeout(timeout);
+@@ -255,6 +294,10 @@
+ }
+ 
+ function withRequestControl<T extends Omit<NstRequestOptions, "path" | "query">>(options: T): T {
++  if (options.maxResponseBytes !== undefined &&
++      (!Number.isSafeInteger(options.maxResponseBytes) || options.maxResponseBytes < 1)) {
++    throw new NstConfigError("NST response byte limit must be a positive safe integer.");
++  }
+   return {
+     ...options,
+     requestControl: options.requestControl ?? {
+@@ -374,6 +417,11 @@
+   url: string,
+   options?: Omit<NstRequestOptions, "path" | "query">
+ ): Promise<{ text: string; redactedUrl: string }> {
++  // An old cache hit cannot establish this opt-in bound or a fresh retrieval.
++  if (options?.maxResponseBytes !== undefined) {
++    const result = await fetchNstTextByUrl(url, options);
++    return { text: result.text, redactedUrl: result.redactedUrl };
++  }
+   const redactedUrl = redactNstUrl(buildNstRequestUrlFromAbsoluteUrl(url, options?.allowQueryKeyFallback ?? false));
+   const cacheKey = `nst-budgeted:${redactedUrl}`;
+   const cached = cacheData.get(cacheKey);

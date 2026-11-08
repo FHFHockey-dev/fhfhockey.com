@@ -126,3 +126,7 @@
 .retrospective { position: relative; display: grid; gap: 8px; padding: 12px 12px 12px 18px; border: 1px dashed v.$border-secondary; border-radius: 6px; background: v.$background-darker; }
 /* Recorded-evidence rule: a flat 6px bar over the dashed left edge (a coloured border-left would bevel against the dashed top). */
 .evidence::before, .retrospective::before { content: ""; position: absolute; top: -1px; bottom: -1px; left: -1px; width: 6px; border-radius: 6px 0 0 6px; background: v.$secondary-color; }
+
+.localDraft { overflow-wrap: anywhere; }
+.localActions { display: flex; flex-wrap: wrap; gap: 8px; }
+.localActions button { min-height: 44px; }

@@ -1,0 +1,69 @@
+{
+  "scope": "Retained current-season window membership at the original November 1 as-of, not current eligibility or empirical validation",
+  "asOfUTC": "2026-11-01T19:57:38.026058+00:00",
+  "eventThroughDate": "2026-10-31",
+  "maxEventAgeDays": 7,
+  "profiles": 740,
+  "fiveRecordProfiles": 644,
+  "lastEventWithinLimitAtAsOf": 594,
+  "everyEventWithinLimitAtAsOf": 0,
+  "everyEventWithinLimitAtEventCutoff": 45,
+  "oldestEventAgeAtAsOfDistribution": {
+    "8": 45,
+    "9": 29,
+    "10": 197,
+    "11": 31,
+    "12": 127,
+    "13": 47,
+    "14": 3,
+    "15": 52,
+    "16": 5,
+    "17": 15,
+    "18": 3,
+    "19": 14,
+    "20": 4,
+    "21": 5,
+    "22": 17,
+    "23": 2,
+    "24": 10,
+    "25": 3,
+    "26": 7,
+    "27": 1,
+    "28": 2,
+    "29": 10,
+    "30": 4,
+    "31": 6,
+    "32": 3,
+    "33": 2
+  },
+  "example": {
+    "playerId": 8474564,
+    "name": "Steven Stamkos",
+    "dates": [
+      "2026-10-24",
+      "2026-10-25",
+      "2026-10-27",
+      "2026-10-29",
+      "2026-10-31"
+    ]
+  },
+  "inputPins": {
+    "request": [
+      "current-refresh-reader-20261101-01/live-read-01/capture/CURRENT-REQUEST.json",
+      "c6d1d13dc7327baa54742c3eb7efe0a1e5d96c6ef6ffefc66de23f4092c12ba2"
+    ],
+    "profiles": [
+      "nst-selected-receipt-intake-20261101-01/intake-02/PROFILES.json",
+      "7cbd9fafc6be4e858817072c0d3004ab3468db4d2c497ba2262dcbd03162735b"
+    ],
+    "rows": [
+      "nst-selected-receipt-intake-20261101-01/intake-02/ROWS.json",
+      "c019d4647c3cab1b4d76a0756e83be07464fe80171be5b86980b72fc548ffd6a"
+    ]
+  },
+  "sourceQualifiedRows": 0,
+  "scoresComputed": 0,
+  "policyChanged": false,
+  "holdoutRead": false,
+  "networkCalls": 0
+}

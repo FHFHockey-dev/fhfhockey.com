@@ -1,0 +1,48 @@
+{
+  "syntheticOnly": true,
+  "passed": true,
+  "checkedManifestEntries": 14,
+  "independentCases": 9,
+  "completeLegacyOutputComparisons": 54,
+  "results": [
+    {
+      "name": "shuffled feeds select latest captured five without mutating caller bytes",
+      "passed": true
+    },
+    {
+      "name": "separate players cannot fill each other’s incomplete windows",
+      "passed": true
+    },
+    {
+      "name": "empty capture remains empty and unadmitted",
+      "passed": true
+    },
+    {
+      "name": "ambiguous duplicate player dates remain counted records, never complete appearances",
+      "passed": true
+    },
+    {
+      "name": "invalid latest captured date is unknown, not silently backfilled",
+      "passed": true
+    },
+    {
+      "name": "future captured event is unknown and unqualified",
+      "passed": true
+    },
+    {
+      "name": "missing latest witness stays a selected held member",
+      "passed": true
+    },
+    {
+      "name": "zero day policy keeps source observations separate from row and window recency",
+      "passed": true
+    },
+    {
+      "name": "unaccepted native bytes cannot gain source qualification through fresh windows",
+      "passed": true
+    }
+  ],
+  "providerRequests": 0,
+  "databaseOperations": 0,
+  "realAcceptancesAdded": 0
+}

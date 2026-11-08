@@ -1,0 +1,17 @@
+{
+  "name": "types",
+  "command": [
+    "node",
+    "--max-old-space-size=8192",
+    "node_modules/typescript/bin/tsc",
+    "--noEmit"
+  ],
+  "cwd": "/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-rso-first-pass-20261107-rq7qrip0/web",
+  "startedAt": "2026-11-07T21:52:00.708952+00:00",
+  "finishedAt": "2026-11-07T21:53:16.804914+00:00",
+  "exitCode": 0,
+  "timedOut": false,
+  "candidateTree": "4ba9b5dd1c6feb613f2f8e526fb280bb4b35c54e",
+  "network": "inert environment and Node outbound guard",
+  "log": "types.log"
+}

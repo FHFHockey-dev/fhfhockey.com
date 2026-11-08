@@ -701,11 +701,14 @@ function evaluatePreparedPlan(prepared: ReturnType<typeof prepareEvaluation>, in
       const preStart: Play[] = [];
       for (const entry of snapshot.roster) {
         const player = players.get(entry.playerId);
-        if (!player || ["IR", "IR+", "NA"].includes(entry.position) || providerListsOut(player) && !slotLocked(player.id, today)) continue;
+        if (!player || ["IR", "IR+", "NA"].includes(entry.position)) continue;
         for (const game of todayGames.filter(game => game.teamAbbreviation === player.teamAbbreviation)) {
+          const gameStarted = started(game);
+          // Current injury status does not establish where a player was locked at puck drop.
+          if (!gameStarted && providerListsOut(player) && !slotLocked(player.id, today)) continue;
           const play = { player, game, forecast: allForecasts.get(`${player.id}:${game.id}`) ?? null };
           preStart.push(play);
-          if (started(game)) startedPlays.push(play);
+          if (gameStarted) startedPlays.push(play);
         }
       }
       const locks = snapshot.lockedAssignments.filter(lock => lock.date === today);
@@ -730,7 +733,7 @@ function evaluatePreparedPlan(prepared: ReturnType<typeof prepareEvaluation>, in
     const plays: Play[] = [];
     for (const game of dayGames) for (const [id, member] of timeline.at(gameTime(game, snapshot.context.timeZone))) {
       const player = players.get(id);
-      if (!player || player.teamAbbreviation !== game.teamAbbreviation || ["IR", "IR+", "NA"].includes(member.position) || time(member.since) > time(gameTime(game, snapshot.context.timeZone))) continue;
+      if (!player || player.teamAbbreviation !== game.teamAbbreviation || ["IR", "IR+", "NA"].includes(member.position) || time(member.since) >= time(gameTime(game, snapshot.context.timeZone))) continue;
       if (!game.startsAt && time(member.since) >= time(zonedMidnight(game.date, snapshot.context.timeZone))) continue;
       // Out per the provider (IR/O): not a lineup option, so his missing projection can't block the totals.
       if (providerListsOut(player)) {

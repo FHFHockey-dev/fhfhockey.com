@@ -1,0 +1,41 @@
+{
+  "preparationTests": {
+    "passed": 27,
+    "log": "preparation-tests.log"
+  },
+  "isolatedClientTests": {
+    "passed": 37,
+    "existing": 23,
+    "new": 14,
+    "log": "client-tests.log"
+  },
+  "focusedVirtualTypes": {
+    "state": "passed",
+    "roots": 6,
+    "log": "types.log"
+  },
+  "lint": {
+    "state": "passed_with_one_non_blocking_artifact_config_warning",
+    "logs": [
+      "lint.log",
+      "client-lint.log",
+      "artifact-lint.log"
+    ]
+  },
+  "ordinaryDiscovery": {
+    "state": "candidate_only_tests_absent",
+    "log": "ordinary-candidate-discovery.log"
+  },
+  "canonicalSourcePins": "matched",
+  "patchApplicability": "passed_not_applied",
+  "providerRequests": 0,
+  "admissionRPCs": 0,
+  "databaseWrites": 0,
+  "builds": 0,
+  "deployments": 0,
+  "score": null,
+  "acceptedEvidence": false,
+  "fullCanonicalTypes": "not_run",
+  "fullCanonicalTests": "not_run",
+  "liveTransport": "not_run"
+}

@@ -3,9 +3,11 @@
  * retrospective Buy Low / Sell High evidence beside (never inside) the forecast. The core BLSH lists
  * do not import this view. Forecast numbers are labelled as forecasts; unavailable ones are withheld, not zero.
  */
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 
 import type { DisplayProfile } from "lib/buyLowSellHigh/displayProfile";
+import { BLSH_FIXTURE_STORAGE_KEY, BLSH_STORAGE_KEY, type BlshLocalState } from "lib/buyLowSellHigh/storage";
+import { sameDraft, useBlshLocalState } from "lib/buyLowSellHigh/useBlshLocalState";
 import { compareTrade, FHFH_STANDARD_SCORING, forecastQualification, playerScoredValues, type ForecastQualification, type TradeScoring } from "lib/buyLowSellHigh/trade";
 import { DEFAULT_HORIZON, GOALIE_TARGETS, HORIZON_OPTIONS, SKATER_TARGETS, TARGET_LABELS, type HorizonGames, type InterpretationRecord } from "lib/skoElement/contract";
 import { retrospectiveComparison, retrospectivePlayer } from "./retrospective";
@@ -37,13 +39,44 @@ export type BlshTradeComparisonProps = {
   initialReceive?: string[];
 };
 
-export default function BlshTradeComparison({ recordsByHorizon, evidence, fixtureBanner = null, initialGive = [], initialReceive = [] }: BlshTradeComparisonProps) {
+export default function BlshTradeComparison(props: BlshTradeComparisonProps) {
+  const synthetic = !!props.fixtureBanner || Object.values(props.recordsByHorizon).some(records => records.some(record => record.fixture));
+  // A source-scope change must not carry editor state or pending fixture save completions into a real draft.
+  return <BlshTradeEditor key={synthetic ? "fixture" : "real"} {...props} synthetic={synthetic} />;
+}
+
+function BlshTradeEditor({ recordsByHorizon, evidence, fixtureBanner = null, initialGive = [], initialReceive = [], synthetic }: BlshTradeComparisonProps & { synthetic: boolean }) {
+  const storageKey = synthetic ? BLSH_FIXTURE_STORAGE_KEY : BLSH_STORAGE_KEY;
+  const local = useBlshLocalState(storageKey);
+  const loadedKey = useRef<string | null>(null);
+  const baseline = useRef<BlshLocalState["draft"]>({ give: [], receive: [] });
+  const [saveNotice, setSaveNotice] = useState<string | null>(null);
   const [horizon, setHorizon] = useState<HorizonGames>(DEFAULT_HORIZON);
   const [mode, setMode] = useState<ScoringMode>("fhfh");
   const [weights, setWeights] = useState<Record<string, number>>({ ...FHFH_STANDARD_SCORING.weights });
   const [categories, setCategories] = useState<string[]>(DEFAULT_CATEGORIES);
   const [sides, setSides] = useState<Record<Side, string[]>>({ give: initialGive, receive: initialReceive });
   const [showRetrospective, setShowRetrospective] = useState(false);
+  useEffect(() => {
+    if (!local.hydrated || loadedKey.current === storageKey) return;
+    loadedKey.current = storageKey;
+    baseline.current = local.state.draft;
+    setSides(local.present && local.status === "ready" ? local.state.draft : { give: initialGive, receive: initialReceive });
+    setSaveNotice(null);
+  }, [local.hydrated, local.present, local.status, local.state.draft, storageKey, initialGive, initialReceive]);
+  const saveDraft = async (next: BlshLocalState["draft"]) => {
+    const expected = baseline.current;
+    const saved = await local.mutate(current => sameDraft(current.draft, expected) ? { ...current, draft: next } : null);
+    if (saved) { baseline.current = next; setSides(next); setShowRetrospective(false); }
+    setSaveNotice(saved ? "Draft selections saved on this device." : "These selections have not been saved.");
+  };
+  const loadDraft = () => {
+    local.clearMessage();
+    baseline.current = local.state.draft;
+    setSides(local.state.draft);
+    setShowRetrospective(false);
+    setSaveNotice("Loaded saved draft selections.");
+  };
 
   const records = recordsByHorizon[horizon];
   const byId = useMemo(() => new Map(records.map(record => [record.identity.playerId, record])), [records]);
@@ -57,7 +90,7 @@ export default function BlshTradeComparison({ recordsByHorizon, evidence, fixtur
     || comparison.issues.some(issue => issue.code === "missing_projection" || issue.code === "unknown_player");
   const offerRetrospective = !comparison.complete && blockedByForecast && sides.give.length > 0 && sides.receive.length > 0;
 
-  const update = (side: Side, ids: string[]) => { setSides(current => ({ ...current, [side]: ids })); setShowRetrospective(false); };
+  const update = (side: Side, ids: string[]) => { setSides(current => ({ ...current, [side]: ids })); setShowRetrospective(false); setSaveNotice("Selections changed. Save to keep them after reload."); };
 
   return (
     <div className={styles.container}>
@@ -67,7 +100,19 @@ export default function BlshTradeComparison({ recordsByHorizon, evidence, fixtur
           A forecast view, separate from the Buy Low / Sell High lists. Forecast numbers come from FORGE; Buy Low / Sell High evidence is recorded history shown beside them.
         </p>
       </header>
-      {fixtureBanner && <p className={styles.fixtureBanner} role="note">{fixtureBanner}</p>}
+      {synthetic && <p className={styles.fixtureBanner} role="note">{fixtureBanner || "Synthetic fixture data, not real player forecasts."}</p>}
+      <section className={styles.localDraft} aria-label="Device-local draft">
+        <p>Draft selections are saved only in this browser on this device, with no account sync. Horizon and scoring settings are not saved. No forecast values or research gaps are saved.</p>
+        {synthetic && <p>Synthetic fixture drafts use separate storage and never replace your real draft.</p>}
+        {local.message && <p role="status">{local.message}</p>}
+        {saveNotice && <p role="status">{saveNotice}</p>}
+        {!sameDraft(local.state.draft, baseline.current) && local.status === "ready" && <p>The saved draft changed elsewhere. Load it before saving or resetting.</p>}
+        <div className={styles.localActions}>
+          <button type="button" className={styles.secondaryButton} disabled={!local.canSave} onClick={() => void saveDraft(sides)}>Save draft selections</button>
+          <button type="button" className={styles.secondaryButton} disabled={!local.canSave} onClick={loadDraft}>Load saved draft</button>
+          <button type="button" className={styles.secondaryButton} disabled={!local.canSave} onClick={() => void saveDraft({ give: [], receive: [] })}>Reset draft selections</button>
+        </div>
+      </section>
 
       <section className={styles.controls} aria-label="Comparison settings">
         <fieldset className={styles.fieldset}>
@@ -120,7 +165,7 @@ export default function BlshTradeComparison({ recordsByHorizon, evidence, fixtur
               <h2 id={`${side}-heading`} className={styles.sideTitle}>{SIDE_TEXT[side]}</h2>
               <label className={styles.control}>
                 <span className={styles.srOnly}>Add a player you {side === "give" ? "give" : "receive"}</span>
-                <select value="" onChange={event => event.target.value && update(side, [...sides[side], event.target.value])}>
+                <select value="" disabled={!local.hydrated || local.pending} onChange={event => event.target.value && update(side, [...sides[side], event.target.value])}>
                   <option value="">Add a player…</option>
                   {records.filter(record => !chosen.has(record.identity.playerId)).map(record => (
                     <option key={record.identity.playerId} value={record.identity.playerId}>
@@ -132,8 +177,8 @@ export default function BlshTradeComparison({ recordsByHorizon, evidence, fixtur
             </div>
             {!sides[side].length && <p className={styles.muted}>No players yet.</p>}
             {sides[side].map(id => (
-              <PlayerCard key={id} playerId={id} record={byId.get(id)} profile={evidence[id]} scoring={scoring} horizon={horizon}
-                onRemove={() => update(side, sides[side].filter(item => item !== id))} />
+              <PlayerCard key={id} playerId={id} record={byId.get(id)} profile={Object.prototype.hasOwnProperty.call(evidence, id) ? evidence[id] : undefined} scoring={scoring} horizon={horizon}
+                removalDisabled={!local.hydrated || local.pending} onRemove={() => update(side, sides[side].filter(item => item !== id))} />
             ))}
           </section>
         ))}
@@ -236,9 +281,9 @@ function RetrospectivePanel({ comparison }: { comparison: ReturnType<typeof retr
   );
 }
 
-function PlayerCard({ playerId, record, profile, scoring, horizon, onRemove }: {
+function PlayerCard({ playerId, record, profile, scoring, horizon, removalDisabled, onRemove }: {
   playerId: string; record: InterpretationRecord | undefined; profile: DisplayProfile | undefined;
-  scoring: TradeScoring; horizon: HorizonGames; onRemove: () => void;
+  scoring: TradeScoring; horizon: HorizonGames; removalDisabled: boolean; onRemove: () => void;
 }) {
   const name = record?.identity.name ?? profile?.displayName ?? playerId;
   const qualification: ForecastQualification = record ? forecastQualification(record) : { status: "unavailable", reasons: ["No forecast record for this player"] };
@@ -249,7 +294,7 @@ function PlayerCard({ playerId, record, profile, scoring, horizon, onRemove }: {
           <h3 className={styles.playerName}>{name}</h3>
           <p className={styles.muted}>{record ? `${record.identity.team ?? "Team unknown"} · ${record.identity.eligibility.join("/") || record.identity.modelClass}` : "No forecast record"}</p>
         </div>
-        <button type="button" className={styles.smallButton} onClick={onRemove} aria-label={`Remove ${name}`}>Remove</button>
+        <button type="button" className={styles.smallButton} disabled={removalDisabled} onClick={onRemove} aria-label={`Remove ${name}`}>Remove</button>
       </div>
 
       <section className={styles.forecast} aria-label={`Forecast for ${name}`}>
@@ -286,16 +331,19 @@ function PlayerCard({ playerId, record, profile, scoring, horizon, onRemove }: {
 
 function EvidenceBlock({ name, playerId, profile, goalie }: { name: string; playerId: string; profile: DisplayProfile | undefined; goalie: boolean }) {
   const recorded = retrospectivePlayer(playerId, profile);
+  const directionWithheld = !!profile?.score.directionWithheldReason;
   return (
     <section className={styles.evidence} aria-label={`Buy Low / Sell High evidence for ${name}`}>
       <p className={styles.kickerRetro}>Buy Low / Sell High · recorded games, not a forecast</p>
       {!profile ? <p className={styles.muted}>{goalie ? "Buy Low / Sell High covers skaters only; no evidence for goalies." : "No Buy Low / Sell High evidence for this player."}</p> : (
         <>
           <p className={styles.evidenceLead}>
-            <strong>{profile.score.gapSignLabel ?? profile.score.statusLabel}</strong>
-            {profile.score.value !== null && <> · index <span className={styles.num}>{fixed(profile.score.value, 0, true)}</span></>}
+            <strong>{directionWithheld ? "Direction withheld: insufficient personal history"
+              : profile.score.headline ? <>FHFH Standard recorded-window gap <span className={styles.num}>{fixed(profile.score.headline.gap, 2, true)}</span></>
+                : profile.score.statusLabel}</strong>
             {" · "}{profile.score.list ? `${profile.score.listLabel} #${profile.score.positionRank ?? profile.score.rank}${profile.score.positionRank !== null && profile.position ? ` among ${profile.position === "F" ? "forwards" : "defence"}` : ""}` : profile.score.listLabel}
           </p>
+          {!directionWithheld && profile.score.value !== null && <p className={styles.muted}>Supporting research index: <span className={styles.num}>{fixed(profile.score.value, 0, true)}</span>. Not a forecast or probability.</p>}
           {profile.score.directionWithheldText && <p className={styles.muted}>{profile.score.directionWithheldText}</p>}
           {profile.score.reasonText && profile.score.reasonText !== profile.score.directionWithheldText && <p className={styles.muted}>{profile.score.reasonText}</p>}
           {recorded.recordedPerGame !== null && recorded.referencePerGame !== null && (
@@ -304,7 +352,7 @@ function EvidenceBlock({ name, playerId, profile, goalie }: { name: string; play
               <div><dt>Reference at current ice time</dt><dd className={styles.num}>{recorded.referencePerGame.toFixed(2)}</dd></div>
             </dl>
           )}
-          <p className={styles.muted}>{profile.evidence.window.games} recorded games. {profile.evidence.window.freshnessText}. {profile.evidence.tierLabel} ({profile.evidence.tierNote.toLowerCase()}).</p>
+          <p className={styles.muted}>{profile.evidence.window.games} recorded games through {profile.evidence.window.recordedThroughDate}. Freshness is relative to that saved date, not today. {profile.evidence.window.freshnessText}. {profile.evidence.tierLabel} ({profile.evidence.tierNote.toLowerCase()}).</p>
           <p className={styles.muted}>{profile.claimsText}</p>
         </>
       )}

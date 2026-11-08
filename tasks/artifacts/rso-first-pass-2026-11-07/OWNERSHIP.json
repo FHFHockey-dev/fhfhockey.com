@@ -1,0 +1,33 @@
+{
+  "owner": "Scout RSO first-pass lane",
+  "scope": "Integrate the independently reviewed two-file RSO correction into canonical source, preserving all other dirty work",
+  "canonicalSourceReadOnly": [
+    "web/components/RosterScheduleOptimizer/HealthyReserveAlert.test.tsx",
+    "web/components/RosterScheduleOptimizer/HealthyReserveAlert.tsx",
+    "web/e2e/roster-schedule-optimizer.spec.ts",
+    "web/lib/integrations/yahoo/rosterPlanning.test.ts",
+    "web/lib/integrations/yahoo/rosterPlanning.ts",
+    "web/lib/rosterScheduleOptimizer/candidatePlanMetrics.test.ts",
+    "web/lib/rosterScheduleOptimizer/contributionLedger.test.ts",
+    "web/lib/rosterScheduleOptimizer/dailyAcceptance.manual.test.ts",
+    "web/lib/rosterScheduleOptimizer/healthyReserves.test.ts",
+    "web/lib/rosterScheduleOptimizer/healthyReserves.ts",
+    "web/lib/rosterScheduleOptimizer/lineupGaps.test.ts",
+    "web/lib/rosterScheduleOptimizer/lineupGaps.ts",
+    "web/lib/rosterScheduleOptimizer/planningTimeline.ts",
+    "web/lib/rosterScheduleOptimizer/refreshForecastInputs.test.ts"
+  ],
+  "writePaths": [
+    "tasks/artifacts/codex-handoff-2026-11-07/09-rso.md",
+    "tasks/artifacts/rso-first-pass-2026-11-07/**",
+    "tasks/diaries/2026-11-07-codex-rso-first-pass.md",
+    "web/lib/rosterScheduleOptimizer/planning.test.ts",
+    "web/lib/rosterScheduleOptimizer/planning.ts"
+  ],
+  "noGitIndexOrRefs": true,
+  "leaseStatus": "released",
+  "outcome": "Two reviewed corrections integrated in canonical source; exact #414-based candidate verified; pending release-owner review and approvals",
+  "releasedAt": "2026-11-07T22:48:39.574289+00:00",
+  "candidateRevision": 2,
+  "integrationStartedAt": "2026-11-07T22:45:50.843617+00:00"
+}

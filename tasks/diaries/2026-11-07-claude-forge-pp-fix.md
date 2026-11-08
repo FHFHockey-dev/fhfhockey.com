@@ -67,3 +67,4 @@ go from TJ in chat 2026-11-07T23:46:03Z; rebuild started
 - Rebuild attempt 23:46Z stopped before any write: the pg guard hit getaddrinfo ENOTFOUND on db.<ref>.supabase.co
   (IPv6-only host, no A record). TJ (pop-up) chose a Codex handoff for the guard fix and the backfill:
   tasks/artifacts/forge-pp-fix-2026-11-07/CODEX-HANDOFF.md (+ script + REBUILD-SIZING.md). Lane is parked here.
+- TJ pasted CODEX-HANDOFF.md into Codex (2026-11-07T23:50:04Z). Rebuild + post-check now Codex-owned; lane parked.

@@ -1,0 +1,195 @@
+{
+  "readOnly": true,
+  "credentialsUsed": false,
+  "comparisons": [
+    {
+      "requestUrl": "https://pub-api-ro.fantasysports.yahoo.com/fantasy/v2/players;player_keys=477.p.30000,477.p.30024,477.p.30104,477.p.30106,477.p.30107,477.p.30108;out=draft_analysis,percent_owned?format=json_f",
+      "responseStatus": 200,
+      "file": "combined-json_f.json",
+      "sha256": "39c6ef582cf57db531c5e1eaf7980a1b3ca1a570f6128f0f4812182a9a7b802a",
+      "bytes": 17600,
+      "capturedAt": "2026-11-07T19:54:47.953917+00:00",
+      "observations": [
+        {
+          "playerKey": "477.p.30000",
+          "name": "Nikita Nesterenko",
+          "percentOwned": {
+            "coverage_type": "week",
+            "week": 6,
+            "delta": "0"
+          }
+        },
+        {
+          "playerKey": "477.p.30024",
+          "name": "Frank Nazar",
+          "percentOwned": {
+            "coverage_type": "week",
+            "week": 6,
+            "value": 9,
+            "delta": "-1"
+          }
+        },
+        {
+          "playerKey": "477.p.30104",
+          "name": "Wyatt Kaiser",
+          "percentOwned": {
+            "coverage_type": "week",
+            "week": 6,
+            "delta": "0"
+          }
+        },
+        {
+          "playerKey": "477.p.30106",
+          "name": "Aidan McDonough",
+          "percentOwned": {
+            "coverage_type": "week",
+            "week": 6,
+            "delta": "0"
+          }
+        },
+        {
+          "playerKey": "477.p.30107",
+          "name": "Ryan Tverberg",
+          "percentOwned": {
+            "coverage_type": "week",
+            "week": 6,
+            "delta": "0"
+          }
+        },
+        {
+          "playerKey": "477.p.30108",
+          "name": "Jayden Struble",
+          "percentOwned": {
+            "coverage_type": "week",
+            "week": 6,
+            "delta": "0"
+          }
+        }
+      ]
+    },
+    {
+      "requestUrl": "https://pub-api-ro.fantasysports.yahoo.com/fantasy/v2/players;player_keys=477.p.30000,477.p.30024,477.p.30104,477.p.30106,477.p.30107,477.p.30108/percent_owned?format=json_f",
+      "responseStatus": 200,
+      "file": "ownership-only-json_f.json",
+      "sha256": "72a1810441022988c0f3d4c73fbf9e69d5df6eb89f849c28a97d863fcff00e7d",
+      "bytes": 14762,
+      "capturedAt": "2026-11-07T19:55:14.647495+00:00",
+      "observations": [
+        {
+          "playerKey": "477.p.30000",
+          "name": "Nikita Nesterenko",
+          "percentOwned": {
+            "coverage_type": "week",
+            "week": 6,
+            "delta": "0"
+          }
+        },
+        {
+          "playerKey": "477.p.30024",
+          "name": "Frank Nazar",
+          "percentOwned": {
+            "coverage_type": "week",
+            "week": 6,
+            "value": 9,
+            "delta": "-1"
+          }
+        },
+        {
+          "playerKey": "477.p.30104",
+          "name": "Wyatt Kaiser",
+          "percentOwned": {
+            "coverage_type": "week",
+            "week": 6,
+            "delta": "0"
+          }
+        },
+        {
+          "playerKey": "477.p.30106",
+          "name": "Aidan McDonough",
+          "percentOwned": {
+            "coverage_type": "week",
+            "week": 6,
+            "delta": "0"
+          }
+        },
+        {
+          "playerKey": "477.p.30107",
+          "name": "Ryan Tverberg",
+          "percentOwned": {
+            "coverage_type": "week",
+            "week": 6,
+            "delta": "0"
+          }
+        },
+        {
+          "playerKey": "477.p.30108",
+          "name": "Jayden Struble",
+          "percentOwned": {
+            "coverage_type": "week",
+            "week": 6,
+            "delta": "0"
+          }
+        }
+      ]
+    },
+    {
+      "requestUrl": "https://pub-api-ro.fantasysports.yahoo.com/fantasy/v2/players;player_keys=477.p.30000,477.p.30024,477.p.30104,477.p.30106,477.p.30107,477.p.30108/percent_owned",
+      "responseStatus": 200,
+      "file": "ownership-only.xml",
+      "sha256": "1d75fff8348389716d9841ed9e2ce9db0f79775135baf7d0467e76ad6927b33f",
+      "bytes": 11379,
+      "capturedAt": "2026-11-07T19:56:25.661774+00:00",
+      "observations": [
+        {
+          "playerKey": "477.p.30000",
+          "percentOwned": {
+            "coverage_type": "week",
+            "week": "6",
+            "delta": "0"
+          }
+        },
+        {
+          "playerKey": "477.p.30024",
+          "percentOwned": {
+            "coverage_type": "week",
+            "week": "6",
+            "value": "9",
+            "delta": "-1"
+          }
+        },
+        {
+          "playerKey": "477.p.30104",
+          "percentOwned": {
+            "coverage_type": "week",
+            "week": "6",
+            "delta": "0"
+          }
+        },
+        {
+          "playerKey": "477.p.30106",
+          "percentOwned": {
+            "coverage_type": "week",
+            "week": "6",
+            "delta": "0"
+          }
+        },
+        {
+          "playerKey": "477.p.30107",
+          "percentOwned": {
+            "coverage_type": "week",
+            "week": "6",
+            "delta": "0"
+          }
+        },
+        {
+          "playerKey": "477.p.30108",
+          "percentOwned": {
+            "coverage_type": "week",
+            "week": "6",
+            "delta": "0"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "at": "2026-11-07T22:46:32.814965+00:00",
+  "candidateTree": "4ba9b5dd1c6feb613f2f8e526fb280bb4b35c54e",
+  "checkedTrackedFiles": 4794,
+  "intentionalEnvironmentOmissions": [
+    "web/.env.development",
+    "web/.env.production",
+    "web/.env.test"
+  ],
+  "mismatches": [],
+  "nextEnvDeclaration": "restored to pinned base after browser-generated scaffolding",
+  "gitMutation": false
+}

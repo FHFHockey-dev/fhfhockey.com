@@ -12,6 +12,7 @@ import { withNhlOffSeasonSkip } from "lib/cron/nhlOffSeason";
 import { formatDurationMsToMMSS } from "lib/formatDurationMmSs";
 import supabase from "lib/supabase/server";
 import { requireLatestSucceededRunId } from "lib/projections/apiHelpers";
+import { requireExternalInputProvenRun } from "lib/projections/externalInputProof";
 import { evaluateForgeCalibrationEligibility } from "lib/projections/calibrationEligibility";
 import {
   buildSkaterModeledHeadTotals,
@@ -1715,15 +1716,11 @@ async function runAccuracyForDate(
   const startedAt = Date.now();
   const projectionDate = addDays(actualDate, -offsetDays);
   const runId = await requireLatestSucceededRunId(projectionDate);
-  const { data: runMetadata, error: runMetadataError } = await supabase
-    .from("forge_runs")
-    .select("metrics")
-    .eq("run_id", runId)
-    .maybeSingle();
-  if (runMetadataError) throw runMetadataError;
-  const calibrationEligibility = evaluateForgeCalibrationEligibility(
-    (runMetadata as any)?.metrics,
-  );
+  // Run-start metrics intentionally do not claim exclusion. Prove the exact
+  // latest run from its snapshot or verified producer, as serving consumers do.
+  // Do not fall back to an older run: atomic replacement is latest-run scoped.
+  const { proof } = await requireExternalInputProvenRun(runId);
+  const calibrationEligibility = evaluateForgeCalibrationEligibility({ input_provenance: proof });
   if (!calibrationEligibility.eligible) {
     const error = new Error(
       "Latest succeeded projection run is excluded from calibration because native input provenance is missing or legacy.",

@@ -164,6 +164,7 @@ export function createCurrentProcessEvidenceGate(policy: ProcessEvidencePolicy =
       const qualifyGroup = (group: Group) => {
         const original = row[group]; const reasons = [...globalReasons];
         let availableAtUTC: string | null = null; let oldestEvidenceAtUTC: string | null = null;
+        let eventRecent = false;
         try {
           need(reasons.length === 0, "unaccepted_bundle");
           const w = witnesses.get(`${record.id}|${group}`); need(w, "no_exact_row_witness");
@@ -210,25 +211,66 @@ export function createCurrentProcessEvidenceGate(policy: ProcessEvidencePolicy =
           const maxCaptureAge = duration(request.freshnessPolicy.maxCaptureAgeHours, HOUR_US);
           const maxEventAge = duration(request.freshnessPolicy.maxEventAgeDays, DAY_US);
           need(captureTimes.every(t => t <= asOf) &&
-            asOf - earliest(nativeTime, frameTime, ...captureTimes) <= maxCaptureAge &&
-            today - time(`${record.date}T00:00:00Z`) <= maxEventAge, "current_use_evidence_stale_or_unknown");
+            asOf - earliest(nativeTime, frameTime, ...captureTimes) <= maxCaptureAge, "current_use_evidence_stale_or_unknown");
+          eventRecent = today - time(`${record.date}T00:00:00Z`) <= maxEventAge;
         } catch (error) { if (!reasons.length) reasons.push(error instanceof GateFailure ? error.message : "invalid_row_provenance"); }
-        const provenanceReasons = [...new Set(reasons)].sort();
-        const scopeReasons = new Set(["unqualified_strength_scope", "unqualified_date_meaning", "unqualified_exposure_unit"]);
-        const retained = provenanceReasons.length ? original.reasons : original.reasons.filter(reason => !scopeReasons.has(reason));
-        const combined = [...new Set([...retained, ...provenanceReasons])].sort();
-        return { qualified: combined.length === 0, reasons: combined,
-          provenance: { state: provenanceReasons.length ? "withheld" : "exact_reviewed_row_provenance", reasons: provenanceReasons,
-            availableAtUTC, oldestEvidenceAtUTC, originalPublicationUTC: null,
-            acceptedReviewSHA256: provenanceReasons.length ? null : acceptance!.reviewSHA256 } };
+        const qualification = (failures: string[]) => {
+          const provenanceReasons = [...new Set(failures)].sort();
+          const scopeReasons = new Set(["unqualified_strength_scope", "unqualified_date_meaning", "unqualified_exposure_unit"]);
+          const retained = provenanceReasons.length ? original.reasons : original.reasons.filter(reason => !scopeReasons.has(reason));
+          const combined = [...new Set([...retained, ...provenanceReasons])].sort();
+          return { qualified: combined.length === 0, reasons: combined,
+            provenance: { state: provenanceReasons.length ? "withheld" : "exact_reviewed_row_provenance", reasons: provenanceReasons,
+              availableAtUTC, oldestEvidenceAtUTC, originalPublicationUTC: null,
+              acceptedReviewSHA256: provenanceReasons.length ? null : acceptance!.reviewSHA256 } };
+        };
+        // Source qualification preserves every integrity/observation check, but an
+        // older event can be valid history in a recent window. This is not window
+        // admission. Keep the existing v1 current-use decision unchanged.
+        const sourceObservation = qualification(reasons);
+        const currentUse = qualification(reasons.length || eventRecent ? reasons : ["current_use_evidence_stale_or_unknown"]);
+        return { ...currentUse, sourceObservation };
       };
       return { ...row, individual: { ...row.individual, ...qualifyGroup("individual") }, onIce: { ...row.onIce, ...qualifyGroup("onIce") },
         rawProcessQualification: { individual: { qualified: row.individual.qualified, reasons: [...row.individual.reasons] },
           onIce: { qualified: row.onIce.qualified, reasons: [...row.onIce.reasons] } } };
     });
+    // Diagnostics only: the capture does not prove a complete appearance census.
+    // Select before checking qualification so a held latest row is never replaced
+    // by an older passing one. Anchor recency to server time, not a frozen cutoff.
+    const byPlayer = new Map<number, typeof records>();
+    for (const row of records) {
+      const playerRows = byPlayer.get(row.record.player_id) ?? [];
+      playerRows.push(row); byPlayer.set(row.record.player_id, playerRows);
+    }
+    const evaluationDate = utc(time(evaluatedAtUTC)).slice(0, 10);
+    const capturedWindows = [...byPlayer].map(([playerId, playerRows]) => {
+      const selected = playerRows.slice(-5), latestDate = selected[selected.length - 1].record.date;
+      const validDate = /^\d{4}-\d{2}-\d{2}$/.test(latestDate) && Number.isFinite(Date.parse(latestDate)) &&
+        new Date(latestDate).toISOString().slice(0, 10) === latestDate;
+      const age = validDate ? (Date.parse(evaluationDate) - Date.parse(latestDate)) / 86400000 : null;
+      const recent = age !== null && age >= 0 && age <= request.freshnessPolicy.maxEventAgeDays;
+      const reasons = ["latest_five_completed_appearances_not_independently_established"];
+      if (selected.length !== 5) reasons.push("fewer_than_five_captured_records");
+      if (!selected.every(row => row.identityAndExposure.qualified)) reasons.push("captured_member_identity_or_exposure_unqualified");
+      if (!recent) reasons.push("latest_captured_event_stale_or_unknown");
+      const sourceObservations = Object.fromEntries((["individual", "onIce"] as const).map(group => [group, {
+        qualifiedMembers: selected.filter(row => row[group].sourceObservation.qualified).length,
+        allMembersQualified: selected.every(row => row[group].sourceObservation.qualified),
+      }])) as Record<Group, { qualifiedMembers: number; allMembersQualified: boolean }>;
+      return { playerId, sourceIds: selected.map(row => row.record.id), dates: selected.map(row => row.record.date),
+        membershipScope: "last_five_captured_WGO_records" as const, completeLatestFiveEstablished: false as const,
+        recency: { anchor: "server_evaluation_utc_date" as const, evaluationDate, latestEventDate: latestDate,
+          latestEventAgeDays: age, maxLatestEventAgeDays: request.freshnessPolicy.maxEventAgeDays,
+          state: age === null || age < 0 ? "unknown" : recent ? "recent" : "stale" },
+        sourceObservations, currentUseQualified: false as const, reasons };
+    });
     return { ...raw, version: "fhfh.blsh.current-process-provenance-gate.v1", sourceRequestAsOfUTC: request.asOfUTC, records,
+      freshnessDiagnosticsVersion: "fhfh.blsh.source-and-window-freshness.v1", capturedWindows,
       coverage: { ...raw.coverage, individualQualified: records.filter(r => r.individual.qualified).length,
-        onIceQualified: records.filter(r => r.onIce.qualified).length },
+        onIceQualified: records.filter(r => r.onIce.qualified).length,
+        sourceObservationIndividualQualified: records.filter(r => r.individual.sourceObservation.qualified).length,
+        sourceObservationOnIceQualified: records.filter(r => r.onIce.sourceObservation.qualified).length },
       rawInputQualificationPreservedSeparately: true, sourceDataChanged: false,
       score: null, trusted: false, productionAdopted: false };
   };

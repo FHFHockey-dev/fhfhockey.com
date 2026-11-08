@@ -3,6 +3,7 @@ import { persistTweetProjectionReports, enrichTweetInjuryHistory } from "lib/sou
 import { admitTweetClaimEvaluationIntake, tweetClaimEvaluationIntakeWindow } from "lib/sources/tweetClaimEvaluationIntake";
 import { processTweetClaimShadowBatch } from "lib/sources/tweetClaimRegistry";
 import { processLineSnapshotEvidence } from "lib/lines/processor";
+import { lineSnapshotFlags } from "lib/lines/types";
 import { rosterSeasonForDate } from "lib/sources/playerIdentity";
 import { isEmptyQueueProcessorRun } from "lib/cron/emptyQueueRun";
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
@@ -346,9 +347,10 @@ export default withCronJobAudit(
       sourceKeys,
       currentDateOnly: parseBooleanFlag(req.query.currentDayOnly) ? requestedDate : null,
     });
+    const eventsFetched = eventRows.length;
     const intake = await admitTweetClaimEvaluationIntake(req.supabase,"line_source_ifttt_events",eventRows);
     if (intake.active && !intake.events.length) return res.json({ success: true,mode: "claim_shadow_stopped",reason: intake.reason,
-      delivery: "not_requested",summary: { eventsLoaded: 0,eventsProcessed: 0 } });
+      delivery: "not_requested",summary: { eventsFetched,eventsLoaded: 0,eventsProcessed: 0 } });
     eventRows = intake.events;
     const currentSeason = await getCurrentSeason();
     const teamDirectory = eventRows.length ? buildTeamDirectory(
@@ -940,6 +942,7 @@ export default withCronJobAudit(
         sourcesProcessed: new Set(
           pendingEvents.map((event) => event.source_key),
         ).size,
+        eventsFetched,
         eventsLoaded: pendingEvents.length,
         tweetsDiscovered: discoveredTweets.length,
         tweetsParsed: parsedCandidates.length,
@@ -1017,6 +1020,8 @@ export default withCronJobAudit(
     jobName: "/api/v1/db/update-line-sources",
     // The starter board polls this processor every minute; empty polls are
     // most audit rows and carry no information. Work and failures stay audited.
-    skipAuditWhenNoOp: isEmptyQueueProcessorRun,
+    // Snapshot reconciliation can write on an empty queue without appearing
+    // in the processor summary, so keep those receipts while it is enabled.
+    skipAuditWhenNoOp: (body) => !lineSnapshotFlags().observations && isEmptyQueueProcessorRun(body),
   },
 );

@@ -1,0 +1,69 @@
+{
+  "candidate": "b4033ad65ffba6835ba0754dd665e5d694301f64",
+  "base": "194d55e720f1a715904c252e750d96af9533ef20",
+  "status": "PRODUCTION_READY",
+  "checkedAt": "2026-11-07T21:13:44.750492+00:00",
+  "authorization": "Parent relayed TJ yes to exact candidate Production release, Lines evidence writes and bounded scheduled stale-goalie cleanup; manual recovery remains separately gated.",
+  "preflight": {
+    "all33BlobsAndTree": "match",
+    "bundleAndPatch": "match",
+    "reproducedClosure": "2676c5366cfc08fa7aaec4a1d4369e6f51caf3018bf2fca3f7d358faceb5c746",
+    "reproducedReceiptSha256": "7ae046a7a4f9e13e9b9d51743203821ecd1b10a7a40438fd3f56794145f3d778",
+    "all4LiveProjectSettings": "rechecked unchanged",
+    "existingCandidateDeploymentsBeforePush": 0
+  },
+  "publication": {
+    "successfulPushes": 1,
+    "ref": "refs/heads/master",
+    "remoteReadback": "b4033ad65ffba6835ba0754dd665e5d694301f64",
+    "note": "Initial command rejected locally because zsh interpreted an unbraced colon refspec; remote was checked unchanged before corrected literal refspec. No uncertain retry.",
+    "sharedEditingBranchAndIndex": "untouched; concurrent HEAD was c1119f3de85f72e2e290084cb2f1c14d3d2c7012 before publication"
+  },
+  "deployments": [
+    {
+      "project": "fhfhockey",
+      "id": "dpl_7FQffXR7EjBFtCEocYBi1UY1pKuU",
+      "state": "READY",
+      "machine": "Enhanced 8 cores/16GB",
+      "url": "https://vercel.com/fhfhockeydevs-projects/fhfhockey/7FQffXR7EjBFtCEocYBi1UY1pKuU",
+      "aliases": [
+        "fhfhockey.com",
+        "www.fhfhockey.com"
+      ]
+    },
+    {
+      "project": "cms-fhfhockey",
+      "id": "dpl_GmPk1tJUQbAW5fb8m23Qa4L2pEY4",
+      "state": "CANCELED",
+      "reason": "Ignored Build Step exit 0, explicitly confirmed in build log"
+    },
+    {
+      "project": "functions-fhfhockey",
+      "id": "dpl_ASB5QBbqy6gSDtuftcg4inD33z95",
+      "state": "CANCELED",
+      "reason": "Ignored Build Step exit 0, explicitly confirmed in build log"
+    },
+    {
+      "project": "fhfhockey.com",
+      "id": "dpl_A4TTuKh7rR8ur5thiTgqWhnm1vSK",
+      "state": "CANCELED",
+      "reason": "Expected root exit 0; events endpoint returned no records"
+    }
+  ],
+  "directApplicationRequests": 0,
+  "manualRecoveryInvocations": 0,
+  "settingChanges": 0,
+  "buildEvidence": {
+    "completed": "2026-11-07T21:12:02.273Z",
+    "reportedBuildDuration": "4m",
+    "warnings": "Webpack cache serialization warnings; successful completion",
+    "returnedEventCount": 100
+  },
+  "runtimeObservation": {
+    "window": "2026-11-07T21:12:00Z to 2026-11-07T21:13:10Z",
+    "deploymentScopedRecords": 6,
+    "errors": "None found in project error query for this narrow window",
+    "warnings": "Home-page data198kB exceeds Next128kB performance threshold",
+    "coverageLimit": "These logs do not verify subsequent scheduled goalie/FORGE/report executions."
+  }
+}

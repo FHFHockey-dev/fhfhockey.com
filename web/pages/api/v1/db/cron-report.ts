@@ -20,6 +20,7 @@ import {
 } from "lib/cron/cronReportFlags";
 import { type CronJobTimingRecord } from "lib/cron/timingContract";
 import { readReportSource, reportRowIdentity, formatReportTime, describeSourceError, REPORT_PAGE_SIZE } from "lib/cron/reportSource";
+import { resolveScheduledHttpUrl } from "lib/cron/scheduledHttpUrl";
 import { extractAuditTimingRecord } from "lib/cron/cronReportTiming";
 import { readReportMetrics, repositoryExecutionLimitMs, isNearRepositoryLimit, reportedRuntimeBudgetMs } from "lib/cron/reportMetrics";
 import { buildSqlCronTimingObservation } from "lib/cron/sqlTiming";
@@ -983,7 +984,7 @@ function parseRowsAffectedFromReturnMessage(
   return null;
 }
 
-function parseCronInvocation(sqlText: string | null): {
+function parseCronInvocation(sqlText: string | null, scheduledAt?: string | null): {
   method: ScheduleMethod;
   url: string | null;
   route: string | null;
@@ -1001,7 +1002,7 @@ function parseCronInvocation(sqlText: string | null): {
     : "SQL";
 
   const urlMatch = sqlText.match(/url\s*:?=\s*'([^']+)'/i);
-  const url = urlMatch?.[1] ?? null;
+  const url = (scheduledAt ? resolveScheduledHttpUrl(sqlText, scheduledAt) : null) ?? urlMatch?.[1] ?? null;
   const { route, routePath } = parseUrlPieces(url);
 
   return {
@@ -1096,9 +1097,10 @@ async function loadScheduledCronJobs(
     const name = match[1]?.trim() ?? "";
     const cronExpression = match[2]?.trim() ?? "";
     const body = match[3]?.trim() ?? "";
-    const invocation = parseCronInvocation(body);
     const scheduleTimeDisplay = formatScheduleTime(cronExpression);
     const expectedRunAt = expectedRunAtWithinWindow(cronExpression, since, now);
+    const literalRoute = parseCronInvocation(body).route;
+    const invocation = parseCronInvocation(body, expectedRunAt);
     const sqlText =
       invocation.method === "SQL"
         ? truncateText(body.replace(/\s+/g, " ").trim(), 180)
@@ -1114,6 +1116,8 @@ async function loadScheduledCronJobs(
       url: invocation.url,
       route: invocation.route,
       routePath: invocation.routePath,
+      literalRoute,
+      command: body,
       sqlText,
       expectedRunAt,
       sortOrder: index,
@@ -1127,7 +1131,7 @@ async function loadScheduledCronJobs(
       const cronExpression = String(entry.schedule ?? "").trim();
       const entryRoute = typeof entry.route === "string" ? entry.route : null;
       const entryUrl = typeof entry.url === "string" ? entry.url : entryRoute;
-      const entryInvocation = parseUrlPieces(entryUrl);
+      const literalInvocation = parseUrlPieces(entryUrl);
       const entryMethod =
         entry.method === "GET" ||
         entry.method === "POST" ||
@@ -1142,6 +1146,13 @@ async function loadScheduledCronJobs(
         ) ??
         sqlDefinitions.find((candidate) => candidate.name === name) ??
         null;
+      const expectedRunAt = expectedRunAtWithinWindow(cronExpression, since, now);
+      // JSON stores the first SQL literal for dynamic date URLs. Only replace
+      // that exact prefix using the matching definition, never a different
+      // inventory operation or an arbitrary query observed on the route.
+      const resolvedUrl = definition && definition.literalRoute === literalInvocation.route
+        ? parseCronInvocation(definition.command, expectedRunAt).url ?? entryUrl : entryUrl;
+      const entryInvocation = parseUrlPieces(resolvedUrl);
 
       return {
         jobid: entry.jobid ?? null,
@@ -1150,11 +1161,11 @@ async function loadScheduledCronJobs(
         cronExpression,
         scheduleTimeDisplay: formatScheduleTime(cronExpression),
         method: entryMethod ?? definition?.method ?? "UNKNOWN",
-        url: entryUrl ?? definition?.url ?? null,
+        url: resolvedUrl ?? definition?.url ?? null,
         route: entryInvocation.route ?? definition?.route ?? null,
         routePath: entryInvocation.routePath ?? definition?.routePath ?? null,
         sqlText: definition?.sqlText ?? null,
-        expectedRunAt: expectedRunAtWithinWindow(cronExpression, since, now),
+        expectedRunAt,
         sortOrder: index,
       };
     })
@@ -1671,21 +1682,25 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   let auditEmailResult: any = null;
   const errors: string[] = [];
 
-  const runSource = await readReportSource<any>((from, to, signal, query) => supabase
+  // Start both core sources together so a slow run-history read cannot spend
+  // the entire shared budget before route audit observations are attempted.
+  const [runSource, auditSource] = await Promise.all([
+    readReportSource<any>((from, to, signal, query) => supabase
     .from("cron_job_report")
     .select("jobid, runid, jobname, scheduled_time, status, return_message, end_time, sql_text", { count: query.count })
     .gte("scheduled_time", since).lte("scheduled_time", until)
     .order("scheduled_time", { ascending: true }).order("runid", { ascending: true })
     .range(from, to).abortSignal(signal),
-    (row) => String(row.runid), REPORT_PAGE_SIZE, 40, sourceBudgetMs, sourceOptions);
-  const auditSource = await readReportSource<any>((from, to, signal, query) => supabase
+    (row) => String(row.runid), REPORT_PAGE_SIZE, 40, sourceBudgetMs, sourceOptions),
+    readReportSource<any>((from, to, signal, query) => supabase
     .from("cron_job_audit")
     .select("job_name, run_time, rows_affected, status, details", { count: query.count })
     .gte("run_time", since).lte("run_time", until)
     .order("run_time", { ascending: true }).order("job_name", { ascending: true })
     .order("status", { ascending: true }).order("rows_affected", { ascending: true })
     .order("details", { ascending: true }).range(from, to)
-    .abortSignal(signal), reportRowIdentity, REPORT_PAGE_SIZE, 40, sourceBudgetMs, sourceOptions);
+    .abortSignal(signal), reportRowIdentity, REPORT_PAGE_SIZE, 40, sourceBudgetMs, sourceOptions),
+  ]);
   const runs = runSource.rows;
   const audits = auditSource.rows;
   const runErr = runSource.error;
@@ -1814,7 +1829,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
   const runRows: RunRow[] = (runs ?? []).map((row: any) => {
     const invocation = parseCronInvocation(
-      (row.sql_text ?? null) as string | null
+      (row.sql_text ?? null) as string | null, row.scheduled_time
     );
     const timing = invocation.method === "SQL" ? buildSqlCronTimingObservation({
       jobname: (row.jobname ?? null) as string | null,
