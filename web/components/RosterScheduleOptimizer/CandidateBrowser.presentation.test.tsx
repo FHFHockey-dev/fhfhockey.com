@@ -152,6 +152,11 @@ it("separates known, partly known and unusable input facts without granting waiv
   expect(screen.queryAllByLabelText(/^Result /)).toHaveLength(0);
   expect(JSON.stringify({ snapshot: props.snapshot, intent: props.intent })).toBe(before);
 });
+it("asks for a roster instead of the loading copy when the roster is empty", () => {
+  render(<CandidateBrowser {...discoveryFixture()} emptyRoster />);
+  expect(screen.getByRole("status").textContent).toBe("Add your roster to rank free agents for it.");
+});
+
 it("leaves unavailable comparisons unranked and names alphabetical browsing for either selected net sort", () => {
   const props = discoveryFixture();
   props.snapshot.rules.unsupported = ["Retained roster inputs are unverified; this is provisional schedule analysis."];

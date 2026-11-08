@@ -24,6 +24,8 @@ type Props = {
   calendar?: CanonicalSchedule;
   players: PlanningPlayer[];
   rosterIds: Set<string>;
+  /** No roster yet: one "add your roster" prompt instead of the loading copy. */
+  emptyRoster?: boolean;
   snapshot: PlanningSnapshot | null;
   intent: PlanIntent;
   fits: PlanningResult["scheduleFits"];
@@ -65,7 +67,7 @@ export function noAddsRemain(snapshot: PlanningSnapshot | null) {
   return periods.length > 0 && periods.every(period => period.source !== "unknown" && period.remaining !== null && Math.floor(period.remaining / cost) < 1);
 }
 
-export default function CandidateBrowser({ executionOptions, preferredSort, searchQuery, changeSearch, calendar, players, rosterIds, snapshot, intent, manual, select, add, selectPlan, canSelectPlan, selectPlanReasonId, markAvailable }: Props) {
+export default function CandidateBrowser({ emptyRoster = false, executionOptions, preferredSort, searchQuery, changeSearch, calendar, players, rosterIds, snapshot, intent, manual, select, add, selectPlan, canSelectPlan, selectPlanReasonId, markAvailable }: Props) {
   const [view, setView] = useState<"team" | "all">("all");
   const [localQuery, setLocalQuery] = useState("");
   const query = searchQuery ?? localQuery;
@@ -187,7 +189,7 @@ export default function CandidateBrowser({ executionOptions, preferredSort, sear
       {categories && <p className={styles.limitation}>Ranked by more starts. Each card shows the category gains and losses for the whole swap.</p>}
       {goalieBoost && <p className={styles.limitation}>Your goalie minimum may be missed, so goalies who add starts are listed first.</p>}
       {loading ? <p role="status" aria-live="polite">Comparing free agents…</p>
-        : !hasEvaluatedFit && <p role="status">{noAddsRemain(snapshot) ? "No adds remain this period; adds return when the period resets." : "Rankings appear once projections and schedules load."}</p>}
+        : !hasEvaluatedFit && <p role="status">{emptyRoster ? "Add your roster to rank free agents for it." : noAddsRemain(snapshot) ? "No adds remain this period; adds return when the period resets." : "Rankings appear once projections and schedules load."}</p>}
       {error && <p aria-live="polite">{error}</p>}
     </div>
     {filtered.length === 0 ? <p>No candidates match these filters.</p> : view === "all" ? lists(filtered) : grouped.map(group => <details key={group.name} className={styles.alternative}><summary>{group.name} · {group.rows.length} players</summary>{lists(group.rows)}</details>)}
