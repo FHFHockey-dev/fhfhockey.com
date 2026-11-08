@@ -1,5 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+// Keep the real audit wrapper, but exercise unavailable telemetry without I/O.
+vi.mock("lib/supabase/server", () => ({
+  default: { from: vi.fn(() => ({
+    insert: vi.fn().mockResolvedValue({ error: { message: "fixture audit unavailable" } })
+  })) }
+}));
+vi.mock("lib/cron/nhlOffSeason", () => ({
+  withNhlOffSeasonSkip: (handler: any) => handler
+}));
+
 vi.mock("utils/adminOnlyMiddleware", () => ({
   default: (handler: any) => handler
 }));

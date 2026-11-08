@@ -260,6 +260,8 @@ export function withCronJobAudit(
   handler: (req: any, res: any) => any,
   opts?: {
     jobName?: string;
+    // Opt into a required persistence acknowledgement. An unconfirmed audit
+    // returns 503 with a no-retry receipt; ordinary routes keep their outcome.
     includeFinalAuditReceipt?: boolean;
     recordRowMetrics?: boolean;
     // Limit persisted response data to safe primitive summary fields. The API
@@ -455,9 +457,10 @@ export function withCronJobAudit(
       }
       if (auditSkipped) {
         // No receipt was promised or written; flush the handler response as is.
-      } else if (finalAuditStatus !== "persisted") {
-        // A failed/uncertain audit never hides behind a successful operation or
-        // an opt-out from positive receipts. Callers must hold, not replay.
+      } else if (opts?.includeFinalAuditReceipt && finalAuditStatus !== "persisted") {
+        // Only routes promising a durable final receipt couple their response
+        // to audit persistence. Other routes retain the handler's status/body;
+        // audit failures are still logged above without retrying the write.
         res.status(503);
         pendingResponse = { kind: "json", body: cronAuditFailureResponse(
           responseToFlush?.body ?? capturedBody, statusCode, finalAuditStatus, "withCronJobAudit") };
