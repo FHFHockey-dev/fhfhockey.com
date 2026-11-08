@@ -33,3 +33,6 @@
 | /game-grid e2e | web/e2e/player-pickup.spec.ts | Pre-existing failures: line 37 expects "Availability in your league…" (signed-out copy changed by d3e76b3a0), connected-pool test fails on premium-auth fixture (line 120). Not fixed here; for Chef. | Other lane / follow-up | 5 |
 | /game-grid | table header labels (.masterSectionLabel, eyebrows, key, day dates) | ~~8.3–9.6px labels.~~ 10–11px (narrower below 1200); "Opponent strength" → "Opponents", clear of the 24px corner (TJ caught the clip) | Done | 6 |
 | /game-grid | table width (sizeMasterTableColumns) | ~~1200px table inside a 1296px column at 1440.~~ Side/summary columns take the spare; edges match the header card at 1024/1440/1920 | Done | 6 |
+| /game-grid | day intensity colours | Validator: green/yellow protan ΔE 6.1 (floor band); legal, as each day prints its game count. Shared tokens. | No change | 7 |
+| /game-grid | 4-week sparklines (OpportunitySparkline.module.scss) | ~~Blended gradient line, glow stroke, glowing dots.~~ Neutral line, per-week dots and bands at every width | Done | 7 |
+| /game-grid | Score digits (DesktopMasterTable data-rank) | ~~Blue for every middle team.~~ Phone's 1–32 rank ramp (TJ edit) | Done | 7 |

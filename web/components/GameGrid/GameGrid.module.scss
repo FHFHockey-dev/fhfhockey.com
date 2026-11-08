@@ -1138,6 +1138,11 @@
       box-shadow: inset 0 -2px 0 $rank-accent;
     }
   }
+
+  // Desktop Score digits use the same rank ramp (the top / bottom 10 keep their tint and outline).
+  .masterSummaryScore[data-rank="#{$i}"] {
+    color: $rank-text !important;
+  }
 }
 
 // Legend bar
@@ -1842,7 +1847,8 @@
 .masterSummaryScore {
   min-width: 0;
   width: auto;
-  color: v.$color-blue-300;
+  // Unranked ("-") stays neutral; ranked scores take the green -> red ramp via [data-rank].
+  color: rgba(v.$color-white, 0.92);
   font-size: 1rem;
   font-weight: 700;
   text-align: center;
@@ -2001,13 +2007,11 @@
 
 .masterScoreBest {
   background: rgba(v.$schedule-green, 0.17) !important;
-  color: gg.$rank-ink-best !important;
   box-shadow: inset 0 0 0 1px rgba(v.$schedule-green, 0.62);
 }
 
 .masterScoreWorst {
   background: rgba(v.$schedule-red, 0.17) !important;
-  color: gg.$rank-ink-worst !important;
   box-shadow: inset 0 0 0 1px rgba(v.$schedule-red, 0.62);
 }
 

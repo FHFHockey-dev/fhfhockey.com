@@ -1337,6 +1337,8 @@ export default function DesktopMasterTable({
                       isTopTen && styles.masterScoreBest,
                       isBottomTen && styles.masterScoreWorst,
                     )}
+                    // Same 1-32 green -> red rank ramp as the phone's Score column.
+                    data-rank={scoreRanking.get(row.teamId)}
                   >
                     {row.weekScore === -100 ? "-" : row.weekScore.toFixed(1)}
                   </td>
