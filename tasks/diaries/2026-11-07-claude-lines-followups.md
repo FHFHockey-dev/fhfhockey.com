@@ -57,6 +57,12 @@ Q2: payload of the latest line_entry_revisions row with goalie units (slot order
 - Trade-offs: a frozen entry now persists only when that team gets a new source or a phase change (read-time freeze covers display). The GET service path (P4) still reads full history (hydrateLineGameStates, fetchLineGames, fetchEntryHistory): bound it before P4.
 - Not touched: Vercel env, crons, update-line-sources/ccc.
 
+## Chef ticket 4b: bounded public GET (a7a7466ad)
+- readGameLines: games window -21d/+14d (the game route reads 1 game, plus the team window only if carry-forward is on); latest state only for candidates; NHL read only if the stored state is older than 5 min; claims since the window; entries for window games; missed claim games in 1 batched read. hydrateLineGameStates removed.
+- Per GET: team 10 q / 4381 rows -> 7 / 71; game 132 q / 2763 rows -> 12 / 83; fresh state -> 0 NHL.
+- serviceLoad.test.ts (4). 1561 pass; typecheck 0; eslint 0.
+- Note: the response's `games` list is now windowed too (it was the full history).
+
 ## Next
 - After tonight's games (~05:00Z 11-08): rerun Q1; if claims > 0, Q2 for goalie slot order; GET /api/v1/lines/projected and /lines/<team> (<=5 sequential reads); write receipt tasks/artifacts/lines-p3-game-night-2026-11-08.md (MTL 189/187/191).
 - If claims stay 0 after game night: diagnose processor (projectionReportFromSource null? units empty?) before P4.
