@@ -49,12 +49,21 @@ Q2: payload of the latest line_entry_revisions row with goalie units (slot order
 - Updated deliberately: projectedLineups.test goalie/injury children now expect "reporter"; PP stays null. Social-share tests already cover both a named reporter (reporter0/reporter1 conflict) and the null fallback; unchanged.
 - vitest lib/sources+lines+socialShare+player-forecasts+update-lines-ccc/line-sources: 4011 pass / 39 skip; typecheck 0; eslint 0.
 
+## Chef ticket 4 (URGENT): P3 load took prod Supabase down (c74e53c03)
+- Cause: processor looped over the whole scheduled slate on every per-minute and per-webhook call: full games history, every stored state row (hydrateLineGameStates), an NHL call, a new state row per call (state_id hashes observedAt), and a reconcile with full claim and PP history reads.
+- Fix in lib/lines only: source teams only (empty call = 0 DB); games window -21d/+3d; latest state = 1 row per near game; a state younger than 5 min is reused; reconcile only on a newly inserted claim or a real phase change (the raw stored phase, not stateAtRead-aged); claims read since the window; PP latest = 1 row per unit.
+- Counts (16 teams, 8 games): empty 112+16 NHL -> 0+0; one source 118+16 -> 14+1; repeat at +1 min 118+16 -> 8+0.
+- Tests: processorLoad.test.ts (4). storage.test mocks updated (upsert().select, entry-read count). 1549 pass; typecheck 0; eslint 0.
+- Trade-offs: a frozen entry now persists only when that team gets a new source or a phase change (read-time freeze covers display). The GET service path (P4) still reads full history (hydrateLineGameStates, fetchLineGames, fetchEntryHistory): bound it before P4.
+- Not touched: Vercel env, crons, update-line-sources/ccc.
+
 ## Next
 - After tonight's games (~05:00Z 11-08): rerun Q1; if claims > 0, Q2 for goalie slot order; GET /api/v1/lines/projected and /lines/<team> (<=5 sequential reads); write receipt tasks/artifacts/lines-p3-game-night-2026-11-08.md (MTL 189/187/191).
 - If claims stay 0 after game night: diagnose processor (projectionReportFromSource null? units empty?) before P4.
 - Then P4 pop-up.
 
 ## Blockers / approvals
+- P3 is off and the crons are paused (Chef). P4 stays off. The game-night receipt waits until P3 is back on.
 - Item 6/7 wait on tonight's game night.
 - Item 8 approved by TJ (pop-up) and done.
 
