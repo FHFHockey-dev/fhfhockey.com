@@ -2804,9 +2804,7 @@
   color: v.$color-black; // high contrast against primary
   border-radius: 50%;
   cursor: help;
-  box-shadow:
-    0 0 0 1px rgba(v.$color-white, 0.15),
-    0 0 4px -1px v.$primary-color;
+  box-shadow: 0 0 0 1px rgba(v.$color-white, 0.15);
   text-transform: none;
   letter-spacing: 0;
   transition:
@@ -2817,9 +2815,7 @@
   &:hover,
   &:focus-visible {
     background: color.adjust(v.$primary-color, $lightness: 8%);
-    box-shadow:
-      0 0 0 1px rgba(v.$color-white, 0.25),
-      0 0 6px 0 v.$primary-color;
+    box-shadow: 0 0 0 1px rgba(v.$color-white, 0.25);
     transform: translateY(-1px);
   }
 }

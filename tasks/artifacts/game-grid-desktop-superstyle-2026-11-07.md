@@ -36,3 +36,8 @@
 | /game-grid | day intensity colours | Validator: green/yellow protan ΔE 6.1 (floor band); legal, as each day prints its game count. Shared tokens. | No change | 7 |
 | /game-grid | 4-week sparklines (OpportunitySparkline.module.scss) | ~~Blended gradient line, glow stroke, glowing dots.~~ Neutral line, per-week dots and bands at every width | Done | 7 |
 | /game-grid | Score digits (DesktopMasterTable data-rank) | ~~Blue for every middle team.~~ Phone's 1–32 rank ramp (TJ edit) | Done | 7 |
+| /game-grid | day switches (Toggle.module.scss, 1440 + 390) | ~~Glossy gradients, blur, hover lift.~~ Flat track, flat blue on, flat thumb | Done | 8 |
+| /game-grid | WEEK SCORE "i" (.weekScoreHelp) | ~~Blue glow.~~ Removed | Done | 8 |
+| /game-grid @390 | grid container top edge | toenails.cjs flags a 1px top rule vs 12px radius; hidden under the sticky header, not visible. | No change | 0, 8 |
+
+Final sweep (pass 8): axe 0 at 1440 and 390 (7- and 10-day), desktop toenails clean, nested-radius probe clean (drawer closed/open), focus sweep 220 stops all visible.
