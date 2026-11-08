@@ -1181,7 +1181,7 @@ export default function RosterScheduleOptimizer() {
       </div>
       <label className={styles.commandSearch}><span className={styles.scheduleSrOnly}>Player search</span><input type="search" aria-label="Search candidate players" placeholder="Search players or teams…" value={candidateSearch} onFocus={() => setTab("candidates")} onChange={event => setCandidateSearch(event.target.value)} /></label>
       {/* One line in the bar; hover or keyboard focus opens every notice as an overlay. */}
-      <div className={styles.navStatus}><div className={styles.statusRail}>
+      <div className={styles.navStatus}><div className={styles.statusRail} tabIndex={0} aria-label="Status messages">
     {/* Success messages leave the rail as a toast that fades (the live region stays put); errors and reasons stay in the rail. */}
     {workspace.context.provider !== "manual" && (refreshToast
       ? <div id="rso-provider-refresh-status" className={`${styles.toastSlot} ${refreshRun ? styles.toastAgain : ""}`} role="status" style={{ "--toast-row": 0 } as CSSProperties}>{refreshFeedback?.text}</div>

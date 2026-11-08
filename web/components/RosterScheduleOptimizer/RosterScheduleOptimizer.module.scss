@@ -523,7 +523,7 @@ details.alternative .candidateRow button { width: auto; }
 // so the panels below get the height. Notices sit on one line and open as an overlay on hover or keyboard focus.
 .navBar { position: relative; z-index: 20; flex-shrink: 0; display: flex; flex-wrap: wrap; align-items: center; gap: v.$space-sm; min-height: 44px; padding: 4px v.$space-sm 4px 14px; border: 1px solid v.$draft-border; border-radius: s.$radius-card; background: v.$draft-surface; }
 .navBar::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 4px; border-radius: s.$radius-card 0 0 s.$radius-card; background: v.$primary-color; pointer-events: none; }
-.navTitle { margin: 0; flex-shrink: 0; color: s.$ink-strong; font: s.$weight-bold #{s.$text-lg}/1 v.$font-family-accent; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; }
+.navTitle { margin: 0; flex-shrink: 0; color: s.$ink-strong; font: 400 #{s.$text-lg}/1 v.$font-family-accent; /* Train One has one weight */ letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; }
 .navBar .providerControl { flex-shrink: 0; gap: 6px; min-height: 32px; padding: 2px 8px 2px 3px; border: 1px solid v.$draft-border; border-radius: s.$radius-small; background: v.$draft-input; text-align: left; }
 .navBar .providerMark { width: 26px; height: 26px; font-size: s.$text-sm; }
 .navBar .providerControl strong { font-size: s.$text-sm; line-height: 1.15; }
@@ -537,6 +537,11 @@ details.alternative .candidateRow button { width: auto; }
 .navStatus:hover > .statusRail, .navStatus:focus-within > .statusRail { max-height: 60vh; overflow: auto; padding: v.$space-xs; border-color: v.$draft-border; background: v.$draft-surface-raised; box-shadow: v.$shadow-panel; }
 .navStatus .notice, .navStatus .dataHealth { max-width: 100%; }
 .navStatus .notice { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-height: none; }
+// A caret says the one-line rail holds more; hover or keyboard focus expands it.
+.navStatus > .statusRail { padding-right: 20px; }
+.navStatus > .statusRail:focus-visible { outline: 2px solid v.$primary-color; outline-offset: 1px; }
+.navStatus:has(.statusRail > :not([hidden]))::after { content: "▾"; position: absolute; top: 15px; right: 6px; z-index: 26; transform: translateY(-50%); color: s.$ink-muted; font-size: s.$text-sm; line-height: 1; pointer-events: none; }
+.navStatus:hover::after, .navStatus:focus-within::after { display: none; }
 .navStatus:hover .notice, .navStatus:focus-within .notice { white-space: normal; }
 .navBar .commandActions { flex-shrink: 1; flex-wrap: wrap; min-width: 0; max-width: 100%; padding: 0; border: 0; background: none; }
 .navBar .commandActions button, .navBar > button { min-height: 30px; padding: 2px 9px; font-size: s.$text-sm; white-space: nowrap; }

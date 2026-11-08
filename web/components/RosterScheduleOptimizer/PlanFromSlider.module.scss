@@ -12,3 +12,4 @@
 .planFrom input::-webkit-slider-thumb { appearance: none; width: 16px; height: 16px; margin-top: -6px; border: 0; border-radius: 50%; background: v.$primary-color; }
 .planFrom input::-moz-range-track { height: 4px; border: 0; border-radius: s.$radius-round; background: var(--track); }
 .planFrom input::-moz-range-thumb { width: 16px; height: 16px; border: 0; border-radius: 50%; background: v.$primary-color; }
+.caption { display: block; margin-bottom: 2px; color: s.$ink-muted; font-size: s.$text-xs; line-height: 1.2; text-align: right; }

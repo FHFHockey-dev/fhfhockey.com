@@ -39,6 +39,8 @@ export default function PlanFromSlider({ days, from, min, max, onChange, disable
   const release = () => { if (!dragging.current) return; dragging.current = false; commit(value); };
   return <div className={styles.planFrom} data-plan-from={days[value]}
     style={{ "--slider-day-count": days.length, "--greyed": days.length > 1 ? value / (days.length - 1) : 0 } as CSSProperties}>
+    {/* Visible caption: the bare thumb didn't say what it moves. */}
+    <span className={styles.caption} aria-hidden="true">Plan from {dayLabel(days[value])}{disabled ? "" : " · drag to change"}</span>
     <input type="range" aria-label="Plan from day" min={0} max={days.length - 1} step={1} value={value} disabled={disabled}
       aria-valuetext={`Plan from ${dayLabel(days[value])}`}
       onPointerDown={() => { dragging.current = true; }} onPointerUp={release} onPointerCancel={release}
