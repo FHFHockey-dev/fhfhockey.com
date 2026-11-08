@@ -21,6 +21,7 @@ const response = () => {
   return res;
 };
 const request = (authorization = "Bearer test-secret", method = "GET") => ({ method, url: "/api/internal/yahoo-live-draft", headers: { authorization } });
+const persistedAudit = { finalAudit: { owner: "withCronJobAudit", status: "persisted" } };
 const auditRow = () => {
   expect(mocks.auditInsert).toHaveBeenCalledTimes(1);
   return mocks.auditInsert.mock.calls[0][0];
@@ -60,7 +61,7 @@ describe("Yahoo production scheduler", () => {
   it("does no work when disabled or no sessions are active", async () => {
     const res = response();
     await handler(request() as any, res as any);
-    expect(res.sent).toHaveBeenCalledWith({ cycles: 0, attempted: 0, succeeded: 0, failed: 0 });
+    expect(res.sent).toHaveBeenCalledWith({ cycles: 0, attempted: 0, succeeded: 0, failed: 0, ...persistedAudit });
     expect(auditRow()).toMatchObject({ job_name: "/api/internal/yahoo-live-draft", status: "success", rows_affected: null });
     vi.stubEnv("YAHOO_LIVE_DRAFT_ENABLED", "false");
     await handler(request() as any, res as any);
@@ -115,7 +116,7 @@ describe("Yahoo production scheduler", () => {
     const res = response();
     await handler(request() as any, res as any);
     expect(res.status).toHaveBeenCalledWith(503);
-    expect(res.sent).toHaveBeenCalledWith({ error: "Yahoo polling coordinator unavailable" });
+    expect(res.sent).toHaveBeenCalledWith({ error: "Yahoo polling coordinator unavailable", ...persistedAudit });
     expect(auditRow()).toMatchObject({ status: "failure", details: { statusCode: 503 } });
     expect(JSON.stringify(auditRow())).not.toContain("private details");
   });
@@ -125,7 +126,7 @@ describe("Yahoo production scheduler", () => {
     const res = response();
     await handler(request() as any, res as any);
     expect(res.status).toHaveBeenCalledWith(503);
-    expect(res.sent).toHaveBeenCalledExactlyOnceWith({ error: "Yahoo polling coordinator unavailable" });
+    expect(res.sent).toHaveBeenCalledExactlyOnceWith({ error: "Yahoo polling coordinator unavailable", ...persistedAudit });
     const row = auditRow();
     expect(row).toMatchObject({ status: "failure", details: { statusCode: 503, error: null,
       responseOutcome: { error: "Yahoo polling coordinator unavailable" } } });
@@ -159,10 +160,10 @@ describe("Yahoo production scheduler", () => {
       const res = response();
       await handler(request() as any, res as any);
       expect(res.status).toHaveBeenCalledWith(200);
-      expect(res.sent).toHaveBeenCalledExactlyOnceWith(body);
+      expect(res.sent).toHaveBeenCalledExactlyOnceWith({ ...body, ...persistedAudit });
       const row = auditRow();
       expect(row).toMatchObject({ job_name: "/api/internal/yahoo-live-draft", status: "success", rows_affected: null,
-        details: { statusCode: 200, rowsUpserted: null, failedRows: null, error: null } });
+        details: { statusCode: 200, rowsUpserted: null, failedRows: null, error: null, ...persistedAudit } });
       expect(JSON.parse(row.details.response)).toEqual(body);
       expect(mocks.limit).not.toHaveBeenCalled();
       expect(mocks.run).not.toHaveBeenCalled();
@@ -185,7 +186,7 @@ describe("Yahoo production scheduler", () => {
       vi.setSystemTime(new Date("2027-08-15T12:00:00Z"));
       const res = response();
       await handler(request() as any, res as any);
-      expect(res.sent).toHaveBeenCalledExactlyOnceWith({ cycles: 0, attempted: 0, succeeded: 0, failed: 0 });
+      expect(res.sent).toHaveBeenCalledExactlyOnceWith({ cycles: 0, attempted: 0, succeeded: 0, failed: 0, ...persistedAudit });
       expect(JSON.parse(auditRow().details.response)).toEqual({ cycles: 0, attempted: 0, succeeded: 0, failed: 0 });
     });
     it("requires review with HTTP 503 when the heartbeat insert fails", async () => {

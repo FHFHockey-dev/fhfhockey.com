@@ -1711,7 +1711,8 @@ describe("NST acquisition and uncertain-persistence regressions", () => {
       const receipt = kind === "shared-null" ? null : kind === "shared-empty" ? {} : kind === "shared-rejected" ? { error: { message: "rejected" } } : undefined;
       if (kind === "shared-thrown") auditInsertMock.mockRejectedValueOnce(new Error("lost acknowledgement"));
       else auditInsertMock.mockResolvedValueOnce(receipt);
-      updateWgoSkatersMock.mockImplementation(withCronJobAudit(operation));
+      // Model a child that promises a final receipt, not a best-effort audit.
+      updateWgoSkatersMock.mockImplementation(withCronJobAudit(operation, { includeFinalAuditReceipt: true }));
     }
     const first = await invoke();
     const child = first.body.stages.find((stage: any) => stage.id === "upstream_skater_sources").steps.find((step: any) => step.id === "update-wgo-skaters");
