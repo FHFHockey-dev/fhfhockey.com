@@ -218,3 +218,7 @@ Q7 rosters is_current stamp counts; Q32 stamps by team (newest stamp per team, c
   max 16 games/day. ~131 rows/game → ~34.6k rows. Route param snapshot_date (route :82) pinned 2026-11-08 on every call.
 - Pop-up TJ with exact plan.
 - TJ pop-up 'Run it as planned'. Pre-check: 0 rows season 20262027. tut-fill.sh started (39 days, snapshot 2026-11-08 pinned).
+- 08:41-08:48 UTC fill DONE: 39/39 HTTP 200, 34,630 rows; readback 34,630 / 264 games / 528 team-games, single
+  snapshot 2026-11-08, all complete, F1+D1 on 528/528, 0 non-regular. RESULTS §4 + §8 follow-ups written.
+- Left: queue replay for Schwindt/Hryckowian items (write → TJ); 2025-26 team_unit_toi rebuild (separate decision);
+  no cron writes team_unit_toi (new dates need runs with the same snapshot).

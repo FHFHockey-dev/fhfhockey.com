@@ -241,3 +241,39 @@ The builder filters by season and date but not by game type, so any future range
 **Snapshot pinning (reader contract).** `teamMatrix.ts` `fetchLatestTeamUnitToiSnapshotDate` takes the newest `snapshot_date` for the whole season, then reads only that snapshot. A backfill must therefore write every game under one pinned `snapshot_date`, passed explicitly on every call. Per-day writes are not atomic, so readers will see a partial season until the last day lands. Run the days back to back and verify the total row count once at the end.
 
 **2025-26 is affected too.** The existing 12,929 rows (one snapshot, 2026-06-22) average 9.5 rows per regular-season game: 2,514 forward-line and 2,744 defense-pair rows across 1,308 games. They were built with the same broken mapping. A rebuild would need its own pinned snapshot covering the whole season, because the reader uses the latest snapshot only.
+
+### Follow-up, 2026-11-08: released fix verified, 2026-27 backfilled (TJ pop-ups)
+
+**Production dry run on release #416** (master 46f971753), 09-29, `dryRun=true`: 656 rows (486 F, 140 D, 30 PP), `teamGamesWithoutEvenStrengthRows` 0, `partialRows` 0, nothing written. This is identical to the local replay.
+
+**Backfill (TJ: "Run it as planned").** It ran from 08:41 to 08:48 UTC.
+
+- **Calls:** 39 one-day calls to `update-team-unit-toi`, 09-29 through 11-06, each with `dryRun=false` and `snapshot_date=2026-11-08`. Calls ran one at a time with a 10 s gap; `pg_stat_activity` read 12–21.
+- **Window:** 11-07 was left out because 10 of its 12 games had no shift rows yet.
+- **Result:** every call returned HTTP 200 with upserted equal to generated, no partial rows and no team-game missing ES rows. 34,630 rows in total.
+
+**Readback (SELECT).**
+
+| Check | Result |
+|---|---|
+| Rows for season 20262027 | 34,630, matching the script total |
+| Games / team-games | 264 / 528 |
+| Snapshot dates | one: 2026-11-08 |
+| Coverage status | all `complete` |
+| Forward-line / defense-pair / PP rows | 25,692 / 7,525 / 1,413 |
+| Team-games with a top forward line and a top defense pair | 528/528 |
+| Non-regular-season rows | 0 |
+
+**Rollback, if ever needed:** delete season 20262027 where `snapshot_date = '2026-11-08'`. There were no 2026-27 rows before this run.
+
+**Ongoing:** no cron writes this table. New dates need a run with the same pinned snapshot date; a later snapshot date would hide this one, because the reader takes only the latest snapshot. **2025-26** is still the old broken build and is a separate decision.
+
+## 4. `rosters.official_seen_at` follow-up (2026-11-08, SELECT only)
+
+- **Run:** the 02:00 UTC `update-players` run succeeded (cron and audit, `dryRun=false`). It stamped 795 of the 5,227 `is_current` rows, across all 32 teams, all between 02:00:22 and 02:00:24.
+- **Stamps:**
+  - Cole Schwindt (FLA, 8481655): stamped. Kai Schwindt (8483878): not stamped.
+  - Justin Hryckowian (DAL, 8484829): stamped. Dylan Hryckowian (8486130): not stamped.
+  - Duplicate rows from other seasons, and Cole's stale VGK row, are null.
+- **Expected effect:** the stamps match the earlier simulated replay, where FLA Schwindt resolved to Cole on 15 of 16 items and DAL Hryckowian to Justin on 16 of 16. That's an inference from identical inputs; the replay was not re-run.
+- **Still pending:** `tweet_pattern_review_items` mentioning either name — DAL 19, FLA 4, CAR 1, untagged 51. They clear only through a replay or an alias review, which is a write and needs TJ's approval.
