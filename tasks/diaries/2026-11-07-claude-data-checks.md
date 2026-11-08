@@ -243,3 +243,16 @@ Q7 rosters is_current stamp counts; Q32 stamps by team (newest stamp per team, c
 1. Re-ask the 2025-26 snapshot pop-up; if approved run with the tut-fill guards (scratchpad runs/tut-fill.sh pattern).
 2. (a) bounded replay: list IDs (DAL 19, FLA 4, CAR 1, untagged 51), dry-run resolver, pop-up, replay only on OK.
 3. Schedule activation for nightly team_unit_toi after release (own TJ pop-up).
+- 21:04 UTC TJ pop-up (this session) 'Start it now': 2025-26 rebuild tut-2526.sh, 218 dates, snapshot 2026-11-08 (pre-check 0 rows), +60 s call guard, activity wait.
+Q33 (a) IDs: select id, team_abbreviation, review_status, parser_classification, source_created_at, left(raw_text,140) from tweet_pattern_review_items where (coalesce(raw_text,'')||' '||coalesce(enriched_text,'')) ~* '(schwindt|hryckowian)' order by team_abbreviation nulls last, source_created_at;
+- (a) Q33: 76 items mention Schwindt/Hryckowian: DAL 19, FLA 6 (1 reviewed), CAR 1, untagged 50 (line_source_ifttt_events
+  / lines_ccc_ifttt_events). Risk: Oct tweets name D(ylan) Hryckowian (debut 10-25, loaned 10-28); a replay with today's
+  stamps could flip historical "Hryckowian" to Justin → before/after must flag. Explore subagent mapping replay path.
+- (a) Explore: no per-item-ID replay without side effects; processor reprocess (update-lines-ccc / update-line-sources
+  ?tweetId&reprocess) rewrites line combos/forecasts/snapshots + emails and uses TODAY's roster. Real queue =
+  lineup_unresolved_player_names: pending FLA Schwindt 16, DAL Hryckowian 20, CAR 1 (= 37). None created after 02:00 UTC
+  11-08; FLA tweets ingested 17:38 UTC 11-08 left 0 unresolved (11-07 ones left 2) → live tie-break works.
+  Bounded path: player-name-aliases action=assign_occurrence (updates only that row; no alias learned; no reparse).
+Q34 the 37 pending rows: id, team, created, tweet_id, context_text, metadata candidates.
+- (a) TJ pop-up: 'Run the 36 updates' + FLA 09-20 'Ignore it' → 34 assign_occurrence (FLA→Cole 8481655 x15, DAL→Justin 8484829 x19) + 3 ignore (CAR 0884b8b4, DAL AHL badb7ffa, FLA 09-20 b1c9dff4). Plan file scratchpad runs/queue-plan.tsv.
+- (a) DONE: 37/37 HTTP 200; readback 34 resolved (occurrence) + 3 ignored, 0 pending, 0 new aliases.

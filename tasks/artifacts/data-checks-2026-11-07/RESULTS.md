@@ -277,3 +277,23 @@ The builder filters by season and date but not by game type, so any future range
   - Duplicate rows from other seasons, and Cole's stale VGK row, are null.
 - **Expected effect:** the stamps match the earlier simulated replay, where FLA Schwindt resolved to Cole on 15 of 16 items and DAL Hryckowian to Justin on 16 of 16. That's an inference from identical inputs; the replay was not re-run.
 - **Still pending:** `tweet_pattern_review_items` mentioning either name — DAL 19, FLA 4, CAR 1, untagged 51. They clear only through a replay or an alias review, which is a write and needs TJ's approval.
+
+### Follow-up, 2026-11-08: Schwindt/Hryckowian backlog cleared (TJ pop-up)
+
+**Where the backlog actually was.** The queue is `lineup_unresolved_player_names`; `tweet_pattern_review_items` only mirrors its source rows. It held 37 pending rows: FLA "Schwindt" 16, DAL "Hryckowian" 20 and CAR 1. None were created after the 02:00 UTC stamps.
+
+**The live tie-break works.** FLA warmup tweets ingested at 17:38 UTC on 11-08 left 0 unresolved rows; the equivalent tweets on 11-07, before the stamps, left 2 each.
+
+**Why not a processor replay.** `update-line-sources` and `update-lines-ccc` with `reprocess` would also rewrite line combinations, forecasts and snapshots, and send emails. They would also resolve old tweets against *today's* roster: October tweets about Dylan Hryckowian (NHL from 10-25 to 10-28) would flip to Justin.
+
+**What ran instead.** Bounded `POST /api/v1/db/player-name-aliases` calls, one row at a time, 37 calls, all HTTP 200:
+
+| Action | Rows |
+|---|---|
+| `assign_occurrence` FLA → Cole Schwindt (8481655), 10-19 → 11-07 | 15 |
+| `assign_occurrence` DAL → Justin Hryckowian (8484829), 10-14 → 11-08 (none in Dylan's stint) | 19 |
+| `ignore`: CAR 09-22 (Panthers preseason lineup filed under CAR), DAL 11-08 (Texas Stars AHL lineup), FLA 09-20 (preseason, Cole or Kai unclear; TJ chose ignore) | 3 |
+
+`assign_occurrence` changes only that row. It learns no surname alias and re-parses nothing.
+
+**Readback.** 0 still pending. 34 rows `resolved` with `resolutionScope=occurrence`, 3 `ignored`, and 0 new rows in `lineup_player_name_aliases`. The historical tweets' stored line parses are unchanged; that was deliberate.
