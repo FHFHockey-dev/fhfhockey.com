@@ -304,6 +304,17 @@
     "route": "/api/v1/db/calculate-wigo-stats"
   },
   {
+    "jobid": 403,
+    "jobname": "update-team-unit-toi-nightly",
+    "schedule": "55 8 * * *",
+    "run_time_utc": "08:55 UTC",
+    "active": true,
+    "method": "GET",
+    "route": "/api/v1/db/update-team-unit-toi?season=20262027&mode=nightly&dryRun=false",
+    "auth": "Supabase Vault cron_secret",
+    "verification": "Scheduled 2026-11-08 by explicit TJ approval after master 620276ede (#379) was READY and smoke-tested. Adds up to 40 completed games missing from the season's latest team_unit_toi snapshot to that same snapshot; ~70 min after update-shift-charts (07:45). Update the season each new season (409 when the season has no snapshot)."
+  },
+  {
     "jobid": 251,
     "jobname": "sync-yahoo-players-to-sheet",
     "schedule": "55 8 * * *",

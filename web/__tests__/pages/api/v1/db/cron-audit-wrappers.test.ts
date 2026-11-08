@@ -78,20 +78,21 @@ describe("scheduled cron audit coverage", () => {
     // run-projection-v2 has no other active pg_cron owner.
     // 2026-10-22: job 399 (route-runner-tick, cron-only) was scheduled after R21,
     // and job 79 (update-nst-gamelog, its route's only pg_cron owner) was unscheduled.
-    expect(authFindings).toHaveLength(45);
+    // 2026-11-08: job 403 (update-team-unit-toi-nightly, cron-only) was scheduled by TJ after #379.
+    expect(authFindings).toHaveLength(46);
     expect(
       authFindings.reduce(
         (jobCount, finding) => jobCount + finding.jobNames.length,
         0,
       ),
-    ).toBe(49);
+    ).toBe(50);
     expect(modeCounts).toEqual({
-      "admin-or-cron": 45,
+      "admin-or-cron": 46,
     });
     expect(callerCounts).toEqual({
       "browser-admin": 5,
       "browser-admin-and-internal": 4,
-      "cron-only": 27,
+      "cron-only": 28,
       "internal-server": 9,
     });
     expect(authFindings.some((finding) => finding.routePath === "/api/v1/db/cron-report")).toBe(false);
