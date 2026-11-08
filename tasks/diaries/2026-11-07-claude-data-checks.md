@@ -177,3 +177,5 @@ Q23 `select endpoint/kind columns of nhl_api_game_payloads_raw` + for one 2026 g
 - Chef: outage root cause = Lines P3 (off since 00:26 UTC). TJ pop-up 'Resume gently now'. rolling5.sh = rolling4 + stop if call > 120 s or < 5 players twice in a row. Resume 8481716, call 28.
 - Guarded leg A (00:30-00:34 UTC): calls 28-29 HTTP 207, activity 10-17, +144 players (~8.3k rows); total 622/752, next 8483490.
 - 00:38 UTC rolling DONE: call 31 HTTP 200. 752/752 players, 47,515 rows (= all window rows). pp_unit vs powerPlayCombinations.unit 6,181/6,181. updated_at not bumped by upserts (no trigger).
+- team_unit_toi 1-day dry run: ?season=20262027&startDate=2026-09-29&endDate=2026-09-29&dryRun=true (activity=9)
+- team_unit_toi 1-day dry run: HTTP 200 1 s, 34 rows (30 PP, 2 F, 2 D for 10 team-games). TJ pop-up: 'Stop; log the coverage gap'. Not populated.

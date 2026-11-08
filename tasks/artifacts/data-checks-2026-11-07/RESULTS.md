@@ -101,7 +101,10 @@ These are mostly the kept-unproven rows plus partial shift feeds. Inspect them, 
   - **Pause:** calls 11–13 and 27 hit 504s during the Supabase incident. Chef traced that incident to Lines P3 reprocessing, not this rebuild. The run was paused and then resumed gently: 60 s budget per call, a 60 s gap between calls, a `pg_stat_activity` check (≤ 40) before each call, and a stop if a call ran over 120 s or processed fewer than 5 players twice in a row.
   - **Note:** `updated_at` is not bumped by these upserts (the table has no trigger), so don't use it as evidence of a rewrite.
 - **Lineup deployment tallies:** left to the 09:55 UTC cron (`action=current`, which rebuilds the whole season), as TJ chose.
-- **team_unit_toi:** this table has never been populated for 2026-27, so there is nothing stale. The 32-day dry run timed out on `nhl_api_shift_rows`, and a 1-day dry run is next.
+- **team_unit_toi: not populated.** TJ chose to stop and log the coverage gap. This table has never been populated for 2026-27, so nothing is stale.
+  - **32-day dry run:** timed out on `nhl_api_shift_rows`.
+  - **1-day dry run** (09-29, `dryRun=true`): HTTP 200 in 1 s. It read 5 games and 3,996 shifts and generated 34 rows: 30 power-play rows, but only 2 forward and 2 defense rows across 10 team-games. The writer's even-strength unit coverage is far below what full lines and pairs would give, so this is a finding for the table's owner.
+  - **Safe size for a first population:** one day per call. A full run would be about 32 calls and roughly 1.4k rows.
 
 ## 6. NST goalie HD/GS
 
