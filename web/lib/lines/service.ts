@@ -1,4 +1,4 @@
-import { fetchAllSupabasePages, fetchAllSupabaseFilterChunks } from "lib/supabase/pagination";
+import { fetchAllSupabasePages } from "lib/supabase/pagination";
 import { sanitizePublicNewsText } from "lib/newsFeed";
 import { verifiedOriginalTweetUrl } from "lib/sources/projectedLineups";
 import { isRelayAccount, scrubRelayHandles } from "./authority";
@@ -7,12 +7,19 @@ import { chooseDefaultGame, observeLineGame, stateAtRead, trustworthyState } fro
 import { fetchCarryMemberships, fetchEntryHistory, fetchLineClaims, latestLineDecisions } from "./storage";
 import { instant, lineSnapshotFlags, type EntryRevision, type EntryView, type GameLinesResponse, type LineClaim, type LineGame, type SelectedLineUnit, type SourceFeedItem } from "./types";
 
-/** `dateFrom` / `dateTo` (YYYY-MM-DD, inclusive) bound the processor's read; readers omit them. */
-export async function fetchLineGames(supabase: any, args: { teamId?: number; gameId?: number; dateFrom?: string; dateTo?: string }): Promise<LineGame[]> {
+/** Public GET bounds: games in this window, and an NHL read only when the stored state is older than the interval. */
+const READ_WINDOW = { backDays: 21, forwardDays: 14 };
+const READ_OBSERVE_INTERVAL_MS = 5 * 60_000;
+const day = (now: string, offsetDays: number) => new Date(Date.parse(now) + offsetDays * 86_400_000).toISOString().slice(0, 10);
+
+/** `dateFrom` / `dateTo` (YYYY-MM-DD, inclusive) bound the read; `gameIds` reads exactly those games. */
+export async function fetchLineGames(supabase: any, args: { teamId?: number; gameId?: number; gameIds?: number[]; dateFrom?: string; dateTo?: string }): Promise<LineGame[]> {
+  if (args.gameIds && !args.gameIds.length) return [];
   const rows = await fetchAllSupabasePages<any>(({ from, to }) => {
     let query = supabase.from("games").select("id,date,startTime,homeTeamId,awayTeamId,home:teams!games_homeTeamId_fkey(abbreviation),away:teams!games_awayTeamId_fkey(abbreviation)");
     if (args.teamId) query = query.or(`homeTeamId.eq.${args.teamId},awayTeamId.eq.${args.teamId}`);
     else if (args.gameId) query = query.eq("id", args.gameId);
+    else if (args.gameIds) query = query.in("id", args.gameIds);
     if (args.dateFrom) query = query.gte("date", args.dateFrom);
     if (args.dateTo) query = query.lte("date", args.dateTo);
     return query.order("date", { ascending: false }).order("id").range(from, to);
@@ -25,7 +32,7 @@ export async function fetchLineGames(supabase: any, args: { teamId?: number; gam
 
 /**
  * The latest stored state of each game, as stored (not aged by stateAtRead): one indexed single-row read per game
- * (line_game_state_history). A schedule amendment invalidates the stored state, as in hydrateLineGameStates.
+ * (line_game_state_history). A schedule amendment (a different scheduled start) invalidates the stored state.
  */
 export async function latestLineGameStates(supabase: any, games: LineGame[]): Promise<LineGame[]> {
   return Promise.all(games.map(async (game) => {
@@ -34,19 +41,6 @@ export async function latestLineGameStates(supabase: any, games: LineGame[]): Pr
     const state = result.data?.[0]?.payload as LineGame | undefined;
     return state && state.scheduledStart === game.scheduledStart ? { ...game, ...state } : game;
   }));
-}
-
-export async function hydrateLineGameStates(supabase: any, games: LineGame[], now: string): Promise<LineGame[]> {
-  if (!games.length) return [];
-  const rows = await fetchAllSupabaseFilterChunks<{ payload: LineGame }, number>(games.map((game) => game.id), (ids, { from, to }) => supabase.from("line_game_state_observations").select("payload")
-    .in("game_id", ids).order("observed_at", { ascending: false }).order("state_id").range(from, to));
-  const latest = new Map<number, LineGame>();
-  for (const row of rows) if (!latest.has(row.payload.id)) latest.set(row.payload.id, row.payload);
-  return games.map((game) => {
-    const state = latest.get(game.id);
-    // Database schedule amendments invalidate the earlier state/binding identity.
-    return state && state.scheduledStart === game.scheduledStart ? stateAtRead({ ...game, ...state }, now) : game;
-  });
 }
 
 /** Relay accounts never reach the site surface: every public string field is scrubbed of them. */
@@ -111,28 +105,33 @@ export async function readGameLines(supabase: any, args: { teamId?: number; game
   const empty: GameLinesResponse = { enabled: controls.entryServing, mode: "snapshots", status: controls.entryServing ? "no_game" : "disabled", controls, game: null, games: [], teams: [],
     entryView: { mode: "expected", frozenAt: null, basis: null } };
   if (!controls.entryServing || !args.teamId && !args.gameId) return empty;
-  let games = await hydrateLineGameStates(supabase, await fetchLineGames(supabase, args), args.now);
+  // Bounded for game-night traffic: a date window of games, the latest stored state of the default-game candidates only,
+  // and an NHL read only when that stored state is older than the processor's observe interval. Never writes on GET.
+  const window = { from: day(args.now, -READ_WINDOW.backDays), to: day(args.now, READ_WINDOW.forwardDays) };
+  let games = await fetchLineGames(supabase, args.gameId ? { gameId: args.gameId } : { teamId: args.teamId, dateFrom: window.from, dateTo: window.to });
   if (args.gameId && !games.some((game) => game.id === args.gameId)) return empty;
-  // Read current state for the explicit game and near-term schedule candidates. Never writes on GET.
   const today = args.now.slice(0, 10);
   const candidates = args.gameId ? games.filter((game) => game.id === args.gameId)
     : games.filter((game) => game.date >= new Date(instant(args.now)! - 86400000).toISOString().slice(0, 10) && game.date <= today)
       .concat([...games].filter((game) => game.date > today).sort((a, b) => a.date.localeCompare(b.date) || a.id - b.id).slice(0, 1));
-  const observations = await Promise.all(candidates.map((game) => observeLineGame(game, args.now)));
-  const states = new Map(observations.map((game) => [game.id, game]));
+  const stored = await latestLineGameStates(supabase, candidates);
+  const fresh = (game: LineGame) => trustworthyState(game, args.now) && Date.parse(args.now) - (instant(game.observedAt) ?? -Infinity) < READ_OBSERVE_INTERVAL_MS;
+  const observations = await Promise.all(stored.map((game) => fresh(game) ? game : observeLineGame(game, args.now)));
+  const states = new Map(observations.map((game) => [game.id, stateAtRead(game, args.now)]));
   games = games.map((game) => states.get(game.id) ?? game);
   const game = args.gameId ? games.find((game) => game.id === args.gameId)! : chooseDefaultGame(games, args.now);
   if (!game) return { ...empty, games };
   const teamIds = args.teamId ? [args.teamId] : [game.awayTeamId, game.homeTeamId];
   if (!teamIds.every((teamId) => [game.homeTeamId, game.awayTeamId].includes(teamId))) return empty;
-  const [claims, entries] = await Promise.all([fetchLineClaims(supabase, teamIds, args.now), fetchEntryHistory(supabase, teamIds)]);
-  // Carry-forward needs the origin games even when reading the two-team game route.
-  const neededGames = [...new Set(claims.flatMap((claim) => claim.gameId != null && !games.some((candidate) => candidate.id === claim.gameId) ? [claim.gameId] : []))];
-  for (const id of neededGames) games.push(...await hydrateLineGameStates(supabase, await fetchLineGames(supabase, { gameId: id }), args.now));
   // PP staleness counts the team's games; the game route loaded only this game.
   if (args.gameId && controls.carryForward) for (const teamId of teamIds) {
-    for (const candidate of await fetchLineGames(supabase, { teamId })) if (!games.some((known) => known.id === candidate.id)) games.push(candidate);
+    for (const candidate of await fetchLineGames(supabase, { teamId, dateFrom: window.from, dateTo: window.to })) if (!games.some((known) => known.id === candidate.id)) games.push(candidate);
   }
+  const [claims, entries] = await Promise.all([fetchLineClaims(supabase, teamIds, args.now, `${window.from}T00:00:00Z`),
+    fetchEntryHistory(supabase, teamIds, games.map((candidate) => candidate.id))]);
+  // Carry-forward origin games a windowed claim names but the window missed: one batched read.
+  const neededGames = [...new Set(claims.flatMap((claim) => claim.gameId != null && !games.some((candidate) => candidate.id === claim.gameId) ? [claim.gameId] : []))];
+  games.push(...await fetchLineGames(supabase, { gameIds: neededGames }));
   const memberships = controls.carryForward ? await fetchCarryMemberships(supabase, claims) : [];
   // Read-time freeze: once the NHL state reads live, compute the entering lineup in memory. No writes on GET.
   const canFreeze = trustworthyState(game, args.now) && (game.phase === "live" || game.phase === "final" && instant(game.actualStart) != null);

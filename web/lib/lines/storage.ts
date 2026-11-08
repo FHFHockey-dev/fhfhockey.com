@@ -61,9 +61,13 @@ export async function fetchLineClaims(supabase: any, teamIds: number[], now: str
   return rows.map((row) => row.payload);
 }
 
-export async function fetchEntryHistory(supabase: any, teamIds: number[]): Promise<EntryRevision[]> {
-  const rows = await fetchAllSupabasePages<{ payload: EntryRevision }>(({ from, to }) => supabase.from("line_entry_revisions").select("payload")
-    .in("team_id", teamIds).order("game_id").order("team_id").order("revision").range(from, to));
+/** `gameIds` bounds the read to those games (the reader's window); omitted, every game. */
+export async function fetchEntryHistory(supabase: any, teamIds: number[], gameIds?: number[]): Promise<EntryRevision[]> {
+  if (gameIds && !gameIds.length) return [];
+  const rows = await fetchAllSupabasePages<{ payload: EntryRevision }>(({ from, to }) => {
+    const query = supabase.from("line_entry_revisions").select("payload").in("team_id", teamIds);
+    return (gameIds ? query.in("game_id", gameIds) : query).order("game_id").order("team_id").order("revision").range(from, to);
+  });
   return rows.map((row) => row.payload);
 }
 

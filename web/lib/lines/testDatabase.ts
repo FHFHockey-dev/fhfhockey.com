@@ -4,6 +4,8 @@ import { vi } from "vitest";
 export function lineTestDatabase(seed: Record<string, any[]>) {
   const tables = structuredClone(seed);
   const writes: string[] = [];
+  /** Rows returned to the caller across every read (load tests). */
+  const reads = { rows: 0 };
   const from = vi.fn((table: string) => {
     let filters: Array<(row: any) => boolean> = [], orders: Array<{ key: string; ascending: boolean }> = [], start = 0, end = Infinity;
     const result = () => {
@@ -11,7 +13,9 @@ export function lineTestDatabase(seed: Record<string, any[]>) {
       data.sort((a, b) => {
         for (const { key, ascending } of orders) { const diff = a[key] < b[key] ? -1 : a[key] > b[key] ? 1 : 0; if (diff) return ascending ? diff : -diff; } return 0;
       });
-      return { data: data.slice(start, end + 1), error: null };
+      const page = data.slice(start, end + 1);
+      reads.rows += page.length;
+      return { data: page, error: null };
     };
     const q: any = {
       select: () => q,
@@ -49,5 +53,5 @@ export function lineTestDatabase(seed: Record<string, any[]>) {
     for (const decision of args.p_pp) if (!tables.line_pp_decisions.some((row) => row.decision_id === decision.id)) tables.line_pp_decisions.push({ decision_id: decision.id, revision: decision.revision, unit_number: decision.unitNumber, team_id: decision.teamId, game_id: decision.gameId, payload: decision });
     return { data: true, error: null };
   });
-  return { from, rpc, writes, tables };
+  return { from, rpc, writes, tables, reads };
 }
