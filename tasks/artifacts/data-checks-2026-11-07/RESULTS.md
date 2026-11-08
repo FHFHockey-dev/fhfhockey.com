@@ -297,3 +297,35 @@ The builder filters by season and date but not by game type, so any future range
 `assign_occurrence` changes only that row. It learns no surname alias and re-parses nothing.
 
 **Readback.** 0 still pending. 34 rows `resolved` with `resolutionScope=occurrence`, 3 `ignored`, and 0 new rows in `lineup_player_name_aliases`. The historical tweets' stored line parses are unchanged; that was deliberate.
+
+### Follow-up, 2026-11-08: 2025-26 team_unit_toi rebuilt into snapshot 2026-11-08 (TJ pop-ups)
+
+**Run.** 218 one-day calls (2025-10-07 → 2026-06-17) for season 20252026, each with `dryRun=false` and `snapshot_date=2026-11-08`. It ran in three legs:
+
+1. **Stop at 2025-12-21 (by design).** That day reported 4 team-games with no ES rows: game 2025020565 (NJD–BUF). Its stored NHL shiftcharts payload, fetched 2026-04-02, is itself corrupt. All 2,179 entries are labelled 565: two copies of every NJD and BUF shift plus 676 VGK/SJS shifts from another game. TJ resumed.
+2. **Stop at 2026-01-16 (transient).** HTTP 400, a statement timeout reading that day's shifts (5 games, database idle). TJ resumed with one retry allowed for a timeout; none was needed.
+3. **The rest:** every call returned 200, with upserted equal to generated.
+
+**Readback.**
+
+| | Snapshot 2026-11-08 (new) | Snapshot 2026-06-22 (old) |
+|---|---|---|
+| Rows | 183,328 | 12,929 |
+| Games | 1,394 (1,311 regular-season + 82 playoff with shifts, plus 565 with PP rows only) | 1,390 |
+| Team-games with a top forward line | 2,786 | 945 |
+| Forward-line / defense-pair / PP rows | 136,571 / 39,188 / 7,569 | — |
+| Coverage status | all `complete` | — |
+
+The reader now serves 2026-11-08. The old snapshot is still in place but hidden; deleting it is a separate decision. Rollback for the new one: delete season 20252026 where `snapshot_date = '2026-11-08'`.
+
+**Shift-feed faults found during this run** (fix committed in `bab719dff`, not yet released):
+
+- **Game 2025020565:** contaminated and doubled, as above. The local replay through the repaired builder gives 122 rows and 52 minutes of 5v5 per team, up from 2 rows.
+- **Exact duplicate shift rows** (same player, period, start and end): 257 games in 2025-26 (1,795 extra rows) and 89 games in 2026-27 (496). A doubled player breaks the 5v5 count, so those segments were silently dropped. Game 2026020019, for example, goes from 44 to 49 minutes of 5v5 per team after the fix.
+- **Game 2025030411** (Stanley Cup Final, Game 1): the shift feed stops at 4:53 of the 3rd period. TJ chose to rebuild it from the NHL HTML time-on-ice reports.
+
+**Next, each needing its own TJ pop-up, after the next release:**
+
+- `gameIds` rebuilds into the same snapshots: game 565 plus the 257 affected 2025-26 games, and the 89 affected 2026-27 games.
+- The 2025030411 rebuild from the HTML reports, which writes to `nhl_api_shift_rows`.
+- Flag the duplicate shift rows to the shift-ingest owner, because other writers read the same rows.

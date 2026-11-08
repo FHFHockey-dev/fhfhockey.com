@@ -269,3 +269,5 @@ Q34 the 37 pending rows: id, team, created, tweet_id, context_text, metadata can
   Real replay: 565 released 2 rows → repaired 122 (NJD 52.3 / BUF 52.6 5v5 min); 2026020019 5v5 44→49 min/team
   (61 dup rows). → after release: rebuild 565 + the 89 dup-affected 2026-27 games + 257 2025-26 games into the same
   snapshots (gameIds batches). SCF G1 2025030411 truncated → needs HTML TOI reports (own approval).
+- 2025-26 stop #2 at 2026-01-16 (HTTP 400 statement timeout on shift read; 5 games, 3,936 rows; DB idle). 96/218 done. TJ pop-up 'Resume, retry timeouts once' → tut-2526-rest2.sh (122 dates from 01-16).
+- 2025-26 DONE 22:07 UTC: 218/218 days; readback snapshot 2026-11-08 183,328 rows / 1,394 games / 2,787 team-games / F1 on 2,786 (all but 565) / all complete / 82 playoff games. RESULTS follow-up written.
