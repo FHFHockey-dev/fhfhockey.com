@@ -1,5 +1,5 @@
 import React from "react";
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
 import CurrentPlayerCardStudio from "./CurrentPlayerCardStudio";
 import CurrentPlayerCard from "./CurrentPlayerCard";
@@ -10,7 +10,7 @@ vi.mock("../../lib/player-cards/reviewedHeroSamples", async importOriginal => {
   const actual = await importOriginal<typeof import("../../lib/player-cards/reviewedHeroSamples")>();
   return { REVIEWED_HERO_SAMPLES: actual.REVIEWED_HERO_SAMPLES.filter(sample => sample.id !== 8476453) };
 });
-afterEach(() => { window.history.replaceState(null, "", "/"); localStorage.clear(); });
+afterEach(() => { cleanup(); window.history.replaceState(null, "", "/"); localStorage.clear(); });
 const fixture = () => buildCurrentNhlCard({ playerId: 8476453, season: 20262027, count: 5 }, {
   identity: { playerId: 8476453, firstName: { default: "Fixture" }, lastName: { default: "Player" }, currentTeamAbbrev: "TBL", position: "R", seasonTotals: [{ season: 20262027, gameTypeId: 2, leagueAbbrev: "NHL", gamesPlayed: 1 }] },
   history: { seasonId: 20262027, gameTypeId: 2, gameLog: [{ gameId: 2026020167, gameDate: "2026-10-23", teamAbbrev: "TBL", goals: 1, assists: 0, points: 1, shots: 4, toi: "20:00" }] },

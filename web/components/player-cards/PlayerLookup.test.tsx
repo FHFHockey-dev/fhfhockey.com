@@ -1,7 +1,8 @@
 import React from "react";
-import { fireEvent, render, screen } from "@testing-library/react";
-import { expect, it, vi } from "vitest";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, expect, it, vi } from "vitest";
 import PlayerLookup from "./PlayerLookup";
+afterEach(() => cleanup());
 it("does not auto-select or fetch, exposes dated results and selects an exact ID", () => {
   const onSelect = vi.fn(); render(<PlayerLookup disabled={false} onSelect={onSelect} />);
   expect(screen.queryByRole("list")).toBeNull(); expect(onSelect).not.toHaveBeenCalled();
