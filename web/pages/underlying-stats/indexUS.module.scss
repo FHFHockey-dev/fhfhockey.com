@@ -290,7 +290,7 @@
   cursor: pointer;
   font-family: v.$font-family-accent, sans-serif;
   font-size: v.$font-size-xs;
-  font-weight: 600;
+  font-weight: 400;
   letter-spacing: 0.05em;
   text-transform: uppercase;
   text-decoration: none;
@@ -330,7 +330,7 @@
   color: v.$color-brand-yellow;
   font-family: v.$font-family-accent, sans-serif;
   font-size: v.$font-size-xs;
-  font-weight: 700;
+  font-weight: 400;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -353,7 +353,7 @@
   color: v.$color-white;
   font-family: v.$font-family-accent, sans-serif;
   font-size: clamp(1.7rem, 3vw, 2.35rem);
-  font-weight: 700;
+  font-weight: 400;
   letter-spacing: 0.09em;
   line-height: 1.05;
   text-transform: uppercase;
@@ -380,7 +380,7 @@
   color: v.$text-secondary;
   font-family: v.$font-family-accent, sans-serif;
   font-size: v.$font-size-xs;
-  font-weight: 700;
+  font-weight: 400;
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
@@ -452,7 +452,7 @@
   color: v.$color-white;
   font-family: v.$font-family-accent, sans-serif;
   font-size: v.$font-size-sm;
-  font-weight: 700;
+  font-weight: 400;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 
@@ -509,7 +509,7 @@
     color: v.$color-white;
     font-family: v.$font-family-accent, sans-serif;
     font-size: v.$font-size-md;
-    font-weight: 700;
+    font-weight: 400;
     letter-spacing: 0.08em;
     text-transform: uppercase;
   }
@@ -608,7 +608,7 @@
   cursor: pointer;
   font-family: v.$font-family-accent, sans-serif;
   font-size: v.$font-size-xs;
-  font-weight: 700;
+  font-weight: 400;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   transition:
@@ -669,7 +669,7 @@
   color: rgba(v.$color-white, 0.08);
   font-family: v.$font-family-accent, sans-serif;
   font-size: clamp(1.6rem, 3.5vw, 2.5rem);
-  font-weight: 700;
+  font-weight: 400;
   line-height: 1;
   pointer-events: none;
 }
@@ -685,7 +685,7 @@
   color: v.$color-white;
   font-family: v.$font-family-accent, sans-serif;
   font-size: clamp(1.05rem, 2vw, 1.35rem);
-  font-weight: 700;
+  font-weight: 400;
   letter-spacing: 0.07em;
   line-height: 1;
   text-transform: uppercase;
@@ -820,7 +820,7 @@
     text-align: left;
     font-family: v.$font-family-accent, sans-serif;
     font-size: 0.72rem;
-    font-weight: 700;
+    font-weight: 400;
     letter-spacing: 0.08em;
     text-transform: uppercase;
     white-space: nowrap;
@@ -919,7 +919,7 @@
   color: v.$color-white;
   font-family: v.$font-family-accent, sans-serif;
   font-size: v.$font-size-sm;
-  font-weight: 700;
+  font-weight: 400;
   letter-spacing: 0.05em;
   text-transform: uppercase;
 }
@@ -931,9 +931,16 @@
   text-transform: uppercase;
 }
 
+// Small muted status dot (not a warning glyph); the tooltip explains it.
 .varianceFlagInline {
-  margin-left: v.$space-xs;
-  color: v.$warning-color;
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-left: 0.35rem;
+  border-radius: 50%;
+  background: rgba(v.$warning-color, 0.75);
+  vertical-align: middle;
+  cursor: help;
 }
 
 .metricHeader {
@@ -1330,7 +1337,7 @@
   color: v.$text-secondary;
   font-family: v.$font-family-accent, sans-serif;
   font-size: v.$font-size-xs;
-  font-weight: 700;
+  font-weight: 400;
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
@@ -1385,7 +1392,7 @@
   color: v.$color-white;
   font-family: v.$font-family-accent, sans-serif;
   font-size: v.$font-size-lg;
-  font-weight: 700;
+  font-weight: 400;
   letter-spacing: 0.09em;
   text-transform: uppercase;
   line-height: 1;
@@ -1770,7 +1777,7 @@
   display: block;
   overflow: hidden;
   color: v.$text-secondary;
-  font-size: 0.75rem;
+  font-size: 0.8125rem; // 13px: the most useful plain-English signal in the row
   line-height: 1.4;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -2029,7 +2036,7 @@
 
     .narrativeLine {
       color: v.$text-secondary;
-      font-size: 0.68rem;
+      font-size: 0.75rem;
       white-space: normal;
     }
   }

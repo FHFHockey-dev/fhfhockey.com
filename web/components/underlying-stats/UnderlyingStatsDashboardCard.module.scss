@@ -30,7 +30,7 @@
   color: v.$primary-color;
   font-family: v.$font-family-accent, sans-serif;
   font-size: v.$font-size-xs;
-  font-weight: 700;
+  font-weight: 400;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -46,7 +46,7 @@
   color: v.$color-white;
   font-family: v.$font-family-accent, sans-serif;
   font-size: clamp(1rem, 1.4vw, 1.15rem);
-  font-weight: 700;
+  font-weight: 400;
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
