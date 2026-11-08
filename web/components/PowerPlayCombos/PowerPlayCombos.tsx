@@ -1,9 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import clsx from "clsx";
+import Link from "next/link";
 import supabase from "lib/supabase/client";
 import { useCurrentSeasonQuery } from "hooks/useCurrentSeason";
 import type { Database } from "lib/supabase/database-generated.types";
 import { getTeamAbbreviationById } from "lib/teamsInfo";
+import { useTeamColor } from "contexts/TeamColorContext";
+import { readableInk } from "components/LineCombinations/PlayerCard/teamInk";
+import cardStyles from "components/LineCombinations/PlayerCard/PlayerCard.module.scss";
 import styles from "./PowerPlayCombos.module.scss";
 
 type RosterRow = Pick<
@@ -26,6 +30,8 @@ type PowerPlayRow = {
 type UnitPlayer = {
   playerId: number;
   displayName: string;
+  firstName: string;
+  lastName: string;
   position: string | null;
   sweaterNumber: number | null;
   ppToi: number;
@@ -33,6 +39,25 @@ type UnitPlayer = {
 };
 
 type UnitsMap = Record<number, UnitPlayer[]>;
+
+/** Power-play totals over a player's last PP_STATS_GAMES games with this team. */
+type PpStats = { games: number; goals: number; assists: number; shots: number; toiSeconds: number };
+
+type StrengthRow = {
+  player_id: number;
+  game_id: number;
+  shots_pp: number | null;
+  toi_pp_seconds: number | null;
+};
+
+type SkaterPpRow = {
+  playerId: number;
+  gameId: number;
+  powerPlayGoals: number | null;
+  powerPlayPoints: number | null;
+};
+
+const PP_STATS_GAMES = 10;
 
 type UnitHistoryEntry = {
   gameId: number;
@@ -58,6 +83,8 @@ type Props = {
   gameId: number;
   seasonId?: number;
   teamAbbreviation?: string;
+  /** Games to total the card stats over (the even-strength cards' window), so both agree. */
+  statsGameIds?: number[];
 };
 
 type CurrentGameRow = Pick<
@@ -71,7 +98,8 @@ export default function PowerPlayCombos({
   teamId,
   gameId,
   seasonId: sourceSeasonId,
-  teamAbbreviation
+  teamAbbreviation,
+  statsGameIds
 }: Props) {
   const currentSeasonQuery = useCurrentSeasonQuery();
   const seasonId = sourceSeasonId ?? currentSeasonQuery.data?.seasonId;
@@ -92,6 +120,9 @@ export default function PowerPlayCombos({
   const [error, setError] = useState<string | null>(null);
   const [expandedUnit, setExpandedUnit] = useState<number | null>(null);
   const [sourceGame, setSourceGame] = useState<SourceGame | null>(null);
+  const [ppStatsByPlayerId, setPpStatsByPlayerId] = useState<
+    Record<number, PpStats>
+  >({});
 
   const dateFormatter = useMemo(
     () =>
@@ -225,6 +256,8 @@ export default function PowerPlayCombos({
           return {
             playerId: row.playerId,
             displayName: displayName || `Player ${row.playerId}`,
+            firstName: rawFirstName,
+            lastName: lastName || `Player ${row.playerId}`,
             position: normalizedPosition,
             sweaterNumber: sweater,
             ppToi: row.PPTOI ?? 0,
@@ -400,6 +433,85 @@ export default function PowerPlayCombos({
     };
   }, [shotShareTeamAbbreviation]);
 
+  // Card stats over the even-strength cards' games (statsGameIds), so PPP agrees with
+  // those cards: PPG / PPP from the NHL game stats (skatersGameStats, the same
+  // source); PP SOG and PP TOI from forge_player_game_strength (the NHL rows carry no
+  // PP shots and their powerPlayToi is "00:00"). Without statsGameIds, the unit's last 10 team games up to the source game.
+  const statsGameKey = statsGameIds?.join(",") ?? "";
+  useEffect(() => {
+    const unitPlayerIds = UNIT_ORDER.flatMap((unit) =>
+      (units[unit] ?? []).map((player) => player.playerId)
+    );
+    if (!teamId || !gameId || unitPlayerIds.length === 0) {
+      setPpStatsByPlayerId({});
+      return;
+    }
+    let cancelled = false;
+    async function loadPpStats() {
+      try {
+        let gameIds = statsGameKey ? statsGameKey.split(",").map(Number) : [];
+        if (!gameIds.length) {
+          const { data: recent, error: recentError } = await supabase
+            .from("forge_player_game_strength")
+            .select("game_id")
+            .eq("team_id", teamId)
+            .lte("game_id", gameId)
+            .order("game_id", { ascending: false })
+            .limit(PP_STATS_GAMES * 25);
+          if (recentError) throw recentError;
+          gameIds = [...new Set((recent ?? []).map((row) => row.game_id as number))].slice(
+            0,
+            PP_STATS_GAMES
+          );
+        }
+        if (!gameIds.length) {
+          if (!cancelled) setPpStatsByPlayerId({});
+          return;
+        }
+        const [nhl, forge] = await Promise.all([
+          supabase
+            .from("skatersGameStats")
+            .select("playerId, gameId, powerPlayGoals, powerPlayPoints")
+            .in("playerId", unitPlayerIds)
+            .in("gameId", gameIds),
+          supabase
+            .from("forge_player_game_strength")
+            .select("player_id, game_id, shots_pp, toi_pp_seconds")
+            .eq("team_id", teamId)
+            .in("player_id", unitPlayerIds)
+            .in("game_id", gameIds)
+        ]);
+        if (nhl.error) throw nhl.error;
+        const next: Record<number, PpStats> = {};
+        const entry = (playerId: number) =>
+          (next[playerId] ??= { games: 0, goals: 0, assists: 0, shots: 0, toiSeconds: 0 });
+        ((nhl.data ?? []) as SkaterPpRow[]).forEach((row) => {
+          const stats = entry(row.playerId);
+          const goals = row.powerPlayGoals ?? 0;
+          stats.games += 1;
+          stats.goals += goals;
+          stats.assists += (row.powerPlayPoints ?? 0) - goals;
+        });
+        if (!forge.error) {
+          ((forge.data ?? []) as StrengthRow[]).forEach((row) => {
+            const stats = next[row.player_id];
+            if (!stats) return;
+            stats.shots += row.shots_pp ?? 0;
+            stats.toiSeconds += row.toi_pp_seconds ?? 0;
+          });
+        }
+        if (!cancelled) setPpStatsByPlayerId(next);
+      } catch (cause) {
+        console.error("Failed to load power play player stats", cause);
+        if (!cancelled) setPpStatsByPlayerId({});
+      }
+    }
+    void loadPpStats();
+    return () => {
+      cancelled = true;
+    };
+  }, [gameId, statsGameKey, teamId, units]);
+
   const unitNumbers = useMemo(
     () => UNIT_ORDER.filter((unit) => (units[unit] ?? []).length > 0),
     [units]
@@ -410,7 +522,7 @@ export default function PowerPlayCombos({
       return null;
     }
 
-    return `${(value * 100).toFixed(1)}% team PP shots`;
+    return `${(value * 100).toFixed(1)}%`;
   }, []);
 
   if (!teamId || !gameId) {
@@ -431,11 +543,9 @@ export default function PowerPlayCombos({
         <h3 className={styles.title}>Power play units</h3>
         <p className={styles.context}>
           Latest groupings from{" "}
-          {describeGame(sourceGame?.startTime, sourceGame?.opponent)}.{" "}
-          <span className={styles.legend}>
-            <span className={styles.legendSwatch} aria-hidden="true" />
-            Blue chips are defensemen.
-          </span>
+          {describeGame(sourceGame?.startTime, sourceGame?.opponent)}. Card
+          stats are power-play totals from the last {PP_STATS_GAMES} games; SH%
+          is the season share of the team&apos;s power-play shots.
         </p>
       </header>
 
@@ -450,62 +560,48 @@ export default function PowerPlayCombos({
       ) : (
         <div className={styles.units}>
           {unitNumbers.map((unit) => {
-            const unitLabelText = unit === 3 ? "Extras" : `Unit ${unit}`;
+            const unitLabelText = `PP${unit}`;
             return (
-              <button
+              <div
                 key={unit}
-                type="button"
                 className={clsx(
                   styles.unitRow,
                   expandedUnit === unit && styles.unitRowExpanded
                 )}
-                onClick={() => toggleUnit(unit)}
-                aria-expanded={expandedUnit === unit}
               >
-                <div className={styles.unitSummary}>
-                  <div className={styles.unitTitleGroup}>
+                <button
+                  type="button"
+                  className={styles.unitSummary}
+                  onClick={() => toggleUnit(unit)}
+                  aria-expanded={expandedUnit === unit}
+                >
+                  <span className={styles.unitTitleGroup}>
                     <span className={styles.unitLabel}>{unitLabelText}</span>
                     <span className={styles.unitMeta}>
                       · {(units[unit] ?? []).length}{" "}
                       {(units[unit] ?? []).length === 1 ? "skater" : "skaters"}
                     </span>
-                  </div>
-                  <span className={styles.chevron} aria-hidden>
-                    ▾
                   </span>
-                </div>
-                <div className={styles.unitPlayers}>
-                  {(units[unit] ?? []).map((player) => (
-                    <span
-                      key={player.playerId}
-                      className={clsx(
-                        styles.playerChip,
-                        player.isDefense && styles.playerChipDefense
-                      )}
-                    >
-                      <span className={styles.playerNumber}>
-                        {player.sweaterNumber
-                          ? `#${player.sweaterNumber}`
-                          : "—"}
-                      </span>
-                      <span className={styles.playerName}>
-                        <span>{player.displayName}</span>
-                        {ppShotShareByPlayerId[player.playerId] != null ? (
-                          <span className={styles.playerDetail}>
-                            {formatShotShare(ppShotShareByPlayerId[player.playerId])}
-                          </span>
-                        ) : null}
-                      </span>
-                      {player.position ? (
-                        <span className={styles.playerPosition}>
-                          {player.position}
-                        </span>
-                      ) : null}
+                  <span className={styles.historyToggle}>
+                    Recent games
+                    <span className={styles.chevron} aria-hidden>
+                      ▾
                     </span>
-                  ))}
-                </div>
+                  </span>
+                </button>
+                <UnitCards
+                  players={units[unit] ?? []}
+                  statsFor={(playerId) => ppStatsByPlayerId[playerId]}
+                  shotShareLabel={(playerId) =>
+                    formatShotShare(ppShotShareByPlayerId[playerId])
+                  }
+                />
                 {expandedUnit === unit ? (
                   <div className={styles.history}>
+                    <p className={styles.legend}>
+                      <span className={styles.legendSwatch} aria-hidden="true" />
+                      Blue chips are defensemen.
+                    </p>
                     {(history[unit] ?? []).length === 0 ? (
                       <div className={styles.historyEmpty}>
                         No recent power play units tracked.
@@ -542,7 +638,8 @@ export default function PowerPlayCombos({
                                       <span className={styles.playerDetail}>
                                         {formatShotShare(
                                           ppShotShareByPlayerId[player.playerId]
-                                        )}
+                                        )}{" "}
+                                        team PP shots
                                       </span>
                                     ) : null}
                                   </span>
@@ -560,11 +657,115 @@ export default function PowerPlayCombos({
                     )}
                   </div>
                 ) : null}
-              </button>
+              </div>
             );
           })}
         </div>
       )}
     </section>
+  );
+}
+
+const formatToi = (seconds: number) => {
+  const whole = Math.max(0, Math.round(seconds));
+  return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, "0")}`;
+};
+
+/**
+ * A unit as lineup cards: up to three forwards on top, defensemen (and any 4th/5th
+ * forward) centred underneath, so a 4F-1D or 3F-2D unit always reads F F F / x D.
+ */
+function UnitCards({
+  players,
+  statsFor,
+  shotShareLabel
+}: {
+  players: UnitPlayer[];
+  statsFor: (playerId: number) => PpStats | undefined;
+  shotShareLabel: (playerId: number) => string | null;
+}) {
+  const forwards = players.filter((player) => !player.isDefense);
+  const defense = players.filter((player) => player.isDefense);
+  const rows = [forwards.slice(0, 3), [...forwards.slice(3), ...defense]].filter(
+    (row) => row.length > 0
+  );
+  return (
+    <div className={styles.unitCards}>
+      {rows.map((row, index) => (
+        <div key={index} className={styles.cardRow}>
+          {row.map((player) => (
+            <PowerPlayCard
+              key={player.playerId}
+              player={player}
+              stats={statsFor(player.playerId)}
+              shotShare={shotShareLabel(player.playerId)}
+            />
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function PowerPlayCard({
+  player,
+  stats,
+  shotShare
+}: {
+  player: UnitPlayer;
+  stats: PpStats | undefined;
+  shotShare: string | null;
+}) {
+  const color = useTeamColor();
+  // Same per-team ink rule as the even-strength cards (WCAG 4.5:1 on the team fill).
+  const numberInk = readableInk(color.primary, [color.jersey, color.secondary]);
+  const accentInk = readableInk(color.primary, [color.secondary, color.jersey]);
+  const count = (value: number | undefined) => (stats ? String(value ?? 0) : "—");
+  const cells = [
+    { label: "PPG", value: count(stats?.goals) },
+    { label: "PPA", value: count(stats?.assists) },
+    { label: "PPP", value: count(stats && stats.goals + stats.assists) },
+    { label: "PP SOG", value: count(stats?.shots) },
+    {
+      label: "TOI/GP",
+      value: stats?.games ? formatToi(stats.toiSeconds / stats.games) : "—"
+    },
+    { label: "SH%", value: shotShare ?? "—" }
+  ];
+  return (
+    <article
+      className={clsx(cardStyles.container, styles.ppCard)}
+      style={{ backgroundColor: color.primary }}
+    >
+      <div className={cardStyles.top}>
+        <p className={cardStyles.names}>
+          <span className={cardStyles.firstName} style={{ color: accentInk }}>
+            {player.firstName}
+          </span>
+          <Link href={`/stats/player/${player.playerId}`}>
+            <span className={cardStyles.lastName}>{player.lastName}</span>
+          </Link>
+        </p>
+        {player.sweaterNumber ? (
+          <div className={cardStyles.sweaterNumber} style={{ color: numberInk }}>
+            <span aria-hidden="true">#</span>
+            <span className={cardStyles.number}>
+              <span className={cardStyles.visuallyHidden}>Number </span>
+              {player.sweaterNumber}
+            </span>
+          </div>
+        ) : null}
+      </div>
+      <dl className={styles.ppStats}>
+        {cells.map((stat) => (
+          <div key={stat.label} className={styles.ppStat}>
+            <dt className={styles.ppLabel}>{stat.label}</dt>
+            <dd className={styles.ppValue} style={{ color: accentInk }}>
+              {stat.value}
+            </dd>
+          </div>
+        ))}
+      </dl>
+    </article>
   );
 }

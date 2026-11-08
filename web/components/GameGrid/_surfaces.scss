@@ -1,0 +1,33 @@
+// Game Grid surface and ink ramp: one named home for the values the Game Grid
+// modules (and the Best Players Available drawer) share that have no styles/vars.scss
+// token yet. Pixel-identical to the literals they replace; promote to vars.scss
+// if another page needs them.
+
+// Surfaces, darkest to lightest
+$canvas: #14181e; // schedule canvas, section banners, base of the day tints
+$canvas-zebra: #171c22; // even schedule rows
+$table-cell: #1d2128; // master / legacy table cells, sticky metric cells
+$panel: #1d2127; // popovers, week nav, sparkline card
+$sticky-glass: #1b2026; // pinned master-table header (at 96%)
+$sticky: #20242a; // sticky team / metric columns
+$row-zebra: #20252d; // even legacy rows, drawer buttons
+$row-hover: #242a31;
+$header: #26292d; // legacy table header
+$team-header: #262d36;
+$four-week: #1c2530; // 4-Week Opportunity group
+$four-week-lead: #1a242e;
+$metrics-banner: #1d2329; // Opponent Strength banner
+$summary-banner: #10384e; // Week Summary banner, pressed drawer buttons
+$summary-header: #0f5f83; // GP / OFF headers
+$totals-row: #14465b; // league totals row
+
+// Inks
+$summary-ink: #0fc0f6; // GP / OFF header text
+$score-header: #77cfff; // SCORE header fill, drawer links and focus
+$score-header-ink: #173448;
+$average-label-ink: #bfe7f8;
+$rank-ink-best: #7cffcb;
+$rank-ink-good: #f2cf63;
+$rank-ink-fair: #ffad5a;
+$rank-ink-worst: #ff8f8f;
+$error-ink: #ffd0d0; // text on the error notice

@@ -48,7 +48,7 @@ function Lines({
     <Container className={styles.lineCombinations}>
       <NextSeo
         title="FHFH | NHL Line Combinations"
-        description="NHL Line Combinations"
+        description="Latest NHL line combinations for all 32 teams, with each night's line promotions and demotions."
       />
 
       <PageTitle>
@@ -315,7 +315,7 @@ function Row({ player }: { player: RowData }) {
             }`}
             title={player.newsFlag.headline}
           >
-            {player.newsFlag.subcategory ?? player.newsFlag.category}
+            {sentenceCase(player.newsFlag.subcategory ?? player.newsFlag.category)}
           </span>
         ) : null}
       </span>
@@ -402,6 +402,12 @@ function PowerUnitChanges({
       {current}
     </div>
   );
+}
+
+/** News categories arrive upper-cased ("PRACTICE LINES"); show them as "Practice lines". */
+function sentenceCase(label: string) {
+  const lower = label.toLowerCase();
+  return lower.charAt(0).toUpperCase() + lower.slice(1);
 }
 
 /**

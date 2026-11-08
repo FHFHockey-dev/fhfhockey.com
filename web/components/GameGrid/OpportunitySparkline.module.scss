@@ -1,5 +1,6 @@
 @use "sass:color";
 @use "styles/vars" as v;
+@use "./surfaces" as gg;
 
 // Neon sparkline recipe mirrors TransactionTrends (.sparkPath / .sparkArea),
 // with per-week matchup colors (green / yellow / red) on the gradient stops and dots.
@@ -26,11 +27,14 @@ $matchup-colors: (
   cursor: pointer;
   transition: background 0.15s ease, box-shadow 0.15s ease;
 
-  &:hover,
+  &:hover {
+    border-color: rgba(v.$color-white, 0.42);
+  }
+
   &:focus-visible {
     outline: none;
     border-color: rgba(v.$color-white, 0.42);
-    box-shadow: 0 0 8px rgba(v.$color-white, 0.12);
+    box-shadow: inset 0 0 0 1px rgba(v.$color-white, 0.42);
   }
 }
 
@@ -68,7 +72,7 @@ $matchup-colors: (
   opacity: 0.14;
 }
 
-// Banded fill is the phone version (see the mobile block); wider layouts keep the blended fill.
+// Banded fill: each week keeps its own matchup colour (enabled at every width below).
 .areaBands {
   display: none;
   opacity: 0.18;
@@ -77,10 +81,6 @@ $matchup-colors: (
 .dot,
 .lastDot {
   stroke: none;
-}
-
-.lastDot {
-  filter: drop-shadow(0 0 3px currentColor);
 }
 
 @each $name, $color in $matchup-colors {
@@ -116,8 +116,8 @@ $matchup-colors: (
   overflow: hidden;
   border: 1px solid rgba(v.$color-white, 0.12);
   border-radius: v.$border-radius-md;
-  background: #1d2127;
-  box-shadow: 0 14px 28px rgba(v.$color-black, 0.4), 0 0 18px rgba(v.$primary-color, 0.12);
+  background: gg.$panel;
+  box-shadow: 0 14px 28px rgba(v.$color-black, 0.4);
   color: v.$text-primary;
   font-family: v.$font-family-primary, sans-serif;
   font-size: 0.72rem;
@@ -213,20 +213,19 @@ $matchup-colors: (
     height: 6px;
     border-radius: 50%;
     background: currentColor;
-    box-shadow: 0 0 6px currentColor;
   }
 }
 
 // Phones: the sparkline buttons share the 4px control corner.
 @media (max-width: v.$breakpoint-mobile-max) {
   .trigger { border-radius: 4px; }
-  // No neon on phones: the matchup colours carry the meaning, so drop the blurred halo and the end-dot glow.
-  .glow { display: none; }
-  .lastDot { filter: none; }
-  // One neutral line; each week's matchup colour sits on its dot and its solid band of fill (no blending).
-  .line { stroke: rgba(v.$color-white, 0.5); }
-  .area { display: none; }
-  .areaBands { display: inline; }
-  .dot { r: 2.2px; }
-  .lastDot { r: 2.8px; }
 }
+
+// Every width: no neon (no blurred halo, no end-dot glow). One neutral line; each week's
+// matchup colour sits on its dot and its solid band of fill, so colours never blend.
+.glow { display: none; }
+.line { stroke: rgba(v.$color-white, 0.5); }
+.area { display: none; }
+.areaBands { display: inline; }
+.dot { r: 2.2px; }
+.lastDot { r: 2.8px; }

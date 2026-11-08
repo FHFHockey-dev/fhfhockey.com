@@ -35,6 +35,15 @@
   color: v.$color-gold-400;
   font-weight: bold;
 }
+// Small "Pro" tag after the feature name (the label leads with what it shows).
+.proTag {
+  margin-left: 2px;
+  padding: 0 4px;
+  border: 1px solid currentColor;
+  border-radius: v.$radius-sm;
+  font-size: 0.7em;
+  line-height: 1.4;
+}
 .context {
   border-left: 1px solid v.$draft-border;
   padding-left: 14px;

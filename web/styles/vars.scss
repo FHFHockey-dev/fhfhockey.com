@@ -192,6 +192,9 @@ $chrome-hover: #263139; // menu item / utility hover
 $chrome-active: #122a34; // desktop nav active fill
 $chrome-active-mobile: #12303d; // bottom-nav active fill, user trigger
 $chrome-menu-bg: #181e22; // nav dropdown and user menu shell
+$chrome-menu-border: #36434c; // user menu panel edge
+$chrome-avatar-text: #e7f5fb; // initials on the user avatar fallback
+$chrome-danger-text: #ff9c9c; // sign-out / destructive menu text on chrome surfaces
 
 // Unified surface elevation ramp (new)
 $surface-0: #111417; // page canvas
@@ -286,6 +289,15 @@ $schedule-yellow: #c7a441; // replaces mid / warning variants for schedule inten
 $schedule-red: #b64343; // replaces heavy / worst-accent base
 $rank-good: $primary-color; // ranking positive extreme (was distinct cyan variants)
 $rank-bad: #9e3a3a; // toned red for negative extreme (replaces #6a2c2c/#421515)
+
+// Player performance tiers (elite → poor): player page insight values, calendar
+// tiers and trend chips. Keep coloured: values carry the good/bad read.
+$player-tier-elite: #10b981;
+$player-tier-excellent: #22c55e;
+$player-tier-good: #84cc16;
+$player-tier-average: #eab308;
+$player-tier-below-average: #f97316;
+$player-tier-poor: #ef4444;
 
 // Opacity ramp for fills (limit to a few consistent steps)
 $fill-opacity-subtle: 0.15;
@@ -474,6 +486,7 @@ $radius-md: 10px;
 $radius-lg: 16px;
 $radius-control: $radius-sm;
 $radius-card: $radius-md;
+$radius-pill: 999px; // fully rounded pills and bars
 $radius-panel: $radius-md;
 $radius-feature: $radius-lg;
 $control-height-sm: 32px;

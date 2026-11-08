@@ -86,8 +86,10 @@ export default function GodView({ toolbar, quickSettings, settingsOpen = false, 
       {selected ? <span className={styles.categoryRanks} style={{ gridTemplateColumns: `repeat(${Math.max(1, Math.ceil(categoryKeys.length / 2))}, minmax(0, 1fr))` }} aria-label="Live team category ranks">
         {categoryKeys.map(key => {
           const definition = STATS_MASTER_LIST.find(stat => stat.key === key);
+          // Before picks (or any full tie) every team ranks #1: neutral "—", like League Standings.
+          const allTied = teams.length > 1 && teams.every(team => teamRanks[team.teamId]?.[key] === 1);
           const rank = teamRanks[pick.teamId]?.[key];
-          return <span key={key} data-category={key} data-rank={rank} data-band={categoryRankBand(rank ?? teams.length, teams.length)} title={`${definition?.displayName || key}: team rank ${rank ?? "unavailable"} of ${teams.length}`}><span>{definition?.shortDisplayName || definition?.displayName || key}</span><strong>{rank ? `#${rank}` : "—"}</strong></span>;
+          return <span key={key} data-category={key} data-rank={rank} data-band={allTied ? undefined : categoryRankBand(rank ?? teams.length, teams.length)} title={`${definition?.displayName || key}: ${allTied ? "all teams tied" : `team rank ${rank ?? "unavailable"} of ${teams.length}`}`}><span>{definition?.shortDisplayName || definition?.displayName || key}</span><strong>{rank && !allTied ? `#${rank}` : "—"}</strong></span>;
         })}
         {!categoryKeys.length && <span>No scoring categories configured</span>}
       </span> : pick.status === "skipped" ? <span className={styles.needs}>No player selected</span> : <>
@@ -102,7 +104,7 @@ export default function GodView({ toolbar, quickSettings, settingsOpen = false, 
   };
   return <section ref={root} className={styles.root} aria-label="Draft Order">
     <header className={styles.header}>
-      <button type="button" className={styles.toggle} onClick={toggle} aria-label={`${open && !settingsOpen ? "Collapse" : "Expand"} God View - Pro`} aria-expanded={open && !settingsOpen} aria-controls="god-view-content"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M8 5h13M8 12h13M8 19h13M3 4v2M3 11v2M3 18v2"/></svg> God View - Pro <span aria-hidden="true">{open && !settingsOpen ? "⌃" : "⌄"}</span></button>
+      <button type="button" className={styles.toggle} onClick={toggle} aria-label={`${open && !settingsOpen ? "Collapse" : "Expand"} All teams · God View Pro`} aria-expanded={open && !settingsOpen} aria-controls="god-view-content"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M8 5h13M8 12h13M8 19h13M3 4v2M3 11v2M3 18v2"/></svg> All teams · God View <span className={styles.proTag}>Pro</span> <span aria-hidden="true">{open && !settingsOpen ? "⌃" : "⌄"}</span></button>
       <span className={styles.context}>Round {round} · {format.charAt(0).toUpperCase() + format.slice(1)}</span>
       <span className={styles.pickProgress}>Pick {Math.min(currentPick, totalPicks)} of {totalPicks}</span>
       {open && allowed && <button type="button" onClick={goToCurrent} className={styles.currentPick}>Current pick</button>}

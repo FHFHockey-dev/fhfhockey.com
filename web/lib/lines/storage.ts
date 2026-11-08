@@ -12,7 +12,9 @@ export async function fetchCarryMemberships(supabase: any, claims: LineClaim[]):
   return rows.map((row) => ({ playerId: row.playerId, teamId: row.teamId, from: row.created_at, until: row.ended_at, evidenceId: `roster:${row.playerId}:${row.teamId}:${row.created_at}:${row.ended_at ?? "open"}` }));
 }
 
-export async function appendLineEvidence(supabase: any, claims: LineClaim[], games: LineGame[]) {
+/** Appends claims, captures and observed game states; returns how many claim rows were new (duplicates are ignored). */
+export async function appendLineEvidence(supabase: any, claims: LineClaim[], games: LineGame[]): Promise<{ insertedClaims: number }> {
+  let insertedClaims = 0;
   // Null ingestion instants remain in the payload; the row's capture clock is this append operation.
   const captures = [...new Map(claims.map((claim) => [claim.captureId, { capture_id: claim.captureId, team_id: claim.teamId,
     original_identity: claim.originalIdentity, captured_at: instant(claim.time.ingestedAt) == null ? claim.time.interpretedAt : claim.time.ingestedAt,
@@ -21,8 +23,10 @@ export async function appendLineEvidence(supabase: any, claims: LineClaim[], gam
     const capture = await supabase.from("line_source_captures").upsert(captures, { onConflict: "capture_id", ignoreDuplicates: true });
     if (capture.error) throw capture.error;
     const result = await supabase.from("line_claim_revisions").upsert(claims.map((claim) => ({ claim_id: claim.id, capture_id: claim.captureId,
-      team_id: claim.teamId, game_id: claim.gameId, interpretation_version: claim.version, interpreted_at: claim.time.interpretedAt, payload: claim })), { onConflict: "claim_id", ignoreDuplicates: true });
+      team_id: claim.teamId, game_id: claim.gameId, interpretation_version: claim.version, interpreted_at: claim.time.interpretedAt, payload: claim })), { onConflict: "claim_id", ignoreDuplicates: true })
+      .select("claim_id");
     if (result.error) throw result.error;
+    insertedClaims = result.data?.length ?? 0;
     // Attempted links remain in the immutable payload. The FK index contains only
     // resolved authorized links; retries use stored payloads, never revised input
     // under an existing claim ID, to avoid silently clearing a review decision.
@@ -45,36 +49,43 @@ export async function appendLineEvidence(supabase: any, claims: LineClaim[], gam
   const states = games.filter((game) => instant(game.observedAt) != null && game.stateSource).map((game) => ({ state_id: evidenceKey(game), game_id: game.id,
     observed_at: game.observedAt, schedule_identity: game.scheduleIdentity, payload: game }));
   if (states.length) { const result = await supabase.from("line_game_state_observations").upsert(states, { onConflict: "state_id", ignoreDuplicates: true }); if (result.error) throw result.error; }
+  return { insertedClaims };
 }
 
-export async function fetchLineClaims(supabase: any, teamIds: number[], now: string): Promise<LineClaim[]> {
-  const rows = await fetchAllSupabasePages<{ payload: LineClaim }>(({ from, to }) => supabase.from("line_claim_revisions").select("payload")
-    .in("team_id", teamIds).lte("interpreted_at", now).order("claim_id").range(from, to));
+/** `since` bounds the read to claims interpreted on or after it (the processor's window); readers omit it. */
+export async function fetchLineClaims(supabase: any, teamIds: number[], now: string, since?: string): Promise<LineClaim[]> {
+  const rows = await fetchAllSupabasePages<{ payload: LineClaim }>(({ from, to }) => {
+    const query = supabase.from("line_claim_revisions").select("payload").in("team_id", teamIds).lte("interpreted_at", now);
+    return (since ? query.gte("interpreted_at", since) : query).order("claim_id").range(from, to);
+  });
   return rows.map((row) => row.payload);
 }
 
-export async function fetchEntryHistory(supabase: any, teamIds: number[]): Promise<EntryRevision[]> {
-  const rows = await fetchAllSupabasePages<{ payload: EntryRevision }>(({ from, to }) => supabase.from("line_entry_revisions").select("payload")
-    .in("team_id", teamIds).order("game_id").order("team_id").order("revision").range(from, to));
+/** `gameIds` bounds the read to those games (the reader's window); omitted, every game. */
+export async function fetchEntryHistory(supabase: any, teamIds: number[], gameIds?: number[]): Promise<EntryRevision[]> {
+  if (gameIds && !gameIds.length) return [];
+  const rows = await fetchAllSupabasePages<{ payload: EntryRevision }>(({ from, to }) => {
+    const query = supabase.from("line_entry_revisions").select("payload").in("team_id", teamIds);
+    return (gameIds ? query.in("game_id", gameIds) : query).order("game_id").order("team_id").order("revision").range(from, to);
+  });
   return rows.map((row) => row.payload);
 }
 
 export async function latestLineDecisions(supabase: any, gameId: number, teamId: number): Promise<{ entry: EntryRevision | null; pp: PPDecision[] }> {
-  const [entries, pp] = await Promise.all([
+  // The latest revision only (PP1 and PP2 each), not the whole revision chain: one indexed row per read.
+  const [entries, ...pp] = await Promise.all([
     supabase.from("line_entry_revisions").select("payload").eq("game_id", gameId).eq("team_id", teamId).order("revision", { ascending: false }).limit(1),
-    fetchAllSupabasePages<{ payload: PPDecision }>(({ from, to }) => supabase.from("line_pp_decisions").select("payload")
-      .eq("game_id", gameId).eq("team_id", teamId).order("revision", { ascending: false }).order("decision_id", { ascending: false }).range(from, to)),
+    ...[1, 2].map((unitNumber) => supabase.from("line_pp_decisions").select("payload").eq("game_id", gameId).eq("team_id", teamId).eq("unit_number", unitNumber)
+      .order("revision", { ascending: false }).order("decision_id", { ascending: false }).limit(1)),
   ]);
-  if (entries.error) throw entries.error;
-  const units = new Map<number, PPDecision>();
-  for (const row of pp) if (!units.has(row.payload.unitNumber)) units.set(row.payload.unitNumber, row.payload);
-  return { entry: entries.data?.[0]?.payload ?? null, pp: [...units.values()] };
+  for (const result of [entries, ...pp]) if (result.error) throw result.error;
+  return { entry: entries.data?.[0]?.payload ?? null, pp: pp.flatMap((result) => result.data?.[0] ? [result.data[0].payload as PPDecision] : []) };
 }
 
 /** Runs only in the gated processor, never on a public GET. Existing forecasts are untouched. */
-export async function persistLineReconciliation(supabase: any, args: { game: LineGame; teamId: number; games: LineGame[]; now: string; carryForward: boolean }) {
+export async function persistLineReconciliation(supabase: any, args: { game: LineGame; teamId: number; games: LineGame[]; now: string; carryForward: boolean; claimsSince?: string }) {
   for (let attempt = 0; attempt < 2; attempt++) {
-    const [claims, previous] = await Promise.all([fetchLineClaims(supabase, [args.teamId], args.now), latestLineDecisions(supabase, args.game.id, args.teamId)]);
+    const [claims, previous] = await Promise.all([fetchLineClaims(supabase, [args.teamId], args.now, args.claimsSince), latestLineDecisions(supabase, args.game.id, args.teamId)]);
     const entry = reconcileEntry({ ...args, claims, previous: previous.entry });
     const pp = reconcilePP({ ...args, claims, previous: previous.pp, memberships: args.carryForward ? await fetchCarryMemberships(supabase, claims) : [] });
     const result = await supabase.rpc("append_line_decisions", { p_game_id: args.game.id, p_team_id: args.teamId,

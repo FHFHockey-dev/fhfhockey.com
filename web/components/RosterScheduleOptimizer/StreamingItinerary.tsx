@@ -51,9 +51,13 @@ function goalieStatus(minimum: StreamingGoalieMinimum, chain: StreamingChain, ch
  * Ranked by the average of projected FPts and last-10 FPts/G over the games each player would start; totals show projections.
  * Days from today before `from` (the plan start) or after `through` (the range end) are listed greyed, unplanned.
  * `confirm` is an inline way past `selectDisabled` (the planning-inputs confirmation), shown beside the reason. */
-export default function StreamingItinerary({ plan, dates, from, through, today, nameOf, teamOf, selectDisabled, confirm, onSelect, defaultOpen = true }: {
+const REVIEW_RULES = "Review League rules and scoring.";
+
+export default function StreamingItinerary({ plan, dates, from, through, today, nameOf, teamOf, selectDisabled, confirm, onSelect, onReviewRules, defaultOpen = true }: {
   plan: StreamingPlanWithAlternatives | undefined; dates: string[]; from?: string; through?: string; today: string; nameOf: (id: string) => string;
   teamOf: (id: string) => string | null; selectDisabled: string | null; confirm?: ReactNode; onSelect: (steps: PlanStep[]) => void;
+  /** Opens the League rules panel when the empty state asks for a rules review. */
+  onReviewRules?: () => void;
   /** Open state until the manager toggles it; their last choice (stored) wins. */
   defaultOpen?: boolean;
 }) {
@@ -76,7 +80,14 @@ export default function StreamingItinerary({ plan, dates, from, through, today, 
   const key = chains.map(chain => chain.steps.map(step => step.id).join("|")).join("/");
   const state = choice.key === key ? choice : { key, chain: 0, overrides: {} };
   const chain = chains[state.chain], alternative = state.chain >= plan.chains.length;
-  if (!chain) return section(<p className={styles.note}>{plan.limitations[0] ?? "No streaming chain adds active games this week."}</p>);
+  if (!chain) {
+    const reason = plan.limitations[0] ?? "No streaming chain adds active games this week.";
+    // The planner ends some reasons with a rules-review prompt; make it the action.
+    if (onReviewRules && reason.endsWith(REVIEW_RULES)) {
+      return section(<p className={styles.note}>{reason.slice(0, -REVIEW_RULES.length).trim()}{" "}<button type="button" className={styles.noteAction} onClick={onReviewRules}>Review league rules and scoring</button></p>);
+    }
+    return section(<p className={styles.note}>{reason}</p>);
+  }
   const playerFor = (index: number) => state.overrides[index] ?? chain.legs[index].playerId;
   const ordered = chain.legs.map((leg, index) => ({ leg, index })).sort((a, b) => a.leg.startDate.localeCompare(b.leg.startDate) || a.leg.spot - b.leg.spot);
   const optionFor = (index: number) => chain.legs[index].options.find(option => option.playerId === playerFor(index));

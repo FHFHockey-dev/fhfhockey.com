@@ -3055,7 +3055,7 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
         {loading || seasonQuery.isLoading || yahooStatus === "loading" ? (
           <PanelStatus state="loading" message="Loading players..." />
         ) : loadError || seasonQuery.isError || yahooSeasonYear === null ? (
-          <div>
+          <div className={styles.errorState}>
             <PanelStatus state="error" message={loadError || "The current season could not be loaded."} />
             <button type="button" className={styles.toolbarButton} onClick={() => { setRetryCount((value) => value + 1); void seasonQuery.refetch(); }}>Retry player data</button>
           </div>

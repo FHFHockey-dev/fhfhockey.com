@@ -16,6 +16,12 @@ import {
   TimeFrame,
 } from "./types";
 import supabase from "../../lib/supabase";
+import {
+  fetchNstRadarSeason,
+  isNstRadarStat,
+  nstRadarComparison,
+  type SupabaseLike,
+} from "../../lib/nst/radarSeasonStats";
 
 ChartJS.register(
   RadialLinearScale,
@@ -123,6 +129,10 @@ const STAT_CALCULATION_METHODS: Record<string, StatCalculationInfo> = {
     method: "percentage",
     description: "Shot attempt percentage (weighted)",
   },
+  usat_pct: {
+    method: "percentage",
+    description: "Unblocked shot attempt percentage (weighted)",
+  },
   cf_pct: { method: "percentage", description: "Corsi For percentage" },
   ff_pct: { method: "percentage", description: "Fenwick For percentage" },
   sf_pct: { method: "percentage", description: "Shot For percentage" },
@@ -223,6 +233,63 @@ const finiteStatValue = (value: unknown): number | null => {
   }
   const numericValue = Number(value);
   return Number.isFinite(numericValue) ? numericValue : null;
+};
+
+// Stats the per-game view stores only as parts, derived here in percent units
+// (49.7 → "49.7%"). League rows need a real per-game sample (leagueMin) so a
+// skater with a handful of attempts can't top the ranking; the player's own
+// value only needs any attempt.
+const ratioPercent = (
+  row: any,
+  part: string,
+  rest: string,
+  minAttempts: number,
+  totalIsPart = false,
+): number | null => {
+  const a = finiteStatValue(row?.[part]);
+  const b = finiteStatValue(row?.[rest]);
+  if (a === null || b === null) return null;
+  const attempts = totalIsPart ? b : a + b;
+  return attempts > 0 && attempts >= minAttempts ? (a / attempts) * 100 : null;
+};
+
+const DERIVED_SKATER_STATS: Record<
+  string,
+  {
+    columns: string[];
+    leagueMin: number;
+    derive: (row: any, minAttempts: number) => number | null;
+  }
+> = {
+  // Faceoff wins and losses per game; a regular faceoff role is 5+ per game.
+  fow_percentage: {
+    columns: ["total_fow", "total_fol"],
+    leagueMin: 5,
+    derive: (row, min) => ratioPercent(row, "total_fow", "total_fol", min),
+  },
+  // Goals per game over shots per game.
+  shooting_percentage: {
+    columns: ["goals", "shots"],
+    leagueMin: 1,
+    derive: (row, min) => ratioPercent(row, "goals", "shots", min, true),
+  },
+  // On-ice shot attempts for/against per game.
+  sat_pct: {
+    columns: ["sat_for", "sat_against"],
+    leagueMin: 10,
+    derive: (row, min) => ratioPercent(row, "sat_for", "sat_against", min),
+  },
+  usat_pct: {
+    columns: ["usat_for", "usat_against"],
+    leagueMin: 10,
+    derive: (row, min) => ratioPercent(row, "usat_for", "usat_against", min),
+  },
+};
+
+const skaterStatValue = (row: any, stat: string, forLeague: boolean) => {
+  const derived = DERIVED_SKATER_STATS[stat];
+  if (!derived) return finiteStatValue(row?.[stat]);
+  return derived.derive(row, forLeague ? derived.leagueMin : 0);
 };
 
 interface RadarComparison {
@@ -332,10 +399,11 @@ export function PlayerRadarChart({
                 .not(stat, "is", null)
                 .eq("season_id", seasonNumber);
             }
+            const columns = DERIVED_SKATER_STATS[stat]?.columns ?? [stat];
             let query = supabase
               .from("wgo_skater_stats_per_game")
-              .select(stat)
-              .not(stat, "is", null)
+              .select(columns.join(","))
+              .not(columns[0], "is", null)
               .eq("season", String(seasonNumber));
             if (positionFilter.length > 0) {
               query = query.in("position_code", positionFilter);
@@ -346,17 +414,47 @@ export function PlayerRadarChart({
           }
         };
 
+        const rankAgainst = (stat: string, playerValue: number, values: number[]) => {
+          if (values.length === 0) return;
+          const isInverted =
+            STAT_CALCULATION_METHODS[stat].isInverted || stat === "goals_against_avg";
+          const worseCount = values.filter((value) =>
+            isInverted ? value > playerValue : value < playerValue,
+          ).length;
+          const betterCount = values.filter((value) =>
+            isInverted ? value < playerValue : value > playerValue,
+          ).length;
+          next.percentiles[stat] = Math.round((worseCount / values.length) * 100);
+          next.rankings[stat] = { rank: betterCount + 1, total: values.length };
+        };
+
+        // Skater possession shares and per-60 rates are not in the WGO view; both the
+        // player's value and the league's come from the NST season views instead.
+        const nstStats = isGoalie ? [] : rankedStats.filter(isNstRadarStat);
+        const wgoStats = rankedStats.filter((stat) => !nstStats.includes(stat));
+
         const playerValues = new Map<string, number>();
-        rankedStats.forEach((stat) => {
-          const value = finiteStatValue((playerData as any)[stat]);
+        wgoStats.forEach((stat) => {
+          const value = isGoalie
+            ? finiteStatValue((playerData as any)[stat])
+            : skaterStatValue(playerData, stat, false);
           if (value !== null) playerValues.set(stat, value);
         });
-        const comparedStats = rankedStats.filter((stat) => playerValues.has(stat));
-        const leagueResults = await Promise.all(comparedStats.map(readLeagueColumn));
+        const comparedStats = wgoStats.filter((stat) => playerValues.has(stat));
+        const [leagueResults, nstSeason] = await Promise.all([
+          Promise.all(comparedStats.map(readLeagueColumn)),
+          nstStats.length > 0
+            ? fetchNstRadarSeason(
+                supabase as unknown as SupabaseLike,
+                seasonNumber,
+                nstStats,
+                positionFilter,
+              )
+            : Promise.resolve(null),
+        ]);
         if (cancelled) return;
 
         comparedStats.forEach((stat, index) => {
-          const statInfo = STAT_CALCULATION_METHODS[stat];
           const playerValue = playerValues.get(stat) as number;
           next.values[stat] = playerValue;
 
@@ -367,20 +465,30 @@ export function PlayerRadarChart({
           }
 
           const values = (data ?? [])
-            .map((row) => finiteStatValue((row as any)[stat]))
+            .map((row) =>
+              isGoalie
+                ? finiteStatValue((row as any)[stat])
+                : skaterStatValue(row, stat, true),
+            )
             .filter((value): value is number => value !== null);
-          if (values.length === 0) return;
-
-          const isInverted = statInfo.isInverted || stat === "goals_against_avg";
-          const worseCount = values.filter((value) =>
-            isInverted ? value > playerValue : value < playerValue,
-          ).length;
-          const betterCount = values.filter((value) =>
-            isInverted ? value < playerValue : value > playerValue,
-          ).length;
-          next.percentiles[stat] = Math.round((worseCount / values.length) * 100);
-          next.rankings[stat] = { rank: betterCount + 1, total: values.length };
+          rankAgainst(stat, playerValue, values);
         });
+
+        if (nstSeason) {
+          nstStats.forEach((stat) => {
+            const { playerValue, leagueValues, error } = nstRadarComparison(
+              stat,
+              nstSeason,
+              Number(player.id),
+            );
+            if (error) {
+              console.error(`Unable to load the ${stat} radar comparison`, error);
+            }
+            if (playerValue === null) return;
+            next.values[stat] = playerValue;
+            rankAgainst(stat, playerValue, leagueValues);
+          });
+        }
       } catch (error) {
         console.error("Unable to load the selected-season radar comparison", error);
       } finally {
@@ -521,8 +629,10 @@ export function PlayerRadarChart({
           },
           color: "#9ca3af",
           backdropColor: "transparent",
+          // The outer ring is the chart edge; its "100%" label sat under the
+          // top axis point, so only the inner rings are labelled.
           callback: function (value: any) {
-            return `${value}%`;
+            return Number(value) >= 100 ? "" : `${value}%`;
           },
         },
         grid: {

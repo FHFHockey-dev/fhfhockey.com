@@ -128,7 +128,8 @@ describe("projected unit publishing", () => {
       .toEqual(fixtures.map(({ snapshot }) => snapshot));
     expect(new Set(parent.raw_payload.reports.map((row: any) => row.key))).toEqual(new Set(database.tables.get("tweet_projection_reports")!.keys()));
     expect(database.children.size).toBe(1);
-    expect([...database.children.values()][0].source_account).toBeNull();
+    // Goalie and injury children credit the verified original reporter (riskyStarts shows the handle); PP units name none.
+    expect([...database.children.values()][0].source_account).toBe(kind === "pp" ? null : "reporter");
     expect(database.calls.indexOf("write:line_source_snapshots")).toBeLessThan(database.calls.lastIndexOf("read:line_source_snapshots"));
     expect(database.calls.lastIndexOf("read:line_source_snapshots")).toBeLessThan(database.calls.findIndex((call) => call.startsWith("rpc:capture_")));
     const downstream = await fetchLineCombinationSourceRowsForDate({ supabase: database.db, date: "2026-10-04" });

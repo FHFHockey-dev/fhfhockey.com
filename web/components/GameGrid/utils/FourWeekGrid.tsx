@@ -77,7 +77,7 @@ export default function FourWeekGrid({ loading = false, teamDataArray, calendar,
           ? ["Schedule incomplete. Affected totals are unavailable; check back after schedule updates."]
           : teamDataArray.some((team) => team.opponentCoverage && team.opponentCoverage.known < team.opponentCoverage.expected)
             ? ["Some opponent strength values are unavailable. Check back after standings update."] : []}>
-        {/* Plain-language version of OPPORTUNITY_INFO / FOUR_WEEK_COLOR_LEGEND (desktop keeps the formulas) */}
+        {/* Plain-language Info; the desktop master table's Info uses the same wording */}
         <p>
           <strong>Total</strong> = remaining team games + 0.25 × off-night games, this week and the next three.
           Higher means more chances to play.

@@ -596,9 +596,9 @@ const MyRoster: React.FC<MyRosterProps> = ({
               type="button"
               className={styles.dustMetric}
               aria-describedby="my-roster-dust-explainer"
-              aria-label={`DUST ${rosterDustPercent} percent`}
+              aria-label={`Bench waste (DUST) ${rosterDustPercent} percent`}
             >
-              <span>DUST <span aria-hidden="true">ⓘ</span></span>
+              <span>Bench waste <span aria-hidden="true">ⓘ</span></span>
               <strong>{rosterDustPercent}%</strong>
               <span
                 id="my-roster-dust-explainer"

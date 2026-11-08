@@ -6,6 +6,8 @@ const paths = {
   stats: "M4 13h4v8H4Zm6-9h4v17h-4Zm6 5h4v12h-4Z",
   trend: "M3 19 9 13l4 3 8-11m-6 0h6v6",
   activity: "M2 12h5l3-8 4 16 3-8h5",
+  // Spread around a mean: a bell curve over a baseline (Variance pages).
+  variance: "M3 20h18M3 18c3 0 4-2 5.5-6S11 5 12 5s2 3 3.5 7 2.5 6 5.5 6",
   lines: "M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01",
   grid: "M3 3h7v7H3Zm11 0h7v7h-7ZM3 14h7v7H3Zm11 0h7v7h-7Z",
   draft: "M7 3h10v4H7ZM5 5H3v16h18V5h-2M7 12h10M7 16h7",

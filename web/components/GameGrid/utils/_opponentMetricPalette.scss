@@ -1,11 +1,12 @@
 @use "styles/vars" as v;
+@use "../surfaces" as gg;
 
 // Reuse each existing OMT view’s high, middle and low colors and opacity.
 @mixin four-week-bands($standalone: false) {
   $high-alpha: 0.16;
-  $middle-color: #f2cf63;
+  $middle-color: gg.$rank-ink-good;
   $middle-alpha: 0.15;
-  $low-color: #ff8f8f;
+  $low-color: gg.$rank-ink-worst;
   $low-alpha: 0.15;
   @if $standalone {
     $high-alpha: 0.2;

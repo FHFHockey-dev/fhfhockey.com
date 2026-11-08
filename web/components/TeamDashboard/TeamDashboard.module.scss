@@ -11,11 +11,7 @@
 }
 
 .container {
-  background: linear-gradient(
-    135deg,
-    v.$background-dark 0%,
-    color-mix(in srgb, v.$background-dark 90%, v.$primary-color 10%) 100%
-  );
+  background: v.$background-dark;
   border-radius: v.$border-radius-lg;
   padding: v.$space-lg v.$space-xxl;
   color: v.$text-primary;
@@ -91,11 +87,11 @@
 
 // Base card styles (shared properties only)
 %baseCard {
-  background: rgba(0, 0, 0, 0.05);
+  background: rgba(v.$color-black, 0.05);
   border: 1px solid color-mix(in srgb, v.$border-primary 30%, transparent 70%);
   border-radius: v.$border-radius-md;
   overflow: hidden;
-  transition: all v.$transition-duration v.$transition-easing;
+  transition: background-color v.$transition-duration v.$transition-easing, border-color v.$transition-duration v.$transition-easing, color v.$transition-duration v.$transition-easing, box-shadow v.$transition-duration v.$transition-easing, transform v.$transition-duration v.$transition-easing, opacity v.$transition-duration v.$transition-easing;
   backdrop-filter: blur(8px);
   position: relative;
 
@@ -118,9 +114,9 @@
     border-color: color-mix(in srgb, v.$primary-color 50%, transparent 50%);
     transform: translateY(-1px);
     box-shadow:
-      0 4px 20px rgba(0, 0, 0, 0.1),
+      0 4px 20px rgba(v.$color-black, 0.1),
       0 0 0 1px color-mix(in srgb, v.$primary-color 20%, transparent 80%);
-    background: rgba(255, 255, 255, 0.02);
+    background: rgba(v.$color-white, 0.02);
   }
 }
 
@@ -130,13 +126,7 @@
   height: 100%; // Fill sidebar height
   display: flex;
   flex-direction: column;
-  background: rgba(0, 0, 0, 0.05);
-  border-right: 2px solid
-    color-mix(
-      in srgb,
-      var(--team-primary-color, v.$primary-color) 30%,
-      transparent 70%
-    );
+  background: rgba(v.$color-black, 0.05);
 
   &::before {
     height: 100%;
@@ -219,7 +209,7 @@
   .metricsSection {
     flex: 0 0 auto; // Natural size for metrics
     padding: v.$space-sm 0 v.$space-sm 0;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    border-top: 1px solid rgba(v.$color-white, 0.1);
     // No overflow restrictions - let content expand naturally
   }
 }
@@ -301,7 +291,7 @@
 
   h3 {
     font-size: v.$font-size-md;
-    font-weight: 700;
+    font-weight: 400; // Train One has one weight
     margin: 0;
     color: v.$text-primary;
     font-family: v.$font-family-accent;
@@ -316,23 +306,33 @@
     color: var(--team-accent-color, v.$secondary-color);
   }
 
+  // A named button beside the heading (not a glyph inside the outlined title).
   .infoIcon {
-    background: color-mix(in srgb, v.$info-color 20%, transparent 80%);
-    color: v.$info-color;
+    background: color-mix(in srgb, v.$primary-color 20%, transparent 80%);
+    color: v.$primary-color;
+    border: none;
     border-radius: 50%;
     width: 18px;
     height: 18px;
+    padding: 0;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: 12px;
-    margin-left: v.$space-xs;
+    vertical-align: middle;
+    font: 400 12px/1 v.$font-family-primary;
+    text-transform: none;
+    letter-spacing: 0;
+    margin-left: v.$space-sm;
     cursor: help;
-    transition: all v.$transition-duration;
+    transition: background-color v.$transition-duration;
 
     &:hover {
-      background: color-mix(in srgb, v.$info-color 30%, transparent 70%);
-      transform: scale(1.1);
+      background: color-mix(in srgb, v.$primary-color 30%, transparent 70%);
+    }
+
+    &:focus-visible {
+      outline: 2px solid v.$primary-color;
+      outline-offset: 2px;
     }
   }
 
@@ -353,7 +353,7 @@
     padding: 4px 8px;
     border-radius: v.$border-radius-sm;
     cursor: pointer;
-    transition: all v.$transition-duration;
+    transition: background-color v.$transition-duration, border-color v.$transition-duration, color v.$transition-duration, box-shadow v.$transition-duration, transform v.$transition-duration, opacity v.$transition-duration;
 
     &:hover {
       background: color-mix(in srgb, v.$primary-color 20%, transparent 80%);
@@ -405,7 +405,7 @@
   border-radius: v.$border-radius-sm;
   text-align: center;
   border: 1px solid color-mix(in srgb, v.$border-secondary 30%, transparent 70%);
-  transition: all v.$transition-duration v.$transition-easing;
+  transition: background-color v.$transition-duration v.$transition-easing, border-color v.$transition-duration v.$transition-easing, color v.$transition-duration v.$transition-easing, box-shadow v.$transition-duration v.$transition-easing, transform v.$transition-duration v.$transition-easing, opacity v.$transition-duration v.$transition-easing;
   min-height: 60px;
   display: flex;
   flex-direction: column;
@@ -434,7 +434,7 @@
     transform: translateY(-1px);
     background: color-mix(in srgb, v.$background-lighter 80%, transparent 20%);
     border-color: color-mix(in srgb, v.$primary-color 40%, transparent 60%);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 8px rgba(v.$color-black, 0.1);
 
     &::before {
       transform: scaleX(1);
@@ -480,13 +480,12 @@
   }
 }
 
+// Plain muted labels under each number; the value leads, not tracked caps.
 .statLabel,
 .tsStatLabel {
   display: block;
-  font-size: v.$font-size-xxs;
+  font-size: v.$font-size-xs;
   color: v.$text-secondary;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
   font-weight: 500;
   line-height: 1.2;
 }
@@ -546,7 +545,7 @@
   background: color-mix(in srgb, v.$background-lighter 40%, transparent 60%);
   border-radius: v.$border-radius-sm;
   border: 1px solid color-mix(in srgb, v.$border-secondary 20%, transparent 80%);
-  transition: all v.$transition-duration;
+  transition: background-color v.$transition-duration, border-color v.$transition-duration, color v.$transition-duration, box-shadow v.$transition-duration, transform v.$transition-duration, opacity v.$transition-duration;
 
   &:hover {
     background: color-mix(in srgb, v.$background-lighter 60%, transparent 40%);
@@ -780,7 +779,7 @@
   background: color-mix(in srgb, v.$background-lighter 30%, transparent 70%);
   border-radius: v.$border-radius-sm;
   border: 1px solid color-mix(in srgb, v.$border-secondary 20%, transparent 80%);
-  transition: all v.$transition-duration;
+  transition: background-color v.$transition-duration, border-color v.$transition-duration, color v.$transition-duration, box-shadow v.$transition-duration, transform v.$transition-duration, opacity v.$transition-duration;
 
   &:hover {
     background: color-mix(in srgb, v.$background-lighter 50%, transparent 50%);
@@ -944,7 +943,7 @@
   border-radius: v.$border-radius-sm;
   text-align: center;
   border: 1px solid color-mix(in srgb, v.$border-secondary 20%, transparent 80%);
-  transition: all v.$transition-duration;
+  transition: background-color v.$transition-duration, border-color v.$transition-duration, color v.$transition-duration, box-shadow v.$transition-duration, transform v.$transition-duration, opacity v.$transition-duration;
 
   &:hover {
     transform: translateY(-1px);
@@ -980,7 +979,7 @@
   border: 1px solid color-mix(in srgb, v.$border-secondary 20%, transparent 80%);
   border-radius: v.$border-radius-sm;
   overflow: hidden;
-  transition: all v.$transition-duration;
+  transition: background-color v.$transition-duration, border-color v.$transition-duration, color v.$transition-duration, box-shadow v.$transition-duration, transform v.$transition-duration, opacity v.$transition-duration;
 
   &:hover {
     background: color-mix(in srgb, v.$background-lighter 50%, transparent 50%);
@@ -1048,7 +1047,7 @@
   padding: v.$space-xs v.$space-sm;
   border-radius: v.$border-radius-sm;
   border: 1px solid color-mix(in srgb, v.$border-secondary 15%, transparent 85%);
-  transition: all v.$transition-duration;
+  transition: background-color v.$transition-duration, border-color v.$transition-duration, color v.$transition-duration, box-shadow v.$transition-duration, transform v.$transition-duration, opacity v.$transition-duration;
 
   &:hover {
     transform: translateY(-1px);
@@ -1078,8 +1077,6 @@
 .goalieStatLabel {
   font-size: v.$font-size-xs;
   color: v.$text-secondary;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
 }
 
 /* ==========================================================================
@@ -1115,9 +1112,8 @@
   font-size: v.$font-size-sm;
   color: v.$text-secondary;
   text-align: center;
-  font-weight: 900;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
 }
 
 .workloadDistribution {
@@ -1140,7 +1136,7 @@
 
 .workloadSegment {
   height: 100%;
-  transition: all v.$transition-duration;
+  transition: background-color v.$transition-duration, border-color v.$transition-duration, color v.$transition-duration, box-shadow v.$transition-duration, transform v.$transition-duration, opacity v.$transition-duration;
   cursor: pointer;
 
   &:hover {
@@ -1166,7 +1162,7 @@
   background: color-mix(in srgb, v.$background-lighter 30%, transparent 70%);
   border-radius: v.$border-radius-sm;
   border: 1px solid color-mix(in srgb, v.$border-secondary 15%, transparent 85%);
-  transition: all v.$transition-duration;
+  transition: background-color v.$transition-duration, border-color v.$transition-duration, color v.$transition-duration, box-shadow v.$transition-duration, transform v.$transition-duration, opacity v.$transition-duration;
 
   &:hover {
     background: color-mix(in srgb, v.$background-lighter 50%, transparent 50%);
@@ -1177,18 +1173,17 @@
   width: 18px;
   height: 18px;
   border-radius: v.$border-radius-sm;
-  border: 1px solid #fff;
+  border: 1px solid v.$color-white;
   margin-right: v.$space-md;
   margin-left: v.$space-sm;
 }
 
 .legendText {
-  font-size: v.$font-size-lg;
+  font-size: v.$font-size-sm;
   color: v.$text-primary;
-  font-variant: all-small-caps;
   line-height: 1.2;
-  letter-spacing: 0.1em;
   font-weight: 500;
+  font-variant-numeric: tabular-nums;
   padding-bottom: v.$space-xxs;
 }
 
@@ -1202,7 +1197,7 @@
 
 .metricsSection {
   padding: v.$space-sm 0;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid rgba(v.$color-white, 0.1);
 }
 
 /* ==========================================================================
@@ -1409,16 +1404,16 @@
 .goaltendingCard {
   // Add subtle inner shadow for depth
   box-shadow:
-    inset 2px 0 4px rgba(0, 0, 0, 0.1),
-    0 4px 20px rgba(0, 0, 0, 0.05);
+    inset 2px 0 4px rgba(v.$color-black, 0.1),
+    0 4px 20px rgba(v.$color-black, 0.05);
 
   // Enhance hover effects for sidebars
   &:hover {
     transform: none; // Remove translateY for sidebars
     background: color-mix(in srgb, v.$background-lighter 25%, transparent 75%);
     box-shadow:
-      inset 2px 0 6px rgba(0, 0, 0, 0.15),
-      0 6px 25px rgba(0, 0, 0, 0.1);
+      inset 2px 0 6px rgba(v.$color-black, 0.15),
+      0 6px 25px rgba(v.$color-black, 0.1);
   }
 
   // Sidebar-specific header styling

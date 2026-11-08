@@ -14,7 +14,7 @@
   z-index: 3;
   margin-bottom: 0;
   border-bottom: none;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 20px rgba(v.$color-black, 0.15);
 
   // background: linear-gradient(
   //   180deg,
@@ -143,7 +143,7 @@
 
 .teamName {
   font-size: 2.2rem;
-  font-weight: 700;
+  font-weight: 400; // Train One has one weight
   font-family: v.$font-family-accent, sans-serif;
   text-transform: uppercase;
   letter-spacing: 0.15em;
@@ -193,7 +193,7 @@
   flex-direction: column;
   align-items: center;
   padding: 8px 12px;
-  background: color-mix(in srgb, var(--primary-color) 70%, #000);
+  background: color-mix(in srgb, var(--primary-color) 70%, v.$color-black);
   border-radius: 8px;
   border: 2px solid color-mix(in srgb, var(--primary-color) 70%, v.$color-white);
   min-width: 80px;
@@ -287,12 +287,12 @@
   @include v.table-base;
   @include v.element-wrapper;
   width: 100%;
-  border-collapse: collapse;
-  background: #232323;
-  color: #fefefe;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: v.$surface-2;
+  color: v.$color-white;
   font-size: 1rem;
-  border: 5px solid v.$border-color-secondary;
-  outline: 5px solid v.$border-color-primary;
+  border: 1px solid v.$border-secondary;
   border-radius: 0.5rem;
   margin-bottom: 1.5rem;
   margin-top: 1.5rem;
@@ -309,10 +309,15 @@
   height: 40px;
 }
 
+// Seasons ("2026-2027") stay on one line.
+.teamStatsTable td:first-child {
+  white-space: nowrap;
+}
+
 .teamStatsTable th,
 .teamStatsTable td {
   padding: 0.4rem 0.5rem;
-  border-bottom: 1px solid #444;
+  border-bottom: 1px solid v.$border-primary;
   text-align: center;
   height: 35px;
 
@@ -323,7 +328,7 @@
 }
 
 .teamStatsTable th {
-  background: #181818;
+  background: v.$surface-1;
   color: v.$secondary-color;
   font-weight: 700;
   letter-spacing: 0.05em;
@@ -606,7 +611,7 @@
 .rinkLabel {
   font-family: v.$font-family-accent, sans-serif;
   font-size: 1.25rem;
-  font-weight: 700;
+  font-weight: 400; // Train One has one weight
   color: v.$color-white;
   letter-spacing: 0.08em;
   margin-bottom: 0.5rem;
@@ -625,7 +630,7 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
   font-size: v.$font-size-sm;
-  font-weight: 700;
+  font-weight: 400; // Train One has one weight
   border-radius: v.$border-radius-md;
   padding: v.$space-xs v.$space-md;
   background-color: transparent;
@@ -689,7 +694,7 @@
 .seasonStatsHeaderLeft {
   font-family: v.$font-family-accent, sans-serif;
   font-size: 1.5rem;
-  font-weight: 700;
+  font-weight: 400; // Train One has one weight
   color: v.$secondary-color;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -707,7 +712,7 @@
 .seasonStatsHeaderRight {
   font-family: v.$font-family-accent, sans-serif;
   font-size: 1.5rem;
-  font-weight: 700;
+  font-weight: 400; // Train One has one weight
   color: v.$secondary-color;
   letter-spacing: 0.08em;
   text-transform: uppercase;

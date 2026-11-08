@@ -359,9 +359,7 @@ function MobileMenu({
                     <NavigationIcon name={category.icon} />
                     <span>
                       {category.label}
-                      {expanded !== category.id && (
-                        <small>{category.description}</small>
-                      )}
+                      <small>{category.description}</small>
                     </span>
                     <NavigationIcon name="chevron" />
                   </button>
@@ -385,9 +383,6 @@ function MobileMenu({
                             >
                               <NavigationIcon name={item.icon} />
                               <span>{item.label}</span>
-                              {isNavigationLinkActive(pathname, item.href) && (
-                                <small>Current</small>
-                              )}
                             </Link>
                           </li>
                         ))}

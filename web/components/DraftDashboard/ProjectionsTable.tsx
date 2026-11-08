@@ -1288,7 +1288,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
             <span className={styles.controlLabelMini}>Search</span>
             <input
               type="text"
-              placeholder="Search players..."
+              placeholder="Search players…"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className={styles.searchInput}

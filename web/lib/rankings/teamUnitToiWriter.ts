@@ -32,6 +32,10 @@ type TeamUnitToiBuildResult = {
     forwardRows: number;
     defenseRows: number;
     powerPlayRows: number;
+    /** Team-games in the shift data that produced no forward lines or defense pairs. */
+    teamGamesWithoutEvenStrengthRows: number;
+    /** Rows not marked complete (for example a skater with an unknown position). */
+    partialRows: number;
   };
 };
 
@@ -189,6 +193,11 @@ export async function buildTeamUnitToiSnapshotRows(
   const teamGames = new Set(
     rows.map((row) => [row.game_id, row.team_id].join(":")),
   );
+  const evenStrengthTeamGames = new Set(
+    rows
+      .filter((row) => row.unit_type !== "power_play")
+      .map((row) => [row.game_id, row.team_id].join(":")),
+  );
 
   return {
     request,
@@ -204,6 +213,10 @@ export async function buildTeamUnitToiSnapshotRows(
       forwardRows: rows.filter((row) => row.unit_type === "forward_line").length,
       defenseRows: rows.filter((row) => row.unit_type === "defense_pair").length,
       powerPlayRows: rows.filter((row) => row.unit_type === "power_play").length,
+      teamGamesWithoutEvenStrengthRows: [
+        ...new Set(shifts.map((row) => [row.game_id, row.team_id].join(":"))),
+      ].filter((key) => !evenStrengthTeamGames.has(key)).length,
+      partialRows: rows.filter((row) => row.coverage_status !== "complete").length,
     },
   };
 }

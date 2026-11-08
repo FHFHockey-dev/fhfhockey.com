@@ -1,7 +1,5 @@
 export type FourWeekMetricBand = "high" | "middle" | "low";
 
-export const FOUR_WEEK_COLOR_LEGEND = "Colors show relative favorability: green = high, gold = middle, red = low. Higher GP, OFF and score are favorable. Lower OPP% is favorable. Missing values stay neutral.";
-
 /** Split known observations into thirds using each tie group's midpoint rank. */
 export function toFourWeekMetricBands(
   entries: { teamId: number; value: number | null | undefined }[],

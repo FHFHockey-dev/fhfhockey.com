@@ -48,46 +48,20 @@ $toggle-sizes: (
     display: block;
     box-sizing: border-box;
     flex-shrink: 0;
-    background: linear-gradient(
-      135deg,
-      rgba(v.$color-white, 0.1),
-      rgba(v.$color-white, 0.05)
-    );
+    // Flat track: no gloss, blur or hover lift; hover is a lighter step and a cyan edge.
+    background: rgba(v.$color-white, 0.08);
     border: 1px solid rgba(v.$color-white, 0.2);
     border-radius: 34px;
-    transition: background 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
-    backdrop-filter: blur(8px);
-    box-shadow:
-      0 2px 4px rgba(v.$color-black, 0.1),
-      inset 0 1px 2px rgba(v.$color-white, 0.1);
+    transition: background-color 150ms ease, border-color 150ms ease;
 
-    // Modern focus states
     &:focus-visible {
       outline: none;
-      box-shadow:
-        v.$focus-ring-desktop,
-        0 2px 4px rgba(v.$color-black, 0.1),
-        inset 0 1px 2px rgba(v.$color-white, 0.1);
+      box-shadow: v.$focus-ring-desktop;
     }
 
-    // Hover effects
     &:hover:not([aria-disabled="true"]) {
-      background: linear-gradient(
-        135deg,
-        rgba(v.$color-white, 0.15),
-        rgba(v.$color-white, 0.08)
-      );
+      background: rgba(v.$color-white, 0.12);
       border-color: rgba(v.$secondary-color, 0.3);
-      transform: translateY(-1px);
-      box-shadow:
-        0 4px 8px rgba(v.$color-black, 0.15),
-        inset 0 1px 2px rgba(v.$color-white, 0.1);
-    }
-
-    // Active state
-    &:active:not([aria-disabled="true"]) {
-      transform: translateY(0);
-      transition: transform 0.1s ease;
     }
 
     // Disabled state
@@ -104,44 +78,26 @@ $toggle-sizes: (
       position: absolute;
       top: 50%;
       transform: translateY(-50%);
-      background: linear-gradient(
-        135deg,
-        rgba(v.$color-white, 0.95),
-        rgba(v.$color-white, 0.85)
-      );
+      background: rgba(v.$color-white, 0.9);
       border-radius: 50%;
-      box-shadow:
-        0 2px 4px rgba(v.$color-black, 0.2),
-        inset 0 1px 2px rgba(v.$color-white, 0.8);
+      box-shadow: 0 1px 2px rgba(v.$color-black, 0.3);
       transition: transform 150ms ease;
       z-index: 2;
     }
 
     // Checked state styling
+    // Checked: one flat blue (the old gradient's midpoint), slightly brighter on hover.
     &[aria-checked="true"] {
-      background: linear-gradient(
-        135deg,
-        rgba(v.$secondary-color, 0.8),
-        rgba(v.$primary-color, 0.6)
-      );
+      background: rgba(v.$secondary-color, 0.7);
       border-color: rgba(v.$secondary-color, 0.4);
 
       &:hover:not([aria-disabled="true"]) {
-        background: linear-gradient(
-          135deg,
-          rgba(v.$secondary-color, 0.9),
-          rgba(v.$primary-color, 0.7)
-        );
+        background: rgba(v.$secondary-color, 0.8);
         border-color: rgba(v.$secondary-color, 0.5);
       }
 
-      // Thumb position when checked
       &::before {
-        background: linear-gradient(
-          135deg,
-          rgba(v.$color-white, 0.98),
-          rgba(v.$color-white, 0.9)
-        );
+        background: v.$color-white;
       }
     }
   }

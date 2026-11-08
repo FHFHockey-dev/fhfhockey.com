@@ -52,7 +52,7 @@
 .panelTitle {
   font-family: v.$font-family-accent, sans-serif;
   font-size: v.$font-size-lg;
-  font-weight: 700;
+  font-weight: 400;
   color: v.$color-white;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -1756,12 +1756,13 @@
 .playersTable,
 .playersTable.statColumnsTable {
   table-layout: fixed;
-  .colName { width: 16.5%; }
+  // Names and team codes read in full; the numeric columns had spare width.
+  .colName { width: 21%; }
   .colFav { width: 3.5%; min-width: 0; }
   .colPos { width: 4.5%; }
-  .colTeam { width: 4%; }
-  .colAction { width: 6.5%; min-width: 0; }
-  .colCompare { width: 4%; min-width: 0; }
+  .colTeam { width: 5.5%; }
+  .colAction { width: 7.5%; min-width: 0; }
+  .colCompare { width: 5.5%; min-width: 0; }
   .colStat, .colScore, .colVorp, .colValueDelta, .colNextPick { width: auto; min-width: 0; }
   // Five-character point and ADP values need a stable, readable footprint in
   // the narrow center panel; the remaining compact columns share the balance.

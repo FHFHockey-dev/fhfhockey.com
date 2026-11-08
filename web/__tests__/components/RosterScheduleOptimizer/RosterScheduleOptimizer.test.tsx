@@ -1044,7 +1044,7 @@ describe("RosterScheduleOptimizer workspace", () => {
       render(<RosterScheduleOptimizer />);
       const summary = screen.getByLabelText("Plan summary");
       const article = await waitFor(() => { const found = within(summary).getByText("Projected points").closest("article")!; expect(found.querySelector("strong")!.textContent).toBe("7.5"); return found; });
-      expect(article.querySelector("small")!.textContent).toBe("League scoring, active games only");
+      expect(article.querySelector("small")!.textContent).toBe("Active games only");
       expect(within(summary).queryByText("Category outcomes")).toBeNull();
     });
     it("explains that opponent remaining totals need values and fills explicit zeros for no games remaining", async () => {
@@ -1079,7 +1079,7 @@ describe("RosterScheduleOptimizer workspace", () => {
     const summary = screen.getByLabelText("Plan summary");
     const points = await waitFor(() => { const card = within(summary).getByText("Projected points").closest("article")!; expect(card.querySelector("strong")!.textContent).toBe(projected === null ? "—" : "12.5"); return card; });
     // The existing detail text stays; the selection note is extra.
-    expect(points.querySelector("small")!.textContent).toBe(projected === null ? "Shows once projections cover your lineup" : "League scoring, active games only");
+    expect(points.querySelector("small")!.textContent).toBe(projected === null ? "No projections" : "Active games only");
     if (note) expect(points.querySelector("em")!.textContent).toBe(note);
     else expect(points.querySelector("em")).toBeNull();
     expect(summary.textContent!.includes("schedule capacity")).toBe(note !== null);
@@ -1101,7 +1101,7 @@ describe("RosterScheduleOptimizer workspace", () => {
     const metric = (label: string) => within(summary).getByText(label).closest("article")!;
     await waitFor(() => expect(metric("Active games").querySelector("strong")!.textContent).toMatch(/^42( \/ \d+)?$/));
     expect(metric("Bench games").querySelector("strong")!.textContent).toBe("6");
-    expect(metric("Bench games").querySelector("small")!.textContent).toBe("13% of scheduled games sit (DUST)");
+    expect(metric("Bench games").querySelector("small")!.textContent).toBe("13% on bench");
     expect(summary.textContent).not.toContain("+ known");
     for (const removed of ["Planned adds", "Goalie minimum", "Team DUST", "Utilization", "Projected outcome"]) expect(within(summary).queryByText(removed)).toBeNull();
     expect(summary.querySelector("button")).toBeNull();

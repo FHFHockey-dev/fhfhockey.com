@@ -359,6 +359,8 @@ type Props = {
   wideNames?: boolean;
   /** Align the mode select and legend to the start instead of the centre. */
   controlsAlign?: "center" | "start";
+  /** Place the two team grids side by side on desktop widths instead of one centred column. */
+  sideBySide?: boolean;
 };
 
 export const OPTIONS = [
@@ -382,7 +384,8 @@ export default function LinemateMatrix({
   headingLevel,
   labelGrid,
   wideNames,
-  controlsAlign
+  controlsAlign,
+  sideBySide
 }: Props) {
   const [activeMode, setActiveMode] = useState<Mode>(mode);
 
@@ -398,7 +401,7 @@ export default function LinemateMatrix({
 
   return <LinemateMatrixView toiData={toiData} rosters={rosters} gameInfo={gameInfo}
     loading={loading} error={error} mode={activeMode} onModeChanged={handleModeChange} teamId={teamId}
-    headingLevel={headingLevel} labelGrid={labelGrid} wideNames={wideNames} controlsAlign={controlsAlign} />;
+    headingLevel={headingLevel} labelGrid={labelGrid} wideNames={wideNames} controlsAlign={controlsAlign} sideBySide={sideBySide} />;
 }
 
 type MatrixViewProps = {
@@ -420,12 +423,15 @@ type MatrixViewProps = {
   wideNames?: boolean;
   /** Align the mode select and legend to the start instead of the centre. */
   controlsAlign?: "center" | "start";
+  /** Place the two team grids side by side on desktop widths instead of one centred column. */
+  sideBySide?: boolean;
 };
 
 export const LinemateMatrixView = memo(function LinemateMatrixView({
   toiData, rosters, gameInfo, loading = false, error = null,
   mode: activeMode, onModeChanged: handleModeChange, compact = false, teamId,
-  headingLevel = "h4", labelGrid = false, wideNames = false, controlsAlign = "center"
+  headingLevel = "h4", labelGrid = false, wideNames = false, controlsAlign = "center",
+  sideBySide = false
 }: MatrixViewProps) {
 
   if (!gameInfo) {
@@ -477,7 +483,7 @@ export const LinemateMatrixView = memo(function LinemateMatrixView({
           {error}
         </div>
       )}
-      <div className={styles.gridWrapper}>
+      <div className={classNames(styles.gridWrapper, { [styles.sideBySide]: sideBySide })}>
         {shownTeams.length === 0 ? (
           <div className={styles.emptyState}>
             No shared ice time for this team in that game.

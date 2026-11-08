@@ -1,5 +1,6 @@
 @use "sass:color";
 @use "styles/vars" as v; // Use an alias for brevity
+@use "../GameGrid/surfaces" as gg;
 @use "sass:math";
 @use "styles/panel" as panel;
 
@@ -247,6 +248,12 @@ $selected-border-width: 2px; // The width of the indicator
 
   .label {
     text-align: left;
+  }
+
+  // Five positions need 240px at a 6px gap; at 10px the G label scrolled out of the 246px row.
+  .positionCheckboxGroup {
+    gap: 6px;
+    justify-content: space-between;
   }
 }
 
@@ -755,36 +762,18 @@ $selected-border-width: 2px; // The width of the indicator
     color: v.$text-secondary;
     border: 1px solid rgba(v.$color-white, 0.15);
     backdrop-filter: blur(12px);
-    transition: all v.$transition-duration v.$transition-easing;
+    transition:
+      background-color v.$transition-duration v.$transition-easing,
+      color v.$transition-duration v.$transition-easing,
+      border-color v.$transition-duration v.$transition-easing;
     position: relative;
     overflow: hidden;
 
-    &::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(
-        135deg,
-        rgba(v.$secondary-color, 0.1),
-        rgba(v.$primary-color, 0.05)
-      );
-      opacity: 0;
-      transition: opacity v.$transition-duration v.$transition-easing;
-    }
+    // Hover is a flat lighter surface and a cyan edge: no glow, no gradient overlay.
     &:hover:not(:disabled) {
-      background: linear-gradient(
-        135deg,
-        rgba(v.$color-white, 0.12),
-        rgba(v.$color-white, 0.08)
-      );
+      background: rgba(v.$color-white, 0.1);
       color: v.$text-color-primary;
       border-color: rgba(v.$secondary-color, 0.3);
-      box-shadow:
-        0 10px 15px rgba(v.$color-black, 0.1),
-        0 0 20px rgba(v.$secondary-color, 0.2);
-      &::before {
-        opacity: 1;
-      }
     }
     &:active:not(:disabled) {
       transform: translateY(0);
@@ -1152,6 +1141,15 @@ $selected-border-width: 2px; // The width of the indicator
   .filterRow { min-width: 0; }
   .filterContainer, .metricFilterContainer, .buttonReset { flex-shrink: 0; }
   .metricPresetButtons { flex-wrap: wrap; flex-shrink: 1; max-width: 100%; }
+  // Desktop sidebar: All / Skaters / Goalies / None as one row of four equal buttons.
+  @media (min-width: v.$breakpoint-desktop) {
+    .metricPresetButtons {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      width: 100%;
+    }
+    .metricPresetButtons button { padding-inline: 6px; }
+  }
   .skaterGoalieRow { flex-wrap: wrap; }
   .skaterMetricsColumn, .goalieMetricsColumn { flex-basis: 200px; }
   .skaterSubGroupsRow, .goalieSubGroupsRow { flex-wrap: wrap; }
@@ -1253,12 +1251,24 @@ $selected-border-width: 2px; // The width of the indicator
   flex: 0 0 auto;
 }
 
+// Error message with its Retry button centred beneath it.
+.errorState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: v.$space-sm;
+  padding-bottom: v.$space-md;
+}
+
 .toolbarButton {
   @include v.button-style;
-  background: linear-gradient(135deg, v.$primary-color, v.$secondary-color);
+  // Flat primary with dark ink: white on this blue was 2.7-2.9:1; $text-on-primary is 6.4:1.
+  // Condensed face, because the outlined accent font turns hollow in dark ink.
+  background: v.$primary-color;
   border: none;
-  color: v.$color-white;
-  font-family: v.$font-family-accent, sans-serif;
+  color: v.$text-on-primary;
+  font-family: v.$font-family-condensed, sans-serif;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   padding: v.$space-xs v.$space-md;
@@ -1860,22 +1870,22 @@ $selected-border-width: 2px; // The width of the indicator
 
 .yahooContext {
   padding: 12px 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+  border-bottom: 1px solid rgba(v.$color-white, 0.16);
   font-size: 0.85rem;
 
   p { margin: 0 0 8px; }
-  a { color: #77cfff; margin-right: 12px; }
+  a { color: gg.$score-header; margin-right: 12px; }
   button {
     margin: 0 8px 8px 0;
     padding: 6px 10px;
-    border: 1px solid rgba(255, 255, 255, 0.25);
+    border: 1px solid rgba(v.$color-white, 0.25);
     border-radius: 4px;
-    background: #20252d;
+    background: gg.$row-zebra;
     color: inherit;
     cursor: pointer;
-    &[aria-pressed="true"] { border-color: #77cfff; background: #10384e; }
+    &[aria-pressed="true"] { border-color: gg.$score-header; background: gg.$summary-banner; }
     &:disabled { opacity: 0.5; cursor: wait; }
-    &:focus-visible { outline: 2px solid #77cfff; outline-offset: 2px; }
+    &:focus-visible { outline: 2px solid gg.$score-header; outline-offset: 2px; }
   }
   summary { cursor: pointer; }
 }
