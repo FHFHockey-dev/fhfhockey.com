@@ -1,5 +1,6 @@
 import type { ParsedLinesCccSource, TweetSourceProvenance } from "lib/sources/linesCccIngestion";
 import type { AuthorityTier } from "./types";
+import { BEAT_REPORTER_HANDLES } from "./beatReporters";
 
 /**
  * Relay accounts (TJ sourcing rule, 2026-11-06): never a source or original author, never shown. The source is the
@@ -12,20 +13,33 @@ export const NO_CONFIRMATION_AUTHORS = ["fhfhockey"];
 /** Below every tier: an unattributed relay post fills a unit only when nothing better applies. */
 export const RELAY_ONLY_WEIGHT = 0.5;
 
-/** Official NHL club accounts (lowercase handles). Exact handles are worth re-checking as clubs rebrand. */
-const TEAM_ACCOUNTS = ["njdevils", "nyislanders", "nyrangers", "nhlflyers", "penguins", "nhlbruins", "buffalosabres", "canadiensmtl", "senators",
-  "mapleleafs", "canes", "nhlcanes", "flapanthers", "tblightning", "capitals", "nhlblackhawks", "detroitredwings", "predsnhl", "stlouisblues", "nhlflames",
-  "avalanche", "edmontonoilers", "canucks", "anaheimducks", "dallasstars", "lakings", "sanjosesharks", "bluejacketsnhl", "mnwild", "nhljets",
+/**
+ * Official NHL club accounts (lowercase handles), one per club, each checked live on 2026-11-07:
+ * see fixtures/clubHandles.ledger.json. Re-check the ledger when a club rebrands.
+ */
+export const TEAM_ACCOUNTS = ["njdevils", "nyislanders", "nyrangers", "nhlflyers", "penguins", "nhlbruins", "buffalosabres", "canadiensmtl", "senators",
+  "mapleleafs", "canes", "flapanthers", "tblightning", "capitals", "nhlblackhawks", "detroitredwings", "predsnhl", "stlouisblues", "nhlflames",
+  "avalanche", "edmontonoilers", "canucks", "anaheimducks", "dallasstars", "lakings", "sanjosesharks", "bluejacketsnhl", "minnesotawild", "nhljets",
   "utahmammoth", "goldenknights", "seattlekraken"];
 
 /**
+ * Team-run accounts in the beat list that rank as "team" like club handles (TJ, pop-up 2026-11-07: team PR counts as
+ * the club). Bios checked live: penguinspr is the Penguins communications department. Media and outlet accounts
+ * (tsn1200, chgo_blackhawks) and staff reporters stay "beat"; TJ reassigns others at /db/beat-reporter-review.
+ */
+export const TEAM_RUN_ACCOUNTS = ["penguinspr"];
+
+/**
  * Seed tiers keyed by lowercase original-author handle, approved by TJ (pop-up, 2026-11-06):
- * team = official club accounts, beat starts empty. Relay rule (2026-11-06): the six relay accounts are never
- * authors; FHFHockey is "aggregator". Every other author is "unknown" at aggregator weight.
+ * team = official club accounts and team-run accounts; beat = TJ-reviewed beat reporters (beatReporters.ts).
+ * Relay rule (2026-11-06): the six relay accounts are never authors; FHFHockey is "aggregator".
+ * Every other author is "unknown" at aggregator weight.
  */
 export const AUTHORITY_SEED_APPROVED = true;
 export const AUTHORITY_SEED: Record<string, Exclude<AuthorityTier, "unknown" | "excluded">> = {
-  ...Object.fromEntries(TEAM_ACCOUNTS.map((handle) => [handle, "team" as const])),
+  ...Object.fromEntries(BEAT_REPORTER_HANDLES.map((handle) => [handle, "beat" as const])),
+  // Spread after the beat list, so club and team-run handles win as "team".
+  ...Object.fromEntries([...TEAM_ACCOUNTS, ...TEAM_RUN_ACCOUNTS].map((handle) => [handle, "team" as const])),
   fhfhockey: "aggregator",
 };
 

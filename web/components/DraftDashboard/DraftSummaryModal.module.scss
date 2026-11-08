@@ -54,7 +54,7 @@
   font-family: v.$font-family-accent, sans-serif;
   color: v.$primary-color;
   font-size: 22px;
-  font-weight: 800;
+  font-weight: 400;
   letter-spacing: 0.08em;
   text-shadow:
     0 0 18px rgba(v.$primary-color, 0.6),
@@ -125,7 +125,7 @@
   right: 2%;
   bottom: 6%;
   font-family: v.$font-family-accent, sans-serif;
-  font-weight: 900;
+  font-weight: 400;
   font-size: clamp(80px, 18vw, 220px);
   letter-spacing: 0.08em;
   color: rgba(255, 255, 255, 0.03);

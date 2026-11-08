@@ -169,6 +169,8 @@ export function RosterMatrix({
 
     return { skaters, goalies };
   }, [players]);
+  const playedCount = (list: typeof players) =>
+    list.filter((p) => (p.games_played ?? 0) > 0).length;
 
   // Filter and sort players
   const filteredPlayers = useMemo(() => {
@@ -467,7 +469,12 @@ export function RosterMatrix({
         positionFilter === "F" ||
         ["LW", "C", "RW", "D"].includes(positionFilter)) && (
         <div className={styles.section}>
-          <h3>Skaters ({skaters.length})</h3>
+          <h3>
+            Skaters{" "}
+            <span className={styles.sectionCount}>
+              · {playedCount(skaters)} played
+            </span>
+          </h3>
           <div className={styles.tableContainer}>
             <table className={styles.rosterTable}>
               {renderTableHeader(
@@ -490,7 +497,12 @@ export function RosterMatrix({
       {/* Goalies Table */}
       {(positionFilter === "all" || positionFilter === "G") && (
         <div className={styles.section}>
-          <h3>Goalies ({goalies.length})</h3>
+          <h3>
+            Goalies{" "}
+            <span className={styles.sectionCount}>
+              · {playedCount(goalies)} played
+            </span>
+          </h3>
           <div className={styles.tableContainer}>
             <table className={styles.rosterTable}>
               {renderTableHeader(

@@ -87,7 +87,7 @@ describe("SuggestedPicks grouped-forward presentation", () => {
     );
 
     fireEvent.click(screen.getByRole("button", { name: "FWD 0 of 3" }));
-    expect(screen.getByText("Multi Forward")).toBeTruthy();
+    expect(screen.getByTitle("Multi Forward")).toBeTruthy();
     expect(screen.queryByText("Defense Player")).toBeNull();
   });
 
@@ -119,9 +119,11 @@ describe("SuggestedPicks grouped-forward presentation", () => {
       (screen.getByRole("combobox", { name: "Sort suggested picks" }) as HTMLSelectElement)
         .value
     ).toBe("rank");
-    expect(screen.getAllByRole("listitem")[0].textContent).toContain(
+    expect(screen.getAllByRole("listitem")[0].getAttribute("title")).toContain(
       "Urgent Player"
     );
+    // The card shows first initial + last name; the title keeps the full name.
+    expect(screen.getAllByRole("listitem")[0].textContent).toContain("U. Player");
     expect(screen.getAllByTitle("Probability of remaining available at your next pick")[0].textContent).toContain("%");
     expect(screen.queryByText(/Gone by next pick/)).toBeNull();
 
@@ -195,7 +197,7 @@ describe("SuggestedPicks grouped-forward presentation", () => {
     const players = [player(1, "First Player", "C", 100), player(2, "Roster Fit", "D", 90)];
     const metrics = new Map([["1", { vbd: 10, vorp: 10, vona: 0 } as any], ["2", { vbd: 9, vorp: 9, vona: 0 } as any]]);
     render(<SuggestedPicks players={players} vorpMetrics={metrics} currentPick={1} teamCount={1} draftProEligible needWeightEnabled categoryWeights={{ GOALS: 1 }} onNeedWeightEnabledChange={vi.fn()} />);
-    await waitFor(() => expect(screen.getAllByRole("listitem")[0].textContent).toContain("Roster Fit"));
+    await waitFor(() => expect(screen.getAllByRole("listitem")[0].getAttribute("title")).toContain("Roster Fit"));
   });
 
   it("enables imported roster-aware recommendations without uploading projections", async () => {
@@ -208,7 +210,7 @@ describe("SuggestedPicks grouped-forward presentation", () => {
     expect((screen.getByRole("checkbox", { name: "Boost roster gaps" }) as HTMLInputElement).disabled).toBe(false);
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
     expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({ dataOrigin: "local_csv", authorizeOnly: true });
-    expect(screen.getAllByRole("listitem")[0].textContent).toContain("Local Player");
+    expect(screen.getAllByRole("listitem")[0].getAttribute("title")).toContain("Local Player");
   });
 
   it("serializes filtered skater and goalie candidates within the endpoint's output bound", async () => {
@@ -245,7 +247,7 @@ describe("SuggestedPicks grouped-forward presentation", () => {
     const metrics = new Map([["1", { vbd: 10, vorp: 10, vona: 0 } as any], ["2", { vbd: 9, vorp: 9, vona: 0 } as any]]);
     const dustInsights = new Map([["1", { activeGamesAdded: 2, marginalDustGames: 1, candidateScheduledGames: 8, dustRate: .1, risk: "moderate" } as any], ["2", { activeGamesAdded: 5, marginalDustGames: 1, candidateScheduledGames: 8, dustRate: .1, risk: "moderate" } as any]]);
     render(<SuggestedPicks players={players} vorpMetrics={metrics} currentPick={1} teamCount={1} dustInsights={dustInsights} dustSort="schedule_fit" canUseProDust />);
-    expect(screen.getAllByRole("listitem")[0].textContent).toContain("More Active Games");
+    expect(screen.getAllByRole("listitem")[0].getAttribute("title")).toContain("More Active Games");
   });
 
   it("keeps ordinary ranking while schedule-fit DUST insights are unavailable", () => {
@@ -256,7 +258,7 @@ describe("SuggestedPicks grouped-forward presentation", () => {
     const metrics = new Map([["1", { value: 90, vbd: 9, vorp: 9, vona: 0 } as any], ["2", { value: 100, vbd: 10, vorp: 10, vona: 0 } as any]]);
     render(<SuggestedPicks players={players} vorpMetrics={metrics} currentPick={1} nextPickNumber={10}
         selectionHorizon={{ currentPick: 1, targetPick: 10, opposingPicks: 9 }} teamCount={1} dustInsights={new Map()} dustSort="schedule_fit" canUseProDust />);
-    expect(screen.getAllByRole("listitem")[0].textContent).toContain("Urgent Player");
+    expect(screen.getAllByRole("listitem")[0].getAttribute("title")).toContain("Urgent Player");
   });
 
   it("labels weekly DUST lineup analysis as unavailable", () => {
@@ -273,7 +275,7 @@ describe("SuggestedPicks grouped-forward presentation", () => {
     const metrics = new Map(players.map((candidate, index) => [String(candidate.playerId), { vbd: 300 - index, vorp: 300 - index, vona: 0 } as any]));
     const dustInsights = new Map([["201", { activeGamesAdded: 9, marginalDustGames: 0, candidateScheduledGames: 8, dustRate: 0, risk: "low" } as any]]);
     render(<SuggestedPicks players={players} vorpMetrics={metrics} currentPick={1} teamCount={1} dustInsights={dustInsights} dustSort="schedule_fit" canUseProDust />);
-    expect(screen.getAllByRole("listitem")[0].textContent).toContain("Player 201");
+    expect(screen.getAllByRole("listitem")[0].getAttribute("title")).toContain("Player 201");
   });
 
   it("sends a goalie-only filtered request through the shared contract", async () => {

@@ -285,3 +285,13 @@
     text-align: left;
   }
 }
+
+// Opt-in (sideBySide): both team grids share one row on desktop widths.
+@media only screen and (min-width: vars.$screen-large) {
+  .gridWrapper.sideBySide {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: center;
+    gap: vars.$space-xl;
+  }
+}

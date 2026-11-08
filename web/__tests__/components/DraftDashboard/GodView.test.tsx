@@ -24,7 +24,7 @@ it("shows selected players and live team ranks using the standings selector", ()
     access: { eligible: true, capabilities: ["god_view"], reason: "eligible", grantingSources: ["purchase"], expiresAt: null, verifiedAt: null, nextVerificationAt: null, providerReadiness: { stripe: false, patreon: false, yahoo: false } }, onSelectTeam: vi.fn(), onExpandGraph: vi.fn(), onSummary: vi.fn(), onOpenChange: vi.fn(),
   };
   const { container, rerender } = render(<GodView {...props} />);
-  fireEvent.click(screen.getByRole("button", { name: "Expand God View - Pro" }));
+  fireEvent.click(screen.getByRole("button", { name: "Expand All teams · God View Pro" }));
   expect(container.querySelector('[data-pick="1"]')?.textContent).toContain("First Player");
   expect(container.querySelector('[data-pick="1"]')?.textContent).toContain("Ice Owls");
   expect(container.querySelector('[data-pick="2"]')?.textContent).toContain("Keeper");
@@ -40,6 +40,10 @@ it("shows selected players and live team ranks using the standings selector", ()
   check(teams);
   expect(container.querySelector('[data-pick="1"] [data-category="GOALS"]')?.getAttribute("data-rank")).toBe("1");
   expect(container.querySelector('[data-pick="2"] [data-category="GOALS"]')?.getAttribute("data-rank")).toBe("1");
+  // A full tie has no leader: neutral "—" with no rank colour.
+  const tiedGoals = container.querySelector('[data-pick="1"] [data-category="GOALS"]');
+  expect(tiedGoals?.querySelector("strong")?.textContent).toBe("—");
+  expect(tiedGoals?.getAttribute("data-band")).toBeNull();
   expect(container.querySelector('[data-pick="1"] [data-category="GOALS_AGAINST_AVERAGE"]')?.getAttribute("data-rank")).toBe("1");
   expect(container.querySelector('[data-pick="1"] [data-category="HITS"]')?.getAttribute("data-rank")).toBe("2");
   const updated = teams.map(team => ({ ...team, categoryTotals: { ...team.categoryTotals, GOALS: team.teamId === "B" ? 30 : 10 } }));

@@ -1,6 +1,6 @@
 import { extractTweetPlayerEvents, type TweetPlayerEvent } from "./tweetPlayerEvents";
 import type { PlayerSlotRole } from "./playerIdentity";
-import { identityMentionPresent, interpretTweetUnits, playerPositionRole, segmentPlayerRow, surnameMentionPresent, tweetPipelineFlags, type TweetInterpretation } from "./tweetInterpretation";
+import { identityMentionPresent, interpretTweetUnits, lineupChangeEvents, playerPositionRole, segmentPlayerRow, surnameMentionPresent, tweetPipelineFlags, type TweetInterpretation } from "./tweetInterpretation";
 import type {
   GameDayTweetsClassification,
   RosterNameEntry,
@@ -1470,7 +1470,7 @@ function buildStructuredContent(args: {
   const eventPlayers = interpretation ? (args.eventPlayers ?? args.rosterEntries).filter((player) =>
     surnameMentionPresent(args.text, player.lastName) || [player.fullName, ...(player.aliases ?? [])].some((name) => identityMentionPresent(args.text, name))) : [];
   const playerEvents = interpretation ? extractTweetPlayerEvents({ text: args.text, players: eventPlayers, publishedAt: args.publishedAt ?? null,
-    includeClaimAnchors: process.env.TWEET_CLAIMS_MODE === "shadow" }) : [];
+    includeClaimAnchors: process.env.TWEET_CLAIMS_MODE === "shadow" }).concat(lineupChangeEvents(args.text, interpretation.changes)) : [];
   const participationObservations = interpretation ? [] : extractTweetPlayerEvents({ text: args.text, players: args.rosterEntries, publishedAt: args.publishedAt ?? null })
     .filter((event) => event.kind === "participation" && event.state === "observed" && event.modality === "negated");
   let goalieStates: RowGoalieState[] | null = null;
@@ -1735,8 +1735,12 @@ export function refreshLinesCccSourceFromPrimaryText(args: {
   const nonNhlHandleMatch = detectNonNhlHandle({
     sourceHandles,
   });
-  const detectedNonNhlLeague =
-    detectNonNhlLeague(text) ?? nonNhlHandleMatch?.league ?? null;
+  // An explicit league label on the relaying wrapper ("AHL Wolf Pack lines") still governs when the primary text is
+  // the quoted original, which may carry only an NHL affiliate's tag (#NYR).
+  const textLeague = [text, args.source.enrichedText, args.source.rawText]
+    .map((value) => (value ? detectNonNhlLeague(value) : null))
+    .find((league) => league != null) ?? null;
+  const detectedNonNhlLeague = textLeague ?? nonNhlHandleMatch?.league ?? null;
   const team = detectedNonNhlLeague
     ? null
     : resolveLinesCccTeam({
@@ -1767,7 +1771,7 @@ export function refreshLinesCccSourceFromPrimaryText(args: {
       ? null
       : nhlFilterStatus === "rejected_non_nhl"
         ? detectedNonNhlLeague === nonNhlHandleMatch?.league &&
-          !detectNonNhlLeague(text)
+          !textLeague
           ? "minor_league_source_handle"
           : "explicit_non_nhl_league_marker"
         : labelMatchedTeams.length > 1

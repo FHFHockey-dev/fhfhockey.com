@@ -31,6 +31,84 @@ function detailsIdForGame(game: GameData) {
   return `game-details-${game.game_id ?? `${game.date}-${game.opponent_team_id}`}`;
 }
 
+/**
+ * Trends view: one bar per game (oldest → newest) for goal differential,
+ * coloured by result like the game cards, with the running total in the title.
+ */
+function GoalDifferentialTrend({
+  games,
+  resultClass
+}: {
+  games: GameData[];
+  resultClass: (result: string) => string;
+}) {
+  const ordered = [...games].reverse();
+  const diffs = ordered.map((game) => game.goals_for - game.goals_against);
+  const total = diffs.reduce((sum, diff) => sum + diff, 0);
+  const scale = Math.max(3, ...diffs.map((diff) => Math.abs(diff)));
+  const width = 320;
+  const height = 132;
+  const top = 16;
+  const plot = height - top - 26; // room for value labels and dates
+  const zeroY = top + plot / 2;
+  const slot = width / Math.max(ordered.length, 1);
+  const barWidth = Math.min(22, slot * 0.6);
+  const signed = (value: number) => (value > 0 ? `+${value}` : String(value));
+
+  return (
+    <figure className={styles.trend}>
+      <figcaption className={styles.trendCaption}>
+        Goal differential by game ·{" "}
+        <strong>{signed(total)}</strong> over {ordered.length}
+      </figcaption>
+      <svg
+        className={styles.trendChart}
+        viewBox={`0 0 ${width} ${height}`}
+        role="img"
+        aria-label={`Goal differential, oldest to newest: ${ordered
+          .map(
+            (game, index) =>
+              `${format(parseISO(game.date), "MMM d")} ${game.is_home ? "vs" : "at"} ${game.opponent_abbrev} ${signed(diffs[index])}`
+          )
+          .join(", ")}. Total ${signed(total)}.`}
+      >
+        <line
+          className={styles.trendZero}
+          x1={0}
+          x2={width}
+          y1={zeroY}
+          y2={zeroY}
+        />
+        {ordered.map((game, index) => {
+          const diff = diffs[index];
+          const barHeight = Math.max((Math.abs(diff) / scale) * (plot / 2), diff === 0 ? 0 : 2);
+          const x = index * slot + (slot - barWidth) / 2;
+          const y = diff >= 0 ? zeroY - barHeight : zeroY;
+          const labelY = diff >= 0 ? y - 4 : y + barHeight + 11;
+          return (
+            <g key={`${game.date}-${game.opponent_team_id}`} className={resultClass(game.result)}>
+              <rect
+                className={styles.trendBar}
+                x={x}
+                y={y}
+                width={barWidth}
+                height={barHeight}
+                rx={2}
+              />
+              <text className={styles.trendValue} x={x + barWidth / 2} y={labelY}>
+                {signed(diff)}
+              </text>
+              <text className={styles.trendDate} x={x + barWidth / 2} y={height - 4}>
+                {format(parseISO(game.date), "M/d")}
+              </text>
+            </g>
+          );
+        })}
+      </svg>
+    </figure>
+  );
+}
+
 export function GameByGameTimeline({
   teamId,
   teamAbbrev,
@@ -205,6 +283,8 @@ export function GameByGameTimeline({
           } else if (result === "OTL") {
             decided = tied ? "SO" : "OT";
           }
+          // NHL convention: the shootout winner is credited one goal (5-5 → 6-5 SO).
+          const shootoutGoal = decided === "SO" && tied ? 1 : 0;
 
           processedGames.push({
             date: currentGame.date,
@@ -213,8 +293,11 @@ export function GameByGameTimeline({
             is_home: isHome,
             result,
             decided,
-            goals_for: currentGame.goals_for || 0,
-            goals_against: currentGame.goals_against || 0,
+            goals_for:
+              (currentGame.goals_for || 0) + (result === "W" ? shootoutGoal : 0),
+            goals_against:
+              (currentGame.goals_against || 0) +
+              (result === "OTL" ? shootoutGoal : 0),
             shots_for: Math.round(currentGame.shots_for_per_game || 0),
             shots_against: Math.round(currentGame.shots_against_per_game || 0),
             power_play_pct: currentGame.power_play_pct || 0,
@@ -317,7 +400,14 @@ export function GameByGameTimeline({
         </div>
       </div>
 
-      <div className={styles.gameGrid}>
+      {selectedView === "trends" && (
+        <GoalDifferentialTrend
+          games={gameData}
+          resultClass={getResultClass}
+        />
+      )}
+
+      <div className={styles.gameGrid} hidden={selectedView === "trends"}>
         {gameData.map((game, index) => {
           const performanceScore = getPerformanceScore(game);
           const isSelected = selectedGame?.date === game.date;

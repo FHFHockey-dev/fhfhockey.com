@@ -1,6 +1,22 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { Header } from "pages/lines/[abbreviation]";
+
+const { getTeamsMock, getLineCombinationsMock } = vi.hoisted(() => ({
+  getTeamsMock: vi.fn(),
+  getLineCombinationsMock: vi.fn(),
+}));
+
+vi.mock("lib/NHL/server", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("lib/NHL/server")>()),
+  getTeams: getTeamsMock,
+}));
+
+vi.mock("components/LineCombinations/utilities", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("components/LineCombinations/utilities")>()),
+  getLineCombinations: getLineCombinationsMock,
+}));
+
+import { Header, getStaticProps } from "pages/lines/[abbreviation]";
 
 afterEach(cleanup);
 
@@ -35,5 +51,31 @@ describe("team lines header", () => {
       />,
     );
     expect(screen.queryByText(/Updated/)).toBeNull();
+  });
+});
+
+describe("team lines getStaticProps", () => {
+  const team = { id: 22, abbreviation: "EDM", name: "Edmonton Oilers" };
+
+  it("shows the no-games state only when the team has no game data", async () => {
+    getTeamsMock.mockResolvedValue([team]);
+    getLineCombinationsMock.mockRejectedValue(
+      new Error("Cannot find at least 2 games for team 22"),
+    );
+    const result = await getStaticProps({ params: { abbreviation: "EDM" } } as any);
+    expect(result).toMatchObject({
+      props: { lineCombinations: null, loadError: false },
+      revalidate: 60,
+    });
+  });
+
+  it("throws on a query failure so ISR keeps the last good page", async () => {
+    getTeamsMock.mockResolvedValue([team]);
+    getLineCombinationsMock.mockRejectedValue(
+      new Error("canceling statement due to statement timeout"),
+    );
+    await expect(
+      getStaticProps({ params: { abbreviation: "EDM" } } as any),
+    ).rejects.toThrow("statement timeout");
   });
 });

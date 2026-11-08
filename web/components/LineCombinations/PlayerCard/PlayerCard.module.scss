@@ -49,16 +49,19 @@
     row-gap: 4.73px;
     text-align: center;
     .stat {
+      // 10px floor for meta labels (fhfh-styles §8.5); was 8px.
       .label {
-        color: white;
+        color: vars.$color-white;
         font-weight: 500;
-        font-size: 0.5rem;
-        letter-spacing: 0.05em;
+        font-size: vars.$font-size-xxs;
+        letter-spacing: 0.02em;
       }
+      // Roboto ships 700, not 900 (900 was faux-bold); light negative tracking keeps
+      // four values per row on phones.
       .value {
         font-size: 1rem;
-        font-weight: 900;
-        letter-spacing: -0.05em;
+        font-weight: 700;
+        letter-spacing: -0.02em;
         text-wrap: nowrap;
       }
     }

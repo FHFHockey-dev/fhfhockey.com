@@ -19,13 +19,13 @@ import MetricInfoDisclosure from "./MetricInfoDisclosure";
 import OpportunitySparkline from "./OpportunitySparkline";
 import RatingMeter from "./RatingMeter";
 import { LoadingCell, LoadingRows } from "./LoadingCells";
-import { RATING_INFO, OPPORTUNITY_INFO, formatOpportunity, type OpponentRating, type TeamOpportunity } from "./utils/scheduleOpportunity";
+import { formatOpportunity, type OpponentRating, type TeamOpportunity } from "./utils/scheduleOpportunity";
 
 import { DAYS, EXTENDED_DAY_ABBREVIATION, EXTENDED_DAYS, WeekData } from "lib/NHL/types";
 import { useTeamsMap } from "hooks/useTeams";
 import { TeamNumeric, toRankMaps } from "./utils/metricRanks";
 import { getOpponentViewDirections, OpponentRole } from "./utils/opponentCategoryEffects";
-import { FOUR_WEEK_COLOR_LEGEND, toFourWeekMetricBands } from "./utils/fourWeekMetricBands";
+import { toFourWeekMetricBands } from "./utils/fourWeekMetricBands";
 import type { FourWeekCalendar } from "./utils/useFourWeekSchedule";
 import {
   OpponentMetricAverages,
@@ -217,6 +217,10 @@ function compareValues(
   return direction === "ascending" ? aNum - bNum : bNum - aNum;
 }
 
+// "Nov 2" from an ISO date, read in UTC so the label matches the schedule day.
+const formatInfoDate = (date: string) =>
+  new Intl.DateTimeFormat("en-US", { timeZone: "UTC", month: "short", day: "numeric" }).format(new Date(`${date}T00:00:00Z`));
+
 export function distributeMasterTableWidths(
   baseWidths: number[],
   targetWidth: number,
@@ -255,8 +259,9 @@ const ORIGINAL_FOUR_WEEK_WIDTHS = [72, 72, 72, 72];
 
 /**
  * Team and day columns keep the pre-redesign widths. The side groups and Week
- * Summary scale with them, then shrink toward their minimums so everything fits;
- * the table scrolls only when even the minimums do not fit.
+ * Summary scale with them, then shrink toward their minimums so everything fits.
+ * If that is still too wide, the day columns narrow toward their minimum; the
+ * table scrolls only when even those minimums do not fit.
  */
 export function sizeMasterTableColumns({ metricColumns, dayCount, fourWeekCollapsed, containerWidth }: {
   metricColumns: MasterColumnSpec[]; dayCount: number; fourWeekCollapsed: boolean; containerWidth: number;
@@ -278,6 +283,24 @@ export function sizeMasterTableColumns({ metricColumns, dayCount, fourWeekCollap
   if (containerWidth > 0 && excess > 0 && room > 0) {
     const share = Math.min(excess, room) / room;
     flex.forEach((spec, index) => { widths[index] -= (widths[index] - spec.min) * share; });
+  }
+
+  // Narrower than its column (side groups collapsed): widen the side and summary columns so the
+  // table spans the same width as the header and controls above it; team and days stay pinned.
+  const spare = containerWidth > 0 ? available - sum(widths) : 0;
+  if (spare > 0) {
+    const total = sum(widths);
+    widths.forEach((width, index) => { widths[index] = width + spare * (width / total); });
+  }
+
+  // Still too wide (e.g. 7 days at 1024px): narrow the day columns toward their minimum
+  // before falling back to a horizontal scroll, so the 4-week columns stay on screen.
+  const shortfall = Math.round(sum(widths) - available);
+  if (containerWidth > 0 && shortfall > 0 && dayCount > 0) {
+    const cut = Math.min(shortfall, sum(grid.slice(1).map((width) => width - day.min)));
+    for (let i = 1; i <= dayCount; i += 1) {
+      grid[i] -= Math.floor(cut / dayCount) + (i <= cut % dayCount ? 1 : 0);
+    }
   }
 
   // Round down, then hand the leftover pixels to the largest fractions so the total is exact.
@@ -690,7 +713,7 @@ export default function DesktopMasterTable({
             aria-expanded={opponentExpanded}
             aria-label={opponentExpanded ? "Collapse opponent details" : "Expand opponent details"}
           >
-            <span>Opponent strength</span>
+            <span>Opponents</span>
             <span className={styles.masterGroupChevron} aria-hidden="true">{opponentExpanded ? "◂" : "▸"}</span>
           </button>
         </th>
@@ -1018,14 +1041,25 @@ export default function DesktopMasterTable({
             : Object.values(fourWeekSummaryByTeamId).some((summary) => summary.opponentCoverage && summary.opponentCoverage.known < summary.opponentCoverage.expected)
               ? ["Some opponent strength values are unavailable. Check back after standings update."] : []),
       ]}>
-        {opponentSourceLabel && <p>Opponent stats (Natural Stat Trick): {opponentSourceLabel}</p>}
-        <p>Metrics per game; PTS% = points / (2 × GP). Missing or incomplete opponent averages show “-”.</p>
-        <p>xG = expected goals; GF/GA = goals for/against; SF/SA = shots for/against.</p>
-        <p>{RATING_INFO}</p>
-        <p>{OPPORTUNITY_INFO}</p>
-        {fourWeekCalendar && <p>Four weeks: {fourWeekCalendar.start}–{fourWeekCalendar.end}, selected Monday–Sunday week plus three weeks. {fourWeekLoading ? "Loading schedule…" : fourWeekCalendar.error ?? (fourWeekCalendar.knownDays === fourWeekCalendar.expectedDays ? "Schedule complete." : "Schedule incomplete; affected totals are unavailable.")}</p>}
-        <p>GP = games played; OFF = games on nights with eight or fewer NHL games. OPP% uses current-season NHL regular-season team points percentages.</p>
-        <p>{FOUR_WEEK_COLOR_LEGEND.replace("score", "Opportunity")}</p>
+        {/* Same plain-language wording as the phone Opponent and 4-Week panels; source and dates last. */}
+        <p>
+          <strong>Attack</strong> and <strong>Defense</strong> rate each team&rsquo;s opponents from 0 to 100 against the
+          league; 50 is average (the white tick). Attack uses the opponents&rsquo; expected goals for per game; Defense uses
+          their expected goals against, flipped so higher means tougher. Based on results so far, not a forecast.
+        </p>
+        <p>
+          <strong>Total</strong> = remaining team games + 0.25 × off-night games, this week and the next three. Higher
+          means more chances to play. <strong>Weekly</strong> lines show the same week by week on a shared scale, coloured
+          by how tough the opponents are: green easier, yellow average, pink-red harder. It&rsquo;s schedule opportunity,
+          not a promise of starts.
+        </p>
+        <p>
+          Expanded columns: GP, OFF (games on nights with 8 or fewer NHL games), OPP% (opponents&rsquo; points %; lower is
+          easier), xG expected goals, GF/GA goals for/against, SF/SA shots for/against, all per game. Cell colours run
+          green (best) to gold to red (worst); &ldquo;-&rdquo; means missing.
+        </p>
+        {opponentSourceLabel && <p>Natural Stat Trick · {opponentSourceLabel}</p>}
+        {fourWeekCalendar && <p>Four weeks: {formatInfoDate(fourWeekCalendar.start)} – {formatInfoDate(fourWeekCalendar.end)} · {fourWeekLoading ? "loading schedule…" : fourWeekCalendar.error ?? (fourWeekCalendar.knownDays === fourWeekCalendar.expectedDays ? "schedule complete" : "schedule incomplete; affected totals unavailable")}</p>}
       </MetricInfoDisclosure>
   );
 
@@ -1107,7 +1141,6 @@ export default function DesktopMasterTable({
                 style={{ left: `${stickyTeamOffset}px` }}
               >
                 <span className={styles.masterAverageTitle}>GP/Day</span>
-                <span className={styles.masterAverageSubtitle}>AVG</span>
               </td>
               {dayKeys.map((day, index) => (
                 <td
@@ -1304,6 +1337,8 @@ export default function DesktopMasterTable({
                       isTopTen && styles.masterScoreBest,
                       isBottomTen && styles.masterScoreWorst,
                     )}
+                    // Same 1-32 green -> red rank ramp as the phone's Score column.
+                    data-rank={scoreRanking.get(row.teamId)}
                   >
                     {row.weekScore === -100 ? "-" : row.weekScore.toFixed(1)}
                   </td>

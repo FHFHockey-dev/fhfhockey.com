@@ -804,7 +804,13 @@ function GameGridInternal({
             <span
               className={styles.legendSwatch + " " + styles.legendOffNight}
             ></span>{" "}
-            Off-night (≤8 GP)
+            Light (≤6 GP)
+          </li>
+          <li>
+            <span
+              className={styles.legendSwatch + " " + styles.legendMid}
+            ></span>{" "}
+            Mid (7–8 GP)
           </li>
           <li>
             <span
@@ -852,36 +858,21 @@ function GameGridInternal({
             style={{ ...weekScoreHelpPosition, visibility: weekScoreHelpPosition ? "visible" : "hidden" }}
             tabIndex={-1}
             role="dialog"
-            aria-label="Week score formula"
+            aria-label="How Week Score works"
           >
             <p>
-              Week Score = (Adjusted Team Games × 6) + (Off-Night Games × 4)
-              + Matchup Bonus + Slate Crowding.
+              Week Score ranks each team&apos;s week for streaming. Games count
+              most: each game above or below the league average moves it by 6,
+              and each game on an off-night (8 or fewer NHL games) adds 4.
             </p>
             <p>
-              Slate crowding adds one adjustment from −0.25 to +0.25 across
-              the entire selection: 0.25 × (2 × mean((16 − league games) / 15) − 1).
-              Lighter slates earn more; missing slate coverage contributes
-              neutral crowding. The binary off-night threshold stays at 8.
+              Two small nudges follow: a matchup bonus from win odds (−0.5 to
+              +0.5, adjusted for back-to-backs) and a light-slate bonus (−0.25
+              to +0.25) when the selected days are quieter across the league.
             </p>
             <p>
-              GP and off nights take priority. Off-night games occur on days
-              with 8 or fewer NHL regular-season games. Counts and league
-              averages use the included days in the selected period.
-            </p>
-            <p>
-              The matchup bonus is capped from −0.5 to +0.5, using current
-              win odds (0–100%) with the existing back-to-back adjustment.
-              Missing odds contribute a neutral bonus.
-            </p>
-            <p>
-              This is an interim win-odds heuristic, not a calibrated fantasy
-              projection or opponent-only scoring difficulty rating. Higher
-              odds add a small edge when schedules match.
-            </p>
-            <p>
-              Adjusted Team Games = Team Games – League Average Games. Teams
-              with no games in the selected period display a dash.
+              Only days that are switched on count. Teams with no games show a
+              dash. It&apos;s a quick guide, not a fantasy projection.
             </p>
           </div>, document.body
         )}
@@ -1235,7 +1226,7 @@ function GameGridInternal({
                 Game <span className={styles.spanColorBlue}>Grid</span>
               </h1>
               <p className={styles.subTitle}>
-                Weekly NHL schedule, off-nights & matchup maximizer
+                Weekly NHL schedule, <span className={styles.noWrap}>off-nights</span> & matchup maximizer
               </p>
             </div>
           </div>
@@ -1558,7 +1549,7 @@ function GameGridInternal({
         ]
           .filter(Boolean)
           .join(" ")}
-        aria-label="Player candidates"
+        aria-label="Best Players Available"
       >
         <button
           type="button"
@@ -1567,11 +1558,11 @@ function GameGridInternal({
           aria-expanded={isBottomDrawerOpen}
           aria-controls="gg-bottom-drawer-content"
         >
+          {/* B, P and A in blue (BPA is standard fantasy shorthand), the rest white */}
           <span className={styles.bottomDrawerTitle}>
-            <span className={styles.bottomDrawerBadge} aria-hidden="true">
-              POOL |
-            </span>
-            Player Candidates
+            <span className={styles.bottomDrawerInitial}>B</span>est{" "}
+            <span className={styles.bottomDrawerInitial}>P</span>layers{" "}
+            <span className={styles.bottomDrawerInitial}>A</span>vailable
           </span>
           <span className={styles.bottomDrawerHint}>
             {isBottomDrawerOpen ? "Close" : "Open"}

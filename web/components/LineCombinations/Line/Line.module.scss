@@ -16,18 +16,19 @@
       grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 
-    border: 1.33px solid white;
+    // Neutral control edge (3.35:1), not pure white: the cards' team fill already sets them apart.
+    border: vars.$border-control;
 
     .playerCardWrapper {
       position: relative;
       &:not(:last-child)::after {
         content: "";
         position: absolute;
-        width: 0.5px;
+        width: 1px;
         height: 83%;
         right: 0;
         top: 7px;
-        background-color: white;
+        background-color: vars.$border-control-color;
         z-index: 5;
       }
     }
@@ -49,13 +50,13 @@
         font-style: italic;
         font-weight: 700;
         font-size: 1.125rem;
-        color: rgba(255, 255, 255, 0.5);
+        color: vars.$text-secondary;
         letter-spacing: 0.1em;
-        margin: 1rem 0;
+        margin: vars.$space-md 0;
       }
     }
     .cards {
-      gap: 24px;
+      gap: vars.$space-lg;
       border: none;
       flex: 1;
       &.twoColumn {
@@ -65,7 +66,7 @@
       }
 
       .playerCardWrapper {
-        border: 2px solid white;
+        border: vars.$border-control;
         flex: 1;
         &::after {
           display: none;

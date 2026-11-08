@@ -257,6 +257,25 @@ export function extractTweetUnitChanges(text: string, roster: PlayerIdentity[]):
   return changes.sort((left, right) => left.evidence.start - right.evidence.start);
 }
 
+/**
+ * Game participation events from lineup changes: in → available, out → out, scoped to the game (so they never
+ * feed injury history). Evidence is the change itself, or the player's own row of an IN/OUT list. PP changes are
+ * unit moves, not availability, and unresolved names make no event.
+ */
+export function lineupChangeEvents(text: string, changes: TweetUnitChange[] | undefined): TweetPlayerEvent[] {
+  return (changes ?? []).filter((change) => change.situation === "lineup").flatMap((change) =>
+    ([["in", change.playersIn], ["out", change.playersOut]] as const).flatMap(([side, players]) => players.map((player): TweetPlayerEvent => {
+      let evidence = change.evidence;
+      if (change.kind === "lineup_in_out") {
+        const start = text.lastIndexOf("\n", player.evidence.start - 1) + 1, newline = text.indexOf("\n", player.evidence.end);
+        const row = text.slice(start, newline < 0 ? text.length : newline).trimEnd();
+        evidence = { start, end: start + row.length, text: row };
+      }
+      return { playerId: player.playerId, playerName: player.name, kind: "participation", state: "observed", evidence: { ...evidence },
+        availabilityScope: "game", modality: "affirmative", timeline: null, timelines: [], availability: side === "in" ? "available" : "out" };
+    })));
+}
+
 export function interpretTweetUnits(text: string, roster: PlayerIdentity[]): TweetInterpretation {
   const result: TweetInterpretation = {
     version: TWEET_INTERPRETATION_VERSION,

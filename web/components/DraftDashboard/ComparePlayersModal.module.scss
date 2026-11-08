@@ -88,7 +88,7 @@
 .title {
   margin: 0;
   font-family: v.$font-family-accent, sans-serif;
-  font-weight: 900;
+  font-weight: 400;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   font-size: clamp(1.1rem, 2.2vw, 1.5rem);
@@ -230,7 +230,7 @@
 }
 .playerName {
   font-family: v.$font-family-accent, sans-serif;
-  font-weight: 800;
+  font-weight: 400;
   letter-spacing: 0.12em;
   line-height: 1.15;
   font-size: clamp(0.8rem, 1.4vw, 0.95rem);

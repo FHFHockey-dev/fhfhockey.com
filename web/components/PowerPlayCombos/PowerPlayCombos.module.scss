@@ -30,6 +30,7 @@
 }
 
 .legend {
+  margin: 0;
   display: inline-flex;
   align-items: center;
   gap: vars.$space-xs;
@@ -68,44 +69,94 @@
   gap: vars.$space-md;
 }
 
+// A unit: header toggle (recent games), then the lineup cards. Only the header is a
+// button, so the cards' player links are not nested inside it.
 .unitRow {
   display: flex;
   flex-direction: column;
   gap: vars.$space-sm;
-  border: 1px solid rgba(vars.$border-secondary, 0.8);
-  border-radius: vars.$border-radius-md;
-  background: rgba(vars.$background-medium, 0.82);
-  padding: vars.$space-md;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
-  cursor: pointer;
-  text-align: left;
-  font: inherit;
-  transition:
-    border-color 180ms ease,
-    box-shadow 200ms ease,
-    transform 200ms ease;
-  color: inherit;
-}
-
-.unitRow:hover {
-  border-color: vars.$primary-color;
-  transform: translateY(-1px);
-}
-
-.unitRow:focus-visible {
-  outline: 2px solid vars.$primary-color;
-  outline-offset: 2px;
-}
-
-.unitRowExpanded {
-  border-color: vars.$primary-color;
 }
 
 .unitSummary {
+  all: unset;
+  box-sizing: border-box;
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: vars.$space-sm;
+  min-height: vars.$touch-target-inline;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid vars.$primary-color;
+    outline-offset: 2px;
+    border-radius: vars.$radius-xs;
+  }
+
+  &:hover .historyToggle {
+    color: vars.$primary-color;
+  }
+}
+
+.historyToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: vars.$space-xs;
+  font-size: vars.$font-size-xs;
+  color: vars.$text-secondary;
+}
+
+// Lineup-card rows (TJ 2026-11-07): three forwards on top, the D (or a 4th/5th
+// forward) centred underneath at the same card width.
+.unitCards {
+  display: flex;
+  flex-direction: column;
+  gap: vars.$space-sm;
+}
+
+.cardRow {
+  --pp-card-gap: #{vars.$space-sm};
+  display: flex;
+  justify-content: center;
+  gap: var(--pp-card-gap);
+
+  > * {
+    flex: 0 0 calc((100% - 2 * var(--pp-card-gap)) / 3);
+    min-width: 0;
+  }
+}
+
+.ppCard {
+  border: vars.$border-control;
+}
+
+// Phones: two stats (position is implied by the row: D sit on the bottom row).
+// Six stats in a 2 x 3 grid on phones, 3 x 2 on desktop (like the even-strength cards'
+// 4 x 2): label over value, centred.
+.ppStats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: vars.$space-xs vars.$space-xxs;
+  margin: vars.$space-xs 0 0;
+  text-align: center;
+}
+
+.ppStat {
+  min-width: 0;
+}
+
+.ppLabel {
+  color: vars.$color-white;
+  font-size: vars.$font-size-xxs;
+  font-weight: 500;
+}
+
+.ppValue {
+  margin: 0;
+  font-family: vars.$font-family-primary;
+  font-size: vars.$font-size-sm;
+  font-weight: 700;
+  white-space: nowrap;
 }
 
 .unitTitleGroup {
@@ -234,7 +285,27 @@
     gap: vars.$space-lg;
   }
 
+  // Cards at the even-strength card width rather than stretched across the panel;
+  // the unit header (and its Recent games toggle) spans the same width.
   .unitRow {
-    padding: vars.$space-lg;
+    max-width: 760px;
+  }
+
+  .cardRow {
+    --pp-card-gap: #{vars.$space-lg};
+  }
+
+  .ppStats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .ppValue {
+    font-size: vars.$font-size-base;
+  }
+
+  // History chips keep the same three-across shape as the cards.
+  .unitPlayers,
+  .historyPlayers {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }

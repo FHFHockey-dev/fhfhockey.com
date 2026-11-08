@@ -1,6 +1,7 @@
 import adminOnly from "utils/adminOnlyMiddleware";
 import puppeteer from "puppeteer-core";
 import supabase from "lib/supabase/server";
+import { linemateMatrixCaptureSelector } from "lib/lines/matrixCapture";
 
 const BASE_URL = true ? "https://fhfhockey.com" : "http://localhost:3000";
 
@@ -124,7 +125,7 @@ async function saveLinemateMatrixImages(gameId: number, teamIds: number[]) {
     teamIds.map(async (teamId) => {
       old = Date.now();
 
-      const content = await page.$(`#linemate-matrix-${teamId} > .content`);
+      const content = await page.$(linemateMatrixCaptureSelector(teamId));
       if (!content) throw new Error("Cannot find the matrix");
 
       const image = await content.screenshot({

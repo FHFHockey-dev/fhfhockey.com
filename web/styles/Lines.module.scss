@@ -144,12 +144,10 @@
             display: inline-flex;
             align-items: center;
             min-height: 20px;
-            padding: 2px vars.$space-sm;
-            border-radius: 999px;
-            font-size: 0.65rem;
+            padding: vars.$space-xxs vars.$space-sm;
+            border-radius: vars.$radius-pill;
+            font-size: vars.$font-size-xxs;
             font-weight: 700;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
             color: vars.$color-white;
             border: vars.$border-subtle;
           }

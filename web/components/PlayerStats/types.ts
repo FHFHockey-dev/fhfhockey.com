@@ -362,6 +362,7 @@ export const STAT_FORMATTERS = {
   save_pct: (value: number) => `${(value || 0).toFixed(3)}`,
   fow_percentage: (value: number) => `${(value || 0).toFixed(1)}%`,
   sat_pct: (value: number) => `${(value || 0).toFixed(1)}%`,
+  usat_pct: (value: number) => `${(value || 0).toFixed(1)}%`,
   zone_start_pct: (value: number) => `${(value || 0).toFixed(1)}%`,
   on_ice_shooting_pct: (value: number) => `${(value || 0).toFixed(1)}%`,
 

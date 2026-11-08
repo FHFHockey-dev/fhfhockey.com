@@ -12,12 +12,12 @@
   align-items: center;
   margin-bottom: 0.5rem;
   padding-bottom: 0.5rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(v.$color-white, 0.1);
 
   h4 {
     margin: 0;
     font-size: 1rem;
-    color: #ffffff;
+    color: v.$color-white;
   }
 }
 
@@ -29,19 +29,19 @@
 
 .tab {
   padding: 0.25rem 0.75rem;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  background: rgba(255, 255, 255, 0.05);
-  color: #ccc;
+  border: 1px solid rgba(v.$color-white, 0.2);
+  background: rgba(v.$color-white, 0.05);
+  color: v.$color-grey-text;
   border-radius: 4px;
   font-size: 0.75rem;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 
   &:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(v.$color-white, 0.1);
     border-color: rgba(v.$secondary-color, 0.5);
   }
 
@@ -71,8 +71,8 @@
 }
 
 .metricGroup {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(v.$color-white, 0.05);
+  border: 1px solid rgba(v.$color-white, 0.1);
   border-radius: 8px;
   padding: 0.5rem 1rem;
 
@@ -116,7 +116,7 @@
   font-size: 0.8rem;
   font-family: v.$font-family-numbers;
   font-weight: 400;
-  color: #ffffff;
+  color: v.$color-white;
   text-align: center;
   min-width: 60px;
 
@@ -142,8 +142,8 @@
 }
 
 .trendsGrid {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(v.$color-white, 0.05);
+  border: 1px solid rgba(v.$color-white, 0.1);
   border-radius: 8px;
   padding: 1.5rem;
 }
@@ -156,13 +156,13 @@
     margin: 0 0 0.5rem 0;
     font-size: 1rem;
     font-weight: 600;
-    color: #ffffff;
+    color: v.$color-white;
   }
 }
 
 .trendsSubtitle {
   font-size: 0.8rem;
-  color: #aaa;
+  color: v.$color-grey-text-sec;
   font-style: italic;
 }
 
@@ -172,13 +172,13 @@
   align-items: center;
   padding: 1rem;
   margin-bottom: 1rem;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(v.$color-white, 0.05);
+  border: 1px solid rgba(v.$color-white, 0.1);
   border-radius: 6px;
-  transition: all 0.2s ease;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
 
   &:hover {
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(v.$color-white, 0.08);
     transform: translateY(-1px);
   }
 
@@ -196,7 +196,7 @@
 .trendLabel {
   font-size: 0.9rem;
   font-weight: 600;
-  color: #ffffff;
+  color: v.$color-white;
 }
 
 .trendIcon {
@@ -252,7 +252,7 @@
 
 .trendPeriod {
   font-size: 0.7rem;
-  color: #aaa;
+  color: v.$color-grey-text-sec;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   font-weight: 600;
@@ -261,7 +261,7 @@
 .trendNumber {
   font-size: 1rem;
   font-weight: 700;
-  color: #ffffff;
+  color: v.$color-white;
 }
 
 .loading {
@@ -270,12 +270,12 @@
   align-items: center;
   justify-content: center;
   padding: 3rem 2rem;
-  color: #aaa;
+  color: v.$color-grey-text-sec;
 
   .spinner {
     width: 32px;
     height: 32px;
-    border: 3px solid rgba(255, 255, 255, 0.1);
+    border: 3px solid rgba(v.$color-white, 0.1);
     border-top: 3px solid v.$secondary-color;
     border-radius: 50%;
     animation: spin 1s linear infinite;
@@ -350,5 +350,5 @@
 .sampleNote {
   margin: -0.25rem 0 0.5rem;
   font-size: 0.75rem;
-  color: #aaa;
+  color: v.$color-grey-text-sec;
 }

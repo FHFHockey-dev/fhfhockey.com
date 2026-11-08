@@ -95,8 +95,24 @@ function positionGroup(position: string | null | undefined) {
   const normalized = (position ?? "").toUpperCase();
   if (normalized === "D") return "defense" as const;
   if (normalized === "G") return "goalie" as const;
-  if (["C", "LW", "RW", "F"].includes(normalized)) return "forward" as const;
+  // players.position stores NHL's single-letter wing codes (L, R); keep LW/RW/F for other sources.
+  if (["C", "L", "R", "LW", "RW", "F"].includes(normalized)) return "forward" as const;
   return null;
+}
+
+// Skaters whose position is missing or unrecognised, per game and team. Such a skater
+// breaks the 5v5 skater count for every segment they are on, so their team-game's units
+// are incomplete and must not be marked complete.
+function unclassifiedSkatersByTeamGame(shifts: NormalizedShift[]) {
+  const byKey = new Map<string, Set<number>>();
+  for (const shift of shifts) {
+    if (shift.positionGroup != null) continue;
+    const key = [shift.seasonId, shift.gameId, shift.teamId].join(":");
+    const ids = byKey.get(key) ?? new Set<number>();
+    ids.add(shift.playerId);
+    byKey.set(key, ids);
+  }
+  return byKey;
 }
 
 function dateOnly(value: string | null) {
@@ -207,8 +223,13 @@ function emitRankedRows(args: {
   snapshotDate: string;
   sourceTable: TeamUnitToiInsert["source_table"];
   metadata: Record<string, unknown>;
+  unclassifiedPlayerIds?: Set<number>;
 }) {
   if (args.poolSeconds <= 0) return [];
+  const unclassified = [...(args.unclassifiedPlayerIds ?? [])].sort((a, b) => a - b);
+  const coverageStatus: TeamUnitToiCoverageStatus = unclassified.length > 0 ? "partial" : "complete";
+  const coverageWarnings =
+    unclassified.length > 0 ? [`unclassified_skater_positions:${unclassified.join(",")}`] : [];
 
   return Array.from(args.units.values())
     .filter((unit) => unit.pooledSeconds > 0)
@@ -234,8 +255,8 @@ function emitRankedRows(args: {
       toi_basis: "pooled_player_seconds",
       source_table: args.sourceTable,
       source_version: SOURCE_VERSION,
-      coverage_status: "complete",
-      coverage_warnings: [],
+      coverage_status: coverageStatus,
+      coverage_warnings: coverageWarnings,
       metadata: args.metadata,
     }));
 }
@@ -253,6 +274,7 @@ export function buildEvenStrengthTeamUnitToiRows(args: {
     season: args.season,
   });
   const accumulators = new Map<string, TeamGameAccumulator>();
+  const unclassified = unclassifiedSkatersByTeamGame(shifts);
 
   const gamePeriodKeys = Array.from(
     new Set(shifts.map((shift) => [shift.gameId, shift.period].join(":"))),
@@ -324,9 +346,10 @@ export function buildEvenStrengthTeamUnitToiRows(args: {
     }
   }
 
-  return Array.from(accumulators.values()).flatMap((accumulator) => [
+  return Array.from(accumulators.entries()).flatMap(([key, accumulator]) => [
     ...emitRankedRows({
       accumulator,
+      unclassifiedPlayerIds: unclassified.get(key),
       unitType: "forward_line",
       units: accumulator.forwardUnits,
       poolSeconds: accumulator.forwardPoolSeconds,
@@ -339,6 +362,7 @@ export function buildEvenStrengthTeamUnitToiRows(args: {
     }),
     ...emitRankedRows({
       accumulator,
+      unclassifiedPlayerIds: unclassified.get(key),
       unitType: "defense_pair",
       units: accumulator.defenseUnits,
       poolSeconds: accumulator.defensePoolSeconds,

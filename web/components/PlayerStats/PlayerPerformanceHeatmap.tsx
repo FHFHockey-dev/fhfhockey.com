@@ -881,6 +881,9 @@ export function PlayerPerformanceHeatmap({
     Math.max(monthIndexChoice ?? defaultMonthIndex, 0),
     Math.max(calendarData.length - 1, 0)
   );
+  // Wider screens show the active month and the one before it; the rest sit
+  // behind a toggle so the calendar doesn't fill the page with upcoming weeks.
+  const [showAllMonths, setShowAllMonths] = useState(false);
 
   // Calculate calendar stats
   const calendarStats = useMemo(() => {
@@ -1424,11 +1427,30 @@ export function PlayerPerformanceHeatmap({
         </div>
       )}
 
-      <div className={styles.calendarGrid}>
+      {calendarData.length > 2 && (
+        <div className={styles.monthToggleRow}>
+          <button
+            type="button"
+            className={styles.monthToggle}
+            aria-expanded={showAllMonths}
+            aria-controls="player-calendar-grid"
+            onClick={() => setShowAllMonths((shown) => !shown)}
+          >
+            {showAllMonths
+              ? "Show recent months"
+              : `Show all ${calendarData.length} months`}
+          </button>
+        </div>
+      )}
+
+      <div
+        id="player-calendar-grid"
+        className={`${styles.calendarGrid} ${showAllMonths ? styles.showAllMonths : ""}`}
+      >
         {calendarData.map((month, monthIndex) => (
           <div
             key={month.date.toISOString()}
-            className={`${styles.calendarMonth} ${monthIndex === activeMonthIndex ? styles.activeMonth : ""}`}
+            className={`${styles.calendarMonth} ${monthIndex === activeMonthIndex ? styles.activeMonth : ""} ${monthIndex === activeMonthIndex || monthIndex === activeMonthIndex - 1 ? styles.recentMonth : ""}`}
           >
             <div className={styles.monthHeader}>
               {format(month.date, "MMM yyyy")}

@@ -1,5 +1,6 @@
 // Modernized GameGrid Styles
 @use "styles/vars" as v;
+@use "./surfaces" as gg;
 @use "sass:color";
 @use "./utils/opponentMetricPalette" as opponentPalette;
 @use "sass:math";
@@ -78,7 +79,7 @@
   width: 100%;
   min-height: 0;
   border-radius: 0;
-  background: #1d2127;
+  background: gg.$panel;
   border: 1px solid rgba(v.$color-white, 0.06);
   box-shadow:
     0 18px 44px rgba(v.$color-black, 0.32),
@@ -104,7 +105,7 @@
     0 0 0 1px rgba(v.$color-white, 0.03) inset,
     0 0 28px rgba(v.$primary-color, 0.08);
   border-radius: 0;
-  background: #20242a;
+  background: gg.$sticky;
 
   @media (min-width: v.$breakpoint-desktop) {
     height: auto;
@@ -130,7 +131,7 @@
   width: 100%;
   min-height: 0;
   border-radius: 0;
-  background: #1d2127;
+  background: gg.$panel;
   border: 1px solid rgba(v.$color-white, 0.06);
   box-shadow:
     0 18px 44px rgba(v.$color-black, 0.32),
@@ -169,7 +170,7 @@
   border-radius: 0;
   overflow: hidden;
   // border: 1px solid rgba(v.$color-white, 0.06);
-  background: #14181e;
+  background: gg.$canvas;
   // box-shadow:
   //   0 20px 44px rgba(v.$color-black, 0.32),
   //   0 0 0 1px rgba(v.$color-white, 0.04) inset,
@@ -196,12 +197,7 @@
   display: none;
 }
 
-.bottomDrawerBadge {
-  font-family: v.$font-family-accent, v.$font-family-primary, sans-serif;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  font-weight: 600;
-  margin-right: v.$space-sm;
+.bottomDrawerInitial {
   color: v.$secondary-color;
 }
 
@@ -213,38 +209,14 @@
     right: 0;
     bottom: 0;
     height: 64px;
-    background: linear-gradient(
-      180deg,
-      rgba(v.$secondary-color, 0.16),
-      rgba(v.$color-black, 0.92) 55%
-    );
-    border-top: 1px solid rgba(v.$secondary-color, 0.4);
-    box-shadow:
-      0 -18px 40px rgba(v.$color-black, 0.6),
-      0 -2px 22px rgba(v.$secondary-color, 0.22);
+    // Flat chrome (was a cyan-to-black wash with a cyan glow and a gradient "neon rail");
+    // the handle row carries the blue.
+    background: v.$chrome-bg;
+    border-top: 2px solid rgba(v.$secondary-color, 0.55);
+    box-shadow: 0 -18px 40px rgba(v.$color-black, 0.6);
     z-index: 60;
-    backdrop-filter: blur(10px);
     overflow: hidden;
     transition: height v.$transition-duration v.$ease-desktop-standard;
-
-    // neon rail across the top edge
-    &::before {
-      content: "";
-      position: absolute;
-      left: 0;
-      right: 0;
-      top: 0;
-      height: 2px;
-      background: linear-gradient(
-        90deg,
-        rgba(v.$primary-color, 0),
-        rgba(v.$primary-color, 0.85),
-        rgba(v.$secondary-color, 0.85),
-        rgba(v.$secondary-color, 0)
-      );
-      box-shadow: 0 0 18px rgba(v.$secondary-color, 0.3);
-      pointer-events: none;
-    }
   }
 
   .bottomDrawerOpen {
@@ -261,28 +233,13 @@
     padding: 0 v.$space-lg;
     border: 0;
     border-top: 0;
-    background: linear-gradient(
-      135deg,
-      rgba(v.$color-white, 0.06),
-      rgba(v.$color-white, 0.02)
-    );
+    background: v.$chrome-active-mobile;
     color: v.$text-color-primary;
     cursor: pointer;
-    transition:
-      transform 0.15s v.$ease-desktop-emphasized,
-      box-shadow 0.15s v.$ease-desktop-emphasized,
-      background 0.15s v.$ease-desktop-emphasized;
+    transition: background-color 0.15s v.$ease-desktop-emphasized;
 
     &:hover {
-      box-shadow:
-        0 0 0 1px rgba(v.$secondary-color, 0.22) inset,
-        0 12px 30px rgba(v.$color-black, 0.35),
-        0 0 22px rgba(v.$secondary-color, 0.18);
-      background: linear-gradient(
-        135deg,
-        rgba(v.$secondary-color, 0.14),
-        rgba(v.$color-white, 0.03)
-      );
+      background: color.mix(v.$secondary-color, v.$chrome-active-mobile, 12%);
     }
 
     &:focus-visible {
@@ -292,6 +249,7 @@
   }
 
   .bottomDrawerTitle {
+    color: v.$color-white;
     font-family: v.$font-family-accent, v.$font-family-primary, sans-serif;
     text-transform: uppercase;
     letter-spacing: 0.08em;
@@ -358,7 +316,7 @@
   min-height: 0;
 
   border: 1px solid rgba(v.$color-white, 0.1);
-  background: #1d2127;
+  background: gg.$panel;
   box-shadow:
     v.$box-shadow-default,
     inset -10px 0 0 rgba(v.$secondary-color, 0.85),
@@ -381,7 +339,7 @@
   min-height: 0;
   border-radius: 0;
   border: 1px solid rgba(v.$color-white, 0.1);
-  background: #1d2127;
+  background: gg.$panel;
   box-shadow:
     v.$box-shadow-default,
     inset 10px 0 0 rgba(v.$primary-color, 0.85),
@@ -570,13 +528,11 @@
   display: flex;
   align-items: center;
   gap: v.$space-sm;
-  background: #1d2127;
+  background: gg.$panel;
   border-radius: v.$border-radius-lg;
   padding: 4px;
   border: 1px solid rgba(v.$secondary-color, 0.22);
-  box-shadow:
-    0 10px 24px rgba(v.$color-black, 0.22),
-    inset 0 1px 0 rgba(v.$color-white, 0.04);
+  box-shadow: 0 10px 24px rgba(v.$color-black, 0.22);
   min-height: 40px;
   width: 50%;
 
@@ -594,13 +550,18 @@
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    border-radius: v.$border-radius-sm;
-    transition: all 0.2s ease;
+    // Nested radius: 8px inner + 4px .dateNav padding = its 12px outer radius.
+    border-radius: v.$border-radius-md;
+    background-image: none;
+    transition: background-color 0.15s ease, color 0.15s ease;
+
+    // Hover is a flat blue step: no glow, no gradient overlay from the shared button block.
+    &::before { display: none; }
 
     &:hover:not(:disabled) {
       color: v.$color-white;
       background-color: rgba(v.$primary-color, 0.3);
-      box-shadow: 0 8px 16px rgba(v.$primary-color, 0.22);
+      box-shadow: none;
     }
 
     &:disabled {
@@ -659,9 +620,7 @@
   text-transform: uppercase;
   letter-spacing: 0.08em;
   margin-bottom: 0;
-  box-shadow:
-    0 20px 50px rgba(v.$color-black, 0.3),
-    inset 0 1px 0 rgba(v.$color-white, 0.05);
+  box-shadow: 0 20px 50px rgba(v.$color-black, 0.3);
 }
 
 .gameGridHeaderContent {
@@ -692,9 +651,6 @@
   text-align: left;
   margin: 0;
   width: 100%;
-  text-shadow:
-    0 0 12px rgba(v.$primary-color, 0.15),
-    0 0 24px rgba(v.$secondary-color, 0.08);
 }
 
 // --- New header enhancements ---
@@ -710,6 +666,13 @@
     flex-direction: column;
     align-items: center;
   }
+
+  // Side by side, the title sizes to its text so the subtitle keeps its full width.
+  @media (min-width: 981px) {
+    .gameGridTitle {
+      width: auto;
+    }
+  }
 }
 
 .subTitle {
@@ -724,7 +687,10 @@
   width: auto;
   max-width: 28rem;
   line-height: 1.45;
-  filter: drop-shadow(0 0 4px rgba(v.$color-white, 0.4));
+
+  .noWrap {
+    white-space: nowrap;
+  }
 
   @media (max-width: 980px) {
     text-align: center;
@@ -764,6 +730,12 @@
     color: v.$surface-1 !important;
 
     .weekScoreHelpIcon { color: v.$surface-1 !important; }
+  }
+
+  // PREV / NEXT hover onto a dark blue fill, where the dark ink above drops to ~2:1; white is ~9:1.
+  .dateNav .dateButtonPrev:hover:not(:disabled),
+  .dateNav .dateButtonNext:hover:not(:disabled) {
+    color: v.$color-white !important;
   }
 
   @media (max-width: 1100px) {
@@ -929,7 +901,6 @@
   border-radius: v.$border-radius-lg;
   padding: 4px;
   border: 1px solid rgba(v.$color-white, 0.08);
-  box-shadow: inset 0 1px 0 rgba(v.$color-white, 0.04);
   justify-self: end;
   grid-column: 3;
   min-height: 40px;
@@ -953,7 +924,7 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
   border-radius: v.$border-radius-sm;
-  transition: all 0.2s ease;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 
   &:hover {
     color: v.$primary-color;
@@ -976,6 +947,13 @@
 //   // keep (covered by .modeButton hover above)
 // }
 
+// Nested radius: 8px inner + 4px toggle padding = the 12px outer radius (the WEEK SCORE pill,
+// which extends .modeButtonActive outside the toggle, keeps its own corner).
+.modeToggle .modeButton,
+.modeToggle .modeButtonActive {
+  border-radius: v.$border-radius-md;
+}
+
 .weekRange {
   display: inline-flex;
   align-items: center;
@@ -992,7 +970,7 @@
   font-weight: 600;
   letter-spacing: 0.02em;
   font-family: v.$font-family-numbers, v.$font-family-primary, sans-serif;
-  background: #1d2127;
+  background: gg.$panel;
   color: v.$color-white;
   border: 1px solid rgba(v.$color-white, 0.08);
   backdrop-filter: blur(8px);
@@ -1160,6 +1138,11 @@
       box-shadow: inset 0 -2px 0 $rank-accent;
     }
   }
+
+  // Desktop Score digits use the same rank ramp (the top / bottom 10 keep their tint and outline).
+  .masterSummaryScore[data-rank="#{$i}"] {
+    color: $rank-text !important;
+  }
 }
 
 // Legend bar
@@ -1210,6 +1193,21 @@
     letter-spacing: 0.05rem;
     color: v.$text-secondary;
   }
+
+  // Narrow desktops: day colours in one column, score outlines in the next, instead of a 2-2-1 wrap.
+  @media (max-width: 1199px) {
+    ul {
+      display: grid;
+      grid-auto-flow: column;
+      grid-template-rows: repeat(3, auto);
+      justify-content: end;
+      gap: 4px 12px;
+    }
+
+    li {
+      font-size: 0.9rem;
+    }
+  }
 }
 
 .legendBarEnd {
@@ -1227,6 +1225,7 @@
 
 .weekScoreHelpPill {
   @extend .modeButtonActive;
+  border-radius: v.$border-radius-md; // matches the 8px buttons in the 7 / 10-day toggle beside it
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1254,7 +1253,7 @@
   overscroll-behavior: contain;
   padding: 12px 14px;
   border: 1px solid rgba(v.$secondary-color, 0.22);
-  background: #1d2127;
+  background: gg.$panel;
   color: v.$text-primary;
   box-shadow:
     0 14px 28px rgba(v.$color-black, 0.34),
@@ -1281,6 +1280,9 @@
 }
 .legendOffNight {
   background: v.$schedule-green;
+}
+.legendMid {
+  background: v.$schedule-yellow;
 }
 .legendHeavy {
   background: v.$schedule-red;
@@ -1355,7 +1357,7 @@
   top: 0;
   z-index: 40;
   overflow: hidden;
-  background: rgba(27, 32, 38, 0.96);
+  background: rgba(gg.$sticky-glass, 0.96);
   border-bottom: 1px solid rgba(v.$color-white, 0.18);
   box-shadow: 0 14px 28px rgba(v.$color-black, 0.34);
   backdrop-filter: blur(10px);
@@ -1390,7 +1392,7 @@
     top: calc(var(--master-table-sticky-top) + var(--master-group-row-height));
     z-index: 8;
     padding: 0;
-    background-color: #26292d;
+    background-color: gg.$header;
     border-bottom: 1px solid rgba(v.$color-white, 0.06);
     text-transform: uppercase;
     letter-spacing: 0.04em;
@@ -1404,7 +1406,7 @@
     padding: 2px 10px;
     text-align: center;
     border-bottom: 1px solid rgba(v.$color-white, 0.04);
-    background: #1d2128;
+    background: gg.$table-cell;
     min-width: 80px;
     font-family: v.$font-family-numbers, v.$font-family-primary, sans-serif;
   }
@@ -1415,11 +1417,11 @@
   }
 
   tbody tr:nth-child(even) td {
-    background: #20252d;
+    background: gg.$row-zebra;
   }
 
   tbody tr:hover td {
-    background: #242a31;
+    background: gg.$row-hover;
   }
 
   td[data-intensity="low"] {
@@ -1500,22 +1502,20 @@
 
 .masterSectionBanner {
   height: var(--master-group-row-height);
-  background: #14181e !important;
+  background: gg.$canvas !important;
   text-align: center;
   border-right: 1px solid rgba(v.$color-white, 0.05);
-  box-shadow:
-    inset 0 -1px 0 rgba(v.$color-white, 0.05),
-    inset 0 1px 0 rgba(v.$color-white, 0.03);
+  border-bottom: 1px solid rgba(v.$color-white, 0.05);
 }
 
 .masterSectionBannerMetrics {
   border-right: 2px solid rgba(v.$secondary-color, 0.55) !important;
-  background: #1d2329 !important;
+  background: gg.$metrics-banner !important;
 }
 
 .masterSectionBannerFourWeek {
   border-left: 2px solid rgba(v.$secondary-color, 0.55) !important;
-  background: #1c2530 !important;
+  background: gg.$four-week !important;
 }
 
 .masterSectionBannerCollapsed {
@@ -1525,12 +1525,15 @@
 }
 
 .masterSectionBannerSummary {
-  background: #10384e !important;
+  background: gg.$summary-banner !important;
   border-right: 0 !important;
 }
 
 .masterSectionBannerStart {
   border-top-left-radius: 24px !important;
+
+  // Keep the label clear of the 24px corner.
+  .masterGroupDisclosure { padding-left: 16px; }
 }
 
 .masterSectionBannerEnd {
@@ -1544,9 +1547,9 @@
   width: 100%;
   min-height: var(--master-group-row-height);
   padding: 0 10px;
-  font-size: 0.54rem;
+  font-size: 0.6875rem; // 11px floor for table labels (was 8.6px)
   line-height: 1;
-  letter-spacing: 0.22em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: rgba(v.$color-blue-100, 0.9);
 }
@@ -1573,11 +1576,14 @@
   flex-direction: column;
   line-height: 1.05;
 
-  &:hover,
+  &:hover {
+    background: rgba(v.$color-white, 0.03);
+  }
+
   &:focus-visible {
     background: rgba(v.$color-white, 0.03);
     outline: none;
-    box-shadow: inset 0 0 0 1px rgba(v.$color-white, 0.04);
+    box-shadow: inset 0 0 0 2px v.$primary-color;
   }
 }
 
@@ -1590,7 +1596,7 @@
 }
 
 .masterMetricEyebrow {
-  font-size: 0.52rem;
+  font-size: 0.625rem;
   line-height: 1;
   letter-spacing: 0.14em;
   color: rgba(v.$color-blue-100, 0.92);
@@ -1634,25 +1640,25 @@
 }
 
 .masterMetricGoodStrong {
-  color: #7cffcb;
+  color: gg.$rank-ink-best;
   background-color: rgba(v.$schedule-green, 0.16) !important;
   font-weight: 700;
 }
 
 .masterMetricGoodSoft {
-  color: #f2cf63;
+  color: gg.$rank-ink-good;
   background-color: rgba(v.$schedule-yellow, 0.15) !important;
   font-weight: 700;
 }
 
 .masterMetricBadSoft {
-  color: #ffad5a;
+  color: gg.$rank-ink-fair;
   background-color: rgba(v.$color-orange-400, 0.15) !important;
   font-weight: 700;
 }
 
 .masterMetricBadStrong {
-  color: #ff8f8f;
+  color: gg.$rank-ink-worst;
   background-color: rgba(v.$schedule-red, 0.15) !important;
   font-weight: 700;
 }
@@ -1660,13 +1666,13 @@
 .masterStickyCol {
   position: sticky;
   z-index: 3;
-  background: #20242a !important;
+  background: gg.$sticky !important;
 }
 
 .masterStickyMetric {
   position: sticky;
   z-index: 5 !important;
-  background: #1d2128 !important;
+  background: gg.$table-cell !important;
   box-shadow: 1px 0 0 rgba(v.$color-white, 0.05);
 }
 
@@ -1701,7 +1707,7 @@
   min-width: 0;
   width: auto;
   z-index: 5 !important;
-  background: #262d36 !important;
+  background: gg.$team-header !important;
 }
 
 .masterStickyTeamCol {
@@ -1736,7 +1742,7 @@
   width: auto;
   font-family: v.$font-family-accent, v.$font-family-primary, sans-serif;
   letter-spacing: 0.08em;
-  background: #262d36 !important;
+  background: gg.$team-header !important;
 }
 
 .masterTeamIdentity {
@@ -1806,7 +1812,12 @@
 }
 
 .masterDayHeaderExcluded {
-  opacity: 0.5;
+  opacity: 0.7;
+
+  // Brighter date ink so the dimmed date still reads at 4.5:1 on the day tints.
+  .masterDayDate {
+    color: v.$text-primary;
+  }
 }
 
 .masterDayName {
@@ -1817,7 +1828,7 @@
 }
 
 .masterDayDate {
-  font-size: 0.6rem;
+  font-size: 0.6875rem;
   color: v.$text-secondary;
   font-family: v.$font-family-primary, sans-serif;
 }
@@ -1836,7 +1847,8 @@
 .masterSummaryScore {
   min-width: 0;
   width: auto;
-  color: v.$color-blue-300;
+  // Unranked ("-") stays neutral; ranked scores take the green -> red ramp via [data-rank].
+  color: rgba(v.$color-white, 0.92);
   font-size: 1rem;
   font-weight: 700;
   text-align: center;
@@ -1846,18 +1858,15 @@
   width: auto;
   min-width: 0 !important;
   max-width: none;
-  background: #1c2530 !important;
+  background: gg.$four-week !important;
   border-left: 2px solid rgba(v.$secondary-color, 0.55);
   border-right: 1px solid rgba(v.$color-blue-300, 0.12);
 }
 
 .masterAverageLabel {
-  color: #bfe7f8;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 2px;
+  color: gg.$average-label-ink;
+  text-align: center;
+  vertical-align: middle;
 }
 
 .masterAverageDash {
@@ -1871,31 +1880,24 @@
   line-height: 1;
 }
 
-.masterAverageSubtitle {
-  font-family: v.$font-family-primary, sans-serif;
-  font-size: 0.58rem;
-  letter-spacing: 0.12em;
-  color: rgba(v.$color-white, 0.54);
-}
-
 .masterCollapseLabel {
   font-size: 0.58rem;
   letter-spacing: 0.1em;
 }
 
 .masterBlueHeader {
-  background: #0f5f83 !important;
-  color: #0fc0f6 !important;
+  background: gg.$summary-header !important;
+  color: v.$color-blue-100 !important; // 5.7:1 on the blue fill (#0fc0f6 was 3.3:1)
 }
 
 .masterScoreHeader {
-  background: #77cfff !important;
-  color: #173448 !important;
+  background: gg.$score-header !important;
+  color: gg.$score-header-ink !important;
   border-right: 0 !important;
 }
 
 .masterFourWeekHeader {
-  background: #1c2530 !important;
+  background: gg.$four-week !important;
   color: rgba(v.$color-white, 0.92) !important;
   border-left: 1px solid rgba(v.$color-blue-300, 0.18);
 }
@@ -1905,7 +1907,7 @@
 }
 
 .masterFourWeekLeadCell {
-  background: #1a242e !important;
+  background: gg.$four-week-lead !important;
   border-left: 2px solid rgba(v.$secondary-color, 0.55);
   border-right: 1px solid rgba(v.$color-blue-300, 0.18);
 }
@@ -1930,7 +1932,7 @@
 }
 
 .masterFourWeekCell {
-  background: #1c2530 !important;
+  background: gg.$four-week !important;
   border-right: 1px solid rgba(v.$color-blue-300, 0.18);
 }
 
@@ -1941,7 +1943,7 @@
 
 // 4WK Value shares the opponent-metric rank palette (top/bottom 5 strong, 6–10 soft).
 .masterFourWeekValueCell {
-  background: #1c2530 !important;
+  background: gg.$four-week !important;
   font-family: v.$font-family-numbers;
   font-weight: 700;
   text-align: center;
@@ -2005,18 +2007,16 @@
 
 .masterScoreBest {
   background: rgba(v.$schedule-green, 0.17) !important;
-  color: #7cffcb !important;
   box-shadow: inset 0 0 0 1px rgba(v.$schedule-green, 0.62);
 }
 
 .masterScoreWorst {
   background: rgba(v.$schedule-red, 0.17) !important;
-  color: #ff8f8f !important;
   box-shadow: inset 0 0 0 1px rgba(v.$schedule-red, 0.62);
 }
 
 .masterTotalsRow td {
-  background: #14465b !important;
+  background: gg.$totals-row !important;
   color: rgba(v.$color-white, 0.92);
   border-top: 2px solid rgba(v.$color-white, 0.16);
   border-bottom: 2px solid rgba(v.$color-white, 0.16);
@@ -2129,25 +2129,25 @@
 
 // Shared matchup cell intensity fill backgrounds (when there IS a game)
 .masterTable tbody td.cellInnerBorder.off-night-day {
-  background: color.mix(v.$schedule-green, #14181e, 12%) !important;
+  background: color.mix(v.$schedule-green, gg.$canvas, 12%) !important;
 }
 .masterTable tbody td.cellInnerBorder.medium-heavy-day {
-  background: color.mix(v.$schedule-yellow, #14181e, 10%) !important;
+  background: color.mix(v.$schedule-yellow, gg.$canvas, 10%) !important;
 }
 .masterTable tbody td.cellInnerBorder.heavy-day {
-  background: color.mix(v.$schedule-red, #14181e, 12%) !important;
+  background: color.mix(v.$schedule-red, gg.$canvas, 12%) !important;
 }
 
 .masterTable tbody tr:nth-child(even) td.cellInnerBorder.off-night-day {
-  background: color.mix(v.$schedule-green, #14181e, 16%) !important;
+  background: color.mix(v.$schedule-green, gg.$canvas, 16%) !important;
 }
 
 .masterTable tbody tr:nth-child(even) td.cellInnerBorder.medium-heavy-day {
-  background: color.mix(v.$schedule-yellow, #14181e, 14%) !important;
+  background: color.mix(v.$schedule-yellow, gg.$canvas, 14%) !important;
 }
 
 .masterTable tbody tr:nth-child(even) td.cellInnerBorder.heavy-day {
-  background: color.mix(v.$schedule-red, #14181e, 16%) !important;
+  background: color.mix(v.$schedule-red, gg.$canvas, 16%) !important;
 }
 
 .cellInnerBorder.off-night-day {
@@ -2558,9 +2558,9 @@
   grid-column: 1 / -1;
   padding: v.$space-sm;
   border-radius: v.$border-radius-md;
-  border: 1px solid rgba(239, 68, 68, 0.35);
-  background: rgba(239, 68, 68, 0.12);
-  color: #ffd0d0;
+  border: 1px solid rgba(v.$danger-color, 0.35);
+  background: rgba(v.$danger-color, 0.12);
+  color: gg.$error-ink;
   font-size: v.$font-size-sm;
 }
 
@@ -2594,15 +2594,18 @@
   height: 40px;
   padding: 0 v.$space-lg;
   border-radius: v.$border-radius-md;
-  background: linear-gradient(to right, v.$primary-color, v.$secondary-color);
-  color: v.$color-white;
-  border: 1px solid rgba(v.$primary-color, 0.45);
+  // Flat primary with dark ink (white on this blue is 2.7-2.9:1), like the drawer buttons.
+  background: v.$primary-color;
+  color: v.$text-on-primary;
+  font-family: v.$font-family-condensed, sans-serif;
+  font-weight: 700;
+  border: 1px solid v.$primary-color;
   text-transform: uppercase;
   letter-spacing: 0.08em;
+  transition: background-color 0.15s ease;
 
   &:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 8px 16px rgba(v.$primary-color, 0.22);
+    background: color.adjust(v.$primary-color, $lightness: 6%);
   }
 }
 
@@ -2626,10 +2629,7 @@
   white-space: normal;
   overflow-wrap: anywhere;
   text-align: center;
-  color: #0fc0f6;
-  text-shadow:
-    0 0 10px rgba(v.$secondary-color, 0.18),
-    0 1px 2px rgba(v.$color-black, 0.45);
+  color: gg.$summary-ink;
 
   @media (max-width: v.$breakpoint-mobile-max) {
     font-size: 0.66rem;
@@ -2804,9 +2804,7 @@
   color: v.$color-black; // high contrast against primary
   border-radius: 50%;
   cursor: help;
-  box-shadow:
-    0 0 0 1px rgba(v.$color-white, 0.15),
-    0 0 4px -1px v.$primary-color;
+  box-shadow: 0 0 0 1px rgba(v.$color-white, 0.15);
   text-transform: none;
   letter-spacing: 0;
   transition:
@@ -2817,9 +2815,7 @@
   &:hover,
   &:focus-visible {
     background: color.adjust(v.$primary-color, $lightness: 8%);
-    box-shadow:
-      0 0 0 1px rgba(v.$color-white, 0.25),
-      0 0 6px 0 v.$primary-color;
+    box-shadow: 0 0 0 1px rgba(v.$color-white, 0.25);
     transform: translateY(-1px);
   }
 }
@@ -3884,7 +3880,7 @@
       }
 
       .excludedOverlay {
-        background-color: rgba(80, 80, 80, 0.4);
+        background-color: rgba(v.$border-secondary, 0.4);
         color: v.$text-color-secondary;
         position: absolute;
         inset: 0;
@@ -5096,11 +5092,11 @@
 // Keep the adjoining metric panels unchanged while darkening the schedule.
 .masterTable {
   tbody td:not(.masterMetricCell):not(.masterFourWeekCell):not(.masterFourWeekLeadCell):not(.masterCollapseSpacer):not([data-intensity]) {
-    background-color: #14181e;
+    background-color: gg.$canvas;
   }
 
   tbody tr:nth-child(even) td:not(.masterMetricCell):not(.masterFourWeekCell):not(.masterFourWeekLeadCell):not(.masterCollapseSpacer):not([data-intensity]) {
-    background-color: #171c22;
+    background-color: gg.$canvas-zebra;
   }
 
   .masterMetricCell.masterGroupEdge,
@@ -5122,9 +5118,9 @@
   background: transparent;
   color: rgba(v.$color-blue-100, 0.9);
   font: inherit;
-  font-size: 0.54rem;
+  font-size: 0.6875rem;
   line-height: 1;
-  letter-spacing: 0.22em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   white-space: nowrap;
   cursor: pointer;
@@ -5198,14 +5194,22 @@
   }
 }
 .masterTrendLabel { flex-direction: column; gap: 2px; }
-.masterTrendLabel small { display: block; font-size: .52rem; line-height: 1.4; color: rgba(v.$color-blue-100, .92); }
+.masterTrendLabel small { display: block; font-size: .625rem; line-height: 1.4; color: rgba(v.$color-blue-100, .92); }
 .matchupKey {
   display: flex; align-items: center; justify-content: center; gap: 3px;
-  margin-top: 4px; font-size: .52rem; letter-spacing: 0; text-transform: none;
-  i { width: 4px; height: 4px; border-radius: 50%; background: #00f5a0; }
-  i:last-child { background: #ff557c; }
+  margin-top: 4px; font-size: .625rem; letter-spacing: 0; text-transform: none;
+  // Same tokens as the sparkline's easier / harder stops.
+  i { width: 4px; height: 4px; border-radius: 50%; background: v.$success-color; }
+  i:last-child { background: v.$danger-color; }
 }
 .masterMetricHeader .masterSortButton { padding-inline: 2px; font-size: .75rem; }
-.masterMetricHeader .masterMetricEyebrow { font-size: .52rem; letter-spacing: 0; }
+.masterMetricHeader .masterMetricEyebrow { font-size: .625rem; letter-spacing: 0; }
 
 .masterGroupDisclosure { padding-inline: 6px; gap: 6px; letter-spacing: .1em; }
+// Narrow desktops: 10px banners with tighter tracking and 9px eyebrows keep the 60px rating columns and
+// the group banners inside their cells.
+@media (max-width: 1199px) {
+  .masterSectionLabel,
+  .masterGroupDisclosure { font-size: .625rem; letter-spacing: 0.04em; padding-inline: 6px; gap: 4px; }
+  .masterMetricHeader .masterMetricEyebrow { font-size: .5625rem; }
+}

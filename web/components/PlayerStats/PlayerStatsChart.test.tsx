@@ -38,6 +38,8 @@ describe("PlayerStatsChart unit panels", () => {
 
     const [counts, percent, toi] = panelProps();
     expect(counts.data.datasets.map((d: any) => d.label)).toEqual(["P"]);
+    expect(counts["aria-label"]).toBe("Counts: P latest 1, high 1, low 1");
+    expect(percent["aria-label"]).toMatch(/^Percentages: .* latest 50\.0%/);
     // Missing values are gaps, never zero.
     expect(counts.data.datasets[0].data).toEqual([1, null]);
 

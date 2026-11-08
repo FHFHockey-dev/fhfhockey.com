@@ -71,7 +71,7 @@ function GoalieCard({
               {lineChange !== "static" && (
                 <img
                   src={lineChange === "promotion" ? UP_ARROW : DOWN_ARROW}
-                  alt={lineChange}
+                  alt={lineChange === "promotion" ? "moved up" : "moved down"}
                   style={{
                     width: 12,
                     height: 12,

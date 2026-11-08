@@ -1,5 +1,6 @@
 @use "sass:color";
 @use "styles/vars" as v;
+@use "./surfaces" as gg;
 
 .page {
   width: 100%;
@@ -372,7 +373,7 @@
 .error {
   padding: v.$space-md;
   border-radius: v.$border-radius-md;
-  border: 1px solid rgba(239, 68, 68, 0.35);
-  background: rgba(239, 68, 68, 0.12);
-  color: #ffd0d0;
+  border: 1px solid rgba(v.$danger-color, 0.35);
+  background: rgba(v.$danger-color, 0.12);
+  color: gg.$error-ink;
 }

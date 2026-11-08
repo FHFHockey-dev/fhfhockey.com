@@ -514,26 +514,34 @@ const GoalieShareChart: React.FC = () => {
   return (
     <div className={styles.goalieShareChart}>
       <p>Share of recorded goalie appearances, including relief. L10, L20 and L30 use team games. Tooltips add official starts when every team game has one recorded starter. These are past workload shares, not future start probabilities.</p>
-      <div className={styles.buttonContainer}>
+      <div className={styles.buttonContainer} role="group" aria-label="Span">
         <button
+          type="button"
+          aria-pressed={selectedSpan === "L10"}
           className={`${styles.spanButton} ${selectedSpan === "L10" ? styles.active : ""}`}
           onClick={() => handleSpanButtonClick("L10")}
         >
           L10
         </button>
         <button
+          type="button"
+          aria-pressed={selectedSpan === "L20"}
           className={`${styles.spanButton} ${selectedSpan === "L20" ? styles.active : ""}`}
           onClick={() => handleSpanButtonClick("L20")}
         >
           L20
         </button>
         <button
+          type="button"
+          aria-pressed={selectedSpan === "L30"}
           className={`${styles.spanButton} ${selectedSpan === "L30" ? styles.active : ""}`}
           onClick={() => handleSpanButtonClick("L30")}
         >
           L30
         </button>
         <button
+          type="button"
+          aria-pressed={selectedSpan === "Season"}
           className={`${styles.spanButton} ${selectedSpan === "Season" ? styles.active : ""}`}
           onClick={() => handleSpanButtonClick("Season")}
         >

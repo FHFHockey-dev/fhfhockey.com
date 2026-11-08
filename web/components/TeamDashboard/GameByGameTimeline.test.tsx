@@ -99,6 +99,14 @@ describe("GameByGameTimeline", () => {
     fireEvent.click(trends);
     expect(overview.getAttribute("aria-pressed")).toBe("false");
     expect(trends.getAttribute("aria-pressed")).toBe("true");
+    // Trends is a real view: a goal-differential chart replaces the cards.
+    expect(
+      screen.getByRole("img", { name: /^Goal differential, oldest to newest: .*vs CGY \+2/ }),
+    ).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /Show details for/ })).toBeNull();
+
+    fireEvent.click(overview);
+    expect(screen.queryByRole("img", { name: /^Goal differential/ })).toBeNull();
 
     const game = screen.getByRole("button", {
       name: /Show details for January 2, 2026, versus CGY, final score 4 to 2/,
@@ -145,11 +153,12 @@ describe("GameByGameTimeline", () => {
             game(1, "2026-01-05", { goals_for: 3, goals_against: 3, wins: 1, wins_in_shootout: 1, wins_in_regulation: 0 }),
             game(2, "2026-01-04", { goals_for: 4, goals_against: 3, wins: 1, wins_in_shootout: 0, wins_in_regulation: 0 }),
             game(3, "2026-01-03", { goals_for: 2, goals_against: 3, ot_losses: 1 }),
+            game(5, "2026-01-01", { goals_for: 1, goals_against: 1, ot_losses: 1 }),
             game(4, "2026-01-02", { goals_for: 4, goals_against: 2, wins: 1, wins_in_shootout: 0, wins_in_regulation: 1 }),
           ]);
         case "games":
           return queryResult(
-            [1, 2, 3, 4].map((id) => ({ id, homeTeamId: 22, awayTeamId: 7, date: "2026-01-01" })),
+            [1, 2, 3, 4, 5].map((id) => ({ id, homeTeamId: 22, awayTeamId: 7, date: "2026-01-01" })),
           );
         case "teams":
           return queryResult([{ id: 7, abbreviation: "CGY" }]);
@@ -162,9 +171,11 @@ describe("GameByGameTimeline", () => {
       <GameByGameTimeline maxGames={10} seasonId="20252026" teamAbbrev="EDM" teamId="22" />,
     );
 
-    expect(await screen.findByRole("button", { name: /final score 3 to 3 in a shootout/ })).toBeTruthy();
+    // NHL convention: the shootout winner gets one goal (3-3 → 4-3 SO).
+    expect(await screen.findByRole("button", { name: /final score 4 to 3 in a shootout/ })).toBeTruthy();
     expect(screen.getByRole("button", { name: /final score 4 to 3 in overtime/ })).toBeTruthy();
     expect(screen.getByRole("button", { name: /final score 2 to 3 in overtime/ })).toBeTruthy();
     expect(screen.getByRole("button", { name: /final score 4 to 2$/ })).toBeTruthy();
+    expect(screen.getByRole("button", { name: /final score 1 to 2 in a shootout/ })).toBeTruthy();
   });
 });

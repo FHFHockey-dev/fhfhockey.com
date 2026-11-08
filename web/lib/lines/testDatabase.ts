@@ -4,6 +4,8 @@ import { vi } from "vitest";
 export function lineTestDatabase(seed: Record<string, any[]>) {
   const tables = structuredClone(seed);
   const writes: string[] = [];
+  /** Rows returned to the caller across every read (load tests). */
+  const reads = { rows: 0 };
   const from = vi.fn((table: string) => {
     let filters: Array<(row: any) => boolean> = [], orders: Array<{ key: string; ascending: boolean }> = [], start = 0, end = Infinity;
     const result = () => {
@@ -11,27 +13,35 @@ export function lineTestDatabase(seed: Record<string, any[]>) {
       data.sort((a, b) => {
         for (const { key, ascending } of orders) { const diff = a[key] < b[key] ? -1 : a[key] > b[key] ? 1 : 0; if (diff) return ascending ? diff : -diff; } return 0;
       });
-      return { data: data.slice(start, end + 1), error: null };
+      const page = data.slice(start, end + 1);
+      reads.rows += page.length;
+      return { data: page, error: null };
     };
     const q: any = {
       select: () => q,
       eq: (key: string, value: unknown) => { filters.push((row) => row[key] === value); return q; },
       lte: (key: string, value: any) => { filters.push((row) => row[key] <= value); return q; },
+      gte: (key: string, value: any) => { filters.push((row) => row[key] >= value); return q; },
       in: (key: string, values: unknown[]) => { filters.push((row) => values.includes(row[key])); return q; },
       or: (value: string) => { const choices = value.split(",").map((value) => value.split(".eq.")); filters.push((row) => choices.some(([key, value]) => String(row[key!]) === value)); return q; },
       order: (key: string, options?: { ascending?: boolean }) => { orders.push({ key, ascending: options?.ascending !== false }); return q; },
       range: (from: number, to: number) => { start = from; end = to; return q; },
       limit: (value: number) => { end = value - 1; return q; },
       then: (resolve: (value: unknown) => void) => Promise.resolve(result()).then(resolve),
-      upsert: async (rows: any[], options: { onConflict: string }) => {
+      // Like PostgREST: awaitable directly, or with .select() for the rows actually inserted (duplicates ignored).
+      upsert: (rows: any[], options: { onConflict: string }) => {
         writes.push(table); tables[table] ??= [];
+        let outcome: { error: Error | null; data: any[] };
         if (table === "line_claim_relations" && rows.some((row) => !tables.line_claim_revisions?.some((claim) => claim.claim_id === row.claim_id)
           || !tables.line_claim_revisions?.some((claim) => claim.claim_id === row.target_claim_id))) {
-          return { error: new Error("23503 line_claim_relations_target_claim_id_fkey") };
+          outcome = { error: new Error("23503 line_claim_relations_target_claim_id_fkey"), data: [] };
+        } else {
+          const keys = options.onConflict.split(","), inserted: any[] = [];
+          for (const row of rows) if (!tables[table]!.some((existing) => keys.every((key) => existing[key] === row[key]))) { tables[table]!.push(row); inserted.push(row); }
+          outcome = { error: null, data: inserted };
         }
-        const keys = options.onConflict.split(",");
-        for (const row of rows) if (!tables[table]!.some((existing) => keys.every((key) => existing[key] === row[key]))) tables[table]!.push(row);
-        return { error: null };
+        const done = Promise.resolve(outcome);
+        return { select: () => done, then: (resolve: (value: unknown) => void, reject?: (reason: unknown) => void) => done.then(resolve, reject) };
       },
     }; return q;
   });
@@ -43,5 +53,5 @@ export function lineTestDatabase(seed: Record<string, any[]>) {
     for (const decision of args.p_pp) if (!tables.line_pp_decisions.some((row) => row.decision_id === decision.id)) tables.line_pp_decisions.push({ decision_id: decision.id, revision: decision.revision, unit_number: decision.unitNumber, team_id: decision.teamId, game_id: decision.gameId, payload: decision });
     return { data: true, error: null };
   });
-  return { from, rpc, writes, tables };
+  return { from, rpc, writes, tables, reads };
 }

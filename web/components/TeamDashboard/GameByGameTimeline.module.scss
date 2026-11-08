@@ -11,20 +11,20 @@
   align-items: center;
   margin-bottom: 0.5rem;
   padding-bottom: 0.25rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(v.$color-white, 0.1);
 
   h4 {
     margin: 0;
     font-size: 0.8rem;
     font-weight: 600;
-    color: #ffffff;
+    color: v.$color-white;
     width: 100%;
   }
 }
 
 .timelineSubtitle {
   font-size: 0.875rem;
-  color: #ccc;
+  color: v.$color-grey-text;
   font-weight: 500;
   width: 100%;
   text-align: right;
@@ -41,20 +41,20 @@
 
 .viewTab {
   padding: 0.25rem 0.75rem;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  background: rgba(255, 255, 255, 0.05);
-  color: #ccc;
+  border: 1px solid rgba(v.$color-white, 0.2);
+  background: rgba(v.$color-white, 0.05);
+  color: v.$color-grey-text;
   border-radius: 4px;
   font-size: 0.75rem;
   font-family: inherit;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 
   &:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(v.$color-white, 0.1);
     border-color: rgba(v.$secondary-color, 0.5);
   }
 
@@ -66,9 +66,14 @@
   }
 
   &:focus-visible {
-    outline: 2px solid #ffffff;
+    outline: 2px solid v.$color-white;
     outline-offset: 2px;
   }
+}
+
+// The Trends view hides the cards with the hidden attribute.
+.gameGrid[hidden] {
+  display: none;
 }
 
 .gameGrid {
@@ -95,7 +100,7 @@
   display: flex;
   flex-direction: column;
   position: relative;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(v.$color-white, 0.05);
   border: 2px solid transparent;
   border-radius: 6px;
   padding: v.$space-sm;
@@ -105,7 +110,7 @@
   text-align: inherit;
 
   &:focus-visible {
-    outline: 2px solid #ffffff;
+    outline: 2px solid v.$color-white;
     outline-offset: 2px;
   }
 
@@ -169,24 +174,26 @@
   }
 }
 
+// Two columns: result badge over date | score (with OT/SO inline) over matchup.
 .gameCard {
   padding: 0.5rem;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background-color 0.2s ease;
   position: relative;
-  display: flex;
-  flex-direction: row;
-  justify-content: space-between;
-  gap: 0;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  align-items: center;
+  column-gap: 0.5rem;
+  row-gap: 2px;
 
   &:hover {
-    transform: translateY(-2px);
-    background: rgba(255, 255, 255, 0.08);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    background: rgba(v.$color-white, 0.08);
   }
 }
 
 .gameHeader {
+  grid-row: 1 / span 2;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -204,27 +211,28 @@
 
 .gameDate {
   font-size: 0.75rem;
-  color: #aaa;
+  color: v.$color-grey-text-sec;
   font-weight: 500;
 }
 
 .gameMatchup {
   display: flex;
-  align-items: center;
-  justify-content: center;
+  align-items: baseline;
+  justify-content: flex-start;
   gap: 0.25rem;
+  min-width: 0;
 }
 
 .homeAway {
   font-size: 0.7rem;
-  color: #ccc;
+  color: v.$color-grey-text;
   font-weight: 500;
 }
 
 .opponent {
   font-size: 0.875rem;
   font-weight: 700;
-  color: #ffffff;
+  color: v.$color-white;
   letter-spacing: 0.5px;
 }
 
@@ -232,17 +240,20 @@
   text-align: center;
   font-size: 1rem;
   font-weight: 700;
-  color: #ffffff;
+  color: v.$color-white;
   display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
+  flex-direction: row;
+  justify-content: flex-start;
+  align-items: baseline;
+  gap: 0.3rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 // OT / SO marker under the score for games decided after regulation.
 .decidedTag {
-  margin-top: 2px;
-  color: rgba(255, 255, 255, 0.6);
+  margin-top: 0;
+  color: rgba(v.$color-white, 0.6);
   font-size: 0.625rem;
   font-weight: 600;
   letter-spacing: 0.06em;
@@ -252,7 +263,7 @@
 .performanceBar {
   width: 100%;
   height: 5px;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(v.$color-white, 0.1);
   border-radius: 2px;
   overflow: hidden;
   margin-top: auto;
@@ -281,8 +292,8 @@
 }
 
 .gameDetails {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(v.$color-white, 0.05);
+  border: 1px solid rgba(v.$color-white, 0.1);
   border-radius: 8px;
   padding: 1rem;
   margin: 1rem 0;
@@ -295,20 +306,20 @@
   align-items: center;
   margin-bottom: 1rem;
   padding-bottom: 0.5rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(v.$color-white, 0.1);
 
   h5 {
     margin: 0;
     font-size: 1rem;
     font-weight: 600;
-    color: #ffffff;
+    color: v.$color-white;
   }
 }
 
 .closeButton {
   background: none;
   border: none;
-  color: #ccc;
+  color: v.$color-grey-text;
   font-size: 1.5rem;
   cursor: pointer;
   padding: 0;
@@ -318,15 +329,15 @@
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  transition: all 0.2s ease;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
 
   &:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: #ffffff;
+    background: rgba(v.$color-white, 0.1);
+    color: v.$color-white;
   }
 
   &:focus-visible {
-    outline: 2px solid #ffffff;
+    outline: 2px solid v.$color-white;
     outline-offset: 2px;
   }
 }
@@ -350,7 +361,7 @@
 
 .detailLabel {
   font-size: 0.75rem;
-  color: #aaa;
+  color: v.$color-grey-text-sec;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   font-weight: 500;
@@ -359,7 +370,7 @@
 .detailValue {
   font-size: 1rem;
   font-weight: 700;
-  color: #ffffff;
+  color: v.$color-white;
 
   &.win {
     color: v.$success-color;
@@ -396,12 +407,12 @@
   align-items: center;
   justify-content: center;
   padding: 2rem;
-  color: #aaa;
+  color: v.$color-grey-text-sec;
 
   .spinner {
     width: 24px;
     height: 24px;
-    border: 2px solid rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(v.$color-white, 0.1);
     border-top: 2px solid v.$secondary-color;
     border-radius: 50%;
     animation: spin 1s linear infinite;
@@ -428,3 +439,64 @@
     transform: rotate(360deg);
   }
 }
+
+// Trends view: goal differential bars, coloured by result like the cards.
+.trend {
+  margin: 0 0 0.25rem;
+}
+
+.trendCaption {
+  margin-bottom: 0.25rem;
+  color: v.$text-secondary;
+  font-size: v.$font-size-xs;
+
+  strong {
+    color: v.$text-primary;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.trendChart {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 180px;
+}
+
+.trendZero {
+  stroke: v.$border-secondary;
+  stroke-width: 1;
+}
+
+.trendBar {
+  fill: var(--result-color, #{v.$text-secondary});
+}
+
+.trendValue,
+.trendDate {
+  text-anchor: middle;
+  font-family: v.$font-family-primary;
+  font-variant-numeric: tabular-nums;
+}
+
+.trendValue {
+  fill: v.$text-primary;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.trendDate {
+  fill: v.$text-secondary;
+  font-size: 9px;
+}
+
+.trend .win {
+  --result-color: #{v.$success-color};
+}
+.trend .loss {
+  --result-color: #{v.$color-coral-500};
+}
+.trend .otLoss {
+  --result-color: #{v.$color-gold-400};
+}
+

@@ -196,6 +196,20 @@ const resolveInitialTeamAbbr = (
   );
 };
 
+// Puck luck is a regression read: hot (yellow) tends to cool, cold (teal) to rebound.
+const getLuckStatusHint = (
+  value: UnderlyingStatsLandingRating["luckStatus"]
+): string => {
+  switch (value) {
+    case "hot":
+      return "Hot: PDO above league average, likely to cool";
+    case "cold":
+      return "Cold: PDO below league average, due to rebound";
+    default:
+      return "Normal: PDO near league average";
+  }
+};
+
 const getLuckStatusLabel = (
   value: UnderlyingStatsLandingRating["luckStatus"]
 ): string => {
@@ -1032,6 +1046,7 @@ export const TeamPowerRankingsPage: NextPage<PageProps> = ({
         summary={
           <span
             className={`${styles.sparkMetricValue} ${getLuckClass(team.luckStatus)}`}
+            title={getLuckStatusHint(team.luckStatus)}
           >
             {getLuckStatusLabel(team.luckStatus)}
           </span>
@@ -1367,17 +1382,19 @@ export const TeamPowerRankingsPage: NextPage<PageProps> = ({
                           <span className={styles.teamCellInner}>
                             <span className={styles.teamName}>
                               {team.teamAbbr}
+                              {team.varianceFlag === 1 && (
+                                // Beside the short abbreviation so it never
+                                // wraps onto a line of its own.
+                                <span
+                                  className={styles.varianceFlagInline}
+                                  role="img"
+                                  aria-label="PDO variance: running well above or below league average"
+                                  title="PDO is running well above or below league average."
+                                />
+                              )}
                             </span>
                             <span className={styles.teamMeta}>
                               {getTeamName(team.teamAbbr)}
-                              {team.varianceFlag === 1 && (
-                                <span
-                                  className={styles.varianceFlagInline}
-                                  title="PDO is running well above or below league average."
-                                >
-                                  ⚠︎
-                                </span>
-                              )}
                             </span>
                           </span>
                         </button>

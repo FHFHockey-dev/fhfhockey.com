@@ -159,12 +159,12 @@
 // Match the shared navigation surfaces and preserve visible keyboard focus.
 .userMenu { margin-right: 0; font-family: "Roboto Condensed", sans-serif; }
 .userTrigger { background: v.$chrome-active-mobile; border-color: v.$chrome-border; box-shadow: none; }
-.userAvatarFallback { background: v.$chrome-active-mobile; color: #e7f5fb; font-family: "Roboto Condensed", sans-serif; }
-.menuPanel { max-width: calc(100vw - 32px); border-radius: 8px; background: v.$chrome-menu-bg; border-color: #36434c; box-shadow: 0 14px 28px #0006; }
+.userAvatarFallback { background: v.$chrome-active-mobile; color: v.$chrome-avatar-text; font-family: "Roboto Condensed", sans-serif; }
+.menuPanel { max-width: calc(100vw - 32px); border-radius: 8px; background: v.$chrome-menu-bg; border-color: v.$chrome-menu-border; box-shadow: 0 14px 28px #0006; }
 .menuName, .menuEmail { overflow-wrap: anywhere; }
 .menuLink, .menuButton { min-height: 44px; border-radius: 5px; background: transparent; }
 .userTrigger:focus-visible, .menuLink:focus-visible, .menuButton:focus-visible { outline: 2px solid #07aae2; outline-offset: 2px; }
-.menuButtonDanger { color: #ff9c9c; background: transparent; }
+.menuButtonDanger { color: v.$chrome-danger-text; background: transparent; }
 @media (prefers-reduced-motion: reduce) {
   .userTrigger, .menuLink, .menuButton { transition: none; &:hover { transform: none; } }
 }
