@@ -197,3 +197,8 @@ Q30 existing team_unit_toi: game types and snapshot_date values present (2025-26
 - Fix: positionGroup + L/R; partial coverage on unclassified skaters; writer coverage counters. eslint 0, rankings tests
   32 files/246, typecheck exit 0. Reader takes latest snapshot for the whole season → pin one snapshot_date.
 - Backfill HELD (TJ). Needs release first.
+- Radar wiring (lock free: f65875019, file clean): PlayerRadarChart.tsx fetchPercentiles routes skater NST stats
+  (isNstRadarStat) to fetchNstRadarSeason/nstRadarComparison in parallel with the WGO league reads; shared
+  rankAgainst(). Tests: 2 NST lower-is-better (pim/hdca), cf_pct + position filter, NST error → "No comparison data";
+  ixg game-log no-borrow test now asserts the NST read. Radar 60/60, PlayerStats + helper 156/156, eslint 0,
+  typecheck exit 0.

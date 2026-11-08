@@ -330,7 +330,7 @@ describe("PlayerRadarChart", () => {
     expect(chartPercentiles()).toEqual([percentile]);
   });
 
-  it.each(["giveaways", "penalties", "penalty_minutes", "hdca_per_60", "pim_per_60"])(
+  it.each(["giveaways", "penalties", "penalty_minutes"])(
     "honors the existing lower-is-better definition for %s",
     async (stat) => {
       renderMetric(stat, 1, [1, 2, 3]);
@@ -524,14 +524,95 @@ describe("PlayerRadarChart", () => {
   });
 
   it("does not borrow strength-specific game-log metrics missing from the season comparison source", async () => {
+    // The NST season view has no row for this player, so ixg_per_60 stays unranked;
+    // the game log's 99 must never stand in for the season value.
     installQueryMock({ playerRow: { points: 1.25 }, cohortRows: [{ points: 1 }, { points: 1.25 }] });
     render(<PlayerRadarChart {...scopeProps} selectedStats={["points", "ixg_per_60"]} gameLog={[{ ...scopeProps.gameLog[0], ixg_per_60: 99 }]} />);
 
     await waitFor(() => expect(screen.queryByText("Calculating...")).toBeNull());
     expect(chartPercentiles()).toEqual([50, null]);
-    expect(queryTraces).toHaveLength(2);
+    expect(queryTraces.map((trace) => trace.table)).toEqual([
+      "wgo_skater_stats_per_game",
+      "wgo_skater_stats_per_game",
+      "nst_seasonlong_as_rates",
+      "wgo_skater_stats_per_game",
+    ]);
     expect(chartState.current.data.averages.ixg_per_60).toBeUndefined();
     expect(screen.queryByText("99.00")).toBeNull();
+  });
+
+  describe("NST season comparison", () => {
+    const nstProps = {
+      player: { id: 1, fullName: "Skater", position: "C" },
+      gameLog: [{ date: "2026-10-01", games_played: 1, points: 1 }],
+      isGoalie: false,
+      seasonId: 20262027,
+    };
+
+    it.each([
+      ["pim_per_60", "player_id,pim_per_60,toi_seconds", (v: number) => ({ pim_per_60: v, toi_seconds: 7200 })],
+      ["hdca_per_60", "player_id,hdca,toi_seconds_oi", (v: number) => ({ hdca: v, toi_seconds_oi: 3600 })],
+    ])("ranks %s lower-is-better from the NST season view", async (stat, select, row) => {
+      installQueryMock({
+        playerRow: { points: 1 },
+        cohortRows: [],
+        cohortResults: {
+          [select]: { data: [1, 2, 3].map((v) => ({ player_id: v, ...row(v) })), error: null },
+          player_id: { data: [{ player_id: 1 }, { player_id: 2 }, { player_id: 3 }], error: null },
+        },
+      });
+      render(<PlayerRadarChart {...nstProps} selectedStats={[stat]} />);
+      fireEvent.click(screen.getByRole("button", { name: "How rankings are calculated" }));
+
+      await waitFor(() => expect(screen.getByText("1st / 3")).toBeTruthy());
+      expect(chartPercentiles()).toEqual([67]);
+      const nstTrace = queryTraces.find((trace) => trace.table.startsWith("nst_"))!;
+      expect(nstTrace.calls).toContainEqual(["eq", "season", 20262027]);
+    });
+
+    it("derives cf_pct from on-ice counts and ranks only same-position skaters", async () => {
+      installQueryMock({
+        playerRow: { points: 1 },
+        cohortRows: [],
+        cohortResults: {
+          "player_id,cf,ca": {
+            data: [
+              { player_id: 1, cf: 60, ca: 40 }, // 60%
+              { player_id: 2, cf: 50, ca: 50 }, // 50%
+              { player_id: 3, cf: 70, ca: 30 }, // 70%, a defenseman: excluded
+            ],
+            error: null,
+          },
+          player_id: { data: [{ player_id: 1 }, { player_id: 2 }], error: null },
+        },
+      });
+      render(<PlayerRadarChart {...nstProps} selectedStats={["cf_pct"]} />);
+      fireEvent.click(screen.getByRole("button", { name: "How rankings are calculated" }));
+
+      await waitFor(() => expect(screen.getByText("1st / 2")).toBeTruthy());
+      expect(chartPercentiles()).toEqual([50]);
+      expect(chartState.current.data.averages.cf_pct).toBeCloseTo(60);
+      const positionTrace = queryTraces.filter((trace) => trace.table === "wgo_skater_stats_per_game").at(-1)!;
+      expect(positionTrace.calls).toContainEqual(["in", "position_code", ["C"]]);
+    });
+
+    it("shows no comparison data when the NST read fails", async () => {
+      installQueryMock({
+        playerRow: { points: 1 },
+        cohortRows: [],
+        cohortResults: {
+          "player_id,cf,ca": { data: null, error: { message: "timeout" } },
+          player_id: { data: [{ player_id: 1 }], error: null },
+        },
+      });
+      const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      render(<PlayerRadarChart {...nstProps} selectedStats={["cf_pct"]} />);
+
+      await waitFor(() => expect(screen.queryByText("Calculating...")).toBeNull());
+      expect(screen.getByText(/No comparison data for/)).toBeTruthy();
+      expect(chartState.current?.data?.averages?.cf_pct).toBeUndefined();
+      errorSpy.mockRestore();
+    });
   });
 
   it.each([null, { points: null }])("shows unavailable rankings when the selected-season player row is missing (%j)", async (playerRow) => {

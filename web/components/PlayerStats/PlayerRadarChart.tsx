@@ -16,6 +16,12 @@ import {
   TimeFrame,
 } from "./types";
 import supabase from "../../lib/supabase";
+import {
+  fetchNstRadarSeason,
+  isNstRadarStat,
+  nstRadarComparison,
+  type SupabaseLike,
+} from "../../lib/nst/radarSeasonStats";
 
 ChartJS.register(
   RadialLinearScale,
@@ -408,19 +414,47 @@ export function PlayerRadarChart({
           }
         };
 
+        const rankAgainst = (stat: string, playerValue: number, values: number[]) => {
+          if (values.length === 0) return;
+          const isInverted =
+            STAT_CALCULATION_METHODS[stat].isInverted || stat === "goals_against_avg";
+          const worseCount = values.filter((value) =>
+            isInverted ? value > playerValue : value < playerValue,
+          ).length;
+          const betterCount = values.filter((value) =>
+            isInverted ? value < playerValue : value > playerValue,
+          ).length;
+          next.percentiles[stat] = Math.round((worseCount / values.length) * 100);
+          next.rankings[stat] = { rank: betterCount + 1, total: values.length };
+        };
+
+        // Skater possession shares and per-60 rates are not in the WGO view; both the
+        // player's value and the league's come from the NST season views instead.
+        const nstStats = isGoalie ? [] : rankedStats.filter(isNstRadarStat);
+        const wgoStats = rankedStats.filter((stat) => !nstStats.includes(stat));
+
         const playerValues = new Map<string, number>();
-        rankedStats.forEach((stat) => {
+        wgoStats.forEach((stat) => {
           const value = isGoalie
             ? finiteStatValue((playerData as any)[stat])
             : skaterStatValue(playerData, stat, false);
           if (value !== null) playerValues.set(stat, value);
         });
-        const comparedStats = rankedStats.filter((stat) => playerValues.has(stat));
-        const leagueResults = await Promise.all(comparedStats.map(readLeagueColumn));
+        const comparedStats = wgoStats.filter((stat) => playerValues.has(stat));
+        const [leagueResults, nstSeason] = await Promise.all([
+          Promise.all(comparedStats.map(readLeagueColumn)),
+          nstStats.length > 0
+            ? fetchNstRadarSeason(
+                supabase as unknown as SupabaseLike,
+                seasonNumber,
+                nstStats,
+                positionFilter,
+              )
+            : Promise.resolve(null),
+        ]);
         if (cancelled) return;
 
         comparedStats.forEach((stat, index) => {
-          const statInfo = STAT_CALCULATION_METHODS[stat];
           const playerValue = playerValues.get(stat) as number;
           next.values[stat] = playerValue;
 
@@ -437,18 +471,24 @@ export function PlayerRadarChart({
                 : skaterStatValue(row, stat, true),
             )
             .filter((value): value is number => value !== null);
-          if (values.length === 0) return;
-
-          const isInverted = statInfo.isInverted || stat === "goals_against_avg";
-          const worseCount = values.filter((value) =>
-            isInverted ? value > playerValue : value < playerValue,
-          ).length;
-          const betterCount = values.filter((value) =>
-            isInverted ? value < playerValue : value > playerValue,
-          ).length;
-          next.percentiles[stat] = Math.round((worseCount / values.length) * 100);
-          next.rankings[stat] = { rank: betterCount + 1, total: values.length };
+          rankAgainst(stat, playerValue, values);
         });
+
+        if (nstSeason) {
+          nstStats.forEach((stat) => {
+            const { playerValue, leagueValues, error } = nstRadarComparison(
+              stat,
+              nstSeason,
+              Number(player.id),
+            );
+            if (error) {
+              console.error(`Unable to load the ${stat} radar comparison`, error);
+            }
+            if (playerValue === null) return;
+            next.values[stat] = playerValue;
+            rankAgainst(stat, playerValue, leagueValues);
+          });
+        }
       } catch (error) {
         console.error("Unable to load the selected-season radar comparison", error);
       } finally {
