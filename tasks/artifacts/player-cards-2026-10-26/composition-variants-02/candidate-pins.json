@@ -1,0 +1,74 @@
+{
+  "preview.html": {
+    "bytes": 3424343,
+    "sha256": "49e287071b186b7c1c1c5387243d04f182fb6d829747c91fe46acb79c8d9c705"
+  },
+  "comparison.html": {
+    "bytes": 1597033,
+    "sha256": "5a65a4cf33e2ab86db9b8365179a1e44c559a8fa74dad065e888c9efa31d569c"
+  },
+  "serve-preview.mjs": {
+    "bytes": 2620,
+    "sha256": "ea8e1be393a5dfcd22512e1ae3ccb50afef754ab7c1962f1f262b2cb1ec7265c"
+  },
+  "comparison.png": {
+    "bytes": 926715,
+    "sha256": "62cb92bc5c371909073110e89038b4f63f3776797ecef1f589554360b8483d87"
+  },
+  "posterized-team-colors-card.png": {
+    "bytes": 622305,
+    "sha256": "01b4a965cda4cf61c80f94eed0348b12a5888e8a4944d1dca4d021ff7426caff"
+  },
+  "pixelated-team-colors-card.png": {
+    "bytes": 574440,
+    "sha256": "355b050e74fafd946333bd37eb7e1fe8faff5e999dafe0a997149cc2d32fe939"
+  },
+  "posterized-team-colors-phone-card.png": {
+    "bytes": 70364,
+    "sha256": "f268c488a53fbcba2e2facf5925b9f823545971630e2873c7acd5a7fb1ee992e"
+  },
+  "pixelated-team-colors-phone-card.png": {
+    "bytes": 66938,
+    "sha256": "d143d65ba96e248ca801f1ff09308f75b6c31fdc49c4dfd3c8253c329eb3c691"
+  },
+  "min-posterized-card.png": {
+    "bytes": 588838,
+    "sha256": "7f16d5aaa506031f00fd9b4cf8a2b23e2ef020edff6aa588844ade9c52e72951"
+  },
+  "min-pixelated-card.png": {
+    "bytes": 533858,
+    "sha256": "86086e988eac7ff96a879ab2e8ab2773def9532d167f68b6bc9c6c4a08621771"
+  },
+  "social-square.png": {
+    "bytes": 625478,
+    "sha256": "aa85eca2b163907c11108716e45efab479b6ba40a4f17e66b6800d9eb3148a80"
+  },
+  "partial-card.png": {
+    "bytes": 622295,
+    "sha256": "abf21817126b0a3c9a78ba7ce3629e2f80260ab2886047056eb98d782c18bade"
+  },
+  "priorTeamColors": {
+    "bytes": 3132147,
+    "sha256": "e2b037f6b82d444f099e9cbfefbc555a673e1131496bea084158771830625c5f"
+  },
+  "priorPortraits": {
+    "bytes": 2440289,
+    "sha256": "5f5dc01034d10b0314317ed3dca3fdf8c5bcb0274761eec6ec8fa9201fe2dd3f"
+  },
+  "priorHero": {
+    "bytes": 3123706,
+    "sha256": "ecd560310b358ebd0521574967a480cab1521946c9d42d5f33341fcc57a5187a"
+  },
+  "priorFunctional": {
+    "bytes": 318626,
+    "sha256": "6c29f6eb3dc6ffc9a6a8a546423f78ac3e6e5e1e7265129475724422d3aad9b5"
+  },
+  "priorEditorial": {
+    "bytes": 314484,
+    "sha256": "f65ce654f1e1e7ab226aa01e95617d925608d8d590fbd65d5bbaa85b324e05a5"
+  },
+  "observedEvidence": {
+    "bytes": 9655,
+    "sha256": "b2ece36cf4c62e41562495fcabe4e6f36d02d6d159523b0364b8fc455607fbd6"
+  }
+}

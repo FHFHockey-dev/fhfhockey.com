@@ -1,0 +1,65 @@
+{
+  "startedAt": "2026-10-29T17:43:32.407Z",
+  "approval": {
+    "sourceThread": "01a16eed-60f6-7096-879f-696c469db015",
+    "scope": "TJ explicitly requested current player data; bounded ordinary public NHL reads authorized by current delegation. One exact three-GET Kucherov/TBL batch; no retries or redirects."
+  },
+  "client": "node:https; rejectUnauthorized:true; no custom trust store",
+  "calls": [
+    {
+      "name": "landing",
+      "url": "https://api-web.nhle.com/v1/player/8476453/landing",
+      "startedAt": "2026-10-29T17:43:32.408Z",
+      "bytes": 26221,
+      "status": "received",
+      "httpStatus": 200,
+      "sha256": "7649c48e6e665288ba88e8679b3e57a08944f2157e6446aa9d7942c0a0675e66",
+      "finishedAt": "2026-10-29T17:43:32.592Z"
+    },
+    {
+      "name": "game-log",
+      "url": "https://api-web.nhle.com/v1/player/8476453/game-log/20262027/2",
+      "startedAt": "2026-10-29T17:43:32.592Z",
+      "bytes": 4932,
+      "status": "received",
+      "httpStatus": 200,
+      "sha256": "9a0cefaa9aade51cf190c0a1bec8493a86759971d3e5aa0cbbe91cdb5d808da2",
+      "finishedAt": "2026-10-29T17:43:32.704Z"
+    },
+    {
+      "name": "team-schedule",
+      "url": "https://api-web.nhle.com/v1/club-schedule-season/TBL/20262027",
+      "startedAt": "2026-10-29T17:43:32.704Z",
+      "bytes": 177781,
+      "status": "received",
+      "httpStatus": 200,
+      "sha256": "805f9b3a7cbb898d4896a3ebbf144870a1e812ced44eea1ef49f5e68735a3e14",
+      "finishedAt": "2026-10-29T17:43:32.792Z"
+    }
+  ],
+  "limits": {
+    "requests": 3,
+    "concurrency": 1,
+    "requestMs": 5000,
+    "totalMs": 15000,
+    "bytesPerResponse": 524288,
+    "totalBytes": 1572864,
+    "gameLogRows": 100,
+    "scheduleRows": 140,
+    "redirects": 0,
+    "retries": 0
+  },
+  "status": "received-and-identity-validated",
+  "totalBytes": 208934,
+  "databaseReads": 0,
+  "remoteWrites": 0,
+  "authOrProfileChanges": 0,
+  "seasonGp": 11,
+  "gameLogRows": 11,
+  "scheduleRows": 88,
+  "actualGameEndsQualified": false,
+  "leagueRanksQualified": false,
+  "finishedAt": "2026-10-29T17:43:32.793Z",
+  "elapsedMs": 386,
+  "callsStarted": 3
+}

@@ -1,0 +1,187 @@
+{
+  "schema": "PASS_STATIC_CATALOG_WITH_PRIVILEGE_PREREQUISITE_BLOCKER",
+  "checks": [
+    {
+      "table": "nst_gamelog_goalie_5v5_counts",
+      "requiredFieldsPresent": true,
+      "numericTypesCompatible": true,
+      "identityDateTypes": {
+        "player_id": "integer",
+        "date_scraped": "date",
+        "season": "integer"
+      },
+      "notNullWithoutDefault": [
+        "player_id",
+        "date_scraped",
+        "season"
+      ]
+    },
+    {
+      "table": "nst_gamelog_goalie_5v5_rates",
+      "requiredFieldsPresent": true,
+      "numericTypesCompatible": true,
+      "identityDateTypes": {
+        "player_id": "integer",
+        "date_scraped": "date",
+        "season": "integer"
+      },
+      "notNullWithoutDefault": [
+        "player_id",
+        "date_scraped",
+        "season"
+      ]
+    },
+    {
+      "table": "nst_gamelog_goalie_all_counts",
+      "requiredFieldsPresent": true,
+      "numericTypesCompatible": true,
+      "identityDateTypes": {
+        "player_id": "integer",
+        "date_scraped": "date",
+        "season": "integer"
+      },
+      "notNullWithoutDefault": [
+        "player_id",
+        "date_scraped"
+      ]
+    },
+    {
+      "table": "nst_gamelog_goalie_all_rates",
+      "requiredFieldsPresent": true,
+      "numericTypesCompatible": true,
+      "identityDateTypes": {
+        "player_id": "integer",
+        "date_scraped": "date",
+        "season": "integer"
+      },
+      "notNullWithoutDefault": [
+        "player_id",
+        "date_scraped"
+      ]
+    },
+    {
+      "table": "nst_gamelog_goalie_ev_counts",
+      "requiredFieldsPresent": true,
+      "numericTypesCompatible": true,
+      "identityDateTypes": {
+        "player_id": "integer",
+        "date_scraped": "date",
+        "season": "integer"
+      },
+      "notNullWithoutDefault": [
+        "player_id",
+        "date_scraped"
+      ]
+    },
+    {
+      "table": "nst_gamelog_goalie_ev_rates",
+      "requiredFieldsPresent": true,
+      "numericTypesCompatible": true,
+      "identityDateTypes": {
+        "player_id": "integer",
+        "date_scraped": "date",
+        "season": "integer"
+      },
+      "notNullWithoutDefault": [
+        "player_id",
+        "date_scraped"
+      ]
+    },
+    {
+      "table": "nst_gamelog_goalie_pk_counts",
+      "requiredFieldsPresent": true,
+      "numericTypesCompatible": true,
+      "identityDateTypes": {
+        "player_id": "integer",
+        "date_scraped": "date",
+        "season": "integer"
+      },
+      "notNullWithoutDefault": [
+        "player_id",
+        "date_scraped"
+      ]
+    },
+    {
+      "table": "nst_gamelog_goalie_pk_rates",
+      "requiredFieldsPresent": true,
+      "numericTypesCompatible": true,
+      "identityDateTypes": {
+        "player_id": "integer",
+        "date_scraped": "date",
+        "season": "integer"
+      },
+      "notNullWithoutDefault": [
+        "player_id",
+        "date_scraped"
+      ]
+    },
+    {
+      "table": "nst_gamelog_goalie_pp_counts",
+      "requiredFieldsPresent": true,
+      "numericTypesCompatible": true,
+      "identityDateTypes": {
+        "player_id": "integer",
+        "date_scraped": "date",
+        "season": "integer"
+      },
+      "notNullWithoutDefault": [
+        "player_id",
+        "date_scraped"
+      ]
+    },
+    {
+      "table": "nst_gamelog_goalie_pp_rates",
+      "requiredFieldsPresent": true,
+      "numericTypesCompatible": true,
+      "identityDateTypes": {
+        "player_id": "integer",
+        "date_scraped": "date",
+        "season": "integer"
+      },
+      "notNullWithoutDefault": [
+        "player_id",
+        "date_scraped"
+      ]
+    }
+  ],
+  "hashes": {
+    "supabase/migrations/20261020224500_data_api_explicit_default_privileges.sql": "60e0ee8f6004d07182c6999fbe34534a2cceb9530cafbd1a0bb868b0fd5ff51c",
+    "/Users/tim/Documents/Codex/2026-10-27/task/accepted-local-handoff/sql/20261027_nst_shared_admission_v1.sql": "aefd3c20f2ff76328ef8b27e19244e438ad69a22ea1f9b5ef3cc1d6068784dce",
+    "supabase/migrations/20261101161622_nst_goalie_catchup_v1.sql": "d99730b43d2658861259e81f01c687217e161a38c293843de0192dc1fd69e291"
+  },
+  "objects": {
+    "newTables": [
+      "nst_goalie_cohorts",
+      "nst_goalie_units",
+      "nst_goalie_cohort_units",
+      "nst_goalie_daily_budget",
+      "nst_goalie_claims",
+      "nst_goalie_unit_receipts",
+      "nst_goalie_control",
+      "nst_goalie_day_evidence",
+      "nst_job_control",
+      "nst_jobs"
+    ],
+    "newPublicFunctions": [
+      "nst_goalie_verify_day_v1",
+      "nst_goalie_ensure_cohort_v1",
+      "nst_goalie_read_state_v1",
+      "nst_goalie_claim_step_v1",
+      "nst_goalie_commit_unit_v1",
+      "nst_goalie_finish_step_v1",
+      "nst_goalie_hold_step_v1",
+      "nst_job_state_v1",
+      "nst_job_begin_v1",
+      "nst_job_finish_v1",
+      "nst_job_hold_v1",
+      "nst_admit_attempt_v1",
+      "nst_admit_job_attempt_v1",
+      "nst_goalie_preparation_state_v1",
+      "nst_goalie_prepare_cohort_v1",
+      "nst_goalie_progress_v1"
+    ],
+    "renamedFunction": "nst_admit_attempt_v1(boolean,integer) -> nst_admit_attempt_budget_v1(boolean,integer)"
+  },
+  "blockedBy": "postgres public defaults grant service_role ALL; existing candidate does not revoke these service_role defaults on control/evidence tables",
+  "otherLimits": "Catalog compatibility only; no hosted DDL, output write, RPC invocation or query performance qualification."
+}

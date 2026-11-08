@@ -26,12 +26,12 @@ import {
   advanceRollingForgeStage,
   buildRollingForgeRunScopeKey,
   finishRollingForgeStage,
-  isRollingForgeStageLeaseDead,
   readRollingForgeRunState,
   readRollingForgeStageFailedAttempts,
   readRollingForgeStageKills,
-  recordRollingForgeStageKill,
   NST_PERSISTENCE_UNCONFIRMED,
+  AUDIT_PERSISTENCE_UNCONFIRMED,
+  STAGE_HANDOFF_UNCONFIRMED,
   RollingForgeStageReviewRequiredError
 } from "lib/rollingForgePipelineRunState";
 
@@ -66,7 +66,7 @@ type StepResult = {
   reason?: string;
   // Set when a source shortfall was downgraded so the stage still completes.
   degraded?: "nst_source_unavailable";
-  requiresReview?: "nst_persistence_unconfirmed";
+  requiresReview?: "nst_persistence_unconfirmed" | "audit_persistence_unconfirmed" | "stage_handoff_unconfirmed";
 };
 
 type StageResult = {
@@ -161,7 +161,7 @@ type ResponseBody = {
 
 type RouteHandler = (req: any, res: any) => Promise<void>;
 
-type TerminalStopCode = "attempts_exhausted" | "stage_killed" | "nst_persistence_unconfirmed";
+type TerminalStopCode = "attempts_exhausted" | "stage_killed" | "nst_persistence_unconfirmed" | "audit_persistence_unconfirmed" | "stage_handoff_unconfirmed";
 
 function getParam(req: NextApiRequest, key: string): string | null {
   const value = req.query[key];
@@ -500,7 +500,15 @@ function isNstSourceShortfall(step: StepResult): boolean {
     && Number.isSafeInteger(unresolved) && unresolved > 0;
 }
 
+function requiresAuditReview(body: unknown): boolean {
+  if (!body || typeof body !== "object" || Array.isArray(body)) return false;
+  const receipt = (body as Record<string, any>).finalAudit;
+  return receipt != null && (typeof receipt !== "object" || Array.isArray(receipt) ||
+    receipt.status !== "persisted" || receipt.retrySafe === false || receipt.requiresReview === true);
+}
+
 function classifyStepStatus(statusCode: number, body: unknown): StepStatus {
+  if (requiresAuditReview(body)) return "failed";
   if (isPartialResume(statusCode, body)) return "partial";
   if (statusCode >= 400) return "failed";
   if (body && typeof body === "object") {
@@ -561,7 +569,9 @@ async function invokeRouteStep(args: {
     statusCode: res.statusCode,
     durationMs: Date.now() - startedAt,
     summary: res.body,
-    query
+    query,
+    ...(requiresAuditReview(res.body) ? { requiresReview: AUDIT_PERSISTENCE_UNCONFIRMED,
+      reason: "Audit persistence is not acknowledged; inspect operation results before replaying." } : {})
   };
 }
 
@@ -688,6 +698,7 @@ async function runStage(args: {
     method?: "GET" | "POST";
     query?: Record<string, string>;
   }) => {
+    if (steps.some((result) => result.requiresReview)) return;
     steps.push(await invokeRouteStep(step));
   };
 
@@ -727,6 +738,7 @@ async function runStage(args: {
         }
       });
       steps.push(nst);
+      if (nst.requiresReview) break;
       const nstBody = nst.summary as Record<string, any> | null;
       if (nstBody?.auditPersistence === "not_confirmed" || nstBody?.writePersistence === "not_confirmed"
         || nstBody?.nstProgress?.auditPersistence === "not_confirmed") {
@@ -1009,6 +1021,7 @@ async function runStage(args: {
           }
         }
       }
+      if (steps.some((step) => step.requiresReview)) break;
       if (args.startDate !== args.endDate) {
         await addStep({
           id: "run-projection-v2",
@@ -1048,6 +1061,7 @@ async function runStage(args: {
             }
           });
           steps.push(step);
+          if (step.requiresReview) break;
           if (step.status === "failed" && index > 0) {
             // A date ahead is best effort: its failure is recorded on the step,
             // never blocks the run date's downstream stages, and does not stop
@@ -1246,13 +1260,13 @@ async function runResumablePipeline(args: {
       );
       continue;
     }
-    if (state?.status === "failed" && state.lastError === NST_PERSISTENCE_UNCONFIRMED) {
-      stageResults.push(notRunStage(stage, "failed", "NST persistence is unconfirmed; manual review is required before retrying.", true));
+    if (state?.status === "failed" && [NST_PERSISTENCE_UNCONFIRMED, AUDIT_PERSISTENCE_UNCONFIRMED].includes(state.lastError ?? "")) {
+      stageResults.push(notRunStage(stage, "failed", "Persistence is unconfirmed; manual review is required before retrying.", true));
       termination = {
         state: "stopped_on_blocking_failure", resumeRequired: false, nextStartDate: null,
         runKey, nextStageId: stage.id, reason: "manual_review_required"
       };
-      terminalStopCode = NST_PERSISTENCE_UNCONFIRMED;
+      terminalStopCode = state.lastError as TerminalStopCode;
       continue;
     }
     const failedAttempts = readRollingForgeStageFailedAttempts(state);
@@ -1305,76 +1319,9 @@ async function runResumablePipeline(args: {
       continue;
     }
 
-    // A `running` row whose lease has expired was held by an invocation that
-    // died (the function was killed). Its progress is stored, so the stage is
-    // taken again, but every dead invocation is counted and the run stops
-    // once there have been too many.
-    // NST cannot replay an abandoned invocation without reviewing its writes.
-    // Its acquisition guard below handles the fresh state without mutating it.
-    if (stage.id !== "upstream_skater_sources" && isRollingForgeStageLeaseDead(state)) {
-      let kills: number;
-      try {
-        kills = await recordRollingForgeStageKill({
-          supabase,
-          scopeKey: runKey,
-          stageId: stage.id,
-          runDate: date,
-          expiredLeaseOwner: state?.leaseOwner ?? null
-        });
-      } catch (error) {
-        termination = continuation("state_error", stage.id, state?.cursorGameId ?? null, errorMessage(error));
-        stageResults.push(
-          notRunStage(stage, "pending", "Could not record the dead invocation; see termination.detail.")
-        );
-        continue;
-      }
-      if (kills >= MAX_KILLED_STAGE_ATTEMPTS) {
-        // Close the stage as failed with its attempts spent, so later
-        // invocations stop here without touching state again.
-        try {
-          const closing = await acquireRollingForgeStage({
-            supabase,
-            scopeKey: runKey,
-            stageId: stage.id,
-            runDate: date,
-            leaseExpiresAtMs: Date.now() + 30_000
-          });
-          if (closing.status === "running") {
-            await finishRollingForgeStage({
-              supabase,
-              lease: closing,
-              outcome: "failed",
-              attempt: MAX_BLOCKING_STAGE_ATTEMPTS
-            });
-          }
-        } catch (error) {
-          console.warn(
-            "[run-rolling-forge-pipeline] could not close a repeatedly killed stage",
-            errorMessage(error)
-          );
-        }
-        stageResults.push(
-          notRunStage(
-            stage,
-            "failed",
-            `${kills} invocation(s) of this run died while running this stage (last stored cursor ${state?.cursorGameId ?? "none"}); not taken again.`,
-            true
-          )
-        );
-        termination = {
-          state: "stopped_on_blocking_failure",
-          resumeRequired: false,
-          nextStartDate: null,
-          runKey,
-          nextStageId: stage.id,
-          reason: "attempts_exhausted",
-          detail: `Killed ${kills} time(s).`
-        };
-        terminalStopCode = "stage_killed";
-        continue;
-      }
-    }
-
+    // Acquire re-reads the exact CAS revision and refuses every unacknowledged
+    // running takeover. Expiry/checkpoints do not prove the last child did not
+    // write; a failed review-hold store must not turn into permission to replay.
     let lease;
     try {
       lease = await acquireRollingForgeStage({
@@ -1391,7 +1338,10 @@ async function runResumablePipeline(args: {
         termination = { state: "stopped_on_blocking_failure", resumeRequired: false,
           nextStartDate: null, runKey, nextStageId: stage.id,
           reason: "manual_review_required", detail: message };
-        terminalStopCode = NST_PERSISTENCE_UNCONFIRMED;
+        const freshStates = await readRollingForgeRunState({ supabase, scopeKey: runKey }).catch(() => states);
+        terminalStopCode = freshStates.get(stage.id)?.lastError === AUDIT_PERSISTENCE_UNCONFIRMED
+          ? AUDIT_PERSISTENCE_UNCONFIRMED : stage.id === "upstream_skater_sources"
+            ? NST_PERSISTENCE_UNCONFIRMED : STAGE_HANDOFF_UNCONFIRMED;
         continue;
       }
       termination = continuation(
@@ -1494,7 +1444,7 @@ async function runResumablePipeline(args: {
         const attempt = failedAttempts + 1;
         const reviewCode = result.steps.find(step => step.requiresReview)?.requiresReview;
         // The known uncertainty remains terminal even if saving its hold fails.
-        // The already-acquired running row also blocks a later NST takeover.
+        // The already-acquired running row blocks a later takeover in every stage.
         if (reviewCode) {
           termination = { state: "stopped_on_blocking_failure", resumeRequired: false,
             nextStartDate: null, runKey, nextStageId: stage.id, reason: "manual_review_required" };
@@ -1523,12 +1473,14 @@ async function runResumablePipeline(args: {
         await finishRollingForgeStage({ supabase, lease: activeLease, outcome: "complete" });
       }
     } catch (error) {
-      // The stage itself ran; only its receipt was not stored. The next
-      // invocation repeats it, which every stage tolerates.
+      // The child may have committed even though its stage receipt did not.
+      // Preserve the running row as the durable fence; never promise a retry.
       const message = errorMessage(error);
-      termination = termination
-        ? { ...termination, detail: `State write failed: ${message}` }
-        : continuation("state_error", stage.id, activeLease.cursorGameId, message);
+      const reviewCode = result.steps.find(step => step.requiresReview)?.requiresReview;
+      termination = { state: "stopped_on_blocking_failure", resumeRequired: false,
+        nextStartDate: null, runKey, nextStageId: stage.id, reason: "manual_review_required",
+        detail: `Stage handoff was not acknowledged: ${message}. Reconcile child outputs and audit before operator-authorized resumption.` };
+      terminalStopCode = reviewCode ?? STAGE_HANDOFF_UNCONFIRMED;
     }
   }
 
@@ -1700,7 +1652,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseBody>) 
     }
 
     const manualReviewStage = stageResults.find(stage => stage.steps.some(step => step.requiresReview));
-    if (manualReviewStage) terminalStopCode = NST_PERSISTENCE_UNCONFIRMED;
+    if (manualReviewStage) terminalStopCode = manualReviewStage.steps.find(step => step.requiresReview)!.requiresReview!;
     const failedBlocking = stageResults.some(
       (stage) => stage.blocking && stage.status === "failed"
     );

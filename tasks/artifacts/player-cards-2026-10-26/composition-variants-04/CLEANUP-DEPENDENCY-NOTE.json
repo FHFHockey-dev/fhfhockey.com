@@ -1,0 +1,14 @@
+{
+  "at": "2026-10-26T18:30:29.284355+00:00",
+  "auditManifest": "/Users/tim/Documents/Codex/2026-10-26/task/SAFE-TO-ARCHIVE-PATHS.txt",
+  "superseded01or02PngHolds": [],
+  "requiredKeep": [
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/before/web/components/player-cards/HeroPlayerCard.tsx",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-03/**",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-04/**",
+    "web/lib/player-cards/**",
+    "web/components/player-cards/**"
+  ],
+  "reason": "Originalgeometrycomesfrompinnedno-logo source; active03copiedfixtureandoldgoldenmanifestused; no37olderPNGreadin04tests/renderer. IndependentLibraryreferencesunavailable, notsubstitutedbyoldPNGs.",
+  "moveOrDeletePerformed": false
+}

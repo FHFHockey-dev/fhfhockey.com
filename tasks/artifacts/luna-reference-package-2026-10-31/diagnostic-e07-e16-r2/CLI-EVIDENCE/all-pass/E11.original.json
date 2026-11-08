@@ -1,0 +1,168 @@
+{
+  "version": "ifttt-luna-review-v1",
+  "canPublish": false,
+  "canWriteAliases": false,
+  "canChangeStatus": false,
+  "canExecuteReplacement": false,
+  "status": "review_only",
+  "holds": [
+    "human_review_required",
+    "no_publication_authority"
+  ],
+  "referencePackage": {
+    "version": "luna-hockey-reference-v4",
+    "mode": "rules-and-synthetic-only",
+    "hash": "9b8a10fd458596b75ba2c0900dea1b72b9ec446d5e0e660ca5c18341920abdb3",
+    "rulesVersion": "luna-hockey-rules-v4",
+    "libraryVersion": null
+  },
+  "responsesRequestHash": "a7280a4d484075fbfab47f5c18249f4bf0ac33ada7b6e38ae41f8393b8a079a2",
+  "lineage": {
+    "originalPostId": "910010",
+    "author": "lunafixture",
+    "url": "https://x.com/LunaFixture/status/910010",
+    "textVersion": "tweet-source-claim-v1:text:3b4c987a97c5059b9b472b41d20785973f8805de978d7f49b54c8c5ab5750e23",
+    "packetHash": "31e6c0b4dd666ddb991810032ae81b4691540e9196ab012c74c5e129665d9114"
+  },
+  "identity": {
+    "version": "tweet-identity-proposal-v1",
+    "requestHash": "f15a6dfed59cb46168665bced15878bef1d45d0182fc97f8b9d790e7b5425d1e",
+    "directoryHash": "88dbd1e19c22a04fba95f07d049c38af533b548723bd17106f639191667ae16f",
+    "occurrences": [
+      {
+        "occurrenceId": "subject-4",
+        "canonicalId": "nhl:900001",
+        "status": "matched",
+        "evidence": {
+          "start": 4,
+          "end": 16,
+          "text": "Avery Keeper"
+        },
+        "identityConfidence": "tentative"
+      },
+      {
+        "occurrenceId": "subject-33",
+        "canonicalId": "nhl:900002",
+        "status": "matched",
+        "evidence": {
+          "start": 33,
+          "end": 45,
+          "text": "Riley Skater"
+        },
+        "identityConfidence": "tentative"
+      }
+    ]
+  },
+  "goalieStatuses": [
+    {
+      "occurrenceId": "subject-4",
+      "canonicalId": "nhl:900001",
+      "status": "confirmed",
+      "evidence": {
+        "start": 4,
+        "end": 32,
+        "text": "Avery Keeper starts tonight."
+      },
+      "verified": false,
+      "gameId": null,
+      "teamId": null,
+      "appliedOverride": null,
+      "policyFloorAfterAcceptance": null,
+      "holds": [
+        "human_review_required",
+        "game_and_source_time_binding_required",
+        "conflict_retraction_check_required"
+      ]
+    }
+  ],
+  "decisionReview": {
+    "mode": "review_only",
+    "canPublish": false,
+    "canChangeStatus": false,
+    "providerDispatchEnabled": false,
+    "bindingVersion": "tweet-decision-review-binding-v1",
+    "planHash": "2b58a468ba6003c1ffad5d355caba77b00e1386661bf8887c5efec2189b278d0",
+    "packetHash": "31e6c0b4dd666ddb991810032ae81b4691540e9196ab012c74c5e129665d9114",
+    "sourceSupportMeaning": "assessment_of_supplied_statement_only",
+    "calibrationStatus": "uncalibrated_shadow_only",
+    "reviewReasons": [
+      "uncalibrated_shadow_only"
+    ],
+    "status": "bound_review",
+    "reason": null,
+    "post": {
+      "status": "scored",
+      "type": "predicate",
+      "probability": 0.95
+    },
+    "claims": [
+      {
+        "candidateIndex": 0,
+        "observationId": "tweet-observation-v2:7cdc95d10637d6ca5d198ba5bb21fddb08e36ab86302ac469f302f64306a61d7",
+        "playerId": 900001,
+        "statement": "Avery Keeper starts tonight.",
+        "statementBindingHash": "4c23fdfee8a8efc5e37735a640c59b3c6808fa0660f859f3cfe94a8b8da11344",
+        "support": {
+          "status": "scored",
+          "type": "choice",
+          "choice": "supported",
+          "confidence": 1,
+          "probabilities": [
+            {
+              "value": "supported",
+              "probability": 1
+            },
+            {
+              "value": "contradicted",
+              "probability": 0
+            },
+            {
+              "value": "insufficient_evidence",
+              "probability": 0
+            }
+          ]
+        },
+        "wording": {
+          "status": "scored",
+          "type": "choice",
+          "choice": "direct_assertion",
+          "confidence": 1,
+          "probabilities": [
+            {
+              "value": "conditional",
+              "probability": 0
+            },
+            {
+              "value": "expectation",
+              "probability": 0
+            },
+            {
+              "value": "speculation",
+              "probability": 0
+            },
+            {
+              "value": "opinion",
+              "probability": 0
+            },
+            {
+              "value": "direct_assertion",
+              "probability": 1
+            },
+            {
+              "value": "unclear",
+              "probability": 0
+            }
+          ]
+        }
+      }
+    ],
+    "heldCandidates": [],
+    "unboundStatements": []
+  },
+  "attempts": 2,
+  "requestIds": [
+    "offline-cli-E11-responses",
+    "offline-cli-E11-decisions"
+  ],
+  "reviewQueueKey": "7380e0d61b747fcfa036d0e7a7665804bd64d81c836fb41a83a342aa1d16b1f0"
+}

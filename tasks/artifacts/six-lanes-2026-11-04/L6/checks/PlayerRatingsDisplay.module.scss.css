@@ -1,0 +1,256 @@
+/* styles/PlayerRatingsDisplay.module.scss */
+/* https://docs.microsoft.com/en-us/windows/apps/design/layout/screen-sizes-and-breakpoints-for-responsive-design */
+/* handset */
+/* tablet */
+/* PC*/
+/* styles/PlayerRatingsDisplay.module.scss */
+.ratingsFrame {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  height: 100%;
+  min-height: 0;
+}
+
+.ratingsNote {
+  margin: 0;
+  padding: 0 4px;
+  font-size: 11px;
+  line-height: 1.2;
+  color: #aaaaaa;
+  flex-shrink: 0;
+}
+
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  clip-path: inset(50%);
+  overflow: hidden;
+}
+
+.ratingsRoot {
+  display: flex;
+  justify-content: space-between;
+  gap: 4px;
+  padding: 4px;
+  background-color: rgb(19.2576271186, 21.4796610169, 24.4423728814);
+  border-radius: 6px;
+  flex: 1 1 auto;
+  min-height: 0;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.ratingSection {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background-color: #1a1d21;
+  border: 1px solid #505050;
+  border-radius: 6px;
+  overflow: hidden;
+}
+.ratingSection:nth-child(2) {
+  order: 3;
+}
+
+.ratingTitle {
+  text-align: center;
+  color: #cccccc;
+  background-color: rgb(14.7627118644, 16.4661016949, 18.7372881356);
+  padding: 3px 2px;
+  margin: 0;
+  font-size: 11px;
+  font-family: "Roboto Condensed", sans-serif;
+  font-weight: 700;
+  letter-spacing: 0;
+  border-bottom: 1px solid #404040;
+  flex-shrink: 0;
+}
+
+.ratingsBoxes {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  padding: 3px;
+  gap: 4px;
+  justify-content: space-evenly;
+  min-height: 0;
+}
+
+.ratingBox {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  border-radius: 6px;
+  padding: 1px;
+  width: 100%;
+  min-height: 32px;
+  flex-basis: 0;
+  flex-grow: 1;
+  box-sizing: border-box;
+  font-family: "Roboto Condensed", sans-serif;
+  text-align: center;
+  border: 2px solid transparent;
+}
+
+.ratingLabel {
+  font-size: 11px;
+  color: #ffffff;
+  font-weight: 400;
+  line-height: 1.1;
+  margin-bottom: 0;
+}
+
+.ratingValue {
+  font-size: 16px;
+  font-weight: 700;
+  color: #cccccc;
+  line-height: 1.2;
+}
+
+.finalRating .ratingLabel {
+  color: #cccccc;
+}
+.finalRating .ratingValue {
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.loading,
+.error,
+.noPlayer,
+.calculating,
+.noData {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  min-height: 100px;
+  color: #aaaaaa;
+  font-style: italic;
+  padding: 16px;
+  box-sizing: border-box;
+  text-align: center;
+}
+
+.error {
+  color: #FF6B6B;
+}
+
+.ratingTrack {
+  display: block;
+  width: 100%;
+  height: 5px;
+  min-width: 0;
+  border-radius: 3px;
+  background: #34464e;
+}
+
+.ratingMeter {
+  display: block;
+  width: 100%;
+  height: 5px;
+  appearance: none;
+  border: 0;
+  border-radius: 3px;
+  background: transparent;
+}
+.ratingMeter::-webkit-meter-bar {
+  height: 5px;
+  border: 0;
+  border-radius: 3px;
+  background: #34464e;
+}
+.ratingMeter::-webkit-meter-optimum-value {
+  border-radius: 3px;
+  background: var(--rating-color);
+}
+.ratingMeter::-moz-meter-bar {
+  border-radius: 3px;
+  background: var(--rating-color);
+}
+
+.ratingValue {
+  font-variant-numeric: tabular-nums;
+}
+
+:global(.wigo-one-page) .ratingsRoot {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  height: 100%;
+  min-height: 0;
+  overflow: visible;
+  padding: 0;
+}
+:global(.wigo-one-page) .ratingSection {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 54px repeat(3, minmax(0, 1fr));
+  gap: 4px;
+  overflow: visible;
+  border: 0;
+}
+:global(.wigo-one-page) .ratingTitle {
+  align-self: center;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #aaaaaa;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-align: left;
+  text-transform: none;
+}
+:global(.wigo-one-page) .ratingsBoxes {
+  display: contents;
+}
+:global(.wigo-one-page) .ratingBox {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-content: center;
+  align-items: center;
+  gap: 3px;
+  min-height: 0;
+  padding: 2px 2px 0;
+  border: 0 !important;
+  background: none;
+}
+:global(.wigo-one-page) .ratingLabel {
+  grid-column: 1/-1;
+  font-size: 11px;
+  line-height: 1.1;
+  color: #aaaaaa;
+}
+:global(.wigo-one-page) .ratingValue, :global(.wigo-one-page) .finalRating .ratingValue {
+  font-size: var(--wigo-data-size, 11px);
+  line-height: 1.15;
+  font-weight: 700;
+}
+
+@media (max-width: 768px) {
+  .ratingBox {
+    min-height: 84px;
+    padding: 6px 4px 4px;
+    gap: 2px;
+    border: 1px solid #505050;
+  }
+}
+.noPlayer {
+  min-height: 0;
+  color: #aaaaaa;
+  font-size: 12px;
+  font-style: normal;
+}

@@ -1,0 +1,4376 @@
+[
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/claude-audit-independent-review-2026-10-22/forge-ledger-lease/COMMANDS.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/claude-audit-independent-review-2026-10-22/forge-ledger-lease/REVIEW.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/cross-platform/2026-10-21-claude-to-codex-forge-audit-followups.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/cross-platform/2026-10-22-claude-forge-model-lane-handover.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/cross-platform/2026-10-22-codex-to-claude-forge-leases.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/cross-platform/2026-10-23-claude-to-codex-rso-forge-handover.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/RSO-FREE/FREE-RSO-ANALYSIS.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/ACTIVE-CHECKPOINT-20261023.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/BATCH-CHECKPOINT.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/CURRENT-OWNERSHIP.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/DISPATCH.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/HEALTH.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/P07-APPROVAL-BOUNDARY.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/P07-CONSUMER-ACCEPTANCE.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/P07-DECISION.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/P07-RETAINED-MATRIX.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/P07-SELECTED-POLICY.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/README.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/RESUME-CHECKPOINT.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/TASKLIST-20261022-SNAPSHOT.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/WORK-PACKETS.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/archive/MASTER-TASKLIST-2026-10-20.before-2026-10-23.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/p01-semantics/HANDOFF.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/p01/HANDOFF.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/p04-search/REVIEW-RECEIPT.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/p04-search/prefetch-correction/RECEIPT.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-continuation-2026-10-17/LEDGER.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-continuation-2026-10-17/LIVE-RUNBOOK-20261020.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-current-season-sog-2026-10-15/HANDOFF.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-current-season-sog-2026-10-15/independent-review-v2.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-current-season-sog-2026-10-15/independent-review.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-current-season-sog-2026-10-15/rejected-v1/HANDOFF.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-current-season-sog-2026-10-15/rejected-v1/independent-review.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-current-season-sog-admission-2026-10-15/GENUINE-READBACK-AND-PUBLICATION-PLAN-v2.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-current-season-sog-admission-2026-10-15/GENUINE-READBACK-AND-PUBLICATION-PLAN.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-current-season-sog-admission-2026-10-15/HANDOFF.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-current-season-sog-admission-2026-10-15/accepted-v1/independent-review.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-current-season-sog-admission-2026-10-15/clock-guard/independent-review.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-current-season-sog-admission-2026-10-15/final-readback-and-plan-review.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-current-season-sog-admission-2026-10-15/independent-review-v2.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-current-season-sog-admission-2026-10-15/independent-review.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-daily-automation-2026-10-17/DESIGN.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-daily-automation-2026-10-17/DRAFT-SCHEDULED-TASK.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-daily-automation-2026-10-17/INJURY-POLICY-PROPOSAL.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-daily-automation-2026-10-17/INTEGRATION-NOTES.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-f6-ledger-week-2026-10-23/FUTURE-APPROVAL.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-f6-ledger-week-2026-10-23/INPUT-CONTRACT.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-f6-ledger-week-2026-10-23/README.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-gate-kit-2026-10-23/README.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-gate-kit-2026-10-23/REPORT.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-gate-kit-2026-10-23/WORK-DIARY.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-k-refit-gate-2026-10-22/MZ-AND-D-SHARE.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-k-refit-gate-2026-10-22/PAIR-f-vs-h.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-k-refit-gate-2026-10-22/PAIR-f-vs-i-hybrid.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-k-refit-gate-2026-10-22/VERDICT.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-means-capture-2026-10-17/INTEGRATION-NOTES.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-model-release-plan-2026-10-22/PLAN.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-modeled-participation-2026-10-15/independent-review-v2-2026-10-15.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-modeled-participation-2026-10-15/independent-review.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-modeled-participation-2026-10-15/rejected-v1/independent-review.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-monitoring-checkpoint-2026-10-23/REPORT.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-native-input-separation-2026-10-13/README.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-native-input-separation-2026-10-13/explicit-run-admission/README.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-native-input-separation-2026-10-13/native-run-admission/README.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-native-serving-plan-2026-10-19/PLAN.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-pipeline-repair-2026-10-21/db-proposal-rolling-support-payload.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-projection-audit-2026-10-21/REPORT.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-projection-audit-2026-10-21/assists-backtest-report-2026-10-21.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-projection-audit-2026-10-21/assists-backtest-verdict.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-projection-audit-2026-10-21/assists-es-refit-backtest-report-2026-10-21.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-projection-audit-2026-10-21/assists-es-refit-verdict.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-projection-audit-2026-10-21/assists-refit-backtest-report-2026-10-21.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-projection-audit-2026-10-21/assists-refit-verdict.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-projection-audit-2026-10-21/forge-model-release-inventory.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-projection-audit-2026-10-21/hydration-recon-backtest-report-2026-10-21.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-projection-audit-2026-10-21/hydration-recon-verdict.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-projection-audit-2026-10-21/pp-overprediction-diagnosis.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-projection-audit-2026-10-21/pp-usage-backtest-report-2026-10-21.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-projection-audit-2026-10-21/pp-usage-verdict.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-projection-audit-2026-10-21/q13-pg-cron-changes.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-projection-audit-2026-10-21/q2-unschedule-h5-job-393.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-projection-audit-2026-10-21/q7-q8-backtest-report-2026-10-21.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-projection-audit-2026-10-21/q7-q8-backtest-verdict.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-projection-audit-2026-10-21/release-es-assist-refit/README.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-projection-audit-2026-10-21/release-pp-usage/README.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-projection-audit-2026-10-21/s-b-served-forecast-ledger-design.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-projection-audit-2026-10-21/workers/w1-inputs.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-projection-audit-2026-10-21/workers/w2-rolling.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-projection-audit-2026-10-21/workers/w3-model.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-projection-audit-2026-10-21/workers/w4-orchestration.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-projection-audit-2026-10-21/workers/w5-bridge-rso.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-projection-audit-2026-10-21/workers/w6-native-accuracy.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-release-path-2026-10-15/PUBLICATION-PROPOSAL.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-reliability-2026-10-20/CAPTURE-FLAG.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-research-amendment-2026-10-15/inputs/FORGE-amended-research-plan-2026-10-15.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-research-amendment-2026-10-15/inputs/FORGE-working-checklist-2026-10-15.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-rolling-participation-2026-10-17/METHOD-NOTE.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-rolling-participation-2026-10-17/README.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-rso-completion-2026-10-15/adapter-review.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-rso-completion-2026-10-15/browser-final/roster-schedule-optimizer--ae298-before-any-plan-is-selected-chromium/error-context.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-rso-completion-2026-10-15/browser/roster-schedule-optimizer--ae298-before-any-plan-is-selected-chromium/error-context.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-rso-completion-2026-10-15/candidate-development-reuse-proposal.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-rso-completion-2026-10-15/checklist.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-rso-completion-2026-10-15/consumer/candidate-participation/receipt.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-rso-completion-2026-10-15/consumer/frozen-start/receipt.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-rso-completion-2026-10-15/consumer/frozen-start/root-integration.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-rso-completion-2026-10-15/consumer/frozen-window/receipt.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-rso-completion-2026-10-15/consumer/goalie-participation-review.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-rso-completion-2026-10-15/consumer/injury-coverage-receipt.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-rso-completion-2026-10-15/consumer/native-source-review.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-rso-completion-2026-10-15/consumer/points-acceptance/receipt.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-rso-completion-2026-10-15/consumer/pp-source/proposal.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-rso-completion-2026-10-15/consumer/readback/receipt.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-rso-completion-2026-10-15/consumer/receipt.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-rso-completion-2026-10-15/consumer/roster-observation/planning-loader/receipt.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-rso-completion-2026-10-15/consumer/roster-observation/receipt.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-rso-completion-2026-10-15/consumer/roster-observation/root-integration.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-rso-completion-2026-10-15/data-read-proposal.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-rso-completion-2026-10-15/native-goalie-win-implementation.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-rso-completion-2026-10-15/native-publication-runner.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-rso-completion-2026-10-15/native-source-capture-proposal.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-rso-completion-2026-10-15/native-use-policy-proposal.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-rso-completion-2026-10-15/nhl-context-capture-proposal.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-rso-completion-2026-10-15/optimizer-review.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-rso-completion-2026-10-15/pipeline/current-native-preparation.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-rso-completion-2026-10-15/pipeline/owned-five-final.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-rso-completion-2026-10-15/pipeline/reuse-and-production.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-rso-completion-2026-10-15/pipeline/schedule-publication-preparation-v1.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-rso-completion-2026-10-15/publication-hosted-preflight-proposal.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-rso-completion-2026-10-15/publication-hosted-preflight-receipt.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-rso-completion-2026-10-15/read-receipt.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-rso-completion-2026-10-15/release-checkpoint.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-rso-completion-2026-10-15/remaining-input-read-proposal.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-rso-completion-2026-10-15/research-comparison-protocol-v1.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-rso-completion-2026-10-15/research-comparison-receipt-v1.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-rso-completion-2026-10-15/research-reconciliation.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-rso-completion-2026-10-15/schedule/cadence/approval-package.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-rso-completion-2026-10-15/schedule/cadence/hosted-parity-preflight-v1/proposal.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-rso-completion-2026-10-15/schedule/cadence/native-approval-package.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-rso-completion-2026-10-15/schedule/receipt.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-rso-completion-2026-10-15/yahoo-source-capture-proposal.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-scout-evidence-2026-10-15-resume-v1/CURRENT-ADDENDUM.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-scout-evidence-2026-10-15-resume-v1/README.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-scout-evidence-2026-10-15-resume-v1/coverage/metadata-feasibility.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-scout-evidence-2026-10-15-resume-v1/protocol/PROPOSAL.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-scout-evidence-2026-10-15-resume-v1/reports/jan8-13-adaptive-development.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-scout-evidence-2026-10-15-resume-v1/reports/v3-development.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-scout-evidence-2026-10-15-resume-v1/reports/v4-goalie-comparison.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-serving-release-review-2026-10-17/B2-SCHEDULE-REFRESH-PROPOSAL.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-serving-release-review-2026-10-17/BLOCKERS.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-serving-release-review-2026-10-17/CHECKPOINT-DIARY-2026-10-18.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-serving-release-review-2026-10-17/RELEASE-PLAN.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-serving-release-review-2026-10-17/REVIEW-ADDENDUM-2.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-serving-release-review-2026-10-17/REVIEW-ADDENDUM.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-serving-release-review-2026-10-17/REVIEW.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-serving-release-review-2026-10-17/SLICE.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-serving-release-review-2026-10-17/START-CHART-Q01.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-skater-candidates-2026-10-22/HANDOFF.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-skater-candidates-2026-10-22/TASK3-DATA-ASK.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-source-restoration-2026-10-15/B-APPROVAL-PROPOSAL.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-source-restoration-2026-10-15/B-MULTIOUTPUT-APPROVAL-PROPOSAL-v2.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-source-restoration-2026-10-15/B-REVIEWED-RESULTS.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-source-restoration-2026-10-15/NEXT-HIT-TOI-PROPOSAL.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-source-restoration-2026-10-15/REVISED-SCOPE-PROPOSAL.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-source-restoration-2026-10-15/TARGET-SCOPE-CLARIFICATION.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-target-scope-fix-2026-10-19/README.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-task1-independent-review-2026-10-22/REVIEW.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-task1-scoreboard-2026-10-22/HANDOFF.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-task2-2026-10-22/HANDOFF.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-task2-2026-10-22/HISTORICAL-62-GAME-RESCORE.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-task2-2026-10-22/r1/HANDOFF.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-task2-2026-10-22/r1/OPERATIONS.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-task2-2026-10-22/r2/HANDOFF.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-task2-gate-2026-10-22/GATE-CI.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-task2-gate-2026-10-22/GATE-REPORT.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-task2-gate-2026-10-22/VERDICT.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-task2-independent-review-2026-10-22/REVIEW.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-task2-independent-review-2026-10-22/r1/REVIEW.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-task3-gate-2026-10-22/PAIR-c-vs-d-es-only.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-task3-gate-2026-10-22/PAIR-c-vs-d.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-task3-gate-2026-10-22/VERDICT.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-task4-gate-2026-10-22/MZ-AND-D-SHARE.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-task4-gate-2026-10-22/PAIR-c-vs-f.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-task4-gate-2026-10-22/PAIR-d-vs-f.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-task4-gate-2026-10-22/VERDICT.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-task9-gate-2026-10-22/MZ-AND-D-SHARE.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-task9-gate-2026-10-22/PAIR-f-vs-g.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-task9-gate-2026-10-22/VERDICT.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-team-context-fix-2026-10-19/NOTE.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-testing-grounds-2026-10-24/local-owner-activation/HANDOFF.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-testing-grounds-2026-10-24/local-owner-activation/OWNERSHIP.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-testing-grounds-2026-10-24/local-owner-configuration/HANDOFF.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-testing-grounds-2026-10-24/local-owner-configuration/OWNERSHIP.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01-r1-review/REVIEW.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01-r1/HANDOFF.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01-r1/OWNERSHIP.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01-review/DECISION-RELAY.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01-review/DISCOVERY-NOTES.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01-review/REVIEW.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01/CAPABILITIES.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01/HANDOFF.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01/OWNERSHIP.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01/SOURCE-RESOLUTION-AND-NEXT.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-02-review/REVIEW.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-02/DECISIONS.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-02/HANDOFF.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-02/OWNERSHIP.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-03-r1-review/REVIEW.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-03-r1/HANDOFF.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-03-r1/OWNERSHIP.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-03-review/REVIEW.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-03/HANDOFF.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-03/OPERATING-PLAN.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-03/OWNERSHIP.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-04-r1-review/REVIEW.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-04-r1/HANDOFF.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-04-r1/OWNERSHIP.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-04-review/REVIEW.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-04/HANDOFF.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-04/OWNERSHIP.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-05-proposal/TRANSFER-REQUEST.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-05-r1-review/REVIEW.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-05-r1/HANDOFF.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-05-r1/OWNERSHIP.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-05-review/REVIEW.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-05/HANDOFF.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-05/LOCAL-VIEW.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-05/OWNERSHIP.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-v2-integration-2026-10-18/CHECKPOINT-DIARY-2026-10-18.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-v2-integration-2026-10-18/README.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-v2-integration-2026-10-18/REVIEW-PATCH03-2026-10-19.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-v2-integration-2026-10-18/REVIEW.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-v2-integration-2026-10-18/STACK-RECEIPT-2026-10-20.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-v2-prerollout-gates-2026-10-19/07-a14-split-materializations.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-v2-prerollout-gates-2026-10-19/README.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-v2-prerollout-gates-2026-10-19/REPLAY-RUNBOOK-2026-10-20.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/forge-v2-target-scope-fix-2026-10-19/README.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/free-rso-analysis-2026-10-24/FREE-RSO-RECOMMENDATION.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/fresh-rso-forge-review-2026-10-16/evidence-report.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/fresh-rso-forge-review-2026-10-16/executive-verdict.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/goalie-workload-forge-2026-10-25/OWNERSHIP.md",
+    "in_repo": true,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/goalie-workload-forge-2026-10-25/REPORT.md",
+    "in_repo": true,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/goalie-workload-forge-2026-10-25/acceptance/FINAL.md",
+    "in_repo": true,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/goalie-workload-forge-2026-10-25/acceptance/REVIEW-CUSTODY.md",
+    "in_repo": true,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/goalie-workload-forge-2026-10-25/acceptance/independent/REVIEW.md",
+    "in_repo": true,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/p07-rso-use-policy-2026-10-22/ARCHITECTURE-HANDOFF.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/p07-rso-use-policy-2026-10-22/LEASE.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/p07-rso-use-policy-2026-10-22/REPORT.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/p07-rso-use-policy-2026-10-22/VERIFY.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/p07-rso-use-policy-2026-10-22/r1/LEASE.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/p07-rso-use-policy-2026-10-22/r1/REPORT.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/p07-rso-use-policy-2026-10-22/r1/VERIFY.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/p07-rso-use-policy-2026-10-22/r2/DISPLAY-LEASE-RELEASE.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/p07-rso-use-policy-2026-10-22/r2/LEASE.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/p07-rso-use-policy-2026-10-22/r2/REPORT.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/p07-rso-use-policy-2026-10-22/r2/VERIFY.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/p07-rso-use-policy-2026-10-22/r2/heavy-verification/RECEIPT.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/p07-rso-use-policy-2026-10-22/r2/review-fixtures/README.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/release-integration-2026-10-23/CURRENT-HANDOFF.json",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/release-integration-2026-10-23/RSO-FIXTURE-ASSIGNMENT.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/release-integration-2026-10-23/RSO-LAYOUT-RECEIPT.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/release-integration-2026-10-23/rso-command-bar/HANDOFF.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/release-r10-2026-10-21/RSO-R7-R8-master.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/release-readiness-2026-10-24/inputs/rso-evidence/REPORT.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-acquisition-rules-workflow-2026-10-16/FINAL-STATUS.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-acquisition-rules-workflow-2026-10-16/HANDOFF.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-acquisition-rules-workflow-2026-10-16/independent-review.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-automatic-suggestions-2026-10-15/FINAL-STATUS.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-automatic-suggestions-2026-10-15/HANDOFF.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-automatic-suggestions-2026-10-15/INTEGRATION-FINAL-STATUS.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-automatic-suggestions-2026-10-15/LOCAL-INTEGRATION.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-automatic-suggestions-2026-10-15/independent-review.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-automatic-suggestions-2026-10-15/integration-independent-review.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-browser-acceptance-2026-10-23/REPORT.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-browser-fixture-reconciliation-2026-10-23/DIARY.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-browser-fixture-reconciliation-2026-10-23/REPORT-WIP.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-browser-fixture-reconciliation-2026-10-23/REPORT.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-candidate-admission-2026-10-15/FINAL-STATUS.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-candidate-admission-2026-10-15/INPUT-TRACE-AND-ACCEPTANCE.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-candidate-admission-2026-10-15/independent-review.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-candidate-pool-2026-10-16/ACTUAL-READBACK.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-candidate-pool-2026-10-16/FINAL-STATUS.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-candidate-pool-2026-10-16/HANDOFF.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-candidate-pool-2026-10-16/MANAGER-RULES-MAPPING.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-candidate-pool-2026-10-16/independent-review.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-candidate-unavailable-2026-10-15/AUTOMATIC-SUGGESTION-CASES.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-candidate-unavailable-2026-10-15/AUTOMATIC-SUGGESTION-CHECKPOINT.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-candidate-unavailable-2026-10-15/DIAGNOSIS.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-candidate-unavailable-2026-10-15/FINAL-STATUS.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-candidate-unavailable-2026-10-15/independent-review.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-consumer-checkpoint-2026-10-13/CONTEXT-DIARY.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-consumer-checkpoint-2026-10-13/independent-write-script-review.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-consumer-checkpoint-2026-10-13/inspect-approved-schedule-README.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-consumer-checkpoint-2026-10-13/inspect-confirm-write-README.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-consumer-checkpoint-2026-10-13/inspect-confirm-write-independent-review.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-consumer-checkpoint-2026-10-13/success-readback/HANDOFF.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-consumer-checkpoint-2026-10-13/write-inspected-schedule-README.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-correctness-2026-10-23/REPORT.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-correctness-2026-10-23/VERIFY.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-correctness-2026-10-23/confirmation-review/REPORT.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-correctness-2026-10-23/confirmation-review/VERIFY.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-correctness-2026-10-23/settled-policy-review/REPORT.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-discovery-observability-2026-10-16/FINAL-STATUS.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-discovery-observability-2026-10-16/HANDOFF.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-discovery-observability-2026-10-16/independent-review.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-input-trace-2026-10-15/RULES-NEXT-STEP.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-input-trace-2026-10-15/TRACE.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-input-trace-2026-10-15/independent-review.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-intraday-periods-2026-10-16/FINAL-STATUS.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-intraday-periods-2026-10-16/HANDOFF.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-intraday-periods-2026-10-16/independent-review.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-mockup-match-2026-10-14/HANDOFF.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-mockup-match-2026-10-14/PAUSE-CHECKPOINT.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-mockup-match-2026-10-14/compiler-correction/independent-acceptance.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-mockup-match-2026-10-14/compiler-final/HANDOFF.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-mockup-match-2026-10-14/independent-review.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-partial-discovery-2026-10-16/FINDINGS.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-partial-discovery-2026-10-16/independent-review.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-participation-transport-2026-10-15/FINAL-STATUS.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-participation-transport-2026-10-15/HANDOFF.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-participation-transport-2026-10-15/independent-review.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-r7-r8-2026-10-20/DESIGN.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-readonly-diagnostic-2026-10-15/FINAL-STATUS.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-readonly-diagnostic-2026-10-15/HANDOFF.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-readonly-diagnostic-2026-10-15/independent-review.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-release-readiness-2026-10-15/ACCEPTANCE.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-release-readiness-2026-10-15/RESUMED-WORKFLOW.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-release-readiness-2026-10-15/RETAINED-PACKETS.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-shared-forecast-refresh-2026-10-15/FINAL-STATUS.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-shared-forecast-refresh-2026-10-15/HANDOFF.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-shared-forecast-refresh-2026-10-15/independent-review-v2.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-shared-forecast-refresh-2026-10-15/independent-review.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-visual-redesign-2026-10-13/HANDOFF.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-visual-redesign-2026-10-13/compiler-fixture-repair/HANDOFF.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-visual-redesign-2026-10-13/compiler-fixture-repair/independent-review.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-visual-redesign-2026-10-13/independent-review.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-visual-redesign-2026-10-13/page-shell-qa/HANDOFF.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-visual-redesign-2026-10-13/page-shell-qa/independent-shell-review.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-visual-redesign-2026-10-13/page-shell-qa/mobile-tabs-recheck/HANDOFF.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-visual-redesign-2026-10-13/review-corrections/HANDOFF.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-visual-redesign-2026-10-13/review-corrections/independent-review.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-weekly-rule-supplement-2026-10-15/FINAL-STATUS.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-weekly-rule-supplement-2026-10-15/HANDOFF.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-weekly-rule-supplement-2026-10-15/independent-review-v2.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-weekly-rule-supplement-2026-10-15/independent-review-v3.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-weekly-rule-supplement-2026-10-15/independent-review.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-weekly-rule-supplement-2026-10-15/rejected-v1-HANDOFF.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/rso-weekly-rule-supplement-2026-10-15/rejected-v2-HANDOFF.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/super-goal-audit-2026-10-17/findings/G5a-forge-model-startchart.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/super-goal-audit-2026-10-17/findings/G5b-forge-dashboards-trends.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-02-current-receipts/BASELINE-MASTER-TASKLIST-2026-10-20.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-02-current-receipts/CANDIDATE-MASTER-TASKLIST-2026-10-20.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-03-contextual-rankings/BASELINE-MASTER-TASKLIST-2026-10-20.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-03-contextual-rankings/CANDIDATE-MASTER-TASKLIST-2026-10-20.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-05-cron-natural/BASELINE-MASTER-TASKLIST-2026-10-20.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-05-cron-natural/CANDIDATE-MASTER-TASKLIST-2026-10-20.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-07-dead-code-contracts/BASELINE-MASTER-TASKLIST-2026-10-20.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-07-dead-code-contracts/CANDIDATE-MASTER-TASKLIST-2026-10-20.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/BASELINE-MASTER-TASKLIST-2026-10-20.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/CANDIDATE-MASTER-TASKLIST-2026-10-20.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/BASELINE-MASTER-TASKLIST-2026-10-20.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/CANDIDATE-MASTER-TASKLIST-2026-10-20.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-10-draft-debug/BASELINE-MASTER-TASKLIST-2026-10-20.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-10-draft-debug/CANDIDATE-MASTER-TASKLIST-2026-10-20.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-11-ranker-contracts/BASELINE-MASTER-TASKLIST-2026-10-20.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-11-ranker-contracts/CANDIDATE-MASTER-TASKLIST-2026-10-20.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-12-forge-command-center/FINDINGS.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-12-forge-command-center/PRIORITIZATION.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-12-forge-command-center/REPORT.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-12-forge-command-center/source-snapshots/21cd27576dc0-EXTRACT-CHEF-REGISTER-2026-10-19.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-12-forge-command-center/source-snapshots/27ab108f4115-G5b-forge-dashboards-trends.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-12-forge-command-center/source-snapshots/3e866cc5a143-tasks-prd-trends.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-12-forge-command-center/source-snapshots/401ac54a9bd9-tasks-forge-dashboard-component-remediation.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-12-forge-command-center/source-snapshots/4458ec505930-EXTRACT-tasks-prd-fhfh-comprehensive-completion-audit-optimization.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-12-forge-command-center/source-snapshots/48636bfa4e23-tasks-prd-forge-ecosystem-pass-4-audit-remediation.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-12-forge-command-center/source-snapshots/5e81ee27988b-DIARY.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-12-forge-command-center/source-snapshots/829345deebcd-EXTRACT-HANDOFF-2026-10-18.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-12-forge-command-center/source-snapshots/89b21a4aba22-forge-dashboard-component-remediation-closeout.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-12-forge-command-center/source-snapshots/91688dbcb8b2-EXTRACT-SPRINT-REGISTER.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-12-forge-command-center/source-snapshots/96e8ee3f4fff-tasks-prd-forge-dashboard-component-health.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-12-forge-command-center/source-snapshots/980e15291033-S-19-command-center-errors.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-12-forge-command-center/source-snapshots/9e0cfd367fc6-forge-command-center-reconciliation-checklist.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-12-forge-command-center/source-snapshots/a9628ebf4f10-tasks-prd-forge-command-center-rebuild.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-12-forge-command-center/source-snapshots/ac0aff5d3b78-CHECKPOINT-DIARY-2026-10-18.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-12-forge-command-center/source-snapshots/b04279f96a09-security-boundary-reconciliation.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-12-forge-command-center/source-snapshots/c32cfde11345-EXTRACT-COMMIT-PLAN-2026-10-18.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-12-forge-command-center/source-snapshots/c69756618b5c-forge-dashboard-component-health-matrix.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-12-forge-command-center/source-snapshots/dbcc5358b6e0-tasks-prd-forge-dashboard.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-12-forge-command-center/source-snapshots/e5d1f7234c45-prd-forge-dashboard-component-health.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-12-forge-command-center/source-snapshots/ee6f435b5a1f-DIARY.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-12-forge-command-center/source-snapshots/f29934462004-prd-forge-command-center-rebuild.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/BASELINE-LEDGER.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/BASELINE-MASTER-TASKLIST-2026-10-20.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/CANDIDATE-LEDGER.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/CANDIDATE-MASTER-TASKLIST-2026-10-20.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/REPORT.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/source-snapshots/035acc6b8851-forge-dashboard-freshness-policy.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/source-snapshots/401ac54a9bd9-tasks-forge-dashboard-component-remediation.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/source-snapshots/4b387ed6ffe2-forge-trends-combo-architecture.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/source-snapshots/5941db83cadb-forge-dashboard-observability-followups.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/source-snapshots/5a28ac3a1541-HANDOFF.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/source-snapshots/5d7a33e87c3a-HANDOFF.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/source-snapshots/644fe30a5cd1-forge-dashboard-component-health-remediation-backlog.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/source-snapshots/743f09fe929c-prd-forge-dashboard.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/source-snapshots/89b21a4aba22-forge-dashboard-component-remediation-closeout.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/source-snapshots/980e15291033-S-19-command-center-errors.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/source-snapshots/b99e7bfde3fd-super-goal-final-summary.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/source-snapshots/c32cfde11345-COMMIT-PLAN-2026-10-18.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/source-snapshots/d89550cc0efe-CODEX-TO-CLAUDE.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/source-snapshots/dbc948491401-REVIEW.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/source-snapshots/dbcc5358b6e0-tasks-prd-forge-dashboard.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/BASELINE-LEDGER.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/BASELINE-MASTER-TASKLIST-2026-10-20.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/CANDIDATE-LEDGER.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/CANDIDATE-MASTER-TASKLIST-2026-10-20.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/RENDER-BEFORE-LEDGER.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/RENDER-BEFORE-MASTER-TASKLIST-2026-10-20.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/REPORT.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/1c5b086e4ade-FORGE_ECOSYSTEM_ELI5_AUDIT.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/1ca6ce016ab2-tasks-forge-projection-audit-streamlining-2026-10-21.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/4f015e185732-FORGE_EXPLAINED.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/52da63113db4-tasks-forge-projection-improvements-2026-10-22.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/9946cdde6b70-VERDICT.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/b27a0139d90a-2026-10-22-claude-forge-model-lane-handover.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/cf55e795365d-tasks-prd-forge-pass-4-living-audit-remediation.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-15-forge-engine-contracts/BASELINE-LEDGER.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-15-forge-engine-contracts/BASELINE-MASTER-TASKLIST-2026-10-20.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-15-forge-engine-contracts/CANDIDATE-LEDGER.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-15-forge-engine-contracts/CANDIDATE-MASTER-TASKLIST-2026-10-20.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-15-forge-engine-contracts/REPORT.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-15-forge-engine-contracts/source-snapshots/1f799bd7fded-tasks-skater-forge.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-15-forge-engine-contracts/source-snapshots/42b41559b156-prd-projection-model.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-15-forge-engine-contracts/source-snapshots/9f445b650d17-tasks-prd-run-forge-projections-modularization.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-15-forge-engine-contracts/source-snapshots/b177dc88ceaf-prd-run-forge-projections-modularization.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-15-forge-engine-contracts/source-snapshots/b4dcc5799054-tasks-prd-forge-prediction-engine-super-task-list.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-15-forge-engine-contracts/source-snapshots/e94e2ae6f458-tasks-prd-projection-model.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-16-sustainability-contracts/BASELINE-MASTER-TASKLIST-2026-10-20.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-16-sustainability-contracts/CANDIDATE-MASTER-TASKLIST-2026-10-20.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-17-sustainability-trends/BASELINE-MASTER-TASKLIST-2026-10-20.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-17-sustainability-trends/CANDIDATE-MASTER-TASKLIST-2026-10-20.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-17-sustainability-trends/source-snapshots/87d80f2f085d-sustainability-forge-bounded-repair-manifest.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-18-goalie-forge/BASELINE-LEDGER.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-18-goalie-forge/BASELINE-MASTER-TASKLIST-2026-10-20.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-18-goalie-forge/CANDIDATE-LEDGER.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-18-goalie-forge/CANDIDATE-MASTER-TASKLIST-2026-10-20.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-18-goalie-forge/REPORT.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-18-goalie-forge/source-snapshots/4983e152de3e-forge-model-release-inventory.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-18-goalie-forge/source-snapshots/6dc10247757f-goalie-forge-operator-runbook.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-18-goalie-forge/source-snapshots/c33a3a7e8e1d-goalie-forge-implementation-plan.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-18-goalie-forge/source-snapshots/c7c9de60578a-tasks-goalie-forge.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-18-goalie-forge/source-snapshots/e1e58da5e8f1-goalie-forge.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-19-start-chart/BASELINE-LEDGER.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-19-start-chart/BASELINE-MASTER-TASKLIST-2026-10-20.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-19-start-chart/CANDIDATE-LEDGER.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-19-start-chart/CANDIDATE-MASTER-TASKLIST-2026-10-20.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-19-start-chart/REPORT.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-19-start-chart/source-snapshots/11e9b55fca23-ctpi-formula-audit-report.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-19-start-chart/source-snapshots/1446518d759a-G5a-forge-model-startchart.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-19-start-chart/source-snapshots/3417e05f47f6-prd-start-chart.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-19-start-chart/source-snapshots/91fb7960dc81-tasks-prd-start-chart.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-19-start-chart/source-snapshots/cf3ee0fd3cf0-prd-start-chart-model.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-19-start-chart/source-snapshots/e409808d5004-tasks-prd-ctpi-formula-audit.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-21-rolling-player-pipeline/BASELINE-MASTER-TASKLIST-2026-10-20.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-21-rolling-player-pipeline/CANDIDATE-MASTER-TASKLIST-2026-10-20.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-21-rolling-player-pipeline/source-snapshots/1ca6ce016ab2-tasks-forge-projection-audit-streamlining-2026-10-21.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-22-ccc-gdl-ingestion/BASELINE-MASTER-TASKLIST-2026-10-20.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-22-ccc-gdl-ingestion/CANDIDATE-MASTER-TASKLIST-2026-10-20.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-23-inseason-trust-clarity/BASELINE-MASTER-TASKLIST-2026-10-20.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-23-inseason-trust-clarity/CANDIDATE-MASTER-TASKLIST-2026-10-20.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-reconciliation-2026-10-24/BASELINE-MASTER-TASKLIST-2026-10-20.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/artifacts/task-artifact-reconciliation-2026-10-24/CANDIDATE-MASTER-TASKLIST-2026-10-20.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/diaries/2026-10-20-claude-forge-f1.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/diaries/2026-10-20-claude-forge-reliability.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/diaries/2026-10-20-claude-rso-ownership-evidence.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/diaries/2026-10-20-claude-rso-r5-r8.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/diaries/2026-10-20-claude-rso-r6.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/diaries/2026-10-21-claude-forge-pipeline-repair.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/diaries/2026-10-21-claude-forge-projection-audit.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/diaries/2026-10-21-claude-forge-streamlining.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/diaries/2026-10-21-claude-rso-drop-chip.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/diaries/2026-10-22-claude-forge-improvements-sprint.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/diaries/2026-10-22-claude-rso-lane.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/diaries/2026-10-22-codex-forge-ledger-lease-review.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/diaries/2026-10-22-codex-forge-skater-candidates.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/diaries/2026-10-22-codex-forge-task1-independent-review.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/diaries/2026-10-22-codex-forge-task2-hydration-physical.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/diaries/2026-10-22-codex-forge-task2-independent-review.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/diaries/2026-10-22-codex-p07-rso-use-policy.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/diaries/2026-10-22-codex-sprint-ledger.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/diaries/2026-10-23-claude-rso-browser-acceptance.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/diaries/2026-10-23-codex-forge-monitoring-checkpoint.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/diaries/2026-10-23-codex-rso-browser-fixture-reconciliation.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/diaries/2026-10-23-codex-rso-correctness.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/diaries/2026-10-24-claude-rso-free-analysis.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/diaries/2026-10-24-codex-forge-rso-release-readiness.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/diaries/2026-10-24-codex-forge-testing-grounds.md",
+    "in_repo": false,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/diaries/2026-10-25-codex-goalie-workload-forge.md",
+    "in_repo": true,
+    "in_archive": true
+  },
+  {
+    "source": "archive",
+    "relative": "tasks/diaries/2026-10-25-codex-goalie-workload-independent-review.md",
+    "in_repo": true,
+    "in_archive": true
+  },
+  {
+    "source": "linked",
+    "relative": "/Users/tim/.codex/worktrees/rso-consolidated-execution/fhfhockey.com/tasks/rso-goal-decisions.md",
+    "in_repo": true,
+    "in_archive": true
+  },
+  {
+    "source": "linked",
+    "relative": "/Users/tim/Documents/Codex/2026-10-12/rso-conditional-lineup-baseline/REPORT.md",
+    "in_repo": true,
+    "in_archive": true
+  },
+  {
+    "source": "linked",
+    "relative": "/Users/tim/Documents/Codex/2026-10-23/task-8/artifacts/derived-exposure/REPORT.md",
+    "in_repo": true,
+    "in_archive": true
+  },
+  {
+    "source": "linked",
+    "relative": "/Users/tim/Downloads/FHFH-RSO-Consolidated-PRD-2026-10-09.md",
+    "in_repo": true,
+    "in_archive": true
+  },
+  {
+    "source": "repo",
+    "relative": "AGENTS.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "docs/player-projections/README.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "docs/player-projections/deep-research-report.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "docs/player-projections/development-evidence-2025-26.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "docs/player-projections/duplicate-retirement-ledger.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "docs/player-projections/existing-system-data-flow.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "docs/player-projections/forge-pp-shot-evidence-packet.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "docs/player-projections/forge-pp-shot-support.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "docs/player-projections/implementation-handoff.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "docs/player-projections/lockbox-evidence-2025-26.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "docs/player-projections/model-inventory.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "docs/player-projections/player-forecasts-capacity-audit-2026-08-04.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "docs/player-projections/player-forecasts-runbook.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "docs/player-projections/project-data-availability.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "docs/player-projections/requirements-traceability.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "docs/player-projections/research-contract-v1.json",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "docs/player-projections/research-contract-v2-validation.json",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "docs/player-projections/research-contract-v3-season.json",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "docs/player-projections/research-contract-v4-season-fantasy.json",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "docs/player-projections/research-contract-v5-season-advanced.json",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "docs/player-projections/season-scoring-model-audit-2026-08-28.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "docs/player-projections/subsystem-decisions.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "docs/player-projections/validation-challenger-evidence-2026-08-04.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "docs/roster-schedule-optimizer.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "docs/start-chart/deep-research.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "docs/start-chart/implementation.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "docs/start-chart/launch-validation.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "mise-en-place.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "modeling/player_forecasts/.pytest_cache/README.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/ARCHIVE-INDEX.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/TASKS/forge-projections/command-center/prd-forge-command-center-rebuild.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/TASKS/forge-projections/command-center/tasks-prd-forge-command-center-rebuild.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/TASKS/forge-projections/context/forge-tables.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/TASKS/forge-projections/context/projection-model-research.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/TASKS/forge-projections/context/projectionTableStructure.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/TASKS/forge-projections/dashboard-health/prd/prd-forge-dashboard-component-health.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/TASKS/forge-projections/dashboard-health/prd/prd-forge-dashboard.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/TASKS/forge-projections/dashboard-health/tasks-forge-dashboard-component-remediation.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/TASKS/forge-projections/dashboard-health/tasks-prd-forge-dashboard-component-health.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/TASKS/forge-projections/dashboard-health/tasks-prd-forge-dashboard.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/TASKS/forge-projections/docs/FORGE_ECOSYSTEM_ELI5_AUDIT.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/TASKS/forge-projections/docs/FORGE_EXPLAINED.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/TASKS/forge-projections/ecosystem-audits/forge-trends-combo-architecture.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/TASKS/forge-projections/ecosystem-audits/prd-forge-pass-4-living-audit-remediation.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/TASKS/forge-projections/ecosystem-audits/prd/prd-forge-ecosystem-pass-3-stabilization-quarantine-dashboard.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/TASKS/forge-projections/ecosystem-audits/prd/prd-forge-ecosystem-pass-4-audit-remediation.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/TASKS/forge-projections/ecosystem-audits/prd/prd-forge-trends-combo-project.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-ecosystem-pass-3-stabilization-quarantine-dashboard.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-ecosystem-pass-4-audit-remediation.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-pass-4-living-audit-remediation.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-trends-combo-project.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/TASKS/forge-projections/prediction-engine/tasks-prd-forge-prediction-engine-super-task-list.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/TASKS/forge-projections/tasks-forge-projection-audit-streamlining-2026-10-21.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/TASKS/forge-projections/v1/docs/goalie-forge-operator-runbook.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/TASKS/forge-projections/v1/goalie-forge.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/TASKS/forge-projections/v1/prd/goalie-forge-implementation-plan.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/TASKS/forge-projections/v1/prd/prd-projection-model.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/TASKS/forge-projections/v1/prd/prd-run-forge-projections-modularization.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/TASKS/forge-projections/v1/prd/prd-start-chart-model.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/TASKS/forge-projections/v1/prd/prd-start-chart.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/TASKS/forge-projections/v1/tasks-goalie-forge.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/TASKS/forge-projections/v1/tasks-prd-run-forge-projections-modularization.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/TASKS/forge-projections/v1/tasks-skater-forge.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/TASKS/prd-forge-testing-grounds.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/TASKS/prd-rso-consolidated-2026-10-09.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/TASKS/prd-rso.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/TASKS/rso-audit-2026-10-08.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/TASKS/rso-compact-layout-amendment-2026-10-09.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/TASKS/rso-implementation-2026-10-08.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/TASKS/three-pillars-analytics/sustainability/sustainability-forge-bounded-repair-manifest.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-pass-2-availability-participation-audit.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/claude-lanes-2026-10-25/DOCS/APPLIED.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/claude-lanes-2026-10-25/DOCS/STALE-POINTERS.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/claude-lanes-2026-10-25/GS/RECEIPT-2.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/claude-lanes-2026-10-25/GS/RECEIPT-3.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/claude-lanes-2026-10-25/GS/RECEIPT-4.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/claude-lanes-2026-10-25/GS/RECEIPT.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/claude-lanes-2026-10-25/HIR/POLICY-3-RESEARCH.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/claude-lanes-2026-10-25/HIR/RECEIPT-2.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/claude-lanes-2026-10-25/HIR/RECEIPT-3.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/claude-lanes-2026-10-25/HIR/RECEIPT-4.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/claude-lanes-2026-10-25/HIR/RECEIPT.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/claude-lanes-2026-10-25/TG/RECEIPT-2.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/claude-lanes-2026-10-25/TG/RECEIPT-3.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/claude-lanes-2026-10-25/TG/RECEIPT-4.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/claude-lanes-2026-10-25/TG/RECEIPT.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/claude-lanes-2026-10-25/TG/STATE-MAP.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/cron-forge-projection-failure-analysis.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/cron-rolling-forge-validation-2026-03-21.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/cross-platform/2026-10-24-coordination/CHEF-SKILL-ALIGNMENT.md",
+    "in_repo": true,
+    "in_archive": true
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/cross-platform/2026-10-24-coordination/CLAUDE-ORCHESTRATOR-PROMPT.md",
+    "in_repo": true,
+    "in_archive": true
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/cross-platform/2026-10-24-coordination/CLAUDE-TO-CODEX.md",
+    "in_repo": true,
+    "in_archive": true
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/cross-platform/2026-10-24-coordination/CODEX-TO-CLAUDE.md",
+    "in_repo": true,
+    "in_archive": true
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/cross-platform/2026-10-24-coordination/COORDINATION-PROTOCOL.md",
+    "in_repo": true,
+    "in_archive": true
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/cross-platform/2026-10-24-coordination/CURRENT-REPO-RECEIPT.md",
+    "in_repo": true,
+    "in_archive": true
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/cross-platform/2026-10-24-coordination/MASTER-RECONCILIATION.md",
+    "in_repo": true,
+    "in_archive": true
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/cross-platform/2026-10-24-coordination/MASTER-UPDATE-2026-10-24.md",
+    "in_repo": true,
+    "in_archive": true
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/cross-platform/2026-10-24-coordination/ORCHESTRATOR-SCOPE-REFERENCE.md",
+    "in_repo": true,
+    "in_archive": true
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/cross-platform/2026-10-24-coordination/QUEST-WORKER-PROMPTS.md",
+    "in_repo": true,
+    "in_archive": true
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/cross-platform/2026-10-24-coordination/README.md",
+    "in_repo": true,
+    "in_archive": true
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/cross-platform/2026-10-24-coordination/SESSION-BRIEFS.md",
+    "in_repo": true,
+    "in_archive": true
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/cross-platform/2026-10-24-coordination/STEER-LOG.md",
+    "in_repo": true,
+    "in_archive": true
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/cross-platform/2026-10-24-coordination/TODAY-PROPOSALS-2026-10-25.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/cross-platform/2026-10-24-coordination/WEB-WORKER-PROMPTS.md",
+    "in_repo": true,
+    "in_archive": true
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.json",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/forge-command-center-reconciliation-checklist.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/forge-dashboard-6-4-remediation-summary.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/forge-dashboard-audit-outcomes.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/forge-dashboard-band-shell-implementation.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/forge-dashboard-band-state-wrappers.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/forge-dashboard-card-taxonomy.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/forge-dashboard-chart-budget-pass.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/forge-dashboard-click-routing-map.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/forge-dashboard-component-audit-procedure.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/forge-dashboard-component-consolidation-plan.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/forge-dashboard-component-evidence-template.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/forge-dashboard-component-health-inventory.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/forge-dashboard-component-health-matrix.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/forge-dashboard-component-health-remediation-backlog.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/forge-dashboard-component-health-scoring-model.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/forge-dashboard-component-purpose-audit.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/forge-dashboard-component-reconciliation-checks.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/forge-dashboard-component-remediation-closeout.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/forge-dashboard-control-surface-implementation.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/forge-dashboard-cron-runtime-health-audit.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/forge-dashboard-data-operator-runbook.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/forge-dashboard-degraded-state-audit.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/forge-dashboard-dependency-matrix.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/forge-dashboard-desktop-qa-checklist.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/forge-dashboard-fantasy-workflow-integration.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/forge-dashboard-freshness-policy.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/forge-dashboard-goalie-band-implementation.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/forge-dashboard-goalie-freshness-ownership.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/forge-dashboard-goalie-health-audit.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/forge-dashboard-goalie-reconciliation.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/forge-dashboard-hot-cold-trend-movement.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/forge-dashboard-launch-gate-6-5.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/forge-dashboard-mobile-tablet-qa-checklist.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/forge-dashboard-module-composition-replacement.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/forge-dashboard-observability-followups.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/forge-dashboard-observability-review.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/forge-dashboard-optimization-audit.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/forge-dashboard-performance-validation.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/forge-dashboard-player-insight-context-adaptation.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/forge-dashboard-player-insight-ownership-band.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/forge-dashboard-player-route-health-audit.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/forge-dashboard-reconciliation-gap-audit.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/forge-dashboard-reliability-audit.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/forge-dashboard-responsive-verification-closeout.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/forge-dashboard-rollout-notes.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/forge-dashboard-route-click-contract.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/forge-dashboard-route-family-health-audit.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/forge-dashboard-route-family-reconciliation.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/forge-dashboard-route-preview-consistency.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/forge-dashboard-route-surface-implementation.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/forge-dashboard-section-blueprint.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/forge-dashboard-signal-explanation-language.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/forge-dashboard-slate-freshness-ownership.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/forge-dashboard-slate-health-audit.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/forge-dashboard-slate-hero-implementation.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/forge-dashboard-slate-reconciliation.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/forge-dashboard-source-surface-audit.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/forge-dashboard-stale-state-policy.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/forge-dashboard-sustainability-freshness-ownership.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/forge-dashboard-sustainability-health-audit.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/forge-dashboard-sustainability-reconciliation.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/forge-dashboard-sustainable-unsustainable-paired-view.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/forge-dashboard-team-context-contract-alignment.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/forge-dashboard-team-context-freshness-ownership.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/forge-dashboard-team-context-health-audit.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/forge-dashboard-team-context-reconciliation.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/forge-dashboard-team-route-health-audit.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/forge-dashboard-team-trend-context-implementation.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/forge-dashboard-top-adds-freshness-ownership.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/forge-dashboard-top-adds-health-audit.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/forge-dashboard-top-adds-ownership-sparkline.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/forge-dashboard-top-adds-rail-implementation.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/forge-dashboard-top-adds-ranking-formula.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/forge-dashboard-top-adds-reconciliation.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/forge-dashboard-top-band-layout-tuning.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/forge-dashboard-trend-movement-freshness-ownership.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/forge-dashboard-trend-movement-health-audit.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/forge-dashboard-trend-movement-reconciliation.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/forge-prediction-operator-runbook.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/forge-projections-modularization-migration-summary.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/forge-projections-parity-report-2026-fixtures.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/goalie-workload-forge-2026-10-25/OWNERSHIP.md",
+    "in_repo": true,
+    "in_archive": true
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/goalie-workload-forge-2026-10-25/REPORT.md",
+    "in_repo": true,
+    "in_archive": true
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/goalie-workload-forge-2026-10-25/acceptance/FINAL.md",
+    "in_repo": true,
+    "in_archive": true
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/goalie-workload-forge-2026-10-25/acceptance/REVIEW-CUSTODY.md",
+    "in_repo": true,
+    "in_archive": true
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/goalie-workload-forge-2026-10-25/acceptance/independent/REVIEW.md",
+    "in_repo": true,
+    "in_archive": true
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/release-rc-2026-10-25/RC-RECEIPT.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/artifacts/rpgm-forge-bible.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/diaries/2026-10-25-claude-hir-healthy-reserves.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/diaries/2026-10-25-codex-goalie-workload-forge.md",
+    "in_repo": true,
+    "in_archive": true
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/diaries/2026-10-25-codex-goalie-workload-independent-review.md",
+    "in_repo": true,
+    "in_archive": true
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/handoff-2026-10-20/CONSOLIDATED-CHECKPOINTS-2026-10-20.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/handoff-2026-10-20/HANDOFF-2026-10-20.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/handoff-2026-10-20/diaries/a01-forge-pipeline-resum.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/handoff-2026-10-20/diaries/calibrate-forge-hit-bloc.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/handoff-2026-10-20/diaries/daily-rso-schedule-refre.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/handoff-2026-10-20/diaries/find-why-forge-projects.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/handoff-2026-10-20/diaries/find-why-forge-skips-reg.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/handoff-2026-10-20/diaries/fix-forge-team-strength.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/handoff-2026-10-20/diaries/fix-stale-forge-readers.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/handoff-2026-10-20/diaries/forge-baseline-v2-prior.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/handoff-2026-10-20/diaries/forge-hits-blocks-recenc.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/handoff-2026-10-20/diaries/forge-v1-fix-native-targ.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/handoff-2026-10-20/diaries/keep-rso-saves-small-as.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/handoff-2026-10-20/diaries/resume-forge-projection.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/handoff-2026-10-20/diaries/review-forge-model-82-ga.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/handoff-2026-10-20/diaries/rso-decision-replay.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/prd-forge-daily-pipeline.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/prd-roster-schedule-optimizer.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/rso-goal-handoff.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/tasks-prd-forge-daily-pipeline.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/tasks-prd-forge-testing-grounds.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/tasks-prd-roster-schedule-optimizer.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/tasks-prd-rso-consolidated-2026-10-09.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/tasks-prd-rso.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/tasks-rso-compact-layout-2026-10-09.md",
+    "in_repo": true,
+    "in_archive": false
+  },
+  {
+    "source": "repo",
+    "relative": "tasks/today-plan-2026-10-25.md",
+    "in_repo": true,
+    "in_archive": false
+  }
+]

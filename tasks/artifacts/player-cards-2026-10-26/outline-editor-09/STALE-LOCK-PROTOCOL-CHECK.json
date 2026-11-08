@@ -1,0 +1,23 @@
+{
+  "at": "2026-10-27T00:57:13.276282+00:00",
+  "lock": "/private/tmp/fhfh-heavy.lock",
+  "inode": 215707084,
+  "sha256": "a9ee8dc706b0d15a62ae6d404ced3fe15037a6ff958f3036b76b7b8c6d517737",
+  "content": "tuesday-rc chef 61075 2026-10-27T00:36:44Z\n",
+  "allRecordedBatchPidsAbsent": [
+    61075,
+    65874,
+    65875,
+    65896
+  ],
+  "previewPid": 45849,
+  "matchedCoordinatorReceipt": true,
+  "protocolSources": [
+    "tasks/artifacts/cross-platform/2026-10-24-coordination/COORDINATION-PROTOCOL.md",
+    "tasks/artifacts/cross-platform/2026-10-24-coordination/CODEX-LEASES.json#shared_resource_coordination.heavy_lock"
+  ],
+  "exactRule": "/private/tmp/fhfh-heavy.lock shared exclusive resource. Release readiness requests one bounded local verification only when free; no lock acquired, removed or stolen by coordinator. Claude must coordinate any heavy check use.",
+  "staleRecoveryAuthorityFound": false,
+  "requiredBoundary": "Claude owner normal release or explicit coordinator/owner stale-lock recovery transfer preserving original evidence. Conditional Scout instruction did not override no-removal rule.",
+  "lockAltered": false
+}

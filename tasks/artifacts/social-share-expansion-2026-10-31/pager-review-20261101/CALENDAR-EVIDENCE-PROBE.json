@@ -1,0 +1,76 @@
+{
+  "generatedAt": "2026-11-01T20:17:14.958Z",
+  "method": "Offline exact fetch helper and actual PeriodControl hook harness. Synthetic auth/session/response fixtures only; bounded timeout wrapper replaced with immediate promise pass-through, so elapsed timeout itself is not tested. No browser or network.",
+  "checks": [
+    {
+      "name": "No session gives no request",
+      "status": "passed"
+    },
+    {
+      "name": "Valid response stays usable and sends bearer/no-store",
+      "status": "passed"
+    },
+    {
+      "name": "HTTP 401 becomes unavailable",
+      "status": "passed"
+    },
+    {
+      "name": "HTTP 403 becomes unavailable",
+      "status": "passed"
+    },
+    {
+      "name": "HTTP 503 becomes unavailable",
+      "status": "passed"
+    },
+    {
+      "name": "Missing cutoff becomes unavailable",
+      "status": "passed"
+    },
+    {
+      "name": "Rejected request becomes unavailable",
+      "status": "passed"
+    },
+    {
+      "name": "Successful empty rows are accepted by fetcher",
+      "status": "passed"
+    },
+    {
+      "name": "Empty calendar is distinct from an unavailable fetch",
+      "status": "passed"
+    }
+  ],
+  "displays": [
+    {
+      "response": "empty",
+      "label": "No matchup week",
+      "alert": false
+    },
+    {
+      "response": "null",
+      "label": "Weeks unavailable",
+      "alert": true
+    },
+    {
+      "response": "populated",
+      "label": "Week 5 · Oct 26 to Nov 1",
+      "alert": false
+    }
+  ],
+  "pins": {
+    "web/lib/socialShare/modules/shared/periodWindow.ts": "715136a861581f45659cd49c1d55ff740179a7abbca6efc1892d4d1ec0c69dda",
+    "web/lib/socialShare/modules/shared/categoryCounts.ts": "92a4e82037e4a793e29f342dbc49d448ccf605b502d0e6152330ba6c36a6e890",
+    "web/lib/socialShare/modules/shared/definitions.ts": "c63abb0c32414dac8a683371b5f48a8e2b9c53d4cb5f612c9144b932e5466f85",
+    "web/lib/rosterScheduleOptimizer/planningDates.ts": "b1d7454aad1238671be337b64120e33f2331ef2f8261e390d52b5ac17d9dd4c8",
+    "web/lib/socialShare/types.ts": "1831ff0bcf344332dcebe07bc42db4e1d0f6d69aa00e15a1a847b95f4fd95a68",
+    "web/lib/socialShare/modules/teamGames.ts": "5a3b0b626fedebb9512ecdc01c7ebaed1d9db494304c44abafec8a55e4a77b80",
+    "web/lib/socialShare/schedule.ts": "f6047772763a790e6a052393debcde0b41e088936f450629c56986952ca2222a",
+    "web/lib/teamsInfo.ts": "645f33ed7272e728b6ac1436754a13126ee25eb2eb6bc598fcefed3acc8e1584",
+    "web/lib/socialShare/modules/contract.ts": "1ddfa1230204268382a11a728c24a81b2d928a72c309635c57ce2699b1a9c4bf",
+    "web/lib/socialShare/modules/shared/goalieInventory.sources.ts": "ed6c69a0b7c711377007b8d3fc7701f34f4be183052cb707dc7715153a680bee",
+    "web/lib/socialShare/modules/shared/goalieInventory.ts": "71f91597d272dad777d01db09d1162e287c052d162c80de7bc9e3137197d14a8",
+    "web/lib/socialShare/modules/shared/goalieLedger.ts": "6c0c05818e858596dd39ee38fb7d9a366a19c23a3021e9c2363a611edc31cdf8",
+    "web/components/SocialShare/PeriodControl.tsx": "27032118dd9863668af0353c6487d416853620858412e7f6e1b8fcb54d00f9d2",
+    "web/lib/socialShare/matchupWeeksFetch.ts": "89e79431e8543f680a25dcf0d141e8e419d262d371441fd5c74a7f157afb4a7f"
+  },
+  "interpretation": "Weeks unavailable identifies a null/unavailable fetch result; successful empty rows instead display No matchup week. Missing auth, HTTP errors, malformed payload and rejected requests collapse to null. Does not attribute the retained real-period render report to any one failure cause."
+}

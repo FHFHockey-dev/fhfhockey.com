@@ -1,0 +1,11 @@
+{
+  "version": "luna-local-export-selection-pins-v1",
+  "files": {
+    "HANDOFF.md": "b5a0a550386ef435cf6f28c46e1bc3ea5cb377e1155a6b2cf4157487a23b04e2",
+    "SELECTION.json": "4505b6264fd8d5fea9f1ba2a0c8be30dd77d6d2f916ea853654f314981836bd6",
+    "VERIFICATION.json": "7802c609c03bf46172bb175cca2c430d4d3855d1f3b773c323e45ff7092206e0"
+  },
+  "previousQualificationManifestSha256": "1bd627f34d7cde67dd1a42637b79c891266ab56235fa681667526774b7802822",
+  "realLedgerSha256": "59723f8818c00c1ce84eb88fc0a5d57cf4458065b9d9996622c962d9f7a9b24a",
+  "diaryExcluded": true
+}

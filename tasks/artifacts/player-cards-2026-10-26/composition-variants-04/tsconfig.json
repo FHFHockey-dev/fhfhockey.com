@@ -1,0 +1,16 @@
+{
+  "extends": "../../../../web/tsconfig.json",
+  "compilerOptions": {
+    "incremental": false
+  },
+  "include": [
+    "../../../../web/next-bootstrap.d.ts",
+    "../../../../web/components/player-cards/*.tsx",
+    "../../../../web/lib/player-cards/shareExport*.ts",
+    "preview-entry.tsx",
+    "../../../../web/lib/player-cards/portraitTreatment*.ts"
+  ],
+  "exclude": [
+    "../../../../web/node_modules"
+  ]
+}

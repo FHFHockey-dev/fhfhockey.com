@@ -1,0 +1,1 @@
+https://api.nhle.com/stats/rest/en/skater/summary?isAggregate=false&isGame=true&start=0&limit=100&cayenneExp=playerId%3D8484287+and+seasonId%3D20222023+and+gameTypeId%3D2

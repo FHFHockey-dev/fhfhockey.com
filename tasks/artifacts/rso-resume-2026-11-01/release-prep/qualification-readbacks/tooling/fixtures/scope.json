@@ -1,0 +1,107 @@
+{
+  "version": "forge-qual-scope-v1",
+  "status": "pinned",
+  "identity": {
+    "target": "SHOTS_ON_GOAL",
+    "method": "fixture-method-v1",
+    "codeVersion": "fixture-sha-0000000",
+    "configurationHash": "fixture-config-1",
+    "artifactHash": "fixture-artifact-1",
+    "horizon": 1
+  },
+  "protocolHash": "49ae034acc864a291393dc27e86cc745697ca83e18cc2f9666508f07db46a4ef",
+  "protocol": {
+    "decisions": "TJ direct pop-ups 2026-10-26 ~00:10Z, recorded in FORGE-QUAL/TJ-DECISIONS-RECORDED.md: D1 sealed block, D2 target and claim, D3 identity, D4 protocol, D5 no review before evidence",
+    "claim": {
+      "startChart": "display",
+      "rsoUses": [
+        "totals",
+        "comparison"
+      ],
+      "deniedRsoUses": [
+        "assignment",
+        "conditionalTieBreak"
+      ]
+    },
+    "sealed": {
+      "from": "2026-10-23",
+      "to": "2026-10-30",
+      "rule": "no issued-row, readback or outcome reads for these dates; never used to choose target, threshold or method"
+    },
+    "population": {
+      "source": "forge_game_revisions rows selected by read_forge_game_revisions, horizon_games = 1, replayClassification captured_live, admitted by both consumers",
+      "games": "canary games of each slate (STARTER_BOARD_CANARY_GAME_IDS)",
+      "rows": "every skater row in those revisions; unconditional, so a skater who does not dress settles at actual 0",
+      "firstSlate": "first slate after 2026-10-30 whose revisions carry this scope's pinned identity",
+      "milestone": {
+        "slates": 14,
+        "minSettledSkaterGames": 500
+      }
+    },
+    "readback": {
+      "timing": "once per slate at T-60 min before the slate's first puck drop",
+      "consumers": [
+        "start_chart",
+        "rso"
+      ],
+      "tolerance": 0.0001
+    },
+    "settlement": {
+      "source": "forge_player_game_strength",
+      "actual": "shots_es + shots_pp + shots_pk (null if any is null)",
+      "readAt": "D+1 12:00 America/New_York",
+      "rules": [
+        "recordedAt after puck drop and after issue",
+        "a later repair is settlement version 2, never an overwrite"
+      ]
+    },
+    "baselines": [
+      {
+        "id": "season_rate",
+        "definition": "player's season-to-date shots per game at cutoffAt, times the issued participation probability",
+        "role": "non-inferiority comparator"
+      },
+      {
+        "id": "previous_release",
+        "definition": "previous released FORGE code version's revisions for the same games, where they exist",
+        "role": "descriptive only"
+      }
+    ],
+    "metrics": {
+      "bias": "mean(predicted - actual) / mean(actual)",
+      "calibrationSlope": "OLS slope of actual on predicted",
+      "deltaMae": "MAE(FORGE) - MAE(season_rate), 95% bootstrap interval clustered by player and game",
+      "integrity": "share of issued rows with a positive readback in both consumers; identity_mismatch and readback_unissued counts"
+    },
+    "thresholds": {
+      "absBiasMax": 0.05,
+      "calibrationSlope": [
+        0.85,
+        1.15
+      ],
+      "deltaMaeUpper95Max": 0.02,
+      "integrityShare": 1,
+      "identityMismatchMax": 0,
+      "readbackUnissuedMax": 0
+    },
+    "looks": [
+      {
+        "afterSlate": 7,
+        "purpose": "stop for harm only",
+        "stopIf": [
+          "absBias > 0.15",
+          "deltaMae lower 95% bound > 0",
+          "any integrity failure"
+        ],
+        "neverDeclaresSuccess": true
+      },
+      {
+        "afterSlate": 14,
+        "purpose": "final decision",
+        "passIf": "all thresholds"
+      }
+    ],
+    "resetRule": "any producer change (codeVersion, configurationHash or artifactHash) ends this scope; a new scope is declared before its first slate",
+    "noTuning": "no method, threshold or population change between looks; failed literal gates are reported beside any owner exception"
+  }
+}

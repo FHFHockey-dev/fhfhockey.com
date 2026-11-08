@@ -1,0 +1,15 @@
+{
+  "check": "concurrency",
+  "command": [
+    "node",
+    "node_modules/vitest/vitest.mjs",
+    "run",
+    "independent-concurrency.test.ts",
+    "--reporter=verbose"
+  ],
+  "cwd": "/tmp/forge-v2-independent-hkh8ulbm/web",
+  "exit": 1,
+  "durationSeconds": 2.720283031463623,
+  "environment": "allowlisted; no inherited credentials; no env files copied",
+  "log": "concurrency.log"
+}

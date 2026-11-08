@@ -1,0 +1,11 @@
+{
+  "processes": [
+    {
+      "pid": 67262,
+      "cwd": "/private/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-rso-first-pass-20261107-rq7qrip0/web",
+      "command": "next-server (v15.5.22)",
+      "signal": "SIGTERM"
+    }
+  ],
+  "portFree": true
+}

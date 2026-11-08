@@ -1,0 +1,2089 @@
+[
+  {
+    "scenario": "all-pass",
+    "records": [
+      {
+        "caseId": "E07",
+        "policy": "luna-exposed-diagnostic-collection-v1",
+        "originalReviewHash": "f0e6efff322a99ad382102a9079ca94866bbe190c99536222d25d9bde765c9d5",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_pass",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "original_grade_pass",
+        "decisionsDisposition": "not_scheduled",
+        "originalPassed": true,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        ],
+        "persisted": true,
+        "diagnosticResultHash": "0863bf13b1c2c48b61dcb74f566a6df5df39f5d11c42454737734bddbecd4d51"
+      },
+      {
+        "caseId": "E08",
+        "policy": "luna-exposed-diagnostic-collection-v1",
+        "originalReviewHash": "17dc19b3d5d6549ea992fd73f6999ad4dd4c51501184d7684e6e04ab56c8f694",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_pass",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "original_grade_pass",
+        "decisionsDisposition": "not_scheduled",
+        "originalPassed": true,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "9d1a891a46a38128e08f272045e5ec9d95a656d413ac5fbb1574e01230c9dec9"
+        ],
+        "persisted": true,
+        "diagnosticResultHash": "d65dfd92be07f43074bd05768ba49d590a29af2128b71f28ceac1184622658c7"
+      },
+      {
+        "caseId": "E09",
+        "policy": "luna-exposed-diagnostic-collection-v1",
+        "originalReviewHash": "dda2da3728bf29ed833eb9ed76589432eb4d035294e2110fa9ca574058a34a56",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "identity_abstention_or_widening_requires_review",
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_pass",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "original_grade_pass",
+        "decisionsDisposition": "not_scheduled",
+        "originalPassed": true,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "fbe771b131918b3cf739b357ce324baaf38dac818b98fc3100b33b6498c7846c"
+        ],
+        "persisted": true,
+        "diagnosticResultHash": "3a1090d6cc871613f269edf299b13a9951e412b2e43dea20c2285ecef1dc44ad"
+      },
+      {
+        "caseId": "E10",
+        "policy": "luna-exposed-diagnostic-collection-v1",
+        "originalReviewHash": "cac00291da065e92f737ae8ef25c2342ac43c710284a58812af908dc79dbdc02",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_pass",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "original_grade_pass",
+        "decisionsDisposition": "completed_and_bound",
+        "originalPassed": true,
+        "calls": 2,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "af1ac22d172d4127a04c08b0b7f2227e59be75059043ee7052802d531b62893d",
+          "6d44c708b3e1173a25d906f2348bd28ac47f20ec262ece430ffda3430754183e"
+        ],
+        "persisted": true,
+        "diagnosticResultHash": "468707c910e1c616dc8f875f3580ed34623c7d687ece749edf0c50ccde38f76d"
+      },
+      {
+        "caseId": "E11",
+        "policy": "luna-exposed-diagnostic-collection-v1",
+        "originalReviewHash": "58dc7b6291bb8e549206ec0e0dc438214306806abe9d7a4f307d5cb927b9632c",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_pass",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "original_grade_pass",
+        "decisionsDisposition": "completed_and_bound",
+        "originalPassed": true,
+        "calls": 2,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "9841ce0f388de9ca206cf22abe7dbd82afb5a3f9500fe6f7a1215e72ad758cba",
+          "5781feae2b9115b7068461d20b8cb0fcb34746baa4cbd2df0b1790702c951740"
+        ],
+        "persisted": true,
+        "diagnosticResultHash": "31b080b0fa4b8812a40c8a9862d3e0a9c849b75ab764dce7a057b8b5c22ce202"
+      },
+      {
+        "caseId": "E12",
+        "policy": "luna-exposed-diagnostic-collection-v1",
+        "originalReviewHash": "a0fde709572c1d26e00f8cf8f0dbe7fefee9e90b8bcf012dd5702e8a42669b57",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_pass",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "original_grade_pass",
+        "decisionsDisposition": "not_scheduled",
+        "originalPassed": true,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "e344741ac77450ec7be9655f6ea7ca57933d26d6b185450ee9df473776a77b2f"
+        ],
+        "persisted": true,
+        "diagnosticResultHash": "b7f2565fe6120af33051de9100c98a4a3e7a2450c5b88c2f26a0d05e130dd588"
+      },
+      {
+        "caseId": "E13",
+        "policy": "luna-exposed-diagnostic-collection-v1",
+        "originalReviewHash": "c48d419a753b01fed3a13a45cb335a989ca9fd95c863b2b6e9d134ba87522f8e",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_pass",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "original_grade_pass",
+        "decisionsDisposition": "not_scheduled",
+        "originalPassed": true,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "7270c5fa8947367d749d52bb2b0917adc03760b9785b59b7fdbb3e9d5955576d"
+        ],
+        "persisted": true,
+        "diagnosticResultHash": "93be2908fdca8efabdb4038190d4d042b9399fff0313460b0f65bef8b8d9cfb1"
+      },
+      {
+        "caseId": "E14",
+        "policy": "luna-exposed-diagnostic-collection-v1",
+        "originalReviewHash": "e0d3d9f926ecfccb35b34770a491f2ddc5e788aaf430175c7f14d3bbdf2f12a8",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_pass",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "original_grade_pass",
+        "decisionsDisposition": "not_scheduled",
+        "originalPassed": true,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "102d9692c07022f282ba3c3c29aed0636aced6adce77164ddb5545a851bccafa"
+        ],
+        "persisted": true,
+        "diagnosticResultHash": "41c92ee4c2f0d1944c79ba813b68f5fec791b813c1881196bdc55cd7b8185176"
+      },
+      {
+        "caseId": "E15",
+        "policy": "luna-exposed-diagnostic-collection-v1",
+        "originalReviewHash": "641d79df9f2daf6355d07cf88060ab21da511bc4040c6d6773039e54e2c1f662",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_pass",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "original_grade_pass",
+        "decisionsDisposition": "not_scheduled",
+        "originalPassed": true,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "06fe01bba0cb4d29d1967fc072951c2ce42cf76dc9059c825b04ea0f728233f2"
+        ],
+        "persisted": true,
+        "diagnosticResultHash": "61cd76f766772fae06bdab081e3031229cc780ad96cf7da36da0423c242b5cef"
+      },
+      {
+        "caseId": "E16",
+        "policy": "luna-exposed-diagnostic-collection-v1",
+        "originalReviewHash": "2684229df0c1221e9ec9e7772c26b50194e585d4f2eb3ccfbf56bea65887c79b",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "identity_abstention_or_widening_requires_review",
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_pass",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "original_grade_pass",
+        "decisionsDisposition": "not_scheduled",
+        "originalPassed": true,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "7308c16d8d1b5c68a6db90c1d4be843203390ba20c5a47c62eb15cecc14cf3b7"
+        ],
+        "persisted": true,
+        "diagnosticResultHash": "7903bf4969c79eb538f421ef1c610b2e78b5e4b457c49f30c7d98fff948867aa"
+      }
+    ]
+  },
+  {
+    "scenario": "identity-label-E07",
+    "records": [
+      {
+        "caseId": "E07",
+        "policy": "luna-exposed-diagnostic-collection-v1",
+        "originalReviewHash": "dc732501e203cfebe77f29f1e7a785de294654abd7d07faebe844754ccab349f",
+        "rawGrade": {
+          "identity": false,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": false
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "identity_abstention_or_widening_requires_review",
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_model_failure",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "frozen_label_mismatch",
+        "decisionsDisposition": "not_scheduled",
+        "originalPassed": false,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        ],
+        "persisted": true,
+        "diagnosticResultHash": "db12f5964f93823375e424b2d67fa8cb8961b6588376ab5ae40e0701421b0483"
+      },
+      {
+        "caseId": "E08",
+        "policy": "luna-exposed-diagnostic-collection-v1",
+        "originalReviewHash": "17dc19b3d5d6549ea992fd73f6999ad4dd4c51501184d7684e6e04ab56c8f694",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_pass",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "original_grade_pass",
+        "decisionsDisposition": "not_scheduled",
+        "originalPassed": true,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "9d1a891a46a38128e08f272045e5ec9d95a656d413ac5fbb1574e01230c9dec9"
+        ],
+        "persisted": true,
+        "diagnosticResultHash": "d65dfd92be07f43074bd05768ba49d590a29af2128b71f28ceac1184622658c7"
+      },
+      {
+        "caseId": "E09",
+        "policy": "luna-exposed-diagnostic-collection-v1",
+        "originalReviewHash": "dda2da3728bf29ed833eb9ed76589432eb4d035294e2110fa9ca574058a34a56",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "identity_abstention_or_widening_requires_review",
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_pass",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "original_grade_pass",
+        "decisionsDisposition": "not_scheduled",
+        "originalPassed": true,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "fbe771b131918b3cf739b357ce324baaf38dac818b98fc3100b33b6498c7846c"
+        ],
+        "persisted": true,
+        "diagnosticResultHash": "3a1090d6cc871613f269edf299b13a9951e412b2e43dea20c2285ecef1dc44ad"
+      },
+      {
+        "caseId": "E10",
+        "policy": "luna-exposed-diagnostic-collection-v1",
+        "originalReviewHash": "cac00291da065e92f737ae8ef25c2342ac43c710284a58812af908dc79dbdc02",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_pass",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "original_grade_pass",
+        "decisionsDisposition": "completed_and_bound",
+        "originalPassed": true,
+        "calls": 2,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "af1ac22d172d4127a04c08b0b7f2227e59be75059043ee7052802d531b62893d",
+          "6d44c708b3e1173a25d906f2348bd28ac47f20ec262ece430ffda3430754183e"
+        ],
+        "persisted": true,
+        "diagnosticResultHash": "468707c910e1c616dc8f875f3580ed34623c7d687ece749edf0c50ccde38f76d"
+      },
+      {
+        "caseId": "E11",
+        "policy": "luna-exposed-diagnostic-collection-v1",
+        "originalReviewHash": "58dc7b6291bb8e549206ec0e0dc438214306806abe9d7a4f307d5cb927b9632c",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_pass",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "original_grade_pass",
+        "decisionsDisposition": "completed_and_bound",
+        "originalPassed": true,
+        "calls": 2,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "9841ce0f388de9ca206cf22abe7dbd82afb5a3f9500fe6f7a1215e72ad758cba",
+          "5781feae2b9115b7068461d20b8cb0fcb34746baa4cbd2df0b1790702c951740"
+        ],
+        "persisted": true,
+        "diagnosticResultHash": "31b080b0fa4b8812a40c8a9862d3e0a9c849b75ab764dce7a057b8b5c22ce202"
+      },
+      {
+        "caseId": "E12",
+        "policy": "luna-exposed-diagnostic-collection-v1",
+        "originalReviewHash": "a0fde709572c1d26e00f8cf8f0dbe7fefee9e90b8bcf012dd5702e8a42669b57",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_pass",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "original_grade_pass",
+        "decisionsDisposition": "not_scheduled",
+        "originalPassed": true,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "e344741ac77450ec7be9655f6ea7ca57933d26d6b185450ee9df473776a77b2f"
+        ],
+        "persisted": true,
+        "diagnosticResultHash": "b7f2565fe6120af33051de9100c98a4a3e7a2450c5b88c2f26a0d05e130dd588"
+      },
+      {
+        "caseId": "E13",
+        "policy": "luna-exposed-diagnostic-collection-v1",
+        "originalReviewHash": "c48d419a753b01fed3a13a45cb335a989ca9fd95c863b2b6e9d134ba87522f8e",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_pass",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "original_grade_pass",
+        "decisionsDisposition": "not_scheduled",
+        "originalPassed": true,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "7270c5fa8947367d749d52bb2b0917adc03760b9785b59b7fdbb3e9d5955576d"
+        ],
+        "persisted": true,
+        "diagnosticResultHash": "93be2908fdca8efabdb4038190d4d042b9399fff0313460b0f65bef8b8d9cfb1"
+      },
+      {
+        "caseId": "E14",
+        "policy": "luna-exposed-diagnostic-collection-v1",
+        "originalReviewHash": "e0d3d9f926ecfccb35b34770a491f2ddc5e788aaf430175c7f14d3bbdf2f12a8",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_pass",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "original_grade_pass",
+        "decisionsDisposition": "not_scheduled",
+        "originalPassed": true,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "102d9692c07022f282ba3c3c29aed0636aced6adce77164ddb5545a851bccafa"
+        ],
+        "persisted": true,
+        "diagnosticResultHash": "41c92ee4c2f0d1944c79ba813b68f5fec791b813c1881196bdc55cd7b8185176"
+      },
+      {
+        "caseId": "E15",
+        "policy": "luna-exposed-diagnostic-collection-v1",
+        "originalReviewHash": "641d79df9f2daf6355d07cf88060ab21da511bc4040c6d6773039e54e2c1f662",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_pass",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "original_grade_pass",
+        "decisionsDisposition": "not_scheduled",
+        "originalPassed": true,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "06fe01bba0cb4d29d1967fc072951c2ce42cf76dc9059c825b04ea0f728233f2"
+        ],
+        "persisted": true,
+        "diagnosticResultHash": "61cd76f766772fae06bdab081e3031229cc780ad96cf7da36da0423c242b5cef"
+      },
+      {
+        "caseId": "E16",
+        "policy": "luna-exposed-diagnostic-collection-v1",
+        "originalReviewHash": "2684229df0c1221e9ec9e7772c26b50194e585d4f2eb3ccfbf56bea65887c79b",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "identity_abstention_or_widening_requires_review",
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_pass",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "original_grade_pass",
+        "decisionsDisposition": "not_scheduled",
+        "originalPassed": true,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "7308c16d8d1b5c68a6db90c1d4be843203390ba20c5a47c62eb15cecc14cf3b7"
+        ],
+        "persisted": true,
+        "diagnosticResultHash": "7903bf4969c79eb538f421ef1c610b2e78b5e4b457c49f30c7d98fff948867aa"
+      }
+    ]
+  },
+  {
+    "scenario": "unsupported-goalie-E07",
+    "records": [
+      {
+        "caseId": "E07",
+        "policy": "luna-exposed-diagnostic-collection-v1",
+        "originalReviewHash": "93b60fd819a14826af0f393abe246d8811c5493e12065548b75126480ae5b456",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": false
+        },
+        "originalStatus": "held",
+        "originalHolds": [
+          "goalie_context_unresolved"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_model_failure",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "goalie_context_unresolved",
+        "decisionsDisposition": "not_scheduled",
+        "originalPassed": false,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        ],
+        "persisted": true,
+        "diagnosticResultHash": "9e4f90cdca4d30908cfcb9937d4bd7ff354b1207e9aedeb3a8bbb2326fafe301"
+      },
+      {
+        "caseId": "E08",
+        "policy": "luna-exposed-diagnostic-collection-v1",
+        "originalReviewHash": "17dc19b3d5d6549ea992fd73f6999ad4dd4c51501184d7684e6e04ab56c8f694",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_pass",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "original_grade_pass",
+        "decisionsDisposition": "not_scheduled",
+        "originalPassed": true,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "9d1a891a46a38128e08f272045e5ec9d95a656d413ac5fbb1574e01230c9dec9"
+        ],
+        "persisted": true,
+        "diagnosticResultHash": "d65dfd92be07f43074bd05768ba49d590a29af2128b71f28ceac1184622658c7"
+      },
+      {
+        "caseId": "E09",
+        "policy": "luna-exposed-diagnostic-collection-v1",
+        "originalReviewHash": "dda2da3728bf29ed833eb9ed76589432eb4d035294e2110fa9ca574058a34a56",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "identity_abstention_or_widening_requires_review",
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_pass",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "original_grade_pass",
+        "decisionsDisposition": "not_scheduled",
+        "originalPassed": true,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "fbe771b131918b3cf739b357ce324baaf38dac818b98fc3100b33b6498c7846c"
+        ],
+        "persisted": true,
+        "diagnosticResultHash": "3a1090d6cc871613f269edf299b13a9951e412b2e43dea20c2285ecef1dc44ad"
+      },
+      {
+        "caseId": "E10",
+        "policy": "luna-exposed-diagnostic-collection-v1",
+        "originalReviewHash": "cac00291da065e92f737ae8ef25c2342ac43c710284a58812af908dc79dbdc02",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_pass",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "original_grade_pass",
+        "decisionsDisposition": "completed_and_bound",
+        "originalPassed": true,
+        "calls": 2,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "af1ac22d172d4127a04c08b0b7f2227e59be75059043ee7052802d531b62893d",
+          "6d44c708b3e1173a25d906f2348bd28ac47f20ec262ece430ffda3430754183e"
+        ],
+        "persisted": true,
+        "diagnosticResultHash": "468707c910e1c616dc8f875f3580ed34623c7d687ece749edf0c50ccde38f76d"
+      },
+      {
+        "caseId": "E11",
+        "policy": "luna-exposed-diagnostic-collection-v1",
+        "originalReviewHash": "58dc7b6291bb8e549206ec0e0dc438214306806abe9d7a4f307d5cb927b9632c",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_pass",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "original_grade_pass",
+        "decisionsDisposition": "completed_and_bound",
+        "originalPassed": true,
+        "calls": 2,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "9841ce0f388de9ca206cf22abe7dbd82afb5a3f9500fe6f7a1215e72ad758cba",
+          "5781feae2b9115b7068461d20b8cb0fcb34746baa4cbd2df0b1790702c951740"
+        ],
+        "persisted": true,
+        "diagnosticResultHash": "31b080b0fa4b8812a40c8a9862d3e0a9c849b75ab764dce7a057b8b5c22ce202"
+      },
+      {
+        "caseId": "E12",
+        "policy": "luna-exposed-diagnostic-collection-v1",
+        "originalReviewHash": "a0fde709572c1d26e00f8cf8f0dbe7fefee9e90b8bcf012dd5702e8a42669b57",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_pass",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "original_grade_pass",
+        "decisionsDisposition": "not_scheduled",
+        "originalPassed": true,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "e344741ac77450ec7be9655f6ea7ca57933d26d6b185450ee9df473776a77b2f"
+        ],
+        "persisted": true,
+        "diagnosticResultHash": "b7f2565fe6120af33051de9100c98a4a3e7a2450c5b88c2f26a0d05e130dd588"
+      },
+      {
+        "caseId": "E13",
+        "policy": "luna-exposed-diagnostic-collection-v1",
+        "originalReviewHash": "c48d419a753b01fed3a13a45cb335a989ca9fd95c863b2b6e9d134ba87522f8e",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_pass",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "original_grade_pass",
+        "decisionsDisposition": "not_scheduled",
+        "originalPassed": true,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "7270c5fa8947367d749d52bb2b0917adc03760b9785b59b7fdbb3e9d5955576d"
+        ],
+        "persisted": true,
+        "diagnosticResultHash": "93be2908fdca8efabdb4038190d4d042b9399fff0313460b0f65bef8b8d9cfb1"
+      },
+      {
+        "caseId": "E14",
+        "policy": "luna-exposed-diagnostic-collection-v1",
+        "originalReviewHash": "e0d3d9f926ecfccb35b34770a491f2ddc5e788aaf430175c7f14d3bbdf2f12a8",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_pass",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "original_grade_pass",
+        "decisionsDisposition": "not_scheduled",
+        "originalPassed": true,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "102d9692c07022f282ba3c3c29aed0636aced6adce77164ddb5545a851bccafa"
+        ],
+        "persisted": true,
+        "diagnosticResultHash": "41c92ee4c2f0d1944c79ba813b68f5fec791b813c1881196bdc55cd7b8185176"
+      },
+      {
+        "caseId": "E15",
+        "policy": "luna-exposed-diagnostic-collection-v1",
+        "originalReviewHash": "641d79df9f2daf6355d07cf88060ab21da511bc4040c6d6773039e54e2c1f662",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_pass",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "original_grade_pass",
+        "decisionsDisposition": "not_scheduled",
+        "originalPassed": true,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "06fe01bba0cb4d29d1967fc072951c2ce42cf76dc9059c825b04ea0f728233f2"
+        ],
+        "persisted": true,
+        "diagnosticResultHash": "61cd76f766772fae06bdab081e3031229cc780ad96cf7da36da0423c242b5cef"
+      },
+      {
+        "caseId": "E16",
+        "policy": "luna-exposed-diagnostic-collection-v1",
+        "originalReviewHash": "2684229df0c1221e9ec9e7772c26b50194e585d4f2eb3ccfbf56bea65887c79b",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "identity_abstention_or_widening_requires_review",
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_pass",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "original_grade_pass",
+        "decisionsDisposition": "not_scheduled",
+        "originalPassed": true,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "7308c16d8d1b5c68a6db90c1d4be843203390ba20c5a47c62eb15cecc14cf3b7"
+        ],
+        "persisted": true,
+        "diagnosticResultHash": "7903bf4969c79eb538f421ef1c610b2e78b5e4b457c49f30c7d98fff948867aa"
+      }
+    ]
+  },
+  {
+    "scenario": "decision-label-E10",
+    "records": [
+      {
+        "caseId": "E07",
+        "policy": "luna-exposed-diagnostic-collection-v1",
+        "originalReviewHash": "f0e6efff322a99ad382102a9079ca94866bbe190c99536222d25d9bde765c9d5",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_pass",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "original_grade_pass",
+        "decisionsDisposition": "not_scheduled",
+        "originalPassed": true,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        ],
+        "persisted": true,
+        "diagnosticResultHash": "0863bf13b1c2c48b61dcb74f566a6df5df39f5d11c42454737734bddbecd4d51"
+      },
+      {
+        "caseId": "E08",
+        "policy": "luna-exposed-diagnostic-collection-v1",
+        "originalReviewHash": "17dc19b3d5d6549ea992fd73f6999ad4dd4c51501184d7684e6e04ab56c8f694",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_pass",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "original_grade_pass",
+        "decisionsDisposition": "not_scheduled",
+        "originalPassed": true,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "9d1a891a46a38128e08f272045e5ec9d95a656d413ac5fbb1574e01230c9dec9"
+        ],
+        "persisted": true,
+        "diagnosticResultHash": "d65dfd92be07f43074bd05768ba49d590a29af2128b71f28ceac1184622658c7"
+      },
+      {
+        "caseId": "E09",
+        "policy": "luna-exposed-diagnostic-collection-v1",
+        "originalReviewHash": "dda2da3728bf29ed833eb9ed76589432eb4d035294e2110fa9ca574058a34a56",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "identity_abstention_or_widening_requires_review",
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_pass",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "original_grade_pass",
+        "decisionsDisposition": "not_scheduled",
+        "originalPassed": true,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "fbe771b131918b3cf739b357ce324baaf38dac818b98fc3100b33b6498c7846c"
+        ],
+        "persisted": true,
+        "diagnosticResultHash": "3a1090d6cc871613f269edf299b13a9951e412b2e43dea20c2285ecef1dc44ad"
+      },
+      {
+        "caseId": "E10",
+        "policy": "luna-exposed-diagnostic-collection-v1",
+        "originalReviewHash": "6857c6e6f3b4d97ddd763efbc2f19131c8dbf3ce79664e9f53a442f79bcb22be",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": false,
+          "labelMatch": false
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_model_failure",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "frozen_label_mismatch",
+        "decisionsDisposition": "completed_and_bound",
+        "originalPassed": false,
+        "calls": 2,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "af1ac22d172d4127a04c08b0b7f2227e59be75059043ee7052802d531b62893d",
+          "6d44c708b3e1173a25d906f2348bd28ac47f20ec262ece430ffda3430754183e"
+        ],
+        "persisted": true,
+        "diagnosticResultHash": "4c546fe7a9d091be8f879d8912260c0129b738394d37e173c9f9d48451d23e2a"
+      },
+      {
+        "caseId": "E11",
+        "policy": "luna-exposed-diagnostic-collection-v1",
+        "originalReviewHash": "58dc7b6291bb8e549206ec0e0dc438214306806abe9d7a4f307d5cb927b9632c",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_pass",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "original_grade_pass",
+        "decisionsDisposition": "completed_and_bound",
+        "originalPassed": true,
+        "calls": 2,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "9841ce0f388de9ca206cf22abe7dbd82afb5a3f9500fe6f7a1215e72ad758cba",
+          "5781feae2b9115b7068461d20b8cb0fcb34746baa4cbd2df0b1790702c951740"
+        ],
+        "persisted": true,
+        "diagnosticResultHash": "31b080b0fa4b8812a40c8a9862d3e0a9c849b75ab764dce7a057b8b5c22ce202"
+      },
+      {
+        "caseId": "E12",
+        "policy": "luna-exposed-diagnostic-collection-v1",
+        "originalReviewHash": "a0fde709572c1d26e00f8cf8f0dbe7fefee9e90b8bcf012dd5702e8a42669b57",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_pass",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "original_grade_pass",
+        "decisionsDisposition": "not_scheduled",
+        "originalPassed": true,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "e344741ac77450ec7be9655f6ea7ca57933d26d6b185450ee9df473776a77b2f"
+        ],
+        "persisted": true,
+        "diagnosticResultHash": "b7f2565fe6120af33051de9100c98a4a3e7a2450c5b88c2f26a0d05e130dd588"
+      },
+      {
+        "caseId": "E13",
+        "policy": "luna-exposed-diagnostic-collection-v1",
+        "originalReviewHash": "c48d419a753b01fed3a13a45cb335a989ca9fd95c863b2b6e9d134ba87522f8e",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_pass",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "original_grade_pass",
+        "decisionsDisposition": "not_scheduled",
+        "originalPassed": true,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "7270c5fa8947367d749d52bb2b0917adc03760b9785b59b7fdbb3e9d5955576d"
+        ],
+        "persisted": true,
+        "diagnosticResultHash": "93be2908fdca8efabdb4038190d4d042b9399fff0313460b0f65bef8b8d9cfb1"
+      },
+      {
+        "caseId": "E14",
+        "policy": "luna-exposed-diagnostic-collection-v1",
+        "originalReviewHash": "e0d3d9f926ecfccb35b34770a491f2ddc5e788aaf430175c7f14d3bbdf2f12a8",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_pass",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "original_grade_pass",
+        "decisionsDisposition": "not_scheduled",
+        "originalPassed": true,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "102d9692c07022f282ba3c3c29aed0636aced6adce77164ddb5545a851bccafa"
+        ],
+        "persisted": true,
+        "diagnosticResultHash": "41c92ee4c2f0d1944c79ba813b68f5fec791b813c1881196bdc55cd7b8185176"
+      },
+      {
+        "caseId": "E15",
+        "policy": "luna-exposed-diagnostic-collection-v1",
+        "originalReviewHash": "641d79df9f2daf6355d07cf88060ab21da511bc4040c6d6773039e54e2c1f662",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_pass",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "original_grade_pass",
+        "decisionsDisposition": "not_scheduled",
+        "originalPassed": true,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "06fe01bba0cb4d29d1967fc072951c2ce42cf76dc9059c825b04ea0f728233f2"
+        ],
+        "persisted": true,
+        "diagnosticResultHash": "61cd76f766772fae06bdab081e3031229cc780ad96cf7da36da0423c242b5cef"
+      },
+      {
+        "caseId": "E16",
+        "policy": "luna-exposed-diagnostic-collection-v1",
+        "originalReviewHash": "2684229df0c1221e9ec9e7772c26b50194e585d4f2eb3ccfbf56bea65887c79b",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "identity_abstention_or_widening_requires_review",
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_pass",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "original_grade_pass",
+        "decisionsDisposition": "not_scheduled",
+        "originalPassed": true,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "7308c16d8d1b5c68a6db90c1d4be843203390ba20c5a47c62eb15cecc14cf3b7"
+        ],
+        "persisted": true,
+        "diagnosticResultHash": "7903bf4969c79eb538f421ef1c610b2e78b5e4b457c49f30c7d98fff948867aa"
+      }
+    ]
+  },
+  {
+    "scenario": "offset-E10",
+    "records": [
+      {
+        "caseId": "E07",
+        "policy": "luna-exposed-diagnostic-collection-v1",
+        "originalReviewHash": "f0e6efff322a99ad382102a9079ca94866bbe190c99536222d25d9bde765c9d5",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_pass",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "original_grade_pass",
+        "decisionsDisposition": "not_scheduled",
+        "originalPassed": true,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        ],
+        "persisted": true,
+        "diagnosticResultHash": "0863bf13b1c2c48b61dcb74f566a6df5df39f5d11c42454737734bddbecd4d51"
+      },
+      {
+        "caseId": "E08",
+        "policy": "luna-exposed-diagnostic-collection-v1",
+        "originalReviewHash": "17dc19b3d5d6549ea992fd73f6999ad4dd4c51501184d7684e6e04ab56c8f694",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_pass",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "original_grade_pass",
+        "decisionsDisposition": "not_scheduled",
+        "originalPassed": true,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "9d1a891a46a38128e08f272045e5ec9d95a656d413ac5fbb1574e01230c9dec9"
+        ],
+        "persisted": true,
+        "diagnosticResultHash": "d65dfd92be07f43074bd05768ba49d590a29af2128b71f28ceac1184622658c7"
+      },
+      {
+        "caseId": "E09",
+        "policy": "luna-exposed-diagnostic-collection-v1",
+        "originalReviewHash": "dda2da3728bf29ed833eb9ed76589432eb4d035294e2110fa9ca574058a34a56",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "identity_abstention_or_widening_requires_review",
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_pass",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "original_grade_pass",
+        "decisionsDisposition": "not_scheduled",
+        "originalPassed": true,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "fbe771b131918b3cf739b357ce324baaf38dac818b98fc3100b33b6498c7846c"
+        ],
+        "persisted": true,
+        "diagnosticResultHash": "3a1090d6cc871613f269edf299b13a9951e412b2e43dea20c2285ecef1dc44ad"
+      },
+      {
+        "caseId": "E10",
+        "policy": "luna-exposed-diagnostic-collection-v1",
+        "originalReviewHash": "97983f887f68e767bd72bfbf7c20b44b687590522dfcb2eabd5da0020792e00a",
+        "rawGrade": {
+          "identity": true,
+          "goalie": false,
+          "decisions": false,
+          "labelMatch": false
+        },
+        "originalStatus": "held",
+        "originalHolds": [
+          "goalie_subject_binding_invalid"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_model_failure",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "goalie_subject_binding_invalid",
+        "decisionsDisposition": "not_run_original_responses_held",
+        "originalPassed": false,
+        "calls": 1,
+        "candidateHash": "ab92ddc043aa247a40b80dde661b1fc756685682ef72215911179148a2f8cf46",
+        "candidateStatus": "candidate_for_human_review",
+        "candidateApplied": false,
+        "requestHashes": [
+          "af1ac22d172d4127a04c08b0b7f2227e59be75059043ee7052802d531b62893d"
+        ],
+        "persisted": true,
+        "diagnosticResultHash": "ffca8e47c0ed47598684dceda70b8f5e5c6dc542c9589f9a759ba483c7c17ca4"
+      },
+      {
+        "caseId": "E11",
+        "policy": "luna-exposed-diagnostic-collection-v1",
+        "originalReviewHash": "58dc7b6291bb8e549206ec0e0dc438214306806abe9d7a4f307d5cb927b9632c",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_pass",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "original_grade_pass",
+        "decisionsDisposition": "completed_and_bound",
+        "originalPassed": true,
+        "calls": 2,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "9841ce0f388de9ca206cf22abe7dbd82afb5a3f9500fe6f7a1215e72ad758cba",
+          "5781feae2b9115b7068461d20b8cb0fcb34746baa4cbd2df0b1790702c951740"
+        ],
+        "persisted": true,
+        "diagnosticResultHash": "31b080b0fa4b8812a40c8a9862d3e0a9c849b75ab764dce7a057b8b5c22ce202"
+      },
+      {
+        "caseId": "E12",
+        "policy": "luna-exposed-diagnostic-collection-v1",
+        "originalReviewHash": "a0fde709572c1d26e00f8cf8f0dbe7fefee9e90b8bcf012dd5702e8a42669b57",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_pass",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "original_grade_pass",
+        "decisionsDisposition": "not_scheduled",
+        "originalPassed": true,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "e344741ac77450ec7be9655f6ea7ca57933d26d6b185450ee9df473776a77b2f"
+        ],
+        "persisted": true,
+        "diagnosticResultHash": "b7f2565fe6120af33051de9100c98a4a3e7a2450c5b88c2f26a0d05e130dd588"
+      },
+      {
+        "caseId": "E13",
+        "policy": "luna-exposed-diagnostic-collection-v1",
+        "originalReviewHash": "c48d419a753b01fed3a13a45cb335a989ca9fd95c863b2b6e9d134ba87522f8e",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_pass",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "original_grade_pass",
+        "decisionsDisposition": "not_scheduled",
+        "originalPassed": true,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "7270c5fa8947367d749d52bb2b0917adc03760b9785b59b7fdbb3e9d5955576d"
+        ],
+        "persisted": true,
+        "diagnosticResultHash": "93be2908fdca8efabdb4038190d4d042b9399fff0313460b0f65bef8b8d9cfb1"
+      },
+      {
+        "caseId": "E14",
+        "policy": "luna-exposed-diagnostic-collection-v1",
+        "originalReviewHash": "e0d3d9f926ecfccb35b34770a491f2ddc5e788aaf430175c7f14d3bbdf2f12a8",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_pass",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "original_grade_pass",
+        "decisionsDisposition": "not_scheduled",
+        "originalPassed": true,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "102d9692c07022f282ba3c3c29aed0636aced6adce77164ddb5545a851bccafa"
+        ],
+        "persisted": true,
+        "diagnosticResultHash": "41c92ee4c2f0d1944c79ba813b68f5fec791b813c1881196bdc55cd7b8185176"
+      },
+      {
+        "caseId": "E15",
+        "policy": "luna-exposed-diagnostic-collection-v1",
+        "originalReviewHash": "641d79df9f2daf6355d07cf88060ab21da511bc4040c6d6773039e54e2c1f662",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_pass",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "original_grade_pass",
+        "decisionsDisposition": "not_scheduled",
+        "originalPassed": true,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "06fe01bba0cb4d29d1967fc072951c2ce42cf76dc9059c825b04ea0f728233f2"
+        ],
+        "persisted": true,
+        "diagnosticResultHash": "61cd76f766772fae06bdab081e3031229cc780ad96cf7da36da0423c242b5cef"
+      },
+      {
+        "caseId": "E16",
+        "policy": "luna-exposed-diagnostic-collection-v1",
+        "originalReviewHash": "2684229df0c1221e9ec9e7772c26b50194e585d4f2eb3ccfbf56bea65887c79b",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "identity_abstention_or_widening_requires_review",
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_pass",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "original_grade_pass",
+        "decisionsDisposition": "not_scheduled",
+        "originalPassed": true,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "7308c16d8d1b5c68a6db90c1d4be843203390ba20c5a47c62eb15cecc14cf3b7"
+        ],
+        "persisted": true,
+        "diagnosticResultHash": "7903bf4969c79eb538f421ef1c610b2e78b5e4b457c49f30c7d98fff948867aa"
+      }
+    ]
+  },
+  {
+    "scenario": "three-offsets",
+    "records": [
+      {
+        "caseId": "E07",
+        "policy": "luna-exposed-diagnostic-collection-v1",
+        "originalReviewHash": "f0e6efff322a99ad382102a9079ca94866bbe190c99536222d25d9bde765c9d5",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_pass",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "original_grade_pass",
+        "decisionsDisposition": "not_scheduled",
+        "originalPassed": true,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6"
+        ],
+        "persisted": true,
+        "diagnosticResultHash": "0863bf13b1c2c48b61dcb74f566a6df5df39f5d11c42454737734bddbecd4d51"
+      },
+      {
+        "caseId": "E08",
+        "policy": "luna-exposed-diagnostic-collection-v1",
+        "originalReviewHash": "17dc19b3d5d6549ea992fd73f6999ad4dd4c51501184d7684e6e04ab56c8f694",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_pass",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "original_grade_pass",
+        "decisionsDisposition": "not_scheduled",
+        "originalPassed": true,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "9d1a891a46a38128e08f272045e5ec9d95a656d413ac5fbb1574e01230c9dec9"
+        ],
+        "persisted": true,
+        "diagnosticResultHash": "d65dfd92be07f43074bd05768ba49d590a29af2128b71f28ceac1184622658c7"
+      },
+      {
+        "caseId": "E09",
+        "policy": "luna-exposed-diagnostic-collection-v1",
+        "originalReviewHash": "dda2da3728bf29ed833eb9ed76589432eb4d035294e2110fa9ca574058a34a56",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "identity_abstention_or_widening_requires_review",
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_pass",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "original_grade_pass",
+        "decisionsDisposition": "not_scheduled",
+        "originalPassed": true,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "fbe771b131918b3cf739b357ce324baaf38dac818b98fc3100b33b6498c7846c"
+        ],
+        "persisted": true,
+        "diagnosticResultHash": "3a1090d6cc871613f269edf299b13a9951e412b2e43dea20c2285ecef1dc44ad"
+      },
+      {
+        "caseId": "E10",
+        "policy": "luna-exposed-diagnostic-collection-v1",
+        "originalReviewHash": "97983f887f68e767bd72bfbf7c20b44b687590522dfcb2eabd5da0020792e00a",
+        "rawGrade": {
+          "identity": true,
+          "goalie": false,
+          "decisions": false,
+          "labelMatch": false
+        },
+        "originalStatus": "held",
+        "originalHolds": [
+          "goalie_subject_binding_invalid"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_model_failure",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "goalie_subject_binding_invalid",
+        "decisionsDisposition": "not_run_original_responses_held",
+        "originalPassed": false,
+        "calls": 1,
+        "candidateHash": "ab92ddc043aa247a40b80dde661b1fc756685682ef72215911179148a2f8cf46",
+        "candidateStatus": "candidate_for_human_review",
+        "candidateApplied": false,
+        "requestHashes": [
+          "af1ac22d172d4127a04c08b0b7f2227e59be75059043ee7052802d531b62893d"
+        ],
+        "persisted": true,
+        "diagnosticResultHash": "ffca8e47c0ed47598684dceda70b8f5e5c6dc542c9589f9a759ba483c7c17ca4"
+      },
+      {
+        "caseId": "E11",
+        "policy": "luna-exposed-diagnostic-collection-v1",
+        "originalReviewHash": "0d59a85b3c584428bb5b6476998f8066a4a023487ab78c826fdf2a862338dd1e",
+        "rawGrade": {
+          "identity": true,
+          "goalie": false,
+          "decisions": false,
+          "labelMatch": false
+        },
+        "originalStatus": "held",
+        "originalHolds": [
+          "goalie_subject_binding_invalid"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_model_failure",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "goalie_subject_binding_invalid",
+        "decisionsDisposition": "not_run_original_responses_held",
+        "originalPassed": false,
+        "calls": 1,
+        "candidateHash": "20539564097b7184b91c3129d8476593a9f25285978c0cb66201f2671c8cc3ec",
+        "candidateStatus": "candidate_for_human_review",
+        "candidateApplied": false,
+        "requestHashes": [
+          "9841ce0f388de9ca206cf22abe7dbd82afb5a3f9500fe6f7a1215e72ad758cba"
+        ],
+        "persisted": true,
+        "diagnosticResultHash": "332c39fe11ab089dd137edb0b0b24b057036fa8d855222b38fe937ff66f655c9"
+      },
+      {
+        "caseId": "E12",
+        "policy": "luna-exposed-diagnostic-collection-v1",
+        "originalReviewHash": "a0fde709572c1d26e00f8cf8f0dbe7fefee9e90b8bcf012dd5702e8a42669b57",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_pass",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "original_grade_pass",
+        "decisionsDisposition": "not_scheduled",
+        "originalPassed": true,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "e344741ac77450ec7be9655f6ea7ca57933d26d6b185450ee9df473776a77b2f"
+        ],
+        "persisted": true,
+        "diagnosticResultHash": "b7f2565fe6120af33051de9100c98a4a3e7a2450c5b88c2f26a0d05e130dd588"
+      },
+      {
+        "caseId": "E13",
+        "policy": "luna-exposed-diagnostic-collection-v1",
+        "originalReviewHash": "c48d419a753b01fed3a13a45cb335a989ca9fd95c863b2b6e9d134ba87522f8e",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_pass",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "original_grade_pass",
+        "decisionsDisposition": "not_scheduled",
+        "originalPassed": true,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "7270c5fa8947367d749d52bb2b0917adc03760b9785b59b7fdbb3e9d5955576d"
+        ],
+        "persisted": true,
+        "diagnosticResultHash": "93be2908fdca8efabdb4038190d4d042b9399fff0313460b0f65bef8b8d9cfb1"
+      },
+      {
+        "caseId": "E14",
+        "policy": "luna-exposed-diagnostic-collection-v1",
+        "originalReviewHash": "e0d3d9f926ecfccb35b34770a491f2ddc5e788aaf430175c7f14d3bbdf2f12a8",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_pass",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "original_grade_pass",
+        "decisionsDisposition": "not_scheduled",
+        "originalPassed": true,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "102d9692c07022f282ba3c3c29aed0636aced6adce77164ddb5545a851bccafa"
+        ],
+        "persisted": true,
+        "diagnosticResultHash": "41c92ee4c2f0d1944c79ba813b68f5fec791b813c1881196bdc55cd7b8185176"
+      },
+      {
+        "caseId": "E15",
+        "policy": "luna-exposed-diagnostic-collection-v1",
+        "originalReviewHash": "ec917b58e74164ce00023c23ccfa282ccd08353b064aba422c59762fac046688",
+        "rawGrade": {
+          "identity": true,
+          "goalie": false,
+          "decisions": true,
+          "labelMatch": false
+        },
+        "originalStatus": "held",
+        "originalHolds": [
+          "goalie_subject_binding_invalid"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_model_failure",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "goalie_subject_binding_invalid",
+        "decisionsDisposition": "not_scheduled",
+        "originalPassed": false,
+        "calls": 1,
+        "candidateHash": "16c6a938ea6ad1a9514e62c85ad06c137903d027f06209316f34ec838707e9a0",
+        "candidateStatus": "candidate_for_human_review",
+        "candidateApplied": false,
+        "requestHashes": [
+          "06fe01bba0cb4d29d1967fc072951c2ce42cf76dc9059c825b04ea0f728233f2"
+        ],
+        "persisted": true,
+        "diagnosticResultHash": "d7630754e5cdf0548f58922bec3e4a221fc22cebdafd8167cf96bb6fa9296e67"
+      },
+      {
+        "caseId": "E16",
+        "policy": "luna-exposed-diagnostic-collection-v1",
+        "originalReviewHash": "2684229df0c1221e9ec9e7772c26b50194e585d4f2eb3ccfbf56bea65887c79b",
+        "rawGrade": {
+          "identity": true,
+          "goalie": true,
+          "decisions": true,
+          "labelMatch": true
+        },
+        "originalStatus": "review_only",
+        "originalHolds": [
+          "identity_abstention_or_widening_requires_review",
+          "human_review_required",
+          "no_publication_authority"
+        ],
+        "canPublish": false,
+        "canApply": false,
+        "canChangeStatus": false,
+        "candidateUsedForGradeOrAdvance": false,
+        "outcome": "recorded_pass",
+        "mayAdvanceDiagnosticSequence": true,
+        "reason": "original_grade_pass",
+        "decisionsDisposition": "not_scheduled",
+        "originalPassed": true,
+        "calls": 1,
+        "candidateHash": null,
+        "candidateStatus": "not_eligible",
+        "candidateApplied": false,
+        "requestHashes": [
+          "7308c16d8d1b5c68a6db90c1d4be843203390ba20c5a47c62eb15cecc14cf3b7"
+        ],
+        "persisted": true,
+        "diagnosticResultHash": "7903bf4969c79eb538f421ef1c610b2e78b5e4b457c49f30c7d98fff948867aa"
+      }
+    ]
+  }
+]

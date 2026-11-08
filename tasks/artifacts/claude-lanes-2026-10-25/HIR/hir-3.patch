@@ -1,0 +1,147 @@
+diff --git a/web/components/RosterScheduleOptimizer/HealthyReserveAlert.test.tsx b/web/components/RosterScheduleOptimizer/HealthyReserveAlert.test.tsx
+index 96e3c86d1..44e052daa 100644
+--- a/web/components/RosterScheduleOptimizer/HealthyReserveAlert.test.tsx
++++ b/web/components/RosterScheduleOptimizer/HealthyReserveAlert.test.tsx
+@@ -46,12 +46,16 @@ describe("Healthy reserve alert", () => {
+     expect(screen.getByText("Only one can be activated: best is Fresh Legs (+10 pts).")).toBeTruthy();
+     const g = { playerId: "g", position: "IR" as const, slotEligible: true, activation: { swapPlayerId: "e", projectedPoints: null, activeGames: null } };
+     rerender(<HealthyReserveAlert nameOf={nameOf} reserves={[f, g, d]} />);
+-    expect(screen.getByText("Only 2 can be activated: best are Fresh Legs (+10 pts) and Third Man.")).toBeTruthy();
++    expect(screen.getByText("Can be activated: Fresh Legs (+10 pts) and Third Man.")).toBeTruthy();
++    expect(screen.queryByText(/best/)).toBeNull();
+     expect(screen.getByText("Gain unknown until the lineup passes the rule check")).toBeTruthy();
++    const h = { ...g, activation: { swapPlayerId: "e", projectedPoints: 4, activeGames: 1 } };
++    rerender(<HealthyReserveAlert nameOf={nameOf} reserves={[f, h, d]} />);
++    expect(screen.getByText("Only 2 can be activated: best are Fresh Legs (+10 pts) and Third Man (+4 pts).")).toBeTruthy();
+     rerender(<HealthyReserveAlert nameOf={nameOf} reserves={[f, g]} />);
+-    expect(screen.queryByText(/can be activated/)).toBeNull();
++    expect(screen.queryByText(/can be activated/i)).toBeNull();
+     rerender(<HealthyReserveAlert nameOf={nameOf} reserves={[d]} />);
+-    expect(screen.queryByText(/can be activated/)).toBeNull();
++    expect(screen.queryByText(/can be activated/i)).toBeNull();
+   });
+ 
+   it("adds a soft note, never a warning, for a DTD player in IR+ whose team plays today", () => {
+diff --git a/web/components/RosterScheduleOptimizer/HealthyReserveAlert.tsx b/web/components/RosterScheduleOptimizer/HealthyReserveAlert.tsx
+index e1a5c9591..d4c06f88c 100644
+--- a/web/components/RosterScheduleOptimizer/HealthyReserveAlert.tsx
++++ b/web/components/RosterScheduleOptimizer/HealthyReserveAlert.tsx
+@@ -15,13 +15,15 @@ function gainText({ projectedPoints, activeGames }: NonNullable<HealthyReserve["
+ }
+ 
+ /** "Only k can be activated" when the open spots and swap partners run out before the flagged players do; the helper
+- * already ranks them by projected gain, unknown gains last. */
++ * already ranks them by projected gain, unknown gains last, ties in roster order. */
+ function contestText(reserves: HealthyReserve[], nameOf: (id: string) => string) {
+   const activated = reserves.filter(reserve => reserve.activation);
+   if (!activated.length || activated.length === reserves.length) return null;
+   const best = activated.map(({ playerId, activation }) => `${nameOf(playerId)}${activation!.projectedPoints !== null ? ` (${signed(activation!.projectedPoints)} pts)`
+     : activation!.activeGames !== null ? ` (${signed(activation!.activeGames)} active games)` : ""}`);
+   const list = best.length === 1 ? best[0] : `${best.slice(0, -1).join(", ")} and ${best[best.length - 1]}`;
++  // An unknown gain can't be called "best" (C7 H3).
++  if (activated.some(({ activation }) => activation!.projectedPoints === null && activation!.activeGames === null)) return `Can be activated: ${list}.`;
+   return `Only ${best.length === 1 ? "one" : best.length} can be activated: best ${best.length === 1 ? "is" : "are"} ${list}.`;
+ }
+ 
+diff --git a/web/lib/rosterScheduleOptimizer/healthyReserves.test.ts b/web/lib/rosterScheduleOptimizer/healthyReserves.test.ts
+index 07a5011aa..95a48c746 100644
+--- a/web/lib/rosterScheduleOptimizer/healthyReserves.test.ts
++++ b/web/lib/rosterScheduleOptimizer/healthyReserves.test.ts
+@@ -39,12 +39,12 @@ function snapshot(): PlanningSnapshot {
+     allowedUses: { assignment: true, totals: true, comparison: true, conditionalTieBreak: false }, startProbability: null, confirmedStart: false, limitations: [] })));
+   return data;
+ }
+-// A second healthy D-man, f (5 per game), on d's team.
+-const withF = (data: PlanningSnapshot, position: "IR" | "IR+") => {
++// A second healthy D-man, f (5 per game unless given), on d's team.
++const withF = (data: PlanningSnapshot, position: "IR" | "IR+", pts = 5) => {
+   const f = member("f", "D", ["D"]);
+   data.players = [...data.players, f];
+   data.roster = [...data.roster, { playerId: "f", position }];
+-  data.forecasts = [...data.forecasts, ...data.forecasts.filter(row => row.playerId === "d").map(row => ({ ...row, playerId: "f", stats: { pts: 5 },
++  data.forecasts = [...data.forecasts, ...data.forecasts.filter(row => row.playerId === "d").map(row => ({ ...row, playerId: "f", stats: { pts },
+     issuedContext: { ...row.issuedContext!, playerId: "f", nhlPlayerId: f.nhlId!, rosterRevision: f.rosterRevision! } }))];
+ };
+ const injured = (data: PlanningSnapshot, id: string, status: string, reserve: PlanningPlayer["reserveEligibility"]) => {
+@@ -181,4 +181,25 @@ describe("healthy reserve players", () => {
+     expect(dtdReserves({ ...final, context: { ...final.context, provider: "manual" } })).toEqual([]);
+     expect(dtdReserves(final)).toEqual(["d"]);
+   });
++
++  // C7 H1: greedy by direct-spot gain gave f the spot and left d nothing, though f could swap with e and d take the spot.
++  it("activates as many players as the spots and swap partners allow before maximising gain", () => {
++    const data = snapshot();
++    data.rules = { ...data.rules, rosterSlots: { ...data.rules.rosterSlots, BN: 2 } };
++    data.roster = [...data.roster, { playerId: "e", position: "active" }];
++    withF(data, "IR+");
++    injured(data, "e", "O", ["IR+"]);
++    expect(healthyReserves(data, intent)).toEqual([
++      { playerId: "f", position: "IR+", slotEligible: false, activation: { swapPlayerId: "e", projectedPoints: 10, activeGames: 2 } },
++      { playerId: "d", position: "IR", slotEligible: false, activation: { swapPlayerId: null, projectedPoints: 6, activeGames: 2 } }]);
++  });
++
++  // C7 H2: equal gains keep roster order, for both the spot and the listing.
++  it("breaks ties by roster order", () => {
++    const data = snapshot();
++    withF(data, "IR+", 3);
++    expect(healthyReserves(data, intent).map(row => [row.playerId, row.activation?.projectedPoints ?? null])).toEqual([["d", 6], ["f", null]]);
++    data.roster = [...data.roster.filter(row => row.playerId !== "d"), { playerId: "d", position: "IR" }];
++    expect(healthyReserves(data, intent).map(row => [row.playerId, row.activation?.projectedPoints ?? null])).toEqual([["f", 6], ["d", null]]);
++  });
+ });
+diff --git a/web/lib/rosterScheduleOptimizer/healthyReserves.ts b/web/lib/rosterScheduleOptimizer/healthyReserves.ts
+index 79ca27902..55646d2cf 100644
+--- a/web/lib/rosterScheduleOptimizer/healthyReserves.ts
++++ b/web/lib/rosterScheduleOptimizer/healthyReserves.ts
+@@ -74,23 +74,33 @@ export function healthyReserves(snapshot: PlanningSnapshot, intent: PlanIntent):
+       { playerId: entry.playerId, position: "bench" as const }];
+     return { swapPlayerId, ...gain(run(roster)) };
+   };
+-  const swaps = new Map<string, Activation[]>();
+-  const bestSwap = (entry: Reserved, taken: Set<string>) => {
+-    if (!swaps.has(entry.playerId)) swaps.set(entry.playerId, base.filter(row => !RESERVE_POSITIONS.has(row.position)
+-      && players.get(row.playerId)?.reserveEligibility.includes(entry.position)).map(row => row.playerId).sort()
+-      .map(id => activate(entry, id)).sort(byGain));
+-    return swaps.get(entry.playerId)!.find(option => !taken.has(option.swapPlayerId!)) ?? null;
++  // Each player's options: an open spot (when any), then each swap partner Yahoo lists for his slot, best gain first.
++  const options = healthy.map(entry => [...(openSpots > 0 ? [activate(entry, null)] : []),
++    ...base.filter(row => !RESERVE_POSITIONS.has(row.position) && players.get(row.playerId)?.reserveEligibility.includes(entry.position))
++      .map(row => row.playerId).sort().map(id => activate(entry, id)).sort(byGain)]);
++  // TJ 2026-10-25 (C7 H1): each open spot or swap partner activates one flagged player. Choose the assignment that
++  // activates the most players, then the most projected points, then active games (unknown gains count as 0). Brute
++  // force: only a handful of reserve slots. Ties keep the first assignment found, so earlier roster players win.
++  const better = (left: number[], right: number[]) => {
++    const at = left.findIndex((value, index) => value !== right[index]);
++    return at >= 0 && left[at] > right[at];
+   };
+-  // TJ 2026-10-25: flagged players compete for the open spots and swap partners, best projected gain first
+-  // (unknown gains last); each spot or partner activates one player, the rest need a drop.
+-  const ranked = healthy.map(entry => ({ entry, best: openSpots > 0 ? activate(entry, null) : bestSwap(entry, new Set()) }))
+-    .sort((a, b) => !a.best || !b.best ? Number(!a.best) - Number(!b.best) : byGain(a.best, b.best));
+-  let spots = openSpots;
+-  const taken = new Set<string>();
+-  return ranked.map(({ entry, best }) => {
+-    const activation = spots-- > 0 ? best : bestSwap(entry, taken);
+-    if (activation?.swapPlayerId) taken.add(activation.swapPlayerId);
+-    return { playerId: entry.playerId, position: entry.position,
+-      slotEligible: players.get(entry.playerId)!.reserveEligibility.includes(entry.position), activation };
+-  });
++  let best: { score: number[]; pick: Array<Activation | null> } = { score: [-1, 0, 0], pick: [] };
++  const search = (index: number, spots: number, taken: Set<string>, score: number[], pick: Array<Activation | null>) => {
++    if (index === healthy.length) {
++      if (better(score, best.score)) best = { score, pick };
++      return;
++    }
++    for (const option of options[index]) {
++      if (option.swapPlayerId === null ? spots === 0 : taken.has(option.swapPlayerId)) continue;
++      search(index + 1, option.swapPlayerId === null ? spots - 1 : spots, option.swapPlayerId === null ? taken : new Set([...taken, option.swapPlayerId]),
++        [score[0] + 1, score[1] + (option.projectedPoints ?? 0), score[2] + (option.activeGames ?? 0)], [...pick, option]);
++    }
++    search(index + 1, spots, taken, score, [...pick, null]);
++  };
++  search(0, openSpots, new Set(), [0, 0, 0], []);
++  // Listed best gain first (unknown gains, then players left without an activation, last); ties keep roster order.
++  return healthy.map((entry, index) => ({ playerId: entry.playerId, position: entry.position,
++    slotEligible: players.get(entry.playerId)!.reserveEligibility.includes(entry.position), activation: best.pick[index] }))
++    .sort((a, b) => !a.activation || !b.activation ? Number(!a.activation) - Number(!b.activation) : byGain(a.activation, b.activation));
+ }

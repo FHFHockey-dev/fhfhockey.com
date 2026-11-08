@@ -1,0 +1,29 @@
+{
+  "observedAt": "2026-10-31T20:50:15.286870+00:00",
+  "organization": "FHFHockey",
+  "organizationId": "org-Zs5aqnEL5AEm0NMcaAyrmt2m",
+  "project": "FHFH IFTTT",
+  "projectId": "proj_l5N9PpHQz2IQY3Em5vTxw66P",
+  "keyTrackingId": "key_QjphyUQhdUMUJnLn",
+  "keyStatus": "Active",
+  "keyCreatedAt": "2026-10-31T19:52:48Z",
+  "keyExpires": "Never",
+  "permissions": [
+    "api.responses.read",
+    "api.responses.write",
+    "api.decisions.write"
+  ],
+  "keyMatchVerifiedInMemory": true,
+  "promotionalRemainingNanoUsd": 85000000000,
+  "promotionalExpiresOn": "2026-11-13",
+  "purchasedRemainingNanoUsd": 10000000000,
+  "usageLast7Days": {
+    "requests": 0,
+    "tokens": 0,
+    "reportedSpendUsd": 0
+  },
+  "concurrencyEvidence": "New evaluation key never used; other active test key also Never; expired historical key last used Oct20. Organization last7days usage0. Balance/usage may lag, not a provider spending cutoff.",
+  "autoReload": "Unchanged: threshold$5, refillto$10, monthlylimit$20",
+  "safetyReserveNanoUsd": 5000000000,
+  "basis": "Fresh read-only Platform billing grant, key metadata/permissions and org usage pages; no API model probe."
+}

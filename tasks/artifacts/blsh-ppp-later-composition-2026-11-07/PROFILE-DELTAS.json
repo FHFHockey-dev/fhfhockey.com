@@ -1,0 +1,836 @@
+[
+  {
+    "playerId": 8471214,
+    "sourceIds": [
+      5589270,
+      5595366,
+      5597336,
+      5599454,
+      5599843
+    ],
+    "composedSourceIds": [
+      5589270
+    ],
+    "beforeSupported": false,
+    "afterSupported": true,
+    "beforeMatchedRows": 4,
+    "afterMatchedRows": 5,
+    "capturedMetricsChanged": false,
+    "fullProfileQualified": false
+  },
+  {
+    "playerId": 8471675,
+    "sourceIds": [
+      5589814,
+      5596320,
+      5597259,
+      5599844,
+      5600700
+    ],
+    "composedSourceIds": [
+      5600700
+    ],
+    "beforeSupported": false,
+    "afterSupported": true,
+    "beforeMatchedRows": 4,
+    "afterMatchedRows": 5,
+    "capturedMetricsChanged": false,
+    "fullProfileQualified": false
+  },
+  {
+    "playerId": 8474151,
+    "sourceIds": [
+      5595368,
+      5597052,
+      5597263,
+      5599850,
+      5600843
+    ],
+    "composedSourceIds": [
+      5597263
+    ],
+    "beforeSupported": false,
+    "afterSupported": true,
+    "beforeMatchedRows": 4,
+    "afterMatchedRows": 5,
+    "capturedMetricsChanged": false,
+    "fullProfileQualified": false
+  },
+  {
+    "playerId": 8475166,
+    "sourceIds": [
+      5586068,
+      5586811,
+      5587335,
+      5588451,
+      5594057
+    ],
+    "composedSourceIds": [
+      5588451
+    ],
+    "beforeSupported": false,
+    "afterSupported": false,
+    "beforeMatchedRows": 2,
+    "afterMatchedRows": 3,
+    "capturedMetricsChanged": false,
+    "fullProfileQualified": false
+  },
+  {
+    "playerId": 8475170,
+    "sourceIds": [
+      5596246,
+      5598050,
+      5598637,
+      5599856,
+      5600849
+    ],
+    "composedSourceIds": [
+      5596246
+    ],
+    "beforeSupported": false,
+    "afterSupported": true,
+    "beforeMatchedRows": 4,
+    "afterMatchedRows": 5,
+    "capturedMetricsChanged": false,
+    "fullProfileQualified": false
+  },
+  {
+    "playerId": 8475690,
+    "sourceIds": [
+      5586152,
+      5586907,
+      5587266,
+      5587886,
+      5600856
+    ],
+    "composedSourceIds": [
+      5587266
+    ],
+    "beforeSupported": false,
+    "afterSupported": true,
+    "beforeMatchedRows": 4,
+    "afterMatchedRows": 5,
+    "capturedMetricsChanged": false,
+    "fullProfileQualified": false
+  },
+  {
+    "playerId": 8475848,
+    "sourceIds": [
+      5589369,
+      5595302,
+      5596353,
+      5598116,
+      5600780
+    ],
+    "composedSourceIds": [
+      5600780
+    ],
+    "beforeSupported": false,
+    "afterSupported": false,
+    "beforeMatchedRows": 3,
+    "afterMatchedRows": 4,
+    "capturedMetricsChanged": false,
+    "fullProfileQualified": false
+  },
+  {
+    "playerId": 8476389,
+    "sourceIds": [
+      5589826,
+      5596203,
+      5597195,
+      5598758,
+      5599780
+    ],
+    "composedSourceIds": [
+      5597195
+    ],
+    "beforeSupported": false,
+    "afterSupported": true,
+    "beforeMatchedRows": 4,
+    "afterMatchedRows": 5,
+    "capturedMetricsChanged": false,
+    "fullProfileQualified": false
+  },
+  {
+    "playerId": 8476453,
+    "sourceIds": [
+      5595230,
+      5597058,
+      5597269,
+      5599782,
+      5600702
+    ],
+    "composedSourceIds": [
+      5597269
+    ],
+    "beforeSupported": false,
+    "afterSupported": true,
+    "beforeMatchedRows": 4,
+    "afterMatchedRows": 5,
+    "capturedMetricsChanged": false,
+    "fullProfileQualified": false
+  },
+  {
+    "playerId": 8476459,
+    "sourceIds": [
+      5589379,
+      5589783,
+      5596178,
+      5597367,
+      5598447
+    ],
+    "composedSourceIds": [
+      5589783
+    ],
+    "beforeSupported": false,
+    "afterSupported": false,
+    "beforeMatchedRows": 3,
+    "afterMatchedRows": 4,
+    "capturedMetricsChanged": false,
+    "fullProfileQualified": false
+  },
+  {
+    "playerId": 8476474,
+    "sourceIds": [
+      5585639,
+      5586178,
+      5588555,
+      5589078,
+      5589285
+    ],
+    "composedSourceIds": [
+      5589285
+    ],
+    "beforeSupported": false,
+    "afterSupported": false,
+    "beforeMatchedRows": 3,
+    "afterMatchedRows": 4,
+    "capturedMetricsChanged": false,
+    "fullProfileQualified": false
+  },
+  {
+    "playerId": 8476483,
+    "sourceIds": [
+      5589760,
+      5596372,
+      5597215,
+      5599742,
+      5600709
+    ],
+    "composedSourceIds": [
+      5600709
+    ],
+    "beforeSupported": false,
+    "afterSupported": false,
+    "beforeMatchedRows": 3,
+    "afterMatchedRows": 4,
+    "capturedMetricsChanged": false,
+    "fullProfileQualified": false
+  },
+  {
+    "playerId": 8477149,
+    "sourceIds": [
+      5587934,
+      5597273,
+      5600882
+    ],
+    "composedSourceIds": [
+      5597273
+    ],
+    "beforeSupported": false,
+    "afterSupported": true,
+    "beforeMatchedRows": 2,
+    "afterMatchedRows": 3,
+    "capturedMetricsChanged": false,
+    "fullProfileQualified": false
+  },
+  {
+    "playerId": 8477346,
+    "sourceIds": [
+      5589835,
+      5596254,
+      5597274,
+      5598788,
+      5599893
+    ],
+    "composedSourceIds": [
+      5597274
+    ],
+    "beforeSupported": false,
+    "afterSupported": true,
+    "beforeMatchedRows": 4,
+    "afterMatchedRows": 5,
+    "capturedMetricsChanged": false,
+    "fullProfileQualified": false
+  },
+  {
+    "playerId": 8477949,
+    "sourceIds": [
+      5589288,
+      5595438,
+      5597178,
+      5599406,
+      5599747
+    ],
+    "composedSourceIds": [
+      5589288
+    ],
+    "beforeSupported": false,
+    "afterSupported": true,
+    "beforeMatchedRows": 4,
+    "afterMatchedRows": 5,
+    "capturedMetricsChanged": false,
+    "fullProfileQualified": false
+  },
+  {
+    "playerId": 8477950,
+    "sourceIds": [
+      5596261,
+      5598139,
+      5598688,
+      5599908,
+      5600890
+    ],
+    "composedSourceIds": [
+      5596261
+    ],
+    "beforeSupported": false,
+    "afterSupported": false,
+    "beforeMatchedRows": 3,
+    "afterMatchedRows": 4,
+    "capturedMetricsChanged": false,
+    "fullProfileQualified": false
+  },
+  {
+    "playerId": 8478416,
+    "sourceIds": [
+      5589452,
+      5595456,
+      5597066,
+      5597283,
+      5599920
+    ],
+    "composedSourceIds": [
+      5597283
+    ],
+    "beforeSupported": false,
+    "afterSupported": true,
+    "beforeMatchedRows": 4,
+    "afterMatchedRows": 5,
+    "capturedMetricsChanged": false,
+    "fullProfileQualified": false
+  },
+  {
+    "playerId": 8478438,
+    "sourceIds": [
+      5589790,
+      5596422,
+      5597424,
+      5599924,
+      5600713
+    ],
+    "composedSourceIds": [
+      5600713
+    ],
+    "beforeSupported": false,
+    "afterSupported": false,
+    "beforeMatchedRows": 3,
+    "afterMatchedRows": 4,
+    "capturedMetricsChanged": false,
+    "fullProfileQualified": false
+  },
+  {
+    "playerId": 8479323,
+    "sourceIds": [
+      5589475,
+      5589792,
+      5596166,
+      5597200,
+      5598411
+    ],
+    "composedSourceIds": [
+      5589792
+    ],
+    "beforeSupported": false,
+    "afterSupported": false,
+    "beforeMatchedRows": 3,
+    "afterMatchedRows": 4,
+    "capturedMetricsChanged": false,
+    "fullProfileQualified": false
+  },
+  {
+    "playerId": 8479343,
+    "sourceIds": [
+      5589764,
+      5596271,
+      5597286,
+      5598834,
+      5599796
+    ],
+    "composedSourceIds": [
+      5597286
+    ],
+    "beforeSupported": false,
+    "afterSupported": false,
+    "beforeMatchedRows": 2,
+    "afterMatchedRows": 3,
+    "capturedMetricsChanged": false,
+    "fullProfileQualified": false
+  },
+  {
+    "playerId": 8479345,
+    "sourceIds": [
+      5589299,
+      5595323,
+      5597201,
+      5599444,
+      5599797
+    ],
+    "composedSourceIds": [
+      5589299
+    ],
+    "beforeSupported": false,
+    "afterSupported": false,
+    "beforeMatchedRows": 2,
+    "afterMatchedRows": 3,
+    "capturedMetricsChanged": false,
+    "fullProfileQualified": false
+  },
+  {
+    "playerId": 8479369,
+    "sourceIds": [
+      5589846,
+      5596444,
+      5597287,
+      5598837,
+      5599798
+    ],
+    "composedSourceIds": [
+      5597287
+    ],
+    "beforeSupported": false,
+    "afterSupported": true,
+    "beforeMatchedRows": 4,
+    "afterMatchedRows": 5,
+    "capturedMetricsChanged": false,
+    "fullProfileQualified": false
+  },
+  {
+    "playerId": 8479378,
+    "sourceIds": [
+      5596272,
+      5598151,
+      5598839,
+      5599944,
+      5600917
+    ],
+    "composedSourceIds": [
+      5596272
+    ],
+    "beforeSupported": false,
+    "afterSupported": false,
+    "beforeMatchedRows": 3,
+    "afterMatchedRows": 4,
+    "capturedMetricsChanged": false,
+    "fullProfileQualified": false
+  },
+  {
+    "playerId": 8479385,
+    "sourceIds": [
+      5589301,
+      5595324,
+      5597202,
+      5599407,
+      5599799
+    ],
+    "composedSourceIds": [
+      5589301
+    ],
+    "beforeSupported": false,
+    "afterSupported": false,
+    "beforeMatchedRows": 3,
+    "afterMatchedRows": 4,
+    "capturedMetricsChanged": false,
+    "fullProfileQualified": false
+  },
+  {
+    "playerId": 8479390,
+    "sourceIds": [
+      5589482,
+      5589793,
+      5596446,
+      5597450,
+      5598468
+    ],
+    "composedSourceIds": [
+      5589793
+    ],
+    "beforeSupported": false,
+    "afterSupported": true,
+    "beforeMatchedRows": 4,
+    "afterMatchedRows": 5,
+    "capturedMetricsChanged": false,
+    "fullProfileQualified": false
+  },
+  {
+    "playerId": 8479410,
+    "sourceIds": [
+      5589794,
+      5596196,
+      5597289,
+      5598696,
+      5599750
+    ],
+    "composedSourceIds": [
+      5597289
+    ],
+    "beforeSupported": false,
+    "afterSupported": false,
+    "beforeMatchedRows": 3,
+    "afterMatchedRows": 4,
+    "capturedMetricsChanged": false,
+    "fullProfileQualified": false
+  },
+  {
+    "playerId": 8479425,
+    "sourceIds": [
+      5596273,
+      5598083,
+      5598623,
+      5599801,
+      5600805
+    ],
+    "composedSourceIds": [
+      5600805
+    ],
+    "beforeSupported": false,
+    "afterSupported": false,
+    "beforeMatchedRows": 3,
+    "afterMatchedRows": 4,
+    "capturedMetricsChanged": false,
+    "fullProfileQualified": false
+  },
+  {
+    "playerId": 8479576,
+    "sourceIds": [
+      5588277,
+      5588805,
+      5589045,
+      5589212,
+      5595485
+    ],
+    "composedSourceIds": [
+      5589212
+    ],
+    "beforeSupported": false,
+    "afterSupported": true,
+    "beforeMatchedRows": 4,
+    "afterMatchedRows": 5,
+    "capturedMetricsChanged": false,
+    "fullProfileQualified": false
+  },
+  {
+    "playerId": 8480015,
+    "sourceIds": [
+      5587430,
+      5588029,
+      5588279,
+      5588594,
+      5594291
+    ],
+    "composedSourceIds": [
+      5588594
+    ],
+    "beforeSupported": false,
+    "afterSupported": true,
+    "beforeMatchedRows": 4,
+    "afterMatchedRows": 5,
+    "capturedMetricsChanged": false,
+    "fullProfileQualified": false
+  },
+  {
+    "playerId": 8480426,
+    "sourceIds": [
+      5595334,
+      5597032,
+      5597296,
+      5599967,
+      5600813
+    ],
+    "composedSourceIds": [
+      5597296
+    ],
+    "beforeSupported": false,
+    "afterSupported": true,
+    "beforeMatchedRows": 4,
+    "afterMatchedRows": 5,
+    "capturedMetricsChanged": false,
+    "fullProfileQualified": false
+  },
+  {
+    "playerId": 8480796,
+    "sourceIds": [
+      5589311,
+      5595512,
+      5597297,
+      5599500,
+      5599808
+    ],
+    "composedSourceIds": [
+      5589311
+    ],
+    "beforeSupported": false,
+    "afterSupported": true,
+    "beforeMatchedRows": 4,
+    "afterMatchedRows": 5,
+    "capturedMetricsChanged": false,
+    "fullProfileQualified": false
+  },
+  {
+    "playerId": 8480797,
+    "sourceIds": [
+      5597172,
+      5598399,
+      5599501,
+      5600485,
+      5600755
+    ],
+    "composedSourceIds": [
+      5598399
+    ],
+    "beforeSupported": false,
+    "afterSupported": true,
+    "beforeMatchedRows": 4,
+    "afterMatchedRows": 5,
+    "capturedMetricsChanged": false,
+    "fullProfileQualified": false
+  },
+  {
+    "playerId": 8480849,
+    "sourceIds": [
+      5589796,
+      5596478,
+      5597302,
+      5598878,
+      5599810
+    ],
+    "composedSourceIds": [
+      5597302
+    ],
+    "beforeSupported": false,
+    "afterSupported": false,
+    "beforeMatchedRows": 3,
+    "afterMatchedRows": 4,
+    "capturedMetricsChanged": false,
+    "fullProfileQualified": false
+  },
+  {
+    "playerId": 8481028,
+    "sourceIds": [
+      5597492,
+      5598400,
+      5599506,
+      5600514,
+      5600756
+    ],
+    "composedSourceIds": [
+      5598400
+    ],
+    "beforeSupported": false,
+    "afterSupported": true,
+    "beforeMatchedRows": 4,
+    "afterMatchedRows": 5,
+    "capturedMetricsChanged": false,
+    "fullProfileQualified": false
+  },
+  {
+    "playerId": 8481604,
+    "sourceIds": [
+      5589555,
+      5589801,
+      5596292,
+      5597240,
+      5598436
+    ],
+    "composedSourceIds": [
+      5589801
+    ],
+    "beforeSupported": false,
+    "afterSupported": false,
+    "beforeMatchedRows": 2,
+    "afterMatchedRows": 3,
+    "capturedMetricsChanged": false,
+    "fullProfileQualified": false
+  },
+  {
+    "playerId": 8481789,
+    "sourceIds": [
+      5589565,
+      5589802,
+      5596225,
+      5597515,
+      5598401
+    ],
+    "composedSourceIds": [
+      5589802
+    ],
+    "beforeSupported": false,
+    "afterSupported": false,
+    "beforeMatchedRows": 2,
+    "afterMatchedRows": 3,
+    "capturedMetricsChanged": false,
+    "fullProfileQualified": false
+  },
+  {
+    "playerId": 8482073,
+    "sourceIds": [
+      5589569,
+      5589803,
+      5596513,
+      5597518,
+      5598483
+    ],
+    "composedSourceIds": [
+      5589803
+    ],
+    "beforeSupported": false,
+    "afterSupported": false,
+    "beforeMatchedRows": 3,
+    "afterMatchedRows": 4,
+    "capturedMetricsChanged": false,
+    "fullProfileQualified": false
+  },
+  {
+    "playerId": 8482109,
+    "sourceIds": [
+      5589573,
+      5589766,
+      5596227,
+      5597242,
+      5598437
+    ],
+    "composedSourceIds": [
+      5589766
+    ],
+    "beforeSupported": false,
+    "afterSupported": false,
+    "beforeMatchedRows": 2,
+    "afterMatchedRows": 3,
+    "capturedMetricsChanged": false,
+    "fullProfileQualified": false
+  },
+  {
+    "playerId": 8482165,
+    "sourceIds": [
+      5597528,
+      5598438,
+      5599519,
+      5600569,
+      5600980
+    ],
+    "composedSourceIds": [
+      5598438
+    ],
+    "beforeSupported": false,
+    "afterSupported": true,
+    "beforeMatchedRows": 4,
+    "afterMatchedRows": 5,
+    "capturedMetricsChanged": false,
+    "fullProfileQualified": false
+  },
+  {
+    "playerId": 8482476,
+    "sourceIds": [
+      5596302,
+      5598094,
+      5598931,
+      5599828,
+      5600987
+    ],
+    "composedSourceIds": [
+      5596302
+    ],
+    "beforeSupported": false,
+    "afterSupported": true,
+    "beforeMatchedRows": 4,
+    "afterMatchedRows": 5,
+    "capturedMetricsChanged": false,
+    "fullProfileQualified": false
+  },
+  {
+    "playerId": 8482679,
+    "sourceIds": [
+      5597209,
+      5598405,
+      5599522,
+      5600482,
+      5600993
+    ],
+    "composedSourceIds": [
+      5598405
+    ],
+    "beforeSupported": false,
+    "afterSupported": true,
+    "beforeMatchedRows": 4,
+    "afterMatchedRows": 5,
+    "capturedMetricsChanged": false,
+    "fullProfileQualified": false
+  },
+  {
+    "playerId": 8483476,
+    "sourceIds": [
+      5596187,
+      5598196,
+      5598612,
+      5600043,
+      5600831
+    ],
+    "composedSourceIds": [
+      5600831
+    ],
+    "beforeSupported": false,
+    "afterSupported": true,
+    "beforeMatchedRows": 4,
+    "afterMatchedRows": 5,
+    "capturedMetricsChanged": false,
+    "fullProfileQualified": false
+  },
+  {
+    "playerId": 8483495,
+    "sourceIds": [
+      5597562,
+      5598406,
+      5599528,
+      5600576,
+      5601015
+    ],
+    "composedSourceIds": [
+      5598406
+    ],
+    "beforeSupported": false,
+    "afterSupported": true,
+    "beforeMatchedRows": 4,
+    "afterMatchedRows": 5,
+    "capturedMetricsChanged": false,
+    "fullProfileQualified": false
+  },
+  {
+    "playerId": 8484768,
+    "sourceIds": [
+      5597256,
+      5598439,
+      5599539,
+      5600586,
+      5600835
+    ],
+    "composedSourceIds": [
+      5598439
+    ],
+    "beforeSupported": false,
+    "afterSupported": true,
+    "beforeMatchedRows": 4,
+    "afterMatchedRows": 5,
+    "capturedMetricsChanged": false,
+    "fullProfileQualified": false
+  }
+]

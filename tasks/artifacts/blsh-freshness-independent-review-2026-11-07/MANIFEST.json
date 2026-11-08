@@ -1,0 +1,22 @@
+{
+  "tasks/artifacts/blsh-freshness-independent-review-2026-11-07/review.cjs": {
+    "bytes": 9027,
+    "sha256": "a064c8ee5c2aaea3faf47ff9e92437f20029da5038f8f6641750b44c1608cab3"
+  },
+  "tasks/artifacts/blsh-freshness-independent-review-2026-11-07/RESULT.json": {
+    "bytes": 1290,
+    "sha256": "65c8011570d4c48cb09d7c08506b0a825d6f4ccd4d485ac07617b1a722fc2264"
+  },
+  "tasks/artifacts/blsh-freshness-independent-review-2026-11-07/REVIEW.md": {
+    "bytes": 3553,
+    "sha256": "956d9cdc114b3602233b1dc24e4fe6a38ab91b3f64c490db1d6bc5350009599d"
+  },
+  "web/lib/buyLowSellHigh/currentProcessEvidence.server.ts": {
+    "bytes": 20149,
+    "sha256": "e69db2c0ee67669df2725636dda689f036780d7809f0e2f49ec89ca504eac724"
+  },
+  "web/lib/buyLowSellHigh/currentProcessEvidence.server.test.ts": {
+    "bytes": 29688,
+    "sha256": "cc9905ca12e2399fba400ff54e7eccbc821235d38c24df82bcbdfaee2593f7d0"
+  }
+}

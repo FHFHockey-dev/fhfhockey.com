@@ -1,0 +1,64 @@
+{
+  "at": "2026-10-26T16:22:43.863563+00:00",
+  "sources": [
+    {
+      "path": "web/lib/player-cards/aggregation.ts",
+      "beforeSha256": "4ffe0ed5cbdea97ecb15b153543aace6b2d349cac10b0ff3e6de7484768b410a",
+      "afterSha256": "87559ceb96773a757ff359a6cf4705d1f89b73f8c96cd068e0eeb194c1cf329b",
+      "bytes": 5899
+    },
+    {
+      "path": "web/lib/player-cards/domain.test.ts",
+      "beforeSha256": "da0e7e3bcc4b923acc7e4229e63236efe4e7210877092f063e4bb3c96bac46b1",
+      "afterSha256": "240b4c192c386d672c5af505a90355787ca43b8f95dc7ce1d57dbba46addbb91",
+      "bytes": 18885
+    },
+    {
+      "path": "web/lib/player-cards/evidenceBundle.test.ts",
+      "beforeSha256": "d4c674cb41deadcb05941d3c2bbb0312495894393cce6faa675c4895711d23b3",
+      "afterSha256": "1a19a42d9bba637a07ad4370d0d5ebe105c22c5e3a432d8c933ee7146066c0af",
+      "bytes": 23778
+    },
+    {
+      "path": "web/lib/player-cards/evidenceBundle.ts",
+      "beforeSha256": "2899407e81b88dec5c78548cd9c9eff524c7592a3c67f5d6253c2181a3424084",
+      "afterSha256": "054308dc7e87ba78c014e91b433225cc63a3a2783a0492881e5e8af688cc4314",
+      "bytes": 21289
+    },
+    {
+      "path": "web/lib/player-cards/evidenceLoader.test.ts",
+      "beforeSha256": "82b96d9dbc200dd675269dfbb13c071ef56d56eedcfcdea1965a4fdb61e646ee",
+      "afterSha256": "9feaa0046e15b5cc94bb8506958aaf222f028aecc70d63b7aa2c11880af0d122",
+      "bytes": 22669
+    },
+    {
+      "path": "web/lib/player-cards/evidenceLoader.ts",
+      "beforeSha256": "ec89625c48056f96bb5d32a673547c0a334fdacb7a0b93e449e1ff61a68ccad1",
+      "afterSha256": "9fee76955b1f5c98bea4c9b638facc68185de8d3cb3e826bdcc848bbad5837d7",
+      "bytes": 15886
+    },
+    {
+      "path": "web/lib/player-cards/nstCapture.test.ts",
+      "beforeSha256": "7c88e4a14687c325858eb4ca7b4c297368179dfedfc6d1a1837539a5829914ed",
+      "afterSha256": "4d4acef017c15c6c21df2faa46f0037ec3ea83e7918275d15b3c3df141eff012",
+      "bytes": 9948
+    },
+    {
+      "path": "web/lib/player-cards/nstCapture.ts",
+      "beforeSha256": "8febc82875c998d9b89c9e8d70194ddf25f204b6fcca8ef08b32d338c16bebb5",
+      "afterSha256": "ddaa8604b6a50f7f6ebe9511899724ab0ade9b7db1235b417903b5b2f6e523ec",
+      "bytes": 7735
+    },
+    {
+      "path": "web/lib/player-cards/windows.ts",
+      "beforeSha256": "b7e989c211b8a9f5a1a91af157c69fc28cd29a409442f89365e57c662d10adb2",
+      "afterSha256": "0ba442eb512f309131c1f3b5a45534ccf7687a1cf7a84d570b40ce49f95dfb30",
+      "bytes": 8080
+    }
+  ],
+  "sourcePatchSha256": "a89365bab727eb762e85ca8cea3b070ac5dcdc1068af903253f853fea324645d",
+  "independentReview": "pending for this new slice",
+  "liveActivation": false,
+  "premiumActivation": false,
+  "publicReportReadState": "automatic approval rejected9reportbatch beforeexecution;0newrequests/no retry/bypass"
+}

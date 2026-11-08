@@ -1,0 +1,15 @@
+# Independent parent recovery review v1
+
+Accepted within the local legacy producer boundary. All 63 frozen pins match the source manifest recorded in `pin-check-after.json`; accepted 59 and 579 previous reviewer files plus the status addendum are unchanged. No implementation edit occurred.
+
+Eight distinct private PostgreSQL tests passed: the unchanged five-test owner harness and three independent tests. All eight original CR037/CR041 assertions passed. Scoped TypeScript passed (exit 0). The disposable cluster stopped and was removed. No full compiler/build or hosted action ran.
+
+CR037's four independently reset same-key conflicts (raw payload, provenance hash, game FK, interpretation version) are rejected by actual `persistTweetProjectionReports` / `persistProjectionSourceSnapshots` readback. Complete retained parent bytes remain unchanged; reports/events/fixture children remain one each, with no new child or downstream capture after conflict. These injections occur at the parent writer boundary after already retained report/event stages; they do not prove transactionality for arbitrary new report/event identities.
+
+CR041 commits the parent before losing its insert acknowledgment. A fresh adapter and serialized retry read the exact retained parent before the fixture child boundary. Full parent bytes and one report/event/child remain stable. Independent missing and conflicting readback replies both suppress capture after that committed-parent fault. The positive inventory preserves original and relay IDs, original quote URL/author, exact raw source and source clocks without inventing relay attribution; the internal derived parent has blank tweet/author fields.
+
+The CR041 `duplicateEvidenceVersionCount` projection is explicitly legacy `report_key` uniqueness. It establishes no native r3 evidence-version or production consumer receipt contract. The forecast consumer is mocked by durable private fixture children; exact retained local column/check/FK DDL establishes no deployed schema, ACL, writer coverage or production history. A fresh adapter is a logical retry, not an operating-system kill test.
+
+No new defect was found in this bounded candidate. CR037/CR041 local producer projections are accepted; original full-52 and real consumer acceptance remain withheld. Original CR042–044 operational consumer bindings remain open and are reviewed separately against the next transport fixture. The parent review hold is released, while the overlapping newly frozen 67 paths remain held for transport review. All artifacts in this review root will remain stable for combined verification.
+
+Evidence: `evidence-summary.json`, `exact-parent-persistence-results.json`, `original-parent-results.json`, `independent-parent-results.json`, logs, frozen source and `pin-check-after.json`. Reproduce from `web/` using the copied harnesses and `vitest.review.config.mjs`, setting `IFTTT_POSTGRES_BIN=/opt/homebrew/opt/postgresql@17/bin`; use `-t independent` for the independent file. The scoped compiler project is `../tasks/ifttt-integration-2026-10-16/parent-recovery-increment/tsconfig.json`.

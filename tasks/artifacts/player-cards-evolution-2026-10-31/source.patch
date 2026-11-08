@@ -1,0 +1,1241 @@
+--- /dev/null
++++ b/web/components/player-cards/PlayerAnalysisCard.tsx
+@@ -0,0 +1,86 @@
++import React from "react";
++import PlayerHeroHeader from "./PlayerHeroHeader";
++import type { PreparedHero } from "./HeroPlayerCard";
++import { ANALYSIS_FIELDS, analysisDifference, type AnalysisMetric, type AnalysisSnapshot } from "../../lib/player-cards/analysisSnapshot";
++import type { CardEvidence, TradeContext } from "../../lib/player-cards/analysisEvidence";
++import type { GoalieOutlook } from "../../lib/player-cards/goalieOutlook";
++import { currentArtworkKey, reviewedHeroFor } from "../../lib/player-cards/currentArtwork";
++import { compositionKey, portraitKey } from "../../lib/player-cards/portraitTreatment";
++import { outlineKey } from "../../lib/player-cards/alphaOutline";
++import { outlineStackKey } from "../../lib/player-cards/outlineStack";
++
++export type AnalysisPresentation = { snapshot: AnalysisSnapshot; view: "categories" | "comparison" | "evidence" | "trades"; blsh: CardEvidence; trades: TradeContext } | { goalie: GoalieOutlook; gameIndex: number };
++export const analysisPresentationKey = (p: AnalysisPresentation, hero?: PreparedHero | null) => JSON.stringify([p, currentArtworkKey(hero)]);
++const number = (v: number | null) => v === null ? "—" : Number.isInteger(v) ? String(v) : v.toFixed(2);
++const categoryMetrics: AnalysisMetric[] = ["goals", "assists", "points", "ppPoints", "shots", "blocks", "hits", "bsh"];
++function lines(text: string, max = 94): string[] {
++  const result: string[] = []; let current = "";
++  for (const word of text.split(/\s+/).filter(Boolean)) {
++    const characters = Array.from(word);
++    for (let start = 0; start < characters.length; start += max) {
++      const piece = characters.slice(start, start + max).join("");
++      if (current && Array.from(current).length + Array.from(piece).length + 1 > max) { result.push(current); current = ""; }
++      current += `${current ? " " : ""}${piece}`;
++    }
++  }
++  if (current) result.push(current); return result;
++}
++function TextLines({ text, y, maxLines = 12 }: { text: string; y: number; maxLines?: number }) {
++  const wrapped = lines(text);
++  return <text x="40" y={y} fontSize="21" fill="#30383d" data-evidence-max-width="1120" data-evidence-truncated={wrapped.length > maxLines ? "true" : undefined}>{wrapped.slice(0, maxLines).map((line, i) => <tspan key={i} x="40" dy={i ? 29 : 0}>{line}{i === maxLines - 1 && wrapped.length > maxLines ? " … (too long to export; narrow the evidence)" : ""}</tspan>)}</text>;
++}
++export default function PlayerAnalysisCard({ presentation: p, hero, svgRef }: { presentation: AnalysisPresentation; hero?: PreparedHero | null; svgRef?: React.Ref<SVGSVGElement> }) {
++  const goalie = "goalie" in p, snapshot = "snapshot" in p ? p.snapshot : null;
++  const player = goalie ? { ...p.goalie.player, position: "G" } : snapshot!.capture.player;
++  if (hero) {
++    const approved = reviewedHeroFor(player);
++    if (!approved || Object.entries(approved).some(([key, value]) => hero[key as keyof typeof approved] !== value)) throw new Error("Artwork must match the selected player, team and reviewed source.");
++  }
++  const research = !goalie && p.view === "evidence" ? p.blsh.retained : undefined;
++  const source = research ? "RETAINED BLSH · PROVISIONAL RESEARCH" : goalie ? p.goalie.state === "fixture" ? "SYNTHETIC GOALIE FIXTURE" : "GOALIE SOURCE UNAVAILABLE" : snapshot!.capture.source === "synthetic" ? "SYNTHETIC CONTRACT FIXTURE" : snapshot!.capture.source === "retained" ? "RETAINED CAPTURE · NOT CURRENT" : "OBSERVED CAPTURE";
++  const title = goalie ? "Goalie outlook" : p.view === "categories" ? "Scoring & peripherals" : p.view === "comparison" ? `${snapshot!.recent.label} vs ${snapshot!.baseline.label}` : p.view === "evidence" ? "Supporting evidence" : "Trade context";
++  const game = goalie ? p.goalie.games[p.gameIndex] : null;
++  const confirmationWarnings = goalie ? p.goalie.sharedProvenance?.confirmationWarnings || [] : [];
++  const warningLines = lines(confirmationWarnings.join(" "), 120);
++  const warningsTooLong = warningLines.length > 2;
++  const displayedWarnings = warningsTooLong ? ["Source warnings are too long for this card. Read the full details; PNG export is unavailable."] : warningLines;
++  const explanation = research && "snapshot" in p ? `${p.blsh.heading}. ${p.blsh.lines.join(" ")}. Observed ${research.asOfUTC}; method ${research.methodVersion}. ${research.provenance?.message || ""} ${research.currentBoxes?.summary || ""}. ${research.currentBoxes?.lines.join(" ") || ""}` : goalie ? [game?.heading, game?.confirmation, game?.forecast, ...confirmationWarnings, ...(game?.dimensions.map(d => `${d.group}: ${d.label}: ${d.text}`) || []), p.goalie.reason].filter(Boolean).join(". ") : `${snapshot!.recent.label}, ${snapshot!.recent.gp} GP, ${snapshot!.settings.basis}, strength ${snapshot!.capture.strength}. ${snapshot!.recent.readings.map(r => `${ANALYSIS_FIELDS[r.metric].label}: ${number(r.value)} ${r.unit}${r.reason ? ` (${r.reason})` : ""}`).join(". ")}. ${snapshot!.disclosure} ${snapshot!.recent.sampleWarning || ""}`;
++  const rows = snapshot ? categoryMetrics.map(m => snapshot.recent.readings.find(r => r.metric === m)!) : [];
++  const maximum = Math.max(1, ...rows.map(r => r.value || 0));
++  return <svg ref={svgRef} xmlns="http://www.w3.org/2000/svg" width="1200" height="1020" viewBox="0 0 1200 1020" role="img" aria-label={`${player.name}. ${source}. ${title}. ${explanation}`} data-analysis-key={analysisPresentationKey(p, hero)} data-portrait-key={hero ? portraitKey(hero) : undefined} data-pipeline-key={hero ? compositionKey(hero) : undefined} data-team-logo-hash={hero?.teamLogo?.sha256} data-outline-key={outlineKey(hero?.outline)} data-outline-settings={hero?.outlineSettings ? outlineStackKey(hero.outlineSettings) : undefined}>
++    <title>{player.name} · FHFH · {title}</title><desc>{explanation}</desc><rect width="1200" height="1020" fill="#F2F1EB" />
++    <PlayerHeroHeader identity={player} hero={hero} context={research ? `${snapshot!.capture.season} · saved BLSH research` : goalie ? `${p.goalie.player.season} · schedule & matchup context` : `${snapshot!.capture.season} · ${snapshot!.recent.label} · ${snapshot!.capture.strength === "all" ? "All Strengths" : snapshot!.capture.strength}`} disclosure={source} />
++    <g fontFamily="Arial, sans-serif" style={{ fontVariantNumeric: "tabular-nums" }}>
++      <text x="40" y="375" fontSize="24" fontWeight="700" fill="#1A1D21">{title.toUpperCase()}</text>
++      {goalie ? <>
++        <TextLines text={game ? `${game.heading}. Starter: ${game.confirmation}. ${game.forecast}` : p.goalie.reason || "No selected game."} y={414} maxLines={4} />
++        {game?.dimensions.map((d, i) => <g key={d.label} transform={`translate(40 ${540 + i * 27})`}><text fontSize="19" fill="#1A1D21" fontWeight="700">{d.label}</text><text x="345" fontSize="17" fill="#555D60" data-evidence-truncated={d.text.length > 80 ? "true" : undefined}>{d.text.length > 80 ? `${d.text.slice(0, 77)}…` : d.text}</text></g>)}
++      </> : p.view === "categories" ? <>
++        <text x="40" y="401" fontSize="15" fontWeight="700" fill="#087CA2">SCORING</text><text x="40" y="582" fontSize="15" fontWeight="700" fill="#087CA2">PERIPHERALS</text>
++        {rows.map((r, i) => <g key={r.metric} transform={`translate(40 ${i < 4 ? 431 + i * 38 : 612 + (i - 4) * 38})`}>
++          <text fontSize="25" fill="#1A1D21">{ANALYSIS_FIELDS[r.metric].label}</text><text x="440" textAnchor="end" fontSize="28" fontWeight="700">{number(r.value)}</text>
++          {snapshot!.settings.visual === "bars" && <><rect x="470" y="-20" width="440" height="22" rx="3" fill="#D9DDD8" />{r.value !== null ? <rect x="470" y="-20" width={r.value / maximum * 440} height="22" rx="3" fill="#087CA2" /> : <text x="480" y="-3" fontSize="16">Missing · not zero</text>}</>}
++          <text x="1120" textAnchor="end" fontSize="17" fill="#555D60">{r.unit}</text>
++        </g>)}
++        {snapshot!.settings.visual === "radar" && <g transform="translate(815 567)" aria-label="Raw count shape, not percentiles">
++          {[0.5, 1].map(scale => <circle key={scale} r={130 * scale} fill="none" stroke="#AAB3AE" />)}
++          {rows.map((r, i) => { const a = i / rows.length * Math.PI * 2 - Math.PI / 2, x = Math.cos(a), y = Math.sin(a), next = rows[(i + 1) % rows.length], b = (i + 1) / rows.length * Math.PI * 2 - Math.PI / 2; return <g key={r.metric}><line x2={x * 130} y2={y * 130} stroke="#C0C7C2" />{r.value !== null && <circle cx={x * 130 * r.value / maximum} cy={y * 130 * r.value / maximum} r="5" fill="#087CA2" />}{r.value !== null && next.value !== null && <line x1={x * 130 * r.value / maximum} y1={y * 130 * r.value / maximum} x2={Math.cos(b) * 130 * next.value / maximum} y2={Math.sin(b) * 130 * next.value / maximum} stroke="#087CA2" strokeWidth="3" />}<text x={x * 151} y={y * 151} fontSize="14" textAnchor="middle">{r.metric === "ppPoints" ? "PPP" : r.metric === "shots" ? "SOG" : r.metric.toUpperCase()}{r.value === null ? " ?" : ""}</text></g>; })}
++        </g>}
++        <text x="40" y="774" fontSize="18" fill="#555D60">Common raw scale 0–{number(maximum)} · {snapshot!.settings.basis} · missing values leave gaps · no percentile or quality score</text>
++        <text x="40" y="808" fontSize="23" fontWeight="700">OPPORTUNITY · TOI {number(snapshot!.recent.readings.find(r => r.metric === "toiSeconds")!.value)} min/GP · PP {number(snapshot!.recent.readings.find(r => r.metric === "ppToiSeconds")!.value)} min/GP</text>
++        <text x="40" y="840" fontSize="18" fill="#555D60">— means missing or unqualified source, not zero. Individual xG and on-ice xG remain separate.</text>
++      </> : p.view === "comparison" ? <>
++        <text x="710" y="409" fontSize="19" textAnchor="end">{snapshot!.recent.label} · {snapshot!.recent.gp} GP</text><text x="935" y="409" fontSize="19" textAnchor="end">{snapshot!.baseline.label} · {snapshot!.baseline.gp} GP</text><text x="1160" y="409" fontSize="19" textAnchor="end">Change</text>
++        {(["goals", "assists", "points", "shots", "bsh", "toiSeconds", "ppToiSeconds", "ixg", "xgf", "xga", "xgPct"] as AnalysisMetric[]).map((m, i) => { const r = snapshot!.recent.readings.find(r => r.metric === m)!, b = snapshot!.baseline.readings.find(r => r.metric === m)!, delta = analysisDifference(snapshot!, m); return <g key={m} transform={`translate(40 ${445 + i * 34})`} fontSize="23"><text>{ANALYSIS_FIELDS[m].label} · {r.unit}</text><text x="670" textAnchor="end">{number(r.value)}</text><text x="895" textAnchor="end">{number(b.value)}</text><text x="1120" textAnchor="end">{delta.value === null ? "—" : `${delta.value > 0 ? "+" : ""}${number(delta.value)}${m === "xgPct" ? " pp" : ""}`}</text></g>; })}
++        <text x="40" y="820" fontSize="18">{snapshot!.baseline.label} dates: {[...snapshot!.baseline.dates].sort().at(0) || "—"} → {[...snapshot!.baseline.dates].sort().at(-1) || "—"} · {snapshot!.baseline.gp} GP</text>
++        <text x="40" y="843" fontSize="17">{snapshot!.baseline.reason || (snapshot!.settings.basis === "total" && snapshot!.recent.gp !== snapshot!.baseline.gp ? "Totals have unequal appearance samples; choose per-game or per60 for a change." : "— means missing or unqualified source; changes are descriptive, not a forecast.")}</text>
++      </> : p.view === "evidence" ? <TextLines text={`${p.blsh.heading}. ${p.blsh.lines.join(" ")} ${p.blsh.market}`} y={420} maxLines={14} /> : <TextLines text={`${p.trades.lines.join(" ")} ${p.trades.records.map(r => `${r.attribution}; observed ${r.observedAt}; trade date ${r.tradedAt || "unknown"}; ${r.give.map(a => a.kind === "player" ? a.name : `${a.season} ${a.description}`).join(" + ")} for ${r.receive.map(a => a.kind === "player" ? a.name : `${a.season} ${a.description}`).join(" + ")}; scoring ${r.context.scoring || "unknown"}, roster ${r.context.roster || "unknown"}.`).join(" ")}`} y={420} maxLines={14} />}
++      <rect x="0" y="864" width="1200" height="156" fill="#1A1D21" />
++      <g fill="#F2F1EB" fontSize="18">{warningLines.length ? <text x="40" y="894" fontSize="17" data-confirmation-warnings="true" data-evidence-max-width="1120" data-evidence-truncated={warningsTooLong ? "true" : undefined}>{displayedWarnings.map((line, i) => <tspan key={i} x="40" dy={i ? 28 : 0}>{line}</tspan>)}</text> : <><text x="40" y="894">{research ? `Saved BLSH window ${research.dates[0]} → ${research.dates.at(-1)} · ${research.dates.length} GP · separate from NHL controls` : goalie ? "Volume upside, ratio exposure and win support are separate dimensions; no combined score." : `${snapshot!.recent.requestedAppearances === null ? `${snapshot!.recent.gp} GP` : `${snapshot!.recent.gp} of ${snapshot!.recent.requestedAppearances} appearances`} · dates ${[...snapshot!.recent.dates].sort().at(0) || "—"} → ${[...snapshot!.recent.dates].sort().at(-1) || "—"} · basis ${snapshot!.settings.basis} · strength ${snapshot!.capture.strength}`}</text>
++        <text x="40" y="922">{research ? research.currentBoxes ? `Stale research · ${research.currentBoxes.summary} · saved values unchanged` : "Stale development reference · exploratory support evidence · no calibrated confidence or trade advice" : goalie ? "Source confirmation and conditional forecast are separate. Partial inputs are not live/complete." : p.view === "comparison" ? snapshot!.disclosure : "BSH = blocks + shots on goal + hits. Missing component → unavailable BSH."}</text></>}
++        <text x="40" y="950">{research ? `BLSH observed: ${research.asOfUTC} · recorded through ${research.eventThroughDate}` : goalie ? `Inventory observed: ${p.goalie.observedAt}` : `Observed: ${snapshot!.capture.observedAt} · rank/N unavailable · all NHL valid values; no GP/TOI/position filter`}</text>
++        <text x="40" y="979">{research ? research.provenance ? `${research.methodVersion} · ${research.provenance.state !== "unavailable" ? `${research.provenance.state === "pending-review" ? "mapping review pending" : "retained mapping reviewed"} · ${research.provenance.captureStale ? "stale capture" : "retained capture"}` : "source mapping unavailable"}` : `Method: ${research.methodVersion} · retained source and complete profile in manifest` : goalie ? p.goalie.sharedProvenance ? `${p.goalie.sharedProvenance.version} fixture · ${p.goalie.sharedProvenance.sourceState} inputs · live producer admission pending.` : "Synthetic consumer proposal; producer interface and real inputs pending." : snapshot!.recent.sampleWarning || "Final status at observation; exact end time unavailable. Field reasons and source definitions in manifest."}</text><text x="40" y="1007" fontSize="16">FHFHOCKEY.COM · {source}</text>
++      </g>
++    </g>
++  </svg>;
++}
+--- /dev/null
++++ b/web/components/player-cards/PlayerAnalysisStudio.module.scss
+@@ -0,0 +1,16 @@
++.studio { color: #f2f1eb; background: #171c22; padding: 20px; font-family: Arial, sans-serif; max-width: 1260px; margin-inline: auto; }
++.controls { display: flex; flex-wrap: wrap; gap: 12px; margin-block: 20px 28px; }
++.control { display: grid; gap: 8px; min-width: 140px; flex: 1 1 170px; }
++.studio input, .studio select, .studio button { font: inherit; color: inherit; background: #252d36; border: 1px solid #7c8991; border-radius: 4px; min-height: 44px; padding: 10px; max-width: 100%; }
++.control input, .control select { min-inline-size: 0; inline-size: 100%; }
++.studio button { cursor: pointer; }
++.studio button:disabled { cursor: default; opacity: .55; }
++.studio :focus-visible { outline: 3px solid #80dfff; outline-offset: 3px; }
++.preview { overflow-x: auto; background: #f2f1eb; }
++.preview svg { display: block; width: 100%; height: auto; }
++.details { margin-block-start: 28px; line-height: 1.5; overflow-wrap: anywhere; }
++.metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 290px), 1fr)); gap: 20px; padding: 0; list-style: none; }
++.metrics li { padding: 12px; background: #252d36; }
++.metrics strong { display: block; }
++.notice { border-inline-start: 4px solid #80dfff; padding-inline-start: 12px; line-height: 1.5; }
++@media (max-width: 420px) { .studio { padding: 12px; } .control { flex-basis: 100%; } }
+--- /dev/null
++++ b/web/components/player-cards/PlayerAnalysisStudio.test.tsx
+@@ -0,0 +1,131 @@
++import React from "react";
++import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
++import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
++import PlayerAnalysisStudio from "./PlayerAnalysisStudio";
++import { captureFixture, goalieFixture, sharedGoalieFixture } from "../../lib/player-cards/analysisFixtures";
++import { sharedGoalieOutlook } from "../../lib/player-cards/sharedGoalieOutlook";
++import { assertAnalysisExport, analysisManifest, canExportAnalysis } from "../../lib/player-cards/analysisExport";
++import { buildAnalysisSnapshot } from "../../lib/player-cards/analysisSnapshot";
++import { cardBlshEvidence, cardTradeContext, type CardEvidence } from "../../lib/player-cards/analysisEvidence";
++import PlayerAnalysisCard, { type AnalysisPresentation } from "./PlayerAnalysisCard";
++const originalBBox = Object.getOwnPropertyDescriptor(SVGElement.prototype, "getBBox");
++// jsdom has no layout engine; real text widths are exercised by the offline browser check.
++beforeEach(() => Object.defineProperty(SVGElement.prototype, "getBBox", { configurable: true, value: () => ({ x: 40, y: 400, width: 900, height: 29 }) }));
++afterEach(() => { cleanup(); if (originalBBox) Object.defineProperty(SVGElement.prototype, "getBBox", originalBBox); else Reflect.deleteProperty(SVGElement.prototype, "getBBox"); });
++const skater = () => ({ id: "skater", label: "Fixture skater · TBL · 2026–27", capture: captureFixture() });
++const goalie = { id: "goalie", label: "Fixture goalie · TBL · 2026–27", goalie: { id: 8476883, name: "Fixture goalie", team: "TBL", season: 20262027 }, inventory: null };
++describe("analysis studio", () => {
++  it("prints the approved known-short GP warning and preserves it in the exported snapshot", () => {
++    const snapshot = buildAnalysisSnapshot(captureFixture(3), { period: { mode: "appearances", count: 5 }, baseline: "season", basis: "per-game", visual: "bars" });
++    const p: AnalysisPresentation = { snapshot, view: "comparison", blsh: cardBlshEvidence(snapshot, null, null), trades: cardTradeContext(snapshot.capture.player.id, [], { fixture: true, ownerReceipt: null, asOf: snapshot.capture.observedAt }) };
++    const { rerender } = render(<PlayerAnalysisCard presentation={p} />);
++    const svg = screen.getByRole("img") as unknown as SVGSVGElement;
++    expect(svg.textContent).toContain("3 of 5 appearances"); expect(svg.getAttribute("aria-label")).toContain("verified complete season history");
++    expect(() => assertAnalysisExport(svg, p)).not.toThrow();
++    const manifest = analysisManifest(p);
++    expect(manifest.presentation.snapshot.rankPolicy).toMatchObject({ status: "approved", ties: "competition", percentile: "midrank" });
++    expect(manifest.presentation.snapshot.recent).toMatchObject({ gp: 3, requestedAppearances: 5, knownShort: true });
++    const incomplete = captureFixture(3); incomplete.games.pop(); p.snapshot = buildAnalysisSnapshot(incomplete, snapshot.settings);
++    rerender(<PlayerAnalysisCard presentation={p} />);
++    expect(svg.textContent).not.toContain("verified complete season history"); expect(() => assertAnalysisExport(svg, p)).toThrow(/Unqualified capture/);
++  });
++  it("exports separate retained research while keeping unsupported NHL analysis blocked", () => {
++    const capture = captureFixture(); capture.history.complete = false;
++    const snapshot = buildAnalysisSnapshot(capture, { period: { mode: "appearances", count: 5 }, baseline: "previous", basis: "per-game", visual: "bars" });
++    const p: AnalysisPresentation = { snapshot, view: "categories", blsh: cardBlshEvidence(snapshot, null, null), trades: cardTradeContext(capture.player.id, [], { fixture: true, ownerReceipt: null, asOf: capture.observedAt }) };
++    expect(canExportAnalysis(p)).toBe(false);
++    p.view = "evidence";
++    expect(canExportAnalysis(p)).toBe(false);
++    p.blsh = { status: "exploratory", heading: "Synthetic retained-research export fixture", lines: ["Separate dated research; source comparisons do not change saved values."], direction: "unknown", receipt: null, market: "Market reference unavailable", retained: { snapshotSHA256: "unit-test-only", reviewReference: "Synthetic unit receipt", asOfUTC: capture.observedAt, eventThroughDate: "2026-10-24", dates: ["2026-10-24"], methodVersion: "test-only", profile: { playerId: capture.player.id, team: capture.player.team }, limits: [] } as unknown as NonNullable<CardEvidence["retained"]> };
++    const { rerender } = render(<PlayerAnalysisCard presentation={p} />);
++    const svg = screen.getByRole("img") as unknown as SVGSVGElement;
++    expect(canExportAnalysis(p)).toBe(true); expect(() => assertAnalysisExport(svg, p)).not.toThrow();
++    expect(analysisManifest(p).presentation.snapshot.recent.reason).toBeTruthy();
++    p.view = "comparison"; rerender(<PlayerAnalysisCard presentation={p} />);
++    expect(canExportAnalysis(p)).toBe(false); expect(() => assertAnalysisExport(svg, p)).toThrow(/Unqualified capture/);
++    p.view = "evidence"; p.blsh.retained!.profile.playerId = 1;
++    expect(canExportAnalysis(p)).toBe(false);
++    p.blsh.retained!.profile.playerId = capture.player.id; p.blsh.status = "unavailable";
++    expect(canExportAnalysis(p)).toBe(false);
++  });
++  it("prints confirmation gaps on the card and refuses an export that omits long warnings", () => {
++    const input = sharedGoalieFixture();
++    const warnings = ["Reports aren't separated by reporter, so conflicts between sources can't be detected.", "No source link or expiry exists for these reports."];
++    input.sources[0].reasons = warnings;
++    const p: AnalysisPresentation = { goalie: sharedGoalieOutlook(input, goalieFixture().player, "fixture"), gameIndex: 0 };
++    const { rerender } = render(<PlayerAnalysisCard presentation={p} />);
++    const svg = screen.getByRole("img") as unknown as SVGSVGElement;
++    expect(svg.querySelector('[data-confirmation-warnings="true"]')?.textContent).toContain("conflicts between sources can't be detected");
++    expect(svg.getAttribute("aria-label")).toContain(warnings[1]);
++    expect(() => assertAnalysisExport(svg, p)).not.toThrow();
++    expect(analysisManifest(p).presentation.goalie.sharedProvenance.confirmationWarnings).toEqual(warnings);
++    p.goalie.sharedProvenance!.confirmationWarnings = ["Unresolved source limitation. ".repeat(30)];
++    rerender(<PlayerAnalysisCard presentation={p} />);
++    expect(() => assertAnalysisExport(svg, p)).toThrow(/Full evidence/);
++  });
++  it("rejects the audited unbroken warning URL while preserving full evidence outside the PNG", () => {
++    const input = sharedGoalieFixture(), warning = "https://example.test/" + "w".repeat(300);
++    input.sources[0].reasons = [warning];
++    const p: AnalysisPresentation = { goalie: sharedGoalieOutlook(input, goalieFixture().player, "fixture"), gameIndex: 0 };
++    render(<PlayerAnalysisCard presentation={p} />);
++    const svg = screen.getByRole("img") as unknown as SVGSVGElement;
++    const text = svg.querySelector('[data-confirmation-warnings="true"]')!;
++    expect(text.getAttribute("data-evidence-truncated")).toBe("true");
++    expect(text.textContent).toContain("PNG export is unavailable");
++    expect([...text.querySelectorAll("tspan")].every(line => !!line.textContent)).toBe(true);
++    expect(svg.getAttribute("aria-label")).toContain(warning);
++    expect(analysisManifest(p).presentation.goalie.sharedProvenance.confirmationWarnings).toEqual([warning]);
++    expect(() => assertAnalysisExport(svg, p)).toThrow(/Full evidence/);
++  });
++  it("checks rendered evidence width even when character wrapping does not flag truncation", () => {
++    const input = sharedGoalieFixture(); input.sources[0].reasons = ["W".repeat(120)];
++    const p: AnalysisPresentation = { goalie: sharedGoalieOutlook(input, goalieFixture().player, "fixture"), gameIndex: 0 };
++    render(<PlayerAnalysisCard presentation={p} />);
++    const svg = screen.getByRole("img") as unknown as SVGSVGElement, text = svg.querySelector('[data-confirmation-warnings="true"]')!;
++    expect(svg.querySelector('[data-evidence-truncated="true"]')).toBeNull();
++    for (const width of [1120, 1121, NaN, 0]) {
++      Object.defineProperty(text, "getBBox", { configurable: true, value: () => ({ width }) });
++      if (width === 1120) expect(() => assertAnalysisExport(svg, p)).not.toThrow();
++      else expect(() => assertAnalysisExport(svg, p)).toThrow(/Full evidence/);
++    }
++    Object.defineProperty(text, "getBBox", { configurable: true, value: undefined });
++    expect(() => assertAnalysisExport(svg, p)).toThrow(/bounds are unavailable/);
++  });
++  it("offers explicit optional season comparison, preserves baseline default and makes no requests", () => {
++    const network = vi.spyOn(globalThis, "fetch"); render(<PlayerAnalysisStudio selections={[skater(), goalie]} />);
++    fireEvent.change(screen.getByLabelText("Analysis view"), { target: { value: "comparison" } });
++    expect((screen.getByLabelText("Comparison baseline") as HTMLSelectElement).value).toBe("previous");
++    fireEvent.change(screen.getByLabelText("Comparison baseline"), { target: { value: "season" } });
++    expect(screen.getAllByText(/Season includes recent games/).length).toBeGreaterThan(0);
++    fireEvent.change(screen.getByLabelText("Window"), { target: { value: "20" } });
++    expect((screen.getByLabelText("Comparison baseline") as HTMLSelectElement).value).toBe("previous");
++    expect(network).not.toHaveBeenCalled(); network.mockRestore();
++  });
++  it("clears skater values when searching or choosing an unsupported goalie", () => {
++    render(<PlayerAnalysisStudio selections={[skater(), goalie]} />);
++    fireEvent.change(screen.getByLabelText("Search supplied players"), { target: { value: "goalie" } });
++    expect(screen.queryByRole("img")).toBeNull();
++    fireEvent.change(screen.getByLabelText("Player"), { target: { value: "goalie" } });
++    expect(screen.getByRole("img").getAttribute("aria-label")).toContain("Goalie outlook");
++    expect((screen.getByText("Download analysis PNG") as HTMLButtonElement).disabled).toBe(true);
++  });
++  it("rejects a prepared share after a control change, including an in-flight export", async () => {
++    let resolve!: (b: Blob) => void; const rasterize = vi.fn(() => new Promise<Blob>(r => { resolve = r; }));
++    render(<PlayerAnalysisStudio selections={[skater()]} rasterize={rasterize} />);
++    fireEvent.click(screen.getByText("Prepare analysis share"));
++    fireEvent.change(screen.getByLabelText("Value basis"), { target: { value: "total" } });
++    resolve(new Blob(["png"], { type: "image/png" }));
++    await waitFor(() => expect((screen.getByText("Prepare analysis share") as HTMLButtonElement).disabled).toBe(false));
++    expect((screen.getByText("Share prepared image") as HTMLButtonElement).disabled).toBe(true);
++  });
++  it("exports the same snapshot and rejects stale or altered selection", () => {
++    const snapshot = buildAnalysisSnapshot(captureFixture(), { period: { mode: "appearances", count: 5 }, baseline: "season", basis: "per-game", visual: "bars" });
++    const p: AnalysisPresentation = { snapshot, view: "comparison", blsh: cardBlshEvidence(snapshot, null, null), trades: cardTradeContext(8476453, [], { fixture: true, ownerReceipt: null, asOf: snapshot.capture.observedAt }) };
++    render(<PlayerAnalysisCard presentation={p} />); const svg = screen.getByRole("img") as unknown as SVGSVGElement;
++    expect(() => assertAnalysisExport(svg, p)).not.toThrow();
++    const manifest = analysisManifest(p); expect(manifest.presentation.snapshot.overlap).toBe(5);
++    const overflow = document.createElementNS("http://www.w3.org/2000/svg", "text"); overflow.setAttribute("data-evidence-truncated", "true"); svg.appendChild(overflow);
++    expect(() => assertAnalysisExport(svg, p)).toThrow(/Full evidence/); overflow.remove();
++    p.snapshot.settings.baseline = "previous"; expect(() => assertAnalysisExport(svg, p)).toThrow(/changed/); expect(manifest.presentation.snapshot.settings.baseline).toBe("season");
++  });
++});
+--- /dev/null
++++ b/web/components/player-cards/PlayerAnalysisStudio.tsx
+@@ -0,0 +1,70 @@
++import React, { useMemo, useRef, useState } from "react";
++import PlayerAnalysisCard, { analysisPresentationKey, type AnalysisPresentation } from "./PlayerAnalysisCard";
++import type { PreparedHero } from "./HeroPlayerCard";
++import { ANALYSIS_FIELDS, buildAnalysisSnapshot, type AnalysisCapture, type AnalysisSettings } from "../../lib/player-cards/analysisSnapshot";
++import { cardBlshEvidence, cardTradeContext, type EvidenceReceipt, type TradeObservation } from "../../lib/player-cards/analysisEvidence";
++import type { DisplayProfile } from "../../lib/buyLowSellHigh/displayProfile";
++import { retainedBlshEvidence, type RetainedBlshInput } from "../../lib/player-cards/retainedBlsh";
++import { goalieOutlook, type GoalieInventory } from "../../lib/player-cards/goalieOutlook";
++import { sharedGoalieOutlook } from "../../lib/player-cards/sharedGoalieOutlook";
++import type { GoalieInventory as SharedGoalieInventory } from "../../lib/socialShare/modules/shared/goalieInventory";
++import { analysisManifest, canExportAnalysis, rasterizeAnalysis } from "../../lib/player-cards/analysisExport";
++import { saveCardFile } from "../../lib/player-cards/shareExport";
++import styles from "./PlayerAnalysisStudio.module.scss";
++
++export type AnalysisSelection = { id: string; label: string; capture: AnalysisCapture; hero?: PreparedHero | null; retainedBlsh?: RetainedBlshInput; blsh?: { profile: DisplayProfile; receipt: EvidenceReceipt }; trades?: { records: TradeObservation[]; ownerReceipt: string | null } } | { id: string; label: string; goalie: GoalieInventory["player"]; inventory: GoalieInventory | null; sharedFixture?: SharedGoalieInventory };
++/** Supplied snapshots only. No loaders or provider calls are reachable from these controls. */
++export default function PlayerAnalysisStudio({ selections, initialWindow = 5, rasterize = rasterizeAnalysis }: { initialWindow?: 5 | 10 | 20; selections: readonly AnalysisSelection[]; rasterize?: typeof rasterizeAnalysis }) {
++  const [selected, setSelected] = useState(selections[0]?.id || ""), [query, setQuery] = useState(""), [view, setView] = useState<"categories" | "comparison" | "evidence" | "trades">("categories");
++  const [settings, setSettings] = useState<AnalysisSettings>({ period: { mode: "appearances", count: initialWindow }, baseline: "previous", basis: "per-game", visual: "bars" }), [gameIndex, setGameIndex] = useState(0);
++  const [prepared, setPrepared] = useState<{ key: string; file: File } | null>(null), [status, setStatus] = useState(""), [busy, setBusy] = useState(false);
++  const svg = useRef<SVGSVGElement>(null), generation = useRef(0), busyRef = useRef(false);
++  const item = selections.find(s => s.id === selected), capture = item && "capture" in item ? item.capture : null;
++  const snapshot = useMemo(() => capture ? buildAnalysisSnapshot(capture, settings) : null, [capture, settings]);
++  const hero = item && "capture" in item ? item.hero : null;
++  const p: AnalysisPresentation | null = item && "goalie" in item ? { goalie: item.sharedFixture ? sharedGoalieOutlook(item.sharedFixture, item.goalie, "fixture") : goalieOutlook(item.inventory, item.goalie), gameIndex } : snapshot && item && "capture" in item ? { snapshot, view, blsh: item.retainedBlsh ? retainedBlshEvidence(snapshot.capture.player, snapshot.capture.season, item.retainedBlsh) : cardBlshEvidence(snapshot, item.blsh?.profile || null, item.blsh?.receipt || null), trades: cardTradeContext(snapshot.capture.player.id, item.trades?.records || [], { fixture: snapshot.capture.source === "synthetic", ownerReceipt: item.trades?.ownerReceipt || null, asOf: snapshot.capture.observedAt }) } : null;
++  const key = p ? analysisPresentationKey(p, hero) : "", keyRef = useRef(key); keyRef.current = key;
++  const changed = () => { generation.current++; setPrepared(null); setStatus(""); };
++  const change = (patch: Partial<AnalysisSettings>) => { changed(); setSettings(s => ({ ...s, ...patch })); };
++  const exportable = p && canExportAnalysis(p);
++  async function image(share: boolean) {
++    if (!p || !svg.current || !exportable || busyRef.current) return;
++    const run = generation.current, savedKey = key; busyRef.current = true; setBusy(true);
++    try {
++      const blob = await rasterize(svg.current, p, hero);
++      if (run !== generation.current || savedKey !== keyRef.current) return;
++      const file = new File([blob], `fhfh-analysis-${selected}.png`, { type: "image/png" });
++      if (share) { setPrepared({ key: savedKey, file }); setStatus("Image prepared from the displayed snapshot."); } else { saveCardFile(file, file.name); setStatus("PNG saved."); }
++    } catch (e) { if (run === generation.current) setStatus(e instanceof Error ? e.message : "Export failed."); }
++    finally { busyRef.current = false; setBusy(false); }
++  }
++  async function share() {
++    if (!prepared || prepared.key !== key) return;
++    if (!navigator.canShare?.({ files: [prepared.file] }) || !navigator.share) { setStatus("File sharing unavailable on this device; download the PNG."); return; }
++    try { await navigator.share({ files: [prepared.file] }); setStatus("Share dialog closed."); } catch (e) { setStatus(e instanceof Error && e.name === "AbortError" ? "Share cancelled." : "Unable to share; download the PNG."); }
++  }
++  return <section className={styles.studio} aria-label="Player card analysis">
++    <h1>Player card analysis</h1><p className={styles.notice}>Local card extension · supplied captures only. Existing card formats and artwork remain in the current editor. Fixture records are labeled throughout.</p>
++    <div className={styles.controls}>
++      <label className={styles.control}>Search supplied players<input value={query} onChange={e => { setQuery(e.target.value); changed(); setSelected(""); }} /></label>
++      <label className={styles.control}>Player<select aria-label="Player" value={selected} onChange={e => { changed(); setSelected(e.target.value); setGameIndex(0); }}><option value="">Choose a player</option>{selections.filter(s => s.label.toLocaleLowerCase().includes(query.toLocaleLowerCase())).map(s => <option key={s.id} value={s.id}>{s.label}</option>)}</select></label>
++      {capture && <>
++        <label className={styles.control}>Analysis view<select aria-label="Analysis view" value={view} onChange={e => { changed(); setView(e.target.value as typeof view); }}><option value="categories">Scoring & peripherals</option><option value="comparison">Recent comparison</option><option value="evidence">BLSH evidence</option><option value="trades">Trade context</option></select></label>
++        <label className={styles.control}>Window<select aria-label="Window" value={settings.period.mode === "appearances" ? settings.period.count : "calendar"} onChange={e => change({ period: e.target.value === "calendar" ? { mode: "calendar", start: capture.observedAt.slice(0, 8) + "01", end: capture.observedAt.slice(0, 10) } : { mode: "appearances", count: Number(e.target.value) as 5 | 10 | 20 }, ...(e.target.value === "20" || e.target.value === "calendar" ? { baseline: "previous" as const } : {}) })}><option value="5">Last 5 appearances</option><option value="10">Last 10 appearances</option><option value="20">Last 20 appearances</option><option value="calendar">UTC calendar</option></select></label>
++        {settings.period.mode === "calendar" && <><label className={styles.control}>Start date<input type="date" value={settings.period.start} onChange={e => { if (settings.period.mode === "calendar") change({ period: { ...settings.period, start: e.target.value } }); }} /></label><label className={styles.control}>End date<input type="date" value={settings.period.end} onChange={e => { if (settings.period.mode === "calendar") change({ period: { ...settings.period, end: e.target.value } }); }} /></label></>}
++        {view === "comparison" && <label className={styles.control}>Comparison baseline<select aria-label="Comparison baseline" value={settings.baseline} onChange={e => change({ baseline: e.target.value as "previous" | "season" })}><option value="previous">Matched previous appearances</option><option value="season" disabled={settings.period.mode !== "appearances" || settings.period.count === 20}>Season to date (L5/L10)</option></select></label>}
++        <label className={styles.control}>Value basis<select aria-label="Value basis" value={settings.basis} onChange={e => change({ basis: e.target.value as AnalysisSettings["basis"] })}><option value="per-game">Per game</option><option value="total">Totals</option><option value="per60">Per 60 minutes</option></select></label>
++        {view === "categories" && <label className={styles.control}>Category display<select aria-label="Category display" value={settings.visual} onChange={e => change({ visual: e.target.value as "bars" | "radar" })}><option value="bars">Aligned bars</option><option value="radar">Raw category shape</option></select></label>}
++      </>}
++      {p && "goalie" in p && <label className={styles.control}>Scheduled game<select aria-label="Scheduled game" value={gameIndex} onChange={e => { changed(); setGameIndex(Number(e.target.value)); }}>{p.goalie.games.map((g, i) => <option value={i} key={g.id}>{g.heading}</option>)}</select></label>}
++    </div>
++    {!p && <p role="status">{selections.some(s => s.label.toLowerCase().includes(query.toLowerCase())) ? "Choose a player. Previous values have been cleared." : "No matching supplied player."}</p>}
++    {p && <><div className={styles.preview}><PlayerAnalysisCard presentation={p} hero={hero} svgRef={svg} /></div><div className={styles.controls}>
++      <button disabled={!exportable || busy} onClick={() => void image(false)}>Download analysis PNG</button><button disabled={!exportable || busy} onClick={() => void image(true)}>Prepare analysis share</button><button disabled={!prepared || prepared.key !== key || busy} onClick={() => void share()}>Share prepared image</button>
++      <button onClick={() => { const file = new File([JSON.stringify(analysisManifest(p, hero), null, 2)], `fhfh-analysis-${selected}.json`, { type: "application/json" }); saveCardFile(file, file.name); }}>Download analysis manifest</button>
++    </div><div className={styles.details} aria-label="Readable card details">
++      {"snapshot" in p ? <><p>{p.snapshot.disclosure}</p>{p.snapshot.recent.sampleWarning && <p>{p.snapshot.recent.sampleWarning}</p>}<p>Rank policy: highest numeric value first; competition ties (1, 2, 2, 4) and shared midrank percentiles. Verified complete short samples are eligible with GP warnings. Percentiles describe numeric magnitude, not probability or player quality. Observed ranks still require complete qualified NHL coverage.</p><p>{p.snapshot.capture.finality}</p><p>{p.snapshot.recent.reason || p.snapshot.baseline.reason}</p><ul className={styles.metrics}>{p.snapshot.recent.readings.map(r => <li key={r.metric}><strong>{ANALYSIS_FIELDS[r.metric].label}</strong>{r.value === null ? "Unavailable" : r.value.toFixed(2)} {r.unit} · {r.gp} GP<p>{r.reason || "Measured value"}</p><small>{r.rankReason}</small></li>)}</ul><h2>{p.blsh.heading}</h2>{p.blsh.retained && <p>Separate saved research observed {p.blsh.retained.asOfUTC}, recorded through {p.blsh.retained.eventThroughDate}; method {p.blsh.retained.methodVersion}. This evidence is not current or bound to the NHL window above.</p>}{p.blsh.retained?.provenance && <><p>{p.blsh.retained.provenance.message}</p>{p.blsh.retained.provenance.sourceMap?.limitations.map((limit, i) => <p key={`provenance-${i}`}>{limit}</p>)}</>}{p.blsh.retained?.currentBoxes && <><h3>{p.blsh.retained.currentBoxes.summary}</h3>{p.blsh.retained.currentBoxes.lines.map((line, i) => <p key={`box-${i}`}>{line}</p>)}</>}{p.blsh.lines.map((t, i) => <p key={i}>{t}</p>)}<p>{p.blsh.market}</p><h2>Trade context</h2>{p.trades.lines.map((t, i) => <p key={i}>{t}</p>)}</> : <><p>{p.goalie.reason}</p>{p.goalie.sharedProvenance && <><h2>Shared inventory provenance</h2><p>{p.goalie.sharedProvenance.version} · {p.goalie.sharedProvenance.sourceState}</p>{p.goalie.sharedProvenance.sourceNotes.map((note, i) => <p key={i}>{note}</p>)}<p>Recent starts: {p.goalie.sharedProvenance.recentStarts.starts ?? "unavailable"} in {p.goalie.sharedProvenance.recentStarts.teamGames} team games; {p.goalie.sharedProvenance.recentStarts.reliefAppearances} relief appearances. {p.goalie.sharedProvenance.recentStarts.complete ? "Complete supplied L10 sample." : "Incomplete supplied L10 sample."} Descriptive workload, not start probability.</p></>}{p.goalie.games.map(g => <article key={g.id}><h2>{g.heading}</h2><p>{g.confirmation}</p><p>{g.forecast}</p>{g.dimensions.map(d => <p key={d.label}><strong>{d.group} · {d.label}:</strong> {d.text}</p>)}</article>)}</>}
++    </div></>}
++    <p role="status" aria-live="polite">{status}</p>
++  </section>;
++}
+--- /dev/null
++++ b/web/lib/player-cards/analysisEvidence.test.ts
+@@ -0,0 +1,64 @@
++import { describe, expect, it } from "vitest";
++import type { DisplayProfile } from "../buyLowSellHigh/displayProfile";
++import { captureFixture } from "./analysisFixtures";
++import { buildAnalysisSnapshot } from "./analysisSnapshot";
++import { cardBlshEvidence, cardMarketReference, cardTradeContext, illustrativeTradeIdeas, preseasonAnchorLabel, type EvidenceReceipt, type TradeObservation } from "./analysisEvidence";
++const snapshot = () => buildAnalysisSnapshot(captureFixture(), { period: { mode: "appearances", count: 5 }, baseline: "previous", basis: "per-game", visual: "bars" });
++function blsh() {
++  const s = snapshot();
++  // Only the owner's display fields consumed by this boundary; no model execution.
++  const p = { playerId: s.capture.player.id, team: s.capture.player.team, displayName: "Fixture skater", score: { version: "support-conditioned-production-gap-v1", gapSign: "buy_low_evidence", statusLabel: "Exploratory", gapSignLabel: "Support above recorded production", calibratedProbability: null }, tracks: ["FP", "G+A", "Game Score"].map(label => ({ label, observed: 2, supportConditioned: 3, gap: 1 })), evidence: { window: { games: 5, sourceIds: [101, 102, 103, 104, 105], fresh: true }, tierNote: "Provisional", reference: { ageText: "Development reference is stale" }, calibratedProbabilityText: "Unavailable" }, coverage: { context: { current: { verified: true } }, notes: [] }, context: { opportunity: [{ label: "PP TOI", current: 1, units: "min/GP", reasonText: null }] }, claims: { forecast: false, marketValue: false, trusted: false } } as unknown as DisplayProfile;
++  const receipt: EvidenceReceipt = { status: "fixture", reference: "synthetic-test", snapshotSHA256: "a".repeat(64), methodVersion: p.score.version, season: s.capture.season, observedAt: s.capture.observedAt, strength: "all", gameIds: s.recent.gameIds, sourceRows: s.recent.gameIds.map((gameId, i) => ({ sourceId: 101 + i, gameId })) };
++  return { s, p, receipt };
++}
++const trade = (): TradeObservation => ({ id: "synthetic-transaction", sample: "synthetic", source: "Yahoo Trade Market", sourceUrl: "https://hockey.fantasysports.yahoo.com/", attribution: "Yahoo Trade Market · synthetic fixture", observedAt: "2026-10-30T12:00:00Z", tradedAt: null, give: [{ kind: "player", playerId: 8476453, name: "Fixture skater" }, { kind: "pick", season: "2027", round: 2, description: "Round 2 pick" }], receive: [{ kind: "player", playerId: 8479318, name: "Fixture counterpart" }], context: { scoring: null, roster: null, leagueSize: null } });
++const options = { fixture: true, ownerReceipt: null, asOf: "2026-10-31T12:00:00Z" };
++describe("card evidence consumers", () => {
++  it.each([["buy_low_evidence", "positive"], ["sell_high_evidence", "negative"], ["balanced", "level"], [null, "unknown"]] as const)("preserves owner-supplied %s direction without upgrading research", (sign, direction) => {
++    const { s, p, receipt } = blsh(); p.score.gapSign = sign;
++    const r = cardBlshEvidence(s, p, receipt); expect(r.status).toBe("exploratory"); expect(r.direction).toBe(direction); expect(r.lines.join(" ")).toContain("recorded 2.00"); expect(r.lines.join(" ")).toContain("not a qualified forecast"); expect(r.market).toBe("Market reference unavailable");
++  });
++  it("rejects wrong player, stale/incomplete support, method drift and mismatched windows", () => {
++    for (const change of [(x: ReturnType<typeof blsh>) => { x.p.playerId++; }, (x: ReturnType<typeof blsh>) => { x.receipt.methodVersion = "wrong"; }, (x: ReturnType<typeof blsh>) => { x.p.evidence.window.fresh = false; }, (x: ReturnType<typeof blsh>) => { x.p.coverage.context.current.verified = false; }, (x: ReturnType<typeof blsh>) => { x.receipt.gameIds = [1]; }, (x: ReturnType<typeof blsh>) => { x.s.capture.source = "observed"; }]) { const x = blsh(); change(x); expect(cardBlshEvidence(x.s, x.p, x.receipt).status).toBe("unavailable"); }
++  });
++  it("requires explicit linkage between source row IDs and NHL game IDs", () => {
++    const x = blsh(); expect(cardBlshEvidence(x.s, x.p, x.receipt).status).toBe("exploratory");
++    x.receipt.sourceRows = []; expect(cardBlshEvidence(x.s, x.p, x.receipt).status).toBe("unavailable");
++    x.receipt.sourceRows = x.s.recent.gameIds.map(gameId => ({ sourceId: gameId, gameId }));
++    expect(cardBlshEvidence(x.s, x.p, x.receipt).status).toBe("unavailable");
++  });
++  it("does not describe missing production as an old window or a mismatched capture", () => {
++    const { s, p, receipt } = blsh();
++    Object.assign(p.evidence.window, { fresh: false, lastGameDaysBeforeRecordedThrough: 1, freshnessText: "Last game 1 day ago; stale window; withheld from lists" });
++    const before = JSON.stringify(p), r = cardBlshEvidence(s, p, receipt);
++    expect(r.status).toBe("unavailable");
++    expect(r.lines).toEqual(["BLSH production or support is unqualified for this window. Missing production does not establish window age."]);
++    expect(JSON.stringify(p)).toBe(before);
++    receipt.observedAt = "2026-10-01T00:00:00Z";
++    expect(cardBlshEvidence(s, p, receipt).lines).toEqual(["BLSH source time does not match the displayed capture."]);
++  });
++  it("does not turn support or ownership into market value", () => {
++    const expected = { value: 3, unit: "count" as const, scoringBasis: "category:POINTS", horizonGames: 5 }, reference = { value: 2, source: "Manager scenario", kind: "manager_entered" as const, capturedAt: "2026-10-30T12:00:00Z", unit: "count" as const, scoringBasis: "category:POINTS", horizonGames: 5 };
++    expect(cardMarketReference(null, reference, options.asOf, 48).status).toBe("unavailable");
++    expect(cardMarketReference(expected, { ...reference, horizonGames: 10 }, options.asOf, 48).status).toBe("unavailable");
++    expect(cardMarketReference(expected, reference, options.asOf, 48).status).toBe("comparable");
++    expect(cardMarketReference(expected, reference, options.asOf, null).status).toBe("unavailable");
++  });
++  it("preserves full bundles/picks and unknown context while deduplicating repeated observations", () => {
++    const t = trade(), r = cardTradeContext(8476453, [t, { ...t, observedAt: "2026-10-31T00:00:00Z" }], options);
++    expect(r.status).toBe("synthetic"); expect(r.records).toHaveLength(1); expect(r.records[0].give).toHaveLength(2); expect(r.records[0].tradedAt).toBeNull();
++    expect(illustrativeTradeIdeas(r)[0].caveat).toContain("scoring unknown"); expect(r.lines.join(" ")).toContain("No guarantee");
++    expect(cardTradeContext(999, [t], options).status).toBe("unavailable");
++  });
++  it("withholds conflicting transactions, invented observed records, future dates and ambiguous identities", () => {
++    const t = trade();
++    expect(cardTradeContext(8476453, [t, { ...t, give: [t.give[0]] }], options).status).toBe("unavailable");
++    expect(cardTradeContext(8476453, [t], { ...options, fixture: false }).status).toBe("unavailable");
++    expect(cardTradeContext(8476453, [{ ...t, observedAt: "2027-01-01" }], options).status).toBe("unavailable");
++    expect(cardTradeContext(8476453, [{ ...t, give: [{ kind: "player", playerId: NaN, name: "Same name" }] }], options).status).toBe("unavailable");
++  });
++  it("keeps dated preseason anchors separate from current performance and pick value", () => {
++    expect(preseasonAnchorLabel({ playerId: 8476453, season: 20262027, publishedAt: "2026-09-01", source: "Fixture anchor", value: 80, unit: "points" }, 8476453, 20262027)).toContain("not current performance, market price or pick value");
++    expect(preseasonAnchorLabel(null, 8476453, 20262027)).toContain("unavailable");
++  });
++});
+--- /dev/null
++++ b/web/lib/player-cards/analysisEvidence.ts
+@@ -0,0 +1,98 @@
++import type { DisplayProfile } from "../buyLowSellHigh/displayProfile";
++import { compareMarketReference, type MarketExpectation, type MarketReference } from "../buyLowSellHigh/market";
++import type { AnalysisSnapshot } from "./analysisSnapshot";
++
++export type EvidenceReceipt = { status: "fixture" | "owner-reviewed"; reference: string; snapshotSHA256: string; methodVersion: string; season: number; observedAt: string; strength: string; gameIds: number[]; sourceRows: { sourceId: number; gameId: number }[] };
++export type BoxCount = "goals" | "assists" | "shots" | "hits" | "blocked_shots";
++export type BoxMeasurement = { wgo: number; official: number; state: "match" | "mismatch" };
++/** Separate dated comparisons; exposure qualification never certifies counting stats. */
++export type RetainedBlshBoxes = {
++  version: "fhfh.card-retained-box-comparison.v1"; rowsSHA256: string; boxEvidenceSHA256: string; receiptSHA256: string;
++  sourceSidecarSHA256: string; snapshotSHA256: string; wgoCapturedAt: string;
++  review: { reference: string; sha256: string; scope: "dated-source-comparison-only" };
++  rows: {
++    sourceId: number; playerId: number; gameId: number; date: string; wgoTeam: string; sourceRowSHA256: string;
++    state: "identity_team_exposure_qualified" | "held"; gameFinality: "final" | "unknown"; appearance: "positive_official_TOI" | "unknown"; team: "match" | "unknown";
++    TOI: BoxMeasurement | null; counts: Partial<Record<BoxCount, BoxMeasurement>>;
++    PPP: BoxMeasurement | { wgo: number; official: null; state: "unknown_PP_assists_not_supplied" } | null;
++    reasons: string[]; officialTeam?: string; officialTeamId?: number; evidenceGameId: number | null;
++    box: { url: string; bodySHA256: string; receiptSHA256: string; retrievedAtUTC: string; originalPublicationUTC: null } | null;
++  }[];
++};
++export type RetainedBoxEvidence = { state: "reviewed-comparison-only" | "unavailable"; summary: string; lines: string[]; evidence: RetainedBlshBoxes | null; currentBinding: false };
++export type RetainedBlshSourceMap = {
++  version: "fhfh.blsh.player-card-research-provenance.v1"; sidecarSHA256: string; snapshotSHA256: string; independentReviewPending: true;
++  generatedAtUTC: string; asOfUTC: string; eventThroughDate: string; maxCaptureAgeHours: number;
++  playerId: number; team: string; season: number;
++  rows: { sourceId: number; gameId: number; playerId: number; season: number; date: string; team: string; regularSeasonCalendarMatched: boolean; finalityEstablished: boolean }[];
++  limitations: string[];
++  review?: { reference: string; sha256: string; sidecarSHA256: string; scope: "dated-stale-research-only" };
++};
++export type CardEvidence = { status: "unavailable" | "exploratory"; heading: string; lines: string[]; direction: "positive" | "negative" | "level" | "unknown"; receipt: EvidenceReceipt | null; market: string; retained?: { snapshotSHA256: string; reviewReference: string; asOfUTC: string; eventThroughDate: string; dates: string[]; methodVersion: string; profile: DisplayProfile; limits: string[]; currentBoxes?: RetainedBoxEvidence; provenance?: { state: "pending-review" | "reviewed-retained-only" | "unavailable"; message: string; currentBinding: false; captureStale: boolean | null; sourceMap: RetainedBlshSourceMap | null } } };
++const hash = (s: string) => /^[0-9a-f]{64}$/.test(s);
++const sameIds = (a: number[], b: number[]) => a.length === b.length && new Set(a).size === a.length && [...a].sort((x, y) => x - y).every((id, i) => id === [...b].sort((x, y) => x - y)[i]);
++
++/** Consumes the owner's display mapping. Never recomputes a BLSH score or direction. */
++export function cardBlshEvidence(snapshot: AnalysisSnapshot, profile: DisplayProfile | null, receipt: EvidenceReceipt | null): CardEvidence {
++  const unavailable = (reason: string): CardEvidence => ({ status: "unavailable", heading: "BLSH evidence unavailable", lines: [reason], direction: "unknown", receipt: null, market: "Market reference unavailable" });
++  if (!profile || !receipt) return unavailable("An owner-qualified current method and snapshot receipt has not been supplied.");
++  if (snapshot.capture.source !== "synthetic" && receipt.status !== "owner-reviewed") return unavailable("Synthetic BLSH evidence cannot bind to observed results.");
++  if (profile.playerId !== snapshot.capture.player.id || receipt.season !== snapshot.capture.season || profile.team !== snapshot.capture.player.team) return unavailable("BLSH player, team or season does not match this card.");
++  if (!receipt.reference.trim() || !hash(receipt.snapshotSHA256) || receipt.methodVersion !== "support-conditioned-production-gap-v1" || profile.score.version !== receipt.methodVersion) return unavailable("BLSH snapshot hash, review or method version is unverified.");
++  if (receipt.strength !== snapshot.capture.strength || !sameIds(receipt.gameIds, snapshot.recent.gameIds) || !Array.isArray(receipt.sourceRows) || receipt.sourceRows.some(r => !Number.isSafeInteger(r.sourceId) || r.sourceId <= 0 || !Number.isSafeInteger(r.gameId) || r.gameId <= 0) || !sameIds(receipt.sourceRows.map(r => r.sourceId), profile.evidence.window.sourceIds) || !sameIds(receipt.sourceRows.map(r => r.gameId), snapshot.recent.gameIds)) return unavailable("BLSH window, source-row-to-NHL-game mapping or strength does not match the displayed games.");
++  if (!Number.isFinite(Date.parse(receipt.observedAt)) || receipt.observedAt !== snapshot.capture.observedAt) return unavailable("BLSH source time does not match the displayed capture.");
++  // The producer's combined `fresh` flag also requires production; it is not a window-age flag.
++  if (!profile.evidence.window.fresh || !profile.coverage.context.current.verified) return unavailable("BLSH production or support is unqualified for this window. Missing production does not establish window age.");
++  if (profile.claims.forecast || profile.claims.marketValue || profile.claims.trusted || profile.score.calibratedProbability !== null) return unavailable("Research-only BLSH claims do not match the reviewed display contract.");
++  if (profile.tracks.some(t => ![t.observed, t.supportConditioned, t.gap].every(Number.isFinite)) || profile.tracks.length !== 3) return unavailable("Player-specific production and support are incomplete.");
++  const sign = profile.score.gapSign;
++  const direction = sign === "buy_low_evidence" ? "positive" : sign === "sell_high_evidence" ? "negative" : sign === "balanced" ? "level" : "unknown";
++  return { status: "exploratory", heading: "BLSH · exploratory support evidence", direction, receipt: JSON.parse(JSON.stringify(receipt)), market: "Market reference unavailable", lines: [
++    `${profile.displayName}: ${profile.score.statusLabel}. ${profile.score.gapSignLabel || "Direction unavailable"}.`,
++    ...profile.tracks.map(t => `${t.label}: recorded ${t.observed.toFixed(2)}, support-conditioned ${t.supportConditioned.toFixed(2)}, signed gap ${t.gap.toFixed(2)} over ${profile.evidence.window.games} recorded games.`),
++    ...profile.context.opportunity.map(o => `${o.label}: ${o.current === null ? "unavailable" : `${o.current.toFixed(2)} ${o.units}`}${o.reasonText ? ` (${o.reasonText})` : ""}.`),
++    profile.evidence.tierNote, profile.evidence.reference.ageText, profile.evidence.calibratedProbabilityText,
++    ...profile.coverage.notes.map(n => n.text), "Descriptive regression/support evidence; not a qualified forecast, trade price or recommendation. Ownership is not market price.",
++  ] };
++}
++
++export function cardMarketReference(expected: MarketExpectation | null, reference: MarketReference | null, asOf: string, approvedMaxAgeHours: number | null) {
++  if (!expected || approvedMaxAgeHours === null || !Number.isFinite(approvedMaxAgeHours) || approvedMaxAgeHours < 0 || expected.value === null || !Number.isFinite(expected.value) || !Number.isSafeInteger(expected.horizonGames) || expected.horizonGames <= 0) return { status: "unavailable" as const, label: "Market reference unavailable", reason: "Qualified comparable expectation and freshness policy required." };
++  return compareMarketReference(expected, reference, { asOf, maxAgeHours: approvedMaxAgeHours });
++}
++
++export type TradeAsset = { kind: "player"; playerId: number; name: string } | { kind: "pick"; season: string; round: number | null; description: string };
++/** Public context only: no manager, account or private-league identifiers. */
++export type TradeObservation = {
++  id: string; source: "Yahoo Trade Market"; sourceUrl: string; attribution: string;
++  observedAt: string; tradedAt: string | null; give: TradeAsset[]; receive: TradeAsset[];
++  context: { scoring: string | null; roster: string | null; leagueSize: number | null };
++  sample: "observed" | "synthetic";
++};
++export type TradeContext = { status: "unavailable" | "observed" | "synthetic"; records: TradeObservation[]; lines: string[] };
++const assetKey = (a: TradeAsset) => a.kind === "player" ? `player:${a.playerId}` : `pick:${a.season}:${a.round}:${a.description}`;
++const bundleKey = (assets: TradeAsset[]) => assets.map(assetKey).sort().join("|");
++const validAsset = (a: TradeAsset) => a.kind === "player" ? Number.isSafeInteger(a.playerId) && a.playerId > 0 && !!a.name.trim() : a.kind === "pick" && !!a.season.trim() && !!a.description.trim() && (a.round === null || Number.isSafeInteger(a.round) && a.round > 0);
++export function cardTradeContext(playerId: number, records: readonly TradeObservation[], options: { fixture: boolean; ownerReceipt: string | null; asOf: string }): TradeContext {
++  const empty = (why: string): TradeContext => ({ status: "unavailable", records: [], lines: [why, "Market reference unavailable. No trade collection was attempted."] });
++  if (!Number.isFinite(Date.parse(options.asOf))) return empty("Trade observation cutoff is invalid.");
++  if (!options.fixture && !options.ownerReceipt?.trim()) return empty("Qualified Yahoo observed-trade records and owner review receipt unavailable.");
++  const unique = new Map<string, TradeObservation>();
++  for (const r of records) {
++    if (!r.id || r.source !== "Yahoo Trade Market" || !r.attribution.trim() || !/^https:\/\/(?:[a-z0-9-]+\.)*yahoo\.com\//i.test(r.sourceUrl) || !Number.isFinite(Date.parse(r.observedAt)) || Date.parse(r.observedAt) > Date.parse(options.asOf) || (r.tradedAt !== null && (!Number.isFinite(Date.parse(r.tradedAt)) || Date.parse(r.tradedAt) > Date.parse(r.observedAt))) || r.sample !== (options.fixture ? "synthetic" : "observed") || !r.give.length || !r.receive.length || [...r.give, ...r.receive].some(a => !validAsset(a))) return empty("Trade source, dates, full assets or sample labels could not be verified.");
++    const previous = unique.get(r.id);
++    if (previous && (bundleKey(previous.give) !== bundleKey(r.give) || bundleKey(previous.receive) !== bundleKey(r.receive) || JSON.stringify(previous.context) !== JSON.stringify(r.context) || previous.tradedAt !== r.tradedAt)) return empty("Conflicting observations share a transaction ID; examples withheld.");
++    if (!previous || r.observedAt < previous.observedAt) unique.set(r.id, JSON.parse(JSON.stringify(r)));
++  }
++  const linked = [...unique.values()].filter(r => [...r.give, ...r.receive].some(a => a.kind === "player" && a.playerId === playerId));
++  if (!linked.length) return empty("No qualified trades matched this NHL player ID.");
++  return { status: options.fixture ? "synthetic" : "observed", records: linked, lines: [options.fixture ? "Synthetic contract examples; no actual trades asserted." : `${linked.length} deduplicated observed transaction(s). Not a representative market sample.`, "Unknown league, scoring or roster context stays unknown. An observed trade elsewhere is not an offer for your league.", "Full bundles and picks are preserved without pick valuation. No guarantee of fairness, benefit or acceptance."] };
++}
++export function illustrativeTradeIdeas(context: TradeContext): { label: string; give: TradeAsset[]; receive: TradeAsset[]; caveat: string }[] {
++  return context.records.map(r => ({ label: context.status === "synthetic" ? "Synthetic illustrative scenario" : "Illustrative scenario from an observed trade", give: r.give, receive: r.receive, caveat: `Assumes the recorded complete bundles; scoring ${r.context.scoring || "unknown"}, roster ${r.context.roster || "unknown"}. Not a fair-value estimate or an acceptance prediction.` }));
++}
++export type PreseasonAnchor = { playerId: number; season: number; publishedAt: string; source: string; value: number; unit: string };
++export function preseasonAnchorLabel(anchor: PreseasonAnchor | null, playerId: number, season: number): string {
++  if (!anchor || anchor.playerId !== playerId || anchor.season !== season || !Number.isFinite(anchor.value) || !Number.isFinite(Date.parse(anchor.publishedAt)) || !anchor.source.trim() || !anchor.unit.trim()) return "Dated preseason anchor unavailable.";
++  return `Preseason anchor: ${anchor.value} ${anchor.unit}, season ${anchor.season}, ${anchor.source}, published ${anchor.publishedAt}. Historical anchor only; not current performance, market price or pick value.`;
++}
+--- /dev/null
++++ b/web/lib/player-cards/analysisExport.ts
+@@ -0,0 +1,30 @@
++import { assertReviewedArtwork, rasterizeCardSvg } from "./shareExport";
++import { analysisPresentationKey, type AnalysisPresentation } from "../../components/player-cards/PlayerAnalysisCard";
++import type { PreparedHero } from "../../components/player-cards/HeroPlayerCard";
++import { currentArtworkKey } from "./currentArtwork";
++import { analysisDifference } from "./analysisSnapshot";
++
++export function analysisManifest(presentation: AnalysisPresentation, hero?: PreparedHero | null) {
++  const artwork = hero ? { ...hero, dataUrl: undefined, teamLogo: hero.teamLogo ? { ...hero.teamLogo, dataUrl: undefined } : undefined, outline: hero.outline ? { ...hero.outline, dataUrl: undefined } : undefined } : { state: "unavailable", reason: "No qualified matching artwork supplied." };
++  return JSON.parse(JSON.stringify({ version: "fhfh-analysis-export-v1", dimensions: { width: 1200, height: 1020 }, presentation, comparison: "snapshot" in presentation ? presentation.snapshot.recent.readings.map(r => ({ metric: r.metric, ...analysisDifference(presentation.snapshot, r.metric) })) : null, artwork, artworkKey: currentArtworkKey(hero), key: analysisPresentationKey(presentation, hero), disclosure: "Local consumer presentation; qualification and unavailable reasons are retained per field. No source refresh or deployment implied." }));
++}
++/** A separately qualified research card does not certify the unrelated NHL capture. */
++export function canExportAnalysis(p: AnalysisPresentation): boolean {
++  if ("goalie" in p) return p.goalie.state === "fixture";
++  const research = p.blsh.retained;
++  if (p.view === "evidence" && research) return p.blsh.status === "exploratory" && research.profile.playerId === p.snapshot.capture.player.id && research.profile.team === p.snapshot.capture.player.team;
++  return !p.snapshot.recent.reason;
++}
++export function assertAnalysisExport(svg: SVGSVGElement, p: AnalysisPresentation, hero?: PreparedHero | null) {
++  if (!svg.isConnected || svg.dataset.analysisKey !== analysisPresentationKey(p, hero)) throw new Error("Displayed analysis changed; prepare the current snapshot again.");
++  if (svg.querySelector('[data-evidence-truncated="true"]')) throw new Error("Full evidence will not fit in this card. Narrow the supplied evidence before exporting.");
++  for (const text of svg.querySelectorAll<SVGGraphicsElement>("[data-evidence-max-width]")) {
++    if (typeof text.getBBox !== "function") throw new Error("Rendered evidence bounds are unavailable. Prepare the card in a supported browser before exporting.");
++    const box = text.getBBox(), limit = Number(text.getAttribute("data-evidence-max-width"));
++    if (!Number.isFinite(box.width) || box.width <= 0 || !Number.isFinite(limit) || limit <= 0 || box.width > limit) throw new Error("Full evidence will not fit in this card. Narrow the supplied evidence before exporting.");
++  }
++  if (hero) assertReviewedArtwork(svg, hero);
++  else if (svg.querySelector("image") || !svg.querySelector('[data-artwork-unavailable="true"]')) throw new Error("Unavailable artwork cannot contain a substitute image.");
++  if (!canExportAnalysis(p)) throw new Error("snapshot" in p ? "Unqualified capture cannot be exported as analysis." : "Qualified goalie inventory is unavailable.");
++}
++export const rasterizeAnalysis = (svg: SVGSVGElement, p: AnalysisPresentation, hero?: PreparedHero | null) => rasterizeCardSvg(svg, () => assertAnalysisExport(svg, p, hero), 1200, 1020);
+--- /dev/null
++++ b/web/lib/player-cards/analysisFixtures.ts
+@@ -0,0 +1,17 @@
++import { CARD_ANALYSIS_VERSION, type AnalysisCapture, type AnalysisField } from "./analysisSnapshot";
++
++/** Deterministic synthetic data; never an observed player result. */
++export function captureFixture(count = 12): AnalysisCapture {
++  const fields: AnalysisCapture["fields"] = {};
++  for (const field of ["goals", "assists", "points", "shots", "blocks", "hits", "ppPoints", "toiSeconds", "ppToiSeconds", "ixg", "xgf", "xga"] as AnalysisField[]) fields[field] = { provider: "synthetic", field, revision: "fixture-v1", model: field.includes("xg") ? "fixture-xG" : null, strength: "all", updatedAt: null, unit: field.endsWith("Seconds") ? "seconds" : field.includes("xg") ? "xG" : "count" };
++  return { version: CARD_ANALYSIS_VERSION, id: "synthetic-12", player: { id: 8476453, name: "Fixture skater", team: "TBL", position: "R" }, season: 20262027, gameType: "regular", source: "synthetic", observedAt: "2026-10-31T12:00:00Z", strength: "all", history: { complete: true, seasonAppearances: count, reason: null }, fields, finality: "Synthetic final status, no exact end times.", games: Array.from({ length: count }, (_, i) => ({ gameId: 2026020001 + i, date: `2026-10-${String(i + 1).padStart(2, "0")}`, utcStart: `2026-10-${String(i + 1).padStart(2, "0")}T12:00:00Z`, team: "TBL", finalAtObservation: true, played: true, values: { goals: i % 2, assists: 1, points: i % 2 + 1, shots: i, blocks: 2, hits: 3, ppPoints: 0, toiSeconds: 600 + i * 60, ppToiSeconds: 60, ixg: 0.5, xgf: 2, xga: 1 } })) };
++}
++
++import { GOALIE_CARD_CONTRACT, type GoalieInventory } from "./goalieOutlook";
++import { GOALIE_INVENTORY_VERSION, type GoalieInventory as SharedGoalieInventory, type InventoryMetric } from "../socialShare/modules/shared/goalieInventory";
++/** Fixture of the frozen shared contract. No observation table or provider is read. */
++export function sharedGoalieFixture(): SharedGoalieInventory {
++  const metric = (value: number | null, unit = "/GP"): InventoryMetric => ({ value, unit, window: "L10", sampleGames: 10, leagueRank: null, leagueCohort: null });
++  return { version: GOALIE_INVENTORY_VERSION, season: 20262027, generatedAt: "2026-10-31T12:00:00Z", from: "2026-10-31", through: "2026-11-07", state: "partial", reasons: ["Synthetic fixture; forecasts unavailable."], sources: [{ name: "Synthetic resolved confirmations", tables: ["player_forecast_goalie_start_observations"], state: "ready", asOf: "2026-10-31T12:00:00Z", updatedAt: "2026-10-31T11:00:00Z", reasons: ["No live table read or pipeline health claim."] }], goalies: [{ goalieId: 8476883, name: "Fixture goalie", team: "TBL", recentStarts: { window: "L10", teamGames: 10, starts: 6, reliefAppearances: 1, share: 0.6, complete: true }, games: [{ gameId: 2026020200, date: "2026-11-01", startTimeUtc: "2026-11-01T23:00:00Z", team: "TBL", opponent: "TOR", home: true, teamSecondNight: false, opponentSecondNight: null, confirmation: { state: "projected", source: "Synthetic reporter", observedAt: "2026-10-31T11:00:00Z", expiresAt: "2026-11-02T02:00:00Z", sourceUrl: null }, forecast: { state: "unavailable", reason: "No admitted forecast" }, signals: { volume: { opponentShotsForPerGame: metric(31, "shots/GP"), teamShotsAgainstPerGame: metric(29, "shots/GP") }, ratioExposure: { opponentXgfPerGame: metric(3.1, "xG/GP"), teamXgaPerGame: metric(null, "xG/GP"), opponentScoringChancesPerGame: metric(28), teamScoringChancesAgainstPerGame: metric(25), opponentPowerPlayPct: metric(21, "%"), teamPenaltyKillPct: metric(80, "%"), teamTimesShorthandedPerGame: metric(3.2) }, winSupport: { teamGoalsForPerGame: metric(3.1), opponentGoalsAgainstPerGame: metric(2.9), teamGoalDifferentialPerGame: metric(-0.3) } } }] }] };
++}
++export const goalieFixture = (): GoalieInventory => ({ version: GOALIE_CARD_CONTRACT, source: "synthetic", sourceVersion: "fixture-v1", observedAt: "2026-10-31T12:00:00Z", player: { id: 8476883, name: "Fixture goalie", team: "TBL", season: 20262027 }, games: [{ id: 2026020200, start: "2026-11-01T23:00:00Z", team: "TBL", opponent: "TOR", status: "scheduled", confirmation: { status: "probable", source: "Synthetic source", updatedAt: "2026-10-31T11:00:00Z", stale: false, appearanceKind: "start" }, dimensions: { opponentShotsFor: { value: 31, unit: "shots/GP", basis: "last 5 team games", strength: "all", source: "Synthetic matchup", model: null, updatedAt: "2026-10-31T11:00:00Z", stale: false } }, forecast: null }] });
+--- /dev/null
++++ b/web/lib/player-cards/analysisSnapshot.test.ts
+@@ -0,0 +1,108 @@
++import { describe, expect, it } from "vitest";
++import { analysisCaptureFromNhl, analysisDifference, buildAnalysisSnapshot, analysisRank, type AnalysisCapture, type AnalysisSettings } from "./analysisSnapshot";
++import { captureFixture } from "./analysisFixtures";
++import { buildCurrentNhlCard } from "./currentNhl";
++
++
++const settings: AnalysisSettings = { period: { mode: "appearances", count: 5 }, baseline: "previous", basis: "per-game", visual: "bars" };
++const get = (c: AnalysisCapture, metric: string, s = settings) => buildAnalysisSnapshot(c, s).recent.readings.find(r => r.metric === metric)!;
++
++describe("card analysis capture", () => {
++  it("pools BSH components on identical appearances and preserves measured zero", () => {
++    const c = captureFixture();
++    expect(get(c, "bsh").value).toBe(14); // SOG 7+8+9+10+11 = 45; blocks=10; hits=15 / 5
++    expect(get(c, "ppPoints").value).toBe(0);
++    c.games[10].values.hits = null;
++    expect(get(c, "bsh")).toMatchObject({ value: null, state: "missing" });
++    expect(get(c, "shots").value).toBe(9);
++  });
++  it("uses pooled exposure rather than averaging ratios and distinguishes ixG/on-ice xG", () => {
++    const c = captureFixture();
++    expect(get(c, "shots", { ...settings, basis: "per60" }).value).toBeCloseTo(45 * 3600 / 5700);
++    expect(get(c, "ixg").value).toBe(0.5);
++    expect(get(c, "xgf").value).toBe(2);
++    expect(get(c, "xgPct").value).toBeCloseTo(200 / 3);
++    c.games.forEach(g => { g.values.xgf = 0; g.values.xga = 0; });
++    expect(get(c, "xgPct")).toMatchObject({ value: null, state: "undefined" });
++  });
++  it("rejects source/strength/unit/model mismatches without suppressing unrelated counts", () => {
++    const c = captureFixture(); c.fields.toiSeconds!.unit = "count";
++    expect(get(c, "shots", { ...settings, basis: "per60" }).state).toBe("missing");
++    expect(get(c, "shots").value).toBe(9);
++    c.fields.ixg!.strength = "pp";
++    expect(get(c, "ixg").state).toBe("missing");
++    c.fields.xga!.model = "different";
++    expect(get(c, "xgPct").state).toBe("missing");
++    c.games[11].values.ppToiSeconds = 3000;
++    expect(get(c, "ppToiSeconds").state).toBe("missing");
++  });
++  it("keeps matched previous windows separate from explicit season overlap", () => {
++    const c = captureFixture(), previous = buildAnalysisSnapshot(c, settings), season = buildAnalysisSnapshot(c, { ...settings, baseline: "season" });
++    expect(previous.recent.gameIds).toHaveLength(5); expect(previous.baseline.gameIds).toHaveLength(5); expect(previous.overlap).toBe(0);
++    expect(season.baseline.gp).toBe(12); expect(season.overlap).toBe(5); expect(season.disclosure).toContain("Season includes recent");
++    expect(season.baseline.readings.find(r => r.metric === "shots")!.value).toBe(5.5);
++    expect(buildAnalysisSnapshot(c, { ...settings, period: { mode: "appearances", count: 20 }, baseline: "season" }).baseline.reason).toContain("L5 or L10");
++  });
++  it("withholds an unequal-sample total delta but permits pooled rate comparisons", () => {
++    const s = buildAnalysisSnapshot(captureFixture(), { ...settings, baseline: "season", basis: "total" });
++    expect(analysisDifference(s, "shots").reason).toContain("unequal");
++    expect(analysisDifference(s, "toiSeconds").value).not.toBeNull();
++    const rates = buildAnalysisSnapshot(captureFixture(), { ...settings, baseline: "season" });
++    expect(analysisDifference(rates, "shots").value).toBe(3.5);
++  });
++  it("distinguishes short verified seasons, incomplete history and no appearances", () => {
++    const short = buildAnalysisSnapshot(captureFixture(3), settings);
++    expect(short.recent.gp).toBe(3); expect(short.baseline.reason).toContain("Needs 10");
++    expect(short.rankPolicy).toMatchObject({ status: "approved", ties: "competition", percentile: "midrank", shortSeason: "include-verified-complete", additionalQualifiers: "none" });
++    expect(short.recent).toMatchObject({ requestedAppearances: 5, knownShort: true });
++    expect(short.recent.sampleWarning).toContain("3 of 5 appearances");
++    expect(short.baseline.knownShort).toBe(false);
++    const season = buildAnalysisSnapshot(captureFixture(3), { ...settings, baseline: "season" }); expect(season.overlap).toBe(3); expect(season.baseline.reason).toBeNull();
++    const c = captureFixture(); c.games.pop();
++    expect(buildAnalysisSnapshot(c, settings).recent.reason).toContain("do not reconcile");
++    expect(buildAnalysisSnapshot(c, settings).recent.knownShort).toBe(false);
++    expect(get(captureFixture(0), "shots").state).toBe("undefined");
++    const ten = buildAnalysisSnapshot(captureFixture(3), { ...settings, period: { mode: "appearances", count: 10 }, baseline: "season" });
++    expect(ten.recent.gp).toBe(3); expect(ten.overlap).toBe(3); expect(ten.baseline.reason).toBeNull();
++    expect(ten.recent.sampleWarning).toContain("3 of 10 appearances");
++    expect(buildAnalysisSnapshot(captureFixture(3), { ...settings, period: { mode: "calendar", start: "2026-10-01", end: "2026-10-03" } }).recent).toMatchObject({ requestedAppearances: null, knownShort: false, sampleWarning: null });
++  });
++  it("checks duplicate identity, participation/finality, DNP, calendar boundaries and immutable selection", () => {
++    const c = captureFixture(); c.games.push({ ...c.games[0] }); expect(buildAnalysisSnapshot(c, settings).recent.reason).toContain("Duplicate"); c.games.pop();
++    c.games[0].played = null; expect(buildAnalysisSnapshot(c, settings).recent.reason).toContain("Participation");
++    c.games[0].played = false; c.history.seasonAppearances = 11;
++    const s = buildAnalysisSnapshot(c, { ...settings, period: { mode: "calendar", start: "2026-10-01", end: "2026-10-03" } });
++    expect(s.recent.gp).toBe(2); expect(s.baseline.reason).toContain("requires an appearance");
++    c.games[2].values.shots = 900; expect(s.capture.games[2].values.shots).toBe(2);
++  });
++  it("applies approved ties while keeping source-population admission separate", () => {
++    const c = captureFixture(); c.games.forEach(g => { g.values.shots = 8; });
++    const s = buildAnalysisSnapshot(c, settings), key = s.recent.readings.find(r => r.metric === "shots")!.definitionKey;
++    const pool = [10, 8, 8, 2].map((value, i) => ({ playerId: String(i === 1 ? 8476453 : i), value, state: "valid" as const, definitionKey: key }));
++    expect(analysisRank(s, "shots", pool, false).rank).toBeNull();
++    expect(analysisRank(s, "shots", pool, true).rank).toMatchObject({ ordinal: 2, population: 4, percentile: 50, tied: true });
++    expect(analysisRank(s, "shots", pool.map(p => ({ ...p, value: 9 })), true).reason).toContain("does not match");
++    s.capture.source = "observed"; expect(analysisRank(s, "shots", pool, true).reason).toContain("source admission pending");
++  });
++  it("includes a verified short sample without accepting missing measurements or source rows", () => {
++    const c = captureFixture(3); c.games.forEach(g => { g.values.shots = 8; });
++    const s = buildAnalysisSnapshot(c, settings), key = s.recent.readings.find(r => r.metric === "shots")!.definitionKey;
++    const pool = [10, 8, 8, 2].map((value, i) => ({ playerId: String(i === 1 ? c.player.id : i), value, state: "valid" as const, definitionKey: key }));
++    expect(s.recent.sampleWarning).toContain("3 of 5 appearances");
++    expect(analysisRank(s, "shots", pool, true).rank).toEqual({ ordinal: 2, population: 4, percentile: 50, tied: true });
++    expect(analysisRank(s, "shots", pool, false).rank).toBeNull();
++    c.games[0].values.shots = null;
++    const missingMetric = buildAnalysisSnapshot(c, settings);
++    expect(missingMetric.recent.knownShort).toBe(true); // The three appearances are verified; this metric is incomplete.
++    expect(missingMetric.recent.readings.find(r => r.metric === "shots")!.state).toBe("missing");
++    expect(analysisRank(missingMetric, "shots", pool, true).rank).toBeNull();
++    c.games.pop();
++    const missingRow = buildAnalysisSnapshot(c, settings);
++    expect(missingRow.recent.knownShort).toBe(false); expect(missingRow.recent.sampleWarning).toBeNull();
++    expect(analysisRank(missingRow, "shots", pool, true).rank).toBeNull();
++  });
++  it("never manufactures missing season data from a selected NHL window", () => {
++    const card = buildCurrentNhlCard({ playerId: 8476453, season: 20262027, count: 5 }, { identity: { playerId: 8476453, firstName: { default: "Test" }, lastName: { default: "Player" }, currentTeamAbbrev: "TBL", position: "R" }, history: {}, schedule: {}, observedAt: "2026-10-31T12:00:00Z" });
++    expect(analysisCaptureFromNhl(card).history.complete).toBe(false);
++  });
++});
+--- /dev/null
++++ b/web/lib/player-cards/analysisSnapshot.ts
+@@ -0,0 +1,132 @@
++import { rankMetric, type PoolValue } from "./ranking";
++import type { Rank, Strength } from "./contracts";
++import type { CurrentNhlCard, CurrentNhlGameEvidence } from "./currentNhl";
++import { validDate } from "./windows";
++
++/** Consumer contract only. Source admission remains with the supplying adapter. */
++export const CARD_ANALYSIS_VERSION = "fhfh-card-analysis-v1" as const;
++/** TJ approved both numeric and known-short policies on 2026-11-01; source admission is separate. */
++export const CARD_RANK_POLICY = Object.freeze({ version: "fhfh-card-rank-policy-2026-11-01", status: "approved", ordering: "highest-numeric-first", ties: "competition", percentile: "midrank", shortSeason: "include-verified-complete", additionalQualifiers: "none" } as const);
++export type AnalysisField = "goals" | "assists" | "points" | "shots" | "blocks" | "hits" | "ppPoints" | "toiSeconds" | "ppToiSeconds" | "ixg" | "xgf" | "xga";
++export type AnalysisMetric = AnalysisField | "bsh" | "xgPct";
++export type AnalysisBasis = "total" | "per-game" | "per60";
++export const ANALYSIS_FIELDS: Record<AnalysisMetric, { label: string; group: "Scoring" | "Peripherals" | "Opportunity" | "Underlying"; unit: string; fields: AnalysisField[] }> = {
++  goals: { label: "Goals", group: "Scoring", unit: "goals", fields: ["goals"] },
++  assists: { label: "Assists", group: "Scoring", unit: "assists", fields: ["assists"] },
++  points: { label: "Points", group: "Scoring", unit: "points", fields: ["points"] },
++  ppPoints: { label: "PP points", group: "Scoring", unit: "points", fields: ["ppPoints"] },
++  shots: { label: "Shots on goal", group: "Peripherals", unit: "shots", fields: ["shots"] },
++  blocks: { label: "Blocks", group: "Peripherals", unit: "blocks", fields: ["blocks"] },
++  hits: { label: "Hits", group: "Peripherals", unit: "hits", fields: ["hits"] },
++  bsh: { label: "BSH · BLK + SOG + HITS", group: "Peripherals", unit: "events", fields: ["blocks", "shots", "hits"] },
++  toiSeconds: { label: "Ice time", group: "Opportunity", unit: "min", fields: ["toiSeconds"] },
++  ppToiSeconds: { label: "PP ice time", group: "Opportunity", unit: "min", fields: ["ppToiSeconds"] },
++  ixg: { label: "Individual ixG", group: "Underlying", unit: "xG", fields: ["ixg"] },
++  xgf: { label: "On-ice xGF", group: "Underlying", unit: "xG", fields: ["xgf"] },
++  xga: { label: "On-ice xGA", group: "Underlying", unit: "xG", fields: ["xga"] },
++  xgPct: { label: "On-ice xG share", group: "Underlying", unit: "%", fields: ["xgf", "xga"] },
++};
++export type FieldSource = { provider: string; field: string; model: string | null; revision: string; updatedAt: string | null; strength: Strength; unit: "count" | "seconds" | "xG" };
++export type AnalysisGame = { gameId: number; date: string; utcStart: string; team: string; finalAtObservation: boolean; played: boolean | null; values: Partial<Record<AnalysisField, number | null>> };
++export type AnalysisCapture = {
++  version: typeof CARD_ANALYSIS_VERSION; id: string; player: CurrentNhlCard["player"]; season: number; gameType: "regular";
++  source: "synthetic" | "retained" | "observed"; observedAt: string; strength: Strength;
++  history: { complete: boolean; seasonAppearances: number | null; reason: string | null };
++  fields: Partial<Record<AnalysisField, FieldSource>>; games: AnalysisGame[]; finality: string;
++};
++export type AnalysisSettings = { period: { mode: "appearances"; count: 5 | 10 | 20 } | { mode: "calendar"; start: string; end: string }; baseline: "previous" | "season"; basis: AnalysisBasis; visual: "bars" | "radar" };
++export type AnalysisReading = { metric: AnalysisMetric; value: number | null; state: "valid" | "missing" | "undefined"; reason: string | null; unit: string; gp: number; rank: Rank | null; rankReason: string; definitionKey: string };
++export type AnalysisWindow = { label: string; gameIds: number[]; dates: string[]; gp: number; requestedAppearances: number | null; knownShort: boolean; sampleWarning: string | null; readings: AnalysisReading[]; reason: string | null };
++export type AnalysisSnapshot = { version: typeof CARD_ANALYSIS_VERSION; capture: AnalysisCapture; settings: AnalysisSettings; recent: AnalysisWindow; baseline: AnalysisWindow; overlap: number; disclosure: string; rankPolicy: typeof CARD_RANK_POLICY };
++const finite = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v) && v >= 0;
++const timestamp = (v: string) => Number.isFinite(Date.parse(v));
++
++function captureError(c: AnalysisCapture): string | null {
++  if (c.version !== CARD_ANALYSIS_VERSION || c.gameType !== "regular" || !timestamp(c.observedAt) || !["all", "5v5", "pp"].includes(c.strength)) return "Capture definition or observation time is invalid.";
++  if (!c.history.complete || c.history.seasonAppearances === null) return c.history.reason || "Complete season history unavailable.";
++  if (new Set(c.games.map(g => g.gameId)).size !== c.games.length) return "Duplicate game identities.";
++  if (c.games.some(g => g.played === null || !validDate(g.date) || !timestamp(g.utcStart) || Date.parse(g.utcStart) > Date.parse(c.observedAt) || !Number.isSafeInteger(g.gameId) || g.gameId <= 0 || (g.played && !g.finalAtObservation))) return "Participation, game identity or final status is unverified.";
++  if (c.games.filter(g => g.played).length !== c.history.seasonAppearances) return "Season appearances do not reconcile; missing rows are not a short sample.";
++  if (new Set(c.games.filter(g => g.played).map(g => g.utcStart)).size !== c.history.seasonAppearances) return "Appearance ordering is ambiguous.";
++  return null;
++}
++function reading(c: AnalysisCapture, games: AnalysisGame[], metric: AnalysisMetric, settings: AnalysisSettings, label: string, reason: string | null): AnalysisReading {
++  const def = ANALYSIS_FIELDS[metric], time = metric === "toiSeconds" || metric === "ppToiSeconds";
++  const basis = metric === "xgPct" ? "pooled-percentage" : time ? "per-game" : settings.basis;
++  const required = [...def.fields, ...(basis === "per60" || metric === "ppToiSeconds" ? ["toiSeconds" as const] : [])];
++  const definitionKey = JSON.stringify([CARD_ANALYSIS_VERSION, CARD_RANK_POLICY.version, c.season, c.gameType, c.observedAt, c.strength, settings.period, label, metric, basis, required.map(f => c.fields[f] || null)]);
++  const result: AnalysisReading = { metric, value: null, state: "missing", reason, gp: games.length, unit: metric === "xgPct" ? "%" : `${def.unit}${basis === "per-game" ? "/GP" : basis === "per60" ? "/60" : " total"}`, rank: null, rankReason: "Rank unavailable: complete all-NHL same-definition population and qualified source evidence required.", definitionKey };
++  if (reason) return result;
++  if (!games.length) return { ...result, state: "undefined", reason: "No completed appearances in this window." };
++  for (const f of required) {
++    const source = c.fields[f];
++    if (!source || !source.provider || !source.field || !source.revision || source.strength !== c.strength || (source.updatedAt !== null && (!timestamp(source.updatedAt) || Date.parse(source.updatedAt) > Date.parse(c.observedAt)))) return { ...result, reason: `${f}: source, strength or revision unavailable/incompatible.` };
++    const expected = f.endsWith("Seconds") ? "seconds" : ["ixg", "xgf", "xga"].includes(f) ? "xG" : "count";
++    if (source.unit !== expected || (expected === "xG" && !source.model)) return { ...result, reason: `${f}: denominator units or xG model unverified.` };
++    if (games.some(g => !finite(g.values[f]) || expected === "count" && !Number.isSafeInteger(g.values[f]))) return { ...result, reason: `${f}: missing or invalid measurement; not zero.` };
++  }
++  if (metric === "ppToiSeconds" && games.some(g => !finite(g.values.toiSeconds) || g.values.ppToiSeconds! > g.values.toiSeconds!)) return { ...result, reason: "PP exposure exceeds or lacks total ice time." };
++  if (metric === "xgPct" && ["provider", "model", "revision"].some(key => c.fields.xgf![key as keyof FieldSource] !== c.fields.xga![key as keyof FieldSource])) return { ...result, reason: "On-ice xGF/xGA source definitions differ." };
++  const sum = (f: AnalysisField) => games.reduce((s, g) => s + g.values[f]!, 0);
++  const numerator = def.fields.reduce((s, f) => s + sum(f), 0);
++  const denominator = metric === "xgPct" ? sum("xgf") + sum("xga") : basis === "per60" ? sum("toiSeconds") : basis === "per-game" ? games.length : 1;
++  if (denominator <= 0) return { ...result, state: "undefined", reason: "Zero exposure/denominator; ratio is undefined." };
++  const value = metric === "xgPct" ? sum("xgf") * 100 / denominator : numerator / denominator * (time ? 1 / 60 : basis === "per60" ? 3600 : 1);
++  return { ...result, value, state: "valid", reason: null };
++}
++
++export function analysisDifference(snapshot: AnalysisSnapshot, metric: AnalysisMetric): { value: number | null; reason: string | null } {
++  const recent = snapshot.recent.readings.find(r => r.metric === metric)!, baseline = snapshot.baseline.readings.find(r => r.metric === metric)!;
++  if (recent.value === null || baseline.value === null) return { value: null, reason: "A comparison value is unavailable." };
++  if (snapshot.settings.basis === "total" && !["toiSeconds", "ppToiSeconds", "xgPct"].includes(metric) && snapshot.recent.gp !== snapshot.baseline.gp) return { value: null, reason: "Totals have unequal appearance samples; choose per-game or per60 for a change." };
++  return { value: recent.value - baseline.value, reason: null };
++}
++/** Copies inputs before selecting; control changes do not fetch or mutate the capture. */
++export function buildAnalysisSnapshot(input: AnalysisCapture, settings: AnalysisSettings): AnalysisSnapshot {
++  const c: AnalysisCapture = JSON.parse(JSON.stringify(input)), s: AnalysisSettings = JSON.parse(JSON.stringify(settings));
++  let error = captureError(c);
++  if (s.period.mode === "calendar" && (!validDate(s.period.start) || !validDate(s.period.end) || s.period.start > s.period.end)) error = "Invalid inclusive UTC calendar window.";
++  if (s.period.mode === "appearances" && ![5, 10, 20].includes(s.period.count)) error = "Unsupported appearance window.";
++  if (!["previous", "season"].includes(s.baseline) || !["total", "per-game", "per60"].includes(s.basis) || !["bars", "radar"].includes(s.visual)) error = "Unsupported analysis setting.";
++  const all = c.games.filter(g => g.played).sort((a, b) => b.utcStart.localeCompare(a.utcStart));
++  const period = s.period;
++  const recent = error ? [] : period.mode === "appearances" ? all.slice(0, period.count) : all.filter(g => g.utcStart.slice(0, 10) >= period.start && g.utcStart.slice(0, 10) <= period.end);
++  let prior: AnalysisGame[] = [], priorError = error;
++  if (s.baseline === "season") {
++    prior = error ? [] : all;
++    if (period.mode !== "appearances" || ![5, 10].includes(period.count)) priorError = "Season comparison is available for L5 or L10 only.";
++  } else if (period.mode === "appearances") {
++    prior = error ? [] : all.slice(period.count, period.count * 2);
++    if (prior.length !== period.count) priorError = error || `Needs ${period.count * 2} appearances for equal, non-overlapping windows; captured ${all.length}.`;
++  } else priorError = error || "Previous comparison requires an appearance window.";
++  const window = (label: string, games: AnalysisGame[], why: string | null, requested: number | null): AnalysisWindow => {
++    const knownShort = !why && requested !== null && games.length > 0 && games.length < requested;
++    return { label, gameIds: games.map(g => g.gameId), dates: games.map(g => g.date), gp: games.length, requestedAppearances: requested, knownShort, sampleWarning: knownShort ? `${games.length} of ${requested} appearances: verified complete season history, small sample. Per-field gaps remain unavailable.` : null, reason: why, readings: (Object.keys(ANALYSIS_FIELDS) as AnalysisMetric[]).map(m => reading(c, games, m, s, label, why)) };
++  };
++  const overlap = priorError ? 0 : recent.filter(g => prior.some(p => p.gameId === g.gameId)).length;
++  return { version: CARD_ANALYSIS_VERSION, capture: c, settings: s, recent: window(period.mode === "appearances" ? `Last ${period.count}` : `${period.start} to ${period.end} UTC`, recent, error, period.mode === "appearances" ? period.count : null), baseline: window(s.baseline === "season" ? "Season to date" : "Previous", prior, priorError, s.baseline === "previous" && period.mode === "appearances" ? period.count : null), overlap, disclosure: s.baseline === "season" ? `Season includes recent games: ${overlap} overlapping appearances. This is not an independent baseline.` : "Equal, non-overlapping appearance windows; short preceding history is withheld.", rankPolicy: CARD_RANK_POLICY };
++}
++
++/** Approved policy reuses the established arithmetic. No observed population is admitted by a boolean alone. */
++export function analysisRank(snapshot: AnalysisSnapshot, metric: AnalysisMetric, pool: readonly PoolValue[], fullPopulation: boolean): { rank: Rank | null; reason?: string } {
++  const value = snapshot.recent.readings.find(r => r.metric === metric)!;
++  if (snapshot.capture.source !== "synthetic") return { rank: null, reason: "Observed population source admission pending: complete all-NHL same-definition evidence required. Ranking policy is approved." };
++  const selected = pool.find(r => r.playerId === String(snapshot.capture.player.id));
++  if (value.state !== "valid" || selected?.value !== value.value) return { rank: null, reason: "Population value does not match the displayed player metric." };
++  return rankMetric(String(snapshot.capture.player.id), pool, { fullEligiblePopulationVerified: fullPopulation, definitionKey: value.definitionKey });
++}
++
++/** Recovers only already supplied, reconciled NHL games; never infers unseen season rows. */
++export function analysisCaptureFromNhl(card: CurrentNhlCard): AnalysisCapture {
++  const games = new Map<number, CurrentNhlGameEvidence>();
++  let conflict = false;
++  for (const w of [card, ...(card.windows || [])]) for (const g of [...w.evidence.selectedGames, ...(w.previous?.state === "ready" ? w.previous.games : [])]) {
++    if (w.player.id !== card.player.id || w.request.season !== card.request.season || w.observedAt !== card.observedAt || w.source !== card.source) { conflict = true; continue; }
++    if (games.has(g.gameId) && JSON.stringify(games.get(g.gameId)) !== JSON.stringify(g)) conflict = true;
++    games.set(g.gameId, g);
++  }
++  const fields: AnalysisCapture["fields"] = {};
++  for (const f of ["goals", "assists", "points", "shots", "toiSeconds"] as const) fields[f] = { provider: "NHL", field: f === "toiSeconds" ? "gameLog.toi (mm:ss converted to seconds)" : `gameLog.${f}`, model: null, revision: card.evidence.version, updatedAt: null, strength: "all", unit: f === "toiSeconds" ? "seconds" : "count" };
++  const complete = card.state === "ready" && !conflict && games.size === card.evidence.seasonGp;
++  return { version: CARD_ANALYSIS_VERSION, id: card.id, player: { ...card.player }, season: card.request.season, gameType: "regular", source: card.source === "contract-fixture" ? "synthetic" : card.source === "nhl-retained" ? "retained" : "observed", observedAt: card.observedAt, strength: "all", history: { complete, seasonAppearances: card.evidence.seasonGp, reason: complete ? null : "Supplied capture does not contain a complete, consistent season; no additional requests made." }, fields, finality: card.finalityStatement, games: [...games.values()].map(g => ({ gameId: g.gameId, date: g.providerDate, utcStart: g.utcStart, team: g.team, finalAtObservation: ["FINAL", "OFF"].includes(g.finalStatusAtObservation), played: true, values: { goals: g.goals, assists: g.assists, points: g.points, shots: g.shots, toiSeconds: g.toiSeconds } })) };
++}
+--- /dev/null
++++ b/web/lib/player-cards/goalieOutlook.test.ts
+@@ -0,0 +1,10 @@
++import { goalieFixture } from "./analysisFixtures";
++import { describe, expect, it } from "vitest";
++import { goalieOutlook } from "./goalieOutlook";
++
++describe("goalie consumer proposal", () => {
++  it("keeps volume, ratio and win context separate; missing fields and forecasts stay unavailable", () => { const f = goalieFixture(), r = goalieOutlook(f, f.player); expect(r.state).toBe("fixture"); expect(r.games[0].confirmation).toContain("probable"); expect(r.games[0].forecast).toContain("unavailable"); expect(new Set(r.games[0].dimensions.map(d => d.group)).size).toBe(3); expect(r.games[0].dimensions.find(d => d.label === "Team xGA")?.text).toContain("Unavailable"); });
++  it("rejects traded-team identity, duplicate games and unknown producers", () => { const f = goalieFixture(); expect(goalieOutlook(f, { ...f.player, team: "TOR" }).state).toBe("unavailable"); f.games.push(f.games[0]); expect(goalieOutlook(f, f.player).state).toBe("unavailable"); expect(goalieOutlook(null, f.player).games).toHaveLength(0); });
++  it("does not confuse relief, stale or conflicting evidence with a confirmed start", () => { const f = goalieFixture(); f.games[0].confirmation.appearanceKind = "relief"; expect(goalieOutlook(f, f.player).games[0].confirmation).toContain("not an official start"); f.games[0].confirmation.appearanceKind = "start"; f.games[0].confirmation.stale = true; expect(goalieOutlook(f, f.player).games[0].confirmation).toContain("stale"); f.games[0].confirmation.stale = false; f.games[0].confirmation.status = "conflicting"; expect(goalieOutlook(f, f.player).games[0].confirmation).toContain("conflicting"); });
++  it("handles postponed/no-game schedules and conditional forecast qualifications", () => { const f = goalieFixture(); f.games[0].forecast = { admitted: true, receipt: "synthetic receipt", conditionalBasis: "given-start", version: "fixture", horizon: "next scheduled game", uncertainty: "synthetic range, not calibrated", target: { player_id: f.player.id, name: f.player.name, start_probability: 0.8, projected_gsaa_per_60: 0.2, confirmed_status: null, source_updated_at: "2026-10-31T11:00:00Z", source_confidence: null, is_stale: false } }; expect(goalieOutlook(f, f.player).games[0].forecast).toContain("given a start"); expect(goalieOutlook(f, f.player).games[0].forecast).not.toContain("0.8"); f.games[0].status = "postponed"; expect(goalieOutlook(f, f.player).games[0].forecast).toContain("unavailable"); f.games = []; expect(goalieOutlook(f, f.player).reason).toContain("No scheduled games"); });
++});
+--- /dev/null
++++ b/web/lib/player-cards/goalieOutlook.ts
+@@ -0,0 +1,37 @@
++import type { StartChartGoalie } from "../projections/startChartContract";
++
++/** Temporary consumer fixture interface. Claude's shared producer owns final admission. */
++export const GOALIE_CARD_CONTRACT = "fhfh-goalie-card-consumer-proposal-v1" as const;
++export type GoalieDimension = "opponentShotsFor" | "teamShotsAgainst" | "opponentXgf" | "teamXga" | "opponentChancesFor" | "teamChancesAgainst" | "opponentPowerPlay" | "teamPenaltyKill" | "teamPenaltyExposure" | "teamGoalsFor" | "opponentGoalsAgainst";
++export const GOALIE_DIMENSIONS: Record<GoalieDimension, { label: string; group: "Volume upside" | "Ratio exposure" | "Win support" }> = {
++  opponentShotsFor: { label: "Opponent shots for", group: "Volume upside" }, teamShotsAgainst: { label: "Team shots against", group: "Volume upside" },
++  opponentXgf: { label: "Opponent xGF", group: "Ratio exposure" }, teamXga: { label: "Team xGA", group: "Ratio exposure" }, opponentChancesFor: { label: "Opponent chances for", group: "Ratio exposure" }, teamChancesAgainst: { label: "Team chances against", group: "Ratio exposure" }, opponentPowerPlay: { label: "Opponent PP", group: "Ratio exposure" }, teamPenaltyKill: { label: "Team PK", group: "Ratio exposure" }, teamPenaltyExposure: { label: "Team penalty exposure", group: "Ratio exposure" }, teamGoalsFor: { label: "Team goals for", group: "Win support" }, opponentGoalsAgainst: { label: "Opponent goals against", group: "Win support" },
++};
++export type GoalieInventory = {
++  version: typeof GOALIE_CARD_CONTRACT; source: "synthetic"; player: { id: number; name: string; team: string; season: number }; observedAt: string; sourceVersion: string;
++  games: { id: number; start: string; team: string; opponent: string; status: "scheduled" | "postponed" | "cancelled";
++    confirmation: { status: "confirmed" | "probable" | "unknown" | "conflicting"; source: string | null; updatedAt: string | null; stale: boolean; appearanceKind: "start" | "relief" | "unknown" };
++    dimensions: Partial<Record<GoalieDimension, { value: number | null; unit: string; basis: string; strength: string; source: string; model: string | null; updatedAt: string | null; stale: boolean }>>;
++    forecast: { admitted: boolean; receipt: string | null; conditionalBasis: "given-start"; version: string; horizon: string; uncertainty: string; target: StartChartGoalie } | null;
++  }[];
++};
++export type GoalieOutlook = { state: "fixture" | "unavailable"; player: GoalieInventory["player"]; observedAt: string; reason: string | null; sharedProvenance?: { version: string; sourceState: string; sourceNotes: string[]; confirmationWarnings?: string[]; recentStarts: { teamGames: number; starts: number | null; reliefAppearances: number; share: number | null; complete: boolean } }; games: { id: number; heading: string; confirmation: string; forecast: string; dimensions: { label: string; group: string; text: string }[] }[] };
++const time = (s: string | null) => s === null ? NaN : Date.parse(s);
++export function goalieOutlook(input: GoalieInventory | null, selected: GoalieInventory["player"]): GoalieOutlook {
++  const empty = (reason: string): GoalieOutlook => ({ state: "unavailable", player: { ...selected }, observedAt: input?.observedAt || "Unavailable", reason, games: [] });
++  if (!input) return empty("Shared goalie inventory unavailable. No start forecast is inferred from appearance share.");
++  if (input.version !== GOALIE_CARD_CONTRACT || input.source !== "synthetic") return empty("Shared producer interface/admission receipt pending; this proposal accepts fixtures only.");
++  if (input.player.id !== selected.id || input.player.team !== selected.team || input.player.season !== selected.season) return empty("Goalie identity, current team or season mismatch; stale selection cleared.");
++  if (!Number.isFinite(time(input.observedAt)) || !input.sourceVersion || new Set(input.games.map(g => g.id)).size !== input.games.length || input.games.some(g => g.team !== selected.team || !Number.isSafeInteger(g.id) || !Number.isFinite(time(g.start)) || !g.opponent)) return empty("Goalie schedule identity or source time is unverified.");
++  return { state: "fixture", player: { ...selected }, observedAt: input.observedAt, reason: input.games.length ? null : "No scheduled games in supplied inventory.", games: input.games.map(g => {
++    const c = g.confirmation, confirmationValid = g.status === "scheduled" && !c.stale && !!c.source && Number.isFinite(time(c.updatedAt)) && time(c.updatedAt) <= time(input.observedAt) && c.appearanceKind === "start";
++    const confirmation = confirmationValid ? `${c.status} · ${c.source} · ${c.updatedAt}` : `Unknown starter · ${c.appearanceKind === "relief" ? "relief is not an official start" : c.stale ? "stale source" : "source/confirmation unavailable"}`;
++    const f = g.forecast;
++    const validForecast = g.status === "scheduled" && f?.admitted && !!f.receipt && f.target.player_id === selected.id && !f.target.is_stale && f.conditionalBasis === "given-start" && !!f.version && !!f.horizon && !!f.uncertainty && Number.isFinite(f.target.projected_gsaa_per_60) && Number.isFinite(time(f.target.source_updated_at)) && time(f.target.source_updated_at) <= time(input.observedAt);
++    return { id: g.id, heading: `${g.start} · ${g.team} vs ${g.opponent} · ${g.status}`, confirmation, forecast: validForecast ? `Synthetic conditional forecast given a start: ${f!.target.projected_gsaa_per_60} GSAA/60; ${f!.version}; ${f!.horizon}; ${f!.uncertainty}. Start probability not inferred.` : "Conditional forecast unavailable; no start odds inferred from workload.", dimensions: (Object.keys(GOALIE_DIMENSIONS) as GoalieDimension[]).map(key => {
++      const d = g.dimensions[key], def = GOALIE_DIMENSIONS[key];
++      const valid = d && d.value !== null && Number.isFinite(d.value) && d.value >= 0 && !!d.source && !!d.unit && !!d.basis && !!d.strength && !d.stale && Number.isFinite(time(d.updatedAt)) && time(d.updatedAt) <= time(input.observedAt) && (!key.toLowerCase().includes("xg") || !!d.model);
++      return { ...def, text: valid ? `${d!.value} ${d!.unit} · ${d!.basis} · ${d!.strength} · ${d!.source}${d!.model ? ` (${d!.model})` : ""} · ${d!.updatedAt}` : "Unavailable: missing, stale or unqualified source dimension." };
++    }) };
++  }) };
++}
+--- /dev/null
++++ b/web/lib/player-cards/retainedBlsh.test.ts
+@@ -0,0 +1,160 @@
++import { describe, expect, it } from "vitest";
++import { readFileSync } from "node:fs";
++import { createHash } from "node:crypto";
++import { resolve } from "node:path";
++import type { DisplaySnapshot } from "../buyLowSellHigh/displayProfile";
++import { RETAINED_BLSH_SHA256, RETAINED_BLSH_SIDECAR_SHA256, RETAINED_BLSH_PROVENANCE_REVIEW_SHA256, RETAINED_BLSH_BOX_PINS, retainedBlshEvidence, type RetainedBlshInput } from "./retainedBlsh";
++const player = { id: 8476453, team: "TBL" };
++const fixture = (): RetainedBlshInput => ({ snapshotSHA256: RETAINED_BLSH_SHA256, reviewReference: "Synthetic unit contract; actual bytes verified separately by owner reader", metadata: { schemaVersion: "fhfh.blsh.current-research-snapshot.v2", scoreVersion: "support-conditioned-production-gap-v1", seasonId: 20262027, provisional: true, exploratory: true, productionAdopted: false, trusted: false, confidenceProbability: null, issuedAtUTC: null, asOfUTC: "2026-10-29T18:41:12Z", eventThroughDate: "2026-10-28", limits: ["Synthetic test; stale development reference"] }, profile: { playerId: player.id, team: player.team, score: { version: "support-conditioned-production-gap-v1", gapSign: "buy_low_evidence", statusLabel: "Direction agrees", calibratedProbability: null }, evidence: { window: { games: 1, dates: ["2026-10-24"], sourceIds: [123], minutes: 20 }, reference: { personalGames: 50, ageDays: 900 }, tierNote: "Coverage is not confidence" }, tracks: ["FP", "G+A", "Game Score"].map(label => ({ label, observed: 2, supportConditioned: 3, gap: 1 })), coverage: { notes: [{ text: "Source revision unverified" }] }, context: { opportunity: [{ label: "TOI", current: 1200, units: "seconds/appearance" }] }, claims: { forecast: false, marketValue: false, trusted: false } } } as unknown as RetainedBlshInput);
++describe("retained BLSH card evidence", () => {
++  const withProvenance = () => {
++    const f = fixture();
++    f.provenance = { version: "fhfh.blsh.player-card-research-provenance.v1", sidecarSHA256: RETAINED_BLSH_SIDECAR_SHA256, snapshotSHA256: RETAINED_BLSH_SHA256, independentReviewPending: true, generatedAtUTC: "2026-11-01T16:32:16.987Z", asOfUTC: f.metadata.asOfUTC, eventThroughDate: f.metadata.eventThroughDate, maxCaptureAgeHours: 24, playerId: player.id, team: player.team, season: 20262027, rows: [{ sourceId: 123, gameId: 2026020177, playerId: player.id, season: 20262027, date: "2026-10-24", team: "TBL", regularSeasonCalendarMatched: true, finalityEstablished: false }], limitations: ["No NST model revision receipt"] };
++    return f;
++  };
++  const withBoxes = () => {
++    const f = withProvenance();
++    f.provenance!.review = { reference: "Original review fixture", sha256: RETAINED_BLSH_PROVENANCE_REVIEW_SHA256, sidecarSHA256: RETAINED_BLSH_SIDECAR_SHA256, scope: "dated-stale-research-only" };
++    f.currentBoxes = { version: "fhfh.card-retained-box-comparison.v1", rowsSHA256: RETAINED_BLSH_BOX_PINS.rows, boxEvidenceSHA256: RETAINED_BLSH_BOX_PINS.boxes, receiptSHA256: RETAINED_BLSH_BOX_PINS.receipt, sourceSidecarSHA256: RETAINED_BLSH_SIDECAR_SHA256, snapshotSHA256: RETAINED_BLSH_SHA256, wgoCapturedAt: f.metadata.asOfUTC, review: { reference: "Box review fixture", sha256: RETAINED_BLSH_BOX_PINS.review, scope: "dated-source-comparison-only" }, rows: [{ sourceId: 123, playerId: player.id, gameId: 2026020177, date: "2026-10-24", wgoTeam: "TBL", sourceRowSHA256: "a".repeat(64), state: "identity_team_exposure_qualified", gameFinality: "final", appearance: "positive_official_TOI", team: "match", TOI: { wgo: 1200, official: 1200, state: "match" }, counts: { goals: { wgo: 0, official: 0, state: "match" }, assists: { wgo: 1, official: 1, state: "match" }, shots: { wgo: 2, official: 2, state: "match" }, hits: { wgo: 0, official: 0, state: "match" }, blocked_shots: { wgo: 0, official: 0, state: "match" } }, PPP: { wgo: 0, official: null, state: "unknown_PP_assists_not_supplied" }, reasons: [], officialTeam: "TBL", officialTeamId: 14, evidenceGameId: 2026020177, box: { url: "https://api-web.nhle.com/v1/gamecenter/2026020177/boxscore", bodySHA256: "b".repeat(64), receiptSHA256: "c".repeat(64), retrievedAtUTC: "2026-10-27T20:15:08Z", originalPublicationUTC: null } }] };
++    return f;
++  };
++  it("preserves count discrepancies even when identity, team and exposure qualify", () => {
++    const f = withBoxes(), row = f.currentBoxes!.rows[0];
++    row.counts.goals = { wgo: 1, official: 0, state: "mismatch" };
++    const r = retainedBlshEvidence(player, 20262027, f), boxes = r.retained!.currentBoxes!;
++    expect(boxes).toMatchObject({ state: "reviewed-comparison-only", currentBinding: false });
++    expect(boxes.summary).toContain("0 match / 1 differ / 0 unknown");
++    expect(boxes.summary).toContain("G differ");
++    expect(boxes.lines.join(" ")).toContain("G differs: WGO 1, box 0");
++    expect(boxes.evidence!.rows[0].state).toBe("identity_team_exposure_qualified");
++    expect(r.retained!.profile).toEqual(f.profile); expect(r.receipt).toBeNull();
++    row.counts.goals.wgo = 8;
++    expect(boxes.evidence!.rows[0].counts.goals!.wgo).toBe(1);
++  });
++  it("limits full matches to exposure and the five counts while preserving unknown PPP", () => {
++    const r = retainedBlshEvidence(player, 20262027, withBoxes()), boxes = r.retained!.currentBoxes!;
++    expect(boxes.summary).toContain("1 match / 0 differ / 0 unknown");
++    expect(boxes.summary).toContain("TOI + 5 counts");
++    expect(boxes.summary).toContain("PPP 1 unknown");
++    expect(boxes.lines.join(" ")).toContain("Match covers TOI plus G/A/SOG/HIT/BLK only");
++    expect(boxes.lines.join(" ")).toContain("no current or advanced-metric admission");
++    expect(boxes.evidence!.rows[0].PPP!.official).toBeNull();
++    expect(r.retained!.provenance!.sourceMap!.rows[0].finalityEstablished).toBe(false);
++  });
++  it("retains missing boxes as unknown and exposure mismatches as differences", () => {
++    const f = withBoxes(), row = f.currentBoxes!.rows[0];
++    row.state = "held"; row.TOI = { wgo: 1200, official: 1199, state: "mismatch" };
++    expect(retainedBlshEvidence(player, 20262027, f).retained!.currentBoxes!.summary).toContain("TOI differ");
++    Object.assign(row, { gameFinality: "unknown", appearance: "unknown", team: "unknown", TOI: null, counts: {}, PPP: null, evidenceGameId: null, box: null, reasons: ["no_pinned_cached_official_box"] });
++    const boxes = retainedBlshEvidence(player, 20262027, f).retained!.currentBoxes!;
++    expect(boxes.summary).toContain("0 match / 0 differ / 1 unknown");
++    expect(boxes.lines.join(" ")).toContain("Missing boxes are not DNP or zero");
++    expect(boxes.evidence!.rows[0].counts).toEqual({});
++  });
++  it("withholds invalid or promoted box attachments without replacing saved research", () => {
++    for (const change of [
++      (f: RetainedBlshInput) => { f.currentBoxes!.review.sha256 = "d".repeat(64); },
++      (f: RetainedBlshInput) => { f.currentBoxes!.rowsSHA256 = "d".repeat(64); },
++      (f: RetainedBlshInput) => { f.currentBoxes!.rows[0].playerId = 1; },
++      (f: RetainedBlshInput) => { f.currentBoxes!.rows[0].officialTeam = "TOR"; },
++      (f: RetainedBlshInput) => { f.currentBoxes!.rows[0].counts.goals!.wgo = 1; },
++      (f: RetainedBlshInput) => { f.currentBoxes!.rows[0].PPP = { wgo: 0, official: 0, state: "match" }; },
++      (f: RetainedBlshInput) => { f.currentBoxes!.rows[0].box!.retrievedAtUTC = "2026-11-01T00:00:00Z"; },
++      (f: RetainedBlshInput) => { f.currentBoxes!.rows.push(f.currentBoxes!.rows[0]); },
++      (f: RetainedBlshInput) => { f.currentBoxes!.rows[0].gameFinality = "unknown"; },
++    ]) {
++      const f = withBoxes(); change(f); const r = retainedBlshEvidence(player, 20262027, f);
++      expect(r.retained!.currentBoxes).toMatchObject({ state: "unavailable", evidence: null, currentBinding: false });
++      expect(r.retained!.profile).toEqual(f.profile); expect(r.status).toBe("exploratory"); expect(r.receipt).toBeNull();
++    }
++  });
++  it("attaches pending source lineage without admitting stale research as current input", () => {
++    const f = withProvenance(), r = retainedBlshEvidence(player, 20262027, f);
++    expect(r.retained?.provenance).toMatchObject({ state: "pending-review", captureStale: true, currentBinding: false });
++    expect(r.retained?.provenance?.message).toContain("Finality evidence for 0/1 rows");
++    expect(r.retained?.provenance?.message).toContain("Independent sidecar review pending");
++    expect(r.lines[0]).toContain("recorded game rows");
++    expect(r.receipt).toBeNull();
++    f.provenance!.rows[0].gameId = 1;
++    expect(r.retained?.provenance?.sourceMap?.rows[0].gameId).toBe(2026020177);
++  });
++  it("binds the independent review only to its exact stale-research scope", () => {
++    const f = withProvenance();
++    f.provenance!.review = { reference: "tasks/artifacts/rso-blsh-independent-review-2026-11-01/PROVENANCE-REVIEW.md", sha256: RETAINED_BLSH_PROVENANCE_REVIEW_SHA256, sidecarSHA256: RETAINED_BLSH_SIDECAR_SHA256, scope: "dated-stale-research-only" };
++    const r = retainedBlshEvidence(player, 20262027, f);
++    expect(r.retained?.provenance).toMatchObject({ state: "reviewed-retained-only", currentBinding: false, captureStale: true });
++    expect(r.retained?.provenance?.sourceMap?.independentReviewPending).toBe(true);
++    expect(r.retained?.provenance?.message).toContain("Independently reviewed for dated stale research only");
++    expect(r.receipt).toBeNull();
++    f.provenance!.review.sha256 = "a".repeat(64);
++    expect(retainedBlshEvidence(player, 20262027, f).retained?.provenance?.state).toBe("unavailable");
++    f.provenance!.review.sha256 = RETAINED_BLSH_PROVENANCE_REVIEW_SHA256;
++    f.provenance!.review.scope = "current" as "dated-stale-research-only";
++    expect(retainedBlshEvidence(player, 20262027, f).retained?.provenance?.state).toBe("unavailable");
++  });
++  it("withholds invalid lineage but preserves independently qualified retained values", () => {
++    for (const change of [
++      (f: RetainedBlshInput) => { f.provenance!.sidecarSHA256 = "a".repeat(64); },
++      (f: RetainedBlshInput) => { f.provenance!.rows[0].sourceId = 999; },
++      (f: RetainedBlshInput) => { f.provenance!.rows[0].date = "2026-10-23"; },
++      (f: RetainedBlshInput) => { f.provenance!.playerId = 1; },
++      (f: RetainedBlshInput) => { f.provenance!.asOfUTC = "2026-10-30T00:00:00Z"; },
++      (f: RetainedBlshInput) => { f.provenance!.rows.push(f.provenance!.rows[0]); },
++      (f: RetainedBlshInput) => { f.provenance!.independentReviewPending = false as true; },
++    ]) {
++      const f = withProvenance(); change(f);
++      const r = retainedBlshEvidence(player, 20262027, f);
++      expect(r.status).toBe("exploratory");
++      expect(r.lines.join(" ")).toContain("recorded 2.00; support-conditioned 3.00");
++      expect(r.retained?.provenance).toMatchObject({ state: "unavailable", currentBinding: false, sourceMap: null });
++      expect(r.receipt).toBeNull();
++    }
++  });
++  it("displays actual supplied values on a separately dated window and preserves full evidence", () => {
++    const f = fixture(), r = retainedBlshEvidence(player, 20262027, f);
++    expect(r.status).toBe("exploratory"); expect(r.lines.join(" ")).toContain("recorded 2.00; support-conditioned 3.00");
++    expect(r.lines.join(" ")).toContain("NHL controls do not change this evidence window");
++    expect(r.lines.join(" ")).toContain("stale development history");
++    expect(r.receipt).toBeNull(); expect(r.retained?.profile).toEqual(f.profile);
++    f.profile.tracks[0].observed = 100; expect(r.retained?.profile.tracks[0].observed).toBe(2);
++  });
++  it("rejects unreviewed bytes, changed identity and promoted research claims", () => {
++    for (const change of [(f: RetainedBlshInput) => { f.snapshotSHA256 = "a".repeat(64); }, (f: RetainedBlshInput) => { f.profile.playerId = 1; }, (f: RetainedBlshInput) => { f.profile.team = "TOR"; }, (f: RetainedBlshInput) => { (f.metadata as any).productionAdopted = true; }, (f: RetainedBlshInput) => { (f.profile.claims as any).forecast = true; }]) {
++      const f = fixture(); change(f); expect(retainedBlshEvidence(player, 20262027, f).status).toBe("unavailable");
++    }
++  });
++  it("rejects incomplete saved windows and unavailable support instead of manufacturing neutrality", () => {
++    const f = fixture(); f.profile.evidence.window.sourceIds = [];
++    expect(retainedBlshEvidence(player, 20262027, f).status).toBe("unavailable");
++    const other = fixture(); other.profile.tracks[1].gap = NaN;
++    expect(retainedBlshEvidence(player, 20262027, other).status).toBe("unavailable");
++  });
++  it("keeps saved window age separate from missing production and preserves raw diagnostics", () => {
++    const bytes = readFileSync(resolve(process.cwd(), "lib/buyLowSellHigh/research-snapshots/2026-10-28.arm-a-canonical-repaired.v2.json"));
++    expect(createHash("sha256").update(bytes).digest("hex")).toBe(RETAINED_BLSH_SHA256);
++    const { profiles, ...metadata } = JSON.parse(bytes.toString()) as DisplaySnapshot;
++    const input = (profile: DisplaySnapshot["profiles"][number]): RetainedBlshInput => ({ profile, metadata, snapshotSHA256: RETAINED_BLSH_SHA256, reviewReference: "Pinned research review; no current admission" });
++    const render = (p: DisplaySnapshot["profiles"][number]) => {
++      if (!p.team) throw new Error("Retained test profile lacks a qualified team");
++      return retainedBlshEvidence({ id: p.playerId, team: p.team }, metadata.seasonId, input(p));
++    };
++    const benn = profiles.find(p => p.playerId === 8473994)!;
++    expect(benn.evidence.window).toMatchObject({ lastGameDaysBeforeRecordedThrough: 1, fresh: false });
++    expect(benn.evidence.window.freshnessText).toContain("stale window");
++    expect(benn.tracks).toEqual([]); expect(render(benn).status).toBe("unavailable");
++    const recentMissing = profiles.filter(p => p.evidence.window.lastGameDaysBeforeRecordedThrough !== null && p.evidence.window.lastGameDaysBeforeRecordedThrough <= 7 && p.score.value === null && !p.evidence.window.fresh);
++    expect(recentMissing).toHaveLength(137);
++    for (const p of recentMissing) {
++      const before = JSON.stringify(p), result = render(p);
++      expect(result.status).toBe("unavailable");
++      expect(result.lines.join(" ")).not.toContain("stale window");
++      expect(JSON.stringify(p)).toBe(before);
++    }
++    const wilson = profiles.find(p => p.playerId === 8475253)!, before = JSON.stringify(wilson), result = render(wilson);
++    expect(wilson.evidence.window.lastGameDaysBeforeRecordedThrough).toBe(11);
++    expect(result.status).toBe("exploratory"); expect(result.lines.join(" ")).not.toContain("stale window");
++    expect(result.retained?.profile).toEqual(wilson); expect(result.retained?.profile.score.value).toBe(43.86735762626921);
++    expect(result.retained?.profile.evidence.window.freshnessText).toBe(wilson.evidence.window.freshnessText);
++    expect(JSON.stringify(wilson)).toBe(before);
++  });
++});
+--- /dev/null
++++ b/web/lib/player-cards/retainedBlsh.ts
+@@ -0,0 +1,85 @@
++import type { DisplayProfile, DisplaySnapshot } from "../buyLowSellHigh/displayProfile";
++import type { BoxCount, BoxMeasurement, CardEvidence, RetainedBlshBoxes, RetainedBlshSourceMap, RetainedBoxEvidence } from "./analysisEvidence";
++
++/** Frozen local research handoff, not live input admission or a scoring implementation. */
++export const RETAINED_BLSH_SHA256 = "2f380c2539390f6931ec92ab1d0b1d8cced2b55f5f4cefb8c6e88a694909f2c8";
++export const RETAINED_BLSH_SIDECAR_SHA256 = "0b98ebc0fa2bbf0554b781d6c7548b820c37768b4868d11784ca837dad070d57";
++export const RETAINED_BLSH_PROVENANCE_REVIEW_SHA256 = "54fbf0418908263ce5a0ed3e2b4812c78d70d152aacc818df0568567aa265701";
++export const RETAINED_BLSH_BOX_PINS = {
++  rows: "314a48ef45dbad11b48192bdbada730ccc82fb355895e2dde56b484ece0a6d36",
++  boxes: "b83fc6bff7bd470bb245f1053a489aeebab6b17f1f734a2ed18d5753f715447f",
++  receipt: "e51173a80e5f0f55e45abf7e914b127b2c8d0cf6f7543a38aa18a9df4f4190a0",
++  review: "166b65ff7be1a16883d2546c4a1a03b54f286963324e494b1ebba0a41aeb2ce9",
++} as const;
++export type RetainedBlshInput = { profile: DisplayProfile; metadata: Omit<DisplaySnapshot, "profiles">; snapshotSHA256: string; reviewReference: string; provenance?: RetainedBlshSourceMap; currentBoxes?: RetainedBlshBoxes };
++const boxCounts: Record<BoxCount, string> = { goals: "G", assists: "A", shots: "SOG", hits: "HIT", blocked_shots: "BLK" };
++const countKeys = Object.keys(boxCounts) as BoxCount[];
++const count = (v: unknown): v is number => typeof v === "number" && Number.isSafeInteger(v) && v >= 0;
++const hash = (v: string) => /^[a-f0-9]{64}$/.test(v);
++const compared = (v: BoxMeasurement | null | undefined): v is BoxMeasurement => !!v && count(v.wgo) && count(v.official) && v.state === (v.wgo === v.official ? "match" : "mismatch");
++
++function retainedBoxEvidence(input: RetainedBlshInput, provenance: NonNullable<CardEvidence["retained"]>["provenance"]): RetainedBoxEvidence | undefined {
++  const b = input.currentBoxes;
++  if (!b) return undefined;
++  const unavailable = (): RetainedBoxEvidence => ({ state: "unavailable", currentBinding: false, evidence: null, summary: "Box comparison unavailable", lines: ["Comparison receipt, identity, window, dates or field states do not match. Saved research values remain unchanged."] });
++  const map = provenance?.sourceMap;
++  if (provenance?.state !== "reviewed-retained-only" || !map || b.version !== "fhfh.card-retained-box-comparison.v1" || b.rowsSHA256 !== RETAINED_BLSH_BOX_PINS.rows || b.boxEvidenceSHA256 !== RETAINED_BLSH_BOX_PINS.boxes || b.receiptSHA256 !== RETAINED_BLSH_BOX_PINS.receipt || b.sourceSidecarSHA256 !== map.sidecarSHA256 || b.snapshotSHA256 !== input.snapshotSHA256 || b.wgoCapturedAt !== input.metadata.asOfUTC || b.review?.sha256 !== RETAINED_BLSH_BOX_PINS.review || !b.review.reference.trim() || b.review.scope !== "dated-source-comparison-only" || !Array.isArray(b.rows) || b.rows.length !== map.rows.length) return unavailable();
++  const valid = b.rows.every((r, i) => {
++    const m = map.rows[i];
++    if (r.sourceId !== m.sourceId || r.playerId !== m.playerId || r.gameId !== m.gameId || r.date !== m.date || r.wgoTeam !== m.team || !hash(r.sourceRowSHA256) || !Array.isArray(r.reasons) || !r.reasons.every(t => typeof t === "string")) return false;
++    if (r.gameFinality === "unknown") return r.state === "held" && r.appearance === "unknown" && r.team === "unknown" && r.TOI === null && !!r.counts && Object.keys(r.counts).length === 0 && r.PPP === null && r.evidenceGameId === null && r.box === null;
++    if (r.gameFinality !== "final" || r.appearance !== "positive_official_TOI" || r.team !== "match" || r.officialTeam !== r.wgoTeam || !count(r.officialTeamId) || r.officialTeamId <= 0 || r.evidenceGameId !== r.gameId || !compared(r.TOI) || r.TOI.wgo <= 0 || r.TOI.official <= 0 || r.state !== (r.TOI.state === "match" ? "identity_team_exposure_qualified" : "held")) return false;
++    if (!r.counts || Object.keys(r.counts).length !== countKeys.length || !countKeys.every(k => compared(r.counts[k]))) return false;
++    const pp = r.PPP;
++    if (!pp || (pp.state === "unknown_PP_assists_not_supplied" ? !count(pp.wgo) || pp.official !== null || r.counts.assists!.official === 0 : !compared(pp) || r.counts.assists!.official !== 0)) return false;
++    const box = r.box, at = Date.parse(box?.retrievedAtUTC || "");
++    return !!box && box.url === `https://api-web.nhle.com/v1/gamecenter/${r.gameId}/boxscore` && hash(box.bodySHA256) && hash(box.receiptSHA256) && box.originalPublicationUTC === null && Number.isFinite(at) && at <= Date.parse(b.wgoCapturedAt);
++  });
++  if (!valid) return unavailable();
++  const covered = b.rows.filter(r => r.gameFinality === "final");
++  const differs = covered.filter(r => r.TOI!.state === "mismatch" || countKeys.some(k => r.counts[k]!.state === "mismatch"));
++  const fields = [...(differs.some(r => r.TOI!.state === "mismatch") ? ["TOI"] : []), ...countKeys.filter(k => differs.some(r => r.counts[k]!.state === "mismatch")).map(k => boxCounts[k])];
++  const ppUnknown = covered.filter(r => r.PPP?.state === "unknown_PP_assists_not_supplied").length;
++  const summary = `Box TOI + 5 counts: ${covered.length - differs.length} match / ${differs.length} differ / ${b.rows.length - covered.length} unknown${fields.length ? ` · ${fields.join("/")} differ` : ppUnknown ? ` · PPP ${ppUnknown} unknown` : ""}`;
++  const measurement = (label: string, v: BoxMeasurement) => `${label} ${v.state === "mismatch" ? "differs" : "matches"}: WGO ${v.wgo}, box ${v.official}`;
++  return { state: "reviewed-comparison-only", currentBinding: false, summary, evidence: JSON.parse(JSON.stringify(b)), lines: [
++    `${covered.length}/${b.rows.length} rows have later-attached final-game/player/team box evidence. Match covers TOI plus G/A/SOG/HIT/BLK only; exposure qualification alone does not certify counts.`,
++    `PPP: ${covered.length - ppUnknown} compared, ${ppUnknown} unknown without PP assists, ${b.rows.length - covered.length} without a box. Missing boxes are not DNP or zero.`,
++    "These are dated source comparisons, not repairs or a verdict on the later capture. Saved research scores and values are unchanged; no current or advanced-metric admission. Original publication/revision time remains unknown.",
++    ...b.rows.map(r => r.box ? `${r.date} · game ${r.gameId} · source row ${r.sourceId}: ${r.state === "identity_team_exposure_qualified" ? "identity, team and exposure match; counts checked separately" : "identity and team match; exposure differs"}. WGO captured ${b.wgoCapturedAt}; box captured ${r.box.retrievedAtUTC}. ${measurement("TOI seconds", r.TOI!)}; ${countKeys.map(k => measurement(boxCounts[k], r.counts[k]!)).join("; ")}; ${r.PPP!.state === "unknown_PP_assists_not_supplied" ? `PPP unknown: WGO ${r.PPP!.wgo}, box PP assists unavailable` : measurement("PPP", r.PPP!)}.` : `${r.date} · game ${r.gameId} · source row ${r.sourceId}: no pinned box in the reviewed bundle; finality, appearance, team and fields unknown.`),
++  ] };
++}
++export function retainedBlshEvidence(player: { id: number; team: string }, season: number, input: RetainedBlshInput): CardEvidence {
++  const p = input.profile, s = input.metadata;
++  const unavailable = (reason: string): CardEvidence => ({ status: "unavailable", heading: "Retained BLSH evidence unavailable", direction: "unknown", lines: [reason], receipt: null, market: "Market reference unavailable" });
++  if (input.snapshotSHA256 !== RETAINED_BLSH_SHA256 || !input.reviewReference.trim() || s.scoreVersion !== "support-conditioned-production-gap-v1" || p.score.version !== s.scoreVersion || s.schemaVersion !== "fhfh.blsh.current-research-snapshot.v2") return unavailable("Saved snapshot or reviewed method does not match the frozen local handoff.");
++  if (p.playerId !== player.id || p.team !== player.team || s.seasonId !== season) return unavailable("Saved BLSH player, team or season does not match the selected player.");
++  if (!s.provisional || !s.exploratory || s.productionAdopted || s.trusted || s.confidenceProbability !== null || s.issuedAtUTC !== null || p.claims.forecast || p.claims.marketValue || p.claims.trusted || p.score.calibratedProbability !== null) return unavailable("Saved research flags cannot be promoted to forecast or market claims.");
++  const w = p.evidence.window, ref = p.evidence.reference;
++  if (!Number.isFinite(Date.parse(s.asOfUTC)) || !Number.isSafeInteger(w.games) || w.games < 1 || w.dates.length !== w.games || w.sourceIds.length !== w.games || new Set(w.sourceIds).size !== w.games || w.dates.some(d => !/^\d{4}-\d{2}-\d{2}$/.test(d) || d > s.eventThroughDate) || p.tracks.length !== 3 || p.tracks.some(t => ![t.observed, t.supportConditioned, t.gap].every(Number.isFinite))) return unavailable("Saved research window or production/support values are unavailable.");
++  const direction = p.score.gapSign === "buy_low_evidence" ? "positive" : p.score.gapSign === "sell_high_evidence" ? "negative" : p.score.gapSign === "balanced" ? "level" : "unknown";
++  const uniqueNotes = [...new Set(p.coverage.notes.map(n => n.text))];
++  let provenance: NonNullable<CardEvidence["retained"]>["provenance"];
++  if (input.provenance) {
++    const m = input.provenance, age = (Date.parse(m.generatedAtUTC) - Date.parse(m.asOfUTC)) / 3_600_000;
++    const valid = m.version === "fhfh.blsh.player-card-research-provenance.v1" && m.sidecarSHA256 === RETAINED_BLSH_SIDECAR_SHA256 && m.snapshotSHA256 === input.snapshotSHA256 && m.independentReviewPending === true
++      && m.playerId === p.playerId && m.team === p.team && m.season === season && m.asOfUTC === s.asOfUTC && m.eventThroughDate === s.eventThroughDate
++      && (!m.review || m.review.scope === "dated-stale-research-only" && !!m.review.reference.trim() && m.review.sha256 === RETAINED_BLSH_PROVENANCE_REVIEW_SHA256 && m.review.sidecarSHA256 === m.sidecarSHA256)
++      && Number.isFinite(age) && age >= 0 && m.maxCaptureAgeHours === 24 && Array.isArray(m.limitations) && m.limitations.every(t => typeof t === "string")
++      && Array.isArray(m.rows) && m.rows.length === w.games && new Set(m.rows.map(r => r.sourceId)).size === w.games && new Set(m.rows.map(r => r.gameId)).size === w.games
++      && m.rows.every((r, i) => Number.isSafeInteger(r.sourceId) && r.sourceId > 0 && Number.isSafeInteger(r.gameId) && r.gameId > 0 && r.sourceId === w.sourceIds[i] && r.date === w.dates[i] && r.playerId === p.playerId && r.season === season && !!r.team && r.regularSeasonCalendarMatched === true && typeof r.finalityEstablished === "boolean");
++    provenance = valid ? {
++      state: m.review ? "reviewed-retained-only" : "pending-review", currentBinding: false, captureStale: age > m.maxCaptureAgeHours, sourceMap: JSON.parse(JSON.stringify(m)),
++      message: `${m.rows.length} recorded source rows mapped. ${m.review ? "Independently reviewed for dated stale research only." : "Independent sidecar review pending."} Capture ${age > m.maxCaptureAgeHours ? "stale" : "within the original age budget only"} at sidecar build (${age.toFixed(1)} hours; ${m.maxCaptureAgeHours}-hour budget). Finality evidence for ${m.rows.filter(r => r.finalityEstablished).length}/${m.rows.length} rows in this original sidecar. This mapping does not admit current binding or advanced metrics.`,
++    } : { state: "unavailable", currentBinding: false, captureStale: null, sourceMap: null, message: "Source mapping unavailable: sidecar identity, bytes reference, window, time or review status does not match. Previously qualified retained research remains separate." };
++  }
++  return { status: "exploratory", heading: "BLSH · retained provisional research", direction, receipt: null, market: "Market reference unavailable", retained: { snapshotSHA256: input.snapshotSHA256, reviewReference: input.reviewReference, asOfUTC: s.asOfUTC, eventThroughDate: s.eventThroughDate, dates: [...w.dates], methodVersion: s.scoreVersion, profile: JSON.parse(JSON.stringify(p)), limits: [...s.limits], provenance, currentBoxes: retainedBoxEvidence(input, provenance) }, lines: [
++    `Separate saved window: ${w.dates[0]} to ${w.dates.at(-1)}; ${w.games} recorded game rows, ${w.minutes ?? "unknown"} minutes. NHL controls do not change this evidence window.`,
++    `${p.score.statusLabel}; ${direction} support gap.`,
++    ...p.tracks.map(t => `${t.label}: recorded ${t.observed.toFixed(2)}; support-conditioned ${t.supportConditioned.toFixed(2)}; gap ${t.gap.toFixed(2)} (window totals).`),
++    `Opportunity: ${p.context.opportunity.map(o => `${o.label} ${o.current === null ? "unavailable" : o.current.toFixed(2)} ${o.units}`).join("; ")}.`,
++    `Reference: ${ref.personalGames} games; age ${ref.ageDays ?? "unknown"} days; stale development history. ${p.evidence.tierNote}.`,
++    `Limits: ${uniqueNotes.join("; ")}.`,
++    "Retrospective support evidence; no calibrated confidence, forecast, market price or trade recommendation.",
++  ] };
++}
+--- /dev/null
++++ b/web/lib/player-cards/sharedGoalieOutlook.test.ts
+@@ -0,0 +1,112 @@
++import { describe, expect, it, vi } from "vitest";
++// The existing resolver is server-owned. Its storage import must never run in these offline tests.
++vi.mock("lib/supabase/server", () => ({ default: { from: () => { throw new Error("No database reads in card tests"); } } }));
++import { resolveDailyBoardEvidence, type BoardConflict, type BoardGoalieEvidence } from "../projections/dailyBoardEvidence";
++import { GOALIE_INVENTORY_FIXTURE } from "../socialShare/modules/shared/goalieInventory.fixture";
++import { goalieFixture, sharedGoalieFixture } from "./analysisFixtures";
++import { sharedGoalieOutlook } from "./sharedGoalieOutlook";
++
++const selected = goalieFixture().player;
++describe("frozen shared goalie inventory consumer", () => {
++  it("consumes the producer's handoff fixture without losing pooled metrics or promoting conflicts", () => {
++    const fixture = GOALIE_INVENTORY_FIXTURE;
++    const player = (id: number, team: string) => ({ ...selected, id, team, season: fixture.season });
++    const njd = sharedGoalieOutlook(fixture, player(7001, "NJD"), "fixture");
++    expect(njd.state).toBe("fixture");
++    expect(njd.games[0].confirmation).toContain("confirmed");
++    expect(njd.games[0].forecast).toContain("unavailable");
++    expect(njd.games[0].dimensions.find(d => d.label === "Opponent shots for")?.text).toMatch(/^26 /);
++    expect(njd.games[0].dimensions.find(d => d.label === "Team shots against")?.text).toMatch(/^26\.5 /);
++    expect(njd.games[0].dimensions.find(d => d.label === "Team goal differential")?.text).toMatch(/^1\.5 /);
++    expect(sharedGoalieOutlook(fixture, player(7004, "MTL"), "fixture").games[0].forecast).toContain("62.0%");
++    const tor = sharedGoalieOutlook(fixture, player(7005, "TOR"), "fixture");
++    expect(tor.games.find(g => g.id === 900012)?.confirmation).toContain("No current resolved");
++    expect(tor.sharedProvenance?.sourceNotes.join(" ")).toMatch(/conflict/i);
++    expect(tor.games[0].forecast).toContain("unavailable");
++  });
++  it("preserves independent dimensions, missing values, negative goal differential and source provenance", () => {
++    const result = sharedGoalieOutlook(sharedGoalieFixture(), selected, "fixture");
++    expect(result.state).toBe("fixture"); expect(result.games[0].dimensions).toHaveLength(12);
++    expect(new Set(result.games[0].dimensions.map(d => d.group)).size).toBe(3);
++    expect(result.games[0].dimensions.find(d => d.label === "Team xGA")?.text).toContain("Unavailable");
++    expect(result.games[0].dimensions.find(d => d.label === "Team goal differential")?.text).toContain("-0.3");
++    expect(result.sharedProvenance?.sourceNotes[0]).toContain("player_forecast_goalie_start_observations");
++    expect(result.sharedProvenance?.recentStarts).toMatchObject({ starts: 6, reliefAppearances: 1, share: 0.6 });
++    expect(result.games[0].forecast).not.toContain("60%");
++  });
++  it("rejects stale/mismatched/duplicate schedules and never admits observed inventory", () => {
++    const f = sharedGoalieFixture();
++    expect(sharedGoalieOutlook(f, { ...selected, team: "TOR" }, "fixture").state).toBe("unavailable");
++    expect(sharedGoalieOutlook(f, { ...selected, season: 20252026 }, "fixture").state).toBe("unavailable");
++    expect(sharedGoalieOutlook(f, selected, "observed" as "fixture").state).toBe("unavailable");
++    f.state = "stale"; expect(sharedGoalieOutlook(f, selected, "fixture").state).toBe("unavailable");
++    f.state = "partial"; f.goalies[0].games.push(f.goalies[0].games[0]);
++    expect(sharedGoalieOutlook(f, selected, "fixture").state).toBe("unavailable");
++    f.goalies[0].games.pop(); f.goalies[0].games[0].date = "2026-11-40";
++    expect(sharedGoalieOutlook(f, selected, "fixture").state).toBe("unavailable");
++  });
++  it("keeps confirmation separate from forecasts and rejects expired or future evidence", () => {
++    const f = sharedGoalieFixture(), game = f.goalies[0].games[0];
++    game.confirmation = { state: "confirmed", source: "Fixture original reporter", sourceUrl: "https://example.test/fixture", observedAt: "2026-10-31T11:00:00Z", expiresAt: "2026-10-31T12:00:00Z" };
++    expect(sharedGoalieOutlook(f, selected, "fixture").games[0].confirmation).toContain("No current resolved");
++    game.confirmation.expiresAt = "2026-11-01T12:00:00Z";
++    const r = sharedGoalieOutlook(f, selected, "fixture");
++    expect(r.games[0].confirmation).toContain("https://example.test/fixture");
++    expect(r.games[0].forecast).toContain("unavailable");
++    game.confirmation.observedAt = "2026-10-31T13:00:00Z";
++    expect(sharedGoalieOutlook(f, selected, "fixture").games[0].confirmation).toContain("No current resolved");
++  });
++  it("preserves producer warnings and withholds confirmations from unavailable source states", () => {
++    const f = sharedGoalieFixture();
++    const warning = "Reports aren't separated by reporter, so conflicts between sources can't be detected.";
++    f.sources[0].reasons = [warning, warning, "No source link or expiry exists for these reports."];
++    f.sources[0].state = "partial";
++    const partial = sharedGoalieOutlook(f, selected, "fixture");
++    expect(partial.sharedProvenance?.confirmationWarnings).toEqual([warning, "No source link or expiry exists for these reports."]);
++    expect(partial.games[0].confirmation).toContain("projected");
++    for (const state of ["missing", "blocked", "stale"] as const) {
++      f.sources[0].state = state;
++      const result = sharedGoalieOutlook(f, selected, "fixture");
++      expect(result.games[0].confirmation).toContain("No current resolved");
++      expect(result.games[0].dimensions[0].text).toContain("31");
++      expect(result.sharedProvenance?.confirmationWarnings).toContain("Starter confirmation source unavailable; status remains unknown.");
++    }
++    f.sources = [];
++    expect(sharedGoalieOutlook(f, selected, "fixture").games[0].confirmation).toContain("No current resolved");
++  });
++  it("uses only a qualified unexpired Start Chart fixture, without borrowing workload share", () => {
++    const f = sharedGoalieFixture(), game = f.goalies[0].games[0];
++    game.forecast = { state: "qualified", startProbability: 0.75, revisionId: "fixture-v1", modelLabel: "Fixture", issuedAt: "2026-10-31T11:00:00Z", expiresAt: "2026-11-01T12:00:00Z" };
++    expect(sharedGoalieOutlook(f, selected, "fixture").games[0].forecast).toContain("75.0%");
++    game.forecast.expiresAt = f.generatedAt;
++    expect(sharedGoalieOutlook(f, selected, "fixture").games[0].forecast).toContain("unavailable");
++  });
++});
++
++const cutoff = "2026-10-31T12:00:00Z";
++const row = (patch: Partial<BoardGoalieEvidence> = {}): BoardGoalieEvidence => ({ id: "gdl-1", game_id: 2026020200, team_id: 14, player_id: 8476883, observation_status: "confirmed", observed_at: "2026-10-31T11:00:00Z", available_at: "2026-10-31T11:01:00Z", created_at: "2026-10-31T11:02:00Z", expires_at: "2026-11-02T02:00:00Z", accepted: true, source_key: "tweet_projection", source_account: "GameDayGoalies", source_url: "https://example.test/fixture-original", ...patch });
++const resolve = (goalies: BoardGoalieEvidence[], conflicts: BoardConflict[] = []) => resolveDailyBoardEvidence({ cutoff, lineups: [], goalies, conflicts });
++describe("reuse of existing dailyBoardEvidence goalie semantics (offline)", () => {
++  it("does not turn IFTTT and table copies or repost counts into multiple votes", () => {
++    const r = resolve([row(), row(), row({ id: "repost", source_key: "ifttt" })]);
++    expect(r.assertions).toHaveLength(1); expect(r.conflicts).toHaveLength(0);
++    expect(r.assertions[0]).toMatchObject({ sourceKey: "GameDayGoalies", sourceUrl: "https://example.test/fixture-original", playerId: 8476883 });
++    expect(r.informationCutoffAt).toBe(cutoff);
++  });
++  it("uses the original reporter's latest publication, regardless of arrival order", () => {
++    const r = resolve([row({ id: "newer", player_id: 999, observed_at: "2026-10-31T11:30:00Z", available_at: "2026-10-31T11:31:00Z", created_at: "2026-10-31T11:32:00Z" }), row({ available_at: "2026-10-31T11:50:00Z", created_at: "2026-10-31T11:51:00Z" })]);
++    expect(r.assertions).toHaveLength(1); expect(r.assertions[0].playerId).toBe(999);
++  });
++  it("withholds expired, unaccepted, invalid and not-yet-known observations", () => {
++    const r = resolve([row({ expires_at: cutoff }), row({ accepted: false }), row({ observed_at: "invalid" }), row({ available_at: "2026-10-31T12:01:00Z" }), row({ created_at: "2026-10-31T12:01:00Z" })]);
++    expect(r.assertions).toEqual([]);
++  });
++  it("withholds conflicting starters until a review was known at the cutoff", () => {
++    const inputs = [row(), row({ id: "second", source_account: "Independent reporter", player_id: 999, observed_at: "2026-10-31T11:05:00Z", available_at: "2026-10-31T11:06:00Z", created_at: "2026-10-31T11:07:00Z" })];
++    expect(resolve(inputs).conflicts).toHaveLength(1); expect(resolve(inputs).assertions).toEqual([]);
++    const conflict: BoardConflict = { id: "conflict", game_id: 2026020200, team_id: 14, player_id: null, conflict_type: "goalie_start", detected_at: "2026-10-31T11:10:00Z", player_forecast_conflict_resolutions: [{ action: "select_observation", selected_observation_id: "second", resolved_at: "2026-10-31T11:20:00Z", created_at: "2026-10-31T12:01:00Z" }] };
++    expect(resolve(inputs, [conflict]).assertions).toEqual([]);
++    conflict.player_forecast_conflict_resolutions[0].created_at = "2026-10-31T11:21:00Z";
++    expect(resolve(inputs, [conflict]).assertions[0].evidenceId).toBe("second");
++  });
++});
+--- /dev/null
++++ b/web/lib/player-cards/sharedGoalieOutlook.ts
+@@ -0,0 +1,37 @@
++import { GOALIE_INVENTORY_VERSION, type GoalieInventory, type InventoryMetric } from "../socialShare/modules/shared/goalieInventory";
++import type { GoalieOutlook } from "./goalieOutlook";
++
++/** Pure downstream consumer of Claude's frozen DTO. No source loader, resolver or credential imports. */
++export function sharedGoalieOutlook(inventory: GoalieInventory, selected: GoalieOutlook["player"], mode: "fixture"): GoalieOutlook {
++  const empty = (reason: string): GoalieOutlook => ({ state: "unavailable", player: { ...selected }, observedAt: inventory.generatedAt, reason, games: [] });
++  if (mode !== "fixture") return empty("Observed shared inventory admission is still pending; no live pipeline claim.");
++  const at = Date.parse(inventory.generatedAt);
++  if (inventory.version !== GOALIE_INVENTORY_VERSION || inventory.season !== selected.season || !Number.isFinite(at) || ["missing", "blocked", "stale"].includes(inventory.state)) return empty(`Shared inventory unavailable: ${inventory.reasons.join("; ") || "version, season, time or source-state mismatch"}`);
++  const matches = inventory.goalies.filter(g => g.goalieId === selected.id && g.team === selected.team);
++  if (matches.length !== 1) return empty("Shared goalie identity/current-team match is absent or ambiguous.");
++  const entry = matches[0];
++  const confirmationSources = inventory.sources.filter(s => s.tables.includes("player_forecast_goalie_start_observations"));
++  const confirmationSourceAvailable = confirmationSources.length > 0 && confirmationSources.every(s => s.state === "ready" || s.state === "partial");
++  const confirmationWarnings = [...new Set(confirmationSources.flatMap(s => s.reasons))];
++  if (!confirmationSourceAvailable) confirmationWarnings.push("Starter confirmation source unavailable; status remains unknown.");
++  const date = (s: string) => /^\d{4}-\d{2}-\d{2}$/.test(s) && Number.isFinite(Date.parse(s)) && new Date(s).toISOString().slice(0, 10) === s;
++  if (!date(inventory.from) || !date(inventory.through) || inventory.from > inventory.through || new Set(entry.games.map(g => g.gameId)).size !== entry.games.length || entry.games.some(g => g.team !== selected.team || !Number.isSafeInteger(g.gameId) || g.gameId <= 0 || !g.opponent || !date(g.date) || g.date < inventory.from || g.date > inventory.through || g.startTimeUtc !== null && !Number.isFinite(Date.parse(g.startTimeUtc)))) return empty("Shared schedule contains an identity, date-range or duplicate-game mismatch.");
++  const metric = (label: string, group: string, m: InventoryMetric) => ({ label, group, text: m.value !== null && Number.isFinite(m.value) && Number.isSafeInteger(m.sampleGames) && m.sampleGames > 0 && m.unit && m.window ? `${m.value} ${m.unit} · ${m.window} · ${m.sampleGames} team games` : "Unavailable: missing metric, unit, window or sample." });
++  return { state: "fixture", player: { ...selected }, observedAt: inventory.generatedAt, reason: inventory.state === "partial" ? `Partial inventory: ${inventory.reasons.join("; ") || "some inputs unavailable"}` : entry.games.length ? null : "No scheduled games in supplied shared inventory.", sharedProvenance: {
++    version: inventory.version, sourceState: inventory.state,
++    sourceNotes: inventory.sources.map(s => `${s.name}: ${s.state}; tables ${s.tables.join(", ")}; as of ${s.asOf || "unknown"}; updated ${s.updatedAt || "unknown"}; ${s.reasons.join("; ")}`),
++    confirmationWarnings,
++    recentStarts: { ...entry.recentStarts },
++  }, games: entry.games.map(g => {
++    const c = g.confirmation, f = g.forecast;
++    const confirmed = confirmationSourceAvailable && c.state !== "none" && !!c.source.trim() && Number.isFinite(Date.parse(c.observedAt)) && Date.parse(c.observedAt) <= at && (c.expiresAt === null || Number.isFinite(Date.parse(c.expiresAt)) && Date.parse(c.expiresAt) > at);
++    const forecast = f.state === "qualified" && Number.isFinite(f.startProbability) && f.startProbability >= 0 && f.startProbability <= 1 && !!f.revisionId && !!f.modelLabel && Number.isFinite(Date.parse(f.issuedAt)) && Date.parse(f.issuedAt) <= at && Number.isFinite(Date.parse(f.expiresAt)) && Date.parse(f.expiresAt) > at;
++    return { id: g.gameId, heading: `${g.startTimeUtc || `${g.date} · start time unavailable`} · ${g.team} vs ${g.opponent} · ${g.home ? "home" : "away"}`,
++      confirmation: confirmed ? `${c.state} · ${c.source} · ${c.observedAt} · expires ${c.expiresAt || "not supplied"}${c.sourceUrl ? ` · ${c.sourceUrl}` : ""}` : "No current resolved starter confirmation; absence is not evidence of not starting.",
++      forecast: forecast ? `Fixture Start Chart start probability ${(f.startProbability * 100).toFixed(1)}%; ${f.modelLabel}; revision ${f.revisionId}; issued ${f.issuedAt}; expires ${f.expiresAt}. Separate from confirmation and workload.` : `Start forecast unavailable: ${f.state === "unavailable" ? f.reason : "expired or incomplete admitted forecast"}. No odds inferred from appearance share.`,
++      dimensions: [metric("Opponent shots for", "Volume upside", g.signals.volume.opponentShotsForPerGame), metric("Team shots against", "Volume upside", g.signals.volume.teamShotsAgainstPerGame),
++        metric("Opponent xGF", "Ratio exposure", g.signals.ratioExposure.opponentXgfPerGame), metric("Team xGA", "Ratio exposure", g.signals.ratioExposure.teamXgaPerGame), metric("Opponent chances for", "Ratio exposure", g.signals.ratioExposure.opponentScoringChancesPerGame), metric("Team chances against", "Ratio exposure", g.signals.ratioExposure.teamScoringChancesAgainstPerGame), metric("Opponent PP", "Ratio exposure", g.signals.ratioExposure.opponentPowerPlayPct), metric("Team PK", "Ratio exposure", g.signals.ratioExposure.teamPenaltyKillPct), metric("Team penalty exposure", "Ratio exposure", g.signals.ratioExposure.teamTimesShorthandedPerGame),
++        metric("Team goals for", "Win support", g.signals.winSupport.teamGoalsForPerGame), metric("Opponent goals against", "Win support", g.signals.winSupport.opponentGoalsAgainstPerGame), metric("Team goal differential", "Win support", g.signals.winSupport.teamGoalDifferentialPerGame)],
++    };
++  }) };
++}

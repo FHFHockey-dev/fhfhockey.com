@@ -1,0 +1,56 @@
+ M web/components/player-cards/HeroPlayerCard.tsx
+ M web/components/player-cards/PlayerCardShareStudio.test.tsx
+ M web/components/player-cards/PlayerCardShareStudio.tsx
+ M web/lib/player-cards/aggregation.ts
+ M web/lib/player-cards/cardEvidenceVerdict.test.ts
+ M web/lib/player-cards/cardEvidenceVerdict.ts
+ M web/lib/player-cards/domain.test.ts
+ M web/lib/player-cards/evidenceBundle.test.ts
+ M web/lib/player-cards/evidenceBundle.ts
+ M web/lib/player-cards/evidenceLoader.test.ts
+ M web/lib/player-cards/evidenceLoader.ts
+ M web/lib/player-cards/nstCapture.test.ts
+ M web/lib/player-cards/nstCapture.ts
+ M web/lib/player-cards/portraitTreatment.test.ts
+ M web/lib/player-cards/portraitTreatment.ts
+ M web/lib/player-cards/reviewedHeroSamples.ts
+ M web/lib/player-cards/shareExport.test.ts
+ M web/lib/player-cards/shareExport.ts
+ M web/lib/player-cards/windows.ts
+ M web/pages/social-share/player-cards.tsx
+?? web/components/player-cards/CurrentPlayerCard.tsx
+?? web/components/player-cards/CurrentPlayerCardStudio.test.tsx
+?? web/components/player-cards/CurrentPlayerCardStudio.tsx
+?? web/components/player-cards/ObservedPlayerCard.test.tsx
+?? web/components/player-cards/ObservedPlayerCard.tsx
+?? web/components/player-cards/OutlineStackControls.module.scss
+?? web/components/player-cards/OutlineStackControls.test.tsx
+?? web/components/player-cards/OutlineStackControls.tsx
+?? web/components/player-cards/PlayerArtworkControls.tsx
+?? web/components/player-cards/PlayerHeroHeader.tsx
+?? web/components/player-cards/PlayerLookup.module.scss
+?? web/components/player-cards/PlayerLookup.test.tsx
+?? web/components/player-cards/PlayerLookup.tsx
+?? web/components/player-cards/ProductionGameChart.tsx
+?? web/components/player-cards/usePlayerArtwork.ts
+?? web/lib/player-cards/alphaOutline.test.ts
+?? web/lib/player-cards/alphaOutline.ts
+?? web/lib/player-cards/currentArtwork.test.ts
+?? web/lib/player-cards/currentArtwork.ts
+?? web/lib/player-cards/currentNhl.server.test.ts
+?? web/lib/player-cards/currentNhl.server.ts
+?? web/lib/player-cards/currentNhl.test.ts
+?? web/lib/player-cards/currentNhl.ts
+?? web/lib/player-cards/currentNhlExport.ts
+?? web/lib/player-cards/currentSelection.test.ts
+?? web/lib/player-cards/currentSelection.ts
+?? web/lib/player-cards/observedExport.test.ts
+?? web/lib/player-cards/observedExport.ts
+?? web/lib/player-cards/observedView.ts
+?? web/lib/player-cards/outlineStack.test.ts
+?? web/lib/player-cards/outlineStack.ts
+?? web/lib/player-cards/playerCatalog.test.ts
+?? web/lib/player-cards/playerCatalog.ts
+?? web/lib/player-cards/teamLogo.ts
+?? web/pages/api/v1/player-cards.ts
+?? web/pages/player-cards.tsx

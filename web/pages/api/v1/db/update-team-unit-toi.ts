@@ -8,6 +8,10 @@ import {
   createTeamUnitToiBuildRequest,
   upsertTeamUnitToiRows,
 } from "lib/rankings/teamUnitToiWriter";
+import {
+  completeGameIds,
+  loadTeamUnitToiNightlyPlan,
+} from "lib/rankings/teamUnitToiNightly";
 import adminOnly from "utils/adminOnlyMiddleware";
 
 type RequestWithSupabase = {
@@ -59,6 +63,72 @@ function readCsvIntegers(value: string | string[] | undefined) {
   );
 }
 
+function easternToday(now = new Date()) {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York" }).format(now);
+}
+
+/**
+ * mode=nightly: add completed games that are not yet in the season's current snapshot to that
+ * same snapshot (never a new one; the reader shows only the latest snapshot). Games whose shifts
+ * do not yet give ES units for both teams are skipped and retried on the next run.
+ */
+async function runNightly(req: RequestWithSupabase, res: NextApiResponse, season: number) {
+  const dryRun = readBoolean(req.query.dryRun, true);
+  const today = readDate(req.query.asOf) ?? easternToday();
+  const plan = await loadTeamUnitToiNightlyPlan(req.supabase, {
+    season,
+    today,
+    maxGames: readInteger(req.query.maxGames, null, { min: 1, max: 100 }) ?? undefined,
+  });
+
+  if (plan.status === "no_snapshot") {
+    return res.status(409).json({
+      success: false,
+      mode: "nightly",
+      error: `Season ${season} has no team_unit_toi snapshot yet; backfill it with an explicit snapshot_date first.`,
+      pendingGames: plan.pendingGames,
+    });
+  }
+  if (plan.status === "nothing_to_do") {
+    return res.status(200).json({
+      success: true,
+      mode: "nightly",
+      dryRun,
+      snapshotDate: plan.snapshotDate,
+      plannedGames: 0,
+      writtenGames: [],
+      skippedGames: [],
+      rowsUpserted: 0,
+    });
+  }
+
+  const request = createTeamUnitToiBuildRequest({
+    season,
+    snapshotDate: plan.snapshotDate,
+    gameIds: plan.gameIds,
+    startDate: null,
+    endDate: null,
+  });
+  const built = await buildTeamUnitToiSnapshotRows(req.supabase, request);
+  const complete = completeGameIds(built.rows);
+  const rows = built.rows.filter((row) => complete.has(row.game_id));
+  const rowsUpserted = dryRun ? 0 : await upsertTeamUnitToiRows(req.supabase, rows);
+
+  return res.status(200).json({
+    success: true,
+    mode: "nightly",
+    dryRun,
+    snapshotDate: plan.snapshotDate,
+    plannedGames: plan.gameIds.length,
+    pendingGames: plan.pendingGames,
+    writtenGames: plan.gameIds.filter((id) => complete.has(id)),
+    skippedGames: plan.gameIds.filter((id) => !complete.has(id)),
+    generatedRows: rows.length,
+    rowsUpserted,
+    coverage: built.coverage,
+  });
+}
+
 async function handler(req: RequestWithSupabase, res: NextApiResponse) {
   if (req.method !== "GET" && req.method !== "POST") {
     res.setHeader("Allow", "GET, POST");
@@ -75,6 +145,10 @@ async function handler(req: RequestWithSupabase, res: NextApiResponse) {
     });
     if (season == null) {
       throw new Error("A numeric season query parameter is required.");
+    }
+
+    if (first(req.query.mode) === "nightly") {
+      return await runNightly(req, res, season);
     }
 
     const request = createTeamUnitToiBuildRequest({

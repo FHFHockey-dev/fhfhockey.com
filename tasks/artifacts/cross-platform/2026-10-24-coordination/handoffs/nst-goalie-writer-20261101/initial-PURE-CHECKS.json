@@ -1,0 +1,43 @@
+{
+  "atUtc": "2026-11-01T14:44:41.623652+00:00",
+  "checks": [
+    {
+      "name": "tests",
+      "command": [
+        "npm",
+        "test",
+        "--",
+        "--run",
+        "lib/nst/goalieCatchup.test.ts",
+        "lib/nst/goalieFreshness.test.ts",
+        "--maxWorkers=1",
+        "--minWorkers=1"
+      ],
+      "exitCode": 0
+    },
+    {
+      "name": "types",
+      "command": [
+        "node",
+        "node_modules/typescript/bin/tsc",
+        "--project",
+        "/Users/tim/Code/fhfhockey.com/tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/tsconfig.pure.json"
+      ],
+      "exitCode": 0
+    },
+    {
+      "name": "lint",
+      "command": [
+        "node",
+        "node_modules/eslint/bin/eslint.js",
+        "lib/nst/goalieCatchup.ts",
+        "lib/nst/goalieCatchup.test.ts",
+        "lib/nst/goalieFreshness.ts",
+        "lib/nst/goalieFreshness.test.ts"
+      ],
+      "exitCode": 0
+    }
+  ],
+  "networkGuard": "offline.cjs",
+  "scope": "Four new pure modules/tests only; no route, database or production verification."
+}

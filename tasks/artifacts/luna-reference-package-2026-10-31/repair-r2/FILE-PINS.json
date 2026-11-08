@@ -1,0 +1,57 @@
+{
+  "version": "luna-reference-repair-r2-candidate-v1",
+  "branch": "octoberBranch",
+  "headInformational": "7e5f9b6c6504f7fcb077abdaf90ddeaf977a2f10",
+  "deliverables": {
+    "web/lib/sources/tweetLunaReference.ts": "3076d174851d8acd7fcc099ce9af222c8c28aea752dda4be6e152b1eaac76f8d",
+    "web/lib/sources/tweetLunaReference.md": "1e26e2166bbeee4bc08b46bb3559eec647b382f2c4752927455b49c40234d026",
+    "web/lib/sources/tweetLunaReview.ts": "0aca5d80fd409eb8b1840df65dff37aa5f659dcab664c22b8e14fcc77358b2ce",
+    "web/lib/sources/tweetLunaReview.test.ts": "252423898877e409db5afe45b9e14997b51941c2a2e84c13887747e1517852ad",
+    "web/lib/sources/fixtures/tweetLunaSyntheticCases.ts": "9bc96553a92bdfcfd63ba1ab2235025026e8d88726846183da88d6a31ff52013",
+    "web/lib/sources/tweetLunaGoalieWording.ts": "eb2ceadb1db0d5d16fcab03f2c835ac2d9dce44e4e97853d9fd3159c610b949a",
+    "web/lib/sources/fixtures/tweetLunaEvaluation.ts": "6f441f341627a8296ad0bf7810ee9c72e076bc16b2e9a67ac7afcd92c4dfac09",
+    "web/scripts/rehearse-luna-evaluation.ts": "f510038e837a24ce88df5fe6a9aa00e2e17ed873d871ddcaa3f03456904d6e66",
+    "web/lib/sources/tweetLunaEvaluationScoring.ts": "22797d003c321c3e52ef31945bbc5a4dfb7365ff4dfcfc93454c5bf041f6363d"
+  },
+  "protected": {
+    "web/lib/sources/tweetLunaTransport.ts": "6f67f0e819766eb8b7e712114f063681833ea87266b08443701231461e4d12d1",
+    "web/lib/sources/tweetLunaLocalStore.ts": "52977c7949d2f60ee4274da0c7d1e0583bc8c5c1324bb6ffb187a32037a2d543",
+    "web/scripts/review-ifttt-luna.ts": "b3407da148f11fe4dd3185e8521f3c1c9b4688232acbff675c9d104902cec8e8",
+    "web/lib/sources/fixtures/tweetLunaAdjudicatedLibrary.json": "e787036b54c89f8fa06e4b28032c8895fbbed81feef1fa04e357435f3229726a",
+    "web/lib/sources/decisionsReference/adapter.mjs": "055bc80ccf9874de8a976da6106bc34af15e424d6b905d39fccf57ecfd2b92a1",
+    "web/lib/sources/tweetIdentityProposal.ts": "a73df0483313bc75e94b36bc3fcf9087e1adb7d96afd0895db7a9c8bad7c9a27",
+    "web/lib/sources/tweetPlayerEvents.ts": "14c421d37506f33df08cac5914e30c38a578b2588ae46f3c6e461b70efadc88c"
+  },
+  "priorR1ManifestSha256": "b25ccf046b253cca7488c69d4663360464c48223be4e891a126af935bb1147ae",
+  "artifacts": {
+    "CREDENTIAL-HANDOFF.md": "1e167a126765e08aa2f43cd9f7c4aa30a6e8d1043a7a688d58075c0d45a0904e",
+    "HANDOFF.md": "6bef07999ecdd661f234395969350997c2f6bb57f132c31cdb4f716ab13b9faf",
+    "application.patch": "968630f6a7a30145a17bd9b1748cc53f1a55ceb5f71018a7047cf9a7ba3d824a",
+    "equivalent-rehearsal/SYNTHETIC-ONLY-ledger.json": "27b84fabbf0af3fa56d47f92acc82458a7e0b0fc673cbb5da08fa3afdb09b0fa",
+    "equivalent-rehearsal/batch.json": "fc77b68db49127a8b16d9958e43721d642f54f3db80b68e7a2a58e6c15786a10",
+    "equivalent-rehearsal/rehearsal.json": "2395626eba3bfb108ba5c2e07075c774b84ecacb9316f9c5b7195965f7de2260",
+    "equivalent-rehearsal/requests.json": "8af83764e6da7a9b28d92bfd301f543cfea8870100b017e59c9698b664e169fe",
+    "equivalent-rehearsal/results.json": "1ede3d530c89e506bae3877a2ac00a4711849708133b1fce7801f66e39b275c7",
+    "equivalent-rehearsal.log": "d248775aca212eaba189cfa61bb7634f6abd65adb849ddb6910e44f5f352a205",
+    "lint.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "rehearsal/SYNTHETIC-ONLY-ledger.json": "1f01493c5a87f2e984e712e03c0815c4919e848a374339a99d42c3cb9b7b2175",
+    "rehearsal/batch.json": "fc77b68db49127a8b16d9958e43721d642f54f3db80b68e7a2a58e6c15786a10",
+    "rehearsal/rehearsal.json": "59b4f986fa91feb333b366a222e9c64b61f4bc89929bff030cf3eee084db5773",
+    "rehearsal/requests.json": "8af83764e6da7a9b28d92bfd301f543cfea8870100b017e59c9698b664e169fe",
+    "rehearsal/results.json": "c6dfa9a6905260ee55bf0ddaa02cbe1bf417f9621cda792ce2a719f27e64323d",
+    "rehearsal.log": "8f59c2b9b087124502958c42db9936805b071b3ba020053303546a17a75fd245",
+    "tests.log": "af5a5e23b2d4cb09011fa667d7bd73e16b6239cd51793d703e916b6d8f26d4fb",
+    "typecheck.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "verification.json": "3b87ee8ef0f85c9791e42019051480b6e4e13bb1a3d9764ad88b4215e501fa36"
+  },
+  "referencePackage": {
+    "version": "luna-hockey-reference-v3",
+    "mode": "rules-and-synthetic-only",
+    "hash": "224cfbc4e68f605104c029f882fae7cd224ab300e44593a16345abf11537420b",
+    "rulesVersion": "luna-hockey-rules-v3",
+    "libraryVersion": null
+  },
+  "batchHash": "467ae6dc553c05744ff5ff7e434a25f849d41497b746b82cef9d1dee806be3f9",
+  "noPaidAuthority": true,
+  "diaryExcluded": true
+}

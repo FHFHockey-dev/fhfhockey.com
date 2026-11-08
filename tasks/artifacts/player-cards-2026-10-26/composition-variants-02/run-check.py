@@ -1,0 +1,43 @@
+from pathlib import Path
+import subprocess, os, json, time, uuid, sys
+
+artifact = Path(__file__).resolve().parent
+repo = artifact.parents[3]
+action = sys.argv[1]
+commands = {
+    'tests': ['npm', 'test', '--', '--run', '--config', '../tasks/artifacts/player-cards-2026-10-26/composition-variants-02/vitest.config.mts'],
+    'types': ['npx', '--no-install', 'tsc', '--noEmit', '--project', '../tasks/artifacts/player-cards-2026-10-26/composition-variants-02/tsconfig.json'],
+    'lint': ['npx', '--no-install', 'eslint', 'components/player-cards/HeroPlayerCard.tsx', 'lib/player-cards/shareExport.test.ts'],
+    'render': ['node', str(artifact / 'render-preview.mjs')],
+    'browser': ['node', str(artifact / 'browser-check.mjs')],
+}
+lock = Path('/private/tmp/fhfh-heavy.lock')
+deadline = time.monotonic() + (30 if len(sys.argv) > 2 and sys.argv[2] == 'wait' else 0)
+while True:
+    try:
+        lock.mkdir()
+        break
+    except FileExistsError:
+        if time.monotonic() >= deadline:
+            print('BLOCKED: shared heavy lock exists; not stolen')
+            sys.exit(75)
+        time.sleep(.5)
+token = str(uuid.uuid4())
+owner = lock / 'owner.json'
+owner.write_text(json.dumps({'owner': 'player-card-composition01', 'pid': os.getpid(), 'token': token, 'action': action}))
+try:
+    env = os.environ.copy()
+    env.pop('GIT_DIR', None)
+    overrides = {'npm_config_cache': str(artifact / '.npm-cache'), 'npm_config_logs_dir': str(artifact / '.npm-logs'), 'NO_UPDATE_NOTIFIER': '1', 'NEXT_TELEMETRY_DISABLED': '1'}
+    env.update(overrides)
+    start = time.monotonic()
+    with (artifact / (action + '.log')).open('w') as output:
+        result = subprocess.run(commands[action], cwd=repo / 'web', env=env, stdout=output, stderr=subprocess.STDOUT, timeout=60)
+    receipt = {'action': action, 'command': commands[action], 'cwd': str(repo / 'web'), 'exitCode': result.returncode, 'elapsedSeconds': round(time.monotonic() - start, 3), 'environmentOverrides': overrides, 'lockOwnedAndReleased': True}
+    (artifact / (action + '-command.json')).write_text(json.dumps(receipt, indent=2) + '\n')
+    print(json.dumps(receipt))
+    sys.exit(result.returncode)
+finally:
+    if owner.exists() and json.loads(owner.read_text()).get('token') == token:
+        owner.unlink()
+        lock.rmdir()

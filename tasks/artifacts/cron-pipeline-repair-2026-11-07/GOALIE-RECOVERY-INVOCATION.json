@@ -1,0 +1,19 @@
+{
+  "startedAt": "2026-11-07T21:26:22.066Z",
+  "method": "POST",
+  "url": "https://www.fhfhockey.com/api/v1/db/update-goalie-projections-v2?endDate=2026-11-13&limit=7",
+  "currentDeployment": "dpl_Eq1QaL9XDs1Bp3oWd3v9NV3TCEJW",
+  "currentCommit": "00ea36b39ee0c541fd6050b79703d2c054e97f1d",
+  "approvedBehaviorCommit": "b4033ad65ffba6835ba0754dd665e5d694301f64",
+  "attempts": 1,
+  "status": "CONFIRMED_DNS_FAILURE_BEFORE_HTTP",
+  "finishedAt": "2026-11-07T21:26:22.094Z",
+  "durationMs": 27,
+  "errorName": "TypeError",
+  "errorCode": "ENOTFOUND",
+  "readOnlyReconciliation": {
+    "checkedAt": "2026-11-07T21:26:57.618869Z",
+    "rowsUnchanged": true,
+    "matchingAuditCount": 0
+  }
+}

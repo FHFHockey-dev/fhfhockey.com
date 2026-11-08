@@ -1,0 +1,63 @@
+{
+  "headAtReceipt": "1a5218be646c1b07b91978491364316b513c9dd1",
+  "scope": "Local uncommitted BLSH presentation candidate only, with exact dependencies recorded; unrelated dirty work excluded",
+  "files": [
+    {
+      "path": "web/components/buyLowSellHigh/BlshCandidateLists.tsx",
+      "bytes": 14233,
+      "sha256": "5eac94ce7c71af44dad76df92100aea9deadf21a94bd86f5894bca17e8466dcd"
+    },
+    {
+      "path": "web/components/buyLowSellHigh/BlshCandidateLists.module.scss",
+      "bytes": 1422,
+      "sha256": "e825bf640ba72c15c324fe37fd6a260bf1f45f917e90f1c1f1d85f86d1f7363e"
+    },
+    {
+      "path": "web/components/buyLowSellHigh/BlshCandidateLists.test.tsx",
+      "bytes": 13537,
+      "sha256": "2609d43f9cb84c06ccdb9330ed0e67efd4cb2ada70c58172338aead987039ae9"
+    },
+    {
+      "path": "web/components/buyLowSellHigh/BuyLowSellHighPreview.tsx",
+      "bytes": 15824,
+      "sha256": "b3fcf950e56f7cc33bc70ac62e3044414cc194ddb5aed04bf5667e6b715ad685"
+    },
+    {
+      "path": "web/components/buyLowSellHigh/BlshPlayerDetail.tsx",
+      "bytes": 21772,
+      "sha256": "6419b05cec243ed5f3f66b40ad7d79b4a3bcba2fd61994bf93d99f5bd8d92a03"
+    },
+    {
+      "path": "web/lib/buyLowSellHigh/displayProfile.ts",
+      "bytes": 44623,
+      "sha256": "6de7898a08f4ece36307b9817ce0dae33f1ee238ebf5eb52dad7f583f4d7178c"
+    },
+    {
+      "path": "web/lib/buyLowSellHigh/researchSnapshot.ts",
+      "bytes": 31655,
+      "sha256": "dc4cbb57a93a6e2cdae66d48b0519704c17f0a7d49451bfa546eafeb885b2cb7"
+    },
+    {
+      "path": "web/lib/buyLowSellHigh/researchSnapshot.server.ts",
+      "bytes": 2494,
+      "sha256": "dc251e7430085e70bed0a30168a36de24fe11b19d9d1ee6b58fe9ead82bea7a0"
+    },
+    {
+      "path": "web/lib/buyLowSellHigh/supportGap.ts",
+      "bytes": 54198,
+      "sha256": "d8b8d42a3ed7a6a66b7d7402ac62ea433c6a77702f086309fd21568ee27a5618"
+    },
+    {
+      "path": "web/lib/buyLowSellHigh/opportunity.ts",
+      "bytes": 23651,
+      "sha256": "9d35fc8a9c09f34caa9d618e6e1ae78f0b9e5e05113b18e2cf2b302610f83e1f"
+    },
+    {
+      "path": "web/pages/buy-low-sell-high/preview.tsx",
+      "bytes": 1118,
+      "sha256": "92c01d412e1d28eef7fa3e782a7a23847dd1607df512f588a4023d8a2acc2614"
+    }
+  ],
+  "snapshotSha256": "daf447b70fd8e08dc88a2e17162e0c1dd04863275cd7e23dbd923acca34e4485",
+  "independentReviewFixesVerifiedAtUTC": "2026-11-07T22:05:23.283526+00:00"
+}

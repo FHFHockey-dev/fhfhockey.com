@@ -1,0 +1,21 @@
+[
+  {
+    "test": "january-synthetic",
+    "command": [
+      "node",
+      "--test",
+      "/Users/tim/Documents/Codex/2026-10-27/task-3/january-replication-20240115-01/pilot.test.cjs"
+    ],
+    "exitCode": 0,
+    "seconds": 0.30109783401712775
+  },
+  {
+    "test": "visual-and-capture",
+    "command": [
+      "node",
+      "/Users/tim/Documents/Codex/2026-10-27/task-3/native-production-visual-20261101-01/run-focused-tests.mjs"
+    ],
+    "exitCode": 0,
+    "seconds": 1.3356484159594402
+  }
+]

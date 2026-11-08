@@ -1,0 +1,581 @@
+--- before/web/components/player-cards/HeroPlayerCard.tsx
++++ web/components/player-cards/HeroPlayerCard.tsx
+@@ -1,12 +1,13 @@
+-import React, { useId } from "react";
++import React from "react";
+ import { teamsInfo } from "../../lib/teamsInfo";
+ import type { FlowSnapshot } from "../../lib/player-cards/interactionSnapshot";
+ import { periodLabel, strengthLabel } from "./InteractiveCard";
++import PlayerHeroHeader from "./PlayerHeroHeader";
+ import EditorialPlayerCard from "./EditorialPlayerCard";
+ import { portraitKey, compositionKey, PORTRAIT_LABELS, isCompositionStyle, type PortraitTreatment } from "../../lib/player-cards/portraitTreatment";
+ import { isPreparedTeamLogo, type PreparedTeamLogo } from "../../lib/player-cards/teamLogo";
+ import { outlineStackKey, type OutlineRing } from "../../lib/player-cards/outlineStack";
+-import { outlineKey, outlineRecipe, validOutlineSettings, validPlayerOutline, OUTLINE_SCALE, type PreparedPlayerOutline } from "../../lib/player-cards/alphaOutline";
++import { outlineKey, outlineRecipe, validOutlineSettings, validPlayerOutline, type PreparedPlayerOutline } from "../../lib/player-cards/alphaOutline";
+ 
+ export type HeroSample = {
+   id: number; name: string; team: string; position: string; sweater: number;
+@@ -20,7 +21,7 @@
+ export default function HeroPlayerCard({ snapshot, hero, format, svgRef }: {
+   snapshot: FlowSnapshot; hero: PreparedHero; format: CardShareFormat; svgRef?: React.Ref<SVGSVGElement>;
+ }) {
+-  const uid = useId().replace(/:/g, ""), palette = teamsInfo[hero.team];
++  const palette = teamsInfo[hero.team];
+   if (String(hero.id) !== snapshot.player.id || !palette || hero.acceptance !== "accepted") throw new Error("Artwork identity is not verified for this card.");
+   const composition = isCompositionStyle(hero.treatment?.style || "original");
+   if (composition && !isPreparedTeamLogo(hero.teamLogo, hero.team)) throw new Error("A matching reviewed team logo is required.");
+@@ -28,39 +29,7 @@
+   const rings = hero.outline ? outlineRecipe(hero.outline) : [];
+   if (hero.outline && !validPlayerOutline(hero.outline, hero)) throw new Error("A matching original-alpha player outline is required.");
+   const square = format === "social-square", height = square ? 1200 : 1020;
+-  const logoSize = 480, logoRightOverhang = 120;
+-  const names = hero.name.split(" "), first = names.shift()!, last = names.join(" ");
+-  const header = <g>
+-    <defs>
+-      <linearGradient id={`${uid}-team`}><stop stopColor={palette.darkColor || palette.primaryColor} /><stop offset="1" stopColor={palette.primaryColor} /></linearGradient>
+-      <linearGradient id={`${uid}-shade`}><stop stopColor="#101214" stopOpacity=".9" /><stop offset=".62" stopColor="#101214" stopOpacity=".2" /><stop offset="1" stopColor="#101214" stopOpacity="0" /></linearGradient>
+-      <clipPath id={`${uid}-crop`}><rect width="1200" height="338" /></clipPath>
+-      {composition && <>
+-        <linearGradient id={`${uid}-logo-fade`}><stop offset="0" stopColor="white" stopOpacity="0" /><stop offset=".25" stopColor="white" /><stop offset="1" stopColor="white" /></linearGradient>
+-        <mask id={`${uid}-logo-mask`} maskUnits="objectBoundingBox" maskContentUnits="objectBoundingBox" x="0" y="0" width="1" height="1"><rect width="1" height="1" fill={`url(#${uid}-logo-fade)`} /></mask>
+-      </>}
+-    </defs>
+-    <g clipPath={`url(#${uid}-crop)`}>
+-      <rect width="1200" height="338" fill={`url(#${uid}-team)`} />
+-      <path d="M700 0H850L630 338H480Z" fill={palette.secondaryColor} opacity=".35" />
+-      <path d="M1040 0H1090L870 338H820Z" fill={palette.jersey} opacity=".6" />
+-      <rect width="1200" height="338" fill={`url(#${uid}-shade)`} />
+-      {composition && <image data-team-logo="true" data-logo-anchor="right-edge" href={hero.teamLogo!.dataUrl} x={1200 - logoSize + logoRightOverhang} y="-100" width={logoSize} height={logoSize} preserveAspectRatio="xMidYMid meet" mask={`url(#${uid}-logo-mask)`} />}
+-      {hero.outline && <image data-player-outline="true" data-outline-width={hero.outline.thickness} data-outline-band-widths={rings.map(r => r.width).join(">")} data-outline-band-width={rings.every(r => r.width === 5) ? 5 : undefined} data-outline-band-colors={rings.map(r => r.color).join(">")} data-outline-color={hero.outline.bands?.join(">") || hero.outline.color} href={hero.outline.dataUrl} x={600 - hero.outline.padding / OUTLINE_SCALE} y={4 - hero.outline.padding / OUTLINE_SCALE} width={hero.outline.width / OUTLINE_SCALE} height={hero.outline.height / OUTLINE_SCALE} preserveAspectRatio="none" />}
+-      <image data-hero-image="true" href={hero.dataUrl} x="600" y="4" width="600" height={600 * hero.sourceHeight / hero.sourceWidth} preserveAspectRatio="xMidYMin meet" style={{ imageRendering: hero.treatment?.style?.startsWith("pixelated") ? "pixelated" : "auto" }} />
+-      <rect y="299" width="1200" height="39" fill="#101214" fillOpacity=".93" />
+-    </g>
+-    <g fill="#F2F1EB" fontFamily="Arial, sans-serif">
+-      <text x="40" y="42" fontSize="24" fontWeight="900" letterSpacing="2" fill="#07AAE2">FHFH</text>
+-      <text x="132" y="42" fontSize="16" letterSpacing="2">/ PLAYER REPORT</text>
+-      <text x="40" y="101" fontSize="44" fontWeight="700">{first.toUpperCase()}</text>
+-      <text x="36" y="184" fontSize={last.length > 10 ? 66 : 86} fontWeight="900" letterSpacing="-3">{last.toUpperCase()}</text>
+-      <text x="40" y="225" fontSize="25">{palette.name} · {hero.position} · #{hero.sweater}</text>
+-      <text x="40" y="268" fontSize="23" fill="#BEEFFF">{String(snapshot.settings.season).slice(0,4)}–{String(snapshot.settings.season).slice(6)} · {periodLabel(snapshot)} · {strengthLabel(snapshot)}</text>
+-      <text x="40" y="325" fontSize="19" fontWeight="700" letterSpacing="1" fill="#80DFFF">ILLUSTRATIVE STATS · NOT {hero.name.toUpperCase()}’S RESULTS</text>
+-      <text x="1160" y="325" textAnchor="end" fontSize={composition ? 14 : 16}>NHL photo · {PORTRAIT_LABELS[hero.treatment?.style || "original"]}</text>
+-    </g>
+-  </g>;
++  const header = <PlayerHeroHeader identity={hero} hero={hero} context={`${String(snapshot.settings.season).slice(0,4)}–${String(snapshot.settings.season).slice(6)} · ${periodLabel(snapshot)} · ${strengthLabel(snapshot)}`} disclosure={`ILLUSTRATIVE STATS · NOT ${hero.name.toUpperCase()}’S RESULTS`} />;
+   return <svg ref={svgRef} xmlns="http://www.w3.org/2000/svg" viewBox={`0 0 1200 ${height}`} width="1200" height={height} role="img"
+     aria-label={`${hero.name}. NHL action photo with locally removed background. Illustrative synthetic statistics, not this player's actual results. ${snapshot.sample.gp === null ? "GP unverified" : `${snapshot.sample.gp} fixture appearances`}. ${snapshot.readings.map(r => r.reason || "").filter(Boolean).join(". ")}`}
+     data-snapshot-id={snapshot.id} data-artwork-hash={hero.alphaSha256} data-share-format={format} data-portrait-key={portraitKey(hero)} data-pipeline-key={compositionKey(hero)} data-team-logo-hash={composition ? hero.teamLogo!.sha256 : undefined} data-outline-key={outlineKey(hero.outline)} data-outline-settings={hero.outlineSettings ? outlineStackKey(hero.outlineSettings) : undefined}>
+--- before/web/components/player-cards/PlayerCardShareStudio.tsx
++++ web/components/player-cards/PlayerCardShareStudio.tsx
+@@ -1,5 +1,5 @@
+-import React, { useEffect, useMemo, useRef, useState } from "react";
+-import HeroPlayerCard, { type HeroSample, type PreparedHero, type CardShareFormat } from "./HeroPlayerCard";
++import React, { useMemo, useRef, useState } from "react";
++import HeroPlayerCard, { type HeroSample, type CardShareFormat } from "./HeroPlayerCard";
+ import { REVIEWED_HERO_SAMPLES } from "../../lib/player-cards/reviewedHeroSamples";
+ import { prepareHero, rasterizePlayerCard, saveCardFile, shareCardFile } from "../../lib/player-cards/shareExport";
+ import { adaptLocalSnapshot } from "../../lib/player-cards/adapter";
+@@ -8,57 +8,24 @@
+ import { EDITORIAL_METRICS } from "./EditorialPlayerCard";
+ import { METRICS } from "../../lib/player-cards/registry";
+ import { formatMetric } from "./PlayerCard";
+-import { prepareOutlinedPortrait, portraitKey, isPortraitStyle, PORTRAIT_STYLES, PORTRAIT_LABELS, type PortraitStyle } from "../../lib/player-cards/portraitTreatment";
+-import { outlineInks, type OutlineInk } from "../../lib/player-cards/alphaOutline";
+-import OutlineStackControls from "./OutlineStackControls";
+-import { defaultOutlineStack, outlineStackKey, outlineTotal, OUTLINE_LIMITS, readOutlineDraft, type OutlineDraftRing, type OutlineRing } from "../../lib/player-cards/outlineStack";
++import { prepareOutlinedPortrait, portraitKey } from "../../lib/player-cards/portraitTreatment";
++import { type OutlineInk } from "../../lib/player-cards/alphaOutline";
++import PlayerArtworkControls from "./PlayerArtworkControls";
++import { usePlayerArtwork } from "./usePlayerArtwork";
++import { outlineTotal } from "../../lib/player-cards/outlineStack";
+ import styles from "./PlayerCardShareStudio.module.scss";
+-
+-const draftFrom = (rings: OutlineRing[]): OutlineDraftRing[] => rings.map((ring, index) => ({ id: `preset-${index}`, color: ring.color, width: String(ring.width), colorMode: "preset" }));
+-const STYLE_STORAGE = "fhfh-player-card-portrait-v1";
+ 
+ export default function PlayerCardShareStudio({ samples = REVIEWED_HERO_SAMPLES, loadArtwork = prepareHero, rasterize = rasterizePlayerCard, treatArtwork = prepareOutlinedPortrait, initialOutlineInk = "white" }: {
+   initialOutlineInk?: OutlineInk; samples?: readonly HeroSample[]; loadArtwork?: typeof prepareHero; rasterize?: typeof rasterizePlayerCard; treatArtwork?: typeof prepareOutlinedPortrait;
+ }) {
+   const [playerId, setPlayerId] = useState(samples[0]?.id), [format, setFormat] = useState<CardShareFormat>("landscape");
+-  const [scenario, setScenario] = useState<FixtureScenario>("complete"), [hero, setHero] = useState<PreparedHero | null>(null);
+-  const [portraitStyle, setPortraitStyle] = useState<PortraitStyle>("team-colors");
+-  const [outlineDraft, setOutlineDraft] = useState<OutlineDraftRing[]>(() => draftFrom(defaultOutlineStack(samples[0]?.team || "")));
+-  const [appliedRings, setAppliedRings] = useState<OutlineRing[]>(() => defaultOutlineStack(samples[0]?.team || ""));
+-  const [outlineInk, setOutlineInk] = useState<OutlineInk>(initialOutlineInk);
+-  const [styledHero, setStyledHero] = useState<PreparedHero | null>(null), [treating, setTreating] = useState(false);
+-  const [error, setError] = useState(""), [retry, setRetry] = useState(0), [busy, setBusy] = useState(false), [status, setStatus] = useState("");
++  const [scenario, setScenario] = useState<FixtureScenario>("complete");
++  const [busy, setBusy] = useState(false), [status, setStatus] = useState("");
+   const [prepared, setPrepared] = useState<{ key: string; file: File } | null>(null);
+   const busyRef = useRef(false), svgRef = useRef<SVGSVGElement>(null);
+   const sample = samples.find(row => row.id === playerId);
+-  const inks = outlineInks(sample?.team || ""), selectedInk = inks.find(option => option.id === outlineInk) || inks[0], ink = selectedInk.id;
+-  const parsed = readOutlineDraft(outlineDraft), draftKey = parsed.rings ? outlineStackKey(parsed.rings) : null, appliedKey = outlineStackKey(appliedRings);
+-  const customPending = ink === "custom" && draftKey !== appliedKey;
+-  useEffect(() => {
+-    if (ink !== "custom" || draftKey === null || draftKey === appliedKey) return;
+-    const timer = setTimeout(() => setAppliedRings(JSON.parse(draftKey) as OutlineRing[]), OUTLINE_LIMITS.debounceMs);
+-    return () => clearTimeout(timer);
+-  }, [ink, draftKey, appliedKey]);
+-  useEffect(() => {
+-    try { const saved = localStorage.getItem(STYLE_STORAGE); if (isPortraitStyle(saved)) setPortraitStyle(saved); } catch { /* Session selection works without storage. */ }
+-  }, []);
+-  useEffect(() => {
+-    let active = true; setHero(null); setError(""); setPrepared(null);
+-    if (!sample) { setError("No reviewed artwork is available."); return; }
+-    loadArtwork(sample).then(value => { if (active) setHero(value); }, reason => { if (active) setError(reason instanceof Error ? reason.message : "Artwork unavailable."); });
+-    return () => { active = false; };
+-  }, [sample, retry, loadArtwork]);
+-  useEffect(() => {
+-    const controller = new AbortController(); setStyledHero(null); setPrepared(null);
+-    if (!hero || hero.id !== sample?.id) { setTreating(false); return; }
+-    setTreating(true); setError("");
+-    treatArtwork(hero, portraitStyle, controller.signal, ink, ink === "custom" ? appliedRings : undefined).then(value => {
+-      if (!controller.signal.aborted) { setStyledHero(value); setTreating(false); }
+-    }, reason => {
+-      if (!controller.signal.aborted) { setError(reason instanceof Error ? reason.message : "Portrait unavailable."); setTreating(false); }
+-    });
+-    return () => controller.abort();
+-  }, [hero, sample, portraitStyle, treatArtwork, ink, appliedRings]);
++  const artwork = usePlayerArtwork(sample, loadArtwork, treatArtwork, initialOutlineInk);
++  const { readyHero, portraitStyle, ink, appliedRings, customPending, treating, error, retryArtwork } = artwork;
+   const snapshot = useMemo(() => {
+     if (!sample) return null;
+     const result = adaptLocalSnapshot(buildInteractionFixture(flowSettings(INITIAL_FLOW), scenario, 1001), 1001);
+@@ -66,7 +33,6 @@
+     const fixture = displaySnapshot(result);
+     return { ...fixture, id: `art-study-${sample.id}-${fixture.id}`, player: { id: String(sample.id), name: sample.name, team: sample.team, position: sample.position } };
+   }, [sample, scenario]);
+-  const readyHero = styledHero?.id === sample?.id && styledHero?.treatment?.style === portraitStyle && (!styledHero.outline || styledHero.outline.ink === ink) && (ink !== "custom" || outlineStackKey(styledHero.outlineSettings || []) === appliedKey) ? styledHero : null;
+   const key = `${snapshot?.id}:${format}:${readyHero ? portraitKey(readyHero) : "pending"}`;
+   const exportable = !customPending && !!snapshot && !!readyHero && snapshot.sample.gp !== null && snapshot.sample.toiSeconds !== null && snapshot.readings.some(r => r.state === "valid");
+   function changed() { setPrepared(null); setStatus(""); }
+@@ -93,22 +59,17 @@
+   return <main className={styles.studio}>
+     <header className={styles.heading}><div><p className={styles.eyebrow}>FHFH / SHARE STUDIO</p><h1>Player cards</h1><p>Reviewed NHL photography with illustrative statistics. The numbers below do not describe the pictured player.</p></div><a href="/social-share/game-grid">Schedule share studio →</a></header>
+     <div className={styles.controls}>
+-      <label>Reviewed artwork<select aria-label="Reviewed artwork" value={playerId} disabled={busy} onChange={e => { changed(); const id = Number(e.target.value), rings = defaultOutlineStack(samples.find(row => row.id === id)?.team || ""); setOutlineDraft(draftFrom(rings)); setAppliedRings(rings); setPlayerId(id); }}>{samples.map(row => <option key={row.id} value={row.id}>{row.name} · {row.team}</option>)}</select></label>
++      <label>Reviewed artwork<select aria-label="Reviewed artwork" value={playerId} disabled={busy} onChange={e => { changed(); setPlayerId(Number(e.target.value)); }}>{samples.map(row => <option key={row.id} value={row.id}>{row.name} · {row.team}</option>)}</select></label>
+       <label>Image format<select aria-label="Image format" value={format} disabled={busy} onChange={e => { changed(); setFormat(e.target.value as CardShareFormat); }}><option value="landscape">Landscape card</option><option value="social-square">Social square</option></select></label>
+-      <label>Portrait style<select aria-label="Portrait style" value={portraitStyle} disabled={busy || treating} onChange={e => {
+-        const value = e.target.value; if (!isPortraitStyle(value)) return;
+-        changed(); setPortraitStyle(value);
+-        try { localStorage.setItem(STYLE_STORAGE, value); } catch { /* Session selection remains available. */ }
+-      }}>{PORTRAIT_STYLES.map(style => <option key={style} value={style}>{PORTRAIT_LABELS[style]}</option>)}</select></label>
+-      <label><span>Outline <span aria-hidden="true" style={{ display: "inline-block", width: 18, height: 12, background: ink === "custom" ? appliedRings.length ? `linear-gradient(to right, ${appliedRings.map(r => r.color).join(",")})` : "transparent" : selectedInk.bands ? `linear-gradient(to right, ${selectedInk.bands.join(",")})` : selectedInk.color, border: "1px solid #b6b9bc" }} /></span><select aria-label="Outline color" value={ink} disabled={busy || treating} onChange={event => { if (!inks.some(option => option.id === event.target.value)) return; changed(); setOutlineInk(event.target.value as OutlineInk); }}>{inks.map(option => <option key={option.id} value={option.id}>{option.label}</option>)}</select></label>
++      <PlayerArtworkControls artwork={artwork} team={sample?.team || ""} busy={busy} onChange={changed} />
+       <label>Statistics preview<select aria-label="Statistics preview" value={scenario} disabled={busy} onChange={e => { changed(); setScenario(e.target.value as FixtureScenario); }}><option value="complete">Illustrative profile</option><option value="metric-gap">Missing metric input</option><option value="history-gap">Unverified appearance history</option></select></label>
+       <button disabled={busy || !exportable} onClick={() => void createImage(false)}>Download PNG</button>
+       <button disabled={busy || !exportable} onClick={() => void createImage(true)}>Social Share</button>
+       {!customPending && prepared?.key === key && <button disabled={busy} onClick={() => void sharePrepared()}>Share prepared image</button>}
+     </div>
+-    {ink === "custom" && <OutlineStackControls team={sample?.team || ""} draft={outlineDraft} disabled={busy} pending={customPending || treating} onChange={draft => { changed(); setOutlineDraft(draft); }} onReset={() => { changed(); setOutlineDraft(draftFrom(defaultOutlineStack(sample?.team || ""))); }} />}
++    <PlayerArtworkControls artwork={artwork} team={sample?.team || ""} busy={busy} onChange={changed} editor />
+     <p>Combined portraits apply posterization or pixelation first, then map that result to team colors. The original Team Colors option remains available.</p>
+-    {error ? <p role="alert">{error} <button onClick={() => setRetry(n => n + 1)}>Retry artwork</button></p> : !readyHero ? <p role="status">{treating ? "Applying portrait style…" : "Preparing reviewed artwork…"}</p> : null}
++    {error ? <p role="alert">{error} <button onClick={() => retryArtwork()}>Retry artwork</button></p> : !readyHero ? <p role="status">{treating ? "Applying portrait style…" : "Preparing reviewed artwork…"}</p> : null}
+     {snapshot && readyHero && <section className={styles.artwork} aria-label="Player card preview"><HeroPlayerCard snapshot={snapshot} hero={readyHero} format={format} svgRef={svgRef} /></section>}
+     <p role="status" aria-live="polite">{status || (snapshot?.sample.gp === null ? "GP unverified. Export unavailable until sample context is verified." : scenario === "metric-gap" ? "Missing metric inputs remain unavailable on the card and export." : "Live statistics and premium activation remain off.")}</p>
+     {snapshot && readyHero && <details><summary>Card values and provenance</summary><p>Photo: NHL action-image URL captured {sample!.capturedAt.slice(0, 10)}. Team and jersey identity reflect that capture. Local background removal; no generated identity. Statistical source: fabricated fixture player1001, separate from the photographed player.</p><p><a href={sample!.sourceUrl} target="_blank" rel="noreferrer">Recorded photo source</a></p><ul>{EDITORIAL_METRICS.map(id => { const row = snapshot.readings.find(v => v.id === id)!; return <li key={id}>{METRICS.find(v => v.id === id)!.help}: {formatMetric(id, row.value)} · {row.rank ? `${row.rank.tied ? "T-" : ""}${row.rank.ordinal}/${row.rank.population} · ${row.rank.percentile.toFixed(1)} percentile` : row.reason || row.rankReason}</li>; })}</ul><button disabled={busy || customPending} onClick={() => saveCardFile(new Blob([JSON.stringify({ snapshot, selectedMetrics: EDITORIAL_METRICS, format, artwork: { ...readyHero, dataUrl: undefined, teamLogo: readyHero.teamLogo ? { ...readyHero.teamLogo, dataUrl: undefined } : undefined, outline: readyHero.outline ? { ...readyHero.outline, dataUrl: undefined } : undefined }, statistics: { origin: "synthetic", fixturePlayerId: 1001, representsPicturedPlayer: false }, liveActivation: false, premiumActivation: false }, null, 2)], { type: "application/json" }), "fhfh-player-card-manifest.json")}>Download manifest</button></details>}
+--- before/web/components/player-cards/CurrentPlayerCard.tsx
++++ web/components/player-cards/CurrentPlayerCard.tsx
+@@ -1,24 +1,29 @@
+ import React from "react";
++import PlayerHeroHeader from "./PlayerHeroHeader";
++import type { PreparedHero } from "./HeroPlayerCard";
++import { currentArtworkKey, assertCurrentHero, CURRENT_IMAGE_UNAVAILABLE } from "../../lib/player-cards/currentArtwork";
++import { portraitKey, compositionKey, isCompositionStyle } from "../../lib/player-cards/portraitTreatment";
++import { outlineKey } from "../../lib/player-cards/alphaOutline";
++import { outlineStackKey } from "../../lib/player-cards/outlineStack";
+ import { CURRENT_NHL_DEFINITIONS, currentNhlRows, formatCurrentNhl, type CurrentNhlCard, type CurrentNhlFormat } from "../../lib/player-cards/currentNhl";
+ 
+-export const currentCardKey = (card: CurrentNhlCard, format: CurrentNhlFormat) => JSON.stringify([card, format]);
+-export default function CurrentPlayerCard({ card, format, svgRef }: { card: CurrentNhlCard; format: CurrentNhlFormat; svgRef?: React.Ref<SVGSVGElement> }) {
++export const currentCardKey = (card: CurrentNhlCard, format: CurrentNhlFormat, hero?: PreparedHero | null) => JSON.stringify([card, format, currentArtworkKey(hero)]);
++export default function CurrentPlayerCard({ card, format, hero, svgRef }: { card: CurrentNhlCard; format: CurrentNhlFormat; hero?: PreparedHero | null; svgRef?: React.Ref<SVGSVGElement> }) {
++  if (hero) assertCurrentHero(card, hero);
++  const composition = !!hero && isCompositionStyle(hero.treatment?.style || "original");
+   const title = format === "results-milestones" ? "Results & Milestones" : "Rates & Opportunity";
+   const retained = card.source === "nhl-retained", fixture = card.source === "contract-fixture", source = fixture ? "SYNTHETIC CONTRACT FIXTURE" : retained ? "RETAINED NHL CAPTURE · NOT CURRENT" : "NHL OBSERVED RESULTS";
+   const rows = currentNhlRows(format);
+-  const description = `${card.player.name}. ${title}. ${source}. ${card.sample.gp === null ? "GP unverified" : `${card.sample.gp} appearances`}. ${rows.map(id => `${CURRENT_NHL_DEFINITIONS[id].label}: ${formatCurrentNhl(id, card.values[id])}`).join(". ")}. ${card.issues.join(". ")}. ${card.rankReason}`;
++  const description = `${card.player.name}. ${title}. ${source}. ${card.sample.gp === null ? "GP unverified" : `${card.sample.gp} appearances`}. ${rows.map(id => `${CURRENT_NHL_DEFINITIONS[id].label}: ${formatCurrentNhl(id, card.values[id])}`).join(". ")}. ${card.issues.join(". ")}. ${card.rankReason}. ${hero ? `Reviewed local NHL photo, captured ${hero.capturedAt}` : CURRENT_IMAGE_UNAVAILABLE}`;
+   const providerDates = [...card.sample.sourceDates].sort(), utcDates = [...card.sample.utcDates].sort();
+-  return <svg ref={svgRef} xmlns="http://www.w3.org/2000/svg" width="1200" height="1020" viewBox="0 0 1200 1020" role="img" aria-label={description} data-current-key={currentCardKey(card, format)} data-source={card.source} data-card-format={format}>
++  return <svg ref={svgRef} xmlns="http://www.w3.org/2000/svg" width="1200" height="1020" viewBox="0 0 1200 1020" role="img" aria-label={description} data-current-key={currentCardKey(card, format, hero)} data-current-artwork-key={currentArtworkKey(hero)} data-portrait-key={hero ? portraitKey(hero) : undefined} data-pipeline-key={hero ? compositionKey(hero) : undefined} data-team-logo-hash={composition ? hero!.teamLogo?.sha256 : undefined} data-outline-key={outlineKey(hero?.outline)} data-outline-settings={hero?.outlineSettings ? outlineStackKey(hero.outlineSettings) : undefined} data-source={card.source} data-card-format={format}>
+     <title>{card.player.name} · FHFH · {title}</title><desc>{description}. {card.finalityStatement} {card.historyStatement}</desc>
+-    <rect width="1200" height="1020" fill="#F2F1EB" /><rect width="1200" height="238" fill="#1A1D21" /><rect width="9" height="238" fill="#07AAE2" />
++    <rect width="1200" height="1020" fill="#F2F1EB" />
++    <PlayerHeroHeader identity={card.player} hero={hero} context={`${String(card.request.season).slice(0, 4)}–${String(card.request.season).slice(6)} · Own last ${card.request.count} · All Strengths`} disclosure={source} />
+     <g fontFamily="Arial, sans-serif" style={{ fontVariantNumeric: "tabular-nums" }}>
+-      <g fill="#F2F1EB"><text x="40" y="44" fontSize="27" fontWeight="900" fill="#07AAE2">FHFH</text><text x="135" y="43" fontSize="18" letterSpacing="2">/ PLAYER REPORT</text>
+-        <text x="40" y="123" fontSize="62" fontWeight="900">{card.player.name}</text><text x="40" y="163" fontSize="27">{card.player.team} · {card.player.position} · {title}</text>
+-        <text x="40" y="205" fontSize="24" fill="#80DFFF">{String(card.request.season).slice(0, 4)}–{String(card.request.season).slice(6)} · Own last {card.request.count} · All Strengths · Regular season</text>
+-        <text x="1160" y="43" textAnchor="end" fontSize="17" fill="#80DFFF">{source}</text></g>
+-      <text x="40" y="282" fontSize="20" fontWeight="700" fill="#555D60">{format === "results-milestones" ? "REPORTED PRODUCTION" : "DEPLOYMENT & INDIVIDUAL PRODUCTION"}</text><text x="755" y="282" textAnchor="end" fontSize="20" fontWeight="700">ACTUAL</text><text x="1160" y="282" textAnchor="end" fontSize="20" fontWeight="700">RANK / N · PERCENTILE</text>
+-      {rows.map((id, i) => <g key={id} transform={`translate(0 ${330 + i * 73})`} fill="#1A1D21" data-metric={id}>
+-        <line x1="40" x2="1160" y1="-30" y2="-30" stroke="#D0D3CE" /><text x="40" y="13" fontSize="31">{CURRENT_NHL_DEFINITIONS[id].label}</text>
++      <text x="40" y="375" fontSize="18" fontWeight="700" fill="#555D60">{format === "results-milestones" ? "REPORTED PRODUCTION · REGULAR SEASON" : "RATES & OPPORTUNITY · REGULAR SEASON"}</text><text x="755" y="375" textAnchor="end" fontSize="20" fontWeight="700">ACTUAL</text><text x="1160" y="375" textAnchor="end" fontSize="20" fontWeight="700">RANK / N · PERCENTILE</text>
++      {rows.map((id, i) => <g key={id} transform={`translate(0 ${423 + i * 53})`} fill="#1A1D21" data-metric={id}>
++        <line x1="40" x2="1160" y1="-27" y2="-27" stroke="#D0D3CE" /><text x="40" y="13" fontSize="31">{CURRENT_NHL_DEFINITIONS[id].label}</text>
+         <text x="755" y="16" textAnchor="end" fontSize="42" fontWeight="700">{formatCurrentNhl(id, card.values[id])}</text>
+         <text x="1160" textAnchor="end" fontSize="19" fill="#744512"><tspan x="1160">Unavailable</tspan><tspan x="1160" dy="23">League pool unverified</tspan></text>
+       </g>)}
+--- before/web/components/player-cards/CurrentPlayerCardStudio.tsx
++++ web/components/player-cards/CurrentPlayerCardStudio.tsx
+@@ -1,4 +1,9 @@
+ import React, { useCallback, useEffect, useRef, useState } from "react";
++import PlayerArtworkControls from "./PlayerArtworkControls";
++import { usePlayerArtwork } from "./usePlayerArtwork";
++import { reviewedHeroFor } from "../../lib/player-cards/currentArtwork";
++import { prepareHero } from "../../lib/player-cards/shareExport";
++import { prepareOutlinedPortrait } from "../../lib/player-cards/portraitTreatment";
+ import CurrentPlayerCard, { currentCardKey } from "./CurrentPlayerCard";
+ import { CURRENT_NHL_DEFINITIONS, CURRENT_NHL_FORMATS, type CurrentNhlCard, type CurrentNhlFormat, type CurrentNhlRequest } from "../../lib/player-cards/currentNhl";
+ import { currentNhlManifest, rasterizeCurrentNhlCard } from "../../lib/player-cards/currentNhlExport";
+@@ -15,12 +20,18 @@
+   if (text.length > 128 * 1024) throw new Error("NHL card response exceeded its bound.");
+   return JSON.parse(text);
+ }
+-export default function CurrentPlayerCardStudio({ initialCard = null, load = loadCurrentCard, rasterize = rasterizeCurrentNhlCard }: { initialCard?: CurrentNhlCard | null; load?: typeof loadCurrentCard; rasterize?: typeof rasterizeCurrentNhlCard }) {
++export default function CurrentPlayerCardStudio({ initialCard = null, load = loadCurrentCard, rasterize = rasterizeCurrentNhlCard, loadArtwork = prepareHero, treatArtwork = prepareOutlinedPortrait }: { initialCard?: CurrentNhlCard | null; load?: typeof loadCurrentCard; rasterize?: typeof rasterizeCurrentNhlCard; loadArtwork?: typeof prepareHero; treatArtwork?: typeof prepareOutlinedPortrait }) {
+   const initial = useRef(selectionFromCard(initialCard)).current;
+   const [playerId, setPlayerId] = useState(initial.playerId), [season, setSeason] = useState(initial.season), [count, setCount] = useState(initial.count);
+   const [format, setFormat] = useState<CurrentNhlFormat>(initial.cardFormat), [card, setCard] = useState(initialCard), [loading, setLoading] = useState(false), [busy, setBusy] = useState(false), [status, setStatus] = useState("");
+   const [prepared, setPrepared] = useState<{ key: string; file: File } | null>(null);
+   const requestRef = useRef<AbortController | null>(null), svgRef = useRef<SVGSVGElement>(null), busyRef = useRef(false), exportGeneration = useRef(0);
++  const sample = card ? reviewedHeroFor(card.player) : undefined;
++  const artwork = usePlayerArtwork(sample, loadArtwork, treatArtwork), hero = artwork.readyHero;
++  const artworkPending = !!sample && !hero && !artwork.error;
++  const artworkBlocked = artworkPending || (!!sample && artwork.customPending);
++  useEffect(() => { exportGeneration.current++; setPrepared(null); }, [artwork.versionKey]);
++  const artworkChanged = () => { exportGeneration.current++; setPrepared(null); setStatus(""); };
+   const changed = useCallback(() => { requestRef.current?.abort(); requestRef.current = null; exportGeneration.current++; setCard(null); setLoading(false); setPrepared(null); setStatus(""); }, []);
+   useEffect(() => {
+     const counter = exportGeneration;
+@@ -57,18 +68,18 @@
+     finally { clearTimeout(timeout); if (requestRef.current === controller) { setLoading(false); if (timedOut) setStatus("NHL request timed out. No substitute values were loaded."); } }
+   }
+   async function createImage(share: boolean) {
+-    if (!card || card.state !== "ready" || !svgRef.current || busyRef.current) return;
++    if (!card || card.state !== "ready" || !svgRef.current || busyRef.current || artworkBlocked) return;
+     const generation = exportGeneration.current; busyRef.current = true; setBusy(true); setStatus("Preparing the displayed snapshot…");
+     try {
+-      const blob = await rasterize(svgRef.current, card, format), file = new File([blob], `fhfh-${card.player.id}-${card.request.season}-L${card.request.count}-${format}-${card.source}.png`, { type: "image/png" });
++      const blob = await rasterize(svgRef.current, card, format, hero), file = new File([blob], `fhfh-${card.player.id}-${card.request.season}-L${card.request.count}-${format}-${card.source}.png`, { type: "image/png" });
+       if (generation !== exportGeneration.current) return;
+-      if (share) { setPrepared({ key: currentCardKey(card, format), file }); setStatus("Image ready. Share prepared image opens your device’s share options."); }
++      if (share) { setPrepared({ key: currentCardKey(card, format, hero), file }); setStatus("Image ready. Share prepared image opens your device’s share options."); }
+       else { saveCardFile(file, file.name); setStatus("PNG saved from the displayed snapshot."); }
+     } catch (error) { setStatus(error instanceof Error ? error.message : "PNG creation failed."); }
+     finally { busyRef.current = false; setBusy(false); }
+   }
+   async function sharePrepared() {
+-    if (!card || !prepared || prepared.key !== currentCardKey(card, format) || busyRef.current) return;
++    if (!card || !prepared || prepared.key !== currentCardKey(card, format, hero) || busyRef.current) return;
+     busyRef.current = true; setBusy(true);
+     try {
+       if (navigator.share && navigator.canShare?.({ files: [prepared.file] })) { await navigator.share({ files: [prepared.file], title: `FHFH · ${card.player.name} · NHL results` }); setStatus("Image handed to your device’s share destination."); }
+@@ -84,13 +95,18 @@
+       <label>Own last appearances<select value={count} disabled={busy} onChange={event => { chooseWindow(event.target.value); }}>{[5, 10, 20].map(value => <option key={value}>{value}</option>)}</select></label>
+       <label>Card category<select value={format} disabled={busy} onChange={event => { const next = event.target.value as CurrentNhlFormat; exportGeneration.current++; setFormat(next); setPrepared(null); setStatus(""); remember({ playerId, season, count, cardFormat: next }); }}>{CURRENT_NHL_FORMATS.map(id => <option key={id} value={id}>{id === "rates-opportunity" ? "Rates & Opportunity" : "Results & Milestones"}</option>)}</select></label>
+       <button type="submit" disabled={busy || loading}>{loading ? "Loading…" : "Load NHL results"}</button>
+-      <button type="button" disabled={busy || card?.state !== "ready"} onClick={() => createImage(false)}>Download PNG</button><button type="button" disabled={busy || card?.state !== "ready"} onClick={() => createImage(true)}>Prepare social image</button>
+-      {prepared && <button type="button" disabled={busy || !card || prepared.key !== currentCardKey(card, format)} onClick={sharePrepared}>Share prepared image</button>}
++      <button type="button" disabled={busy || artworkBlocked || card?.state !== "ready"} onClick={() => createImage(false)}>Download PNG</button><button type="button" disabled={busy || artworkBlocked || card?.state !== "ready"} onClick={() => createImage(true)}>Prepare social image</button>
++      {prepared && <button type="button" disabled={busy || !card || prepared.key !== currentCardKey(card, format, hero)} onClick={sharePrepared}>Share prepared image</button>}
+     </form>
++    {card && <section aria-label="Player artwork controls">
++      {sample ? <><div className={styles.controls}><PlayerArtworkControls artwork={artwork} team={card.player.team} busy={busy} onChange={artworkChanged} /></div><PlayerArtworkControls artwork={artwork} team={card.player.team} busy={busy} onChange={artworkChanged} editor />
++        {artwork.error && <p role="alert">{artwork.error} Stats remain available with an image-unavailable export. <button onClick={artwork.retryArtwork}>Retry artwork</button></p>}{artworkPending && <p role="status">Preparing the verified player artwork…</p>}</>
++        : <p>A verified matching player image is unavailable for {card.player.name} · {card.player.team}. Stats and PNG export remain available; another player’s portrait is never substituted.</p>}
++    </section>}
+     <p>Paste a stable NHL ID or an existing FHFH /stats/player/ID URL. All Strengths, regular-season skater data only; name search and richer suites require their qualified source interfaces.</p>
+     <p role="status" aria-live="polite">{status || (loading ? "Checking identity, game log and final-game schedule…" : card ? card.source === "contract-fixture" ? "Synthetic contract fixture. Not a real player’s results." : card.source === "nhl-retained" ? "Retained official NHL capture, not a current live response." : "NHL snapshot loaded at the observation time shown on the card." : "Choose a player and load a snapshot.")}</p>
+-    {card && <><div className={styles.artwork}><CurrentPlayerCard card={card} format={format} svgRef={svgRef} /></div><div role="note"><p>{card.rankReason}</p>{card.issues.map(issue => <p key={issue}>{issue}</p>)}</div>
+-      <details><summary>Source and metric definitions</summary><p>{card.historyStatement} {card.finalityStatement}</p><p>All Strengths only. Calendar-date windows and strength splits are unavailable in this source adapter.</p>{Object.entries(CURRENT_NHL_DEFINITIONS).map(([id, definition]) => <p key={id}>{definition.label}: {definition.definition}</p>)}<button onClick={() => saveCardFile(new Blob([JSON.stringify(currentNhlManifest(card, format), null, 2)], { type: "application/json" }), `fhfh-${card.player.id}-${format}-manifest.json`)}>Download snapshot manifest</button></details></>}
++    {card && <><div className={styles.artwork}><CurrentPlayerCard card={card} format={format} hero={hero} svgRef={svgRef} /></div><div role="note"><p>{card.rankReason}</p>{card.issues.map(issue => <p key={issue}>{issue}</p>)}</div>
++      <details><summary>Source and metric definitions</summary><p>{card.historyStatement} {card.finalityStatement}</p><p>All Strengths only. Calendar-date windows and strength splits are unavailable in this source adapter.</p>{Object.entries(CURRENT_NHL_DEFINITIONS).map(([id, definition]) => <p key={id}>{definition.label}: {definition.definition}</p>)}<button disabled={busy || artworkBlocked} onClick={() => saveCardFile(new Blob([JSON.stringify(currentNhlManifest(card, format, hero), null, 2)], { type: "application/json" }), `fhfh-${card.player.id}-${format}-manifest.json`)}>Download snapshot manifest</button></details></>}
+     <p>Other stat suites remain in the work plan. Sustainability scores, isolated impact, on-ice chance metrics, goalie workload and milestone baselines are not inferred from these counts.</p>
+   </main>;
+ }
+--- before/web/components/player-cards/CurrentPlayerCardStudio.test.tsx
++++ web/components/player-cards/CurrentPlayerCardStudio.test.tsx
+@@ -5,7 +5,7 @@
+ import CurrentPlayerCard from "./CurrentPlayerCard";
+ import { assertCurrentNhlExport } from "../../lib/player-cards/currentNhlExport";
+ import { buildCurrentNhlCard } from "../../lib/player-cards/currentNhl";
+-afterEach(() => window.history.replaceState(null, "", "/"));
++afterEach(() => { window.history.replaceState(null, "", "/"); localStorage.clear(); });
+ const fixture = () => buildCurrentNhlCard({ playerId: 8476453, season: 20262027, count: 5 }, {
+   identity: { playerId: 8476453, firstName: { default: "Fixture" }, lastName: { default: "Player" }, currentTeamAbbrev: "TBL", position: "R", seasonTotals: [{ season: 20262027, gameTypeId: 2, leagueAbbrev: "NHL", gamesPlayed: 1 }] },
+   history: { seasonId: 20262027, gameTypeId: 2, gameLog: [{ gameId: 2026020167, gameDate: "2026-10-23", teamAbbrev: "TBL", goals: 1, assists: 0, points: 1, shots: 4, toi: "20:00" }] },
+@@ -61,3 +61,25 @@
+   fireEvent.change(screen.getByLabelText("Player NHL ID"), { target: { value: "https://other.invalid/stats/player/8476453" } });
+   fireEvent.click(screen.getByRole("button", { name: "Load NHL results" })); await screen.findByText("Enter a valid NHL ID or FHFH player URL."); expect(load).toHaveBeenCalledTimes(1);
+ });
++
++it("keeps uncaptured artwork unavailable and never loads a different player's image", async () => {
++  const loadArtwork = vi.fn(); render(<CurrentPlayerCardStudio initialCard={fixture()} loadArtwork={loadArtwork} />);
++  expect(loadArtwork).not.toHaveBeenCalled(); expect(screen.queryByLabelText("Portrait style")).toBeNull();
++  expect(screen.getByRole("img").querySelector("image")).toBeNull(); expect(screen.getByRole("button", { name: "Download PNG" }).hasAttribute("disabled")).toBe(false);
++});
++it("joins verified artwork controls to the data card and invalidates prepared images on treatment changes", async () => {
++  const { REVIEWED_HERO_SAMPLES } = await import("../../lib/player-cards/reviewedHeroSamples");
++  const { PORTRAIT_VERSION } = await import("../../lib/player-cards/portraitTreatment");
++  const sample = REVIEWED_HERO_SAMPLES[0], first = fixture(), card = { ...first, player: { id: sample.id, name: sample.name, team: sample.team, position: sample.position }, request: { ...first.request, playerId: sample.id } };
++  const loadArtwork = vi.fn(async () => ({ ...sample, dataUrl: "data:image/png;base64,original" }));
++  const treatArtwork = vi.fn(async (hero, style) => ({ ...hero, dataUrl: `data:image/png;base64,${style}`, treatment: { style, version: PORTRAIT_VERSION, sourceAlphaSha256: sample.alphaSha256, renderedSha256: sample.alphaSha256, width: sample.sourceWidth, height: sample.sourceHeight } }));
++  const rasterize = vi.fn<typeof import("../../lib/player-cards/currentNhlExport").rasterizeCurrentNhlCard>(async () => new Blob(["png"])); render(<CurrentPlayerCardStudio initialCard={card} loadArtwork={loadArtwork} treatArtwork={treatArtwork} rasterize={rasterize} />);
++  await waitFor(() => expect(screen.getByRole("button", { name: "Prepare social image" }).hasAttribute("disabled")).toBe(false));
++  fireEvent.click(screen.getByRole("button", { name: "Prepare social image" })); await screen.findByRole("button", { name: "Share prepared image" });
++  expect(rasterize.mock.calls[0][3]).toMatchObject({ id: sample.id, team: sample.team });
++  fireEvent.change(screen.getByLabelText("Portrait style"), { target: { value: "posterized" } });
++  await waitFor(() => expect(document.querySelector('[data-hero-image="true"]')?.getAttribute("href")).toBe("data:image/png;base64,posterized"));
++  expect(screen.queryByRole("button", { name: "Share prepared image" })).toBeNull();
++  fireEvent.change(screen.getByLabelText("Player NHL ID"), { target: { value: "8476453" } });
++  expect(screen.queryByRole("img")).toBeNull(); expect(screen.queryByLabelText("Portrait style")).toBeNull(); expect(loadArtwork).toHaveBeenCalledTimes(1);
++});
+--- /dev/null
++++ web/components/player-cards/PlayerHeroHeader.tsx
+@@ -0,0 +1,49 @@
++import React, { useId } from "react";
++import { teamsInfo } from "../../lib/teamsInfo";
++import type { PreparedHero } from "./HeroPlayerCard";
++import { isCompositionStyle, PORTRAIT_LABELS } from "../../lib/player-cards/portraitTreatment";
++import { outlineRecipe, OUTLINE_SCALE } from "../../lib/player-cards/alphaOutline";
++
++/** Shared 338px artwork header; player and logo geometry are identical in every card. */
++export default function PlayerHeroHeader({ identity, hero, context, disclosure }: {
++  identity: { name: string; team: string; position: string }; hero?: PreparedHero | null; context: string; disclosure: string;
++}) {
++  const uid = useId().replace(/:/g, ""), palette = teamsInfo[identity.team] || { name: identity.team, primaryColor: "#1A1D21", secondaryColor: "#07AAE2", jersey: "#07AAE2", darkColor: "#101214" };
++  const composition = !!hero && isCompositionStyle(hero.treatment?.style || "original");
++  const rings = hero?.outline ? outlineRecipe(hero.outline) : [];
++  const logoSize = 480, logoRightOverhang = 120;
++  const names = identity.name.split(" "), first = names.shift()!, last = names.join(" ");
++  return <g>
++    <defs>
++      <linearGradient id={`${uid}-team`}><stop stopColor={palette.darkColor || palette.primaryColor} /><stop offset="1" stopColor={palette.primaryColor} /></linearGradient>
++      <linearGradient id={`${uid}-shade`}><stop stopColor="#101214" stopOpacity=".9" /><stop offset=".62" stopColor="#101214" stopOpacity=".2" /><stop offset="1" stopColor="#101214" stopOpacity="0" /></linearGradient>
++      <clipPath id={`${uid}-crop`}><rect width="1200" height="338" /></clipPath>
++      {composition && hero && <>
++        <linearGradient id={`${uid}-logo-fade`}><stop offset="0" stopColor="white" stopOpacity="0" /><stop offset=".25" stopColor="white" /><stop offset="1" stopColor="white" /></linearGradient>
++        <mask id={`${uid}-logo-mask`} maskUnits="objectBoundingBox" maskContentUnits="objectBoundingBox" x="0" y="0" width="1" height="1"><rect width="1" height="1" fill={`url(#${uid}-logo-fade)`} /></mask>
++      </>}
++    </defs>
++    <g clipPath={`url(#${uid}-crop)`}>
++      <rect width="1200" height="338" fill={`url(#${uid}-team)`} />
++      <path d="M700 0H850L630 338H480Z" fill={palette.secondaryColor} opacity=".35" />
++      <path d="M1040 0H1090L870 338H820Z" fill={palette.jersey} opacity=".6" />
++      <rect width="1200" height="338" fill={`url(#${uid}-shade)`} />
++      {composition && hero && <image data-team-logo="true" data-logo-anchor="right-edge" href={hero.teamLogo!.dataUrl} x={1200 - logoSize + logoRightOverhang} y="-100" width={logoSize} height={logoSize} preserveAspectRatio="xMidYMid meet" mask={`url(#${uid}-logo-mask)`} />}
++      {hero?.outline && <image data-player-outline="true" data-outline-width={hero.outline.thickness} data-outline-band-widths={rings.map(r => r.width).join(">")} data-outline-band-width={rings.every(r => r.width === 5) ? 5 : undefined} data-outline-band-colors={rings.map(r => r.color).join(">")} data-outline-color={hero.outline.bands?.join(">") || hero.outline.color} href={hero.outline.dataUrl} x={600 - hero.outline.padding / OUTLINE_SCALE} y={4 - hero.outline.padding / OUTLINE_SCALE} width={hero.outline.width / OUTLINE_SCALE} height={hero.outline.height / OUTLINE_SCALE} preserveAspectRatio="none" />}
++      {hero && <image data-hero-image="true" href={hero.dataUrl} x="600" y="4" width="600" height={600 * hero.sourceHeight / hero.sourceWidth} preserveAspectRatio="xMidYMin meet" style={{ imageRendering: hero.treatment?.style?.startsWith("pixelated") ? "pixelated" : "auto" }} />}
++      <rect y="299" width="1200" height="39" fill="#101214" fillOpacity=".93" />
++    </g>
++    {!hero && <g fill="#BEEFFF" fontFamily="Arial, sans-serif" textAnchor="middle" data-artwork-unavailable="true"><text x="925" y="130" fontSize="24" fontWeight="700">PLAYER IMAGE UNAVAILABLE</text><text x="925" y="166" fontSize="18">No accepted local cutout for this player and team</text></g>}
++    <g fill="#F2F1EB" fontFamily="Arial, sans-serif">
++      <text x="40" y="42" fontSize="24" fontWeight="900" letterSpacing="2" fill="#07AAE2">FHFH</text>
++      <text x="132" y="42" fontSize="16" letterSpacing="2">/ PLAYER REPORT</text>
++      <text x="40" y="101" fontSize="44" fontWeight="700">{first.toUpperCase()}</text>
++      <text x="36" y="184" fontSize={last.length > 10 ? 66 : 86} fontWeight="900" letterSpacing="-3">{last.toUpperCase()}</text>
++      <text x="40" y="225" fontSize="25">{palette.name} · {identity.position}{hero ? ` · #${hero.sweater}` : ""}</text>
++      <text x="40" y="268" fontSize="23" fill="#BEEFFF">{context}</text>
++      <text x="40" y="325" fontSize="19" fontWeight="700" letterSpacing="1" fill="#80DFFF">{disclosure}</text>
++      <text x="1160" y="325" textAnchor="end" fontSize={composition ? 14 : 16}>{hero ? `NHL photo · ${PORTRAIT_LABELS[hero.treatment?.style || "original"]}` : "Player image unavailable"}</text>
++    </g>
++  </g>;
++
++}
+--- /dev/null
++++ web/components/player-cards/PlayerArtworkControls.tsx
+@@ -0,0 +1,16 @@
++import React from "react";
++import OutlineStackControls from "./OutlineStackControls";
++import type { PlayerArtworkController } from "./usePlayerArtwork";
++import { isPortraitStyle, PORTRAIT_STYLES, PORTRAIT_LABELS } from "../../lib/player-cards/portraitTreatment";
++import { type OutlineInk } from "../../lib/player-cards/alphaOutline";
++export default function PlayerArtworkControls({ artwork, team, busy, onChange, editor = false }: { artwork: PlayerArtworkController; team: string; busy: boolean; onChange: () => void; editor?: boolean }) {
++  const { portraitStyle, setPortraitStyle, ink, inks, selectedInk, appliedRings, setOutlineInk, treating, outlineDraft, setOutlineDraft, customPending, resetOutline } = artwork;
++  if (editor) return <>    {ink === "custom" && <OutlineStackControls team={team} draft={outlineDraft} disabled={busy} pending={customPending || treating} onChange={draft => { onChange(); setOutlineDraft(draft); }} onReset={() => { onChange(); resetOutline(); }} />}
++</>;
++  return <>      <label>Portrait style<select aria-label="Portrait style" value={portraitStyle} disabled={busy || treating} onChange={e => {
++        const value = e.target.value; if (!isPortraitStyle(value)) return;
++        onChange(); setPortraitStyle(value);
++      }}>{PORTRAIT_STYLES.map(style => <option key={style} value={style}>{PORTRAIT_LABELS[style]}</option>)}</select></label>
++      <label><span>Outline <span aria-hidden="true" style={{ display: "inline-block", width: 18, height: 12, background: ink === "custom" ? appliedRings.length ? `linear-gradient(to right, ${appliedRings.map(r => r.color).join(",")})` : "transparent" : selectedInk.bands ? `linear-gradient(to right, ${selectedInk.bands.join(",")})` : selectedInk.color, border: "1px solid #b6b9bc" }} /></span><select aria-label="Outline color" value={ink} disabled={busy || treating} onChange={event => { if (!inks.some(option => option.id === event.target.value)) return; onChange(); setOutlineInk(event.target.value as OutlineInk); }}>{inks.map(option => <option key={option.id} value={option.id}>{option.label}</option>)}</select></label>
++</>;
++}
+--- /dev/null
++++ web/components/player-cards/usePlayerArtwork.ts
+@@ -0,0 +1,53 @@
++import { useEffect, useState } from "react";
++import type { HeroSample, PreparedHero } from "./HeroPlayerCard";
++import { prepareHero } from "../../lib/player-cards/shareExport";
++import { prepareOutlinedPortrait, portraitKey, isPortraitStyle, type PortraitStyle } from "../../lib/player-cards/portraitTreatment";
++import { outlineInks, type OutlineInk } from "../../lib/player-cards/alphaOutline";
++import { defaultOutlineStack, outlineStackKey, OUTLINE_LIMITS, readOutlineDraft, type OutlineDraftRing, type OutlineRing } from "../../lib/player-cards/outlineStack";
++const draftFrom = (rings: OutlineRing[]): OutlineDraftRing[] => rings.map((ring, index) => ({ id: `preset-${index}`, color: ring.color, width: String(ring.width), colorMode: "preset" }));
++const STYLE_STORAGE = "fhfh-player-card-portrait-v1";
++
++/** One bounded artwork pipeline for illustrative and observed-data editors. */
++export function usePlayerArtwork(sample: HeroSample | undefined, loadArtwork = prepareHero, treatArtwork = prepareOutlinedPortrait, initialOutlineInk: OutlineInk = "white") {
++  const [hero, setHero] = useState<PreparedHero | null>(null), [styledHero, setStyledHero] = useState<PreparedHero | null>(null), [treating, setTreating] = useState(false);
++  const [portraitStyle, setStyle] = useState<PortraitStyle>("team-colors"), [outlineInk, setOutlineInk] = useState<OutlineInk>(initialOutlineInk);
++  const [outlineDraft, setOutlineDraft] = useState<OutlineDraftRing[]>(() => draftFrom(defaultOutlineStack(sample?.team || "")));
++  const [appliedRings, setAppliedRings] = useState<OutlineRing[]>(() => defaultOutlineStack(sample?.team || ""));
++  const [error, setError] = useState(""), [retry, setRetry] = useState(0);
++  useEffect(() => { const rings = defaultOutlineStack(sample?.team || ""); setOutlineDraft(draftFrom(rings)); setAppliedRings(rings); }, [sample?.id, sample?.team]);
++  const inks = outlineInks(sample?.team || ""), selectedInk = inks.find(option => option.id === outlineInk) || inks[0], ink = selectedInk.id;
++  const parsed = readOutlineDraft(outlineDraft), draftKey = parsed.rings ? outlineStackKey(parsed.rings) : null, appliedKey = outlineStackKey(appliedRings);
++  const customPending = ink === "custom" && draftKey !== appliedKey;
++  useEffect(() => {
++    if (ink !== "custom" || draftKey === null || draftKey === appliedKey) return;
++    const timer = setTimeout(() => setAppliedRings(JSON.parse(draftKey) as OutlineRing[]), OUTLINE_LIMITS.debounceMs);
++    return () => clearTimeout(timer);
++  }, [ink, draftKey, appliedKey]);
++  useEffect(() => {
++    try { const saved = localStorage.getItem(STYLE_STORAGE); if (isPortraitStyle(saved)) setPortraitStyle(saved); } catch { /* Session selection works without storage. */ }
++  }, []);
++  useEffect(() => {
++    let active = true; setHero(null); setError("");
++    if (!sample) return;
++    loadArtwork(sample).then(value => { if (active) setHero(value); }, reason => { if (active) setError(reason instanceof Error ? reason.message : "Artwork unavailable."); });
++    return () => { active = false; };
++  }, [sample, retry, loadArtwork]);
++  useEffect(() => {
++    const controller = new AbortController(); setStyledHero(null);
++    if (!hero || hero.id !== sample?.id) { setTreating(false); return; }
++    setTreating(true); setError("");
++    treatArtwork(hero, portraitStyle, controller.signal, ink, ink === "custom" ? appliedRings : undefined).then(value => {
++      if (!controller.signal.aborted) { setStyledHero(value); setTreating(false); }
++    }, reason => {
++      if (!controller.signal.aborted) { setError(reason instanceof Error ? reason.message : "Portrait unavailable."); setTreating(false); }
++    });
++    return () => controller.abort();
++  }, [hero, sample, portraitStyle, treatArtwork, ink, appliedRings]);
++  const readyHero = styledHero?.id === sample?.id && styledHero?.team === sample?.team && styledHero?.treatment?.style === portraitStyle && (!styledHero.outline || styledHero.outline.ink === ink) && (ink !== "custom" || outlineStackKey(styledHero.outlineSettings || []) === appliedKey) ? styledHero : null;
++  function setPortraitStyle(value: PortraitStyle) { setStyle(value); try { localStorage.setItem(STYLE_STORAGE, value); } catch { /* Session selection works without storage. */ } }
++  return { readyHero, portraitStyle, setPortraitStyle, outlineDraft, setOutlineDraft, appliedRings, ink, inks, selectedInk, setOutlineInk, customPending, treating, error,
++    resetOutline: () => setOutlineDraft(draftFrom(defaultOutlineStack(sample?.team || ""))), retryArtwork: () => setRetry(n => n + 1),
++    versionKey: `${sample?.id || "none"}:${sample?.team || ""}:${portraitStyle}:${ink}:${draftKey}:${readyHero ? portraitKey(readyHero) : "pending"}`,
++  };
++}
++export type PlayerArtworkController = ReturnType<typeof usePlayerArtwork>;
+--- before/web/lib/player-cards/currentNhlExport.ts
++++ web/lib/player-cards/currentNhlExport.ts
+@@ -1,14 +1,17 @@
++import type { PreparedHero } from "../../components/player-cards/HeroPlayerCard";
++import { assertCurrentArtwork, currentArtworkManifest } from "./currentArtwork";
+ import { rasterizeCardSvg } from "./shareExport";
+ import { currentCardKey } from "../../components/player-cards/CurrentPlayerCard";
+ import { CURRENT_NHL_DEFINITIONS, currentNhlRows, type CurrentNhlCard, type CurrentNhlFormat } from "./currentNhl";
+ 
+-export function assertCurrentNhlExport(svg: SVGSVGElement, card: CurrentNhlCard, format: CurrentNhlFormat) {
+-  if (!svg.isConnected || card.state !== "ready" || card.sample.gp === null || card.sample.toiSeconds === null || svg.dataset.currentKey !== currentCardKey(card, format) || svg.dataset.source !== card.source || svg.dataset.cardFormat !== format || svg.querySelector("image")) throw new Error("The qualified displayed snapshot changed or is unavailable. Retry this card.");
++export function assertCurrentNhlExport(svg: SVGSVGElement, card: CurrentNhlCard, format: CurrentNhlFormat, hero?: PreparedHero | null) {
++  if (!svg.isConnected || card.state !== "ready" || card.sample.gp === null || card.sample.toiSeconds === null || svg.dataset.currentKey !== currentCardKey(card, format, hero) || svg.dataset.source !== card.source || svg.dataset.cardFormat !== format) throw new Error("The qualified displayed snapshot changed or is unavailable. Retry this card.");
++  assertCurrentArtwork(svg, card, hero);
+ }
+-export const rasterizeCurrentNhlCard = (svg: SVGSVGElement, card: CurrentNhlCard, format: CurrentNhlFormat): Promise<Blob> => rasterizeCardSvg(svg, () => assertCurrentNhlExport(svg, card, format), 1200, 1020);
++export const rasterizeCurrentNhlCard = (svg: SVGSVGElement, card: CurrentNhlCard, format: CurrentNhlFormat, hero?: PreparedHero | null): Promise<Blob> => rasterizeCardSvg(svg, () => assertCurrentNhlExport(svg, card, format, hero), 1200, 1020);
+ 
+ /** Selected snapshot only; alternate cached windows never leak into its reproducibility manifest. */
+-export function currentNhlManifest(card: CurrentNhlCard, format: CurrentNhlFormat) {
++export function currentNhlManifest(card: CurrentNhlCard, format: CurrentNhlFormat, hero?: PreparedHero | null) {
+   const { windows: _windows, ...selected } = card;
+-  return { renderVersion: "fhfh-current-card-v1", card: selected, format, selectedMetrics: currentNhlRows(format), definitions: CURRENT_NHL_DEFINITIONS, inputHashScope: "Source paths and selected normalized game inputs; no raw-response hash or exact end-time claim" };
++  return { renderVersion: "fhfh-current-card-v2", card: selected, format, artwork: currentArtworkManifest(card, hero), selectedMetrics: currentNhlRows(format), definitions: CURRENT_NHL_DEFINITIONS, inputHashScope: "Source paths and selected normalized game inputs; no raw-response hash or exact end-time claim" };
+ }
+--- /dev/null
++++ web/lib/player-cards/currentArtwork.ts
+@@ -0,0 +1,29 @@
++import type { HeroSample, PreparedHero } from "../../components/player-cards/HeroPlayerCard";
++import type { CurrentNhlCard } from "./currentNhl";
++import { REVIEWED_HERO_SAMPLES } from "./reviewedHeroSamples";
++import { portraitKey } from "./portraitTreatment";
++import { assertReviewedArtwork } from "./shareExport";
++
++export const CURRENT_IMAGE_UNAVAILABLE = "A verified matching player image is unavailable.";
++export function reviewedHeroFor(player: CurrentNhlCard["player"]): HeroSample | undefined {
++  return REVIEWED_HERO_SAMPLES.find(sample => sample.id === player.id && sample.team === player.team && sample.acceptance === "accepted");
++}
++export function assertCurrentHero(card: CurrentNhlCard, hero: PreparedHero) {
++  const sample = reviewedHeroFor(card.player);
++  if (!sample || Object.entries(sample).some(([key, value]) => hero[key as keyof HeroSample] !== value)) throw new Error("Artwork does not match the selected player, team and reviewed source.");
++}
++export function currentArtworkKey(hero?: PreparedHero | null) {
++  return hero ? `${hero.id}:${hero.team}:${hero.alphaSha256}:${portraitKey(hero)}` : "image-unavailable";
++}
++export function assertCurrentArtwork(svg: SVGSVGElement, card: CurrentNhlCard, hero?: PreparedHero | null) {
++  if (svg.dataset.currentArtworkKey !== currentArtworkKey(hero)) throw new Error("The displayed artwork changed. Retry this snapshot.");
++  if (hero) { assertCurrentHero(card, hero); assertReviewedArtwork(svg, hero); }
++  else if (svg.querySelector("image") || !svg.querySelector('[data-artwork-unavailable="true"]')) throw new Error("Unavailable artwork must not contain a substitute image.");
++}
++export function currentArtworkManifest(card: CurrentNhlCard, hero?: PreparedHero | null) {
++  if (!hero) return { state: "unavailable", reason: CURRENT_IMAGE_UNAVAILABLE, playerId: card.player.id, team: card.player.team };
++  assertCurrentHero(card, hero);
++  const { dataUrl: _dataUrl, teamLogo, outline, ...source } = hero;
++  return { state: "reviewed-local", ...source, teamLogo: teamLogo ? { ...teamLogo, dataUrl: undefined } : undefined, outline: outline ? { ...outline, dataUrl: undefined } : undefined,
++    geometry: { playerX: 600, playerY: 4, playerWidth: 600, headerHeight: 338, logoX: 840, logoY: -100, logoSize: 480 }, outlineAlignment: "outward; final export pixels; inner to outer", logoMask: "alpha 0 at left edge, 1 at 25%, 1 through right edge; logo only" };
++}
+--- /dev/null
++++ web/lib/player-cards/currentArtwork.test.ts
+@@ -0,0 +1,36 @@
++import { createElement } from "react";
++import { render } from "@testing-library/react";
++import { expect, it } from "vitest";
++import { REVIEWED_HERO_SAMPLES } from "./reviewedHeroSamples";
++import { reviewedHeroFor, currentArtworkManifest } from "./currentArtwork";
++import { assertCurrentNhlExport } from "./currentNhlExport";
++import CurrentPlayerCard from "../../components/player-cards/CurrentPlayerCard";
++import type { PreparedHero } from "../../components/player-cards/HeroPlayerCard";
++import type { CurrentNhlCard } from "./currentNhl";
++import { PORTRAIT_VERSION } from "./portraitTreatment";
++const sample = REVIEWED_HERO_SAMPLES[0];
++const hero: PreparedHero = { ...sample, dataUrl: "data:image/png;base64,reviewed", treatment: { style: "original" as const, version: PORTRAIT_VERSION, sourceAlphaSha256: sample.alphaSha256, renderedSha256: sample.alphaSha256, width: sample.sourceWidth, height: sample.sourceHeight } };
++const card = { id: "contract", source: "contract-fixture", state: "ready", player: { id: sample.id, name: sample.name, team: sample.team, position: sample.position }, request: { playerId: sample.id, season: 20262027, count: 5 }, observedAt: "2026-10-27T00:00:00Z", sample: { gp: 1, toiSeconds: 1200, sourceDates: [], utcDates: [], gameIds: [] }, values: { atoi: 1200, shots60: 12, goals60: 3, points60: 3, goals: 1, assists: 0, points: 1, shots: 4, shootingPct: 25 }, issues: [], rankReason: "League pool unverified", historyStatement: "Fixture", finalityStatement: "Fixture", evidence: { version: "nhl-basic-skater-v1", sourcePaths: [], seasonGp: 1, selectedGames: [], actualEndTimesSupplied: false } } as CurrentNhlCard;
++it("requires the exact accepted ID and team, never an unreviewed roster candidate", () => {
++  expect(reviewedHeroFor(card.player)).toBe(sample);
++  expect(reviewedHeroFor({ ...card.player, team: "MIN" })).toBeUndefined();
++  expect(reviewedHeroFor({ ...card.player, id: 8476453, team: "TBL" })).toBeUndefined();
++  expect(() => currentArtworkManifest({ ...card, player: { ...card.player, id: 8476453, team: "TBL" } }, hero)).toThrow("match");
++});
++it("uses the existing player geometry, binds embedded pixels and rejects substituted or stale artwork", () => {
++  const { container } = render(createElement(CurrentPlayerCard, { card, format: "rates-opportunity", hero }));
++  const svg = container.querySelector("svg")!, image = svg.querySelector('[data-hero-image="true"]')!;
++  expect(["x", "y", "width", "height"].map(key => image.getAttribute(key))).toEqual(["600", "4", "600", "337.5"]);
++  expect(() => assertCurrentNhlExport(svg, card, "rates-opportunity", hero)).not.toThrow();
++  expect(() => assertCurrentNhlExport(svg, card, "rates-opportunity")).toThrow();
++  image.setAttribute("href", "https://not-permitted.invalid/photo.png");
++  expect(() => assertCurrentNhlExport(svg, card, "rates-opportunity", hero)).toThrow("Embedded");
++});
++it("exports an explicit image-unavailable state without disabling valid stats or inventing an asset", () => {
++  const { container } = render(createElement(CurrentPlayerCard, { card, format: "results-milestones" })), svg = container.querySelector("svg")!;
++  expect(svg.querySelector("image")).toBeNull(); expect(svg.textContent).toContain("PLAYER IMAGE UNAVAILABLE");
++  expect(svg.textContent).toContain("SYNTHETIC CONTRACT FIXTURE"); expect(svg.textContent).toContain("League pool unverified");
++  expect(() => assertCurrentNhlExport(svg, card, "results-milestones")).not.toThrow();
++  expect(currentArtworkManifest(card)).toMatchObject({ state: "unavailable", playerId: sample.id, team: sample.team });
++  const metadata = JSON.stringify(currentArtworkManifest(card, hero)); expect(metadata).not.toContain("data:image"); expect(metadata).toContain(sample.alphaSha256);
++});
+--- before/web/lib/player-cards/shareExport.ts
++++ web/lib/player-cards/shareExport.ts
+@@ -22,9 +22,15 @@
+ 
+ export function assertCardExport(svg: SVGSVGElement, snapshot: FlowSnapshot, hero: PreparedHero, format: CardShareFormat) {
+   if (snapshot.source !== "synthetic" || snapshot.player.id !== String(hero.id) || svg.dataset.snapshotId !== snapshot.id || svg.dataset.artworkHash !== hero.alphaSha256 || svg.dataset.shareFormat !== format || svg.dataset.portraitKey !== portraitKey(hero)) throw new Error("The displayed card changed. Retry this snapshot.");
++  if (snapshot.sample.gp === null || snapshot.sample.toiSeconds === null || !snapshot.readings.some(r => r.state === "valid")) throw new Error("Verified sample context is required to export.");
++  assertReviewedArtwork(svg, hero);
++}
++
++/** Same embedded-asset and provenance checks for actual and illustrative cards. */
++export function assertReviewedArtwork(svg: SVGSVGElement, hero: PreparedHero) {
++  if (svg.dataset.portraitKey !== portraitKey(hero)) throw new Error("The displayed portrait changed. Retry this snapshot.");
+   const treatment = hero.treatment;
+   if (treatment && (!isPortraitStyle(treatment.style) || treatment.version !== PORTRAIT_VERSION || treatment.sourceAlphaSha256 !== hero.alphaSha256 || treatment.width !== hero.sourceWidth || treatment.height !== hero.sourceHeight || !/^[a-f0-9]{64}$/.test(treatment.renderedSha256))) throw new Error("Portrait provenance changed. Retry this snapshot.");
+-  if (snapshot.sample.gp === null || snapshot.sample.toiSeconds === null || !snapshot.readings.some(r => r.state === "valid")) throw new Error("Verified sample context is required to export.");
+   const images = [...svg.querySelectorAll("image")];
+   const composition = isCompositionStyle(treatment?.style || "original");
+   if (composition) {

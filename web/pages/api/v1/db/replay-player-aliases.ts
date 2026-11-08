@@ -1,3 +1,4 @@
+import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import { retryTweetAttribution } from "lib/sources/tweetAttribution";
 import { randomUUID } from "node:crypto";
 import adminOnly from "utils/adminOnlyMiddleware";
@@ -8,7 +9,7 @@ import { easternReportDate } from "lib/sources/projectedLineups";
 import { tweetPublicationFromUrl } from "lib/sources/linesCccIngestion";
 import { iftttIntakePilotConfigured } from "lib/sources/iftttIntakePolicy";
 
-export default adminOnly(async (req, res) => {
+export default adminOnly(withCronJobAudit(async (req, res) => {
   if (req.method !== "POST" && req.method !== "GET") return res.status(405).end();
   if (!tweetPipelineFlags().interpretation) return res.json({ skipped: true });
   const { data: jobs, error } = await (req.supabase as any).from("tweet_pipeline_jobs").select("job_key,payload")
@@ -44,7 +45,10 @@ export default adminOnly(async (req, res) => {
           rosterByTeam: await fetchRosterEntriesByTeam({ supabase: req.supabase, teamIds: [job.payload.teamId], seasonId }), aliases,
         }));
         const roster = rosterCache.get(seasonId)!;
-        const match = resolvePlayerIdentity(row.raw_name, roster.get(job.payload.teamId) ?? []);
+        // The queued row's slot lets team + position aliases and position tie-breaks apply.
+        const situation = row.metadata?.situation;
+        const slot = situation === "es_forward" || situation === "es_defense" || situation === "goalie" ? situation : null;
+        const match = resolvePlayerIdentity(row.raw_name, roster.get(job.payload.teamId) ?? [], undefined, slot);
         if (match.status !== "matched" || match.player.playerId !== job.payload.playerId) continue;
         if (row.status === "pending") {
           const { error: updateError } = await (req.supabase as any).from("lineup_unresolved_player_names")
@@ -83,4 +87,4 @@ export default adminOnly(async (req, res) => {
     if (pending.count) digest = await sendPlayerAliasReviewEmailForQueuedNames({ req, unresolvedNamesQueued: pending.count });
   }
   return res.json({ success: true, resolved, attribution, digest });
-});
+}, { jobName: "/api/v1/db/replay-player-aliases", recordRowMetrics: false, responsePreviewKeys: ["success", "resolved", "skipped", "error"] }));

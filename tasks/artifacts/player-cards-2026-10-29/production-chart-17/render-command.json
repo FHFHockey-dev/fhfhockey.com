@@ -1,0 +1,9 @@
+{
+  "command": [
+    "node",
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-29/production-chart-17/render-preview.mjs"
+  ],
+  "exitCode": 0,
+  "elapsedSeconds": 0.191,
+  "sharedSlot": "parent verify token"
+}

@@ -943,6 +943,10 @@ describe("planning engine", () => {
   ])("preserves the custom $startDate horizon while including its last actionable day", ({ startDate, asOf }) => {
     const data = snapshot();
     data.context = { ...data.context, startDate, asOf };
+    data.lockedAssignments = [
+      { date: "2026-10-05", playerId: "a", slotId: "C#1", source: "provider" },
+      { date: "2026-10-05", playerId: "b", slotId: null, source: "provider" },
+    ];
     data.games.push({ ...data.games[0], id: "outside-horizon", date: "2026-10-07", startsAt: "2026-10-07T20:00:00Z" });
     const context = { ...data.context };
     const result = evaluatePlan(data, intent, "agp");
@@ -1803,13 +1807,64 @@ describe("games already under way", () => {
   const today = (evaluation: ReturnType<typeof evaluatePlan>) => evaluation.assignments.filter(row => row.date === "2026-10-05")
     .map(row => `${row.playerId}@${row.slotId}${row.locked ? ":locked" : ""}`);
 
-  it("keeps a started player in his pre-start slot and closes it to later games", () => {
+  it("keeps inferred started slots for display but cannot certify their legality", () => {
     expect(today(evaluatePlan(underway("2026-10-05T19:00:00Z"), intent, "agp", [], false))).toEqual(["a@C#1"]);
     const live = evaluatePlan(underway(), intent, "agp", [], false);
-    expect(live.legal).toBe(true);
+    expect(live.legal).toBe(false);
+    expect(live.recommendation?.eligible).toBe(false);
+    expect(live.limitations).toContain("Started games lack recorded lineup locks; inferred positions are provisional. Confirm the active and bench assignments before acting.");
     expect(today(live)).toEqual(["a@C#1:locked"]);
     // Only the games still to be played count as remaining starts.
     expect(live.activeGames).toBe(live.assignments.filter(row => row.date !== "2026-10-05").length);
+  });
+
+  describe("injured started-game locks", () => {
+    function injured(status: string, locks: PlanningSnapshot["lockedAssignments"] = []) {
+      const data = underway(undefined, locks);
+      data.evidence.schedule = { ...data.evidence.schedule!, asOf: data.context.asOf };
+      data.players = data.players.map(row => row.id === "a" ? { ...row, injury: { status, label: status, note: null } } : row);
+      return data;
+    }
+
+    it.each(["O", "IR"])("requires a recorded lock for a started %s player", status => {
+      const result = evaluatePlan(injured(status), intent, "agp", [], false);
+      expect(result.legal).toBe(false);
+      expect(result.recommendation?.eligible).toBe(false);
+      expect(result.limitations).toContain("Started games lack recorded lineup locks; inferred positions are provisional. Confirm the active and bench assignments before acting.");
+      expect(today(result)).toEqual(["a@C#1:locked"]);
+      expect(result.activeGames).toBe(1);
+    });
+
+    it.each(["O", "IR"])("preserves an explicit active lock for a started %s player", status => {
+      const result = evaluatePlan(injured(status, [{ date: "2026-10-05", playerId: "a", slotId: "C#1" }]), intent, "agp", [], false);
+      expect(result.legal).toBe(true);
+      expect(today(result)).toEqual(["a@C#1:locked"]);
+      expect(result.activeGames).toBe(1);
+    });
+
+    it.each(["O", "IR"])("opens the slot only with an explicit bench lock for a started %s player", status => {
+      const result = evaluatePlan(injured(status, [{ date: "2026-10-05", playerId: "a", slotId: null }]), intent, "agp", [], false);
+      expect(result.legal).toBe(true);
+      expect(today(result)).toEqual(["b@C#1"]);
+      expect(result.activeGames).toBe(2);
+    });
+  });
+
+  it.each([
+    ["2026-10-05T19:59:59.999Z", 2],
+    ["2026-10-05T20:00:00.000Z", 1],
+    ["2026-10-05T20:00:00.001Z", 1],
+  ])("claims only strictly post-acquisition games at %s", (effectiveAt, expectedGames) => {
+    const data = snapshot();
+    data.roster = [];
+    data.players = data.players.filter(row => row.id === "c");
+    data.games = data.games.filter(game => game.teamAbbreviation === "C");
+    data.forecasts = [];
+    const result = evaluatePlan(data, intent, "agp", [{ id: "add-c", type: "add", playerId: "c",
+      at: effectiveAt, effectiveAt, conditional: true, dependsOn: [] }], false);
+    expect(result.legal).toBe(true);
+    expect(result.activeGames).toBe(expectedGames);
+    expect(result.assignments.some(row => row.gameId === "C0")).toBe(expectedGames === 2);
   });
 
   it("follows the provider's lock for a started game instead of failing the plan", () => {
@@ -1827,10 +1882,225 @@ describe("games already under way", () => {
     expect(today(held)).toEqual(["a@C#1:locked"]);
   });
 
+  it("applies the lock at the exact game-start instant, not a millisecond later", () => {
+    const result = evaluatePlan(underway("2026-10-05T20:00:00Z"), intent, "agp", [], false);
+    expect(result.legal).toBe(false);
+    expect(today(result)).toEqual(["a@C#1:locked"]);
+    expect(result.activeGames).toBe(result.assignments.filter(row => row.date !== "2026-10-05").length);
+  });
+
   it("still shows today's locked lineup once every game today has started", () => {
     const late = evaluatePlan(underway("2026-10-05T23:30:00Z"), intent, "agp", [], false);
-    expect(late.legal).toBe(true);
+    expect(late.legal).toBe(false);
     expect(today(late)).toEqual(["a@C#1:locked"]);
+  });
+});
+
+describe("November 4 research regressions", () => {
+  function researchRoster(rows: Array<[string, string[], number[], number]>, slots: Record<string, number>) {
+    const data = snapshot();
+    data.context.endDate = "2026-10-11";
+    data.players = rows.map(([id, positions]) => ({ ...player(id, id), eligiblePositions: positions }));
+    data.roster = rows.map(([id]) => ({ playerId: id, position: "bench" }));
+    data.rules.rosterSlots = slots;
+    data.games = rows.flatMap(([id, , days]) => days.map(day => ({
+      id: `${id}-${day}`, scheduleRevision: `${id}-${day}-v1`, date: `2026-10-${String(day).padStart(2, "0")}`,
+      startsAt: `2026-10-${String(day).padStart(2, "0")}T20:00:00Z`, teamAbbreviation: id,
+      opponent: "OPP", home: true, status: "scheduled" as const,
+    })));
+    data.forecasts = data.games.map(game => issuedForecast(data, game.teamAbbreviation, game.id,
+      { stats: { pts: rows.find(([id]) => id === game.teamAbbreviation)![3] } }));
+    return data;
+  }
+
+  it("A: assigns C-only B and C/LW A to separate eligible slots", () => {
+    const data = researchRoster([["A", ["C", "LW"], [5], 1], ["B", ["C"], [5], 1]], { C: 1, LW: 1 });
+    const result = evaluatePlan(data, intent, "outcome");
+    expect(result.assignments.map(row => [row.playerId, row.slotId]).sort()).toEqual([["A", "LW#1"], ["B", "C#1"]]);
+  });
+
+  it("B: reconciles full-roster displacement to the same optimized 4/32 baseline", () => {
+    const data = researchRoster([
+      ["core", ["LW"], [6, 8, 10], 10], ["expendable", ["LW"], [5], 2],
+      ["X", ["LW"], [6, 8, 10, 11], 3], ["Y", ["LW"], [7, 9, 11], 3],
+    ], { LW: 1, BN: 1 });
+    data.roster = data.roster.slice(0, 2);
+    data.players.slice(2).forEach(row => { row.availability = "free_agent"; });
+    const baseline = evaluatePlan(data, intent, "outcome", [], false);
+    expect(baseline).toMatchObject({ legal: true, activeGames: 4, projectedValue: 32 });
+    for (const [id, starts, points] of [["X", 4, 33], ["Y", 6, 39]] as const) {
+      const plan = evaluatePlan(data, intent, "outcome", [{ id, type: "add", playerId: id, dropPlayerId: "expendable",
+        at: data.context.asOf, effectiveAt: data.context.asOf, conditional: false, dependsOn: [] }], false);
+      expect(plan).toMatchObject({ legal: true, activeGames: starts, projectedValue: points });
+      const value = (rows: typeof plan.assignments) => rows.reduce((total, row) => total + data.forecasts.find(f => f.playerId === row.playerId && f.gameId === row.gameId)!.stats.pts!, 0);
+      expect(value(plan.assignments) - value(baseline.assignments)).toBe(points - 32);
+      expect(plan.activeGames - baseline.activeGames).toBe(starts - 4);
+    }
+    const result = planRoster(data, intent, { maxSteps: 0, maxEvaluations: 1, timeBudgetMs: Infinity });
+    expect(result.selected.assignments).toEqual(result.baseline.assignments);
+    expect(result.selected.projectedValue).toBe(result.baseline.projectedValue);
+  });
+
+  it("C: weekly occupancy persists on off days while daily occupancy can change", () => {
+    const data = researchRoster([["M", ["C"], [5], 1], ["T", ["C"], [6], 1]], { C: 1, BN: 1 });
+    expect(evaluatePlan(data, intent, "agp").activeGames).toBe(2);
+    data.rules.lineupMode = "weekly";
+    data.rules.lineupPeriods = [{ id: "week", start: "2026-10-05T00:00:00Z", end: "2026-10-12T00:00:00Z", lockAt: "2026-10-05T00:00:00Z" }];
+    expect(evaluatePlan(data, intent, "agp")).toMatchObject({ legal: true, activeGames: 1 });
+  });
+
+  it("D: pools goalie numerators and denominators, with explicit zero-exposure unknowns", () => {
+    const data = researchRoster([["A", ["G"], [5], 0], ["B", ["G"], [5], 0]], { G: 2 });
+    data.players.forEach(row => { row.playerClass = "goalie"; });
+    data.rules.scoring = { mode: "categories", weights: {}, categories: [
+      { key: "SV%", direction: "higher", numerator: "SAVES_GOALIE", denominator: "SHOTS_AGAINST_GOALIE" },
+      { key: "GAA", direction: "lower", numerator: "GOALS_AGAINST_GOALIE", denominator: "GOALIE_MINUTES", multiplier: 60 },
+    ] };
+    data.forecasts.forEach(row => { row.stats = row.playerId === "A"
+      ? { SAVES_GOALIE: 27, SHOTS_AGAINST_GOALIE: 30, GOALS_AGAINST_GOALIE: 0, GOALIE_MINUTES: 30 }
+      : { SAVES_GOALIE: 10, SHOTS_AGAINST_GOALIE: 10, GOALS_AGAINST_GOALIE: 3, GOALIE_MINUTES: 60 }; });
+    const result = evaluatePlan(data, intent, "agp");
+    expect(result.categoryResults.map(row => row.own)).toEqual([0.925, 2]);
+    data.forecasts.forEach(row => { row.stats = { SAVES_GOALIE: 0, SHOTS_AGAINST_GOALIE: 0, GOALS_AGAINST_GOALIE: 0, GOALIE_MINUTES: 0 }; });
+    expect(evaluatePlan(data, intent, "agp").categoryResults.map(row => row.own)).toEqual([null, null]);
+  });
+
+  it("E: reads already-unconditional four points once despite .8 appearance metadata", () => {
+    const data = researchRoster([["A", ["C"], [5], 4]], { C: 1 });
+    data.forecasts[0].conditionalStats = { pts: 5 };
+    data.forecasts[0].appearanceProbability = 0.8;
+    expect(evaluatePlan(data, intent, "outcome").projectedValue).toBe(4);
+  });
+
+  it("F: distinguishes a toy threshold probability from expected starts and exclusive events", () => {
+    // Explicit finite outcome spaces, not a calibrated hockey probability model.
+    const independent = [{ count: 0, p: .35 * .45 }, { count: 1, p: .65 * .45 + .35 * .55 }, { count: 2, p: .65 * .55 }];
+    expect(independent.filter(row => 2 + row.count >= 3).reduce((sum, row) => sum + row.p, 0)).toBeCloseTo(.8425);
+    const exclusive = [{ starts: [1, 0], p: .6 }, { starts: [0, 1], p: .4 }];
+    expect(exclusive.filter(row => row.starts.every(Boolean)).reduce((sum, row) => sum + row.p, 0)).toBe(0);
+    const data = researchRoster([["A", ["G"], [5], 1], ["B", ["G"], [6], 1]], { G: 2 });
+    data.players.forEach(row => { row.playerClass = "goalie"; });
+    data.forecasts.forEach((row, index) => { row.startProbability = [.65, .55][index]; });
+    data.rules.goalieMinimum = { required: 3, credited: 2, counts: "appearances", penalty: "none", periodStart: "2026-10-05", periodEnd: "2026-10-12" };
+    expect(evaluatePlan(data, intent, "agp").goalie).toMatchObject({ credited: 2, projected: null, confirmed: 0, risk: true });
+  });
+
+  it.each(["unsupported", "cap"])("does not certify %s rules", kind => {
+    const data = snapshot();
+    if (kind === "unsupported") data.rules.lineupMode = "unsupported";
+    else data.rules.unsupported = ["Position game caps require credited usage and cap-day rules; unsupported."];
+    expect(evaluatePlan(data, intent, "outcome")).toMatchObject({ legal: false, recommendation: { eligible: false } });
+  });
+
+  it("does not use a future schedule observation to certify an earlier decision", () => {
+    const data = snapshot();
+    data.evidence.schedule.asOf = "2026-10-05T00:00:00Z";
+    const result = evaluatePlan(data, intent, "outcome");
+    expect(result.projectedValue).toBeNull();
+    expect(result.recommendation?.eligible).toBe(false);
+    expect(result.limitations).toContain("Schedule evidence was observed after the planning time; reload inputs for this decision.");
+  });
+
+  it("does not reuse pre-drop availability to reacquire a streamed player", () => {
+    const data = snapshot();
+    data.rules.periods[0].remaining = 3;
+    const first = { id: "first", type: "add" as const, playerId: "c", dropPlayerId: "b", at: data.context.asOf, effectiveAt: data.context.asOf, conditional: false, dependsOn: [] };
+    const drop = { id: "drop", type: "drop" as const, playerId: "c", at: "2026-10-05T00:00:00Z", effectiveAt: "2026-10-05T00:00:00Z", conditional: false, dependsOn: ["first"] };
+    const again = { ...first, id: "again", dropPlayerId: undefined, at: "2026-10-06T00:00:00Z", effectiveAt: "2026-10-06T00:00:00Z", conditional: true, dependsOn: ["drop"] };
+    const timeline = buildTimeline(data, intent, [first, drop, again]);
+    expect([...timeline.at(again.effectiveAt).keys()]).toEqual(["a"]);
+    expect(timeline.legal).toBe(false);
+    expect(timeline.acquisitions).toEqual({ p: 1 });
+    expect(timeline.limitations).toContain("Player c was dropped in this plan; reacquisition needs new availability and waiver evidence.");
+  });
+
+  it("rejects cross-reset waiver accounting instead of charging a claim to an assumed period", () => {
+    const data = snapshot();
+    data.players[2].availability = "waivers";
+    data.players[2].waiverClearsAt = "2026-10-06T00:00:00Z";
+    data.rules.waivers = { mode: "priority", remainingBudget: null };
+    data.rules.periods = [
+      { id: "p1", start: data.context.asOf, end: "2026-10-06T00:00:00Z", remaining: 1, source: "manager" },
+      { id: "p2", start: "2026-10-06T00:00:00Z", end: "2026-10-12T00:00:00Z", remaining: 1, source: "manager" },
+    ];
+    const step = { id: "claim", type: "add" as const, playerId: "c", dropPlayerId: "b", at: data.context.asOf,
+      effectiveAt: data.players[2].waiverClearsAt, conditional: true, dependsOn: [] };
+    const crossing = buildTimeline(data, intent, [step]);
+    expect([...crossing.at(step.effectiveAt).keys()]).toEqual(["a", "b"]);
+    expect(crossing.legal).toBe(false);
+    expect(crossing.acquisitions).toEqual({});
+    expect(crossing.limitations).toContain("Waiver claim crosses an acquisition reset; the charge period is unverified.");
+    const samePeriod = buildTimeline(data, intent, [{ ...step, at: step.effectiveAt }]);
+    samePeriod.at(step.effectiveAt);
+    expect(samePeriod.legal).toBe(true);
+    expect(samePeriod.acquisitions).toEqual({ p2: 1 });
+  });
+
+  it("rejects direct-to-reserve additions instead of silently treating them as bench adds", () => {
+    const data = snapshot();
+    const at = data.context.asOf;
+    expect(evaluatePlan(data, intent, "agp", [{ id: "ir", type: "add", playerId: "c", dropPlayerId: "b", reservePosition: "IR", at, effectiveAt: at, conditional: false, dependsOn: [] }]).legal).toBe(false);
+  });
+
+  it("allows an ineligible IR stash and its removal, but blocks adds until it is resolved", () => {
+    const data = snapshot();
+    data.roster[1].position = "IR";
+    data.rules.rosterSlots.IR = 1;
+    expect(evaluatePlan(data, intent, "agp").legal).toBe(true);
+    const at = data.context.asOf;
+    const add = { id: "add", type: "add" as const, playerId: "c", at, effectiveAt: at, conditional: false, dependsOn: [] };
+    const blocked = buildTimeline(data, intent, [add]);
+    expect([...blocked.at(at).keys()]).toEqual(["a", "b"]);
+    expect(blocked.legal).toBe(false);
+    expect(blocked.acquisitions).toEqual({});
+    const drop = { id: "drop", type: "drop" as const, playerId: "b", at, effectiveAt: at, conditional: false, dependsOn: [] };
+    const repaired = buildTimeline(data, intent, [drop, { ...add, dependsOn: [drop.id] }]);
+    expect([...repaired.at(at).keys()]).toEqual(["a", "c"]);
+    expect(repaired.legal).toBe(true);
+    expect(repaired.acquisitions).toEqual({ p: 1 });
+  });
+
+  it("matches tiny exhaustive assignments, including repeated slots, negatives and fixed-objective invariants", () => {
+    // Independent enumerator: no production matcher, slot expansion or assignment helpers.
+    const positions = [["C", "LW"], ["C"], ["LW"], ["C"]];
+    const oracle = (values: number[], slots: string[], excluded: Set<number> = new Set()) => {
+      const visit = (slot: number, used: Set<number>): number => slot === slots.length ? 0
+        : Math.max(visit(slot + 1, used), ...values.flatMap((value, index) =>
+          !used.has(index) && !excluded.has(index) && positions[index].includes(slots[slot])
+            ? [value + visit(slot + 1, new Set([...used, index]))] : []));
+      return visit(0, new Set());
+    };
+    for (let seed = 0; seed < 40; seed++) {
+      const values = positions.map((_, index) => ((seed * (index + 3) + index * 7) % 17) - 8);
+      const data = researchRoster(positions.map((p, index) => [`p${index}`, p, [5], values[index]]), { C: 2, LW: 1, BN: 1 });
+      const result = evaluatePlan(data, intent, "outcome", [], false);
+      const expected = oracle(values, ["C", "C", "LW"]);
+      expect(result.assignmentValue, `seed ${seed}`).toBe(expected);
+      // Validate the assignment witness independently of the solver's legal flag.
+      expect(new Set(result.assignments.map(row => row.playerId)).size).toBe(result.assignments.length);
+      expect(new Set(result.assignments.map(row => row.slotId)).size).toBe(result.assignments.length);
+      for (const row of result.assignments) expect(positions[Number(row.playerId.slice(1))]).toContain(row.slotId.split("#")[0]);
+      const reversed = { ...data, players: [...data.players].reverse(), roster: [...data.roster].reverse(), games: [...data.games].reverse(), forecasts: [...data.forecasts].reverse() };
+      expect(evaluatePlan(reversed, intent, "outcome", [], false).assignments).toEqual(result.assignments);
+      const expanded = evaluatePlan({ ...data, rules: { ...data.rules, rosterSlots: { C: 2, LW: 2, BN: 1 } } }, intent, "outcome", [], false);
+      expect(expanded.assignmentValue).toBeGreaterThanOrEqual(expected);
+      const constrained = evaluatePlan({ ...data, lockedAssignments: [{ date: "2026-10-05", playerId: "p0", slotId: null }] }, intent, "outcome", [], false);
+      expect(constrained.assignmentValue).toBe(oracle(values, ["C", "C", "LW"], new Set([0])));
+      expect(constrained.assignmentValue).toBeLessThanOrEqual(expected);
+    }
+  });
+
+  it("benchmarks one-move search against every legal swap in a tiny candidate universe", () => {
+    const data = researchRoster([["a", ["C"], [5], 2], ["b", ["C"], [5], 1], ["c", ["C"], [5], 5], ["d", ["C"], [5], 4]], { C: 1, BN: 1 });
+    data.roster = data.roster.slice(0, 2);
+    data.players.slice(2).forEach(row => { row.availability = "free_agent"; });
+    const result = planRoster(data, intent, { maxSteps: 1, maxCandidates: 4, beamWidth: 30, maxEvaluations: 500, timeBudgetMs: Infinity });
+    // With one slot on one date, exhaustive ownership enumeration is max(max(roster after each swap)).
+    const value = (id: string) => data.forecasts.find(row => row.playerId === id)!.stats.pts!;
+    const exact = Math.max(2, ...["c", "d"].flatMap(add => ["a", "b"].map(drop =>
+      Math.max(...["a", "b"].filter(id => id !== drop).map(value), value(add)))));
+    expect(Math.max(result.baseline.assignmentValue!, ...result.alternatives.map(plan => plan.assignmentValue!))).toBe(exact);
+    expect(result.alternatives.every(plan => plan.legal)).toBe(true);
   });
 });
 

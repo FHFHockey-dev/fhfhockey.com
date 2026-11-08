@@ -1,0 +1,75 @@
+{
+  "schemaVersion": "forge-v2-execution-prerequisites-v1",
+  "status": "PROPOSED_CONTRACT_NOT_IMPLEMENTED_OR_APPROVED",
+  "executionAuthorized": false,
+  "scientificallyQualified": false,
+  "candidateCommit": "7113329d2c24b8629f54484df37441f95a63d853",
+  "preparationReviewScope": "Chef-authored supplement after preparation-review.json; source/route inspection only. Not covered by independent scientific acceptance.",
+  "prospectiveProducer": {
+    "tasks": ["NEW-08", "14.1", "14.2"],
+    "currentBehavior": "PreparedIssuance and runPreparedIssuance in pipeline.server.ts admit fixture/retrospective_reconstruction only. No live prospective producer exists. Keep that fence until a separate authority-bound implementation is reviewed.",
+    "missingOwnerInputs": [
+      {"field": "serviceIdentityAndIsolation", "required": "Named operator/environment owner, actual service identity, exact isolated database/schema and private artifact prefix, rights and v1/RSO reservation receipt", "why": "A caller-provided string or arbitrary storage object does not prove the executing writer has the authorized identity or target."},
+      {"field": "trustedApprovalReader", "required": "Owner-designated immutable approval store or signature verifier, canonical approval ID/hash, revocation reader and operator-stop channel; authentication/secret setup handled separately", "why": "A self-asserted approved boolean must never create prospective authority. Choosing the trust anchor is an owner decision."},
+      {"field": "trustedSourceCaptureReader", "required": "Exact admissible source manifest/bytes, provenance/rights/completeness field mappings, original receipt clocks and finite approved capture IDs", "why": "Fixture or reconstruction data must not be relabeled as genuine contemporaneous evidence."},
+      {"field": "durableBoundsAndClock", "required": "Authoritative execution/commit clock contract, durable atomic attempt/read/write/byte counters and approved ceilings, exact population/window and queue partitions", "why": "Per-process counters/resettable clocks cannot enforce a multi-invocation approval budget or establish pre-lock issuance."}
+    ],
+    "proposedRuntimeSequence": [
+      "Read and verify the immutable approval plus current revocation/stop state through the designated trusted reader; bind exact candidate/dependency/source/opportunity hashes and actual target/service identity.",
+      "Atomically reserve a single attempt against durable total/day/issuance/batch/resource counters; zero new provider calls. Reject wrong population, expiry, missing inputs or any exceeded cap without opening broader scope.",
+      "Capture the due opportunity independently of successful prediction. Use existing source, episode, lock, claim, feature and fitted-availability validation without relaxing cutoff fences.",
+      "Generate and persist pinned private unqualified outputs. Recheck stop/authority/clock/lock and current claim before atomic publication; obtain committed readback proof from the same authorized store.",
+      "A post-lock readback remains retained evidence but cannot be labeled eligible. Retry only within existing issuance/attempt bounds; append actual misses/failures, never backfill a live vintage.",
+      "Record actual operation/resource counters, approval/capture references and immutable artifact/readback hashes. Stop new admission at any cap, while preserving permanent history and separately authorized settlement/recovery procedures."
+    ],
+    "requiredLocalAcceptanceCases": [
+      "Missing/untrusted/self-supplied, expired, future-window, revoked or wrong-environment approval produces no prospective publication.",
+      "Wrong code/model/protocol/source/game/player/profile hash or capture-class mismatch refuses issuance and preserves opportunity/missingness evidence.",
+      "Repeated invocation/concurrent claim cannot reset durable attempt/storage/request caps; cancellation and stale claim CAS never publish or manufacture a gap.",
+      "Clock rollback, start correction, play-begun fence or readback after lock cannot create eligible pregame evidence.",
+      "Draft recovery matches exact original authority and receipt; wrong-scope existing draft cannot be adopted.",
+      "Unqualified private shadow works without public qualification; public API/page and RSO remain disabled.",
+      "Process interruption/recovery, artifact loss/restore and official outcome correction retain the same immutable lineage and requested denominators."
+    ],
+    "smallestNextStep": "Owner supplies the four concrete contracts above as metadata, without protected labels or credentials. Then implement the disabled local producer and independent regression review before requesting the exact external operation. No generic allowProspective flag is proposed."
+  },
+  "publicReleaseSmokeProposal": {
+    "tasks": ["14.4"],
+    "status": "DRAFT_BLOCKED_NO_QUALIFIED_CANDIDATE_OR_TARGET",
+    "targetOrigin": null,
+    "approvedCandidateSha": null,
+    "approvedPlayerId": null,
+    "approvedGameId": null,
+    "qualificationManifestSha256": null,
+    "maximumApplicationRequests": 5,
+    "concurrency": 1,
+    "automaticRetries": 0,
+    "cacheBust": false,
+    "browserCrawl": false,
+    "routeProposal": [
+      {"order": 1, "method": "GET", "path": "/forge/v2", "check": "HTML response and declared product/qualification labels for the approved release. This single response does not count as browser rendering or asset verification."},
+      {"order": 2, "method": "GET", "path": "/api/v2/forge/methodology", "check": "Approved methodology/version/conditioning and unsupported-scope disclosures; update and review the current disabled-methodology contract before release."},
+      {"order": 3, "method": "GET", "path": "/api/v2/forge/next-ten?playerId={approvedPlayerId}", "check": "At most ten accepted games, expected default profile and qualification; immutable latest/final/actual references match retained expected records."},
+      {"order": 4, "method": "GET", "path": "/api/v2/forge/history?playerId={approvedPlayerId}&gameId={approvedGameId}", "check": "Only first bounded page; expected immutable vintage IDs, failure gaps and interval availability. No pagination fanout or cache invalidation."},
+      {"order": 5, "method": "GET", "path": "/api/v2/forge/accountability?playerId={approvedPlayerId}", "check": "Expected default-profile denominators, baseline/interval/probability/missingness disclosures and preserved corrections."}
+    ],
+    "artifactVerification": "Use an already-retained approved archive/reproduction receipt and hashes; do not invent a public artifact-download route. If direct hosted archive verification is necessary, register its operation/resource budget and authorization separately before execution.",
+    "beforeAnyRequest": [
+      "Require independent qualified scope and exact target/candidate approval; the current candidate has enabled:false, repository:null and page notFound:true.",
+      "Review future serving repository construction and routes for read-only bounded behavior; current route names alone do not authorize requests or prove future costs.",
+      "Inventory every linked Vercel project/root/trigger/ignored-build behavior and existing exact-SHA deployments. Do not assume root/web plus functions local links form the entire remote inventory.",
+      "Complete approved real IDs, expected immutable response references, at-most-five route budget, rollback target and named operator. No new builds, provider reads or schedules are implicit."
+    ],
+    "stop": "Stop at the first unexpected identity, unsupported qualification exposure, non-read-only fanout, failed integrity check or resource bound. Otherwise stop once conclusive within five requests. Do not retry or expand to a browser crawl.",
+    "rollbackProposal": "Named release owner separately approves the exact reversible disable action or prior successful deployment before release. Disable only v2 serving; preserve v1/RSO, existing essential schedules, immutable records and artifacts. Rollback request/build cost needs its own stated allowance; do not assume it fits the five-read budget.",
+    "requestsPerformed": 0
+  },
+  "scientificMethodDecisionHandoff": {
+    "tasks": ["NEW-07", "2.5", "8.3", "8.5", "13.4"],
+    "localPreparationComplete": "Current-code selection reconciliation, exact draft feature formulas, chronological synthetic proof and metadata admission checker exist. No baseline interval/dependence/multiplicity implementation or final scientific freeze is claimed.",
+    "exactDecisionNeeded": "Review protocol-methods-draft.json against admitted source fields and development allocation; return one exact baseline predictive distribution/calibration recipe, dependence estimator and multiplicity/test-family specification, with numerical criteria that must await development evidence identified explicitly.",
+    "whyNotSubstituteArbitraryCode": "Alternative methods imply different estimands, support and failure behavior. The draft explicitly leaves those scientific choices unresolved; implementing arbitrary alternatives would not satisfy its independent methodological acceptance.",
+    "copyReadyPrompt": "Review the FORGE v2 approved PRD, protocol-proposal.json, protocol-methods-draft.json, open-task-reassessment.json and current model/uncertainty/evaluation source at candidate 7113329d2. No protected labels, production access, or deployment is authorized. Resolve exact baseline predictive intervals, dependence estimator/block structure and multiplicity family before final qualification; preserve chronological mean fit then later calibration, all trial failures, and source availability fences. Identify which choices require admitted development evidence and source-schema mapping. Return a concrete implementation specification and hash-bound disposition, not a qualification claim. Request any missing files, excerpts, logs or source metadata before recommending a solution."
+  },
+  "actionStatus": {"restrictedActionsAttempted": false, "denied": [], "pendingToolApprovals": [], "uncertain": []}
+}

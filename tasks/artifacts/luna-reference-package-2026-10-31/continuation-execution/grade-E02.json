@@ -1,0 +1,49 @@
+{
+  "caseId": "E02",
+  "scoredAt": "2026-10-31T21:18:26.913Z",
+  "status": "held",
+  "score": {
+    "identity": true,
+    "goalie": false,
+    "decisions": true,
+    "labelMatch": false
+  },
+  "holds": [
+    "goalie_subject_binding_invalid"
+  ],
+  "proceed": false,
+  "callsThisReport": 1,
+  "cumulativeCalls": 3,
+  "aggregateExposureNanoUsd": 263485646,
+  "usagePricedCeilingNanoUsd": 450451,
+  "requestIds": [
+    "req_a41998e094bc4f87b4fe0a2557856226"
+  ],
+  "providerUsage": [
+    {
+      "hash": "a008002a2f52e504b17262b7907edc00494d834e58c9420c7a3450406dfd3ed2",
+      "state": "settled",
+      "endpoint": "responses",
+      "requestId": "req_a41998e094bc4f87b4fe0a2557856226",
+      "model": "gpt-6-luna",
+      "usage": {
+        "input_tokens": 3085,
+        "input_tokens_details": {
+          "cache_write_tokens": 0,
+          "cache_write_tokens_details": {
+            "ttl_12h_tokens": 0,
+            "ttl_30m_tokens": 0
+          },
+          "cached_tokens": 0
+        },
+        "output_tokens": 202,
+        "output_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "total_tokens": 3287
+      }
+    }
+  ],
+  "ledgerEnabled": false,
+  "ledgerBlockedReason": "bounded_continuation_stopped"
+}

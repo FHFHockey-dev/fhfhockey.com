@@ -1,0 +1,123 @@
+{
+  "at": "2026-11-01T19:21:03.501176+00:00",
+  "review": {
+    "path": "tasks/artifacts/player-cards-candidate-audit-2026-11-01/REVIEW.md",
+    "sha256": "afceaebc603c672e2e97a2d1b73439e776e2087aded3294a1ff6055bcd1674f4",
+    "findings": [
+      "P2 long unbroken goalie warning clips in accepted PNG",
+      "P3 stale preview-wide synthetic provenance notice"
+    ]
+  },
+  "implementation": {
+    "P2": "Wrap oversized tokens without blank leading lines. Over-capacity warning footer displays an explicit non-exportable notice; full warnings remain in accessible description/readable details/manifest. Export checks actual SVG bounds for wrapped evidence and warnings, refusing absent/nonfinite/zero/excessive widths. Character count alone cannot admit a wide token.",
+    "P3": "Preview notice names retained NHL/BLSH captures, separately dated box comparisons, stale research and labeled synthetic/unavailable selections; offline preview regenerated."
+  },
+  "sourceChanges": [
+    {
+      "path": "web/components/player-cards/PlayerAnalysisCard.tsx",
+      "beforeSHA256": "a46c3979c3dc81eda03bb5c101d5c4c98508e103499fa5f5edf0600da0a162b6",
+      "afterSHA256": "cf9579abfa92b946b541172ee2bb762ee595101ad27466bd90fbf036b2b72382"
+    },
+    {
+      "path": "web/lib/player-cards/analysisExport.ts",
+      "beforeSHA256": "ff5babdfb11862b390f9eb10fa4762860880a1000a7c985a0fa5169f68529b2f",
+      "afterSHA256": "3a1a068fa3398f3d9b9a2b81550f9dfa3917e1f3f44f39b9dd466f2a3bcacc93"
+    },
+    {
+      "path": "web/components/player-cards/PlayerAnalysisStudio.test.tsx",
+      "beforeSHA256": "2e73505476533015ea471b6a416f44ccef0972405fe142629bf3c9db7797f5ef",
+      "afterSHA256": "37e057ce7c65e3c73bd7a6160e65e2dae5fa25b90b13dd475db322c8b7adc74f"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-evolution-2026-10-31/preview-entry.tsx",
+      "beforeSHA256": "26000cdde7fd877c93ed5ac5257d39699f3d36f2b5ee2111eaafe52c081eeb7f",
+      "afterSHA256": "d04db4ace09288daeccb845e7ed70573ef6a6a7297474b0491547c86bf10a19e"
+    }
+  ],
+  "checks": [
+    {
+      "check": "tests",
+      "command": [
+        "npm",
+        "test",
+        "--",
+        "--run",
+        "components/player-cards/PlayerAnalysisStudio.test.tsx",
+        "lib/player-cards/sharedGoalieOutlook.test.ts"
+      ],
+      "exitCode": 0,
+      "log": "audit-fixes-tests-20261101.log"
+    },
+    {
+      "check": "types",
+      "command": [
+        "/usr/local/bin/node",
+        "node_modules/typescript/bin/tsc",
+        "--noEmit",
+        "--project",
+        "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-evolution-2026-10-31/tsconfig.json"
+      ],
+      "exitCode": 0,
+      "log": "audit-fixes-types-20261101.log"
+    },
+    {
+      "check": "lint",
+      "command": [
+        "/usr/local/bin/node",
+        "node_modules/eslint/bin/eslint.js",
+        "components/player-cards/PlayerAnalysisCard.tsx",
+        "components/player-cards/PlayerAnalysisStudio.test.tsx",
+        "lib/player-cards/analysisExport.ts"
+      ],
+      "exitCode": 0,
+      "log": "audit-fixes-lint-20261101.log"
+    },
+    {
+      "check": "preview",
+      "command": [
+        "/usr/local/bin/node",
+        "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-evolution-2026-10-31/render-preview.mjs"
+      ],
+      "exitCode": 0,
+      "log": "audit-fixes-preview-20261101.log"
+    }
+  ],
+  "testCount": 19,
+  "browserReceipt": "AUDIT-FIXES-BROWSER-20261101.json",
+  "browserSummary": {
+    "exact321CharacterURL": "Rejected; placeholder right724.15625<=1160, no PNG download",
+    "wide120WToken": "Rejected by rendered width1925.453125>1120 although no truncation marker",
+    "normalWarnings": "Accepted; width868.265625;1200x1020 actualPNG",
+    "wrapped120W": "Accepted on two lines; width962.734375;1200x1020 actualPNG",
+    "retainedResearch": "Kucherov and Sasson evidencePNG downloads passed",
+    "mobile": 320,
+    "HTTPRequests": 0,
+    "pageErrors": 0,
+    "fullWarningManifestEquality": true
+  },
+  "visualInspection": [
+    "audit-fix-wrapped-wide-20261101.png",
+    "audit-fix-long-token-blocked-20261101.png"
+  ],
+  "reviewStatus": "Locally fixed and verified; independent re-review pending. This receipt does not self-close the external audit.",
+  "reReviewReproduction": {
+    "testsFromWeb": "npm test -- --run components/player-cards/PlayerAnalysisStudio.test.tsx lib/player-cards/sharedGoalieOutlook.test.ts",
+    "offlineBrowser": "browser-audit-fixes-20261101.mjs uses compiled audit-fixes-repro-20261101.html and preview.html, blocks all HTTP and downloads only local files. Acquire shared heavy slot and use approved local browser authority.",
+    "sourceDelta": "audit-fixes-20261101.patch",
+    "currentSourcePins": "SOURCE-PINS.json",
+    "limitations": "No new full-project test/build, assistive-technology session, deployed verification or observed-source admission. Browser-backed getBBox replaces unmeasured export acceptance; jsdom-only exports without a geometry stub now correctly refuse."
+  },
+  "releaseReconciliation": "PR402-RECONCILIATION-20261101.json: confirmed merge f17bea20d; current octoberBranch descends, localmasterrefstale;16ownedcandidatepaths not released; no scopeddependency/custodychange.",
+  "costControl": "Both fixes batched into one local candidate; no commit/push/hosted build/deployment. Coordinate a deliberate release only after custody/source/acceptance gates.",
+  "operations": {
+    "newProviderOrDatabaseRequests": 0,
+    "newCollections": 0,
+    "credentialActions": 0,
+    "productionRequests": 0,
+    "deployments": 0,
+    "pushes": 0,
+    "githubMetadataReads": 1,
+    "deniedOrUncertainActions": 0
+  },
+  "remainingOriginalSubtasks": 12
+}

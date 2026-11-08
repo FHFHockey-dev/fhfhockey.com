@@ -1,0 +1,6 @@
+import { defineConfig } from "vitest/config";
+import react from "@vitejs/plugin-react";
+const M = "/private/tmp/c7-r43/at/web";
+export default defineConfig({ root: M, cacheDir: "/private/tmp/c7-r43/cache-head", plugins: [react()],
+  resolve: { alias: ["lib", "components", "hooks", "pages", "utils", "contexts", "styles", "public"].map(n => ({ find: new RegExp("^" + n + "/"), replacement: M + "/" + n + "/" })) },
+  test: { environment: "jsdom", setupFiles: [M + "/__tests__/vitest.setup.js"], dir: "/", include: ["/private/tmp/c7-r43/at/web/lib/projections/reserveProjections.test.ts", "/private/tmp/c7-r43/at/web/lib/projections/run-forge-projections.local-attempt.test.ts", "/private/tmp/c7-r43/at/web/lib/rosterScheduleData/forgeDailyBridge.test.ts", "/private/tmp/c7-r43/at/web/lib/rosterScheduleData/forgeReservePayload.test.ts", "/private/tmp/c7-r43/at/web/lib/projections/externalInputProof.test.ts", "/private/tmp/c7-r43/at/web/lib/projections/verifiedForgeReleases.test.ts", "/private/tmp/c7-r43/at/web/lib/game-predictions/featureBuilder.test.ts", "/private/tmp/c7-r43/at/web/lib/game-predictions/publicPredictions.test.ts", "/private/tmp/c7-r43/at/web/lib/game-predictions/workflow.test.ts", ], maxWorkers: 2, testTimeout: 120000 } });

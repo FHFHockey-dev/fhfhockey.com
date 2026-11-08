@@ -628,6 +628,45 @@ describe("source semantics", () => {
     expect(rows.find((r) => r.player_id === 2)?.assignment_status).toBe("observed");
     expect(rows.some((r) => r.unit_type === "scratch")).toBe(false);
   });
+  it.each([
+    { playerId: 8475786, playerName: "Zach Hyman", lastName: "Hyman", teamId: 22, condition: "concussion", opponent: "Vancouver" },
+    { playerId: 8481532, playerName: "Alex Turcotte", lastName: "Turcotte", teamId: 26, condition: "undisclosed", opponent: "Pittsburgh" },
+  ])("deduplicates $playerName injury assignments without losing claims, including an exact retry", async (player) => {
+    vi.stubEnv("TWEET_PIPELINE_INTERPRETATION_ENABLED", "true");
+    vi.stubEnv("TWEET_PIPELINE_PUBLISHING_ENABLED", "true");
+    const text = `${player.playerName}: Injury: ${player.lastName} (${player.condition}) is expected to return vs. ${player.opponent} on Saturday.`;
+    const events = extractTweetPlayerEvents({ text, publishedAt: goalieRow.tweet_posted_at, players: [{
+      playerId: player.playerId, fullName: player.playerName, lastName: player.lastName, position: "C", teamId: player.teamId,
+    }] });
+    expect(events.map((event) => event.availability)).toEqual(["unknown", "uncertain"]);
+    const interpretation = { version: "test", context: "game", certainty: "projected", units: [], unresolved: [], events };
+    const claimsBefore = JSON.stringify(interpretation);
+    const row = { ...goalieRow, classification: "injury", team_id: player.teamId, raw_text: text,
+      metadata: { interpretation } } as ForecastLineSourceRow;
+    const assignment = { player_id: player.playerId, raw_player_name: player.playerName, unit_type: "injury",
+      unit_number: null, slot_number: 1, assignment_status: "observed" };
+    expect(assignmentsFor(row)).toEqual([assignment]);
+    let captures = 0;
+    const rpc = vi.fn(async (name: string, args: any) => {
+      expect(name).toBe("capture_starter_board_lineup");
+      expect(args.p_assignments).toEqual([assignment]);
+      expect(args.p_snapshot.metadata.interpretation.events).toEqual(events);
+      captures += 1;
+      return { data: { insertedSnapshot: captures === 1, insertedAssignments: captures === 1 ? 1 : 0 }, error: null };
+    });
+    const supabase = { ...scheduleDb([], scopeQuery([]), []), rpc };
+    expect(await capturePlayerForecastSourceRows({ supabase, rows: [row] })).toMatchObject({ lineupSnapshots: 1, lineupAssignments: 1 });
+    expect(await capturePlayerForecastSourceRows({ supabase, rows: [row] })).toMatchObject({ lineupSnapshots: 0, lineupAssignments: 0 });
+    expect(rpc).toHaveBeenCalledTimes(2);
+    expect(rpc.mock.calls[1]).toEqual(rpc.mock.calls[0]);
+    expect(JSON.stringify(interpretation)).toBe(claimsBefore);
+  });
+  it("does not silently collapse conflicting injury assignment statuses", () => {
+    const events = ["unknown", "out"].map((availability) => ({ kind: "injury", playerId: 1, playerName: "Player", teamId: 10, availability }));
+    const row = { ...goalieRow, metadata: { interpretation: { context: "game", units: [], events } } };
+    expect(assignmentsFor(row).map((assignment) => assignment.assignment_status)).toEqual(["observed", "ruled_out"]);
+    expect(row.metadata.interpretation.events).toEqual(events);
+  });
   it("keeps explicit goalie language separate from model probabilities", () => {
     expect(goalieObservationStatus("Joseph Woll is confirmed to start tonight")).toBe("confirmed");
     expect(goalieObservationStatus("Woll is expected in goal")).toBe("projected");

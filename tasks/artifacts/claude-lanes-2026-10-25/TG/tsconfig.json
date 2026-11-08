@@ -1,0 +1,14 @@
+{
+  "extends": "../../../../web/tsconfig.json",
+  "include": [
+    "../../../../web/next-bootstrap.d.ts",
+    "../../../../web/lib/forge-testing-grounds/**/*.ts",
+    "../../../../web/lib/forge-testing-grounds/**/*.tsx",
+    "../../../../web/pages/forge/testing-grounds.tsx",
+    "../../../../web/pages/api/v1/forge/testing-grounds/**/*.ts"
+  ],
+  "exclude": [],
+  "compilerOptions": {
+    "incremental": false
+  }
+}

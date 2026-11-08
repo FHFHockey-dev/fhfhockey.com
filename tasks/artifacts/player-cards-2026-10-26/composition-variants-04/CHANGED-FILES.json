@@ -1,0 +1,14 @@
+[
+  {
+    "path": "web/components/player-cards/HeroPlayerCard.tsx",
+    "beforeSha256": "aec816cdf01282fe2865d1eab2ef4b4a69aa949a9956f75bedd7bc81acf7968d",
+    "afterSha256": "61b2eec28664e7702aae34a1c60ba270315cef350e9ded352939b2a8709d1b17",
+    "bytes": 7070
+  },
+  {
+    "path": "web/lib/player-cards/shareExport.test.ts",
+    "beforeSha256": "8d6873c6c16b8ae7f3d2fbb8241ffcaf8ea202775c32f05f6fef79d647686e47",
+    "afterSha256": "a6f31ab095ddc200e4ddb9fec2cdc507ccd6f534eaef7fcdbdd3b01a497229f7",
+    "bytes": 6437
+  }
+]

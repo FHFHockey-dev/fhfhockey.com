@@ -1,0 +1,394 @@
+{
+  "pass": true,
+  "pinsVerifiedAndUnchanged": 337,
+  "networkDenied": true,
+  "sourceImports": false,
+  "verifiedReceipts": 38,
+  "totalBodyBytes": 46313371,
+  "largestBodyBytes": 1382886,
+  "minimumDispatchSpacingSeconds": 2.000773,
+  "maximumTransportSeconds": 0.653056,
+  "firstDispatchUTC": "2026-11-01T21:05:21.428686+00:00",
+  "lastBodyCapturedUTC": "2026-11-01T21:06:35.870477+00:00",
+  "componentCellsSupported": 1674,
+  "originalNullsPreserved": 1680,
+  "byDate": {
+    "2026-10-27": 116,
+    "2026-10-28": 22,
+    "2026-10-29": 66,
+    "2026-10-30": 21,
+    "2026-10-31": 54
+  },
+  "tallies": {
+    "controlNonzeroCells": 1757,
+    "controlZeroCells": 4771,
+    "nativeNullCells": 1680,
+    "supportedRows": 279,
+    "goalCount": 244,
+    "goalieAbsentAtGoalSides": 24,
+    "delayedPenaltyEvents": 76,
+    "controlRows": 1088,
+    "previousPartialComponentsMatched": 174,
+    "shootoutGoalEventsExcluded": 3
+  },
+  "shootoutGames": [
+    2026020192,
+    2026020219
+  ],
+  "held": [
+    {
+      "sourceId": 5599858,
+      "playerId": 8475235,
+      "gameId": 2026020206,
+      "sourceTOI": 445,
+      "officialTOI": 444
+    }
+  ],
+  "weakWitnessGames": 11,
+  "CSVMatchesJSON": true,
+  "GameScoresComputed": 0,
+  "sourceRepairs": 0,
+  "games": [
+    {
+      "gameId": 2026020188,
+      "eventCount": 286,
+      "controlRows": 28,
+      "targetRows": 8,
+      "goalCount": 7,
+      "goalieAbsentAtGoalSides": 1,
+      "delayedPenaltyEvents": 3
+    },
+    {
+      "gameId": 2026020189,
+      "eventCount": 307,
+      "controlRows": 24,
+      "targetRows": 12,
+      "delayedPenaltyEvents": 4,
+      "goalCount": 3,
+      "goalieAbsentAtGoalSides": 0
+    },
+    {
+      "gameId": 2026020190,
+      "eventCount": 330,
+      "controlRows": 23,
+      "targetRows": 13,
+      "goalCount": 3,
+      "goalieAbsentAtGoalSides": 0,
+      "delayedPenaltyEvents": 2
+    },
+    {
+      "gameId": 2026020191,
+      "eventCount": 358,
+      "controlRows": 18,
+      "targetRows": 18,
+      "delayedPenaltyEvents": 3,
+      "goalCount": 2,
+      "goalieAbsentAtGoalSides": 0
+    },
+    {
+      "gameId": 2026020192,
+      "eventCount": 332,
+      "controlRows": 27,
+      "targetRows": 9,
+      "delayedPenaltyEvents": 5,
+      "goalCount": 6,
+      "goalieAbsentAtGoalSides": 0,
+      "shootoutGoalEventsExcluded": 2
+    },
+    {
+      "gameId": 2026020193,
+      "eventCount": 301,
+      "controlRows": 32,
+      "targetRows": 4,
+      "goalCount": 6,
+      "goalieAbsentAtGoalSides": 0,
+      "delayedPenaltyEvents": 1
+    },
+    {
+      "gameId": 2026020194,
+      "eventCount": 315,
+      "controlRows": 23,
+      "targetRows": 13,
+      "goalCount": 6,
+      "goalieAbsentAtGoalSides": 0
+    },
+    {
+      "gameId": 2026020195,
+      "eventCount": 353,
+      "controlRows": 23,
+      "targetRows": 13,
+      "delayedPenaltyEvents": 1,
+      "goalCount": 4,
+      "goalieAbsentAtGoalSides": 1
+    },
+    {
+      "gameId": 2026020196,
+      "eventCount": 315,
+      "controlRows": 30,
+      "targetRows": 6,
+      "delayedPenaltyEvents": 1,
+      "goalCount": 5,
+      "goalieAbsentAtGoalSides": 2
+    },
+    {
+      "gameId": 2026020197,
+      "eventCount": 316,
+      "controlRows": 35,
+      "targetRows": 1,
+      "goalCount": 11,
+      "goalieAbsentAtGoalSides": 2,
+      "delayedPenaltyEvents": 2
+    },
+    {
+      "gameId": 2026020198,
+      "eventCount": 346,
+      "controlRows": 17,
+      "targetRows": 19,
+      "goalCount": 2,
+      "goalieAbsentAtGoalSides": 1,
+      "delayedPenaltyEvents": 1
+    },
+    {
+      "gameId": 2026020199,
+      "eventCount": 330,
+      "controlRows": 30,
+      "targetRows": 6,
+      "goalCount": 7,
+      "goalieAbsentAtGoalSides": 1,
+      "delayedPenaltyEvents": 1
+    },
+    {
+      "gameId": 2026020200,
+      "eventCount": 312,
+      "controlRows": 25,
+      "targetRows": 11,
+      "goalCount": 4,
+      "goalieAbsentAtGoalSides": 0
+    },
+    {
+      "gameId": 2026020201,
+      "eventCount": 334,
+      "controlRows": 35,
+      "targetRows": 1,
+      "delayedPenaltyEvents": 3,
+      "goalCount": 7,
+      "goalieAbsentAtGoalSides": 0
+    },
+    {
+      "gameId": 2026020202,
+      "eventCount": 305,
+      "controlRows": 32,
+      "targetRows": 4,
+      "goalCount": 9,
+      "goalieAbsentAtGoalSides": 1,
+      "delayedPenaltyEvents": 3
+    },
+    {
+      "gameId": 2026020203,
+      "eventCount": 298,
+      "controlRows": 26,
+      "targetRows": 10,
+      "goalCount": 5,
+      "goalieAbsentAtGoalSides": 1,
+      "delayedPenaltyEvents": 3
+    },
+    {
+      "gameId": 2026020204,
+      "eventCount": 323,
+      "controlRows": 33,
+      "targetRows": 3,
+      "goalCount": 10,
+      "goalieAbsentAtGoalSides": 2,
+      "delayedPenaltyEvents": 1
+    },
+    {
+      "gameId": 2026020205,
+      "eventCount": 324,
+      "controlRows": 28,
+      "targetRows": 8,
+      "delayedPenaltyEvents": 2,
+      "goalCount": 7,
+      "goalieAbsentAtGoalSides": 1
+    },
+    {
+      "gameId": 2026020206,
+      "eventCount": 341,
+      "controlRows": 26,
+      "targetRows": 10,
+      "delayedPenaltyEvents": 2,
+      "goalCount": 5,
+      "goalieAbsentAtGoalSides": 0
+    },
+    {
+      "gameId": 2026020207,
+      "eventCount": 323,
+      "controlRows": 28,
+      "targetRows": 8,
+      "goalCount": 5,
+      "goalieAbsentAtGoalSides": 0,
+      "delayedPenaltyEvents": 1
+    },
+    {
+      "gameId": 2026020208,
+      "eventCount": 307,
+      "controlRows": 31,
+      "targetRows": 5,
+      "delayedPenaltyEvents": 3,
+      "goalCount": 7,
+      "goalieAbsentAtGoalSides": 0
+    },
+    {
+      "gameId": 2026020209,
+      "eventCount": 272,
+      "controlRows": 33,
+      "targetRows": 3,
+      "goalCount": 7,
+      "goalieAbsentAtGoalSides": 1,
+      "delayedPenaltyEvents": 1
+    },
+    {
+      "gameId": 2026020210,
+      "eventCount": 344,
+      "controlRows": 32,
+      "targetRows": 4,
+      "goalCount": 7,
+      "goalieAbsentAtGoalSides": 0,
+      "delayedPenaltyEvents": 1
+    },
+    {
+      "gameId": 2026020211,
+      "eventCount": 345,
+      "controlRows": 35,
+      "targetRows": 1,
+      "delayedPenaltyEvents": 4,
+      "goalCount": 13,
+      "goalieAbsentAtGoalSides": 2
+    },
+    {
+      "gameId": 2026020212,
+      "eventCount": 340,
+      "controlRows": 30,
+      "targetRows": 6,
+      "goalCount": 11,
+      "goalieAbsentAtGoalSides": 1,
+      "delayedPenaltyEvents": 1
+    },
+    {
+      "gameId": 2026020213,
+      "eventCount": 284,
+      "controlRows": 27,
+      "targetRows": 9,
+      "delayedPenaltyEvents": 5,
+      "goalCount": 5,
+      "goalieAbsentAtGoalSides": 0
+    },
+    {
+      "gameId": 2026020214,
+      "eventCount": 300,
+      "controlRows": 30,
+      "targetRows": 6,
+      "goalCount": 7,
+      "goalieAbsentAtGoalSides": 1,
+      "delayedPenaltyEvents": 1
+    },
+    {
+      "gameId": 2026020215,
+      "eventCount": 329,
+      "controlRows": 28,
+      "targetRows": 8,
+      "delayedPenaltyEvents": 3,
+      "goalCount": 7,
+      "goalieAbsentAtGoalSides": 1
+    },
+    {
+      "gameId": 2026020216,
+      "eventCount": 313,
+      "controlRows": 29,
+      "targetRows": 7,
+      "goalCount": 8,
+      "goalieAbsentAtGoalSides": 0,
+      "delayedPenaltyEvents": 1
+    },
+    {
+      "gameId": 2026020217,
+      "eventCount": 346,
+      "controlRows": 35,
+      "targetRows": 1,
+      "delayedPenaltyEvents": 1,
+      "goalCount": 9,
+      "goalieAbsentAtGoalSides": 1
+    },
+    {
+      "gameId": 2026020218,
+      "eventCount": 305,
+      "controlRows": 35,
+      "targetRows": 1,
+      "goalCount": 9,
+      "goalieAbsentAtGoalSides": 0,
+      "delayedPenaltyEvents": 2
+    },
+    {
+      "gameId": 2026020219,
+      "eventCount": 311,
+      "controlRows": 34,
+      "targetRows": 2,
+      "delayedPenaltyEvents": 2,
+      "goalCount": 8,
+      "goalieAbsentAtGoalSides": 0,
+      "shootoutGoalEventsExcluded": 1
+    },
+    {
+      "gameId": 2026020220,
+      "eventCount": 274,
+      "controlRows": 26,
+      "targetRows": 10,
+      "delayedPenaltyEvents": 4,
+      "goalCount": 4,
+      "goalieAbsentAtGoalSides": 1
+    },
+    {
+      "gameId": 2026020221,
+      "eventCount": 333,
+      "controlRows": 25,
+      "targetRows": 11,
+      "delayedPenaltyEvents": 3,
+      "goalCount": 5,
+      "goalieAbsentAtGoalSides": 0
+    },
+    {
+      "gameId": 2026020222,
+      "eventCount": 334,
+      "controlRows": 33,
+      "targetRows": 3,
+      "goalCount": 6,
+      "goalieAbsentAtGoalSides": 1,
+      "delayedPenaltyEvents": 3
+    },
+    {
+      "gameId": 2026020224,
+      "eventCount": 309,
+      "controlRows": 29,
+      "targetRows": 7,
+      "goalCount": 6,
+      "goalieAbsentAtGoalSides": 1
+    },
+    {
+      "gameId": 2026020225,
+      "eventCount": 286,
+      "controlRows": 21,
+      "targetRows": 15,
+      "goalCount": 4,
+      "goalieAbsentAtGoalSides": 1,
+      "delayedPenaltyEvents": 1
+    },
+    {
+      "gameId": 2026020226,
+      "eventCount": 289,
+      "controlRows": 32,
+      "targetRows": 4,
+      "goalCount": 7,
+      "goalieAbsentAtGoalSides": 0,
+      "delayedPenaltyEvents": 1
+    }
+  ]
+}

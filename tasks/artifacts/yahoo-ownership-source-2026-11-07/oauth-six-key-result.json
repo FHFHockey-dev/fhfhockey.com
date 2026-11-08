@@ -1,0 +1,11 @@
+{
+  "checkedAt": "2026-11-07T20:02:54.305Z",
+  "readOnly": true,
+  "tokenRefreshAllowed": false,
+  "databaseWrites": 0,
+  "yahooRequests": 1,
+  "status": "stopped_yahoo_authorization_rejected",
+  "httpStatus": 401,
+  "tokenExpiryPresent": false,
+  "authorizationFailureReason": "unknown; HTTP 401 alone does not distinguish expired, revoked, or invalid tokens"
+}

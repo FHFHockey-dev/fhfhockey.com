@@ -1,0 +1,14 @@
+{
+  "atUtc": "2026-11-01T18:14:03.991619+00:00",
+  "liveAndFrozenPins": 67,
+  "originalFrozenPinsIntact": 67,
+  "reviewFixes": 11,
+  "manifestSha256": "cec0829dcd184e411aa508a300ea477085d8fecd946100d6ddc339c8c4ccacb3",
+  "reviewPromptSha256": "477fec6ab5313a80fb86b82edf720d0ac279c7ccb06fa8ca57e2e35e5ec6a575",
+  "mailboxPrefixVerified": true,
+  "mailboxLine": 2694,
+  "sqlExactVerified": true,
+  "ownedPgStopped": true,
+  "ownedHeavyLockReleased": true,
+  "unrelatedHeavyLockPresent": false
+}

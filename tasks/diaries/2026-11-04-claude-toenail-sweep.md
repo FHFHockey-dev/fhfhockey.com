@@ -1,0 +1,107 @@
+# Toenail sweep → fixes → skill passes (2026-11-04, Claude)
+
+- Scope: (1) report-only toenail sweep (done: `tasks/artifacts/toenail-sweep-2026-11-04.md`); (2) TJ's loop: fix every toenail one change at a time with before/after + pop-up, then one skill per pass (design-critique → design-system → accessibility-review [retry Axe MCP] → ux-copy → unslop → frontend-design → dataviz) over each toenail page, then a combined sweep. High-priority changes go through the loop; medium/low go to `tasks/artifacts/Toenail-Audit-Visual-Enhancements.md`. Game Grid / PlayerPickupTable excluded (audit session owns them).
+- Where: octoberBranch, canonical checkout, all uncommitted. Tools in session scratchpad: `ba/ba.cjs` (before/after shots, SETUP/SYNTH staging, MAXH), `ba/pure.cjs` (CSS-modules pure check), `sweep/sweep.cjs` (PAGES env).
+- Toenail pass DONE, every fix approved by TJ:
+  - Stats.module.scss: quick-stat cards + gold goaltending accent; active filter pill 6px white stripe; mobile leaderboard card; rank rows 4px; desktop leader rows 4px + nth-of-type colour realign.
+  - UnderlyingStatsDashboard.module.scss: .powerLeader.itemActive ::before stripe.
+  - RSO: StreamingItinerary .itinerary, .confirmGate, .notice, .toastSlot, HealthyReserveAlert .alert.
+  - YahooLiveDraftPanel .infoNotice; DraftSettings dead .pointsInput deleted.
+  - MobileMenu links 4px.
+  - PlayerStats %card-base/.streak, PlayerPageShell .metric (6px radius).
+  - GameByGameTimeline: ::before result bar (miter fix) + OT/SO tag + test.
+  - TeamDashboard .goaltendingCard single 4px rail.
+  - BlshTrade .evidence/.retrospective 6px ::before bar + "1 day" in fixtureEvidence.ts.
+  - Post.module.scss dead blockquote deleted.
+  - TeamScheduleCalendar: false positive, reverted.
+- Checks: pure check OK on every edited module; GameByGameTimeline tests 2/2; blshTrade tests 9/9; typecheck exit 2, all errors in another lane's untracked currentProcessEvidence.server*.ts.
+- Decisions: TJ left 1px miters on fixes 1, 3, 7-10; use the ::before bar where the side borders are ≥2px or dashed.
+- Gotchas: border-left miters against a non-zero top border (looks like a bevel). Dead CSS: .pointsInput, .postPage tree. displayProfile.ts has uncommitted BLSH-lane work; its "N days" plural copy is logged, not edited.
+- Re-sweep after the toenail pass: 44 loads, 0 errors, only the MyRoster false positives. Axe MCP retry still fails (connection closed); retry at the accessibility pass.
+- design-critique pass, /stats DONE (all approved):
+  - Key Metrics auto-fit grid.
+  - GoalieShareChart: one CSS grid, GP chip, xs names at 0 tracking, legend below the donut, black → grey, navy tint (blue-led only), mobile single column.
+  - Mobile team grid starts collapsed as a strip (scroll morph removed; test rewritten).
+  - Mobile leaderboard header stacked and centred.
+  - PlayerSearchBar dark field (shared component).
+  - /stats search gap trimmed.
+- design-critique, /underlying-stats DONE (all approved):
+  - Schedule chips capped at 2 (tooltip has the full list), 0.66rem, stacked.
+  - Advanced table fits 1440 (desktop block in indexUS.module.scss).
+  - Table "i" icons hidden (the value opens the popover).
+  - Numeric columns centred; column-group bands.
+  - Phones default to Simple mode (matchMedia guarded); phone grid rows carry the note line; row-level backgrounds.
+  - Team column centred; note's first word coloured by sentence tone.
+- design-critique, RSO: empty-roster CTA (.emptyRoster) approved. Labels: inner view "Itinerary" → "Streaming"; mobile tab, heading and region "Itinerary" → "Week" (22 e2e refs updated). RSO e2e run in progress (isolated :3100).
+- RSO e2e investigation (TJ asked): the 7 failures were stale expectations from Oct 29 commits c3cf52629 (second Confirm button; 30-min upkeep) and 7499af689 (band label $on-accent). Updated the spec: 5 Confirm locators scoped to Roster and setup; 30-min fast-forward; label colour rgb(16,18,20). This exposed a real 1080p overflow (20 slots): an open "Date controls" pushed the info icon onto its own row. Fix: .scheduleControlDisclosure[open] { order: 1 }. Week label refs also updated in the fixtures helper, rso-continuity and rso-acceptance; 6b locator .first() (CTA duplicates the summary text).
+- Concurrent lane: the Codex RSO audit (tasks/diaries/2026-11-04-codex-rso-audit.md) owns lib/rosterScheduleOptimizer/*, HealthyReserveAlert.tsx/test and an e2e assertion; uncommitted. No overlap with my hunks.
+- RSO e2e set green: 63/63 (main 44, continuity, acceptance); TJ approved.
+- design-critique, Draft Dashboard DONE (approved): SuggestedPicks stats 3/row; phone toolbar wraps + "Mock draft" short label (aria-label keeps "Practice / Mock Draft"); phone players table shows 7 columns (container ≤480, header .col* plus body class names). The modal "not full height" finding was a capture artifact and was dropped.
+- design-critique: mobile menu has no high items (3 logged). Player page: named neutral note for unranked stats (PlayerRadarChart .comparisonGap), approved.
+- design-critique, team page (approved):
+  - Columns fit 1440 (flexible sidebars, minmax grids).
+  - Leader lists packed, plus a PP Points Leaders list (test counts 3→4).
+  - Phone header band stripes pinned to 18px.
+  - Tabs: snap-scroll + fade; active tab scrolled into view.
+  - Contrast-safe active/inactive tab colours (readableOnBar, reusing teamNeon contrast()).
+- TJ detour, unslop deep pass on the Roster Matrix (approved):
+  - Integer counts; .902 SV%.
+  - Quiet "{team} roster" header.
+  - 0-GP players folded ("Show N yet to play").
+  - Single-hue sorted-column heat (old thresholds removed); one-line caption.
+  - Flat toolbar with a Basic|Advanced toggle; content-sized phone columns.
+- design-critique pass COMPLETE (approved):
+  - Team ranking tiles 6/3 columns (fixed the phone overlap I'd introduced).
+  - Workflow links wrapped at 90% width.
+  - BLSH trade: net value leads, tinted; plain-English verdict.
+- Checkpoint: typecheck exit 0; vitest across touched areas 82 files / 1072 tests pass. RSO e2e 63/63 earlier.
+- Checkpoint commit b4cf80631 (local, 47 files, only this session's hunks; the Codex IR-alert hunk in the RSO spec was left unstaged).
+- design-system pass COMPLETE (approved), uncommitted after b4cf80631:
+  - Team timeline + L10 metrics semantic colours → tokens (custom properties need #{}; I caught a broken result bar).
+  - RosterMatrix fully tokenised; flat $surface-1 container.
+  - TeamTabNavigation + TeamStatsPage exact-match literals → tokens.
+  - MobileMenu private ramp → $color-neutral-* (27 of 28; #ff9c9c left).
+- accessibility-review pass (pass 3) — the Axe MCP stayed CONNECTION_CLOSED, so I injected local axe-core 4.11 via Playwright (scratchpad axe/axe.cjs; focus.cjs does the Tab sweep). All 9 fixes approved:
+  - (1) RosterMatrix Position select label/id.
+  - (2) /stats team grid `div role=list` → `nav aria-label="Teams"`.
+  - (3) RSO Bench days aria-controls only while open.
+  - (4) New token `$text-on-primary` (#101214, 6.4:1) on brand-blue fills: Stats filters/tabs/PTS chip, team toggle, RSO empty CTA. Goalie pills now outlined, active filled.
+  - (5) Chart canvas aria-labels: Goalie donuts, plus the radar with spoken stat names and ordinals.
+  - (6) Player streak calendar: per-cell ink via contrast().
+  - (7) Team header quick-stat value 70% → 40% team mix (all 32 teams ≥4.48).
+  - (8) Draft OFF-rank bottom quartile flat #f05252; pickLabel lightened.
+  - (9) RSO team band ink: first team colour ≥4.5:1 (10 teams changed; test updated).
+- Checks: typecheck exit 0; vitest 60 files / 909 tests pass. RSO e2e not rerun; the bench-days locator is unaffected.
+- Gotchas: axe misreads backgrounds on the RSO slot bands and team bands (painted by style/inset). The focus sweep found only the roster select, which has a 1px border cue (logged Low).
+- Medium/low logged to Toenail-Audit-Visual-Enhancements.md: landmarks, h1, heading order, Goalie pills aria-pressed, underlying 3.98 badge, article role.
+- Pass 3 closed (TJ approved). Final scan: 0 critical; serious = underlying badge 3.98 (logged) + 2 RSO false positives.
+- Checkpoint commit 1fe279d3a (local, 23 files, passes 2+3; no push).
+- Pass 4 ux-copy (all approved, uncommitted after 1fe279d3a):
+  - Team workflow description (no "legacy team route").
+  - Radar caption "vs centers"/"vs all skaters" plus the named ⓘ button (radar tests now use the role name).
+  - /stats "Filter by position" (pills now fit on one row).
+  - Draft standings tooltips "Sort by …".
+  - Medium/low items logged.
+- Typecheck now fails only in another lane's untracked lib/sources/lunaHosted/capture.ts; my files are clean.
+- Pass 5 unslop (polish mode; direction: exact, quick, rink-side; arena boards; keep the outlined caps display headings for titles only):
+  - /stats leader names in normal case, 16/500, primary white (TJ edit).
+  - Team stat value glows removed.
+  - Goalie role badges as tinted labels (Reserve replaces R), goalie names plain (TJ edit).
+  - Draft ticker kept (deliberate). Low items logged.
+- Checkpoint commit a2b72850c (passes 4+5, local).
+- Pass 6 frontend-design (all approved, uncommitted):
+  - /stats page header (h1 at the top, search folded in on desktop; phones keep the sticky search).
+  - Lineup Deployment labelled depth chart (also on the Starter Board).
+  - Season heatmap: month-label bug fix plus fluid cells (container query on .contributionGraph; cells size from the week column; 12/16px overrides removed).
+- Gotcha: the day-label class also matches [class*=contributionDay]; probe with [class*=weekColumn] [class*=contributionDay].
+- Checkpoint commit 42edeb100 (pass 6, local).
+- Pass 7 dataviz (approved, uncommitted):
+  - /stats leader bars recoloured with validated PART_COLORS #1590c4/#c98500/#9085e9 (no status red), labels dark solid condensed.
+  - Player heat scale diverging: warm #8a3b2b/#c2502f/#ef7a5a, grey #4b4f55, blue #184f95/#256abf/#5598e7 ($perf-* tokens + TSX map); legend generated.
+  - Validator: dataviz/scripts/validate_palette.js --mode dark --surface #1a1d21 (--ordinal for arms).
+- Typecheck noise from other lanes: lunaHosted/capture.ts, lib/buyLowSellHigh/__fixtures__/syntheticProfiles.ts.
+- Final combined sweep:
+  - Full axe (16 runs), focus sweep, and mobile/desktop full pages.
+  - Fixed my /stats <header> duplicate-banner regression (now a div) and the underlying negative badge ink (4.8:1).
+  - Remaining: logged Medium landmarks/headings; RSO band false positives; Roster select 1px focus cue (Low).
+- Loop COMPLETE: toenails, 7 passes and the final sweep, all approved by TJ. Medium/low backlog lives in tasks/artifacts/Toenail-Audit-Visual-Enhancements.md.

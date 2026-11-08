@@ -1,0 +1,11 @@
+--- a/web/e2e/roster-schedule-optimizer.spec.ts
++++ b/web/e2e/roster-schedule-optimizer.spec.ts
+@@ -797,7 +797,7 @@
+     await readiness.locator(":scope > summary").focus();
+     await page.keyboard.press("Enter");
+     await page.getByRole("button", { name: "Review rules", exact: true }).click();
+-    await page.getByRole("button", { name: "Confirm planning inputs", exact: true }).focus();
++    await page.getByRole("region", { name: "Roster and setup" }).getByRole("button", { name: "Confirm planning inputs", exact: true }).focus();
+     await page.keyboard.press("Space");
+     await openDisclosure(page, /^League rules and scoring$/);
+     await expect(page.getByText("Inputs reviewed for this session. Unknown values still need verification.", { exact: false })).toBeVisible();

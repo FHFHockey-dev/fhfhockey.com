@@ -1,0 +1,15 @@
+{
+  "check": "types",
+  "command": [
+    "/Users/tim/Code/fhfhockey.com/web/node_modules/.bin/tsc",
+    "--noEmit",
+    "--project",
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/forge-v2-concurrency-2026-10-30/tsconfig.json"
+  ],
+  "exit": 0,
+  "durationSeconds": 1.4126648902893066,
+  "log": "types.txt",
+  "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "syntheticOnly": true,
+  "remoteActions": 0
+}

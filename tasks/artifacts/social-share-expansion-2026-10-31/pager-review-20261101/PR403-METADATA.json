@@ -1,0 +1,73 @@
+{
+  "checkedAt": "2026-11-01T20:11:10.236Z",
+  "pr": {
+    "url": "https://github.com/FHFHockey-dev/fhfhockey.com/pull/403",
+    "number": 403,
+    "state": "closed",
+    "merged": true,
+    "mergeable": false,
+    "draft": false,
+    "body": "Ships the code at `octoberBranch` `cc263466a`, as TJ approved. Social Share files only; no migration needed.\n\n**Includes**\n- Shared matchup pager and custom date range on 13 posts, from `yahoo_matchup_weeks`, including next-week Off-Night Edge\n- Past-slate chooser on Last Nights Standouts\n- Goalie of the Period: dynamic titles, Season to Date and custom range, TGV grade section removed, average ADP added\n\n**Verification on this exact tree**\n- Unit: 15,715 passed, 61 skipped\n- Type-check and lint: no errors\n- Production build: passed\n- Social Share browser suite: 134 passed, 1 skipped\n- Real-data renders at chosen dates; Codex review: 0 blockers, 0 high, its 1 medium fixed\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n",
+    "title": "Release: matchup pager, custom ranges and Goalie of the Period updates",
+    "base": "master",
+    "base_sha": "f17bea20d8caa2b6268c318bdb2152d7e2a3b57d",
+    "head": "chef/release-period-control-2026-11-01",
+    "head_sha": "a138dc69105fffbfca288e6a7aae4864d7359a06",
+    "head_repo_id": 510950230,
+    "head_repo_full_name": "FHFHockey-dev/fhfhockey.com",
+    "merge_commit_sha": "295b384da47f2a4665a76d841d3d1aa701912d8c",
+    "user": {
+      "login": "TjsUsername",
+      "name": "TjsUsername",
+      "email": null,
+      "avatar_url": "https://avatars.githubusercontent.com/u/52942235?v=4",
+      "id": 52942235
+    },
+    "requested_reviewers": null,
+    "requested_team_reviewers": null,
+    "diff": null,
+    "comments": null,
+    "created_at": "2026-11-01T20:06:42Z",
+    "updated_at": "2026-11-01T20:08:02Z",
+    "closed_at": "2026-11-01T20:08:02Z",
+    "merged_at": "2026-11-01T20:08:01Z",
+    "commits": 1,
+    "changed_files": 82,
+    "additions": 3357,
+    "deletions": 475,
+    "display_url": "https://github.com/FHFHockey-dev/fhfhockey.com/pull/403",
+    "display_title": "Release: matchup pager, custom ranges and Goalie of the Period updates"
+  },
+  "mergedFiles": [
+    {
+      "path": "web/lib/socialShare/modules/lastNightsStandouts.sources.ts",
+      "gitBlob": "309d4515d9d067b4beef9c93bcf0b15ec88aa229",
+      "url": "https://github.com/FHFHockey-dev/fhfhockey.com/blob/295b384da47f2a4665a76d841d3d1aa701912d8c/web/lib/socialShare/modules/lastNightsStandouts.sources.ts",
+      "length": 9832
+    },
+    {
+      "path": "web/lib/socialShare/modules/lastNightsStandouts.ts",
+      "gitBlob": "8b5e10ea402f5db65561109ee50e25bf31ad5dfd",
+      "url": "https://github.com/FHFHockey-dev/fhfhockey.com/blob/295b384da47f2a4665a76d841d3d1aa701912d8c/web/lib/socialShare/modules/lastNightsStandouts.ts",
+      "length": 38618
+    },
+    {
+      "path": "web/components/SocialShare/PeriodControl.tsx",
+      "gitBlob": "748e212dcba70fc8ff4afca3432d2849ad5b12ac",
+      "url": "https://github.com/FHFHockey-dev/fhfhockey.com/blob/295b384da47f2a4665a76d841d3d1aa701912d8c/web/components/SocialShare/PeriodControl.tsx",
+      "length": 4830
+    },
+    {
+      "path": "web/components/SocialShare/PostStudio.tsx",
+      "gitBlob": "19a1682b7c40a8988dda76a09190974efd522a76",
+      "url": "https://github.com/FHFHockey-dev/fhfhockey.com/blob/295b384da47f2a4665a76d841d3d1aa701912d8c/web/components/SocialShare/PostStudio.tsx",
+      "length": 18710
+    },
+    {
+      "path": "web/lib/socialShare/modules/shared/periodWindow.ts",
+      "gitBlob": "f5ecfe6f08fc51fdab40a356f8e91b7efab1c817",
+      "url": "https://github.com/FHFHockey-dev/fhfhockey.com/blob/295b384da47f2a4665a76d841d3d1aa701912d8c/web/lib/socialShare/modules/shared/periodWindow.ts",
+      "length": 8348
+    }
+  ]
+}

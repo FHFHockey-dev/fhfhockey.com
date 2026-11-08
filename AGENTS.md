@@ -51,7 +51,7 @@ Run JavaScript application commands in the owning directory; there is no root pa
 
 ### Web app (`web/`)
 
-- Install reproducibly: `npm ci` (npm and `web/package-lock.json` are the sole package-manager authority; CI and local use Node 22.11.0 from `.nvmrc`).
+- Install reproducibly: `npm ci` (npm and `web/package-lock.json` are the sole package-manager authority; CI and local use Node 22.23.4 from `.nvmrc`).
 - Develop: `npm run dev`; use `npm run dev:stable` if file watching reports `EMFILE` or generated `.next` files disappear.
 - Local production build (exception only): `npm run build`; use it only under the criteria in Verification and Testing.
 - Lint: `npm run lint`.

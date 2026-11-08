@@ -1,0 +1,24 @@
+{
+  "checks": [
+    "Explicit synthetic fixture; no automatic HTTP request; ready sample and actual ratios distinct from unverified population ranks",
+    "Two functional stat suites from identical snapshot; real PNGs1200x1020/manifest/share-fallback parity; desktop and390px phone without overflow",
+    "Category changes discard prepared image; window changes invalidate old snapshot/export; explicit reload restores matching selected window",
+    "Incomplete history produces unknown GP/missing values and disables PNG, without replacing data with zeros"
+  ],
+  "exports": [
+    {
+      "format": "rates-opportunity",
+      "sha256": "6348014136efae7c071cb183e07bb2d5a0d121e419b8c8d6a8b44db92a2bf4c4",
+      "shareBytesMatch": true
+    },
+    {
+      "format": "results-milestones",
+      "sha256": "1a43e3baef5fe986557d450704db16218a5b1bb5eb0efad2e74de340cbd5202d",
+      "shareBytesMatch": true
+    }
+  ],
+  "externalAttempts": [],
+  "pageErrors": [],
+  "liveDataQualified": false,
+  "fixture": "synthetic-contract-fixture.json"
+}

@@ -1,3 +1,4 @@
+import { cronAuditFailureResponse } from "lib/cron/manualCronAudit";
 import type { NextApiRequest, NextApiResponse } from "next";
 import {
   buildCronJobTiming,
@@ -259,13 +260,16 @@ export function withCronJobAudit(
   handler: (req: any, res: any) => any,
   opts?: {
     jobName?: string;
+    // Opt into a required persistence acknowledgement. An unconfirmed audit
+    // returns 503 with a no-retry receipt; ordinary routes keep their outcome.
     includeFinalAuditReceipt?: boolean;
     recordRowMetrics?: boolean;
     // Limit persisted response data to safe primitive summary fields. The API
     // response and outcome inference still use the complete handler result.
     responsePreviewKeys?: readonly string[];
-    // Empty successful queue polls add no useful execution evidence.
-    // Work, failures, continuations and explicit final receipts remain audited.
+    // Return true for a clean run that did no work (for example an empty
+    // queue poll). That run writes no audit row. Failures, continuations,
+    // non-2xx responses and runs that did work are always audited.
     skipAuditWhenNoOp?: (body: unknown) => boolean;
   }
 ): (req: any, res: any) => Promise<void> {
@@ -362,7 +366,8 @@ export function withCronJobAudit(
       }
     }
 
-    let finalAuditStatus: "persisted" | "failed" = "persisted";
+    let finalAuditStatus: "persisted" | "failed" | "unverified" = "unverified";
+    // A final-audit receipt promises a persisted row, so it never skips.
     const auditSkipped = thrown == null && !plannedContinuation && !inferredFailure &&
       statusCode >= 200 && statusCode < 300 && !opts?.includeFinalAuditReceipt &&
       opts?.skipAuditWhenNoOp?.(capturedBody) === true;
@@ -382,6 +387,7 @@ export function withCronJobAudit(
           : "success",
       rows_affected: rowsUpserted,
       details: {
+        invocationSource: req.headers?.["user-agent"] === "vercel-cron/1.0" ? "vercel-cron-claimed" : "unspecified",
         method: req.method ?? null,
         url: req.url ?? null,
         statusCode,
@@ -410,10 +416,24 @@ export function withCronJobAudit(
 
     try {
       if (!auditSkipped) try {
-        const { error: auditInsertError } = await supabase
-          .from("cron_job_audit")
-          .insert(row as any);
-        if (auditInsertError) {
+        const controller = new AbortController();
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        const query = supabase.from("cron_job_audit").insert(row as any);
+        const pending = typeof query?.abortSignal === "function" ? query.abortSignal(controller.signal) : query;
+        let acknowledgement: { error?: any };
+        try {
+          acknowledgement = await Promise.race([
+            Promise.resolve(pending),
+            new Promise<never>((_resolve, reject) => {
+              timer = setTimeout(() => { controller.abort(); reject(new Error("Audit acknowledgement timed out; persistence outcome unverified")); }, 5000);
+            }),
+          ]);
+        } finally { clearTimeout(timer); }
+        const auditInsertError = acknowledgement?.error;
+        if (acknowledgement && typeof acknowledgement === "object" && !Array.isArray(acknowledgement) &&
+            Object.prototype.hasOwnProperty.call(acknowledgement, "error") && acknowledgement.error === null) {
+          finalAuditStatus = "persisted";
+        } else if (auditInsertError) {
           finalAuditStatus = "failed";
           console.error(
             "cron_job_audit insert failed",
@@ -423,7 +443,7 @@ export function withCronJobAudit(
           );
         }
       } catch (e) {
-        finalAuditStatus = "failed";
+        finalAuditStatus = "unverified";
         console.error("cron_job_audit insert failed", (e as any)?.message ?? e);
       }
     } finally {
@@ -435,28 +455,23 @@ export function withCronJobAudit(
       if (originalSend) {
         res.send = originalSend as any;
       }
-      if (
-        opts?.includeFinalAuditReceipt &&
-        pendingResponse?.body &&
-        typeof pendingResponse.body === "object" &&
-        !Array.isArray(pendingResponse.body)
-      ) {
-        pendingResponse = {
-          ...pendingResponse,
-          body: {
-            ...(pendingResponse.body as Record<string, unknown>),
-            finalAudit: {
-              owner: "withCronJobAudit",
-              status: finalAuditStatus,
-            },
-          },
-        };
+      if (auditSkipped) {
+        // No receipt was promised or written; flush the handler response as is.
+      } else if (opts?.includeFinalAuditReceipt && finalAuditStatus !== "persisted") {
+        // Only routes promising a durable final receipt couple their response
+        // to audit persistence. Other routes retain the handler's status/body;
+        // audit failures are still logged above without retrying the write.
+        res.status(503);
+        pendingResponse = { kind: "json", body: cronAuditFailureResponse(
+          responseToFlush?.body ?? capturedBody, statusCode, finalAuditStatus, "withCronJobAudit") };
+      } else if (opts?.includeFinalAuditReceipt && responseToFlush?.body &&
+          typeof responseToFlush.body === "object" && !Array.isArray(responseToFlush.body)) {
+        pendingResponse = { ...responseToFlush, body: { ...responseToFlush.body,
+          finalAudit: { owner: "withCronJobAudit", status: "persisted" } } };
       }
-      if (responseToFlush?.kind === "json") {
-        originalJson(pendingResponse?.body ?? responseToFlush.body);
-      } else if (responseToFlush?.kind === "send" && originalSend) {
-        originalSend(pendingResponse?.body ?? responseToFlush.body);
-      }
+      const outgoing = pendingResponse as { kind: "json" | "send"; body: unknown } | null;
+      if (outgoing?.kind === "json") originalJson(outgoing.body);
+      else if (outgoing?.kind === "send" && originalSend) originalSend(outgoing.body);
     }
   };
 }

@@ -1,0 +1,3134 @@
+{
+  "capturedAt": "2026-10-27T01:26:45.360Z",
+  "s1Rows": 269,
+  "s1Statements": 2,
+  "hot": [
+    {
+      "card": "hot",
+      "nhlId": 8484387,
+      "name": "Matvei Michkov",
+      "latest": {
+        "date": "2026-10-24",
+        "sgp": 13
+      },
+      "series": [
+        null,
+        1,
+        0,
+        0,
+        0,
+        1,
+        2,
+        2,
+        1,
+        2
+      ],
+      "missing": [
+        {
+          "index": 0,
+          "game": 4,
+          "reasons": [
+            "no row with season games played = 3"
+          ]
+        }
+      ],
+      "rows": [
+        {
+          "date": "2026-10-05",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 4,
+          "points": 1,
+          "toi": 3719
+        },
+        {
+          "date": "2026-10-08",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 5,
+          "points": 2,
+          "toi": 4639
+        },
+        {
+          "date": "2026-10-10",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 6,
+          "points": 2,
+          "toi": 5574
+        },
+        {
+          "date": "2026-10-11",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 7,
+          "points": 2,
+          "toi": 6348
+        },
+        {
+          "date": "2026-10-13",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 8,
+          "points": 2,
+          "toi": 7234
+        },
+        {
+          "date": "2026-10-15",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 9,
+          "points": 3,
+          "toi": 8054
+        },
+        {
+          "date": "2026-10-17",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 10,
+          "points": 5,
+          "toi": 8923
+        },
+        {
+          "date": "2026-10-19",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 11,
+          "points": 7,
+          "toi": 9800
+        },
+        {
+          "date": "2026-10-21",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 12,
+          "points": 8,
+          "toi": 10882
+        },
+        {
+          "date": "2026-10-24",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 13,
+          "points": 10,
+          "toi": 11977
+        }
+      ]
+    },
+    {
+      "card": "hot",
+      "nhlId": 8480039,
+      "name": "Martin Necas",
+      "latest": {
+        "date": "2026-10-25",
+        "sgp": 12
+      },
+      "series": [
+        null,
+        0,
+        1,
+        2,
+        0,
+        3,
+        1,
+        0,
+        3,
+        2
+      ],
+      "missing": [
+        {
+          "index": 0,
+          "game": 3,
+          "reasons": [
+            "no row with season games played = 2"
+          ]
+        }
+      ],
+      "rows": [
+        {
+          "date": "2026-10-07",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 3,
+          "points": 4,
+          "toi": 3545
+        },
+        {
+          "date": "2026-10-08",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 4,
+          "points": 4,
+          "toi": 4583
+        },
+        {
+          "date": "2026-10-10",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 5,
+          "points": 5,
+          "toi": 6030
+        },
+        {
+          "date": "2026-10-13",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 6,
+          "points": 7,
+          "toi": 7434
+        },
+        {
+          "date": "2026-10-14",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 7,
+          "points": 7,
+          "toi": 8778
+        },
+        {
+          "date": "2026-10-16",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 8,
+          "points": 10,
+          "toi": 10036
+        },
+        {
+          "date": "2026-10-19",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 9,
+          "points": 11,
+          "toi": 11096
+        },
+        {
+          "date": "2026-10-20",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 10,
+          "points": 11,
+          "toi": 12241
+        },
+        {
+          "date": "2026-10-23",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 11,
+          "points": 14,
+          "toi": 13233
+        },
+        {
+          "date": "2026-10-25",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 12,
+          "points": 16,
+          "toi": 14380
+        }
+      ]
+    },
+    {
+      "card": "hot",
+      "nhlId": 8477476,
+      "name": "Artturi Lehkonen",
+      "latest": {
+        "date": "2026-10-25",
+        "sgp": 12
+      },
+      "series": [
+        0,
+        0,
+        0,
+        1,
+        1,
+        2,
+        1,
+        2,
+        2,
+        1
+      ],
+      "missing": [],
+      "rows": [
+        {
+          "date": "2026-09-30",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 1,
+          "points": 2,
+          "toi": 1167
+        },
+        {
+          "date": "2026-10-03",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 2,
+          "points": 4,
+          "toi": 2333
+        },
+        {
+          "date": "2026-10-07",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 3,
+          "points": 4,
+          "toi": 3374
+        },
+        {
+          "date": "2026-10-08",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 4,
+          "points": 4,
+          "toi": 4416
+        },
+        {
+          "date": "2026-10-10",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 5,
+          "points": 4,
+          "toi": 5635
+        },
+        {
+          "date": "2026-10-13",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 6,
+          "points": 5,
+          "toi": 6820
+        },
+        {
+          "date": "2026-10-14",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 7,
+          "points": 6,
+          "toi": 8137
+        },
+        {
+          "date": "2026-10-16",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 8,
+          "points": 8,
+          "toi": 9250
+        },
+        {
+          "date": "2026-10-19",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 9,
+          "points": 9,
+          "toi": 10396
+        },
+        {
+          "date": "2026-10-20",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 10,
+          "points": 11,
+          "toi": 11400
+        },
+        {
+          "date": "2026-10-23",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 11,
+          "points": 13,
+          "toi": 12536
+        },
+        {
+          "date": "2026-10-25",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 12,
+          "points": 14,
+          "toi": 13648
+        }
+      ]
+    },
+    {
+      "card": "hot",
+      "nhlId": 8481533,
+      "name": "Trevor Zegras",
+      "latest": {
+        "date": "2026-10-24",
+        "sgp": 13
+      },
+      "series": [
+        null,
+        1,
+        0,
+        0,
+        1,
+        0,
+        1,
+        3,
+        1,
+        2
+      ],
+      "missing": [
+        {
+          "index": 0,
+          "game": 4,
+          "reasons": [
+            "no row with season games played = 3"
+          ]
+        }
+      ],
+      "rows": [
+        {
+          "date": "2026-10-05",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 4,
+          "points": 1,
+          "toi": 4489
+        },
+        {
+          "date": "2026-10-08",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 5,
+          "points": 2,
+          "toi": 5654
+        },
+        {
+          "date": "2026-10-10",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 6,
+          "points": 2,
+          "toi": 6607
+        },
+        {
+          "date": "2026-10-11",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 7,
+          "points": 2,
+          "toi": 7572
+        },
+        {
+          "date": "2026-10-13",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 8,
+          "points": 3,
+          "toi": 8875
+        },
+        {
+          "date": "2026-10-15",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 9,
+          "points": 3,
+          "toi": 9954
+        },
+        {
+          "date": "2026-10-17",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 10,
+          "points": 4,
+          "toi": 11112
+        },
+        {
+          "date": "2026-10-19",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 11,
+          "points": 7,
+          "toi": 12173
+        },
+        {
+          "date": "2026-10-21",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 12,
+          "points": 8,
+          "toi": 13169
+        },
+        {
+          "date": "2026-10-24",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 13,
+          "points": 10,
+          "toi": 14461
+        }
+      ]
+    },
+    {
+      "card": "hot",
+      "nhlId": 8481721,
+      "name": "Arseny Gritsyuk",
+      "latest": {
+        "date": "2026-10-24",
+        "sgp": 11
+      },
+      "series": [
+        null,
+        null,
+        1,
+        1,
+        0,
+        1,
+        2,
+        1,
+        1,
+        2
+      ],
+      "missing": [
+        {
+          "index": 0,
+          "game": 2,
+          "reasons": [
+            "no row with season games played = 2",
+            "no row with season games played = 1"
+          ]
+        },
+        {
+          "index": 1,
+          "game": 3,
+          "reasons": [
+            "no row with season games played = 2"
+          ]
+        }
+      ],
+      "rows": [
+        {
+          "date": "2026-10-06",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 3,
+          "points": 0,
+          "toi": 2753
+        },
+        {
+          "date": "2026-10-10",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 4,
+          "points": 1,
+          "toi": 3530
+        },
+        {
+          "date": "2026-10-12",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 5,
+          "points": 2,
+          "toi": 4366
+        },
+        {
+          "date": "2026-10-13",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 6,
+          "points": 2,
+          "toi": 5533
+        },
+        {
+          "date": "2026-10-15",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 7,
+          "points": 3,
+          "toi": 6549
+        },
+        {
+          "date": "2026-10-17",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 8,
+          "points": 5,
+          "toi": 7586
+        },
+        {
+          "date": "2026-10-20",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 9,
+          "points": 6,
+          "toi": 8270
+        },
+        {
+          "date": "2026-10-22",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 10,
+          "points": 7,
+          "toi": 9210
+        },
+        {
+          "date": "2026-10-24",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 11,
+          "points": 9,
+          "toi": 10130
+        }
+      ]
+    },
+    {
+      "card": "hot",
+      "nhlId": 8480830,
+      "name": "Andrei Svechnikov",
+      "latest": {
+        "date": "2026-10-24",
+        "sgp": 13
+      },
+      "series": [
+        null,
+        2,
+        0,
+        2,
+        3,
+        0,
+        0,
+        0,
+        0,
+        1
+      ],
+      "missing": [
+        {
+          "index": 0,
+          "game": 4,
+          "reasons": [
+            "no row with season games played = 3"
+          ]
+        }
+      ],
+      "rows": [
+        {
+          "date": "2026-10-06",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 4,
+          "points": 4,
+          "toi": 4271
+        },
+        {
+          "date": "2026-10-08",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 5,
+          "points": 6,
+          "toi": 5190
+        },
+        {
+          "date": "2026-10-10",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 6,
+          "points": 6,
+          "toi": 6136
+        },
+        {
+          "date": "2026-10-11",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 7,
+          "points": 8,
+          "toi": 7122
+        },
+        {
+          "date": "2026-10-13",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 8,
+          "points": 11,
+          "toi": 8411
+        },
+        {
+          "date": "2026-10-17",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 9,
+          "points": 11,
+          "toi": 9530
+        },
+        {
+          "date": "2026-10-18",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 10,
+          "points": 11,
+          "toi": 10530
+        },
+        {
+          "date": "2026-10-20",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 11,
+          "points": 11,
+          "toi": 11674
+        },
+        {
+          "date": "2026-10-22",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 12,
+          "points": 11,
+          "toi": 12801
+        },
+        {
+          "date": "2026-10-24",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 13,
+          "points": 12,
+          "toi": 13690
+        }
+      ]
+    },
+    {
+      "card": "hot",
+      "nhlId": 8479318,
+      "name": "Auston Matthews",
+      "latest": {
+        "date": "2026-10-24",
+        "sgp": 13
+      },
+      "series": [
+        4,
+        1,
+        4,
+        2,
+        1,
+        0,
+        3,
+        2,
+        0,
+        1
+      ],
+      "missing": [],
+      "rows": [
+        {
+          "date": "2026-09-29",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 1,
+          "points": 0,
+          "toi": 1354
+        },
+        {
+          "date": "2026-09-30",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 2,
+          "points": 0,
+          "toi": 2558
+        },
+        {
+          "date": "2026-10-03",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 3,
+          "points": 1,
+          "toi": 3868
+        },
+        {
+          "date": "2026-10-06",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 4,
+          "points": 5,
+          "toi": 5377
+        },
+        {
+          "date": "2026-10-08",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 5,
+          "points": 6,
+          "toi": 6669
+        },
+        {
+          "date": "2026-10-10",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 6,
+          "points": 10,
+          "toi": 7995
+        },
+        {
+          "date": "2026-10-13",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 7,
+          "points": 12,
+          "toi": 9207
+        },
+        {
+          "date": "2026-10-15",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 8,
+          "points": 13,
+          "toi": 10541
+        },
+        {
+          "date": "2026-10-17",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 9,
+          "points": 13,
+          "toi": 11737
+        },
+        {
+          "date": "2026-10-19",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 10,
+          "points": 16,
+          "toi": 12994
+        },
+        {
+          "date": "2026-10-20",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 11,
+          "points": 18,
+          "toi": 14020
+        },
+        {
+          "date": "2026-10-22",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 12,
+          "points": 18,
+          "toi": 15176
+        },
+        {
+          "date": "2026-10-24",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 13,
+          "points": 19,
+          "toi": 16209
+        }
+      ]
+    },
+    {
+      "card": "hot",
+      "nhlId": 8478398,
+      "name": "Kyle Connor",
+      "latest": {
+        "date": "2026-10-25",
+        "sgp": 11
+      },
+      "series": [
+        3,
+        0,
+        2,
+        1,
+        2,
+        1,
+        0,
+        0,
+        1,
+        0
+      ],
+      "missing": [],
+      "rows": [
+        {
+          "date": "2026-10-02",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 1,
+          "points": 2,
+          "toi": 1256
+        },
+        {
+          "date": "2026-10-04",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 2,
+          "points": 5,
+          "toi": 2461
+        },
+        {
+          "date": "2026-10-05",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 3,
+          "points": 5,
+          "toi": 3780
+        },
+        {
+          "date": "2026-10-07",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 4,
+          "points": 7,
+          "toi": 4975
+        },
+        {
+          "date": "2026-10-09",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 5,
+          "points": 8,
+          "toi": 6411
+        },
+        {
+          "date": "2026-10-13",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 6,
+          "points": 10,
+          "toi": 7457
+        },
+        {
+          "date": "2026-10-15",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 7,
+          "points": 11,
+          "toi": 8720
+        },
+        {
+          "date": "2026-10-17",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 8,
+          "points": 11,
+          "toi": 9932
+        },
+        {
+          "date": "2026-10-20",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 9,
+          "points": 11,
+          "toi": 11235
+        },
+        {
+          "date": "2026-10-22",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 10,
+          "points": 12,
+          "toi": 12617
+        },
+        {
+          "date": "2026-10-25",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 11,
+          "points": 12,
+          "toi": 14080
+        }
+      ]
+    },
+    {
+      "card": "hot",
+      "nhlId": 8475798,
+      "name": "Mikael Granlund",
+      "latest": {
+        "date": "2026-10-24",
+        "sgp": 10
+      },
+      "series": [
+        1,
+        1,
+        1,
+        2,
+        2,
+        1,
+        0,
+        0,
+        0,
+        0
+      ],
+      "missing": [],
+      "rows": [
+        {
+          "date": "2026-10-02",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 1,
+          "points": 1,
+          "toi": 1119
+        },
+        {
+          "date": "2026-10-04",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 2,
+          "points": 2,
+          "toi": 2470
+        },
+        {
+          "date": "2026-10-07",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 3,
+          "points": 3,
+          "toi": 3763
+        },
+        {
+          "date": "2026-10-09",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 4,
+          "points": 5,
+          "toi": 4754
+        },
+        {
+          "date": "2026-10-10",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 5,
+          "points": 7,
+          "toi": 5917
+        },
+        {
+          "date": "2026-10-13",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 6,
+          "points": 8,
+          "toi": 7169
+        },
+        {
+          "date": "2026-10-19",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 7,
+          "points": 8,
+          "toi": 8137
+        },
+        {
+          "date": "2026-10-20",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 8,
+          "points": 8,
+          "toi": 9372
+        },
+        {
+          "date": "2026-10-22",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 9,
+          "points": 8,
+          "toi": 10578
+        },
+        {
+          "date": "2026-10-24",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 10,
+          "points": 8,
+          "toi": 11880
+        }
+      ]
+    },
+    {
+      "card": "hot",
+      "nhlId": 8482149,
+      "name": "Cole Perfetti",
+      "latest": {
+        "date": "2026-10-25",
+        "sgp": 11
+      },
+      "series": [
+        null,
+        null,
+        1,
+        0,
+        2,
+        0,
+        0,
+        1,
+        0,
+        0
+      ],
+      "missing": [
+        {
+          "index": 0,
+          "game": 2,
+          "reasons": [
+            "no row with season games played = 2",
+            "no row with season games played = 1"
+          ]
+        },
+        {
+          "index": 1,
+          "game": 3,
+          "reasons": [
+            "no row with season games played = 2"
+          ]
+        }
+      ],
+      "rows": [
+        {
+          "date": "2026-10-05",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 3,
+          "points": 5,
+          "toi": 3255
+        },
+        {
+          "date": "2026-10-07",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 4,
+          "points": 6,
+          "toi": 4397
+        },
+        {
+          "date": "2026-10-09",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 5,
+          "points": 6,
+          "toi": 5737
+        },
+        {
+          "date": "2026-10-13",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 6,
+          "points": 8,
+          "toi": 6710
+        },
+        {
+          "date": "2026-10-15",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 7,
+          "points": 8,
+          "toi": 7847
+        },
+        {
+          "date": "2026-10-17",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 8,
+          "points": 8,
+          "toi": 8849
+        },
+        {
+          "date": "2026-10-20",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 9,
+          "points": 9,
+          "toi": 10036
+        },
+        {
+          "date": "2026-10-22",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 10,
+          "points": 9,
+          "toi": 11176
+        },
+        {
+          "date": "2026-10-25",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 11,
+          "points": 9,
+          "toi": 12617
+        }
+      ]
+    }
+  ],
+  "deployment": [
+    {
+      "card": "deployment",
+      "nhlId": 8479442,
+      "name": "Troy Stecher",
+      "latest": {
+        "date": "2026-10-24",
+        "sgp": 13
+      },
+      "series": [
+        1040,
+        995,
+        1113,
+        1010,
+        1028,
+        1221,
+        1213,
+        1585,
+        1217,
+        1461
+      ],
+      "missing": [],
+      "rows": [
+        {
+          "date": "2026-09-29",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 1,
+          "points": 0,
+          "toi": 1145
+        },
+        {
+          "date": "2026-09-30",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 2,
+          "points": 0,
+          "toi": 2110
+        },
+        {
+          "date": "2026-10-03",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 3,
+          "points": 0,
+          "toi": 3200
+        },
+        {
+          "date": "2026-10-06",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 4,
+          "points": 0,
+          "toi": 4240
+        },
+        {
+          "date": "2026-10-08",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 5,
+          "points": 0,
+          "toi": 5235
+        },
+        {
+          "date": "2026-10-10",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 6,
+          "points": 0,
+          "toi": 6348
+        },
+        {
+          "date": "2026-10-13",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 7,
+          "points": 0,
+          "toi": 7358
+        },
+        {
+          "date": "2026-10-15",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 8,
+          "points": 0,
+          "toi": 8386
+        },
+        {
+          "date": "2026-10-17",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 9,
+          "points": 1,
+          "toi": 9607
+        },
+        {
+          "date": "2026-10-19",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 10,
+          "points": 1,
+          "toi": 10820
+        },
+        {
+          "date": "2026-10-20",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 11,
+          "points": 1,
+          "toi": 12405
+        },
+        {
+          "date": "2026-10-22",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 12,
+          "points": 2,
+          "toi": 13622
+        },
+        {
+          "date": "2026-10-24",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 13,
+          "points": 3,
+          "toi": 15083
+        }
+      ]
+    },
+    {
+      "card": "deployment",
+      "nhlId": 8475768,
+      "name": "Jaden Schwartz",
+      "latest": {
+        "date": "2026-10-25",
+        "sgp": 12
+      },
+      "series": [
+        797,
+        831,
+        639,
+        782,
+        827,
+        843,
+        987,
+        1097,
+        787,
+        913
+      ],
+      "missing": [],
+      "rows": [
+        {
+          "date": "2026-09-30",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 1,
+          "points": 2,
+          "toi": 769
+        },
+        {
+          "date": "2026-10-03",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 2,
+          "points": 2,
+          "toi": 1623
+        },
+        {
+          "date": "2026-10-07",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 3,
+          "points": 4,
+          "toi": 2420
+        },
+        {
+          "date": "2026-10-08",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 4,
+          "points": 6,
+          "toi": 3251
+        },
+        {
+          "date": "2026-10-10",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 5,
+          "points": 6,
+          "toi": 3890
+        },
+        {
+          "date": "2026-10-13",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 6,
+          "points": 6,
+          "toi": 4672
+        },
+        {
+          "date": "2026-10-14",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 7,
+          "points": 6,
+          "toi": 5499
+        },
+        {
+          "date": "2026-10-16",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 8,
+          "points": 6,
+          "toi": 6342
+        },
+        {
+          "date": "2026-10-19",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 9,
+          "points": 6,
+          "toi": 7329
+        },
+        {
+          "date": "2026-10-20",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 10,
+          "points": 6,
+          "toi": 8426
+        },
+        {
+          "date": "2026-10-23",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 11,
+          "points": 7,
+          "toi": 9213
+        },
+        {
+          "date": "2026-10-25",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 12,
+          "points": 7,
+          "toi": 10126
+        }
+      ]
+    },
+    {
+      "card": "deployment",
+      "nhlId": 8477955,
+      "name": "Jared McCann",
+      "latest": {
+        "date": "2026-10-22",
+        "sgp": 11
+      },
+      "series": [
+        869,
+        942,
+        907,
+        721,
+        936,
+        1050,
+        981,
+        1139,
+        1025,
+        1002
+      ],
+      "missing": [],
+      "rows": [
+        {
+          "date": "2026-10-01",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 1,
+          "points": 3,
+          "toi": 1074
+        },
+        {
+          "date": "2026-10-03",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 2,
+          "points": 3,
+          "toi": 1943
+        },
+        {
+          "date": "2026-10-04",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 3,
+          "points": 4,
+          "toi": 2885
+        },
+        {
+          "date": "2026-10-06",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 4,
+          "points": 5,
+          "toi": 3792
+        },
+        {
+          "date": "2026-10-09",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 5,
+          "points": 6,
+          "toi": 4513
+        },
+        {
+          "date": "2026-10-11",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 6,
+          "points": 7,
+          "toi": 5449
+        },
+        {
+          "date": "2026-10-13",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 7,
+          "points": 7,
+          "toi": 6499
+        },
+        {
+          "date": "2026-10-15",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 8,
+          "points": 8,
+          "toi": 7480
+        },
+        {
+          "date": "2026-10-17",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 9,
+          "points": 8,
+          "toi": 8619
+        },
+        {
+          "date": "2026-10-20",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 10,
+          "points": 8,
+          "toi": 9644
+        },
+        {
+          "date": "2026-10-22",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 11,
+          "points": 8,
+          "toi": 10646
+        }
+      ]
+    },
+    {
+      "card": "deployment",
+      "nhlId": 8480426,
+      "name": "Charle-Edouard D'Astous",
+      "latest": {
+        "date": "2026-10-24",
+        "sgp": 10
+      },
+      "series": [
+        null,
+        null,
+        null,
+        964,
+        810,
+        841,
+        1015,
+        772,
+        1266,
+        1206
+      ],
+      "missing": [
+        {
+          "index": 0,
+          "game": 1,
+          "reasons": [
+            "no row with season games played = 1"
+          ]
+        },
+        {
+          "index": 1,
+          "game": 2,
+          "reasons": [
+            "no row with season games played = 2",
+            "no row with season games played = 1"
+          ]
+        },
+        {
+          "index": 2,
+          "game": 3,
+          "reasons": [
+            "no row with season games played = 2"
+          ]
+        }
+      ],
+      "rows": [
+        {
+          "date": "2026-10-05",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 3,
+          "points": 1,
+          "toi": 2630
+        },
+        {
+          "date": "2026-10-08",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 4,
+          "points": 1,
+          "toi": 3594
+        },
+        {
+          "date": "2026-10-10",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 5,
+          "points": 1,
+          "toi": 4404
+        },
+        {
+          "date": "2026-10-13",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 6,
+          "points": 1,
+          "toi": 5245
+        },
+        {
+          "date": "2026-10-17",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 7,
+          "points": 2,
+          "toi": 6260
+        },
+        {
+          "date": "2026-10-20",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 8,
+          "points": 3,
+          "toi": 7032
+        },
+        {
+          "date": "2026-10-23",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 9,
+          "points": 5,
+          "toi": 8298
+        },
+        {
+          "date": "2026-10-24",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 10,
+          "points": 6,
+          "toi": 9504
+        }
+      ]
+    },
+    {
+      "card": "deployment",
+      "nhlId": 8483450,
+      "name": "Ryan Greene",
+      "latest": {
+        "date": "2026-10-25",
+        "sgp": 11
+      },
+      "series": [
+        null,
+        null,
+        null,
+        null,
+        1186,
+        639,
+        789,
+        585,
+        766,
+        880
+      ],
+      "missing": [
+        {
+          "index": 0,
+          "game": 2,
+          "reasons": [
+            "no row with season games played = 2",
+            "no row with season games played = 1"
+          ]
+        },
+        {
+          "index": 1,
+          "game": 3,
+          "reasons": [
+            "no row with season games played = 2"
+          ]
+        },
+        {
+          "index": 2,
+          "game": 4,
+          "reasons": [
+            "no row with season games played = 4"
+          ]
+        },
+        {
+          "index": 3,
+          "game": 5,
+          "reasons": [
+            "no row with season games played = 4"
+          ]
+        }
+      ],
+      "rows": [
+        {
+          "date": "2026-10-06",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 3,
+          "points": 0,
+          "toi": 2800
+        },
+        {
+          "date": "2026-10-08",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 5,
+          "points": 1,
+          "toi": 4572
+        },
+        {
+          "date": "2026-10-10",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 6,
+          "points": 1,
+          "toi": 5758
+        },
+        {
+          "date": "2026-10-13",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 7,
+          "points": 2,
+          "toi": 6397
+        },
+        {
+          "date": "2026-10-15",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 8,
+          "points": 2,
+          "toi": 7186
+        },
+        {
+          "date": "2026-10-17",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 9,
+          "points": 2,
+          "toi": 7771
+        },
+        {
+          "date": "2026-10-23",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 10,
+          "points": 2,
+          "toi": 8537
+        },
+        {
+          "date": "2026-10-25",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 11,
+          "points": 3,
+          "toi": 9417
+        }
+      ]
+    },
+    {
+      "card": "deployment",
+      "nhlId": 8484994,
+      "name": "Igor Chernyshov",
+      "latest": {
+        "date": "2026-10-22",
+        "sgp": 11
+      },
+      "series": [
+        null,
+        null,
+        956,
+        663,
+        953,
+        670,
+        822,
+        959,
+        1022,
+        294
+      ],
+      "missing": [
+        {
+          "index": 0,
+          "game": 2,
+          "reasons": [
+            "no row with season games played = 2",
+            "no row with season games played = 1"
+          ]
+        },
+        {
+          "index": 1,
+          "game": 3,
+          "reasons": [
+            "no row with season games played = 2"
+          ]
+        }
+      ],
+      "rows": [
+        {
+          "date": "2026-10-05",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 3,
+          "points": 3,
+          "toi": 2619
+        },
+        {
+          "date": "2026-10-08",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 4,
+          "points": 3,
+          "toi": 3575
+        },
+        {
+          "date": "2026-10-10",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 5,
+          "points": 3,
+          "toi": 4238
+        },
+        {
+          "date": "2026-10-13",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 6,
+          "points": 3,
+          "toi": 5191
+        },
+        {
+          "date": "2026-10-15",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 7,
+          "points": 4,
+          "toi": 5861
+        },
+        {
+          "date": "2026-10-17",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 8,
+          "points": 4,
+          "toi": 6683
+        },
+        {
+          "date": "2026-10-19",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 9,
+          "points": 4,
+          "toi": 7642
+        },
+        {
+          "date": "2026-10-20",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 10,
+          "points": 4,
+          "toi": 8664
+        },
+        {
+          "date": "2026-10-22",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 11,
+          "points": 4,
+          "toi": 8958
+        }
+      ]
+    },
+    {
+      "card": "deployment",
+      "nhlId": 8480028,
+      "name": "Morgan Frost",
+      "latest": {
+        "date": "2026-10-24",
+        "sgp": 10
+      },
+      "series": [
+        null,
+        null,
+        null,
+        null,
+        1018,
+        820,
+        945,
+        952,
+        799,
+        740
+      ],
+      "missing": [
+        {
+          "index": 0,
+          "game": 1,
+          "reasons": [
+            "no row with season games played = 1"
+          ]
+        },
+        {
+          "index": 1,
+          "game": 2,
+          "reasons": [
+            "no row with season games played = 2",
+            "no row with season games played = 1"
+          ]
+        },
+        {
+          "index": 2,
+          "game": 3,
+          "reasons": [
+            "no row with season games played = 3",
+            "no row with season games played = 2"
+          ]
+        },
+        {
+          "index": 3,
+          "game": 4,
+          "reasons": [
+            "no row with season games played = 3"
+          ]
+        }
+      ],
+      "rows": [
+        {
+          "date": "2026-10-08",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 4,
+          "points": 1,
+          "toi": 3831
+        },
+        {
+          "date": "2026-10-10",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 5,
+          "points": 2,
+          "toi": 4849
+        },
+        {
+          "date": "2026-10-13",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 6,
+          "points": 2,
+          "toi": 5669
+        },
+        {
+          "date": "2026-10-15",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 7,
+          "points": 3,
+          "toi": 6614
+        },
+        {
+          "date": "2026-10-18",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 8,
+          "points": 5,
+          "toi": 7566
+        },
+        {
+          "date": "2026-10-22",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 9,
+          "points": 6,
+          "toi": 8365
+        },
+        {
+          "date": "2026-10-24",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 10,
+          "points": 7,
+          "toi": 9105
+        }
+      ]
+    },
+    {
+      "card": "deployment",
+      "nhlId": 8481068,
+      "name": "Yegor Sharangovich",
+      "latest": {
+        "date": "2026-10-24",
+        "sgp": 10
+      },
+      "series": [
+        null,
+        null,
+        null,
+        null,
+        1331,
+        1038,
+        723,
+        1002,
+        1078,
+        756
+      ],
+      "missing": [
+        {
+          "index": 0,
+          "game": 1,
+          "reasons": [
+            "no row with season games played = 1"
+          ]
+        },
+        {
+          "index": 1,
+          "game": 2,
+          "reasons": [
+            "no row with season games played = 2",
+            "no row with season games played = 1"
+          ]
+        },
+        {
+          "index": 2,
+          "game": 3,
+          "reasons": [
+            "no row with season games played = 3",
+            "no row with season games played = 2"
+          ]
+        },
+        {
+          "index": 3,
+          "game": 4,
+          "reasons": [
+            "no row with season games played = 3"
+          ]
+        }
+      ],
+      "rows": [
+        {
+          "date": "2026-10-08",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 4,
+          "points": 2,
+          "toi": 3861
+        },
+        {
+          "date": "2026-10-10",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 5,
+          "points": 2,
+          "toi": 5192
+        },
+        {
+          "date": "2026-10-13",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 6,
+          "points": 3,
+          "toi": 6230
+        },
+        {
+          "date": "2026-10-15",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 7,
+          "points": 3,
+          "toi": 6953
+        },
+        {
+          "date": "2026-10-18",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 8,
+          "points": 4,
+          "toi": 7955
+        },
+        {
+          "date": "2026-10-22",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 9,
+          "points": 4,
+          "toi": 9033
+        },
+        {
+          "date": "2026-10-24",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 10,
+          "points": 4,
+          "toi": 9789
+        }
+      ]
+    }
+  ],
+  "rates": [
+    {
+      "card": "rates",
+      "nhlId": 8477935,
+      "name": "Sam Bennett",
+      "latest": {
+        "date": "2026-10-25",
+        "sgp": 12
+      },
+      "series": [
+        11,
+        3.1,
+        5.8,
+        3.9,
+        3.8,
+        18.1,
+        19.3,
+        7.1,
+        12.7,
+        9.3
+      ],
+      "missing": [],
+      "rows": [
+        {
+          "date": "2026-09-29",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 1,
+          "points": 0,
+          "toi": 1148
+        },
+        {
+          "date": "2026-10-01",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 2,
+          "points": 1,
+          "toi": 2397
+        },
+        {
+          "date": "2026-10-04",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 3,
+          "points": 2,
+          "toi": 3709
+        },
+        {
+          "date": "2026-10-06",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 4,
+          "points": 3,
+          "toi": 4878
+        },
+        {
+          "date": "2026-10-10",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 5,
+          "points": 3,
+          "toi": 6128
+        },
+        {
+          "date": "2026-10-12",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 6,
+          "points": 3,
+          "toi": 7062
+        },
+        {
+          "date": "2026-10-13",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 7,
+          "points": 3,
+          "toi": 8010
+        },
+        {
+          "date": "2026-10-15",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 8,
+          "points": 3,
+          "toi": 9205
+        },
+        {
+          "date": "2026-10-17",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 9,
+          "points": 6,
+          "toi": 9950
+        },
+        {
+          "date": "2026-10-21",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 10,
+          "points": 6,
+          "toi": 10965
+        },
+        {
+          "date": "2026-10-22",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 11,
+          "points": 6,
+          "toi": 12103
+        },
+        {
+          "date": "2026-10-25",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 12,
+          "points": 6,
+          "toi": 13259
+        }
+      ]
+    },
+    {
+      "card": "rates",
+      "nhlId": 8476453,
+      "name": "Nikita Kucherov",
+      "latest": {
+        "date": "2026-10-24",
+        "sgp": 11
+      },
+      "series": [
+        7.9,
+        2.7,
+        2.9,
+        3.4,
+        5.2,
+        21.6,
+        20.3,
+        6.6,
+        5.8,
+        9
+      ],
+      "missing": [],
+      "rows": [
+        {
+          "date": "2026-10-01",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 1,
+          "points": 1,
+          "toi": 1447
+        },
+        {
+          "date": "2026-10-03",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 2,
+          "points": 2,
+          "toi": 2813
+        },
+        {
+          "date": "2026-10-05",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 3,
+          "points": 4,
+          "toi": 4132
+        },
+        {
+          "date": "2026-10-08",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 4,
+          "points": 6,
+          "toi": 5387
+        },
+        {
+          "date": "2026-10-10",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 5,
+          "points": 8,
+          "toi": 6453
+        },
+        {
+          "date": "2026-10-13",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 6,
+          "points": 8,
+          "toi": 7848
+        },
+        {
+          "date": "2026-10-15",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 7,
+          "points": 8,
+          "toi": 9184
+        },
+        {
+          "date": "2026-10-17",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 8,
+          "points": 10,
+          "toi": 10424
+        },
+        {
+          "date": "2026-10-20",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 9,
+          "points": 13,
+          "toi": 11523
+        },
+        {
+          "date": "2026-10-23",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 10,
+          "points": 13,
+          "toi": 12766
+        },
+        {
+          "date": "2026-10-24",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 11,
+          "points": 14,
+          "toi": 13968
+        }
+      ]
+    },
+    {
+      "card": "rates",
+      "nhlId": 8482702,
+      "name": "Logan Stankoven",
+      "latest": {
+        "date": "2026-10-24",
+        "sgp": 13
+      },
+      "series": [
+        null,
+        19.8,
+        7.4,
+        10.2,
+        0,
+        17.5,
+        9.9,
+        15.8,
+        16.5,
+        19.4
+      ],
+      "missing": [
+        {
+          "index": 0,
+          "game": 4,
+          "reasons": [
+            "no row with season games played = 3"
+          ]
+        }
+      ],
+      "rows": [
+        {
+          "date": "2026-10-06",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 4,
+          "points": 1,
+          "toi": 4501
+        },
+        {
+          "date": "2026-10-08",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 5,
+          "points": 4,
+          "toi": 5409
+        },
+        {
+          "date": "2026-10-10",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 6,
+          "points": 5,
+          "toi": 6381
+        },
+        {
+          "date": "2026-10-11",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 7,
+          "points": 5,
+          "toi": 7445
+        },
+        {
+          "date": "2026-10-13",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 8,
+          "points": 5,
+          "toi": 8375
+        },
+        {
+          "date": "2026-10-17",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 9,
+          "points": 6,
+          "toi": 9402
+        },
+        {
+          "date": "2026-10-18",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 10,
+          "points": 6,
+          "toi": 10498
+        },
+        {
+          "date": "2026-10-20",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 11,
+          "points": 9,
+          "toi": 11635
+        },
+        {
+          "date": "2026-10-22",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 12,
+          "points": 10,
+          "toi": 12728
+        },
+        {
+          "date": "2026-10-24",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 13,
+          "points": 11,
+          "toi": 13658
+        }
+      ]
+    },
+    {
+      "card": "rates",
+      "nhlId": 8482702,
+      "name": "Logan Stankoven",
+      "latest": {
+        "date": "2026-10-24",
+        "sgp": 13
+      },
+      "series": [
+        null,
+        19.8,
+        18.5,
+        10.2,
+        3.9,
+        28,
+        16.4,
+        25.3,
+        23.1,
+        38.7
+      ],
+      "missing": [
+        {
+          "index": 0,
+          "game": 4,
+          "reasons": [
+            "no row with season games played = 3"
+          ]
+        }
+      ],
+      "rows": [
+        {
+          "date": "2026-10-06",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 4,
+          "points": 1,
+          "toi": 4501
+        },
+        {
+          "date": "2026-10-08",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 5,
+          "points": 4,
+          "toi": 5409
+        },
+        {
+          "date": "2026-10-10",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 6,
+          "points": 5,
+          "toi": 6381
+        },
+        {
+          "date": "2026-10-11",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 7,
+          "points": 5,
+          "toi": 7445
+        },
+        {
+          "date": "2026-10-13",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 8,
+          "points": 5,
+          "toi": 8375
+        },
+        {
+          "date": "2026-10-17",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 9,
+          "points": 6,
+          "toi": 9402
+        },
+        {
+          "date": "2026-10-18",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 10,
+          "points": 6,
+          "toi": 10498
+        },
+        {
+          "date": "2026-10-20",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 11,
+          "points": 9,
+          "toi": 11635
+        },
+        {
+          "date": "2026-10-22",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 12,
+          "points": 10,
+          "toi": 12728
+        },
+        {
+          "date": "2026-10-24",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 13,
+          "points": 11,
+          "toi": 13658
+        }
+      ]
+    },
+    {
+      "card": "rates",
+      "nhlId": 8485395,
+      "name": "James Hagens",
+      "latest": {
+        "date": "2026-10-24",
+        "sgp": 12
+      },
+      "series": [
+        null,
+        null,
+        0,
+        24.3,
+        5.3,
+        17.9,
+        16,
+        18,
+        23.9,
+        34.2
+      ],
+      "missing": [
+        {
+          "index": 0,
+          "game": 3,
+          "reasons": [
+            "no row with season games played = 3",
+            "no row with season games played = 2"
+          ]
+        },
+        {
+          "index": 1,
+          "game": 4,
+          "reasons": [
+            "no row with season games played = 3"
+          ]
+        }
+      ],
+      "rows": [
+        {
+          "date": "2026-10-05",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 4,
+          "points": 2,
+          "toi": 3319
+        },
+        {
+          "date": "2026-10-08",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 5,
+          "points": 3,
+          "toi": 4016
+        },
+        {
+          "date": "2026-10-10",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 6,
+          "points": 4,
+          "toi": 4904
+        },
+        {
+          "date": "2026-10-13",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 7,
+          "points": 4,
+          "toi": 5588
+        },
+        {
+          "date": "2026-10-16",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 8,
+          "points": 6,
+          "toi": 6191
+        },
+        {
+          "date": "2026-10-17",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 9,
+          "points": 6,
+          "toi": 6868
+        },
+        {
+          "date": "2026-10-20",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 10,
+          "points": 7,
+          "toi": 7668
+        },
+        {
+          "date": "2026-10-22",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 11,
+          "points": 7,
+          "toi": 8572
+        },
+        {
+          "date": "2026-10-24",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 12,
+          "points": 9,
+          "toi": 9309
+        }
+      ]
+    },
+    {
+      "card": "rates",
+      "nhlId": 8482073,
+      "name": "Braden Schneider",
+      "latest": {
+        "date": "2026-10-24",
+        "sgp": 13
+      },
+      "series": [
+        null,
+        null,
+        20.4,
+        3.6,
+        3.8,
+        16.7,
+        21.7,
+        12.6,
+        17.4,
+        15.8
+      ],
+      "missing": [
+        {
+          "index": 0,
+          "game": 4,
+          "reasons": [
+            "no row with season games played = 4",
+            "no row with season games played = 3"
+          ]
+        },
+        {
+          "index": 1,
+          "game": 5,
+          "reasons": [
+            "no row with season games played = 4"
+          ]
+        }
+      ],
+      "rows": [
+        {
+          "date": "2026-10-06",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 5,
+          "points": 0,
+          "toi": 5219
+        },
+        {
+          "date": "2026-10-09",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 6,
+          "points": 0,
+          "toi": 6276
+        },
+        {
+          "date": "2026-10-11",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 7,
+          "points": 1,
+          "toi": 7283
+        },
+        {
+          "date": "2026-10-13",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 8,
+          "points": 1,
+          "toi": 8232
+        },
+        {
+          "date": "2026-10-15",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 9,
+          "points": 1,
+          "toi": 9310
+        },
+        {
+          "date": "2026-10-17",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 10,
+          "points": 1,
+          "toi": 10469
+        },
+        {
+          "date": "2026-10-19",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 11,
+          "points": 2,
+          "toi": 11610
+        },
+        {
+          "date": "2026-10-22",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 12,
+          "points": 2,
+          "toi": 12643
+        },
+        {
+          "date": "2026-10-24",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 13,
+          "points": 2,
+          "toi": 13556
+        }
+      ]
+    },
+    {
+      "card": "rates",
+      "nhlId": 8478493,
+      "name": "Joel Eriksson Ek",
+      "latest": {
+        "date": "2026-10-25",
+        "sgp": 13
+      },
+      "series": [
+        1.92,
+        2.7,
+        3.34,
+        2.53,
+        1.37,
+        2.76,
+        6.65,
+        2.53,
+        4.44,
+        1.64
+      ],
+      "missing": [],
+      "rows": [
+        {
+          "date": "2026-10-01",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 1,
+          "points": 0,
+          "toi": 1220
+        },
+        {
+          "date": "2026-10-03",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 2,
+          "points": 1,
+          "toi": 2287
+        },
+        {
+          "date": "2026-10-06",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 3,
+          "points": 1,
+          "toi": 3513
+        },
+        {
+          "date": "2026-10-08",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 4,
+          "points": 1,
+          "toi": 4789
+        },
+        {
+          "date": "2026-10-10",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 5,
+          "points": 2,
+          "toi": 5881
+        },
+        {
+          "date": "2026-10-12",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 6,
+          "points": 3,
+          "toi": 7164
+        },
+        {
+          "date": "2026-10-13",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 7,
+          "points": 3,
+          "toi": 8260
+        },
+        {
+          "date": "2026-10-15",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 8,
+          "points": 5,
+          "toi": 9652
+        },
+        {
+          "date": "2026-10-18",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 9,
+          "points": 6,
+          "toi": 10930
+        },
+        {
+          "date": "2026-10-20",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 10,
+          "points": 7,
+          "toi": 12295
+        },
+        {
+          "date": "2026-10-22",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 11,
+          "points": 7,
+          "toi": 13689
+        },
+        {
+          "date": "2026-10-24",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 12,
+          "points": 9,
+          "toi": 14597
+        },
+        {
+          "date": "2026-10-25",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 13,
+          "points": 10,
+          "toi": 15807
+        }
+      ]
+    },
+    {
+      "card": "rates",
+      "nhlId": 8477416,
+      "name": "Oliver Bjorkstrand",
+      "latest": {
+        "date": "2026-10-24",
+        "sgp": 13
+      },
+      "series": [
+        0,
+        0,
+        0.71,
+        1.57,
+        0.4,
+        1.64,
+        3.37,
+        2.77,
+        1.91,
+        1.8
+      ],
+      "missing": [],
+      "rows": [
+        {
+          "date": "2026-09-29",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 1,
+          "points": 0,
+          "toi": 873
+        },
+        {
+          "date": "2026-10-01",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 2,
+          "points": 1,
+          "toi": 1618
+        },
+        {
+          "date": "2026-10-02",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 3,
+          "points": 1,
+          "toi": 2420
+        },
+        {
+          "date": "2026-10-04",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 4,
+          "points": 1,
+          "toi": 2889
+        },
+        {
+          "date": "2026-10-06",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 5,
+          "points": 3,
+          "toi": 3427
+        },
+        {
+          "date": "2026-10-09",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 6,
+          "points": 3,
+          "toi": 3985
+        },
+        {
+          "date": "2026-10-11",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 7,
+          "points": 3,
+          "toi": 4603
+        },
+        {
+          "date": "2026-10-13",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 8,
+          "points": 3,
+          "toi": 5058
+        },
+        {
+          "date": "2026-10-15",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 9,
+          "points": 3,
+          "toi": 5782
+        },
+        {
+          "date": "2026-10-17",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 10,
+          "points": 3,
+          "toi": 6305
+        },
+        {
+          "date": "2026-10-19",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 11,
+          "points": 5,
+          "toi": 7033
+        },
+        {
+          "date": "2026-10-22",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 12,
+          "points": 6,
+          "toi": 7656
+        },
+        {
+          "date": "2026-10-24",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 13,
+          "points": 7,
+          "toi": 8276
+        }
+      ]
+    },
+    {
+      "card": "rates",
+      "nhlId": 8476399,
+      "name": "Blake Coleman",
+      "latest": {
+        "date": "2026-10-25",
+        "sgp": 13
+      },
+      "series": [
+        1.97,
+        0.4,
+        0.41,
+        0.41,
+        1.12,
+        0.22,
+        0.41,
+        0.96,
+        5.09,
+        4.51
+      ],
+      "missing": [],
+      "rows": [
+        {
+          "date": "2026-10-01",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 1,
+          "points": 1,
+          "toi": 824
+        },
+        {
+          "date": "2026-10-03",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 2,
+          "points": 1,
+          "toi": 1638
+        },
+        {
+          "date": "2026-10-06",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 3,
+          "points": 2,
+          "toi": 2702
+        },
+        {
+          "date": "2026-10-08",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 4,
+          "points": 3,
+          "toi": 3562
+        },
+        {
+          "date": "2026-10-10",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 5,
+          "points": 3,
+          "toi": 4558
+        },
+        {
+          "date": "2026-10-12",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 6,
+          "points": 3,
+          "toi": 5612
+        },
+        {
+          "date": "2026-10-13",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 7,
+          "points": 3,
+          "toi": 6487
+        },
+        {
+          "date": "2026-10-15",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 8,
+          "points": 3,
+          "toi": 7544
+        },
+        {
+          "date": "2026-10-18",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 9,
+          "points": 3,
+          "toi": 8531
+        },
+        {
+          "date": "2026-10-20",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 10,
+          "points": 3,
+          "toi": 9586
+        },
+        {
+          "date": "2026-10-22",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 11,
+          "points": 3,
+          "toi": 10449
+        },
+        {
+          "date": "2026-10-24",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 12,
+          "points": 5,
+          "toi": 11439
+        },
+        {
+          "date": "2026-10-25",
+          "season": 20262027,
+          "strength": "all",
+          "sgp": 13,
+          "points": 5,
+          "toi": 12301
+        }
+      ]
+    }
+  ]
+}

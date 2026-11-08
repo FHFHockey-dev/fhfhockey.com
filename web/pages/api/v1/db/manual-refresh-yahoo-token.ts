@@ -1,14 +1,15 @@
 // pages/api/v1/db/manual-refresh-token.ts
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import {
-  loadYahooGlobalCredentials,
-  persistYahooGlobalTokens
+  loadYahooGlobalCredentials
 } from "lib/integrations/yahoo/globalCredentials";
+import {
+  refreshYahooGlobalCredentials,
+  YahooGlobalRefreshError
+} from "lib/integrations/yahoo/refreshGlobalCredentials";
 import { NextApiRequest, NextApiResponse } from "next";
 import { createClient } from "@supabase/supabase-js";
-import YahooFantasy from "yahoo-fantasy";
 import adminOnly from "utils/adminOnlyMiddleware";
-import { withYahooRetry } from "lib/integrations/yahoo/ingestionLifecycle";
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (!["GET", "POST"].includes(req.method || "")) {
@@ -29,48 +30,23 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     return res.status(500).json({ error: "Failed to fetch Yahoo credentials" });
   }
 
-  const yf = new YahooFantasy(
-    yahooCredentials.consumer_key,
-    yahooCredentials.consumer_secret,
-    async ({
-      access_token,
-      refresh_token
-    }: {
-      access_token: string;
-      refresh_token: string;
-    }) => {
-      await persistYahooGlobalTokens(supabase, yahooCredentials.id, {
-        access_token,
-        refresh_token
-      });
-    }
-  );
-
-  yf.setUserToken(yahooCredentials.access_token);
-  yf.setRefreshToken(yahooCredentials.refresh_token);
-
-  let retries = 0;
-  let rateLimitEvents = 0;
   try {
-    await withYahooRetry(() => yf.games.user(), {
-      maxAttempts: 3,
-      onRetry: ({ rateLimited }) => {
-        retries += 1;
-        if (rateLimited) rateLimitEvents += 1;
-      }
-    }); // trivial call to trigger refresh
+    await refreshYahooGlobalCredentials(supabase, yahooCredentials);
     return res.status(200).json({
       success: true,
       refreshed: true,
       refreshedAt: new Date().toISOString(),
-      retries,
-      rateLimitEvents
+      retries: 0,
+      rateLimitEvents: 0
     });
-  } catch {
-    return res.status(500).json({
+  } catch (error) {
+    const failure = error instanceof YahooGlobalRefreshError ? error : null;
+    return res.status(failure?.statusCode ?? 500).json({
       success: false,
-      retries,
-      rateLimitEvents,
+      retries: 0,
+      rateLimitEvents: failure?.code === "yahoo_refresh_rate_limited" ? 1 : 0,
+      code: failure?.code ?? "yahoo_refresh_failed",
+      refreshOutcome: failure?.refreshOutcome ?? "unknown",
       error: "Yahoo token refresh failed"
     });
   }

@@ -1,0 +1,292 @@
+{
+  "at": "2026-10-28T03:36:23.749Z",
+  "nodeVersion": "v22.11.0",
+  "mode": "exact source-extracted current functions; synthetic fixtures; no full module imports",
+  "passed": 8,
+  "failed": 0,
+  "sourcePinsUnchanged": true,
+  "compiledSha256": "a76bd2b70d4bbc0ddcd17a86840b60ebba2fb58373312c2185877618b321e0d7",
+  "fragments": [
+    {
+      "file": "web/lib/api/queryParams.ts",
+      "name": "getSingleQueryParam",
+      "line": 1,
+      "sha256": "f1e19a5af57cb22ba60ee97719489c9482a90138450c9cd9253e20be98e7c065"
+    },
+    {
+      "file": "web/lib/api/queryParams.ts",
+      "name": "parseQueryString",
+      "line": 8,
+      "sha256": "598879a60094d3846ddd8d7872dacbc9bda83d9f27f62a3d04af19db0687d8f5"
+    },
+    {
+      "file": "web/pages/api/v1/debug/rolling-player-metrics.ts",
+      "name": "STRENGTHS",
+      "line": 24,
+      "sha256": "0d5b2d5945c3c3796d23d01f4f094c3a0276a9e3deaad7efc6e3aeb9cac2a857"
+    },
+    {
+      "file": "web/pages/api/v1/debug/rolling-player-metrics.ts",
+      "name": "parseStrength",
+      "line": 32,
+      "sha256": "a27294fd1c3b0deca3141b958b7aa98d796746e341e5c8418dd6184aaf8a509a"
+    },
+    {
+      "file": "web/lib/supabase/Upserts/rollingDroppedColumns.ts",
+      "name": "ROLLING_DROPPED_COLUMNS",
+      "line": 2,
+      "sha256": "f391db219195d0d3468d7f4bd9f6028c63b6f72622dadb539336b802c96d3338"
+    },
+    {
+      "file": "web/lib/supabase/Upserts/rollingDroppedColumns.ts",
+      "name": "ROLLING_DROPPED_COLUMN_SET",
+      "line": 496,
+      "sha256": "ffbd0457a41d015657e7d9de42cd9734467312d7eec4cb08034b606bf32621d8"
+    },
+    {
+      "file": "web/lib/supabase/Upserts/rollingDroppedColumns.ts",
+      "name": "isRollingDroppedColumn",
+      "line": 498,
+      "sha256": "0c84fdb35aac1dfd141796777977c7a33b24e754fa7d4be1e18bcbec69f659fe"
+    },
+    {
+      "file": "web/lib/supabase/Upserts/rollingPlayerValidationPayload.ts",
+      "name": "toNumberOrNull",
+      "line": 595,
+      "sha256": "712561e1a45142ea361b2fc8256d431105b5c5d87611c8514c536bd8087c3654"
+    },
+    {
+      "file": "web/lib/supabase/Upserts/rollingPlayerValidationPayload.ts",
+      "name": "compareValues",
+      "line": 606,
+      "sha256": "8f41b6be2322be5f65495b6e3a3f205344a72173b1c24c67c44eba27f9c09ec9"
+    },
+    {
+      "file": "web/lib/supabase/Upserts/rollingPlayerValidationPayload.ts",
+      "name": "getRowGameId",
+      "line": 641,
+      "sha256": "0fa27ef9cd4ac548e34ea7a3b0ecbf028367960f8c7c31b0331c4701307c931f"
+    },
+    {
+      "file": "web/lib/supabase/Upserts/rollingPlayerValidationPayload.ts",
+      "name": "getRowGameDate",
+      "line": 646,
+      "sha256": "0c763d80e30d3afc975c10735c31b5c8bcf7633ed9c5ca00640c7a61c82e5bf4"
+    },
+    {
+      "file": "web/lib/supabase/Upserts/rollingPlayerValidationPayload.ts",
+      "name": "getRowStrength",
+      "line": 651,
+      "sha256": "a8dd9b163ab334ae138ddb0d3bb880a45c4f6664be6dfee2cab7250ee62927ec"
+    },
+    {
+      "file": "web/lib/supabase/Upserts/rollingPlayerValidationPayload.ts",
+      "name": "getRowSeason",
+      "line": 658,
+      "sha256": "225201f2297ea17049a62a66195cf93b830a7110dec30e737d3946c956d96157"
+    },
+    {
+      "file": "web/lib/supabase/Upserts/rollingPlayerValidationPayload.ts",
+      "name": "getRowTeamId",
+      "line": 663,
+      "sha256": "8c11f11701ab9f801f7f8285d55349ee33879cd984f90d5c81593ecab3c68fb4"
+    },
+    {
+      "file": "web/lib/supabase/Upserts/rollingPlayerValidationPayload.ts",
+      "name": "getRowKey",
+      "line": 668,
+      "sha256": "9c55dcd324b264673e04843c73ed8c830b86acd5b95fe9ebcb57b069b2de4fec"
+    },
+    {
+      "file": "web/lib/supabase/Upserts/rollingPlayerValidationPayload.ts",
+      "name": "sortRowsByDateAsc",
+      "line": 675,
+      "sha256": "c805ade4f24818a2e3c7d5c01d0455fb83538dc92908e2139119c958395ec09d"
+    },
+    {
+      "file": "web/lib/supabase/Upserts/rollingPlayerValidationPayload.ts",
+      "name": "filterRowsForRequest",
+      "line": 689,
+      "sha256": "fb911f22bd873f3a8fc16db04d76192b61d111cb1a5c29f3cbff74a6de9bd7fd"
+    },
+    {
+      "file": "web/lib/supabase/Upserts/rollingPlayerValidationPayload.ts",
+      "name": "isLegacyField",
+      "line": 787,
+      "sha256": "890a0dabaa57cfe446506a886aafb18079a1ac31b3fb7f598e8eedc525cc2491"
+    },
+    {
+      "file": "web/lib/supabase/Upserts/rollingPlayerValidationPayload.ts",
+      "name": "inferMetricFamily",
+      "line": 795,
+      "sha256": "35173b47ed48530afae55ee02e709fbb35b15ac6a9066d9247ace122d9d55fd0"
+    },
+    {
+      "file": "web/lib/supabase/Upserts/rollingPlayerValidationPayload.ts",
+      "name": "buildFamilyComparisonSummary",
+      "line": 1497,
+      "sha256": "cbb75a5999c6b09bba45e5722754bdf8d4edce792143ba1091dc99f4f2952a00"
+    }
+  ],
+  "results": [
+    {
+      "name": "all: selected row survives and real mismatch remains visible",
+      "passed": true,
+      "actual": {
+        "rowCount": 1,
+        "playerId": 8476453,
+        "strength": "all",
+        "key": "2026-10-20:all:2026020100",
+        "compared": 1,
+        "mismatches": 1
+      },
+      "expected": {
+        "rowCount": 1,
+        "playerId": 8476453,
+        "strength": "all",
+        "key": "2026-10-20:all:2026020100",
+        "compared": 1,
+        "mismatches": 1
+      }
+    },
+    {
+      "name": "ev: selected row survives and real mismatch remains visible",
+      "passed": true,
+      "actual": {
+        "rowCount": 1,
+        "playerId": 8476453,
+        "strength": "ev",
+        "key": "2026-10-20:ev:2026020100",
+        "compared": 1,
+        "mismatches": 1
+      },
+      "expected": {
+        "rowCount": 1,
+        "playerId": 8476453,
+        "strength": "ev",
+        "key": "2026-10-20:ev:2026020100",
+        "compared": 1,
+        "mismatches": 1
+      }
+    },
+    {
+      "name": "pp: selected row survives and real mismatch remains visible",
+      "passed": true,
+      "actual": {
+        "rowCount": 1,
+        "playerId": 8476453,
+        "strength": "pp",
+        "key": "2026-10-20:pp:2026020100",
+        "compared": 1,
+        "mismatches": 1
+      },
+      "expected": {
+        "rowCount": 1,
+        "playerId": 8476453,
+        "strength": "pp",
+        "key": "2026-10-20:pp:2026020100",
+        "compared": 1,
+        "mismatches": 1
+      }
+    },
+    {
+      "name": "pk: selected row survives and real mismatch remains visible",
+      "passed": true,
+      "actual": {
+        "rowCount": 1,
+        "playerId": 8476453,
+        "strength": "pk",
+        "key": "2026-10-20:pk:2026020100",
+        "compared": 1,
+        "mismatches": 1
+      },
+      "expected": {
+        "rowCount": 1,
+        "playerId": 8476453,
+        "strength": "pk",
+        "key": "2026-10-20:pk:2026020100",
+        "compared": 1,
+        "mismatches": 1
+      }
+    },
+    {
+      "name": "5v5: selected row survives and real mismatch remains visible",
+      "passed": true,
+      "actual": {
+        "rowCount": 1,
+        "playerId": 8476453,
+        "strength": "5v5",
+        "key": "2026-10-20:5v5:2026020100",
+        "compared": 1,
+        "mismatches": 1
+      },
+      "expected": {
+        "rowCount": 1,
+        "playerId": 8476453,
+        "strength": "5v5",
+        "key": "2026-10-20:5v5:2026020100",
+        "compared": 1,
+        "mismatches": 1
+      }
+    },
+    {
+      "name": "Unsupported strength is rejected and never enters the 5v5 frame",
+      "passed": true,
+      "actual": {
+        "route": null,
+        "retained": 0
+      },
+      "expected": {
+        "route": null,
+        "retained": 0
+      }
+    },
+    {
+      "name": "Season, team and date restrictions still apply",
+      "passed": true,
+      "actual": [
+        {
+          "player_id": 8476453,
+          "season": 20262027,
+          "game_id": 2026020100,
+          "game_date": "2026-10-20",
+          "team_id": 14,
+          "goals_avg_last5": 0.5,
+          "strength_state": "5v5"
+        }
+      ],
+      "expected": [
+        {
+          "player_id": 8476453,
+          "season": 20262027,
+          "game_id": 2026020100,
+          "game_date": "2026-10-20",
+          "team_id": 14,
+          "goals_avg_last5": 0.5,
+          "strength_state": "5v5"
+        }
+      ]
+    },
+    {
+      "name": "5v5 comparison preserves valid zero versus missing/null",
+      "passed": true,
+      "actual": [
+        true,
+        false,
+        false,
+        true
+      ],
+      "expected": [
+        true,
+        false,
+        false,
+        true
+      ]
+    }
+  ],
+  "networkCalls": 0,
+  "databaseOperations": 0,
+  "environmentFileReads": 0,
+  "sourceEdits": 0,
+  "fullPackageTestsRun": false
+}

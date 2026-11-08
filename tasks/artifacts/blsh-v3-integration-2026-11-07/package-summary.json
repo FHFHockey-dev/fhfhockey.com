@@ -1,0 +1,50 @@
+{
+  "candidatePath": "/Users/tim/Documents/Codex/2026-11-07/blsh-v3-integration/2026-10-28.arm-a.mapper-v3.candidate.json",
+  "bytes": 10243796,
+  "sha256": "daf447b70fd8e08dc88a2e17162e0c1dd04863275cd7e23dbd923acca34e4485",
+  "counts": {
+    "profiles": 729,
+    "numeric": 551,
+    "BL": 169,
+    "SH": 112,
+    "withheld": 448,
+    "withheldNoPersonalHistory": 84,
+    "withheldPersonalHistoryUnavailable": 0,
+    "withheldInsufficientPersonalHistory": 39,
+    "withheldShortWindow": 15,
+    "withheldHeadlineConflict": 29,
+    "withheldHeadlineUnavailable": 0,
+    "directionWithheld": 163,
+    "opportunityAttached": 0,
+    "opportunityListCheck": {
+      "agrees": 0,
+      "qualified": 0,
+      "balanced": 0,
+      "contradicts": 0,
+      "withheld": 0,
+      "unavailable": 0
+    },
+    "byPosition": {
+      "F": {
+        "BL": 103,
+        "SH": 82
+      },
+      "D": {
+        "BL": 66,
+        "SH": 30
+      }
+    },
+    "unavailableTier": 178,
+    "referenceContextAbsent": 152,
+    "zeroShotWindows": 19,
+    "zeroShotNumeric": 14,
+    "zeroShotListed": 0,
+    "personalReference1to4": 36,
+    "referenceAgeDays": {
+      "n": 577,
+      "min": 894,
+      "max": 1451
+    }
+  },
+  "membershipChanges": 167
+}

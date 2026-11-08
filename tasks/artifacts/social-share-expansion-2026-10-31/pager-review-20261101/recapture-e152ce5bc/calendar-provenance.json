@@ -1,0 +1,104 @@
+{
+ "pin": "e152ce5bca1aa77e29a43acd33eb7e9ae0d0ac62",
+ "loader": "loadMatchupWeeks(public client, readAt), the matchup-weeks route's own call",
+ "readAt": "2026-11-03T16:37:44.586Z",
+ "sha256": "96f7e60a7932a59e8ea727b8b1637e400b50f9befba5169ff886278091f193c1",
+ "requests": [
+  {
+   "host": "supabase.co",
+   "path": "yahoo_matchup_weeks",
+   "query": "?select=week%2Cstart_date%2Cend_date&season=eq.2026&order=week.asc&offset=0&limit=40",
+   "status": 200,
+   "range": "0-26/27"
+  }
+ ],
+ "rows": 27,
+ "liveCutoff": "2026-11-02",
+ "editions": [
+  {
+   "name": "off-night-next",
+   "generatedAt": "2026-11-01T19:45:06.800Z",
+   "cutoff": "2026-10-31"
+  },
+  {
+   "name": "off-night-w4",
+   "generatedAt": "2026-11-01T19:45:09.845Z",
+   "cutoff": "2026-10-31"
+  },
+  {
+   "name": "team-games-w4",
+   "generatedAt": "2026-11-01T19:45:11.079Z",
+   "cutoff": "2026-10-31"
+  },
+  {
+   "name": "risky-next",
+   "generatedAt": "2026-11-01T19:45:11.307Z",
+   "cutoff": "2026-10-31"
+  },
+  {
+   "name": "risky-past",
+   "generatedAt": "2026-11-01T19:45:12.552Z",
+   "cutoff": "2026-10-31"
+  },
+  {
+   "name": "start-sit-next",
+   "generatedAt": "2026-11-01T19:45:12.610Z",
+   "cutoff": "2026-10-31"
+  },
+  {
+   "name": "bsh-w4",
+   "generatedAt": "2026-11-01T19:45:13.134Z",
+   "cutoff": "2026-10-31"
+  },
+  {
+   "name": "mcm-w4",
+   "generatedAt": "2026-11-01T19:45:13.417Z",
+   "cutoff": "2026-10-31"
+  },
+  {
+   "name": "nightly-custom",
+   "generatedAt": "2026-11-01T19:45:13.722Z",
+   "cutoff": "2026-10-31"
+  },
+  {
+   "name": "cardio-w4",
+   "generatedAt": "2026-11-01T19:45:14.294Z",
+   "cutoff": "2026-10-31"
+  },
+  {
+   "name": "stars-w4",
+   "generatedAt": "2026-11-01T19:45:14.842Z",
+   "cutoff": "2026-10-31"
+  },
+  {
+   "name": "gsax-w4",
+   "generatedAt": "2026-11-01T19:45:16.867Z",
+   "cutoff": "2026-10-31"
+  },
+  {
+   "name": "busy-custom",
+   "generatedAt": "2026-11-01T19:45:17.681Z",
+   "cutoff": "2026-10-31"
+  },
+  {
+   "name": "rescue-w4",
+   "generatedAt": "2026-11-01T19:45:17.949Z",
+   "cutoff": "2026-10-31"
+  },
+  {
+   "name": "goalie-week",
+   "generatedAt": "2026-11-01T19:45:18.653Z",
+   "cutoff": "2026-10-31"
+  },
+  {
+   "name": "goalie-season",
+   "generatedAt": "2026-11-01T19:45:20.117Z",
+   "cutoff": "2026-10-31"
+  },
+  {
+   "name": "standouts-1028",
+   "generatedAt": "2026-11-01T19:45:21.277Z",
+   "cutoff": "2026-10-31"
+  }
+ ]
+}

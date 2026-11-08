@@ -1,0 +1,22 @@
+{
+  "id": "CODEX-PLAYER-CARDS-RECENT15-20261029",
+  "at": "2026-10-29T17:30:34.681999+00:00",
+  "owner_thread": "01a16ec2-f81c-717b-8961-8c3832fdc00f",
+  "status": "ACTIVE exact owned local data/comparison slice; tests await shared slot",
+  "authority": "TJ resume via Scout; existing card custody; no new data requests without bounded approval",
+  "source_paths": [
+    "web/lib/player-cards/currentNhl.ts",
+    "web/lib/player-cards/currentNhl.test.ts",
+    "web/lib/player-cards/currentSelection.ts",
+    "web/lib/player-cards/currentSelection.test.ts",
+    "web/components/player-cards/CurrentPlayerCard.tsx",
+    "web/components/player-cards/CurrentPlayerCardStudio.tsx",
+    "web/components/player-cards/CurrentPlayerCardStudio.test.tsx",
+    "tasks/tasks-prd-shareable-player-cards.md",
+    "web/lib/player-cards/currentNhlExport.ts"
+  ],
+  "artifact_root": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15",
+  "baseline_head": "081fcb849fad94fdc958cf0af86a8b977796d060",
+  "scope": "Same-capture recent versus preceding equal N, invalid baseline isolated, raw rates and evidence export; no rank/cohort/style changes",
+  "boundaries": "No BLSH/Tuesday/shared auth, new workers, dependencies, Git mutation, deployment or deletion"
+}

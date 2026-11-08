@@ -1,0 +1,307 @@
+{
+  "at": "2026-10-27T02:43:55.954903+00:00",
+  "head": "7da3e8663338f624564b2bb570e146b4f0b3f2de",
+  "sourceFiles": 5,
+  "unchanged12RendererControllerDataPins": 10,
+  "prior12ArtifactPinsVerified": 78,
+  "qualification": {
+    "at": "2026-10-27T02:38:43.409734+00:00",
+    "reviewer": "Codex existing player-card task; routine boundedlocalQA, not independent or ownerpersonalvisualapproval",
+    "scope": "One Kucherovoriginal/alpha/dark/checker/mask and localTBLlogo; no newinference/network/sourcechanges",
+    "identityEvidence": {
+      "visibleOriginal": "KUCHEROV lettering,86jersey,Tampauniform; facepartlyobscured/turned; nofacialrecognitionclaim",
+      "officialRetainedPlayerId": 8476453,
+      "name": "Nikita Kucherov",
+      "team": "TBL",
+      "sweater": 86,
+      "position": "R",
+      "heroImageExact": "https://assets.nhle.com/mugs/actionshots/1296x729/8476453.jpg",
+      "sourceUrlMatches": true
+    },
+    "technical": {
+      "sourcePath": "/Users/tim/Documents/FHFH-local-image-tests/2026-10-25-birefnet-roster805/originals/8476453.jpg",
+      "alphaPath": "/Users/tim/Documents/FHFH-local-image-tests/2026-10-25-birefnet-roster805/outputs/8476453/alpha.png",
+      "sourceSha256": "3036cb4ec324cc902ab2d797f4e69b58347c85909d6ce92daab01b7123f0711b",
+      "alphaSha256": "2010d97f1e1c631f7ccf154d991517f3b6923df7739d756e39ed06140aa1f278",
+      "decodedRgbSha256": "2dd312c729c7d6742edba42be59ba058e25273c4c96388e1b450787806204a72",
+      "sourceDimensions": [
+        1296,
+        729
+      ],
+      "alphaDimensions": [
+        1296,
+        729
+      ],
+      "sourceRgbExactlyPreserved": true,
+      "alphaBounds": [
+        325,
+        63,
+        942,
+        586
+      ],
+      "transparentPixels": 826038,
+      "opaquePixels": 28871,
+      "antialiasedPixels": 89875,
+      "allFourFrameEdgesTransparent": true,
+      "logoPath": "web/public/teamLogos/TBL.png",
+      "logoSha256": "51a484101a24be2f33145a58d1c7855bfc5b408bec39a7195a29aec7aaa6332c",
+      "logoDimensions": [
+        1099,
+        1099
+      ]
+    },
+    "visual": {
+      "scalesViewed": [
+        "1296x729 original/nativealpha/mask",
+        "320x180 dark/checker cardheaders"
+      ],
+      "pass": [
+        "Jerseyname86teamagreewithofficialretainedidentity",
+        "Coherentplayer/stick/gloves/skatesretained",
+        "No crowd,boards,logos,otherplayersorpartialnet retained",
+        "Alphaedgecontinuousatcardscale,noobviousmajorhalosorequipmentloss"
+      ],
+      "limitations": [
+        "Posefacesawayasoriginal; nofacefabrication",
+        "Smallskatelaceedgefidelitynotperfect/noedgepainting",
+        "Localpreviewqualificationonly,notapublicationrightsdetermination"
+      ]
+    },
+    "whyPreviouslyUnreviewed": "805batchgenerated651candidates;only48newcutoutsreceivedvisualQA. Kucherovhad no recordedvisualreview; noexistingrejection/owneronlyapprovalrequirementfound. Batchoriginalstatuspreservedunchanged.",
+    "decision": "QUALIFIED_AND_SERVED_WITH_MATCHING_RETAINED_REAL_STATS",
+    "finalExportReview": {
+      "at": "2026-10-27T02:43:55.954903+00:00",
+      "automated": "PASS3servedbrowsergroups/5PNGs/manifests/3sharebytes; exactownKucherovTBL86id,actualretainedvalues/originalgeometry,portraitstageorder,TBLlogo/3x5pxcontours",
+      "nativePixelInspection": {
+        "at": "2026-10-27T02:45:25.749500+00:00",
+        "viewed": [
+          "team-colors-L10.png",
+          "posterized-team-colors-L10.png",
+          "pixelated-team-colors-L10.png"
+        ],
+        "pass": "OwnKucherov86/sourcepose/equipment retained; distinctcombinedtreatmentsvisible,originalgeometry/TBLbackgroundlogo/contourbands clear;actual20:52/8.63/.86/3.74/10.0%/10GP208.7min andretainedsource/rankunavailablelabels visible",
+        "limitation": "Pixelatedtreatmentintentionallyremovesfinejersey/face detail; originalidentity verifiedseparately. No identitycompletion/redraw."
+      }
+    },
+    "captureDate": {
+      "date": "2026-10-24",
+      "precision": "day",
+      "basis": "Original dated validation batch download-receipts.json, exactmatching sourceSHA; exact download/photographic time not supplied",
+      "notUsedAsImageDownloadTime": "Landingrecord fetched_at2026-10-24T20:21:59.751271 and cutoutprocessingstarted25T04:20 are separate events"
+    }
+  },
+  "commands": {
+    "tests": {
+      "action": "tests",
+      "command": [
+        "npm",
+        "test",
+        "--",
+        "--run",
+        "--config",
+        "../tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/vitest.config.mts"
+      ],
+      "cwd": "/Users/tim/Code/fhfhockey.com/web",
+      "exitCode": 0,
+      "elapsedSeconds": 3.439,
+      "environmentOverrides": {
+        "npm_config_cache": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/.npm-cache",
+        "npm_config_logs_dir": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/.npm-logs",
+        "NO_UPDATE_NOTIFIER": "1",
+        "NEXT_TELEMETRY_DISABLED": "1"
+      },
+      "lockOwnedAndReleased": true
+    },
+    "types": {
+      "action": "types",
+      "command": [
+        "npx",
+        "--no-install",
+        "tsc",
+        "--noEmit",
+        "--project",
+        "../tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/tsconfig.json"
+      ],
+      "cwd": "/Users/tim/Code/fhfhockey.com/web",
+      "exitCode": 0,
+      "elapsedSeconds": 1.663,
+      "environmentOverrides": {
+        "npm_config_cache": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/.npm-cache",
+        "npm_config_logs_dir": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/.npm-logs",
+        "NO_UPDATE_NOTIFIER": "1",
+        "NEXT_TELEMETRY_DISABLED": "1"
+      },
+      "lockOwnedAndReleased": true
+    },
+    "lint": {
+      "action": "lint",
+      "command": [
+        "npx",
+        "--no-install",
+        "eslint",
+        "lib/player-cards/reviewedHeroSamples.ts",
+        "lib/player-cards/teamLogo.ts",
+        "lib/player-cards/currentArtwork.test.ts",
+        "components/player-cards/CurrentPlayerCardStudio.test.tsx"
+      ],
+      "cwd": "/Users/tim/Code/fhfhockey.com/web",
+      "exitCode": 0,
+      "elapsedSeconds": 0.714,
+      "environmentOverrides": {
+        "npm_config_cache": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/.npm-cache",
+        "npm_config_logs_dir": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/.npm-logs",
+        "NO_UPDATE_NOTIFIER": "1",
+        "NEXT_TELEMETRY_DISABLED": "1"
+      },
+      "lockOwnedAndReleased": true
+    },
+    "render": {
+      "action": "render",
+      "command": [
+        "node",
+        "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/render-preview.mjs"
+      ],
+      "cwd": "/Users/tim/Code/fhfhockey.com/web",
+      "exitCode": 0,
+      "elapsedSeconds": 0.194,
+      "environmentOverrides": {
+        "npm_config_cache": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/.npm-cache",
+        "npm_config_logs_dir": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/.npm-logs",
+        "NO_UPDATE_NOTIFIER": "1",
+        "NEXT_TELEMETRY_DISABLED": "1"
+      },
+      "lockOwnedAndReleased": true
+    },
+    "served": {
+      "action": "served",
+      "command": [
+        "node",
+        "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/verify-served.mjs"
+      ],
+      "cwd": "/Users/tim/Code/fhfhockey.com/web",
+      "exitCode": 0,
+      "elapsedSeconds": 2.474,
+      "environmentOverrides": {
+        "npm_config_cache": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/.npm-cache",
+        "npm_config_logs_dir": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/.npm-logs",
+        "NO_UPDATE_NOTIFIER": "1",
+        "NEXT_TELEMETRY_DISABLED": "1"
+      },
+      "lockOwnedAndReleased": true
+    }
+  },
+  "tests": {
+    "passed": 30,
+    "failed": 0,
+    "files": 4
+  },
+  "browser": {
+    "checks": [
+      "ActualKucherovcapture+ownsource/jersey/ID/team:TeamColorsdefaultand2combinedtreatments, originalgeometry,matchingTBLlogo/3x5pxcontours,PNGmanifestandnative-sharebyteparity",
+      "Real5/10/20+bothformats retainownhero/source andselected-onlyreproducibility; noadditionalAPIcapture orrankclaims",
+      "390pxnooverflow;changingselectedID immediatelyclearsKucherovportrait,stats,preparedfileandcontrols"
+    ],
+    "exports": [
+      {
+        "style": "team-colors",
+        "format": "rates-opportunity",
+        "count": 10,
+        "sha256": "6b98142939329b8c8333565f74b5eba3a41c4dfce3c2fc3cded2ecfe38811527",
+        "playerId": 8476453,
+        "source": "nhl-retained"
+      },
+      {
+        "style": "posterized-team-colors",
+        "format": "rates-opportunity",
+        "count": 10,
+        "sha256": "e15a973766c1fbaa9df5046287cb868cdcfce25a45414ca10d0e1ed3ab33906a",
+        "playerId": 8476453,
+        "source": "nhl-retained"
+      },
+      {
+        "style": "pixelated-team-colors",
+        "format": "rates-opportunity",
+        "count": 10,
+        "sha256": "35b4d61650c5dbe120259e274397ebc41ac4091424e72979c6a390247d224aa7",
+        "playerId": 8476453,
+        "source": "nhl-retained"
+      },
+      {
+        "format": "results-milestones",
+        "count": 5,
+        "sha256": "b9bd82fe7fbd14ad3dd294ed4ed87801d0f4e9cd1d9484268f138f26422d3f3d",
+        "playerId": 8476453,
+        "source": "nhl-retained"
+      },
+      {
+        "format": "results-milestones",
+        "count": 20,
+        "sha256": "8999449df8ef9b002ac95dd3028adb7add4202a3ba5a44d9ad2b4b21bd52bc43",
+        "playerId": 8476453,
+        "source": "nhl-retained"
+      }
+    ],
+    "localApiCalls": [
+      "?playerId=8476453&season=20262027&count=10"
+    ],
+    "localAssetCalls": [
+      "/player-cards/hero-samples/8476453.png",
+      "/teamLogos/TBL.png",
+      "/teamLogos/TBL.png",
+      "/teamLogos/TBL.png"
+    ],
+    "fixtureProviderPaths": [
+      "/player/8476453/landing",
+      "/player/8476453/game-log/20262027/2",
+      "/club-schedule-season/TBL/20262027"
+    ],
+    "externalAttempts": [],
+    "pageErrors": [],
+    "newLiveRequests": 0,
+    "source": "approvedretainedcaptureandbyteidenticalexistinglocalcutout;actualnativeHTTPloopbackonly"
+  },
+  "runtime": {
+    "pid": 78672,
+    "bind": "127.0.0.1:3125",
+    "readbacks": [
+      {
+        "route": "/player-cards/current",
+        "status": 200,
+        "path": "tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/preview.html",
+        "bytes": 374804,
+        "sha256": "85ebc3dffaa72e01e7c7518ec066450a78d4bf7e48a42bd62cb2d8e5ae01f86b"
+      },
+      {
+        "route": "/player-cards",
+        "status": 200,
+        "path": "tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/preview.html",
+        "bytes": 374804,
+        "sha256": "85ebc3dffaa72e01e7c7518ec066450a78d4bf7e48a42bd62cb2d8e5ae01f86b"
+      },
+      {
+        "route": "/player-cards/customizer",
+        "status": 200,
+        "path": "tasks/artifacts/player-cards-2026-10-26/outline-editor-09/preview.html",
+        "bytes": 3455216,
+        "sha256": "ca75a7448351ce85abcd833f6f0f40cd54f85911c6ad06a087a81ed6f5b543d9"
+      },
+      {
+        "route": "/player-cards/nhl-retained",
+        "status": 200,
+        "path": "tasks/artifacts/player-cards-2026-10-26/current-data-01/approved-snapshot-02/preview.html",
+        "bytes": 523724,
+        "sha256": "3b6ff7d783576dda860386c0fb47af8c64e6b42fcb1d0b9cecefee98f02a2777"
+      },
+      {
+        "route": "/player-cards/functional",
+        "status": 200,
+        "path": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1/preview.html",
+        "bytes": 318626,
+        "sha256": "6c29f6eb3dc6ffc9a6a8a546423f78ac3e6e5e1e7265129475724422d3aad9b5"
+      }
+    ]
+  },
+  "initialFailure": "Missing comma whenappendingregistrysample:parsefailurebeforetestcollection;fixed,firstlogs/commandsretained",
+  "boundaries": "No newfetches/inference/originalbatchchanges/renderertransforms/DB/Git/deploy/deletion/deps. Onlyoneassetlocallyqualified;nofull805acceptance/publicationrightsclaim.",
+  "finalAt": "2026-10-27T02:45:25.749500+00:00"
+}

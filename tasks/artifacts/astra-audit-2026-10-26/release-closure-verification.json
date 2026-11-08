@@ -1,0 +1,8 @@
+{
+  "sha": "538100d41ee87e721d2764b694f7bac8c2f2bb34",
+  "receipt_hash": "4382282d8564a3e10465c02f7062d336b9d6a7d17cb4bb2eeccdda1ff96d7fc9",
+  "modules": 192,
+  "recomputed_closure_hash": "4bf0fce7a4bf1e6ed7b5e8b28b8524836f4b6969adfe57e80ae373b2f847cbbb",
+  "receipt_closure_hash": "4bf0fce7a4bf1e6ed7b5e8b28b8524836f4b6969adfe57e80ae373b2f847cbbb",
+  "match": true
+}

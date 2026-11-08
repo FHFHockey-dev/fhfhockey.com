@@ -1,0 +1,12 @@
+{
+  "at": "2026-11-07T21:40:42.170295+00:00",
+  "privateLink": "/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-rso-first-pass-20261107-rq7qrip0/web/node_modules/node_modules",
+  "target": "/Users/tim/Code/fhfhockey.com/web/node_modules",
+  "originalLinkExists": true,
+  "originalLinkTarget": "/Users/tim/Code/fhfhockey.com/web/node_modules",
+  "cause": "Nested node_modules/node_modules symlink reaches canonical dependency tree in ESM resolution; CJS resolves private React. Captured stack shows QueryClientProvider canonical React versus private renderer.",
+  "action": "remove private copied symlink only; original preserved",
+  "correctedPageStatus": 200,
+  "sourceChanged": false,
+  "validationReceipt": "ssr-diagnostic.json"
+}

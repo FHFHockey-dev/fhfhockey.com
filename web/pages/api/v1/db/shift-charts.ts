@@ -1,3 +1,4 @@
+import { persistManualCronAudit, withManualCronAuditResponse } from "lib/cron/manualCronAudit";
 /**
  * API Endpoint: /api/v1/db/shift-charts
  * HTTP Method: POST
@@ -1373,7 +1374,7 @@ async function handleShiftChartsRequest(
         };
       }
       try {
-        await supabase.from("cron_job_audit").insert([
+        await persistManualCronAudit(supabase, [
           {
             job_name: jobName,
             status,
@@ -1392,6 +1393,7 @@ async function handleShiftChartsRequest(
         ]);
       } catch (auditErr) {
         console.error("Failed to write audit row:", auditErr);
+        throw auditErr;
       }
     }
   }
@@ -1410,4 +1412,4 @@ function directShiftChartsHandler(req: NextApiRequest, res: NextApiResponse) {
   return handleShiftChartsRequest(req, res, "self");
 }
 
-export default adminOnly(directShiftChartsHandler);
+export default adminOnly(withManualCronAuditResponse(directShiftChartsHandler));

@@ -1,0 +1,22 @@
+{
+  "atUtc": "2026-11-01T18:31:19.872644+00:00",
+  "status": "READ_ONLY_PREFLIGHT_COMPLETE_PRIVILEGE_APPROVAL_PENDING",
+  "project": "fyhftlxokyjtpndbkfse",
+  "hostedSelectCallsThisContinuation": 3,
+  "providerOrApplicationRequests": 0,
+  "productionMutations": 0,
+  "files": {
+    "APPROVAL-PACKET.md": "36a9aa73b6ca2502a9660eadb5c59230a17824489a7f714a172a07e58e88a42b",
+    "MAILBOX-RECEIPT.json": "e03a054ccf71f5b93e685958f685a448ef24a71fe4ed660f4e092ee4f5c4b7dc",
+    "OPERATIONAL-DETAILS.md": "cd95ed8aa23c189b0070b17764582f87517f44b74d2d7e2f70ee04acaa19072f",
+    "PREFLIGHT-ASSESSMENT.json": "028b3457022d0fbc4c43660dc86b2731d09a1e6c483cb3b1b5a0bb045bfb6229",
+    "PROPOSED-admission-install.sql": "c262a45040d5e090a0f9a6640cad899a2c7da299eae12de1be42cbe908f038b0",
+    "hosted-preflight.json": "41d9439fb351505f4c0bd78c259bfec08fd0007cbfa6016fe5a5375ebd128a4b",
+    "hosted-preflight.sql": "365c1f3ce154cdc05bfc6a4b8f0d46272e93ea8b3a9efbcb0078dc0d4efdadf6",
+    "legacy-runner-read.json": "3f0c75e948a852bd1bce6949a7dd7fc7cd1a35bf6c949671df3ec1b10a6687c2",
+    "legacy-runner-read.sql": "bcd2ea631a1c747ae2c9b4d34118accec95dc7344329b18a395eb87af4763704",
+    "legacy-runner-source-trace.json": "c2c6c578cefba06eea2a2e8dfca37e7ea9e9d395e1acad2b66468227d853c2bb",
+    "prerequisite-history-and-runner-audit.json": "175aaf049741dc2e2b2be3c07447a7596fdb720dcae6bc1a0011252c4793b3fc",
+    "prerequisite-history-and-runner-audit.sql": "5827c5e6a3406e24961c7d63ef33c2e0d6566ef8a534dc4834f2f1f3e4690622"
+  }
+}

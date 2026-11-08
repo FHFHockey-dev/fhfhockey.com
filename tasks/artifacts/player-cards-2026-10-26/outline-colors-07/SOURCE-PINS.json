@@ -1,0 +1,37 @@
+[
+  {
+    "path": "web/lib/player-cards/alphaOutline.ts",
+    "sha256": "043a8e8ebd41628ab01e733d4ac02bb8694a4d2986eb5480e51128b328a839d1",
+    "bytes": 8528
+  },
+  {
+    "path": "web/lib/player-cards/alphaOutline.test.ts",
+    "sha256": "aa1df15a4d1de078dea4f4eaf96c1330de1e6d7cd62d5e750bd682325299faa6",
+    "bytes": 3727
+  },
+  {
+    "path": "web/lib/player-cards/portraitTreatment.ts",
+    "sha256": "69828090d20ea833df4d980a278337b76fb0f07dce1fac076118c76bfea87eff",
+    "bytes": 10091
+  },
+  {
+    "path": "web/components/player-cards/PlayerCardShareStudio.tsx",
+    "sha256": "3f3140ec173037b1b4986391752ad93f024557c4a0cb2773f71519624856a9ff",
+    "bytes": 11337
+  },
+  {
+    "path": "web/components/player-cards/PlayerCardShareStudio.test.tsx",
+    "sha256": "1b9548b80e2ccc1e7a80a7ec8efae78117985bbcd059a4bf87e5800aef686761",
+    "bytes": 10374
+  },
+  {
+    "path": "web/lib/player-cards/shareExport.test.ts",
+    "sha256": "2bc95479d20532d436b96c421e2b02969893ad03e04afa609b8672e78b23703f",
+    "bytes": 7722
+  },
+  {
+    "path": "web/components/player-cards/HeroPlayerCard.tsx",
+    "sha256": "464acf7ae3b321f067bd03452770f4d39ed1985f0431de62d7929d9d0f5d8091",
+    "bytes": 7925
+  }
+]

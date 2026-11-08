@@ -1,0 +1,109 @@
+{
+  "now": "2026-10-26T13:20:45.850Z",
+  "sourceKind": "legacy",
+  "players": 1065,
+  "skaters": 950,
+  "goalies": 115,
+  "noTeam": 58,
+  "scheduledTeamGames": 94,
+  "futureTeamGames": 94,
+  "forecastsBuilt": 1847,
+  "bridgeRowsWire": 1847,
+  "bridgeRowsServed": 1847,
+  "bodyBytes": 1253164,
+  "budget": 4000000,
+  "manifest": {
+    "required": 2973,
+    "forecasted": 1847,
+    "exclusionCounts": {}
+  },
+  "perDate": {
+    "2026-10-26": {
+      "teamGames": 6,
+      "futureTeamGames": 6,
+      "sk": 180,
+      "gl": 18,
+      "skCovered": 104,
+      "glCovered": 13,
+      "skServed": 104,
+      "glServed": 13
+    },
+    "2026-10-27": {
+      "teamGames": 22,
+      "futureTeamGames": 22,
+      "sk": 624,
+      "gl": 77,
+      "skCovered": 389,
+      "glCovered": 45,
+      "skServed": 389,
+      "glServed": 45
+    },
+    "2026-10-28": {
+      "teamGames": 8,
+      "futureTeamGames": 8,
+      "sk": 232,
+      "gl": 25,
+      "skCovered": 140,
+      "glCovered": 16,
+      "skServed": 140,
+      "glServed": 16
+    },
+    "2026-10-29": {
+      "teamGames": 22,
+      "futureTeamGames": 22,
+      "sk": 605,
+      "gl": 75,
+      "skCovered": 387,
+      "glCovered": 46,
+      "skServed": 387,
+      "glServed": 46
+    },
+    "2026-10-30": {
+      "teamGames": 6,
+      "futureTeamGames": 6,
+      "sk": 178,
+      "gl": 20,
+      "skCovered": 107,
+      "glCovered": 12,
+      "skServed": 107,
+      "glServed": 12
+    },
+    "2026-10-31": {
+      "teamGames": 20,
+      "futureTeamGames": 20,
+      "sk": 564,
+      "gl": 66,
+      "skCovered": 352,
+      "glCovered": 42,
+      "skServed": 352,
+      "glServed": 42
+    },
+    "2026-11-01": {
+      "teamGames": 10,
+      "futureTeamGames": 10,
+      "sk": 276,
+      "gl": 33,
+      "skCovered": 174,
+      "glCovered": 20,
+      "skServed": 174,
+      "glServed": 20
+    }
+  },
+  "limitations": [
+    "Interim FORGE projections until native forecasts go live: each player's latest FORGE v2 daily line (runs 2026-10-20 to 2026-10-27) stands in for his remaining games; 32 of 32 teams covered.",
+    "Penalty minutes, plus-minus, shorthanded points, game-winning goals and faceoffs are season per-game rates (this season plus half of last, pulled toward league rates), not FORGE projections.",
+    "Future games move each FORGE line to that game's opponent with FORGE's team-strength adjustment (team xG for and against, 32 teams, last season blended in as 20 games), plus FORGE's home-ice and rest model (back-to-backs included); a goalie's start chance drops on the second night of a back-to-back, and each opponent's tilt toward forwards or defencemen (points and shots allowed by position vs league, shrunk).",
+    "Goalie wins: FORGE's per-game team win probability (both teams sum to 1) × 0.984 starter decision share, times his start chance; games FORGE has not projected yet use FORGE's same win model on team xG.",
+    "Goalie starts use each goalie's last-10 start share (season share when missing) from start rows for his current team this season: the row for that game when one exists, otherwise his latest. FORGE's own starter probability applies to an already projected game. Per-start lines come from his latest FORGE line, or his team's when he has none.",
+    "5 team-games have a goalie with no start share; the others keep their own shares, never scaled up, so start chances there sum to less than 1.",
+    "9 goalies have no current NHL team, so their start chances are unknown; the team their latest start row or FORGE line names keeps its other goalies' shares unscaled.",
+    "1 goalies have start shares only from another team or season; those are ignored, so their start chance is unknown.",
+    "Goalie news (IFTTT, accepted automatically): 0 confirmed, 0 likely or projected (start chance at least 80% / 65%), 0 ruled out.",
+    "70 skaters missing from their team's latest FORGE run get no forecast (likely scratched, injured or moved).",
+    "40 goalies with no start share get no forecast for games FORGE has not projected for them.",
+    "Only issued unconditional game forecasts are used. Conditional-only, missing, or out-of-horizon statistics are unknown, not zero."
+  ],
+  "servedLimitations": [
+    "Interim FORGE projection: the player's latest FORGE game line, reused for this game."
+  ]
+}

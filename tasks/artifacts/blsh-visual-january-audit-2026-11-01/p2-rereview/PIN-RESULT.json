@@ -1,0 +1,5 @@
+{
+  "pinChecks": 25,
+  "exactPatchMatchesActualFourFiles": true,
+  "frozenScoreAndSnapshotPinsMatch": true
+}

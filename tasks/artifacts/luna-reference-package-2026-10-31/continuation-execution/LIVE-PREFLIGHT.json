@@ -1,0 +1,33 @@
+{
+  "checkedAt": "2026-10-31T21:17:33.670261+00:00",
+  "parentAuthorizationThread": "01a189f6-9a3a-7235-a989-e1af4f47b014",
+  "independentAcceptanceThread": "01a1936a-45ae-73d0-ae05-fe4339c5a022",
+  "planSha256": "6898bb4fa8b8683bbd77165fa90f3194b7b0971cb6086f1d5cc8608ebd32b340",
+  "funding": {
+    "promotionalDisplayedUsd": 85,
+    "promotionalExpiresOn": "2026-11-13",
+    "purchasedDisplayedUsd": 10,
+    "reportingRoundedAndMayLag": true,
+    "reserveUsd": 5
+  },
+  "access": {
+    "organization": "FHFHockey",
+    "project": "FHFH IFTTT",
+    "projectId": "proj_l5N9PpHQz2IQY3Em5vTxw66P",
+    "keyTrackingId": "key_QjphyUQhdUMUJnLn",
+    "status": "Active",
+    "expires": "Never",
+    "permissions": [
+      "api.responses.write",
+      "api.responses.read",
+      "api.decisions.write"
+    ],
+    "localMaskMatch": true,
+    "lastUsedObserved": "2026-10-31T20:53:31Z"
+  },
+  "concurrentSpendEvidence": "All-project/all-key usage shows one Responses and one Decisions request matching prior E01 usage. Other active Test Project key Never used; expired historical key last used Oct20. No additional current use observed; reporting may lag.",
+  "expiry": "2026-11-01T23:59:59Z",
+  "sourcePinsMatched": 46,
+  "noSettingsChanged": true,
+  "scope": "Existing reviewed E02-E16 plan only; 18 new calls maximum, two prior attempts retained, zero retries, same1USD cap."
+}

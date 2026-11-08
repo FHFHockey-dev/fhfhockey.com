@@ -1,0 +1,31 @@
+{
+  "typescriptTests": {
+    "status": "PASS",
+    "files": 17,
+    "tests": 440,
+    "log": "preparation-tests.log"
+  },
+  "scopedTypes": {
+    "status": "PASS",
+    "log": "preparation-types.log",
+    "command": "node node_modules/typescript/bin/tsc --project /Users/tim/Code/fhfhockey.com/tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/caller-qualification/tsconfig.json"
+  },
+  "scopedLint": {
+    "status": "PASS",
+    "log": "preparation-lint.log",
+    "files": "FILES in verify.py"
+  },
+  "pythonTests": {
+    "status": "PASS",
+    "tests": 104,
+    "log": "python-tests.log",
+    "commandReceipt": "PYTHON-CHECKS.json"
+  },
+  "postgres": {
+    "status": "PASS_PRIOR_EXACT_UNCHANGED_SQL",
+    "scenarios": 17,
+    "receipt": "../pg-check-11/RESULT.json"
+  },
+  "fullProjectTypecheck": "NOT_RUN_SCOPED_CHECK_ONLY",
+  "production": "NOT_RUN"
+}

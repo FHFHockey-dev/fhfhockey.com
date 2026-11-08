@@ -1,0 +1,10 @@
+{
+  "head": "50f4e9aaede4b2b40b673ea16b73e2be17d6c057",
+  "released402": "f17bea20d8caa2b6268c318bdb2152d7e2a3b57d",
+  "reviewHeadContext": "8a20ff91a8fffe24979ab208248fc06d9196e6aa",
+  "releaseIsAncestorOfHead": true,
+  "syncMergeTreeUnchanged": true,
+  "releaseChangedPathCount": 376,
+  "writerAndProtectedIntersections": [],
+  "trackedDirtyPaths": 128
+}

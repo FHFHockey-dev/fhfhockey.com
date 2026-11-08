@@ -1,0 +1,24 @@
+relative               lib/player-cards/probe.ts                        restricted=0
+The compact formatter is no longer part of core ESLint. Install it manually with `npm install -D eslint-formatter-compact`
+alias                  pages/api/probe.ts                               restricted=0
+The compact formatter is no longer part of core ESLint. Install it manually with `npm install -D eslint-formatter-compact`
+parentRel              components/x/probe.tsx                           restricted=0
+The compact formatter is no longer part of core ESLint. Install it manually with `npm install -D eslint-formatter-compact`
+renamed                lib/foo/probe.ts                                 restricted=0
+The compact formatter is no longer part of core ESLint. Install it manually with `npm install -D eslint-formatter-compact`
+namespace              lib/foo/probe.ts                                 restricted=0
+The compact formatter is no longer part of core ESLint. Install it manually with `npm install -D eslint-formatter-compact`
+reexport               lib/foo/probe.ts                                 restricted=0
+The compact formatter is no longer part of core ESLint. Install it manually with `npm install -D eslint-formatter-compact`
+dynamic                lib/foo/probe.ts                                 restricted=0
+The compact formatter is no longer part of core ESLint. Install it manually with `npm install -D eslint-formatter-compact`
+typeOnly               lib/foo/probe.ts                                 restricted=0
+The compact formatter is no longer part of core ESLint. Install it manually with `npm install -D eslint-formatter-compact`
+otherName              lib/foo/probe.ts                                 restricted=0
+The compact formatter is no longer part of core ESLint. Install it manually with `npm install -D eslint-formatter-compact`
+loaderAllowed          lib/player-cards/evidenceLoader.ts               restricted=0
+The compact formatter is no longer part of core ESLint. Install it manually with `npm install -D eslint-formatter-compact`
+testAllowed            lib/player-cards/evidenceBundle.test.ts          restricted=0
+The compact formatter is no longer part of core ESLint. Install it manually with `npm install -D eslint-formatter-compact`
+loaderTest             lib/player-cards/evidenceLoader.test.ts          restricted=0
+The compact formatter is no longer part of core ESLint. Install it manually with `npm install -D eslint-formatter-compact`

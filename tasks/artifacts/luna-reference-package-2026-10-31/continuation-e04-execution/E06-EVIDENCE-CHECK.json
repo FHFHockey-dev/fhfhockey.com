@@ -1,0 +1,62 @@
+{
+  "source": "SYN Avery Keeper starts tonight, as confirmed during warmups.",
+  "sourceUtf16Length": 61,
+  "rawModelEvidence": {
+    "start": 4,
+    "end": 57,
+    "text": "Avery Keeper starts tonight, as confirmed during warmups."
+  },
+  "actualSliceAtModelOffsets": "Avery Keeper starts tonight, as confirmed during warm",
+  "modelTextAndOffsetsAgree": false,
+  "uniqueExactQuoteOccurrences": 1,
+  "uniqueExactQuoteSpan": {
+    "start": 4,
+    "end": 61,
+    "text": "Avery Keeper starts tonight, as confirmed during warmups."
+  },
+  "frozenAllowedVariants": [
+    {
+      "occurrenceId": "subject-4",
+      "allowedSpans": [
+        {
+          "start": 4,
+          "end": 61,
+          "text": "Avery Keeper starts tonight, as confirmed during warmups."
+        },
+        {
+          "start": 4,
+          "end": 60,
+          "text": "Avery Keeper starts tonight, as confirmed during warmups"
+        },
+        {
+          "start": 0,
+          "end": 61,
+          "text": "SYN Avery Keeper starts tonight, as confirmed during warmups."
+        },
+        {
+          "start": 0,
+          "end": 60,
+          "text": "SYN Avery Keeper starts tonight, as confirmed during warmups"
+        }
+      ]
+    }
+  ],
+  "originalGradeUnchanged": {
+    "identity": true,
+    "goalie": false,
+    "decisions": false,
+    "labelMatch": false
+  },
+  "separateCandidateHash": "4bf6ffdf1fe5adf480de820d7a618bdbf5a8971ea385ce62b8f8459a0adeb560",
+  "candidateStatus": "candidate_for_human_review",
+  "candidateCanApply": false,
+  "candidateHolds": [
+    "goalie_subject_binding_invalid",
+    "human_review_required",
+    "no_publication_authority",
+    "original_response_remains_held",
+    "evidence_binding_human_review_required"
+  ],
+  "humanDecisionRecorded": false,
+  "originalReceiptBoundExactly": true
+}

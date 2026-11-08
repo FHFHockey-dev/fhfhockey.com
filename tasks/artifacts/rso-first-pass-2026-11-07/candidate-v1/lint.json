@@ -1,0 +1,31 @@
+{
+  "name": "lint",
+  "command": [
+    "node",
+    "node_modules/eslint/bin/eslint.js",
+    "components/RosterScheduleOptimizer/HealthyReserveAlert.test.tsx",
+    "components/RosterScheduleOptimizer/HealthyReserveAlert.tsx",
+    "e2e/roster-schedule-optimizer.spec.ts",
+    "lib/integrations/yahoo/rosterPlanning.test.ts",
+    "lib/integrations/yahoo/rosterPlanning.ts",
+    "lib/rosterScheduleOptimizer/candidatePlanMetrics.test.ts",
+    "lib/rosterScheduleOptimizer/contributionLedger.test.ts",
+    "lib/rosterScheduleOptimizer/dailyAcceptance.manual.test.ts",
+    "lib/rosterScheduleOptimizer/healthyReserves.test.ts",
+    "lib/rosterScheduleOptimizer/healthyReserves.ts",
+    "lib/rosterScheduleOptimizer/lineupGaps.test.ts",
+    "lib/rosterScheduleOptimizer/lineupGaps.ts",
+    "lib/rosterScheduleOptimizer/planning.test.ts",
+    "lib/rosterScheduleOptimizer/planning.ts",
+    "lib/rosterScheduleOptimizer/planningTimeline.ts",
+    "lib/rosterScheduleOptimizer/refreshForecastInputs.test.ts"
+  ],
+  "cwd": "/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-rso-first-pass-20261107-rq7qrip0/web",
+  "startedAt": "2026-11-07T21:25:19.302251+00:00",
+  "finishedAt": "2026-11-07T21:25:21.253909+00:00",
+  "exitCode": 0,
+  "timedOut": false,
+  "candidateTree": "50766b2d31d6f5a6b9cbbcc3565be91152080c9e",
+  "network": "inert environment and Node outbound guard",
+  "log": "lint.log"
+}

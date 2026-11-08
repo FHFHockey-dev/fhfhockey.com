@@ -24,7 +24,8 @@ describe("shared game/team Lines API", () => {
     expect((await request(query)).code).toBe(400); expect(mocks.read).not.toHaveBeenCalled();
   });
   it("requires a scope and preserves team participation validation", async () => {
-    expect((await request()).code).toBe(400);
+    const missing = await request();
+    expect(missing.code).toBe(400); expect(missing.body).toEqual({ error: "A teamId or gameId query parameter is required" }); expect(mocks.read).not.toHaveBeenCalled();
     mocks.read.mockResolvedValue({ ...fixtureResponse(), game: null });
     expect((await request({ teamId: "99", gameId: "2026010001" })).code).toBe(404);
   });

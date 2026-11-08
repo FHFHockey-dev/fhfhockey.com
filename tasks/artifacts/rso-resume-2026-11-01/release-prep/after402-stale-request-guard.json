@@ -1,0 +1,9 @@
+{
+  "at": "2026-11-01T19:16:11.429647+00:00",
+  "check": "Old admission helper refuses preparation after release-base supersession",
+  "exitCode": 1,
+  "expectedRejection": "Candidate base superseded by PR402; reconcile and approve the replacement manifest before admission preparation",
+  "syntax": "passed",
+  "gitMutations": 0,
+  "canonicalAdmissionChanges": 0
+}

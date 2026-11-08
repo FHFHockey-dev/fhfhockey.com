@@ -1,0 +1,319 @@
+{
+  "observed_at": "2026-10-25T05:01:20.002Z",
+  "web": {
+    "result": {
+      "deployment": {
+        "id": "dpl_6o3jhLud2V47fDNZi6SzXh9VeyrM",
+        "name": "fhfhockey",
+        "url": "fhfhockey-cj0gw07o9-fhfhockeydevs-projects.vercel.app",
+        "type": "LAMBDAS",
+        "state": "READY",
+        "createdAt": 1792904098028,
+        "creator": {
+          "uid": "RIjKGS50TnQKekn6kUu1bdJw",
+          "username": "fhfhockey-dev"
+        },
+        "project": {
+          "id": "prj_LV0wbwH5gRjOsZlowzEFNGRuX7Lw",
+          "name": "fhfhockey",
+          "framework": "nextjs"
+        },
+        "meta": {
+          "githubCommitRef": "master",
+          "githubCommitSha": "0619f9126872c136144c37092fb86715c7f58625",
+          "githubCommitMessage": "Keep production type checks within the existing build heap (#381)\n\nThe reconciled release exhausted Vercel's 6 GB Node heap while Next loaded the full development and test TypeScript program. Give production builds a derived TypeScript config that removes test/tooling entry roots, while preservin...",
+          "githubRepo": "fhfhockey.com",
+          "githubOrg": "FHFHockey-dev"
+        },
+        "alias": [
+          "fhfhockey.com",
+          "fhfhockey.vercel.app",
+          "www.fhfhockey.com",
+          "fhfhockey-fhfhockeydevs-projects.vercel.app",
+          "fhfhockey-git-master-fhfhockeydevs-projects.vercel.app"
+        ],
+        "target": "production",
+        "regions": [
+          "iad1"
+        ],
+        "buildingAt": 1792904099055,
+        "ready": 1792904390945,
+        "readyState": "READY",
+        "source": "git",
+        "aliasError": null
+      }
+    }
+  },
+  "results": [
+    {
+      "key": "ci",
+      "value": {
+        "statuses": [
+          {
+            "context": "Vercel – fhfhockey.com",
+            "state": "success",
+            "target_url": "https://vercel.com/fhfhockeydevs-projects/fhfhockey.com/EbfLbHqddTRP6feGHpfbj8RfYtkS"
+          },
+          {
+            "context": "Vercel – functions-fhfhockey",
+            "state": "success",
+            "target_url": "https://vercel.com/fhfhockeydevs-projects/functions-fhfhockey/G1JBPNqLviFjxW9a7XM8JLukt1Lj"
+          },
+          {
+            "context": "Vercel – cms-fhfhockey",
+            "state": "success",
+            "target_url": "https://vercel.com/fhfhockeydevs-projects/cms-fhfhockey/APSsF3pEzmY7qvsrB8LMk8gmj5BV"
+          },
+          {
+            "context": "Vercel – fhfhockey",
+            "state": "success",
+            "target_url": "https://vercel.com/fhfhockeydevs-projects/fhfhockey/6o3jhLud2V47fDNZi6SzXh9VeyrM"
+          }
+        ]
+      }
+    },
+    {
+      "key": "full_release",
+      "value": {
+        "result": {
+          "deployments": {
+            "pagination": {
+              "count": 4,
+              "prev": 1792903264281
+            },
+            "deployments": [
+              {
+                "id": "dpl_H4GUWz7zEuwMCvYBPYTq8noKWjRD",
+                "name": "cms-fhfhockey",
+                "url": "cms-fhfhockey-qupzquwad-fhfhockeydevs-projects.vercel.app",
+                "created": 1792903264281,
+                "state": "CANCELED",
+                "target": "production",
+                "creator": {
+                  "uid": "RIjKGS50TnQKekn6kUu1bdJw",
+                  "username": "fhfhockey-dev"
+                },
+                "meta": {
+                  "githubCommitRef": "master",
+                  "githubCommitSha": "b3f9a7e25c5e1b82bc74aead8337302177274c9f",
+                  "githubCommitMessage": "Release reconciled October source and social studio (#380)\n\nReconcile the preserved October application source with the qualified release, including statistics, news, provider/account, FORGE/RSO and social-studio integration repairs.\n\nFresh combined verification: 13,520 tests passed, 52 opt-in sk...",
+                  "githubRepo": "fhfhockey.com",
+                  "githubOrg": "FHFHockey-dev"
+                },
+                "inspectorUrl": "https://vercel.com/fhfhockeydevs-projects/cms-fhfhockey/H4GUWz7zEuwMCvYBPYTq8noKWjRD",
+                "isRollbackCandidate": false
+              },
+              {
+                "id": "dpl_FeB8yX1UcUvkUqZGMnH6Lg5EkF3Y",
+                "name": "fhfhockey",
+                "url": "fhfhockey-klgixkmhm-fhfhockeydevs-projects.vercel.app",
+                "created": 1792903264251,
+                "state": "ERROR",
+                "target": "production",
+                "creator": {
+                  "uid": "RIjKGS50TnQKekn6kUu1bdJw",
+                  "username": "fhfhockey-dev"
+                },
+                "meta": {
+                  "githubCommitRef": "master",
+                  "githubCommitSha": "b3f9a7e25c5e1b82bc74aead8337302177274c9f",
+                  "githubCommitMessage": "Release reconciled October source and social studio (#380)\n\nReconcile the preserved October application source with the qualified release, including statistics, news, provider/account, FORGE/RSO and social-studio integration repairs.\n\nFresh combined verification: 13,520 tests passed, 52 opt-in sk...",
+                  "githubRepo": "fhfhockey.com",
+                  "githubOrg": "FHFHockey-dev"
+                },
+                "inspectorUrl": "https://vercel.com/fhfhockeydevs-projects/fhfhockey/FeB8yX1UcUvkUqZGMnH6Lg5EkF3Y",
+                "isRollbackCandidate": false
+              },
+              {
+                "id": "dpl_87T83RYKhKFvZLHyCHNZTf8A561d",
+                "name": "functions-fhfhockey",
+                "url": "functions-fhfhockey-4m4a5iwyq-fhfhockeydevs-projects.vercel.app",
+                "created": 1792903264177,
+                "state": "READY",
+                "target": "production",
+                "creator": {
+                  "uid": "RIjKGS50TnQKekn6kUu1bdJw",
+                  "username": "fhfhockey-dev"
+                },
+                "meta": {
+                  "githubCommitRef": "master",
+                  "githubCommitSha": "b3f9a7e25c5e1b82bc74aead8337302177274c9f",
+                  "githubCommitMessage": "Release reconciled October source and social studio (#380)\n\nReconcile the preserved October application source with the qualified release, including statistics, news, provider/account, FORGE/RSO and social-studio integration repairs.\n\nFresh combined verification: 13,520 tests passed, 52 opt-in sk...",
+                  "githubRepo": "fhfhockey.com",
+                  "githubOrg": "FHFHockey-dev"
+                },
+                "inspectorUrl": "https://vercel.com/fhfhockeydevs-projects/functions-fhfhockey/87T83RYKhKFvZLHyCHNZTf8A561d",
+                "isRollbackCandidate": true
+              },
+              {
+                "id": "dpl_3dY7AsX18ae16cEUnwKcTQt4M9Ui",
+                "name": "fhfhockey.com",
+                "url": "fhfhockey-dqwqwogo0-fhfhockeydevs-projects.vercel.app",
+                "created": 1792903264165,
+                "state": "CANCELED",
+                "target": "production",
+                "creator": {
+                  "uid": "RIjKGS50TnQKekn6kUu1bdJw",
+                  "username": "fhfhockey-dev"
+                },
+                "meta": {
+                  "githubCommitRef": "master",
+                  "githubCommitSha": "b3f9a7e25c5e1b82bc74aead8337302177274c9f",
+                  "githubCommitMessage": "Release reconciled October source and social studio (#380)\n\nReconcile the preserved October application source with the qualified release, including statistics, news, provider/account, FORGE/RSO and social-studio integration repairs.\n\nFresh combined verification: 13,520 tests passed, 52 opt-in sk...",
+                  "githubRepo": "fhfhockey.com",
+                  "githubOrg": "FHFHockey-dev"
+                },
+                "inspectorUrl": "https://vercel.com/fhfhockeydevs-projects/fhfhockey.com/3dY7AsX18ae16cEUnwKcTQt4M9Ui",
+                "isRollbackCandidate": false
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "key": "memory_fix",
+      "value": {
+        "result": {
+          "deployments": {
+            "pagination": {
+              "count": 4,
+              "prev": 1792904098028
+            },
+            "deployments": [
+              {
+                "id": "dpl_6o3jhLud2V47fDNZi6SzXh9VeyrM",
+                "name": "fhfhockey",
+                "url": "fhfhockey-cj0gw07o9-fhfhockeydevs-projects.vercel.app",
+                "created": 1792904098028,
+                "state": "READY",
+                "target": "production",
+                "creator": {
+                  "uid": "RIjKGS50TnQKekn6kUu1bdJw",
+                  "username": "fhfhockey-dev"
+                },
+                "meta": {
+                  "githubCommitRef": "master",
+                  "githubCommitSha": "0619f9126872c136144c37092fb86715c7f58625",
+                  "githubCommitMessage": "Keep production type checks within the existing build heap (#381)\n\nThe reconciled release exhausted Vercel's 6 GB Node heap while Next loaded the full development and test TypeScript program. Give production builds a derived TypeScript config that removes test/tooling entry roots, while preservin...",
+                  "githubRepo": "fhfhockey.com",
+                  "githubOrg": "FHFHockey-dev"
+                },
+                "inspectorUrl": "https://vercel.com/fhfhockeydevs-projects/fhfhockey/6o3jhLud2V47fDNZi6SzXh9VeyrM",
+                "isRollbackCandidate": true
+              },
+              {
+                "id": "dpl_G1JBPNqLviFjxW9a7XM8JLukt1Lj",
+                "name": "functions-fhfhockey",
+                "url": "functions-fhfhockey-6cs07yuuw-fhfhockeydevs-projects.vercel.app",
+                "created": 1792904098024,
+                "state": "CANCELED",
+                "target": "production",
+                "creator": {
+                  "uid": "RIjKGS50TnQKekn6kUu1bdJw",
+                  "username": "fhfhockey-dev"
+                },
+                "meta": {
+                  "githubCommitRef": "master",
+                  "githubCommitSha": "0619f9126872c136144c37092fb86715c7f58625",
+                  "githubCommitMessage": "Keep production type checks within the existing build heap (#381)\n\nThe reconciled release exhausted Vercel's 6 GB Node heap while Next loaded the full development and test TypeScript program. Give production builds a derived TypeScript config that removes test/tooling entry roots, while preservin...",
+                  "githubRepo": "fhfhockey.com",
+                  "githubOrg": "FHFHockey-dev"
+                },
+                "inspectorUrl": "https://vercel.com/fhfhockeydevs-projects/functions-fhfhockey/G1JBPNqLviFjxW9a7XM8JLukt1Lj",
+                "isRollbackCandidate": false
+              },
+              {
+                "id": "dpl_APSsF3pEzmY7qvsrB8LMk8gmj5BV",
+                "name": "cms-fhfhockey",
+                "url": "cms-fhfhockey-iev5zi8wi-fhfhockeydevs-projects.vercel.app",
+                "created": 1792904097977,
+                "state": "CANCELED",
+                "target": "production",
+                "creator": {
+                  "uid": "RIjKGS50TnQKekn6kUu1bdJw",
+                  "username": "fhfhockey-dev"
+                },
+                "meta": {
+                  "githubCommitRef": "master",
+                  "githubCommitSha": "0619f9126872c136144c37092fb86715c7f58625",
+                  "githubCommitMessage": "Keep production type checks within the existing build heap (#381)\n\nThe reconciled release exhausted Vercel's 6 GB Node heap while Next loaded the full development and test TypeScript program. Give production builds a derived TypeScript config that removes test/tooling entry roots, while preservin...",
+                  "githubRepo": "fhfhockey.com",
+                  "githubOrg": "FHFHockey-dev"
+                },
+                "inspectorUrl": "https://vercel.com/fhfhockeydevs-projects/cms-fhfhockey/APSsF3pEzmY7qvsrB8LMk8gmj5BV",
+                "isRollbackCandidate": false
+              },
+              {
+                "id": "dpl_EbfLbHqddTRP6feGHpfbj8RfYtkS",
+                "name": "fhfhockey.com",
+                "url": "fhfhockey-pe5emad75-fhfhockeydevs-projects.vercel.app",
+                "created": 1792904097944,
+                "state": "CANCELED",
+                "target": "production",
+                "creator": {
+                  "uid": "RIjKGS50TnQKekn6kUu1bdJw",
+                  "username": "fhfhockey-dev"
+                },
+                "meta": {
+                  "githubCommitRef": "master",
+                  "githubCommitSha": "0619f9126872c136144c37092fb86715c7f58625",
+                  "githubCommitMessage": "Keep production type checks within the existing build heap (#381)\n\nThe reconciled release exhausted Vercel's 6 GB Node heap while Next loaded the full development and test TypeScript program. Give production builds a derived TypeScript config that removes test/tooling entry roots, while preservin...",
+                  "githubRepo": "fhfhockey.com",
+                  "githubOrg": "FHFHockey-dev"
+                },
+                "inspectorUrl": "https://vercel.com/fhfhockeydevs-projects/fhfhockey.com/EbfLbHqddTRP6feGHpfbj8RfYtkS",
+                "isRollbackCandidate": false
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "key": "functions",
+      "value": {
+        "result": {
+          "deployment": {
+            "id": "dpl_87T83RYKhKFvZLHyCHNZTf8A561d",
+            "name": "functions-fhfhockey",
+            "url": "functions-fhfhockey-4m4a5iwyq-fhfhockeydevs-projects.vercel.app",
+            "type": "LAMBDAS",
+            "state": "READY",
+            "createdAt": 1792903264177,
+            "creator": {
+              "uid": "RIjKGS50TnQKekn6kUu1bdJw",
+              "username": "fhfhockey-dev"
+            },
+            "project": {
+              "id": "prj_q9tnoe1pF6WAe9zPcBzBLBPZx5mQ",
+              "name": "functions-fhfhockey",
+              "framework": null
+            },
+            "meta": {
+              "githubCommitRef": "master",
+              "githubCommitSha": "b3f9a7e25c5e1b82bc74aead8337302177274c9f",
+              "githubCommitMessage": "Release reconciled October source and social studio (#380)\n\nReconcile the preserved October application source with the qualified release, including statistics, news, provider/account, FORGE/RSO and social-studio integration repairs.\n\nFresh combined verification: 13,520 tests passed, 52 opt-in sk...",
+              "githubRepo": "fhfhockey.com",
+              "githubOrg": "FHFHockey-dev"
+            },
+            "alias": [
+              "functions-fhfhockey.vercel.app",
+              "functions-fhfhockey-fhfhockeydevs-projects.vercel.app",
+              "functions-fhfhockey-git-master-fhfhockeydevs-projects.vercel.app"
+            ],
+            "target": "production",
+            "regions": [
+              "iad1"
+            ],
+            "buildingAt": 1792903265049,
+            "ready": 1792903282679,
+            "readyState": "READY",
+            "source": "git",
+            "aliasError": null
+          }
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "atUtc": "2026-11-01T18:37:21.937783+00:00",
+  "status": "APPLIED_VERIFIED_STOPPED_BEFORE_NST",
+  "files": {
+    "AFTER.json": "07f889f2f786cafb884b0d0f7fd563c0e8351fa24ba0f86a28365f7baba05476",
+    "APPLY-RESULT.json": "5ec9e6a0ce0b96e161f07551da8f1bbeb018126662aa02019835691dcee6a386",
+    "AUTHORIZATION.json": "18594d0c8a0aeb2c91b3a646b5464da254d759e00cad66c33a45d101a3cb3801",
+    "BEFORE.json": "08566a7091b0e89d5b28dd2e9c7f8586022f17f46f059cf82124a97ea4466718",
+    "MAILBOX-RECEIPT.json": "6bb6aacead2a0b9385b91852d3d1cef9ad58ca3c2839bbe480cddb44e41f7a1a",
+    "RESULT.md": "694025a7ea66a1474015cce4fd5ef709dae12013b243e3bab08f0fd2370891d5",
+    "TARGET.json": "5ab6ca2f6c6089656d99680656d9ab17f5b169b8a00a34eb4985bb2e37ef459d",
+    "VERIFICATION.json": "102b629f454961fca038e5a20bda11ffc7c93ce1bea00ae2093a8294b3ef15c0",
+    "approved-source.sql": "60e0ee8f6004d07182c6999fbe34534a2cceb9530cafbd1a0bb868b0fd5ff51c",
+    "read-defaults.sql": "d1f8fc37805a418009eebd97bcf9a7dbfb04f314b64a7537d81e9e2bff92abac"
+  }
+}

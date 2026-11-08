@@ -1,0 +1,290 @@
+[
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/production-chart-17/BEFORE.json",
+    "sha256": "c75c0d7685da400a92cf24a877678fb9616ca27f5f410c17d415722d2576b8e1"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/production-chart-17/BROWSER-VERIFICATION.json",
+    "sha256": "e146d1c61826d9be5914d3edd4dea831cd03dc9dc999bf4e60f8b98b1368d74a"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/production-chart-17/HANDOFF.md",
+    "sha256": "eda8dc4d18f6e1214e03431ad926bd8e5ffeb95125afeda6cce121a1827a33e1"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/production-chart-17/KEEP-RUNTIME.json",
+    "sha256": "3926b0245a6d77f43b84366069551e3f65aebe3acd6894b7da233893b8749a38"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/production-chart-17/OWNERSHIP.json",
+    "sha256": "73acfdedef0718306c81237f43f6e5918687f786177e8357d34b8bd4fdd15d9b"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/production-chart-17/PROTECTED-PINS.json",
+    "sha256": "3d784054b38c0bd2469d62ecbb615c86fc79f0080d95417bd66ecd96e7ca068c"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/production-chart-17/SOURCE-PINS.json",
+    "sha256": "94a4d49c16fd072b44adacb3c6c1f399b953b12b93a0821b7e9683c142e5f0cd"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/production-chart-17/before/tasks/tasks-prd-shareable-player-cards.md",
+    "sha256": "34f21b8b30b88ccb9adce82f7815a53033a098e64fa211ecc36aa71bccde4aa2"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/production-chart-17/before/web/components/player-cards/CurrentPlayerCard.tsx",
+    "sha256": "215600dbd49dbc51cabe17b1521f76c615fdc91c3107e7384ce800f01b5e16cd"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/production-chart-17/before/web/components/player-cards/CurrentPlayerCardStudio.test.tsx",
+    "sha256": "ec33c9e33a4fe3559a013601772e2d2a2514481fe9c24298e3c45d6b7e60762f"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/production-chart-17/before/web/lib/player-cards/currentNhl.ts",
+    "sha256": "a1e05a7651d1725094de808eb1873ab94a1a0306ecb587e44ff19a918edb6f73"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/production-chart-17/before/web/lib/player-cards/currentNhlExport.ts",
+    "sha256": "1cfb288e35fa053a5e001268db36d97e8084d6797066cfb6aed3a7c1089534d3"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/production-chart-17/browser-check.mjs",
+    "sha256": "3382b9aacbaf1804fb675233547be8de85b733ce474792a7f361d67476a9a138"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/production-chart-17/browser-command.json",
+    "sha256": "8e6e33af040996c0fac11338d2a28d45ce060f49f627a2c0354ef7d6c04ebb3d"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/production-chart-17/browser.log",
+    "sha256": "5db49745bdedf36d478b67e24a747ed7ec8b88b0aa64ca93678b51033043cd0c"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/production-chart-17/chart-final-command.json",
+    "sha256": "61b2ff8edf1ad9964512cdda0aa09d83df54e39949d9b28532f4b1db31e936a0"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/production-chart-17/chart-final.log",
+    "sha256": "7d599858c74b4d5e5ae20d3e74b50162663731ac0439fdcdd62033c65be692c0"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/production-chart-17/chart-final.py",
+    "sha256": "a4188c6e744c5fec4fde43b24d2818c87485c620f1a6f5a1c1e16e97b15af935"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/production-chart-17/desktop.png",
+    "sha256": "f0cdf5e03ae574dc00a1bccc92a0b78946e5e140b9b4b1266d649ae0cc9d30ca"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/production-chart-17/final-lint-command.json",
+    "sha256": "7aeb13e17662afecf764ba52990989b027a39dc951d37539fa003f89c6096723"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/production-chart-17/final-lint.log",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/production-chart-17/final-types-command.json",
+    "sha256": "54f90808de7747ebff6a0c97441672e4e1a2a79f6d7a9cc5bac9303d53c60e76"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/production-chart-17/final-types.log",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/production-chart-17/first-BROWSER-VERIFICATION.json",
+    "sha256": "73f8b6d4219192f9777b92e412c4b2ce7af0cc01140655af5c7c8640daae7b82"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/production-chart-17/first-browser-command.json",
+    "sha256": "f92663746238e70907c738e26ff54cac84794a1ee5ee6c75f80b306e6fb37757"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/production-chart-17/first-browser.log",
+    "sha256": "5db49745bdedf36d478b67e24a747ed7ec8b88b0aa64ca93678b51033043cd0c"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/production-chart-17/first-final-types-command.json",
+    "sha256": "3c8b8c6aa8eb0efe40550f9b6a59042ca9c638cd041cbf1f5a8242da6b2654bc"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/production-chart-17/first-final-types.log",
+    "sha256": "0725680226207d794ee65a3962aa87e28ab50ac83af4d2157677f090042169fe"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/production-chart-17/first-known-short-L20.png",
+    "sha256": "bfcb73eea0e4179659ecf1541c954daab0058dd18b49dea9efc177febc4c7dfe"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/production-chart-17/first-pixelated-team-colors.png",
+    "sha256": "f18ee6addb1afc7513710bff51698e0020dfb7d9551dc0883fbd3ac0c9c3f1ca"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/production-chart-17/first-posterized-team-colors.png",
+    "sha256": "630d823a0f19345027dd6ac0d839e8f6e8ab9d5932e579b6c9f7ff9ef40d7dff"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/production-chart-17/first-preview.html",
+    "sha256": "1e38ea3a5438cf0df82978daa537818fa4c667904e60ab79fd8d1c0e167c139c"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/production-chart-17/first-runtime.json",
+    "sha256": "b600701094cef11c109a3b5d1587a181ff05ddd42176d32777b5279bf8758061"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/production-chart-17/first-unit-command.json",
+    "sha256": "e17ab7b01e19e0d7a16388a9c0802bd39b2caee4c2f6640bc5208122260042ee"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/production-chart-17/first-unit.log",
+    "sha256": "469ef3a5e473e66d1c3860a51c2479419504e15fced53ee91114474ef9ac505d"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/production-chart-17/first-verify-command.json",
+    "sha256": "f55cee4e5be1593cf48a14f4ca35f4d2b8ae0f98a0c81a4c60e38591005b6f0c"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/production-chart-17/first-verify.log",
+    "sha256": "acb8cd6e77f4634b69a689fa2afcf511e4dcc3533aa2a139880578b88e9fe154"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/production-chart-17/handoff-server.py",
+    "sha256": "258459f71b8eef061cc426b32d14f9952bd61cd45102f155b90c2b2031db2936"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/production-chart-17/known-short-L20.png",
+    "sha256": "debe120a4a518cd114dc402c8837d425c8f96debf52b692a2bf25428f8413568"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/production-chart-17/offline.setup.ts",
+    "sha256": "1f5f36af850464317c4dec5386d3c7bad39dbd625a2cafd5f4751055bbdfe928"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/production-chart-17/phone.png",
+    "sha256": "3b4027a59e4e0057d8e05fcdb60de399a4262c25a94a957ce7322748af5881c3"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/production-chart-17/pixelated-team-colors-manifest.json",
+    "sha256": "cc0258192440248021ef232e95f28375ad19fdc951fea6597c451b1ca969ef14"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/production-chart-17/pixelated-team-colors.png",
+    "sha256": "5353919c7a20a083480949421282e0334c4227fd9d79ad50b324899dbd898051"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/production-chart-17/posterized-team-colors-manifest.json",
+    "sha256": "7d3d6ac39e33c39e500a5de0ef304a8b14a49e812e902a2f6afa2f19922bdf0b"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/production-chart-17/posterized-team-colors.png",
+    "sha256": "f44e2e8e8d6f10805e5c51ef324b86ab5c4c7d9da9ef25875b558cfb651c9d13"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/production-chart-17/preview-entry.tsx",
+    "sha256": "fc67f12ef324d8285b061638231490191b6ec55e2a36783e9d8462c852a05a7c"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/production-chart-17/preview.css",
+    "sha256": "f4c0a5ab2c9608efbd2ff69935d9586a63d0c828743ddd28ea58ba6cc25bc196"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/production-chart-17/preview.html",
+    "sha256": "376104ba91f90a178ccff25168dad63e91c215c9cf876f2217eb18d9d2f85bfb"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/production-chart-17/production-card.png",
+    "sha256": "61bbedf71be5ef0035c01288d89aacec3b5834651f8281f413a71b4e88e38c45"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/production-chart-17/provider-contract.mjs",
+    "sha256": "0d856b8b785183a5b20c9683649119768a2d95928a64a2373b69f3c754feba52"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/production-chart-17/provider.mjs",
+    "sha256": "8face738f596cde5aa4b91c801beb2571be8f87c7a27870305d3e08780d43e00"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/production-chart-17/refresh-owned-server.py",
+    "sha256": "4877b46f41113d78b39809281d6412251ca48dbeb4b889b0d26b4b9176eb72d3"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/production-chart-17/render-command.json",
+    "sha256": "63866a992205860740ab5855f34f3d3790822d63b6d4d505507e480e461a84b2"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/production-chart-17/render-preview.mjs",
+    "sha256": "e3c42d90e998d403e58e24be4fb09cad049913cd7128ae4adafd491522211d86"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/production-chart-17/render.log",
+    "sha256": "64b8aac03ac97010cca69f761cc72932f34793f5cfe322b8c5d2ae9b31aff8e4"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/production-chart-17/run-check.py",
+    "sha256": "b47303dd0b965978f59f97df92c506ff22be8b2be781eaf34cc4faf62e569aca"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/production-chart-17/runtime.json",
+    "sha256": "96ebd15ce8ab17a9976dcf4a8f07f21863ae3992f71455ea6591f20f544deff2"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/production-chart-17/serve-preview.mjs",
+    "sha256": "c0c17b7c31102ff2e7741349e409f56fe2d3ca961aeb84569366139144a743a3"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/production-chart-17/source/tasks/tasks-prd-shareable-player-cards.md",
+    "sha256": "34d49ccf20dc7d577e02ace9fbdd2289612a17209416ee60b5c87c934d5a343b"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/production-chart-17/source/web/components/player-cards/CurrentPlayerCard.tsx",
+    "sha256": "7e6217dae0ebdc759d318953c1aac25d7b41b0e685a567e8a9065359cb96bca5"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/production-chart-17/source/web/components/player-cards/CurrentPlayerCardStudio.test.tsx",
+    "sha256": "4a748958d132b78ad509dc30510e6b871306e000665952a0d9ac7fda83abd378"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/production-chart-17/source/web/components/player-cards/ProductionGameChart.tsx",
+    "sha256": "428eba85db383569b4f1bf63fd04f09aa0cf02c6919614780b1b0c10e30b45be"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/production-chart-17/source/web/lib/player-cards/currentNhl.ts",
+    "sha256": "e76894c48f9ad67551515581e48997f2519c7b0796d0a0f2110530252af54161"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/production-chart-17/source/web/lib/player-cards/currentNhlExport.ts",
+    "sha256": "94d0f32f2337c2bb59cce2748f433d1b3b103cffed3ea7d77ca169dc2561a505"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/production-chart-17/source.patch",
+    "sha256": "61e767bb6aab735de421b625b8e3f9781a8e4fda07544cd0b0ead8b1ba509f27"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/production-chart-17/tsconfig.json",
+    "sha256": "ad8adf4b67a428cc1c76098c272d3e8a0c0e8679f360295445736485dbc1f892"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/production-chart-17/unit-command.json",
+    "sha256": "887e7c97a77274179f486b3fa8559463189475a9ea50c672eada4f446d6afd26"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/production-chart-17/unit.log",
+    "sha256": "a083265e27ede1486db01d75eb2c06335969c3e94f6e14aa76db26e9284f7a61"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/production-chart-17/verify-batch.py",
+    "sha256": "76df03b014b06edf7901037fbadcd3236d134730b76cecef3da0371a7717b43b"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/production-chart-17/verify-command.json",
+    "sha256": "0053580802f93c540f13f54cf8040eea15c18805b239b2d1a42be71baab277f2"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/production-chart-17/verify.log",
+    "sha256": "0c3e07330d0af509c60958796ba41d589cc74cdeb1bf94409441d81bfbba849b"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-29/production-chart-17/vitest.config.mts",
+    "sha256": "a04f897035d54e2a6e78c9a7b0f3a37295004dd80e3fc7f5a58d4c5b21f1f517"
+  }
+]

@@ -1,0 +1,150 @@
+{
+  "reviewed_at_utc": "2026-11-01T17:38:57.878244+00:00",
+  "reviewed_at_America_New_York": "2026-11-01T12:38:57.878244-05:00",
+  "requester_thread": "01a19339-5345-7588-a312-bef6a7aa802c",
+  "scope": "Existing retained evidence only; owner response for Player Cards. No collection, database action, credentials/tool change or denied-process retry.",
+  "successful_Yahoo_capture_retained": false,
+  "later_successful_capture_found": false,
+  "real_trade_observations_retained": 0,
+  "real_complete_trade_bundles_retained": 0,
+  "market_empty_inferred": false,
+  "market_coverage": "unknown",
+  "real_trade_dates": null,
+  "retained_request": {
+    "url": "https://hockey.fantasysports.yahoo.com/hockey/playertrades?pid=4681&type=player",
+    "requested_at_utc": "2026-10-27T22:12:08Z",
+    "requested_at_local": "2026-10-27T18:12:08-04:00",
+    "http_status": 429,
+    "page_html_available": false,
+    "retry_after_exposed": false,
+    "parser_executed": false,
+    "retry_operations": 0
+  },
+  "earlier_request": {
+    "attribution": "Parent-reported; no successful capture/body retained here",
+    "requested_at_utc_approx": "2026-10-27T20:50:42Z\u20132026-10-27T20:50:46Z",
+    "requested_at_local_approx": "2026-10-27 16:50:42\u201316:50:46 EDT",
+    "http_status": 429
+  },
+  "identity": {
+    "Yahoo_player_key": "477.p.4681",
+    "game_key": "477",
+    "season_id": 20262027,
+    "canonical_player_id": "9923",
+    "retained_lookup_status": "verified with one forward/one reverse row on2026-10-27",
+    "lookup_checked_at_utc": "2026-10-27T22:14:13.957548+00:00",
+    "lookup_checked_at_local": "2026-10-27T18:14:13.957548-04:00",
+    "nhl_player_id": null,
+    "canonical_to_NHL_bridge_retained": false,
+    "live_page_identity_verified": false
+  },
+  "deduplication": {
+    "real_event_deduplication_executed": false,
+    "real_source_league_or_event_ids_verified": false,
+    "candidate_contract": "Capture replay idempotent; verified scoped source IDs only if source semantics are established; otherwise retain separate capture occurrences. Complete-package clusters are separate inference and never merge observed rows or prove unique-deal counts.",
+    "synthetic_parser_version": "synthetic-contract/1.0.0",
+    "cluster_algorithm": "complete-package/1.0.0"
+  },
+  "attribution": {
+    "requirement": "TJ reports specific Yahoo permission with the condition that the Yahoo logo be displayed; agreement records are not a gate.",
+    "evidence_message": "Sentinel_2c03ccf5b22081918cbd0a9101ee308d",
+    "specific_permission_confirmation": "Sentinel_d7862a88236881919a12328f7a7f4423",
+    "logo_path": "/Users/tim/Code/fhfhockey.com/web/public/pictures/Yahoo_Fantasy.svg",
+    "logo_sha256": "c18837d9ce56596d6ad7e849c81a5066644652d3786ed8bdce989b10153f2947",
+    "public_url": "/pictures/Yahoo_Fantasy.svg",
+    "placement_status": "Proposed alongside the Yahoo-source heading/label; no Player Cards or export implementation/verification by this owner."
+  },
+  "missing_prerequisites": [
+    "A retained authorized successful Yahoo Trade Market HTML/HAR or equivalent with actual response body, source/capture context, complete both-side player/pick packages, Yahoo player IDs and date labels.",
+    "Retained verified canonical-to-NHL mapping for players in those real packages; current retained mapping stops at canonical9923."
+  ],
+  "eligibility_for_Player_Cards": "No real Yahoo trade evidence available from this owner. Synthetic fixtures/demo counts and supplied-PID mapping must not be presented as observed market transactions, valuation, acceptance odds or fairness evidence.",
+  "inspected_retention": {
+    "root": "/Users/tim/Documents/Codex/2026-10-27/task-5",
+    "prior_manifest_entries_verified": 47,
+    "unmanifested_noncache_artifacts": [],
+    "global_absence_claimed": false
+  },
+  "artifacts": [
+    {
+      "path": "/Users/tim/Documents/Codex/2026-10-27/task-5/integration_v1/evidence/source-check-20261027T221208Z.json",
+      "sha256": "2342d4b58756faa411c6fd2f771d12a1781c29131788a093e988dbc97724fab7",
+      "bytes": 1104
+    },
+    {
+      "path": "/Users/tim/Documents/Codex/2026-10-27/task-5/integration_v1/evidence/stopped-run-checkpoint.json",
+      "sha256": "8d786c0d00879c90d368471f0ebc3cc61d61d2d6e8bcfa271c2a579af27570a9",
+      "bytes": 807
+    },
+    {
+      "path": "/Users/tim/Documents/Codex/2026-10-27/task-5/integration_v1/evidence/supplied-pid-4681-mapping-summary.json",
+      "sha256": "1370eb20fd85762bef634fd9f2bef3eae7afbff6e32cd2e47534690a806e43c9",
+      "bytes": 596
+    },
+    {
+      "path": "/Users/tim/Documents/Codex/2026-10-27/task-5/integration_v1/evidence/supplied-pid-4681-mapping-tool-result.json",
+      "sha256": "81a6bea780809ff8928c455eeadaa859cba09197abeae36d489e60d44c78dfe7",
+      "bytes": 1582
+    },
+    {
+      "path": "/Users/tim/Documents/Codex/2026-10-27/task-5/evidence/synthetic-demo.json",
+      "sha256": "604e44f4b6329ef606dc28138b3b548ad73f6cb5c3356ebf9d98f2b8fd216560",
+      "bytes": 2525
+    },
+    {
+      "path": "/Users/tim/Documents/Codex/2026-10-27/task-5/trade_market_poc/fixtures/packages.html",
+      "sha256": "007311ab7dda54cd309d16b6e5295bf389af443c73ed9d91f339fabcd70f9ef8",
+      "bytes": 1951
+    },
+    {
+      "path": "/Users/tim/Documents/Codex/2026-10-27/task-5/trade_market_poc/fixtures/empty.html",
+      "sha256": "2ac1317986189c56f28991b8f8c538c47880463038c7b5394c3f3c2a45012a21",
+      "bytes": 185
+    },
+    {
+      "path": "/Users/tim/Documents/Codex/2026-10-27/task-5/trade_market_poc/parser.py",
+      "sha256": "c1ae134628ab08b1d2631e28db00974655806871445241239de4eadafe21d38a",
+      "bytes": 9837
+    },
+    {
+      "path": "/Users/tim/Documents/Codex/2026-10-27/task-5/trade_market_poc/store.py",
+      "sha256": "d9b089d7e422f8c56aac24d9a805612ee960f1e65ce0a533157d46afa1553e01",
+      "bytes": 5819
+    },
+    {
+      "path": "/Users/tim/Documents/Codex/2026-10-27/task-5/PERMISSION-AND-ATTRIBUTION.md",
+      "sha256": "4743529a56a09817556505adc1d20dbf8fdaa40b8123fe8dc9ad0fe947ce5a5f",
+      "bytes": 7447
+    },
+    {
+      "path": "/Users/tim/Documents/Codex/2026-10-27/task-5/integration_v1/REA-READONLY-ASSESSMENT.md",
+      "sha256": "afd0761a43c2786ad9b79c58ef2ae268edbeec4b16c78215b871d23c23650459",
+      "bytes": 5185
+    },
+    {
+      "path": "/Users/tim/Documents/Codex/2026-10-27/task-5/integration_v1/evidence/rea-readonly-status.json",
+      "sha256": "50074f57ea0f4e925793438c7748847cd37268eb8b290295bc31103a14ca7702",
+      "bytes": 2873
+    },
+    {
+      "path": "/Users/tim/Code/fhfhockey.com/web/public/pictures/Yahoo_Fantasy.svg",
+      "sha256": "c18837d9ce56596d6ad7e849c81a5066644652d3786ed8bdce989b10153f2947",
+      "bytes": 2925
+    }
+  ],
+  "preservation": {
+    "handoff_before_sha256": "ad37469069475dbad73ca1cb4a72779eb061a3cda07cfe119312a09d8ad9fb3a",
+    "diary_before_sha256": "7b88b58a133a59f8f62e6cf13a0c275e59b6f10843eda3c4d702557d41d2cd84",
+    "operation": "Append response to owner handoff/diary; preserve original prefixes and all other retained files. Prior manifests remain unchanged as historical snapshots."
+  },
+  "actions_this_review": {
+    "new_Yahoo_requests": 0,
+    "database_actions": 0,
+    "credentials_or_login_actions": 0,
+    "tool_or_security_changes": 0,
+    "process_checks": 0,
+    "previously_denied_actions_retried": 0,
+    "Player_Cards_edits": 0,
+    "Git_actions": 0
+  }
+}

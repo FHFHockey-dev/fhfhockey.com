@@ -1,0 +1,18 @@
+{
+  "action": "qualify-remaining",
+  "command": [
+    "python3",
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-26/outline-editor-09/qualify.py",
+    "--remaining"
+  ],
+  "cwd": "/Users/tim/Code/fhfhockey.com/web",
+  "exitCode": 0,
+  "elapsedSeconds": 10.43,
+  "environmentOverrides": {
+    "npm_config_cache": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-26/outline-editor-09/.npm-cache",
+    "npm_config_logs_dir": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-26/outline-editor-09/.npm-logs",
+    "NO_UPDATE_NOTIFIER": "1",
+    "NEXT_TELEMETRY_DISABLED": "1"
+  },
+  "lockOwnedAndReleased": true
+}

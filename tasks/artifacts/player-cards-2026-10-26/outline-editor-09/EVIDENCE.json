@@ -1,0 +1,341 @@
+{
+  "at": "2026-10-27T01:05:22.105001+00:00",
+  "branch": "octoberBranch",
+  "head": "c05e2f19f6396a11d284947879080d0701eb235b",
+  "sourceFiles": 13,
+  "scope": "outline09 interactive contour stack plus offline qualification of approved official capture02; synthetic artwork not promoted to actual NHL results",
+  "checks": {
+    "unitTests": {
+      "passed": 41,
+      "files": 6,
+      "receipt": "tests-command.json",
+      "note": "Initialall41PASS. LatereditONLYtestreturntypeannotation/unsupportedRTLtypeoptionremoved afterTSerror; runtime/assertionsunchanged,unittestsnotredundantlyrerun."
+    },
+    "types": {
+      "passed": true,
+      "receipt": "types-command.json",
+      "originalFailure": "initial-types.log",
+      "fix": "ExplicitPromise<PreparedHero> testdouble returntype prevents literalversionwidening; removeunsupportedRTLexact typeoption"
+    },
+    "lint": {
+      "passed": true,
+      "receipt": "lint-command.json"
+    },
+    "offlineCustomizer": {
+      "checks": [
+        "Keyboard reorder keeps whole ring/focus; repeated widths debounce, add/remove and native custom color produce exact ordered variable recipe",
+        "Native SVG 2/7/3px control; both combined styles keep geometry/logo and one true-contour asset; PNG/manifest/share bytes match",
+        "Invalid/pending edits invalidate prepared sharing; 5-ring/40px bounds; zero-ring export and reset; original portrait/logo preserved; phone has no horizontal overflow"
+      ],
+      "exports": [
+        {
+          "style": "posterized-team-colors",
+          "pngSha256": "a6d2b596f2a6124687ab0557b887d666041d45dc4354f08ddd37e32665799645",
+          "recipe": [
+            {
+              "color": "#A6192E",
+              "width": 5
+            },
+            {
+              "color": "#154734",
+              "width": 7.5
+            },
+            {
+              "color": "#123456",
+              "width": 2
+            }
+          ]
+        },
+        {
+          "style": "pixelated-team-colors",
+          "pngSha256": "5fd044addcaf0f292db88fe52499ef021befb4b85702369e009333575e422d7f",
+          "recipe": [
+            {
+              "color": "#A6192E",
+              "width": 5
+            },
+            {
+              "color": "#154734",
+              "width": 7.5
+            },
+            {
+              "color": "#123456",
+              "width": 2
+            }
+          ]
+        }
+      ],
+      "native": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          221,
+          203,
+          164,
+          255
+        ],
+        [
+          221,
+          203,
+          164,
+          255
+        ],
+        [
+          221,
+          203,
+          164,
+          255
+        ],
+        [
+          166,
+          25,
+          46,
+          255
+        ],
+        [
+          166,
+          25,
+          46,
+          255
+        ],
+        [
+          166,
+          25,
+          46,
+          255
+        ],
+        [
+          166,
+          25,
+          46,
+          255
+        ],
+        [
+          166,
+          25,
+          46,
+          255
+        ],
+        [
+          166,
+          25,
+          46,
+          255
+        ],
+        [
+          166,
+          25,
+          46,
+          255
+        ],
+        [
+          21,
+          71,
+          52,
+          255
+        ],
+        [
+          21,
+          71,
+          52,
+          255
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "externalAttempts": [],
+      "pageErrors": [],
+      "liveActivation": false
+    },
+    "offlineOfficialCapture": {
+      "checks": [
+        "Actual captured NHL inputs produce ready10appearance card; all9values/exposure/IDs/providerdates/UTCdates match independently summed raw rows",
+        "Both functional formats use actual retained capture; PNG/manifest/share parity, source/capture/finality/rank caveats and390px nooverflow",
+        "Ownlast5/10/20 reload only captured inputs, snapshot invalidation and knownshort11/20 sample remain truthful",
+        "Dropped history/invalid game counts failclosed; uncaptured player cannot fanout or retain stale export"
+      ],
+      "exports": [
+        {
+          "format": "rates-opportunity",
+          "sha256": "a6f16f7973b1132b071e65d2bd16efbe23c5ebf14498d78426b7a883152b18d3",
+          "shareBytesMatch": true
+        },
+        {
+          "format": "results-milestones",
+          "sha256": "b66d2694c42faea6e49748b17781b6f784b535251866741c2a828d2c2ac545bc",
+          "shareBytesMatch": true
+        }
+      ],
+      "externalAttempts": [],
+      "pageErrors": [],
+      "actualSelectedPlayerBasicDataQualified": true,
+      "source": "nhl-retained",
+      "leagueRanksQualified": false,
+      "actualGameEndsQualified": false
+    },
+    "actualServedURLs": {
+      "checks": [
+        "Actual served09HTMLhash, interactivevariableoutline/customcolor/reorder, both combinedstylePNGhashes/geometry/logo verified; desktop390pxphone",
+        "Actual served retainedNHLHTMLhash; bothcategoriesPNGhashes matchqualifiedcaptures; source/time/10GP/rankunavailablelabels anddesktopphone"
+      ],
+      "pngs": [
+        {
+          "style": "posterized-team-colors",
+          "matchedOfflineExport": true
+        },
+        {
+          "style": "pixelated-team-colors",
+          "matchedOfflineExport": true
+        }
+      ],
+      "retainedFormatPNGsVerified": 2,
+      "externalAttempts": [],
+      "pageErrors": [],
+      "pid": 69351,
+      "customizerUrl": "http://127.0.0.1:3125/player-cards/customizer?checkpoint=editor09",
+      "retainedUrl": "http://127.0.0.1:3125/player-cards/nhl-retained?checkpoint=snapshot02",
+      "remoteAvailabilityClaimed": false
+    },
+    "scopedDiffCheck": true
+  },
+  "capture": {
+    "startedAt": "2026-10-27T00:42:32.766Z",
+    "approval": {
+      "userReply": "Sentinel_f2d8ba6f19fc81918c158c55444a021d",
+      "assistantMessage": "Sentinel_6b7ca3ae1b0881919313f81e84bd319b",
+      "at": "2026-10-27T00:40:24Z",
+      "answer": "yes",
+      "scope": "ONE secure retry of same3publicGETs; no further retries"
+    },
+    "client": "node:https; rejectUnauthorized:true; no custom trust store",
+    "calls": [
+      {
+        "name": "landing",
+        "url": "https://api-web.nhle.com/v1/player/8476453/landing",
+        "startedAt": "2026-10-27T00:42:32.767Z",
+        "bytes": 26221,
+        "status": "received",
+        "httpStatus": 200,
+        "sha256": "7649c48e6e665288ba88e8679b3e57a08944f2157e6446aa9d7942c0a0675e66",
+        "finishedAt": "2026-10-27T00:42:32.984Z"
+      },
+      {
+        "name": "game-log",
+        "url": "https://api-web.nhle.com/v1/player/8476453/game-log/20262027/2",
+        "startedAt": "2026-10-27T00:42:32.984Z",
+        "bytes": 4932,
+        "status": "received",
+        "httpStatus": 200,
+        "sha256": "f32faa520f8f0bcff4e4e40f2db0eb27fa4ac81a70bfc026c930450cd6a1ad43",
+        "finishedAt": "2026-10-27T00:42:33.137Z"
+      },
+      {
+        "name": "team-schedule",
+        "url": "https://api-web.nhle.com/v1/club-schedule-season/TBL/20262027",
+        "startedAt": "2026-10-27T00:42:33.138Z",
+        "bytes": 177781,
+        "status": "received",
+        "httpStatus": 200,
+        "sha256": "5667c3bc07e9088c024e007513898d24bb0ff380a702dcaf79116656baf3a695",
+        "finishedAt": "2026-10-27T00:42:33.266Z"
+      }
+    ],
+    "limits": {
+      "requests": 3,
+      "concurrency": 1,
+      "requestMs": 5000,
+      "totalMs": 15000,
+      "bytesPerResponse": 524288,
+      "totalBytes": 1572864,
+      "gameLogRows": 100,
+      "scheduleRows": 140,
+      "redirects": 0,
+      "retries": 0
+    },
+    "status": "received-and-identity-validated",
+    "totalBytes": 208934,
+    "databaseReads": 0,
+    "remoteWrites": 0,
+    "authOrProfileChanges": 0,
+    "seasonGp": 11,
+    "gameLogRows": 11,
+    "scheduleRows": 88,
+    "actualGameEndsQualified": false,
+    "leagueRanksQualified": false,
+    "finishedAt": "2026-10-27T00:42:33.268Z",
+    "elapsedMs": 503,
+    "callsStarted": 3
+  },
+  "runtime": {
+    "pid": 69351,
+    "bind": "127.0.0.1:3125",
+    "readbacks": [
+      {
+        "route": "/player-cards/customizer",
+        "status": 200,
+        "path": "tasks/artifacts/player-cards-2026-10-26/outline-editor-09/preview.html",
+        "bytes": 3455216,
+        "sha256": "ca75a7448351ce85abcd833f6f0f40cd54f85911c6ad06a087a81ed6f5b543d9"
+      },
+      {
+        "route": "/player-cards/studio",
+        "status": 200,
+        "path": "tasks/artifacts/player-cards-2026-10-26/outline-editor-09/preview.html",
+        "bytes": 3455216,
+        "sha256": "ca75a7448351ce85abcd833f6f0f40cd54f85911c6ad06a087a81ed6f5b543d9"
+      },
+      {
+        "route": "/player-cards/nhl-retained",
+        "status": 200,
+        "path": "tasks/artifacts/player-cards-2026-10-26/current-data-01/approved-snapshot-02/preview.html",
+        "bytes": 523724,
+        "sha256": "3b6ff7d783576dda860386c0fb47af8c64e6b42fcb1d0b9cecefee98f02a2777"
+      },
+      {
+        "route": "/player-cards/compositions-08",
+        "status": 200,
+        "path": "tasks/artifacts/player-cards-2026-10-26/stacked-outline-08/comparison.html",
+        "bytes": 1553491,
+        "sha256": "afe6c60d78b71ef3aa8fa6ce79066da3932e13d206dc410a2cffc0b3d84b7f3b"
+      },
+      {
+        "route": "/player-cards/functional",
+        "status": 200,
+        "path": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1/preview.html",
+        "bytes": 318626,
+        "sha256": "6c29f6eb3dc6ffc9a6a8a546423f78ac3e6e5e1e7265129475724422d3aad9b5"
+      }
+    ],
+    "lifecycle": "Detached POSIX session independent of launcher; host/environment shutdown or explicit stop ends it. No automatic restart/system startup; post-turn survival not yet observed."
+  },
+  "heavySlotReleased": true,
+  "staleLockRecovery": "STALE-LOCK-RECOVERY.json; exactoriginalinodearchivedwithoutdeletion,0processkilling; userdirectyesat00:58:07Z",
+  "manualImageInspection": {
+    "at": "2026-10-27T01:06:18.752815+00:00",
+    "viewed": [
+      "served-editor-phone.png",
+      "served-posterized-team-colors.png",
+      "../current-data-01/approved-snapshot-02/results-milestones.png"
+    ],
+    "observed": "Phonecontrols legible/no horizontaloverflow; nativeposterizedcustomoutlinecolors/geometry/rightedgelogovisible; actualcapturePNGname/3G10A13P30SOG/10%/208.7min/provenance andunavailableranklabelsreadable. Fineartworkfooterneedszoomatphonefitwidth; fullall-textphoneacceptancenotclaimed."
+  },
+  "independentAcceptance": false,
+  "liveActivation": false,
+  "premiumActivation": false,
+  "remaining": [
+    "No complete all-NHL same-definition population: ranks/N/percentiles unavailable in actual-data formats",
+    "NST advanced/chance/onice definitions and zeros notqualified by NHL basic capture",
+    "Actual end timestamps/historicalcutoffs and milestonebaselines notestablished by current capture",
+    "Actual NHL results card and synthetic hero/customizer remain separate; no claim of integrated live hero/export",
+    "Only Rates&Opportunity and Results&Milestones basicresults implemented; seven-suite backlog preserved; Thursdaynotstarted",
+    "No deployment/appauthhydration/privateDB/sourcewrites; no newNHLcalls afterapproved3GETsnapshot"
+  ]
+}

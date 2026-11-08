@@ -1,0 +1,90 @@
+diff --git a/web/lib/rosterScheduleOptimizer/planning.test.ts b/web/lib/rosterScheduleOptimizer/planning.test.ts
+index 4db1fdcf6656dc1261f884a34b6d3b22ba5d4927..37716f6225f89681d1fd6938ec8f7d858953cceb 100644
+--- a/web/lib/rosterScheduleOptimizer/planning.test.ts
++++ b/web/lib/rosterScheduleOptimizer/planning.test.ts
+@@ -1818,6 +1818,55 @@
+     expect(live.activeGames).toBe(live.assignments.filter(row => row.date !== "2026-10-05").length);
+   });
+ 
++  describe("injured started-game locks", () => {
++    function injured(status: string, locks: PlanningSnapshot["lockedAssignments"] = []) {
++      const data = underway(undefined, locks);
++      data.evidence.schedule = { ...data.evidence.schedule!, asOf: data.context.asOf };
++      data.players = data.players.map(row => row.id === "a" ? { ...row, injury: { status, label: status, note: null } } : row);
++      return data;
++    }
++
++    it.each(["O", "IR"])("requires a recorded lock for a started %s player", status => {
++      const result = evaluatePlan(injured(status), intent, "agp", [], false);
++      expect(result.legal).toBe(false);
++      expect(result.recommendation?.eligible).toBe(false);
++      expect(result.limitations).toContain("Started games lack recorded lineup locks; inferred positions are provisional. Confirm the active and bench assignments before acting.");
++      expect(today(result)).toEqual(["a@C#1:locked"]);
++      expect(result.activeGames).toBe(1);
++    });
++
++    it.each(["O", "IR"])("preserves an explicit active lock for a started %s player", status => {
++      const result = evaluatePlan(injured(status, [{ date: "2026-10-05", playerId: "a", slotId: "C#1" }]), intent, "agp", [], false);
++      expect(result.legal).toBe(true);
++      expect(today(result)).toEqual(["a@C#1:locked"]);
++      expect(result.activeGames).toBe(1);
++    });
++
++    it.each(["O", "IR"])("opens the slot only with an explicit bench lock for a started %s player", status => {
++      const result = evaluatePlan(injured(status, [{ date: "2026-10-05", playerId: "a", slotId: null }]), intent, "agp", [], false);
++      expect(result.legal).toBe(true);
++      expect(today(result)).toEqual(["b@C#1"]);
++      expect(result.activeGames).toBe(2);
++    });
++  });
++
++  it.each([
++    ["2026-10-05T19:59:59.999Z", 2],
++    ["2026-10-05T20:00:00.000Z", 1],
++    ["2026-10-05T20:00:00.001Z", 1],
++  ])("claims only strictly post-acquisition games at %s", (effectiveAt, expectedGames) => {
++    const data = snapshot();
++    data.roster = [];
++    data.players = data.players.filter(row => row.id === "c");
++    data.games = data.games.filter(game => game.teamAbbreviation === "C");
++    data.forecasts = [];
++    const result = evaluatePlan(data, intent, "agp", [{ id: "add-c", type: "add", playerId: "c",
++      at: effectiveAt, effectiveAt, conditional: true, dependsOn: [] }], false);
++    expect(result.legal).toBe(true);
++    expect(result.activeGames).toBe(expectedGames);
++    expect(result.assignments.some(row => row.gameId === "C0")).toBe(expectedGames === 2);
++  });
++
+   it("follows the provider's lock for a started game instead of failing the plan", () => {
+     const locked = evaluatePlan(underway(undefined, [{ date: "2026-10-05", playerId: "a", slotId: "C#1" }]), intent, "agp", [], false);
+     expect(locked.legal).toBe(true);
+diff --git a/web/lib/rosterScheduleOptimizer/planning.ts b/web/lib/rosterScheduleOptimizer/planning.ts
+index f10dda07b3ceeaf7654c54bff8bffc7b73124f20..f7d15914a1fff7c0dfc764a298c56798c27e1d59 100644
+--- a/web/lib/rosterScheduleOptimizer/planning.ts
++++ b/web/lib/rosterScheduleOptimizer/planning.ts
+@@ -701,11 +701,14 @@
+       const preStart: Play[] = [];
+       for (const entry of snapshot.roster) {
+         const player = players.get(entry.playerId);
+-        if (!player || ["IR", "IR+", "NA"].includes(entry.position) || providerListsOut(player) && !slotLocked(player.id, today)) continue;
++        if (!player || ["IR", "IR+", "NA"].includes(entry.position)) continue;
+         for (const game of todayGames.filter(game => game.teamAbbreviation === player.teamAbbreviation)) {
++          const gameStarted = started(game);
++          // Current injury status does not establish where a player was locked at puck drop.
++          if (!gameStarted && providerListsOut(player) && !slotLocked(player.id, today)) continue;
+           const play = { player, game, forecast: allForecasts.get(`${player.id}:${game.id}`) ?? null };
+           preStart.push(play);
+-          if (started(game)) startedPlays.push(play);
++          if (gameStarted) startedPlays.push(play);
+         }
+       }
+       const locks = snapshot.lockedAssignments.filter(lock => lock.date === today);
+@@ -730,7 +733,7 @@
+     const plays: Play[] = [];
+     for (const game of dayGames) for (const [id, member] of timeline.at(gameTime(game, snapshot.context.timeZone))) {
+       const player = players.get(id);
+-      if (!player || player.teamAbbreviation !== game.teamAbbreviation || ["IR", "IR+", "NA"].includes(member.position) || time(member.since) > time(gameTime(game, snapshot.context.timeZone))) continue;
++      if (!player || player.teamAbbreviation !== game.teamAbbreviation || ["IR", "IR+", "NA"].includes(member.position) || time(member.since) >= time(gameTime(game, snapshot.context.timeZone))) continue;
+       if (!game.startsAt && time(member.since) >= time(zonedMidnight(game.date, snapshot.context.timeZone))) continue;
+       // Out per the provider (IR/O): not a lineup option, so his missing projection can't block the totals.
+       if (providerListsOut(player)) {

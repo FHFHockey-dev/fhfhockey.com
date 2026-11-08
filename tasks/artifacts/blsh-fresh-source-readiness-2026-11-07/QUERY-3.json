@@ -1,0 +1,241 @@
+{
+  "tool": "Supabase execute_sql",
+  "project_id": "fyhftlxokyjtpndbkfse",
+  "query": "SELECT jsonb_build_object(\n'observed_at_utc',now(),\n'current_rows',(SELECT jsonb_agg(t) FROM (\nSELECT 'wgo' AS source,date AS event_date,count(*) AS rows,count(DISTINCT player_id) AS players FROM public.wgo_skater_stats WHERE season_id=20262027 AND date BETWEEN DATE '2026-11-01' AND DATE '2026-11-07' AND games_played=1 GROUP BY date\nUNION ALL SELECT 'individual',date_scraped,count(*),count(DISTINCT player_id) FROM public.nst_gamelog_as_counts WHERE season=20262027 AND date_scraped BETWEEN DATE '2026-11-01' AND DATE '2026-11-07' GROUP BY date_scraped\nUNION ALL SELECT 'onIce',date_scraped,count(*),count(DISTINCT player_id) FROM public.nst_gamelog_as_counts_oi WHERE season=20262027 AND date_scraped BETWEEN DATE '2026-11-01' AND DATE '2026-11-07' GROUP BY date_scraped\n) t),\n'exact_wgo',(SELECT jsonb_agg(t) FROM (SELECT id,player_id,game_id,date,season_id,player_name,team_abbrev,games_played,toi_per_game FROM public.wgo_skater_stats WHERE id IN (5599858,5594296) AND season_id=20262027 LIMIT 2)t),\n'exact_nst',(SELECT jsonb_agg(t) FROM (SELECT 'individual' AS source,id,player_id,date_scraped,season,gp,toi FROM public.nst_gamelog_as_counts WHERE id IN (809478,806838) AND season=20262027 UNION ALL SELECT 'onIce',id,player_id,date_scraped,season,gp,toi FROM public.nst_gamelog_as_counts_oi WHERE id IN (757676,755036) AND season=20262027)t),\n'recent_nst_audits',(SELECT jsonb_agg(t) FROM (SELECT run_time,job_name,status,rows_affected,ARRAY(SELECT jsonb_object_keys(details)) AS detail_keys FROM public.cron_job_audit WHERE run_time >= TIMESTAMPTZ '2026-11-06T00:00:00Z' AND run_time < TIMESTAMPTZ '2026-11-08T00:00:00Z' AND job_name='update-nst-gamelog' ORDER BY run_time DESC LIMIT 12)t),\n'provenance_summary',(SELECT jsonb_agg(t) FROM (SELECT source_type,source_name,count(*) AS rows,min(observed_at) AS first_observed_at,max(observed_at) AS last_observed_at FROM public.source_provenance_snapshots WHERE snapshot_date BETWEEN DATE '2026-11-01' AND DATE '2026-11-07' GROUP BY source_type,source_name ORDER BY source_type,source_name LIMIT 50)t)\n) AS evidence;",
+  "results": [
+    {
+      "evidence": {
+        "exact_nst": [
+          {
+            "gp": 1,
+            "id": 806838,
+            "toi": 702,
+            "season": 20262027,
+            "source": "individual",
+            "player_id": 8480075,
+            "date_scraped": "2026-10-15"
+          },
+          {
+            "gp": 1,
+            "id": 809478,
+            "toi": 445,
+            "season": 20262027,
+            "source": "individual",
+            "player_id": 8475235,
+            "date_scraped": "2026-10-29"
+          },
+          {
+            "gp": 1,
+            "id": 755036,
+            "toi": 702,
+            "season": 20262027,
+            "source": "onIce",
+            "player_id": 8480075,
+            "date_scraped": "2026-10-15"
+          },
+          {
+            "gp": 1,
+            "id": 757676,
+            "toi": 445,
+            "season": 20262027,
+            "source": "onIce",
+            "player_id": 8475235,
+            "date_scraped": "2026-10-29"
+          }
+        ],
+        "exact_wgo": [
+          {
+            "id": 5594296,
+            "date": "2026-10-15",
+            "game_id": 2026020109,
+            "player_id": 8480075,
+            "season_id": 20262027,
+            "player_name": "Cameron Crotty",
+            "team_abbrev": "OTT",
+            "games_played": 1,
+            "toi_per_game": 700
+          },
+          {
+            "id": 5599858,
+            "date": "2026-10-29",
+            "game_id": 2026020206,
+            "player_id": 8475235,
+            "season_id": 20262027,
+            "player_name": "Nicolas Deslauriers",
+            "team_abbrev": "CAR",
+            "games_played": 1,
+            "toi_per_game": 445
+          }
+        ],
+        "current_rows": [
+          {
+            "rows": 180,
+            "source": "wgo",
+            "players": 180,
+            "event_date": "2026-11-01"
+          },
+          {
+            "rows": 144,
+            "source": "wgo",
+            "players": 144,
+            "event_date": "2026-11-02"
+          },
+          {
+            "rows": 396,
+            "source": "wgo",
+            "players": 396,
+            "event_date": "2026-11-03"
+          },
+          {
+            "rows": 144,
+            "source": "wgo",
+            "players": 144,
+            "event_date": "2026-11-04"
+          },
+          {
+            "rows": 396,
+            "source": "wgo",
+            "players": 396,
+            "event_date": "2026-11-05"
+          },
+          {
+            "rows": 108,
+            "source": "wgo",
+            "players": 108,
+            "event_date": "2026-11-06"
+          },
+          {
+            "rows": 180,
+            "source": "individual",
+            "players": 180,
+            "event_date": "2026-11-01"
+          },
+          {
+            "rows": 144,
+            "source": "individual",
+            "players": 144,
+            "event_date": "2026-11-02"
+          },
+          {
+            "rows": 396,
+            "source": "individual",
+            "players": 396,
+            "event_date": "2026-11-03"
+          },
+          {
+            "rows": 144,
+            "source": "individual",
+            "players": 144,
+            "event_date": "2026-11-04"
+          },
+          {
+            "rows": 396,
+            "source": "individual",
+            "players": 396,
+            "event_date": "2026-11-05"
+          },
+          {
+            "rows": 108,
+            "source": "individual",
+            "players": 108,
+            "event_date": "2026-11-06"
+          },
+          {
+            "rows": 180,
+            "source": "onIce",
+            "players": 180,
+            "event_date": "2026-11-01"
+          },
+          {
+            "rows": 144,
+            "source": "onIce",
+            "players": 144,
+            "event_date": "2026-11-02"
+          },
+          {
+            "rows": 396,
+            "source": "onIce",
+            "players": 396,
+            "event_date": "2026-11-03"
+          },
+          {
+            "rows": 144,
+            "source": "onIce",
+            "players": 144,
+            "event_date": "2026-11-04"
+          },
+          {
+            "rows": 396,
+            "source": "onIce",
+            "players": 396,
+            "event_date": "2026-11-05"
+          },
+          {
+            "rows": 108,
+            "source": "onIce",
+            "players": 108,
+            "event_date": "2026-11-06"
+          }
+        ],
+        "observed_at_utc": "2026-11-07T22:15:10.726948+00:00",
+        "recent_nst_audits": [
+          {
+            "status": "success",
+            "job_name": "update-nst-gamelog",
+            "run_time": "2026-11-07T10:05:41.085198+00:00",
+            "detail_keys": [
+              "timing",
+              "failedRows",
+              "failedUrls",
+              "sourceDown",
+              "urlsQueued",
+              "nstProgress",
+              "stoppedEarly",
+              "isForwardFull",
+              "urlsProcessed",
+              "playersProcessed",
+              "troublesomePlayersCount"
+            ],
+            "rows_affected": 1880
+          },
+          {
+            "status": "success",
+            "job_name": "update-nst-gamelog",
+            "run_time": "2026-11-06T10:06:03.333114+00:00",
+            "detail_keys": [
+              "timing",
+              "failedRows",
+              "failedUrls",
+              "sourceDown",
+              "urlsQueued",
+              "nstProgress",
+              "stoppedEarly",
+              "isForwardFull",
+              "urlsProcessed",
+              "playersProcessed",
+              "troublesomePlayersCount"
+            ],
+            "rows_affected": 6712
+          }
+        ],
+        "provenance_summary": [
+          {
+            "rows": 39,
+            "source_name": "espn_site_api_market_odds",
+            "source_type": "game_prediction_market_odds",
+            "last_observed_at": "2026-11-07T21:10:18.428+00:00",
+            "first_observed_at": "2026-11-01T17:34:00.456+00:00"
+          },
+          {
+            "rows": 39,
+            "source_name": "espn_site_api_market_odds_rejected",
+            "source_type": "game_prediction_market_odds",
+            "last_observed_at": "2026-11-07T21:10:18.428+00:00",
+            "first_observed_at": "2026-11-02T21:10:18.515+00:00"
+          }
+        ]
+      }
+    }
+  ],
+  "notes": "Read-only bounded metadata or current-season public sports data; not native-source or BLSH acceptance evidence."
+}

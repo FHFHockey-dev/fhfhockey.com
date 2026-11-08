@@ -72,18 +72,18 @@ describe("Sustainability Gap", () => {
     expect(gapFor(0.8, missing)).toEqual({ gap: null, orientedGap: null, basis });
     expect(rateFromTotals(missing, 100)).toBeNull();
     expect(rateFromTotals(90, missing)).toBeNull();
-    expect(vuduSaveGap({ expectedSaveProb: missing, recentSaves: 90, recentShotsOnNet: 100 })).toBeNull();
-    expect(vuduSaveGap({ expectedSaveProb: 0.92, recentSaves: missing, recentShotsOnNet: 100 })).toBeNull();
-    expect(vuduSaveGap({ expectedSaveProb: 0.92, recentSaves: 90, recentShotsOnNet: missing })).toBeNull();
+    expect(vuduSaveGap({ expectedShotPopulation: "on_net_shots", expectedSaveProb: missing, recentSaves: 90, recentShotsOnNet: 100 })).toBeNull();
+    expect(vuduSaveGap({ expectedShotPopulation: "on_net_shots", expectedSaveProb: 0.92, recentSaves: missing, recentShotsOnNet: 100 })).toBeNull();
+    expect(vuduSaveGap({ expectedShotPopulation: "on_net_shots", expectedSaveProb: 0.92, recentSaves: 90, recentShotsOnNet: missing })).toBeNull();
     expect(watchLabel(missing, 0.1)).toBeNull();
   });
 
   it("derives VuDu saves per 100 on-net shots from pooled totals", () => {
-    expect(vuduSaveGap({ expectedSaveProb: 0.92, recentSaves: 90, recentShotsOnNet: 100 })).toBeCloseTo(2);
-    expect(vuduSaveGap({ expectedSaveProb: 0.9, recentSaves: 95, recentShotsOnNet: 100 })).toBeCloseTo(-5);
+    expect(vuduSaveGap({ expectedShotPopulation: "on_net_shots", expectedSaveProb: 0.92, recentSaves: 90, recentShotsOnNet: 100 })).toBeCloseTo(2);
+    expect(vuduSaveGap({ expectedShotPopulation: "on_net_shots", expectedSaveProb: 0.9, recentSaves: 95, recentShotsOnNet: 100 })).toBeCloseTo(-5);
     // 9/10 and 81/100 must be pooled as 90/110, not averaged as 0.855.
     expect(rateFromTotals(9 + 81, 10 + 100)).toBeCloseTo(90 / 110);
-    expect(vuduSaveGap({ expectedSaveProb: 0.92, recentSaves: 9 + 81, recentShotsOnNet: 10 + 100 }))
+    expect(vuduSaveGap({ expectedShotPopulation: "on_net_shots", expectedSaveProb: 0.92, recentSaves: 9 + 81, recentShotsOnNet: 10 + 100 }))
       .toBeCloseTo(100 * (0.92 - 90 / 110));
     // GAA: total goals against * 60 / total minutes, not mean individual GAA.
     expect(rateFromTotals((1 + 4) * 60, 30 + 60)).toBeCloseTo(10 / 3);
@@ -92,12 +92,12 @@ describe("Sustainability Gap", () => {
   it("returns null for zero exposure and preserves observed zero production", () => {
     expect(rateFromTotals(0, 0)).toBeNull();
     expect(rateFromTotals(3, 0)).toBeNull();
-    expect(vuduSaveGap({ expectedSaveProb: 0.92, recentSaves: 0, recentShotsOnNet: 0 })).toBeNull();
-    expect(vuduSaveGap({ expectedSaveProb: 0.92, recentSaves: 3, recentShotsOnNet: 0 })).toBeNull();
+    expect(vuduSaveGap({ expectedShotPopulation: "on_net_shots", expectedSaveProb: 0.92, recentSaves: 0, recentShotsOnNet: 0 })).toBeNull();
+    expect(vuduSaveGap({ expectedShotPopulation: "on_net_shots", expectedSaveProb: 0.92, recentSaves: 3, recentShotsOnNet: 0 })).toBeNull();
     expect(rateFromTotals(0, 100)).toBe(0);
     expect(gapFor(0, 0)).toEqual({ gap: 0, orientedGap: 0, basis });
     expect(gapFor(0, 0, true).orientedGap).toBe(0);
-    expect(vuduSaveGap({ expectedSaveProb: 0, recentSaves: 0, recentShotsOnNet: 100 })).toBe(0);
+    expect(vuduSaveGap({ expectedShotPopulation: "on_net_shots", expectedSaveProb: 0, recentSaves: 0, recentShotsOnNet: 100 })).toBe(0);
   });
 
   it("normalizes display only and uses inclusive native-unit watch thresholds", () => {
@@ -120,7 +120,7 @@ describe("Sustainability Gap", () => {
     expect(() => rateFromTotals(1, invalid)).toThrow();
     expect(() => watchLabel(invalid, 0.1)).toThrow();
     expect(() => watchLabel(0.1, invalid)).toThrow();
-    expect(() => vuduSaveGap({ expectedSaveProb: invalid, recentSaves: 90, recentShotsOnNet: 100 })).toThrow();
+    expect(() => vuduSaveGap({ expectedShotPopulation: "on_net_shots", expectedSaveProb: invalid, recentSaves: 90, recentShotsOnNet: 100 })).toThrow();
   });
 
   it("rejects invalid scales, exposures, save probabilities and counts", () => {
@@ -128,12 +128,19 @@ describe("Sustainability Gap", () => {
     expect(() => rateFromTotals(1, -1)).toThrow();
     expect(() => watchLabel(1, -1)).toThrow();
     for (const expectedSaveProb of [-0.1, 92]) {
-      expect(() => vuduSaveGap({ expectedSaveProb, recentSaves: 90, recentShotsOnNet: 100 })).toThrow();
+      expect(() => vuduSaveGap({ expectedShotPopulation: "on_net_shots", expectedSaveProb, recentSaves: 90, recentShotsOnNet: 100 })).toThrow();
     }
-    expect(() => vuduSaveGap({ expectedSaveProb: 0.92, recentSaves: -1, recentShotsOnNet: 100 })).toThrow();
-    expect(() => vuduSaveGap({ expectedSaveProb: 0.92, recentSaves: 101, recentShotsOnNet: 100 })).toThrow();
-    expect(() => vuduSaveGap({ expectedSaveProb: 0.92, recentSaves: 0, recentShotsOnNet: -1 })).toThrow();
+    expect(() => vuduSaveGap({ expectedShotPopulation: "on_net_shots", expectedSaveProb: 0.92, recentSaves: -1, recentShotsOnNet: 100 })).toThrow();
+    expect(() => vuduSaveGap({ expectedShotPopulation: "on_net_shots", expectedSaveProb: 0.92, recentSaves: 101, recentShotsOnNet: 100 })).toThrow();
+    expect(() => vuduSaveGap({ expectedShotPopulation: "on_net_shots", expectedSaveProb: 0.92, recentSaves: 0, recentShotsOnNet: -1 })).toThrow();
     expect(() => gapFor(Number.MAX_VALUE, -Number.MAX_VALUE)).toThrow();
     expect(() => rateFromTotals(Number.MAX_VALUE, Number.MIN_VALUE)).toThrow();
+  });
+});
+
+
+describe("VuDu event population", () => {
+  it.each(["unblocked_attempts", "unknown"] as const)("withholds an expected save rate over %s", expectedShotPopulation => {
+    expect(vuduSaveGap({ expectedShotPopulation, expectedSaveProb: 0.92, recentSaves: 90, recentShotsOnNet: 100 })).toBeNull();
   });
 });

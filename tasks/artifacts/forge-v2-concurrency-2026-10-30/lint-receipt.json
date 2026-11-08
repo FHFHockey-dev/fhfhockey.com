@@ -1,0 +1,17 @@
+{
+  "check": "lint",
+  "command": [
+    "/Users/tim/Code/fhfhockey.com/web/node_modules/.bin/eslint",
+    "lib/forge-v2/history.server.ts",
+    "lib/forge-v2/history.test.ts",
+    "lib/forge-v2/preparation.server.ts",
+    "lib/forge-v2/preparation.test.ts",
+    "lib/forge-v2/fixtureHarness.server.ts"
+  ],
+  "exit": 0,
+  "durationSeconds": 1.4563119411468506,
+  "log": "lint.txt",
+  "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "syntheticOnly": true,
+  "remoteActions": 0
+}

@@ -1,0 +1,64 @@
+--- a/web/pages/api/v1/db/forge-served-forecast-snapshot.ts
++++ b/web/pages/api/v1/db/forge-served-forecast-snapshot.ts
+@@ -28,11 +28,16 @@
+   const now = new Date(), date = param(req, "date") ?? todayEtDateOnly(now);
+   if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !Number.isFinite(Date.parse(`${date}T12:00:00Z`))
+     || new Date(`${date}T12:00:00Z`).toISOString().slice(0, 10) !== date) return res.status(400).json({ error: "date must be YYYY-MM-DD" });
++  // Elapsed time per stage, so a deadline error names the stage that spent the budget.
++  const stageMs: Record<string, number> = {};
++  let stage = "day_games", stageStart = Date.now();
++  const enter = (next: string) => { stageMs[stage] = Date.now() - stageStart; stage = next; stageStart = Date.now(); };
+   try {
+     const db = supabase as unknown as SupabaseClient<any>, deadline = Date.now() + 45000;
+     const dayGames = await pages(() => db.from("games").select("id,date,seasonId,startTime,homeTeamId,awayTeamId", { count: "exact" }).eq("date", date).order("id"), deadline, 40);
+     if (!dayGames.length) return res.status(200).json({ success: true, date, games: 0, rowsUpserted: 0, countsBySource: {}, skippedGames: [] });
+     const seasonId = Number(dayGames[0].seasonId);
++    enter("planning_inputs");
+     const planning = await loadPlanningInputs(db, { seasonId, startDate: date, endDate: date, timeZone: "America/New_York" }, now);
+     const sides = new Map<string, Row[]>();
+     for (const game of planning.games) sides.set(game.id, [...(sides.get(game.id) ?? []), game]);
+@@ -47,11 +52,13 @@
+     const identified = planning.players.filter(player => player.nhlId !== null && Number.isFinite(player.nhlTeamId) && player.rosterRevision
+       && player.teamAbbreviation && teamIds.has(player.nhlTeamId!));
+     const players: LedgerPlayer[] = identified.map(player => ({ nhlId: player.nhlId!, planningId: player.id, playerClass: player.playerClass, teamId: player.nhlTeamId! }));
++    enter("forge_bridge");
+     const bridge = await loadForgeDailyBridgeForecasts(db, identified, planning.games, now, seasonId, deadline, forecastCalendarPolicy());
+     const runIds = [...new Set(bridge.forecasts.map(row => row.revisionId.split(":").at(-1)!).filter(Boolean))];
+     const previousSeason = (Math.floor(seasonId / 10000) - 1) * 10001 + 1;
+     const priorFrom = new Date(Date.parse(`${date}T12:00:00Z`) - 7 * DAY_MS).toISOString().slice(0, 10);
+     const skaterIds = players.filter(row => row.playerClass === "skater").map(row => row.nhlId), goalieIds = players.filter(row => row.playerClass === "goalie").map(row => row.nhlId);
++    enter("history_reads");
+     const [runs, scheduleGames, wgoGameRows, goalieGameRows, teamPriors, lastSeasonTeams] = await Promise.all([
+       runIds.length ? pages(() => db.from("forge_runs").select("run_id,as_of_date", { count: "exact" }).in("run_id", runIds).order("run_id"), deadline, 500, row => row.run_id) : [],
+       pages(() => db.from("games").select("id,date,homeTeamId,awayTeamId", { count: "exact" }).eq("seasonId", seasonId).lte("date", date).order("date").order("id"), deadline, 2000),
+@@ -76,8 +83,10 @@
+       teamWin.set(`${game.gameId}:${game.homeTeamId}`, teamWinProbability(priors.get(home.toUpperCase()), priors.get(away.toUpperCase()), true));
+       teamWin.set(`${game.gameId}:${game.awayTeamId}`, teamWinProbability(priors.get(away.toUpperCase()), priors.get(home.toUpperCase()), false));
+     }
++    enter("ledger_build");
+     const { rows, universe, skippedGameIds } = buildLedgerRows({ date, seasonId, now, games, players, bridgeForecasts: bridge.forecasts,
+       runDates: new Map(runs.map(row => [row.run_id, row.as_of_date])), scheduleGames, wgoGameRows, goalieGameRows, teamWin });
++    enter("ledger_upsert");
+     let rowsUpserted = 0;
+     for (const batch of chunks(rows, UPSERT_BATCH)) {
+       const { error } = await db.from(LEDGER_TABLE).upsert(batch, { onConflict: "served_date,player_id,game_id,source" });
+@@ -85,6 +94,7 @@
+       rowsUpserted += batch.length;
+     }
+     // Market rows go last and alone: a market read or write failure never blocks the served forecasts above.
++    enter("market");
+     let marketRows: typeof rows = [], marketError: string | null = null;
+     if (LEDGER_MARKET_ENABLED) try {
+       const gameIds = games.map(game => game.gameId);
+@@ -112,8 +122,9 @@
+       identifiedPlayerGames: universe.length, coverageStatus: "unavailable_independent_universe_not_persisted",
+       skippedGames: skippedGameIds, bridgeLimitations: bridge.limitations });
+   } catch (error: any) {
+-    console.error("forge-served-forecast-snapshot failed:", error);
+-    return res.status(500).json({ success: false, date, error: error?.message ?? String(error) });
++    stageMs[stage] = Date.now() - stageStart;
++    console.error("forge-served-forecast-snapshot failed:", stage, stageMs, error);
++    return res.status(500).json({ success: false, date, error: error?.message ?? String(error), stage, stageMs });
+   }
+ };
+ 

@@ -1,0 +1,26 @@
+{
+  "owner": "Codex RSO resume, parent 01a189f6-9a3a-7235-a989-e1af4f47b014",
+  "at": "2026-11-01T13:57:08.385591+00:00",
+  "status": "completed local slice; source handed back to Codex RSO/release owner, no active writer",
+  "authority": "TJ current-task correction: Codex owns both lanes; delegated local implementation and tests",
+  "branch": "octoberBranch",
+  "head": "4589394f1965e746027865a602a63b9879db98aa",
+  "scope": "Require native issued participation lineage to retain its revision; regression and legal-planning integration tests only",
+  "paths": [
+    {
+      "path": "web/lib/player-forecasts/rsoUsePolicy.ts",
+      "baseline_sha256": "23fe44ea3d664f2303fea72caa748596fa7a7ef83de8be0bc59f909ad96c4375"
+    },
+    {
+      "path": "web/lib/player-forecasts/rsoUsePolicy.test.ts",
+      "baseline_sha256": "270148df973fd6d70035956d39eca61db1a17558ca47c0e5a7428f72121c7c7c"
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/planningReproducibility.test.ts",
+      "baseline_sha256": "5a94d41bff83f4f6fdedf562f33670b78f12d6fdc2d76367fb70eb0e0d9e3db7"
+    }
+  ],
+  "coordination": "No dirty changes in these files. CLAUDE-LEASES exact match is FORGE-PROV, released. No current Codex exact path claim found. Historical broad ownership superseded by current TJ correction. S1/S2/S3 and all unrelated source preserved.",
+  "excluded": "No production reads, writes, flags, activation, push, deployment, database repair, shared model approval or producer edits.",
+  "completed_at": "2026-11-01T14:01:30.575930+00:00"
+}

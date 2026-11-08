@@ -1,0 +1,47 @@
+{
+  "startedAt": "2026-11-07T21:27:55.079Z",
+  "method": "POST",
+  "url": "https://fhfhockey.com/api/v1/db/update-goalie-projections-v2?endDate=2026-11-13&limit=7",
+  "currentDeployment": "dpl_Eq1QaL9XDs1Bp3oWd3v9NV3TCEJW",
+  "currentCommit": "00ea36b39ee0c541fd6050b79703d2c054e97f1d",
+  "approvedBehaviorCommit": "b4033ad65ffba6835ba0754dd665e5d694301f64",
+  "applicationInvocationBudget": 1,
+  "priorDispatches": [
+    "DNS failure before HTTP, confirmed no writes or audit",
+    "Vercel308 from www to already-verified canonical production host; no handler execution"
+  ],
+  "status": "RESPONSE_RECEIVED",
+  "finishedAt": "2026-11-07T21:28:05.642Z",
+  "durationMs": 10563,
+  "httpStatus": 200,
+  "vercelId": "iad1::iad1::wrcg7-1794086875196-98bd0e812ccd",
+  "responseUrl": "https://fhfhockey.com/api/v1/db/update-goalie-projections-v2?endDate=2026-11-13&limit=7",
+  "body": {
+    "success": true,
+    "message": "Updated projections. Total upserted: 216",
+    "updates": 216,
+    "rowsRemoved": 4,
+    "failedRows": 0,
+    "failures": [],
+    "ownershipDecision": {
+      "decisionVersion": "goalie-start-ownership-v1",
+      "table": "goalie_start_projections",
+      "decision": "retain_shared_table_name_for_now",
+      "canonicalWriterRoute": "/api/v1/db/update-goalie-projections-v2",
+      "canonicalWriterStatus": "single_writer",
+      "sharedReaders": [
+        "/api/v1/forge/goalies",
+        "/api/v1/start-chart",
+        "web/lib/projections/run-forge-projections.ts"
+      ],
+      "renameDeferred": true,
+      "note": "Pass 3 keeps goalie_start_projections as the intentional shared goalie-prior table; rename or wrapping is deferred to a later pass so the single writer and shared readers stay explicit."
+    },
+    "observability": {
+      "goalieRowsProcessed": 216,
+      "databaseWriteFailures": 0,
+      "excludedHistoricalCandidates": 8,
+      "dataQualityWarnings": []
+    }
+  }
+}

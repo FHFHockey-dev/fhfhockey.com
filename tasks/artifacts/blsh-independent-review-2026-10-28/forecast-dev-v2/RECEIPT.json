@@ -1,0 +1,22 @@
+{
+  "version": "blsh-forecast-dev-comparison-v2",
+  "pins": {
+    "ORIGINAL-BLOCK-CATALOG.jsonl": "f60056cd5ab6b80688d130661d2efbaacfe31c001de7b690a634514900ded529",
+    "INPUTS.json": "343e796081506a0aa31d3a3da47927af872e11b4e9d150f06c5a902d3bdf2eac",
+    "dev-history.jsonl": "da32a473923e7b9940032c7ee22c1292e73798c7dc242a956a0244233d020106",
+    "export_dev_history.py": "b6a4a580acc7af04a6d469429fbfefa19411aea4cf52a92d5847b3acd4deefe6"
+  },
+  "excludedAnomalyIds": [
+    3100455,
+    3101421
+  ],
+  "playerLimit": null,
+  "players": 1093,
+  "rows": 94429,
+  "elapsedSeconds": 985.075,
+  "budgetSeconds": 3600,
+  "node": "v22.11.0",
+  "database": false,
+  "network": false,
+  "runnerStatus": "not recorded here; the command's exit status and any unhandled Vitest error decide whether the run is clean"
+}

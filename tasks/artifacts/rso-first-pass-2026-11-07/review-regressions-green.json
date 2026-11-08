@@ -1,0 +1,18 @@
+{
+  "exitCode": 0,
+  "command": [
+    "node",
+    "node_modules/vitest/vitest.mjs",
+    "run",
+    "lib/rosterScheduleOptimizer/planning.test.ts",
+    "-t",
+    "injured started-game locks|claims only strictly post-acquisition games",
+    "--maxWorkers=1",
+    "--reporter=dot",
+    "--reporter=json",
+    "--outputFile.json=/Users/tim/Code/fhfhockey.com/tasks/artifacts/rso-first-pass-2026-11-07/review-regressions-green-results.json"
+  ],
+  "runtimeSourceSha256": "c082f0e0b51f355e946e7836d3740f30665e54d0ffdf8809c9d9b7eb67381f57",
+  "testSourceSha256": "13c94223ecaf2c70fb6d6ee6a5eec0e2957b040b65c85f174c3cf8647e5184f0",
+  "at": "2026-11-07T21:50:51.745125+00:00"
+}

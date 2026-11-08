@@ -1,0 +1,82 @@
+{
+  "filePinsVerified": [
+    {
+      "path": "web/lib/player-forecasts/rsoUsePolicy.ts",
+      "sha256": "8299f6ff97d1ae8bf3836f1202b0eb82586cea4abf70b642a612e03c861d7aad",
+      "unchanged": true
+    },
+    {
+      "path": "web/lib/player-forecasts/rsoUsePolicy.test.ts",
+      "sha256": "bda984e71954a157f644e84e8a7fbb5b89b27a3b7f790e18c633e51b5f9f6a90",
+      "unchanged": true
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/planningReproducibility.test.ts",
+      "sha256": "7aa609b962ce392342bb272c57bc1609225ac686ad93e1807428906fce381198",
+      "unchanged": true
+    },
+    {
+      "path": "web/e2e/roster-schedule-optimizer.spec.ts",
+      "sha256": "fb096e6a413c6e4e79111cfffd9fb69974672133e2d46ae41d584592e0665be9",
+      "unchanged": true
+    },
+    {
+      "path": "web/lib/projections/verifiedForgeReleases.ts",
+      "sha256": "70242a513aab76a69af41f4bdd4d64b82f345e4559f7f7014db5216752940325",
+      "unchanged": true
+    },
+    {
+      "path": "web/lib/projections/verifiedForgeReleases.test.ts",
+      "sha256": "e47a37977bca4582d431cc126b1e8ccb4ecb52e57f787ffba6e0b2f05f9639ca",
+      "unchanged": true
+    },
+    {
+      "path": "tasks/artifacts/rso-resume-2026-11-01/release-prep/after402-committed-release.json",
+      "sha256": "a9674d30f42b32d88b604a33672e311c74470075da3c9219c1bb613bb2b43b3a",
+      "unchanged": true
+    },
+    {
+      "path": "tasks/artifacts/rso-resume-2026-11-01/release-prep/admission/c3897d3273ca46ea25a9f2737f09c835e5ec7325/receipt.json",
+      "sha256": "fe424f17b66c82ca3232d9566a41a7dbafc76400d2f8ea4f007e9afc1758b924",
+      "unchanged": true
+    },
+    {
+      "path": "web/pages/api/v1/start-chart.ts",
+      "sha256": "b5bbe2e5b3a64f8368dc409ad11207420af36811c0342e9cbfd49220c3d3f98e",
+      "unchanged": true
+    },
+    {
+      "path": "web/__tests__/pages/api/v1/start-chart.test.ts",
+      "sha256": "9601527da7de26fd44f555af069edd1225eef29695bab3f603c5f298083b5b67",
+      "unchanged": true
+    }
+  ],
+  "relevantCustodyRecords": [
+    {
+      "lane": "PROV-GUARD",
+      "owner": null,
+      "status": "idle",
+      "scope": "Week-ahead coverage: bridge reads runs through today+7; pipeline FORGE_PROJECTION_DAYS_AHEAD (unset=1, unchanged) behind env; no schedule/env change | future-date preflight freshness anchoring (no bypass)",
+      "relevantWritePaths": [
+        "web/pages/api/v1/start-chart.ts",
+        "web/__tests__/pages/api/v1/start-chart.test.ts"
+      ]
+    },
+    {
+      "lane": "RSO-ADMISSION-FILES",
+      "owner": "Codex RSO lane 01a19764-091f-763d-a983-8c692d79200b",
+      "status": "active",
+      "scope": "Install the proposed admission entries for candidate c3897d3273ca46ea25a9f2737f09c835e5ec7325; carve-out from idle PROV-GUARD for these two files only",
+      "write_paths": [
+        {
+          "path": "web/lib/projections/verifiedForgeReleases.ts",
+          "baseline_sha256": "314d048f083fb917d36718b772a36822d3cff2bf1137be28a85035aefd679cce"
+        },
+        {
+          "path": "web/lib/projections/verifiedForgeReleases.test.ts",
+          "baseline_sha256": "7c04cb6e43a76d70efe38af2b0978c25872bae991eed68ddcabed96d75d53f30"
+        }
+      ]
+    }
+  ]
+}

@@ -81,6 +81,20 @@ create index IF not exists idx_goalie_projections_v2_date_team_horizon on public
 
 # forge_player_game_strength
 
+> **Known data issue (2026-11-07): 2025-26 PP scoring is inflated.** Before the fix in candidate
+> 1bdcf6e3e, the derived builder labelled any skater advantage as PP and ignored the goalie digits. As a result,
+> extra-attacker (pulled-goalie) events and shootout attempts landed in the `*_pp` buckets.
+> - 2025-26 `goals_pp`, `assists_pp` and `shots_pp` in this table and in `forge_team_game_strength` are overstated:
+>   985 FORGE PPG against 789 NHL PPG. In `forge_goalie_game`, shots against, goals allowed and saves include shootout attempts.
+> - TOI columns are correct, because they come from shift_charts.
+> - These rows can't be rebuilt by `build-projection-derived-v2`. They came from an older writer, before
+>   `projection_game_materialization_status` existed, so they have no complete input manifest and the route skips
+>   them as `projection_inputs_unavailable`.
+> - TJ chose (2026-11-07) to flag 2025-26 and rebuild only 2026-27.
+> - For 2025-26 PPG and PPA, use `skatersGameStats`/`wgo_skater_stats`.
+>
+> Source: `tasks/artifacts/data-checks-2026-11-07/RESULTS.md` section 7.
+
 ```sql
 create table public.forge_player_game_strength (
   game_id bigint not null,
@@ -264,6 +278,8 @@ create index IF not exists idx_projection_runs_v2_status on public.forge_runs us
 ```
 
 # forge_team_game_strength
+
+> **Known data issue:** 2025-26 `goals_pp`/`shots_pp` are inflated by extra-attacker and shootout events; see the note under `forge_player_game_strength`.
 
 ```sql
 create table public.forge_team_game_strength (

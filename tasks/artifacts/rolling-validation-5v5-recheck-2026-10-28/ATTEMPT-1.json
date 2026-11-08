@@ -1,0 +1,8 @@
+{
+  "exitCode": 1,
+  "kind": "isolated harness dependency omission, not an application regression",
+  "error": "ReferenceError: isLegacyField is not defined",
+  "location": "inferMetricFamily called by buildFamilyComparisonSummary",
+  "correction": "Include exact source-extracted isLegacyField declaration; no application source change",
+  "testsCompleted": 0
+}

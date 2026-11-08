@@ -1,0 +1,314 @@
+{
+  "tool": "Supabase execute_sql",
+  "project_id": "fyhftlxokyjtpndbkfse",
+  "query": "SELECT table_name, column_name, data_type FROM information_schema.columns WHERE table_schema='public' AND table_name IN ('games','wgo_skater_stats','nst_gamelog_as_counts','nst_gamelog_as_counts_oi') ORDER BY table_name, ordinal_position LIMIT 300; SELECT tablename,indexname,indexdef FROM pg_indexes WHERE schemaname='public' AND tablename IN ('games','wgo_skater_stats','nst_gamelog_as_counts','nst_gamelog_as_counts_oi') ORDER BY tablename,indexname LIMIT 70; SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND (table_name LIKE '%nst%' OR table_name LIKE '%source%receipt%' OR table_name LIKE '%provenance%' OR table_name LIKE '%cron%audit%') ORDER BY table_name LIMIT 120;",
+  "results": [
+    {
+      "table_name": "cron_job_audit"
+    },
+    {
+      "table_name": "nst_5v5_team_differentials"
+    },
+    {
+      "table_name": "nst_5v5_team_per_game"
+    },
+    {
+      "table_name": "nst_all_team_differentials"
+    },
+    {
+      "table_name": "nst_all_team_per_game"
+    },
+    {
+      "table_name": "nst_att_def_scores"
+    },
+    {
+      "table_name": "nst_avg_5v5"
+    },
+    {
+      "table_name": "nst_avg_all"
+    },
+    {
+      "table_name": "nst_avg_pk"
+    },
+    {
+      "table_name": "nst_avg_pp"
+    },
+    {
+      "table_name": "nst_gamelog_5v5_counts"
+    },
+    {
+      "table_name": "nst_gamelog_5v5_counts_oi"
+    },
+    {
+      "table_name": "nst_gamelog_5v5_rates"
+    },
+    {
+      "table_name": "nst_gamelog_5v5_rates_oi"
+    },
+    {
+      "table_name": "nst_gamelog_as_counts"
+    },
+    {
+      "table_name": "nst_gamelog_as_counts_oi"
+    },
+    {
+      "table_name": "nst_gamelog_as_rates"
+    },
+    {
+      "table_name": "nst_gamelog_as_rates_oi"
+    },
+    {
+      "table_name": "nst_gamelog_es_counts"
+    },
+    {
+      "table_name": "nst_gamelog_es_counts_oi"
+    },
+    {
+      "table_name": "nst_gamelog_es_rates"
+    },
+    {
+      "table_name": "nst_gamelog_es_rates_oi"
+    },
+    {
+      "table_name": "nst_gamelog_goalie_5v5_counts"
+    },
+    {
+      "table_name": "nst_gamelog_goalie_5v5_rates"
+    },
+    {
+      "table_name": "nst_gamelog_goalie_all_counts"
+    },
+    {
+      "table_name": "nst_gamelog_goalie_all_rates"
+    },
+    {
+      "table_name": "nst_gamelog_goalie_ev_counts"
+    },
+    {
+      "table_name": "nst_gamelog_goalie_ev_rates"
+    },
+    {
+      "table_name": "nst_gamelog_goalie_pk_counts"
+    },
+    {
+      "table_name": "nst_gamelog_goalie_pk_rates"
+    },
+    {
+      "table_name": "nst_gamelog_goalie_pp_counts"
+    },
+    {
+      "table_name": "nst_gamelog_goalie_pp_rates"
+    },
+    {
+      "table_name": "nst_gamelog_pk_counts"
+    },
+    {
+      "table_name": "nst_gamelog_pk_counts_oi"
+    },
+    {
+      "table_name": "nst_gamelog_pk_rates"
+    },
+    {
+      "table_name": "nst_gamelog_pk_rates_oi"
+    },
+    {
+      "table_name": "nst_gamelog_pp_counts"
+    },
+    {
+      "table_name": "nst_gamelog_pp_counts_oi"
+    },
+    {
+      "table_name": "nst_gamelog_pp_rates"
+    },
+    {
+      "table_name": "nst_gamelog_pp_rates_oi"
+    },
+    {
+      "table_name": "nst_league_averages"
+    },
+    {
+      "table_name": "nst_percentile_as_defense"
+    },
+    {
+      "table_name": "nst_percentile_as_defense_filtered"
+    },
+    {
+      "table_name": "nst_percentile_as_defense_legacy"
+    },
+    {
+      "table_name": "nst_percentile_as_offense"
+    },
+    {
+      "table_name": "nst_percentile_as_offense_legacy"
+    },
+    {
+      "table_name": "nst_percentile_es_defense"
+    },
+    {
+      "table_name": "nst_percentile_es_defense_filtered"
+    },
+    {
+      "table_name": "nst_percentile_es_offense"
+    },
+    {
+      "table_name": "nst_percentile_es_offense_filtered"
+    },
+    {
+      "table_name": "nst_percentile_pk_defense"
+    },
+    {
+      "table_name": "nst_percentile_pk_defense_filtered"
+    },
+    {
+      "table_name": "nst_percentile_pk_offense"
+    },
+    {
+      "table_name": "nst_percentile_pk_offense_filtered"
+    },
+    {
+      "table_name": "nst_percentile_pp_defense"
+    },
+    {
+      "table_name": "nst_percentile_pp_defense_filtered"
+    },
+    {
+      "table_name": "nst_percentile_pp_offense"
+    },
+    {
+      "table_name": "nst_percentile_pp_offense_filtered"
+    },
+    {
+      "table_name": "nst_pk_team_differentials"
+    },
+    {
+      "table_name": "nst_pk_team_per_game"
+    },
+    {
+      "table_name": "nst_pp_team_differentials"
+    },
+    {
+      "table_name": "nst_pp_team_per_game"
+    },
+    {
+      "table_name": "nst_seasonal_individual_counts"
+    },
+    {
+      "table_name": "nst_seasonal_individual_rates"
+    },
+    {
+      "table_name": "nst_seasonal_on_ice_counts"
+    },
+    {
+      "table_name": "nst_seasonal_on_ice_rates"
+    },
+    {
+      "table_name": "nst_seasonlong_as_counts"
+    },
+    {
+      "table_name": "nst_seasonlong_as_counts_oi"
+    },
+    {
+      "table_name": "nst_seasonlong_as_rates"
+    },
+    {
+      "table_name": "nst_seasonlong_as_rates_oi"
+    },
+    {
+      "table_name": "nst_seasonlong_combined_es"
+    },
+    {
+      "table_name": "nst_seasonlong_combined_pk"
+    },
+    {
+      "table_name": "nst_seasonlong_combined_pp"
+    },
+    {
+      "table_name": "nst_seasonlong_es_counts"
+    },
+    {
+      "table_name": "nst_seasonlong_es_counts_oi"
+    },
+    {
+      "table_name": "nst_seasonlong_es_rates"
+    },
+    {
+      "table_name": "nst_seasonlong_es_rates_oi"
+    },
+    {
+      "table_name": "nst_seasonlong_pk_counts"
+    },
+    {
+      "table_name": "nst_seasonlong_pk_counts_oi"
+    },
+    {
+      "table_name": "nst_seasonlong_pk_rates"
+    },
+    {
+      "table_name": "nst_seasonlong_pk_rates_oi"
+    },
+    {
+      "table_name": "nst_seasonlong_pp_counts"
+    },
+    {
+      "table_name": "nst_seasonlong_pp_counts_oi"
+    },
+    {
+      "table_name": "nst_seasonlong_pp_rates"
+    },
+    {
+      "table_name": "nst_seasonlong_pp_rates_oi"
+    },
+    {
+      "table_name": "nst_team_5v5"
+    },
+    {
+      "table_name": "nst_team_all"
+    },
+    {
+      "table_name": "nst_team_gamelogs_as_counts"
+    },
+    {
+      "table_name": "nst_team_gamelogs_as_rates"
+    },
+    {
+      "table_name": "nst_team_gamelogs_es_counts"
+    },
+    {
+      "table_name": "nst_team_gamelogs_es_rates"
+    },
+    {
+      "table_name": "nst_team_gamelogs_pk_counts"
+    },
+    {
+      "table_name": "nst_team_gamelogs_pk_rates"
+    },
+    {
+      "table_name": "nst_team_gamelogs_pp_counts"
+    },
+    {
+      "table_name": "nst_team_gamelogs_pp_rates"
+    },
+    {
+      "table_name": "nst_team_pk"
+    },
+    {
+      "table_name": "nst_team_pp"
+    },
+    {
+      "table_name": "nst_team_scores_all_strengths"
+    },
+    {
+      "table_name": "nst_team_stats"
+    },
+    {
+      "table_name": "nst_team_stats_ly"
+    },
+    {
+      "table_name": "source_provenance_snapshots"
+    },
+    {
+      "table_name": "vw_team_stats_nst_wgo"
+    }
+  ],
+  "notes": "Multiple read-only statements; tool returned only the final table-name result. Metadata was obtained in query 2."
+}

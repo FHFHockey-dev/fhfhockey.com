@@ -1,0 +1,2077 @@
+{
+  "config": {
+    "configFile": "/Users/tim/Code/fhfhockey.com/web/playwright.config.ts",
+    "rootDir": "/Users/tim/Code/fhfhockey.com/web/e2e",
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/tuesday-trends-2026-10-26/run/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/Users/tim/Code/fhfhockey.com/web/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list"
+      ],
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.60.0",
+    "workers": 8,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "social-share.spec.ts",
+      "file": "social-share.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "default summary, recalculated dates and actual PNG match one frozen edition",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1941,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-26T19:07:22.248Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "a54bce60df3e96b84bd8-a2b8110f1acbb8e62f5b",
+          "file": "social-share.spec.ts",
+          "line": 173,
+          "column": 5
+        },
+        {
+          "title": "Wednesday excludes Wednesday; mobile controls and detail PNG preserve selected games",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1426,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-26T19:07:24.335Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "a54bce60df3e96b84bd8-bb6468475399c76a0805",
+          "file": "social-share.spec.ts",
+          "line": 244,
+          "column": 5
+        },
+        {
+          "title": "long text and missing logo stay inside the square and export with a branded fallback",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1271,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-26T19:07:25.766Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "a54bce60df3e96b84bd8-5be4bf24db003abdd3e1",
+          "file": "social-share.spec.ts",
+          "line": 280,
+          "column": 5
+        },
+        {
+          "title": "failed refresh preserves only a nonexportable preview and retries the same selection",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1265,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-26T19:07:27.040Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "a54bce60df3e96b84bd8-f416bd92178a5fa25dcc",
+          "file": "social-share.spec.ts",
+          "line": 293,
+          "column": 5
+        },
+        {
+          "title": "partial, stale and valid zero-game sources do not publish rankings",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1107,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-26T19:07:28.308Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "a54bce60df3e96b84bd8-15a22359ccddeee8a472",
+          "file": "social-share.spec.ts",
+          "line": 323,
+          "column": 5
+        },
+        {
+          "title": "export font failures are explicit and retry without refetching schedule data",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1604,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-26T19:07:29.419Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "a54bce60df3e96b84bd8-1377584d9cd5571586a8",
+          "file": "social-share.spec.ts",
+          "line": 342,
+          "column": 5
+        },
+        {
+          "title": "edition expiry disables export and unsupported formats stay explicitly gated",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2687,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-26T19:07:31.026Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "a54bce60df3e96b84bd8-adee6c6698932a0d7968",
+          "file": "social-share.spec.ts",
+          "line": 356,
+          "column": 5
+        },
+        {
+          "title": "Monday default grid ranks every team by Game Grid weekScore in square day cells and exports",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2118,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-26T19:07:33.718Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "a54bce60df3e96b84bd8-0be3269dc84a288a0474",
+          "file": "social-share.spec.ts",
+          "line": 373,
+          "column": 5
+        },
+        {
+          "title": "Monday grid falls back to abbreviation tiles and never ranks an untrusted edition",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2021,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-26T19:07:35.840Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "a54bce60df3e96b84bd8-84273b69726531fa01bc",
+          "file": "social-share.spec.ts",
+          "line": 406,
+          "column": 5
+        },
+        {
+          "title": "pinned Monday grid edition exports the same PNG bytes every run",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 5542,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-26T19:07:37.865Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "a54bce60df3e96b84bd8-520340c8b519a690f283",
+          "file": "social-share.spec.ts",
+          "line": 425,
+          "column": 5
+        },
+        {
+          "title": "Easiest schedules and streaming matchup cards rank by Game Grid opponent DEF and export",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3842,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-26T19:07:43.412Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "a54bce60df3e96b84bd8-df5311117a89d24f5691",
+          "file": "social-share.spec.ts",
+          "line": 483,
+          "column": 5
+        },
+        {
+          "title": "matchup cards never rank or export without current, complete opponent ratings",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 2384,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\n\u001b[1mMatcher error\u001b[22m: \u001b[31mreceived\u001b[39m value must not be null nor undefined\n\nReceived has value: \u001b[31mundefined\u001b[39m",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\n\u001b[1mMatcher error\u001b[22m: \u001b[31mreceived\u001b[39m value must not be null nor undefined\n\nReceived has value: \u001b[31mundefined\u001b[39m\n    at open (/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:154:47)\n    at /Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:563:3",
+                    "location": {
+                      "file": "/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts",
+                      "column": 47,
+                      "line": 154
+                    },
+                    "snippet": "  152 | async function open(page: Page, format = \"game-grid\") {\n  153 |   const response = await page.goto(`/social-share/${format}`);\n> 154 |   expect(response?.headers()[\"x-robots-tag\"]).toContain(\"noindex\");\n      |                                               ^\n  155 |   await expect(page.getByRole(\"button\", { name: \"Refresh schedule\", exact: true })).toBeEnabled();\n  156 |   await page.getByLabel(\"Week of (Monday)\").fill(upcomingWeek);\n  157 |   await expect(page.getByRole(\"button\", { name: \"Refresh schedule\", exact: true })).toBeEnabled();"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts",
+                        "column": 47,
+                        "line": 154
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\n\u001b[1mMatcher error\u001b[22m: \u001b[31mreceived\u001b[39m value must not be null nor undefined\n\nReceived has value: \u001b[31mundefined\u001b[39m\n\n  152 | async function open(page: Page, format = \"game-grid\") {\n  153 |   const response = await page.goto(`/social-share/${format}`);\n> 154 |   expect(response?.headers()[\"x-robots-tag\"]).toContain(\"noindex\");\n      |                                               ^\n  155 |   await expect(page.getByRole(\"button\", { name: \"Refresh schedule\", exact: true })).toBeEnabled();\n  156 |   await page.getByLabel(\"Week of (Monday)\").fill(upcomingWeek);\n  157 |   await expect(page.getByRole(\"button\", { name: \"Refresh schedule\", exact: true })).toBeEnabled();\n    at open (/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:154:47)\n    at /Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:563:3"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-26T19:07:47.261Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/tuesday-trends-2026-10-26/run/test-results/social-share-matchup-cards-800b2-t-complete-opponent-ratings-chromium/test-failed-1.png"
+                    },
+                    {
+                      "name": "video",
+                      "contentType": "video/webm",
+                      "path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/tuesday-trends-2026-10-26/run/test-results/social-share-matchup-cards-800b2-t-complete-opponent-ratings-chromium/video.webm"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/tuesday-trends-2026-10-26/run/test-results/social-share-matchup-cards-800b2-t-complete-opponent-ratings-chromium/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts",
+                    "column": 47,
+                    "line": 154
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "a54bce60df3e96b84bd8-299a773e91c627b57cdc",
+          "file": "social-share.spec.ts",
+          "line": 560,
+          "column": 5
+        },
+        {
+          "title": "Pickup tier and specialist cards list ranked players from top Week Score teams and export",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 2465,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\n\u001b[1mMatcher error\u001b[22m: \u001b[31mreceived\u001b[39m value must not be null nor undefined\n\nReceived has value: \u001b[31mundefined\u001b[39m",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\n\u001b[1mMatcher error\u001b[22m: \u001b[31mreceived\u001b[39m value must not be null nor undefined\n\nReceived has value: \u001b[31mundefined\u001b[39m\n    at open (/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:154:47)\n    at /Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:596:3",
+                    "location": {
+                      "file": "/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts",
+                      "column": 47,
+                      "line": 154
+                    },
+                    "snippet": "  152 | async function open(page: Page, format = \"game-grid\") {\n  153 |   const response = await page.goto(`/social-share/${format}`);\n> 154 |   expect(response?.headers()[\"x-robots-tag\"]).toContain(\"noindex\");\n      |                                               ^\n  155 |   await expect(page.getByRole(\"button\", { name: \"Refresh schedule\", exact: true })).toBeEnabled();\n  156 |   await page.getByLabel(\"Week of (Monday)\").fill(upcomingWeek);\n  157 |   await expect(page.getByRole(\"button\", { name: \"Refresh schedule\", exact: true })).toBeEnabled();"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts",
+                        "column": 47,
+                        "line": 154
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\n\u001b[1mMatcher error\u001b[22m: \u001b[31mreceived\u001b[39m value must not be null nor undefined\n\nReceived has value: \u001b[31mundefined\u001b[39m\n\n  152 | async function open(page: Page, format = \"game-grid\") {\n  153 |   const response = await page.goto(`/social-share/${format}`);\n> 154 |   expect(response?.headers()[\"x-robots-tag\"]).toContain(\"noindex\");\n      |                                               ^\n  155 |   await expect(page.getByRole(\"button\", { name: \"Refresh schedule\", exact: true })).toBeEnabled();\n  156 |   await page.getByLabel(\"Week of (Monday)\").fill(upcomingWeek);\n  157 |   await expect(page.getByRole(\"button\", { name: \"Refresh schedule\", exact: true })).toBeEnabled();\n    at open (/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:154:47)\n    at /Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:596:3"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-26T19:07:50.432Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/tuesday-trends-2026-10-26/run/test-results/social-share-Pickup-tier-a-d8343-Week-Score-teams-and-export-chromium/test-failed-1.png"
+                    },
+                    {
+                      "name": "video",
+                      "contentType": "video/webm",
+                      "path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/tuesday-trends-2026-10-26/run/test-results/social-share-Pickup-tier-a-d8343-Week-Score-teams-and-export-chromium/video.webm"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/tuesday-trends-2026-10-26/run/test-results/social-share-Pickup-tier-a-d8343-Week-Score-teams-and-export-chromium/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts",
+                    "column": 47,
+                    "line": 154
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "a54bce60df3e96b84bd8-cb6f22399b27b6a91c7a",
+          "file": "social-share.spec.ts",
+          "line": 592,
+          "column": 5
+        },
+        {
+          "title": "player cards never rank or export without current player sources or a ready schedule",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 1502,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\n\u001b[1mMatcher error\u001b[22m: \u001b[31mreceived\u001b[39m value must not be null nor undefined\n\nReceived has value: \u001b[31mundefined\u001b[39m",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\n\u001b[1mMatcher error\u001b[22m: \u001b[31mreceived\u001b[39m value must not be null nor undefined\n\nReceived has value: \u001b[31mundefined\u001b[39m\n    at open (/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:154:47)\n    at /Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:634:3",
+                    "location": {
+                      "file": "/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts",
+                      "column": 47,
+                      "line": 154
+                    },
+                    "snippet": "  152 | async function open(page: Page, format = \"game-grid\") {\n  153 |   const response = await page.goto(`/social-share/${format}`);\n> 154 |   expect(response?.headers()[\"x-robots-tag\"]).toContain(\"noindex\");\n      |                                               ^\n  155 |   await expect(page.getByRole(\"button\", { name: \"Refresh schedule\", exact: true })).toBeEnabled();\n  156 |   await page.getByLabel(\"Week of (Monday)\").fill(upcomingWeek);\n  157 |   await expect(page.getByRole(\"button\", { name: \"Refresh schedule\", exact: true })).toBeEnabled();"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts",
+                        "column": 47,
+                        "line": 154
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\n\u001b[1mMatcher error\u001b[22m: \u001b[31mreceived\u001b[39m value must not be null nor undefined\n\nReceived has value: \u001b[31mundefined\u001b[39m\n\n  152 | async function open(page: Page, format = \"game-grid\") {\n  153 |   const response = await page.goto(`/social-share/${format}`);\n> 154 |   expect(response?.headers()[\"x-robots-tag\"]).toContain(\"noindex\");\n      |                                               ^\n  155 |   await expect(page.getByRole(\"button\", { name: \"Refresh schedule\", exact: true })).toBeEnabled();\n  156 |   await page.getByLabel(\"Week of (Monday)\").fill(upcomingWeek);\n  157 |   await expect(page.getByRole(\"button\", { name: \"Refresh schedule\", exact: true })).toBeEnabled();\n    at open (/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:154:47)\n    at /Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:634:3"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-26T19:07:54.089Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/tuesday-trends-2026-10-26/run/test-results/social-share-player-cards--31fd8-sources-or-a-ready-schedule-chromium/test-failed-1.png"
+                    },
+                    {
+                      "name": "video",
+                      "contentType": "video/webm",
+                      "path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/tuesday-trends-2026-10-26/run/test-results/social-share-player-cards--31fd8-sources-or-a-ready-schedule-chromium/video.webm"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/tuesday-trends-2026-10-26/run/test-results/social-share-player-cards--31fd8-sources-or-a-ready-schedule-chromium/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts",
+                    "column": 47,
+                    "line": 154
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "a54bce60df3e96b84bd8-1da6366cddeb35213678",
+          "file": "social-share.spec.ts",
+          "line": 631,
+          "column": 5
+        },
+        {
+          "title": "short pickup columns say how many qualify and the card still exports",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 1437,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\n\u001b[1mMatcher error\u001b[22m: \u001b[31mreceived\u001b[39m value must not be null nor undefined\n\nReceived has value: \u001b[31mundefined\u001b[39m",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\n\u001b[1mMatcher error\u001b[22m: \u001b[31mreceived\u001b[39m value must not be null nor undefined\n\nReceived has value: \u001b[31mundefined\u001b[39m\n    at open (/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:154:47)\n    at /Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:661:3",
+                    "location": {
+                      "file": "/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts",
+                      "column": 47,
+                      "line": 154
+                    },
+                    "snippet": "  152 | async function open(page: Page, format = \"game-grid\") {\n  153 |   const response = await page.goto(`/social-share/${format}`);\n> 154 |   expect(response?.headers()[\"x-robots-tag\"]).toContain(\"noindex\");\n      |                                               ^\n  155 |   await expect(page.getByRole(\"button\", { name: \"Refresh schedule\", exact: true })).toBeEnabled();\n  156 |   await page.getByLabel(\"Week of (Monday)\").fill(upcomingWeek);\n  157 |   await expect(page.getByRole(\"button\", { name: \"Refresh schedule\", exact: true })).toBeEnabled();"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts",
+                        "column": 47,
+                        "line": 154
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\n\u001b[1mMatcher error\u001b[22m: \u001b[31mreceived\u001b[39m value must not be null nor undefined\n\nReceived has value: \u001b[31mundefined\u001b[39m\n\n  152 | async function open(page: Page, format = \"game-grid\") {\n  153 |   const response = await page.goto(`/social-share/${format}`);\n> 154 |   expect(response?.headers()[\"x-robots-tag\"]).toContain(\"noindex\");\n      |                                               ^\n  155 |   await expect(page.getByRole(\"button\", { name: \"Refresh schedule\", exact: true })).toBeEnabled();\n  156 |   await page.getByLabel(\"Week of (Monday)\").fill(upcomingWeek);\n  157 |   await expect(page.getByRole(\"button\", { name: \"Refresh schedule\", exact: true })).toBeEnabled();\n    at open (/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:154:47)\n    at /Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:661:3"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-26T19:07:56.480Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/tuesday-trends-2026-10-26/run/test-results/social-share-short-pickup--4cfac--and-the-card-still-exports-chromium/test-failed-1.png"
+                    },
+                    {
+                      "name": "video",
+                      "contentType": "video/webm",
+                      "path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/tuesday-trends-2026-10-26/run/test-results/social-share-short-pickup--4cfac--and-the-card-still-exports-chromium/video.webm"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/tuesday-trends-2026-10-26/run/test-results/social-share-short-pickup--4cfac--and-the-card-still-exports-chromium/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts",
+                    "column": 47,
+                    "line": 154
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "a54bce60df3e96b84bd8-c78e34cc355cab9ea448",
+          "file": "social-share.spec.ts",
+          "line": 658,
+          "column": 5
+        },
+        {
+          "title": "pinned Wednesday and Tuesday editions export the same PNG bytes every run",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 4,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 11003,
+                  "error": {
+                    "message": "TimeoutError: locator.fill: Timeout 10000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByLabel('Week of (Monday)')\u001b[22m\n\u001b[2m    15 × waiting for\" http://127.0.0.1:3110/social-share/remaining-week\" navigation to finish...\u001b[22m\n\u001b[2m       - navigated to \"http://127.0.0.1:3110/social-share/remaining-week\"\u001b[22m\n",
+                    "stack": "TimeoutError: locator.fill: Timeout 10000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByLabel('Week of (Monday)')\u001b[22m\n\u001b[2m    15 × waiting for\" http://127.0.0.1:3110/social-share/remaining-week\" navigation to finish...\u001b[22m\n\u001b[2m       - navigated to \"http://127.0.0.1:3110/social-share/remaining-week\"\u001b[22m\n\n    at /Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:699:45",
+                    "location": {
+                      "file": "/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts",
+                      "column": 45,
+                      "line": 699
+                    },
+                    "snippet": "  697 |   await page.clock.install({ time: new Date(\"2026-10-28T13:05:00Z\") });\n  698 |   await page.goto(\"/social-share/remaining-week\");\n> 699 |   await page.getByLabel(\"Week of (Monday)\").fill(week);\n      |                                             ^\n  700 |   await expect(page.getByRole(\"button\", { name: \"Download PNG\", exact: true })).toBeEnabled();\n  701 |   const wednesday = await exportCards(page, [\"grid\", \"easiest\", \"stream\", \"pickups-50\", \"pickups-30\", \"pickups-20\", \"specialists\", \"tiers\", \"tiers-wide\"], \"wednesday\");\n  702 |   if (process.env.SOCIAL_SHARE_PINNED_WEDNESDAY_SHA256) expect(wednesday).toBe(process.env.SOCIAL_SHARE_PINNED_WEDNESDAY_SHA256);"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts",
+                        "column": 45,
+                        "line": 699
+                      },
+                      "message": "TimeoutError: locator.fill: Timeout 10000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByLabel('Week of (Monday)')\u001b[22m\n\u001b[2m    15 × waiting for\" http://127.0.0.1:3110/social-share/remaining-week\" navigation to finish...\u001b[22m\n\u001b[2m       - navigated to \"http://127.0.0.1:3110/social-share/remaining-week\"\u001b[22m\n\n\n  697 |   await page.clock.install({ time: new Date(\"2026-10-28T13:05:00Z\") });\n  698 |   await page.goto(\"/social-share/remaining-week\");\n> 699 |   await page.getByLabel(\"Week of (Monday)\").fill(week);\n      |                                             ^\n  700 |   await expect(page.getByRole(\"button\", { name: \"Download PNG\", exact: true })).toBeEnabled();\n  701 |   const wednesday = await exportCards(page, [\"grid\", \"easiest\", \"stream\", \"pickups-50\", \"pickups-30\", \"pickups-20\", \"specialists\", \"tiers\", \"tiers-wide\"], \"wednesday\");\n  702 |   if (process.env.SOCIAL_SHARE_PINNED_WEDNESDAY_SHA256) expect(wednesday).toBe(process.env.SOCIAL_SHARE_PINNED_WEDNESDAY_SHA256);\n    at /Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:699:45"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-26T19:07:58.438Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/tuesday-trends-2026-10-26/run/test-results/social-share-pinned-Wednes-85510-he-same-PNG-bytes-every-run-chromium/test-failed-1.png"
+                    },
+                    {
+                      "name": "video",
+                      "contentType": "video/webm",
+                      "path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/tuesday-trends-2026-10-26/run/test-results/social-share-pinned-Wednes-85510-he-same-PNG-bytes-every-run-chromium/video.webm"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/tuesday-trends-2026-10-26/run/test-results/social-share-pinned-Wednes-85510-he-same-PNG-bytes-every-run-chromium/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts",
+                    "column": 45,
+                    "line": 699
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "a54bce60df3e96b84bd8-8fe29fed90bbad64399a",
+          "file": "social-share.spec.ts",
+          "line": 693,
+          "column": 5
+        },
+        {
+          "title": "Wednesday edition recomputes every card for Thursday to Sunday and names the covered dates",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 5,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 1252,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\n\u001b[1mMatcher error\u001b[22m: \u001b[31mreceived\u001b[39m value must not be null nor undefined\n\nReceived has value: \u001b[31mundefined\u001b[39m",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\n\u001b[1mMatcher error\u001b[22m: \u001b[31mreceived\u001b[39m value must not be null nor undefined\n\nReceived has value: \u001b[31mundefined\u001b[39m\n    at open (/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:154:47)\n    at /Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:716:3",
+                    "location": {
+                      "file": "/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts",
+                      "column": 47,
+                      "line": 154
+                    },
+                    "snippet": "  152 | async function open(page: Page, format = \"game-grid\") {\n  153 |   const response = await page.goto(`/social-share/${format}`);\n> 154 |   expect(response?.headers()[\"x-robots-tag\"]).toContain(\"noindex\");\n      |                                               ^\n  155 |   await expect(page.getByRole(\"button\", { name: \"Refresh schedule\", exact: true })).toBeEnabled();\n  156 |   await page.getByLabel(\"Week of (Monday)\").fill(upcomingWeek);\n  157 |   await expect(page.getByRole(\"button\", { name: \"Refresh schedule\", exact: true })).toBeEnabled();"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts",
+                        "column": 47,
+                        "line": 154
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\n\u001b[1mMatcher error\u001b[22m: \u001b[31mreceived\u001b[39m value must not be null nor undefined\n\nReceived has value: \u001b[31mundefined\u001b[39m\n\n  152 | async function open(page: Page, format = \"game-grid\") {\n  153 |   const response = await page.goto(`/social-share/${format}`);\n> 154 |   expect(response?.headers()[\"x-robots-tag\"]).toContain(\"noindex\");\n      |                                               ^\n  155 |   await expect(page.getByRole(\"button\", { name: \"Refresh schedule\", exact: true })).toBeEnabled();\n  156 |   await page.getByLabel(\"Week of (Monday)\").fill(upcomingWeek);\n  157 |   await expect(page.getByRole(\"button\", { name: \"Refresh schedule\", exact: true })).toBeEnabled();\n    at open (/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:154:47)\n    at /Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:716:3"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-26T19:08:09.862Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/tuesday-trends-2026-10-26/run/test-results/social-share-Wednesday-edi-b660f-and-names-the-covered-dates-chromium/test-failed-1.png"
+                    },
+                    {
+                      "name": "video",
+                      "contentType": "video/webm",
+                      "path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/tuesday-trends-2026-10-26/run/test-results/social-share-Wednesday-edi-b660f-and-names-the-covered-dates-chromium/video.webm"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/tuesday-trends-2026-10-26/run/test-results/social-share-Wednesday-edi-b660f-and-names-the-covered-dates-chromium/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts",
+                    "column": 47,
+                    "line": 154
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "a54bce60df3e96b84bd8-8966978ce6278c28f374",
+          "file": "social-share.spec.ts",
+          "line": 712,
+          "column": 5
+        },
+        {
+          "title": "Tuesday trend cards list the server's sections with definitions and a source line, and export",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 6,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 1260,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\n\u001b[1mMatcher error\u001b[22m: \u001b[31mreceived\u001b[39m value must not be null nor undefined\n\nReceived has value: \u001b[31mundefined\u001b[39m",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\n\u001b[1mMatcher error\u001b[22m: \u001b[31mreceived\u001b[39m value must not be null nor undefined\n\nReceived has value: \u001b[31mundefined\u001b[39m\n    at open (/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:154:47)\n    at /Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:762:3",
+                    "location": {
+                      "file": "/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts",
+                      "column": 47,
+                      "line": 154
+                    },
+                    "snippet": "  152 | async function open(page: Page, format = \"game-grid\") {\n  153 |   const response = await page.goto(`/social-share/${format}`);\n> 154 |   expect(response?.headers()[\"x-robots-tag\"]).toContain(\"noindex\");\n      |                                               ^\n  155 |   await expect(page.getByRole(\"button\", { name: \"Refresh schedule\", exact: true })).toBeEnabled();\n  156 |   await page.getByLabel(\"Week of (Monday)\").fill(upcomingWeek);\n  157 |   await expect(page.getByRole(\"button\", { name: \"Refresh schedule\", exact: true })).toBeEnabled();"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts",
+                        "column": 47,
+                        "line": 154
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\n\u001b[1mMatcher error\u001b[22m: \u001b[31mreceived\u001b[39m value must not be null nor undefined\n\nReceived has value: \u001b[31mundefined\u001b[39m\n\n  152 | async function open(page: Page, format = \"game-grid\") {\n  153 |   const response = await page.goto(`/social-share/${format}`);\n> 154 |   expect(response?.headers()[\"x-robots-tag\"]).toContain(\"noindex\");\n      |                                               ^\n  155 |   await expect(page.getByRole(\"button\", { name: \"Refresh schedule\", exact: true })).toBeEnabled();\n  156 |   await page.getByLabel(\"Week of (Monday)\").fill(upcomingWeek);\n  157 |   await expect(page.getByRole(\"button\", { name: \"Refresh schedule\", exact: true })).toBeEnabled();\n    at open (/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:154:47)\n    at /Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:762:3"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-26T19:08:11.556Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/tuesday-trends-2026-10-26/run/test-results/social-share-Tuesday-trend-f6f65-nd-a-source-line-and-export-chromium/test-failed-1.png"
+                    },
+                    {
+                      "name": "video",
+                      "contentType": "video/webm",
+                      "path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/tuesday-trends-2026-10-26/run/test-results/social-share-Tuesday-trend-f6f65-nd-a-source-line-and-export-chromium/video.webm"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/tuesday-trends-2026-10-26/run/test-results/social-share-Tuesday-trend-f6f65-nd-a-source-line-and-export-chromium/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts",
+                    "column": 47,
+                    "line": 154
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "a54bce60df3e96b84bd8-589be1ccd76051545303",
+          "file": "social-share.spec.ts",
+          "line": 758,
+          "column": 5
+        },
+        {
+          "title": "an empty Recent Form shows an honest empty state and never blocks the other Tuesday exports (TT-3)",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 7,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 1305,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\n\u001b[1mMatcher error\u001b[22m: \u001b[31mreceived\u001b[39m value must not be null nor undefined\n\nReceived has value: \u001b[31mundefined\u001b[39m",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\n\u001b[1mMatcher error\u001b[22m: \u001b[31mreceived\u001b[39m value must not be null nor undefined\n\nReceived has value: \u001b[31mundefined\u001b[39m\n    at open (/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:154:47)\n    at /Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:829:3",
+                    "location": {
+                      "file": "/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts",
+                      "column": 47,
+                      "line": 154
+                    },
+                    "snippet": "  152 | async function open(page: Page, format = \"game-grid\") {\n  153 |   const response = await page.goto(`/social-share/${format}`);\n> 154 |   expect(response?.headers()[\"x-robots-tag\"]).toContain(\"noindex\");\n      |                                               ^\n  155 |   await expect(page.getByRole(\"button\", { name: \"Refresh schedule\", exact: true })).toBeEnabled();\n  156 |   await page.getByLabel(\"Week of (Monday)\").fill(upcomingWeek);\n  157 |   await expect(page.getByRole(\"button\", { name: \"Refresh schedule\", exact: true })).toBeEnabled();"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts",
+                        "column": 47,
+                        "line": 154
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\n\u001b[1mMatcher error\u001b[22m: \u001b[31mreceived\u001b[39m value must not be null nor undefined\n\nReceived has value: \u001b[31mundefined\u001b[39m\n\n  152 | async function open(page: Page, format = \"game-grid\") {\n  153 |   const response = await page.goto(`/social-share/${format}`);\n> 154 |   expect(response?.headers()[\"x-robots-tag\"]).toContain(\"noindex\");\n      |                                               ^\n  155 |   await expect(page.getByRole(\"button\", { name: \"Refresh schedule\", exact: true })).toBeEnabled();\n  156 |   await page.getByLabel(\"Week of (Monday)\").fill(upcomingWeek);\n  157 |   await expect(page.getByRole(\"button\", { name: \"Refresh schedule\", exact: true })).toBeEnabled();\n    at open (/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:154:47)\n    at /Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:829:3"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-26T19:08:13.247Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/tuesday-trends-2026-10-26/run/test-results/social-share-an-empty-Rece-51eb0-other-Tuesday-exports-TT-3--chromium/test-failed-1.png"
+                    },
+                    {
+                      "name": "video",
+                      "contentType": "video/webm",
+                      "path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/tuesday-trends-2026-10-26/run/test-results/social-share-an-empty-Rece-51eb0-other-Tuesday-exports-TT-3--chromium/video.webm"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/tuesday-trends-2026-10-26/run/test-results/social-share-an-empty-Rece-51eb0-other-Tuesday-exports-TT-3--chromium/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts",
+                    "column": 47,
+                    "line": 154
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "a54bce60df3e96b84bd8-17ade294847d2d91bd35",
+          "file": "social-share.spec.ts",
+          "line": 826,
+          "column": 5
+        },
+        {
+          "title": "Tuesday cards never rank stale or failed sources, and say why with the as-of date",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 8,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 1274,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\n\u001b[1mMatcher error\u001b[22m: \u001b[31mreceived\u001b[39m value must not be null nor undefined\n\nReceived has value: \u001b[31mundefined\u001b[39m",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\n\u001b[1mMatcher error\u001b[22m: \u001b[31mreceived\u001b[39m value must not be null nor undefined\n\nReceived has value: \u001b[31mundefined\u001b[39m\n    at open (/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:154:47)\n    at /Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:846:3",
+                    "location": {
+                      "file": "/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts",
+                      "column": 47,
+                      "line": 154
+                    },
+                    "snippet": "  152 | async function open(page: Page, format = \"game-grid\") {\n  153 |   const response = await page.goto(`/social-share/${format}`);\n> 154 |   expect(response?.headers()[\"x-robots-tag\"]).toContain(\"noindex\");\n      |                                               ^\n  155 |   await expect(page.getByRole(\"button\", { name: \"Refresh schedule\", exact: true })).toBeEnabled();\n  156 |   await page.getByLabel(\"Week of (Monday)\").fill(upcomingWeek);\n  157 |   await expect(page.getByRole(\"button\", { name: \"Refresh schedule\", exact: true })).toBeEnabled();"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts",
+                        "column": 47,
+                        "line": 154
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\n\u001b[1mMatcher error\u001b[22m: \u001b[31mreceived\u001b[39m value must not be null nor undefined\n\nReceived has value: \u001b[31mundefined\u001b[39m\n\n  152 | async function open(page: Page, format = \"game-grid\") {\n  153 |   const response = await page.goto(`/social-share/${format}`);\n> 154 |   expect(response?.headers()[\"x-robots-tag\"]).toContain(\"noindex\");\n      |                                               ^\n  155 |   await expect(page.getByRole(\"button\", { name: \"Refresh schedule\", exact: true })).toBeEnabled();\n  156 |   await page.getByLabel(\"Week of (Monday)\").fill(upcomingWeek);\n  157 |   await expect(page.getByRole(\"button\", { name: \"Refresh schedule\", exact: true })).toBeEnabled();\n    at open (/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:154:47)\n    at /Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:846:3"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-26T19:08:14.971Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/tuesday-trends-2026-10-26/run/test-results/social-share-Tuesday-cards-33ebe-say-why-with-the-as-of-date-chromium/test-failed-1.png"
+                    },
+                    {
+                      "name": "video",
+                      "contentType": "video/webm",
+                      "path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/tuesday-trends-2026-10-26/run/test-results/social-share-Tuesday-cards-33ebe-say-why-with-the-as-of-date-chromium/video.webm"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/tuesday-trends-2026-10-26/run/test-results/social-share-Tuesday-cards-33ebe-say-why-with-the-as-of-date-chromium/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts",
+                    "column": 47,
+                    "line": 154
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "a54bce60df3e96b84bd8-b5b06821155256ed4178",
+          "file": "social-share.spec.ts",
+          "line": 843,
+          "column": 5
+        },
+        {
+          "title": "a Tuesday PNG is refused when the preview changes between click and capture",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 9,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 1282,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\n\u001b[1mMatcher error\u001b[22m: \u001b[31mreceived\u001b[39m value must not be null nor undefined\n\nReceived has value: \u001b[31mundefined\u001b[39m",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\n\u001b[1mMatcher error\u001b[22m: \u001b[31mreceived\u001b[39m value must not be null nor undefined\n\nReceived has value: \u001b[31mundefined\u001b[39m\n    at open (/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:154:47)\n    at /Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:879:3",
+                    "location": {
+                      "file": "/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts",
+                      "column": 47,
+                      "line": 154
+                    },
+                    "snippet": "  152 | async function open(page: Page, format = \"game-grid\") {\n  153 |   const response = await page.goto(`/social-share/${format}`);\n> 154 |   expect(response?.headers()[\"x-robots-tag\"]).toContain(\"noindex\");\n      |                                               ^\n  155 |   await expect(page.getByRole(\"button\", { name: \"Refresh schedule\", exact: true })).toBeEnabled();\n  156 |   await page.getByLabel(\"Week of (Monday)\").fill(upcomingWeek);\n  157 |   await expect(page.getByRole(\"button\", { name: \"Refresh schedule\", exact: true })).toBeEnabled();"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts",
+                        "column": 47,
+                        "line": 154
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\n\u001b[1mMatcher error\u001b[22m: \u001b[31mreceived\u001b[39m value must not be null nor undefined\n\nReceived has value: \u001b[31mundefined\u001b[39m\n\n  152 | async function open(page: Page, format = \"game-grid\") {\n  153 |   const response = await page.goto(`/social-share/${format}`);\n> 154 |   expect(response?.headers()[\"x-robots-tag\"]).toContain(\"noindex\");\n      |                                               ^\n  155 |   await expect(page.getByRole(\"button\", { name: \"Refresh schedule\", exact: true })).toBeEnabled();\n  156 |   await page.getByLabel(\"Week of (Monday)\").fill(upcomingWeek);\n  157 |   await expect(page.getByRole(\"button\", { name: \"Refresh schedule\", exact: true })).toBeEnabled();\n    at open (/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:154:47)\n    at /Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:879:3"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-26T19:08:16.657Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/tuesday-trends-2026-10-26/run/test-results/social-share-a-Tuesday-PNG-cdcb7-s-between-click-and-capture-chromium/test-failed-1.png"
+                    },
+                    {
+                      "name": "video",
+                      "contentType": "video/webm",
+                      "path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/tuesday-trends-2026-10-26/run/test-results/social-share-a-Tuesday-PNG-cdcb7-s-between-click-and-capture-chromium/video.webm"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/tuesday-trends-2026-10-26/run/test-results/social-share-a-Tuesday-PNG-cdcb7-s-between-click-and-capture-chromium/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts",
+                    "column": 47,
+                    "line": 154
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "a54bce60df3e96b84bd8-ec82df8acb0390293111",
+          "file": "social-share.spec.ts",
+          "line": 876,
+          "column": 5
+        },
+        {
+          "title": "Tuesday OFFLINE FIXTURE evidence: desktop, phone and 1080 PNG per card",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 10,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 1258,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\n\u001b[1mMatcher error\u001b[22m: \u001b[31mreceived\u001b[39m value must not be null nor undefined\n\nReceived has value: \u001b[31mundefined\u001b[39m",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\n\u001b[1mMatcher error\u001b[22m: \u001b[31mreceived\u001b[39m value must not be null nor undefined\n\nReceived has value: \u001b[31mundefined\u001b[39m\n    at open (/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:154:47)\n    at /Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:910:5",
+                    "location": {
+                      "file": "/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts",
+                      "column": 47,
+                      "line": 154
+                    },
+                    "snippet": "  152 | async function open(page: Page, format = \"game-grid\") {\n  153 |   const response = await page.goto(`/social-share/${format}`);\n> 154 |   expect(response?.headers()[\"x-robots-tag\"]).toContain(\"noindex\");\n      |                                               ^\n  155 |   await expect(page.getByRole(\"button\", { name: \"Refresh schedule\", exact: true })).toBeEnabled();\n  156 |   await page.getByLabel(\"Week of (Monday)\").fill(upcomingWeek);\n  157 |   await expect(page.getByRole(\"button\", { name: \"Refresh schedule\", exact: true })).toBeEnabled();"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts",
+                        "column": 47,
+                        "line": 154
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\n\u001b[1mMatcher error\u001b[22m: \u001b[31mreceived\u001b[39m value must not be null nor undefined\n\nReceived has value: \u001b[31mundefined\u001b[39m\n\n  152 | async function open(page: Page, format = \"game-grid\") {\n  153 |   const response = await page.goto(`/social-share/${format}`);\n> 154 |   expect(response?.headers()[\"x-robots-tag\"]).toContain(\"noindex\");\n      |                                               ^\n  155 |   await expect(page.getByRole(\"button\", { name: \"Refresh schedule\", exact: true })).toBeEnabled();\n  156 |   await page.getByLabel(\"Week of (Monday)\").fill(upcomingWeek);\n  157 |   await expect(page.getByRole(\"button\", { name: \"Refresh schedule\", exact: true })).toBeEnabled();\n    at open (/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:154:47)\n    at /Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:910:5"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-26T19:08:18.339Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/tuesday-trends-2026-10-26/run/test-results/social-share-Tuesday-OFFLI-e118e-phone-and-1080-PNG-per-card-chromium/test-failed-1.png"
+                    },
+                    {
+                      "name": "video",
+                      "contentType": "video/webm",
+                      "path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/tuesday-trends-2026-10-26/run/test-results/social-share-Tuesday-OFFLI-e118e-phone-and-1080-PNG-per-card-chromium/video.webm"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/tuesday-trends-2026-10-26/run/test-results/social-share-Tuesday-OFFLI-e118e-phone-and-1080-PNG-per-card-chromium/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts",
+                    "column": 47,
+                    "line": 154
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "a54bce60df3e96b84bd8-d2a8032547e6212baa84",
+          "file": "social-share.spec.ts",
+          "line": 896,
+          "column": 5
+        },
+        {
+          "title": "a page load makes exactly one edition API call even under the dev strict-mode double mount",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 11,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 17396,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeEnabled\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('button', { name: 'Refresh schedule', exact: true })\nExpected: enabled\nTimeout: 15000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeEnabled\" with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('button', { name: 'Refresh schedule', exact: true })\u001b[22m\n\u001b[2m    23 × waiting for\" http://127.0.0.1:3110/social-share/game-grid\" navigation to finish...\u001b[22m\n\u001b[2m       - navigated to \"http://127.0.0.1:3110/social-share/game-grid\"\u001b[22m\n",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeEnabled\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('button', { name: 'Refresh schedule', exact: true })\nExpected: enabled\nTimeout: 15000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeEnabled\" with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('button', { name: 'Refresh schedule', exact: true })\u001b[22m\n\u001b[2m    23 × waiting for\" http://127.0.0.1:3110/social-share/game-grid\" navigation to finish...\u001b[22m\n\u001b[2m       - navigated to \"http://127.0.0.1:3110/social-share/game-grid\"\u001b[22m\n\n    at /Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:930:85",
+                    "location": {
+                      "file": "/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts",
+                      "column": 85,
+                      "line": 930
+                    },
+                    "snippet": "  928 |   page.on(\"request\", request => { if (request.url().includes(\"/api/v1/social-share/\")) apiCalls.push(new URL(request.url()).search); });\n  929 |   await page.goto(\"/social-share/game-grid\");\n> 930 |   await expect(page.getByRole(\"button\", { name: \"Refresh schedule\", exact: true })).toBeEnabled();\n      |                                                                                     ^\n  931 |   await page.waitForTimeout(1500);\n  932 |   expect(apiCalls).toHaveLength(1);\n  933 |   expect(source.requests).toBe(1);"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts",
+                        "column": 85,
+                        "line": 930
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeEnabled\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('button', { name: 'Refresh schedule', exact: true })\nExpected: enabled\nTimeout: 15000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeEnabled\" with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('button', { name: 'Refresh schedule', exact: true })\u001b[22m\n\u001b[2m    23 × waiting for\" http://127.0.0.1:3110/social-share/game-grid\" navigation to finish...\u001b[22m\n\u001b[2m       - navigated to \"http://127.0.0.1:3110/social-share/game-grid\"\u001b[22m\n\n\n  928 |   page.on(\"request\", request => { if (request.url().includes(\"/api/v1/social-share/\")) apiCalls.push(new URL(request.url()).search); });\n  929 |   await page.goto(\"/social-share/game-grid\");\n> 930 |   await expect(page.getByRole(\"button\", { name: \"Refresh schedule\", exact: true })).toBeEnabled();\n      |                                                                                     ^\n  931 |   await page.waitForTimeout(1500);\n  932 |   expect(apiCalls).toHaveLength(1);\n  933 |   expect(source.requests).toBe(1);\n    at /Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:930:85"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-26T19:08:20.001Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/tuesday-trends-2026-10-26/run/test-results/social-share-a-page-load-m-20607-ev-strict-mode-double-mount-chromium/test-failed-1.png"
+                    },
+                    {
+                      "name": "video",
+                      "contentType": "video/webm",
+                      "path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/tuesday-trends-2026-10-26/run/test-results/social-share-a-page-load-m-20607-ev-strict-mode-double-mount-chromium/video.webm"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/tuesday-trends-2026-10-26/run/test-results/social-share-a-page-load-m-20607-ev-strict-mode-double-mount-chromium/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts",
+                    "column": 85,
+                    "line": 930
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "a54bce60df3e96b84bd8-c2e665abfedb61356291",
+          "file": "social-share.spec.ts",
+          "line": 926,
+          "column": 5
+        },
+        {
+          "title": "the eyebrow names the real date context, not the format's posting day",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 12,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 1420,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\n\u001b[1mMatcher error\u001b[22m: \u001b[31mreceived\u001b[39m value must not be null nor undefined\n\nReceived has value: \u001b[31mundefined\u001b[39m",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\n\u001b[1mMatcher error\u001b[22m: \u001b[31mreceived\u001b[39m value must not be null nor undefined\n\nReceived has value: \u001b[31mundefined\u001b[39m\n    at open (/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:154:47)\n    at /Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:943:3",
+                    "location": {
+                      "file": "/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts",
+                      "column": 47,
+                      "line": 154
+                    },
+                    "snippet": "  152 | async function open(page: Page, format = \"game-grid\") {\n  153 |   const response = await page.goto(`/social-share/${format}`);\n> 154 |   expect(response?.headers()[\"x-robots-tag\"]).toContain(\"noindex\");\n      |                                               ^\n  155 |   await expect(page.getByRole(\"button\", { name: \"Refresh schedule\", exact: true })).toBeEnabled();\n  156 |   await page.getByLabel(\"Week of (Monday)\").fill(upcomingWeek);\n  157 |   await expect(page.getByRole(\"button\", { name: \"Refresh schedule\", exact: true })).toBeEnabled();"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts",
+                        "column": 47,
+                        "line": 154
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\n\u001b[1mMatcher error\u001b[22m: \u001b[31mreceived\u001b[39m value must not be null nor undefined\n\nReceived has value: \u001b[31mundefined\u001b[39m\n\n  152 | async function open(page: Page, format = \"game-grid\") {\n  153 |   const response = await page.goto(`/social-share/${format}`);\n> 154 |   expect(response?.headers()[\"x-robots-tag\"]).toContain(\"noindex\");\n      |                                               ^\n  155 |   await expect(page.getByRole(\"button\", { name: \"Refresh schedule\", exact: true })).toBeEnabled();\n  156 |   await page.getByLabel(\"Week of (Monday)\").fill(upcomingWeek);\n  157 |   await expect(page.getByRole(\"button\", { name: \"Refresh schedule\", exact: true })).toBeEnabled();\n    at open (/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:154:47)\n    at /Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:943:3"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-26T19:08:37.804Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/tuesday-trends-2026-10-26/run/test-results/social-share-the-eyebrow-n-7c897-ot-the-format-s-posting-day-chromium/test-failed-1.png"
+                    },
+                    {
+                      "name": "video",
+                      "contentType": "video/webm",
+                      "path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/tuesday-trends-2026-10-26/run/test-results/social-share-the-eyebrow-n-7c897-ot-the-format-s-posting-day-chromium/video.webm"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/tuesday-trends-2026-10-26/run/test-results/social-share-the-eyebrow-n-7c897-ot-the-format-s-posting-day-chromium/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts",
+                    "column": 47,
+                    "line": 154
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "a54bce60df3e96b84bd8-c75dd1d03bab788658d2",
+          "file": "social-share.spec.ts",
+          "line": 940,
+          "column": 5
+        },
+        {
+          "title": "ticket 10 flair: striped player banners with L5 evidence, three per list, tiered grid scores and cherry picks",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 13,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 1413,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\n\u001b[1mMatcher error\u001b[22m: \u001b[31mreceived\u001b[39m value must not be null nor undefined\n\nReceived has value: \u001b[31mundefined\u001b[39m",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\n\u001b[1mMatcher error\u001b[22m: \u001b[31mreceived\u001b[39m value must not be null nor undefined\n\nReceived has value: \u001b[31mundefined\u001b[39m\n    at open (/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:154:47)\n    at /Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:959:3",
+                    "location": {
+                      "file": "/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts",
+                      "column": 47,
+                      "line": 154
+                    },
+                    "snippet": "  152 | async function open(page: Page, format = \"game-grid\") {\n  153 |   const response = await page.goto(`/social-share/${format}`);\n> 154 |   expect(response?.headers()[\"x-robots-tag\"]).toContain(\"noindex\");\n      |                                               ^\n  155 |   await expect(page.getByRole(\"button\", { name: \"Refresh schedule\", exact: true })).toBeEnabled();\n  156 |   await page.getByLabel(\"Week of (Monday)\").fill(upcomingWeek);\n  157 |   await expect(page.getByRole(\"button\", { name: \"Refresh schedule\", exact: true })).toBeEnabled();"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts",
+                        "column": 47,
+                        "line": 154
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\n\u001b[1mMatcher error\u001b[22m: \u001b[31mreceived\u001b[39m value must not be null nor undefined\n\nReceived has value: \u001b[31mundefined\u001b[39m\n\n  152 | async function open(page: Page, format = \"game-grid\") {\n  153 |   const response = await page.goto(`/social-share/${format}`);\n> 154 |   expect(response?.headers()[\"x-robots-tag\"]).toContain(\"noindex\");\n      |                                               ^\n  155 |   await expect(page.getByRole(\"button\", { name: \"Refresh schedule\", exact: true })).toBeEnabled();\n  156 |   await page.getByLabel(\"Week of (Monday)\").fill(upcomingWeek);\n  157 |   await expect(page.getByRole(\"button\", { name: \"Refresh schedule\", exact: true })).toBeEnabled();\n    at open (/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:154:47)\n    at /Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:959:3"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-26T19:08:39.940Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/tuesday-trends-2026-10-26/run/test-results/social-share-ticket-10-fla-069a2-rid-scores-and-cherry-picks-chromium/test-failed-1.png"
+                    },
+                    {
+                      "name": "video",
+                      "contentType": "video/webm",
+                      "path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/tuesday-trends-2026-10-26/run/test-results/social-share-ticket-10-fla-069a2-rid-scores-and-cherry-picks-chromium/video.webm"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/tuesday-trends-2026-10-26/run/test-results/social-share-ticket-10-fla-069a2-rid-scores-and-cherry-picks-chromium/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts",
+                    "column": 47,
+                    "line": 154
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "a54bce60df3e96b84bd8-a1331d28e2aa33b147fa",
+          "file": "social-share.spec.ts",
+          "line": 955,
+          "column": 5
+        },
+        {
+          "title": "player tiles never claim 'no recent game' when the last-five-games read failed",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 14,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 1280,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\n\u001b[1mMatcher error\u001b[22m: \u001b[31mreceived\u001b[39m value must not be null nor undefined\n\nReceived has value: \u001b[31mundefined\u001b[39m",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\n\u001b[1mMatcher error\u001b[22m: \u001b[31mreceived\u001b[39m value must not be null nor undefined\n\nReceived has value: \u001b[31mundefined\u001b[39m\n    at open (/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:154:47)\n    at /Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:1009:3",
+                    "location": {
+                      "file": "/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts",
+                      "column": 47,
+                      "line": 154
+                    },
+                    "snippet": "  152 | async function open(page: Page, format = \"game-grid\") {\n  153 |   const response = await page.goto(`/social-share/${format}`);\n> 154 |   expect(response?.headers()[\"x-robots-tag\"]).toContain(\"noindex\");\n      |                                               ^\n  155 |   await expect(page.getByRole(\"button\", { name: \"Refresh schedule\", exact: true })).toBeEnabled();\n  156 |   await page.getByLabel(\"Week of (Monday)\").fill(upcomingWeek);\n  157 |   await expect(page.getByRole(\"button\", { name: \"Refresh schedule\", exact: true })).toBeEnabled();"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts",
+                        "column": 47,
+                        "line": 154
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\n\u001b[1mMatcher error\u001b[22m: \u001b[31mreceived\u001b[39m value must not be null nor undefined\n\nReceived has value: \u001b[31mundefined\u001b[39m\n\n  152 | async function open(page: Page, format = \"game-grid\") {\n  153 |   const response = await page.goto(`/social-share/${format}`);\n> 154 |   expect(response?.headers()[\"x-robots-tag\"]).toContain(\"noindex\");\n      |                                               ^\n  155 |   await expect(page.getByRole(\"button\", { name: \"Refresh schedule\", exact: true })).toBeEnabled();\n  156 |   await page.getByLabel(\"Week of (Monday)\").fill(upcomingWeek);\n  157 |   await expect(page.getByRole(\"button\", { name: \"Refresh schedule\", exact: true })).toBeEnabled();\n    at open (/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:154:47)\n    at /Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:1009:3"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-26T19:08:41.874Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/tuesday-trends-2026-10-26/run/test-results/social-share-player-tiles--8d399-last-five-games-read-failed-chromium/test-failed-1.png"
+                    },
+                    {
+                      "name": "video",
+                      "contentType": "video/webm",
+                      "path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/tuesday-trends-2026-10-26/run/test-results/social-share-player-tiles--8d399-last-five-games-read-failed-chromium/video.webm"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/tuesday-trends-2026-10-26/run/test-results/social-share-player-tiles--8d399-last-five-games-read-failed-chromium/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts",
+                    "column": 47,
+                    "line": 154
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "a54bce60df3e96b84bd8-86b6b352802840a9f070",
+          "file": "social-share.spec.ts",
+          "line": 1006,
+          "column": 5
+        },
+        {
+          "title": "GP and off-night counts are coloured per column on Monday and Wednesday editions",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 15,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 1277,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\n\u001b[1mMatcher error\u001b[22m: \u001b[31mreceived\u001b[39m value must not be null nor undefined\n\nReceived has value: \u001b[31mundefined\u001b[39m",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\n\u001b[1mMatcher error\u001b[22m: \u001b[31mreceived\u001b[39m value must not be null nor undefined\n\nReceived has value: \u001b[31mundefined\u001b[39m\n    at open (/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:154:47)\n    at /Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:1043:5",
+                    "location": {
+                      "file": "/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts",
+                      "column": 47,
+                      "line": 154
+                    },
+                    "snippet": "  152 | async function open(page: Page, format = \"game-grid\") {\n  153 |   const response = await page.goto(`/social-share/${format}`);\n> 154 |   expect(response?.headers()[\"x-robots-tag\"]).toContain(\"noindex\");\n      |                                               ^\n  155 |   await expect(page.getByRole(\"button\", { name: \"Refresh schedule\", exact: true })).toBeEnabled();\n  156 |   await page.getByLabel(\"Week of (Monday)\").fill(upcomingWeek);\n  157 |   await expect(page.getByRole(\"button\", { name: \"Refresh schedule\", exact: true })).toBeEnabled();"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts",
+                        "column": 47,
+                        "line": 154
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\n\u001b[1mMatcher error\u001b[22m: \u001b[31mreceived\u001b[39m value must not be null nor undefined\n\nReceived has value: \u001b[31mundefined\u001b[39m\n\n  152 | async function open(page: Page, format = \"game-grid\") {\n  153 |   const response = await page.goto(`/social-share/${format}`);\n> 154 |   expect(response?.headers()[\"x-robots-tag\"]).toContain(\"noindex\");\n      |                                               ^\n  155 |   await expect(page.getByRole(\"button\", { name: \"Refresh schedule\", exact: true })).toBeEnabled();\n  156 |   await page.getByLabel(\"Week of (Monday)\").fill(upcomingWeek);\n  157 |   await expect(page.getByRole(\"button\", { name: \"Refresh schedule\", exact: true })).toBeEnabled();\n    at open (/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:154:47)\n    at /Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:1043:5"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-26T19:08:43.563Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/tuesday-trends-2026-10-26/run/test-results/social-share-GP-and-off-ni-fd3ba-nday-and-Wednesday-editions-chromium/test-failed-1.png"
+                    },
+                    {
+                      "name": "video",
+                      "contentType": "video/webm",
+                      "path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/tuesday-trends-2026-10-26/run/test-results/social-share-GP-and-off-ni-fd3ba-nday-and-Wednesday-editions-chromium/video.webm"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/tuesday-trends-2026-10-26/run/test-results/social-share-GP-and-off-ni-fd3ba-nday-and-Wednesday-editions-chromium/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts",
+                    "column": 47,
+                    "line": 154
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "a54bce60df3e96b84bd8-71070e20a195437a125c",
+          "file": "social-share.spec.ts",
+          "line": 1039,
+          "column": 5
+        },
+        {
+          "title": "schedule-aware tier list shows only tier teams' players as list rows, strict and widened",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 16,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 1326,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\n\u001b[1mMatcher error\u001b[22m: \u001b[31mreceived\u001b[39m value must not be null nor undefined\n\nReceived has value: \u001b[31mundefined\u001b[39m",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\n\u001b[1mMatcher error\u001b[22m: \u001b[31mreceived\u001b[39m value must not be null nor undefined\n\nReceived has value: \u001b[31mundefined\u001b[39m\n    at open (/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:154:47)\n    at /Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:1068:3",
+                    "location": {
+                      "file": "/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts",
+                      "column": 47,
+                      "line": 154
+                    },
+                    "snippet": "  152 | async function open(page: Page, format = \"game-grid\") {\n  153 |   const response = await page.goto(`/social-share/${format}`);\n> 154 |   expect(response?.headers()[\"x-robots-tag\"]).toContain(\"noindex\");\n      |                                               ^\n  155 |   await expect(page.getByRole(\"button\", { name: \"Refresh schedule\", exact: true })).toBeEnabled();\n  156 |   await page.getByLabel(\"Week of (Monday)\").fill(upcomingWeek);\n  157 |   await expect(page.getByRole(\"button\", { name: \"Refresh schedule\", exact: true })).toBeEnabled();"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts",
+                        "column": 47,
+                        "line": 154
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\n\u001b[1mMatcher error\u001b[22m: \u001b[31mreceived\u001b[39m value must not be null nor undefined\n\nReceived has value: \u001b[31mundefined\u001b[39m\n\n  152 | async function open(page: Page, format = \"game-grid\") {\n  153 |   const response = await page.goto(`/social-share/${format}`);\n> 154 |   expect(response?.headers()[\"x-robots-tag\"]).toContain(\"noindex\");\n      |                                               ^\n  155 |   await expect(page.getByRole(\"button\", { name: \"Refresh schedule\", exact: true })).toBeEnabled();\n  156 |   await page.getByLabel(\"Week of (Monday)\").fill(upcomingWeek);\n  157 |   await expect(page.getByRole(\"button\", { name: \"Refresh schedule\", exact: true })).toBeEnabled();\n    at open (/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:154:47)\n    at /Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:1068:3"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-26T19:08:45.240Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/tuesday-trends-2026-10-26/run/test-results/social-share-schedule-awar-af104-ist-rows-strict-and-widened-chromium/test-failed-1.png"
+                    },
+                    {
+                      "name": "video",
+                      "contentType": "video/webm",
+                      "path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/tuesday-trends-2026-10-26/run/test-results/social-share-schedule-awar-af104-ist-rows-strict-and-widened-chromium/video.webm"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/tuesday-trends-2026-10-26/run/test-results/social-share-schedule-awar-af104-ist-rows-strict-and-widened-chromium/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts",
+                    "column": 47,
+                    "line": 154
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "a54bce60df3e96b84bd8-af6741c0511868c78cd7",
+          "file": "social-share.spec.ts",
+          "line": 1065,
+          "column": 5
+        },
+        {
+          "title": "share studio stays closed without a social editor role, and the edition is never requested",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 17,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 15943,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: locator('section[aria-labelledby=\"share-access-title\"] [role=\"alert\"]')\nExpected: \u001b[32m\"Sign in with your FHFH social editor account to continue.\"\u001b[39m\nTimeout: 15000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toHaveText\" with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for locator('section[aria-labelledby=\"share-access-title\"] [role=\"alert\"]')\u001b[22m\n\u001b[2m    24 × waiting for\" http://127.0.0.1:3110/social-share/game-grid\" navigation to finish...\u001b[22m\n\u001b[2m       - navigated to \"http://127.0.0.1:3110/social-share/game-grid\"\u001b[22m\n",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: locator('section[aria-labelledby=\"share-access-title\"] [role=\"alert\"]')\nExpected: \u001b[32m\"Sign in with your FHFH social editor account to continue.\"\u001b[39m\nTimeout: 15000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toHaveText\" with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for locator('section[aria-labelledby=\"share-access-title\"] [role=\"alert\"]')\u001b[22m\n\u001b[2m    24 × waiting for\" http://127.0.0.1:3110/social-share/game-grid\" navigation to finish...\u001b[22m\n\u001b[2m       - navigated to \"http://127.0.0.1:3110/social-share/game-grid\"\u001b[22m\n\n    at /Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:1109:100",
+                    "location": {
+                      "file": "/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts",
+                      "column": 100,
+                      "line": 1109
+                    },
+                    "snippet": "  1107 |     const source = await install(page, access);\n  1108 |     await page.goto(\"/social-share/game-grid\");\n> 1109 |     await expect(page.locator(\"section[aria-labelledby=\\\"share-access-title\\\"] [role=\\\"alert\\\"]\")).toHaveText(access.signedIn ? \"Social editor access is required to use this studio.\" : \"Sign in with your FHFH social editor account to continue.\");\n       |                                                                                                    ^\n  1110 |     await expect(page.getByTestId(\"share-square\")).toHaveCount(0);\n  1111 |     expect(source.requests).toBe(0);\n  1112 |     expect(access.roleReads > 0).toBe(access.signedIn);"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts",
+                        "column": 100,
+                        "line": 1109
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: locator('section[aria-labelledby=\"share-access-title\"] [role=\"alert\"]')\nExpected: \u001b[32m\"Sign in with your FHFH social editor account to continue.\"\u001b[39m\nTimeout: 15000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toHaveText\" with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for locator('section[aria-labelledby=\"share-access-title\"] [role=\"alert\"]')\u001b[22m\n\u001b[2m    24 × waiting for\" http://127.0.0.1:3110/social-share/game-grid\" navigation to finish...\u001b[22m\n\u001b[2m       - navigated to \"http://127.0.0.1:3110/social-share/game-grid\"\u001b[22m\n\n\n  1107 |     const source = await install(page, access);\n  1108 |     await page.goto(\"/social-share/game-grid\");\n> 1109 |     await expect(page.locator(\"section[aria-labelledby=\\\"share-access-title\\\"] [role=\\\"alert\\\"]\")).toHaveText(access.signedIn ? \"Social editor access is required to use this studio.\" : \"Sign in with your FHFH social editor account to continue.\");\n       |                                                                                                    ^\n  1110 |     await expect(page.getByTestId(\"share-square\")).toHaveCount(0);\n  1111 |     expect(source.requests).toBe(0);\n  1112 |     expect(access.roleReads > 0).toBe(access.signedIn);\n    at /Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:1109:100"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-26T19:08:46.999Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/tuesday-trends-2026-10-26/run/test-results/social-share-share-studio--ca12b--edition-is-never-requested-chromium/test-failed-1.png"
+                    },
+                    {
+                      "name": "video",
+                      "contentType": "video/webm",
+                      "path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/tuesday-trends-2026-10-26/run/test-results/social-share-share-studio--ca12b--edition-is-never-requested-chromium/video.webm"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/tuesday-trends-2026-10-26/run/test-results/social-share-share-studio--ca12b--edition-is-never-requested-chromium/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts",
+                    "column": 100,
+                    "line": 1109
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "a54bce60df3e96b84bd8-2bbd4c44b42b86f02791",
+          "file": "social-share.spec.ts",
+          "line": 1104,
+          "column": 5
+        },
+        {
+          "title": "returning to the tab keeps the week, days and card: the gate's re-check remounts the studio without a reset (ticket 15)",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 18,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 2231,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\n\u001b[1mMatcher error\u001b[22m: \u001b[31mreceived\u001b[39m value must not be null nor undefined\n\nReceived has value: \u001b[31mundefined\u001b[39m",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\n\u001b[1mMatcher error\u001b[22m: \u001b[31mreceived\u001b[39m value must not be null nor undefined\n\nReceived has value: \u001b[31mundefined\u001b[39m\n    at open (/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:154:47)\n    at /Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:1122:3",
+                    "location": {
+                      "file": "/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts",
+                      "column": 47,
+                      "line": 154
+                    },
+                    "snippet": "  152 | async function open(page: Page, format = \"game-grid\") {\n  153 |   const response = await page.goto(`/social-share/${format}`);\n> 154 |   expect(response?.headers()[\"x-robots-tag\"]).toContain(\"noindex\");\n      |                                               ^\n  155 |   await expect(page.getByRole(\"button\", { name: \"Refresh schedule\", exact: true })).toBeEnabled();\n  156 |   await page.getByLabel(\"Week of (Monday)\").fill(upcomingWeek);\n  157 |   await expect(page.getByRole(\"button\", { name: \"Refresh schedule\", exact: true })).toBeEnabled();"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts",
+                        "column": 47,
+                        "line": 154
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\n\u001b[1mMatcher error\u001b[22m: \u001b[31mreceived\u001b[39m value must not be null nor undefined\n\nReceived has value: \u001b[31mundefined\u001b[39m\n\n  152 | async function open(page: Page, format = \"game-grid\") {\n  153 |   const response = await page.goto(`/social-share/${format}`);\n> 154 |   expect(response?.headers()[\"x-robots-tag\"]).toContain(\"noindex\");\n      |                                               ^\n  155 |   await expect(page.getByRole(\"button\", { name: \"Refresh schedule\", exact: true })).toBeEnabled();\n  156 |   await page.getByLabel(\"Week of (Monday)\").fill(upcomingWeek);\n  157 |   await expect(page.getByRole(\"button\", { name: \"Refresh schedule\", exact: true })).toBeEnabled();\n    at open (/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:154:47)\n    at /Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:1122:3"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-26T19:09:03.390Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/tuesday-trends-2026-10-26/run/test-results/social-share-returning-to--0bde8--without-a-reset-ticket-15--chromium/test-failed-1.png"
+                    },
+                    {
+                      "name": "video",
+                      "contentType": "video/webm",
+                      "path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/tuesday-trends-2026-10-26/run/test-results/social-share-returning-to--0bde8--without-a-reset-ticket-15--chromium/video.webm"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/tuesday-trends-2026-10-26/run/test-results/social-share-returning-to--0bde8--without-a-reset-ticket-15--chromium/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts",
+                    "column": 47,
+                    "line": 154
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "a54bce60df3e96b84bd8-f2641c828d56714f6d6e",
+          "file": "social-share.spec.ts",
+          "line": 1118,
+          "column": 5
+        },
+        {
+          "title": "cards carry no ordering or selection-rule captions (SS1-17, TJ)",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 19,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 1247,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\n\u001b[1mMatcher error\u001b[22m: \u001b[31mreceived\u001b[39m value must not be null nor undefined\n\nReceived has value: \u001b[31mundefined\u001b[39m",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\n\u001b[1mMatcher error\u001b[22m: \u001b[31mreceived\u001b[39m value must not be null nor undefined\n\nReceived has value: \u001b[31mundefined\u001b[39m\n    at open (/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:154:47)\n    at /Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:1151:3",
+                    "location": {
+                      "file": "/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts",
+                      "column": 47,
+                      "line": 154
+                    },
+                    "snippet": "  152 | async function open(page: Page, format = \"game-grid\") {\n  153 |   const response = await page.goto(`/social-share/${format}`);\n> 154 |   expect(response?.headers()[\"x-robots-tag\"]).toContain(\"noindex\");\n      |                                               ^\n  155 |   await expect(page.getByRole(\"button\", { name: \"Refresh schedule\", exact: true })).toBeEnabled();\n  156 |   await page.getByLabel(\"Week of (Monday)\").fill(upcomingWeek);\n  157 |   await expect(page.getByRole(\"button\", { name: \"Refresh schedule\", exact: true })).toBeEnabled();"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts",
+                        "column": 47,
+                        "line": 154
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\n\u001b[1mMatcher error\u001b[22m: \u001b[31mreceived\u001b[39m value must not be null nor undefined\n\nReceived has value: \u001b[31mundefined\u001b[39m\n\n  152 | async function open(page: Page, format = \"game-grid\") {\n  153 |   const response = await page.goto(`/social-share/${format}`);\n> 154 |   expect(response?.headers()[\"x-robots-tag\"]).toContain(\"noindex\");\n      |                                               ^\n  155 |   await expect(page.getByRole(\"button\", { name: \"Refresh schedule\", exact: true })).toBeEnabled();\n  156 |   await page.getByLabel(\"Week of (Monday)\").fill(upcomingWeek);\n  157 |   await expect(page.getByRole(\"button\", { name: \"Refresh schedule\", exact: true })).toBeEnabled();\n    at open (/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:154:47)\n    at /Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:1151:3"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-26T19:09:06.011Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/tuesday-trends-2026-10-26/run/test-results/social-share-cards-carry-n-a0031-on-rule-captions-SS1-17-TJ--chromium/test-failed-1.png"
+                    },
+                    {
+                      "name": "video",
+                      "contentType": "video/webm",
+                      "path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/tuesday-trends-2026-10-26/run/test-results/social-share-cards-carry-n-a0031-on-rule-captions-SS1-17-TJ--chromium/video.webm"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/tuesday-trends-2026-10-26/run/test-results/social-share-cards-carry-n-a0031-on-rule-captions-SS1-17-TJ--chromium/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts",
+                    "column": 47,
+                    "line": 154
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "a54bce60df3e96b84bd8-28232baa0a8023467c8d",
+          "file": "social-share.spec.ts",
+          "line": 1148,
+          "column": 5
+        },
+        {
+          "title": "hot and cold streak badges sit beside the L5 line and match the streak rules (SS1-18)",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 20,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 2396,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\n\u001b[1mMatcher error\u001b[22m: \u001b[31mreceived\u001b[39m value must not be null nor undefined\n\nReceived has value: \u001b[31mundefined\u001b[39m",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\n\u001b[1mMatcher error\u001b[22m: \u001b[31mreceived\u001b[39m value must not be null nor undefined\n\nReceived has value: \u001b[31mundefined\u001b[39m\n    at open (/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:154:47)\n    at /Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:1174:3",
+                    "location": {
+                      "file": "/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts",
+                      "column": 47,
+                      "line": 154
+                    },
+                    "snippet": "  152 | async function open(page: Page, format = \"game-grid\") {\n  153 |   const response = await page.goto(`/social-share/${format}`);\n> 154 |   expect(response?.headers()[\"x-robots-tag\"]).toContain(\"noindex\");\n      |                                               ^\n  155 |   await expect(page.getByRole(\"button\", { name: \"Refresh schedule\", exact: true })).toBeEnabled();\n  156 |   await page.getByLabel(\"Week of (Monday)\").fill(upcomingWeek);\n  157 |   await expect(page.getByRole(\"button\", { name: \"Refresh schedule\", exact: true })).toBeEnabled();"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts",
+                        "column": 47,
+                        "line": 154
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\n\u001b[1mMatcher error\u001b[22m: \u001b[31mreceived\u001b[39m value must not be null nor undefined\n\nReceived has value: \u001b[31mundefined\u001b[39m\n\n  152 | async function open(page: Page, format = \"game-grid\") {\n  153 |   const response = await page.goto(`/social-share/${format}`);\n> 154 |   expect(response?.headers()[\"x-robots-tag\"]).toContain(\"noindex\");\n      |                                               ^\n  155 |   await expect(page.getByRole(\"button\", { name: \"Refresh schedule\", exact: true })).toBeEnabled();\n  156 |   await page.getByLabel(\"Week of (Monday)\").fill(upcomingWeek);\n  157 |   await expect(page.getByRole(\"button\", { name: \"Refresh schedule\", exact: true })).toBeEnabled();\n    at open (/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:154:47)\n    at /Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:1174:3"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-26T19:09:07.645Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/tuesday-trends-2026-10-26/run/test-results/social-share-hot-and-cold--463e3-ch-the-streak-rules-SS1-18--chromium/test-failed-1.png"
+                    },
+                    {
+                      "name": "video",
+                      "contentType": "video/webm",
+                      "path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/tuesday-trends-2026-10-26/run/test-results/social-share-hot-and-cold--463e3-ch-the-streak-rules-SS1-18--chromium/video.webm"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/tuesday-trends-2026-10-26/run/test-results/social-share-hot-and-cold--463e3-ch-the-streak-rules-SS1-18--chromium/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts",
+                    "column": 47,
+                    "line": 154
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "a54bce60df3e96b84bd8-9d82758a46402ef1f042",
+          "file": "social-share.spec.ts",
+          "line": 1171,
+          "column": 5
+        },
+        {
+          "title": "Tuesday GENUINE DATA render: captured layer, offline, export token per card",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 21,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 11221,
+                  "error": {
+                    "message": "TimeoutError: locator.fill: Timeout 10000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByLabel('Week of (Monday)')\u001b[22m\n\u001b[2m    15 × waiting for\" http://127.0.0.1:3110/social-share/tuesday-trends\" navigation to finish...\u001b[22m\n\u001b[2m       - navigated to \"http://127.0.0.1:3110/social-share/tuesday-trends\"\u001b[22m\n\u001b[2m    - waiting for\" http://127.0.0.1:3110/social-share/tuesday-trends\" navigation to finish...\u001b[22m\n",
+                    "stack": "TimeoutError: locator.fill: Timeout 10000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByLabel('Week of (Monday)')\u001b[22m\n\u001b[2m    15 × waiting for\" http://127.0.0.1:3110/social-share/tuesday-trends\" navigation to finish...\u001b[22m\n\u001b[2m       - navigated to \"http://127.0.0.1:3110/social-share/tuesday-trends\"\u001b[22m\n\u001b[2m    - waiting for\" http://127.0.0.1:3110/social-share/tuesday-trends\" navigation to finish...\u001b[22m\n\n    at /Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:1222:47",
+                    "location": {
+                      "file": "/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts",
+                      "column": 47,
+                      "line": 1222
+                    },
+                    "snippet": "  1220 |     await page.setViewportSize(viewport);\n  1221 |     await page.goto(\"/social-share/tuesday-trends\");\n> 1222 |     await page.getByLabel(\"Week of (Monday)\").fill(\"2026-10-26\");\n       |                                               ^\n  1223 |     await expect(page.getByRole(\"button\", { name: \"Refresh schedule\", exact: true })).toBeEnabled();\n  1224 |     for (const card of [\"hot\", \"deployment\", \"rates\", \"movers\"]) {\n  1225 |       await page.getByRole(\"combobox\", { name: /^Graphic/ }).selectOption(card);"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts",
+                        "column": 47,
+                        "line": 1222
+                      },
+                      "message": "TimeoutError: locator.fill: Timeout 10000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByLabel('Week of (Monday)')\u001b[22m\n\u001b[2m    15 × waiting for\" http://127.0.0.1:3110/social-share/tuesday-trends\" navigation to finish...\u001b[22m\n\u001b[2m       - navigated to \"http://127.0.0.1:3110/social-share/tuesday-trends\"\u001b[22m\n\u001b[2m    - waiting for\" http://127.0.0.1:3110/social-share/tuesday-trends\" navigation to finish...\u001b[22m\n\n\n  1220 |     await page.setViewportSize(viewport);\n  1221 |     await page.goto(\"/social-share/tuesday-trends\");\n> 1222 |     await page.getByLabel(\"Week of (Monday)\").fill(\"2026-10-26\");\n       |                                               ^\n  1223 |     await expect(page.getByRole(\"button\", { name: \"Refresh schedule\", exact: true })).toBeEnabled();\n  1224 |     for (const card of [\"hot\", \"deployment\", \"rates\", \"movers\"]) {\n  1225 |       await page.getByRole(\"combobox\", { name: /^Graphic/ }).selectOption(card);\n    at /Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:1222:47"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-26T19:09:10.899Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/tuesday-trends-2026-10-26/run/test-results/social-share-Tuesday-GENUI-6357b-fline-export-token-per-card-chromium/test-failed-1.png"
+                    },
+                    {
+                      "name": "video",
+                      "contentType": "video/webm",
+                      "path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/tuesday-trends-2026-10-26/run/test-results/social-share-Tuesday-GENUI-6357b-fline-export-token-per-card-chromium/video.webm"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/tuesday-trends-2026-10-26/run/test-results/social-share-Tuesday-GENUI-6357b-fline-export-token-per-card-chromium/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts",
+                    "column": 47,
+                    "line": 1222
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "a54bce60df3e96b84bd8-c0a6db4f19d3ce432df0",
+          "file": "social-share.spec.ts",
+          "line": 1203,
+          "column": 5
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-26T19:07:21.948Z",
+    "duration": 120615.419,
+    "expected": 11,
+    "skipped": 0,
+    "unexpected": 22,
+    "flaky": 0
+  }
+}

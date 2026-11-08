@@ -27,6 +27,24 @@ function reading(capture: NstCapture, id: MetricId) {
 }
 
 describe("supplied NST capture mapping, with synthetic proof receipts", () => {
+  it("joins the preserved provider lookup date while emitting UTC calendar dates", () => {
+    const capture = fixture();
+    capture.frames[0].appearances = capture.frames[0].appearances.map((game, i) => ({ ...game, sourceDate: game.date, date: `2026-10-${21 + i}`, completion: { status: "verified-final", completedDuring: { startInclusive: `2026-10-${21 + i}T03:00:00Z`, endExclusive: `2026-10-${21 + i}T03:01:00Z`, timezone: "America/Denver", clockBasis: "schedule-bound-12h" }, reference: "synthetic minute" } }));
+    const result = mapped(capture);
+    expect(result.issues).toEqual([]);
+    expect(result.input.players[0].records.map(row => [row.date, row.individual.shots])).toEqual([["2026-10-21", 4], ["2026-10-22", 4]]);
+    expect(reading(capture, "sog60").value).toBe(12);
+    capture.frames[0].appearances[1].sourceDate = "2026-10-20";
+    expect(mapped(capture).issues.some(issue => issue.reason.includes("Multiple official"))).toBe(true);
+  });
+  it("withholds source rows captured inside the reported completion minute", () => {
+    const capture = fixture();
+    capture.frames[0].appearances[0].completion = { status: "verified-final", completedDuring: { startInclusive: "2026-10-20T23:00:00Z", endExclusive: "2026-10-20T23:01:00Z", timezone: "UTC", clockBasis: "explicit-24h" }, reference: "synthetic minute" };
+    capture.individual.capturedAt = "2026-10-20T23:00:30Z";
+    const result = mapped(capture);
+    expect(result.input.players[0].records[0].individual).toEqual({});
+    expect(result.input.players[0].records[0].onIce.xgf).toBe(1);
+  });
   it("preserves seconds, canonical components and unknown population without mutating or aliasing the capture", () => {
     const capture = fixture(), before = JSON.stringify(capture), result = mapped(capture);
     expect(JSON.stringify(capture)).toBe(before); expect(result.issues).toEqual([]);

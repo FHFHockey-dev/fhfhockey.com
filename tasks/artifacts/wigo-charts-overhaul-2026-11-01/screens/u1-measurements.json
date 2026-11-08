@@ -1,0 +1,3608 @@
+{
+ "1280x800": {
+  "errors": [],
+  "blocked": 4,
+  "doc": [
+   1280,
+   800
+  ],
+  "rootTop": 68,
+  "page": {
+   "nodes": 862,
+   "controls": 61,
+   "controlKinds": {
+    "input": 2,
+    "button": 57,
+    "select": 2
+   },
+   "textNodes": 594,
+   "chars": 2922,
+   "type": {
+    "11/400": 415,
+    "11/700": 118,
+    "12/400": 27,
+    "12/700": 22,
+    "16/700": 5,
+    "14/400": 5,
+    "20/700": 1,
+    "16/400": 1
+   },
+   "colors": {
+    "rgb(255, 255, 255)": 295,
+    "rgb(170, 170, 170)": 118,
+    "rgb(204, 204, 204)": 94,
+    "rgb(20, 162, 210)": 26,
+    "color(srgb 0 1 0.6)": 7,
+    "rgb(255, 204, 51)": 4,
+    "rgb(124, 255, 203)": 3,
+    "rgb(75, 192, 192)": 3,
+    "rgb(255, 159, 64)": 3,
+    "rgb(153, 153, 153)": 2,
+    "rgb(255, 99, 132)": 2,
+    "rgb(255, 230, 0)": 1,
+    "rgb(157, 255, 10)": 1,
+    "rgb(179, 255, 8)": 1,
+    "rgb(255, 236, 0)": 1,
+    "rgb(172, 255, 8)": 1,
+    "rgb(240, 255, 1)": 1,
+    "rgb(255, 242, 0)": 1,
+    "rgb(188, 255, 7)": 1,
+    "rgb(255, 210, 0)": 1,
+    "color(srgb 0.837045 1 0.934818)": 1,
+    "color(srgb 1 0.514187 0.616955)": 1,
+    "color(srgb 0.32 1 0.728)": 1,
+    "color(srgb 1 0.988384 0.990841)": 1,
+    "color(srgb 1 0.61909 0.699667)": 1,
+    "color(srgb 1 0.842384 0.875726)": 1,
+    "color(srgb 1 0.950397 0.96089)": 1,
+    "color(srgb 0.918129 1 0.967251)": 1,
+    "color(srgb 1 0.762582 0.812805)": 1,
+    "color(srgb 1 0.51758 0.61963)": 1,
+    "color(srgb 0.807947 1 0.923179)": 1,
+    "color(srgb 1 0.918818 0.935992)": 1,
+    "color(srgb 1 0.833246 0.868521)": 1,
+    "color(srgb 1 0.864554 0.893206)": 1,
+    "color(srgb 0.763441 1 0.905376)": 1,
+    "color(srgb 1 0.716609 0.776557)": 1,
+    "color(srgb 1 0.604348 0.688043)": 1,
+    "color(srgb 1 0.645984 0.720872)": 1,
+    "color(srgb 1 0.673117 0.742265)": 1,
+    "color(srgb 1 0.856199 0.886618)": 1,
+    "color(srgb 0.409091 1 0.763636)": 1,
+    "color(srgb 1 0.721035 0.780047)": 1,
+    "color(srgb 1 0.72596 0.78393)": 1,
+    "color(srgb 1 0.970653 0.976861)": 1,
+    "color(srgb 1 0.819518 0.857697)": 1,
+    "color(srgb 1 0.67528 0.743971)": 1,
+    "color(srgb 1 0.84649 0.878963)": 1,
+    "rgb(16, 18, 20)": 1
+   },
+   "radii": {
+    "6px": 43,
+    "10px": 5
+   },
+   "backgrounds": {
+    "rgb(15, 16, 19)": 58,
+    "rgba(255, 204, 51, 0.1)": 38,
+    "rgba(20, 162, 210, 0.08)": 37,
+    "rgb(19, 21, 24)": 20,
+    "rgb(24, 24, 24)": 11,
+    "rgb(26, 29, 33)": 9,
+    "rgb(29, 29, 29)": 8,
+    "rgba(20, 162, 210, 0.16)": 8,
+    "rgb(4, 4, 4)": 3,
+    "rgb(24, 26, 30)": 2,
+    "rgb(32, 32, 32)": 2,
+    "rgb(0, 32, 91)": 2,
+    "rgb(13, 14, 16)": 1,
+    "rgb(27, 27, 27)": 1,
+    "rgba(7, 170, 226, 0.1)": 1,
+    "rgba(255, 205, 86, 0.1)": 1,
+    "rgb(20, 162, 210)": 1,
+    "rgb(255, 255, 255)": 1
+   },
+   "borders": {
+    "rgb(170, 170, 170)": 37,
+    "rgb(80, 80, 80)": 22,
+    "rgb(20, 162, 210)": 2,
+    "rgb(46, 52, 59)": 1,
+    "rgb(60, 67, 76)": 1,
+    "rgb(7, 170, 226)": 1,
+    "rgb(255, 205, 86)": 1,
+    "rgba(255, 204, 51, 0.3)": 1
+   }
+  },
+  "areas": {
+   "C01": {
+    "rect": [
+     32,
+     72,
+     1216,
+     32
+    ],
+    "nodes": 13,
+    "controls": 2,
+    "controlKinds": {
+     "input": 1,
+     "button": 1
+    },
+    "textNodes": 4,
+    "chars": 30,
+    "type": {
+     "12/400": 2,
+     "20/700": 1,
+     "12/700": 1
+    },
+    "colors": {
+     "rgb(170, 170, 170)": 3,
+     "rgb(20, 162, 210)": 1
+    },
+    "radii": {
+     "10px": 1,
+     "6px": 1
+    },
+    "sampleText": [
+     "WiGO",
+     "What Is Going On",
+     "VAN",
+     "Clear"
+    ]
+   },
+   "C02 C03": {
+    "rect": [
+     32,
+     108,
+     240,
+     90
+    ],
+    "nodes": 18,
+    "controls": 0,
+    "controlKinds": {},
+    "textNodes": 8,
+    "chars": 53,
+    "type": {
+     "11/400": 6,
+     "16/700": 1,
+     "16/400": 1
+    },
+    "colors": {
+     "rgb(204, 204, 204)": 5,
+     "rgb(170, 170, 170)": 3
+    },
+    "radii": {
+     "10px": 2,
+     "6px": 1
+    },
+    "sampleText": [
+     "Vancouver Canucks",
+     "Fictional",
+     "Alex",
+     "Age",
+     "194 lbs"
+    ]
+   },
+   "C04": {
+    "rect": [
+     32,
+     202,
+     240,
+     66
+    ],
+    "nodes": 20,
+    "controls": 0,
+    "controlKinds": {},
+    "textNodes": 14,
+    "chars": 87,
+    "type": {
+     "11/400": 8,
+     "16/700": 4,
+     "12/700": 1,
+     "12/400": 1
+    },
+    "colors": {
+     "rgb(170, 170, 170)": 10,
+     "rgb(204, 204, 204)": 4
+    },
+    "radii": {
+     "6px": 1
+    },
+    "sampleText": [
+     "Season production",
+     "Points",
+     "Goals",
+     "Assists",
+     "SOG"
+    ]
+   },
+   "C05": {
+    "rect": [
+     276,
+     108,
+     240,
+     160
+    ],
+    "nodes": 59,
+    "controls": 1,
+    "controlKinds": {
+     "button": 1
+    },
+    "textNodes": 38,
+    "chars": 146,
+    "type": {
+     "11/700": 36,
+     "12/700": 1,
+     "14/400": 1
+    },
+    "colors": {
+     "rgb(204, 204, 204)": 37,
+     "rgb(170, 170, 170)": 1
+    },
+    "radii": {
+     "6px": 1
+    },
+    "sampleText": [
+     "Per-game / 84-game pace",
+     "Metric",
+     "Per/GP",
+     "Pace/84",
+     "PTS",
+     "SOG",
+     "PPP",
+     "HIT",
+     "BLK",
+     "PIM"
+    ]
+   },
+   "C06": {
+    "rect": [
+     520,
+     108,
+     179,
+     160
+    ],
+    "nodes": 49,
+    "controls": 0,
+    "controlKinds": {},
+    "textNodes": 33,
+    "chars": 253,
+    "type": {
+     "11/400": 30,
+     "11/700": 3
+    },
+    "colors": {
+     "rgb(204, 204, 204)": 32,
+     "rgb(170, 170, 170)": 1
+    },
+    "radii": {
+     "6px": 1,
+     "10px": 1
+    },
+    "sampleText": [
+     "Date",
+     "Opponent",
+     "Details",
+     "Fri, Mar 13",
+     "vs. SEA",
+     "Sun, Mar 15",
+     "@ LAK",
+     "Wed, Mar 18",
+     "vs. ANA",
+     "Fri, Mar 20",
+     "@ SJS",
+     "Sun, Mar 22",
+     "vs. VGK",
+     "Tue, Mar 24"
+    ]
+   },
+   "C07": {
+    "rect": [
+     703,
+     108,
+     240,
+     160
+    ],
+    "nodes": 41,
+    "controls": 1,
+    "controlKinds": {
+     "button": 1
+    },
+    "textNodes": 23,
+    "chars": 104,
+    "type": {
+     "11/400": 9,
+     "11/700": 9,
+     "12/700": 4,
+     "14/400": 1
+    },
+    "colors": {
+     "rgb(170, 170, 170)": 13,
+     "rgb(204, 204, 204)": 1,
+     "rgb(255, 230, 0)": 1,
+     "rgb(157, 255, 10)": 1,
+     "rgb(179, 255, 8)": 1,
+     "rgb(255, 236, 0)": 1,
+     "rgb(172, 255, 8)": 1,
+     "rgb(240, 255, 1)": 1,
+     "rgb(255, 242, 0)": 1,
+     "rgb(188, 255, 7)": 1,
+     "rgb(255, 210, 0)": 1
+    },
+    "radii": {
+     "6px": 15
+    },
+    "sampleText": [
+     "Player ratings",
+     "Offense",
+     "All",
+     "Even",
+     "Overall",
+     "Special",
+     "Defense"
+    ]
+   },
+   "C08 C09 C10 C11": {
+    "rect": [
+     703,
+     272,
+     240,
+     156
+    ],
+    "nodes": 28,
+    "controls": 1,
+    "controlKinds": {
+     "button": 1
+    },
+    "textNodes": 15,
+    "chars": 250,
+    "type": {
+     "11/700": 8,
+     "11/400": 5,
+     "12/700": 1,
+     "14/400": 1
+    },
+    "colors": {
+     "rgb(170, 170, 170)": 6,
+     "rgb(204, 204, 204)": 5,
+     "rgb(124, 255, 203)": 3,
+     "rgb(255, 204, 51)": 1
+    },
+    "radii": {
+     "6px": 2
+    },
+    "sampleText": [
+     "VAN performance drivers",
+     "Chance Generation",
+     "2.41 xGF/GP",
+     "strength",
+     "pct",
+     "Chance Suppression",
+     "2.40 xGA/GP",
+     "neutral",
+     "Finishing",
+     "65.7% GF/xGF",
+     "Special Teams",
+     "Regular season · 5v5:",
+     "Apr 4",
+     "Special teams through:"
+    ]
+   },
+   "C14": {
+    "rect": [
+     32,
+     272,
+     240,
+     156
+    ],
+    "nodes": 31,
+    "controls": 0,
+    "controlKinds": {},
+    "textNodes": 17,
+    "chars": 94,
+    "type": {
+     "12/400": 11,
+     "12/700": 6
+    },
+    "colors": {
+     "rgb(170, 170, 170)": 6,
+     "rgb(255, 255, 255)": 6,
+     "rgb(153, 153, 153)": 2,
+     "rgb(255, 99, 132)": 1,
+     "rgb(20, 162, 210)": 1,
+     "rgb(75, 192, 192)": 1
+    },
+    "radii": {
+     "6px": 1
+    },
+    "sampleText": [
+     "Point consistency",
+     "0 Pts",
+     "2 Pts",
+     "3 Pts",
+     "Cardio"
+    ]
+   },
+   "C15": {
+    "rect": [
+     947,
+     108,
+     301,
+     320
+    ],
+    "nodes": 8,
+    "controls": 0,
+    "controlKinds": {},
+    "textNodes": 3,
+    "chars": 76,
+    "type": {
+     "12/700": 1,
+     "12/400": 1,
+     "11/400": 1
+    },
+    "colors": {
+     "rgb(170, 170, 170)": 3
+    },
+    "radii": {
+     "6px": 1
+    },
+    "sampleText": [
+     "Category percentiles",
+     "All skaters ·",
+     "skaters with"
+    ]
+   },
+   "C12": {
+    "rect": [
+     32,
+     432,
+     1216,
+     194
+    ],
+    "nodes": 402,
+    "controls": 38,
+    "controlKinds": {
+     "select": 2,
+     "button": 36
+    },
+    "textNodes": 342,
+    "chars": 1291,
+    "type": {
+     "11/400": 297,
+     "11/700": 42,
+     "12/700": 2,
+     "14/400": 1
+    },
+    "colors": {
+     "rgb(255, 255, 255)": 260,
+     "rgb(170, 170, 170)": 39,
+     "color(srgb 0 1 0.6)": 7,
+     "rgb(204, 204, 204)": 4,
+     "rgb(20, 162, 210)": 3,
+     "rgb(255, 204, 51)": 2,
+     "color(srgb 0.837045 1 0.934818)": 1,
+     "color(srgb 1 0.514187 0.616955)": 1,
+     "color(srgb 0.32 1 0.728)": 1,
+     "color(srgb 1 0.988384 0.990841)": 1,
+     "color(srgb 1 0.61909 0.699667)": 1,
+     "color(srgb 1 0.842384 0.875726)": 1,
+     "color(srgb 1 0.950397 0.96089)": 1,
+     "color(srgb 0.918129 1 0.967251)": 1,
+     "color(srgb 1 0.762582 0.812805)": 1,
+     "color(srgb 1 0.51758 0.61963)": 1,
+     "color(srgb 0.807947 1 0.923179)": 1,
+     "color(srgb 1 0.918818 0.935992)": 1,
+     "color(srgb 1 0.833246 0.868521)": 1,
+     "color(srgb 1 0.864554 0.893206)": 1,
+     "color(srgb 0.763441 1 0.905376)": 1,
+     "color(srgb 1 0.716609 0.776557)": 1,
+     "color(srgb 1 0.604348 0.688043)": 1,
+     "color(srgb 1 0.645984 0.720872)": 1,
+     "color(srgb 1 0.673117 0.742265)": 1,
+     "color(srgb 1 0.856199 0.886618)": 1,
+     "color(srgb 0.409091 1 0.763636)": 1,
+     "color(srgb 1 0.721035 0.780047)": 1,
+     "color(srgb 1 0.72596 0.78393)": 1,
+     "color(srgb 1 0.970653 0.976861)": 1,
+     "color(srgb 1 0.819518 0.857697)": 1,
+     "color(srgb 1 0.67528 0.743971)": 1,
+     "color(srgb 1 0.84649 0.878963)": 1
+    },
+    "radii": {
+     "6px": 3,
+     "10px": 1
+    },
+    "sampleText": [
+     "Compare",
+     "DIFF: % change · counts per game",
+     "Totals",
+     "Per 60",
+     "On-ice",
+     "Period",
+     "ATOI",
+     "PTS",
+     "SOG",
+     "PPP",
+     "PPG",
+     "PPA",
+     "PPTOI",
+     "HIT"
+    ]
+   },
+   "C13": {
+    "rect": [
+     32,
+     630,
+     301,
+     164
+    ],
+    "nodes": 52,
+    "controls": 7,
+    "controlKinds": {
+     "button": 7
+    },
+    "textNodes": 18,
+    "chars": 130,
+    "type": {
+     "11/400": 16,
+     "12/700": 1,
+     "11/700": 1
+    },
+    "colors": {
+     "rgb(255, 255, 255)": 10,
+     "rgb(170, 170, 170)": 8
+    },
+    "radii": {
+     "6px": 1
+    },
+    "sampleText": [
+     "SOG/60",
+     "game log",
+     "games",
+     "STD",
+     "Game mean: 2.13"
+    ]
+   },
+   "C16": {
+    "rect": [
+     337,
+     630,
+     301,
+     164
+    ],
+    "nodes": 12,
+    "controls": 3,
+    "controlKinds": {
+     "button": 3
+    },
+    "textNodes": 7,
+    "chars": 44,
+    "type": {
+     "12/400": 3,
+     "11/400": 3,
+     "12/700": 1
+    },
+    "colors": {
+     "rgb(204, 204, 204)": 3,
+     "rgb(170, 170, 170)": 1,
+     "rgb(255, 255, 255)": 1,
+     "rgb(20, 162, 210)": 1,
+     "rgb(255, 159, 64)": 1
+    },
+    "radii": {
+     "6px": 4
+    },
+    "sampleText": [
+     "Time on ice",
+     "· Avg (min)",
+     "━Total",
+     "TOI",
+     "PP TOI %"
+    ]
+   },
+   "C17": {
+    "rect": [
+     642,
+     630,
+     301,
+     164
+    ],
+    "nodes": 12,
+    "controls": 1,
+    "controlKinds": {
+     "button": 1
+    },
+    "textNodes": 7,
+    "chars": 36,
+    "type": {
+     "12/400": 5,
+     "12/700": 1,
+     "11/400": 1
+    },
+    "colors": {
+     "rgb(170, 170, 170)": 1,
+     "rgb(255, 255, 255)": 1,
+     "rgb(20, 162, 210)": 1,
+     "rgb(75, 192, 192)": 1,
+     "rgb(255, 159, 64)": 1,
+     "rgb(255, 99, 132)": 1,
+     "rgb(204, 204, 204)": 1
+    },
+    "radii": {
+     "6px": 2
+    },
+    "sampleText": [
+     "Points / game",
+     "▮Pts",
+     "┄Avg"
+    ]
+   },
+   "C18": {
+    "rect": [
+     947,
+     630,
+     301,
+     164
+    ],
+    "nodes": 14,
+    "controls": 2,
+    "controlKinds": {
+     "button": 2
+    },
+    "textNodes": 7,
+    "chars": 31,
+    "type": {
+     "12/400": 4,
+     "12/700": 1,
+     "11/400": 1,
+     "14/400": 1
+    },
+    "colors": {
+     "rgb(204, 204, 204)": 2,
+     "rgb(170, 170, 170)": 1,
+     "rgb(255, 255, 255)": 1,
+     "rgb(20, 162, 210)": 1,
+     "rgb(75, 192, 192)": 1,
+     "rgb(255, 159, 64)": 1
+    },
+    "radii": {
+     "6px": 3
+    },
+    "sampleText": [
+     "Game score",
+     "▮Score"
+    ]
+   },
+   "C19": {
+    "rect": [
+     276,
+     272,
+     423,
+     156
+    ],
+    "nodes": 101,
+    "controls": 5,
+    "controlKinds": {
+     "button": 4,
+     "input": 1
+    },
+    "textNodes": 58,
+    "chars": 297,
+    "type": {
+     "11/400": 38,
+     "11/700": 19,
+     "12/700": 1
+    },
+    "colors": {
+     "rgb(170, 170, 170)": 22,
+     "rgb(20, 162, 210)": 18,
+     "rgb(255, 255, 255)": 16,
+     "rgb(16, 18, 20)": 1,
+     "rgb(255, 204, 51)": 1
+    },
+    "radii": {
+     "6px": 6
+    },
+    "sampleText": [
+     "Rate stat percentiles",
+     "Min GP:",
+     "Player GP:",
+     "2024–25 values and cohort, not 2025–26",
+     "TOI/GP",
+     "Pts/60",
+     "SOG/60",
+     "iSCF/60",
+     "iHDCF/60",
+     "ixG/60",
+     "iCF/60",
+     "SCF/60",
+     "HDCF/60",
+     "SCF%"
+    ]
+   }
+  }
+ },
+ "1440x900": {
+  "errors": [],
+  "blocked": 4,
+  "doc": [
+   1440,
+   900
+  ],
+  "rootTop": 68,
+  "page": {
+   "nodes": 865,
+   "controls": 61,
+   "controlKinds": {
+    "input": 2,
+    "button": 57,
+    "select": 2
+   },
+   "textNodes": 595,
+   "chars": 2926,
+   "type": {
+    "12/400": 356,
+    "12/700": 128,
+    "11/400": 87,
+    "11/700": 12,
+    "16/700": 5,
+    "14/400": 5,
+    "20/700": 1,
+    "16/400": 1
+   },
+   "colors": {
+    "rgb(255, 255, 255)": 296,
+    "rgb(170, 170, 170)": 118,
+    "rgb(204, 204, 204)": 94,
+    "rgb(20, 162, 210)": 26,
+    "color(srgb 0 1 0.6)": 7,
+    "rgb(255, 204, 51)": 4,
+    "rgb(124, 255, 203)": 3,
+    "rgb(75, 192, 192)": 3,
+    "rgb(255, 159, 64)": 3,
+    "rgb(153, 153, 153)": 2,
+    "rgb(255, 99, 132)": 2,
+    "rgb(255, 230, 0)": 1,
+    "rgb(157, 255, 10)": 1,
+    "rgb(179, 255, 8)": 1,
+    "rgb(255, 236, 0)": 1,
+    "rgb(172, 255, 8)": 1,
+    "rgb(240, 255, 1)": 1,
+    "rgb(255, 242, 0)": 1,
+    "rgb(188, 255, 7)": 1,
+    "rgb(255, 210, 0)": 1,
+    "color(srgb 0.837045 1 0.934818)": 1,
+    "color(srgb 1 0.514187 0.616955)": 1,
+    "color(srgb 0.32 1 0.728)": 1,
+    "color(srgb 1 0.988384 0.990841)": 1,
+    "color(srgb 1 0.61909 0.699667)": 1,
+    "color(srgb 1 0.842384 0.875726)": 1,
+    "color(srgb 1 0.950397 0.96089)": 1,
+    "color(srgb 0.918129 1 0.967251)": 1,
+    "color(srgb 1 0.762582 0.812805)": 1,
+    "color(srgb 1 0.51758 0.61963)": 1,
+    "color(srgb 0.807947 1 0.923179)": 1,
+    "color(srgb 1 0.918818 0.935992)": 1,
+    "color(srgb 1 0.833246 0.868521)": 1,
+    "color(srgb 1 0.864554 0.893206)": 1,
+    "color(srgb 0.763441 1 0.905376)": 1,
+    "color(srgb 1 0.716609 0.776557)": 1,
+    "color(srgb 1 0.604348 0.688043)": 1,
+    "color(srgb 1 0.645984 0.720872)": 1,
+    "color(srgb 1 0.673117 0.742265)": 1,
+    "color(srgb 1 0.856199 0.886618)": 1,
+    "color(srgb 0.409091 1 0.763636)": 1,
+    "color(srgb 1 0.721035 0.780047)": 1,
+    "color(srgb 1 0.72596 0.78393)": 1,
+    "color(srgb 1 0.970653 0.976861)": 1,
+    "color(srgb 1 0.819518 0.857697)": 1,
+    "color(srgb 1 0.67528 0.743971)": 1,
+    "color(srgb 1 0.84649 0.878963)": 1,
+    "rgb(16, 18, 20)": 1
+   },
+   "radii": {
+    "6px": 43,
+    "10px": 5
+   },
+   "backgrounds": {
+    "rgb(15, 16, 19)": 58,
+    "rgba(255, 204, 51, 0.1)": 38,
+    "rgba(20, 162, 210, 0.08)": 37,
+    "rgb(19, 21, 24)": 20,
+    "rgb(24, 24, 24)": 11,
+    "rgb(26, 29, 33)": 9,
+    "rgb(29, 29, 29)": 8,
+    "rgba(20, 162, 210, 0.16)": 8,
+    "rgb(4, 4, 4)": 3,
+    "rgb(24, 26, 30)": 2,
+    "rgb(32, 32, 32)": 2,
+    "rgb(0, 32, 91)": 2,
+    "rgb(13, 14, 16)": 1,
+    "rgb(27, 27, 27)": 1,
+    "rgba(7, 170, 226, 0.1)": 1,
+    "rgba(255, 205, 86, 0.1)": 1,
+    "rgb(20, 162, 210)": 1,
+    "rgb(255, 255, 255)": 1
+   },
+   "borders": {
+    "rgb(170, 170, 170)": 37,
+    "rgb(80, 80, 80)": 22,
+    "rgb(20, 162, 210)": 2,
+    "rgb(46, 52, 59)": 1,
+    "rgb(60, 67, 76)": 1,
+    "rgb(7, 170, 226)": 1,
+    "rgb(255, 205, 86)": 1,
+    "rgba(255, 204, 51, 0.3)": 1
+   }
+  },
+  "areas": {
+   "C01": {
+    "rect": [
+     36,
+     72,
+     1368,
+     32
+    ],
+    "nodes": 13,
+    "controls": 2,
+    "controlKinds": {
+     "input": 1,
+     "button": 1
+    },
+    "textNodes": 4,
+    "chars": 30,
+    "type": {
+     "12/400": 2,
+     "20/700": 1,
+     "12/700": 1
+    },
+    "colors": {
+     "rgb(170, 170, 170)": 3,
+     "rgb(20, 162, 210)": 1
+    },
+    "radii": {
+     "10px": 1,
+     "6px": 1
+    },
+    "sampleText": [
+     "WiGO",
+     "What Is Going On",
+     "VAN",
+     "Clear"
+    ]
+   },
+   "C02 C03": {
+    "rect": [
+     36,
+     108,
+     270,
+     106
+    ],
+    "nodes": 18,
+    "controls": 0,
+    "controlKinds": {},
+    "textNodes": 8,
+    "chars": 53,
+    "type": {
+     "11/400": 3,
+     "12/400": 3,
+     "16/700": 1,
+     "16/400": 1
+    },
+    "colors": {
+     "rgb(204, 204, 204)": 5,
+     "rgb(170, 170, 170)": 3
+    },
+    "radii": {
+     "10px": 2,
+     "6px": 1
+    },
+    "sampleText": [
+     "Vancouver Canucks",
+     "Fictional",
+     "Alex",
+     "Age",
+     "194 lbs"
+    ]
+   },
+   "C04": {
+    "rect": [
+     36,
+     218,
+     270,
+     72
+    ],
+    "nodes": 20,
+    "controls": 0,
+    "controlKinds": {},
+    "textNodes": 14,
+    "chars": 87,
+    "type": {
+     "11/400": 8,
+     "16/700": 4,
+     "12/700": 1,
+     "12/400": 1
+    },
+    "colors": {
+     "rgb(170, 170, 170)": 10,
+     "rgb(204, 204, 204)": 4
+    },
+    "radii": {
+     "6px": 1
+    },
+    "sampleText": [
+     "Season production",
+     "Points",
+     "Goals",
+     "Assists",
+     "SOG"
+    ]
+   },
+   "C05": {
+    "rect": [
+     310,
+     108,
+     270,
+     182
+    ],
+    "nodes": 59,
+    "controls": 1,
+    "controlKinds": {
+     "button": 1
+    },
+    "textNodes": 38,
+    "chars": 146,
+    "type": {
+     "12/700": 37,
+     "14/400": 1
+    },
+    "colors": {
+     "rgb(204, 204, 204)": 37,
+     "rgb(170, 170, 170)": 1
+    },
+    "radii": {
+     "6px": 1
+    },
+    "sampleText": [
+     "Per-game / 84-game pace",
+     "Metric",
+     "Per/GP",
+     "Pace/84",
+     "PTS",
+     "SOG",
+     "PPP",
+     "HIT",
+     "BLK",
+     "PIM"
+    ]
+   },
+   "C06": {
+    "rect": [
+     585,
+     108,
+     202,
+     182
+    ],
+    "nodes": 49,
+    "controls": 0,
+    "controlKinds": {},
+    "textNodes": 33,
+    "chars": 253,
+    "type": {
+     "12/400": 30,
+     "12/700": 3
+    },
+    "colors": {
+     "rgb(204, 204, 204)": 32,
+     "rgb(170, 170, 170)": 1
+    },
+    "radii": {
+     "6px": 1,
+     "10px": 1
+    },
+    "sampleText": [
+     "Date",
+     "Opponent",
+     "Details",
+     "Fri, Mar 13",
+     "vs. SEA",
+     "Sun, Mar 15",
+     "@ LAK",
+     "Wed, Mar 18",
+     "vs. ANA",
+     "Fri, Mar 20",
+     "@ SJS",
+     "Sun, Mar 22",
+     "vs. VGK",
+     "Tue, Mar 24"
+    ]
+   },
+   "C07": {
+    "rect": [
+     791,
+     108,
+     270,
+     182
+    ],
+    "nodes": 41,
+    "controls": 1,
+    "controlKinds": {
+     "button": 1
+    },
+    "textNodes": 23,
+    "chars": 104,
+    "type": {
+     "12/700": 13,
+     "11/400": 9,
+     "14/400": 1
+    },
+    "colors": {
+     "rgb(170, 170, 170)": 13,
+     "rgb(204, 204, 204)": 1,
+     "rgb(255, 230, 0)": 1,
+     "rgb(157, 255, 10)": 1,
+     "rgb(179, 255, 8)": 1,
+     "rgb(255, 236, 0)": 1,
+     "rgb(172, 255, 8)": 1,
+     "rgb(240, 255, 1)": 1,
+     "rgb(255, 242, 0)": 1,
+     "rgb(188, 255, 7)": 1,
+     "rgb(255, 210, 0)": 1
+    },
+    "radii": {
+     "6px": 15
+    },
+    "sampleText": [
+     "Player ratings",
+     "Offense",
+     "All",
+     "Even",
+     "Overall",
+     "Special",
+     "Defense"
+    ]
+   },
+   "C08 C09 C10 C11": {
+    "rect": [
+     791,
+     294,
+     270,
+     178
+    ],
+    "nodes": 28,
+    "controls": 1,
+    "controlKinds": {
+     "button": 1
+    },
+    "textNodes": 15,
+    "chars": 250,
+    "type": {
+     "11/700": 8,
+     "11/400": 5,
+     "12/700": 1,
+     "14/400": 1
+    },
+    "colors": {
+     "rgb(170, 170, 170)": 6,
+     "rgb(204, 204, 204)": 5,
+     "rgb(124, 255, 203)": 3,
+     "rgb(255, 204, 51)": 1
+    },
+    "radii": {
+     "6px": 2
+    },
+    "sampleText": [
+     "VAN performance drivers",
+     "Chance Generation",
+     "2.41 xGF/GP",
+     "strength",
+     "pct",
+     "Chance Suppression",
+     "2.40 xGA/GP",
+     "neutral",
+     "Finishing",
+     "65.7% GF/xGF",
+     "Special Teams",
+     "Regular season · 5v5:",
+     "Apr 4",
+     "Special teams through:"
+    ]
+   },
+   "C14": {
+    "rect": [
+     36,
+     294,
+     270,
+     178
+    ],
+    "nodes": 31,
+    "controls": 0,
+    "controlKinds": {},
+    "textNodes": 17,
+    "chars": 94,
+    "type": {
+     "12/400": 11,
+     "12/700": 6
+    },
+    "colors": {
+     "rgb(170, 170, 170)": 6,
+     "rgb(255, 255, 255)": 6,
+     "rgb(153, 153, 153)": 2,
+     "rgb(255, 99, 132)": 1,
+     "rgb(20, 162, 210)": 1,
+     "rgb(75, 192, 192)": 1
+    },
+    "radii": {
+     "6px": 1
+    },
+    "sampleText": [
+     "Point consistency",
+     "0 Pts",
+     "2 Pts",
+     "3 Pts",
+     "Cardio"
+    ]
+   },
+   "C15": {
+    "rect": [
+     1065,
+     108,
+     339,
+     364
+    ],
+    "nodes": 8,
+    "controls": 0,
+    "controlKinds": {},
+    "textNodes": 3,
+    "chars": 76,
+    "type": {
+     "12/700": 1,
+     "12/400": 1,
+     "11/400": 1
+    },
+    "colors": {
+     "rgb(170, 170, 170)": 3
+    },
+    "radii": {
+     "6px": 1
+    },
+    "sampleText": [
+     "Category percentiles",
+     "All skaters ·",
+     "skaters with"
+    ]
+   },
+   "C12": {
+    "rect": [
+     36,
+     476,
+     1368,
+     206
+    ],
+    "nodes": 402,
+    "controls": 38,
+    "controlKinds": {
+     "select": 2,
+     "button": 36
+    },
+    "textNodes": 342,
+    "chars": 1291,
+    "type": {
+     "12/400": 296,
+     "12/700": 44,
+     "11/400": 1,
+     "14/400": 1
+    },
+    "colors": {
+     "rgb(255, 255, 255)": 260,
+     "rgb(170, 170, 170)": 39,
+     "color(srgb 0 1 0.6)": 7,
+     "rgb(204, 204, 204)": 4,
+     "rgb(20, 162, 210)": 3,
+     "rgb(255, 204, 51)": 2,
+     "color(srgb 0.837045 1 0.934818)": 1,
+     "color(srgb 1 0.514187 0.616955)": 1,
+     "color(srgb 0.32 1 0.728)": 1,
+     "color(srgb 1 0.988384 0.990841)": 1,
+     "color(srgb 1 0.61909 0.699667)": 1,
+     "color(srgb 1 0.842384 0.875726)": 1,
+     "color(srgb 1 0.950397 0.96089)": 1,
+     "color(srgb 0.918129 1 0.967251)": 1,
+     "color(srgb 1 0.762582 0.812805)": 1,
+     "color(srgb 1 0.51758 0.61963)": 1,
+     "color(srgb 0.807947 1 0.923179)": 1,
+     "color(srgb 1 0.918818 0.935992)": 1,
+     "color(srgb 1 0.833246 0.868521)": 1,
+     "color(srgb 1 0.864554 0.893206)": 1,
+     "color(srgb 0.763441 1 0.905376)": 1,
+     "color(srgb 1 0.716609 0.776557)": 1,
+     "color(srgb 1 0.604348 0.688043)": 1,
+     "color(srgb 1 0.645984 0.720872)": 1,
+     "color(srgb 1 0.673117 0.742265)": 1,
+     "color(srgb 1 0.856199 0.886618)": 1,
+     "color(srgb 0.409091 1 0.763636)": 1,
+     "color(srgb 1 0.721035 0.780047)": 1,
+     "color(srgb 1 0.72596 0.78393)": 1,
+     "color(srgb 1 0.970653 0.976861)": 1,
+     "color(srgb 1 0.819518 0.857697)": 1,
+     "color(srgb 1 0.67528 0.743971)": 1,
+     "color(srgb 1 0.84649 0.878963)": 1
+    },
+    "radii": {
+     "6px": 3,
+     "10px": 1
+    },
+    "sampleText": [
+     "Compare",
+     "DIFF: % change · counts per game",
+     "Totals",
+     "Per 60",
+     "On-ice",
+     "Period",
+     "ATOI",
+     "PTS",
+     "SOG",
+     "PPP",
+     "PPG",
+     "PPA",
+     "PPTOI",
+     "HIT"
+    ]
+   },
+   "C13": {
+    "rect": [
+     36,
+     686,
+     339,
+     208
+    ],
+    "nodes": 55,
+    "controls": 7,
+    "controlKinds": {
+     "button": 7
+    },
+    "textNodes": 19,
+    "chars": 134,
+    "type": {
+     "11/400": 17,
+     "12/700": 1,
+     "11/700": 1
+    },
+    "colors": {
+     "rgb(255, 255, 255)": 11,
+     "rgb(170, 170, 170)": 8
+    },
+    "radii": {
+     "6px": 1
+    },
+    "sampleText": [
+     "SOG/60",
+     "game log",
+     "games",
+     "STD",
+     "Game mean: 2.13"
+    ]
+   },
+   "C16": {
+    "rect": [
+     379,
+     686,
+     339,
+     208
+    ],
+    "nodes": 12,
+    "controls": 3,
+    "controlKinds": {
+     "button": 3
+    },
+    "textNodes": 7,
+    "chars": 44,
+    "type": {
+     "12/400": 3,
+     "11/400": 3,
+     "12/700": 1
+    },
+    "colors": {
+     "rgb(204, 204, 204)": 3,
+     "rgb(170, 170, 170)": 1,
+     "rgb(255, 255, 255)": 1,
+     "rgb(20, 162, 210)": 1,
+     "rgb(255, 159, 64)": 1
+    },
+    "radii": {
+     "6px": 4
+    },
+    "sampleText": [
+     "Time on ice",
+     "· Avg (min)",
+     "━Total",
+     "TOI",
+     "PP TOI %"
+    ]
+   },
+   "C17": {
+    "rect": [
+     722,
+     686,
+     339,
+     208
+    ],
+    "nodes": 12,
+    "controls": 1,
+    "controlKinds": {
+     "button": 1
+    },
+    "textNodes": 7,
+    "chars": 36,
+    "type": {
+     "12/400": 5,
+     "12/700": 1,
+     "11/400": 1
+    },
+    "colors": {
+     "rgb(170, 170, 170)": 1,
+     "rgb(255, 255, 255)": 1,
+     "rgb(20, 162, 210)": 1,
+     "rgb(75, 192, 192)": 1,
+     "rgb(255, 159, 64)": 1,
+     "rgb(255, 99, 132)": 1,
+     "rgb(204, 204, 204)": 1
+    },
+    "radii": {
+     "6px": 2
+    },
+    "sampleText": [
+     "Points / game",
+     "▮Pts",
+     "┄Avg"
+    ]
+   },
+   "C18": {
+    "rect": [
+     1065,
+     686,
+     339,
+     208
+    ],
+    "nodes": 14,
+    "controls": 2,
+    "controlKinds": {
+     "button": 2
+    },
+    "textNodes": 7,
+    "chars": 31,
+    "type": {
+     "12/400": 4,
+     "12/700": 1,
+     "11/400": 1,
+     "14/400": 1
+    },
+    "colors": {
+     "rgb(204, 204, 204)": 2,
+     "rgb(170, 170, 170)": 1,
+     "rgb(255, 255, 255)": 1,
+     "rgb(20, 162, 210)": 1,
+     "rgb(75, 192, 192)": 1,
+     "rgb(255, 159, 64)": 1
+    },
+    "radii": {
+     "6px": 3
+    },
+    "sampleText": [
+     "Game score",
+     "▮Score"
+    ]
+   },
+   "C19": {
+    "rect": [
+     310,
+     294,
+     476,
+     178
+    ],
+    "nodes": 101,
+    "controls": 5,
+    "controlKinds": {
+     "button": 4,
+     "input": 1
+    },
+    "textNodes": 58,
+    "chars": 297,
+    "type": {
+     "11/400": 38,
+     "12/700": 17,
+     "11/700": 3
+    },
+    "colors": {
+     "rgb(170, 170, 170)": 22,
+     "rgb(20, 162, 210)": 18,
+     "rgb(255, 255, 255)": 16,
+     "rgb(16, 18, 20)": 1,
+     "rgb(255, 204, 51)": 1
+    },
+    "radii": {
+     "6px": 6
+    },
+    "sampleText": [
+     "Rate stat percentiles",
+     "Min GP:",
+     "Player GP:",
+     "2024–25 values and cohort, not 2025–26",
+     "TOI/GP",
+     "Pts/60",
+     "SOG/60",
+     "iSCF/60",
+     "iHDCF/60",
+     "ixG/60",
+     "iCF/60",
+     "SCF/60",
+     "HDCF/60",
+     "SCF%"
+    ]
+   }
+  }
+ },
+ "1440x790": {
+  "errors": [],
+  "blocked": 4,
+  "doc": [
+   1440,
+   790
+  ],
+  "rootTop": 68,
+  "page": {
+   "nodes": 859,
+   "controls": 61,
+   "controlKinds": {
+    "input": 2,
+    "button": 57,
+    "select": 2
+   },
+   "textNodes": 593,
+   "chars": 2918,
+   "type": {
+    "11/400": 414,
+    "11/700": 118,
+    "12/400": 27,
+    "12/700": 22,
+    "16/700": 5,
+    "14/400": 5,
+    "20/700": 1,
+    "16/400": 1
+   },
+   "colors": {
+    "rgb(255, 255, 255)": 294,
+    "rgb(170, 170, 170)": 118,
+    "rgb(204, 204, 204)": 94,
+    "rgb(20, 162, 210)": 26,
+    "color(srgb 0 1 0.6)": 7,
+    "rgb(255, 204, 51)": 4,
+    "rgb(124, 255, 203)": 3,
+    "rgb(75, 192, 192)": 3,
+    "rgb(255, 159, 64)": 3,
+    "rgb(153, 153, 153)": 2,
+    "rgb(255, 99, 132)": 2,
+    "rgb(255, 230, 0)": 1,
+    "rgb(157, 255, 10)": 1,
+    "rgb(179, 255, 8)": 1,
+    "rgb(255, 236, 0)": 1,
+    "rgb(172, 255, 8)": 1,
+    "rgb(240, 255, 1)": 1,
+    "rgb(255, 242, 0)": 1,
+    "rgb(188, 255, 7)": 1,
+    "rgb(255, 210, 0)": 1,
+    "color(srgb 0.837045 1 0.934818)": 1,
+    "color(srgb 1 0.514187 0.616955)": 1,
+    "color(srgb 0.32 1 0.728)": 1,
+    "color(srgb 1 0.988384 0.990841)": 1,
+    "color(srgb 1 0.61909 0.699667)": 1,
+    "color(srgb 1 0.842384 0.875726)": 1,
+    "color(srgb 1 0.950397 0.96089)": 1,
+    "color(srgb 0.918129 1 0.967251)": 1,
+    "color(srgb 1 0.762582 0.812805)": 1,
+    "color(srgb 1 0.51758 0.61963)": 1,
+    "color(srgb 0.807947 1 0.923179)": 1,
+    "color(srgb 1 0.918818 0.935992)": 1,
+    "color(srgb 1 0.833246 0.868521)": 1,
+    "color(srgb 1 0.864554 0.893206)": 1,
+    "color(srgb 0.763441 1 0.905376)": 1,
+    "color(srgb 1 0.716609 0.776557)": 1,
+    "color(srgb 1 0.604348 0.688043)": 1,
+    "color(srgb 1 0.645984 0.720872)": 1,
+    "color(srgb 1 0.673117 0.742265)": 1,
+    "color(srgb 1 0.856199 0.886618)": 1,
+    "color(srgb 0.409091 1 0.763636)": 1,
+    "color(srgb 1 0.721035 0.780047)": 1,
+    "color(srgb 1 0.72596 0.78393)": 1,
+    "color(srgb 1 0.970653 0.976861)": 1,
+    "color(srgb 1 0.819518 0.857697)": 1,
+    "color(srgb 1 0.67528 0.743971)": 1,
+    "color(srgb 1 0.84649 0.878963)": 1,
+    "rgb(16, 18, 20)": 1
+   },
+   "radii": {
+    "6px": 43,
+    "10px": 5
+   },
+   "backgrounds": {
+    "rgb(15, 16, 19)": 58,
+    "rgba(255, 204, 51, 0.1)": 38,
+    "rgba(20, 162, 210, 0.08)": 37,
+    "rgb(19, 21, 24)": 20,
+    "rgb(24, 24, 24)": 11,
+    "rgb(26, 29, 33)": 9,
+    "rgb(29, 29, 29)": 8,
+    "rgba(20, 162, 210, 0.16)": 8,
+    "rgb(4, 4, 4)": 3,
+    "rgb(24, 26, 30)": 2,
+    "rgb(32, 32, 32)": 2,
+    "rgb(0, 32, 91)": 2,
+    "rgb(13, 14, 16)": 1,
+    "rgb(27, 27, 27)": 1,
+    "rgba(7, 170, 226, 0.1)": 1,
+    "rgba(255, 205, 86, 0.1)": 1,
+    "rgb(20, 162, 210)": 1,
+    "rgb(255, 255, 255)": 1
+   },
+   "borders": {
+    "rgb(170, 170, 170)": 37,
+    "rgb(80, 80, 80)": 22,
+    "rgb(20, 162, 210)": 2,
+    "rgb(46, 52, 59)": 1,
+    "rgb(60, 67, 76)": 1,
+    "rgb(7, 170, 226)": 1,
+    "rgb(255, 205, 86)": 1,
+    "rgba(255, 204, 51, 0.3)": 1
+   }
+  },
+  "areas": {
+   "C01": {
+    "rect": [
+     36,
+     72,
+     1368,
+     32
+    ],
+    "nodes": 13,
+    "controls": 2,
+    "controlKinds": {
+     "input": 1,
+     "button": 1
+    },
+    "textNodes": 4,
+    "chars": 30,
+    "type": {
+     "12/400": 2,
+     "20/700": 1,
+     "12/700": 1
+    },
+    "colors": {
+     "rgb(170, 170, 170)": 3,
+     "rgb(20, 162, 210)": 1
+    },
+    "radii": {
+     "10px": 1,
+     "6px": 1
+    },
+    "sampleText": [
+     "WiGO",
+     "What Is Going On",
+     "VAN",
+     "Clear"
+    ]
+   },
+   "C02 C03": {
+    "rect": [
+     36,
+     108,
+     270,
+     90
+    ],
+    "nodes": 18,
+    "controls": 0,
+    "controlKinds": {},
+    "textNodes": 8,
+    "chars": 53,
+    "type": {
+     "11/400": 6,
+     "16/700": 1,
+     "16/400": 1
+    },
+    "colors": {
+     "rgb(204, 204, 204)": 5,
+     "rgb(170, 170, 170)": 3
+    },
+    "radii": {
+     "10px": 2,
+     "6px": 1
+    },
+    "sampleText": [
+     "Vancouver Canucks",
+     "Fictional",
+     "Alex",
+     "Age",
+     "194 lbs"
+    ]
+   },
+   "C04": {
+    "rect": [
+     36,
+     202,
+     270,
+     66
+    ],
+    "nodes": 20,
+    "controls": 0,
+    "controlKinds": {},
+    "textNodes": 14,
+    "chars": 87,
+    "type": {
+     "11/400": 8,
+     "16/700": 4,
+     "12/700": 1,
+     "12/400": 1
+    },
+    "colors": {
+     "rgb(170, 170, 170)": 10,
+     "rgb(204, 204, 204)": 4
+    },
+    "radii": {
+     "6px": 1
+    },
+    "sampleText": [
+     "Season production",
+     "Points",
+     "Goals",
+     "Assists",
+     "SOG"
+    ]
+   },
+   "C05": {
+    "rect": [
+     310,
+     108,
+     270,
+     160
+    ],
+    "nodes": 59,
+    "controls": 1,
+    "controlKinds": {
+     "button": 1
+    },
+    "textNodes": 38,
+    "chars": 146,
+    "type": {
+     "11/700": 36,
+     "12/700": 1,
+     "14/400": 1
+    },
+    "colors": {
+     "rgb(204, 204, 204)": 37,
+     "rgb(170, 170, 170)": 1
+    },
+    "radii": {
+     "6px": 1
+    },
+    "sampleText": [
+     "Per-game / 84-game pace",
+     "Metric",
+     "Per/GP",
+     "Pace/84",
+     "PTS",
+     "SOG",
+     "PPP",
+     "HIT",
+     "BLK",
+     "PIM"
+    ]
+   },
+   "C06": {
+    "rect": [
+     585,
+     108,
+     202,
+     160
+    ],
+    "nodes": 49,
+    "controls": 0,
+    "controlKinds": {},
+    "textNodes": 33,
+    "chars": 253,
+    "type": {
+     "11/400": 30,
+     "11/700": 3
+    },
+    "colors": {
+     "rgb(204, 204, 204)": 32,
+     "rgb(170, 170, 170)": 1
+    },
+    "radii": {
+     "6px": 1,
+     "10px": 1
+    },
+    "sampleText": [
+     "Date",
+     "Opponent",
+     "Details",
+     "Fri, Mar 13",
+     "vs. SEA",
+     "Sun, Mar 15",
+     "@ LAK",
+     "Wed, Mar 18",
+     "vs. ANA",
+     "Fri, Mar 20",
+     "@ SJS",
+     "Sun, Mar 22",
+     "vs. VGK",
+     "Tue, Mar 24"
+    ]
+   },
+   "C07": {
+    "rect": [
+     791,
+     108,
+     270,
+     160
+    ],
+    "nodes": 41,
+    "controls": 1,
+    "controlKinds": {
+     "button": 1
+    },
+    "textNodes": 23,
+    "chars": 104,
+    "type": {
+     "11/400": 9,
+     "11/700": 9,
+     "12/700": 4,
+     "14/400": 1
+    },
+    "colors": {
+     "rgb(170, 170, 170)": 13,
+     "rgb(204, 204, 204)": 1,
+     "rgb(255, 230, 0)": 1,
+     "rgb(157, 255, 10)": 1,
+     "rgb(179, 255, 8)": 1,
+     "rgb(255, 236, 0)": 1,
+     "rgb(172, 255, 8)": 1,
+     "rgb(240, 255, 1)": 1,
+     "rgb(255, 242, 0)": 1,
+     "rgb(188, 255, 7)": 1,
+     "rgb(255, 210, 0)": 1
+    },
+    "radii": {
+     "6px": 15
+    },
+    "sampleText": [
+     "Player ratings",
+     "Offense",
+     "All",
+     "Even",
+     "Overall",
+     "Special",
+     "Defense"
+    ]
+   },
+   "C08 C09 C10 C11": {
+    "rect": [
+     791,
+     272,
+     270,
+     156
+    ],
+    "nodes": 28,
+    "controls": 1,
+    "controlKinds": {
+     "button": 1
+    },
+    "textNodes": 15,
+    "chars": 250,
+    "type": {
+     "11/700": 8,
+     "11/400": 5,
+     "12/700": 1,
+     "14/400": 1
+    },
+    "colors": {
+     "rgb(170, 170, 170)": 6,
+     "rgb(204, 204, 204)": 5,
+     "rgb(124, 255, 203)": 3,
+     "rgb(255, 204, 51)": 1
+    },
+    "radii": {
+     "6px": 2
+    },
+    "sampleText": [
+     "VAN performance drivers",
+     "Chance Generation",
+     "2.41 xGF/GP",
+     "strength",
+     "pct",
+     "Chance Suppression",
+     "2.40 xGA/GP",
+     "neutral",
+     "Finishing",
+     "65.7% GF/xGF",
+     "Special Teams",
+     "Regular season · 5v5:",
+     "Apr 4",
+     "Special teams through:"
+    ]
+   },
+   "C14": {
+    "rect": [
+     36,
+     272,
+     270,
+     156
+    ],
+    "nodes": 31,
+    "controls": 0,
+    "controlKinds": {},
+    "textNodes": 17,
+    "chars": 94,
+    "type": {
+     "12/400": 11,
+     "12/700": 6
+    },
+    "colors": {
+     "rgb(170, 170, 170)": 6,
+     "rgb(255, 255, 255)": 6,
+     "rgb(153, 153, 153)": 2,
+     "rgb(255, 99, 132)": 1,
+     "rgb(20, 162, 210)": 1,
+     "rgb(75, 192, 192)": 1
+    },
+    "radii": {
+     "6px": 1
+    },
+    "sampleText": [
+     "Point consistency",
+     "0 Pts",
+     "2 Pts",
+     "3 Pts",
+     "Cardio"
+    ]
+   },
+   "C15": {
+    "rect": [
+     1065,
+     108,
+     339,
+     320
+    ],
+    "nodes": 8,
+    "controls": 0,
+    "controlKinds": {},
+    "textNodes": 3,
+    "chars": 76,
+    "type": {
+     "12/700": 1,
+     "12/400": 1,
+     "11/400": 1
+    },
+    "colors": {
+     "rgb(170, 170, 170)": 3
+    },
+    "radii": {
+     "6px": 1
+    },
+    "sampleText": [
+     "Category percentiles",
+     "All skaters ·",
+     "skaters with"
+    ]
+   },
+   "C12": {
+    "rect": [
+     36,
+     432,
+     1368,
+     194
+    ],
+    "nodes": 402,
+    "controls": 38,
+    "controlKinds": {
+     "select": 2,
+     "button": 36
+    },
+    "textNodes": 342,
+    "chars": 1291,
+    "type": {
+     "11/400": 297,
+     "11/700": 42,
+     "12/700": 2,
+     "14/400": 1
+    },
+    "colors": {
+     "rgb(255, 255, 255)": 260,
+     "rgb(170, 170, 170)": 39,
+     "color(srgb 0 1 0.6)": 7,
+     "rgb(204, 204, 204)": 4,
+     "rgb(20, 162, 210)": 3,
+     "rgb(255, 204, 51)": 2,
+     "color(srgb 0.837045 1 0.934818)": 1,
+     "color(srgb 1 0.514187 0.616955)": 1,
+     "color(srgb 0.32 1 0.728)": 1,
+     "color(srgb 1 0.988384 0.990841)": 1,
+     "color(srgb 1 0.61909 0.699667)": 1,
+     "color(srgb 1 0.842384 0.875726)": 1,
+     "color(srgb 1 0.950397 0.96089)": 1,
+     "color(srgb 0.918129 1 0.967251)": 1,
+     "color(srgb 1 0.762582 0.812805)": 1,
+     "color(srgb 1 0.51758 0.61963)": 1,
+     "color(srgb 0.807947 1 0.923179)": 1,
+     "color(srgb 1 0.918818 0.935992)": 1,
+     "color(srgb 1 0.833246 0.868521)": 1,
+     "color(srgb 1 0.864554 0.893206)": 1,
+     "color(srgb 0.763441 1 0.905376)": 1,
+     "color(srgb 1 0.716609 0.776557)": 1,
+     "color(srgb 1 0.604348 0.688043)": 1,
+     "color(srgb 1 0.645984 0.720872)": 1,
+     "color(srgb 1 0.673117 0.742265)": 1,
+     "color(srgb 1 0.856199 0.886618)": 1,
+     "color(srgb 0.409091 1 0.763636)": 1,
+     "color(srgb 1 0.721035 0.780047)": 1,
+     "color(srgb 1 0.72596 0.78393)": 1,
+     "color(srgb 1 0.970653 0.976861)": 1,
+     "color(srgb 1 0.819518 0.857697)": 1,
+     "color(srgb 1 0.67528 0.743971)": 1,
+     "color(srgb 1 0.84649 0.878963)": 1
+    },
+    "radii": {
+     "6px": 3,
+     "10px": 1
+    },
+    "sampleText": [
+     "Compare",
+     "DIFF: % change · counts per game",
+     "Totals",
+     "Per 60",
+     "On-ice",
+     "Period",
+     "ATOI",
+     "PTS",
+     "SOG",
+     "PPP",
+     "PPG",
+     "PPA",
+     "PPTOI",
+     "HIT"
+    ]
+   },
+   "C13": {
+    "rect": [
+     36,
+     630,
+     339,
+     154
+    ],
+    "nodes": 49,
+    "controls": 7,
+    "controlKinds": {
+     "button": 7
+    },
+    "textNodes": 17,
+    "chars": 126,
+    "type": {
+     "11/400": 15,
+     "12/700": 1,
+     "11/700": 1
+    },
+    "colors": {
+     "rgb(255, 255, 255)": 9,
+     "rgb(170, 170, 170)": 8
+    },
+    "radii": {
+     "6px": 1
+    },
+    "sampleText": [
+     "SOG/60",
+     "game log",
+     "games",
+     "STD",
+     "Game mean: 2.13"
+    ]
+   },
+   "C16": {
+    "rect": [
+     379,
+     630,
+     339,
+     154
+    ],
+    "nodes": 12,
+    "controls": 3,
+    "controlKinds": {
+     "button": 3
+    },
+    "textNodes": 7,
+    "chars": 44,
+    "type": {
+     "12/400": 3,
+     "11/400": 3,
+     "12/700": 1
+    },
+    "colors": {
+     "rgb(204, 204, 204)": 3,
+     "rgb(170, 170, 170)": 1,
+     "rgb(255, 255, 255)": 1,
+     "rgb(20, 162, 210)": 1,
+     "rgb(255, 159, 64)": 1
+    },
+    "radii": {
+     "6px": 4
+    },
+    "sampleText": [
+     "Time on ice",
+     "· Avg (min)",
+     "━Total",
+     "TOI",
+     "PP TOI %"
+    ]
+   },
+   "C17": {
+    "rect": [
+     722,
+     630,
+     339,
+     154
+    ],
+    "nodes": 12,
+    "controls": 1,
+    "controlKinds": {
+     "button": 1
+    },
+    "textNodes": 7,
+    "chars": 36,
+    "type": {
+     "12/400": 5,
+     "12/700": 1,
+     "11/400": 1
+    },
+    "colors": {
+     "rgb(170, 170, 170)": 1,
+     "rgb(255, 255, 255)": 1,
+     "rgb(20, 162, 210)": 1,
+     "rgb(75, 192, 192)": 1,
+     "rgb(255, 159, 64)": 1,
+     "rgb(255, 99, 132)": 1,
+     "rgb(204, 204, 204)": 1
+    },
+    "radii": {
+     "6px": 2
+    },
+    "sampleText": [
+     "Points / game",
+     "▮Pts",
+     "┄Avg"
+    ]
+   },
+   "C18": {
+    "rect": [
+     1065,
+     630,
+     339,
+     154
+    ],
+    "nodes": 14,
+    "controls": 2,
+    "controlKinds": {
+     "button": 2
+    },
+    "textNodes": 7,
+    "chars": 31,
+    "type": {
+     "12/400": 4,
+     "12/700": 1,
+     "11/400": 1,
+     "14/400": 1
+    },
+    "colors": {
+     "rgb(204, 204, 204)": 2,
+     "rgb(170, 170, 170)": 1,
+     "rgb(255, 255, 255)": 1,
+     "rgb(20, 162, 210)": 1,
+     "rgb(75, 192, 192)": 1,
+     "rgb(255, 159, 64)": 1
+    },
+    "radii": {
+     "6px": 3
+    },
+    "sampleText": [
+     "Game score",
+     "▮Score"
+    ]
+   },
+   "C19": {
+    "rect": [
+     310,
+     272,
+     476,
+     156
+    ],
+    "nodes": 101,
+    "controls": 5,
+    "controlKinds": {
+     "button": 4,
+     "input": 1
+    },
+    "textNodes": 58,
+    "chars": 297,
+    "type": {
+     "11/400": 38,
+     "11/700": 19,
+     "12/700": 1
+    },
+    "colors": {
+     "rgb(170, 170, 170)": 22,
+     "rgb(20, 162, 210)": 18,
+     "rgb(255, 255, 255)": 16,
+     "rgb(16, 18, 20)": 1,
+     "rgb(255, 204, 51)": 1
+    },
+    "radii": {
+     "6px": 6
+    },
+    "sampleText": [
+     "Rate stat percentiles",
+     "Min GP:",
+     "Player GP:",
+     "2024–25 values and cohort, not 2025–26",
+     "TOI/GP",
+     "Pts/60",
+     "SOG/60",
+     "iSCF/60",
+     "iHDCF/60",
+     "ixG/60",
+     "iCF/60",
+     "SCF/60",
+     "HDCF/60",
+     "SCF%"
+    ]
+   }
+  }
+ },
+ "1920x1080": {
+  "errors": [],
+  "blocked": 4,
+  "doc": [
+   1920,
+   1080
+  ],
+  "rootTop": 68,
+  "page": {
+   "nodes": 871,
+   "controls": 61,
+   "controlKinds": {
+    "input": 2,
+    "button": 57,
+    "select": 2
+   },
+   "textNodes": 597,
+   "chars": 2936,
+   "type": {
+    "14/400": 334,
+    "14/700": 106,
+    "11/400": 89,
+    "12/400": 27,
+    "12/700": 22,
+    "11/700": 12,
+    "20/700": 6,
+    "20/400": 1
+   },
+   "colors": {
+    "rgb(255, 255, 255)": 298,
+    "rgb(170, 170, 170)": 118,
+    "rgb(204, 204, 204)": 94,
+    "rgb(20, 162, 210)": 26,
+    "color(srgb 0 1 0.6)": 7,
+    "rgb(255, 204, 51)": 4,
+    "rgb(124, 255, 203)": 3,
+    "rgb(75, 192, 192)": 3,
+    "rgb(255, 159, 64)": 3,
+    "rgb(153, 153, 153)": 2,
+    "rgb(255, 99, 132)": 2,
+    "rgb(255, 230, 0)": 1,
+    "rgb(157, 255, 10)": 1,
+    "rgb(179, 255, 8)": 1,
+    "rgb(255, 236, 0)": 1,
+    "rgb(172, 255, 8)": 1,
+    "rgb(240, 255, 1)": 1,
+    "rgb(255, 242, 0)": 1,
+    "rgb(188, 255, 7)": 1,
+    "rgb(255, 210, 0)": 1,
+    "color(srgb 0.837045 1 0.934818)": 1,
+    "color(srgb 1 0.514187 0.616955)": 1,
+    "color(srgb 0.32 1 0.728)": 1,
+    "color(srgb 1 0.988384 0.990841)": 1,
+    "color(srgb 1 0.61909 0.699667)": 1,
+    "color(srgb 1 0.842384 0.875726)": 1,
+    "color(srgb 1 0.950397 0.96089)": 1,
+    "color(srgb 0.918129 1 0.967251)": 1,
+    "color(srgb 1 0.762582 0.812805)": 1,
+    "color(srgb 1 0.51758 0.61963)": 1,
+    "color(srgb 0.807947 1 0.923179)": 1,
+    "color(srgb 1 0.918818 0.935992)": 1,
+    "color(srgb 1 0.833246 0.868521)": 1,
+    "color(srgb 1 0.864554 0.893206)": 1,
+    "color(srgb 0.763441 1 0.905376)": 1,
+    "color(srgb 1 0.716609 0.776557)": 1,
+    "color(srgb 1 0.604348 0.688043)": 1,
+    "color(srgb 1 0.645984 0.720872)": 1,
+    "color(srgb 1 0.673117 0.742265)": 1,
+    "color(srgb 1 0.856199 0.886618)": 1,
+    "color(srgb 0.409091 1 0.763636)": 1,
+    "color(srgb 1 0.721035 0.780047)": 1,
+    "color(srgb 1 0.72596 0.78393)": 1,
+    "color(srgb 1 0.970653 0.976861)": 1,
+    "color(srgb 1 0.819518 0.857697)": 1,
+    "color(srgb 1 0.67528 0.743971)": 1,
+    "color(srgb 1 0.84649 0.878963)": 1,
+    "rgb(16, 18, 20)": 1
+   },
+   "radii": {
+    "6px": 43,
+    "10px": 5
+   },
+   "backgrounds": {
+    "rgb(15, 16, 19)": 58,
+    "rgba(255, 204, 51, 0.1)": 38,
+    "rgba(20, 162, 210, 0.08)": 37,
+    "rgb(19, 21, 24)": 20,
+    "rgb(24, 24, 24)": 11,
+    "rgb(26, 29, 33)": 9,
+    "rgb(29, 29, 29)": 8,
+    "rgba(20, 162, 210, 0.16)": 8,
+    "rgb(4, 4, 4)": 3,
+    "rgb(24, 26, 30)": 2,
+    "rgb(32, 32, 32)": 2,
+    "rgb(0, 32, 91)": 2,
+    "rgb(13, 14, 16)": 1,
+    "rgb(27, 27, 27)": 1,
+    "rgba(7, 170, 226, 0.1)": 1,
+    "rgba(255, 205, 86, 0.1)": 1,
+    "rgb(20, 162, 210)": 1,
+    "rgb(255, 255, 255)": 1
+   },
+   "borders": {
+    "rgb(170, 170, 170)": 37,
+    "rgb(80, 80, 80)": 22,
+    "rgb(20, 162, 210)": 2,
+    "rgb(46, 52, 59)": 1,
+    "rgb(60, 67, 76)": 1,
+    "rgb(7, 170, 226)": 1,
+    "rgb(255, 205, 86)": 1,
+    "rgba(255, 204, 51, 0.3)": 1
+   }
+  },
+  "areas": {
+   "C01": {
+    "rect": [
+     48,
+     72,
+     1824,
+     32
+    ],
+    "nodes": 13,
+    "controls": 2,
+    "controlKinds": {
+     "input": 1,
+     "button": 1
+    },
+    "textNodes": 4,
+    "chars": 30,
+    "type": {
+     "12/400": 2,
+     "20/700": 1,
+     "12/700": 1
+    },
+    "colors": {
+     "rgb(170, 170, 170)": 3,
+     "rgb(20, 162, 210)": 1
+    },
+    "radii": {
+     "10px": 1,
+     "6px": 1
+    },
+    "sampleText": [
+     "WiGO",
+     "What Is Going On",
+     "VAN",
+     "Clear"
+    ]
+   },
+   "C02 C03": {
+    "rect": [
+     48,
+     108,
+     362,
+     130
+    ],
+    "nodes": 18,
+    "controls": 0,
+    "controlKinds": {},
+    "textNodes": 8,
+    "chars": 53,
+    "type": {
+     "11/400": 3,
+     "14/400": 3,
+     "20/700": 1,
+     "20/400": 1
+    },
+    "colors": {
+     "rgb(204, 204, 204)": 5,
+     "rgb(170, 170, 170)": 3
+    },
+    "radii": {
+     "10px": 2,
+     "6px": 1
+    },
+    "sampleText": [
+     "Vancouver Canucks",
+     "Fictional",
+     "Alex",
+     "Age",
+     "194 lbs"
+    ]
+   },
+   "C04": {
+    "rect": [
+     48,
+     242,
+     362,
+     102
+    ],
+    "nodes": 20,
+    "controls": 0,
+    "controlKinds": {},
+    "textNodes": 14,
+    "chars": 87,
+    "type": {
+     "11/400": 8,
+     "20/700": 4,
+     "12/700": 1,
+     "12/400": 1
+    },
+    "colors": {
+     "rgb(170, 170, 170)": 10,
+     "rgb(204, 204, 204)": 4
+    },
+    "radii": {
+     "6px": 1
+    },
+    "sampleText": [
+     "Season production",
+     "Points",
+     "Goals",
+     "Assists",
+     "SOG"
+    ]
+   },
+   "C05": {
+    "rect": [
+     414,
+     108,
+     362,
+     236
+    ],
+    "nodes": 59,
+    "controls": 1,
+    "controlKinds": {
+     "button": 1
+    },
+    "textNodes": 38,
+    "chars": 146,
+    "type": {
+     "14/700": 36,
+     "12/700": 1,
+     "14/400": 1
+    },
+    "colors": {
+     "rgb(204, 204, 204)": 37,
+     "rgb(170, 170, 170)": 1
+    },
+    "radii": {
+     "6px": 1
+    },
+    "sampleText": [
+     "Per-game / 84-game pace",
+     "Metric",
+     "Per/GP",
+     "Pace/84",
+     "PTS",
+     "SOG",
+     "PPP",
+     "HIT",
+     "BLK",
+     "PIM"
+    ]
+   },
+   "C06": {
+    "rect": [
+     779,
+     108,
+     270,
+     236
+    ],
+    "nodes": 49,
+    "controls": 0,
+    "controlKinds": {},
+    "textNodes": 33,
+    "chars": 253,
+    "type": {
+     "14/400": 30,
+     "14/700": 3
+    },
+    "colors": {
+     "rgb(204, 204, 204)": 32,
+     "rgb(170, 170, 170)": 1
+    },
+    "radii": {
+     "6px": 1,
+     "10px": 1
+    },
+    "sampleText": [
+     "Date",
+     "Opponent",
+     "Details",
+     "Fri, Mar 13",
+     "vs. SEA",
+     "Sun, Mar 15",
+     "@ LAK",
+     "Wed, Mar 18",
+     "vs. ANA",
+     "Fri, Mar 20",
+     "@ SJS",
+     "Sun, Mar 22",
+     "vs. VGK",
+     "Tue, Mar 24"
+    ]
+   },
+   "C07": {
+    "rect": [
+     1053,
+     108,
+     362,
+     236
+    ],
+    "nodes": 41,
+    "controls": 1,
+    "controlKinds": {
+     "button": 1
+    },
+    "textNodes": 23,
+    "chars": 104,
+    "type": {
+     "11/400": 9,
+     "14/700": 9,
+     "12/700": 4,
+     "14/400": 1
+    },
+    "colors": {
+     "rgb(170, 170, 170)": 13,
+     "rgb(204, 204, 204)": 1,
+     "rgb(255, 230, 0)": 1,
+     "rgb(157, 255, 10)": 1,
+     "rgb(179, 255, 8)": 1,
+     "rgb(255, 236, 0)": 1,
+     "rgb(172, 255, 8)": 1,
+     "rgb(240, 255, 1)": 1,
+     "rgb(255, 242, 0)": 1,
+     "rgb(188, 255, 7)": 1,
+     "rgb(255, 210, 0)": 1
+    },
+    "radii": {
+     "6px": 15
+    },
+    "sampleText": [
+     "Player ratings",
+     "Offense",
+     "All",
+     "Even",
+     "Overall",
+     "Special",
+     "Defense"
+    ]
+   },
+   "C08 C09 C10 C11": {
+    "rect": [
+     1053,
+     348,
+     362,
+     232
+    ],
+    "nodes": 28,
+    "controls": 1,
+    "controlKinds": {
+     "button": 1
+    },
+    "textNodes": 15,
+    "chars": 250,
+    "type": {
+     "11/700": 8,
+     "11/400": 5,
+     "12/700": 1,
+     "14/400": 1
+    },
+    "colors": {
+     "rgb(170, 170, 170)": 6,
+     "rgb(204, 204, 204)": 5,
+     "rgb(124, 255, 203)": 3,
+     "rgb(255, 204, 51)": 1
+    },
+    "radii": {
+     "6px": 2
+    },
+    "sampleText": [
+     "VAN performance drivers",
+     "Chance Generation",
+     "2.41 xGF/GP",
+     "strength",
+     "pct",
+     "Chance Suppression",
+     "2.40 xGA/GP",
+     "neutral",
+     "Finishing",
+     "65.7% GF/xGF",
+     "Special Teams",
+     "Regular season · 5v5:",
+     "Apr 4",
+     "Special teams through:"
+    ]
+   },
+   "C14": {
+    "rect": [
+     48,
+     348,
+     362,
+     232
+    ],
+    "nodes": 31,
+    "controls": 0,
+    "controlKinds": {},
+    "textNodes": 17,
+    "chars": 94,
+    "type": {
+     "12/400": 11,
+     "12/700": 6
+    },
+    "colors": {
+     "rgb(170, 170, 170)": 6,
+     "rgb(255, 255, 255)": 6,
+     "rgb(153, 153, 153)": 2,
+     "rgb(255, 99, 132)": 1,
+     "rgb(20, 162, 210)": 1,
+     "rgb(75, 192, 192)": 1
+    },
+    "radii": {
+     "6px": 1
+    },
+    "sampleText": [
+     "Point consistency",
+     "0 Pts",
+     "2 Pts",
+     "3 Pts",
+     "Cardio"
+    ]
+   },
+   "C15": {
+    "rect": [
+     1419,
+     108,
+     453,
+     472
+    ],
+    "nodes": 8,
+    "controls": 0,
+    "controlKinds": {},
+    "textNodes": 3,
+    "chars": 76,
+    "type": {
+     "12/700": 1,
+     "12/400": 1,
+     "11/400": 1
+    },
+    "colors": {
+     "rgb(170, 170, 170)": 3
+    },
+    "radii": {
+     "6px": 1
+    },
+    "sampleText": [
+     "Category percentiles",
+     "All skaters ·",
+     "skaters with"
+    ]
+   },
+   "C12": {
+    "rect": [
+     48,
+     584,
+     1824,
+     229
+    ],
+    "nodes": 402,
+    "controls": 38,
+    "controlKinds": {
+     "select": 2,
+     "button": 36
+    },
+    "textNodes": 342,
+    "chars": 1291,
+    "type": {
+     "14/400": 297,
+     "14/700": 42,
+     "12/700": 2,
+     "11/400": 1
+    },
+    "colors": {
+     "rgb(255, 255, 255)": 260,
+     "rgb(170, 170, 170)": 39,
+     "color(srgb 0 1 0.6)": 7,
+     "rgb(204, 204, 204)": 4,
+     "rgb(20, 162, 210)": 3,
+     "rgb(255, 204, 51)": 2,
+     "color(srgb 0.837045 1 0.934818)": 1,
+     "color(srgb 1 0.514187 0.616955)": 1,
+     "color(srgb 0.32 1 0.728)": 1,
+     "color(srgb 1 0.988384 0.990841)": 1,
+     "color(srgb 1 0.61909 0.699667)": 1,
+     "color(srgb 1 0.842384 0.875726)": 1,
+     "color(srgb 1 0.950397 0.96089)": 1,
+     "color(srgb 0.918129 1 0.967251)": 1,
+     "color(srgb 1 0.762582 0.812805)": 1,
+     "color(srgb 1 0.51758 0.61963)": 1,
+     "color(srgb 0.807947 1 0.923179)": 1,
+     "color(srgb 1 0.918818 0.935992)": 1,
+     "color(srgb 1 0.833246 0.868521)": 1,
+     "color(srgb 1 0.864554 0.893206)": 1,
+     "color(srgb 0.763441 1 0.905376)": 1,
+     "color(srgb 1 0.716609 0.776557)": 1,
+     "color(srgb 1 0.604348 0.688043)": 1,
+     "color(srgb 1 0.645984 0.720872)": 1,
+     "color(srgb 1 0.673117 0.742265)": 1,
+     "color(srgb 1 0.856199 0.886618)": 1,
+     "color(srgb 0.409091 1 0.763636)": 1,
+     "color(srgb 1 0.721035 0.780047)": 1,
+     "color(srgb 1 0.72596 0.78393)": 1,
+     "color(srgb 1 0.970653 0.976861)": 1,
+     "color(srgb 1 0.819518 0.857697)": 1,
+     "color(srgb 1 0.67528 0.743971)": 1,
+     "color(srgb 1 0.84649 0.878963)": 1
+    },
+    "radii": {
+     "6px": 3,
+     "10px": 1
+    },
+    "sampleText": [
+     "Compare",
+     "DIFF: % change · counts per game",
+     "Totals",
+     "Per 60",
+     "On-ice",
+     "Period",
+     "ATOI",
+     "PTS",
+     "SOG",
+     "PPP",
+     "PPG",
+     "PPA",
+     "PPTOI",
+     "HIT"
+    ]
+   },
+   "C13": {
+    "rect": [
+     48,
+     817,
+     453,
+     257
+    ],
+    "nodes": 61,
+    "controls": 7,
+    "controlKinds": {
+     "button": 7
+    },
+    "textNodes": 21,
+    "chars": 144,
+    "type": {
+     "11/400": 19,
+     "12/700": 1,
+     "11/700": 1
+    },
+    "colors": {
+     "rgb(255, 255, 255)": 13,
+     "rgb(170, 170, 170)": 8
+    },
+    "radii": {
+     "6px": 1
+    },
+    "sampleText": [
+     "SOG/60",
+     "game log",
+     "games",
+     "STD",
+     "Game mean: 2.13"
+    ]
+   },
+   "C16": {
+    "rect": [
+     505,
+     817,
+     453,
+     257
+    ],
+    "nodes": 12,
+    "controls": 3,
+    "controlKinds": {
+     "button": 3
+    },
+    "textNodes": 7,
+    "chars": 44,
+    "type": {
+     "12/400": 3,
+     "11/400": 3,
+     "12/700": 1
+    },
+    "colors": {
+     "rgb(204, 204, 204)": 3,
+     "rgb(170, 170, 170)": 1,
+     "rgb(255, 255, 255)": 1,
+     "rgb(20, 162, 210)": 1,
+     "rgb(255, 159, 64)": 1
+    },
+    "radii": {
+     "6px": 4
+    },
+    "sampleText": [
+     "Time on ice",
+     "· Avg (min)",
+     "━Total",
+     "TOI",
+     "PP TOI %"
+    ]
+   },
+   "C17": {
+    "rect": [
+     962,
+     817,
+     453,
+     257
+    ],
+    "nodes": 12,
+    "controls": 1,
+    "controlKinds": {
+     "button": 1
+    },
+    "textNodes": 7,
+    "chars": 36,
+    "type": {
+     "12/400": 5,
+     "12/700": 1,
+     "11/400": 1
+    },
+    "colors": {
+     "rgb(170, 170, 170)": 1,
+     "rgb(255, 255, 255)": 1,
+     "rgb(20, 162, 210)": 1,
+     "rgb(75, 192, 192)": 1,
+     "rgb(255, 159, 64)": 1,
+     "rgb(255, 99, 132)": 1,
+     "rgb(204, 204, 204)": 1
+    },
+    "radii": {
+     "6px": 2
+    },
+    "sampleText": [
+     "Points / game",
+     "▮Pts",
+     "┄Avg"
+    ]
+   },
+   "C18": {
+    "rect": [
+     1419,
+     817,
+     453,
+     257
+    ],
+    "nodes": 14,
+    "controls": 2,
+    "controlKinds": {
+     "button": 2
+    },
+    "textNodes": 7,
+    "chars": 31,
+    "type": {
+     "12/400": 4,
+     "12/700": 1,
+     "11/400": 1,
+     "14/400": 1
+    },
+    "colors": {
+     "rgb(204, 204, 204)": 2,
+     "rgb(170, 170, 170)": 1,
+     "rgb(255, 255, 255)": 1,
+     "rgb(20, 162, 210)": 1,
+     "rgb(75, 192, 192)": 1,
+     "rgb(255, 159, 64)": 1
+    },
+    "radii": {
+     "6px": 3
+    },
+    "sampleText": [
+     "Game score",
+     "▮Score"
+    ]
+   },
+   "C19": {
+    "rect": [
+     414,
+     348,
+     636,
+     232
+    ],
+    "nodes": 101,
+    "controls": 5,
+    "controlKinds": {
+     "button": 4,
+     "input": 1
+    },
+    "textNodes": 58,
+    "chars": 297,
+    "type": {
+     "11/400": 38,
+     "14/700": 16,
+     "11/700": 3,
+     "12/700": 1
+    },
+    "colors": {
+     "rgb(170, 170, 170)": 22,
+     "rgb(20, 162, 210)": 18,
+     "rgb(255, 255, 255)": 16,
+     "rgb(16, 18, 20)": 1,
+     "rgb(255, 204, 51)": 1
+    },
+    "radii": {
+     "6px": 6
+    },
+    "sampleText": [
+     "Rate stat percentiles",
+     "Min GP:",
+     "Player GP:",
+     "2024–25 values and cohort, not 2025–26",
+     "TOI/GP",
+     "Pts/60",
+     "SOG/60",
+     "iSCF/60",
+     "iHDCF/60",
+     "ixG/60",
+     "iCF/60",
+     "SCF/60",
+     "HDCF/60",
+     "SCF%"
+    ]
+   }
+  }
+ },
+ "1200x800": {
+  "errors": [],
+  "blocked": 4,
+  "doc": [
+   1200,
+   1815
+  ],
+  "rootTop": 68,
+  "page": {
+   "nodes": 874,
+   "controls": 61,
+   "controlKinds": {
+    "input": 2,
+    "button": 57,
+    "select": 2
+   },
+   "textNodes": 598,
+   "chars": 2941,
+   "type": {
+    "11/400": 419,
+    "11/700": 118,
+    "12/400": 27,
+    "12/700": 22,
+    "16/700": 5,
+    "14/400": 5,
+    "20/700": 1,
+    "16/400": 1
+   },
+   "colors": {
+    "rgb(255, 255, 255)": 299,
+    "rgb(170, 170, 170)": 118,
+    "rgb(204, 204, 204)": 94,
+    "rgb(20, 162, 210)": 26,
+    "color(srgb 0 1 0.6)": 7,
+    "rgb(255, 204, 51)": 4,
+    "rgb(124, 255, 203)": 3,
+    "rgb(75, 192, 192)": 3,
+    "rgb(255, 159, 64)": 3,
+    "rgb(153, 153, 153)": 2,
+    "rgb(255, 99, 132)": 2,
+    "rgb(255, 230, 0)": 1,
+    "rgb(157, 255, 10)": 1,
+    "rgb(179, 255, 8)": 1,
+    "rgb(255, 236, 0)": 1,
+    "rgb(172, 255, 8)": 1,
+    "rgb(240, 255, 1)": 1,
+    "rgb(255, 242, 0)": 1,
+    "rgb(188, 255, 7)": 1,
+    "rgb(255, 210, 0)": 1,
+    "color(srgb 0.837045 1 0.934818)": 1,
+    "color(srgb 1 0.514187 0.616955)": 1,
+    "color(srgb 0.32 1 0.728)": 1,
+    "color(srgb 1 0.988384 0.990841)": 1,
+    "color(srgb 1 0.61909 0.699667)": 1,
+    "color(srgb 1 0.842384 0.875726)": 1,
+    "color(srgb 1 0.950397 0.96089)": 1,
+    "color(srgb 0.918129 1 0.967251)": 1,
+    "color(srgb 1 0.762582 0.812805)": 1,
+    "color(srgb 1 0.51758 0.61963)": 1,
+    "color(srgb 0.807947 1 0.923179)": 1,
+    "color(srgb 1 0.918818 0.935992)": 1,
+    "color(srgb 1 0.833246 0.868521)": 1,
+    "color(srgb 1 0.864554 0.893206)": 1,
+    "color(srgb 0.763441 1 0.905376)": 1,
+    "color(srgb 1 0.716609 0.776557)": 1,
+    "color(srgb 1 0.604348 0.688043)": 1,
+    "color(srgb 1 0.645984 0.720872)": 1,
+    "color(srgb 1 0.673117 0.742265)": 1,
+    "color(srgb 1 0.856199 0.886618)": 1,
+    "color(srgb 0.409091 1 0.763636)": 1,
+    "color(srgb 1 0.721035 0.780047)": 1,
+    "color(srgb 1 0.72596 0.78393)": 1,
+    "color(srgb 1 0.970653 0.976861)": 1,
+    "color(srgb 1 0.819518 0.857697)": 1,
+    "color(srgb 1 0.67528 0.743971)": 1,
+    "color(srgb 1 0.84649 0.878963)": 1,
+    "rgb(16, 18, 20)": 1
+   },
+   "radii": {
+    "6px": 43,
+    "10px": 5
+   },
+   "backgrounds": {
+    "rgb(15, 16, 19)": 58,
+    "rgba(255, 204, 51, 0.1)": 38,
+    "rgba(20, 162, 210, 0.08)": 37,
+    "rgb(19, 21, 24)": 20,
+    "rgb(24, 24, 24)": 11,
+    "rgb(26, 29, 33)": 9,
+    "rgb(29, 29, 29)": 8,
+    "rgba(20, 162, 210, 0.16)": 8,
+    "rgb(4, 4, 4)": 3,
+    "rgb(24, 26, 30)": 2,
+    "rgb(32, 32, 32)": 2,
+    "rgb(0, 32, 91)": 2,
+    "rgb(13, 14, 16)": 1,
+    "rgb(27, 27, 27)": 1,
+    "rgba(7, 170, 226, 0.1)": 1,
+    "rgba(255, 205, 86, 0.1)": 1,
+    "rgb(20, 162, 210)": 1,
+    "rgb(255, 255, 255)": 1
+   },
+   "borders": {
+    "rgb(170, 170, 170)": 37,
+    "rgb(80, 80, 80)": 22,
+    "rgb(20, 162, 210)": 2,
+    "rgb(46, 52, 59)": 1,
+    "rgb(60, 67, 76)": 1,
+    "rgb(7, 170, 226)": 1,
+    "rgb(255, 205, 86)": 1,
+    "rgba(255, 204, 51, 0.3)": 1
+   }
+  },
+  "areas": {
+   "C01": {
+    "rect": [
+     30,
+     74,
+     1140,
+     32
+    ],
+    "nodes": 13,
+    "controls": 2,
+    "controlKinds": {
+     "input": 1,
+     "button": 1
+    },
+    "textNodes": 4,
+    "chars": 30,
+    "type": {
+     "12/400": 2,
+     "20/700": 1,
+     "12/700": 1
+    },
+    "colors": {
+     "rgb(170, 170, 170)": 3,
+     "rgb(20, 162, 210)": 1
+    },
+    "radii": {
+     "10px": 1,
+     "6px": 1
+    },
+    "sampleText": [
+     "WiGO",
+     "What Is Going On",
+     "VAN",
+     "Clear"
+    ]
+   },
+   "C02 C03": {
+    "rect": [
+     30,
+     112,
+     567,
+     75
+    ],
+    "nodes": 18,
+    "controls": 0,
+    "controlKinds": {},
+    "textNodes": 8,
+    "chars": 53,
+    "type": {
+     "11/400": 6,
+     "16/700": 1,
+     "16/400": 1
+    },
+    "colors": {
+     "rgb(204, 204, 204)": 5,
+     "rgb(170, 170, 170)": 3
+    },
+    "radii": {
+     "10px": 2,
+     "6px": 1
+    },
+    "sampleText": [
+     "Vancouver Canucks",
+     "Fictional",
+     "Alex",
+     "Age",
+     "194 lbs"
+    ]
+   },
+   "C04": {
+    "rect": [
+     30,
+     193,
+     567,
+     61
+    ],
+    "nodes": 20,
+    "controls": 0,
+    "controlKinds": {},
+    "textNodes": 14,
+    "chars": 87,
+    "type": {
+     "11/400": 8,
+     "16/700": 4,
+     "12/700": 1,
+     "12/400": 1
+    },
+    "colors": {
+     "rgb(170, 170, 170)": 10,
+     "rgb(204, 204, 204)": 4
+    },
+    "radii": {
+     "6px": 1
+    },
+    "sampleText": [
+     "Season production",
+     "Points",
+     "Goals",
+     "Assists",
+     "SOG"
+    ]
+   },
+   "C05": {
+    "rect": [
+     603,
+     264,
+     567,
+     101
+    ],
+    "nodes": 59,
+    "controls": 1,
+    "controlKinds": {
+     "button": 1
+    },
+    "textNodes": 38,
+    "chars": 146,
+    "type": {
+     "11/700": 36,
+     "12/700": 1,
+     "14/400": 1
+    },
+    "colors": {
+     "rgb(204, 204, 204)": 37,
+     "rgb(170, 170, 170)": 1
+    },
+    "radii": {
+     "6px": 1
+    },
+    "sampleText": [
+     "Per-game / 84-game pace",
+     "Metric",
+     "Per/GP",
+     "Pace/84",
+     "PTS",
+     "SOG",
+     "PPP",
+     "HIT",
+     "BLK",
+     "PIM"
+    ]
+   },
+   "C06": {
+    "rect": [
+     603,
+     112,
+     567,
+     146
+    ],
+    "nodes": 49,
+    "controls": 0,
+    "controlKinds": {},
+    "textNodes": 33,
+    "chars": 253,
+    "type": {
+     "11/400": 30,
+     "11/700": 3
+    },
+    "colors": {
+     "rgb(204, 204, 204)": 32,
+     "rgb(170, 170, 170)": 1
+    },
+    "radii": {
+     "6px": 1,
+     "10px": 1
+    },
+    "sampleText": [
+     "Date",
+     "Opponent",
+     "Details",
+     "Fri, Mar 13",
+     "vs. SEA",
+     "Sun, Mar 15",
+     "@ LAK",
+     "Wed, Mar 18",
+     "vs. ANA",
+     "Fri, Mar 20",
+     "@ SJS",
+     "Sun, Mar 22",
+     "vs. VGK",
+     "Tue, Mar 24"
+    ]
+   },
+   "C07": {
+    "rect": [
+     30,
+     655,
+     567,
+     142
+    ],
+    "nodes": 41,
+    "controls": 1,
+    "controlKinds": {
+     "button": 1
+    },
+    "textNodes": 23,
+    "chars": 104,
+    "type": {
+     "11/400": 9,
+     "11/700": 9,
+     "12/700": 4,
+     "14/400": 1
+    },
+    "colors": {
+     "rgb(170, 170, 170)": 13,
+     "rgb(204, 204, 204)": 1,
+     "rgb(255, 230, 0)": 1,
+     "rgb(157, 255, 10)": 1,
+     "rgb(179, 255, 8)": 1,
+     "rgb(255, 236, 0)": 1,
+     "rgb(172, 255, 8)": 1,
+     "rgb(240, 255, 1)": 1,
+     "rgb(255, 242, 0)": 1,
+     "rgb(188, 255, 7)": 1,
+     "rgb(255, 210, 0)": 1
+    },
+    "radii": {
+     "6px": 15
+    },
+    "sampleText": [
+     "Player ratings",
+     "Offense",
+     "All",
+     "Even",
+     "Overall",
+     "Special",
+     "Defense"
+    ]
+   },
+   "C08 C09 C10 C11": {
+    "rect": [
+     603,
+     655,
+     567,
+     142
+    ],
+    "nodes": 28,
+    "controls": 1,
+    "controlKinds": {
+     "button": 1
+    },
+    "textNodes": 15,
+    "chars": 250,
+    "type": {
+     "11/700": 8,
+     "11/400": 5,
+     "12/700": 1,
+     "14/400": 1
+    },
+    "colors": {
+     "rgb(170, 170, 170)": 6,
+     "rgb(204, 204, 204)": 5,
+     "rgb(124, 255, 203)": 3,
+     "rgb(255, 204, 51)": 1
+    },
+    "radii": {
+     "6px": 2
+    },
+    "sampleText": [
+     "VAN performance drivers",
+     "Chance Generation",
+     "2.41 xGF/GP",
+     "strength",
+     "pct",
+     "Chance Suppression",
+     "2.40 xGA/GP",
+     "neutral",
+     "Finishing",
+     "65.7% GF/xGF",
+     "Special Teams",
+     "Regular season · 5v5:",
+     "Apr 4",
+     "Special teams through:"
+    ]
+   },
+   "C14": {
+    "rect": [
+     30,
+     264,
+     567,
+     220
+    ],
+    "nodes": 31,
+    "controls": 0,
+    "controlKinds": {},
+    "textNodes": 17,
+    "chars": 94,
+    "type": {
+     "12/400": 11,
+     "12/700": 6
+    },
+    "colors": {
+     "rgb(170, 170, 170)": 6,
+     "rgb(255, 255, 255)": 6,
+     "rgb(153, 153, 153)": 2,
+     "rgb(255, 99, 132)": 1,
+     "rgb(20, 162, 210)": 1,
+     "rgb(75, 192, 192)": 1
+    },
+    "radii": {
+     "6px": 1
+    },
+    "sampleText": [
+     "Point consistency",
+     "0 Pts",
+     "2 Pts",
+     "3 Pts",
+     "Cardio"
+    ]
+   },
+   "C15": {
+    "rect": [
+     30,
+     803,
+     1140,
+     320
+    ],
+    "nodes": 8,
+    "controls": 0,
+    "controlKinds": {},
+    "textNodes": 3,
+    "chars": 76,
+    "type": {
+     "12/700": 1,
+     "12/400": 1,
+     "11/400": 1
+    },
+    "colors": {
+     "rgb(170, 170, 170)": 3
+    },
+    "radii": {
+     "6px": 1
+    },
+    "sampleText": [
+     "Category percentiles",
+     "All skaters ·",
+     "skaters with"
+    ]
+   },
+   "C12": {
+    "rect": [
+     30,
+     1129,
+     1140,
+     194
+    ],
+    "nodes": 402,
+    "controls": 38,
+    "controlKinds": {
+     "select": 2,
+     "button": 36
+    },
+    "textNodes": 342,
+    "chars": 1291,
+    "type": {
+     "11/400": 297,
+     "11/700": 42,
+     "12/700": 2,
+     "14/400": 1
+    },
+    "colors": {
+     "rgb(255, 255, 255)": 260,
+     "rgb(170, 170, 170)": 39,
+     "color(srgb 0 1 0.6)": 7,
+     "rgb(204, 204, 204)": 4,
+     "rgb(20, 162, 210)": 3,
+     "rgb(255, 204, 51)": 2,
+     "color(srgb 0.837045 1 0.934818)": 1,
+     "color(srgb 1 0.514187 0.616955)": 1,
+     "color(srgb 0.32 1 0.728)": 1,
+     "color(srgb 1 0.988384 0.990841)": 1,
+     "color(srgb 1 0.61909 0.699667)": 1,
+     "color(srgb 1 0.842384 0.875726)": 1,
+     "color(srgb 1 0.950397 0.96089)": 1,
+     "color(srgb 0.918129 1 0.967251)": 1,
+     "color(srgb 1 0.762582 0.812805)": 1,
+     "color(srgb 1 0.51758 0.61963)": 1,
+     "color(srgb 0.807947 1 0.923179)": 1,
+     "color(srgb 1 0.918818 0.935992)": 1,
+     "color(srgb 1 0.833246 0.868521)": 1,
+     "color(srgb 1 0.864554 0.893206)": 1,
+     "color(srgb 0.763441 1 0.905376)": 1,
+     "color(srgb 1 0.716609 0.776557)": 1,
+     "color(srgb 1 0.604348 0.688043)": 1,
+     "color(srgb 1 0.645984 0.720872)": 1,
+     "color(srgb 1 0.673117 0.742265)": 1,
+     "color(srgb 1 0.856199 0.886618)": 1,
+     "color(srgb 0.409091 1 0.763636)": 1,
+     "color(srgb 1 0.721035 0.780047)": 1,
+     "color(srgb 1 0.72596 0.78393)": 1,
+     "color(srgb 1 0.970653 0.976861)": 1,
+     "color(srgb 1 0.819518 0.857697)": 1,
+     "color(srgb 1 0.67528 0.743971)": 1,
+     "color(srgb 1 0.84649 0.878963)": 1
+    },
+    "radii": {
+     "6px": 3,
+     "10px": 1
+    },
+    "sampleText": [
+     "Compare",
+     "DIFF: % change · counts per game",
+     "Totals",
+     "Per 60",
+     "On-ice",
+     "Period",
+     "ATOI",
+     "PTS",
+     "SOG",
+     "PPP",
+     "PPG",
+     "PPA",
+     "PPTOI",
+     "HIT"
+    ]
+   },
+   "C13": {
+    "rect": [
+     30,
+     1329,
+     567,
+     240
+    ],
+    "nodes": 64,
+    "controls": 7,
+    "controlKinds": {
+     "button": 7
+    },
+    "textNodes": 22,
+    "chars": 149,
+    "type": {
+     "11/400": 20,
+     "12/700": 1,
+     "11/700": 1
+    },
+    "colors": {
+     "rgb(255, 255, 255)": 14,
+     "rgb(170, 170, 170)": 8
+    },
+    "radii": {
+     "6px": 1
+    },
+    "sampleText": [
+     "SOG/60",
+     "game log",
+     "games",
+     "STD",
+     "Game mean: 2.13"
+    ]
+   },
+   "C16": {
+    "rect": [
+     603,
+     1329,
+     567,
+     240
+    ],
+    "nodes": 12,
+    "controls": 3,
+    "controlKinds": {
+     "button": 3
+    },
+    "textNodes": 7,
+    "chars": 44,
+    "type": {
+     "12/400": 3,
+     "11/400": 3,
+     "12/700": 1
+    },
+    "colors": {
+     "rgb(204, 204, 204)": 3,
+     "rgb(170, 170, 170)": 1,
+     "rgb(255, 255, 255)": 1,
+     "rgb(20, 162, 210)": 1,
+     "rgb(255, 159, 64)": 1
+    },
+    "radii": {
+     "6px": 4
+    },
+    "sampleText": [
+     "Time on ice",
+     "· Avg (min)",
+     "━Total",
+     "TOI",
+     "PP TOI %"
+    ]
+   },
+   "C17": {
+    "rect": [
+     30,
+     1575,
+     567,
+     240
+    ],
+    "nodes": 12,
+    "controls": 1,
+    "controlKinds": {
+     "button": 1
+    },
+    "textNodes": 7,
+    "chars": 36,
+    "type": {
+     "12/400": 5,
+     "12/700": 1,
+     "11/400": 1
+    },
+    "colors": {
+     "rgb(170, 170, 170)": 1,
+     "rgb(255, 255, 255)": 1,
+     "rgb(20, 162, 210)": 1,
+     "rgb(75, 192, 192)": 1,
+     "rgb(255, 159, 64)": 1,
+     "rgb(255, 99, 132)": 1,
+     "rgb(204, 204, 204)": 1
+    },
+    "radii": {
+     "6px": 2
+    },
+    "sampleText": [
+     "Points / game",
+     "▮Pts",
+     "┄Avg"
+    ]
+   },
+   "C18": {
+    "rect": [
+     603,
+     1575,
+     567,
+     240
+    ],
+    "nodes": 14,
+    "controls": 2,
+    "controlKinds": {
+     "button": 2
+    },
+    "textNodes": 7,
+    "chars": 31,
+    "type": {
+     "12/400": 4,
+     "12/700": 1,
+     "11/400": 1,
+     "14/400": 1
+    },
+    "colors": {
+     "rgb(204, 204, 204)": 2,
+     "rgb(170, 170, 170)": 1,
+     "rgb(255, 255, 255)": 1,
+     "rgb(20, 162, 210)": 1,
+     "rgb(75, 192, 192)": 1,
+     "rgb(255, 159, 64)": 1
+    },
+    "radii": {
+     "6px": 3
+    },
+    "sampleText": [
+     "Game score",
+     "▮Score"
+    ]
+   },
+   "C19": {
+    "rect": [
+     30,
+     490,
+     1140,
+     158
+    ],
+    "nodes": 101,
+    "controls": 5,
+    "controlKinds": {
+     "button": 4,
+     "input": 1
+    },
+    "textNodes": 58,
+    "chars": 297,
+    "type": {
+     "11/400": 38,
+     "11/700": 19,
+     "12/700": 1
+    },
+    "colors": {
+     "rgb(170, 170, 170)": 22,
+     "rgb(20, 162, 210)": 18,
+     "rgb(255, 255, 255)": 16,
+     "rgb(16, 18, 20)": 1,
+     "rgb(255, 204, 51)": 1
+    },
+    "radii": {
+     "6px": 6
+    },
+    "sampleText": [
+     "Rate stat percentiles",
+     "Min GP:",
+     "Player GP:",
+     "2024–25 values and cohort, not 2025–26",
+     "TOI/GP",
+     "Pts/60",
+     "SOG/60",
+     "iSCF/60",
+     "iHDCF/60",
+     "ixG/60",
+     "iCF/60",
+     "SCF/60",
+     "HDCF/60",
+     "SCF%"
+    ]
+   }
+  }
+ }
+}

@@ -1,0 +1,212 @@
+{
+  "id": "CODEX-PLAYER-CARDS-RESEARCH10-20261027",
+  "at": "2026-10-27T01:17:16.745981+00:00",
+  "owner_thread": "01a16ec2-f81c-717b-8961-8c3832fdc00f",
+  "source": "Scout exact reviewedoptionalplayerResearchSnapshot integration grant;15offlinefixedfixtures+manifest;no current/historical data mixing;preserve09",
+  "source_paths": [
+    "web/lib/player-cards/researchSnapshot.types.ts",
+    "web/lib/player-cards/researchSnapshot.ts",
+    "web/lib/player-cards/researchSnapshot.test.ts",
+    "web/lib/player-cards/researchExamples.ts",
+    "web/lib/player-cards/researchFixtures.server.ts",
+    "web/lib/player-cards/researchFixtures.server.test.ts",
+    "web/lib/player-cards/researchExport.ts",
+    "web/components/player-cards/ResearchCardEvidence.tsx",
+    "web/components/player-cards/ResearchPlayerCard.tsx",
+    "web/components/player-cards/ResearchPlayerCardStudio.tsx",
+    "web/components/player-cards/ResearchPlayerCardStudio.test.tsx",
+    "web/pages/api/v1/player-cards/research.ts",
+    "web/lib/player-cards/research-fixtures/MANIFEST.json",
+    "web/lib/player-cards/research-fixtures/matthews_pending_hot.json",
+    "web/lib/player-cards/research-fixtures/matthews_confirmed_hot.json",
+    "web/lib/player-cards/research-fixtures/matthews_exited_hot.json",
+    "web/lib/player-cards/research-fixtures/matthews_confirmed_cold.json",
+    "web/lib/player-cards/research-fixtures/matthews_apr18.json",
+    "web/lib/player-cards/research-fixtures/perbix_low_shot_apr18.json",
+    "web/lib/player-cards/research-fixtures/luke_hughes_sparse_streak_oct31.json",
+    "web/lib/player-cards/research-fixtures/necas_cohort_process_apr18.json",
+    "web/lib/player-cards/research-fixtures/gallagher_imputed_process_apr18.json",
+    "web/lib/player-cards/research-fixtures/sparse_reference.json",
+    "web/lib/player-cards/research-fixtures/zero_reference_variance.json",
+    "web/lib/player-cards/research-fixtures/missing_GS_no_two_track_composite.json",
+    "web/lib/player-cards/research-fixtures/nonappearance_is_censor_not_zero.json",
+    "web/lib/player-cards/research-fixtures/zero_shots_broad_profile_retained.json",
+    "web/lib/player-cards/research-fixtures/no_current_history.json",
+    "web/lib/player-cards/currentNhl.ts",
+    "web/components/player-cards/CurrentPlayerCardStudio.tsx",
+    "web/lib/player-cards/currentNhlExport.ts",
+    "web/components/player-cards/CurrentPlayerCardStudio.test.tsx",
+    "web/pages/social-share/player-cards.tsx"
+  ],
+  "baseline": [
+    {
+      "path": "web/lib/player-cards/researchSnapshot.types.ts",
+      "sha256": null,
+      "absent": true
+    },
+    {
+      "path": "web/lib/player-cards/researchSnapshot.ts",
+      "sha256": null,
+      "absent": true
+    },
+    {
+      "path": "web/lib/player-cards/researchSnapshot.test.ts",
+      "sha256": null,
+      "absent": true
+    },
+    {
+      "path": "web/lib/player-cards/researchExamples.ts",
+      "sha256": null,
+      "absent": true
+    },
+    {
+      "path": "web/lib/player-cards/researchFixtures.server.ts",
+      "sha256": null,
+      "absent": true
+    },
+    {
+      "path": "web/lib/player-cards/researchFixtures.server.test.ts",
+      "sha256": null,
+      "absent": true
+    },
+    {
+      "path": "web/lib/player-cards/researchExport.ts",
+      "sha256": null,
+      "absent": true
+    },
+    {
+      "path": "web/components/player-cards/ResearchCardEvidence.tsx",
+      "sha256": null,
+      "absent": true
+    },
+    {
+      "path": "web/components/player-cards/ResearchPlayerCard.tsx",
+      "sha256": null,
+      "absent": true
+    },
+    {
+      "path": "web/components/player-cards/ResearchPlayerCardStudio.tsx",
+      "sha256": null,
+      "absent": true
+    },
+    {
+      "path": "web/components/player-cards/ResearchPlayerCardStudio.test.tsx",
+      "sha256": null,
+      "absent": true
+    },
+    {
+      "path": "web/pages/api/v1/player-cards/research.ts",
+      "sha256": null,
+      "absent": true
+    },
+    {
+      "path": "web/lib/player-cards/research-fixtures/MANIFEST.json",
+      "sha256": null,
+      "absent": true
+    },
+    {
+      "path": "web/lib/player-cards/research-fixtures/matthews_pending_hot.json",
+      "sha256": null,
+      "absent": true
+    },
+    {
+      "path": "web/lib/player-cards/research-fixtures/matthews_confirmed_hot.json",
+      "sha256": null,
+      "absent": true
+    },
+    {
+      "path": "web/lib/player-cards/research-fixtures/matthews_exited_hot.json",
+      "sha256": null,
+      "absent": true
+    },
+    {
+      "path": "web/lib/player-cards/research-fixtures/matthews_confirmed_cold.json",
+      "sha256": null,
+      "absent": true
+    },
+    {
+      "path": "web/lib/player-cards/research-fixtures/matthews_apr18.json",
+      "sha256": null,
+      "absent": true
+    },
+    {
+      "path": "web/lib/player-cards/research-fixtures/perbix_low_shot_apr18.json",
+      "sha256": null,
+      "absent": true
+    },
+    {
+      "path": "web/lib/player-cards/research-fixtures/luke_hughes_sparse_streak_oct31.json",
+      "sha256": null,
+      "absent": true
+    },
+    {
+      "path": "web/lib/player-cards/research-fixtures/necas_cohort_process_apr18.json",
+      "sha256": null,
+      "absent": true
+    },
+    {
+      "path": "web/lib/player-cards/research-fixtures/gallagher_imputed_process_apr18.json",
+      "sha256": null,
+      "absent": true
+    },
+    {
+      "path": "web/lib/player-cards/research-fixtures/sparse_reference.json",
+      "sha256": null,
+      "absent": true
+    },
+    {
+      "path": "web/lib/player-cards/research-fixtures/zero_reference_variance.json",
+      "sha256": null,
+      "absent": true
+    },
+    {
+      "path": "web/lib/player-cards/research-fixtures/missing_GS_no_two_track_composite.json",
+      "sha256": null,
+      "absent": true
+    },
+    {
+      "path": "web/lib/player-cards/research-fixtures/nonappearance_is_censor_not_zero.json",
+      "sha256": null,
+      "absent": true
+    },
+    {
+      "path": "web/lib/player-cards/research-fixtures/zero_shots_broad_profile_retained.json",
+      "sha256": null,
+      "absent": true
+    },
+    {
+      "path": "web/lib/player-cards/research-fixtures/no_current_history.json",
+      "sha256": null,
+      "absent": true
+    },
+    {
+      "path": "web/lib/player-cards/currentNhl.ts",
+      "sha256": "e8b083955320ef1b4cfef62ac60572a530e00e6dadc77159c4d8e6b66817a1e8",
+      "absent": false
+    },
+    {
+      "path": "web/components/player-cards/CurrentPlayerCardStudio.tsx",
+      "sha256": "de551a59d5e83f594e2848176dd5c4b872069af91cf18174ef9c811774355e40",
+      "absent": false
+    },
+    {
+      "path": "web/lib/player-cards/currentNhlExport.ts",
+      "sha256": "d8533b01c5886f229606d198697ece97ed208fe4d015ff6aafe3da6bb5aab653",
+      "absent": false
+    },
+    {
+      "path": "web/components/player-cards/CurrentPlayerCardStudio.test.tsx",
+      "sha256": "0cb960b00336d932eedddf23d1c0f314c1d74c2b4a1124c84e7b480d4a18c4de",
+      "absent": false
+    },
+    {
+      "path": "web/pages/social-share/player-cards.tsx",
+      "sha256": "12c4f9cb54a1ce275ed65be3aa3120da0e4e20e87741993d759601b9a955a78b",
+      "absent": false
+    }
+  ],
+  "status": "PAUSED_SCOPE_CORRECTION;33proposedfilespreservedunderartifactcandidate-source;5existingintegrationhunksdetached;28newfilesreversiblyrelocated;NOTactiveCard/BLSHUI",
+  "artifact_root": "tasks/artifacts/player-cards-2026-10-27/research-integration-10",
+  "limits": "No source/detector/scorerruns/recalculation/currentorreservedreads/Git/deploy/deletion/framework;staticqualifiedfixturesonly, no fulltimeline;auth/ClaudeTuesdayunchanged",
+  "pausedAt": "2026-10-27T01:30:04.413615+00:00"
+}

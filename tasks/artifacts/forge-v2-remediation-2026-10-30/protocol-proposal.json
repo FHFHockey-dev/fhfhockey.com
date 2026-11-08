@@ -1,0 +1,260 @@
+{
+  "schemaVersion": "forge-v2-protocol-proposal-v1",
+  "status": "PROPOSAL_NOT_FROZEN_NOT_AUTHORIZATION",
+  "date": "2026-10-30",
+  "authority": {
+    "approvedFacts": "Canonical PRD product definitions only; numerical choices below are proposals, not empirically justified or accepted thresholds.",
+    "independentReview": null,
+    "custodyApproval": null,
+    "frozenProtocolHash": null,
+    "candidateHashes": "Chef must populate after final local candidate pinning; model/data/calibration hashes remain absent until authorized fitting.",
+    "runtime": "Dispatch requested Astra medium; independent runtime attestation unavailable."
+  },
+  "freezePrerequisites": [
+    "Source owner signs source manifest and intended-use rights; original byte hashes, receipt/publication clocks, corrections and population completeness verified.",
+    "Custodian supplies metadata-only dataset hashes, exact UTC boundaries, allowed purposes, all prior actors/access/trials and target-game allocation. No labels opened for registration.",
+    "Independent reviewer evaluates development-only support/power, numerical thresholds and dependence implementation, records exact protocol/code/input hashes and disposition.",
+    "Before final labels: freeze candidate, all transforms, profile IDs, contiguous H1\u2013Hk, cohorts, evaluator, calibration and stopping budget; one-time final-access receipt with named custodian."
+  ],
+  "allocation": {
+    "status": "EXACT_DATES_AND_DATASET_HASHES_UNAVAILABLE",
+    "holds": [
+      "2024\u201325 excluded",
+      "2025\u201326 reserved; no v2 authorization inferred from BLSH leases",
+      "2022\u201324 development history is not automatically v2-admissible"
+    ],
+    "requiredManifestFields": [
+      "datasetId",
+      "rawCaptureHashes",
+      "parsedManifestHash",
+      "owner",
+      "rightsEvidence",
+      "intendedUse",
+      "exposureLogHash",
+      "allowedPurpose",
+      "startUtcInclusive",
+      "endUtcExclusive",
+      "gameIdsHash",
+      "rowCount",
+      "gameCount",
+      "playerCount",
+      "slateCount",
+      "custodian",
+      "labelAccessPolicy",
+      "approvalId"
+    ],
+    "sequence": "Training -> development -> calibration -> untouched final -> genuinely future prospective; strictly chronological, disjoint whole-game allocations; exact intervals must be assigned before fitting. All players, revisions, horizons, profiles and outcomes for one NHL game remain together. No random row split.",
+    "boundaryRule": "Assign by authoritative target-game start; outcomes must be received before partition end and fitting. Purge games crossing a boundary or with unresolved correction clocks; log counts. Freeze a 14-calendar-day embargo between fitting/calibration and final evaluation, subject to development-only dependence review.",
+    "leakage": "Training-only feature transforms. Calibration fits only after mean recipe selection. No final labels/features used to tune. Retrospective predeclared-recipe replay remains reconstruction; fittedAt/availableAt cannot be backdated."
+  },
+  "candidateBudget": {
+    "status": "PROPOSED_NOT_EXECUTED",
+    "maxMeanRecipes": 3,
+    "recipes": [
+      {
+        "id": "kernel-bw-0.5",
+        "algorithm": "official-appearance-kernel-means-v1",
+        "bandwidth": 0.5,
+        "minimumSupport": 100,
+        "featureNames": [
+          "homeIndicator",
+          "restDaysCapped7",
+          "opponentPriorSogAgainstRate",
+          "ownPriorToiPerAppearance",
+          "ownPriorPpToiPerAppearance"
+        ]
+      },
+      {
+        "id": "kernel-bw-1.0",
+        "algorithm": "official-appearance-kernel-means-v1",
+        "bandwidth": 1.0,
+        "minimumSupport": 100,
+        "featureNames": [
+          "homeIndicator",
+          "restDaysCapped7",
+          "opponentPriorSogAgainstRate",
+          "ownPriorToiPerAppearance",
+          "ownPriorPpToiPerAppearance"
+        ]
+      },
+      {
+        "id": "kernel-bw-2.0",
+        "algorithm": "official-appearance-kernel-means-v1",
+        "bandwidth": 2.0,
+        "minimumSupport": 100,
+        "featureNames": [
+          "homeIndicator",
+          "restDaysCapped7",
+          "opponentPriorSogAgainstRate",
+          "ownPriorToiPerAppearance",
+          "ownPriorPpToiPerAppearance"
+        ]
+      }
+    ],
+    "transforms": "Each feature is train-only centered/scaled by mean and sample SD; rest is capped at 7 before scaling, zero SD uses scale 1. Exact feature definitions, source mappings, admissible history window and transform artifact hashes must be reviewed before these recipes are executable. Opponent/role values require cutoff-qualified receipts; missing is unavailable. No feature search.",
+    "selection": "Choose minimum paired default-FP development MSE over common eligible observations for all three recipes and both baselines; ties within 1e-12 select ascending recipe ID. Report per-recipe requested/missing support; sparse common intersection fails rather than selecting on favorable coverage. No retraining on development after selection.",
+    "participation": "One appearance-kernel-bin-calibration-v1 recipe, same fixed feature list, bandwidth 1.0, minimumSupport 100; 10 equal-width [0,1] bins, minimum 100 calibration opportunities per bin. Unsupported bins unavailable. No participation hyperparameter search.",
+    "intervals": "One profile-tail-padding-v1 calibration procedure per predeclared target/horizon/cohort/profile; central 0.5 and 0.9 only; empirical-kernel-joint-v1 whole-vector outcomes. No calibration recipe search.",
+    "maxSelectionRounds": 1,
+    "maxFinalEvaluations": 1,
+    "maxProspectiveWindows": 1,
+    "failureRule": "All failures/trials retained. No final-data retuning or same-holdout retry; a corrected evaluator needs independent invalidity review and fresh untouched evidence for new scientific claims."
+  },
+  "baselinesAndLoss": {
+    "lastFive": "Arithmetic mean of each category over last five verified official appearances with original outcomes available by selected cutoff; if fewer than five, unavailable. Include legitimate zero-minute credited appearances. Missing category in any of the five leaves that category unavailable, not a substitute older slot.",
+    "seasonRate": "Arithmetic per-official-appearance category mean over all verified appearances in current season available by selected cutoff; no appearances or incomplete required category history => unavailable.",
+    "matching": "Same selected cutoff, player/game, conditioning, target/profile, finality/correction version and evidence class. Default scoring {G:3,A:2,PPP:1,SOG:0.2,HIT:0.2,BLK:0.25,PIM:0}.",
+    "meanSelectionLoss": "Squared error of conditional default FP on official appearances; MSE primary, MAE diagnostic only. Participation uses every independently captured occurred-game opportunity with unambiguous label, not just successful predictions.",
+    "participationBaseline": "Training-only overall official-appearance frequency and player expanding appearance frequency over eligible occurred-game opportunities; fewer than 20 prior player opportunities => that baseline unavailable. Report paired denominators separately.",
+    "intervalScores": "For central 1-alpha interval [l,u], score=(u-l)+(2/alpha)*(l-y)*I(y<l)+(2/alpha)*(y-u)*I(y>u). Report each level plus their equal-weight average; score joint weighted outcomes for FP, never sum marginal quantiles."
+  },
+  "proposedNumericalGates": {
+    "warning": "These conservative starting values lack empirical development/power justification. They cannot qualify any model until independently justified and frozen before final labels.",
+    "support": {
+      "perHorizonCohortTargetProfile": {
+        "officialAppearances": 1000,
+        "distinctGames": 100,
+        "distinctPlayers": 100,
+        "distinctSlates": 30
+      },
+      "participationPerHorizonCohort": {
+        "opportunities": 2000,
+        "nonappearances": 100,
+        "appearances": 1000
+      },
+      "calibrationPerCell": 1000,
+      "kernelEffectiveSampleSizeMinimum": 100,
+      "effectiveSampleSizeFormula": "(sum w)^2 / sum(w^2); count-based support in current code alone does not enforce this proposed gate."
+    },
+    "meanAccuracy": "Default-FP MSE ratio versus EACH baseline <=0.98; multiplicity-adjusted one-sided 95% upper bound on paired MSE difference strictly <0. Per contributing category/horizon/cohort MSE ratio <=1.05 and adjusted upper ratio bound <=1.10 against each baseline. Zero baseline MSE: candidate must also be zero, cannot establish improvement against that baseline.",
+    "intervals": "Inclusive discrete interval coverage: 50% in [0.45,0.60], 90% in [0.87,0.97]; dependence-aware simultaneous 95% lower bound >=0.40 and >=0.84 respectively. Both levels required in every claimed cell. Discrete overcoverage outside bounds fails this proposal; no post-final widening of tolerance. Average interval score ratio <=1.05 versus matched baseline predictive intervals, upper adjusted ratio bound <=1.10. Mean width ratio <=1.25; baseline predictive intervals require their own predeclared calibration on identical allowed calibration data.",
+    "participation": "10 fixed bins; ECE <=0.03, max absolute supported-bin error <=0.08; Brier and log loss <= each matched baseline, adjusted upper loss ratio <=1.05. Log loss clips probabilities only for diagnostic arithmetic at [1e-6,1-1e-6], recording clip counts; issued probabilities unmodified.",
+    "missingness": "At least 95% selected-vintage coverage among independently captured eligible opportunities per claimed H/cohort; at least 95% contributing-category/joint/participation availability among selected eligible cases; both-baseline paired coverage at least 90% of gradeable official appearances; ambiguous labels <=1% of occurred-game opportunities; 100% known exclusions and missing reasons reported. No conditional-accuracy credit for excluded populations.",
+    "integrity": "Zero unresolved identity/hash/clock/provenance/rights/qualification conflicts in claimed scope. No fabricated zero values or backfilled prospective receipts."
+  },
+  "dependence": {
+    "unit": "Keep all player/game horizons, profiles, revisions and corrections linked; resampling never treats vintages as independent observations. Aggregate cell loss differences per player/game before uncertainty calculations.",
+    "proposedMethod": "2000 seeded moving-calendar-block bootstrap replicates, 14-day blocks containing complete NHL slates and all game/player records; sensitivity 28-day blocks. Separately compute two-way player and game cluster robust loss-difference intervals to address repeated player effects and within-game cross-player effects. Use the conservative envelope across methods, not the most favorable interval. Effective support is distinct clusters as well as raw counts.",
+    "multiplicity": "Predeclare all claimed targets/horizons/cohorts/profiles and both baseline comparisons; simultaneous max-statistic bootstrap bounds or Holm-adjusted one-sided tests across the full family at alpha 0.05. Exact implementation must be independently validated before freeze.",
+    "limit": "No iid/exchangeability guarantee asserted; insufficient block or cluster support blocks release. Seed proposed 20261030."
+  },
+  "FR26": {
+    "normativeTextVerbatim": "Use the following primary rule, fixed before evaluating results:\n\n1. Track each player/game\u2019s horizon from contemporaneously accepted schedule and affiliation observations. A **horizon episode** is a continuous observed period in which that target has ordinal H.\n2. For each player/game/H, use the **first eligible successfully published vintage in its first observed episode at that horizon**, whether triggered by the daily schedule or a material event.\n3. Select the vintage independently of prediction values, eventual outcomes, or category completeness. Use its same ID across category and scoring evaluations. An unavailable component stays missing at that checkpoint; do not substitute a later revision for that component.\n4. Deduplicate retries. Resolve timestamp ties using the stable issuance sequence and vintage ID.\n5. If no eligible vintage was published during that first episode, record that horizon as missing. Do not fill it from an adjacent horizon, a later episode, a calendar-day proxy, or a reconstruction.\n6. If a game leaves and later re-enters a previously observed horizon after a reschedule, preserve the original primary selection or missing disposition. Later episodes remain available for separately labeled diagnostics.\n7. Keep the as-issued ordinal and schedule revision. Do not relabel old vintages using the final schedule.\n8. If an original selection is later shown to be technically ineligible, append the correction and report the exclusion; do not silently choose a more favorable replacement.\n9. Evaluate baselines at the same selected cutoff and on matched targets, scoring, conditioning, and outcomes.\n10. Count at most one primary observation per player/game/H/target/profile within an evidence class. Model-version filtering stratifies selected observations; it does not trigger reselection.\n\nReport elapsed time to the target start alongside ordinal, plus reschedule and missing-horizon flags. A game may contribute to several horizons, so dependence-aware evaluation must keep its observations together.\n\nThe locked-final pregame benchmark is a **separate series**. It is not synonymous with the primary H1 checkpoint.",
+    "lockedFinal": "Separate latest proven eligible pregame series strictly before applicable accepted scheduled lock and earlier actual-start safeguards; never substitute for primary H1."
+  },
+  "scopeAndAcceptance": {
+    "initialSubsetProposal": "H1 only; all six nonzero default categories G/A/PPP/SOG/HIT/BLK, default FP, official-appearance probability and central 50/90 intervals. Freeze before final evaluation; do not select k after final results.",
+    "fullV2": "All seven G/A/PPP/SOG/HIT/BLK/PIM x every H1..H10 x every claimed cohort; conditional means, joint default and registered supported signed custom profiles, participation, both interval levels, baseline/regression/missingness/integrity gates must all pass. Subset does not complete full v2.",
+    "customProfileProposal": [
+      {
+        "id": "default",
+        "weights": {
+          "G": 3,
+          "A": 2,
+          "PPP": 1,
+          "SOG": 0.2,
+          "HIT": 0.2,
+          "BLK": 0.25,
+          "PIM": 0
+        }
+      },
+      {
+        "id": "signed-pim",
+        "weights": {
+          "G": 3,
+          "A": 2,
+          "PPP": 1,
+          "SOG": 0.2,
+          "HIT": 0.2,
+          "BLK": 0.25,
+          "PIM": -0.5
+        }
+      }
+    ],
+    "profiles": "Hash canonical actual maps and scoring version before freeze; arbitrary user weights may produce labeled re-scored means when contributing means qualify, but interval qualification does not extrapolate from these two profiles.",
+    "cohorts": "Predeclare all-skater, forward, defense; sparse-history (<20 prior official appearances), recent affiliation change (within 14 days) and injury/reserve-at-cutoff are mandatory diagnostics and may not silently disappear. Exact supported cohort predicate hashes and sparse exclusions must be frozen; if claimed, each cohort must satisfy all support/gates.",
+    "reviewEvidence": "Independent untouched and prospective reports separated by evidence class, all failed gates, denominator manifests, immutable model/source/feature/joint-generator/calibration/evaluator/protocol hashes, archive reproduction and official source cases; AC-14/16 scientific acceptance and AC-01..18 implementation receipts remain distinct.",
+    "decisionNow": "NO_QUALIFIED_SUBSET"
+  },
+  "shadowApprovalPackage": {
+    "status": "INCOMPLETE_PROPOSAL_NOT_EXECUTABLE",
+    "requiredPins": {
+      "codeCommit": null,
+      "codeContentManifestSha256": null,
+      "modelSha256": null,
+      "featureTransformSha256": null,
+      "sourceManifestSha256": null,
+      "jointGeneratorSha256": null,
+      "calibrationSha256": null,
+      "protocolSha256": null,
+      "opportunityManifestSha256": null,
+      "environmentProjectId": null,
+      "environmentName": null,
+      "environmentOwner": null,
+      "serviceIdentity": null,
+      "isolatedSchema": null,
+      "privateArtifactPrefix": null,
+      "approvalId": null,
+      "approvedUtcStart": null,
+      "approvedUtcEnd": null
+    },
+    "population": "Owner supplies exact <=20 skater IDs, <=200 unique target-game IDs, team/season IDs and source-capture hashes. Injury/reserve/trade examples only if independently admissible. This small shadow is operational evidence and cannot by itself satisfy scientific minimum support.",
+    "proposedCaps": {
+      "wallCalendarDays": 14,
+      "skaters": 20,
+      "horizonsPerSkater": 10,
+      "uniqueTargetGames": 200,
+      "dailyLogicalIssuances": 2800,
+      "materialLogicalIssuances": 2800,
+      "pregameLogicalIssuances": 4000,
+      "totalLogicalIssuances": 9600,
+      "attemptsPerLogicalIssuance": 2,
+      "totalAttempts": 19200,
+      "concurrency": 1,
+      "batchSize": 1,
+      "maxSecondsPerAttempt": 30,
+      "maxWorkerSecondsPerDay": 3600,
+      "maxWorkerSecondsTotal": 14400,
+      "maxResidentMemoryMiB": 1024,
+      "maxRetainedBytes": 5368709120,
+      "maxIsolatedStoreReadWriteOperations": 60000,
+      "maxRetrievalPages": 500,
+      "maxRowsPerPage": 100,
+      "maxCpuSecondsTotal": 7200,
+      "newProviderRequests": 0,
+      "newDeployments": 0,
+      "publicApplicationRequests": 0
+    },
+    "boundsMeaning": "All are proposed ceilings, not measured sustainable settings. Stop at first bound; missed scopes remain missing. Prefetch existing approved captures only; no new provider acquisition. Any environment installation/deployment is a separate explicit approval. Retain already captured records permanently; storage ceiling stops admission, never deletes history.",
+    "cadence": "Daily by 08:00 America/New_York, material-evidence target <=15 minutes, T-30 attempt; no schedule installed. Owner selects exact future UTC window after protocol/producer clearance.",
+    "productionReadiness": "Current producer fixture/reconstruction restrictions require separately reviewed prospective authority wiring; do not remove fences merely to run this proposal.",
+    "costAndReservations": {
+      "paidServices": null,
+      "currencyBudget": null,
+      "storageRetentionOwner": null,
+      "v1RsoReservedCpuMemoryRequests": null,
+      "measuredCapacityManifest": null,
+      "unknowns": "Real inference, database operation fanout, retention/archive pricing and sustainable CPU/memory unknown; missing values block approval."
+    },
+    "stopConditions": [
+      "Any protected allocation or source-rights conflict",
+      "Source/hash/identity/clock conflict or play-begun observation",
+      "Qualification or candidate dependency drift",
+      "First budget, timeout, storage or reservation breach",
+      "No trustworthy publication readback or actual-start evidence",
+      "Operator stop or approval window expiry"
+    ],
+    "receiptFields": [
+      "approval/hash bindings",
+      "due opportunities including misses",
+      "attempt/publication/commit readback clocks",
+      "source/lock/episode IDs",
+      "actual CPU/memory/wall time/bytes/requests/cost unknowns",
+      "immutable artifact restore checks",
+      "official outcomes/corrections",
+      "scope disable and untouched-history proof",
+      "named independent review disposition"
+    ],
+    "executionPerformed": false
+  }
+}

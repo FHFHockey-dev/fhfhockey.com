@@ -1,0 +1,30 @@
+{
+  "at": "2026-11-01T20:25:49.393045+00:00",
+  "unitCommand": "PYTHONDONTWRITEBYTECODE=1 python3 tasks/artifacts/rso-resume-2026-11-01/release-prep/admission-selection.test.py",
+  "unitTestsPassed": 6,
+  "releaseSubstitutionCheck": {
+    "commit": "295b384da47f2a4665a76d841d3d1aa701912d8c",
+    "exitCode": 1,
+    "result": "expected rejection: wrong candidate tree; released base lacks four fixes"
+  },
+  "manifestCrossChecks": "passed",
+  "hashSelfChecks": "released bases and previous candidate reproduced; four source pins and all 195 closure blobs unchanged",
+  "helperSha256": "9b36971f737297e29c25e8ce7061508c4073fa430debde44059312c0b03455e2",
+  "testSha256": "0cde8176d9c918734a6b4ee38cf200472b32c000716c19a27005d2d2bf7bfd12",
+  "canonicalSourceEditsThisSlice": 0,
+  "gitMutations": 0,
+  "hostedBuilds": 0,
+  "deployments": 0,
+  "providerRequests": 0,
+  "databaseRequests": 0,
+  "applicationRequests": 0,
+  "remoteMetadataReads": {
+    "githubPullRequest": 1,
+    "vercelDeploymentList": 1,
+    "vercelEnvListDenied": 1
+  },
+  "ownerReplyReceived": false,
+  "uncertainActions": false,
+  "pendingToolApproval": false,
+  "fourFileDiffCheck": "passed"
+}

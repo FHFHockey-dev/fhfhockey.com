@@ -1,0 +1,60 @@
+{
+  "recordedAt": "2026-11-01T20:15:56.205932+00:00",
+  "scope": "Named retained legacy metadata/configuration, native publication/store receipts, recovered handoffs; no sealed forecast/outcome payload reads",
+  "sourcePins": [
+    {
+      "path": "/Users/tim/Documents/FHFH-private/forge-rso-completion-20261016-v1/native-publication-execution-v1/receipt.json",
+      "sha256": "7684812fecf2363befaa7105adb8c247cf79879be86ef18f05a6b88bf8205f0b"
+    },
+    {
+      "path": "/Users/tim/Documents/FHFH-private/forge-rso-completion-20261016-v1/candidate-conditional-publication-v2/receipt.json",
+      "sha256": "517996d320c8910218f7313b74f56a04c052a2a7a1c4fe242952b85b4b6f924f"
+    },
+    {
+      "path": "/Users/tim/Documents/FHFH-private/forge-rso-completion-20261016-v1/candidate-participation-publication-v2/receipt.json",
+      "sha256": "05e60bb191ac956dd574bf49db99b027dcfcd19983c633b46cc2c380b070316a"
+    },
+    {
+      "path": "/Users/tim/Documents/FHFH-private/forge-rso-completion-20261016-v1/native-cadence-readonly-reconciliation-execution-v1/receipt.json",
+      "sha256": "cf8975354dcd1ed0866c000525b232abbe30b00a1a8e7890daef081df167d19e"
+    },
+    {
+      "path": "/Users/tim/Documents/FHFH-private/forge-rso-completion-20261016-v1/consumer-live-readback-v1/execution-receipt.json",
+      "sha256": "a058bd7e0a1b7b1f1efbe954abd609e9267f092a2f8fe7e3e845928228f43a1b"
+    },
+    {
+      "path": "/Users/tim/Code/fhfhockey-workspace-recovery-2026-10-24/clean-checkout-2026-10-25-1505/files/tasks/artifacts/forge-task2-2026-10-22/HANDOFF.md",
+      "sha256": "fdb0428fa1eeff6779f45d6a1ad17c3e30cea6156652c2a1a17001504a96f64c"
+    },
+    {
+      "path": "/Users/tim/Code/fhfhockey-workspace-recovery-2026-10-24/clean-checkout-2026-10-25-1505/files/tasks/artifacts/forge-rso-completion-2026-10-15/consumer/readback/receipt.md",
+      "sha256": "24723217b6d67477bc4e9ddd1b4e86c0e080ba2240cd530f17cd0f5ad70f8106"
+    },
+    {
+      "path": "tasks/artifacts/astra-rso-handoff-2026-10-26/BOUNDED-READ-RECEIPT-2026-10-26.md",
+      "sha256": "7d9b6f753c197cbd9514e8a922f675ea821ef85e36174aa5e7a1853735cc5652"
+    }
+  ],
+  "qualificationIdentityFound": false,
+  "historicalFlags": {
+    "receipt": "CLAUDE-20261026-098",
+    "serving": false,
+    "legacyCombinedFlag": "unset",
+    "canaryGameIds": [
+      2026010049
+    ],
+    "currentStateVerified": false
+  },
+  "normalizer": {
+    "files": {
+      "normalize-readbacks.ts": "300257339bfa5db82a659a57f13fd2de8d150ae7fc445c70fd412258c0cdd2e2",
+      "normalize-readbacks.test.ts": "f2a966a7aa4d0b5374296c3787a22fda6e5b3c8f7224e355974ebb62ef53d3fe",
+      "normalizer-tests.log": "611b6c8bce586d3d68616ecb46736f0465a7da00b54ab69fbc9fcd5afa0b7e62"
+    },
+    "testsPassed": 11,
+    "typeChecking": "ts-node with transpileOnly=false, module CommonJS, moduleResolution node",
+    "applicationTransportSha256": "8d92ae6d13e4b10947c189a10fe095a06e25e63974d64b41e2c38303992f3947"
+  },
+  "newLiveTraffic": 0,
+  "candidateChanged": false
+}

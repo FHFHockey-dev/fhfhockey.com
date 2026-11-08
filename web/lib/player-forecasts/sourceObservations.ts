@@ -164,7 +164,9 @@ export function assignmentsFor(row: ForecastLineSourceRow) {
         result[result.length - 1]!.slot_number = event.goalieRole === "backup" ? 2 : 1;
       }
     }
-    return result;
+    // Separate evidence spans can support the same assignment; retain those claims in interpretation.
+    // Include status in the identity so conflicting claims are not silently resolved by deduplication.
+    return [...new Map(result.map((assignment) => [JSON.stringify(assignment), assignment])).values()];
   }
 
   [1, 2, 3, 4].forEach((line) =>

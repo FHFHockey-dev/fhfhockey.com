@@ -1,0 +1,33 @@
+[
+  {
+    "hash": "102d9692c07022f282ba3c3c29aed0636aced6adce77164ddb5545a851bccafa",
+    "reservedNanoUsd": 233000000,
+    "state": "settled",
+    "receipt": {
+      "body": {
+        "id": "synthetic-E14-responses",
+        "model": "gpt-6-luna",
+        "usage": {
+          "input_tokens": 100,
+          "output_tokens": 50
+        },
+        "status": "completed",
+        "output": [
+          {
+            "type": "message",
+            "role": "assistant",
+            "content": [
+              {
+                "type": "output_text",
+                "text": "{\"identity\":{\"version\":\"tweet-identity-proposal-v1\",\"requestHash\":\"75d9e3509648187fb6219060f76b736c5de8f21f6193c0d8564438c3be23c0ee\",\"directoryHash\":\"88dbd1e19c22a04fba95f07d049c38af533b548723bd17106f639191667ae16f\",\"occurrences\":[{\"occurrenceId\":\"subject-4\",\"status\":\"matched\",\"canonicalId\":\"nhl:900002\",\"evidence\":{\"start\":4,\"end\":16,\"text\":\"Riley Skater\"},\"identityConfidence\":\"tentative\"}]},\"goalieStatuses\":[]}"
+              }
+            ]
+          }
+        ]
+      },
+      "requestId": "offline-cli-E14-responses",
+      "endpoint": "responses",
+      "chargeNanoUsd": 38500
+    }
+  }
+]

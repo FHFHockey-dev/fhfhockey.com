@@ -1,0 +1,449 @@
+{
+  "at": "2026-10-26T18:11:54.999730+00:00",
+  "sourceChanges": [
+    {
+      "path": "web/lib/player-cards/portraitTreatment.ts",
+      "beforeSha256": "ec23203f003317efedc2f80b380518548c2306c3384b9f276fda2e9a94b92657",
+      "afterSha256": "5c13ba66de1f5799741f61aebd61bc6bd3dfbbaad15fb896d68e16c0aa93c6e5",
+      "bytes": 9336
+    },
+    {
+      "path": "web/lib/player-cards/portraitTreatment.test.ts",
+      "beforeSha256": "90b205e1710b0c59e180e6467323b4a2affb951f43b3c7ff13c751d60e336cec",
+      "afterSha256": "8256a7a06cae74b07fbd9683c78762fbf2d303d958d8f27eeb5bbe2308e0da95",
+      "bytes": 5499
+    },
+    {
+      "path": "web/lib/player-cards/shareExport.ts",
+      "beforeSha256": "4ba56a5b7a907cfc38b2dcbcd10dd6d4b32697aca8e4d03b83e2bea11a74747d",
+      "afterSha256": "5fc00b1a9b3484f0d2d53e7a99a690fa2516b72468faa4c59f0bc26a111376e7",
+      "bytes": 6875
+    },
+    {
+      "path": "web/lib/player-cards/shareExport.test.ts",
+      "beforeSha256": "d99a533da4263ce22e90728f80cd6436f222618c6570626597ec2cd06ab9d8b0",
+      "afterSha256": "8d6873c6c16b8ae7f3d2fbb8241ffcaf8ea202775c32f05f6fef79d647686e47",
+      "bytes": 6052
+    },
+    {
+      "path": "web/components/player-cards/HeroPlayerCard.tsx",
+      "beforeSha256": "dbcf10f090976ff2e30a15b04d90031290cb3aa3b045c7e4a72fa3680146acfc",
+      "afterSha256": "aec816cdf01282fe2865d1eab2ef4b4a69aa949a9956f75bedd7bc81acf7968d",
+      "bytes": 7011
+    },
+    {
+      "path": "web/components/player-cards/PlayerCardShareStudio.tsx",
+      "beforeSha256": "f7c17b8cc5614d9b67e9882fe6c6835168faeb622128d4b510245e2790addc52",
+      "afterSha256": "df7fd35aed76a5e07363afd92e2e8ff65b490721e69fc7d93f5a58e0162bd640",
+      "bytes": 10325
+    },
+    {
+      "path": "web/components/player-cards/PlayerCardShareStudio.test.tsx",
+      "beforeSha256": "fb5287eabc81abd2a521f0c9442633548a5121f01877a2cbab250b2e71fcfe1a",
+      "afterSha256": "9bd7b239a845156d1583a8f38a1eda56ea80d2a692c64fec415ba2256dbbb0c8",
+      "bytes": 8672
+    }
+  ],
+  "artifactPins": {
+    "priorTeamColors": {
+      "bytes": 3132147,
+      "sha256": "e2b037f6b82d444f099e9cbfefbc555a673e1131496bea084158771830625c5f"
+    },
+    "priorPortraits": {
+      "bytes": 2440289,
+      "sha256": "5f5dc01034d10b0314317ed3dca3fdf8c5bcb0274761eec6ec8fa9201fe2dd3f"
+    },
+    "priorHero": {
+      "bytes": 3123706,
+      "sha256": "ecd560310b358ebd0521574967a480cab1521946c9d42d5f33341fcc57a5187a"
+    },
+    "priorFunctional": {
+      "bytes": 318626,
+      "sha256": "6c29f6eb3dc6ffc9a6a8a546423f78ac3e6e5e1e7265129475724422d3aad9b5"
+    },
+    "priorEditorial": {
+      "bytes": 314484,
+      "sha256": "f65ce654f1e1e7ab226aa01e95617d925608d8d590fbd65d5bbaa85b324e05a5"
+    },
+    "observedEvidence": {
+      "bytes": 9655,
+      "sha256": "b2ece36cf4c62e41562495fcabe4e6f36d02d6d159523b0364b8fc455607fbd6"
+    },
+    "priorComposition02": {
+      "bytes": 1597033,
+      "sha256": "5a65a4cf33e2ab86db9b8365179a1e44c559a8fa74dad065e888c9efa31d569c"
+    },
+    "preview.html": {
+      "bytes": 3426931,
+      "sha256": "996b67587180c64282152d53abd953ae66b9e115549896eeab591e198533d954"
+    },
+    "comparison.html": {
+      "bytes": 2186609,
+      "sha256": "6ab6b59a6ad34e193e73348b54cf96fcd73b2116f1d07110f32b2433a43d4ff1"
+    },
+    "serve-preview.mjs": {
+      "bytes": 2953,
+      "sha256": "efcd31db14e7fccfdc81d1cf93e209f08cceacd219810a191c6ed4b1e30d9d5e"
+    },
+    "comparison.png": {
+      "bytes": 891982,
+      "sha256": "448bb5595cfdb30a1b4213e812500d4982f5b769a6d7c772f05c618675eed22e"
+    },
+    "posterized-team-colors-card.png": {
+      "bytes": 600740,
+      "sha256": "38ec329efcf8974c81966ae7bc6a9ddff0f9aa762076c42969e190048b5ad30c"
+    },
+    "pixelated-team-colors-card.png": {
+      "bytes": 547676,
+      "sha256": "58bb0c960487c82cc8129356aeec552851db925e909485cca10d44f999110548"
+    },
+    "posterized-team-colors-stage1.png": {
+      "bytes": 133910,
+      "sha256": "9208257eedd8928207084f2f90dc27b59c150ef657b82ad991b444f4f1aa0171"
+    },
+    "pixelated-team-colors-stage1.png": {
+      "bytes": 108702,
+      "sha256": "fa02883af1253ee9c6d06afd4537a93944a08cb65b05fd81999fa7de274972e8"
+    },
+    "posterized-team-colors-phone-card.png": {
+      "bytes": 68159,
+      "sha256": "063226d0be325eb5f8131c7ff54a5b0bf17e6f1820a77f920c8e418177350ffb"
+    },
+    "pixelated-team-colors-phone-card.png": {
+      "bytes": 62650,
+      "sha256": "546949526256a9241859a7fead85430d3d61333a5e3abf3d3e9f1524af4bdba1"
+    },
+    "tor-posterized-card.png": {
+      "bytes": 621911,
+      "sha256": "1109ad7b59ece3a91ff21c3bac32ffdd23539906165bf1e94855349dabf3d3c5"
+    },
+    "tor-pixelated-card.png": {
+      "bytes": 572552,
+      "sha256": "305bc6a40370eec0ad33f1addeb226a1e95466ed24b195970e0e50d7a9842b94"
+    },
+    "social-square.png": {
+      "bytes": 637354,
+      "sha256": "cb6476e3fb699e0f3ec7ff612b5987e8461ded5cbc12aafa088afb381522a9ed"
+    },
+    "partial-card.png": {
+      "bytes": 634273,
+      "sha256": "50755d631270ac64fe1d41721cc49976036d0b2b4ff05cfd3d6f4f6336815dab"
+    }
+  },
+  "servedArtifactPins": [
+    {
+      "path": "served-comparison-desktop.png",
+      "bytes": 316756,
+      "sha256": "31c2cf5cf7759704465f010f1ab8b5665457cf468f88f1dd5a475163bfe76277"
+    },
+    {
+      "path": "served-comparison-phone.png",
+      "bytes": 222620,
+      "sha256": "bd8a4d39af751ecdc496d6a7c0ae9d1636a410066f936dddc332b659c369df18"
+    },
+    {
+      "path": "served-studio-posterized-team-colors.png",
+      "bytes": 400289,
+      "sha256": "382a4384d1bae4ad5bef6e24e9d9c38cb5cd874d2e7d4b17e7d7e3bc8bfb95cd"
+    },
+    {
+      "path": "served-studio-pixelated-team-colors.png",
+      "bytes": 364276,
+      "sha256": "76ebc49bfcffe94a7c65056ad4176b1f4f434e7fd8690488e68e427383166981"
+    },
+    {
+      "path": "SERVED-VERIFICATION.json",
+      "bytes": 518,
+      "sha256": "3f87fbc16e20c0fbe0ff655580dbb4090dc9e7040fd21f460a2b487d605d857f"
+    },
+    {
+      "path": "SERVED-PRIOR02-INSPECTION.json",
+      "bytes": 849,
+      "sha256": "95ef5297e542a60ec1fe0724d5c220e59b1cec064a490adb118baed0787ce575"
+    }
+  ],
+  "priorServedInspection": {
+    "url": "http://127.0.0.1:3125/player-cards/compositions?checkpoint=inspect-prior02",
+    "httpStatus": 200,
+    "bytes": 1597033,
+    "sha256": "5a65a4cf33e2ab86db9b8365179a1e44c559a8fa74dad065e888c9efa31d569c",
+    "title": "FHFH two composition experiments",
+    "headings": [
+      "Posterization + Team Colors",
+      "Pixelated + Team Colors"
+    ],
+    "images": [
+      {
+        "alt": "Auston Matthews artwork experiment; identical fabricated statistical profile",
+        "width": 1200,
+        "height": 1020,
+        "pngSha256": "01b4a965cda4cf61c80f94eed0348b12a5888e8a4944d1dca4d021ff7426caff"
+      },
+      {
+        "alt": "Auston Matthews artwork experiment; identical fabricated statistical profile",
+        "width": 1200,
+        "height": 1020,
+        "pngSha256": "355b050e74fafd946333bd37eb7e1fe8faff5e999dafe0a997149cc2d32fe939"
+      }
+    ],
+    "blocked": []
+  },
+  "confirmedFindings": [
+    "Fresh previous served page contained exact expected logo-bearing PNGs; missing asset/stale response not reproduced",
+    "Previous main landing showed ordinary Team Colors until selecting a combination",
+    "Previous combined poster branch used a different team-map quantization and fused processing; weak effects and heavily overlapped/cropped logo did not meet owner visual intent"
+  ],
+  "changes": [
+    "Explicit first-stage buffer then unchanged Team Colors second pass; manifest verifies stage order/pixel hashes",
+    "Four-tone first-stage posterization and coarse first-stage pixelation are visibly retained after team colors; standalone old styles unchanged",
+    "480px logo moved to x630/y-100 behind identically cropped hero; opaque logo pixels genuinely cross the top frame",
+    "Landing and compositions route directly display both combined results; checkpoint03 marker and stage previews; studio separate route"
+  ],
+  "checks": {
+    "tests": {
+      "action": "tests",
+      "command": [
+        "npm",
+        "test",
+        "--",
+        "--run",
+        "--config",
+        "../tasks/artifacts/player-cards-2026-10-26/composition-variants-03/vitest.config.mts"
+      ],
+      "cwd": "/Users/tim/Code/fhfhockey.com/web",
+      "exitCode": 0,
+      "elapsedSeconds": 2.16,
+      "environmentOverrides": {
+        "npm_config_cache": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-26/composition-variants-03/.npm-cache",
+        "npm_config_logs_dir": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-26/composition-variants-03/.npm-logs",
+        "NO_UPDATE_NOTIFIER": "1",
+        "NEXT_TELEMETRY_DISABLED": "1"
+      },
+      "lockOwnedAndReleased": true
+    },
+    "types": {
+      "action": "types",
+      "command": [
+        "npx",
+        "--no-install",
+        "tsc",
+        "--noEmit",
+        "--project",
+        "../tasks/artifacts/player-cards-2026-10-26/composition-variants-03/tsconfig.json"
+      ],
+      "cwd": "/Users/tim/Code/fhfhockey.com/web",
+      "exitCode": 0,
+      "elapsedSeconds": 1.263,
+      "environmentOverrides": {
+        "npm_config_cache": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-26/composition-variants-03/.npm-cache",
+        "npm_config_logs_dir": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-26/composition-variants-03/.npm-logs",
+        "NO_UPDATE_NOTIFIER": "1",
+        "NEXT_TELEMETRY_DISABLED": "1"
+      },
+      "lockOwnedAndReleased": true
+    },
+    "lint": {
+      "action": "lint",
+      "command": [
+        "npx",
+        "--no-install",
+        "eslint",
+        "components/player-cards/HeroPlayerCard.tsx",
+        "components/player-cards/PlayerCardShareStudio.tsx",
+        "components/player-cards/PlayerCardShareStudio.test.tsx",
+        "lib/player-cards/portraitTreatment.ts",
+        "lib/player-cards/portraitTreatment.test.ts",
+        "lib/player-cards/shareExport.ts",
+        "lib/player-cards/shareExport.test.ts"
+      ],
+      "cwd": "/Users/tim/Code/fhfhockey.com/web",
+      "exitCode": 0,
+      "elapsedSeconds": 0.769,
+      "environmentOverrides": {
+        "npm_config_cache": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-26/composition-variants-03/.npm-cache",
+        "npm_config_logs_dir": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-26/composition-variants-03/.npm-logs",
+        "NO_UPDATE_NOTIFIER": "1",
+        "NEXT_TELEMETRY_DISABLED": "1"
+      },
+      "lockOwnedAndReleased": true
+    },
+    "render": {
+      "action": "render",
+      "command": [
+        "node",
+        "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-26/composition-variants-03/render-preview.mjs"
+      ],
+      "cwd": "/Users/tim/Code/fhfhockey.com/web",
+      "exitCode": 0,
+      "elapsedSeconds": 0.197,
+      "environmentOverrides": {
+        "npm_config_cache": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-26/composition-variants-03/.npm-cache",
+        "npm_config_logs_dir": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-26/composition-variants-03/.npm-logs",
+        "NO_UPDATE_NOTIFIER": "1",
+        "NEXT_TELEMETRY_DISABLED": "1"
+      },
+      "lockOwnedAndReleased": true
+    },
+    "browser": {
+      "action": "browser",
+      "command": [
+        "node",
+        "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-26/composition-variants-03/browser-check.mjs"
+      ],
+      "cwd": "/Users/tim/Code/fhfhockey.com/web",
+      "exitCode": 0,
+      "elapsedSeconds": 2.897,
+      "environmentOverrides": {
+        "npm_config_cache": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-26/composition-variants-03/.npm-cache",
+        "npm_config_logs_dir": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-26/composition-variants-03/.npm-logs",
+        "NO_UPDATE_NOTIFIER": "1",
+        "NEXT_TELEMETRY_DISABLED": "1"
+      },
+      "lockOwnedAndReleased": true
+    }
+  },
+  "focusedTestsPassed": 24,
+  "offlineBrowserGroupsPassed": 4,
+  "browser": {
+    "checks": [
+      "Team Colors remains fresh default; existing four styles retained; logo composition is opt-in",
+      "Both combined treatments: same player/snapshot, pinned embedded MIN logo behind hero, left-quarter fade, landscape PNG/manifest/same-instance share parity, phone390 no overflow",
+      "Explicit first-stage buffers and subsequent same Team Colors mapper match manifest hashes; original alpha unchanged; distinct combined output; analytics bytes identical",
+      "Explicit combined style persists; second team uses TOR asset/palette; square export; partial source explanation and unknown-GP export block retained"
+    ],
+    "exports": [
+      {
+        "style": "posterized-team-colors",
+        "pngSha256": "38ec329efcf8974c81966ae7bc6a9ddff0f9aa762076c42969e190048b5ad30c",
+        "portraitSha256": "844e1de6ac29ef0cf3e6860b29e8a0c4ff21c20af478e7efc77e36be91fd4176",
+        "logoSha256": "430c6a4073da40b9d2e147c2528dba317f019273390ef2bdd43363895c5e0fc2"
+      },
+      {
+        "style": "pixelated-team-colors",
+        "pngSha256": "58bb0c960487c82cc8129356aeec552851db925e909485cca10d44f999110548",
+        "portraitSha256": "be73488bac6a934c8ac800cf0244d0884826676a495c264001878be5569566fb",
+        "logoSha256": "430c6a4073da40b9d2e147c2528dba317f019273390ef2bdd43363895c5e0fc2"
+      }
+    ],
+    "analyticsByteDifferences": 0,
+    "externalAttempts": [],
+    "pageErrors": [],
+    "referenceInspected": false
+  },
+  "servedVerification": {
+    "url": "http://127.0.0.1:3125/player-cards/compositions?checkpoint=sequential03",
+    "checkpoint": "sequential03",
+    "comparisonBytes": 2186609,
+    "comparisonSha256": "6ab6b59a6ad34e193e73348b54cf96fcd73b2116f1d07110f32b2433a43d4ff1",
+    "latestExportHashesVerified": 2,
+    "servedComparisonScreenshots": [
+      "served-comparison-desktop.png",
+      "served-comparison-phone.png"
+    ],
+    "servedInteractivePipelineAndLogoVerified": 2,
+    "externalAttempts": [],
+    "pageErrors": [],
+    "remoteAvailabilityClaimed": false
+  },
+  "runtime": {
+    "at": "2026-10-26T18:09:40.673739+00:00",
+    "previousListeners": [
+      "55021"
+    ],
+    "stoppedOwnPid": 55021,
+    "bind": "127.0.0.1:3125",
+    "automaticRestart": false,
+    "systemStartupChanges": false,
+    "verifiedOwnCommand": "/usr/local/bin/node /Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-26/composition-variants-02/serve-preview.mjs",
+    "pid": 70975,
+    "launcherPid": 70957,
+    "startNewSession": true,
+    "stdin": "DEVNULL",
+    "stdoutStderr": "server.log",
+    "execSession": null,
+    "readbacks": [
+      {
+        "url": "http://127.0.0.1:3125/player-cards",
+        "status": 200,
+        "bytes": 2186609,
+        "sha256": "6ab6b59a6ad34e193e73348b54cf96fcd73b2116f1d07110f32b2433a43d4ff1"
+      },
+      {
+        "url": "http://127.0.0.1:3125/player-cards/compositions",
+        "status": 200,
+        "bytes": 2186609,
+        "sha256": "6ab6b59a6ad34e193e73348b54cf96fcd73b2116f1d07110f32b2433a43d4ff1"
+      },
+      {
+        "url": "http://127.0.0.1:3125/player-cards/studio",
+        "status": 200,
+        "bytes": 3426931,
+        "sha256": "996b67587180c64282152d53abd953ae66b9e115549896eeab591e198533d954"
+      },
+      {
+        "url": "http://127.0.0.1:3125/player-cards/compositions-02",
+        "status": 200,
+        "bytes": 1597033,
+        "sha256": "5a65a4cf33e2ab86db9b8365179a1e44c559a8fa74dad065e888c9efa31d569c"
+      },
+      {
+        "url": "http://127.0.0.1:3125/player-cards/observed-evidence",
+        "status": 200,
+        "bytes": 9655,
+        "sha256": "b2ece36cf4c62e41562495fcabe4e6f36d02d6d159523b0364b8fc455607fbd6"
+      }
+    ],
+    "localReadOnlyGets": 5,
+    "upstreamRequests": 0,
+    "lifecycle": "Detached POSIX session, independent of launcher; host/environment shutdown or explicit stop ends process. No automatic restart or system startup."
+  },
+  "stageProofs": [
+    {
+      "style": "posterized-team-colors",
+      "composition": {
+        "version": "fhfh-sequential-v1",
+        "order": [
+          "posterized",
+          "team-colors"
+        ],
+        "firstStagePreset": "four-tone",
+        "firstPixelSha256": "99a1983dd73115ec2460d764bb5bd254b2791885d33c903eda243668c396d633",
+        "finalPixelSha256": "8f5d8f8f1a7ffbff4a674d11bfdd0c7b5ad4d97863c4c7a6f2f856b67be6e0d7"
+      },
+      "portraitSha256": "844e1de6ac29ef0cf3e6860b29e8a0c4ff21c20af478e7efc77e36be91fd4176",
+      "cardSha256": "38ec329efcf8974c81966ae7bc6a9ddff0f9aa762076c42969e190048b5ad30c"
+    },
+    {
+      "style": "pixelated-team-colors",
+      "composition": {
+        "version": "fhfh-sequential-v1",
+        "order": [
+          "pixelated",
+          "team-colors"
+        ],
+        "firstStagePreset": "coarse",
+        "firstPixelSha256": "5b814dffc1d88815d4e71e5bdfa92d81dacac7510256c9150847e4ff1f34ec2f",
+        "finalPixelSha256": "94f25dadc1217b124e07210425a52e2dfda37dc36953f4c252fbeb73d278b9f7"
+      },
+      "portraitSha256": "be73488bac6a934c8ac800cf0244d0884826676a495c264001878be5569566fb",
+      "cardSha256": "58bb0c960487c82cc8129356aeec552851db925e909485cca10d44f999110548"
+    }
+  ],
+  "priorArtifactsPreserved": [
+    "composition-variants-01/preview.html",
+    "composition-variants-01/comparison.html",
+    "composition-variants-01/posterized-team-colors-card.png",
+    "composition-variants-01/pixelated-team-colors-card.png",
+    "composition-variants-02/preview.html",
+    "composition-variants-02/comparison.html",
+    "composition-variants-02/posterized-team-colors-card.png",
+    "composition-variants-02/pixelated-team-colors-card.png"
+  ],
+  "currentApplicationSourcePinsVerified": 23,
+  "liveActivation": false,
+  "premiumActivation": false,
+  "referenceInspected": false,
+  "libraryUploadsThisSlice": 0,
+  "libraryPermissionPending": "composition-variants-02/LIBRARY-APPROVAL-BLOCK.json",
+  "independentAcceptancePending": true
+}

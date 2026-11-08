@@ -1,0 +1,26 @@
+{
+  "externalRequests": [],
+  "errors": [],
+  "checks": [],
+  "accessibility": [],
+  "observations": [],
+  "resumedAfterSuccessfulLayoutAndAxeChecks": true,
+  "forcedColors": {
+    "outline": "solid",
+    "width": "2px",
+    "color": "rgba(55, 0, 110, 0.8)"
+  },
+  "paginationFinal": {
+    "focusTag": "BODY",
+    "focusId": "",
+    "scrollY": 715,
+    "firstNewPlayerTop": 80673.75,
+    "statusTop": 0.15625,
+    "nextTab": {
+      "tag": "BUTTON",
+      "id": "",
+      "text": "Details for A.J. Greer"
+    }
+  },
+  "state": "PASS"
+}

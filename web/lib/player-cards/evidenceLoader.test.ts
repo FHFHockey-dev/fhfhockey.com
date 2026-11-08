@@ -98,6 +98,33 @@ afterEach(async () => { await Promise.all(roots.splice(0).map(root => rm(root, {
 const edit = (files: Spec[], name: string, change: (file: Spec) => void) => change(files.find(file => file.name === name)!);
 
 describe("trusted loader: genuinely admitted evidence", () => {
+  it("parses reviewed minute-end receipts and source-date bindings while preserving their precision", async () => {
+    const w = await stage(files => {
+      for (const file of files.filter(f => f.kind === "finality")) {
+        const { endedAt: _exact, ...subject } = file.body.subject;
+        file.body.subject = { ...subject, sourceClass: "official-game-report-minute", endMinute: { startInclusive: `${subject.date}T22:30:00Z`, endExclusive: `${subject.date}T22:31:00Z`, timezone: "UTC", clockBasis: "explicit-24h" } };
+        file.claims = file.claims.map(claim => claim.kind === "game-finality" ? { ...claim, sourceClass: "official-game-report-minute" } : claim);
+      }
+      const history = files.find(file => file.name === "history-1001.json")!;
+      const games = history.body.subject.appearances as { gameId: number; date: string; sourceDate?: string; played: boolean }[];
+      games[0].sourceDate = "2026-10-13";
+    });
+    w.input.players[0].frame.appearances[0].sourceDate = "2026-10-13";
+    const evidence = await w.load(), result = validateAdmittedEvidence(w.input, w.bundle, evidence);
+    expect(evidence.issues).toEqual([]); expect(result.state).toBe("eligible");
+    const final = evidence.receipts.find(receipt => receipt.kind === "game-finality")!;
+    expect(final.subject).toHaveProperty("endMinute"); expect(final.subject).not.toHaveProperty("endedAt");
+    expect(result.card!.selection.games.every(game => game.completion.status === "verified-final" && !game.completion.completedAt)).toBe(true);
+  });
+  it("does not admit receipts that mix an exact end with a minute range", async () => {
+    const w = await stage(files => {
+      const file = files.find(f => f.kind === "finality")!;
+      file.body.subject.endMinute = { startInclusive: "2026-10-14T22:30:00Z", endExclusive: "2026-10-14T22:31:00Z", timezone: "UTC", clockBasis: "explicit-24h" };
+    });
+    const evidence = await w.load();
+    expect(evidence.issues.some(issue => issue.code === "retained-schema")).toBe(true);
+    expect(validateAdmittedEvidence(w.input, w.bundle, evidence).state).toBe("incomplete");
+  });
   it("hashes and parses the retained bytes and makes a fully admitted synthetic card eligible", async () => {
     const { root, bundle, input, load } = await stage();
     const evidence = await load();

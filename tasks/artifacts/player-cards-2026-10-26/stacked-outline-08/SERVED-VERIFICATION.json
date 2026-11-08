@@ -1,0 +1,18 @@
+{
+  "url": "http://127.0.0.1:3125/player-cards/compositions?checkpoint=stacked08",
+  "checkpoint": "stacked08",
+  "comparisonSha256": "afe6c60d78b71ef3aa8fa6ce79066da3932e13d206dc410a2cffc0b3d84b7f3b",
+  "servedPNGHashesVerified": 2,
+  "interactiveBandAssetsVerified": 2,
+  "individualBandWidths": [
+    5,
+    5,
+    5
+  ],
+  "totalOutwardPx": 15,
+  "unchangedPlayerAndLogo": true,
+  "desktopPhoneScreenshots": true,
+  "externalAttempts": [],
+  "pageErrors": [],
+  "remoteAvailabilityClaimed": false
+}

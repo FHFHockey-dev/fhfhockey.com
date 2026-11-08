@@ -1,0 +1,21 @@
+{
+  "action": "types",
+  "command": [
+    "npx",
+    "--no-install",
+    "tsc",
+    "--noEmit",
+    "--project",
+    "../tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/tsconfig.json"
+  ],
+  "cwd": "/Users/tim/Code/fhfhockey.com/web",
+  "exitCode": 0,
+  "elapsedSeconds": 1.697,
+  "environmentOverrides": {
+    "npm_config_cache": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/.npm-cache",
+    "npm_config_logs_dir": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/.npm-logs",
+    "NO_UPDATE_NOTIFIER": "1",
+    "NEXT_TELEMETRY_DISABLED": "1"
+  },
+  "lockOwnedAndReleased": true
+}

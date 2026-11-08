@@ -1,0 +1,118 @@
+{
+  "capturedAt": "2026-10-26T16:18:39.380Z",
+  "finishedAt": "2026-10-26T16:18:41.537Z",
+  "statements": 11,
+  "ceiling": {
+    "statements": 40,
+    "rowsPerStatement": 1000,
+    "concurrency": 2
+  },
+  "maxInFlight": 2,
+  "maxRowsInOneStatement": 1000,
+  "errors": 0,
+  "fact1_rolling": {
+    "rows": 1728,
+    "statements": [
+      {
+        "ms": 1284,
+        "rows": 1000,
+        "contentRange": "0-999/1728"
+      },
+      {
+        "ms": 276,
+        "rows": 728,
+        "contentRange": "1000-1727/1728"
+      }
+    ],
+    "distinctPlayers": 638,
+    "gamesPerPlayer": {
+      "1": 64,
+      "2": 132,
+      "3": 368,
+      "4": 74
+    },
+    "goaliesAmongShortlistedNames": "0 of 66",
+    "nullTeamIds": 0,
+    "newestUpdatedAt": "2026-10-26T10:15:32.129153+00:00",
+    "oldestUpdatedAt": "2026-10-20T08:16:31.874177+00:00",
+    "newestGameDate": "2026-10-25"
+  },
+  "fact2_ownership": {
+    "latestDate": "2026-10-26",
+    "previousDate": "2026-10-21",
+    "rowsPerDate": {
+      "2026-10-21": 566,
+      "2026-10-26": 575
+    },
+    "todayNewYork": "2026-10-26",
+    "nullPct": 0
+  },
+  "fact3_last5": {
+    "latestRows": 638,
+    "seasonPointsNearInteger": "638 of 638",
+    "toiTotalOverAvg": {
+      "equals5": 631,
+      "equalsMinGp5": 576,
+      "checked": 638,
+      "gpUnder5": 66,
+      "gpUnder5Equals_gp": 4
+    }
+  },
+  "fact4_pp": {
+    "gamesQueried": 48,
+    "gamesWithPpRows": 48,
+    "latestGames": 42,
+    "latestGamesWithPpRows": 42,
+    "ppcRows": 1322,
+    "latestRowsPpUnitNull": 184,
+    "latestRowsPpUnitNullWithoutGameRows": 0
+  },
+  "fact5_map": {
+    "valuesQueried": [
+      [
+        "yahoo_player_id=in.(120 values)",
+        "order=yahoo_player_id.asc,nhl_player_id.asc",
+        "offset=0",
+        "limit=240"
+      ]
+    ],
+    "mapRows": 60,
+    "keysWithOneNhlId": 60,
+    "keysWithManyNhlIds": 0,
+    "evRows": 23
+  },
+  "recentForm": {
+    "rule": "recent-form-v1-early",
+    "qualifiers": 439,
+    "up": 5,
+    "down": 5,
+    "seasonGpAtLeast10": 439,
+    "last10Present": 638
+  },
+  "footerFreshness": {
+    "metricsUpdatedAt": "2026-10-26T10:15:32.129Z",
+    "metricsThrough": "2026-10-25"
+  },
+  "sections": {
+    "hot": {
+      "state": "ready",
+      "reasons": [],
+      "listed": 10
+    },
+    "deployment": {
+      "state": "ready",
+      "reasons": [],
+      "listed": 8
+    },
+    "rates": {
+      "state": "ready",
+      "reasons": [],
+      "listed": 9
+    },
+    "movers": {
+      "state": "ready",
+      "reasons": [],
+      "listed": 10
+    }
+  }
+}

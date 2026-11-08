@@ -1,0 +1,14 @@
+{
+  "reviewCopyOnly": true,
+  "defaultUnchanged": true,
+  "selectedPlayerWindowAndFormatPreserved": true,
+  "analysisStartsAtSelectedWindow": 10,
+  "seasonComparisonExported": true,
+  "artworkKeyParity": true,
+  "networkAttempts": [],
+  "assetCalls": [
+    "/player-cards/hero-samples/8476453.png",
+    "/player-cards/hero-samples/8476453.png"
+  ],
+  "errors": []
+}

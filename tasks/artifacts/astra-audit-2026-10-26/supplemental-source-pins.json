@@ -1,0 +1,34 @@
+[
+  {
+    "path": "web/lib/projections/verifiedForgeReleases.ts",
+    "sha256": "8e926eac2abc05c0a983ab9c8f2c461668d861e4fe543e13c0a61103b32d385a"
+  },
+  {
+    "path": "web/lib/projections/externalInputProof.test.ts",
+    "sha256": "3d99de98e39e32058797e39e52b2d566adbb07bbbf3fbb81b15f54cad0cf0c2d"
+  },
+  {
+    "path": "web/lib/projections/externalInputProof.fixtures.ts",
+    "sha256": "6fcf19721d797fb6033d58088c071c51fcee981425685db0d7f5552668a998a2"
+  },
+  {
+    "path": "web/lib/projections/verifiedForgeReleases.test.ts",
+    "sha256": "a4b4e46981c71afe634c96d41370385a17dba9580020487e19e1e4f20d6ad437"
+  },
+  {
+    "path": "web/lib/projections/apiHelpers.runAdmission.test.ts",
+    "sha256": "713c4e009a2e0d1c4c55ac1878602536c3364e80ab1a508f617a265675ad64b8"
+  },
+  {
+    "path": "web/scripts/verify-forge-release-sha.ts",
+    "sha256": "a7fe43be9ef2668fbe2dd5f1c93f9b2b8696870277f463208af40b05dd5650f3"
+  },
+  {
+    "path": "web/lib/game-predictions/featureBuilder.ts",
+    "sha256": "14d5e6fb70f100879ddc10879dd6a73af3a97af98a8a18b22dd5287f2b7b7c71"
+  },
+  {
+    "path": "web/lib/player-forecasts/rsoUsePolicy.ts",
+    "sha256": "917d4a7463d05f75d5527261da779241e5e075c5e8bc121fc72d0e5c2aada54c"
+  }
+]

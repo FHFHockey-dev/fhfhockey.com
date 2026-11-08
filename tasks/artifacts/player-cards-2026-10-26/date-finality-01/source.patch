@@ -1,0 +1,427 @@
+--- a/web/lib/player-cards/aggregation.ts
++++ b/web/lib/player-cards/aggregation.ts
+@@ -1,6 +1,6 @@
+ import type { MetricDefinition, MetricId, Strength } from "./contracts";
+ import { METRICS } from "./registry";
+-import { instant, type WindowSelection } from "./windows";
++import { instant, completionBounds, type WindowSelection } from "./windows";
+ 
+ type IndividualField = "toi" | "shots" | "icf" | "iscfs" | "ixg" | "total_points" | "goals";
+ type OnIceField = "toi" | "cf" | "scf" | "xgf" | "xga" | "gf" | "sf";
+@@ -70,7 +70,7 @@
+     if (rows.length !== 1) return allUnavailable("missing", "Missing or duplicate source row for a selected appearance");
+     const row = rows[0];
+     const captured = instant(row.capturedAt);
+-    const completed = game.completion.status === "verified-final" ? instant(game.completion.completedAt) : null;
++    const completed = completionBounds(game.completion)?.safeAfter ?? null;
+     if (row.season !== selection.settings.season || row.date !== game.date || row.strength !== selection.settings.strength || row.sourceDefinition !== source.definition || row.sourceVersion !== source.version || row.state !== "ready" || captured === null || captured > snapshotTime || completed === null || captured < completed || row.toiUnit !== "seconds") return allUnavailable("missing", "Source identity, strength, freshness or selected-game alignment is unverified");
+     joined.push(row);
+   }
+--- a/web/lib/player-cards/domain.test.ts
++++ b/web/lib/player-cards/domain.test.ts
+@@ -1,7 +1,7 @@
+ import { describe, expect, it } from "vitest";
+ import type { CardSettings, MetricId } from "./contracts";
+ import { METRICS } from "./registry";
+-import { selectWindow, type Appearance, type AppearanceFrame } from "./windows";
++import { selectWindow, type Appearance, type AppearanceFrame, type EndMinute } from "./windows";
+ import { aggregateWindow, pooledMetric, type Components, type GameMetricRecord } from "./aggregation";
+ import { adaptLocalSnapshot, type LocalCardInput } from "./adapter";
+ 
+@@ -21,6 +21,7 @@
+   return { ...components(), playerId: appearance.playerId, gameId: appearance.gameId, season: appearance.season, date: appearance.date, strength: "all", sourceDefinition: source.definition, sourceVersion: source.version, capturedAt: "2026-10-24T01:00:00Z", state: "ready" };
+ }
+ const metric = (id: MetricId) => METRICS.find(metric => metric.id === id)!;
++const endMinute = (startInclusive = "2026-10-23T23:59:00Z", endExclusive = "2026-10-24T00:00:00Z"): EndMinute => ({ startInclusive, endExclusive, timezone: "UTC", clockBasis: "explicit-24h" });
+ function input(): LocalCardInput {
+   const players = [1001, 1002].map(id => {
+     const games = [game(20, id), game(21, id)];
+@@ -74,6 +75,45 @@
+     const second = selectWindow(frame([game(20, 1002), game(22, 1002)], 1002), settings);
+     const first = selectWindow(frame([game(18), game(22)]), settings);
+     expect(second.firstDate).not.toBe(first.firstDate); expect(second.settings.cutoff).toBe(first.settings.cutoff);
++  });
++});
++
++describe("minute-precision finality and separate lookup/calendar dates", () => {
++  it("includes only an entire end minute before the cutoff and withholds overlapping cutoffs", () => {
++    const g: Appearance = { ...game(23), completion: { status: "verified-final", completedDuring: endMinute(), reference: "synthetic official minute" } };
++    expect(selectWindow(frame([g]), settings)).toMatchObject({ state: "ready", actualGp: 1 });
++    expect(selectWindow(frame([g]), { ...settings, cutoff: "2026-10-23T23:59:30Z" })).toMatchObject({ state: "missing", reason: expect.stringContaining("overlaps") });
++    expect(selectWindow(frame([g]), { ...settings, cutoff: "2026-10-23T23:59:00Z" }).state).toBe("missing");
++    expect(selectWindow(frame([g]), { ...settings, cutoff: "2026-10-23T23:58:59Z" }).state).toBe("undefined");
++    expect(selectWindow(frame([g]), settings).games[0].completion).not.toHaveProperty("completedAt");
++  });
++  it("rejects unsupported precision, mixed exact/range timestamps and unresolved clock/zone evidence", () => {
++    for (const interval of [endMinute(undefined, "2026-10-24T00:00:01Z"), { ...endMinute(), clockBasis: "unresolved" as const }, { ...endMinute(), timezone: "Not/AZone" }]) {
++      expect(selectWindow(frame([{ ...game(23), completion: { status: "verified-final", completedDuring: interval, reference: "synthetic" } }]), settings).state).toBe("missing");
++    }
++    expect(selectWindow(frame([{ ...game(23), completion: { status: "verified-final", completedAt: "2026-10-23T23:59:30Z", completedDuring: endMinute(), reference: "synthetic" } }]), settings).state).toBe("missing");
++  });
++  it("requires source capture after the whole end minute, not its invented first second", () => {
++    const g: Appearance = { ...game(23), completion: { status: "verified-final", completedDuring: endMinute(), reference: "synthetic" } };
++    const selection = selectWindow(frame([g]), settings), row = record(g);
++    row.capturedAt = "2026-10-23T23:59:30Z";
++    expect(aggregateWindow(selection, [row], source).values.sog60.state).toBe("missing");
++    row.capturedAt = "2026-10-24T00:00:00Z";
++    expect(aggregateWindow(selection, [row], source).values.sog60.value).toBe(12);
++  });
++  it("does not order overlapping end minutes, while adjacent minutes remain ordered", () => {
++    const a: Appearance = { ...game(23), gameId: 1, completion: { status: "verified-final", completedDuring: endMinute(), reference: "synthetic" } };
++    const b: Appearance = { ...a, gameId: 2 };
++    expect(selectWindow(frame([a, b]), settings).state).toBe("missing");
++    b.completion = { status: "verified-final", completedDuring: endMinute("2026-10-23T23:58:00Z", "2026-10-23T23:59:00Z"), reference: "synthetic" };
++    expect(selectWindow(frame([a, b]), settings).games.map(row => row.gameId)).toEqual([1, 2]);
++  });
++  it("filters by UTC calendar day while retaining the provider source day", () => {
++    const g: Appearance = { ...game(24), sourceDate: "2026-10-23", completion: { status: "verified-final", completedDuring: endMinute("2026-10-24T03:58:00Z", "2026-10-24T03:59:00Z"), reference: "synthetic minute" } };
++    const s: CardSettings = { ...settings, cutoff: "2026-10-25T00:00:00Z", period: { mode: "calendar", start: "2026-10-24", end: "2026-10-24", timezone: "UTC" } };
++    const selected = selectWindow({ ...frame([g]), historyThrough: s.cutoff }, s);
++    expect(selected.games[0]).toMatchObject({ date: "2026-10-24", sourceDate: "2026-10-23" });
++    expect(selectWindow({ ...frame([g]), historyThrough: s.cutoff }, { ...s, period: { mode: "calendar", start: "2026-10-23", end: "2026-10-23", timezone: "UTC" } }).state).toBe("undefined");
+   });
+ });
+ 
+--- a/web/lib/player-cards/evidenceBundle.test.ts
++++ b/web/lib/player-cards/evidenceBundle.test.ts
+@@ -54,6 +54,36 @@
+ }
+ 
+ describe("evidence bundle: explicitly qualified synthetic positive", () => {
++  it("retains separately admitted source dates and minute precision without inventing endedAt", () => {
++    const w = world();
++    w.input.players[0].frame.appearances[0].sourceDate = "2026-10-13";
++    w.history[0].subject.appearances = w.history[0].subject.appearances.map((game, i) => i === 0 ? { ...game, sourceDate: "2026-10-13" } : game);
++    for (const receipt of w.finality) {
++      const { endedAt: _exact, ...subject } = receipt.subject;
++      receipt.subject = { ...subject, sourceClass: "official-game-report-minute", endMinute: { startInclusive: `${subject.date}T22:30:00Z`, endExclusive: `${subject.date}T22:31:00Z`, timezone: "UTC", clockBasis: "explicit-24h" } };
++    }
++    const result = run(w);
++    expect(result.state).toBe("eligible");
++    expect(result.card!.selection.games.every(game => game.completion.status === "verified-final" && !!game.completion.completedDuring && !game.completion.completedAt)).toBe(true);
++    w.input.players[0].frame.appearances[0].sourceDate = "2026-10-12";
++    expect(codes(run(w))).toContain("history-conflict");
++  });
++  it("withholds unresolved end clocks and rejects falsely precise authority labels", () => {
++    const w = world(), receipt = w.finality[0], { endedAt: _exact, ...subject } = receipt.subject;
++    receipt.subject = { ...subject, sourceClass: "official-game-report-minute", endMinute: { startInclusive: `${subject.date}T22:30:00Z`, endExclusive: `${subject.date}T22:31:00Z`, timezone: "UTC", clockBasis: "unresolved" } };
++    expect(codes(run(w))).toContain("finality-clock-ambiguous");
++    expect(run(w).state).toBe("incomplete");
++    receipt.subject.endMinute!.clockBasis = "explicit-24h"; receipt.subject.sourceClass = "official-game-end";
++    expect(codes(run(w))).toContain("finality-precision");
++  });
++  it("keeps a report captured inside its end minute incomplete rather than inventing order", () => {
++    const w = world(), receipt = w.finality[0], { endedAt: _exact, ...subject } = receipt.subject;
++    receipt.capturedAt = `${subject.date}T22:30:30Z`;
++    receipt.subject = { ...subject, sourceClass: "official-game-report-minute", endMinute: { startInclusive: `${subject.date}T22:30:00Z`, endExclusive: `${subject.date}T22:31:00Z`, timezone: "UTC", clockBasis: "explicit-24h" } };
++    const result = run(w);
++    expect(result.state).toBe("incomplete"); expect(codes(result)).toContain("finality-capture-ambiguous");
++    expect(codes(result)).not.toContain("finality-time");
++  });
+   it("is eligible only when every claim resolves to a matching retained receipt", () => {
+     const result = run(world());
+     expect(result.issues).toEqual([]);
+--- a/web/lib/player-cards/evidenceBundle.ts
++++ b/web/lib/player-cards/evidenceBundle.ts
+@@ -1,7 +1,7 @@
+ import type { CardSettings, MetricId, MetricReading, Period, Strength } from "./contracts";
+ import { METRICS, REGISTRY_VERSION } from "./registry";
+ import { adaptLocalSnapshot, type AdaptedCard, type LocalCardInput, type MetricCoverage } from "./adapter";
+-import { instant, settingsError, validDate } from "./windows";
++import { instant, completionBounds, settingsError, validDate, type EndMinute } from "./windows";
+ 
+ type Origin = LocalCardInput["origin"];
+ export type ReceiptRef = { receiptId: string; sha256: string };
+@@ -9,11 +9,11 @@
+ export type HistoryReceipt = Retained<"appearance-history", {
+   playerId: number; season: number; gameType: "regular"; dateBasis: "UTC" | "provider-game-date";
+   sourceClass: "complete-official-log" | "latest-n" | "row-count"; through: string;
+-  appearances: readonly { gameId: number; date: string; played: boolean }[];
++  appearances: readonly { gameId: number; date: string; sourceDate?: string; played: boolean }[];
+ }>;
+ export type FinalityReceipt = Retained<"game-finality", {
+-  gameId: number; season: number; date: string; endedAt: string;
+-  sourceClass: "official-game-end" | "ingestion-completion" | "scheduled-start";
++  gameId: number; season: number; date: string; endedAt?: string; endMinute?: EndMinute;
++  sourceClass: "official-game-end" | "official-game-report-minute" | "ingestion-completion" | "scheduled-start";
+ }>;
+ export type DefinitionReceipt = Retained<"metric-definition", {
+   metricId: MetricId; registryVersion: string; sourceDefinition: string; sourceVersion: string; definitionVersion: string;
+@@ -105,7 +105,7 @@
+   for (const player of input.players) {
+     const id = player.frame.playerId, at = { playerId: id }, before = issues.length;
+     const games = player.frame.appearances.filter(game => game.playerId === id && game.season === settings.season && game.gameType === settings.gameType);
+-    if (!positiveIds(games.map(game => game.gameId)) || games.some(game => !validDate(game.date))) { reject("frame-game-identity", "Supplied frame has an invalid or duplicate game identity", at); continue; }
++    if (!positiveIds(games.map(game => game.gameId)) || games.some(game => !validDate(game.date) || (game.sourceDate !== undefined && !validDate(game.sourceDate)))) { reject("frame-game-identity", "Supplied frame has an invalid or duplicate game identity/date binding", at); continue; }
+     if (new Set(games.map(game => game.date)).size !== games.length) { reject("duplicate-date", "Supplied frame lists multiple appearances on one date; date-keyed NST rows cannot identify the game", at); continue; }
+     for (const game of games) {
+       if (game.played !== true || !inPeriod(game.date, settings)) continue;
+@@ -118,12 +118,12 @@
+     const history = receipt.subject, through = instant(history.through);
+     if (history.playerId !== id || history.season !== settings.season || history.gameType !== settings.gameType) { reject("history-identity", "History receipt player, season or game type does not match the supplied frame", at); continue; }
+     if (through === null || through > instant(receipt.capturedAt)!) { reject("history-time", "History receipt claims coverage beyond its own capture time", at); continue; }
+-    if (!positiveIds(history.appearances.map(game => game.gameId)) || history.appearances.some(game => !validDate(game.date))) { reject("history-game-identity", "History receipt has an invalid or duplicate game identity", at); continue; }
++    if (!positiveIds(history.appearances.map(game => game.gameId)) || history.appearances.some(game => !validDate(game.date) || (game.sourceDate !== undefined && !validDate(game.sourceDate)))) { reject("history-game-identity", "History receipt has an invalid or duplicate game identity/date binding", at); continue; }
+     if (new Set(history.appearances.map(game => game.date)).size !== history.appearances.length) { reject("duplicate-date", "History receipt lists multiple appearances on one date; date-keyed NST rows cannot identify the game", at); continue; }
+     for (const game of games) {
+       const listed = history.appearances.find(entry => entry.gameId === game.gameId);
+       if (!listed) reject("history-extra-appearance", `Supplied appearance ${game.gameId} is not in the history receipt`, { ...at, gameId: game.gameId });
+-      else if (listed.date !== game.date || listed.played !== game.played) reject("history-conflict", `Supplied appearance ${game.gameId} date or participation conflicts with the history receipt`, { ...at, gameId: game.gameId });
++      else if (listed.date !== game.date || (listed.sourceDate ?? listed.date) !== (game.sourceDate ?? game.date) || listed.played !== game.played) reject("history-conflict", `Supplied appearance ${game.gameId} calendar/source date or participation conflicts with the history receipt`, { ...at, gameId: game.gameId });
+     }
+     for (const listed of history.appearances) if (!games.some(game => game.gameId === listed.gameId)) lack("history-appearance-absent", `History receipt appearance ${listed.gameId} is absent from the supplied frame`, { ...at, gameId: listed.gameId });
+     if (history.sourceClass !== "complete-official-log") lack("history-not-complete", `History source "${history.sourceClass}" does not establish complete appearance history`, at);
+@@ -138,10 +138,14 @@
+     const at = { gameId };
+     const receipt = resolve(single(bundle.finality.filter(entry => entry.gameId === gameId), at, "finality")?.receipt, "game-finality", at);
+     if (!receipt) continue;
+-    const final = receipt.subject, ended = instant(final.endedAt);
++    const final = receipt.subject;
+     if (final.gameId !== gameId || final.season !== settings.season || final.date !== game.date) { reject("finality-identity", "Finality receipt game, season or date does not match the appearance", at); continue; }
+-    if (ended === null || ended > instant(receipt.capturedAt)! || ended < Date.parse(`${game.date}T00:00:00Z`)) { reject("finality-time", "Finality end time is invalid, precedes the game date or follows its own capture", at); continue; }
+-    if (final.sourceClass !== "official-game-end") { lack("finality-not-actual-end", final.sourceClass === "ingestion-completion" ? "Ingestion completion is not an actual game-end time" : `Finality source "${final.sourceClass}" is not an actual game-end time`, at); continue; }
++    if (final.endMinute?.clockBasis === "unresolved") { lack("finality-clock-ambiguous", "Official end clock AM/PM or timezone binding remains unresolved", at); continue; }
++    const ended = completionBounds({ status: "verified-final", reference: receipt.receiptId, completedAt: final.endedAt, completedDuring: final.endMinute });
++    if (!ended || ended.earliest > instant(receipt.capturedAt)! || ended.earliest < Date.parse(`${game.date}T00:00:00Z`)) { reject("finality-time", "Finality end time/range is invalid, precedes the game date or follows its own capture", at); continue; }
++    if (!ended.exact && ended.safeAfter > instant(receipt.capturedAt)!) { lack("finality-capture-ambiguous", "Receipt capture overlaps the reported end minute", at); continue; }
++    if (final.sourceClass !== "official-game-end" && final.sourceClass !== "official-game-report-minute") { lack("finality-not-actual-end", final.sourceClass === "ingestion-completion" ? "Ingestion completion is not an actual game-end time" : `Finality source "${final.sourceClass}" is not an actual game-end time`, at); continue; }
++    if ((final.sourceClass === "official-game-report-minute") !== !!final.endMinute) { reject("finality-precision", "Finality authority and exact/minute representation disagree", at); continue; }
+     verifiedFinal.set(gameId, receipt);
+   }
+ 
+@@ -182,7 +186,7 @@
+       ...player.frame, completeHistory: !!history, historyThrough: history?.subject.through ?? "", historyReference: history?.receiptId ?? "",
+       appearances: player.frame.appearances.map(game => {
+         const final = verifiedFinal.get(game.gameId);
+-        return { ...game, completion: final ? { status: "verified-final" as const, completedAt: final.subject.endedAt, reference: final.receiptId } : { status: "unverified" as const } };
++        return { ...game, completion: final ? { status: "verified-final" as const, ...(final.subject.endMinute ? { completedDuring: { ...final.subject.endMinute } } : { completedAt: final.subject.endedAt }), reference: final.receiptId } : { status: "unverified" as const } };
+       }),
+     } };
+   });
+--- a/web/lib/player-cards/evidenceLoader.test.ts
++++ b/web/lib/player-cards/evidenceLoader.test.ts
+@@ -98,6 +98,33 @@
+ const edit = (files: Spec[], name: string, change: (file: Spec) => void) => change(files.find(file => file.name === name)!);
+ 
+ describe("trusted loader: genuinely admitted evidence", () => {
++  it("parses reviewed minute-end receipts and source-date bindings while preserving their precision", async () => {
++    const w = await stage(files => {
++      for (const file of files.filter(f => f.kind === "finality")) {
++        const { endedAt: _exact, ...subject } = file.body.subject;
++        file.body.subject = { ...subject, sourceClass: "official-game-report-minute", endMinute: { startInclusive: `${subject.date}T22:30:00Z`, endExclusive: `${subject.date}T22:31:00Z`, timezone: "UTC", clockBasis: "explicit-24h" } };
++        file.claims = file.claims.map(claim => claim.kind === "game-finality" ? { ...claim, sourceClass: "official-game-report-minute" } : claim);
++      }
++      const history = files.find(file => file.name === "history-1001.json")!;
++      const games = history.body.subject.appearances as { gameId: number; date: string; sourceDate?: string; played: boolean }[];
++      games[0].sourceDate = "2026-10-13";
++    });
++    w.input.players[0].frame.appearances[0].sourceDate = "2026-10-13";
++    const evidence = await w.load(), result = validateAdmittedEvidence(w.input, w.bundle, evidence);
++    expect(evidence.issues).toEqual([]); expect(result.state).toBe("eligible");
++    const final = evidence.receipts.find(receipt => receipt.kind === "game-finality")!;
++    expect(final.subject).toHaveProperty("endMinute"); expect(final.subject).not.toHaveProperty("endedAt");
++    expect(result.card!.selection.games.every(game => game.completion.status === "verified-final" && !game.completion.completedAt)).toBe(true);
++  });
++  it("does not admit receipts that mix an exact end with a minute range", async () => {
++    const w = await stage(files => {
++      const file = files.find(f => f.kind === "finality")!;
++      file.body.subject.endMinute = { startInclusive: "2026-10-14T22:30:00Z", endExclusive: "2026-10-14T22:31:00Z", timezone: "UTC", clockBasis: "explicit-24h" };
++    });
++    const evidence = await w.load();
++    expect(evidence.issues.some(issue => issue.code === "retained-schema")).toBe(true);
++    expect(validateAdmittedEvidence(w.input, w.bundle, evidence).state).toBe("incomplete");
++  });
+   it("hashes and parses the retained bytes and makes a fully admitted synthetic card eligible", async () => {
+     const { root, bundle, input, load } = await stage();
+     const evidence = await load();
+--- a/web/lib/player-cards/evidenceLoader.ts
++++ b/web/lib/player-cards/evidenceLoader.ts
+@@ -32,19 +32,19 @@
+ 
+ /** Facts a receipt subject carries; parsed from the hashed bytes and bound by the admission's pinned hash. */
+ const FACTS: Record<Kind, Record<string, Check>> = {
+-  "appearance-history": { playerId: id, season: id, gameType: regular, through: time, appearances: value => Array.isArray(value) && value.every(game => shaped(game, { gameId: id, date: day, played: played => typeof played === "boolean" })) },
+-  "game-finality": { gameId: id, season: id, date: day, endedAt: time },
++  "appearance-history": { playerId: id, season: id, gameType: regular, through: time, appearances: value => Array.isArray(value) && value.every(game => shaped(game, { gameId: id, date: day, played: played => typeof played === "boolean" }, ["sourceDate"]) && (!own(game as object, "sourceDate") || day((game as Record<string, unknown>).sourceDate))) },
++  "game-finality": { gameId: id, season: id, date: day },
+   "metric-definition": { metricId, registryVersion: text, sourceDefinition: text, sourceVersion: text, definitionVersion: text },
+   "population-membership": { metricId, scope: scope => scope === "all-nhl" || scope === "synthetic-all-values", definitionVersion: text, season: id, gameType: regular, strength: strength => strength === "all" || strength === "5v5" || strength === "pp", period, cutoff: time, memberIds: value => Array.isArray(value) && value.every(id) },
+ };
+ /** Authority labels: written only from a verified admission claim. A file may carry them, but they never count as proof. */
+ const LABELS: Record<Kind, Record<string, readonly string[]>> = {
+   "appearance-history": { sourceClass: ["complete-official-log", "latest-n", "row-count"], dateBasis: ["UTC", "provider-game-date"] },
+-  "game-finality": { sourceClass: ["official-game-end", "ingestion-completion", "scheduled-start"] },
++  "game-finality": { sourceClass: ["official-game-end", "official-game-report-minute", "ingestion-completion", "scheduled-start"] },
+   "metric-definition": { zeroSemantics: ["verified-distinct", "placeholder-coerced", "unknown"] },
+   "population-membership": { sourceClass: ["metric-population-inventory", "roster-snapshot", "ingestion-position-filter"] },
+ };
+-const AUTHORITATIVE = new Set(["complete-official-log", "UTC", "official-game-end", "verified-distinct", "metric-population-inventory"]);
++const AUTHORITATIVE = new Set(["complete-official-log", "UTC", "official-game-end", "official-game-report-minute", "verified-distinct", "metric-population-inventory"]);
+ /** The most each retained format can establish, whatever its admission claims. */
+ const CEILING: Record<Admission["format"], (claim: VerifiedClaim) => boolean> = {
+   "receipt-v1": () => true,
+@@ -56,10 +56,16 @@
+ function receiptV1(json: unknown): Candidate[] | string {
+   if (!shaped(json, { kind: kind => typeof kind === "string" && own(FACTS, kind), receiptId: text, origin: origin => origin === "synthetic" || origin === "local-observed", capturedAt: time, subject: record })) return "Receipt envelope is malformed or carries unrecognised fields";
+   const envelope = json as Record<string, unknown>, kind = envelope.kind as Kind, subject = envelope.subject as Record<string, unknown>, labels = Object.keys(LABELS[kind]);
+-  if (!shaped(subject, FACTS[kind], labels)) return `Receipt subject does not match the ${kind} schema`;
++  const fields = kind === "game-finality" ? ["endedAt", "endMinute"] : [];
++  if (!shaped(subject, FACTS[kind], [...labels, ...fields])) return `Receipt subject does not match the ${kind} schema`;
++  if (kind === "game-finality") {
++    if (own(subject, "endedAt") === own(subject, "endMinute")) return "Finality must carry exactly one exact end or end-minute range";
++    if (own(subject, "endedAt") && !time(subject.endedAt)) return "Finality exact end is malformed";
++    if (own(subject, "endMinute") && !shaped(subject.endMinute, { startInclusive: time, endExclusive: time, timezone: text, clockBasis: basis => typeof basis === "string" && ["explicit-24h", "schedule-bound-12h", "unresolved"].includes(basis) })) return "Finality end-minute range is malformed";
++  }
+   return [{
+     kind, receiptId: envelope.receiptId as string, origin: envelope.origin, capturedAt: envelope.capturedAt as string,
+-    facts: Object.fromEntries(Object.keys(FACTS[kind]).map(key => [key, subject[key]])),
++    facts: Object.fromEntries([...Object.keys(FACTS[kind]), ...fields.filter(key => own(subject, key))].map(key => [key, subject[key]])),
+     asserted: Object.fromEntries(labels.filter(key => own(subject, key)).map(key => [key, subject[key]])),
+   }];
+ }
+--- a/web/lib/player-cards/nstCapture.test.ts
++++ b/web/lib/player-cards/nstCapture.test.ts
+@@ -27,6 +27,24 @@
+ }
+ 
+ describe("supplied NST capture mapping, with synthetic proof receipts", () => {
++  it("joins the preserved provider lookup date while emitting UTC calendar dates", () => {
++    const capture = fixture();
++    capture.frames[0].appearances = capture.frames[0].appearances.map((game, i) => ({ ...game, sourceDate: game.date, date: `2026-10-${21 + i}`, completion: { status: "verified-final", completedDuring: { startInclusive: `2026-10-${21 + i}T03:00:00Z`, endExclusive: `2026-10-${21 + i}T03:01:00Z`, timezone: "America/Denver", clockBasis: "schedule-bound-12h" }, reference: "synthetic minute" } }));
++    const result = mapped(capture);
++    expect(result.issues).toEqual([]);
++    expect(result.input.players[0].records.map(row => [row.date, row.individual.shots])).toEqual([["2026-10-21", 4], ["2026-10-22", 4]]);
++    expect(reading(capture, "sog60").value).toBe(12);
++    capture.frames[0].appearances[1].sourceDate = "2026-10-20";
++    expect(mapped(capture).issues.some(issue => issue.reason.includes("Multiple official"))).toBe(true);
++  });
++  it("withholds source rows captured inside the reported completion minute", () => {
++    const capture = fixture();
++    capture.frames[0].appearances[0].completion = { status: "verified-final", completedDuring: { startInclusive: "2026-10-20T23:00:00Z", endExclusive: "2026-10-20T23:01:00Z", timezone: "UTC", clockBasis: "explicit-24h" }, reference: "synthetic minute" };
++    capture.individual.capturedAt = "2026-10-20T23:00:30Z";
++    const result = mapped(capture);
++    expect(result.input.players[0].records[0].individual).toEqual({});
++    expect(result.input.players[0].records[0].onIce.xgf).toBe(1);
++  });
+   it("preserves seconds, canonical components and unknown population without mutating or aliasing the capture", () => {
+     const capture = fixture(), before = JSON.stringify(capture), result = mapped(capture);
+     expect(JSON.stringify(capture)).toBe(before); expect(result.issues).toEqual([]);
+--- a/web/lib/player-cards/nstCapture.ts
++++ b/web/lib/player-cards/nstCapture.ts
+@@ -1,7 +1,7 @@
+ import type { LocalCardInput } from "./adapter";
+ import type { Components, GameMetricRecord } from "./aggregation";
+ import type { CardSettings } from "./contracts";
+-import { instant, settingsError, validDate, type AppearanceFrame } from "./windows";
++import { instant, completionBounds, settingsError, validDate, type AppearanceFrame } from "./windows";
+ 
+ export type NstCaptureBatch = {
+   table: string;
+@@ -62,18 +62,22 @@
+   });
+ 
+   const players = capture.frames.map(frame => {
+-    const appearances = frame.appearances.map(game => ({ ...game, completion: { ...game.completion } }));
++    const appearances = frame.appearances.map(game => ({ ...game, completion: { ...game.completion, ...(game.completion.status === "verified-final" && game.completion.completedDuring ? { completedDuring: { ...game.completion.completedDuring } } : {}) } }));
+     const eligible = appearances.filter(game => game.playerId === frame.playerId && game.season === capture.settings.season && game.gameType === capture.settings.gameType && game.played !== false);
+     const dates = new Map<string, Set<number>>();
+-    for (const game of eligible) dates.set(game.date, new Set([...(dates.get(game.date) || []), game.gameId]));
++    for (const game of eligible) {
++      const sourceDate = game.sourceDate ?? game.date;
++      dates.set(sourceDate, new Set([...(dates.get(sourceDate) || []), game.gameId]));
++    }
+     const records: GameMetricRecord[] = eligible.map(game => {
+       const components: Components = { toiUnit: "seconds", individual: {}, onIce: {} };
+       const times: number[] = [];
+-      const ambiguous = (dates.get(game.date)?.size || 0) > 1;
++      const sourceDate = game.sourceDate ?? game.date;
++      const ambiguous = !validDate(sourceDate) || (dates.get(sourceDate)?.size || 0) > 1;
+       if (ambiguous) issues.push({ group: "both", playerId: frame.playerId, gameId: game.gameId, reason: "Multiple official games share one date; NST date rows cannot identify the game" });
+       if (!ambiguous) (["individual", "onIce"] as const).forEach((group, index) => {
+-        const batch = indexed[index], matches = batch.rows.get(key(frame.playerId, game.season, game.date)) || [];
+-        const completed = game.completion.status === "verified-final" ? instant(game.completion.completedAt) : null;
++        const batch = indexed[index], matches = batch.rows.get(key(frame.playerId, game.season, sourceDate)) || [];
++        const completed = completionBounds(game.completion)?.safeAfter ?? null;
+         const issue = (reason: string) => issues.push({ group, playerId: frame.playerId, gameId: game.gameId, reason });
+         if (batch.time === null) return;
+         if (matches.length !== 1) { issue(matches.length ? "Duplicate NST date rows; no row chosen or pooled" : "No captured NST row for this official appearance"); return; }
+--- a/web/lib/player-cards/windows.ts
++++ b/web/lib/player-cards/windows.ts
+@@ -1,10 +1,14 @@
+ import type { CardSettings } from "./contracts";
+ 
+-/** Dates are canonical UTC game dates supplied by an inspected adapter. */
++export type EndMinute = {
++  startInclusive: string; endExclusive: string; timezone: string;
++  clockBasis: "explicit-24h" | "schedule-bound-12h" | "unresolved";
++};
++/** `date` is the canonical UTC calendar date; `sourceDate` preserves the provider lookup day. */
+ export type Appearance = {
+   playerId: number; gameId: number; season: number; gameType: "regular" | "playoffs";
+-  date: string; played: boolean | null;
+-  completion: { status: "verified-final"; completedAt: string; reference: string } | { status: "unverified" };
++  date: string; sourceDate?: string; played: boolean | null;
++  completion: { status: "verified-final"; completedAt?: string; completedDuring?: EndMinute; reference: string } | { status: "unverified" };
+ };
+ export type AppearanceFrame = {
+   playerId: number; season: number; gameType: "regular"; dateBasis: "UTC";
+@@ -29,6 +33,21 @@
+   if (!Number.isFinite(time) || new Date(time).toISOString().slice(0, 19) !== value.slice(0, 19)) return null;
+   return time;
+ }
++/** A minute is a range, never an invented exact second. Unresolved clocks are not finality proof. */
++export function completionBounds(completion: Appearance["completion"]): { earliest: number; safeAfter: number; exact: boolean } | null {
++  if (completion.status !== "verified-final") return null;
++  if (completion.completedAt !== undefined) {
++    if (completion.completedDuring !== undefined) return null;
++    const time = typeof completion.completedAt === "string" ? instant(completion.completedAt) : null;
++    return time === null ? null : { earliest: time, safeAfter: time, exact: true };
++  }
++  const minute = completion.completedDuring;
++  if (!minute || !["explicit-24h", "schedule-bound-12h"].includes(minute.clockBasis)) return null;
++  const start = instant(minute.startInclusive), end = instant(minute.endExclusive);
++  if (start === null || end === null || start % 60000 !== 0 || end - start !== 60000 || typeof minute.timezone !== "string" || !minute.timezone.trim()) return null;
++  try { new Intl.DateTimeFormat("en", { timeZone: minute.timezone }); } catch { return null; }
++  return { earliest: start, safeAfter: end, exact: false };
++}
+ export function settingsError(settings: CardSettings): string | null {
+   const season = String(settings.season);
+   if (!/^\d{8}$/.test(season) || Number(season.slice(4)) !== Number(season.slice(0, 4)) + 1 || instant(settings.cutoff) === null) return "Invalid season or UTC cutoff";
+@@ -52,7 +71,7 @@
+   const seen = new Set<number>();
+   for (const game of frame.appearances) {
+     if (game.playerId !== frame.playerId || game.season !== settings.season || game.gameType !== settings.gameType) continue;
+-    if (!validDate(game.date)) return unavailable("Appearance has an invalid UTC game date");
++    if (!validDate(game.date) || (game.sourceDate !== undefined && !validDate(game.sourceDate))) return unavailable("Appearance has an invalid calendar or source game date");
+     if (game.date > settings.cutoff.slice(0, 10)) continue;
+     if (settings.period.mode === "calendar" && (game.date < settings.period.start || game.date > settings.period.end)) continue;
+     if (!Number.isSafeInteger(game.gameId) || game.gameId <= 0 || seen.has(game.gameId)) return unavailable("Appearance has an invalid or duplicate game identity");
+@@ -60,13 +79,23 @@
+     if (game.played === false) continue;
+     if (game.played !== true) return unavailable("Appearance participation is unverified");
+     if (game.completion.status !== "verified-final" || !game.completion.reference.trim()) return unavailable("Completed-game evidence is unverified");
+-    const finished = instant(game.completion.completedAt);
+-    if (finished === null || finished < Date.parse(`${game.date}T00:00:00Z`)) return unavailable("Completed-game timestamp is invalid");
+-    if (finished > cutoff) continue;
+-    games.push({ ...game, completion: { ...game.completion } });
++    const finished = completionBounds(game.completion);
++    if (!finished || finished.earliest < Date.parse(`${game.date}T00:00:00Z`)) return unavailable("Completed-game time or clock precision is unverified");
++    if (finished.safeAfter > cutoff) {
++      if (finished.earliest > cutoff) continue;
++      return unavailable("Game-end minute overlaps the cutoff; completion at the cutoff is unknown");
++    }
++    games.push({ ...game, completion: { ...game.completion, ...(game.completion.completedDuring ? { completedDuring: { ...game.completion.completedDuring } } : {}) } });
++  }
++  for (let i = 0; i < games.length; i++) for (let j = i + 1; j < games.length; j++) {
++    if (games[i].date !== games[j].date) continue;
++    const a = completionBounds(games[i].completion)!, b = completionBounds(games[j].completion)!;
++    const aBeforeB = a.exact ? a.safeAfter < b.earliest : a.safeAfter <= b.earliest;
++    const bBeforeA = b.exact ? b.safeAfter < a.earliest : b.safeAfter <= a.earliest;
++    if ((!a.exact || !b.exact) && !aBeforeB && !bBeforeA) return unavailable("Same-date appearance order is unknown at the reported end-time precision");
+   }
+   games.sort((a, b) => b.date.localeCompare(a.date)
+-    || (b.completion.status === "verified-final" ? instant(b.completion.completedAt)! : 0) - (a.completion.status === "verified-final" ? instant(a.completion.completedAt)! : 0)
++    || completionBounds(b.completion)!.safeAfter - completionBounds(a.completion)!.safeAfter
+     || b.gameId - a.gameId);
+   const chosen = settings.period.mode === "appearances" ? games.slice(0, settings.period.count) : games;
+   const short = settings.period.mode === "appearances" && chosen.length < settings.period.count;

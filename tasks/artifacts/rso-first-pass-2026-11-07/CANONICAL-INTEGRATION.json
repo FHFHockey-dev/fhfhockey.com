@@ -1,0 +1,35 @@
+{
+  "startedAt": "2026-11-07T22:45:50.843617+00:00",
+  "completedAt": "2026-11-07T22:45:50.895284+00:00",
+  "baseCommit": "00ea36b39ee0c541fd6050b79703d2c054e97f1d",
+  "remoteBaseCheck": "read-only git ls-remote succeeded after scope clarification; remote master matches base",
+  "canonicalHeadAtIntegration": "d889664edd232886e2d95b539771bd270bcdabd1",
+  "candidateTree": "4ba9b5dd1c6feb613f2f8e526fb280bb4b35c54e",
+  "sourcePathsChanged": [
+    "web/lib/rosterScheduleOptimizer/planning.ts",
+    "web/lib/rosterScheduleOptimizer/planning.test.ts"
+  ],
+  "beforeSha256": {
+    "web/lib/rosterScheduleOptimizer/planning.ts": "b4c98515a1785de95b8f8e4b84c4ee805b5f173d91006832ad9859295b5d0a2e",
+    "web/lib/rosterScheduleOptimizer/planning.test.ts": "bb8057e7b4fe848a67258d3b4a6b4fa1b3ca025008382065c275c2ca5b2e5ad6"
+  },
+  "afterSha256": {
+    "web/lib/rosterScheduleOptimizer/planning.ts": "c082f0e0b51f355e946e7836d3740f30665e54d0ffdf8809c9d9b7eb67381f57",
+    "web/lib/rosterScheduleOptimizer/planning.test.ts": "13c94223ecaf2c70fb6d6ee6a5eec0e2957b040b65c85f174c3cf8647e5184f0"
+  },
+  "all16CanonicalPathsMatchCandidate": true,
+  "indexOrRefMutation": false,
+  "commitCreated": false,
+  "externalWrites": false,
+  "scope": "exact two-file incremental correction; unrelated dirty files preserved",
+  "verifiedAt": "2026-11-07T22:48:39.574289+00:00",
+  "focusedPlanningTestsPassed": 173,
+  "focusedLint": "passed",
+  "fullCandidateSourceParity": {
+    "trackedFiles": 4794,
+    "mismatches": 0
+  },
+  "candidateIdentityUnchanged": true,
+  "gitDiffCheck": "passed",
+  "canonicalHeadAfterVerification": "45386c9a26178b33adc816daae8d479152085fa1"
+}

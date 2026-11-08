@@ -1,0 +1,343 @@
+{
+  "version": "luna-e07-e16-diagnostic-continuation-v2",
+  "preparedAt": "2026-10-31T22:53:06.808728+00:00",
+  "authority": "proposal_only_no_paid_dispatch_or_policy_activation",
+  "independentReview": "pending",
+  "selectedCaseIds": [
+    "E07",
+    "E08",
+    "E09",
+    "E10",
+    "E11",
+    "E12",
+    "E13",
+    "E14",
+    "E15",
+    "E16"
+  ],
+  "excludedCaseIds": [
+    "E01",
+    "E02",
+    "E03",
+    "E04",
+    "E05",
+    "E06"
+  ],
+  "provenance": {
+    "split": "exposed_synthetic_development",
+    "independentHoldout": false,
+    "humanGroundTruth": false,
+    "rightsBasis": "Previously exposed assistant-authored fictional synthetic reports; no S01-S10 source text; no new acquisition.",
+    "uncalledDoesNotMeanHoldout": true,
+    "selectionAfterEarlierFailures": true
+  },
+  "referencePackage": {
+    "version": "luna-hockey-reference-v4",
+    "mode": "rules-and-synthetic-only",
+    "hash": "9b8a10fd458596b75ba2c0900dea1b72b9ec446d5e0e660ca5c18341920abdb3",
+    "rulesVersion": "luna-hockey-rules-v4",
+    "libraryVersion": null
+  },
+  "basePins": {
+    "realLedgerPath": "tasks/artifacts/luna-reference-package-2026-10-31/paid-evaluation/ledger.json",
+    "realLedgerSha256": "2bf56d754b1f98888785b8d7e759d1c701b5541b0fb9e91ade63eff041ff3ceb",
+    "historicalLedgerSha256": "e8418735afaeff893177e550df6774600c6c6fec4f49c2b01c183712cdc064f2",
+    "previousExecutionManifestPath": "tasks/artifacts/luna-reference-package-2026-10-31/continuation-e04-execution/FILE-PINS.json",
+    "previousExecutionManifestSha256": "a984a5b9c96b3e648e07095feab0f543ae17e2976d79be60f56ae6a70350ca94",
+    "v4FullOfflineBatchSha256": "2d7ed6d130fbd4fb3debfe3cc01328e8ef004667597547079974fd908504fa10",
+    "packetsSha256": "b50ace71b2f7ad72d6ea86cbeb93c7427b729b1d44b5d623369f5777e98fef41",
+    "requestsSha256": "d59caecc7bb6d2c237c49d437259c66a7cbf097e232c71d538dc63a41cfc6fc4",
+    "diagnosticPolicySha256": "5e96e99beb1558c66f00c73cdce49f3b722cbdf7f4395f6fbb6388ec7cd1da20",
+    "previousDiagnosticManifestPath": "tasks/artifacts/luna-reference-package-2026-10-31/diagnostic-e07-e16/FILE-PINS.json",
+    "previousDiagnosticManifestSha256": "2608668732060067bf8194bb6ed6cdf955c7ff96e21fed9745ebb64574f2e29c",
+    "diagnosticCheckpointSha256": "b10ab32677a05590028e236ee721ae12077e7943e28b82414172fb014fab87c9"
+  },
+  "applicationPins": {
+    "web/lib/sources/tweetLunaReview.test.ts": "e03d9800a72ae4b51f1bffefe1f98ef657ae69c9873e3587b05e55b47b8e32fd",
+    "web/lib/sources/tweetLunaReference.ts": "9070da4a660da3240ffca1cbe55d0b8e4d411b895ba679d6c24d49695afb4927",
+    "web/lib/sources/tweetLunaReference.md": "20d3bb649b07fa2124a0bdbe45eb7145babdd125607da60f5b43c6e2f3b5ee99",
+    "web/lib/sources/tweetLunaReview.ts": "88eb4a0a182c1a7ad42b63a98cd77dde8cdb18cadeaeb900dd36b6f6d98e2940",
+    "web/lib/sources/fixtures/tweetLunaSyntheticCases.ts": "9bc96553a92bdfcfd63ba1ab2235025026e8d88726846183da88d6a31ff52013",
+    "web/lib/sources/tweetLunaGoalieWording.ts": "eb2ceadb1db0d5d16fcab03f2c835ac2d9dce44e4e97853d9fd3159c610b949a",
+    "web/lib/sources/fixtures/tweetLunaEvaluation.ts": "6f441f341627a8296ad0bf7810ee9c72e076bc16b2e9a67ac7afcd92c4dfac09",
+    "web/scripts/rehearse-luna-evaluation.ts": "f510038e837a24ce88df5fe6a9aa00e2e17ed873d871ddcaa3f03456904d6e66",
+    "web/lib/sources/tweetLunaEvaluationScoring.ts": "22797d003c321c3e52ef31945bbc5a4dfb7365ff4dfcfc93454c5bf041f6363d",
+    "web/lib/sources/tweetLunaTransport.ts": "6f67f0e819766eb8b7e712114f063681833ea87266b08443701231461e4d12d1",
+    "web/lib/sources/tweetLunaLocalStore.ts": "52977c7949d2f60ee4274da0c7d1e0583bc8c5c1324bb6ffb187a32037a2d543",
+    "web/scripts/review-ifttt-luna.ts": "10cadfd09c9410909350927f02f9549bccdb927b1f0b082deeb7fc44f6167878",
+    "web/lib/sources/fixtures/tweetLunaAdjudicatedLibrary.json": "e787036b54c89f8fa06e4b28032c8895fbbed81feef1fa04e357435f3229726a",
+    "web/lib/sources/decisionsReference/adapter.mjs": "055bc80ccf9874de8a976da6106bc34af15e424d6b905d39fccf57ecfd2b92a1",
+    "web/lib/sources/tweetIdentityProposal.ts": "a73df0483313bc75e94b36bc3fcf9087e1adb7d96afd0895db7a9c8bad7c9a27",
+    "web/lib/sources/tweetPlayerEvents.ts": "14c421d37506f33df08cac5914e30c38a578b2588ae46f3c6e461b70efadc88c",
+    "web/lib/sources/tweetLunaEvidenceBinding.ts": "2bca6e4b4aa4b94a093a29b08ec5400e09e2a20409ecb5ba966de48c45d2eb24",
+    "web/lib/sources/tweetLunaBindingWorkflow.ts": "4836141438d31305dd976b3fabbb2704ace940b3191b0d299bbd1baf6b26e546"
+  },
+  "carryForward": {
+    "ledgerEnabled": false,
+    "blockedReason": "bounded_continuation_stopped",
+    "approvedPolicyId": "owner-reviewed-v4-e04-e16-continuation-v1",
+    "priorExposureNanoUsd": 262519843,
+    "historicalUncertainReservationNanoUsd": 254394800,
+    "existingAttempts": [
+      {
+        "hash": "e462a1fdead8678a2fc4cf1991b0515f0b7b19d87954c8597ae427e163310423",
+        "state": "settled",
+        "endpoint": "responses",
+        "requestId": "req_4fcb802531754e388253b4e7d481c96a",
+        "chargeNanoUsd": 417341
+      },
+      {
+        "hash": "fd281e98c460607c2e7b3c740c75a417ac86703eceaf8dfe45bc47f128143a38",
+        "state": "settled",
+        "endpoint": "decisions",
+        "requestId": "req_c4eda22b6eed4875899808677e96db42",
+        "chargeNanoUsd": 98011
+      },
+      {
+        "hash": "a008002a2f52e504b17262b7907edc00494d834e58c9420c7a3450406dfd3ed2",
+        "state": "settled",
+        "endpoint": "responses",
+        "requestId": "req_a41998e094bc4f87b4fe0a2557856226",
+        "chargeNanoUsd": 450451
+      },
+      {
+        "hash": "cb4ebd599a52911bd995fd7089baf7062544dabdf3efd093e05d7782cf540084",
+        "state": "settled",
+        "endpoint": "responses",
+        "requestId": "req_e7803dc01f86494eadd832c1c7490158",
+        "chargeNanoUsd": 464751
+      },
+      {
+        "hash": "ea9e7d92269db5fb02f815d908e235536892cb75b5923bb6e8b69f2200ab5ab8",
+        "state": "settled",
+        "endpoint": "responses",
+        "requestId": "req_de4a4cffe2b940ef9b61203359c0233e",
+        "chargeNanoUsd": 428671
+      },
+      {
+        "hash": "afff9e4835346591f2e624c4473ac0542db178a459557b6a0dd7d2e397ba88af",
+        "state": "settled",
+        "endpoint": "responses",
+        "requestId": "req_4bcbab2e72a648e2b644bf60f62d1a04",
+        "chargeNanoUsd": 426031
+      },
+      {
+        "hash": "a3f5c84126412a9d3e070017013f03152caeeb776aa488be61c0a4a64d82ab7e",
+        "state": "settled",
+        "endpoint": "responses",
+        "requestId": "req_284566fb7592479eb04c18bfe57c47b1",
+        "chargeNanoUsd": 458591
+      }
+    ]
+  },
+  "budget": {
+    "cumulativeMaxCalls": 20,
+    "previouslyUsedCalls": 7,
+    "availableCallSlots": 13,
+    "maximumNewCalls": 12,
+    "maximumCumulativeCallsForThisPlan": 19,
+    "unusedSlotCannotBeRepurposed": true,
+    "responsesMaximum": 10,
+    "decisionsMaximum": 2,
+    "maxRetries": 0,
+    "concurrency": 1,
+    "aggregateCapNanoUsd": 1000000000,
+    "startingAggregateExposureNanoUsd": 265263690,
+    "maximumAdditionalExposureNanoUsd": 734736310,
+    "reservationNanoUsd": 233000000,
+    "promotionalSafetyReserveNanoUsd": 5000000000,
+    "expiresAt": "2026-11-01T23:59:59Z",
+    "diagnosticNewCostEstimateNanoUsd": 30071588,
+    "estimateIsNotInvoiceOrTokenCeiling": true
+  },
+  "sequence": [
+    {
+      "sequenceIfAllConditionalLegsRun": 1,
+      "maximumCumulativeCallNumber": 8,
+      "caseId": "E07",
+      "endpoint": "responses",
+      "hash": "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6",
+      "bytes": 14843,
+      "condition": "previous_case_recorded_and_operationally_safe"
+    },
+    {
+      "sequenceIfAllConditionalLegsRun": 2,
+      "maximumCumulativeCallNumber": 9,
+      "caseId": "E08",
+      "endpoint": "responses",
+      "hash": "9d1a891a46a38128e08f272045e5ec9d95a656d413ac5fbb1574e01230c9dec9",
+      "bytes": 15113,
+      "condition": "previous_case_recorded_and_operationally_safe"
+    },
+    {
+      "sequenceIfAllConditionalLegsRun": 3,
+      "maximumCumulativeCallNumber": 10,
+      "caseId": "E09",
+      "endpoint": "responses",
+      "hash": "fbe771b131918b3cf739b357ce324baaf38dac818b98fc3100b33b6498c7846c",
+      "bytes": 15548,
+      "condition": "previous_case_recorded_and_operationally_safe"
+    },
+    {
+      "sequenceIfAllConditionalLegsRun": 4,
+      "maximumCumulativeCallNumber": 11,
+      "caseId": "E10",
+      "endpoint": "responses",
+      "hash": "af1ac22d172d4127a04c08b0b7f2227e59be75059043ee7052802d531b62893d",
+      "bytes": 15147,
+      "condition": "previous_case_recorded_and_operationally_safe"
+    },
+    {
+      "sequenceIfAllConditionalLegsRun": 5,
+      "maximumCumulativeCallNumber": 12,
+      "caseId": "E10",
+      "endpoint": "decisions",
+      "hash": "6d44c708b3e1173a25d906f2348bd28ac47f20ec262ece430ffda3430754183e",
+      "bytes": 3203,
+      "condition": "original_responses_validates_in_existing_caller"
+    },
+    {
+      "sequenceIfAllConditionalLegsRun": 6,
+      "maximumCumulativeCallNumber": 13,
+      "caseId": "E11",
+      "endpoint": "responses",
+      "hash": "9841ce0f388de9ca206cf22abe7dbd82afb5a3f9500fe6f7a1215e72ad758cba",
+      "bytes": 16047,
+      "condition": "previous_case_recorded_and_operationally_safe"
+    },
+    {
+      "sequenceIfAllConditionalLegsRun": 7,
+      "maximumCumulativeCallNumber": 14,
+      "caseId": "E11",
+      "endpoint": "decisions",
+      "hash": "5781feae2b9115b7068461d20b8cb0fcb34746baa4cbd2df0b1790702c951740",
+      "bytes": 3162,
+      "condition": "original_responses_validates_in_existing_caller"
+    },
+    {
+      "sequenceIfAllConditionalLegsRun": 8,
+      "maximumCumulativeCallNumber": 15,
+      "caseId": "E12",
+      "endpoint": "responses",
+      "hash": "e344741ac77450ec7be9655f6ea7ca57933d26d6b185450ee9df473776a77b2f",
+      "bytes": 16057,
+      "condition": "previous_case_recorded_and_operationally_safe"
+    },
+    {
+      "sequenceIfAllConditionalLegsRun": 9,
+      "maximumCumulativeCallNumber": 16,
+      "caseId": "E13",
+      "endpoint": "responses",
+      "hash": "7270c5fa8947367d749d52bb2b0917adc03760b9785b59b7fdbb3e9d5955576d",
+      "bytes": 14839,
+      "condition": "previous_case_recorded_and_operationally_safe"
+    },
+    {
+      "sequenceIfAllConditionalLegsRun": 10,
+      "maximumCumulativeCallNumber": 17,
+      "caseId": "E14",
+      "endpoint": "responses",
+      "hash": "102d9692c07022f282ba3c3c29aed0636aced6adce77164ddb5545a851bccafa",
+      "bytes": 15137,
+      "condition": "previous_case_recorded_and_operationally_safe"
+    },
+    {
+      "sequenceIfAllConditionalLegsRun": 11,
+      "maximumCumulativeCallNumber": 18,
+      "caseId": "E15",
+      "endpoint": "responses",
+      "hash": "06fe01bba0cb4d29d1967fc072951c2ce42cf76dc9059c825b04ea0f728233f2",
+      "bytes": 14853,
+      "condition": "previous_case_recorded_and_operationally_safe"
+    },
+    {
+      "sequenceIfAllConditionalLegsRun": 12,
+      "maximumCumulativeCallNumber": 19,
+      "caseId": "E16",
+      "endpoint": "responses",
+      "hash": "7308c16d8d1b5c68a6db90c1d4be843203390ba20c5a47c62eb15cecc14cf3b7",
+      "bytes": 14741,
+      "condition": "previous_case_recorded_and_operationally_safe"
+    }
+  ],
+  "diagnosticPolicy": {
+    "version": "luna-exposed-diagnostic-collection-v2",
+    "changeFromPreviousPlan": "Original model-result failures are retained as failures and may allow the next fixed case only after receipt-bound replay and operational checks. They never become accepted evidence.",
+    "collectibleHeldReasons": [
+      "goalie_subject_binding_invalid",
+      "goalie_certainty_inflation",
+      "goalie_definite_wording_unsupported",
+      "goalie_context_unresolved",
+      "goalie_conflict_or_correction_unresolved",
+      "goalie_tentative_wording_unsupported"
+    ],
+    "collectibleReviewOnly": "Frozen identity/goalie/Decisions label mismatches when existing caller validates, all required legs settle and Decisions bind.",
+    "mustStop": [
+      "transport error or unknown/unsettled outcome",
+      "provider/protocol/incomplete/malformed schema output",
+      "generic or unlisted validation failure",
+      "unresolved Decisions",
+      "CLI exit other than matching 0 review_only or 2 allowlisted held result",
+      "receipt/source/request/original review binding mismatch",
+      "authority violation",
+      "pins, sequence, retention, clock, funding, ledger or budget failure",
+      "all selected cases recorded"
+    ],
+    "receiptReplay": "Offline only through pinned existing caller and transport using exact saved settled receipts; no key loader, fetch fallback, admission mutation or additional call. Exact original review digest must reproduce.",
+    "decisionLegs": "Only E10/E11; existing caller sends after original Responses validation. An allowlisted held Responses skips that case Decisions permanently, records not_run_original_responses_held, and may continue to next case. No candidate or label can force Decisions.",
+    "scoring": "Preserve original raw grade/status/holds. Count a recorded pass only after receipt-bound replay, recorded_pass outcome, durable four-file checkpoint, and successful latest integrity recheck. Distinguish raw model failures from operationally unverified or corrupted records; neither can become a pass.",
+    "candidates": "Separate bound optional exact-quote candidates and human decisions only; never supplied to classifier, grade, next request or Decisions. No apply/publish/training authority.",
+    "noCorrectionConditionForAdvance": true,
+    "sequentialSupervisionRequired": true,
+    "caseAdvancementNotTruthOrProductionAcceptance": true,
+    "receiptCompletion": "Responses require completed status; both endpoints reject any non-null error/incomplete_details or explicit non-completed status, including response message and Decisions-answer indicators. Decisions may omit status; a missing status is not a fabricated completion assertion.",
+    "artifactIntegrity": "Bind original review, complete per-case receipt rows, candidate or explicit absence, and diagnostic result by exact file-byte hashes in a durably written per-case checkpoint chained to the previous trusted anchor. Recheck every required file, checkpoint and full ledger content/policy prefix before the next case and before completion. Compare the ledger before/after each call to reject prior-receipt or policy mutations during the call. Missing/corrupt/extra artifacts or changed ledger records stop; do not regenerate expected anchors from changed files."
+  },
+  "execution": {
+    "implementation": "Existing pinned manual CLI, one unchanged saved packet at a time with separate --binding-candidate-output; proposed offline diagnostic classifier used by supervising operator after each report. No automated loop or new API client.",
+    "perCaseArtifacts": [
+      "original raw receipt",
+      "original review and frozen-label grade",
+      "separate candidate or explicit absence",
+      "diagnostic classification and exact consumed/skipped-leg accounting",
+      "updated same-ledger prefix and conservative usage"
+    ],
+    "preInvocation": "Verify frozen pins/source packet, original seven receipts plus each exact recorded ledger prefix (all fields, receipt bodies, usage/charges, reservations and policy metadata), all four required artifacts and checkpoint chain against supervisor-held trusted hashes, case sequence, stop/duplicate state, fresh funding/scope/clock, full reservation headroom and unchanged expiry. Reconstruct expected starting activation from the pinned START-LEDGER plus only the reviewed three activation fields.",
+    "beforeAdvancing": "Persist/fsync original review, complete receipt rows, candidate/explicit absence and diagnostic result. Seal their expected byte hashes and exact ledger-prefix digest into a new exclusive checkpoint; retain its trusted hash outside mutable artifact files. Re-read/recheck all prior case artifacts, checkpoints and full ledger prefix before each next invocation, and before final completion. Check prior prefix unchanged across the current call. Any missing/corrupt file or altered ledger field disables the same ledger before further action; never repair history or release money.",
+    "completion": "Durably disable ledger after E16 whether some cases passed or failed. Preserve all receipts and reservations.",
+    "noAutomaticResume": true,
+    "noReorder": true,
+    "noE01ThroughE06OrTheirUnsentDecisions": true,
+    "trustedCheckpointAnchor": "Supervising process retains the just-created expected checkpoint hashes and emits them for independently retained execution records; never trust a hash freshly recomputed from mutable case files. Hashes detect edits but do not authenticate against an operator who can alter every trust anchor."
+  },
+  "activationProposalOnly": {
+    "requires": "Independent review of new policy, frozen sequence and offline checks, then parent execution authorization and fresh live preflight. No activation in preparation.",
+    "setOnlyAfterReview": {
+      "approvedPolicyId": "owner-reviewed-e07-e16-diagnostic-collection-v2",
+      "enabled": true,
+      "blockedReason": null
+    },
+    "requiredStartingStopReason": "bounded_continuation_stopped",
+    "preserveUnchanged": [
+      "version",
+      "all seven original attempts and receipts",
+      "priorExposureNanoUsd",
+      "capNanoUsd",
+      "maxCalls",
+      "expiresAt"
+    ],
+    "onAnyOperationalFailure": "Disable durably; preserve unknown-outcome stop; no retry/resume.",
+    "notAReset": true
+  },
+  "production": {
+    "hostedDispatchAuthorized": false,
+    "databaseMutationAuthorized": false,
+    "deploymentAuthorized": false,
+    "verifiedRevocationRotationBeforeProduction": "pending; separate production gate"
+  },
+  "repairReview": {
+    "thread": "01a1936a-45ae-73d0-ae05-fe4339c5a022",
+    "previousProposal": "not ready: incomplete Decisions and unverified receipt/candidate/ledger content between cases",
+    "state": "offline R1 repair; independent re-review required; no paid execution"
+  }
+}

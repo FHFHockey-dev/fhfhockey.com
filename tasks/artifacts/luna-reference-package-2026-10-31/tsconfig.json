@@ -1,0 +1,12 @@
+{
+  "extends": "../../../web/tsconfig.json",
+  "include": [
+    "../../../web/next-bootstrap.d.ts",
+    "../../../web/yahoo-fantasy.d.ts",
+    "../../../web/lib/sources/tweetLunaReference.ts",
+    "../../../web/lib/sources/tweetLunaReview.ts",
+    "../../../web/lib/sources/tweetLunaReview.test.ts",
+    "../../../web/lib/sources/fixtures/tweetLunaSyntheticCases.ts"
+  ],
+  "exclude": ["../../../web/node_modules", "../../../web/.next"]
+}

@@ -1,0 +1,30 @@
+{
+  "at": "2026-11-01T16:50:18.672933+00:00",
+  "syntax": "passed",
+  "negativeChecks": [
+    {
+      "case": "short SHA",
+      "sha": "76ea6d02a",
+      "exitCode": 1,
+      "expectedRejection": "A full lowercase 40-character committed SHA is required",
+      "artifactCreated": false
+    },
+    {
+      "case": "saved release base",
+      "sha": "4965a872a9746b6129c9ac589c200560d01a1e23",
+      "exitCode": 1,
+      "expectedRejection": "Wrong candidate tree: observed 4a0a6b012a6a547309058672ca5f062d56fcfef3; expected a77527cdc29fd994bc0e28a4b2d5ec1b87acbe14. Do not substitute HEAD or a tree-only receipt.",
+      "artifactCreated": false
+    },
+    {
+      "case": "current HEAD",
+      "sha": "76ea6d02a1fc5bcdeeab07754dc874922d75c347",
+      "exitCode": 1,
+      "expectedRejection": "Wrong candidate tree: observed 52c2cb19951d5ca25fe8bc493ab52fa6c146d62d; expected a77527cdc29fd994bc0e28a4b2d5ec1b87acbe14. Do not substitute HEAD or a tree-only receipt.",
+      "artifactCreated": false
+    }
+  ],
+  "positivePreparation": "not run: exact committed candidate absent",
+  "canonicalAdmissionChanged": false,
+  "gitMutations": 0
+}

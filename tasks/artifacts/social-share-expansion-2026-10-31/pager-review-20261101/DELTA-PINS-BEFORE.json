@@ -1,0 +1,18 @@
+{
+  "candidate": "cc263466a69e9c7c0fe7d7ff3a04f411c30a9c2e",
+  "files": {
+    "web/components/SocialShare/PeriodControl.tsx": "27032118dd9863668af0353c6487d416853620858412e7f6e1b8fcb54d00f9d2",
+    "web/components/SocialShare/PostStudio.test.tsx": "3a03d04772a47e5b8408c236758f89b5a0a8acedc3a0e57308f53a8a800ae48e",
+    "web/components/SocialShare/PostStudio.tsx": "dac93c9ec8db5d7785516f277e3991d4564f711688be0b8aa5e2740655b92d73",
+    "web/components/SocialShare/modules/BusyQuietCard.tsx": "0226d49189d3201525a577ad6b5d01ac482f28380893d769bfa6cd6c91453bf3",
+    "web/components/SocialShare/modules/GoalieRescueCard.module.scss": "53ab46e2484d1fbe2b2f23b9a12bfb6d020adfaaca55742892b0cdd8b1a6393a",
+    "web/components/SocialShare/modules/GoalieRescueCard.tsx": "6bdf2ba9cceb6854b2dee2e56dbe10df365972e6a624858f507a0fb0bebd1e53",
+    "web/lib/socialShare/modules/busyQuiet.sources.ts": "03f8d88ccc90dc697644ceb4eca841dc587f59d412e128f6c5bf218cf8dacda5",
+    "web/lib/socialShare/modules/busyQuiet.test.ts": "a6078d54ea5aa096a6b2ab6ec86daa3bef9dbd87c0e6176fcaff387003f95d97",
+    "web/lib/socialShare/modules/busyQuiet.ts": "92295dd978ec84a4016e943d92277891780663785639d6b706fcabefee14f128",
+    "web/lib/socialShare/modules/goalieRescue.test.ts": "6b4a113787ced339489d74af01d21972006fec1e20c0e512cc2774777a195ba6",
+    "web/lib/socialShare/modules/goalieRescue.ts": "b9c5eb48c2c51f5def12d038924332bf2ad95d39fd0825471d6b8ca9b7c69f82",
+    "web/lib/socialShare/postedWeek.test.ts": "2cc702e6fb48be7080e7819c2a435f16ee9dee1d42dd181258f4c75fddf53c46",
+    "web/lib/socialShare/postedWeek.ts": "2b881d6f46dedfdc8d164b206126aad836a75022623c331f85a7dd255b57c905"
+  }
+}

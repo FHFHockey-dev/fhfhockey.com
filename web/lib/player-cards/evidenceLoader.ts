@@ -32,19 +32,19 @@ const period: Check = value => shaped(value, { mode: mode => mode === "appearanc
 
 /** Facts a receipt subject carries; parsed from the hashed bytes and bound by the admission's pinned hash. */
 const FACTS: Record<Kind, Record<string, Check>> = {
-  "appearance-history": { playerId: id, season: id, gameType: regular, through: time, appearances: value => Array.isArray(value) && value.every(game => shaped(game, { gameId: id, date: day, played: played => typeof played === "boolean" })) },
-  "game-finality": { gameId: id, season: id, date: day, endedAt: time },
+  "appearance-history": { playerId: id, season: id, gameType: regular, through: time, appearances: value => Array.isArray(value) && value.every(game => shaped(game, { gameId: id, date: day, played: played => typeof played === "boolean" }, ["sourceDate"]) && (!own(game as object, "sourceDate") || day((game as Record<string, unknown>).sourceDate))) },
+  "game-finality": { gameId: id, season: id, date: day },
   "metric-definition": { metricId, registryVersion: text, sourceDefinition: text, sourceVersion: text, definitionVersion: text },
   "population-membership": { metricId, scope: scope => scope === "all-nhl" || scope === "synthetic-all-values", definitionVersion: text, season: id, gameType: regular, strength: strength => strength === "all" || strength === "5v5" || strength === "pp", period, cutoff: time, memberIds: value => Array.isArray(value) && value.every(id) },
 };
 /** Authority labels: written only from a verified admission claim. A file may carry them, but they never count as proof. */
 const LABELS: Record<Kind, Record<string, readonly string[]>> = {
   "appearance-history": { sourceClass: ["complete-official-log", "latest-n", "row-count"], dateBasis: ["UTC", "provider-game-date"] },
-  "game-finality": { sourceClass: ["official-game-end", "ingestion-completion", "scheduled-start"] },
+  "game-finality": { sourceClass: ["official-game-end", "official-game-report-minute", "ingestion-completion", "scheduled-start"] },
   "metric-definition": { zeroSemantics: ["verified-distinct", "placeholder-coerced", "unknown"] },
   "population-membership": { sourceClass: ["metric-population-inventory", "roster-snapshot", "ingestion-position-filter"] },
 };
-const AUTHORITATIVE = new Set(["complete-official-log", "UTC", "official-game-end", "verified-distinct", "metric-population-inventory"]);
+const AUTHORITATIVE = new Set(["complete-official-log", "UTC", "official-game-end", "official-game-report-minute", "verified-distinct", "metric-population-inventory"]);
 /** The most each retained format can establish, whatever its admission claims. */
 const CEILING: Record<Admission["format"], (claim: VerifiedClaim) => boolean> = {
   "receipt-v1": () => true,
@@ -56,10 +56,16 @@ type Candidate = { kind: Kind; receiptId: string; origin?: unknown; capturedAt: 
 function receiptV1(json: unknown): Candidate[] | string {
   if (!shaped(json, { kind: kind => typeof kind === "string" && own(FACTS, kind), receiptId: text, origin: origin => origin === "synthetic" || origin === "local-observed", capturedAt: time, subject: record })) return "Receipt envelope is malformed or carries unrecognised fields";
   const envelope = json as Record<string, unknown>, kind = envelope.kind as Kind, subject = envelope.subject as Record<string, unknown>, labels = Object.keys(LABELS[kind]);
-  if (!shaped(subject, FACTS[kind], labels)) return `Receipt subject does not match the ${kind} schema`;
+  const fields = kind === "game-finality" ? ["endedAt", "endMinute"] : [];
+  if (!shaped(subject, FACTS[kind], [...labels, ...fields])) return `Receipt subject does not match the ${kind} schema`;
+  if (kind === "game-finality") {
+    if (own(subject, "endedAt") === own(subject, "endMinute")) return "Finality must carry exactly one exact end or end-minute range";
+    if (own(subject, "endedAt") && !time(subject.endedAt)) return "Finality exact end is malformed";
+    if (own(subject, "endMinute") && !shaped(subject.endMinute, { startInclusive: time, endExclusive: time, timezone: text, clockBasis: basis => typeof basis === "string" && ["explicit-24h", "schedule-bound-12h", "unresolved"].includes(basis) })) return "Finality end-minute range is malformed";
+  }
   return [{
     kind, receiptId: envelope.receiptId as string, origin: envelope.origin, capturedAt: envelope.capturedAt as string,
-    facts: Object.fromEntries(Object.keys(FACTS[kind]).map(key => [key, subject[key]])),
+    facts: Object.fromEntries([...Object.keys(FACTS[kind]), ...fields.filter(key => own(subject, key))].map(key => [key, subject[key]])),
     asserted: Object.fromEntries(labels.filter(key => own(subject, key)).map(key => [key, subject[key]])),
   }];
 }

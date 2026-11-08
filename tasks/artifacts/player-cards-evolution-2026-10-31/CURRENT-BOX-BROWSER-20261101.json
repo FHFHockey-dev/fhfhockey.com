@@ -1,0 +1,34 @@
+{
+  "checks": [
+    {
+      "id": 8476453,
+      "summary": "Box TOI + 5 counts: 5 match / 0 differ / 0 unknown · PPP 2 unknown",
+      "sourceRowsPreserved": true,
+      "profileUnchanged": true,
+      "dimensions": [
+        1200,
+        1020
+      ],
+      "pngSHA256": "ef807d9a6afa3cded087fd5058b30a32df7ab4b19c90d6a00e8253a7986d7cac",
+      "footerRight": 930.2100830078125,
+      "mobile": 320
+    },
+    {
+      "id": 8484136,
+      "summary": "Box TOI + 5 counts: 3 match / 1 differ / 1 unknown · G/A/SOG differ",
+      "sourceRowsPreserved": true,
+      "profileUnchanged": true,
+      "dimensions": [
+        1200,
+        1020
+      ],
+      "pngSHA256": "5ce42944b74c53c27254a051387feb758cac9e248616768fae7f535ff60b1662",
+      "footerRight": 923.15576171875,
+      "mobile": 320
+    }
+  ],
+  "unknownNhlAnalysisStillBlocked": true,
+  "separateResearchExport": true,
+  "requests": [],
+  "errors": []
+}

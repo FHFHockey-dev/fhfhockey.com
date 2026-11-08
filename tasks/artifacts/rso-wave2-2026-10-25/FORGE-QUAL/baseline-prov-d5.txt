@@ -1,0 +1,74 @@
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+(node:39324) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ❯ lib/player-forecasts/rsoUsePolicy.test.ts (24 tests | 6 failed) 7ms
+   ✓ RSO target/use reviews > does not invent production approvals from valid-looking inputs 1ms
+   ✓ RSO target/use reviews > keeps assignment, totals, comparison and tie-breaking independent 0ms
+   ✓ RSO target/use reviews > rejects a different component without broadening the reviewed scope 0ms
+   ✓ RSO target/use reviews > rejects a different modelMode without broadening the reviewed scope 0ms
+   ✓ RSO target/use reviews > rejects a different codeVersion without broadening the reviewed scope 0ms
+   ✓ RSO target/use reviews > rejects a different configurationHash without broadening the reviewed scope 0ms
+   ✓ RSO target/use reviews > rejects a different artifactHash without broadening the reviewed scope 0ms
+   ✓ RSO target/use reviews > rejects a different targetKey without broadening the reviewed scope 0ms
+   ✓ RSO target/use reviews > rejects a different horizonGames without broadening the reviewed scope 0ms
+   ✓ RSO target/use reviews > rejects a different conditioning without broadening the reviewed scope 0ms
+   ✓ RSO target/use reviews > rejects a different participationLineage without broadening the reviewed scope 0ms
+   ✓ RSO target/use reviews > keeps the production catalog empty, so a binding with valid identity hashes is still denied 0ms
+   × RSO target/use reviews > counts a review only with both evidence references (prospectiveEvidenceRef = "") 3ms
+     → expected { assignment: true, …(3) } to deeply equal { assignment: false, …(3) }
+   × RSO target/use reviews > counts a review only with both evidence references (prospectiveEvidenceRef = "   ") 1ms
+     → expected { assignment: true, …(3) } to deeply equal { assignment: false, …(3) }
+   × RSO target/use reviews > counts a review only with both evidence references (prospectiveEvidenceRef = undefined) 0ms
+     → expected { assignment: true, …(3) } to deeply equal { assignment: false, …(3) }
+   × RSO target/use reviews > counts a review only with both evidence references (ownerApprovalRef = "") 0ms
+     → expected { assignment: true, …(3) } to deeply equal { assignment: false, …(3) }
+   × RSO target/use reviews > counts a review only with both evidence references (ownerApprovalRef = "   ") 0ms
+     → expected { assignment: true, …(3) } to deeply equal { assignment: false, …(3) }
+   × RSO target/use reviews > counts a review only with both evidence references (ownerApprovalRef = undefined) 0ms
+     → expected { assignment: true, …(3) } to deeply equal { assignment: false, …(3) }
+   ✓ RSO target/use reviews > denies revoked review evidence 0ms
+   ✓ RSO target/use reviews > denies expired review evidence 0ms
+   ✓ RSO target/use reviews > denies future_review review evidence 0ms
+   ✓ RSO target/use reviews > denies old_cutoff review evidence 0ms
+   ✓ RSO target/use reviews > denies late_cutoff review evidence 0ms
+   ✓ RSO target/use reviews > denies duplicate review evidence 0ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 6 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  lib/player-forecasts/rsoUsePolicy.test.ts > RSO target/use reviews > counts a review only with both evidence references (prospectiveEvidenceRef = "")
+ FAIL  lib/player-forecasts/rsoUsePolicy.test.ts > RSO target/use reviews > counts a review only with both evidence references (prospectiveEvidenceRef = "   ")
+ FAIL  lib/player-forecasts/rsoUsePolicy.test.ts > RSO target/use reviews > counts a review only with both evidence references (prospectiveEvidenceRef = undefined)
+ FAIL  lib/player-forecasts/rsoUsePolicy.test.ts > RSO target/use reviews > counts a review only with both evidence references (ownerApprovalRef = "")
+ FAIL  lib/player-forecasts/rsoUsePolicy.test.ts > RSO target/use reviews > counts a review only with both evidence references (ownerApprovalRef = "   ")
+ FAIL  lib/player-forecasts/rsoUsePolicy.test.ts > RSO target/use reviews > counts a review only with both evidence references (ownerApprovalRef = undefined)
+AssertionError: expected { assignment: true, …(3) } to deeply equal { assignment: false, …(3) }
+
+- Expected
++ Received
+
+  {
+-   "assignment": false,
++   "assignment": true,
+    "comparison": false,
+    "conditionalTieBreak": false,
+    "totals": false,
+  }
+
+ ❯ lib/player-forecasts/rsoUsePolicy.test.ts:43:70
+     41|     const candidate = structuredClone(policy) as RsoUsePolicy & { revi…
+     42|     if (value === undefined) delete candidate.reviews[0][field]; else …
+     43|     expect(resolveRsoTargetUse(binding, now, candidate).allowedUses).t…
+       |                                                                      ^
+     44|   });
+     45|   it.each(["revoked", "expired", "future_review", "old_cutoff", "late_…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/6]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  6 failed | 18 passed (24)
+   Start at  20:04:44
+   Duration  378ms (transform 39ms, setup 3ms, collect 49ms, tests 7ms, environment 135ms, prepare 37ms)
+

@@ -1,0 +1,65 @@
+{
+  "id": "CODEX-PLAYER-CARDS-COMPOSITION-20261026",
+  "at": "2026-10-26T16:28:05.995007+00:00",
+  "owner_thread": "01a16ec2-f81c-717b-8961-8c3832fdc00f",
+  "source": "TJ explicit visual experiment relayed at16:18UTC; existing exact card release CLAUDE-20261026-103",
+  "source_paths": [
+    "web/lib/player-cards/portraitTreatment.ts",
+    "web/lib/player-cards/portraitTreatment.test.ts",
+    "web/components/player-cards/HeroPlayerCard.tsx",
+    "web/lib/player-cards/shareExport.ts",
+    "web/lib/player-cards/shareExport.test.ts",
+    "web/components/player-cards/PlayerCardShareStudio.tsx",
+    "web/components/player-cards/PlayerCardShareStudio.test.tsx",
+    "web/lib/player-cards/teamLogo.ts"
+  ],
+  "status": "Active bounded two combined portrait treatments and embedded actual team logo; default unchanged",
+  "artifact_root": "tasks/artifacts/player-cards-2026-10-26/composition-variants-01",
+  "baseline": [
+    {
+      "path": "web/lib/player-cards/portraitTreatment.ts",
+      "existed": true,
+      "sha256": "12826051100dc134e0c39838909ef5ca49f18376ae3f849c99ebe21eb2b3299f"
+    },
+    {
+      "path": "web/lib/player-cards/portraitTreatment.test.ts",
+      "existed": true,
+      "sha256": "921177c59ca88558260fc95b0f4dee62938b49b429f1bf9f6a548747ead78116"
+    },
+    {
+      "path": "web/components/player-cards/HeroPlayerCard.tsx",
+      "existed": true,
+      "sha256": "4305ed15a9113022df9c8e4402d6ba2db1019871d6adfba580a7aa33c8c2e166"
+    },
+    {
+      "path": "web/lib/player-cards/shareExport.ts",
+      "existed": true,
+      "sha256": "608676949169425fc4b35df4829cd841d921d0d5f7e1b16b7e5f074cc546c512"
+    },
+    {
+      "path": "web/lib/player-cards/shareExport.test.ts",
+      "existed": true,
+      "sha256": "446b53b6571db6770dabfc5b762863d15850f3f0b2d0aff749c6a71b7148397e"
+    },
+    {
+      "path": "web/components/player-cards/PlayerCardShareStudio.tsx",
+      "existed": true,
+      "sha256": "c96629b6cc07ec8be06aab2804e0e6f3793650b0e3ed71f692591f5cd9969ad9"
+    },
+    {
+      "path": "web/components/player-cards/PlayerCardShareStudio.test.tsx",
+      "existed": true,
+      "sha256": "2fcd04e379852ba7104c03f4ee5df5462ebe3a1de659cf5f2a98d7eaad1afd78"
+    },
+    {
+      "path": "web/lib/player-cards/teamLogo.ts",
+      "existed": false
+    }
+  ],
+  "read_only_assets": [
+    "web/public/teamLogos/TOR.png",
+    "web/public/teamLogos/MIN.png",
+    "web/lib/teamsInfo.ts"
+  ],
+  "limits": "No shared/Tuesday/auth/production/Git/deploy/delete/source image changes"
+}

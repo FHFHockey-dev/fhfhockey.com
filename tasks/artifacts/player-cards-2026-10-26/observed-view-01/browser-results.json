@@ -1,0 +1,11 @@
+{
+  "checks": [
+    "Actual public-history identity reaches observed SVG through trusted server pipeline; unknown GP/metrics/ranks retained; PNG and Share correctly blocked",
+    "Phone390 has no page overflow and readable expanded provenance outside artwork; fixed-width artwork fine print still requires zoom"
+  ],
+  "network": [],
+  "errors": [],
+  "actualObservedExport": "blocked-unqualified",
+  "downloadedPng": false,
+  "screenshotsAreQaOnly": true
+}

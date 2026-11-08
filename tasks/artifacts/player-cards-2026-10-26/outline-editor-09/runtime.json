@@ -1,0 +1,184 @@
+{
+  "at": "2026-10-27T01:02:34.406547+00:00",
+  "previousListeners": [
+    "45849"
+  ],
+  "startupInputs": [
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/outline-editor-09/serve-preview.mjs",
+      "bytes": 4761,
+      "sha256": "88ace74c90121667faa0c459f3836b78c3cafc63608a0955f3cc1d05b2f40142"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/composition-variants-04/comparison.html",
+      "bytes": 2970642,
+      "sha256": "7312a49a98b2edc111c1b298db9e68e0d4bad166df906a5227c1e8240e299dd5"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/composition-variants-04/preview.html",
+      "bytes": 3426994,
+      "sha256": "64e7157b24935152a6c761a8a858fd6eb0d9bc408f532dfa1cfef47f64a8a002"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/composition-variants-05/comparison.html",
+      "bytes": 3011124,
+      "sha256": "7feabe950f22f4aae229b0b28362a824793902b87c9084bea9ce0c8c12a06a93"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/composition-variants-05/preview.html",
+      "bytes": 3427192,
+      "sha256": "c4b67da6bd5d7a786f0b46e4bb522e406fee543ba614b5d4a5db424c0746e57e"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/outline-06/comparison.html",
+      "bytes": 3055347,
+      "sha256": "b873b3f1167b1d16d31553cc364817e219a91c96c4823c3735758d0b83efeed3"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/outline-06/preview.html",
+      "bytes": 3434993,
+      "sha256": "601d0ba667a5fbdacb2194d7f742bb2f3fde73249c043057473b3a0536ac0ea1"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/outline-colors-07/comparison.html",
+      "bytes": 3220292,
+      "sha256": "9252e96763b5c3e8219c2f2ee3deb3f3934e5425c98a498e910ed39dafa9a624"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/outline-colors-07/preview.html",
+      "bytes": 3437503,
+      "sha256": "b0ce6b1e2879ca222305ca9878959b7548a988f34317911687a78b2d575f360b"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/outline-editor-09/preview.html",
+      "bytes": 3455216,
+      "sha256": "ca75a7448351ce85abcd833f6f0f40cd54f85911c6ad06a087a81ed6f5b543d9"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/preview.html",
+      "bytes": 3123706,
+      "sha256": "ecd560310b358ebd0521574967a480cab1521946c9d42d5f33341fcc57a5187a"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/comparison.html",
+      "bytes": 2440289,
+      "sha256": "5f5dc01034d10b0314317ed3dca3fdf8c5bcb0274761eec6ec8fa9201fe2dd3f"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1/preview.html",
+      "bytes": 318626,
+      "sha256": "6c29f6eb3dc6ffc9a6a8a546423f78ac3e6e5e1e7265129475724422d3aad9b5"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/visual-checkpoint-01/preview.html",
+      "bytes": 314484,
+      "sha256": "f65ce654f1e1e7ab226aa01e95617d925608d8d590fbd65d5bbaa85b324e05a5"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/stacked-outline-08/comparison.html",
+      "bytes": 1553491,
+      "sha256": "afe6c60d78b71ef3aa8fa6ce79066da3932e13d206dc410a2cffc0b3d84b7f3b"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/stacked-outline-08/preview.html",
+      "bytes": 3440212,
+      "sha256": "d696c72e27e4081dab9ca445fcd645e278a431dfa79cee921878f28826a687ff"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/current-data-01/approved-snapshot-02/preview.html",
+      "bytes": 523724,
+      "sha256": "3b6ff7d783576dda860386c0fb47af8c64e6b42fcb1d0b9cecefee98f02a2777"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/team-colors-default-01/preview.html",
+      "bytes": 3132147,
+      "sha256": "e2b037f6b82d444f099e9cbfefbc555a673e1131496bea084158771830625c5f"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/observed-view-01/preview.html",
+      "bytes": 9655,
+      "sha256": "b2ece36cf4c62e41562495fcabe4e6f36d02d6d159523b0364b8fc455607fbd6"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/comparison.html",
+      "bytes": 1597171,
+      "sha256": "391232bc2d2e845dad2f407e55365f40d971249a5b7416abc0d3aa8eaa4f983b"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/preview.html",
+      "bytes": 3424357,
+      "sha256": "7867690db0776f1d2ec34fc42860d0d5a48ef478ec7d8d1e06163be4c6045f2b"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/composition-variants-02/comparison.html",
+      "bytes": 1597033,
+      "sha256": "5a65a4cf33e2ab86db9b8365179a1e44c559a8fa74dad065e888c9efa31d569c"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/composition-variants-02/preview.html",
+      "bytes": 3424343,
+      "sha256": "49e287071b186b7c1c1c5387243d04f182fb6d829747c91fe46acb79c8d9c705"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/composition-variants-03/comparison.html",
+      "bytes": 2186609,
+      "sha256": "6ab6b59a6ad34e193e73348b54cf96fcd73b2116f1d07110f32b2433a43d4ff1"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/composition-variants-03/preview.html",
+      "bytes": 3426931,
+      "sha256": "996b67587180c64282152d53abd953ae66b9e115549896eeab591e198533d954"
+    }
+  ],
+  "bind": "127.0.0.1:3125",
+  "automaticRestart": false,
+  "systemStartupChanges": false,
+  "verifiedOwnCommand": "/usr/local/bin/node /Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-26/stacked-outline-08/serve-preview.mjs",
+  "stoppedOwnPid": 45849,
+  "pid": 69351,
+  "launcherPid": 69330,
+  "startNewSession": true,
+  "execSession": null,
+  "stdin": "DEVNULL",
+  "stdoutStderr": "server.log",
+  "readbacks": [
+    {
+      "route": "/player-cards/customizer",
+      "status": 200,
+      "path": "tasks/artifacts/player-cards-2026-10-26/outline-editor-09/preview.html",
+      "bytes": 3455216,
+      "sha256": "ca75a7448351ce85abcd833f6f0f40cd54f85911c6ad06a087a81ed6f5b543d9"
+    },
+    {
+      "route": "/player-cards/studio",
+      "status": 200,
+      "path": "tasks/artifacts/player-cards-2026-10-26/outline-editor-09/preview.html",
+      "bytes": 3455216,
+      "sha256": "ca75a7448351ce85abcd833f6f0f40cd54f85911c6ad06a087a81ed6f5b543d9"
+    },
+    {
+      "route": "/player-cards/nhl-retained",
+      "status": 200,
+      "path": "tasks/artifacts/player-cards-2026-10-26/current-data-01/approved-snapshot-02/preview.html",
+      "bytes": 523724,
+      "sha256": "3b6ff7d783576dda860386c0fb47af8c64e6b42fcb1d0b9cecefee98f02a2777"
+    },
+    {
+      "route": "/player-cards/compositions-08",
+      "status": 200,
+      "path": "tasks/artifacts/player-cards-2026-10-26/stacked-outline-08/comparison.html",
+      "bytes": 1553491,
+      "sha256": "afe6c60d78b71ef3aa8fa6ce79066da3932e13d206dc410a2cffc0b3d84b7f3b"
+    },
+    {
+      "route": "/player-cards/functional",
+      "status": 200,
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1/preview.html",
+      "bytes": 318626,
+      "sha256": "6c29f6eb3dc6ffc9a6a8a546423f78ac3e6e5e1e7265129475724422d3aad9b5"
+    }
+  ],
+  "localReadOnlyGets": 5,
+  "upstreamRequests": 0,
+  "lifecycle": "Detached POSIX session independent of launcher; host/environment shutdown or explicit stop ends it. No automatic restart/system startup; post-turn survival not yet observed."
+}

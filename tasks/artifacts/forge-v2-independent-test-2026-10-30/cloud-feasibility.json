@@ -1,0 +1,38 @@
+{
+  "sourceBundleFileCount": 51,
+  "sourceBundleRawBytes": 1487208,
+  "estimatedTarGzipBytes": 357500,
+  "coreCodeTestsConfigBytes": 575507,
+  "includesPrivateProjectCode": true,
+  "uploaded": false,
+  "bundleWritten": false,
+  "contents": "FORGE v2 code/tests/fixtures, one migration, manifests/configs, approved PRD/task list; excludes env files, .git, actual datasets, credentials, caches and node_modules",
+  "node": "22.11.0",
+  "nativeDatabase": "PostgreSQL 17.11 local Unix socket, disposable cluster, LC_ALL=C",
+  "installedVersions": {
+    "vitest": "3.2.7",
+    "@vitejs/plugin-react": "4.7.0",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "@testing-library/react": "14.3.1",
+    "jsdom": "20.0.3",
+    "pg": "8.16.3",
+    "@playwright/test": "1.60.0",
+    "esbuild": "0.25.12",
+    "sass": "1.97.1",
+    "typescript": "5.7.3",
+    "next": "15.5.22"
+  },
+  "lockfileRegistryHosts": [
+    "registry.npmjs.org"
+  ],
+  "cloudAdjustments": [
+    "Install Linux dependencies from reviewed package-lock with npm ci or use verified preprovisioned dependencies; never transfer Mac node_modules",
+    "Provide PostgreSQL 17 binaries; set FORGE_V2_POSTGRES_BIN to Linux location",
+    "Install matching Linux Chromium and its system dependencies; set PLAYWRIGHT_BROWSERS_PATH to Linux cache",
+    "Use a non-root OS user for initdb, local temporary directories and loopback-only HTTP test server",
+    "Redirect screenshots/output to new paths; no inherited env or env files",
+    "Retain exact source SHA256 manifest and independently verify after any approved transfer"
+  ],
+  "recommendation": "Finish current Mac checks; future synthetic regression runs can move to cloud after explicit approval to transfer allowlisted private source and provision dependencies. No production connection or datasets required. No cloud test executed."
+}

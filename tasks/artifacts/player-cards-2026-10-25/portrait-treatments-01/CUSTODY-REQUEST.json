@@ -1,0 +1,35 @@
+[
+  {
+    "path": "web/lib/player-cards/portraitTreatment.ts",
+    "baseline": "absent"
+  },
+  {
+    "path": "web/lib/player-cards/portraitTreatment.test.ts",
+    "baseline": "absent"
+  },
+  {
+    "path": "web/components/player-cards/HeroPlayerCard.tsx",
+    "baseline": "97743b313e22666e6abedea9ea16b17b3ad15050e3fa72a8f8d924f98c1829fc",
+    "bytes": 5279
+  },
+  {
+    "path": "web/components/player-cards/PlayerCardShareStudio.tsx",
+    "baseline": "3e8aad27ad7585170706c0a975237a8c29a055bac95e0b9d20bac75fd77e1d00",
+    "bytes": 8120
+  },
+  {
+    "path": "web/components/player-cards/PlayerCardShareStudio.test.tsx",
+    "baseline": "617efa35e88953c79bcbcb16308603e562edfc79f43b050852a625ae91b7ba24",
+    "bytes": 4401
+  },
+  {
+    "path": "web/lib/player-cards/shareExport.ts",
+    "baseline": "fddfd3bd89470da289ea14f8f6a8ea13b3407c1222d2e189482dee47a8d7bbde",
+    "bytes": 4730
+  },
+  {
+    "path": "web/lib/player-cards/shareExport.test.ts",
+    "baseline": "9669b12a8e4ade7e3badce18ea9cd44a29ddd4c9a5297a2cfe5fd1e862938426",
+    "bytes": 3425
+  }
+]

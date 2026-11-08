@@ -1,0 +1,51 @@
+{
+  "at": "2026-11-01T21:22:22.413351+00:00",
+  "state": "ISOLATED_TESTED_REQUEST_POSTED_AWAITING_CUSTODY",
+  "baseCandidate": "c3897d3273ca46ea25a9f2737f09c835e5ec7325",
+  "files": [
+    {
+      "path": "web/pages/api/v1/start-chart.ts",
+      "sha256": "b5bbe2e5b3a64f8368dc409ad11207420af36811c0342e9cbfd49220c3d3f98e",
+      "matchesCandidate": true,
+      "proposedSha256": "e384e12aea45dfccb6fdd9ee619632c36bea573cbb48478905c7e5806ea6fdc1"
+    },
+    {
+      "path": "web/__tests__/pages/api/v1/start-chart.test.ts",
+      "sha256": "9601527da7de26fd44f555af069edd1225eef29695bab3f603c5f298083b5b67",
+      "matchesCandidate": true,
+      "proposedSha256": "fc9a09239f83ad3d4903bd360c6b4e1e9080457adde5f28c0f198a4cdfcf9d32"
+    }
+  ],
+  "patch": "source.patch",
+  "patchSha256": "12930181540c83c2169b7e1a5d9f606d3501369dd6b9afac38e8d7b6824fffe6",
+  "patchApplyCheck": {
+    "exitCode": 0,
+    "target": "disposable two-file original copy; no Git/index/ref mutation"
+  },
+  "checks": "checks.json",
+  "tests": {
+    "originalNewCases": {
+      "passed": 1,
+      "failed": 8,
+      "log": "before.log"
+    },
+    "correctedTimerOriginalCases": {
+      "failed": 2,
+      "log": "before-corrected-timers.log"
+    },
+    "targetedPassed": 9,
+    "routePassed": 123,
+    "routeExistingSkipped": 1,
+    "scopedTypes": "passed",
+    "scopedLint": "passed"
+  },
+  "canonicalFilesUnchanged": true,
+  "custody": "PROV-GUARD retained by Claude1e668672; no transfer for these files",
+  "outboundRequestSent": true,
+  "currentAdmissionCandidateExpanded": false,
+  "newRemoteRequests": 0,
+  "gitMutations": 0,
+  "builds": 0,
+  "deployments": 0,
+  "dispatch": "DISPATCH.json"
+}

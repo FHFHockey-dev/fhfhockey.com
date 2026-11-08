@@ -1,0 +1,22 @@
+{
+  "exitCode": 0,
+  "result": {
+    "standaloneImportSucceeded": true,
+    "projectModules": [
+      "/Users/tim/Code/fhfhockey.com/web/lib/projections/evidenceTime.ts"
+    ],
+    "filesystemMutationAttempts": [
+      {
+        "operation": "mkdirSync",
+        "path": "/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/v8-compile-cache-501/12.4.254.21-node.21"
+      },
+      {
+        "operation": "writeFileSync",
+        "path": "/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/v8-compile-cache-501/12.4.254.21-node.21/zSUserszStimzSCodezSfhfhockey.comzSweb.LOCK"
+      }
+    ],
+    "environmentUnchanged": true,
+    "networkDenied": true,
+    "localTypescriptHookRegistered": true
+  }
+}

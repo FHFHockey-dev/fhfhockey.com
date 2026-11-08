@@ -1,0 +1,48 @@
+{
+  "id": "CODEX-PLAYER-CARDS-STACKED08-20261026",
+  "at": "2026-10-26T23:53:48.612363+00:00",
+  "owner_thread": "01a16ec2-f81c-717b-8961-8c3832fdc00f",
+  "source": "TJ correction: THREE stacked genuine5px contour bands, innerprimarygreen\u2192jerseyred\u2192secondarytan, total15px; supersedes separate-only interpretation",
+  "source_paths": [
+    "web/lib/player-cards/alphaOutline.ts",
+    "web/lib/player-cards/alphaOutline.test.ts",
+    "web/components/player-cards/HeroPlayerCard.tsx",
+    "web/components/player-cards/PlayerCardShareStudio.tsx",
+    "web/components/player-cards/PlayerCardShareStudio.test.tsx",
+    "web/lib/player-cards/shareExport.ts",
+    "web/lib/player-cards/shareExport.test.ts"
+  ],
+  "baseline": [
+    {
+      "path": "web/lib/player-cards/alphaOutline.ts",
+      "sha256": "043a8e8ebd41628ab01e733d4ac02bb8694a4d2986eb5480e51128b328a839d1"
+    },
+    {
+      "path": "web/lib/player-cards/alphaOutline.test.ts",
+      "sha256": "aa1df15a4d1de078dea4f4eaf96c1330de1e6d7cd62d5e750bd682325299faa6"
+    },
+    {
+      "path": "web/components/player-cards/HeroPlayerCard.tsx",
+      "sha256": "464acf7ae3b321f067bd03452770f4d39ed1985f0431de62d7929d9d0f5d8091"
+    },
+    {
+      "path": "web/components/player-cards/PlayerCardShareStudio.tsx",
+      "sha256": "3f3140ec173037b1b4986391752ad93f024557c4a0cb2773f71519624856a9ff"
+    },
+    {
+      "path": "web/components/player-cards/PlayerCardShareStudio.test.tsx",
+      "sha256": "1b9548b80e2ccc1e7a80a7ec8efae78117985bbcd059a4bf87e5800aef686761"
+    },
+    {
+      "path": "web/lib/player-cards/shareExport.ts",
+      "sha256": "fcf5550c52ec1e99609890df2469a814363d0cdaf950e9a1ed16da1ca72dd1e1"
+    },
+    {
+      "path": "web/lib/player-cards/shareExport.test.ts",
+      "sha256": "2bc95479d20532d436b96c421e2b02969893ad03e04afa609b8672e78b23703f"
+    }
+  ],
+  "status": "ACTIVE bounded nonoverlappingstackedbands candidate;07serveduntilQA",
+  "artifact_root": "tasks/artifacts/player-cards-2026-10-26/stacked-outline-08",
+  "limits": "One combinedRGBAassetwith5/10/15diskdilationdifferences; no opaqueoccludinglayers/shadows/rectangle, geometry/sourcealpha/logo/portraitorderchanges; preserve07andearlier; no live/deps/Git/deploy/delete/sharedfiles"
+}

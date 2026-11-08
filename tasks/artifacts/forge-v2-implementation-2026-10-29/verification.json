@@ -1,0 +1,291 @@
+{
+  "verifiedAt": "2026-10-30T00:47:37.721168+00:00",
+  "scope": "local implementation and synthetic/native mechanics; not scientific qualification",
+  "branch": "octoberBranch",
+  "node": "22.11.0",
+  "checks": [
+    {
+      "lane": "contracts",
+      "files": [
+        "contracts.test.ts"
+      ],
+      "tests": 4,
+      "command": "npm test -- --run lib/forge-v2/contracts.test.ts --maxWorkers=1 --minWorkers=1",
+      "exit": 0,
+      "observer": "lead"
+    },
+    {
+      "lane": "source admission",
+      "files": [
+        "data.test.ts"
+      ],
+      "tests": 16,
+      "command": "npm test -- --run lib/forge-v2/data.test.ts lib/forge-v2/refresh.test.ts",
+      "exit": 0,
+      "observer": "source worker; original combined32 run"
+    },
+    {
+      "lane": "final refresh",
+      "files": [
+        "refresh.test.ts"
+      ],
+      "tests": 34,
+      "command": "npm test -- --run lib/forge-v2/refresh.test.ts --maxWorkers=1 --minWorkers=1",
+      "exit": 0,
+      "observer": "source worker"
+    },
+    {
+      "lane": "model and uncertainty",
+      "files": [
+        "model.test.ts",
+        "uncertainty.test.ts"
+      ],
+      "tests": 17,
+      "command": "npm test -- --run lib/forge-v2/model.test.ts lib/forge-v2/uncertainty.test.ts lib/forge-v2/integration.test.ts --maxWorkers=1 --minWorkers=1",
+      "exit": 0,
+      "observer": "model worker; integration superseded by later7-test run"
+    },
+    {
+      "lane": "final pipeline and integration",
+      "files": [
+        "pipeline.test.ts",
+        "integration.test.ts"
+      ],
+      "tests": 23,
+      "command": "npm test -- --run lib/forge-v2/pipeline.test.ts lib/forge-v2/integration.test.ts --maxWorkers=1 --minWorkers=1",
+      "exit": 0,
+      "observer": "model worker; pipeline16+integration7"
+    },
+    {
+      "lane": "schedule evaluation lifecycle operations",
+      "files": [
+        "schedule.test.ts",
+        "evaluation.test.ts",
+        "lifecycle.test.ts"
+      ],
+      "tests": 29,
+      "command": "npm test -- --run lib/forge-v2/schedule.test.ts lib/forge-v2/evaluation.test.ts lib/forge-v2/lifecycle.test.ts --maxWorkers=1 --minWorkers=1",
+      "exit": 0,
+      "observer": "schedule worker; later lifecycle-only availability fixture and material-fanout rechecks also passed"
+    },
+    {
+      "lane": "component",
+      "files": [
+        "ForecastExplorer.test.tsx"
+      ],
+      "tests": 21,
+      "command": "npm test -- --run components/ForgeV2/ForecastExplorer.test.tsx --maxWorkers=1 --minWorkers=1",
+      "exit": 0,
+      "observer": "source worker"
+    },
+    {
+      "lane": "final native storage and API",
+      "files": [
+        "history.test.ts",
+        "api.test.ts"
+      ],
+      "tests": 19,
+      "command": "FORGE_V2_POSTGRES_BIN=/opt/homebrew/opt/postgresql@17/bin npm test -- --run lib/forge-v2/history.test.ts lib/forge-v2/api.test.ts --maxWorkers=1 --minWorkers=1",
+      "exit": 0,
+      "observer": "lead; history12+API7; PostgreSQL17 temporary UNIX-socket-only cluster, no inherited PG environment"
+    },
+    {
+      "lane": "existing consumer compatibility",
+      "files": [
+        "lib/player-forecasts/rsoUsePolicy.test.ts",
+        "lib/player-forecasts/forecastServingSource.test.ts",
+        "lib/rosterScheduleOptimizer/healthyReserves.test.ts"
+      ],
+      "tests": 93,
+      "command": "npm test -- --run lib/forge-v2/history.test.ts lib/forge-v2/api.test.ts lib/forge-v2/pipeline.test.ts lib/player-forecasts/rsoUsePolicy.test.ts lib/player-forecasts/forecastServingSource.test.ts lib/rosterScheduleOptimizer/healthyReserves.test.ts --maxWorkers=1 --minWorkers=1",
+      "exit": 0,
+      "observer": "lead; combined124 then; v2 counts superseded by later tests"
+    }
+  ],
+  "uniqueCurrentTestInventory": {
+    "v2": 163,
+    "existingCompatibility": 93,
+    "total": 256,
+    "note": "Across recorded focused runs, not a single full-suite run; no sum of reruns"
+  },
+  "static": {
+    "tscArgs": [
+      "npx",
+      "tsc",
+      "--noEmit",
+      "--strict",
+      "--skipLibCheck",
+      "--target",
+      "ES2022",
+      "--module",
+      "commonjs",
+      "--moduleResolution",
+      "node",
+      "--esModuleInterop",
+      "--jsx",
+      "react-jsx",
+      "--lib",
+      "ES2022,DOM",
+      "next-env.d.ts",
+      "lib/forge-v2/api.server.ts",
+      "lib/forge-v2/api.test.ts",
+      "lib/forge-v2/api.ts",
+      "lib/forge-v2/artifacts.server.ts",
+      "lib/forge-v2/contracts.test.ts",
+      "lib/forge-v2/contracts.ts",
+      "lib/forge-v2/data.test.ts",
+      "lib/forge-v2/data.ts",
+      "lib/forge-v2/evaluation.test.ts",
+      "lib/forge-v2/evaluation.ts",
+      "lib/forge-v2/fixtures.ts",
+      "lib/forge-v2/hash.server.ts",
+      "lib/forge-v2/history.server.ts",
+      "lib/forge-v2/history.test.ts",
+      "lib/forge-v2/identity.ts",
+      "lib/forge-v2/integration.test.ts",
+      "lib/forge-v2/integration.ts",
+      "lib/forge-v2/lifecycle.test.ts",
+      "lib/forge-v2/model.test.ts",
+      "lib/forge-v2/model.ts",
+      "lib/forge-v2/operations.ts",
+      "lib/forge-v2/participation.ts",
+      "lib/forge-v2/pipeline.server.ts",
+      "lib/forge-v2/pipeline.test.ts",
+      "lib/forge-v2/qualification.ts",
+      "lib/forge-v2/refresh.test.ts",
+      "lib/forge-v2/refresh.ts",
+      "lib/forge-v2/schedule.test.ts",
+      "lib/forge-v2/schedule.ts",
+      "lib/forge-v2/uncertainty.test.ts",
+      "lib/forge-v2/uncertainty.ts",
+      "components/ForgeV2/ForecastExplorer.test.tsx",
+      "components/ForgeV2/ForecastExplorer.tsx",
+      "pages/forge/v2/index.tsx",
+      "pages/api/v2/forge/[operation].ts",
+      "e2e/forge-v2.spec.ts"
+    ],
+    "tscExit": 0,
+    "eslintArgs": [
+      "npx",
+      "eslint",
+      "lib/forge-v2/api.server.ts",
+      "lib/forge-v2/api.test.ts",
+      "lib/forge-v2/api.ts",
+      "lib/forge-v2/artifacts.server.ts",
+      "lib/forge-v2/contracts.test.ts",
+      "lib/forge-v2/contracts.ts",
+      "lib/forge-v2/data.test.ts",
+      "lib/forge-v2/data.ts",
+      "lib/forge-v2/evaluation.test.ts",
+      "lib/forge-v2/evaluation.ts",
+      "lib/forge-v2/fixtures.ts",
+      "lib/forge-v2/hash.server.ts",
+      "lib/forge-v2/history.server.ts",
+      "lib/forge-v2/history.test.ts",
+      "lib/forge-v2/identity.ts",
+      "lib/forge-v2/integration.test.ts",
+      "lib/forge-v2/integration.ts",
+      "lib/forge-v2/lifecycle.test.ts",
+      "lib/forge-v2/model.test.ts",
+      "lib/forge-v2/model.ts",
+      "lib/forge-v2/operations.ts",
+      "lib/forge-v2/participation.ts",
+      "lib/forge-v2/pipeline.server.ts",
+      "lib/forge-v2/pipeline.test.ts",
+      "lib/forge-v2/qualification.ts",
+      "lib/forge-v2/refresh.test.ts",
+      "lib/forge-v2/refresh.ts",
+      "lib/forge-v2/schedule.test.ts",
+      "lib/forge-v2/schedule.ts",
+      "lib/forge-v2/uncertainty.test.ts",
+      "lib/forge-v2/uncertainty.ts",
+      "components/ForgeV2/ForecastExplorer.test.tsx",
+      "components/ForgeV2/ForecastExplorer.tsx",
+      "pages/forge/v2/index.tsx",
+      "pages/api/v2/forge/[operation].ts",
+      "e2e/forge-v2.spec.ts"
+    ],
+    "eslintExit": 0,
+    "observer": "lead final all-v2 pass after final native checks"
+  },
+  "browser": {
+    "command": "PLAYWRIGHT_SKIP_WEB_SERVER=1 npm run test:e2e -- e2e/forge-v2.spec.ts --project=chromium --workers=1 --output=/private/tmp/forge-v2-browser-review-results",
+    "exit": 0,
+    "cases": 2,
+    "viewportWidths": [
+      1440,
+      390
+    ],
+    "externalRequests": 0,
+    "pageErrors": 0,
+    "pageOverflow": 0,
+    "observer": "schedule worker; lead visually inspected final screenshots",
+    "limits": "Real component/Sass with synthetic DTOs, ephemeral loopback server; not live API/account acceptance. No200%-zoom/RTL audit claim."
+  },
+  "review": {
+    "original": "independent-review.json",
+    "followup": "review-followup.json",
+    "disposition": "five original and three later seam findings repaired; source-reviewed final seam hashes match current files; native/API final tests substantiate runtime checks",
+    "scientificReview": "not completed"
+  },
+  "resolvedFailures": [
+    "savepoint publication proof used top-level committed transaction status",
+    "late-committing receipt excluded from pinned history snapshots",
+    "play-begun preserved when actual-start timestamp absent",
+    "fit/availability clocks prevent hindsight inference",
+    "frozen generator pins separated from future output hashes",
+    "unchanged-horizon revision updates preserve original episode/lock metadata",
+    "archived-game first lookup independent of active queue",
+    "SQL parameter holes and text/jsonb type inference fixed",
+    "absent request fields omitted before canonical cache hashing",
+    "phone uncertainty select intrinsic overflow fixed",
+    "test Next request stubs and ProcessEnv typings corrected",
+    "same-scientific-ID successor lock/event snapshots refused"
+  ],
+  "notRun": [
+    "full production build",
+    "full repository unit suite",
+    "hosted migration",
+    "provider acquisition",
+    "protected/untouched evaluation",
+    "real-data fitting/calibration",
+    "prospective capture",
+    "public release",
+    "RSO activation"
+  ],
+  "remoteActions": {
+    "productionRequests": 0,
+    "builds": 0,
+    "deployments": 0,
+    "pushes": 0,
+    "hostedMigrations": 0
+  },
+  "remainingGates": [
+    "official source/PIM examples and original availability",
+    "data custody/exposure/temporal allocations",
+    "independently frozen protocol and real diagnostics",
+    "untouched and prospective qualification",
+    "real operating limits/permanent retention/cost reservations",
+    "exact shadow environment/input bounds",
+    "separate public and RSO-owner release approvals"
+  ],
+  "localImplementationCandidate": "43d35f8020d2071e07d08da13f50f1f882277f26",
+  "commits": [
+    {
+      "sha": "2bb04301c",
+      "purpose": "approved contracts, document custody and source inventory"
+    },
+    {
+      "sha": "4c8150349",
+      "purpose": "game-level candidate, scheduling, refresh and temporal evaluation"
+    },
+    {
+      "sha": "92f9d63bd",
+      "purpose": "native immutable storage, prepared queue/ledger integration and bounded API"
+    },
+    {
+      "sha": "43d35f8020d2071e07d08da13f50f1f882277f26",
+      "purpose": "disabled forecast explorer and real browser acceptance"
+    }
+  ]
+}

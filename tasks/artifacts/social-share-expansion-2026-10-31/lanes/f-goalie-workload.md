@@ -1,0 +1,202 @@
+# Lane F receipt: goalie workload (SS 10.0, 12.0)
+
+Posts: `busy-quiet-goalies`, `goalie-rescue`, `ratio-impact`, all registered through `lib/socialShare/modules/lanes/goalieWorkload.ts`. No frozen file was edited.
+
+## Subtasks
+
+| Subtask | State | Evidence |
+| --- | --- | --- |
+| 10.1 `busyQuiet.ts` | Done | `busyQuiet.test.ts`: basis switch, relief handling, no goodness wording, danger-zone shots labeled as shots, team chances labeled team-level |
+| 10.2 `goalieRescue.ts` | Done | `goalieRescue.test.ts`: no combined score, ownership states, empty pool |
+| 10.3 Cards | Done | Card tests inside both test files, rendered with Testing Library. `suggestedUse` is a note only; no calendar field exists |
+| 10.4 [real] | Done | Reads 1–9 below |
+| 12.1 `ratioImpact.ts` | Done | `ratioImpact.test.ts`: pooled and mean of rates differ, unit conversion |
+| 12.2 Sensitivity and safeguards | Done | Zero denominators unknown, line added to an empty base, stated zero base stays known, partial base stays unknown |
+| 12.3 `RatioImpactCard.tsx` | Done | `hypothetical` basis, card test, forbidden-wording test over card, summary, fields, sample and alt text |
+| 12.4 [real] | Done | Read 8 below. Loader test proves no read happens without a goalie id |
+
+## Checks
+
+- `npm test` on the three lane files plus `contract.test.ts`, `server.test.ts` and `PostStudio.test.tsx`: 79 tests, all passed.
+- `eslint` on all lane files: clean.
+- CSS-module pure check (sass, then `postcss-modules-local-by-default` in pure mode) on the three SCSS files: passed.
+- `npx tsc --noEmit`: no errors in lane files.
+- `e2e/social-share-goalie-workload.spec.ts`: this lane ran `--list` only (4 tests). The lead reports all 4 pass in a browser, after changing the spec at `108c68938` to click Refresh after server-scoped settings and to use role selectors for Category.
+
+## Real reads
+
+Project `fyhftlxokyjtpndbkfse`, Supabase MCP `execute_sql`, 2026-10-31. Every statement was a single `SELECT`. No writes, provider calls or Vercel requests.
+
+| # | Statement | Tables read | Rows returned | Result |
+| --- | --- | --- | --- | --- |
+| 1 | Sample game rows, 10-24 to 10-30 | `wgo_goalie_stats` | 20 | Passed. TOI in seconds; relief rows present |
+| 2 | Sample rows from 10-20 | `nst_gamelog_goalie_all_counts` | 10 | Passed. `toi` is minutes **and a string**; `team` uses `N.J`, `L.A` |
+| 3 | Sample rows from 10-24 | `nst_team_gamelogs_as_counts` | 10 | Passed. Standard team codes; `situation` is `all` |
+| 4 | Sample goalies joined to the map | `yahoo_players`, `yahoo_nhl_player_map_read` | 15 | Passed. Map keys match `player_key` |
+| 5 | Coverage aggregates | `yahoo_players`, `wgo_goalie_stats`, `nst_gamelog_goalie_all_counts`, `nst_team_gamelogs_as_counts` | 1 | Passed |
+| 6 | L10 workload sample, first attempt | `wgo_goalie_stats`, `yahoo_players`, map | 0 | **Failed before running**: `round(double precision, integer)`. Corrected with casts in 7 |
+| 7 | L10 workload sample, at least 3 starts, top 12 by SA per start | `wgo_goalie_stats`, `yahoo_players`, map | 12 | Passed |
+| 8 | Integrity aggregates and one goalie's base totals | `wgo_goalie_stats`, `yahoo_players`, map, `nst_team_gamelogs_as_counts`, `games` | 1 | Passed |
+| 9 | Yahoo status of goalies with at least 3 L10 starts | `wgo_goalie_stats`, `yahoo_players`, map | 6 | Passed |
+| 10 | Games on 10-31 and 11-01, for F7 | `games` | 15 | Passed. `startTime` is real; the table has no state column |
+| 11 | Same-day game state candidate, for F7 | `pp_timeframes` | 10 | Passed. Only 10-31 rows, written overnight, so it has no state for today's games |
+| 12 | Yahoo goalie rows by `last_updated` date, for F6 | `yahoo_players` | 1 | Passed. All 181 dated 11-01, so no real goalie is stale today |
+| 13 | Matchup weeks 3 to 5 | `yahoo_matchup_weeks` | 3 | Passed. Week 4 is 10-19 to 10-25 |
+| 14 | Full loaders for Week 4, at min 3 and min 2, as the lead's ticket asked. Over the 50-row sample bound by request; SELECT only, public key, no NHL feed call | `wgo_goalie_stats`, `wgo_team_stats`, `games`, `yahoo_matchup_weeks`, `yahoo_players`, map, both NST tables | Not printed | Passed. Counts below |
+
+Findings:
+
+- No nulls in SA, saves, GA or TOI, and no zero TOI, across this season's 455 game rows.
+- NST goalie rows join WGO on goalie and game date: 414 of 417 match, with no duplicate keys, through 10-27. NST `shots_against` differs from WGO on 36 of the 414, so WGO stays the shot source and NST supplies only danger-zone splits.
+- Because NST lags, an L10 window ending 10-30 is often under 90% covered. Those goalies show `— covered/expected`, as the contract requires. Expect many of these until NST catches up.
+- 71 goalies appeared and 62 have at least 3 starts in the L10 window. 0 ambiguous Yahoo ids. 181 Yahoo goalies, 67 with null ownership, none among the 62.
+- Top of the real Busy list on default settings, computed in SQL from the same definition: 32.4 SA per start, 8 starts, 2 relief. This checks the definition against real rows; it is not a loader run.
+- Ratio base read for one goalie: 2 appearances, 39 SA, 36 saves, 3 GA, 7,200 s, no nulls.
+
+**Loaders:** this lane did not run them end to end. A real edition reads about 455 appearances and 432 team games, above the 50-row sample bound, so the lead ran them at the render step and reports that all three posts rendered and exported correctly on real data. `ratio-impact` reads nothing without a goalie id.
+
+## Decisions for the lead to check
+
+1. **A Window field was added** to Busy/Quiet and Rescue (L5, L10, STD; default L10). 10.2 asks for window fields, but CONTRACT's default table names none.
+2. **Rescue also has a Category field** (wins, saves, SV%, GAA; default wins) and a visible include-unknown toggle (default off). One category orders the list; there is no combined score.
+3. **Rescue applies the pickup cards' status rule**: only healthy or `DTD` count as available. On real data this removes 15 of the 62 qualified goalies (IR 6, NA 6, O 2, IR-LT 1), including 9 at or under 50% rostered, and leaves 26 candidates on defaults. The count is printed on the card. `NA` covers some goalies with recent starts, and Yahoo's status may lag. TJ may want to review this at real-input acceptance.
+4. **Busy/Quiet shows no SV% or GAA at all**, and does not use `teamStartShare`, which no subtask requires.
+5. **NST failures do not fail Busy/Quiet.** Shots stand, the source says `missing` and the columns show `—`. Rescue's reads are all or nothing, because ownership gates its pool.
+6. **Team chances are per team game and never switch with basis.** The card discloses how many listed appearances shared the net.
+7. **Ratio Impact takes saves as shots less goals** for entered lines, so a line cannot contradict itself. The sensitivity axis is goals allowed, at the entered shots and minutes, and it stops at the entered shots rather than print negative saves.
+8. **`goalie-rescue` is a new id.** The older gated `category-rescue` format is untouched; its disposition stays with 13.0.
+
+## Follow-up from the real render
+
+The lead's render found "1 listed appearances shared the net" in the Busy/Quiet footnote. It now handles the singular, with a test for each form.
+
+## Follow-up: fill the card, cut the text (TJ, 2026-10-31)
+
+Built on the lead's shell change (`9bb30218d`, `756d4706f`), with a body of about 860px.
+
+- **Rows:** Busy/Quiet goes from 6 to 11 per side, and Rescue from 10 to 20. Row heights stretch to fill the body, up to a cap, so a thin pool leaves a band rather than giant rows.
+- **Ties:** Busy/Quiet holds at most 13 per side and Rescue 30. Anyone cut by that cap is counted in `evidence.sample`, so a tied goalie is never dropped silently.
+- **Ratio Impact:** type is 30px and row heights stretch. `SENSITIVITY_MAX_STEPS` drops from 20 to 12, so the table still fits at that size.
+- **On-card text:** each card has one legend line. Rescue and Busy/Quiet keep the window and through date in it, so the PNG still says what it covers. Explainers moved to `evidence.sample` and `evidence.cohort`, which print on the page.
+- **Column changes:** Rescue's `TEAM GMS LEFT` is now `GMS LEFT`, with its meaning in the legend. Its `GS` cell no longer prints the short-window count; `GS` plus `RELIEF` is that count.
+- **Spec:** `e2e/social-share-goalie-workload.spec.ts` now expects the Rescue legend, on top of the lead's `108c68938`.
+- **Not verified:** no browser run. The row counts come from arithmetic on the 860px body, so the fill and the no-clip result need the lead's real render.
+
+## Follow-up: overflow on the real render
+
+The lead measured content of 1142, 1423 and 887px against bodies of 845 to 861px.
+
+- **Cause:** the `.fill` wrapper's grid row sized to the table's largest content, so table rows grew to their height cap. Rows at the cap predict 1146, 1427 and 896px from the real snapshots' row counts, which matches. Row count was not the cause.
+- **Fix:** `.fill` now has a `minmax(0, 1fr)` row and the table `min-height: 0`, so rows share the height actually available.
+- **Expected row heights from the real snapshots, by arithmetic:** Busy/Quiet about 33px (11 per side), Rescue about 35px (23 rows), Ratio Impact about 80px on top and 67px in sensitivity. Ratio Impact's cap rises from 72 to 84px so its top table leaves no band.
+- **Rescue tie cap:** 30 becomes 29, which fits at the 27px minimum in an 845px body.
+- **Not verified:** no browser run. The lead re-measures.
+
+## Follow-up: Busy and Quiet visuals (TJ, 2026-10-31)
+
+- **Layout:** Busy and Quiet sit side by side in the goalie board style, reusing `GoalieIdent`. Its Best and Worst boards and `HeatTile` are not used, because they carry goodness colours.
+- **Tile:** SA on the selected basis, in one cyan hue whose strength follows the shown low-to-high range. No green, red or tone attribute.
+- **Sparkline:** shots against per appearance, oldest first, on one scale for the whole card. A null is a gap with a tick and a broken line; a real 0 is plotted. Relief is an open dot. The series is the goalie's appearances, so a team game he did not play is not a gap.
+- **Kept, compact:** GP, GS, relief, total SA, HD SHOTS on the basis, and TEAM SCA and HDCA per game, in two detail lines. The legend keeps "Workload only, not how well a goalie played."
+- **Rows and ties:** 11 per side gives about 72px rows at an 845px body. Minimum row is 63px, so the tie cap drops from 13 to 12; anyone cut is counted in `evidence.sample`.
+- **Alt text:** adds each goalie's shots by game.
+- **Spec:** expects `TEAM SCA` and a visible sparkline.
+- **Not verified:** no browser run. The fit is arithmetic until the lead's render.
+
+## Follow-up: Rescue visuals (TJ, 2026-10-31)
+
+- **Groups:** W sits under Wins, SV and SA under Volume, and SV%, GA and GAA under Ratios. There is no combined score, and shades are worked out on the card, never stored in the data.
+- **Colour:** each column is scaled on its own over the goalies listed, using the board green and red. `cellShade` flips GA and GAA, so lower reads as better. SA has no better end, so it stays unshaded, as does a missing value.
+- **Selected category:** that column's head inverts, and its cells get side rules and a bold value.
+- **GMS LEFT:** one dot per team game beside the printed number; unknown prints a dash.
+- **Legend:** keeps the Yahoo-wide and team-games wording, and adds "Colour compares this list, by column."
+- **Tie cap:** 29 becomes 28, because the group head takes about 21px. Anyone cut is counted in `evidence.sample`.
+- **Spec:** expects the Volume head and the selected W head.
+- **Not verified:** no browser run. The fit is arithmetic until the lead's render.
+
+## Follow-up: Ratio Impact visuals (TJ, 2026-10-31)
+
+- **Tiles:** large before and after tiles for SV% and GAA, with an arrow and the change between them. With no base, or a base that leaves a rate unknown, the before tile shows "—" and no change is drawn. Rates still come from the same pooled totals, printed in the tile captions.
+- **Hypothetical line:** one printed line carries the entered line's saves, shots, goals, TOI and rates.
+- **Chart:** SV% after and GAA after across the stated goals, each spanning the table's value columns so a point sits over its printed values. No bar or row was dropped: GA, SV, SV% after, GAA after and both changes are still printed for every step.
+- **Marks:** the entered line gets a band, an ENTERED label, a larger point and a highlighted column. An entered value outside the range is stated in the title. A dashed line marks the before value when known.
+- **Gaps:** a zero or missing denominator leaves a tick and a broken line, never a point at 0.
+- **Capture:** every SVG colour is an attribute, with no classes on SVG children.
+- **Alt text:** adds the charted values.
+- **Spec:** expects 7 SV% points, and 0 changes with no base and 2 with one.
+- **Not verified:** no browser run. The fit is arithmetic until the lead's render: tiles take about 270px of an 845px body. The chart assumes a 1006px body width; a different width scales its height slightly, and the tiles absorb that.
+
+## Blockers
+
+None. No frozen file needs a change.
+
+## Follow-up: Busy and Quiet third line (TJ, 2026-11-01)
+
+- **Tiles:** the third line is now three small labelled tiles per row: HD on the basis (HD/GS, HD/GP or HD/60), TEAM SCA and HDCA. They are neutral, and they keep the same columns down the board.
+- **No truncation:** the tiles have no ellipsis or overflow rule, and their columns cannot go below their text width, so a long value widens the tile instead of clipping.
+- **Missing HD:** below 90% coverage the tile prints a dimmed "—". A real zero prints 0.0. The covered and expected counts moved to `evidence.sample` in plain wording, such as "G1 1 of 3 games". After a failed NST read, the source's own reason says so instead.
+- **Row height:** the minimum row rises from 63 to 65px. The tie cap stays at 12, because 12 x 65 + 53 = 833 fits an 845px body.
+- **Spec:** expects the three tiles and fails if a tile's text overflows it or a tile runs past its column (`--list` only).
+- **Not verified:** no browser run. The width budget is an estimate, about 221px of tile content plus 6px of gaps in a 249px column, until the lead's render runs that check.
+
+## Follow-up: Rescue column balance (TJ, 2026-11-01)
+
+- **Columns:** RK and GOALIE now stop at their text. The other ten columns share the spare width equally, so OWN, GS, RELIEF, the three groups and GMS LEFT all spread out.
+- **Long names:** names show whole when the table fits. A name too long for the card ellipsizes instead of pushing the table past the card edge.
+- **Kept:** group headers, the highlighted column and the colours are unchanged. `data-goalie-name` was added to the name span so the spec can check it.
+- **Spec:** fails if a name is cut, the table passes the card edge, or a group head does not span its columns (`--list` only).
+- **Not verified:** no browser run. Whether "Dennis Hildeby DTD" and "Daniil Tarasov DTD" show whole depends on the lead's render running those checks.
+
+## Follow-up: Ratio Impact plain rewrite (TJ, 2026-11-01)
+
+- **Message:** what one start does to a real goalie's ratios, using the existing goalie id setting.
+- **Headline:** `ratioHeadline`. It says BAD from 4 goals allowed (`RATIO_BAD_GOALS`, my threshold), and is neutral below that. The name comes from the edition, and only while it still matches the goalie id in the settings.
+- **Needs the lead:** the frozen `headline(settings)` gets no data, so today's header prints "A GOALIE'S RATIOS". `ratioHeadline` already takes an optional second argument. It needs `headline?: (settings: Settings, data: Data | null) => string` in `contract.ts` and `entry.headline?.(settings, snapshot.data)` in `PostStudio.tsx`.
+- **Headline length:** at the 52px header, about 22 characters fit per line, so these headlines wrap to 2 or 3 lines. By arithmetic, three lines leave a 741px body and the tiles still have about 260px.
+- **Layout:** sentence, legend line, large before and after tiles, then one what-if chart. SV% and GAA each have their own lane and scale, over one goals-allowed axis. Each point prints its value, and the entered column is marked. The printed tables and two stacked charts are gone; their values are in `evidence.sample` and the alt text.
+- **No goalie:** the card asks for one and draws nothing, and `hasRows` is false, so there is no export. A goalie with no games says so. Entered manual base totals still work and read "this goalie".
+- **Labels:** the chart range fields now read "Chart: goals from" and "Chart: goals to". The setting ids are unchanged.
+- **Not verified:** no browser run. The spec checks the headline start, sentence, chart points and overflow (`--list` only).
+
+## Audit findings F6 and F7
+
+- **F6, ownership freshness:** each goalie's own `last_updated` now decides. A percentage last observed before yesterday, or undated, becomes unknown: excluded unless "Include unknown ownership" is on, then printed as a dash, never the old value. The reason counts them and names the oldest date, and the edition is partial. The Yahoo source's `asOf` is now the oldest date among listed goalies, and its reasons give the oldest and newest. A stale row's Yahoo status is still applied; the finding covers ownership only.
+- **F7, GMS LEFT:** `games` has a start time but no state, and `pp_timeframes` has no same-day rows, so the week's games now come from the NHL schedule feed (`getSchedule`, as Off-Night Edge does).
+- **F7 rule:** NHL state decides. Live counts, including a game past midnight on yesterday's date. Scheduled counts. Final, postponed and cancelled don't. With no usable state, a future start counts. Anything else, including a null start time with no state, is unknown: that team's count prints a dash and the edition is partial. A null start time with a usable state follows the state.
+- **Failed schedule read:** every count prints a dash and the edition is partial; the rest of the card stands.
+- **Not verified:** the loader was not run, so no real NHL feed read happened here. The lead's render should cover it, and Goalie Rescue now makes one NHL API call per generation. No browser run; spec `--list` only.
+- **Correction to the F6 and F7 check:** `657b6e699` did not type-check. Its `tsc` run was piped through a filter with no exit status read, so that pass was not evidence. Fixed next commit: a game with no date is unknown unless its state is live, final, postponed or cancelled, and is never guessed into the week. Use whole-project `tsc` and read the exit code.
+
+## Period control on Busy and Quiet and Goalie Rescue
+
+- **Period:** Recent appearances stays the default and is each goalie's own L5, L10 or STD, so it reads no calendar. Matchup week and Custom range are new, mode past-only. `window` stays its own field, so an old `window=std` link means what it did.
+- **Dates:** each card prints them. A rolling window names its oldest and newest game. A week under way reads "Week 2 · Oct 26 to Nov 1, games through Oct 31".
+- **Min starts:** counts official starts in the chosen dates only and is never lowered for a short range. An empty short range says so and can't export.
+- **Coverage:** chosen dates check every scheduled game inside them and none outside. NST HD/GS coverage stays per goalie over the chosen games, and "—" still prints.
+- **GMS LEFT (decision):** hidden when the dates ended before the last completed games, because beside them it reads as games left in them. Its track goes too, and the feed isn't read. Shown when the dates reach the last completed games, labelled "GMS LEFT count the current week, through ...".
+- **Ownership:** a past period prints "Rostered % and status are current and Yahoo-wide, not as of these dates." It is in the evidence and alt text too. The ceiling and status filter also use today's values.
+- **Fit:** the spec's fullest cards found a real clip: a current week's two-line legend pushed Rescue's 28th row past the card. That case now caps at 27, and the evidence names who is left out. Busy and Quiet's 12 rows fit.
+- **Reads:** one bounded `yahoo_matchup_weeks` read; a failure or a refused week gives a visible missing edition, before the ledger is read. No real rows read by this lane for this ticket; the loaders ran on fake clients only.
+
+## Min starts by period
+
+- **Rule:** each period has its own visible field, and only the chosen period's shows: `minStarts` 3 for Recent appearances, `minStartsWeek` 2 for Matchup, `minStartsRange` 2 for Custom. An explicit value wins. Old links read `minStarts` as before. A `minStarts` on a Matchup link is ignored; that pairing only existed at the unpushed `ea01214aa`.
+- **Card:** on Matchup and Custom the legend states it ("Min 2 starts." on Rescue, "Min 2 GS." on Busy and Quiet).
+- **Real Week 4 (read 14), ready on both:**
+
+| Post | Min 3 | Min 2 |
+| --- | --- | --- |
+| Goalie Rescue rows | 1 (6 qualified, 4 above the ceiling, 1 by status) | 11 (33 qualified, 17 above the ceiling, 5 by status) |
+| Busy and Quiet rows | 6 busy, 0 quiet (6 eligible of 58) | 11 busy, 12 quiet (33 eligible of 58), no HD dashes |
+
+- **Rows:** Rescue rows now share the card's height, so 11 rows fill it. Under 4 rows they stop at 130px, as Busy and Quiet's boards do, so a list that small still leaves blank space below it.
+- **Row cap:** every Matchup and Custom card caps ties at 27, since the legend can reach two lines.
+
+## Late feed (SS-1103-F)
+
+- **Rule:** Busy and Quiet and Goalie Rescue run `completeThrough` over the ledger's nights: expected is scheduled games × 2, observed is reported team results. Newest incomplete nights are cut, the window is rebuilt to the last complete night, the card stays ready, and `pageNotes` carries the helper's note. Nothing reaches the PNG.
+- **Older gaps:** still block. They are left in after the cut and `ledgerCoverage` reports them as before, over the window's own nights only. That is the helper's `olderMissing`, without the season's older nights that no window reads, which never blocked.
+- **Chosen dates:** the cut applies inside them, and the line ends ", games through Oct 2". No complete night gives a missing edition with the reason.
+- **Labelled starters:** only missing team results are cut. A team game reported without exactly one labelled starter still blocks, wherever it falls.
+- **Ratio Impact:** skipped. It reads one goalie's rows with no schedule or team-games check, so it has no missing-team-games reason.
+- **Busy and Quiet loader:** the NST reads follow the cut window, so its oldest game keeps its danger-zone row.

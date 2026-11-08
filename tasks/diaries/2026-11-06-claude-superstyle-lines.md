@@ -26,7 +26,11 @@ TJ chose **audit only, hand off** (pop-up 2026-11-06): the Lines IGA Chef lane (
 
 ## Next
 - Nothing in this lane until the Lines IGA lanes land; then a full /superstyle edit pass on the new pages.
-- Bottom-nav toenail FIXED (TJ approved): `web/components/Layout/Header/Header.module.scss` `.bottomNavButton` radius 6px -> 3px 3px 6px 6px. scss-check pure OK; toenails.cjs mobile /lines + /stats clean. Uncommitted, pending TJ's commit decision.
+- Bottom-nav toenail FIXED (TJ approved): `web/components/Layout/Header/Header.module.scss` `.bottomNavButton` radius 6px -> 3px 3px 6px 6px. scss-check pure OK; toenails.cjs mobile /lines + /stats clean. Committed d33d2c8a5 (with the backlog and this diary). Not pushed.
+
+## Inventory (2026-11-07, orchestrator local_c4e6c533 check-in)
+- No nested sessions started. Report: side-session-notes/local_c4e6c533-.../inventories/superstyle-lines.md.
+- Header.module.scss now shows an uncommitted token swap (hex -> v.$chrome-*). That's another lane's work, not mine; my radius line is already in d33d2c8a5.
 
 ## Gotchas
 - `/api/v1/lines/projected` currently returns `enabled:false` (projected lineups feature off), so ProjectedLineups state shown is the disabled one.

@@ -1,0 +1,21 @@
+{
+  "at": "2026-10-31T21:13:00.382162+00:00",
+  "applicationPinsUnchanged": 16,
+  "historicalArtifactCountsUnchanged": {
+    "repair-r2": 19,
+    "paid-evaluation": 30,
+    "omission-diagnosis": 23
+  },
+  "realLedgerUnchangedAndDisabled": true,
+  "archivedLedgerUnchanged": true,
+  "newPaidRequests": 0,
+  "newPaidCostNanoUsd": 0,
+  "newCredentials": 0,
+  "builds": 0,
+  "deployments": 0,
+  "scopedVerifierTypecheckExit": 0,
+  "continuationScenariosPassed": 5,
+  "explicitVersionReplayComparisonsPassed": 4,
+  "independentContinuationReview": "pending",
+  "executionAuthorization": "not_granted_by_this_preparation"
+}

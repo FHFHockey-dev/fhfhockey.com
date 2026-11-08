@@ -1,0 +1,219 @@
+{
+ "390x844-trends": {
+  "errors": [],
+  "blocked": 4,
+  "doc": [
+   390,
+   1778
+  ],
+  "rootTop": 56,
+  "page": {
+   "nodes": 103,
+   "controls": 12,
+   "controlKinds": {
+    "input": 1,
+    "button": 10,
+    "summary": 1
+   },
+   "textNodes": 47,
+   "chars": 290,
+   "type": {
+    "12/400": 25,
+    "12/700": 10,
+    "11/400": 5,
+    "14/400": 4,
+    "28.8/700": 1,
+    "11/700": 1,
+    "16/400": 1
+   },
+   "colors": {
+    "rgb(170, 170, 170)": 21,
+    "rgb(255, 255, 255)": 11,
+    "rgb(20, 162, 210)": 5,
+    "rgb(75, 192, 192)": 3,
+    "rgb(255, 159, 64)": 3,
+    "rgb(128, 128, 128)": 2,
+    "rgb(255, 99, 132)": 2
+   },
+   "radii": {
+    "6px": 10
+   },
+   "backgrounds": {
+    "rgb(24, 26, 30)": 5,
+    "rgb(15, 16, 19)": 5,
+    "rgb(4, 4, 4)": 5,
+    "rgb(32, 32, 32)": 1,
+    "rgb(22, 24, 27)": 1,
+    "rgb(0, 32, 91)": 1
+   },
+   "borders": {
+    "rgb(80, 80, 80)": 9,
+    "rgb(16, 126, 163)": 1
+   }
+  },
+  "areas": {
+   "C14": {
+    "rect": [
+     16,
+     269,
+     358,
+     240
+    ],
+    "nodes": 32,
+    "controls": 0,
+    "controlKinds": {},
+    "textNodes": 17,
+    "chars": 94,
+    "type": {
+     "12/700": 6,
+     "12/400": 6,
+     "11/400": 5
+    },
+    "colors": {
+     "rgb(170, 170, 170)": 6,
+     "rgb(255, 255, 255)": 6,
+     "rgb(128, 128, 128)": 2,
+     "rgb(255, 99, 132)": 1,
+     "rgb(20, 162, 210)": 1,
+     "rgb(75, 192, 192)": 1
+    },
+    "radii": {},
+    "sampleText": [
+     "Point consistency",
+     "0 Pts",
+     "2 Pts",
+     "3 Pts",
+     "Cardio"
+    ]
+   },
+   "C15": {
+    "rect": [
+     16,
+     525,
+     358,
+     300
+    ],
+    "nodes": 6,
+    "controls": 0,
+    "controlKinds": {},
+    "textNodes": 1,
+    "chars": 20,
+    "type": {
+     "12/700": 1
+    },
+    "colors": {
+     "rgb(170, 170, 170)": 1
+    },
+    "radii": {},
+    "sampleText": [
+     "Category percentiles"
+    ]
+   },
+   "C16": {
+    "rect": [
+     16,
+     841,
+     358,
+     260
+    ],
+    "nodes": 14,
+    "controls": 3,
+    "controlKinds": {
+     "button": 3
+    },
+    "textNodes": 7,
+    "chars": 44,
+    "type": {
+     "12/400": 6,
+     "12/700": 1
+    },
+    "colors": {
+     "rgb(170, 170, 170)": 4,
+     "rgb(255, 255, 255)": 1,
+     "rgb(20, 162, 210)": 1,
+     "rgb(255, 159, 64)": 1
+    },
+    "radii": {
+     "6px": 3
+    },
+    "sampleText": [
+     "Time on ice",
+     "· Avg (min)",
+     "━Total",
+     "TOI",
+     "PP TOI %"
+    ]
+   },
+   "C17": {
+    "rect": [
+     16,
+     1117,
+     358,
+     260
+    ],
+    "nodes": 13,
+    "controls": 1,
+    "controlKinds": {
+     "button": 1
+    },
+    "textNodes": 7,
+    "chars": 36,
+    "type": {
+     "12/400": 6,
+     "12/700": 1
+    },
+    "colors": {
+     "rgb(170, 170, 170)": 2,
+     "rgb(255, 255, 255)": 1,
+     "rgb(20, 162, 210)": 1,
+     "rgb(75, 192, 192)": 1,
+     "rgb(255, 159, 64)": 1,
+     "rgb(255, 99, 132)": 1
+    },
+    "radii": {
+     "6px": 1
+    },
+    "sampleText": [
+     "Points / game",
+     "▮Pts",
+     "┄Avg"
+    ]
+   },
+   "C18": {
+    "rect": [
+     16,
+     1393,
+     358,
+     260
+    ],
+    "nodes": 16,
+    "controls": 2,
+    "controlKinds": {
+     "button": 1,
+     "summary": 1
+    },
+    "textNodes": 7,
+    "chars": 31,
+    "type": {
+     "12/400": 5,
+     "12/700": 1,
+     "16/400": 1
+    },
+    "colors": {
+     "rgb(170, 170, 170)": 2,
+     "rgb(255, 255, 255)": 2,
+     "rgb(20, 162, 210)": 1,
+     "rgb(75, 192, 192)": 1,
+     "rgb(255, 159, 64)": 1
+    },
+    "radii": {
+     "6px": 1
+    },
+    "sampleText": [
+     "Game score",
+     "▮Score"
+    ]
+   }
+  }
+ }
+}

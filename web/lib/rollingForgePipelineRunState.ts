@@ -20,8 +20,9 @@ import type { RollingForgePipelineMode } from "./rollingPlayerOperationalPolicy"
  * lease RPC gives each stage a single owner, a monotonic cursor (the rolling
  * step's player resume id) and a terminal `complete`/`failed` status, so a
  * later invocation can continue where an earlier one stopped. An invocation
- * killed mid-stage leaves a `running` row; once its lease expires the next
- * invocation repeats that stage from its last stored cursor.
+ * killed mid-stage leaves a `running` row. Expiry cannot prove replay safety;
+ * only an acknowledged handoff permits automatic continuation. Ambiguous rows
+ * remain available for operator reconciliation rather than being reclaimed.
  */
 export const ROLLING_FORGE_RUN_PIPELINE_KEY = "rolling_forge_pipeline";
 
@@ -38,6 +39,8 @@ export type RollingForgeStageState = {
 export const ROLLING_FORGE_HANDOFF_LEASE_MS = 30_000;
 const HANDOFF_CODE = "stage_handoff";
 export const NST_PERSISTENCE_UNCONFIRMED = "nst_persistence_unconfirmed";
+export const AUDIT_PERSISTENCE_UNCONFIRMED = "audit_persistence_unconfirmed";
+export const STAGE_HANDOFF_UNCONFIRMED = "stage_handoff_unconfirmed";
 export class RollingForgeStageReviewRequiredError extends Error {}
 
 
@@ -184,9 +187,9 @@ export function acquireRollingForgeStage(args: {
     initialCursorDate: args.runDate,
     leaseMs: Math.max(30_000, args.leaseExpiresAtMs - now.getTime()),
     now,
-    assertResumable: args.stageId === "upstream_skater_sources" ? (current) => {
-      if (current.status === "failed" && current.lastError === NST_PERSISTENCE_UNCONFIRMED) {
-        throw new RollingForgeStageReviewRequiredError("NST persistence is unconfirmed; the durable review hold cannot be reacquired.");
+    assertResumable: (current) => {
+      if (current.status === "failed" && [NST_PERSISTENCE_UNCONFIRMED, AUDIT_PERSISTENCE_UNCONFIRMED].includes(current.lastError ?? "")) {
+        throw new RollingForgeStageReviewRequiredError("Persistence is unconfirmed; the durable review hold cannot be reacquired.");
       }
       // A running row is durable pre-call intent. Without an acknowledged
       // handoff, even an expired owner may have written data or lost its hold.
@@ -196,9 +199,9 @@ export function acquireRollingForgeStage(args: {
         if (Number.isFinite(expiresAt) && expiresAt > now.getTime()) {
           throw new Error("PROJECTION_PIPELINE_LEASE_HELD");
         }
-        throw new RollingForgeStageReviewRequiredError("NST invocation ended without an acknowledged handoff; inspect persistence before retrying.");
+        throw new RollingForgeStageReviewRequiredError("Stage invocation ended without an acknowledged handoff; reconcile child outputs and audit before an operator authorizes resumption.");
       }
-    } : undefined
+    }
   });
 }
 

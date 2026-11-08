@@ -1,0 +1,654 @@
+{
+  "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json": {
+    "sha256": "751fa3578ea9ac732a4e0b7e562cc1ccaa5edfb22331798c1ea893018a367e14",
+    "binding": "retained_local_audit_or_handoff_anchor"
+  },
+  "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/RESULT.json": {
+    "sha256": "224671271c818f162124bd3908d9bfea1a8d9c065393349bbdde35afb9d90647",
+    "binding": "retained_local_audit_or_handoff_anchor"
+  },
+  "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/verify.py": {
+    "sha256": "9119907159c5e1549312bc9ea4133170d1a9329c0de0eead29a43049dd41b948",
+    "binding": "retained_local_audit_or_handoff_anchor"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/ppp-sidecar-composition-20261101-01/HANDOFF-RECEIPT.json": {
+    "sha256": "9bfe74102225ac4f2dda98fab6d6487f0f69a172326e45b766d757f820597f37",
+    "binding": "retained_local_audit_or_handoff_anchor"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/COMPARISONS.json": {
+    "sha256": "f95e72642491e9912cacda60cd4d9f6d92b595f8842b918a68d52d24177e086c",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/CHECKPOINT.md": {
+    "sha256": "28fb20b29d40b3eb1405e9c256236eb1ef95d77618dfd3ea7b1eb2b3e5cb19ac",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/INPUT-PINS.json": {
+    "sha256": "4446247b95586b8e69786b221ffc955b58753fdb8dcb71ec1d33a9fe83e15810",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/FINAL-RECEIPT.json": {
+    "sha256": "dc63be00e008c36d2c5a6fd271fbeb7d98712effbad72b6bfe49b5583b468846",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-refresh-reader-20261101-01/live-read-01/capture/CURRENT-REQUEST.json": {
+    "sha256": "c6d1d13dc7327baa54742c3eb7efe0a1e5d96c6ef6ffefc66de23f4092c12ba2",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-refresh-reader-20261101-01/production-context-02/CONTEXTS.json": {
+    "sha256": "7336bfc30cc56ce18c28af5527e4072baaeaeb99f63f3f32321185e194b29325",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/ppp-sidecar-composition-20261101-01/candidate-01/ROWS.json": {
+    "sha256": "5c7da26694e7439eb7f7f8ec9371fb50e3d88674ed964f4f36062fc17ab68691",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/older-ppp-observation-contract-20261101-01/candidate-01/ANNOTATIONS.json": {
+    "sha256": "143d18df4cde7f9b1b6d9583dfba525f5eab43fd356be9f89c1676cfbf4251a4",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/fresh-box-qualification-20261101-01/qualification-01/COMBINED-ROW-EVIDENCE.json": {
+    "sha256": "b5eee0371ecbdd364caaa04c8c926f895d803bd56fe746732935d6bbd2f664f2",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/ppp-sidecar-composition-20261101-01/FINAL-RECEIPT.json": {
+    "sha256": "a0399fc26fc460b573fe1342f2ff2e791e2fac426aea03709f20f29e59bbc3ff",
+    "binding": "/Users/tim/Documents/Codex/2026-10-27/task-3/ppp-sidecar-composition-20261101-01/HANDOFF-RECEIPT.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/ppp-sidecar-composition-20261101-01/candidate-01/PROFILES.json": {
+    "sha256": "e3d9a71a5a334f14068801d83f61c5eacec3421b74e4e47475aaf363cbf2b2be",
+    "binding": "/Users/tim/Documents/Codex/2026-10-27/task-3/ppp-sidecar-composition-20261101-01/FINAL-RECEIPT.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/ppp-sidecar-composition-20261101-01/compose.py": {
+    "sha256": "ca83545643e5e0ac8ce80af20e48b2057dbc4c79585f81ee848ee0b378a53408",
+    "binding": "/Users/tim/Documents/Codex/2026-10-27/task-3/ppp-sidecar-composition-20261101-01/FINAL-RECEIPT.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5587266/BODY.json": {
+    "sha256": "40ed70fe48a02c1ff5f09038b8168cbb9a69de542ac6fed690fdd17ee1372af7",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5587266/TRANSPORT-RECEIPT.json": {
+    "sha256": "c94e4359b93743829c11d6979d2d72d0f13c99528c3384fc19286ce2208dac98",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5587266/DISPATCH.json": {
+    "sha256": "e49ff496c40e4f0c7f16fe7cf6c4c1a8f83d9457b50084d3d2a889506d7649a1",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5588451/BODY.json": {
+    "sha256": "bfa0db5b596dcac8e3ceee96a2ff1a1e5e923dd486631fdeafc64dce66ddf781",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5588451/TRANSPORT-RECEIPT.json": {
+    "sha256": "9a28e0e26d705ad622f108e8e18521d2b9ab47dc099cd725a3d58c6fbde88545",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5588451/DISPATCH.json": {
+    "sha256": "8169440bcace1c3f0558696247be4e43038299d86dce5734a9272183c5f921b0",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5588594/BODY.json": {
+    "sha256": "b3abfbdcaaaa089bd7024a3e644e1bf00022125cb609bce4d0b71bfbf5e89d9d",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5588594/TRANSPORT-RECEIPT.json": {
+    "sha256": "1ef389e1c848a6fb7bd692f2e140bb2b5a1620862a38311b4c2c2a98e3c9dade",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5588594/DISPATCH.json": {
+    "sha256": "b1251114b2504a601b7c1b7953dc63ae8308d1d49cd4281e7bdfb7cc3f628717",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5589212/BODY.json": {
+    "sha256": "001b32cfdcb8ebc560b1d2534eeb5eeafd913ced9af9a798f463fce84de6277b",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5589212/TRANSPORT-RECEIPT.json": {
+    "sha256": "11508a14114481354251e464164b53c1f91c2dc3c18b53c15d083fd54fc60646",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5589212/DISPATCH.json": {
+    "sha256": "0e7976dab4a96b986192132ea9d054568aad6aa5658ada1b02abacc3ca022665",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5589270/BODY.json": {
+    "sha256": "7ca266e2a4171f1320aa9b86b2926d55bf3e4df0d4c7a705ae5d9aeed7db73a4",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5589270/TRANSPORT-RECEIPT.json": {
+    "sha256": "38a8dd551fcc8b656c853fe95bd72735299a04904fec5a7be17702a176292029",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5589270/DISPATCH.json": {
+    "sha256": "d1420023c1d7620de4ce95220a06970be7e40a0782fc584f5a3f94f40e76db43",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5589285/BODY.json": {
+    "sha256": "7717841e58374624e175ceb4b255bfe762f24cd3cce99b837fbb675632883204",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5589285/TRANSPORT-RECEIPT.json": {
+    "sha256": "b843f63593235bec438a4246e3e4bedd69c076dac0e2328f4182a2fb4c7409fa",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5589285/DISPATCH.json": {
+    "sha256": "9cddcbb992adbe2976f4fa8452eb0fee257495754b39e3e9658a1a4b22cc6b74",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5589288/BODY.json": {
+    "sha256": "1bca61b2534e854209aed55692f4a73110865195d916bba5dd60081411ab6ac4",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5589288/TRANSPORT-RECEIPT.json": {
+    "sha256": "d7b16935c08de9358f3ac014fe009bbf986a4b1509f8355e29da83c549f23054",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5589288/DISPATCH.json": {
+    "sha256": "ccbd4fdc16625178d1747a60f6027d9346aa05987c1579dbf88d02d1eaa0252f",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5589299/BODY.json": {
+    "sha256": "d1bf94fa3ceeb2504187aaccff1f6753f560b3fda28a55fa7f4130b7f0b25141",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5589299/TRANSPORT-RECEIPT.json": {
+    "sha256": "e8348690b2aa2f12638277a4e33e96d8abf62688ebbb57bf35220395f57834aa",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5589299/DISPATCH.json": {
+    "sha256": "c2e43455c1d1a13bdde69fc8461dfb60ad80d5c296e545817c75383f3f868e7c",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5589301/BODY.json": {
+    "sha256": "871b13e71ad5381b657d6a9d6e7496216602e2feaecee35742cbe52c977ef4f3",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5589301/TRANSPORT-RECEIPT.json": {
+    "sha256": "18d701b43ba0552912a4376b35009d94c3ad13b33f01b55aa56710ab9ac9afa5",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5589301/DISPATCH.json": {
+    "sha256": "989f1ec7ebd00df85f0b5267e577af3e929678cd80458f4814c75ceb10e3b238",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5589311/BODY.json": {
+    "sha256": "caf520e4cf23dc7f3e502bc0f57469706ff6b4a238d3e5028a4e30b895e2489a",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5589311/TRANSPORT-RECEIPT.json": {
+    "sha256": "2eaa62078707fc4f375beec67ca91a1dfd4a98552817f6d206b404c70e7e90bd",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5589311/DISPATCH.json": {
+    "sha256": "ce25164e7131d36b5c30fc0c575d6a7f86f490377dde0f78285952a973adf22f",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5589766/BODY.json": {
+    "sha256": "53ad5a24bdbdb3c930fc3c95cb83b4fc274b5d83e9e99ac956a028b59143578c",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5589766/TRANSPORT-RECEIPT.json": {
+    "sha256": "e39aec5d052aa2449ea8163a5367d3f51ce86687ebd52611d3b24ccdebfd3bf1",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5589766/DISPATCH.json": {
+    "sha256": "f1ee96a08946cbd37cdeee0e0c9e2c0878a4107a57a914d7bfb20c262d686cff",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5589783/BODY.json": {
+    "sha256": "ff2191f9964e475af88d316d2e39392bae4b60f21a4ee0daddde48b0cc6e6f62",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5589783/TRANSPORT-RECEIPT.json": {
+    "sha256": "8ae360767e74d9a93847f9b032154363a14752ea02527a919e62757cdeefa018",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5589783/DISPATCH.json": {
+    "sha256": "720d9b2622005e8f60d6ba707230680839db3b2c27462366a172a47872ab3736",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5589792/BODY.json": {
+    "sha256": "9e90884f069deeae966502f3976c4a5b994d8831a97ea45c9871c856a063e255",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5589792/TRANSPORT-RECEIPT.json": {
+    "sha256": "46a28e3e29cc6803c5fde1ff9b439a9a00658da2c2bb9f880f8ef9198bacdd7c",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5589792/DISPATCH.json": {
+    "sha256": "8b4159bafb3a140e013a4177ea4313d783b1dda62def3fb1555b9d6e5947c8ea",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5589793/BODY.json": {
+    "sha256": "c8188e556b87ba3aca1f11866712e68036ca0809ae6644ede7a64a61b32300ae",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5589793/TRANSPORT-RECEIPT.json": {
+    "sha256": "9c5f0860e964a2c4de5b16b2796acb594aca489a2bee505b3439efc0d3011180",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5589793/DISPATCH.json": {
+    "sha256": "13b459d8a578e8c1682eee9b9471bc26b02b88305778a4db965c3824722997e4",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5589801/BODY.json": {
+    "sha256": "70702e61ee3f9c1708cc3c7468a11ec755e1f7ba0eb9618d5db0f29dd9101718",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5589801/TRANSPORT-RECEIPT.json": {
+    "sha256": "8bb015ec54dff4a8ca94f1b903ebc0967cd6f5ea5eff6901061f3db9400b78d7",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5589801/DISPATCH.json": {
+    "sha256": "4920e0e742d82da378b8fe9fb46c5e627422bfa2183ae67776f279f5c452159e",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5589802/BODY.json": {
+    "sha256": "ee36e47b5c421f9746ff537f798cb6f9d3f8011a7a89355e97b73c975396f767",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5589802/TRANSPORT-RECEIPT.json": {
+    "sha256": "b3c6d83de7b4280214b70498ddc88f94d9caf0eb39f5770b866b2d67e7f37dc1",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5589802/DISPATCH.json": {
+    "sha256": "bcd8bc408cdf9c36b5a7d3596fafce244f705e0349d5a19878152392f5215b87",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5589803/BODY.json": {
+    "sha256": "cc2aac67f6ab9a60d8b2650b83ba6b06e72fe7a5441fbc0d86729bebc2738c41",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5589803/TRANSPORT-RECEIPT.json": {
+    "sha256": "eac0fb7f219d31551ec91bf1224a367ce5e3b68be6b98a26d281b2265fb5664a",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5589803/DISPATCH.json": {
+    "sha256": "3934473c943b71a03857461181e77bd3287348e33bafe0bcbe8b33378df952fb",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5596246/BODY.json": {
+    "sha256": "64f883148dbc3f2249a528e5504300cfe1e757c73aed28f5664f9aba680c4a48",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5596246/TRANSPORT-RECEIPT.json": {
+    "sha256": "2edfb6405756a5273fac60d0e0d59c1292326f544f33765e7c700b4fddc5a5e6",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5596246/DISPATCH.json": {
+    "sha256": "f309dec6662075ae506122ed1351ce5ab8c4dd48547268f2fda6ab34b895fec5",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5596261/BODY.json": {
+    "sha256": "13860758fe21ca65c6269513bfc323a053e8ac8a6ef6c6b8c14c1406b8d062d4",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5596261/TRANSPORT-RECEIPT.json": {
+    "sha256": "7df53b666f3a55f6168b8dda8c94eee6f16ef12f35e00151602fa878b7f0cb56",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5596261/DISPATCH.json": {
+    "sha256": "e12906573f544a6bba6379815ed3046a9fee448dff44d46b0e62f66bb50c890a",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/source-vintage-20261101-01/live-02/021-2026020156-summary.body.json": {
+    "sha256": "35525857ef61c753f9ffb31f10df97fc39791c7489c714ce0fd68a1d4a8d517b",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/source-vintage-20261101-01/live-02/021-2026020156-summary.receipt.json": {
+    "sha256": "a5836bf57f0f7a4ca3d352a694b9b498093053e56276277b24146c7616f9c682",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/source-vintage-20261101-01/live-02/021-2026020156-summary.dispatch.json": {
+    "sha256": "ba7159d14eb9f1bcd9eaf37f9399755b0ccf529b550be467d650b402d2d7a673",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5596272/BODY.json": {
+    "sha256": "4a735bcfbf9c94059574e742e9aa4fafd0043334e3d90dfc34ca98dadabc4907",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5596272/TRANSPORT-RECEIPT.json": {
+    "sha256": "81dae4c243e58e2418eb5e98f6c336c5844749efc9f2353f1acd61a6a75379df",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5596272/DISPATCH.json": {
+    "sha256": "8a6c402a6ccd4da2fc6b83752f2ae322807427ddb9cbeeb8168e6ca1b42f9211",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5596302/BODY.json": {
+    "sha256": "775b3ca9a761d9c1f757de696b35dbd4a1cc350d42a23122b2cdc74c523055b9",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5596302/TRANSPORT-RECEIPT.json": {
+    "sha256": "82bec5c853a8c3383673b76f7955a94fb14baff076dbc84e6d242fb97587640f",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5596302/DISPATCH.json": {
+    "sha256": "f6702032b0bc408d5660f686af2fd985de4e6d80757410139a75a8ab7860baf8",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/source-vintage-20261101-01/live-02/041-2026020167-summary.body.json": {
+    "sha256": "5ea96c15c5150eecad103f80287cd767ecf148225d8b8c9322446cea07ff06cf",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/source-vintage-20261101-01/live-02/041-2026020167-summary.receipt.json": {
+    "sha256": "276e1c1f1517f8d679ecdd8c367909873ca4ed81b72c4d5d2ac9f89bb084f34b",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/source-vintage-20261101-01/live-02/041-2026020167-summary.dispatch.json": {
+    "sha256": "bb2cf64f9c51d895a5b8cd403ab207187fe99423c5d21b0ff8c7483149ede29c",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/source-vintage-20261101-01/live-02/048-2026020171-summary.body.json": {
+    "sha256": "437dac0c38935947c4f01a914aef5a59849a0dcad6c2d10407ab26b2a50fefdb",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/source-vintage-20261101-01/live-02/048-2026020171-summary.receipt.json": {
+    "sha256": "57c0faafce009b0a3e00c627a1562e44183822ae770c1d2b10242faca4999962",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/source-vintage-20261101-01/live-02/048-2026020171-summary.dispatch.json": {
+    "sha256": "344e5c5c35ddde2a2fd8cf8416d20478cb946bca742e8a1737221405dbf00056",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5597195/BODY.json": {
+    "sha256": "883d255caa04102e5fa4c60007cd6e0dd587d9d7216a10769f578bca90eec0ab",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5597195/TRANSPORT-RECEIPT.json": {
+    "sha256": "99e7753d54c6852eb5a90756deadb88b4ddf9a8d1a15f2734e86589f02b651e7",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5597195/DISPATCH.json": {
+    "sha256": "5614db4bcd14fbd9840538d5706484b50cc151bef06577a57742d6c6cd3b2cf5",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5597263/BODY.json": {
+    "sha256": "3ce8da8ca76ccd413c115dbeed8ecaa06ffe251aa8a96a8126f3f96241d10f24",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5597263/TRANSPORT-RECEIPT.json": {
+    "sha256": "29f438d1923612af571a3594384641ccbf1279282a7e5f03215f5d67a6fa2dab",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5597263/DISPATCH.json": {
+    "sha256": "52bf71fbad91c28121114d92c943d36dc7a5c9d04b2afa2e898bac4a75fa4280",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5597269/BODY.json": {
+    "sha256": "0efc983044b34a282b67348b3521ff9977148c5e4fb1752f3301721298dafbbb",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5597269/TRANSPORT-RECEIPT.json": {
+    "sha256": "3f004ff3bb346f5875fe0c05f51837b1c422e1c0677766b15b42d5493f4fb428",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5597269/DISPATCH.json": {
+    "sha256": "fafdea1b0253326dfd79dc941fbcd4479b507cbe5c2c711d9bb4474d0204dee9",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5597273/BODY.json": {
+    "sha256": "4aa9052a55484b18b91a6d5f4e6a6d1a492ba17f6fe72fc40b4c61c1ad0d1a5d",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5597273/TRANSPORT-RECEIPT.json": {
+    "sha256": "6058ead952306fd3f1d532e597db841fe9e7036d3b71e8086cdff38fb397cd6f",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5597273/DISPATCH.json": {
+    "sha256": "fad6e980ccd09c46772f4f20b5902d62f406e2df6d5e560cdc4ffce3e781ed82",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5597274/BODY.json": {
+    "sha256": "28b0f467cc8c61895f81076040833dcff412224391ec61f36797a62d93a21604",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5597274/TRANSPORT-RECEIPT.json": {
+    "sha256": "8f116074b72a46e6b7496be1cd8d384f7ae9869e792aecaddf92400c85fba042",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5597274/DISPATCH.json": {
+    "sha256": "fc50a9036b7f54ab4bee8aa66eebaf21576c988ad609ae8de1a5be86a6b95013",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5597283/BODY.json": {
+    "sha256": "6d3f50391befac1e1f6c7da2215f3ea06916fe805775c1e6dc1de8da811c0ddd",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5597283/TRANSPORT-RECEIPT.json": {
+    "sha256": "2802222072e985016fef6073c7eccf38c6504d4a6c70c36e1618c77889f58a6f",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5597283/DISPATCH.json": {
+    "sha256": "8d8874786e424143e0e9debcc6a24406a44d41e98cb6345a42d935e32ed8f01a",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5597286/BODY.json": {
+    "sha256": "39a1dfb983cc4b55031ca228581d4580599e4bbda27a8308d7b67e45fd10a463",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5597286/TRANSPORT-RECEIPT.json": {
+    "sha256": "1aceb03fe3526b6794ccf771d7ab3184f51714f04f66340aabfe496bc507d932",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5597286/DISPATCH.json": {
+    "sha256": "99e46d84da2b886ac07ed30515471b2de66d560e26a416c91c289d7ebf3559ba",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5597287/BODY.json": {
+    "sha256": "04be556a34055e1d512b4773b9bd5c71413e0dcda327b7f2ad98842d2000d805",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5597287/TRANSPORT-RECEIPT.json": {
+    "sha256": "a1241f92cf4b5c82e6e9d6334a3b0c5cf430ed499e43c238cbb3475a4d850750",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5597287/DISPATCH.json": {
+    "sha256": "94f01441b9e86b90974b2cceb48b1b0f4305713ab44c3457eef697833df8f243",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5597289/BODY.json": {
+    "sha256": "20efa84bba7287db8e93379038bbcd18061727de457594d4d3ea479e1af2987c",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5597289/TRANSPORT-RECEIPT.json": {
+    "sha256": "e9cbaeee8dc33ab07ed04fb43f234c6de38f14d341017e721e671e5cfbaf450d",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5597289/DISPATCH.json": {
+    "sha256": "36a4dd48a74e4b656cbe218000c1a655e8a03aeb0d982a4549c8ba304bf2d1d2",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5597296/BODY.json": {
+    "sha256": "40e2c8be47977c997bdb74d4e6191b26ea50ae2684fdfcf3c5ee4f0a25960482",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5597296/TRANSPORT-RECEIPT.json": {
+    "sha256": "5b662e80243c8aa7e53b273af55726eb22c2c9a5ff5b18d8436d408be50a3923",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5597296/DISPATCH.json": {
+    "sha256": "6e722c2dfe9e278e214fa506467560a548cf99e182a5c752270dd9eb5a4bac1b",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5597302/BODY.json": {
+    "sha256": "f29e4f225b5a1f872de75a2d7cbf6b74cc8a805e8fd0db78c29b9ca38a964acb",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5597302/TRANSPORT-RECEIPT.json": {
+    "sha256": "f42fe519e813973677b059342c418d0f3d3156bf372ad988e10d2c1e6ea63297",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5597302/DISPATCH.json": {
+    "sha256": "811563635d4cf81fc1d96a2e5402be4ce6106040e1bbe0597c22ed7d32f271a6",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5598399/BODY.json": {
+    "sha256": "01c05003516c93343b848e20d66edf57a5a75a021ad218f95c15acf87207e3dd",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5598399/TRANSPORT-RECEIPT.json": {
+    "sha256": "7e8d5da49962e8ac6b6fa91278199d34210957f82e5c7b6a095d510371bc16a3",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5598399/DISPATCH.json": {
+    "sha256": "a564583de34ba90d83f487054871c1304f98e8d70857d0f143e65e9e67a8a4c6",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5598400/BODY.json": {
+    "sha256": "f0dfea84aff5d7778e1fe81f3158c2da6d300c15742c3264c11996807d118541",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5598400/TRANSPORT-RECEIPT.json": {
+    "sha256": "5599e12e44e998b0fee13c372806fd437f7e6c9b590f90ac88a710beefe85b4a",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5598400/DISPATCH.json": {
+    "sha256": "1162195f9966afde9e9fd2adb46c8e6d5504b46f382f1f1c67e03a0ba80d3ad9",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5598405/BODY.json": {
+    "sha256": "818d1e617f4ba1b0a989e7108044f326f362316cf96b673af1f449268f6b962a",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5598405/TRANSPORT-RECEIPT.json": {
+    "sha256": "26c75abd3520186001c8c6c6feb6a0047e934e398fd8947f63bf58e136619ef6",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5598405/DISPATCH.json": {
+    "sha256": "1b6e74bad28dc7dfd3b16b865d895f00382e8bb50cb129e3aea5b063d227fd16",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5598406/BODY.json": {
+    "sha256": "fb2e88f0efe4437ba4f976a7799f6fe63c968621992c2edb03cbcef6a8773d48",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5598406/TRANSPORT-RECEIPT.json": {
+    "sha256": "47f330cf6313f1aac8b6bde873a7aebfc4bf87ee9373c147b3f2ed36579a167a",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5598406/DISPATCH.json": {
+    "sha256": "2c65a4102361994f4fb72d2cee53737969aad3dead20a6ffc47221a84b687248",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5598438/BODY.json": {
+    "sha256": "9215a05aa867a2ce36a47e1ce9591ce3426274a75ccc0b7a3ae293e5dc7e36b4",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5598438/TRANSPORT-RECEIPT.json": {
+    "sha256": "7e8aa9e50e208069e81083d89c50086c5933b20e7b08bcead325e58cafd57c0d",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5598438/DISPATCH.json": {
+    "sha256": "55c7335112ee45116c870ec88b562bb23c2416f00ebe00ff3500c4d5ee90d3a4",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5598439/BODY.json": {
+    "sha256": "a9e29adf98f5aa21951bcf6909cd0f46d71bb0eb619f664786a96997e9d792dc",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5598439/TRANSPORT-RECEIPT.json": {
+    "sha256": "c22e4ba5db8d5ee680aba06f9afb3cb301a87bfb7ace6a7cba2921a9b86ff250",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5598439/DISPATCH.json": {
+    "sha256": "3489ed6919d6b6eeee572e9944feca6e625bb60fdc55b39737a1b9ac0883374b",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5598688/BODY.json": {
+    "sha256": "d7bf5a8a81269c047e8d2d2c83be585e17bf093621dce0d4ebfcfa11706279c1",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5598688/TRANSPORT-RECEIPT.json": {
+    "sha256": "081dd1871910811a619e343186e8e70219b6b679a0c80db0602be7d4e010a6f0",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5598688/DISPATCH.json": {
+    "sha256": "b8e30d3ca280bf01b45486274ca80e54d0a7421a5ba0f6c8a3e69b21b83803cb",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5599832/BODY.json": {
+    "sha256": "d3b2a07a3903c67026507afb1f3d46362e511806921a463f423d52d74f4203d5",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5599832/TRANSPORT-RECEIPT.json": {
+    "sha256": "9001d4012606b893857179ead7d87c69d83ae7cdfb3628396ac4b9a721d0e063",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5599832/DISPATCH.json": {
+    "sha256": "c0981a2caa301c994a76bfd099dc96e6fe1a875da5a7cb532ad44e759c178b34",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5600700/BODY.json": {
+    "sha256": "b4036b28d56f31d76bf009ecc9411c51ff2b0adf40a355ef474b242248e09235",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5600700/TRANSPORT-RECEIPT.json": {
+    "sha256": "45d23387af0b03818c874dde344858aea613ebfe2a81945532e32b81b38bb199",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5600700/DISPATCH.json": {
+    "sha256": "bb05f8fe01da24d7040963be1892b40c31daa1381203db5886a2e1a31e87f957",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5600709/BODY.json": {
+    "sha256": "e4cf9141690c1f37f6eafd16fc0451c847826e1f9a9bb8d8572242e4986789b7",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5600709/TRANSPORT-RECEIPT.json": {
+    "sha256": "6f6cfeabc0a6c6286d1f1ff43d688ea12a8f57157364e755bad7c9428dd8c7b2",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5600709/DISPATCH.json": {
+    "sha256": "8e545335a1dcd0f8dcfa7941e6189f113263bc9f49ed62c20c7bc4c8d88dbc4f",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5600713/BODY.json": {
+    "sha256": "80d41f71d808747c6d3cb8fa1e268c01cc7fbd6ef5487c10e28d2c6c1f892fe9",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5600713/TRANSPORT-RECEIPT.json": {
+    "sha256": "95116ccbdb7ad40fc71df5ffb5e462b4d4aabadfde3955f9d34d7eb4edae139b",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5600713/DISPATCH.json": {
+    "sha256": "3b812164bb68cee37b5744e2edc142c094fcdb99f658e6327e8e33ef688c4628",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5600780/BODY.json": {
+    "sha256": "170368f25250576c8a9587755d84610d742295398df8661561b1d74351435ee0",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5600780/TRANSPORT-RECEIPT.json": {
+    "sha256": "040c5e42d6208d5a2f63fb42ee5b405636b8eb6eafd2df04bd430b07d1925c37",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5600780/DISPATCH.json": {
+    "sha256": "ae3ebf3b7577499ef0046c88da8fb8fd8c98cadbe958f4b9d9b3a195942998f8",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5600805/BODY.json": {
+    "sha256": "d28eeb213b9d7fd41de85222e36b9cc73230498fd598d42f498294cbb0b60612",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5600805/TRANSPORT-RECEIPT.json": {
+    "sha256": "9cb94ed2e117cb3c8d936eaf9fa8b2fce657b40293b95713142ff1271daf724b",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5600805/DISPATCH.json": {
+    "sha256": "041cd1e87e3c7ef78e71cd7536cac5abe193318315233ad9d139c7c3a7f236ae",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5600831/BODY.json": {
+    "sha256": "30bdca1a4c83450f775394639b1283d7eba638420db8aa2305131170dae3405b",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5600831/TRANSPORT-RECEIPT.json": {
+    "sha256": "7308cfbc315f06d6b9bc243692822bb6202af2a0cd8b76aef082f55a7494596b",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-ppp-direct-comparison-20261102-01/live-01/5600831/DISPATCH.json": {
+    "sha256": "bf29d744a3c60548ba4fa7a9f0ed0278fc7c0a04b70429cfe6641db05d843162",
+    "binding": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-ppp-direct-audit-2026-11-02/PINS.json"
+  }
+}

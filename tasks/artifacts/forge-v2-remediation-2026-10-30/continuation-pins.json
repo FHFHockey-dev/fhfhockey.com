@@ -1,0 +1,169 @@
+{
+  "schemaVersion": "forge-v2-continuation-pins-v1",
+  "baseCommit": "156030056f62836f4b0a42f4c9064e8ddb057002",
+  "codeCandidateUnchanged": "7113329d2c24b8629f54484df37441f95a63d853",
+  "objectiveComplete": false,
+  "goalMarkerActive": false,
+  "originalSubtasksOpen": [
+    "13.2",
+    "13.4",
+    "14.1",
+    "14.2",
+    "14.3",
+    "14.4",
+    "14.5",
+    "14.6",
+    "2.2",
+    "2.4",
+    "2.5",
+    "7.1",
+    "7.3",
+    "8.3",
+    "8.5"
+  ],
+  "newDependenciesOpen": [
+    "NEW-07",
+    "NEW-08"
+  ],
+  "checks": {
+    "jsonAndMarkdownReferences": "passed",
+    "taskStateReconciliation": 85,
+    "originalSourcePinsUnchanged": 44,
+    "originalReviewPinsUnchanged": 24,
+    "preparationPinsUnchangedExceptAdministrativeOwnership": 21,
+    "receiptLogHashes": "4 passed",
+    "routeAndDisabledGateInspection": "passed"
+  },
+  "files": [
+    {
+      "path": "tasks/artifacts/forge-v2-remediation-2026-10-30/CRITICAL-PATH.md",
+      "sha256": "44c2328f983d008dfd6ffd567dd65cc868b80c2d666002a96de041873928792d",
+      "bytes": 13548
+    },
+    {
+      "path": "tasks/artifacts/forge-v2-remediation-2026-10-30/OWNERSHIP.json",
+      "sha256": "4f9727abcc110aaa9303f975c90f6a7c51595fd715f5f5da95d50b3422cdccc7",
+      "bytes": 5448
+    },
+    {
+      "path": "tasks/artifacts/forge-v2-remediation-2026-10-30/RUNBOOK.md",
+      "sha256": "b1b5b233dcb0a9bc30ce31cfa78e850968442745c2935e765c05a91b2f35c6c9",
+      "bytes": 13986
+    },
+    {
+      "path": "tasks/artifacts/forge-v2-remediation-2026-10-30/capacity-check.ts",
+      "sha256": "9188854efe849eeef072c3c941cbddbf7605fa5f84e5e13c1517f988e61bce19",
+      "bytes": 10007
+    },
+    {
+      "path": "tasks/artifacts/forge-v2-remediation-2026-10-30/capacity-plan.json",
+      "sha256": "b98d584be252e4346cf552d6683a60be7611ec79be88a31919b08b29c2e2930e",
+      "bytes": 6036
+    },
+    {
+      "path": "tasks/artifacts/forge-v2-remediation-2026-10-30/chronology-check.ts",
+      "sha256": "15cb5f15cb5714fb315572a2295d833918d8a215234203508f6c9386134fed55",
+      "bytes": 6529
+    },
+    {
+      "path": "tasks/artifacts/forge-v2-remediation-2026-10-30/continuation-capacity-receipt.json",
+      "sha256": "d4a5764fc1480b38720ca7174250c9398d6ae9107fa32fb7ef5f32125340964d",
+      "bytes": 762
+    },
+    {
+      "path": "tasks/artifacts/forge-v2-remediation-2026-10-30/continuation-capacity.txt",
+      "sha256": "0d8c25afca5203fa91ae82ed75303df4b4462af12151be6822c08460b6832e94",
+      "bytes": 2674
+    },
+    {
+      "path": "tasks/artifacts/forge-v2-remediation-2026-10-30/continuation-chronology-receipt.json",
+      "sha256": "0c6a275e64a1af7a50be11091f899af2e351da792d6f309a499c40037bdbc486",
+      "bytes": 768
+    },
+    {
+      "path": "tasks/artifacts/forge-v2-remediation-2026-10-30/continuation-chronology.txt",
+      "sha256": "69c02c27c0a703a3313bdf08320fb34360c327008a35f9029920307217a39dbf",
+      "bytes": 725
+    },
+    {
+      "path": "tasks/artifacts/forge-v2-remediation-2026-10-30/continuation-intake-receipt.json",
+      "sha256": "8f73e989885e8b10babbb37502edd6f26313d60dd0fb179bb1c91e93cdaaa566",
+      "bytes": 429
+    },
+    {
+      "path": "tasks/artifacts/forge-v2-remediation-2026-10-30/continuation-intake.txt",
+      "sha256": "ac8c933d47bdcfa564ffbb3af0b33b0ab3c7c6600fa13bca44777766dc8da3fb",
+      "bytes": 1786
+    },
+    {
+      "path": "tasks/artifacts/forge-v2-remediation-2026-10-30/continuation-types-receipt.json",
+      "sha256": "2976b3cffa6503c7369e5f52546a0e9506698e6cd51af5ea61c88693d06ed6d1",
+      "bytes": 474
+    },
+    {
+      "path": "tasks/artifacts/forge-v2-remediation-2026-10-30/continuation-types.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "tasks/artifacts/forge-v2-remediation-2026-10-30/continuation-verification.json",
+      "sha256": "b0b636ee426a8dc00ced3d324d7503de6795d74093a4ac0d35e2cfc697434288",
+      "bytes": 7551
+    },
+    {
+      "path": "tasks/artifacts/forge-v2-remediation-2026-10-30/execution-prerequisites.json",
+      "sha256": "20844569f5d9c1a07c8ce7776bfaad8bef7f54af01eddb283f875e7fa2993934",
+      "bytes": 10120
+    },
+    {
+      "path": "tasks/artifacts/forge-v2-remediation-2026-10-30/intake-template-report.json",
+      "sha256": "2148d4423c01a00afefc5f41f0afe74b290d7c0b30b4a552beeb6b18a3054f5d",
+      "bytes": 21243
+    },
+    {
+      "path": "tasks/artifacts/forge-v2-remediation-2026-10-30/intake-template.json",
+      "sha256": "f6825994f3a3cb78334e3a8217450bc401e39fb3d0fa1dcc8185250f46a92ab4",
+      "bytes": 5782
+    },
+    {
+      "path": "tasks/artifacts/forge-v2-remediation-2026-10-30/intake_check.py",
+      "sha256": "fd75d523d63ed1a8c26ef99a29359a2cd11f613c812e693f0e5daf01e3d729df",
+      "bytes": 11737
+    },
+    {
+      "path": "tasks/artifacts/forge-v2-remediation-2026-10-30/open-task-reassessment.json",
+      "sha256": "b9c8d63953a6e3bfb222974cd5da5cdc46dbfc3d630f8b3b235935bd56c89da7",
+      "bytes": 49945
+    },
+    {
+      "path": "tasks/artifacts/forge-v2-remediation-2026-10-30/preparation-review.json",
+      "sha256": "fa1b215a4d24f2ffd6f93be3c74bc28d548455f9fab51d309f8fb15e3e0bad5a",
+      "bytes": 7272
+    },
+    {
+      "path": "tasks/artifacts/forge-v2-remediation-2026-10-30/protocol-methods-draft.json",
+      "sha256": "d048932f84fcb19bcf6885b021a47b4b5e808c5e8d7df8b5917172e18e6d2e5a",
+      "bytes": 10638
+    },
+    {
+      "path": "tasks/artifacts/forge-v2-remediation-2026-10-30/run_continuation.py",
+      "sha256": "f5430770f7ed84f337fcfb6c15ce20577786c61e66feddcf2b1ecaf6a3eb9143",
+      "bytes": 3851
+    },
+    {
+      "path": "tasks/artifacts/forge-v2-remediation-2026-10-30/task-status.json",
+      "sha256": "8aa6aeeadd81695fc0345f8a08bca1df059cb6f440b1a3d5b1de33d50674f3f4",
+      "bytes": 31679
+    },
+    {
+      "path": "tasks/artifacts/forge-v2-remediation-2026-10-30/test_intake_check.py",
+      "sha256": "ff48a260216642c64e6e619e77015fba7dd09523c9d5393889d08a993dc670e7",
+      "bytes": 7980
+    },
+    {
+      "path": "tasks/tasks-prd-forge-v2-skater-game-forecasts.md",
+      "sha256": "4ee19459ae483beb5a69969a2332f4caa684e8b05f19bf56056a230a9e415177",
+      "bytes": 62046
+    }
+  ]
+}

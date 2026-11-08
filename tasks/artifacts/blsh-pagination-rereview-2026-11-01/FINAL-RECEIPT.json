@@ -1,0 +1,12 @@
+{
+  "state": "STATIC_PASS_BROWSER_DENIED_P2_PENDING",
+  "files": {
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-pagination-rereview-2026-11-01/REVIEW.md": "b616db848c41d38c2d62c1ecb48bc29174d355a9a6cd515dc80c15481e29de0d",
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-pagination-rereview-2026-11-01/PINS.json": "d6cbae74c780ecb77bf022e9a3022fbcc959b103ba3e10aa4f0ff682ac835000",
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-pagination-rereview-2026-11-01/STATIC-VERIFICATION.json": "188726e5ddcf4c9f61e594a28380a781342fb123c2dd5b8f41567ee0956f8123",
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-pagination-rereview-2026-11-01/review.cjs": "63e0ce79edaafd9c49fb45a78e2218f9756960271cfe553ad3771a0d343531a8"
+  },
+  "independentBrowserExecuted": false,
+  "verifiedPins": 56,
+  "noOwnedLock": true
+}

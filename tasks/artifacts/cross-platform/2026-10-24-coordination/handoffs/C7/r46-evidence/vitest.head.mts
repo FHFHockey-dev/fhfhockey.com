@@ -1,0 +1,6 @@
+import { defineConfig } from "vitest/config";
+import react from "@vitejs/plugin-react";
+const M = "/private/tmp/c7-r46/at/web";
+export default defineConfig({ root: M, cacheDir: "/private/tmp/c7-r46/cache-head", plugins: [react()],
+  resolve: { alias: ["lib", "components", "hooks", "pages", "utils", "contexts", "styles", "public"].map(n => ({ find: new RegExp("^" + n + "/"), replacement: M + "/" + n + "/" })) },
+  test: { environment: "jsdom", setupFiles: [M + "/__tests__/vitest.setup.js"], dir: "/", include: ["/private/tmp/c7-r46/at/web/__tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts", "/private/tmp/c7-r46/at/web/lib/rosterScheduleData/forgeDailyBridge.test.ts", "/private/tmp/c7-r46/at/web/__tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx", "/private/tmp/c7-r46/at/web/__tests__/components/RosterScheduleOptimizer/CategoryGains.test.tsx", "/private/tmp/c7-r46/at/web/lib/rosterScheduleOptimizer/dailyAcceptance.categories.test.ts", "/private/tmp/c7-r46/at/web/lib/rosterScheduleOptimizer/planning.test.ts", "/private/tmp/c7-r46/at/web/lib/rosterScheduleOptimizer/planningReproducibility.test.ts", "/private/tmp/c7-r46/at/web/lib/integrations/yahoo/rosterPlanning.test.ts", "/private/tmp/c7-r46/at/web/lib/integrations/yahoo/yahooDiet.test.ts", ], maxWorkers: 2, testTimeout: 120000 } });

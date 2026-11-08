@@ -1,0 +1,29 @@
+{
+  "atUTC": "2026-11-02T00:26:18.873399+00:00",
+  "disposition": "NO_ACTIONABLE_FINDINGS_BOUNDED_DIRECT_PPP_RESULT_SUPPORTED",
+  "pinsUnchanged": 240,
+  "testsPassed": 15,
+  "nativeMatches": 27,
+  "observedZeroRecords": 13,
+  "nonzeroRecords": 14,
+  "coverage": "101 previous +22 unique census +27 new direct =150 disjoint reference records; composition pending",
+  "heldCensusIds": [
+    3085027,
+    3087408
+  ],
+  "scoreChanges": 0,
+  "sourceEdits": 0,
+  "networkRequests": 0,
+  "holdoutReads": 0,
+  "productionActions": 0,
+  "builds": 0,
+  "deployments": 0,
+  "ownedLocksReleased": true,
+  "files": {
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-historical-ppp-audit-2026-11-02/RESULT.json": "ae56ad795508063fc9abac5d9a29296e16603d7e4a183b3a774b5e92ad30fa60",
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-historical-ppp-audit-2026-11-02/TESTS.log": "bdd2bb70358074447ebcca109f33b5603e3139a3d874c729e32200f8c7918142",
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-historical-ppp-audit-2026-11-02/verify.py": "702b7e1ef7c85124485aae46fd72eec7a74f42a5d1d0d2a507389c99b3e2dc4e",
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-historical-ppp-audit-2026-11-02/REVIEW.md": "3a2325a31891493bc81bed5a5a1acf0ab7e6894d711967a114c62caea39ef733",
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-historical-ppp-audit-2026-11-02/PINS.json": "644eec0f75a8891e1392905c5360a4e113ed20d983931e45d096bf4cf42a9242"
+  }
+}

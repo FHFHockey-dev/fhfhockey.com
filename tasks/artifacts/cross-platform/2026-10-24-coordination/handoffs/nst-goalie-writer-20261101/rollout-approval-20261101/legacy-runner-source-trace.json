@@ -1,0 +1,16 @@
+[
+  {
+    "deployedProvenanceSha": "4965a872a9746b6129c9ac589c200560d01a1e23",
+    "path": "web/lib/routeRunner/core.ts",
+    "fileSha256": "b2f6bedc2aae693af1f3a6030b34c409068e9c6c973c3eb1b292bc1df637b4c2",
+    "excerptStartLine": 636,
+    "excerpt": "  if (rows != null) {\n    progress.rows = rows;\n  } else if (count(sourceCounts?.rows_persisted) != null) {\n    progress.rows = count(sourceCounts?.rows_persisted);\n    progress.rowsUnit = \"sources\";\n  } else if (count(body.pendingUrlsProcessed) != null) {\n    progress.rows = count(body.pendingUrlsProcessed);\n    progress.rowsUnit = \"urls\";\n  }"
+  },
+  {
+    "deployedProvenanceSha": "4965a872a9746b6129c9ac589c200560d01a1e23",
+    "path": "web/lib/routeRunner/tick.ts",
+    "fileSha256": "61345ec8ec2eaae85ae5704a56377053cfb5cfcf59437cb2dfafb9a84f6979f9",
+    "excerptStartLine": 330,
+    "excerpt": "    sentQuery,\n    previous?.stalls ?? 0,\n    previous?.done ?? null\n  );\n  const decision = guarded.decision;\n  const stepProgress = extractStepProgress(result.body);\n  const rowsTotal = Number(job.rows_total ?? 0) + (stepProgress.rows ?? 0);\n  const progress = {\n    ...mergeJobProgress(previous, stepProgress, guarded.stalls),\n    ...(decision.kind === \"fail\" && decision.blockedBy\n      ? { blockedBy: decision.blockedBy, blockerCount: decision.blockerCount ?? null }\n      : {}),\n    rowsTotal,\n    lastStepMs: result.durationMs\n  };\n\n  const bookkeeping: RouteRunnerJobPatch = {\n    steps: step,\n    rows_total: rowsTotal,\n    progress,\n    last_status_code: result.statusCode,\n    last_operation_status: stepProgress.operationStatus,\n    lease_until: null"
+  }
+]

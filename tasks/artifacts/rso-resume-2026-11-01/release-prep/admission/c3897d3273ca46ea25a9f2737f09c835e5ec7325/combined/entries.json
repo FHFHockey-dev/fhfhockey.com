@@ -1,0 +1,18 @@
+[
+  {
+    "closureSha256": "f87dd7079506915fbdb9602d35c3a97270865ae0f4b8813c4456d6d09e96dc92",
+    "commit": "f17bea20d8caa2b6268c318bdb2152d7e2a3b57d",
+    "receipt": "tasks/artifacts/rso-resume-2026-11-01/release-prep/after402-committed-release.json",
+    "receiptSha256": "a9674d30f42b32d88b604a33672e311c74470075da3c9219c1bb613bb2b43b3a",
+    "verifierVersion": "forge-release-sha-verifier-v1",
+    "note": "Released PR #402 PP/IFTTT producer closure, commit f17bea20d: 195-module closure, 0 findings. This does not grant native forecast-use approval."
+  },
+  {
+    "closureSha256": "ec5bdab6593f58ec19ad9b250fb645aa377616542e98205150e22f085914968c",
+    "commit": "c3897d3273ca46ea25a9f2737f09c835e5ec7325",
+    "receipt": "tasks/artifacts/rso-resume-2026-11-01/release-prep/admission/c3897d3273ca46ea25a9f2737f09c835e5ec7325/receipt.json",
+    "receiptSha256": "fe424f17b66c82ca3232d9566a41a7dbafc76400d2f8ea4f007e9afc1758b924",
+    "verifierVersion": "forge-release-sha-verifier-v1",
+    "note": "RSO issued-method lineage and retained participation replay, commit c3897d327: 195-module closure, 0 findings."
+  }
+]

@@ -1,0 +1,12 @@
+{
+  "runtime": "/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-autopsy-qa-Sxyqvl",
+  "port": 3135,
+  "serverStarted": false,
+  "browserStarted": false,
+  "serverStopped": null,
+  "browserStopped": null,
+  "productionCallsAuthorized": false,
+  "result": "failed",
+  "error": "PermissionError: [Errno 1] Operation not permitted",
+  "preservedLockReceipt": "/private/tmp/fhfh-autopsy-browser-released-461d5d53-3213-4332-aade-914a456addd4"
+}

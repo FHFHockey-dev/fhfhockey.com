@@ -1,0 +1,12 @@
+{
+  "at": "2026-10-25T04:53:45.189834+00:00",
+  "pid": 30284,
+  "ppid": 1,
+  "pgid": 30284,
+  "tty": "none",
+  "command": "/usr/local/bin/node /Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/serve-preview.mjs",
+  "soleListener": "127.0.0.1:3125",
+  "observedAfterLauncherExit": true,
+  "observedAfterThisTurnCompletion": false,
+  "automaticRestart": false
+}

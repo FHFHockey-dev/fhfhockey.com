@@ -1,0 +1,28 @@
+{
+  "state": "PASS",
+  "tests": 10,
+  "pins": 44,
+  "profiles": 740,
+  "records": 3461,
+  "zeroShotProfiles": 20,
+  "zeroFields": 36992,
+  "completeRecords": 3181,
+  "nullFields": 1680,
+  "incompleteRecords": 280,
+  "profilesWithIncompleteRecords": 228,
+  "missingByField": {
+    "es_goals_for": 280,
+    "pp_goals_for": 280,
+    "sh_goals_for": 280,
+    "es_goals_against": 280,
+    "pp_goals_against": 280,
+    "sh_goals_against": 280
+  },
+  "originalDisplayIdentical": true,
+  "htmlPayloadAndTemplateExact": true,
+  "acceptedPaginationHandlerIdentical": true,
+  "fpWindows": 482,
+  "unresolvedPPP": 212,
+  "scoresComputed": 0,
+  "networkRequests": 0
+}

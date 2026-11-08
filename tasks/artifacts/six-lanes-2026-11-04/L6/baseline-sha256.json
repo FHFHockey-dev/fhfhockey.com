@@ -1,0 +1,11 @@
+{
+  "web/pages/wigoCharts.tsx": "9f01ed1e7a62bbd0f67301b77c8421c6c0fcb0d6fd1c5a38e47bb25243e1ae23",
+  "web/components/WiGO/WigoDashboardSections.tsx": "f866b2f1e3a4951bf8396a159898c461f1a36cd1cf1b32f8826df0937c9914a6",
+  "web/styles/wigoCharts.module.scss": "28679870cf0ca322c322da32350138442d6eaa3bdf90e943dbb9ecd2a836e573",
+  "web/components/WiGO/PlayerRatingsDisplay.tsx": "ec203f895146ddf564f0ca6dc421eb023e5ddd425ff33cd8860c8d905faa6d16",
+  "web/components/WiGO/PlayerRatingsDisplay.module.scss": "b9fa14c06277be821a68e9e061e8e8597222b5c358d74cd68b4831bcbd2bd34d",
+  "web/__tests__/pages/wigoCharts.test.tsx": "d71e1041112aeaa4b59efb4a260aa031a11c30c890b9f07155d439e8c48cc0ed",
+  "web/components/WiGO/WigoDashboardSections.test.tsx": "e5248064f00e3c457a3b4d9deb13451a8bfeef6606de377501891747e06487dd",
+  "web/components/WiGO/PlayerRatingsDisplay.test.tsx": "37153865ad15d8d867a621d9f04b5e742d4efcc0b97383b5322d066f9fc79f29",
+  "web/e2e/wigo-one-page.spec.ts": "f029650fa7f130bc4a7e1a5a4f19180f2cbd7c4c06334516871516f4018b4e65"
+}

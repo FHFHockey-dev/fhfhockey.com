@@ -1,0 +1,16 @@
+{
+  "installed_files": {
+    "web/lib/buyLowSellHigh/researchSnapshot.ts": "dc4cbb57a93a6e2cdae66d48b0519704c17f0a7d49451bfa546eafeb885b2cb7",
+    "web/lib/buyLowSellHigh/researchSnapshot.test.ts": "a34517a7cdb23dd91e6980bf16d40ea1751ebfce75b06895a553d4a687099c14"
+  },
+  "baseline_dependencies_unchanged": true,
+  "canonical_focused_test": {
+    "passed": 74,
+    "files": 1,
+    "exit_code": 0,
+    "duration_seconds": 5.01
+  },
+  "shared_lock": "acquired atomically and own lock released",
+  "scoped_diff_check": "passed",
+  "application_scope": "exact reviewed two-file patch; prior audit diff preserved"
+}

@@ -1,0 +1,10 @@
+{
+  "exit": 0,
+  "scope": "C1/C2 candidate module/test and imported dependencies",
+  "command": [
+    "tsc",
+    "--noEmit",
+    "-p",
+    "/tmp/fhfh-codex-handoff-review-20261025/types.config.json"
+  ]
+}

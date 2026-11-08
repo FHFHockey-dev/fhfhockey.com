@@ -1,0 +1,1757 @@
+[
+  {
+    "path": "supabase/migrations/20261026200000_rso_yahoo_past_lineups.sql",
+    "pin": "bec40282d7b923960d859160ebf079c848d19a8ab860968361ef936b650c1603",
+    "3795abb43": "bec40282d7b923960d859160ebf079c848d19a8ab860968361ef936b650c1603",
+    "HEAD": "bec40282d7b923960d859160ebf079c848d19a8ab860968361ef936b650c1603",
+    "origin/master": null,
+    "origin/octoberBranch": null,
+    "working_tree": "bec40282d7b923960d859160ebf079c848d19a8ab860968361ef936b650c1603"
+  },
+  {
+    "path": "web/components/RosterScheduleOptimizer/AcquisitionPeriodTimes.test.tsx",
+    "pin": "06498058e4ae0d2094b751172d6e2601cc67d0425c76a0db22f85dfaa1fd862c",
+    "3795abb43": "06498058e4ae0d2094b751172d6e2601cc67d0425c76a0db22f85dfaa1fd862c",
+    "HEAD": "06498058e4ae0d2094b751172d6e2601cc67d0425c76a0db22f85dfaa1fd862c",
+    "origin/master": "06498058e4ae0d2094b751172d6e2601cc67d0425c76a0db22f85dfaa1fd862c",
+    "origin/octoberBranch": "06498058e4ae0d2094b751172d6e2601cc67d0425c76a0db22f85dfaa1fd862c",
+    "working_tree": "06498058e4ae0d2094b751172d6e2601cc67d0425c76a0db22f85dfaa1fd862c"
+  },
+  {
+    "path": "web/components/RosterScheduleOptimizer/AcquisitionPeriodTimes.tsx",
+    "pin": "ba4a9703f5f94f56e25197f5c97699c0500d2b5534a34bcd113ef0c627f4193b",
+    "3795abb43": "ba4a9703f5f94f56e25197f5c97699c0500d2b5534a34bcd113ef0c627f4193b",
+    "HEAD": "ba4a9703f5f94f56e25197f5c97699c0500d2b5534a34bcd113ef0c627f4193b",
+    "origin/master": "ba4a9703f5f94f56e25197f5c97699c0500d2b5534a34bcd113ef0c627f4193b",
+    "origin/octoberBranch": "ba4a9703f5f94f56e25197f5c97699c0500d2b5534a34bcd113ef0c627f4193b",
+    "working_tree": "ba4a9703f5f94f56e25197f5c97699c0500d2b5534a34bcd113ef0c627f4193b"
+  },
+  {
+    "path": "web/components/RosterScheduleOptimizer/BenchDays.test.tsx",
+    "pin": "7113a101ebcde3f68172ca38e20c13c8df294056ab738d9b1573fc472b48187d",
+    "3795abb43": "7113a101ebcde3f68172ca38e20c13c8df294056ab738d9b1573fc472b48187d",
+    "HEAD": "7113a101ebcde3f68172ca38e20c13c8df294056ab738d9b1573fc472b48187d",
+    "origin/master": "7113a101ebcde3f68172ca38e20c13c8df294056ab738d9b1573fc472b48187d",
+    "origin/octoberBranch": "7113a101ebcde3f68172ca38e20c13c8df294056ab738d9b1573fc472b48187d",
+    "working_tree": "7113a101ebcde3f68172ca38e20c13c8df294056ab738d9b1573fc472b48187d"
+  },
+  {
+    "path": "web/components/RosterScheduleOptimizer/BenchDays.tsx",
+    "pin": "b783b16a228852b2d90ea4e631688c217df3d4034231458246b4f6fbf0c85065",
+    "3795abb43": "b783b16a228852b2d90ea4e631688c217df3d4034231458246b4f6fbf0c85065",
+    "HEAD": "b783b16a228852b2d90ea4e631688c217df3d4034231458246b4f6fbf0c85065",
+    "origin/master": "b783b16a228852b2d90ea4e631688c217df3d4034231458246b4f6fbf0c85065",
+    "origin/octoberBranch": "b783b16a228852b2d90ea4e631688c217df3d4034231458246b4f6fbf0c85065",
+    "working_tree": "b783b16a228852b2d90ea4e631688c217df3d4034231458246b4f6fbf0c85065"
+  },
+  {
+    "path": "web/components/RosterScheduleOptimizer/BenchDecisions.tsx",
+    "pin": "4818120e212f13b0b729515e67b88dab21403d175061fbd703e4bd3634b72000",
+    "3795abb43": "4818120e212f13b0b729515e67b88dab21403d175061fbd703e4bd3634b72000",
+    "HEAD": "4818120e212f13b0b729515e67b88dab21403d175061fbd703e4bd3634b72000",
+    "origin/master": "4818120e212f13b0b729515e67b88dab21403d175061fbd703e4bd3634b72000",
+    "origin/octoberBranch": "4818120e212f13b0b729515e67b88dab21403d175061fbd703e4bd3634b72000",
+    "working_tree": "4818120e212f13b0b729515e67b88dab21403d175061fbd703e4bd3634b72000"
+  },
+  {
+    "path": "web/components/RosterScheduleOptimizer/CandidateBrowser.integration.test.tsx",
+    "pin": "eb2381452a65065250b699f38883c5d9f15f4d1bda560d96698bb9fe05dc6be9",
+    "3795abb43": "eb2381452a65065250b699f38883c5d9f15f4d1bda560d96698bb9fe05dc6be9",
+    "HEAD": "eb2381452a65065250b699f38883c5d9f15f4d1bda560d96698bb9fe05dc6be9",
+    "origin/master": "eb2381452a65065250b699f38883c5d9f15f4d1bda560d96698bb9fe05dc6be9",
+    "origin/octoberBranch": "eb2381452a65065250b699f38883c5d9f15f4d1bda560d96698bb9fe05dc6be9",
+    "working_tree": "eb2381452a65065250b699f38883c5d9f15f4d1bda560d96698bb9fe05dc6be9"
+  },
+  {
+    "path": "web/components/RosterScheduleOptimizer/CandidateBrowser.presentation.test.tsx",
+    "pin": "3dad74fc7bb29415bc1b4ee5521c980a2d40f6e17e5bcf947ebce130996c8737",
+    "3795abb43": "3dad74fc7bb29415bc1b4ee5521c980a2d40f6e17e5bcf947ebce130996c8737",
+    "HEAD": "3dad74fc7bb29415bc1b4ee5521c980a2d40f6e17e5bcf947ebce130996c8737",
+    "origin/master": "3dad74fc7bb29415bc1b4ee5521c980a2d40f6e17e5bcf947ebce130996c8737",
+    "origin/octoberBranch": "3dad74fc7bb29415bc1b4ee5521c980a2d40f6e17e5bcf947ebce130996c8737",
+    "working_tree": "3dad74fc7bb29415bc1b4ee5521c980a2d40f6e17e5bcf947ebce130996c8737"
+  },
+  {
+    "path": "web/components/RosterScheduleOptimizer/CandidateBrowser.tsx",
+    "pin": "c3ff6cb96ea340c40ccd0719109fcdb0e09c1eb8e54518cd3d8eb0a6785611a7",
+    "3795abb43": "c3ff6cb96ea340c40ccd0719109fcdb0e09c1eb8e54518cd3d8eb0a6785611a7",
+    "HEAD": "c3ff6cb96ea340c40ccd0719109fcdb0e09c1eb8e54518cd3d8eb0a6785611a7",
+    "origin/master": "c3ff6cb96ea340c40ccd0719109fcdb0e09c1eb8e54518cd3d8eb0a6785611a7",
+    "origin/octoberBranch": "c3ff6cb96ea340c40ccd0719109fcdb0e09c1eb8e54518cd3d8eb0a6785611a7",
+    "working_tree": "c3ff6cb96ea340c40ccd0719109fcdb0e09c1eb8e54518cd3d8eb0a6785611a7"
+  },
+  {
+    "path": "web/components/RosterScheduleOptimizer/CandidateCard.test.tsx",
+    "pin": "4042390cb7c4a05984d7ad9134f799fa3983ebbf6e23ca242bbb1ca21aad04f0",
+    "3795abb43": "4042390cb7c4a05984d7ad9134f799fa3983ebbf6e23ca242bbb1ca21aad04f0",
+    "HEAD": "4042390cb7c4a05984d7ad9134f799fa3983ebbf6e23ca242bbb1ca21aad04f0",
+    "origin/master": "4042390cb7c4a05984d7ad9134f799fa3983ebbf6e23ca242bbb1ca21aad04f0",
+    "origin/octoberBranch": "4042390cb7c4a05984d7ad9134f799fa3983ebbf6e23ca242bbb1ca21aad04f0",
+    "working_tree": "4042390cb7c4a05984d7ad9134f799fa3983ebbf6e23ca242bbb1ca21aad04f0"
+  },
+  {
+    "path": "web/components/RosterScheduleOptimizer/CandidateCard.tsx",
+    "pin": "39cfa74dcbedd1897cc0f87b586cd8a53b44796b6f8d1ad697533e21658f8dda",
+    "3795abb43": "39cfa74dcbedd1897cc0f87b586cd8a53b44796b6f8d1ad697533e21658f8dda",
+    "HEAD": "39cfa74dcbedd1897cc0f87b586cd8a53b44796b6f8d1ad697533e21658f8dda",
+    "origin/master": "39cfa74dcbedd1897cc0f87b586cd8a53b44796b6f8d1ad697533e21658f8dda",
+    "origin/octoberBranch": "39cfa74dcbedd1897cc0f87b586cd8a53b44796b6f8d1ad697533e21658f8dda",
+    "working_tree": "39cfa74dcbedd1897cc0f87b586cd8a53b44796b6f8d1ad697533e21658f8dda"
+  },
+  {
+    "path": "web/components/RosterScheduleOptimizer/CategoryGains.tsx",
+    "pin": "7e388abfebde4d4859ba7d0b17a20ea924e16c916945b66962325a2dca3c68c2",
+    "3795abb43": "7e388abfebde4d4859ba7d0b17a20ea924e16c916945b66962325a2dca3c68c2",
+    "HEAD": "7e388abfebde4d4859ba7d0b17a20ea924e16c916945b66962325a2dca3c68c2",
+    "origin/master": "7e388abfebde4d4859ba7d0b17a20ea924e16c916945b66962325a2dca3c68c2",
+    "origin/octoberBranch": "7e388abfebde4d4859ba7d0b17a20ea924e16c916945b66962325a2dca3c68c2",
+    "working_tree": "7e388abfebde4d4859ba7d0b17a20ea924e16c916945b66962325a2dca3c68c2"
+  },
+  {
+    "path": "web/components/RosterScheduleOptimizer/CompactSchedule.test.ts",
+    "pin": "1fbcf1e810d1004d7ca25ca609966b12db35f3aed7861be3311ddddc463c8162",
+    "3795abb43": "1fbcf1e810d1004d7ca25ca609966b12db35f3aed7861be3311ddddc463c8162",
+    "HEAD": "1fbcf1e810d1004d7ca25ca609966b12db35f3aed7861be3311ddddc463c8162",
+    "origin/master": "1fbcf1e810d1004d7ca25ca609966b12db35f3aed7861be3311ddddc463c8162",
+    "origin/octoberBranch": "1fbcf1e810d1004d7ca25ca609966b12db35f3aed7861be3311ddddc463c8162",
+    "working_tree": "1fbcf1e810d1004d7ca25ca609966b12db35f3aed7861be3311ddddc463c8162"
+  },
+  {
+    "path": "web/components/RosterScheduleOptimizer/CompactSchedule.tsx",
+    "pin": "1e91adce6fd9b1ab15f8a3586e569632b43bde14b749ef2e53e44114b6dad36e",
+    "3795abb43": "1e91adce6fd9b1ab15f8a3586e569632b43bde14b749ef2e53e44114b6dad36e",
+    "HEAD": "1e91adce6fd9b1ab15f8a3586e569632b43bde14b749ef2e53e44114b6dad36e",
+    "origin/master": "1e91adce6fd9b1ab15f8a3586e569632b43bde14b749ef2e53e44114b6dad36e",
+    "origin/octoberBranch": "1e91adce6fd9b1ab15f8a3586e569632b43bde14b749ef2e53e44114b6dad36e",
+    "working_tree": "1e91adce6fd9b1ab15f8a3586e569632b43bde14b749ef2e53e44114b6dad36e"
+  },
+  {
+    "path": "web/components/RosterScheduleOptimizer/ForecastEvidence.tsx",
+    "pin": "b0a1518642de5c7fb3bf61e5ce9e514558b23c5fa54ce42cb5fd062210fc03d8",
+    "3795abb43": "b0a1518642de5c7fb3bf61e5ce9e514558b23c5fa54ce42cb5fd062210fc03d8",
+    "HEAD": "b0a1518642de5c7fb3bf61e5ce9e514558b23c5fa54ce42cb5fd062210fc03d8",
+    "origin/master": "b0a1518642de5c7fb3bf61e5ce9e514558b23c5fa54ce42cb5fd062210fc03d8",
+    "origin/octoberBranch": "b0a1518642de5c7fb3bf61e5ce9e514558b23c5fa54ce42cb5fd062210fc03d8",
+    "working_tree": "b0a1518642de5c7fb3bf61e5ce9e514558b23c5fa54ce42cb5fd062210fc03d8"
+  },
+  {
+    "path": "web/components/RosterScheduleOptimizer/ForecastPoints.test.tsx",
+    "pin": "ab1476e402f23dd6b4978d5ce383824849a05b8298866c52d4991e741a92cf91",
+    "3795abb43": "ab1476e402f23dd6b4978d5ce383824849a05b8298866c52d4991e741a92cf91",
+    "HEAD": "ab1476e402f23dd6b4978d5ce383824849a05b8298866c52d4991e741a92cf91",
+    "origin/master": "ab1476e402f23dd6b4978d5ce383824849a05b8298866c52d4991e741a92cf91",
+    "origin/octoberBranch": "ab1476e402f23dd6b4978d5ce383824849a05b8298866c52d4991e741a92cf91",
+    "working_tree": "ab1476e402f23dd6b4978d5ce383824849a05b8298866c52d4991e741a92cf91"
+  },
+  {
+    "path": "web/components/RosterScheduleOptimizer/ForecastPoints.tsx",
+    "pin": "38ba29a3e5c2c85f7229568b3395a500c409ab0257403a1fb4930d7f3c98b9bf",
+    "3795abb43": "38ba29a3e5c2c85f7229568b3395a500c409ab0257403a1fb4930d7f3c98b9bf",
+    "HEAD": "38ba29a3e5c2c85f7229568b3395a500c409ab0257403a1fb4930d7f3c98b9bf",
+    "origin/master": "38ba29a3e5c2c85f7229568b3395a500c409ab0257403a1fb4930d7f3c98b9bf",
+    "origin/octoberBranch": "38ba29a3e5c2c85f7229568b3395a500c409ab0257403a1fb4930d7f3c98b9bf",
+    "working_tree": "38ba29a3e5c2c85f7229568b3395a500c409ab0257403a1fb4930d7f3c98b9bf"
+  },
+  {
+    "path": "web/components/RosterScheduleOptimizer/HealthyReserveAlert.test.tsx",
+    "pin": "7539b6824ae3c038cce055a0572d21a139f231a4ff0eef13ae916369e69989f5",
+    "3795abb43": "7539b6824ae3c038cce055a0572d21a139f231a4ff0eef13ae916369e69989f5",
+    "HEAD": "7539b6824ae3c038cce055a0572d21a139f231a4ff0eef13ae916369e69989f5",
+    "origin/master": "7539b6824ae3c038cce055a0572d21a139f231a4ff0eef13ae916369e69989f5",
+    "origin/octoberBranch": "7539b6824ae3c038cce055a0572d21a139f231a4ff0eef13ae916369e69989f5",
+    "working_tree": "7539b6824ae3c038cce055a0572d21a139f231a4ff0eef13ae916369e69989f5"
+  },
+  {
+    "path": "web/components/RosterScheduleOptimizer/HealthyReserveAlert.tsx",
+    "pin": "b3099d43684d9eb2d2139c46aaaa5e59416a14886cbe844765d9e686a84596c9",
+    "3795abb43": "b3099d43684d9eb2d2139c46aaaa5e59416a14886cbe844765d9e686a84596c9",
+    "HEAD": "b3099d43684d9eb2d2139c46aaaa5e59416a14886cbe844765d9e686a84596c9",
+    "origin/master": "b3099d43684d9eb2d2139c46aaaa5e59416a14886cbe844765d9e686a84596c9",
+    "origin/octoberBranch": "b3099d43684d9eb2d2139c46aaaa5e59416a14886cbe844765d9e686a84596c9",
+    "working_tree": "b3099d43684d9eb2d2139c46aaaa5e59416a14886cbe844765d9e686a84596c9"
+  },
+  {
+    "path": "web/components/RosterScheduleOptimizer/InfoTooltip.test.tsx",
+    "pin": "c8853db8c8d8a55312d6b4db2f486f2212c8e95a1d4e214be14eaa64f3db6a4a",
+    "3795abb43": "c8853db8c8d8a55312d6b4db2f486f2212c8e95a1d4e214be14eaa64f3db6a4a",
+    "HEAD": "c8853db8c8d8a55312d6b4db2f486f2212c8e95a1d4e214be14eaa64f3db6a4a",
+    "origin/master": "c8853db8c8d8a55312d6b4db2f486f2212c8e95a1d4e214be14eaa64f3db6a4a",
+    "origin/octoberBranch": "c8853db8c8d8a55312d6b4db2f486f2212c8e95a1d4e214be14eaa64f3db6a4a",
+    "working_tree": "c8853db8c8d8a55312d6b4db2f486f2212c8e95a1d4e214be14eaa64f3db6a4a"
+  },
+  {
+    "path": "web/components/RosterScheduleOptimizer/InfoTooltip.tsx",
+    "pin": "edbf37198e95677235f360e4f6e99e17bd820b0532c7964c8213ff36d681cce7",
+    "3795abb43": "edbf37198e95677235f360e4f6e99e17bd820b0532c7964c8213ff36d681cce7",
+    "HEAD": "edbf37198e95677235f360e4f6e99e17bd820b0532c7964c8213ff36d681cce7",
+    "origin/master": "edbf37198e95677235f360e4f6e99e17bd820b0532c7964c8213ff36d681cce7",
+    "origin/octoberBranch": "edbf37198e95677235f360e4f6e99e17bd820b0532c7964c8213ff36d681cce7",
+    "working_tree": "edbf37198e95677235f360e4f6e99e17bd820b0532c7964c8213ff36d681cce7"
+  },
+  {
+    "path": "web/components/RosterScheduleOptimizer/OptimizeLineup.test.tsx",
+    "pin": "5f4fd0b4221a3c1f40a82b08f3b47491b5a9ec53c253408310269e9df5c384f9",
+    "3795abb43": "5f4fd0b4221a3c1f40a82b08f3b47491b5a9ec53c253408310269e9df5c384f9",
+    "HEAD": "5f4fd0b4221a3c1f40a82b08f3b47491b5a9ec53c253408310269e9df5c384f9",
+    "origin/master": "5f4fd0b4221a3c1f40a82b08f3b47491b5a9ec53c253408310269e9df5c384f9",
+    "origin/octoberBranch": "5f4fd0b4221a3c1f40a82b08f3b47491b5a9ec53c253408310269e9df5c384f9",
+    "working_tree": "5f4fd0b4221a3c1f40a82b08f3b47491b5a9ec53c253408310269e9df5c384f9"
+  },
+  {
+    "path": "web/components/RosterScheduleOptimizer/OptimizeLineup.tsx",
+    "pin": "2fef26b8a71d2c947ee06c68057765b617eca5bb85a21229184960fb6b01266a",
+    "3795abb43": "2fef26b8a71d2c947ee06c68057765b617eca5bb85a21229184960fb6b01266a",
+    "HEAD": "2fef26b8a71d2c947ee06c68057765b617eca5bb85a21229184960fb6b01266a",
+    "origin/master": "2fef26b8a71d2c947ee06c68057765b617eca5bb85a21229184960fb6b01266a",
+    "origin/octoberBranch": "2fef26b8a71d2c947ee06c68057765b617eca5bb85a21229184960fb6b01266a",
+    "working_tree": "2fef26b8a71d2c947ee06c68057765b617eca5bb85a21229184960fb6b01266a"
+  },
+  {
+    "path": "web/components/RosterScheduleOptimizer/RosterContribution.tsx",
+    "pin": "3bd18cbb9a56b711fcfa2bdb0456fe9ba5c9647388efd082898bc8608ec04b15",
+    "3795abb43": "3bd18cbb9a56b711fcfa2bdb0456fe9ba5c9647388efd082898bc8608ec04b15",
+    "HEAD": "3bd18cbb9a56b711fcfa2bdb0456fe9ba5c9647388efd082898bc8608ec04b15",
+    "origin/master": "3bd18cbb9a56b711fcfa2bdb0456fe9ba5c9647388efd082898bc8608ec04b15",
+    "origin/octoberBranch": "3bd18cbb9a56b711fcfa2bdb0456fe9ba5c9647388efd082898bc8608ec04b15",
+    "working_tree": "3bd18cbb9a56b711fcfa2bdb0456fe9ba5c9647388efd082898bc8608ec04b15"
+  },
+  {
+    "path": "web/components/RosterScheduleOptimizer/RosterPlayerRow.test.tsx",
+    "pin": "c749b3e4d47b515af3816c68721058907d28f3583ef4d853b04f57156272d882",
+    "3795abb43": "c749b3e4d47b515af3816c68721058907d28f3583ef4d853b04f57156272d882",
+    "HEAD": "c749b3e4d47b515af3816c68721058907d28f3583ef4d853b04f57156272d882",
+    "origin/master": "c749b3e4d47b515af3816c68721058907d28f3583ef4d853b04f57156272d882",
+    "origin/octoberBranch": "c749b3e4d47b515af3816c68721058907d28f3583ef4d853b04f57156272d882",
+    "working_tree": "c749b3e4d47b515af3816c68721058907d28f3583ef4d853b04f57156272d882"
+  },
+  {
+    "path": "web/components/RosterScheduleOptimizer/RosterPlayerRow.tsx",
+    "pin": "1f07bbf9bae54b646fba5ffdf95415f4ad0bfeaba9cb2c633159749d6e4995f2",
+    "3795abb43": "1f07bbf9bae54b646fba5ffdf95415f4ad0bfeaba9cb2c633159749d6e4995f2",
+    "HEAD": "1f07bbf9bae54b646fba5ffdf95415f4ad0bfeaba9cb2c633159749d6e4995f2",
+    "origin/master": "1f07bbf9bae54b646fba5ffdf95415f4ad0bfeaba9cb2c633159749d6e4995f2",
+    "origin/octoberBranch": "1f07bbf9bae54b646fba5ffdf95415f4ad0bfeaba9cb2c633159749d6e4995f2",
+    "working_tree": "1f07bbf9bae54b646fba5ffdf95415f4ad0bfeaba9cb2c633159749d6e4995f2"
+  },
+  {
+    "path": "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.points.test.tsx",
+    "pin": "914a1f665db2d3e5a28f9b172cc1bb5e02f1648ce9143e289a8fee2e1d624539",
+    "3795abb43": "914a1f665db2d3e5a28f9b172cc1bb5e02f1648ce9143e289a8fee2e1d624539",
+    "HEAD": "914a1f665db2d3e5a28f9b172cc1bb5e02f1648ce9143e289a8fee2e1d624539",
+    "origin/master": "914a1f665db2d3e5a28f9b172cc1bb5e02f1648ce9143e289a8fee2e1d624539",
+    "origin/octoberBranch": "914a1f665db2d3e5a28f9b172cc1bb5e02f1648ce9143e289a8fee2e1d624539",
+    "working_tree": "914a1f665db2d3e5a28f9b172cc1bb5e02f1648ce9143e289a8fee2e1d624539"
+  },
+  {
+    "path": "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx",
+    "pin": "10987845ebc8ca756c0cc466818ca2bda58c55e6540da7220b0fddda08c5a83c",
+    "3795abb43": "10987845ebc8ca756c0cc466818ca2bda58c55e6540da7220b0fddda08c5a83c",
+    "HEAD": "10987845ebc8ca756c0cc466818ca2bda58c55e6540da7220b0fddda08c5a83c",
+    "origin/master": "9485af7a50a3214a115f3bd9ad56cd1df7836b88a9079ece5aa06c7836925abb",
+    "origin/octoberBranch": "9485af7a50a3214a115f3bd9ad56cd1df7836b88a9079ece5aa06c7836925abb",
+    "working_tree": "10987845ebc8ca756c0cc466818ca2bda58c55e6540da7220b0fddda08c5a83c"
+  },
+  {
+    "path": "web/components/RosterScheduleOptimizer/SlotWeekGrid.test.tsx",
+    "pin": "4ab7d2e87b1d1d147a1f1dee82d2cd812680c91004485c1c2b049f5d90082785",
+    "3795abb43": "4ab7d2e87b1d1d147a1f1dee82d2cd812680c91004485c1c2b049f5d90082785",
+    "HEAD": "4ab7d2e87b1d1d147a1f1dee82d2cd812680c91004485c1c2b049f5d90082785",
+    "origin/master": "4ab7d2e87b1d1d147a1f1dee82d2cd812680c91004485c1c2b049f5d90082785",
+    "origin/octoberBranch": "4ab7d2e87b1d1d147a1f1dee82d2cd812680c91004485c1c2b049f5d90082785",
+    "working_tree": "4ab7d2e87b1d1d147a1f1dee82d2cd812680c91004485c1c2b049f5d90082785"
+  },
+  {
+    "path": "web/components/RosterScheduleOptimizer/SlotWeekGrid.tsx",
+    "pin": "8b885637080bc0f5edc26d4f38405bf28eb866557d569c44ca334194c786faaa",
+    "3795abb43": "8b885637080bc0f5edc26d4f38405bf28eb866557d569c44ca334194c786faaa",
+    "HEAD": "8b885637080bc0f5edc26d4f38405bf28eb866557d569c44ca334194c786faaa",
+    "origin/master": "8b885637080bc0f5edc26d4f38405bf28eb866557d569c44ca334194c786faaa",
+    "origin/octoberBranch": "8b885637080bc0f5edc26d4f38405bf28eb866557d569c44ca334194c786faaa",
+    "working_tree": "8b885637080bc0f5edc26d4f38405bf28eb866557d569c44ca334194c786faaa"
+  },
+  {
+    "path": "web/components/RosterScheduleOptimizer/TeamScheduleContext.test.tsx",
+    "pin": "ce99e4cc8f4ddbcc2e69ff3d4defe2d9ed24b6a5f16730588b61c79eb5620c19",
+    "3795abb43": "ce99e4cc8f4ddbcc2e69ff3d4defe2d9ed24b6a5f16730588b61c79eb5620c19",
+    "HEAD": "ce99e4cc8f4ddbcc2e69ff3d4defe2d9ed24b6a5f16730588b61c79eb5620c19",
+    "origin/master": "ce99e4cc8f4ddbcc2e69ff3d4defe2d9ed24b6a5f16730588b61c79eb5620c19",
+    "origin/octoberBranch": "ce99e4cc8f4ddbcc2e69ff3d4defe2d9ed24b6a5f16730588b61c79eb5620c19",
+    "working_tree": "ce99e4cc8f4ddbcc2e69ff3d4defe2d9ed24b6a5f16730588b61c79eb5620c19"
+  },
+  {
+    "path": "web/components/RosterScheduleOptimizer/TeamScheduleContext.tsx",
+    "pin": "fd294f0302475e2de1c91198a9cd5ca3837306f50e060751d7f91d953e358652",
+    "3795abb43": "fd294f0302475e2de1c91198a9cd5ca3837306f50e060751d7f91d953e358652",
+    "HEAD": "fd294f0302475e2de1c91198a9cd5ca3837306f50e060751d7f91d953e358652",
+    "origin/master": "fd294f0302475e2de1c91198a9cd5ca3837306f50e060751d7f91d953e358652",
+    "origin/octoberBranch": "fd294f0302475e2de1c91198a9cd5ca3837306f50e060751d7f91d953e358652",
+    "working_tree": "fd294f0302475e2de1c91198a9cd5ca3837306f50e060751d7f91d953e358652"
+  },
+  {
+    "path": "web/components/RosterScheduleOptimizer/canonicalSchedule.test.ts",
+    "pin": "fa32be7a87e6f1cd8a4e3198566c1c3a687c82a588eb08d20d4f3efcd36107b0",
+    "3795abb43": "fa32be7a87e6f1cd8a4e3198566c1c3a687c82a588eb08d20d4f3efcd36107b0",
+    "HEAD": "fa32be7a87e6f1cd8a4e3198566c1c3a687c82a588eb08d20d4f3efcd36107b0",
+    "origin/master": "fa32be7a87e6f1cd8a4e3198566c1c3a687c82a588eb08d20d4f3efcd36107b0",
+    "origin/octoberBranch": "fa32be7a87e6f1cd8a4e3198566c1c3a687c82a588eb08d20d4f3efcd36107b0",
+    "working_tree": "fa32be7a87e6f1cd8a4e3198566c1c3a687c82a588eb08d20d4f3efcd36107b0"
+  },
+  {
+    "path": "web/components/RosterScheduleOptimizer/canonicalSchedule.ts",
+    "pin": "83805810a1377e77ac22ca4160c7f7723c840389f8384e5937f407072a666b05",
+    "3795abb43": "83805810a1377e77ac22ca4160c7f7723c840389f8384e5937f407072a666b05",
+    "HEAD": "83805810a1377e77ac22ca4160c7f7723c840389f8384e5937f407072a666b05",
+    "origin/master": "83805810a1377e77ac22ca4160c7f7723c840389f8384e5937f407072a666b05",
+    "origin/octoberBranch": "83805810a1377e77ac22ca4160c7f7723c840389f8384e5937f407072a666b05",
+    "working_tree": "83805810a1377e77ac22ca4160c7f7723c840389f8384e5937f407072a666b05"
+  },
+  {
+    "path": "web/components/RosterScheduleOptimizer/index.ts",
+    "pin": "6c1479cdeb73f251e2799a08a931539d95ead9f2cd7efd8f1cc4396dfc428607",
+    "3795abb43": "6c1479cdeb73f251e2799a08a931539d95ead9f2cd7efd8f1cc4396dfc428607",
+    "HEAD": "6c1479cdeb73f251e2799a08a931539d95ead9f2cd7efd8f1cc4396dfc428607",
+    "origin/master": "6c1479cdeb73f251e2799a08a931539d95ead9f2cd7efd8f1cc4396dfc428607",
+    "origin/octoberBranch": "6c1479cdeb73f251e2799a08a931539d95ead9f2cd7efd8f1cc4396dfc428607",
+    "working_tree": "6c1479cdeb73f251e2799a08a931539d95ead9f2cd7efd8f1cc4396dfc428607"
+  },
+  {
+    "path": "web/components/StarterBoardYahoo.tsx",
+    "pin": "c233ef136358fd7e1bfb750b1100ef1052eb544821be47e4f2cce497854c91d1",
+    "3795abb43": "c233ef136358fd7e1bfb750b1100ef1052eb544821be47e4f2cce497854c91d1",
+    "HEAD": "c233ef136358fd7e1bfb750b1100ef1052eb544821be47e4f2cce497854c91d1",
+    "origin/master": "c233ef136358fd7e1bfb750b1100ef1052eb544821be47e4f2cce497854c91d1",
+    "origin/octoberBranch": "c233ef136358fd7e1bfb750b1100ef1052eb544821be47e4f2cce497854c91d1",
+    "working_tree": "c233ef136358fd7e1bfb750b1100ef1052eb544821be47e4f2cce497854c91d1"
+  },
+  {
+    "path": "web/e2e/roster-schedule-optimizer.spec.ts",
+    "pin": "32511ac4e77b8d8c6761c69769ce65d1a18c347516688efd11fa18bdb15d9c67",
+    "3795abb43": "32511ac4e77b8d8c6761c69769ce65d1a18c347516688efd11fa18bdb15d9c67",
+    "HEAD": "32511ac4e77b8d8c6761c69769ce65d1a18c347516688efd11fa18bdb15d9c67",
+    "origin/master": "22bbc98f215b4c19b16c9095135c789ff5b40785370b23d773081d91052cc8cd",
+    "origin/octoberBranch": "22bbc98f215b4c19b16c9095135c789ff5b40785370b23d773081d91052cc8cd",
+    "working_tree": "32511ac4e77b8d8c6761c69769ce65d1a18c347516688efd11fa18bdb15d9c67"
+  },
+  {
+    "path": "web/e2e/rso-continuity.spec.ts",
+    "pin": "c9d49bcace0ba5c37646dc5e04f5bad70f379a73e1fc0624354b128ef9709d19",
+    "3795abb43": "c9d49bcace0ba5c37646dc5e04f5bad70f379a73e1fc0624354b128ef9709d19",
+    "HEAD": "c9d49bcace0ba5c37646dc5e04f5bad70f379a73e1fc0624354b128ef9709d19",
+    "origin/master": "ea808b9a1738a61f68521fa24069dea5225d91ce5277404222072fae7307300a",
+    "origin/octoberBranch": "ea808b9a1738a61f68521fa24069dea5225d91ce5277404222072fae7307300a",
+    "working_tree": "c9d49bcace0ba5c37646dc5e04f5bad70f379a73e1fc0624354b128ef9709d19"
+  },
+  {
+    "path": "web/hooks/useRosterPlanning.ts",
+    "pin": "fe82194f4d8b6111e1410b452708417b43eda28f6f43823f84664cdf58f43f9b",
+    "3795abb43": "fe82194f4d8b6111e1410b452708417b43eda28f6f43823f84664cdf58f43f9b",
+    "HEAD": "fe82194f4d8b6111e1410b452708417b43eda28f6f43823f84664cdf58f43f9b",
+    "origin/master": "fe82194f4d8b6111e1410b452708417b43eda28f6f43823f84664cdf58f43f9b",
+    "origin/octoberBranch": "fe82194f4d8b6111e1410b452708417b43eda28f6f43823f84664cdf58f43f9b",
+    "working_tree": "fe82194f4d8b6111e1410b452708417b43eda28f6f43823f84664cdf58f43f9b"
+  },
+  {
+    "path": "web/lib/integrations/yahoo/config.ts",
+    "pin": "d66c27225edf3cf45e192cebeaceb276c5196ead29492c7a4abc2612a178fab5",
+    "3795abb43": "d66c27225edf3cf45e192cebeaceb276c5196ead29492c7a4abc2612a178fab5",
+    "HEAD": "d66c27225edf3cf45e192cebeaceb276c5196ead29492c7a4abc2612a178fab5",
+    "origin/master": "d66c27225edf3cf45e192cebeaceb276c5196ead29492c7a4abc2612a178fab5",
+    "origin/octoberBranch": "d66c27225edf3cf45e192cebeaceb276c5196ead29492c7a4abc2612a178fab5",
+    "working_tree": "d66c27225edf3cf45e192cebeaceb276c5196ead29492c7a4abc2612a178fab5"
+  },
+  {
+    "path": "web/lib/integrations/yahoo/discovery.test.ts",
+    "pin": "d7a95802e52852bcc2b2d515fb33b93f9b06273dca2e20e12f694bec68506b49",
+    "3795abb43": "d7a95802e52852bcc2b2d515fb33b93f9b06273dca2e20e12f694bec68506b49",
+    "HEAD": "d7a95802e52852bcc2b2d515fb33b93f9b06273dca2e20e12f694bec68506b49",
+    "origin/master": "d7a95802e52852bcc2b2d515fb33b93f9b06273dca2e20e12f694bec68506b49",
+    "origin/octoberBranch": "d7a95802e52852bcc2b2d515fb33b93f9b06273dca2e20e12f694bec68506b49",
+    "working_tree": "d7a95802e52852bcc2b2d515fb33b93f9b06273dca2e20e12f694bec68506b49"
+  },
+  {
+    "path": "web/lib/integrations/yahoo/discovery.ts",
+    "pin": "0cab4d5f1f5ae7bba474ea15060a888c802be58647efc0d35e50d4085ce85198",
+    "3795abb43": "0cab4d5f1f5ae7bba474ea15060a888c802be58647efc0d35e50d4085ce85198",
+    "HEAD": "0cab4d5f1f5ae7bba474ea15060a888c802be58647efc0d35e50d4085ce85198",
+    "origin/master": "0cab4d5f1f5ae7bba474ea15060a888c802be58647efc0d35e50d4085ce85198",
+    "origin/octoberBranch": "0cab4d5f1f5ae7bba474ea15060a888c802be58647efc0d35e50d4085ce85198",
+    "working_tree": "0cab4d5f1f5ae7bba474ea15060a888c802be58647efc0d35e50d4085ce85198"
+  },
+  {
+    "path": "web/lib/integrations/yahoo/gameContext.ts",
+    "pin": "4878e106ac9b3cb917a86cff36ad05565a14743be314c548ae754915b4f476c3",
+    "3795abb43": "4878e106ac9b3cb917a86cff36ad05565a14743be314c548ae754915b4f476c3",
+    "HEAD": "4878e106ac9b3cb917a86cff36ad05565a14743be314c548ae754915b4f476c3",
+    "origin/master": "4878e106ac9b3cb917a86cff36ad05565a14743be314c548ae754915b4f476c3",
+    "origin/octoberBranch": "4878e106ac9b3cb917a86cff36ad05565a14743be314c548ae754915b4f476c3",
+    "working_tree": "4878e106ac9b3cb917a86cff36ad05565a14743be314c548ae754915b4f476c3"
+  },
+  {
+    "path": "web/lib/integrations/yahoo/globalCredentials.test.ts",
+    "pin": "eca532336fa271f2ddf12168fa21936d0ea9dfa88cbfc3ae491c810ccd92a5b5",
+    "3795abb43": "eca532336fa271f2ddf12168fa21936d0ea9dfa88cbfc3ae491c810ccd92a5b5",
+    "HEAD": "eca532336fa271f2ddf12168fa21936d0ea9dfa88cbfc3ae491c810ccd92a5b5",
+    "origin/master": "eca532336fa271f2ddf12168fa21936d0ea9dfa88cbfc3ae491c810ccd92a5b5",
+    "origin/octoberBranch": "eca532336fa271f2ddf12168fa21936d0ea9dfa88cbfc3ae491c810ccd92a5b5",
+    "working_tree": "eca532336fa271f2ddf12168fa21936d0ea9dfa88cbfc3ae491c810ccd92a5b5"
+  },
+  {
+    "path": "web/lib/integrations/yahoo/globalCredentials.ts",
+    "pin": "ea1121ef376255806a9382a0d4da37a95cbc9726a517af4736048b7fb58bac5f",
+    "3795abb43": "ea1121ef376255806a9382a0d4da37a95cbc9726a517af4736048b7fb58bac5f",
+    "HEAD": "ea1121ef376255806a9382a0d4da37a95cbc9726a517af4736048b7fb58bac5f",
+    "origin/master": "ea1121ef376255806a9382a0d4da37a95cbc9726a517af4736048b7fb58bac5f",
+    "origin/octoberBranch": "ea1121ef376255806a9382a0d4da37a95cbc9726a517af4736048b7fb58bac5f",
+    "working_tree": "ea1121ef376255806a9382a0d4da37a95cbc9726a517af4736048b7fb58bac5f"
+  },
+  {
+    "path": "web/lib/integrations/yahoo/ingestionLifecycle.ts",
+    "pin": "fccf628b2ec495cffba9294083259ef46674b331d6568586d705bd07dae21f7c",
+    "3795abb43": "fccf628b2ec495cffba9294083259ef46674b331d6568586d705bd07dae21f7c",
+    "HEAD": "fccf628b2ec495cffba9294083259ef46674b331d6568586d705bd07dae21f7c",
+    "origin/master": "fccf628b2ec495cffba9294083259ef46674b331d6568586d705bd07dae21f7c",
+    "origin/octoberBranch": "fccf628b2ec495cffba9294083259ef46674b331d6568586d705bd07dae21f7c",
+    "working_tree": "fccf628b2ec495cffba9294083259ef46674b331d6568586d705bd07dae21f7c"
+  },
+  {
+    "path": "web/lib/integrations/yahoo/lifecycleHealth.ts",
+    "pin": "6c66f8ce15ad6d98a7845fc113bd677bd27fbe8498b9e0b102bc431ff7e62fe6",
+    "3795abb43": "6c66f8ce15ad6d98a7845fc113bd677bd27fbe8498b9e0b102bc431ff7e62fe6",
+    "HEAD": "6c66f8ce15ad6d98a7845fc113bd677bd27fbe8498b9e0b102bc431ff7e62fe6",
+    "origin/master": "6c66f8ce15ad6d98a7845fc113bd677bd27fbe8498b9e0b102bc431ff7e62fe6",
+    "origin/octoberBranch": "6c66f8ce15ad6d98a7845fc113bd677bd27fbe8498b9e0b102bc431ff7e62fe6",
+    "working_tree": "6c66f8ce15ad6d98a7845fc113bd677bd27fbe8498b9e0b102bc431ff7e62fe6"
+  },
+  {
+    "path": "web/lib/integrations/yahoo/liveDraft.test.ts",
+    "pin": "470401d3bdf0398eff40291bbc860147ca4502e496d3d11bf44d735950313aea",
+    "3795abb43": "470401d3bdf0398eff40291bbc860147ca4502e496d3d11bf44d735950313aea",
+    "HEAD": "470401d3bdf0398eff40291bbc860147ca4502e496d3d11bf44d735950313aea",
+    "origin/master": "470401d3bdf0398eff40291bbc860147ca4502e496d3d11bf44d735950313aea",
+    "origin/octoberBranch": "470401d3bdf0398eff40291bbc860147ca4502e496d3d11bf44d735950313aea",
+    "working_tree": "470401d3bdf0398eff40291bbc860147ca4502e496d3d11bf44d735950313aea"
+  },
+  {
+    "path": "web/lib/integrations/yahoo/liveDraft.ts",
+    "pin": "10b030f85530623ed163da41fd722c970e649de02b354d52575359c98b1ad320",
+    "3795abb43": "10b030f85530623ed163da41fd722c970e649de02b354d52575359c98b1ad320",
+    "HEAD": "10b030f85530623ed163da41fd722c970e649de02b354d52575359c98b1ad320",
+    "origin/master": "10b030f85530623ed163da41fd722c970e649de02b354d52575359c98b1ad320",
+    "origin/octoberBranch": "10b030f85530623ed163da41fd722c970e649de02b354d52575359c98b1ad320",
+    "working_tree": "10b030f85530623ed163da41fd722c970e649de02b354d52575359c98b1ad320"
+  },
+  {
+    "path": "web/lib/integrations/yahoo/liveDraftAccess.test.ts",
+    "pin": "b5881360f25aa47fa2796310b1f88e980ca9ebce257881cdd59b71f0725d7d63",
+    "3795abb43": "b5881360f25aa47fa2796310b1f88e980ca9ebce257881cdd59b71f0725d7d63",
+    "HEAD": "b5881360f25aa47fa2796310b1f88e980ca9ebce257881cdd59b71f0725d7d63",
+    "origin/master": "b5881360f25aa47fa2796310b1f88e980ca9ebce257881cdd59b71f0725d7d63",
+    "origin/octoberBranch": "b5881360f25aa47fa2796310b1f88e980ca9ebce257881cdd59b71f0725d7d63",
+    "working_tree": "b5881360f25aa47fa2796310b1f88e980ca9ebce257881cdd59b71f0725d7d63"
+  },
+  {
+    "path": "web/lib/integrations/yahoo/liveDraftAccess.ts",
+    "pin": "0f10b91da37fb63c98c0da17934e9ef03cbb38ef3e6e31803c02ef733a07760c",
+    "3795abb43": "0f10b91da37fb63c98c0da17934e9ef03cbb38ef3e6e31803c02ef733a07760c",
+    "HEAD": "0f10b91da37fb63c98c0da17934e9ef03cbb38ef3e6e31803c02ef733a07760c",
+    "origin/master": "0f10b91da37fb63c98c0da17934e9ef03cbb38ef3e6e31803c02ef733a07760c",
+    "origin/octoberBranch": "0f10b91da37fb63c98c0da17934e9ef03cbb38ef3e6e31803c02ef733a07760c",
+    "working_tree": "0f10b91da37fb63c98c0da17934e9ef03cbb38ef3e6e31803c02ef733a07760c"
+  },
+  {
+    "path": "web/lib/integrations/yahoo/liveDraftApi.test.ts",
+    "pin": "cfd5df681033c5b6bf66421db71e1530c4b833539941caf35dd2b381c8d02458",
+    "3795abb43": "cfd5df681033c5b6bf66421db71e1530c4b833539941caf35dd2b381c8d02458",
+    "HEAD": "cfd5df681033c5b6bf66421db71e1530c4b833539941caf35dd2b381c8d02458",
+    "origin/master": "cfd5df681033c5b6bf66421db71e1530c4b833539941caf35dd2b381c8d02458",
+    "origin/octoberBranch": "cfd5df681033c5b6bf66421db71e1530c4b833539941caf35dd2b381c8d02458",
+    "working_tree": "cfd5df681033c5b6bf66421db71e1530c4b833539941caf35dd2b381c8d02458"
+  },
+  {
+    "path": "web/lib/integrations/yahoo/liveDraftApi.ts",
+    "pin": "13761bcf13fc7c6a6697e731660b6e3c3b476fa1b877b3b099b76a9ce75a8081",
+    "3795abb43": "13761bcf13fc7c6a6697e731660b6e3c3b476fa1b877b3b099b76a9ce75a8081",
+    "HEAD": "13761bcf13fc7c6a6697e731660b6e3c3b476fa1b877b3b099b76a9ce75a8081",
+    "origin/master": "13761bcf13fc7c6a6697e731660b6e3c3b476fa1b877b3b099b76a9ce75a8081",
+    "origin/octoberBranch": "13761bcf13fc7c6a6697e731660b6e3c3b476fa1b877b3b099b76a9ce75a8081",
+    "working_tree": "13761bcf13fc7c6a6697e731660b6e3c3b476fa1b877b3b099b76a9ce75a8081"
+  },
+  {
+    "path": "web/lib/integrations/yahoo/liveDraftDatabase.ts",
+    "pin": "1f506b137fcc335a5f3d878f54e0a2904bea3326ed219559e666952ef5310718",
+    "3795abb43": "1f506b137fcc335a5f3d878f54e0a2904bea3326ed219559e666952ef5310718",
+    "HEAD": "1f506b137fcc335a5f3d878f54e0a2904bea3326ed219559e666952ef5310718",
+    "origin/master": "1f506b137fcc335a5f3d878f54e0a2904bea3326ed219559e666952ef5310718",
+    "origin/octoberBranch": "1f506b137fcc335a5f3d878f54e0a2904bea3326ed219559e666952ef5310718",
+    "working_tree": "1f506b137fcc335a5f3d878f54e0a2904bea3326ed219559e666952ef5310718"
+  },
+  {
+    "path": "web/lib/integrations/yahoo/liveDraftServer.test.ts",
+    "pin": "7d5bcd3ed91d2f159b627f9a8773f2dc5630dad96cd25c6016346d40b75a904d",
+    "3795abb43": "7d5bcd3ed91d2f159b627f9a8773f2dc5630dad96cd25c6016346d40b75a904d",
+    "HEAD": "7d5bcd3ed91d2f159b627f9a8773f2dc5630dad96cd25c6016346d40b75a904d",
+    "origin/master": "7d5bcd3ed91d2f159b627f9a8773f2dc5630dad96cd25c6016346d40b75a904d",
+    "origin/octoberBranch": "7d5bcd3ed91d2f159b627f9a8773f2dc5630dad96cd25c6016346d40b75a904d",
+    "working_tree": "7d5bcd3ed91d2f159b627f9a8773f2dc5630dad96cd25c6016346d40b75a904d"
+  },
+  {
+    "path": "web/lib/integrations/yahoo/liveDraftServer.ts",
+    "pin": "7076fc46f6152a6c5ae65388fbc00293437aab20c7772614e3e304db48e78222",
+    "3795abb43": "7076fc46f6152a6c5ae65388fbc00293437aab20c7772614e3e304db48e78222",
+    "HEAD": "7076fc46f6152a6c5ae65388fbc00293437aab20c7772614e3e304db48e78222",
+    "origin/master": "7076fc46f6152a6c5ae65388fbc00293437aab20c7772614e3e304db48e78222",
+    "origin/octoberBranch": "7076fc46f6152a6c5ae65388fbc00293437aab20c7772614e3e304db48e78222",
+    "working_tree": "7076fc46f6152a6c5ae65388fbc00293437aab20c7772614e3e304db48e78222"
+  },
+  {
+    "path": "web/lib/integrations/yahoo/oauth.test.ts",
+    "pin": "eeab188067f85d8474ddad127c5947ac292b7fb44bd944b6336d45e242066069",
+    "3795abb43": "eeab188067f85d8474ddad127c5947ac292b7fb44bd944b6336d45e242066069",
+    "HEAD": "eeab188067f85d8474ddad127c5947ac292b7fb44bd944b6336d45e242066069",
+    "origin/master": "eeab188067f85d8474ddad127c5947ac292b7fb44bd944b6336d45e242066069",
+    "origin/octoberBranch": "eeab188067f85d8474ddad127c5947ac292b7fb44bd944b6336d45e242066069",
+    "working_tree": "eeab188067f85d8474ddad127c5947ac292b7fb44bd944b6336d45e242066069"
+  },
+  {
+    "path": "web/lib/integrations/yahoo/oauth.ts",
+    "pin": "121e4b36ca1a73ea3ddbcb46787d1560c1755651bc2618a74493fb645fcf6a69",
+    "3795abb43": "121e4b36ca1a73ea3ddbcb46787d1560c1755651bc2618a74493fb645fcf6a69",
+    "HEAD": "121e4b36ca1a73ea3ddbcb46787d1560c1755651bc2618a74493fb645fcf6a69",
+    "origin/master": "121e4b36ca1a73ea3ddbcb46787d1560c1755651bc2618a74493fb645fcf6a69",
+    "origin/octoberBranch": "121e4b36ca1a73ea3ddbcb46787d1560c1755651bc2618a74493fb645fcf6a69",
+    "working_tree": "121e4b36ca1a73ea3ddbcb46787d1560c1755651bc2618a74493fb645fcf6a69"
+  },
+  {
+    "path": "web/lib/integrations/yahoo/observability.ts",
+    "pin": "0e5e98e9aa49702a64e60488b672089d0ccdde9684eb056d7b68df65199bd1b2",
+    "3795abb43": "0e5e98e9aa49702a64e60488b672089d0ccdde9684eb056d7b68df65199bd1b2",
+    "HEAD": "0e5e98e9aa49702a64e60488b672089d0ccdde9684eb056d7b68df65199bd1b2",
+    "origin/master": "0e5e98e9aa49702a64e60488b672089d0ccdde9684eb056d7b68df65199bd1b2",
+    "origin/octoberBranch": "0e5e98e9aa49702a64e60488b672089d0ccdde9684eb056d7b68df65199bd1b2",
+    "working_tree": "0e5e98e9aa49702a64e60488b672089d0ccdde9684eb056d7b68df65199bd1b2"
+  },
+  {
+    "path": "web/lib/integrations/yahoo/pickup.test.ts",
+    "pin": "a49cfb1c5d3bca602f898fdc158b3df19b6794a7f9da761dd553cf12fedd8e8f",
+    "3795abb43": "a49cfb1c5d3bca602f898fdc158b3df19b6794a7f9da761dd553cf12fedd8e8f",
+    "HEAD": "a49cfb1c5d3bca602f898fdc158b3df19b6794a7f9da761dd553cf12fedd8e8f",
+    "origin/master": "a49cfb1c5d3bca602f898fdc158b3df19b6794a7f9da761dd553cf12fedd8e8f",
+    "origin/octoberBranch": "a49cfb1c5d3bca602f898fdc158b3df19b6794a7f9da761dd553cf12fedd8e8f",
+    "working_tree": "a49cfb1c5d3bca602f898fdc158b3df19b6794a7f9da761dd553cf12fedd8e8f"
+  },
+  {
+    "path": "web/lib/integrations/yahoo/pickup.ts",
+    "pin": "99ae3331ce75ec9d94674cb8fb2749f5f4d749f11b414e0b4cf4d7513a2dbb6a",
+    "3795abb43": "99ae3331ce75ec9d94674cb8fb2749f5f4d749f11b414e0b4cf4d7513a2dbb6a",
+    "HEAD": "99ae3331ce75ec9d94674cb8fb2749f5f4d749f11b414e0b4cf4d7513a2dbb6a",
+    "origin/master": "99ae3331ce75ec9d94674cb8fb2749f5f4d749f11b414e0b4cf4d7513a2dbb6a",
+    "origin/octoberBranch": "99ae3331ce75ec9d94674cb8fb2749f5f4d749f11b414e0b4cf4d7513a2dbb6a",
+    "working_tree": "99ae3331ce75ec9d94674cb8fb2749f5f4d749f11b414e0b4cf4d7513a2dbb6a"
+  },
+  {
+    "path": "web/lib/integrations/yahoo/pickupApi.test.ts",
+    "pin": "4aa0503a697752dba180ef653bffb2595e6184238ad2497d68c694c6239cce9d",
+    "3795abb43": "4aa0503a697752dba180ef653bffb2595e6184238ad2497d68c694c6239cce9d",
+    "HEAD": "4aa0503a697752dba180ef653bffb2595e6184238ad2497d68c694c6239cce9d",
+    "origin/master": "4aa0503a697752dba180ef653bffb2595e6184238ad2497d68c694c6239cce9d",
+    "origin/octoberBranch": "4aa0503a697752dba180ef653bffb2595e6184238ad2497d68c694c6239cce9d",
+    "working_tree": "4aa0503a697752dba180ef653bffb2595e6184238ad2497d68c694c6239cce9d"
+  },
+  {
+    "path": "web/lib/integrations/yahoo/pickupServer.ts",
+    "pin": "8ca19f19a1237a57d244a3e572ecb37c807f2dabe1d4671b8ce8150116d8e60c",
+    "3795abb43": "8ca19f19a1237a57d244a3e572ecb37c807f2dabe1d4671b8ce8150116d8e60c",
+    "HEAD": "8ca19f19a1237a57d244a3e572ecb37c807f2dabe1d4671b8ce8150116d8e60c",
+    "origin/master": "8ca19f19a1237a57d244a3e572ecb37c807f2dabe1d4671b8ce8150116d8e60c",
+    "origin/octoberBranch": "8ca19f19a1237a57d244a3e572ecb37c807f2dabe1d4671b8ce8150116d8e60c",
+    "working_tree": "8ca19f19a1237a57d244a3e572ecb37c807f2dabe1d4671b8ce8150116d8e60c"
+  },
+  {
+    "path": "web/lib/integrations/yahoo/planningCache.ts",
+    "pin": "012da3519715c41407f3096124c186943e428432cc1af4d546d8e3c6d03e1c95",
+    "3795abb43": "012da3519715c41407f3096124c186943e428432cc1af4d546d8e3c6d03e1c95",
+    "HEAD": "012da3519715c41407f3096124c186943e428432cc1af4d546d8e3c6d03e1c95",
+    "origin/master": null,
+    "origin/octoberBranch": null,
+    "working_tree": "012da3519715c41407f3096124c186943e428432cc1af4d546d8e3c6d03e1c95"
+  },
+  {
+    "path": "web/lib/integrations/yahoo/planningConfirmationRoute.test.ts",
+    "pin": "4927754fdd1641b471272b69fc0a2657c6ec0d2bcd1a9e5b75833f2cc458c318",
+    "3795abb43": "4927754fdd1641b471272b69fc0a2657c6ec0d2bcd1a9e5b75833f2cc458c318",
+    "HEAD": "4927754fdd1641b471272b69fc0a2657c6ec0d2bcd1a9e5b75833f2cc458c318",
+    "origin/master": "4927754fdd1641b471272b69fc0a2657c6ec0d2bcd1a9e5b75833f2cc458c318",
+    "origin/octoberBranch": "4927754fdd1641b471272b69fc0a2657c6ec0d2bcd1a9e5b75833f2cc458c318",
+    "working_tree": "4927754fdd1641b471272b69fc0a2657c6ec0d2bcd1a9e5b75833f2cc458c318"
+  },
+  {
+    "path": "web/lib/integrations/yahoo/planningConfirmations.test.ts",
+    "pin": "f3f602a0c5aa4808efc8e80f407448fd9ac69c892c49e9fdf8debebe619c1493",
+    "3795abb43": "f3f602a0c5aa4808efc8e80f407448fd9ac69c892c49e9fdf8debebe619c1493",
+    "HEAD": "f3f602a0c5aa4808efc8e80f407448fd9ac69c892c49e9fdf8debebe619c1493",
+    "origin/master": "a114587cb397460f6cd190e64aef253f888935a08735d3638c1d6752548e1b7a",
+    "origin/octoberBranch": "a114587cb397460f6cd190e64aef253f888935a08735d3638c1d6752548e1b7a",
+    "working_tree": "f3f602a0c5aa4808efc8e80f407448fd9ac69c892c49e9fdf8debebe619c1493"
+  },
+  {
+    "path": "web/lib/integrations/yahoo/planningConfirmations.ts",
+    "pin": "78262e2a66d587e1243c969b4ed41c67ff542eb010b0b931bd8c224a06f0db7f",
+    "3795abb43": "78262e2a66d587e1243c969b4ed41c67ff542eb010b0b931bd8c224a06f0db7f",
+    "HEAD": "78262e2a66d587e1243c969b4ed41c67ff542eb010b0b931bd8c224a06f0db7f",
+    "origin/master": "21387c814e0e751d428a882d563fa142593a0b65b3f0f456d3a27b5fce884f61",
+    "origin/octoberBranch": "21387c814e0e751d428a882d563fa142593a0b65b3f0f456d3a27b5fce884f61",
+    "working_tree": "78262e2a66d587e1243c969b4ed41c67ff542eb010b0b931bd8c224a06f0db7f"
+  },
+  {
+    "path": "web/lib/integrations/yahoo/playerWriter.ts",
+    "pin": "6758de5dd20a5be44473e56b2f2522692d5ea086a8e2143ba0862809c0ad98c8",
+    "3795abb43": "6758de5dd20a5be44473e56b2f2522692d5ea086a8e2143ba0862809c0ad98c8",
+    "HEAD": "6758de5dd20a5be44473e56b2f2522692d5ea086a8e2143ba0862809c0ad98c8",
+    "origin/master": "6758de5dd20a5be44473e56b2f2522692d5ea086a8e2143ba0862809c0ad98c8",
+    "origin/octoberBranch": "6758de5dd20a5be44473e56b2f2522692d5ea086a8e2143ba0862809c0ad98c8",
+    "working_tree": "6758de5dd20a5be44473e56b2f2522692d5ea086a8e2143ba0862809c0ad98c8"
+  },
+  {
+    "path": "web/lib/integrations/yahoo/pollCoordinator.test.ts",
+    "pin": "09111e3793622a201edbba78cff84d3c8ce7aa734c52d145740bbdb918715da2",
+    "3795abb43": "09111e3793622a201edbba78cff84d3c8ce7aa734c52d145740bbdb918715da2",
+    "HEAD": "09111e3793622a201edbba78cff84d3c8ce7aa734c52d145740bbdb918715da2",
+    "origin/master": "09111e3793622a201edbba78cff84d3c8ce7aa734c52d145740bbdb918715da2",
+    "origin/octoberBranch": "09111e3793622a201edbba78cff84d3c8ce7aa734c52d145740bbdb918715da2",
+    "working_tree": "09111e3793622a201edbba78cff84d3c8ce7aa734c52d145740bbdb918715da2"
+  },
+  {
+    "path": "web/lib/integrations/yahoo/pollCoordinator.ts",
+    "pin": "3f1db105e8de6c7ddf1579aea8c43cd6e5120ad614aa9965d01e0d3714c1ccf2",
+    "3795abb43": "3f1db105e8de6c7ddf1579aea8c43cd6e5120ad614aa9965d01e0d3714c1ccf2",
+    "HEAD": "3f1db105e8de6c7ddf1579aea8c43cd6e5120ad614aa9965d01e0d3714c1ccf2",
+    "origin/master": "3f1db105e8de6c7ddf1579aea8c43cd6e5120ad614aa9965d01e0d3714c1ccf2",
+    "origin/octoberBranch": "3f1db105e8de6c7ddf1579aea8c43cd6e5120ad614aa9965d01e0d3714c1ccf2",
+    "working_tree": "3f1db105e8de6c7ddf1579aea8c43cd6e5120ad614aa9965d01e0d3714c1ccf2"
+  },
+  {
+    "path": "web/lib/integrations/yahoo/pollPolicy.test.ts",
+    "pin": "360524a259cfcfdc1716deaec790be6bcb61507ce844a95ad86d458c578d640a",
+    "3795abb43": "360524a259cfcfdc1716deaec790be6bcb61507ce844a95ad86d458c578d640a",
+    "HEAD": "360524a259cfcfdc1716deaec790be6bcb61507ce844a95ad86d458c578d640a",
+    "origin/master": "360524a259cfcfdc1716deaec790be6bcb61507ce844a95ad86d458c578d640a",
+    "origin/octoberBranch": "360524a259cfcfdc1716deaec790be6bcb61507ce844a95ad86d458c578d640a",
+    "working_tree": "360524a259cfcfdc1716deaec790be6bcb61507ce844a95ad86d458c578d640a"
+  },
+  {
+    "path": "web/lib/integrations/yahoo/pollPolicy.ts",
+    "pin": "e529c0ac764f5a35cb812bad17e9083ea94cf1dd5aceeef03b528c64268e5f73",
+    "3795abb43": "e529c0ac764f5a35cb812bad17e9083ea94cf1dd5aceeef03b528c64268e5f73",
+    "HEAD": "e529c0ac764f5a35cb812bad17e9083ea94cf1dd5aceeef03b528c64268e5f73",
+    "origin/master": "e529c0ac764f5a35cb812bad17e9083ea94cf1dd5aceeef03b528c64268e5f73",
+    "origin/octoberBranch": "e529c0ac764f5a35cb812bad17e9083ea94cf1dd5aceeef03b528c64268e5f73",
+    "working_tree": "e529c0ac764f5a35cb812bad17e9083ea94cf1dd5aceeef03b528c64268e5f73"
+  },
+  {
+    "path": "web/lib/integrations/yahoo/providerClient.ts",
+    "pin": "8b9285f9f0803c85256d5e31db09f503582befff646e30c8798b06efe6636f67",
+    "3795abb43": "8b9285f9f0803c85256d5e31db09f503582befff646e30c8798b06efe6636f67",
+    "HEAD": "8b9285f9f0803c85256d5e31db09f503582befff646e30c8798b06efe6636f67",
+    "origin/master": "8b9285f9f0803c85256d5e31db09f503582befff646e30c8798b06efe6636f67",
+    "origin/octoberBranch": "8b9285f9f0803c85256d5e31db09f503582befff646e30c8798b06efe6636f67",
+    "working_tree": "8b9285f9f0803c85256d5e31db09f503582befff646e30c8798b06efe6636f67"
+  },
+  {
+    "path": "web/lib/integrations/yahoo/refresh.test.ts",
+    "pin": "5189b8857c676cdf10a2253a6229b264e8a959a91a8e2459f519ca4430b19c63",
+    "3795abb43": "5189b8857c676cdf10a2253a6229b264e8a959a91a8e2459f519ca4430b19c63",
+    "HEAD": "5189b8857c676cdf10a2253a6229b264e8a959a91a8e2459f519ca4430b19c63",
+    "origin/master": "5189b8857c676cdf10a2253a6229b264e8a959a91a8e2459f519ca4430b19c63",
+    "origin/octoberBranch": "5189b8857c676cdf10a2253a6229b264e8a959a91a8e2459f519ca4430b19c63",
+    "working_tree": "5189b8857c676cdf10a2253a6229b264e8a959a91a8e2459f519ca4430b19c63"
+  },
+  {
+    "path": "web/lib/integrations/yahoo/refresh.ts",
+    "pin": "b74a84d73a730a6bc92516c616411428f3e0d947435e2ccec827e077779fe8f9",
+    "3795abb43": "b74a84d73a730a6bc92516c616411428f3e0d947435e2ccec827e077779fe8f9",
+    "HEAD": "b74a84d73a730a6bc92516c616411428f3e0d947435e2ccec827e077779fe8f9",
+    "origin/master": "b74a84d73a730a6bc92516c616411428f3e0d947435e2ccec827e077779fe8f9",
+    "origin/octoberBranch": "b74a84d73a730a6bc92516c616411428f3e0d947435e2ccec827e077779fe8f9",
+    "working_tree": "b74a84d73a730a6bc92516c616411428f3e0d947435e2ccec827e077779fe8f9"
+  },
+  {
+    "path": "web/lib/integrations/yahoo/rosterPlanning.test.ts",
+    "pin": "32deab9f0c1757623ad06db2ed348eb9a6fb1613cdec1bca4d2463da5de35410",
+    "3795abb43": "32deab9f0c1757623ad06db2ed348eb9a6fb1613cdec1bca4d2463da5de35410",
+    "HEAD": "32deab9f0c1757623ad06db2ed348eb9a6fb1613cdec1bca4d2463da5de35410",
+    "origin/master": "32deab9f0c1757623ad06db2ed348eb9a6fb1613cdec1bca4d2463da5de35410",
+    "origin/octoberBranch": "32deab9f0c1757623ad06db2ed348eb9a6fb1613cdec1bca4d2463da5de35410",
+    "working_tree": "32deab9f0c1757623ad06db2ed348eb9a6fb1613cdec1bca4d2463da5de35410"
+  },
+  {
+    "path": "web/lib/integrations/yahoo/rosterPlanning.ts",
+    "pin": "19660e49140612ac132862c33af371ec417d4b9bc0c2b854c483db4a3869898e",
+    "3795abb43": "19660e49140612ac132862c33af371ec417d4b9bc0c2b854c483db4a3869898e",
+    "HEAD": "19660e49140612ac132862c33af371ec417d4b9bc0c2b854c483db4a3869898e",
+    "origin/master": "2e0119937949f558bb1328cd58435ef9b98fcebef340554c1a7a7000404cc84a",
+    "origin/octoberBranch": "2e0119937949f558bb1328cd58435ef9b98fcebef340554c1a7a7000404cc84a",
+    "working_tree": "19660e49140612ac132862c33af371ec417d4b9bc0c2b854c483db4a3869898e"
+  },
+  {
+    "path": "web/lib/integrations/yahoo/starterBoard.ts",
+    "pin": "076e75577553ebe58c279f8730a04444057ef2acb1c507e95302d543fe2874be",
+    "3795abb43": "076e75577553ebe58c279f8730a04444057ef2acb1c507e95302d543fe2874be",
+    "HEAD": "076e75577553ebe58c279f8730a04444057ef2acb1c507e95302d543fe2874be",
+    "origin/master": "5c46825992f66200494dc541af3fc774b233cb09e06fd7468edee09be18dd231",
+    "origin/octoberBranch": "5c46825992f66200494dc541af3fc774b233cb09e06fd7468edee09be18dd231",
+    "working_tree": "076e75577553ebe58c279f8730a04444057ef2acb1c507e95302d543fe2874be"
+  },
+  {
+    "path": "web/lib/integrations/yahoo/teamRoster.test.ts",
+    "pin": "d7f04f095fb4c8b77ac40ea19f79b6ff3880cbfebbcb251438346d98a3d35339",
+    "3795abb43": "d7f04f095fb4c8b77ac40ea19f79b6ff3880cbfebbcb251438346d98a3d35339",
+    "HEAD": "d7f04f095fb4c8b77ac40ea19f79b6ff3880cbfebbcb251438346d98a3d35339",
+    "origin/master": "d7f04f095fb4c8b77ac40ea19f79b6ff3880cbfebbcb251438346d98a3d35339",
+    "origin/octoberBranch": "d7f04f095fb4c8b77ac40ea19f79b6ff3880cbfebbcb251438346d98a3d35339",
+    "working_tree": "d7f04f095fb4c8b77ac40ea19f79b6ff3880cbfebbcb251438346d98a3d35339"
+  },
+  {
+    "path": "web/lib/integrations/yahoo/teamRoster.ts",
+    "pin": "8500a32ea78449740dd2080ea888432a9defaedaff9e7a12e72a005ed5956d08",
+    "3795abb43": "8500a32ea78449740dd2080ea888432a9defaedaff9e7a12e72a005ed5956d08",
+    "HEAD": "8500a32ea78449740dd2080ea888432a9defaedaff9e7a12e72a005ed5956d08",
+    "origin/master": "8500a32ea78449740dd2080ea888432a9defaedaff9e7a12e72a005ed5956d08",
+    "origin/octoberBranch": "8500a32ea78449740dd2080ea888432a9defaedaff9e7a12e72a005ed5956d08",
+    "working_tree": "8500a32ea78449740dd2080ea888432a9defaedaff9e7a12e72a005ed5956d08"
+  },
+  {
+    "path": "web/lib/integrations/yahoo/tokenManager.ts",
+    "pin": "4c905ede3ee15f1bce3a2fb6fe4aced506a0527c3d01a85270c5372893aab009",
+    "3795abb43": "4c905ede3ee15f1bce3a2fb6fe4aced506a0527c3d01a85270c5372893aab009",
+    "HEAD": "4c905ede3ee15f1bce3a2fb6fe4aced506a0527c3d01a85270c5372893aab009",
+    "origin/master": "4c905ede3ee15f1bce3a2fb6fe4aced506a0527c3d01a85270c5372893aab009",
+    "origin/octoberBranch": "4c905ede3ee15f1bce3a2fb6fe4aced506a0527c3d01a85270c5372893aab009",
+    "working_tree": "4c905ede3ee15f1bce3a2fb6fe4aced506a0527c3d01a85270c5372893aab009"
+  },
+  {
+    "path": "web/lib/integrations/yahoo/writerPermissions.test.ts",
+    "pin": "d241c768b54687c233914ccd2088053a1996f0825c35c338f97ed263a243eecb",
+    "3795abb43": "d241c768b54687c233914ccd2088053a1996f0825c35c338f97ed263a243eecb",
+    "HEAD": "d241c768b54687c233914ccd2088053a1996f0825c35c338f97ed263a243eecb",
+    "origin/master": "d241c768b54687c233914ccd2088053a1996f0825c35c338f97ed263a243eecb",
+    "origin/octoberBranch": "d241c768b54687c233914ccd2088053a1996f0825c35c338f97ed263a243eecb",
+    "working_tree": "d241c768b54687c233914ccd2088053a1996f0825c35c338f97ed263a243eecb"
+  },
+  {
+    "path": "web/lib/integrations/yahoo/yahooDiet.test.ts",
+    "pin": "a8c9fc809d05f617644bb24ae9d4c8b498b56d0aad7bc564a2a0acfa5c8eece7",
+    "3795abb43": "a8c9fc809d05f617644bb24ae9d4c8b498b56d0aad7bc564a2a0acfa5c8eece7",
+    "HEAD": "a8c9fc809d05f617644bb24ae9d4c8b498b56d0aad7bc564a2a0acfa5c8eece7",
+    "origin/master": null,
+    "origin/octoberBranch": null,
+    "working_tree": "a8c9fc809d05f617644bb24ae9d4c8b498b56d0aad7bc564a2a0acfa5c8eece7"
+  },
+  {
+    "path": "web/lib/integrations/yahoo/yahooIdentity.ts",
+    "pin": "1019329b2ccc51a8df19ceec57b301bec9e7029b1dc6a87aad8e52931dc2f76c",
+    "3795abb43": "1019329b2ccc51a8df19ceec57b301bec9e7029b1dc6a87aad8e52931dc2f76c",
+    "HEAD": "1019329b2ccc51a8df19ceec57b301bec9e7029b1dc6a87aad8e52931dc2f76c",
+    "origin/master": null,
+    "origin/octoberBranch": null,
+    "working_tree": "1019329b2ccc51a8df19ceec57b301bec9e7029b1dc6a87aad8e52931dc2f76c"
+  },
+  {
+    "path": "web/lib/player-forecasts/forecastServingSource.ts",
+    "pin": "6a1b2b3c05a088c51305b5113a256d986d201a45f941746a16244a05b114833a",
+    "3795abb43": "6a1b2b3c05a088c51305b5113a256d986d201a45f941746a16244a05b114833a",
+    "HEAD": "6a1b2b3c05a088c51305b5113a256d986d201a45f941746a16244a05b114833a",
+    "origin/master": "6a1b2b3c05a088c51305b5113a256d986d201a45f941746a16244a05b114833a",
+    "origin/octoberBranch": "6a1b2b3c05a088c51305b5113a256d986d201a45f941746a16244a05b114833a",
+    "working_tree": "6a1b2b3c05a088c51305b5113a256d986d201a45f941746a16244a05b114833a"
+  },
+  {
+    "path": "web/lib/player-forecasts/planningContributions.ts",
+    "pin": "37c472d95769790bc1c20535165f64486eabc4d0bcc825b18b821002aa42ad09",
+    "3795abb43": "37c472d95769790bc1c20535165f64486eabc4d0bcc825b18b821002aa42ad09",
+    "HEAD": "37c472d95769790bc1c20535165f64486eabc4d0bcc825b18b821002aa42ad09",
+    "origin/master": "37c472d95769790bc1c20535165f64486eabc4d0bcc825b18b821002aa42ad09",
+    "origin/octoberBranch": "37c472d95769790bc1c20535165f64486eabc4d0bcc825b18b821002aa42ad09",
+    "working_tree": "37c472d95769790bc1c20535165f64486eabc4d0bcc825b18b821002aa42ad09"
+  },
+  {
+    "path": "web/lib/player-forecasts/resolvedPlanningForecast.ts",
+    "pin": "f6304a1e1bff4a0ad20a8177b9e2cfc17a193761c0d9edce07cebd6e7a6b4d07",
+    "3795abb43": "f6304a1e1bff4a0ad20a8177b9e2cfc17a193761c0d9edce07cebd6e7a6b4d07",
+    "HEAD": "f6304a1e1bff4a0ad20a8177b9e2cfc17a193761c0d9edce07cebd6e7a6b4d07",
+    "origin/master": "f6304a1e1bff4a0ad20a8177b9e2cfc17a193761c0d9edce07cebd6e7a6b4d07",
+    "origin/octoberBranch": "f6304a1e1bff4a0ad20a8177b9e2cfc17a193761c0d9edce07cebd6e7a6b4d07",
+    "working_tree": "f6304a1e1bff4a0ad20a8177b9e2cfc17a193761c0d9edce07cebd6e7a6b4d07"
+  },
+  {
+    "path": "web/lib/player-forecasts/rsoUsePolicy.ts",
+    "pin": "917d4a7463d05f75d5527261da779241e5e075c5e8bc121fc72d0e5c2aada54c",
+    "3795abb43": "917d4a7463d05f75d5527261da779241e5e075c5e8bc121fc72d0e5c2aada54c",
+    "HEAD": "917d4a7463d05f75d5527261da779241e5e075c5e8bc121fc72d0e5c2aada54c",
+    "origin/master": "917d4a7463d05f75d5527261da779241e5e075c5e8bc121fc72d0e5c2aada54c",
+    "origin/octoberBranch": "917d4a7463d05f75d5527261da779241e5e075c5e8bc121fc72d0e5c2aada54c",
+    "working_tree": "917d4a7463d05f75d5527261da779241e5e075c5e8bc121fc72d0e5c2aada54c"
+  },
+  {
+    "path": "web/lib/projections/apiHelpers.ts",
+    "pin": "6768ae4c712f40b949f00fdbd5a05c74be81d487ad596f7d862b27907663d11a",
+    "3795abb43": "6768ae4c712f40b949f00fdbd5a05c74be81d487ad596f7d862b27907663d11a",
+    "HEAD": "6768ae4c712f40b949f00fdbd5a05c74be81d487ad596f7d862b27907663d11a",
+    "origin/master": "b5ce713fac1e74cc64b8483ef9a9e21ba39cfa9e29dc50636c5a769b62ebcb41",
+    "origin/octoberBranch": "b5ce713fac1e74cc64b8483ef9a9e21ba39cfa9e29dc50636c5a769b62ebcb41",
+    "working_tree": "6768ae4c712f40b949f00fdbd5a05c74be81d487ad596f7d862b27907663d11a"
+  },
+  {
+    "path": "web/lib/projections/consumerRevisionAdmission.ts",
+    "pin": "303a0c9896f6277e8ad8f5f018a7220a61d92e586f4e0610506e782e00ea3f4a",
+    "3795abb43": "303a0c9896f6277e8ad8f5f018a7220a61d92e586f4e0610506e782e00ea3f4a",
+    "HEAD": "303a0c9896f6277e8ad8f5f018a7220a61d92e586f4e0610506e782e00ea3f4a",
+    "origin/master": "303a0c9896f6277e8ad8f5f018a7220a61d92e586f4e0610506e782e00ea3f4a",
+    "origin/octoberBranch": "303a0c9896f6277e8ad8f5f018a7220a61d92e586f4e0610506e782e00ea3f4a",
+    "working_tree": "303a0c9896f6277e8ad8f5f018a7220a61d92e586f4e0610506e782e00ea3f4a"
+  },
+  {
+    "path": "web/lib/projections/externalInputProof.ts",
+    "pin": "ae2cf41585dcd3391b91161ee1858b87f6bfd3073cafde69c95327e556be49e1",
+    "3795abb43": "ae2cf41585dcd3391b91161ee1858b87f6bfd3073cafde69c95327e556be49e1",
+    "HEAD": "4001a93214c2bfdf49d008e8eab88cd0acb7d43f8cd4d61660817a761ca9cbfe",
+    "origin/master": null,
+    "origin/octoberBranch": null,
+    "working_tree": "4001a93214c2bfdf49d008e8eab88cd0acb7d43f8cd4d61660817a761ca9cbfe"
+  },
+  {
+    "path": "web/lib/projections/queries/run-lifecycle-queries.ts",
+    "pin": "79281435f6649f1865ac6ab74e194fad4d406c91a078681c461e7e50834f2daf",
+    "3795abb43": "79281435f6649f1865ac6ab74e194fad4d406c91a078681c461e7e50834f2daf",
+    "HEAD": "79281435f6649f1865ac6ab74e194fad4d406c91a078681c461e7e50834f2daf",
+    "origin/master": "79281435f6649f1865ac6ab74e194fad4d406c91a078681c461e7e50834f2daf",
+    "origin/octoberBranch": "79281435f6649f1865ac6ab74e194fad4d406c91a078681c461e7e50834f2daf",
+    "working_tree": "79281435f6649f1865ac6ab74e194fad4d406c91a078681c461e7e50834f2daf"
+  },
+  {
+    "path": "web/lib/projections/run-forge-projections.ts",
+    "pin": "37125f7bcca6f634fe801df2676ccb145a935725262e1812ab6428b8f936e3b7",
+    "3795abb43": "37125f7bcca6f634fe801df2676ccb145a935725262e1812ab6428b8f936e3b7",
+    "HEAD": "37125f7bcca6f634fe801df2676ccb145a935725262e1812ab6428b8f936e3b7",
+    "origin/master": "37125f7bcca6f634fe801df2676ccb145a935725262e1812ab6428b8f936e3b7",
+    "origin/octoberBranch": "37125f7bcca6f634fe801df2676ccb145a935725262e1812ab6428b8f936e3b7",
+    "working_tree": "37125f7bcca6f634fe801df2676ccb145a935725262e1812ab6428b8f936e3b7"
+  },
+  {
+    "path": "web/lib/projections/seasonBootstrap.ts",
+    "pin": "8f957a23846bdf096df6255b5152b6ea9cff2f14ba271f3885289b2eecd70977",
+    "3795abb43": "8f957a23846bdf096df6255b5152b6ea9cff2f14ba271f3885289b2eecd70977",
+    "HEAD": "8f957a23846bdf096df6255b5152b6ea9cff2f14ba271f3885289b2eecd70977",
+    "origin/master": "8f957a23846bdf096df6255b5152b6ea9cff2f14ba271f3885289b2eecd70977",
+    "origin/octoberBranch": "8f957a23846bdf096df6255b5152b6ea9cff2f14ba271f3885289b2eecd70977",
+    "working_tree": "8f957a23846bdf096df6255b5152b6ea9cff2f14ba271f3885289b2eecd70977"
+  },
+  {
+    "path": "web/lib/projections/stages/goalie-stage.ts",
+    "pin": "588098919858f116e1bdd931fc0c32632bd598d14970df52b2dac1f5c23d8451",
+    "3795abb43": "588098919858f116e1bdd931fc0c32632bd598d14970df52b2dac1f5c23d8451",
+    "HEAD": "588098919858f116e1bdd931fc0c32632bd598d14970df52b2dac1f5c23d8451",
+    "origin/master": "588098919858f116e1bdd931fc0c32632bd598d14970df52b2dac1f5c23d8451",
+    "origin/octoberBranch": "588098919858f116e1bdd931fc0c32632bd598d14970df52b2dac1f5c23d8451",
+    "working_tree": "588098919858f116e1bdd931fc0c32632bd598d14970df52b2dac1f5c23d8451"
+  },
+  {
+    "path": "web/lib/projections/stages/skater-stage.ts",
+    "pin": "958c3e5bf3ffab4efe1cf67d42bc063a308e9aeac7de11e712ab297f6cbf9faa",
+    "3795abb43": "958c3e5bf3ffab4efe1cf67d42bc063a308e9aeac7de11e712ab297f6cbf9faa",
+    "HEAD": "958c3e5bf3ffab4efe1cf67d42bc063a308e9aeac7de11e712ab297f6cbf9faa",
+    "origin/master": "958c3e5bf3ffab4efe1cf67d42bc063a308e9aeac7de11e712ab297f6cbf9faa",
+    "origin/octoberBranch": "958c3e5bf3ffab4efe1cf67d42bc063a308e9aeac7de11e712ab297f6cbf9faa",
+    "working_tree": "958c3e5bf3ffab4efe1cf67d42bc063a308e9aeac7de11e712ab297f6cbf9faa"
+  },
+  {
+    "path": "web/lib/projections/starterBoardFlags.ts",
+    "pin": "f6f0bea6cedda71bb43f41f7aa0235232178524b9bf9271c0a1b3567ae251e2d",
+    "3795abb43": "f6f0bea6cedda71bb43f41f7aa0235232178524b9bf9271c0a1b3567ae251e2d",
+    "HEAD": "f6f0bea6cedda71bb43f41f7aa0235232178524b9bf9271c0a1b3567ae251e2d",
+    "origin/master": "f6f0bea6cedda71bb43f41f7aa0235232178524b9bf9271c0a1b3567ae251e2d",
+    "origin/octoberBranch": "f6f0bea6cedda71bb43f41f7aa0235232178524b9bf9271c0a1b3567ae251e2d",
+    "working_tree": "f6f0bea6cedda71bb43f41f7aa0235232178524b9bf9271c0a1b3567ae251e2d"
+  },
+  {
+    "path": "web/lib/rosterScheduleData/bridgeForecastWire.ts",
+    "pin": "d5e4aa7b51cdc6d5362ebfe5b70f163701764b80d9db14feae35beef53959b27",
+    "3795abb43": "d5e4aa7b51cdc6d5362ebfe5b70f163701764b80d9db14feae35beef53959b27",
+    "HEAD": "d5e4aa7b51cdc6d5362ebfe5b70f163701764b80d9db14feae35beef53959b27",
+    "origin/master": "d5e4aa7b51cdc6d5362ebfe5b70f163701764b80d9db14feae35beef53959b27",
+    "origin/octoberBranch": "d5e4aa7b51cdc6d5362ebfe5b70f163701764b80d9db14feae35beef53959b27",
+    "working_tree": "d5e4aa7b51cdc6d5362ebfe5b70f163701764b80d9db14feae35beef53959b27"
+  },
+  {
+    "path": "web/lib/rosterScheduleData/constants.ts",
+    "pin": "00b04acf0abba39a9cfdf5837b2ee99993e1a7b873e8e84e121abe6f7b00f1fd",
+    "3795abb43": "00b04acf0abba39a9cfdf5837b2ee99993e1a7b873e8e84e121abe6f7b00f1fd",
+    "HEAD": "00b04acf0abba39a9cfdf5837b2ee99993e1a7b873e8e84e121abe6f7b00f1fd",
+    "origin/master": "00b04acf0abba39a9cfdf5837b2ee99993e1a7b873e8e84e121abe6f7b00f1fd",
+    "origin/octoberBranch": "00b04acf0abba39a9cfdf5837b2ee99993e1a7b873e8e84e121abe6f7b00f1fd",
+    "working_tree": "00b04acf0abba39a9cfdf5837b2ee99993e1a7b873e8e84e121abe6f7b00f1fd"
+  },
+  {
+    "path": "web/lib/rosterScheduleData/forgeDailyBridge.test.ts",
+    "pin": "e55aa3a41e4bf89c8a92e21165cfeb509fd63973f20ee8cb47a63512e7938eeb",
+    "3795abb43": "e55aa3a41e4bf89c8a92e21165cfeb509fd63973f20ee8cb47a63512e7938eeb",
+    "HEAD": "f96946c3859cdeaa64aeb8985ac93e87b76fed88a605d3ce775fa6ae9953d2d3",
+    "origin/master": "b349bfed1fb64835b632e47e70b741fba78c3fad2ca3284e3497d2260b0cf7bd",
+    "origin/octoberBranch": "b349bfed1fb64835b632e47e70b741fba78c3fad2ca3284e3497d2260b0cf7bd",
+    "working_tree": "f96946c3859cdeaa64aeb8985ac93e87b76fed88a605d3ce775fa6ae9953d2d3"
+  },
+  {
+    "path": "web/lib/rosterScheduleData/forgeDailyBridge.ts",
+    "pin": "d6be6b7338a2f8053913aae1221dc3c13931a7de9fba1bdfaa6befa19fcda43e",
+    "3795abb43": "d6be6b7338a2f8053913aae1221dc3c13931a7de9fba1bdfaa6befa19fcda43e",
+    "HEAD": "d6be6b7338a2f8053913aae1221dc3c13931a7de9fba1bdfaa6befa19fcda43e",
+    "origin/master": "f1604e34907082401a7bb2f68f106f94b8a467dd3f5df5d10344082e4c374b9b",
+    "origin/octoberBranch": "f1604e34907082401a7bb2f68f106f94b8a467dd3f5df5d10344082e4c374b9b",
+    "working_tree": "d6be6b7338a2f8053913aae1221dc3c13931a7de9fba1bdfaa6befa19fcda43e"
+  },
+  {
+    "path": "web/lib/rosterScheduleData/index.ts",
+    "pin": "f2e5ca096435cbb2fa588e749ff27bf3fce20591e58dbbd11b1928d30cc23bb4",
+    "3795abb43": "f2e5ca096435cbb2fa588e749ff27bf3fce20591e58dbbd11b1928d30cc23bb4",
+    "HEAD": "f2e5ca096435cbb2fa588e749ff27bf3fce20591e58dbbd11b1928d30cc23bb4",
+    "origin/master": "f2e5ca096435cbb2fa588e749ff27bf3fce20591e58dbbd11b1928d30cc23bb4",
+    "origin/octoberBranch": "f2e5ca096435cbb2fa588e749ff27bf3fce20591e58dbbd11b1928d30cc23bb4",
+    "working_tree": "f2e5ca096435cbb2fa588e749ff27bf3fce20591e58dbbd11b1928d30cc23bb4"
+  },
+  {
+    "path": "web/lib/rosterScheduleData/normalize.test.ts",
+    "pin": "5235b7183f937b1008bc669d678b8b4e7f5b9e4f2b6b28e301d7411afe951e4e",
+    "3795abb43": "5235b7183f937b1008bc669d678b8b4e7f5b9e4f2b6b28e301d7411afe951e4e",
+    "HEAD": "5235b7183f937b1008bc669d678b8b4e7f5b9e4f2b6b28e301d7411afe951e4e",
+    "origin/master": "5235b7183f937b1008bc669d678b8b4e7f5b9e4f2b6b28e301d7411afe951e4e",
+    "origin/octoberBranch": "5235b7183f937b1008bc669d678b8b4e7f5b9e4f2b6b28e301d7411afe951e4e",
+    "working_tree": "5235b7183f937b1008bc669d678b8b4e7f5b9e4f2b6b28e301d7411afe951e4e"
+  },
+  {
+    "path": "web/lib/rosterScheduleData/normalize.ts",
+    "pin": "bf6a30c1ea38903f11b66643721915543af73f61d28a8b6e3b48e8869489c4a6",
+    "3795abb43": "bf6a30c1ea38903f11b66643721915543af73f61d28a8b6e3b48e8869489c4a6",
+    "HEAD": "bf6a30c1ea38903f11b66643721915543af73f61d28a8b6e3b48e8869489c4a6",
+    "origin/master": "bf6a30c1ea38903f11b66643721915543af73f61d28a8b6e3b48e8869489c4a6",
+    "origin/octoberBranch": "bf6a30c1ea38903f11b66643721915543af73f61d28a8b6e3b48e8869489c4a6",
+    "working_tree": "bf6a30c1ea38903f11b66643721915543af73f61d28a8b6e3b48e8869489c4a6"
+  },
+  {
+    "path": "web/lib/rosterScheduleData/persistence.test.ts",
+    "pin": "c2d94916cfadfe02e7a44337967b8b4225ebb5e765049baa8e592390fa2bc6f7",
+    "3795abb43": "c2d94916cfadfe02e7a44337967b8b4225ebb5e765049baa8e592390fa2bc6f7",
+    "HEAD": "c2d94916cfadfe02e7a44337967b8b4225ebb5e765049baa8e592390fa2bc6f7",
+    "origin/master": "c2d94916cfadfe02e7a44337967b8b4225ebb5e765049baa8e592390fa2bc6f7",
+    "origin/octoberBranch": "c2d94916cfadfe02e7a44337967b8b4225ebb5e765049baa8e592390fa2bc6f7",
+    "working_tree": "c2d94916cfadfe02e7a44337967b8b4225ebb5e765049baa8e592390fa2bc6f7"
+  },
+  {
+    "path": "web/lib/rosterScheduleData/persistence.ts",
+    "pin": "2e26a73a64f8abe53c87a854b85189740fbbc8300b582d6588ad45d4b69b4605",
+    "3795abb43": "2e26a73a64f8abe53c87a854b85189740fbbc8300b582d6588ad45d4b69b4605",
+    "HEAD": "2e26a73a64f8abe53c87a854b85189740fbbc8300b582d6588ad45d4b69b4605",
+    "origin/master": "2e26a73a64f8abe53c87a854b85189740fbbc8300b582d6588ad45d4b69b4605",
+    "origin/octoberBranch": "2e26a73a64f8abe53c87a854b85189740fbbc8300b582d6588ad45d4b69b4605",
+    "working_tree": "2e26a73a64f8abe53c87a854b85189740fbbc8300b582d6588ad45d4b69b4605"
+  },
+  {
+    "path": "web/lib/rosterScheduleData/planning.test.ts",
+    "pin": "553d41b25bcd39ab9fadd21827822d9fd26c85d656f1a215ebc43d7f006a34c0",
+    "3795abb43": "553d41b25bcd39ab9fadd21827822d9fd26c85d656f1a215ebc43d7f006a34c0",
+    "HEAD": "553d41b25bcd39ab9fadd21827822d9fd26c85d656f1a215ebc43d7f006a34c0",
+    "origin/master": "edab69cc1235bc59ef3ec976b3aae15ccc98d750052f9d337237c0a25dd41eaa",
+    "origin/octoberBranch": "edab69cc1235bc59ef3ec976b3aae15ccc98d750052f9d337237c0a25dd41eaa",
+    "working_tree": "553d41b25bcd39ab9fadd21827822d9fd26c85d656f1a215ebc43d7f006a34c0"
+  },
+  {
+    "path": "web/lib/rosterScheduleData/planning.ts",
+    "pin": "4482731bb70801e50ee2d5b0b22c954c48706b7f65e78541640ca2285cf87062",
+    "3795abb43": "4482731bb70801e50ee2d5b0b22c954c48706b7f65e78541640ca2285cf87062",
+    "HEAD": "4482731bb70801e50ee2d5b0b22c954c48706b7f65e78541640ca2285cf87062",
+    "origin/master": "4482731bb70801e50ee2d5b0b22c954c48706b7f65e78541640ca2285cf87062",
+    "origin/octoberBranch": "4482731bb70801e50ee2d5b0b22c954c48706b7f65e78541640ca2285cf87062",
+    "working_tree": "4482731bb70801e50ee2d5b0b22c954c48706b7f65e78541640ca2285cf87062"
+  },
+  {
+    "path": "web/lib/rosterScheduleData/planningDataTransport.ts",
+    "pin": "933d564db9996a5deb16e508a4224f06da890a1bf5f8e2c94fdfc4e0ad72d870",
+    "3795abb43": "933d564db9996a5deb16e508a4224f06da890a1bf5f8e2c94fdfc4e0ad72d870",
+    "HEAD": "933d564db9996a5deb16e508a4224f06da890a1bf5f8e2c94fdfc4e0ad72d870",
+    "origin/master": "933d564db9996a5deb16e508a4224f06da890a1bf5f8e2c94fdfc4e0ad72d870",
+    "origin/octoberBranch": "933d564db9996a5deb16e508a4224f06da890a1bf5f8e2c94fdfc4e0ad72d870",
+    "working_tree": "933d564db9996a5deb16e508a4224f06da890a1bf5f8e2c94fdfc4e0ad72d870"
+  },
+  {
+    "path": "web/lib/rosterScheduleData/planningInputs.ts",
+    "pin": "8193aa5d1bd22349b729e0a135f2060e847c5569312f83a84b23d2cbee498313",
+    "3795abb43": "8193aa5d1bd22349b729e0a135f2060e847c5569312f83a84b23d2cbee498313",
+    "HEAD": "8193aa5d1bd22349b729e0a135f2060e847c5569312f83a84b23d2cbee498313",
+    "origin/master": "8193aa5d1bd22349b729e0a135f2060e847c5569312f83a84b23d2cbee498313",
+    "origin/octoberBranch": "8193aa5d1bd22349b729e0a135f2060e847c5569312f83a84b23d2cbee498313",
+    "working_tree": "8193aa5d1bd22349b729e0a135f2060e847c5569312f83a84b23d2cbee498313"
+  },
+  {
+    "path": "web/lib/rosterScheduleData/query.test.ts",
+    "pin": "739e692f04f61ae7069f569e43f5e236433b64673619cd79b6018d98747c74e3",
+    "3795abb43": "739e692f04f61ae7069f569e43f5e236433b64673619cd79b6018d98747c74e3",
+    "HEAD": "739e692f04f61ae7069f569e43f5e236433b64673619cd79b6018d98747c74e3",
+    "origin/master": "739e692f04f61ae7069f569e43f5e236433b64673619cd79b6018d98747c74e3",
+    "origin/octoberBranch": "739e692f04f61ae7069f569e43f5e236433b64673619cd79b6018d98747c74e3",
+    "working_tree": "739e692f04f61ae7069f569e43f5e236433b64673619cd79b6018d98747c74e3"
+  },
+  {
+    "path": "web/lib/rosterScheduleData/query.ts",
+    "pin": "26b55bcf782b801fee30163b128ae7802ec9dba1419f4353aa2835fe4ce2468d",
+    "3795abb43": "26b55bcf782b801fee30163b128ae7802ec9dba1419f4353aa2835fe4ce2468d",
+    "HEAD": "26b55bcf782b801fee30163b128ae7802ec9dba1419f4353aa2835fe4ce2468d",
+    "origin/master": "26b55bcf782b801fee30163b128ae7802ec9dba1419f4353aa2835fe4ce2468d",
+    "origin/octoberBranch": "26b55bcf782b801fee30163b128ae7802ec9dba1419f4353aa2835fe4ce2468d",
+    "working_tree": "26b55bcf782b801fee30163b128ae7802ec9dba1419f4353aa2835fe4ce2468d"
+  },
+  {
+    "path": "web/lib/rosterScheduleData/recurring.ts",
+    "pin": "e876ef82ec720744588bbc4dc3e984db8669b1861229666b6637d6de1ae46136",
+    "3795abb43": "e876ef82ec720744588bbc4dc3e984db8669b1861229666b6637d6de1ae46136",
+    "HEAD": "e876ef82ec720744588bbc4dc3e984db8669b1861229666b6637d6de1ae46136",
+    "origin/master": "e876ef82ec720744588bbc4dc3e984db8669b1861229666b6637d6de1ae46136",
+    "origin/octoberBranch": "e876ef82ec720744588bbc4dc3e984db8669b1861229666b6637d6de1ae46136",
+    "working_tree": "e876ef82ec720744588bbc4dc3e984db8669b1861229666b6637d6de1ae46136"
+  },
+  {
+    "path": "web/lib/rosterScheduleData/refreshGuard.ts",
+    "pin": "4b5cdd04b3688ccc528d28148ac60cc1ed2c38a6010d662fce7c9e87bfcbcc78",
+    "3795abb43": "4b5cdd04b3688ccc528d28148ac60cc1ed2c38a6010d662fce7c9e87bfcbcc78",
+    "HEAD": "4b5cdd04b3688ccc528d28148ac60cc1ed2c38a6010d662fce7c9e87bfcbcc78",
+    "origin/master": "4b5cdd04b3688ccc528d28148ac60cc1ed2c38a6010d662fce7c9e87bfcbcc78",
+    "origin/octoberBranch": "4b5cdd04b3688ccc528d28148ac60cc1ed2c38a6010d662fce7c9e87bfcbcc78",
+    "working_tree": "4b5cdd04b3688ccc528d28148ac60cc1ed2c38a6010d662fce7c9e87bfcbcc78"
+  },
+  {
+    "path": "web/lib/rosterScheduleData/source.test.ts",
+    "pin": "5823209501809d6e8fceec53344848e9e2a42fbf240d6389a5ffc1e443b5ebfe",
+    "3795abb43": "5823209501809d6e8fceec53344848e9e2a42fbf240d6389a5ffc1e443b5ebfe",
+    "HEAD": "5823209501809d6e8fceec53344848e9e2a42fbf240d6389a5ffc1e443b5ebfe",
+    "origin/master": "5823209501809d6e8fceec53344848e9e2a42fbf240d6389a5ffc1e443b5ebfe",
+    "origin/octoberBranch": "5823209501809d6e8fceec53344848e9e2a42fbf240d6389a5ffc1e443b5ebfe",
+    "working_tree": "5823209501809d6e8fceec53344848e9e2a42fbf240d6389a5ffc1e443b5ebfe"
+  },
+  {
+    "path": "web/lib/rosterScheduleData/source.ts",
+    "pin": "770c0dd5820aaf745441e4b5b10bc5d73d727e3d14d0fc3617ab369bbac9b92e",
+    "3795abb43": "770c0dd5820aaf745441e4b5b10bc5d73d727e3d14d0fc3617ab369bbac9b92e",
+    "HEAD": "770c0dd5820aaf745441e4b5b10bc5d73d727e3d14d0fc3617ab369bbac9b92e",
+    "origin/master": "770c0dd5820aaf745441e4b5b10bc5d73d727e3d14d0fc3617ab369bbac9b92e",
+    "origin/octoberBranch": "770c0dd5820aaf745441e4b5b10bc5d73d727e3d14d0fc3617ab369bbac9b92e",
+    "working_tree": "770c0dd5820aaf745441e4b5b10bc5d73d727e3d14d0fc3617ab369bbac9b92e"
+  },
+  {
+    "path": "web/lib/rosterScheduleData/types.ts",
+    "pin": "9e9f0efd355ecd743390c6ad6e400c62b44d14015602818aebc47d0984e6ea65",
+    "3795abb43": "9e9f0efd355ecd743390c6ad6e400c62b44d14015602818aebc47d0984e6ea65",
+    "HEAD": "9e9f0efd355ecd743390c6ad6e400c62b44d14015602818aebc47d0984e6ea65",
+    "origin/master": "9e9f0efd355ecd743390c6ad6e400c62b44d14015602818aebc47d0984e6ea65",
+    "origin/octoberBranch": "9e9f0efd355ecd743390c6ad6e400c62b44d14015602818aebc47d0984e6ea65",
+    "working_tree": "9e9f0efd355ecd743390c6ad6e400c62b44d14015602818aebc47d0984e6ea65"
+  },
+  {
+    "path": "web/lib/rosterScheduleOptimizer/benchDecisions.ts",
+    "pin": "d18ad04836325a255843730afe37b2e5a9761b8fc5dc10013a853e177ca91b4d",
+    "3795abb43": "d18ad04836325a255843730afe37b2e5a9761b8fc5dc10013a853e177ca91b4d",
+    "HEAD": "d18ad04836325a255843730afe37b2e5a9761b8fc5dc10013a853e177ca91b4d",
+    "origin/master": "d18ad04836325a255843730afe37b2e5a9761b8fc5dc10013a853e177ca91b4d",
+    "origin/octoberBranch": "d18ad04836325a255843730afe37b2e5a9761b8fc5dc10013a853e177ca91b4d",
+    "working_tree": "d18ad04836325a255843730afe37b2e5a9761b8fc5dc10013a853e177ca91b4d"
+  },
+  {
+    "path": "web/lib/rosterScheduleOptimizer/candidatePlanMetrics.test.ts",
+    "pin": "6830e4a75a1ded1a5e5fc3a4b3c7a01ef6ae9fa5b9a0b5678a5af97066cb4ce2",
+    "3795abb43": "6830e4a75a1ded1a5e5fc3a4b3c7a01ef6ae9fa5b9a0b5678a5af97066cb4ce2",
+    "HEAD": "6830e4a75a1ded1a5e5fc3a4b3c7a01ef6ae9fa5b9a0b5678a5af97066cb4ce2",
+    "origin/master": "6830e4a75a1ded1a5e5fc3a4b3c7a01ef6ae9fa5b9a0b5678a5af97066cb4ce2",
+    "origin/octoberBranch": "6830e4a75a1ded1a5e5fc3a4b3c7a01ef6ae9fa5b9a0b5678a5af97066cb4ce2",
+    "working_tree": "6830e4a75a1ded1a5e5fc3a4b3c7a01ef6ae9fa5b9a0b5678a5af97066cb4ce2"
+  },
+  {
+    "path": "web/lib/rosterScheduleOptimizer/candidatePlanMetrics.ts",
+    "pin": "30acc638e6019650dbe7c53b7a443c9670be8fdea54b38e7e56027e9e4883b90",
+    "3795abb43": "30acc638e6019650dbe7c53b7a443c9670be8fdea54b38e7e56027e9e4883b90",
+    "HEAD": "30acc638e6019650dbe7c53b7a443c9670be8fdea54b38e7e56027e9e4883b90",
+    "origin/master": "30acc638e6019650dbe7c53b7a443c9670be8fdea54b38e7e56027e9e4883b90",
+    "origin/octoberBranch": "30acc638e6019650dbe7c53b7a443c9670be8fdea54b38e7e56027e9e4883b90",
+    "working_tree": "30acc638e6019650dbe7c53b7a443c9670be8fdea54b38e7e56027e9e4883b90"
+  },
+  {
+    "path": "web/lib/rosterScheduleOptimizer/categoryFormat.ts",
+    "pin": "292d058b429eb1403b266607772a585d7419a34020a710a20a30e06dac465c96",
+    "3795abb43": "292d058b429eb1403b266607772a585d7419a34020a710a20a30e06dac465c96",
+    "HEAD": "292d058b429eb1403b266607772a585d7419a34020a710a20a30e06dac465c96",
+    "origin/master": "292d058b429eb1403b266607772a585d7419a34020a710a20a30e06dac465c96",
+    "origin/octoberBranch": "292d058b429eb1403b266607772a585d7419a34020a710a20a30e06dac465c96",
+    "working_tree": "292d058b429eb1403b266607772a585d7419a34020a710a20a30e06dac465c96"
+  },
+  {
+    "path": "web/lib/rosterScheduleOptimizer/contributionLedger.test.ts",
+    "pin": "64461f061b5d26a0c278f71f0a49a5d854de7c8673a2c592141f53daf51c3250",
+    "3795abb43": "64461f061b5d26a0c278f71f0a49a5d854de7c8673a2c592141f53daf51c3250",
+    "HEAD": "64461f061b5d26a0c278f71f0a49a5d854de7c8673a2c592141f53daf51c3250",
+    "origin/master": "64461f061b5d26a0c278f71f0a49a5d854de7c8673a2c592141f53daf51c3250",
+    "origin/octoberBranch": "64461f061b5d26a0c278f71f0a49a5d854de7c8673a2c592141f53daf51c3250",
+    "working_tree": "64461f061b5d26a0c278f71f0a49a5d854de7c8673a2c592141f53daf51c3250"
+  },
+  {
+    "path": "web/lib/rosterScheduleOptimizer/contributionLedger.ts",
+    "pin": "27c3a2242e1781a878a4c90963bc4b7c248a88e692e8eaed64061598ca42e6a5",
+    "3795abb43": "27c3a2242e1781a878a4c90963bc4b7c248a88e692e8eaed64061598ca42e6a5",
+    "HEAD": "27c3a2242e1781a878a4c90963bc4b7c248a88e692e8eaed64061598ca42e6a5",
+    "origin/master": "27c3a2242e1781a878a4c90963bc4b7c248a88e692e8eaed64061598ca42e6a5",
+    "origin/octoberBranch": "27c3a2242e1781a878a4c90963bc4b7c248a88e692e8eaed64061598ca42e6a5",
+    "working_tree": "27c3a2242e1781a878a4c90963bc4b7c248a88e692e8eaed64061598ca42e6a5"
+  },
+  {
+    "path": "web/lib/rosterScheduleOptimizer/currentPlanningRead.ts",
+    "pin": "e54bbb13d53a67400716fa329d90ab8f20e3c98c564a932f4f3224b71bf76adf",
+    "3795abb43": "e54bbb13d53a67400716fa329d90ab8f20e3c98c564a932f4f3224b71bf76adf",
+    "HEAD": "e54bbb13d53a67400716fa329d90ab8f20e3c98c564a932f4f3224b71bf76adf",
+    "origin/master": "e54bbb13d53a67400716fa329d90ab8f20e3c98c564a932f4f3224b71bf76adf",
+    "origin/octoberBranch": "e54bbb13d53a67400716fa329d90ab8f20e3c98c564a932f4f3224b71bf76adf",
+    "working_tree": "e54bbb13d53a67400716fa329d90ab8f20e3c98c564a932f4f3224b71bf76adf"
+  },
+  {
+    "path": "web/lib/rosterScheduleOptimizer/dailyAcceptance.manual.test.ts",
+    "pin": "52e448f45e7a99eac2455cd0faa4f3e33f632592d0dad86ddaa4af44bb20ae2b",
+    "3795abb43": "52e448f45e7a99eac2455cd0faa4f3e33f632592d0dad86ddaa4af44bb20ae2b",
+    "HEAD": "52e448f45e7a99eac2455cd0faa4f3e33f632592d0dad86ddaa4af44bb20ae2b",
+    "origin/master": "52e448f45e7a99eac2455cd0faa4f3e33f632592d0dad86ddaa4af44bb20ae2b",
+    "origin/octoberBranch": "52e448f45e7a99eac2455cd0faa4f3e33f632592d0dad86ddaa4af44bb20ae2b",
+    "working_tree": "52e448f45e7a99eac2455cd0faa4f3e33f632592d0dad86ddaa4af44bb20ae2b"
+  },
+  {
+    "path": "web/lib/rosterScheduleOptimizer/dailyAcceptance.yahoo.test.ts",
+    "pin": "207007ae2c721d3c08fd276e39ed50cd2c480e94e2815a9a4914fd1189ba1886",
+    "3795abb43": "207007ae2c721d3c08fd276e39ed50cd2c480e94e2815a9a4914fd1189ba1886",
+    "HEAD": "207007ae2c721d3c08fd276e39ed50cd2c480e94e2815a9a4914fd1189ba1886",
+    "origin/master": "207007ae2c721d3c08fd276e39ed50cd2c480e94e2815a9a4914fd1189ba1886",
+    "origin/octoberBranch": "207007ae2c721d3c08fd276e39ed50cd2c480e94e2815a9a4914fd1189ba1886",
+    "working_tree": "207007ae2c721d3c08fd276e39ed50cd2c480e94e2815a9a4914fd1189ba1886"
+  },
+  {
+    "path": "web/lib/rosterScheduleOptimizer/dailyDecisionReplay.test.ts",
+    "pin": "366c1e2bcd32fbb357f73a17f14b01b950c0e4589a3b73cce03cf98e7cfc0ec7",
+    "3795abb43": "366c1e2bcd32fbb357f73a17f14b01b950c0e4589a3b73cce03cf98e7cfc0ec7",
+    "HEAD": "366c1e2bcd32fbb357f73a17f14b01b950c0e4589a3b73cce03cf98e7cfc0ec7",
+    "origin/master": "366c1e2bcd32fbb357f73a17f14b01b950c0e4589a3b73cce03cf98e7cfc0ec7",
+    "origin/octoberBranch": "366c1e2bcd32fbb357f73a17f14b01b950c0e4589a3b73cce03cf98e7cfc0ec7",
+    "working_tree": "366c1e2bcd32fbb357f73a17f14b01b950c0e4589a3b73cce03cf98e7cfc0ec7"
+  },
+  {
+    "path": "web/lib/rosterScheduleOptimizer/diagnostic.test.ts",
+    "pin": "3b711619fb017bb3e39e957a5f8b5a02e608e2af12d83310e1ee38ab50b2232a",
+    "3795abb43": "3b711619fb017bb3e39e957a5f8b5a02e608e2af12d83310e1ee38ab50b2232a",
+    "HEAD": "3b711619fb017bb3e39e957a5f8b5a02e608e2af12d83310e1ee38ab50b2232a",
+    "origin/master": "3b711619fb017bb3e39e957a5f8b5a02e608e2af12d83310e1ee38ab50b2232a",
+    "origin/octoberBranch": "3b711619fb017bb3e39e957a5f8b5a02e608e2af12d83310e1ee38ab50b2232a",
+    "working_tree": "3b711619fb017bb3e39e957a5f8b5a02e608e2af12d83310e1ee38ab50b2232a"
+  },
+  {
+    "path": "web/lib/rosterScheduleOptimizer/diagnostic.ts",
+    "pin": "c9c8d0343942bfd7919ac126a86d3995f0ac78aff2dc18daf83f72e104e05af8",
+    "3795abb43": "c9c8d0343942bfd7919ac126a86d3995f0ac78aff2dc18daf83f72e104e05af8",
+    "HEAD": "c9c8d0343942bfd7919ac126a86d3995f0ac78aff2dc18daf83f72e104e05af8",
+    "origin/master": "c9c8d0343942bfd7919ac126a86d3995f0ac78aff2dc18daf83f72e104e05af8",
+    "origin/octoberBranch": "c9c8d0343942bfd7919ac126a86d3995f0ac78aff2dc18daf83f72e104e05af8",
+    "working_tree": "c9c8d0343942bfd7919ac126a86d3995f0ac78aff2dc18daf83f72e104e05af8"
+  },
+  {
+    "path": "web/lib/rosterScheduleOptimizer/eligibility.ts",
+    "pin": "12fc37330981b2171ee34014ae47a1d0a58a74bae4bfbb1441576018dce8482b",
+    "3795abb43": "12fc37330981b2171ee34014ae47a1d0a58a74bae4bfbb1441576018dce8482b",
+    "HEAD": "12fc37330981b2171ee34014ae47a1d0a58a74bae4bfbb1441576018dce8482b",
+    "origin/master": "12fc37330981b2171ee34014ae47a1d0a58a74bae4bfbb1441576018dce8482b",
+    "origin/octoberBranch": "12fc37330981b2171ee34014ae47a1d0a58a74bae4bfbb1441576018dce8482b",
+    "working_tree": "12fc37330981b2171ee34014ae47a1d0a58a74bae4bfbb1441576018dce8482b"
+  },
+  {
+    "path": "web/lib/rosterScheduleOptimizer/executionAdapter.test.ts",
+    "pin": "6e45fb8c8d3344e99d162f6a5ef19050aebef6cf143d7f0d847d36c82a999982",
+    "3795abb43": "6e45fb8c8d3344e99d162f6a5ef19050aebef6cf143d7f0d847d36c82a999982",
+    "HEAD": "6e45fb8c8d3344e99d162f6a5ef19050aebef6cf143d7f0d847d36c82a999982",
+    "origin/master": "6e45fb8c8d3344e99d162f6a5ef19050aebef6cf143d7f0d847d36c82a999982",
+    "origin/octoberBranch": "6e45fb8c8d3344e99d162f6a5ef19050aebef6cf143d7f0d847d36c82a999982",
+    "working_tree": "6e45fb8c8d3344e99d162f6a5ef19050aebef6cf143d7f0d847d36c82a999982"
+  },
+  {
+    "path": "web/lib/rosterScheduleOptimizer/executionAdapter.ts",
+    "pin": "1d828365e56b2b0dd052e1bbaf95da25ca3d1a09769279df525cd58b90aedfda",
+    "3795abb43": "1d828365e56b2b0dd052e1bbaf95da25ca3d1a09769279df525cd58b90aedfda",
+    "HEAD": "1d828365e56b2b0dd052e1bbaf95da25ca3d1a09769279df525cd58b90aedfda",
+    "origin/master": "1d828365e56b2b0dd052e1bbaf95da25ca3d1a09769279df525cd58b90aedfda",
+    "origin/octoberBranch": "1d828365e56b2b0dd052e1bbaf95da25ca3d1a09769279df525cd58b90aedfda",
+    "working_tree": "1d828365e56b2b0dd052e1bbaf95da25ca3d1a09769279df525cd58b90aedfda"
+  },
+  {
+    "path": "web/lib/rosterScheduleOptimizer/gameForecastPoints.test.ts",
+    "pin": "932bae6895f65b1a83b5eea20fca7bcebdf5136c719108bf16d6cc27246cbfb6",
+    "3795abb43": "932bae6895f65b1a83b5eea20fca7bcebdf5136c719108bf16d6cc27246cbfb6",
+    "HEAD": "932bae6895f65b1a83b5eea20fca7bcebdf5136c719108bf16d6cc27246cbfb6",
+    "origin/master": "932bae6895f65b1a83b5eea20fca7bcebdf5136c719108bf16d6cc27246cbfb6",
+    "origin/octoberBranch": "932bae6895f65b1a83b5eea20fca7bcebdf5136c719108bf16d6cc27246cbfb6",
+    "working_tree": "932bae6895f65b1a83b5eea20fca7bcebdf5136c719108bf16d6cc27246cbfb6"
+  },
+  {
+    "path": "web/lib/rosterScheduleOptimizer/healthyReserves.test.ts",
+    "pin": "db2b03b90633e1b8ba33729f08acc9813e5909f66e68ff7fead869f067519696",
+    "3795abb43": "db2b03b90633e1b8ba33729f08acc9813e5909f66e68ff7fead869f067519696",
+    "HEAD": "db2b03b90633e1b8ba33729f08acc9813e5909f66e68ff7fead869f067519696",
+    "origin/master": "db2b03b90633e1b8ba33729f08acc9813e5909f66e68ff7fead869f067519696",
+    "origin/octoberBranch": "db2b03b90633e1b8ba33729f08acc9813e5909f66e68ff7fead869f067519696",
+    "working_tree": "db2b03b90633e1b8ba33729f08acc9813e5909f66e68ff7fead869f067519696"
+  },
+  {
+    "path": "web/lib/rosterScheduleOptimizer/healthyReserves.ts",
+    "pin": "ae286a0c538e1c1ad483db751bc2c69edb13e299072327aaa6c4b24cde3e89b9",
+    "3795abb43": "ae286a0c538e1c1ad483db751bc2c69edb13e299072327aaa6c4b24cde3e89b9",
+    "HEAD": "ae286a0c538e1c1ad483db751bc2c69edb13e299072327aaa6c4b24cde3e89b9",
+    "origin/master": "ae286a0c538e1c1ad483db751bc2c69edb13e299072327aaa6c4b24cde3e89b9",
+    "origin/octoberBranch": "ae286a0c538e1c1ad483db751bc2c69edb13e299072327aaa6c4b24cde3e89b9",
+    "working_tree": "ae286a0c538e1c1ad483db751bc2c69edb13e299072327aaa6c4b24cde3e89b9"
+  },
+  {
+    "path": "web/lib/rosterScheduleOptimizer/index.ts",
+    "pin": "ad59070e58aeee9df5175ec5110cfb748f28637f9ad5d047a342ae9c43b6198f",
+    "3795abb43": "ad59070e58aeee9df5175ec5110cfb748f28637f9ad5d047a342ae9c43b6198f",
+    "HEAD": "ad59070e58aeee9df5175ec5110cfb748f28637f9ad5d047a342ae9c43b6198f",
+    "origin/master": "ad59070e58aeee9df5175ec5110cfb748f28637f9ad5d047a342ae9c43b6198f",
+    "origin/octoberBranch": "ad59070e58aeee9df5175ec5110cfb748f28637f9ad5d047a342ae9c43b6198f",
+    "working_tree": "ad59070e58aeee9df5175ec5110cfb748f28637f9ad5d047a342ae9c43b6198f"
+  },
+  {
+    "path": "web/lib/rosterScheduleOptimizer/lineupGaps.test.ts",
+    "pin": "390e19f2029c95d0f8115dfacf5fd9f8150247216ea3de2b61c8f29c2b0f8c8f",
+    "3795abb43": "390e19f2029c95d0f8115dfacf5fd9f8150247216ea3de2b61c8f29c2b0f8c8f",
+    "HEAD": "390e19f2029c95d0f8115dfacf5fd9f8150247216ea3de2b61c8f29c2b0f8c8f",
+    "origin/master": "390e19f2029c95d0f8115dfacf5fd9f8150247216ea3de2b61c8f29c2b0f8c8f",
+    "origin/octoberBranch": "390e19f2029c95d0f8115dfacf5fd9f8150247216ea3de2b61c8f29c2b0f8c8f",
+    "working_tree": "390e19f2029c95d0f8115dfacf5fd9f8150247216ea3de2b61c8f29c2b0f8c8f"
+  },
+  {
+    "path": "web/lib/rosterScheduleOptimizer/lineupGaps.ts",
+    "pin": "ac25446d63b3343b5b826052b7609da86ba9529ed56ce7637c88bd65ea608646",
+    "3795abb43": "ac25446d63b3343b5b826052b7609da86ba9529ed56ce7637c88bd65ea608646",
+    "HEAD": "ac25446d63b3343b5b826052b7609da86ba9529ed56ce7637c88bd65ea608646",
+    "origin/master": "ac25446d63b3343b5b826052b7609da86ba9529ed56ce7637c88bd65ea608646",
+    "origin/octoberBranch": "ac25446d63b3343b5b826052b7609da86ba9529ed56ce7637c88bd65ea608646",
+    "working_tree": "ac25446d63b3343b5b826052b7609da86ba9529ed56ce7637c88bd65ea608646"
+  },
+  {
+    "path": "web/lib/rosterScheduleOptimizer/matching.ts",
+    "pin": "5b11305f6d24cb70a1b886e380f5e088f2221a0a925705e3b805acbd4a39e9be",
+    "3795abb43": "5b11305f6d24cb70a1b886e380f5e088f2221a0a925705e3b805acbd4a39e9be",
+    "HEAD": "5b11305f6d24cb70a1b886e380f5e088f2221a0a925705e3b805acbd4a39e9be",
+    "origin/master": "5b11305f6d24cb70a1b886e380f5e088f2221a0a925705e3b805acbd4a39e9be",
+    "origin/octoberBranch": "5b11305f6d24cb70a1b886e380f5e088f2221a0a925705e3b805acbd4a39e9be",
+    "working_tree": "5b11305f6d24cb70a1b886e380f5e088f2221a0a925705e3b805acbd4a39e9be"
+  },
+  {
+    "path": "web/lib/rosterScheduleOptimizer/optimizer.test.ts",
+    "pin": "89fd71319c28fdbc8cf4d773bee136f9580d2c8a3d8425e1470154dbf7f1f40f",
+    "3795abb43": "89fd71319c28fdbc8cf4d773bee136f9580d2c8a3d8425e1470154dbf7f1f40f",
+    "HEAD": "89fd71319c28fdbc8cf4d773bee136f9580d2c8a3d8425e1470154dbf7f1f40f",
+    "origin/master": "89fd71319c28fdbc8cf4d773bee136f9580d2c8a3d8425e1470154dbf7f1f40f",
+    "origin/octoberBranch": "89fd71319c28fdbc8cf4d773bee136f9580d2c8a3d8425e1470154dbf7f1f40f",
+    "working_tree": "89fd71319c28fdbc8cf4d773bee136f9580d2c8a3d8425e1470154dbf7f1f40f"
+  },
+  {
+    "path": "web/lib/rosterScheduleOptimizer/optimizer.ts",
+    "pin": "66418a4988bf5fe5cc955a7ea2bd2c02e4ff41b4893b0043792ded7cb51ead63",
+    "3795abb43": "66418a4988bf5fe5cc955a7ea2bd2c02e4ff41b4893b0043792ded7cb51ead63",
+    "HEAD": "66418a4988bf5fe5cc955a7ea2bd2c02e4ff41b4893b0043792ded7cb51ead63",
+    "origin/master": "66418a4988bf5fe5cc955a7ea2bd2c02e4ff41b4893b0043792ded7cb51ead63",
+    "origin/octoberBranch": "66418a4988bf5fe5cc955a7ea2bd2c02e4ff41b4893b0043792ded7cb51ead63",
+    "working_tree": "66418a4988bf5fe5cc955a7ea2bd2c02e4ff41b4893b0043792ded7cb51ead63"
+  },
+  {
+    "path": "web/lib/rosterScheduleOptimizer/periodBoundaries.test.ts",
+    "pin": "a2e4ed8f4eab1fe63fb21030d2c8ec45657a0fdcd9808ce291edb530f1d9bffc",
+    "3795abb43": "a2e4ed8f4eab1fe63fb21030d2c8ec45657a0fdcd9808ce291edb530f1d9bffc",
+    "HEAD": "a2e4ed8f4eab1fe63fb21030d2c8ec45657a0fdcd9808ce291edb530f1d9bffc",
+    "origin/master": "a2e4ed8f4eab1fe63fb21030d2c8ec45657a0fdcd9808ce291edb530f1d9bffc",
+    "origin/octoberBranch": "a2e4ed8f4eab1fe63fb21030d2c8ec45657a0fdcd9808ce291edb530f1d9bffc",
+    "working_tree": "a2e4ed8f4eab1fe63fb21030d2c8ec45657a0fdcd9808ce291edb530f1d9bffc"
+  },
+  {
+    "path": "web/lib/rosterScheduleOptimizer/periodBoundaries.ts",
+    "pin": "0e777c8af2b61ebe68b00818ccb89627dd25a79aa6aa93da3c100dada2ba9bbc",
+    "3795abb43": "0e777c8af2b61ebe68b00818ccb89627dd25a79aa6aa93da3c100dada2ba9bbc",
+    "HEAD": "0e777c8af2b61ebe68b00818ccb89627dd25a79aa6aa93da3c100dada2ba9bbc",
+    "origin/master": "0e777c8af2b61ebe68b00818ccb89627dd25a79aa6aa93da3c100dada2ba9bbc",
+    "origin/octoberBranch": "0e777c8af2b61ebe68b00818ccb89627dd25a79aa6aa93da3c100dada2ba9bbc",
+    "working_tree": "0e777c8af2b61ebe68b00818ccb89627dd25a79aa6aa93da3c100dada2ba9bbc"
+  },
+  {
+    "path": "web/lib/rosterScheduleOptimizer/planning.test.ts",
+    "pin": "56a5bba9454e57ded5d6cd85dae46391a31db6ca210c655bdce568d7ce9a33ee",
+    "3795abb43": "56a5bba9454e57ded5d6cd85dae46391a31db6ca210c655bdce568d7ce9a33ee",
+    "HEAD": "56a5bba9454e57ded5d6cd85dae46391a31db6ca210c655bdce568d7ce9a33ee",
+    "origin/master": "56a5bba9454e57ded5d6cd85dae46391a31db6ca210c655bdce568d7ce9a33ee",
+    "origin/octoberBranch": "56a5bba9454e57ded5d6cd85dae46391a31db6ca210c655bdce568d7ce9a33ee",
+    "working_tree": "56a5bba9454e57ded5d6cd85dae46391a31db6ca210c655bdce568d7ce9a33ee"
+  },
+  {
+    "path": "web/lib/rosterScheduleOptimizer/planning.ts",
+    "pin": "d68bd7d091fd5e94bf622c08453ff735909b8a72e89a0e477f3d8d27bbac6d00",
+    "3795abb43": "d68bd7d091fd5e94bf622c08453ff735909b8a72e89a0e477f3d8d27bbac6d00",
+    "HEAD": "d68bd7d091fd5e94bf622c08453ff735909b8a72e89a0e477f3d8d27bbac6d00",
+    "origin/master": "d68bd7d091fd5e94bf622c08453ff735909b8a72e89a0e477f3d8d27bbac6d00",
+    "origin/octoberBranch": "d68bd7d091fd5e94bf622c08453ff735909b8a72e89a0e477f3d8d27bbac6d00",
+    "working_tree": "d68bd7d091fd5e94bf622c08453ff735909b8a72e89a0e477f3d8d27bbac6d00"
+  },
+  {
+    "path": "web/lib/rosterScheduleOptimizer/planningDates.ts",
+    "pin": "b1d7454aad1238671be337b64120e33f2331ef2f8261e390d52b5ac17d9dd4c8",
+    "3795abb43": "b1d7454aad1238671be337b64120e33f2331ef2f8261e390d52b5ac17d9dd4c8",
+    "HEAD": "b1d7454aad1238671be337b64120e33f2331ef2f8261e390d52b5ac17d9dd4c8",
+    "origin/master": "b1d7454aad1238671be337b64120e33f2331ef2f8261e390d52b5ac17d9dd4c8",
+    "origin/octoberBranch": "b1d7454aad1238671be337b64120e33f2331ef2f8261e390d52b5ac17d9dd4c8",
+    "working_tree": "b1d7454aad1238671be337b64120e33f2331ef2f8261e390d52b5ac17d9dd4c8"
+  },
+  {
+    "path": "web/lib/rosterScheduleOptimizer/planningReproducibility.test.ts",
+    "pin": "dc4e9bcacd4e5ece49d8a26469b61af7c7005275a69a1b6f27e4ba8cd5fbf60c",
+    "3795abb43": "dc4e9bcacd4e5ece49d8a26469b61af7c7005275a69a1b6f27e4ba8cd5fbf60c",
+    "HEAD": "dc4e9bcacd4e5ece49d8a26469b61af7c7005275a69a1b6f27e4ba8cd5fbf60c",
+    "origin/master": "dc4e9bcacd4e5ece49d8a26469b61af7c7005275a69a1b6f27e4ba8cd5fbf60c",
+    "origin/octoberBranch": "dc4e9bcacd4e5ece49d8a26469b61af7c7005275a69a1b6f27e4ba8cd5fbf60c",
+    "working_tree": "dc4e9bcacd4e5ece49d8a26469b61af7c7005275a69a1b6f27e4ba8cd5fbf60c"
+  },
+  {
+    "path": "web/lib/rosterScheduleOptimizer/planningTimeline.ts",
+    "pin": "264f95a4a37ed618372650e61893e3f80f070f64a14d63d6418cf329fb519eb2",
+    "3795abb43": "264f95a4a37ed618372650e61893e3f80f070f64a14d63d6418cf329fb519eb2",
+    "HEAD": "264f95a4a37ed618372650e61893e3f80f070f64a14d63d6418cf329fb519eb2",
+    "origin/master": "264f95a4a37ed618372650e61893e3f80f070f64a14d63d6418cf329fb519eb2",
+    "origin/octoberBranch": "264f95a4a37ed618372650e61893e3f80f070f64a14d63d6418cf329fb519eb2",
+    "working_tree": "264f95a4a37ed618372650e61893e3f80f070f64a14d63d6418cf329fb519eb2"
+  },
+  {
+    "path": "web/lib/rosterScheduleOptimizer/planningTypes.ts",
+    "pin": "9b47521c85e102e9387adafa132cedd596d9ef7aec3aeb2aaec81d347009e8a2",
+    "3795abb43": "9b47521c85e102e9387adafa132cedd596d9ef7aec3aeb2aaec81d347009e8a2",
+    "HEAD": "9b47521c85e102e9387adafa132cedd596d9ef7aec3aeb2aaec81d347009e8a2",
+    "origin/master": "9b47521c85e102e9387adafa132cedd596d9ef7aec3aeb2aaec81d347009e8a2",
+    "origin/octoberBranch": "9b47521c85e102e9387adafa132cedd596d9ef7aec3aeb2aaec81d347009e8a2",
+    "working_tree": "9b47521c85e102e9387adafa132cedd596d9ef7aec3aeb2aaec81d347009e8a2"
+  },
+  {
+    "path": "web/lib/rosterScheduleOptimizer/privatePlanningRead.ts",
+    "pin": "59817ba72f6db530b8da8498e027614bdfb352ec9af8e86816601cfc99ba5e69",
+    "3795abb43": "59817ba72f6db530b8da8498e027614bdfb352ec9af8e86816601cfc99ba5e69",
+    "HEAD": "59817ba72f6db530b8da8498e027614bdfb352ec9af8e86816601cfc99ba5e69",
+    "origin/master": "59817ba72f6db530b8da8498e027614bdfb352ec9af8e86816601cfc99ba5e69",
+    "origin/octoberBranch": "59817ba72f6db530b8da8498e027614bdfb352ec9af8e86816601cfc99ba5e69",
+    "working_tree": "59817ba72f6db530b8da8498e027614bdfb352ec9af8e86816601cfc99ba5e69"
+  },
+  {
+    "path": "web/lib/rosterScheduleOptimizer/providerGoalieStarts.test.ts",
+    "pin": "a64083dba8281770327c8f438c8c9a1c2a01809ae3b86ab4e750e85bd71fa00b",
+    "3795abb43": "a64083dba8281770327c8f438c8c9a1c2a01809ae3b86ab4e750e85bd71fa00b",
+    "HEAD": "a64083dba8281770327c8f438c8c9a1c2a01809ae3b86ab4e750e85bd71fa00b",
+    "origin/master": "a64083dba8281770327c8f438c8c9a1c2a01809ae3b86ab4e750e85bd71fa00b",
+    "origin/octoberBranch": "a64083dba8281770327c8f438c8c9a1c2a01809ae3b86ab4e750e85bd71fa00b",
+    "working_tree": "a64083dba8281770327c8f438c8c9a1c2a01809ae3b86ab4e750e85bd71fa00b"
+  },
+  {
+    "path": "web/lib/rosterScheduleOptimizer/providerGoalieStarts.ts",
+    "pin": "a5e86e0b12ef6ca3d056f9811e3de81b991130b0edee807181a44c745f33032b",
+    "3795abb43": "a5e86e0b12ef6ca3d056f9811e3de81b991130b0edee807181a44c745f33032b",
+    "HEAD": "a5e86e0b12ef6ca3d056f9811e3de81b991130b0edee807181a44c745f33032b",
+    "origin/master": "a5e86e0b12ef6ca3d056f9811e3de81b991130b0edee807181a44c745f33032b",
+    "origin/octoberBranch": "a5e86e0b12ef6ca3d056f9811e3de81b991130b0edee807181a44c745f33032b",
+    "working_tree": "a5e86e0b12ef6ca3d056f9811e3de81b991130b0edee807181a44c745f33032b"
+  },
+  {
+    "path": "web/lib/rosterScheduleOptimizer/providerRules.test.ts",
+    "pin": "9f455696eb2ee57292c6a975f389f814e4ff1d9822633de594c53efffbaa34a6",
+    "3795abb43": "9f455696eb2ee57292c6a975f389f814e4ff1d9822633de594c53efffbaa34a6",
+    "HEAD": "9f455696eb2ee57292c6a975f389f814e4ff1d9822633de594c53efffbaa34a6",
+    "origin/master": "e386b3fa4063086d4ea378582e4b78d2c94b8c6f768dc092549abc4939d720ef",
+    "origin/octoberBranch": "e386b3fa4063086d4ea378582e4b78d2c94b8c6f768dc092549abc4939d720ef",
+    "working_tree": "9f455696eb2ee57292c6a975f389f814e4ff1d9822633de594c53efffbaa34a6"
+  },
+  {
+    "path": "web/lib/rosterScheduleOptimizer/providerRules.ts",
+    "pin": "e3774305d8f77d38966b64eda2c49c33789e9d9fd9fb66281389a77a8475cace",
+    "3795abb43": "e3774305d8f77d38966b64eda2c49c33789e9d9fd9fb66281389a77a8475cace",
+    "HEAD": "e3774305d8f77d38966b64eda2c49c33789e9d9fd9fb66281389a77a8475cace",
+    "origin/master": "c78853d6e8b7a5ebbe134610e3818c8e697635ce1d63de6819df13a9f4d6e26b",
+    "origin/octoberBranch": "c78853d6e8b7a5ebbe134610e3818c8e697635ce1d63de6819df13a9f4d6e26b",
+    "working_tree": "e3774305d8f77d38966b64eda2c49c33789e9d9fd9fb66281389a77a8475cace"
+  },
+  {
+    "path": "web/lib/rosterScheduleOptimizer/recommendations.ts",
+    "pin": "1acf9c18577f2e60f91816a8063ec7ea33762a885f7b163e521bc40768052ea2",
+    "3795abb43": "1acf9c18577f2e60f91816a8063ec7ea33762a885f7b163e521bc40768052ea2",
+    "HEAD": "1acf9c18577f2e60f91816a8063ec7ea33762a885f7b163e521bc40768052ea2",
+    "origin/master": "1acf9c18577f2e60f91816a8063ec7ea33762a885f7b163e521bc40768052ea2",
+    "origin/octoberBranch": "1acf9c18577f2e60f91816a8063ec7ea33762a885f7b163e521bc40768052ea2",
+    "working_tree": "1acf9c18577f2e60f91816a8063ec7ea33762a885f7b163e521bc40768052ea2"
+  },
+  {
+    "path": "web/lib/rosterScheduleOptimizer/reconciliation.test.ts",
+    "pin": "775393b4c3e2131f1257396e75253f4aea4f6fda21313b67be728645ba3a9d61",
+    "3795abb43": "775393b4c3e2131f1257396e75253f4aea4f6fda21313b67be728645ba3a9d61",
+    "HEAD": "775393b4c3e2131f1257396e75253f4aea4f6fda21313b67be728645ba3a9d61",
+    "origin/master": "775393b4c3e2131f1257396e75253f4aea4f6fda21313b67be728645ba3a9d61",
+    "origin/octoberBranch": "775393b4c3e2131f1257396e75253f4aea4f6fda21313b67be728645ba3a9d61",
+    "working_tree": "775393b4c3e2131f1257396e75253f4aea4f6fda21313b67be728645ba3a9d61"
+  },
+  {
+    "path": "web/lib/rosterScheduleOptimizer/reconciliation.ts",
+    "pin": "d3e27bc0fd9ed8dce1bc85ecc9382fccfe0ee83516505bf4f2bbb91dba0bb57a",
+    "3795abb43": "d3e27bc0fd9ed8dce1bc85ecc9382fccfe0ee83516505bf4f2bbb91dba0bb57a",
+    "HEAD": "d3e27bc0fd9ed8dce1bc85ecc9382fccfe0ee83516505bf4f2bbb91dba0bb57a",
+    "origin/master": "d3e27bc0fd9ed8dce1bc85ecc9382fccfe0ee83516505bf4f2bbb91dba0bb57a",
+    "origin/octoberBranch": "d3e27bc0fd9ed8dce1bc85ecc9382fccfe0ee83516505bf4f2bbb91dba0bb57a",
+    "working_tree": "d3e27bc0fd9ed8dce1bc85ecc9382fccfe0ee83516505bf4f2bbb91dba0bb57a"
+  },
+  {
+    "path": "web/lib/rosterScheduleOptimizer/refreshForecastInputs.test.ts",
+    "pin": "ea0c2efe67468ef6a5be24364fd649bf682685f1a4ea36031fff1f095b880d9c",
+    "3795abb43": "ea0c2efe67468ef6a5be24364fd649bf682685f1a4ea36031fff1f095b880d9c",
+    "HEAD": "ea0c2efe67468ef6a5be24364fd649bf682685f1a4ea36031fff1f095b880d9c",
+    "origin/master": "ea0c2efe67468ef6a5be24364fd649bf682685f1a4ea36031fff1f095b880d9c",
+    "origin/octoberBranch": "ea0c2efe67468ef6a5be24364fd649bf682685f1a4ea36031fff1f095b880d9c",
+    "working_tree": "ea0c2efe67468ef6a5be24364fd649bf682685f1a4ea36031fff1f095b880d9c"
+  },
+  {
+    "path": "web/lib/rosterScheduleOptimizer/refreshForecastInputs.ts",
+    "pin": "a77283cfdced008068f95cebb0dcc40315c70595cd28f8e55a0577d06384a594",
+    "3795abb43": "a77283cfdced008068f95cebb0dcc40315c70595cd28f8e55a0577d06384a594",
+    "HEAD": "a77283cfdced008068f95cebb0dcc40315c70595cd28f8e55a0577d06384a594",
+    "origin/master": "a77283cfdced008068f95cebb0dcc40315c70595cd28f8e55a0577d06384a594",
+    "origin/octoberBranch": "a77283cfdced008068f95cebb0dcc40315c70595cd28f8e55a0577d06384a594",
+    "working_tree": "a77283cfdced008068f95cebb0dcc40315c70595cd28f8e55a0577d06384a594"
+  },
+  {
+    "path": "web/lib/rosterScheduleOptimizer/retention.test.ts",
+    "pin": "baeeaeef625fe4e3f3e2b77bae5a7d8939b0994c247ae2e607f7fb13743ace89",
+    "3795abb43": "baeeaeef625fe4e3f3e2b77bae5a7d8939b0994c247ae2e607f7fb13743ace89",
+    "HEAD": "baeeaeef625fe4e3f3e2b77bae5a7d8939b0994c247ae2e607f7fb13743ace89",
+    "origin/master": "baeeaeef625fe4e3f3e2b77bae5a7d8939b0994c247ae2e607f7fb13743ace89",
+    "origin/octoberBranch": "baeeaeef625fe4e3f3e2b77bae5a7d8939b0994c247ae2e607f7fb13743ace89",
+    "working_tree": "baeeaeef625fe4e3f3e2b77bae5a7d8939b0994c247ae2e607f7fb13743ace89"
+  },
+  {
+    "path": "web/lib/rosterScheduleOptimizer/retention.ts",
+    "pin": "f6a6b1fdb53879c4da06a67dd0d469d0dc444fc2472777b941a94a672f6e6c7a",
+    "3795abb43": "f6a6b1fdb53879c4da06a67dd0d469d0dc444fc2472777b941a94a672f6e6c7a",
+    "HEAD": "f6a6b1fdb53879c4da06a67dd0d469d0dc444fc2472777b941a94a672f6e6c7a",
+    "origin/master": "f6a6b1fdb53879c4da06a67dd0d469d0dc444fc2472777b941a94a672f6e6c7a",
+    "origin/octoberBranch": "f6a6b1fdb53879c4da06a67dd0d469d0dc444fc2472777b941a94a672f6e6c7a",
+    "working_tree": "f6a6b1fdb53879c4da06a67dd0d469d0dc444fc2472777b941a94a672f6e6c7a"
+  },
+  {
+    "path": "web/lib/rosterScheduleOptimizer/risk.ts",
+    "pin": "954328bb75b24a9dd6d39fa7cbce76547fc36a98589f481157304049b6bbba61",
+    "3795abb43": "954328bb75b24a9dd6d39fa7cbce76547fc36a98589f481157304049b6bbba61",
+    "HEAD": "954328bb75b24a9dd6d39fa7cbce76547fc36a98589f481157304049b6bbba61",
+    "origin/master": "954328bb75b24a9dd6d39fa7cbce76547fc36a98589f481157304049b6bbba61",
+    "origin/octoberBranch": "954328bb75b24a9dd6d39fa7cbce76547fc36a98589f481157304049b6bbba61",
+    "working_tree": "954328bb75b24a9dd6d39fa7cbce76547fc36a98589f481157304049b6bbba61"
+  },
+  {
+    "path": "web/lib/rosterScheduleOptimizer/signature.ts",
+    "pin": "6a8deb6f7bcf45c301fabe3dc697983934d2d7ba0c6222ebbb14d7da384b7e2e",
+    "3795abb43": "6a8deb6f7bcf45c301fabe3dc697983934d2d7ba0c6222ebbb14d7da384b7e2e",
+    "HEAD": "6a8deb6f7bcf45c301fabe3dc697983934d2d7ba0c6222ebbb14d7da384b7e2e",
+    "origin/master": "6a8deb6f7bcf45c301fabe3dc697983934d2d7ba0c6222ebbb14d7da384b7e2e",
+    "origin/octoberBranch": "6a8deb6f7bcf45c301fabe3dc697983934d2d7ba0c6222ebbb14d7da384b7e2e",
+    "working_tree": "6a8deb6f7bcf45c301fabe3dc697983934d2d7ba0c6222ebbb14d7da384b7e2e"
+  },
+  {
+    "path": "web/lib/rosterScheduleOptimizer/slots.ts",
+    "pin": "e045a6c6f4da46b714c0c0cea7cfc18d443ba21c0d9d8fc66524c90057d11202",
+    "3795abb43": "e045a6c6f4da46b714c0c0cea7cfc18d443ba21c0d9d8fc66524c90057d11202",
+    "HEAD": "e045a6c6f4da46b714c0c0cea7cfc18d443ba21c0d9d8fc66524c90057d11202",
+    "origin/master": "e045a6c6f4da46b714c0c0cea7cfc18d443ba21c0d9d8fc66524c90057d11202",
+    "origin/octoberBranch": "e045a6c6f4da46b714c0c0cea7cfc18d443ba21c0d9d8fc66524c90057d11202",
+    "working_tree": "e045a6c6f4da46b714c0c0cea7cfc18d443ba21c0d9d8fc66524c90057d11202"
+  },
+  {
+    "path": "web/lib/rosterScheduleOptimizer/types.ts",
+    "pin": "1a86dde23e5f0811e24bb8e0ad8ae826e3996dd9f4c5db81b70825bed325af0f",
+    "3795abb43": "1a86dde23e5f0811e24bb8e0ad8ae826e3996dd9f4c5db81b70825bed325af0f",
+    "HEAD": "1a86dde23e5f0811e24bb8e0ad8ae826e3996dd9f4c5db81b70825bed325af0f",
+    "origin/master": "1a86dde23e5f0811e24bb8e0ad8ae826e3996dd9f4c5db81b70825bed325af0f",
+    "origin/octoberBranch": "1a86dde23e5f0811e24bb8e0ad8ae826e3996dd9f4c5db81b70825bed325af0f",
+    "working_tree": "1a86dde23e5f0811e24bb8e0ad8ae826e3996dd9f4c5db81b70825bed325af0f"
+  },
+  {
+    "path": "web/lib/rosterScheduleOptimizer/upkeepLease.ts",
+    "pin": "cfa5451cbc90c573b5249250bbfbd4342ad162a429ff296f7ff8d58542107892",
+    "3795abb43": "cfa5451cbc90c573b5249250bbfbd4342ad162a429ff296f7ff8d58542107892",
+    "HEAD": "cfa5451cbc90c573b5249250bbfbd4342ad162a429ff296f7ff8d58542107892",
+    "origin/master": null,
+    "origin/octoberBranch": null,
+    "working_tree": "cfa5451cbc90c573b5249250bbfbd4342ad162a429ff296f7ff8d58542107892"
+  },
+  {
+    "path": "web/lib/rosterScheduleOptimizer/weeks.ts",
+    "pin": "aba01c57916a578ce7be8fdd67c18b493eb3e59c27304c75a342a4171f407713",
+    "3795abb43": "aba01c57916a578ce7be8fdd67c18b493eb3e59c27304c75a342a4171f407713",
+    "HEAD": "aba01c57916a578ce7be8fdd67c18b493eb3e59c27304c75a342a4171f407713",
+    "origin/master": "aba01c57916a578ce7be8fdd67c18b493eb3e59c27304c75a342a4171f407713",
+    "origin/octoberBranch": "aba01c57916a578ce7be8fdd67c18b493eb3e59c27304c75a342a4171f407713",
+    "working_tree": "aba01c57916a578ce7be8fdd67c18b493eb3e59c27304c75a342a4171f407713"
+  },
+  {
+    "path": "web/lib/rosterScheduleOptimizer/workspace.test.ts",
+    "pin": "5ffe77f24dae321754408ef96a062ce31a62cb481f403e10b12242878123af7f",
+    "3795abb43": "5ffe77f24dae321754408ef96a062ce31a62cb481f403e10b12242878123af7f",
+    "HEAD": "5ffe77f24dae321754408ef96a062ce31a62cb481f403e10b12242878123af7f",
+    "origin/master": "5ffe77f24dae321754408ef96a062ce31a62cb481f403e10b12242878123af7f",
+    "origin/octoberBranch": "5ffe77f24dae321754408ef96a062ce31a62cb481f403e10b12242878123af7f",
+    "working_tree": "5ffe77f24dae321754408ef96a062ce31a62cb481f403e10b12242878123af7f"
+  },
+  {
+    "path": "web/lib/rosterScheduleOptimizer/workspace.ts",
+    "pin": "4f4c105d350a6d5e56dc18f6fb448733bb934abf7bb86b371b51ebea4bbeeb65",
+    "3795abb43": "4f4c105d350a6d5e56dc18f6fb448733bb934abf7bb86b371b51ebea4bbeeb65",
+    "HEAD": "4f4c105d350a6d5e56dc18f6fb448733bb934abf7bb86b371b51ebea4bbeeb65",
+    "origin/master": "4f4c105d350a6d5e56dc18f6fb448733bb934abf7bb86b371b51ebea4bbeeb65",
+    "origin/octoberBranch": "4f4c105d350a6d5e56dc18f6fb448733bb934abf7bb86b371b51ebea4bbeeb65",
+    "working_tree": "4f4c105d350a6d5e56dc18f6fb448733bb934abf7bb86b371b51ebea4bbeeb65"
+  },
+  {
+    "path": "web/lib/rosterScheduleOptimizer/yahooEligibility.ts",
+    "pin": "11c94952da445a9143cfa82eba94db80040bf690fdecd79d9c5c7f45d803690f",
+    "3795abb43": "11c94952da445a9143cfa82eba94db80040bf690fdecd79d9c5c7f45d803690f",
+    "HEAD": "11c94952da445a9143cfa82eba94db80040bf690fdecd79d9c5c7f45d803690f",
+    "origin/master": "11c94952da445a9143cfa82eba94db80040bf690fdecd79d9c5c7f45d803690f",
+    "origin/octoberBranch": "11c94952da445a9143cfa82eba94db80040bf690fdecd79d9c5c7f45d803690f",
+    "working_tree": "11c94952da445a9143cfa82eba94db80040bf690fdecd79d9c5c7f45d803690f"
+  },
+  {
+    "path": "web/lib/rosterScheduleOptimizer/yahooEligibilityCache.test.ts",
+    "pin": "71c6468fc5ba72e1bbeff04447303f0ff6c11a681ab2abc8f013ab2efad8ca46",
+    "3795abb43": "71c6468fc5ba72e1bbeff04447303f0ff6c11a681ab2abc8f013ab2efad8ca46",
+    "HEAD": "71c6468fc5ba72e1bbeff04447303f0ff6c11a681ab2abc8f013ab2efad8ca46",
+    "origin/master": "71c6468fc5ba72e1bbeff04447303f0ff6c11a681ab2abc8f013ab2efad8ca46",
+    "origin/octoberBranch": "71c6468fc5ba72e1bbeff04447303f0ff6c11a681ab2abc8f013ab2efad8ca46",
+    "working_tree": "71c6468fc5ba72e1bbeff04447303f0ff6c11a681ab2abc8f013ab2efad8ca46"
+  },
+  {
+    "path": "web/lib/rosterScheduleOptimizer/yahooEligibilityCache.ts",
+    "pin": "f34826b36757033c8d1ada6bf2b7ed8c0d52d980e0fc1e30f268767fb273abf8",
+    "3795abb43": "f34826b36757033c8d1ada6bf2b7ed8c0d52d980e0fc1e30f268767fb273abf8",
+    "HEAD": "f34826b36757033c8d1ada6bf2b7ed8c0d52d980e0fc1e30f268767fb273abf8",
+    "origin/master": "f34826b36757033c8d1ada6bf2b7ed8c0d52d980e0fc1e30f268767fb273abf8",
+    "origin/octoberBranch": "f34826b36757033c8d1ada6bf2b7ed8c0d52d980e0fc1e30f268767fb273abf8",
+    "working_tree": "f34826b36757033c8d1ada6bf2b7ed8c0d52d980e0fc1e30f268767fb273abf8"
+  },
+  {
+    "path": "web/pages/api/v1/db/forge-served-forecast-snapshot.ts",
+    "pin": "6f9cc41d08a81ba9bed6f3a441df60e207f3292bb05fa0937802c9148ee5ba29",
+    "3795abb43": "6f9cc41d08a81ba9bed6f3a441df60e207f3292bb05fa0937802c9148ee5ba29",
+    "HEAD": "6f9cc41d08a81ba9bed6f3a441df60e207f3292bb05fa0937802c9148ee5ba29",
+    "origin/master": "9b78c93ed9f4f56de8102601b57a02c9aa3f749059326759b2c2aa2dd4e13000",
+    "origin/octoberBranch": "9b78c93ed9f4f56de8102601b57a02c9aa3f749059326759b2c2aa2dd4e13000",
+    "working_tree": "6f9cc41d08a81ba9bed6f3a441df60e207f3292bb05fa0937802c9148ee5ba29"
+  },
+  {
+    "path": "web/pages/api/v1/forge/accuracy.ts",
+    "pin": "41fae68930912723f2b107f851c26b3bb99d1da0716edbba2cbde8c7b3218e49",
+    "3795abb43": "41fae68930912723f2b107f851c26b3bb99d1da0716edbba2cbde8c7b3218e49",
+    "HEAD": "41fae68930912723f2b107f851c26b3bb99d1da0716edbba2cbde8c7b3218e49",
+    "origin/master": "41fae68930912723f2b107f851c26b3bb99d1da0716edbba2cbde8c7b3218e49",
+    "origin/octoberBranch": "41fae68930912723f2b107f851c26b3bb99d1da0716edbba2cbde8c7b3218e49",
+    "working_tree": "41fae68930912723f2b107f851c26b3bb99d1da0716edbba2cbde8c7b3218e49"
+  },
+  {
+    "path": "web/pages/api/v1/forge/forecasts.ts",
+    "pin": "eec41e1b8db6aa2a0cfc96e8865b1abed991377f9224ce7384eab9de22eb3dc9",
+    "3795abb43": "eec41e1b8db6aa2a0cfc96e8865b1abed991377f9224ce7384eab9de22eb3dc9",
+    "HEAD": "eec41e1b8db6aa2a0cfc96e8865b1abed991377f9224ce7384eab9de22eb3dc9",
+    "origin/master": "eec41e1b8db6aa2a0cfc96e8865b1abed991377f9224ce7384eab9de22eb3dc9",
+    "origin/octoberBranch": "eec41e1b8db6aa2a0cfc96e8865b1abed991377f9224ce7384eab9de22eb3dc9",
+    "working_tree": "eec41e1b8db6aa2a0cfc96e8865b1abed991377f9224ce7384eab9de22eb3dc9"
+  },
+  {
+    "path": "web/pages/api/v1/forge/goalies.ts",
+    "pin": "b76b011e1308b6445280e42bde087e90cac6496bcbd61ab9b32605dbd47ca3e7",
+    "3795abb43": "b76b011e1308b6445280e42bde087e90cac6496bcbd61ab9b32605dbd47ca3e7",
+    "HEAD": "b76b011e1308b6445280e42bde087e90cac6496bcbd61ab9b32605dbd47ca3e7",
+    "origin/master": "b76b011e1308b6445280e42bde087e90cac6496bcbd61ab9b32605dbd47ca3e7",
+    "origin/octoberBranch": "b76b011e1308b6445280e42bde087e90cac6496bcbd61ab9b32605dbd47ca3e7",
+    "working_tree": "b76b011e1308b6445280e42bde087e90cac6496bcbd61ab9b32605dbd47ca3e7"
+  },
+  {
+    "path": "web/pages/api/v1/forge/players.ts",
+    "pin": "5e37d137d8992d40dfd8c94fbc0c88e37aca2be1c86e414d73b91d5ae4fac04f",
+    "3795abb43": "5e37d137d8992d40dfd8c94fbc0c88e37aca2be1c86e414d73b91d5ae4fac04f",
+    "HEAD": "5e37d137d8992d40dfd8c94fbc0c88e37aca2be1c86e414d73b91d5ae4fac04f",
+    "origin/master": "9cef7a65971bbc998c51f81f40646720c3a062004a9c25f709d080ca0adea26e",
+    "origin/octoberBranch": "9cef7a65971bbc998c51f81f40646720c3a062004a9c25f709d080ca0adea26e",
+    "working_tree": "5e37d137d8992d40dfd8c94fbc0c88e37aca2be1c86e414d73b91d5ae4fac04f"
+  },
+  {
+    "path": "web/pages/api/v1/forge/roster-events.ts",
+    "pin": "11341e9659fa31d53f1d7a66709afb4cc32a3a2dfe710a0691621ea462011036",
+    "3795abb43": "11341e9659fa31d53f1d7a66709afb4cc32a3a2dfe710a0691621ea462011036",
+    "HEAD": "11341e9659fa31d53f1d7a66709afb4cc32a3a2dfe710a0691621ea462011036",
+    "origin/master": "11341e9659fa31d53f1d7a66709afb4cc32a3a2dfe710a0691621ea462011036",
+    "origin/octoberBranch": "11341e9659fa31d53f1d7a66709afb4cc32a3a2dfe710a0691621ea462011036",
+    "working_tree": "11341e9659fa31d53f1d7a66709afb4cc32a3a2dfe710a0691621ea462011036"
+  },
+  {
+    "path": "web/pages/api/v1/forge/scoreboard.ts",
+    "pin": "5cd651886914058597ad856f777ef2c4227c7c03e92b7029bc250f74534b92d0",
+    "3795abb43": "5cd651886914058597ad856f777ef2c4227c7c03e92b7029bc250f74534b92d0",
+    "HEAD": "5cd651886914058597ad856f777ef2c4227c7c03e92b7029bc250f74534b92d0",
+    "origin/master": "5cd651886914058597ad856f777ef2c4227c7c03e92b7029bc250f74534b92d0",
+    "origin/octoberBranch": "5cd651886914058597ad856f777ef2c4227c7c03e92b7029bc250f74534b92d0",
+    "working_tree": "5cd651886914058597ad856f777ef2c4227c7c03e92b7029bc250f74534b92d0"
+  },
+  {
+    "path": "web/pages/api/v1/forge/testing-grounds/access.ts",
+    "pin": "abcb5af6c8a9cb97822b6bfad8f8bf217ab305b4e2e76e9c8d5671f9eb737b25",
+    "3795abb43": "abcb5af6c8a9cb97822b6bfad8f8bf217ab305b4e2e76e9c8d5671f9eb737b25",
+    "HEAD": "abcb5af6c8a9cb97822b6bfad8f8bf217ab305b4e2e76e9c8d5671f9eb737b25",
+    "origin/master": "abcb5af6c8a9cb97822b6bfad8f8bf217ab305b4e2e76e9c8d5671f9eb737b25",
+    "origin/octoberBranch": "abcb5af6c8a9cb97822b6bfad8f8bf217ab305b4e2e76e9c8d5671f9eb737b25",
+    "working_tree": "abcb5af6c8a9cb97822b6bfad8f8bf217ab305b4e2e76e9c8d5671f9eb737b25"
+  },
+  {
+    "path": "web/pages/api/v1/forge/testing-grounds/runs/[runId]/[operation].ts",
+    "pin": "6f0bbf14d718075a6d1b38c614bc132510f4550af2f7a395a72f64ab3d5c8962",
+    "3795abb43": "6f0bbf14d718075a6d1b38c614bc132510f4550af2f7a395a72f64ab3d5c8962",
+    "HEAD": "6f0bbf14d718075a6d1b38c614bc132510f4550af2f7a395a72f64ab3d5c8962",
+    "origin/master": "6f0bbf14d718075a6d1b38c614bc132510f4550af2f7a395a72f64ab3d5c8962",
+    "origin/octoberBranch": "6f0bbf14d718075a6d1b38c614bc132510f4550af2f7a395a72f64ab3d5c8962",
+    "working_tree": "6f0bbf14d718075a6d1b38c614bc132510f4550af2f7a395a72f64ab3d5c8962"
+  },
+  {
+    "path": "web/pages/api/v1/forge/testing-grounds/runs/index.ts",
+    "pin": "94469027fcb99205b3b6337e2228f978a697ba4f499aafb10b6e3b28ef4ed836",
+    "3795abb43": "94469027fcb99205b3b6337e2228f978a697ba4f499aafb10b6e3b28ef4ed836",
+    "HEAD": "94469027fcb99205b3b6337e2228f978a697ba4f499aafb10b6e3b28ef4ed836",
+    "origin/master": "94469027fcb99205b3b6337e2228f978a697ba4f499aafb10b6e3b28ef4ed836",
+    "origin/octoberBranch": "94469027fcb99205b3b6337e2228f978a697ba4f499aafb10b6e3b28ef4ed836",
+    "working_tree": "94469027fcb99205b3b6337e2228f978a697ba4f499aafb10b6e3b28ef4ed836"
+  },
+  {
+    "path": "web/pages/api/v1/projections/goalies.ts",
+    "pin": "153099f3ebe6b9cbd2dd5b6f783b2f061f88c038253c6ecaed9a7a4149afdcce",
+    "3795abb43": "153099f3ebe6b9cbd2dd5b6f783b2f061f88c038253c6ecaed9a7a4149afdcce",
+    "HEAD": "153099f3ebe6b9cbd2dd5b6f783b2f061f88c038253c6ecaed9a7a4149afdcce",
+    "origin/master": "153099f3ebe6b9cbd2dd5b6f783b2f061f88c038253c6ecaed9a7a4149afdcce",
+    "origin/octoberBranch": "153099f3ebe6b9cbd2dd5b6f783b2f061f88c038253c6ecaed9a7a4149afdcce",
+    "working_tree": "153099f3ebe6b9cbd2dd5b6f783b2f061f88c038253c6ecaed9a7a4149afdcce"
+  },
+  {
+    "path": "web/pages/api/v1/projections/players.ts",
+    "pin": "d6da3f0b35a3452248c80844319015621bf2841f36e15138a2ac998a985a893b",
+    "3795abb43": "d6da3f0b35a3452248c80844319015621bf2841f36e15138a2ac998a985a893b",
+    "HEAD": "d6da3f0b35a3452248c80844319015621bf2841f36e15138a2ac998a985a893b",
+    "origin/master": "a60ec06398d2086fbc1164f849d2750913dba34d1e568d8d7916e06aaa9b3b65",
+    "origin/octoberBranch": "a60ec06398d2086fbc1164f849d2750913dba34d1e568d8d7916e06aaa9b3b65",
+    "working_tree": "d6da3f0b35a3452248c80844319015621bf2841f36e15138a2ac998a985a893b"
+  },
+  {
+    "path": "web/pages/api/v1/projections/teams.ts",
+    "pin": "ba1acecfad25b35b4d554a2992679eaffbfeae673743015762a852ea23be9412",
+    "3795abb43": "ba1acecfad25b35b4d554a2992679eaffbfeae673743015762a852ea23be9412",
+    "HEAD": "ba1acecfad25b35b4d554a2992679eaffbfeae673743015762a852ea23be9412",
+    "origin/master": "ba1acecfad25b35b4d554a2992679eaffbfeae673743015762a852ea23be9412",
+    "origin/octoberBranch": "ba1acecfad25b35b4d554a2992679eaffbfeae673743015762a852ea23be9412",
+    "working_tree": "ba1acecfad25b35b4d554a2992679eaffbfeae673743015762a852ea23be9412"
+  },
+  {
+    "path": "web/pages/api/v1/roster-schedule-optimizer/access.ts",
+    "pin": "e65e0f5c316424c6d28eebe9cf292257deb3e2c669621edeeb0890f6f83b9842",
+    "3795abb43": "e65e0f5c316424c6d28eebe9cf292257deb3e2c669621edeeb0890f6f83b9842",
+    "HEAD": "e65e0f5c316424c6d28eebe9cf292257deb3e2c669621edeeb0890f6f83b9842",
+    "origin/master": "e65e0f5c316424c6d28eebe9cf292257deb3e2c669621edeeb0890f6f83b9842",
+    "origin/octoberBranch": "e65e0f5c316424c6d28eebe9cf292257deb3e2c669621edeeb0890f6f83b9842",
+    "working_tree": "e65e0f5c316424c6d28eebe9cf292257deb3e2c669621edeeb0890f6f83b9842"
+  },
+  {
+    "path": "web/pages/api/v1/roster-schedule-optimizer/data.ts",
+    "pin": "a8549dccf6bfda665576ae2d41df6e39db9ca09e2be11098a467e85a5b63e049",
+    "3795abb43": "a8549dccf6bfda665576ae2d41df6e39db9ca09e2be11098a467e85a5b63e049",
+    "HEAD": "a8549dccf6bfda665576ae2d41df6e39db9ca09e2be11098a467e85a5b63e049",
+    "origin/master": "a8549dccf6bfda665576ae2d41df6e39db9ca09e2be11098a467e85a5b63e049",
+    "origin/octoberBranch": "a8549dccf6bfda665576ae2d41df6e39db9ca09e2be11098a467e85a5b63e049",
+    "working_tree": "a8549dccf6bfda665576ae2d41df6e39db9ca09e2be11098a467e85a5b63e049"
+  },
+  {
+    "path": "web/pages/api/v1/roster-schedule-optimizer/diagnostic-context.ts",
+    "pin": "7c75581903fe53a721519f6072df7f81db4d3169984a7b369057e223d207a625",
+    "3795abb43": "7c75581903fe53a721519f6072df7f81db4d3169984a7b369057e223d207a625",
+    "HEAD": "7c75581903fe53a721519f6072df7f81db4d3169984a7b369057e223d207a625",
+    "origin/master": "7c75581903fe53a721519f6072df7f81db4d3169984a7b369057e223d207a625",
+    "origin/octoberBranch": "7c75581903fe53a721519f6072df7f81db4d3169984a7b369057e223d207a625",
+    "working_tree": "7c75581903fe53a721519f6072df7f81db4d3169984a7b369057e223d207a625"
+  },
+  {
+    "path": "web/pages/api/v1/roster-schedule-optimizer/diagnostic.ts",
+    "pin": "98e98ec4e506e053650698404e1871fe0dd601d0bb9373631674387590c72719",
+    "3795abb43": "98e98ec4e506e053650698404e1871fe0dd601d0bb9373631674387590c72719",
+    "HEAD": "98e98ec4e506e053650698404e1871fe0dd601d0bb9373631674387590c72719",
+    "origin/master": "98e98ec4e506e053650698404e1871fe0dd601d0bb9373631674387590c72719",
+    "origin/octoberBranch": "98e98ec4e506e053650698404e1871fe0dd601d0bb9373631674387590c72719",
+    "working_tree": "98e98ec4e506e053650698404e1871fe0dd601d0bb9373631674387590c72719"
+  },
+  {
+    "path": "web/pages/api/v1/roster-schedule-optimizer/eligibility.ts",
+    "pin": "f5447e4c9de58133127e0811d63a56d3078ed3e2bccab3645bf3758ffd55ffc5",
+    "3795abb43": "f5447e4c9de58133127e0811d63a56d3078ed3e2bccab3645bf3758ffd55ffc5",
+    "HEAD": "f5447e4c9de58133127e0811d63a56d3078ed3e2bccab3645bf3758ffd55ffc5",
+    "origin/master": "f5447e4c9de58133127e0811d63a56d3078ed3e2bccab3645bf3758ffd55ffc5",
+    "origin/octoberBranch": "f5447e4c9de58133127e0811d63a56d3078ed3e2bccab3645bf3758ffd55ffc5",
+    "working_tree": "f5447e4c9de58133127e0811d63a56d3078ed3e2bccab3645bf3758ffd55ffc5"
+  },
+  {
+    "path": "web/pages/api/v1/roster-schedule-optimizer/provider.ts",
+    "pin": "b4bcb961b9ae1f8bd27383b1f3bdf6f155b89ee643bd69f1c10fa02bfc5602b2",
+    "3795abb43": "b4bcb961b9ae1f8bd27383b1f3bdf6f155b89ee643bd69f1c10fa02bfc5602b2",
+    "HEAD": "b4bcb961b9ae1f8bd27383b1f3bdf6f155b89ee643bd69f1c10fa02bfc5602b2",
+    "origin/master": "7d2eaddedbf4ad6993cd41f451aaaa05a4a6fae45e80d844387ee84222bb571d",
+    "origin/octoberBranch": "7d2eaddedbf4ad6993cd41f451aaaa05a4a6fae45e80d844387ee84222bb571d",
+    "working_tree": "b4bcb961b9ae1f8bd27383b1f3bdf6f155b89ee643bd69f1c10fa02bfc5602b2"
+  },
+  {
+    "path": "web/pages/api/v1/roster-schedule-optimizer/schedule.ts",
+    "pin": "bf48cf11fe17e0177ee855e0c91bd54ec62fdf9e783a8c2ab55b639a25d2a4fd",
+    "3795abb43": "bf48cf11fe17e0177ee855e0c91bd54ec62fdf9e783a8c2ab55b639a25d2a4fd",
+    "HEAD": "bf48cf11fe17e0177ee855e0c91bd54ec62fdf9e783a8c2ab55b639a25d2a4fd",
+    "origin/master": "bf48cf11fe17e0177ee855e0c91bd54ec62fdf9e783a8c2ab55b639a25d2a4fd",
+    "origin/octoberBranch": "bf48cf11fe17e0177ee855e0c91bd54ec62fdf9e783a8c2ab55b639a25d2a4fd",
+    "working_tree": "bf48cf11fe17e0177ee855e0c91bd54ec62fdf9e783a8c2ab55b639a25d2a4fd"
+  },
+  {
+    "path": "web/pages/api/v1/roster-schedule-optimizer/workspace.ts",
+    "pin": "0848b58b2f38d52d38c17a8ba1ce611f0baddacecfb4f7a39ab08832f10c5721",
+    "3795abb43": "0848b58b2f38d52d38c17a8ba1ce611f0baddacecfb4f7a39ab08832f10c5721",
+    "HEAD": "0848b58b2f38d52d38c17a8ba1ce611f0baddacecfb4f7a39ab08832f10c5721",
+    "origin/master": "0848b58b2f38d52d38c17a8ba1ce611f0baddacecfb4f7a39ab08832f10c5721",
+    "origin/octoberBranch": "0848b58b2f38d52d38c17a8ba1ce611f0baddacecfb4f7a39ab08832f10c5721",
+    "working_tree": "0848b58b2f38d52d38c17a8ba1ce611f0baddacecfb4f7a39ab08832f10c5721"
+  },
+  {
+    "path": "web/pages/api/v1/roster-schedule-optimizer/yahoo-current-data.ts",
+    "pin": "f37eedbd2887b68e6434aefc638bdc0e017b899b3b3d8bac2fd09a8d769f0e8b",
+    "3795abb43": "f37eedbd2887b68e6434aefc638bdc0e017b899b3b3d8bac2fd09a8d769f0e8b",
+    "HEAD": "f37eedbd2887b68e6434aefc638bdc0e017b899b3b3d8bac2fd09a8d769f0e8b",
+    "origin/master": "f37eedbd2887b68e6434aefc638bdc0e017b899b3b3d8bac2fd09a8d769f0e8b",
+    "origin/octoberBranch": "f37eedbd2887b68e6434aefc638bdc0e017b899b3b3d8bac2fd09a8d769f0e8b",
+    "working_tree": "f37eedbd2887b68e6434aefc638bdc0e017b899b3b3d8bac2fd09a8d769f0e8b"
+  },
+  {
+    "path": "web/pages/api/v1/start-chart.ts",
+    "pin": "cfc0a794ad60087225218b68a399388662d5e90ec408f9d563a96c79715833a2",
+    "3795abb43": "cfc0a794ad60087225218b68a399388662d5e90ec408f9d563a96c79715833a2",
+    "HEAD": "cfc0a794ad60087225218b68a399388662d5e90ec408f9d563a96c79715833a2",
+    "origin/master": "37b34456ed5f02a05b6fe61edee46d7b153217fd886ecdca8b13ab9a3aaad4a8",
+    "origin/octoberBranch": "37b34456ed5f02a05b6fe61edee46d7b153217fd886ecdca8b13ab9a3aaad4a8",
+    "working_tree": "cfc0a794ad60087225218b68a399388662d5e90ec408f9d563a96c79715833a2"
+  }
+]

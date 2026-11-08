@@ -107,3 +107,14 @@ The original PRD is preserved as planning evidence. Its earlier staffing/scoring
 - Forecast dependencies: an admitted public seven-category reader with verified times/state, release permissions, schedule/roster revisions, individual fantasy credits, source freshness and immutable shared team/player lineage. No current interface established the full contract. Current totals remain unavailable.
 - Opponent/market dependencies: qualified target-specific neutral-reference records and as-of history; original market availability, appropriate provider permission and market rules. Proposed experiments were not executed with unavailable data.
 - Final deliverables: exact commit/base, reproducible patch, changed-file/preservation manifest, unit/date/lint/typecheck/browser receipts, independent review and release/rollback proposal are in the local goal outputs. Production authorization and released-experience checks remain tasks 16–17.
+
+## 2026-10-18 sprint lane S-14 (local only, uncommitted)
+
+Details, evidence and checks: `tasks/artifacts/game-grid-lane-2026-10-18/DIARY.md`.
+- **Release inclusion.** Score/crowding code is identical to `cca89e264` and is in production `457435eb`. `56b9f4693`, `4ca92f874` and `0de97e77d` remain octoberBranch-only.
+- **Crowding experiment.** Offline, on a real 32-team schedule (3 weeks × 64 day masks). Its pre-registered criterion was met with 0 GP/ON guarantee violations. The effect is tie-breaking only; the roster model is synthetic and positionless.
+- **Opponent effects split by role** (`opponentCategoryEffects.ts`), with a Skaters/Goalies perspective in both opponent tables. The skater default is unchanged. GAMEGRID C0025's "Score-only emphasis" now refers to rank emphasis only, since the 4WK favorability shading (`fefefe006`) is deliberate.
+- **Shared FORGE game-expectations adapter** (`teamGameExpectations.ts`). It is not wired into the UI until native serving is released.
+- **Regression tests:** 32-team real week across all 127 day masks, plus partial, postponed and empty states.
+- **Browser evidence:** isolated fixtures at 1920/1180/390/320px.
+- **Keep exploring links restored** on `/game-grid/[mode]`.

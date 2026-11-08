@@ -1,0 +1,13 @@
+{
+  "checkedAt": "2026-11-07T21:54:22.101435+00:00",
+  "referenceReceipt": "tasks/artifacts/cron-pipeline-repair-2026-11-07/d9fcc711e12d2902cd6b646ce38888a43e606f2b.json",
+  "referenceReceiptCommit": {
+    "subject": "fix: isolate goalie, calibration and cron reporting repair",
+    "committedAt": "2026-11-07T14:59:45-05:00",
+    "tree": "c7fe0fed5dcb6c4913da0f6254a2ce5e9436a148"
+  },
+  "referenceModuleCount": 195,
+  "changedModuleIntersection": [],
+  "conclusion": "Candidate overlay changes no module in this verified producer closure. This is impact analysis, not fresh qualification or an admission of the entire release base.",
+  "candidateTree": "4ba9b5dd1c6feb613f2f8e526fb280bb4b35c54e"
+}

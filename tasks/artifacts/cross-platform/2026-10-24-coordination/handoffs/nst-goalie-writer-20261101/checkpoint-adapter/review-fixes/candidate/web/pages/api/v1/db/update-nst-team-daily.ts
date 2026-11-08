@@ -1,0 +1,936 @@
+import { withNstJobLifecycle } from "lib/nst/jobLifecycle.server";
+import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+import { withNhlOffSeasonSkip } from "lib/cron/nhlOffSeason";
+import adminOnly from "utils/adminOnlyMiddleware";
+import {
+  NST_TEAM_DAILY_BURST_INTERVAL_MS,
+  NST_SAFE_INTERVAL_MS,
+  TEAM_DAILY_URLS_PER_DATE,
+  resolveTeamDailyNstRequestPlan,
+} from "lib/cron/nstBurstPlans";
+import type { NextApiRequest, NextApiResponse } from "next";
+import * as cheerio from "cheerio";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import dotenv from "dotenv";
+import { fetchNstTextByUrl, NST_DEFAULT_RETRIES } from "lib/nst/client";
+import { addDays, format, isAfter, isBefore, parseISO } from "date-fns";
+import { toZonedTime, format as tzFormat } from "date-fns-tz";
+import { fetchCurrentSeason } from "utils/fetchCurrentSeason";
+import { teamNameToAbbreviationMap, teamsInfo } from "lib/teamsInfo";
+import { fetchPaginatedRows } from "lib/power-ratings";
+
+/**
+ * URL Examples:
+ *
+ * Incremental mode (default - processes new dates since last update):
+ * GET /api/v1/db/update-nst-team-daily
+ * POST /api/v1/db/update-nst-team-daily
+ *
+ * Forward mode (processes dates from start of season or specified date forward):
+ * GET /api/v1/db/update-nst-team-daily?runMode=forward
+ * GET /api/v1/db/update-nst-team-daily?runMode=forward&startDate=2024-10-01
+ * GET /api/v1/db/update-nst-team-daily?runMode=forward&startDate=2024-10-01&endDate=2024-11-05
+ *
+ * Reverse mode (processes dates from today or specified date backward):
+ * GET /api/v1/db/update-nst-team-daily?runMode=reverse
+ * GET /api/v1/db/update-nst-team-daily?runMode=reverse&startDate=2024-11-05&endDate=2024-10-01
+ *
+ * With overwrite flag (force update existing data):
+ * GET /api/v1/db/update-nst-team-daily?runMode=forward&overwrite=true
+ * GET /api/v1/db/update-nst-team-daily?startDate=2024-11-01&endDate=2024-11-05&overwrite=true
+ *
+ * Single date processing:
+ * GET /api/v1/db/update-nst-team-daily?runMode=forward&startDate=2024-11-05&endDate=2024-11-05
+ *
+ * Parameters:
+ * - runMode: "incremental" | "forward" | "reverse" (default: "incremental")
+ * - startDate: YYYY-MM-DD format (ISO 8601)
+ * - endDate: YYYY-MM-DD format (ISO 8601)
+ * - overwrite: "true" | "false" | "1" | "0" | "yes" | "y" (default varies by runMode)
+ *
+ * Cron-safe default:
+ * - no params => incremental mode, resuming the day after the latest complete
+ *   stored date (or rechecking it when partial), floored at the season's first
+ *   game and skipping dates with no scheduled games
+ *
+ * Methods supported: GET, POST
+ * For POST requests, parameters can be sent in the request body as JSON
+ */
+
+dotenv.config({ path: "./../../../.env.local" });
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+if (!supabaseUrl || !supabaseKey) {
+  console.error("Supabase URL or Service Role Key is missing.");
+  process.exit(1);
+}
+
+const supabase: SupabaseClient = createClient(supabaseUrl, supabaseKey);
+const MAX_DATE_BASED_DATES_PER_RUN = 2;
+// Extra requests per run on top of the date budget. A date whose all-strength
+// probe shows no games costs one request, so it cannot hold the queue in place.
+const EMPTY_DATE_PROBE_ALLOWANCE = 2;
+const PRESEASON_GAME_TYPE = 1;
+// Leave at least 20 seconds before the previously observed 240-second limit
+// for database completion and the wrapper's terminal audit insert.
+const NST_RUN_BUDGET_MS = 220_000;
+const NST_REQUEST_TIMEOUT_MS = 45_000;
+
+export const config = {
+  maxDuration: 300,
+};
+
+type RunMode = "incremental" | "forward" | "reverse";
+
+interface DatasetConfig {
+  key: string;
+  table: string;
+  sit: string;
+  rate: "n" | "y";
+  description: string;
+  isRateTable: boolean;
+  situationLabel: string;
+}
+
+const NST_BASE_URL = "https://data.naturalstattrick.com/teamtable.php";
+const TIME_ZONE = "America/New_York";
+
+const DATASETS: DatasetConfig[] = [
+  {
+    key: "as_counts",
+    table: "nst_team_gamelogs_as_counts",
+    sit: "all",
+    rate: "n",
+    description: "All strengths counts",
+    isRateTable: false,
+    situationLabel: "all",
+  },
+  {
+    key: "as_rates",
+    table: "nst_team_gamelogs_as_rates",
+    sit: "all",
+    rate: "y",
+    description: "All strengths rates",
+    isRateTable: true,
+    situationLabel: "all",
+  },
+  {
+    key: "es_counts",
+    table: "nst_team_gamelogs_es_counts",
+    sit: "5v5",
+    rate: "n",
+    description: "Even strength counts",
+    isRateTable: false,
+    situationLabel: "5v5",
+  },
+  {
+    key: "es_rates",
+    table: "nst_team_gamelogs_es_rates",
+    sit: "5v5",
+    rate: "y",
+    description: "Even strength rates",
+    isRateTable: true,
+    situationLabel: "5v5",
+  },
+  {
+    key: "pp_counts",
+    table: "nst_team_gamelogs_pp_counts",
+    sit: "pp",
+    rate: "n",
+    description: "Power play counts",
+    isRateTable: false,
+    situationLabel: "pp",
+  },
+  {
+    key: "pp_rates",
+    table: "nst_team_gamelogs_pp_rates",
+    sit: "pp",
+    rate: "y",
+    description: "Power play rates",
+    isRateTable: true,
+    situationLabel: "pp",
+  },
+  {
+    key: "pk_counts",
+    table: "nst_team_gamelogs_pk_counts",
+    sit: "pk",
+    rate: "n",
+    description: "Penalty kill counts",
+    isRateTable: false,
+    situationLabel: "pk",
+  },
+  {
+    key: "pk_rates",
+    table: "nst_team_gamelogs_pk_rates",
+    sit: "pk",
+    rate: "y",
+    description: "Penalty kill rates",
+    isRateTable: true,
+    situationLabel: "pk",
+  },
+];
+
+const TEAM_TABLES = DATASETS.map((dataset) => dataset.table);
+
+const sharedHeaderMap: Record<string, string> = {
+  gp: "gp",
+  w: "wins",
+  l: "losses",
+  otl: "otl",
+  row: "row_wins",
+  points: "points",
+  "point%": "point_pct",
+  "cf%": "cf_pct",
+  "ff%": "ff_pct",
+  "sf%": "sf_pct",
+  "gf%": "gf_pct",
+  "xgf%": "xgf_pct",
+  "scf%": "scf_pct",
+  "scsf%": "scsf_pct",
+  "scgf%": "scgf_pct",
+  "scsh%": "scsh_pct",
+  "scsv%": "scsv_pct",
+  "hdcf%": "hdcf_pct",
+  "hdsf%": "hdsf_pct",
+  "hdgf%": "hdgf_pct",
+  "hdsh%": "hdsh_pct",
+  "hdsv%": "hdsv_pct",
+  "mdcf%": "mdcf_pct",
+  "mdsf%": "mdsf_pct",
+  "mdgf%": "mdgf_pct",
+  "mdsh%": "mdsh_pct",
+  "mdsv%": "mdsv_pct",
+  "ldcf%": "ldcf_pct",
+  "ldsf%": "ldsf_pct",
+  "ldgf%": "ldgf_pct",
+  "ldsh%": "ldsh_pct",
+  "ldsv%": "ldsv_pct",
+  "sh%": "sh_pct",
+  "sv%": "sv_pct",
+  pdo: "pdo",
+};
+
+const countsHeaderMap: Record<string, string> = {
+  toi: "toi_seconds",
+  cf: "cf",
+  ca: "ca",
+  ff: "ff",
+  fa: "fa",
+  sf: "sf",
+  sa: "sa",
+  gf: "gf",
+  ga: "ga",
+  xgf: "xgf",
+  xga: "xga",
+  scf: "scf",
+  sca: "sca",
+  scsf: "scsf",
+  scsa: "scsa",
+  scgf: "scgf",
+  scga: "scga",
+  hdcf: "hdcf",
+  hdca: "hdca",
+  hdsf: "hdsf",
+  hdsa: "hdsa",
+  hdgf: "hdgf",
+  hdga: "hdga",
+  mdcf: "mdcf",
+  mdca: "mdca",
+  mdsf: "mdsf",
+  mdsa: "mdsa",
+  mdgf: "mdgf",
+  mdga: "mdga",
+  ldcf: "ldcf",
+  ldca: "ldca",
+  ldsf: "ldsf",
+  ldsa: "ldsa",
+  ldgf: "ldgf",
+  ldga: "ldga",
+};
+
+const ratesHeaderMap: Record<string, string> = {
+  "toi/gp": "toi_per_gp_seconds",
+  "cf/60": "cf_per_60",
+  "ca/60": "ca_per_60",
+  "ff/60": "ff_per_60",
+  "fa/60": "fa_per_60",
+  "sf/60": "sf_per_60",
+  "sa/60": "sa_per_60",
+  "gf/60": "gf_per_60",
+  "ga/60": "ga_per_60",
+  "xgf/60": "xgf_per_60",
+  "xga/60": "xga_per_60",
+  "scf/60": "scf_per_60",
+  "sca/60": "sca_per_60",
+  "scsf/60": "scsf_per_60",
+  "scsa/60": "scsa_per_60",
+  "scgf/60": "scgf_per_60",
+  "scga/60": "scga_per_60",
+  "hdcf/60": "hdcf_per_60",
+  "hdca/60": "hdca_per_60",
+  "hdsf/60": "hdsf_per_60",
+  "hdsa/60": "hdsa_per_60",
+  "hdgf/60": "hdgf_per_60",
+  "hdga/60": "hdga_per_60",
+  "mdcf/60": "mdcf_per_60",
+  "mdca/60": "mdca_per_60",
+  "mdsf/60": "mdsf_per_60",
+  "mdsa/60": "mdsa_per_60",
+  "mdgf/60": "mdgf_per_60",
+  "mdga/60": "mdga_per_60",
+  "ldcf/60": "ldcf_per_60",
+  "ldca/60": "ldca_per_60",
+  "ldsf/60": "ldsf_per_60",
+  "ldsa/60": "ldsa_per_60",
+  "ldgf/60": "ldgf_per_60",
+  "ldga/60": "ldga_per_60",
+};
+
+type RawRow = Record<string, string | null>;
+
+type TeamGamelogInsert = {
+  team_abbreviation: string;
+  team_name: string;
+  season_id: number;
+  date: string;
+  situation: string;
+  updated_at?: string;
+} & Record<string, number | string | null | undefined>;
+
+const normalizedTeamLookup = new Map<string, string>();
+
+Object.entries(teamsInfo).forEach(([abbr, info]) => {
+  normalizedTeamLookup.set(normalizeTeamName(info.name), abbr);
+  if (info.shortName) {
+    normalizedTeamLookup.set(normalizeTeamName(info.shortName), abbr);
+  }
+});
+
+Object.entries(teamNameToAbbreviationMap).forEach(([name, abbr]) => {
+  normalizedTeamLookup.set(normalizeTeamName(name), abbr);
+});
+
+const unknownTeams = new Set<string>();
+let lastNstRequestAt = 0;
+let currentRequestIntervalMs = NST_TEAM_DAILY_BURST_INTERVAL_MS;
+
+function normalizeHeaderKey(text: string): string {
+  return text
+    .replace(/\u00a0/g, " ")
+    .replace(/\s+\/\s+/g, "/")
+    .replace(/\s+%/g, "%")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+}
+
+function normalizeTeamName(name: string): string {
+  return name
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "")
+    .replace(/\s+/g, "")
+    .toLowerCase();
+}
+
+function convertTimeToSeconds(value: string | null | undefined): number | null {
+  if (!value || value === "-") return null;
+  const parts = value.split(":");
+  if (parts.length !== 2) return null;
+  const minutes = Number(parts[0]);
+  const seconds = Number(parts[1]);
+  if (Number.isNaN(minutes) || Number.isNaN(seconds)) return null;
+  return minutes * 60 + seconds;
+}
+
+function parseNumeric(value: string | null | undefined): number | null {
+  if (!value || value === "-") return null;
+  const cleaned = value.replace(/,/g, "");
+  const num = Number(cleaned);
+  return Number.isNaN(num) ? null : num;
+}
+
+function parsePercentage(value: string | null | undefined): number | null {
+  const parsed = parseNumeric(value);
+  if (parsed === null) return null;
+  return parsed;
+}
+
+function formatEstDate(date: Date): string {
+  return tzFormat(toZonedTime(date, TIME_ZONE), "yyyy-MM-dd", {
+    timeZone: TIME_ZONE,
+  });
+}
+
+function seasonIdFromDate(dateString: string): number {
+  const parsed = parseISO(dateString);
+  const year = parsed.getUTCFullYear();
+  const month = parsed.getUTCMonth();
+  const startYear = month >= 6 ? year : year - 1;
+  const endYear = startYear + 1;
+  return Number(`${startYear}${endYear}`);
+}
+
+async function nstGet(url: string, deadlineAt: number, plannedRequestCount: number): Promise<string> {
+  const now = Date.now();
+  const elapsed = now - lastNstRequestAt;
+  if (currentRequestIntervalMs > 0 && elapsed < currentRequestIntervalMs) {
+    await delay(currentRequestIntervalMs - elapsed);
+  }
+  lastNstRequestAt = Date.now();
+  const response = await fetchNstTextByUrl(url, {
+    timeoutMs: NST_REQUEST_TIMEOUT_MS,
+    requestControl: {
+      deadlineAt,
+      maxAttempts: NST_DEFAULT_RETRIES + 1,
+      attemptsStarted: 0,
+      minIntervalMs: currentRequestIntervalMs,
+      plannedRequestCount,
+    },
+  });
+  return response.text;
+}
+
+function delay(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function parseTeamTable(html: string): RawRow[] {
+  const $ = cheerio.load(html);
+  const table = $("#teams");
+  if (table.length === 0) {
+    return [];
+  }
+
+  const bodyRows = table.find("tbody tr");
+  if (bodyRows.length === 0) {
+    return [];
+  }
+
+  const theadRows = table.find("thead tr");
+  const tdCount = bodyRows.first().find("td").length;
+  let headerRow = theadRows.last();
+  theadRows.each((_, tr) => {
+    const thCount = $(tr).find("th").length;
+    if (thCount === tdCount) {
+      headerRow = $(tr);
+      return false;
+    }
+    return undefined;
+  });
+
+  const headers: Array<string | null> = [];
+  headerRow.find("th").each((index, th) => {
+    const raw = $(th).text();
+    const normalized = normalizeHeaderKey(raw);
+    if (normalized === "" && index === 0) {
+      headers.push(null);
+      return;
+    }
+    headers.push(normalized);
+  });
+
+  const rows: RawRow[] = [];
+  bodyRows.each((_, tr) => {
+    const row: RawRow = {};
+    $(tr)
+      .find("td")
+      .each((idx, td) => {
+        const header = headers[idx];
+        if (!header) {
+          return;
+        }
+        const text = $(td).text().replace(/\s+/g, " ").trim();
+        row[header] = text === "" || text === "-" ? null : text;
+      });
+    if (Object.keys(row).length > 0) {
+      rows.push(row);
+    }
+  });
+  return rows;
+}
+
+function resolveTeam(
+  teamLabel: string
+): { abbreviation: string; name: string } | null {
+  const trimmed = teamLabel.trim();
+  const direct = teamNameToAbbreviationMap[trimmed];
+  const normalized = normalizeTeamName(trimmed);
+  const fallback = normalizedTeamLookup.get(normalized);
+  const abbreviation = direct || fallback;
+  if (!abbreviation) {
+    if (!unknownTeams.has(trimmed)) {
+      console.warn(
+        `Unable to match team name "${trimmed}" to an abbreviation.`
+      );
+      unknownTeams.add(trimmed);
+    }
+    return null;
+  }
+  const canonical = teamsInfo[abbreviation]?.name ?? trimmed;
+  return { abbreviation, name: canonical };
+}
+
+function buildHeaderMap(isRateTable: boolean): Record<string, string> {
+  if (isRateTable) {
+    return { ...sharedHeaderMap, ...ratesHeaderMap };
+  }
+  return { ...sharedHeaderMap, ...countsHeaderMap };
+}
+
+function buildDatasetUrl(
+  date: string,
+  dataset: DatasetConfig,
+  seasonId: string
+) {
+  const query = new URLSearchParams({
+    fromseason: seasonId,
+    thruseason: seasonId,
+    stype: "2",
+    sit: dataset.sit,
+    score: "all",
+    rate: dataset.rate,
+    team: "all",
+    loc: "B",
+    gpf: "410",
+    fd: date,
+    td: date,
+  });
+  return `${NST_BASE_URL}?${query.toString()}`;
+}
+
+async function getEarliestDatasetLatestDate(): Promise<string | null> {
+  let latest: string | null = null;
+  for (const table of TEAM_TABLES) {
+    const { data, error } = await supabase
+      .from(table)
+      .select("date")
+      .order("date", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (error) {
+      throw new Error(
+        `Failed to read latest NST date from ${table}: ${error.message}`
+      );
+    }
+    if (!data?.date) {
+      return null;
+    }
+    if (!latest || data.date < latest) {
+      latest = data.date;
+    }
+  }
+  return latest;
+}
+
+async function getMissingDatasets(date: string): Promise<DatasetConfig[]> {
+  const results = await Promise.all(
+    DATASETS.map(async (dataset) => {
+      const { error, count } = await supabase
+        .from(dataset.table)
+        .select("team_abbreviation", { count: "exact", head: true })
+        .eq("date", date);
+      if (error) {
+        console.warn(
+          `Supabase completeness check failed for ${dataset.table} (${date}): ${error.message}`
+        );
+        return false;
+      }
+      return (count ?? 0) > 0;
+    })
+  );
+
+  return DATASETS.filter((_, index) => !results[index]);
+}
+
+function parseDateInput(value: string | undefined): Date | null {
+  if (!value) return null;
+  const parsed = parseISO(value);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return parsed;
+}
+
+function buildDateQueue(
+  runMode: RunMode,
+  today: Date,
+  seasonFloor: string,
+  resumeDate: string | null,
+  startDateInput?: Date | null,
+  endDateInput?: Date | null
+): string[] {
+  const dates: string[] = [];
+  const todayStr = formatEstDate(today);
+  const todayDate = parseISO(todayStr);
+  const seasonStartDate = parseISO(seasonFloor);
+
+  const clampToToday = (date: Date) =>
+    isAfter(date, todayDate) ? todayDate : date;
+
+  if (runMode === "reverse") {
+    const start = clampToToday(startDateInput ?? todayDate);
+    const end = endDateInput ? endDateInput : seasonStartDate;
+    if (isBefore(start, end)) {
+      return [];
+    }
+    let cursor = start;
+    while (!isBefore(cursor, end)) {
+      dates.push(format(cursor, "yyyy-MM-dd"));
+      cursor = addDays(cursor, -1);
+    }
+    return dates;
+  }
+
+  // Walk calendar-date strings: converting a parsed local midnight to Eastern
+  // time shifts every date back a day on a UTC host.
+  const start = startDateInput
+    ? format(startDateInput, "yyyy-MM-dd")
+    : (resumeDate ?? seasonFloor);
+  const requestedEnd = endDateInput
+    ? format(endDateInput, "yyyy-MM-dd")
+    : todayStr;
+  const end = requestedEnd > todayStr ? todayStr : requestedEnd;
+
+  for (let cursor = start; cursor <= end; cursor = addCalendarDays(cursor, 1)) {
+    dates.push(cursor);
+  }
+  return dates;
+}
+
+function mapRowToInsert(
+  raw: RawRow,
+  dataset: DatasetConfig,
+  date: string
+): TeamGamelogInsert | null {
+  // NST can return a season-to-date aggregate on a calendar date with no
+  // games. This table is a one-team-game source, so never persist GP > 1 (or
+  // a row whose grain cannot be proved) under the requested date.
+  if (parseNumeric(raw["gp"]) !== 1) return null;
+  const teamLabel = raw["team"];
+  if (!teamLabel) return null;
+  const team = resolveTeam(teamLabel);
+  if (!team) return null;
+  const headerMap = buildHeaderMap(dataset.isRateTable);
+  const row: TeamGamelogInsert = {
+    team_abbreviation: team.abbreviation,
+    team_name: team.name,
+    season_id: seasonIdFromDate(date),
+    date,
+    situation: dataset.situationLabel,
+    updated_at: new Date().toISOString(),
+  };
+
+  for (const [headerKey, columnName] of Object.entries(headerMap)) {
+    const value = raw[headerKey];
+    if (value === undefined) continue;
+    if (columnName === "toi_seconds" || columnName === "toi_per_gp_seconds") {
+      row[columnName] = convertTimeToSeconds(value);
+    } else if (headerKey.includes("%")) {
+      row[columnName] = parsePercentage(value);
+    } else {
+      row[columnName] = parseNumeric(value);
+    }
+  }
+  return row;
+}
+
+function addCalendarDays(date: string, days: number): string {
+  const next = new Date(`${date}T00:00:00.000Z`);
+  next.setUTCDate(next.getUTCDate() + days);
+  return next.toISOString().slice(0, 10);
+}
+
+function excludePreseason<T extends { or: (filter: string) => T }>(query: T) {
+  // NST is queried with stype=2, so preseason dates never have rows to store.
+  return query.or(`type.is.null,type.neq.${PRESEASON_GAME_TYPE}`);
+}
+
+async function getSeasonFirstGameDate(seasonId: number): Promise<string | null> {
+  const { data, error } = await excludePreseason(
+    supabase.from("games").select("date").eq("seasonId", seasonId)
+  )
+    .order("date", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  if (error) {
+    throw new Error(`Failed to read first game date: ${error.message}`);
+  }
+  return data?.date ?? null;
+}
+
+async function getScheduledGameDates(
+  seasonId: number,
+  fromDate: string,
+  toDate: string
+): Promise<Set<string>> {
+  const rows = await fetchPaginatedRows<{ date: string }>(
+    () =>
+      excludePreseason(
+        supabase
+          .from("games")
+          .select("date")
+          .eq("seasonId", seasonId)
+          .gte("date", fromDate)
+          .lte("date", toDate)
+      ),
+    ["date", "id"]
+  );
+  return new Set(rows.map((row) => row.date.slice(0, 10)));
+}
+
+async function resolveIncrementalStartDate(seasonFloor: string): Promise<string> {
+  const latest = await getEarliestDatasetLatestDate();
+  if (!latest || latest < seasonFloor) return seasonFloor;
+  // Recheck a partially written latest date so it can be repaired; once it is
+  // complete, resume the day after it.
+  const missing = await getMissingDatasets(latest);
+  return missing.length > 0 ? latest : addCalendarDays(latest, 1);
+}
+
+async function processDatasetForDate(
+  date: string,
+  dataset: DatasetConfig,
+  deadlineAt: number,
+  plannedRequestCount: number
+): Promise<{ inserted: number; table: string; teamGames: number }> {
+  const seasonId = seasonIdFromDate(date).toString();
+  const url = buildDatasetUrl(date, dataset, seasonId);
+  console.log(`[NST] Fetching ${dataset.description} for ${date} -> ${url}`);
+  const html = await nstGet(url, deadlineAt, plannedRequestCount);
+  const rawRows = parseTeamTable(html);
+  const teamGames = rawRows.filter(
+    (raw) => parseNumeric(raw["gp"]) === 1
+  ).length;
+  if (rawRows.length === 0) {
+    console.log(`[NST] No ${dataset.description} rows for ${date}`);
+    return { inserted: 0, table: dataset.table, teamGames };
+  }
+  const rows = rawRows
+    .map((raw) => mapRowToInsert(raw, dataset, date))
+    .filter(
+      (row): row is TeamGamelogInsert =>
+        row !== null && row.team_abbreviation !== undefined
+    );
+  if (rows.length === 0) {
+    console.log(
+      `[NST] All ${dataset.description} rows skipped for ${date} after mapping.`
+    );
+    return { inserted: 0, table: dataset.table, teamGames };
+  }
+  const { error } = await supabase
+    .from(dataset.table)
+    .upsert(rows, { onConflict: "team_abbreviation,date" });
+  if (error) {
+    throw new Error(
+      `Supabase upsert failed for ${dataset.table} (${date}): ${error.message}`
+    );
+  }
+  console.log(
+    `[NST] Upserted ${rows.length} rows into ${dataset.table} for ${date}`
+  );
+  return { inserted: rows.length, table: dataset.table, teamGames };
+}
+
+function coerceParam(value: unknown): string | undefined {
+  if (value === undefined || value === null) return undefined;
+  if (Array.isArray(value)) {
+    return value[0];
+  }
+  if (typeof value === "string") return value;
+  return String(value);
+}
+
+function parseBooleanParam(
+  value: string | undefined,
+  defaultValue: boolean
+): boolean {
+  if (value === undefined) return defaultValue;
+  return ["true", "1", "yes", "y"].includes(value.toLowerCase());
+}
+
+const handler = async (req: NextApiRequest, res: NextApiResponse) => {
+  const startedAt = Date.now();
+  const deadlineAt = startedAt + NST_RUN_BUDGET_MS;
+  lastNstRequestAt = 0;
+  if (req.method !== "GET" && req.method !== "POST") {
+    res.setHeader("Allow", "GET,POST");
+    return res.status(405).json({ message: "Method not allowed" });
+  }
+
+  const params = req.method === "GET" ? req.query : (req.body ?? {});
+  const runModeParam = coerceParam(params.runMode)?.toLowerCase();
+  const runMode: RunMode = (runModeParam as RunMode) || "incremental";
+  if (!["incremental", "forward", "reverse"].includes(runMode)) {
+    return res.status(400).json({
+      message:
+        "Invalid runMode. Use incremental (default), forward, or reverse.",
+    });
+  }
+
+  const startDateParam = coerceParam(params.startDate);
+  const endDateParam = coerceParam(params.endDate);
+  const overwriteParam = coerceParam(params.overwrite);
+
+  const startDateParsed = parseDateInput(startDateParam);
+  const endDateParsed = parseDateInput(endDateParam);
+
+  if (startDateParam && !startDateParsed) {
+    return res.status(400).json({ message: "Invalid startDate value." });
+  }
+  if (endDateParam && !endDateParsed) {
+    return res.status(400).json({ message: "Invalid endDate value." });
+  }
+
+  const overwriteDefault = runMode === "incremental" ? false : true;
+  const overwrite = parseBooleanParam(overwriteParam, overwriteDefault);
+
+  try {
+    const season = await fetchCurrentSeason();
+    const seasonFirstGameDate = await getSeasonFirstGameDate(season.id);
+    const seasonFloor = seasonFirstGameDate ?? season.startDate.slice(0, 10);
+    const resumeDate =
+      runMode === "incremental" && !startDateParsed
+        ? await resolveIncrementalStartDate(seasonFloor)
+        : null;
+    const calendarDates = buildDateQueue(
+      runMode,
+      new Date(),
+      seasonFloor,
+      resumeDate,
+      startDateParsed,
+      endDateParsed
+    );
+    // A league-wide off day never gets rows, so it must not enter the queue.
+    // Without a schedule for the season, keep every date rather than guess.
+    const scheduledDates =
+      runMode === "incremental" && seasonFirstGameDate && calendarDates.length
+        ? await getScheduledGameDates(
+            season.id,
+            calendarDates[0],
+            calendarDates[calendarDates.length - 1]
+          )
+        : null;
+    const queuedDates = scheduledDates
+      ? calendarDates.filter((date) => scheduledDates.has(date))
+      : calendarDates;
+    const offDays = calendarDates.length - queuedDates.length;
+
+    if (queuedDates.length === 0) {
+      return res.status(200).json({
+        message: "No dates to process for the provided parameters.",
+        success: true,
+        complete: true,
+        runMode,
+        overwrite,
+        offDays,
+      });
+    }
+
+    const nstRequestPlan = resolveTeamDailyNstRequestPlan(queuedDates);
+    const maxDatesThisRun = nstRequestPlan.burstAllowed
+      ? MAX_DATE_BASED_DATES_PER_RUN
+      : 1;
+    // Budget requests rather than dates: complete dates cost nothing and a
+    // no-game date costs one probe, so neither stalls the queue.
+    const requestBudget =
+      maxDatesThisRun * TEAM_DAILY_URLS_PER_DATE + EMPTY_DATE_PROBE_ALLOWANCE;
+    let requestsUsed = 0;
+    const retryDates: string[] = [];
+    let deferredDates: string[] = [];
+    currentRequestIntervalMs = nstRequestPlan.requestIntervalMs;
+
+    const summary = {
+      runMode,
+      overwrite,
+      totalDates: queuedDates.length,
+      offDays,
+      processedDates: 0,
+      skippedDates: 0,
+      noGameDates: [] as string[],
+      requestsUsed: 0,
+      datasetResults: [] as Array<{
+        date: string;
+        table: string;
+        inserted: number;
+      }>,
+      errors: [] as string[],
+    };
+
+    dateLoop: for (const [index, date] of queuedDates.entries()) {
+      const datasets = overwrite ? DATASETS : await getMissingDatasets(date);
+      if (datasets.length === 0) {
+        summary.skippedDates += 1;
+        continue;
+      }
+      if (requestsUsed + datasets.length > requestBudget) {
+        deferredDates = queuedDates.slice(index);
+        break;
+      }
+
+      const errorsBeforeDate = summary.errors.length;
+      for (const dataset of datasets) {
+        if (Date.now() + currentRequestIntervalMs + NST_REQUEST_TIMEOUT_MS > deadlineAt) {
+          // This date may have persisted some datasets; incremental mode will
+          // recheck it and fetch only those still missing on the next run.
+          deferredDates = queuedDates.slice(index);
+          break dateLoop;
+        }
+        requestsUsed += 1;
+        try {
+          const result = await processDatasetForDate(date, dataset, deadlineAt, nstRequestPlan.requestCount);
+          if (result.inserted > 0) {
+            summary.datasetResults.push({
+              date,
+              table: result.table,
+              inserted: result.inserted,
+            });
+          }
+          // All-strength counts list every team that played, so an empty
+          // table means no games that day; the other situations would be too.
+          if (dataset.key === "as_counts" && result.teamGames === 0) {
+            summary.noGameDates.push(date);
+            break;
+          }
+        } catch (error: any) {
+          const message =
+            error instanceof Error ? error.message : String(error);
+          console.error(message);
+          summary.errors.push(message);
+        }
+      }
+      summary.processedDates += 1;
+      if (summary.errors.length > errorsBeforeDate) {
+        retryDates.push(date);
+      }
+    }
+    summary.requestsUsed = requestsUsed;
+    deferredDates = [...retryDates, ...deferredDates];
+
+    const success = summary.errors.length === 0;
+    const complete = success && deferredDates.length === 0;
+    const statusCode = success ? 200 : 207;
+    return res.status(statusCode).json({
+      message: `Processed ${summary.processedDates} day(s); ${summary.skippedDates} skipped.`,
+      success,
+      complete,
+      durationMs: Date.now() - startedAt,
+      nstRequestPlan,
+      failedRequests: summary.errors.length,
+      failures: summary.errors.slice(0, 10).map((reason) => ({ reason })),
+      remainingDatesCount: deferredDates.length,
+      remainingDates: deferredDates.slice(0, 10),
+      nextStartDate: deferredDates[0] ?? null,
+      summary,
+    });
+  } catch (error: any) {
+    console.error("update-nst-team-daily failed:", error);
+    return res.status(500).json({
+      message: "Unexpected error while updating NST team gamelogs.",
+      durationMs: Date.now() - startedAt,
+      error: error?.message ?? error,
+    });
+  }
+};
+
+export default adminOnly(withNstJobLifecycle(withCronJobAudit(withNhlOffSeasonSkip(handler as any)), "update-nst-team-daily", req => req.method !== "GET"));

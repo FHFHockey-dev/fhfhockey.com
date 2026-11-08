@@ -1,0 +1,38 @@
+{
+  "id": "CODEX-PLAYER-CARDS-REFINEMENT05-20261026",
+  "at": "2026-10-26T22:38:52.088747+00:00",
+  "owner_thread": "01a16ec2-f81c-717b-8961-8c3832fdc00f",
+  "source": "TJ red-inclusive posterized team palette, finer combined pixels and exact alpha0\u21921at25% logo; first diagnose occlusion; preserve original player/rightedge logo geometry",
+  "source_paths": [
+    "web/lib/player-cards/portraitTreatment.ts",
+    "web/lib/player-cards/portraitTreatment.test.ts",
+    "web/components/player-cards/HeroPlayerCard.tsx",
+    "web/lib/player-cards/shareExport.test.ts",
+    "web/components/player-cards/PlayerCardShareStudio.test.tsx"
+  ],
+  "baseline": [
+    {
+      "path": "web/lib/player-cards/portraitTreatment.ts",
+      "sha256": "5c13ba66de1f5799741f61aebd61bc6bd3dfbbaad15fb896d68e16c0aa93c6e5"
+    },
+    {
+      "path": "web/lib/player-cards/portraitTreatment.test.ts",
+      "sha256": "8256a7a06cae74b07fbd9683c78762fbf2d303d958d8f27eeb5bbe2308e0da95"
+    },
+    {
+      "path": "web/components/player-cards/HeroPlayerCard.tsx",
+      "sha256": "61b2eec28664e7702aae34a1c60ba270315cef350e9ded352939b2a8709d1b17"
+    },
+    {
+      "path": "web/lib/player-cards/shareExport.test.ts",
+      "sha256": "a6f31ab095ddc200e4ddb9fec2cdc507ccd6f534eaef7fcdbdd3b01a497229f7"
+    },
+    {
+      "path": "web/components/player-cards/PlayerCardShareStudio.test.tsx",
+      "sha256": "9bd7b239a845156d1583a8f38a1eda56ea80d2a692c64fec415ba2256dbbb0c8"
+    }
+  ],
+  "status": "ACTIVE bounded correction; current04 runtime unchanged until verified",
+  "artifact_root": "tasks/artifacts/player-cards-2026-10-26/composition-variants-05",
+  "limits": "No new composition/art sources/default switch, no live reads/Tuesday/sharedauth/Git/deploy/delete/deps. Cartoonify feasibility only in this slice."
+}

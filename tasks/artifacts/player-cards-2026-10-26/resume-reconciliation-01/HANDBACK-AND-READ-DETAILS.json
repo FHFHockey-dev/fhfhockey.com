@@ -1,0 +1,127 @@
+{
+  "at": "2026-10-26T15:19:12.972526+00:00",
+  "source": "Previously captured CLAUDE-LEASES-OBSERVED.json plus existing mailbox/receipts; no runtime/process inspection or live request",
+  "mailboxHandbackEntry": "CODEX-20261026-001",
+  "mailboxHandbackAt": "2026-10-26T15:09:22.986418+00:00",
+  "leases": [
+    {
+      "lane": "T1-C1",
+      "owner": "Claude orchestrator -> local_003887f5-f8cd-4290-8920-3d8fa95cf1b2 (c1-evidence-bundle)",
+      "recordedStatus": "ACTIVE canonical 2026-10-25T16:24Z \u2014 installing granted patch (CODEX-080)",
+      "canonicalPaths": [
+        "web/lib/player-cards/evidenceBundle.ts",
+        "web/lib/player-cards/evidenceBundle.test.ts"
+      ],
+      "snapshotArtifactPaths": [
+        "/private/tmp/fhfh-c1-isolated/web/** (snapshot)",
+        "tasks/artifacts/today-plan-2026-10-25/C1/"
+      ],
+      "latestLeaseStatusTimestamp": "2026-10-25T16:24Z",
+      "recordAsOf": "2026-10-26T14:28:28.167177Z",
+      "currentWriterEstablished": false
+    },
+    {
+      "lane": "T2-C2",
+      "owner": "Claude orchestrator -> local_1bef5915-33f7-48c0-baa4-2a4f0ca452f2 (c2-card-readability)",
+      "recordedStatus": "CLOSED 2026-10-25T16:24Z \u2014 not approved by TJ; nothing installed",
+      "canonicalPaths": [
+        "web/components/player-cards/EditorialPlayerCard.tsx",
+        "web/components/player-cards/EditorialPlayerCard.test.tsx",
+        "web/components/player-cards/PlayerCardShareStudio.module.scss"
+      ],
+      "snapshotArtifactPaths": [
+        "/private/tmp/fhfh-c2cards-isolated/web/** (snapshot)",
+        "tasks/artifacts/today-plan-2026-10-25/C2/"
+      ],
+      "latestLeaseStatusTimestamp": "2026-10-25T16:24Z",
+      "recordAsOf": "2026-10-26T14:28:28.167177Z",
+      "currentWriterEstablished": false
+    },
+    {
+      "lane": "PC",
+      "owner": "Claude orchestrator -> local_bd4b0f5c-a517-4d89-98f8-cdb2e7b9b5d7 (pc-player-cards)",
+      "recordedStatus": "active 2026-10-25T16:39Z",
+      "canonicalPaths": [
+        "web/components/player-cards/HeroPlayerCard.tsx",
+        "web/components/player-cards/InteractiveCard.tsx",
+        "web/components/player-cards/PlayerCard.module.scss",
+        "web/components/player-cards/PlayerCard.tsx",
+        "web/components/player-cards/PlayerCardFlow.module.scss",
+        "web/components/player-cards/PlayerCardFlow.test.tsx",
+        "web/components/player-cards/PlayerCardFlow.tsx",
+        "web/components/player-cards/PlayerCardPreview.test.tsx",
+        "web/components/player-cards/PlayerCardPreview.tsx",
+        "web/components/player-cards/PlayerCardShareStudio.module.scss",
+        "web/components/player-cards/PlayerCardShareStudio.test.tsx",
+        "web/components/player-cards/PlayerCardShareStudio.tsx",
+        "web/lib/player-cards/adapter.ts",
+        "web/lib/player-cards/aggregation.r1.test.ts",
+        "web/lib/player-cards/aggregation.ts",
+        "web/lib/player-cards/contracts.ts",
+        "web/lib/player-cards/domain.test.ts",
+        "web/lib/player-cards/evidenceBundle.test.ts",
+        "web/lib/player-cards/evidenceBundle.ts",
+        "web/lib/player-cards/fixtures.ts",
+        "web/lib/player-cards/interactionFixtures.ts",
+        "web/lib/player-cards/interactionSnapshot.ts",
+        "web/lib/player-cards/nstCapture.test.ts",
+        "web/lib/player-cards/nstCapture.ts",
+        "web/lib/player-cards/portraitTreatment.test.ts",
+        "web/lib/player-cards/portraitTreatment.ts",
+        "web/lib/player-cards/ranking.test.ts",
+        "web/lib/player-cards/ranking.ts",
+        "web/lib/player-cards/registry.ts",
+        "web/lib/player-cards/reviewedHeroSamples.ts",
+        "web/lib/player-cards/shareExport.test.ts",
+        "web/lib/player-cards/shareExport.ts",
+        "web/lib/player-cards/windows.ts",
+        "web/pages/social-share/player-cards.tsx",
+        "web/public/player-cards/hero-samples/8478864.png",
+        "web/public/player-cards/hero-samples/8479318.png",
+        "tasks/artifacts/claude-lanes-2026-10-25/PC/"
+      ],
+      "snapshotArtifactPaths": [],
+      "latestLeaseStatusTimestamp": "2026-10-25T16:39Z",
+      "recordAsOf": "2026-10-26T14:28:28.167177Z",
+      "currentWriterEstablished": false
+    }
+  ],
+  "actualWriterEvidence": "No active card writer is established. C1 installed/committed9dbc55afb; PC-5 receipt completed~2026-10-25T21:07Z, later commit32f82b1ee. Latest Claude mailbox102 explicitly says implementation paused after cd73cbd69. Active lease labels are stale relative to those receipts, not evidence of current execution. No explicit card-path release acknowledgement received in available artifacts.",
+  "releaseState": "TJ assigned cards to Codex; conflicting source paths stay unedited until exact handback is recorded, not because an actual running writer was found.",
+  "nextRead": {
+    "executed": false,
+    "source": "Official NHL public production API",
+    "isLiveProductionRead": true,
+    "supabaseProject": null,
+    "databaseTables": [],
+    "method": "GET",
+    "url": "https://api-web.nhle.com/v1/player/8476453/game-log/20262027/2",
+    "playerIds": [
+      8476453
+    ],
+    "season": 20262027,
+    "gameType": 2,
+    "dateRange": "Entire2026-27regularseason as returned; no server-side date range. Historical comparison cutoff2026-10-24T00:00:00Z; any selection requires separate date/finality validation.",
+    "fields": "Full public endpoint JSON, capped by bytes; no field projection specified by this endpoint/proposal. Required facts to inspect: response identity/season/type, game identities, game dates and appearance participation. Exact response schema is not yet asserted or admitted.",
+    "maxGameLogRows": 100,
+    "maxResponseBytes": 2097152,
+    "requestTimeoutSeconds": 5,
+    "overallProcessTimeoutSeconds": 15,
+    "executions": 1,
+    "concurrency": 1,
+    "retries": 0,
+    "redirectFollowing": false,
+    "pagination": false,
+    "fanOut": false,
+    "writes": false,
+    "credentials": false,
+    "privateAccounts": false,
+    "purpose": "Bounded one-player official history input only; no actual-end, source metric, league-population or rank proof."
+  },
+  "safeOfflineWork": [
+    "Inspect existing saved Team Colors/partial/unknown PNGs and their manifests; no rerender or rejected C2 patch.",
+    "Prepare artifact-only observed-input/display/export interface mapping and a requirement checklist from preserved contracts; no canonical edits.",
+    "Trace the existing captured metric-definition/null-zero/date/finality evidence and draft the next exact evidence request without live access.",
+    "Use existing fixture/control receipts to specify focused acceptance cases after handback; avoid rerunning successful suites merely to wait."
+  ]
+}

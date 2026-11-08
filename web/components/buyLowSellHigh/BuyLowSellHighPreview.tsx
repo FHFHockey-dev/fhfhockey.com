@@ -1,231 +1,200 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 
-import { buildWatchlists, compareMarketReference, type MarketReference, type WatchTarget } from "lib/buyLowSellHigh/market";
-import { emptyBlshState, loadBlshState, resetBlshState, saveBlshState, type BlshLocalState } from "lib/buyLowSellHigh/storage";
-import { compareTrade, playerPointsTotal, type TradeScoring } from "lib/buyLowSellHigh/trade";
-import { DEFAULT_HORIZON, HORIZON_OPTIONS, SKATER_TARGETS, TARGET_LABELS, type HorizonGames, type SkaterTarget } from "lib/skoElement/contract";
-import { FIXTURE_AS_OF, FIXTURE_DISCLAIMER, fixtureRecords } from "lib/skoElement/fixtures";
-import { DIRECTION_TEXT, formatMeasured, reasonText } from "components/skoElement/format";
+import { isCurrentResearchSnapshot, currentResearchLists, currentStateLabel, currentWindowAgeText, profileName, savedResearchLists, stateLabel, numberText, type BlshPreviewSnapshot, type BlshResearchSnapshot } from "lib/buyLowSellHigh/researchSnapshot";
+import type { DisplaySnapshot } from "lib/buyLowSellHigh/displayProfile";
 import styles from "components/skoElement/SkoElement.module.scss";
-import BlshPlayerDetail from "./BlshPlayerDetail";
 import detailStyles from "./BlshPlayerDetail.module.scss";
+import BlshPlayerDetail, { CurrentBlshPlayerDetail } from "./BlshPlayerDetail";
+import BlshCandidateLists from "./BlshCandidateLists";
 
-/** Illustrative fixture league. PPP is an intentional bonus on top of goals and assists. */
-export const FIXTURE_LEAGUE: Extract<TradeScoring, { mode: "points" }> = {
-  mode: "points", scoringBasis: "points:fixture-league",
-  weights: { GOALS: 3, ASSISTS: 2, PP_POINTS: 1, SHOTS_ON_GOAL: 0.5, HITS: 0.5, BLOCKED_SHOTS: 0.5,
-    WINS_GOALIE: 4, SAVES_GOALIE: 0.2, GOALS_AGAINST_GOALIE: -1, SHUTOUTS_GOALIE: 3 },
-};
-const SKATER_WEIGHTS = Object.fromEntries(Object.entries(FIXTURE_LEAGUE.weights).filter(([key]) => (SKATER_TARGETS as readonly string[]).includes(key))) as Partial<Record<SkaterTarget, number>>;
-const CATEGORIES = ["GOALS", "ASSISTS", "POINTS", "PP_POINTS", "SHOTS_ON_GOAL", "HITS", "BLOCKED_SHOTS", "WINS_GOALIE", "SAVE_PERCENTAGE", "GOALS_AGAINST_AVERAGE"];
-const MARKET_MAX_AGE_HOURS = 72;
-
-type ListName = "rebound" | "cooling";
+const PAGE_SIZE = 25;
 const DETAIL_ID = "blsh-player-detail";
 
-function defaultStorage(): Storage | null {
-  try { return typeof window === "undefined" ? null : window.localStorage; } catch { return null; }
+/** Existing standalone product preview; immutable historical evidence only. */
+export default function BuyLowSellHighPreview({ snapshot }: { snapshot: BlshPreviewSnapshot }) {
+  return isCurrentResearchSnapshot(snapshot) ? <CurrentPreview snapshot={snapshot} /> : <HistoricalPreview snapshot={snapshot} />;
 }
 
-export default function BuyLowSellHighPreview({ storage }: { storage?: Storage | null }) {
-  const [horizon, setHorizon] = useState<HorizonGames>(DEFAULT_HORIZON);
-  const [target, setTarget] = useState<WatchTarget>("POINTS");
-  const [list, setList] = useState<ListName>("rebound");
-  const [scoringMode, setScoringMode] = useState<"points" | "categories">("points");
-  const [local, setLocal] = useState<BlshLocalState>(emptyBlshState);
-  const [loaded, setLoaded] = useState<{ ready: boolean; recovered: boolean }>({ ready: false, recovered: false });
-  const [giveChoice, setGiveChoice] = useState("");
-  const [receiveChoice, setReceiveChoice] = useState("");
-  const [detailId, setDetailId] = useState<string | null>(null);
-  const toggles = useRef(new Map<string, HTMLButtonElement>());
-  const [refDraft, setRefDraft] = useState({ playerId: "", source: "", value: "", capturedAt: "", horizon: String(DEFAULT_HORIZON) });
-  const store = storage === undefined ? defaultStorage() : storage;
-
-  useEffect(() => {
-    const result = loadBlshState(store);
-    setLocal(result.state);
-    setLoaded({ ready: true, recovered: result.recovered });
-  }, [store]);
-  useEffect(() => { if (loaded.ready) saveBlshState(store, local); }, [store, local, loaded.ready]);
-
-  const records = useMemo(() => fixtureRecords(horizon), [horizon]);
-  const lists = useMemo(() => buildWatchlists(records, target, SKATER_WEIGHTS), [records, target]);
-  const byId = new Map(records.map(record => [record.identity.playerId, record]));
-  const rows = lists[list];
-  const scoring: TradeScoring = scoringMode === "points" ? FIXTURE_LEAGUE : { mode: "categories", categories: CATEGORIES };
-  const tradeResult = compareTrade({ ...local.draft, scoring }, records);
-  const allRows = [...lists.rebound, ...lists.cooling, ...lists.level, ...lists.unranked];
-
-  const detailRecord = detailId ? byId.get(detailId) ?? null : null;
+function HistoricalPreview({ snapshot }: { snapshot: BlshResearchSnapshot }) {
+  const lists = useMemo(() => savedResearchLists(snapshot), [snapshot]);
+  const [side, setSide] = useState<"BL" | "SH" | "withheld">("BL");
+  const [limit, setLimit] = useState(PAGE_SIZE);
+  const [selected, setSelected] = useState<number | null>(null);
+  const toggleRefs = useRef(new Map<number, HTMLButtonElement>());
+  const selectorRef = useRef<HTMLSelectElement>(null);
+  const selectedProfile = snapshot.profiles.find(p => p.playerId === selected) ?? null;
+  const rows = lists[side];
+  const chooseList = (next: typeof side) => { setSide(next); setLimit(PAGE_SIZE); };
   const closeDetail = () => {
-    const id = detailId;
-    setDetailId(null);
-    if (id) toggles.current.get(id)?.focus();
-  };
-
-  const detailToggle = (row: { playerId: string; name: string }) => (
-    <button type="button" ref={node => { if (node) toggles.current.set(row.playerId, node); else toggles.current.delete(row.playerId); }}
-      className={`${styles.rowButton} ${detailStyles.touchButton}`} aria-expanded={detailId === row.playerId} aria-controls={detailId === row.playerId ? DETAIL_ID : undefined}
-      onClick={() => (detailId === row.playerId ? closeDetail() : setDetailId(row.playerId))}>
-      {detailId === row.playerId ? "Hide details" : "Details"}<span className={styles.visuallyHidden}> for {row.name}</span></button>);
-
-  const update = (patch: Partial<BlshLocalState>) => setLocal(current => ({ ...current, ...patch }));
-  const watched = (playerId: string) => local.watchlist.some(entry => entry.playerId === playerId && entry.target === target && entry.horizon === horizon);
-  const toggleWatch = (playerId: string, gap: number | null) => update({ watchlist: watched(playerId)
-    ? local.watchlist.filter(entry => !(entry.playerId === playerId && entry.target === target && entry.horizon === horizon))
-    : [...local.watchlist, { playerId, target, horizon, addedAt: FIXTURE_AS_OF, gapAtAdd: gap }] });
-  const addTo = (side: "give" | "receive", playerId: string) => { if (playerId) update({ draft: { ...local.draft, [side]: [...local.draft[side], playerId] } }); };
-  const removeFrom = (side: "give" | "receive", index: number) => update({ draft: { ...local.draft, [side]: local.draft[side].filter((_, i) => i !== index) } });
-  const saveReference = () => {
-    if (!refDraft.playerId) return;
-    const parsed = Date.parse(refDraft.capturedAt);
-    const reference: MarketReference = { source: refDraft.source, kind: "manager_entered", capturedAt: Number.isFinite(parsed) ? new Date(parsed).toISOString() : refDraft.capturedAt,
-      horizonGames: Number(refDraft.horizon), scoringBasis: FIXTURE_LEAGUE.scoringBasis, unit: "fantasy_points", value: refDraft.value === "" ? Number.NaN : Number(refDraft.value) };
-    update({ marketReferences: { ...local.marketReferences, [refDraft.playerId]: reference } });
+    const id = selected; setSelected(null);
+    if (id && toggleRefs.current.get(id)?.isConnected) toggleRefs.current.get(id)?.focus();
+    else selectorRef.current?.focus();
   };
 
   return (
     <div className={styles.container}>
       <header>
         <h1 className={styles.title}>Buy Low / Sell High</h1>
-        <p className={styles.subtitle}>Rebound and cooling watchlists from the shared Sko Element interpretation, plus manager-entered trade comparisons. Advisory only: nothing here submits a transaction.</p>
+        <p className={styles.subtitle}>Production versus underlying support · separate hot/cold research states</p>
       </header>
-      <p className={styles.fixtureBanner} role="note">{FIXTURE_DISCLAIMER}</p>
-      {loaded.recovered ? <p className={styles.warn} role="alert">Saved local data was unreadable and has been reset on this device.</p> : null}
+      <p className={styles.fixtureBanner} role="note">
+        Historical research snapshot — {snapshot.eventThroughDate}. Real recorded development data, not current player status.
+        Candidate lists are not trading recommendations. All trusted flags remain off.
+      </p>
+      <p className={styles.muted}>
+        Positive = buy-low evidence; negative = sell-high evidence. The research index is not a probability, price or ROI.
+        Personal-reference process coverage does not mean high confidence. Conflicts, stale windows and unavailable values remain inspectable.
+      </p>
+      <p className={styles.muted}>{snapshot.scoringProfile}. The three production tracks are FP, G+A and the named FHFH WiGO Game Score variant.</p>
 
-      <div className={styles.controls}>
-        <label className={styles.control}>Horizon (scheduled team games)
-          <select value={horizon} onChange={event => setHorizon(Number(event.target.value) as HorizonGames)}>
-            {HORIZON_OPTIONS.map(option => <option key={option} value={option}>{`Next ${option}${option === DEFAULT_HORIZON ? " (default)" : ""}`}</option>)}
-          </select>
-        </label>
-        <label className={styles.control}>Ranked by
-          <select value={target} onChange={event => setTarget(event.target.value as WatchTarget)}>
-            <option value="LEAGUE_POINTS">Fixture league points (skaters)</option>
-            {SKATER_TARGETS.map(item => <option key={item} value={item}>{TARGET_LABELS[item]}</option>)}
-          </select>
-        </label>
-      </div>
-
-      <nav className={styles.tabs} aria-label="Watchlist">
-        <button type="button" className={styles.tab} aria-pressed={list === "rebound"} onClick={() => setList("rebound")}>Rebound watch ({lists.rebound.length})</button>
-        <button type="button" className={styles.tab} aria-pressed={list === "cooling"} onClick={() => setList("cooling")}>Cooling watch ({lists.cooling.length})</button>
+      <label className={styles.control}>Inspect any historical profile ({snapshot.profiles.length})
+        <select ref={selectorRef} value={selected ?? ""} onChange={e => setSelected(e.target.value ? Number(e.target.value) : null)}>
+          <option value="">Choose a player</option>
+          {[...snapshot.profiles].sort((a, b) => profileName(a).localeCompare(profileName(b)) || a.playerId - b.playerId)
+            .map(p => <option key={p.playerId} value={p.playerId}>{profileName(p)} · {p.position ?? "position unavailable"}</option>)}
+        </select>
+      </label>
+      <nav className={styles.tabs} aria-label="BLSH candidate lists">
+        <button type="button" className={`${styles.tab} ${detailStyles.touchButton}`} aria-pressed={side === "BL"} onClick={() => chooseList("BL")}>Buy-low candidates ({lists.BL.length})</button>
+        <button type="button" className={`${styles.tab} ${detailStyles.touchButton}`} aria-pressed={side === "SH"} onClick={() => chooseList("SH")}>Sell-high candidates ({lists.SH.length})</button>
+        <button type="button" className={`${styles.tab} ${detailStyles.touchButton}`} aria-pressed={side === "withheld"} onClick={() => chooseList("withheld")}>Withheld / balanced / unavailable ({lists.withheld.length})</button>
       </nav>
-      <p className={styles.muted}>Included by the sign of the shared gap only; alert magnitude, duration and hysteresis are undecided. A watchlist row is not a buy or sell recommendation.</p>
+      <p className={styles.muted}>Saved ranks retain their reviewed coverage-tier ordering. No score is recalculated here. Freshness uses the frozen seven-day research proxy, not an adopted live refresh policy.</p>
 
       <div className={`${styles.tableWrap} ${detailStyles.scrollContainer}`}>
-        <table className={styles.table} aria-label={list === "rebound" ? "Rebound watch" : "Cooling watch"}>
-          <thead><tr><th>Player</th><th>Recent per team game</th><th>Expected per team game</th><th>Gap</th><th>Opportunity</th><th>Evidence</th><th>Market reference</th><th>Watch</th></tr></thead>
-          <tbody>{rows.map(row => {
-            const record = byId.get(row.playerId)!;
-            const expectedTotal = playerPointsTotal(record, FIXTURE_LEAGUE);
-            const market = compareMarketReference({ value: expectedTotal.value, unit: "fantasy_points", horizonGames: horizon, scoringBasis: FIXTURE_LEAGUE.scoringBasis },
-              local.marketReferences[row.playerId], { asOf: FIXTURE_AS_OF, maxAgeHours: MARKET_MAX_AGE_HOURS });
-            return (
-              <tr key={row.playerId}>
-                <th scope="row">{row.name}<br /><span className={styles.muted}>{row.team} · {row.modelClass}</span><br />{detailToggle(row)}</th>
-                <td className={styles.num}>{formatMeasured(row.observed)}</td>
-                <td className={styles.num}>{formatMeasured(row.expected)}</td>
-                <td className={`${styles.num} ${styles[row.direction]}`}>{formatMeasured(row.gap, 2, true)}<br /><span>{DIRECTION_TEXT[row.direction]}</span></td>
-                <td>{row.opportunityLabel}</td>
-                <td><span className={row.evidenceStatus === "fresh" ? undefined : styles.warn}>Evidence {row.evidenceStatus}</span>{row.sparse ? <><br /><span className={styles.muted}>sparse sample</span></> : null}</td>
-                <td>{market.status === "comparable" ? market.label : <>{market.label}<br /><span className={styles.muted}>{reasonText(market.reason)}</span></>}</td>
-                <td><button type="button" className={styles.smallButton} aria-pressed={watched(row.playerId)} onClick={() => toggleWatch(row.playerId, row.gap.value)}>
-                  {watched(row.playerId) ? "Watching" : "Watch"}<span className={styles.visuallyHidden}> {row.name}</span></button></td>
-              </tr>);
-          })}</tbody>
+        <table className={styles.table} aria-label={side === "BL" ? "Buy-low candidates" : side === "SH" ? "Sell-high candidates" : "Withheld historical profiles"}>
+          <thead><tr><th>Player / saved rank</th><th>Production P</th><th>Support-adjusted index</th><th>Evidence / freshness</th><th>Independent streak</th><th>Details</th></tr></thead>
+          <tbody>{rows.slice(0, limit).map(p => (
+            <tr key={p.playerId}>
+              <th scope="row">{profileName(p)}<br /><span className={styles.muted}>{p.team ?? "team unavailable"} · {p.position ?? "position unavailable"}{p.score.rank === null ? "" : ` · #${p.score.rank}`}</span></th>
+              <td className={styles.num}>{numberText(p.score.productionP, 2, true)}</td>
+              <td className={styles.num}>{numberText(p.score.value, 2, true)}</td>
+              <td>{stateLabel(p)}<br /><span className={styles.muted}>Current-window age: {p.reference.currentAgeDays === null ? "unknown" : `${p.reference.currentAgeDays} days`}</span></td>
+              <td>{p.streak ? p.streak.saved.tracks.composite.status.replace(/_/g, " ") : "Unavailable: no matching saved streak"}</td>
+              <td><button type="button" className={`${styles.rowButton} ${detailStyles.touchButton}`}
+                ref={node => { if (node) toggleRefs.current.set(p.playerId, node); else toggleRefs.current.delete(p.playerId); }}
+                aria-expanded={selected === p.playerId} aria-controls={selected === p.playerId ? DETAIL_ID : undefined}
+                onClick={() => selected === p.playerId ? closeDetail() : setSelected(p.playerId)}>
+                {selected === p.playerId ? "Hide details" : "Details"}<span className={styles.visuallyHidden}> for {profileName(p)}</span>
+              </button></td>
+            </tr>
+          ))}</tbody>
         </table>
       </div>
-      {!rows.length ? <p className={styles.muted}>No players in this list for these settings.</p> : null}
-      {detailRecord ? (
-        <BlshPlayerDetail id={DETAIL_ID} record={detailRecord} row={allRows.find(row => row.playerId === detailRecord.identity.playerId) ?? null}
-          target={target} inCurrentList={rows.some(row => row.playerId === detailRecord.identity.playerId)} onClose={closeDetail} />) : null}
-      <details>
-        <summary>Unranked ({lists.unranked.length}) and level ({lists.level.length}) players</summary>
+      {rows.length > limit ? <button type="button" className={`${styles.smallButton} ${detailStyles.touchButton}`} onClick={() => setLimit(n => n + PAGE_SIZE)}>Show next {PAGE_SIZE}</button> : null}
+      <p className={styles.muted}>Showing {Math.min(rows.length, limit)} of {rows.length}. All {snapshot.profiles.length} historical profiles are available in the selector, including low/zero-shot and insufficient-evidence cases.</p>
+
+      {selectedProfile ? <BlshPlayerDetail id={DETAIL_ID} profile={selectedProfile} snapshot={snapshot} onClose={closeDetail} /> : null}
+      <details><summary>Versions, provenance and limitations</summary>
         <ul className={styles.list}>
-          {lists.unranked.map(row => <li key={row.playerId}>{row.name}: gap unavailable ({reasonText(row.reason)}) {detailToggle(row)}</li>)}
-          {lists.level.map(row => <li key={row.playerId}>{row.name}: {DIRECTION_TEXT.level} {detailToggle(row)}</li>)}
+          <li>Snapshot {snapshot.snapshotId}; contract {snapshot.schemaVersion}; score {snapshot.scoreVersion}.</li>
+          <li>Recorded-through {snapshot.eventThroughDate}; packaged {snapshot.packagedAtUTC}. Original source availability, retrieval and live issuance are unknown.</li>
+          {snapshot.limits.map(limitText => <li key={limitText}>{limitText}</li>)}
         </ul>
       </details>
-
-      <section className={styles.panel} aria-label="Local watchlist">
-        <h2>Your watchlist (this device only)</h2>
-        {local.watchlist.length ? (
-          <ul className={styles.list}>{local.watchlist.map(entry => {
-            const now = allRows.find(row => row.playerId === entry.playerId);
-            const current = entry.target === target && entry.horizon === horizon ? now?.gap.value ?? null : null;
-            return (
-              <li key={`${entry.playerId}:${entry.target}:${entry.horizon}`}>
-                {byId.get(entry.playerId)?.identity.name ?? entry.playerId} · {entry.target === "LEAGUE_POINTS" ? "league points" : TARGET_LABELS[entry.target as SkaterTarget] ?? entry.target} · next {entry.horizon}: gap when added {entry.gapAtAdd === null ? "unavailable" : entry.gapAtAdd.toFixed(2)}
-                {current !== null && entry.gapAtAdd !== null ? `, change since added ${(current - entry.gapAtAdd).toFixed(2)}` : ", change shown when the same category and horizon are selected"}
-                {" "}<button type="button" className={styles.smallButton} onClick={() => update({ watchlist: local.watchlist.filter(item => item !== entry) })}>Remove</button>
-              </li>);
-          })}</ul>) : <p className={styles.muted}>No watched players.</p>}
-        <div><button type="button" className={styles.smallButton} onClick={() => { resetBlshState(store); setLocal(emptyBlshState()); }}>Reset all local Buy Low/Sell High data</button></div>
-      </section>
-
-      <section className={styles.panel} aria-label="Trade comparison">
-        <h2>Trade comparison (offer scenario)</h2>
-        <div className={styles.controls}>
-          {(["give", "receive"] as const).map(side => (
-            <div key={side} className={styles.control}>
-              <label className={styles.control}>{side === "give" ? "You give" : "You receive"}
-                <select value={side === "give" ? giveChoice : receiveChoice} onChange={event => (side === "give" ? setGiveChoice : setReceiveChoice)(event.target.value)}>
-                  <option value="">Choose a player</option>
-                  {records.map(record => <option key={record.identity.playerId} value={record.identity.playerId}>{record.identity.name}</option>)}
-                </select>
-              </label>
-              <button type="button" className={styles.smallButton} onClick={() => addTo(side, side === "give" ? giveChoice : receiveChoice)}>Add to {side}</button>
-              <ul className={styles.list} aria-label={`${side} side`}>{local.draft[side].map((id, index) => (
-                <li key={`${id}:${index}`}>{byId.get(id)?.identity.name ?? id} <button type="button" className={styles.smallButton} onClick={() => removeFrom(side, index)}>Remove<span className={styles.visuallyHidden}> {byId.get(id)?.identity.name ?? id}</span></button></li>
-              ))}</ul>
-            </div>))}
-          <label className={styles.control}>Scoring
-            <select value={scoringMode} onChange={event => setScoringMode(event.target.value as "points" | "categories")}>
-              <option value="points">Fixture league points</option>
-              <option value="categories">Category vectors</option>
-            </select>
-          </label>
-        </div>
-        {tradeResult.issues.length ? <ul className={styles.issues}>{tradeResult.issues.map(issue => <li key={issue.code}>{issue.message}</li>)}</ul> : null}
-        <p>{tradeResult.summary}</p>
-        {tradeResult.complete ? (
-          <div className={styles.tableWrap}>
-            <table className={styles.table} aria-label="Trade totals">
-              <thead><tr><th>{scoringMode === "points" ? "Total" : "Category"}</th><th>Give</th><th>Receive</th><th>Net (receive − give)</th></tr></thead>
-              <tbody>{tradeResult.rows.map(row => (
-                <tr key={row.key}>
-                  <th scope="row">{row.label}{row.lowerIsBetter ? " (lower is better)" : ""}</th>
-                  <td className={styles.num}>{row.give.value === null ? `Unavailable (${reasonText(row.give.reason)})` : row.give.value.toFixed(3)}</td>
-                  <td className={styles.num}>{row.receive.value === null ? `Unavailable (${reasonText(row.receive.reason)})` : row.receive.value.toFixed(3)}</td>
-                  <td className={styles.num}>{row.net === null ? "Unavailable" : `${row.net > 0 ? "+" : ""}${row.net.toFixed(3)}${row.favorableForReceiver === null ? "" : row.favorableForReceiver ? " (favors receiving)" : " (favors giving)"}`}</td>
-                </tr>))}</tbody>
-            </table>
-          </div>) : null}
-        {tradeResult.players.length ? <p className={styles.muted}>Each player keeps their own team&apos;s scheduled dates: {tradeResult.players.map(player => `${player.name} ${player.startDate} to ${player.endDate}`).join("; ")}.</p> : null}
-      </section>
-
-      <section className={styles.panel} aria-label="Market reference">
-        <h2>Market reference (optional, manager-entered)</h2>
-        <p className={styles.muted}>A market gap appears only for a sourced, dated reference in fixture league points over the same horizon. Ownership or popularity is not a price.</p>
-        <div className={styles.controls}>
-          <label className={styles.control}>Player
-            <select value={refDraft.playerId} onChange={event => setRefDraft({ ...refDraft, playerId: event.target.value })}>
-              <option value="">Choose a player</option>
-              {records.map(record => <option key={record.identity.playerId} value={record.identity.playerId}>{record.identity.name}</option>)}
-            </select>
-          </label>
-          <label className={styles.control}>Source<input value={refDraft.source} onChange={event => setRefDraft({ ...refDraft, source: event.target.value })} /></label>
-          <label className={styles.control}>Value (fantasy points)<input inputMode="decimal" value={refDraft.value} onChange={event => setRefDraft({ ...refDraft, value: event.target.value })} /></label>
-          <label className={styles.control}>Captured at<input type="datetime-local" value={refDraft.capturedAt} onChange={event => setRefDraft({ ...refDraft, capturedAt: event.target.value })} /></label>
-          <label className={styles.control}>Horizon
-            <select value={refDraft.horizon} onChange={event => setRefDraft({ ...refDraft, horizon: event.target.value })}>
-              {HORIZON_OPTIONS.map(option => <option key={option} value={option}>{`Next ${option}`}</option>)}
-            </select>
-          </label>
-          <button type="button" className={styles.smallButton} onClick={saveReference}>Save reference</button>
-        </div>
-      </section>
     </div>
   );
+}
+
+// Only this saved request has a verified 24-hour capture-age policy. This display
+// check does not requalify source data, recompute scores or change list membership.
+const CAPTURE_POLICY_REQUEST = "dcba14c2253d82bc70690d3c21112d926c1cdfc4f361024aa8a02f117e262465";
+export function captureAgeState(snapshot: DisplaySnapshot, nowMs: number | null): "unknown" | "within_budget" | "stale" {
+  const capturedMs = Date.parse(snapshot.asOfUTC);
+  if (snapshot.sourcePins.currentRequest !== CAPTURE_POLICY_REQUEST || snapshot.eventThroughDate !== "2026-10-28"
+    || nowMs === null || !Number.isFinite(nowMs) || !Number.isFinite(capturedMs) || nowMs < capturedMs) return "unknown";
+  return nowMs - capturedMs > 24 * 60 * 60 * 1000 ? "stale" : "within_budget";
+}
+
+function CaptureAgeNotice({ snapshot }: { snapshot: DisplaySnapshot }) {
+  // Start unknown on both server and client to avoid a clock-dependent hydration mismatch.
+  const [nowMs, setNowMs] = useState<number | null>(null);
+  useEffect(() => {
+    const update = () => setNowMs(Date.now());
+    update();
+    const timer = window.setInterval(update, 60_000);
+    window.addEventListener("focus", update);
+    return () => { window.clearInterval(timer); window.removeEventListener("focus", update); };
+  }, []);
+  const state = captureAgeState(snapshot, nowMs);
+  return <p className={styles.fixtureBanner} role="status" aria-label="Snapshot capture freshness">
+    {state === "stale"
+      ? "Stale saved capture — more than 24 hours old. Research display only; current recommendations unavailable."
+      : state === "within_budget"
+        ? "Saved capture is within its 24-hour age budget. Research only; live freshness remains unverified."
+        : "Capture age or policy unavailable. Saved research only; live freshness remains unverified."}
+  </p>;
+}
+
+function CurrentPreview({ snapshot }: { snapshot: DisplaySnapshot }) {
+  const lists = useMemo(() => currentResearchLists(snapshot), [snapshot]);
+  const [side, setSide] = useState<"BL" | "SH" | "withheld">("BL");
+  const [limit, setLimit] = useState(PAGE_SIZE);
+  const [selected, setSelected] = useState<number | null>(null);
+  const toggleRefs = useRef(new Map<number, HTMLButtonElement>());
+  const selectorRef = useRef<HTMLSelectElement>(null);
+  const selectedProfile = snapshot.profiles.find(p => p.playerId === selected) ?? null;
+  const rows = lists[side];
+  const chooseList = (next: typeof side) => { setSide(next); setLimit(PAGE_SIZE); };
+  const closeDetail = () => {
+    const id = selected; setSelected(null);
+    if (id && toggleRefs.current.get(id)?.isConnected) toggleRefs.current.get(id)?.focus();
+    else selectorRef.current?.focus();
+  };
+
+  return <div className={styles.container}>
+    <header>
+      <h1 className={styles.title}>Buy Low / Sell High</h1>
+      <p className={styles.subtitle}>Recent production relative to a historical personal/cohort reference, adjusted for current underlying support.</p>
+    </header>
+    <p className={styles.fixtureBanner} role="note">{snapshot.banner} {snapshot.referencePolicy.label}</p>
+    <CaptureAgeNotice snapshot={snapshot} />
+    <p className={styles.muted}>Positive = buy-low evidence; negative = sell-high evidence. These are retrospective research comparisons, not measured market discounts or future returns. All trusted flags remain off.</p>
+    <p className={styles.muted}>Recorded through {snapshot.eventThroughDate}; captured as of {snapshot.asOfUTC}. The development reference is stale. Player game ages below are relative to this saved cutoff, not today. Coverage tiers describe available evidence, not calibrated confidence.</p>
+    {snapshot.mapperVersion === "blsh-display-profile-v3" ? <BlshCandidateLists snapshot={snapshot} /> : <>
+    <label className={styles.control}>Inspect any profile ({snapshot.profiles.length})
+      <select ref={selectorRef} value={selected ?? ""} onChange={e => setSelected(e.target.value ? Number(e.target.value) : null)}>
+        <option value="">Choose a player</option>
+        {[...snapshot.profiles].sort((a, b) => a.displayName.localeCompare(b.displayName) || a.playerId - b.playerId)
+          .map(p => <option key={p.playerId} value={p.playerId}>{p.displayName} · {p.position ?? "position unavailable"}</option>)}
+      </select>
+    </label>
+    <nav className={styles.tabs} aria-label="BLSH candidate lists">
+      <button type="button" className={`${styles.tab} ${detailStyles.touchButton}`} aria-pressed={side === "BL"} onClick={() => chooseList("BL")}>Buy-low candidates ({lists.BL.length})</button>
+      <button type="button" className={`${styles.tab} ${detailStyles.touchButton}`} aria-pressed={side === "SH"} onClick={() => chooseList("SH")}>Sell-high candidates ({lists.SH.length})</button>
+      <button type="button" className={`${styles.tab} ${detailStyles.touchButton}`} aria-pressed={side === "withheld"} onClick={() => chooseList("withheld")}>Withheld / balanced / unavailable ({lists.withheld.length})</button>
+    </nav>
+    <p className={styles.muted}>Saved research order; no score or list cutoff is added. These index values are not fantasy points or per-game averages. Open a player’s details for totals across their selected games. Production gap compares the historical reference with recorded production; the support-adjusted index also considers changes in scoring chances.</p>
+    <div className={`${styles.tableWrap} ${detailStyles.scrollContainer}`}>
+      <table className={styles.table} aria-label={side === "BL" ? "Buy-low candidates" : side === "SH" ? "Sell-high candidates" : "Withheld profiles"}>
+        <thead><tr><th>Player / saved rank</th><th>Production gap (normalized)</th><th>Support-adjusted index</th><th>Evidence / age at saved cutoff</th><th>Details</th></tr></thead>
+        <tbody>{rows.slice(0, limit).map(p => <tr key={p.playerId}>
+          <th scope="row">{p.displayName}<br /><span className={styles.muted}>{p.team ?? "team unavailable"} · {p.position ?? "position unavailable"}{p.score.rank === null ? "" : ` · #${p.score.rank}`}</span></th>
+          <td className={styles.num}>{numberText(p.score.baselineNormalizedGap, 2, true)}</td>
+          <td className={styles.num}>{numberText(p.score.value, 2, true)}</td>
+          <td>{currentStateLabel(p)}<br /><span className={styles.muted}>{currentWindowAgeText(p.evidence.window)}</span></td>
+          <td><button type="button" className={`${styles.rowButton} ${detailStyles.touchButton}`}
+            ref={node => { if (node) toggleRefs.current.set(p.playerId, node); else toggleRefs.current.delete(p.playerId); }}
+            aria-expanded={selected === p.playerId} aria-controls={selected === p.playerId ? DETAIL_ID : undefined}
+            onClick={() => selected === p.playerId ? closeDetail() : setSelected(p.playerId)}>
+            {selected === p.playerId ? "Hide details" : "Details"}<span className={styles.visuallyHidden}> for {p.displayName}</span>
+          </button></td>
+        </tr>)}</tbody>
+      </table>
+    </div>
+    {rows.length > limit ? <button type="button" className={`${styles.smallButton} ${detailStyles.touchButton}`} onClick={() => setLimit(n => n + PAGE_SIZE)}>Show next {PAGE_SIZE}</button> : null}
+    <p className={styles.muted}>Showing {Math.min(rows.length, limit)} of {rows.length}. All {snapshot.profiles.length} captured profiles are available in the selector, including low/zero-shot, conflicting and unavailable cases.</p>
+    {selectedProfile ? <CurrentBlshPlayerDetail id={DETAIL_ID} profile={selectedProfile} snapshot={snapshot} onClose={closeDetail} /> : null}
+    </>}
+    <details><summary>Versions, provenance and limitations</summary>
+      <ul className={styles.list}>
+        <li>Contract {snapshot.schemaVersion}; score {snapshot.scoreVersion}; explanation {snapshot.explanationVersion}; assembler {snapshot.assemblerVersion}.</li>
+        <li>Recorded-through {snapshot.eventThroughDate}; as of {snapshot.asOfUTC}; packaged {snapshot.packagedAtUTC}. Issued alert: unavailable.</li>
+        <li>Reference selected by {snapshot.referencePolicy.selectedBy} at {snapshot.referencePolicy.selectedAtUTC} for this provisional local research snapshot.</li>
+        <li>{snapshot.overlay}</li>
+        {snapshot.limits.map(text => <li key={text}>{text}</li>)}
+        <li>{snapshot.predictiveResearch.note} Report: {snapshot.predictiveResearch.report}</li>
+      </ul>
+    </details>
+  </div>;
 }

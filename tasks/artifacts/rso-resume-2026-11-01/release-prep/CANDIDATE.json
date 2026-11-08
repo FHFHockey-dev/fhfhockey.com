@@ -1,0 +1,66 @@
+{
+  "at": "2026-11-01T20:21:45.328925+00:00",
+  "state": "SOURCE_COMMITTED_ADMISSION_INSTALLED_PENDING_OWNER_COMMIT",
+  "selectedCommittedBase": "295b384da47f2a4665a76d841d3d1aa701912d8c",
+  "baseTree": "f5d6366ecc9d441bd20e5f93b744187672cb6d2e",
+  "candidateTree": "394e3cb70d3e9995e8a1f02f75ba13973320df34",
+  "candidateCommit": "c3897d3273ca46ea25a9f2737f09c835e5ec7325",
+  "overlayFiles": [
+    {
+      "path": "web/lib/player-forecasts/rsoUsePolicy.ts",
+      "sha256": "8299f6ff97d1ae8bf3836f1202b0eb82586cea4abf70b642a612e03c861d7aad"
+    },
+    {
+      "path": "web/lib/player-forecasts/rsoUsePolicy.test.ts",
+      "sha256": "bda984e71954a157f644e84e8a7fbb5b89b27a3b7f790e18c633e51b5f9f6a90"
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/planningReproducibility.test.ts",
+      "sha256": "7aa609b962ce392342bb272c57bc1609225ac686ad93e1807428906fce381198"
+    },
+    {
+      "path": "web/e2e/roster-schedule-optimizer.spec.ts",
+      "sha256": "fb096e6a413c6e4e79111cfffd9fb69974672133e2d46ae41d584592e0665be9"
+    }
+  ],
+  "exportRoot": null,
+  "exportCurrently": "No new export; identical producer closure and four source overlays verified by Git blob identities",
+  "excludedEnvironmentFiles": [
+    "web/.env.development",
+    "web/.env.production",
+    "web/.env.test"
+  ],
+  "predecessorCandidateTree": "9820a239181765a7eae2597c32c0f380c0260b5a",
+  "predecessorBase": "f17bea20d8caa2b6268c318bdb2152d7e2a3b57d",
+  "supersessionReason": "PR403 merged/deployed; preserve all newly released Social Share code",
+  "limits": "Read-only Git plus Git-free tree hashes; no index/object/ref/admission writes",
+  "closureChecks": [
+    {
+      "stage": "baseline",
+      "exitCode": 0,
+      "receipt": "after402-baseline-closure.json",
+      "receiptSha256": "3b7e3d81f8ea80650cbc94ca8380207aa1f47daf0627d4210b3161e5aeb03df2",
+      "closureSha256": "f87dd7079506915fbdb9602d35c3a97270865ae0f4b8813c4456d6d09e96dc92",
+      "moduleCount": 195,
+      "findings": []
+    },
+    {
+      "stage": "candidate",
+      "exitCode": 0,
+      "receipt": "after402-candidate-closure.json",
+      "receiptSha256": "4e6dab63aee4d2119a65e03859f88eba2945fe20e2d8b091c6dde89c973bcca0",
+      "closureSha256": "ec5bdab6593f58ec19ad9b250fb645aa377616542e98205150e22f085914968c",
+      "moduleCount": 195,
+      "findings": []
+    }
+  ],
+  "verifiedAt": "2026-11-01T20:21:45.328925+00:00",
+  "selectedBy": "Parent continuation explicitly directs reconciling PR403 baseline/exact candidate; existing custody request remains authorized",
+  "selectedAt": "2026-11-01T20:21:45.328925+00:00",
+  "baselineReconciliation": "after403-reconciliation.json",
+  "testEvidenceScope": "400 passing tests were run on the prior #402 candidate. #403 changes only Social Share; no tests rerun or new exact-tree test claim.",
+  "commitVerifiedAt": "2026-11-01T20:31:59.539539+00:00",
+  "commitVerification": "Exact tree, four source pins and first parent 295b384 verified read-only",
+  "admissionDelivery": "admission/c3897d3273ca46ea25a9f2737f09c835e5ec7325/combined/COMMIT-DELIVERY.json",
+  "expectedFinalTree": "125279a5a50d661c4a01d585a4c593693e0ab2f6"
+}

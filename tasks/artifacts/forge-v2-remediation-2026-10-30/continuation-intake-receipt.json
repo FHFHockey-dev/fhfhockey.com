@@ -1,0 +1,20 @@
+{
+  "check": "intake",
+  "runId": "6235b9c8-d85e-4809-95c8-cac0d1e87bf3",
+  "exit": 0,
+  "status": "passed",
+  "errorKind": null,
+  "commands": [
+    [
+      "python3",
+      "-m",
+      "unittest",
+      "-v",
+      "test_intake_check.py"
+    ]
+  ],
+  "log": "continuation-intake.txt",
+  "logSha256": "ac8c933d47bdcfa564ffbb3af0b33b0ab3c7c6600fa13bca44777766dc8da3fb",
+  "scientificallyQualified": false,
+  "remoteActions": 0
+}

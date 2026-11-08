@@ -1,0 +1,613 @@
+{
+  "state": "TRANSFERRED_LOCAL_EDITING_CUSTODY",
+  "recordedAtUtc": "2026-11-01T16:49:18.850449+00:00",
+  "recordedAtLocal": "2026-11-01T11:49:18.850449-05:00",
+  "localTimezone": "America/New_York",
+  "repository": "/Users/tim/Code/fhfhockey.com",
+  "branch": "octoberBranch",
+  "head": "80060f9425917402805ba4149e0c5ee65040f7b9",
+  "fromLease": "CODEX-CRON-TRIAGE-20261027-01",
+  "fromOwnerThread": "01a17d95-8833-7618-ab3c-93e40feaf0dd",
+  "toOwnerThread": "01a19780-b73c-7334-9e53-4b7fda61201c",
+  "toParentThread": "01a189f6-9a3a-7235-a989-e1af4f47b014",
+  "successorLease": "CODEX-NST-GOALIE-WRITER-20261101-SHARED-ADMISSION",
+  "files": [
+    {
+      "path": "web/lib/nst/client.ts",
+      "sha256": "f0978a2ad0bcbb8dc6d8ed8074dce627e94c38d3ebbbb758c6d552b145e904d0",
+      "bytes": 11630,
+      "acceptedV4Sha256": "f0978a2ad0bcbb8dc6d8ed8074dce627e94c38d3ebbbb758c6d552b145e904d0",
+      "matchesAcceptedV4": true,
+      "disposition": "TRANSFER",
+      "currentRecordedOwners": {
+        "CODEX": [
+          {
+            "location": "root.current_codex_assignments[0]",
+            "id": "CODEX-CRON-TRIAGE-20261027-01",
+            "owner": "Codex cron-report triage worker; parent task 01a16eed-60f6-7096-879f-696c469db015",
+            "ownerThread": null,
+            "status": "ACTIVE_RETAINED_REMAINDER \u2014 exact NST goalie/runner/report successor handoff recorded; other custody and immutable v4 evidence retained; no rollout",
+            "matchingPatterns": [
+              "web/lib/nst/client.ts"
+            ]
+          }
+        ],
+        "CLAUDE": []
+      }
+    },
+    {
+      "path": "web/lib/nst/client.test.ts",
+      "sha256": "e5bd6b585d7e0c7a2229726116c2ff6534236660e35a3845ba8864675b0a952d",
+      "bytes": 14547,
+      "acceptedV4Sha256": "e5bd6b585d7e0c7a2229726116c2ff6534236660e35a3845ba8864675b0a952d",
+      "matchesAcceptedV4": true,
+      "disposition": "TRANSFER",
+      "currentRecordedOwners": {
+        "CODEX": [
+          {
+            "location": "root.current_codex_assignments[0]",
+            "id": "CODEX-CRON-TRIAGE-20261027-01",
+            "owner": "Codex cron-report triage worker; parent task 01a16eed-60f6-7096-879f-696c469db015",
+            "ownerThread": null,
+            "status": "ACTIVE_RETAINED_REMAINDER \u2014 exact NST goalie/runner/report successor handoff recorded; other custody and immutable v4 evidence retained; no rollout",
+            "matchingPatterns": [
+              "web/lib/nst/client.test.ts"
+            ]
+          }
+        ],
+        "CLAUDE": []
+      }
+    },
+    {
+      "path": "web/lib/nst/requestBudget.ts",
+      "sha256": "ccbab70aee15aba93818df4ef42d41195eceb39757af0ad3eef3b3dd15437e5a",
+      "bytes": 6944,
+      "acceptedV4Sha256": "ccbab70aee15aba93818df4ef42d41195eceb39757af0ad3eef3b3dd15437e5a",
+      "matchesAcceptedV4": true,
+      "disposition": "TRANSFER",
+      "currentRecordedOwners": {
+        "CODEX": [
+          {
+            "location": "root.current_codex_assignments[0]",
+            "id": "CODEX-CRON-TRIAGE-20261027-01",
+            "owner": "Codex cron-report triage worker; parent task 01a16eed-60f6-7096-879f-696c469db015",
+            "ownerThread": null,
+            "status": "ACTIVE_RETAINED_REMAINDER \u2014 exact NST goalie/runner/report successor handoff recorded; other custody and immutable v4 evidence retained; no rollout",
+            "matchingPatterns": [
+              "web/lib/nst/requestBudget.ts"
+            ]
+          }
+        ],
+        "CLAUDE": []
+      }
+    },
+    {
+      "path": "web/lib/nst/requestBudget.test.ts",
+      "sha256": "8bdc68777001bc9ee6b79bdb6dacbc173090f83e752f736f664a274562ded34a",
+      "bytes": 9640,
+      "acceptedV4Sha256": "8bdc68777001bc9ee6b79bdb6dacbc173090f83e752f736f664a274562ded34a",
+      "matchesAcceptedV4": true,
+      "disposition": "TRANSFER",
+      "currentRecordedOwners": {
+        "CODEX": [
+          {
+            "location": "root.current_codex_assignments[0]",
+            "id": "CODEX-CRON-TRIAGE-20261027-01",
+            "owner": "Codex cron-report triage worker; parent task 01a16eed-60f6-7096-879f-696c469db015",
+            "ownerThread": null,
+            "status": "ACTIVE_RETAINED_REMAINDER \u2014 exact NST goalie/runner/report successor handoff recorded; other custody and immutable v4 evidence retained; no rollout",
+            "matchingPatterns": [
+              "web/lib/nst/requestBudget.test.ts"
+            ]
+          }
+        ],
+        "CLAUDE": []
+      }
+    },
+    {
+      "path": "web/lib/nst/sharedAdmission.ts",
+      "sha256": "c93354c62a3493d119014d2a4e0e9518241a84c30c7cd14794b1561b595af10f",
+      "bytes": 3151,
+      "acceptedV4Sha256": "c93354c62a3493d119014d2a4e0e9518241a84c30c7cd14794b1561b595af10f",
+      "matchesAcceptedV4": true,
+      "disposition": "TRANSFER",
+      "currentRecordedOwners": {
+        "CODEX": [
+          {
+            "location": "root.current_codex_assignments[0]",
+            "id": "CODEX-CRON-TRIAGE-20261027-01",
+            "owner": "Codex cron-report triage worker; parent task 01a16eed-60f6-7096-879f-696c469db015",
+            "ownerThread": null,
+            "status": "ACTIVE_RETAINED_REMAINDER \u2014 exact NST goalie/runner/report successor handoff recorded; other custody and immutable v4 evidence retained; no rollout",
+            "matchingPatterns": [
+              "web/lib/nst/sharedAdmission.ts"
+            ]
+          }
+        ],
+        "CLAUDE": []
+      }
+    },
+    {
+      "path": "web/lib/nst/sharedAdmission.test.ts",
+      "sha256": "b3c4adeec26b9528c8cd993069dfed01c741502506f4e2574197a1b50e9cd5db",
+      "bytes": 5539,
+      "acceptedV4Sha256": "b3c4adeec26b9528c8cd993069dfed01c741502506f4e2574197a1b50e9cd5db",
+      "matchesAcceptedV4": true,
+      "disposition": "TRANSFER",
+      "currentRecordedOwners": {
+        "CODEX": [
+          {
+            "location": "root.current_codex_assignments[0]",
+            "id": "CODEX-CRON-TRIAGE-20261027-01",
+            "owner": "Codex cron-report triage worker; parent task 01a16eed-60f6-7096-879f-696c469db015",
+            "ownerThread": null,
+            "status": "ACTIVE_RETAINED_REMAINDER \u2014 exact NST goalie/runner/report successor handoff recorded; other custody and immutable v4 evidence retained; no rollout",
+            "matchingPatterns": [
+              "web/lib/nst/sharedAdmission.test.ts"
+            ]
+          }
+        ],
+        "CLAUDE": []
+      }
+    },
+    {
+      "path": "functions/lib/nst_admission.py",
+      "sha256": "aa15e2805d2b500a72a5f6a5f9ab5e750929e44f0c2c1c4dd79df007954e38b3",
+      "bytes": 3602,
+      "acceptedV4Sha256": "aa15e2805d2b500a72a5f6a5f9ab5e750929e44f0c2c1c4dd79df007954e38b3",
+      "matchesAcceptedV4": true,
+      "disposition": "TRANSFER",
+      "currentRecordedOwners": {
+        "CODEX": [
+          {
+            "location": "root.current_codex_assignments[0]",
+            "id": "CODEX-CRON-TRIAGE-20261027-01",
+            "owner": "Codex cron-report triage worker; parent task 01a16eed-60f6-7096-879f-696c469db015",
+            "ownerThread": null,
+            "status": "ACTIVE_RETAINED_REMAINDER \u2014 exact NST goalie/runner/report successor handoff recorded; other custody and immutable v4 evidence retained; no rollout",
+            "matchingPatterns": [
+              "functions/lib/nst_admission.py"
+            ]
+          }
+        ],
+        "CLAUDE": []
+      }
+    },
+    {
+      "path": "functions/tests/test_nst_admission.py",
+      "sha256": "eecd256cd92038e5ca1e580c190ba27a69a7463f6834ec537b5a4a7b5233dbd2",
+      "bytes": 4077,
+      "acceptedV4Sha256": "eecd256cd92038e5ca1e580c190ba27a69a7463f6834ec537b5a4a7b5233dbd2",
+      "matchesAcceptedV4": true,
+      "disposition": "TRANSFER",
+      "currentRecordedOwners": {
+        "CODEX": [
+          {
+            "location": "root.current_codex_assignments[0]",
+            "id": "CODEX-CRON-TRIAGE-20261027-01",
+            "owner": "Codex cron-report triage worker; parent task 01a16eed-60f6-7096-879f-696c469db015",
+            "ownerThread": null,
+            "status": "ACTIVE_RETAINED_REMAINDER \u2014 exact NST goalie/runner/report successor handoff recorded; other custody and immutable v4 evidence retained; no rollout",
+            "matchingPatterns": [
+              "functions/tests/test_nst_admission.py"
+            ]
+          }
+        ],
+        "CLAUDE": []
+      }
+    }
+  ],
+  "scope": "Shared NST request-admission/client/local-budget adapters and their exact tests, including the Python admission adapter, for the goalie writer lane to prepare an explicit whole-job occupancy protocol. Preserve existing non-goalie APIs, rolling attempt budgets, fail-closed behavior, whole-plan burst eligibility and retry accounting. This transfer authorizes local edits only, not activation of a new lifecycle contract or rollout.",
+  "retainedAuditFiles": [
+    {
+      "path": "web/lib/cron/withCronJobAudit.ts",
+      "sha256": "a89d29fa77ed7fecdc7164d927b976a18922ce6bacf349e0659505f9fbf110de",
+      "bytes": 16303,
+      "acceptedV4Sha256": "a89d29fa77ed7fecdc7164d927b976a18922ce6bacf349e0659505f9fbf110de",
+      "matchesAcceptedV4": true,
+      "disposition": "RETAIN_GLOBAL_AUDIT",
+      "currentRecordedOwners": {
+        "CODEX": [
+          {
+            "location": "root.current_codex_assignments[0]",
+            "id": "CODEX-CRON-TRIAGE-20261027-01",
+            "owner": "Codex cron-report triage worker; parent task 01a16eed-60f6-7096-879f-696c469db015",
+            "ownerThread": null,
+            "status": "ACTIVE_RETAINED_REMAINDER \u2014 exact NST goalie/runner/report successor handoff recorded; other custody and immutable v4 evidence retained; no rollout",
+            "matchingPatterns": [
+              "web/lib/cron/withCronJobAudit.ts"
+            ]
+          }
+        ],
+        "CLAUDE": []
+      }
+    },
+    {
+      "path": "web/lib/cron/withCronJobAudit.test.ts",
+      "sha256": "2e02e107cc12b7b5bb27a91455e95347657c30192d2e6df3ce16b09b5dfe0d6c",
+      "bytes": 27611,
+      "acceptedV4Sha256": "2e02e107cc12b7b5bb27a91455e95347657c30192d2e6df3ce16b09b5dfe0d6c",
+      "matchesAcceptedV4": true,
+      "disposition": "RETAIN_GLOBAL_AUDIT",
+      "currentRecordedOwners": {
+        "CODEX": [
+          {
+            "location": "root.current_codex_assignments[0]",
+            "id": "CODEX-CRON-TRIAGE-20261027-01",
+            "owner": "Codex cron-report triage worker; parent task 01a16eed-60f6-7096-879f-696c469db015",
+            "ownerThread": null,
+            "status": "ACTIVE_RETAINED_REMAINDER \u2014 exact NST goalie/runner/report successor handoff recorded; other custody and immutable v4 evidence retained; no rollout",
+            "matchingPatterns": [
+              "web/lib/cron/withCronJobAudit.test.ts"
+            ]
+          }
+        ],
+        "CLAUDE": []
+      }
+    }
+  ],
+  "auditDisposition": "Both global audit files remain with CODEX-CRON-TRIAGE-20261027-01, idle and read-only to successor. No competing editor found. They contain no NST lifecycle contract. If a concrete generic hook is necessary, request that exact hook/transfer; do not broaden all-cron behavior implicitly.",
+  "companionFilesNotTransferred": [
+    {
+      "path": "functions/api/fetch_team_table.py",
+      "sha256": "fb9b22534d8f5312995fd240f342675cb6ea2d96707d9f49c62612ba8cb00b89",
+      "disposition": "READ_ONLY_NOT_TRANSFERRED",
+      "recordedOwners": {
+        "CODEX": [
+          {
+            "location": "root.current_codex_assignments[0]",
+            "id": "CODEX-CRON-TRIAGE-20261027-01",
+            "owner": "Codex cron-report triage worker; parent task 01a16eed-60f6-7096-879f-696c469db015",
+            "ownerThread": null,
+            "status": "ACTIVE_RETAINED_REMAINDER \u2014 exact NST goalie/runner/report successor handoff recorded; other custody and immutable v4 evidence retained; no rollout",
+            "matchingPatterns": [
+              "functions/api/fetch_team_table.py"
+            ]
+          }
+        ],
+        "CLAUDE": []
+      }
+    },
+    {
+      "path": "functions/tests/test_fetch_team_table_contract.py",
+      "sha256": "aa5838f549ce6905b6d4542147f0d9d2a91193544c1b4866f067cf4b846015ea",
+      "disposition": "READ_ONLY_NOT_TRANSFERRED",
+      "recordedOwners": {
+        "CODEX": [
+          {
+            "location": "root.current_codex_assignments[0]",
+            "id": "CODEX-CRON-TRIAGE-20261027-01",
+            "owner": "Codex cron-report triage worker; parent task 01a16eed-60f6-7096-879f-696c469db015",
+            "ownerThread": null,
+            "status": "ACTIVE_RETAINED_REMAINDER \u2014 exact NST goalie/runner/report successor handoff recorded; other custody and immutable v4 evidence retained; no rollout",
+            "matchingPatterns": [
+              "functions/tests/test_fetch_team_table_contract.py"
+            ]
+          }
+        ],
+        "CLAUDE": []
+      }
+    },
+    {
+      "path": "web/pages/api/Teams/nst-team-stats.ts",
+      "sha256": "e526a3ba1de0b06772886976d5a3ccffe5d7323aafe3ecc58105f0516cdccfb1",
+      "disposition": "READ_ONLY_NOT_TRANSFERRED",
+      "recordedOwners": {
+        "CODEX": [
+          {
+            "location": "root.current_codex_assignments[0]",
+            "id": "CODEX-CRON-TRIAGE-20261027-01",
+            "owner": "Codex cron-report triage worker; parent task 01a16eed-60f6-7096-879f-696c469db015",
+            "ownerThread": null,
+            "status": "ACTIVE_RETAINED_REMAINDER \u2014 exact NST goalie/runner/report successor handoff recorded; other custody and immutable v4 evidence retained; no rollout",
+            "matchingPatterns": [
+              "web/pages/api/Teams/nst-team-stats.ts"
+            ]
+          }
+        ],
+        "CLAUDE": []
+      }
+    },
+    {
+      "path": "web/__tests__/pages/api/Teams/nst-team-stats.route.test.ts",
+      "sha256": "0a1ce0f480439d5cd487dfa55744914ad3131bf75d0ccca9edc61df5962b62c0",
+      "disposition": "READ_ONLY_NOT_TRANSFERRED",
+      "recordedOwners": {
+        "CODEX": [
+          {
+            "location": "root.current_codex_assignments[0]",
+            "id": "CODEX-CRON-TRIAGE-20261027-01",
+            "owner": "Codex cron-report triage worker; parent task 01a16eed-60f6-7096-879f-696c469db015",
+            "ownerThread": null,
+            "status": "ACTIVE_RETAINED_REMAINDER \u2014 exact NST goalie/runner/report successor handoff recorded; other custody and immutable v4 evidence retained; no rollout",
+            "matchingPatterns": [
+              "web/__tests__/pages/api/Teams/nst-team-stats.route.test.ts"
+            ]
+          }
+        ],
+        "CLAUDE": []
+      }
+    },
+    {
+      "path": "web/scripts/fetch_team_table.py",
+      "sha256": "9c1d58963de4ce72ab289860f5d247c3084f0255a76d5636314424e7a6ca760f",
+      "disposition": "READ_ONLY_NOT_TRANSFERRED",
+      "recordedOwners": {
+        "CODEX": [
+          {
+            "location": "root.current_codex_assignments[0]",
+            "id": "CODEX-CRON-TRIAGE-20261027-01",
+            "owner": "Codex cron-report triage worker; parent task 01a16eed-60f6-7096-879f-696c469db015",
+            "ownerThread": null,
+            "status": "ACTIVE_RETAINED_REMAINDER \u2014 exact NST goalie/runner/report successor handoff recorded; other custody and immutable v4 evidence retained; no rollout",
+            "matchingPatterns": [
+              "web/scripts/fetch_team_table.py"
+            ]
+          }
+        ],
+        "CLAUDE": []
+      }
+    },
+    {
+      "path": "web/pages/api/ThreeYearAverages/nstgamelog.py",
+      "sha256": "27c588097d7c4e46ebf7ea773a7c114a8c3126e31ddd6b855f9404d756b85579",
+      "disposition": "READ_ONLY_NOT_TRANSFERRED",
+      "recordedOwners": {
+        "CODEX": [
+          {
+            "location": "root.current_codex_assignments[0]",
+            "id": "CODEX-CRON-TRIAGE-20261027-01",
+            "owner": "Codex cron-report triage worker; parent task 01a16eed-60f6-7096-879f-696c469db015",
+            "ownerThread": null,
+            "status": "ACTIVE_RETAINED_REMAINDER \u2014 exact NST goalie/runner/report successor handoff recorded; other custody and immutable v4 evidence retained; no rollout",
+            "matchingPatterns": [
+              "web/pages/api/ThreeYearAverages/nstgamelog.py"
+            ]
+          }
+        ],
+        "CLAUDE": []
+      }
+    },
+    {
+      "path": "web/pages/api/ThreeYearAverages/nsttest.py",
+      "sha256": "70613144aae7e604732b6cd5685214f6778d067e29629a6bd62bb02fb189db81",
+      "disposition": "READ_ONLY_NOT_TRANSFERRED",
+      "recordedOwners": {
+        "CODEX": [
+          {
+            "location": "root.current_codex_assignments[0]",
+            "id": "CODEX-CRON-TRIAGE-20261027-01",
+            "owner": "Codex cron-report triage worker; parent task 01a16eed-60f6-7096-879f-696c469db015",
+            "ownerThread": null,
+            "status": "ACTIVE_RETAINED_REMAINDER \u2014 exact NST goalie/runner/report successor handoff recorded; other custody and immutable v4 evidence retained; no rollout",
+            "matchingPatterns": [
+              "web/pages/api/ThreeYearAverages/nsttest.py"
+            ]
+          }
+        ],
+        "CLAUDE": []
+      }
+    },
+    {
+      "path": "web/pages/api/v1/db/nst_gamelog_scraper.py",
+      "sha256": "ece5e48a383567914cce31e3a17bbada7a9f4fde3b0566fddc06c999a8ae2fbd",
+      "disposition": "READ_ONLY_NOT_TRANSFERRED",
+      "recordedOwners": {
+        "CODEX": [
+          {
+            "location": "root.current_codex_assignments[0]",
+            "id": "CODEX-CRON-TRIAGE-20261027-01",
+            "owner": "Codex cron-report triage worker; parent task 01a16eed-60f6-7096-879f-696c469db015",
+            "ownerThread": null,
+            "status": "ACTIVE_RETAINED_REMAINDER \u2014 exact NST goalie/runner/report successor handoff recorded; other custody and immutable v4 evidence retained; no rollout",
+            "matchingPatterns": [
+              "web/pages/api/v1/db/nst_gamelog_scraper.py"
+            ]
+          }
+        ],
+        "CLAUDE": []
+      }
+    },
+    {
+      "path": "web/pages/api/v1/db/nst_gamelog_goalie_scraper.py",
+      "sha256": "09ea9259aadb442a9333dcf5a2b22f970c7305af577502639d03b4ef15e2df81",
+      "disposition": "READ_ONLY_NOT_TRANSFERRED",
+      "recordedOwners": {
+        "CODEX": [
+          {
+            "location": "root.current_codex_assignments[0]",
+            "id": "CODEX-CRON-TRIAGE-20261027-01",
+            "owner": "Codex cron-report triage worker; parent task 01a16eed-60f6-7096-879f-696c469db015",
+            "ownerThread": null,
+            "status": "ACTIVE_RETAINED_REMAINDER \u2014 exact NST goalie/runner/report successor handoff recorded; other custody and immutable v4 evidence retained; no rollout",
+            "matchingPatterns": [
+              "web/pages/api/v1/db/nst_gamelog_goalie_scraper.py"
+            ]
+          }
+        ],
+        "CLAUDE": []
+      }
+    },
+    {
+      "path": "web/pages/api/v1/db/update-nst-current-season.ts",
+      "sha256": "a9b520fad0693c2cf865f69163b273aa43c80f341050c826d6c6d278ff461ae1",
+      "disposition": "READ_ONLY_NOT_TRANSFERRED",
+      "recordedOwners": {
+        "CODEX": [
+          {
+            "location": "root.current_codex_assignments[0]",
+            "id": "CODEX-CRON-TRIAGE-20261027-01",
+            "owner": "Codex cron-report triage worker; parent task 01a16eed-60f6-7096-879f-696c469db015",
+            "ownerThread": null,
+            "status": "ACTIVE_RETAINED_REMAINDER \u2014 exact NST goalie/runner/report successor handoff recorded; other custody and immutable v4 evidence retained; no rollout",
+            "matchingPatterns": [
+              "web/pages/api/v1/db/update-nst-current-season.ts"
+            ]
+          }
+        ],
+        "CLAUDE": []
+      }
+    },
+    {
+      "path": "web/pages/api/v1/db/update-nst-team-daily.ts",
+      "sha256": "37ad8b752f1c90244f2a27636899a9e37d3251601c9ac67866991279056afed0",
+      "disposition": "READ_ONLY_NOT_TRANSFERRED",
+      "recordedOwners": {
+        "CODEX": [
+          {
+            "location": "root.current_codex_assignments[0]",
+            "id": "CODEX-CRON-TRIAGE-20261027-01",
+            "owner": "Codex cron-report triage worker; parent task 01a16eed-60f6-7096-879f-696c469db015",
+            "ownerThread": null,
+            "status": "ACTIVE_RETAINED_REMAINDER \u2014 exact NST goalie/runner/report successor handoff recorded; other custody and immutable v4 evidence retained; no rollout",
+            "matchingPatterns": [
+              "web/pages/api/v1/db/update-nst-team-daily.ts"
+            ]
+          }
+        ],
+        "CLAUDE": []
+      }
+    },
+    {
+      "path": "web/pages/api/v1/db/update-nst-gamelog.ts",
+      "sha256": "9f6b8f628f2d4be77e3bf15a3d94ee8bceef6b420618034eab5c23162d8db1d4",
+      "disposition": "READ_ONLY_NOT_TRANSFERRED",
+      "recordedOwners": {
+        "CODEX": [],
+        "CLAUDE": []
+      }
+    },
+    {
+      "path": "web/pages/api/v1/db/check-missing-goalie-data.ts",
+      "sha256": "36a289efc0dc416e478b91c5014efce340f65c74b8c2bf8c013b369aca6e0c87",
+      "disposition": "READ_ONLY_NOT_TRANSFERRED",
+      "recordedOwners": {
+        "CODEX": [],
+        "CLAUDE": []
+      }
+    },
+    {
+      "path": "web/pages/api/v1/db/update-nst-player-reports.ts",
+      "sha256": "08637b8014b1525c591d5f4a682b8fc626f298e1700c430bd7e5d0e1d86703bd",
+      "disposition": "READ_ONLY_NOT_TRANSFERRED",
+      "recordedOwners": {
+        "CODEX": [],
+        "CLAUDE": []
+      }
+    },
+    {
+      "path": "web/pages/api/v1/db/update-nst-last-ten.ts",
+      "sha256": "d89897eedbb490663400cadfa9a55637a882ec6dddaf5e362788e1eec178d818",
+      "disposition": "READ_ONLY_NOT_TRANSFERRED",
+      "recordedOwners": {
+        "CODEX": [],
+        "CLAUDE": []
+      }
+    },
+    {
+      "path": "web/pages/api/Teams/[teamAbbreviation].ts",
+      "sha256": "18376cc7d197ac3f756f1fcb963426e3c6b2d99b04832b7ae183fedc7e026890",
+      "disposition": "READ_ONLY_NOT_TRANSFERRED",
+      "recordedOwners": {
+        "CODEX": [],
+        "CLAUDE": []
+      }
+    }
+  ],
+  "companionIntegration": [
+    "Python request transport already goes through functions/lib/nst_admission.py (transferred). Whole Python jobs do not thereby acquire a lifecycle. Enclosing job-level begin/finish/hold would require the exact Python entrypoints listed here, and their tests, if they participate in occupancy.",
+    "functions/api/fetch_team_table.py and web/pages/api/Teams/nst-team-stats.ts form the current Python proxy boundary. The web proxy sends planned-request/admission-budget headers and has its own persistence/processing after the HTTP exchange; a backend per-request finish cannot stand in for parent whole-job completion. Both source files and their listed tests remain retained/idle.",
+    "Seven other direct-client consumers outside the already-transferred goalie route are listed with exact recorded custody. An empty owner list means no matching exact claim observed in the two inspected registries, not a custody grant or proof nobody edits it. Existing imports do not establish whole-job lease participation.",
+    "No legacy Python/proxy/other direct caller source is transferred by this receipt. Coordinate only the concrete enclosing hooks needed after the lifecycle design is reviewable. New service/SQL paths need exact allocation in the recipient lane; do not edit or replace the immutable accepted SQL artifact."
+  ],
+  "lifecycleContractEvidence": {
+    "existingSharedAdmission": "nst_admit_attempt_v1 has global rolling attempt timestamps and spacing, with a 1000ms dispatch TTL. It has no job owner/token, start/end receipt, heartbeat or whole-job occupancy state. No admission timestamp, elapsed gap, missing audit, or cleared rate window proves a direct job ended.",
+    "localBudget": "requestBudget.ts active/urlHash records cover one local request attempt and are conservative on an unfinished attempt. They are same-user filesystem coordination, explicitly not a cross-host job lease or global completion receipt.",
+    "audit": "withCronJobAudit wraps web handlers and persists a final audit outcome. It has no NST lease. Its finally path is not guaranteed after process death and cannot establish Python/proxy job finality. Preserve business outcome versus audit durability and retrySafe:false holds.",
+    "newGoalieCheckpoint": "Successor-owned 20261101161622_nst_goalie_catchup_v1.sql has cohort claim/finish/hold receipts, a disabled control row, and a direct-finish/clearance requirement. Its comment says no automatic producer establishes those attestations. It is not an implemented shared direct-job occupancy service. An expired or unacknowledged claim remains unknown/review-required, never proof of completed output.",
+    "smallestBoundary": "An NST-specific lifecycle at the enclosing job/orchestrator boundary, with explicit shared owner/token and start/finish evidence covering request fan-out and durable output/checkpoint finalization, is the focused integration boundary. Do not open and close a whole-job lease per client fetch, infer it from audit presence, or make expiry imply success. Transport adapters alone cannot attest the enclosing multi-request job ended.",
+    "implementationStatus": "Boundary guidance only. This custodian has implemented no lifecycle service and has not validated the successor-reported108 offline tests / 11 local PostgreSQL scenario groups. Existing checkpoint remains disabled; no enabled/production health claim."
+  },
+  "sourceOwnerNoActiveOperation": {
+    "confirmed": true,
+    "meaning": "No active source edit, pending mutation, NST/provider request, runtime job, server, held heavy slot or local DB process belongs to this custodian. This is a source-owner statement only, not a global idle guarantee.",
+    "externalBackfill": "TJ-reported existing37-request total backfill remains external and untouched; current runtime state was not polled or inferred."
+  },
+  "competingActiveExactOwnersFound": [],
+  "acceptedPacket": {
+    "root": "/Users/tim/Documents/Codex/2026-10-27/task/review-fixes-v4",
+    "artifactIndexSha256": "693970168512fe62b7139901318d49f12cf2eb286f8374370cb7065a7c263fd4",
+    "artifactsVerified": 13,
+    "results": {
+      "HANDOFF.md": {
+        "expected": "5ff65093a1781453d1ef8c4518c4c8e12cfe2998a37a8ab0dd864ac6430092c9",
+        "actual": "5ff65093a1781453d1ef8c4518c4c8e12cfe2998a37a8ab0dd864ac6430092c9"
+      },
+      "source-pins-v4.json": {
+        "expected": "42694b97cc30bbeb7ea7faf6c6380d13403c35013592c7b5f2ce8873b8bd0fc9",
+        "actual": "42694b97cc30bbeb7ea7faf6c6380d13403c35013592c7b5f2ce8873b8bd0fc9"
+      },
+      "source-complete-v4.patch": {
+        "expected": "1bb3f7df06747fbaf01c9ce85bab812ed46de3cc883f7cde1ba83a9add0aa09c",
+        "actual": "1bb3f7df06747fbaf01c9ce85bab812ed46de3cc883f7cde1ba83a9add0aa09c"
+      },
+      "runner-adapter-delta.patch": {
+        "expected": "a61a9d83c8c81ef9889de25e9e82f50bd32d033ffde36702b36d99f35750b955",
+        "actual": "a61a9d83c8c81ef9889de25e9e82f50bd32d033ffde36702b36d99f35750b955"
+      },
+      "reconstruction-results.json": {
+        "expected": "5e5a0a1fd738d023a585c8aa0797c43f4bd72d98fdcaa9148375cc621b699752",
+        "actual": "5e5a0a1fd738d023a585c8aa0797c43f4bd72d98fdcaa9148375cc621b699752"
+      },
+      "reconstructed-full.log": {
+        "expected": "c70541fdb0f40faa5a514ea24f9a265c74fa1341da77fc0ae5c86ed38360615f",
+        "actual": "c70541fdb0f40faa5a514ea24f9a265c74fa1341da77fc0ae5c86ed38360615f"
+      },
+      "reconstructed-delta.log": {
+        "expected": "6335a7eab3a4fa0b98ff43a6b69682182a60659f4e2bb4a3e35055bbc4725509",
+        "actual": "6335a7eab3a4fa0b98ff43a6b69682182a60659f4e2bb4a3e35055bbc4725509"
+      },
+      "checks.json": {
+        "expected": "59087b76a25ec37b2c93b1cc162e74db0a2d3beb37124cd0f14484eb19956caa",
+        "actual": "59087b76a25ec37b2c93b1cc162e74db0a2d3beb37124cd0f14484eb19956caa"
+      },
+      "caller-integration-map.json": {
+        "expected": "e6ca1037762a76384bcc23ebdebe676d4ee2ad21813fabef28642ce7cbde3238",
+        "actual": "e6ca1037762a76384bcc23ebdebe676d4ee2ad21813fabef28642ce7cbde3238"
+      },
+      "failing-integration.log": {
+        "expected": "77ce9ae76e38c265cf7d75174d626982921e447c72ffc31c2f546fa705e487e1",
+        "actual": "77ce9ae76e38c265cf7d75174d626982921e447c72ffc31c2f546fa705e487e1"
+      },
+      "finite-acceptance.log": {
+        "expected": "8bd52852af9474e40f3790954ce76d2ee31f6d0329ddcd92d29d7b8c6db2f71c",
+        "actual": "8bd52852af9474e40f3790954ce76d2ee31f6d0329ddcd92d29d7b8c6db2f71c"
+      },
+      "typescript-final.log": {
+        "expected": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "actual": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "eslint.log": {
+        "expected": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "actual": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    }
+  },
+  "newCheckpointSql": {
+    "path": "supabase/migrations/20261101161622_nst_goalie_catchup_v1.sql",
+    "sha256": "e0a14daec09b80332574952869319a45ed5159f812d56ebe66d14676de3a86fd",
+    "ownerThread": "01a19780-b73c-7334-9e53-4b7fda61201c",
+    "disposition": "EXISTING_SUCCESSOR_OWNED_NOT_TRANSFERRED_OR_APPLIED"
+  },
+  "rolloutBoundary": "Do not ship guarded runtime before its reviewed database prerequisite is separately authorized and confirmed. Hosted schema/deployment state is unverified here. No migration application, lifecycle activation, schedules, production/provider requests, NST jobs, email, Git push or deployment is authorized by this handoff.",
+  "budgetBoundary": "Every attempt/retry/duplicate shares39 per rolling minute, 80 per 5 minutes, 100 per 15 minutes, 180 per hour across participating hosts/languages. Preserve existing accepted semi-burst scope and conservative unknown/large-job fallback. Whole-job occupancy and rate headroom are separate facts.",
+  "previousHandoff": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/OWNER-HANDOFF-20261101.json",
+  "checksActuallyRun": [
+    "Read-only source/contract inspection",
+    "10of10current source hashes equal accepted v4 pins",
+    "13of13 immutable packet artifact hashes match",
+    "Both local ownership registries checked for exact/pattern conflicts",
+    "Current source bytes preserved in workspace baseline copies"
+  ],
+  "tests": "Not run: custody-only coordination, no source implementation by this custodian."
+}

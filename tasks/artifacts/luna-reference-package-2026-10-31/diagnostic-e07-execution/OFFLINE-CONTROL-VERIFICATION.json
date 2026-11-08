@@ -1,0 +1,716 @@
+{
+  "scenariosPassed": 6,
+  "actualProviderRequests": 0,
+  "realLedgerUnchanged": true,
+  "scenarios": [
+    {
+      "scenario": "all-pass",
+      "mockCalls": 12,
+      "actualProviderRequests": 0,
+      "stopped": false,
+      "ledgerEnabled": false,
+      "blockedReason": "diagnostic_collection_completed",
+      "priorSevenPreserved": true,
+      "records": [
+        {
+          "caseId": "E07",
+          "outcome": "recorded_pass",
+          "rawGrade": {
+            "identity": true,
+            "goalie": true,
+            "decisions": true,
+            "labelMatch": true
+          },
+          "reason": "original_grade_pass",
+          "decisionsDisposition": "not_scheduled",
+          "anchor": {
+            "caseId": "E07",
+            "sha256": "9014e13a6ec76039124635b2a011ef82cef7a16ffaeed2f80b77cc0630de218b"
+          },
+          "candidateAvailable": false,
+          "candidateApplied": false,
+          "callsThisReport": 1,
+          "cumulativeCalls": 8,
+          "exposureNanoUsd": 265302190,
+          "currentChargeNanoUsd": 38500,
+          "ledgerEnabled": true,
+          "blockedReason": null,
+          "proceed": true
+        },
+        {
+          "caseId": "E08",
+          "outcome": "recorded_pass",
+          "rawGrade": {
+            "identity": true,
+            "goalie": true,
+            "decisions": true,
+            "labelMatch": true
+          },
+          "reason": "original_grade_pass",
+          "decisionsDisposition": "not_scheduled",
+          "anchor": {
+            "caseId": "E08",
+            "sha256": "30233096026b53da4b7604abbbc87cab651e823c0c5c2eacfd6dffcd043c4537"
+          },
+          "candidateAvailable": false,
+          "candidateApplied": false,
+          "callsThisReport": 1,
+          "cumulativeCalls": 9,
+          "exposureNanoUsd": 265340690,
+          "currentChargeNanoUsd": 38500,
+          "ledgerEnabled": true,
+          "blockedReason": null,
+          "proceed": true
+        },
+        {
+          "caseId": "E09",
+          "outcome": "recorded_pass",
+          "rawGrade": {
+            "identity": true,
+            "goalie": true,
+            "decisions": true,
+            "labelMatch": true
+          },
+          "reason": "original_grade_pass",
+          "decisionsDisposition": "not_scheduled",
+          "anchor": {
+            "caseId": "E09",
+            "sha256": "3726114940918d5193e9ee6f3cf9a578981ccfb015b50c476d189994fbf8c3eb"
+          },
+          "candidateAvailable": false,
+          "candidateApplied": false,
+          "callsThisReport": 1,
+          "cumulativeCalls": 10,
+          "exposureNanoUsd": 265379190,
+          "currentChargeNanoUsd": 38500,
+          "ledgerEnabled": true,
+          "blockedReason": null,
+          "proceed": true
+        },
+        {
+          "caseId": "E10",
+          "outcome": "recorded_pass",
+          "rawGrade": {
+            "identity": true,
+            "goalie": true,
+            "decisions": true,
+            "labelMatch": true
+          },
+          "reason": "original_grade_pass",
+          "decisionsDisposition": "completed_and_bound",
+          "anchor": {
+            "caseId": "E10",
+            "sha256": "9e91c12ed56b5876b6a39d66970a90d4a4ce4c7d43e9b04e2c7dc18c12b5246d"
+          },
+          "candidateAvailable": false,
+          "candidateApplied": false,
+          "callsThisReport": 2,
+          "cumulativeCalls": 12,
+          "exposureNanoUsd": 265428690,
+          "currentChargeNanoUsd": 49500,
+          "ledgerEnabled": true,
+          "blockedReason": null,
+          "proceed": true
+        },
+        {
+          "caseId": "E11",
+          "outcome": "recorded_pass",
+          "rawGrade": {
+            "identity": true,
+            "goalie": true,
+            "decisions": true,
+            "labelMatch": true
+          },
+          "reason": "original_grade_pass",
+          "decisionsDisposition": "completed_and_bound",
+          "anchor": {
+            "caseId": "E11",
+            "sha256": "d11a6db12f23a8fab53cde66462522a09633f36887fbb08cce7b2d795174b0a4"
+          },
+          "candidateAvailable": false,
+          "candidateApplied": false,
+          "callsThisReport": 2,
+          "cumulativeCalls": 14,
+          "exposureNanoUsd": 265478190,
+          "currentChargeNanoUsd": 49500,
+          "ledgerEnabled": true,
+          "blockedReason": null,
+          "proceed": true
+        },
+        {
+          "caseId": "E12",
+          "outcome": "recorded_pass",
+          "rawGrade": {
+            "identity": true,
+            "goalie": true,
+            "decisions": true,
+            "labelMatch": true
+          },
+          "reason": "original_grade_pass",
+          "decisionsDisposition": "not_scheduled",
+          "anchor": {
+            "caseId": "E12",
+            "sha256": "169ea9d6e4d6d1417681472adc61ffa9a814d27e9ffeb10d1a00236005addb17"
+          },
+          "candidateAvailable": false,
+          "candidateApplied": false,
+          "callsThisReport": 1,
+          "cumulativeCalls": 15,
+          "exposureNanoUsd": 265516690,
+          "currentChargeNanoUsd": 38500,
+          "ledgerEnabled": true,
+          "blockedReason": null,
+          "proceed": true
+        },
+        {
+          "caseId": "E13",
+          "outcome": "recorded_pass",
+          "rawGrade": {
+            "identity": true,
+            "goalie": true,
+            "decisions": true,
+            "labelMatch": true
+          },
+          "reason": "original_grade_pass",
+          "decisionsDisposition": "not_scheduled",
+          "anchor": {
+            "caseId": "E13",
+            "sha256": "6ea4a59f4996fe6cfeb47a3a836cbb56fbe7c76ff18417376dc550ea034a50b6"
+          },
+          "candidateAvailable": false,
+          "candidateApplied": false,
+          "callsThisReport": 1,
+          "cumulativeCalls": 16,
+          "exposureNanoUsd": 265555190,
+          "currentChargeNanoUsd": 38500,
+          "ledgerEnabled": true,
+          "blockedReason": null,
+          "proceed": true
+        },
+        {
+          "caseId": "E14",
+          "outcome": "recorded_pass",
+          "rawGrade": {
+            "identity": true,
+            "goalie": true,
+            "decisions": true,
+            "labelMatch": true
+          },
+          "reason": "original_grade_pass",
+          "decisionsDisposition": "not_scheduled",
+          "anchor": {
+            "caseId": "E14",
+            "sha256": "8d4e4efc622643f631c5d159c1382bc1c914ee08c03ba8e43294796bcdb6e1c5"
+          },
+          "candidateAvailable": false,
+          "candidateApplied": false,
+          "callsThisReport": 1,
+          "cumulativeCalls": 17,
+          "exposureNanoUsd": 265593690,
+          "currentChargeNanoUsd": 38500,
+          "ledgerEnabled": true,
+          "blockedReason": null,
+          "proceed": true
+        },
+        {
+          "caseId": "E15",
+          "outcome": "recorded_pass",
+          "rawGrade": {
+            "identity": true,
+            "goalie": true,
+            "decisions": true,
+            "labelMatch": true
+          },
+          "reason": "original_grade_pass",
+          "decisionsDisposition": "not_scheduled",
+          "anchor": {
+            "caseId": "E15",
+            "sha256": "db2908de5e984d41ddbac96738f4267483b36135d918e96356885c0b54c2e4bd"
+          },
+          "candidateAvailable": false,
+          "candidateApplied": false,
+          "callsThisReport": 1,
+          "cumulativeCalls": 18,
+          "exposureNanoUsd": 265632190,
+          "currentChargeNanoUsd": 38500,
+          "ledgerEnabled": true,
+          "blockedReason": null,
+          "proceed": true
+        },
+        {
+          "caseId": "E16",
+          "outcome": "recorded_pass",
+          "rawGrade": {
+            "identity": true,
+            "goalie": true,
+            "decisions": true,
+            "labelMatch": true
+          },
+          "reason": "original_grade_pass",
+          "decisionsDisposition": "not_scheduled",
+          "anchor": {
+            "caseId": "E16",
+            "sha256": "3f2bc4436769868a1dcae33c4fb462b7dd05c5bc354b2cce17f9858e9012d0cb"
+          },
+          "candidateAvailable": false,
+          "candidateApplied": false,
+          "callsThisReport": 1,
+          "cumulativeCalls": 19,
+          "exposureNanoUsd": 265670690,
+          "currentChargeNanoUsd": 38500,
+          "ledgerEnabled": false,
+          "blockedReason": "diagnostic_collection_completed",
+          "proceed": false
+        }
+      ]
+    },
+    {
+      "scenario": "offset-E10",
+      "mockCalls": 11,
+      "actualProviderRequests": 0,
+      "stopped": false,
+      "ledgerEnabled": false,
+      "blockedReason": "diagnostic_collection_completed",
+      "priorSevenPreserved": true,
+      "records": [
+        {
+          "caseId": "E07",
+          "outcome": "recorded_pass",
+          "rawGrade": {
+            "identity": true,
+            "goalie": true,
+            "decisions": true,
+            "labelMatch": true
+          },
+          "reason": "original_grade_pass",
+          "decisionsDisposition": "not_scheduled",
+          "anchor": {
+            "caseId": "E07",
+            "sha256": "9014e13a6ec76039124635b2a011ef82cef7a16ffaeed2f80b77cc0630de218b"
+          },
+          "candidateAvailable": false,
+          "candidateApplied": false,
+          "callsThisReport": 1,
+          "cumulativeCalls": 8,
+          "exposureNanoUsd": 265302190,
+          "currentChargeNanoUsd": 38500,
+          "ledgerEnabled": true,
+          "blockedReason": null,
+          "proceed": true
+        },
+        {
+          "caseId": "E08",
+          "outcome": "recorded_pass",
+          "rawGrade": {
+            "identity": true,
+            "goalie": true,
+            "decisions": true,
+            "labelMatch": true
+          },
+          "reason": "original_grade_pass",
+          "decisionsDisposition": "not_scheduled",
+          "anchor": {
+            "caseId": "E08",
+            "sha256": "30233096026b53da4b7604abbbc87cab651e823c0c5c2eacfd6dffcd043c4537"
+          },
+          "candidateAvailable": false,
+          "candidateApplied": false,
+          "callsThisReport": 1,
+          "cumulativeCalls": 9,
+          "exposureNanoUsd": 265340690,
+          "currentChargeNanoUsd": 38500,
+          "ledgerEnabled": true,
+          "blockedReason": null,
+          "proceed": true
+        },
+        {
+          "caseId": "E09",
+          "outcome": "recorded_pass",
+          "rawGrade": {
+            "identity": true,
+            "goalie": true,
+            "decisions": true,
+            "labelMatch": true
+          },
+          "reason": "original_grade_pass",
+          "decisionsDisposition": "not_scheduled",
+          "anchor": {
+            "caseId": "E09",
+            "sha256": "3726114940918d5193e9ee6f3cf9a578981ccfb015b50c476d189994fbf8c3eb"
+          },
+          "candidateAvailable": false,
+          "candidateApplied": false,
+          "callsThisReport": 1,
+          "cumulativeCalls": 10,
+          "exposureNanoUsd": 265379190,
+          "currentChargeNanoUsd": 38500,
+          "ledgerEnabled": true,
+          "blockedReason": null,
+          "proceed": true
+        },
+        {
+          "caseId": "E10",
+          "outcome": "recorded_model_failure",
+          "rawGrade": {
+            "identity": true,
+            "goalie": false,
+            "decisions": false,
+            "labelMatch": false
+          },
+          "reason": "goalie_subject_binding_invalid",
+          "decisionsDisposition": "not_run_original_responses_held",
+          "anchor": {
+            "caseId": "E10",
+            "sha256": "9ef678a92bf340d3cafbeef91f97f5c5ac59261ebd707ab3f8399366a2000c6d"
+          },
+          "candidateAvailable": true,
+          "candidateApplied": false,
+          "callsThisReport": 1,
+          "cumulativeCalls": 11,
+          "exposureNanoUsd": 265417690,
+          "currentChargeNanoUsd": 38500,
+          "ledgerEnabled": true,
+          "blockedReason": null,
+          "proceed": true
+        },
+        {
+          "caseId": "E11",
+          "outcome": "recorded_pass",
+          "rawGrade": {
+            "identity": true,
+            "goalie": true,
+            "decisions": true,
+            "labelMatch": true
+          },
+          "reason": "original_grade_pass",
+          "decisionsDisposition": "completed_and_bound",
+          "anchor": {
+            "caseId": "E11",
+            "sha256": "632942a20dc3c1843fdeebc84fe5c29fdfe9e7689fbe1214c5de9374901d3830"
+          },
+          "candidateAvailable": false,
+          "candidateApplied": false,
+          "callsThisReport": 2,
+          "cumulativeCalls": 13,
+          "exposureNanoUsd": 265467190,
+          "currentChargeNanoUsd": 49500,
+          "ledgerEnabled": true,
+          "blockedReason": null,
+          "proceed": true
+        },
+        {
+          "caseId": "E12",
+          "outcome": "recorded_pass",
+          "rawGrade": {
+            "identity": true,
+            "goalie": true,
+            "decisions": true,
+            "labelMatch": true
+          },
+          "reason": "original_grade_pass",
+          "decisionsDisposition": "not_scheduled",
+          "anchor": {
+            "caseId": "E12",
+            "sha256": "2dfd865acc21ed06a37469ced8e8afdf2946c373aabeaf4dd025582802a9a3e3"
+          },
+          "candidateAvailable": false,
+          "candidateApplied": false,
+          "callsThisReport": 1,
+          "cumulativeCalls": 14,
+          "exposureNanoUsd": 265505690,
+          "currentChargeNanoUsd": 38500,
+          "ledgerEnabled": true,
+          "blockedReason": null,
+          "proceed": true
+        },
+        {
+          "caseId": "E13",
+          "outcome": "recorded_pass",
+          "rawGrade": {
+            "identity": true,
+            "goalie": true,
+            "decisions": true,
+            "labelMatch": true
+          },
+          "reason": "original_grade_pass",
+          "decisionsDisposition": "not_scheduled",
+          "anchor": {
+            "caseId": "E13",
+            "sha256": "6908a3b9e55e6798cdbd4fec506e1dccf577ffb1774b3755d92fb3c4d7ba153e"
+          },
+          "candidateAvailable": false,
+          "candidateApplied": false,
+          "callsThisReport": 1,
+          "cumulativeCalls": 15,
+          "exposureNanoUsd": 265544190,
+          "currentChargeNanoUsd": 38500,
+          "ledgerEnabled": true,
+          "blockedReason": null,
+          "proceed": true
+        },
+        {
+          "caseId": "E14",
+          "outcome": "recorded_pass",
+          "rawGrade": {
+            "identity": true,
+            "goalie": true,
+            "decisions": true,
+            "labelMatch": true
+          },
+          "reason": "original_grade_pass",
+          "decisionsDisposition": "not_scheduled",
+          "anchor": {
+            "caseId": "E14",
+            "sha256": "be8b875cc7832cf289f4e5769499002fc19fcec4e04320f0cab063a4603a80a8"
+          },
+          "candidateAvailable": false,
+          "candidateApplied": false,
+          "callsThisReport": 1,
+          "cumulativeCalls": 16,
+          "exposureNanoUsd": 265582690,
+          "currentChargeNanoUsd": 38500,
+          "ledgerEnabled": true,
+          "blockedReason": null,
+          "proceed": true
+        },
+        {
+          "caseId": "E15",
+          "outcome": "recorded_pass",
+          "rawGrade": {
+            "identity": true,
+            "goalie": true,
+            "decisions": true,
+            "labelMatch": true
+          },
+          "reason": "original_grade_pass",
+          "decisionsDisposition": "not_scheduled",
+          "anchor": {
+            "caseId": "E15",
+            "sha256": "f2d13a4276a7f83c379a3ec99057e400779049ce9470631815dc2eb3bc8b3f0b"
+          },
+          "candidateAvailable": false,
+          "candidateApplied": false,
+          "callsThisReport": 1,
+          "cumulativeCalls": 17,
+          "exposureNanoUsd": 265621190,
+          "currentChargeNanoUsd": 38500,
+          "ledgerEnabled": true,
+          "blockedReason": null,
+          "proceed": true
+        },
+        {
+          "caseId": "E16",
+          "outcome": "recorded_pass",
+          "rawGrade": {
+            "identity": true,
+            "goalie": true,
+            "decisions": true,
+            "labelMatch": true
+          },
+          "reason": "original_grade_pass",
+          "decisionsDisposition": "not_scheduled",
+          "anchor": {
+            "caseId": "E16",
+            "sha256": "ed414ea958e92fdf1aa86ad04af501d17acca010fbf46e35284f5e303318d270"
+          },
+          "candidateAvailable": false,
+          "candidateApplied": false,
+          "callsThisReport": 1,
+          "cumulativeCalls": 18,
+          "exposureNanoUsd": 265659690,
+          "currentChargeNanoUsd": 38500,
+          "ledgerEnabled": false,
+          "blockedReason": "diagnostic_collection_completed",
+          "proceed": false
+        }
+      ]
+    },
+    {
+      "scenario": "uncertain-E07",
+      "mockCalls": 1,
+      "actualProviderRequests": 0,
+      "stopped": true,
+      "ledgerEnabled": false,
+      "blockedReason": "unknown_billed_outcome",
+      "priorSevenPreserved": true,
+      "records": [
+        {
+          "caseId": "E07",
+          "outcome": "operational_stop",
+          "rawGrade": {
+            "identity": false,
+            "goalie": true,
+            "decisions": true,
+            "labelMatch": false
+          },
+          "reason": "unsettled_or_uncertain_outcome",
+          "decisionsDisposition": "unresolved_do_not_dispatch",
+          "anchor": null,
+          "candidateAvailable": false,
+          "candidateApplied": false,
+          "callsThisReport": 1,
+          "cumulativeCalls": 8,
+          "exposureNanoUsd": 498263690,
+          "currentChargeNanoUsd": 0,
+          "ledgerEnabled": false,
+          "blockedReason": "unknown_billed_outcome",
+          "proceed": false
+        }
+      ]
+    },
+    {
+      "scenario": "incomplete-decisions-E10",
+      "mockCalls": 5,
+      "actualProviderRequests": 0,
+      "stopped": true,
+      "ledgerEnabled": false,
+      "blockedReason": "diagnostic_operational_stop",
+      "priorSevenPreserved": true,
+      "records": [
+        {
+          "caseId": "E07",
+          "outcome": "recorded_pass",
+          "rawGrade": {
+            "identity": true,
+            "goalie": true,
+            "decisions": true,
+            "labelMatch": true
+          },
+          "reason": "original_grade_pass",
+          "decisionsDisposition": "not_scheduled",
+          "anchor": {
+            "caseId": "E07",
+            "sha256": "9014e13a6ec76039124635b2a011ef82cef7a16ffaeed2f80b77cc0630de218b"
+          },
+          "candidateAvailable": false,
+          "candidateApplied": false,
+          "callsThisReport": 1,
+          "cumulativeCalls": 8,
+          "exposureNanoUsd": 265302190,
+          "currentChargeNanoUsd": 38500,
+          "ledgerEnabled": true,
+          "blockedReason": null,
+          "proceed": true
+        },
+        {
+          "caseId": "E08",
+          "outcome": "recorded_pass",
+          "rawGrade": {
+            "identity": true,
+            "goalie": true,
+            "decisions": true,
+            "labelMatch": true
+          },
+          "reason": "original_grade_pass",
+          "decisionsDisposition": "not_scheduled",
+          "anchor": {
+            "caseId": "E08",
+            "sha256": "30233096026b53da4b7604abbbc87cab651e823c0c5c2eacfd6dffcd043c4537"
+          },
+          "candidateAvailable": false,
+          "candidateApplied": false,
+          "callsThisReport": 1,
+          "cumulativeCalls": 9,
+          "exposureNanoUsd": 265340690,
+          "currentChargeNanoUsd": 38500,
+          "ledgerEnabled": true,
+          "blockedReason": null,
+          "proceed": true
+        },
+        {
+          "caseId": "E09",
+          "outcome": "recorded_pass",
+          "rawGrade": {
+            "identity": true,
+            "goalie": true,
+            "decisions": true,
+            "labelMatch": true
+          },
+          "reason": "original_grade_pass",
+          "decisionsDisposition": "not_scheduled",
+          "anchor": {
+            "caseId": "E09",
+            "sha256": "3726114940918d5193e9ee6f3cf9a578981ccfb015b50c476d189994fbf8c3eb"
+          },
+          "candidateAvailable": false,
+          "candidateApplied": false,
+          "callsThisReport": 1,
+          "cumulativeCalls": 10,
+          "exposureNanoUsd": 265379190,
+          "currentChargeNanoUsd": 38500,
+          "ledgerEnabled": true,
+          "blockedReason": null,
+          "proceed": true
+        },
+        {
+          "caseId": "E10",
+          "outcome": "operational_stop",
+          "rawGrade": {
+            "identity": true,
+            "goalie": true,
+            "decisions": true,
+            "labelMatch": true
+          },
+          "reason": "receipt_or_usage_invalid",
+          "decisionsDisposition": "unresolved_do_not_dispatch",
+          "anchor": null,
+          "candidateAvailable": false,
+          "candidateApplied": false,
+          "callsThisReport": 2,
+          "cumulativeCalls": 12,
+          "exposureNanoUsd": 265428690,
+          "currentChargeNanoUsd": 49500,
+          "ledgerEnabled": false,
+          "blockedReason": "diagnostic_operational_stop",
+          "proceed": false
+        }
+      ]
+    },
+    {
+      "scenario": "corrupt-E07",
+      "mockCalls": 1,
+      "actualProviderRequests": 0,
+      "stopped": true,
+      "ledgerEnabled": false,
+      "blockedReason": "diagnostic_operator_check_failed",
+      "priorSevenPreserved": true,
+      "records": [
+        {
+          "caseId": "E07",
+          "outcome": "recorded_pass",
+          "rawGrade": {
+            "identity": true,
+            "goalie": true,
+            "decisions": true,
+            "labelMatch": true
+          },
+          "reason": "original_grade_pass",
+          "decisionsDisposition": "not_scheduled",
+          "anchor": {
+            "caseId": "E07",
+            "sha256": "9014e13a6ec76039124635b2a011ef82cef7a16ffaeed2f80b77cc0630de218b"
+          },
+          "candidateAvailable": false,
+          "candidateApplied": false,
+          "callsThisReport": 1,
+          "cumulativeCalls": 8,
+          "exposureNanoUsd": 265302190,
+          "currentChargeNanoUsd": 38500,
+          "ledgerEnabled": true,
+          "blockedReason": null,
+          "proceed": true
+        }
+      ]
+    },
+    {
+      "scenario": "occupied-candidate-E07",
+      "mockCalls": 0,
+      "actualProviderRequests": 0,
+      "stopped": true,
+      "ledgerEnabled": false,
+      "blockedReason": "diagnostic_operator_check_failed",
+      "priorSevenPreserved": true,
+      "records": []
+    }
+  ]
+}

@@ -1,0 +1,261 @@
+{
+  "schemaVersion": "forge-v2-scientific-prerequisites-v1",
+  "date": "2026-10-30",
+  "baseHead": "1d9e900515726c5efcc62ad4df3a8cadc435c88c",
+  "branch": "octoberBranch",
+  "scope": "All fifteen unchecked scientific/external leaf IDs; NEW-01..03 implementation repair IDs are Chef/other workers, not omitted scientific tasks. Parent 2.0/7.0/8.0/13.0/14.0 stay incomplete until children close.",
+  "evidencePolicy": "Only local source, metadata, requirements and synthetic-fixture descriptions inspected. No real numerical research rows, protected labels, provider calls, database calls or external actions. Proposals are not approvals.",
+  "taskPrerequisites": {
+    "2.2": {
+      "status": "OPEN_PREREQUISITES_UNAVAILABLE",
+      "ownerRole": "source/data owner",
+      "dependsOn": [],
+      "requiredArtifact": "Official-source appearance and PIM case dossier",
+      "exactAcceptanceEvidence": "Six owner-approved nonprotected original cases: ordinary credited appearance, credited zero-minute/penalty-only, dressed-unused, verified nonappearance, incomplete/ambiguous and game-not-played. Include raw-byte hash, canonical player/game, authoritative credit field and PIM units/rules, completeness proof, receipt/publication clocks, correction version and intended-use evidence.",
+      "localEvidenceAndLimit": "Existing gameContract synthetic penalty-only case proves representability, not source semantics. Positive-TOI legacy labels are inadequate.",
+      "allowedNextAction": "Request metadata and minimal approved cases; validate event mapping without protected labels.",
+      "canCompleteNow": false,
+      "externalActionState": "not_attempted; no denial and no pending tool approval; evidence/owner decision required"
+    },
+    "2.4": {
+      "status": "OPEN_PREREQUISITES_UNAVAILABLE",
+      "ownerRole": "data custodian",
+      "dependsOn": [],
+      "requiredArtifact": "Signed exposure and allocation register",
+      "exactAcceptanceEvidence": "Exact dataset hashes/UTC boundaries, all actors/access/purposes/trials, whole-game grouping, training/development/calibration/final/prospective allocations, rights, counts and one-time final-label custody. Explicitly maintain 2024\u201325 excluded and 2025\u201326 reserved unless custodian issues new scope.",
+      "localEvidenceAndLimit": "Named local lease text independently confirms holds but provides no v2 clearance. Source audit documents absence of exposure registration.",
+      "allowedNextAction": "Custodian reviews metadata-only manifest; no numerical rows or outcomes required to register.",
+      "canCompleteNow": false,
+      "externalActionState": "not_attempted; no denial and no pending tool approval; evidence/owner decision required"
+    },
+    "2.5": {
+      "status": "OPEN_PREREQUISITES_UNAVAILABLE",
+      "ownerRole": "scientific lead plus independent methodological reviewer",
+      "dependsOn": [
+        "2.2",
+        "2.4"
+      ],
+      "requiredArtifact": "Frozen protocol and review receipt",
+      "exactAcceptanceEvidence": "Convert protocol-proposal.json into exact executable recipes/feature definitions, justified numerical thresholds and dataset/candidate/evaluator hashes. Attach independent signed review and immutable registration time before final access.",
+      "localEvidenceAndLimit": "Concrete finite proposal now exists, but no development evidence justifies proposed thresholds; reviewer and custody pins absent.",
+      "allowedNextAction": "Review proposal using authorized development metadata/evidence; resolve definitions and pins; do not mark frozen from JSON status booleans.",
+      "canCompleteNow": false,
+      "externalActionState": "not_attempted; no denial and no pending tool approval; evidence/owner decision required"
+    },
+    "7.1": {
+      "status": "OPEN_PREREQUISITES_UNAVAILABLE",
+      "ownerRole": "data/source owner",
+      "dependsOn": [
+        "2.2",
+        "2.4"
+      ],
+      "requiredArtifact": "Immutable independent opportunity and label manifest",
+      "exactAcceptanceEvidence": "Capture all eligible player/game opportunities independently of inference success, including injury/reserve/call-up, trades and unresolved identity/affiliation. Bind effective versus receipt clocks, complete schedule episodes and official outcome states. Include cancellation and ambiguous dispositions with counts.",
+      "localEvidenceAndLimit": "NativeParticipationFrame and v2 contracts support supplied populations; no complete authorized real population furnished.",
+      "allowedNextAction": "Supply an owner-approved finite nonprotected dataset manifest, then build locally only after explicit data scope clearance.",
+      "canCompleteNow": false,
+      "externalActionState": "not_attempted; no denial and no pending tool approval; evidence/owner decision required"
+    },
+    "7.3": {
+      "status": "OPEN_PREREQUISITES_UNAVAILABLE",
+      "ownerRole": "participation scientist",
+      "dependsOn": [
+        "2.5",
+        "7.1"
+      ],
+      "requiredArtifact": "Chronological participation calibration and evaluation receipt",
+      "exactAcceptanceEvidence": "Admitted hashes, fixed recipe/binning, all trials, fitted/available/dependency times, reliability/Brier/log loss, paired baselines, exclusions, support and uncertainty by frozen H/cohort. Separate development from final claims.",
+      "localEvidenceAndLimit": "Kernel/bin fitter exists and declares development_only; no real calibration evidence inspected.",
+      "allowedNextAction": "After clearance, execute single registered participation recipe on allowed train/calibration inputs; final access remains separate.",
+      "canCompleteNow": false,
+      "externalActionState": "not_attempted; no denial and no pending tool approval; evidence/owner decision required"
+    },
+    "8.3": {
+      "status": "OPEN_PREREQUISITES_UNAVAILABLE",
+      "ownerRole": "uncertainty scientist",
+      "dependsOn": [
+        "2.5",
+        "7.1"
+      ],
+      "requiredArtifact": "Immutable interval calibration artifacts and diagnostic table",
+      "exactAcceptanceEvidence": "Whole-vector dependence, profile identities, train/calibration chronology, both 50/90 coverage/width/proper scores, discrete handling, support per H/cohort/profile and deterministic archive reproduction; retain all misses.",
+      "localEvidenceAndLimit": "Empirical joint and tail-padding arithmetic exists; code alone does not calibrate real intervals or signed FP.",
+      "allowedNextAction": "Run the one registered calibrator only on authorized calibration allocation after candidate selection; verify applicable artifacts locally.",
+      "canCompleteNow": false,
+      "externalActionState": "not_attempted; no denial and no pending tool approval; evidence/owner decision required"
+    },
+    "8.5": {
+      "status": "OPEN_PREREQUISITES_UNAVAILABLE",
+      "ownerRole": "scientific lead",
+      "dependsOn": [
+        "2.5",
+        "7.3",
+        "8.3"
+      ],
+      "requiredArtifact": "Complete development trial ledger and candidate freeze",
+      "exactAcceptanceEvidence": "All three proposed mean recipes including failed/unavailable trials, common paired losses/denominators, missingness, participation/interval results, selected recipe, exact transforms, cohorts, profiles and contiguous release scope frozen before final.",
+      "localEvidenceAndLimit": "Fixture diagnostics and deterministic fit selection are not a real development experiment ledger.",
+      "allowedNextAction": "On authorized development data run finite registered budget; freeze H1 proposal or a development-justified contiguous range before final access.",
+      "canCompleteNow": false,
+      "externalActionState": "not_attempted; no denial and no pending tool approval; evidence/owner decision required"
+    },
+    "13.2": {
+      "status": "OPEN_PREREQUISITES_UNAVAILABLE",
+      "ownerRole": "operations and storage owners",
+      "dependsOn": [
+        "8.5"
+      ],
+      "requiredArtifact": "Representative measured capacity and retention manifest",
+      "exactAcceptanceEvidence": "Real-model full-universe daily and maximum material fanout, queue recovery, API/UI payload/latency, rows/bytes growth, archive restore latency, permanent retention plan, CPU/memory/request/storage limits, costs and v1/RSO reservations. Include measurement environment and exact population/candidate hashes.",
+      "localEvidenceAndLimit": "Runbook synthetic 1200 x 10/five-row-model timings and illustrative 365-day row arithmetic are measurements of fixtures only.",
+      "allowedNextAction": "Owner approves bounded local real-data benchmark after source clearance; measure isolated representative workload before choosing hosted caps. No production load test.",
+      "canCompleteNow": false,
+      "externalActionState": "not_attempted; no denial and no pending tool approval; evidence/owner decision required"
+    },
+    "13.4": {
+      "status": "OPEN_PREREQUISITES_UNAVAILABLE",
+      "ownerRole": "independent implementation reviewer and scientific reviewer/custodian",
+      "dependsOn": [
+        "2.5",
+        "8.5"
+      ],
+      "requiredArtifact": "Hash-bound independent review plus one-time untouched evaluation",
+      "exactAcceptanceEvidence": "Separate implementation findings/dispositions from methodology acceptance; review actual source/candidate/protocol/artifact pins and authorized untouched manifest. Record access/execution once, all results, failure handling and no retuning.",
+      "localEvidenceAndLimit": "Existing implementation review receipts cannot certify science; no cleared untouched period or accepted scientific freeze exists.",
+      "allowedNextAction": "Review proposal and code independently now; final evaluation waits for named custody and exact bounded access approval.",
+      "canCompleteNow": false,
+      "externalActionState": "not_attempted; no denial and no pending tool approval; evidence/owner decision required"
+    },
+    "14.1": {
+      "status": "OPEN_PREREQUISITES_UNAVAILABLE",
+      "ownerRole": "environment/resource owner and approver",
+      "dependsOn": [
+        "13.2",
+        "13.4"
+      ],
+      "requiredArtifact": "Exact bounded shadow approval packet",
+      "exactAcceptanceEvidence": "Fill every null field in protocol-proposal.json/shadowApprovalPackage: candidate/source/model/calibration hashes, named environment/service owner/private paths, exact dates/IDs, measured caps, costs/reservations, producer authority, clocks, stop/settlement plan and approval signature.",
+      "localEvidenceAndLimit": "Finite proposed caps now present; hosted target, scientific candidate, resource measurements and authorization absent.",
+      "allowedNextAction": "Chef pins final local code; owner supplies environment/data/cost details and validated limits; submit completed packet for explicit authorization. Draft alone cannot close exact-packet task.",
+      "canCompleteNow": false,
+      "externalActionState": "not_attempted; no denial and no pending tool approval; evidence/owner decision required"
+    },
+    "14.2": {
+      "status": "OPEN_PREREQUISITES_UNAVAILABLE",
+      "ownerRole": "authorized shadow operator",
+      "dependsOn": [
+        "14.1"
+      ],
+      "requiredArtifact": "Prospective issuance/settlement receipts",
+      "exactAcceptanceEvidence": "Only future genuine issuance with exact committed readback proof before lock/actual start, all due opportunities/misses, artifacts/outcomes/corrections, freshness, measured costs and stop receipts within approved finite scope.",
+      "localEvidenceAndLimit": "No live prospective evidence collected; current prepared producer only admits fixture/reconstruction classes.",
+      "allowedNextAction": "First review prospective producer wiring; after explicit approved packet run once. Never relabel reconstructed or synthetic records.",
+      "canCompleteNow": false,
+      "externalActionState": "not_attempted; no denial and no pending tool approval; evidence/owner decision required"
+    },
+    "14.3": {
+      "status": "OPEN_PREREQUISITES_UNAVAILABLE",
+      "ownerRole": "independent qualification reviewer",
+      "dependsOn": [
+        "13.4",
+        "14.2"
+      ],
+      "requiredArtifact": "Qualified subset or no-qualified-subset decision",
+      "exactAcceptanceEvidence": "Prespecified contiguous H1\u2013Hk, cohorts, default FP and all six contributing category means/joint coverage, qualified participation and 50/90 intervals, signed profiles only if separately supported. Bind unchanged freeze and separate untouched/prospective reports with every failed gate.",
+      "localEvidenceAndLimit": "Current supported decision remains no qualified subset; neither real evidence class is available.",
+      "allowedNextAction": "Keep unavailable gate; evaluate prespecified scope only when both evidence reports exist. Do not shorten k after final outcomes to find flattering slice.",
+      "canCompleteNow": false,
+      "externalActionState": "not_attempted; no denial and no pending tool approval; evidence/owner decision required"
+    },
+    "14.4": {
+      "status": "OPEN_PREREQUISITES_UNAVAILABLE",
+      "ownerRole": "release owner and user approver",
+      "dependsOn": [
+        "14.3"
+      ],
+      "requiredArtifact": "Exact public release approval/build inventory/smoke receipt",
+      "exactAcceptanceEvidence": "Candidate SHA/environment/project/branch, every linked project/root/trigger/ignored-build effect, existing exact-SHA deployment check, qualified scope, rollback and at-most-five sequential read-only route plan. Separate approval for any new deployment.",
+      "localEvidenceAndLimit": "Public serving is disabled; no release/build authorization or qualified candidate.",
+      "allowedNextAction": "Prepare inventory from permitted local metadata; after qualification obtain explicit current-task remote authorization before hosted inspection/action as applicable.",
+      "canCompleteNow": false,
+      "externalActionState": "not_attempted; no denial and no pending tool approval; evidence/owner decision required"
+    },
+    "14.5": {
+      "status": "OPEN_PREREQUISITES_UNAVAILABLE",
+      "ownerRole": "scientific lead and independent reviewer",
+      "dependsOn": [
+        "14.3"
+      ],
+      "requiredArtifact": "Full seven-category by H1\u2013H10 qualification matrix",
+      "exactAcceptanceEvidence": "Every G/A/PPP/SOG/HIT/BLK/PIM x H1..H10 x claimed cohort cell meets frozen support, MSE regression, intervals, participation, missingness, joint custom-profile and archive gates. Fresh preregistered evidence for expansion; subset success insufficient.",
+      "localEvidenceAndLimit": "No real category/horizon cell qualified. PIM and distant-horizon support remain unestablished.",
+      "allowedNextAction": "Register a separate finite expansion protocol and genuinely fresh evidence after initial result; never reuse opened final labels as untouched.",
+      "canCompleteNow": false,
+      "externalActionState": "not_attempted; no denial and no pending tool approval; evidence/owner decision required"
+    },
+    "14.6": {
+      "status": "OPEN_PREREQUISITES_UNAVAILABLE",
+      "ownerRole": "RSO consumer owner and separate rollout approver",
+      "dependsOn": [
+        "14.3"
+      ],
+      "requiredArtifact": "Owner-accepted consumer diff, actual-display lineage and activation receipt",
+      "exactAcceptanceEvidence": "Exact shared file transfer/change review; qualified matching player/game/profile/conditioning/cutoff scopes, one-time participation, side-by-side old/disabled candidate fixtures, stored->bridge->served->actual display receipt IDs/values/hashes/timestamps, bounded enable/rollback approval.",
+      "localEvidenceAndLimit": "Runbook names source-selector/planning/bridge/component seams; isolated adapter and synthetic display receipts do not establish real consumer acceptance.",
+      "allowedNextAction": "Owner reviews disabled integration package now; keep shared files and activation unchanged until transfer, qualification and separate approval.",
+      "canCompleteNow": false,
+      "externalActionState": "not_attempted; no denial and no pending tool approval; evidence/owner decision required"
+    }
+  },
+  "completedNow": [
+    "Task-ID keyed finite prerequisite and allowed-action registry",
+    "Concrete unfrozen numerical protocol proposal with bounded trials, exact normative FR26, allocation requirements and acceptance matrix",
+    "Finite shadow packet template with explicit missing pins and proposed ceilings",
+    "Local ownership evidence confirms protected allocation holds; does not transfer source/data/consumer authority"
+  ],
+  "originalUncheckedTasksClosedNow": [],
+  "decision": "NO_QUALIFIED_SUBSET",
+  "protocolProposal": "tasks/artifacts/forge-v2-remediation-2026-10-30/protocol-proposal.json",
+  "sourcePinsAtInspection": [
+    {
+      "path": "tasks/TASKS/prd-forge-v2-skater-game-forecasts.md",
+      "sha256": "7fe25088be9797eb6976aed6fe30367e52c9bf7dc2b6720c8d329121609ae51c"
+    },
+    {
+      "path": "tasks/artifacts/forge-v2-implementation-2026-10-29/source-audit.json",
+      "sha256": "11be74fc432b211dfa62e669a7a0aa72e13cb9e2ffebf4e02fbdd072bc7931f9"
+    },
+    {
+      "path": "tasks/artifacts/forge-v2-implementation-2026-10-29/RUNBOOK.md",
+      "sha256": "72f26708228450ee9209df8f106b7d973590b78f48cb04b49add33a783a018d8"
+    },
+    {
+      "path": "web/lib/forge-v2/model.ts",
+      "sha256": "563c95530612de830788056cda7ad36e26cd6181c5d6a5db1689cb00586488f4"
+    },
+    {
+      "path": "web/lib/forge-v2/participation.ts",
+      "sha256": "5521885456b989ac6393521f814b3ceef2242cd62f36e508ed384eebdca38b9e"
+    },
+    {
+      "path": "web/lib/forge-v2/uncertainty.ts",
+      "sha256": "4d2b616d0fc488ccfd2e97320fea977636e76a34850e73a352a939fcec223612"
+    }
+  ],
+  "ownershipEvidence": {
+    "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/CODEX-LEASES.json",
+    "keys": [
+      "claude_blsh_dry_run_boundary_20261029"
+    ],
+    "lines": "6803 and 6826 at inspection",
+    "finding": "2024\u201325 excluded, 2025\u201326 closed pending separately frozen one-time holdout; 2022\u201324 transport provisional. BLSH clearance does not clear v2 data."
+  },
+  "verification": {
+    "jsonParsing": "passed: both JSON documents parsed",
+    "taskCoverage": "passed: exact 15 open scientific/external leaf IDs, canonical unchecked state verified; FR26 text exact; proposed issuance and retry cap arithmetic verified",
+    "applicationTests": "not run; documentation-only",
+    "productionRequests": 0,
+    "deployments": 0,
+    "protectedLabelsOpened": false
+  }
+}

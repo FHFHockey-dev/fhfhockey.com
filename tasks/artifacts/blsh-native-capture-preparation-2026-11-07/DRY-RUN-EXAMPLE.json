@@ -1,0 +1,63 @@
+{
+  "version": "fhfh.blsh.native-process-capture-preparation.v1",
+  "input": {
+    "seasonId": 20262027,
+    "date": "2026-11-06",
+    "plannedAtUTC": "2026-11-07T23:00:11.734Z",
+    "groups": [
+      "individual",
+      "onIce"
+    ]
+  },
+  "expiresAtUTC": "2026-11-07T23:15:11.734Z",
+  "pages": [
+    {
+      "group": "individual",
+      "url": "https://data.naturalstattrick.com/playerteams.php?fromseason=20262027&thruseason=20262027&stype=2&sit=all&score=all&stdoi=std&rate=n&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2026-11-06&td=2026-11-06&lines=single&draftteam=ALL"
+    },
+    {
+      "group": "onIce",
+      "url": "https://data.naturalstattrick.com/playerteams.php?fromseason=20262027&thruseason=20262027&stype=2&sit=all&score=all&stdoi=oi&rate=n&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2026-11-06&td=2026-11-06&lines=single&draftteam=ALL"
+    }
+  ],
+  "futureExecution": {
+    "client": "web/lib/nst/client.ts:fetchNstTextByUrl",
+    "plannedProviderPages": 2,
+    "maxProviderAttempts": 2,
+    "concurrency": 1,
+    "retries": 0,
+    "timeoutMs": 15000,
+    "deadlineMs": 120000,
+    "maxAttempts": 2,
+    "plannedRequestCount": 2,
+    "minInterval": "NST_MIN_REQUEST_INTERVAL_MS",
+    "allowQueryKeyFallback": false,
+    "sharedControls": [
+      "withNstRequestBudget",
+      "admitSharedNstAttempt"
+    ],
+    "sharedAdmissionRPC": {
+      "maxCalls": null,
+      "deadlineBounded": true,
+      "mayWriteProductionLedger": true
+    }
+  },
+  "limits": {
+    "retainedParserInputBytesPerPage": 2097152,
+    "responseConsumptionBytes": null,
+    "note": "Retention is checked after text consumption. It does not bound downloaded bytes. The frozen client uses response.clone().text()."
+  },
+  "executionAllowed": false,
+  "blockers": [
+    "bounded_response_client_change_required",
+    "shared_admission_write_authorization_required",
+    "official_completed_date_review_required"
+  ],
+  "completionVerified": false,
+  "originalPublicationUTC": null,
+  "modelDefinition": "unknown",
+  "score": null,
+  "advancedAdmission": false,
+  "independentlyAccepted": false,
+  "productionAdopted": false
+}

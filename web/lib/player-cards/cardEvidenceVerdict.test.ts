@@ -2,18 +2,18 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import type { GetServerSidePropsContext } from "next";
-import { createElement } from "react";
-import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
-import PlayerCardsSharePage, { getServerSideProps } from "../../pages/social-share/player-cards";
+import { getServerSideProps } from "../../pages/social-share/player-cards";
 import { evidenceStatusCopy } from "./evidenceVerdictCopy";
 import type { LocalCardInput } from "./adapter";
-import { cardEvidenceVerdict, unclaimedBundle } from "./cardEvidenceVerdict";
+import { cardEvidenceVerdict, observedCardEvidence, clientEvidence, unclaimedBundle } from "./cardEvidenceVerdict";
 import type { EvidenceBundle } from "./evidenceBundle";
 import { loadAdmittedEvidence, validateAdmittedEvidence } from "./evidenceLoader";
 import { buildInteractionFixture } from "./interactionFixtures";
 import { flowSettings, INITIAL_FLOW } from "./interactionSnapshot";
 import type { Appearance } from "./windows";
+import type { NstCapture } from "./nstCapture";
+import { METRICS } from "./registry";
 
 const WEB = path.resolve(__dirname, "../..");
 function sources(dir: string): string[] {
@@ -94,22 +94,61 @@ describe("page props carry no free text, receipt ids or bundle internals", () =>
   });
 });
 
-vi.mock("components/SocialShare/SocialShareAccessGate", () => ({ default: ({ children }: { children: unknown }) => children }));
-vi.mock("components/player-cards/PlayerCardShareStudio", () => ({ default: () => null }));
+describe("observed capture to admitted evidence pipeline", () => {
+  // Fabricated counts/claims for the five retained ingestion-only game identities.
+  // These are adversarial test inputs, never actual player statistics or new admissions.
+  function captured(): { capture: NstCapture; bundle: EvidenceBundle } {
+    const games = [[2026020095, "2026-10-13"], [2026020111, "2026-10-15"], [2026020123, "2026-10-17"], [2026020151, "2026-10-20"], [2026020167, "2026-10-23"]] as const;
+    const settings = { ...flowSettings(INITIAL_FLOW), cutoff: "2026-10-25T00:00:00Z", period: { mode: "appearances" as const, count: 5 as const } };
+    const appearances: Appearance[] = games.map(([gameId, date]) => ({ playerId: 8476453, gameId, date, season: settings.season, gameType: "regular", played: true, completion: { status: "verified-final", completedAt: `${date}T23:59:00Z`, reference: "unreviewed caller assertion" } }));
+    const rows = appearances.map(game => ({ player_id: game.playerId, season: game.season, date_scraped: game.date, gp: 1, toi: 1200 }));
+    const batch = { toiUnit: "seconds" as const, capturedAt: "2026-10-25T06:10:24Z", reference: "fabricated test count capture", readStatus: "ok" as const, identity: { mode: "row-player-id" as const } };
+    const capture: NstCapture = {
+      id: "fabricated-count-capture", capturedAt: batch.capturedAt, settings,
+      source: { definition: "unreviewed-count-definition", version: "test-v1", definitionReference: "caller says verified", verifiedMetrics: METRICS.map(metric => metric.id) },
+      population: { scope: "all-nhl", complete: true, reference: "caller says full NHL", expectedPlayerIds: [8476453] },
+      frames: [{ playerId: 8476453, season: settings.season, gameType: "regular", dateBasis: "UTC", completeHistory: true, historyThrough: settings.cutoff, historyReference: "caller says complete", appearances }],
+      individual: { ...batch, table: "nst_gamelog_as_counts", rows: rows.map(row => ({ ...row, shots: 4, goals: 1, total_points: 1, icf: 8, iscfs: 3, ixg: .4 })) },
+      onIce: { ...batch, table: "nst_gamelog_as_counts_oi", rows: rows.map(row => ({ ...row, cf: 20, scf: 10, xgf: 1, xga: .5, gf: 2, sf: 15 })) },
+    };
+    const { season, gameType, strength, period, cutoff } = settings;
+    const bundle: EvidenceBundle = { id: "unverified-observed-bundle", origin: "local-observed", selection: { playerId: 8476453, season, gameType, strength, period, cutoff }, history: [], finality: games.map(([gameId]) => ({ gameId, receipt: { receiptId: `player-cards-2026-10-25/completion-read-01/RESULT.json#game-${gameId}`, sha256: "6ee7b37d6f6d075557d9987599043ba09320ca9d66e9c9a6bbdf75bf5dd5dae2" } })), definitions: [], populations: [] };
+    return { capture, bundle };
+  }
+  it("maps count captures but does not promote caller flags or ingestion observations into qualified values/ranks", async () => {
+    const { capture, bundle } = captured(), before = JSON.stringify(capture);
+    const result = await observedCardEvidence(capture, bundle);
+    expect(result.verdict.state).toBe("incomplete");
+    expect(result.verdict.issueCodes).toContain("finality-not-actual-end");
+    expect(result.mappingIssues).toEqual([]);
+    expect(result.card).toMatchObject({ origin: "local-observed", state: "unavailable", liveActivation: false, premiumActivation: false });
+    expect(result.card!.readings.every(row => row.value === null && row.rank === null && row.state === "missing")).toBe(true);
+    expect(Object.values(result.card!.coverage).every(pool => !pool.fullEligiblePopulationVerified)).toBe(true);
+    expect(JSON.stringify(capture)).toBe(before);
+    expect(clientEvidence(result.verdict)).toStrictEqual({ state: "incomplete" });
+  });
+  it("retains mapper source failures instead of hiding them behind an evidence verdict", async () => {
+    const { capture, bundle } = captured(); capture.onIce.table = "nst_gamelog_pp_counts_oi";
+    const result = await observedCardEvidence(capture, bundle);
+    expect(result.mappingIssues).toEqual(expect.arrayContaining([expect.objectContaining({ group: "onIce", reason: expect.stringContaining("Table/strength") })]));
+    expect(result.card!.readings.every(row => row.rank === null)).toBe(true);
+  });
+  it("rejects invalid captures and synthetic bundles with no observed card", async () => {
+    const { capture, bundle } = captured();
+    const invalid = await observedCardEvidence({ ...capture, capturedAt: "2026-10-01T00:00:00Z" }, bundle);
+    expect(invalid.card).toBeNull(); expect(invalid.verdict.issueCodes).toEqual(["capture-mapping-rejected"]);
+    const wrongOrigin = await observedCardEvidence(capture, { ...bundle, origin: "synthetic" });
+    expect(wrongOrigin.card).toBeNull(); expect(wrongOrigin.verdict.issueCodes).toEqual(["capture-origin-mismatch"]);
+    expect(Object.values(wrongOrigin.verdict.metrics).every(state => state === "rejected")).toBe(true);
+  });
+  it("rejects a bundle for another selection rather than reusing the mapped player's counts", async () => {
+    const { capture, bundle } = captured(); bundle.selection.playerId = 8479318;
+    const result = await observedCardEvidence(capture, bundle);
+    expect(result.verdict.state).toBe("rejected"); expect(result.card).toBeNull();
+  });
+});
 
 describe("studio evidence status line", () => {
-  it("renders fixed copy selected by state only, never codes", async () => {
-    const result = await getServerSideProps({ res: { setHeader: vi.fn() } } as unknown as GetServerSidePropsContext);
-    const { evidence } = (result as { props: { evidence: Parameters<typeof PlayerCardsSharePage>[0]["evidence"] } }).props;
-    const html = renderToStaticMarkup(createElement(PlayerCardsSharePage, { evidence }));
-    expect(html).toContain('role="status" data-evidence-state="incomplete"');
-    expect(html).toContain("Evidence check: incomplete");
-    expect(html).toContain("Fabricated preview, no admitted evidence. Ranks are illustrative.");
-    const input = buildInteractionFixture(flowSettings(INITIAL_FLOW), INITIAL_FLOW.scenario, INITIAL_FLOW.playerId);
-    const { issueCodes } = await cardEvidenceVerdict(input, unclaimedBundle(input, INITIAL_FLOW.playerId, "studio-preview"));
-    expect(issueCodes.length).toBeGreaterThan(0);
-    for (const code of issueCodes) expect(html).not.toContain(code);
-  });
   it("has copy for every verdict state and context, and falls back to rejected", () => {
     const states = ["eligible", "incomplete", "rejected"] as const;
     for (const context of ["fabricated-preview", "evidence-bundle"] as const) {

@@ -1,0 +1,42 @@
+{
+  "at": "2026-10-28T03:47:57.845083+00:00",
+  "head": "e4fb6f1467401983abe63d69277b75df151e0395",
+  "state": "IMPLEMENTED_NOT_VERIFIED_NOT_SERVED",
+  "sourcePaths": 8,
+  "newFiles": 5,
+  "preparedCases": 19,
+  "tests": "NOT RUN; heavywait75 no childstarted",
+  "typeCheck": "NOT RUN",
+  "lint": "NOT RUN",
+  "browser": "NOT RUN",
+  "staticDiffCheck": "PASS",
+  "protectedNewestPinsVerified": 13,
+  "resource": {
+    "at": "2026-10-28T03:47:06.994176+00:00",
+    "state": "SOURCE_IMPLEMENTED_NOT_VERIFIED_NOT_SERVED",
+    "blockingLock": "/private/tmp/fhfh-heavy.lock",
+    "knownOwner": "Codex Scout V63 sprint",
+    "knownPid": 91323,
+    "knownToken": "accab5eb-4906-4004-b89c-96d9a2937b35",
+    "testAttempt": "run-check.py tests wait returned75 after30sec; no test process started",
+    "priorInterruptedDispatch": "exec-servertransportdisconnect, no receipt/log/session existed afterreconnect; browserharnesswritebehinditdidnotrun",
+    "coordinatorMessageConfirmedDelivered": {
+      "threadId": "01a16e23-72b5-76ee-8ade-2d209d0e7002",
+      "purpose": "Shortquietheavywindowrequest only; no stale-lock recovery orprocesscontrol"
+    },
+    "preview": "unchangedverified13PID78672/3125;14source notserved",
+    "nextSafeCommandAfterLegitimateRelease": "python3 tasks/artifacts/player-cards-2026-10-28/name-search-14/run-check.py tests wait",
+    "actualOwnerThread": "01a17a5d-1234-73bd-b9f0-91ff875430f2",
+    "actualOwnerTitle": "Reshape Scout toward concept",
+    "ownerStatus": "active per coordinator",
+    "coordinatorAck": "CODEX-20261028-PC14-RESOURCE-COORDINATOR-ACK",
+    "releaseConfirmed": false,
+    "ownerAcknowledgementConfirmed": false
+  },
+  "usage": {
+    "usedPercent": 40,
+    "remainingPercent": 60,
+    "windowDurationMins": 10080
+  },
+  "preservation": "Existing3125/13preview remains; source13art/math/renderer/controller not edited. No source/DB/image/network requests, Git/deploy/deps/deletion/TLSretry."
+}

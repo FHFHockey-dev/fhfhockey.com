@@ -1,0 +1,73 @@
+{
+  "id": "CODEX-PLAYER-CARDS-CURRENT-DATA-20261026",
+  "at": "2026-10-26T22:32:10.476912+00:00",
+  "owner_thread": "01a16ec2-f81c-717b-8961-8c3832fdc00f",
+  "source": "TJ explicit live data and selectable card categories; parent narrow local route/provider/selector grant; Claude103 card handback",
+  "source_paths": [
+    "web/lib/player-cards/currentNhl.ts",
+    "web/lib/player-cards/currentNhl.test.ts",
+    "web/lib/player-cards/currentNhl.server.ts",
+    "web/lib/player-cards/currentNhl.server.test.ts",
+    "web/pages/api/v1/player-cards.ts",
+    "web/components/player-cards/CurrentPlayerCard.tsx",
+    "web/components/player-cards/CurrentPlayerCardStudio.tsx",
+    "web/components/player-cards/CurrentPlayerCardStudio.test.tsx",
+    "web/lib/player-cards/currentNhlExport.ts",
+    "web/pages/social-share/player-cards.tsx"
+  ],
+  "baseline": [
+    {
+      "path": "web/lib/player-cards/currentNhl.ts",
+      "sha256": null,
+      "absent": true
+    },
+    {
+      "path": "web/lib/player-cards/currentNhl.test.ts",
+      "sha256": null,
+      "absent": true
+    },
+    {
+      "path": "web/lib/player-cards/currentNhl.server.ts",
+      "sha256": null,
+      "absent": true
+    },
+    {
+      "path": "web/lib/player-cards/currentNhl.server.test.ts",
+      "sha256": null,
+      "absent": true
+    },
+    {
+      "path": "web/pages/api/v1/player-cards.ts",
+      "sha256": null,
+      "absent": true
+    },
+    {
+      "path": "web/components/player-cards/CurrentPlayerCard.tsx",
+      "sha256": null,
+      "absent": true
+    },
+    {
+      "path": "web/components/player-cards/CurrentPlayerCardStudio.tsx",
+      "sha256": null,
+      "absent": true
+    },
+    {
+      "path": "web/components/player-cards/CurrentPlayerCardStudio.test.tsx",
+      "sha256": null,
+      "absent": true
+    },
+    {
+      "path": "web/lib/player-cards/currentNhlExport.ts",
+      "sha256": null,
+      "absent": true
+    },
+    {
+      "path": "web/pages/social-share/player-cards.tsx",
+      "sha256": "f17fd0a83eb1f5b328884f3d2c3a19ebd599912104db9a912092a8eea3df7b31",
+      "absent": false
+    }
+  ],
+  "status": "ACTIVE bounded local implementation; no external reads authorized or performed",
+  "artifact_root": "tasks/artifacts/player-cards-2026-10-26/current-data-01",
+  "limits": "Current public NHL basic skater results only, no NST substitution, complete-population ranks remain unavailable, no privateDB/sharedauth/Tuesday/Git/deploy/delete/dependency changes; checkpoint04 art/runtime preserved"
+}

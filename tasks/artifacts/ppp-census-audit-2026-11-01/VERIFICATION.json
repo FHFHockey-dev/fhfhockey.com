@@ -1,0 +1,58 @@
+{
+  "pinsVerified": 376,
+  "sharedPinsUnchanged": 10,
+  "authenticatedBodies": 172,
+  "decompressedBytes": 2293726,
+  "allRowsReconciled": 694,
+  "empiricalAllocationSetsEnumerated": 631,
+  "cohortStates": {
+    "current_unresolved": {
+      "uniquely_implied": 188,
+      "ambiguous": 244,
+      "unknown": 34
+    },
+    "current_direct_validation": {
+      "uniquely_implied": 55,
+      "ambiguous": 97,
+      "unknown": 27
+    },
+    "historical_reference_unresolved": {
+      "ambiguous": 25,
+      "uniquely_implied": 22,
+      "unknown": 2
+    }
+  },
+  "derivedZerosByCohort": {
+    "current_unresolved": 168,
+    "current_direct_validation": 48,
+    "historical_reference_unresolved": 16
+  },
+  "additionalNewOtherCountDiscrepancies": 0,
+  "combinedCurrentPartition": [
+    179,
+    188,
+    278
+  ],
+  "historicalPartition": [
+    101,
+    22,
+    27
+  ],
+  "remainingInventoryRows": 305,
+  "receiptRanges": {
+    "20262027": [
+      "2026-10-27T20:00:42.466463+00:00",
+      "2026-10-27T20:18:50.852036+00:00"
+    ],
+    "20222023": [
+      "2026-10-26T03:04:57.447067+00:00",
+      "2026-10-26T03:40:40.884810+00:00"
+    ]
+  },
+  "currentDirectMatchesWithOtherDiscrepancies": 15,
+  "currentNoPinnedBoxOutsideCohort": 580,
+  "historicalConnorExampleVerified": true,
+  "holdoutAccessed": false,
+  "providerRequests": 0,
+  "sourceEdits": 0
+}

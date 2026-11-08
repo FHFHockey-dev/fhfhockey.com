@@ -1,0 +1,8 @@
+2d1250f0b9b35adbdfe8def6a6562ff0b3c48b6b6cbd861a7432990adcbe0cea  ./C3-b-incremental-recent-holes-v2.patch
+4e05a130c6fc9c45c4184f9ec6e962baeb1b9cf0879a605db35a286098670329  ./DIARY.md
+85664928ce7ef4999dfb35795159f956008b2f4316406e9b315cf2003a3f2201  ./RECEIPT-2.md
+86dad979aa04be0f702da2b493515fa98ec39ef72da116a6c0329e07354ec989  ./c3b-tests.log
+0724c8be217d62726cf98c0e4a2434e683e13792cfccacc452fd6ba94b802a93  ./c3b.vitest.config.mts
+5a83d97a21c0eab565b86e5fdffa9fc131fad4dd6196d15f3c11efba990f8fc1  ./patched/playerStatsRefreshWindow.ts
+f3ada0be7c7a8021464d89923fac0d83253c20b6f841d2dd26148f8eb1a43303  ./tests/b-incremental-recent-holes.test.ts
+dde18b92d1c01865701efe62092f265cd77d0001a6b531c8032ae9c989578509  ./tests/b-route-startdate.test.ts

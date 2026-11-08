@@ -58,6 +58,11 @@
   border: 1px solid v.$border-color-secondary; // Keep the section border
   border-radius: s.$radius-small;
   overflow: hidden; // Hide overflow within the section
+
+  // Offense, Defense, Overall on every layout (Overall is second in the markup).
+  &:nth-child(2) {
+    order: 3;
+  }
 }
 
 // Title for each section (Offense, Overall, Defense)
@@ -73,8 +78,7 @@
   font-size: s.$text-11;
   font-family: v.$font-family-primary;
   font-weight: s.$weight-bold;
-  text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 0;
   border-bottom: 1px solid v.$border-color-primary;
   flex-shrink: 0; // Prevent title from shrinking
 }
@@ -85,7 +89,7 @@
   flex-direction: column; // Stack boxes vertically by default
   flex-grow: 1; // Allow this container to fill the remaining space
   padding: 3px;
-  gap: 3px;
+  gap: 4px;
   justify-content: space-evenly; // Distribute space evenly vertically
   min-height: 0; // Allow flex container to shrink properly if needed
 }
@@ -154,7 +158,7 @@
   min-height: 100px;
   color: s.$ink-muted;
   font-style: italic;
-  padding: 15px;
+  padding: 16px;
   box-sizing: border-box;
   text-align: center;
 }
@@ -163,26 +167,67 @@
   color: s.$bad;
 }
 
-// One-page dashboard: a 3×3 matrix (Offense / Defense / Overall × three strengths); each cell carries a filled bar.
+// Native meters preserve labeled values for assistive technology; empty tracks
+// have no meter so unavailable ratings cannot be mistaken for a real zero.
+.ratingTrack {
+  display: block;
+  width: 100%;
+  height: 5px;
+  min-width: 0;
+  border-radius: 3px;
+  background: #34464e;
+}
+
+.ratingMeter {
+  display: block;
+  width: 100%;
+  height: 5px;
+  appearance: none;
+  border: 0;
+  border-radius: 3px;
+  background: transparent;
+
+  &::-webkit-meter-bar {
+    height: 5px;
+    border: 0;
+    border-radius: 3px;
+    background: #34464e;
+  }
+  &::-webkit-meter-optimum-value {
+    border-radius: 3px;
+    background: var(--rating-color);
+  }
+  &::-moz-meter-bar {
+    border-radius: 3px;
+    background: var(--rating-color);
+  }
+}
+
+.ratingValue {
+  font-variant-numeric: tabular-nums;
+}
+
+// One-page dashboard: nine labeled bars, grouped by family and situation.
 :global(.wigo-one-page) {
-  .ratingsRoot { display: flex; flex-direction: column; gap: 3px; height: 100%; min-height: 0; overflow: visible; padding: 0; }
-  .ratingSection { flex: 1; min-height: 0; display: grid; grid-template-columns: 54px repeat(3, minmax(0, 1fr)); gap: 3px; overflow: visible; border: 0; }
-  .ratingSection:nth-child(2) { order: 3; }
+  .ratingsRoot { display: flex; flex-direction: column; gap: 4px; height: 100%; min-height: 0; overflow: visible; padding: 0; }
+  .ratingSection { flex: 1; min-height: 0; display: grid; grid-template-columns: 54px repeat(3, minmax(0, 1fr)); gap: 4px; overflow: visible; border: 0; }
   .ratingTitle { align-self: center; margin: 0; padding: 0; border: 0; background: none; color: s.$ink-muted; font-size: s.$text-12; font-weight: s.$weight-bold; letter-spacing: 0; text-align: left; text-transform: none; }
   .ratingsBoxes { display: contents; }
   .ratingBox {
-    position: relative; display: flex; flex-direction: column; justify-content: center; align-items: center;
-    min-height: 0; padding: 0 2px 5px; border: 0 !important; background: none;
-    &::before { content: ""; position: absolute; left: 4px; bottom: 3px; height: 2px; width: calc(100% - 8px); background: linear-gradient(90deg, var(--rating-color) var(--rating-width), rgba(255, 255, 255, .08) var(--rating-width)); border-radius: s.$radius-small; }
+    position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-content: center; align-items: center; gap: 3px;
+    min-height: 0; padding: 2px 2px 0; border: 0 !important; background: none;
   }
-  .ratingLabel { font-size: s.$text-11; line-height: 1.1; color: s.$ink-muted; }
+  .ratingLabel { grid-column: 1 / -1; font-size: s.$text-11; line-height: 1.1; color: s.$ink-muted; }
   .ratingValue, .finalRating .ratingValue { font-size: var(--wigo-data-size, 11px); line-height: 1.15; font-weight: s.$weight-bold; }
 }
 
 @media (max-width: v.$breakpoint-tablet) {
-  // The rating colour stays on the value and a thin outline, so nine boxes don't compete with the data.
+  // The rating colour stays on the value only; the outline is a neutral hairline so nine boxes don't compete.
   .ratingBox {
-    border-width: 1px !important;
+    min-height: 84px;
+    padding: 6px 4px 4px;
+    gap: 2px;
+    border: 1px solid v.$border-color-secondary;
   }
 }
 

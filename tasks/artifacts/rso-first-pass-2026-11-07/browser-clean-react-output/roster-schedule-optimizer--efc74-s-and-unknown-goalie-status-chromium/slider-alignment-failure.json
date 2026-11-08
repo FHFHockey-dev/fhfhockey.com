@@ -1,0 +1,78 @@
+{
+  "date": "Wed, Oct 7",
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "thumbCenter": 306.140625,
+  "headerCenter": 186.1328125,
+  "delta": 120.0078125,
+  "geometry": {
+    "scheduleLegend": {
+      "rect": {
+        "x": 13,
+        "y": 314,
+        "width": 364,
+        "height": 205,
+        "top": 314,
+        "right": 377,
+        "bottom": 519,
+        "left": 13
+      },
+      "padding": "1px 3px",
+      "width": "364px"
+    },
+    "dayControls": {
+      "rect": {
+        "x": -104,
+        "y": 474,
+        "width": 650,
+        "height": 44,
+        "top": 474,
+        "right": 546,
+        "bottom": 518,
+        "left": -104
+      },
+      "padding": "0px 1px 0px 28px",
+      "width": "650px"
+    },
+    "compactScroll": {
+      "rect": {
+        "x": 13,
+        "y": 519,
+        "width": 364,
+        "height": 548.59375,
+        "top": 519,
+        "right": 377,
+        "bottom": 1067.59375,
+        "left": 13
+      },
+      "padding": "3px",
+      "width": "364px"
+    },
+    "compactTable": {
+      "rect": {
+        "x": -104,
+        "y": 508,
+        "width": 650,
+        "height": 1180,
+        "top": 508,
+        "right": 546,
+        "bottom": 1688,
+        "left": -104
+      },
+      "padding": "0px",
+      "width": "650px"
+    }
+  },
+  "selectedHeader": {
+    "x": 160.703125,
+    "y": 522,
+    "width": 50.859375,
+    "height": 44,
+    "top": 522,
+    "right": 211.5625,
+    "bottom": 566,
+    "left": 160.703125
+  }
+}

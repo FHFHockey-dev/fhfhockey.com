@@ -1,0 +1,39 @@
+{
+  "at": "2026-10-25T06:16:59.236259+00:00",
+  "status": "stopped-awaiting-explicit-owner-resume",
+  "reason": "Parent-relayed verified usage reset100%remaining at06:14UTC",
+  "atomicOperationAtSignal": "3125handoff already completed",
+  "previewPid": 48266,
+  "previewListener": "127.0.0.1:3125",
+  "previewState": "intentionally-running; lsof confirmed",
+  "postLaunchProcessDetails": "ps denied in sandbox; no retry",
+  "activeExecSessions": [],
+  "reviewerState": "completed-and-stopped",
+  "databaseCalls": 1,
+  "databaseRetries": 0,
+  "newLibraryAttempts": 0,
+  "sourcePaths": [
+    "web/components/player-cards/PlayerCardShareStudio.tsx",
+    "web/components/player-cards/PlayerCardShareStudio.test.tsx"
+  ],
+  "sourcePins": [
+    {
+      "path": "web/components/player-cards/PlayerCardShareStudio.tsx",
+      "bytes": 10076,
+      "sha256": "c96629b6cc07ec8be06aab2804e0e6f3793650b0e3ed71f692591f5cd9969ad9"
+    },
+    {
+      "path": "web/components/player-cards/PlayerCardShareStudio.test.tsx",
+      "bytes": 7034,
+      "sha256": "2fcd04e379852ba7104c03f4ee5df5462ebe3a1de659cf5f2a98d7eaad1afd78"
+    }
+  ],
+  "handoffSha256": "7e004149dd7cf48fd6fe79f001d42bea6d2dab8c7ae7946f16e9dfd84c8cb291",
+  "evidenceSha256": "050bfae2bb95a130fc80e7930e60ce4b83d01b9b13b5d659957465119900aa30",
+  "pending": [
+    "Explicit owner resume",
+    "Scout integration acceptance",
+    "Live qualification",
+    "Supported Library connection repair"
+  ]
+}

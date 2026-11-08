@@ -1,0 +1,146 @@
+{
+  "fixtureOnly": true,
+  "fullNextRoute": false,
+  "compileOnly": false,
+  "checks": [
+    {
+      "name": "actual component and CSS-module/Sass compile",
+      "passed": true
+    },
+    {
+      "name": "1440: unknown capacity stays unresolved",
+      "passed": true
+    },
+    {
+      "name": "1440: whole two-for-one requires an explicit drop",
+      "passed": true
+    },
+    {
+      "name": "1440: no automatic drop",
+      "passed": true
+    },
+    {
+      "name": "1440: outgoing and incoming players cannot be selected as drops",
+      "passed": true
+    },
+    {
+      "name": "1440: keyboard-selected drop resolves capacity",
+      "passed": true
+    },
+    {
+      "name": "1440: both final counts reconcile",
+      "passed": true
+    },
+    {
+      "name": "1440: complete pick and unknown text retained for both sides",
+      "passed": true
+    },
+    {
+      "name": "1440: no horizontal overflow",
+      "passed": true
+    },
+    {
+      "name": "1440: 200% CSS zoom has no horizontal overflow",
+      "passed": true
+    },
+    {
+      "name": "1440: roster edits clear stale exchange and require review",
+      "passed": true
+    },
+    {
+      "name": "1440: offer state is not persisted",
+      "passed": true
+    },
+    {
+      "name": "390: unknown capacity stays unresolved",
+      "passed": true
+    },
+    {
+      "name": "390: whole two-for-one requires an explicit drop",
+      "passed": true
+    },
+    {
+      "name": "390: no automatic drop",
+      "passed": true
+    },
+    {
+      "name": "390: outgoing and incoming players cannot be selected as drops",
+      "passed": true
+    },
+    {
+      "name": "390: keyboard-selected drop resolves capacity",
+      "passed": true
+    },
+    {
+      "name": "390: both final counts reconcile",
+      "passed": true
+    },
+    {
+      "name": "390: complete pick and unknown text retained for both sides",
+      "passed": true
+    },
+    {
+      "name": "390: no horizontal overflow",
+      "passed": true
+    },
+    {
+      "name": "390: RTL mirror has no horizontal overflow",
+      "passed": true
+    },
+    {
+      "name": "390: roster edits clear stale exchange and require review",
+      "passed": true
+    },
+    {
+      "name": "390: offer state is not persisted",
+      "passed": true
+    },
+    {
+      "name": "320: unknown capacity stays unresolved",
+      "passed": true
+    },
+    {
+      "name": "320: whole two-for-one requires an explicit drop",
+      "passed": true
+    },
+    {
+      "name": "320: no automatic drop",
+      "passed": true
+    },
+    {
+      "name": "320: outgoing and incoming players cannot be selected as drops",
+      "passed": true
+    },
+    {
+      "name": "320: keyboard-selected drop resolves capacity",
+      "passed": true
+    },
+    {
+      "name": "320: both final counts reconcile",
+      "passed": true
+    },
+    {
+      "name": "320: complete pick and unknown text retained for both sides",
+      "passed": true
+    },
+    {
+      "name": "320: no horizontal overflow",
+      "passed": true
+    },
+    {
+      "name": "320: roster edits clear stale exchange and require review",
+      "passed": true
+    },
+    {
+      "name": "320: offer state is not persisted",
+      "passed": true
+    },
+    {
+      "name": "no uncaught page errors",
+      "passed": true
+    }
+  ],
+  "blockedRequests": [],
+  "pageErrors": [],
+  "result": "passed"
+}

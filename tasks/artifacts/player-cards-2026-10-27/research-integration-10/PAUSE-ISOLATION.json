@@ -1,0 +1,178 @@
+{
+  "at": "2026-10-27T01:30:04.413615+00:00",
+  "scopeCorrection": "TJconfusedbyBLSHcards;Scoutpausesunapprovedcrossover;no newresearchUI/tests",
+  "existingIntegrationHunksDetached": [
+    {
+      "path": "web/lib/player-cards/currentNhl.ts",
+      "sha256": "e8b083955320ef1b4cfef62ac60572a530e00e6dadc77159c4d8e6b66817a1e8"
+    },
+    {
+      "path": "web/components/player-cards/CurrentPlayerCardStudio.tsx",
+      "sha256": "de551a59d5e83f594e2848176dd5c4b872069af91cf18174ef9c811774355e40"
+    },
+    {
+      "path": "web/lib/player-cards/currentNhlExport.ts",
+      "sha256": "d8533b01c5886f229606d198697ece97ed208fe4d015ff6aafe3da6bb5aab653"
+    },
+    {
+      "path": "web/components/player-cards/CurrentPlayerCardStudio.test.tsx",
+      "sha256": "0cb960b00336d932eedddf23d1c0f314c1d74c2b4a1124c84e7b480d4a18c4de"
+    },
+    {
+      "path": "web/pages/social-share/player-cards.tsx",
+      "sha256": "12c4f9cb54a1ce275ed65be3aa3120da0e4e20e87741993d759601b9a955a78b"
+    }
+  ],
+  "newCandidateFilesReversiblyRelocated": [
+    {
+      "from": "web/lib/player-cards/researchSnapshot.types.ts",
+      "to": "tasks/artifacts/player-cards-2026-10-27/research-integration-10/candidate-source/web/lib/player-cards/researchSnapshot.types.ts",
+      "sha256": "3810baa162277d9ddbe2933e7c1643e9af4ee2bd25d5166f9f8728b97e3b0cae"
+    },
+    {
+      "from": "web/lib/player-cards/researchSnapshot.ts",
+      "to": "tasks/artifacts/player-cards-2026-10-27/research-integration-10/candidate-source/web/lib/player-cards/researchSnapshot.ts",
+      "sha256": "cfa2c3060d9ea470374a3dcdf4d53b1096c996da17db39e4fb902d1b96482b8d"
+    },
+    {
+      "from": "web/lib/player-cards/researchSnapshot.test.ts",
+      "to": "tasks/artifacts/player-cards-2026-10-27/research-integration-10/candidate-source/web/lib/player-cards/researchSnapshot.test.ts",
+      "sha256": "8cdc8d86f6723d53e37a8e1d0a6bc7c749dcae2b7d4749e45e1db9be1727b4cf"
+    },
+    {
+      "from": "web/lib/player-cards/researchExamples.ts",
+      "to": "tasks/artifacts/player-cards-2026-10-27/research-integration-10/candidate-source/web/lib/player-cards/researchExamples.ts",
+      "sha256": "ee26a0c72fb7d7b4be5321d51157381a5f6d14fb52c4e4d69849965e4d1ba57f"
+    },
+    {
+      "from": "web/lib/player-cards/researchFixtures.server.ts",
+      "to": "tasks/artifacts/player-cards-2026-10-27/research-integration-10/candidate-source/web/lib/player-cards/researchFixtures.server.ts",
+      "sha256": "a00f3cbf5b00c2201e960ca50f65e47d367f8b9328c9a573794b21c08df420c0"
+    },
+    {
+      "from": "web/lib/player-cards/researchFixtures.server.test.ts",
+      "to": "tasks/artifacts/player-cards-2026-10-27/research-integration-10/candidate-source/web/lib/player-cards/researchFixtures.server.test.ts",
+      "sha256": "92040ad4da279a9c94d19d61c64dfd6a15ffd7b5f1ff4e97d69fa05da4662f8f"
+    },
+    {
+      "from": "web/lib/player-cards/researchExport.ts",
+      "to": "tasks/artifacts/player-cards-2026-10-27/research-integration-10/candidate-source/web/lib/player-cards/researchExport.ts",
+      "sha256": "fcb639f349e2f5a15e88c6223c127a9ee6ff0d44c49a4f0c57ec8d3f83c7cece"
+    },
+    {
+      "from": "web/components/player-cards/ResearchCardEvidence.tsx",
+      "to": "tasks/artifacts/player-cards-2026-10-27/research-integration-10/candidate-source/web/components/player-cards/ResearchCardEvidence.tsx",
+      "sha256": "0132bf4a2446c83a9a705f015bbbe63fd473b56d93ccdc213cac6831a4d128e4"
+    },
+    {
+      "from": "web/components/player-cards/ResearchPlayerCard.tsx",
+      "to": "tasks/artifacts/player-cards-2026-10-27/research-integration-10/candidate-source/web/components/player-cards/ResearchPlayerCard.tsx",
+      "sha256": "c0afaa1c16bff5df5a0d8bbf69df315f6db23cd79f62aeaf84fcb434fa9be164"
+    },
+    {
+      "from": "web/components/player-cards/ResearchPlayerCardStudio.tsx",
+      "to": "tasks/artifacts/player-cards-2026-10-27/research-integration-10/candidate-source/web/components/player-cards/ResearchPlayerCardStudio.tsx",
+      "sha256": "8f6ef19c281f7c5622b534abe327b216c018a2e2506cf9338e9c71334c74676a"
+    },
+    {
+      "from": "web/components/player-cards/ResearchPlayerCardStudio.test.tsx",
+      "to": "tasks/artifacts/player-cards-2026-10-27/research-integration-10/candidate-source/web/components/player-cards/ResearchPlayerCardStudio.test.tsx",
+      "sha256": "cdf6efa7c846fa6fb9da3a2b88b96f2177d5a685d7759498fe6309728d624341"
+    },
+    {
+      "from": "web/pages/api/v1/player-cards/research.ts",
+      "to": "tasks/artifacts/player-cards-2026-10-27/research-integration-10/candidate-source/web/pages/api/v1/player-cards/research.ts",
+      "sha256": "9c13e20755abaa102169b52efca49569c6464461aeabfbaa93682a7e227ef141"
+    },
+    {
+      "from": "web/lib/player-cards/research-fixtures/MANIFEST.json",
+      "to": "tasks/artifacts/player-cards-2026-10-27/research-integration-10/candidate-source/web/lib/player-cards/research-fixtures/MANIFEST.json",
+      "sha256": "beeb34c351e31b91598ca771518bf93030cc7d6079ba5a5b1eab9925c14d8f0a"
+    },
+    {
+      "from": "web/lib/player-cards/research-fixtures/matthews_pending_hot.json",
+      "to": "tasks/artifacts/player-cards-2026-10-27/research-integration-10/candidate-source/web/lib/player-cards/research-fixtures/matthews_pending_hot.json",
+      "sha256": "1e75d5fc6f0e832c38bfb2217c2203cba165da8cfaea2ac540c6a08ae3ff68e4"
+    },
+    {
+      "from": "web/lib/player-cards/research-fixtures/matthews_confirmed_hot.json",
+      "to": "tasks/artifacts/player-cards-2026-10-27/research-integration-10/candidate-source/web/lib/player-cards/research-fixtures/matthews_confirmed_hot.json",
+      "sha256": "de11254822d4f03338c7d53bfd2d0ccbbea323da4a156614590d867156ae476f"
+    },
+    {
+      "from": "web/lib/player-cards/research-fixtures/matthews_exited_hot.json",
+      "to": "tasks/artifacts/player-cards-2026-10-27/research-integration-10/candidate-source/web/lib/player-cards/research-fixtures/matthews_exited_hot.json",
+      "sha256": "d28cd3f2d51328449f70c088a30b532aa4ea8c61547cf4ffc4076f3cba6b5e56"
+    },
+    {
+      "from": "web/lib/player-cards/research-fixtures/matthews_confirmed_cold.json",
+      "to": "tasks/artifacts/player-cards-2026-10-27/research-integration-10/candidate-source/web/lib/player-cards/research-fixtures/matthews_confirmed_cold.json",
+      "sha256": "4dda87f7468d3804e892cfaf1b2180c551e54849dd5f10643f30d0f4d821a2fd"
+    },
+    {
+      "from": "web/lib/player-cards/research-fixtures/matthews_apr18.json",
+      "to": "tasks/artifacts/player-cards-2026-10-27/research-integration-10/candidate-source/web/lib/player-cards/research-fixtures/matthews_apr18.json",
+      "sha256": "0425657a0ab8604e9afaf9f30b889f37cd4acc61c95499b79d7174cc9c2f8dcb"
+    },
+    {
+      "from": "web/lib/player-cards/research-fixtures/perbix_low_shot_apr18.json",
+      "to": "tasks/artifacts/player-cards-2026-10-27/research-integration-10/candidate-source/web/lib/player-cards/research-fixtures/perbix_low_shot_apr18.json",
+      "sha256": "c0d03e28b04ae1ebfd2f489721ac1738b716d634e7b24b955fa0542bd517e2e4"
+    },
+    {
+      "from": "web/lib/player-cards/research-fixtures/luke_hughes_sparse_streak_oct31.json",
+      "to": "tasks/artifacts/player-cards-2026-10-27/research-integration-10/candidate-source/web/lib/player-cards/research-fixtures/luke_hughes_sparse_streak_oct31.json",
+      "sha256": "0b9ee98de9bfe39e7f22b477bbdc53600602b3e48e81d06e0a0c7310bd8fdde0"
+    },
+    {
+      "from": "web/lib/player-cards/research-fixtures/necas_cohort_process_apr18.json",
+      "to": "tasks/artifacts/player-cards-2026-10-27/research-integration-10/candidate-source/web/lib/player-cards/research-fixtures/necas_cohort_process_apr18.json",
+      "sha256": "94de24fff217c82cb1b247c0c72fb2eb48cd567703c14802c79c03978a2f7420"
+    },
+    {
+      "from": "web/lib/player-cards/research-fixtures/gallagher_imputed_process_apr18.json",
+      "to": "tasks/artifacts/player-cards-2026-10-27/research-integration-10/candidate-source/web/lib/player-cards/research-fixtures/gallagher_imputed_process_apr18.json",
+      "sha256": "6dac1fc47696feaa61113e56372671b160954790d29ec162b58a167490c32b96"
+    },
+    {
+      "from": "web/lib/player-cards/research-fixtures/sparse_reference.json",
+      "to": "tasks/artifacts/player-cards-2026-10-27/research-integration-10/candidate-source/web/lib/player-cards/research-fixtures/sparse_reference.json",
+      "sha256": "4cdd36e59033f593977c8f327d828278df929548cd7f358e055c723d9e41a4e1"
+    },
+    {
+      "from": "web/lib/player-cards/research-fixtures/zero_reference_variance.json",
+      "to": "tasks/artifacts/player-cards-2026-10-27/research-integration-10/candidate-source/web/lib/player-cards/research-fixtures/zero_reference_variance.json",
+      "sha256": "6fa996c61adbd498b875a416697d19c42dddfed1fbfddba5008f2f8f02b174e3"
+    },
+    {
+      "from": "web/lib/player-cards/research-fixtures/missing_GS_no_two_track_composite.json",
+      "to": "tasks/artifacts/player-cards-2026-10-27/research-integration-10/candidate-source/web/lib/player-cards/research-fixtures/missing_GS_no_two_track_composite.json",
+      "sha256": "8991b05a8325142c938807a17eceecb6bb454b346289836870148e5bcf913a1f"
+    },
+    {
+      "from": "web/lib/player-cards/research-fixtures/nonappearance_is_censor_not_zero.json",
+      "to": "tasks/artifacts/player-cards-2026-10-27/research-integration-10/candidate-source/web/lib/player-cards/research-fixtures/nonappearance_is_censor_not_zero.json",
+      "sha256": "9551d148b503d248efea5222d75b68a822b2414128f293ad5a5c2f82af1fa32a"
+    },
+    {
+      "from": "web/lib/player-cards/research-fixtures/zero_shots_broad_profile_retained.json",
+      "to": "tasks/artifacts/player-cards-2026-10-27/research-integration-10/candidate-source/web/lib/player-cards/research-fixtures/zero_shots_broad_profile_retained.json",
+      "sha256": "20a696dcfb145782637a9108d2b74dc6d7d85ccc554349e2930e9331dd6df24d"
+    },
+    {
+      "from": "web/lib/player-cards/research-fixtures/no_current_history.json",
+      "to": "tasks/artifacts/player-cards-2026-10-27/research-integration-10/candidate-source/web/lib/player-cards/research-fixtures/no_current_history.json",
+      "sha256": "aba480d4eae3d0093fa0437bd46637eccd02fafd3c31dc7714754a121bd1cb23"
+    }
+  ],
+  "candidatePinsMatch": 33,
+  "checkpoint09SourcePinsMatch": 13,
+  "permanentlyDeleted": 0,
+  "gitResets": 0,
+  "liveRequests": 0,
+  "testsAfterPause": 0,
+  "servedPreviewChanged": false,
+  "servedPidLastVerified": 69351,
+  "browserCandidateNeverServed": true,
+  "candidateState": "PAUSED/ISOLATED; not accepted; resumeonlyexplicitownerintegrationchoice"
+}

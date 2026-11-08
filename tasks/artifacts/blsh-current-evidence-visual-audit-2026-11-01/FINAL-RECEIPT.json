@@ -1,0 +1,20 @@
+{
+  "state": "REVIEW_COMPLETE_ONE_P2_UI_FINDING",
+  "files": {
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-evidence-visual-audit-2026-11-01/REVIEW.md": "fa1949450eab7d1af55276511aa762177f2c42955d6263590bad2d7a7aecbd44",
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-evidence-visual-audit-2026-11-01/PINS.json": "4d0bb330a346138c0b0888eb837429bc9f6695dd5babede12c91a61d95eeadb0",
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-evidence-visual-audit-2026-11-01/VERIFICATION.json": "138c41b093d9c98f0493e9de76b202fdebd481a8474d12daec76a152bb227a23",
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-evidence-visual-audit-2026-11-01/TESTS.log": "7d2d71ba80c4fe26d6b1eb316472514e87a476a35a51a91a8b0b6cc521d61d9b",
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-evidence-visual-audit-2026-11-01/verify.py": "13378cf9c0583bb2616dade2c54ecd7a37039c00e3513b61596a88b51b297fa9",
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-evidence-visual-audit-2026-11-01/browser-review.cjs": "bdfc336441ffb3d9c302812eb3ea56f13e23b36e29ff3456b52474dd089e99c4",
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-evidence-visual-audit-2026-11-01/browser-03/RESULT.json": "835db9ff9fdcf439eb742911a8fdeefd948643865329efce984c3d7133ef4448",
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-evidence-visual-audit-2026-11-01/browser-04/RESULT.json": "99a0f818ca3517ff95d370d6a7c8986f1fd897e8c5d349e76bd79ccd0f2af0d0"
+  },
+  "testsPassed": 16,
+  "inputPinsVerified": 558,
+  "productionRequests": 0,
+  "sourceEdits": 0,
+  "holdoutAccess": 0,
+  "ownedLock": false,
+  "pendingApproval": false
+}

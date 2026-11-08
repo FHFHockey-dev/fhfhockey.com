@@ -20,6 +20,7 @@ import updateNstGamelogHandler from "./update-nst-gamelog";
 import updateNstGoaliesHandler from "./update-nst-goalies";
 import updateNstTeamDailyHandler from "./update-nst-team-daily";
 import updateRollingPlayerAveragesHandler from "./update-rolling-player-averages";
+import updateTeamUnitToiHandler from "./update-team-unit-toi";
 import updateWgoGoaliesHandler from "./update-wgo-goalies";
 import updateWgoSkatersHandler from "./update-wgo-skaters";
 import updateWgoTotalsHandler from "./update-wgo-totals";
@@ -34,6 +35,7 @@ const ROUTE_RUNNER_HANDLERS = {
   "/api/v1/db/update-nst-current-season": updateNstCurrentSeasonHandler,
   "/api/v1/db/update-wgo-skaters": updateWgoSkatersHandler,
   "/api/v1/db/update-wgo-goalies": updateWgoGoaliesHandler,
+  "/api/v1/db/update-team-unit-toi": updateTeamUnitToiHandler,
   "/api/v1/db/update-wgo-totals": updateWgoTotalsHandler
 } satisfies Record<RouteRunnerPath, RouteHandler>;
 

@@ -1,0 +1,28 @@
+{
+  "at": "2026-10-26T22:50:10.343949+00:00",
+  "reason": "Another worker guarded heavy resource lock; not stolen or bypassed",
+  "foreignLock": {
+    "owner": "Codex isolated map worker",
+    "token": "guarded-d474782a-ff2e-472e-a392-97bd102f63c7",
+    "name": "baseline",
+    "createdUtc": "2026-10-26T22:43:50.554115+00:00",
+    "note": "Preserve this owned lease: sandbox denied SIGTERM and Editor outcome is uncertain; do not release until the process is known stopped."
+  },
+  "priorPassed": {
+    "unitTests": 19,
+    "scopedTypes": true,
+    "scopedLint": true
+  },
+  "latestSourceDeltaSinceThoseChecks": [
+    "NHL API method/validation regression",
+    "verified UTC chronology regression and fail-closed ambiguous starts",
+    "explicit contract-fixture presentation",
+    "early upstream player-identity rejection"
+  ],
+  "pending": [
+    "latest focused 21 tests",
+    "latest scoped TypeScript/lint",
+    "offline browser two formats/PNG/manifest/share/cancel/unavailable states"
+  ],
+  "newLiveReads": 0
+}

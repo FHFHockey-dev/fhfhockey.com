@@ -63,11 +63,102 @@ describe("withCronJobAudit", () => {
   beforeEach(() => {
     process.env.SUPABASE_SERVICE_ROLE_KEY = "test-service-role-key";
     insertMock.mockReset();
-    insertMock.mockResolvedValue({});
+    insertMock.mockResolvedValue({ error: null });
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
+  });
+
+  it.each([undefined, false, true])("bounds audit timeouts without retrying when final receipt is %s", async (includeFinalAuditReceipt) => {
+    vi.useFakeTimers();
+    const log = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      insertMock.mockImplementation(() => new Promise(() => {}));
+      const wrapped = withCronJobAudit(async (_req, res) => res.json({ success: true }), { includeFinalAuditReceipt });
+      const res = createMockRes(); const pending = wrapped(createMockReq(), res);
+      await vi.advanceTimersByTimeAsync(5000); await pending;
+      expect(insertMock).toHaveBeenCalledTimes(1);
+      expect(res.statusCode).toBe(includeFinalAuditReceipt ? 503 : 200);
+      if (includeFinalAuditReceipt) {
+        expect(res.body.finalAudit).toMatchObject({ status: "unverified", retrySafe: false, requiresReview: true });
+      } else {
+        expect(res.body).toEqual({ success: true });
+      }
+      expect(log).toHaveBeenCalledWith("cron_job_audit insert failed", expect.stringContaining("outcome unverified"));
+    } finally { vi.useRealTimers(); }
+  });
+
+  it.each([
+    ["missing", undefined, "unverified"], ["null", null, "unverified"], ["empty", {}, "unverified"],
+    ["rejected", { error: { message: "fixture rejection" } }, "failed"],
+  ])("requires positive acknowledgement for %s only when a final receipt was promised", async (_name, receipt, expectedStatus) => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    for (const includeFinalAuditReceipt of [undefined, false, true]) {
+      insertMock.mockReset().mockResolvedValue(receipt);
+      const res = createMockRes();
+      await withCronJobAudit(async (_req, out) => out.json({ success: true, rowsUpserted: 2 }), { includeFinalAuditReceipt })(createMockReq(), res);
+      expect(insertMock).toHaveBeenCalledTimes(1);
+      expect(res.statusCode).toBe(includeFinalAuditReceipt ? 503 : 200);
+      if (includeFinalAuditReceipt) {
+        expect(res.body).toMatchObject({ success: false, rowsUpserted: 2,
+          operationOutcome: { statusCode: 200, success: true },
+          finalAudit: { status: expectedStatus, retrySafe: false, requiresReview: true } });
+      } else {
+        expect(res.body).toEqual({ success: true, rowsUpserted: 2 });
+      }
+    }
+  });
+
+  it("keeps a thrown transport acknowledgement uncertain and caller-visible without a retry", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    insertMock.mockRejectedValue(new Error("fixture connection lost")); const res = createMockRes();
+    await withCronJobAudit(async (_req, out) => out.status(207).json({ success: false, rowsUpserted: 2, error: "partial operation" }), { includeFinalAuditReceipt: true })(createMockReq(), res);
+    expect(res.statusCode).toBe(503); expect(insertMock).toHaveBeenCalledTimes(1);
+    expect(res.body).toMatchObject({ success: false, error: "partial operation", rowsUpserted: 2,
+      operationOutcome: { statusCode: 207, success: false }, finalAudit: { status: "unverified", retrySafe: false } });
+  });
+
+  it.each([200, 207, 400, 405, 410, 424, 500])("preserves the handler's HTTP %i response when best-effort auditing throws", async (statusCode) => {
+    const log = vi.spyOn(console, "error").mockImplementation(() => {});
+    insertMock.mockRejectedValue(new Error("fixture connection lost"));
+    const res = createMockRes();
+    const body = { success: statusCode === 200, rowsUpserted: 2, message: "handler outcome" };
+
+    await withCronJobAudit(async (_req, out) => out.status(statusCode).json(body))(createMockReq(), res);
+
+    expect(res.statusCode).toBe(statusCode);
+    expect(res.body).toEqual(body);
+    expect(insertMock).toHaveBeenCalledTimes(1);
+    expect(log).toHaveBeenCalledWith("cron_job_audit insert failed", "fixture connection lost");
+  });
+
+  it("preserves send responses and headers when best-effort audit persistence fails", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    insertMock.mockResolvedValue({ error: { message: "fixture rejection" } });
+    const res = createMockRes();
+    await withCronJobAudit(async (_req, out) => {
+      out.setHeader("Allow", ["GET"]);
+      return out.status(405).send("Method Not Allowed");
+    })(createMockReq(), res);
+
+    expect(res.statusCode).toBe(405);
+    expect(res.headers.Allow).toEqual(["GET"]);
+    expect(res.body).toBe("Method Not Allowed");
+    expect(insertMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("preserves a thrown handler's 500 when its best-effort audit also fails", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    insertMock.mockResolvedValue({ error: { message: "fixture rejection" } });
+    const res = createMockRes();
+
+    await withCronJobAudit(async () => { throw new Error("handler failed"); })(createMockReq(), res);
+
+    expect(res.statusCode).toBe(500);
+    expect(res.body).toMatchObject({ success: false, error: "handler failed", timing: { durationMs: expect.any(Number) } });
+    expect(res.body).not.toHaveProperty("finalAudit");
+    expect(insertMock).toHaveBeenCalledTimes(1);
   });
 
   it("adds timing to wrapper-generated 500 responses when the handler throws", async () => {
@@ -457,7 +548,7 @@ describe("withCronJobAudit", () => {
     expect(res.headersSent).toBe(false);
     expect(res.body).toBeUndefined();
 
-    resolveInsert?.({});
+    resolveInsert?.({ error: null });
     await pending;
 
     expect(res.headersSent).toBe(true);
@@ -576,7 +667,8 @@ describe("withCronJobAudit", () => {
     await wrapped(createMockReq(), res);
 
     expect(res.body).toMatchObject({
-      success: true,
+      success: false,
+      operationOutcome: { statusCode: 200, success: true },
       finalAudit: {
         owner: "withCronJobAudit",
         status: "failed",
@@ -619,7 +711,7 @@ describe("withCronJobAudit seasonal game-data classification", () => {
 
   beforeEach(() => {
     insertMock.mockReset();
-    insertMock.mockResolvedValue({});
+    insertMock.mockResolvedValue({ error: null });
   });
 
   it("stamps the classification from the actual wrapper chain, whatever the route is called", async () => {

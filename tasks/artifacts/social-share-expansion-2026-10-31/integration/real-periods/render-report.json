@@ -1,0 +1,257 @@
+[
+ {
+  "space": {
+   "emptyPx": 0,
+   "bodyPx": 840,
+   "textOutside": 0,
+   "minFont": 15
+  },
+  "name": "off-night-next",
+  "enabled": true,
+  "png": true,
+  "feedback": "PNG downloaded: 1080 × 1080.",
+  "status": "Weeks unavailable",
+  "fit": [],
+  "phone": 375
+ },
+ {
+  "space": {
+   "emptyPx": 0,
+   "bodyPx": 840,
+   "textOutside": 0,
+   "minFont": 15
+  },
+  "name": "off-night-w4",
+  "enabled": true,
+  "png": true,
+  "feedback": "PNG downloaded: 1080 × 1080.",
+  "status": "Weeks unavailable",
+  "fit": [],
+  "phone": 375
+ },
+ {
+  "space": {
+   "emptyPx": 156,
+   "bodyPx": 858,
+   "textOutside": 0,
+   "minFont": 15
+  },
+  "name": "team-games-w4",
+  "enabled": true,
+  "png": true,
+  "feedback": "PNG downloaded: 1080 × 1080.",
+  "status": "Weeks unavailable",
+  "fit": [],
+  "phone": 375
+ },
+ {
+  "space": {
+   "emptyPx": 6,
+   "bodyPx": 858,
+   "textOutside": 0,
+   "minFont": 12
+  },
+  "name": "risky-next",
+  "enabled": true,
+  "png": true,
+  "feedback": "PNG downloaded: 1080 × 1080.",
+  "status": "Weeks unavailable",
+  "fit": [],
+  "phone": 375
+ },
+ {
+  "space": {
+   "emptyPx": 825,
+   "bodyPx": 858,
+   "textOutside": 0,
+   "minFont": 28
+  },
+  "name": "risky-past",
+  "enabled": false,
+  "png": false,
+  "feedback": "",
+  "status": "Weeks unavailable",
+  "fit": [],
+  "phone": 375
+ },
+ {
+  "space": {
+   "emptyPx": 7,
+   "bodyPx": 821,
+   "textOutside": 0,
+   "minFont": 11
+  },
+  "name": "start-sit-next",
+  "enabled": true,
+  "png": true,
+  "feedback": "PNG downloaded: 1080 × 1080.",
+  "status": "Weeks unavailable",
+  "fit": [],
+  "phone": 375
+ },
+ {
+  "space": {
+   "emptyPx": 8,
+   "bodyPx": 858,
+   "textOutside": 0,
+   "minFont": 12
+  },
+  "name": "bsh-w4",
+  "enabled": true,
+  "png": true,
+  "feedback": "PNG downloaded: 1080 × 1080.",
+  "status": "Weeks unavailable",
+  "fit": [],
+  "phone": 375
+ },
+ {
+  "space": {
+   "emptyPx": 6,
+   "bodyPx": 858,
+   "textOutside": 0,
+   "minFont": 12
+  },
+  "name": "mcm-w4",
+  "enabled": true,
+  "png": true,
+  "feedback": "PNG downloaded: 1080 × 1080.",
+  "status": "Weeks unavailable",
+  "fit": [],
+  "phone": 375
+ },
+ {
+  "space": {
+   "emptyPx": 10,
+   "bodyPx": 858,
+   "textOutside": 0,
+   "minFont": 12
+  },
+  "name": "nightly-custom",
+  "enabled": true,
+  "png": true,
+  "feedback": "PNG downloaded: 1080 × 1080.",
+  "status": "",
+  "fit": [],
+  "phone": 375
+ },
+ {
+  "space": {
+   "emptyPx": 10,
+   "bodyPx": 858,
+   "textOutside": 0,
+   "minFont": 12
+  },
+  "name": "cardio-w4",
+  "enabled": true,
+  "png": true,
+  "feedback": "PNG downloaded: 1080 × 1080.",
+  "status": "Weeks unavailable",
+  "fit": [],
+  "phone": 375
+ },
+ {
+  "space": {
+   "emptyPx": 5,
+   "bodyPx": 858,
+   "textOutside": 0,
+   "minFont": 13
+  },
+  "name": "stars-w4",
+  "enabled": true,
+  "png": true,
+  "feedback": "PNG downloaded: 1080 × 1080.",
+  "status": "Weeks unavailable",
+  "fit": [],
+  "phone": 375
+ },
+ {
+  "space": {
+   "emptyPx": 0,
+   "bodyPx": 840,
+   "textOutside": 0,
+   "minFont": 12
+  },
+  "name": "gsax-w4",
+  "enabled": true,
+  "png": true,
+  "feedback": "PNG downloaded: 1080 × 1080.",
+  "status": "Weeks unavailable",
+  "fit": [],
+  "phone": 375
+ },
+ {
+  "space": {
+   "emptyPx": 5,
+   "bodyPx": 840,
+   "textOutside": 0,
+   "minFont": 10
+  },
+  "name": "busy-custom",
+  "enabled": true,
+  "png": true,
+  "feedback": "PNG downloaded: 1080 × 1080.",
+  "status": "",
+  "fit": [],
+  "phone": 375
+ },
+ {
+  "space": {
+   "emptyPx": 733,
+   "bodyPx": 840,
+   "textOutside": 0,
+   "minFont": 15
+  },
+  "name": "rescue-w4",
+  "enabled": true,
+  "png": true,
+  "feedback": "PNG downloaded: 1080 × 1080.",
+  "status": "Weeks unavailable",
+  "fit": [],
+  "phone": 375
+ },
+ {
+  "space": {
+   "emptyPx": 0,
+   "bodyPx": 840,
+   "textOutside": 0,
+   "minFont": 11
+  },
+  "name": "goalie-week",
+  "enabled": true,
+  "png": true,
+  "feedback": "PNG downloaded: 1080 × 1080.",
+  "status": "Weeks unavailable",
+  "fit": [],
+  "phone": 375
+ },
+ {
+  "space": {
+   "emptyPx": 0,
+   "bodyPx": 840,
+   "textOutside": 0,
+   "minFont": 11
+  },
+  "name": "goalie-season",
+  "enabled": true,
+  "png": true,
+  "feedback": "PNG downloaded: 1080 × 1080.",
+  "status": "",
+  "fit": [],
+  "phone": 375
+ },
+ {
+  "space": {
+   "emptyPx": 7,
+   "bodyPx": 840,
+   "textOutside": 0,
+   "minFont": 13.44
+  },
+  "name": "standouts-1028",
+  "enabled": true,
+  "png": true,
+  "feedback": "PNG downloaded: 1080 × 1080.",
+  "status": "",
+  "fit": [],
+  "phone": 375
+ }
+]

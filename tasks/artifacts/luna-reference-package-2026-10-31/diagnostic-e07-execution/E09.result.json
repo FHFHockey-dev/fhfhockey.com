@@ -1,0 +1,25 @@
+{
+  "caseId": "E09",
+  "outcome": "recorded_pass",
+  "rawGrade": {
+    "identity": true,
+    "goalie": true,
+    "decisions": true,
+    "labelMatch": true
+  },
+  "reason": "original_grade_pass",
+  "decisionsDisposition": "not_scheduled",
+  "anchor": {
+    "caseId": "E09",
+    "sha256": "6e73c855576c8f570ff5b86ba9b3bfd90c56c407e212a05493949572aa6951e6"
+  },
+  "candidateAvailable": false,
+  "candidateApplied": false,
+  "callsThisReport": 1,
+  "cumulativeCalls": 10,
+  "exposureNanoUsd": 266590843,
+  "currentChargeNanoUsd": 443961,
+  "ledgerEnabled": true,
+  "blockedReason": null,
+  "proceed": true
+}

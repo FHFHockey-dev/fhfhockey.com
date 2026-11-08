@@ -1,0 +1,64 @@
+{
+  "id": "CODEX-PLAYER-CARDS-SEARCH14-20261028",
+  "at": "2026-10-28T03:36:04.092742+00:00",
+  "owner_thread": "01a16ec2-f81c-717b-8961-8c3832fdc00f",
+  "status": "FROZEN_VERIFIED_USABLE14;19tests/TS/lint0warn/3nativeHTTPgroups/lookupaxe0/2PNGbyteparity;parentindependentreviewpending",
+  "source": "TJ/Scout explicit resumedcards lane; nextfreecatalogname-selection toexistingverifiedprovider/PNG flow, no newreadscope",
+  "source_paths": [
+    "web/lib/player-cards/playerCatalog.ts",
+    "web/lib/player-cards/playerCatalog.test.ts",
+    "web/components/player-cards/PlayerLookup.tsx",
+    "web/components/player-cards/PlayerLookup.module.scss",
+    "web/components/player-cards/PlayerLookup.test.tsx",
+    "web/components/player-cards/CurrentPlayerCardStudio.tsx",
+    "web/components/player-cards/CurrentPlayerCardStudio.test.tsx",
+    "tasks/tasks-prd-shareable-player-cards.md"
+  ],
+  "baseline": [
+    {
+      "path": "web/lib/player-cards/playerCatalog.ts",
+      "sha256": null,
+      "absent": true
+    },
+    {
+      "path": "web/lib/player-cards/playerCatalog.test.ts",
+      "sha256": null,
+      "absent": true
+    },
+    {
+      "path": "web/components/player-cards/PlayerLookup.tsx",
+      "sha256": null,
+      "absent": true
+    },
+    {
+      "path": "web/components/player-cards/PlayerLookup.module.scss",
+      "sha256": null,
+      "absent": true
+    },
+    {
+      "path": "web/components/player-cards/PlayerLookup.test.tsx",
+      "sha256": null,
+      "absent": true
+    },
+    {
+      "path": "web/components/player-cards/CurrentPlayerCardStudio.tsx",
+      "sha256": "5ff673b35518035961011c9e02091ca792d8aab35fa79f9dae9495531ab2f43f",
+      "absent": false
+    },
+    {
+      "path": "web/components/player-cards/CurrentPlayerCardStudio.test.tsx",
+      "sha256": "c23571ab0d50f069c41dc793e64aa3c1d545d784e6346a0c2c9be857b0891f82",
+      "absent": false
+    },
+    {
+      "path": "tasks/tasks-prd-shareable-player-cards.md",
+      "sha256": "b854ef3d75c17281cf33ca642815a7f6ddb7adc5797a3d4b4e412f8a9228b551",
+      "absent": false
+    }
+  ],
+  "artifact_root": "tasks/artifacts/player-cards-2026-10-28/name-search-14",
+  "head": "e4fb6f1467401983abe63d69277b75df151e0395",
+  "boundaries": "Onlydatedidentitycatalog805/2026-10-24 lookup, no livecurrentroster/rankcoverageclaim; goalieunsupportedexplicit;13art/math/API/renderer unchanged. No Tuesday/BLSH/sharedsocial/Auth/Git/deps/newfetch/deploy/deletion. ForeignScoutV63heavylock respected.",
+  "checkpointAt": "2026-10-28T03:47:06.994176+00:00",
+  "completedAt": "2026-10-28T04:00:10.689602+00:00"
+}

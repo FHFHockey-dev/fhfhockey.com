@@ -1,0 +1,10 @@
+{
+  "action": "browser",
+  "command": [
+    "node",
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-26/stacked-outline-08/browser-check.mjs"
+  ],
+  "exitCode": 0,
+  "elapsedSeconds": 2.778,
+  "heldBy": "qualify parent resource slot"
+}

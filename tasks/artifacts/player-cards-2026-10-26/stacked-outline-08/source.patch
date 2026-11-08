@@ -1,0 +1,230 @@
+--- a/web/lib/player-cards/alphaOutline.ts
++++ b/web/lib/player-cards/alphaOutline.ts
+@@ -4,20 +4,24 @@
+ export const PLAYER_RENDER_WIDTH = 600;
+ export const PLAYER_OUTLINE_PX = 5;
+ export const OUTLINE_SCALE = 2;
+-export const OUTLINE_VERSION = "fhfh-alpha-outline-v1";
+-export type OutlineInk = "white" | "primary" | "jersey" | "secondary" | "accent";
+-export function outlineInks(team: string): { id: OutlineInk; label: string; color: string }[] {
+-  const palette = teamsInfo[team], result: { id: OutlineInk; label: string; color: string }[] = [{ id: "white", label: "White · #FFFFFF", color: "#FFFFFF" }];
++export const OUTLINE_VERSION = "fhfh-alpha-outline-v2";
++export type OutlineInk = "white" | "primary" | "jersey" | "secondary" | "accent" | "stacked";
++type OutlineOption = { id: OutlineInk; label: string; color: string; bands?: [string, string, string] };
++export function outlineInks(team: string): OutlineOption[] {
++  const palette = teamsInfo[team], result: OutlineOption[] = [{ id: "white", label: "White · #FFFFFF", color: "#FFFFFF" }];
+   for (const [id, label, color] of [["primary", "Primary", palette?.primaryColor], ["jersey", "Jersey", palette?.jersey], ["secondary", "Secondary", palette?.secondaryColor], ["accent", "Accent", palette?.accent]] as const) {
+     if (typeof color === "string" && /^#[\da-f]{6}$/i.test(color) && !result.some(ink => ink.color.toUpperCase() === color.toUpperCase())) result.push({ id, label: `${label} · ${color}`, color });
+   }
++  const bands = [palette?.primaryColor, palette?.jersey, palette?.secondaryColor].filter((color): color is string => typeof color === "string" && /^#[\da-f]{6}$/i.test(color));
++  if (bands.length === 3 && new Set(bands.map(color => color.toUpperCase())).size === 3) result.push({ id: "stacked", label: "Stacked · 3 × 5 px (15 px total)", color: bands[0], bands: bands as [string, string, string] });
+   return result;
+ }
+ const MAX_OUTLINE_PIXELS = 2_000_000;
+ export type PreparedPlayerOutline = {
+   version: typeof OUTLINE_VERSION; sourceAlphaSha256: string; sha256: string; dataUrl: string;
+-  thickness: 5; scale: 2; padding: number; width: number; height: number;
++  thickness: 5 | 15; scale: 2; padding: number; width: number; height: number;
+   ink: OutlineInk; color: string;
++  bands?: [string, string, string]; bandWidth?: 5;
+ };
+ const cache = new Map<string, PreparedPlayerOutline>();
+ 
+@@ -60,11 +64,27 @@
+ }
+ 
+ export function outlineKey(outline?: PreparedPlayerOutline): string {
+-  return outline ? `${outline.version}:${outline.thickness}:${outline.ink}:${outline.color}:${outline.sha256}` : "none";
++  return outline ? `${outline.version}:${outline.thickness}:${outline.ink}:${outline.bands?.join(">") || outline.color}:${outline.sha256}` : "none";
+ }
+ export function validPlayerOutline(outline: PreparedPlayerOutline, hero: PreparedHero): boolean {
+-  const pad = PLAYER_OUTLINE_PX * OUTLINE_SCALE + 1;
+-  return outlineInks(hero.team).some(ink => ink.id === outline.ink && ink.color === outline.color) && outline.version === OUTLINE_VERSION && outline.sourceAlphaSha256 === hero.alphaSha256 && outline.thickness === PLAYER_OUTLINE_PX && outline.scale === OUTLINE_SCALE && outline.padding === pad && outline.width === PLAYER_RENDER_WIDTH * OUTLINE_SCALE + 2 * pad && outline.height === Math.ceil(PLAYER_RENDER_WIDTH * hero.sourceHeight / hero.sourceWidth * OUTLINE_SCALE) + 2 * pad && /^[a-f0-9]{64}$/.test(outline.sha256) && outline.dataUrl.startsWith("data:image/png;base64,");
++  const option = outlineInks(hero.team).find(ink => ink.id === outline.ink && ink.color === outline.color), thickness = option?.bands ? 15 : 5, pad = thickness * OUTLINE_SCALE + 1;
++  return !!option && (option.bands ? outline.bandWidth === 5 && JSON.stringify(outline.bands) === JSON.stringify(option.bands) : !outline.bands) && outline.version === OUTLINE_VERSION && outline.sourceAlphaSha256 === hero.alphaSha256 && outline.thickness === thickness && outline.scale === OUTLINE_SCALE && outline.padding === pad && outline.width === PLAYER_RENDER_WIDTH * OUTLINE_SCALE + 2 * pad && outline.height === Math.ceil(PLAYER_RENDER_WIDTH * hero.sourceHeight / hero.sourceWidth * OUTLINE_SCALE) + 2 * pad && /^[a-f0-9]{64}$/.test(outline.sha256) && outline.dataUrl.startsWith("data:image/png;base64,");
++}
++
++/** One RGBA asset of disjoint annuli: D5, D10-D5, D15-D10. No opaque layer occlusion.
++ *  Coverage differences partition every antialiased pixel; the sum is exactly D15.
++ */
++export function stackedOutlinePixels(input: Uint8ClampedArray, width: number, height: number, colors: readonly string[]): Uint8ClampedArray {
++  if (!Number.isInteger(width) || !Number.isInteger(height) || width < 1 || height < 1 || width * height > MAX_OUTLINE_PIXELS || input.length !== width * height * 4 || colors.length !== 3 || !colors.every(color => /^#[\da-f]{6}$/i.test(color)) || new Set(colors.map(color => color.toUpperCase())).size !== 3) throw new Error("Unsupported stacked outline dimensions or source colors.");
++  const distance = distanceToContour(input, width, height), output = new Uint8ClampedArray(input.length), rgb = colors.map(color => [1, 3, 5].map(start => parseInt(color.slice(start, start + 2), 16)));
++  for (let i = 0; i < distance.length; i++) {
++    if (input[i * 4 + 3] >= 128) continue;
++    const d = Math.sqrt(distance[i]), inner = Math.max(0, Math.min(1, 11 - d)), middle = Math.max(0, Math.min(1, 21 - d)), outer = Math.max(0, Math.min(1, 31 - d));
++    const alpha = Math.round(outer * (255 - input[i * 4 + 3])); if (!alpha) continue;
++    for (let channel = 0; channel < 3; channel++) output[i * 4 + channel] = (inner * rgb[0][channel] + (middle - inner) * rgb[1][channel] + (outer - middle) * rgb[2][channel]) / outer;
++    output[i * 4 + 3] = alpha;
++  }
++  return output;
+ }
+ 
+ /** Derive from the original reviewed alpha, independently of any RGB portrait treatment. */
+@@ -72,9 +92,9 @@
+   if (signal?.aborted) throw new DOMException("Outline cancelled.", "AbortError");
+   if (!hero.dataUrl.startsWith("data:image/png;base64,") || hero.treatment && hero.treatment.style !== "original") throw new Error("Original reviewed alpha is required for the outline.");
+   const option = outlineInks(hero.team).find(option => option.id === ink); if (!option) throw new Error("Verified team outline color is unavailable.");
+-  const key = `${hero.alphaSha256}:${hero.sourceWidth}:${hero.sourceHeight}:${ink}:${option.color}`;
++  const key = `${hero.alphaSha256}:${hero.sourceWidth}:${hero.sourceHeight}:${ink}:${option.bands?.join(">") || option.color}`;
+   const existing = cache.get(key); if (existing) return existing;
+-  const padding = PLAYER_OUTLINE_PX * OUTLINE_SCALE + 1, contentWidth = PLAYER_RENDER_WIDTH * OUTLINE_SCALE, contentHeight = PLAYER_RENDER_WIDTH * hero.sourceHeight / hero.sourceWidth * OUTLINE_SCALE;
++  const thickness = option.bands ? 15 : 5, padding = thickness * OUTLINE_SCALE + 1, contentWidth = PLAYER_RENDER_WIDTH * OUTLINE_SCALE, contentHeight = PLAYER_RENDER_WIDTH * hero.sourceHeight / hero.sourceWidth * OUTLINE_SCALE;
+   const width = contentWidth + padding * 2, height = Math.ceil(contentHeight) + padding * 2;
+   if (!Number.isFinite(height) || height < 1 || width * height > MAX_OUTLINE_PIXELS) throw new Error("Outline exceeds the bounded rendering size.");
+   const image = new Image(); image.src = hero.dataUrl; await image.decode();
+@@ -84,13 +104,13 @@
+   try {
+     const context = canvas.getContext("2d", { willReadFrequently: true }); if (!context) throw new Error("Outline rendering unavailable.");
+     context.drawImage(image, padding, padding, contentWidth, contentHeight);
+-    const frame = context.getImageData(0, 0, width, height); frame.data.set(alphaOutlinePixels(frame.data, width, height, PLAYER_OUTLINE_PX * OUTLINE_SCALE, option.color)); context.putImageData(frame, 0, 0);
++    const frame = context.getImageData(0, 0, width, height); frame.data.set(option.bands ? stackedOutlinePixels(frame.data, width, height, option.bands) : alphaOutlinePixels(frame.data, width, height, PLAYER_OUTLINE_PX * OUTLINE_SCALE, option.color)); context.putImageData(frame, 0, 0);
+     if (signal?.aborted) throw new DOMException("Outline cancelled.", "AbortError");
+     const blob = await new Promise<Blob>((resolve, reject) => canvas.toBlob(b => b ? resolve(b) : reject(new Error("Outline encoding failed.")), "image/png"));
+     const hash = [...new Uint8Array(await crypto.subtle.digest("SHA-256", await blob.arrayBuffer()))].map(n => n.toString(16).padStart(2, "0")).join("");
+     const dataUrl = await new Promise<string>((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(String(reader.result)); reader.onerror = () => reject(new Error("Outline could not be read.")); reader.readAsDataURL(blob); });
+     if (signal?.aborted) throw new DOMException("Outline cancelled.", "AbortError");
+-    const result: PreparedPlayerOutline = { version: OUTLINE_VERSION, sourceAlphaSha256: hero.alphaSha256, sha256: hash, dataUrl, thickness: 5, scale: 2, padding, width, height, ink, color: option.color };
++    const result: PreparedPlayerOutline = { version: OUTLINE_VERSION, sourceAlphaSha256: hero.alphaSha256, sha256: hash, dataUrl, thickness, scale: 2, padding, width, height, ink, color: option.color, ...(option.bands ? { bands: option.bands, bandWidth: 5 as const } : {}) };
+     if (cache.size >= 2) cache.delete(cache.keys().next().value!); cache.set(key, result);
+     return result;
+   } finally { canvas.width = 0; canvas.height = 0; }
+--- a/web/lib/player-cards/alphaOutline.test.ts
++++ b/web/lib/player-cards/alphaOutline.test.ts
+@@ -1,5 +1,5 @@
+ import { expect, it } from "vitest";
+-import { alphaOutlinePixels, outlineInks } from "./alphaOutline";
++import { alphaOutlinePixels, outlineInks, stackedOutlinePixels } from "./alphaOutline";
+ const frame = (size = 100) => new Uint8ClampedArray(size * size * 4);
+ const alpha = (p: Uint8ClampedArray, x: number, y: number, size = 100) => p[(y * size + x) * 4 + 3];
+ const opaque = (p: Uint8ClampedArray, x: number, y: number, size = 100, a = 255) => p.set([35, 80, 24, a], (y * size + x) * 4);
+@@ -32,7 +32,7 @@
+   expect(() => alphaOutlinePixels(frame(), 100, 99)).toThrow("dimensions"); expect(() => alphaOutlinePixels(frame(), 100, 100, 50)).toThrow("radius");
+ });
+ it("uses only distinct actual team palette colors and preserves exactly the same alpha ring", () => {
+-  const inks = outlineInks("MIN");
++  const inks = outlineInks("MIN").filter(option => option.id !== "stacked");
+   expect(inks.map(({ id, color }) => [id, color])).toEqual([["white", "#FFFFFF"], ["primary", "#154734"], ["jersey", "#A6192E"], ["secondary", "#DDCBA4"]]);
+   expect(outlineInks("unknown").map(option => option.id)).toEqual(["white"]);
+   const input = frame(); opaque(input, 50, 50); const baseline = alphaOutlinePixels(input, 100, 100);
+@@ -42,3 +42,30 @@
+     expect([...colored.slice((50 * 100 + 60) * 4, (50 * 100 + 60) * 4 + 3)]).toEqual([1, 3, 5].map(start => parseInt(ink.color.slice(start, start + 2), 16)));
+   }
+ });
++it("partitions genuine 5/10/15px disk dilation differences into three consecutive 5px bands", () => {
++  const size = 200, input = frame(size), option = outlineInks("MIN").find(option => option.id === "stacked")!;
++  expect(option.bands).toEqual(["#154734", "#A6192E", "#DDCBA4"]);
++  for (let y = 40; y < 160; y++) for (let x = 80; x < 160; x++) opaque(input, x, y, size);
++  const before = new Uint8ClampedArray(input), result = stackedOutlinePixels(input, size, size, option.bands!);
++  const reading = (x: number) => [...result.slice((100 * size + x) * 4, (100 * size + x) * 4 + 4)];
++  for (let x = 50; x < 60; x++) expect(reading(x)).toEqual([221,203,164,255]);
++  for (let x = 60; x < 70; x++) expect(reading(x)).toEqual([166,25,46,255]);
++  for (let x = 70; x < 80; x++) expect(reading(x)).toEqual([21,71,52,255]);
++  expect(reading(49)).toEqual([0,0,0,0]); expect(reading(80)).toEqual([0,0,0,0]); expect(input).toEqual(before);
++});
++it("keeps antialiased band transitions opaque without overlap gaps and clips only at the final frame", () => {
++  const size = 200, input = frame(size); opaque(input, 100, 100, size);
++  const colors = ["#154734", "#A6192E", "#DDCBA4"], result = stackedOutlinePixels(input, size, size, colors);
++  const pixel = (x: number, y: number) => [...result.slice((y * size + x) * 4, (y * size + x) * 4 + 4)];
++  expect(pixel(110, 102)[3]).toBe(255); expect(pixel(110, 102)[0]).toBeGreaterThan(21); expect(pixel(110, 102)[0]).toBeLessThan(166);
++  expect(pixel(130, 100)).toEqual([221,203,164,255]); expect(pixel(131, 100)[3]).toBe(0); expect(pixel(130, 130)[3]).toBe(0);
++  expect(pixel(130, 105)[3]).toBeGreaterThan(0); expect(pixel(130, 105)[3]).toBeLessThan(255);
++  expect(() => stackedOutlinePixels(input, size, size, ["#154734", "#154734", "#DDCBA4"])).toThrow("colors");
++});
++it("preserves wide alpha holes and excludes soft interior pixels in stacked mode", () => {
++  const size = 200, input = frame(size);
++  for (let y = 10; y < 190; y++) for (let x = 10; x < 190; x++) if (x < 60 || x >= 140 || y < 60 || y >= 140) opaque(input, x, y, size);
++  opaque(input, 30, 100, size, 200);
++  const output = stackedOutlinePixels(input, size, size, ["#154734", "#A6192E", "#DDCBA4"]);
++  expect(alpha(output, 100, 100, size)).toBe(0); expect(alpha(output, 60, 100, size)).toBe(255); expect(alpha(output, 30, 100, size)).toBe(0);
++});
+--- a/web/components/player-cards/HeroPlayerCard.tsx
++++ b/web/components/player-cards/HeroPlayerCard.tsx
+@@ -43,7 +43,7 @@
+       <path d="M1040 0H1090L870 338H820Z" fill={palette.jersey} opacity=".6" />
+       <rect width="1200" height="338" fill={`url(#${uid}-shade)`} />
+       {composition && <image data-team-logo="true" data-logo-anchor="right-edge" href={hero.teamLogo!.dataUrl} x={1200 - logoSize + logoRightOverhang} y="-100" width={logoSize} height={logoSize} preserveAspectRatio="xMidYMid meet" mask={`url(#${uid}-logo-mask)`} />}
+-      {hero.outline && <image data-player-outline="true" data-outline-width="5" data-outline-color={hero.outline.color} href={hero.outline.dataUrl} x={600 - hero.outline.padding / OUTLINE_SCALE} y={4 - hero.outline.padding / OUTLINE_SCALE} width={hero.outline.width / OUTLINE_SCALE} height={hero.outline.height / OUTLINE_SCALE} preserveAspectRatio="none" />}
++      {hero.outline && <image data-player-outline="true" data-outline-width={hero.outline.thickness} data-outline-band-width={hero.outline.bands ? 5 : undefined} data-outline-band-colors={hero.outline.bands?.join(">")} data-outline-color={hero.outline.bands?.join(">") || hero.outline.color} href={hero.outline.dataUrl} x={600 - hero.outline.padding / OUTLINE_SCALE} y={4 - hero.outline.padding / OUTLINE_SCALE} width={hero.outline.width / OUTLINE_SCALE} height={hero.outline.height / OUTLINE_SCALE} preserveAspectRatio="none" />}
+       <image data-hero-image="true" href={hero.dataUrl} x="600" y="4" width="600" height={600 * hero.sourceHeight / hero.sourceWidth} preserveAspectRatio="xMidYMin meet" style={{ imageRendering: hero.treatment?.style?.startsWith("pixelated") ? "pixelated" : "auto" }} />
+       <rect y="299" width="1200" height="39" fill="#101214" fillOpacity=".93" />
+     </g>
+@@ -62,7 +62,7 @@
+     aria-label={`${hero.name}. NHL action photo with locally removed background. Illustrative synthetic statistics, not this player's actual results. ${snapshot.sample.gp === null ? "GP unverified" : `${snapshot.sample.gp} fixture appearances`}. ${snapshot.readings.map(r => r.reason || "").filter(Boolean).join(". ")}`}
+     data-snapshot-id={snapshot.id} data-artwork-hash={hero.alphaSha256} data-share-format={format} data-portrait-key={portraitKey(hero)} data-pipeline-key={compositionKey(hero)} data-team-logo-hash={composition ? hero.teamLogo!.sha256 : undefined} data-outline-key={outlineKey(hero.outline)}>
+     <title>{hero.name} · FHFH artwork study · illustrative statistics</title>
+-    <desc>Source photo: {hero.sourceUrl}. Captured {hero.capturedAt}. Treatment: {PORTRAIT_LABELS[hero.treatment?.style || "original"]}; original silhouette preserved. Team and jersey identity from that captured source. {hero.outline ? `Alpha-contour outline ${hero.outline.color}, 5 design pixels outward from the 50% contour, behind the unchanged player. ` : ""}{composition ? `Team logo: ${hero.teamLogo!.localPath}, displayed behind the player with a fade on its leftmost quarter. ` : ""}No live statistics or ranking coverage claimed.</desc>
++    <desc>Source photo: {hero.sourceUrl}. Captured {hero.capturedAt}. Treatment: {PORTRAIT_LABELS[hero.treatment?.style || "original"]}; original silhouette preserved. Team and jersey identity from that captured source. {hero.outline ? hero.outline.bands ? `Three non-overlapping 5 design pixel contour bands, inner to outer ${hero.outline.bands.join(" → ")}, 15 pixels total, behind the unchanged player. ` : `Alpha-contour outline ${hero.outline.color}, 5 design pixels outward from the 50% contour, behind the unchanged player. ` : ""}{composition ? `Team logo: ${hero.teamLogo!.localPath}, displayed behind the player with a fade on its leftmost quarter. ` : ""}No live statistics or ranking coverage claimed.</desc>
+     <rect width="1200" height={height} fill="#101214" />
+     {square && <g fill="#F2F1EB" fontFamily="Arial, sans-serif"><text x="40" y="48" fontSize="22" letterSpacing="2">FHFH / SOCIAL SHARE</text><text x="1160" y="48" textAnchor="end" fontSize="18" fill="#80DFFF">ARTWORK CHECKPOINT</text></g>}
+     <svg x="0" y={square ? 76 : 0} width="1200" height="1020" viewBox="0 0 1200 1020" aria-hidden="true">
+--- a/web/components/player-cards/PlayerCardShareStudio.tsx
++++ b/web/components/player-cards/PlayerCardShareStudio.tsx
+@@ -63,7 +63,7 @@
+     busyRef.current = true; setBusy(true); setStatus("Preparing the displayed image…");
+     try {
+       const blob = await rasterize(svgRef.current, snapshot, readyHero, format);
+-      const file = new File([blob], `fhfh-${sample!.id}-illustrative-${format}-${portraitStyle}-${ink}-5px.png`, { type: "image/png" });
++      const file = new File([blob], `fhfh-${sample!.id}-illustrative-${format}-${portraitStyle}-${ink === "stacked" ? "stacked-3x5px" : `${ink}-5px`}.png`, { type: "image/png" });
+       if (social) { setPrepared({ key, file }); setStatus("Image ready. Choose Share prepared image to open your device’s share options."); }
+       else { saveCardFile(file, file.name); setStatus("PNG saved from the displayed snapshot."); }
+     } catch (reason) { setStatus(reason instanceof Error ? reason.message : "Export failed. Please retry."); }
+@@ -88,7 +88,7 @@
+         changed(); setPortraitStyle(value);
+         try { localStorage.setItem(STYLE_STORAGE, value); } catch { /* Session selection remains available. */ }
+       }}>{PORTRAIT_STYLES.map(style => <option key={style} value={style}>{PORTRAIT_LABELS[style]}</option>)}</select></label>
+-      <label><span>Outline color · 5 px <span aria-hidden="true" style={{ display: "inline-block", width: 12, height: 12, background: selectedInk.color, border: "1px solid #b6b9bc" }} /></span><select aria-label="Outline color" value={ink} disabled={busy || treating} onChange={event => { if (!inks.some(option => option.id === event.target.value)) return; changed(); setOutlineInk(event.target.value as OutlineInk); }}>{inks.map(option => <option key={option.id} value={option.id}>{option.label}</option>)}</select></label>
++      <label><span>Outline · 5 px per band <span aria-hidden="true" style={{ display: "inline-block", width: 18, height: 12, background: selectedInk.bands ? `linear-gradient(to right, ${selectedInk.bands.join(",")})` : selectedInk.color, border: "1px solid #b6b9bc" }} /></span><select aria-label="Outline color" value={ink} disabled={busy || treating} onChange={event => { if (!inks.some(option => option.id === event.target.value)) return; changed(); setOutlineInk(event.target.value as OutlineInk); }}>{inks.map(option => <option key={option.id} value={option.id}>{option.label}</option>)}</select></label>
+       <label>Statistics preview<select aria-label="Statistics preview" value={scenario} disabled={busy} onChange={e => { changed(); setScenario(e.target.value as FixtureScenario); }}><option value="complete">Illustrative profile</option><option value="metric-gap">Missing metric input</option><option value="history-gap">Unverified appearance history</option></select></label>
+       <button disabled={busy || !exportable} onClick={() => void createImage(false)}>Download PNG</button>
+       <button disabled={busy || !exportable} onClick={() => void createImage(true)}>Social Share</button>
+--- a/web/components/player-cards/PlayerCardShareStudio.test.tsx
++++ b/web/components/player-cards/PlayerCardShareStudio.test.tsx
+@@ -95,7 +95,7 @@
+     return { ...await treatment(hero, style), outline: { version: OUTLINE_VERSION, thickness: 5, scale: 2, padding: 11, width: 1222, height: 697, sourceAlphaSha256: hero.alphaSha256, sha256: (ink === "white" ? "c" : "d").repeat(64), dataUrl: "data:image/png;base64,outline", ink: option.id, color: option.color } };
+   }), rasterize = vi.fn<typeof rasterizePlayerCard>(async () => new Blob(["png"], { type: "image/png" }));
+   render(<PlayerCardShareStudio samples={[REVIEWED_HERO_SAMPLES[1]]} loadArtwork={loaded} treatArtwork={treat} rasterize={rasterize} />); await ready();
+-  expect([...(screen.getByLabelText("Outline color") as HTMLSelectElement).options].map(option => option.value)).toEqual(["white", "primary", "jersey", "secondary"]);
++  expect([...(screen.getByLabelText("Outline color") as HTMLSelectElement).options].map(option => option.value)).toEqual(["white", "primary", "jersey", "secondary", "stacked"]);
+   fireEvent.click(screen.getByRole("button", { name: "Social Share" })); await screen.findByRole("button", { name: "Share prepared image" });
+   fireEvent.change(screen.getByLabelText("Outline color"), { target: { value: "jersey" } }); await ready();
+   expect(screen.queryByRole("button", { name: "Share prepared image" })).toBeNull(); expect(treat.mock.calls.at(-1)?.[3]).toBe("jersey");
+--- a/web/lib/player-cards/shareExport.ts
++++ b/web/lib/player-cards/shareExport.ts
+@@ -33,7 +33,8 @@
+   }
+   const heroImage = svg.querySelector('[data-hero-image="true"]');
+   if (images.length !== (composition ? 2 : 1) + (hero.outline ? 1 : 0) || heroImage?.getAttribute("href") !== hero.dataUrl || !hero.dataUrl.startsWith("data:image/png;base64,")) throw new Error("Embedded reviewed artwork is required to export.");
+-  if (hero.outline && (!validPlayerOutline(hero.outline, hero) || svg.dataset.outlineKey !== outlineKey(hero.outline) || svg.querySelector('[data-player-outline="true"]')?.getAttribute("href") !== hero.outline.dataUrl || svg.querySelector('[data-player-outline="true"]')?.getAttribute("data-outline-width") !== "5")) throw new Error("The player outline changed. Retry this snapshot.");
++  const ring = svg.querySelector('[data-player-outline="true"]');
++  if (hero.outline && (!validPlayerOutline(hero.outline, hero) || svg.dataset.outlineKey !== outlineKey(hero.outline) || ring?.getAttribute("href") !== hero.outline.dataUrl || ring?.getAttribute("data-outline-width") !== String(hero.outline.thickness) || hero.outline.bands && (ring?.getAttribute("data-outline-band-width") !== "5" || ring?.getAttribute("data-outline-band-colors") !== hero.outline.bands.join(">")))) throw new Error("The player outline changed. Retry this snapshot.");
+   if (composition && (!isPreparedTeamLogo(hero.teamLogo, hero.team) || svg.dataset.teamLogoHash !== hero.teamLogo.sha256 || svg.querySelector('[data-team-logo="true"]')?.getAttribute("href") !== hero.teamLogo.dataUrl)) throw new Error("Embedded matching team logo is required to export.");
+ }
+ 
+--- a/web/lib/player-cards/shareExport.test.ts
++++ b/web/lib/player-cards/shareExport.test.ts
+@@ -9,7 +9,7 @@
+ import HeroPlayerCard from "../../components/player-cards/HeroPlayerCard";
+ import type { PreparedHero } from "../../components/player-cards/HeroPlayerCard";
+ import { PORTRAIT_VERSION, COMPOSITION_VERSION } from "./portraitTreatment";
+-import { OUTLINE_VERSION } from "./alphaOutline";
++import { OUTLINE_VERSION, outlineInks } from "./alphaOutline";
+ 
+ afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
+ function card() {
+@@ -75,6 +75,15 @@
+   expect(svg.querySelector("filter")).toBeNull(); expect(svg.innerHTML).not.toContain("drop-shadow");
+   svg.dataset.outlineKey = "stale"; expect(() => assertCardExport(svg, snapshot, outlined, "landscape")).toThrow("outline");
+ });
++it("binds one three-band asset with exact5px widths and15px padded geometry", () => {
++  const { snapshot, hero } = card(), option = outlineInks(hero.team).find(option => option.id === "stacked")!;
++  const stacked: PreparedHero = { ...hero, outline: { version: OUTLINE_VERSION, thickness: 15, bandWidth: 5, bands: option.bands!, scale: 2, padding: 31, width: 1262, height: 737, sourceAlphaSha256: hero.alphaSha256, sha256: "e".repeat(64), dataUrl: "data:image/png;base64,stacked", ink: "stacked", color: option.color } };
++  const { container } = render(React.createElement(HeroPlayerCard, { snapshot, hero: stacked, format: "landscape" })); const svg = container.querySelector("svg")!, ring = svg.querySelector('[data-player-outline="true"]')!;
++  expect(svg.querySelectorAll('[data-player-outline="true"]').length).toBe(1); expect(() => assertCardExport(svg, snapshot, stacked, "landscape")).not.toThrow();
++  expect(["x", "y", "width", "height", "data-outline-width", "data-outline-band-width"].map(key => ring.getAttribute(key))).toEqual(["584.5", "-11.5", "631", "368.5", "15", "5"]);
++  expect(ring.getAttribute("data-outline-band-colors")).toBe(option.bands!.join(">"));
++  ring.setAttribute("data-outline-band-width", "4"); expect(() => assertCardExport(svg, snapshot, stacked, "landscape")).toThrow("outline");
++});
+ it("falls back to a local PNG download when file sharing is unsupported", async () => {
+   vi.stubGlobal("navigator", {}); vi.stubGlobal("URL", { createObjectURL: () => "blob:fixture", revokeObjectURL: vi.fn() });
+   const click = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});

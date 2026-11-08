@@ -1,0 +1,23 @@
+{
+  "checkedAt": "2026-11-01T21:10:06.455Z",
+  "url": "https://github.com/FHFHockey-dev/fhfhockey.com/pull/403#issuecomment-6563846358",
+  "body": "**Correction to this PR's description.** \"Codex review: 0 blockers, 0 high, its 1 medium fixed\" describes only one separate review, pinned to `2aa77ee0a`. It wasn't full acceptance of this merged tree.\n\nAn independent Codex pager review had two medium findings open at merge, both still in this code:\n- **Pager cutoff:** the matchup pager could show a different default week from the loaded edition around midnight, and a failed calendar refresh gave no warning.\n- **Standouts slates:** a played slate with a missing skater feed reads \"No completed games\" and the slate pager skips it.\n\nFixes are in progress on `octoberBranch` and will ship with the next release. Also, the description's real-data renders didn't exercise the pager: the capture script didn't supply the calendar, so 13 of the 17 render reports showed \"Weeks unavailable\". A re-capture with a real calendar is underway.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n",
+  "user": {
+    "login": "TjsUsername",
+    "name": "TjsUsername",
+    "email": null,
+    "avatar_url": "https://avatars.githubusercontent.com/u/52942235?v=4",
+    "id": 52942235
+  },
+  "id": 6563846358,
+  "pull_request_review_id": null,
+  "in_reply_to_id": null,
+  "created_at": "2026-11-01T21:03:13Z",
+  "updated_at": "2026-11-01T21:03:13Z",
+  "review": null,
+  "side": null,
+  "line": null,
+  "start_line": null,
+  "path": null,
+  "body_html": "<p dir=\"auto\"><strong>Correction to this PR's description.</strong> \"Codex review: 0 blockers, 0 high, its 1 medium fixed\" describes only one separate review, pinned to <code class=\"notranslate\">2aa77ee0a</code>. It wasn't full acceptance of this merged tree.</p>\n<p dir=\"auto\">An independent Codex pager review had two medium findings open at merge, both still in this code:</p>\n<ul dir=\"auto\">\n<li><strong>Pager cutoff:</strong> the matchup pager could show a different default week from the loaded edition around midnight, and a failed calendar refresh gave no warning.</li>\n<li><strong>Standouts slates:</strong> a played slate with a missing skater feed reads \"No completed games\" and the slate pager skips it.</li>\n</ul>\n<p dir=\"auto\">Fixes are in progress on <code class=\"notranslate\">octoberBranch</code> and will ship with the next release. Also, the description's real-data renders didn't exercise the pager: the capture script didn't supply the calendar, so 13 of the 17 render reports showed \"Weeks unavailable\". A re-capture with a real calendar is underway.</p>\n<p dir=\"auto\">🤖 Generated with <a href=\"https://claude.com/claude-code\" rel=\"nofollow\">Claude Code</a></p>"
+}

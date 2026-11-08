@@ -1,0 +1,33 @@
+[
+  {
+    "hash": "06fe01bba0cb4d29d1967fc072951c2ce42cf76dc9059c825b04ea0f728233f2",
+    "reservedNanoUsd": 233000000,
+    "state": "settled",
+    "receipt": {
+      "body": {
+        "id": "synthetic-E15-responses",
+        "model": "gpt-6-luna",
+        "usage": {
+          "input_tokens": 100,
+          "output_tokens": 50
+        },
+        "status": "completed",
+        "output": [
+          {
+            "type": "message",
+            "role": "assistant",
+            "content": [
+              {
+                "type": "output_text",
+                "text": "{\"identity\":{\"version\":\"tweet-identity-proposal-v1\",\"requestHash\":\"42d471769c81680df36e1f98e50a388b69249623aaac38c94595638bd9778e17\",\"directoryHash\":\"88dbd1e19c22a04fba95f07d049c38af533b548723bd17106f639191667ae16f\",\"occurrences\":[{\"occurrenceId\":\"subject-7\",\"status\":\"matched\",\"canonicalId\":\"nhl:900001\",\"evidence\":{\"start\":7,\"end\":19,\"text\":\"Avery Keeper\"},\"identityConfidence\":\"tentative\"}]},\"goalieStatuses\":[{\"occurrenceId\":\"subject-7\",\"canonicalId\":\"nhl:900001\",\"status\":\"likely\",\"evidence\":{\"start\":7,\"end\":47,\"text\":\"Avery Keeper is likely to start tonight.\"}}]}"
+              }
+            ]
+          }
+        ]
+      },
+      "requestId": "offline-cli-E15-responses",
+      "endpoint": "responses",
+      "chargeNanoUsd": 38500
+    }
+  }
+]

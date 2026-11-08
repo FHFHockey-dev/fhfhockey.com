@@ -1,0 +1,26 @@
+--- a/web/styles/wigoCharts.module.scss
++++ b/web/styles/wigoCharts.module.scss
+@@ -1309,6 +1309,23 @@
+ 
+ // The comparison band (one-page and phone). Scoped to its panel rather than to
+ // the one-page class, so the phone tab draws the same band (U10).
++@font-face {
++  font-family: "WiGO Matrix";
++  src: url("/fonts/social-share/RobotoCondensed-Variable.ttf") format("truetype");
++  font-style: normal;
++  font-weight: 100 900;
++  font-display: swap;
++}
++
++// Keep the compact 36-column band independent of external font availability.
++// The existing bundled face is the same condensed family intended below.
++@media (min-width: 1280px) and (max-width: 1399px) {
++  .wigoDashHeader:global(.wigo-one-page.wigo-fit) .comparisonMatrix {
++    --wigo-band-pad: 1px;
++    font-family: "WiGO Matrix", v.$font-family-primary;
++  }
++}
++
+ .comparisonMatrixPanel {
+   // One band: periods as rows, 36 metric columns sized to content. The wrapper
+   // scrolls sideways only if a freak value would otherwise overprint (E-01).

@@ -1,0 +1,294 @@
+--- a/tasks/artifacts/rso-wave2-2026-10-25/FORGE-QUAL/tooling/check-readbacks.mjs
++++ b/tasks/artifacts/rso-wave2-2026-10-25/FORGE-QUAL/tooling/check-readbacks.mjs
+@@ -1,5 +1,5 @@
+ #!/usr/bin/env node
+-// FORGE qualification readback checker. Offline only: it reads local JSON files and writes a report, nothing else.
++// FORGE qualification readback checker. Offline only: local inputs/report and the repository timestamp parser.
+ //
+ // Inputs (normalized evidence; see ../QUALIFICATION-PLAN.md §4 for how each is extracted):
+ //   --issued <file>        originally issued rows, one per player/game/target (the immutable record)
+@@ -14,7 +14,22 @@
+ // Exit code: 0 pass, 1 findings, 2 bad input.
+ 
+ import { createHash } from "node:crypto";
+-import { readFileSync, writeFileSync } from "node:fs";
++import { existsSync, readFileSync, writeFileSync } from "node:fs";
++import { createRequire } from "node:module";
++import { dirname, join } from "node:path";
++import { fileURLToPath } from "node:url";
++
++// Works from the retained tooling or an isolated supplement, independent of the calling directory.
++let repository = dirname(fileURLToPath(import.meta.url));
++while (!existsSync(join(repository, "web/lib/projections/evidenceTime.ts"))) {
++  const parent = dirname(repository);
++  if (parent === repository) throw new Error("Run this checker inside the FHFH repository with web dependencies installed");
++  repository = parent;
++}
++const require = createRequire(join(repository, "web/package.json"));
++if (!require.extensions[".ts"]) require("ts-node").register({ project: join(repository, "web/tsconfig.json"),
++  transpileOnly: true, compilerOptions: { module: "CommonJS", moduleResolution: "node" } });
++const { timestampMicros: time } = require(join(repository, "web/lib/projections/evidenceTime.ts"));
+ 
+ /** Identity fields a readback must carry unchanged from the issued row, when the consumer exposes them. */
+ export const IDENTITY_FIELDS = ["revisionId", "target", "method", "codeVersion", "configurationHash", "artifactHash", "cutoffAt",
+@@ -43,7 +58,6 @@
+   }
+   return { scope, problems };
+ }
+-const time = value => (typeof value === "string" ? Date.parse(value) : NaN);
+ const finite = value => typeof value === "number" && Number.isFinite(value);
+ 
+ /** Pure: returns { findings, summary }. Never throws on bad rows; each problem is a finding. */
+@@ -53,8 +67,19 @@
+   const add = (code, detail) => findings.push({ code, ...detail });
+   const inSealed = date => typeof date === "string" && date >= sealed.from && date <= sealed.to;
+   const issuedByKey = new Map();
++  const sealedKeys = new Set();
++  let sealedRows = 0;
++  if (issued.length === 0) add("issued_empty", {});
++  for (const consumer of scope?.protocol?.readback?.consumers ?? [])
++    if (!Object.hasOwn(consumers, consumer)) add("consumer_missing", { consumer });
+ 
+   for (const row of issued) {
++    if (inSealed(row.gameDate)) {
++      sealedRows++;
++      sealedKeys.add(key(row));
++      add("sealed_issued_present", { key: key(row), gameDate: row.gameDate });
++      continue;
++    }
+     const missing = REQUIRED_ISSUED.filter(field => row[field] === undefined || row[field] === null || row[field] === "");
+     if (missing.length) { add("issued_incomplete", { key: key(row), missing }); continue; }
+     if (issuedByKey.has(key(row))) { add("issued_duplicate", { key: key(row) }); continue; }
+@@ -63,8 +88,9 @@
+       if (identity[field] !== undefined && identity[field] !== null && row[field] !== identity[field])
+         add("issued_out_of_scope", { key: key(row), field, issued: row[field], scope: identity[field] });
+     // Chronology of issuance: inputs cut off no later than issue, issue strictly before puck drop.
+-    if (!(time(row.cutoffAt) <= time(row.issuedAt))) add("cutoff_after_issue", { key: key(row), cutoffAt: row.cutoffAt, issuedAt: row.issuedAt });
+-    if (!(time(row.issuedAt) < time(row.scheduledAt))) add("issued_after_puck_drop", { key: key(row), issuedAt: row.issuedAt, scheduledAt: row.scheduledAt });
++    const cutoffAt = time(row.cutoffAt), issuedAt = time(row.issuedAt), scheduledAt = time(row.scheduledAt);
++    if (cutoffAt === null || issuedAt === null || cutoffAt > issuedAt) add("cutoff_after_issue", { key: key(row), cutoffAt: row.cutoffAt, issuedAt: row.issuedAt });
++    if (issuedAt === null || scheduledAt === null || issuedAt >= scheduledAt) add("issued_after_puck_drop", { key: key(row), issuedAt: row.issuedAt, scheduledAt: row.scheduledAt });
+     issuedByKey.set(key(row), row);
+   }
+ 
+@@ -73,6 +99,10 @@
+     const seen = new Map();
+     for (const row of rows) {
+       const k = key(row);
++      if (sealedKeys.has(k) || inSealed(row.gameDate)) {
++        add("sealed_readback_present", { consumer, key: k });
++        continue;
++      }
+       if (seen.has(k)) { add("readback_duplicate", { consumer, key: k }); continue; }
+       seen.set(k, row);
+       const source = issuedByKey.get(k);
+@@ -91,15 +121,23 @@
+       // A consumer may never allow a use the claim does not cover (before any review, RSO allows none).
+       if (allowedRsoUses && consumer === "rso" && row.allowedUses) for (const [use, allowed] of Object.entries(row.allowedUses))
+         if (allowed === true && !allowedRsoUses.includes(use)) add("use_beyond_scope", { consumer, key: k, use });
+-      if (row.observedAt !== undefined && !(time(row.observedAt) >= time(source.issuedAt)))
+-        add("readback_before_issue", { consumer, key: k, observedAt: row.observedAt, issuedAt: source.issuedAt });
++      const observedAt = time(row.observedAt);
++      if ((scope?.protocol?.readback || row.observedAt !== undefined) && observedAt === null)
++        add("readback_capture_time_missing_or_invalid", { consumer, key: k });
++      else if (observedAt !== null) {
++        const issuedAt = time(source.issuedAt), scheduledAt = time(source.scheduledAt);
++        if (issuedAt === null || observedAt < issuedAt)
++          add("readback_before_issue", { consumer, key: k, observedAt: row.observedAt, issuedAt: source.issuedAt });
++        if (scheduledAt === null || observedAt >= scheduledAt)
++          add("readback_not_pregame", { consumer, key: k, observedAt: row.observedAt, scheduledAt: source.scheduledAt });
++      }
+     }
+     let matched = 0;
+     for (const k of issuedByKey.keys()) if (seen.has(k)) matched++; else add("readback_missing", { consumer, key: k });
+     coverage[consumer] = { issued: issuedByKey.size, matched, readbacks: rows.length };
+   }
+ 
+-  let settled = 0, sealedRows = 0;
++  let settled = 0;
+   if (settlement) {
+     const outcomes = new Map();
+     for (const row of settlement) {
+@@ -107,15 +145,15 @@
+       outcomes.set(key(row), row);
+     }
+     for (const [k, row] of issuedByKey) {
+-      if (inSealed(row.gameDate)) { sealedRows++; continue; }
+       const outcome = outcomes.get(k);
+       if (!outcome) continue;
+       // An outcome counts only when recorded after the game started and after the forecast was issued.
+-      if (!(time(outcome.recordedAt) > time(row.scheduledAt))) { add("settlement_before_game", { key: k, recordedAt: outcome.recordedAt }); continue; }
++      const recordedAt = time(outcome.recordedAt), scheduledAt = time(row.scheduledAt);
++      if (recordedAt === null || scheduledAt === null || recordedAt <= scheduledAt) { add("settlement_before_game", { key: k, recordedAt: outcome.recordedAt }); continue; }
+       if (!finite(outcome.actual)) { add("settlement_not_numeric", { key: k }); continue; }
+       settled++;
+     }
+-  } else for (const row of issuedByKey.values()) if (inSealed(row.gameDate)) sealedRows++;
++  }
+ 
+   const codes = {};
+   for (const finding of findings) codes[finding.code] = (codes[finding.code] ?? 0) + 1;
+@@ -148,6 +186,7 @@
+   if (args.sealed) {
+     const [from, to] = args.sealed.split("..");
+     if (!/^\d{4}-\d{2}-\d{2}$/.test(from ?? "") || !/^\d{4}-\d{2}-\d{2}$/.test(to ?? "")) { console.error("--sealed is YYYY-MM-DD..YYYY-MM-DD"); process.exit(2); }
++    if (scope && (from !== sealed.from || to !== sealed.to)) { console.error("--sealed cannot change the declared scope"); process.exit(2); }
+     sealed = { from, to };
+   }
+   const consumers = {};
+--- a/tasks/artifacts/rso-wave2-2026-10-25/FORGE-QUAL/tooling/check-readbacks.test.mjs
++++ b/tasks/artifacts/rso-wave2-2026-10-25/FORGE-QUAL/tooling/check-readbacks.test.mjs
+@@ -83,7 +83,7 @@
+   input.issued[0].gameDate = "2026-10-27";
+   input.settlement[0].gameDate = "2026-10-27";
+   const report = checkReadbacks(input);
+-  assert.deepEqual(codes(report), ["sealed_outcome_present"]);
++  assert.deepEqual(codes(report), ["sealed_issued_present", "sealed_outcome_present", "sealed_readback_present"]);
+   assert.equal(report.summary.sealedRows, 1);
+   assert.equal(report.summary.settled, 1);
+ });
+@@ -134,6 +134,7 @@
+ 
+ test("the CLI refuses a draft scope unless explicitly allowed", () => {
+   const dir = join(here, "fixtures"), base = [join(here, "check-readbacks.mjs"), "--issued", join(dir, "issued.json"), "--rso", join(dir, "rso.json"),
++    "--start-chart", join(dir, "start-chart.json"),
+     "--scope", join(here, "..", "scope.json")];
+   let status = 0;
+   try { execFileSync(process.execPath, base, { encoding: "utf8", stdio: "pipe" }); } catch (error) { status = error.status; }
+@@ -141,3 +142,136 @@
+   const report = JSON.parse(execFileSync(process.execPath, [...base, "--allow-draft-scope", "true"], { encoding: "utf8" }));
+   assert.equal(report.summary.protocolHash, JSON.parse(readFileSync(join(here, "..", "scope.json"), "utf8")).protocolHash);
+ });
++
++
++test("a scoped check requires every declared consumer, not just those supplied", () => {
++  const input = clean();
++  delete input.consumers.start_chart;
++  const report = checkReadbacks(input);
++  assert.equal(report.summary.pass, false);
++  assert.ok(codes(report).includes("consumer_missing"));
++  assert.ok(report.findings.some(row => row.code === "consumer_missing" && row.consumer === "start_chart"));
++});
++
++test("an empty issued population cannot pass integrity", () => {
++  const input = clean();
++  input.issued = [];
++  input.consumers = { rso: [], start_chart: [] };
++  input.settlement = [];
++  const report = checkReadbacks(input);
++  assert.equal(report.summary.pass, false);
++  assert.ok(codes(report).includes("issued_empty"));
++});
++
++test("sealed issued rows and their readbacks fail even without outcomes", () => {
++  const input = clean();
++  input.issued[0].gameDate = "2026-10-27";
++  input.settlement = null;
++  const report = checkReadbacks(input);
++  assert.equal(report.summary.pass, false);
++  assert.ok(codes(report).includes("sealed_issued_present"));
++  assert.equal(report.summary.findingCodes.sealed_readback_present, 2);
++  assert.equal(report.summary.sealedRows, 1);
++  assert.equal(report.summary.issued, 1);
++});
++
++test("an independently dated sealed readback is rejected", () => {
++  const input = clean();
++  input.consumers.rso[0].gameDate = "2026-10-27";
++  const report = checkReadbacks(input);
++  assert.equal(report.summary.pass, false);
++  assert.ok(codes(report).includes("sealed_readback_present"));
++});
++
++test("the CLI cannot narrow the frozen scope's sealed window", () => {
++  const dir = join(here, "fixtures"), args = [join(here, "check-readbacks.mjs"), "--issued", join(dir, "issued.json"),
++    "--rso", join(dir, "rso.json"), "--start-chart", join(dir, "start-chart.json"), "--scope", join(dir, "scope.json"),
++    "--sealed", "2026-10-23..2026-10-24"];
++  let status = 0;
++  try { execFileSync(process.execPath, args, { encoding: "utf8", stdio: "pipe" }); }
++  catch (error) { status = error.status; }
++  assert.equal(status, 2);
++});
++
++test("scoped readbacks require an actual capture timestamp from each consumer", () => {
++  for (const consumer of ["rso", "start_chart"]) for (const timestamp of [undefined, "not-a-time"]) {
++    const input = clean();
++    input.consumers[consumer][0].observedAt = timestamp;
++    const report = checkReadbacks(input);
++    assert.equal(report.summary.pass, false);
++    assert.ok(report.findings.some(row => row.code === "readback_capture_time_missing_or_invalid" && row.consumer === consumer));
++  }
++});
++
++test("a matching readback at or after puck drop cannot pass prospective integrity", () => {
++  for (const consumer of ["rso", "start_chart"]) for (const timestamp of ["2026-11-03T23:00:00Z", "2026-11-04T12:00:00Z"]) {
++    const input = clean();
++    input.consumers[consumer][0].observedAt = timestamp;
++    const report = checkReadbacks(input);
++    assert.equal(report.summary.pass, false);
++    assert.ok(report.findings.some(row => row.code === "readback_not_pregame" && row.consumer === consumer));
++  }
++});
++
++test("microsecond cutoff ordering allows equality but rejects a later input", () => {
++  for (const digit of [1, 2, 3]) {
++    const input = clean(), row = input.issued[0];
++    row.issuedAt = "2026-11-03T16:00:00.000002Z";
++    row.cutoffAt = `2026-11-03T16:00:00.00000${digit}Z`;
++    for (const rows of Object.values(input.consumers)) rows[0].cutoffAt = row.cutoffAt;
++    assert.equal(codes(checkReadbacks(input)).includes("cutoff_after_issue"), digit > 2);
++  }
++});
++
++test("microsecond issuance must be strictly before puck drop", () => {
++  for (const digit of [1, 2, 3]) {
++    const input = clean(), row = input.issued[0];
++    row.scheduledAt = "2026-11-03T23:00:00.000002Z";
++    row.issuedAt = `2026-11-03T23:00:00.00000${digit}Z`;
++    assert.equal(codes(checkReadbacks(input)).includes("issued_after_puck_drop"), digit >= 2);
++  }
++});
++
++test("microsecond readbacks may equal issue time but cannot precede it", () => {
++  for (const digit of [1, 2, 3]) {
++    const input = clean(); input.issued[0].issuedAt = "2026-11-03T16:00:00.000002Z";
++    for (const rows of Object.values(input.consumers)) rows[0].observedAt = `2026-11-03T11:00:00.00000${digit}-05:00`;
++    assert.equal(codes(checkReadbacks(input)).includes("readback_before_issue"), digit < 2);
++  }
++});
++
++test("microsecond readbacks must remain strictly before puck drop", () => {
++  for (const digit of [1, 2, 3]) {
++    const input = clean(); input.issued[0].scheduledAt = "2026-11-03T23:00:00.000002Z";
++    for (const rows of Object.values(input.consumers)) rows[0].observedAt = `2026-11-03T23:00:00.00000${digit}Z`;
++    assert.equal(codes(checkReadbacks(input)).includes("readback_not_pregame"), digit >= 2);
++  }
++});
++
++test("microsecond settlement must be strictly after puck drop", () => {
++  for (const digit of [1, 2, 3]) {
++    const input = clean(); input.issued[0].scheduledAt = "2026-11-03T23:00:00.000002Z";
++    input.settlement[0].recordedAt = `2026-11-03T23:00:00.00000${digit}Z`;
++    const result = checkReadbacks(input);
++    assert.equal(codes(result).includes("settlement_before_game"), digit <= 2);
++    assert.equal(result.summary.settled, digit > 2 ? 2 : 1);
++  }
++});
++
++test("raw readback clocks require explicit zones, real dates and supported precision", () => {
++  for (const observedAt of ["2026-11-03T16:30:00", "2026-11-31T16:30:00Z", "2027-02-29T16:30:00Z", "2026-11-03T16:30:00.1234567Z"]) {
++    const input = clean(); input.consumers.rso[0].observedAt = observedAt;
++    assert.ok(codes(checkReadbacks(input)).includes("readback_capture_time_missing_or_invalid"), observedAt);
++  }
++});
++
++test("raw issued and settlement clocks cannot coerce an invalid timestamp into a comparison", () => {
++  for (const [field, value, code] of [["cutoffAt", "2026-11-03T15:00:00", "cutoff_after_issue"],
++    ["issuedAt", "2026-11-03T16:00:00", "issued_after_puck_drop"],
++    ["scheduledAt", "2026-11-03T23:00:00", "issued_after_puck_drop"],
++    ["recordedAt", "2026-11-04T03:00:00", "settlement_before_game"]]) {
++    const input = clean();
++    (field === "recordedAt" ? input.settlement[0] : input.issued[0])[field] = value;
++    assert.ok(codes(checkReadbacks(input)).includes(code), field);
++  }
++});

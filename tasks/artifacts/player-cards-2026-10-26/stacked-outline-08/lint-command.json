@@ -1,0 +1,19 @@
+{
+  "action": "lint",
+  "command": [
+    "npx",
+    "--no-install",
+    "eslint",
+    "lib/player-cards/shareExport.ts",
+    "lib/player-cards/alphaOutline.ts",
+    "lib/player-cards/alphaOutline.test.ts",
+    "lib/player-cards/portraitTreatment.ts",
+    "components/player-cards/HeroPlayerCard.tsx",
+    "components/player-cards/PlayerCardShareStudio.tsx",
+    "components/player-cards/PlayerCardShareStudio.test.tsx",
+    "lib/player-cards/shareExport.test.ts"
+  ],
+  "exitCode": 0,
+  "elapsedSeconds": 0.938,
+  "heldBy": "qualify parent resource slot"
+}

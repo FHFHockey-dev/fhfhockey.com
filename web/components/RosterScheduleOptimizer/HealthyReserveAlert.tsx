@@ -44,8 +44,8 @@ export default function HealthyReserveAlert({ reserves, dtd = [], nameOf, onSele
       const name = nameOf(reserve.playerId), activation = reserve.activation, gain = activation && gainText(activation);
       return <li key={reserve.playerId}>
         <p>{onSelect ? <button className={styles.name} onClick={() => onSelect(reserve.playerId)}>{name}</button> : <strong className={styles.name}>{name}</strong>} is
-          in your {reserve.position} spot, but Yahoo lists no injury.{!reserve.slotEligible && <> Yahoo no longer lists him for {reserve.position}, so the
-          lineup is illegal until he moves.</>}</p>
+          in your {reserve.position} spot, but Yahoo lists no injury.{!reserve.slotEligible && <> Yahoo no longer lists him for {reserve.position}, so
+          additions are blocked until that reserve position is resolved. Your existing active lineup can still score.</>}</p>
         <p className={styles.action}>{!activation ? "No roster spot is open: drop a player or move an injured one to IR to activate him."
           : activation.swapPlayerId ? <>Swap him with {nameOf(activation.swapPlayerId)} (Yahoo lists {nameOf(activation.swapPlayerId)} for {reserve.position}).</>
             : "Move him to an open bench or active spot."}

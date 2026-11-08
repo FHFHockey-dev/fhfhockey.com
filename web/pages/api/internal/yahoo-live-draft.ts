@@ -8,6 +8,7 @@ import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 
 // One audit row per admitted, enabled, unsuspended run. The coordinator owns
 // its own errors, so persist only the fixed counters, never provider detail.
+// Scheduler execution is acknowledged only after its audit row is confirmed.
 const auditedPoll = withCronJobAudit(async (_req: NextApiRequest, res: NextApiResponse) => {
   try {
     getYahooLiveDraftSeasonConfig();
@@ -35,7 +36,7 @@ const auditedPoll = withCronJobAudit(async (_req: NextApiRequest, res: NextApiRe
   } catch {
     return res.status(503).json({ error: "Yahoo polling coordinator unavailable" });
   }
-}, { jobName: "/api/internal/yahoo-live-draft", recordRowMetrics: false,
+}, { jobName: "/api/internal/yahoo-live-draft", includeFinalAuditReceipt: true, recordRowMetrics: false,
   responsePreviewKeys: ["cycles", "attempted", "succeeded", "failed", "error"] });
 
 // Disabled and off-season exits do no work, so most of them write no row. The
@@ -52,7 +53,7 @@ function idleState() {
 const isIdleHeartbeatMinute = (now = new Date()) => now.getUTCHours() === 12 && now.getUTCMinutes() === 0;
 
 const auditedIdle = withCronJobAudit(async (_req: NextApiRequest, res: NextApiResponse) =>
-  res.status(200).json(idleState()), { jobName: "/api/internal/yahoo-live-draft", recordRowMetrics: false,
+  res.status(200).json(idleState()), { jobName: "/api/internal/yahoo-live-draft", includeFinalAuditReceipt: true, recordRowMetrics: false,
   responsePreviewKeys: ["disabled", "suspended", "resumesAt"] });
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {

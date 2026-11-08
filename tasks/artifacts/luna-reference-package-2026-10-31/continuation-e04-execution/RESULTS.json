@@ -1,0 +1,146 @@
+{
+  "completedAt": "2026-10-31T22:27:28.518382+00:00",
+  "state": "stopped_on_E06_original_evidence_binding_failure",
+  "newProviderRequests": 3,
+  "newResponsesRequests": 3,
+  "newDecisionsRequests": 0,
+  "cumulativeCurrentEvaluationCalls": 7,
+  "remainingCallSlotsNotAuthorizedResume": 13,
+  "retries": 0,
+  "newUncertainOutcomes": 0,
+  "newConservativeUsageChargeNanoUsd": 1313293,
+  "newStandardRateEstimateNanoUsd": 1193900,
+  "newInputTokens": 9314,
+  "newOutputTokens": 525,
+  "allSevenConservativeChargeNanoUsd": 2743847,
+  "priorExposureNanoUsd": 262519843,
+  "historicalUncertainReservationNanoUsd": 254394800,
+  "aggregateExposureNanoUsd": 265263690,
+  "capNanoUsd": 1000000000,
+  "ledgerEnabled": false,
+  "ledgerBlockedReason": "bounded_continuation_stopped",
+  "ledgerSha256": "2bf56d754b1f98888785b8d7e759d1c701b5541b0fb9e91ade63eff041ff3ceb",
+  "planSha256": "32d4048054109b84258c70800f679809077e3bf7ffe03b2e85a833ee487d3ab1",
+  "preparationManifestSha256": "dac5a4041ca57cb571fe4360952526475bcdc7b4b873488f1bda3509ba83018a",
+  "reviewedPinsMatched": 47,
+  "priorFourReceiptsPreserved": true,
+  "historicalLedgerUnchanged": true,
+  "rows": [
+    {
+      "caseId": "E04",
+      "source": "SYN Avery Keeper attended practice.",
+      "originalStatus": "review_only",
+      "score": {
+        "identity": true,
+        "goalie": true,
+        "decisions": true,
+        "labelMatch": true
+      },
+      "calls": 1,
+      "usage": {
+        "input_tokens": 3087,
+        "input_tokens_details": {
+          "cache_write_tokens": 0,
+          "cache_write_tokens_details": {
+            "ttl_12h_tokens": 0,
+            "ttl_30m_tokens": 0
+          },
+          "cached_tokens": 0
+        },
+        "output_tokens": 162,
+        "output_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "total_tokens": 3249
+      },
+      "conservativeChargeNanoUsd": 428671,
+      "requestId": "req_de4a4cffe2b940ef9b61203359c0233e",
+      "separateCandidate": false,
+      "candidateVersion": null,
+      "candidateAcceptedOrApplied": false
+    },
+    {
+      "caseId": "E05",
+      "source": "SYN Avery Keeper is on the ice for warmups.",
+      "originalStatus": "review_only",
+      "score": {
+        "identity": true,
+        "goalie": true,
+        "decisions": true,
+        "labelMatch": true
+      },
+      "calls": 1,
+      "usage": {
+        "input_tokens": 3083,
+        "input_tokens_details": {
+          "cache_write_tokens": 0,
+          "cache_write_tokens_details": {
+            "ttl_12h_tokens": 0,
+            "ttl_30m_tokens": 0
+          },
+          "cached_tokens": 0
+        },
+        "output_tokens": 158,
+        "output_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "total_tokens": 3241
+      },
+      "conservativeChargeNanoUsd": 426031,
+      "requestId": "req_4bcbab2e72a648e2b644bf60f62d1a04",
+      "separateCandidate": false,
+      "candidateVersion": null,
+      "candidateAcceptedOrApplied": false
+    },
+    {
+      "caseId": "E06",
+      "source": "SYN Avery Keeper starts tonight, as confirmed during warmups.",
+      "originalStatus": "held",
+      "score": {
+        "identity": true,
+        "goalie": false,
+        "decisions": false,
+        "labelMatch": false
+      },
+      "calls": 1,
+      "usage": {
+        "input_tokens": 3144,
+        "input_tokens_details": {
+          "cache_write_tokens": 0,
+          "cache_write_tokens_details": {
+            "ttl_12h_tokens": 0,
+            "ttl_30m_tokens": 0
+          },
+          "cached_tokens": 0
+        },
+        "output_tokens": 205,
+        "output_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "total_tokens": 3349
+      },
+      "conservativeChargeNanoUsd": 458591,
+      "requestId": "req_284566fb7592479eb04c18bfe57c47b1",
+      "separateCandidate": true,
+      "candidateVersion": "luna-bound-evidence-review-v1",
+      "candidateAcceptedOrApplied": false
+    }
+  ],
+  "notSent": [
+    "E06 Decisions",
+    "E07",
+    "E08",
+    "E09",
+    "E10",
+    "E11",
+    "E12",
+    "E13",
+    "E14",
+    "E15",
+    "E16"
+  ],
+  "candidatesAcceptedOrApplied": 0,
+  "noApplicationOrLabelChanges": true,
+  "productionEnabled": false,
+  "invoiceReconciled": false
+}

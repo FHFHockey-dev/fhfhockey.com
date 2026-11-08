@@ -1,0 +1,45 @@
+{
+  "retainedExports": [
+    {
+      "playerId": 8476453,
+      "score": 43.40034170207121,
+      "profileAndTracksEqualPinnedSnapshot": true,
+      "boxRowsEqualInput": true,
+      "sourceMapEqualInput": true,
+      "summary": "Box TOI + 5 counts: 5 match / 0 differ / 0 unknown \u00b7 PPP 2 unknown"
+    },
+    {
+      "playerId": 8484136,
+      "score": 13.269823517937136,
+      "profileAndTracksEqualPinnedSnapshot": true,
+      "boxRowsEqualInput": true,
+      "sourceMapEqualInput": true,
+      "summary": "Box TOI + 5 counts: 3 match / 1 differ / 1 unknown \u00b7 G/A/SOG differ"
+    }
+  ],
+  "shortSamples": [
+    {
+      "case": "fixture",
+      "actual": 3,
+      "requested": 5,
+      "independentReadingsMatched": 14,
+      "sourceRanksUnavailable": true
+    },
+    {
+      "case": "retained",
+      "actual": 11,
+      "requested": 20,
+      "independentReadingsMatched": 5,
+      "sourceRanksUnavailable": true
+    }
+  ],
+  "finalCandidateAndProtectedPinsUnchanged": 94,
+  "upstreamPinsMatched": [
+    "tasks/artifacts/blsh-visual-january-audit-2026-11-01/p2-rereview/REVIEW.md",
+    "web/lib/buyLowSellHigh/displayProfile.ts",
+    "web/lib/buyLowSellHigh/researchSnapshot.ts",
+    "web/lib/buyLowSellHigh/research-snapshots/2026-10-28.arm-a-canonical-repaired.v2.json"
+  ],
+  "snapshotSHA256": "2f380c2539390f6931ec92ab1d0b1d8cced2b55f5f4cefb8c6e88a694909f2c8",
+  "holdoutAccessed": false
+}

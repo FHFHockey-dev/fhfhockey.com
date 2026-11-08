@@ -1,0 +1,62 @@
+{
+  "blsh": {
+    "schema": "fhfh.blsh.current-research-snapshot.v2",
+    "eventThroughDate": "2026-10-28",
+    "asOfUTC": "2026-10-29T18:41:12.798646+00:00",
+    "referencePolicy": {
+      "arm": "A_development_reference",
+      "inputs": "official_receipt_overlay",
+      "provisional": true,
+      "stale": true,
+      "selectedBy": "TJ",
+      "selectedAtUTC": "2026-10-29T13:15:25Z",
+      "label": "Reference: 2022-24 development history (stale; each player's reference age is shown). Current games use fresh canonical WGO after the official-source repair. Receipt overlays are already satisfied and apply zero values; 138 newer rows retain missing Game Score inputs."
+    },
+    "counts": {
+      "profiles": 729,
+      "numeric": 551,
+      "BL": 264,
+      "SH": 184,
+      "withheld": 281,
+      "unavailableTier": 178,
+      "referenceContextAbsent": 152,
+      "zeroShotWindows": 19,
+      "zeroShotNumeric": 14,
+      "zeroShotListed": 7,
+      "personalReference1to4": 36,
+      "referenceAgeDays": {
+        "n": 577,
+        "min": 894,
+        "max": 1451
+      }
+    },
+    "profiles": 729,
+    "scoreVersion": "support-conditioned-production-gap-v1",
+    "httpStatus": 200,
+    "freshness": "Stale saved capture — more than 24 hours old. Research display only; current recommendations unavailable.",
+    "detail": "Nikita Kucherov\n\nTBL · F · recorded through 2026-10-28\n\nClose\ndetails for Nikita Kucherov\nProduction reference and underlying support\n\nFHFH Standard points: observed 22.85; historical comparison at current TOI 24.39; support comparison 24.94 (gap +2.09).\n\nThe index combines the production tracks below. Index values are not fantasy points or per-game averages.\n\nSupport-adjusted research index: +43.40. Production and support agree in direction.\nProduction gap (normalized): +0.7072. Support-adjusted normalized gap: +0.7668.\nList: Buy-low research candidate. Trusted: false.\nMeasured process, personal reference. A coverage tier, not calibrated confidence. The reference is stale; this snapshot remains provisional.\nWhat would change this assessment?\n\nCheck whether total and PP minutes, shot activity and chance quality persist, and whether missing or revised source records change the comparison. A supported increase is not an automatic sell; falling production with deteriorating support is not an automatic buy.\n\nMarket reference unavailable: these are research candidates, not demonstrated discounts or premiums. League scoring, an attainable offer and roster consequences still need a separate comparison.\n\nOpportunity is provisional context and does not change list membership or rank. PP minutes alone do not establish PP share, a lasting promotion or a medical explanation.\n\nEvidence quantity\nCurrent window: 5 recorded appearances across 9 days; 102.00 minutes. 2026-10-15 to 2026-10-24.\nLast game 4 days before the recorded-through date (2026-10-28); within the saved seven-day window-age limit.\nPersonal reference: 50 appearances; 2023-12-19 to 2024-04-17. Reference ends 911 days before the window (20232024); stale development history.\nPersonal estimator weight: 0.8401; cohort estimator weight: 0.1599. Estimator weights, shown as decimals; not confidence percentages.\nPrior donor players: 515.\nCalibrated probability: Unavailable (no calibrated probability exists).\nMissing, estimated and restricted evidence\nhistory process gate (estimated): History process gate is a disclosed simplification, not the sealed v1 transport.\ndelta:goals minus individual xG per 60 (partial): Source revision unverified.\ndelta:on ice goals minus xGF per 60 (unavailable): Change withheld: current and reference use different known source revisions.\ndelta:assists per teammate on ice goal (unavailable): Change withheld: current and reference use different known source revisions.\ndelta:shots per 60 (partial): Source revision unverified.\n\nMissing measurements remain unavailable; they are not observed zeros. These restrictions are separate from evidence quantity and estimator weights.\n\nProduction totals across the selected games\n\nEach number below covers all 5 recorded appearances (2026-10-15 to 2026-10-24) and 102.00 total minutes of ice time. These are totals across those games, not per-game averages.\n\nActual total: what the player recorded across those games.\nHistorical comparison total: the historical production rate applied to the same ice time. The weights above show how much comes from the player’s history and how much comes from a position-group estimate; reference age is shown separately. This is not the player’s historical per-game average.\nSupport comparison total: adjusts the historical comparison using changes in the player’s own scoring chances and team chances for and against while they are on the ice. These chance measures use expected goals (xG), which estimate scoring opportunity. Missing or estimated inputs remain flagged above. This is a retrospective model comparison, not a forecast or proof of good or bad luck.\nGap: support comparison minus actual total. Positive means recorded production was lower; negative means it was higher.\n5 recorded appearances · 102.00 total minutes. All values are totals in each row’s units.\nTRACK\tACTUAL TOTAL\tHISTORICAL COMPARISON TOTAL\tSUPPORT COMPARISON TOTAL\tGAP (SUPPORT − ACTUAL)\nFP\t22.85\t24.39\t24.94\t+2.0931\nG+A\t6.00\t7.80\t7.96\t+1.9589\nFHFH WIGO GAME SCORE\t5.85\t7.41\t7.37\t+1.5157\n\nFP, G+A and the named FHFH WiGO Game Score share scoring ingredients. Their covariance is accounted for; these are not three independent votes.\n\nCompare these totals visually\nFP: additive gap components\nG+A: additive gap components\nFHFH WiGO Game Score: additive gap components\n\nTrack contributions sum to the normalized gap. The displayed index is its separate bounded transform: 100·g / (1 + |g|) of the normalized gap g. Neither the multiplier nor a contribution is a percentage share of the index.\n\nContext, not part of the score\n\nThe figures below are rates or ratios, with their units stated on each line. Per appearance means per recorded game; per 60 means per 60 minutes of the stated game situation. Deployment, finishing and own shot volume are explanatory context. Low and zero shots remain observations; there is no whole-profile shooting gate.\n\nTotal TOI per game: current 1224.00, reference 1296.80, change -72.8000 seconds/appearance.\nES TOI per game: current 986.80, reference 1051.78, change -64.9800 seconds/appearance.\nPP TOI per game: current 235.20, reference 244.84, change -9.6400 seconds/appearance.\nGoals minus individual xG per 60\n\nCurrent 0.53, reference 0.25, change +0.2807 goals/60 minus provider xG/60, per 60 of the operands' scope. Source revision unverified.\n\nSpread: 0.85 goals/60 of the same scope. Upper-bound spread if window goals were Poisson with mean equal to provider xG; per-shot variance is smaller, and it ignores the reference's own uncertainty.\n\nPossible explanations (not identified)\n\ngoals and xG drawn from different sources or game states\nempty-net goals or the goaltending faced\nshort-window finishing variance\nshot quality the provider's xG model does not capture\na real change in finishing ability\nOn-ice goals minus xGF per 60\n\nCurrent 0.81, reference 1.43, change Unavailable on-ice goals/60 minus provider xGF/60, per 60 of the operands' scope. Change withheld: current and reference use different known source revisions.\n\nPossible explanations (not identified)\n\ngoals and xGF drawn from different sources or game states\nthe player's own finishing\nteammates' finishing variance\nopposing goaltending\nlinemate or role change\nAssists per teammate on-ice goal\n\nCurrent 0.43, reference 0.81, change Unavailable assists / (on-ice goals for − own goals). Change withheld: current and reference use different known source revisions.\n\nPossible explanations (not identified)\n\nassists and on-ice goals drawn from different game states\nvariance on few goals\nrole or linemate change\na real change in playmaking\nShots per 60\n\nCurrent 12.94, reference 8.88, change +4.0578 shots/60 of the shots' scope. Source revision unverified.\n\nPossible explanations (not identified)\n\ndeployment change\na real change in shot volume (process, not a finishing signal)\nIndependent hot/cold research state\n\nNo current-season streak is saved; streak unavailable. A low or high total across five games does not establish five consecutive cold or hot games. A streak label requires separate game-by-game evidence.\n\nNot a luck finding, a market value, a forecast or a trusted recommendation.\n\nExact source and diagnostic record",
+    "mobile": {
+      "viewport": 390,
+      "documentWidth": 390
+    }
+  },
+  "sko": {
+    "personalComparisonVisible": true,
+    "fixtureNote": "FIXTURE DATA: synthetic players, teams and schedules. Not NHL data, not a FORGE forecast and not advice."
+  },
+  "vudu": {
+    "table": "GOALIE AND EVIDENCE WINDOW\tRECENT SV% (SAVES / SHOTS)\tRECENT GAA (60 × GA / MIN)\tPERSONAL PRIOR BLOCK\tOBSERVED JOB SHARE\tEXPECTED SV% (RATIO OF EXPECTED TOTALS)\tEXPECTED GAA\tEXPECTED STARTS\tGAP STATUS\nFIXTURE GOALIE ONE FX22026-10-05 TO 2026-10-14; 7 APPEARANCES, 420 MINUTES. EVIDENCE: FRESH. FORECAST: CURRENT.\t95.0% 210/221\t1.57\t2026-09-25 to 2026-10-04; 7 appearances. SV% 91.6%; GAA 2.57.\tStarts Unavailable (start relief evidence unavailable); relief Unavailable (start relief evidence unavailable). Start share Unavailable versus prior Unavailable.\t92.9%\t2.12\t6.60\tPending goalie adapter: VuDu gaps await an accepted goalie adapter and goalie evidence; ratios are shown as context only.",
+    "mobile": {
+      "viewport": 390,
+      "documentWidth": 390
+    }
+  },
+  "errors": [],
+  "blocked": [
+    "https://fonts.googleapis.com/css2",
+    "https://img.buymeacoffee.com/button-api/",
+    "https://fonts.googleapis.com/css",
+    "https://cdn.vercel-insights.com/v1/script.debug.js",
+    "https://va.vercel-scripts.com/v1/speed-insights/script.debug.js"
+  ]
+}

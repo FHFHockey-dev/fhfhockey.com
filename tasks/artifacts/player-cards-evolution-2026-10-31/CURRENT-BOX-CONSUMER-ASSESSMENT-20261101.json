@@ -1,0 +1,50 @@
+{
+  "scope": "Consumer binding to reviewed hashes and all source-row identities; no repeat scientific review",
+  "inputPins": [
+    {
+      "path": "/Users/tim/Documents/Codex/2026-10-27/task-3/current-box-provenance-20261101-01/FINAL-RECEIPT.json",
+      "sha256": "e51173a80e5f0f55e45abf7e914b127b2c8d0cf6f7543a38aa18a9df4f4190a0",
+      "bytes": 6336
+    },
+    {
+      "path": "/Users/tim/Documents/Codex/2026-10-27/task-3/current-box-provenance-20261101-01/ROW-QUALIFICATION.json",
+      "sha256": "314a48ef45dbad11b48192bdbada730ccc82fb355895e2dde56b484ece0a6d36",
+      "bytes": 3476976
+    },
+    {
+      "path": "/Users/tim/Documents/Codex/2026-10-27/task-3/current-box-provenance-20261101-01/BOX-EVIDENCE.json",
+      "sha256": "b83fc6bff7bd470bb245f1053a489aeebab6b17f1f734a2ed18d5753f715447f",
+      "bytes": 131946
+    },
+    {
+      "path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/rso-blsh-independent-review-2026-11-01/CURRENT-BOX-REVIEW.md",
+      "sha256": "166b65ff7be1a16883d2546c4a1a03b54f286963324e494b1ebba0a41aeb2ce9",
+      "bytes": 6829
+    },
+    {
+      "path": "/Users/tim/Documents/Codex/2026-10-27/task-3/baseline-card-provenance-20261101-01/cards-01/PLAYER-CARDS-PROVENANCE.json",
+      "sha256": "0b98ebc0fa2bbf0554b781d6c7548b820c37768b4868d11784ca837dad070d57",
+      "bytes": 6566654
+    },
+    {
+      "path": "/Users/tim/Code/fhfhockey.com/web/lib/buyLowSellHigh/research-snapshots/2026-10-28.arm-a-canonical-repaired.v2.json",
+      "sha256": "2f380c2539390f6931ec92ab1d0b1d8cced2b55f5f4cefb8c6e88a694909f2c8",
+      "bytes": 9559567
+    }
+  ],
+  "rows": 3407,
+  "exposureQualifiedRows": 2774,
+  "exposureQualifiedWithCountDifferences": 46,
+  "matchExposureAndFiveCounts": 2728,
+  "differentExposureOrCounts": 99,
+  "unavailable": 580,
+  "selectedPlayers": [
+    "8476453",
+    "8484136"
+  ],
+  "originalSidecarPreserved": true,
+  "researchScoresPreserved": true,
+  "currentBinding": false,
+  "sourceRequests": 0,
+  "repairs": 0
+}

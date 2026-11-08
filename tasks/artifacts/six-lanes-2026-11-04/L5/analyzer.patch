@@ -1,0 +1,526 @@
+diff --git a/web/pages/trade-analyzer.tsx b/web/pages/trade-analyzer.tsx
+new file mode 100644
+index 000000000..a5c8314e8
+--- /dev/null
++++ b/web/pages/trade-analyzer.tsx
+@@ -0,0 +1,12 @@
++import Head from "next/head";
++
++import ClientOnly from "components/ClientOnly";
++import Container from "components/Layout/Container";
++import TradeAnalyzer from "components/TradeAnalyzer/TradeAnalyzer";
++
++export default function TradeAnalyzerPage() {
++  return <>
++    <Head><title>Trade Analyzer | FHFH</title><meta name="description" content="Review an entered fantasy hockey offer, both rosters and explicit drop consequences." /></Head>
++    <Container><ClientOnly><TradeAnalyzer /></ClientOnly></Container>
++  </>;
++}
+diff --git a/web/components/TradeAnalyzer/TradeAnalyzer.tsx b/web/components/TradeAnalyzer/TradeAnalyzer.tsx
+new file mode 100644
+index 000000000..c65bfe1ce
+--- /dev/null
++++ b/web/components/TradeAnalyzer/TradeAnalyzer.tsx
+@@ -0,0 +1,97 @@
++import { useState, type FormEvent } from "react";
++
++import { assetsFromText, MAX_OTHER_ASSETS, MAX_ROSTER_PLAYERS, previewOffer, rosterFromText, type ManualPlayer, type OfferTeam, type TeamId } from "lib/tradeAnalyzer/offer";
++
++import styles from "./TradeAnalyzer.module.scss";
++
++type TeamForm = { id: TeamId; name: string; rosterText: string; rosterReviewed: boolean; capacity: string;
++  capacityReviewed: boolean; givePlayerIds: string[]; dropPlayerIds: string[]; assetText: string };
++const emptyTeam = (id: TeamId): TeamForm => ({ id, name: "", rosterText: "", rosterReviewed: false,
++  capacity: "", capacityReviewed: false, givePlayerIds: [], dropPlayerIds: [], assetText: "" });
++const teamLabel = (id: TeamId) => id === "a" ? "Team A" : "Team B";
++const toggle = (ids: string[], id: string, checked: boolean) => checked ? [...ids, id] : ids.filter(value => value !== id);
++
++function RosterList({ players }: { players: ManualPlayer[] }) {
++  return players.length ? <ul>{players.map(player => <li key={player.id}><strong>{player.name}</strong>
++    <span> · {player.positions || "Positions unknown"} · {player.status || "Status unknown"}</span></li>)}</ul> : <p>No players entered.</p>;
++}
++
++export default function TradeAnalyzer() {
++  const [forms, setForms] = useState<[TeamForm, TeamForm]>([emptyTeam("a"), emptyTeam("b")]);
++  const [effectiveDate, setEffectiveDate] = useState("");
++  const [showPreview, setShowPreview] = useState(false);
++  const teams = forms.map(form => ({ id: form.id, name: form.name, roster: rosterFromText(form.id, form.rosterText),
++    rosterReviewed: form.rosterReviewed, totalCapacity: /^\d+$/.test(form.capacity) ? Number(form.capacity) : null,
++    capacityReviewed: form.capacityReviewed, givePlayerIds: form.givePlayerIds, dropPlayerIds: form.dropPlayerIds,
++    otherAssets: assetsFromText(form.assetText) })) as [OfferTeam, OfferTeam];
++  const result = previewOffer({ effectiveDate, teams });
++  const update = (id: TeamId, patch: Partial<TeamForm>) => setForms(current => current.map(team => team.id === id ? { ...team, ...patch } : team) as [TeamForm, TeamForm]);
++  function submit(event: FormEvent<HTMLFormElement>) { event.preventDefault(); setShowPreview(true); }
++
++  return <div className={styles.page}>
++    <header className={styles.hero}><p className={styles.eyebrow}>Manual offer review</p><h1>Trade Analyzer</h1>
++      <p>Enter an offer you received or plan to make. Compare both complete rosters and choose any drops yourself.</p>
++      <p className={styles.note}>Two teams only · {MAX_ROSTER_PLAYERS} players and {MAX_OTHER_ASSETS} other assets per side. This page keeps inputs only until you leave or reload; nothing is sent or saved.</p>
++    </header>
++    <form onSubmit={submit}>
++      <div className={styles.panel}><label className={styles.date}>Proposed effective date<input type="date" value={effectiveDate} onChange={event => setEffectiveDate(event.target.value)} /></label>
++        <p className={styles.note}>This records your scenario date. Deadlines, processing delays and dated lineup legality are not verified.</p></div>
++      <div className={styles.teamGrid}>{forms.map((form, index) => {
++        const team = teams[index];
++        const label = teamLabel(form.id);
++        return <fieldset key={form.id} className={styles.panel}><legend>{label}</legend>
++          <label>{label} name<input maxLength={120} value={form.name} onChange={event => update(form.id, { name: event.target.value })} /></label>
++          <label>{label} full before-roster<textarea aria-label={`${label} full before-roster`} rows={7} maxLength={20000} value={form.rosterText} placeholder={"Player name | C/LW | bench\nAnother player | D | IR"}
++            onChange={event => update(form.id, { rosterText: event.target.value, rosterReviewed: false, givePlayerIds: [], dropPlayerIds: [] })} /></label>
++          <p className={styles.note}>One player per line: name | league positions | status. Include active, bench and reserve players. Positions and status remain manager-reported; they do not establish lineup eligibility. Distinguish identical names. Editing the roster clears its offer/drop selections.</p>
++          <label className={styles.check}><input type="checkbox" checked={form.rosterReviewed} onChange={event => update(form.id, { rosterReviewed: event.target.checked })} />I reviewed {label}&apos;s complete roster and ownership.</label>
++          <label>{label} maximum total players<input type="text" inputMode="numeric" maxLength={3} value={form.capacity}
++            onChange={event => update(form.id, { capacity: event.target.value, capacityReviewed: false })} /></label>
++          <p className={styles.note}>Enter the maximum count including active, bench and reserve players, not just starting slots. Leave blank if unknown. Separate reserve/slot restrictions remain unverified.</p>
++          <label className={styles.check}><input type="checkbox" checked={form.capacityReviewed} onChange={event => update(form.id, { capacityReviewed: event.target.checked })} />I reviewed {label}&apos;s total-player limit.</label>
++          <h2>{label} gives to {teamLabel(form.id === "a" ? "b" : "a")}</h2>
++          {team.roster.length ? <ul className={styles.selectionList}>{team.roster.map(player => <li key={player.id}><label className={styles.check}>
++            <input type="checkbox" checked={form.givePlayerIds.includes(player.id)} onChange={event => update(form.id, {
++              givePlayerIds: toggle(form.givePlayerIds, player.id, event.target.checked), dropPlayerIds: form.dropPlayerIds.filter(id => id !== player.id) })} />
++            Offer {player.name || "Unnamed player"} ({player.positions || "positions unknown"})</label></li>)}</ul> : <p className={styles.note}>Enter the full roster above to select outgoing players.</p>}
++          <label>{label} picks or other assets<textarea aria-label={`${label} picks or other assets`} rows={3} maxLength={6000} value={form.assetText} placeholder={"pick: 2027 round 2, original owner unknown\nUnknown asset or condition"}
++            onChange={event => update(form.id, { assetText: event.target.value })} /></label>
++          <p className={styles.note}>Use “pick:” for each pick; other lines stay unknown assets. Full descriptions are retained, never priced or silently removed.</p>
++        </fieldset>;
++      })}</div>
++      <button type="submit" className={styles.previewButton}>Preview offer</button>
++    </form>
++
++    {showPreview && <section className={styles.results} aria-labelledby="offer-preview-heading">
++      <h2 id="offer-preview-heading">Offer preview</h2>
++      <p role="status">{result.entryComplete ? "Entry and reviewed total-player counts are complete. This is not a trade-legality or value verdict." : "Conditional preview — resolve the items below before relying on roster counts."} The preview updates as you edit.</p>
++      {result.issues.length > 0 && <div className={styles.warning}><h3>Items to resolve</h3><ul>{result.issues.map((issue, index) => <li key={`${issue.code}-${index}`}>{issue.message}</li>)}</ul></div>}
++      <div className={styles.teamGrid}>{result.teams.map((preview, index) => {
++        const team = teams[index], form = forms[index];
++        return <section key={team.id} className={styles.panel} aria-labelledby={`preview-${team.id}`}>
++          <h3 id={`preview-${team.id}`}>{team.name || teamLabel(team.id)} before and after</h3>
++          <h4>Before · {preview.before.length} players</h4><RosterList players={preview.before} />
++          <h4>Gives</h4><ul>{team.roster.filter(player => team.givePlayerIds.includes(player.id)).map(player => <li key={player.id}>{player.name} · manager-entered player</li>)}
++            {team.otherAssets.map((asset, assetIndex) => <li key={`asset-${assetIndex}`}>{asset.kind === "pick" ? "Pick" : "Unknown asset"}: {asset.rawText || "Description missing"} · value unavailable</li>)}</ul>
++          <h4>Receives</h4><ul>{teams[1 - index].roster.filter(player => teams[1 - index].givePlayerIds.includes(player.id)).map(player => <li key={player.id}>{player.name} · manager-entered player</li>)}
++            {teams[1 - index].otherAssets.map((asset, assetIndex) => <li key={`asset-${assetIndex}`}>{asset.kind === "pick" ? "Pick" : "Unknown asset"}: {asset.rawText || "Description missing"} · value unavailable</li>)}</ul>
++          {preview.capacity.status === "available" ? <p className={styles.capacity}>Reviewed total-player limit: {preview.capacity.value.total}. Before: {preview.capacity.value.beforeCount}; after exchange: {preview.capacity.value.afterExchangeCount}; after selected drops: {preview.capacity.value.afterCount}.
++            {` ${preview.capacity.value.requiredDrops} drop(s) needed after the exchange; ${preview.capacity.value.additionalDrops} additional drop(s) still required.`}</p>
++            : <p className={styles.warning}>Capacity unresolved: {preview.capacity.reasons.join(" ")}</p>}
++          <h4>Select explicit drops for {team.name || teamLabel(team.id)}</h4>
++          <p className={styles.note}>Only retained players from this team&apos;s before-roster can be dropped here. Offered and incoming players are excluded. No player is dropped automatically.</p>
++          <ul className={styles.selectionList}>{team.roster.filter(player => !team.givePlayerIds.includes(player.id)).map(player => <li key={player.id}><label className={styles.check}>
++            <input type="checkbox" checked={form.dropPlayerIds.includes(player.id)} onChange={event => update(team.id, { dropPlayerIds: toggle(form.dropPlayerIds, player.id, event.target.checked) })} />
++            Drop {teamLabel(team.id)}: {player.name}</label></li>)}</ul>
++          <p className={styles.note}>Selected drops: {preview.drops.length ? preview.drops.map(player => player.name).join(", ") : "None"}. Their production cost is unavailable, not zero.</p>
++          <h4>After selected drops</h4>{preview.after.status === "available" ? <RosterList players={preview.after.value} /> : <p>{preview.after.reasons.join(" ")}</p>}
++        </section>;
++      })}</div>
++      <section className={styles.panel} aria-labelledby="offer-evidence-heading"><h3 id="offer-evidence-heading">What this preview cannot establish</h3>
++        {([ ["Dated legality", result.datedLegality], ["League valuation", result.valuation], ["Roster impact", result.impact], ["Counterparty acceptance", result.acceptance], ["Market evidence", result.market] ] as const).map(([label, value]) =>
++          <p key={label}><strong>{label}: unavailable.</strong> {value.status === "unavailable" ? value.reasons.join(" ") : ""}</p>)}
++        <p>Player quality is not scored. Players, positions and ownership are manually entered and have not been verified against your league. This offer stays on this page; it is never submitted as a transaction or counted as market evidence.</p>
++      </section>
++    </section>}
++  </div>;
++}
+diff --git a/web/components/TradeAnalyzer/TradeAnalyzer.module.scss b/web/components/TradeAnalyzer/TradeAnalyzer.module.scss
+new file mode 100644
+index 000000000..16fca93c2
+--- /dev/null
++++ b/web/components/TradeAnalyzer/TradeAnalyzer.module.scss
+@@ -0,0 +1,43 @@
++.page {
++  display: grid;
++  gap: 24px;
++  max-width: 1400px;
++  margin: 0 auto;
++  padding-block: 28px 48px;
++  color: #eef8fb;
++  font-variant-numeric: tabular-nums;
++  h1, h2, h3, h4, p { margin: 0; }
++  h1 { margin-block: 8px 12px; font-size: clamp(2rem, 4vw, 3rem); }
++  h2 { font-size: 1.25rem; }
++  h3 { font-size: 1.15rem; }
++  h4 { margin-top: 16px; font-size: 1rem; }
++  p, li { line-height: 1.5; overflow-wrap: anywhere; }
++  form, fieldset, .results { display: grid; gap: 16px; min-width: 0; }
++  label { display: grid; gap: 8px; font-size: 0.9rem; font-weight: 600; }
++  input, textarea, button { font: inherit; min-height: 44px; }
++  input:not([type="checkbox"]), textarea { width: 100%; box-sizing: border-box; min-width: 0; padding: 10px 12px;
++    border: 1px solid #58717e; border-radius: 6px; background: #09151d; color: #f3fbff; }
++  textarea { resize: vertical; }
++  textarea::placeholder { color: #91a9b5; }
++  :is(input, textarea, button):focus-visible { outline: 3px solid #75dafa; outline-offset: 2px; }
++  ul { margin-block: 8px; padding-inline-start: 20px; }
++}
++.hero, .panel { min-width: 0; padding: 24px; border: 1px solid #304551; border-radius: 14px; background: #101d26; }
++.panel { margin: 0; }
++.panel legend { padding-inline: 8px; font-size: 1.25rem; font-weight: 700; }
++.hero { background: linear-gradient(120deg, #102b38, #101d26 70%); }
++.eyebrow { color: #74d5f2; font-size: 0.75rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; }
++.note { margin-top: 8px !important; color: #b7c8d1; font-size: 0.85rem; }
++.teamGrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 440px), 1fr)); gap: 24px; align-items: start; }
++.page .check { display: flex; align-items: center; gap: 10px; min-height: 44px; line-height: 1.4; }
++.check input { flex: 0 0 auto; width: 20px; height: 20px; min-height: 20px; accent-color: #6bd4f6; }
++.page .selectionList { display: grid; gap: 4px; padding: 0; margin: 0; list-style: none; }
++.previewButton { justify-self: start; padding: 12px 20px; border: 1px solid #4d798c; border-radius: 7px; background: #183544; color: #effbff; font-weight: 700; cursor: pointer; }
++.previewButton:hover { background: #224b5e; }
++.date { max-width: 300px; }
++.warning { padding: 12px; border: 1px solid #8d6d37; border-radius: 9px; background: #302718; color: #ffe0a5; }
++.capacity { margin-top: 16px !important; padding: 12px; background: #183544; border-radius: 7px; }
++.results > .panel { display: grid; gap: 12px; }
++@media (max-width: 600px) {
++  .hero, .panel { padding: 16px; }
++}
+diff --git a/web/components/TradeAnalyzer/TradeAnalyzer.test.tsx b/web/components/TradeAnalyzer/TradeAnalyzer.test.tsx
+new file mode 100644
+index 000000000..033d03387
+--- /dev/null
++++ b/web/components/TradeAnalyzer/TradeAnalyzer.test.tsx
+@@ -0,0 +1,93 @@
++import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
++import { afterEach, describe, expect, it, vi } from "vitest";
++
++import TradeAnalyzer from "./TradeAnalyzer";
++
++afterEach(cleanup);
++const change = (label: string, value: string) => fireEvent.change(screen.getByLabelText(label), { target: { value } });
++function enterOffer() {
++  change("Proposed effective date", "2026-11-10");
++  change("Team A name", "Alpha");
++  change("Team B name", "Beta");
++  change("Team A full before-roster", "A1 | C | active\nA2 | LW | bench");
++  change("Team B full before-roster", "B1 | RW | active\nB2 | D | bench\nB3 | G | IR");
++  for (const label of ["Team A", "Team B"]) {
++    change(`${label} maximum total players`, label === "Team A" ? "2" : "3");
++    fireEvent.click(screen.getByLabelText(`I reviewed ${label}'s complete roster and ownership.`));
++    fireEvent.click(screen.getByLabelText(`I reviewed ${label}'s total-player limit.`));
++  }
++  for (const name of ["Offer A1 (C)", "Offer B1 (RW)", "Offer B2 (D)"]) fireEvent.click(screen.getByLabelText(name));
++}
++
++describe("manual Trade Analyzer", () => {
++  it("keeps each textarea's accessible name stable after populated values and rerenders", () => {
++    render(<TradeAnalyzer />); enterOffer();
++    for (const side of ["A", "B"]) change(`Team ${side} picks or other assets`, `pick: Synthetic ${side} conditional pick`);
++    fireEvent.click(screen.getByRole("button", { name: "Preview offer" }));
++    fireEvent.click(screen.getByLabelText("Drop Team A: A2"));
++    for (const side of ["A", "B"]) {
++      const roster = screen.getByRole("textbox", { name: `Team ${side} full before-roster` });
++      const assets = screen.getByRole("textbox", { name: `Team ${side} picks or other assets` });
++      expect(roster).toBe(screen.getByLabelText(`Team ${side} full before-roster`, { exact: true }));
++      expect(assets).toBe(screen.getByLabelText(`Team ${side} picks or other assets`, { exact: true }));
++      expect((roster as HTMLTextAreaElement).value).toContain(`${side}1`);
++      expect((assets as HTMLTextAreaElement).value).toContain(`Synthetic ${side} conditional pick`);
++    }
++  });
++
++  it("previews both full rosters, requires a selected drop and keeps incoming/outgoing assets out of drop controls", () => {
++    render(<TradeAnalyzer />); enterOffer();
++    fireEvent.click(screen.getByRole("button", { name: "Preview offer" }));
++    expect(screen.getByRole("status").textContent).toContain("Conditional preview");
++    const a = screen.getByRole("region", { name: "Alpha before and after" });
++    const b = screen.getByRole("region", { name: "Beta before and after" });
++    expect(within(a).getByText(/after exchange: 3; after selected drops: 3/)).toBeTruthy();
++    expect(within(b).getByText(/after exchange: 2; after selected drops: 2/)).toBeTruthy();
++    expect(within(a).queryByLabelText("Drop Team A: A1")).toBeNull();
++    expect(within(a).queryByLabelText("Drop Team A: B1")).toBeNull();
++    expect((within(a).getByLabelText("Drop Team A: A2") as HTMLInputElement).checked).toBe(false);
++    fireEvent.click(within(a).getByLabelText("Drop Team A: A2"));
++    expect(screen.getByRole("status").textContent).toContain("Entry and reviewed total-player counts are complete");
++    expect(within(a).getByText(/after selected drops: 2/)).toBeTruthy();
++    expect(within(a).getByText(/Selected drops: A2/)).toBeTruthy();
++    expect(screen.getByText(/Drop costs, displaced starts and net production are unavailable/)).toBeTruthy();
++  });
++
++  it("retains picks and unknown assets on both sides without requiring or fabricating a value", () => {
++    render(<TradeAnalyzer />); enterOffer();
++    change("Team A picks or other assets", "pick: Conditional 2027 second\nFuture considerations");
++    fireEvent.click(screen.getByRole("button", { name: "Preview offer" }));
++    expect(screen.getAllByText("Pick: Conditional 2027 second · value unavailable")).toHaveLength(2);
++    expect(screen.getAllByText("Unknown asset: Future considerations · value unavailable")).toHaveLength(2);
++    expect(screen.getByRole("region", { name: "What this preview cannot establish" }).textContent).toContain("An entered offer is not a market sighting");
++  });
++
++  it("does not interpret blank/unreviewed capacity as an empty roster slot", () => {
++    render(<TradeAnalyzer />); enterOffer();
++    change("Team A maximum total players", "");
++    fireEvent.click(screen.getByRole("button", { name: "Preview offer" }));
++    const a = screen.getByRole("region", { name: "Alpha before and after" });
++    expect(within(a).getByText(/Capacity unresolved:.*No free capacity is assumed/)).toBeTruthy();
++    expect(screen.getByRole("status").textContent).toContain("Conditional");
++    change("Team A maximum total players", "4");
++    expect(within(a).getByText(/Capacity unresolved/)).toBeTruthy();
++    fireEvent.click(screen.getByLabelText("I reviewed Team A's total-player limit."));
++    expect(within(a).getByText(/Reviewed total-player limit: 4/)).toBeTruthy();
++  });
++
++  it("clears stale exchange/drop selections on roster edits and uses only in-memory state", () => {
++    const saved = vi.spyOn(Storage.prototype, "setItem");
++    render(<TradeAnalyzer />); enterOffer();
++    fireEvent.click(screen.getByRole("button", { name: "Preview offer" }));
++    fireEvent.click(screen.getByLabelText("Drop Team A: A2"));
++    change("Team A full before-roster", "Replacement | C | active");
++    expect((screen.getByLabelText("Offer Replacement (C)") as HTMLInputElement).checked).toBe(false);
++    expect((screen.getByLabelText("I reviewed Team A's complete roster and ownership.") as HTMLInputElement).checked).toBe(false);
++    expect(screen.queryByLabelText("Drop Team A: A2")).toBeNull();
++    expect(screen.getByRole("status").textContent).toContain("Conditional");
++    expect(saved).not.toHaveBeenCalled();
++    cleanup(); render(<TradeAnalyzer />);
++    expect((screen.getByLabelText("Team A full before-roster") as HTMLTextAreaElement).value).toBe("");
++    saved.mockRestore();
++  });
++});
+diff --git a/web/lib/tradeAnalyzer/offer.ts b/web/lib/tradeAnalyzer/offer.ts
+new file mode 100644
+index 000000000..68794ccba
+--- /dev/null
++++ b/web/lib/tradeAnalyzer/offer.ts
+@@ -0,0 +1,112 @@
++import type { Asset, Result } from "lib/tradeValue/contracts";
++
++export const MAX_ROSTER_PLAYERS = 100;
++export const MAX_OTHER_ASSETS = 20;
++export type TeamId = "a" | "b";
++export type ManualPlayer = { id: string; name: string; positions: string; status: string };
++export type OtherAsset = Exclude<Asset, { kind: "player" }>;
++export type OfferTeam = {
++  id: TeamId; name: string; roster: ManualPlayer[]; rosterReviewed: boolean;
++  totalCapacity: number | null; capacityReviewed: boolean;
++  givePlayerIds: string[]; dropPlayerIds: string[]; otherAssets: OtherAsset[];
++};
++export type OfferInput = { effectiveDate: string; teams: [OfferTeam, OfferTeam] };
++export type OfferIssue = { code: string; teamId?: TeamId; message: string };
++export type CapacityPreview = { total: number; beforeCount: number; beforeExcess: number; afterExchangeCount: number;
++  requiredDrops: number; afterCount: number; additionalDrops: number };
++export type TeamPreview = { teamId: TeamId; before: ManualPlayer[]; afterExchange: Result<ManualPlayer[]>;
++  after: Result<ManualPlayer[]>; drops: ManualPlayer[]; capacity: Result<CapacityPreview> };
++
++/** Local row identifiers only; changing roster text requires reviewing selections again. */
++export function rosterFromText(team: TeamId, text: string): ManualPlayer[] {
++  return text.split(/\r?\n/).filter(line => line.trim()).map((line, index) => {
++    const [name = "", positions = "", ...status] = line.split("|");
++    return { id: `manual:${team}:${index + 1}`, name: name.trim(), positions: positions.trim(), status: status.join("|").trim() };
++  });
++}
++
++/** Unknown pick metadata stays unknown; entered text is never market evidence. */
++export function assetsFromText(text: string): OtherAsset[] {
++  return text.split(/\r?\n/).filter(line => line.trim()).map(line => {
++    const pick = line.trim().match(/^pick:\s*(.*)$/i);
++    return pick ? { kind: "pick", rawText: pick[1], season: null, round: null, originalOwnerText: null, conditionText: null }
++      : { kind: "unknown", rawText: line.trim() };
++  });
++}
++
++const unavailable = <T>(...reasons: string[]): Result<T> => ({ status: "unavailable", reasons });
++const repeated = (values: string[]) => new Set(values).size !== values.length;
++const normalized = (value: string) => value.trim().toLocaleLowerCase();
++
++/** Applies only an entered exchange and explicit drops. No slot solver or valuation. */
++export function previewOffer(input: OfferInput) {
++  const issues: OfferIssue[] = [];
++  let exchangeBlocked = false;
++  const issue = (code: string, message: string, teamId?: TeamId, blocksExchange = false) => {
++    issues.push({ code, message, ...(teamId ? { teamId } : {}) });
++    if (blocksExchange) exchangeBlocked = true;
++  };
++  const [a, b] = input.teams;
++  if (a.id !== "a" || b.id !== "b") issue("team_ids", "The two roster sides must have distinct local team IDs.", undefined, true);
++  const validDate = /^\d{4}-\d{2}-\d{2}$/.test(input.effectiveDate)
++    && Number.isFinite(Date.parse(input.effectiveDate))
++    && new Date(input.effectiveDate).toISOString().slice(0, 10) === input.effectiveDate;
++  if (!validDate) issue("effective_date", "Enter a valid effective date. Trade timing and deadlines are not verified.");
++  if (!a.name.trim() || !b.name.trim() || normalized(a.name) === normalized(b.name)) issue("team_names", "Enter two distinct team names.");
++
++  const allPlayers = input.teams.flatMap(team => team.roster);
++  if (repeated(allPlayers.map(player => player.id)) || allPlayers.some(player => !player.id.trim())) {
++    issue("duplicate_identity", "Each player needs a unique local roster ID across both teams.", undefined, true);
++  }
++  if (repeated(allPlayers.map(player => normalized(player.name)))) {
++    issue("ambiguous_name", "Repeated player names need distinct identifying labels; ownership cannot be inferred from a name.", undefined, true);
++  }
++  for (const team of input.teams) {
++    if (team.roster.length > MAX_ROSTER_PLAYERS) issue("roster_limit", `${team.name || team.id}: at most ${MAX_ROSTER_PLAYERS} roster players are supported.`, team.id, true);
++    if (team.roster.some(player => !player.name.trim())) issue("player_name", "Every roster row needs a player name.", team.id, true);
++    if (!team.rosterReviewed) issue("roster_review", `${team.name || team.id}: confirm the complete before-roster and ownership.`, team.id);
++    if (!Number.isSafeInteger(team.totalCapacity) || team.totalCapacity === null || team.totalCapacity < 0 || team.totalCapacity > MAX_ROSTER_PLAYERS) {
++      issue("capacity_missing", `${team.name || team.id}: enter the maximum total players, including bench and reserves (0–${MAX_ROSTER_PLAYERS}).`, team.id);
++    } else if (!team.capacityReviewed) issue("capacity_review", `${team.name || team.id}: review the total-player limit; active starting slots alone are insufficient.`, team.id);
++    if (repeated(team.givePlayerIds)) issue("duplicate_exchange", "A player cannot be offered twice.", team.id, true);
++    if (team.givePlayerIds.some(id => !team.roster.some(player => player.id === id))) issue("wrong_owner", "An outgoing player is not on that side’s entered roster.", team.id, true);
++    if (team.givePlayerIds.length + team.otherAssets.length === 0) issue("empty_side", `${team.name || team.id}: enter at least one offered player, pick or other asset.`, team.id);
++    if (team.otherAssets.length > MAX_OTHER_ASSETS) issue("asset_limit", `At most ${MAX_OTHER_ASSETS} picks or other assets per side are supported.`, team.id);
++    if (team.otherAssets.some(asset => !asset.rawText.trim())) issue("asset_text", "Every pick or unknown asset needs its full description.", team.id);
++  }
++  const extras = input.teams.flatMap(team => team.otherAssets.map(asset => `${asset.kind}:${normalized(asset.rawText)}`));
++  if (repeated(extras)) issue("duplicate_asset", "Repeated asset descriptions need distinguishing ownership or conditions. All entered assets are retained.");
++
++  const teams: TeamPreview[] = input.teams.map((team, index) => {
++    const other = input.teams[1 - index];
++    const afterExchange: Result<ManualPlayer[]> = exchangeBlocked
++      ? unavailable("Resolve roster identities and outgoing ownership before previewing either exchange.")
++      : { status: "available", value: [...team.roster.filter(player => !team.givePlayerIds.includes(player.id)),
++        ...other.roster.filter(player => other.givePlayerIds.includes(player.id))] };
++    const invalidDrops = repeated(team.dropPlayerIds) || team.dropPlayerIds.some(id =>
++      !team.roster.some(player => player.id === id) || team.givePlayerIds.includes(id));
++    if (invalidDrops) issue("invalid_drop", "Select each drop once from retained players on the original roster. Exchanged or incoming players cannot also be dropped.", team.id);
++    const drops = team.roster.filter(player => team.dropPlayerIds.includes(player.id));
++    const after: Result<ManualPlayer[]> = invalidDrops ? unavailable("Resolve invalid drop selections.")
++      : afterExchange.status === "unavailable" ? afterExchange
++        : { status: "available", value: afterExchange.value.filter(player => !team.dropPlayerIds.includes(player.id)) };
++    let capacity: Result<CapacityPreview> = unavailable("The total-player limit is missing or unreviewed. No free capacity is assumed.");
++    if (team.capacityReviewed && team.totalCapacity !== null && Number.isSafeInteger(team.totalCapacity)
++      && team.totalCapacity >= 0 && team.totalCapacity <= MAX_ROSTER_PLAYERS && afterExchange.status === "available" && after.status === "available") {
++      const total = team.totalCapacity;
++      const value = { total, beforeCount: team.roster.length, beforeExcess: Math.max(0, team.roster.length - total),
++        afterExchangeCount: afterExchange.value.length, requiredDrops: Math.max(0, afterExchange.value.length - total),
++        afterCount: after.value.length, additionalDrops: Math.max(0, after.value.length - total) };
++      capacity = { status: "available", value };
++      if (value.beforeExcess) issue("before_capacity", `${team.name}: the entered before-roster exceeds the reviewed total-player limit by ${value.beforeExcess}.`, team.id);
++      if (value.additionalDrops) issue("drop_required", `${team.name}: select ${value.additionalDrops} additional drop(s) or correct the reviewed capacity. No player is dropped automatically.`, team.id);
++    } else if (after.status === "unavailable") capacity = unavailable(...after.reasons);
++    return { teamId: team.id, before: team.roster, afterExchange, after, drops, capacity };
++  });
++  return { issues, entryComplete: issues.length === 0, teams,
++    datedLegality: unavailable<never>("Lineup eligibility, active/bench/reserve limits, locks, deadlines, processing time and keeper/cap rules are unverified. Roster counts do not establish trade legality."),
++    valuation: unavailable<never>("No qualified league valuation is connected. Picks and unknown assets have no price here."),
++    impact: unavailable<never>("No qualified full-roster forecast or lineup-impact contract is connected. Drop costs, displaced starts and net production are unavailable."),
++    acceptance: unavailable<never>("The other manager’s preferences and acceptance are unknown."),
++    market: unavailable<never>("No observation evidence is loaded. An entered offer is not a market sighting.") };
++}
+diff --git a/web/lib/tradeAnalyzer/offer.test.ts b/web/lib/tradeAnalyzer/offer.test.ts
+new file mode 100644
+index 000000000..c7ceb4c64
+--- /dev/null
++++ b/web/lib/tradeAnalyzer/offer.test.ts
+@@ -0,0 +1,133 @@
++import { describe, expect, it } from "vitest";
++
++import { assetsFromText, previewOffer, rosterFromText, type OfferInput, type OfferTeam, type TeamId } from "./offer";
++
++const team = (id: TeamId, roster: string, capacity: number): OfferTeam => ({ id, name: `Team ${id}`, roster: rosterFromText(id, roster),
++  rosterReviewed: true, totalCapacity: capacity, capacityReviewed: true, givePlayerIds: [], dropPlayerIds: [], otherAssets: [] });
++function input(): OfferInput {
++  const a = team("a", "A1 | C | active\nA2 | LW | bench\nA3 | D | IR", 3);
++  const b = team("b", "B1 | RW | active\nB2 | C | bench\nB3 | D | IR", 3);
++  a.givePlayerIds = [a.roster[0].id];
++  b.givePlayerIds = [b.roster[0].id];
++  return { effectiveDate: "2026-11-10", teams: [a, b] };
++}
++const ids = (roster: ReturnType<typeof previewOffer>["teams"][number]["after"]) => roster.status === "available" ? roster.value.map(player => player.name) : null;
++
++describe("manual entered-offer preview", () => {
++  it("applies the whole one-for-one exchange to both complete rosters without mutation or value claims", () => {
++    const offer = input(), before = JSON.stringify(offer);
++    const result = previewOffer(offer);
++    expect(result.entryComplete).toBe(true);
++    expect(ids(result.teams[0].after)).toEqual(["A2", "A3", "B1"]);
++    expect(ids(result.teams[1].after)).toEqual(["B2", "B3", "A1"]);
++    expect(JSON.stringify(offer)).toBe(before);
++    for (const key of ["datedLegality", "valuation", "impact", "acceptance", "market"] as const) {
++      expect(result[key].status).toBe("unavailable");
++    }
++  });
++
++  it("requires an explicit drop for a two-for-one and includes the selected drop in the final roster", () => {
++    const offer = input();
++    offer.teams[1].givePlayerIds.push(offer.teams[1].roster[1].id);
++    let result = previewOffer(offer);
++    expect(result.entryComplete).toBe(false);
++    expect(result.teams[0].capacity).toMatchObject({ status: "available", value: { beforeCount: 3, afterExchangeCount: 4, requiredDrops: 1, additionalDrops: 1 } });
++    expect(ids(result.teams[0].after)).toEqual(["A2", "A3", "B1", "B2"]);
++    expect(ids(result.teams[1].after)).toEqual(["B3", "A1"]);
++    offer.teams[0].dropPlayerIds = [offer.teams[0].roster[1].id];
++    result = previewOffer(offer);
++    expect(result.entryComplete).toBe(true);
++    expect(ids(result.teams[0].after)).toEqual(["A3", "B1", "B2"]);
++    expect(result.teams[0].drops.map(player => player.name)).toEqual(["A2"]);
++    expect(result.teams[0].capacity).toMatchObject({ status: "available", value: { afterCount: 3, additionalDrops: 0 } });
++  });
++
++  it("checks drops on either team, preserving reserve rows and separate before-limit violations", () => {
++    const offer = input();
++    offer.teams[0].givePlayerIds.push(offer.teams[0].roster[1].id);
++    offer.teams[1].totalCapacity = 2;
++    let result = previewOffer(offer);
++    expect(result.issues.filter(issue => issue.teamId === "b").map(issue => issue.code)).toEqual(["before_capacity", "drop_required"]);
++    expect(result.teams[1].capacity).toMatchObject({ value: { beforeExcess: 1, afterExchangeCount: 4, additionalDrops: 2 } });
++    offer.teams[1].totalCapacity = 3;
++    offer.teams[1].dropPlayerIds = [offer.teams[1].roster[1].id];
++    result = previewOffer(offer);
++    expect(result.entryComplete).toBe(true);
++    expect(result.teams[1].after).toMatchObject({ value: [{ name: "B3", status: "IR" }, { name: "A1" }, { name: "A2" }] });
++  });
++
++  it("does not assume missing, invalid or unreviewed total capacity is free space", () => {
++    for (const capacity of [null, -1, 1.5, 101]) {
++      const offer = input(); offer.teams[0].totalCapacity = capacity;
++      const result = previewOffer(offer);
++      expect(result.teams[0].capacity.status).toBe("unavailable");
++      expect(result.issues.some(issue => issue.code === "capacity_missing")).toBe(true);
++      expect(ids(result.teams[0].after)).toEqual(["A2", "A3", "B1"]);
++    }
++    const offer = input(); offer.teams[1].capacityReviewed = false;
++    expect(previewOffer(offer).teams[1].capacity.status).toBe("unavailable");
++    const empty = team("a", "", 0); empty.otherAssets = assetsFromText("pick: conditional future pick");
++    const result = previewOffer({ ...input(), teams: [empty, input().teams[1]] });
++    expect(result.teams[0].capacity).toMatchObject({ value: { total: 0, additionalDrops: 1 } });
++  });
++
++  it("blocks duplicate and ambiguous identities or outgoing ownership on both exchange previews", () => {
++    const cases = [input(), input(), input(), input()];
++    cases[0].teams[1].roster[0].id = cases[0].teams[0].roster[0].id;
++    cases[1].teams[1].roster[0].name = " a1 ";
++    cases[2].teams[0].givePlayerIds = ["manual:b:1"];
++    cases[3].teams[0].givePlayerIds.push(cases[3].teams[0].givePlayerIds[0]);
++    for (const offer of cases) {
++      const result = previewOffer(offer);
++      expect(result.entryComplete).toBe(false);
++      expect(result.teams.map(preview => preview.after.status)).toEqual(["unavailable", "unavailable"]);
++    }
++  });
++
++  it("rejects exchanged, incoming, nonexistent or repeated drops instead of removing a player twice", () => {
++    for (const dropIds of [["manual:a:1"], ["manual:b:1"], ["missing"], ["manual:a:2", "manual:a:2"]]) {
++      const offer = input(); offer.teams[0].dropPlayerIds = dropIds;
++      const result = previewOffer(offer);
++      expect(result.issues.some(issue => issue.code === "invalid_drop")).toBe(true);
++      expect(result.teams[0].after.status).toBe("unavailable");
++      expect(result.teams[0].capacity.status).toBe("unavailable");
++    }
++  });
++
++  it("preserves complete pick conditions and unknown text without roster slots, inferred identities or prices", () => {
++    const offer = input();
++    offer.teams[0].otherAssets = assetsFromText("pick: 2027 second, original owner unknown, conditional on playoffs\nUnresolved rights / future considerations");
++    const before = JSON.stringify(offer);
++    const result = previewOffer(offer);
++    expect(result.entryComplete).toBe(true);
++    expect(offer.teams[0].otherAssets).toEqual([
++      { kind: "pick", rawText: "2027 second, original owner unknown, conditional on playoffs", season: null, round: null, originalOwnerText: null, conditionText: null },
++      { kind: "unknown", rawText: "Unresolved rights / future considerations" },
++    ]);
++    expect(result.teams[0].capacity).toMatchObject({ value: { afterCount: 3 } });
++    expect(JSON.stringify(offer)).toBe(before);
++  });
++
++  it("keeps repeated or incomplete assets for correction and enforces support bounds", () => {
++    const offer = input();
++    offer.teams[0].otherAssets = assetsFromText("pick: same description\npick: same description\npick:");
++    expect(previewOffer(offer).issues.map(issue => issue.code)).toEqual(["asset_text", "duplicate_asset"]);
++    expect(offer.teams[0].otherAssets).toHaveLength(3);
++    offer.teams[0].roster = rosterFromText("a", Array.from({ length: 101 }, (_, i) => `Synthetic ${i}`).join("\n"));
++    expect(previewOffer(offer).issues.some(issue => issue.code === "roster_limit")).toBe(true);
++    offer.teams[1].otherAssets = assetsFromText(Array.from({ length: 21 }, (_, i) => `pick: distinct ${i}`).join("\n"));
++    expect(previewOffer(offer).issues.some(issue => issue.code === "asset_limit")).toBe(true);
++  });
++
++  it("requires dates, named sides, roster review and nonempty offers without inventing legality", () => {
++    const offer = input();
++    offer.effectiveDate = "2026-02-30";
++    offer.teams[1].name = offer.teams[0].name;
++    offer.teams[0].rosterReviewed = false;
++    offer.teams[1].givePlayerIds = [];
++    const result = previewOffer(offer);
++    expect(result.entryComplete).toBe(false);
++    expect(result.issues.map(issue => issue.code)).toEqual(["effective_date", "team_names", "roster_review", "empty_side", "drop_required"]);
++    expect(result.datedLegality.status).toBe("unavailable");
++  });
++});

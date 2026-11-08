@@ -1,0 +1,11 @@
+{
+  "startedAt": "2026-10-26T22:59:34.798661+00:00",
+  "approval": {
+    "assistantMessage": "Sentinel_96ec1a4dd0d08191bfb33a1897f3dc87",
+    "userReply": "Sentinel_fca3d11ad3988191b3fa135d5eaf3f1b",
+    "userAnswer": "yes",
+    "approvedAt": "2026-10-26T22:57:28Z",
+    "source": "Scout trusted delegation quoting direct owner response"
+  },
+  "oneExecutionNoRetry": true
+}

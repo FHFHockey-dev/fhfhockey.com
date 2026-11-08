@@ -1,0 +1,132 @@
+{
+  "schemaVersion": "forge-v2-capacity-measurement-plan-v1",
+  "status": "PREPARATION_ONLY_NOT_OPERATING_APPROVAL",
+  "candidateCommit": "7113329d2c24b8629f54484df37441f95a63d853",
+  "fixtureReceipt": "continuation-capacity-receipt.json",
+  "fixtureMeasurements": {
+    "storageStatements": 130,
+    "publicationMs": {
+      "count": 25,
+      "mean": 1.1081500400000142,
+      "p50": 0.7341250000000628,
+      "p95": 1.8182090000000244,
+      "maximum": 8.430624999999964
+    },
+    "bulkFixtureInsertMs": 777.255583,
+    "historyPageMs": {
+      "count": 16,
+      "mean": 8.266312374999984,
+      "p50": 8.117207999999891,
+      "p95": 11.85333300000002,
+      "maximum": 11.85333300000002
+    },
+    "historyRows": 3030,
+    "historySerializedBytes": 6895856,
+    "relationBytes": [
+      {
+        "relname": "forge_v2_artifacts",
+        "bytes": "16384"
+      },
+      {
+        "relname": "forge_v2_publication_receipts",
+        "bytes": "901120"
+      },
+      {
+        "relname": "forge_v2_records",
+        "bytes": "32768"
+      },
+      {
+        "relname": "forge_v2_vintages",
+        "bytes": "4825088"
+      },
+      {
+        "relname": "forge_v2_work_queue",
+        "bytes": "16384"
+      }
+    ],
+    "artifactMs": {
+      "put": 23.736000000000104,
+      "archive": 10.083624999999984,
+      "archivedRead": 1.5477920000000722,
+      "restore": 7.128291999999874
+    },
+    "unqualifiedTenGameProjectionMs": 16.270874999999933,
+    "unqualifiedTenGamePayloadBytes": 189285,
+    "elapsedMs": 1688.164292,
+    "nodeResourceUsage": {
+      "userCPUTime": 319608,
+      "systemCPUTime": 33697,
+      "maxRSS": 163408,
+      "sharedMemorySize": 0,
+      "unsharedDataSize": 0,
+      "unsharedStackSize": 0,
+      "minorPageFault": 11927,
+      "majorPageFault": 0,
+      "swappedOut": 0,
+      "fsRead": 0,
+      "fsWrite": 0,
+      "ipcSent": 968,
+      "ipcReceived": 951,
+      "signalsCount": 0,
+      "voluntaryContextSwitches": 85,
+      "involuntaryContextSwitches": 2186
+    }
+  },
+  "measurementInterpretation": [
+    "Local native database, not hosted latency or billing",
+    "25 publication-barrier calls measured separately from 3005 bulk fixture inserts",
+    "1 MiB artifact measures verified I/O only, not calibrated inference",
+    "Ten-game view has unqualified values and is not a qualified full-population payload benchmark",
+    "Real model size, final scope, full-scale browser, remote storage pricing and v1/RSO reservations remain unmeasured",
+    "nodeResourceUsage covers the Node driver, not PostgreSQL child CPU/memory or host-wide load.",
+    "History read timings are warm local page timings; no cold-cache or network inference.",
+    "Database relation bytes include local table/index storage at this row count; no extrapolated hosted cost or saving."
+  ],
+  "remainingMeasurements": [
+    {
+      "id": "representative-model",
+      "needed": "Approved model/training/calibration hashes and full-universe opportunity manifest",
+      "method": "One isolated local daily pass and one maximum permitted material event, fixed population; instrument complete elapsed time, model input/serialization sizes, per-process CPU/RSS and actual artifact bytes. No provider reads.",
+      "stop": "Owner-approved CPU/memory/wall/storage caps; preserve all missed jobs."
+    },
+    {
+      "id": "queue-recovery",
+      "needed": "Measured durable queue bounds, exact partitioning and concurrency reservation",
+      "method": "Use same admitted queue snapshots and deterministic interruption points; measure bounded repeated batch recovery, receipt reads and event rows. Exercise prepared-batch recovery max100 jobs per scan; never infer12000-scope fixture planner timing proves one production batch can process12000 jobs.",
+      "stop": "Any unbounded queue scan, duplicate publication, false gap or reservation conflict."
+    },
+    {
+      "id": "qualified-api-browser",
+      "needed": "Representative qualified synthetic DTO shape from frozen real model/scope, never live user data; exact archive/history profile counts",
+      "method": "Measure max allowed10games and200history rows per response with full category/FP interval/accountability detail; desktop1440 and phone390. Keep existing keyboard/scoring invariants; record p50/p95 only over prespecified repeat count and distinguish warm/cold.",
+      "stop": "2MiB response bound, overflow, mismatched context/profile, invalid qualification projection."
+    },
+    {
+      "id": "permanent-retention",
+      "needed": "Real per-vintage model/joint/calibration bytes, deduplication manifest and storage-owner approved archive policy/pricing",
+      "method": "Record actual row/index/manifest/content sizes, artifact hash deduplication, backup/replica overhead, monotonic growth and verified restore at approved volume. Retention never expires scientific history.",
+      "stop": "Stop admission at approved byte ceiling; do not delete old artifacts."
+    },
+    {
+      "id": "production-reservation",
+      "needed": "Named operations owner, existing v1/RSO CPU/memory/request reservation, environment/project, current price evidence and currency cap",
+      "method": "Owner signs exact sustainable caps after local representative measurements; read-only hosted metadata only under appropriate authority. No load test/deployment implied.",
+      "stop": "Unknown cost/reservation or any overlap with existing production budgets."
+    }
+  ],
+  "packetFieldsStillRequired": [
+    "environment/project/service identity",
+    "exact UTC observation window and IDs",
+    "admissible source/data and model/calibration hashes",
+    "maximum total attempts and batch/queue partitioning",
+    "measured runtime/CPU/memory/storage/request limits",
+    "permanent archive retention owner and cost budget",
+    "v1/RSO reservation receipt",
+    "separate prospective producer review",
+    "explicit current operation approval"
+  ],
+  "productionRequests": 0,
+  "providerDataRequests": 0,
+  "deployments": 0,
+  "scientificQualification": false
+}

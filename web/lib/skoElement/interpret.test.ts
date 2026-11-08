@@ -81,6 +81,28 @@ describe("horizons", () => {
     const record = run("f1", { asOf: "2026-10-19T13:00:00.000Z", config: { ...FIXTURE_CONFIG, maxEvidenceAgeHours: 1000 } });
     expect(record.freshness.forecastStatus).toBe("expired");
     expect(metric(record, "POINTS").expectedPerTeamGame.reason).toBe("forecast_expired");
+    expect(metric(record, "POINTS").expectedPerAppearanceConditional.reason).toBe("forecast_expired");
+  });
+
+  it("keeps the player's pre-window comparison independent of current output and forecast horizon", () => {
+    const base = fixture("f1");
+    const before = run("f1");
+    const evidence = structuredClone(base.evidence);
+    evidence.teamGames.slice(-10).forEach(g => { g.stats.POINTS = 20; });
+    const changed = run("f1", { evidence, horizon: 5, forecast: base.forecasts[5] });
+    expect(changed.personalReferenceWindow).toEqual(before.personalReferenceWindow);
+    expect(changed.personalReferenceWindow.endDate! < changed.recentWindow.startDate!).toBe(true);
+    const old = metric(before, "POINTS"), now = metric(changed, "POINTS");
+    expect(now.personalReference.perTeamGame).toEqual(old.personalReference.perTeamGame);
+    expect(now.personalReference.perAppearance).toEqual(old.personalReference.perAppearance);
+    expect(now.personalReference.changePerTeamGame.value).toBeCloseTo(20 - old.personalReference.perTeamGame.value!);
+  });
+
+  it("shows thin personal history as missing rather than a zero baseline", () => {
+    const record = run("f1", { config: { ...FIXTURE_CONFIG, recentWindowTeamGames: 20 } });
+    expect(record.personalReferenceWindow.teamGames).toBe(0);
+    expect(metric(record, "POINTS").personalReference.perTeamGame).toEqual({ value: null, reason: "no_completed_team_games" });
+    expect(metric(record, "POINTS").personalReference.changePerTeamGame.value).toBeNull();
   });
 });
 
@@ -125,7 +147,18 @@ describe("sparse, partial and stale evidence", () => {
     ] };
     const normalized = normalizeTeamGames(evidence, Date.parse(FIXTURE_AS_OF));
     expect(normalized).toMatchObject({ excludedFutureRows: 1, invalidRows: 2, duplicateRows: 1, conflictingGameIds: [] });
-    expect(normalized.games).toHaveLength(20);
+    expect(normalized.games).toHaveLength(21);
+    expect(normalized.games.find(g => g.gameId === "FX3-NEG")?.status).toBe("unknown");
+  });
+
+  it("retains an invalid recent game as unknown instead of backfilling an older result", () => {
+    const evidence = structuredClone(fixture("f6").evidence);
+    const before = run("f6");
+    evidence.teamGames.at(-1)!.toiMinutes = -1;
+    const record = run("f6", { evidence });
+    expect(record.recentWindow.startDate).toBe(before.recentWindow.startDate);
+    expect(record.recentWindow.unknownGames).toBe(1);
+    expect(metric(record, "POINTS").gapPerTeamGame.value).toBeNull();
   });
 });
 
@@ -188,6 +221,65 @@ describe("opportunity context", () => {
 });
 
 describe("VuDu goalie context", () => {
+  const withGames = (goalies: NonNullable<ObservedEvidence["teamGames"][number]["goalie"]>[]) => {
+    const evidence = structuredClone(fixture("g1").evidence);
+    evidence.teamGames = evidence.teamGames.slice(-goalies.length).map((g, i) => ({ ...g, status: "appeared", goalie: goalies[i] }));
+    return evidence;
+  };
+
+  it("weights a relief appearance by shots and minutes, not equally with a start", () => {
+    const evidence = withGames([
+      { saves: 9, shotsAgainst: 10, goalsAgainst: 1, minutes: 10, appearanceType: "relief" },
+      { saves: 99, shotsAgainst: 100, goalsAgainst: 1, minutes: 60, appearanceType: "start" },
+    ]);
+    const goalie = run("g1", { evidence }).goalie!;
+    expect(goalie.observed.savePercentage.value).toBeCloseTo(108 / 110);
+    expect(goalie.observed.goalsAgainstAverage.value).toBeCloseTo(60 * 2 / 70);
+    expect(goalie.observed.starts.value).toBe(1);
+    expect(goalie.observed.reliefAppearances.value).toBe(1);
+    expect(goalie.observed.startShare.value).toBe(0.5);
+  });
+
+  it.each([
+    { saves: 31, shotsAgainst: 30, goalsAgainst: 1, minutes: 60 },
+    { saves: 29, shotsAgainst: 30, goalsAgainst: 2, minutes: 60 },
+    { saves: 29, shotsAgainst: 30, goalsAgainst: 1, minutes: 0 },
+  ])("withholds inconsistent goalie primitives: %j", primitives => {
+    const observed = run("g1", { evidence: withGames([primitives]) }).goalie!.observed;
+    expect(observed.savePercentage.reason).toBe("inconsistent_goalie_primitives");
+    expect(observed.goalsAgainstAverage.value).toBeNull();
+  });
+
+  it("keeps zero exposure, missing saves and unknown participation distinct", () => {
+    const evidence = withGames([{ saves: 0, shotsAgainst: 0, goalsAgainst: 0, minutes: 10 }]);
+    let observed = run("g1", { evidence }).goalie!.observed;
+    expect(observed.savePercentage.reason).toBe("zero_denominator");
+    expect(observed.goalsAgainstAverage.value).toBe(0);
+    expect(observed.starts.value).toBeNull();
+    evidence.teamGames[0].goalie!.saves = null;
+    observed = run("g1", { evidence }).goalie!.observed;
+    expect(observed.savePercentage.reason).toBe("incomplete_primitives");
+    evidence.teamGames[0].status = "unknown";
+    expect(run("g1", { evidence }).goalie!.observed.savePercentage.reason).toBe("unknown_team_game_status");
+  });
+
+  it("withholds expired forecast ratios and starts while preserving recorded results", () => {
+    const record = run("g1", { asOf: "2026-10-19T13:00:00.000Z" });
+    expect(record.freshness.forecastStatus).toBe("expired");
+    for (const value of Object.values(record.goalie!.expected).filter(v => typeof v === "object")) expect(value).toEqual({ value: null, reason: "forecast_expired" });
+    expect(record.goalie!.observed.savePercentage.value).not.toBeNull();
+  });
+
+  it("keeps improving save results separate from a falling start share", () => {
+    const evidence = structuredClone(fixture("g1").evidence);
+    evidence.teamGames = evidence.teamGames.map((g, i) => ({ ...g, status: "appeared",
+      goalie: { saves: i < 10 ? 27 : 29, shotsAgainst: 30, goalsAgainst: i < 10 ? 3 : 1, minutes: 60, appearanceType: i < 10 ? "start" : "relief" } }));
+    const goalie = run("g1", { evidence }).goalie!;
+    expect(goalie.observed.savePercentage.value!).toBeGreaterThan(goalie.personalReference.savePercentage.value!);
+    expect(goalie.observed.startShare.value).toBe(0);
+    expect(goalie.personalReference.startShare.value).toBe(1);
+    expect(goalie.gap.status).toBe("pending_goalie_adapter");
+  });
   it("aggregates SV% and GAA from primitives and passes FORGE ratios through, with the gap pending", () => {
     const record = run("g1");
     const goalie = record.goalie!;

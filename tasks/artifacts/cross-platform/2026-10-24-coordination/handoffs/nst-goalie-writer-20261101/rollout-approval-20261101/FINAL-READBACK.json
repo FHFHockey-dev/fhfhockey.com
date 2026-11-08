@@ -1,0 +1,12 @@
+{
+  "sourcePinsUnchanged": 67,
+  "priorMailboxBytesPreserved": 542824,
+  "mailboxLine": 2737,
+  "localLinksVerified": 5,
+  "readOnlyCalls": 3,
+  "coreOutputSchemasChecked": 10,
+  "readOnlyFailureCauseResolved": true,
+  "pendingFirstApproval": "postgres default privileges migration 20261020224500 SHA256 60e0ee8f6004d07182c6999fbe34534a2cceb9530cafbd1a0bb868b0fd5ff51c",
+  "candidateStillDisabled": true,
+  "packetSha256": "36a9aa73b6ca2502a9660eadb5c59230a17824489a7f714a172a07e58e88a42b"
+}

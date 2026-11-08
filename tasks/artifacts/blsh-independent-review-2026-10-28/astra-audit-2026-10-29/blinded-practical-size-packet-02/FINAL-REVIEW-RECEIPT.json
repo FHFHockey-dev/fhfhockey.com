@@ -1,0 +1,34 @@
+{
+  "status": "COMPLETE_JUDGMENTS_PRESERVED_THRESHOLD_NOT_ESTABLISHED",
+  "files": {
+    "BLINDED-REVIEW-FINDINGS.md": {
+      "sha256": "95568900c52aa2bfcbb0c5a280c776e7c767351203b3b40b0086dc073ee5aac5",
+      "bytes": 11409
+    },
+    "RECONCILIATION.json": {
+      "sha256": "43728c6da155aeb9e74bed47f03505f7383bb96997bcdee348f23158c8d38896",
+      "bytes": 54227
+    },
+    "REVIEW-MANIFEST.json": {
+      "sha256": "9e73c3f262ff12c01012d3a85fb38e206982233d5ebe9ca61eeb53b13911c8b3",
+      "bytes": 2715
+    },
+    "REVIEWER-A.json": {
+      "sha256": "52999aefbb3a86b230d2193e7710186a21deb2762898417646e1cd453dbd01f0",
+      "bytes": 20917
+    },
+    "REVIEWER-B.json": {
+      "sha256": "b9859903ddaa8eb32cecdef6ca3ebfd7ffb51a4874146fc4463fed47db4cf086",
+      "bytes": 21252
+    }
+  },
+  "originalPacketsUnchanged": true,
+  "judgments": 48,
+  "newFits": 0,
+  "januaryRun": false,
+  "reservedSeasonReads": 0,
+  "networkCalls": 0,
+  "databaseCalls": 0,
+  "gitActions": 0,
+  "deploymentActions": 0
+}

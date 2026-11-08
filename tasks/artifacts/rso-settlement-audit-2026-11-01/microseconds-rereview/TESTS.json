@@ -1,0 +1,63 @@
+{
+  "checks": [
+    {
+      "check": "checker-UTC",
+      "exitCode": 0,
+      "counts": {
+        "tests": 28,
+        "pass": 28,
+        "fail": 0
+      }
+    },
+    {
+      "check": "readbacks-UTC",
+      "exitCode": 0,
+      "counts": {
+        "tests": 19,
+        "pass": 19,
+        "fail": 0
+      }
+    },
+    {
+      "check": "settlement-UTC",
+      "exitCode": 0,
+      "counts": {
+        "tests": 19,
+        "pass": 19,
+        "fail": 0
+      }
+    },
+    {
+      "check": "checker-America_New_York",
+      "exitCode": 0,
+      "counts": {
+        "tests": 28,
+        "pass": 28,
+        "fail": 0
+      }
+    },
+    {
+      "check": "readbacks-America_New_York",
+      "exitCode": 0,
+      "counts": {
+        "tests": 19,
+        "pass": 19,
+        "fail": 0
+      }
+    },
+    {
+      "check": "settlement-America_New_York",
+      "exitCode": 0,
+      "counts": {
+        "tests": 19,
+        "pass": 19,
+        "fail": 0
+      }
+    }
+  ],
+  "allPassed": true,
+  "sourcePinsUnchanged": 19,
+  "productionEnvironmentAbsent": true,
+  "networkGuard": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/rso-settlement-audit-2026-11-01/network-deny.cjs",
+  "retainedToolingNotModified": true
+}

@@ -1,0 +1,605 @@
+{
+  "schemaVersion": "forge-v2-open-task-reassessment-v1",
+  "date": "2026-10-30",
+  "reportedCandidate": {
+    "code": "7113329d2",
+    "documents": "156030056",
+    "source": "Chef handoff, not newly attested full content pins"
+  },
+  "scope": "All15 open scientific/external tasks reassessed; zero completion inferred from preparation.",
+  "tasks": {
+    "2.2": {
+      "canonicalAcceptanceText": "- [ ] **2.2 Verify official appearance and PIM semantics.** Establish how sources distinguish credited appearances, legitimate zero-minute penalty appearances, dressed-unused, nonappearance, and ambiguity. Retain inspected examples or explicitly record missing evidence. Do not infer nonappearance from an absent row in an incomplete feed.",
+      "acceptanceDisposition": "OPEN; local preparation does not satisfy complete task",
+      "custodian": {
+        "establishedPerson": null,
+        "unresolvedRole": "source/data owner",
+        "note": "No exact v2 authority assignment to a named human established in inspected evidence; historical agent lanes are not data/release authority."
+      },
+      "missingArtifactOrAction": "Official-source appearance and PIM case dossier: Six owner-approved nonprotected original cases: ordinary credited appearance, credited zero-minute/penalty-only, dressed-unused, verified nonappearance, incomplete/ambiguous and game-not-played. Include raw-byte hash, canonical player/game, authoritative credit field and PIM units/rules, completeness proof, receipt/publication clocks, correction version and intended-use evidence.",
+      "whyRequired": "Establish how sources distinguish credited appearances, legitimate zero-minute penalty appearances, dressed-unused, nonappearance, and ambiguity. Retain inspected examples or explicitly record missing evidence. Do not infer nonappearance from an absent row in an incomplete feed.",
+      "priorAttemptAndEvidence": {
+        "performed": "Prior local source audit, prerequisite registry and proposal; this pass canonical acceptance/source inspection only.",
+        "finding": "Existing gameContract synthetic penalty-only case proves representability, not source semantics. Positive-TOI legacy labels are inadequate.",
+        "references": [
+          "canonical PRD FR-07 / AC-06",
+          "source-audit.json findings synthetic_appearance_contract"
+        ]
+      },
+      "authorizedLocalPreparation": {
+        "done": "Case checklist and missing-evidence account already complete; metadata intake validation owned by Chef. Actual cases cannot be generated synthetically as source proof.",
+        "scopeNote": "Where phrased possible/prepare/resolve/review, this is remaining local work, not an executed implementation. This lane completes only reassessment, critical path, and local project-link inventory; Chef owns intake/capacity preparation."
+      },
+      "smallestNextStep": "Request metadata and minimal approved cases; validate event mapping without protected labels.",
+      "dependencies": [],
+      "externalActionStatus": "not-attempted",
+      "denialOrPendingToolApproval": null,
+      "remainingEvidenceStatus": "unavailable in inspected local materials; owner/reviewer response not requested through messaging tools",
+      "originalTaskCompleted": false,
+      "acceptanceNuance": "Task text permits explicitly recording missing evidence, already done in source-audit and registry. That narrow reporting clause is satisfied; FR-07 still requires validation against official sources and task title says Verify. Do not mark the whole semantic gate closed without Chef resolving acceptance interpretation; no real source semantics established."
+    },
+    "2.4": {
+      "canonicalAcceptanceText": "- [ ] **2.4 Register data exposure and temporal allocations.** Identify already-exposed development data, genuinely untouched periods, calibration data, and prospective evidence. Preserve protected allocations and classify reconstructions honestly. Keep every target game\u2019s related observations together.",
+      "acceptanceDisposition": "OPEN; local preparation does not satisfy complete task",
+      "custodian": {
+        "establishedPerson": null,
+        "unresolvedRole": "data custodian",
+        "note": "No exact v2 authority assignment to a named human established in inspected evidence; historical agent lanes are not data/release authority."
+      },
+      "missingArtifactOrAction": "Signed exposure and allocation register: Exact dataset hashes/UTC boundaries, all actors/access/purposes/trials, whole-game grouping, training/development/calibration/final/prospective allocations, rights, counts and one-time final-label custody. Explicitly maintain 2024\u201325 excluded and 2025\u201326 reserved unless custodian issues new scope.",
+      "whyRequired": "Identify already-exposed development data, genuinely untouched periods, calibration data, and prospective evidence. Preserve protected allocations and classify reconstructions honestly. Keep every target game\u2019s related observations together.",
+      "priorAttemptAndEvidence": {
+        "performed": "Prior local source audit, prerequisite registry and proposal; this pass canonical acceptance/source inspection only.",
+        "finding": "Named local lease text independently confirms holds but provides no v2 clearance. Source audit documents absence of exposure registration.",
+        "references": [
+          "canonical PRD RV-01/RV-02/RV-05",
+          "CODEX-LEASES.json claude_blsh_dry_run_boundary_20261029"
+        ]
+      },
+      "authorizedLocalPreparation": {
+        "done": "Required exposure/custody fields enumerated; Chef owns intake validator. No actor identity or permission inferred from leases.",
+        "scopeNote": "Where phrased possible/prepare/resolve/review, this is remaining local work, not an executed implementation. This lane completes only reassessment, critical path, and local project-link inventory; Chef owns intake/capacity preparation."
+      },
+      "smallestNextStep": "Custodian reviews metadata-only manifest; no numerical rows or outcomes required to register.",
+      "dependencies": [],
+      "externalActionStatus": "not-attempted",
+      "denialOrPendingToolApproval": null,
+      "remainingEvidenceStatus": "unavailable in inspected local materials; owner/reviewer response not requested through messaging tools",
+      "originalTaskCompleted": false
+    },
+    "2.5": {
+      "canonicalAcceptanceText": "- [ ] **2.5 Freeze the experiment and qualification protocol.** Before final evaluation, specify candidate recipes, tuning budget, stopping rules, baselines, selection loss, minimum support, calibration tolerances, regression limits, dependence treatment, release scope, and missingness limits. Include the exact FR-26 vintage selector. Obtain independent methodological review before opening final results.",
+      "acceptanceDisposition": "OPEN; local preparation does not satisfy complete task",
+      "custodian": {
+        "establishedPerson": null,
+        "unresolvedRole": "scientific lead plus independent methodological reviewer",
+        "note": "No exact v2 authority assignment to a named human established in inspected evidence; historical agent lanes are not data/release authority."
+      },
+      "missingArtifactOrAction": "Frozen protocol and review receipt: Convert protocol-proposal.json into exact executable recipes/feature definitions, justified numerical thresholds and dataset/candidate/evaluator hashes. Attach independent signed review and immutable registration time before final access.",
+      "whyRequired": "Before final evaluation, specify candidate recipes, tuning budget, stopping rules, baselines, selection loss, minimum support, calibration tolerances, regression limits, dependence treatment, release scope, and missingness limits. Include the exact FR-26 vintage selector. Obtain independent methodological review before opening final results.",
+      "priorAttemptAndEvidence": {
+        "performed": "Prior local source audit, prerequisite registry and proposal; this pass canonical acceptance/source inspection only.",
+        "finding": "Concrete finite proposal now exists, but no development evidence justifies proposed thresholds; reviewer and custody pins absent.",
+        "references": [
+          "canonical PRD RV-02",
+          "protocol-proposal.json candidateBudget/dependence",
+          "web/lib/forge-v2/model.ts fitCandidate/partitionExamples"
+        ]
+      },
+      "authorizedLocalPreparation": {
+        "done": "Resolve exact source feature/window definitions, comparator interval recipe, multiplicity method and draft/code selection/availability discrepancies in a new reviewed protocol revision; independent of protected labels.",
+        "scopeNote": "Where phrased possible/prepare/resolve/review, this is remaining local work, not an executed implementation. This lane completes only reassessment, critical path, and local project-link inventory; Chef owns intake/capacity preparation."
+      },
+      "smallestNextStep": "Review proposal using authorized development metadata/evidence; resolve definitions and pins; do not mark frozen from JSON status booleans.",
+      "dependencies": [
+        "2.2",
+        "2.4"
+      ],
+      "externalActionStatus": "not-attempted",
+      "denialOrPendingToolApproval": null,
+      "remainingEvidenceStatus": "unavailable in inspected local materials; owner/reviewer response not requested through messaging tools",
+      "originalTaskCompleted": false
+    },
+    "7.1": {
+      "canonicalAcceptanceText": "- [ ] **7.1 Build the participation opportunity and label dataset.** Use independently captured eligible opportunities and distinguish official appearance, dressed-unused, nonappearance, ambiguity, and game cancellation. Preserve prior trade-related predictions instead of removing difficult examples.",
+      "acceptanceDisposition": "OPEN; local preparation does not satisfy complete task",
+      "custodian": {
+        "establishedPerson": null,
+        "unresolvedRole": "data/source owner",
+        "note": "No exact v2 authority assignment to a named human established in inspected evidence; historical agent lanes are not data/release authority."
+      },
+      "missingArtifactOrAction": "Immutable independent opportunity and label manifest: Capture all eligible player/game opportunities independently of inference success, including injury/reserve/call-up, trades and unresolved identity/affiliation. Bind effective versus receipt clocks, complete schedule episodes and official outcome states. Include cancellation and ambiguous dispositions with counts.",
+      "whyRequired": "Use independently captured eligible opportunities and distinguish official appearance, dressed-unused, nonappearance, ambiguity, and game cancellation. Preserve prior trade-related predictions instead of removing difficult examples.",
+      "priorAttemptAndEvidence": {
+        "performed": "Prior local source audit, prerequisite registry and proposal; this pass canonical acceptance/source inspection only.",
+        "finding": "NativeParticipationFrame and v2 contracts support supplied populations; no complete authorized real population furnished.",
+        "references": [
+          "canonical PRD FR-01/FR-05/FR-07/FR-08",
+          "source-audit.json roster_affiliation"
+        ]
+      },
+      "authorizedLocalPreparation": {
+        "done": "Opportunity/label contracts and existing synthetic cases reusable; Chef intake work can reject incomplete metadata. Real population still required.",
+        "scopeNote": "Where phrased possible/prepare/resolve/review, this is remaining local work, not an executed implementation. This lane completes only reassessment, critical path, and local project-link inventory; Chef owns intake/capacity preparation."
+      },
+      "smallestNextStep": "Supply an owner-approved finite nonprotected dataset manifest, then build locally only after explicit data scope clearance.",
+      "dependencies": [
+        "2.2",
+        "2.4"
+      ],
+      "externalActionStatus": "not-attempted",
+      "denialOrPendingToolApproval": null,
+      "remainingEvidenceStatus": "unavailable in inspected local materials; owner/reviewer response not requested through messaging tools",
+      "originalTaskCompleted": false
+    },
+    "7.3": {
+      "canonicalAcceptanceText": "- [ ] **7.3 Calibrate and evaluate participation.** Fit and calibrate on approved chronological partitions; report reliability, Brier/log loss, support, exclusions, and sparse-cohort limitations. Keep unqualified percentages private. Final qualification uses the frozen independent evaluation process.",
+      "acceptanceDisposition": "OPEN; local preparation does not satisfy complete task",
+      "custodian": {
+        "establishedPerson": null,
+        "unresolvedRole": "participation scientist",
+        "note": "No exact v2 authority assignment to a named human established in inspected evidence; historical agent lanes are not data/release authority."
+      },
+      "missingArtifactOrAction": "Chronological participation calibration and evaluation receipt: Admitted hashes, fixed recipe/binning, all trials, fitted/available/dependency times, reliability/Brier/log loss, paired baselines, exclusions, support and uncertainty by frozen H/cohort. Separate development from final claims.",
+      "whyRequired": "Fit and calibrate on approved chronological partitions; report reliability, Brier/log loss, support, exclusions, and sparse-cohort limitations. Keep unqualified percentages private. Final qualification uses the frozen independent evaluation process.",
+      "priorAttemptAndEvidence": {
+        "performed": "Prior local source audit, prerequisite registry and proposal; this pass canonical acceptance/source inspection only.",
+        "finding": "Kernel/bin fitter exists and declares development_only; no real calibration evidence inspected.",
+        "references": [
+          "canonical PRD FR-08/AC-14",
+          "web/lib/forge-v2/participation.ts fitParticipation"
+        ]
+      },
+      "authorizedLocalPreparation": {
+        "done": "Prepare fixed-bin/reliability output contract and synthetic verification after scientific method is agreed; no new real fitting authorized.",
+        "scopeNote": "Where phrased possible/prepare/resolve/review, this is remaining local work, not an executed implementation. This lane completes only reassessment, critical path, and local project-link inventory; Chef owns intake/capacity preparation."
+      },
+      "smallestNextStep": "After clearance, execute single registered participation recipe on allowed train/calibration inputs; final access remains separate.",
+      "dependencies": [
+        "2.5",
+        "7.1"
+      ],
+      "externalActionStatus": "not-attempted",
+      "denialOrPendingToolApproval": null,
+      "remainingEvidenceStatus": "unavailable in inspected local materials; owner/reviewer response not requested through messaging tools",
+      "originalTaskCompleted": false
+    },
+    "8.3": {
+      "canonicalAcceptanceText": "- [ ] **8.3 Fit and validate interval calibration.** Follow the frozen chronology and recipe budget. Evaluate both interval levels, discrete outcomes, width, proper interval scores, and support across horizons/cohorts. Never add marginal quantiles to create FP intervals.",
+      "acceptanceDisposition": "OPEN; local preparation does not satisfy complete task",
+      "custodian": {
+        "establishedPerson": null,
+        "unresolvedRole": "uncertainty scientist",
+        "note": "No exact v2 authority assignment to a named human established in inspected evidence; historical agent lanes are not data/release authority."
+      },
+      "missingArtifactOrAction": "Immutable interval calibration artifacts and diagnostic table: Whole-vector dependence, profile identities, train/calibration chronology, both 50/90 coverage/width/proper scores, discrete handling, support per H/cohort/profile and deterministic archive reproduction; retain all misses.",
+      "whyRequired": "Follow the frozen chronology and recipe budget. Evaluate both interval levels, discrete outcomes, width, proper interval scores, and support across horizons/cohorts. Never add marginal quantiles to create FP intervals.",
+      "priorAttemptAndEvidence": {
+        "performed": "Prior local source audit, prerequisite registry and proposal; this pass canonical acceptance/source inspection only.",
+        "finding": "Empirical joint and tail-padding arithmetic exists; code alone does not calibrate real intervals or signed FP.",
+        "references": [
+          "canonical PRD RV-04/AC-14",
+          "web/lib/forge-v2/uncertainty.ts fitIntervalCalibration"
+        ]
+      },
+      "authorizedLocalPreparation": {
+        "done": "Specify comparator interval construction and staged model/calibration availability before implementation; existing tail-padding arithmetic is not evidence of calibration.",
+        "scopeNote": "Where phrased possible/prepare/resolve/review, this is remaining local work, not an executed implementation. This lane completes only reassessment, critical path, and local project-link inventory; Chef owns intake/capacity preparation."
+      },
+      "smallestNextStep": "Run the one registered calibrator only on authorized calibration allocation after candidate selection; verify applicable artifacts locally.",
+      "dependencies": [
+        "2.5",
+        "7.1"
+      ],
+      "externalActionStatus": "not-attempted",
+      "denialOrPendingToolApproval": null,
+      "remainingEvidenceStatus": "unavailable in inspected local materials; owner/reviewer response not requested through messaging tools",
+      "originalTaskCompleted": false
+    },
+    "8.5": {
+      "canonicalAcceptanceText": "- [ ] **8.5 Produce complete development diagnostics.** Report coverage, width, proper scores, missingness, baseline comparisons, and all registered trials, including failures. Freeze the candidate and proposed contiguous release scope before untouched final assessment; do not promote from fixture or development results.",
+      "acceptanceDisposition": "OPEN; local preparation does not satisfy complete task",
+      "custodian": {
+        "establishedPerson": null,
+        "unresolvedRole": "scientific lead",
+        "note": "No exact v2 authority assignment to a named human established in inspected evidence; historical agent lanes are not data/release authority."
+      },
+      "missingArtifactOrAction": "Complete development trial ledger and candidate freeze: All three proposed mean recipes including failed/unavailable trials, common paired losses/denominators, missingness, participation/interval results, selected recipe, exact transforms, cohorts, profiles and contiguous release scope frozen before final.",
+      "whyRequired": "Report coverage, width, proper scores, missingness, baseline comparisons, and all registered trials, including failures. Freeze the candidate and proposed contiguous release scope before untouched final assessment; do not promote from fixture or development results.",
+      "priorAttemptAndEvidence": {
+        "performed": "Prior local source audit, prerequisite registry and proposal; this pass canonical acceptance/source inspection only.",
+        "finding": "Fixture diagnostics and deterministic fit selection are not a real development experiment ledger.",
+        "references": [
+          "canonical PRD RV-02/RV-03/RV-06",
+          "web/lib/forge-v2/model.ts fitCandidate"
+        ]
+      },
+      "authorizedLocalPreparation": {
+        "done": "Make an all-trial diagnostics specification aligned to actual candidate selection; synthetic schema validation possible. No development results can be supplied without approved data.",
+        "scopeNote": "Where phrased possible/prepare/resolve/review, this is remaining local work, not an executed implementation. This lane completes only reassessment, critical path, and local project-link inventory; Chef owns intake/capacity preparation."
+      },
+      "smallestNextStep": "On authorized development data run finite registered budget; freeze H1 proposal or a development-justified contiguous range before final access.",
+      "dependencies": [
+        "2.5",
+        "7.3",
+        "8.3"
+      ],
+      "externalActionStatus": "not-attempted",
+      "denialOrPendingToolApproval": null,
+      "remainingEvidenceStatus": "unavailable in inspected local materials; owner/reviewer response not requested through messaging tools",
+      "originalTaskCompleted": false
+    },
+    "13.2": {
+      "canonicalAcceptanceText": "- [ ] **13.2 Measure capacity and retrieval performance.** Benchmark full-universe daily generation, worst-case event fan-out, queue recovery, row/byte growth, permanent-history retention, archive retrieval, API pagination, and representative mobile/desktop rendering. Set explicit operating limits from measurements; reject budgets that consume v1/RSO reservations.",
+      "acceptanceDisposition": "OPEN; local preparation does not satisfy complete task",
+      "custodian": {
+        "establishedPerson": null,
+        "unresolvedRole": "operations and storage owners",
+        "note": "No exact v2 authority assignment to a named human established in inspected evidence; historical agent lanes are not data/release authority."
+      },
+      "missingArtifactOrAction": "Representative measured capacity and retention manifest: Real-model full-universe daily and maximum material fanout, queue recovery, API/UI payload/latency, rows/bytes growth, archive restore latency, permanent retention plan, CPU/memory/request/storage limits, costs and v1/RSO reservations. Include measurement environment and exact population/candidate hashes.",
+      "whyRequired": "Benchmark full-universe daily generation, worst-case event fan-out, queue recovery, row/byte growth, permanent-history retention, archive retrieval, API pagination, and representative mobile/desktop rendering. Set explicit operating limits from measurements; reject budgets that consume v1/RSO reservations.",
+      "priorAttemptAndEvidence": {
+        "performed": "Prior local source audit, prerequisite registry and proposal; this pass canonical acceptance/source inspection only.",
+        "finding": "Runbook synthetic 1200 x 10/five-row-model timings and illustrative 365-day row arithmetic are measurements of fixtures only.",
+        "references": [
+          "canonical PRD Reliability and operating gates",
+          "implementation RUNBOOK.md Capacity observations, not production limits"
+        ]
+      },
+      "authorizedLocalPreparation": {
+        "done": "Chef is preparing synthetic representative capacity evidence; distinguish it from real-model hosted capacity, retention ownership and actual reservations.",
+        "scopeNote": "Where phrased possible/prepare/resolve/review, this is remaining local work, not an executed implementation. This lane completes only reassessment, critical path, and local project-link inventory; Chef owns intake/capacity preparation."
+      },
+      "smallestNextStep": "Owner approves bounded local real-data benchmark after source clearance; measure isolated representative workload before choosing hosted caps. No production load test.",
+      "dependencies": [
+        "8.5"
+      ],
+      "externalActionStatus": "not-attempted",
+      "denialOrPendingToolApproval": null,
+      "remainingEvidenceStatus": "unavailable in inspected local materials; owner/reviewer response not requested through messaging tools",
+      "originalTaskCompleted": false
+    },
+    "13.4": {
+      "canonicalAcceptanceText": "- [ ] **13.4 Obtain independent implementation and scientific review.** Review actual artifacts, provenance, publication timing, immutable history, qualification logic, and the frozen protocol. Run the authorized untouched evaluation only after candidate/protocol pins are frozen and data custody is cleared. Preserve all results; a failed final evaluation does not authorize tuning against it and retrying.",
+      "acceptanceDisposition": "OPEN; local preparation does not satisfy complete task",
+      "custodian": {
+        "establishedPerson": null,
+        "unresolvedRole": "independent implementation reviewer and scientific reviewer/custodian",
+        "note": "No exact v2 authority assignment to a named human established in inspected evidence; historical agent lanes are not data/release authority."
+      },
+      "missingArtifactOrAction": "Hash-bound independent review plus one-time untouched evaluation: Separate implementation findings/dispositions from methodology acceptance; review actual source/candidate/protocol/artifact pins and authorized untouched manifest. Record access/execution once, all results, failure handling and no retuning.",
+      "whyRequired": "Review actual artifacts, provenance, publication timing, immutable history, qualification logic, and the frozen protocol. Run the authorized untouched evaluation only after candidate/protocol pins are frozen and data custody is cleared. Preserve all results; a failed final evaluation does not authorize tuning against it and retrying.",
+      "priorAttemptAndEvidence": {
+        "performed": "Prior local source audit, prerequisite registry and proposal; this pass canonical acceptance/source inspection only.",
+        "finding": "Existing implementation review receipts cannot certify science; no cleared untouched period or accepted scientific freeze exists.",
+        "references": [
+          "canonical PRD RV-02/AC-14",
+          "scientific-prerequisites.json 13.4"
+        ]
+      },
+      "authorizedLocalPreparation": {
+        "done": "Independent source/methodology review can begin on pinned code and draft without labels; final evaluation cannot. Preserve existing implementation review receipts.",
+        "scopeNote": "Where phrased possible/prepare/resolve/review, this is remaining local work, not an executed implementation. This lane completes only reassessment, critical path, and local project-link inventory; Chef owns intake/capacity preparation."
+      },
+      "smallestNextStep": "Review proposal and code independently now; final evaluation waits for named custody and exact bounded access approval.",
+      "dependencies": [
+        "2.5",
+        "8.5"
+      ],
+      "externalActionStatus": "not-attempted",
+      "denialOrPendingToolApproval": null,
+      "remainingEvidenceStatus": "unavailable in inspected local materials; owner/reviewer response not requested through messaging tools",
+      "originalTaskCompleted": false
+    },
+    "14.1": {
+      "canonicalAcceptanceText": "- [ ] **14.1 Prepare the bounded shadow-operation approval packet.** Specify exact candidate hashes, environment, data scope, clocks, source access, scheduling, concurrency, runtime, storage, costs/unknowns, monitoring, and stop conditions. Reuse existing inputs and preserve provider limits and data holds.",
+      "acceptanceDisposition": "OPEN; local preparation does not satisfy complete task",
+      "custodian": {
+        "establishedPerson": null,
+        "unresolvedRole": "environment/resource owner and approver",
+        "note": "No exact v2 authority assignment to a named human established in inspected evidence; historical agent lanes are not data/release authority."
+      },
+      "missingArtifactOrAction": "Exact bounded shadow approval packet: Fill every null field in protocol-proposal.json/shadowApprovalPackage: candidate/source/model/calibration hashes, named environment/service owner/private paths, exact dates/IDs, measured caps, costs/reservations, producer authority, clocks, stop/settlement plan and approval signature.",
+      "whyRequired": "Specify exact candidate hashes, environment, data scope, clocks, source access, scheduling, concurrency, runtime, storage, costs/unknowns, monitoring, and stop conditions. Reuse existing inputs and preserve provider limits and data holds.",
+      "priorAttemptAndEvidence": {
+        "performed": "Prior local source audit, prerequisite registry and proposal; this pass canonical acceptance/source inspection only.",
+        "finding": "Finite proposed caps now present; hosted target, scientific candidate, resource measurements and authorization absent.",
+        "references": [
+          "canonical task14.1",
+          "protocol-proposal.json shadowApprovalPackage"
+        ]
+      },
+      "authorizedLocalPreparation": {
+        "done": "Chef can populate exact code pins and metadata intake; local project-link findings below reduce target ambiguity but cannot name approved environment or owner.",
+        "scopeNote": "Where phrased possible/prepare/resolve/review, this is remaining local work, not an executed implementation. This lane completes only reassessment, critical path, and local project-link inventory; Chef owns intake/capacity preparation."
+      },
+      "smallestNextStep": "Chef pins final local code; owner supplies environment/data/cost details and validated limits; submit completed packet for explicit authorization. Draft alone cannot close exact-packet task.",
+      "dependencies": [
+        "13.2",
+        "13.4"
+      ],
+      "externalActionStatus": "not-attempted",
+      "denialOrPendingToolApproval": null,
+      "remainingEvidenceStatus": "unavailable in inspected local materials; owner/reviewer response not requested through messaging tools",
+      "originalTaskCompleted": false
+    },
+    "14.2": {
+      "canonicalAcceptanceText": "- [ ] **14.2 Run authorized prospective shadow capture and settlement.** Capture genuinely issued forecasts and immutable artifacts, measure freshness and failures, and settle outcomes. Do not backfill missed issuance as live history. Remain within approved bounds.",
+      "acceptanceDisposition": "OPEN; local preparation does not satisfy complete task",
+      "custodian": {
+        "establishedPerson": null,
+        "unresolvedRole": "authorized shadow operator",
+        "note": "No exact v2 authority assignment to a named human established in inspected evidence; historical agent lanes are not data/release authority."
+      },
+      "missingArtifactOrAction": "Prospective issuance/settlement receipts: Only future genuine issuance with exact committed readback proof before lock/actual start, all due opportunities/misses, artifacts/outcomes/corrections, freshness, measured costs and stop receipts within approved finite scope.",
+      "whyRequired": "Capture genuinely issued forecasts and immutable artifacts, measure freshness and failures, and settle outcomes. Do not backfill missed issuance as live history. Remain within approved bounds.",
+      "priorAttemptAndEvidence": {
+        "performed": "Prior local source audit, prerequisite registry and proposal; this pass canonical acceptance/source inspection only.",
+        "finding": "No live prospective evidence collected; current prepared producer only admits fixture/reconstruction classes.",
+        "references": [
+          "canonical PRD FR-12/FR-13",
+          "web/lib/forge-v2/pipeline.server.ts:134/180/242"
+        ]
+      },
+      "authorizedLocalPreparation": {
+        "done": "Review/design prospective-authority producer separately with fake-clock/commit readback cases; preserve current fixture/reconstruction fence until reviewed implementation. No live issuance permitted.",
+        "scopeNote": "Where phrased possible/prepare/resolve/review, this is remaining local work, not an executed implementation. This lane completes only reassessment, critical path, and local project-link inventory; Chef owns intake/capacity preparation."
+      },
+      "smallestNextStep": "First review prospective producer wiring; after explicit approved packet run once. Never relabel reconstructed or synthetic records.",
+      "dependencies": [
+        "14.1"
+      ],
+      "externalActionStatus": "not-attempted",
+      "denialOrPendingToolApproval": null,
+      "remainingEvidenceStatus": "unavailable in inspected local materials; owner/reviewer response not requested through messaging tools",
+      "originalTaskCompleted": false
+    },
+    "14.3": {
+      "canonicalAcceptanceText": "- [ ] **14.3 Produce the qualified-subset decision.** Combine independently reviewed untouched and prospective evidence. Name the contiguous H1\u2013Hk range, population support, contributing categories, default FP, participation, both intervals, and supported custom profiles. Require all nonzero-weight categories in each profile\u2019s joint distribution; disclose unsupported scope and every failed gate.",
+      "acceptanceDisposition": "OPEN; local preparation does not satisfy complete task",
+      "custodian": {
+        "establishedPerson": null,
+        "unresolvedRole": "independent qualification reviewer",
+        "note": "No exact v2 authority assignment to a named human established in inspected evidence; historical agent lanes are not data/release authority."
+      },
+      "missingArtifactOrAction": "Qualified subset or no-qualified-subset decision: Prespecified contiguous H1\u2013Hk, cohorts, default FP and all six contributing category means/joint coverage, qualified participation and 50/90 intervals, signed profiles only if separately supported. Bind unchanged freeze and separate untouched/prospective reports with every failed gate.",
+      "whyRequired": "Combine independently reviewed untouched and prospective evidence. Name the contiguous H1\u2013Hk range, population support, contributing categories, default FP, participation, both intervals, and supported custom profiles. Require all nonzero-weight categories in each profile\u2019s joint distribution; disclose unsupported scope and every failed gate.",
+      "priorAttemptAndEvidence": {
+        "performed": "Prior local source audit, prerequisite registry and proposal; this pass canonical acceptance/source inspection only.",
+        "finding": "Current supported decision remains no qualified subset; neither real evidence class is available.",
+        "references": [
+          "canonical PRD Two readiness states / RV-06",
+          "scientific-prerequisites.json14.3"
+        ]
+      },
+      "authorizedLocalPreparation": {
+        "done": "Predeclare machine-readable matrix and fail-closed no-qualified-subset report; real evidence still mandatory for task acceptance.",
+        "scopeNote": "Where phrased possible/prepare/resolve/review, this is remaining local work, not an executed implementation. This lane completes only reassessment, critical path, and local project-link inventory; Chef owns intake/capacity preparation."
+      },
+      "smallestNextStep": "Keep unavailable gate; evaluate prespecified scope only when both evidence reports exist. Do not shorten k after final outcomes to find flattering slice.",
+      "dependencies": [
+        "13.4",
+        "14.2"
+      ],
+      "externalActionStatus": "not-attempted",
+      "denialOrPendingToolApproval": null,
+      "remainingEvidenceStatus": "unavailable in inspected local materials; owner/reviewer response not requested through messaging tools",
+      "originalTaskCompleted": false
+    },
+    "14.4": {
+      "canonicalAcceptanceText": "- [ ] **14.4 Prepare and execute an approved public subset release.** Obtain exact candidate/environment approval, inventory linked build effects, reuse an eligible deployment where available, and use the bounded approved smoke plan. Verify public labels, qualification enforcement, history, artifacts, and rollback.",
+      "acceptanceDisposition": "OPEN; local preparation does not satisfy complete task",
+      "custodian": {
+        "establishedPerson": null,
+        "unresolvedRole": "release owner and user approver",
+        "note": "No exact v2 authority assignment to a named human established in inspected evidence; historical agent lanes are not data/release authority."
+      },
+      "missingArtifactOrAction": "Exact public release approval/build inventory/smoke receipt: Candidate SHA/environment/project/branch, every linked project/root/trigger/ignored-build effect, existing exact-SHA deployment check, qualified scope, rollback and at-most-five sequential read-only route plan. Separate approval for any new deployment.",
+      "whyRequired": "Obtain exact candidate/environment approval, inventory linked build effects, reuse an eligible deployment where available, and use the bounded approved smoke plan. Verify public labels, qualification enforcement, history, artifacts, and rollback.",
+      "priorAttemptAndEvidence": {
+        "performed": "Prior local source audit, prerequisite registry and proposal; this pass canonical acceptance/source inspection only.",
+        "finding": "Public serving is disabled; no release/build authorization or qualified candidate.",
+        "references": [
+          "AGENTS.md Vercel Usage and Cost Controls",
+          "local .vercel/project.json, web/.vercel/project.json, functions/.vercel/project.json"
+        ]
+      },
+      "authorizedLocalPreparation": {
+        "done": "Local project-link inventory completed; draft route smoke/rollback plan can be prepared without invoking routes. Remote trigger/build inventory remains absent.",
+        "scopeNote": "Where phrased possible/prepare/resolve/review, this is remaining local work, not an executed implementation. This lane completes only reassessment, critical path, and local project-link inventory; Chef owns intake/capacity preparation."
+      },
+      "smallestNextStep": "Prepare inventory from permitted local metadata; after qualification obtain explicit current-task remote authorization before hosted inspection/action as applicable.",
+      "dependencies": [
+        "14.3"
+      ],
+      "externalActionStatus": "not-attempted",
+      "denialOrPendingToolApproval": null,
+      "remainingEvidenceStatus": "unavailable in inspected local materials; owner/reviewer response not requested through messaging tools",
+      "originalTaskCompleted": false
+    },
+    "14.5": {
+      "canonicalAcceptanceText": "- [ ] **14.5 Complete full-v2 qualification.** Close outstanding category and horizon gates through separately registered work and fresh evidence. Full-v2 completion requires all seven categories and H1\u2013H10; a successful subset release does not check this task.",
+      "acceptanceDisposition": "OPEN; local preparation does not satisfy complete task",
+      "custodian": {
+        "establishedPerson": null,
+        "unresolvedRole": "scientific lead and independent reviewer",
+        "note": "No exact v2 authority assignment to a named human established in inspected evidence; historical agent lanes are not data/release authority."
+      },
+      "missingArtifactOrAction": "Full seven-category by H1\u2013H10 qualification matrix: Every G/A/PPP/SOG/HIT/BLK/PIM x H1..H10 x claimed cohort cell meets frozen support, MSE regression, intervals, participation, missingness, joint custom-profile and archive gates. Fresh preregistered evidence for expansion; subset success insufficient.",
+      "whyRequired": "Close outstanding category and horizon gates through separately registered work and fresh evidence. Full-v2 completion requires all seven categories and H1\u2013H10; a successful subset release does not check this task.",
+      "priorAttemptAndEvidence": {
+        "performed": "Prior local source audit, prerequisite registry and proposal; this pass canonical acceptance/source inspection only.",
+        "finding": "No real category/horizon cell qualified. PIM and distant-horizon support remain unestablished.",
+        "references": [
+          "canonical PRD Full v2 / RV-04",
+          "canonical task14.5"
+        ]
+      },
+      "authorizedLocalPreparation": {
+        "done": "Predeclare 7 x 10 x claimed-cohort/profile matrix and fresh-evidence expansion rule; do not condition gate choices on final outcomes.",
+        "scopeNote": "Where phrased possible/prepare/resolve/review, this is remaining local work, not an executed implementation. This lane completes only reassessment, critical path, and local project-link inventory; Chef owns intake/capacity preparation."
+      },
+      "smallestNextStep": "Register a separate finite expansion protocol and genuinely fresh evidence after initial result; never reuse opened final labels as untouched.",
+      "dependencies": [
+        "14.3"
+      ],
+      "externalActionStatus": "not-attempted",
+      "denialOrPendingToolApproval": null,
+      "remainingEvidenceStatus": "unavailable in inspected local materials; owner/reviewer response not requested through messaging tools",
+      "originalTaskCompleted": false
+    },
+    "14.6": {
+      "canonicalAcceptanceText": "- [ ] **14.6 Complete RSO-owner acceptance and separately approved activation.** Confirm requested RSO scopes are supported, preserve displayed-forecast receipts, verify side-by-side behavior, and execute the owner-approved reversible rollout. No public v2 release automatically enables RSO.",
+      "acceptanceDisposition": "OPEN; local preparation does not satisfy complete task",
+      "custodian": {
+        "establishedPerson": null,
+        "unresolvedRole": "RSO consumer owner and separate rollout approver",
+        "note": "No exact v2 authority assignment to a named human established in inspected evidence; historical agent lanes are not data/release authority."
+      },
+      "missingArtifactOrAction": "Owner-accepted consumer diff, actual-display lineage and activation receipt: Exact shared file transfer/change review; qualified matching player/game/profile/conditioning/cutoff scopes, one-time participation, side-by-side old/disabled candidate fixtures, stored->bridge->served->actual display receipt IDs/values/hashes/timestamps, bounded enable/rollback approval.",
+      "whyRequired": "Confirm requested RSO scopes are supported, preserve displayed-forecast receipts, verify side-by-side behavior, and execute the owner-approved reversible rollout. No public v2 release automatically enables RSO.",
+      "priorAttemptAndEvidence": {
+        "performed": "Prior local source audit, prerequisite registry and proposal; this pass canonical acceptance/source inspection only.",
+        "finding": "Runbook names source-selector/planning/bridge/component seams; isolated adapter and synthetic display receipts do not establish real consumer acceptance.",
+        "references": [
+          "canonical PRD FR-24 / AC-17",
+          "web/lib/forge-v2/integration.ts disabledRsoAdapter",
+          "implementation RUNBOOK.md Disabled RSO consumer acceptance package"
+        ]
+      },
+      "authorizedLocalPreparation": {
+        "done": "Existing disabled seam/receipt package reusable; owner-role assignment and exact shared-file transfer needed before consumer edits.",
+        "scopeNote": "Where phrased possible/prepare/resolve/review, this is remaining local work, not an executed implementation. This lane completes only reassessment, critical path, and local project-link inventory; Chef owns intake/capacity preparation."
+      },
+      "smallestNextStep": "Owner reviews disabled integration package now; keep shared files and activation unchanged until transfer, qualification and separate approval.",
+      "dependencies": [
+        "14.3"
+      ],
+      "externalActionStatus": "not-attempted",
+      "denialOrPendingToolApproval": null,
+      "remainingEvidenceStatus": "unavailable in inspected local materials; owner/reviewer response not requested through messaging tools",
+      "originalTaskCompleted": false
+    }
+  },
+  "localIssuesAndOrdering": [
+    {
+      "id": "SEQ-1",
+      "type": "prerequisite_cycle_in_draft",
+      "tasks": [
+        "2.5",
+        "8.5"
+      ],
+      "finding": "Numerical final thresholds need development evidence, while development work references frozen protocol.",
+      "resolution": "Separate preregistered bounded development protocol from independently reviewed final qualification freeze. Development approval fixes permissible trials/access; final freeze fixes justified gates/candidate before final labels. Never use final results to justify thresholds."
+    },
+    {
+      "id": "SEQ-2",
+      "type": "prospective_vs_qualification_cycle_to_avoid",
+      "tasks": [
+        "14.1",
+        "14.2",
+        "14.3"
+      ],
+      "finding": "Prospective evidence is needed for qualification; requiring completed public qualification before private shadow would deadlock.",
+      "resolution": "Authorize private, unqualified, isolated shadow only after source/protocol/candidate/readiness clearance; public and RSO remain unavailable. Do not require14.3 as prerequisite for14.2."
+    },
+    {
+      "id": "DRAFT-1",
+      "type": "independently_fixable_definition_gap",
+      "tasks": [
+        "2.5",
+        "8.3"
+      ],
+      "finding": "Feature history windows/source mappings and baseline predictive-interval recipe unspecified; multiplicity offers max-statistic OR Holm.",
+      "resolution": "Choose exact formulas/windows/quantiles/interval baseline/multiplicity and test frozen arithmetic with synthetic inputs; require reviewer acceptance. Old proposal preserved unchanged."
+    },
+    {
+      "id": "DRAFT-2",
+      "type": "independently_fixable_code_protocol_mismatch",
+      "tasks": [
+        "2.5",
+        "8.5"
+      ],
+      "finding": "Draft uses common intersection with both baselines and tolerance1e-12 ties; fitCandidate requires complete requested candidate predictions and exact MSE sorting, without baseline intersection.",
+      "resolution": "Choose one predeclared rule then align reviewed code/protocol and synthetic diagnostics. Neither current path is accepted as scientific selection merely because it exists."
+    },
+    {
+      "id": "DRAFT-3",
+      "type": "chronology_review_required",
+      "tasks": [
+        "2.5",
+        "8.3"
+      ],
+      "finding": "partitionExamples orders calibrationEndAt before fitAt, and model availability follows fitAt. Thus selected fitted model cannot be available at calibration cutoffs in that same protocol period.",
+      "resolution": "Feasible existing-code staged path: mean fit uses only train+development with an empty calibration metadata interval, then collects distinct post-model-availableAt interval observations under a separate CalibrationProtocol and fits calibrator later. Chef prepares synthetic proof. Same-period earlier draft mismatch remains until methods appendix review; no backdating or guard relaxation."
+    },
+    {
+      "id": "IMPL-1",
+      "type": "independently_fixable_design_then_review",
+      "tasks": [
+        "14.1",
+        "14.2"
+      ],
+      "finding": "pipeline.server.ts only accepts fixture/retrospective_reconstruction and rejects prospective/public classes.",
+      "resolution": "Design explicit authority-bound prospective producer with committed readback proof, finite bounds and isolated private output. Review/test locally before authorized operation; simply changing class string is invalid."
+    },
+    {
+      "id": "SCOPE-1",
+      "type": "shadow_sample_insufficient_for_scientific_gate",
+      "tasks": [
+        "14.2",
+        "14.3",
+        "14.5"
+      ],
+      "finding": "20-skater/14-day shadow caps cannot meet proposal minimum100 distinct players per scientific cell.",
+      "resolution": "Treat this shadow as operational readiness only. Before claiming prospective scientific qualification, independently predeclare adequately powered fresh observation scope and obtain a separate bounded approval. Do not lower thresholds after seeing results or silently enlarge packet."
+    }
+  ],
+  "localDeploymentMetadata": [
+    {
+      "path": ".vercel/project.json",
+      "exists": true,
+      "projectId": "prj_LV0wbwH5gRjOsZlowzEFNGRuX7Lw",
+      "projectName": "fhfhockey",
+      "observation": "Local link only; no live configuration, root directory, git trigger, ignored-build setting or environment approval established."
+    },
+    {
+      "path": "web/.vercel/project.json",
+      "exists": true,
+      "projectId": "prj_LV0wbwH5gRjOsZlowzEFNGRuX7Lw",
+      "projectName": "fhfhockey",
+      "observation": "Local link only; no live configuration, root directory, git trigger, ignored-build setting or environment approval established."
+    },
+    {
+      "path": "cms/.vercel/project.json",
+      "exists": false,
+      "projectId": null,
+      "projectName": null,
+      "observation": "Local link only; no live configuration, root directory, git trigger, ignored-build setting or environment approval established."
+    },
+    {
+      "path": "functions/.vercel/project.json",
+      "exists": true,
+      "projectId": "prj_q9tnoe1pF6WAe9zPcBzBLBPZx5mQ",
+      "projectName": "functions-fhfhockey",
+      "observation": "Local link only; no live configuration, root directory, git trigger, ignored-build setting or environment approval established."
+    }
+  ],
+  "deploymentConclusion": "Two distinct locally linked project IDs; root/web duplicate same ID. Absent CMS file does not prove no linked CMS project. Exact root/branch/ignored-build/integration inventory still required before any authorized publish.",
+  "criticalPath": "CRITICAL-PATH.md",
+  "verification": {
+    "applicationTests": "not run as instructed",
+    "protectedRowsOpened": false,
+    "remoteCalls": 0,
+    "messagesToExternalThreads": 0,
+    "deployments": 0,
+    "oldProtocolEdited": false,
+    "jsonAndCoverage": "passed: JSON parses; all15 IDs present and open; previous reviewed artifact hashes unchanged"
+  },
+  "priorArtifactHashes": {
+    "scientific-prerequisites.json": "9440a89703b7e174303cc1fbcb9730bbd7ad36d4c27227ba663735ad2db3ecfc",
+    "protocol-proposal.json": "6bf518f5cd016fe6c14db886f5f967ecd422119084c7e499d7911bb4b899219a"
+  },
+  "methodsAppendix": "protocol-methods-draft.json; DRAFT_NOT_FROZEN, exact proposed current-code selection and staged chronology, feature/window definitions; provider mappings and method choices unresolved"
+}

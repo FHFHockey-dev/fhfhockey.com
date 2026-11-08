@@ -1,0 +1,18 @@
+{
+  "preview.html": {
+    "bytes": 3123706,
+    "sha256": "ecd560310b358ebd0521574967a480cab1521946c9d42d5f33341fcc57a5187a"
+  },
+  "serve-preview.mjs": {
+    "bytes": 1436,
+    "sha256": "68c9ebeb770cebf819d5f0af370a56c0ef4d073a94cc4c9c9c16138fc995eab4"
+  },
+  "priorFunctional": {
+    "bytes": 318626,
+    "sha256": "6c29f6eb3dc6ffc9a6a8a546423f78ac3e6e5e1e7265129475724422d3aad9b5"
+  },
+  "priorEditorial": {
+    "bytes": 314484,
+    "sha256": "f65ce654f1e1e7ab226aa01e95617d925608d8d590fbd65d5bbaa85b324e05a5"
+  }
+}

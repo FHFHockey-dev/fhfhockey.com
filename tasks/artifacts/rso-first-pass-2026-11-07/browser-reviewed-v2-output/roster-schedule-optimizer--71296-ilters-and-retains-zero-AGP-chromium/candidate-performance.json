@@ -1,0 +1,17 @@
+[
+  {
+    "elapsedMs": 4377.399999991059,
+    "ticks": 217,
+    "maxGapMs": 49.900000005960464,
+    "search": {
+      "evaluated": 160,
+      "maxEvaluations": 160,
+      "candidates": 40,
+      "eligibleCandidates": 999,
+      "maxCandidates": 40,
+      "maxProposalsPerCandidate": 12,
+      "complete": false
+    },
+    "evaluated": 40
+  }
+]

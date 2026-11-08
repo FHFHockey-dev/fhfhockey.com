@@ -1,0 +1,18 @@
+{
+  "id": "CODEX-PLAYER-CARDS-OBSERVED-EXPORT-20261026",
+  "at": "2026-10-26T16:19:02.714615+00:00",
+  "owner_thread": "01a16ec2-f81c-717b-8961-8c3832fdc00f",
+  "status": "Active bounded qualified observed PNG path; actual incomplete capture remains blocked",
+  "source_paths": [
+    "web/lib/player-cards/observedExport.ts",
+    "web/lib/player-cards/observedExport.test.ts",
+    "web/lib/player-cards/shareExport.ts"
+  ],
+  "baseline_sha256": {
+    "web/lib/player-cards/observedExport.ts": null,
+    "web/lib/player-cards/observedExport.test.ts": null,
+    "web/lib/player-cards/shareExport.ts": "fd5d5081e35522cea8b33e5c8d697b0a304fe666de461f0e30967fe2eac4f435"
+  },
+  "scope": "Reuse existing SVG rasterizer with unchanged hero assertions; observed snapshot guard, missingGP/TOI/value blocks, focused tests/fixture-only positive browser control; no sharedsocial/auth/route/live/realadmission change",
+  "artifact_root": "tasks/artifacts/player-cards-2026-10-26/observed-view-01/"
+}

@@ -1,0 +1,21 @@
+{
+  "audit": {
+    "web/lib/cron/withCronJobAudit.ts": true,
+    "web/lib/cron/withCronJobAudit.test.ts": true
+  },
+  "acceptedArtifacts": {
+    "HANDOFF.md": true,
+    "source-pins-v4.json": true,
+    "source-complete-v4.patch": true,
+    "runner-adapter-delta.patch": true,
+    "reconstruction-results.json": true,
+    "reconstructed-full.log": true,
+    "reconstructed-delta.log": true,
+    "checks.json": true,
+    "caller-integration-map.json": true,
+    "failing-integration.log": true,
+    "finite-acceptance.log": true,
+    "typescript-final.log": true,
+    "eslint.log": true
+  }
+}

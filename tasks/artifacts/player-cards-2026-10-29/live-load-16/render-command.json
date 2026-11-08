@@ -1,0 +1,9 @@
+{
+  "command": [
+    "node",
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-29/live-load-16/render-preview.mjs"
+  ],
+  "exitCode": 0,
+  "elapsedSeconds": 0.183,
+  "sharedSlot": "parent verify token"
+}

@@ -256,6 +256,8 @@ export function classifyCronAuditSource(
     return "shared-wrapper";
   }
 
+  if (/\bpersistManualCronAudit\s*\(/.test(source)) return "manual-insert";
+
   if (/\.from\(\s*["']cron_job_audit["']\s*\)\s*\.insert\s*\(/.test(source)) {
     return "manual-insert";
   }
@@ -550,11 +552,12 @@ export function classifyVercelCronSource(source: string, routePath: string) {
   // C5 r2: pin the complete reviewed Yahoo AST, including both audit bodies,
   // admission order, idle-state helper, preview keys and 12:00 UTC predicate.
   // Comments/formatting may vary; any semantic change needs a new review/pin.
+  // Re-pinned 2026-11-08 for 9279976ad: both wrappers opt into includeFinalAuditReceipt (reviewed by Scout, Chef, TJ).
   const yahooIdleAudit = routePath === "/api/internal/yahoo-live-draft" && bespoke &&
     imported("withCronJobAudit", "lib/cron/withCronJobAudit") &&
     createHash("sha256").update(sourceSignature(source)).digest("hex") ===
-      "24a6f790f51d2835b6ec914a831c39890e738fbc5038d6f5f230f878c15a1f48";
-  const delegatedAudit = ((routePath === "/api/internal/espn-sync" || routePath === "/api/internal/fantrax-sync") &&
+      "586ee9c965e59d03f9a492997613489fbf7401b68264f0aa97177775cc25be75";
+  const delegatedAudit = (routePath === "/api/internal/starter-board" && bespoke && returnsAuditDelegate(defaultHandler, 5)) || ((routePath === "/api/internal/espn-sync" || routePath === "/api/internal/fantrax-sync") &&
       bespoke && returnsAuditDelegate(defaultHandler, 4)) ||
     (patreonHandler != null && prefixMatches(`if (req.method !== "GET") {
       res.setHeader("Allow", "GET");

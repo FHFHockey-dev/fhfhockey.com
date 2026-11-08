@@ -1,0 +1,30 @@
+{
+  "checks": [
+    {
+      "name": "settlement-tests",
+      "exitCode": 0,
+      "command": [
+        "node",
+        "--test",
+        "/Users/tim/Code/fhfhockey.com/tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/normalize-settlement.test.mjs"
+      ]
+    },
+    {
+      "name": "readback-tests",
+      "exitCode": 0,
+      "command": [
+        "node",
+        "-r",
+        "ts-node/register",
+        "-r",
+        "tsconfig-paths/register",
+        "--test",
+        "/Users/tim/Code/fhfhockey.com/tasks/artifacts/rso-resume-2026-11-01/release-prep/qualification-capture/normalize-readbacks.test.ts"
+      ]
+    }
+  ],
+  "allPassed": true,
+  "sourcePinsUnchanged": true,
+  "productionEnvironmentAbsent": true,
+  "networkGuard": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/rso-settlement-audit-2026-11-01/network-deny.cjs"
+}

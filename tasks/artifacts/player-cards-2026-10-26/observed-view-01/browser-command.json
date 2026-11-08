@@ -1,0 +1,8 @@
+{
+  "command": [
+    "/usr/local/bin/node",
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-26/observed-view-01/browser-check.mjs"
+  ],
+  "exitCode": 0,
+  "seconds": 1.126
+}

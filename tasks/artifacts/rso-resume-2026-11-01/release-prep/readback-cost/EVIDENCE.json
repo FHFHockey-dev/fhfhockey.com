@@ -1,0 +1,154 @@
+{
+  "at": "2026-11-01T21:13:45.710898+00:00",
+  "scope": "Local consumer-cost bound reconciliation, no whole-route measurement",
+  "candidateCommit": "c3897d3273ca46ea25a9f2737f09c835e5ec7325",
+  "sources": [
+    {
+      "path": "web/pages/api/v1/start-chart.ts",
+      "sha256": "b5bbe2e5b3a64f8368dc409ad11207420af36811c0342e9cbfd49220c3d3f98e",
+      "matchesCandidate": true,
+      "anchors": {
+        "async function fetchCtpiRows": [
+          1079
+        ],
+        "async function fetchYahooOwnershipHistory": [
+          589
+        ],
+        "export const START_CHART_RESPONSE_MAX_BYTES": [
+          210
+        ],
+        "const cacheKey =": [
+          1200
+        ],
+        "const ctpiPromise =": [
+          1331
+        ]
+      }
+    },
+    {
+      "path": "supabase/migrations/20260716112908_production_schema_baseline.sql",
+      "sha256": "27067d2221516be147d5cf71492b1fee3f0fd377d0ccd14e49557931ad1b791d",
+      "matchesCandidate": true,
+      "anchors": {
+        "CREATE TABLE public.team_ctpi_daily": [
+          25753
+        ],
+        "ADD CONSTRAINT team_ctpi_daily_pkey": [
+          32687
+        ]
+      }
+    },
+    {
+      "path": "supabase/migrations/20260828130824_start_chart_yahoo_overlay_reader.sql",
+      "sha256": "1bade7c44ca992b199b1bc32002a361606c97c9427405891db622b2284b7776e",
+      "matchesCandidate": true,
+      "anchors": {
+        "create or replace function": [
+          1
+        ],
+        "and cardinality(p_nhl_player_ids)": [
+          27
+        ]
+      }
+    },
+    {
+      "path": "web/pages/api/v1/roster-schedule-optimizer/data.ts",
+      "sha256": "d605311bb06704c9a7bb738572de7215e0280cebe2cc9ba3869ee6ab96e57cb5",
+      "matchesCandidate": true,
+      "anchors": {
+        "const source = await selectForecastServingSource": [
+          21
+        ],
+        "const data = await loadPlanningData": [
+          23
+        ]
+      }
+    },
+    {
+      "path": "web/lib/rosterScheduleData/planning.ts",
+      "sha256": "be7919f534eab6278a7874be4bc8a6fce5db560d9b6ad8aa57e1fe633c0ebf81",
+      "matchesCandidate": true,
+      "anchors": {
+        "const deadline =": [
+          83
+        ],
+        "RECENT_FORM_BUDGET_MS =": [
+          49
+        ]
+      }
+    },
+    {
+      "path": "web/lib/rosterScheduleData/planningInputs.ts",
+      "sha256": "dc165605bef18537ae5e5bac23156e38b8e74d423da2ee4d718faa3cb67adb85",
+      "matchesCandidate": true,
+      "anchors": {
+        "export async function pages": [
+          57
+        ],
+        "export async function concurrentPages": [
+          96
+        ]
+      }
+    },
+    {
+      "path": "web/lib/rosterScheduleData/bridgeForecastWire.ts",
+      "sha256": "61105e1a7347880c28ed4417f157a71ed1e53e06b2d1d58a0434c4983bf7ffaf",
+      "matchesCandidate": true,
+      "anchors": {
+        "export const PLANNING_RESPONSE_BYTE_BUDGET": [
+          172
+        ]
+      }
+    },
+    {
+      "path": "web/lib/player-forecasts/forecastServingSource.ts",
+      "sha256": "6a1b2b3c05a088c51305b5113a256d986d201a45f941746a16244a05b114833a",
+      "matchesCandidate": true,
+      "anchors": {
+        "export const FORECAST_SERVING_DEADLINE_MS": [
+          8
+        ],
+        "export async function selectForecastServingSource": [
+          59
+        ]
+      }
+    }
+  ],
+  "checks": {
+    "probesPassed": 5,
+    "probe": "probe.cjs",
+    "probeSha256": "fb369b4be54f2e67eec13de29864adb409b0c7cf42b414ed1e6df7697e41d2f6",
+    "results": "PROBES.json",
+    "resultsSha256": "4eb6e539dbb29cc76096769cea01b6c57b9850b21fd86798cc93263c805d7ae5",
+    "command": "env -i PATH=/usr/local/bin:/usr/bin:/bin HOME=/Users/tim NODE_OPTIONS=\"--require <repo>/tasks/artifacts/rso-resume-2026-11-01/release-prep/loopback-only.cjs\" node tasks/artifacts/rso-resume-2026-11-01/release-prep/readback-cost/probe.cjs",
+    "nodeVersion": "22.11.0",
+    "actualNetworkRequests": 0,
+    "actualDatabaseReads": 0
+  },
+  "handoffSha256": "ab5bac637d467229570067b25ed61d4a8a6b09194ce3d25937ca2d61b7a2117c",
+  "ownership": {
+    "lane": "PROV-GUARD",
+    "custodian": "Claude1e668672",
+    "status": "idle retained custody; only admission files carved out",
+    "paths": [
+      "web/pages/api/v1/start-chart.ts",
+      "web/__tests__/pages/api/v1/start-chart.test.ts"
+    ]
+  },
+  "boundaries": {
+    "timestampReviewSourcePinsUnchanged": true,
+    "candidateAndDeliveryPinsUnchanged": true,
+    "heldFilesChanged": false,
+    "runtimeChanged": false,
+    "scopeChanged": false,
+    "gitMutations": 0,
+    "builds": 0,
+    "deployments": 0,
+    "newProviderRequests": 0,
+    "mailboxBytes": 197987,
+    "mailboxSha256": "51c1b10bdbaf84b9711b6aa89893858a3344e94016dff3de40766f3dbed1cd1f",
+    "finalAdmissionCommitResponseReceived": false,
+    "actualIssuedIdentity": null,
+    "vercel403Retried": false
+  }
+}

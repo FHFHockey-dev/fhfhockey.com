@@ -1,0 +1,11 @@
+# BLSH retrospective offer guards
+
+- Scope: reject empty sides, duplicate IDs within either side, and cross-side identity in the pure retrospective comparison. Preserve FHFH-only scoring, missing-player withholding, valid unknown IDs, valid arithmetic, and input immutability.
+- Where: `/Users/tim/Code/fhfhockey.com`, `octoberBranch`, starting HEAD `f123bf3d1f12bf40f5db3282e6a64c45377469c5`. Own only `web/components/blshTrade/retrospective.ts` and `retrospective.test.ts`, plus this diary and a small task receipt.
+- Start: read repository instructions and inspected both owned files; scoped diff was clean. The combined player list is currently filtered into each side, so duplicate or cross-side IDs can inflate totals.
+- Checks: none yet. Only the focused retrospective Vitest file will run here; persistence owner owns shared heavyweight verification.
+- Next: add early structural rejection and focused regressions, then send source hashes and receipt to persistence implementation/review owners.
+- Blockers/approvals: none. Local work only; no network, holdout, source/model, route/UI, deployment, or publication changes.
+- Implementation checkpoint: added structural checks before any side aggregation. Invalid offers retain their player rows but expose null totals/net and an explicit structural reason. Regression cases cover each invalid shape, unknown-ID invalid shapes, frozen input arrays/evidence equality, and valid unknown IDs on either side. Ready for the focused test and source freeze.
+- Review checkpoint: reviewer found inherited object names can pass a non-profile into `retrospectivePlayer`. Parent approved the narrowly related fix. Added own-property evidence lookup, missing-profile cases for `constructor`, `toString`, and `__proto__`, and own-entry cases proving those IDs are not rejected or filtered. Shared type-check lock is released; focused test is next.
+- Handoff checkpoint: focused retrospective file passed 22/22 tests on Node 22.11.0; scoped diff-check passed. Files are frozen and SHA-256 pins/test result were sent to parent, persistence owner, and independent reviewer. Receipt and raw test log: `tasks/artifacts/blsh-retrospective-offer-guards-2026-11-07/`. No type/lint/browser/build or external action was run here. Shared final verification remains with persistence owner; no blockers or further source edits planned.

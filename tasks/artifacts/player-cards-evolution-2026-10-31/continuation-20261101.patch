@@ -1,0 +1,121 @@
+--- a/web/components/player-cards/PlayerAnalysisCard.tsx
++++ b/web/components/player-cards/PlayerAnalysisCard.tsx
+@@ -33,7 +33,9 @@
+   const source = research ? "RETAINED BLSH · PROVISIONAL RESEARCH" : goalie ? p.goalie.state === "fixture" ? "SYNTHETIC GOALIE FIXTURE" : "GOALIE SOURCE UNAVAILABLE" : snapshot!.capture.source === "synthetic" ? "SYNTHETIC CONTRACT FIXTURE" : snapshot!.capture.source === "retained" ? "RETAINED CAPTURE · NOT CURRENT" : "OBSERVED CAPTURE";
+   const title = goalie ? "Goalie outlook" : p.view === "categories" ? "Scoring & peripherals" : p.view === "comparison" ? `${snapshot!.recent.label} vs ${snapshot!.baseline.label}` : p.view === "evidence" ? "Supporting evidence" : "Trade context";
+   const game = goalie ? p.goalie.games[p.gameIndex] : null;
+-  const explanation = research && "snapshot" in p ? `${p.blsh.heading}. ${p.blsh.lines.join(" ")}. Observed ${research.asOfUTC}; method ${research.methodVersion}.` : goalie ? [game?.heading, game?.confirmation, game?.forecast, ...(game?.dimensions.map(d => `${d.group}: ${d.label}: ${d.text}`) || []), p.goalie.reason].filter(Boolean).join(". ") : `${snapshot!.recent.label}, ${snapshot!.recent.gp} GP, ${snapshot!.settings.basis}, strength ${snapshot!.capture.strength}. ${snapshot!.recent.readings.map(r => `${ANALYSIS_FIELDS[r.metric].label}: ${number(r.value)} ${r.unit}${r.reason ? ` (${r.reason})` : ""}`).join(". ")}. ${snapshot!.disclosure}`;
++  const confirmationWarnings = goalie ? p.goalie.sharedProvenance?.confirmationWarnings || [] : [];
++  const warningLines = lines(confirmationWarnings.join(" "), 120);
++  const explanation = research && "snapshot" in p ? `${p.blsh.heading}. ${p.blsh.lines.join(" ")}. Observed ${research.asOfUTC}; method ${research.methodVersion}.` : goalie ? [game?.heading, game?.confirmation, game?.forecast, ...confirmationWarnings, ...(game?.dimensions.map(d => `${d.group}: ${d.label}: ${d.text}`) || []), p.goalie.reason].filter(Boolean).join(". ") : `${snapshot!.recent.label}, ${snapshot!.recent.gp} GP, ${snapshot!.settings.basis}, strength ${snapshot!.capture.strength}. ${snapshot!.recent.readings.map(r => `${ANALYSIS_FIELDS[r.metric].label}: ${number(r.value)} ${r.unit}${r.reason ? ` (${r.reason})` : ""}`).join(". ")}. ${snapshot!.disclosure}`;
+   const rows = snapshot ? categoryMetrics.map(m => snapshot.recent.readings.find(r => r.metric === m)!) : [];
+   const maximum = Math.max(1, ...rows.map(r => r.value || 0));
+   return <svg ref={svgRef} xmlns="http://www.w3.org/2000/svg" width="1200" height="1020" viewBox="0 0 1200 1020" role="img" aria-label={`${player.name}. ${source}. ${title}. ${explanation}`} data-analysis-key={analysisPresentationKey(p, hero)} data-portrait-key={hero ? portraitKey(hero) : undefined} data-pipeline-key={hero ? compositionKey(hero) : undefined} data-team-logo-hash={hero?.teamLogo?.sha256} data-outline-key={outlineKey(hero?.outline)} data-outline-settings={hero?.outlineSettings ? outlineStackKey(hero.outlineSettings) : undefined}>
+@@ -65,8 +67,8 @@
+         <text x="40" y="843" fontSize="17">{snapshot!.baseline.reason || (snapshot!.settings.basis === "total" && snapshot!.recent.gp !== snapshot!.baseline.gp ? "Totals have unequal appearance samples; choose per-game or per60 for a change." : "— means missing or unqualified source; changes are descriptive, not a forecast.")}</text>
+       </> : p.view === "evidence" ? <TextLines text={`${p.blsh.heading}. ${p.blsh.lines.join(" ")} ${p.blsh.market}`} y={420} maxLines={14} /> : <TextLines text={`${p.trades.lines.join(" ")} ${p.trades.records.map(r => `${r.attribution}; observed ${r.observedAt}; trade date ${r.tradedAt || "unknown"}; ${r.give.map(a => a.kind === "player" ? a.name : `${a.season} ${a.description}`).join(" + ")} for ${r.receive.map(a => a.kind === "player" ? a.name : `${a.season} ${a.description}`).join(" + ")}; scoring ${r.context.scoring || "unknown"}, roster ${r.context.roster || "unknown"}.`).join(" ")}`} y={420} maxLines={14} />}
+       <rect x="0" y="864" width="1200" height="156" fill="#1A1D21" />
+-      <g fill="#F2F1EB" fontSize="18"><text x="40" y="894">{research ? `Saved BLSH window ${research.dates[0]} → ${research.dates.at(-1)} · ${research.dates.length} GP · separate from NHL controls` : goalie ? "Volume upside, ratio exposure and win support are separate dimensions; no combined score." : `${snapshot!.recent.gp} GP · dates ${[...snapshot!.recent.dates].sort().at(0) || "—"} → ${[...snapshot!.recent.dates].sort().at(-1) || "—"} · basis ${snapshot!.settings.basis} · strength ${snapshot!.capture.strength}`}</text>
+-        <text x="40" y="922">{research ? "Stale development reference · exploratory support evidence · no calibrated confidence or trade advice" : goalie ? "Source confirmation and conditional forecast are separate. Partial inputs are not live/complete." : p.view === "comparison" ? snapshot!.disclosure : "BSH = blocks + shots on goal + hits. Missing component → unavailable BSH."}</text>
++      <g fill="#F2F1EB" fontSize="18">{warningLines.length ? <text x="40" y="894" fontSize="17" data-confirmation-warnings="true" data-evidence-truncated={warningLines.length > 2 ? "true" : undefined}>{warningLines.slice(0, 2).map((line, i) => <tspan key={i} x="40" dy={i ? 28 : 0}>{line}{i === 1 && warningLines.length > 2 ? " … (too long to export)" : ""}</tspan>)}</text> : <><text x="40" y="894">{research ? `Saved BLSH window ${research.dates[0]} → ${research.dates.at(-1)} · ${research.dates.length} GP · separate from NHL controls` : goalie ? "Volume upside, ratio exposure and win support are separate dimensions; no combined score." : `${snapshot!.recent.gp} GP · dates ${[...snapshot!.recent.dates].sort().at(0) || "—"} → ${[...snapshot!.recent.dates].sort().at(-1) || "—"} · basis ${snapshot!.settings.basis} · strength ${snapshot!.capture.strength}`}</text>
++        <text x="40" y="922">{research ? "Stale development reference · exploratory support evidence · no calibrated confidence or trade advice" : goalie ? "Source confirmation and conditional forecast are separate. Partial inputs are not live/complete." : p.view === "comparison" ? snapshot!.disclosure : "BSH = blocks + shots on goal + hits. Missing component → unavailable BSH."}</text></>}
+         <text x="40" y="950">{research ? `BLSH observed: ${research.asOfUTC} · recorded through ${research.eventThroughDate}` : goalie ? `Inventory observed: ${p.goalie.observedAt}` : `Observed: ${snapshot!.capture.observedAt} · rank/N unavailable · all NHL valid values; no GP/TOI/position filter`}</text>
+         <text x="40" y="979">{research ? `Method: ${research.methodVersion} · retained source and complete profile in manifest` : goalie ? p.goalie.sharedProvenance ? `${p.goalie.sharedProvenance.version} fixture · ${p.goalie.sharedProvenance.sourceState} inputs · live producer admission pending.` : "Synthetic consumer proposal; producer interface and real inputs pending." : "Final status at observation; exact end time unavailable. Field reasons and source definitions in manifest."}</text><text x="40" y="1007" fontSize="16">FHFHOCKEY.COM · {source}</text>
+       </g>
+--- a/web/components/player-cards/PlayerAnalysisStudio.test.tsx
++++ b/web/components/player-cards/PlayerAnalysisStudio.test.tsx
+@@ -2,7 +2,8 @@
+ import { afterEach, describe, expect, it, vi } from "vitest";
+ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+ import PlayerAnalysisStudio from "./PlayerAnalysisStudio";
+-import { captureFixture } from "../../lib/player-cards/analysisFixtures";
++import { captureFixture, goalieFixture, sharedGoalieFixture } from "../../lib/player-cards/analysisFixtures";
++import { sharedGoalieOutlook } from "../../lib/player-cards/sharedGoalieOutlook";
+ import { assertAnalysisExport, analysisManifest } from "../../lib/player-cards/analysisExport";
+ import { buildAnalysisSnapshot } from "../../lib/player-cards/analysisSnapshot";
+ import { cardBlshEvidence, cardTradeContext } from "../../lib/player-cards/analysisEvidence";
+@@ -11,6 +12,21 @@
+ const skater = () => ({ id: "skater", label: "Fixture skater · TBL · 2026–27", capture: captureFixture() });
+ const goalie = { id: "goalie", label: "Fixture goalie · TBL · 2026–27", goalie: { id: 8476883, name: "Fixture goalie", team: "TBL", season: 20262027 }, inventory: null };
+ describe("analysis studio", () => {
++  it("prints confirmation gaps on the card and refuses an export that omits long warnings", () => {
++    const input = sharedGoalieFixture();
++    const warnings = ["Reports aren't separated by reporter, so conflicts between sources can't be detected.", "No source link or expiry exists for these reports."];
++    input.sources[0].reasons = warnings;
++    const p: AnalysisPresentation = { goalie: sharedGoalieOutlook(input, goalieFixture().player, "fixture"), gameIndex: 0 };
++    const { rerender } = render(<PlayerAnalysisCard presentation={p} />);
++    const svg = screen.getByRole("img") as unknown as SVGSVGElement;
++    expect(svg.querySelector('[data-confirmation-warnings="true"]')?.textContent).toContain("conflicts between sources can't be detected");
++    expect(svg.getAttribute("aria-label")).toContain(warnings[1]);
++    expect(() => assertAnalysisExport(svg, p)).not.toThrow();
++    expect(analysisManifest(p).presentation.goalie.sharedProvenance.confirmationWarnings).toEqual(warnings);
++    p.goalie.sharedProvenance!.confirmationWarnings = ["Unresolved source limitation. ".repeat(30)];
++    rerender(<PlayerAnalysisCard presentation={p} />);
++    expect(() => assertAnalysisExport(svg, p)).toThrow(/Full evidence/);
++  });
+   it("offers explicit optional season comparison, preserves baseline default and makes no requests", () => {
+     const network = vi.spyOn(globalThis, "fetch"); render(<PlayerAnalysisStudio selections={[skater(), goalie]} />);
+     fireEvent.change(screen.getByLabelText("Analysis view"), { target: { value: "comparison" } });
+--- a/web/lib/player-cards/goalieOutlook.ts
++++ b/web/lib/player-cards/goalieOutlook.ts
+@@ -15,7 +15,7 @@
+     forecast: { admitted: boolean; receipt: string | null; conditionalBasis: "given-start"; version: string; horizon: string; uncertainty: string; target: StartChartGoalie } | null;
+   }[];
+ };
+-export type GoalieOutlook = { state: "fixture" | "unavailable"; player: GoalieInventory["player"]; observedAt: string; reason: string | null; sharedProvenance?: { version: string; sourceState: string; sourceNotes: string[]; recentStarts: { teamGames: number; starts: number | null; reliefAppearances: number; share: number | null; complete: boolean } }; games: { id: number; heading: string; confirmation: string; forecast: string; dimensions: { label: string; group: string; text: string }[] }[] };
++export type GoalieOutlook = { state: "fixture" | "unavailable"; player: GoalieInventory["player"]; observedAt: string; reason: string | null; sharedProvenance?: { version: string; sourceState: string; sourceNotes: string[]; confirmationWarnings?: string[]; recentStarts: { teamGames: number; starts: number | null; reliefAppearances: number; share: number | null; complete: boolean } }; games: { id: number; heading: string; confirmation: string; forecast: string; dimensions: { label: string; group: string; text: string }[] }[] };
+ const time = (s: string | null) => s === null ? NaN : Date.parse(s);
+ export function goalieOutlook(input: GoalieInventory | null, selected: GoalieInventory["player"]): GoalieOutlook {
+   const empty = (reason: string): GoalieOutlook => ({ state: "unavailable", player: { ...selected }, observedAt: input?.observedAt || "Unavailable", reason, games: [] });
+--- a/web/lib/player-cards/sharedGoalieOutlook.test.ts
++++ b/web/lib/player-cards/sharedGoalieOutlook.test.ts
+@@ -56,6 +56,24 @@
+     game.confirmation.observedAt = "2026-10-31T13:00:00Z";
+     expect(sharedGoalieOutlook(f, selected, "fixture").games[0].confirmation).toContain("No current resolved");
+   });
++  it("preserves producer warnings and withholds confirmations from unavailable source states", () => {
++    const f = sharedGoalieFixture();
++    const warning = "Reports aren't separated by reporter, so conflicts between sources can't be detected.";
++    f.sources[0].reasons = [warning, warning, "No source link or expiry exists for these reports."];
++    f.sources[0].state = "partial";
++    const partial = sharedGoalieOutlook(f, selected, "fixture");
++    expect(partial.sharedProvenance?.confirmationWarnings).toEqual([warning, "No source link or expiry exists for these reports."]);
++    expect(partial.games[0].confirmation).toContain("projected");
++    for (const state of ["missing", "blocked", "stale"] as const) {
++      f.sources[0].state = state;
++      const result = sharedGoalieOutlook(f, selected, "fixture");
++      expect(result.games[0].confirmation).toContain("No current resolved");
++      expect(result.games[0].dimensions[0].text).toContain("31");
++      expect(result.sharedProvenance?.confirmationWarnings).toContain("Starter confirmation source unavailable; status remains unknown.");
++    }
++    f.sources = [];
++    expect(sharedGoalieOutlook(f, selected, "fixture").games[0].confirmation).toContain("No current resolved");
++  });
+   it("uses only a qualified unexpired Start Chart fixture, without borrowing workload share", () => {
+     const f = sharedGoalieFixture(), game = f.goalies[0].games[0];
+     game.forecast = { state: "qualified", startProbability: 0.75, revisionId: "fixture-v1", modelLabel: "Fixture", issuedAt: "2026-10-31T11:00:00Z", expiresAt: "2026-11-01T12:00:00Z" };
+--- a/web/lib/player-cards/sharedGoalieOutlook.ts
++++ b/web/lib/player-cards/sharedGoalieOutlook.ts
+@@ -10,16 +10,21 @@
+   const matches = inventory.goalies.filter(g => g.goalieId === selected.id && g.team === selected.team);
+   if (matches.length !== 1) return empty("Shared goalie identity/current-team match is absent or ambiguous.");
+   const entry = matches[0];
++  const confirmationSources = inventory.sources.filter(s => s.tables.includes("player_forecast_goalie_start_observations"));
++  const confirmationSourceAvailable = confirmationSources.length > 0 && confirmationSources.every(s => s.state === "ready" || s.state === "partial");
++  const confirmationWarnings = [...new Set(confirmationSources.flatMap(s => s.reasons))];
++  if (!confirmationSourceAvailable) confirmationWarnings.push("Starter confirmation source unavailable; status remains unknown.");
+   const date = (s: string) => /^\d{4}-\d{2}-\d{2}$/.test(s) && Number.isFinite(Date.parse(s)) && new Date(s).toISOString().slice(0, 10) === s;
+   if (!date(inventory.from) || !date(inventory.through) || inventory.from > inventory.through || new Set(entry.games.map(g => g.gameId)).size !== entry.games.length || entry.games.some(g => g.team !== selected.team || !Number.isSafeInteger(g.gameId) || g.gameId <= 0 || !g.opponent || !date(g.date) || g.date < inventory.from || g.date > inventory.through || g.startTimeUtc !== null && !Number.isFinite(Date.parse(g.startTimeUtc)))) return empty("Shared schedule contains an identity, date-range or duplicate-game mismatch.");
+   const metric = (label: string, group: string, m: InventoryMetric) => ({ label, group, text: m.value !== null && Number.isFinite(m.value) && Number.isSafeInteger(m.sampleGames) && m.sampleGames > 0 && m.unit && m.window ? `${m.value} ${m.unit} · ${m.window} · ${m.sampleGames} team games` : "Unavailable: missing metric, unit, window or sample." });
+   return { state: "fixture", player: { ...selected }, observedAt: inventory.generatedAt, reason: inventory.state === "partial" ? `Partial inventory: ${inventory.reasons.join("; ") || "some inputs unavailable"}` : entry.games.length ? null : "No scheduled games in supplied shared inventory.", sharedProvenance: {
+     version: inventory.version, sourceState: inventory.state,
+     sourceNotes: inventory.sources.map(s => `${s.name}: ${s.state}; tables ${s.tables.join(", ")}; as of ${s.asOf || "unknown"}; updated ${s.updatedAt || "unknown"}; ${s.reasons.join("; ")}`),
++    confirmationWarnings,
+     recentStarts: { ...entry.recentStarts },
+   }, games: entry.games.map(g => {
+     const c = g.confirmation, f = g.forecast;
+-    const confirmed = c.state !== "none" && !!c.source.trim() && Number.isFinite(Date.parse(c.observedAt)) && Date.parse(c.observedAt) <= at && (c.expiresAt === null || Number.isFinite(Date.parse(c.expiresAt)) && Date.parse(c.expiresAt) > at);
++    const confirmed = confirmationSourceAvailable && c.state !== "none" && !!c.source.trim() && Number.isFinite(Date.parse(c.observedAt)) && Date.parse(c.observedAt) <= at && (c.expiresAt === null || Number.isFinite(Date.parse(c.expiresAt)) && Date.parse(c.expiresAt) > at);
+     const forecast = f.state === "qualified" && Number.isFinite(f.startProbability) && f.startProbability >= 0 && f.startProbability <= 1 && !!f.revisionId && !!f.modelLabel && Number.isFinite(Date.parse(f.issuedAt)) && Date.parse(f.issuedAt) <= at && Number.isFinite(Date.parse(f.expiresAt)) && Date.parse(f.expiresAt) > at;
+     return { id: g.gameId, heading: `${g.startTimeUtc || `${g.date} · start time unavailable`} · ${g.team} vs ${g.opponent} · ${g.home ? "home" : "away"}`,
+       confirmation: confirmed ? `${c.state} · ${c.source} · ${c.observedAt} · expires ${c.expiresAt || "not supplied"}${c.sourceUrl ? ` · ${c.sourceUrl}` : ""}` : "No current resolved starter confirmation; absence is not evidence of not starting.",

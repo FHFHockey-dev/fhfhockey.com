@@ -1,0 +1,64 @@
+{
+  "checkedAtUtc": "2026-11-01T15:43:52.762832+00:00",
+  "projectId": "fyhftlxokyjtpndbkfse",
+  "projectName": "fhfhockey.com",
+  "authorization": "TJ explicitly requested bounded SELECT coverage for other nine tables and schedule-grounded backlog assessment; no production mutation/NST authorization.",
+  "sqlCalls": 4,
+  "sqlCallsDescription": [
+    "information_schema columns for10namedtables",
+    "Oct27\u201331WGO +9NST exact-key/field coverage",
+    "same9tables conditional denominator/exposure qualification",
+    "3namedcronjobs +atmost20filteredwriterreceipts"
+  ],
+  "allCountsIndependentCheck": "Not repeated; TJ/Claude receipt supplied82keys [22,9,24,7,20].",
+  "scope": {
+    "season": 20262027,
+    "startDate": "2026-10-27",
+    "endDate": "2026-10-31",
+    "maxRowsPerTable": 501,
+    "actualWgoRows": 82,
+    "actualOtherNineRows": 724,
+    "allCapsClear": true
+  },
+  "qualification": "Row presence and checked required fields only. Seven absent PP/PK keys infer zero exposure from other stored situation TOI; not an independent NST-provider or durable-empty-receipt verification.",
+  "nullCellCountWithZeroDenominator": 1022,
+  "observedManualWindowReceipts": {
+    "count": 10,
+    "sumPendingUrlOperations": 60,
+    "durationMsMin": 126936,
+    "durationMsMax": 148871,
+    "uniqueProviderRequests": "unknown; counters include valid-empty repeated work and are not unique URL/admission receipts"
+  },
+  "ownership": {
+    "yahooSourceCustodian": {
+      "task": "Repair cron reporting pipeline",
+      "thread": "01a17d95-8833-7618-ab3c-93e40feaf0dd",
+      "evidence": "CODEX-CRON-TRIAGE-20261027-01 retained declared_paths includes playerWriter/update-yahoo-players"
+    },
+    "rolling937Issue": "No explicit accepted owner found; same cron custodian retains pipeline wrapper, not an accepted repair assignment for937appearances. Exact recompute writer custody must be allocated.",
+    "wgoJuneRowsIssue": "No active exact producer lease/accepted issue owner found; Review WGO repair evidence task concerns skater trigger review, not these goalie rows. Claude WiGO UI lease forbids WGO writes.",
+    "murrayIdentityIssue": "NST writer source diagnosis belongs to this task under transferred goalie-route custody; no correction implemented or production repair approved."
+  },
+  "actions": {
+    "productionDatabaseSelectCalls": 4,
+    "productionDatabaseWrites": 0,
+    "nstRequests": 0,
+    "applicationRequests": 0,
+    "emails": 0,
+    "migrations": 0,
+    "scheduleChanges": 0,
+    "pushes": 0,
+    "builds": 0,
+    "deployments": 0
+  },
+  "artifactHashes": {
+    "schedule-throughput.sql": "2e66f2b905078e99306f4678e2c7a1e3d825e331cbdbea5dcfbc0b63991d0d5b",
+    "schema.sql": "1b4e593908e9f74b81c9918499ad12258c7ffbc6a69dd517d40fef566bf818e4",
+    "coverage.sql": "c2258fecae3ff6487d018a623883c14b937f57f76c52efd9b96b1a7fb393f77f",
+    "schedule-throughput.json": "c41a0c11e64ff24fec5916d314fa690a84f5d82f4de4a8d117f3cb017b52570c",
+    "meaning.sql": "8c37126d4d92bb07431d0a96ee6f40598cedff0f48917d286451e6f75b50454c",
+    "meaning.json": "92c7a3b0272be5c5d0b333ae665fb0ee8d2edee170386d22346ea5da4bda90ce",
+    "schema.json": "87f7f49f9c11bb96413d736723a23f55d2bd6a8bf4d4be544cdc513815c3a9d2",
+    "coverage.json": "9f9ec3d09ec72dc8b517c4d1eea79b20bc9ab0077dbf28885ff729b0cd78fcfe"
+  }
+}

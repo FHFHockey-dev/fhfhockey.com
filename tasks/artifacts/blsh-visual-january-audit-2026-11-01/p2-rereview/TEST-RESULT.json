@@ -1,0 +1,9 @@
+{
+  "command": [
+    "node",
+    "/Users/tim/Documents/Codex/2026-10-27/task-3/window-age-label-fix-20261101-01/run-focused-tests.mjs"
+  ],
+  "nameFilter": "saved window age independent|production404|capture",
+  "exitCode": 0,
+  "seconds": 1.7986940420232713
+}

@@ -1,0 +1,119 @@
+import { AsyncLocalStorage } from "node:async_hooks";
+import { randomUUID } from "node:crypto";
+
+export class NstJobLifecycleError extends Error {}
+export type NstJobToken = { kind: "direct" | "goalie"; token: string };
+type JobContext = NstJobToken & { deadlineAt: number; active: number; closed: boolean };
+const jobs = new AsyncLocalStorage<JobContext>();
+const UUID = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
+export type NstLifecycleRpc = (name: string, args: Record<string, unknown>, deadlineAt: number) => Promise<any>;
+
+/** Bounded control-plane I/O only; never retries an uncertain mutation. */
+export const nstLifecycleRpc: NstLifecycleRpc = async (name, args, deadlineAt) => {
+  const origin = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+  if (!origin || !key) throw new NstJobLifecycleError("NST job lifecycle is not configured.");
+  const url = new URL(`/rest/v1/rpc/${name}`, origin);
+  if (url.protocol !== "https:" || url.username || url.password) throw new NstJobLifecycleError("Invalid NST lifecycle origin.");
+  const controller = new AbortController();
+  const remaining = Math.min(5_000, deadlineAt - Date.now());
+  if (remaining <= 0) throw new NstJobLifecycleError("NST lifecycle deadline exhausted.");
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([(async () => {
+      const response = await fetch(url, { method: "POST", redirect: "error", signal: controller.signal,
+        headers: { "Content-Type": "application/json", apikey: key, Authorization: `Bearer ${key}` }, body: JSON.stringify(args) });
+      if (!response.ok) throw new Error("Lifecycle unavailable");
+      return response.json();
+    })(), new Promise<never>((_, reject) => {
+      timer = setTimeout(() => { controller.abort(); reject(new NstJobLifecycleError("NST lifecycle acknowledgement timed out.")); }, remaining);
+    })]);
+  } finally { clearTimeout(timer); }
+};
+
+export function currentNstJob(): NstJobToken | undefined {
+  const job = jobs.getStore();
+  if (job && (job.closed || Date.now() >= job.deadlineAt)) throw new NstJobLifecycleError("NST job is closed or expired.");
+  return job && { kind: job.kind, token: job.token };
+}
+
+/** Keep the enclosing lease open through provider body consumption. */
+export async function withNstJobDispatch<T>(dispatch: () => Promise<T>): Promise<T> {
+  const job = jobs.getStore();
+  currentNstJob();
+  if (!job) return dispatch();
+  job.active++;
+  try { return await dispatch(); } finally { job.active--; }
+}
+
+/** Callers must await all provider and persistence work and explicitly classify
+ * its final outcome. Disabled by default until every caller is qualified. */
+export async function runNstJob<T>(input: {
+  owner: string; deadlineAt: number; settled: (result: T) => boolean; rpc?: NstLifecycleRpc;
+}, work: () => Promise<T>): Promise<T> {
+  if (process.env.NST_JOB_LIFECYCLE_ENABLED !== "true") return work();
+  if (jobs.getStore()) throw new NstJobLifecycleError("Nested NST jobs require the existing parent lease.");
+  const rpc = input.rpc ?? nstLifecycleRpc;
+  const token = randomUUID();
+  if (!input.owner.trim() || input.owner.length > 128 || !Number.isFinite(input.deadlineAt) ||
+      input.deadlineAt <= Date.now() || input.deadlineAt > Date.now() + 3_600_000) throw new NstJobLifecycleError("Invalid NST job bounds.");
+  const receipt = await rpc("nst_job_begin_v1", { p_token: token, p_owner: input.owner, p_deadline_at: new Date(input.deadlineAt).toISOString() }, input.deadlineAt);
+  if (receipt?.status !== "started" || receipt.token !== token) throw new NstJobLifecycleError("NST job begin is unacknowledged; no work started.");
+  const context: JobContext = { kind: "direct", token, deadlineAt: input.deadlineAt, active: 0, closed: false };
+  try {
+    const result = await jobs.run(context, work);
+    context.closed = true;
+    if (context.active || Date.now() >= input.deadlineAt || !input.settled(result)) throw new NstJobLifecycleError("NST job outcome requires reconciliation.");
+    const finished = await rpc("nst_job_finish_v1", { p_token: token }, input.deadlineAt);
+    if (finished?.status !== "finished" || finished.token !== token) throw new NstJobLifecycleError("NST job finish is unacknowledged.");
+    return result;
+  } catch (error) {
+    context.closed = true;
+    try { await rpc("nst_job_hold_v1", { p_token: token, p_reason: "Unacknowledged enclosing job outcome" }, Date.now() + 5_000); } catch { /* The active/expired row already prevents clearance. */ }
+    throw error;
+  }
+}
+
+/** Checkpoint claims are themselves durable enclosing leases. No new direct job
+ * is opened around a goalie claim; its commit/finish RPCs own settlement. */
+export function withGoalieJob<T>(token: string, deadlineAt: number, work: () => Promise<T>): Promise<T> {
+  if (!UUID.test(token) || jobs.getStore()) throw new NstJobLifecycleError("Invalid goalie job context.");
+  const context: JobContext = { kind: "goalie", token, deadlineAt, active: 0, closed: false };
+  return jobs.run(context, async () => {
+    try {
+      const result = await work();
+      if (context.active) throw new NstJobLifecycleError("Goalie provider work is still active.");
+      return result;
+    } finally { context.closed = true; }
+  });
+}
+
+/** Enclose authenticated JSON routes outside their audit wrapper. Delay the
+ * response until the lifecycle receipt is acknowledged, preserving audit data. */
+export function withNstJobLifecycle(
+  handler: (req: import("next").NextApiRequest, res: import("next").NextApiResponse) => Promise<unknown>,
+  owner: string,
+  skip?: (req: import("next").NextApiRequest) => boolean,
+) {
+  return async (req: import("next").NextApiRequest, res: import("next").NextApiResponse) => {
+    if (process.env.NST_JOB_LIFECYCLE_ENABLED !== "true" || skip?.(req)) return handler(req, res);
+    const originalJson = res.json;
+    let captured = false;
+    let body: any;
+    res.json = ((value: unknown) => { captured = true; body = value; return res; }) as typeof res.json;
+    try {
+      await runNstJob({ owner, deadlineAt: Date.now() + 240_000, settled: () => captured && !res.headersSent &&
+        res.statusCode >= 200 && res.statusCode < 300 && body?.success !== false && body?.retrySafe !== false &&
+        body?.operationStatus !== "failed" && body?.auditPersisted !== false }, async () => { await handler(req, res); });
+      res.json = originalJson;
+      return res.json(body);
+    } catch {
+      res.json = originalJson;
+      if (res.headersSent) return;
+      return res.status(503).json({ success: false, operationStatus: "failed", retrySafe: false,
+        lifecycle: { status: "unacknowledged", requiresReview: true },
+        error: "NST job lifecycle requires reconciliation before retrying.",
+        ...(captured ? { operationResponse: body } : {}) });
+    } finally { res.json = originalJson; }
+  };
+}

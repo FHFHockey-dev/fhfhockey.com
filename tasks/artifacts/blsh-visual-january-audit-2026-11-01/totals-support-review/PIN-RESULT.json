@@ -1,0 +1,6 @@
+{
+  "pinChecks": 21,
+  "exactThreeFileDiffMatches": true,
+  "scorerReferenceAssemblerMapperReaderAndSnapshotUnchanged": true,
+  "initialHarnessRead": "Before-images use before/web/...; first basename lookup failed before tests. Corrected path."
+}

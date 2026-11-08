@@ -1,0 +1,110 @@
+[
+  {
+    "hash": "9841ce0f388de9ca206cf22abe7dbd82afb5a3f9500fe6f7a1215e72ad758cba",
+    "reservedNanoUsd": 233000000,
+    "state": "settled",
+    "receipt": {
+      "body": {
+        "id": "synthetic-E11-responses",
+        "model": "gpt-6-luna",
+        "usage": {
+          "input_tokens": 100,
+          "output_tokens": 50
+        },
+        "status": "completed",
+        "output": [
+          {
+            "type": "message",
+            "role": "assistant",
+            "content": [
+              {
+                "type": "output_text",
+                "text": "{\"identity\":{\"version\":\"tweet-identity-proposal-v1\",\"requestHash\":\"f15a6dfed59cb46168665bced15878bef1d45d0182fc97f8b9d790e7b5425d1e\",\"directoryHash\":\"88dbd1e19c22a04fba95f07d049c38af533b548723bd17106f639191667ae16f\",\"occurrences\":[{\"occurrenceId\":\"subject-4\",\"status\":\"matched\",\"canonicalId\":\"nhl:900001\",\"evidence\":{\"start\":4,\"end\":16,\"text\":\"Avery Keeper\"},\"identityConfidence\":\"tentative\"},{\"occurrenceId\":\"subject-33\",\"status\":\"matched\",\"canonicalId\":\"nhl:900002\",\"evidence\":{\"start\":33,\"end\":45,\"text\":\"Riley Skater\"},\"identityConfidence\":\"tentative\"}]},\"goalieStatuses\":[{\"occurrenceId\":\"subject-4\",\"canonicalId\":\"nhl:900001\",\"status\":\"confirmed\",\"evidence\":{\"start\":4,\"end\":32,\"text\":\"Avery Keeper starts tonight.\"}}]}"
+              }
+            ]
+          }
+        ]
+      },
+      "requestId": "offline-cli-E11-responses",
+      "endpoint": "responses",
+      "chargeNanoUsd": 38500
+    }
+  },
+  {
+    "hash": "5781feae2b9115b7068461d20b8cb0fcb34746baa4cbd2df0b1790702c951740",
+    "reservedNanoUsd": 233000000,
+    "state": "settled",
+    "receipt": {
+      "body": {
+        "id": "synthetic-E11-decisions",
+        "model": "gpt-6-luna",
+        "usage": {
+          "input_tokens": 100,
+          "output_tokens": 50
+        },
+        "answers": [
+          {
+            "name": "post_material_news",
+            "type": "predicate",
+            "probability": 0.95
+          },
+          {
+            "name": "claim_0_support",
+            "type": "choice",
+            "choice": "supported",
+            "confidence": 1,
+            "probabilities": [
+              {
+                "value": "supported",
+                "probability": 1
+              },
+              {
+                "value": "contradicted",
+                "probability": 0
+              },
+              {
+                "value": "insufficient_evidence",
+                "probability": 0
+              }
+            ]
+          },
+          {
+            "name": "claim_0_wording",
+            "type": "choice",
+            "choice": "direct_assertion",
+            "confidence": 1,
+            "probabilities": [
+              {
+                "value": "conditional",
+                "probability": 0
+              },
+              {
+                "value": "expectation",
+                "probability": 0
+              },
+              {
+                "value": "speculation",
+                "probability": 0
+              },
+              {
+                "value": "opinion",
+                "probability": 0
+              },
+              {
+                "value": "direct_assertion",
+                "probability": 1
+              },
+              {
+                "value": "unclear",
+                "probability": 0
+              }
+            ]
+          }
+        ]
+      },
+      "requestId": "offline-cli-E11-decisions",
+      "endpoint": "decisions",
+      "chargeNanoUsd": 11000
+    }
+  }
+]

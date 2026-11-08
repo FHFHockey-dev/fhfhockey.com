@@ -1,0 +1,1986 @@
+{
+  "tool": "Supabase execute_sql",
+  "project_id": "fyhftlxokyjtpndbkfse",
+  "query": "SELECT jsonb_build_object('columns',(SELECT jsonb_agg(t) FROM (SELECT table_name,column_name,data_type FROM information_schema.columns WHERE table_schema='public' AND table_name IN ('games','wgo_skater_stats','nst_gamelog_as_counts','nst_gamelog_as_counts_oi','source_provenance_snapshots','cron_job_audit') ORDER BY table_name,ordinal_position LIMIT 450)t),'indexes',(SELECT jsonb_agg(t) FROM (SELECT tablename,indexname,indexdef FROM pg_indexes WHERE schemaname='public' AND tablename IN ('games','wgo_skater_stats','nst_gamelog_as_counts','nst_gamelog_as_counts_oi','source_provenance_snapshots','cron_job_audit') ORDER BY tablename,indexname LIMIT 100)t)) AS metadata;",
+  "results": [
+    {
+      "metadata": {
+        "columns": [
+          {
+            "data_type": "text",
+            "table_name": "cron_job_audit",
+            "column_name": "job_name"
+          },
+          {
+            "data_type": "timestamp with time zone",
+            "table_name": "cron_job_audit",
+            "column_name": "run_time"
+          },
+          {
+            "data_type": "text",
+            "table_name": "cron_job_audit",
+            "column_name": "status"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "cron_job_audit",
+            "column_name": "rows_affected"
+          },
+          {
+            "data_type": "jsonb",
+            "table_name": "cron_job_audit",
+            "column_name": "details"
+          },
+          {
+            "data_type": "bigint",
+            "table_name": "games",
+            "column_name": "id"
+          },
+          {
+            "data_type": "date",
+            "table_name": "games",
+            "column_name": "date"
+          },
+          {
+            "data_type": "bigint",
+            "table_name": "games",
+            "column_name": "seasonId"
+          },
+          {
+            "data_type": "timestamp with time zone",
+            "table_name": "games",
+            "column_name": "startTime"
+          },
+          {
+            "data_type": "smallint",
+            "table_name": "games",
+            "column_name": "type"
+          },
+          {
+            "data_type": "timestamp with time zone",
+            "table_name": "games",
+            "column_name": "created_at"
+          },
+          {
+            "data_type": "smallint",
+            "table_name": "games",
+            "column_name": "homeTeamId"
+          },
+          {
+            "data_type": "smallint",
+            "table_name": "games",
+            "column_name": "awayTeamId"
+          },
+          {
+            "data_type": "bigint",
+            "table_name": "nst_gamelog_as_counts",
+            "column_name": "id"
+          },
+          {
+            "data_type": "bigint",
+            "table_name": "nst_gamelog_as_counts",
+            "column_name": "player_id"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "nst_gamelog_as_counts",
+            "column_name": "season"
+          },
+          {
+            "data_type": "date",
+            "table_name": "nst_gamelog_as_counts",
+            "column_name": "date_scraped"
+          },
+          {
+            "data_type": "smallint",
+            "table_name": "nst_gamelog_as_counts",
+            "column_name": "gp"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "nst_gamelog_as_counts",
+            "column_name": "toi"
+          },
+          {
+            "data_type": "smallint",
+            "table_name": "nst_gamelog_as_counts",
+            "column_name": "goals"
+          },
+          {
+            "data_type": "smallint",
+            "table_name": "nst_gamelog_as_counts",
+            "column_name": "total_assists"
+          },
+          {
+            "data_type": "smallint",
+            "table_name": "nst_gamelog_as_counts",
+            "column_name": "first_assists"
+          },
+          {
+            "data_type": "smallint",
+            "table_name": "nst_gamelog_as_counts",
+            "column_name": "second_assists"
+          },
+          {
+            "data_type": "smallint",
+            "table_name": "nst_gamelog_as_counts",
+            "column_name": "total_points"
+          },
+          {
+            "data_type": "smallint",
+            "table_name": "nst_gamelog_as_counts",
+            "column_name": "shots"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "nst_gamelog_as_counts",
+            "column_name": "ixg"
+          },
+          {
+            "data_type": "smallint",
+            "table_name": "nst_gamelog_as_counts",
+            "column_name": "icf"
+          },
+          {
+            "data_type": "smallint",
+            "table_name": "nst_gamelog_as_counts",
+            "column_name": "iff"
+          },
+          {
+            "data_type": "smallint",
+            "table_name": "nst_gamelog_as_counts",
+            "column_name": "iscfs"
+          },
+          {
+            "data_type": "smallint",
+            "table_name": "nst_gamelog_as_counts",
+            "column_name": "hdcf"
+          },
+          {
+            "data_type": "smallint",
+            "table_name": "nst_gamelog_as_counts",
+            "column_name": "rush_attempts"
+          },
+          {
+            "data_type": "smallint",
+            "table_name": "nst_gamelog_as_counts",
+            "column_name": "rebounds_created"
+          },
+          {
+            "data_type": "smallint",
+            "table_name": "nst_gamelog_as_counts",
+            "column_name": "pim"
+          },
+          {
+            "data_type": "smallint",
+            "table_name": "nst_gamelog_as_counts",
+            "column_name": "total_penalties"
+          },
+          {
+            "data_type": "smallint",
+            "table_name": "nst_gamelog_as_counts",
+            "column_name": "minor_penalties"
+          },
+          {
+            "data_type": "smallint",
+            "table_name": "nst_gamelog_as_counts",
+            "column_name": "major_penalties"
+          },
+          {
+            "data_type": "smallint",
+            "table_name": "nst_gamelog_as_counts",
+            "column_name": "misconduct_penalties"
+          },
+          {
+            "data_type": "smallint",
+            "table_name": "nst_gamelog_as_counts",
+            "column_name": "penalties_drawn"
+          },
+          {
+            "data_type": "smallint",
+            "table_name": "nst_gamelog_as_counts",
+            "column_name": "giveaways"
+          },
+          {
+            "data_type": "smallint",
+            "table_name": "nst_gamelog_as_counts",
+            "column_name": "takeaways"
+          },
+          {
+            "data_type": "smallint",
+            "table_name": "nst_gamelog_as_counts",
+            "column_name": "hits"
+          },
+          {
+            "data_type": "smallint",
+            "table_name": "nst_gamelog_as_counts",
+            "column_name": "hits_taken"
+          },
+          {
+            "data_type": "smallint",
+            "table_name": "nst_gamelog_as_counts",
+            "column_name": "shots_blocked"
+          },
+          {
+            "data_type": "smallint",
+            "table_name": "nst_gamelog_as_counts",
+            "column_name": "faceoffs_won"
+          },
+          {
+            "data_type": "smallint",
+            "table_name": "nst_gamelog_as_counts",
+            "column_name": "faceoffs_lost"
+          },
+          {
+            "data_type": "numeric",
+            "table_name": "nst_gamelog_as_counts",
+            "column_name": "ipp"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "nst_gamelog_as_counts",
+            "column_name": "faceoffs_percentage"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "nst_gamelog_as_counts",
+            "column_name": "sh_percentage"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "nst_gamelog_as_counts_oi",
+            "column_name": "player_id"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "nst_gamelog_as_counts_oi",
+            "column_name": "gp"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "nst_gamelog_as_counts_oi",
+            "column_name": "cf"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "nst_gamelog_as_counts_oi",
+            "column_name": "ca"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "nst_gamelog_as_counts_oi",
+            "column_name": "cf_pct"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "nst_gamelog_as_counts_oi",
+            "column_name": "ff"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "nst_gamelog_as_counts_oi",
+            "column_name": "fa"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "nst_gamelog_as_counts_oi",
+            "column_name": "ff_pct"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "nst_gamelog_as_counts_oi",
+            "column_name": "sf"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "nst_gamelog_as_counts_oi",
+            "column_name": "sa"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "nst_gamelog_as_counts_oi",
+            "column_name": "sf_pct"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "nst_gamelog_as_counts_oi",
+            "column_name": "gf"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "nst_gamelog_as_counts_oi",
+            "column_name": "ga"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "nst_gamelog_as_counts_oi",
+            "column_name": "gf_pct"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "nst_gamelog_as_counts_oi",
+            "column_name": "xgf"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "nst_gamelog_as_counts_oi",
+            "column_name": "xga"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "nst_gamelog_as_counts_oi",
+            "column_name": "xgf_pct"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "nst_gamelog_as_counts_oi",
+            "column_name": "scf"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "nst_gamelog_as_counts_oi",
+            "column_name": "sca"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "nst_gamelog_as_counts_oi",
+            "column_name": "scf_pct"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "nst_gamelog_as_counts_oi",
+            "column_name": "hdcf"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "nst_gamelog_as_counts_oi",
+            "column_name": "hdca"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "nst_gamelog_as_counts_oi",
+            "column_name": "hdcf_pct"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "nst_gamelog_as_counts_oi",
+            "column_name": "hdgf"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "nst_gamelog_as_counts_oi",
+            "column_name": "mdcf"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "nst_gamelog_as_counts_oi",
+            "column_name": "mdca"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "nst_gamelog_as_counts_oi",
+            "column_name": "mdcf_pct"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "nst_gamelog_as_counts_oi",
+            "column_name": "mdgf"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "nst_gamelog_as_counts_oi",
+            "column_name": "mdga"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "nst_gamelog_as_counts_oi",
+            "column_name": "mdgf_pct"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "nst_gamelog_as_counts_oi",
+            "column_name": "ldcf"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "nst_gamelog_as_counts_oi",
+            "column_name": "ldca"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "nst_gamelog_as_counts_oi",
+            "column_name": "ldcf_pct"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "nst_gamelog_as_counts_oi",
+            "column_name": "ldgf"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "nst_gamelog_as_counts_oi",
+            "column_name": "ldga"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "nst_gamelog_as_counts_oi",
+            "column_name": "ldgf_pct"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "nst_gamelog_as_counts_oi",
+            "column_name": "on_ice_sh_pct"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "nst_gamelog_as_counts_oi",
+            "column_name": "on_ice_sv_pct"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "nst_gamelog_as_counts_oi",
+            "column_name": "off_zone_starts"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "nst_gamelog_as_counts_oi",
+            "column_name": "neu_zone_starts"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "nst_gamelog_as_counts_oi",
+            "column_name": "def_zone_starts"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "nst_gamelog_as_counts_oi",
+            "column_name": "off_zone_start_pct"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "nst_gamelog_as_counts_oi",
+            "column_name": "off_zone_faceoffs"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "nst_gamelog_as_counts_oi",
+            "column_name": "neu_zone_faceoffs"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "nst_gamelog_as_counts_oi",
+            "column_name": "def_zone_faceoffs"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "nst_gamelog_as_counts_oi",
+            "column_name": "off_zone_faceoff_pct"
+          },
+          {
+            "data_type": "date",
+            "table_name": "nst_gamelog_as_counts_oi",
+            "column_name": "date_scraped"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "nst_gamelog_as_counts_oi",
+            "column_name": "season"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "nst_gamelog_as_counts_oi",
+            "column_name": "toi"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "nst_gamelog_as_counts_oi",
+            "column_name": "pdo"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "nst_gamelog_as_counts_oi",
+            "column_name": "hdga"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "nst_gamelog_as_counts_oi",
+            "column_name": "hdgf_pct"
+          },
+          {
+            "data_type": "bigint",
+            "table_name": "nst_gamelog_as_counts_oi",
+            "column_name": "id"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "nst_gamelog_as_counts_oi",
+            "column_name": "shots_blocked"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "nst_gamelog_as_counts_oi",
+            "column_name": "on_the_fly_starts"
+          },
+          {
+            "data_type": "date",
+            "table_name": "source_provenance_snapshots",
+            "column_name": "snapshot_date"
+          },
+          {
+            "data_type": "text",
+            "table_name": "source_provenance_snapshots",
+            "column_name": "source_type"
+          },
+          {
+            "data_type": "text",
+            "table_name": "source_provenance_snapshots",
+            "column_name": "entity_type"
+          },
+          {
+            "data_type": "bigint",
+            "table_name": "source_provenance_snapshots",
+            "column_name": "entity_id"
+          },
+          {
+            "data_type": "bigint",
+            "table_name": "source_provenance_snapshots",
+            "column_name": "game_id"
+          },
+          {
+            "data_type": "text",
+            "table_name": "source_provenance_snapshots",
+            "column_name": "source_name"
+          },
+          {
+            "data_type": "text",
+            "table_name": "source_provenance_snapshots",
+            "column_name": "source_url"
+          },
+          {
+            "data_type": "smallint",
+            "table_name": "source_provenance_snapshots",
+            "column_name": "source_rank"
+          },
+          {
+            "data_type": "boolean",
+            "table_name": "source_provenance_snapshots",
+            "column_name": "is_official"
+          },
+          {
+            "data_type": "text",
+            "table_name": "source_provenance_snapshots",
+            "column_name": "status"
+          },
+          {
+            "data_type": "timestamp with time zone",
+            "table_name": "source_provenance_snapshots",
+            "column_name": "observed_at"
+          },
+          {
+            "data_type": "timestamp with time zone",
+            "table_name": "source_provenance_snapshots",
+            "column_name": "freshness_expires_at"
+          },
+          {
+            "data_type": "jsonb",
+            "table_name": "source_provenance_snapshots",
+            "column_name": "payload"
+          },
+          {
+            "data_type": "jsonb",
+            "table_name": "source_provenance_snapshots",
+            "column_name": "metadata"
+          },
+          {
+            "data_type": "timestamp with time zone",
+            "table_name": "source_provenance_snapshots",
+            "column_name": "updated_at"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "id"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "player_id"
+          },
+          {
+            "data_type": "text",
+            "table_name": "wgo_skater_stats",
+            "column_name": "player_name"
+          },
+          {
+            "data_type": "date",
+            "table_name": "wgo_skater_stats",
+            "column_name": "date"
+          },
+          {
+            "data_type": "text",
+            "table_name": "wgo_skater_stats",
+            "column_name": "shoots_catches"
+          },
+          {
+            "data_type": "text",
+            "table_name": "wgo_skater_stats",
+            "column_name": "position_code"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "games_played"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "points"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "points_per_game"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "goals"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "assists"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "shots"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "shooting_percentage"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "plus_minus"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "ot_goals"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "gw_goals"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "pp_points"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "fow_percentage"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "toi_per_game"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "blocked_shots"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "blocks_per_60"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "empty_net_assists"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "empty_net_goals"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "empty_net_points"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "first_goals"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "giveaways"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "giveaways_per_60"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "hits"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "hits_per_60"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "missed_shot_crossbar"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "missed_shot_goal_post"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "missed_shot_over_net"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "missed_shot_short_side"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "missed_shot_wide_of_net"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "missed_shots"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "takeaways"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "takeaways_per_60"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "d_zone_fo_percentage"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "d_zone_faceoffs"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "ev_faceoff_percentage"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "ev_faceoffs"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "n_zone_fo_percentage"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "n_zone_faceoffs"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "o_zone_fo_percentage"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "o_zone_faceoffs"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "pp_faceoff_percentage"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "pp_faceoffs"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "sh_faceoff_percentage"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "sh_faceoffs"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "total_faceoffs"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "d_zone_fol"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "d_zone_fow"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "ev_fol"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "ev_fow"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "n_zone_fol"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "n_zone_fow"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "o_zone_fol"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "o_zone_fow"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "pp_fol"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "pp_fow"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "sh_fol"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "sh_fow"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "total_fol"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "total_fow"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "es_goal_diff"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "es_goals_against"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "es_goals_for"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "es_goals_for_percentage"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "es_toi_per_game"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "pp_goals_against"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "pp_goals_for"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "pp_toi_per_game"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "sh_goals_against"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "sh_goals_for"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "sh_toi_per_game"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "game_misconduct_penalties"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "major_penalties"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "match_penalties"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "minor_penalties"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "misconduct_penalties"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "net_penalties"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "net_penalties_per_60"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "penalties"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "penalties_drawn"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "penalties_drawn_per_60"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "penalties_taken_per_60"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "penalty_minutes"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "penalty_minutes_per_toi"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "penalty_seconds_per_game"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "pp_goals_against_per_60"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "sh_assists"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "sh_goals"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "sh_points"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "sh_goals_per_60"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "sh_individual_sat_for"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "sh_individual_sat_per_60"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "sh_points_per_60"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "sh_primary_assists"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "sh_primary_assists_per_60"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "sh_secondary_assists"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "sh_secondary_assists_per_60"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "sh_shooting_percentage"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "sh_shots"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "sh_shots_per_60"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "sh_time_on_ice"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "sh_time_on_ice_pct_per_game"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "pp_assists"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "pp_goals"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "pp_goals_for_per_60"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "pp_goals_per_60"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "pp_individual_sat_for"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "pp_individual_sat_per_60"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "pp_points_per_60"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "pp_primary_assists"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "pp_primary_assists_per_60"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "pp_secondary_assists"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "pp_secondary_assists_per_60"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "pp_shooting_percentage"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "pp_shots"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "pp_shots_per_60"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "pp_toi"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "pp_toi_pct_per_game"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "goals_pct"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "faceoff_pct_5v5"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "individual_sat_for_per_60"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "individual_shots_for_per_60"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "on_ice_shooting_pct"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "sat_pct"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "toi_per_game_5v5"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "usat_pct"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "zone_start_pct"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "sat_against"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "sat_ahead"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "sat_behind"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "sat_close"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "sat_for"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "sat_tied"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "sat_total"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "usat_against"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "usat_ahead"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "usat_behind"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "usat_close"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "usat_for"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "usat_tied"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "usat_total"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "sat_percentage"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "sat_percentage_ahead"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "sat_percentage_behind"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "sat_percentage_close"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "sat_percentage_tied"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "sat_relative"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "shooting_percentage_5v5"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "skater_save_pct_5v5"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "skater_shooting_plus_save_pct_5v5"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "usat_percentage"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "usat_percentage_ahead"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "usat_percentage_behind"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "usat_percentage_close"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "usat_percentage_tied"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "usat_relative"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "zone_start_pct_5v5"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "assists_5v5"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "assists_per_60_5v5"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "goals_5v5"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "goals_per_60_5v5"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "net_minor_penalties_per_60"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "o_zone_start_pct_5v5"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "on_ice_shooting_pct_5v5"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "points_5v5"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "points_per_60_5v5"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "primary_assists_5v5"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "primary_assists_per_60_5v5"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "sat_relative_5v5"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "secondary_assists_5v5"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "secondary_assists_per_60_5v5"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "assists_per_game"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "blocks_per_game"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "goals_per_game"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "hits_per_game"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "penalty_minutes_per_game"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "primary_assists_per_game"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "secondary_assists_per_game"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "shots_per_game"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "total_primary_assists"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "total_secondary_assists"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "goals_backhand"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "goals_bat"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "goals_between_legs"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "goals_cradle"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "goals_deflected"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "goals_poke"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "goals_slap"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "goals_snap"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "goals_tip_in"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "goals_wrap_around"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "goals_wrist"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "shooting_pct_backhand"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "shooting_pct_bat"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "shooting_pct_between_legs"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "shooting_pct_cradle"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "shooting_pct_deflected"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "shooting_pct_poke"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "shooting_pct_slap"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "shooting_pct_snap"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "shooting_pct_tip_in"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "shooting_pct_wrap_around"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "shooting_pct_wrist"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "shots_on_net_backhand"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "shots_on_net_bat"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "shots_on_net_between_legs"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "shots_on_net_cradle"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "shots_on_net_deflected"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "shots_on_net_poke"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "shots_on_net_slap"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "shots_on_net_snap"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "shots_on_net_tip_in"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "shots_on_net_wrap_around"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "shots_on_net_wrist"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "ev_time_on_ice"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "ev_time_on_ice_per_game"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "ot_time_on_ice"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "ot_time_on_ice_per_game"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "shifts"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "shifts_per_game"
+          },
+          {
+            "data_type": "double precision",
+            "table_name": "wgo_skater_stats",
+            "column_name": "time_on_ice_per_shift"
+          },
+          {
+            "data_type": "text",
+            "table_name": "wgo_skater_stats",
+            "column_name": "birth_city"
+          },
+          {
+            "data_type": "text",
+            "table_name": "wgo_skater_stats",
+            "column_name": "birth_date"
+          },
+          {
+            "data_type": "text",
+            "table_name": "wgo_skater_stats",
+            "column_name": "current_team_abbreviation"
+          },
+          {
+            "data_type": "text",
+            "table_name": "wgo_skater_stats",
+            "column_name": "current_team_name"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "draft_overall"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "draft_round"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "draft_year"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "first_season_for_game_type"
+          },
+          {
+            "data_type": "text",
+            "table_name": "wgo_skater_stats",
+            "column_name": "nationality_code"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "weight"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "height"
+          },
+          {
+            "data_type": "text",
+            "table_name": "wgo_skater_stats",
+            "column_name": "birth_country"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "season_id"
+          },
+          {
+            "data_type": "bigint",
+            "table_name": "wgo_skater_stats",
+            "column_name": "game_id"
+          },
+          {
+            "data_type": "text",
+            "table_name": "wgo_skater_stats",
+            "column_name": "team_abbrev"
+          },
+          {
+            "data_type": "text",
+            "table_name": "wgo_skater_stats",
+            "column_name": "opponent_team_abbrev"
+          },
+          {
+            "data_type": "character",
+            "table_name": "wgo_skater_stats",
+            "column_name": "home_road"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "ev_goals"
+          },
+          {
+            "data_type": "integer",
+            "table_name": "wgo_skater_stats",
+            "column_name": "ev_points"
+          }
+        ],
+        "indexes": [
+          {
+            "indexdef": "CREATE INDEX cron_job_audit_run_time_idx ON public.cron_job_audit USING btree (run_time, job_name, status, rows_affected)",
+            "indexname": "cron_job_audit_run_time_idx",
+            "tablename": "cron_job_audit"
+          },
+          {
+            "indexdef": "CREATE UNIQUE INDEX games_pkey ON public.games USING btree (id)",
+            "indexname": "games_pkey",
+            "tablename": "games"
+          },
+          {
+            "indexdef": "CREATE INDEX idx_games_date ON public.games USING btree (date)",
+            "indexname": "idx_games_date",
+            "tablename": "games"
+          },
+          {
+            "indexdef": "CREATE INDEX idx_nst_gamelog_as_counts_player_date ON public.nst_gamelog_as_counts USING btree (player_id, date_scraped DESC)",
+            "indexname": "idx_nst_gamelog_as_counts_player_date",
+            "tablename": "nst_gamelog_as_counts"
+          },
+          {
+            "indexdef": "CREATE INDEX nst_counts_key_idx ON public.nst_gamelog_as_counts USING btree (player_id, date_scraped, season)",
+            "indexname": "nst_counts_key_idx",
+            "tablename": "nst_gamelog_as_counts"
+          },
+          {
+            "indexdef": "CREATE INDEX nst_counts_pid_date_season ON public.nst_gamelog_as_counts USING btree (player_id, date_scraped, season)",
+            "indexname": "nst_counts_pid_date_season",
+            "tablename": "nst_gamelog_as_counts"
+          },
+          {
+            "indexdef": "CREATE INDEX nst_gamelog_as_counts_key_idx ON public.nst_gamelog_as_counts USING btree (player_id, date_scraped, season)",
+            "indexname": "nst_gamelog_as_counts_key_idx",
+            "tablename": "nst_gamelog_as_counts"
+          },
+          {
+            "indexdef": "CREATE UNIQUE INDEX nst_gamelog_as_counts_pkey ON public.nst_gamelog_as_counts USING btree (id)",
+            "indexname": "nst_gamelog_as_counts_pkey",
+            "tablename": "nst_gamelog_as_counts"
+          },
+          {
+            "indexdef": "CREATE INDEX nst_gamelog_as_counts_season_player_idx ON public.nst_gamelog_as_counts USING btree (season, player_id)",
+            "indexname": "nst_gamelog_as_counts_season_player_idx",
+            "tablename": "nst_gamelog_as_counts"
+          },
+          {
+            "indexdef": "CREATE UNIQUE INDEX nst_gamelog_as_counts_unique ON public.nst_gamelog_as_counts USING btree (player_id, date_scraped)",
+            "indexname": "nst_gamelog_as_counts_unique",
+            "tablename": "nst_gamelog_as_counts"
+          },
+          {
+            "indexdef": "CREATE UNIQUE INDEX unique_player_date_as_counts ON public.nst_gamelog_as_counts USING btree (player_id, date_scraped)",
+            "indexname": "unique_player_date_as_counts",
+            "tablename": "nst_gamelog_as_counts"
+          },
+          {
+            "indexdef": "CREATE INDEX idx_nst_gamelog_as_counts_oi_player_date ON public.nst_gamelog_as_counts_oi USING btree (player_id, date_scraped DESC)",
+            "indexname": "idx_nst_gamelog_as_counts_oi_player_date",
+            "tablename": "nst_gamelog_as_counts_oi"
+          },
+          {
+            "indexdef": "CREATE INDEX nst_counts_oi_key_idx ON public.nst_gamelog_as_counts_oi USING btree (player_id, date_scraped, season)",
+            "indexname": "nst_counts_oi_key_idx",
+            "tablename": "nst_gamelog_as_counts_oi"
+          },
+          {
+            "indexdef": "CREATE INDEX nst_counts_oi_pid_date_season ON public.nst_gamelog_as_counts_oi USING btree (player_id, date_scraped, season)",
+            "indexname": "nst_counts_oi_pid_date_season",
+            "tablename": "nst_gamelog_as_counts_oi"
+          },
+          {
+            "indexdef": "CREATE INDEX nst_gamelog_as_counts_oi_key_idx ON public.nst_gamelog_as_counts_oi USING btree (player_id, date_scraped, season)",
+            "indexname": "nst_gamelog_as_counts_oi_key_idx",
+            "tablename": "nst_gamelog_as_counts_oi"
+          },
+          {
+            "indexdef": "CREATE UNIQUE INDEX nst_gamelog_as_counts_oi_pkey ON public.nst_gamelog_as_counts_oi USING btree (id)",
+            "indexname": "nst_gamelog_as_counts_oi_pkey",
+            "tablename": "nst_gamelog_as_counts_oi"
+          },
+          {
+            "indexdef": "CREATE INDEX nst_gamelog_as_counts_oi_season_player_idx ON public.nst_gamelog_as_counts_oi USING btree (season, player_id)",
+            "indexname": "nst_gamelog_as_counts_oi_season_player_idx",
+            "tablename": "nst_gamelog_as_counts_oi"
+          },
+          {
+            "indexdef": "CREATE UNIQUE INDEX nst_gamelog_as_counts_oi_unique ON public.nst_gamelog_as_counts_oi USING btree (player_id, date_scraped)",
+            "indexname": "nst_gamelog_as_counts_oi_unique",
+            "tablename": "nst_gamelog_as_counts_oi"
+          },
+          {
+            "indexdef": "CREATE UNIQUE INDEX unique_player_date_as_counts_oi ON public.nst_gamelog_as_counts_oi USING btree (player_id, date_scraped)",
+            "indexname": "unique_player_date_as_counts_oi",
+            "tablename": "nst_gamelog_as_counts_oi"
+          },
+          {
+            "indexdef": "CREATE UNIQUE INDEX source_provenance_snapshots_pkey ON public.source_provenance_snapshots USING btree (snapshot_date, source_type, entity_type, entity_id, source_name, game_id)",
+            "indexname": "source_provenance_snapshots_pkey",
+            "tablename": "source_provenance_snapshots"
+          },
+          {
+            "indexdef": "CREATE INDEX idx_wgo_skater_stats_date ON public.wgo_skater_stats USING btree (date DESC)",
+            "indexname": "idx_wgo_skater_stats_date",
+            "tablename": "wgo_skater_stats"
+          },
+          {
+            "indexdef": "CREATE INDEX idx_wgo_skater_stats_game_id ON public.wgo_skater_stats USING btree (game_id) WHERE (game_id IS NOT NULL)",
+            "indexname": "idx_wgo_skater_stats_game_id",
+            "tablename": "wgo_skater_stats"
+          },
+          {
+            "indexdef": "CREATE INDEX idx_wgo_skater_stats_player_date ON public.wgo_skater_stats USING btree (player_id, date DESC)",
+            "indexname": "idx_wgo_skater_stats_player_date",
+            "tablename": "wgo_skater_stats"
+          },
+          {
+            "indexdef": "CREATE INDEX idx_wgo_skater_stats_player_id ON public.wgo_skater_stats USING btree (player_id)",
+            "indexname": "idx_wgo_skater_stats_player_id",
+            "tablename": "wgo_skater_stats"
+          },
+          {
+            "indexdef": "CREATE INDEX skater_name_norm_btree ON public.wgo_skater_stats USING btree (immutable_unaccent(lower(player_name)))",
+            "indexname": "skater_name_norm_btree",
+            "tablename": "wgo_skater_stats"
+          },
+          {
+            "indexdef": "CREATE INDEX wgo_skater_stats_date_brin ON public.wgo_skater_stats USING brin (date) WITH (pages_per_range='64') WHERE (games_played = 1)",
+            "indexname": "wgo_skater_stats_date_brin",
+            "tablename": "wgo_skater_stats"
+          },
+          {
+            "indexdef": "CREATE INDEX wgo_skater_stats_date_idx ON public.wgo_skater_stats USING btree (date) WHERE (games_played = 1)",
+            "indexname": "wgo_skater_stats_date_idx",
+            "tablename": "wgo_skater_stats"
+          },
+          {
+            "indexdef": "CREATE INDEX wgo_skater_stats_g1_idx ON public.wgo_skater_stats USING btree (player_id, date, season_id) WHERE (games_played = 1)",
+            "indexname": "wgo_skater_stats_g1_idx",
+            "tablename": "wgo_skater_stats"
+          },
+          {
+            "indexdef": "CREATE INDEX wgo_skater_stats_gp1_date ON public.wgo_skater_stats USING btree (date) WHERE (games_played = 1)",
+            "indexname": "wgo_skater_stats_gp1_date",
+            "tablename": "wgo_skater_stats"
+          },
+          {
+            "indexdef": "CREATE INDEX wgo_skater_stats_pid_date_season ON public.wgo_skater_stats USING btree (player_id, date, season_id)",
+            "indexname": "wgo_skater_stats_pid_date_season",
+            "tablename": "wgo_skater_stats"
+          },
+          {
+            "indexdef": "CREATE UNIQUE INDEX wgo_skater_stats_pkey ON public.wgo_skater_stats USING btree (id)",
+            "indexname": "wgo_skater_stats_pkey",
+            "tablename": "wgo_skater_stats"
+          },
+          {
+            "indexdef": "CREATE UNIQUE INDEX wgo_skater_stats_player_id_date_key ON public.wgo_skater_stats USING btree (player_id, date)",
+            "indexname": "wgo_skater_stats_player_id_date_key",
+            "tablename": "wgo_skater_stats"
+          }
+        ]
+      }
+    }
+  ],
+  "notes": "Read-only bounded metadata or current-season public sports data; not native-source or BLSH acceptance evidence."
+}

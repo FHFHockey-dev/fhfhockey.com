@@ -1,0 +1,42 @@
+{
+  "version": "luna-reference-repair-r1-candidate-v1",
+  "branch": "octoberBranch",
+  "headInformational": "108c68938aa42cee7a9b82a40390149433def4e2",
+  "deliverables": {
+    "web/lib/sources/tweetLunaReference.ts": "226a6820f843f9b3092f8c9f9e31f00b42f0e9beef7084a8917d89bf8fe569bc",
+    "web/lib/sources/tweetLunaReference.md": "4d8dc93f82f81fc8b5ba1fb135e78ba4d009d3cfbf7eb241e8a45ee88cede1fc",
+    "web/lib/sources/tweetLunaReview.ts": "b942e553e97b67bb363dcc32e2e8496e01584cfa71cbe207a1fb120f7d3e3000",
+    "web/lib/sources/tweetLunaReview.test.ts": "eb93e0e310aa49dffa2a3000c212a5d835582184e55202c8b7cb866b6e104566",
+    "web/lib/sources/fixtures/tweetLunaSyntheticCases.ts": "e2186a1e08fc1be1181ceac982f404804fee094a29305be24246d895688efbc6",
+    "web/lib/sources/tweetLunaGoalieWording.ts": "1beda8dd6bfb7f46f7df473451c921987aaa03bf263bd8af5c071ba4009d4f04",
+    "web/lib/sources/fixtures/tweetLunaEvaluation.ts": "adaab844f90bd4a75015ea506fd52597d509abaebf055703ea6fcf2f4d8796be",
+    "web/scripts/rehearse-luna-evaluation.ts": "d566f56d0650ed5f47221ff924bdb40289b4390c19b6001063468917479556a4"
+  },
+  "protected": {
+    "web/lib/sources/tweetLunaTransport.ts": "6f67f0e819766eb8b7e712114f063681833ea87266b08443701231461e4d12d1",
+    "web/lib/sources/tweetLunaLocalStore.ts": "52977c7949d2f60ee4274da0c7d1e0583bc8c5c1324bb6ffb187a32037a2d543",
+    "web/scripts/review-ifttt-luna.ts": "b3407da148f11fe4dd3185e8521f3c1c9b4688232acbff675c9d104902cec8e8",
+    "web/lib/sources/fixtures/tweetLunaAdjudicatedLibrary.json": "e787036b54c89f8fa06e4b28032c8895fbbed81feef1fa04e357435f3229726a",
+    "web/lib/sources/decisionsReference/adapter.mjs": "055bc80ccf9874de8a976da6106bc34af15e424d6b905d39fccf57ecfd2b92a1",
+    "web/lib/sources/tweetIdentityProposal.ts": "a73df0483313bc75e94b36bc3fcf9087e1adb7d96afd0895db7a9c8bad7c9a27",
+    "web/lib/sources/tweetPlayerEvents.ts": "14c421d37506f33df08cac5914e30c38a578b2588ae46f3c6e461b70efadc88c"
+  },
+  "artifacts": {
+    "CREDENTIAL-HANDOFF.md": "c81e7c3b1bd3bcd2718335b153bdde962dd8da64ae3776639901e82916ffc6f8",
+    "HANDOFF.md": "7c25037fd7e968116e0437d55fdf5f6692c7e7be7d17d7416a4ff8689b73c76c",
+    "application.patch": "872f39a45d96d6dde729ef23f3137eb93f28f75549e2f519af0b687a7581b80d",
+    "lint.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "rehearsal/SYNTHETIC-ONLY-ledger.json": "e2693e559ab281b601f54c7b6780f01f5fdf40b88e1610b6916890334db6397c",
+    "rehearsal/batch.json": "c8878323aec0be52bb0b814981b1d97d981959e676c3bb4c0415d17493523ae9",
+    "rehearsal/rehearsal.json": "c48464bb5ba432ada25c3986f58a4183aca47d1016741068a16225be3ed6ae9f",
+    "rehearsal/requests.json": "14910654d3c4ba20a39b190f467ba931e8c2ad1d85b8a02f3b63c4f5172775a6",
+    "rehearsal/results.json": "1cff34c8b1aa55bfd94c331475196e206b3bdf5f5e68462b4e4c78e052279ba7",
+    "rehearsal.log": "b9d6473695cd1e2938476d23ad18d88a2839e2d62a4f6ccf0be21779694f00d4",
+    "tests.log": "af67ad04ede239b3f073e38401d5018ef76c1b767026f74d22ae70b9e3995588",
+    "typecheck.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "verification.json": "7218316324ffb498f9deb6a7e67fb586499739c5c044e2257b356a0420f774fc"
+  },
+  "batchHash": "3450aab7010da412d8e1922f8928f1369de1bd55508a860b9ce19f05e031cf74",
+  "noPaidAuthority": true,
+  "diaryExcluded": true
+}

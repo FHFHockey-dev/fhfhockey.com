@@ -1,0 +1,15 @@
+{
+  "id": "CODEX-NST-GOALIE-AGGREGATE-PROXY-20261101",
+  "owner_thread": "01a19780-b73c-7334-9e53-4b7fda61201c",
+  "parent_thread": "01a189f6-9a3a-7235-a989-e1af4f47b014",
+  "paths": [
+    "functions/api/index.py"
+  ],
+  "status": "ACTIVE_LOCAL_ONLY",
+  "authority": "Authorized writer/lifecycle implementation; retained custodian confirms no hold and both registries freshly checked conflict-free",
+  "baseline_sha256": {
+    "functions/api/index.py": "e5eb968e2052b7fc16abfa59eea7eb018038dbe0c93c6de36cab9b19f560f374"
+  },
+  "started_at_utc": "2026-11-01T17:13:53.985391+00:00",
+  "scope": "Reuse authenticated NST proxy handler while preserving aggregate default seasons and all unrelated routes"
+}

@@ -1,0 +1,136 @@
+{
+  "version": "ifttt-luna-review-v1",
+  "canPublish": false,
+  "canWriteAliases": false,
+  "canChangeStatus": false,
+  "canExecuteReplacement": false,
+  "status": "review_only",
+  "holds": [
+    "human_review_required",
+    "no_publication_authority"
+  ],
+  "referencePackage": {
+    "version": "luna-hockey-reference-v3",
+    "mode": "rules-and-synthetic-only",
+    "hash": "224cfbc4e68f605104c029f882fae7cd224ab300e44593a16345abf11537420b",
+    "rulesVersion": "luna-hockey-rules-v3",
+    "libraryVersion": null
+  },
+  "responsesRequestHash": "030ddad83f0677f23155de90a7a5754b19141a34f1a3003d23c77385582190ba",
+  "lineage": {
+    "originalPostId": "910000",
+    "author": "lunafixture",
+    "url": "https://x.com/LunaFixture/status/910000",
+    "textVersion": "tweet-source-claim-v1:text:2aaf9c3666e010204104a076cda278ec29cd0b3566cdcb25b508e762ba4a6d53",
+    "packetHash": "8b365aa0e221ac7eded7dc3fadb2601a3510d17818527b6785ddd2cf032f3685"
+  },
+  "identity": {
+    "version": "tweet-identity-proposal-v1",
+    "requestHash": "50daee1404e3d2c0b1e16ba8c5c9ff1a0edd9c582df57c8d4c8ec699bb62d622",
+    "directoryHash": "88dbd1e19c22a04fba95f07d049c38af533b548723bd17106f639191667ae16f",
+    "occurrences": [
+      {
+        "occurrenceId": "subject-4",
+        "canonicalId": "nhl:900001",
+        "status": "matched",
+        "evidence": {
+          "start": 4,
+          "end": 16,
+          "text": "Avery Keeper"
+        },
+        "identityConfidence": "tentative"
+      }
+    ]
+  },
+  "goalieStatuses": [],
+  "decisionReview": {
+    "mode": "review_only",
+    "canPublish": false,
+    "canChangeStatus": false,
+    "providerDispatchEnabled": false,
+    "bindingVersion": "tweet-decision-review-binding-v1",
+    "planHash": "167518ef1257242859527edb8474b694da4bef7603ef32e1be7a506e2da2e711",
+    "packetHash": "8b365aa0e221ac7eded7dc3fadb2601a3510d17818527b6785ddd2cf032f3685",
+    "sourceSupportMeaning": "assessment_of_supplied_statement_only",
+    "calibrationStatus": "uncalibrated_shadow_only",
+    "reviewReasons": [
+      "uncalibrated_shadow_only"
+    ],
+    "status": "bound_review",
+    "reason": null,
+    "post": {
+      "status": "scored",
+      "type": "predicate",
+      "probability": 1
+    },
+    "claims": [
+      {
+        "candidateIndex": 0,
+        "observationId": "tweet-observation-v2:89406786611cd07003cb05591f030bf88b29beaa920064149fa0d4cfd3abe0c3",
+        "playerId": 900001,
+        "statement": "Avery Keeper starts tonight.",
+        "statementBindingHash": "ceaca5fa7c308934349cd048be113c16238d95bc56197f1d970078dbf7df95b6",
+        "support": {
+          "status": "scored",
+          "type": "choice",
+          "choice": "supported",
+          "confidence": 0.66,
+          "probabilities": [
+            {
+              "value": "supported",
+              "probability": 0.77
+            },
+            {
+              "value": "contradicted",
+              "probability": 0.03
+            },
+            {
+              "value": "insufficient_evidence",
+              "probability": 0.2
+            }
+          ]
+        },
+        "wording": {
+          "status": "scored",
+          "type": "choice",
+          "choice": "direct_assertion",
+          "confidence": 0.94,
+          "probabilities": [
+            {
+              "value": "conditional",
+              "probability": 0
+            },
+            {
+              "value": "expectation",
+              "probability": 0.04
+            },
+            {
+              "value": "speculation",
+              "probability": 0.01
+            },
+            {
+              "value": "opinion",
+              "probability": 0
+            },
+            {
+              "value": "direct_assertion",
+              "probability": 0.95
+            },
+            {
+              "value": "unclear",
+              "probability": 0
+            }
+          ]
+        }
+      }
+    ],
+    "heldCandidates": [],
+    "unboundStatements": []
+  },
+  "attempts": 2,
+  "requestIds": [
+    "req_4fcb802531754e388253b4e7d481c96a",
+    "req_c4eda22b6eed4875899808677e96db42"
+  ],
+  "reviewQueueKey": "d0f0909f23a624cf58f04784fd27c83f6f590d466868d7a0d646c0968ac81991"
+}

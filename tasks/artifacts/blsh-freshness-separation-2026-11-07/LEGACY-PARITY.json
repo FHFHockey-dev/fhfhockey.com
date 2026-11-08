@@ -1,0 +1,402 @@
+{
+  "cases": 66,
+  "passed": true,
+  "results": [
+    {
+      "name": "recent",
+      "evaluatedAtUTC": "2026-11-01T20:00:00Z",
+      "acceptedSyntheticPolicy": true,
+      "unchanged": true
+    },
+    {
+      "name": "recent",
+      "evaluatedAtUTC": "2026-11-01T20:00:00Z",
+      "acceptedSyntheticPolicy": false,
+      "unchanged": true
+    },
+    {
+      "name": "recent",
+      "evaluatedAtUTC": "2026-11-01T20:00:00.000001Z",
+      "acceptedSyntheticPolicy": true,
+      "unchanged": true
+    },
+    {
+      "name": "recent",
+      "evaluatedAtUTC": "2026-11-01T20:00:00.000001Z",
+      "acceptedSyntheticPolicy": false,
+      "unchanged": true
+    },
+    {
+      "name": "recent",
+      "evaluatedAtUTC": "2026-11-03T20:00:00Z",
+      "acceptedSyntheticPolicy": true,
+      "unchanged": true
+    },
+    {
+      "name": "recent",
+      "evaluatedAtUTC": "2026-11-03T20:00:00Z",
+      "acceptedSyntheticPolicy": false,
+      "unchanged": true
+    },
+    {
+      "name": "wide-recent-window",
+      "evaluatedAtUTC": "2026-11-01T20:00:00Z",
+      "acceptedSyntheticPolicy": true,
+      "unchanged": true
+    },
+    {
+      "name": "wide-recent-window",
+      "evaluatedAtUTC": "2026-11-01T20:00:00Z",
+      "acceptedSyntheticPolicy": false,
+      "unchanged": true
+    },
+    {
+      "name": "wide-recent-window",
+      "evaluatedAtUTC": "2026-11-01T20:00:00.000001Z",
+      "acceptedSyntheticPolicy": true,
+      "unchanged": true
+    },
+    {
+      "name": "wide-recent-window",
+      "evaluatedAtUTC": "2026-11-01T20:00:00.000001Z",
+      "acceptedSyntheticPolicy": false,
+      "unchanged": true
+    },
+    {
+      "name": "wide-recent-window",
+      "evaluatedAtUTC": "2026-11-03T20:00:00Z",
+      "acceptedSyntheticPolicy": true,
+      "unchanged": true
+    },
+    {
+      "name": "wide-recent-window",
+      "evaluatedAtUTC": "2026-11-03T20:00:00Z",
+      "acceptedSyntheticPolicy": false,
+      "unchanged": true
+    },
+    {
+      "name": "old-window",
+      "evaluatedAtUTC": "2026-11-01T20:00:00Z",
+      "acceptedSyntheticPolicy": true,
+      "unchanged": true
+    },
+    {
+      "name": "old-window",
+      "evaluatedAtUTC": "2026-11-01T20:00:00Z",
+      "acceptedSyntheticPolicy": false,
+      "unchanged": true
+    },
+    {
+      "name": "old-window",
+      "evaluatedAtUTC": "2026-11-01T20:00:00.000001Z",
+      "acceptedSyntheticPolicy": true,
+      "unchanged": true
+    },
+    {
+      "name": "old-window",
+      "evaluatedAtUTC": "2026-11-01T20:00:00.000001Z",
+      "acceptedSyntheticPolicy": false,
+      "unchanged": true
+    },
+    {
+      "name": "old-window",
+      "evaluatedAtUTC": "2026-11-03T20:00:00Z",
+      "acceptedSyntheticPolicy": true,
+      "unchanged": true
+    },
+    {
+      "name": "old-window",
+      "evaluatedAtUTC": "2026-11-03T20:00:00Z",
+      "acceptedSyntheticPolicy": false,
+      "unchanged": true
+    },
+    {
+      "name": "short-window",
+      "evaluatedAtUTC": "2026-11-01T20:00:00Z",
+      "acceptedSyntheticPolicy": true,
+      "unchanged": true
+    },
+    {
+      "name": "short-window",
+      "evaluatedAtUTC": "2026-11-01T20:00:00Z",
+      "acceptedSyntheticPolicy": false,
+      "unchanged": true
+    },
+    {
+      "name": "short-window",
+      "evaluatedAtUTC": "2026-11-01T20:00:00.000001Z",
+      "acceptedSyntheticPolicy": true,
+      "unchanged": true
+    },
+    {
+      "name": "short-window",
+      "evaluatedAtUTC": "2026-11-01T20:00:00.000001Z",
+      "acceptedSyntheticPolicy": false,
+      "unchanged": true
+    },
+    {
+      "name": "short-window",
+      "evaluatedAtUTC": "2026-11-03T20:00:00Z",
+      "acceptedSyntheticPolicy": true,
+      "unchanged": true
+    },
+    {
+      "name": "short-window",
+      "evaluatedAtUTC": "2026-11-03T20:00:00Z",
+      "acceptedSyntheticPolicy": false,
+      "unchanged": true
+    },
+    {
+      "name": "missing-other-feed",
+      "evaluatedAtUTC": "2026-11-01T20:00:00Z",
+      "acceptedSyntheticPolicy": true,
+      "unchanged": true
+    },
+    {
+      "name": "missing-other-feed",
+      "evaluatedAtUTC": "2026-11-01T20:00:00Z",
+      "acceptedSyntheticPolicy": false,
+      "unchanged": true
+    },
+    {
+      "name": "missing-other-feed",
+      "evaluatedAtUTC": "2026-11-01T20:00:00.000001Z",
+      "acceptedSyntheticPolicy": true,
+      "unchanged": true
+    },
+    {
+      "name": "missing-other-feed",
+      "evaluatedAtUTC": "2026-11-01T20:00:00.000001Z",
+      "acceptedSyntheticPolicy": false,
+      "unchanged": true
+    },
+    {
+      "name": "missing-other-feed",
+      "evaluatedAtUTC": "2026-11-03T20:00:00Z",
+      "acceptedSyntheticPolicy": true,
+      "unchanged": true
+    },
+    {
+      "name": "missing-other-feed",
+      "evaluatedAtUTC": "2026-11-03T20:00:00Z",
+      "acceptedSyntheticPolicy": false,
+      "unchanged": true
+    },
+    {
+      "name": "invalid-metric",
+      "evaluatedAtUTC": "2026-11-01T20:00:00Z",
+      "acceptedSyntheticPolicy": true,
+      "unchanged": true
+    },
+    {
+      "name": "invalid-metric",
+      "evaluatedAtUTC": "2026-11-01T20:00:00Z",
+      "acceptedSyntheticPolicy": false,
+      "unchanged": true
+    },
+    {
+      "name": "invalid-metric",
+      "evaluatedAtUTC": "2026-11-01T20:00:00.000001Z",
+      "acceptedSyntheticPolicy": true,
+      "unchanged": true
+    },
+    {
+      "name": "invalid-metric",
+      "evaluatedAtUTC": "2026-11-01T20:00:00.000001Z",
+      "acceptedSyntheticPolicy": false,
+      "unchanged": true
+    },
+    {
+      "name": "invalid-metric",
+      "evaluatedAtUTC": "2026-11-03T20:00:00Z",
+      "acceptedSyntheticPolicy": true,
+      "unchanged": true
+    },
+    {
+      "name": "invalid-metric",
+      "evaluatedAtUTC": "2026-11-03T20:00:00Z",
+      "acceptedSyntheticPolicy": false,
+      "unchanged": true
+    },
+    {
+      "name": "unreviewed-scope",
+      "evaluatedAtUTC": "2026-11-01T20:00:00Z",
+      "acceptedSyntheticPolicy": true,
+      "unchanged": true
+    },
+    {
+      "name": "unreviewed-scope",
+      "evaluatedAtUTC": "2026-11-01T20:00:00Z",
+      "acceptedSyntheticPolicy": false,
+      "unchanged": true
+    },
+    {
+      "name": "unreviewed-scope",
+      "evaluatedAtUTC": "2026-11-01T20:00:00.000001Z",
+      "acceptedSyntheticPolicy": true,
+      "unchanged": true
+    },
+    {
+      "name": "unreviewed-scope",
+      "evaluatedAtUTC": "2026-11-01T20:00:00.000001Z",
+      "acceptedSyntheticPolicy": false,
+      "unchanged": true
+    },
+    {
+      "name": "unreviewed-scope",
+      "evaluatedAtUTC": "2026-11-03T20:00:00Z",
+      "acceptedSyntheticPolicy": true,
+      "unchanged": true
+    },
+    {
+      "name": "unreviewed-scope",
+      "evaluatedAtUTC": "2026-11-03T20:00:00Z",
+      "acceptedSyntheticPolicy": false,
+      "unchanged": true
+    },
+    {
+      "name": "exposure-mismatch",
+      "evaluatedAtUTC": "2026-11-01T20:00:00Z",
+      "acceptedSyntheticPolicy": true,
+      "unchanged": true
+    },
+    {
+      "name": "exposure-mismatch",
+      "evaluatedAtUTC": "2026-11-01T20:00:00Z",
+      "acceptedSyntheticPolicy": false,
+      "unchanged": true
+    },
+    {
+      "name": "exposure-mismatch",
+      "evaluatedAtUTC": "2026-11-01T20:00:00.000001Z",
+      "acceptedSyntheticPolicy": true,
+      "unchanged": true
+    },
+    {
+      "name": "exposure-mismatch",
+      "evaluatedAtUTC": "2026-11-01T20:00:00.000001Z",
+      "acceptedSyntheticPolicy": false,
+      "unchanged": true
+    },
+    {
+      "name": "exposure-mismatch",
+      "evaluatedAtUTC": "2026-11-03T20:00:00Z",
+      "acceptedSyntheticPolicy": true,
+      "unchanged": true
+    },
+    {
+      "name": "exposure-mismatch",
+      "evaluatedAtUTC": "2026-11-03T20:00:00Z",
+      "acceptedSyntheticPolicy": false,
+      "unchanged": true
+    },
+    {
+      "name": "row-drift",
+      "evaluatedAtUTC": "2026-11-01T20:00:00Z",
+      "acceptedSyntheticPolicy": true,
+      "unchanged": true
+    },
+    {
+      "name": "row-drift",
+      "evaluatedAtUTC": "2026-11-01T20:00:00Z",
+      "acceptedSyntheticPolicy": false,
+      "unchanged": true
+    },
+    {
+      "name": "row-drift",
+      "evaluatedAtUTC": "2026-11-01T20:00:00.000001Z",
+      "acceptedSyntheticPolicy": true,
+      "unchanged": true
+    },
+    {
+      "name": "row-drift",
+      "evaluatedAtUTC": "2026-11-01T20:00:00.000001Z",
+      "acceptedSyntheticPolicy": false,
+      "unchanged": true
+    },
+    {
+      "name": "row-drift",
+      "evaluatedAtUTC": "2026-11-03T20:00:00Z",
+      "acceptedSyntheticPolicy": true,
+      "unchanged": true
+    },
+    {
+      "name": "row-drift",
+      "evaluatedAtUTC": "2026-11-03T20:00:00Z",
+      "acceptedSyntheticPolicy": false,
+      "unchanged": true
+    },
+    {
+      "name": "native-future-microsecond",
+      "evaluatedAtUTC": "2026-11-01T20:00:00Z",
+      "acceptedSyntheticPolicy": true,
+      "unchanged": true
+    },
+    {
+      "name": "native-future-microsecond",
+      "evaluatedAtUTC": "2026-11-01T20:00:00Z",
+      "acceptedSyntheticPolicy": false,
+      "unchanged": true
+    },
+    {
+      "name": "native-future-microsecond",
+      "evaluatedAtUTC": "2026-11-01T20:00:00.000001Z",
+      "acceptedSyntheticPolicy": true,
+      "unchanged": true
+    },
+    {
+      "name": "native-future-microsecond",
+      "evaluatedAtUTC": "2026-11-01T20:00:00.000001Z",
+      "acceptedSyntheticPolicy": false,
+      "unchanged": true
+    },
+    {
+      "name": "native-future-microsecond",
+      "evaluatedAtUTC": "2026-11-03T20:00:00Z",
+      "acceptedSyntheticPolicy": true,
+      "unchanged": true
+    },
+    {
+      "name": "native-future-microsecond",
+      "evaluatedAtUTC": "2026-11-03T20:00:00Z",
+      "acceptedSyntheticPolicy": false,
+      "unchanged": true
+    },
+    {
+      "name": "capture-age-microsecond",
+      "evaluatedAtUTC": "2026-11-01T20:00:00Z",
+      "acceptedSyntheticPolicy": true,
+      "unchanged": true
+    },
+    {
+      "name": "capture-age-microsecond",
+      "evaluatedAtUTC": "2026-11-01T20:00:00Z",
+      "acceptedSyntheticPolicy": false,
+      "unchanged": true
+    },
+    {
+      "name": "capture-age-microsecond",
+      "evaluatedAtUTC": "2026-11-01T20:00:00.000001Z",
+      "acceptedSyntheticPolicy": true,
+      "unchanged": true
+    },
+    {
+      "name": "capture-age-microsecond",
+      "evaluatedAtUTC": "2026-11-01T20:00:00.000001Z",
+      "acceptedSyntheticPolicy": false,
+      "unchanged": true
+    },
+    {
+      "name": "capture-age-microsecond",
+      "evaluatedAtUTC": "2026-11-03T20:00:00Z",
+      "acceptedSyntheticPolicy": true,
+      "unchanged": true
+    },
+    {
+      "name": "capture-age-microsecond",
+      "evaluatedAtUTC": "2026-11-03T20:00:00Z",
+      "acceptedSyntheticPolicy": false,
+      "unchanged": true
+    }
+  ]
+}

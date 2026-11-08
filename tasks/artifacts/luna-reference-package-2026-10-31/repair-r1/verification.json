@@ -1,0 +1,37 @@
+{
+  "node": "22.11.0",
+  "tests": {
+    "status": "passed",
+    "files": 5,
+    "tests": 243,
+    "lunaTests": 114,
+    "coupledTests": 129,
+    "log": "tests.log"
+  },
+  "typescript": {
+    "status": "passed",
+    "exitCode": 0,
+    "config": "../tsconfig.json",
+    "log": "typecheck.log"
+  },
+  "eslint": {
+    "status": "passed",
+    "exitCode": 0,
+    "files": 7,
+    "log": "lint.log"
+  },
+  "standaloneRehearsal": {
+    "status": "passed",
+    "exitCode": 0,
+    "reports": 16,
+    "responses": 16,
+    "decisions": 4,
+    "maxRetries": 0,
+    "actualPaidRequests": 0,
+    "actualPaidCostNanoUsd": 0
+  },
+  "protectedPins": "7 unchanged",
+  "independentRereview": "pending",
+  "realHoldout": "unavailable",
+  "deployment": "not performed; hosted state not inspected"
+}

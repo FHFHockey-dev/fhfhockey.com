@@ -1,0 +1,281 @@
+{
+  "at": "2026-10-26T23:06:33.460080+00:00",
+  "sourceChanges": [
+    {
+      "path": "web/lib/player-cards/currentNhl.ts",
+      "bytes": 10432,
+      "sha256": "e8b083955320ef1b4cfef62ac60572a530e00e6dadc77159c4d8e6b66817a1e8"
+    },
+    {
+      "path": "web/lib/player-cards/currentNhl.test.ts",
+      "bytes": 5266,
+      "sha256": "8b5a19b8d4157d44c4386e2b14ab5da7b6480b236e5543c1531f69178963b457"
+    },
+    {
+      "path": "web/lib/player-cards/currentNhl.server.ts",
+      "bytes": 2685,
+      "sha256": "63c0df4d1a325383864de8cac1fc8175f15ed3194bd473697b3cd13792c5691c"
+    },
+    {
+      "path": "web/lib/player-cards/currentNhl.server.test.ts",
+      "bytes": 4271,
+      "sha256": "2f482b8999827bd008eab1927a21dbbc62d4cdf3a94da657532c6a5dbc48a493"
+    },
+    {
+      "path": "web/pages/api/v1/player-cards.ts",
+      "bytes": 843,
+      "sha256": "182a4388c37857db84a6a8e1b42eb7c07ae1cd79594a06fe4b9b8d62cb632146"
+    },
+    {
+      "path": "web/components/player-cards/CurrentPlayerCard.tsx",
+      "bytes": 5327,
+      "sha256": "a9c00a89b7779f61d745ad9a802e03a1d58751af4ea8c97d30838f2d501484e1"
+    },
+    {
+      "path": "web/components/player-cards/CurrentPlayerCardStudio.tsx",
+      "bytes": 8226,
+      "sha256": "de551a59d5e83f594e2848176dd5c4b872069af91cf18174ef9c811774355e40"
+    },
+    {
+      "path": "web/components/player-cards/CurrentPlayerCardStudio.test.tsx",
+      "bytes": 3412,
+      "sha256": "0cb960b00336d932eedddf23d1c0f314c1d74c2b4a1124c84e7b480d4a18c4de"
+    },
+    {
+      "path": "web/lib/player-cards/currentNhlExport.ts",
+      "bytes": 877,
+      "sha256": "d8533b01c5886f229606d198697ece97ed208fe4d015ff6aafe3da6bb5aab653"
+    },
+    {
+      "path": "web/pages/social-share/player-cards.tsx",
+      "bytes": 2262,
+      "sha256": "12c4f9cb54a1ce275ed65be3aa3120da0e4e20e87741993d759601b9a955a78b"
+    }
+  ],
+  "checks": {
+    "tests": {
+      "action": "tests",
+      "command": [
+        "npm",
+        "test",
+        "--",
+        "--run",
+        "--config",
+        "../tasks/artifacts/player-cards-2026-10-26/current-data-01/vitest.config.mts"
+      ],
+      "cwd": "/Users/tim/Code/fhfhockey.com/web",
+      "exitCode": 0,
+      "elapsedSeconds": 1.889,
+      "environmentOverrides": {
+        "npm_config_cache": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-26/current-data-01/.npm-cache",
+        "npm_config_logs_dir": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-26/current-data-01/.npm-logs",
+        "NO_UPDATE_NOTIFIER": "1",
+        "NEXT_TELEMETRY_DISABLED": "1"
+      },
+      "lockOwnedAndReleased": true
+    },
+    "types": {
+      "action": "types",
+      "command": [
+        "npx",
+        "--no-install",
+        "tsc",
+        "--noEmit",
+        "--project",
+        "../tasks/artifacts/player-cards-2026-10-26/current-data-01/tsconfig.json"
+      ],
+      "cwd": "/Users/tim/Code/fhfhockey.com/web",
+      "exitCode": 0,
+      "elapsedSeconds": 1.896,
+      "environmentOverrides": {
+        "npm_config_cache": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-26/current-data-01/.npm-cache",
+        "npm_config_logs_dir": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-26/current-data-01/.npm-logs",
+        "NO_UPDATE_NOTIFIER": "1",
+        "NEXT_TELEMETRY_DISABLED": "1"
+      },
+      "lockOwnedAndReleased": true
+    },
+    "lint": {
+      "action": "lint",
+      "command": [
+        "npx",
+        "--no-install",
+        "eslint",
+        "lib/player-cards/currentNhl.ts",
+        "lib/player-cards/currentNhl.test.ts",
+        "lib/player-cards/currentNhl.server.ts",
+        "lib/player-cards/currentNhl.server.test.ts",
+        "pages/api/v1/player-cards.ts",
+        "components/player-cards/CurrentPlayerCard.tsx",
+        "components/player-cards/CurrentPlayerCardStudio.tsx",
+        "components/player-cards/CurrentPlayerCardStudio.test.tsx",
+        "lib/player-cards/currentNhlExport.ts",
+        "pages/social-share/player-cards.tsx"
+      ],
+      "cwd": "/Users/tim/Code/fhfhockey.com/web",
+      "exitCode": 0,
+      "elapsedSeconds": 1.416,
+      "environmentOverrides": {
+        "npm_config_cache": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-26/current-data-01/.npm-cache",
+        "npm_config_logs_dir": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-26/current-data-01/.npm-logs",
+        "NO_UPDATE_NOTIFIER": "1",
+        "NEXT_TELEMETRY_DISABLED": "1"
+      },
+      "lockOwnedAndReleased": true
+    },
+    "render": {
+      "action": "render",
+      "command": [
+        "node",
+        "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-26/current-data-01/render-preview.mjs"
+      ],
+      "cwd": "/Users/tim/Code/fhfhockey.com/web",
+      "exitCode": 0,
+      "elapsedSeconds": 0.181,
+      "environmentOverrides": {
+        "npm_config_cache": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-26/current-data-01/.npm-cache",
+        "npm_config_logs_dir": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-26/current-data-01/.npm-logs",
+        "NO_UPDATE_NOTIFIER": "1",
+        "NEXT_TELEMETRY_DISABLED": "1"
+      },
+      "lockOwnedAndReleased": true
+    },
+    "browser": {
+      "action": "browser",
+      "command": [
+        "node",
+        "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-26/current-data-01/browser-check.mjs"
+      ],
+      "cwd": "/Users/tim/Code/fhfhockey.com/web",
+      "exitCode": 0,
+      "elapsedSeconds": 2.422,
+      "environmentOverrides": {
+        "npm_config_cache": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-26/current-data-01/.npm-cache",
+        "npm_config_logs_dir": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-26/current-data-01/.npm-logs",
+        "NO_UPDATE_NOTIFIER": "1",
+        "NEXT_TELEMETRY_DISABLED": "1"
+      },
+      "lockOwnedAndReleased": true
+    }
+  },
+  "unitTestsPassed": 21,
+  "runtimeTestNote": "Following runtime pass, two test-only NextApiRequest casts gained unknown; erased TypeScript change only; scoped tsc then passed.",
+  "offlineBrowserGroups": {
+    "checks": [
+      "Explicit synthetic fixture; no automatic HTTP request; ready sample and actual ratios distinct from unverified population ranks",
+      "Two functional stat suites from identical snapshot; real PNGs1200x1020/manifest/share-fallback parity; desktop and390px phone without overflow",
+      "Category changes discard prepared image; window changes invalidate old snapshot/export; explicit reload restores matching selected window",
+      "Incomplete history produces unknown GP/missing values and disables PNG, without replacing data with zeros"
+    ],
+    "exports": [
+      {
+        "format": "rates-opportunity",
+        "sha256": "6348014136efae7c071cb183e07bb2d5a0d121e419b8c8d6a8b44db92a2bf4c4",
+        "shareBytesMatch": true
+      },
+      {
+        "format": "results-milestones",
+        "sha256": "1a43e3baef5fe986557d450704db16218a5b1bb5eb0efad2e74de340cbd5202d",
+        "shareBytesMatch": true
+      }
+    ],
+    "externalAttempts": [],
+    "pageErrors": [],
+    "liveDataQualified": false,
+    "fixture": "synthetic-contract-fixture.json"
+  },
+  "artifactPins": [
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/current-data-01/source.patch",
+      "bytes": 44993,
+      "sha256": "1b6c7e9f197b3e7fcad49c153dd54c4976f0ecdb41c645e88ab24424adae49f8"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/current-data-01/preview.html",
+      "bytes": 311714,
+      "sha256": "573f214876c425923f73ad9ab5a925a6fce245f1ed6ba4d7080b0b5005a0a8b9"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/current-data-01/synthetic-contract-fixture.json",
+      "bytes": 1647,
+      "sha256": "13530a8056f2b37d733f67f76192cb8333b24067bd702c5e3113ded61845c244"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/current-data-01/rates-opportunity.png",
+      "bytes": 234335,
+      "sha256": "6348014136efae7c071cb183e07bb2d5a0d121e419b8c8d6a8b44db92a2bf4c4"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/current-data-01/results-milestones.png",
+      "bytes": 214590,
+      "sha256": "1a43e3baef5fe986557d450704db16218a5b1bb5eb0efad2e74de340cbd5202d"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/current-data-01/rates-opportunity-manifest.json",
+      "bytes": 2754,
+      "sha256": "5987b0c35313e6d0e5294dcd694c30223df5798d222c2c94c14ef4ea49f87c1d"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/current-data-01/results-milestones-manifest.json",
+      "bytes": 2755,
+      "sha256": "30a2bdfbe11310f93be751fc531886a45b3a6d5495508fc7c31da9b6fe033503"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/current-data-01/unavailable-state.png",
+      "bytes": 248768,
+      "sha256": "a1613d863af4402254c6ccb3e2b258ffb0de931e07736305b598be6953db7beb"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/current-data-01/browser-check.mjs",
+      "bytes": 5606,
+      "sha256": "dd442203847b4a15863dd93221d80d344a53b5ab9f06d0a0ea3b4bbc19c2964c"
+    }
+  ],
+  "approvedSnapshot": {
+    "startedAt": "2026-10-26T22:59:34.798661+00:00",
+    "approval": {
+      "assistantMessage": "Sentinel_96ec1a4dd0d08191bfb33a1897f3dc87",
+      "userReply": "Sentinel_fca3d11ad3988191b3fa135d5eaf3f1b",
+      "userAnswer": "yes",
+      "approvedAt": "2026-10-26T22:57:28Z",
+      "source": "Scout trusted delegation quoting direct owner response"
+    },
+    "calls": [
+      {
+        "name": "landing",
+        "url": "https://api-web.nhle.com/v1/player/8476453/landing",
+        "startedAt": "2026-10-26T22:59:34.801275+00:00",
+        "bytes": 0,
+        "status": "started"
+      }
+    ],
+    "status": "stopped",
+    "limits": {
+      "calls": 3,
+      "concurrency": 1,
+      "perRequestSeconds": 5,
+      "totalSeconds": 15,
+      "perResponseBytes": 524288,
+      "totalBytes": 1572864,
+      "gameLogRows": 100,
+      "scheduleRows": 140,
+      "redirects": 0,
+      "retries": 0
+    },
+    "databaseReads": 0,
+    "remoteWrites": 0,
+    "authOrProfileChanges": 0,
+    "error": "URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1020)>",
+    "retryPermitted": false,
+    "finishedAt": "2026-10-26T22:59:34.918276+00:00",
+    "elapsedSeconds": 0.1196,
+    "totalBytes": 0,
+    "callsStarted": 1
+  },
+  "freshLiveDataQualified": false,
+  "rankPopulationQualified": false,
+  "premiumActivation": false,
+  "sourceAssetsMutated": false,
+  "libraryUploads": 0,
+  "independentReview": "pending Scout"
+}

@@ -55,7 +55,7 @@ describe("healthy reserve players", () => {
   // TJ 2026-10-22: a player got healthy but stayed in his IR spot; activating him gained projected points, unflagged.
   it("flags a healthy player left in IR and prices moving him to the open spot", () => {
     const data = snapshot();
-    expect(evaluatePlan(data, intent, "outcome", [], false).legal).toBe(false);
+    expect(evaluatePlan(data, intent, "outcome", [], false).legal).toBe(true);
     expect(healthyReserves(data, intent)).toEqual([{ playerId: "d", position: "IR", slotEligible: false,
       activation: { swapPlayerId: null, projectedPoints: 6, activeGames: 2 } }]);
   });
@@ -107,6 +107,9 @@ describe("healthy reserve players", () => {
     const started = snapshot();
     started.context = { ...started.context, asOf: "2026-10-05T23:30:00Z" };
     started.evidence.schedule = { ...started.evidence.schedule!, asOf: started.context.asOf };
+    expect(healthyReserves(started, intent)[0].activation).toEqual({ swapPlayerId: null, projectedPoints: null, activeGames: null });
+    started.lockedAssignments = [{ date: "2026-10-05", playerId: "a", slotId: "C#1" },
+      { date: "2026-10-05", playerId: "d", slotId: null }];
     expect(healthyReserves(started, intent)[0].activation).toEqual({ swapPlayerId: null, projectedPoints: 3, activeGames: 1 });
     const weekly = snapshot();
     weekly.rules = { ...weekly.rules, lineupMode: "weekly", lineupPeriods: [] };

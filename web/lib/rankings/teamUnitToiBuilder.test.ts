@@ -4,6 +4,7 @@ import {
   buildEvenStrengthTeamUnitToiRows,
   buildPowerPlayTeamUnitToiRows,
   buildTeamUnitToiRows,
+  cleanTeamUnitToiShifts,
   type TeamUnitToiPlayerPositionRow,
   type TeamUnitToiShiftRow,
 } from "./teamUnitToiBuilder";
@@ -242,5 +243,46 @@ describe("teamUnitToiBuilder", () => {
       "forward_line",
       "power_play",
     ]);
+  });
+
+  describe("shift-feed repairs", () => {
+    const fullShifts = () => [
+      ...[101, 102, 103, 104, 105, 106].map((playerId) =>
+        shift({ playerId, teamId: 1, teamAbbrev: "AAA", start: 0, end: 60 }),
+      ),
+      ...[201, 202, 203, 204, 205, 206].map((playerId) =>
+        shift({ playerId, teamId: 2, teamAbbrev: "BBB", start: 0, end: 60 }),
+      ),
+    ];
+    const gameTeams = new Map([[2025020001, { homeTeamId: 1, awayTeamId: 2 }]]);
+
+    it("collapses exact duplicate shifts and drops teams that are not in the game", () => {
+      const strays = [301, 302, 303, 304, 305, 306].map((playerId) =>
+        shift({ playerId, teamId: 3, teamAbbrev: "CCC", start: 0, end: 60 }),
+      );
+      const cleaned = cleanTeamUnitToiShifts([...fullShifts(), ...fullShifts(), ...strays], gameTeams);
+      expect(cleaned.shifts).toHaveLength(12);
+      expect(cleaned.droppedDuplicates).toBe(12);
+      expect(cleaned.droppedOffGameTeam).toBe(6);
+      // Without known game teams, a third team is kept (nothing to check it against).
+      expect(cleanTeamUnitToiShifts(strays).shifts).toHaveLength(6);
+    });
+
+    it("builds the same units from a doubled, contaminated feed as from the clean one", () => {
+      const clean = buildTeamUnitToiRows({ shifts: fullShifts(), players, ppRows: [], season: 20252026, snapshotDate: "2026-11-08", gameTeams });
+      // Game 2025020565: every shift twice plus another game's skaters under the same game id.
+      const corrupted = [
+        ...fullShifts(),
+        ...fullShifts(),
+        ...[301, 302, 303, 304, 305].map((playerId) =>
+          shift({ playerId, teamId: 3, teamAbbrev: "CCC", start: 0, end: 60 }),
+        ),
+      ];
+      const repaired = buildTeamUnitToiRows({ shifts: corrupted, players, ppRows: [], season: 20252026, snapshotDate: "2026-11-08", gameTeams });
+      expect(clean).toHaveLength(4);
+      expect(repaired).toEqual(clean);
+      // Before the repair the doubled feed yields no 5v5 segments at all.
+      expect(buildEvenStrengthTeamUnitToiRows({ shifts: corrupted, players, season: 20252026, snapshotDate: "2026-11-08" })).toEqual([]);
+    });
   });
 });

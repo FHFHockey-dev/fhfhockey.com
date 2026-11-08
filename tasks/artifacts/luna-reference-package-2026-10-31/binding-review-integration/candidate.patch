@@ -1,0 +1,442 @@
+--- a/web/scripts/review-ifttt-luna.ts
++++ b/web/scripts/review-ifttt-luna.ts
+@@ -5,6 +5,8 @@
+ import { createLunaTransport } from "../lib/sources/tweetLunaTransport";
+ import { openLunaLocalAdmission } from "../lib/sources/tweetLunaLocalStore";
+ import { DECISION_REFERENCE_SHA256 } from "../lib/sources/tweetDecisionReviewMapping";
++import { LUNA_EVIDENCE_BINDING_POLICY } from "../lib/sources/tweetLunaEvidenceBinding";
++import { recordLunaEvidenceBindingDecision, runRetainedTweetLunaReviewWithBinding } from "../lib/sources/tweetLunaBindingWorkflow";
+ 
+ /** Manual post-retention worker. One saved packet; no DB read, scheduler or live intake hook.
+  * Default invocation never reads a key or ledger and never sends a request.
+@@ -14,8 +16,24 @@
+   const args = process.argv.slice(2), dispatch = args.includes("--dispatch");
+   const value = (key: string) => { const i = args.indexOf(key); return i >= 0 ? args[i + 1] : undefined; };
+   const inputPath = value("--input"), outputPath = value("--output"), ledgerPath = value("--ledger");
++  const candidateOutput = value("--binding-candidate-output"), decisionPath = value("--binding-decision");
++  if (decisionPath) {
++    const candidatePath = value("--binding-candidate"), originalPath = value("--original-review");
++    if (dispatch || inputPath || ledgerPath || candidateOutput || !candidatePath || !originalPath || !outputPath
++      || new Set([decisionPath, candidatePath, originalPath, outputPath].map(p => resolve(p))).size !== 4) throw new Error("Separate local decision inputs/output required");
++    const read = (path: string) => { const raw = readFileSync(path); if (raw.length > 1_500_000) throw new Error("Decision input too large"); return JSON.parse(raw.toString("utf8")); };
++    const result = recordLunaEvidenceBindingDecision({ candidate: read(candidatePath), originalReview: read(originalPath), decision: read(decisionPath) });
++    if (result.status !== "recorded_for_review") throw new Error("Binding decision held");
++    const output = openSync(outputPath, "wx", 0o600);
++    try { writeFileSync(output, JSON.stringify(result.record, null, 2) + "\n"); fsyncSync(output); } finally { closeSync(output); }
++    process.stdout.write(JSON.stringify({ status: result.status, canApply: false }) + "\n");
++    return;
++  }
++  if (args.includes("--binding-candidate") || args.includes("--original-review") || args.includes("--binding-decision")
++    || args.includes("--binding-candidate-output") && !candidateOutput) throw new Error("Incomplete binding review arguments");
+   if (!inputPath || !outputPath || (dispatch && !ledgerPath)) throw new Error("Expected --input packet.json --output new-review.json; dispatch also requires --ledger existing-approved-ledger.json");
+-  if (resolve(inputPath) === resolve(outputPath) || ledgerPath && [inputPath, outputPath].some(p => resolve(p) === resolve(ledgerPath))) throw new Error("Input, output and ledger must be distinct");
++  const paths = [inputPath, outputPath, ...(ledgerPath ? [ledgerPath] : []), ...(candidateOutput ? [candidateOutput] : [])].map(p => resolve(p));
++  if (new Set(paths).size !== paths.length) throw new Error("Input, output, candidate and ledger must be distinct");
+   const raw = readFileSync(inputPath);
+   if (raw.length > 512_000) throw new Error("Review packet exceeds local byte limit");
+   const ref = readFileSync(resolve("lib/sources/decisionsReference/adapter.mjs"));
+@@ -27,12 +45,20 @@
+   }) : undefined;
+   // Reserve the new output file before any dispatch; never overwrite an adjudication.
+   const output = openSync(outputPath, "wx", 0o600);
++  let candidateFile: number | undefined;
+   try {
+-    const result = await runRetainedTweetLunaReview({ enabled: dispatch, input, transport });
++    // Reserve the separate correction artifact before any request as well.
++    if (candidateOutput) candidateFile = openSync(candidateOutput, "wx", 0o600);
++    const bound = candidateOutput ? await runRetainedTweetLunaReviewWithBinding({ enabled: dispatch, input, transport,
++      bindingPolicy: LUNA_EVIDENCE_BINDING_POLICY }) : null;
++    const result = bound ? bound.review : await runRetainedTweetLunaReview({ enabled: dispatch, input, transport });
+     writeFileSync(output, JSON.stringify(result, null, 2) + "\n"); fsyncSync(output);
++    if (candidateFile !== undefined && bound) {
++      writeFileSync(candidateFile, JSON.stringify(bound.candidate ?? { status: bound.bindingStatus, candidate: null }, null, 2) + "\n"); fsyncSync(candidateFile);
++    }
+     process.stdout.write(JSON.stringify({ status: result.status, attempts: result.attempts, holds: result.holds }) + "\n");
+     if (result.status === "held") process.exitCode = 2;
+-  } finally { closeSync(output); }
++  } finally { if (candidateFile !== undefined) closeSync(candidateFile); closeSync(output); }
+ }
+ 
+ main().catch(() => { process.stderr.write("Luna review held; no automatic retry. Inspect the approved local packet and admission record.\n"); process.exitCode = 1; });
+--- a/web/lib/sources/tweetLunaReview.test.ts
++++ b/web/lib/sources/tweetLunaReview.test.ts
+@@ -1,9 +1,10 @@
+ // @vitest-environment node
+ import { afterEach, describe, expect, it, vi } from "vitest";
+-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
++import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+ import { tmpdir } from "node:os";
+ import { join } from "node:path";
+ import { createHash } from "node:crypto";
++import { spawnSync } from "node:child_process";
+ import { qualifiedFixture } from "./fixtures/tweetClaimQualificationFixture";
+ import library from "./fixtures/tweetLunaAdjudicatedLibrary.json";
+ import { lunaSyntheticCases } from "./fixtures/tweetLunaSyntheticCases";
+@@ -12,6 +13,7 @@
+ import { scoreLunaEvaluation } from "./tweetLunaEvaluationScoring";
+ import { LUNA_EVIDENCE_BINDING_POLICY, proposeLunaEvidenceBindingReview } from "./tweetLunaEvidenceBinding";
+ import type { FixtureIdentityRequest } from "./tweetIdentityProposal";
++import { recordLunaEvidenceBindingDecision, runRetainedTweetLunaReviewWithBinding } from "./tweetLunaBindingWorkflow";
+ import { buildLunaReferenceInput, getLunaReferencePackage, LUNA_CORRECTION_CATEGORIES, LUNA_REFERENCE_PACKAGE, LUNA_REVIEW_RULES } from "./tweetLunaReference";
+ import { identityDigest } from "./playerIdentitySnapshot";
+ import { extractDurableTweetClaims, TWEET_CLAIM_EXTRACTION_VERSION } from "./tweetClaimExtraction";
+@@ -75,7 +77,9 @@
+   const transport = createLunaTransport({ enabled: true, stopped, apiKey: key, admission: store,
+     fetch: fetcher as typeof fetch, timeoutMs: options.timeoutMs });
+   return { path, fetcher, key, transport, store, ledger: () => JSON.parse(readFileSync(path, "utf8")),
+-    run: (input = fixture(), enabled = true) => runRetainedTweetLunaReview({ enabled, input, transport, now: () => NOW }) };
++    run: (input = fixture(), enabled = true) => runRetainedTweetLunaReview({ enabled, input, transport, now: () => NOW }),
++    runWithBinding: (input = fixture(), options: { policy?: typeof LUNA_EVIDENCE_BINDING_POLICY; now?: () => string } = {}) =>
++      runRetainedTweetLunaReviewWithBinding({ enabled: true, input, transport, now: options.now ?? (() => NOW), bindingPolicy: options.policy }) };
+ }
+ function changeProposal(body: any, endpoint: string, edit: (value: any) => void) {
+   if (endpoint !== "responses") return;
+@@ -179,6 +183,143 @@
+       const result = proposeLunaEvidenceBindingReview({ ...args, rawOutputText: JSON.stringify({ ...raw, goalieStatuses: statuses }) });
+       expect(result).toMatchObject({ status: "not_needed", candidate: null, corrections: [] });
+     }
++  });
++});
++
++describe("optional retained binding workflow", () => {
++  function bindingHarness(edit?: (body: any, endpoint: string, wire: any) => void) {
++    return harness({ mutate: (body, endpoint, wire) => {
++      changeProposal(body, endpoint, raw => { raw.goalieStatuses = [{ occurrenceId: "subject", canonicalId: "nhl:8478499", status: "confirmed",
++        evidence: { start: 4, end: 5, text: "Jeremy Swayman starts tonight." } }]; });
++      edit?.(body, endpoint, wire);
++    } });
++  }
++  const feedback = (candidateHash: string) => ({ candidateHash, reviewerId: "synthetic-reviewer", reviewedAt: NOW,
++    decision: "accept_coordinate_proposal", rationale: "Synthetic test: coordinates match the exact retained quote." });
++
++  it("requires caller opt-in and never changes the original held outcome or request count", async () => {
++    const h = bindingHarness(), without = await h.runWithBinding();
++    expect(without).toMatchObject({ bindingStatus: "disabled", candidate: null });
++    const enabled = bindingHarness(), withBinding = await enabled.runWithBinding(fixture(), { policy: LUNA_EVIDENCE_BINDING_POLICY });
++    expect(withBinding.review).toEqual(without.review);
++    expect(withBinding.review).toMatchObject({ status: "held", attempts: 1, goalieStatuses: [], decisionReview: null });
++    expect(withBinding.bindingStatus).toBe("candidate_for_human_review");
++    expect(enabled.fetcher).toHaveBeenCalledTimes(1); expect(Object.keys(enabled.ledger().attempts)).toHaveLength(1);
++    const c = withBinding.candidate!.content, receipt = Object.values(enabled.ledger().attempts)[0] as any;
++    expect(c.receipt).toEqual(receipt.receipt); expect(c.receiptHash).toBe(identityDigest(receipt.receipt));
++    expect(c.responsesRequestHash).toBe(withBinding.review.responsesRequestHash);
++    expect(c.originalReviewHash).toBe(identityDigest(without.review));
++    expect(c.sourcePolicy.source.sourceTextVersionId).toBe(fixture().packet.source.sourceTextVersionId);
++    expect(c.preparedRequest.hash).toBe(c.derivation.requestHash);
++    expect(c.derivation.rawOutputText).toBe(c.receipt.body.output[0].content[0].text);
++    expect(c.holds).toEqual(expect.arrayContaining([...without.review.holds, "original_response_remains_held", "evidence_binding_human_review_required"]));
++    expect(Object.isFrozen(c.receipt.body)).toBe(true);
++  });
++
++  it.each(["incomplete", "refusal", "multiple_messages", "message_incomplete", "no_response_id", "no_request_id", "wrong_usage"])("does not bind a %s receipt", async kind => {
++    const h = bindingHarness(body => {
++      if (kind === "incomplete") body.status = "incomplete";
++      if (kind === "refusal") body.output[0].content[0] = { type: "refusal", refusal: "no" };
++      if (kind === "multiple_messages") body.output.push(structuredClone(body.output[0]));
++      if (kind === "message_incomplete") body.output[0].status = "incomplete";
++      if (kind === "no_response_id") body.id = null;
++      if (kind === "wrong_usage") body.usage.input_tokens = -1;
++    });
++    const result = kind === "no_request_id" ? await runRetainedTweetLunaReviewWithBinding({ enabled: true, input: fixture(), now: () => NOW,
++      bindingPolicy: LUNA_EVIDENCE_BINDING_POLICY, transport: async (...args) => ({ ...await h.transport(...args), requestId: null }) })
++      : await h.runWithBinding(fixture(), { policy: LUNA_EVIDENCE_BINDING_POLICY });
++    expect(result.review.status).toBe("held"); expect(result.candidate).toBeNull(); expect(h.fetcher).toHaveBeenCalledTimes(1);
++  });
++
++  it.each(["retention", "source_revision", "publication_clock", "identity_clock"])("keeps existing %s checks before capture", async kind => {
++    const input = fixture(), h = bindingHarness();
++    if (kind === "retention") input.packet.receiptSnapshot.inputRow.text += " changed";
++    if (kind === "source_revision") input.packet.source.sourceTextVersionId = "changed";
++    if (kind === "publication_clock") input.packet.source.publishedAt = "2026-10-17T00:00:00Z";
++    if (kind === "identity_clock") input.identity!.asOf = "2026-10-17T00:00:00Z";
++    expect((await h.runWithBinding(input, { policy: LUNA_EVIDENCE_BINDING_POLICY })).candidate).toBeNull();
++    expect(h.fetcher).not.toHaveBeenCalled();
++  });
++
++  it("rejects a clock reversal after receipt and preserves retrospective holds", async () => {
++    let returned = false;
++    const h = bindingHarness(() => { returned = true; });
++    const bad = await h.runWithBinding(fixture(), { policy: LUNA_EVIDENCE_BINDING_POLICY,
++      now: () => returned ? "2026-10-15T00:00:00Z" : NOW });
++    expect(bad.candidate).toBeNull(); expect(bad.review.holds).toContain("goalie_subject_binding_invalid");
++    const input = fixture(), retro = bindingHarness();
++    input.identity!.evaluation = { mode: "retrospective", sourcePublishedAt: input.packet.source.publishedAt!, reviewedAt: NOW };
++    const result = await retro.runWithBinding(input, { policy: LUNA_EVIDENCE_BINDING_POLICY });
++    expect(result.candidate!.content.holds).toContain("retrospective_development_evidence");
++  });
++
++  it.each(["reject", "defer", "accept_coordinate_proposal"])("records separate %s feedback without clearing holds or touching admission", async decision => {
++    const h = bindingHarness(), result = await h.runWithBinding(fixture(), { policy: LUNA_EVIDENCE_BINDING_POLICY });
++    const before = structuredClone(result), ledger = readFileSync(h.path, "utf8");
++    const recorded = recordLunaEvidenceBindingDecision({ candidate: result.candidate, originalReview: result.review,
++      decision: { ...feedback(result.candidate!.hash), decision }, now: () => NOW });
++    expect(recorded.status).toBe("recorded_for_review");
++    expect(recorded.record!.content).toMatchObject({ reviewerId: "synthetic-reviewer", reviewedAt: NOW, recordedAt: NOW, decision,
++      candidateHash: result.candidate!.hash, originalReviewHash: identityDigest(result.review), canApply: false, canPublish: false,
++      holds: result.candidate!.content.holds, scope: "coordinate_proposal_feedback_only" });
++    expect(result).toEqual(before); expect(readFileSync(h.path, "utf8")).toBe(ledger); expect(h.fetcher).toHaveBeenCalledTimes(1);
++  });
++
++  it.each(["raw_text", "source_revision", "request", "receipt_id", "authority", "candidate_holds", "original_holds", "wrong_candidate", "missing_reviewer", "past", "future", "extra_authority"])("rejects tampered or unbound %s feedback", async kind => {
++    const h = bindingHarness(), result = await h.runWithBinding(fixture(), { policy: LUNA_EVIDENCE_BINDING_POLICY });
++    const candidate = structuredClone(result.candidate!), original = structuredClone(result.review), decision: any = feedback(candidate.hash);
++    if (kind === "raw_text") candidate.content.receipt.body.output[0].content[0].text += " ";
++    if (kind === "source_revision") candidate.content.sourcePolicy.source.sourceTextVersionId = "changed";
++    if (kind === "request") candidate.content.preparedRequest.content.source.text += " changed";
++    if (kind === "receipt_id") candidate.content.receipt.requestId = "other-request";
++    if (kind === "authority") (candidate.content as any).canApply = true;
++    if (kind === "candidate_holds") candidate.content.holds = [];
++    if (kind === "original_holds") original.holds = [];
++    if (kind === "wrong_candidate") decision.candidateHash = "0".repeat(64);
++    if (kind === "missing_reviewer") decision.reviewerId = " ";
++    if (kind === "past") decision.reviewedAt = "2026-10-15T00:00:00Z";
++    if (kind === "future") decision.reviewedAt = "2026-10-17T00:00:00Z";
++    if (kind === "extra_authority") decision.canApply = true;
++    // Also exercise nested checks after an edited artifact is rehashed. The operator's
++    // expected hash is changed here solely to test those guards, not to grant trust.
++    if (["source_revision", "request", "receipt_id", "authority", "candidate_holds"].includes(kind)) {
++      candidate.hash = identityDigest(candidate.content); decision.candidateHash = candidate.hash;
++    }
++    expect(recordLunaEvidenceBindingDecision({ candidate, originalReview: original, decision, now: () => NOW }))
++      .toMatchObject({ status: "held", record: null });
++  });
++
++  it("uses the existing CLI for a separate no-overwrite decision without dispatch", async () => {
++    const h = bindingHarness(), result = await h.runWithBinding(fixture(), { policy: LUNA_EVIDENCE_BINDING_POLICY });
++    const dir = mkdtempSync(join(tmpdir(), "luna-binding-cli-")); dirs.push(dir);
++    const paths = Object.fromEntries(["candidate", "original", "decision", "output"].map(name => [name, join(dir, `${name}.json`)]));
++    writeFileSync(paths.candidate!, JSON.stringify(result.candidate)); writeFileSync(paths.original!, JSON.stringify(result.review));
++    writeFileSync(paths.decision!, JSON.stringify(feedback(result.candidate!.hash)));
++    const run = (extra: string[] = []) => spawnSync(process.execPath, ["--experimental-require-module", "-r", "ts-node/register/transpile-only",
++      "scripts/review-ifttt-luna.ts", "--binding-candidate", paths.candidate!, "--original-review", paths.original!, "--binding-decision", paths.decision!,
++      "--output", paths.output!, ...extra], { encoding: "utf8", env: { PATH: process.env.PATH, TMPDIR: tmpdir(), NODE_PATH: ".", NODE_ENV: "test",
++        NODE_OPTIONS: process.env.NODE_OPTIONS, TS_NODE_COMPILER_OPTIONS: '{"module":"CommonJS","moduleResolution":"node","allowJs":false}' } });
++    expect(run(["--dispatch"]).status).toBe(1); expect(existsSync(paths.output!)).toBe(false);
++    expect(run().status).toBe(0); const saved = readFileSync(paths.output!, "utf8");
++    expect(JSON.parse(saved).content).toMatchObject({ canApply: false, candidateHash: result.candidate!.hash, reviewerId: "synthetic-reviewer" });
++    expect(run().status).toBe(1); expect(readFileSync(paths.output!, "utf8")).toBe(saved);
++    expect(h.fetcher).toHaveBeenCalledTimes(1);
++  });
++
++  it.each(["existing_candidate", "ledger_alias"])("reserves a distinct new candidate file before admission: %s", kind => {
++    const h = bindingHarness(), dir = mkdtempSync(join(tmpdir(), "luna-binding-paths-")); dirs.push(dir);
++    const inputPath = join(dir, "input.json"), outputPath = join(dir, "original.json"), candidatePath = join(dir, "candidate.json");
++    writeFileSync(inputPath, JSON.stringify(fixture())); writeFileSync(candidatePath, "existing-review-do-not-overwrite");
++    const ledger = h.ledger(); ledger.expiresAt = "2099-01-01T00:00:00Z"; writeFileSync(h.path, JSON.stringify(ledger));
++    const before = readFileSync(h.path, "utf8");
++    const result = spawnSync(process.execPath, ["--experimental-require-module", "-r", "ts-node/register/transpile-only", "scripts/review-ifttt-luna.ts",
++      "--input", inputPath, "--output", outputPath, "--binding-candidate-output", kind === "ledger_alias" ? h.path : candidatePath, "--dispatch", "--ledger", h.path],
++    { encoding: "utf8", env: { PATH: process.env.PATH, TMPDIR: tmpdir(), NODE_PATH: ".", NODE_ENV: "test", NODE_OPTIONS: process.env.NODE_OPTIONS,
++      TS_NODE_COMPILER_OPTIONS: '{"module":"CommonJS","moduleResolution":"node","allowJs":false}',
++      OPENAI_API_KEY: "offline-not-a-credential", IFTTT_LUNA_REVIEW_ENABLED: "true", IFTTT_LUNA_REVIEW_STOP: "false" } });
++    expect(result.status).toBe(1); expect(readFileSync(h.path, "utf8")).toBe(before);
++    expect(readFileSync(candidatePath, "utf8")).toBe("existing-review-do-not-overwrite");
++    expect(h.fetcher).not.toHaveBeenCalled();
+   });
+ });
+ 
+--- a/web/lib/sources/tweetLunaReference.md
++++ b/web/lib/sources/tweetLunaReference.md
+@@ -64,9 +64,9 @@
+ 
+ These are a review-record specification and a correction taxonomy, not a new UI or persistence system. A swipe is field feedback only: no automatic training, alias learning, publication or production authorization. Changes to reference material require explicit review, provenance, a new version/hash, and the offline regression checks. Invalid provider responses remain held; a held artifact must never be treated as an accepted field proposal.
+ 
+-## Offline evidence binding review candidate
++## Optional evidence binding review
+ 
+-[`tweetLunaEvidenceBinding.ts`](./tweetLunaEvidenceBinding.ts) exports `proposeLunaEvidenceBindingReview`, a pure offline correction-proposal function. It is not imported by the runtime caller, transport or CLI. Its explicit caller-selected policy is `luna-unique-exact-quote-review-v1`; omitting it leaves the function disabled before reading the request or response. The strict model schema, prompt/version and automatic validation are unchanged. This policy does not grant any dispatch, correction-application or production authority.
++[`tweetLunaEvidenceBinding.ts`](./tweetLunaEvidenceBinding.ts) exports `proposeLunaEvidenceBindingReview`, a pure correction-proposal function. Its explicit caller-selected policy is `luna-unique-exact-quote-review-v1`; omitting it leaves the function disabled before reading the request or response. [`tweetLunaBindingWorkflow.ts`](./tweetLunaBindingWorkflow.ts) optionally wraps the existing retained caller and binds a separate candidate to its completed receipt, actual prepared request and retained source revision. The strict model schema, prompt/version and automatic validation are unchanged. This policy does not grant dispatch, correction-application or production authority.
+ 
+ The caller supplies the **original prepared dated identity request** and **unaltered model output text** from a retained receipt. The function validates the request/identity binding, parses the existing strict goalie schema, and searches the original source for each exact quote. Missing or multiple matches (including overlapping matches) reject the entire proposal. It never uses the model's wrong coordinates to choose among matches, changes quote text, normalizes case/whitespace/Unicode, repairs identity, fills an omission or changes a status. JavaScript string offsets are UTF-16; the existing exact-span validator also rejects surrogate/grapheme splits.
+ 
+@@ -74,7 +74,21 @@
+ 
+ The immutable result retains the original model output text verbatim, its UTF-8 SHA256, request/source hashes, exact before/proposed spans and a version-bound candidate hash. Derived statuses stay nested under `candidate`, with `verified:false`, null game/team/override and source/game/conflict holds. `canApply:false`, `original_response_remains_held` and `evidence_binding_human_review_required` prevent this record from purporting to apply a change. The paid evaluation's historical score/result is never replaced by this candidate.
+ 
+-This candidate resolves only quote coordinates. It cannot prove a unique quote expresses the intended claim or resolve complex semantics missed by existing finite wording guards. Source provenance, completed provider receipt, retention/packet lineage, reviewer identity/time/decision and source/game acceptance remain required at any future integration boundary. This module has no acceptance or persistence endpoint, UI, automated training path or consumer that lifts holds. Automatic rebinding would change the acceptance contract and needs separate explicit coordination, independent review, versioning and tests. See the [offline binding-review handoff](../../../tasks/artifacts/luna-reference-package-2026-10-31/span-binding-review/HANDOFF.md).
++This candidate resolves only quote coordinates. It cannot prove a unique quote expresses the intended claim or resolve complex semantics missed by existing finite wording guards. Automatic rebinding would change the acceptance contract and needs separate explicit coordination, independent review, versioning and tests. The [offline helper handoff](../../../tasks/artifacts/luna-reference-package-2026-10-31/span-binding-review/HANDOFF.md) retains the separately accepted pure helper; the [integration handoff](../../../tasks/artifacts/luna-reference-package-2026-10-31/binding-review-integration/HANDOFF.md) records the optional workflow and its verification.
++
++The wrapper executes the existing retention, attribution, source-revision, identity cutoff and review-clock checks. Only a completed Responses receipt successfully returned by that invocation is captured; missing receipt/response IDs, incomplete/refused/invalid output or unresolved usage cannot produce a candidate. It retains the full receipt and caller wire, their hashes, prepared request, supplied source policy, source text revision, review queue key, original review hash/holds and local receipt/candidate timestamps. The saved candidate is checked against those bindings again when recording feedback. These hashes establish internal integrity, not external source authenticity or a provider signature.
++
++The existing manual CLI accepts an optional `--binding-candidate-output new-candidate.json` alongside its normal `--input` and `--output`. Both output files must be new and distinct from each other, input and ledger; they are reserved before any request. The original output, status, holds, attempts and exit code remain unchanged. The separate file contains a bound candidate, or an explicit no-candidate status. Without separately authorized dispatch the caller stays disabled. There is no new intake hook or hosted flag, and candidates never reach Decisions, model scoring or admission accounting.
++
++Human feedback uses the same CLI's local-only mode:
++
++```sh
++env -i PATH="$PATH" TMPDIR=/tmp NODE_PATH=. TS_NODE_COMPILER_OPTIONS='{"module":"CommonJS","moduleResolution":"node","allowJs":false}' node --experimental-require-module -r ts-node/register/transpile-only scripts/review-ifttt-luna.ts --binding-candidate candidate.json --original-review original-review.json --binding-decision decision.json --output new-decision-record.json
++```
++
++`decision.json` must explicitly supply the candidate's `hash` as `candidateHash`, a nonblank `reviewerId`, timezone-qualified `reviewedAt`, `decision` (`accept_coordinate_proposal`, `reject` or `defer`) and a nonblank `rationale`. The review timestamp must fall between candidate creation and recording. This manual mode rejects dispatch/input/ledger arguments, reads no credential, and writes a new file without overwriting an earlier decision. Candidate tampering, substituted original reviews and mismatched hashes hold. Multiple feedback files remain separate disagreements; no automatic latest-wins rule exists.
++
++The decision record binds reviewer/time/choice to the candidate, original review, receipt, prepared request, queue key and source revision. Acceptance means agreement with proposed coordinates only: `canApply:false` and every original/candidate hold remain. Reviewer identity is an operator assertion, not authenticated identity; an eventual multi-user interface needs its own authentication and durable provenance controls. No decision applies corrections, changes historical grades, frees reservations, resets call counts, trains a model, publishes, creates aliases or writes to production. Source/game/time/conflict acceptance remains separate. The local integration is pending independent review.
+ 
+ ## Local validation
+ 
+@@ -83,7 +97,7 @@
+ ```sh
+ env -i PATH="$PATH" TMPDIR=/tmp NODE_OPTIONS='--require=/Users/tim/Code/fhfhockey.com/tasks/artifacts/luna-reference-package-2026-10-31/deny-network.cjs' ./node_modules/.bin/vitest run --config ../tasks/artifacts/luna-reference-package-2026-10-31/offline.config.mts lib/sources/tweetLunaReview.test.ts
+ ./node_modules/.bin/tsc --noEmit -p ../tasks/artifacts/luna-reference-package-2026-10-31/tsconfig.json
+-./node_modules/.bin/eslint lib/sources/tweetLunaReference.ts lib/sources/tweetLunaGoalieWording.ts lib/sources/tweetLunaReview.ts lib/sources/tweetLunaReview.test.ts lib/sources/tweetLunaEvidenceBinding.ts lib/sources/tweetLunaEvaluationScoring.ts lib/sources/fixtures/tweetLunaSyntheticCases.ts lib/sources/fixtures/tweetLunaEvaluation.ts scripts/rehearse-luna-evaluation.ts
++./node_modules/.bin/eslint lib/sources/tweetLunaReference.ts lib/sources/tweetLunaGoalieWording.ts lib/sources/tweetLunaReview.ts lib/sources/tweetLunaReview.test.ts lib/sources/tweetLunaEvidenceBinding.ts lib/sources/tweetLunaBindingWorkflow.ts lib/sources/tweetLunaEvaluationScoring.ts lib/sources/fixtures/tweetLunaSyntheticCases.ts lib/sources/fixtures/tweetLunaEvaluation.ts scripts/rehearse-luna-evaluation.ts scripts/review-ifttt-luna.ts
+ ```
+ 
+ See the [omission diagnosis](../../../tasks/artifacts/luna-reference-package-2026-10-31/omission-diagnosis/HANDOFF.md) for the v4 clarification and exact replay evidence. The [R2 handoff](../../../tasks/artifacts/luna-reference-package-2026-10-31/repair-r2/HANDOFF.md) and [initial paid outcome](../../../tasks/artifacts/luna-reference-package-2026-10-31/paid-evaluation/HANDOFF.md) retain version3 evidence; the [E03 outcome](../../../tasks/artifacts/luna-reference-package-2026-10-31/continuation-e03-execution/HANDOFF.md) records the latest paid stop. The real ledger remains disabled with four calls consumed from the same cumulative20 cap; a new package/batch hash or binding-review candidate does not authorize another budget or retry. The historical integration handoff is available via `git show cb8ed5217:tasks/artifacts/luna-review-integration-2026-10-23/HANDOFF.md`; its original worktree file is absent from this checkout.
+--- a/web/lib/sources/tweetLunaEvidenceBinding.ts
++++ b/web/lib/sources/tweetLunaEvidenceBinding.ts
+@@ -10,7 +10,8 @@
+   "binding_raw_output_too_large", "duplicate_goalie_subject", "goalie_subject_binding_invalid", "goalie_certainty_inflation",
+   "goalie_definite_wording_unsupported", "goalie_context_unresolved", "goalie_conflict_or_correction_unresolved", "goalie_tentative_wording_unsupported"]);
+ 
+-/** Offline correction proposal only. Never called by the provider/review/CLI path.
++/** Pure correction proposal only. The optional binding workflow supplies receipt
++ * and retained-source lineage before persisting a separate review artifact.
+  * A unique exact quote can identify coordinates, not establish semantic truth.
+  * Raw text, original offsets, and historical review outcomes remain unchanged.
+  */
+--- /dev/null
++++ b/web/lib/sources/tweetLunaBindingWorkflow.ts
+@@ -0,0 +1,144 @@
++import { z } from "zod";
++import { timestampMicros } from "lib/projections/evidenceTime";
++import { freezeIdentityValue, identityDigest } from "./playerIdentitySnapshot";
++import type { FixtureIdentityRequest } from "./tweetIdentityProposal";
++import { LUNA_EVIDENCE_BINDING_POLICY, proposeLunaEvidenceBindingReview } from "./tweetLunaEvidenceBinding";
++import { LUNA_REVIEW_AUTHORITY, runRetainedTweetLunaReview } from "./tweetLunaReview";
++import { priceLunaUsage, type LunaReceipt, type LunaTransport } from "./tweetLunaTransport";
++import type { LunaSuppliedSourcePolicy } from "./tweetLunaReference";
++import { sourceClaimTextVersionId } from "./tweetSourceClaimRegistry";
++
++const VERSION = "luna-bound-evidence-review-v1";
++type Review = Awaited<ReturnType<typeof runRetainedTweetLunaReview>>;
++type Derivation = ReturnType<typeof proposeLunaEvidenceBindingReview>;
++type BoundContent = typeof LUNA_REVIEW_AUTHORITY & {
++  version: typeof VERSION; canApply: false; createdAt: string; receiptReceivedAt: string;
++  originalReviewHash: string; reviewQueueKey: string; originalHolds: string[];
++  responsesRequestHash: string; responsesRequest: Record<string, unknown>; sourcePolicy: LunaSuppliedSourcePolicy;
++  preparedRequest: FixtureIdentityRequest; receipt: LunaReceipt; receiptHash: string;
++  derivation: Derivation; holds: string[];
++};
++export type LunaBoundEvidenceReview = { content: BoundContent; hash: string };
++const digest = z.string().regex(/^[a-f0-9]{64}$/);
++const decisionSchema = z.object({ candidateHash: digest, reviewerId: z.string().trim().min(1).max(200),
++  reviewedAt: z.string().datetime({ offset: true }), decision: z.enum(["accept_coordinate_proposal", "reject", "defer"]),
++  rationale: z.string().trim().min(1).max(2000) }).strict();
++
++function completedOutput(receipt: LunaReceipt): string {
++  const body = receipt.body;
++  if (receipt.endpoint !== "responses" || !/^[A-Za-z0-9_-]{1,200}$/.test(receipt.requestId ?? "")
++    || !/^[A-Za-z0-9_-]{1,200}$/.test(body?.id ?? "") || body.status !== "completed"
++    || body.error != null || body.incomplete_details != null || !Array.isArray(body.output)
++    || priceLunaUsage(body, "responses") !== receipt.chargeNanoUsd) throw new Error("binding_receipt_invalid");
++  const messages = body.output.filter((item: any) => item.type === "message" && item.role === "assistant");
++  if (messages.length !== 1 || messages[0].status != null && messages[0].status !== "completed"
++    || !Array.isArray(messages[0].content) || messages[0].content.length !== 1
++    || messages[0].content[0].type !== "output_text" || typeof messages[0].content[0].text !== "string") throw new Error("binding_receipt_invalid");
++  return messages[0].content[0].text;
++}
++
++/** Recheck persisted integrity against the separately retained original review.
++ * Hashes detect substitution; they do not authenticate a human or an edited local file.
++ */
++function assertBound(candidate: LunaBoundEvidenceReview, original: Review) {
++  const c = candidate.content, p = c.sourcePolicy, s = p.source, source = c.preparedRequest.content.source;
++  const sent = JSON.parse(String(c.responsesRequest.input));
++  if (candidate.hash !== identityDigest(c) || c.version !== VERSION || c.canApply !== false
++    || Object.entries(LUNA_REVIEW_AUTHORITY).some(([k, v]) => (c as any)[k] !== v || (original as any)[k] !== v)
++    || c.originalReviewHash !== identityDigest(original) || original.status !== "held"
++    || !original.holds.includes("goalie_subject_binding_invalid") || identityDigest(c.originalHolds) !== identityDigest(original.holds)
++    || !original.reviewQueueKey || c.reviewQueueKey !== original.reviewQueueKey
++    || c.responsesRequestHash !== original.responsesRequestHash || !original.requestIds.includes(c.receipt.requestId)
++    || identityDigest(c.responsesRequest) !== c.responsesRequestHash || sent.identityRequestHash !== c.preparedRequest.hash
++    || identityDigest(sent.identityRequest) !== identityDigest(c.preparedRequest.content) || identityDigest(sent.sourcePolicy) !== identityDigest(p)
++    || c.receiptHash !== identityDigest(c.receipt)
++    || !original.lineage || original.lineage.packetHash !== p.packetHash || original.lineage.textVersion !== s.sourceTextVersionId
++    || original.lineage.originalPostId !== s.originalPostId || original.lineage.author !== s.author || original.lineage.url !== s.url
++    || source.id !== s.retainedSourceId || source.originalPostId !== s.originalPostId || source.authorId !== s.author || source.url !== s.url
++    || source.publishedAt !== s.publishedAt || source.receivedAt !== s.ingestedAt
++    || source.provenance.label !== `retained-sidecar:${p.packetHash}`
++    || s.sourceTextVersionId !== sourceClaimTextVersionId(source.id, source.text)) throw new Error("binding_lineage_invalid");
++  const created = timestampMicros(c.createdAt), received = timestampMicros(c.receiptReceivedAt), ingested = timestampMicros(s.ingestedAt);
++  const published = timestampMicros(s.publishedAt!), asOf = timestampMicros(p.identityAsOf);
++  if (created === null || received === null || ingested === null || published === null || asOf === null
++    || published > ingested || ingested > received || received > created || asOf > received
++    || timestampMicros(p.identityEvaluation.sourcePublishedAt) !== published) throw new Error("binding_clock_invalid");
++  const derived = proposeLunaEvidenceBindingReview({ policy: LUNA_EVIDENCE_BINDING_POLICY,
++    request: c.preparedRequest, rawOutputText: completedOutput(c.receipt) });
++  const holds = [...original.holds, ...derived.holds,
++    ...(p.identityEvaluation.mode === "retrospective" ? ["retrospective_development_evidence"] : [])];
++  if (derived.status !== "candidate_for_human_review" || identityDigest(derived) !== identityDigest(c.derivation)
++    || identityDigest(original.identity) !== identityDigest(derived.candidate?.identity) || original.goalieStatuses.length !== 0
++    || identityDigest(holds) !== identityDigest(c.holds)) throw new Error("binding_derivation_invalid");
++}
++
++/** Optional wrapper around the existing caller. It captures only a successfully
++ * returned receipt after that caller's retention/clock preparation. It never feeds
++ * a correction into the caller, Decisions, score or admission store.
++ */
++export async function runRetainedTweetLunaReviewWithBinding(args: Parameters<typeof runRetainedTweetLunaReview>[0] & {
++  bindingPolicy?: typeof LUNA_EVIDENCE_BINDING_POLICY;
++}) {
++  if (args.bindingPolicy !== LUNA_EVIDENCE_BINDING_POLICY || args.enabled !== true) {
++    return { review: await runRetainedTweetLunaReview(args), bindingStatus: "disabled", candidate: null as LunaBoundEvidenceReview | null };
++  }
++  const now = args.now ?? (() => new Date().toISOString()), input = structuredClone(args.input);
++  const captures: { wire: Record<string, unknown>; receipt: LunaReceipt; receivedAt: string }[] = [];
++  const transport: LunaTransport | undefined = args.transport ? async (endpoint, wire, hooks) => {
++    const sent = structuredClone(wire), receipt = await args.transport!(endpoint, wire, hooks);
++    if (endpoint === "responses") captures.push({ wire: sent, receipt: structuredClone(receipt), receivedAt: now() });
++    return receipt;
++  } : undefined;
++  const review = await runRetainedTweetLunaReview({ ...args, input, transport, now });
++  try {
++    if (captures.length !== 1 || review.status !== "held" || !review.holds.includes("goalie_subject_binding_invalid")) {
++      return { review, bindingStatus: "not_eligible", candidate: null };
++    }
++    const { wire, receipt, receivedAt } = captures[0]!, envelope = JSON.parse(String(wire.input));
++    if (identityDigest(wire) !== review.responsesRequestHash) throw new Error("binding_request_invalid");
++    const preparedRequest = { content: envelope.identityRequest, hash: envelope.identityRequestHash } as FixtureIdentityRequest;
++    const derivation = proposeLunaEvidenceBindingReview({ policy: args.bindingPolicy, request: preparedRequest, rawOutputText: completedOutput(receipt) });
++    if (derivation.status !== "candidate_for_human_review") return { review, bindingStatus: "held", candidate: null };
++    const sourcePolicy: LunaSuppliedSourcePolicy = envelope.sourcePolicy;
++    const { retainedSourceId, sourceTextVersionId, originalPostId, author, url, publishedAt, ingestedAt, provenance } = input.packet.source;
++    if (identityDigest(sourcePolicy.source) !== identityDigest({ retainedSourceId, sourceTextVersionId, originalPostId, author, url, publishedAt, ingestedAt, provenance })) {
++      throw new Error("binding_source_invalid");
++    }
++    const content: BoundContent = { version: VERSION, ...LUNA_REVIEW_AUTHORITY, canApply: false,
++      createdAt: now(), receiptReceivedAt: receivedAt, originalReviewHash: identityDigest(review), reviewQueueKey: review.reviewQueueKey!,
++      originalHolds: [...review.holds], responsesRequestHash: review.responsesRequestHash!, responsesRequest: wire, sourcePolicy,
++      preparedRequest, receipt, receiptHash: identityDigest(receipt), derivation,
++      holds: [...review.holds, ...derivation.holds, ...(sourcePolicy.identityEvaluation.mode === "retrospective" ? ["retrospective_development_evidence"] : [])] };
++    const candidate = { content, hash: identityDigest(content) };
++    assertBound(candidate, review);
++    return { review, bindingStatus: "candidate_for_human_review", candidate: freezeIdentityValue(candidate) };
++  } catch {
++    return { review, bindingStatus: "held", candidate: null };
++  }
++}
++
++/** Manual feedback only, stored as a new separate artifact by the existing CLI.
++ * Acceptance means agreement with proposed coordinates, never application or truth.
++ * reviewerId is an operator assertion; this local tool has no authentication UI.
++ */
++export function recordLunaEvidenceBindingDecision(args: {
++  candidate: unknown; originalReview: unknown; decision: unknown; now?: () => string;
++}) {
++  try {
++    const decision = decisionSchema.parse(args.decision), candidate = structuredClone(args.candidate) as LunaBoundEvidenceReview;
++    const original = structuredClone(args.originalReview) as Review;
++    if (Buffer.byteLength(JSON.stringify(candidate)) > 1_500_000 || decision.candidateHash !== candidate.hash) throw new Error("invalid_binding_decision");
++    assertBound(candidate, original);
++    const recordedAt = (args.now ?? (() => new Date().toISOString()))(), recorded = timestampMicros(recordedAt);
++    const reviewed = timestampMicros(decision.reviewedAt), created = timestampMicros(candidate.content.createdAt);
++    if (recorded === null || reviewed === null || created === null || reviewed < created || reviewed > recorded) throw new Error("invalid_binding_decision_clock");
++    const content = { version: "luna-evidence-binding-decision-v1", ...LUNA_REVIEW_AUTHORITY, canApply: false,
++      ...decision, recordedAt, originalReviewHash: candidate.content.originalReviewHash, receiptHash: candidate.content.receiptHash,
++      preparedRequestHash: candidate.content.preparedRequest.hash, sourceTextVersionId: candidate.content.sourcePolicy.source.sourceTextVersionId,
++      reviewQueueKey: candidate.content.reviewQueueKey, bindingPolicy: LUNA_EVIDENCE_BINDING_POLICY,
++      scope: "coordinate_proposal_feedback_only", holds: [...candidate.content.holds] } as const;
++    return freezeIdentityValue({ status: "recorded_for_review" as const, record: { content, hash: identityDigest(content) } });
++  } catch {
++    return { status: "held" as const, reason: "invalid_binding_decision", record: null };
++  }
++}

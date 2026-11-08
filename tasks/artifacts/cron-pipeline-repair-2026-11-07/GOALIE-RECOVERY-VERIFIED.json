@@ -1,0 +1,153 @@
+{
+  "checked_at": "2026-11-07T21:29:00.458535+00:00",
+  "total_rows": 216,
+  "prior_rows": 100,
+  "inserted_keys": 120,
+  "replaced_keys": 96,
+  "removed_keys": [
+    {
+      "game_id": 2026020267,
+      "team_id": 3,
+      "player_id": 8477484,
+      "game_date": "2026-11-07"
+    },
+    {
+      "game_id": 2026020270,
+      "team_id": 1,
+      "player_id": 8482076,
+      "game_date": "2026-11-07"
+    },
+    {
+      "game_id": 2026020279,
+      "team_id": 1,
+      "player_id": 8482076,
+      "game_date": "2026-11-08"
+    },
+    {
+      "game_id": 2026020283,
+      "team_id": 3,
+      "player_id": 8477484,
+      "game_date": "2026-11-09"
+    }
+  ],
+  "removed_exact_manifest": true,
+  "per_date": [
+    {
+      "rows": 54,
+      "games": 12,
+      "game_date": "2026-11-07",
+      "game_sides": 24,
+      "newest_update": "2026-11-02T10:15:41.881988+00:00",
+      "oldest_update": "2026-11-02T10:15:41.881988+00:00"
+    },
+    {
+      "rows": 28,
+      "games": 6,
+      "game_date": "2026-11-08",
+      "game_sides": 12,
+      "newest_update": "2026-11-02T10:15:41.881988+00:00",
+      "oldest_update": "2026-11-02T10:15:41.881988+00:00"
+    },
+    {
+      "rows": 14,
+      "games": 3,
+      "game_date": "2026-11-09",
+      "game_sides": 6,
+      "newest_update": "2026-11-03T10:16:36.62418+00:00",
+      "oldest_update": "2026-11-03T10:16:36.62418+00:00"
+    },
+    {
+      "rows": 33,
+      "games": 7,
+      "game_date": "2026-11-10",
+      "game_sides": 14,
+      "newest_update": "2026-11-07T21:28:05.276273+00:00",
+      "oldest_update": "2026-11-07T21:28:05.276273+00:00"
+    },
+    {
+      "rows": 29,
+      "games": 6,
+      "game_date": "2026-11-11",
+      "game_sides": 12,
+      "newest_update": "2026-11-07T21:28:05.276273+00:00",
+      "oldest_update": "2026-11-07T21:28:05.276273+00:00"
+    },
+    {
+      "rows": 48,
+      "games": 11,
+      "game_date": "2026-11-12",
+      "game_sides": 22,
+      "newest_update": "2026-11-07T21:28:05.276273+00:00",
+      "oldest_update": "2026-11-07T21:28:05.276273+00:00"
+    },
+    {
+      "rows": 10,
+      "games": 2,
+      "game_date": "2026-11-13",
+      "game_sides": 4,
+      "newest_update": "2026-11-07T21:28:05.276273+00:00",
+      "oldest_update": "2026-11-07T21:28:05.276273+00:00"
+    }
+  ],
+  "missing_game_sides": null,
+  "duplicate_keys": null,
+  "ineligible_rows": null,
+  "rows_updated_since_start_outside_scope": 0,
+  "goalie_audits": [
+    {
+      "status": "success",
+      "details": {
+        "url": "/api/v1/db/update-goalie-projections-v2?endDate=2026-11-13&limit=7",
+        "error": null,
+        "method": "POST",
+        "timing": {
+          "timer": "00:10",
+          "source": "audit",
+          "endedAt": "2026-11-07T21:28:05.586Z",
+          "startedAt": "2026-11-07T21:27:55.238Z",
+          "durationMs": 10348
+        },
+        "response": "{\"success\":true,\"message\":\"Updated projections. Total upserted: 216\",\"updates\":216,\"rowsRemoved\":4,\"failedRows\":0,\"failures\":[],\"ownershipDecision\":{\"decisionVersion\":\"goalie-start-ownership-v1\",\"table\":\"goalie_start_projections\",\"decision\":\"retain_shared_table_name_for_now\",\"canonicalWriterRoute\":\"/api/v1/db/update-goalie-projections-v2\",\"canonicalWriterStatus\":\"single_writer\",\"sharedReaders\":[\"/api/v1/forge/goalies\",\"/api/v1/start-chart\",\"web/lib/projections/run-forge-projections.ts\"],\"renameDeferred\":true,\"note\":\"Pass 3 keeps goalie_start_projections as the intentional shared goalie-prior table; rename or wrapping is deferred to a later pass so the single writer and shared readers stay explicit.\"},\"observability\":{\"goalieRowsProcessed\":216,\"databaseWriteFailures\":0,\"excludedHistoricalCandidates\":8,\"dataQualityWarnings\":[]}}",
+        "durationMs": 10348,
+        "failedRows": 0,
+        "finalAudit": null,
+        "statusCode": 200,
+        "rowsUpserted": null,
+        "responseOutcome": {
+          "success": true
+        },
+        "responseTruncated": false,
+        "cronClassification": "nhl_seasonal_game_data"
+      },
+      "job_name": "/api/v1/db/update-goalie-projections-v2",
+      "run_time": "2026-11-07T21:28:05.605567+00:00",
+      "rows_affected": null
+    }
+  ],
+  "new_forge_runs": 0,
+  "projection_stage": [
+    {
+      "status": "failed",
+      "last_error": "stage_failed:attempt-2",
+      "updated_at": "2026-11-07T10:22:35.645702+00:00",
+      "cursor_game_id": 7,
+      "lease_expires_at": null
+    }
+  ],
+  "all_updated_at_timestamps_advanced": false,
+  "upsert_acknowledged_rows": 216,
+  "status": "SUCCEEDED_WITH_EXISTING_TIMESTAMP_METADATA_CAVEAT",
+  "value_comparison": {
+    "existingRows": 96,
+    "existingRowsWithChangedValues": 49,
+    "unchangedValues": 47,
+    "changedColumnNames": [
+      "season_start_pct",
+      "games_played",
+      "projected_gsaa_per_60",
+      "l10_start_pct",
+      "start_probability"
+    ]
+  },
+  "timestamp_caveat": "The payload omits updated_at. All96 existing keys retain old updated_at values;49 have changed projection values and47 remain numerically identical. One atomic upsert acknowledged216 rows. No extra write performed to repair timestamps."
+}

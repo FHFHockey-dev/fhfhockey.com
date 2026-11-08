@@ -1,0 +1,10 @@
+{
+  "at": "2026-10-26T23:06:33.460080+00:00",
+  "previousResourceBlock": "released; no bypass",
+  "tests": 21,
+  "types": true,
+  "lint": true,
+  "offlineBrowserGroups": 4,
+  "externalBrowserAttempts": [],
+  "liveReadResult": "stopped"
+}

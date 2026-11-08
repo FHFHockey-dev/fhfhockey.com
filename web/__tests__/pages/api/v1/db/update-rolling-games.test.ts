@@ -1,4 +1,11 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+// Keep the real audit wrapper, but exercise unavailable telemetry without I/O.
+vi.mock("lib/supabase/server", () => ({
+  default: { from: vi.fn(() => ({
+    insert: vi.fn().mockResolvedValue({ error: { message: "fixture audit unavailable" } })
+  })) }
+}));
 
 import handler from "../../../../../pages/api/v1/db/update-rolling-games";
 

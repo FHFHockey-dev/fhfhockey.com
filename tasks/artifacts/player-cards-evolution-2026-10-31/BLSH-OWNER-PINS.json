@@ -1,0 +1,18 @@
+{
+  "ownerThread": "01a17e93-6d23-77b3-bb91-c200b28f80fc",
+  "installationReceipt": "/Users/tim/Documents/Codex/2026-10-27/task-3/current-refresh-20261029-01/portable-install-01/INSTALLATION-RECEIPT.json",
+  "receiptSHA256": "ff11ce4d1acf249b043eaa0386556c5b900c6491042c0ff1c2051a04412b1a32",
+  "sourcePins": [
+    {
+      "path": "/Users/tim/Code/fhfhockey.com/web/lib/buyLowSellHigh/research-snapshots/2026-10-28.arm-a-canonical-repaired.v2.json",
+      "sha256": "2f380c2539390f6931ec92ab1d0b1d8cced2b55f5f4cefb8c6e88a694909f2c8",
+      "matches": true
+    },
+    {
+      "path": "/Users/tim/Code/fhfhockey.com/web/lib/buyLowSellHigh/researchSnapshot.server.ts",
+      "sha256": "dc251e7430085e70bed0a30168a36de24fe11b19d9d1ee6b58fe9ead82bea7a0",
+      "matches": true
+    }
+  ],
+  "scope": "Retained local provisional research only; no observed current-card admission"
+}

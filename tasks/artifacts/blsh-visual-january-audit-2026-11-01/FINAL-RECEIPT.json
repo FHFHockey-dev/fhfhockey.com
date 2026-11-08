@@ -1,0 +1,72 @@
+{
+  "state": "AUDIT_COMPLETE_ONE_P2_DISPLAY_FINDING",
+  "applicationPinsUnchanged": true,
+  "newTestsPassed": 23,
+  "newTestsSkipped": 54,
+  "newOrigins": 0,
+  "newFits": 0,
+  "providerRequests": 0,
+  "productionRequests": 0,
+  "deployments": 0,
+  "reservedSeasonReads": 0,
+  "sourceEdits": 0,
+  "blockers": [],
+  "files": {
+    "TEST-RESULTS.json": {
+      "bytes": 499,
+      "sha256": "3d4e0d31b66b564e8dd0611de9c474a2344655d42ed95d9c91d062b4558f5192"
+    },
+    "audit.py": {
+      "bytes": 12955,
+      "sha256": "b68509a735b845b14595aa7bbe741704d420b22a54b5de3165a63b567bf9a2a9"
+    },
+    "RESULT.json": {
+      "bytes": 1870,
+      "sha256": "233760ad9efeeb50c4d7c949eaff3108f7ae87111371518e19cb2c0fd5cc770e"
+    },
+    "deny-network.cjs": {
+      "bytes": 264,
+      "sha256": "a68fd53e471c017d2c1fbe6bdbcd95d8c172d115f758cb7a61d10990aafc501c"
+    },
+    "STALE-LABEL-CASES.json": {
+      "bytes": 35924,
+      "sha256": "980e452ee9e8c24c5c403aba7bcd1427000c2d0ad92b050c9f11802019d14415"
+    },
+    "STALE-LABEL-RENDER.json": {
+      "bytes": 288,
+      "sha256": "079c8389bb262e1b33246e3263047627e9d8458d7aefc1b9b64b100594f1908c"
+    },
+    "REVIEW.md": {
+      "bytes": 10755,
+      "sha256": "16d812fe4129a2673c13d489253c2b181152414dd75a5d4fb1d12a7833a3cfd2"
+    },
+    "PARITY-AND-ANNOTATION.json": {
+      "bytes": 267,
+      "sha256": "2f41f5fa6a0262a1b69c75c8c4c5ddcf377040814eeec593a4fa120839e47a96"
+    },
+    "january-synthetic/stderr.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "january-synthetic/stdout.log": {
+      "bytes": 2039,
+      "sha256": "316ad4f85dd7d7621cc38e99d7b92bbf2ad6222bbb6d55acdc054bad6b0769fb"
+    },
+    "visual-and-capture/stderr.log": {
+      "bytes": 198,
+      "sha256": "272a04c9e08d412623ac065f1cade8d0e35130ff138f7e55b3467152cb3cef35"
+    },
+    "visual-and-capture/RETAINED-VITEST-DIRECTORIES.json": {
+      "bytes": 147,
+      "sha256": "f23985b5f2770e45418cc1e21cbf3ebf18b67e8e4d3de8f88bf7f71504acace3"
+    },
+    "visual-and-capture/VITEST-RESULTS.json": {
+      "bytes": 20826,
+      "sha256": "fc88dc53c61b0a8b02c71652e758d4f262e7d0667afaae85599f80848688fd62"
+    },
+    "visual-and-capture/stdout.log": {
+      "bytes": 649,
+      "sha256": "ad57a2a0e05d14f170818fbe4c911820fdf15af3dcce4468e6f609fdefad44e6"
+    }
+  }
+}

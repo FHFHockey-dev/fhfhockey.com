@@ -1,0 +1,103 @@
+{
+  "schemaVersion": "forge-v2-independent-remediation-review-v1",
+  "date": "2026-10-30",
+  "base": "1d9e900515726c5efcc62ad4df3a8cadc435c88c",
+  "pass": 1,
+  "disposition": "CHANGES_REQUIRED",
+  "scope": "Requested local remediation paths and approved requirements; product read-only. Parent browser/native integration edits still underway.",
+  "findings": [
+    {
+      "id": "R1",
+      "severity": "P1",
+      "title": "Pre-CAS expiry event append can retain a false missing-refresh gap",
+      "file": "web/lib/forge-v2/pipeline.server.ts",
+      "lines": [
+        327,
+        339
+      ],
+      "evidence": "Executed stale-snapshot reproduction returns claim_conflict while authoritative job is published, yet ledger gains missing_refresh:lock_passed.",
+      "reproduction": "Worker A reads pending queue before lock and pauses. Worker B publishes and acknowledges before lock. A resumes after lock, appends gap from its stale snapshot at lines 333-336, then loses CAS. Reproduced by returning that stale pending snapshot once from FixtureHistoryStore.loadQueue while the real queue retains published status.",
+      "impact": "Immutable history falsely records a missed refresh; preparation uses gap.at >= last publication to mark a successfully issued target stale. CAS conflict does not undo appended event.",
+      "requestedCorrection": "Bind attempt/gap evidence atomically to the validated queue transition, or use a durable transition outbox with idempotent draining. Cover stale snapshot, concurrent acknowledgement, and crash recovery."
+    },
+    {
+      "id": "R2",
+      "severity": "P2",
+      "title": "Primary selection remains excluded after authoritative start correction restores eligibility",
+      "file": "web/lib/forge-v2/evaluation.ts",
+      "lines": [
+        91,
+        101
+      ],
+      "evidence": "Executed result: publicationEligibility=null; prior.state=excluded; corrected next.state=excluded, reason=at_or_after_actual_start.",
+      "reproduction": "Select fixture publication, append erroneous early actual-start epoch causing exclusion, then linked later actual-start correction restoring eligibility. Call selectPrimaryCheckpoints with prior excluded selection.",
+      "impact": "Locked-final correction was repaired but H-level grade remains incorrect; retaining immutable vintage identity does not require retaining a superseded timing exclusion.",
+      "requestedCorrection": "Recompute timing disposition for same original primary ID while preserving explicit technical invalidations and append selection/evaluation correction lineage. Test selected -> excluded -> selected without replacement."
+    },
+    {
+      "id": "R3",
+      "severity": "P2",
+      "title": "Historical context replay reads future grade revisions",
+      "file": "web/lib/forge-v2/preparation.server.ts",
+      "lines": [
+        121,
+        129
+      ],
+      "evidence": "Executed originalContext replay after issuedLifecycleFixture creates corrected context throws Invalid evaluation correction lineage.",
+      "reproduction": "Build issuedLifecycleFixture; call preparePlayerReadContext using originalContext.asOf and previous=originalContext after later outcome correction/grades exist. selectionHistory correctly filters asOf but previous grade scan selects newest future grade.",
+      "impact": "Previously prepared context cannot be idempotently reproduced after later corrections. Future grade state can be reused when comparison keys match, or causes chronology rejection when they differ.",
+      "requestedCorrection": "Apply asOf cutoff to prior-grade reads, match the exact stored revision for retry, and prevent historical replay from forking the current context head. Add retry-before-and-after-later-correction coverage."
+    },
+    {
+      "id": "R4",
+      "severity": "P2",
+      "title": "Prepared accountability cannot evaluate category intervals",
+      "file": "web/lib/forge-v2/preparation.server.ts",
+      "lines": [
+        119,
+        122
+      ],
+      "evidence": "Source-proven unconditional category_interval_not_prepared for every non-FP category; no real category artifact can alter this branch. FP uses public qualification-gated projection.",
+      "reproduction": "Supply any category-qualified retained issuance and prepare context: every category grade interval remains unavailable, so both category interval sample counts stay zero.",
+      "impact": "Category coverage/width/proper-score acceptance cannot be completed by supplying scientific evidence alone. Prequalification FP evaluation also needs an internal deterministic artifact projection instead of depending on public qualification.",
+      "requestedCorrection": "Provide internal category/profile interval evaluation from pinned applicable artifacts with explicit scope, provenance and cutoff validation, separate from public serving qualification. Or explicitly reopen and retain the unimplemented category evaluation task rather than describing complete metrics wiring."
+    }
+  ],
+  "executedVerification": {
+    "kind": "Isolated esbuild-bundled Node reproductions under /private/tmp/fhfh-heavy.lock",
+    "script": "/tmp/forge-review-check.ts",
+    "log": "/tmp/forge-review-check.log",
+    "results": [
+      "PRIMARY_RESTORE: eligibility null; excluded disposition incorrectly retained",
+      "STALE_SNAPSHOT: claim_conflict; published job; false missing_refresh event appended",
+      "HISTORICAL_REPLAY: Invalid evaluation correction lineage"
+    ],
+    "broaderTests": "not run; parent owns integration verification",
+    "observedOutput": "PRIMARY_RESTORE {\"eligible\":null,\"prior\":\"excluded\",\"next\":\"excluded\",\"reason\":\"at_or_after_actual_start\"}\nSTALE_SNAPSHOT {\"result\":{\"state\":\"claim_conflict\",\"jobs\":[]},\"actualJobStatus\":\"published\",\"appended\":[\"missing_refresh:lock_passed\"]}\nHISTORICAL_REPLAY Invalid evaluation correction lineage\n",
+    "reproductionSource": "import { selectPrimaryCheckpoints, publicationEligibility } from '/Users/tim/Code/fhfhockey.com/web/lib/forge-v2/evaluation';\nimport { fixturePublished, FIXTURE_CLOCK, FIXTURE_TARGET } from '/Users/tim/Code/fhfhockey.com/web/lib/forge-v2/fixtures';\nimport { issuedLifecycleFixture, FIXTURE_BOUNDS } from '/Users/tim/Code/fhfhockey.com/web/lib/forge-v2/fixtureHarness.server';\nimport { runPreparedQueueBatch } from '/Users/tim/Code/fhfhockey.com/web/lib/forge-v2/pipeline.server';\nimport { preparePlayerReadContext } from '/Users/tim/Code/fhfhockey.com/web/lib/forge-v2/preparation.server';\nimport { mkdtemp, rm } from 'node:fs/promises';\nasync function main() {\n const pub=fixturePublished();\n const epoch={ id:'lock-1', gameId:FIXTURE_TARGET.gameId, adoptedAt:FIXTURE_CLOCK, lockAt:'2026-01-11T23:00:00.000Z', scheduleRevision:'schedule-1', predecessorId:null, reopened:false, actualStartAt:null, timingStatus:'provisional', playBegun:false } as const;\n const episode={...FIXTURE_TARGET,id:'episode-H10-1',horizon:10,episode:1,enteredAt:FIXTURE_CLOCK,exitedAt:'2026-01-02T12:00:00.000Z',scheduleRevision:'schedule-1',affiliationRevision:'affiliation-1'} as const;\n const bad={...epoch,id:'bad-start', predecessorId:epoch.id,adoptedAt:'2026-01-12T12:00:00.000Z',actualStartAt:'2026-01-01T12:00:01.000Z',playBegun:true,timingStatus:'confirmed'} as const;\n const good={...bad,id:'corrected-start',predecessorId:bad.id,adoptedAt:'2026-01-13T12:00:00.000Z',actualStartAt:'2026-01-11T22:30:00.000Z'};\n const args={target:FIXTURE_TARGET,episodes:[episode],publications:[pub],epochs:[epoch,bad],evidenceClass:'fixture' as const,asOf:bad.adoptedAt};\n const prior=selectPrimaryCheckpoints(args);\n const next=selectPrimaryCheckpoints({...args,epochs:[epoch,bad,good],asOf:good.adoptedAt,prior});\n console.log('PRIMARY_RESTORE',JSON.stringify({eligible:publicationEligibility(pub,[epoch,bad,good],good.adoptedAt),prior:prior[9].state,next:next[9].state,reason:next[9].reason}));\n const root=await mkdtemp('/tmp/forge-review-fixture-');\n try { const env=await issuedLifecycleFixture(root);\n const load=env.store.loadQueue.bind(env.store); const real=await load('integrated');\n const published=(real!.state as any).jobs.find((j:any)=>j.status==='published');\n const stale=structuredClone(real!); stale.revision=1;\n stale.state={...(stale.state as any),jobs:[{...published,status:'pending',attempts:0,startedAt:null,leaseUntil:null,finishedAt:null,confirmedAt:null,vintageId:null,reason:null}]};\n let first=true; env.store.loadQueue=async id=>{if(first){first=false;return stale}return load(id)};\n const priorEvents=env.store.ledger.size;\n const result=await runPreparedQueueBatch({store:env.store,artifacts:env.artifacts,queueId:'integrated',prepared:new Map(),bounds:FIXTURE_BOUNDS,clock:()=>new Date(Date.parse(published.lockAt)+1000).toISOString()});\n const appended=[...env.store.ledger.values()].slice(priorEvents).map((r:any)=>r.payload.reason);\n console.log('STALE_SNAPSHOT',JSON.stringify({result,actualJobStatus:published.status,appended})); env.store.loadQueue=load;\n try {await preparePlayerReadContext({store:env.store,artifacts:env.artifacts,player:env.originalContext.player,targets:[FIXTURE_TARGET],asOf:env.originalContext.asOf,evidenceClass:'fixture',profiles:env.profiles,qualifications:[],excluded:[],previous:env.originalContext,maximumRecordsPerKind:10000,maximumPublicationsPerGame:100,visibility:'local_fixture'});console.log('HISTORICAL_REPLAY passed')}catch(e){console.log('HISTORICAL_REPLAY',e.message)}\n } finally {await rm(root,{recursive:true,force:true})}\n}\nmain();\n"
+  },
+  "scientificReview": {
+    "disposition": "Proposal accurately remains unfrozen and no-qualified-subset; not scientific acceptance",
+    "checked": "FR26 normative text matches approved rule; original fifteen scientific/external gates remain open; protected allocation holds, absent source/custody rights, exact hashes, threshold justification and independent approval are explicit. No proposal or fixture closes these gates.",
+    "localIssue": "shadowApprovalPackage proposes concurrency=1 and batchSize=20; current refresh validBounds requires batchSize<=concurrency. Normalize packet before claiming executable bounds; packet is already labeled incomplete."
+  },
+  "integrationReview": {
+    "progress": "Preparation + lifecycle fixture creates real queue publications and retained grades/API path; original fake-publication gap materially reduced. API public metrics now whitelist nested exact-profile reports.",
+    "pending": "Parent browser and native PostgreSQL integration changes/checks are in progress and not re-certified here. Existing synthetic display browser coverage alone cannot prove queue\u2192retention\u2192API\u2192UI."
+  },
+  "externalGates": {
+    "state": "not attempted; no denial or pending approval",
+    "productionRequests": 0,
+    "deployments": 0,
+    "protectedLabelsOpened": false,
+    "blockers": "Scientific qualification, source rights/custody, authorized real populations, untouched/prospective evidence and release approval remain unavailable."
+  },
+  "pins": {
+    "web/lib/forge-v2/pipeline.server.ts": "3b4b603082bc431d00735d0d81e187c4d1d175856d0fb8b113067bfae5b3fd7d",
+    "web/lib/forge-v2/evaluation.ts": "933c8ffdb11137303427ce6a49f0b27c4acdc54ec84f29c41a451b7bfcfb215f",
+    "web/lib/forge-v2/preparation.server.ts": "6cf2a05c83a4966a8439e910bffcf1a190a9b0cbcfe14205bb5ef0b9ed088dda",
+    "tasks/artifacts/forge-v2-remediation-2026-10-30/protocol-proposal.json": "f555c0fbde6c848e705eb3c37f46e25541a056f105a38f7c2659e6949dcc3e41",
+    "tasks/artifacts/forge-v2-remediation-2026-10-30/scientific-prerequisites.json": "9440a89703b7e174303cc1fbcb9730bbd7ad36d4c27227ba663735ad2db3ecfc"
+  },
+  "remainingReviewBudget": "One correction pass only"
+}

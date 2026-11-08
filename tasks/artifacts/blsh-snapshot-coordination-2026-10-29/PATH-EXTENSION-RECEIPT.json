@@ -1,0 +1,32 @@
+{
+  "status": "ONE_EXACT_PATH_REGISTERED_INSTALLATION_PENDING_OWNER",
+  "atUTC": "2026-10-29T19:13:51.282983+00:00",
+  "register": "tasks/artifacts/cross-platform/2026-10-24-coordination/CODEX-LEASES.json",
+  "beforeSHA256": "4da83d0170129d5cbc08cb87df86fe7005c5f4fdf6a14ce38e258515625fd01b",
+  "afterSHA256": "5758557af1c32158b2dbcaae3c848e7091cdfd894d0a6d2f313727eec6b08a68",
+  "changedLease": "CODEX-BLSH-CURRENT-SEASON-20261027-SUCCESSOR",
+  "newExactPaths": [
+    "web/lib/buyLowSellHigh/research-snapshots/2026-10-28.arm-a-canonical-repaired.v2.json"
+  ],
+  "ownerThread": "01a17e93-6d23-77b3-bb91-c200b28f80fc",
+  "allOtherEntriesAndSurroundingBytesPreserved": true,
+  "extension": {
+    "id": "CODEX-BLSH-CANONICAL-REPAIRED-SNAPSHOT-20261029",
+    "atUTC": "2026-10-29T19:13:51.282983+00:00",
+    "paths": [
+      "web/lib/buyLowSellHigh/research-snapshots/2026-10-28.arm-a-canonical-repaired.v2.json"
+    ],
+    "owner_thread": "01a17e93-6d23-77b3-bb91-c200b28f80fc",
+    "scope": "One new immutable current research JSON under existing preview owner; exact hash/size copy and repository-relative fixed reader path. Existing parser/reader/test custody retained. No scorer/threshold/reference change.",
+    "authority": "Current coordinating-parent delegation; narrow uncontested exact-path extension for already-authorized local post-repair preview; no new user approval needed.",
+    "manifest": "/Users/tim/Documents/Codex/2026-10-27/task-3/current-refresh-20261029-01/INSTALL-REQUEST.json",
+    "manifestSHA256": "4bd182cbcc645f2f36bb71bac2cfdc0fabe99170fafabc9e29fd3acd289d6fe8",
+    "sourceArtifact": "/Users/tim/Documents/Codex/2026-10-27/task-3/current-refresh-20261029-01/replay-01/2026-10-28.arm-a-canonical-repaired.v2.json",
+    "snapshotSHA256": "2f380c2539390f6931ec92ab1d0b1d8cced2b55f5f4cefb8c6e88a694909f2c8",
+    "snapshotBytes": 9559567,
+    "baselineState": "ABSENT_AT_REGISTRATION",
+    "competingActiveOwners": [],
+    "installationPerformedByCoordinator": false,
+    "limits": "Preserve historical v1/Oct26 v2. No 2025-26 holdout, deployment, database/provider calls, Git mutation, confidence claim or threshold adoption."
+  }
+}

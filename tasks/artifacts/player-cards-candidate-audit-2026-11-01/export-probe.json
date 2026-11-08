@@ -1,0 +1,33 @@
+[
+  {
+    "name": "normal",
+    "warnings": [
+      "Reports aren't separated by reporter, so conflicts between sources can't be detected.",
+      "No source link or expiry exists for these reports."
+    ],
+    "exportAccepted": true,
+    "error": null,
+    "markedTruncated": false,
+    "lineLengths": [
+      117,
+      18
+    ],
+    "ariaPreservesFullWarning": true,
+    "manifestPreservesFullWarning": true
+  },
+  {
+    "name": "long-token",
+    "warnings": [
+      "https://example.test/wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww"
+    ],
+    "exportAccepted": true,
+    "error": null,
+    "markedTruncated": false,
+    "lineLengths": [
+      0,
+      321
+    ],
+    "ariaPreservesFullWarning": true,
+    "manifestPreservesFullWarning": true
+  }
+]

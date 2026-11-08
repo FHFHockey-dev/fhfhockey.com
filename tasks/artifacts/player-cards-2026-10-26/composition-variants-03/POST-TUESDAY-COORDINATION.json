@@ -1,0 +1,33 @@
+{
+  "at": "2026-10-26T18:12:28.268397+00:00",
+  "branch": "octoberBranch",
+  "head": "b9206fe31aa162f692f440f949588bb59e36f48c",
+  "trackedDirtyPathCount": 34,
+  "cardTrackedDirtyPaths": [
+    "web/components/player-cards/HeroPlayerCard.tsx",
+    "web/components/player-cards/PlayerCardShareStudio.test.tsx",
+    "web/components/player-cards/PlayerCardShareStudio.tsx",
+    "web/lib/player-cards/aggregation.ts",
+    "web/lib/player-cards/cardEvidenceVerdict.test.ts",
+    "web/lib/player-cards/cardEvidenceVerdict.ts",
+    "web/lib/player-cards/domain.test.ts",
+    "web/lib/player-cards/evidenceBundle.test.ts",
+    "web/lib/player-cards/evidenceBundle.ts",
+    "web/lib/player-cards/evidenceLoader.test.ts",
+    "web/lib/player-cards/evidenceLoader.ts",
+    "web/lib/player-cards/nstCapture.test.ts",
+    "web/lib/player-cards/nstCapture.ts",
+    "web/lib/player-cards/portraitTreatment.test.ts",
+    "web/lib/player-cards/portraitTreatment.ts",
+    "web/lib/player-cards/shareExport.test.ts",
+    "web/lib/player-cards/shareExport.ts",
+    "web/lib/player-cards/windows.ts"
+  ],
+  "pinnedCardSourcesVerified": 23,
+  "actualPinnedSourceCollisions": [],
+  "gitMutations": false,
+  "sharedSourceEdits": false,
+  "candidatePreserved": true,
+  "previewPid": 70975,
+  "note": "TJ reports Claude merging Tuesday; no card edits after finalfreeze, no checkout/index/ref/reset/merge/commit operation. Shared newHEADsource preserved."
+}

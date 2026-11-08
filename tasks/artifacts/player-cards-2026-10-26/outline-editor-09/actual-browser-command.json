@@ -1,0 +1,10 @@
+{
+  "action": "actual-browser",
+  "command": [
+    "node",
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-26/current-data-01/approved-snapshot-02/browser-check.mjs"
+  ],
+  "exitCode": 0,
+  "elapsedSeconds": 1.886,
+  "heldBy": "editor09 qualify parent resource slot"
+}

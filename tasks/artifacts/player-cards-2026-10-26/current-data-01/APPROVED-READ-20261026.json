@@ -1,0 +1,11 @@
+{
+  "at": "2026-10-26T22:59:19.420464+00:00",
+  "approvalAssistant": "Sentinel_96ec1a4dd0d08191bfb33a1897f3dc87",
+  "ownerDirectYes": "Sentinel_fca3d11ad3988191b3fa135d5eaf3f1b",
+  "approvedAt": "2026-10-26T22:57:28Z",
+  "scriptSha256": "908a185a1a01d1f4790278af4efc6a567f03a0df614767329cfd5dae06efd74c",
+  "previousExecutionIntentAbsent": true,
+  "oldSourcePinsMatched": 10,
+  "currentHead": "fe285adcf2a0651d7d08b43fa5e31376a5c3ede3",
+  "scope": "Exactly3fixedpublicNHLGETs;5s512KiBeach/15s1.5MiBtotal/oneexecution/noretryredirect;noDB/auth/profilewrites"
+}

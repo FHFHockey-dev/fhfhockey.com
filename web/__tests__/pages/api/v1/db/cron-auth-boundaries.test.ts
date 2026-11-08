@@ -6,7 +6,7 @@ const {
   authMaybeSingleMock,
   createClientMock,
   serviceFromMock,
-  yahooGamesUserMock,
+  yahooRefreshMock,
   replayCoverageMock,
 } = vi.hoisted(() => ({
   auditInsertMock: vi.fn(),
@@ -14,7 +14,7 @@ const {
   authMaybeSingleMock: vi.fn(),
   createClientMock: vi.fn(),
   serviceFromMock: vi.fn(),
-  yahooGamesUserMock: vi.fn(),
+  yahooRefreshMock: vi.fn(),
   replayCoverageMock: vi.fn(),
 }));
 
@@ -22,12 +22,9 @@ vi.mock("@supabase/supabase-js", () => ({
   createClient: createClientMock,
 }));
 
-vi.mock("yahoo-fantasy", () => ({
-  default: class YahooFantasyMock {
-    games = { user: yahooGamesUserMock };
-    setUserToken = vi.fn();
-    setRefreshToken = vi.fn();
-  },
+vi.mock("lib/integrations/yahoo/refreshGlobalCredentials", async (importOriginal) => ({
+  ...await importOriginal<typeof import("lib/integrations/yahoo/refreshGlobalCredentials")>(),
+  refreshYahooGlobalCredentials: yahooRefreshMock,
 }));
 
 vi.mock("lib/supabase/server", () => ({
@@ -74,6 +71,7 @@ import wgoHandler from "../../../../../pages/api/v1/db/update-wgo-goalies";
 import refreshYahooHandler from "../../../../../pages/api/v1/db/manual-refresh-yahoo-token";
 import updateYahooPlayersHandler from "../../../../../pages/api/v1/db/update-yahoo-players";
 import updateYahooWeeksHandler from "../../../../../pages/api/v1/db/update-yahoo-weeks";
+import { YahooGlobalRefreshError } from "lib/integrations/yahoo/refreshGlobalCredentials";
 
 const originalCronSecret = process.env.CRON_SECRET;
 const originalServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -234,7 +232,73 @@ describe("season and WGO cron authorization boundaries", () => {
     }
 
     expect(createClientMock).not.toHaveBeenCalled();
+    expect(yahooRefreshMock).not.toHaveBeenCalled();
     expect(auditInsertMock).toHaveBeenCalledTimes(3);
+  });
+
+  it.each([
+    new YahooGlobalRefreshError("yahoo_reauth_required", 409, "not_refreshed"),
+    new YahooGlobalRefreshError("yahoo_refresh_rate_limited", 429, "not_refreshed"),
+    new YahooGlobalRefreshError("yahoo_refresh_invalid_response", 502, "unknown"),
+    new YahooGlobalRefreshError("yahoo_refresh_store_failed", 503, "unknown"),
+    new YahooGlobalRefreshError("yahoo_refresh_timeout", 504, "unknown"),
+  ])("returns a completed, redacted response and audit for $code", async (failure) => {
+    const credentials = {
+      id: 1, consumer_key: "synthetic-consumer", consumer_secret: "synthetic-secret",
+      access_token: "synthetic-access", refresh_token: "synthetic-refresh",
+    };
+    createClientMock.mockReturnValue({
+      from: vi.fn(() => ({
+        select: vi.fn(() => ({
+          single: vi.fn().mockResolvedValue({ data: credentials, error: null }),
+        })),
+      })),
+    });
+    yahooRefreshMock.mockRejectedValue(failure);
+    const res = createMockRes();
+    await refreshYahooHandler(
+      createReq(yahooProtectedRoutes[0] as any, "Bearer configured-test-secret"), res,
+    );
+    expect(res.statusCode).toBe(failure.statusCode);
+    expect(res.body).toEqual({
+      success: false, retries: 0,
+      rateLimitEvents: failure.code === "yahoo_refresh_rate_limited" ? 1 : 0,
+      error: "Yahoo token refresh failed", code: failure.code,
+      refreshOutcome: failure.refreshOutcome,
+    });
+    expect(yahooRefreshMock).toHaveBeenCalledTimes(1);
+    expect(auditInsertMock).toHaveBeenCalledTimes(1);
+    expect(JSON.stringify([res.body, auditInsertMock.mock.calls])).not.toMatch(/synthetic-/);
+  });
+
+  it("reports refresh success only after the refresh and storage operation resolves", async () => {
+    const credentials = {
+      id: 1, consumer_key: "synthetic-consumer", consumer_secret: "synthetic-secret",
+      access_token: "synthetic-access", refresh_token: "synthetic-refresh",
+    };
+    createClientMock.mockReturnValue({
+      from: vi.fn(() => ({
+        select: vi.fn(() => ({
+          single: vi.fn().mockResolvedValue({ data: credentials, error: null }),
+        })),
+      })),
+    });
+    let finish!: () => void;
+    yahooRefreshMock.mockReturnValue(new Promise<void>((resolve) => { finish = resolve; }));
+    const res = createMockRes();
+    const request = refreshYahooHandler(
+      createReq(yahooProtectedRoutes[0] as any, "Bearer configured-test-secret"), res,
+    );
+    await vi.waitFor(() => expect(yahooRefreshMock).toHaveBeenCalledTimes(1));
+    expect(res.headersSent).toBe(false);
+    finish();
+    await request;
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toEqual({
+      success: true, refreshed: true, refreshedAt: expect.any(String),
+      retries: 0, rateLimitEvents: 0,
+    });
+    expect(auditInsertMock).toHaveBeenCalledTimes(1);
   });
 
   it("redacts Yahoo provider failures from the manual refresh response and audit", async () => {
@@ -252,7 +316,7 @@ describe("season and WGO cron authorization boundaries", () => {
         })),
       })),
     });
-    yahooGamesUserMock.mockRejectedValue(
+    yahooRefreshMock.mockRejectedValue(
       new Error("provider failure with sensitive-fragment"),
     );
     const route = yahooProtectedRoutes[0];
@@ -268,6 +332,8 @@ describe("season and WGO cron authorization boundaries", () => {
       success: false,
       retries: 0,
       rateLimitEvents: 0,
+      code: "yahoo_refresh_failed",
+      refreshOutcome: "unknown",
       error: "Yahoo token refresh failed",
     });
     expect(JSON.stringify(auditInsertMock.mock.calls)).not.toContain(

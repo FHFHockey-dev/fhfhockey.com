@@ -1,0 +1,21 @@
+{
+  "id": "CODEX-NST-GOALIE-WRITER-20261101-PURE",
+  "owner": "Codex task 01a19780-b73c-7334-9e53-4b7fda61201c; parent 01a189f6-9a3a-7235-a989-e1af4f47b014",
+  "status": "ACTIVE_EXACT_LOCAL_PATHS",
+  "started_at_utc": "2026-11-01T14:40:00.722523+00:00",
+  "paths": [
+    "web/lib/nst/goalieCatchup.ts",
+    "web/lib/nst/goalieCatchup.test.ts",
+    "web/lib/nst/goalieFreshness.ts",
+    "web/lib/nst/goalieFreshness.test.ts"
+  ],
+  "baseline_sha256": {
+    "web/lib/nst/goalieCatchup.ts": null,
+    "web/lib/nst/goalieCatchup.test.ts": null,
+    "web/lib/nst/goalieFreshness.ts": null,
+    "web/lib/nst/goalieFreshness.test.ts": null
+  },
+  "scope": "Pure bounded goalie catch-up manifest/admission and freshness assessment with fixtures; no IO adapters, schedule, migration, runtime activation or frozen-source edits.",
+  "authority": "Current assignment explicitly permits non-conflicting isolated pieces while retained ownership is reconciled.",
+  "conflicts": []
+}

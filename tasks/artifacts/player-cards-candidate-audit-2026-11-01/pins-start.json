@@ -1,0 +1,581 @@
+{
+  "at": "2026-11-01T19:05:43.063353+00:00",
+  "checks": {
+    "SOURCE-PINS.json": {
+      "count": 16,
+      "matching": 16,
+      "files": [
+        {
+          "path": "web/components/player-cards/PlayerAnalysisCard.tsx",
+          "expected": "a46c3979c3dc81eda03bb5c101d5c4c98508e103499fa5f5edf0600da0a162b6",
+          "actual": "a46c3979c3dc81eda03bb5c101d5c4c98508e103499fa5f5edf0600da0a162b6",
+          "match": true
+        },
+        {
+          "path": "web/components/player-cards/PlayerAnalysisStudio.module.scss",
+          "expected": "80e4d29db119dcc35c78d617b35becb84e5778880361b323cd4d9969a2d1dc3f",
+          "actual": "80e4d29db119dcc35c78d617b35becb84e5778880361b323cd4d9969a2d1dc3f",
+          "match": true
+        },
+        {
+          "path": "web/components/player-cards/PlayerAnalysisStudio.test.tsx",
+          "expected": "2e73505476533015ea471b6a416f44ccef0972405fe142629bf3c9db7797f5ef",
+          "actual": "2e73505476533015ea471b6a416f44ccef0972405fe142629bf3c9db7797f5ef",
+          "match": true
+        },
+        {
+          "path": "web/components/player-cards/PlayerAnalysisStudio.tsx",
+          "expected": "107278c3bd3bbebf6fd28f2940b46658d90ac1037ce9103e4aa342a29cf5a06b",
+          "actual": "107278c3bd3bbebf6fd28f2940b46658d90ac1037ce9103e4aa342a29cf5a06b",
+          "match": true
+        },
+        {
+          "path": "web/lib/player-cards/analysisEvidence.test.ts",
+          "expected": "4f6313bbad5dfea6360c6659ca9e85cadf3783cb7f86e4fe89eef993afaed382",
+          "actual": "4f6313bbad5dfea6360c6659ca9e85cadf3783cb7f86e4fe89eef993afaed382",
+          "match": true
+        },
+        {
+          "path": "web/lib/player-cards/analysisEvidence.ts",
+          "expected": "e9632bf60feb058fd10a80b03deb88287ce50a4d54311476d39904825ccbd332",
+          "actual": "e9632bf60feb058fd10a80b03deb88287ce50a4d54311476d39904825ccbd332",
+          "match": true
+        },
+        {
+          "path": "web/lib/player-cards/analysisExport.ts",
+          "expected": "ff5babdfb11862b390f9eb10fa4762860880a1000a7c985a0fa5169f68529b2f",
+          "actual": "ff5babdfb11862b390f9eb10fa4762860880a1000a7c985a0fa5169f68529b2f",
+          "match": true
+        },
+        {
+          "path": "web/lib/player-cards/analysisFixtures.ts",
+          "expected": "80ff3110c833784e3df2a99ea6500a2454149ad775b044bc62c4dcb9433b16ac",
+          "actual": "80ff3110c833784e3df2a99ea6500a2454149ad775b044bc62c4dcb9433b16ac",
+          "match": true
+        },
+        {
+          "path": "web/lib/player-cards/analysisSnapshot.test.ts",
+          "expected": "2b1d0e8077bf8c59c29e171991d66e25c35a30dab057e396c13ccf7a51674378",
+          "actual": "2b1d0e8077bf8c59c29e171991d66e25c35a30dab057e396c13ccf7a51674378",
+          "match": true
+        },
+        {
+          "path": "web/lib/player-cards/analysisSnapshot.ts",
+          "expected": "aca542f523cec0bfa2a3f66932db38815712f4986781bfeca797a321e7d49804",
+          "actual": "aca542f523cec0bfa2a3f66932db38815712f4986781bfeca797a321e7d49804",
+          "match": true
+        },
+        {
+          "path": "web/lib/player-cards/goalieOutlook.test.ts",
+          "expected": "f7e943496b5b6988346a8af76dfe72cbdb00e9b652d8ae5fde7d820c8d9830aa",
+          "actual": "f7e943496b5b6988346a8af76dfe72cbdb00e9b652d8ae5fde7d820c8d9830aa",
+          "match": true
+        },
+        {
+          "path": "web/lib/player-cards/goalieOutlook.ts",
+          "expected": "26d6db7f6d0b86548cfc7faa592520741bc23b70a892e2ca7b1aba9a1f993726",
+          "actual": "26d6db7f6d0b86548cfc7faa592520741bc23b70a892e2ca7b1aba9a1f993726",
+          "match": true
+        },
+        {
+          "path": "web/lib/player-cards/retainedBlsh.test.ts",
+          "expected": "56433315e0322bb90324ae0754cdf21baceb67e2481b78bcd98b71e257f8b52d",
+          "actual": "56433315e0322bb90324ae0754cdf21baceb67e2481b78bcd98b71e257f8b52d",
+          "match": true
+        },
+        {
+          "path": "web/lib/player-cards/retainedBlsh.ts",
+          "expected": "328d56eceec9248568f5fb1b08397ede0a7ee6d64d9bbc5facb061d6449f80be",
+          "actual": "328d56eceec9248568f5fb1b08397ede0a7ee6d64d9bbc5facb061d6449f80be",
+          "match": true
+        },
+        {
+          "path": "web/lib/player-cards/sharedGoalieOutlook.test.ts",
+          "expected": "5ed60a472ef85210384708810cdaf7d0c0090b7a2f51c233e93d6ec72d95d454",
+          "actual": "5ed60a472ef85210384708810cdaf7d0c0090b7a2f51c233e93d6ec72d95d454",
+          "match": true
+        },
+        {
+          "path": "web/lib/player-cards/sharedGoalieOutlook.ts",
+          "expected": "41146367aad54526b93b58a6abec98037b194ef8d0495a977e8b7881fefd58ed",
+          "actual": "41146367aad54526b93b58a6abec98037b194ef8d0495a977e8b7881fefd58ed",
+          "match": true
+        }
+      ]
+    },
+    "BASELINE.json": {
+      "count": 78,
+      "matching": 78,
+      "files": [
+        {
+          "path": "web/lib/player-cards/currentNhl.server.test.ts",
+          "expected": "105b977fdee0ecc1e5e9023924619d7c7155940240425132def99650fa803dad",
+          "actual": "105b977fdee0ecc1e5e9023924619d7c7155940240425132def99650fa803dad",
+          "match": true
+        },
+        {
+          "path": "web/lib/player-cards/outlineStack.test.ts",
+          "expected": "6831023b91aadd9e324af59f1e0cdb8fdd1f59c630b6bf4122f8c58c1716f055",
+          "actual": "6831023b91aadd9e324af59f1e0cdb8fdd1f59c630b6bf4122f8c58c1716f055",
+          "match": true
+        },
+        {
+          "path": "web/lib/player-cards/fixtures.ts",
+          "expected": "00ac0c5bc1194427c2aecb7981c0f228b22b51fef16b343a72ec0f47a4405f65",
+          "actual": "00ac0c5bc1194427c2aecb7981c0f228b22b51fef16b343a72ec0f47a4405f65",
+          "match": true
+        },
+        {
+          "path": "web/lib/player-cards/currentNhl.server.ts",
+          "expected": "905cca317479d47609066bf636c209e2e5662a783e334ad66274e6131b9ffbaa",
+          "actual": "905cca317479d47609066bf636c209e2e5662a783e334ad66274e6131b9ffbaa",
+          "match": true
+        },
+        {
+          "path": "web/lib/player-cards/evidenceLoader.ts",
+          "expected": "9fee76955b1f5c98bea4c9b638facc68185de8d3cb3e826bdcc848bbad5837d7",
+          "actual": "9fee76955b1f5c98bea4c9b638facc68185de8d3cb3e826bdcc848bbad5837d7",
+          "match": true
+        },
+        {
+          "path": "web/lib/player-cards/observedExport.ts",
+          "expected": "6ec078118974d42028619b0f000f642feb1460503d4ed49220db788e0c9856fd",
+          "actual": "6ec078118974d42028619b0f000f642feb1460503d4ed49220db788e0c9856fd",
+          "match": true
+        },
+        {
+          "path": "web/lib/player-cards/currentNhl.test.ts",
+          "expected": "a755776e200e95a18de618a20ccb6f0d5ffe59fff5a676eb254ebf81d527f626",
+          "actual": "a755776e200e95a18de618a20ccb6f0d5ffe59fff5a676eb254ebf81d527f626",
+          "match": true
+        },
+        {
+          "path": "web/lib/player-cards/alphaOutline.ts",
+          "expected": "b83074d715c5d804a6b074f6a4929c36385c1551084889b6806cc766284b4615",
+          "actual": "b83074d715c5d804a6b074f6a4929c36385c1551084889b6806cc766284b4615",
+          "match": true
+        },
+        {
+          "path": "web/lib/player-cards/evidenceVerdictCopy.ts",
+          "expected": "e2ea463484098fdaed40373804dd2989f7dfd215228cf73885c68daaa1f7a23e",
+          "actual": "e2ea463484098fdaed40373804dd2989f7dfd215228cf73885c68daaa1f7a23e",
+          "match": true
+        },
+        {
+          "path": "web/lib/player-cards/currentSelection.test.ts",
+          "expected": "61783cfa56e2bf7c2ef6ff0b326ee0e423911505a69bedc901f71f5a351f3a88",
+          "actual": "61783cfa56e2bf7c2ef6ff0b326ee0e423911505a69bedc901f71f5a351f3a88",
+          "match": true
+        },
+        {
+          "path": "web/lib/player-cards/windows.ts",
+          "expected": "0ba442eb512f309131c1f3b5a45534ccf7687a1cf7a84d570b40ce49f95dfb30",
+          "actual": "0ba442eb512f309131c1f3b5a45534ccf7687a1cf7a84d570b40ce49f95dfb30",
+          "match": true
+        },
+        {
+          "path": "web/lib/player-cards/contracts.ts",
+          "expected": "5bc0b00708a6dd9f3638f801701d3bf56dfe9a0dfcdd1484fd34d806ff8c283d",
+          "actual": "5bc0b00708a6dd9f3638f801701d3bf56dfe9a0dfcdd1484fd34d806ff8c283d",
+          "match": true
+        },
+        {
+          "path": "web/lib/player-cards/playerCatalog.ts",
+          "expected": "98d967b1895f574c8e9c4703b1594539b499ccdfb31b38955aaad85456e7bb0b",
+          "actual": "98d967b1895f574c8e9c4703b1594539b499ccdfb31b38955aaad85456e7bb0b",
+          "match": true
+        },
+        {
+          "path": "web/lib/player-cards/ranking.ts",
+          "expected": "813a18860ac97ce19bceeb01f014541644b9a4d002c34ac7a0d95c09ef6b5338",
+          "actual": "813a18860ac97ce19bceeb01f014541644b9a4d002c34ac7a0d95c09ef6b5338",
+          "match": true
+        },
+        {
+          "path": "web/lib/player-cards/domain.test.ts",
+          "expected": "240b4c192c386d672c5af505a90355787ca43b8f95dc7ce1d57dbba46addbb91",
+          "actual": "240b4c192c386d672c5af505a90355787ca43b8f95dc7ce1d57dbba46addbb91",
+          "match": true
+        },
+        {
+          "path": "web/lib/player-cards/nstCapture.ts",
+          "expected": "ddaa8604b6a50f7f6ebe9511899724ab0ade9b7db1235b417903b5b2f6e523ec",
+          "actual": "ddaa8604b6a50f7f6ebe9511899724ab0ade9b7db1235b417903b5b2f6e523ec",
+          "match": true
+        },
+        {
+          "path": "web/lib/player-cards/portraitTreatment.ts",
+          "expected": "202386082221d4ac656e6b3a3f12777abb115eae949a82eed4b2985d78918399",
+          "actual": "202386082221d4ac656e6b3a3f12777abb115eae949a82eed4b2985d78918399",
+          "match": true
+        },
+        {
+          "path": "web/lib/player-cards/evidenceLoader.test.ts",
+          "expected": "9feaa0046e15b5cc94bb8506958aaf222f028aecc70d63b7aa2c11880af0d122",
+          "actual": "9feaa0046e15b5cc94bb8506958aaf222f028aecc70d63b7aa2c11880af0d122",
+          "match": true
+        },
+        {
+          "path": "web/lib/player-cards/shareExport.test.ts",
+          "expected": "1251d0366c44d591fcfc74a5ac3afaf9868e49895563cd47b4e80fd97b7b3753",
+          "actual": "1251d0366c44d591fcfc74a5ac3afaf9868e49895563cd47b4e80fd97b7b3753",
+          "match": true
+        },
+        {
+          "path": "web/lib/player-cards/cardEvidenceVerdict.test.ts",
+          "expected": "8942ef62c9ecd4a0396301ed63437658c8b4fb0e9db9c122f35575d62a50985f",
+          "actual": "8942ef62c9ecd4a0396301ed63437658c8b4fb0e9db9c122f35575d62a50985f",
+          "match": true
+        },
+        {
+          "path": "web/lib/player-cards/reviewedHeroSamples.ts",
+          "expected": "b2ed3a541240d600dbbb9fcf10d1bac2ce2db6476484b908f0f3469210cec0cc",
+          "actual": "b2ed3a541240d600dbbb9fcf10d1bac2ce2db6476484b908f0f3469210cec0cc",
+          "match": true
+        },
+        {
+          "path": "web/lib/player-cards/playerCatalog.test.ts",
+          "expected": "d6d89b87220d1ba377280500eff6a624a18076fb9141d308c07ec579f7eca0aa",
+          "actual": "d6d89b87220d1ba377280500eff6a624a18076fb9141d308c07ec579f7eca0aa",
+          "match": true
+        },
+        {
+          "path": "web/lib/player-cards/evidenceBundle.test.ts",
+          "expected": "1a19a42d9bba637a07ad4370d0d5ebe105c22c5e3a432d8c933ee7146066c0af",
+          "actual": "1a19a42d9bba637a07ad4370d0d5ebe105c22c5e3a432d8c933ee7146066c0af",
+          "match": true
+        },
+        {
+          "path": "web/lib/player-cards/alphaOutline.test.ts",
+          "expected": "a825f939b65b66e500504cb1a3572bf9406f838a95c2ee203fb3376aff75c06c",
+          "actual": "a825f939b65b66e500504cb1a3572bf9406f838a95c2ee203fb3376aff75c06c",
+          "match": true
+        },
+        {
+          "path": "web/lib/player-cards/evidenceAdmissions.ts",
+          "expected": "d2af7842eaa250b813c55d595e20cfb2a4ea6bd46bc13ac76d4658dfc470cfda",
+          "actual": "d2af7842eaa250b813c55d595e20cfb2a4ea6bd46bc13ac76d4658dfc470cfda",
+          "match": true
+        },
+        {
+          "path": "web/lib/player-cards/shareExport.ts",
+          "expected": "d09598ad242f990662de13fa355ea60f6b87f6d37259e44a7a6afc10b12e3d4b",
+          "actual": "d09598ad242f990662de13fa355ea60f6b87f6d37259e44a7a6afc10b12e3d4b",
+          "match": true
+        },
+        {
+          "path": "web/lib/player-cards/interactionFixtures.ts",
+          "expected": "803cf3b41962b3125a0cd78c886700c58d2a37fd61206562545919767d04774e",
+          "actual": "803cf3b41962b3125a0cd78c886700c58d2a37fd61206562545919767d04774e",
+          "match": true
+        },
+        {
+          "path": "web/lib/player-cards/currentArtwork.ts",
+          "expected": "c10d6c49d505ca0114c47a8dc1ac6f075e90f5ea0d118d24c38039c12efe8930",
+          "actual": "c10d6c49d505ca0114c47a8dc1ac6f075e90f5ea0d118d24c38039c12efe8930",
+          "match": true
+        },
+        {
+          "path": "web/lib/player-cards/interactionSnapshot.ts",
+          "expected": "53ce89f2495a7b832a20302d070c9f6b87d1dc099f1e460600e7471eb4aa3759",
+          "actual": "53ce89f2495a7b832a20302d070c9f6b87d1dc099f1e460600e7471eb4aa3759",
+          "match": true
+        },
+        {
+          "path": "web/lib/player-cards/nstCapture.test.ts",
+          "expected": "4d4acef017c15c6c21df2faa46f0037ec3ea83e7918275d15b3c3df141eff012",
+          "actual": "4d4acef017c15c6c21df2faa46f0037ec3ea83e7918275d15b3c3df141eff012",
+          "match": true
+        },
+        {
+          "path": "web/lib/player-cards/adapter.ts",
+          "expected": "095368ab27e9a207a62b0309f0ff45f7a401e2735c609ed6481199846883c81f",
+          "actual": "095368ab27e9a207a62b0309f0ff45f7a401e2735c609ed6481199846883c81f",
+          "match": true
+        },
+        {
+          "path": "web/lib/player-cards/aggregation.r1.test.ts",
+          "expected": "54df67e6ff24264a685db97bfbba2a54803ef9214d2132941ffa580f522cf348",
+          "actual": "54df67e6ff24264a685db97bfbba2a54803ef9214d2132941ffa580f522cf348",
+          "match": true
+        },
+        {
+          "path": "web/lib/player-cards/evidenceBundle.ts",
+          "expected": "054308dc7e87ba78c014e91b433225cc63a3a2783a0492881e5e8af688cc4314",
+          "actual": "054308dc7e87ba78c014e91b433225cc63a3a2783a0492881e5e8af688cc4314",
+          "match": true
+        },
+        {
+          "path": "web/lib/player-cards/registry.ts",
+          "expected": "f9c6a55ef5ee37a4e9de4cb1321ee971af5da0e3008dfdd86dfcec260c25cd29",
+          "actual": "f9c6a55ef5ee37a4e9de4cb1321ee971af5da0e3008dfdd86dfcec260c25cd29",
+          "match": true
+        },
+        {
+          "path": "web/lib/player-cards/observedView.ts",
+          "expected": "3c1623d0162e780281e21b0bd18b1430b4e177669a6fd964e241cc32fa9c5110",
+          "actual": "3c1623d0162e780281e21b0bd18b1430b4e177669a6fd964e241cc32fa9c5110",
+          "match": true
+        },
+        {
+          "path": "web/lib/player-cards/cardEvidenceVerdict.ts",
+          "expected": "9b6f71f71d2eb5baef64509f30d0e12f3c34e08f6ef745c6cbcdb08b5161b88f",
+          "actual": "9b6f71f71d2eb5baef64509f30d0e12f3c34e08f6ef745c6cbcdb08b5161b88f",
+          "match": true
+        },
+        {
+          "path": "web/lib/player-cards/outlineStack.ts",
+          "expected": "c90e50e1209b11f420498fff574920b1585d9514e39c23f0f3bcbc328a565789",
+          "actual": "c90e50e1209b11f420498fff574920b1585d9514e39c23f0f3bcbc328a565789",
+          "match": true
+        },
+        {
+          "path": "web/lib/player-cards/currentSelection.ts",
+          "expected": "a539b049e99fdb7e3767a6f4106e72ecf5459cc5cd842291da252358e077813e",
+          "actual": "a539b049e99fdb7e3767a6f4106e72ecf5459cc5cd842291da252358e077813e",
+          "match": true
+        },
+        {
+          "path": "web/lib/player-cards/currentNhl.ts",
+          "expected": "e76894c48f9ad67551515581e48997f2519c7b0796d0a0f2110530252af54161",
+          "actual": "e76894c48f9ad67551515581e48997f2519c7b0796d0a0f2110530252af54161",
+          "match": true
+        },
+        {
+          "path": "web/lib/player-cards/aggregation.ts",
+          "expected": "87559ceb96773a757ff359a6cf4705d1f89b73f8c96cd068e0eeb194c1cf329b",
+          "actual": "87559ceb96773a757ff359a6cf4705d1f89b73f8c96cd068e0eeb194c1cf329b",
+          "match": true
+        },
+        {
+          "path": "web/lib/player-cards/currentArtwork.test.ts",
+          "expected": "6bb47a0f84e5c2c983fd9e4155cc106771a1368da5fd3cfefb3c1a41156f2ae1",
+          "actual": "6bb47a0f84e5c2c983fd9e4155cc106771a1368da5fd3cfefb3c1a41156f2ae1",
+          "match": true
+        },
+        {
+          "path": "web/lib/player-cards/ranking.test.ts",
+          "expected": "b6177f53c26acde7f03e9afcdc5a3bbe4cdf2be071aea5a6e8be455e7375c027",
+          "actual": "b6177f53c26acde7f03e9afcdc5a3bbe4cdf2be071aea5a6e8be455e7375c027",
+          "match": true
+        },
+        {
+          "path": "web/lib/player-cards/observedExport.test.ts",
+          "expected": "7fe0983a3d0f85479301b050b175055c583319de57f02689f8b1f3f7a9568a7a",
+          "actual": "7fe0983a3d0f85479301b050b175055c583319de57f02689f8b1f3f7a9568a7a",
+          "match": true
+        },
+        {
+          "path": "web/lib/player-cards/portraitTreatment.test.ts",
+          "expected": "30606f5940e1e097c9bf7bb9e8581e9e8c9a8d31979e2cb688105fdbdea547c5",
+          "actual": "30606f5940e1e097c9bf7bb9e8581e9e8c9a8d31979e2cb688105fdbdea547c5",
+          "match": true
+        },
+        {
+          "path": "web/lib/player-cards/currentNhlExport.ts",
+          "expected": "94d0f32f2337c2bb59cce2748f433d1b3b103cffed3ea7d77ca169dc2561a505",
+          "actual": "94d0f32f2337c2bb59cce2748f433d1b3b103cffed3ea7d77ca169dc2561a505",
+          "match": true
+        },
+        {
+          "path": "web/lib/player-cards/teamLogo.ts",
+          "expected": "8cc47f9f57feff380c4af32e9bf3b96b5506f1e1c75d29c42cbdbce43295aa47",
+          "actual": "8cc47f9f57feff380c4af32e9bf3b96b5506f1e1c75d29c42cbdbce43295aa47",
+          "match": true
+        },
+        {
+          "path": "web/components/player-cards/PlayerLookup.module.scss",
+          "expected": "b476b6ed999bd74ff0d48d904a601e1773e8061ab188daf7c1da864ceabbeed7",
+          "actual": "b476b6ed999bd74ff0d48d904a601e1773e8061ab188daf7c1da864ceabbeed7",
+          "match": true
+        },
+        {
+          "path": "web/components/player-cards/PlayerCardShareStudio.module.scss",
+          "expected": "0bcab0a01648ff20a2d083dea3ec7e3d9c7fa0ca644eba48fa5d1b976db50db3",
+          "actual": "0bcab0a01648ff20a2d083dea3ec7e3d9c7fa0ca644eba48fa5d1b976db50db3",
+          "match": true
+        },
+        {
+          "path": "web/components/player-cards/HeroPlayerCard.tsx",
+          "expected": "12894428c08a893675d4b03f74b49e9f4e9a7e23bfe72dc2810f26d96f86055c",
+          "actual": "12894428c08a893675d4b03f74b49e9f4e9a7e23bfe72dc2810f26d96f86055c",
+          "match": true
+        },
+        {
+          "path": "web/components/player-cards/PlayerCard.tsx",
+          "expected": "917edf84256f3153459bc02302ff9a804a3847838eaaf8192bd000fb21f9cdfc",
+          "actual": "917edf84256f3153459bc02302ff9a804a3847838eaaf8192bd000fb21f9cdfc",
+          "match": true
+        },
+        {
+          "path": "web/components/player-cards/PlayerLookup.test.tsx",
+          "expected": "1fbaf73ec6e465a37eec4003ce21a37a9b3c447564fb63848bb3bf1601ca96cf",
+          "actual": "1fbaf73ec6e465a37eec4003ce21a37a9b3c447564fb63848bb3bf1601ca96cf",
+          "match": true
+        },
+        {
+          "path": "web/components/player-cards/PlayerCardPreview.test.tsx",
+          "expected": "5309f794268f88a670c19efe98939ca008b2439fd07c700c223bc832799b7e8f",
+          "actual": "5309f794268f88a670c19efe98939ca008b2439fd07c700c223bc832799b7e8f",
+          "match": true
+        },
+        {
+          "path": "web/components/player-cards/ProductionGameChart.tsx",
+          "expected": "428eba85db383569b4f1bf63fd04f09aa0cf02c6919614780b1b0c10e30b45be",
+          "actual": "428eba85db383569b4f1bf63fd04f09aa0cf02c6919614780b1b0c10e30b45be",
+          "match": true
+        },
+        {
+          "path": "web/components/player-cards/PlayerCard.module.scss",
+          "expected": "cec892e73d5642253435108e81c91ab0f6fb6b9bedacee849ffd10808e792b77",
+          "actual": "cec892e73d5642253435108e81c91ab0f6fb6b9bedacee849ffd10808e792b77",
+          "match": true
+        },
+        {
+          "path": "web/components/player-cards/ObservedPlayerCard.tsx",
+          "expected": "05e3389c018f5e38f54b54cde5eb15a9686a13b601624d556c9d3a2a64b8abe2",
+          "actual": "05e3389c018f5e38f54b54cde5eb15a9686a13b601624d556c9d3a2a64b8abe2",
+          "match": true
+        },
+        {
+          "path": "web/components/player-cards/PlayerCardFlow.test.tsx",
+          "expected": "0ce3fb52c6f19fcea4d5f0755924faab1472cda1b4e1fa704396e1b4176c8579",
+          "actual": "0ce3fb52c6f19fcea4d5f0755924faab1472cda1b4e1fa704396e1b4176c8579",
+          "match": true
+        },
+        {
+          "path": "web/components/player-cards/CurrentPlayerCard.tsx",
+          "expected": "7e6217dae0ebdc759d318953c1aac25d7b41b0e685a567e8a9065359cb96bca5",
+          "actual": "7e6217dae0ebdc759d318953c1aac25d7b41b0e685a567e8a9065359cb96bca5",
+          "match": true
+        },
+        {
+          "path": "web/components/player-cards/PlayerCardPreview.tsx",
+          "expected": "f58bdd545fa121be6ca79ffab03f52aeff8ca9d18a74e3e608b4addf7ae1a4b6",
+          "actual": "f58bdd545fa121be6ca79ffab03f52aeff8ca9d18a74e3e608b4addf7ae1a4b6",
+          "match": true
+        },
+        {
+          "path": "web/components/player-cards/CurrentPlayerCardStudio.test.tsx",
+          "expected": "4a748958d132b78ad509dc30510e6b871306e000665952a0d9ac7fda83abd378",
+          "actual": "4a748958d132b78ad509dc30510e6b871306e000665952a0d9ac7fda83abd378",
+          "match": true
+        },
+        {
+          "path": "web/components/player-cards/PlayerArtworkControls.tsx",
+          "expected": "360a3a03a35d0db7b40cd2ca414c6d5791b6ea6cbf8dbe2d5a4280bcb3558a82",
+          "actual": "360a3a03a35d0db7b40cd2ca414c6d5791b6ea6cbf8dbe2d5a4280bcb3558a82",
+          "match": true
+        },
+        {
+          "path": "web/components/player-cards/OutlineStackControls.test.tsx",
+          "expected": "86267f9da6d9a77f51dbc6ec585fafb553101e34be356c2e8ddb7396c139bb34",
+          "actual": "86267f9da6d9a77f51dbc6ec585fafb553101e34be356c2e8ddb7396c139bb34",
+          "match": true
+        },
+        {
+          "path": "web/components/player-cards/EditorialPlayerCard.test.tsx",
+          "expected": "99b9013b5d2d16d343f88381730d5794c1beaefda5b6647aa092f0cef5d8bfe6",
+          "actual": "99b9013b5d2d16d343f88381730d5794c1beaefda5b6647aa092f0cef5d8bfe6",
+          "match": true
+        },
+        {
+          "path": "web/components/player-cards/PlayerLookup.tsx",
+          "expected": "b66e133300009e65e4736a998f062227111b1d4eab7bfbd44e3a183a08fe4984",
+          "actual": "b66e133300009e65e4736a998f062227111b1d4eab7bfbd44e3a183a08fe4984",
+          "match": true
+        },
+        {
+          "path": "web/components/player-cards/PlayerHeroHeader.tsx",
+          "expected": "c7997ab2d2f834d9d65cbefc27cbd72242ef228a9ff7e2a6834d38c468bf6873",
+          "actual": "c7997ab2d2f834d9d65cbefc27cbd72242ef228a9ff7e2a6834d38c468bf6873",
+          "match": true
+        },
+        {
+          "path": "web/components/player-cards/usePlayerArtwork.ts",
+          "expected": "ce852791cec30c0eb1b145bd1b31963456b9ec90d9fabcc050f5913544529ea9",
+          "actual": "ce852791cec30c0eb1b145bd1b31963456b9ec90d9fabcc050f5913544529ea9",
+          "match": true
+        },
+        {
+          "path": "web/components/player-cards/PlayerCardFlow.module.scss",
+          "expected": "4e49342c3f99b62201e8bc2dcf76c60faee6a565ff924894c00e40c374512c43",
+          "actual": "4e49342c3f99b62201e8bc2dcf76c60faee6a565ff924894c00e40c374512c43",
+          "match": true
+        },
+        {
+          "path": "web/components/player-cards/PlayerCardShareStudio.tsx",
+          "expected": "f7e9b934edd88877d21c97497af057483befb2590731c2fc20863521d5d269f7",
+          "actual": "f7e9b934edd88877d21c97497af057483befb2590731c2fc20863521d5d269f7",
+          "match": true
+        },
+        {
+          "path": "web/components/player-cards/PlayerCardFlow.tsx",
+          "expected": "036c44fb865ac729e2ddfba06bf0d6205d983bf9f89133c88f20918869302e30",
+          "actual": "036c44fb865ac729e2ddfba06bf0d6205d983bf9f89133c88f20918869302e30",
+          "match": true
+        },
+        {
+          "path": "web/components/player-cards/ObservedPlayerCard.test.tsx",
+          "expected": "e217c9edad47ae3e84b6743e261e3dccd990869565e65fc85d09390d12c538eb",
+          "actual": "e217c9edad47ae3e84b6743e261e3dccd990869565e65fc85d09390d12c538eb",
+          "match": true
+        },
+        {
+          "path": "web/components/player-cards/EditorialPlayerCard.tsx",
+          "expected": "f3c996c4c0cf9d75f533d1d4937a5db2474edb6a7c9b9665bbb3849df205afb5",
+          "actual": "f3c996c4c0cf9d75f533d1d4937a5db2474edb6a7c9b9665bbb3849df205afb5",
+          "match": true
+        },
+        {
+          "path": "web/components/player-cards/InteractiveCard.tsx",
+          "expected": "70b6edce10ffe219817c64f2c4763a8e58091b9c59f9b77fb2a68aa2b7d33271",
+          "actual": "70b6edce10ffe219817c64f2c4763a8e58091b9c59f9b77fb2a68aa2b7d33271",
+          "match": true
+        },
+        {
+          "path": "web/components/player-cards/OutlineStackControls.module.scss",
+          "expected": "f2798e788b878bca1e5b97e205c36fea77dd780e2afedba31a062ecd9ff0bc7b",
+          "actual": "f2798e788b878bca1e5b97e205c36fea77dd780e2afedba31a062ecd9ff0bc7b",
+          "match": true
+        },
+        {
+          "path": "web/components/player-cards/CurrentPlayerCardStudio.tsx",
+          "expected": "9806acf539365419c4afae21b53b7186feb1eb8ae5e5ad4227d8162d11104021",
+          "actual": "9806acf539365419c4afae21b53b7186feb1eb8ae5e5ad4227d8162d11104021",
+          "match": true
+        },
+        {
+          "path": "web/components/player-cards/PlayerCardShareStudio.test.tsx",
+          "expected": "ffa4f5cbb3400973470f6977ca255915c506de986cd886f4d7b50df91e91c9b6",
+          "actual": "ffa4f5cbb3400973470f6977ca255915c506de986cd886f4d7b50df91e91c9b6",
+          "match": true
+        },
+        {
+          "path": "web/components/player-cards/OutlineStackControls.tsx",
+          "expected": "686f510f128eb876873c541fc594053463b226a224b327b1e267cc398372fe6a",
+          "actual": "686f510f128eb876873c541fc594053463b226a224b327b1e267cc398372fe6a",
+          "match": true
+        },
+        {
+          "path": "web/pages/player-cards.tsx",
+          "expected": "47a487285a131d98ef415ca059beea128851a0d62593331291442c3e5257b01d",
+          "actual": "47a487285a131d98ef415ca059beea128851a0d62593331291442c3e5257b01d",
+          "match": true
+        },
+        {
+          "path": "web/pages/social-share/player-cards.tsx",
+          "expected": "12c4f9cb54a1ce275ed65be3aa3120da0e4e20e87741993d759601b9a955a78b",
+          "actual": "12c4f9cb54a1ce275ed65be3aa3120da0e4e20e87741993d759601b9a955a78b",
+          "match": true
+        },
+        {
+          "path": "web/pages/api/v1/player-cards.ts",
+          "expected": "182a4388c37857db84a6a8e1b42eb7c07ae1cd79594a06fe4b9b8d62cb632146",
+          "actual": "182a4388c37857db84a6a8e1b42eb7c07ae1cd79594a06fe4b9b8d62cb632146",
+          "match": true
+        }
+      ]
+    }
+  }
+}

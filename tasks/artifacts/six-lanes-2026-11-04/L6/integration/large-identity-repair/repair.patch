@@ -1,0 +1,20 @@
+--- a/web/styles/wigoCharts.module.scss
++++ b/web/styles/wigoCharts.module.scss
+@@ -2140,13 +2140,13 @@
+     }
+     // Large screens: the top-row panels grow their content instead of leaving it small in a big cell.
+     .identitySummary {
+-      grid-template-columns: 96px minmax(0, 1fr);
+-      column-gap: 16px;
++      grid-template-columns: 80px minmax(0, 1fr);
++      column-gap: 12px;
+       padding: 8px 12px;
+     }
+     .playerHeaderContainer {
+-      width: 96px;
+-      height: 112px;
++      width: 80px;
++      height: 96px;
+     }
+     .playerName:not([data-name-length="long"]) {
+       font-size: 28px;

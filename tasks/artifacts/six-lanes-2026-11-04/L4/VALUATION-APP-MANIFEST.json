@@ -1,0 +1,12 @@
+{
+  "branch": "octoberBranch",
+  "head_at_verification": "5f6b4e7a3a893000fe31cc6928cd8736b56e5d39",
+  "files": {
+    "web/lib/tradeValue/valuationComponents.ts": "a11683b789dc3b2f010b81164de26733039c4d48d248d836828a57f086ebd940",
+    "web/lib/tradeValue/valuationComponents.test.ts": "c3aff71efd20ed61a5666d163e68436abf3bcf1df9c0b33523fce1b6b2667010"
+  },
+  "checks": "VALUATION-APP-CHECKS.json",
+  "patch": "VALUATION-APP.patch",
+  "frozen_observation_trio_unchanged": true,
+  "scope": "projected league points only; no production caller or combined trade value"
+}

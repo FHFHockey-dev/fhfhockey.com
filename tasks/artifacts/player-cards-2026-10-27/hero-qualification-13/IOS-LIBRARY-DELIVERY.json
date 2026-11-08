@@ -1,0 +1,42 @@
+{
+  "at": "2026-10-27T02:54:59.542678+00:00",
+  "purpose": "TJ explicit iOS screenshotdelivery: exactlytwoexistingcheckpoint13cardPNGs tohisChatGPTLibrary",
+  "files": [
+    {
+      "path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/posterized-team-colors-L10.png",
+      "fileName": "posterized-team-colors-L10.png",
+      "bytes": 649499,
+      "sha256": "e15a973766c1fbaa9df5046287cb868cdcfce25a45414ca10d0e1ed3ab33906a",
+      "label": "posterized-team-colors \u00b7 Kucherov8476453/TBL \u00b7 retainedofficialL10stats \u00b73x5pxcontours"
+    },
+    {
+      "path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-27/hero-qualification-13/pixelated-team-colors-L10.png",
+      "fileName": "pixelated-team-colors-L10.png",
+      "bytes": 601037,
+      "sha256": "35b4d61650c5dbe120259e274397ebc41ac4091424e72979c6a390247d224aa7",
+      "label": "pixelated-team-colors \u00b7 Kucherov8476453/TBL \u00b7 retainedofficialL10stats \u00b73x5pxcontours"
+    }
+  ],
+  "state": "BLOCKED_BEFORE_PREPARATION",
+  "successfulLibraryIds": [],
+  "attempts": [
+    {
+      "networkScope": "sandbox",
+      "exitCode": 1,
+      "stdoutBytes": 0,
+      "error": "library upload failed: hosted apps tools/list request failed: DNS"
+    },
+    {
+      "networkScope": "authorizednetwork",
+      "exitCode": 1,
+      "stdoutBytes": 0,
+      "error": "library upload failed: hosted apps tools/list request failed: TLS"
+    }
+  ],
+  "preparationExecuted": false,
+  "transferExecuted": false,
+  "finalizationExecuted": false,
+  "certificateVerification": "Not disabled or changed; no truststore/security bypass",
+  "nextStep": "Restore supported Library connection/tool discovery; no alternate destination or retry queued",
+  "exactBlocker": "Current supported secure Library helper cannot complete hosted apps tools/list: sandbox DNS failure, then authorizednetwork TLS failure. Both precede upload preparation; zero IDs."
+}

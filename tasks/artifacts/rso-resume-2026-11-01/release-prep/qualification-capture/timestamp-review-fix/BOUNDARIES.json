@@ -1,0 +1,22 @@
+{
+  "at": "2026-11-01T21:06:58.886276+00:00",
+  "head": "e152ce5bca1aa77e29a43acd33eb7e9ae0d0ac62",
+  "candidateRef": "c3897d3273ca46ea25a9f2737f09c835e5ec7325",
+  "mailboxBytes": 197987,
+  "mailboxSha256": "51c1b10bdbaf84b9711b6aa89893858a3344e94016dff3de40766f3dbed1cd1f",
+  "ownerFinalAdmissionCommitReceived": false,
+  "admissionStatus": "PENDING_CLAUDE_1e668672_FINAL_COMMIT",
+  "expectedFinalTree": "125279a5a50d661c4a01d585a4c593693e0ab2f6",
+  "productionConfigAccess": "Prior Vercel metadata 403; no retry or bypass",
+  "actualIssuedIdentity": null,
+  "sourceAndAdmissionPinsVerified": "SOURCE-PINS.json",
+  "newRuntimeEdits": 0,
+  "heldToolingEdits": 0,
+  "gitMutations": 0,
+  "newRemoteRequests": 0,
+  "providerRequests": 0,
+  "builds": 0,
+  "deployments": 0,
+  "backgroundWatcherRunning": false,
+  "finalHeadReconciliation": "e152ce5bca1aa77e29a43acd33eb7e9ae0d0ac62 adds eight Social Share Standouts/artifact paths only after f56ba565; no RSO/source/admission/parser overlap."
+}

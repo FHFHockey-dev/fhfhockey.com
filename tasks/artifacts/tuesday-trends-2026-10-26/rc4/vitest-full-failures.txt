@@ -1,0 +1,41 @@
+ FAIL  components/ArticleReader/related.server.test.ts [ components/ArticleReader/related.server.test.ts ]
+Error: Cannot find module '/Users/tim/Code/fhfhockey.com/web/node_modules/next-sanity/dist/next-sanity.esm.js' imported from '/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/b50bfdba-45bb-4bdb-b77c-4073ad2f897a/scratchpad/rc4-export/web/components/ArticleReader/related.server.ts'
+ ❯ components/ArticleReader/related.server.ts:1:1
+      1| import { groq } from "next-sanity";
+       | ^
+--
+ FAIL  scripts/qualify-native-players-offline.test.ts > offline current native player qualification > writes a new reproducible receipt without changing or overwriting original inputs
+Error: Command failed: git rev-parse HEAD
+fatal: not a git repository (or any of the parent directories): .git
+
+ ❯ execFileSync scripts/qualify-native-players-offline.test.ts:27:20
+--
+ FAIL  lib/projections/nativeGoalLedgerAudit.test.ts > local audit CLI > writes reproducible receipts, never calls fetch and refuses to overwrite inputs
+Error: Command failed: git rev-parse HEAD
+fatal: not a git repository (or any of the parent directories): .git
+
+ ❯ execFileSync lib/projections/nativeGoalLedgerAudit.test.ts:25:20
+--
+ FAIL  lib/projections/nativeIntervalReconciliation.test.ts > retained interval integrity and offline CLI > replays retained files identically, leaves every input untouched and requires a new output
+Error: Command failed: git rev-parse HEAD
+fatal: not a git repository (or any of the parent directories): .git
+
+ ❯ execFileSync lib/projections/nativeIntervalReconciliation.test.ts:24:20
+--
+ FAIL  lib/projections/researchGoalBaseline.test.ts > retained official GOALS research evaluation > runs deterministic offline CLI evaluations without overwriting retained input/output bytes
+Error: Command failed: git rev-parse HEAD
+fatal: not a git repository (or any of the parent directories): .git
+
+ ❯ execFileSync lib/projections/researchGoalBaseline.test.ts:27:20
+--
+ FAIL  lib/projections/reserveProjections.test.ts > FORGE reserve selection and rows > is read and written only by the reserve writer, the source audit and the RSO bridge
+Error: Command failed: git grep --untracked -l forge_reserve_projections -- lib pages components scripts
+fatal: not a git repository (or any of the parent directories): .git
+
+ ❯ lib/projections/reserveProjections.test.ts:86:19
+--
+ FAIL  __tests__/pages/api/v1/db/update-line-sources.test.ts > /api/v1/db/update-line-sources > replays the frozen 11 regression and 24 candidate records equivalently through GDL and CCC with mocked enrichment and storage
+Error: Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ __tests__/pages/api/v1/db/update-line-sources.test.ts:707:3
+    705|   });

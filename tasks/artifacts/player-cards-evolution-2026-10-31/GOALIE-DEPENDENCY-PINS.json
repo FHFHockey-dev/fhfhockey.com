@@ -1,0 +1,34 @@
+[
+  {
+    "path": "web/lib/player-cards/goalieOutlook.ts",
+    "sha256": "cd78d92486e5e9c22d8464f57f09925b8fbb5497af244d405ce4a17471ef3fd4"
+  },
+  {
+    "path": "web/lib/player-cards/analysisFixtures.ts",
+    "sha256": "135150143eb0c0db5960ec74c3ec7b05370fc168dc720199319a6acf21de9b28"
+  },
+  {
+    "path": "web/components/player-cards/PlayerAnalysisStudio.tsx",
+    "sha256": "dd59c922536dc5b4078d1ee3d64bf7758defdd5e3673a42f7c933b51c3a6514a"
+  },
+  {
+    "path": "web/components/player-cards/PlayerAnalysisCard.tsx",
+    "sha256": "782284fd4f8a6cb57383083f008b9ba479fd7a51d04773304938df340286d144"
+  },
+  {
+    "path": "web/lib/socialShare/modules/shared/goalieInventory.ts",
+    "sha256": "71f91597d272dad777d01db09d1162e287c052d162c80de7bc9e3137197d14a8"
+  },
+  {
+    "path": "web/lib/projections/dailyBoardEvidence.ts",
+    "sha256": "d1900dc7c322a74d2810ecfe8b36476f2d047d7d348d431ba888352f9cb54d16"
+  },
+  {
+    "path": "web/lib/projections/starterBoardScoring.ts",
+    "sha256": "c34fcb08fa23d6f05c26d8864f77dc3efdccb749b5527d66c0920e4043d9e535"
+  },
+  {
+    "path": "web/pages/api/v1/sources/ifttt/gamedaygoalies-tweet.ts",
+    "sha256": "89d554fec38517f69450fa7a8f851954423391da9111e53f6b268f4d3ebdd726"
+  }
+]

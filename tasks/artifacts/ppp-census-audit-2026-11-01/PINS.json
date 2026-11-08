@@ -1,0 +1,1506 @@
+{
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-box-provenance-20261101-01/ROW-QUALIFICATION.json": {
+    "sha256": "314a48ef45dbad11b48192bdbada730ccc82fb355895e2dde56b484ece0a6d36",
+    "bytes": 3476976
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/current-box-provenance-20261101-01/BOX-EVIDENCE.json": {
+    "sha256": "b83fc6bff7bd470bb245f1053a489aeebab6b17f1f734a2ed18d5753f715447f",
+    "bytes": 131946
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/baseline-card-provenance-20261101-01/baseline-01/BASELINE-ROW-LINKS.json": {
+    "sha256": "50d7ba0f7c237da875b919bfb49097da752883938487cca3aa622b387f48babd",
+    "bytes": 183260
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/baseline-card-provenance-20261101-01/baseline-01/OFFICIAL-RECEIPTS.json": {
+    "sha256": "13b2b7ae92a8bf77cbe4d94f517b7e1b4e560c1965b5ef1fd572f4739662e7db",
+    "bytes": 433683
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/practical-use-comparison-20261101-01/ppp-cached-check-01/ROWS.json": {
+    "sha256": "f6e5c28986aa10947475ee766d662719eff78167d1b5e10003645cdc8d4bd9dc",
+    "bytes": 404859
+  },
+  "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-practical-use-audit-2026-11-01/REVIEW.md": {
+    "sha256": "c4df3836d3535b61b094599715c4480c3ccf93ea636edddd8c25272a4a938aa0",
+    "bytes": 7210
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/absence-ledger-replay-20261101-01/replay-02/BASELINE.json": {
+    "sha256": "a31782eac7468c34c3c518d18499a938abd378d20093ec0af1ff52f46237ef0a",
+    "bytes": 77007
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/midseason-absence-cohort-20261101-01/replay-02/BASELINES.json": {
+    "sha256": "450525cbcb437689d4397abc6348a6be321f6aa53a2f8a0c6aedae671855b059",
+    "bytes": 163700
+  },
+  "/Users/tim/Code/fhfhockey.com/web/lib/buyLowSellHigh/researchSnapshot.ts": {
+    "sha256": "dabc03430b118adab600decb344b3f5b530092f2485077cfd1a1649710b4b141",
+    "bytes": 21184
+  },
+  "/Users/tim/Code/fhfhockey.com/web/components/buyLowSellHigh/BuyLowSellHighPreview.tsx": {
+    "sha256": "68e385c08fe08d360bc8edbba08fdfe8ac8f8fbfca527759a5a99f145759079d",
+    "bytes": 15652
+  },
+  "/Users/tim/Code/fhfhockey.com/web/components/buyLowSellHigh/BlshPlayerDetail.tsx": {
+    "sha256": "51d250cb344ed20149303f429b7d47e6bb357e75ca8f9a6d495ea5dae2ed4cbb",
+    "bytes": 20478
+  },
+  "/Users/tim/Code/fhfhockey.com/web/components/buyLowSellHigh/BuyLowSellHighPreview.test.tsx": {
+    "sha256": "d5f4418cfb736bec99e4fc933f17b24698d96efa46ee49718890ce59c186a5ec",
+    "bytes": 26826
+  },
+  "/Users/tim/Code/fhfhockey.com/web/lib/buyLowSellHigh/productionReference.ts": {
+    "sha256": "9a56af85486c850aebc2df4d3ad218b43ca2bbeb3a7073453a0c38189a4be85e",
+    "bytes": 17083
+  },
+  "/Users/tim/Code/fhfhockey.com/web/lib/buyLowSellHigh/supportGap.ts": {
+    "sha256": "d8b8d42a3ed7a6a66b7d7402ac62ea433c6a77702f086309fd21568ee27a5618",
+    "bytes": 54198
+  },
+  "/Users/tim/Code/fhfhockey.com/web/lib/buyLowSellHigh/currentWindows.ts": {
+    "sha256": "e3d4c5f7878df7ccb26a348fa1824b9c9c1f65fea307161ceca6ec38f2214959",
+    "bytes": 16738
+  },
+  "/Users/tim/Code/fhfhockey.com/web/lib/buyLowSellHigh/researchSnapshot.server.ts": {
+    "sha256": "dc251e7430085e70bed0a30168a36de24fe11b19d9d1ee6b58fe9ead82bea7a0",
+    "bytes": 2494
+  },
+  "/Users/tim/Code/fhfhockey.com/web/lib/buyLowSellHigh/research-snapshots/2026-10-28.arm-a-canonical-repaired.v2.json": {
+    "sha256": "2f380c2539390f6931ec92ab1d0b1d8cced2b55f5f4cefb8c6e88a694909f2c8",
+    "bytes": 9559567
+  },
+  "/Users/tim/Code/fhfhockey.com/web/lib/buyLowSellHigh/displayProfile.ts": {
+    "sha256": "a69438100056f9301f481d2da2704b835998b8b4da0d5a75d9173daf0905d284",
+    "bytes": 25572
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/ppp-census-bounds-20261101-01/CONTRACT.json": {
+    "sha256": "ccc0fe44b8bcabd117ef272219191a2ad368f9c3eb5995ddf36894c40aebc4df",
+    "bytes": 6361
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/ppp-census-bounds-20261101-01/qualify.py": {
+    "sha256": "d5fe358c8d38a1598314c0ddea41ece884aec8178b88e19dcf53f611c9221cf6",
+    "bytes": 12116
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/ppp-census-bounds-20261101-01/test_qualify.py": {
+    "sha256": "e603956b56d49f4f4c00613fa0485a294f576263b4a42a81b0e57f242540f72a",
+    "bytes": 7050
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/ppp-census-bounds-20261101-01/run.py": {
+    "sha256": "b79fd346d60a77db82cd3c2e42f5d64214e080af8951f7197944c88497d1ed22",
+    "bytes": 1821
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/ppp-census-bounds-20261101-01/verification-01/RESULT.json": {
+    "sha256": "e129ac8fe600557eb23b78bc36ed7b4802773992b825d3d38c8717845bf5da56",
+    "bytes": 681
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/ppp-census-bounds-20261101-01/replay-01/RECEIPT.json": {
+    "sha256": "fd3accba4cc281d8a2309cd658ccd1f44f4e010c20dcc13c39f5eca947353d60",
+    "bytes": 751
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/ppp-census-bounds-20261101-01/replay-01/SUMMARY.json": {
+    "sha256": "cdf08dcfa0300cfad94b6d96bcfb7187ba9955eed8575ee8b1eee74cb5ab2c34",
+    "bytes": 2196
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/ppp-census-bounds-20261101-01/RECONCILIATION.json": {
+    "sha256": "caa0336b1b2ebe858f1c42be51dd679c40430eda4924ef92dc0dfa2644acfe29",
+    "bytes": 292
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/ppp-census-bounds-20261101-01/COMBINED-COVERAGE.json": {
+    "sha256": "da931aa3f2eb6f0e3bf9a6896d26afd0f60b15f84fe4c0a3dffa5168958e998c",
+    "bytes": 535
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/ppp-census-bounds-20261101-01/REMAINING-EVIDENCE.json": {
+    "sha256": "8663c9b05dbba7042d174a1d82acb14bbaaeea46d2b1f7a72715883dc5704382",
+    "bytes": 145895
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/ppp-census-bounds-20261101-01/SOURCE-PINS.json": {
+    "sha256": "4361c07b4a6dd8ca57e44156909b843dfb0d495100671e223cca57de11bc3ecf",
+    "bytes": 1545
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/ppp-census-bounds-20261101-01/CHECKPOINT.md": {
+    "sha256": "0297b6a97352cdcbe0ea34562fa337d6f1ee1d63505c14f8182c2dddae3dadf6",
+    "bytes": 7335
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/ppp-census-bounds-20261101-01/replay-01/ROWS.json": {
+    "sha256": "a0b3f9b49f5c0af5dc1f8768d4f3b4824a76db47f152b1f898a2cba2411c8e0f",
+    "bytes": 835936
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/ppp-census-bounds-20261101-01/replay-01/EVIDENCE.json": {
+    "sha256": "ba52ba369cefdaa0c511ed8e8fdb58bebe2c6628f3bbb00e36c56989b23f9ae8",
+    "bytes": 124223
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/58704495b31fe82af62175e89dc25d846a095b44836c5a0a562370d309c14671.receipt.json": {
+    "sha256": "22ec171172f5bb4d104cfcdd356b3df6d816e0388c52d03b779cdfd595dce5d1",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/58704495b31fe82af62175e89dc25d846a095b44836c5a0a562370d309c14671.body": {
+    "sha256": "8c64162f5dcee826b968246a0db901352b01fe53c3cfec632dd9321e6ce35d5d",
+    "bytes": 13192
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/310c1395f2e97d19028276ceafb08b7c6e2089f46be04f1b1a12aae88ac0e3bc.receipt.json": {
+    "sha256": "96b769b1c9168595c57132cf11578d2f5bc74183f08913cae962ab6ad676472d",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/310c1395f2e97d19028276ceafb08b7c6e2089f46be04f1b1a12aae88ac0e3bc.body": {
+    "sha256": "8e3e64500c62eda23b434c68c64c5e611556d1dc5289db5bfc92ecd4444a5c1b",
+    "bytes": 13376
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/20aebc5cfb75659077fec07642851ce6530dbb8dfd5f56a0059abb885325be31.receipt.json": {
+    "sha256": "f0f096e2f9d730b970dcfa47cec4189e5c22781e0af7aaf8e36a2fd510a6b39d",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/20aebc5cfb75659077fec07642851ce6530dbb8dfd5f56a0059abb885325be31.body": {
+    "sha256": "6b80da0469b76cc5924c5819acc30750937c95bbc3596c2fae90bff99a499fa4",
+    "bytes": 13384
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/2394aca0a294345fdd6cdc7d590f7653569e49ae2b8053084676092bf2906c4b.receipt.json": {
+    "sha256": "ea246a687fb2c2fa0fb150aa8bcc4bc78a83a548dc5fdec0fc6bc7c4f74bbffc",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/2394aca0a294345fdd6cdc7d590f7653569e49ae2b8053084676092bf2906c4b.body": {
+    "sha256": "28b188c551d73172d4b93928ed69aa12be310d4c22b1abf488e65236a33491b8",
+    "bytes": 13345
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/a19eb7fa01d48850f056b20d985156eb93c5fbde3e9aad6b55d2b082dfe382ea.receipt.json": {
+    "sha256": "4581d3424c81885ef0e1d30b96a6388c0e838d6370455665fe9c3cabbe6f5844",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/a19eb7fa01d48850f056b20d985156eb93c5fbde3e9aad6b55d2b082dfe382ea.body": {
+    "sha256": "a46b57b0c97b34b9c218e34670f7b3b5592997be8c3aed31c99712d84dee824a",
+    "bytes": 13231
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/13bd0b5cc43c40c50d806a4a9febd762b744fde1b86e08c9e9da58a7e8d7a2f3.receipt.json": {
+    "sha256": "2768eb330c5811bd38d60b75706e88256904832227152bc3985fc9699ec52a8c",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/13bd0b5cc43c40c50d806a4a9febd762b744fde1b86e08c9e9da58a7e8d7a2f3.body": {
+    "sha256": "cb8357dc6e5d47420a14472b206a23bc15e8b7585084623df34bdfd032fedbb1",
+    "bytes": 13469
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/373c3f834c746780796f4050e5590fb534e70c3f3132e6e99c2bd091293b8b5c.receipt.json": {
+    "sha256": "0bb29cb58b5163b14fffa12cf4a22ad40a6461fc115599f5b6f54323ea1bf1ac",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/373c3f834c746780796f4050e5590fb534e70c3f3132e6e99c2bd091293b8b5c.body": {
+    "sha256": "c01e2a33d4847514a37e3cbe989b071b13c314204ec904cd74f601de5f2ae813",
+    "bytes": 13289
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/147e40003ed6d75a254c2fd21d594bc87c6fbf2dfe7f9ddc39e44e505218d793.receipt.json": {
+    "sha256": "5d88f51a20229fde1f8670ee96e419b71fca20a02e26827212d1be1cafd6b54b",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/147e40003ed6d75a254c2fd21d594bc87c6fbf2dfe7f9ddc39e44e505218d793.body": {
+    "sha256": "d5f97a0ea7bb0f330bfeb666db8f80142b4b80740a468e2ce683aa234a5d7a62",
+    "bytes": 13180
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/6660ae90bc5c4bf963472ad00e47ce4421496b7383d139133cf45cd510b47215.receipt.json": {
+    "sha256": "cd248fd3ea8ceb0e4b2eb842634f77dcaea4240594b2aae31bcb026fe3cf5dc6",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/6660ae90bc5c4bf963472ad00e47ce4421496b7383d139133cf45cd510b47215.body": {
+    "sha256": "74f57cd5f9b7d32be44e64c6a7ad61cdd806f306bfc51f4218f6819abc7e8f79",
+    "bytes": 13116
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/78efc3b35431bddae78c69c4c88c76138c027885927bc5dc60b8e02cba07628a.receipt.json": {
+    "sha256": "c704a206b0e08e236b7b97c796910aa3792fada3f312a95986bf9bb063f52d5c",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/78efc3b35431bddae78c69c4c88c76138c027885927bc5dc60b8e02cba07628a.body": {
+    "sha256": "a903573c3117ddc1daa31881144249d1a3907ca21a632e5c6cc9e54815789b6d",
+    "bytes": 13602
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/fece72d3beb30ac4b766bf3b831e68ffc1e97a56f57133d02bdf567e5cc75150.receipt.json": {
+    "sha256": "d24acf623b8b81b789a513bea0f2bdd67c6ed5498ff03efcc3b12c7c028f3014",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/fece72d3beb30ac4b766bf3b831e68ffc1e97a56f57133d02bdf567e5cc75150.body": {
+    "sha256": "aff7f23f6b4854109eea0c02806926436112d0c9aa017e0f839374958c749505",
+    "bytes": 13556
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/06821af11566c6794e59780ba835087757b683eb3725ee4e873a6cb9fde0b69b.receipt.json": {
+    "sha256": "805d01c4249fff10b53847b58a5548ae3ec6ef0c58f44179533ac25b57168daf",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/06821af11566c6794e59780ba835087757b683eb3725ee4e873a6cb9fde0b69b.body": {
+    "sha256": "27532867c0f4a76a43bafea6e803a564f7b3de1991321e8718680af78ece9efd",
+    "bytes": 13233
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/d0b22cbc67d27677366a5dadccbbdde7b83890ce543ea0259868c17fbe5fbffc.receipt.json": {
+    "sha256": "513e2cdb0c85759438c6249f83dd22eb702ae680b122cb86b77cbfa2ef5ae61a",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/d0b22cbc67d27677366a5dadccbbdde7b83890ce543ea0259868c17fbe5fbffc.body": {
+    "sha256": "08f3cfb9ff534998fc852c21ca175759ddc495a32476f627ac0e832e2c98e3e5",
+    "bytes": 13246
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/d715517a6afa7e270e09689dbd539d1ca8bce7b9d9dc9dba15540df3e55f1b5f.receipt.json": {
+    "sha256": "e995516a265253f0293903eb79af4897fcd72a49d4b448a2345885429133e556",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/d715517a6afa7e270e09689dbd539d1ca8bce7b9d9dc9dba15540df3e55f1b5f.body": {
+    "sha256": "ee4fee96c4923b53bcd8204d0a3fde14815fe378786a16852019677fe9da945a",
+    "bytes": 13259
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/62f79878d9d30d91bbc5b663d8052467129188aa575422ab068965933412df7b.receipt.json": {
+    "sha256": "3b68fbe79158974a9192661b05234ae17491a5f16043ab20f776103aa2c3c07a",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/62f79878d9d30d91bbc5b663d8052467129188aa575422ab068965933412df7b.body": {
+    "sha256": "26e3f6d2f38dc6ea445907fdaf3d67c0fa47b9faa2b781a9673e15f116a2db25",
+    "bytes": 13370
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/7fb7470559d02e2147da37fc71e2eecce114b02213a46fb87b65c2d5d28398b0.receipt.json": {
+    "sha256": "9794caebb31aff5ef76ba30d01a550658f2f34cd0e831179747ff764269f4fbb",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/7fb7470559d02e2147da37fc71e2eecce114b02213a46fb87b65c2d5d28398b0.body": {
+    "sha256": "8a4df06beceed06e41ad1bfd1a53f257660cbe0a3ead948272e09a88f49b5c47",
+    "bytes": 13378
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/4eeaef175f1ded19a010b0adf66ade3a173987f872fce937f4bed9ef1bce6c67.receipt.json": {
+    "sha256": "dd2c1b68a5b0ba66729c7899e49314757cdaa49a7dec3631c3bf62ad2bc9fd0e",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/4eeaef175f1ded19a010b0adf66ade3a173987f872fce937f4bed9ef1bce6c67.body": {
+    "sha256": "2a5b30c38f7c413d1f0e272207767405eed80800aeeeb862bcafbe46cd165c60",
+    "bytes": 13095
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/d702c087e0a09bdae0b7bc45bfdfb16c9e3ead5f7e2e32173235119526cf6fb2.receipt.json": {
+    "sha256": "f82974f973a756029653e932d89c8cb99be7773396f507c0eb72c9a27b63130c",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/d702c087e0a09bdae0b7bc45bfdfb16c9e3ead5f7e2e32173235119526cf6fb2.body": {
+    "sha256": "ec2da9f2b9d651d428d7f2e1548fc2021136070d4270b9a9d11387af35b5a41c",
+    "bytes": 13201
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/2260658995add25730a410a55ecf0634aa6164d742bdf2633b7f3600147bb865.receipt.json": {
+    "sha256": "bb335f1d49d7bdaadb20414c6f769b5367cd61a4aa353d290c32a4a97413255a",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/2260658995add25730a410a55ecf0634aa6164d742bdf2633b7f3600147bb865.body": {
+    "sha256": "f9d4c038115a8921ecefdb810472d891a85cb355fc711d2a56775e01fe1db958",
+    "bytes": 13330
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/faeb6e57e852264aaf6d29235f2750040f6ab458875c212d78fb0a822b560917.receipt.json": {
+    "sha256": "9933b3349e4d8ffb50ee0c007916e1c22a92f3ebefe8a8734eb3169d93634ae0",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/faeb6e57e852264aaf6d29235f2750040f6ab458875c212d78fb0a822b560917.body": {
+    "sha256": "b7777df0cdace007a022cb8164565ca7465e79ef6bb662318b5b733bd86f0661",
+    "bytes": 13409
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/e2710f4168f08cbb86cb8246f032ef596439dc9a756132a6319d1d24beaa4e8e.receipt.json": {
+    "sha256": "cae817014b33b86120d0a12c8ba066fddb48ee9e99e70322f282b96e2dcb3081",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/e2710f4168f08cbb86cb8246f032ef596439dc9a756132a6319d1d24beaa4e8e.body": {
+    "sha256": "a5372e0317cf4287d5442ab5b612cdb9c5e8e1b5cd6b7e70932875a976a6f643",
+    "bytes": 13280
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/4e5ba1fec3e25b0d5763263b91554c3de5e06013e19de406253fd90b9576d41f.receipt.json": {
+    "sha256": "89532884df0d3fe4a0c7890a486bbc700884f22e22852af6597be311f0463f31",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/4e5ba1fec3e25b0d5763263b91554c3de5e06013e19de406253fd90b9576d41f.body": {
+    "sha256": "ec00c0fadfccd8e0bac6a06dd7af9986dc295c4e2b012e26630f149cadb7f83e",
+    "bytes": 13377
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/40758c2fa595d3f7b93e0575b11b08127a72e98bd7781ca9dd3f3f5a62470f44.receipt.json": {
+    "sha256": "fb4faea1ac8f2d3e7198bb739ee85c80a39b866336c492fa96d6fb68f53862be",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/40758c2fa595d3f7b93e0575b11b08127a72e98bd7781ca9dd3f3f5a62470f44.body": {
+    "sha256": "d1574dc9ebcf43797405f1e444eb759e47fe87225d0f2136bc6ced6169066ad0",
+    "bytes": 13297
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/841e135a755b413d1eb1b0635fd7dad68eacb21319c365fd31b976e76df69acc.receipt.json": {
+    "sha256": "a5f92c2d300c10f6c4dc3d870bc09798f1243781a61813bad41d3f367b5a5309",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/841e135a755b413d1eb1b0635fd7dad68eacb21319c365fd31b976e76df69acc.body": {
+    "sha256": "423029173d0a1dda36b1d1293ca51aed3b67a656956341f425902397fcdccd25",
+    "bytes": 13327
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/9b6492fd755b5b5756614176f8682c0e6060787eb55ab0aca095d3f5a62a169e.receipt.json": {
+    "sha256": "a00db5372124b3182d5845e6963feb6c1d5fd4d881fb191e890b61897db74fb5",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/9b6492fd755b5b5756614176f8682c0e6060787eb55ab0aca095d3f5a62a169e.body": {
+    "sha256": "61dc75161041773dd633300cd691d67ebe522589a2d9b1a0b9068106fa8cdd39",
+    "bytes": 13275
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/9914bd76ba0ad16b6e003059ceb3f19bb38d7579b6180ca662bef6264c2ec42a.receipt.json": {
+    "sha256": "f35abb7032eb8d24743e3fcc44e5c55389992a3abb11329243ab5b0ddefb5ccf",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/9914bd76ba0ad16b6e003059ceb3f19bb38d7579b6180ca662bef6264c2ec42a.body": {
+    "sha256": "dcd40857c9977ce4744d1100388e1fde966352aa311d39da1995a10676869494",
+    "bytes": 13498
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/e40f5f25eeb61fb161d5becc52df1d4638a4c946879ba349feee0a7683859c02.receipt.json": {
+    "sha256": "3704cd586af3e7ff0a51d09c7c1dc9e2b5d14704ba56f21718506b6c0efee206",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/e40f5f25eeb61fb161d5becc52df1d4638a4c946879ba349feee0a7683859c02.body": {
+    "sha256": "acc37e391aad826101cd1a0b45a8b6e0edcb7fff4291fdded6051307f44ff4f7",
+    "bytes": 13196
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/bd336da99a640f2056ce291bc0f282de148196a2c1d21623e35f6d93877372dc.receipt.json": {
+    "sha256": "085971279125f86065c0c0f9fc3dd1de657f4e962b8e7edb981269cb7a210fa9",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/bd336da99a640f2056ce291bc0f282de148196a2c1d21623e35f6d93877372dc.body": {
+    "sha256": "b1778a6872fe55d2c1bb22fcf9f2fe04e01598648bc963a96484b1c705d5d223",
+    "bytes": 13456
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/2ae44bdac77d2c47cc130d7d4c4d12d94c4621b54a7bdfd3b39c1afec84c1b42.receipt.json": {
+    "sha256": "3b736c67e8ed99863d168fd20c40811754ab673b6a312c9ebc59b7d0310ff0f2",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/2ae44bdac77d2c47cc130d7d4c4d12d94c4621b54a7bdfd3b39c1afec84c1b42.body": {
+    "sha256": "a8d288a74d4e39e4ee383391dc446a7e154738b5cb31eacf2b8a53ee65de136a",
+    "bytes": 13447
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/8d5e16b64dfcb932f3cac49ba51ec3d5fa7e671584e93f14a9a7fe1b48132583.receipt.json": {
+    "sha256": "b453f1c1dce4bf6b0af3e0bda9d72020b579e04a2df44f2f0868762c00d26d54",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/8d5e16b64dfcb932f3cac49ba51ec3d5fa7e671584e93f14a9a7fe1b48132583.body": {
+    "sha256": "404fd5a1d2aa4d56514b83343d4e8a07e187700815854609ac8546dcb3b5e22b",
+    "bytes": 13434
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/a77137dda166fa1fe97c4bf2e57cf273872775fa4e6c6d2eb78cc500db483897.receipt.json": {
+    "sha256": "ec1808ddf48daaeffedfbf87f7364480c6eb00b654a1a3d63235db06d04df647",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/a77137dda166fa1fe97c4bf2e57cf273872775fa4e6c6d2eb78cc500db483897.body": {
+    "sha256": "a9d76ae804aee4704d72686f837532e79933d5dde0dd45da12a2ccf630fa59cd",
+    "bytes": 13402
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/9a37206f540c08fda5179c2a4eb0f1fc29d623ba5f57961f74782a72791e25bc.receipt.json": {
+    "sha256": "ee39e149cbd402f4a4b8c35c246df1969cb736fe151ce409c4c2f4e4fcc019d2",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/9a37206f540c08fda5179c2a4eb0f1fc29d623ba5f57961f74782a72791e25bc.body": {
+    "sha256": "2d35f54156dfcbfa853ce7062785eb11ec821b94b6cf780ab65927b461c98183",
+    "bytes": 13339
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/69fc130c332a112f769fbb7a2d9c75dd77b2c68ec09f7cf8e0e19dac48402399.receipt.json": {
+    "sha256": "4be9c3ea581801257c46458c1d3439e5b7d2b2848659d483134f44979485b7dd",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/69fc130c332a112f769fbb7a2d9c75dd77b2c68ec09f7cf8e0e19dac48402399.body": {
+    "sha256": "4586f8362360de77137537d10f77e64abdd265d7e4741251bfe56bb175abe2b8",
+    "bytes": 13177
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/e6862ee30bfb1cf3d463b5d3791d64b53735dc9ec4ab50cec554d97bfe67a863.receipt.json": {
+    "sha256": "b467b22dc06ab0d81b1fbe30c685b202cd18775c6147adc56a3b4b98938bde86",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/e6862ee30bfb1cf3d463b5d3791d64b53735dc9ec4ab50cec554d97bfe67a863.body": {
+    "sha256": "ecd4747832cb72e34e067566607eb021d009cce611a23597fa5da7076e19db19",
+    "bytes": 13268
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/2fde484906b12fc84539e10225462f420dcd2837093b539d212399c9aa6de23b.receipt.json": {
+    "sha256": "f05a647da3179f4a2bcba05edda242dfed17adef518fa6855b409bee45e6d45c",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/2fde484906b12fc84539e10225462f420dcd2837093b539d212399c9aa6de23b.body": {
+    "sha256": "603f166b615c40b49389583af829938fd69c045f3bd50779c6dd3a53a6be19dc",
+    "bytes": 13344
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/31fbc0aa4cb4bca6861a431c2aa3fa0faacb906100aa9443931008b4f26921ed.receipt.json": {
+    "sha256": "594ea8f94253e82f87b59f4f676dce434472491e57f909fbffc326167126346d",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/31fbc0aa4cb4bca6861a431c2aa3fa0faacb906100aa9443931008b4f26921ed.body": {
+    "sha256": "422fb001ca0c86fa88720782d181f541930185ecb74ebb643f62f8ac4ed15af0",
+    "bytes": 13391
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/3582383ec4a04a363a912650060be961692c74dc38452e91ed1ae1d67f3b217f.receipt.json": {
+    "sha256": "bff98d0d192fafd07848ac6f9fd2564df831283e0b9568fbcc7cff54f147e3b1",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/3582383ec4a04a363a912650060be961692c74dc38452e91ed1ae1d67f3b217f.body": {
+    "sha256": "6b5079f03adbba123c9fb5508fa06bb10ac1b4b2336f30444590d60e8574de2b",
+    "bytes": 13278
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/d5a99c47f946a642a074b7eb0ab8a0c3b24b6853abf7a7fdd77d13a07f3fe5ea.receipt.json": {
+    "sha256": "42b1bf1b7880548e950ee9759ad30db401182076f58d4cb48a28587ab6701e14",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/d5a99c47f946a642a074b7eb0ab8a0c3b24b6853abf7a7fdd77d13a07f3fe5ea.body": {
+    "sha256": "b5fdf861a154f371dc7a607eb9128524ad9f65c33326be9226bdbf016ff88d82",
+    "bytes": 13441
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/7063f355c6e68a19b96239fbecd3419cd658538541d5d1ba2799cdf3a8b53cda.receipt.json": {
+    "sha256": "c486061662b5e3408d6a822c35f51e7b0700ca72cce55477f46fad94db930a8c",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/7063f355c6e68a19b96239fbecd3419cd658538541d5d1ba2799cdf3a8b53cda.body": {
+    "sha256": "ebd6fc425a245667c9e397dacebaee3b7ebd8d4a8c17a1f61b942d9f2fa7f3da",
+    "bytes": 13429
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/4e2168db19d6f3b141deee4a4c846c058bc2d4681e6632e0d6e9a8a3842c919e.receipt.json": {
+    "sha256": "c5f94f73fab05d7cc62c582db22623fd946b6e70716a3c47869cd8159f16f4d2",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/4e2168db19d6f3b141deee4a4c846c058bc2d4681e6632e0d6e9a8a3842c919e.body": {
+    "sha256": "a95de67ba0014bebb11e4b6a9b82ea67685680aaf96387e111c9e0ce3ff5ccc7",
+    "bytes": 13125
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/cbd6fd155339d2cbbc2116d8edf23a498e9fd323416e3d25c48223dce7b9a85a.receipt.json": {
+    "sha256": "93c533d4f52af0080d8cbb6d3681fc467d3deffcd17209c97020069f6f689156",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/cbd6fd155339d2cbbc2116d8edf23a498e9fd323416e3d25c48223dce7b9a85a.body": {
+    "sha256": "41e9402586817c097e90b1592f1e4be5ef3be9cb7d9c24ca2807b01f6b9e944c",
+    "bytes": 13478
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/882ba946ac4df9979bb0c2c75b8bd56e12dda5768df571755088d87978399d3f.receipt.json": {
+    "sha256": "1cb33dab7abd71b9a1419531ada7d98bc2864a055d88a34051285d32e067378d",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/882ba946ac4df9979bb0c2c75b8bd56e12dda5768df571755088d87978399d3f.body": {
+    "sha256": "fff7dd97320b12e99c72ff926c67161041e294f52efa1dded47ea46442671ee0",
+    "bytes": 13182
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/bdbceed19d58755f31a80331e9af7789301a375aa546a5f820f9b1ee242322fb.receipt.json": {
+    "sha256": "6709e001f880c07bbeba60f32567070252db3749b5681ccfd93188abd2d128ec",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/bdbceed19d58755f31a80331e9af7789301a375aa546a5f820f9b1ee242322fb.body": {
+    "sha256": "f6a610efa0be2a1ecfc1356a0476c4263a6f425e64e4736e182d9cabc250de7c",
+    "bytes": 13345
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/73eed9b63956cf1b0c8a30bf4c62ef24276fc871b19f008b6b003d09d0b0e6d7.receipt.json": {
+    "sha256": "ee951101f5c2ee97b67e96749cf01c2cbb4914156f74f658678bfbc3bfaa4b69",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/73eed9b63956cf1b0c8a30bf4c62ef24276fc871b19f008b6b003d09d0b0e6d7.body": {
+    "sha256": "dcfcd47729e8e063ccb7ae829b5e74cd2b50ab01656db13538dded6ecc994594",
+    "bytes": 13189
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/6deeeb23127b16ad61a396cc192a91a8b4bbb2a0dee7df462f154da0a8609fb4.receipt.json": {
+    "sha256": "13710af2aa0df604e18ccb5eb47e574a4becda2deec399f5ffa56dddd35257f5",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/6deeeb23127b16ad61a396cc192a91a8b4bbb2a0dee7df462f154da0a8609fb4.body": {
+    "sha256": "cdec46efa662ad6394326a104d564cdfba12c040015dbd7c4ff24beee2ec3722",
+    "bytes": 13287
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/69557be4cdbb3ec6a80e8abac63e8dcf545c07f18a99a5783fc88719903d3727.receipt.json": {
+    "sha256": "4c16e5b433c167907ec6b9438995cff1c8586479fb9743e12d9904ae4a95d535",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/69557be4cdbb3ec6a80e8abac63e8dcf545c07f18a99a5783fc88719903d3727.body": {
+    "sha256": "ffdbcafedbcaf47fa1620bc6a5222dcd99e426ed7fdca7a7cf38c133eebb333d",
+    "bytes": 13158
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/3496e7b9c8aa026b4fe8bcb6f6669593cd1837a5ed01d13443144f03012381fd.receipt.json": {
+    "sha256": "b3a73dea21546cc8700d6f9771d1eb132dfa2d5c3df256974a4d089ec00b7a65",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/3496e7b9c8aa026b4fe8bcb6f6669593cd1837a5ed01d13443144f03012381fd.body": {
+    "sha256": "cdf5032698f0fa447796542226682704be932d756a326f3ca85410b4d4c4fc1d",
+    "bytes": 13357
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/bd3d79179c694a4c10cb6f46ad1863f9986b2367d98c70177e72bb9ce3ae34cf.receipt.json": {
+    "sha256": "df407c4a30f715762fc70dd695e79eaf6146295b482d0991bd6598753a1b50fd",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/bd3d79179c694a4c10cb6f46ad1863f9986b2367d98c70177e72bb9ce3ae34cf.body": {
+    "sha256": "ab769b4da185e206485246169c1d70be73f06777506e639e758f491713ba6e60",
+    "bytes": 13427
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/5d52e78020264eeb0ea229ec0af22464e9bce4a51219d85ab9d2fce6c16b3c98.receipt.json": {
+    "sha256": "fce7cc5abbdcf492179afdc4db9b168c6c3f0bb5ec693da83698781a41fcf2dc",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/5d52e78020264eeb0ea229ec0af22464e9bce4a51219d85ab9d2fce6c16b3c98.body": {
+    "sha256": "0c11a11a52ec5a1f71d6378ac050ceb7982af94cdb61cf1d09213587c2888f9e",
+    "bytes": 13181
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/f091626e15aa4726f23fde8c51572b52330d92c89b82737c12bd4a74495693c6.receipt.json": {
+    "sha256": "de194c89312372b54f7d323a9e53b7700d96a1c053b365e53a2ec2d3ca3265b9",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/f091626e15aa4726f23fde8c51572b52330d92c89b82737c12bd4a74495693c6.body": {
+    "sha256": "5bc12cae60cb441e658ae9d428d9c02703cb2694a582628f14858f59cb0a6f55",
+    "bytes": 13182
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/d529b32ab42cbcf9e560086b07fd65db4299ba07c175c4a04c96be808acd0232.receipt.json": {
+    "sha256": "eb7bf4798affafc7a6f0cbb2c102c7d79534feae99ef2b52b752891be2512ce8",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/d529b32ab42cbcf9e560086b07fd65db4299ba07c175c4a04c96be808acd0232.body": {
+    "sha256": "86b215d8065eaa63a8cc33650ae3fb152269c0ab0da54df37d4087eff833b154",
+    "bytes": 13482
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/86e337ba58e3fc00a262fcc0e8f8734c4419c00ac2b8f91c122a780ccba4b837.receipt.json": {
+    "sha256": "9000fc2f8c8dd880bd2aa9f22c3c81ee0735f7cc0340dd0875397185233d7143",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/86e337ba58e3fc00a262fcc0e8f8734c4419c00ac2b8f91c122a780ccba4b837.body": {
+    "sha256": "cf4eb7f8c95b2e1e29bf5f425b4fbdf55ce41448d46c8e5fdeeb009fad98cf30",
+    "bytes": 13409
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/ec710c0d5378f0c9983fa42fba053fb8b09d6e75469b4c2bccda8dcf172fa91d.receipt.json": {
+    "sha256": "b61885b039e2aa3cee4cab1d46053ebca5e1ce5c23b62f142d11ae2ea866b33d",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/ec710c0d5378f0c9983fa42fba053fb8b09d6e75469b4c2bccda8dcf172fa91d.body": {
+    "sha256": "1bc042c375122df899aafa3697bc2c19c97039c2008d29df8a18734315b78238",
+    "bytes": 13199
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/7aba3d1bb6534fc473ebe71c92c6d58d9e88fb333ed05006d5f1f6c09842ba90.receipt.json": {
+    "sha256": "2228be1bb4b813a4e8b14df9a1da12b0a2384460f8e0f80f5282da13b926ceb1",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/7aba3d1bb6534fc473ebe71c92c6d58d9e88fb333ed05006d5f1f6c09842ba90.body": {
+    "sha256": "b48e10dff765b9cc44d2651f0da34fab8acebfa9ce33d160d1057e909c049392",
+    "bytes": 13279
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/18106526f6cd32c549a1ccce30a2a39dad5b13e46184aa90d711dc284cb7915f.receipt.json": {
+    "sha256": "91f07740e0f08b0c59163df0889ea4a6abd2741837f0683f00762df87de8d452",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/18106526f6cd32c549a1ccce30a2a39dad5b13e46184aa90d711dc284cb7915f.body": {
+    "sha256": "b0c4c7785838ad7e795cd2e182dc83ff12ff2f0c86e6e3d541fb7b634bb5464e",
+    "bytes": 13407
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/12453f6129a48a1eedbaffa8ef8e088a6e1b1bb0148dac14434ac056ebb5d8f7.receipt.json": {
+    "sha256": "e75c5bf87356cf8cc5f92cb2fb89e8289b534f0fe18e9379ed23607b3571fda3",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/12453f6129a48a1eedbaffa8ef8e088a6e1b1bb0148dac14434ac056ebb5d8f7.body": {
+    "sha256": "e19e4ba5c6f031ce72eab4acdcd82f7eddb6c6394e9e5492b3a44f7e31646900",
+    "bytes": 13413
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/0a1fcebb4975520353ab67bb51c5e7974c6cbc08d5e9b39a11dd8c6c2571ca7a.receipt.json": {
+    "sha256": "fd9dd58d5e3c7837316b6ea1aa76e842bc7065b7aa814f37ad601a4f6db83f1a",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/0a1fcebb4975520353ab67bb51c5e7974c6cbc08d5e9b39a11dd8c6c2571ca7a.body": {
+    "sha256": "d41440204864dfc53c1e94a2e63f0f560f5ea479c8d8643e0d066adc348f14de",
+    "bytes": 13480
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/0687d0a028ca37530bb77f67d0d44d28647a7167b1cd8ce4d048cd4946f0020d.receipt.json": {
+    "sha256": "18ebbfa5209aa9ba6da9e2e3a54385d45aa936bf3fcf764534df9939946618ef",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/0687d0a028ca37530bb77f67d0d44d28647a7167b1cd8ce4d048cd4946f0020d.body": {
+    "sha256": "4ecf832bca7150811341ffe6f12bd94b12c828d808ca701d493b69ba83e523dc",
+    "bytes": 13315
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/66b3cc4bde85b99e95837ada100522d636fe4fd0b42e84f9677d228124d2df22.receipt.json": {
+    "sha256": "ee0bad4a006227814534f7fc26f69008a6d94d5d2bed66cdc00be4bcb9db8c83",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/66b3cc4bde85b99e95837ada100522d636fe4fd0b42e84f9677d228124d2df22.body": {
+    "sha256": "e461af3a03beddae96dcc61a8f8cf01aa3cf7b7c4f60eca8bb80851fc1f846e1",
+    "bytes": 13247
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/6fe97a5ce72a1c0c94736e9bc3e09fb281cdf20f507a77dfb899f4a5907c7643.receipt.json": {
+    "sha256": "6919e0f9037f68961f6d81277cb8f5270d7673d95b872247cb48a967f8c24989",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/6fe97a5ce72a1c0c94736e9bc3e09fb281cdf20f507a77dfb899f4a5907c7643.body": {
+    "sha256": "537e3ecb150e9d3dd32eb8b1a9a834091e4c18b0a7f00ae056c7f811a4d9a877",
+    "bytes": 13105
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/fe19aa0d8dcdd415c93cee68dd00e090682e17108a90ad4e04cd2e89cba69d13.receipt.json": {
+    "sha256": "57af4a231739be0bb2b4301309b522f7a3855c5f787a995e00f11b619ada135d",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/fe19aa0d8dcdd415c93cee68dd00e090682e17108a90ad4e04cd2e89cba69d13.body": {
+    "sha256": "e2362a11a79269cbfe56f7fda6688fcf43c8cb7021350d675a252ecb4db24780",
+    "bytes": 13259
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/c4e6078a99839910b5a76b1c1321c651f6288432e8e045d1700ed47e19c60d06.receipt.json": {
+    "sha256": "279163ad556cfd297942e4af47b52fa9edae9b22685129ac4d6bf7e4cd5188d0",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/c4e6078a99839910b5a76b1c1321c651f6288432e8e045d1700ed47e19c60d06.body": {
+    "sha256": "76673375c398e320d7ef9981a7c4ea3e56e24b2f4c8d4cd89ac44a0bcf1a73e4",
+    "bytes": 13343
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/68a987b8a380bbba4750558b41d0485c31a2e31c74e47cc3df7b726f822c8977.receipt.json": {
+    "sha256": "80b9db1cc67c1e800de701e393027f833daa2a245eb54b5780ac601be990ee1a",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/68a987b8a380bbba4750558b41d0485c31a2e31c74e47cc3df7b726f822c8977.body": {
+    "sha256": "49a5ef72d316fc0cb8ff1d31a4149d3f0faf774b2124005db457225722245475",
+    "bytes": 13360
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/a5bea466f837d78a7179738b9f69dbeea01c438fc6512fdfd27da443f730c980.receipt.json": {
+    "sha256": "965b4bacb460453f1c67043f201aa8c483aca1819b61c79daec78105abf0c7c4",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/a5bea466f837d78a7179738b9f69dbeea01c438fc6512fdfd27da443f730c980.body": {
+    "sha256": "f3e5438e2ad696093d35dc1fc7dccd63227b5e5871b2008e4ccd6f74d86cfbf4",
+    "bytes": 13228
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/b2f2c6b2c87c18973bce0a57201b2408d2a73131a60d5408ac387583e9f87abe.receipt.json": {
+    "sha256": "4e180396297f582206e349e8dec13824ebbf8f31581ff6931f5fa1cb46a57a8f",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/b2f2c6b2c87c18973bce0a57201b2408d2a73131a60d5408ac387583e9f87abe.body": {
+    "sha256": "ce8f4049601b8fe3dad1a03d7a3d5c6e3e43f6b7376c48484408bdf501a93ec7",
+    "bytes": 13315
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/cddc19a91d1572832063d778714d9aaa049ad9efed4707d16755883e9a60a68f.receipt.json": {
+    "sha256": "d5aacbcdd406c2af0be968a5c7a4259b8560917d1aa7e63f31e8a4d93f7bff4d",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/cddc19a91d1572832063d778714d9aaa049ad9efed4707d16755883e9a60a68f.body": {
+    "sha256": "d16da05bf2c253c2709a7bc6cd882b18ba2b762d4f18a6862588e0d35bfeea3a",
+    "bytes": 13441
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/af3acbe77450172d9264893df9169d71d43a66d679b2e685d4e681b3c8d49519.receipt.json": {
+    "sha256": "4f40bcf8a0d4ba46e5ce763127a5929dcef7b01a3f878e8b29ab408963bca70a",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/af3acbe77450172d9264893df9169d71d43a66d679b2e685d4e681b3c8d49519.body": {
+    "sha256": "3cee8fa523aa13f6c84db8e71a1be86a5d7918e45b28afa0d600c37eb30f65e1",
+    "bytes": 13508
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/c9e9f1f5514fb65da79df12dbe2baeba02ee53e7fc17c897369d473537857f8b.receipt.json": {
+    "sha256": "4a8735fa07093736b61cf8440c5341c8a041ad70741165765d1a6091b0f5467e",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/c9e9f1f5514fb65da79df12dbe2baeba02ee53e7fc17c897369d473537857f8b.body": {
+    "sha256": "56100d9aac0a90f36a5e9fca2cbabd67b1ccbffc077d4e9c9c6b879e561ba247",
+    "bytes": 13538
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/dba6287b4bb57a201bd62aff26e652951d9c7e47f223870f70c1ae8181158d9c.receipt.json": {
+    "sha256": "9319ed6890d7947c7cdaaa177d4ef579ae25e8ed87e8848308145d75ffa91649",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/dba6287b4bb57a201bd62aff26e652951d9c7e47f223870f70c1ae8181158d9c.body": {
+    "sha256": "a5c7be612689a5eeef8e5471aea13032fd783f2e1bd2c3301150d6fd05331ca6",
+    "bytes": 13287
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/730b1ff1dfd3413d2949f1b086dae076879b248d13a92c705820306a03faf7fc.receipt.json": {
+    "sha256": "c93a74197795246cefac0c851895810fdcfb2a710fa1f9811a5977ca8a47b7c9",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/730b1ff1dfd3413d2949f1b086dae076879b248d13a92c705820306a03faf7fc.body": {
+    "sha256": "09e1328236ddc95f1f7392f6e7e2f4b0aa5a1f70aaae0ef91ae6023e818ea15a",
+    "bytes": 13479
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/2be669aea034c2c178e847934aef310d3a98eb4fa7fcacb758fb086f43e212b9.receipt.json": {
+    "sha256": "452f117530a7eff360c6f1a0ed25ae9c4034814237918bc5dbd039b32f712fd9",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/2be669aea034c2c178e847934aef310d3a98eb4fa7fcacb758fb086f43e212b9.body": {
+    "sha256": "6aa2ad8dcb9faa6ba82cbf65dfb4e8ea9673780c66596f8b7e02f7bf5f0f651a",
+    "bytes": 13454
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/87eecc725ec40b77406b436a642facb9df931776aded4e6b047dd39daf8b849c.receipt.json": {
+    "sha256": "b1c0fd91f831a3fef28452d6d377ca81a44a6bdb0b93bb3597e6bc35f6c62f11",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/87eecc725ec40b77406b436a642facb9df931776aded4e6b047dd39daf8b849c.body": {
+    "sha256": "b6925173bdf23be020831881dc57be98d084bb5e5de13b53ade3e7744685759b",
+    "bytes": 13371
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/956adfb32bbfae1df68942fb8ef5acfedb4d4e9e730641978c3a02e2a43c0be1.receipt.json": {
+    "sha256": "ad30cf277f3103968a929b035bd0cbac34747b94b2dfb5410212c85e1d511e79",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/956adfb32bbfae1df68942fb8ef5acfedb4d4e9e730641978c3a02e2a43c0be1.body": {
+    "sha256": "a424c54b263c4328046ef3b298f23fa76bbd1ea3442e9663878b61da161d8653",
+    "bytes": 13424
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/38f8d2f94feaa7d13c6648cd35b2e45299a2eafdff571befee579b8f975b70d8.receipt.json": {
+    "sha256": "19e56b582b266071782d78ff12de90cc16e4a46cc8fa435ce74a2389b91f12d5",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/38f8d2f94feaa7d13c6648cd35b2e45299a2eafdff571befee579b8f975b70d8.body": {
+    "sha256": "eaeab5fcbaa5de9d1aa6cde4ec9f7e67ce2e823dac3547efae8120147314b4ba",
+    "bytes": 13402
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/0fb989b524e1f7241cecca7efcdbf1116f42b31591477123968b5553a8ff90c3.receipt.json": {
+    "sha256": "b93d0570c965a4fc6cd9a2b1d1d0abdf22d3eb364fb076c678bc711820ea0dc7",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/0fb989b524e1f7241cecca7efcdbf1116f42b31591477123968b5553a8ff90c3.body": {
+    "sha256": "48a8d04ed76c2d4b77140fd32d73feda4b8db7bd394c70e2db8875a68e5f79e2",
+    "bytes": 13424
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/c9c33e4514fa503180172f23e44d76b5dfaabf2512b66192e090da3fc2b72efb.receipt.json": {
+    "sha256": "44f3b5422d4fd06643c2df960ae3c82dd25fe944b1fc7899b61251b062f8644f",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/c9c33e4514fa503180172f23e44d76b5dfaabf2512b66192e090da3fc2b72efb.body": {
+    "sha256": "36aa8f5cd74e8b21ae0c01eb4710263f8e964e2cd4a49093078adafaaed0a04a",
+    "bytes": 13249
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/0900a93b24b49dadb5dbd30cc2b8bdaf2675080a37a776edc73e9f6f9ebedba0.receipt.json": {
+    "sha256": "c725115342fb91702bc9a3f5e366745999662f1b698273e033029885bf599920",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/0900a93b24b49dadb5dbd30cc2b8bdaf2675080a37a776edc73e9f6f9ebedba0.body": {
+    "sha256": "0de4c08d7bb9df1214d1ae9172b0ac0785e6d6f178166ed7dce6c53e362defe4",
+    "bytes": 13203
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/b0cbbd8c002039fa7eac30a9ef5d95a5264ab38433e0f986590c33466cb10f1b.receipt.json": {
+    "sha256": "8d2f05bb984244ee3573b24462a870e19d72c8b2ac3c7bd56eeac22119c8a27b",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/b0cbbd8c002039fa7eac30a9ef5d95a5264ab38433e0f986590c33466cb10f1b.body": {
+    "sha256": "17c8d22b6c5eeb73f1b6f15a924b64733390210c7ad09111395c8544f2ca0861",
+    "bytes": 13426
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/1f40f3f52384b01394f28dfb4b6ed886f7fbb6aeb6719c2d9847d93b1c65e2a4.receipt.json": {
+    "sha256": "680df34e2d1f9923ac83924846ac4019f27cea5a21a1fdacbf20bb1e0fd2063a",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/1f40f3f52384b01394f28dfb4b6ed886f7fbb6aeb6719c2d9847d93b1c65e2a4.body": {
+    "sha256": "e5cb1ed5626eafa0e1ffee34cb93369f66c3d6bdcdbb1a93084bfe13087d1440",
+    "bytes": 13434
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/cf6a3237ab9b488a93f171436d3567d55802a7f08ac61925af9a608840b20263.receipt.json": {
+    "sha256": "b64f469b8158be59acda9ad5f2f121a88b24ee17f3ac2b735436d1a036c9f175",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/cf6a3237ab9b488a93f171436d3567d55802a7f08ac61925af9a608840b20263.body": {
+    "sha256": "9512dabebcf02e41a21cdb197ad0c153c6c90d59157b5df7e341bbe7f3eca8c4",
+    "bytes": 13198
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/6a5ec0f33959fd2907bf9f4058d729538d2943e9af2fd90e73a82175e5c9f7b1.receipt.json": {
+    "sha256": "f6c717f20825f4206f7541d070a88304f7b18d13831c944931ab898ad44e96b3",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/6a5ec0f33959fd2907bf9f4058d729538d2943e9af2fd90e73a82175e5c9f7b1.body": {
+    "sha256": "e0376a453be2373df8321a84c2041ed44249ee9a1a31981dbe6613b5edd5d47e",
+    "bytes": 13360
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/bb5f883de6014e4494a7a0f3aba38736aaee714e43f89e6ea75355175c10338d.receipt.json": {
+    "sha256": "915c6aa80ec6650d8d7fef1cbb6928d950b79a0158785fe6a68b5f79a9667e0c",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/bb5f883de6014e4494a7a0f3aba38736aaee714e43f89e6ea75355175c10338d.body": {
+    "sha256": "cd4d5e1c2749c282402358e3801ffb11c748bcf55d35d4b330e87e6e7c8ecd0c",
+    "bytes": 13489
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/eb32ebfc2681b72ec59e6bb25a6f144f9877fad37d24c58cdff93345edeb3fdb.receipt.json": {
+    "sha256": "0aaeb701b52ca0196a83ba117b960dc6520d11bfd2a267dffc3c7d2d9b60f702",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/eb32ebfc2681b72ec59e6bb25a6f144f9877fad37d24c58cdff93345edeb3fdb.body": {
+    "sha256": "90fa05ccc77aa066557a04e1a94507f544463c23be2e3292cdf04922d127ffe0",
+    "bytes": 13188
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/848426febedfbf3944d3bd4e4aac625451a86ef4b15172128d8b3d96d7f38e40.receipt.json": {
+    "sha256": "f3607ffbf171ac6c50793db006d54d6473e2e853ce051d911a847a32daa83bd0",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/848426febedfbf3944d3bd4e4aac625451a86ef4b15172128d8b3d96d7f38e40.body": {
+    "sha256": "8d3022e730a8257dd71a4699267984b7d4fdfa632f39a3a7fb7b43b9698b9f9b",
+    "bytes": 13286
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/ae0823a19466b2dd50bc91a00190f60847b822193fde4dd0f3ca5328afefa4d2.receipt.json": {
+    "sha256": "1ba1660257d5b47814a1744d6806ae21feecbbd40f16912cdf119c121c3d3565",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/ae0823a19466b2dd50bc91a00190f60847b822193fde4dd0f3ca5328afefa4d2.body": {
+    "sha256": "d3a3d26f93b6b68713e44e1061ce126b580571bb9e8bb04933be96fd8e47feab",
+    "bytes": 13179
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/995093c89eaab1c9470a0439a437e9c6b49e2699dc1e962ba9b22faae5fdf9d9.receipt.json": {
+    "sha256": "4255d68966200fb6eacd846684c5a9717047d7cbdb5d92372528a1395fbeef4e",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/995093c89eaab1c9470a0439a437e9c6b49e2699dc1e962ba9b22faae5fdf9d9.body": {
+    "sha256": "92fa5c79f0e3c837f0d37584baa7ef8ede31d8d55a41e8791a9092abbaaf8327",
+    "bytes": 13399
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/5d9c0f9f489cd1dcb18141b5f9e92f67a9ee094ea046c6b1678fed7b49807a33.receipt.json": {
+    "sha256": "fcf4d6d4f6aaec9b43bf5bf434a37d82adbeb6c478534a86a8b70bfa123a592c",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/5d9c0f9f489cd1dcb18141b5f9e92f67a9ee094ea046c6b1678fed7b49807a33.body": {
+    "sha256": "5f5c51b7f300a68fea951d73bb3f3ada318a893050d8f002391568e628315db9",
+    "bytes": 13278
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/96695dc282df9913177b29e0a7cd846ab2599a3830619c2c3dd6818e6afe5493.receipt.json": {
+    "sha256": "c73d4618bf97e064cfc192ec1ac8cf37d8adc2ed1d3c97ee0630db5576a1ee55",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/96695dc282df9913177b29e0a7cd846ab2599a3830619c2c3dd6818e6afe5493.body": {
+    "sha256": "00494a6a8168df4de0921e39f6e9f84faecc7c3abcf0c557050ffede1d7ff8df",
+    "bytes": 13313
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/8ede18589c4a1bf22171629f4058d996f8ff59faefdda066145b5dbe914b4b96.receipt.json": {
+    "sha256": "ba8f86e2c1102f5fa8a75a4de2b396ce56d864654fe63637fd3c071fff81fb71",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/8ede18589c4a1bf22171629f4058d996f8ff59faefdda066145b5dbe914b4b96.body": {
+    "sha256": "5838a4885dde45aa89744f9e8163be66af3a7dac4dc7dd117cfc3ae94c90fbf8",
+    "bytes": 13369
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/8a35ab8bc553140d2d78dfcd2cce5784d284846a1eba062594427dca064f54ba.receipt.json": {
+    "sha256": "921baac3990b59c4e889bf844a6180cc2c6fc0e4a4d04cc3a26677187bca8f55",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/8a35ab8bc553140d2d78dfcd2cce5784d284846a1eba062594427dca064f54ba.body": {
+    "sha256": "e1322cc42f8488f147112d7ef1e1293e186a498dfba51454733123eba1aad824",
+    "bytes": 13140
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/ab9365bfe3e4bdfadb921d78893ea9ab4dd68ea9b3bb19c321b3325bcffd0ee8.receipt.json": {
+    "sha256": "25a367a14ffdf1c16071d8bb09c1bb1dc114b6767bd412aca99be6fbf0a4ff30",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/ab9365bfe3e4bdfadb921d78893ea9ab4dd68ea9b3bb19c321b3325bcffd0ee8.body": {
+    "sha256": "c674053c5909bb06c2c4ecb452cdccde94b3501eddd58e23405df5f3fae9cfb5",
+    "bytes": 13257
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/9987d5b4077e23a8987b4f6e2dfc54e5d040f9267662fc8415c6b3c34964ce61.receipt.json": {
+    "sha256": "e357873ae6632047eba047b6235510b5b522b097ebcb4e4f1e770ebe38c9022b",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/9987d5b4077e23a8987b4f6e2dfc54e5d040f9267662fc8415c6b3c34964ce61.body": {
+    "sha256": "8f3b4124f7560d05e1ef58e104462bcbdbec2580b8f5a905bb669329e651e7b4",
+    "bytes": 13418
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/0ac634aa7d62189c666357e5427a08ae14961e5625deeaf889160a1b2bf66ece.receipt.json": {
+    "sha256": "bc899a92589873150b207a8ce5497201ae06046b9fccf17faf2d54bfef13f5ed",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/0ac634aa7d62189c666357e5427a08ae14961e5625deeaf889160a1b2bf66ece.body": {
+    "sha256": "c20834ad7e66d4c51f14104cf67b039889c143d0d058132de8fb7f8aa2d86521",
+    "bytes": 13524
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/5649ee0dbc0e3408b62ce006f2dfaad827e36ab1aa9f815c66f3e8ad25af6902.receipt.json": {
+    "sha256": "8a86ab72d8642f919213c217af0626fcc6ab4e4668937417b07874b19020b122",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/5649ee0dbc0e3408b62ce006f2dfaad827e36ab1aa9f815c66f3e8ad25af6902.body": {
+    "sha256": "8ce5d8164a495ca7a0680355179a659d8963c0fdb509169736fc90638e84abcb",
+    "bytes": 13373
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/ab94f086058983d38f108f529a25e450436a1e7d307a03fcb731a353a870eea1.receipt.json": {
+    "sha256": "d0ee5d1416977375a9d43fa5d23ff4253a3345460080176c86fa0b2187aaf6a4",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/ab94f086058983d38f108f529a25e450436a1e7d307a03fcb731a353a870eea1.body": {
+    "sha256": "d3206c338aeeeb155f1328d27b96ea09246992bc0fbec4f7c74d499da8079c78",
+    "bytes": 13429
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/b33dc75c506a11edb01703e5311557262e83dab7d5b1222f1b5f264500fd99e3.receipt.json": {
+    "sha256": "249ded3ce65d81b300d505b4e318127eeece1f3273f0527d5d6dddf86137b6fe",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/b33dc75c506a11edb01703e5311557262e83dab7d5b1222f1b5f264500fd99e3.body": {
+    "sha256": "926ff80bffe07cb765fe5a63a5b0da97e2b0f3ba06f8a4896bc41ad3d7156308",
+    "bytes": 13116
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/905fb944b5e84dd7b2fec7d758bc3ba892a244fc39a0593735f4d8889eded075.receipt.json": {
+    "sha256": "562f96bd775755606c9e04a13633ae7c3eaa61bec8f1db9b4c331216e3387384",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/905fb944b5e84dd7b2fec7d758bc3ba892a244fc39a0593735f4d8889eded075.body": {
+    "sha256": "81279cfd0ba4fbb4ea8b67109050d1b8276358af31186b3e2652cc3145259408",
+    "bytes": 13335
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/7aec9d4083a0cafea6932ee40e753750a540f996b5547f9afac41437e1c09683.receipt.json": {
+    "sha256": "38c0e2b51cf1396cb9b130dc532d3f59899f93e623d326e212994f01c8ea909a",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/7aec9d4083a0cafea6932ee40e753750a540f996b5547f9afac41437e1c09683.body": {
+    "sha256": "6abedbc25187c23de1f8a0e67fc10f416ee35b2d40d6b67a9c0850c0cab0515a",
+    "bytes": 13293
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/78d55837d271870a3a8675c6f03acfa26bbacfd16725ca75ac30a8c70296edff.receipt.json": {
+    "sha256": "a6b9c2b0027f64a16142ee88e6dcf1717bc527e28cc8428966318c7b9250eb6d",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/78d55837d271870a3a8675c6f03acfa26bbacfd16725ca75ac30a8c70296edff.body": {
+    "sha256": "337402358ea33fab5aca2233a8c44e49ad033c3ad1a9aa867c71febc79965286",
+    "bytes": 13190
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/7a6b0033febc45fe4eb22cb289e8bb1371ecd6207c3e07fef83247e86f2a4f1e.receipt.json": {
+    "sha256": "61bc32f8be1fe2578744b5458ce36570b5a36339a501a4d40cc1014ee46079e2",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/7a6b0033febc45fe4eb22cb289e8bb1371ecd6207c3e07fef83247e86f2a4f1e.body": {
+    "sha256": "ce0bfc416e3a1cc7d1acf2f5d956530d147396b9f21b864203be4d5b083f0ec3",
+    "bytes": 13201
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/05efb37b21e10a38fdd05dddc810e86bfecae6e530433b83e41cec357a3c0244.receipt.json": {
+    "sha256": "f0376f0149d38474670a8c97dd1fb2b22f7467bfc01d7ed21bfe5a8c77087d3f",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/05efb37b21e10a38fdd05dddc810e86bfecae6e530433b83e41cec357a3c0244.body": {
+    "sha256": "2e78f7754de6c47c15153cfe9cc0124cc0a9b4a3ac491bf8c203fc47d33683c1",
+    "bytes": 13380
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/f214a5aee8277c654cc0db1bd577270e3ce3e1ec109bd2b21af8fbc8698b761e.receipt.json": {
+    "sha256": "6fc2e249f0415631c793cb78a34493d733095cc055178cc7108bf0fb82be0421",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/f214a5aee8277c654cc0db1bd577270e3ce3e1ec109bd2b21af8fbc8698b761e.body": {
+    "sha256": "60d5181682f2e61fe5a050658b529e8f45a5053424fa2ab782c97a36858bd9bc",
+    "bytes": 13342
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/860d90555227c6d10496707b5745f28eac2a1b3dab283dc5433efe914ba401dd.receipt.json": {
+    "sha256": "7fc6218df50447a6965e65ce554f5ddddc172693fe86490c0eec828d87a413c0",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/860d90555227c6d10496707b5745f28eac2a1b3dab283dc5433efe914ba401dd.body": {
+    "sha256": "4403f00cd81a22ef2531b30f5350df6fb5dee63191fd69693e08a69b7d327472",
+    "bytes": 13434
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/d7eb1dd3e3bbf4f4492a0c0928aa8fd003f15c3be44496d473e90a325b00fdec.receipt.json": {
+    "sha256": "943e3bcee5af3b546f1c0f7688a922b89ce5d4eb2a66dd66306eee8f37cd78d4",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/d7eb1dd3e3bbf4f4492a0c0928aa8fd003f15c3be44496d473e90a325b00fdec.body": {
+    "sha256": "a7436c0a6de2bb6f183cbef30e7cc3941040246d6bc5455ecc649a78f80aa1c0",
+    "bytes": 13506
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/5cbf6b3f29fa4a9e080b1b2bcfe90958a7e7c720e269b0ca5d664b385105c493.receipt.json": {
+    "sha256": "6e5151f4ba93e066cc7f224b7b2e1a1f1a5ddf256f2daef6384aac5fafded379",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/5cbf6b3f29fa4a9e080b1b2bcfe90958a7e7c720e269b0ca5d664b385105c493.body": {
+    "sha256": "5138c6a5036f9cd237f1995c744959cccb8e8380b5827a57a308d6a5fefabd66",
+    "bytes": 13415
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/378f87c1dc2a84c3bcd6b68513a1868a42ca056e2b9981b5d215bdc9cd9706be.receipt.json": {
+    "sha256": "636ad08165809f37bfa970ee6ec183fa6029506a8a194ce13cdc61114c2889d9",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/378f87c1dc2a84c3bcd6b68513a1868a42ca056e2b9981b5d215bdc9cd9706be.body": {
+    "sha256": "ceb661620dffbafc3c6f0573905dfcfe9518d8ff2338a9c141616efc734ea9df",
+    "bytes": 13335
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/a2da63fda3856cde37d7afb601189caf77691a4ced7295a997fbcf04952e4820.receipt.json": {
+    "sha256": "10a55bcffd3e82c7ec4bb80a2ca960f260d2c93cc8609ac7b57be6e7d177d702",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/a2da63fda3856cde37d7afb601189caf77691a4ced7295a997fbcf04952e4820.body": {
+    "sha256": "4050385d0ef50028ef0bbc4c240f731ff0c6f7527b80984b30fd450184f25c3b",
+    "bytes": 13172
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/87bb3d7daeeb3537b08b870f9a3013ae3a93d14e7ad9911c01e72a12b6b239bf.receipt.json": {
+    "sha256": "65e1eab6ddb1201224169bffeb8bc1e90b20e9bd124bf65f41c28a95acd3736d",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/87bb3d7daeeb3537b08b870f9a3013ae3a93d14e7ad9911c01e72a12b6b239bf.body": {
+    "sha256": "142480d162ff93dbe1ff9fbbb53792e50b060ee42146df589437703088446130",
+    "bytes": 13319
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/531fbfa1678baa81478e0df30ed821bfeca93ce9ceea43b3a570758cb64660fd.receipt.json": {
+    "sha256": "b911db9a14386c4fed295e9e60b76fb619442b6755e00c218389fdaf2df6ca74",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/531fbfa1678baa81478e0df30ed821bfeca93ce9ceea43b3a570758cb64660fd.body": {
+    "sha256": "39c77573f959b97a374ba59153c6f300cb43a212883aa7aaea9ce9aaab42585f",
+    "bytes": 13509
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/cc6a079f63cc6909471105b98f5658bbb311303408cf35dc4e3ab7a31772f865.receipt.json": {
+    "sha256": "4c6b1d695e89540619b15baf7bccb355b9400720f7ed6eea147cb0bde09a0cf4",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/cc6a079f63cc6909471105b98f5658bbb311303408cf35dc4e3ab7a31772f865.body": {
+    "sha256": "ec4ca917750a3a322bcfa0ddbaf1b4dc09c9f6bb9779db4f4209e54c5cc69a43",
+    "bytes": 13287
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/d8ec9b91a7e8db5912da19d0bd248e1e27d90e621b77b1946f7265b620bdf8e0.receipt.json": {
+    "sha256": "a2d4411251bfd06bf980cc351422ea5afc60529f62f2ff3a20ec8f54a5345cd3",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/d8ec9b91a7e8db5912da19d0bd248e1e27d90e621b77b1946f7265b620bdf8e0.body": {
+    "sha256": "75f9c4b446eb4789a646c10566a0f15a10aa3dd3128d096d4b82c1b4c3819b85",
+    "bytes": 13383
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/96c907b7bde446a70bc98047b3c26c479cfcd1c5ee4bfe0f5f6aa49f0ac00f1d.receipt.json": {
+    "sha256": "c1df9a9d2cc9383549b52285a896fb9a2133d614eb4ac6c46b12c0b4a2cd03cf",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/96c907b7bde446a70bc98047b3c26c479cfcd1c5ee4bfe0f5f6aa49f0ac00f1d.body": {
+    "sha256": "f505ef2ec74209dfe7302a8749417c69baaae44f817b3b284e9a3e7c5ee09ec0",
+    "bytes": 13308
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/b36b65a81b58a83efc51251cb87562a5d442a506ddef63774b74dd7cf0bae08f.receipt.json": {
+    "sha256": "bd623e2e36e475cb286f063e03f12828754f2e2646212558513f079364154c7a",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/b36b65a81b58a83efc51251cb87562a5d442a506ddef63774b74dd7cf0bae08f.body": {
+    "sha256": "2b3099599838c1980cdd243b9f9c7cac9fd65abcd65bdfa941a175089c0584e1",
+    "bytes": 13250
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/b9719bcd790580f2477a83f5ee2ff6c39d3b0de9d17fd88d6b65fc5aebea07d7.receipt.json": {
+    "sha256": "c9806d28384ee0672bafe21fcc40d166f307d55ae66ab321f1abf46cec419c6e",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/b9719bcd790580f2477a83f5ee2ff6c39d3b0de9d17fd88d6b65fc5aebea07d7.body": {
+    "sha256": "2f0946cdbe65e1106528b24dd40146575de21a9bc6e7738e5fe2f42efd3db5b3",
+    "bytes": 13473
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/d8f0be7295d071985ccab3715dc2b5bdd0270ad8525bb4f373673af1a003c6d5.receipt.json": {
+    "sha256": "84ba2050a874defbbd3abdd6c77077f026c10e8abf0943796d7b7d395e1c10ff",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/d8f0be7295d071985ccab3715dc2b5bdd0270ad8525bb4f373673af1a003c6d5.body": {
+    "sha256": "e388a5351fb5d8404044a46c0bf311262ec5beda0be141c089e4b26de1611d55",
+    "bytes": 13504
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/d86d61ba908d88a8a8d285652c8a94703d80fd3b9c177ace523dbd5aac8a1c04.receipt.json": {
+    "sha256": "6c1255a7a1548ed4e9b740c46e6bcb47341d2088dea6847ad3e8bbca2f517ecf",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/d86d61ba908d88a8a8d285652c8a94703d80fd3b9c177ace523dbd5aac8a1c04.body": {
+    "sha256": "0eddbffeb21aac83f062ec3c233cda2619c5fa1f97f0f86fb7bd8736bfabd5b1",
+    "bytes": 13302
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/1bf4061fef55ad95fa636fa2570b1321f8ffc44ee6cde293630319c816dfd071.receipt.json": {
+    "sha256": "e0a51beb6149969c6231e98d10b7d737ff93e07794e15a6d8fd65f7b714b76de",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/1bf4061fef55ad95fa636fa2570b1321f8ffc44ee6cde293630319c816dfd071.body": {
+    "sha256": "d43e761ef4ebab0cef3b7521017cc5f65bf123dfd30f14906e31021f013cf83e",
+    "bytes": 13324
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/a4b5cfb2f5f2c8ad139ceb5385e2c41adcb3123c94b445e79b6fbecde8cba527.receipt.json": {
+    "sha256": "09e9a5e0335dcf05da2c794d6510594e11b445d870d4f38e2198aeb68f15e965",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/a4b5cfb2f5f2c8ad139ceb5385e2c41adcb3123c94b445e79b6fbecde8cba527.body": {
+    "sha256": "50c89174cb37d021c3cfcf9e7f84e34b3b914fbd165ac06bfffb2c22e44ff70b",
+    "bytes": 13268
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/4c89b3779c3cb96724325a68d1d70595c97f4ca0417084c1c5f9cd04c7e7d371.receipt.json": {
+    "sha256": "059fdbc6510925d1b4a71ada3c3d9b8d6101b2ddad9b84a40d869aa79d7a29ab",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/4c89b3779c3cb96724325a68d1d70595c97f4ca0417084c1c5f9cd04c7e7d371.body": {
+    "sha256": "ee7898c0379b08eeb75f18e736e41f785825930b4bbf3ac2dd5d2c920a0e9e30",
+    "bytes": 13221
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/dcb8284a8141fac4545d67a3dd45b921734e2f059cdbb4a2e25588fee9800c2a.receipt.json": {
+    "sha256": "76956dbb50a6b728d694ae45a31cefa5696ffb38dcdfd7eaeb1338c42e1c5187",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/dcb8284a8141fac4545d67a3dd45b921734e2f059cdbb4a2e25588fee9800c2a.body": {
+    "sha256": "dbc4877a682d5578ea72eeff2477224b23be888454bb2c635f959203d3c1cd54",
+    "bytes": 13383
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/fdb468c4e85ae03a51a5a7054c3a3a9fcd1052beaed6dfb9b814898d72c995b5.receipt.json": {
+    "sha256": "98d4ff0c057c2c45d60f08eab4b4ba36308ff99694de72c1376587332542f763",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/fdb468c4e85ae03a51a5a7054c3a3a9fcd1052beaed6dfb9b814898d72c995b5.body": {
+    "sha256": "8e9faf56e263cb0e7f45368fbf5ff1a8259929f94bba4e5690c56e9babef0196",
+    "bytes": 13827
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/87308411084da74e92ca6792affc3c0e61707e77a4cccca9b85b60e52d192441.receipt.json": {
+    "sha256": "c9a682645e2a9715dd64916547530f7d36bfad57b46d3c9950b4cf2f345cf894",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/87308411084da74e92ca6792affc3c0e61707e77a4cccca9b85b60e52d192441.body": {
+    "sha256": "b4cd2a9eb7206efe72cba421ac9bbd989d5a54f5d5dad9504b21ac8f1e0f9c3e",
+    "bytes": 13436
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/acdb128180dfa670a7ea9fee330ab49e6dbbdc1589277aaa9bdf1a2400ff92f6.receipt.json": {
+    "sha256": "30df6aae8904355e938f214a9976faa9b8c957bb8cfbd4a90dad5b387c39192a",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/acdb128180dfa670a7ea9fee330ab49e6dbbdc1589277aaa9bdf1a2400ff92f6.body": {
+    "sha256": "2a5f730cdb63a1ba4a44bb48f35ade0b391fe243a9d6f481cbfb3636cfec71d0",
+    "bytes": 13434
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/0ba289cc189fc8a156f98b9de2de218f7b47e4348348b1142dfdb598d08fde8f.receipt.json": {
+    "sha256": "d4799461ea4953e783e554678926820c09c62301679825a73396533277703476",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/0ba289cc189fc8a156f98b9de2de218f7b47e4348348b1142dfdb598d08fde8f.body": {
+    "sha256": "c0791357814fca0d6ea40cd7a3021c95e4774105fb68085e54c2c62a7a5e44b3",
+    "bytes": 13337
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/c1b923cbf3705b6b52c503fcc49fbb69727133746fb7db5885bc12ac4b5ff77b.receipt.json": {
+    "sha256": "d3b7ed0b8fe886683fa2278d5cf64c783bfad88e360741bbf7a6162de2a40c95",
+    "bytes": 352
+  },
+  "/Users/tim/Documents/Codex/2026-10-27/task-3/row-repair-01/live-read-01/store/cache/c1b923cbf3705b6b52c503fcc49fbb69727133746fb7db5885bc12ac4b5ff77b.body": {
+    "sha256": "18709a269ef84782a66cb7ede07b85a7fd9852935efdd2a1309db9fd940ffafb",
+    "bytes": 13178
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022020606.box.json": {
+    "sha256": "8f75fc26c83870b1f271a47d4ebee999199338f5cf7675861266049b6c75a233",
+    "bytes": 958
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022020606.box.gz": {
+    "sha256": "6ce61ea9fa93f810ae4f82f3565c8e7c28841259f75d673cc2b2f63cb445843a",
+    "bytes": 2322
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022020615.box.json": {
+    "sha256": "e8b0bfa8eb6d517a1b38299c33af87e8599cbd07f2a6d67251cbfd92887df24b",
+    "bytes": 956
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022020615.box.gz": {
+    "sha256": "2a95c02c06fa700c0ca4cd039074f12e3fd7a20e0c20fa4f227c5bf8af4bc658",
+    "bytes": 2296
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022020687.box.json": {
+    "sha256": "dd8f32976b1786c6fa0ccc75e9917e22986ad5a154d20c435a8f6bde965044e6",
+    "bytes": 958
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022020687.box.gz": {
+    "sha256": "d059ce04aae57a408bf3001a8f11d02fea0676c6a9c5cc10da4101265840ce26",
+    "bytes": 2286
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022020798.box.json": {
+    "sha256": "d896ebd1fbce4f2c1e469f14a202432cc8263353149d1e46030eff0d50ec3724",
+    "bytes": 956
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022020798.box.gz": {
+    "sha256": "f71e066eb5115dea0219dce0bca4765d9e110ec5d765bf05e7bdb40971a0944f",
+    "bytes": 2273
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022021021.box.json": {
+    "sha256": "591e75dc7d6dc86eec292326d5cefaa024103e51c080e75d057f00115fbf6b1e",
+    "bytes": 955
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022021021.box.gz": {
+    "sha256": "3d28eafd6426d8cc4032a8c319528cae831cb46e0e239b697cd48282ffed5268",
+    "bytes": 2221
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022021130.box.json": {
+    "sha256": "f227f77ee07ee6082ba989d5fabe06bf893381d9c5fb0a4522bab76e3db04036",
+    "bytes": 956
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022021130.box.gz": {
+    "sha256": "a9ad9ff2bbeed4781046261408fc39bfb3e45f872f88b5b1e3fa41021e67f41d",
+    "bytes": 2308
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022021152.box.json": {
+    "sha256": "9f988ea7525c8a46c6155c74f3b05c651e38a29146f753843c379434515d8e7b",
+    "bytes": 956
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022021152.box.gz": {
+    "sha256": "c6cb8706816c5fc47dc0ce33aebef33de7ab7a9c9a85db38979b4d2ec060107d",
+    "bytes": 2261
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022021228.box.json": {
+    "sha256": "6cb588b470bfb458f859a4c97fad1cf6141c6ccb85e81183d4e19f9b3979dfa3",
+    "bytes": 953
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022021228.box.gz": {
+    "sha256": "88a80e65e80d5d28527d35b9b07e45b3fd6ca98b70112e931a031250f72eb09a",
+    "bytes": 2339
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022020552.box.json": {
+    "sha256": "b49f34a07a873a291bf763e0231cc26de4fa4d51ff50d93c0eb2796635e196ad",
+    "bytes": 956
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022020552.box.gz": {
+    "sha256": "df8141f34af55cf1940689c0c776e87313f662e479a4930bb3d80b5e25673ae2",
+    "bytes": 2290
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022020570.box.json": {
+    "sha256": "de74e7ca608de7ab2b06c9e6055874ebb34bcc5f42b02d3cfee75c07b21f8f0b",
+    "bytes": 958
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022020570.box.gz": {
+    "sha256": "f0298d646e83389d91cfb7fdef604d637e3b35cb14ef9f5e3ee5c279b9d4e705",
+    "bytes": 2315
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022020588.box.json": {
+    "sha256": "a5543555fd296aef61a5a5164e05a06ab869ac024a9890cb7b49a2ca14796eae",
+    "bytes": 955
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022020588.box.gz": {
+    "sha256": "4242d80210e379a3fb45de190ef57f642896997cc4955832e7e712c20b4c6344",
+    "bytes": 2313
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022020603.box.json": {
+    "sha256": "c2d94cc30fb6d275ff00137ea786b846ad879d5ee563967ab2d615ac16470859",
+    "bytes": 956
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022020603.box.gz": {
+    "sha256": "e0e7883ce79441cbadc790d67462ffccaa0bf888b21e0edaf4ea1ef076c073be",
+    "bytes": 2340
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022020624.box.json": {
+    "sha256": "764e905f1814c18ede0924f8ee17729c24a0bf237f4ba409a4fb3ba59d8de8e7",
+    "bytes": 956
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022020624.box.gz": {
+    "sha256": "5018376d3ce200d7913e9ec4b177f426b7cf7c0b2d4d1f74d030a7cfe1e7f6a6",
+    "bytes": 2387
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022020654.box.json": {
+    "sha256": "0b3cb9beef0681419436659488670f84b1f0778744e06f323bf62c35e68cef04",
+    "bytes": 958
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022020654.box.gz": {
+    "sha256": "8d5f81d0db4212650f6d8a7ffa25bf28087da92342dbd8150283ad4ed6b9ae5c",
+    "bytes": 2417
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022020668.box.json": {
+    "sha256": "fdd161139d3303cbf20d53d68ebe0f467e2bf112caf854ce810b1d6d67ee28b1",
+    "bytes": 958
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022020668.box.gz": {
+    "sha256": "20f3a8fb395f06c2885ebda7b7f315700ce9da2b30908ab559fdce74983ac2cb",
+    "bytes": 2355
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022020674.box.json": {
+    "sha256": "9eaea1a3bc27786f6b4466d268666fdaf08b307606f74b84a1026017c4c06656",
+    "bytes": 958
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022020674.box.gz": {
+    "sha256": "6702be04b4888133709070ac4cb1fc925535aec37eeaf30782ee64d507e5628f",
+    "bytes": 2336
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022020738.box.json": {
+    "sha256": "0ce897f8bafbec973ea7278fd284b475c962fc95e8ae6a66deab42e2ee6ca309",
+    "bytes": 956
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022020738.box.gz": {
+    "sha256": "9f88527bce7214f932c26800f33e54aefce8b39b043297fcd873e5db2770070f",
+    "bytes": 2386
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022020801.box.json": {
+    "sha256": "52ced9ad026a3dd590617344fd636e73aa6ba01419e157298211e6a16b0aab46",
+    "bytes": 956
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022020801.box.gz": {
+    "sha256": "64c32cd8d1ee1ef675e3c7d29f84dad8b4fc6b2fcd3d1536bcb5c7574790dc1f",
+    "bytes": 2336
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022020844.box.json": {
+    "sha256": "cecf78ec571df45bd02a488cdaafc04a9179914a86d4f54c5a49eeeb51520e15",
+    "bytes": 958
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022020844.box.gz": {
+    "sha256": "31228394e957c3f34bbf9556c19d68065730f6b8bfb31267da77fbdb8c820bb5",
+    "bytes": 2283
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022020860.box.json": {
+    "sha256": "5af19935f144291f9719b91ce2f3b558006097c0020626f80516cc940dc21748",
+    "bytes": 956
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022020860.box.gz": {
+    "sha256": "0be622c5a1a3e6374d96f19f333bd25fc92edc6c5879c2ba8d781499912ad5b0",
+    "bytes": 2236
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022020907.box.json": {
+    "sha256": "455e31d07caf24afd08609b465f635181fc7172753840a1c4e5af4c2da5a48e7",
+    "bytes": 956
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022020907.box.gz": {
+    "sha256": "77b188e8933c87c92d3caf0fa809f1fc2b07f8383de23f8f4ce0eff50ffea273",
+    "bytes": 2353
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022020917.box.json": {
+    "sha256": "d0a549e2c34bc824d0ec0d777e0ffcfcc16b48a5302df016a30a1eb1631a2a0a",
+    "bytes": 956
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022020917.box.gz": {
+    "sha256": "362c46f3a9557d70c5a02dd7e6646e1d939eb7e375abfed07d39700c50926160",
+    "bytes": 2272
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022020995.box.json": {
+    "sha256": "dca961b80b9b855f006c1648f9ac23f9fe6ddb0d9f2caf663cac58fb3c641f36",
+    "bytes": 956
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022020995.box.gz": {
+    "sha256": "e257ae6913f64564229a318055ffc72d9100a6d94176f544f35b830ec5df98ef",
+    "bytes": 2359
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022021007.box.json": {
+    "sha256": "da06ee2dfe1acb83d9d98db20681cea9066e6cfa86302708ec562419e34c2382",
+    "bytes": 958
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022021007.box.gz": {
+    "sha256": "d32734d5674abe0e69cad44588d36e00e06c693be40ccf111a0c4a2ba2426093",
+    "bytes": 2430
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022021023.box.json": {
+    "sha256": "6fd273a73ee6f631132ee01283f30c5dc5c2097702ef86e7a6d2bb896238432a",
+    "bytes": 956
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022021023.box.gz": {
+    "sha256": "5fb63b542c23152b07ccc31567b56cfeb72f87c264f86985a41d62168fd6199a",
+    "bytes": 2318
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022021047.box.json": {
+    "sha256": "b14584fb39a0d3a223f81785c3bbeb2faae7f2ecd13755cf0695b4da735aec2d",
+    "bytes": 955
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022021047.box.gz": {
+    "sha256": "15e761ab62c972616af8b856cf1f45a867f56918782d83914feed698142e9f59",
+    "bytes": 2431
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022021154.box.json": {
+    "sha256": "c38fab7cbc259c5a2e7efdf17c6f2d9ed677ab66d9f900b97cded7f4d5abdcba",
+    "bytes": 958
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022021154.box.gz": {
+    "sha256": "a508b12648fb84cc0433b42aa254da7011ca0cd45f7c9c1f94a8e90a5a6abbb3",
+    "bytes": 2366
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022021201.box.json": {
+    "sha256": "062e64648a3c8e9e87606760b79fc93b7257030ac38371efd536622fc500a7e4",
+    "bytes": 956
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022021201.box.gz": {
+    "sha256": "df10958b2f5e85b507a2c1e25d5f3b5b4e94fbcd596e6d0340795a14c6684e51",
+    "bytes": 2347
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022021278.box.json": {
+    "sha256": "9c6a42851f1f98fbf074790bda4607ba525e76749af4c3dc511575425c1ff6e1",
+    "bytes": 958
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022021278.box.gz": {
+    "sha256": "58967117377b5b5b3609488b6e196772c93c6a2955ac0bc9b4cfd694f1146d6a",
+    "bytes": 2370
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022020283.box.json": {
+    "sha256": "db4a51f58f5e9f4cf6b080eabfcceadc9f2e6c7857369143b09b3ce90f4ffce5",
+    "bytes": 956
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022020283.box.gz": {
+    "sha256": "7647a2a7a307be827c6cdf77b8c751de7572944c77c9f9e5313b9ecbeb4c1639",
+    "bytes": 2295
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022020309.box.json": {
+    "sha256": "2882e74bc78fa09c9069f5d13e582224ae2df6149a768b7cd2d42e2f6fc77575",
+    "bytes": 958
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022020309.box.gz": {
+    "sha256": "006f9bcb9e424f2abc860d5c58b0cbcc320f5b8b426b3cea337b30c18041c316",
+    "bytes": 2338
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022020322.box.json": {
+    "sha256": "c62b9c4d7975e2a097ac56ab4f42398d0caec2907689d745297fe20e67a6060c",
+    "bytes": 956
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022020322.box.gz": {
+    "sha256": "720a1a7d30308b36f3e1949f552aa3bb67fb4f1d836c8e27ddacf8c91b557698",
+    "bytes": 2290
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022020341.box.json": {
+    "sha256": "b3a6c132d530c802b8de16dc1d94ffd87b6f8f303f8176a974013bba319231ba",
+    "bytes": 956
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022020341.box.gz": {
+    "sha256": "0a76071171924215c280720715ea78ace13a699c8f3ca28bcae0b975d47b4171",
+    "bytes": 2335
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022020370.box.json": {
+    "sha256": "4ea4137855fbecea09507174b1ab39ba9ec5f9e312dc5c7015b6800c2dbe324b",
+    "bytes": 956
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022020370.box.gz": {
+    "sha256": "75c4dd238b3e0862c485a7f4922e2471088e0da4e3eb6e1281c1bd4ae2a52768",
+    "bytes": 2300
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022020429.box.json": {
+    "sha256": "5c400938418b053048e82aae48a2183bd54b3dcf4d897e1af258c94317f6b006",
+    "bytes": 956
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022020429.box.gz": {
+    "sha256": "71f127bbdfc9ac7741e42946a6ae10c08ec7e9351c4e2dd50966d311f7343c6b",
+    "bytes": 2320
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022020452.box.json": {
+    "sha256": "027a1dca679b8e7149c435cdff828cc7c2c63fbb826789c40650558f7939c117",
+    "bytes": 958
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022020452.box.gz": {
+    "sha256": "42d9b32e175fdc9e5dd25f72322b0887eab9ebe80ffc7df469fe40457e60b8aa",
+    "bytes": 2216
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022020467.box.json": {
+    "sha256": "298c6b756eb961214a5d724cacdb50d090b2dcbcc449e62093a00673f5f5f39d",
+    "bytes": 956
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022020467.box.gz": {
+    "sha256": "b7e043fe796b38acad9a0759ab59cadfd382f3a593494b49607b721ea8da3dc7",
+    "bytes": 2274
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022020481.box.json": {
+    "sha256": "1a33a8a197cab97c69d86fea7f1a60c1e40efd1a1f170c380b3832696dbf57fd",
+    "bytes": 958
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022020481.box.gz": {
+    "sha256": "a6c46ad0c67c3b9f3338e1400633bd9b1f846ea781ef7a52737d08b93e507f5b",
+    "bytes": 2242
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022020497.box.json": {
+    "sha256": "8cf11089606e17563a569d547b39b276f27a06c1ad6884f43d9c255381f4514e",
+    "bytes": 956
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022020497.box.gz": {
+    "sha256": "5a09771543a97c5c768a53bb6817d5b3b0adfa954097a19242d0498d967f242c",
+    "bytes": 2308
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022020532.box.json": {
+    "sha256": "ede51181c46e574057c741489ed03c40b53bd6a33805fc8bfe5d26a5f20da5b3",
+    "bytes": 956
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022020532.box.gz": {
+    "sha256": "958b4421a232debbfd95f5910dcdb4f0002258bd0a8a156b5350e8d0285fc8af",
+    "bytes": 2338
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022020669.box.json": {
+    "sha256": "20ddd8269aa48a95b24515d9626e52740653e1cd6dffe3a0371a814401b4c39f",
+    "bytes": 956
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022020669.box.gz": {
+    "sha256": "ba173898e7bbbbd7b248aed45646b923064dc366f6ce05c831adb12bcb797f00",
+    "bytes": 2269
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022020685.box.json": {
+    "sha256": "8b9a781ebcfe3b06bdc847288fe95573cd2a28269896cdbfa65400a6e23e6647",
+    "bytes": 958
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022020685.box.gz": {
+    "sha256": "61469de5dfb36d2a070403c78af21bf7a3b440da93fd7ccd0bb491a261fd1269",
+    "bytes": 2256
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022020734.box.json": {
+    "sha256": "fb3acd86b6909abd34ed5cd6e5f86b4c1fdab91598c1ca0e14043fbbc05f480f",
+    "bytes": 958
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022020734.box.gz": {
+    "sha256": "1acdd2f647cdf3bec4c8fc859b08de99fa9b33d875df91bc1c615535adb2633d",
+    "bytes": 2288
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022020778.box.json": {
+    "sha256": "66bdba31f6ea11595eef883a357069a63d3b7b1d63d19d26fb911c31761c322e",
+    "bytes": 956
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022020778.box.gz": {
+    "sha256": "caff8709380c7306783a687811bbc3e040db762943e8d153329d984d0048b4d8",
+    "bytes": 2261
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022020795.box.json": {
+    "sha256": "08f64e0d3ab6845358b7ac63152e7508a51df842fdbe7274566951fa74143567",
+    "bytes": 958
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022020795.box.gz": {
+    "sha256": "068b961ffe6ce06a0a54eb8c4d0e51585b2ec1d4dadafe6a62344e3ed7efa4c3",
+    "bytes": 2257
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022020820.box.json": {
+    "sha256": "b30b409092c7e20865bf7d8cdf345fdf83a2a73139213f43d7164d067f5958a9",
+    "bytes": 956
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022020820.box.gz": {
+    "sha256": "ea18a761777a563f9e9a9744e8c4db776842e0a6d958b4dbfcd946056d045136",
+    "bytes": 2313
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022020913.box.json": {
+    "sha256": "bfa9541e480d887523506623dabe573242583c4c4f784d451b6f1555a935077a",
+    "bytes": 958
+  },
+  "/Users/tim/Documents/Codex/2026-10-25/task-5/all-rows-research-repair-v1/cache/2022020913.box.gz": {
+    "sha256": "5eb690be06153d4373efa5c5a3663dfcf8363708b351671560a727eaa0b65863",
+    "bytes": 2216
+  }
+}

@@ -1,0 +1,146 @@
+{
+  "schemaVersion": "forge-v2-remediation-verification-v1",
+  "verifiedAt": "2026-10-30T02:50:50.987927+00:00",
+  "branch": "octoberBranch",
+  "codeCandidateCommit": "7113329d2c24b8629f54484df37441f95a63d853",
+  "node": "22.11.0",
+  "checks": [
+    {
+      "check": "unit",
+      "command": "python3 tasks/artifacts/forge-v2-remediation-2026-10-30/verify.py unit",
+      "status": "passed",
+      "exit": 0,
+      "tests": 134,
+      "log": "logs/unit.log",
+      "logSha256": "8c12b33ae3c52012268b4858f0085444ec2ba90640e35317ed22b4d2ede0a6a4",
+      "observer": "Chef executed and observed tool exit status; reviewer independently reproduced three findings and reviewed primary logs"
+    },
+    {
+      "check": "acceptance",
+      "command": "python3 tasks/artifacts/forge-v2-remediation-2026-10-30/verify.py acceptance",
+      "status": "passed",
+      "exit": 0,
+      "tests": 37,
+      "log": "logs/acceptance.log",
+      "logSha256": "5ef5291b26d177505aedb7c27718395a41824ce04ebdba1c361ef045d37acc5a",
+      "observer": "Chef executed and observed tool exit status; reviewer independently reproduced three findings and reviewed primary logs"
+    },
+    {
+      "check": "native",
+      "command": "python3 tasks/artifacts/forge-v2-remediation-2026-10-30/verify.py native",
+      "status": "passed",
+      "exit": 0,
+      "tests": 13,
+      "log": "logs/native.log",
+      "logSha256": "01843b0b3c32b9eed1bd9b91cff20e26bc08f99456b4cc64135156c21320c47f",
+      "observer": "Chef executed and observed tool exit status; reviewer independently reproduced three findings and reviewed primary logs"
+    },
+    {
+      "check": "compatibility",
+      "command": "python3 tasks/artifacts/forge-v2-remediation-2026-10-30/verify.py compatibility",
+      "status": "passed",
+      "exit": 0,
+      "tests": 93,
+      "log": "logs/compatibility.log",
+      "logSha256": "f96cffaf7ed46048ab09b3957863de8dd8dc6f7f7e221929ac20931e3c266238",
+      "observer": "Chef executed and observed tool exit status; reviewer independently reproduced three findings and reviewed primary logs"
+    },
+    {
+      "check": "browser",
+      "command": "python3 tasks/artifacts/forge-v2-remediation-2026-10-30/verify.py browser",
+      "status": "passed",
+      "exit": 0,
+      "tests": 4,
+      "log": "logs/browser.log",
+      "logSha256": "c810c1a108842498563e1cb747b7e6c635f8e100c5fdf3c08bf34330f4a3e636",
+      "observer": "Chef executed and observed tool exit status; reviewer independently reproduced three findings and reviewed primary logs"
+    },
+    {
+      "check": "types",
+      "command": "python3 tasks/artifacts/forge-v2-remediation-2026-10-30/verify.py types",
+      "status": "passed",
+      "exit": 0,
+      "tests": null,
+      "log": "logs/types.log",
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "observer": "Chef executed and observed tool exit status; reviewer independently reproduced three findings and reviewed primary logs"
+    },
+    {
+      "check": "lint",
+      "command": "python3 tasks/artifacts/forge-v2-remediation-2026-10-30/verify.py lint",
+      "status": "passed",
+      "exit": 0,
+      "tests": null,
+      "log": "logs/lint.log",
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "observer": "Chef executed and observed tool exit status; reviewer independently reproduced three findings and reviewed primary logs"
+    }
+  ],
+  "uniqueTestInventory": {
+    "forgeV2": 183,
+    "existingConsumerCompatibility": 93,
+    "browserCases": 4,
+    "note": "Focused runs, not a full repository suite; preparation.test appears in both unit and acceptance, counted once. Latest acceptance run supersedes its earlier execution. Final timeout-only increase does not alter assertions."
+  },
+  "review": {
+    "first": "independent-review.json",
+    "final": "review-followup.json",
+    "disposition": "ACCEPT_LOCAL_REMEDIATION_WITH_EXTERNAL_GATES_OPEN",
+    "reproductions": "stale queue snapshot, primary timing restoration, historical context replay passed independently",
+    "science": "not qualified"
+  },
+  "integrationLimits": [
+    "Browser uses synthetic input and durable-store double; actual queue and API functions are exercised. Native PostgreSQL pipeline-to-context-reader is verified separately; no single native-to-browser test claimed.",
+    "All candidate/calibration/outcome examples are synthetic; no forecast accuracy or calibration qualification established.",
+    "Full repository typecheck/lint/build not run; scoped v2 checks passed.",
+    "No 200% zoom or RTL audit claimed."
+  ],
+  "resolvedDuringChecks": [
+    "Atomic queue/event race and committed-receipt recovery",
+    "Authoritative actual-start correction restores primary and final eligibility",
+    "Historical context replay cutoff/current-head safety",
+    "Category and FP intervals evaluated internally from pinned artifacts",
+    "Native scientific-record order used text alias; changed ORDER BY to numeric underlying ordinal",
+    "Archived distribution/calibration and integrity failure/restoration preserve reproducible grades"
+  ],
+  "notRun": [
+    "real-data fitting/calibration",
+    "protected untouched evaluation",
+    "prospective capture",
+    "hosted migration",
+    "production capacity/load",
+    "public release",
+    "RSO activation",
+    "full production build",
+    "full repository suite"
+  ],
+  "remoteActions": {
+    "productionRequests": 0,
+    "providerRequests": 0,
+    "builds": 0,
+    "deployments": 0,
+    "pushes": 0,
+    "hostedMigrations": 0,
+    "schedulesEnabled": 0,
+    "protectedLabelsOpened": false
+  },
+  "approvalState": {
+    "denied": [],
+    "pendingToolApprovals": [],
+    "uncertainOutcomes": [],
+    "externalWork": "not attempted; required evidence/owner decisions/authorization unavailable"
+  },
+  "goalMarker": {
+    "active": false,
+    "reason": "No persistent-goal capability exposed in available tool inventory; no actual marker established."
+  },
+  "sourceManifestSha256": "a26f5a5ea6ed69a4ff9eb9cdd47ecc6994715f7a23b00133f185cd6c26b6c39e",
+  "documentChecks": {
+    "json": "passed",
+    "taskHierarchy": "passed",
+    "reviewHashMatch": 24,
+    "sourceHashMatch": 44,
+    "runbookLinks": "passed",
+    "whitespace": "product/docs passed; raw captured logs retain original trailing blank lines to preserve reviewed byte hashes"
+  }
+}

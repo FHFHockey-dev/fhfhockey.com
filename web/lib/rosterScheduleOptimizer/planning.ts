@@ -49,7 +49,7 @@ export function sanitizeForecastInputs<T extends ContributionPlanningSnapshot>(s
 const time = (value: string) => Date.parse(value);
 const gameTime = (game: PlanningGame, zone: string) => game.startsAt ?? zonedMidnight(game.date, zone);
 const eligibleGame = (game: PlanningGame, snapshot: PlanningSnapshot) => game.startsAt
-  ? time(game.startsAt) >= time(snapshot.context.asOf)
+  ? time(game.startsAt) > time(snapshot.context.asOf)
   : game.date > localDate(snapshot.context.asOf, snapshot.context.timeZone);
 const preferredGoalieDate = (date: string, intent: PlanIntent) => {
   const weekday = (new Date(`${date}T12:00:00Z`).getUTCDay() + 6) % 7 + 1;
@@ -630,6 +630,7 @@ export function scheduleAdmissionProblem(snapshot: PlanningSnapshot): string | n
   const schedule = snapshot.evidence.schedule;
   if (schedule?.completeness !== "complete") return "Planning schedule coverage is incomplete or unknown.";
   const observed = time(schedule.asOf ?? ""), planning = time(snapshot.context.asOf);
+  if (observed > planning) return "Schedule evidence was observed after the planning time; reload inputs for this decision.";
   if (!Number.isFinite(observed) || !Number.isFinite(planning) || planning - observed < SCHEDULE_WITNESS_TTL_MS) return null;
   const iso = (value: number) => new Date(value).toISOString();
   return `Schedule evidence observed ${iso(observed)} expired ${iso(observed + SCHEDULE_WITNESS_TTL_MS)}; planning time is ${iso(planning)}. Reload the schedule; a forecast refresh does not renew it.`;
@@ -694,21 +695,28 @@ function evaluatePreparedPlan(prepared: ReturnType<typeof prepareEvaluation>, in
   const startedPlays: Play[] = [], startedRows: PlanningAssignment[] = [];
   if (snapshot.rules.lineupMode === "daily" && today >= snapshot.context.startDate && today <= snapshot.context.endDate) {
     const todayGames = snapshot.games.filter(game => game.date === today && ["scheduled", "live", "final"].includes(game.status));
-    const started = (game: PlanningGame) => game.startsAt ? time(game.startsAt) < time(snapshot.context.asOf) : game.status !== "scheduled";
+    const started = (game: PlanningGame) => game.startsAt ? time(game.startsAt) <= time(snapshot.context.asOf) : game.status !== "scheduled";
     if (todayGames.some(started)) {
       const allForecasts = new Map(snapshot.forecasts.map(forecast => [`${forecast.playerId}:${forecast.gameId}`, forecast]));
       const preStart: Play[] = [];
       for (const entry of snapshot.roster) {
         const player = players.get(entry.playerId);
-        if (!player || ["IR", "IR+", "NA"].includes(entry.position) || providerListsOut(player) && !slotLocked(player.id, today)) continue;
+        if (!player || ["IR", "IR+", "NA"].includes(entry.position)) continue;
         for (const game of todayGames.filter(game => game.teamAbbreviation === player.teamAbbreviation)) {
+          const gameStarted = started(game);
+          // Current injury status does not establish where a player was locked at puck drop.
+          if (!gameStarted && providerListsOut(player) && !slotLocked(player.id, today)) continue;
           const play = { player, game, forecast: allForecasts.get(`${player.id}:${game.id}`) ?? null };
           preStart.push(play);
-          if (started(game)) startedPlays.push(play);
+          if (gameStarted) startedPlays.push(play);
         }
       }
       const locks = snapshot.lockedAssignments.filter(lock => lock.date === today);
       const unlocked = startedPlays.some(play => !locks.some(lock => lock.playerId === play.player.id));
+      if (unlocked) {
+        invalidLocks = true;
+        limitations.add("Started games lack recorded lineup locks; inferred positions are provisional. Confirm the active and bench assignments before acting.");
+      }
       const beforeStart = unlocked ? assign(snapshot, intent, objective, preStart, today, locks, new Set(), applicability, []) : [];
       for (const play of startedPlays) {
         const lock = locks.find(item => item.playerId === play.player.id);
@@ -725,7 +733,7 @@ function evaluatePreparedPlan(prepared: ReturnType<typeof prepareEvaluation>, in
     const plays: Play[] = [];
     for (const game of dayGames) for (const [id, member] of timeline.at(gameTime(game, snapshot.context.timeZone))) {
       const player = players.get(id);
-      if (!player || player.teamAbbreviation !== game.teamAbbreviation || ["IR", "IR+", "NA"].includes(member.position) || time(member.since) > time(gameTime(game, snapshot.context.timeZone))) continue;
+      if (!player || player.teamAbbreviation !== game.teamAbbreviation || ["IR", "IR+", "NA"].includes(member.position) || time(member.since) >= time(gameTime(game, snapshot.context.timeZone))) continue;
       if (!game.startsAt && time(member.since) >= time(zonedMidnight(game.date, snapshot.context.timeZone))) continue;
       // Out per the provider (IR/O): not a lineup option, so his missing projection can't block the totals.
       if (providerListsOut(player)) {
@@ -972,7 +980,7 @@ function evaluatePreparedPlan(prepared: ReturnType<typeof prepareEvaluation>, in
   if (hasMinimum && (minimum.counts === "unknown" || minimum.penalty === "unknown")) limitations.add("Goalie minimum semantics are incomplete.");
   if (risk && minimum.penalty === "lose_goalie_categories" && snapshot.rules.scoring.mode === "categories") { matchupKnown = false; limitations.add("Goalie-category forfeiture risk makes the matchup projection incomplete."); }
   if (totalsUnresolved.length || !opportunitiesComplete) { projectedValue = null; matchupKnown = false; }
-  const legal = timeline.legal && !invalidLocks && !weeklyEvidenceMissing && snapshot.rules.lineupMode !== "unsupported" && (snapshot.rules.lineupMode !== "weekly" || dates.every(date => !!lineupPeriodForDate(date)?.lockAt)) && !slotDiagnostics.some(item => item.severity === "error");
+  const legal = timeline.legal && !invalidLocks && !weeklyEvidenceMissing && !snapshot.rules.unsupported.length && snapshot.rules.lineupMode !== "unsupported" && (snapshot.rules.lineupMode !== "weekly" || dates.every(date => !!lineupPeriodForDate(date)?.lockAt)) && !slotDiagnostics.some(item => item.severity === "error");
   if ([...chosen.values()].some(play => ["baseline", "blended"].includes(play.forecast?.sourceKind ?? ""))) limitations.add("Includes provisional baseline estimates; no calibrated uncertainty.");
   if (conflictingTargets.size) { projectedValue = null; matchupKnown = false; }
   const assignmentValue = unresolved.length || (scheduledGames > 0 && forecastedOpportunities === 0) ? null

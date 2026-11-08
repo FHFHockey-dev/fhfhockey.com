@@ -1,0 +1,48 @@
+[
+  {
+    "method": "fixture-method-v1",
+    "codeVersion": "fixture-sha-0000000",
+    "artifactHash": "fixture-artifact-1",
+    "target": "SHOTS_ON_GOAL",
+    "horizon": 1,
+    "cutoffAt": "2026-11-03T15:00:00Z",
+    "issuedAt": "2026-11-03T16:00:00Z",
+    "scheduledAt": "2026-11-03T23:00:00Z",
+    "gameDate": "2026-11-03",
+    "gameId": "fixture-game-1",
+    "scheduleRevision": "fixture-schedule-1",
+    "participationRevisionId": "fixture-participation-1",
+    "catalogHeadId": "fixture-head-1",
+    "sourcePayloadHash": "fixture-payload-1",
+    "revisionId": "fixture-rev-1",
+    "playerId": "fixture-player-1",
+    "value": {
+      "conditionalMean": 2.71828,
+      "unconditionalMean": 2.45678
+    },
+    "configurationHash": "fixture-config-1"
+  },
+  {
+    "method": "fixture-method-v1",
+    "codeVersion": "fixture-sha-0000000",
+    "artifactHash": "fixture-artifact-1",
+    "target": "SHOTS_ON_GOAL",
+    "horizon": 1,
+    "cutoffAt": "2026-11-03T15:00:00Z",
+    "issuedAt": "2026-11-03T16:00:00Z",
+    "scheduledAt": "2026-11-03T23:00:00Z",
+    "gameDate": "2026-11-03",
+    "gameId": "fixture-game-1",
+    "scheduleRevision": "fixture-schedule-1",
+    "participationRevisionId": "fixture-participation-1",
+    "catalogHeadId": "fixture-head-1",
+    "sourcePayloadHash": "fixture-payload-1",
+    "revisionId": "fixture-rev-2",
+    "playerId": "fixture-player-2",
+    "value": {
+      "conditionalMean": 1.5,
+      "unconditionalMean": 1.2
+    },
+    "configurationHash": "fixture-config-1"
+  }
+]

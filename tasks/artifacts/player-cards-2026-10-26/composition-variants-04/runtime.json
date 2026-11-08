@@ -1,0 +1,52 @@
+{
+  "at": "2026-10-26T18:34:04.033790+00:00",
+  "previousListeners": [
+    "70975"
+  ],
+  "stoppedOwnPid": 70975,
+  "bind": "127.0.0.1:3125",
+  "automaticRestart": false,
+  "systemStartupChanges": false,
+  "verifiedOwnCommand": "/usr/local/bin/node /Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-26/composition-variants-03/serve-preview.mjs",
+  "pid": 1189,
+  "launcherPid": 1171,
+  "startNewSession": true,
+  "stdin": "DEVNULL",
+  "stdoutStderr": "server.log",
+  "execSession": null,
+  "readbacks": [
+    {
+      "url": "http://127.0.0.1:3125/player-cards",
+      "status": 200,
+      "bytes": 2970642,
+      "sha256": "7312a49a98b2edc111c1b298db9e68e0d4bad166df906a5227c1e8240e299dd5"
+    },
+    {
+      "url": "http://127.0.0.1:3125/player-cards/compositions",
+      "status": 200,
+      "bytes": 2970642,
+      "sha256": "7312a49a98b2edc111c1b298db9e68e0d4bad166df906a5227c1e8240e299dd5"
+    },
+    {
+      "url": "http://127.0.0.1:3125/player-cards/studio",
+      "status": 200,
+      "bytes": 3426994,
+      "sha256": "64e7157b24935152a6c761a8a858fd6eb0d9bc408f532dfa1cfef47f64a8a002"
+    },
+    {
+      "url": "http://127.0.0.1:3125/player-cards/compositions-03",
+      "status": 200,
+      "bytes": 2186609,
+      "sha256": "6ab6b59a6ad34e193e73348b54cf96fcd73b2116f1d07110f32b2433a43d4ff1"
+    },
+    {
+      "url": "http://127.0.0.1:3125/player-cards/observed-evidence",
+      "status": 200,
+      "bytes": 9655,
+      "sha256": "b2ece36cf4c62e41562495fcabe4e6f36d02d6d159523b0364b8fc455607fbd6"
+    }
+  ],
+  "localReadOnlyGets": 5,
+  "upstreamRequests": 0,
+  "lifecycle": "Detached POSIX session, independent of launcher; host/environment shutdown or explicit stop ends process. No automatic restart or system startup."
+}

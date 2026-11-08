@@ -1,0 +1,22 @@
+# Team Colors default — frozen local checkpoint; stopped
+
+Owner selected Team Colors at06:08UTC. Exact lease CODEX-PLAYER-CARDS-TEAM-COLORS-DEFAULT-20261025 covers only PlayerCardShareStudio.tsx and its test. The implementation delta is one default-state literal: original → team-colors. Fresh/invalid/unavailable storage uses Team Colors; explicit saved valid preferences and all variants remain. Test injection was updated to exercise the default without image decoding in JSDOM. Original sources, portraits and comparison packets remain frozen.
+
+## Verified before stop
+
+- Seven focused Studio tests passed. Scoped TypeScript, two-file lint and isolated HTML bundling passed. Exact commands and logs are adjacent; no app production build or dependencies changed.
+- Three offline Chromium groups passed: fresh Team Colors, original saved preference, invalid fallback, displayed portrait/snapshot/manifest consistency, same-instance Social Share fallback PNG equality, mobile390 no overflow, missing-source and unverified-GP behavior. No HTTP attempts or page errors. Actual default and phone PNGs inspected. The inherited small footer still requires zoom at phone width; no layout overhaul occurred.
+- Independent portrait review completed before its stop signal: portrait-technical-review-01/REVIEW.md recommends local technical acceptance with no actionable findings. It reports10/10 independent probes, actual PNG/alpha/dimensions/analytics/share readbacks and106preserved files. Its report was read; parent Scout owns final acceptance. Independent real-browser/mobile/native-share execution remains unperformed; author Chromium and saved PNG evidence are distinct.
+- Owned loopback handoff completed at06:15:05UTC before this worker received stop: verified oldPID44618 exact command, stopped only that process, startedPID48266 using this directory's serve-preview.mjs. Five sequential localGET byte/hash readbacks passed. Current/player-cards HTML3132147bytes SHA256e2b037f6b82d444f099e9cbfefbc555a673e1131496bea084158771830625c5f. Comparison/hero/functional/editorial responses retain prior hashes. No upstream requests.
+
+## Operation state at stop
+
+Parent reports verified100%remaining reset at06:14UTC and directs all lanes to stop at a safe turn boundary. No new tests, queries, uploads, builds or workers were started after receipt. Reviewer is stopped and its lock released. No active exec session or new task worker remains. Intended preview processPID48266 remains listening only127.0.0.1:3125, freshly confirmed by lsof. It was launched with start_new_session, DEVNULL stdin and file logs; no autorestart/startup setting. A subsequent sandboxed ps query was denied, so post-launch PPID/PGID details were not independently reconfirmed; no escalation/retry made. Host/environment shutdown or explicit stop can end this local preview.
+
+The separately approved one-time database query completed once before stop: five rows,5.601seconds connector elapsed,5s database statement timeout,1s lock timeout,0retries/writes. See ../completion-read-01/EXECUTION-HANDOFF.md and RESULT.json. Identity and complete-ingestion facts are joined into an offline evidence overlay. Game dates differ from scheduled UTC dates for two games; ingestion completion is not actual game end and the latest completion is after the original cutoff. No history/provider/model/league coverage qualification was promoted.
+
+## Remaining gates and resume
+
+Await explicit owner resume before any further work. Scout must accept/integrate the isolated portrait/default change; production/shared navigation integration and publication remain separate. Qualified live cards still need complete appearance history, correct calendar/cutoff/finality semantics, source/provider and null/zero verification, and metric-specific all-NHL population coverage. Premium remains off. Library delivery exhausted its one authorized retry with TLS failure before preparation;0LibraryIDs. Do not retry without a relevant supported connection fix and authority.
+
+Next safe command after explicit resume: cat tasks/artifacts/player-cards-2026-10-25/team-colors-default-01/HANDOFF.md tasks/artifacts/player-cards-2026-10-25/portrait-technical-review-01/REVIEW.md tasks/artifacts/player-cards-2026-10-25/completion-read-01/EXECUTION-HANDOFF.md. Then verify exact custody/source pins and current listener before any mutation; do not rerun completed checks without a new reason. Preserve all packets and current preview while parent decides integration scope.

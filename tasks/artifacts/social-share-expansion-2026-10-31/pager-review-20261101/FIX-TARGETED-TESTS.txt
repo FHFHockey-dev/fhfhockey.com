@@ -1,0 +1,23 @@
+
+> web@0.1.0 test
+> vitest --run components/SocialShare/PostStudio.test.tsx lib/socialShare/modules/shared/periodWindow.test.ts lib/socialShare/modules/lastNightsStandouts.test.ts --maxWorkers=1 --minWorkers=1
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+(node:32998) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ components/SocialShare/PostStudio.test.tsx (19 tests) 1452ms
+   ✓ PostStudio > waits out a font that is not declared yet, and offers a retry if it never loads  1031ms
+(node:33018) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/socialShare/modules/lastNightsStandouts.test.ts (88 tests) 16ms
+(node:33020) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/socialShare/modules/shared/periodWindow.test.ts (21 tests) 5ms
+
+ Test Files  3 passed (3)
+      Tests  128 passed (128)
+   Start at  16:09:54
+   Duration  2.97s (transform 386ms, setup 5ms, collect 645ms, tests 1.47s, environment 505ms, prepare 88ms)
+

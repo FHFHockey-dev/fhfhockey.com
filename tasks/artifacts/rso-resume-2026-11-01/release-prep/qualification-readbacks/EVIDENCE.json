@@ -1,0 +1,81 @@
+{
+  "at": "2026-11-01T20:30:03.116401+00:00",
+  "state": "TESTED_ISOLATED_SUPPLEMENT_NOT_APPLIED",
+  "headObserved": "2aa77ee0aa4c2a4866c7338be463200338bf3a4b",
+  "activeCandidateTreeUnchanged": "394e3cb70d3e9995e8a1f02f75ba13973320df34",
+  "sourcePins": [
+    {
+      "path": "tasks/artifacts/rso-wave2-2026-10-25/FORGE-QUAL/tooling/check-readbacks.mjs",
+      "originalSha256": "1788c6549ae6f3a8bf3a24c6cfd82599fb349ef89fafc39f5528cd2277235e2e",
+      "proposedSha256": "d4b95c100a69d60ce3aea845ed7b4990b43b22c0a6ca5eac8f4d59519a146add",
+      "beforeMicrosecondsProposedSha256": "0432b1455b0f5b7826ed9182d79e7a034b624520cd3f39af00572c166ea135c6"
+    },
+    {
+      "path": "tasks/artifacts/rso-wave2-2026-10-25/FORGE-QUAL/tooling/check-readbacks.test.mjs",
+      "originalSha256": "479edbef96b5af789dd8809f04b8809d885c93fc9a2c423e513308ebf6b28230",
+      "proposedSha256": "4a5ad746e1231e0be099c810ce75a23db0fb6dc496c10cd887cc43fe505c8e23",
+      "beforeMicrosecondsProposedSha256": "0bc5b8c50ac2736c2d025f0797984a6333b5eba797f94886dba6d6c7b2bb7e54"
+    }
+  ],
+  "scopeSha256": "16b7092bea0ba307d07c1b8de3c4559533cc3a044a3af4264abd80dd397ffbe5",
+  "protocolHash": "49ae034acc864a291393dc27e86cc745697ca83e18cc2f9666508f07db46a4ef",
+  "tests": {
+    "baseline": {
+      "passed": 14,
+      "failed": 5,
+      "log": "baseline-tests.log"
+    },
+    "patched": {
+      "passed": 21,
+      "failed": 0,
+      "log": "capture-clock-after.log"
+    },
+    "patchCheck": {
+      "exitCode": 0,
+      "log": "capture-clock-patch-check.log"
+    },
+    "previousPatched": {
+      "passed": 19,
+      "failed": 0,
+      "log": "tests.log"
+    },
+    "clockRegressionsBefore": {
+      "passed": 19,
+      "failed": 2,
+      "log": "capture-clock-before.log"
+    }
+  },
+  "limits": {
+    "canonicalFilesChanged": false,
+    "candidateChanged": false,
+    "scopeIdentityPinned": false,
+    "qualificationApproved": false,
+    "newLiveInputsRead": false,
+    "networkRequests": 0,
+    "builds": 0,
+    "gitMutations": 0
+  },
+  "captureClockChange": {
+    "scope": "Scoped readbacks need a valid observedAt; capture at/after scheduled start is rejected. Existing before-issue guard remains. Exact T-60 compliance still requires the capture protocol; no timing tolerance invented.",
+    "canonicalSourceChanged": false,
+    "scientificScopeChanged": false
+  },
+  "microsecondRepair": {
+    "at": "2026-11-01T21:28:46.482359+00:00",
+    "state": "TESTED_AWAITING_INDEPENDENT_REREVIEW",
+    "before": "microseconds-review/before.json",
+    "after": "microseconds-review/after.json",
+    "evidence": "microseconds-review/EVIDENCE.json",
+    "checkerTestsPassedPerTimezone": 28,
+    "timezones": [
+      "UTC",
+      "America/New_York"
+    ],
+    "allAffectedDistinctTestsPassed": 87,
+    "allAffectedExecutionsPassed": 153,
+    "canonicalSourceChanged": false,
+    "runtimeFilesChanged": false,
+    "parser": "web/lib/projections/evidenceTime.ts (unchanged)",
+    "dependency": "existing installed web/ts-node; discovers repository from module location"
+  }
+}

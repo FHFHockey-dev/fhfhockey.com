@@ -1,0 +1,11 @@
+{
+  "checks": [
+    "Fresh default Team Colors; all variants retained; exact chosen portrait and snapshot preserved; displayed image hash/manifest and same-instance social/download PNG agree",
+    "Explicit saved Original survives reload; invalid preference falls back to Team Colors; changing style invalidates prepared share",
+    "Phone390 has no overflow; missing-source and unverified-GP behavior retained"
+  ],
+  "externalAttempts": [],
+  "pageErrors": [],
+  "portraitSha256": "886b20d3edba1faf4ceae0baf4f95aad82df7ae39c17165063297c6f6f58bf00",
+  "pngSha256": "10bb4a91caaf0f8fa2f36cd34505c3523f8cf062939a23ed96133f33779f8d91"
+}

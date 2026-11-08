@@ -1,0 +1,81 @@
+diff --git a/web/lib/player-forecasts/rsoUsePolicy.test.ts b/web/lib/player-forecasts/rsoUsePolicy.test.ts
+index 031bc861d..dd55e1072 100644
+--- a/web/lib/player-forecasts/rsoUsePolicy.test.ts
++++ b/web/lib/player-forecasts/rsoUsePolicy.test.ts
+@@ -84,6 +84,7 @@ describe("stable method approval with per-issuance lineage", () => {
+     ["another participation method", { ...binding, participationLineage: `${ISSUED_PARTICIPATION_METHOD}:goalie@rev-2` }],
+     ["a newer method contract", { ...binding, participationLineage: "forge-issued-participation-v2:skater@rev-2" }],
+     ["another model configuration", { ...issued("rev-2"), configurationHash: "c".repeat(64) }],
++    ["an issued method without its revision", { ...binding, participationLineage: method }],
+     ["an empty issuance", { ...binding, participationLineage: `${method}@` }],
+   ])("denies %s", (_label, changed) => {
+     expect(resolveRsoTargetUse(changed, now, methodPolicy).allowedUses).toEqual(deniedRsoUses());
+@@ -96,6 +97,9 @@ describe("stable method approval with per-issuance lineage", () => {
+     ["an expired issuance", row("rev-2", { expiresAt: now })],
+     ["an issuance from the future", row("rev-2", { issuedAt: "2026-10-22T13:00:00Z" })],
+     ["another producer's code version", row("rev-2", { modelVersion: "other-code" })],
++    ["a missing revision suffix", row("rev-2", { rsoTargetBindings: { HITS: { ...binding, participationLineage: method } } })],
++    ["a missing revision suffix and issued context", row("rev-2", { issuedContext: undefined,
++      rsoTargetBindings: { HITS: { ...binding, participationLineage: method } } })],
+   ] as const)("still denies %s on each issued row", (_label, forecast) => {
+     expect(uses(forecast)).toEqual(deniedRsoUses());
+   });
+diff --git a/web/lib/player-forecasts/rsoUsePolicy.ts b/web/lib/player-forecasts/rsoUsePolicy.ts
+index 0e7cdb3f2..d65b30a7f 100644
+--- a/web/lib/player-forecasts/rsoUsePolicy.ts
++++ b/web/lib/player-forecasts/rsoUsePolicy.ts
+@@ -52,7 +52,7 @@ export const currentRsoUsePolicy = (): RsoUsePolicy => RSO_USE_POLICY;
+ 
+ /** Native participation lineage is `<stable method>@<issued revision>` (Astra F3). A review approves the method, so the
+  * next revision of the same method qualifies; each issued row must still carry its own revision, issued context and
+- * unexpired issuance. A lineage without `@` is compared whole, as before. */
++ * unexpired issuance. Legacy lineages without `@` are compared whole; the native issued method requires a revision. */
+ export const ISSUED_PARTICIPATION_METHOD = "forge-issued-participation-v1";
+ export const issuedParticipationLineage = (sourceKind: string, revisionId: string) =>
+   `${ISSUED_PARTICIPATION_METHOD}:${sourceKind}@${revisionId}`;
+@@ -79,7 +79,8 @@ export function resolveRsoTargetUse(binding: RsoTargetUseBinding | undefined, no
+     || !/^[a-f0-9]{64}$/.test(binding.artifactHash ?? "")
+     || !Number.isSafeInteger(binding.horizonGames) || binding.horizonGames < 1) return denied;
+   const lineage = lineageParts(binding.participationLineage);
+-  if (!lineage.method || lineage.issuance === "") return denied;
++  if (!lineage.method || lineage.issuance === ""
++    || lineage.method.startsWith(`${ISSUED_PARTICIPATION_METHOD}:`) && lineage.issuance === null) return denied;
+   const { cutoffAt: _, ...bound } = binding, scope = { ...bound, participationLineage: lineage.method };
+   const nonempty = (value: unknown) => typeof value === "string" && value.trim().length > 0;
+   const candidates = policy.reviews.filter(review => review.id && !policy.revokedReviewIds.includes(review.id)
+diff --git a/web/lib/rosterScheduleOptimizer/planningReproducibility.test.ts b/web/lib/rosterScheduleOptimizer/planningReproducibility.test.ts
+index 5aabeeb48..997acf36b 100644
+--- a/web/lib/rosterScheduleOptimizer/planningReproducibility.test.ts
++++ b/web/lib/rosterScheduleOptimizer/planningReproducibility.test.ts
+@@ -126,6 +126,31 @@ describe("planning search reproducibility", () => {
+     const stable = (result: ReturnType<typeof planRoster>) => ({ ...result, search: { ...result.search, elapsedMs: undefined } });
+     expect(stable(planRoster(connected, intent, options))).toEqual(stable(planRoster(manual, intent, options)));
+   });
++  it.each(["manual", "yahoo"] as const)("keeps %s schedule planning legal but forecast gains unknown after native issuance lineage is stripped", provider => {
++    vi.spyOn(Date, "now").mockReturnValue(CLOCK);
++    const snapshot = qualityFixture("detailed");
++    snapshot.context.provider = provider;
++    const method = `${rsoPolicy.ISSUED_PARTICIPATION_METHOD}:skater`;
++    const policy = fixtureRsoPolicy(["fixture-forge-v1"], ["GOALS", "ASSISTS"]);
++    policy.reviews = policy.reviews.map(review => ({ ...review, binding: { ...review.binding, participationLineage: method } }));
++    vi.spyOn(rsoPolicy, "currentRsoUsePolicy").mockReturnValue(policy);
++    for (const row of snapshot.forecasts) for (const binding of Object.values(row.rsoTargetBindings!)) {
++      binding.participationLineage = rsoPolicy.issuedParticipationLineage("skater", row.revisionId);
++    }
++    const admitted = evaluatePlan(snapshot, intent, "outcome");
++    expect(admitted.comparisonEligible).toBe(true);
++    expect(admitted.projectedValue).toBeGreaterThan(0);
++
++    const saved: PlanningSnapshot = JSON.parse(JSON.stringify(snapshot));
++    for (const row of saved.forecasts) for (const binding of Object.values(row.rsoTargetBindings!)) binding.participationLineage = method;
++    const replayed = evaluatePlan(saved, intent, "outcome");
++    expect(replayed.legal).toBe(true);
++    expect(replayed.activeGames).toBe(admitted.activeGames);
++    expect(replayed.projectedValue).toBeNull();
++    expect(replayed.assignmentValue).toBeNull();
++    expect(replayed.comparisonEligible).toBe(false);
++    expect(replayed.recommendation?.eligible).toBe(false);
++  });
+   const reproducesAdmittedQuality = (source: "detailed" | "baseline" | "blended") => {
+     for (const profile of ["points", "categories", "goalie"] as const) {
+       const snapshot = qualityFixture(source, profile);

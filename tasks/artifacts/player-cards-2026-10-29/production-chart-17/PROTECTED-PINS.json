@@ -1,0 +1,26 @@
+[
+  {
+    "path": "web/components/player-cards/PlayerHeroHeader.tsx",
+    "sha256": "c7997ab2d2f834d9d65cbefc27cbd72242ef228a9ff7e2a6834d38c468bf6873"
+  },
+  {
+    "path": "web/lib/player-cards/portraitTreatment.ts",
+    "sha256": "202386082221d4ac656e6b3a3f12777abb115eae949a82eed4b2985d78918399"
+  },
+  {
+    "path": "web/lib/player-cards/alphaOutline.ts",
+    "sha256": "b83074d715c5d804a6b074f6a4929c36385c1551084889b6806cc766284b4615"
+  },
+  {
+    "path": "web/lib/player-cards/outlineStack.ts",
+    "sha256": "c90e50e1209b11f420498fff574920b1585d9514e39c23f0f3bcbc328a565789"
+  },
+  {
+    "path": "web/lib/player-cards/currentNhl.server.ts",
+    "sha256": "905cca317479d47609066bf636c209e2e5662a783e334ad66274e6131b9ffbaa"
+  },
+  {
+    "path": "web/components/player-cards/CurrentPlayerCardStudio.tsx",
+    "sha256": "9806acf539365419c4afae21b53b7186feb1eb8ae5e5ad4227d8162d11104021"
+  }
+]

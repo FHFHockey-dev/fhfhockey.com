@@ -1,0 +1,7 @@
+{
+  "observedAfterLauncherExit": true,
+  "ps": "44618     1 44618 ??       /usr/local/bin/node /Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/serve-preview.mjs",
+  "soleListener": "44618",
+  "lifecycleLimit": "host/environment shutdown ends preview; no restart service",
+  "activeExecSession": null
+}

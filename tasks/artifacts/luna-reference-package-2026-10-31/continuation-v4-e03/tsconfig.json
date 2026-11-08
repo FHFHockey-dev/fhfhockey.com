@@ -1,0 +1,5 @@
+{
+  "extends": "../tsconfig.json",
+  "include": ["verify-continuation.ts"],
+  "exclude": ["../../../../web/node_modules", "../../../../web/.next"]
+}

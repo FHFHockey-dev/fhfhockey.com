@@ -1,0 +1,114 @@
+{
+  "observedAt": "2026-11-07T22:18:47.801855+00:00",
+  "checkout": "/Users/tim/Code/fhfhockey.com",
+  "branch": "octoberBranch",
+  "head": "0c22a9d5b7782513ee22c3c68f3d06dddff9fa5e",
+  "purpose": "Bounded source inspection only. These pins are observations, not file custody or model/data acceptance.",
+  "files": [
+    {
+      "path": "web/lib/skoElement/contract.ts",
+      "sha256": "b262b18374d78e292dc45e4c1510e14489fb31a2f945ebe08fc685a3cb7b9904",
+      "bytes": 11131
+    },
+    {
+      "path": "web/lib/skoElement/interpret.ts",
+      "sha256": "d5b2d8a5033cc87ae606b03a79e9bf9ba023c6e6f9d7255b6d33011a9890b497",
+      "bytes": 27465
+    },
+    {
+      "path": "web/lib/skoElement/fixtures.ts",
+      "sha256": "b4e7e6b31c9fd9d1e541aba1e0f19993caa413bab8112b1cd05bc10e1b7f2fa2",
+      "bytes": 17583
+    },
+    {
+      "path": "web/lib/skoElement/interpret.test.ts",
+      "sha256": "3391d627c4e31971792d0dd5d42b5ef1ec1ab5e4d5b9cdd703a50b90e55427dc",
+      "bytes": 17748
+    },
+    {
+      "path": "web/lib/sko/gap.ts",
+      "sha256": "fda168904af69c64c492dd0b64a8ec1a63ad1d0b85278fb161138dc57ca2911b",
+      "bytes": 4176
+    },
+    {
+      "path": "web/lib/sko/gap.test.ts",
+      "sha256": "cc60669248e6ec44caae7d87abf9c0d2833a47dd46fe3c6648b4602d06fd69f0",
+      "bytes": 7819
+    },
+    {
+      "path": "web/lib/player-forecasts/gameExpectations.ts",
+      "sha256": "6e3995d94f1898322ad14ef74d4cae805dffcae2780c90ffe448543354b59c2c",
+      "bytes": 17562
+    },
+    {
+      "path": "web/lib/player-forecasts/gameExpectations.test.ts",
+      "sha256": "5331f59afaeb2912ef9e42b2e91d4542a49cf70c1b65b616088c9f3f9e8d152c",
+      "bytes": 36907
+    },
+    {
+      "path": "web/lib/player-forecasts/baselineSourceLineage.ts",
+      "sha256": "c1d492523843b103aafcdb081fe6aafe31651f2a5117a2b77ef60e4e2e604223",
+      "bytes": 26125
+    },
+    {
+      "path": "web/lib/player-forecasts/goalieBaselineInputCapture.ts",
+      "sha256": "8d4361eac8e424c54fb24a66d4f7692882bdaf93da9421624537245725ae154c",
+      "bytes": 17890
+    },
+    {
+      "path": "web/lib/player-forecasts/goalieBaselineRates.ts",
+      "sha256": "9151ca9ee7d47465814b7ae41be29c19e684337f256038cfcd17839883f35c47",
+      "bytes": 29525
+    },
+    {
+      "path": "web/lib/player-forecasts/nativeGoalieOutcomes.ts",
+      "sha256": "4ec9fa3356113480e243e55826d7e7c563edbf15684f1d9d8bd02153b3c175fb",
+      "bytes": 16535
+    },
+    {
+      "path": "web/lib/player-forecasts/nativeGoalieOutcomes.test.ts",
+      "sha256": "ea024e2b2360bfdfbe6aaf993bf9c8d293019d66047378af860558b033c6e575",
+      "bytes": 20499
+    },
+    {
+      "path": "web/lib/player-forecasts/goalieBaseline.test.ts",
+      "sha256": "7602bee9c5f4c02e0cdd9968010be25a51e8327ebc31a70e25ab984947d82008",
+      "bytes": 63545
+    },
+    {
+      "path": "tasks/TASKS/prd-sko-element.md",
+      "sha256": "2aca23f3d405e49b9ff6947dcad0167c02c40a6186d9ea4ae36dc4df1fceae10",
+      "bytes": 35432
+    },
+    {
+      "path": "tasks/TASKS/prd-buy-low-sell-high.md",
+      "sha256": "8ed2330cc8d85f9e0ec0c083a21ad7fccea2538087882c5005d5056f18acd163",
+      "bytes": 13947
+    },
+    {
+      "path": "tasks/artifacts/blsh-v3-integration-2026-11-07/SOURCE-READINESS.md",
+      "sha256": "82e6e2ba9077ecf097d5c20a805450717a0c256b43de3e62ad2b8b35d8138391",
+      "bytes": 5161
+    },
+    {
+      "path": "tasks/artifacts/blsh-sko-vudu-audit-2026-11-04.md",
+      "sha256": "c3a4590583dfffbc8c809fe8632ad22ca263c3e1388c9f84816058e89b8f9433",
+      "bytes": 20782
+    },
+    {
+      "path": "tasks/artifacts/codex-handoff-2026-11-07/TJ-DECISIONS-2026-11-07.md",
+      "sha256": "9d53b979f646126d9a3537830e1a4f2740dcab5d2acd2b0243c25017d1d5d04f",
+      "bytes": 2279
+    },
+    {
+      "path": "tasks/artifacts/codex-handoff-2026-11-07/CODEX-HANDOFF-PROMPTS.md",
+      "sha256": "e6ea3779707d7508a83f2ed6e31e85f24f9c130017efd08614b33e18c98bddc8",
+      "bytes": 12989
+    }
+  ],
+  "applicationFilesWritten": [],
+  "testsRun": [],
+  "externalActions": [],
+  "protectedHoldoutRead": false,
+  "outcome": "No source adapter installed. Exact retained current-season goalie cohort and forecast/admission evidence still needed before a genuine trace; no retrospective method adopted."
+}

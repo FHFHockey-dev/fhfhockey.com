@@ -1,0 +1,20 @@
+[
+  {
+    "library_file_id": "libfile_08af5b36b28881918a083d2a45772ad0",
+    "file_id": "file_00000000b3ac81f9a0b4aa854b3396f7",
+    "filename": "8478864 (1)(1).jpg",
+    "destination": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/reference/8478864 (1)(1).jpg",
+    "exitCode": 1,
+    "locallyReadable": false,
+    "output": "library file transfer failed: download failed\n"
+  },
+  {
+    "library_file_id": "libfile_c7b4cfe9b14c8191bc9c5a9292ad9e60",
+    "file_id": "file_00000000d22c81fda1e9de3c67439b54",
+    "filename": "ChatGPT Image Oct 25, 2026, 01_04_23 AM.png",
+    "destination": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/reference/ChatGPT Image Oct 25, 2026, 01_04_23 AM.png",
+    "exitCode": 1,
+    "locallyReadable": false,
+    "output": "library file transfer failed: download failed\n"
+  }
+]

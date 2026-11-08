@@ -1,0 +1,117 @@
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+(node:53347) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ❯ lib/projections/run-forge-projections.external-inputs.test.ts (13 tests | 13 failed) 148ms
+   × FORGE external fantasy input claim > claims the exclusion only when every captured read is an audited non-fantasy source 2ms
+     → readsExcludeExternalFantasy is not a function
+   × FORGE external fantasy input claim > a read of PROJECTIONS_20262027_AG_SKATERS forces the claim off, even a failed one 0ms
+     → isFantasyProjectionSource is not a function
+   × FORGE external fantasy input claim > a read of PROJECTIONS_20262027_BLAKE_AG_SKATERS forces the claim off, even a failed one 0ms
+     → isFantasyProjectionSource is not a function
+   × FORGE external fantasy input claim > a read of PROJECTIONS_20262027_NATE_AG_SKATERS forces the claim off, even a failed one 0ms
+     → isFantasyProjectionSource is not a function
+   × FORGE external fantasy input claim > a read of PROJECTIONS_20262027_CULLEN_SKATERS forces the claim off, even a failed one 0ms
+     → isFantasyProjectionSource is not a function
+   × FORGE external fantasy input claim > a read of PROJECTIONS_20262027_CULLEN_GOALIES forces the claim off, even a failed one 0ms
+     → isFantasyProjectionSource is not a function
+   × FORGE external fantasy input claim > a read of PROJECTIONS_20262027_DTZ_SKATERS forces the claim off, even a failed one 0ms
+     → isFantasyProjectionSource is not a function
+   × FORGE external fantasy input claim > a read of PROJECTIONS_20262027_DTZ_GOALIES forces the claim off, even a failed one 0ms
+     → isFantasyProjectionSource is not a function
+   × FORGE external fantasy input claim > a read of PROJECTIONS_20262027_5V5_SKATERS forces the claim off, even a failed one 0ms
+     → isFantasyProjectionSource is not a function
+   × FORGE external fantasy input claim > a read of PROJECTIONS_20262027_5V5_GOALIES forces the claim off, even a failed one 0ms
+     → isFantasyProjectionSource is not a function
+   × FORGE external fantasy input claim > treats a new fantasy projection table and any unaudited source as not excluded 0ms
+     → isFantasyProjectionSource is not a function
+   × FORGE external fantasy input claim > audits every source the run's code can read: a new table, RPC or dynamic query site fails here 137ms
+     → Cannot read properties of undefined (reading 'has')
+   × FORGE external fantasy input claim > derives both snapshots' claim from their own captured reads, never from configuration 7ms
+     → expected [] to have a length of 2 but got +0
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 13 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  lib/projections/run-forge-projections.external-inputs.test.ts > FORGE external fantasy input claim > claims the exclusion only when every captured read is an audited non-fantasy source
+TypeError: readsExcludeExternalFantasy is not a function
+ ❯ lib/projections/run-forge-projections.external-inputs.test.ts:69:12
+     67| describe("FORGE external fantasy input claim", () => {
+     68|   it("claims the exclusion only when every captured read is an audited…
+     69|     expect(readsExcludeExternalFantasy([read("from", "games"), read("f…
+       |            ^
+     70|       read("from", "skatersGameStats")])).toBe(true);
+     71|     expect(readsExcludeExternalFantasy([])).toBe(false);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/13]⎯
+
+ FAIL  lib/projections/run-forge-projections.external-inputs.test.ts > FORGE external fantasy input claim > a read of PROJECTIONS_20262027_AG_SKATERS forces the claim off, even a failed one
+ FAIL  lib/projections/run-forge-projections.external-inputs.test.ts > FORGE external fantasy input claim > a read of PROJECTIONS_20262027_BLAKE_AG_SKATERS forces the claim off, even a failed one
+ FAIL  lib/projections/run-forge-projections.external-inputs.test.ts > FORGE external fantasy input claim > a read of PROJECTIONS_20262027_NATE_AG_SKATERS forces the claim off, even a failed one
+ FAIL  lib/projections/run-forge-projections.external-inputs.test.ts > FORGE external fantasy input claim > a read of PROJECTIONS_20262027_CULLEN_SKATERS forces the claim off, even a failed one
+ FAIL  lib/projections/run-forge-projections.external-inputs.test.ts > FORGE external fantasy input claim > a read of PROJECTIONS_20262027_CULLEN_GOALIES forces the claim off, even a failed one
+ FAIL  lib/projections/run-forge-projections.external-inputs.test.ts > FORGE external fantasy input claim > a read of PROJECTIONS_20262027_DTZ_SKATERS forces the claim off, even a failed one
+ FAIL  lib/projections/run-forge-projections.external-inputs.test.ts > FORGE external fantasy input claim > a read of PROJECTIONS_20262027_DTZ_GOALIES forces the claim off, even a failed one
+ FAIL  lib/projections/run-forge-projections.external-inputs.test.ts > FORGE external fantasy input claim > a read of PROJECTIONS_20262027_5V5_SKATERS forces the claim off, even a failed one
+ FAIL  lib/projections/run-forge-projections.external-inputs.test.ts > FORGE external fantasy input claim > a read of PROJECTIONS_20262027_5V5_GOALIES forces the claim off, even a failed one
+TypeError: isFantasyProjectionSource is not a function
+ ❯ lib/projections/run-forge-projections.external-inputs.test.ts:75:12
+     73| 
+     74|   it.each(PROJECTION_SOURCES_CONFIG.map(source => source.tableName))("…
+     75|     expect(isFantasyProjectionSource(table)).toBe(true);
+       |            ^
+     76|     expect(FORGE_AUDITED_INPUT_SOURCES.has(table)).toBe(false);
+     77|     expect(readsExcludeExternalFantasy([read("from", "games"), read("f…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/13]⎯
+
+ FAIL  lib/projections/run-forge-projections.external-inputs.test.ts > FORGE external fantasy input claim > treats a new fantasy projection table and any unaudited source as not excluded
+TypeError: isFantasyProjectionSource is not a function
+ ❯ lib/projections/run-forge-projections.external-inputs.test.ts:82:12
+     80| 
+     81|   it("treats a new fantasy projection table and any unaudited source a…
+     82|     expect(isFantasyProjectionSource("PROJECTIONS_20272028_NEW_SKATERS…
+       |            ^
+     83|     expect(readsExcludeExternalFantasy([read("from", "games"), read("f…
+     84|     expect(readsExcludeExternalFantasy([read("from", "games"), read("f…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/13]⎯
+
+ FAIL  lib/projections/run-forge-projections.external-inputs.test.ts > FORGE external fantasy input claim > audits every source the run's code can read: a new table, RPC or dynamic query site fails here
+TypeError: Cannot read properties of undefined (reading 'has')
+ ❯ lib/projections/run-forge-projections.external-inputs.test.ts:91:85
+     89|     const { files, literals, dynamic, evidenceTables } = runQuerySites…
+     90|     expect(files.size).toBeGreaterThan(20);
+     91|     const unaudited = [...literals].filter(([name]) => !FORGE_AUDITED_…
+       |                                                                                     ^
+     92|     expect(unaudited, "add the source to EXTERNAL-INPUT-AUDIT.md and F…
+     93|     expect([...literals.keys()].filter(isFantasyProjectionSource)).toE…
+ ❯ lib/projections/run-forge-projections.external-inputs.test.ts:91:37
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/13]⎯
+
+ FAIL  lib/projections/run-forge-projections.external-inputs.test.ts > FORGE external fantasy input claim > derives both snapshots' claim from their own captured reads, never from configuration
+AssertionError: expected [] to have a length of 2 but got +0
+
+- Expected
++ Received
+
+- 2
++ 0
+
+ ❯ lib/projections/run-forge-projections.external-inputs.test.ts:112:82
+    110|     walk(source);
+    111|     // The two input snapshots claim from their reads; the run-start m…
+    112|     expect(calls.filter(args => args === "externalFantasyClaim(capture…
+       |                                                                                  ^
+    113|     expect(calls.filter(args => args === "")).toHaveLength(1);
+    114|     expect(calls).toHaveLength(3);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/13]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  13 failed (13)
+   Start at  20:58:38
+   Duration  1.20s (transform 251ms, setup 3ms, collect 641ms, tests 148ms, environment 151ms, prepare 43ms)
+

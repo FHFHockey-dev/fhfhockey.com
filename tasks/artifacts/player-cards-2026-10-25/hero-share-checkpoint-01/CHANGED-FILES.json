@@ -1,0 +1,86 @@
+[
+  {
+    "path": "web/components/player-cards/EditorialPlayerCard.tsx",
+    "beforeSha256": "053d67ea06e1be6ba336db2afa35eaa04a7ec72b3e599f3d166e0c0d898d8a29",
+    "sha256": "f3c996c4c0cf9d75f533d1d4937a5db2474edb6a7c9b9665bbb3849df205afb5",
+    "bytes": 11100,
+    "integration": "Frozen candidate bytes"
+  },
+  {
+    "path": "web/components/player-cards/HeroPlayerCard.tsx",
+    "beforeSha256": null,
+    "sha256": "97743b313e22666e6abedea9ea16b17b3ad15050e3fa72a8f8d924f98c1829fc",
+    "bytes": 5279,
+    "integration": "Frozen candidate bytes"
+  },
+  {
+    "path": "web/components/player-cards/PlayerCardShareStudio.tsx",
+    "beforeSha256": null,
+    "sha256": "3e8aad27ad7585170706c0a975237a8c29a055bac95e0b9d20bac75fd77e1d00",
+    "bytes": 8120,
+    "integration": "Frozen candidate bytes"
+  },
+  {
+    "path": "web/components/player-cards/PlayerCardShareStudio.module.scss",
+    "beforeSha256": null,
+    "sha256": "0bcab0a01648ff20a2d083dea3ec7e3d9c7fa0ca644eba48fa5d1b976db50db3",
+    "bytes": 1418,
+    "integration": "Frozen candidate bytes"
+  },
+  {
+    "path": "web/components/player-cards/PlayerCardShareStudio.test.tsx",
+    "beforeSha256": null,
+    "sha256": "617efa35e88953c79bcbcb16308603e562edfc79f43b050852a625ae91b7ba24",
+    "bytes": 4401,
+    "integration": "Frozen candidate bytes"
+  },
+  {
+    "path": "web/lib/player-cards/shareExport.ts",
+    "beforeSha256": null,
+    "sha256": "fddfd3bd89470da289ea14f8f6a8ea13b3407c1222d2e189482dee47a8d7bbde",
+    "bytes": 4730,
+    "integration": "Frozen candidate bytes"
+  },
+  {
+    "path": "web/lib/player-cards/shareExport.test.ts",
+    "beforeSha256": null,
+    "sha256": "9669b12a8e4ade7e3badce18ea9cd44a29ddd4c9a5297a2cfe5fd1e862938426",
+    "bytes": 3425,
+    "integration": "Frozen candidate bytes"
+  },
+  {
+    "path": "web/pages/social-share/player-cards.tsx",
+    "beforeSha256": null,
+    "sha256": "fac7acb9dd79e6812ff3d60da5b575861baede0fbd3ee66b9f56742426f92043",
+    "bytes": 836,
+    "integration": "Frozen candidate bytes"
+  },
+  {
+    "path": "web/lib/player-cards/reviewedHeroSamples.ts",
+    "beforeSha256": null,
+    "sha256": "1e8fe079c5a29b5d4355b7dfa729acabacb6ff8164a0c52c6ef93b7e2e16af18",
+    "bytes": 1371,
+    "integration": "Frozen candidate bytes"
+  },
+  {
+    "path": "web/public/player-cards/hero-samples/8479318.png",
+    "beforeSha256": null,
+    "sha256": "713a4923cf4742cefbbc09a647a249f98c095edea8eb92f7bda028929e0db065",
+    "bytes": 1152357,
+    "integration": "Frozen candidate bytes"
+  },
+  {
+    "path": "web/public/player-cards/hero-samples/8478864.png",
+    "beforeSha256": null,
+    "sha256": "4199308c2f56a9ac0244697e7162f42283f1a5c247b656fb7c9278597b3ee18c",
+    "bytes": 929229,
+    "integration": "Frozen candidate bytes"
+  },
+  {
+    "path": "web/components/SocialShare/SocialShare.tsx",
+    "beforeSha256": "ff809aa03f785462d53ec50a94e4580efecb7fb6b39e1ded2d37d37c76ffb5c4",
+    "sha256": "4b724ac9b91c8825bd392c9821546799ac73e5a6c465dad00b8f3b90d490375e",
+    "bytes": 77915,
+    "integration": "Replay minimal social-navigation.patch onto released file only"
+  }
+]

@@ -1,0 +1,26 @@
+{
+  "preview.html": {
+    "bytes": 3132147,
+    "sha256": "e2b037f6b82d444f099e9cbfefbc555a673e1131496bea084158771830625c5f"
+  },
+  "serve-preview.mjs": {
+    "bytes": 1724,
+    "sha256": "4b82f93d24e8779e8791acadcb9d9ce05a11177f1ab805d2327e5eb85d44f6d9"
+  },
+  "comparison.html": {
+    "bytes": 2440289,
+    "sha256": "5f5dc01034d10b0314317ed3dca3fdf8c5bcb0274761eec6ec8fa9201fe2dd3f"
+  },
+  "priorHero": {
+    "bytes": 3123706,
+    "sha256": "ecd560310b358ebd0521574967a480cab1521946c9d42d5f33341fcc57a5187a"
+  },
+  "priorFunctional": {
+    "bytes": 318626,
+    "sha256": "6c29f6eb3dc6ffc9a6a8a546423f78ac3e6e5e1e7265129475724422d3aad9b5"
+  },
+  "priorEditorial": {
+    "bytes": 314484,
+    "sha256": "f65ce654f1e1e7ab226aa01e95617d925608d8d590fbd65d5bbaa85b324e05a5"
+  }
+}

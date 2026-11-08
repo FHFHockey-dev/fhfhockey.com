@@ -1,0 +1,33 @@
+{
+  "status": "READ_ONLY_INVENTORY_COMPLETE_EXTERNAL_CLEARANCE_OPEN",
+  "files": {
+    "CLI-PROJECT-INSPECTION.json": "ede66abd4fc8ae50e2b9ddf6ea4abae11f245c521db5a6e8a89fdb1bfa3107cb",
+    "DEPLOYED-PROVENANCE-SOURCE.json": "52ff5ca844578ea014cd55e9217a8703a7fa066e84f0c84fc861aef5d887c29e",
+    "EDGE-FUNCTIONS.json": "f98f8e3ef622429f9bd425faa392f2a7bd1ac5e1bc38f6ceba76c88a0b726784",
+    "HOSTED-PREFLIGHT.sql": "e4953a3ab0bfbaccf5c084d8ebfdf1b34ff034457b99c3ed9ac45218337926d9",
+    "INVENTORY-AND-APPROVALS.md": "e7098c4c86f54ea835b7a7fa7963a75174f10e951ca542e6dc6cfd070dd2dcee",
+    "LOCAL-NST-REFERENCE-PATHS.json": "36aa7127480e8b7975a04aef6c82c5ec7bc8a3b4156939effe2b8c6ed10424be",
+    "RUNTIME-COUNTS.json": "4e9e1121163c5dc660eff9819972d910927f628af7fabe5587abac4b754802d3",
+    "VERCEL-PROJECTS.json": "4a907fdb039413b2b1ad83c9ef99d183f6f92daab13c886bb256f160783350b9",
+    "VERCEL-PROVENANCE.json": "c7ed1ccfdd423b78e4b6a2c6c2be7354bc6293cfa81d19be0419c7240e605d17",
+    "audit.json": "820df565a1bd343a8036e8380fc78588414b732f6cea25dfada57a39b46962fb",
+    "audit.sql": "b55f3c28be2f855f7c49257350142ad87544690456c69fc591395fdc9f85015d",
+    "catalog.json": "0481e6d997c4810a2d0a1d99d3b84f2bec3233e472b1fca63aca4a14427898b3",
+    "catalog.sql": "f25f4f10a5b3f391f42e7fee6e009425ab9102a8e37134e354dd0a3cc8fbac57",
+    "provenance-source/cms/vercel.json": "c5e9d87df6482fd2b5473ab9e39f6d74cd40cfc6433452cde9a5ab8bac5db87f",
+    "provenance-source/functions/api/fetch_team_table.py": "8c0090dec39aeb6c36a7608d1090e3ca94cf70f16779d9f422fe00843e1db148",
+    "provenance-source/functions/api/index.py": "e5eb968e2052b7fc16abfa59eea7eb018038dbe0c93c6de36cab9b19f560f374",
+    "provenance-source/functions/vercel.json": "e019c54a60fb314a8242e6be9f321bfbfda88c7e5771e5586672c5a731e6bedb",
+    "provenance-source/vercel.json": "c18d6c5262ce3443c70667b03b99b2f7d91d3977b0e522c5eb01077d89f7f961",
+    "provenance-source/web/lib/nst/client.ts": "712eefa3c63b3340770a4d45fb2c97428ffe7ede49a5581f36f75a9c9a3783e9",
+    "provenance-source/web/pages/api/Teams/nst-team-stats.ts": "93189097463995f6c3bf770a4c4f1ab897c5725b3e3af77971e6acac1f7987e3",
+    "provenance-source/web/pages/api/v1/db/run-rolling-forge-pipeline.ts": "bb8c0c0e467c164584b22ff154b6cf1f9b645fe11030a32a310a062b71faa55d",
+    "provenance-source/web/pages/api/v1/db/update-nst-current-season.ts": "01cb818ffa53d4e30fcd594c7cc3ba84d95cfef021dd7873f8f5d037cf67db12",
+    "provenance-source/web/pages/api/v1/db/update-nst-gamelog.ts": "9f6b8f628f2d4be77e3bf15a3d94ee8bceef6b420618034eab5c23162d8db1d4",
+    "provenance-source/web/pages/api/v1/db/update-nst-goalies.ts": "aeaddea4bd81b246e08ac176468915c1378a4be20dc907ffffd0207df019520e",
+    "provenance-source/web/pages/api/v1/db/update-nst-team-daily.ts": "abbe2bf9fd887e01334953e84c0f68bbf284c508ae1e3001677619819a799845",
+    "provenance-source/web/vercel.json": "bcd2cab8174bead693c7a4268ce2dd44ea551c9dfa92736b347868a0ebac2d2b",
+    "runner.json": "de14819a57552069c896d011207b012858864a213a624c0ad783d680db72edde",
+    "runner.sql": "4c501f705d219561a1808bec13c87d2ac66fa6f9a23b8cce93b286f9aaf2c1d9"
+  }
+}

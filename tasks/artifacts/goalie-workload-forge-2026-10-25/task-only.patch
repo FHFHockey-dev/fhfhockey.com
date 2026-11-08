@@ -1,0 +1,528 @@
+--- a/web/components/GoalieShareChart/index.tsx
++++ b/web/components/GoalieShareChart/index.tsx
+@@ -4,132 +4,17 @@
+ import { teamsInfo } from "../../lib/teamsInfo";
+ import Fetch from "../../lib/cors-fetch";
+ import styles from "./GoalieShareChart.module.scss";
++import { assertUniqueGoalieGameRows, buildGoalieShareByTeam, type GoalieGameRow, type SpanType } from "../../lib/goalieWorkload";
+ 
+ // Register Chart.js components
+ ChartJS.register(ArcElement, Tooltip, Legend, Title);
+ 
+-interface GoalieData {
+-  playerId: number;
+-  goalieFullName: string;
+-  gamesPlayed: number;
+-  timeOnIce: number;
+-  wins: number;
+-  losses: number;
+-  otLosses: number;
+-  savePct: number;
+-  goalsAgainstAverage: number;
+-}
+-
+-interface TeamGoalieStats {
+-  [teamAbbrev: string]: {
+-    goalies: GoalieData[];
+-    totalGames: number;
+-  };
+-}
+-
+-/** One goalie appearance from the NHL stats API (isGame=true, isAggregate=false). */
+-export interface GoalieGameRow {
+-  gameId: number;
+-  gameDate: string;
+-  teamAbbrev: string;
+-  playerId: number;
+-  goalieFullName: string;
+-  gamesPlayed: number;
+-  wins: number;
+-  losses: number;
+-  otLosses: number;
+-  saves: number;
+-  shotsAgainst: number;
+-  goalsAgainst: number;
+-  timeOnIce: number;
+-}
+-
+-type SpanType = "L10" | "L20" | "L30" | "Season";
++// Preserve the component's existing helper/type import surface.
++export { buildGoalieShareByTeam, type GoalieGameRow } from "../../lib/goalieWorkload";
+ 
+ // The CORS proxy accepts at most 100 rows per stats request.
+ const GOALIE_GAME_PAGE_SIZE = 100;
+ const GOALIE_GAME_PAGE_CONCURRENCY = 8;
+-
+-const SPAN_GAMES: Record<SpanType, number | null> = {
+-  L10: 10,
+-  L20: 20,
+-  L30: 30,
+-  Season: null
+-};
+-
+-/**
+- * Per-team goalie workload over each team's last N completed games (or the
+- * season). A team's games are the distinct games its goalies appeared in, so
+- * the window never reaches into unplayed games. Rates use summed saves, shots
+- * and time on ice.
+- */
+-export function buildGoalieShareByTeam(
+-  rows: readonly GoalieGameRow[],
+-  span: SpanType
+-): TeamGoalieStats {
+-  const rowsByTeam = new Map<string, GoalieGameRow[]>();
+-  rows.forEach((row) => {
+-    if (!row.teamAbbrev) return;
+-    const teamRows = rowsByTeam.get(row.teamAbbrev) ?? [];
+-    teamRows.push(row);
+-    rowsByTeam.set(row.teamAbbrev, teamRows);
+-  });
+-
+-  const result: TeamGoalieStats = {};
+-  Object.keys(teamsInfo)
+-    .sort()
+-    .forEach((teamAbbrev) => {
+-      const teamRows = rowsByTeam.get(teamAbbrev);
+-      if (!teamRows?.length) return;
+-
+-      const gameDates = new Map<number, string>();
+-      teamRows.forEach((row) => gameDates.set(row.gameId, row.gameDate));
+-      const games = Array.from(gameDates).sort(
+-        ([idA, dateA], [idB, dateB]) =>
+-          dateA.localeCompare(dateB) || idA - idB
+-      );
+-      const limit = SPAN_GAMES[span];
+-      const windowGames = new Set(
+-        (limit === null ? games : games.slice(-limit)).map(([gameId]) => gameId)
+-      );
+-
+-      const byGoalie = new Map<number, GoalieGameRow[]>();
+-      teamRows
+-        .filter((row) => windowGames.has(row.gameId))
+-        .forEach((row) => {
+-          const goalieRows = byGoalie.get(row.playerId) ?? [];
+-          goalieRows.push(row);
+-          byGoalie.set(row.playerId, goalieRows);
+-        });
+-
+-      const goalies: GoalieData[] = Array.from(byGoalie, ([playerId, goalieRows]) => {
+-        const sum = (read: (row: GoalieGameRow) => number) =>
+-          goalieRows.reduce((total, row) => total + (read(row) || 0), 0);
+-        const shotsAgainst = sum((row) => row.shotsAgainst);
+-        const timeOnIce = sum((row) => row.timeOnIce);
+-        return {
+-          playerId,
+-          goalieFullName: goalieRows[goalieRows.length - 1].goalieFullName,
+-          gamesPlayed: sum((row) => row.gamesPlayed),
+-          timeOnIce,
+-          wins: sum((row) => row.wins),
+-          losses: sum((row) => row.losses),
+-          otLosses: sum((row) => row.otLosses),
+-          savePct: shotsAgainst > 0 ? sum((row) => row.saves) / shotsAgainst : 0,
+-          goalsAgainstAverage:
+-            timeOnIce > 0 ? (sum((row) => row.goalsAgainst) * 3600) / timeOnIce : 0
+-        };
+-      }).sort((a, b) => b.gamesPlayed - a.gamesPlayed);
+-
+-      if (goalies.length > 0) {
+-        result[teamAbbrev] = {
+-          goalies,
+-          totalGames: goalies.reduce((total, goalie) => total + goalie.gamesPlayed, 0)
+-        };
+-      }
+-    });
+-  return result;
+-}
+ 
+ function inferCurrentSeasonId(): number {
+   const now = new Date();
+@@ -282,6 +167,7 @@
+         rows.push(...page.rows);
+       });
+     }
++    assertUniqueGoalieGameRows(rows);
+     setGoalieGames(rows);
+   }, [fetchJsonWithRetry]);
+ 
+@@ -360,13 +246,13 @@
+       : ["#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0", "#9966FF"];
+ 
+     const goalies = teamStats.goalies.slice(0, 5); // Limit to top 5 goalies
+-    const totalGames = teamStats.totalGames;
++    const totalAppearances = teamStats.totalAppearances;
+ 
+     return {
+       labels: goalies.map((goalie) => {
+         const percentage =
+-          totalGames > 0
+-            ? ((goalie.gamesPlayed / totalGames) * 100).toFixed(1)
++          totalAppearances > 0
++            ? ((goalie.gamesPlayed / totalAppearances) * 100).toFixed(1)
+             : "0.0";
+         // Safe handling of goalie names
+         const lastName = goalie.goalieFullName
+@@ -418,12 +304,12 @@
+               const goalieDisplayName =
+                 goalie.goalieFullName || "Unknown Goalie";
+               return [
+-                `${goalieDisplayName}: ${context.parsed} games`,
+-                `Save %: ${(goalie.savePct * 100).toFixed(1)}%`,
+-                `GAA: ${goalie.goalsAgainstAverage.toFixed(2)}`
++                `${goalieDisplayName}: ${context.parsed} appearances`,
++                `Save %: ${goalie.savePct === null ? "Unavailable" : `${(goalie.savePct * 100).toFixed(1)}%`}`,
++                `GAA: ${goalie.goalsAgainstAverage === null ? "Unavailable" : goalie.goalsAgainstAverage.toFixed(2)}`
+               ];
+             }
+-            return `${context.label}: ${context.parsed} games`;
++            return `${context.label}: ${context.parsed} appearances`;
+           }
+         }
+       }
+@@ -480,7 +366,7 @@
+                               {teamInfo?.shortName || teamAbbrev}
+                             </h4>
+                             <div className={styles.teamStats}>
+-                              <span className={styles.statsLabel}>GP:</span>
++                              <span className={styles.statsLabel}>Team GP:</span>
+                               <span className={styles.statsValue}>
+                                 {totalGames}
+                               </span>
+@@ -554,7 +440,7 @@
+                               {teamInfo?.shortName || teamAbbrev}
+                             </h4>
+                             <div className={styles.teamStats}>
+-                              <span className={styles.statsLabel}>GP:</span>
++                              <span className={styles.statsLabel}>Team GP:</span>
+                               <span className={styles.statsValue}>
+                                 {totalGames}
+                               </span>
+@@ -590,6 +476,7 @@
+ 
+   return (
+     <div className={styles.goalieShareChart}>
++      <p>Share of recorded goalie appearances, including relief. L10, L20 and L30 use team games. These are past workload shares, not future start probabilities.</p>
+       <div className={styles.buttonContainer}>
+         <button
+           className={`${styles.spanButton} ${selectedSpan === "L10" ? styles.active : ""}`}
+--- a/web/components/GoalieShareChart/GoalieShareChart.test.ts
++++ b/web/components/GoalieShareChart/GoalieShareChart.test.ts
+@@ -1,8 +1,5 @@
+-import { describe, expect, it, vi } from "vitest";
+-
+-vi.mock("react-chartjs-2", () => ({ Doughnut: () => null }));
+-
+-import { buildGoalieShareByTeam, type GoalieGameRow } from "./index";
++import { describe, expect, it } from "vitest";
++import { buildGoalieShareByTeam, type GoalieGameRow } from "../../lib/goalieWorkload";
+ 
+ function row(overrides: Partial<GoalieGameRow>): GoalieGameRow {
+   return {
+@@ -71,4 +68,31 @@
+     expect(stats.PHI.goalies[0].gamesPlayed).toBe(1);
+     expect(stats.BOS.goalies[0].gamesPlayed).toBe(1);
+   });
++
++  it("counts one team game and two appearances when a goalie relieves", () => {
++    const stats = buildGoalieShareByTeam([row({}), row({ playerId: 2 })], "L10").PHI;
++    expect(stats.totalGames).toBe(1);
++    expect(stats.totalAppearances).toBe(2);
++    expect(stats.goalies.map(goalie => goalie.gamesPlayed / stats.totalAppearances)).toEqual([0.5, 0.5]);
++  });
++
++  it("windows by distinct team games even when one game has relief", () => {
++    const stats = buildGoalieShareByTeam([...phiGames, row({ ...phiGames[11], playerId: 3 })], "L10").PHI;
++    expect(stats.totalGames).toBe(10);
++    expect(stats.totalAppearances).toBe(11);
++  });
++
++  it("preserves missing exposure and distinguishes undefined rates from measured zero", () => {
++    const missing = buildGoalieShareByTeam([row({ timeOnIce: null }), row({ gameId: 2, saves: null })], "Season").PHI.goalies[0];
++    expect(missing.timeOnIce).toBeNull();
++    expect(missing.goalsAgainstAverage).toBeNull();
++    expect(missing.savePct).toBeNull();
++    const noSaves = buildGoalieShareByTeam([row({ saves: 0, goalsAgainst: 30 })], "Season").PHI.goalies[0];
++    expect(noSaves.savePct).toBe(0);
++    const noGoals = buildGoalieShareByTeam([row({ saves: 30, goalsAgainst: 0 })], "Season").PHI.goalies[0];
++    expect(noGoals.goalsAgainstAverage).toBe(0);
++    const noExposure = buildGoalieShareByTeam([row({ shotsAgainst: 0, saves: 0, timeOnIce: 0 })], "Season").PHI.goalies[0];
++    expect(noExposure.savePct).toBeNull();
++    expect(noExposure.goalsAgainstAverage).toBeNull();
++  });
+ });
+--- a/web/components/GoalieShareChart/GoalieShareChart.pagination.test.tsx
++++ b/web/components/GoalieShareChart/GoalieShareChart.pagination.test.tsx
+@@ -111,6 +111,26 @@
+     await finishRequests();
+     expect(screen.queryAllByTestId("chart")).toHaveLength(0);
+     expect(screen.getByRole("alert")).toBeTruthy();
++  });
++
++  it("withholds equal-sized pages with duplicate appearance identities", async () => {
++    mockPages((start) => start === 100
++      ? response({ total: rows.length, data: rows.slice(0, 100) })
++      : completePage(start));
++    render(<GoalieShareChart />);
++    await finishRequests();
++    expect(screen.queryAllByTestId("chart")).toHaveLength(0);
++    expect(screen.getByRole("alert")).toBeTruthy();
++  });
++
++  it("labels appearance share and counts relief once in team GP", async () => {
++    mockPages(() => response({ total: 2, data: [rows[0], { ...rows[0], playerId: 2 }] }));
++    render(<GoalieShareChart />);
++    await finishRequests();
++    const chart = JSON.parse(screen.getByTestId("chart").textContent!);
++    expect(chart.labels).toEqual(["One (50.0%)", "One (50.0%)"]);
++    expect(screen.getByText("Team GP:").nextSibling?.textContent).toBe("1");
++    expect(screen.getByText(/Share of recorded goalie appearances, including relief/)).toBeTruthy();
+   });
+ 
+   it("recovers within the retry budget and re-slices complete data without fetching", async () => {
+--- /dev/null
++++ b/web/lib/goalieWorkload.ts
+@@ -0,0 +1,105 @@
++import { teamsInfo } from "./teamsInfo";
++
++/** Descriptive NHL summary appearances. Callers supply one complete season;
++ * these rows do not establish official starts, eligibility or as-of availability. */
++export interface GoalieGameRow {
++  gameId: number;
++  gameDate: string;
++  teamAbbrev: string;
++  playerId: number;
++  goalieFullName: string;
++  gamesPlayed: number;
++  wins: number;
++  losses: number;
++  otLosses: number;
++  saves: number | null;
++  shotsAgainst: number | null;
++  goalsAgainst: number | null;
++  timeOnIce: number | null;
++}
++
++export type SpanType = "L10" | "L20" | "L30" | "Season";
++export interface GoalieData {
++  playerId: number;
++  goalieFullName: string;
++  gamesPlayed: number;
++  timeOnIce: number | null;
++  wins: number;
++  losses: number;
++  otLosses: number;
++  savePct: number | null;
++  goalsAgainstAverage: number | null;
++}
++export interface TeamGoalieStats {
++  [teamAbbrev: string]: {
++    goalies: GoalieData[];
++    /** Distinct recorded team games, including games with a relief appearance. */
++    totalGames: number;
++    /** Pie denominator: a relief appearance adds one here, not to totalGames. */
++    totalAppearances: number;
++  };
++}
++const SPAN_GAMES: Record<SpanType, number | null> = { L10: 10, L20: 20, L30: 30, Season: null };
++
++/** Stable pagination can still repeat a row while keeping lengths/totals equal. */
++export function assertUniqueGoalieGameRows(rows: readonly GoalieGameRow[]): void {
++  const identities = new Set<string>();
++  for (const row of rows) {
++    const key = `${row.teamAbbrev}:${row.gameId}:${row.playerId}`;
++    if (identities.has(key)) throw new Error("Goalie game request failed: duplicate appearance in page set");
++    identities.add(key);
++  }
++}
++
++/** Last N distinct recorded team games. Appearance share includes relief and
++ * is descriptive; a complete provider page set does not certify a schedule. */
++export function buildGoalieShareByTeam(rows: readonly GoalieGameRow[], span: SpanType): TeamGoalieStats {
++  const rowsByTeam = new Map<string, GoalieGameRow[]>();
++  for (const row of rows) {
++    const teamRows = rowsByTeam.get(row.teamAbbrev) ?? [];
++    teamRows.push(row);
++    rowsByTeam.set(row.teamAbbrev, teamRows);
++  }
++  const result: TeamGoalieStats = {};
++  for (const teamAbbrev of Object.keys(teamsInfo).sort()) {
++    const teamRows = rowsByTeam.get(teamAbbrev);
++    if (!teamRows?.length) continue;
++    const gameDates = new Map(teamRows.map(row => [row.gameId, row.gameDate]));
++    const games = Array.from(gameDates).sort(([idA, dateA], [idB, dateB]) => dateA.localeCompare(dateB) || idA - idB);
++    const limit = SPAN_GAMES[span];
++    const windowGames = new Set((limit === null ? games : games.slice(-limit)).map(([gameId]) => gameId));
++    const byGoalie = new Map<number, GoalieGameRow[]>();
++    for (const row of teamRows) {
++      if (!windowGames.has(row.gameId)) continue;
++      const goalieRows = byGoalie.get(row.playerId) ?? [];
++      goalieRows.push(row);
++      byGoalie.set(row.playerId, goalieRows);
++    }
++    const goalies: GoalieData[] = Array.from(byGoalie, ([playerId, goalieRows]) => {
++      const sum = (read: (row: GoalieGameRow) => number) => goalieRows.reduce((total, row) => total + (read(row) || 0), 0);
++      const completeSum = (read: (row: GoalieGameRow) => number | null) => {
++        let total = 0;
++        for (const row of goalieRows) {
++          const value = read(row);
++          if (value == null || !Number.isFinite(value) || value < 0) return null;
++          total += value;
++        }
++        return total;
++      };
++      const shotsAgainst = completeSum(row => row.shotsAgainst);
++      const saves = completeSum(row => row.saves);
++      const goalsAgainst = completeSum(row => row.goalsAgainst);
++      const timeOnIce = completeSum(row => row.timeOnIce);
++      return {
++        playerId, goalieFullName: goalieRows[goalieRows.length - 1].goalieFullName,
++        gamesPlayed: sum(row => row.gamesPlayed), timeOnIce,
++        wins: sum(row => row.wins), losses: sum(row => row.losses), otLosses: sum(row => row.otLosses),
++        savePct: shotsAgainst !== null && shotsAgainst > 0 && saves !== null && saves <= shotsAgainst ? saves / shotsAgainst : null,
++        goalsAgainstAverage: timeOnIce !== null && timeOnIce > 0 && goalsAgainst !== null ? (goalsAgainst * 3600) / timeOnIce : null
++      };
++    }).sort((a, b) => b.gamesPlayed - a.gamesPlayed);
++    result[teamAbbrev] = { goalies, totalGames: windowGames.size,
++      totalAppearances: goalies.reduce((total, goalie) => total + goalie.gamesPlayed, 0) };
++  }
++  return result;
++}
+--- /dev/null
++++ b/web/lib/projections/goalie/workloadEvidence.ts
+@@ -0,0 +1,35 @@
++import { buildRollingWindowGoalieParticipationReceipt, buildRollingWindowGoalieStartReceipt,
++  type RollingWindowGoalieStartInput } from "../../player-forecasts/rollingWindowParticipation";
++
++/** Offline FORGE integration seam. Never adapt the chart's appearance rows into
++ * starter evidence: the canonical kernels require independently complete team
++ * opportunities, dated eligibility, official starter labels and source clocks.
++ * No production reader or probability calculator selects this diagnostic. */
++export function buildGoalieWorkloadEvidence(input: RollingWindowGoalieStartInput,
++  issuance: { issuedAt: string; expiresAt: string }) {
++  const appearance = buildRollingWindowGoalieParticipationReceipt({ ...input,
++    version: "goalie-rolling-14d-participation-input-v1" }, issuance);
++  const start = buildRollingWindowGoalieStartReceipt(input, issuance);
++  const describe = (receipt: typeof appearance | typeof start) => ({
++    event: receipt.event, methodVersion: receipt.methodVersion,
++    observedCount: receipt.reasons.length ? null : receipt.numerator,
++    eligibleTeamGames: receipt.denominator,
++    observedShare: receipt.reasons.length ? null : receipt.probability,
++    selectedGameIds: [...receipt.selectedGameIds], reasons: [...receipt.reasons],
++    inputHash: receipt.inputHash, evidenceHashes: [...receipt.evidenceHashes]
++  });
++  return {
++    version: "forge-goalie-workload-evidence-v1" as const,
++    status: "descriptive_only" as const,
++    scope: { ...start.scope }, cutoffAt: start.cutoffAt,
++    window: { startAt: start.historyStartAt, endAt: start.historyEndAt },
++    denominator: "eligible_team_games" as const,
++    starts: describe(start), appearances: describe(appearance),
++    forecast: { startProbability: null, appearanceProbability: null,
++      confirmation: "unconfirmed" as const, calibration: "unavailable" as const, activation: "dormant" as const },
++    limitations: [...new Set([...start.limitations, ...appearance.limitations]),
++      "Historical eligible-opportunity share is distinct from the chart's share of all recorded appearances.",
++      "No shrinkage, rest/back-to-back adjustment, narrative adjustment or future probability is added here; conditional stopping rates are untouched.",
++      "Historical frequencies, including sparse zero/one endpoints, require time-ordered held-out calibration before predictive use."]
++  };
++}
+--- /dev/null
++++ b/web/lib/projections/goalie/workloadEvidence.test.ts
+@@ -0,0 +1,99 @@
++// @vitest-environment node
++import { createHash } from "node:crypto";
++import { describe, expect, it } from "vitest";
++import { buildGoalieWorkloadEvidence } from "./workloadEvidence";
++import { rollingParticipationWindow, type RollingWindowGoalieStartInput } from "../../player-forecasts/rollingWindowParticipation";
++import { ROSTER_CONTINUATION_ASSUMPTION } from "../../player-forecasts/targetRosterObservation";
++
++const cutoffAt = "2026-10-25T11:00:00Z";
++const issuance = { issuedAt: "2026-10-25T12:00:00Z", expiresAt: "2026-10-25T18:00:00Z" };
++const evidence = (id: string, clock: string) => ({ id,
++  hash: createHash("sha256").update(id).digest("hex"), availableAt: clock, capturedAt: clock });
++function fixture(): RollingWindowGoalieStartInput {
++  const window = rollingParticipationWindow(cutoffAt);
++  const roster = evidence("synthetic-roster", "2026-10-25T10:00:00Z");
++  const games = [12, 16, 22].map((date, index) => {
++    const scheduledAt = `2026-10-${date}T23:00:00Z`;
++    const box = evidence(`synthetic-box-${date}`, `2026-10-${date + 1}T03:00:00Z`);
++    return { gameId: 100 + index, teamId: 1, scheduledAt, occurred: true,
++      eligibility: { playerId: 7, nhlPlayerId: 77, teamId: 1, eligible: true,
++        effectiveFrom: scheduledAt, effectiveUntil: `2026-10-${date + 1}T04:00:00Z`, evidence: box },
++      positiveMinutes: index !== 1, resolution: index === 1 ? "explicit_zero_toi" as const : "positive_toi" as const,
++      outcomeEvidence: box, officialStarter: index === 0, starterEvidence: box };
++  });
++  return { version: "goalie-rolling-14d-start-input-v1", playerClass: "goalie", cutoffAt,
++    scope: { playerId: 7, nhlPlayerId: 77, seasonId: 20262027, teamId: 1, gameId: 999,
++      scheduledAt: "2026-10-27T23:00:00Z", scheduleRevision: "synthetic-schedule", rosterRevision: "synthetic-roster" },
++    scheduleEvidence: roster, rosterEvidence: roster,
++    targetRosterObservation: { playerId: 7, nhlPlayerId: 77, teamId: 1, seasonId: 20262027,
++      listed: true, sourceKind: "official_season_roster", knownConflict: null,
++      continuationAssumptionVersion: ROSTER_CONTINUATION_ASSUMPTION, evidence: roster },
++    history: { complete: true, windowStartAt: window.startAt, windowEndAt: window.endAt,
++      scheduleEvidence: roster, games } };
++}
++
++describe("FORGE descriptive workload evidence seam", () => {
++  it("keeps official starts, relief appearances and future predictions distinct", () => {
++    const result = buildGoalieWorkloadEvidence(fixture(), issuance);
++    expect(result).toMatchObject({ status: "descriptive_only", denominator: "eligible_team_games",
++      starts: { event: "official_starter", observedCount: 1, eligibleTeamGames: 3, observedShare: 1 / 3 },
++      appearances: { event: "positive_minutes", observedCount: 2, eligibleTeamGames: 3, observedShare: 2 / 3 },
++      forecast: { startProbability: null, appearanceProbability: null, confirmation: "unconfirmed", activation: "dormant" } });
++    expect(result.starts.selectedGameIds).toEqual(result.appearances.selectedGameIds);
++    expect(result.starts.methodVersion).toBe("goalie-rolling-14d-start-frequency-v1");
++    expect(result.starts.evidenceHashes).toContain(fixture().history.games[0].starterEvidence!.hash);
++  });
++
++  it("withholds unknown starter history while retaining supported appearance history", () => {
++    const input = fixture(); input.history.games[0].officialStarter = null;
++    const result = buildGoalieWorkloadEvidence(input, issuance);
++    expect(result.starts.observedShare).toBeNull();
++    expect(result.starts.observedCount).toBeNull();
++    expect(result.starts.reasons).toContain("unresolved_official_starter_label");
++    expect(result.appearances.observedShare).toBe(2 / 3);
++  });
++
++  it("keeps missing appearance labels unknown rather than making them nonstarts", () => {
++    const input = fixture(); input.history.games[1].positiveMinutes = null; input.history.games[1].resolution = null;
++    const result = buildGoalieWorkloadEvidence(input, issuance);
++    expect(result.starts.observedShare).toBeNull();
++    expect(result.appearances.observedShare).toBeNull();
++    expect(result.appearances.reasons).toContain("unresolved_participation_label");
++  });
++
++  it.each([0, 1])("retains historical endpoint %s without confirming a future start", endpoint => {
++    const input = fixture();
++    input.history.games = [input.history.games[0]];
++    input.history.games[0].officialStarter = endpoint === 1;
++    const result = buildGoalieWorkloadEvidence(input, issuance);
++    expect(result.starts.observedShare).toBe(endpoint);
++    expect(result.starts.eligibleTeamGames).toBe(1);
++    expect(result.forecast.startProbability).toBeNull();
++    expect(result.forecast.confirmation).toBe("unconfirmed");
++  });
++
++  it("withholds incomplete team opportunities and known availability conflicts", () => {
++    const incomplete = fixture(); incomplete.history.complete = false;
++    expect(buildGoalieWorkloadEvidence(incomplete, issuance).starts.observedShare).toBeNull();
++    const injury = fixture(); injury.targetRosterObservation!.knownConflict = true;
++    expect(buildGoalieWorkloadEvidence(injury, issuance).appearances.observedShare).toBeNull();
++  });
++
++  it("uses eligible team opportunities without silently claiming all team games", () => {
++    const input = fixture(); input.history.games[1].eligibility!.eligible = false;
++    const result = buildGoalieWorkloadEvidence(input, issuance);
++    expect(result.starts.eligibleTeamGames).toBe(2);
++    expect(result.starts.observedShare).toBe(0.5);
++    expect(result.denominator).toBe("eligible_team_games");
++  });
++
++  it.each(["team", "season", "late evidence", "future game", "duplicate game"])("rejects %s identity or leakage", kind => {
++    const input = fixture();
++    if (kind === "team") input.history.games[0].teamId = 2;
++    if (kind === "season") input.scope.seasonId = 20252026;
++    if (kind === "late evidence") input.history.games[0].starterEvidence = evidence("late-label", "2026-10-25T11:00:00.000001Z");
++    if (kind === "future game") input.history.games[0].scheduledAt = "2026-10-25T23:00:00Z";
++    if (kind === "duplicate game") input.history.games.push(input.history.games[0]);
++    expect(() => buildGoalieWorkloadEvidence(input, issuance)).toThrow();
++  });
++});

@@ -1,0 +1,19 @@
+{
+  "startedAt": "2026-10-26T16:46:16.133430+00:00",
+  "finishedAt": "2026-10-26T16:46:16.210549+00:00",
+  "exitCode": 1,
+  "orderedFiles": [
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-26/composition-variants-01/posterized-team-colors-card.png",
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-26/composition-variants-01/pixelated-team-colors-card.png"
+  ],
+  "helperAttempts": 1,
+  "retryPerformed": false,
+  "sourceChanges": false,
+  "results": null,
+  "phase": "tools/list discovery before upload preparation",
+  "exactError": "library upload failed: hosted apps tools/list request failed: DNS",
+  "newLibraryIds": [],
+  "knownUploadWrites": 0,
+  "outcomeUncertain": false,
+  "pngHashesUnchanged": true
+}

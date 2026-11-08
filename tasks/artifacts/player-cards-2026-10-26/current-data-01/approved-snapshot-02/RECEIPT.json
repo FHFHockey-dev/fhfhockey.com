@@ -1,0 +1,68 @@
+{
+  "startedAt": "2026-10-27T00:42:32.766Z",
+  "approval": {
+    "userReply": "Sentinel_f2d8ba6f19fc81918c158c55444a021d",
+    "assistantMessage": "Sentinel_6b7ca3ae1b0881919313f81e84bd319b",
+    "at": "2026-10-27T00:40:24Z",
+    "answer": "yes",
+    "scope": "ONE secure retry of same3publicGETs; no further retries"
+  },
+  "client": "node:https; rejectUnauthorized:true; no custom trust store",
+  "calls": [
+    {
+      "name": "landing",
+      "url": "https://api-web.nhle.com/v1/player/8476453/landing",
+      "startedAt": "2026-10-27T00:42:32.767Z",
+      "bytes": 26221,
+      "status": "received",
+      "httpStatus": 200,
+      "sha256": "7649c48e6e665288ba88e8679b3e57a08944f2157e6446aa9d7942c0a0675e66",
+      "finishedAt": "2026-10-27T00:42:32.984Z"
+    },
+    {
+      "name": "game-log",
+      "url": "https://api-web.nhle.com/v1/player/8476453/game-log/20262027/2",
+      "startedAt": "2026-10-27T00:42:32.984Z",
+      "bytes": 4932,
+      "status": "received",
+      "httpStatus": 200,
+      "sha256": "f32faa520f8f0bcff4e4e40f2db0eb27fa4ac81a70bfc026c930450cd6a1ad43",
+      "finishedAt": "2026-10-27T00:42:33.137Z"
+    },
+    {
+      "name": "team-schedule",
+      "url": "https://api-web.nhle.com/v1/club-schedule-season/TBL/20262027",
+      "startedAt": "2026-10-27T00:42:33.138Z",
+      "bytes": 177781,
+      "status": "received",
+      "httpStatus": 200,
+      "sha256": "5667c3bc07e9088c024e007513898d24bb0ff380a702dcaf79116656baf3a695",
+      "finishedAt": "2026-10-27T00:42:33.266Z"
+    }
+  ],
+  "limits": {
+    "requests": 3,
+    "concurrency": 1,
+    "requestMs": 5000,
+    "totalMs": 15000,
+    "bytesPerResponse": 524288,
+    "totalBytes": 1572864,
+    "gameLogRows": 100,
+    "scheduleRows": 140,
+    "redirects": 0,
+    "retries": 0
+  },
+  "status": "received-and-identity-validated",
+  "totalBytes": 208934,
+  "databaseReads": 0,
+  "remoteWrites": 0,
+  "authOrProfileChanges": 0,
+  "seasonGp": 11,
+  "gameLogRows": 11,
+  "scheduleRows": 88,
+  "actualGameEndsQualified": false,
+  "leagueRanksQualified": false,
+  "finishedAt": "2026-10-27T00:42:33.268Z",
+  "elapsedMs": 503,
+  "callsStarted": 3
+}

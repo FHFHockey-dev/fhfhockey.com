@@ -1,7 +1,7 @@
 import type { CardSettings, MetricId, MetricReading, Period, Strength } from "./contracts";
 import { METRICS, REGISTRY_VERSION } from "./registry";
 import { adaptLocalSnapshot, type AdaptedCard, type LocalCardInput, type MetricCoverage } from "./adapter";
-import { instant, settingsError, validDate } from "./windows";
+import { instant, completionBounds, settingsError, validDate, type EndMinute } from "./windows";
 
 type Origin = LocalCardInput["origin"];
 export type ReceiptRef = { receiptId: string; sha256: string };
@@ -9,11 +9,11 @@ type Retained<K extends string, S> = { kind: K; receiptId: string; sha256: strin
 export type HistoryReceipt = Retained<"appearance-history", {
   playerId: number; season: number; gameType: "regular"; dateBasis: "UTC" | "provider-game-date";
   sourceClass: "complete-official-log" | "latest-n" | "row-count"; through: string;
-  appearances: readonly { gameId: number; date: string; played: boolean }[];
+  appearances: readonly { gameId: number; date: string; sourceDate?: string; played: boolean }[];
 }>;
 export type FinalityReceipt = Retained<"game-finality", {
-  gameId: number; season: number; date: string; endedAt: string;
-  sourceClass: "official-game-end" | "ingestion-completion" | "scheduled-start";
+  gameId: number; season: number; date: string; endedAt?: string; endMinute?: EndMinute;
+  sourceClass: "official-game-end" | "official-game-report-minute" | "ingestion-completion" | "scheduled-start";
 }>;
 export type DefinitionReceipt = Retained<"metric-definition", {
   metricId: MetricId; registryVersion: string; sourceDefinition: string; sourceVersion: string; definitionVersion: string;
@@ -105,7 +105,7 @@ export function validateEvidenceBundle(input: LocalCardInput, bundle: EvidenceBu
   for (const player of input.players) {
     const id = player.frame.playerId, at = { playerId: id }, before = issues.length;
     const games = player.frame.appearances.filter(game => game.playerId === id && game.season === settings.season && game.gameType === settings.gameType);
-    if (!positiveIds(games.map(game => game.gameId)) || games.some(game => !validDate(game.date))) { reject("frame-game-identity", "Supplied frame has an invalid or duplicate game identity", at); continue; }
+    if (!positiveIds(games.map(game => game.gameId)) || games.some(game => !validDate(game.date) || (game.sourceDate !== undefined && !validDate(game.sourceDate)))) { reject("frame-game-identity", "Supplied frame has an invalid or duplicate game identity/date binding", at); continue; }
     if (new Set(games.map(game => game.date)).size !== games.length) { reject("duplicate-date", "Supplied frame lists multiple appearances on one date; date-keyed NST rows cannot identify the game", at); continue; }
     for (const game of games) {
       if (game.played !== true || !inPeriod(game.date, settings)) continue;
@@ -118,12 +118,12 @@ export function validateEvidenceBundle(input: LocalCardInput, bundle: EvidenceBu
     const history = receipt.subject, through = instant(history.through);
     if (history.playerId !== id || history.season !== settings.season || history.gameType !== settings.gameType) { reject("history-identity", "History receipt player, season or game type does not match the supplied frame", at); continue; }
     if (through === null || through > instant(receipt.capturedAt)!) { reject("history-time", "History receipt claims coverage beyond its own capture time", at); continue; }
-    if (!positiveIds(history.appearances.map(game => game.gameId)) || history.appearances.some(game => !validDate(game.date))) { reject("history-game-identity", "History receipt has an invalid or duplicate game identity", at); continue; }
+    if (!positiveIds(history.appearances.map(game => game.gameId)) || history.appearances.some(game => !validDate(game.date) || (game.sourceDate !== undefined && !validDate(game.sourceDate)))) { reject("history-game-identity", "History receipt has an invalid or duplicate game identity/date binding", at); continue; }
     if (new Set(history.appearances.map(game => game.date)).size !== history.appearances.length) { reject("duplicate-date", "History receipt lists multiple appearances on one date; date-keyed NST rows cannot identify the game", at); continue; }
     for (const game of games) {
       const listed = history.appearances.find(entry => entry.gameId === game.gameId);
       if (!listed) reject("history-extra-appearance", `Supplied appearance ${game.gameId} is not in the history receipt`, { ...at, gameId: game.gameId });
-      else if (listed.date !== game.date || listed.played !== game.played) reject("history-conflict", `Supplied appearance ${game.gameId} date or participation conflicts with the history receipt`, { ...at, gameId: game.gameId });
+      else if (listed.date !== game.date || (listed.sourceDate ?? listed.date) !== (game.sourceDate ?? game.date) || listed.played !== game.played) reject("history-conflict", `Supplied appearance ${game.gameId} calendar/source date or participation conflicts with the history receipt`, { ...at, gameId: game.gameId });
     }
     for (const listed of history.appearances) if (!games.some(game => game.gameId === listed.gameId)) lack("history-appearance-absent", `History receipt appearance ${listed.gameId} is absent from the supplied frame`, { ...at, gameId: listed.gameId });
     if (history.sourceClass !== "complete-official-log") lack("history-not-complete", `History source "${history.sourceClass}" does not establish complete appearance history`, at);
@@ -138,10 +138,14 @@ export function validateEvidenceBundle(input: LocalCardInput, bundle: EvidenceBu
     const at = { gameId };
     const receipt = resolve(single(bundle.finality.filter(entry => entry.gameId === gameId), at, "finality")?.receipt, "game-finality", at);
     if (!receipt) continue;
-    const final = receipt.subject, ended = instant(final.endedAt);
+    const final = receipt.subject;
     if (final.gameId !== gameId || final.season !== settings.season || final.date !== game.date) { reject("finality-identity", "Finality receipt game, season or date does not match the appearance", at); continue; }
-    if (ended === null || ended > instant(receipt.capturedAt)! || ended < Date.parse(`${game.date}T00:00:00Z`)) { reject("finality-time", "Finality end time is invalid, precedes the game date or follows its own capture", at); continue; }
-    if (final.sourceClass !== "official-game-end") { lack("finality-not-actual-end", final.sourceClass === "ingestion-completion" ? "Ingestion completion is not an actual game-end time" : `Finality source "${final.sourceClass}" is not an actual game-end time`, at); continue; }
+    if (final.endMinute?.clockBasis === "unresolved") { lack("finality-clock-ambiguous", "Official end clock AM/PM or timezone binding remains unresolved", at); continue; }
+    const ended = completionBounds({ status: "verified-final", reference: receipt.receiptId, completedAt: final.endedAt, completedDuring: final.endMinute });
+    if (!ended || ended.earliest > instant(receipt.capturedAt)! || ended.earliest < Date.parse(`${game.date}T00:00:00Z`)) { reject("finality-time", "Finality end time/range is invalid, precedes the game date or follows its own capture", at); continue; }
+    if (!ended.exact && ended.safeAfter > instant(receipt.capturedAt)!) { lack("finality-capture-ambiguous", "Receipt capture overlaps the reported end minute", at); continue; }
+    if (final.sourceClass !== "official-game-end" && final.sourceClass !== "official-game-report-minute") { lack("finality-not-actual-end", final.sourceClass === "ingestion-completion" ? "Ingestion completion is not an actual game-end time" : `Finality source "${final.sourceClass}" is not an actual game-end time`, at); continue; }
+    if ((final.sourceClass === "official-game-report-minute") !== !!final.endMinute) { reject("finality-precision", "Finality authority and exact/minute representation disagree", at); continue; }
     verifiedFinal.set(gameId, receipt);
   }
 
@@ -182,7 +186,7 @@ export function validateEvidenceBundle(input: LocalCardInput, bundle: EvidenceBu
       ...player.frame, completeHistory: !!history, historyThrough: history?.subject.through ?? "", historyReference: history?.receiptId ?? "",
       appearances: player.frame.appearances.map(game => {
         const final = verifiedFinal.get(game.gameId);
-        return { ...game, completion: final ? { status: "verified-final" as const, completedAt: final.subject.endedAt, reference: final.receiptId } : { status: "unverified" as const } };
+        return { ...game, completion: final ? { status: "verified-final" as const, ...(final.subject.endMinute ? { completedDuring: { ...final.subject.endMinute } } : { completedAt: final.subject.endedAt }), reference: final.receiptId } : { status: "unverified" as const } };
       }),
     } };
   });

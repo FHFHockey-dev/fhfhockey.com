@@ -1,0 +1,18 @@
+{
+  "observedAt": "2026-10-31T22:28:24.465247+00:00",
+  "organization": "FHFHockey",
+  "promotionalDisplayedUsd": 85,
+  "promotionalExpiry": "2026-11-13",
+  "purchasedDisplayedUsd": 10,
+  "allProjectsAllKeysAllSources": true,
+  "displayedResponsesRequests": 3,
+  "displayedResponsesInputTokens": 9204,
+  "displayedDecisionsRequests": 1,
+  "displayedDecisionsInputTokens": 891,
+  "displayedSpendUsd": 0,
+  "newThreeReceiptsNotYetReflected": true,
+  "reportingRoundedAndMayLag": true,
+  "noInvoiceOrCreditAllocationReconciliationClaim": true,
+  "additionalPolling": false,
+  "settingsChanged": false
+}

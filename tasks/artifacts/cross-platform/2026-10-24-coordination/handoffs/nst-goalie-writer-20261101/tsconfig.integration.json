@@ -1,0 +1,26 @@
+{
+  "extends": "/Users/tim/Code/fhfhockey.com/web/tsconfig.json",
+  "compilerOptions": {
+    "incremental": false
+  },
+  "include": [
+    "/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/update-nst-goalies.ts",
+    "/Users/tim/Code/fhfhockey.com/web/__tests__/pages/api/v1/db/update-nst-goalies.route.test.ts",
+    "/Users/tim/Code/fhfhockey.com/web/lib/cron/nstBurstPlans.ts",
+    "/Users/tim/Code/fhfhockey.com/web/lib/cron/nstBurstPlans.test.ts",
+    "/Users/tim/Code/fhfhockey.com/web/lib/routeRunner/core.ts",
+    "/Users/tim/Code/fhfhockey.com/web/lib/routeRunner/core.test.ts",
+    "/Users/tim/Code/fhfhockey.com/web/lib/routeRunner/registry.ts",
+    "/Users/tim/Code/fhfhockey.com/web/lib/routeRunner/tick.ts",
+    "/Users/tim/Code/fhfhockey.com/web/lib/routeRunner/tick.test.ts",
+    "/Users/tim/Code/fhfhockey.com/web/lib/routeRunner/store.ts",
+    "/Users/tim/Code/fhfhockey.com/web/lib/routeRunner/store.test.ts",
+    "/Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/cron-report.ts",
+    "/Users/tim/Code/fhfhockey.com/web/__tests__/pages/api/v1/db/cron-report.test.ts",
+    "/Users/tim/Code/fhfhockey.com/web/components/CronReportEmail/CronAuditEmail.tsx",
+    "/Users/tim/Code/fhfhockey.com/web/__tests__/components/CronReportEmail/CronAuditEmail.test.tsx"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "qualificationRows": 7271,
+  "patches": 1463,
+  "savedOverlayStates": {
+    "not_supplied": 5808,
+    "already_satisfied": 1463
+  },
+  "allPatchesAlreadySatisfiedByCapturedInputs": true
+}

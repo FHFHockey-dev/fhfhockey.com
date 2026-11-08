@@ -1,0 +1,10 @@
+{
+  "action": "actual-render",
+  "command": [
+    "node",
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-26/current-data-01/approved-snapshot-02/render-preview.mjs"
+  ],
+  "exitCode": 0,
+  "elapsedSeconds": 0.18,
+  "heldBy": "editor09 qualify parent resource slot"
+}

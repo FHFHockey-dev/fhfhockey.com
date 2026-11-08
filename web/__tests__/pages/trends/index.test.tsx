@@ -1,6 +1,6 @@
 import React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 
 const teamTrendsFixture = vi.hoisted(() => ({
   value: { generatedAt: "", categories: {} } as any
@@ -58,7 +58,8 @@ vi.mock("recharts", () => ({
   XAxis: () => null,
   YAxis: () => null,
   Tooltip: () => null,
-  Legend: () => null
+  Legend: () => null,
+  CartesianGrid: () => null
 }));
 
 vi.mock("components/SurfaceWorkflowLinks", () => ({
@@ -240,7 +241,7 @@ describe("Trends dashboard", () => {
     expect(screen.getByText("Recent-Form Scan")).toBeTruthy();
     expect(screen.getByText("Usage Driver")).toBeTruthy();
     expect(screen.getByText("Shot Driver")).toBeTruthy();
-    expect(screen.getByText(/Last Year stays out of strong v1/i)).toBeTruthy();
+    expect(screen.getByText(/Compared with Season, 3-Year, Career,? and Cumulative baselines/i)).toBeTruthy();
     expect(screen.getByText("Goalie Workload Share")).toBeTruthy();
     expect(screen.getByText("goalie share chart")).toBeTruthy();
     expect(screen.getByText("No team trend history yet.")).toBeTruthy();
@@ -327,7 +328,7 @@ describe("Trends dashboard", () => {
 
     render(<TrendsDashboardPage initialDate="2026-04-08" />);
 
-    expect(screen.getByText("Team Risers And Fallers")).toBeTruthy();
+    expect(screen.getByText("Risers And Fallers")).toBeTruthy();
     expect(screen.getByText("Most Improved (last 5 GP)")).toBeTruthy();
     expect(screen.getByText("Most Degraded (last 5 GP)")).toBeTruthy();
     expect(screen.getAllByText("CAR").length).toBeGreaterThan(0);
@@ -336,6 +337,16 @@ describe("Trends dashboard", () => {
     expect(screen.getByText("▼3.2%")).toBeTruthy();
     expect(screen.getByText("Rolling percentile by games played")).toBeTruthy();
     expect(screen.getByText("Source updated 2026-04-08")).toBeTruthy();
+
+    // The movement chart highlights one line; the name buttons move the focus.
+    const highlight = screen.getByRole("group", { name: "Highlight a line" });
+    const [car, ana] = within(highlight).getAllByRole("button");
+    expect(car.textContent).toBe("CAR");
+    expect(car.getAttribute("aria-pressed")).toBe("true");
+    expect(ana.getAttribute("aria-pressed")).toBe("false");
+    fireEvent.click(ana);
+    expect(ana.getAttribute("aria-pressed")).toBe("true");
+    expect(car.getAttribute("aria-pressed")).toBe("false");
   });
 
   it("keeps stale section data visible with source context and a scoped retry", () => {
@@ -368,7 +379,7 @@ describe("Trends dashboard", () => {
     render(<TrendsDashboardPage initialDate="2026-04-08" />);
     fireEvent.click(screen.getByRole("tab", { name: "Goalies" }));
 
-    expect(screen.getByText(/high confidence \(10 GP\)/i)).toBeTruthy();
+    expect(screen.getByText(/high confidence · 10 GP/i)).toBeTruthy();
     expect(screen.getByText(/volatility 5.7/i)).toBeTruthy();
     expect(screen.getByRole("alert").textContent).toMatch(
       /Observed source-date gap:\s*19\s*days/i

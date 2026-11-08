@@ -260,7 +260,10 @@
   line-height: 1;
 }
 
+// Spans inside the card button: block display so width/height apply (inline
+// spans ignore them, which left the bar as an empty track).
 .performanceBar {
+  display: block;
   width: 100%;
   height: 5px;
   background: rgba(v.$color-white, 0.1);
@@ -270,24 +273,25 @@
 }
 
 .performanceFill {
+  display: block;
   height: 100%;
   border-radius: 2px;
   transition: width 0.3s ease;
 
   .excellent & {
-    background: linear-gradient(90deg, v.$success-color, #00cc6a);
+    background: v.$success-color;
   }
 
   .good & {
-    background: linear-gradient(90deg, v.$secondary-color, #0591c7);
+    background: v.$secondary-color;
   }
 
   .poor & {
-    background: linear-gradient(90deg, v.$color-gold-400, #ff9800);
+    background: v.$color-gold-400;
   }
 
   .terrible & {
-    background: linear-gradient(90deg, v.$color-coral-500, #ff5252);
+    background: v.$color-coral-500;
   }
 }
 

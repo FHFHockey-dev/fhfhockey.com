@@ -1,0 +1,27 @@
+{
+  "checkedAtUtc": "2026-11-01T15:51:08.317473+00:00",
+  "targets": [
+    "web/lib/nst/goalieCatchup.server.ts",
+    "web/lib/nst/goalieCatchup.server.test.ts",
+    "supabase/migrations/*_nst_goalie_catchup_v1.sql",
+    "supabase/tests/nst_goalie_catchup_v1.sql"
+  ],
+  "exactPathConflicts": [],
+  "newAdapterLease": {
+    "id": "CODEX-NST-GOALIE-CHECKPOINT-ADAPTER-20261101",
+    "owner": "Codex task 01a19780-b73c-7334-9e53-4b7fda61201c",
+    "status": "ACTIVE_LOCAL_UNWIRED_ADAPTER",
+    "paths": [
+      "web/lib/nst/goalieCatchup.server.ts",
+      "web/lib/nst/goalieCatchup.server.test.ts"
+    ],
+    "baseline_sha256": {
+      "web/lib/nst/goalieCatchup.server.ts": null,
+      "web/lib/nst/goalieCatchup.server.test.ts": null
+    },
+    "started_at_utc": "2026-11-01T15:51:08.317473+00:00",
+    "scope": "New non-conflicting checkpoint RPC adapter and mocked regression tests; no route import/activation, SQL application, migration, schedule or production request. Parent explicitly requests continued local checkpoint/schema-adapter design/tests.",
+    "authority": "Current parent continuation plus existing authorization for non-conflicting isolated local implementation."
+  },
+  "sqlDisposition": "No named exact-path holder found for proposed new checkpoint SQL/test. Registry owner Scout/Codex requires migration/config coordination. The retained cron owner excluded unlisted SQL from the15file transfer; exclusion is not evidence that this new schema is held by that owner. Canonical SQL allocation remains pending; artifact-only schema design is unblocked."
+}

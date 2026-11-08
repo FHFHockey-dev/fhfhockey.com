@@ -48,6 +48,13 @@ export default function LeagueStandings({
     () => rankTeamCategories(teams, categories, leagueType),
     [teams, categories, leagueType],
   );
+  // A column where every team has the same total (e.g. all 0 before the first
+  // pick) has no leader, so it gets no best-to-lowest tint.
+  const tiedColumns = useMemo(
+    () => new Set(Object.keys(categories).filter((key) =>
+      new Set(teams.map((team) => team.categoryTotals[key] ?? null)).size <= 1)),
+    [teams, categories],
+  );
   const values = useMemo(
     () =>
       Object.fromEntries(
@@ -222,8 +229,8 @@ export default function LeagueStandings({
                       key={key}
                       data-category={key}
                       data-rank={rank}
-                      data-band={rank == null ? undefined : categoryRankBand(rank, teams.length)}
-                      title={`${definition?.displayName || key}: ${rank == null ? "unranked" : `rank ${rank} of ${teams.length}`}${estimated ? " · Estimated" : ""}`}
+                      data-band={rank == null || tiedColumns.has(key) ? undefined : categoryRankBand(rank, teams.length)}
+                      title={`${definition?.displayName || key}: ${rank == null ? "unranked" : tiedColumns.has(key) ? "all teams tied" : `rank ${rank} of ${teams.length}`}${estimated ? " · Estimated" : ""}`}
                     >
                       {value == null ? <span aria-label="Unavailable team rate">N/A</span> : <>
                         {value.toFixed(definition?.decimalPlaces ?? 0)}

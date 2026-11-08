@@ -1,0 +1,35 @@
+ FAIL  components/ArticleReader/related.server.test.ts [ components/ArticleReader/related.server.test.ts ]
+Error: Cannot find module '/Users/tim/Code/fhfhockey.com/web/node_modules/next-sanity/dist/next-sanity.esm.js' imported from '/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/6f186a08-cdb5-482f-b201-f63b07400eb0/scratchpad/rc2-export/web/components/ArticleReader/related.server.ts'
+ ❯ components/ArticleReader/related.server.ts:1:1
+      1| import { groq } from "next-sanity";
+       | ^
+--
+ FAIL  scripts/qualify-native-players-offline.test.ts > offline current native player qualification > writes a new reproducible receipt without changing or overwriting original inputs
+Error: Command failed: git rev-parse HEAD
+fatal: not a git repository (or any of the parent directories): .git
+
+ ❯ execFileSync scripts/qualify-native-players-offline.test.ts:27:20
+--
+ FAIL  lib/projections/nativeGoalLedgerAudit.test.ts > local audit CLI > writes reproducible receipts, never calls fetch and refuses to overwrite inputs
+Error: Command failed: git rev-parse HEAD
+fatal: not a git repository (or any of the parent directories): .git
+
+ ❯ execFileSync lib/projections/nativeGoalLedgerAudit.test.ts:25:20
+--
+ FAIL  lib/projections/nativeIntervalReconciliation.test.ts > retained interval integrity and offline CLI > replays retained files identically, leaves every input untouched and requires a new output
+Error: Command failed: git rev-parse HEAD
+fatal: not a git repository (or any of the parent directories): .git
+
+ ❯ execFileSync lib/projections/nativeIntervalReconciliation.test.ts:24:20
+--
+ FAIL  lib/projections/researchGoalBaseline.test.ts > retained official GOALS research evaluation > runs deterministic offline CLI evaluations without overwriting retained input/output bytes
+Error: Command failed: git rev-parse HEAD
+fatal: not a git repository (or any of the parent directories): .git
+
+ ❯ execFileSync lib/projections/researchGoalBaseline.test.ts:27:20
+--
+ FAIL  lib/projections/reserveProjections.test.ts > FORGE reserve selection and rows > is read and written only by the reserve writer, the source audit and the RSO bridge
+Error: Command failed: git grep --untracked -l forge_reserve_projections -- lib pages components scripts
+fatal: not a git repository (or any of the parent directories): .git
+
+ ❯ lib/projections/reserveProjections.test.ts:86:19

@@ -1,0 +1,126 @@
+{
+  "fixtureOnly": true,
+  "checks": [
+    {
+      "name": "desktop: route HTTP 200",
+      "result": true
+    },
+    {
+      "name": "desktop: fresh manual player added",
+      "result": true
+    },
+    {
+      "name": "desktop: multi-position player fills one of two simultaneous slots",
+      "result": true
+    },
+    {
+      "name": "desktop: manual player survives reload",
+      "result": true
+    },
+    {
+      "name": "desktop: slot counts and coverage survive reload",
+      "result": true
+    },
+    {
+      "name": "desktop: conflict warning appears",
+      "result": true
+    },
+    {
+      "name": "desktop: conflict does not overwrite newer stored bytes",
+      "result": true
+    },
+    {
+      "name": "desktop: conflict retains current session edit",
+      "result": true
+    },
+    {
+      "name": "phone: route HTTP 200",
+      "result": true
+    },
+    {
+      "name": "phone: fresh manual player added",
+      "result": true
+    },
+    {
+      "name": "phone: multi-position player fills one of two simultaneous slots",
+      "result": true
+    },
+    {
+      "name": "phone: manual player survives reload",
+      "result": true
+    },
+    {
+      "name": "phone: slot counts and coverage survive reload",
+      "result": true
+    },
+    {
+      "name": "phone: conflict warning appears",
+      "result": true
+    },
+    {
+      "name": "phone: conflict does not overwrite newer stored bytes",
+      "result": true
+    },
+    {
+      "name": "phone: conflict retains current session edit",
+      "result": true
+    },
+    {
+      "name": "no uncaught browser errors",
+      "result": true
+    }
+  ],
+  "externalRequestsBlocked": [
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://img.buymeacoffee.com/button-api/",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://cdn.vercel-insights.com/v1/script.debug.js",
+    "GET https://va.vercel-scripts.com/v1/speed-insights/script.debug.js",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://img.buymeacoffee.com/button-api/",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://cdn.vercel-insights.com/v1/script.debug.js",
+    "GET https://va.vercel-scripts.com/v1/speed-insights/script.debug.js",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://img.buymeacoffee.com/button-api/",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://cdn.vercel-insights.com/v1/script.debug.js",
+    "GET https://va.vercel-scripts.com/v1/speed-insights/script.debug.js",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://img.buymeacoffee.com/button-api/",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://fonts.googleapis.com/css2",
+    "GET https://cdn.vercel-insights.com/v1/script.debug.js",
+    "GET https://va.vercel-scripts.com/v1/speed-insights/script.debug.js"
+  ],
+  "localApiRequestsBlocked": [],
+  "pageErrors": [],
+  "result": "passed"
+}

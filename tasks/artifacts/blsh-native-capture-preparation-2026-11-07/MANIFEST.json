@@ -1,0 +1,106 @@
+{
+  "version": 1,
+  "purpose": "local_only_native_capture_preparation_and_isolated_client_patch",
+  "files": [
+    {
+      "path": "web/scripts/blsh/nativeProcessCapturePreparation.ts",
+      "sha256": "7f562056c16f446641917c90b41425c8c13ae97f11d6383f38e5c3cf12c3b0a7",
+      "bytes": 10312
+    },
+    {
+      "path": "web/scripts/blsh/nativeProcessCapturePreparation.test.ts",
+      "sha256": "275423bd778dd5838917f03074c79a89e3c007101ba86957d87c02c7258895fb",
+      "bytes": 9791
+    },
+    {
+      "path": "tasks/artifacts/blsh-native-capture-preparation-2026-11-07/CHECKS.json",
+      "sha256": "4db21a7a1d97b0414c0f8b749b4a6240e221edc19dd7b0fe8f8751ebf5f5bfde",
+      "bytes": 922
+    },
+    {
+      "path": "tasks/artifacts/blsh-native-capture-preparation-2026-11-07/CLIENT-SOURCE-PINS.json",
+      "sha256": "01695226a68b7873ce657c93934a40aab3c0713a463fa51f8f9fc3e3ee8dab38",
+      "bytes": 1103
+    },
+    {
+      "path": "tasks/artifacts/blsh-native-capture-preparation-2026-11-07/DRY-RUN-EXAMPLE.json",
+      "sha256": "164178d6134ae3b42de443cba9cbf4efbd6423cc5df5514a42b095caeb813871",
+      "bytes": 2115
+    },
+    {
+      "path": "tasks/artifacts/blsh-native-capture-preparation-2026-11-07/HANDOFF.md",
+      "sha256": "0689971269e01acd14a27bc778f08d8f3b06fa00746420b0ffd2370ecb791723",
+      "bytes": 10764
+    },
+    {
+      "path": "tasks/artifacts/blsh-native-capture-preparation-2026-11-07/artifact-lint.log",
+      "sha256": "57746240256bdae0b423a9caec400eb183de1fb044f783b066306eb3b154c9da",
+      "bytes": 230
+    },
+    {
+      "path": "tasks/artifacts/blsh-native-capture-preparation-2026-11-07/client-lint.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "tasks/artifacts/blsh-native-capture-preparation-2026-11-07/client-tests.log",
+      "sha256": "95b41d3f7bad3b1b4d1379b0af54b264b48bf67c469cb283ce3370edfc640a0b",
+      "bytes": 395
+    },
+    {
+      "path": "tasks/artifacts/blsh-native-capture-preparation-2026-11-07/lint.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "tasks/artifacts/blsh-native-capture-preparation-2026-11-07/nativeProcessCaptureCandidate.vitest.mts",
+      "sha256": "d7f82051fc5b130ee5794de36605abc09c41e254f3610d8d35edc0f86f4193bd",
+      "bytes": 1253
+    },
+    {
+      "path": "tasks/artifacts/blsh-native-capture-preparation-2026-11-07/nativeProcessCaptureClient.base.ts",
+      "sha256": "48d82fc40ca06d9abe4675f4a1896add55c4e53d4dee661bbe082d424c944e4f",
+      "bytes": 11733
+    },
+    {
+      "path": "tasks/artifacts/blsh-native-capture-preparation-2026-11-07/nativeProcessCaptureClient.candidate.ts",
+      "sha256": "99ad45c5ffc88f8ccb24b2d69f5fbad7c6dbcb800fcbd1962c0ab6c7f8945388",
+      "bytes": 13727
+    },
+    {
+      "path": "tasks/artifacts/blsh-native-capture-preparation-2026-11-07/nativeProcessCaptureClient.patch",
+      "sha256": "827445c19e2791dfc0fb1c7255581a559097e29fd8d37312322f0e51cf64d3f0",
+      "bytes": 3454
+    },
+    {
+      "path": "tasks/artifacts/blsh-native-capture-preparation-2026-11-07/nativeProcessCaptureClient.test.ts",
+      "sha256": "c1cf956c73bc518d1abfcd6005b36fc71a04693027290cba76943707721f5d63",
+      "bytes": 6283
+    },
+    {
+      "path": "tasks/artifacts/blsh-native-capture-preparation-2026-11-07/nativeProcessCaptureNetworkBlock.setup.ts",
+      "sha256": "2dc7a4ab72805f3e5cc330c7d08d4a6996c842c07ec2f5d6a19368c1f19bfd64",
+      "bytes": 694
+    },
+    {
+      "path": "tasks/artifacts/blsh-native-capture-preparation-2026-11-07/nativeProcessCaptureTypecheck.cjs",
+      "sha256": "bfe7a3aeeeee105a77882a61bd6b834dd63c12a0cc9ec6b381df7d5be6499f7c",
+      "bytes": 1995
+    },
+    {
+      "path": "tasks/artifacts/blsh-native-capture-preparation-2026-11-07/ordinary-candidate-discovery.log",
+      "sha256": "ae4e7dc398893a80205e576f6d3e2ea33fa14be10ba09f3d52feda15cb54968d",
+      "bytes": 53
+    },
+    {
+      "path": "tasks/artifacts/blsh-native-capture-preparation-2026-11-07/preparation-tests.log",
+      "sha256": "8beaa5a9cd636b0d476788caf11e189fbcf7856166ae6ae63f4be7c81b89f225",
+      "bytes": 305
+    },
+    {
+      "path": "tasks/artifacts/blsh-native-capture-preparation-2026-11-07/types.log",
+      "sha256": "cfbbde19b2e1b6df6d3ee6f719ac7fc059dd07d2f53d7a6d097d2f0d000d4181",
+      "bytes": 95
+    }
+  ]
+}

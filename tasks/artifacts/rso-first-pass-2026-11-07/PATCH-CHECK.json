@@ -1,0 +1,7 @@
+{
+  "at": "2026-11-07T21:51:20.520293+00:00",
+  "candidateTree": "4ba9b5dd1c6feb613f2f8e526fb280bb4b35c54e",
+  "exitCode": 0,
+  "command": "git apply --reverse --check CORRECTIONS.patch",
+  "mutation": false
+}

@@ -1,0 +1,33 @@
+[
+  {
+    "hash": "7308c16d8d1b5c68a6db90c1d4be843203390ba20c5a47c62eb15cecc14cf3b7",
+    "reservedNanoUsd": 233000000,
+    "state": "settled",
+    "receipt": {
+      "body": {
+        "id": "synthetic-E16-responses",
+        "model": "gpt-6-luna",
+        "usage": {
+          "input_tokens": 100,
+          "output_tokens": 50
+        },
+        "status": "completed",
+        "output": [
+          {
+            "type": "message",
+            "role": "assistant",
+            "content": [
+              {
+                "type": "output_text",
+                "text": "{\"identity\":{\"version\":\"tweet-identity-proposal-v1\",\"requestHash\":\"d11beb0c6f76b2b9ab8d817ee1d86c87a3bc02d6ceaf21494b7b47932a087e81\",\"directoryHash\":\"88dbd1e19c22a04fba95f07d049c38af533b548723bd17106f639191667ae16f\",\"occurrences\":[{\"occurrenceId\":\"subject-4\",\"status\":\"missing\",\"canonicalId\":null,\"evidence\":{\"start\":4,\"end\":21,\"text\":\"Mystery Netminder\"},\"identityConfidence\":\"unknown\"}]},\"goalieStatuses\":[]}"
+              }
+            ]
+          }
+        ]
+      },
+      "requestId": "offline-cli-E16-responses",
+      "endpoint": "responses",
+      "chargeNanoUsd": 38500
+    }
+  }
+]

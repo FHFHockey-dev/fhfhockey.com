@@ -1,0 +1,20 @@
+{
+  "url": "https://api-web.nhle.com/v1/club-schedule-season/TBL/20262027",
+  "club": "TBL",
+  "season": 20262027,
+  "maxGames": 128,
+  "startedAt": "2026-10-26T15:42:14.406Z",
+  "requests": 1,
+  "retries": 0,
+  "maxRequests": 1,
+  "maxBytes": 2097152,
+  "timeoutMs": 5000,
+  "processTimeoutMs": 15000,
+  "status": "captured-unadmitted",
+  "admissionsChanged": false,
+  "httpStatus": 200,
+  "bytes": 177781,
+  "sha256": "5667c3bc07e9088c024e007513898d24bb0ff380a702dcaf79116656baf3a695",
+  "gameCount": 88,
+  "finishedAt": "2026-10-26T15:42:14.608Z"
+}

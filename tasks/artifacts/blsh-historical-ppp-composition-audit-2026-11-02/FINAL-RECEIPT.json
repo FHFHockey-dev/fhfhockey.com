@@ -1,0 +1,28 @@
+{
+  "atUTC": "2026-11-02T00:36:39.080249+00:00",
+  "disposition": "NO_ACTIONABLE_FINDINGS_BOUNDED_FIELD_COMPOSITION_ACCEPTED",
+  "pinsUnchanged": 413,
+  "testsPassed": 9,
+  "ledgerRowsExactlyRebuilt": 150,
+  "authenticatedDistinctBoxes": 146,
+  "preservedHoldIds": [
+    3085027,
+    3087408
+  ],
+  "installedGateAndTestsMatchReviewedBytes": true,
+  "scorePromotion": false,
+  "sourceEdits": 0,
+  "networkRequests": 0,
+  "productionActions": 0,
+  "holdoutReads": 0,
+  "builds": 0,
+  "deployments": 0,
+  "locksReleased": true,
+  "files": {
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-historical-ppp-composition-audit-2026-11-02/RESULT.json": "2decdb3f4c195c38f53dc407c478269f1da8eac0e31782d313e8c2057f059a00",
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-historical-ppp-composition-audit-2026-11-02/TESTS.log": "6bcb806e4b8e139e0c5bad2392146d102cff718b76c459985298579b364817e2",
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-historical-ppp-composition-audit-2026-11-02/verify.py": "2af34b14a94e63c18d3ba1658a79e037421a5609649623db8252b97c9f243d41",
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-historical-ppp-composition-audit-2026-11-02/REVIEW.md": "7dc9f5e5fb3a655e59c263336e216adeadf1ab07927128ebee6968998e0191c5",
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-historical-ppp-composition-audit-2026-11-02/PINS.json": "c47e6abfee8a7ac46cafc5ff2ab2c356475b0e3dd251ed75f2ffc4c9224e04c3"
+  }
+}

@@ -1,0 +1,80 @@
+{
+  "id": "CODEX-PLAYER-CARDS-CURRENTFLOW11-20261027",
+  "at": "2026-10-27T01:38:41.479261+00:00",
+  "owner_thread": "01a16ec2-f81c-717b-8961-8c3832fdc00f",
+  "source": "Scout approvedstandalonecurrentRates/Resultsflow,selectedplayer/window,existingprovider/API/exportprovenance;no newreads",
+  "source_paths": [
+    "web/lib/player-cards/currentSelection.ts",
+    "web/lib/player-cards/currentSelection.test.ts",
+    "web/pages/player-cards.tsx",
+    "web/lib/player-cards/currentNhl.ts",
+    "web/lib/player-cards/currentNhl.test.ts",
+    "web/lib/player-cards/currentNhl.server.ts",
+    "web/lib/player-cards/currentNhl.server.test.ts",
+    "web/components/player-cards/CurrentPlayerCard.tsx",
+    "web/components/player-cards/CurrentPlayerCardStudio.tsx",
+    "web/components/player-cards/CurrentPlayerCardStudio.test.tsx",
+    "web/lib/player-cards/currentNhlExport.ts"
+  ],
+  "baseline": [
+    {
+      "path": "web/lib/player-cards/currentSelection.ts",
+      "sha256": null,
+      "absent": true
+    },
+    {
+      "path": "web/lib/player-cards/currentSelection.test.ts",
+      "sha256": null,
+      "absent": true
+    },
+    {
+      "path": "web/pages/player-cards.tsx",
+      "sha256": null,
+      "absent": true
+    },
+    {
+      "path": "web/lib/player-cards/currentNhl.ts",
+      "sha256": "e8b083955320ef1b4cfef62ac60572a530e00e6dadc77159c4d8e6b66817a1e8",
+      "absent": false
+    },
+    {
+      "path": "web/lib/player-cards/currentNhl.test.ts",
+      "sha256": "8b5a19b8d4157d44c4386e2b14ab5da7b6480b236e5543c1531f69178963b457",
+      "absent": false
+    },
+    {
+      "path": "web/lib/player-cards/currentNhl.server.ts",
+      "sha256": "63c0df4d1a325383864de8cac1fc8175f15ed3194bd473697b3cd13792c5691c",
+      "absent": false
+    },
+    {
+      "path": "web/lib/player-cards/currentNhl.server.test.ts",
+      "sha256": "2f482b8999827bd008eab1927a21dbbc62d4cdf3a94da657532c6a5dbc48a493",
+      "absent": false
+    },
+    {
+      "path": "web/components/player-cards/CurrentPlayerCard.tsx",
+      "sha256": "a9c00a89b7779f61d745ad9a802e03a1d58751af4ea8c97d30838f2d501484e1",
+      "absent": false
+    },
+    {
+      "path": "web/components/player-cards/CurrentPlayerCardStudio.tsx",
+      "sha256": "de551a59d5e83f594e2848176dd5c4b872069af91cf18174ef9c811774355e40",
+      "absent": false
+    },
+    {
+      "path": "web/components/player-cards/CurrentPlayerCardStudio.test.tsx",
+      "sha256": "0cb960b00336d932eedddf23d1c0f314c1d74c2b4a1124c84e7b480d4a18c4de",
+      "absent": false
+    },
+    {
+      "path": "web/lib/player-cards/currentNhlExport.ts",
+      "sha256": "d8533b01c5886f229606d198697ece97ed208fe4d015ff6aafe3da6bb5aab653",
+      "absent": false
+    }
+  ],
+  "status": "FROZEN usable nativeHTTPcheckpoint11;27tests/finalTS/lint0warn/3offline+actualHTTP/4PNGmanifests/mobile44pxPASS;parentreviewpending",
+  "artifact_root": "tasks/artifacts/player-cards-2026-10-27/current-flow-11",
+  "limits": "No parkedresearch/BLSH,auth/sharednavigation,hero09styling,live/DBreads,dependencies,Git/deploy/deletion. PublicstandalonepagecheckedabsentandmatchesPagesRouterconventions;3fixedpublicNHLGETsperexplicitLoadonlyinimplementation,QAusesapprovedcaptureoffline.",
+  "completedAt": "2026-10-27T02:13:58.017356+00:00"
+}

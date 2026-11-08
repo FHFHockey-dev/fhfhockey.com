@@ -1,0 +1,87 @@
+--- before/web/lib/player-cards/reviewedHeroSamples.ts
++++ web/lib/player-cards/reviewedHeroSamples.ts
+@@ -1,6 +1,7 @@
+ import type { HeroSample } from "../../components/player-cards/HeroPlayerCard";
+ 
+-// Dated local artwork samples accepted by TJ. No live player-stat or current-roster claim.
++// Dated local artwork qualified for local cards; receipts distinguish TJ acceptance from scoped agent QA.
++// No live player-stat, current-roster or publication-rights claim.
+ export const REVIEWED_HERO_SAMPLES: readonly HeroSample[] = [
+   {
+     "id": 8479318,
+@@ -31,5 +32,22 @@
+     "alphaSha256": "4199308c2f56a9ac0244697e7162f42283f1a5c247b656fb7c9278597b3ee18c",
+     "acceptance": "accepted",
+     "localPath": "/player-cards/hero-samples/8478864.png"
+-  }
++  },
++  // Scoped local source/visual QA: hero-qualification-13/QUALIFICATION.json; not TJ personal acceptance.
++  // Download receipt is dated 2026-10-24; exact download time is not recorded.
++  {
++    "id": 8476453,
++    "name": "Nikita Kucherov",
++    "team": "TBL",
++    "position": "R",
++    "sweater": 86,
++    "sourceUrl": "https://assets.nhle.com/mugs/actionshots/1296x729/8476453.jpg",
++    "sourceWidth": 1296,
++    "sourceHeight": 729,
++    "capturedAt": "2026-10-24",
++    "sourceSha256": "3036cb4ec324cc902ab2d797f4e69b58347c85909d6ce92daab01b7123f0711b",
++    "alphaSha256": "2010d97f1e1c631f7ccf154d991517f3b6923df7739d756e39ed06140aa1f278",
++    "acceptance": "accepted",
++    "localPath": "/player-cards/hero-samples/8476453.png"
++  },
+ ];
+--- before/web/lib/player-cards/teamLogo.ts
++++ web/lib/player-cards/teamLogo.ts
+@@ -1,9 +1,10 @@
+ import { teamsInfo } from "../teamsInfo";
+ 
+-// Existing local team assets inspected for this two-player composition checkpoint.
++// Existing local team assets inspected and pinned for the qualified card compositions.
+ const LOGOS: Record<string, { path: string; sha256: string; size: number }> = {
+   TOR: { path: "/teamLogos/TOR.png", sha256: "b88d6edb92e4bcca291f7d3a37c1265fee39e1f5ef41650aaa19d8a39ad7e01d", size: 1023 },
+   MIN: { path: "/teamLogos/MIN.png", sha256: "430c6a4073da40b9d2e147c2528dba317f019273390ef2bdd43363895c5e0fc2", size: 1280 },
++  TBL: { path: "/teamLogos/TBL.png", sha256: "51a484101a24be2f33145a58d1c7855bfc5b408bec39a7195a29aec7aaa6332c", size: 1099 },
+ };
+ export type PreparedTeamLogo = { team: string; dataUrl: string; sha256: string; localPath: string };
+ 
+--- before/web/lib/player-cards/currentArtwork.test.ts
++++ web/lib/player-cards/currentArtwork.test.ts
+@@ -14,8 +14,8 @@
+ it("requires the exact accepted ID and team, never an unreviewed roster candidate", () => {
+   expect(reviewedHeroFor(card.player)).toBe(sample);
+   expect(reviewedHeroFor({ ...card.player, team: "MIN" })).toBeUndefined();
+-  expect(reviewedHeroFor({ ...card.player, id: 8476453, team: "TBL" })).toBeUndefined();
+-  expect(() => currentArtworkManifest({ ...card, player: { ...card.player, id: 8476453, team: "TBL" } }, hero)).toThrow("match");
++  expect(reviewedHeroFor({ ...card.player, id: 8470001, team: "TBL" })).toBeUndefined();
++  expect(() => currentArtworkManifest({ ...card, player: { ...card.player, id: 8470001, team: "TBL" } }, hero)).toThrow("match");
+ });
+ it("uses the existing player geometry, binds embedded pixels and rejects substituted or stale artwork", () => {
+   const { container } = render(createElement(CurrentPlayerCard, { card, format: "rates-opportunity", hero }));
+@@ -34,3 +34,9 @@
+   expect(currentArtworkManifest(card)).toMatchObject({ state: "unavailable", playerId: sample.id, team: sample.team });
+   const metadata = JSON.stringify(currentArtworkManifest(card, hero)); expect(metadata).not.toContain("data:image"); expect(metadata).toContain(sample.alphaSha256);
+ });
++
++it("binds qualified Kucherov to his exact TBL source and rejects another team", () => {
++  const selected = reviewedHeroFor({ id: 8476453, name: "Nikita Kucherov", team: "TBL", position: "R" });
++  expect(selected).toMatchObject({ id: 8476453, team: "TBL", sweater: 86, alphaSha256: "2010d97f1e1c631f7ccf154d991517f3b6923df7739d756e39ed06140aa1f278", localPath: "/player-cards/hero-samples/8476453.png" });
++  expect(reviewedHeroFor({ id: 8476453, name: "Nikita Kucherov", team: "TOR", position: "R" })).toBeUndefined();
++});
+--- before/web/components/player-cards/CurrentPlayerCardStudio.test.tsx
++++ web/components/player-cards/CurrentPlayerCardStudio.test.tsx
+@@ -5,6 +5,11 @@
+ import CurrentPlayerCard from "./CurrentPlayerCard";
+ import { assertCurrentNhlExport } from "../../lib/player-cards/currentNhlExport";
+ import { buildCurrentNhlCard } from "../../lib/player-cards/currentNhl";
++// Preserve missing-art consumer fixtures while the real registry adds qualified Kucherov.
++vi.mock("../../lib/player-cards/reviewedHeroSamples", async importOriginal => {
++  const actual = await importOriginal<typeof import("../../lib/player-cards/reviewedHeroSamples")>();
++  return { REVIEWED_HERO_SAMPLES: actual.REVIEWED_HERO_SAMPLES.filter(sample => sample.id !== 8476453) };
++});
+ afterEach(() => { window.history.replaceState(null, "", "/"); localStorage.clear(); });
+ const fixture = () => buildCurrentNhlCard({ playerId: 8476453, season: 20262027, count: 5 }, {
+   identity: { playerId: 8476453, firstName: { default: "Fixture" }, lastName: { default: "Player" }, currentTeamAbbrev: "TBL", position: "R", seasonTotals: [{ season: 20262027, gameTypeId: 2, leagueAbbrev: "NHL", gamesPlayed: 1 }] },
+New byte-identical qualified local image: web/public/player-cards/hero-samples/8476453.png; SHA256 2010d97f1e1c631f7ccf154d991517f3b6923df7739d756e39ed06140aa1f278; 1302004 bytes.

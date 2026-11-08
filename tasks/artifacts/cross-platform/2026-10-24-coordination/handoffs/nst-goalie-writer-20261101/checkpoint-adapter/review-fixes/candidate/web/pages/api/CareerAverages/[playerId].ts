@@ -1,0 +1,251 @@
+import { withNstJobLifecycle } from "lib/nst/jobLifecycle.server";
+import type { NextApiRequest, NextApiResponse } from "next";
+import { HTMLElement, parse } from "node-html-parser";
+
+import { buildNstUrlString, fetchNstTextWithCacheByUrl } from "lib/nst/client";
+import { parseTime } from "lib/NHL/TOI";
+
+export type Data = {
+  IPP: number | null;
+  "S%": number | null;
+  "xS%": number | null;
+  "SOG/60": number | null;
+  "oZS%": number | null;
+  "oiSH%": number | null;
+  "secA%": number | null;
+  iHDCF: number | null;
+  iSCF: number | null;
+  ixG: number | null;
+  goals: number | null;
+};
+
+type Response = {
+  message: string;
+  success: boolean;
+  data?: Data;
+};
+
+async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse<Response>
+) {
+  const { playerId } = req.query;
+  if (!playerId) {
+    return res.json({
+      message: "Player Id is required",
+      success: false
+    });
+  }
+
+  try {
+    const stats = await getStats(playerId as string);
+
+    res.json({
+      success: true,
+      message:
+        "Successfully fetch the career averages stats for player: " + playerId,
+      data: stats
+    });
+  } catch (e: any) {
+    res.json({
+      success: false,
+      message: "Unable to fetch the data. " + e.message
+    });
+  }
+}
+
+export function parseTable(table: HTMLElement) {
+  const data = [];
+  const rows = table.getElementsByTagName("tr");
+
+  if (rows.length <= 2) {
+    throw new Error("Cannot find the player.");
+  }
+  for (let rowIdx = 1; rowIdx < rows.length; rowIdx++) {
+    const row = rows[rowIdx];
+    const cols = [...row.childNodes]
+      .filter((n) => n.nodeType !== 3)
+      .map((td) => td.textContent);
+    data.push(cols);
+  }
+
+  const headers = [...rows[0].childNodes]
+    .filter((n) => n.nodeType !== 3)
+    .map((th) => th.textContent);
+  return { headers, data };
+}
+
+async function getStats(playerId: string) {
+  const URL = buildNstUrlString("playerreport.php", {
+    stype: 2,
+    sit: "all",
+    stdoi: "std",
+    rate: "n",
+    v: "p",
+    playerid: playerId
+  });
+  const { text: html } = await fetchNstTextWithCacheByUrl(URL);
+  const document = parse(html);
+  const individual = parseTable(document.getElementById("indreg"));
+  const onIce = parseTable(document.getElementById("reg"));
+
+  // S%
+  const shootsPctIdx = individual.headers.indexOf("S%");
+  const shootsPct =
+    individual.data.reduce(
+      (prev, current) => prev + Number(current[shootsPctIdx]),
+      0
+    ) / individual.data.length;
+
+  // xS% (ixG/shots)
+  const xSPct =
+    individual.data.reduce(
+      (prev, current) =>
+        prev +
+        Number(current[individual.headers.indexOf("ixG")]) /
+          Number(current[individual.headers.indexOf("Shots")]),
+      0
+    ) / individual.data.length;
+
+  // IPP
+  const IPP =
+    individual.data.reduce(
+      (prev, current) =>
+        prev + Number(current[individual.headers.indexOf("IPP")]) || 0,
+      0
+    ) / individual.data.length;
+
+  // oiSH% - "On-Ice SH%"
+  const oiSHPct =
+    onIce.data.reduce(
+      (prev, current) =>
+        prev + Number(current[onIce.headers.indexOf("On-Ice SH%")]) || 0,
+      0
+    ) / onIce.data.length;
+
+  // sec A% (Secondary assist %) - second assists/total Assists
+  const secAPct =
+    individual.data.reduce(
+      (prev, current) =>
+        prev +
+          Number(current[individual.headers.indexOf("Second Assists")]) /
+            Number(current[individual.headers.indexOf("Total Assists")]) || 0,
+      0
+    ) / individual.data.length;
+
+  const primaryAssists =
+    individual.data.reduce(
+      (prev, current) =>
+        prev + Number(current[individual.headers.indexOf("First Assists")]) ||
+        0,
+      0
+    ) / individual.data.length;
+
+  const secondaryAssists =
+    individual.data.reduce(
+      (prev, current) =>
+        prev + Number(current[individual.headers.indexOf("Second Assists")]) ||
+        0,
+      0
+    ) / individual.data.length;
+
+  const totalPoints =
+    individual.data.reduce(
+      (prev, current) =>
+        prev + Number(current[individual.headers.indexOf("Total Points")]) || 0,
+      0
+    ) / individual.data.length;
+
+  // SOG/60 - (shots/toi)*60
+  const SOGPerSixty =
+    individual.data.reduce((prev, current) => {
+      return (
+        prev +
+        (Number(current[individual.headers.indexOf("Shots")]) /
+          parseTime(current[individual.headers.indexOf("TOI")]) || 0) *
+          60
+      );
+    }, 0) / individual.data.length;
+
+  // oZS% is offensive zone start % - Off. Zone Start %
+  const oZSPct =
+    onIce.data.reduce(
+      (prev, current) =>
+        prev + Number(current[onIce.headers.indexOf("Off. Zone Start %")]) || 0,
+      0
+    ) / onIce.data.length;
+
+  // iHDCF - Individual High Danger Chances For
+  const iHDCF =
+    individual.data.reduce(
+      (prev, current) =>
+        prev + Number(current[individual.headers.indexOf("iHDCF")]) || 0,
+      0
+    ) / individual.data.length;
+
+  // iSCF - Individual Scoring Chance For
+  const iSCF =
+    individual.data.reduce(
+      (prev, current) =>
+        prev + Number(current[individual.headers.indexOf("iSCF")]) || 0,
+      0
+    ) / individual.data.length;
+
+  // ixG - Individual Expected Goals
+  const ixG =
+    individual.data.reduce(
+      (prev, current) =>
+        prev + Number(current[individual.headers.indexOf("ixG")]) || 0,
+      0
+    ) / individual.data.length;
+
+  const ixGpct =
+    onIce.data.reduce(
+      (prev, current) =>
+        prev + Number(current[onIce.headers.indexOf("xG%")]) || 0,
+      0
+    ) / onIce.data.length;
+
+  const iCFpct =
+    onIce.data.reduce(
+      (prev, current) =>
+        prev + Number(current[onIce.headers.indexOf("CF%")]) || 0,
+      0
+    ) / onIce.data.length;
+
+  // Goals
+  const goals =
+    individual.data.reduce(
+      (prev, current) =>
+        prev + Number(current[individual.headers.indexOf("Goals")]) || 0,
+      0
+    ) / individual.data.length;
+
+  const data = {
+    "S%": shootsPct / 100,
+    "xS%": xSPct,
+    IPP: IPP / 100,
+    "oiSH%": oiSHPct / 100,
+    "secA%": secAPct,
+    "Primary Assists": primaryAssists,
+    "Secondary Assists": secondaryAssists,
+    "Total Points": totalPoints,
+    "SOG/60": SOGPerSixty,
+
+    "oZS%": oZSPct / 100,
+
+    iHDCF: iHDCF,
+
+    iSCF: iSCF,
+
+    ixG: ixG,
+    ixGpct: ixGpct,
+
+    goals: goals,
+
+    iCFpct: iCFpct
+  };
+  return data;
+}
+
+export default withNstJobLifecycle(handler, "CareerAverages/[playerId]", undefined, { lazy: true });

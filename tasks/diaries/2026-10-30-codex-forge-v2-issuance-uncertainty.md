@@ -1,0 +1,19 @@
+# FORGE issuance and uncertainty remediation
+- Scope: audit defects 1–3; own pipeline.server.ts, pipeline.test.ts, uncertainty.ts, uncertainty.test.ts only.
+- Where: octoberBranch canonical checkout; Chef handles commits and integration.
+- State: inspected audit and current pipeline/calibration contracts; initial owned paths clean. Other working-tree changes preserved.
+- Runtime: parent selected Astra/medium; no independent runtime model/effort attestation exposed.
+- Next: implement append-only attempt/gap records and profile calibration bundles; regress zero-weight PIM support.
+- Checks: none yet; focused Node 22 tests require atomic shared heavy lock.
+- Blockers: none. No live data, database, or deployment work authorized.
+- Checkpoint: implemented profile calibration bundles with legacy scalar compatibility, scoped joint support/fallback, and append-only queue attempt/gap capture. Shared contracts unchanged; Chef notified of exact exports and API generic update.
+- Verification: Node v22.11.0; 30 focused tests in pipeline.test.ts and uncertainty.test.ts passed under atomically acquired /private/tmp/fhfh-heavy.lock, released by owning process. Log /tmp/forge-v2-issuance-uncertainty-tests.log. Owned diff whitespace check passed.
+- Next: Chef reviews/integrates read-context/API consumers and scoped type/lint checks. No commits by worker.
+- Limits: synthetic evidence only, no scientific qualification or live calls. No independent runtime attestation. Queue/history writes are separate store operations; fact capture precedes destructive transitions, retry observations use stable clocks.
+- Reopened by Chef: atomic queue/event race confirmed; ownership expanded to history.server.ts only. Implementing single-statement CAS+event capture; Chef owns native store tests and fixtureHarness mirror. Also authorized an internal pinned-interval evaluation seam without public qualification for scientific evaluation (public qualification remains enforced).
+- Atomic checkpoint: saveQueueWithRecords added to history.server.ts; queue claim/expiry and failure acknowledgements now capture events in same CAS statement. Losing CAS writes no events; immutable collisions abort SQL statement. Executed failures remain attempt facts after stale lease without mutating newer claim or declaring terminal gaps.
+- Added internal evaluatePinnedIntervals with shared pin/profile/target/model/calibration/means validation; public reproduceIntervals retains independent qualification and manifest generator/hash checks.
+- Checks: 33 focused tests passed (pipeline22 uncertainty11) on Node22.11.0 under owned shared lock. Log /tmp/forge-v2-issuance-uncertainty-atomic-tests.log; diff check passed. Native SQL and type/lint integration remain Chef-owned.
+- Remaining review nuance sent to Chef: publication receipt insertion locks queue but does not advance queue revision. Lost acknowledgement after committed publication can be mislabeled missing_refresh during expiry; exact concurrent receipt/snapshot window also needs a revision fence. Worker did not silently change publication semantics beyond assigned atomic queue method.
+- Receipt-race remediation: expanded ownership refresh.ts for focused recovery helper. New receipts atomically increment queue revision; repeated receipt commits do not. Transition-due attempted jobs recover full draft+receipt proof before expiry classification (max100 jobs/200 sequential reads). Terminal acknowledgement failures also check for committed receipts before declaring gaps, bounded by max100 claims and max5 merge attempts (up to1000 additional reads).
+- Added regressions for after-lock receipt recovery, receipt/CAS race, tampered recovery proof, last-attempt acknowledgement failure, and over-capacity refusal. Source stable; latest changes await Chef's shared-lock run (Chef currently owns lock). Earlier33 tests passed before this receipt-specific pass; no claim yet for latest checks.

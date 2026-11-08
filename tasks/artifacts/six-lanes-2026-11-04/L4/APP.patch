@@ -1,0 +1,172 @@
+--- /dev/null
++++ b/web/lib/tradeValue/contracts.ts
+@@ -0,0 +1,50 @@
++/** Observation-only v1 contracts for trusted adapters. No valuation or roster-impact implementation. */
++export type Result<T> = { status: "available"; value: T } | { status: "unavailable"; reasons: readonly string[] };
++export type Scope = { gameKey: string; seasonId: string };
++export type EventScope = Scope & (
++  | { source: "yahoo_trade_market"; leagueKey: string | null }
++  | { source: "yahoo_league_transactions"; leagueKey: string }
++);
++export type Asset =
++  | { kind: "player"; rawText: string; yahooKey: string | null; identity: Result<{ scope: Scope; fhfhPlayerId: string; nhlPlayerId: number; receipt: string }> }
++  | { kind: "pick"; rawText: string; season: string | null; round: number | null; originalOwnerText: string | null; conditionText: string | null }
++  | { kind: "unknown"; rawText: string };
++/** Assertions from a trusted adapter; these fields do not authenticate permission or attribution. */
++export type SourceUse = {
++  receipt: string | null;
++  display: "public" | "connected_league_only" | "manager_only" | "unapproved";
++  attribution: string | null;
++  yahooLogoRequired: boolean;
++};
++export type Observation = {
++  version: "trade-observation-v1";
++  sightingId: string;
++  captureId: string;
++  parserVersion: string;
++  source: "yahoo_trade_market" | "yahoo_league_transactions";
++  scope: Scope;
++  sourceUrl: string;
++  sourceUse: SourceUse;
++  observedAt: string;
++  tradedAt: string | null;
++  rawDateText: string | null;
++  // Null unless the source proves event identity within this explicit scope.
++  // A league-scoped ID requires leagueKey even on a public market page.
++  event: { scope: EventScope; id: string } | null;
++  sample: "observed" | "synthetic";
++  // Preserve all sides and every asset in source order, including unresolved assets.
++  sides: readonly { label: string; assets: readonly Asset[] }[];
++  context: { scoring: string | null; roster: string | null; leagueSize: number | null; keeper: string | null };
++};
++export type Coverage = {
++  version: "trade-coverage-v1";
++  // Set only after verifying the source's explicit empty marker.
++  state: "not_captured" | "blocked" | "parse_failed" | "verified_empty" | "sightings";
++  captureId: string | null;
++  scope: Scope;
++  requestedPlayers: number;
++  receivedPlayers: number;
++  identityResolvedPlayers: number;
++  universe: string;
++  asOf: string;
++};
+--- /dev/null
++++ b/web/lib/tradeValue/observationEvidence.ts
+@@ -0,0 +1,44 @@
++import type { Observation, Result } from "./contracts";
++
++/**
++ * Select public observation evidence supplied by a trusted adapter.
++ * Not a parser for untrusted JSON, permission/identity verifier or source-event admission boundary.
++ * Receipt strings, source-use flags and event scopes are assertions; adapters must verify them first.
++ * No collection, scalar market valuation, roster benefit or acceptance inference occurs here.
++ */
++export function selectObservationEvidence(rows: readonly Observation[], options: {
++  asOf: string; sample: Observation["sample"];
++}): Result<{ records: readonly Observation[]; sightings: number; provenEvents: number }> {
++  const asOf = Date.parse(options.asOf);
++  if (!Number.isFinite(asOf)) return { status: "unavailable", reasons: ["invalid_cutoff"] };
++  const events = new Map<string, string>();
++  const sightings = new Map<string, Observation>();
++  for (const row of rows) {
++    // This public selector cannot establish same-league membership: private evidence stays unavailable.
++    if (row.sourceUse.display !== "public" || row.source !== "yahoo_trade_market" || !row.sourceUse.receipt?.trim() || !row.sourceUse.attribution?.trim() || !row.sourceUse.yahooLogoRequired)
++      return { status: "unavailable", reasons: ["source_use_unavailable"] };
++    if (!/^https:\/\/hockey\.fantasysports\.yahoo\.com\//.test(row.sourceUrl) || row.sample !== options.sample)
++      return { status: "unavailable", reasons: ["source_or_sample_mismatch"] };
++    const observed = Date.parse(row.observedAt), traded = row.tradedAt === null ? null : Date.parse(row.tradedAt);
++    if (!Number.isFinite(observed) || observed > asOf || traded !== null && (!Number.isFinite(traded) || traded > observed))
++      return { status: "unavailable", reasons: ["invalid_evidence_time"] };
++    if (!row.scope.gameKey.trim() || !row.scope.seasonId.trim() || !row.sightingId.trim() || !row.captureId.trim() || !row.parserVersion.trim() || row.sides.length < 2 || row.sides.some(side => !side.assets.length))
++      return { status: "unavailable", reasons: ["incomplete_sides_or_lineage"] };
++    // Conservative exact-content comparison. No bundle-based clustering or player-price inference.
++    const content = JSON.stringify([row.sides, row.context, row.tradedAt]);
++    const previous = sightings.get(row.sightingId);
++    if (previous && JSON.stringify(previous) !== JSON.stringify(row)) return { status: "unavailable", reasons: ["conflicting_sighting"] };
++    if (row.event) {
++      const scope = row.event.scope;
++      if (!row.event.id.trim() || scope.source !== row.source || scope.gameKey !== row.scope.gameKey || scope.seasonId !== row.scope.seasonId
++        || scope.leagueKey !== null && !scope.leagueKey.trim())
++        return { status: "unavailable", reasons: ["invalid_event_identity"] };
++      const key = JSON.stringify([scope.source, scope.gameKey, scope.seasonId, scope.leagueKey, row.event.id]);
++      if (events.has(key) && events.get(key) !== content) return { status: "unavailable", reasons: ["conflicting_event"] };
++      events.set(key, content);
++    }
++    sightings.set(row.sightingId, row);
++  }
++  if (!sightings.size) return { status: "unavailable", reasons: ["no_sightings_not_verified_empty"] };
++  return { status: "available", value: { records: [...sightings.values()], sightings: sightings.size, provenEvents: events.size } };
++}
+--- /dev/null
++++ b/web/lib/tradeValue/observationEvidence.test.ts
+@@ -0,0 +1,69 @@
++import { describe, expect, it } from "vitest";
++import type { Observation, EventScope } from "./contracts";
++import { selectObservationEvidence } from "./observationEvidence";
++
++const row: Observation = {
++  version: "trade-observation-v1", sightingId: "synthetic-sighting-1", captureId: "synthetic-capture", parserVersion: "synthetic-v1",
++  source: "yahoo_trade_market", sourceUrl: "https://hockey.fantasysports.yahoo.com/hockey/playertrades?pid=1&type=player",
++  scope: { gameKey: "477", seasonId: "2026" },
++  sourceUse: { receipt: "synthetic-use-receipt-not-authority", display: "public", attribution: "Synthetic Yahoo contract example", yahooLogoRequired: true },
++  observedAt: "2026-11-04T12:00:00Z", tradedAt: null, rawDateText: "Yesterday", event: null, sample: "synthetic",
++  sides: [
++    { label: "A", assets: [{ kind: "player", rawText: "Unresolved synthetic player", yahooKey: "477.p.1", identity: { status: "unavailable", reasons: ["unmapped"] } }] },
++    { label: "B", assets: [{ kind: "pick", rawText: "Conditional future pick", season: null, round: null, originalOwnerText: null, conditionText: "condition unresolved" }, { kind: "unknown", rawText: "Unparsed asset" }] },
++    { label: "C", assets: [{ kind: "unknown", rawText: "Third side retained" }] },
++  ], context: { scoring: null, roster: null, leagueSize: null, keeper: null },
++};
++const options = { asOf: "2026-11-04T13:00:00Z", sample: "synthetic" } as const;
++const eventScope: EventScope = { source: "yahoo_trade_market", gameKey: "477", seasonId: "2026", leagueKey: null };
++const changed = (patch: Partial<Observation>) => ({ ...structuredClone(row), ...patch });
++describe("public trade observation evidence from trusted adapters", () => {
++  it("all three sides, unresolved picks and unknown assets survive unchanged", () => {
++    const result = selectObservationEvidence([row], options);
++    expect(result.status).toBe("available");
++    if (result.status === "available") { expect(result.value.records[0]).toEqual(row); expect(result.value.provenEvents).toBe(0); }
++  });
++  it("identical bundles are separate sightings without proven event identity", () => {
++    const result = selectObservationEvidence([row, changed({ sightingId: "synthetic-sighting-2" })], options);
++    expect(result.status).toBe("available");
++    if (result.status === "available") { expect(result.value.sightings).toBe(2); expect(result.value.provenEvents).toBe(0); }
++  });
++  it("same event across captures retains two sightings and counts one proven event", () => {
++    const event = { scope: eventScope, id: "event-1" };
++    const result = selectObservationEvidence([changed({ event }), changed({ sightingId: "s2", captureId: "capture2", event })], options);
++    expect(result.status).toBe("available");
++    if (result.status === "available") { expect(result.value.sightings).toBe(2); expect(result.value.provenEvents).toBe(1); }
++  });
++  it("conflicting proven event is withheld", () => {
++    const event = { scope: eventScope, id: "event-1" };
++    expect(selectObservationEvidence([changed({ event }), changed({ sightingId: "s2", event, tradedAt: "2026-11-03T00:00:00Z" })], options)).toEqual({ status: "unavailable", reasons: ["conflicting_event"] });
++  });
++  it("same event ID across game, season and league scopes never collides", () => {
++    const scopes: EventScope[] = [eventScope, { ...eventScope, gameKey: "478" }, { ...eventScope, seasonId: "2027" },
++      { ...eventScope, leagueKey: "477.l.1" }, { ...eventScope, leagueKey: "477.l.2" }];
++    const result = selectObservationEvidence(scopes.map((scope, index) => changed({ sightingId: `scope-${index}`, scope: { gameKey: scope.gameKey, seasonId: scope.seasonId },
++      event: { scope, id: "same-id" }, tradedAt: `2026-10-0${index + 1}T00:00:00Z` })), options);
++    if (result.status !== "available") expect.fail("Expected evidence");
++    expect(result.value.provenEvents).toBe(5);
++  });
++  it("event source, game and season must match its observation", () => {
++    const mismatches: EventScope[] = [{ ...eventScope, source: "yahoo_league_transactions", leagueKey: "477.l.1" },
++      { ...eventScope, gameKey: "478" }, { ...eventScope, seasonId: "2027" }];
++    for (const scope of mismatches) expect(selectObservationEvidence([changed({ event: { scope, id: "same-id" } })], options)).toEqual({ status: "unavailable", reasons: ["invalid_event_identity"] });
++  });
++  it("replayed sighting is idempotent", () => {
++    const result = selectObservationEvidence([row, structuredClone(row)], options);
++    if (result.status !== "available") expect.fail("Expected evidence");
++    expect(result.value.sightings).toBe(1);
++  });
++  it("private league data never enters public evidence", () => expect(selectObservationEvidence([changed({ sourceUse: { ...row.sourceUse, display: "connected_league_only" } })], options).status).toBe("unavailable"));
++  it("unapproved use is withheld", () => expect(selectObservationEvidence([changed({ sourceUse: { ...row.sourceUse, receipt: null } })], options).status).toBe("unavailable"));
++  it("future capture and synthetic/observed mismatch are withheld", () => {
++    expect(selectObservationEvidence([changed({ observedAt: "2026-11-05T00:00:00Z" })], options).status).toBe("unavailable");
++    expect(selectObservationEvidence([row], { ...options, sample: "observed" }).status).toBe("unavailable");
++  });
++  it("empty input is unavailable, never a verified empty market", () => expect(selectObservationEvidence([], options)).toEqual({ status: "unavailable", reasons: ["no_sightings_not_verified_empty"] }));
++  it("selection does not mutate source bundles", () => {
++    const original = JSON.stringify(row); selectObservationEvidence([row], options); expect(JSON.stringify(row)).toBe(original);
++  });
++});

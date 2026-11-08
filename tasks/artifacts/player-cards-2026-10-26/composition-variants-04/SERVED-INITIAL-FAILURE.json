@@ -1,0 +1,6 @@
+{
+  "stage": "two final PNG hash loop",
+  "actual": "10bb4a91caaf0f8fa2f36cd34505c3523f8cf062939a23ed96133f33779f8d91",
+  "expected": "51b7ac42acff12f4d4420a9d32abd6e79a7e5cdd15c7cc7df11bcaf4e76f28fc",
+  "cause": "Harness img.card selector included third original-placement reference card; first two result hashes passed. Scope final variants to main article cards. No app/source/asset changes."
+}

@@ -1,0 +1,8 @@
+{
+  "web/lib/buyLowSellHigh/currentProcessEvidence.server.ts": "9011207c1d16af7a2834a80b4d19d85d0b772a02093eef822e0dd44a9959af83",
+  "web/lib/buyLowSellHigh/currentInput.ts": "58a87ea119a98b33d7d67fb6849a269e375c22210610b607dfa30ba034c76232",
+  "web/lib/nst/client.ts": "48d82fc40ca06d9abe4675f4a1896add55c4e53d4dee661bbe082d424c944e4f",
+  "web/lib/nst/gamelogProgress.ts": "b0c657c0e28193384939c58fdab6321460347f149b698e8051c4211cacab9942",
+  "web/pages/api/v1/db/update-nst-gamelog.ts": "b2d81075043e45a22bb12ae62be8aff7d804ece1faa64596e322fd328cd5c750",
+  "tasks/artifacts/blsh-v3-integration-2026-11-07/SOURCE-READINESS.md": "82e6e2ba9077ecf097d5c20a805450717a0c256b43de3e62ad2b8b35d8138391"
+}

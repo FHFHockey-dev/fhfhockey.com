@@ -1,0 +1,53 @@
+{
+  "at": "2026-11-01T19:18:05.575305+00:00",
+  "oldBase": "4965a872a9746b6129c9ac589c200560d01a1e23",
+  "newBase": "f17bea20d8caa2b6268c318bdb2152d7e2a3b57d",
+  "oldCandidateTree": "a77527cdc29fd994bc0e28a4b2d5ec1b87acbe14",
+  "replacementCandidateTree": "9820a239181765a7eae2597c32c0f380c0260b5a",
+  "committedClosureChanges": [
+    {
+      "path": "web/components/LinemateMatrix/index.tsx",
+      "beforeSha256": "035e0cef12a081f0d84035a9a05ebc577807fec0781b8c479cc244517ed99bb5",
+      "afterSha256": "f94465372574d2fa61edb6b98e00445ac36b3f8bffdfb404faac6af957c29278"
+    },
+    {
+      "path": "web/components/LinemateMatrix/utilities.ts",
+      "beforeSha256": "3b94ce271ff3d985f05dd679dc994745f156554918b79ff080dfbb9c70384a11",
+      "afterSha256": "e22da6347c03ee981458b106881b2691277659e94cfb274d13a21236a95fb908"
+    },
+    {
+      "path": "web/lib/sources/lineSourceIftttReceiver.ts",
+      "beforeSha256": "5fb55c31fe8a72e29b18718d345fca30b5acc87c97dffeff5c0dfd750ae687d7",
+      "afterSha256": "3077aba4fc04433dc83f658ae399d47bbebc95dfb0f306df901b1be6d07d50ad"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-power-play-combinations/[gameId].ts",
+      "beforeSha256": "8c702065650099873efdb74967cb7ea648a310092b50c1f11d895cf192469ee3",
+      "afterSha256": "de84e472726f210b485457fa79b81a5d70440219f99606c653d1b9f61f48c618"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-power-play-combinations/index.ts",
+      "beforeSha256": "14a459c34cf47867012de4eefe86eb7e9eb8758d85ae7fc831dbbe90ae58d8be",
+      "afterSha256": "9489d61ecb6dc1fce3da8e6fdf4621b7338cd4362f6d5e4a0d20f925afab2241"
+    },
+    {
+      "path": "web/utils/getPowerPlayBlocks.ts",
+      "beforeSha256": "59c8fde9690db7f56ff196f94c9c0eee437b948c01f2f9459ee0e01573d112e4",
+      "afterSha256": "6ca511c288dc5633b9b2f5cf2f1e1a793eedfee15c1d76de3dd212ca8c49ed5a"
+    }
+  ],
+  "addedClosureModules": [],
+  "removedClosureModules": [],
+  "rsoRuntimeAndExistingBrowserSpecChanges": [],
+  "replacementPatchByteIdentical": true,
+  "sourcePatch": "combined-source.patch",
+  "sourcePatchSha256": "711a2d8d779b668f9e9e24ffeed3fcd779af9bd88b41fb0f04782b784ce19c4d",
+  "overlayChangedClosureMembers": [
+    "web/lib/player-forecasts/rsoUsePolicy.ts"
+  ],
+  "newBaseClosure": "f87dd7079506915fbdb9602d35c3a97270865ae0f4b8813c4456d6d09e96dc92",
+  "newCandidateClosure": "ec5bdab6593f58ec19ad9b250fb645aa377616542e98205150e22f085914968c",
+  "newBaseClosureListed": false,
+  "newCandidateClosureListed": false,
+  "admissionMeaning": "Uncaptured-input allowlist path only. No production serving or activation conclusion."
+}

@@ -712,6 +712,8 @@ export default withCronJobAudit(
   }),
   {
     jobName: "/api/v1/db/update-lines-ccc",
+    // The starter board polls this processor every minute; empty polls are
+    // most audit rows and carry no information. Work and failures stay audited.
     skipAuditWhenNoOp: isEmptyQueueProcessorRun,
   },
 );

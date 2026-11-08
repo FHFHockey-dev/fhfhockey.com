@@ -1,0 +1,1447 @@
+{
+  "kind": "request-to-git-custodian-not-final-candidate",
+  "observed_at_utc": "2026-11-04T23:04:07.361234+00:00",
+  "chef_thread": "01a1a86a-6dc1-72ae-a9c9-f29e9367c020",
+  "git_custodian": "Claude 1e668672",
+  "routing_custodian": "01a16e4f-a250-727a-aeb5-2e42da87500f",
+  "checkout": "/Users/tim/Code/fhfhockey.com",
+  "branch": "octoberBranch",
+  "proposed_base_sha": "5f6b4e7a3a893000fe31cc6928cd8736b56e5d39",
+  "candidate_commit": null,
+  "final_candidate_frozen": false,
+  "scope": "Accepted groups for local selective composition planning only; no staging/commit/ref operation by L3 and no remote action authorized",
+  "groups": [
+    {
+      "id": "RSO-CORRECTNESS",
+      "selection": "Chef-selected for proposed LOCAL review composition",
+      "acceptance": "Chef accepted for exact local candidate preparation; not final release acceptance",
+      "files": [
+        {
+          "path": "web/lib/rosterScheduleOptimizer/planning.ts",
+          "sha256": "b4c98515a1785de95b8f8e4b84c4ee805b5f173d91006832ad9859295b5d0a2e",
+          "bytes": 127468,
+          "git_blob_sha1": "f10dda07b3ceeaf7654c54bff8bffc7b73124f20",
+          "base_blob_sha1": "dcd0d592874b3d2eb88f8f0b1d2f164b900fd5eb",
+          "base_presence": "tracked",
+          "verified_at_utc": "2026-11-04T23:19:28.340623+00:00"
+        },
+        {
+          "path": "web/lib/rosterScheduleOptimizer/planningTimeline.ts",
+          "sha256": "8c8649e8f0f03e1159230dbe58a48cbedbef8286f5c15d6a8f2e244e604bc474",
+          "bytes": 12748,
+          "git_blob_sha1": "4213dfb744cdac2bdaeaba71703083060e6dffed",
+          "base_blob_sha1": "eaffdb66d8dde58eaa8a465093230d8357380345",
+          "base_presence": "tracked",
+          "verified_at_utc": "2026-11-04T23:19:28.340623+00:00"
+        },
+        {
+          "path": "web/lib/rosterScheduleOptimizer/lineupGaps.ts",
+          "sha256": "a664b961df98d4b244c85a9845447a4b62ac998943803d4360894cf4c0feeec4",
+          "bytes": 10087,
+          "git_blob_sha1": "3a3c7ee9534a462e34e7b17573651dd707462245",
+          "base_blob_sha1": "c8da1282cf1f2b84b3ae956f1a68495aaa5edfe8",
+          "base_presence": "tracked",
+          "verified_at_utc": "2026-11-04T23:19:28.340623+00:00"
+        },
+        {
+          "path": "web/lib/rosterScheduleOptimizer/healthyReserves.ts",
+          "sha256": "a4127298df7900f319e4a6eff6e49112b9164fb1c8a9f08db7caee6b1c450f6c",
+          "bytes": 9096,
+          "git_blob_sha1": "96be11d315fe42e04655d0d3675bae2a4e90f255",
+          "base_blob_sha1": "ae0015f71d4c7d318c603aa74e6ce5e02fab0dfa",
+          "base_presence": "tracked",
+          "verified_at_utc": "2026-11-04T23:19:28.340623+00:00"
+        },
+        {
+          "path": "web/lib/integrations/yahoo/rosterPlanning.ts",
+          "sha256": "bf1ea851c024f6e5f5e399f0505347dc9e16d8407b5921f1c3406cc005661cc9",
+          "bytes": 59302,
+          "git_blob_sha1": "8d172bd28b31eb11e7fe8555e8d8f2ef1c70f698",
+          "base_blob_sha1": "f7f906524c71953cdce5926c7017c1de7b79c10a",
+          "base_presence": "tracked",
+          "verified_at_utc": "2026-11-04T23:19:28.340623+00:00"
+        },
+        {
+          "path": "web/components/RosterScheduleOptimizer/HealthyReserveAlert.tsx",
+          "sha256": "1ff7c1fcf016d6131b5bd3124aa2332810d51ab364c0189c9b5c0581fccb2eca",
+          "bytes": 4788,
+          "git_blob_sha1": "1c7a026403c58b46dcee0b00f5b724f285cc8e23",
+          "base_blob_sha1": "c05cb751f5431fbcccf9a7fd3c561fa26c98db3f",
+          "base_presence": "tracked",
+          "verified_at_utc": "2026-11-04T23:19:28.340623+00:00"
+        },
+        {
+          "path": "web/lib/rosterScheduleOptimizer/planning.test.ts",
+          "sha256": "bb8057e7b4fe848a67258d3b4a6b4fa1b3ca025008382065c275c2ca5b2e5ad6",
+          "bytes": 166052,
+          "git_blob_sha1": "4db1fdcf6656dc1261f884a34b6d3b22ba5d4927",
+          "base_blob_sha1": "3414c3a217f5f431d7c55273c8fa836dcb62664c",
+          "base_presence": "tracked",
+          "verified_at_utc": "2026-11-04T23:19:28.340623+00:00"
+        },
+        {
+          "path": "web/lib/rosterScheduleOptimizer/candidatePlanMetrics.test.ts",
+          "sha256": "156b1923c3fd85e96d2a3e1659afd04d8c95567f41c720738a84529609fb547e",
+          "bytes": 50833,
+          "git_blob_sha1": "03f7f275bba039b6b8657e150e11984175643231",
+          "base_blob_sha1": "567a473f7ff988681f6ebec9c10fc8daf67cde12",
+          "base_presence": "tracked",
+          "verified_at_utc": "2026-11-04T23:19:28.340623+00:00"
+        },
+        {
+          "path": "web/lib/rosterScheduleOptimizer/contributionLedger.test.ts",
+          "sha256": "776bf76c7eafeb6eb434d992577705e30ed2ab5f0a5c7ae711fe7c48311c5970",
+          "bytes": 9718,
+          "git_blob_sha1": "5127794ffa1a1bab70474adc9b6a0b4c9e23fdeb",
+          "base_blob_sha1": "fac47c34c29c288d944fd538aeb93116b2083443",
+          "base_presence": "tracked",
+          "verified_at_utc": "2026-11-04T23:19:28.340623+00:00"
+        },
+        {
+          "path": "web/lib/rosterScheduleOptimizer/dailyAcceptance.manual.test.ts",
+          "sha256": "121f2b714b23f209bc845538327e47729ac86fb37f641dacbf338d20920d483c",
+          "bytes": 47963,
+          "git_blob_sha1": "acd40ca05577fc8dea77b1611e7d32612055cf6d",
+          "base_blob_sha1": "83d301ed3214732177f6e135894ef01562bdd609",
+          "base_presence": "tracked",
+          "verified_at_utc": "2026-11-04T23:19:28.340623+00:00"
+        },
+        {
+          "path": "web/lib/rosterScheduleOptimizer/healthyReserves.test.ts",
+          "sha256": "dab0c7f0abdb9bc2dd30baa94b0aab19d3965136c2f831da1e6fe2b800160998",
+          "bytes": 18269,
+          "git_blob_sha1": "692f42952d070492ccee2c1306125c144499b4e8",
+          "base_blob_sha1": "979cca8d526439195b7eda1a0af2131093c892c8",
+          "base_presence": "tracked",
+          "verified_at_utc": "2026-11-04T23:19:28.340623+00:00"
+        },
+        {
+          "path": "web/lib/rosterScheduleOptimizer/lineupGaps.test.ts",
+          "sha256": "8437cd29102f0c685db090cad6c4a68224f2215ca5d564a39a98e31bd83c9775",
+          "bytes": 10668,
+          "git_blob_sha1": "5b51ec457e9e8d0c931544e4fafea82cb339668a",
+          "base_blob_sha1": "ebbf46fbe72e3c91d97e2b92747072bf6018f6eb",
+          "base_presence": "tracked",
+          "verified_at_utc": "2026-11-04T23:19:28.340623+00:00"
+        },
+        {
+          "path": "web/lib/rosterScheduleOptimizer/refreshForecastInputs.test.ts",
+          "sha256": "d85373455b595a198c7855f4a1ebe8a0a20e4dd9aff74e6f883b5694bbacd681",
+          "bytes": 17092,
+          "git_blob_sha1": "e16ab7ed78b953d3e054250fe2dc3d5bf6aacac8",
+          "base_blob_sha1": "9d5fd766469bf66ce81ac4313daa2409a1e1a12f",
+          "base_presence": "tracked",
+          "verified_at_utc": "2026-11-04T23:19:28.340623+00:00"
+        },
+        {
+          "path": "web/lib/integrations/yahoo/rosterPlanning.test.ts",
+          "sha256": "3f1ee33d5ebf1a69026241314ac3cf3fe3c1d65f2114d969dfbed3dd66245508",
+          "bytes": 78684,
+          "git_blob_sha1": "815e08265174e1ce099b0f4b9443fe449fed3125",
+          "base_blob_sha1": "110dbc7e5fc16623f731616f241d362e81ff4396",
+          "base_presence": "tracked",
+          "verified_at_utc": "2026-11-04T23:19:28.340623+00:00"
+        },
+        {
+          "path": "web/components/RosterScheduleOptimizer/HealthyReserveAlert.test.tsx",
+          "sha256": "d81e31c1fe5a8886a5ff56718f8382caac2a3e0acbc4cbd6d58a51a7008a8b95",
+          "bytes": 6491,
+          "git_blob_sha1": "d9ea1df418e822268bebeac89db05b5c68fe73e4",
+          "base_blob_sha1": "c494cffd21e056cf71b6f26e338cfdbfe2cc0089",
+          "base_presence": "tracked",
+          "verified_at_utc": "2026-11-04T23:19:28.340623+00:00"
+        },
+        {
+          "path": "web/lib/player-forecasts/contributions.test.ts",
+          "sha256": "7003a4c02cf922d08f0fde791b6624603e45206d9996b783c244c0792cb49d34",
+          "bytes": 97080,
+          "git_blob_sha1": "4bd29dc563c92ef685b90c8954fe00820e79a534",
+          "base_blob_sha1": "5c473f48a223fff2afda34eca6fbed6f180b7304",
+          "base_presence": "tracked",
+          "verified_at_utc": "2026-11-04T23:19:28.340623+00:00"
+        },
+        {
+          "path": "web/e2e/roster-schedule-optimizer.spec.ts",
+          "sha256": "a16bddc3c2bba0c9e5ec7d8c165c531bb3e78501b1e851e0ca2f8f703490b135",
+          "bytes": 200594,
+          "git_blob_sha1": "5c55a4104aefbd10cfd62ad54f5a2153d29e4431",
+          "base_blob_sha1": "0b9d772e0eadf147a863725146c5eab136f3a7cd",
+          "base_presence": "tracked",
+          "verified_at_utc": "2026-11-04T23:19:28.340623+00:00"
+        }
+      ],
+      "dependencies": [
+        "Existing committed RSO/forecast-admission infrastructure; no new FORGE research module required"
+      ],
+      "reused_evidence": "Reuse RSO receipt: 61 RSO files / 1517 tests passed; targeted lint and five synthetic Chromium cases. Final selected subset not executed by L3. Concurrent styles excluded; no visual acceptance at their current revision.",
+      "independent_group_label": "core"
+    },
+    {
+      "id": "FORGE-OBSERVED-COUNTS",
+      "selection": "Chef-selected for proposed LOCAL review composition",
+      "acceptance": "Chef accepted for exact local candidate preparation; not final release acceptance",
+      "files": [
+        {
+          "path": "web/lib/forge-v2/contracts.ts",
+          "sha256": "a9d1dc573630538a008ac215ff479f7f0b1727456c435c233e9cb8ec1c623bd0",
+          "bytes": 17931,
+          "git_blob_sha1": "e1ef854c267400f5fa440357a4d22835270f981f",
+          "base_blob_sha1": "930bbfa4b0896bd9efb3f99bac6e3c04f35b40f4",
+          "base_presence": "tracked",
+          "verified_at_utc": "2026-11-04T23:19:28.340623+00:00"
+        },
+        {
+          "path": "web/lib/forge-v2/evaluation.ts",
+          "sha256": "8344c4ee2a46f075fcdc403eb6f68ded95611f0eee433fb45d651379740848fc",
+          "bytes": 30396,
+          "git_blob_sha1": "abc323f09409846bf1b15df42253dfff12052bd0",
+          "base_blob_sha1": "a10490eef0e13738d27134bca903b75fb220e424",
+          "base_presence": "tracked",
+          "verified_at_utc": "2026-11-04T23:19:28.340623+00:00"
+        },
+        {
+          "path": "web/lib/forge-v2/model.ts",
+          "sha256": "7a6de0e610f123cd0563809eabd07f43bd050cd162f07aa59320d6e5682275e7",
+          "bytes": 12848,
+          "git_blob_sha1": "24113ffa10d981f1ac198ce921fb589472da6f52",
+          "base_blob_sha1": "a3c45ad46b661f121d8b8abfa17e05d3894eee4a",
+          "base_presence": "tracked",
+          "verified_at_utc": "2026-11-04T23:19:28.340623+00:00"
+        },
+        {
+          "path": "web/lib/forge-v2/evaluation.test.ts",
+          "sha256": "f129c2f4554e0da89a807b2bcce2073d940a1f144a98c7093913ee8c90d8572c",
+          "bytes": 24963,
+          "git_blob_sha1": "db9b7ae93a7ed70a5d955b310af8ec1168ce3952",
+          "base_blob_sha1": "3c22f0d2af942fa71e5bab379e983ad3d0f0fa96",
+          "base_presence": "tracked",
+          "verified_at_utc": "2026-11-04T23:19:28.340623+00:00"
+        }
+      ],
+      "dependencies": [
+        "Existing committed model/contract fixtures; exclude new model.test.ts/data.test.ts hunks in this minimal full-file slice"
+      ],
+      "reused_evidence": "Reuse provenance receipt: 320/17 aggregate, TypeScript/lint; evaluation.test.ts has direct ingestion/settlement regression. Existing model tests remain in HEAD. No selected-subset rerun by L3.",
+      "independent_group_label": "core"
+    },
+    {
+      "id": "FORGE-HORIZON-OFFLINE",
+      "selection": "Chef-selected for proposed LOCAL review composition",
+      "acceptance": "Chef accepted for exact local candidate preparation; not final release acceptance",
+      "files": [
+        {
+          "path": "web/lib/forge-v2/horizonEvaluation.ts",
+          "sha256": "09f65c649c5ddfb2ddb6e9dca8a735cd5f3caa25a8c5cad193280175c5e565ab",
+          "bytes": 24979,
+          "git_blob_sha1": "469063bd4df30f3b47b5940681a71a988e09d7ca",
+          "base_blob_sha1": null,
+          "base_presence": "absent; new file requires explicit inclusion",
+          "verified_at_utc": "2026-11-04T23:19:28.340623+00:00"
+        },
+        {
+          "path": "web/lib/forge-v2/horizonEvaluation.test.ts",
+          "sha256": "6a8fdb0c91e63d147634787f1056ac1b33da031eee11f954011f99cc2015eb51",
+          "bytes": 12898,
+          "git_blob_sha1": "76e214616c3673d0dce6f849c3ed356302c1e49f",
+          "base_blob_sha1": null,
+          "base_presence": "absent; new file requires explicit inclusion",
+          "verified_at_utc": "2026-11-04T23:19:28.340623+00:00"
+        },
+        {
+          "path": "web/lib/forge-v2/horizonEvaluation.fixtures.ts",
+          "sha256": "1e34731a0a1fc4ad1d8faa109b2dbbd6b2cbc25f9159ef861d6ef5b577859cf6",
+          "bytes": 3508,
+          "git_blob_sha1": "d4cb0ebfe5b05b5cd850cd0c15e60c3e34b2abaf",
+          "base_blob_sha1": null,
+          "base_presence": "absent; new file requires explicit inclusion",
+          "verified_at_utc": "2026-11-04T23:19:28.340623+00:00"
+        },
+        {
+          "path": "web/scripts/forge-horizon-evaluate.ts",
+          "sha256": "5cb3485145dc33319c8ae7a0d80ffd4d4f47389e77696d00e58f577402286c05",
+          "bytes": 3822,
+          "git_blob_sha1": "caab232dfc0f82947bd836ad5ffeb2c8762a7979",
+          "base_blob_sha1": null,
+          "base_presence": "absent; new file requires explicit inclusion",
+          "verified_at_utc": "2026-11-04T23:19:28.340623+00:00"
+        }
+      ],
+      "dependencies": [
+        "Existing committed contracts/hash helpers; include runner because horizonEvaluation.test.ts imports it; runner imports fixtures"
+      ],
+      "reused_evidence": "Integrity/provenance aggregate receipts; inspected temporal/count/scoring/pairing gates and runner bounds. No new evaluation run.",
+      "independent_group_label": "optional_independently_releasable"
+    },
+    {
+      "id": "FORGE-LEDGER-OFFLINE",
+      "selection": "Chef-selected for proposed LOCAL review composition",
+      "acceptance": "Chef accepted for exact local candidate preparation; not final release acceptance",
+      "files": [
+        {
+          "path": "web/scripts/forge-ledger-evaluate.ts",
+          "sha256": "b2609ac9a13a7d283e67b5993888b458bb0a613bdb5a3c08681f0e8a4dc330db",
+          "bytes": 10468,
+          "git_blob_sha1": "ee4b4b9dbf9d160252c52e45e8b8a49a06cd89bc",
+          "base_blob_sha1": null,
+          "base_presence": "absent; new file requires explicit inclusion",
+          "verified_at_utc": "2026-11-04T23:19:28.340623+00:00"
+        },
+        {
+          "path": "web/lib/player-forecasts/servedForecastLedger.test.ts",
+          "sha256": "fee3d790ff16b3601fce4c892907e4bc6dca94e8d04e8838112672f059199ac8",
+          "bytes": 32467,
+          "git_blob_sha1": "9c4ebc49b9bfe93ec5b9dd1f34538ac6f22654f0",
+          "base_blob_sha1": "c971c980eb5812271542c1097e55672132d69986",
+          "base_presence": "tracked",
+          "verified_at_utc": "2026-11-04T23:19:28.340623+00:00"
+        }
+      ],
+      "dependencies": [
+        "Existing committed servedForecastLedger.ts; test imports runner"
+      ],
+      "reused_evidence": "Empirical/provenance aggregate receipts; inspected chronology, label masking, count/mean quarantine, input/output bounds; no protected-data read or CLI execution.",
+      "independent_group_label": "optional_independently_releasable"
+    },
+    {
+      "id": "FORGE-JOINT-SAMPLER",
+      "selection": "Chef-selected for proposed LOCAL review composition",
+      "acceptance": "Chef accepted for exact local candidate preparation; not final release acceptance",
+      "files": [
+        {
+          "path": "web/lib/projections/uncertainty.ts",
+          "sha256": "3239c2be13d0b043dc2edfe793e16527bc7cd25e8123327d0dfafb207f691cdd",
+          "bytes": 33624,
+          "git_blob_sha1": "2cf35326733c5ac0da9361ac6c7e13699ce8c7ec",
+          "base_blob_sha1": "e11d4800af20e046ced2ab7cc9d59e7769a0d86f",
+          "base_presence": "tracked",
+          "verified_at_utc": "2026-11-04T23:19:28.340623+00:00"
+        },
+        {
+          "path": "web/lib/projections/uncertainty.test.ts",
+          "sha256": "462714bb825024a34f4b550dca28aa011ae1eb355e685a2d9ccca481b2c763fc",
+          "bytes": 13282,
+          "git_blob_sha1": "00409dce131de61a0e5a6eb3b1146d2cb89ace32",
+          "base_blob_sha1": "a05530220a237f5c6366108259e5bb6251745f97",
+          "base_presence": "tracked",
+          "verified_at_utc": "2026-11-04T23:19:28.340623+00:00"
+        }
+      ],
+      "dependencies": [
+        "Keep jointGoalieCounts option disabled in producers; no qualification or caller activation"
+      ],
+      "reused_evidence": "Integrity/provenance receipts include default/opt-in accounting tests. Inspected conditional branch, coherent inputs and independent bit-enumeration test. Bounded goalie-stage caller read found no option enablement there; no new global caller audit.",
+      "independent_group_label": "optional_independently_releasable"
+    },
+    {
+      "id": "L2-YAHOO-AUDIT-TEST",
+      "selection": "Chef-selected for proposed LOCAL review composition",
+      "acceptance": "Chef accepted reviewed L2 patch after L1 C5 custody clearance",
+      "files": [
+        {
+          "path": "web/__tests__/pages/api/internal/yahoo-live-draft.test.ts",
+          "sha256": "36e296269135ee08ae822511d00b51c7f5f47bd200b21929e146e3e91e376a71",
+          "bytes": 11780,
+          "git_blob_sha1": "fada9560cf4f7971bc5237626e2a26785db1ddfa",
+          "base_blob_sha1": "32a3eb5ad2935ee51d6cf831ed0c481bff317c8e",
+          "base_presence": "tracked",
+          "verified_at_utc": "2026-11-04T23:19:28.340623+00:00"
+        }
+      ],
+      "dependencies": [
+        "Existing committed fail-closed audit response contract; runtime files unchanged"
+      ],
+      "reused_evidence": "17 mocked tests and targeted lint/diff checks passed, reported by Chef; no rerun by L3",
+      "independent_group_label": "core"
+    },
+    {
+      "id": "L4-OBSERVATION-ONLY",
+      "selection": "Chef-selected for proposed LOCAL review composition",
+      "acceptance": "Chef accepted observation-only trio",
+      "files": [
+        {
+          "path": "web/lib/tradeValue/contracts.ts",
+          "sha256": "24e132e2c1ea715ccd0cf572eaa9162349f32f545e5dd49aafbdb948a470b9cd",
+          "bytes": 2329,
+          "git_blob_sha1": "0118c3c69acf4bf2b9152083e2e90147859ecef5",
+          "base_blob_sha1": null,
+          "base_presence": "absent; new file requires explicit inclusion",
+          "verified_at_utc": "2026-11-04T23:19:28.340623+00:00"
+        },
+        {
+          "path": "web/lib/tradeValue/observationEvidence.ts",
+          "sha256": "bafb1916b8e42ecd684dd332a4743da7110db7741d252e061a505e341d77ed12",
+          "bytes": 3357,
+          "git_blob_sha1": "83e272bd749faa9c38feb65605aa47c7d49112b6",
+          "base_blob_sha1": null,
+          "base_presence": "absent; new file requires explicit inclusion",
+          "verified_at_utc": "2026-11-04T23:19:28.340623+00:00"
+        },
+        {
+          "path": "web/lib/tradeValue/observationEvidence.test.ts",
+          "sha256": "e0cde9df893283f9a204147357083934892a0d6d0f29b5865974e204e3b094e8",
+          "bytes": 5731,
+          "git_blob_sha1": "abf045cecb1794ffeaf6cdf266480f157f3b6125",
+          "base_blob_sha1": null,
+          "base_presence": "absent; new file requires explicit inclusion",
+          "verified_at_utc": "2026-11-04T23:19:28.340623+00:00"
+        }
+      ],
+      "dependencies": [
+        "Trusted upstream adapter still required before real observations/source-use claims; no runtime wiring"
+      ],
+      "reused_evidence": "APP-CHECKS.json: 12 Vitest tests, targeted lint, isolated strict TypeScript passed. Source fields are assertions, not authenticated proof; no valuation/roster-impact exports.",
+      "independent_group_label": "optional_independently_releasable"
+    },
+    {
+      "id": "L5-STRUCTURAL-DIAGNOSIS",
+      "selection": "Chef-selected for proposed LOCAL review composition",
+      "acceptance": "Chef accepted structural diagnosis; Chef-run synthetic component browser follow-up passed30 checks",
+      "files": [
+        {
+          "path": "web/components/RosterAutopsy/RosterAutopsy.tsx",
+          "sha256": "3e1c2e4cb9d2baf7a53bca36bade8dfe44c5c5cbffdb4cf2058c430c19c608dd",
+          "bytes": 23387,
+          "git_blob_sha1": "2435d1db198f9cd789ecffe47ba5c1d9ffc34976",
+          "base_blob_sha1": "455d8f5dc98a7969f804d47b457d10fcd3b9ffc1",
+          "base_presence": "tracked",
+          "verified_at_utc": "2026-11-04T23:19:28.340623+00:00"
+        },
+        {
+          "path": "web/components/RosterAutopsy/RosterAutopsy.module.scss",
+          "sha256": "6c48ba65c343b0e608713a3d6336dc5bb5ce29d5b521c5950308e258db6b44b7",
+          "bytes": 8189,
+          "git_blob_sha1": "a68d2b6aebe1275f14194ca6665695362cacaf4d",
+          "base_blob_sha1": "a9a1baf7600d06a8f5304844bc2e5c952c6fe294",
+          "base_presence": "tracked",
+          "verified_at_utc": "2026-11-04T23:19:28.340623+00:00"
+        },
+        {
+          "path": "web/components/RosterAutopsy/RosterAutopsy.test.tsx",
+          "sha256": "0497001d534127f1283d3745c6aa053925fb58ecfdfde62bcd543fd0fe9607f9",
+          "bytes": 12725,
+          "git_blob_sha1": "652f8b92cf42d6b43ff28b09a8333b8e4f154c0b",
+          "base_blob_sha1": "5168785be0862739fd1b8f4543040adfb65bd1cf",
+          "base_presence": "tracked",
+          "verified_at_utc": "2026-11-04T23:19:28.340623+00:00"
+        },
+        {
+          "path": "web/lib/rosterAutopsy/diagnosis.ts",
+          "sha256": "d5c80f92344cffaf477d567228c8227bffcfed896a3547f5e561c90af8aa35b3",
+          "bytes": 3537,
+          "git_blob_sha1": "ea7b999dbd4e8f0fa17651b89c6ee1ffe9f6e68d",
+          "base_blob_sha1": null,
+          "base_presence": "absent; new file requires explicit inclusion",
+          "verified_at_utc": "2026-11-04T23:19:28.340623+00:00"
+        },
+        {
+          "path": "web/lib/rosterAutopsy/diagnosis.test.ts",
+          "sha256": "0833bad394ddb301d58e6c3befcea1e254fa56e90d3ba0d89cb7afcfb7777813",
+          "bytes": 4596,
+          "git_blob_sha1": "22068ef97a9d8b421b9fee6ec51469826e4446c2",
+          "base_blob_sha1": null,
+          "base_presence": "absent; new file requires explicit inclusion",
+          "verified_at_utc": "2026-11-04T23:19:28.340623+00:00"
+        }
+      ],
+      "dependencies": [
+        "Existing committed rosterAutopsy/manual.ts and route/import/storage model; no L4 numerical contract or Analyzer required",
+        "Synthetic component browser scope only; full Next shell and unrelated global style integration remain outside acceptance"
+      ],
+      "reused_evidence": "Prior26 tests/3 files, scoped TypeScript, lint, synthetic component/Sass compile passed. Chef-run updated browser-result.json:30 checks at1440/390/320 including keyboard/edit/reload/RTL/200% CSS zoom passed; no page errors or external requests. Chef inspected desktop/390 screenshots. Full Next app shell remains outside scope. No browser rerun by L3.",
+      "independent_group_label": "optional_independently_releasable"
+    },
+    {
+      "id": "FORGE-CAPTURE-BASELINES",
+      "selection": "Chef-selected for proposed LOCAL review composition",
+      "acceptance": "Chef accepted after independently inspecting owner delta.patch/receipt; no activation",
+      "files": [
+        {
+          "path": "web/lib/forge-v2/researchCapture.ts",
+          "sha256": "fa591f0e7072e6ad21562b64646f13ea6906d4b1b2fa1ca40905dacf625ff7b4",
+          "bytes": 10781,
+          "git_blob_sha1": "28650db1d58260a1cf370322ed9e8bfa4f48a664",
+          "base_blob_sha1": null,
+          "base_presence": "absent; new file requires explicit inclusion",
+          "pin_source": "FORGE owner capture-origin-fix/hashes.json + Chef acceptance",
+          "verified_at_utc": "2026-11-04T23:19:28.340623+00:00"
+        },
+        {
+          "path": "web/lib/forge-v2/researchBaselines.ts",
+          "sha256": "f0670035ba224a2c08954522fab41c137e00b7631008629eae0b48c82dae1b6b",
+          "bytes": 9415,
+          "git_blob_sha1": "225bb02a88b854b3b32fb3d95b55b7282a233122",
+          "base_blob_sha1": null,
+          "base_presence": "absent; new file requires explicit inclusion",
+          "pin_source": "unchanged accepted prior L3 review pin",
+          "verified_at_utc": "2026-11-04T23:19:28.340623+00:00"
+        },
+        {
+          "path": "web/lib/forge-v2/data.test.ts",
+          "sha256": "50eca3ba00217affa179230e5948a7485c644bc9be7885a85ec0aeb88b1c1cb4",
+          "bytes": 13513,
+          "git_blob_sha1": "d6a2f799ee88b16e91b144ba84b98a2b1f25db16",
+          "base_blob_sha1": "0994730fb3fde1bfebffb5f072466b94b31859a8",
+          "base_presence": "tracked",
+          "pin_source": "FORGE owner capture-origin-fix/hashes.json + Chef acceptance",
+          "verified_at_utc": "2026-11-04T23:19:28.340623+00:00"
+        },
+        {
+          "path": "web/lib/forge-v2/model.test.ts",
+          "sha256": "24b772ef5b74ba3d276ca2248157107c984d3d935c748e741dcca6ff008e2fb1",
+          "bytes": 15156,
+          "git_blob_sha1": "fa42103f65de37038cb613056cfa3e0fed03e7ad",
+          "base_blob_sha1": "b699b341b20ceac58c81844e88422f08eebebfdc",
+          "base_presence": "tracked",
+          "pin_source": "unchanged accepted prior L3 review pin",
+          "verified_at_utc": "2026-11-04T23:19:28.340623+00:00"
+        }
+      ],
+      "dependencies": [
+        "Requires horizonEvaluation.ts from FORGE-HORIZON-OFFLINE; include helper/test additions together",
+        "No durable capture store, real source admission or model activation implied"
+      ],
+      "reused_evidence": "Owner capture-origin-fix receipt:39 data/model tests and targeted lint passed; pre-fix delayed-retention failure recorded. Selection now issuedAt; late retainedAt crossing eligible first game rejected including absent forecasts. No full typecheck or aggregate rerun for follow-up; prior broader checks remain historical.",
+      "independent_group_label": "optional_independently_releasable"
+    },
+    {
+      "id": "L2-SAVED-SNAPSHOT-PARSER",
+      "selection": "Chef-selected for proposed LOCAL review composition",
+      "acceptance": "Chef accepted installed reviewed parser-only pair with original audit changes preserved in full files",
+      "files": [
+        {
+          "path": "web/lib/buyLowSellHigh/researchSnapshot.ts",
+          "sha256": "dc4cbb57a93a6e2cdae66d48b0519704c17f0a7d49451bfa546eafeb885b2cb7",
+          "bytes": 31655,
+          "git_blob_sha1": "087856a6d8a6dcf33695dbd8841aef923a195747",
+          "base_blob_sha1": "6c06ae34df2aa0f5cd4442bb7203ac90326956c9",
+          "base_presence": "tracked",
+          "prior_audit_pin_sha256": "76721610cf1be0f699279696603517c1b92547d1e85944e150098370a31babd3",
+          "pin_source": "Chef-accepted L2/parser-v3/INSTALL-RECEIPT.json; full files preserve prior audit changes",
+          "verified_at_utc": "2026-11-04T23:19:28.340623+00:00"
+        },
+        {
+          "path": "web/lib/buyLowSellHigh/researchSnapshot.test.ts",
+          "sha256": "a34517a7cdb23dd91e6980bf16d40ea1751ebfce75b06895a553d4a687099c14",
+          "bytes": 21093,
+          "git_blob_sha1": "172dacb524d44a614a28d7c362820b3cb1c7ca38",
+          "base_blob_sha1": "8173cdcce330d2f034f85016bb28b4625cb3f739",
+          "base_presence": "tracked",
+          "prior_audit_pin_sha256": "3cd79a94f1ff6b896c48cd41dd59a1e0a3ea9a33fe54abdc378927071e6ab69c",
+          "pin_source": "Chef-accepted L2/parser-v3/INSTALL-RECEIPT.json; full files preserve prior audit changes",
+          "verified_at_utc": "2026-11-04T23:19:28.340623+00:00"
+        }
+      ],
+      "dependencies": [
+        "Baseline dependency pins unchanged per installation receipt",
+        "Existing pinned snapshot unchanged; no repackaging, rescoring, new input admission or refresh included"
+      ],
+      "reused_evidence": "INSTALL-RECEIPT.json:74 canonical focused tests in one file pass under shared lock; scoped diff check pass; exact reviewed two-file patch installed with prior audit diff preserved. L3 verified two resulting file hashes only; no rerun.",
+      "independent_group_label": "core"
+    },
+    {
+      "id": "L4-PROJECTED-LEAGUE-POINTS",
+      "selection": "Chef-selected for proposed LOCAL review composition",
+      "acceptance": "Chef inspected installed helper/receipt and accepted pure trusted-input projected-points slice",
+      "files": [
+        {
+          "path": "web/lib/tradeValue/valuationComponents.ts",
+          "sha256": "a11683b789dc3b2f010b81164de26733039c4d48d248d836828a57f086ebd940",
+          "bytes": 4987,
+          "git_blob_sha1": "783a00a03f3b5688f6975272024d6161d6aaacc2",
+          "base_blob_sha1": null,
+          "base_presence": "absent; new file requires explicit inclusion",
+          "pin_source": "Chef-accepted L4/VALUATION-APP-MANIFEST.json",
+          "verified_at_utc": "2026-11-04T23:19:28.340623+00:00"
+        },
+        {
+          "path": "web/lib/tradeValue/valuationComponents.test.ts",
+          "sha256": "c3aff71efd20ed61a5666d163e68436abf3bcf1df9c0b33523fce1b6b2667010",
+          "bytes": 5922,
+          "git_blob_sha1": "e478f735375c28aa56a4d0d72f7030cd4206e75c",
+          "base_blob_sha1": null,
+          "base_presence": "absent; new file requires explicit inclusion",
+          "pin_source": "Chef-accepted L4/VALUATION-APP-MANIFEST.json",
+          "verified_at_utc": "2026-11-04T23:19:28.340623+00:00"
+        }
+      ],
+      "dependencies": [
+        "Result type from accepted L4 observation contracts.ts; retain original observation trio separately",
+        "Existing committed admitted gameExpectations/contribution path, TradeScoring type and scoreBoardStats; supplied view itself is not proof of admission",
+        "No production caller, combined trade value, roster impact, pricing or counterparty acceptance included"
+      ],
+      "reused_evidence": "VALUATION-APP-CHECKS.json:9 focused Vitest tests, targeted lint and focused TypeScript using actual app tsconfig ES2015 with zero diagnostics passed. Observation trio unchanged per manifest. L3 verified only these two pins/base file identities; no rerun or other group repin.",
+      "independent_group_label": "optional_independently_releasable"
+    },
+    {
+      "id": "L2-BLSH-SKO-VUDU-AUDIT",
+      "selection": "Chef-selected for proposed LOCAL review composition",
+      "acceptance": "Chef read L2 inclusion receipt and independently inspected consequential runtime/UI hunks; accepted17-file audit footprint with parser pair retained once in its existing group",
+      "files": [
+        {
+          "path": "web/lib/buyLowSellHigh/displayProfile.ts",
+          "sha256": "6de7898a08f4ece36307b9817ce0dae33f1ee238ebf5eb52dad7f583f4d7178c",
+          "bytes": 44623,
+          "git_blob_sha1": "4bb4b04acd70f8b1778a565a23251dbaa6fda082",
+          "base_blob_sha1": "9cf6fd9fafa22a4043a3282737edcb6fb84e8801",
+          "base_presence": "tracked",
+          "verified_at_utc": "2026-11-04T23:19:28.340623+00:00"
+        },
+        {
+          "path": "web/lib/buyLowSellHigh/displayProfile.test.ts",
+          "sha256": "16958f5e09adaae9a54c94bbee12ae8268a2a5fc6829325bac74e0c4cd2eae8a",
+          "bytes": 35982,
+          "git_blob_sha1": "dc937e59ca1a31c8e68eecc18ff372e8bc7c4827",
+          "base_blob_sha1": "edb80f251d82f8816403fa61b6278aadbda5f93d",
+          "base_presence": "tracked",
+          "verified_at_utc": "2026-11-04T23:19:28.340623+00:00"
+        },
+        {
+          "path": "web/lib/player-cards/retainedBlsh.ts",
+          "sha256": "201bf1df492d113aeac973f4b82f6ca2ce1695650eca13263f472f7a2568eb23",
+          "bytes": 12950,
+          "git_blob_sha1": "a824a6d80744080665dd358dc2389133a5f260d5",
+          "base_blob_sha1": "107ee5ee0d035e9434b2267414a5a98f79930642",
+          "base_presence": "tracked",
+          "verified_at_utc": "2026-11-04T23:19:28.340623+00:00"
+        },
+        {
+          "path": "web/lib/player-cards/retainedBlsh.test.ts",
+          "sha256": "cc8c8928489518c46f4a70a677bb954c7507d99f3a4f0c2bf7e6b9b184b57816",
+          "bytes": 15512,
+          "git_blob_sha1": "bcec39226129313a566cddf50f1b3ced40f008bb",
+          "base_blob_sha1": "fc1c3670f04169e310883f6c488a16589369561c",
+          "base_presence": "tracked",
+          "verified_at_utc": "2026-11-04T23:19:28.340623+00:00"
+        },
+        {
+          "path": "web/components/buyLowSellHigh/BlshPlayerDetail.tsx",
+          "sha256": "6419b05cec243ed5f3f66b40ad7d79b4a3bcba2fd61994bf93d99f5bd8d92a03",
+          "bytes": 21772,
+          "git_blob_sha1": "dba7d5e0f77f8c890982a0d0cc38d2aad2513aec",
+          "base_blob_sha1": "70520e15c626622ab5b741f5153ad064805c2871",
+          "base_presence": "tracked",
+          "verified_at_utc": "2026-11-04T23:19:28.340623+00:00"
+        },
+        {
+          "path": "web/lib/skoElement/contract.ts",
+          "sha256": "b262b18374d78e292dc45e4c1510e14489fb31a2f945ebe08fc685a3cb7b9904",
+          "bytes": 11131,
+          "git_blob_sha1": "5b1f86652a485f7d5bb3214065950738bfbb187f",
+          "base_blob_sha1": "126ac4b33b5313419bc94a3446caedaa9f7adb6a",
+          "base_presence": "tracked",
+          "verified_at_utc": "2026-11-04T23:19:28.340623+00:00"
+        },
+        {
+          "path": "web/lib/skoElement/interpret.ts",
+          "sha256": "d5b2d8a5033cc87ae606b03a79e9bf9ba023c6e6f9d7255b6d33011a9890b497",
+          "bytes": 27465,
+          "git_blob_sha1": "c3abd9379d4bd0d421afb87ae6dc2dba41a6c2db",
+          "base_blob_sha1": "59c2a5158e1472133c8e0b6a31239c6a6e93a6a9",
+          "base_presence": "tracked",
+          "verified_at_utc": "2026-11-04T23:19:28.340623+00:00"
+        },
+        {
+          "path": "web/lib/skoElement/interpret.test.ts",
+          "sha256": "3391d627c4e31971792d0dd5d42b5ef1ec1ab5e4d5b9cdd703a50b90e55427dc",
+          "bytes": 17748,
+          "git_blob_sha1": "fa220791bd6c4f8bca7184793f0a135ea1156a1d",
+          "base_blob_sha1": "fc6b00b645ccabd49037e76d9671acaeffb3c317",
+          "base_presence": "tracked",
+          "verified_at_utc": "2026-11-04T23:19:28.340623+00:00"
+        },
+        {
+          "path": "web/components/skoElement/SkoElementPreview.tsx",
+          "sha256": "d663bd5cabd7048c54fb4950d26fc7b96128ab2ef196213dc2ff64fb2374d5c2",
+          "bytes": 19060,
+          "git_blob_sha1": "3211bac0031c9d677b4f8a02c2bd2278a602500b",
+          "base_blob_sha1": "339e43f24cbdc1a7a6254d8a693fd52d37e139c1",
+          "base_presence": "tracked",
+          "verified_at_utc": "2026-11-04T23:19:28.340623+00:00"
+        },
+        {
+          "path": "web/components/skoElement/SkoElementPreview.test.tsx",
+          "sha256": "229b78417459fd35da1311a69e5a6f68a7c1f29104d15da6793a13769305de58",
+          "bytes": 5451,
+          "git_blob_sha1": "4ceadedd6b3f3dfe400e0ff1093b21938e189a7a",
+          "base_blob_sha1": "603799cf6dff7c410d24cb50b39f4b45dcc66a6a",
+          "base_presence": "tracked",
+          "verified_at_utc": "2026-11-04T23:19:28.340623+00:00"
+        },
+        {
+          "path": "web/lib/sko/gap.ts",
+          "sha256": "fda168904af69c64c492dd0b64a8ec1a63ad1d0b85278fb161138dc57ca2911b",
+          "bytes": 4176,
+          "git_blob_sha1": "dbbdcefadacb69b13ab5cc92791f7bce9f0a7ebb",
+          "base_blob_sha1": "424544c7783480c1242cd5f39a54ceeb295b90a0",
+          "base_presence": "tracked",
+          "verified_at_utc": "2026-11-04T23:19:28.340623+00:00"
+        },
+        {
+          "path": "web/lib/sko/gap.test.ts",
+          "sha256": "cc60669248e6ec44caae7d87abf9c0d2833a47dd46fe3c6648b4602d06fd69f0",
+          "bytes": 7819,
+          "git_blob_sha1": "c9690a36811953dbb1eeb486cad623d69d3fb959",
+          "base_blob_sha1": "f4a6c375394db48d0d888feaab672a212c909bb5",
+          "base_presence": "tracked",
+          "verified_at_utc": "2026-11-04T23:19:28.340623+00:00"
+        },
+        {
+          "path": "web/lib/buyLowSellHigh/market.ts",
+          "sha256": "44df9313b86bbc078dc6f314a5884deb490e266509bec4a44f6f9ff08e537f60",
+          "bytes": 6848,
+          "git_blob_sha1": "a6a47391c29dfe1452248a636f8caa48896cfd54",
+          "base_blob_sha1": "51184f97d1e4757c7be2542cd676ef288422a96c",
+          "base_presence": "tracked",
+          "verified_at_utc": "2026-11-04T23:19:28.340623+00:00"
+        },
+        {
+          "path": "web/lib/buyLowSellHigh/market.test.ts",
+          "sha256": "75c50d315356e83498fb497c6b5b1b9b5d60701bb7375d5bedcbc60f5d3eec73",
+          "bytes": 6354,
+          "git_blob_sha1": "83fffe65c645ea2cf0db0a57c34d77ded6598b96",
+          "base_blob_sha1": "b33312e1fd1c51a06750d0375f2aa2ade8eee621",
+          "base_presence": "tracked",
+          "verified_at_utc": "2026-11-04T23:19:28.340623+00:00"
+        },
+        {
+          "path": "web/lib/buyLowSellHigh/supportGap.test.ts",
+          "sha256": "e7a86b4afdce36aaf6dc27f7ce103f888e5aba7982ea61ac47adfd24e0f1f43a",
+          "bytes": 48101,
+          "git_blob_sha1": "491aa9649088d573b6fe4def3db04b4634834da8",
+          "base_blob_sha1": "7685ae30515afb59488e1ee069cc4499d6bb6b5e",
+          "base_presence": "tracked",
+          "verified_at_utc": "2026-11-04T23:19:28.340623+00:00"
+        }
+      ],
+      "coupled_subgroups": {
+        "parser_card_consistency": [
+          "web/lib/buyLowSellHigh/researchSnapshot.ts",
+          "web/lib/buyLowSellHigh/researchSnapshot.test.ts",
+          "web/lib/buyLowSellHigh/displayProfile.ts",
+          "web/lib/buyLowSellHigh/displayProfile.test.ts",
+          "web/lib/player-cards/retainedBlsh.ts",
+          "web/lib/player-cards/retainedBlsh.test.ts"
+        ],
+        "independent_blsh_detail": [
+          "web/components/buyLowSellHigh/BlshPlayerDetail.tsx"
+        ],
+        "coupled_sko_vudu_contract_and_ui": [
+          "web/lib/skoElement/contract.ts",
+          "web/lib/skoElement/interpret.ts",
+          "web/lib/skoElement/interpret.test.ts",
+          "web/components/skoElement/SkoElementPreview.tsx",
+          "web/components/skoElement/SkoElementPreview.test.tsx"
+        ],
+        "independent_vudu_population": [
+          "web/lib/sko/gap.ts",
+          "web/lib/sko/gap.test.ts"
+        ],
+        "independent_market_guard": [
+          "web/lib/buyLowSellHigh/market.ts",
+          "web/lib/buyLowSellHigh/market.test.ts"
+        ],
+        "support_invariant_regression": [
+          "web/lib/buyLowSellHigh/supportGap.test.ts"
+        ]
+      },
+      "dependencies": [
+        "Parser/card/display consistency spans this group and the existing accepted L2-SAVED-SNAPSHOT-PARSER group; keep complete six-file closure",
+        "sKO contract/interpreter/UI five-file subgroup must travel together",
+        "Retain function/test pairs for VuDu population and market guard; supportGap scorer unchanged"
+      ],
+      "reused_evidence": "Original audit407 passed/4 skipped, targeted lint/diff and dated isolated desktop/mobile checks; parser74 and process87 are separate scoped evidence, not summed totals. Minor VuDu team/date separator remains unresolved; no claim it was fixed. No snapshot refresh/arm-C adoption/real goalie or current process admission.",
+      "independent_group_label": "core"
+    },
+    {
+      "id": "L2-CLOSED-PROCESS-EVIDENCE",
+      "selection": "Chef-selected for proposed LOCAL review composition",
+      "acceptance": "Chef accepted corrected process-evidence pair as distinct owner-reviewed slice",
+      "files": [
+        {
+          "path": "web/lib/buyLowSellHigh/currentProcessEvidence.server.ts",
+          "sha256": "9011207c1d16af7a2834a80b4d19d85d0b772a02093eef822e0dd44a9959af83",
+          "bytes": 16728,
+          "git_blob_sha1": "fe0fa2add182e6922c8b2ba40de839343fad0b97",
+          "base_blob_sha1": null,
+          "base_presence": "absent; new file requires explicit inclusion",
+          "verified_at_utc": "2026-11-04T23:19:28.340623+00:00"
+        },
+        {
+          "path": "web/lib/buyLowSellHigh/currentProcessEvidence.server.test.ts",
+          "sha256": "fe82f1de79f70576c3708ab565d790cc5448397a7421cabfedb54981414aab6e",
+          "bytes": 22180,
+          "git_blob_sha1": "e956b66bf5a01a7829cb37a4ace0093a26566378",
+          "base_blob_sha1": null,
+          "base_presence": "absent; new file requires explicit inclusion",
+          "verified_at_utc": "2026-11-04T23:19:28.340623+00:00"
+        }
+      ],
+      "dependencies": [
+        "Existing committed currentInput.ts and source contracts; default CLOSED_PROCESS_EVIDENCE_POLICY.acceptances remains empty",
+        "No runtime caller or native source receipt admission included"
+      ],
+      "reused_evidence": "Owner compatibility receipt87 focused checks and focused compiler/lint pass; later FORGE full typecheck is historical evidence. No rerun, real NST acceptance, scoring activation or provider capture.",
+      "independent_group_label": "core"
+    },
+    {
+      "id": "L5-MANUAL-ENTERED-OFFER-ANALYZER",
+      "selection": "Chef-selected for proposed LOCAL review composition",
+      "acceptance": "Chef inspected corrected accessible-name changes and accepted six-file slice for LOCAL candidate preparation; Chef-run unchanged synthetic harness34 checks passed",
+      "files": [
+        {
+          "path": "web/pages/trade-analyzer.tsx",
+          "sha256": "8651e62e477fdbd1157dd06fe3639b98a7cdf2bed142ca9406c5d6b1aa2495a9",
+          "bytes": 514,
+          "git_blob_sha1": "a5c8314e841a7a6af2758f9dc553e674c8fda8bc",
+          "base_blob_sha1": null,
+          "base_presence": "absent; new file requires explicit inclusion",
+          "verified_at_utc": "2026-11-04T23:19:28.340623+00:00"
+        },
+        {
+          "path": "web/components/TradeAnalyzer/TradeAnalyzer.tsx",
+          "sha256": "a731d3f1dee651b174f03806f41958ec6814dfaa79e374fbb5e5bc5555eca30a",
+          "bytes": 10856,
+          "git_blob_sha1": "c65bfe1cebcedc84bdc998314da387df38c9b0c5",
+          "base_blob_sha1": null,
+          "base_presence": "absent; new file requires explicit inclusion",
+          "verified_at_utc": "2026-11-04T23:19:28.340623+00:00"
+        },
+        {
+          "path": "web/components/TradeAnalyzer/TradeAnalyzer.module.scss",
+          "sha256": "39b338160b82146281a3387a136e5bd7015324fadb916dc34b2400b53bc6da12",
+          "bytes": 2542,
+          "git_blob_sha1": "16fca93c2f6b98ce621771c23a96adb93c3dcb2d",
+          "base_blob_sha1": null,
+          "base_presence": "absent; new file requires explicit inclusion",
+          "verified_at_utc": "2026-11-04T23:19:28.340623+00:00"
+        },
+        {
+          "path": "web/components/TradeAnalyzer/TradeAnalyzer.test.tsx",
+          "sha256": "a18948c585ff3057825006982d1552ab55594c13b1c326b430924208cedffc60",
+          "bytes": 6013,
+          "git_blob_sha1": "033d033875fa1571673cb80c9e6f1e355ebd4564",
+          "base_blob_sha1": null,
+          "base_presence": "absent; new file requires explicit inclusion",
+          "verified_at_utc": "2026-11-04T23:19:28.340623+00:00"
+        },
+        {
+          "path": "web/lib/tradeAnalyzer/offer.ts",
+          "sha256": "a33ffaad85a115c647bb60de0f5851886bc2fb6a408095e2369c0fc4f303760f",
+          "bytes": 9295,
+          "git_blob_sha1": "68794ccbab44558aac0776d32490967a83ce949b",
+          "base_blob_sha1": null,
+          "base_presence": "absent; new file requires explicit inclusion",
+          "verified_at_utc": "2026-11-04T23:19:28.340623+00:00"
+        },
+        {
+          "path": "web/lib/tradeAnalyzer/offer.test.ts",
+          "sha256": "d5fabb8b6d315aaaded04976c8b353d132238569cb89d01ca3031c9944aa4120",
+          "bytes": 7878,
+          "git_blob_sha1": "c7ceb4c64e78cb1c45ba8320b3bd3a27e1edc815",
+          "base_blob_sha1": null,
+          "base_presence": "absent; new file requires explicit inclusion",
+          "verified_at_utc": "2026-11-04T23:19:28.340623+00:00"
+        }
+      ],
+      "dependencies": [
+        "Result/Asset type-only imports from accepted L4 observation contracts.ts; include observation dependency if choosing Analyzer",
+        "Existing app route infrastructure; no navigation/auth/shared producer changes",
+        "No qualified forecast/league-value/roster-impact or counterparty acceptance claim; corresponding panels remain unavailable"
+      ],
+      "reused_evidence": "L5 original9 model tests and corrected5 component tests pass (do not add overlapping original component count); corrected scoped TypeScript/lint pass. Chef-run synthetic component browser34 recorded checks incl compile/error checks pass at1440/390/320, keyboard/drop/edit/reload/RTL/200% CSS zoom; no page errors/external requests, desktop/mobile screenshots inspected. NOT full Next shell; no persistence or transaction.",
+      "independent_group_label": "optional_independently_releasable"
+    }
+  ],
+  "held_groups": [],
+  "excluded_current_dirty_paths": [
+    {
+      "status": " M",
+      "path": "tasks/artifacts/Toenail-Audit-Visual-Enhancements.md"
+    },
+    {
+      "status": " M",
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/CLAUDE-TO-CODEX.md"
+    },
+    {
+      "status": " M",
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/CODEX-LEASES.json"
+    },
+    {
+      "status": " M",
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/CODEX-TO-CLAUDE.md"
+    },
+    {
+      "status": " M",
+      "path": "tasks/diaries/2026-10-27-codex-blsh-current-input.md"
+    },
+    {
+      "status": " M",
+      "path": "tasks/diaries/2026-10-31-claude-social-share-chef.md"
+    },
+    {
+      "status": " M",
+      "path": "web/components/GoalieShareChart/GoalieShareChart.module.scss"
+    },
+    {
+      "status": " M",
+      "path": "web/components/GoalieShareChart/index.tsx"
+    },
+    {
+      "status": " M",
+      "path": "web/components/Layout/MobileMenu/MobileMenu.module.scss"
+    },
+    {
+      "status": " M",
+      "path": "web/components/PlayerStats/PlayerPerformanceHeatmap.tsx"
+    },
+    {
+      "status": " M",
+      "path": "web/components/PlayerStats/PlayerRadarChart.tsx"
+    },
+    {
+      "status": " M",
+      "path": "web/components/PlayerStats/PlayerStats.module.scss"
+    },
+    {
+      "status": " M",
+      "path": "web/components/RosterMatrix/RosterMatrix.module.scss"
+    },
+    {
+      "status": " M",
+      "path": "web/components/RosterMatrix/RosterMatrix.tsx"
+    },
+    {
+      "status": " M",
+      "path": "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.module.scss"
+    },
+    {
+      "status": " M",
+      "path": "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx"
+    },
+    {
+      "status": " M",
+      "path": "web/components/TeamDashboard/AdvancedL10Metrics.module.scss"
+    },
+    {
+      "status": " M",
+      "path": "web/components/TeamDashboard/GameByGameTimeline.module.scss"
+    },
+    {
+      "status": " M",
+      "path": "web/components/TeamDashboard/TeamDashboard.module.scss"
+    },
+    {
+      "status": " M",
+      "path": "web/components/TeamTabNavigation/TeamTabNavigation.module.scss"
+    },
+    {
+      "status": " M",
+      "path": "web/next-env.d.ts"
+    },
+    {
+      "status": " M",
+      "path": "web/pages/stats/index.tsx"
+    },
+    {
+      "status": " M",
+      "path": "web/styles/Stats.module.scss"
+    },
+    {
+      "status": " M",
+      "path": "web/styles/TeamStatsPage.module.scss"
+    },
+    {
+      "status": " M",
+      "path": "web/styles/vars.scss"
+    },
+    {
+      "status": "??",
+      "path": "tasks/artifacts/blsh-sko-vudu-audit-2026-11-04.md"
+    },
+    {
+      "status": "??",
+      "path": "tasks/artifacts/blsh-verification-2026-11-04/results.json"
+    },
+    {
+      "status": "??",
+      "path": "tasks/artifacts/forge-empirical-2026-11-04.md"
+    },
+    {
+      "status": "??",
+      "path": "tasks/artifacts/forge-integrity-2026-11-04.md"
+    },
+    {
+      "status": "??",
+      "path": "tasks/artifacts/forge-provenance-2026-11-04.md"
+    },
+    {
+      "status": "??",
+      "path": "tasks/artifacts/luna-hosted-adapter-2026-11-04/offline.config.mts"
+    },
+    {
+      "status": "??",
+      "path": "tasks/artifacts/luna-hosted-adapter-2026-11-04/schema.sql"
+    },
+    {
+      "status": "??",
+      "path": "tasks/artifacts/luna-hosted-adapter-2026-11-04/tsconfig.json"
+    },
+    {
+      "status": "??",
+      "path": "tasks/artifacts/rso-audit-2026-11-04.md"
+    },
+    {
+      "status": "??",
+      "path": "tasks/artifacts/six-lane-mailbox-routing-2026-11-04/REGISTER.patch"
+    },
+    {
+      "status": "??",
+      "path": "tasks/artifacts/six-lane-mailbox-routing-2026-11-04/ROUTING-RECEIPT.json"
+    },
+    {
+      "status": "??",
+      "path": "tasks/artifacts/six-lanes-2026-11-04/L1/ANALYZER-PATH-CHECK-05.md"
+    },
+    {
+      "status": "??",
+      "path": "tasks/artifacts/six-lanes-2026-11-04/L1/COORDINATION-UPDATE-06.md"
+    },
+    {
+      "status": "??",
+      "path": "tasks/artifacts/six-lanes-2026-11-04/L1/CUSTODY-DELTA-02.json"
+    },
+    {
+      "status": "??",
+      "path": "tasks/artifacts/six-lanes-2026-11-04/L1/CUSTODY-DELTA-02.md"
+    },
+    {
+      "status": "??",
+      "path": "tasks/artifacts/six-lanes-2026-11-04/L1/CUSTODY-INVENTORY.json"
+    },
+    {
+      "status": "??",
+      "path": "tasks/artifacts/six-lanes-2026-11-04/L1/CUSTODY-TABLE.md"
+    },
+    {
+      "status": "??",
+      "path": "tasks/artifacts/six-lanes-2026-11-04/L1/GRANT-UPDATE-07.md"
+    },
+    {
+      "status": "??",
+      "path": "tasks/artifacts/six-lanes-2026-11-04/L1/GRANTS-AND-CONTACTS-03.md"
+    },
+    {
+      "status": "??",
+      "path": "tasks/artifacts/six-lanes-2026-11-04/L1/PARSER-HANDBACK-04.md"
+    },
+    {
+      "status": "??",
+      "path": "tasks/artifacts/six-lanes-2026-11-04/L1/RECONCILIATION.md"
+    },
+    {
+      "status": "??",
+      "path": "tasks/artifacts/six-lanes-2026-11-04/L1/WIGO-ANALYZER-PINS-05.json"
+    },
+    {
+      "status": "??",
+      "path": "tasks/artifacts/six-lanes-2026-11-04/L1/WIGO-CUSTODY-REQUEST-05.md"
+    },
+    {
+      "status": "??",
+      "path": "tasks/artifacts/six-lanes-2026-11-04/L2/PATCH-RECEIPT.json"
+    },
+    {
+      "status": "??",
+      "path": "tasks/artifacts/six-lanes-2026-11-04/L2/RECEIPT.md"
+    },
+    {
+      "status": "??",
+      "path": "tasks/artifacts/six-lanes-2026-11-04/L2/SOURCE-PINS.json"
+    },
+    {
+      "status": "??",
+      "path": "tasks/artifacts/six-lanes-2026-11-04/L2/parser-v3/BASELINE-PINS.json"
+    },
+    {
+      "status": "??",
+      "path": "tasks/artifacts/six-lanes-2026-11-04/L2/parser-v3/PATCH-PINS.json"
+    },
+    {
+      "status": "??",
+      "path": "tasks/artifacts/six-lanes-2026-11-04/L2/parser-v3/RECEIPT.md"
+    },
+    {
+      "status": "??",
+      "path": "tasks/artifacts/six-lanes-2026-11-04/L2/parser-v3/check-types.cjs"
+    },
+    {
+      "status": "??",
+      "path": "tasks/artifacts/six-lanes-2026-11-04/L2/parser-v3/mapper-v3.patch"
+    },
+    {
+      "status": "??",
+      "path": "tasks/artifacts/six-lanes-2026-11-04/L2/parser-v3/researchSnapshot.test.ts"
+    },
+    {
+      "status": "??",
+      "path": "tasks/artifacts/six-lanes-2026-11-04/L2/parser-v3/researchSnapshot.ts"
+    },
+    {
+      "status": "??",
+      "path": "tasks/artifacts/six-lanes-2026-11-04/L2/parser-v3/vitest.config.mjs"
+    },
+    {
+      "status": "??",
+      "path": "tasks/artifacts/six-lanes-2026-11-04/L2/yahoo-audit-expectations.patch"
+    },
+    {
+      "status": "??",
+      "path": "tasks/artifacts/six-lanes-2026-11-04/L3/MANIFEST.json"
+    },
+    {
+      "status": "??",
+      "path": "tasks/artifacts/six-lanes-2026-11-04/L3/READINESS.md"
+    },
+    {
+      "status": "??",
+      "path": "tasks/artifacts/six-lanes-2026-11-04/L3/REVIEW-SLICES.json"
+    },
+    {
+      "status": "??",
+      "path": "tasks/artifacts/six-lanes-2026-11-04/L3/REVIEW-SLICES.md"
+    },
+    {
+      "status": "??",
+      "path": "tasks/artifacts/six-lanes-2026-11-04/L4/APP-CHECKS.json"
+    },
+    {
+      "status": "??",
+      "path": "tasks/artifacts/six-lanes-2026-11-04/L4/APP-INTEGRATION.md"
+    },
+    {
+      "status": "??",
+      "path": "tasks/artifacts/six-lanes-2026-11-04/L4/APP-MANIFEST.json"
+    },
+    {
+      "status": "??",
+      "path": "tasks/artifacts/six-lanes-2026-11-04/L4/APP.patch"
+    },
+    {
+      "status": "??",
+      "path": "tasks/artifacts/six-lanes-2026-11-04/L4/DECISION-RECEIPTS.json"
+    },
+    {
+      "status": "??",
+      "path": "tasks/artifacts/six-lanes-2026-11-04/L4/HANDOFF.md"
+    },
+    {
+      "status": "??",
+      "path": "tasks/artifacts/six-lanes-2026-11-04/L4/SOURCE-PINS.json"
+    },
+    {
+      "status": "??",
+      "path": "tasks/artifacts/six-lanes-2026-11-04/L4/VALUATION-CHECKS.json"
+    },
+    {
+      "status": "??",
+      "path": "tasks/artifacts/six-lanes-2026-11-04/L4/checks.ts"
+    },
+    {
+      "status": "??",
+      "path": "tasks/artifacts/six-lanes-2026-11-04/L4/contracts.ts"
+    },
+    {
+      "status": "??",
+      "path": "tasks/artifacts/six-lanes-2026-11-04/L4/valuation-check.config.mts"
+    },
+    {
+      "status": "??",
+      "path": "tasks/artifacts/six-lanes-2026-11-04/L4/valuationAdapter.checks.ts"
+    },
+    {
+      "status": "??",
+      "path": "tasks/artifacts/six-lanes-2026-11-04/L4/valuationAdapter.ts"
+    },
+    {
+      "status": "??",
+      "path": "tasks/artifacts/six-lanes-2026-11-04/L5/HANDOFF.md"
+    },
+    {
+      "status": "??",
+      "path": "tasks/artifacts/six-lanes-2026-11-04/L5/IMPLEMENTATION.md"
+    },
+    {
+      "status": "??",
+      "path": "tasks/artifacts/six-lanes-2026-11-04/L5/actual-offer-analyzer-brief.md"
+    },
+    {
+      "status": "??",
+      "path": "tasks/artifacts/six-lanes-2026-11-04/L5/browser-check.mjs"
+    },
+    {
+      "status": "??",
+      "path": "tasks/artifacts/six-lanes-2026-11-04/L5/browser-fixture/auth.ts"
+    },
+    {
+      "status": "??",
+      "path": "tasks/artifacts/six-lanes-2026-11-04/L5/browser-fixture/index.html"
+    },
+    {
+      "status": "??",
+      "path": "tasks/artifacts/six-lanes-2026-11-04/L5/browser-fixture/main.tsx"
+    },
+    {
+      "status": "??",
+      "path": "tasks/artifacts/six-lanes-2026-11-04/L5/browser-result-initial.json"
+    },
+    {
+      "status": "??",
+      "path": "tasks/artifacts/six-lanes-2026-11-04/L5/browser-result.json"
+    },
+    {
+      "status": "??",
+      "path": "tasks/artifacts/six-lanes-2026-11-04/L5/roster-diagnosis-brief.md"
+    },
+    {
+      "status": "??",
+      "path": "tasks/artifacts/six-lanes-2026-11-04/L5/tasks-prd-actual-offer-analyzer.md"
+    },
+    {
+      "status": "??",
+      "path": "tasks/artifacts/six-lanes-2026-11-04/L5/tasks-prd-roster-autopsy.md"
+    },
+    {
+      "status": "??",
+      "path": "tasks/artifacts/six-lanes-2026-11-04/L5/tsconfig.roster.json"
+    },
+    {
+      "status": "??",
+      "path": "tasks/artifacts/six-lanes-2026-11-04/L6/RECEIPT.md"
+    },
+    {
+      "status": "??",
+      "path": "tasks/artifacts/wigo-charts-overhaul-2026-11-01/screens/pc-measurements.json"
+    },
+    {
+      "status": "??",
+      "path": "tasks/diaries/2026-11-03-claude-yahoo-status-sticky.md"
+    },
+    {
+      "status": "??",
+      "path": "tasks/diaries/2026-11-04-claude-blsh-baseline.md"
+    },
+    {
+      "status": "??",
+      "path": "tasks/diaries/2026-11-04-claude-blsh-lists.md"
+    },
+    {
+      "status": "??",
+      "path": "tasks/diaries/2026-11-04-claude-blsh-opportunity.md"
+    },
+    {
+      "status": "??",
+      "path": "tasks/diaries/2026-11-04-claude-toenail-sweep.md"
+    },
+    {
+      "status": "??",
+      "path": "tasks/diaries/2026-11-04-codex-blsh-sko-vudu-audit.md"
+    },
+    {
+      "status": "??",
+      "path": "tasks/diaries/2026-11-04-codex-forge-integrity.md"
+    },
+    {
+      "status": "??",
+      "path": "tasks/diaries/2026-11-04-codex-luna-hosted-adapter.md"
+    },
+    {
+      "status": "??",
+      "path": "tasks/diaries/2026-11-04-codex-rso-audit.md"
+    },
+    {
+      "status": "??",
+      "path": "tasks/diaries/2026-11-04-codex-six-lane-mailbox-routing.md"
+    },
+    {
+      "status": "??",
+      "path": "tasks/diaries/2026-11-04-codex-six-lanes-l1.md"
+    },
+    {
+      "status": "??",
+      "path": "tasks/diaries/2026-11-04-codex-six-lanes-l2.md"
+    },
+    {
+      "status": "??",
+      "path": "tasks/diaries/2026-11-04-codex-six-lanes-l3.md"
+    },
+    {
+      "status": "??",
+      "path": "tasks/diaries/2026-11-04-codex-six-lanes-l4.md"
+    },
+    {
+      "status": "??",
+      "path": "tasks/diaries/2026-11-04-codex-six-lanes-l5.md"
+    },
+    {
+      "status": "??",
+      "path": "tasks/diaries/2026-11-04-codex-six-lanes-l6.md"
+    },
+    {
+      "status": "??",
+      "path": "web/lib/sources/lunaHosted/contract.ts"
+    },
+    {
+      "status": "??",
+      "path": "web/lib/sources/lunaHosted/handler.ts"
+    },
+    {
+      "status": "??",
+      "path": "web/lib/sources/lunaHosted/store.ts"
+    },
+    {
+      "status": "??",
+      "path": "web/pages/api/internal/luna-review.ts"
+    }
+  ],
+  "exclusion_rule": "Only exact selected69 group paths are eligible for local preparation; all other current/future dirty or staged paths remain excluded and preserved. Retained exclusion inventory is the original observation minus newly accepted paths, NOT a fresh whole-tree inventory. WiGO isolated proposal, Luna, all working diaries/evidence and unrelated/global styles remain excluded. L5 own component stylesheet files are included only within accepted groups.",
+  "decision_requested": [
+    "Claude Git custodian confirm exact base5f6b4e7a3a893000fe31cc6928cd8736b56e5d39 and index custody, including inherited committed scope",
+    "Safely compose the Chef-selected69 paths within custodian authorization while preserving every excluded staged/unstaged change; return any concrete conflict or selected-pin/base drift to Chef",
+    "Confirm dependency closure for the selected groups; core/optional labels describe independence, not a request for TJ to choose routine groups",
+    "Return exact resulting local candidate SHA/blobs and preserved exclusions for Chef candidate review, or the specific custody/inherited-base/composition blocker",
+    "No staging/commit authority transfers to L3; no final release freeze, push, deployment, build, production or migration action granted by this request"
+  ],
+  "verification": "Final authorized refresh verified all69 selected file SHA256/Git blobs and named base tree identities; base/branch unchanged. Supporting receipt hashes pinned with dated/superseded-scope notes. No application test/lint/typecheck/browser/build rerun by L3; no whole-tree status inventory regenerated; no Git mutation.",
+  "composition_request_digest_sha256": "082de6c92af34208a3c8e0a36f959b93eab21674e8c589635e3c52f292e78f29",
+  "current_totals": {
+    "paths": 69,
+    "core_paths": 41,
+    "optional_paths": 28,
+    "groups": 14,
+    "retained_exclusion_paths": 112,
+    "all_paths_selected_by_chef": true
+  },
+  "delivery_status": {
+    "direct_claude_receipt": false,
+    "source": "Chef instruction",
+    "blocker": "Parent send_message route returned thread-not-found despite durable read; platform final report carries request/blocker. No L3 message/retry performed."
+  },
+  "final_preparation_update": {
+    "at_utc": "2026-11-04T23:19:28.340623+00:00",
+    "base_sha": "5f6b4e7a3a893000fe31cc6928cd8736b56e5d39",
+    "branch": "octoberBranch",
+    "all69_file_pins": "verified against authoritative accepted receipts; no mismatches",
+    "base_tree_identity": "all selected path base blobs/absence read at exact base",
+    "not_final_candidate": true,
+    "scope": "Single final composition packet refresh after Analyzer acceptance; no staging/ref/commit/test/remote actions",
+    "selection": "All69 selected by Chef for proposed local review composition; labels descriptive only"
+  },
+  "supporting_evidence": [
+    {
+      "path": "tasks/artifacts/rso-audit-2026-11-04.md",
+      "sha256": "1a5c72d153ed6212adad3075ba79eaa82dfb549689965fbc26cc55eb7a24ec18",
+      "scope": "RSO61 files/1517 tests, dated Chromium/lint; old compiler/Yahoo blockers superseded by later accepted corrections"
+    },
+    {
+      "path": "tasks/artifacts/forge-provenance-2026-11-04.md",
+      "sha256": "c0b9cd438f8d4ddba9ba042dc2985ef3ae6670e60e6fe9c4d05b37c16316974d",
+      "scope": "FORGE320/17 aggregate/types/lint historical checks; not fresh whole-tree certificate"
+    },
+    {
+      "path": "/Users/tim/.fhfh/forge-evaluation/2026-11-04/capture-origin-fix/receipt.md",
+      "sha256": "44d9ee0b1fe484169787342660b5a88de276bcd55fd1940c56ad2577e96cc25e",
+      "scope": "Accepted bounded issuance-origin fix39 tests/lint; no aggregate/typecheck rerun"
+    },
+    {
+      "path": "/Users/tim/.fhfh/forge-evaluation/2026-11-04/capture-origin-fix/hashes.json",
+      "sha256": "37b05f2a9d4eb3e3aa6cd202bf4969e8b52d4124bce99a4a16f12ae6037dfde7",
+      "scope": "Authoritative corrected researchCapture/data.test pins"
+    },
+    {
+      "path": "tasks/artifacts/blsh-sko-vudu-audit-2026-11-04.md",
+      "sha256": "c3a4590583dfffbc8c809fe8632ad22ca263c3e1388c9f84816058e89b8f9433",
+      "scope": "Original407pass/4skip audit/local browser; synthetic previews and stale snapshot limitations retained"
+    },
+    {
+      "path": "tasks/artifacts/six-lanes-2026-11-04/L2/AUDIT-INCLUSION.md",
+      "sha256": "2de089edd2cdecc5768916686b4e89b5df094b249db19415432454fe5746f9a3",
+      "scope": "Chef-reviewed17-file audit plus separately owned process2 coupling/disposition"
+    },
+    {
+      "path": "tasks/artifacts/six-lanes-2026-11-04/L2/AUDIT-INCLUSION-PINS.json",
+      "sha256": "41eb58b61e71093f9794678e0b8c883533113ba097613780bd8a1d69fe106ff0",
+      "scope": "Exact19 audit/process pins including accepted parser overlay"
+    },
+    {
+      "path": "tasks/artifacts/six-lanes-2026-11-04/L2/parser-v3/INSTALL-RECEIPT.json",
+      "sha256": "906874a221c38e6194daf881b8d159c18cb2676ae1f84c71a1b7426343d19cfc",
+      "scope": "74 canonical focused parser tests; audit diff and dependencies preserved"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/CODEX-TO-CLAUDE.md",
+      "sha256": "ce9fc8ee881ee227e0028d5ff24c178d684562574563f946f2cd53725c9e4d18",
+      "scope": "Owner process compatibility completion87 focused checks; default closed admission"
+    },
+    {
+      "path": "tasks/artifacts/six-lanes-2026-11-04/L4/APP-MANIFEST.json",
+      "sha256": "565a3ec68edbfcae6658f4073b889ff766caec1ac24d6924d5f040ed703d47c4",
+      "scope": "Frozen observation trio"
+    },
+    {
+      "path": "tasks/artifacts/six-lanes-2026-11-04/L4/APP-CHECKS.json",
+      "sha256": "280a8b937cac750057bb4ca585cd5e002df1e625f2c0e22b9e7df833c609d44e",
+      "scope": "12 tests/lint/isolated types"
+    },
+    {
+      "path": "tasks/artifacts/six-lanes-2026-11-04/L4/VALUATION-APP-MANIFEST.json",
+      "sha256": "a05bfc0618a50cb80d19a1dc83c7cf4a8196f0d3ceb66183cdc32adfdb1de75d",
+      "scope": "Projected-points-only trusted-input pair; no caller/combined value"
+    },
+    {
+      "path": "tasks/artifacts/six-lanes-2026-11-04/L4/VALUATION-APP-CHECKS.json",
+      "sha256": "8cd6dc6e50afa4a063a148e4c0287b62635f3a4d547bbfee14660e8568132e5d",
+      "scope": "9 tests/lint/actual app ES2015 focused types"
+    },
+    {
+      "path": "tasks/artifacts/six-lanes-2026-11-04/L5/IMPLEMENTATION.md",
+      "sha256": "42259df3ca06ce233d392c3ac0329dac27404b65b094fa509dd29d1124bfe8da",
+      "scope": "Structural diagnosis26 tests/types/lint; initial browser block superseded by Chef-run result"
+    },
+    {
+      "path": "tasks/artifacts/six-lanes-2026-11-04/L5/browser-result.json",
+      "sha256": "8bea061da9834afe1bb175461f1ad3d9cb2986168db1a344b4b117830f06701c",
+      "scope": "Chef-run30 component browser checks pass; fullNextRoute false"
+    },
+    {
+      "path": "tasks/artifacts/six-lanes-2026-11-04/L5/ANALYZER-IMPLEMENTATION.md",
+      "sha256": "34b56d40fb69be9c8413b8f1b6d0fb2d5c384906271c78bfb870899bd07b64e7",
+      "scope": "Final six-file corrected Analyzer pins/types/lint; pending-browser prose superseded by Chef acceptance/result"
+    },
+    {
+      "path": "tasks/artifacts/six-lanes-2026-11-04/L5/analyzer-browser-result.json",
+      "sha256": "4e72738e35705bbd9f1c0b654fe6f954de08c34745309571d1383c8e6db0d8f4",
+      "scope": "Chef-run34 recorded component browser checks pass; fullNextRoute false"
+    }
+  ],
+  "chef_selection": {
+    "all69_selected": true,
+    "core_optional_labels": "Descriptive independence/dependency labels only; no routine selection decision left to TJ",
+    "scope": "Proposed local review composition; exact candidate verification and inherited-base review still required; no L3 staging/commit authority or push/deploy grant"
+  },
+  "excluded_groups": [
+    {
+      "id": "LUNA-DISABLED-ADAPTER",
+      "status": "Owner reports completed review repairs; EXCLUDED pending parent independent review, no six-lane composition inclusion",
+      "parent_reported_evidence": {
+        "receipt_path": "tasks/artifacts/luna-hosted-adapter-2026-11-04/HANDOFF.md",
+        "final_sha256": "cd30e2e6f4274587bf581c4ceb0d0dd0d7566a9fa94bb4e90fd7c47e8e922606",
+        "checks": "Latest owner notice via Chef:48 synthetic tests/scoped types/lint; SQL unapplied/assertions unexecuted. Parent independent review pending.",
+        "verification_by_l3": "Notice only; no Luna code/receipt inspection/hash/review or inclusion"
+      }
+    },
+    {
+      "id": "WIGO-ISOLATED-PROPOSAL-AND-OTHER-UNACCEPTED-WORK",
+      "status": "Excluded; no implied inclusion of proposal/new feature files outside exact69 selected paths"
+    }
+  ]
+}

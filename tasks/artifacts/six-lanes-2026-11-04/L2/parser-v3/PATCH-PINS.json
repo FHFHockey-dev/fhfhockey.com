@@ -1,0 +1,15 @@
+{
+  "files": {
+    "web/lib/buyLowSellHigh/researchSnapshot.ts": {
+      "baseline_sha256": "76721610cf1be0f699279696603517c1b92547d1e85944e150098370a31babd3",
+      "candidate_sha256": "dc4cbb57a93a6e2cdae66d48b0519704c17f0a7d49451bfa546eafeb885b2cb7"
+    },
+    "web/lib/buyLowSellHigh/researchSnapshot.test.ts": {
+      "baseline_sha256": "3cd79a94f1ff6b896c48cd41dd59a1e0a3ea9a33fe54abdc378927071e6ab69c",
+      "candidate_sha256": "a34517a7cdb23dd91e6980bf16d40ea1751ebfce75b06895a553d4a687099c14"
+    }
+  },
+  "patch_sha256": "db2749334e4cc396ca5d0e48689c5935cd00b8ebaa23857ef9fe0b4b5ab2c3ef",
+  "shared_files_changed": false,
+  "revision": "chef-opportunity-sign-correction"
+}

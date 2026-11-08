@@ -1,0 +1,31 @@
+@use "styles/vars" as v;
+
+.lists { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.list { min-width: 0; display: grid; align-content: start; gap: 12px; }
+.list h2 { margin: 0; font-size: 1.05rem; }
+.control, .withheld { min-width: 0; max-width: 100%; }
+.control select { min-width: 0; max-width: 100%; min-height: 44px; }
+.scroller { position: relative; min-width: 0; max-width: 100%; }
+.stickyIdentity th:first-child {
+  position: sticky; left: 0; z-index: 1; min-width: 110px; max-width: 150px;
+  background: v.$background-dark; box-shadow: 1px 0 v.$border-soft;
+}
+.stickyIdentity th[scope="row"] { text-transform: none; }
+.touch { min-height: 44px; min-width: 44px; }
+.chip { margin-top: 8px; font-size: v.$font-size-xs; }
+.chip summary { cursor: pointer; min-height: 44px; }
+.chip summary:focus-visible { outline: 2px solid v.$focus-color; outline-offset: 2px; }
+.comparisons { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.comparisons > div { min-width: 0; }
+.comparisons p { overflow-wrap: anywhere; white-space: normal; }
+.opportunityTrack { border-top: 1px solid v.$border-soft; padding-top: 12px; }
+.opportunityTrack h4, .opportunityTrack h5 { margin: 0 0 8px; font-size: 0.9rem; }
+
+@media (max-width: 900px) { .lists { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 640px) { .comparisons { grid-template-columns: minmax(0, 1fr); } }
+
+.watchlist { min-width: 0; overflow-wrap: anywhere; }
+.watchEntries { padding-left: 20px; }
+.watchEntries li { margin-bottom: 8px; }
+.watchEntries button { margin-left: 8px; }
+.rowActions { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }

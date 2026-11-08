@@ -1,0 +1,15 @@
+{
+  "observedAt": "2026-11-01T22:46:06.330970+00:00",
+  "mode": "single check requested by parent",
+  "ownerLatestAssistant": "2026-11-01T21:05:48.084Z",
+  "ownerLastError": "rate_limit",
+  "mailboxLastModified": "2026-11-01T21:03:00.987517+00:00",
+  "integratedPacketPresent": false,
+  "head": "e152ce5bca1aa77e29a43acd33eb7e9ae0d0ac62",
+  "retainedRenderReportSha256": "fdcedc09bf60e59c41204c0c5c8cc3f1fe953a550cff110aaf75563e927abe43",
+  "retainedRenderReportUnchanged": true,
+  "status": "pending owner resumption and integrated candidate/calendar evidence; no denied or uncertain action",
+  "newRequestsSent": 0,
+  "newTestsOrBuilds": 0,
+  "productionActions": 0
+}

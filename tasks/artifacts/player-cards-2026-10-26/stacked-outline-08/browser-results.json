@@ -1,0 +1,166 @@
+{
+  "checks": [
+    "Actual native SVG raster: exactly5tan+5red+5green design pixels outward;15px total with transparent exterior/interior",
+    "Both portrait treatments: one disjoint-band asset above unchanged logo/below unchanged player; three source colors present, paddedtransparentedges/AA, stagehashes/PNGmanifestshareparity and390px",
+    "White and separatecoloroptions retained as single5pxrings; prepared files invalidated; unchanged headerclip deliberately trims15pxbandextent near frame without movingplayer"
+  ],
+  "exports": [
+    {
+      "style": "posterized-team-colors",
+      "pngSha256": "f22cb846a94778585644bbd4308ffb50ce0a4661cd0698c36c6ff0b8e7fa66e4",
+      "bandAssetSha256": "9982dd6b32b673138741e112d9f39e6b47f49a0dad9a14a3c10c3783efae5797",
+      "bandColors": [
+        "#154734",
+        "#A6192E",
+        "#DDCBA4"
+      ],
+      "bandWidths": [
+        5,
+        5,
+        5
+      ],
+      "totalWidth": 15,
+      "assetStats": {
+        "edge": 0,
+        "aa": 8268,
+        "counts": [
+          23859,
+          27309,
+          27456
+        ]
+      }
+    },
+    {
+      "style": "pixelated-team-colors",
+      "pngSha256": "22924ba5031c5a7731e779efceb37218623ab869698e0473b8693e693aa80502",
+      "bandAssetSha256": "9982dd6b32b673138741e112d9f39e6b47f49a0dad9a14a3c10c3783efae5797",
+      "bandColors": [
+        "#154734",
+        "#A6192E",
+        "#DDCBA4"
+      ],
+      "bandWidths": [
+        5,
+        5,
+        5
+      ],
+      "totalWidth": 15,
+      "assetStats": {
+        "edge": 0,
+        "aa": 8268,
+        "counts": [
+          23859,
+          27309,
+          27456
+        ]
+      }
+    }
+  ],
+  "nativeBands": [
+    [
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      221,
+      203,
+      164,
+      255
+    ],
+    [
+      221,
+      203,
+      164,
+      255
+    ],
+    [
+      221,
+      203,
+      164,
+      255
+    ],
+    [
+      221,
+      203,
+      164,
+      255
+    ],
+    [
+      221,
+      203,
+      164,
+      255
+    ],
+    [
+      166,
+      25,
+      46,
+      255
+    ],
+    [
+      166,
+      25,
+      46,
+      255
+    ],
+    [
+      166,
+      25,
+      46,
+      255
+    ],
+    [
+      166,
+      25,
+      46,
+      255
+    ],
+    [
+      166,
+      25,
+      46,
+      255
+    ],
+    [
+      21,
+      71,
+      52,
+      255
+    ],
+    [
+      21,
+      71,
+      52,
+      255
+    ],
+    [
+      21,
+      71,
+      52,
+      255
+    ],
+    [
+      21,
+      71,
+      52,
+      255
+    ],
+    [
+      21,
+      71,
+      52,
+      255
+    ],
+    [
+      0,
+      0,
+      0,
+      0
+    ]
+  ],
+  "externalAttempts": [],
+  "pageErrors": [],
+  "liveActivation": false
+}

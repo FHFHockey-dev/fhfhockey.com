@@ -1,0 +1,10 @@
+{
+  "action": "browser",
+  "command": [
+    "node",
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-27/current-flow-11/browser-check.mjs"
+  ],
+  "exitCode": 0,
+  "elapsedSeconds": 2.524,
+  "heldBy": "current11 sequential owner slot"
+}

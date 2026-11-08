@@ -50,6 +50,7 @@ vi.mock("lib/cron/withCronJobAudit", () => ({
 import handler from "../../../../../pages/api/v1/db/update-lines-ccc";
 import * as tweetClaimRegistry from "lib/sources/tweetClaimRegistry";
 import * as tweetProjectionStorage from "lib/sources/tweetProjectionStorage";
+import * as lineProcessor from "lib/lines/processor";
 
 function createMockReq(overrides: Record<string, unknown> = {}) {
   return {
@@ -336,12 +337,14 @@ describe("/api/v1/db/update-lines-ccc", () => {
     vi.stubEnv("TWEET_PIPELINE_PUBLISHING_ENABLED", "true");
     const shadow = vi.spyOn(tweetClaimRegistry, "processTweetClaimShadowBatch").mockResolvedValue({ mode: "claim_shadow", capture: { skipped: false, scopes: [] }, eventsProcessed: 2, eventsDeferred: 0, delivery: "not_requested" });
     const legacy = vi.spyOn(tweetProjectionStorage, "persistTweetProjectionReports");
+    const snapshots = vi.spyOn(lineProcessor, "processLineSnapshotEvidence");
     try {
       const res = createMockRes(); await handler(createMockReq(), res);
       expect(res.statusCode).toBe(200); expect(res.body).toMatchObject({ mode: "claim_shadow", delivery: "not_requested" });
       expect(shadow).toHaveBeenCalledWith(expect.objectContaining({ table: "lines_ccc_ifttt_events" }));
       expect(db.linesCccUpsertMock).not.toHaveBeenCalled(); expect(db.unresolvedNamesUpsertMock).not.toHaveBeenCalled(); expect(legacy).not.toHaveBeenCalled();
-    } finally { shadow.mockRestore(); legacy.mockRestore(); }
+      expect(snapshots).not.toHaveBeenCalled();
+    } finally { shadow.mockRestore(); legacy.mockRestore(); snapshots.mockRestore(); }
   });
 
   it("reports a failed queue read instead of skipping work", async () => {
@@ -357,8 +360,13 @@ describe("/api/v1/db/update-lines-ccc", () => {
       createSupabaseMocks();
     const req = createMockReq();
     const res = createMockRes();
+    const snapshots = vi.spyOn(lineProcessor, "processLineSnapshotEvidence").mockResolvedValue({ enabled: true, claims: 1, reconciled: 1 });
 
-    await handler(req, res);
+    try {
+      await handler(req, res);
+      // CCC reaches the snapshot engine with the same parsed sources the legacy projection store sees.
+      expect(snapshots).toHaveBeenCalledWith(expect.objectContaining({ from: expect.any(Function) }), expect.arrayContaining([expect.objectContaining({ authorName: "CcCMiddleton", gameId: 2025030111 })]), expect.any(Array));
+    } finally { snapshots.mockRestore(); }
 
     expect(mocks.getTeams).toHaveBeenCalledWith(20252026, {
       mode: "current-canonical",

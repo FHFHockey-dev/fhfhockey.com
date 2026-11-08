@@ -1,0 +1,76 @@
+{
+  "disposition": "NO_FINDINGS_IN_REVISED_TOTALS_SUPPORT_SCOPE",
+  "sourceAndSnapshotPinsUnchanged": true,
+  "newTestsPassed": 10,
+  "newTestsSkipped": 62,
+  "independentRenderedCases": 5,
+  "numericProfilesExposureChecked": 551,
+  "nativeTrackGapsChecked": 1653,
+  "holdoutReads": 0,
+  "productionRequests": 0,
+  "sourceEdits": 0,
+  "deployments": 0,
+  "ownHeavyLockReleased": true,
+  "files": {
+    "8475413.html": {
+      "bytes": 24453,
+      "sha256": "93041179ee586db485a7b7bd93c9ca5eac3dee007332bb075c24e582cf3b07d8"
+    },
+    "8476891.html": {
+      "bytes": 27204,
+      "sha256": "822a6db591d63ccecc807cb2f79e09aed51de96af0353ce225a0d4d3d162956a"
+    },
+    "verify-render.cjs": {
+      "bytes": 5502,
+      "sha256": "99ee42d2f9c101e27aa612c15dbeb98bc0871f63a7dd3bc867c962349171d5a2"
+    },
+    "8475253.html": {
+      "bytes": 27235,
+      "sha256": "a3bb2e1dc83b8b293067f4b567de93d721aba5f22dc7e6174ac1b3046ff9fb55"
+    },
+    "RENDER-RESULT.json": {
+      "bytes": 12136,
+      "sha256": "bbba84fa3b053d8d99cd59b5e5877a2ec1fa961a13473c28dceb539a9ad8f8ae"
+    },
+    "8473994.html": {
+      "bytes": 17227,
+      "sha256": "87aab92c8b2c2912f769ff7d087b68a74a80c97d756739d229a1e7f0e09699d9"
+    },
+    "TEST-RESULT.json": {
+      "bytes": 289,
+      "sha256": "8a8946ffc622355658ef1bdf364cc8d9412c23ad60bd754e16b9b98d48075a02"
+    },
+    "8470613.html": {
+      "bytes": 26781,
+      "sha256": "ca16869ec053671a51d28eed1e2511268d98b2d6800e3be74e2a66235a2aef39"
+    },
+    "REVIEW.md": {
+      "bytes": 5844,
+      "sha256": "36675a0cc868032ae485dfbdd46a1de810433b35bbcb785ab3bfabe39a0cd059"
+    },
+    "PIN-RESULT.json": {
+      "bytes": 247,
+      "sha256": "6a1401328b39eeceb3a768b42408668eb3ee59ff83b90525d787f7b97a74a3e9"
+    },
+    "tests/stderr.log": {
+      "bytes": 198,
+      "sha256": "f2f6475875672d1f7167fa64b6ef3c9002309856398393232e1f96364c1d5cea"
+    },
+    "tests/RETAINED-VITEST-DIRECTORIES.json": {
+      "bytes": 147,
+      "sha256": "284db4bc3fc1f88e6dcf468767eb3303f35019731e825e1cec79351ad525a073"
+    },
+    "tests/VITEST-RESULTS.json": {
+      "bytes": 22190,
+      "sha256": "6d123b60fc72105b4136a149f0b67338f2de730f4ba6ada70666f8047b48b0b9"
+    },
+    "tests/stdout.log": {
+      "bytes": 818,
+      "sha256": "876fbf89c7729a78e32827bc302aef5f63975892552d5e2602afe125ec055fde"
+    },
+    "RELEASED-HEAVY-LOCK/owner.json": {
+      "bytes": 137,
+      "sha256": "e4717529e7830d983588c3650f536125296c6015100e8426ea7e8f1066d34757"
+    }
+  }
+}

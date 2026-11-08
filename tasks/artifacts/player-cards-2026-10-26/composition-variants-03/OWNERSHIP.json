@@ -1,0 +1,48 @@
+{
+  "id": "CODEX-PLAYER-CARDS-SEQUENTIAL-COMPOSITION-20261026",
+  "at": "2026-10-26T17:54:30.916088+00:00",
+  "owner_thread": "01a16ec2-f81c-717b-8961-8c3832fdc00f",
+  "source": "TJ explicitcorrection: posterization first then team mapping; pixelation first then team mapping; visiblycombined/resultsvisibleatservedlanding",
+  "source_paths": [
+    "web/lib/player-cards/portraitTreatment.ts",
+    "web/lib/player-cards/portraitTreatment.test.ts",
+    "web/lib/player-cards/shareExport.ts",
+    "web/lib/player-cards/shareExport.test.ts",
+    "web/components/player-cards/HeroPlayerCard.tsx",
+    "web/components/player-cards/PlayerCardShareStudio.tsx",
+    "web/components/player-cards/PlayerCardShareStudio.test.tsx"
+  ],
+  "baseline": [
+    {
+      "path": "web/lib/player-cards/portraitTreatment.ts",
+      "sha256": "ec23203f003317efedc2f80b380518548c2306c3384b9f276fda2e9a94b92657"
+    },
+    {
+      "path": "web/lib/player-cards/portraitTreatment.test.ts",
+      "sha256": "90b205e1710b0c59e180e6467323b4a2affb951f43b3c7ff13c751d60e336cec"
+    },
+    {
+      "path": "web/lib/player-cards/shareExport.ts",
+      "sha256": "4ba56a5b7a907cfc38b2dcbcd10dd6d4b32697aca8e4d03b83e2bea11a74747d"
+    },
+    {
+      "path": "web/lib/player-cards/shareExport.test.ts",
+      "sha256": "d99a533da4263ce22e90728f80cd6436f222618c6570626597ec2cd06ab9d8b0"
+    },
+    {
+      "path": "web/components/player-cards/HeroPlayerCard.tsx",
+      "sha256": "dbcf10f090976ff2e30a15b04d90031290cb3aa3b045c7e4a72fa3680146acfc"
+    },
+    {
+      "path": "web/components/player-cards/PlayerCardShareStudio.tsx",
+      "sha256": "f7c17b8cc5614d9b67e9882fe6c6835168faeb622128d4b510245e2790addc52"
+    },
+    {
+      "path": "web/components/player-cards/PlayerCardShareStudio.test.tsx",
+      "sha256": "fb5287eabc81abd2a521f0c9442633548a5121f01877a2cbab250b2e71fcfe1a"
+    }
+  ],
+  "status": "Active exact7cardfiles explicit staged pipeline/provenance/current comparison presentation",
+  "artifact_root": "tasks/artifacts/player-cards-2026-10-26/composition-variants-03",
+  "limits": "No sharedauth/Tuesday/palette/assets/math/data/sourceproviders/Git/deploy/deletes; preserve originalTeamColorsandallpriorartifacts"
+}

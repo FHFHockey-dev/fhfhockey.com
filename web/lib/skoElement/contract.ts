@@ -9,7 +9,7 @@
  */
 import type { GameExpectationsResponse } from "lib/player-forecasts/gameExpectations";
 
-export const SKO_CONTRACT_VERSION = "sko-interpretation-v0.1" as const;
+export const SKO_CONTRACT_VERSION = "sko-interpretation-v0.2" as const;
 
 /** Settled product decision: next 10 scheduled team games by default, 5 or 20 selectable. */
 export const HORIZON_OPTIONS = [5, 10, 20] as const;
@@ -63,7 +63,9 @@ export type ObservedTeamGame = {
   stats: Partial<Record<SkaterTarget, number | null>>;
   /** All-situation on-ice team goals for IPP (same games and strength as POINTS). */
   onIceGoalsFor?: number | null;
-  goalie?: { saves: number | null; shotsAgainst: number | null; goalsAgainst: number | null; minutes: number | null };
+  goalie?: { saves: number | null; shotsAgainst: number | null; goalsAgainst: number | null; minutes: number | null;
+    /** Source-recorded participation; never inferred from minutes or an appearance. */
+    appearanceType?: "start" | "relief" | "unknown" };
 };
 
 export type ObservedEvidence = {
@@ -131,6 +133,8 @@ export type MetricInterpretation = {
   unit: "count";
   observedPerTeamGame: Measured;
   observedPerAppearance: Measured;
+  /** Same player's immediately preceding, disjoint block; descriptive, not an expected future rate. */
+  personalReference: { perTeamGame: Measured; perAppearance: Measured; changePerTeamGame: Measured };
   /** FORGE unconditional horizon total / scheduled team games. Already includes participation. */
   expectedPerTeamGame: Measured;
   /** Mean FORGE conditional (per appearance) value; labeled conditional, never a horizon total. */
@@ -168,11 +172,15 @@ export type OpportunityInterpretation = {
   scenarios: { status: "not_supplied"; reason: string };
 };
 
-export type GoalieInterpretation = {
-  observed: {
+export type GoalieResults = {
     appearances: number; saves: number | null; shotsAgainst: number | null; goalsAgainst: number | null; minutes: number | null;
     savePercentage: Measured; goalsAgainstAverage: Measured;
+    starts: Measured; reliefAppearances: Measured; startShare: Measured;
   };
+
+export type GoalieInterpretation = {
+  observed: GoalieResults;
+  personalReference: GoalieResults;
   expected: {
     savePercentage: Measured; goalsAgainstAverage: Measured; expectedStarts: Measured;
     interpretation: "ratio_of_expected_totals";
@@ -200,6 +208,11 @@ export type InterpretationRecord = {
   recentWindow: {
     requestedTeamGames: number; teamGames: number; appearances: number; confirmedAbsences: number;
     unknownGames: number; startDate: string | null; endDate: string | null; rule: string;
+  };
+  personalReferenceWindow: {
+    teamGames: number; appearances: number; unknownGames: number;
+    startDate: string | null; endDate: string | null;
+    method: "preceding_disjoint_team_game_block";
   };
   /** Unmodified FORGE horizon totals, passed through for both pages (trade arithmetic reads these). */
   forecastTotals: Record<string, { expected: number | null; unit: "count" | "minutes" | null; reason: string | null }>;

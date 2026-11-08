@@ -1,0 +1,28 @@
+{
+  "atUtc": "2026-11-01T16:06:08.510793+00:00",
+  "state": "UNWIRED_LOCAL_ADAPTER_VERIFIED_SQL_CONTRACT_DRAFT",
+  "files": [
+    {
+      "path": "web/lib/nst/goalieCatchup.server.ts",
+      "sha256": "5c47017c9999392daee0e86e788d251209d587261719b9504677e6e992c2217e"
+    },
+    {
+      "path": "web/lib/nst/goalieCatchup.server.test.ts",
+      "sha256": "1d349d62cc594162e1f67b441f1afb8edf6d716fb9be103824a7e0fb77487e69"
+    }
+  ],
+  "tests": 21,
+  "scopedTypes": "passed",
+  "scopedLint": "passed",
+  "diffWhitespace": "passed",
+  "checksReceipt": "../ADAPTER-CHECKS.json",
+  "unchangedPriorCandidatePins": 21,
+  "runtimeIntegration": false,
+  "schemaSqlApplied": false,
+  "databaseSqlVerified": false,
+  "newDatabaseOrNstCalls": 0,
+  "productionActions": 0,
+  "schemaDesignSha256": "330bfc6dd8f6fd27a6366bd58336aa9d22585e8058c61a5649fc1d23306f5f6d",
+  "rpcContractSha256": "180ab0214f0ff4212304b195754caf0fbafd1e0b6c06564790c2dff9634c4661",
+  "ownership": "OWNERSHIP.json; no exact SQL holder found; coordinator allocation required for canonical migration/test, adapter paths reserved."
+}

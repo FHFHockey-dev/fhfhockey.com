@@ -1,0 +1,122 @@
+[
+ {
+  "space": {
+   "emptyPx": 389,
+   "bodyPx": 861,
+   "textOutside": 0,
+   "minFont": 26
+  },
+  "name": "what-changed",
+  "enabled": false,
+  "png": false,
+  "feedback": "",
+  "status": "missing: What Changed sources could not be read.",
+  "fit": [],
+  "phone": 375
+ },
+ {
+  "space": {
+   "emptyPx": 2,
+   "bodyPx": 845,
+   "textOutside": 0,
+   "minFont": 12
+  },
+  "name": "role-watch",
+  "enabled": true,
+  "png": true,
+  "feedback": "PNG downloaded: 1080 × 1080.",
+  "status": "",
+  "fit": [],
+  "phone": 375
+ },
+ {
+  "space": {
+   "emptyPx": 8,
+   "bodyPx": 861,
+   "textOutside": 0,
+   "minFont": 12
+  },
+  "name": "bsh-board",
+  "enabled": true,
+  "png": true,
+  "feedback": "PNG downloaded: 1080 × 1080.",
+  "status": "",
+  "fit": [],
+  "phone": 375
+ },
+ {
+  "space": {
+   "emptyPx": 8,
+   "bodyPx": 861,
+   "textOutside": 0,
+   "minFont": 12
+  },
+  "name": "bsh-risers",
+  "enabled": true,
+  "png": true,
+  "feedback": "PNG downloaded: 1080 × 1080.",
+  "status": "",
+  "fit": [],
+  "phone": 375
+ },
+ {
+  "space": {
+   "emptyPx": 1,
+   "bodyPx": 861,
+   "textOutside": 0,
+   "minFont": 13
+  },
+  "name": "crease-shift",
+  "enabled": true,
+  "png": true,
+  "feedback": "PNG downloaded: 1080 × 1080.",
+  "status": "",
+  "fit": [],
+  "phone": 375
+ },
+ {
+  "space": {
+   "emptyPx": 1,
+   "bodyPx": 861,
+   "textOutside": 0,
+   "minFont": 13
+  },
+  "name": "ratio-impact",
+  "enabled": true,
+  "png": true,
+  "feedback": "PNG downloaded: 1080 × 1080.",
+  "status": "",
+  "fit": [],
+  "phone": 375
+ },
+ {
+  "space": {
+   "emptyPx": 6,
+   "bodyPx": 845,
+   "textOutside": 0,
+   "minFont": 13
+  },
+  "name": "risky-starts",
+  "enabled": true,
+  "png": true,
+  "feedback": "PNG downloaded: 1080 × 1080.",
+  "status": "",
+  "fit": [],
+  "phone": 375
+ },
+ {
+  "space": {
+   "emptyPx": 6,
+   "bodyPx": 845,
+   "textOutside": 0,
+   "minFont": 11
+  },
+  "name": "start-sit",
+  "enabled": true,
+  "png": true,
+  "feedback": "PNG downloaded: 1080 × 1080.",
+  "status": "",
+  "fit": [],
+  "phone": 375
+ }
+]

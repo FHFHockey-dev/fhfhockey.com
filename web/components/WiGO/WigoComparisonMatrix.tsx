@@ -460,7 +460,7 @@ export default function WigoComparisonMatrix({
           </span>
         </div>
         {phone && (
-          <p className={styles.statsTableNote}>
+          <p className={styles.bandNote}>
             L5/L10/L20: up to the latest played games across seasons; see GP for
             the actual samples.
           </p>

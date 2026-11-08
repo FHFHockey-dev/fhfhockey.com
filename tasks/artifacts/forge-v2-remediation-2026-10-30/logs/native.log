@@ -1,0 +1,15 @@
+
+> web@0.1.0 test
+> vitest --run lib/forge-v2/history.test.ts --maxWorkers=1 --minWorkers=1
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+ ✓ lib/forge-v2/history.test.ts (13 tests) 1931ms
+   ✓ FORGE v2 native PostgreSQL persistence (T3) > pages beyond 3,000 revisions with a fixed snapshot while new publications arrive  963ms
+
+ Test Files  1 passed (1)
+      Tests  13 passed (13)
+   Start at  22:45:34
+   Duration  2.24s (transform 113ms, setup 3ms, collect 162ms, tests 1.93s, environment 0ms, prepare 34ms)
+

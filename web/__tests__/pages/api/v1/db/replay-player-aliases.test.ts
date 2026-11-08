@@ -1,7 +1,8 @@
 // @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ supabase: null as any }));
+const mocks = vi.hoisted(() => ({ supabase: null as any, auditInsert: vi.fn(async (_row: any) => ({ error: null })) }));
+vi.mock("lib/supabase/server", () => ({ default: { from: () => ({ insert: mocks.auditInsert }) } }));
 vi.mock("utils/adminOnlyMiddleware", () => ({ default: (handler: any) => (req: any, res: any) => { req.supabase = mocks.supabase; return handler(req, res); } }));
 vi.mock("lib/sources/tweetAttribution", () => ({ retryTweetAttribution: async () => ({ resolved: 0, skipped: true }) }));
 vi.mock("lib/sources/lineSourceProcessing", () => ({ fetchRosterEntriesByTeam: async () => new Map([[30, []]]), fetchPlayerNameAliases: async () => [],
@@ -57,6 +58,7 @@ describe("alias replay cron", () => {
     const { req, res, writes, fetchMock, rows } = fixture();
     await handler(req, res);
     expect(res.body).toMatchObject({ success: true, resolved: 2 });
+    expect(mocks.auditInsert).toHaveBeenCalledWith(expect.objectContaining({ job_name: "/api/v1/db/replay-player-aliases", status: "success", rows_affected: null }));
     expect(resolvedIds(writes)).toEqual([101, 102]);
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const url = new URL(String((fetchMock.mock.calls[0] as unknown[])[0]));

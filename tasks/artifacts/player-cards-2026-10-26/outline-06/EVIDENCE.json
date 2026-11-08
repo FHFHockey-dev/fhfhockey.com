@@ -1,0 +1,283 @@
+{
+  "at": "2026-10-26T23:27:10.168700+00:00",
+  "sourceChanges": [
+    {
+      "path": "web/lib/player-cards/alphaOutline.ts",
+      "bytes": 7063,
+      "sha256": "ab6276f665a0fe88c18ac10edf47740eda9ce72e31199bd7ffacf064c3b7b6d1"
+    },
+    {
+      "path": "web/lib/player-cards/alphaOutline.test.ts",
+      "bytes": 2864,
+      "sha256": "eb9d6fea0dad370ad2ec54700351773d877bde5453bedd622db62416b57fbd9b"
+    },
+    {
+      "path": "web/lib/player-cards/portraitTreatment.ts",
+      "bytes": 10042,
+      "sha256": "6e48c91672b082a035bdd0eb2cc1284874178576521ad7f152cf17d5302901d8"
+    },
+    {
+      "path": "web/components/player-cards/HeroPlayerCard.tsx",
+      "bytes": 7869,
+      "sha256": "995f1dd4bb8645e7e8891a4981d548261c8a793754b82d6c030487166d796e4f"
+    },
+    {
+      "path": "web/components/player-cards/PlayerCardShareStudio.tsx",
+      "bytes": 10445,
+      "sha256": "4de18df5b3f6f16c54ec794b35e3d45bfb8e2ba877dda5d3abb8c0a59dea7ba9"
+    },
+    {
+      "path": "web/lib/player-cards/shareExport.ts",
+      "bytes": 7351,
+      "sha256": "fcf5550c52ec1e99609890df2469a814363d0cdaf950e9a1ed16da1ca72dd1e1"
+    },
+    {
+      "path": "web/lib/player-cards/shareExport.test.ts",
+      "bytes": 7690,
+      "sha256": "d68ac0887313c3441a1bddaaa71bb4de7f1cf0d227774a4b65c24c8752b312f0"
+    }
+  ],
+  "checks": {
+    "tests": {
+      "action": "tests",
+      "command": [
+        "npm",
+        "test",
+        "--",
+        "--run",
+        "--config",
+        "../tasks/artifacts/player-cards-2026-10-26/outline-06/vitest.config.mts"
+      ],
+      "cwd": "/Users/tim/Code/fhfhockey.com/web",
+      "exitCode": 0,
+      "elapsedSeconds": 4.346,
+      "environmentOverrides": {
+        "npm_config_cache": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-26/outline-06/.npm-cache",
+        "npm_config_logs_dir": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-26/outline-06/.npm-logs",
+        "NO_UPDATE_NOTIFIER": "1",
+        "NEXT_TELEMETRY_DISABLED": "1"
+      },
+      "lockOwnedAndReleased": true
+    },
+    "types": {
+      "action": "types",
+      "command": [
+        "npx",
+        "--no-install",
+        "tsc",
+        "--noEmit",
+        "--project",
+        "../tasks/artifacts/player-cards-2026-10-26/outline-06/tsconfig.json"
+      ],
+      "cwd": "/Users/tim/Code/fhfhockey.com/web",
+      "exitCode": 0,
+      "elapsedSeconds": 2.678,
+      "environmentOverrides": {
+        "npm_config_cache": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-26/outline-06/.npm-cache",
+        "npm_config_logs_dir": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-26/outline-06/.npm-logs",
+        "NO_UPDATE_NOTIFIER": "1",
+        "NEXT_TELEMETRY_DISABLED": "1"
+      },
+      "lockOwnedAndReleased": true
+    },
+    "lint": {
+      "action": "lint",
+      "command": [
+        "npx",
+        "--no-install",
+        "eslint",
+        "components/player-cards/HeroPlayerCard.tsx",
+        "lib/player-cards/shareExport.test.ts",
+        "lib/player-cards/shareExport.ts",
+        "lib/player-cards/alphaOutline.ts",
+        "lib/player-cards/alphaOutline.test.ts",
+        "components/player-cards/PlayerCardShareStudio.tsx",
+        "lib/player-cards/portraitTreatment.ts",
+        "lib/player-cards/portraitTreatment.test.ts",
+        "components/player-cards/PlayerCardShareStudio.test.tsx"
+      ],
+      "cwd": "/Users/tim/Code/fhfhockey.com/web",
+      "exitCode": 0,
+      "elapsedSeconds": 2.078,
+      "environmentOverrides": {
+        "npm_config_cache": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-26/outline-06/.npm-cache",
+        "npm_config_logs_dir": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-26/outline-06/.npm-logs",
+        "NO_UPDATE_NOTIFIER": "1",
+        "NEXT_TELEMETRY_DISABLED": "1"
+      },
+      "lockOwnedAndReleased": true
+    },
+    "render": {
+      "action": "render",
+      "command": [
+        "node",
+        "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-26/outline-06/render-preview.mjs"
+      ],
+      "cwd": "/Users/tim/Code/fhfhockey.com/web",
+      "exitCode": 0,
+      "elapsedSeconds": 0.448,
+      "environmentOverrides": {
+        "npm_config_cache": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-26/outline-06/.npm-cache",
+        "npm_config_logs_dir": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-26/outline-06/.npm-logs",
+        "NO_UPDATE_NOTIFIER": "1",
+        "NEXT_TELEMETRY_DISABLED": "1"
+      },
+      "lockOwnedAndReleased": true
+    },
+    "browser": {
+      "action": "browser",
+      "command": [
+        "node",
+        "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-26/outline-06/browser-check.mjs"
+      ],
+      "cwd": "/Users/tim/Code/fhfhockey.com/web",
+      "exitCode": 0,
+      "elapsedSeconds": 5.213,
+      "environmentOverrides": {
+        "npm_config_cache": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-26/outline-06/.npm-cache",
+        "npm_config_logs_dir": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-26/outline-06/.npm-logs",
+        "NO_UPDATE_NOTIFIER": "1",
+        "NEXT_TELEMETRY_DISABLED": "1"
+      },
+      "lockOwnedAndReleased": true
+    },
+    "served": {
+      "action": "served",
+      "command": [
+        "node",
+        "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-26/outline-06/verify-served.mjs"
+      ],
+      "cwd": "/Users/tim/Code/fhfhockey.com/web",
+      "exitCode": 0,
+      "elapsedSeconds": 2.497,
+      "environmentOverrides": {
+        "npm_config_cache": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-26/outline-06/.npm-cache",
+        "npm_config_logs_dir": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-26/outline-06/.npm-logs",
+        "NO_UPDATE_NOTIFIER": "1",
+        "NEXT_TELEMETRY_DISABLED": "1"
+      },
+      "lockOwnedAndReleased": true
+    }
+  },
+  "unitTests": 28,
+  "browserGroups": {
+    "checks": [
+      "Team Colors remains fresh default; existing four styles retained; logo composition is opt-in",
+      "Native design-coordinate raster has exactly five opaque outward pixels on a straight edge; transparent exterior and interior remain empty",
+      "Both combined treatments: same player/snapshot, pinned embedded MIN logo behind hero, left-quarter fade, landscape PNG/manifest/same-instance share parity, phone390 no overflow",
+      "Genuine 5px outline padded/antialiased, embedded behind unchanged player and above logo; explicit first-stage buffers and subsequent same Team Colors mapper match manifest hashes; original alpha unchanged; distinct combined output; analytics bytes identical",
+      "Explicit combined style persists; second team uses TOR asset/palette; square export; partial source explanation and unknown-GP export block retained"
+    ],
+    "exports": [
+      {
+        "style": "posterized-team-colors",
+        "pngSha256": "90c7b9acbc78e5c27f8b98408bd96b89d173bc7ee155a0ccb1839b53b5245089",
+        "outlineSha256": "860c1b2949082deffee1feb4a57b4428d472c4fd56afa664d1735d9968614745",
+        "portraitSha256": "4d1eb2d09934e9b5bf717f554dcfbd46ad6b17eee21c1cf4faca77fae64d3608",
+        "redPixels": 11858,
+        "logoSha256": "430c6a4073da40b9d2e147c2528dba317f019273390ef2bdd43363895c5e0fc2"
+      },
+      {
+        "style": "pixelated-team-colors",
+        "pngSha256": "1dee405006ef8049b66e7dfd69bf53b0f3d305aace9c9245e7dc7f0587709769",
+        "outlineSha256": "860c1b2949082deffee1feb4a57b4428d472c4fd56afa664d1735d9968614745",
+        "portraitSha256": "8b7008d0722f76782b87acbc07ff07a320e6fec71f350b6407e1b6488cf314b6",
+        "redPixels": 6489,
+        "logoSha256": "430c6a4073da40b9d2e147c2528dba317f019273390ef2bdd43363895c5e0fc2"
+      }
+    ],
+    "analyticsByteDifferences": 0,
+    "externalAttempts": [],
+    "pageErrors": [],
+    "referenceInspected": false
+  },
+  "actualServed": {
+    "url": "http://127.0.0.1:3125/player-cards/compositions?checkpoint=outline06",
+    "checkpoint": "outline06",
+    "comparisonBytes": 3055347,
+    "comparisonSha256": "b873b3f1167b1d16d31553cc364817e219a91c96c4823c3735758d0b83efeed3",
+    "latestExportHashesVerified": 2,
+    "servedComparisonScreenshots": [
+      "served-comparison-desktop.png",
+      "served-comparison-phone.png"
+    ],
+    "servedInteractivePipelineAndLogoVerified": 2,
+    "externalAttempts": [],
+    "pageErrors": [],
+    "remoteAvailabilityClaimed": false
+  },
+  "runtime": {
+    "at": "2026-10-26T23:20:57.516222+00:00",
+    "previousListeners": [
+      "97856"
+    ],
+    "stoppedOwnPid": 97856,
+    "bind": "127.0.0.1:3125",
+    "automaticRestart": false,
+    "systemStartupChanges": false,
+    "verifiedOwnCommand": "/usr/local/bin/node /Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-26/composition-variants-05/serve-preview.mjs",
+    "pid": 22758,
+    "launcherPid": 22718,
+    "startNewSession": true,
+    "stdin": "DEVNULL",
+    "stdoutStderr": "server.log",
+    "execSession": null,
+    "readbacks": [
+      {
+        "url": "http://127.0.0.1:3125/player-cards",
+        "status": 200,
+        "bytes": 3055347,
+        "sha256": "b873b3f1167b1d16d31553cc364817e219a91c96c4823c3735758d0b83efeed3"
+      },
+      {
+        "url": "http://127.0.0.1:3125/player-cards/compositions",
+        "status": 200,
+        "bytes": 3055347,
+        "sha256": "b873b3f1167b1d16d31553cc364817e219a91c96c4823c3735758d0b83efeed3"
+      },
+      {
+        "url": "http://127.0.0.1:3125/player-cards/studio",
+        "status": 200,
+        "bytes": 3434993,
+        "sha256": "601d0ba667a5fbdacb2194d7f742bb2f3fde73249c043057473b3a0536ac0ea1"
+      },
+      {
+        "url": "http://127.0.0.1:3125/player-cards/compositions-05",
+        "status": 200,
+        "bytes": 3011124,
+        "sha256": "7feabe950f22f4aae229b0b28362a824793902b87c9084bea9ce0c8c12a06a93"
+      },
+      {
+        "url": "http://127.0.0.1:3125/player-cards/observed-evidence",
+        "status": 200,
+        "bytes": 9655,
+        "sha256": "b2ece36cf4c62e41562495fcabe4e6f36d02d6d159523b0364b8fc455607fbd6"
+      }
+    ],
+    "localReadOnlyGets": 5,
+    "upstreamRequests": 0,
+    "lifecycle": "Detached POSIX session, independent of launcher; host/environment shutdown or explicit stop ends process. No automatic restart or system startup."
+  },
+  "alignment": "ALIGNMENT.md",
+  "originalPlayerGeometry": [
+    600,
+    4,
+    600,
+    337.5
+  ],
+  "unchangedLogoGeometry": [
+    840,
+    -100,
+    480,
+    480
+  ],
+  "designStrokePx": 5,
+  "newDependencies": 0,
+  "sourceAssetsMutated": false,
+  "networkReads": 0,
+  "livePremiumActivation": false,
+  "libraryUploads": 0,
+  "sourceAndExportImagesInspected": true,
+  "servedPhoneVisualInspection": "not yet viewed after last transport interruption; generated/browser verified",
+  "independentAcceptance": "pending Scout"
+}

@@ -1,0 +1,41 @@
+{
+  "startedAt": "2026-10-26T22:59:34.798661+00:00",
+  "approval": {
+    "assistantMessage": "Sentinel_96ec1a4dd0d08191bfb33a1897f3dc87",
+    "userReply": "Sentinel_fca3d11ad3988191b3fa135d5eaf3f1b",
+    "userAnswer": "yes",
+    "approvedAt": "2026-10-26T22:57:28Z",
+    "source": "Scout trusted delegation quoting direct owner response"
+  },
+  "calls": [
+    {
+      "name": "landing",
+      "url": "https://api-web.nhle.com/v1/player/8476453/landing",
+      "startedAt": "2026-10-26T22:59:34.801275+00:00",
+      "bytes": 0,
+      "status": "started"
+    }
+  ],
+  "status": "stopped",
+  "limits": {
+    "calls": 3,
+    "concurrency": 1,
+    "perRequestSeconds": 5,
+    "totalSeconds": 15,
+    "perResponseBytes": 524288,
+    "totalBytes": 1572864,
+    "gameLogRows": 100,
+    "scheduleRows": 140,
+    "redirects": 0,
+    "retries": 0
+  },
+  "databaseReads": 0,
+  "remoteWrites": 0,
+  "authOrProfileChanges": 0,
+  "error": "URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1020)>",
+  "retryPermitted": false,
+  "finishedAt": "2026-10-26T22:59:34.918276+00:00",
+  "elapsedSeconds": 0.1196,
+  "totalBytes": 0,
+  "callsStarted": 1
+}

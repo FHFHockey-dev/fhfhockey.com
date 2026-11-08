@@ -1,0 +1,14 @@
+{
+  "action": "types",
+  "command": [
+    "npx",
+    "--no-install",
+    "tsc",
+    "--noEmit",
+    "--project",
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-27/current-flow-11/tsconfig.json"
+  ],
+  "exitCode": 2,
+  "elapsedSeconds": 1.909,
+  "heldBy": "current11 sequential owner slot"
+}

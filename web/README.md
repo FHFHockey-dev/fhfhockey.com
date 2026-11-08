@@ -4,7 +4,7 @@ FHFH website
 
 ## How to start the dev server
 
-Use Node 22.11.0 from `.nvmrc`. npm and `package-lock.json` are the sole
+Use Node 22.23.4 from `.nvmrc`. npm and `package-lock.json` are the sole
 package-manager authority for this application.
 
 ```bash

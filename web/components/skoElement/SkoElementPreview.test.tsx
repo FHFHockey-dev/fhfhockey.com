@@ -46,6 +46,9 @@ describe("SkoElementPreview", () => {
     fireEvent.click(screen.getByRole("button", { name: "VuDu goalies" }));
     const table = screen.getByRole("table", { name: "VuDu goalie context" });
     expect(within(table).getByText(/Pending goalie adapter/)).toBeTruthy();
+    expect(within(table).getByRole("columnheader", { name: "Personal prior block" })).toBeTruthy();
+    expect(within(table).getByRole("columnheader", { name: "Observed job share" })).toBeTruthy();
+    expect(within(table).getByText(/start relief evidence unavailable/)).toBeTruthy();
   });
 
   it("opens details with explanations, sources and limitations, and keeps a filtered-out selection visible", () => {
@@ -53,6 +56,8 @@ describe("SkoElementPreview", () => {
     const button = within(rowFor("Fixture Forward One")).getByRole("button", { name: /Details/ });
     fireEvent.click(button);
     const detail = screen.getByRole("region", { name: "Details for Fixture Forward One" });
+    expect(within(detail).getByRole("heading", { name: "Current production versus this player’s prior block" })).toBeTruthy();
+    expect(within(detail).getByText(/These games precede the current window/)).toBeTruthy();
     expect(within(detail).getByText(/Expected cooling from the recent run coexists/)).toBeTruthy();
     expect(within(detail).getByText(/PP1 \(fixture lineup report\)/)).toBeTruthy();
     expect(within(detail).getByText(/not supplied by FORGE game expectations v1/)).toBeTruthy();

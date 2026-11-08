@@ -1,0 +1,17 @@
+{
+  "id": "CODEX-NST-GOALIE-LIFECYCLE-20261101",
+  "owner_thread": "01a19780-b73c-7334-9e53-4b7fda61201c",
+  "parent_thread": "01a189f6-9a3a-7235-a989-e1af4f47b014",
+  "paths": [
+    "web/lib/nst/jobLifecycle.server.ts",
+    "web/lib/nst/jobLifecycle.server.test.ts"
+  ],
+  "status": "ACTIVE_LOCAL_ONLY",
+  "authority": "Parent explicitly requests lifecycle clearance local implementation and coordination",
+  "baseline_sha256": {
+    "web/lib/nst/jobLifecycle.server.ts": null,
+    "web/lib/nst/jobLifecycle.server.test.ts": null
+  },
+  "started_at_utc": "2026-11-01T16:58:19.393070+00:00",
+  "scope": "Explicit whole-job token/finish/hold helper; no automatic activation or production I/O"
+}

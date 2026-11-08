@@ -1018,6 +1018,8 @@ export default withCronJobAudit(
   }),
   {
     jobName: "/api/v1/db/update-line-sources",
+    // The starter board polls this processor every minute; empty polls are
+    // most audit rows and carry no information. Work and failures stay audited.
     // Snapshot reconciliation can write on an empty queue without appearing
     // in the processor summary, so keep those receipts while it is enabled.
     skipAuditWhenNoOp: (body) => !lineSnapshotFlags().observations && isEmptyQueueProcessorRun(body),

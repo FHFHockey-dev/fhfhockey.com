@@ -1,0 +1,134 @@
+{
+  "checks": [
+    "Keyboard reorder keeps whole ring/focus; repeated widths debounce, add/remove and native custom color produce exact ordered variable recipe",
+    "Native SVG 2/7/3px control; both combined styles keep geometry/logo and one true-contour asset; PNG/manifest/share bytes match",
+    "Invalid/pending edits invalidate prepared sharing; 5-ring/40px bounds; zero-ring export and reset; original portrait/logo preserved; phone has no horizontal overflow"
+  ],
+  "exports": [
+    {
+      "style": "posterized-team-colors",
+      "pngSha256": "a6d2b596f2a6124687ab0557b887d666041d45dc4354f08ddd37e32665799645",
+      "recipe": [
+        {
+          "color": "#A6192E",
+          "width": 5
+        },
+        {
+          "color": "#154734",
+          "width": 7.5
+        },
+        {
+          "color": "#123456",
+          "width": 2
+        }
+      ]
+    },
+    {
+      "style": "pixelated-team-colors",
+      "pngSha256": "5fd044addcaf0f292db88fe52499ef021befb4b85702369e009333575e422d7f",
+      "recipe": [
+        {
+          "color": "#A6192E",
+          "width": 5
+        },
+        {
+          "color": "#154734",
+          "width": 7.5
+        },
+        {
+          "color": "#123456",
+          "width": 2
+        }
+      ]
+    }
+  ],
+  "native": [
+    [
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      221,
+      203,
+      164,
+      255
+    ],
+    [
+      221,
+      203,
+      164,
+      255
+    ],
+    [
+      221,
+      203,
+      164,
+      255
+    ],
+    [
+      166,
+      25,
+      46,
+      255
+    ],
+    [
+      166,
+      25,
+      46,
+      255
+    ],
+    [
+      166,
+      25,
+      46,
+      255
+    ],
+    [
+      166,
+      25,
+      46,
+      255
+    ],
+    [
+      166,
+      25,
+      46,
+      255
+    ],
+    [
+      166,
+      25,
+      46,
+      255
+    ],
+    [
+      166,
+      25,
+      46,
+      255
+    ],
+    [
+      21,
+      71,
+      52,
+      255
+    ],
+    [
+      21,
+      71,
+      52,
+      255
+    ],
+    [
+      0,
+      0,
+      0,
+      0
+    ]
+  ],
+  "externalAttempts": [],
+  "pageErrors": [],
+  "liveActivation": false
+}

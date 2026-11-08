@@ -1,0 +1,23 @@
+{
+  "atUtc": "2026-11-01T18:08:50.359515+00:00",
+  "checks": [
+    {
+      "name": "tests",
+      "command": [
+        "npm",
+        "test",
+        "--",
+        "--run",
+        "__tests__/pages/api/v1/db/update-nst-goalies.route.test.ts",
+        "__tests__/pages/api/v1/db/update-nst-gamelog.test.ts",
+        "lib/nst/jobLifecycle.server.test.ts",
+        "lib/nst/goalieFreshness.server.test.ts",
+        "--maxWorkers=1",
+        "--minWorkers=1"
+      ],
+      "exitCode": 0
+    }
+  ],
+  "networkGuard": "offline.cjs",
+  "scope": "Owned route/runner/checkpoint adapter integration with mocked I/O; isolated PostgreSQL proof recorded separately. No provider or production verification."
+}

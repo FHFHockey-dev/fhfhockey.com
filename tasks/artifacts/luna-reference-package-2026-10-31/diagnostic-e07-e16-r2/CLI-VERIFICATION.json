@@ -1,0 +1,1470 @@
+{
+  "version": "luna-real-cli-checkpoint-offline-v1",
+  "planSha256": "af1499f51ffd1baba22aee3fbefd20a0bc1919b12bbc972289bcf0f7d5d431b5",
+  "actualProviderRequests": 0,
+  "realCredentialsRead": false,
+  "syntheticCredentialLiteralOnly": true,
+  "realLedgerUnchangedDisabled": true,
+  "historicalLedgerUnchanged": true,
+  "compactCopyRejectedWithoutModifyingCliOriginal": true,
+  "totalCliInvocations": 42,
+  "scenarios": [
+    {
+      "scenario": "all-pass",
+      "cliInvocations": 10,
+      "mockCalls": 12,
+      "actualProviderRequests": 0,
+      "reportsClassified": 10,
+      "stopped": false,
+      "stopReason": null,
+      "ledgerEnabled": false,
+      "blockedReason": "diagnostic_collection_completed",
+      "cumulativeSyntheticAttempts": 19,
+      "priorSevenPreserved": true,
+      "originalCliBytesPreservedDuringNormalProcessing": true,
+      "deliberatePostSealCorruption": false,
+      "trustedAnchors": [
+        {
+          "caseId": "E07",
+          "sha256": "235b0e36256d4ea37f551d9e1904d9b4335769c650f53ffbb391e09b8e6ae4fd"
+        },
+        {
+          "caseId": "E08",
+          "sha256": "7deaee907e362a0c40308983af652810c76b0d985f94d2281860a3986c1615bb"
+        },
+        {
+          "caseId": "E09",
+          "sha256": "f626adcb203ed9ea2bde7c035a85596d0b82bd18dfe3666f556441ce45cc3ff6"
+        },
+        {
+          "caseId": "E10",
+          "sha256": "7ec5ecbaef951509bbb441d05ea9614313821ce08f21aab53de6e2b96d83bbbe"
+        },
+        {
+          "caseId": "E11",
+          "sha256": "3e3b51ef35dbda28b63deab064ea0c4580d9d9696e0a166a22eaa189478ad613"
+        },
+        {
+          "caseId": "E12",
+          "sha256": "20a1877a1133ea3b27e4b4eeb99ee0f9760e0f50e9d59e04f5df9b6832622f63"
+        },
+        {
+          "caseId": "E13",
+          "sha256": "c34fe102e5006a5ff74a4c0a198eff61c1794f5e8688ec9e2785b23f03dcb96b"
+        },
+        {
+          "caseId": "E14",
+          "sha256": "bfd6b0051832d9b496c53a23ac1c0fb369c879bf50d09814f91130de838fb15b"
+        },
+        {
+          "caseId": "E15",
+          "sha256": "a28754d6b756596579e50824d3b480dd2aabe44766598887af3b1bcd04b2ce7a"
+        },
+        {
+          "caseId": "E16",
+          "sha256": "5f46125a80e8f8fca9b863ab0ea07064be46c257548ecf79a9f77f77d7a86bf0"
+        }
+      ],
+      "records": [
+        {
+          "caseId": "E07",
+          "cliExit": 0,
+          "mockCalls": 1,
+          "actualProviderRequests": 0,
+          "originalFileSha256": "a2566e91b00999ba19ba495d71a16cd2978e1a2b579f8c54c01b5292874999f0",
+          "candidateFileSha256": "da2774e2b0040ecfec3a8acd4eac66da37691f9631aea56c878e078c8edaf668",
+          "originalCliBytesUnchanged": true,
+          "receiptDataUnchanged": true,
+          "originalStatus": "review_only",
+          "rawGrade": {
+            "identity": true,
+            "goalie": true,
+            "decisions": true,
+            "labelMatch": true
+          },
+          "outcome": "recorded_pass",
+          "mayAdvance": true,
+          "reason": "original_grade_pass",
+          "decisionsDisposition": "not_scheduled",
+          "candidateAvailable": false,
+          "candidateApplied": false,
+          "checkpointSealed": true,
+          "checkpointAnchor": {
+            "caseId": "E07",
+            "sha256": "235b0e36256d4ea37f551d9e1904d9b4335769c650f53ffbb391e09b8e6ae4fd"
+          }
+        },
+        {
+          "caseId": "E08",
+          "cliExit": 0,
+          "mockCalls": 1,
+          "actualProviderRequests": 0,
+          "originalFileSha256": "ce97395aaa12bfa84b4773bccba771b0d1d8e1878eed38e4ee7cd56eb5536298",
+          "candidateFileSha256": "da2774e2b0040ecfec3a8acd4eac66da37691f9631aea56c878e078c8edaf668",
+          "originalCliBytesUnchanged": true,
+          "receiptDataUnchanged": true,
+          "originalStatus": "review_only",
+          "rawGrade": {
+            "identity": true,
+            "goalie": true,
+            "decisions": true,
+            "labelMatch": true
+          },
+          "outcome": "recorded_pass",
+          "mayAdvance": true,
+          "reason": "original_grade_pass",
+          "decisionsDisposition": "not_scheduled",
+          "candidateAvailable": false,
+          "candidateApplied": false,
+          "checkpointSealed": true,
+          "checkpointAnchor": {
+            "caseId": "E08",
+            "sha256": "7deaee907e362a0c40308983af652810c76b0d985f94d2281860a3986c1615bb"
+          }
+        },
+        {
+          "caseId": "E09",
+          "cliExit": 0,
+          "mockCalls": 1,
+          "actualProviderRequests": 0,
+          "originalFileSha256": "ebb1eb3b210326fa2e351cc71f7eefe06c839d10af119f4faca351d997839bf7",
+          "candidateFileSha256": "da2774e2b0040ecfec3a8acd4eac66da37691f9631aea56c878e078c8edaf668",
+          "originalCliBytesUnchanged": true,
+          "receiptDataUnchanged": true,
+          "originalStatus": "review_only",
+          "rawGrade": {
+            "identity": true,
+            "goalie": true,
+            "decisions": true,
+            "labelMatch": true
+          },
+          "outcome": "recorded_pass",
+          "mayAdvance": true,
+          "reason": "original_grade_pass",
+          "decisionsDisposition": "not_scheduled",
+          "candidateAvailable": false,
+          "candidateApplied": false,
+          "checkpointSealed": true,
+          "checkpointAnchor": {
+            "caseId": "E09",
+            "sha256": "f626adcb203ed9ea2bde7c035a85596d0b82bd18dfe3666f556441ce45cc3ff6"
+          }
+        },
+        {
+          "caseId": "E10",
+          "cliExit": 0,
+          "mockCalls": 2,
+          "actualProviderRequests": 0,
+          "originalFileSha256": "0c95ed24d60000df861bd65e25b4762c49dc0841d9497b6e8b2112b38f0029e0",
+          "candidateFileSha256": "da2774e2b0040ecfec3a8acd4eac66da37691f9631aea56c878e078c8edaf668",
+          "originalCliBytesUnchanged": true,
+          "receiptDataUnchanged": true,
+          "originalStatus": "review_only",
+          "rawGrade": {
+            "identity": true,
+            "goalie": true,
+            "decisions": true,
+            "labelMatch": true
+          },
+          "outcome": "recorded_pass",
+          "mayAdvance": true,
+          "reason": "original_grade_pass",
+          "decisionsDisposition": "completed_and_bound",
+          "candidateAvailable": false,
+          "candidateApplied": false,
+          "checkpointSealed": true,
+          "checkpointAnchor": {
+            "caseId": "E10",
+            "sha256": "7ec5ecbaef951509bbb441d05ea9614313821ce08f21aab53de6e2b96d83bbbe"
+          }
+        },
+        {
+          "caseId": "E11",
+          "cliExit": 0,
+          "mockCalls": 2,
+          "actualProviderRequests": 0,
+          "originalFileSha256": "f93b41d7c811ed12c2b096b60971353033fed26a42d99f8d5b2f637b6e35fac5",
+          "candidateFileSha256": "da2774e2b0040ecfec3a8acd4eac66da37691f9631aea56c878e078c8edaf668",
+          "originalCliBytesUnchanged": true,
+          "receiptDataUnchanged": true,
+          "originalStatus": "review_only",
+          "rawGrade": {
+            "identity": true,
+            "goalie": true,
+            "decisions": true,
+            "labelMatch": true
+          },
+          "outcome": "recorded_pass",
+          "mayAdvance": true,
+          "reason": "original_grade_pass",
+          "decisionsDisposition": "completed_and_bound",
+          "candidateAvailable": false,
+          "candidateApplied": false,
+          "checkpointSealed": true,
+          "checkpointAnchor": {
+            "caseId": "E11",
+            "sha256": "3e3b51ef35dbda28b63deab064ea0c4580d9d9696e0a166a22eaa189478ad613"
+          }
+        },
+        {
+          "caseId": "E12",
+          "cliExit": 0,
+          "mockCalls": 1,
+          "actualProviderRequests": 0,
+          "originalFileSha256": "7fdf82c95db82f15c8f3923d52236b7d41c046fe2c7c56bd8b672fe258ab73fe",
+          "candidateFileSha256": "da2774e2b0040ecfec3a8acd4eac66da37691f9631aea56c878e078c8edaf668",
+          "originalCliBytesUnchanged": true,
+          "receiptDataUnchanged": true,
+          "originalStatus": "review_only",
+          "rawGrade": {
+            "identity": true,
+            "goalie": true,
+            "decisions": true,
+            "labelMatch": true
+          },
+          "outcome": "recorded_pass",
+          "mayAdvance": true,
+          "reason": "original_grade_pass",
+          "decisionsDisposition": "not_scheduled",
+          "candidateAvailable": false,
+          "candidateApplied": false,
+          "checkpointSealed": true,
+          "checkpointAnchor": {
+            "caseId": "E12",
+            "sha256": "20a1877a1133ea3b27e4b4eeb99ee0f9760e0f50e9d59e04f5df9b6832622f63"
+          }
+        },
+        {
+          "caseId": "E13",
+          "cliExit": 0,
+          "mockCalls": 1,
+          "actualProviderRequests": 0,
+          "originalFileSha256": "fa80bd09d08d3c6b8ebf55e6304fe8b7274b874e75bc091594d6e767e138c6c6",
+          "candidateFileSha256": "da2774e2b0040ecfec3a8acd4eac66da37691f9631aea56c878e078c8edaf668",
+          "originalCliBytesUnchanged": true,
+          "receiptDataUnchanged": true,
+          "originalStatus": "review_only",
+          "rawGrade": {
+            "identity": true,
+            "goalie": true,
+            "decisions": true,
+            "labelMatch": true
+          },
+          "outcome": "recorded_pass",
+          "mayAdvance": true,
+          "reason": "original_grade_pass",
+          "decisionsDisposition": "not_scheduled",
+          "candidateAvailable": false,
+          "candidateApplied": false,
+          "checkpointSealed": true,
+          "checkpointAnchor": {
+            "caseId": "E13",
+            "sha256": "c34fe102e5006a5ff74a4c0a198eff61c1794f5e8688ec9e2785b23f03dcb96b"
+          }
+        },
+        {
+          "caseId": "E14",
+          "cliExit": 0,
+          "mockCalls": 1,
+          "actualProviderRequests": 0,
+          "originalFileSha256": "b6293133d2757535495ea83a428061df0f226c743b9a48efc3d8662818c085e6",
+          "candidateFileSha256": "da2774e2b0040ecfec3a8acd4eac66da37691f9631aea56c878e078c8edaf668",
+          "originalCliBytesUnchanged": true,
+          "receiptDataUnchanged": true,
+          "originalStatus": "review_only",
+          "rawGrade": {
+            "identity": true,
+            "goalie": true,
+            "decisions": true,
+            "labelMatch": true
+          },
+          "outcome": "recorded_pass",
+          "mayAdvance": true,
+          "reason": "original_grade_pass",
+          "decisionsDisposition": "not_scheduled",
+          "candidateAvailable": false,
+          "candidateApplied": false,
+          "checkpointSealed": true,
+          "checkpointAnchor": {
+            "caseId": "E14",
+            "sha256": "bfd6b0051832d9b496c53a23ac1c0fb369c879bf50d09814f91130de838fb15b"
+          }
+        },
+        {
+          "caseId": "E15",
+          "cliExit": 0,
+          "mockCalls": 1,
+          "actualProviderRequests": 0,
+          "originalFileSha256": "c7f66cc01ea34a8dca1ba7e8575aa15fb0113108896dd73404c06c6b60a532cc",
+          "candidateFileSha256": "da2774e2b0040ecfec3a8acd4eac66da37691f9631aea56c878e078c8edaf668",
+          "originalCliBytesUnchanged": true,
+          "receiptDataUnchanged": true,
+          "originalStatus": "review_only",
+          "rawGrade": {
+            "identity": true,
+            "goalie": true,
+            "decisions": true,
+            "labelMatch": true
+          },
+          "outcome": "recorded_pass",
+          "mayAdvance": true,
+          "reason": "original_grade_pass",
+          "decisionsDisposition": "not_scheduled",
+          "candidateAvailable": false,
+          "candidateApplied": false,
+          "checkpointSealed": true,
+          "checkpointAnchor": {
+            "caseId": "E15",
+            "sha256": "a28754d6b756596579e50824d3b480dd2aabe44766598887af3b1bcd04b2ce7a"
+          }
+        },
+        {
+          "caseId": "E16",
+          "cliExit": 0,
+          "mockCalls": 1,
+          "actualProviderRequests": 0,
+          "originalFileSha256": "d20c7e9510b945aa5d46bba469fdb7d86818ff9909226d065416d6a36b6deac3",
+          "candidateFileSha256": "da2774e2b0040ecfec3a8acd4eac66da37691f9631aea56c878e078c8edaf668",
+          "originalCliBytesUnchanged": true,
+          "receiptDataUnchanged": true,
+          "originalStatus": "review_only",
+          "rawGrade": {
+            "identity": true,
+            "goalie": true,
+            "decisions": true,
+            "labelMatch": true
+          },
+          "outcome": "recorded_pass",
+          "mayAdvance": true,
+          "reason": "original_grade_pass",
+          "decisionsDisposition": "not_scheduled",
+          "candidateAvailable": false,
+          "candidateApplied": false,
+          "checkpointSealed": true,
+          "checkpointAnchor": {
+            "caseId": "E16",
+            "sha256": "5f46125a80e8f8fca9b863ab0ea07064be46c257548ecf79a9f77f77d7a86bf0"
+          }
+        }
+      ]
+    },
+    {
+      "scenario": "identity-label",
+      "cliInvocations": 10,
+      "mockCalls": 12,
+      "actualProviderRequests": 0,
+      "reportsClassified": 10,
+      "stopped": false,
+      "stopReason": null,
+      "ledgerEnabled": false,
+      "blockedReason": "diagnostic_collection_completed",
+      "cumulativeSyntheticAttempts": 19,
+      "priorSevenPreserved": true,
+      "originalCliBytesPreservedDuringNormalProcessing": true,
+      "deliberatePostSealCorruption": false,
+      "trustedAnchors": [
+        {
+          "caseId": "E07",
+          "sha256": "9f47a7ac5a551eeb1daf59f6e1d0959aac21377233f7c484fe3007db01f721c2"
+        },
+        {
+          "caseId": "E08",
+          "sha256": "47b0f3ed360bf63e20517d330ab7b066548d66514c33db3159fce75472298924"
+        },
+        {
+          "caseId": "E09",
+          "sha256": "a76e87adebffbd4d3079b7efb1c488abe75681bc3063802abf1cdae6887baa7c"
+        },
+        {
+          "caseId": "E10",
+          "sha256": "dcde477acf2acdc5c39bb57843a4183f382fb6947d0f5cf164fe96fb9c9d89bb"
+        },
+        {
+          "caseId": "E11",
+          "sha256": "f24a231c5f8af83c877cc50947fdebc7d1dd05bc2acf220ea6b5c4e0d9182ffe"
+        },
+        {
+          "caseId": "E12",
+          "sha256": "d91f15a1fd0d930d8063adff186863419f2670c14acf3cd664b08fd190a2c5a8"
+        },
+        {
+          "caseId": "E13",
+          "sha256": "255775a984d06dfda39899b239cb8b470a0c806c7d4e86cca8adc936c0cb09e6"
+        },
+        {
+          "caseId": "E14",
+          "sha256": "38ea72a8d9600ff1200e845aa98363ee6e6f09e67cb393a47d8cdb8d9ebe02bc"
+        },
+        {
+          "caseId": "E15",
+          "sha256": "a2ac80edab3aefed882047dfbfa079c4445d70fe57467ab5ea5989c7535bd738"
+        },
+        {
+          "caseId": "E16",
+          "sha256": "86deac6e74db301467c370feedd16a4f83ab407f2165b650ad788701a2e06de5"
+        }
+      ],
+      "records": [
+        {
+          "caseId": "E07",
+          "cliExit": 0,
+          "mockCalls": 1,
+          "actualProviderRequests": 0,
+          "originalFileSha256": "7ce1e538632e853a2745dd8f7d13c0418c9c636e5948e9d6a6802009590ecf96",
+          "candidateFileSha256": "da2774e2b0040ecfec3a8acd4eac66da37691f9631aea56c878e078c8edaf668",
+          "originalCliBytesUnchanged": true,
+          "receiptDataUnchanged": true,
+          "originalStatus": "review_only",
+          "rawGrade": {
+            "identity": false,
+            "goalie": true,
+            "decisions": true,
+            "labelMatch": false
+          },
+          "outcome": "recorded_model_failure",
+          "mayAdvance": true,
+          "reason": "frozen_label_mismatch",
+          "decisionsDisposition": "not_scheduled",
+          "candidateAvailable": false,
+          "candidateApplied": false,
+          "checkpointSealed": true,
+          "checkpointAnchor": {
+            "caseId": "E07",
+            "sha256": "9f47a7ac5a551eeb1daf59f6e1d0959aac21377233f7c484fe3007db01f721c2"
+          }
+        },
+        {
+          "caseId": "E08",
+          "cliExit": 0,
+          "mockCalls": 1,
+          "actualProviderRequests": 0,
+          "originalFileSha256": "ce97395aaa12bfa84b4773bccba771b0d1d8e1878eed38e4ee7cd56eb5536298",
+          "candidateFileSha256": "da2774e2b0040ecfec3a8acd4eac66da37691f9631aea56c878e078c8edaf668",
+          "originalCliBytesUnchanged": true,
+          "receiptDataUnchanged": true,
+          "originalStatus": "review_only",
+          "rawGrade": {
+            "identity": true,
+            "goalie": true,
+            "decisions": true,
+            "labelMatch": true
+          },
+          "outcome": "recorded_pass",
+          "mayAdvance": true,
+          "reason": "original_grade_pass",
+          "decisionsDisposition": "not_scheduled",
+          "candidateAvailable": false,
+          "candidateApplied": false,
+          "checkpointSealed": true,
+          "checkpointAnchor": {
+            "caseId": "E08",
+            "sha256": "47b0f3ed360bf63e20517d330ab7b066548d66514c33db3159fce75472298924"
+          }
+        },
+        {
+          "caseId": "E09",
+          "cliExit": 0,
+          "mockCalls": 1,
+          "actualProviderRequests": 0,
+          "originalFileSha256": "ebb1eb3b210326fa2e351cc71f7eefe06c839d10af119f4faca351d997839bf7",
+          "candidateFileSha256": "da2774e2b0040ecfec3a8acd4eac66da37691f9631aea56c878e078c8edaf668",
+          "originalCliBytesUnchanged": true,
+          "receiptDataUnchanged": true,
+          "originalStatus": "review_only",
+          "rawGrade": {
+            "identity": true,
+            "goalie": true,
+            "decisions": true,
+            "labelMatch": true
+          },
+          "outcome": "recorded_pass",
+          "mayAdvance": true,
+          "reason": "original_grade_pass",
+          "decisionsDisposition": "not_scheduled",
+          "candidateAvailable": false,
+          "candidateApplied": false,
+          "checkpointSealed": true,
+          "checkpointAnchor": {
+            "caseId": "E09",
+            "sha256": "a76e87adebffbd4d3079b7efb1c488abe75681bc3063802abf1cdae6887baa7c"
+          }
+        },
+        {
+          "caseId": "E10",
+          "cliExit": 0,
+          "mockCalls": 2,
+          "actualProviderRequests": 0,
+          "originalFileSha256": "0c95ed24d60000df861bd65e25b4762c49dc0841d9497b6e8b2112b38f0029e0",
+          "candidateFileSha256": "da2774e2b0040ecfec3a8acd4eac66da37691f9631aea56c878e078c8edaf668",
+          "originalCliBytesUnchanged": true,
+          "receiptDataUnchanged": true,
+          "originalStatus": "review_only",
+          "rawGrade": {
+            "identity": true,
+            "goalie": true,
+            "decisions": true,
+            "labelMatch": true
+          },
+          "outcome": "recorded_pass",
+          "mayAdvance": true,
+          "reason": "original_grade_pass",
+          "decisionsDisposition": "completed_and_bound",
+          "candidateAvailable": false,
+          "candidateApplied": false,
+          "checkpointSealed": true,
+          "checkpointAnchor": {
+            "caseId": "E10",
+            "sha256": "dcde477acf2acdc5c39bb57843a4183f382fb6947d0f5cf164fe96fb9c9d89bb"
+          }
+        },
+        {
+          "caseId": "E11",
+          "cliExit": 0,
+          "mockCalls": 2,
+          "actualProviderRequests": 0,
+          "originalFileSha256": "f93b41d7c811ed12c2b096b60971353033fed26a42d99f8d5b2f637b6e35fac5",
+          "candidateFileSha256": "da2774e2b0040ecfec3a8acd4eac66da37691f9631aea56c878e078c8edaf668",
+          "originalCliBytesUnchanged": true,
+          "receiptDataUnchanged": true,
+          "originalStatus": "review_only",
+          "rawGrade": {
+            "identity": true,
+            "goalie": true,
+            "decisions": true,
+            "labelMatch": true
+          },
+          "outcome": "recorded_pass",
+          "mayAdvance": true,
+          "reason": "original_grade_pass",
+          "decisionsDisposition": "completed_and_bound",
+          "candidateAvailable": false,
+          "candidateApplied": false,
+          "checkpointSealed": true,
+          "checkpointAnchor": {
+            "caseId": "E11",
+            "sha256": "f24a231c5f8af83c877cc50947fdebc7d1dd05bc2acf220ea6b5c4e0d9182ffe"
+          }
+        },
+        {
+          "caseId": "E12",
+          "cliExit": 0,
+          "mockCalls": 1,
+          "actualProviderRequests": 0,
+          "originalFileSha256": "7fdf82c95db82f15c8f3923d52236b7d41c046fe2c7c56bd8b672fe258ab73fe",
+          "candidateFileSha256": "da2774e2b0040ecfec3a8acd4eac66da37691f9631aea56c878e078c8edaf668",
+          "originalCliBytesUnchanged": true,
+          "receiptDataUnchanged": true,
+          "originalStatus": "review_only",
+          "rawGrade": {
+            "identity": true,
+            "goalie": true,
+            "decisions": true,
+            "labelMatch": true
+          },
+          "outcome": "recorded_pass",
+          "mayAdvance": true,
+          "reason": "original_grade_pass",
+          "decisionsDisposition": "not_scheduled",
+          "candidateAvailable": false,
+          "candidateApplied": false,
+          "checkpointSealed": true,
+          "checkpointAnchor": {
+            "caseId": "E12",
+            "sha256": "d91f15a1fd0d930d8063adff186863419f2670c14acf3cd664b08fd190a2c5a8"
+          }
+        },
+        {
+          "caseId": "E13",
+          "cliExit": 0,
+          "mockCalls": 1,
+          "actualProviderRequests": 0,
+          "originalFileSha256": "fa80bd09d08d3c6b8ebf55e6304fe8b7274b874e75bc091594d6e767e138c6c6",
+          "candidateFileSha256": "da2774e2b0040ecfec3a8acd4eac66da37691f9631aea56c878e078c8edaf668",
+          "originalCliBytesUnchanged": true,
+          "receiptDataUnchanged": true,
+          "originalStatus": "review_only",
+          "rawGrade": {
+            "identity": true,
+            "goalie": true,
+            "decisions": true,
+            "labelMatch": true
+          },
+          "outcome": "recorded_pass",
+          "mayAdvance": true,
+          "reason": "original_grade_pass",
+          "decisionsDisposition": "not_scheduled",
+          "candidateAvailable": false,
+          "candidateApplied": false,
+          "checkpointSealed": true,
+          "checkpointAnchor": {
+            "caseId": "E13",
+            "sha256": "255775a984d06dfda39899b239cb8b470a0c806c7d4e86cca8adc936c0cb09e6"
+          }
+        },
+        {
+          "caseId": "E14",
+          "cliExit": 0,
+          "mockCalls": 1,
+          "actualProviderRequests": 0,
+          "originalFileSha256": "b6293133d2757535495ea83a428061df0f226c743b9a48efc3d8662818c085e6",
+          "candidateFileSha256": "da2774e2b0040ecfec3a8acd4eac66da37691f9631aea56c878e078c8edaf668",
+          "originalCliBytesUnchanged": true,
+          "receiptDataUnchanged": true,
+          "originalStatus": "review_only",
+          "rawGrade": {
+            "identity": true,
+            "goalie": true,
+            "decisions": true,
+            "labelMatch": true
+          },
+          "outcome": "recorded_pass",
+          "mayAdvance": true,
+          "reason": "original_grade_pass",
+          "decisionsDisposition": "not_scheduled",
+          "candidateAvailable": false,
+          "candidateApplied": false,
+          "checkpointSealed": true,
+          "checkpointAnchor": {
+            "caseId": "E14",
+            "sha256": "38ea72a8d9600ff1200e845aa98363ee6e6f09e67cb393a47d8cdb8d9ebe02bc"
+          }
+        },
+        {
+          "caseId": "E15",
+          "cliExit": 0,
+          "mockCalls": 1,
+          "actualProviderRequests": 0,
+          "originalFileSha256": "c7f66cc01ea34a8dca1ba7e8575aa15fb0113108896dd73404c06c6b60a532cc",
+          "candidateFileSha256": "da2774e2b0040ecfec3a8acd4eac66da37691f9631aea56c878e078c8edaf668",
+          "originalCliBytesUnchanged": true,
+          "receiptDataUnchanged": true,
+          "originalStatus": "review_only",
+          "rawGrade": {
+            "identity": true,
+            "goalie": true,
+            "decisions": true,
+            "labelMatch": true
+          },
+          "outcome": "recorded_pass",
+          "mayAdvance": true,
+          "reason": "original_grade_pass",
+          "decisionsDisposition": "not_scheduled",
+          "candidateAvailable": false,
+          "candidateApplied": false,
+          "checkpointSealed": true,
+          "checkpointAnchor": {
+            "caseId": "E15",
+            "sha256": "a2ac80edab3aefed882047dfbfa079c4445d70fe57467ab5ea5989c7535bd738"
+          }
+        },
+        {
+          "caseId": "E16",
+          "cliExit": 0,
+          "mockCalls": 1,
+          "actualProviderRequests": 0,
+          "originalFileSha256": "d20c7e9510b945aa5d46bba469fdb7d86818ff9909226d065416d6a36b6deac3",
+          "candidateFileSha256": "da2774e2b0040ecfec3a8acd4eac66da37691f9631aea56c878e078c8edaf668",
+          "originalCliBytesUnchanged": true,
+          "receiptDataUnchanged": true,
+          "originalStatus": "review_only",
+          "rawGrade": {
+            "identity": true,
+            "goalie": true,
+            "decisions": true,
+            "labelMatch": true
+          },
+          "outcome": "recorded_pass",
+          "mayAdvance": true,
+          "reason": "original_grade_pass",
+          "decisionsDisposition": "not_scheduled",
+          "candidateAvailable": false,
+          "candidateApplied": false,
+          "checkpointSealed": true,
+          "checkpointAnchor": {
+            "caseId": "E16",
+            "sha256": "86deac6e74db301467c370feedd16a4f83ab407f2165b650ad788701a2e06de5"
+          }
+        }
+      ]
+    },
+    {
+      "scenario": "offset-E10",
+      "cliInvocations": 10,
+      "mockCalls": 11,
+      "actualProviderRequests": 0,
+      "reportsClassified": 10,
+      "stopped": false,
+      "stopReason": null,
+      "ledgerEnabled": false,
+      "blockedReason": "diagnostic_collection_completed",
+      "cumulativeSyntheticAttempts": 18,
+      "priorSevenPreserved": true,
+      "originalCliBytesPreservedDuringNormalProcessing": true,
+      "deliberatePostSealCorruption": false,
+      "trustedAnchors": [
+        {
+          "caseId": "E07",
+          "sha256": "235b0e36256d4ea37f551d9e1904d9b4335769c650f53ffbb391e09b8e6ae4fd"
+        },
+        {
+          "caseId": "E08",
+          "sha256": "7deaee907e362a0c40308983af652810c76b0d985f94d2281860a3986c1615bb"
+        },
+        {
+          "caseId": "E09",
+          "sha256": "f626adcb203ed9ea2bde7c035a85596d0b82bd18dfe3666f556441ce45cc3ff6"
+        },
+        {
+          "caseId": "E10",
+          "sha256": "3c93dfe5874581ad138d05e3fb90d50b7e75ffa880cacf01ca97c516f72f7c6f"
+        },
+        {
+          "caseId": "E11",
+          "sha256": "d2941d13503ce8e87e50c505f8013d91b7a1ad90ca9f2f0bc9467163342c7637"
+        },
+        {
+          "caseId": "E12",
+          "sha256": "0bce4410f8cf6859ec65a1422b7fb333093d970e41b74767dafeda9ec8a174a2"
+        },
+        {
+          "caseId": "E13",
+          "sha256": "adc20d62cae32a187fa5f012e7b9a97b0fc3ef2a2f93a95cf407c9ce8ef6b2f4"
+        },
+        {
+          "caseId": "E14",
+          "sha256": "a773d4200f684a2185edb3671b263f8087a705c6b1234f1e94233d4d3afcd3b1"
+        },
+        {
+          "caseId": "E15",
+          "sha256": "6d5b27009898eaeeabae5da1f214884dd1292c8d6b0d3a77ce35ab50bb2ff634"
+        },
+        {
+          "caseId": "E16",
+          "sha256": "772c1bb4726cc5d4f1299493c4472ac000cca0941c433155e18cc14cffaad6ec"
+        }
+      ],
+      "records": [
+        {
+          "caseId": "E07",
+          "cliExit": 0,
+          "mockCalls": 1,
+          "actualProviderRequests": 0,
+          "originalFileSha256": "a2566e91b00999ba19ba495d71a16cd2978e1a2b579f8c54c01b5292874999f0",
+          "candidateFileSha256": "da2774e2b0040ecfec3a8acd4eac66da37691f9631aea56c878e078c8edaf668",
+          "originalCliBytesUnchanged": true,
+          "receiptDataUnchanged": true,
+          "originalStatus": "review_only",
+          "rawGrade": {
+            "identity": true,
+            "goalie": true,
+            "decisions": true,
+            "labelMatch": true
+          },
+          "outcome": "recorded_pass",
+          "mayAdvance": true,
+          "reason": "original_grade_pass",
+          "decisionsDisposition": "not_scheduled",
+          "candidateAvailable": false,
+          "candidateApplied": false,
+          "checkpointSealed": true,
+          "checkpointAnchor": {
+            "caseId": "E07",
+            "sha256": "235b0e36256d4ea37f551d9e1904d9b4335769c650f53ffbb391e09b8e6ae4fd"
+          }
+        },
+        {
+          "caseId": "E08",
+          "cliExit": 0,
+          "mockCalls": 1,
+          "actualProviderRequests": 0,
+          "originalFileSha256": "ce97395aaa12bfa84b4773bccba771b0d1d8e1878eed38e4ee7cd56eb5536298",
+          "candidateFileSha256": "da2774e2b0040ecfec3a8acd4eac66da37691f9631aea56c878e078c8edaf668",
+          "originalCliBytesUnchanged": true,
+          "receiptDataUnchanged": true,
+          "originalStatus": "review_only",
+          "rawGrade": {
+            "identity": true,
+            "goalie": true,
+            "decisions": true,
+            "labelMatch": true
+          },
+          "outcome": "recorded_pass",
+          "mayAdvance": true,
+          "reason": "original_grade_pass",
+          "decisionsDisposition": "not_scheduled",
+          "candidateAvailable": false,
+          "candidateApplied": false,
+          "checkpointSealed": true,
+          "checkpointAnchor": {
+            "caseId": "E08",
+            "sha256": "7deaee907e362a0c40308983af652810c76b0d985f94d2281860a3986c1615bb"
+          }
+        },
+        {
+          "caseId": "E09",
+          "cliExit": 0,
+          "mockCalls": 1,
+          "actualProviderRequests": 0,
+          "originalFileSha256": "ebb1eb3b210326fa2e351cc71f7eefe06c839d10af119f4faca351d997839bf7",
+          "candidateFileSha256": "da2774e2b0040ecfec3a8acd4eac66da37691f9631aea56c878e078c8edaf668",
+          "originalCliBytesUnchanged": true,
+          "receiptDataUnchanged": true,
+          "originalStatus": "review_only",
+          "rawGrade": {
+            "identity": true,
+            "goalie": true,
+            "decisions": true,
+            "labelMatch": true
+          },
+          "outcome": "recorded_pass",
+          "mayAdvance": true,
+          "reason": "original_grade_pass",
+          "decisionsDisposition": "not_scheduled",
+          "candidateAvailable": false,
+          "candidateApplied": false,
+          "checkpointSealed": true,
+          "checkpointAnchor": {
+            "caseId": "E09",
+            "sha256": "f626adcb203ed9ea2bde7c035a85596d0b82bd18dfe3666f556441ce45cc3ff6"
+          }
+        },
+        {
+          "caseId": "E10",
+          "cliExit": 2,
+          "mockCalls": 1,
+          "actualProviderRequests": 0,
+          "originalFileSha256": "d91061fa8213693dded11ba28a56ae3038cd8d81449a2d0d0bb266886d9e4288",
+          "candidateFileSha256": "4d2dbf07f66d126d7f0d2920201c4ac5bdc4fac393282e08b43e1825b6b4529a",
+          "originalCliBytesUnchanged": true,
+          "receiptDataUnchanged": true,
+          "originalStatus": "held",
+          "rawGrade": {
+            "identity": true,
+            "goalie": false,
+            "decisions": false,
+            "labelMatch": false
+          },
+          "outcome": "recorded_model_failure",
+          "mayAdvance": true,
+          "reason": "goalie_subject_binding_invalid",
+          "decisionsDisposition": "not_run_original_responses_held",
+          "candidateAvailable": true,
+          "candidateApplied": false,
+          "checkpointSealed": true,
+          "checkpointAnchor": {
+            "caseId": "E10",
+            "sha256": "3c93dfe5874581ad138d05e3fb90d50b7e75ffa880cacf01ca97c516f72f7c6f"
+          }
+        },
+        {
+          "caseId": "E11",
+          "cliExit": 0,
+          "mockCalls": 2,
+          "actualProviderRequests": 0,
+          "originalFileSha256": "f93b41d7c811ed12c2b096b60971353033fed26a42d99f8d5b2f637b6e35fac5",
+          "candidateFileSha256": "da2774e2b0040ecfec3a8acd4eac66da37691f9631aea56c878e078c8edaf668",
+          "originalCliBytesUnchanged": true,
+          "receiptDataUnchanged": true,
+          "originalStatus": "review_only",
+          "rawGrade": {
+            "identity": true,
+            "goalie": true,
+            "decisions": true,
+            "labelMatch": true
+          },
+          "outcome": "recorded_pass",
+          "mayAdvance": true,
+          "reason": "original_grade_pass",
+          "decisionsDisposition": "completed_and_bound",
+          "candidateAvailable": false,
+          "candidateApplied": false,
+          "checkpointSealed": true,
+          "checkpointAnchor": {
+            "caseId": "E11",
+            "sha256": "d2941d13503ce8e87e50c505f8013d91b7a1ad90ca9f2f0bc9467163342c7637"
+          }
+        },
+        {
+          "caseId": "E12",
+          "cliExit": 0,
+          "mockCalls": 1,
+          "actualProviderRequests": 0,
+          "originalFileSha256": "7fdf82c95db82f15c8f3923d52236b7d41c046fe2c7c56bd8b672fe258ab73fe",
+          "candidateFileSha256": "da2774e2b0040ecfec3a8acd4eac66da37691f9631aea56c878e078c8edaf668",
+          "originalCliBytesUnchanged": true,
+          "receiptDataUnchanged": true,
+          "originalStatus": "review_only",
+          "rawGrade": {
+            "identity": true,
+            "goalie": true,
+            "decisions": true,
+            "labelMatch": true
+          },
+          "outcome": "recorded_pass",
+          "mayAdvance": true,
+          "reason": "original_grade_pass",
+          "decisionsDisposition": "not_scheduled",
+          "candidateAvailable": false,
+          "candidateApplied": false,
+          "checkpointSealed": true,
+          "checkpointAnchor": {
+            "caseId": "E12",
+            "sha256": "0bce4410f8cf6859ec65a1422b7fb333093d970e41b74767dafeda9ec8a174a2"
+          }
+        },
+        {
+          "caseId": "E13",
+          "cliExit": 0,
+          "mockCalls": 1,
+          "actualProviderRequests": 0,
+          "originalFileSha256": "fa80bd09d08d3c6b8ebf55e6304fe8b7274b874e75bc091594d6e767e138c6c6",
+          "candidateFileSha256": "da2774e2b0040ecfec3a8acd4eac66da37691f9631aea56c878e078c8edaf668",
+          "originalCliBytesUnchanged": true,
+          "receiptDataUnchanged": true,
+          "originalStatus": "review_only",
+          "rawGrade": {
+            "identity": true,
+            "goalie": true,
+            "decisions": true,
+            "labelMatch": true
+          },
+          "outcome": "recorded_pass",
+          "mayAdvance": true,
+          "reason": "original_grade_pass",
+          "decisionsDisposition": "not_scheduled",
+          "candidateAvailable": false,
+          "candidateApplied": false,
+          "checkpointSealed": true,
+          "checkpointAnchor": {
+            "caseId": "E13",
+            "sha256": "adc20d62cae32a187fa5f012e7b9a97b0fc3ef2a2f93a95cf407c9ce8ef6b2f4"
+          }
+        },
+        {
+          "caseId": "E14",
+          "cliExit": 0,
+          "mockCalls": 1,
+          "actualProviderRequests": 0,
+          "originalFileSha256": "b6293133d2757535495ea83a428061df0f226c743b9a48efc3d8662818c085e6",
+          "candidateFileSha256": "da2774e2b0040ecfec3a8acd4eac66da37691f9631aea56c878e078c8edaf668",
+          "originalCliBytesUnchanged": true,
+          "receiptDataUnchanged": true,
+          "originalStatus": "review_only",
+          "rawGrade": {
+            "identity": true,
+            "goalie": true,
+            "decisions": true,
+            "labelMatch": true
+          },
+          "outcome": "recorded_pass",
+          "mayAdvance": true,
+          "reason": "original_grade_pass",
+          "decisionsDisposition": "not_scheduled",
+          "candidateAvailable": false,
+          "candidateApplied": false,
+          "checkpointSealed": true,
+          "checkpointAnchor": {
+            "caseId": "E14",
+            "sha256": "a773d4200f684a2185edb3671b263f8087a705c6b1234f1e94233d4d3afcd3b1"
+          }
+        },
+        {
+          "caseId": "E15",
+          "cliExit": 0,
+          "mockCalls": 1,
+          "actualProviderRequests": 0,
+          "originalFileSha256": "c7f66cc01ea34a8dca1ba7e8575aa15fb0113108896dd73404c06c6b60a532cc",
+          "candidateFileSha256": "da2774e2b0040ecfec3a8acd4eac66da37691f9631aea56c878e078c8edaf668",
+          "originalCliBytesUnchanged": true,
+          "receiptDataUnchanged": true,
+          "originalStatus": "review_only",
+          "rawGrade": {
+            "identity": true,
+            "goalie": true,
+            "decisions": true,
+            "labelMatch": true
+          },
+          "outcome": "recorded_pass",
+          "mayAdvance": true,
+          "reason": "original_grade_pass",
+          "decisionsDisposition": "not_scheduled",
+          "candidateAvailable": false,
+          "candidateApplied": false,
+          "checkpointSealed": true,
+          "checkpointAnchor": {
+            "caseId": "E15",
+            "sha256": "6d5b27009898eaeeabae5da1f214884dd1292c8d6b0d3a77ce35ab50bb2ff634"
+          }
+        },
+        {
+          "caseId": "E16",
+          "cliExit": 0,
+          "mockCalls": 1,
+          "actualProviderRequests": 0,
+          "originalFileSha256": "d20c7e9510b945aa5d46bba469fdb7d86818ff9909226d065416d6a36b6deac3",
+          "candidateFileSha256": "da2774e2b0040ecfec3a8acd4eac66da37691f9631aea56c878e078c8edaf668",
+          "originalCliBytesUnchanged": true,
+          "receiptDataUnchanged": true,
+          "originalStatus": "review_only",
+          "rawGrade": {
+            "identity": true,
+            "goalie": true,
+            "decisions": true,
+            "labelMatch": true
+          },
+          "outcome": "recorded_pass",
+          "mayAdvance": true,
+          "reason": "original_grade_pass",
+          "decisionsDisposition": "not_scheduled",
+          "candidateAvailable": false,
+          "candidateApplied": false,
+          "checkpointSealed": true,
+          "checkpointAnchor": {
+            "caseId": "E16",
+            "sha256": "772c1bb4726cc5d4f1299493c4472ac000cca0941c433155e18cc14cffaad6ec"
+          }
+        }
+      ]
+    },
+    {
+      "scenario": "uncertain-responses-E07",
+      "cliInvocations": 1,
+      "mockCalls": 1,
+      "actualProviderRequests": 0,
+      "reportsClassified": 1,
+      "stopped": true,
+      "stopReason": "unsettled_or_uncertain_outcome",
+      "ledgerEnabled": false,
+      "blockedReason": "unknown_billed_outcome",
+      "cumulativeSyntheticAttempts": 8,
+      "priorSevenPreserved": true,
+      "originalCliBytesPreservedDuringNormalProcessing": true,
+      "deliberatePostSealCorruption": false,
+      "trustedAnchors": [],
+      "records": [
+        {
+          "caseId": "E07",
+          "cliExit": 2,
+          "mockCalls": 1,
+          "actualProviderRequests": 0,
+          "originalFileSha256": "8d64aed37f4e9c02bca6ce0479cc27909817d9954a2f045a75b150cf6421f1fc",
+          "candidateFileSha256": "da2774e2b0040ecfec3a8acd4eac66da37691f9631aea56c878e078c8edaf668",
+          "originalCliBytesUnchanged": true,
+          "receiptDataUnchanged": true,
+          "originalStatus": "held",
+          "rawGrade": {
+            "identity": false,
+            "goalie": true,
+            "decisions": true,
+            "labelMatch": false
+          },
+          "outcome": "operational_stop",
+          "mayAdvance": false,
+          "reason": "unsettled_or_uncertain_outcome",
+          "decisionsDisposition": "unresolved_do_not_dispatch",
+          "candidateAvailable": false,
+          "candidateApplied": false,
+          "checkpointSealed": false,
+          "checkpointAnchor": null
+        }
+      ]
+    },
+    {
+      "scenario": "uncertain-decisions-E10",
+      "cliInvocations": 4,
+      "mockCalls": 5,
+      "actualProviderRequests": 0,
+      "reportsClassified": 4,
+      "stopped": true,
+      "stopReason": "unsettled_or_uncertain_outcome",
+      "ledgerEnabled": false,
+      "blockedReason": "unknown_billed_outcome",
+      "cumulativeSyntheticAttempts": 12,
+      "priorSevenPreserved": true,
+      "originalCliBytesPreservedDuringNormalProcessing": true,
+      "deliberatePostSealCorruption": false,
+      "trustedAnchors": [
+        {
+          "caseId": "E07",
+          "sha256": "235b0e36256d4ea37f551d9e1904d9b4335769c650f53ffbb391e09b8e6ae4fd"
+        },
+        {
+          "caseId": "E08",
+          "sha256": "7deaee907e362a0c40308983af652810c76b0d985f94d2281860a3986c1615bb"
+        },
+        {
+          "caseId": "E09",
+          "sha256": "f626adcb203ed9ea2bde7c035a85596d0b82bd18dfe3666f556441ce45cc3ff6"
+        }
+      ],
+      "records": [
+        {
+          "caseId": "E07",
+          "cliExit": 0,
+          "mockCalls": 1,
+          "actualProviderRequests": 0,
+          "originalFileSha256": "a2566e91b00999ba19ba495d71a16cd2978e1a2b579f8c54c01b5292874999f0",
+          "candidateFileSha256": "da2774e2b0040ecfec3a8acd4eac66da37691f9631aea56c878e078c8edaf668",
+          "originalCliBytesUnchanged": true,
+          "receiptDataUnchanged": true,
+          "originalStatus": "review_only",
+          "rawGrade": {
+            "identity": true,
+            "goalie": true,
+            "decisions": true,
+            "labelMatch": true
+          },
+          "outcome": "recorded_pass",
+          "mayAdvance": true,
+          "reason": "original_grade_pass",
+          "decisionsDisposition": "not_scheduled",
+          "candidateAvailable": false,
+          "candidateApplied": false,
+          "checkpointSealed": true,
+          "checkpointAnchor": {
+            "caseId": "E07",
+            "sha256": "235b0e36256d4ea37f551d9e1904d9b4335769c650f53ffbb391e09b8e6ae4fd"
+          }
+        },
+        {
+          "caseId": "E08",
+          "cliExit": 0,
+          "mockCalls": 1,
+          "actualProviderRequests": 0,
+          "originalFileSha256": "ce97395aaa12bfa84b4773bccba771b0d1d8e1878eed38e4ee7cd56eb5536298",
+          "candidateFileSha256": "da2774e2b0040ecfec3a8acd4eac66da37691f9631aea56c878e078c8edaf668",
+          "originalCliBytesUnchanged": true,
+          "receiptDataUnchanged": true,
+          "originalStatus": "review_only",
+          "rawGrade": {
+            "identity": true,
+            "goalie": true,
+            "decisions": true,
+            "labelMatch": true
+          },
+          "outcome": "recorded_pass",
+          "mayAdvance": true,
+          "reason": "original_grade_pass",
+          "decisionsDisposition": "not_scheduled",
+          "candidateAvailable": false,
+          "candidateApplied": false,
+          "checkpointSealed": true,
+          "checkpointAnchor": {
+            "caseId": "E08",
+            "sha256": "7deaee907e362a0c40308983af652810c76b0d985f94d2281860a3986c1615bb"
+          }
+        },
+        {
+          "caseId": "E09",
+          "cliExit": 0,
+          "mockCalls": 1,
+          "actualProviderRequests": 0,
+          "originalFileSha256": "ebb1eb3b210326fa2e351cc71f7eefe06c839d10af119f4faca351d997839bf7",
+          "candidateFileSha256": "da2774e2b0040ecfec3a8acd4eac66da37691f9631aea56c878e078c8edaf668",
+          "originalCliBytesUnchanged": true,
+          "receiptDataUnchanged": true,
+          "originalStatus": "review_only",
+          "rawGrade": {
+            "identity": true,
+            "goalie": true,
+            "decisions": true,
+            "labelMatch": true
+          },
+          "outcome": "recorded_pass",
+          "mayAdvance": true,
+          "reason": "original_grade_pass",
+          "decisionsDisposition": "not_scheduled",
+          "candidateAvailable": false,
+          "candidateApplied": false,
+          "checkpointSealed": true,
+          "checkpointAnchor": {
+            "caseId": "E09",
+            "sha256": "f626adcb203ed9ea2bde7c035a85596d0b82bd18dfe3666f556441ce45cc3ff6"
+          }
+        },
+        {
+          "caseId": "E10",
+          "cliExit": 2,
+          "mockCalls": 2,
+          "actualProviderRequests": 0,
+          "originalFileSha256": "b1426b65f80cedcd5d595f6b9c122deab4ec6b29fbb6182cfe57d97dd64c4fde",
+          "candidateFileSha256": "da2774e2b0040ecfec3a8acd4eac66da37691f9631aea56c878e078c8edaf668",
+          "originalCliBytesUnchanged": true,
+          "receiptDataUnchanged": true,
+          "originalStatus": "held",
+          "rawGrade": {
+            "identity": true,
+            "goalie": true,
+            "decisions": false,
+            "labelMatch": false
+          },
+          "outcome": "operational_stop",
+          "mayAdvance": false,
+          "reason": "unsettled_or_uncertain_outcome",
+          "decisionsDisposition": "unresolved_do_not_dispatch",
+          "candidateAvailable": false,
+          "candidateApplied": false,
+          "checkpointSealed": false,
+          "checkpointAnchor": {
+            "caseId": "E09",
+            "sha256": "f626adcb203ed9ea2bde7c035a85596d0b82bd18dfe3666f556441ce45cc3ff6"
+          }
+        }
+      ]
+    },
+    {
+      "scenario": "incomplete-decisions-E10",
+      "cliInvocations": 4,
+      "mockCalls": 5,
+      "actualProviderRequests": 0,
+      "reportsClassified": 4,
+      "stopped": true,
+      "stopReason": "receipt_or_usage_invalid",
+      "ledgerEnabled": false,
+      "blockedReason": "diagnostic_operational_stop",
+      "cumulativeSyntheticAttempts": 12,
+      "priorSevenPreserved": true,
+      "originalCliBytesPreservedDuringNormalProcessing": true,
+      "deliberatePostSealCorruption": false,
+      "trustedAnchors": [
+        {
+          "caseId": "E07",
+          "sha256": "235b0e36256d4ea37f551d9e1904d9b4335769c650f53ffbb391e09b8e6ae4fd"
+        },
+        {
+          "caseId": "E08",
+          "sha256": "7deaee907e362a0c40308983af652810c76b0d985f94d2281860a3986c1615bb"
+        },
+        {
+          "caseId": "E09",
+          "sha256": "f626adcb203ed9ea2bde7c035a85596d0b82bd18dfe3666f556441ce45cc3ff6"
+        }
+      ],
+      "records": [
+        {
+          "caseId": "E07",
+          "cliExit": 0,
+          "mockCalls": 1,
+          "actualProviderRequests": 0,
+          "originalFileSha256": "a2566e91b00999ba19ba495d71a16cd2978e1a2b579f8c54c01b5292874999f0",
+          "candidateFileSha256": "da2774e2b0040ecfec3a8acd4eac66da37691f9631aea56c878e078c8edaf668",
+          "originalCliBytesUnchanged": true,
+          "receiptDataUnchanged": true,
+          "originalStatus": "review_only",
+          "rawGrade": {
+            "identity": true,
+            "goalie": true,
+            "decisions": true,
+            "labelMatch": true
+          },
+          "outcome": "recorded_pass",
+          "mayAdvance": true,
+          "reason": "original_grade_pass",
+          "decisionsDisposition": "not_scheduled",
+          "candidateAvailable": false,
+          "candidateApplied": false,
+          "checkpointSealed": true,
+          "checkpointAnchor": {
+            "caseId": "E07",
+            "sha256": "235b0e36256d4ea37f551d9e1904d9b4335769c650f53ffbb391e09b8e6ae4fd"
+          }
+        },
+        {
+          "caseId": "E08",
+          "cliExit": 0,
+          "mockCalls": 1,
+          "actualProviderRequests": 0,
+          "originalFileSha256": "ce97395aaa12bfa84b4773bccba771b0d1d8e1878eed38e4ee7cd56eb5536298",
+          "candidateFileSha256": "da2774e2b0040ecfec3a8acd4eac66da37691f9631aea56c878e078c8edaf668",
+          "originalCliBytesUnchanged": true,
+          "receiptDataUnchanged": true,
+          "originalStatus": "review_only",
+          "rawGrade": {
+            "identity": true,
+            "goalie": true,
+            "decisions": true,
+            "labelMatch": true
+          },
+          "outcome": "recorded_pass",
+          "mayAdvance": true,
+          "reason": "original_grade_pass",
+          "decisionsDisposition": "not_scheduled",
+          "candidateAvailable": false,
+          "candidateApplied": false,
+          "checkpointSealed": true,
+          "checkpointAnchor": {
+            "caseId": "E08",
+            "sha256": "7deaee907e362a0c40308983af652810c76b0d985f94d2281860a3986c1615bb"
+          }
+        },
+        {
+          "caseId": "E09",
+          "cliExit": 0,
+          "mockCalls": 1,
+          "actualProviderRequests": 0,
+          "originalFileSha256": "ebb1eb3b210326fa2e351cc71f7eefe06c839d10af119f4faca351d997839bf7",
+          "candidateFileSha256": "da2774e2b0040ecfec3a8acd4eac66da37691f9631aea56c878e078c8edaf668",
+          "originalCliBytesUnchanged": true,
+          "receiptDataUnchanged": true,
+          "originalStatus": "review_only",
+          "rawGrade": {
+            "identity": true,
+            "goalie": true,
+            "decisions": true,
+            "labelMatch": true
+          },
+          "outcome": "recorded_pass",
+          "mayAdvance": true,
+          "reason": "original_grade_pass",
+          "decisionsDisposition": "not_scheduled",
+          "candidateAvailable": false,
+          "candidateApplied": false,
+          "checkpointSealed": true,
+          "checkpointAnchor": {
+            "caseId": "E09",
+            "sha256": "f626adcb203ed9ea2bde7c035a85596d0b82bd18dfe3666f556441ce45cc3ff6"
+          }
+        },
+        {
+          "caseId": "E10",
+          "cliExit": 0,
+          "mockCalls": 2,
+          "actualProviderRequests": 0,
+          "originalFileSha256": "0c95ed24d60000df861bd65e25b4762c49dc0841d9497b6e8b2112b38f0029e0",
+          "candidateFileSha256": "da2774e2b0040ecfec3a8acd4eac66da37691f9631aea56c878e078c8edaf668",
+          "originalCliBytesUnchanged": true,
+          "receiptDataUnchanged": true,
+          "originalStatus": "review_only",
+          "rawGrade": {
+            "identity": true,
+            "goalie": true,
+            "decisions": true,
+            "labelMatch": true
+          },
+          "outcome": "operational_stop",
+          "mayAdvance": false,
+          "reason": "receipt_or_usage_invalid",
+          "decisionsDisposition": "unresolved_do_not_dispatch",
+          "candidateAvailable": false,
+          "candidateApplied": false,
+          "checkpointSealed": false,
+          "checkpointAnchor": {
+            "caseId": "E09",
+            "sha256": "f626adcb203ed9ea2bde7c035a85596d0b82bd18dfe3666f556441ce45cc3ff6"
+          }
+        }
+      ]
+    },
+    {
+      "scenario": "schema-E07",
+      "cliInvocations": 1,
+      "mockCalls": 1,
+      "actualProviderRequests": 0,
+      "reportsClassified": 1,
+      "stopped": true,
+      "stopReason": "noncollectible_validation_or_protocol_failure",
+      "ledgerEnabled": false,
+      "blockedReason": "diagnostic_operational_stop",
+      "cumulativeSyntheticAttempts": 8,
+      "priorSevenPreserved": true,
+      "originalCliBytesPreservedDuringNormalProcessing": true,
+      "deliberatePostSealCorruption": false,
+      "trustedAnchors": [],
+      "records": [
+        {
+          "caseId": "E07",
+          "cliExit": 2,
+          "mockCalls": 1,
+          "actualProviderRequests": 0,
+          "originalFileSha256": "be9e203941bc6850ce915ddc0aca1f94d54f5a0d1056206b11a02b29dd452e83",
+          "candidateFileSha256": "da2774e2b0040ecfec3a8acd4eac66da37691f9631aea56c878e078c8edaf668",
+          "originalCliBytesUnchanged": true,
+          "receiptDataUnchanged": true,
+          "originalStatus": "held",
+          "rawGrade": {
+            "identity": false,
+            "goalie": true,
+            "decisions": true,
+            "labelMatch": false
+          },
+          "outcome": "operational_stop",
+          "mayAdvance": false,
+          "reason": "noncollectible_validation_or_protocol_failure",
+          "decisionsDisposition": "unresolved_do_not_dispatch",
+          "candidateAvailable": false,
+          "candidateApplied": false,
+          "checkpointSealed": false,
+          "checkpointAnchor": null
+        }
+      ]
+    },
+    {
+      "scenario": "candidate-file-exists-E07",
+      "cliInvocations": 1,
+      "mockCalls": 0,
+      "actualProviderRequests": 0,
+      "reportsClassified": 0,
+      "stopped": true,
+      "stopReason": "cli_failed_before_complete_artifacts",
+      "ledgerEnabled": false,
+      "blockedReason": "diagnostic_operational_stop",
+      "cumulativeSyntheticAttempts": 7,
+      "priorSevenPreserved": true,
+      "originalCliBytesPreservedDuringNormalProcessing": true,
+      "deliberatePostSealCorruption": false,
+      "trustedAnchors": [],
+      "records": []
+    },
+    {
+      "scenario": "post-seal-corruption-E07",
+      "cliInvocations": 1,
+      "mockCalls": 1,
+      "actualProviderRequests": 0,
+      "reportsClassified": 1,
+      "stopped": true,
+      "stopReason": "pre_invocation_integrity_failure",
+      "ledgerEnabled": false,
+      "blockedReason": "diagnostic_operational_stop",
+      "cumulativeSyntheticAttempts": 8,
+      "priorSevenPreserved": true,
+      "originalCliBytesPreservedDuringNormalProcessing": true,
+      "deliberatePostSealCorruption": true,
+      "trustedAnchors": [
+        {
+          "caseId": "E07",
+          "sha256": "235b0e36256d4ea37f551d9e1904d9b4335769c650f53ffbb391e09b8e6ae4fd"
+        }
+      ],
+      "records": [
+        {
+          "caseId": "E07",
+          "cliExit": 0,
+          "mockCalls": 1,
+          "actualProviderRequests": 0,
+          "originalFileSha256": "a2566e91b00999ba19ba495d71a16cd2978e1a2b579f8c54c01b5292874999f0",
+          "candidateFileSha256": "da2774e2b0040ecfec3a8acd4eac66da37691f9631aea56c878e078c8edaf668",
+          "originalCliBytesUnchanged": true,
+          "receiptDataUnchanged": true,
+          "originalStatus": "review_only",
+          "rawGrade": {
+            "identity": true,
+            "goalie": true,
+            "decisions": true,
+            "labelMatch": true
+          },
+          "outcome": "recorded_pass",
+          "mayAdvance": true,
+          "reason": "original_grade_pass",
+          "decisionsDisposition": "not_scheduled",
+          "candidateAvailable": false,
+          "candidateApplied": false,
+          "checkpointSealed": true,
+          "checkpointAnchor": {
+            "caseId": "E07",
+            "sha256": "235b0e36256d4ea37f551d9e1904d9b4335769c650f53ffbb391e09b8e6ae4fd"
+          }
+        }
+      ]
+    }
+  ]
+}

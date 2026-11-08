@@ -1,0 +1,19 @@
+{
+  "command": [
+    "npx",
+    "--no-install",
+    "eslint",
+    "lib/player-cards/currentNhl.ts",
+    "lib/player-cards/currentNhl.test.ts",
+    "lib/player-cards/currentSelection.ts",
+    "lib/player-cards/currentSelection.test.ts",
+    "lib/player-cards/currentNhlExport.ts",
+    "components/player-cards/CurrentPlayerCard.tsx",
+    "components/player-cards/CurrentPlayerCardStudio.tsx",
+    "components/player-cards/CurrentPlayerCardStudio.test.tsx"
+  ],
+  "cwd": "/Users/tim/Code/fhfhockey.com/web",
+  "exitCode": 0,
+  "elapsedSeconds": 0.931,
+  "sharedSlot": "parent run-check.py verify owns token"
+}

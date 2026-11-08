@@ -1,0 +1,6 @@
+   ✓ Healthy reserve alert > names the healthy IR player, says the lineup is illegal and shows the gain from activating him 34ms
+   × Healthy reserve alert > suggests the swap, or a drop when no spot opens, and never invents a gain 7ms
+     → Unable to find an element with the text: Gain unknown until the lineup passes the rule check. This could be because the text is broken up by multiple elements. In this case, you can provide a
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+TestingLibraryElementError: Unable to find an element with the text: Gain unknown until the lineup passes the rule check. This could be because the text is broken up by multiple elements. In this case
+      Tests  1 failed | 1 passed (2)

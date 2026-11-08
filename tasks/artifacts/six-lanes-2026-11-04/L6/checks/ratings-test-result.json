@@ -1,0 +1,10 @@
+{
+  "command": [
+    "./node_modules/.bin/vitest",
+    "run",
+    "--config",
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/six-lanes-2026-11-04/L6/checks/vitest.l6.mjs"
+  ],
+  "exit_code": 1,
+  "shared_lock": "acquired atomically; own lock released after run"
+}

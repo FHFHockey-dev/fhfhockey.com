@@ -1,0 +1,71 @@
+{
+  "recordedAt": "2026-11-01T20:05:18.421006+00:00",
+  "authority": "TJ bounded-read authorization relayed by parent 01a189f6-9a3a-7235-a989-e1af4f47b014 in the active delegation",
+  "status": "COMPLETED_DISCOVERY_NO_ISSUED_IDENTITY",
+  "target": {
+    "id": "fyhftlxokyjtpndbkfse",
+    "name": "fhfhockey.com",
+    "status": "ACTIVE_HEALTHY",
+    "region": "us-east-1"
+  },
+  "productionSelects": 2,
+  "transactionMode": "READ ONLY; separate bounded calls preserve each result",
+  "perSelect": {
+    "maximumRows": 17,
+    "statementTimeoutSeconds": 5,
+    "lockTimeoutSeconds": 1,
+    "retries": 0
+  },
+  "identity": {
+    "date": "2026-11-01",
+    "returnedRows": 0,
+    "actualModelIdentity": null,
+    "inspection": "identity-inspection.json",
+    "exitCode": 1,
+    "meaning": "Expected fail-closed result: no observed issued population; not evidence of a specific flag/cadence failure"
+  },
+  "schedule": {
+    "date": "2026-11-02",
+    "returnedRows": 4,
+    "gameIds": [
+      2026020232,
+      2026020233,
+      2026020234,
+      2026020235
+    ],
+    "fullSlateFirstStartUtc": "2026-11-03T00:00:00+00:00",
+    "provisionalFullSlateCaptureUtc": "2026-11-02T23:00:00+00:00",
+    "provisionalFullSlateCaptureNewYork": "2026-11-02T18:00:00-05:00",
+    "settlementProposedUtc": "2026-11-03T17:00:00+00:00",
+    "canaryIds": null,
+    "qualificationWindowApproved": false
+  },
+  "checks": {
+    "noSensitiveColumnsReturned": true,
+    "noOverflow": true,
+    "toolErrors": false,
+    "actionTimeApprovalPrompt": false
+  },
+  "files": {
+    "identity-inspection.json": "f8d4886dfdec8cdf4d2b51ac079ffd4da01c00d05b79a08b4eede3cbcc35516a",
+    "schedule-result.json": "322c7a4fa657d38a93ad168a437571bdda95d1eac35e330366f1eb5d11f691c7",
+    "target.json": "1f757f779cccea7be5859fd17173b706450b375806ae4d71b4ca26f28eceff08",
+    "RESULTS.md": "2e073819f6ab49794fd8c0e64c56a589aaa4f7fa05521fc7fbecd231d584ef6e",
+    "identity-tool-result.json": "747293d3f44ec707d82a73debf3aec4b367e6818957a60b8d8e07265ceab6792",
+    "schedule-query.sql": "39016b9bff98a2b57b41a19736546993e20224cea30b19a167164740051e0d06",
+    "schedule-tool-result.json": "2a47d77400538a66cecd3af927678c7eef3017e244401cc3e9689ff909b6e192",
+    "identity-result.json": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+    "identity-query.sql": "969e0ab21d55b9185176dafc75fd52b73b42cf85af250a072616da738c51bf70"
+  },
+  "sourceForMultiStatementResultSemantics": "https://raw.githubusercontent.com/supabase/postgres-meta/master/src/lib/db.ts",
+  "limits": {
+    "applicationRequests": 0,
+    "providerRequests": 0,
+    "canaryRuns": 0,
+    "databaseMutations": 0,
+    "builds": 0,
+    "pushes": 0,
+    "deployments": 0,
+    "otherProductionSelects": 0
+  }
+}

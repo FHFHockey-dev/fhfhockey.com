@@ -1,0 +1,1902 @@
+[
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/.integration-vite/vitest/da39a3ee5e6b4b0d3255bfef95601890afd80709/results.json",
+    "sha256": "d505b103796167dfa03cd69986ef9c198a4a14b034a9c6bbe252b3fbeb400b64",
+    "bytes": 424
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/APPROVED-POLICY-CONTACTS-20261101.json",
+    "sha256": "5eea9c4ef6d47a31b4894d78dddfcc53c7cd0c86dace279744ce4f5ae835beeb",
+    "bytes": 2851
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/APPROVED-RANKS-BROWSER-20261101.json",
+    "sha256": "ad1f33861a4ec9281eb7f6e3b947204df980a066dfc06f15da6ac4cce3e7e514",
+    "bytes": 1299
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/APPROVED-RANKS-CHECKS-20261101.json",
+    "sha256": "4933dfa706736af2714ddc1eba0f40de008a6c2c4130738b981ebff26f7e93f1",
+    "bytes": 1388
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/APPROVED-RANKS-FINAL-VERIFICATION-20261101.json",
+    "sha256": "e8de8a1c9ac7d23198dc2469d47241c9d6f876c1bc1266cbe969a412a9e79bb8",
+    "bytes": 2014
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/APPROVED-RANKS-INTEGRATION-20261101.json",
+    "sha256": "47c06c0dcbd66300a1814199601208f93fc29da3edd9ff8bc351c3e7baa4b71e",
+    "bytes": 4985
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/AUDIT-FIXES-BROWSER-20261101.json",
+    "sha256": "a0401da6479b60af210ccb2669beaf81312584d9d9881eb4d6cf0ca86c4f4656",
+    "bytes": 3926
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/AUDIT-FIXES-BROWSER-COMMAND-20261101.json",
+    "sha256": "f6b9f224db155abeeb6ab21709410a2d8a7177bb3d0efc3fc0587ea21dc28ac0",
+    "bytes": 325
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/AUDIT-FIXES-CHECKS-20261101.json",
+    "sha256": "76ef0ee12a59322a713ec680daa7a8c8a0ca320e499f32843719c8c37f1122df",
+    "bytes": 1226
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/AUDIT-FIXES-FINAL-20261101.json",
+    "sha256": "d182afbbda10d2f37b07b17e11a801be82822914a7a8e3d25a5b1d97d8de7479",
+    "bytes": 367
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/AUDIT-FIXES-REREVIEW-20261101.json",
+    "sha256": "60ab9608b0aac53fd3063e34165f710cde041bc67499a6b57afc251ca77b4e54",
+    "bytes": 5690
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/BASELINE-RECONCILIATION.json",
+    "sha256": "e60f47974ce7dc6fc7034899ad9028a3a84fe655c795f5f59437cbb42e499bc1",
+    "bytes": 536
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/BASELINE.json",
+    "sha256": "446a9eb92d8048b0e2ce75d7724e32ed58ee11e86e95af17e6efc364717925cd",
+    "bytes": 12352
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/BLOCKERS.json",
+    "sha256": "b731d1c054a8860f9199c3582bbb4093536ec0fc121baa541ab720b38aa0be54",
+    "bytes": 7562
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/BLSH-BROWSER.json",
+    "sha256": "2f69a9b1c3cfb81701985ee9298feda879666f5dd601002d806815122b55122b",
+    "bytes": 311
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/BLSH-OWNER-PINS.json",
+    "sha256": "bc4fbd4ddfe10a2ae1b7a08731dcd1bfa664e69c4d43c21ba856fae681ea9584",
+    "bytes": 875
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/BLSH-PROVENANCE-BROWSER-20261101.json",
+    "sha256": "f20c6312eae6face7a0b51d324eb20914736e874a374edab9eaeb6dce0a0c4d7",
+    "bytes": 458
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/BLSH-PROVENANCE-INTEGRATION-20261101.json",
+    "sha256": "9809f714c9be1473bf61dfc79b0244da56098facc8f4e5dc4e779d678caf16d0",
+    "bytes": 4061
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/BLSH-QUALIFICATION.json",
+    "sha256": "f8749a3a5b50791044727fdb0188cef29d4054b91ee54821c66a104f9f622eb7",
+    "bytes": 1716
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/BLSH-SIDECAR-ASSESSMENT-20261101.json",
+    "sha256": "963c63579e74897fde99a494bcfa38067380f23cf842dc1f7770f64af437401c",
+    "bytes": 2438
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/BROWSER-IMPORTS.json",
+    "sha256": "bda36fef2fb8e6ac1c2558f62bdf5cab13c5aa8d4d50d1ae96fcc6fb07ca2d2b",
+    "bytes": 2567
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/BROWSER-VERIFICATION.json",
+    "sha256": "7e879a59ac687b2544ec1fae6251f966144752c45cc5e1f6f95c0079dac02555",
+    "bytes": 1452
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/COMPARISON-FINAL.json",
+    "sha256": "d48991e913ec212c2221eb2dd3b74a98e4bcd593490caa3a6817acf29ecef33a",
+    "bytes": 116
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/CONTINUATION.md",
+    "sha256": "cb2a5702fef5a35114a9fd662c1ee18ddb4d0579b056eddeff2db677a39944fd",
+    "bytes": 7176
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/COORDINATION-WRITES.json",
+    "sha256": "96847fe53472426223fd73e922b234a76be1b5ace4b5b31a8e9de7fb90fd2a02",
+    "bytes": 1621
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/CURRENT-BOX-BROWSER-20261101.json",
+    "sha256": "56e641fa84cadde708f6de8f9457efbe3c01d09cec154cdfd3eca685c5bd2ea7",
+    "bytes": 918
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/CURRENT-BOX-CHECKS-20261101.json",
+    "sha256": "36fc79d1166ec82d0011aa94fc9cadfe536e1de24d04eeacdc07e3db031d420d",
+    "bytes": 1356
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/CURRENT-BOX-CONSUMER-ASSESSMENT-20261101.json",
+    "sha256": "1ad4f55ddaf6a26da8f1c6752a7f0b2f452a3c02201acc8d30e931ae05f81383",
+    "bytes": 1976
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/CURRENT-BOX-CORRECTED-CHECKS-20261101.json",
+    "sha256": "9ccd7209ea65aac6b54ee7b4ec3813db62a34abf30d34fa9d9fd43feae5b597b",
+    "bytes": 1161
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/CURRENT-BOX-FINAL-CHECKS-20261101.json",
+    "sha256": "3143dcd7a5bc52c16ea09ff4dfa7b0f4f661f5c2de701ae03835c227abbb7a91",
+    "bytes": 674
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/CURRENT-BOX-INTEGRATION-20261101.json",
+    "sha256": "3630277cb3d27c04377f0487ec389f73b7d36a50f4a41fd59fc3eafe1fad8a16",
+    "bytes": 4759
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/CURRENT-BOX-LABEL-CHECKS-20261101.json",
+    "sha256": "6788dc2007166dbeb11d30f1d6f39fb37bcf64e1fbddff9b64ce2883ad0e79f8",
+    "bytes": 773
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/FINAL-REVIEW.json",
+    "sha256": "7cf1114e06650d7ccb16fc641e10b4e6df419d364b54f0aa3f2210dcb15d5e12",
+    "bytes": 975
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/GOALIE-DEPENDENCY-PINS.json",
+    "sha256": "b890c8f164de2504da24ee97a7fe56c34fde33a65a10500a988179a9b5361173",
+    "bytes": 1220
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/GOALIE-FINAL.json",
+    "sha256": "afa6c508d96dcdf1625c2ea5fa246efe502d484395f96fd10c785c24ca4663d0",
+    "bytes": 93
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/GOALIE-GAPS-BROWSER-20261101.json",
+    "sha256": "87b697fd46df6acdc37a1c3d51da5ef8b6307a71a91c8ffd276eacfa2132b618",
+    "bytes": 512
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/HANDOFF.md",
+    "sha256": "2a2e15fd20f065c681b03daa2ac97a94036d8d19b5782294005b95b75934c799",
+    "bytes": 19553
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/IMPLEMENTATION.md",
+    "sha256": "ccf7f5460b0ccd18ab6e7f754b3b7ac326c87c9ce3fc354614f2359f1d762f84",
+    "bytes": 10190
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/INTEGRATION-BROWSER-IMPORTS.json",
+    "sha256": "1c306422f43a381191697dd21f0a88c8f1c41f8e5221e03fe931696ad612ebe8",
+    "bytes": 2554
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/INTEGRATION-BROWSER.json",
+    "sha256": "6bfc34e19d0a8e83939ecd46dffc75378db7139c0a85d15dd060d37a72226dc9",
+    "bytes": 366
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/INTEGRATION-PREIMAGE.json",
+    "sha256": "9eff38ab7bd09fc7bd349cc336af9151831aeb9abecb2ebe1c4ecc41b1a9d59e",
+    "bytes": 608
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/POST-REREVIEW-STATUS-20261101.json",
+    "sha256": "5f8e1df9ab1e201384e4d4688fea7878d2de5cb8ac5745436df41b4f0a35042a",
+    "bytes": 3542
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/PR402-RECONCILIATION-20261101.json",
+    "sha256": "e72849df235c380af4278254c36af679217e0dd31538954b4a32798f8c52623a",
+    "bytes": 1822
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/PRESERVATION.json",
+    "sha256": "339afa47c5a952428355e23891456246c503afaa1a36c4fb2491f856cca519e5",
+    "bytes": 12398
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/RETAINED-INPUT-PINS.json",
+    "sha256": "5f5f074d7e41ef62184e8046c321d677c8dfca6e665d6432614177961b94e25a",
+    "bytes": 834
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/SHARED-GOALIE-BROWSER.json",
+    "sha256": "62db4dfd56ecf9fd86cea71cb664db273e1ed10b256bebfd786790f77c08a321",
+    "bytes": 372
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/SHARED-GOALIE-HANDOFF.md",
+    "sha256": "579e00971090121d5bb90328e60ee0ebf546306b907c39108a793141b0e1c76b",
+    "bytes": 7341
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/SOURCE-PINS.json",
+    "sha256": "f092d5bc6092fbe2c9b4a9263832f7bc3607b331519bd31d01a66bdda77d6c9a",
+    "bytes": 3648
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/SOURCE-QUALIFICATION-TESTS-20261101.json",
+    "sha256": "0360cedc4c79d735c06a6e5d9105f38942745d5a5fdab285fc3988a81959e627",
+    "bytes": 3019
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/STATUS-20261101.json",
+    "sha256": "6cf7e3fda23fc27873ac9bc90ae15fedcc513827f0ae9894472003293bd1d8b4",
+    "bytes": 14166
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/STATUS-RECHECK.json",
+    "sha256": "80afc3ee4591bf4c0c3fb108414e0d02cf126c79fd4961efb81ac002f19bc1a8",
+    "bytes": 4522
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/TASK-VALIDATION.json",
+    "sha256": "0f01cbe9ef9dbac5d7a11c68063cec88096dd264ff17903cce9683a6d681810c",
+    "bytes": 802
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/TRADE-RETAINED-OWNER-RESPONSE-20261101.json",
+    "sha256": "a710935af442db07ae81e0687a0196cefac67afb85553b97dc667064b2f5ad78",
+    "bytes": 7378
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/TYPECHECK-FINAL.json",
+    "sha256": "7cd807553f94506456d88891ce38e88c7f0cbefe3560055310a89a3ce3272a30",
+    "bytes": 1968
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/TYPECHECK-OWNER-CORRECTIONS.json",
+    "sha256": "d410c74c1708a8aa815dec833b440ecd385c3bd717b9f1681c9f97846aeefadb",
+    "bytes": 780
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/TYPECHECK-RETRY.json",
+    "sha256": "79770e7ebbb5b4fce8137e5c552271ebb98e661de55caea7dea0bbbe65a36993",
+    "bytes": 2880
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/VISUAL-FINAL.json",
+    "sha256": "1192dd301016951cd3a89680a7708c3be28c6f4fd954a5ab8a729bb9413e3238",
+    "bytes": 121
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/WINDOW-AGE-BEFORE-20261101.json",
+    "sha256": "8ec0bbeaab551711a0b69efc9d1fc6d5258c27b6b29d16e2d5fb73c4ec28c976",
+    "bytes": 532
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/WINDOW-AGE-CHECKS-20261101.json",
+    "sha256": "f8ee7119fbd186d776aa520cdea00fd62e82c0fed477616acc55e3b166c759c8",
+    "bytes": 1686
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/WINDOW-AGE-CONSUMER-20261101.json",
+    "sha256": "a1d2fc6658b86df7ff7fcf603c7974f9f24723da95b2c35737b536903b07f3ec",
+    "bytes": 5504
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/WINDOW-AGE-FINAL-20261101.json",
+    "sha256": "5e85976648c8b2f2317a3823e0ae6e6a706271013a088a469df3ff9a7c17cd32",
+    "bytes": 354
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/approved-ranks-browser-20261101.log",
+    "sha256": "ba1964520919383d2497f1dcb9f9b3a84a0efcdcd882fae3bfa2886a9ab50391",
+    "bytes": 159
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/approved-ranks-integration-20261101.patch",
+    "sha256": "29c36f66d8bce437bfa42ac9ad3a91ecabf0cbd8f44c6e7d387e3591c63092db",
+    "bytes": 30406
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/approved-ranks-lint-20261101.log",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/approved-ranks-preview-20261101.log",
+    "sha256": "025ec3129e190229cbb89e95648cee412815260b0cc048577cb67296efe0da1c",
+    "bytes": 238
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/approved-ranks-tests-20261101.log",
+    "sha256": "ac510177cbd9c45c8e009ebb2cf976362f360d68799b3c21d65087f26c9c70fa",
+    "bytes": 1184
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/approved-ranks-types-20261101.log",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/approved-short-fixture-20261101.png",
+    "sha256": "57ce2e57da0300db12784a20ae7a5568066b7df910938733cb42d3853970ebe7",
+    "bytes": 582623
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/approved-short-fixture-manifest-20261101.json",
+    "sha256": "96e32d2d914cb34f40ddb7695ec58b108aa5d9706bd1d027262e4acf28c4950b",
+    "bytes": 57746
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/approved-short-fixture-mobile-20261101.png",
+    "sha256": "7283f71f48a32af5056d9cbd9ff1dbdf34681b0198b121e343a1c3e7e85187f0",
+    "bytes": 395496
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/approved-short-retained-20261101.png",
+    "sha256": "602fa89088733531ec7f84e3109b7dc041edef8c8cf82da787593038f6d8a8c4",
+    "bytes": 574762
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/approved-short-retained-manifest-20261101.json",
+    "sha256": "218d68da39db3bd7fd7344c91c0000489dccb697e5835d2f88a4872696ed9787",
+    "bytes": 133368
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/approved-short-retained-mobile-20261101.png",
+    "sha256": "507b2cc72b950470db88bb7b230ee0243e7e9368131b3e219b3f48e7af82b4b5",
+    "bytes": 961709
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/audit-fix-long-token-blocked-20261101.png",
+    "sha256": "e169e9ca01091c145418e6ff84f63a079e56c83aa8aedbb0b73f4889da09b691",
+    "bytes": 387693
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/audit-fix-long-token-manifest-20261101.json",
+    "sha256": "4bfb6df914fe7519d0aec9fe06b8a80477ed50a3b31f3bef3b7d61f39fdd3636",
+    "bytes": 7406
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/audit-fix-normal-20261101.png",
+    "sha256": "0f16aa2b80f4638fb23c5cd3bd8a7b483174acd63cb73dba16f0abf650f29596",
+    "bytes": 611925
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/audit-fix-normal-manifest-20261101.json",
+    "sha256": "796080fd5b00978a2b0797ac6597282c088f761c3f94cf6f2021bea769c09519",
+    "bytes": 6685
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/audit-fix-preview-mobile-20261101.png",
+    "sha256": "a5b8836908ae7cfd910329e7bc869fe23eae74bed3ca74b08d382aafbb79c7cf",
+    "bytes": 965098
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/audit-fix-retained-20261101.png",
+    "sha256": "ef807d9a6afa3cded087fd5058b30a32df7ab4b19c90d6a00e8253a7986d7cac",
+    "bytes": 657562
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/audit-fix-retained-sasson-20261101.png",
+    "sha256": "5ce42944b74c53c27254a051387feb758cac9e248616768fae7f535ff60b1662",
+    "bytes": 687578
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/audit-fix-wide-token-manifest-20261101.json",
+    "sha256": "09b704f7e15f9d8c42f2f75190e7118d74d0b8017eca654e1bc17df232e3d86c",
+    "bytes": 6602
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/audit-fix-wrapped-wide-20261101.png",
+    "sha256": "20140e501ce2ecf4b151ab28876528e1896d02ca822956a001712158c21c79ff",
+    "bytes": 604509
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/audit-fix-wrapped-wide-manifest-20261101.json",
+    "sha256": "beaa62bcae3f02bb5a5958adbc88aef8ea4955384941a3dedb4566cd8337cc63",
+    "bytes": 6606
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/audit-fixes-20261101.patch",
+    "sha256": "ebc78731b8e26ae10cde801527a969d52b2d8bbeaadba85d451781477457bb08",
+    "bytes": 18109
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/audit-fixes-browser-20261101.log",
+    "sha256": "b7b37b9e314ada60c09e5da18149b4b5762c52eb635f9621abf68580adb3d9a4",
+    "bytes": 132
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/audit-fixes-entry-20261101.tsx",
+    "sha256": "3383365b6cbf0818c761cf4127f73871c6e54af73a6386a3df5a6e736fc8c768",
+    "bytes": 2514
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/audit-fixes-lint-20261101.log",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/audit-fixes-preview-20261101.log",
+    "sha256": "606f255047f0bc2580fc24e1ce7c4d945fc894851031ad9175865da41c47eabf",
+    "bytes": 238
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/audit-fixes-repro-20261101.html",
+    "sha256": "34b32394243187e50200f35d50cdaf2ffa3872b4f3f93ccf19092995b366ecde",
+    "bytes": 330877
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/audit-fixes-tests-20261101.log",
+    "sha256": "d97cb0f2a378875642eb5fa03a4a037c246d1118cd476d1b84c831342797dc18",
+    "bytes": 905
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/audit-fixes-types-20261101.log",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/baseline/web/components/player-cards/CurrentPlayerCard.tsx",
+    "sha256": "7e6217dae0ebdc759d318953c1aac25d7b41b0e685a567e8a9065359cb96bca5",
+    "bytes": 8683
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/baseline/web/components/player-cards/CurrentPlayerCardStudio.test.tsx",
+    "sha256": "4a748958d132b78ad509dc30510e6b871306e000665952a0d9ac7fda83abd378",
+    "bytes": 16652
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/baseline/web/components/player-cards/CurrentPlayerCardStudio.tsx",
+    "sha256": "9806acf539365419c4afae21b53b7186feb1eb8ae5e5ad4227d8162d11104021",
+    "bytes": 13548
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/baseline/web/components/player-cards/EditorialPlayerCard.test.tsx",
+    "sha256": "99b9013b5d2d16d343f88381730d5794c1beaefda5b6647aa092f0cef5d8bfe6",
+    "bytes": 5438
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/baseline/web/components/player-cards/EditorialPlayerCard.tsx",
+    "sha256": "f3c996c4c0cf9d75f533d1d4937a5db2474edb6a7c9b9665bbb3849df205afb5",
+    "bytes": 11100
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/baseline/web/components/player-cards/HeroPlayerCard.tsx",
+    "sha256": "12894428c08a893675d4b03f74b49e9f4e9a7e23bfe72dc2810f26d96f86055c",
+    "bytes": 5207
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/baseline/web/components/player-cards/InteractiveCard.tsx",
+    "sha256": "70b6edce10ffe219817c64f2c4763a8e58091b9c59f9b77fb2a68aa2b7d33271",
+    "bytes": 5984
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/baseline/web/components/player-cards/ObservedPlayerCard.test.tsx",
+    "sha256": "e217c9edad47ae3e84b6743e261e3dccd990869565e65fc85d09390d12c538eb",
+    "bytes": 3897
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/baseline/web/components/player-cards/ObservedPlayerCard.tsx",
+    "sha256": "05e3389c018f5e38f54b54cde5eb15a9686a13b601624d556c9d3a2a64b8abe2",
+    "bytes": 7304
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/baseline/web/components/player-cards/OutlineStackControls.module.scss",
+    "sha256": "f2798e788b878bca1e5b97e205c36fea77dd780e2afedba31a062ecd9ff0bc7b",
+    "bytes": 965
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/baseline/web/components/player-cards/OutlineStackControls.test.tsx",
+    "sha256": "86267f9da6d9a77f51dbc6ec585fafb553101e34be356c2e8ddb7396c139bb34",
+    "bytes": 2830
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/baseline/web/components/player-cards/OutlineStackControls.tsx",
+    "sha256": "686f510f128eb876873c541fc594053463b226a224b327b1e267cc398372fe6a",
+    "bytes": 3985
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/baseline/web/components/player-cards/PlayerArtworkControls.tsx",
+    "sha256": "360a3a03a35d0db7b40cd2ca414c6d5791b6ea6cbf8dbe2d5a4280bcb3558a82",
+    "bytes": 2111
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/baseline/web/components/player-cards/PlayerCard.module.scss",
+    "sha256": "cec892e73d5642253435108e81c91ab0f6fb6b9bedacee849ffd10808e792b77",
+    "bytes": 3568
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/baseline/web/components/player-cards/PlayerCard.tsx",
+    "sha256": "917edf84256f3153459bc02302ff9a804a3847838eaaf8192bd000fb21f9cdfc",
+    "bytes": 5788
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/baseline/web/components/player-cards/PlayerCardFlow.module.scss",
+    "sha256": "4e49342c3f99b62201e8bc2dcf76c60faee6a565ff924894c00e40c374512c43",
+    "bytes": 2931
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/baseline/web/components/player-cards/PlayerCardFlow.test.tsx",
+    "sha256": "0ce3fb52c6f19fcea4d5f0755924faab1472cda1b4e1fa704396e1b4176c8579",
+    "bytes": 9114
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/baseline/web/components/player-cards/PlayerCardFlow.tsx",
+    "sha256": "036c44fb865ac729e2ddfba06bf0d6205d983bf9f89133c88f20918869302e30",
+    "bytes": 11747
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/baseline/web/components/player-cards/PlayerCardPreview.test.tsx",
+    "sha256": "5309f794268f88a670c19efe98939ca008b2439fd07c700c223bc832799b7e8f",
+    "bytes": 3784
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/baseline/web/components/player-cards/PlayerCardPreview.tsx",
+    "sha256": "f58bdd545fa121be6ca79ffab03f52aeff8ca9d18a74e3e608b4addf7ae1a4b6",
+    "bytes": 8174
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/baseline/web/components/player-cards/PlayerCardShareStudio.module.scss",
+    "sha256": "0bcab0a01648ff20a2d083dea3ec7e3d9c7fa0ca644eba48fa5d1b976db50db3",
+    "bytes": 1418
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/baseline/web/components/player-cards/PlayerCardShareStudio.test.tsx",
+    "sha256": "ffa4f5cbb3400973470f6977ca255915c506de986cd886f4d7b50df91e91c9b6",
+    "bytes": 13194
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/baseline/web/components/player-cards/PlayerCardShareStudio.tsx",
+    "sha256": "f7e9b934edd88877d21c97497af057483befb2590731c2fc20863521d5d269f7",
+    "bytes": 9045
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/baseline/web/components/player-cards/PlayerHeroHeader.tsx",
+    "sha256": "c7997ab2d2f834d9d65cbefc27cbd72242ef228a9ff7e2a6834d38c468bf6873",
+    "bytes": 4944
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/baseline/web/components/player-cards/PlayerLookup.module.scss",
+    "sha256": "b476b6ed999bd74ff0d48d904a601e1773e8061ab188daf7c1da864ceabbeed7",
+    "bytes": 867
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/baseline/web/components/player-cards/PlayerLookup.test.tsx",
+    "sha256": "1fbaf73ec6e465a37eec4003ce21a37a9b3c447564fb63848bb3bf1601ca96cf",
+    "bytes": 2725
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/baseline/web/components/player-cards/PlayerLookup.tsx",
+    "sha256": "b66e133300009e65e4736a998f062227111b1d4eab7bfbd44e3a183a08fe4984",
+    "bytes": 2108
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/baseline/web/components/player-cards/ProductionGameChart.tsx",
+    "sha256": "428eba85db383569b4f1bf63fd04f09aa0cf02c6919614780b1b0c10e30b45be",
+    "bytes": 3336
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/baseline/web/components/player-cards/usePlayerArtwork.ts",
+    "sha256": "ce852791cec30c0eb1b145bd1b31963456b9ec90d9fabcc050f5913544529ea9",
+    "bytes": 4781
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/baseline/web/lib/player-cards/adapter.ts",
+    "sha256": "095368ab27e9a207a62b0309f0ff45f7a401e2735c609ed6481199846883c81f",
+    "bytes": 6282
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/baseline/web/lib/player-cards/aggregation.r1.test.ts",
+    "sha256": "54df67e6ff24264a685db97bfbba2a54803ef9214d2132941ffa580f522cf348",
+    "bytes": 4385
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/baseline/web/lib/player-cards/aggregation.ts",
+    "sha256": "87559ceb96773a757ff359a6cf4705d1f89b73f8c96cd068e0eeb194c1cf329b",
+    "bytes": 5899
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/baseline/web/lib/player-cards/alphaOutline.test.ts",
+    "sha256": "a825f939b65b66e500504cb1a3572bf9406f838a95c2ee203fb3376aff75c06c",
+    "bytes": 7466
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/baseline/web/lib/player-cards/alphaOutline.ts",
+    "sha256": "b83074d715c5d804a6b074f6a4929c36385c1551084889b6806cc766284b4615",
+    "bytes": 12559
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/baseline/web/lib/player-cards/cardEvidenceVerdict.test.ts",
+    "sha256": "8942ef62c9ecd4a0396301ed63437658c8b4fb0e9db9c122f35575d62a50985f",
+    "bytes": 15500
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/baseline/web/lib/player-cards/cardEvidenceVerdict.ts",
+    "sha256": "9b6f71f71d2eb5baef64509f30d0e12f3c34e08f6ef745c6cbcdb08b5161b88f",
+    "bytes": 5354
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/baseline/web/lib/player-cards/contracts.ts",
+    "sha256": "5bc0b00708a6dd9f3638f801701d3bf56dfe9a0dfcdd1484fd34d806ff8c283d",
+    "bytes": 2213
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/baseline/web/lib/player-cards/currentArtwork.test.ts",
+    "sha256": "6bb47a0f84e5c2c983fd9e4155cc106771a1368da5fd3cfefb3c1a41156f2ae1",
+    "bytes": 4274
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/baseline/web/lib/player-cards/currentArtwork.ts",
+    "sha256": "c10d6c49d505ca0114c47a8dc1ac6f075e90f5ea0d118d24c38039c12efe8930",
+    "bytes": 2415
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/baseline/web/lib/player-cards/currentNhl.server.test.ts",
+    "sha256": "105b977fdee0ecc1e5e9023924619d7c7155940240425132def99650fa803dad",
+    "bytes": 4421
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/baseline/web/lib/player-cards/currentNhl.server.ts",
+    "sha256": "905cca317479d47609066bf636c209e2e5662a783e334ad66274e6131b9ffbaa",
+    "bytes": 2933
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/baseline/web/lib/player-cards/currentNhl.test.ts",
+    "sha256": "a755776e200e95a18de618a20ccb6f0d5ffe59fff5a676eb254ebf81d527f626",
+    "bytes": 8984
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/baseline/web/lib/player-cards/currentNhl.ts",
+    "sha256": "e76894c48f9ad67551515581e48997f2519c7b0796d0a0f2110530252af54161",
+    "bytes": 13330
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/baseline/web/lib/player-cards/currentNhlExport.ts",
+    "sha256": "94d0f32f2337c2bb59cce2748f433d1b3b103cffed3ea7d77ca169dc2561a505",
+    "bytes": 2721
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/baseline/web/lib/player-cards/currentSelection.test.ts",
+    "sha256": "61783cfa56e2bf7c2ef6ff0b326ee0e423911505a69bedc901f71f5a351f3a88",
+    "bytes": 3336
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/baseline/web/lib/player-cards/currentSelection.ts",
+    "sha256": "a539b049e99fdb7e3767a6f4106e72ecf5459cc5cd842291da252358e077813e",
+    "bytes": 6064
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/baseline/web/lib/player-cards/domain.test.ts",
+    "sha256": "240b4c192c386d672c5af505a90355787ca43b8f95dc7ce1d57dbba46addbb91",
+    "bytes": 18885
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/baseline/web/lib/player-cards/evidenceAdmissions.ts",
+    "sha256": "d2af7842eaa250b813c55d595e20cfb2a4ea6bd46bc13ac76d4658dfc470cfda",
+    "bytes": 2395
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/baseline/web/lib/player-cards/evidenceBundle.test.ts",
+    "sha256": "1a19a42d9bba637a07ad4370d0d5ebe105c22c5e3a432d8c933ee7146066c0af",
+    "bytes": 23778
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/baseline/web/lib/player-cards/evidenceBundle.ts",
+    "sha256": "054308dc7e87ba78c014e91b433225cc63a3a2783a0492881e5e8af688cc4314",
+    "bytes": 21289
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/baseline/web/lib/player-cards/evidenceLoader.test.ts",
+    "sha256": "9feaa0046e15b5cc94bb8506958aaf222f028aecc70d63b7aa2c11880af0d122",
+    "bytes": 22669
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/baseline/web/lib/player-cards/evidenceLoader.ts",
+    "sha256": "9fee76955b1f5c98bea4c9b638facc68185de8d3cb3e826bdcc848bbad5837d7",
+    "bytes": 15886
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/baseline/web/lib/player-cards/evidenceVerdictCopy.ts",
+    "sha256": "e2ea463484098fdaed40373804dd2989f7dfd215228cf73885c68daaa1f7a23e",
+    "bytes": 1865
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/baseline/web/lib/player-cards/fixtures.ts",
+    "sha256": "00ac0c5bc1194427c2aecb7981c0f228b22b51fef16b343a72ec0f47a4405f65",
+    "bytes": 2715
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/baseline/web/lib/player-cards/interactionFixtures.ts",
+    "sha256": "803cf3b41962b3125a0cd78c886700c58d2a37fd61206562545919767d04774e",
+    "bytes": 4100
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/baseline/web/lib/player-cards/interactionSnapshot.ts",
+    "sha256": "53ce89f2495a7b832a20302d070c9f6b87d1dc099f1e460600e7471eb4aa3759",
+    "bytes": 3759
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/baseline/web/lib/player-cards/nstCapture.test.ts",
+    "sha256": "4d4acef017c15c6c21df2faa46f0037ec3ea83e7918275d15b3c3df141eff012",
+    "bytes": 9948
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/baseline/web/lib/player-cards/nstCapture.ts",
+    "sha256": "ddaa8604b6a50f7f6ebe9511899724ab0ade9b7db1235b417903b5b2f6e523ec",
+    "bytes": 7735
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/baseline/web/lib/player-cards/observedExport.test.ts",
+    "sha256": "7fe0983a3d0f85479301b050b175055c583319de57f02689f8b1f3f7a9568a7a",
+    "bytes": 2377
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/baseline/web/lib/player-cards/observedExport.ts",
+    "sha256": "6ec078118974d42028619b0f000f642feb1460503d4ed49220db788e0c9856fd",
+    "bytes": 1098
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/baseline/web/lib/player-cards/observedView.ts",
+    "sha256": "3c1623d0162e780281e21b0bd18b1430b4e177669a6fd964e241cc32fa9c5110",
+    "bytes": 2298
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/baseline/web/lib/player-cards/outlineStack.test.ts",
+    "sha256": "6831023b91aadd9e324af59f1e0cdb8fdd1f59c630b6bf4122f8c58c1716f055",
+    "bytes": 1718
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/baseline/web/lib/player-cards/outlineStack.ts",
+    "sha256": "c90e50e1209b11f420498fff574920b1585d9514e39c23f0f3bcbc328a565789",
+    "bytes": 3342
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/baseline/web/lib/player-cards/playerCatalog.test.ts",
+    "sha256": "d6d89b87220d1ba377280500eff6a624a18076fb9141d308c07ec579f7eca0aa",
+    "bytes": 2016
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/baseline/web/lib/player-cards/playerCatalog.ts",
+    "sha256": "98d967b1895f574c8e9c4703b1594539b499ccdfb31b38955aaad85456e7bb0b",
+    "bytes": 57404
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/baseline/web/lib/player-cards/portraitTreatment.test.ts",
+    "sha256": "30606f5940e1e097c9bf7bb9e8581e9e8c9a8d31979e2cb688105fdbdea547c5",
+    "bytes": 6254
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/baseline/web/lib/player-cards/portraitTreatment.ts",
+    "sha256": "202386082221d4ac656e6b3a3f12777abb115eae949a82eed4b2985d78918399",
+    "bytes": 10457
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/baseline/web/lib/player-cards/ranking.test.ts",
+    "sha256": "b6177f53c26acde7f03e9afcdc5a3bbe4cdf2be071aea5a6e8be455e7375c027",
+    "bytes": 2413
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/baseline/web/lib/player-cards/ranking.ts",
+    "sha256": "813a18860ac97ce19bceeb01f014541644b9a4d002c34ac7a0d95c09ef6b5338",
+    "bytes": 1716
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/baseline/web/lib/player-cards/registry.ts",
+    "sha256": "f9c6a55ef5ee37a4e9de4cb1321ee971af5da0e3008dfdd86dfcec260c25cd29",
+    "bytes": 3382
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/baseline/web/lib/player-cards/reviewedHeroSamples.ts",
+    "sha256": "b2ed3a541240d600dbbb9fcf10d1bac2ce2db6476484b908f0f3469210cec0cc",
+    "bytes": 2186
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/baseline/web/lib/player-cards/shareExport.test.ts",
+    "sha256": "1251d0366c44d591fcfc74a5ac3afaf9868e49895563cd47b4e80fd97b7b3753",
+    "bytes": 10528
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/baseline/web/lib/player-cards/shareExport.ts",
+    "sha256": "d09598ad242f990662de13fa355ea60f6b87f6d37259e44a7a6afc10b12e3d4b",
+    "bytes": 8327
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/baseline/web/lib/player-cards/teamLogo.ts",
+    "sha256": "8cc47f9f57feff380c4af32e9bf3b96b5506f1e1c75d29c42cbdbce43295aa47",
+    "bytes": 2342
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/baseline/web/lib/player-cards/windows.ts",
+    "sha256": "0ba442eb512f309131c1f3b5a45534ccf7687a1cf7a84d570b40ce49f95dfb30",
+    "bytes": 8080
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/baseline/web/pages/api/v1/player-cards.ts",
+    "sha256": "182a4388c37857db84a6a8e1b42eb7c07ae1cd79594a06fe4b9b8d62cb632146",
+    "bytes": 843
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/baseline/web/pages/player-cards.tsx",
+    "sha256": "47a487285a131d98ef415ca059beea128851a0d62593331291442c3e5257b01d",
+    "bytes": 369
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/baseline/web/pages/social-share/player-cards.tsx",
+    "sha256": "12c4f9cb54a1ce275ed65be3aa3120da0e4e20e87741993d759601b9a955a78b",
+    "bytes": 2262
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/baseline-status.txt",
+    "sha256": "92b84805c011218849a3f5ec82ac704ea32b720b318e09dcce67b8ab95d092fe",
+    "bytes": 2640
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/before-goalie-alignment/web/components/player-cards/PlayerAnalysisCard.tsx",
+    "sha256": "782284fd4f8a6cb57383083f008b9ba479fd7a51d04773304938df340286d144",
+    "bytes": 11939
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/before-goalie-alignment/web/components/player-cards/PlayerAnalysisStudio.tsx",
+    "sha256": "dd59c922536dc5b4078d1ee3d64bf7758defdd5e3673a42f7c933b51c3a6514a",
+    "bytes": 10547
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/before-goalie-alignment/web/lib/player-cards/analysisFixtures.ts",
+    "sha256": "135150143eb0c0db5960ec74c3ec7b05370fc168dc720199319a6acf21de9b28",
+    "bytes": 2302
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/before-goalie-alignment/web/lib/player-cards/goalieOutlook.ts",
+    "sha256": "cd78d92486e5e9c22d8464f57f09925b8fbb5497af244d405ce4a17471ef3fd4",
+    "bytes": 6020
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/before-goalie-alignment/web/lib/projections/dailyBoardEvidence.ts",
+    "sha256": "d1900dc7c322a74d2810ecfe8b36476f2d047d7d348d431ba888352f9cb54d16",
+    "bytes": 14222
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/before-goalie-alignment/web/lib/projections/starterBoardScoring.ts",
+    "sha256": "c34fcb08fa23d6f05c26d8864f77dc3efdccb749b5527d66c0920e4043d9e535",
+    "bytes": 20175
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/before-goalie-alignment/web/lib/socialShare/modules/shared/goalieInventory.ts",
+    "sha256": "71f91597d272dad777d01db09d1162e287c052d162c80de7bc9e3137197d14a8",
+    "bytes": 4426
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/before-goalie-alignment/web/pages/api/v1/sources/ifttt/gamedaygoalies-tweet.ts",
+    "sha256": "89d554fec38517f69450fa7a8f851954423391da9111e53f6b268f4d3ebdd726",
+    "bytes": 337
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/blsh-lint.log",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/blsh-preview.log",
+    "sha256": "0cd28e79d825beb7f2aa920c0cfd5d6a2c3ad1f56fcb5e4f5c1ee7b7fdfa53bb",
+    "bytes": 238
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/blsh-provenance-20261101.png",
+    "sha256": "a231fa5feaf42d22964af7435c52aa6f3a81560a6237138ae3224f89b0d1725b",
+    "bytes": 655181
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/blsh-provenance-desktop-20261101.png",
+    "sha256": "466e024be4362d86320d2472f4d46b79742c0e1e7019b3954a44c1691af92d46",
+    "bytes": 936475
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/blsh-provenance-integration-20261101.patch",
+    "sha256": "96acedf9a14475c96e2be19284cf97f5598efe4bd1d634735d7e0ae23ff5209c",
+    "bytes": 24692
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/blsh-provenance-lint-20261101.log",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/blsh-provenance-manifest-20261101.json",
+    "sha256": "c0db7d61f9646e9a344f61e42e76ee38d513be90b1900186f7f3e250845e7024",
+    "bytes": 104266
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/blsh-provenance-mobile-20261101.png",
+    "sha256": "f1702dd50abc673053198bf1a702b1bed5ad1d5225a1f22ca199c7289cc12b0f",
+    "bytes": 655370
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/blsh-provenance-preview-build-20261101.log",
+    "sha256": "061e2f9d8a1e6500156dcbc85cfba7e4463fbd63d5ab3e5e44616a4eb3f5c59a",
+    "bytes": 238
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/blsh-provenance-types-20261101.log",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/blsh-sidecar-tests-20261101.log",
+    "sha256": "5cb32cfe8de7875a8fd8c94d00788b3184f618fa2235909a8734e2c5d8258f9c",
+    "bytes": 1195
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/blsh-sidecar-tests-final-20261101.log",
+    "sha256": "2e328eb0f79bb23d34c7368a20663864e27825b3549a3624f02504ec642dbfcb",
+    "bytes": 1194
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/blsh-tests.log",
+    "sha256": "62491abbbce148b73d0f3060747706c6be1ff30c789a5d3575704cbe301188d2",
+    "bytes": 1221
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/blsh-types-final.log",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/blsh-types.log",
+    "sha256": "1a51c05fb8dc237557b991b12e7d8bdb798dca9c0c478a7e95699e9ab890e450",
+    "bytes": 444
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/browser-approved-ranks-20261101.mjs",
+    "sha256": "825471366c248b120aad17b0254263ad3177ce8e17d20b7b7898bdb77a09ca04",
+    "bytes": 5302
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/browser-audit-fixes-20261101.mjs",
+    "sha256": "a36e8e3c1344e81c5c4012fce36f6f418606a48637511f6bbb20c56c4e9644fa",
+    "bytes": 4973
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/browser-blsh-provenance-20261101.mjs",
+    "sha256": "5569fc1daa8bde7f8c898beb825d4c8957bf3b567397f1ee6aa7dca400dd95a1",
+    "bytes": 4255
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/browser-blsh.mjs",
+    "sha256": "96810e9a89dae12a7c2add8771dc2c2aa7fc2af23d3e64375868f97752e156e5",
+    "bytes": 3286
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/browser-check.mjs",
+    "sha256": "0930e37340dd5e535e6992670703cfe8e2e3abc188e496eca846cd430be2f159",
+    "bytes": 9201
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/browser-comparison-final.log",
+    "sha256": "5b349947f30e128ad193fbee12e145f9f00cbddc358c3454af354ab6debd31d3",
+    "bytes": 33
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/browser-comparison-final.mjs",
+    "sha256": "ff2ac7e77c27616a1dd2683690c846573b8b89080002b323b883bb7fcffa1d3f",
+    "bytes": 2207
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/browser-current-box-20261101.mjs",
+    "sha256": "04eaf845d4a2cd55f8672292fdf4c94283d84e96ff0638796265a6e9b5959a75",
+    "bytes": 5336
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/browser-diagnose.log",
+    "sha256": "d76592e017339f01f37fd9792b11dba678e27a0020250d05a4181d728ad06622",
+    "bytes": 7107
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/browser-diagnose.mjs",
+    "sha256": "79b4ed95fb54c90b68b6e3e98844e103d4a646e1f18c85e7be9c04c611211c45",
+    "bytes": 990
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/browser-final.log",
+    "sha256": "7147d0cca4f38aa7e0866d2904c26c84c2a9db1341ffb474521e6771f51fef15",
+    "bytes": 46
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/browser-first.log",
+    "sha256": "06095a438de7ff357f5982f71f650ec5585a208b873c540519d0a122d43334e9",
+    "bytes": 4306
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/browser-fourth.log",
+    "sha256": "7147d0cca4f38aa7e0866d2904c26c84c2a9db1341ffb474521e6771f51fef15",
+    "bytes": 46
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/browser-goalie-final.log",
+    "sha256": "93930a26b64155fcd7a9901ae42129eea7a0127d9fd8c1abd60ff910ada1402d",
+    "bytes": 38
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/browser-goalie-final.mjs",
+    "sha256": "11124a4808aa98667dee34d5923a16d2bb60070e96d32abc59b093b2174253e4",
+    "bytes": 2008
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/browser-goalie-gaps-20261101.mjs",
+    "sha256": "4bc4299e0c55da285500da410a7e67d2bd38683b42781aa1f5316e38be51cfae",
+    "bytes": 3593
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/browser-integration.mjs",
+    "sha256": "5eb8a1a232bffec0ff11d1ead4d2b4ab422dd69c2032b79c75796b482dc5b5f2",
+    "bytes": 3758
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/browser-local.log",
+    "sha256": "25630404a25d752e77666119bbce6387eeea837f23b109f7f7dc81c5611e4709",
+    "bytes": 350
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/browser-overflow.log",
+    "sha256": "6730ebd60496c9265202115b762d06e39745808b66c78b15134769c2ad94a8b4",
+    "bytes": 175
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/browser-second.log",
+    "sha256": "23b67ca8744f92968f4ab267871372ca0969b353e75977017dd84d0d824d5bb2",
+    "bytes": 364
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/browser-shared-goalie.mjs",
+    "sha256": "9ea3e66e9e198c92a54fc1cca380ac1cf27e37848200e3750a071ef16c741cf3",
+    "bytes": 2989
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/browser-third.log",
+    "sha256": "ca56611e05eb5b8fe45194d05c1da2d65d55b5ab8dc62e20a9518015363fde71",
+    "bytes": 1031
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/browser-visual-final.log",
+    "sha256": "5c7cf60ca2248793a646a1ea4d601937b589d30544586d957f35875bf012a610",
+    "bytes": 34
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/browser-visual-final.mjs",
+    "sha256": "3f7bdfc2008bd8c39e41fa5dc0f01ab4a5642ec0c7c7efc6f696019d3cbe4514",
+    "bytes": 2341
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/calendar-manifest.json",
+    "sha256": "23787d5d8f70524eda480cbbe581bdc71d76bda52fd9d121df450ac819ef3e74",
+    "bytes": 67626
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/changed-tests-final.log",
+    "sha256": "a4ce15a75431a57d5f98e51626fdee05608c038f5a4af06b8a6c7c6a5d1f7700",
+    "bytes": 927
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/comparison-1440.png",
+    "sha256": "201dd43fda546e1f231931525bad839e8ceb1832c184473807c2d62bca8cc590",
+    "bytes": 656797
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/comparison-320.png",
+    "sha256": "b1f72076c81a8960b0fcefafa02b47ccac7260b33598e6531aa6ec186538eba3",
+    "bytes": 423132
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/comparison-390.png",
+    "sha256": "f3201475160cc745e8f9ec663979202b2928b5126512954247bc4a5c2a0fbfe8",
+    "bytes": 423918
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/consumer-tests.log",
+    "sha256": "5cbf676ce6bb2cdd6e07d8ec3791397fbf793608388285ead9699ff0b2fbdd93",
+    "bytes": 1526
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/continuation-20261101.patch",
+    "sha256": "364146b6077211894681394d33bfd52123d3c61a5770b790c145f595bfebd88f",
+    "bytes": 17494
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/current-box-8476453-20261101.png",
+    "sha256": "ef807d9a6afa3cded087fd5058b30a32df7ab4b19c90d6a00e8253a7986d7cac",
+    "bytes": 657562
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/current-box-8476453-manifest-20261101.json",
+    "sha256": "ba706bdb33abf03ad62a0ca21ad66b97718c9c31dced839433b301d8931d7376",
+    "bytes": 128972
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/current-box-8476453-mobile-20261101.png",
+    "sha256": "a97896c1d0e8535afe117e1a283b0328352e07cee0ae3cb720ce5018513c3064",
+    "bytes": 930650
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/current-box-8484136-20261101.png",
+    "sha256": "5ce42944b74c53c27254a051387feb758cac9e248616768fae7f535ff60b1662",
+    "bytes": 687578
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/current-box-8484136-manifest-20261101.json",
+    "sha256": "a0ad6d7c19216172d75142afb5ff77619df577df319d0de8a2fffaee4c757d9d",
+    "bytes": 112144
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/current-box-8484136-mobile-20261101.png",
+    "sha256": "ddc173bf6558fde7b1cac9d6ad65797532c2158f47f0a8eceec5d4a6a62411c4",
+    "bytes": 931060
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/current-box-browser-20261101.log",
+    "sha256": "f1c7a94f5b6824bdf46845341e4ba2b3ce4cce080e17620ab5ef14bce44d2a34",
+    "bytes": 111
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/current-box-corrected-lint-20261101.log",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/current-box-corrected-preview-20261101.log",
+    "sha256": "904b8f50cb73096487ed50c58f2cdcb02ad115018ea95919449bf1ef7cb4937e",
+    "bytes": 238
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/current-box-corrected-types-20261101.log",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/current-box-final-tests-20261101.log",
+    "sha256": "5057c39485bd7fe8a488a310d5486f5ed369774c94bbfe5c6cd4c8bfb6dabbef",
+    "bytes": 1196
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/current-box-final-types-20261101.log",
+    "sha256": "4e205bb0a1a8b482d9367058e0df808ff2c91c398a76960302d4c57105f9ecf0",
+    "bytes": 920
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/current-box-integration-20261101.patch",
+    "sha256": "9ac0447a5f23aceac60a9fc35ce32144fad168bb06eb0c7ad2a00a2d02b6fe62",
+    "bytes": 42248
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/current-box-label-lint-20261101.log",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/current-box-label-preview-20261101.log",
+    "sha256": "2873dac3b9e14234be7e5b8d1c3a55cdd262e11343f630e6d7a9be4ace121078",
+    "bytes": 238
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/current-box-label-tests-20261101.log",
+    "sha256": "ced9cc8fee7556807ce560ea21eb03a3c277efd7bfd7d43f5f263f7da91c36a8",
+    "bytes": 560
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/current-box-lint-20261101.log",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/current-box-preview-20261101.log",
+    "sha256": "c40d7265f804a40bd0a2199dc9bb719bd423b415b4a44e876953a00e2bd53ed0",
+    "bytes": 238
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/current-box-tests-20261101.log",
+    "sha256": "7c49761f128a7b94ae0dacb5f4eac41c885325cede4e2281c85fa9fdf3eabf17",
+    "bytes": 1195
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/current-box-types-20261101.log",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/diagnose.png",
+    "sha256": "e36da2dde5695d329fc18cbda8f8a517dcde8222b7cf8f09f4d1def364a557d0",
+    "bytes": 425590
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/domain-test.log",
+    "sha256": "18c5c12df8cfb82e502a0ddccf8789dbaee0c292040c0d343c818b41f41a0a36",
+    "bytes": 596
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/export-guard-final.log",
+    "sha256": "4a18eca133428cf4134b607130d44b7f2a841ba85674101835fb48a3b4b8eef1",
+    "bytes": 625
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/final-preview-build.log",
+    "sha256": "70d009f9d79b2e0ebab77bec01fc308ce48a0207724d0154f3c5b20eee4417cb",
+    "bytes": 238
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/first-WINDOW-AGE-CHECKS-20261101.json",
+    "sha256": "d1044c544a6abe87909dbfb9fd7818c7c4d0c99c2d9fee15b5de641f0e69ec5b",
+    "bytes": 479
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/first-window-age-tests-20261101.log",
+    "sha256": "abc1002e5a03ee0e31bcb3002e8a87ddfa0312571943d1470c61ff17704e322b",
+    "bytes": 3372
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/goalie-gaps-20261101.png",
+    "sha256": "89345a9ff479005eb73f5b9f759eedb50bf259b08fbb57b771eb0b57530bab91",
+    "bytes": 610578
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/goalie-gaps-lint-20261101.log",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/goalie-gaps-manifest-20261101.json",
+    "sha256": "35a32484bafa3298dd8709af238c53654269a716a071b3063def61df0b21146a",
+    "bytes": 6664
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/goalie-gaps-mobile-20261101.png",
+    "sha256": "ea88127e01223d791a489bbb11e7b42fed750196eb687cf1b15b1b1bfdb698a4",
+    "bytes": 273165
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/goalie-gaps-preview-build-20261101.log",
+    "sha256": "daced71eee092fea754a7279bb29efd3d83a6b54570d8fd4442a0a87dbc6d6b0",
+    "bytes": 238
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/goalie-gaps-tests-20261101.log",
+    "sha256": "11d193399b60e407853adabab5c97f8b6456fa0e9fbd0bf45b1f8eb9b92765e4",
+    "bytes": 1202
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/goalie-gaps-types-20261101.log",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/goalie-manifest.json",
+    "sha256": "0537545b38d9054f95aa330448696d906f3b4cc6d0e335d6beb471e3b275374e",
+    "bytes": 5281
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/goalie.png",
+    "sha256": "83a9e8677478a2e57655f513dbe71f6956fb78e5ee6fdd071ba52840690cc0c9",
+    "bytes": 630450
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/integration/CurrentPlayerCardStudio.tsx",
+    "sha256": "6ed4445cdbb6b82270333caea57113addb8626fbe33a0a486d1ce51521e4397b",
+    "bytes": 14365
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/integration-comparison.png",
+    "sha256": "eb6a6ae2d3051369a183bc2c17b0a9ed59ab5507882774cb4c89c2c700de192c",
+    "bytes": 624832
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/integration-preview.html",
+    "sha256": "d8412c07808497c593d0fd4c1f0b27bcc080033456f009b2e08d916ff9e53869",
+    "bytes": 2551034
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/integration-preview.log",
+    "sha256": "213f1789258c38dc3418229cc2491c70aa67a7a95e0df4b2837e98e12559e082",
+    "bytes": 250
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/integration-tests-cleanup-failure.log",
+    "sha256": "5bca720c3378643736dd36181fbf3c62ac759607ed0656f813190edf069399a5",
+    "bytes": 342339
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/integration-tests-first.log",
+    "sha256": "dff140cffe01b156a6365fd2c653823fd5ca1441478de8f5ace24c23ea8a6805",
+    "bytes": 1653
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/integration-tests.log",
+    "sha256": "8b615af59b1cad4c73472b44250235097b704acd1a7d2f692ca82486a0bc861a",
+    "bytes": 911
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/integration-types.log",
+    "sha256": "127c70eac54d68beadcd239b405338e42f254122fb98453462d2bd1df3d2b5ae",
+    "bytes": 54
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/integration.patch",
+    "sha256": "592a6e68c2aedae0b276bce64025f2af4919f51a68a68628184a4d56b7ba8b63",
+    "bytes": 3559
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/integration.vitest.config.mts",
+    "sha256": "2d6fed15383fa2e40161e13205846ff731c39853438bff59fb67855b1d07739b",
+    "bytes": 899
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/lint-final.log",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/lint-first.log",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/lint-overflow-final.log",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/observed-owner-period-delta-20261101.patch",
+    "sha256": "71f0365b57df38d2bf762254bf347eb21ca80d0ffa258169368980aabecc2fe7",
+    "bytes": 6645
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/offline-inputs.json",
+    "sha256": "debdb4f8e0aa70dd945f14db450f6f18285c3dc2290cc09acb5bd3bdc627bc68",
+    "bytes": 2006190
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/pixelated-team-colors.png",
+    "sha256": "03fe1e24eff22c69398be7d69716601e2bfb0f51c106c83b6ff81c24ff22766e",
+    "bytes": 566497
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/posterized-team-colors.png",
+    "sha256": "e0b2f40167471adf16ad2ef21f7d2c7f5d855baa70931bae5265b365fc101b00",
+    "bytes": 614809
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/pre-20261101/web/components/player-cards/PlayerAnalysisCard.tsx",
+    "sha256": "bfb55ce76c7f0cb8959095938ba65240ca4af9cfc72a47092172107c7e9b0b1c",
+    "bytes": 12912
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/pre-20261101/web/components/player-cards/PlayerAnalysisStudio.test.tsx",
+    "sha256": "b3f35916293ed9841a4791c3a3fe41412a8aaff75b266c0bf274f33d4b486de1",
+    "bytes": 4424
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/pre-20261101/web/lib/player-cards/goalieOutlook.ts",
+    "sha256": "1aec470342ec57436a236e799f3f357deb7ee2d1408a82d5bfb09ae5aa5a1e3a",
+    "bytes": 6232
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/pre-20261101/web/lib/player-cards/sharedGoalieOutlook.test.ts",
+    "sha256": "cb738c96c815768e726b31c5a73dfe1ecd1d06987a19e57f4b4b0030288fa6c7",
+    "bytes": 8228
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/pre-20261101/web/lib/player-cards/sharedGoalieOutlook.ts",
+    "sha256": "c2f119c48d8ddf81b0dd91b1e03e9842934a86dd14df7241c790e53be15fe950",
+    "bytes": 5567
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/pre-approved-ranks-20261101/web/components/player-cards/PlayerAnalysisCard.tsx",
+    "sha256": "f713ece18bab6f99b2d68e5492cd9199936d02bc45db0602f27e5691b740c5e1",
+    "bytes": 14005
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/pre-approved-ranks-20261101/web/components/player-cards/PlayerAnalysisStudio.test.tsx",
+    "sha256": "ccfdf4b77dd5722b7dd4fb2c4fc07fe21047e21587afca9ddea944514606e60d",
+    "bytes": 7854
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/pre-approved-ranks-20261101/web/components/player-cards/PlayerAnalysisStudio.tsx",
+    "sha256": "b7562f5cd5f0ad2e79ead9e40c4637da47fda6949642bf251499e08429118e50",
+    "bytes": 12379
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/pre-approved-ranks-20261101/web/lib/player-cards/analysisSnapshot.test.ts",
+    "sha256": "bdba55e1c118c67a048e068c89d17829ed26f2d90be90ab482acaed5dd7257bd",
+    "bytes": 6462
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/pre-approved-ranks-20261101/web/lib/player-cards/analysisSnapshot.ts",
+    "sha256": "d42dd329a4510f9899618f8509cec6feddcdca9d8c7f07a2c93a6e91bb2cfe24",
+    "bytes": 14607
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/pre-audit-fixes-20261101/tasks/artifacts/player-cards-evolution-2026-10-31/preview-entry.tsx",
+    "sha256": "26000cdde7fd877c93ed5ac5257d39699f3d36f2b5ee2111eaafe52c081eeb7f",
+    "bytes": 4544
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/pre-audit-fixes-20261101/web/components/player-cards/PlayerAnalysisCard.tsx",
+    "sha256": "a46c3979c3dc81eda03bb5c101d5c4c98508e103499fa5f5edf0600da0a162b6",
+    "bytes": 14216
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/pre-audit-fixes-20261101/web/components/player-cards/PlayerAnalysisStudio.test.tsx",
+    "sha256": "2e73505476533015ea471b6a416f44ccef0972405fe142629bf3c9db7797f5ef",
+    "bytes": 9366
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/pre-audit-fixes-20261101/web/lib/player-cards/analysisExport.ts",
+    "sha256": "ff5babdfb11862b390f9eb10fa4762860880a1000a7c985a0fa5169f68529b2f",
+    "bytes": 2853
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/pre-blsh-provenance-20261101/web/components/player-cards/PlayerAnalysisCard.tsx",
+    "sha256": "a1befd8ef948d504842d001fc4079d20a5c23b570f8529d3c12f2cf5142f45d3",
+    "bytes": 13451
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/pre-blsh-provenance-20261101/web/components/player-cards/PlayerAnalysisStudio.tsx",
+    "sha256": "46703b934b0147d0f86a3ce0730bc05f212530ac3275eeb333edfd98cb9c442f",
+    "bytes": 12054
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/pre-blsh-provenance-20261101/web/lib/player-cards/analysisEvidence.ts",
+    "sha256": "81ce56d3a411d6140787aa233248731fd546401d02e317882c4aaca78f13511a",
+    "bytes": 10473
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/pre-blsh-provenance-20261101/web/lib/player-cards/retainedBlsh.test.ts",
+    "sha256": "76202ca36b06e2ecc63f8681ca8ee5e77f89a44f2038c62cd1ae4f046e53abad",
+    "bytes": 3191
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/pre-blsh-provenance-20261101/web/lib/player-cards/retainedBlsh.ts",
+    "sha256": "ec63580349459ea4964fea0cbcd6640b8b0f67cdf9463b4d7afd5ae6b6714c82",
+    "bytes": 3843
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/pre-current-box-20261101/BROWSER-IMPORTS.json",
+    "sha256": "9fffdc5fe1861c924fbed3e12a25b83d400ba75d254515cfd38f75804abc0008",
+    "bytes": 2565
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/pre-current-box-20261101/preview-entry.tsx",
+    "sha256": "eecbe05a485e70b53aad4481fdc6bd1ff84374c5dcc266f0fb83769242188e8a",
+    "bytes": 3853
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/pre-current-box-20261101/preview.html",
+    "sha256": "f4f45c88d4f488e705b81c67850cfd6c0d259d419b3a6d39d73dcd2516074536",
+    "bytes": 2559020
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/pre-current-box-20261101/web/components/player-cards/PlayerAnalysisCard.tsx",
+    "sha256": "2d705ef3df7851e54a52668a614eb72e70b321a147f16b97efb6cbd33186b7d5",
+    "bytes": 13811
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/pre-current-box-20261101/web/components/player-cards/PlayerAnalysisStudio.test.tsx",
+    "sha256": "0ba20372d191f55dd5398af9854f98d30e85edf0df513124b4f3c61809be76bb",
+    "bytes": 5771
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/pre-current-box-20261101/web/components/player-cards/PlayerAnalysisStudio.tsx",
+    "sha256": "aa1f1751a5826e66026c1ef8dbf9b30fb1c560075cd7139be734df77cbf6116f",
+    "bytes": 12244
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/pre-current-box-20261101/web/lib/player-cards/analysisEvidence.ts",
+    "sha256": "0d051d6e2dea02c5f39c10962e0cc508d83cc9d797042e60d540744956f17a56",
+    "bytes": 11308
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/pre-current-box-20261101/web/lib/player-cards/analysisExport.ts",
+    "sha256": "2c24fca5de8a7f9f42cfe411722140282c01c94158a7dc917daa1e3df3018ea9",
+    "bytes": 2437
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/pre-current-box-20261101/web/lib/player-cards/retainedBlsh.test.ts",
+    "sha256": "0c8e3e5a60ff946d66603d784782b1c286ae378b2fe4d2000c5eafb83981e351",
+    "bytes": 6952
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/pre-current-box-20261101/web/lib/player-cards/retainedBlsh.ts",
+    "sha256": "c90be0b59c68fcc0392e45a95305b148caa5ea6a1cf43669bdd69e47ef562b14",
+    "bytes": 6592
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/pre-window-age-20261101/web/lib/player-cards/analysisEvidence.test.ts",
+    "sha256": "d10d3d3b09f172c4bc82b6842880950514e51db27c73b09eb0b36ab6908bc2b4",
+    "bytes": 6800
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/pre-window-age-20261101/web/lib/player-cards/analysisEvidence.ts",
+    "sha256": "c44f8d606b72daec5cd7b8d816b53c69d97dcf47c82c02a4f90341527d56ce68",
+    "bytes": 12833
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/pre-window-age-20261101/web/lib/player-cards/retainedBlsh.test.ts",
+    "sha256": "97a399efa0b137cec57968f1e3d88b36d452d363a89c345f91cce65e704dc353",
+    "bytes": 12338
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/prepare-blsh-sidecar.py",
+    "sha256": "51fb6438e745a2f0f2593fa6048d1fdabd0a827701d1d3c6dc91a24233dd2b13",
+    "bytes": 6970
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/prepare-current-box-20261101.py",
+    "sha256": "b1924139e8e90863b68dac04c9bcd88eba3fec22b598190ae97d3d95b7011b6d",
+    "bytes": 4639
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/preview-entry.tsx",
+    "sha256": "d04db4ace09288daeccb845e7ed70573ef6a6a7297474b0491547c86bf10a19e",
+    "bytes": 4704
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/preview.css",
+    "sha256": "96f255e80e991645f1356d610238f5c0eeef06bb2ebfce97a04981fb396f8526",
+    "bytes": 111
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/preview.html",
+    "sha256": "e7deb05d6967772b49f051df8f49bf815f83640fa75ebf52661049100e04e940",
+    "bytes": 2619317
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/producer-handoff-lint.log",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/producer-handoff-tests.log",
+    "sha256": "cdf08dff8ee50a14e250a1be6ef20a2a70f2cc69cd6f1ceb1ff8f22378c7f6e4",
+    "bytes": 572
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/qualify-blsh-entry.ts",
+    "sha256": "78002cffef305f3bfa7a501dfeaa607ffa8d42714eb6d8262cbf37778e6818a0",
+    "bytes": 1669
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/qualify-blsh.cjs",
+    "sha256": "6df9254e85fcedc91eb4ad43159c61b98ea9f44647f895383fe087296a6e0dfb",
+    "bytes": 15168
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/qualify-blsh.mjs",
+    "sha256": "289ba79d48830d05ed6f3cee26897aeafabee944bd65ec537d6ba7be2ef7698f",
+    "bytes": 624
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/render-audit-fixes-20261101.mjs",
+    "sha256": "f5e2bc059519dfff2ffeee2cd806c3a32a174160367853e1049c45b0e1aa2d72",
+    "bytes": 1256
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/render-integration-preview.mjs",
+    "sha256": "818d4704d41df6b80c2cda1ff3671932fd87ad17ff9f6070bfeb5b5f7fd2943e",
+    "bytes": 3217
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/render-preview.mjs",
+    "sha256": "2927a44d6171f7a44084549272f54b752e976eb81bdf296d0d5be301c8441612",
+    "bytes": 2886
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/render.log",
+    "sha256": "4adcbf4b80fdd80b26e624c486b3f07070ea026295f78d3b1b13dd34ca0bcc6f",
+    "bytes": 238
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/retained-blsh-current-box-inputs.json",
+    "sha256": "31f16beba7563f661a9dc9e91e603e7bf5b42a32870ec4017f6b124a740b0e90",
+    "bytes": 77341
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/retained-blsh-desktop.png",
+    "sha256": "04ab3a8d12120491bb3f90fc931e2e29da52250f9478b51d3ddfa26753c4d661",
+    "bytes": 827650
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/retained-blsh-input.json",
+    "sha256": "74fb92b387337de36fe9bebc6b493e2452b7d1583ed99c7e0e28850aa7581dc6",
+    "bytes": 24426
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/retained-blsh-manifest.json",
+    "sha256": "7b22d356795220dc0eb803b8aa05c812e61cc97392ad8a114b001c804bbdfe46",
+    "bytes": 96452
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/retained-blsh-mobile.png",
+    "sha256": "cdf925bc9dc918728d20925d554de38f420a5b9a1861fef0a8805b100c9012b1",
+    "bytes": 537151
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/retained-blsh-provenance-input.json",
+    "sha256": "25ee8e58c64b366ebb5abb8b9f894f2e5d92ccc047ba08c079a128e330b715bb",
+    "bytes": 27902
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/retained-blsh.png",
+    "sha256": "5809818518dfa6c2a2f4ed9c591f655f22109dc81f5457714d72d18ab44739f6",
+    "bytes": 656303
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/retained-manifest.json",
+    "sha256": "891157adafd0529f45e26f8e12216d4af25bdc4a35cd0556c2f2cdaadb62d137",
+    "bytes": 52375
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/retained-season.png",
+    "sha256": "62687a37293c38bab541492874c945e7f54302439bbc93d9559714e0d5035c39",
+    "bytes": 583971
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/rtl-320.png",
+    "sha256": "e2c81764b985fb8d10577c5356bded7beec3c045b017979b9bae10157a31187d",
+    "bytes": 398875
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/season-manifest.json",
+    "sha256": "89ebca8a0a6f2dc719e8ffa4c1a710a46847dd656c012a87b44ec13605ed5165",
+    "bytes": 53182
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/second-WINDOW-AGE-CHECKS-20261101.json",
+    "sha256": "d1c4ea11022f04e01fe6c305762f8ef99e2d4b7b8fe2e0da017e46ea434de606",
+    "bytes": 861
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/second-window-age-tests-20261101.log",
+    "sha256": "380ad477975aea96947f1c05301ac0b57993ae0c151f23c9e5200c8956213536",
+    "bytes": 1197
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/second-window-age-types-20261101.log",
+    "sha256": "9143d07a7dd95e32a2362d31adc1598df7f19ea1227590698a2b31d90d95786f",
+    "bytes": 169
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/shared-goalie-lint.log",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/shared-goalie-manifest.json",
+    "sha256": "102d4526177d3979f1274e418383329504ab806ee369668d02d8c3d21a7e2316",
+    "bytes": 6119
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/shared-goalie-mobile.png",
+    "sha256": "cdadb9cbc37b931b81a26422113c223c899ce35481a68e40d2c046969417d8e9",
+    "bytes": 267307
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/shared-goalie-preview.log",
+    "sha256": "9f507a805540889a5b91381b30359617183ccee875fd9409b500b565c4f6c8fc",
+    "bytes": 238
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/shared-goalie-tests.log",
+    "sha256": "7582672a75d2d2dec7397df75903037356d2a8ee0eea7e629843d53c5756d47d",
+    "bytes": 1229
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/shared-goalie-types.log",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/shared-goalie.png",
+    "sha256": "4c8f13a317a8e14828c7494d6848e9282f08df4519c84b32f8f4d01cb715d618",
+    "bytes": 616427
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/short-manifest.json",
+    "sha256": "1827270f67324d464f8bd46b842476786aa67c95c6620095524ee203262b79d1",
+    "bytes": 56843
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/source/web/components/player-cards/PlayerAnalysisCard.tsx",
+    "sha256": "cf9579abfa92b946b541172ee2bb762ee595101ad27466bd90fbf036b2b72382",
+    "bytes": 14629
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/source/web/components/player-cards/PlayerAnalysisStudio.module.scss",
+    "sha256": "80e4d29db119dcc35c78d617b35becb84e5778880361b323cd4d9969a2d1dc3f",
+    "bytes": 1345
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/source/web/components/player-cards/PlayerAnalysisStudio.test.tsx",
+    "sha256": "37e057ce7c65e3c73bd7a6160e65e2dae5fa25b90b13dd475db322c8b7adc74f",
+    "bytes": 11992
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/source/web/components/player-cards/PlayerAnalysisStudio.tsx",
+    "sha256": "107278c3bd3bbebf6fd28f2940b46658d90ac1037ce9103e4aa342a29cf5a06b",
+    "bytes": 12766
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/source/web/lib/player-cards/analysisEvidence.test.ts",
+    "sha256": "4f6313bbad5dfea6360c6659ca9e85cadf3783cb7f86e4fe89eef993afaed382",
+    "bytes": 7577
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/source/web/lib/player-cards/analysisEvidence.ts",
+    "sha256": "e9632bf60feb058fd10a80b03deb88287ce50a4d54311476d39904825ccbd332",
+    "bytes": 13047
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/source/web/lib/player-cards/analysisExport.ts",
+    "sha256": "3a1a068fa3398f3d9b9a2b81550f9dfa3917e1f3f44f39b9dd466f2a3bcacc93",
+    "bytes": 3434
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/source/web/lib/player-cards/analysisFixtures.ts",
+    "sha256": "80ff3110c833784e3df2a99ea6500a2454149ad775b044bc62c4dcb9433b16ac",
+    "bytes": 4402
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/source/web/lib/player-cards/analysisSnapshot.test.ts",
+    "sha256": "2b1d0e8077bf8c59c29e171991d66e25c35a30dab057e396c13ccf7a51674378",
+    "bytes": 8573
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/source/web/lib/player-cards/analysisSnapshot.ts",
+    "sha256": "aca542f523cec0bfa2a3f66932db38815712f4986781bfeca797a321e7d49804",
+    "bytes": 15696
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/source/web/lib/player-cards/goalieOutlook.test.ts",
+    "sha256": "f7e943496b5b6988346a8af76dfe72cbdb00e9b652d8ae5fde7d820c8d9830aa",
+    "bytes": 2531
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/source/web/lib/player-cards/goalieOutlook.ts",
+    "sha256": "26d6db7f6d0b86548cfc7faa592520741bc23b70a892e2ca7b1aba9a1f993726",
+    "bytes": 6265
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/source/web/lib/player-cards/retainedBlsh.test.ts",
+    "sha256": "56433315e0322bb90324ae0754cdf21baceb67e2481b78bcd98b71e257f8b52d",
+    "bytes": 14879
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/source/web/lib/player-cards/retainedBlsh.ts",
+    "sha256": "328d56eceec9248568f5fb1b08397ede0a7ee6d64d9bbc5facb061d6449f80be",
+    "bytes": 12871
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/source/web/lib/player-cards/sharedGoalieOutlook.test.ts",
+    "sha256": "5ed60a472ef85210384708810cdaf7d0c0090b7a2f51c233e93d6ec72d95d454",
+    "bytes": 9472
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/source/web/lib/player-cards/sharedGoalieOutlook.ts",
+    "sha256": "41146367aad54526b93b58a6abec98037b194ef8d0495a977e8b7881fefd58ed",
+    "bytes": 6120
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/source-qualification-tests-20261101.log",
+    "sha256": "83be718f9ebfee33acaa63ab72cb78613b2d701f74acb7faf07844e8b724575a",
+    "bytes": 1160
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/source.patch",
+    "sha256": "172731769029c04b07417dee8ea4506628919175df6fe50c54cc30e0da51c0de",
+    "bytes": 148119
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/studio-lint-final.log",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/synthetic-bars.png",
+    "sha256": "c13aa47dac41b678cd6b11059d21b1bcd28ac3fc56c20521cad747fb0c763dd5",
+    "bytes": 567829
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/synthetic-radar.png",
+    "sha256": "b4c1b0a8878d8429b73d90b9dcbb1f7a22a53d7e8e6d64f890794a32fa24ed40",
+    "bytes": 593259
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/tests-final.log",
+    "sha256": "539a31f0f7fb8e10262f4d75391ba1d49aede9c7a763cca75905a8e2317f8f79",
+    "bytes": 1808
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/tsconfig.json",
+    "sha256": "4e6d076d8abbafb595e2881db5575b425c1b5258fd09e3d3ef90d4a891a9f67f",
+    "bytes": 1113
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/types-final.log",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/types-first.log",
+    "sha256": "c44b2a25329e87796fd877c87472a78ff0db32f9abf565d1472234d7d6f177df",
+    "bytes": 8372
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/types-full-final.log",
+    "sha256": "cf3b627b2a3452e68a8bdf1e713952ae8138c702d6fa671e61fe66c6b8121320",
+    "bytes": 2989
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/types-full-owner-corrections.log",
+    "sha256": "0c7a124e676e4f2894b7fc8354058789f94b6685449aacd43daca52c6d3c6f77",
+    "bytes": 972
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/types-full-retry.log",
+    "sha256": "d18286b179c8974bc91a402980072a902593f386e292b778502ab4db02f36990",
+    "bytes": 3950
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/types-scoped.log",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/verify-integration.mjs",
+    "sha256": "c5fa7d8b16104f6b2b0187e170e01d29d79ce8ddb2053c86b816858919082d23",
+    "bytes": 1571
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/window-age-consumer-20261101.patch",
+    "sha256": "b6777a5956970b539c458421267581e0307e56180746ba0fd4719445d00b2bfe",
+    "bytes": 8510
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/window-age-lint-20261101.log",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/window-age-preview-20261101.log",
+    "sha256": "2c796e248939e759479fc95f64bf2ee07172157c57928c72d2fe8aa56a2e3668",
+    "bytes": 238
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/window-age-tests-20261101.log",
+    "sha256": "29f9ec60c1b9f8f1afc2f1abd2aedb3080d59d468eb8b4cc30730df49072a993",
+    "bytes": 562
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/window-age-types-20261101.log",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  },
+  {
+    "path": "tasks/artifacts/player-cards-evolution-2026-10-31/zoom-200.png",
+    "sha256": "a60e3b8a312fda47231252405029f215a5842c879875a082cfbc1e06dc6bc69a",
+    "bytes": 1024963
+  }
+]

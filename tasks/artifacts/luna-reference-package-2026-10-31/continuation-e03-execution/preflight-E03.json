@@ -1,0 +1,10 @@
+{
+  "caseId": "E03",
+  "checkedAt": "2026-10-31T21:36:45.651Z",
+  "priorCalls": 3,
+  "aggregateExposureNanoUsd": 263485646,
+  "expectedHashes": [
+    "cb4ebd599a52911bd995fd7089baf7062544dabdf3efd093e05d7782cf540084"
+  ],
+  "ready": true
+}

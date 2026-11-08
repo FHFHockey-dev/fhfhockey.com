@@ -1,0 +1,23 @@
+{
+  "at": "2026-10-25T14:38:28.163498+00:00",
+  "head": "1ee5127dc22c34ef9658f96ed4d72823b1d5ea29",
+  "branch": "octoberBranch",
+  "allSixCheckpointPinsMatch": true,
+  "trackedStatus": "",
+  "scope": "Independent bounded acceptance only; no source write custody claimed",
+  "modelSettings": {
+    "chefActualModel": "not exposed by runtime tools",
+    "chefActualReasoning": "not exposed by runtime tools",
+    "collaborationRoot": "running; model/effort unavailable from list_agents",
+    "reviewerRequestedModel": "gpt-6-astra",
+    "reviewerRequestedReasoning": "medium",
+    "constraint": "Cannot independently verify Chef > reviewer hierarchy. mise-en-place permits stating runtime constraint and using feasible explicit assignment; no claim of model self-switch or verified hierarchy."
+  },
+  "budget": {
+    "reviewers": 1,
+    "scope": "six frozen source/test files; adjacent imports only for concrete issues",
+    "verification": "one bounded artifact-only adversarial test group if needed; reuse existing results; no broad suites",
+    "corrections": "one concrete-finding round within original files, only after fresh custody"
+  },
+  "custody": "application sources read-only; this acceptance artifact directory and existing diary only"
+}

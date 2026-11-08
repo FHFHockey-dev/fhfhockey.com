@@ -1,0 +1,2055 @@
+
+> web@0.1.0 test
+> vitest --run lib/nst/goalieCatchup.server.test.ts __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts lib/routeRunner/core.test.ts --maxWorkers=1 --minWorkers=1
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > preserves representative playerteams goalie upsert shape through the migrated NST client
+Using explicit startDate 2025-10-01.
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > preserves representative playerteams goalie upsert shape through the migrated NST client
+Data existence check for "nst_gamelog_goalie_5v5_counts" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > preserves representative playerteams goalie upsert shape through the migrated NST client
+Data existence check for "nst_gamelog_goalie_5v5_rates" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > preserves representative playerteams goalie upsert shape through the migrated NST client
+Data existence check for "nst_gamelog_goalie_ev_counts" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > preserves representative playerteams goalie upsert shape through the migrated NST client
+Data existence check for "nst_gamelog_goalie_ev_rates" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > preserves representative playerteams goalie upsert shape through the migrated NST client
+Data existence check for "nst_gamelog_goalie_all_counts" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > preserves representative playerteams goalie upsert shape through the migrated NST client
+Data existence check for "nst_gamelog_goalie_all_rates" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > preserves representative playerteams goalie upsert shape through the migrated NST client
+Data existence check for "nst_gamelog_goalie_pp_counts" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > preserves representative playerteams goalie upsert shape through the migrated NST client
+Data existence check for "nst_gamelog_goalie_pp_rates" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > preserves representative playerteams goalie upsert shape through the migrated NST client
+Data existence check for "nst_gamelog_goalie_pk_counts" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > preserves representative playerteams goalie upsert shape through the migrated NST client
+Data existence check for "nst_gamelog_goalie_pk_rates" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > preserves representative playerteams goalie upsert shape through the migrated NST client
+Fetching data from URL: https://data.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-01&td=2025-10-01&tgp=410&lines=single&draftteam=ALL&sit=5v5&rate=n (Attempt 1)
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > preserves representative playerteams goalie upsert shape through the migrated NST client
+Parsed 1 rows for datasetType "5v5Counts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > preserves representative playerteams goalie upsert shape through the migrated NST client
+Upserting 1 rows into table "nst_gamelog_goalie_5v5_counts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > preserves representative playerteams goalie upsert shape through the migrated NST client
+Successfully acknowledged goalie upsert into "nst_gamelog_goalie_5v5_counts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > fails fast on missing NST configuration instead of retrying it
+Using explicit startDate 2025-10-01.
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > fails fast on missing NST configuration instead of retrying it
+Data existence check for "nst_gamelog_goalie_5v5_counts" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > fails fast on missing NST configuration instead of retrying it
+Data existence check for "nst_gamelog_goalie_5v5_rates" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > fails fast on missing NST configuration instead of retrying it
+Data existence check for "nst_gamelog_goalie_ev_counts" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > fails fast on missing NST configuration instead of retrying it
+Data existence check for "nst_gamelog_goalie_ev_rates" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > fails fast on missing NST configuration instead of retrying it
+Data existence check for "nst_gamelog_goalie_all_counts" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > fails fast on missing NST configuration instead of retrying it
+Data existence check for "nst_gamelog_goalie_all_rates" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > fails fast on missing NST configuration instead of retrying it
+Data existence check for "nst_gamelog_goalie_pp_counts" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > fails fast on missing NST configuration instead of retrying it
+Data existence check for "nst_gamelog_goalie_pp_rates" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > fails fast on missing NST configuration instead of retrying it
+Data existence check for "nst_gamelog_goalie_pk_counts" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > fails fast on missing NST configuration instead of retrying it
+Data existence check for "nst_gamelog_goalie_pk_rates" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > fails fast on missing NST configuration instead of retrying it
+Fetching data from URL: https://data.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-01&td=2025-10-01&tgp=410&lines=single&draftteam=ALL&sit=5v5&rate=n (Attempt 1)
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > excludes the current New York date from provider work
+Using explicit startDate 2026-10-28.
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > excludes the current New York date from provider work
+Data existence check for "nst_gamelog_goalie_all_counts" on 2026-10-28: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > excludes the current New York date from provider work
+Data existence check for "nst_gamelog_goalie_all_counts" on 2026-10-29: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > excludes the current New York date from provider work
+Data existence check for "nst_gamelog_goalie_all_counts" on 2026-10-30: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > excludes the current New York date from provider work
+Data existence check for "nst_gamelog_goalie_all_counts" on 2026-10-31: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > excludes the current New York date from provider work
+Fetching data from URL: https://data.naturalstattrick.com/playerteams.php?fromseason=20262027&thruseason=20262027&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2026-10-28&td=2026-10-28&tgp=410&lines=single&draftteam=ALL&sit=all&rate=n (Attempt 1)
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > excludes the current New York date from provider work
+Parsed 1 rows for datasetType "allCounts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > excludes the current New York date from provider work
+Upserting 1 rows into table "nst_gamelog_goalie_all_counts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > excludes the current New York date from provider work
+Successfully acknowledged goalie upsert into "nst_gamelog_goalie_all_counts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > excludes the current New York date from provider work
+Fetching data from URL: https://data.naturalstattrick.com/playerteams.php?fromseason=20262027&thruseason=20262027&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2026-10-29&td=2026-10-29&tgp=410&lines=single&draftteam=ALL&sit=all&rate=n (Attempt 1)
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > excludes the current New York date from provider work
+Parsed 1 rows for datasetType "allCounts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > excludes the current New York date from provider work
+Upserting 1 rows into table "nst_gamelog_goalie_all_counts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > excludes the current New York date from provider work
+Successfully acknowledged goalie upsert into "nst_gamelog_goalie_all_counts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > excludes the current New York date from provider work
+Fetching data from URL: https://data.naturalstattrick.com/playerteams.php?fromseason=20262027&thruseason=20262027&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2026-10-30&td=2026-10-30&tgp=410&lines=single&draftteam=ALL&sit=all&rate=n (Attempt 1)
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > excludes the current New York date from provider work
+Parsed 1 rows for datasetType "allCounts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > excludes the current New York date from provider work
+Upserting 1 rows into table "nst_gamelog_goalie_all_counts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > excludes the current New York date from provider work
+Successfully acknowledged goalie upsert into "nst_gamelog_goalie_all_counts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > excludes the current New York date from provider work
+Fetching data from URL: https://data.naturalstattrick.com/playerteams.php?fromseason=20262027&thruseason=20262027&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2026-10-31&td=2026-10-31&tgp=410&lines=single&draftteam=ALL&sit=all&rate=n (Attempt 1)
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > excludes the current New York date from provider work
+Parsed 1 rows for datasetType "allCounts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > excludes the current New York date from provider work
+Upserting 1 rows into table "nst_gamelog_goalie_all_counts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > excludes the current New York date from provider work
+Successfully acknowledged goalie upsert into "nst_gamelog_goalie_all_counts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Using explicit startDate 2025-10-01.
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Data existence check for "nst_gamelog_goalie_5v5_counts" on 2025-10-01: true
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Data existence check for "nst_gamelog_goalie_5v5_rates" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Data existence check for "nst_gamelog_goalie_ev_counts" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Data existence check for "nst_gamelog_goalie_ev_rates" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Data existence check for "nst_gamelog_goalie_all_counts" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Data existence check for "nst_gamelog_goalie_all_rates" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Data existence check for "nst_gamelog_goalie_pp_counts" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Data existence check for "nst_gamelog_goalie_pp_rates" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Data existence check for "nst_gamelog_goalie_pk_counts" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Data existence check for "nst_gamelog_goalie_pk_rates" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Data existence check for "nst_gamelog_goalie_5v5_counts" on 2025-10-02: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Data existence check for "nst_gamelog_goalie_5v5_rates" on 2025-10-02: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Data existence check for "nst_gamelog_goalie_ev_counts" on 2025-10-02: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Data existence check for "nst_gamelog_goalie_ev_rates" on 2025-10-02: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Data existence check for "nst_gamelog_goalie_all_counts" on 2025-10-02: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Data existence check for "nst_gamelog_goalie_all_rates" on 2025-10-02: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Data existence check for "nst_gamelog_goalie_pp_counts" on 2025-10-02: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Data existence check for "nst_gamelog_goalie_pp_rates" on 2025-10-02: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Data existence check for "nst_gamelog_goalie_pk_counts" on 2025-10-02: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Data existence check for "nst_gamelog_goalie_pk_rates" on 2025-10-02: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Data existence check for "nst_gamelog_goalie_5v5_counts" on 2025-10-03: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Data existence check for "nst_gamelog_goalie_5v5_rates" on 2025-10-03: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Data existence check for "nst_gamelog_goalie_ev_counts" on 2025-10-03: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Data existence check for "nst_gamelog_goalie_ev_rates" on 2025-10-03: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Data existence check for "nst_gamelog_goalie_all_counts" on 2025-10-03: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Data existence check for "nst_gamelog_goalie_all_rates" on 2025-10-03: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Data existence check for "nst_gamelog_goalie_pp_counts" on 2025-10-03: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Data existence check for "nst_gamelog_goalie_pp_rates" on 2025-10-03: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Data existence check for "nst_gamelog_goalie_pk_counts" on 2025-10-03: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Data existence check for "nst_gamelog_goalie_pk_rates" on 2025-10-03: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Data existence check for "nst_gamelog_goalie_5v5_counts" on 2025-10-04: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Data existence check for "nst_gamelog_goalie_5v5_rates" on 2025-10-04: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Data existence check for "nst_gamelog_goalie_ev_counts" on 2025-10-04: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Data existence check for "nst_gamelog_goalie_ev_rates" on 2025-10-04: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Data existence check for "nst_gamelog_goalie_all_counts" on 2025-10-04: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Data existence check for "nst_gamelog_goalie_all_rates" on 2025-10-04: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Data existence check for "nst_gamelog_goalie_pp_counts" on 2025-10-04: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Data existence check for "nst_gamelog_goalie_pp_rates" on 2025-10-04: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Data existence check for "nst_gamelog_goalie_pk_counts" on 2025-10-04: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Data existence check for "nst_gamelog_goalie_pk_rates" on 2025-10-04: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Fetching data from URL: https://data.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-01&td=2025-10-01&tgp=410&lines=single&draftteam=ALL&sit=5v5&rate=y (Attempt 1)
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Parsed 1 rows for datasetType "5v5Rates".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Upserting 1 rows into table "nst_gamelog_goalie_5v5_rates".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Successfully acknowledged goalie upsert into "nst_gamelog_goalie_5v5_rates".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Using explicit startDate 2025-10-01.
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Data existence check for "nst_gamelog_goalie_ev_counts" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Data existence check for "nst_gamelog_goalie_ev_rates" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Data existence check for "nst_gamelog_goalie_all_counts" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Data existence check for "nst_gamelog_goalie_all_rates" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Data existence check for "nst_gamelog_goalie_pp_counts" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Data existence check for "nst_gamelog_goalie_pp_rates" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Data existence check for "nst_gamelog_goalie_pk_counts" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Data existence check for "nst_gamelog_goalie_pk_rates" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Data existence check for "nst_gamelog_goalie_5v5_counts" on 2025-10-02: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Data existence check for "nst_gamelog_goalie_5v5_rates" on 2025-10-02: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Data existence check for "nst_gamelog_goalie_ev_counts" on 2025-10-02: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Data existence check for "nst_gamelog_goalie_ev_rates" on 2025-10-02: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Data existence check for "nst_gamelog_goalie_all_counts" on 2025-10-02: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Data existence check for "nst_gamelog_goalie_all_rates" on 2025-10-02: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Data existence check for "nst_gamelog_goalie_pp_counts" on 2025-10-02: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Data existence check for "nst_gamelog_goalie_pp_rates" on 2025-10-02: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Data existence check for "nst_gamelog_goalie_pk_counts" on 2025-10-02: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Data existence check for "nst_gamelog_goalie_pk_rates" on 2025-10-02: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Data existence check for "nst_gamelog_goalie_5v5_counts" on 2025-10-03: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Data existence check for "nst_gamelog_goalie_5v5_rates" on 2025-10-03: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Data existence check for "nst_gamelog_goalie_ev_counts" on 2025-10-03: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Data existence check for "nst_gamelog_goalie_ev_rates" on 2025-10-03: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Data existence check for "nst_gamelog_goalie_all_counts" on 2025-10-03: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Data existence check for "nst_gamelog_goalie_all_rates" on 2025-10-03: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Data existence check for "nst_gamelog_goalie_pp_counts" on 2025-10-03: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Data existence check for "nst_gamelog_goalie_pp_rates" on 2025-10-03: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Data existence check for "nst_gamelog_goalie_pk_counts" on 2025-10-03: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Data existence check for "nst_gamelog_goalie_pk_rates" on 2025-10-03: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Data existence check for "nst_gamelog_goalie_5v5_counts" on 2025-10-04: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Data existence check for "nst_gamelog_goalie_5v5_rates" on 2025-10-04: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Data existence check for "nst_gamelog_goalie_ev_counts" on 2025-10-04: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Data existence check for "nst_gamelog_goalie_ev_rates" on 2025-10-04: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Data existence check for "nst_gamelog_goalie_all_counts" on 2025-10-04: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Data existence check for "nst_gamelog_goalie_all_rates" on 2025-10-04: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Data existence check for "nst_gamelog_goalie_pp_counts" on 2025-10-04: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Data existence check for "nst_gamelog_goalie_pp_rates" on 2025-10-04: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Data existence check for "nst_gamelog_goalie_pk_counts" on 2025-10-04: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Data existence check for "nst_gamelog_goalie_pk_rates" on 2025-10-04: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Fetching data from URL: https://data.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-01&td=2025-10-01&tgp=410&lines=single&draftteam=ALL&sit=ev&rate=n (Attempt 1)
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Parsed 1 rows for datasetType "evCounts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Upserting 1 rows into table "nst_gamelog_goalie_ev_counts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+Successfully acknowledged goalie upsert into "nst_gamelog_goalie_ev_counts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Using explicit startDate 2025-10-01.
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Data existence check for "nst_gamelog_goalie_5v5_counts" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Data existence check for "nst_gamelog_goalie_5v5_rates" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Data existence check for "nst_gamelog_goalie_ev_counts" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Data existence check for "nst_gamelog_goalie_ev_rates" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Data existence check for "nst_gamelog_goalie_all_counts" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Data existence check for "nst_gamelog_goalie_all_rates" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Data existence check for "nst_gamelog_goalie_pp_counts" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Data existence check for "nst_gamelog_goalie_pp_rates" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Data existence check for "nst_gamelog_goalie_pk_counts" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Data existence check for "nst_gamelog_goalie_pk_rates" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Data existence check for "nst_gamelog_goalie_5v5_counts" on 2025-10-02: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Data existence check for "nst_gamelog_goalie_5v5_rates" on 2025-10-02: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Data existence check for "nst_gamelog_goalie_ev_counts" on 2025-10-02: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Data existence check for "nst_gamelog_goalie_ev_rates" on 2025-10-02: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Data existence check for "nst_gamelog_goalie_all_counts" on 2025-10-02: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Data existence check for "nst_gamelog_goalie_all_rates" on 2025-10-02: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Data existence check for "nst_gamelog_goalie_pp_counts" on 2025-10-02: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Data existence check for "nst_gamelog_goalie_pp_rates" on 2025-10-02: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Data existence check for "nst_gamelog_goalie_pk_counts" on 2025-10-02: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Data existence check for "nst_gamelog_goalie_pk_rates" on 2025-10-02: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Data existence check for "nst_gamelog_goalie_5v5_counts" on 2025-10-03: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Data existence check for "nst_gamelog_goalie_5v5_rates" on 2025-10-03: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Data existence check for "nst_gamelog_goalie_ev_counts" on 2025-10-03: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Data existence check for "nst_gamelog_goalie_ev_rates" on 2025-10-03: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Data existence check for "nst_gamelog_goalie_all_counts" on 2025-10-03: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Data existence check for "nst_gamelog_goalie_all_rates" on 2025-10-03: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Data existence check for "nst_gamelog_goalie_pp_counts" on 2025-10-03: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Data existence check for "nst_gamelog_goalie_pp_rates" on 2025-10-03: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Data existence check for "nst_gamelog_goalie_pk_counts" on 2025-10-03: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Data existence check for "nst_gamelog_goalie_pk_rates" on 2025-10-03: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Data existence check for "nst_gamelog_goalie_5v5_counts" on 2025-10-04: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Data existence check for "nst_gamelog_goalie_5v5_rates" on 2025-10-04: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Data existence check for "nst_gamelog_goalie_ev_counts" on 2025-10-04: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Data existence check for "nst_gamelog_goalie_ev_rates" on 2025-10-04: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Data existence check for "nst_gamelog_goalie_all_counts" on 2025-10-04: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Data existence check for "nst_gamelog_goalie_all_rates" on 2025-10-04: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Data existence check for "nst_gamelog_goalie_pp_counts" on 2025-10-04: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Data existence check for "nst_gamelog_goalie_pp_rates" on 2025-10-04: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Data existence check for "nst_gamelog_goalie_pk_counts" on 2025-10-04: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Data existence check for "nst_gamelog_goalie_pk_rates" on 2025-10-04: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Fetching data from URL: https://data.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-01&td=2025-10-01&tgp=410&lines=single&draftteam=ALL&sit=5v5&rate=n (Attempt 1)
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Parsed 1 rows for datasetType "5v5Counts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Upserting 1 rows into table "nst_gamelog_goalie_5v5_counts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Successfully acknowledged goalie upsert into "nst_gamelog_goalie_5v5_counts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Using explicit startDate 2025-10-01.
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Data existence check for "nst_gamelog_goalie_5v5_rates" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Data existence check for "nst_gamelog_goalie_ev_counts" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Data existence check for "nst_gamelog_goalie_ev_rates" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Data existence check for "nst_gamelog_goalie_all_counts" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Data existence check for "nst_gamelog_goalie_all_rates" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Data existence check for "nst_gamelog_goalie_pp_counts" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Data existence check for "nst_gamelog_goalie_pp_rates" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Data existence check for "nst_gamelog_goalie_pk_counts" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Data existence check for "nst_gamelog_goalie_pk_rates" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Data existence check for "nst_gamelog_goalie_5v5_counts" on 2025-10-02: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Data existence check for "nst_gamelog_goalie_5v5_rates" on 2025-10-02: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Data existence check for "nst_gamelog_goalie_ev_counts" on 2025-10-02: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Data existence check for "nst_gamelog_goalie_ev_rates" on 2025-10-02: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Data existence check for "nst_gamelog_goalie_all_counts" on 2025-10-02: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Data existence check for "nst_gamelog_goalie_all_rates" on 2025-10-02: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Data existence check for "nst_gamelog_goalie_pp_counts" on 2025-10-02: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Data existence check for "nst_gamelog_goalie_pp_rates" on 2025-10-02: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Data existence check for "nst_gamelog_goalie_pk_counts" on 2025-10-02: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Data existence check for "nst_gamelog_goalie_pk_rates" on 2025-10-02: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Data existence check for "nst_gamelog_goalie_5v5_counts" on 2025-10-03: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Data existence check for "nst_gamelog_goalie_5v5_rates" on 2025-10-03: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Data existence check for "nst_gamelog_goalie_ev_counts" on 2025-10-03: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Data existence check for "nst_gamelog_goalie_ev_rates" on 2025-10-03: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Data existence check for "nst_gamelog_goalie_all_counts" on 2025-10-03: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Data existence check for "nst_gamelog_goalie_all_rates" on 2025-10-03: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Data existence check for "nst_gamelog_goalie_pp_counts" on 2025-10-03: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Data existence check for "nst_gamelog_goalie_pp_rates" on 2025-10-03: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Data existence check for "nst_gamelog_goalie_pk_counts" on 2025-10-03: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Data existence check for "nst_gamelog_goalie_pk_rates" on 2025-10-03: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Data existence check for "nst_gamelog_goalie_5v5_counts" on 2025-10-04: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Data existence check for "nst_gamelog_goalie_5v5_rates" on 2025-10-04: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Data existence check for "nst_gamelog_goalie_ev_counts" on 2025-10-04: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Data existence check for "nst_gamelog_goalie_ev_rates" on 2025-10-04: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Data existence check for "nst_gamelog_goalie_all_counts" on 2025-10-04: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Data existence check for "nst_gamelog_goalie_all_rates" on 2025-10-04: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Data existence check for "nst_gamelog_goalie_pp_counts" on 2025-10-04: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Data existence check for "nst_gamelog_goalie_pp_rates" on 2025-10-04: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Data existence check for "nst_gamelog_goalie_pk_counts" on 2025-10-04: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Data existence check for "nst_gamelog_goalie_pk_rates" on 2025-10-04: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Fetching data from URL: https://data.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-01&td=2025-10-01&tgp=410&lines=single&draftteam=ALL&sit=5v5&rate=y (Attempt 1)
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Parsed 1 rows for datasetType "5v5Rates".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Upserting 1 rows into table "nst_gamelog_goalie_5v5_rates".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+Successfully acknowledged goalie upsert into "nst_gamelog_goalie_5v5_rates".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > fails closed on a coverage read error before NST dispatch
+Using explicit startDate 2025-10-01.
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > fails closed on a coverage read timeout before NST dispatch
+Using explicit startDate 2025-10-01.
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > does not start NST when the runner deadline leaves insufficient headroom
+Using explicit startDate 2025-10-01.
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > rejects unscoped or legacy request plans
+Using explicit startDate 2025-10-01.
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > rejects unscoped or legacy request plans
+Using explicit startDate 2025-10-01.
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > defers minute headroom without dispatch, upsert, completed URL or cursor advance
+Using explicit startDate 2025-10-01.
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > defers minute headroom without dispatch, upsert, completed URL or cursor advance
+Data existence check for "nst_gamelog_goalie_5v5_counts" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > defers minute headroom without dispatch, upsert, completed URL or cursor advance
+Data existence check for "nst_gamelog_goalie_5v5_rates" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > defers minute headroom without dispatch, upsert, completed URL or cursor advance
+Data existence check for "nst_gamelog_goalie_ev_counts" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > defers minute headroom without dispatch, upsert, completed URL or cursor advance
+Data existence check for "nst_gamelog_goalie_ev_rates" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > defers minute headroom without dispatch, upsert, completed URL or cursor advance
+Data existence check for "nst_gamelog_goalie_all_counts" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > defers minute headroom without dispatch, upsert, completed URL or cursor advance
+Data existence check for "nst_gamelog_goalie_all_rates" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > defers minute headroom without dispatch, upsert, completed URL or cursor advance
+Data existence check for "nst_gamelog_goalie_pp_counts" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > defers minute headroom without dispatch, upsert, completed URL or cursor advance
+Data existence check for "nst_gamelog_goalie_pp_rates" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > defers minute headroom without dispatch, upsert, completed URL or cursor advance
+Data existence check for "nst_gamelog_goalie_pk_counts" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > defers minute headroom without dispatch, upsert, completed URL or cursor advance
+Data existence check for "nst_gamelog_goalie_pk_rates" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > defers minute headroom without dispatch, upsert, completed URL or cursor advance
+Fetching data from URL: https://data.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-01&td=2025-10-01&tgp=410&lines=single&draftteam=ALL&sit=5v5&rate=n (Attempt 1)
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > defers five-minute headroom without dispatch, upsert, completed URL or cursor advance
+Using explicit startDate 2025-10-01.
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > defers five-minute headroom without dispatch, upsert, completed URL or cursor advance
+Data existence check for "nst_gamelog_goalie_5v5_counts" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > defers five-minute headroom without dispatch, upsert, completed URL or cursor advance
+Data existence check for "nst_gamelog_goalie_5v5_rates" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > defers five-minute headroom without dispatch, upsert, completed URL or cursor advance
+Data existence check for "nst_gamelog_goalie_ev_counts" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > defers five-minute headroom without dispatch, upsert, completed URL or cursor advance
+Data existence check for "nst_gamelog_goalie_ev_rates" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > defers five-minute headroom without dispatch, upsert, completed URL or cursor advance
+Data existence check for "nst_gamelog_goalie_all_counts" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > defers five-minute headroom without dispatch, upsert, completed URL or cursor advance
+Data existence check for "nst_gamelog_goalie_all_rates" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > defers five-minute headroom without dispatch, upsert, completed URL or cursor advance
+Data existence check for "nst_gamelog_goalie_pp_counts" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > defers five-minute headroom without dispatch, upsert, completed URL or cursor advance
+Data existence check for "nst_gamelog_goalie_pp_rates" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > defers five-minute headroom without dispatch, upsert, completed URL or cursor advance
+Data existence check for "nst_gamelog_goalie_pk_counts" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > defers five-minute headroom without dispatch, upsert, completed URL or cursor advance
+Data existence check for "nst_gamelog_goalie_pk_rates" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > defers five-minute headroom without dispatch, upsert, completed URL or cursor advance
+Fetching data from URL: https://data.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-01&td=2025-10-01&tgp=410&lines=single&draftteam=ALL&sit=5v5&rate=n (Attempt 1)
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > defers late deadline without dispatch, upsert, completed URL or cursor advance
+Using explicit startDate 2025-10-01.
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > defers late deadline without dispatch, upsert, completed URL or cursor advance
+Data existence check for "nst_gamelog_goalie_5v5_counts" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > defers late deadline without dispatch, upsert, completed URL or cursor advance
+Data existence check for "nst_gamelog_goalie_5v5_rates" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > defers late deadline without dispatch, upsert, completed URL or cursor advance
+Data existence check for "nst_gamelog_goalie_ev_counts" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > defers late deadline without dispatch, upsert, completed URL or cursor advance
+Data existence check for "nst_gamelog_goalie_ev_rates" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > defers late deadline without dispatch, upsert, completed URL or cursor advance
+Data existence check for "nst_gamelog_goalie_all_counts" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > defers late deadline without dispatch, upsert, completed URL or cursor advance
+Data existence check for "nst_gamelog_goalie_all_rates" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > defers late deadline without dispatch, upsert, completed URL or cursor advance
+Data existence check for "nst_gamelog_goalie_pp_counts" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > defers late deadline without dispatch, upsert, completed URL or cursor advance
+Data existence check for "nst_gamelog_goalie_pp_rates" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > defers late deadline without dispatch, upsert, completed URL or cursor advance
+Data existence check for "nst_gamelog_goalie_pk_counts" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > defers late deadline without dispatch, upsert, completed URL or cursor advance
+Data existence check for "nst_gamelog_goalie_pk_rates" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > defers late deadline without dispatch, upsert, completed URL or cursor advance
+Fetching data from URL: https://data.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-01&td=2025-10-01&tgp=410&lines=single&draftteam=ALL&sit=5v5&rate=n (Attempt 1)
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains prior acknowledged writes and resumes exactly at the deferred URL even with overwrite
+Using explicit startDate 2025-10-01.
+Fetching data from URL: https://data.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-01&td=2025-10-01&tgp=410&lines=single&draftteam=ALL&sit=5v5&rate=n (Attempt 1)
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains prior acknowledged writes and resumes exactly at the deferred URL even with overwrite
+Parsed 1 rows for datasetType "5v5Counts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains prior acknowledged writes and resumes exactly at the deferred URL even with overwrite
+Upserting 1 rows into table "nst_gamelog_goalie_5v5_counts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains prior acknowledged writes and resumes exactly at the deferred URL even with overwrite
+Successfully acknowledged goalie upsert into "nst_gamelog_goalie_5v5_counts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains prior acknowledged writes and resumes exactly at the deferred URL even with overwrite
+Fetching data from URL: https://data.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-01&td=2025-10-01&tgp=410&lines=single&draftteam=ALL&sit=5v5&rate=y (Attempt 1)
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains prior acknowledged writes and resumes exactly at the deferred URL even with overwrite
+Using explicit startDate 2025-10-01.
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains prior acknowledged writes and resumes exactly at the deferred URL even with overwrite
+Using explicit startDate 2025-10-01.
+Fetching data from URL: https://data.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-01&td=2025-10-01&tgp=410&lines=single&draftteam=ALL&sit=5v5&rate=y (Attempt 1)
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains prior acknowledged writes and resumes exactly at the deferred URL even with overwrite
+Parsed 1 rows for datasetType "5v5Rates".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains prior acknowledged writes and resumes exactly at the deferred URL even with overwrite
+Upserting 1 rows into table "nst_gamelog_goalie_5v5_rates".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains prior acknowledged writes and resumes exactly at the deferred URL even with overwrite
+Successfully acknowledged goalie upsert into "nst_gamelog_goalie_5v5_rates".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains prior acknowledged writes and resumes exactly at the deferred URL even with overwrite
+Fetching data from URL: https://data.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-01&td=2025-10-01&tgp=410&lines=single&draftteam=ALL&sit=ev&rate=n (Attempt 1)
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains prior acknowledged writes and resumes exactly at the deferred URL even with overwrite
+Parsed 1 rows for datasetType "evCounts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains prior acknowledged writes and resumes exactly at the deferred URL even with overwrite
+Upserting 1 rows into table "nst_gamelog_goalie_ev_counts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains prior acknowledged writes and resumes exactly at the deferred URL even with overwrite
+Successfully acknowledged goalie upsert into "nst_gamelog_goalie_ev_counts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains prior acknowledged writes and resumes exactly at the deferred URL even with overwrite
+Fetching data from URL: https://data.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-01&td=2025-10-01&tgp=410&lines=single&draftteam=ALL&sit=ev&rate=y (Attempt 1)
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains prior acknowledged writes and resumes exactly at the deferred URL even with overwrite
+Parsed 1 rows for datasetType "evRates".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains prior acknowledged writes and resumes exactly at the deferred URL even with overwrite
+Upserting 1 rows into table "nst_gamelog_goalie_ev_rates".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains prior acknowledged writes and resumes exactly at the deferred URL even with overwrite
+Successfully acknowledged goalie upsert into "nst_gamelog_goalie_ev_rates".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains prior acknowledged writes and resumes exactly at the deferred URL even with overwrite
+Fetching data from URL: https://data.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-01&td=2025-10-01&tgp=410&lines=single&draftteam=ALL&sit=all&rate=n (Attempt 1)
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains prior acknowledged writes and resumes exactly at the deferred URL even with overwrite
+Parsed 1 rows for datasetType "allCounts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains prior acknowledged writes and resumes exactly at the deferred URL even with overwrite
+Upserting 1 rows into table "nst_gamelog_goalie_all_counts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains prior acknowledged writes and resumes exactly at the deferred URL even with overwrite
+Successfully acknowledged goalie upsert into "nst_gamelog_goalie_all_counts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains prior acknowledged writes and resumes exactly at the deferred URL even with overwrite
+Fetching data from URL: https://data.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-01&td=2025-10-01&tgp=410&lines=single&draftteam=ALL&sit=all&rate=y (Attempt 1)
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains prior acknowledged writes and resumes exactly at the deferred URL even with overwrite
+Parsed 1 rows for datasetType "allRates".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains prior acknowledged writes and resumes exactly at the deferred URL even with overwrite
+Upserting 1 rows into table "nst_gamelog_goalie_all_rates".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains prior acknowledged writes and resumes exactly at the deferred URL even with overwrite
+Successfully acknowledged goalie upsert into "nst_gamelog_goalie_all_rates".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains prior acknowledged writes and resumes exactly at the deferred URL even with overwrite
+Fetching data from URL: https://data.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-01&td=2025-10-01&tgp=410&lines=single&draftteam=ALL&sit=pp&rate=n (Attempt 1)
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains prior acknowledged writes and resumes exactly at the deferred URL even with overwrite
+Parsed 1 rows for datasetType "ppCounts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains prior acknowledged writes and resumes exactly at the deferred URL even with overwrite
+Upserting 1 rows into table "nst_gamelog_goalie_pp_counts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains prior acknowledged writes and resumes exactly at the deferred URL even with overwrite
+Successfully acknowledged goalie upsert into "nst_gamelog_goalie_pp_counts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains prior acknowledged writes and resumes exactly at the deferred URL even with overwrite
+Fetching data from URL: https://data.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-01&td=2025-10-01&tgp=410&lines=single&draftteam=ALL&sit=pp&rate=y (Attempt 1)
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains prior acknowledged writes and resumes exactly at the deferred URL even with overwrite
+Parsed 1 rows for datasetType "ppRates".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains prior acknowledged writes and resumes exactly at the deferred URL even with overwrite
+Upserting 1 rows into table "nst_gamelog_goalie_pp_rates".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains prior acknowledged writes and resumes exactly at the deferred URL even with overwrite
+Successfully acknowledged goalie upsert into "nst_gamelog_goalie_pp_rates".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains prior acknowledged writes and resumes exactly at the deferred URL even with overwrite
+Fetching data from URL: https://data.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-01&td=2025-10-01&tgp=410&lines=single&draftteam=ALL&sit=pk&rate=n (Attempt 1)
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains prior acknowledged writes and resumes exactly at the deferred URL even with overwrite
+Parsed 1 rows for datasetType "pkCounts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains prior acknowledged writes and resumes exactly at the deferred URL even with overwrite
+Upserting 1 rows into table "nst_gamelog_goalie_pk_counts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains prior acknowledged writes and resumes exactly at the deferred URL even with overwrite
+Successfully acknowledged goalie upsert into "nst_gamelog_goalie_pk_counts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains prior acknowledged writes and resumes exactly at the deferred URL even with overwrite
+Fetching data from URL: https://data.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-01&td=2025-10-01&tgp=410&lines=single&draftteam=ALL&sit=pk&rate=y (Attempt 1)
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains prior acknowledged writes and resumes exactly at the deferred URL even with overwrite
+Parsed 1 rows for datasetType "pkRates".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains prior acknowledged writes and resumes exactly at the deferred URL even with overwrite
+Upserting 1 rows into table "nst_gamelog_goalie_pk_rates".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains prior acknowledged writes and resumes exactly at the deferred URL even with overwrite
+Successfully acknowledged goalie upsert into "nst_gamelog_goalie_pk_rates".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > separates a valid empty table from malformed HTML and provider failure
+Using explicit startDate 2025-10-01.
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > separates a valid empty table from malformed HTML and provider failure
+Data existence check for "nst_gamelog_goalie_5v5_counts" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > separates a valid empty table from malformed HTML and provider failure
+Fetching data from URL: https://data.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-01&td=2025-10-01&tgp=410&lines=single&draftteam=ALL&sit=5v5&rate=n (Attempt 1)
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > separates a valid empty table from malformed HTML and provider failure
+Parsed 0 rows for datasetType "5v5Counts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > separates a valid empty table from malformed HTML and provider failure
+Using explicit startDate 2025-10-01.
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > separates a valid empty table from malformed HTML and provider failure
+Data existence check for "nst_gamelog_goalie_5v5_counts" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > separates a valid empty table from malformed HTML and provider failure
+Data existence check for "nst_gamelog_goalie_5v5_rates" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > separates a valid empty table from malformed HTML and provider failure
+Data existence check for "nst_gamelog_goalie_ev_counts" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > separates a valid empty table from malformed HTML and provider failure
+Data existence check for "nst_gamelog_goalie_ev_rates" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > separates a valid empty table from malformed HTML and provider failure
+Data existence check for "nst_gamelog_goalie_all_counts" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > separates a valid empty table from malformed HTML and provider failure
+Data existence check for "nst_gamelog_goalie_all_rates" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > separates a valid empty table from malformed HTML and provider failure
+Data existence check for "nst_gamelog_goalie_pp_counts" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > separates a valid empty table from malformed HTML and provider failure
+Data existence check for "nst_gamelog_goalie_pp_rates" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > separates a valid empty table from malformed HTML and provider failure
+Data existence check for "nst_gamelog_goalie_pk_counts" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > separates a valid empty table from malformed HTML and provider failure
+Data existence check for "nst_gamelog_goalie_pk_rates" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > separates a valid empty table from malformed HTML and provider failure
+Fetching data from URL: https://data.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-01&td=2025-10-01&tgp=410&lines=single&draftteam=ALL&sit=5v5&rate=n (Attempt 1)
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > separates a valid empty table from malformed HTML and provider failure
+Using explicit startDate 2025-10-01.
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > separates a valid empty table from malformed HTML and provider failure
+Data existence check for "nst_gamelog_goalie_5v5_counts" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > separates a valid empty table from malformed HTML and provider failure
+Data existence check for "nst_gamelog_goalie_5v5_rates" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > separates a valid empty table from malformed HTML and provider failure
+Data existence check for "nst_gamelog_goalie_ev_counts" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > separates a valid empty table from malformed HTML and provider failure
+Data existence check for "nst_gamelog_goalie_ev_rates" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > separates a valid empty table from malformed HTML and provider failure
+Data existence check for "nst_gamelog_goalie_all_counts" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > separates a valid empty table from malformed HTML and provider failure
+Data existence check for "nst_gamelog_goalie_all_rates" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > separates a valid empty table from malformed HTML and provider failure
+Data existence check for "nst_gamelog_goalie_pp_counts" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > separates a valid empty table from malformed HTML and provider failure
+Data existence check for "nst_gamelog_goalie_pp_rates" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > separates a valid empty table from malformed HTML and provider failure
+Data existence check for "nst_gamelog_goalie_pk_counts" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > separates a valid empty table from malformed HTML and provider failure
+Data existence check for "nst_gamelog_goalie_pk_rates" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > separates a valid empty table from malformed HTML and provider failure
+Fetching data from URL: https://data.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-01&td=2025-10-01&tgp=410&lines=single&draftteam=ALL&sit=5v5&rate=n (Attempt 1)
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > does not offer automatic replay after provider completion acknowledgment or database uncertainty
+Using explicit startDate 2025-10-01.
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > does not offer automatic replay after provider completion acknowledgment or database uncertainty
+Data existence check for "nst_gamelog_goalie_5v5_counts" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > does not offer automatic replay after provider completion acknowledgment or database uncertainty
+Data existence check for "nst_gamelog_goalie_5v5_rates" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > does not offer automatic replay after provider completion acknowledgment or database uncertainty
+Data existence check for "nst_gamelog_goalie_ev_counts" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > does not offer automatic replay after provider completion acknowledgment or database uncertainty
+Data existence check for "nst_gamelog_goalie_ev_rates" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > does not offer automatic replay after provider completion acknowledgment or database uncertainty
+Data existence check for "nst_gamelog_goalie_all_counts" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > does not offer automatic replay after provider completion acknowledgment or database uncertainty
+Data existence check for "nst_gamelog_goalie_all_rates" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > does not offer automatic replay after provider completion acknowledgment or database uncertainty
+Data existence check for "nst_gamelog_goalie_pp_counts" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > does not offer automatic replay after provider completion acknowledgment or database uncertainty
+Data existence check for "nst_gamelog_goalie_pp_rates" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > does not offer automatic replay after provider completion acknowledgment or database uncertainty
+Data existence check for "nst_gamelog_goalie_pk_counts" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > does not offer automatic replay after provider completion acknowledgment or database uncertainty
+Data existence check for "nst_gamelog_goalie_pk_rates" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > does not offer automatic replay after provider completion acknowledgment or database uncertainty
+Fetching data from URL: https://data.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-01&td=2025-10-01&tgp=410&lines=single&draftteam=ALL&sit=5v5&rate=n (Attempt 1)
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > does not offer automatic replay after provider completion acknowledgment or database uncertainty
+Using explicit startDate 2025-10-01.
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > does not offer automatic replay after provider completion acknowledgment or database uncertainty
+Data existence check for "nst_gamelog_goalie_5v5_counts" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > does not offer automatic replay after provider completion acknowledgment or database uncertainty
+Data existence check for "nst_gamelog_goalie_5v5_rates" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > does not offer automatic replay after provider completion acknowledgment or database uncertainty
+Data existence check for "nst_gamelog_goalie_ev_counts" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > does not offer automatic replay after provider completion acknowledgment or database uncertainty
+Data existence check for "nst_gamelog_goalie_ev_rates" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > does not offer automatic replay after provider completion acknowledgment or database uncertainty
+Data existence check for "nst_gamelog_goalie_all_counts" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > does not offer automatic replay after provider completion acknowledgment or database uncertainty
+Data existence check for "nst_gamelog_goalie_all_rates" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > does not offer automatic replay after provider completion acknowledgment or database uncertainty
+Data existence check for "nst_gamelog_goalie_pp_counts" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > does not offer automatic replay after provider completion acknowledgment or database uncertainty
+Data existence check for "nst_gamelog_goalie_pp_rates" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > does not offer automatic replay after provider completion acknowledgment or database uncertainty
+Data existence check for "nst_gamelog_goalie_pk_counts" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > does not offer automatic replay after provider completion acknowledgment or database uncertainty
+Data existence check for "nst_gamelog_goalie_pk_rates" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > does not offer automatic replay after provider completion acknowledgment or database uncertainty
+Fetching data from URL: https://data.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-01&td=2025-10-01&tgp=410&lines=single&draftteam=ALL&sit=5v5&rate=n (Attempt 1)
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > does not offer automatic replay after provider completion acknowledgment or database uncertainty
+Parsed 1 rows for datasetType "5v5Counts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > does not offer automatic replay after provider completion acknowledgment or database uncertainty
+Upserting 1 rows into table "nst_gamelog_goalie_5v5_counts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > records actual wrapped deferral as continued and provider failure as failure, never healthy completion
+Using explicit startDate 2025-10-01.
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > records actual wrapped deferral as continued and provider failure as failure, never healthy completion
+Data existence check for "nst_gamelog_goalie_5v5_counts" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > records actual wrapped deferral as continued and provider failure as failure, never healthy completion
+Data existence check for "nst_gamelog_goalie_5v5_rates" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > records actual wrapped deferral as continued and provider failure as failure, never healthy completion
+Data existence check for "nst_gamelog_goalie_ev_counts" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > records actual wrapped deferral as continued and provider failure as failure, never healthy completion
+Data existence check for "nst_gamelog_goalie_ev_rates" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > records actual wrapped deferral as continued and provider failure as failure, never healthy completion
+Data existence check for "nst_gamelog_goalie_all_counts" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > records actual wrapped deferral as continued and provider failure as failure, never healthy completion
+Data existence check for "nst_gamelog_goalie_all_rates" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > records actual wrapped deferral as continued and provider failure as failure, never healthy completion
+Data existence check for "nst_gamelog_goalie_pp_counts" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > records actual wrapped deferral as continued and provider failure as failure, never healthy completion
+Data existence check for "nst_gamelog_goalie_pp_rates" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > records actual wrapped deferral as continued and provider failure as failure, never healthy completion
+Data existence check for "nst_gamelog_goalie_pk_counts" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > records actual wrapped deferral as continued and provider failure as failure, never healthy completion
+Data existence check for "nst_gamelog_goalie_pk_rates" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > records actual wrapped deferral as continued and provider failure as failure, never healthy completion
+Fetching data from URL: https://data.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-01&td=2025-10-01&tgp=410&lines=single&draftteam=ALL&sit=5v5&rate=n (Attempt 1)
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > records actual wrapped deferral as continued and provider failure as failure, never healthy completion
+Using explicit startDate 2025-10-01.
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > records actual wrapped deferral as continued and provider failure as failure, never healthy completion
+Data existence check for "nst_gamelog_goalie_5v5_counts" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > records actual wrapped deferral as continued and provider failure as failure, never healthy completion
+Data existence check for "nst_gamelog_goalie_5v5_rates" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > records actual wrapped deferral as continued and provider failure as failure, never healthy completion
+Data existence check for "nst_gamelog_goalie_ev_counts" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > records actual wrapped deferral as continued and provider failure as failure, never healthy completion
+Data existence check for "nst_gamelog_goalie_ev_rates" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > records actual wrapped deferral as continued and provider failure as failure, never healthy completion
+Data existence check for "nst_gamelog_goalie_all_counts" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > records actual wrapped deferral as continued and provider failure as failure, never healthy completion
+Data existence check for "nst_gamelog_goalie_all_rates" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > records actual wrapped deferral as continued and provider failure as failure, never healthy completion
+Data existence check for "nst_gamelog_goalie_pp_counts" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > records actual wrapped deferral as continued and provider failure as failure, never healthy completion
+Data existence check for "nst_gamelog_goalie_pp_rates" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > records actual wrapped deferral as continued and provider failure as failure, never healthy completion
+Data existence check for "nst_gamelog_goalie_pk_counts" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > records actual wrapped deferral as continued and provider failure as failure, never healthy completion
+Data existence check for "nst_gamelog_goalie_pk_rates" on 2025-10-01: false
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > records actual wrapped deferral as continued and provider failure as failure, never healthy completion
+Fetching data from URL: https://data.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-01&td=2025-10-01&tgp=410&lines=single&draftteam=ALL&sit=5v5&rate=n (Attempt 1)
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with rows
+Using explicit startDate 2025-10-01.
+Fetching data from URL: https://data.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-01&td=2025-10-01&tgp=410&lines=single&draftteam=ALL&sit=5v5&rate=n (Attempt 1)
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with rows
+Parsed 1 rows for datasetType "5v5Counts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with rows
+Upserting 1 rows into table "nst_gamelog_goalie_5v5_counts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with rows
+Successfully acknowledged goalie upsert into "nst_gamelog_goalie_5v5_counts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with rows
+Using explicit startDate 2025-10-01.
+Fetching data from URL: https://data.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-01&td=2025-10-01&tgp=410&lines=single&draftteam=ALL&sit=5v5&rate=y (Attempt 1)
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with rows
+Parsed 1 rows for datasetType "5v5Rates".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with rows
+Upserting 1 rows into table "nst_gamelog_goalie_5v5_rates".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with rows
+Successfully acknowledged goalie upsert into "nst_gamelog_goalie_5v5_rates".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with rows
+Using explicit startDate 2025-10-01.
+Fetching data from URL: https://data.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-01&td=2025-10-01&tgp=410&lines=single&draftteam=ALL&sit=ev&rate=n (Attempt 1)
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with rows
+Parsed 1 rows for datasetType "evCounts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with rows
+Upserting 1 rows into table "nst_gamelog_goalie_ev_counts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with rows
+Successfully acknowledged goalie upsert into "nst_gamelog_goalie_ev_counts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with rows
+Using explicit startDate 2025-10-01.
+Fetching data from URL: https://data.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-01&td=2025-10-01&tgp=410&lines=single&draftteam=ALL&sit=ev&rate=y (Attempt 1)
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with rows
+Parsed 1 rows for datasetType "evRates".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with rows
+Upserting 1 rows into table "nst_gamelog_goalie_ev_rates".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with rows
+Successfully acknowledged goalie upsert into "nst_gamelog_goalie_ev_rates".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with rows
+Using explicit startDate 2025-10-01.
+Fetching data from URL: https://data.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-01&td=2025-10-01&tgp=410&lines=single&draftteam=ALL&sit=all&rate=n (Attempt 1)
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with rows
+Parsed 1 rows for datasetType "allCounts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with rows
+Upserting 1 rows into table "nst_gamelog_goalie_all_counts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with rows
+Successfully acknowledged goalie upsert into "nst_gamelog_goalie_all_counts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with rows
+Using explicit startDate 2025-10-01.
+Fetching data from URL: https://data.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-01&td=2025-10-01&tgp=410&lines=single&draftteam=ALL&sit=all&rate=y (Attempt 1)
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with rows
+Parsed 1 rows for datasetType "allRates".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with rows
+Upserting 1 rows into table "nst_gamelog_goalie_all_rates".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with rows
+Successfully acknowledged goalie upsert into "nst_gamelog_goalie_all_rates".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with rows
+Using explicit startDate 2025-10-01.
+Fetching data from URL: https://data.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-01&td=2025-10-01&tgp=410&lines=single&draftteam=ALL&sit=pp&rate=n (Attempt 1)
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with rows
+Parsed 1 rows for datasetType "ppCounts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with rows
+Upserting 1 rows into table "nst_gamelog_goalie_pp_counts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with rows
+Successfully acknowledged goalie upsert into "nst_gamelog_goalie_pp_counts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with rows
+Using explicit startDate 2025-10-01.
+Fetching data from URL: https://data.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-01&td=2025-10-01&tgp=410&lines=single&draftteam=ALL&sit=pp&rate=y (Attempt 1)
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with rows
+Parsed 1 rows for datasetType "ppRates".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with rows
+Upserting 1 rows into table "nst_gamelog_goalie_pp_rates".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with rows
+Successfully acknowledged goalie upsert into "nst_gamelog_goalie_pp_rates".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with rows
+Using explicit startDate 2025-10-01.
+Fetching data from URL: https://data.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-01&td=2025-10-01&tgp=410&lines=single&draftteam=ALL&sit=pk&rate=n (Attempt 1)
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with rows
+Parsed 1 rows for datasetType "pkCounts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with rows
+Upserting 1 rows into table "nst_gamelog_goalie_pk_counts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with rows
+Successfully acknowledged goalie upsert into "nst_gamelog_goalie_pk_counts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with rows
+Using explicit startDate 2025-10-01.
+Fetching data from URL: https://data.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-01&td=2025-10-01&tgp=410&lines=single&draftteam=ALL&sit=pk&rate=y (Attempt 1)
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with rows
+Parsed 1 rows for datasetType "pkRates".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with rows
+Upserting 1 rows into table "nst_gamelog_goalie_pk_rates".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with rows
+Successfully acknowledged goalie upsert into "nst_gamelog_goalie_pk_rates".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with admission pause
+Using explicit startDate 2025-10-01.
+Fetching data from URL: https://data.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-01&td=2025-10-01&tgp=410&lines=single&draftteam=ALL&sit=5v5&rate=n (Attempt 1)
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with admission pause
+Parsed 1 rows for datasetType "5v5Counts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with admission pause
+Upserting 1 rows into table "nst_gamelog_goalie_5v5_counts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with admission pause
+Successfully acknowledged goalie upsert into "nst_gamelog_goalie_5v5_counts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with admission pause
+Using explicit startDate 2025-10-01.
+Fetching data from URL: https://data.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-01&td=2025-10-01&tgp=410&lines=single&draftteam=ALL&sit=5v5&rate=y (Attempt 1)
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with admission pause
+Using explicit startDate 2025-10-01.
+Fetching data from URL: https://data.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-01&td=2025-10-01&tgp=410&lines=single&draftteam=ALL&sit=5v5&rate=y (Attempt 1)
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with admission pause
+Parsed 1 rows for datasetType "5v5Rates".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with admission pause
+Upserting 1 rows into table "nst_gamelog_goalie_5v5_rates".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with admission pause
+Successfully acknowledged goalie upsert into "nst_gamelog_goalie_5v5_rates".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with admission pause
+Using explicit startDate 2025-10-01.
+Fetching data from URL: https://data.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-01&td=2025-10-01&tgp=410&lines=single&draftteam=ALL&sit=ev&rate=n (Attempt 1)
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with admission pause
+Parsed 1 rows for datasetType "evCounts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with admission pause
+Upserting 1 rows into table "nst_gamelog_goalie_ev_counts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with admission pause
+Successfully acknowledged goalie upsert into "nst_gamelog_goalie_ev_counts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with admission pause
+Using explicit startDate 2025-10-01.
+Fetching data from URL: https://data.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-01&td=2025-10-01&tgp=410&lines=single&draftteam=ALL&sit=ev&rate=y (Attempt 1)
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with admission pause
+Parsed 1 rows for datasetType "evRates".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with admission pause
+Upserting 1 rows into table "nst_gamelog_goalie_ev_rates".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with admission pause
+Successfully acknowledged goalie upsert into "nst_gamelog_goalie_ev_rates".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with admission pause
+Using explicit startDate 2025-10-01.
+Fetching data from URL: https://data.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-01&td=2025-10-01&tgp=410&lines=single&draftteam=ALL&sit=all&rate=n (Attempt 1)
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with admission pause
+Parsed 1 rows for datasetType "allCounts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with admission pause
+Upserting 1 rows into table "nst_gamelog_goalie_all_counts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with admission pause
+Successfully acknowledged goalie upsert into "nst_gamelog_goalie_all_counts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with admission pause
+Using explicit startDate 2025-10-01.
+Fetching data from URL: https://data.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-01&td=2025-10-01&tgp=410&lines=single&draftteam=ALL&sit=all&rate=y (Attempt 1)
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with admission pause
+Parsed 1 rows for datasetType "allRates".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with admission pause
+Upserting 1 rows into table "nst_gamelog_goalie_all_rates".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with admission pause
+Successfully acknowledged goalie upsert into "nst_gamelog_goalie_all_rates".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with admission pause
+Using explicit startDate 2025-10-01.
+Fetching data from URL: https://data.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-01&td=2025-10-01&tgp=410&lines=single&draftteam=ALL&sit=pp&rate=n (Attempt 1)
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with admission pause
+Parsed 1 rows for datasetType "ppCounts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with admission pause
+Upserting 1 rows into table "nst_gamelog_goalie_pp_counts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with admission pause
+Successfully acknowledged goalie upsert into "nst_gamelog_goalie_pp_counts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with admission pause
+Using explicit startDate 2025-10-01.
+Fetching data from URL: https://data.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-01&td=2025-10-01&tgp=410&lines=single&draftteam=ALL&sit=pp&rate=y (Attempt 1)
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with admission pause
+Parsed 1 rows for datasetType "ppRates".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with admission pause
+Upserting 1 rows into table "nst_gamelog_goalie_pp_rates".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with admission pause
+Successfully acknowledged goalie upsert into "nst_gamelog_goalie_pp_rates".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with admission pause
+Using explicit startDate 2025-10-01.
+Fetching data from URL: https://data.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-01&td=2025-10-01&tgp=410&lines=single&draftteam=ALL&sit=pk&rate=n (Attempt 1)
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with admission pause
+Parsed 1 rows for datasetType "pkCounts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with admission pause
+Upserting 1 rows into table "nst_gamelog_goalie_pk_counts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with admission pause
+Successfully acknowledged goalie upsert into "nst_gamelog_goalie_pk_counts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with admission pause
+Using explicit startDate 2025-10-01.
+Fetching data from URL: https://data.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-01&td=2025-10-01&tgp=410&lines=single&draftteam=ALL&sit=pk&rate=y (Attempt 1)
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with admission pause
+Parsed 1 rows for datasetType "pkRates".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with admission pause
+Upserting 1 rows into table "nst_gamelog_goalie_pk_rates".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with admission pause
+Successfully acknowledged goalie upsert into "nst_gamelog_goalie_pk_rates".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with initial admission pause
+Using explicit startDate 2025-10-01.
+Fetching data from URL: https://data.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-01&td=2025-10-01&tgp=410&lines=single&draftteam=ALL&sit=5v5&rate=n (Attempt 1)
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with initial admission pause
+Using explicit startDate 2025-10-01.
+Fetching data from URL: https://data.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-01&td=2025-10-01&tgp=410&lines=single&draftteam=ALL&sit=5v5&rate=n (Attempt 1)
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with initial admission pause
+Parsed 1 rows for datasetType "5v5Counts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with initial admission pause
+Upserting 1 rows into table "nst_gamelog_goalie_5v5_counts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with initial admission pause
+Successfully acknowledged goalie upsert into "nst_gamelog_goalie_5v5_counts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with initial admission pause
+Using explicit startDate 2025-10-01.
+Fetching data from URL: https://data.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-01&td=2025-10-01&tgp=410&lines=single&draftteam=ALL&sit=5v5&rate=y (Attempt 1)
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with initial admission pause
+Parsed 1 rows for datasetType "5v5Rates".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with initial admission pause
+Upserting 1 rows into table "nst_gamelog_goalie_5v5_rates".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with initial admission pause
+Successfully acknowledged goalie upsert into "nst_gamelog_goalie_5v5_rates".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with initial admission pause
+Using explicit startDate 2025-10-01.
+Fetching data from URL: https://data.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-01&td=2025-10-01&tgp=410&lines=single&draftteam=ALL&sit=ev&rate=n (Attempt 1)
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with initial admission pause
+Parsed 1 rows for datasetType "evCounts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with initial admission pause
+Upserting 1 rows into table "nst_gamelog_goalie_ev_counts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with initial admission pause
+Successfully acknowledged goalie upsert into "nst_gamelog_goalie_ev_counts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with initial admission pause
+Using explicit startDate 2025-10-01.
+Fetching data from URL: https://data.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-01&td=2025-10-01&tgp=410&lines=single&draftteam=ALL&sit=ev&rate=y (Attempt 1)
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with initial admission pause
+Parsed 1 rows for datasetType "evRates".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with initial admission pause
+Upserting 1 rows into table "nst_gamelog_goalie_ev_rates".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with initial admission pause
+Successfully acknowledged goalie upsert into "nst_gamelog_goalie_ev_rates".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with initial admission pause
+Using explicit startDate 2025-10-01.
+Fetching data from URL: https://data.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-01&td=2025-10-01&tgp=410&lines=single&draftteam=ALL&sit=all&rate=n (Attempt 1)
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with initial admission pause
+Parsed 1 rows for datasetType "allCounts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with initial admission pause
+Upserting 1 rows into table "nst_gamelog_goalie_all_counts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with initial admission pause
+Successfully acknowledged goalie upsert into "nst_gamelog_goalie_all_counts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with initial admission pause
+Using explicit startDate 2025-10-01.
+Fetching data from URL: https://data.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-01&td=2025-10-01&tgp=410&lines=single&draftteam=ALL&sit=all&rate=y (Attempt 1)
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with initial admission pause
+Parsed 1 rows for datasetType "allRates".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with initial admission pause
+Upserting 1 rows into table "nst_gamelog_goalie_all_rates".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with initial admission pause
+Successfully acknowledged goalie upsert into "nst_gamelog_goalie_all_rates".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with initial admission pause
+Using explicit startDate 2025-10-01.
+Fetching data from URL: https://data.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-01&td=2025-10-01&tgp=410&lines=single&draftteam=ALL&sit=pp&rate=n (Attempt 1)
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with initial admission pause
+Parsed 1 rows for datasetType "ppCounts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with initial admission pause
+Upserting 1 rows into table "nst_gamelog_goalie_pp_counts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with initial admission pause
+Successfully acknowledged goalie upsert into "nst_gamelog_goalie_pp_counts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with initial admission pause
+Using explicit startDate 2025-10-01.
+Fetching data from URL: https://data.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-01&td=2025-10-01&tgp=410&lines=single&draftteam=ALL&sit=pp&rate=y (Attempt 1)
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with initial admission pause
+Parsed 1 rows for datasetType "ppRates".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with initial admission pause
+Upserting 1 rows into table "nst_gamelog_goalie_pp_rates".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with initial admission pause
+Successfully acknowledged goalie upsert into "nst_gamelog_goalie_pp_rates".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with initial admission pause
+Using explicit startDate 2025-10-01.
+Fetching data from URL: https://data.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-01&td=2025-10-01&tgp=410&lines=single&draftteam=ALL&sit=pk&rate=n (Attempt 1)
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with initial admission pause
+Parsed 1 rows for datasetType "pkCounts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with initial admission pause
+Upserting 1 rows into table "nst_gamelog_goalie_pk_counts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with initial admission pause
+Successfully acknowledged goalie upsert into "nst_gamelog_goalie_pk_counts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with initial admission pause
+Using explicit startDate 2025-10-01.
+Fetching data from URL: https://data.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-01&td=2025-10-01&tgp=410&lines=single&draftteam=ALL&sit=pk&rate=y (Attempt 1)
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with initial admission pause
+Parsed 1 rows for datasetType "pkRates".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with initial admission pause
+Upserting 1 rows into table "nst_gamelog_goalie_pk_rates".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with initial admission pause
+Successfully acknowledged goalie upsert into "nst_gamelog_goalie_pk_rates".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with empty valid
+Using explicit startDate 2025-10-01.
+Fetching data from URL: https://data.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-01&td=2025-10-01&tgp=410&lines=single&draftteam=ALL&sit=5v5&rate=n (Attempt 1)
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with empty valid
+Parsed 0 rows for datasetType "5v5Counts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with empty valid
+Using explicit startDate 2025-10-01.
+Fetching data from URL: https://data.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-01&td=2025-10-01&tgp=410&lines=single&draftteam=ALL&sit=5v5&rate=y (Attempt 1)
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with empty valid
+Parsed 0 rows for datasetType "5v5Rates".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with empty valid
+Using explicit startDate 2025-10-01.
+Fetching data from URL: https://data.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-01&td=2025-10-01&tgp=410&lines=single&draftteam=ALL&sit=ev&rate=n (Attempt 1)
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with empty valid
+Parsed 0 rows for datasetType "evCounts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with empty valid
+Using explicit startDate 2025-10-01.
+Fetching data from URL: https://data.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-01&td=2025-10-01&tgp=410&lines=single&draftteam=ALL&sit=ev&rate=y (Attempt 1)
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with empty valid
+Parsed 0 rows for datasetType "evRates".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with empty valid
+Using explicit startDate 2025-10-01.
+Fetching data from URL: https://data.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-01&td=2025-10-01&tgp=410&lines=single&draftteam=ALL&sit=all&rate=n (Attempt 1)
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with empty valid
+Parsed 0 rows for datasetType "allCounts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with empty valid
+Using explicit startDate 2025-10-01.
+Fetching data from URL: https://data.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-01&td=2025-10-01&tgp=410&lines=single&draftteam=ALL&sit=all&rate=y (Attempt 1)
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with empty valid
+Parsed 0 rows for datasetType "allRates".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with empty valid
+Using explicit startDate 2025-10-01.
+Fetching data from URL: https://data.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-01&td=2025-10-01&tgp=410&lines=single&draftteam=ALL&sit=pp&rate=n (Attempt 1)
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with empty valid
+Parsed 0 rows for datasetType "ppCounts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with empty valid
+Using explicit startDate 2025-10-01.
+Fetching data from URL: https://data.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-01&td=2025-10-01&tgp=410&lines=single&draftteam=ALL&sit=pp&rate=y (Attempt 1)
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with empty valid
+Parsed 0 rows for datasetType "ppRates".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with empty valid
+Using explicit startDate 2025-10-01.
+Fetching data from URL: https://data.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-01&td=2025-10-01&tgp=410&lines=single&draftteam=ALL&sit=pk&rate=n (Attempt 1)
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with empty valid
+Parsed 0 rows for datasetType "pkCounts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with empty valid
+Using explicit startDate 2025-10-01.
+Fetching data from URL: https://data.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-01&td=2025-10-01&tgp=410&lines=single&draftteam=ALL&sit=pk&rate=y (Attempt 1)
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with empty valid
+Parsed 0 rows for datasetType "pkRates".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real goalie runner stops on changed scope instead of replaying the first URL
+Using explicit startDate 2025-10-01.
+Fetching data from URL: https://data.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-01&td=2025-10-01&tgp=410&lines=single&draftteam=ALL&sit=5v5&rate=n (Attempt 1)
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real goalie runner stops on changed scope instead of replaying the first URL
+Parsed 1 rows for datasetType "5v5Counts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real goalie runner stops on changed scope instead of replaying the first URL
+Upserting 1 rows into table "nst_gamelog_goalie_5v5_counts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real goalie runner stops on changed scope instead of replaying the first URL
+Successfully acknowledged goalie upsert into "nst_gamelog_goalie_5v5_counts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real goalie runner stops on extra field instead of replaying the first URL
+Using explicit startDate 2025-10-01.
+Fetching data from URL: https://data.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-01&td=2025-10-01&tgp=410&lines=single&draftteam=ALL&sit=5v5&rate=n (Attempt 1)
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real goalie runner stops on extra field instead of replaying the first URL
+Parsed 1 rows for datasetType "5v5Counts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real goalie runner stops on extra field instead of replaying the first URL
+Upserting 1 rows into table "nst_gamelog_goalie_5v5_counts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real goalie runner stops on extra field instead of replaying the first URL
+Successfully acknowledged goalie upsert into "nst_gamelog_goalie_5v5_counts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real goalie runner stops on unpersisted audit instead of replaying the first URL
+Using explicit startDate 2025-10-01.
+Fetching data from URL: https://data.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-01&td=2025-10-01&tgp=410&lines=single&draftteam=ALL&sit=5v5&rate=n (Attempt 1)
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real goalie runner stops on unpersisted audit instead of replaying the first URL
+Parsed 1 rows for datasetType "5v5Counts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real goalie runner stops on unpersisted audit instead of replaying the first URL
+Upserting 1 rows into table "nst_gamelog_goalie_5v5_counts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real goalie runner stops on unpersisted audit instead of replaying the first URL
+Successfully acknowledged goalie upsert into "nst_gamelog_goalie_5v5_counts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > holds a timed-out actual goalie write rather than scheduling an unsafe replay
+Using explicit startDate 2025-10-01.
+Fetching data from URL: https://data.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-01&td=2025-10-01&tgp=410&lines=single&draftteam=ALL&sit=5v5&rate=n (Attempt 1)
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > holds a timed-out actual goalie write rather than scheduling an unsafe replay
+Parsed 1 rows for datasetType "5v5Counts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > holds a timed-out actual goalie write rather than scheduling an unsafe replay
+Upserting 1 rows into table "nst_gamelog_goalie_5v5_counts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > uses the actual checkpoint adapter to atomically commit output without legacy upserts
+Fetching data from URL: https://data.naturalstattrick.com/playerteams.php?fromseason=20262027&thruseason=20262027&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2026-10-31&td=2026-10-31&tgp=410&lines=single&draftteam=ALL&sit=all&rate=n (Attempt 1)
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > uses the actual checkpoint adapter to atomically commit output without legacy upserts
+Parsed 1 rows for datasetType "allCounts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > holds checkpoint source on ambiguous identity
+Fetching data from URL: https://data.naturalstattrick.com/playerteams.php?fromseason=20262027&thruseason=20262027&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2026-10-31&td=2026-10-31&tgp=410&lines=single&draftteam=ALL&sit=all&rate=n (Attempt 1)
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > holds checkpoint source on ambiguous identity
+Parsed 1 rows for datasetType "allCounts".
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > holds checkpoint source on missing empty headers
+Fetching data from URL: https://data.naturalstattrick.com/playerteams.php?fromseason=20262027&thruseason=20262027&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2026-10-31&td=2026-10-31&tgp=410&lines=single&draftteam=ALL&sit=all&rate=n (Attempt 1)
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > holds checkpoint source on blank core field
+Fetching data from URL: https://data.naturalstattrick.com/playerteams.php?fromseason=20262027&thruseason=20262027&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2026-10-31&td=2026-10-31&tgp=410&lines=single&draftteam=ALL&sit=all&rate=n (Attempt 1)
+
+stdout | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > holds checkpoint source on blank core field
+Parsed 1 rows for datasetType "allCounts".
+
+ ✓ __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts (32 tests) 117ms
+ ❯ lib/nst/goalieCatchup.server.test.ts (21 tests | 1 failed) 33ms
+   ✓ unwired goalie checkpoint adapter > requests cohort creation and idempotent enqueue in one transaction 11ms
+   × unwired goalie checkpoint adapter > does not dispatch without an acknowledged atomic claim, including racing workers 6ms
+     → expected { utcDate: '2026-11-01', …(2) } to match object { steps: 1, attempts: 6 }
+(1 matching property omitted from actual)
+   ✓ unwired goalie checkpoint adapter > holds loseClaimAck without any source dispatch or blind retry 1ms
+   ✓ unwired goalie checkpoint adapter > holds malformedClaim without any source dispatch or blind retry 1ms
+   ✓ unwired goalie checkpoint adapter > holds loseCommitAck and never automatically writes that unit twice 1ms
+   ✓ unwired goalie checkpoint adapter > holds malformedCommit and never automatically writes that unit twice 1ms
+   ✓ unwired goalie checkpoint adapter > preserves uncertainty when even the hold acknowledgement is lost 0ms
+   ✓ unwired goalie checkpoint adapter > commits a validated empty situation receipt durably without inventing output rows 1ms
+   ✓ unwired goalie checkpoint adapter > holds invalid identity evidence before an output transaction 1ms
+   ✓ unwired goalie checkpoint adapter > holds invalid fields evidence before an output transaction 0ms
+   ✓ unwired goalie checkpoint adapter > holds invalid unvalidated empty evidence before an output transaction 0ms
+   ✓ unwired goalie checkpoint adapter > holds invalid budget mutation evidence before an output transaction 0ms
+   ✓ unwired goalie checkpoint adapter > settles a proven pre-dispatch deferral without completing the unit 0ms
+   ✓ unwired goalie checkpoint adapter > does not claim completion or refund attempts after uncertain settlement 1ms
+   ✓ unwired goalie checkpoint adapter > rejects an allCounts checkpoint that does not acknowledge expected appearance coverage 0ms
+   ✓ unwired goalie checkpoint adapter > keeps a prior-day global hold across a new cohort and reset daily budget 1ms
+   ✓ unwired goalie checkpoint adapter > bounds a hanging provider and retains the entire uncertain reservation 2ms
+   ✓ unwired goalie checkpoint adapter > bounds a hanging state read and starts no claim/provider call 1ms
+   ✓ unwired goalie checkpoint adapter > retains the original large cohort pacing after progress and enforces the conservative daily reservation cap 2ms
+   ✓ unwired goalie checkpoint adapter > makes bounded progress on 37 backlog plus 10 new/day without unverified refunds 2ms
+   ✓ unwired goalie checkpoint adapter > rejects an incomplete ten-dataset manifest and a missing RPC before provider work 0ms
+ ✓ lib/routeRunner/core.test.ts (54 tests) 13ms
+
+ Test Files  1 failed | 2 passed (3)
+      Tests  1 failed | 106 passed (107)
+   Start at  11:26:39
+   Duration  1.52s (transform 149ms, setup 8ms, collect 371ms, tests 163ms, environment 579ms, prepare 102ms)
+
+(node:80684) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > preserves representative playerteams goalie upsert shape through the migrated NST client
+[nhl-off-season] season window unavailable; running job { reason: 'client.from(...).select is not a function' }
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > fails fast on missing NST configuration instead of retrying it
+[nhl-off-season] season window unavailable; running job { reason: 'client.from(...).select is not a function' }
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > excludes the current New York date from provider work
+[nhl-off-season] season window unavailable; running job { reason: 'client.from(...).select is not a function' }
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+[nhl-off-season] season window unavailable; running job { reason: 'client.from(...).select is not a function' }
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > plans all missing URLs before applying a per-call cap and freezes that plan across continuation
+[nhl-off-season] season window unavailable; running job { reason: 'client.from(...).select is not a function' }
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+[nhl-off-season] season window unavailable; running job { reason: 'client.from(...).select is not a function' }
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining
+[nhl-off-season] season window unavailable; running job { reason: 'client.from(...).select is not a function' }
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > fails closed on a coverage read error before NST dispatch
+[nhl-off-season] season window unavailable; running job { reason: 'client.from(...).select is not a function' }
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > fails closed on a coverage read error before NST dispatch
+An error occurred: Goalie coverage read failed for nst_gamelog_goalie_5v5_counts; no missing-work assumption is safe.
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > fails closed on a coverage read error before NST dispatch
+Error in API handler: Goalie coverage read failed for nst_gamelog_goalie_5v5_counts; no missing-work assumption is safe.
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > fails closed on a coverage read timeout before NST dispatch
+[nhl-off-season] season window unavailable; running job { reason: 'client.from(...).select is not a function' }
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > fails closed on a coverage read timeout before NST dispatch
+An error occurred: Goalie database acknowledgement timed out.
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > fails closed on a coverage read timeout before NST dispatch
+Error in API handler: Goalie database acknowledgement timed out.
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > does not start NST when the runner deadline leaves insufficient headroom
+[nhl-off-season] season window unavailable; running job { reason: 'client.from(...).select is not a function' }
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > does not start NST when the runner deadline leaves insufficient headroom
+An error occurred: Goalie coverage preflight exceeded its read budget; no provider request started.
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > does not start NST when the runner deadline leaves insufficient headroom
+Error in API handler: Goalie coverage preflight exceeded its read budget; no provider request started.
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > rejects unscoped or legacy request plans
+[nhl-off-season] season window unavailable; running job { reason: 'client.from(...).select is not a function' }
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > rejects unscoped or legacy request plans
+An error occurred: Goalie continuation needs its acknowledged whole-job request plan; reconcile legacy progress before resuming.
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > rejects unscoped or legacy request plans
+Error in API handler: Goalie continuation needs its acknowledged whole-job request plan; reconcile legacy progress before resuming.
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > rejects unscoped or legacy request plans
+[nhl-off-season] season window unavailable; running job { reason: 'client.from(...).select is not a function' }
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > rejects unscoped or legacy request plans
+An error occurred: Goalie continuation needs its acknowledged whole-job request plan; reconcile legacy progress before resuming.
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > rejects unscoped or legacy request plans
+Error in API handler: Goalie continuation needs its acknowledged whole-job request plan; reconcile legacy progress before resuming.
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > defers minute headroom without dispatch, upsert, completed URL or cursor advance
+[nhl-off-season] season window unavailable; running job { reason: 'client.from(...).select is not a function' }
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > defers five-minute headroom without dispatch, upsert, completed URL or cursor advance
+[nhl-off-season] season window unavailable; running job { reason: 'client.from(...).select is not a function' }
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > defers late deadline without dispatch, upsert, completed URL or cursor advance
+[nhl-off-season] season window unavailable; running job { reason: 'client.from(...).select is not a function' }
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains prior acknowledged writes and resumes exactly at the deferred URL even with overwrite
+[nhl-off-season] season window unavailable; running job { reason: 'client.from(...).select is not a function' }
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains prior acknowledged writes and resumes exactly at the deferred URL even with overwrite
+[nhl-off-season] season window unavailable; running job { reason: 'client.from(...).select is not a function' }
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains prior acknowledged writes and resumes exactly at the deferred URL even with overwrite
+An error occurred: Goalie resume cursor/scope does not match the complete queue and request plan.
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains prior acknowledged writes and resumes exactly at the deferred URL even with overwrite
+Error in API handler: Goalie resume cursor/scope does not match the complete queue and request plan.
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > retains prior acknowledged writes and resumes exactly at the deferred URL even with overwrite
+[nhl-off-season] season window unavailable; running job { reason: 'client.from(...).select is not a function' }
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > separates a valid empty table from malformed HTML and provider failure
+[nhl-off-season] season window unavailable; running job { reason: 'client.from(...).select is not a function' }
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > separates a valid empty table from malformed HTML and provider failure
+[nhl-off-season] season window unavailable; running job { reason: 'client.from(...).select is not a function' }
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > separates a valid empty table from malformed HTML and provider failure
+Attempt 1 - Error fetching https://data.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-01&td=2025-10-01&tgp=410&lines=single&draftteam=ALL&sit=5v5&rate=n: NST response did not contain a goalie table.
+Failed to fetch data from https://data.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-01&td=2025-10-01&tgp=410&lines=single&draftteam=ALL&sit=5v5&rate=n after 1 attempts.
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > separates a valid empty table from malformed HTML and provider failure
+[nhl-off-season] season window unavailable; running job { reason: 'client.from(...).select is not a function' }
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > separates a valid empty table from malformed HTML and provider failure
+Attempt 1 - Error fetching https://data.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-01&td=2025-10-01&tgp=410&lines=single&draftteam=ALL&sit=5v5&rate=n: upstream timeout
+Failed to fetch data from https://data.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-01&td=2025-10-01&tgp=410&lines=single&draftteam=ALL&sit=5v5&rate=n after 1 attempts.
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > does not offer automatic replay after provider completion acknowledgment or database uncertainty
+[nhl-off-season] season window unavailable; running job { reason: 'client.from(...).select is not a function' }
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > does not offer automatic replay after provider completion acknowledgment or database uncertainty
+[nhl-off-season] season window unavailable; running job { reason: 'client.from(...).select is not a function' }
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > records actual wrapped deferral as continued and provider failure as failure, never healthy completion
+[nhl-off-season] season window unavailable; running job { reason: 'client.from(...).select is not a function' }
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > records actual wrapped deferral as continued and provider failure as failure, never healthy completion
+[nhl-off-season] season window unavailable; running job { reason: 'client.from(...).select is not a function' }
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > records actual wrapped deferral as continued and provider failure as failure, never healthy completion
+Attempt 1 - Error fetching https://data.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-01&td=2025-10-01&tgp=410&lines=single&draftteam=ALL&sit=5v5&rate=n: upstream timeout
+Failed to fetch data from https://data.naturalstattrick.com/playerteams.php?fromseason=20252026&thruseason=20252026&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2025-10-01&td=2025-10-01&tgp=410&lines=single&draftteam=ALL&sit=5v5&rate=n after 1 attempts.
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with rows
+[nhl-off-season] season window unavailable; running job { reason: 'client.from(...).select is not a function' }
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with rows
+[nhl-off-season] season window unavailable; running job { reason: 'client.from(...).select is not a function' }
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with rows
+[nhl-off-season] season window unavailable; running job { reason: 'client.from(...).select is not a function' }
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with rows
+[nhl-off-season] season window unavailable; running job { reason: 'client.from(...).select is not a function' }
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with rows
+[nhl-off-season] season window unavailable; running job { reason: 'client.from(...).select is not a function' }
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with rows
+[nhl-off-season] season window unavailable; running job { reason: 'client.from(...).select is not a function' }
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with rows
+[nhl-off-season] season window unavailable; running job { reason: 'client.from(...).select is not a function' }
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with rows
+[nhl-off-season] season window unavailable; running job { reason: 'client.from(...).select is not a function' }
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with rows
+[nhl-off-season] season window unavailable; running job { reason: 'client.from(...).select is not a function' }
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with rows
+[nhl-off-season] season window unavailable; running job { reason: 'client.from(...).select is not a function' }
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with admission pause
+[nhl-off-season] season window unavailable; running job { reason: 'client.from(...).select is not a function' }
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with admission pause
+[nhl-off-season] season window unavailable; running job { reason: 'client.from(...).select is not a function' }
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with admission pause
+[nhl-off-season] season window unavailable; running job { reason: 'client.from(...).select is not a function' }
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with admission pause
+[nhl-off-season] season window unavailable; running job { reason: 'client.from(...).select is not a function' }
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with admission pause
+[nhl-off-season] season window unavailable; running job { reason: 'client.from(...).select is not a function' }
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with admission pause
+[nhl-off-season] season window unavailable; running job { reason: 'client.from(...).select is not a function' }
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with admission pause
+[nhl-off-season] season window unavailable; running job { reason: 'client.from(...).select is not a function' }
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with admission pause
+[nhl-off-season] season window unavailable; running job { reason: 'client.from(...).select is not a function' }
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with admission pause
+[nhl-off-season] season window unavailable; running job { reason: 'client.from(...).select is not a function' }
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with admission pause
+[nhl-off-season] season window unavailable; running job { reason: 'client.from(...).select is not a function' }
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with admission pause
+[nhl-off-season] season window unavailable; running job { reason: 'client.from(...).select is not a function' }
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with initial admission pause
+[nhl-off-season] season window unavailable; running job { reason: 'client.from(...).select is not a function' }
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with initial admission pause
+[nhl-off-season] season window unavailable; running job { reason: 'client.from(...).select is not a function' }
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with initial admission pause
+[nhl-off-season] season window unavailable; running job { reason: 'client.from(...).select is not a function' }
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with initial admission pause
+[nhl-off-season] season window unavailable; running job { reason: 'client.from(...).select is not a function' }
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with initial admission pause
+[nhl-off-season] season window unavailable; running job { reason: 'client.from(...).select is not a function' }
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with initial admission pause
+[nhl-off-season] season window unavailable; running job { reason: 'client.from(...).select is not a function' }
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with initial admission pause
+[nhl-off-season] season window unavailable; running job { reason: 'client.from(...).select is not a function' }
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with initial admission pause
+[nhl-off-season] season window unavailable; running job { reason: 'client.from(...).select is not a function' }
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with initial admission pause
+[nhl-off-season] season window unavailable; running job { reason: 'client.from(...).select is not a function' }
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with initial admission pause
+[nhl-off-season] season window unavailable; running job { reason: 'client.from(...).select is not a function' }
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with initial admission pause
+[nhl-off-season] season window unavailable; running job { reason: 'client.from(...).select is not a function' }
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with empty valid
+[nhl-off-season] season window unavailable; running job { reason: 'client.from(...).select is not a function' }
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with empty valid
+[nhl-off-season] season window unavailable; running job { reason: 'client.from(...).select is not a function' }
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with empty valid
+[nhl-off-season] season window unavailable; running job { reason: 'client.from(...).select is not a function' }
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with empty valid
+[nhl-off-season] season window unavailable; running job { reason: 'client.from(...).select is not a function' }
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with empty valid
+[nhl-off-season] season window unavailable; running job { reason: 'client.from(...).select is not a function' }
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with empty valid
+[nhl-off-season] season window unavailable; running job { reason: 'client.from(...).select is not a function' }
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with empty valid
+[nhl-off-season] season window unavailable; running job { reason: 'client.from(...).select is not a function' }
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with empty valid
+[nhl-off-season] season window unavailable; running job { reason: 'client.from(...).select is not a function' }
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with empty valid
+[nhl-off-season] season window unavailable; running job { reason: 'client.from(...).select is not a function' }
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real route and tick finish ten distinct goalie URLs with empty valid
+[nhl-off-season] season window unavailable; running job { reason: 'client.from(...).select is not a function' }
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real goalie runner stops on changed scope instead of replaying the first URL
+[nhl-off-season] season window unavailable; running job { reason: 'client.from(...).select is not a function' }
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real goalie runner stops on extra field instead of replaying the first URL
+[nhl-off-season] season window unavailable; running job { reason: 'client.from(...).select is not a function' }
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real goalie runner stops on unpersisted audit instead of replaying the first URL
+[nhl-off-season] season window unavailable; running job { reason: 'client.from(...).select is not a function' }
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > real goalie runner stops on unpersisted audit instead of replaying the first URL
+cron_job_audit insert failed audit rejected
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > holds a timed-out actual goalie write rather than scheduling an unsafe replay
+[nhl-off-season] season window unavailable; running job { reason: 'client.from(...).select is not a function' }
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > uses the actual checkpoint adapter to atomically commit output without legacy upserts
+[nhl-off-season] season window unavailable; running job { reason: 'client.from(...).select is not a function' }
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > makes no provider call when checkpoint SQL is absent or scope is mixed
+[nhl-off-season] season window unavailable; running job { reason: 'client.from(...).select is not a function' }
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > makes no provider call when checkpoint SQL is absent or scope is mixed
+[nhl-off-season] season window unavailable; running job { reason: 'client.from(...).select is not a function' }
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > holds checkpoint source on ambiguous identity
+[nhl-off-season] season window unavailable; running job { reason: 'client.from(...).select is not a function' }
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > holds checkpoint source on missing empty headers
+[nhl-off-season] season window unavailable; running job { reason: 'client.from(...).select is not a function' }
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > holds checkpoint source on missing empty headers
+Attempt 1 - Error fetching https://data.naturalstattrick.com/playerteams.php?fromseason=20262027&thruseason=20262027&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2026-10-31&td=2026-10-31&tgp=410&lines=single&draftteam=ALL&sit=all&rate=n: NST checkpoint headers are incomplete or ambiguous.
+Failed to fetch data from https://data.naturalstattrick.com/playerteams.php?fromseason=20262027&thruseason=20262027&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=2026-10-31&td=2026-10-31&tgp=410&lines=single&draftteam=ALL&sit=all&rate=n after 1 attempts.
+
+stderr | __tests__/pages/api/v1/db/update-nst-goalies.route.test.ts > /api/v1/db/update-nst-goalies > holds checkpoint source on blank core field
+[nhl-off-season] season window unavailable; running job { reason: 'client.from(...).select is not a function' }
+
+(node:80692) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:80694) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  lib/nst/goalieCatchup.server.test.ts > unwired goalie checkpoint adapter > does not dispatch without an acknowledged atomic claim, including racing workers
+AssertionError: expected { utcDate: '2026-11-01', …(2) } to match object { steps: 1, attempts: 6 }
+(1 matching property omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "attempts": 6,
++   "attempts": 18,
+    "steps": 1,
+  }
+
+ ❯ lib/nst/goalieCatchup.server.test.ts:111:28
+    109|     expect(results.map(value => value.status).sort()).toEqual(["deferr…
+    110|     expect(fetch).toHaveBeenCalledTimes(6);
+    111|     expect(f.state.budget).toMatchObject({ steps: 1, attempts: 6 });
+       |                            ^
+    112|   });
+    113|   it.each(["loseClaimAck", "malformedClaim"] as const)("holds %s witho…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

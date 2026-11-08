@@ -1,0 +1,355 @@
+{
+  "inputSha256": "52ea73b19894b2d379e77230f7a7d14089548774b6f5c1411299a4f55cc7d201",
+  "inputRows": 60,
+  "nhlRows": 20,
+  "captureTimeBasis": "query-2-result start_utc request envelope; not a row source-update or database transaction timestamp",
+  "currentSeasonRowsMapped": 10,
+  "joinedGames": [
+    {
+      "gameId": 2026020167,
+      "date": "2026-10-23",
+      "individualPresent": true,
+      "onIcePresent": true
+    },
+    {
+      "gameId": 2026020151,
+      "date": "2026-10-20",
+      "individualPresent": true,
+      "onIcePresent": true
+    },
+    {
+      "gameId": 2026020123,
+      "date": "2026-10-17",
+      "individualPresent": true,
+      "onIcePresent": true
+    },
+    {
+      "gameId": 2026020111,
+      "date": "2026-10-15",
+      "individualPresent": true,
+      "onIcePresent": true
+    },
+    {
+      "gameId": 2026020095,
+      "date": "2026-10-13",
+      "individualPresent": true,
+      "onIcePresent": true
+    },
+    {
+      "gameId": 2026020081,
+      "date": "2026-10-10",
+      "individualPresent": true,
+      "onIcePresent": true
+    },
+    {
+      "gameId": 2026020060,
+      "date": "2026-10-08",
+      "individualPresent": true,
+      "onIcePresent": true
+    },
+    {
+      "gameId": 2026020040,
+      "date": "2026-10-05",
+      "individualPresent": false,
+      "onIcePresent": false
+    },
+    {
+      "gameId": 2026020024,
+      "date": "2026-10-03",
+      "individualPresent": true,
+      "onIcePresent": true
+    },
+    {
+      "gameId": 2026020010,
+      "date": "2026-10-01",
+      "individualPresent": true,
+      "onIcePresent": true
+    }
+  ],
+  "issues": [
+    {
+      "group": "individual",
+      "playerId": 8476453,
+      "gameId": 2026020040,
+      "reason": "No captured NST row for this official appearance"
+    },
+    {
+      "group": "onIce",
+      "playerId": 8476453,
+      "gameId": 2026020040,
+      "reason": "No captured NST row for this official appearance"
+    }
+  ],
+  "adapted": {
+    "state": "unavailable",
+    "snapshotId": "historical-nst-mapping-52ea73b19894b2d379e77230f7a7d14089548774b6f5c1411299a4f55cc7d201",
+    "origin": "local-observed",
+    "source": {
+      "definition": "NST stored count contract; provider model/event-universe not yet verified",
+      "version": "captured-bytes-sha256:52ea73b19894b2d379e77230f7a7d14089548774b6f5c1411299a4f55cc7d201",
+      "definitionReference": "",
+      "verifiedMetrics": []
+    },
+    "capturedAt": "2026-10-24T16:26:03.736Z",
+    "gameCutoff": "2026-10-24T00:00:00Z",
+    "retrospective": true,
+    "settings": {
+      "season": 20262027,
+      "gameType": "regular",
+      "strength": "all",
+      "cutoff": "2026-10-24T00:00:00Z",
+      "period": {
+        "mode": "appearances",
+        "count": 5
+      },
+      "seasonPolicy": "season-only-proposed",
+      "shortSamplePolicy": "allow-known-short-proposed",
+      "rankPolicy": "competition-midrank-proposed"
+    },
+    "selection": {
+      "state": "missing",
+      "settings": {
+        "season": 20262027,
+        "gameType": "regular",
+        "strength": "all",
+        "cutoff": "2026-10-24T00:00:00Z",
+        "period": {
+          "mode": "appearances",
+          "count": 5
+        },
+        "seasonPolicy": "season-only-proposed",
+        "shortSamplePolicy": "allow-known-short-proposed",
+        "rankPolicy": "competition-midrank-proposed"
+      },
+      "playerId": 8476453,
+      "games": [],
+      "actualGp": 0,
+      "requestedN": 5,
+      "knownShort": false,
+      "firstDate": null,
+      "lastDate": null,
+      "reason": "Complete appearance history through the common cutoff is unverified"
+    },
+    "readings": [
+      {
+        "id": "atoi",
+        "value": null,
+        "state": "missing",
+        "reason": "Metric provider/model definition is unverified",
+        "rank": null,
+        "rankReason": "League rank unavailable: incomplete coverage"
+      },
+      {
+        "id": "sog60",
+        "value": null,
+        "state": "missing",
+        "reason": "Metric provider/model definition is unverified",
+        "rank": null,
+        "rankReason": "League rank unavailable: incomplete coverage"
+      },
+      {
+        "id": "icf60",
+        "value": null,
+        "state": "missing",
+        "reason": "Metric provider/model definition is unverified",
+        "rank": null,
+        "rankReason": "League rank unavailable: incomplete coverage"
+      },
+      {
+        "id": "iscf60",
+        "value": null,
+        "state": "missing",
+        "reason": "Metric provider/model definition is unverified",
+        "rank": null,
+        "rankReason": "League rank unavailable: incomplete coverage"
+      },
+      {
+        "id": "ixg60",
+        "value": null,
+        "state": "missing",
+        "reason": "Metric provider/model definition is unverified",
+        "rank": null,
+        "rankReason": "League rank unavailable: incomplete coverage"
+      },
+      {
+        "id": "cf60",
+        "value": null,
+        "state": "missing",
+        "reason": "Metric provider/model definition is unverified",
+        "rank": null,
+        "rankReason": "League rank unavailable: incomplete coverage"
+      },
+      {
+        "id": "scf60",
+        "value": null,
+        "state": "missing",
+        "reason": "Metric provider/model definition is unverified",
+        "rank": null,
+        "rankReason": "League rank unavailable: incomplete coverage"
+      },
+      {
+        "id": "xgf60",
+        "value": null,
+        "state": "missing",
+        "reason": "Metric provider/model definition is unverified",
+        "rank": null,
+        "rankReason": "League rank unavailable: incomplete coverage"
+      },
+      {
+        "id": "xgPct",
+        "value": null,
+        "state": "missing",
+        "reason": "Metric provider/model definition is unverified",
+        "rank": null,
+        "rankReason": "League rank unavailable: incomplete coverage"
+      },
+      {
+        "id": "ipp",
+        "value": null,
+        "state": "missing",
+        "reason": "Metric provider/model definition is unverified",
+        "rank": null,
+        "rankReason": "League rank unavailable: incomplete coverage"
+      },
+      {
+        "id": "shPct",
+        "value": null,
+        "state": "missing",
+        "reason": "Metric provider/model definition is unverified",
+        "rank": null,
+        "rankReason": "League rank unavailable: incomplete coverage"
+      },
+      {
+        "id": "oiShPct",
+        "value": null,
+        "state": "missing",
+        "reason": "Metric provider/model definition is unverified",
+        "rank": null,
+        "rankReason": "League rank unavailable: incomplete coverage"
+      }
+    ],
+    "coverage": {
+      "atoi": {
+        "expectedPlayers": 0,
+        "suppliedPlayers": 1,
+        "valid": 0,
+        "knownUndefined": 0,
+        "missingIncomplete": 1,
+        "knownShort": 0,
+        "fullEligiblePopulationVerified": false
+      },
+      "sog60": {
+        "expectedPlayers": 0,
+        "suppliedPlayers": 1,
+        "valid": 0,
+        "knownUndefined": 0,
+        "missingIncomplete": 1,
+        "knownShort": 0,
+        "fullEligiblePopulationVerified": false
+      },
+      "icf60": {
+        "expectedPlayers": 0,
+        "suppliedPlayers": 1,
+        "valid": 0,
+        "knownUndefined": 0,
+        "missingIncomplete": 1,
+        "knownShort": 0,
+        "fullEligiblePopulationVerified": false
+      },
+      "iscf60": {
+        "expectedPlayers": 0,
+        "suppliedPlayers": 1,
+        "valid": 0,
+        "knownUndefined": 0,
+        "missingIncomplete": 1,
+        "knownShort": 0,
+        "fullEligiblePopulationVerified": false
+      },
+      "ixg60": {
+        "expectedPlayers": 0,
+        "suppliedPlayers": 1,
+        "valid": 0,
+        "knownUndefined": 0,
+        "missingIncomplete": 1,
+        "knownShort": 0,
+        "fullEligiblePopulationVerified": false
+      },
+      "cf60": {
+        "expectedPlayers": 0,
+        "suppliedPlayers": 1,
+        "valid": 0,
+        "knownUndefined": 0,
+        "missingIncomplete": 1,
+        "knownShort": 0,
+        "fullEligiblePopulationVerified": false
+      },
+      "scf60": {
+        "expectedPlayers": 0,
+        "suppliedPlayers": 1,
+        "valid": 0,
+        "knownUndefined": 0,
+        "missingIncomplete": 1,
+        "knownShort": 0,
+        "fullEligiblePopulationVerified": false
+      },
+      "xgf60": {
+        "expectedPlayers": 0,
+        "suppliedPlayers": 1,
+        "valid": 0,
+        "knownUndefined": 0,
+        "missingIncomplete": 1,
+        "knownShort": 0,
+        "fullEligiblePopulationVerified": false
+      },
+      "xgPct": {
+        "expectedPlayers": 0,
+        "suppliedPlayers": 1,
+        "valid": 0,
+        "knownUndefined": 0,
+        "missingIncomplete": 1,
+        "knownShort": 0,
+        "fullEligiblePopulationVerified": false
+      },
+      "ipp": {
+        "expectedPlayers": 0,
+        "suppliedPlayers": 1,
+        "valid": 0,
+        "knownUndefined": 0,
+        "missingIncomplete": 1,
+        "knownShort": 0,
+        "fullEligiblePopulationVerified": false
+      },
+      "shPct": {
+        "expectedPlayers": 0,
+        "suppliedPlayers": 1,
+        "valid": 0,
+        "knownUndefined": 0,
+        "missingIncomplete": 1,
+        "knownShort": 0,
+        "fullEligiblePopulationVerified": false
+      },
+      "oiShPct": {
+        "expectedPlayers": 0,
+        "suppliedPlayers": 1,
+        "valid": 0,
+        "knownUndefined": 0,
+        "missingIncomplete": 1,
+        "knownShort": 0,
+        "fullEligiblePopulationVerified": false
+      }
+    },
+    "liveActivation": false,
+    "premiumActivation": false
+  },
+  "qualification": {
+    "historyVerified": false,
+    "completedGamesVerified": false,
+    "gameTypeAndUtcDateEvidence": "Frame declaration only; game rows were not joined in the capture",
+    "providerModelVerified": false,
+    "fullPopulationVerified": false,
+    "currentData": false,
+    "liveActivation": false,
+    "premiumActivation": false
+  },
+  "result": "Source mapping reconciled; all 12 observed card values/ranks remain unavailable. No final-game, history, UTC-date, provider-model or league-population proof invented."
+}

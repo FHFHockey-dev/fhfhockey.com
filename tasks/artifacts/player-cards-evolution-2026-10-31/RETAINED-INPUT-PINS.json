@@ -1,0 +1,21 @@
+{
+  "observedAt": "2026-10-29T17:43:32.793Z",
+  "files": [
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/current-snapshot-15/landing.json",
+      "sha256": "7649c48e6e665288ba88e8679b3e57a08944f2157e6446aa9d7942c0a0675e66",
+      "matchesOriginalReceipt": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/current-snapshot-15/game-log.json",
+      "sha256": "9a0cefaa9aade51cf190c0a1bec8493a86759971d3e5aa0cbbe91cdb5d808da2",
+      "matchesOriginalReceipt": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/current-snapshot-15/team-schedule.json",
+      "sha256": "805f9b3a7cbb898d4896a3ebbf144870a1e812ced44eea1ef49f5e68735a3e14",
+      "matchesOriginalReceipt": true
+    }
+  ],
+  "newProviderRequests": 0
+}

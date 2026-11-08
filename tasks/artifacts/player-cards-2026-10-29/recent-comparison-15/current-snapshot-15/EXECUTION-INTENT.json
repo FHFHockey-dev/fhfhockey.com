@@ -1,0 +1,8 @@
+{
+  "startedAt": "2026-10-29T17:43:32.407Z",
+  "approval": {
+    "sourceThread": "01a16eed-60f6-7096-879f-696c469db015",
+    "scope": "TJ explicitly requested current player data; bounded ordinary public NHL reads authorized by current delegation. One exact three-GET Kucherov/TBL batch; no retries or redirects."
+  },
+  "oneExecution": true
+}

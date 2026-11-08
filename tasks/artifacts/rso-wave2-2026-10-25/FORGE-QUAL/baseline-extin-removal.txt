@@ -1,0 +1,279 @@
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+(node:59003) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:59001) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:59002) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ❯ lib/projections/nativeInputEligibility.test.ts (5 tests | 4 failed) 216ms
+   × FORGE native input boundary > keeps every FORGE module free of the draft dashboard's fantasy projection config and tables 173ms
+     → expected [ …(7) ] to deeply equal []
+   ✓ FORGE native input boundary > keeps native inference, priors, calibration and model selection free of provider imports and table references 39ms
+   × FORGE native input boundary > loads only native skater appearance history, and no fantasy projection table, in the current season 1ms
+     → expected [ 'currentSeasonGames', …(6) ] to deeply equal [ 'currentSeasonGames', …(3) ]
+   × FORGE native input boundary > loads only native goalie appearance history, and no fantasy projection table, in the current season 1ms
+     → expected [ 'currentSeasonGames', …(6) ] to deeply equal [ 'currentSeasonGames', …(3) ]
+   × FORGE native input boundary > leaves missing history and categories missing instead of reading provider fallbacks or inventing priors 1ms
+     → expected { Object (version, currentSeasonGames, ...) } to match object { fantasyWeight: +0, sourceIds: [] }
+(7 matching properties omitted from actual)
+ ❯ lib/projections/run-forge-projections.external-inputs.test.ts (13 tests | 1 failed) 144ms
+   ✓ FORGE external fantasy input claim > claims the exclusion only when every captured read is an audited non-fantasy source 1ms
+   ✓ FORGE external fantasy input claim > a read of PROJECTIONS_20262027_AG_SKATERS forces the claim off, even a failed one 0ms
+   ✓ FORGE external fantasy input claim > a read of PROJECTIONS_20262027_BLAKE_AG_SKATERS forces the claim off, even a failed one 0ms
+   ✓ FORGE external fantasy input claim > a read of PROJECTIONS_20262027_NATE_AG_SKATERS forces the claim off, even a failed one 0ms
+   ✓ FORGE external fantasy input claim > a read of PROJECTIONS_20262027_CULLEN_SKATERS forces the claim off, even a failed one 0ms
+   ✓ FORGE external fantasy input claim > a read of PROJECTIONS_20262027_CULLEN_GOALIES forces the claim off, even a failed one 0ms
+   ✓ FORGE external fantasy input claim > a read of PROJECTIONS_20262027_DTZ_SKATERS forces the claim off, even a failed one 0ms
+   ✓ FORGE external fantasy input claim > a read of PROJECTIONS_20262027_DTZ_GOALIES forces the claim off, even a failed one 0ms
+   ✓ FORGE external fantasy input claim > a read of PROJECTIONS_20262027_5V5_SKATERS forces the claim off, even a failed one 0ms
+   ✓ FORGE external fantasy input claim > a read of PROJECTIONS_20262027_5V5_GOALIES forces the claim off, even a failed one 0ms
+   ✓ FORGE external fantasy input claim > treats a new fantasy projection table and any unaudited source as not excluded 0ms
+   × FORGE external fantasy input claim > audits every source the run's code can read: a new table, RPC or dynamic query site fails here 138ms
+     → expected [ …(6) ] to deeply equal [ …(5) ]
+   ✓ FORGE external fantasy input claim > derives the live snapshot's claim from its own captured reads, never from configuration 4ms
+ ❯ lib/projections/startChartPipeline.test.ts (104 tests | 2 failed) 562ms
+   ✓ shared PP-role normalization > preserves explicit missing/not-applicable states and never admits a raw role or source 2ms
+   ✓ immutable daily-board forecast exports > exports the frozen checkpoint with serving semantics and no invented comparators 8ms
+   ✓ immutable daily-board forecast exports > excludes missing or conflicting pregame membership instead of using postgame teams 0ms
+   ✓ immutable daily-board forecast exports > rejects changed snapshots, substituted revisions, reconstructions, and late publication 1ms
+   ✓ immutable daily-board forecast exports > reads only the explicitly frozen revision and its source observation 1ms
+   ✓ immutable daily-board forecast exports > writes a private CLI artifact and verifies exact retries without rewriting  448ms
+   ✓ Starter Board release and review disclosure > requires all frozen policy, sample, paired improvement and probability-label gates 0ms
+   ✓ Starter Board release and review disclosure > rejects protected holdout reuse and inconsistent report evidence 2ms
+   ✓ Starter Board release and review disclosure > does not turn elapsed time or live slates into settled samples or calibrated intervals 0ms
+   ✓ Starter Board release and review disclosure > publishes safe measured fields without leaking private registry/artifact data or activating challengers 1ms
+   ✓ Starter Board operational evidence > separates provider delay from acceptance and uses a conservative visibility receipt 1ms
+   ✓ Starter Board operational evidence > counts missing visibility as a failure after 300 seconds and retains every breach 0ms
+   ✓ Starter Board operational evidence > cannot pass with empty, preseason-only or missing-category evidence 6ms
+   ✓ Starter Board operational evidence > keeps unknown provider time and impossible timing explicit without dropping events 0ms
+   ✓ Starter Board operational evidence > does not turn reposts into independent samples or reset their first acceptance deadline 3ms
+   ✓ Starter Board operational evidence > is deterministic, rejects duplicate rows, and enforces declared cutoff windows 1ms
+   ✓ today-only eligible lineup assignment > finds the maximum across flexible eligibility instead of greedily filling slots 0ms
+   ✓ today-only eligible lineup assignment > preserves locked active/bench players and inactive slots, and excludes goalies from Util 0ms
+   ✓ today-only eligible lineup assignment > labels incomplete calculations and preserves active players with missing estimates or lock rules 0ms
+   ✓ today-only eligible lineup assignment > computes incremental streaming gain with a legal drop and refuses inferred free agents 0ms
+   ✓ today-only eligible lineup assignment > matches an exhaustive small-roster oracle for multi-position, negative and tied values 1ms
+   ✓ today-only eligible lineup assignment > matches an exhaustive weighted oracle with negative values and empty slots 0ms
+   ✓ Starter Board season-opening priors > averages history while keeping missing categories missing 0ms
+   ✓ Starter Board season-opening priors > takes the last N previous-season regular appearances across trades, excluding future games and nonappearances 0ms
+   × Starter Board season-opening priors > fades the NHL-history prior with observed appearances, never blending a fantasy projection 5ms
+     → Cannot convert undefined or null to object
+   ✓ Starter Board season-opening priors > keeps opponent context and current PP removal effective while preserving skater category accounting 1ms
+   × Starter Board season-opening priors > integrates goalie starting probability once from the history-only performance prior 0ms
+     → Cannot convert undefined or null to object
+   ✓ Starter Board reproducible inputs > captures and replays through the browser-safe shared-client bridge 1ms
+   ✓ Starter Board reproducible inputs > captures read-only reconstructions without constructing writes and refuses opaque RPCs 0ms
+   ✓ Starter Board reproducible inputs > records controlled news in replay inputs and never permits it in a writing capture 0ms
+   ✓ Starter Board reproducible inputs > replays calculations from captured reads without constructing a DB client or writing 0ms
+   ✓ Starter Board reproducible inputs > rejects unseen and unused reads instead of falling back to current data 0ms
+   ✓ Starter Board reproducible inputs > isolates simultaneous capture scopes and records a read only once 0ms
+   ✓ Starter Board reproducible inputs > preserves error responses and detects changed outputs 0ms
+   ✓ Starter Board reproducible inputs > freezes goalie inputs with game and team identities from the actual queries 0ms
+   ✓ complete daily-board evidence reads > reads capped parent and child pages without losing opposing evidence and replays exactly 2ms
+   ✓ complete daily-board evidence reads > rejects missing_count in either parent or child evidence 1ms
+   ✓ complete daily-board evidence reads > rejects null_data in either parent or child evidence 1ms
+   ✓ complete daily-board evidence reads > rejects count_drift in either parent or child evidence 1ms
+   ✓ complete daily-board evidence reads > rejects late_error in either parent or child evidence 1ms
+   ✓ complete daily-board evidence reads > rejects duplicate in either parent or child evidence 1ms
+   ✓ complete daily-board evidence reads > rejects no_progress in either parent or child evidence 1ms
+   ✓ complete daily-board evidence reads > rejects overflow in either parent or child evidence 1ms
+   ✓ complete daily-board evidence reads > keeps a future conflict resolution out of a controlled replay without live reads 1ms
+   ✓ complete daily-board evidence reads > rejects invalid scope and skips all reads for an empty scope 0ms
+   ✓ complete daily-board evidence reads > checks microsecond receipt boundaries independently of query filtering for player_forecast_lineup_snapshots 0ms
+   ✓ complete daily-board evidence reads > checks microsecond receipt boundaries independently of query filtering for player_forecast_lineup_assignments 0ms
+   ✓ complete daily-board evidence reads > checks microsecond receipt boundaries independently of query filtering for player_forecast_conflict_resolutions 0ms
+   ✓ Starter Board same-day overlay > preserves microseconds in observed_at eligibility 0ms
+   ✓ Starter Board same-day overlay > preserves microseconds in available_at eligibility 0ms
+   ✓ Starter Board same-day overlay > preserves microseconds in created_at eligibility 0ms
+   ✓ Starter Board same-day overlay > expires evidence at the exact cutoff: before 0ms
+   ✓ Starter Board same-day overlay > expires evidence at the exact cutoff: equal 0ms
+   ✓ Starter Board same-day overlay > expires evidence at the exact cutoff: offset equal 0ms
+   ✓ Starter Board same-day overlay > expires evidence at the exact cutoff: after 0ms
+   ✓ Starter Board same-day overlay > expires evidence at the exact cutoff: invalid 0ms
+   ✓ Starter Board same-day overlay > rejects malformed precision or timezone and preserves absent optional timestamps 0ms
+   ✓ Starter Board same-day overlay > only cutoff-known child receipts can establish participation: before 0ms
+   ✓ Starter Board same-day overlay > only cutoff-known child receipts can establish participation: equal 0ms
+   ✓ Starter Board same-day overlay > only cutoff-known child receipts can establish participation: offset equal 0ms
+   ✓ Starter Board same-day overlay > only cutoff-known child receipts can establish participation: after 0ms
+   ✓ Starter Board same-day overlay > only cutoff-known child receipts can establish participation: invalid 0ms
+   ✓ Starter Board same-day overlay > orders reporter corrections within one millisecond before using the identity tie breaker 0ms
+   ✓ Starter Board same-day overlay > orders equally confirmed independent reporters at microsecond precision 0ms
+   ✓ Starter Board same-day overlay > only cutoff-known conflict detected_at can block an assertion 0ms
+   ✓ Starter Board same-day overlay > only cutoff-known conflict created_at can block an assertion 0ms
+   ✓ Starter Board same-day overlay > only cutoff-known resolution resolved_at can dismiss a conflict 0ms
+   ✓ Starter Board same-day overlay > only cutoff-known resolution created_at can dismiss a conflict 0ms
+   ✓ Starter Board same-day overlay > uses the latest known conflict resolution even within the same millisecond 0ms
+   ✓ Starter Board same-day overlay > applies the same precise eligibility and expiry to goalie confirmation 0ms
+   ✓ Starter Board same-day overlay > excludes future publications, late arrivals, later parsing and expired evidence 0ms
+   ✓ Starter Board same-day overlay > applies a partial PP change without overwriting EV or inferring scratches 0ms
+   ✓ Starter Board same-day overlay > uses reporter corrections, not late arrival order or repost counts 0ms
+   ✓ Starter Board same-day overlay > retains material conflicts and never converts legacy injury mentions into out labels 0ms
+   ✓ Starter Board same-day overlay > honors only conflict resolutions known by the cutoff 0ms
+   ✓ Starter Board scoring and probability accounting > integrates scoped confirmed appearance once and retains unsupported full-strength heads 1ms
+   ✓ Starter Board scoring and probability accounting > rejects a copied or unsupported participation claim: player 0ms
+   ✓ Starter Board scoring and probability accounting > rejects a copied or unsupported participation claim: team 0ms
+   ✓ Starter Board scoring and probability accounting > rejects a copied or unsupported participation claim: game 0ms
+   ✓ Starter Board scoring and probability accounting > rejects a copied or unsupported participation claim: horizon 0ms
+   ✓ Starter Board scoring and probability accounting > rejects a copied or unsupported participation claim: erased 0ms
+   ✓ Starter Board scoring and probability accounting > rejects a copied or unsupported participation claim: scalar 0ms
+   ✓ Starter Board scoring and probability accounting > rejects a copied or unsupported participation claim: ids 0ms
+   ✓ Starter Board scoring and probability accounting > rejects a copied or unsupported participation claim: cutoff 0ms
+   ✓ Starter Board scoring and probability accounting > rejects a copied or unsupported participation claim: publication 0ms
+   ✓ Starter Board scoring and probability accounting > rejects a copied or unsupported participation claim: receipt 0ms
+   ✓ Starter Board scoring and probability accounting > rejects a copied or unsupported participation claim: source 0ms
+   ✓ Starter Board scoring and probability accounting > rejects a copied or unsupported participation claim: conflict 0ms
+   ✓ Starter Board scoring and probability accounting > rejects a copied or unsupported participation claim: reverse-chronology 0ms
+   ✓ Starter Board scoring and probability accounting > rejects a copied or unsupported participation claim: malformed-conflict 0ms
+   ✓ Starter Board scoring and probability accounting > rejects a copied or unsupported participation claim: row-identity 0ms
+   ✓ Starter Board scoring and probability accounting > requires evidence for explicit exclusions and explicit authoritative contexts 0ms
+   ✓ Starter Board scoring and probability accounting > binds goalie confirmation independently of the numerical start probability 0ms
+   ✓ Starter Board scoring and probability accounting > matches hand-calculated default and custom scoring, and propagates missing values 0ms
+   ✓ Starter Board scoring and probability accounting > leaves missing participation unknown and weights each goalie category once 0ms
+   ✓ Starter Board scoring and probability accounting > allows fantasy order to differ from starting probability and re-scores without changing forecasts 0ms
+   ✓ Starter Board scoring and probability accounting > re-scores comparable revisions and preserves a validated public profile 0ms
+   ✓ Starter Board dispatch budget > separates private capture and compute from public serving and challengers 0ms
+   ✓ Starter Board dispatch budget > dispatches all 16 leased games without waiting for serial batches 53ms
+   ✓ Starter Board dispatch budget > claims only the configured canary and refuses an out-of-scope worker 1ms
+   ✓ Starter Board dispatch budget > requires explicit valid canary configuration instead of silently opening the slate 0ms
+   ✓ Starter Board dispatch budget > bounds game work, finishes failures and measures breaches from acceptance 1ms
+   ✓ Starter Board dispatch budget > includes delayed game lookup in every full-slate worker's computation deadline 3ms
+   ✓ Starter Board dispatch budget > aborts a stalled lookup without running FORGE and records a retryable failure 1ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 7 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  lib/projections/nativeInputEligibility.test.ts > FORGE native input boundary > keeps every FORGE module free of the draft dashboard's fantasy projection config and tables
+AssertionError: expected [ …(7) ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   "seasonBootstrap.ts: PROJECTION_SOURCES_CONFIG",
++   "seasonBootstrap.ts: lib/projectionsConfig/projectionSourcesConfig",
++   "seasonBootstrap.ts: FANTASY_PROJECTION_SEASON_ID",
++   "seasonBootstrap.ts: lib/fantasy-projections/contracts",
++   "seasonBootstrap.ts: PROJECTION_SOURCES_CONFIG",
++   "seasonBootstrap.ts: FANTASY_PROJECTION_SEASON_ID",
++   "seasonBootstrap.ts: PROJECTION_SOURCES_CONFIG",
++ ]
+
+ ❯ lib/projections/nativeInputEligibility.test.ts:54:23
+     52|     }
+     53|     expect(files.length).toBeGreaterThan(50);
+     54|     expect(offenders).toEqual([]);
+       |                       ^
+     55|     // Both stages call the history-only prior: no fantasy switch argu…
+     56|     for (const file of ["stages/skater-stage.ts", "stages/goalie-stage…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/7]⎯
+
+ FAIL  lib/projections/nativeInputEligibility.test.ts > FORGE native input boundary > loads only native skater appearance history, and no fantasy projection table, in the current season
+ FAIL  lib/projections/nativeInputEligibility.test.ts > FORGE native input boundary > loads only native goalie appearance history, and no fantasy projection table, in the current season
+AssertionError: expected [ 'currentSeasonGames', …(6) ] to deeply equal [ 'currentSeasonGames', …(3) ]
+
+- Expected
++ Received
+
+  [
+    "currentSeasonGames",
++   "fantasy",
+    "historyGames",
+    "limitations",
+    "previous",
++   "sourceIds",
++   "sourceRowIds",
+  ]
+
+ ❯ lib/projections/nativeInputEligibility.test.ts:94:41
+     92|       expect(database.tables.filter(table => /^projections_/i.test(tab…
+     93|       expect(prior).toMatchObject({ historyGames: 1, currentSeasonGame…
+     94|       expect(Object.keys(prior).sort()).toEqual(["currentSeasonGames",…
+       |                                         ^
+     95|       expect(prior.limitations.join(" ")).not.toMatch(/fantasy|public …
+     96|       if (population === "skater") {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/7]⎯
+
+ FAIL  lib/projections/nativeInputEligibility.test.ts > FORGE native input boundary > leaves missing history and categories missing instead of reading provider fallbacks or inventing priors
+AssertionError: expected { Object (version, currentSeasonGames, ...) } to match object { fantasyWeight: +0, sourceIds: [] }
+(7 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "fantasyWeight": 0,
++   "fantasyWeight": 0.6,
+    "sourceIds": [],
+  }
+
+ ❯ lib/projections/nativeInputEligibility.test.ts:112:68
+    110|     const prior = (await loadSeasonBootstrap([7], 20262027, "2026-10-0…
+    111|     expect(prior).toMatchObject({ previous: {}, historyGames: 0 });
+    112|     expect(blendSeasonBootstrap({ GOALS: 0.4 }, prior).disclosure).toM…
+       |                                                                    ^
+    113|     expect(blendSeasonBootstrap({}, prior).stats).toEqual({});
+    114|     expect(blendSeasonBootstrap({ GOALS: 0.4, HITS: null }, prior).sta…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/7]⎯
+
+ FAIL  lib/projections/run-forge-projections.external-inputs.test.ts > FORGE external fantasy input claim > audits every source the run's code can read: a new table, RPC or dynamic query site fails here
+AssertionError: expected [ …(6) ] to deeply equal [ …(5) ]
+
+- Expected
++ Received
+
+@@ -2,6 +2,7 @@
+    "lib/projections/dailyBoardEvidence.ts table",
+    "lib/projections/queries/run-lifecycle-queries.ts table",
+    "lib/projections/queries/skater-queries.ts LATEST_ROLLING_ROWS_RPC",
+    "lib/projections/queries/skater-queries.ts ROLLING_PLAYER_SUPPORT_PAYLOAD_TABLE",
+    "lib/projections/seasonBootstrap.ts population === \"skater\" ? \"skatersGameStats\" : \"goaliesGameStats\"",
++   "lib/projections/seasonBootstrap.ts source.tableName",
+  ]
+
+ ❯ lib/projections/run-forge-projections.external-inputs.test.ts:92:33
+     90|     expect(unaudited, "add the source to EXTERNAL-INPUT-AUDIT.md and F…
+     91|     expect([...literals.keys()].filter(isFantasyProjectionSource)).toE…
+     92|     expect([...dynamic].sort()).toEqual([...AUDITED_DYNAMIC_SITES].sor…
+       |                                 ^
+     93|     expect(evidenceTables.length).toBeGreaterThan(0);
+     94|     expect(evidenceTables.filter(table => !FORGE_AUDITED_INPUT_SOURCES…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/7]⎯
+
+ FAIL  lib/projections/startChartPipeline.test.ts > Starter Board season-opening priors > fades the NHL-history prior with observed appearances, never blending a fantasy projection
+TypeError: Cannot convert undefined or null to object
+ ❯ blendSeasonBootstrap lib/projections/seasonBootstrap.ts:100:97
+     98|   const historyWeight = (1 - progress) * (1 - SEASON_BOOTSTRAP_POLICY.…
+     99|   const stats: BoardStats = { ...organic };
+    100|   for (const key of new Set([...Object.keys(organic), ...Object.keys(p…
+       |                                                                                                 ^
+    101|     const parts = [[organic[key], progress], [prior.previous[key], his…
+    102|       .filter(([value, weight]) => value != null && Number.isFinite(va…
+ ❯ lib/projections/startChartPipeline.test.ts:373:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/7]⎯
+
+ FAIL  lib/projections/startChartPipeline.test.ts > Starter Board season-opening priors > integrates goalie starting probability once from the history-only performance prior
+TypeError: Cannot convert undefined or null to object
+ ❯ blendSeasonBootstrap lib/projections/seasonBootstrap.ts:100:97
+     98|   const historyWeight = (1 - progress) * (1 - SEASON_BOOTSTRAP_POLICY.…
+     99|   const stats: BoardStats = { ...organic };
+    100|   for (const key of new Set([...Object.keys(organic), ...Object.keys(p…
+       |                                                                                                 ^
+    101|     const parts = [[organic[key], progress], [prior.previous[key], his…
+    102|       .filter(([value, weight]) => value != null && Number.isFinite(va…
+ ❯ lib/projections/startChartPipeline.test.ts:396:21
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/7]⎯
+
+
+ Test Files  3 failed (3)
+      Tests  7 failed | 115 passed (122)
+   Start at  21:10:11
+   Duration  1.71s (transform 406ms, setup 9ms, collect 1.33s, tests 922ms, environment 883ms, prepare 143ms)
+

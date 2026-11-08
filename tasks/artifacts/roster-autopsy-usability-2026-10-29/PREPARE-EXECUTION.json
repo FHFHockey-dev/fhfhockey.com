@@ -1,0 +1,11 @@
+{
+  "phase": "prepare",
+  "result": "passed",
+  "checks": [
+    {
+      "log": "SNAPSHOT-CAPTURE.log",
+      "exitCode": 0
+    }
+  ],
+  "preservedLockReceipt": "/private/tmp/fhfh-autopsy-usability-prepare-released-f1ccfa31-e426-4eb4-9bbf-d622008e9d5a"
+}

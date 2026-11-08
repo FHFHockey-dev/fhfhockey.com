@@ -1,0 +1,92 @@
+{
+  "id": "CODEX-PLAYER-CARDS-EDITOR09-20261027",
+  "at": "2026-10-27T00:35:03.400115+00:00",
+  "owner_thread": "01a16ec2-f81c-717b-8961-8c3832fdc00f",
+  "source": "TJinteractiveoutlineeditor: add/remove/reorder/independentwidth/colors/reset; realcumulativecontourbands/AA/exportparity; bounded/debouncedlocalwork",
+  "source_paths": [
+    "web/lib/player-cards/outlineStack.ts",
+    "web/lib/player-cards/outlineStack.test.ts",
+    "web/components/player-cards/OutlineStackControls.tsx",
+    "web/components/player-cards/OutlineStackControls.test.tsx",
+    "web/components/player-cards/OutlineStackControls.module.scss",
+    "web/lib/player-cards/alphaOutline.ts",
+    "web/lib/player-cards/alphaOutline.test.ts",
+    "web/components/player-cards/HeroPlayerCard.tsx",
+    "web/lib/player-cards/portraitTreatment.ts",
+    "web/components/player-cards/PlayerCardShareStudio.tsx",
+    "web/components/player-cards/PlayerCardShareStudio.test.tsx",
+    "web/lib/player-cards/shareExport.ts",
+    "web/lib/player-cards/shareExport.test.ts"
+  ],
+  "baseline": [
+    {
+      "path": "web/lib/player-cards/outlineStack.ts",
+      "sha256": null,
+      "absent": true
+    },
+    {
+      "path": "web/lib/player-cards/outlineStack.test.ts",
+      "sha256": null,
+      "absent": true
+    },
+    {
+      "path": "web/components/player-cards/OutlineStackControls.tsx",
+      "sha256": null,
+      "absent": true
+    },
+    {
+      "path": "web/components/player-cards/OutlineStackControls.test.tsx",
+      "sha256": null,
+      "absent": true
+    },
+    {
+      "path": "web/components/player-cards/OutlineStackControls.module.scss",
+      "sha256": null,
+      "absent": true
+    },
+    {
+      "path": "web/lib/player-cards/alphaOutline.ts",
+      "sha256": "3a3fd3d0df706b89dad934540226a5cef4a6d561100b54a04b196c203d3d8a98",
+      "absent": false
+    },
+    {
+      "path": "web/lib/player-cards/alphaOutline.test.ts",
+      "sha256": "21265746240e16cbc7165486b4a72e8a120c06a9b1793341b3e0fd947624d8a1",
+      "absent": false
+    },
+    {
+      "path": "web/components/player-cards/HeroPlayerCard.tsx",
+      "sha256": "69a636cfd0c6c84c4213dedc1e2a1a82afe62e7bba687ff6a60750285cdc0a3d",
+      "absent": false
+    },
+    {
+      "path": "web/lib/player-cards/portraitTreatment.ts",
+      "sha256": "69828090d20ea833df4d980a278337b76fb0f07dce1fac076118c76bfea87eff",
+      "absent": false
+    },
+    {
+      "path": "web/components/player-cards/PlayerCardShareStudio.tsx",
+      "sha256": "76fb9232a28032c7b68272c20d5e827eed9e24dd022fabe25e0c87116693f06b",
+      "absent": false
+    },
+    {
+      "path": "web/components/player-cards/PlayerCardShareStudio.test.tsx",
+      "sha256": "087d97f3ff7e64cb0c52d4ad3b7129c8271c3618c81d4cbda1b1c60a7f0f8360",
+      "absent": false
+    },
+    {
+      "path": "web/lib/player-cards/shareExport.ts",
+      "sha256": "c09f8832b8c20f2fa1c86eb5ef2dcd999449ce9dd91c0ed8133bda2dddab6542",
+      "absent": false
+    },
+    {
+      "path": "web/lib/player-cards/shareExport.test.ts",
+      "sha256": "1e87d16c1d2860c71bd607b7ff420772b2608031e691096aa1d67c66c944116e",
+      "absent": false
+    }
+  ],
+  "status": "FROZEN deliveredlocal09;41tests/TS/lint/3customizer+4retainedcapturegroups/actualservedproofPASS;parentindependentreviewpending",
+  "artifact_root": "tasks/artifacts/player-cards-2026-10-26/outline-editor-09",
+  "limits": "0\u20135rings;0.5\u201312pxeach/0.5step;40pxtotal;250msdebounce;max2MP/cache2; no geometry/logomask/RGBsource/orderchanges; no deps/liveNHLretry/Git/deploy/delete/sharedfiles",
+  "completedAt": "2026-10-27T01:05:22.105001+00:00"
+}

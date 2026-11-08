@@ -1,0 +1,9 @@
+{
+  "fixtureOnly": true,
+  "fullNextRoute": false,
+  "checks": [],
+  "blockedRequests": [],
+  "pageErrors": [],
+  "result": "failed",
+  "error": "TypeError: build is not a function\n    at file:///Users/tim/Code/fhfhockey.com/tasks/artifacts/six-lanes-2026-11-04/L5/browser-check.mjs:23:9"
+}

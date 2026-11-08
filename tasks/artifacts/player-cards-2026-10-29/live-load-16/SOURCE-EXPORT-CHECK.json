@@ -1,0 +1,36 @@
+[
+  {
+    "playerId": 8484387,
+    "gp": 10,
+    "requested": 10,
+    "totals": {
+      "goals": 7,
+      "assists": 2,
+      "points": 9,
+      "shots": 15
+    },
+    "toiSeconds": 9659,
+    "sourceCalls": 3,
+    "bytes": 197010,
+    "elapsedMs": 422,
+    "sourceHashesMatched": true,
+    "rawTotalsMatchExport": true
+  },
+  {
+    "playerId": 8478439,
+    "gp": 5,
+    "requested": 10,
+    "totals": {
+      "goals": 0,
+      "assists": 3,
+      "points": 3,
+      "shots": 8
+    },
+    "toiSeconds": 5043,
+    "sourceCalls": 3,
+    "bytes": 199165,
+    "elapsedMs": 412,
+    "sourceHashesMatched": true,
+    "rawTotalsMatchExport": true
+  }
+]

@@ -1,0 +1,17 @@
+{
+  "extends": "/Users/tim/Code/fhfhockey.com/web/tsconfig.json",
+  "compilerOptions": {
+    "incremental": false
+  },
+  "include": [
+    "/Users/tim/Code/fhfhockey.com/web/next-bootstrap.d.ts",
+    "/Users/tim/Code/fhfhockey.com/web/yahoo-fantasy.d.ts",
+    "/Users/tim/Code/fhfhockey.com/web/pages/roster-autopsy.tsx",
+    "/Users/tim/Code/fhfhockey.com/web/components/RosterAutopsy/RosterAutopsy.tsx",
+    "/Users/tim/Code/fhfhockey.com/web/components/RosterAutopsy/RosterAutopsy.test.tsx",
+    "/Users/tim/Code/fhfhockey.com/web/lib/rosterAutopsy/diagnosis.ts",
+    "/Users/tim/Code/fhfhockey.com/web/lib/rosterAutopsy/diagnosis.test.ts",
+    "/Users/tim/Code/fhfhockey.com/web/lib/rosterAutopsy/manual.test.ts"
+  ],
+  "exclude": []
+}

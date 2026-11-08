@@ -1,0 +1,144 @@
+{
+  "web": {
+    "id": "prj_LV0wbwH5gRjOsZlowzEFNGRuX7Lw",
+    "name": "fhfhockey",
+    "nodeVersion": "22.x",
+    "latestListedDeployment": {
+      "id": "dpl_2eZcqdmKfyUUy4DWN7s5q5ibiitW",
+      "url": "fhfhockey-iabildqnc-fhfhockeydevs-projects.vercel.app",
+      "createdAt": 1793553820493,
+      "readyState": "CANCELED",
+      "target": "production"
+    },
+    "currentAlias": {
+      "alias": "fhfhockey.com",
+      "projectId": "prj_LV0wbwH5gRjOsZlowzEFNGRuX7Lw",
+      "deployment": {
+        "id": "dpl_HzivoZGr2gwii7ci21mCbS5gNMjc",
+        "url": "fhfhockey-g1h9t90os-fhfhockeydevs-projects.vercel.app"
+      },
+      "updatedAt": 1793326487979
+    },
+    "currentDeployment": {
+      "id": "dpl_HzivoZGr2gwii7ci21mCbS5gNMjc",
+      "name": "fhfhockey",
+      "url": "fhfhockey-g1h9t90os-fhfhockeydevs-projects.vercel.app",
+      "type": "LAMBDAS",
+      "state": "READY",
+      "createdAt": 1793326165222,
+      "creator": {
+        "uid": "RIjKGS50TnQKekn6kUu1bdJw",
+        "username": "fhfhockey-dev"
+      },
+      "project": {
+        "id": "prj_LV0wbwH5gRjOsZlowzEFNGRuX7Lw",
+        "name": "fhfhockey",
+        "framework": "nextjs"
+      },
+      "meta": {
+        "githubCommitRef": "master",
+        "githubCommitSha": "4965a872a9746b6129c9ac589c200560d01a1e23",
+        "githubCommitMessage": "RSO: Data health says inputs are complete; confirmable Yahoo rule notes (RC17) (#401)\n\nRSO RC17: Data health says inputs are complete when only league-rule notes remain; confirmable Yahoo rule notes\n\nExact blobs from octoberBranch cfc785e75 on origin/master d80e3f296.\n\nCo-authored-by: Claude Opus...",
+        "githubRepo": "fhfhockey.com",
+        "githubOrg": "FHFHockey-dev"
+      },
+      "alias": [
+        "fhfhockey.com",
+        "fhfhockey.vercel.app",
+        "www.fhfhockey.com",
+        "fhfhockey-fhfhockeydevs-projects.vercel.app",
+        "fhfhockey-git-master-fhfhockeydevs-projects.vercel.app"
+      ],
+      "target": "production",
+      "regions": [
+        "iad1"
+      ],
+      "buildingAt": 1793326166198,
+      "ready": 1793326487821,
+      "readyState": "READY",
+      "source": "git",
+      "aliasError": null
+    },
+    "environmentMetadata": {
+      "project": "web",
+      "isError": true,
+      "keys": [
+        "error",
+        "cliFallback",
+        "error_code"
+      ],
+      "totalEntries": 0,
+      "relevant": []
+    }
+  },
+  "functions": {
+    "id": "prj_q9tnoe1pF6WAe9zPcBzBLBPZx5mQ",
+    "name": "functions-fhfhockey",
+    "nodeVersion": "20.x",
+    "latestListedDeployment": {
+      "id": "dpl_2zuKRckHAyzuatEg3yAtXDZznUWP",
+      "url": "functions-fhfhockey-23iwri7wf-fhfhockeydevs-projects.vercel.app",
+      "createdAt": 1793326165310,
+      "readyState": "CANCELED",
+      "target": "production"
+    },
+    "currentAlias": {
+      "alias": "functions-fhfhockey-fhfhockeydevs-projects.vercel.app",
+      "projectId": "prj_q9tnoe1pF6WAe9zPcBzBLBPZx5mQ",
+      "deployment": {
+        "id": "dpl_87T83RYKhKFvZLHyCHNZTf8A561d",
+        "url": "functions-fhfhockey-4m4a5iwyq-fhfhockeydevs-projects.vercel.app"
+      },
+      "updatedAt": 1792903282866
+    },
+    "currentDeployment": {
+      "id": "dpl_87T83RYKhKFvZLHyCHNZTf8A561d",
+      "name": "functions-fhfhockey",
+      "url": "functions-fhfhockey-4m4a5iwyq-fhfhockeydevs-projects.vercel.app",
+      "type": "LAMBDAS",
+      "state": "READY",
+      "createdAt": 1792903264177,
+      "creator": {
+        "uid": "RIjKGS50TnQKekn6kUu1bdJw",
+        "username": "fhfhockey-dev"
+      },
+      "project": {
+        "id": "prj_q9tnoe1pF6WAe9zPcBzBLBPZx5mQ",
+        "name": "functions-fhfhockey",
+        "framework": null
+      },
+      "meta": {
+        "githubCommitRef": "master",
+        "githubCommitSha": "b3f9a7e25c5e1b82bc74aead8337302177274c9f",
+        "githubCommitMessage": "Release reconciled October source and social studio (#380)\n\nReconcile the preserved October application source with the qualified release, including statistics, news, provider/account, FORGE/RSO and social-studio integration repairs.\n\nFresh combined verification: 13,520 tests passed, 52 opt-in sk...",
+        "githubRepo": "fhfhockey.com",
+        "githubOrg": "FHFHockey-dev"
+      },
+      "alias": [
+        "functions-fhfhockey.vercel.app",
+        "functions-fhfhockey-fhfhockeydevs-projects.vercel.app",
+        "functions-fhfhockey-git-master-fhfhockeydevs-projects.vercel.app"
+      ],
+      "target": "production",
+      "regions": [
+        "iad1"
+      ],
+      "buildingAt": 1792903265049,
+      "ready": 1792903282679,
+      "readyState": "READY",
+      "source": "git",
+      "aliasError": null
+    },
+    "environmentMetadata": {
+      "project": "functions",
+      "isError": true,
+      "keys": [
+        "error",
+        "cliFallback",
+        "error_code"
+      ],
+      "totalEntries": 0,
+      "relevant": []
+    }
+  }
+}

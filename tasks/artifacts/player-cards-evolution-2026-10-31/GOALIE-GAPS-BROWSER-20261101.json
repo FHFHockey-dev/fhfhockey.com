@@ -1,0 +1,20 @@
+{
+  "sharedContract": "goalie-inventory-v1",
+  "dimensions": 12,
+  "completeDimensionText": true,
+  "provenanceInReadableDetailsAndManifest": true,
+  "confirmationWarningsVisibleInSvgAndPng": true,
+  "warningBounds": {
+    "right": 908.0942993164062,
+    "bottom": 925.9343872070312
+  },
+  "png": {
+    "width": 1200,
+    "height": 1020,
+    "sha256": "89345a9ff479005eb73f5b9f759eedb50bf259b08fbb57b771eb0b57530bab91"
+  },
+  "mobileWidth": 320,
+  "horizontalOverflow": false,
+  "requests": [],
+  "errors": []
+}

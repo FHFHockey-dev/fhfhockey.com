@@ -1,0 +1,13 @@
+{
+  "paidEvidenceManifestSha256": "824bf5722469f6e459896361384b62c8671d895505a57c9f34f5b7e313153828",
+  "paidLedgerSha256": "e992f8e85a70e3c4c46630904ff6b278cbbd67f96c4886d357e453f0bf268c7e",
+  "paidReviewSha256": "c7fa68e65808f4f1be3f9bc650e90ff27295bbc2468cb52a895157d33860375a",
+  "observedProposalTextSha256": "f46284357d6d5b4df1b633df19ee1d0c15a26731eec3f33848ee7e0313f56b71",
+  "historicalLedgerSha256": "e8418735afaeff893177e550df6774600c6c6fec4f49c2b01c183712cdc064f2",
+  "paidEnabled": false,
+  "paidBlockedReason": "bounded_evaluation_stopped",
+  "newPaidRequestsBeforeDiagnosis": 2,
+  "priorExposureNanoUsd": 262519843,
+  "cumulativeMaxCalls": 20,
+  "diagnosisPermissions": "Offline only; no credentials/provider requests; no paid ledger or labels mutation; separate independent review before any continuation."
+}

@@ -1,0 +1,41 @@
+{
+  "at": "2026-11-01T19:29:18.696077+00:00",
+  "scope": "New independent fixture-browser readiness evidence; no runtime source change",
+  "advertisedCandidateTree": "9820a239181765a7eae2597c32c0f380c0260b5a",
+  "newDistinctCasesPassed": 3,
+  "caseExecutions": 4,
+  "firstRun": "../readiness-browser.json",
+  "missingCoverageRerun": "../coverage-browser.json",
+  "firstRunOutcomes": {
+    "connectedBenchLocks": "passed",
+    "goalieUnknownEvidence": "passed",
+    "mixedCoverage": "failed at duplicate confirmation-button locator"
+  },
+  "rerun": "mixed coverage passed with one-line isolated locator scope, across 1180/1024/768/390/320-pixel viewports",
+  "supplement": {
+    "scope": "Only ambiguous confirmation locator in existing mixed-coverage browser fixture",
+    "path": "web/e2e/roster-schedule-optimizer.spec.ts",
+    "beforeSha256": "fb096e6a413c6e4e79111cfffd9fb69974672133e2d46ae41d584592e0665be9",
+    "afterSha256": "0361c9efb0dd39b2b9c647f02fe657d64da6d9b1978857bab106256459c7c038",
+    "patch": "readiness-supplement/source.patch",
+    "canonicalFileChanged": false,
+    "producerClosureChanged": false
+  },
+  "supplementSource": "roster-schedule-optimizer.spec.ts",
+  "supplementPatch": "source.patch",
+  "patchApplyCheck": "passed",
+  "lintExitCode": 0,
+  "canonicalFileChanged": false,
+  "advertisedCandidatePinsMatched": true,
+  "verificationExportRestored": true,
+  "producerClosureChanged": false,
+  "serverRetained": false,
+  "heavyLockRetained": false,
+  "gitMutations": 0,
+  "hostedBuilds": 0,
+  "pushes": 0,
+  "deployments": 0,
+  "providerRequests": 0,
+  "databaseRequests": 0,
+  "liveYahooAcceptance": false
+}

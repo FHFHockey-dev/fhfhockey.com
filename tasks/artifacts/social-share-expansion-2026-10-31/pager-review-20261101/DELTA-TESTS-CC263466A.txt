@@ -1,0 +1,26 @@
+
+> web@0.1.0 test
+> vitest --run lib/socialShare/modules/busyQuiet.test.ts lib/socialShare/modules/goalieRescue.test.ts lib/socialShare/postedWeek.test.ts components/SocialShare/PostStudio.test.tsx --maxWorkers=1 --minWorkers=1
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+(node:2428) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ components/SocialShare/PostStudio.test.tsx (17 tests) 1429ms
+   ✓ PostStudio > waits out a font that is not declared yet, and offers a retry if it never loads  1020ms
+(node:2435) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/socialShare/modules/goalieRescue.test.ts (49 tests) 102ms
+(node:2439) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/socialShare/modules/busyQuiet.test.ts (44 tests) 108ms
+(node:2441) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/socialShare/postedWeek.test.ts (57 tests) 11ms
+
+ Test Files  4 passed (4)
+      Tests  167 passed (167)
+   Start at  15:00:12
+   Duration  3.56s (transform 443ms, setup 7ms, collect 825ms, tests 1.65s, environment 595ms, prepare 122ms)
+

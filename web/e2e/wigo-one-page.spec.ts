@@ -9,9 +9,37 @@ import { installWigoFixtures, WIGO_FIXTURE_PLAYER_ID, type FixtureLogEntry } fro
 const COVERAGE = Array.from({ length: 19 }, (_, index) => `C${String(index + 1).padStart(2, "0")}`);
 const PERIODS = ["STD", "LY", "CA", "3YA", "L5", "L10", "L20"];
 
+async function installOfflineWigoFixtures(page: Page, options: Parameters<typeof installWigoFixtures>[1]) {
+  await installWigoFixtures(page, options);
+  // The shared fixtures permit public fonts; this suite stays entirely offline.
+  await page.route(/^https:\/\/fonts\.(?:googleapis|gstatic)\.com\//, route => route.abort());
+}
+
+const browserDiagnostics = new WeakMap<Page, { pageErrors: string[]; consoleErrors: string[] }>();
+
+test.beforeEach(async ({ page }) => {
+  const pageErrors: string[] = [];
+  const consoleErrors: string[] = [];
+  browserDiagnostics.set(page, { pageErrors, consoleErrors });
+  page.on("pageerror", error => pageErrors.push(error.message));
+  page.on("console", message => {
+    if (message.type() === "error") consoleErrors.push(message.text());
+  });
+});
+
+test.afterEach(async ({ page }, testInfo) => {
+  const diagnostics = browserDiagnostics.get(page);
+  if (!diagnostics) return;
+  await testInfo.attach("browser-diagnostics", {
+    body: JSON.stringify(diagnostics, null, 2),
+    contentType: "application/json",
+  });
+  expect(diagnostics.pageErrors).toEqual([]);
+});
+
 async function open(page: Page, { player = true, longName = false, teamGameGaps = 0 } = {}) {
   const log: FixtureLogEntry[] = [];
-  await installWigoFixtures(page, { longName, teamGameGaps, log: (entry) => log.push(entry) });
+  await installOfflineWigoFixtures(page, { longName, teamGameGaps, log: (entry) => log.push(entry) });
   await page.goto(player ? `/wigoCharts?playerId=${WIGO_FIXTURE_PLAYER_ID}` : "/wigoCharts");
   if (player) {
     await expect(page.locator('[data-coverage="C19"] meter')).toHaveCount(16, { timeout: 60_000 });
@@ -88,6 +116,16 @@ for (const [width, height] of [[1280, 800], [1440, 900], [1440, 790], [1920, 108
     expect(result.overflowing).toEqual([]);
     expect(result.clippedCells).toEqual([]);
     expect(result.smallText).toEqual([]);
+    // A wider selected-stat plot establishes the hierarchy; the full matrix
+    // stays beneath the analytical workspace instead of hiding any panels.
+    const selected = await page.locator('[data-coverage="C13"]').boundingBox();
+    const toi = await page.locator('[data-coverage="C16"]').boundingBox();
+    const matrix = await page.locator('[data-coverage="C12"]').boundingBox();
+    expect(selected!.width).toBeGreaterThan(toi!.width * 1.5);
+    expect(matrix!.y).toBeGreaterThanOrEqual(selected!.y + selected!.height);
+    const ratings = page.locator('[data-coverage="C07"]');
+    await expect(ratings.getByRole("heading", { name: "Player ratings", exact: true })).toHaveCount(1);
+    await expect(ratings.getByRole("meter", { name: "Offense Even", exact: true })).toHaveCount(1);
     await expect(page.getByText("WiGO workflow")).toHaveCount(0);
     expect(log.filter((entry) => entry.kind === "blocked-write")).toEqual([]);
     await page.screenshot({ path: test.info().outputPath(`wigo-one-page-${width}x${height}.png`) });
@@ -234,7 +272,7 @@ test("every help note opens fully inside the 1280×800 screen and Escape closes 
 test("the phone comparison tab shows the band with a pinned period column, jump buttons and every period and DIFF", async ({ page }) => {
   test.setTimeout(120_000);
   await page.setViewportSize({ width: 390, height: 844 });
-  await installWigoFixtures(page, {});
+  await installOfflineWigoFixtures(page, {});
   await page.goto(`/wigoCharts?playerId=${WIGO_FIXTURE_PLAYER_ID}&tab=comparison`);
   const band = page.getByRole("region", { name: "Comparison band, scrolls sideways" });
   await expect(band).toBeVisible({ timeout: 60_000 });

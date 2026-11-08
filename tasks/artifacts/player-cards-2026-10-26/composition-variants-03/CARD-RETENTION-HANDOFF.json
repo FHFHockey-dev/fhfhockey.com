@@ -1,0 +1,1171 @@
+{
+  "at": "2026-10-26T18:23:06.463859+00:00",
+  "owner_thread": "01a16ec2-f81c-717b-8961-8c3832fdc00f",
+  "actionsPerformed": "Read-only discovery plus this handoff; no moves/deletions/Git/process/source changes",
+  "preview": {
+    "pid": 70975,
+    "host": "127.0.0.1",
+    "port": 3125,
+    "bootstrapKeep": [
+      {
+        "path": "tasks/artifacts/player-cards-2026-10-26/composition-variants-03/serve-preview.mjs",
+        "bytes": 2953,
+        "sha256": "efcd31db14e7fccfdc81d1cf93e209f08cceacd219810a191c6ed4b1e30d9d5e"
+      },
+      {
+        "path": "tasks/artifacts/player-cards-2026-10-26/composition-variants-03/preview.html",
+        "bytes": 3426931,
+        "sha256": "996b67587180c64282152d53abd953ae66b9e115549896eeab591e198533d954"
+      },
+      {
+        "path": "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/preview.html",
+        "bytes": 3123706,
+        "sha256": "ecd560310b358ebd0521574967a480cab1521946c9d42d5f33341fcc57a5187a"
+      },
+      {
+        "path": "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/comparison.html",
+        "bytes": 2440289,
+        "sha256": "5f5dc01034d10b0314317ed3dca3fdf8c5bcb0274761eec6ec8fa9201fe2dd3f"
+      },
+      {
+        "path": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1/preview.html",
+        "bytes": 318626,
+        "sha256": "6c29f6eb3dc6ffc9a6a8a546423f78ac3e6e5e1e7265129475724422d3aad9b5"
+      },
+      {
+        "path": "tasks/artifacts/player-cards-2026-10-24/visual-checkpoint-01/preview.html",
+        "bytes": 314484,
+        "sha256": "f65ce654f1e1e7ab226aa01e95617d925608d8d590fbd65d5bbaa85b324e05a5"
+      },
+      {
+        "path": "tasks/artifacts/player-cards-2026-10-26/composition-variants-03/comparison.html",
+        "bytes": 2186609,
+        "sha256": "6ab6b59a6ad34e193e73348b54cf96fcd73b2116f1d07110f32b2433a43d4ff1"
+      },
+      {
+        "path": "tasks/artifacts/player-cards-2026-10-25/team-colors-default-01/preview.html",
+        "bytes": 3132147,
+        "sha256": "e2b037f6b82d444f099e9cbfefbc555a673e1131496bea084158771830625c5f"
+      },
+      {
+        "path": "tasks/artifacts/player-cards-2026-10-26/observed-view-01/preview.html",
+        "bytes": 9655,
+        "sha256": "b2ece36cf4c62e41562495fcabe4e6f36d02d6d159523b0364b8fc455607fbd6"
+      },
+      {
+        "path": "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/comparison.html",
+        "bytes": 1597171,
+        "sha256": "391232bc2d2e845dad2f407e55365f40d971249a5b7416abc0d3aa8eaa4f983b"
+      },
+      {
+        "path": "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/preview.html",
+        "bytes": 3424357,
+        "sha256": "7867690db0776f1d2ec34fc42860d0d5a48ef478ec7d8d1e06163be4c6045f2b"
+      },
+      {
+        "path": "tasks/artifacts/player-cards-2026-10-26/composition-variants-02/comparison.html",
+        "bytes": 1597033,
+        "sha256": "5a65a4cf33e2ab86db9b8365179a1e44c559a8fa74dad065e888c9efa31d569c"
+      },
+      {
+        "path": "tasks/artifacts/player-cards-2026-10-26/composition-variants-02/preview.html",
+        "bytes": 3424343,
+        "sha256": "49e287071b186b7c1c1c5387243d04f182fb6d829747c91fe46acb79c8d9c705"
+      }
+    ],
+    "reason": "readFileSync startup dependencies; current in-memory buffers are not proof relocation is restart-safe"
+  },
+  "pendingLibraryUploads": {
+    "status": "Approved; transportTLSblockedbeforepreparation;0LibraryIDs",
+    "keepRegularFiles": [
+      {
+        "path": "tasks/artifacts/player-cards-2026-10-26/composition-variants-03/posterized-team-colors-card.png",
+        "bytes": 600740,
+        "sha256": "38ec329efcf8974c81966ae7bc6a9ddff0f9aa762076c42969e190048b5ad30c"
+      },
+      {
+        "path": "tasks/artifacts/player-cards-2026-10-26/composition-variants-03/pixelated-team-colors-card.png",
+        "bytes": 547676,
+        "sha256": "58bb0c960487c82cc8129356aeec552851db925e909485cca10d44f999110548"
+      }
+    ],
+    "keepApprovalAndReceiptFiles": [
+      "tasks/artifacts/player-cards-2026-10-26/composition-variants-03/LIBRARY-APPROVED-STDERR.log",
+      "tasks/artifacts/player-cards-2026-10-26/composition-variants-03/LIBRARY-APPROVAL-20261026.json",
+      "tasks/artifacts/player-cards-2026-10-26/composition-variants-03/LIBRARY-APPROVED-STDOUT.log",
+      "tasks/artifacts/player-cards-2026-10-26/composition-variants-03/LIBRARY-APPROVED-DELIVERY-RECEIPT.json",
+      "tasks/artifacts/player-cards-2026-10-26/composition-variants-03/LIBRARY-UPLOAD-EXECUTION-INTENT.json",
+      "tasks/artifacts/player-cards-2026-10-26/composition-variants-03/LIBRARY-APPROVED-DELIVERY-HANDOFF.md"
+    ],
+    "doNotRelocateOrReplaceWithSymlinkBeforeDelivery": true
+  },
+  "sourceTestFixtureAndAssetKeep": [
+    {
+      "path": "tasks/TASKS/prd-shareable-player-cards.md",
+      "bytes": 26797,
+      "sha256": "eba54a6abf91c29bcec0eedccb9a677b44f6e25ffb03c9bf33b26303fae0e438"
+    },
+    {
+      "path": "tasks/diaries/2026-10-24-codex-player-cards.md",
+      "bytes": 42959,
+      "sha256": "2e2fc5ed409a594b86b2a250a39c525e7510c54f25fa99b40fc29df82eaa1858",
+      "mutableWorkingNote": true,
+      "notAcceptanceEvidence": true
+    },
+    {
+      "path": "tasks/tasks-prd-shareable-player-cards.md",
+      "bytes": 27688,
+      "sha256": "fea80ab325b3a1ed4c0c46bcc4a1f28100445c73801e2c986c505cb9032e5a4f"
+    },
+    {
+      "path": "web/components/player-cards/EditorialPlayerCard.test.tsx",
+      "bytes": 5438,
+      "sha256": "99b9013b5d2d16d343f88381730d5794c1beaefda5b6647aa092f0cef5d8bfe6"
+    },
+    {
+      "path": "web/components/player-cards/EditorialPlayerCard.tsx",
+      "bytes": 11100,
+      "sha256": "f3c996c4c0cf9d75f533d1d4937a5db2474edb6a7c9b9665bbb3849df205afb5"
+    },
+    {
+      "path": "web/components/player-cards/HeroPlayerCard.tsx",
+      "bytes": 7011,
+      "sha256": "aec816cdf01282fe2865d1eab2ef4b4a69aa949a9956f75bedd7bc81acf7968d"
+    },
+    {
+      "path": "web/components/player-cards/InteractiveCard.tsx",
+      "bytes": 5984,
+      "sha256": "70b6edce10ffe219817c64f2c4763a8e58091b9c59f9b77fb2a68aa2b7d33271"
+    },
+    {
+      "path": "web/components/player-cards/ObservedPlayerCard.test.tsx",
+      "bytes": 3897,
+      "sha256": "e217c9edad47ae3e84b6743e261e3dccd990869565e65fc85d09390d12c538eb"
+    },
+    {
+      "path": "web/components/player-cards/ObservedPlayerCard.tsx",
+      "bytes": 7304,
+      "sha256": "05e3389c018f5e38f54b54cde5eb15a9686a13b601624d556c9d3a2a64b8abe2"
+    },
+    {
+      "path": "web/components/player-cards/PlayerCard.module.scss",
+      "bytes": 3568,
+      "sha256": "cec892e73d5642253435108e81c91ab0f6fb6b9bedacee849ffd10808e792b77"
+    },
+    {
+      "path": "web/components/player-cards/PlayerCard.tsx",
+      "bytes": 5788,
+      "sha256": "917edf84256f3153459bc02302ff9a804a3847838eaaf8192bd000fb21f9cdfc"
+    },
+    {
+      "path": "web/components/player-cards/PlayerCardFlow.module.scss",
+      "bytes": 2931,
+      "sha256": "4e49342c3f99b62201e8bc2dcf76c60faee6a565ff924894c00e40c374512c43"
+    },
+    {
+      "path": "web/components/player-cards/PlayerCardFlow.test.tsx",
+      "bytes": 9114,
+      "sha256": "0ce3fb52c6f19fcea4d5f0755924faab1472cda1b4e1fa704396e1b4176c8579"
+    },
+    {
+      "path": "web/components/player-cards/PlayerCardFlow.tsx",
+      "bytes": 11747,
+      "sha256": "036c44fb865ac729e2ddfba06bf0d6205d983bf9f89133c88f20918869302e30"
+    },
+    {
+      "path": "web/components/player-cards/PlayerCardPreview.test.tsx",
+      "bytes": 3784,
+      "sha256": "5309f794268f88a670c19efe98939ca008b2439fd07c700c223bc832799b7e8f"
+    },
+    {
+      "path": "web/components/player-cards/PlayerCardPreview.tsx",
+      "bytes": 8174,
+      "sha256": "f58bdd545fa121be6ca79ffab03f52aeff8ca9d18a74e3e608b4addf7ae1a4b6"
+    },
+    {
+      "path": "web/components/player-cards/PlayerCardShareStudio.module.scss",
+      "bytes": 1418,
+      "sha256": "0bcab0a01648ff20a2d083dea3ec7e3d9c7fa0ca644eba48fa5d1b976db50db3"
+    },
+    {
+      "path": "web/components/player-cards/PlayerCardShareStudio.test.tsx",
+      "bytes": 8672,
+      "sha256": "9bd7b239a845156d1583a8f38a1eda56ea80d2a692c64fec415ba2256dbbb0c8"
+    },
+    {
+      "path": "web/components/player-cards/PlayerCardShareStudio.tsx",
+      "bytes": 10325,
+      "sha256": "df7fd35aed76a5e07363afd92e2e8ff65b490721e69fc7d93f5a58e0162bd640"
+    },
+    {
+      "path": "web/lib/player-cards/__fixtures__/retained/player-cards-2026-10-25/completion-read-01/RESULT.json",
+      "bytes": 2982,
+      "sha256": "6ee7b37d6f6d075557d9987599043ba09320ca9d66e9c9a6bbdf75bf5dd5dae2"
+    },
+    {
+      "path": "web/lib/player-cards/adapter.ts",
+      "bytes": 6282,
+      "sha256": "095368ab27e9a207a62b0309f0ff45f7a401e2735c609ed6481199846883c81f"
+    },
+    {
+      "path": "web/lib/player-cards/aggregation.r1.test.ts",
+      "bytes": 4385,
+      "sha256": "54df67e6ff24264a685db97bfbba2a54803ef9214d2132941ffa580f522cf348"
+    },
+    {
+      "path": "web/lib/player-cards/aggregation.ts",
+      "bytes": 5899,
+      "sha256": "87559ceb96773a757ff359a6cf4705d1f89b73f8c96cd068e0eeb194c1cf329b"
+    },
+    {
+      "path": "web/lib/player-cards/cardEvidenceVerdict.test.ts",
+      "bytes": 15500,
+      "sha256": "8942ef62c9ecd4a0396301ed63437658c8b4fb0e9db9c122f35575d62a50985f"
+    },
+    {
+      "path": "web/lib/player-cards/cardEvidenceVerdict.ts",
+      "bytes": 5354,
+      "sha256": "9b6f71f71d2eb5baef64509f30d0e12f3c34e08f6ef745c6cbcdb08b5161b88f"
+    },
+    {
+      "path": "web/lib/player-cards/contracts.ts",
+      "bytes": 2213,
+      "sha256": "5bc0b00708a6dd9f3638f801701d3bf56dfe9a0dfcdd1484fd34d806ff8c283d"
+    },
+    {
+      "path": "web/lib/player-cards/domain.test.ts",
+      "bytes": 18885,
+      "sha256": "240b4c192c386d672c5af505a90355787ca43b8f95dc7ce1d57dbba46addbb91"
+    },
+    {
+      "path": "web/lib/player-cards/evidenceAdmissions.ts",
+      "bytes": 2395,
+      "sha256": "d2af7842eaa250b813c55d595e20cfb2a4ea6bd46bc13ac76d4658dfc470cfda"
+    },
+    {
+      "path": "web/lib/player-cards/evidenceBundle.test.ts",
+      "bytes": 23778,
+      "sha256": "1a19a42d9bba637a07ad4370d0d5ebe105c22c5e3a432d8c933ee7146066c0af"
+    },
+    {
+      "path": "web/lib/player-cards/evidenceBundle.ts",
+      "bytes": 21289,
+      "sha256": "054308dc7e87ba78c014e91b433225cc63a3a2783a0492881e5e8af688cc4314"
+    },
+    {
+      "path": "web/lib/player-cards/evidenceLoader.test.ts",
+      "bytes": 22669,
+      "sha256": "9feaa0046e15b5cc94bb8506958aaf222f028aecc70d63b7aa2c11880af0d122"
+    },
+    {
+      "path": "web/lib/player-cards/evidenceLoader.ts",
+      "bytes": 15886,
+      "sha256": "9fee76955b1f5c98bea4c9b638facc68185de8d3cb3e826bdcc848bbad5837d7"
+    },
+    {
+      "path": "web/lib/player-cards/evidenceVerdictCopy.ts",
+      "bytes": 1865,
+      "sha256": "e2ea463484098fdaed40373804dd2989f7dfd215228cf73885c68daaa1f7a23e"
+    },
+    {
+      "path": "web/lib/player-cards/fixtures.ts",
+      "bytes": 2715,
+      "sha256": "00ac0c5bc1194427c2aecb7981c0f228b22b51fef16b343a72ec0f47a4405f65"
+    },
+    {
+      "path": "web/lib/player-cards/interactionFixtures.ts",
+      "bytes": 4100,
+      "sha256": "803cf3b41962b3125a0cd78c886700c58d2a37fd61206562545919767d04774e"
+    },
+    {
+      "path": "web/lib/player-cards/interactionSnapshot.ts",
+      "bytes": 3759,
+      "sha256": "53ce89f2495a7b832a20302d070c9f6b87d1dc099f1e460600e7471eb4aa3759"
+    },
+    {
+      "path": "web/lib/player-cards/nstCapture.test.ts",
+      "bytes": 9948,
+      "sha256": "4d4acef017c15c6c21df2faa46f0037ec3ea83e7918275d15b3c3df141eff012"
+    },
+    {
+      "path": "web/lib/player-cards/nstCapture.ts",
+      "bytes": 7735,
+      "sha256": "ddaa8604b6a50f7f6ebe9511899724ab0ade9b7db1235b417903b5b2f6e523ec"
+    },
+    {
+      "path": "web/lib/player-cards/observedExport.test.ts",
+      "bytes": 2377,
+      "sha256": "7fe0983a3d0f85479301b050b175055c583319de57f02689f8b1f3f7a9568a7a"
+    },
+    {
+      "path": "web/lib/player-cards/observedExport.ts",
+      "bytes": 1098,
+      "sha256": "6ec078118974d42028619b0f000f642feb1460503d4ed49220db788e0c9856fd"
+    },
+    {
+      "path": "web/lib/player-cards/observedView.ts",
+      "bytes": 2298,
+      "sha256": "3c1623d0162e780281e21b0bd18b1430b4e177669a6fd964e241cc32fa9c5110"
+    },
+    {
+      "path": "web/lib/player-cards/portraitTreatment.test.ts",
+      "bytes": 5499,
+      "sha256": "8256a7a06cae74b07fbd9683c78762fbf2d303d958d8f27eeb5bbe2308e0da95"
+    },
+    {
+      "path": "web/lib/player-cards/portraitTreatment.ts",
+      "bytes": 9336,
+      "sha256": "5c13ba66de1f5799741f61aebd61bc6bd3dfbbaad15fb896d68e16c0aa93c6e5"
+    },
+    {
+      "path": "web/lib/player-cards/ranking.test.ts",
+      "bytes": 2413,
+      "sha256": "b6177f53c26acde7f03e9afcdc5a3bbe4cdf2be071aea5a6e8be455e7375c027"
+    },
+    {
+      "path": "web/lib/player-cards/ranking.ts",
+      "bytes": 1716,
+      "sha256": "813a18860ac97ce19bceeb01f014541644b9a4d002c34ac7a0d95c09ef6b5338"
+    },
+    {
+      "path": "web/lib/player-cards/registry.ts",
+      "bytes": 3382,
+      "sha256": "f9c6a55ef5ee37a4e9de4cb1321ee971af5da0e3008dfdd86dfcec260c25cd29"
+    },
+    {
+      "path": "web/lib/player-cards/reviewedHeroSamples.ts",
+      "bytes": 1371,
+      "sha256": "1e8fe079c5a29b5d4355b7dfa729acabacb6ff8164a0c52c6ef93b7e2e16af18"
+    },
+    {
+      "path": "web/lib/player-cards/shareExport.test.ts",
+      "bytes": 6052,
+      "sha256": "8d6873c6c16b8ae7f3d2fbb8241ffcaf8ea202775c32f05f6fef79d647686e47"
+    },
+    {
+      "path": "web/lib/player-cards/shareExport.ts",
+      "bytes": 6875,
+      "sha256": "5fc00b1a9b3484f0d2d53e7a99a690fa2516b72468faa4c59f0bc26a111376e7"
+    },
+    {
+      "path": "web/lib/player-cards/teamLogo.ts",
+      "bytes": 2211,
+      "sha256": "ea27905c906262947faebf75dcc24a9ca42a623b431ed48d20bede3bfafca186"
+    },
+    {
+      "path": "web/lib/player-cards/windows.ts",
+      "bytes": 8080,
+      "sha256": "0ba442eb512f309131c1f3b5a45534ccf7687a1cf7a84d570b40ce49f95dfb30"
+    },
+    {
+      "path": "web/lib/teamsInfo.ts",
+      "bytes": 17281,
+      "sha256": "645f33ed7272e728b6ac1436754a13126ee25eb2eb6bc598fcefed3acc8e1584"
+    },
+    {
+      "path": "web/pages/social-share/player-cards.tsx",
+      "bytes": 1800,
+      "sha256": "f17fd0a83eb1f5b328884f3d2c3a19ebd599912104db9a912092a8eea3df7b31"
+    },
+    {
+      "path": "web/public/player-cards/hero-samples/8478864.png",
+      "bytes": 929229,
+      "sha256": "4199308c2f56a9ac0244697e7162f42283f1a5c247b656fb7c9278597b3ee18c"
+    },
+    {
+      "path": "web/public/player-cards/hero-samples/8479318.png",
+      "bytes": 1152357,
+      "sha256": "713a4923cf4742cefbbc09a647a249f98c095edea8eb92f7bda028929e0db065"
+    },
+    {
+      "path": "web/public/teamLogos/MIN.png",
+      "bytes": 89553,
+      "sha256": "430c6a4073da40b9d2e147c2528dba317f019273390ef2bdd43363895c5e0fc2"
+    },
+    {
+      "path": "web/public/teamLogos/TOR.png",
+      "bytes": 122296,
+      "sha256": "b88d6edb92e4bcca291f7d3a37c1265fee39e1f5ef41650aaa19d8a39ad7e01d"
+    }
+  ],
+  "activeEvidenceKeepTrees": [
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-03/**",
+    "tasks/artifacts/player-cards-2026-10-26/date-finality-01/**",
+    "tasks/artifacts/player-cards-2026-10-26/report-qualification-01/**",
+    "tasks/artifacts/player-cards-2026-10-26/history-qualification-01/**",
+    "tasks/artifacts/player-cards-2026-10-26/resume-reconciliation-01/**",
+    "tasks/artifacts/player-cards-2026-10-26/observed-pipeline-01/**",
+    "tasks/artifacts/player-cards-2026-10-26/observed-view-01/**",
+    "tasks/artifacts/player-cards-2026-10-25/completion-read-01/**",
+    "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/**",
+    "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01-review/**"
+  ],
+  "goldenTestInputKeep": {
+    "path": "tasks/artifacts/player-cards-2026-10-25/team-colors-default-01/default-manifest.json",
+    "bytes": 5551,
+    "sha256": "971a63d672c9d0ed7b58d3881e404212588b611eef057f0b97e316e509aa517b"
+  },
+  "smallEvidenceTextKeep": [
+    "tasks/artifacts/player-cards-2026-10-24/visual-checkpoint-01/server.log",
+    "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/CHANGED-FILES.json",
+    "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/EVIDENCE.json",
+    "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/EVIDENCE.sha256",
+    "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/EditorialPlayerCard.before.tsx",
+    "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/HANDOFF.md",
+    "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/LEASE.json",
+    "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/SocialShare.before.tsx",
+    "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/baseline.json",
+    "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/browser-check.mjs",
+    "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/browser-command.json",
+    "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/browser-initial.log",
+    "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/browser-results.json",
+    "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/browser.log",
+    "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/candidate-pins.json",
+    "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/handoff-preview.py",
+    "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/hero-inputs.json",
+    "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/kaprizov-social-manifest.json",
+    "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/lifecycle-readback.json",
+    "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/lint-command.json",
+    "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/lint.log",
+    "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/local-assets.json",
+    "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/matthews-landscape-manifest.json",
+    "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/nav-lint-command.json",
+    "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/nav-lint.log",
+    "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/offline.setup.ts",
+    "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/preservation-results.json",
+    "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/preview-entry.tsx",
+    "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/render-command.json",
+    "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/render-preview.mjs",
+    "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/render.log",
+    "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/route-integration.test.tsx",
+    "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/run-check.py",
+    "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/runtime.json",
+    "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/serve-preview.mjs",
+    "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/server.log",
+    "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/social-navigation.patch",
+    "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/source-files/web/components/player-cards/EditorialPlayerCard.tsx",
+    "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/source-files/web/components/player-cards/HeroPlayerCard.tsx",
+    "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/source-files/web/components/player-cards/PlayerCardShareStudio.test.tsx",
+    "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/source-files/web/components/player-cards/PlayerCardShareStudio.tsx",
+    "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/source-files/web/lib/player-cards/reviewedHeroSamples.ts",
+    "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/source-files/web/lib/player-cards/shareExport.test.ts",
+    "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/source-files/web/lib/player-cards/shareExport.ts",
+    "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/source-files/web/pages/social-share/player-cards.tsx",
+    "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/source.patch",
+    "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/tests-command.json",
+    "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/tests-initial.log",
+    "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/tests.log",
+    "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/tsconfig.json",
+    "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/types-command.json",
+    "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/types-initial.log",
+    "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/types.log",
+    "tasks/artifacts/player-cards-2026-10-25/mobile-library-delivery-01/retry-upload-error.log",
+    "tasks/artifacts/player-cards-2026-10-25/mobile-library-delivery-01/upload-error.log",
+    "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01-review/REVIEW.md",
+    "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01-review/command.json",
+    "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01-review/preservation-after.json",
+    "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01-review/preservation-before.json",
+    "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01-review/probe-results.json",
+    "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01-review/probes.log",
+    "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01-review/probes.mjs",
+    "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01-review/run-probes.py",
+    "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/CHANGED-FILES.json",
+    "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/EVIDENCE.json",
+    "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/EVIDENCE.sha256",
+    "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/HANDOFF.md",
+    "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/INPUT-PINS.json",
+    "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/LEASE.json",
+    "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/READ-REQUEST.md",
+    "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/READINESS.md",
+    "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/capture-command.json",
+    "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/capture-reconciliation.json",
+    "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/capture.log",
+    "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/lint-command.json",
+    "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/lint.log",
+    "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/offline.setup.ts",
+    "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/preservation-results.json",
+    "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/reconcile-capture.mjs",
+    "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/run-check.py",
+    "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/source-files/web/lib/player-cards/nstCapture.test.ts",
+    "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/source-files/web/lib/player-cards/nstCapture.ts",
+    "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/source.patch",
+    "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/tests-command.json",
+    "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/tests.log",
+    "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/tsconfig.json",
+    "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/types-command.json",
+    "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/types.log",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-technical-review-01/REVIEW.md",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-technical-review-01/commands.json",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-technical-review-01/current-vs-frozen.patch",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-technical-review-01/offline.setup.ts",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-technical-review-01/pixel-results.json",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-technical-review-01/preservation-after.json",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-technical-review-01/preservation-before.json",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-technical-review-01/probes.test.tsx",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-technical-review-01/read-pixels.mjs",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-technical-review-01/run-0.log",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-technical-review-01/run-1.log",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-technical-review-01/run-review.py",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-technical-review-01/source-comparison.json",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/.library-input-helpers/library_file_transfer.py",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/.library-input-helpers/library_hosted_apps.py",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/CHANGED-FILES.json",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/CUSTODY-REQUEST.json",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/DESIGN-NOTES.md",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/EVIDENCE.json",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/EVIDENCE.sha256",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/HANDOFF-INPUT-BLOCKED.md",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/HANDOFF.md",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/INPUT-LIMITATION.json",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/LEASE.json",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/LOCAL-REFERENCES.json",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/before/web/components/player-cards/HeroPlayerCard.tsx",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/before/web/components/player-cards/PlayerCardShareStudio.test.tsx",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/before/web/components/player-cards/PlayerCardShareStudio.tsx",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/before/web/lib/player-cards/shareExport.test.ts",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/before/web/lib/player-cards/shareExport.ts",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/browser-check.mjs",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/browser-command.json",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/browser-diagnostic-command.json",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/browser-diagnostic-failure.json",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/browser-diagnostic.log",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/browser-failure.json",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/browser-initial-check.mjs",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/browser-initial-command.json",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/browser-initial-failure.json",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/browser-initial.log",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/browser-results.json",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/browser-sandbox-command.json",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/browser-sandbox-failure.json",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/browser-sandbox.log",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/browser.log",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/candidate-pins.json",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/handoff-preview.py",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/input-attempt-1.json",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/input-attempt-2.json",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/lifecycle-readback.json",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/lint-command.json",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/lint.log",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/offline.setup.ts",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/pixelated-manifest.json",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/posterized-manifest.json",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/preservation-results.json",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/preview-entry.tsx",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/reload-manifest.json",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/render-command.json",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/render-preview.mjs",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/render.log",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/run-check.py",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/runtime.json",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/serve-preview.mjs",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/server.log",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/source-files/web/components/player-cards/HeroPlayerCard.tsx",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/source-files/web/components/player-cards/PlayerCardShareStudio.test.tsx",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/source-files/web/components/player-cards/PlayerCardShareStudio.tsx",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/source-files/web/lib/player-cards/portraitTreatment.test.ts",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/source-files/web/lib/player-cards/portraitTreatment.ts",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/source-files/web/lib/player-cards/shareExport.test.ts",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/source-files/web/lib/player-cards/shareExport.ts",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/source.patch",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/team-colors-manifest.json",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/tests-command.json",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/tests-initial-command.json",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/tests-initial.log",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/tests.log",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/tsconfig.json",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/types-command.json",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/types-initial-command.json",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/types-initial.log",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/types.log",
+    "tasks/artifacts/player-cards-2026-10-25/team-colors-default-01/CHANGED-FILES.json",
+    "tasks/artifacts/player-cards-2026-10-25/team-colors-default-01/EVIDENCE.json",
+    "tasks/artifacts/player-cards-2026-10-25/team-colors-default-01/EVIDENCE.sha256",
+    "tasks/artifacts/player-cards-2026-10-25/team-colors-default-01/HANDOFF.md",
+    "tasks/artifacts/player-cards-2026-10-25/team-colors-default-01/LEASE.json",
+    "tasks/artifacts/player-cards-2026-10-25/team-colors-default-01/STOP-CHECKPOINT.json",
+    "tasks/artifacts/player-cards-2026-10-25/team-colors-default-01/before/web/components/player-cards/PlayerCardShareStudio.test.tsx",
+    "tasks/artifacts/player-cards-2026-10-25/team-colors-default-01/before/web/components/player-cards/PlayerCardShareStudio.tsx",
+    "tasks/artifacts/player-cards-2026-10-25/team-colors-default-01/browser-check.mjs",
+    "tasks/artifacts/player-cards-2026-10-25/team-colors-default-01/browser-command.json",
+    "tasks/artifacts/player-cards-2026-10-25/team-colors-default-01/browser-results.json",
+    "tasks/artifacts/player-cards-2026-10-25/team-colors-default-01/browser.log",
+    "tasks/artifacts/player-cards-2026-10-25/team-colors-default-01/candidate-pins.json",
+    "tasks/artifacts/player-cards-2026-10-25/team-colors-default-01/default-manifest.json",
+    "tasks/artifacts/player-cards-2026-10-25/team-colors-default-01/handoff-preview.py",
+    "tasks/artifacts/player-cards-2026-10-25/team-colors-default-01/lint-command.json",
+    "tasks/artifacts/player-cards-2026-10-25/team-colors-default-01/lint.log",
+    "tasks/artifacts/player-cards-2026-10-25/team-colors-default-01/offline.setup.ts",
+    "tasks/artifacts/player-cards-2026-10-25/team-colors-default-01/preview-entry.tsx",
+    "tasks/artifacts/player-cards-2026-10-25/team-colors-default-01/render-command.json",
+    "tasks/artifacts/player-cards-2026-10-25/team-colors-default-01/render-preview.mjs",
+    "tasks/artifacts/player-cards-2026-10-25/team-colors-default-01/render.log",
+    "tasks/artifacts/player-cards-2026-10-25/team-colors-default-01/run-check.py",
+    "tasks/artifacts/player-cards-2026-10-25/team-colors-default-01/runtime.json",
+    "tasks/artifacts/player-cards-2026-10-25/team-colors-default-01/serve-preview.mjs",
+    "tasks/artifacts/player-cards-2026-10-25/team-colors-default-01/server.log",
+    "tasks/artifacts/player-cards-2026-10-25/team-colors-default-01/source-files/web/components/player-cards/PlayerCardShareStudio.test.tsx",
+    "tasks/artifacts/player-cards-2026-10-25/team-colors-default-01/source-files/web/components/player-cards/PlayerCardShareStudio.tsx",
+    "tasks/artifacts/player-cards-2026-10-25/team-colors-default-01/source.patch",
+    "tasks/artifacts/player-cards-2026-10-25/team-colors-default-01/tests-command.json",
+    "tasks/artifacts/player-cards-2026-10-25/team-colors-default-01/tests.log",
+    "tasks/artifacts/player-cards-2026-10-25/team-colors-default-01/tsconfig.json",
+    "tasks/artifacts/player-cards-2026-10-25/team-colors-default-01/types-command.json",
+    "tasks/artifacts/player-cards-2026-10-25/team-colors-default-01/types.log",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/CHANGED-FILES.json",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/DATA-FREEZE-CHECK.json",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/DELIVERY-HANDOFF.md",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/DELIVERY-LOCAL-READBACK.json",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/DELIVERY-LOCAL-SANDBOX-BLOCK.json",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/EVIDENCE.json",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/EVIDENCE.sha256",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/HANDOFF.md",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/LIBRARY-DELIVERY-RECEIPT.json",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/LIBRARY-UPLOAD-REQUEST.json",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/LIBRARY-UPLOAD-STDERR.log",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/LIBRARY-UPLOAD-STDOUT.log",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/NINE-REPORT-APPROVAL-SCOPE.json",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/OWNERSHIP.json",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/PLAN-OWNERSHIP.json",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/PLAN-READBACK.json",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/REFERENCE-RECEIPT.json",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/before/web/components/player-cards/HeroPlayerCard.tsx",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/before/web/components/player-cards/PlayerCardShareStudio.test.tsx",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/before/web/components/player-cards/PlayerCardShareStudio.tsx",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/before/web/lib/player-cards/portraitTreatment.test.ts",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/before/web/lib/player-cards/portraitTreatment.ts",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/before/web/lib/player-cards/shareExport.test.ts",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/before/web/lib/player-cards/shareExport.ts",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/browser-check.mjs",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/browser-command.json",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/browser-results.json",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/browser.log",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/candidate-pins.json",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/handoff-preview.py",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/initial-DATA-FREEZE-CHECK.json",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/initial-browser-command.json",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/initial-browser-results.json",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/initial-browser.log",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/initial-tests-command.json",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/initial-tests.log",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/lint-command.json",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/lint.log",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/local-assets.json",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/offline.setup.ts",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/pixelated-team-colors-manifest.json",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/posterized-team-colors-manifest.json",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/preview-entry.tsx",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/render-command.json",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/render-preview.mjs",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/render.log",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/run-check.py",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/runtime.json",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/serve-preview.mjs",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/server.log",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/source-files/web/components/player-cards/HeroPlayerCard.tsx",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/source-files/web/components/player-cards/PlayerCardShareStudio.test.tsx",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/source-files/web/components/player-cards/PlayerCardShareStudio.tsx",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/source-files/web/lib/player-cards/portraitTreatment.test.ts",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/source-files/web/lib/player-cards/portraitTreatment.ts",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/source-files/web/lib/player-cards/shareExport.test.ts",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/source-files/web/lib/player-cards/shareExport.ts",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/source-files/web/lib/player-cards/teamLogo.ts",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/source.patch",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/tasklist-before.md",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/tests-command.json",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/tests.log",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/tsconfig.json",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/types-command.json",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/types.log",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/verify-local-preview.py",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-02/CHANGED-FILES.json",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-02/EVIDENCE.json",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-02/EVIDENCE.sha256",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-02/HANDOFF.md",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-02/LIBRARY-APPROVAL-BLOCK.json",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-02/LIBRARY-REQUEST.json",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-02/OWNERSHIP.json",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-02/PRIOR-COMPARISON-READBACK.json",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-02/before/web/components/player-cards/HeroPlayerCard.tsx",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-02/before/web/lib/player-cards/shareExport.test.ts",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-02/browser-check.mjs",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-02/browser-command.json",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-02/browser-results.json",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-02/browser.log",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-02/candidate-pins.json",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-02/handoff-preview.py",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-02/lint-command.json",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-02/lint.log",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-02/local-assets.json",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-02/offline.setup.ts",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-02/pixelated-team-colors-manifest.json",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-02/posterized-team-colors-manifest.json",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-02/preview-entry.tsx",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-02/render-command.json",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-02/render-preview.mjs",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-02/render.log",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-02/run-check.py",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-02/runtime.json",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-02/save-library.py",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-02/serve-preview.mjs",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-02/server.log",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-02/source-files/web/components/player-cards/HeroPlayerCard.tsx",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-02/source-files/web/lib/player-cards/shareExport.test.ts",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-02/source.patch",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-02/tests-command.json",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-02/tests.log",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-02/verify-current-comparison.py",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-03/CHANGED-FILES.json",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-03/EVIDENCE.json",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-03/EVIDENCE.sha256",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-03/HANDOFF.md",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-03/LIBRARY-APPROVAL-20261026.json",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-03/LIBRARY-APPROVED-DELIVERY-HANDOFF.md",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-03/LIBRARY-APPROVED-DELIVERY-RECEIPT.json",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-03/LIBRARY-APPROVED-STDERR.log",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-03/LIBRARY-APPROVED-STDOUT.log",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-03/LIBRARY-UPLOAD-EXECUTION-INTENT.json",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-03/OWNERSHIP.json",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-03/POST-TUESDAY-COORDINATION.json",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-03/SERVED-PRIOR02-INSPECTION.json",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-03/SERVED-VERIFICATION.json",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-03/before/web/components/player-cards/HeroPlayerCard.tsx",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-03/before/web/components/player-cards/PlayerCardShareStudio.test.tsx",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-03/before/web/components/player-cards/PlayerCardShareStudio.tsx",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-03/before/web/lib/player-cards/portraitTreatment.test.ts",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-03/before/web/lib/player-cards/portraitTreatment.ts",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-03/before/web/lib/player-cards/shareExport.test.ts",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-03/before/web/lib/player-cards/shareExport.ts",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-03/browser-check.mjs",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-03/browser-command.json",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-03/browser-results.json",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-03/browser.log",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-03/candidate-pins.json",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-03/handoff-preview.py",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-03/initial-browser-command.json",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-03/initial-browser-results.json",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-03/initial-browser.log",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-03/initial-types-command.json",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-03/initial-types.log",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-03/inspect-served-current.mjs",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-03/lint-command.json",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-03/lint.log",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-03/local-assets.json",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-03/make-comparison.mjs",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-03/offline.setup.ts",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-03/original-team-colors-manifest.json",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-03/pixelated-team-colors-manifest.json",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-03/posterized-team-colors-manifest.json",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-03/preview-entry.tsx",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-03/render-command.json",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-03/render-preview.mjs",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-03/render.log",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-03/run-check.py",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-03/runtime.json",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-03/save-approved-library.py",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-03/serve-preview.mjs",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-03/server.log",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-03/source-files/web/components/player-cards/HeroPlayerCard.tsx",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-03/source-files/web/components/player-cards/PlayerCardShareStudio.test.tsx",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-03/source-files/web/components/player-cards/PlayerCardShareStudio.tsx",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-03/source-files/web/lib/player-cards/portraitTreatment.test.ts",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-03/source-files/web/lib/player-cards/portraitTreatment.ts",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-03/source-files/web/lib/player-cards/shareExport.test.ts",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-03/source-files/web/lib/player-cards/shareExport.ts",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-03/source.patch",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-03/tests-command.json",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-03/tests.log",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-03/tsconfig.json",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-03/types-command.json",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-03/types.log",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-03/verify-served.mjs",
+    "tasks/artifacts/player-cards-2026-10-26/date-finality-01/APPROVED-EXECUTION-RECEIPT.json",
+    "tasks/artifacts/player-cards-2026-10-26/date-finality-01/APPROVED-EXECUTION-STDERR.log",
+    "tasks/artifacts/player-cards-2026-10-26/date-finality-01/APPROVED-EXECUTION-STDOUT.log",
+    "tasks/artifacts/player-cards-2026-10-26/date-finality-01/APPROVED-REPORT-READ-20261026.json",
+    "tasks/artifacts/player-cards-2026-10-26/date-finality-01/CHANGED-FILES.json",
+    "tasks/artifacts/player-cards-2026-10-26/date-finality-01/EVIDENCE.json",
+    "tasks/artifacts/player-cards-2026-10-26/date-finality-01/HANDOFF.md",
+    "tasks/artifacts/player-cards-2026-10-26/date-finality-01/OWNERSHIP.json",
+    "tasks/artifacts/player-cards-2026-10-26/date-finality-01/PUBLIC-REPORT-BATCH-RECEIPT.json",
+    "tasks/artifacts/player-cards-2026-10-26/date-finality-01/PUBLIC-REPORTS-APPROVAL-BLOCK.json",
+    "tasks/artifacts/player-cards-2026-10-26/date-finality-01/before/web/lib/player-cards/aggregation.ts",
+    "tasks/artifacts/player-cards-2026-10-26/date-finality-01/before/web/lib/player-cards/domain.test.ts",
+    "tasks/artifacts/player-cards-2026-10-26/date-finality-01/before/web/lib/player-cards/evidenceBundle.test.ts",
+    "tasks/artifacts/player-cards-2026-10-26/date-finality-01/before/web/lib/player-cards/evidenceBundle.ts",
+    "tasks/artifacts/player-cards-2026-10-26/date-finality-01/before/web/lib/player-cards/evidenceLoader.test.ts",
+    "tasks/artifacts/player-cards-2026-10-26/date-finality-01/before/web/lib/player-cards/evidenceLoader.ts",
+    "tasks/artifacts/player-cards-2026-10-26/date-finality-01/before/web/lib/player-cards/nstCapture.test.ts",
+    "tasks/artifacts/player-cards-2026-10-26/date-finality-01/before/web/lib/player-cards/nstCapture.ts",
+    "tasks/artifacts/player-cards-2026-10-26/date-finality-01/before/web/lib/player-cards/windows.ts",
+    "tasks/artifacts/player-cards-2026-10-26/date-finality-01/capture-required-reports.mjs",
+    "tasks/artifacts/player-cards-2026-10-26/date-finality-01/lint-command.json",
+    "tasks/artifacts/player-cards-2026-10-26/date-finality-01/lint.log",
+    "tasks/artifacts/player-cards-2026-10-26/date-finality-01/run-approved-reports.py",
+    "tasks/artifacts/player-cards-2026-10-26/date-finality-01/source-files/web/lib/player-cards/aggregation.ts",
+    "tasks/artifacts/player-cards-2026-10-26/date-finality-01/source-files/web/lib/player-cards/domain.test.ts",
+    "tasks/artifacts/player-cards-2026-10-26/date-finality-01/source-files/web/lib/player-cards/evidenceBundle.test.ts",
+    "tasks/artifacts/player-cards-2026-10-26/date-finality-01/source-files/web/lib/player-cards/evidenceBundle.ts",
+    "tasks/artifacts/player-cards-2026-10-26/date-finality-01/source-files/web/lib/player-cards/evidenceLoader.test.ts",
+    "tasks/artifacts/player-cards-2026-10-26/date-finality-01/source-files/web/lib/player-cards/evidenceLoader.ts",
+    "tasks/artifacts/player-cards-2026-10-26/date-finality-01/source-files/web/lib/player-cards/nstCapture.test.ts",
+    "tasks/artifacts/player-cards-2026-10-26/date-finality-01/source-files/web/lib/player-cards/nstCapture.ts",
+    "tasks/artifacts/player-cards-2026-10-26/date-finality-01/source-files/web/lib/player-cards/windows.ts",
+    "tasks/artifacts/player-cards-2026-10-26/date-finality-01/source.patch",
+    "tasks/artifacts/player-cards-2026-10-26/date-finality-01/tests-command.json",
+    "tasks/artifacts/player-cards-2026-10-26/date-finality-01/tests.log",
+    "tasks/artifacts/player-cards-2026-10-26/date-finality-01/tsconfig.json",
+    "tasks/artifacts/player-cards-2026-10-26/date-finality-01/types-command.json",
+    "tasks/artifacts/player-cards-2026-10-26/date-finality-01/types.log",
+    "tasks/artifacts/player-cards-2026-10-26/history-qualification-01/EVIDENCE.json",
+    "tasks/artifacts/player-cards-2026-10-26/history-qualification-01/GAME-DATE-MAP.json",
+    "tasks/artifacts/player-cards-2026-10-26/history-qualification-01/HANDOFF.md",
+    "tasks/artifacts/player-cards-2026-10-26/history-qualification-01/HISTORY-RECONCILIATION.json",
+    "tasks/artifacts/player-cards-2026-10-26/history-qualification-01/LANDING-FACTS.json",
+    "tasks/artifacts/player-cards-2026-10-26/history-qualification-01/LANDING-RAW.json",
+    "tasks/artifacts/player-cards-2026-10-26/history-qualification-01/LANDING-RECEIPT.json",
+    "tasks/artifacts/player-cards-2026-10-26/history-qualification-01/METRIC-QUALIFICATION.json",
+    "tasks/artifacts/player-cards-2026-10-26/history-qualification-01/NEXT-CONTRACT-AND-READ.md",
+    "tasks/artifacts/player-cards-2026-10-26/history-qualification-01/PUBLIC-RESEARCH-LIMITATIONS.json",
+    "tasks/artifacts/player-cards-2026-10-26/history-qualification-01/REPORT-QUALIFICATION.json",
+    "tasks/artifacts/player-cards-2026-10-26/history-qualification-01/REPORT-RECEIPT.json",
+    "tasks/artifacts/player-cards-2026-10-26/history-qualification-01/REVIEWED-SOURCE-PINS.json",
+    "tasks/artifacts/player-cards-2026-10-26/history-qualification-01/SCHEDULE-RAW.json",
+    "tasks/artifacts/player-cards-2026-10-26/history-qualification-01/SCHEDULE-RECEIPT.json",
+    "tasks/artifacts/player-cards-2026-10-26/history-qualification-01/capture-finality-source.mjs",
+    "tasks/artifacts/player-cards-2026-10-26/history-qualification-01/capture-game-report.mjs",
+    "tasks/artifacts/player-cards-2026-10-26/history-qualification-01/capture-schedule.mjs",
+    "tasks/artifacts/player-cards-2026-10-26/history-qualification-01/landing-read.log",
+    "tasks/artifacts/player-cards-2026-10-26/history-qualification-01/qualify-report.mjs",
+    "tasks/artifacts/player-cards-2026-10-26/history-qualification-01/report-read.log",
+    "tasks/artifacts/player-cards-2026-10-26/history-qualification-01/schedule-read.log",
+    "tasks/artifacts/player-cards-2026-10-26/observed-pipeline-01/CHANGED-FILES.json",
+    "tasks/artifacts/player-cards-2026-10-26/observed-pipeline-01/EVIDENCE.json",
+    "tasks/artifacts/player-cards-2026-10-26/observed-pipeline-01/HANDOFF.md",
+    "tasks/artifacts/player-cards-2026-10-26/observed-pipeline-01/OWNERSHIP.json",
+    "tasks/artifacts/player-cards-2026-10-26/observed-pipeline-01/before/web/lib/player-cards/cardEvidenceVerdict.test.ts",
+    "tasks/artifacts/player-cards-2026-10-26/observed-pipeline-01/before/web/lib/player-cards/cardEvidenceVerdict.ts",
+    "tasks/artifacts/player-cards-2026-10-26/observed-pipeline-01/lint-command.json",
+    "tasks/artifacts/player-cards-2026-10-26/observed-pipeline-01/lint.log",
+    "tasks/artifacts/player-cards-2026-10-26/observed-pipeline-01/source-files/web/lib/player-cards/cardEvidenceVerdict.test.ts",
+    "tasks/artifacts/player-cards-2026-10-26/observed-pipeline-01/source-files/web/lib/player-cards/cardEvidenceVerdict.ts",
+    "tasks/artifacts/player-cards-2026-10-26/observed-pipeline-01/source.patch",
+    "tasks/artifacts/player-cards-2026-10-26/observed-pipeline-01/tests-command.json",
+    "tasks/artifacts/player-cards-2026-10-26/observed-pipeline-01/tests.log",
+    "tasks/artifacts/player-cards-2026-10-26/observed-pipeline-01/tsconfig.json",
+    "tasks/artifacts/player-cards-2026-10-26/observed-pipeline-01/types-command.json",
+    "tasks/artifacts/player-cards-2026-10-26/observed-pipeline-01/types.log",
+    "tasks/artifacts/player-cards-2026-10-26/observed-view-01/CHANGED-FILES.json",
+    "tasks/artifacts/player-cards-2026-10-26/observed-view-01/EVIDENCE.json",
+    "tasks/artifacts/player-cards-2026-10-26/observed-view-01/EXPORT-OWNERSHIP.json",
+    "tasks/artifacts/player-cards-2026-10-26/observed-view-01/HANDOFF.md",
+    "tasks/artifacts/player-cards-2026-10-26/observed-view-01/OBSERVED-INPUT.json",
+    "tasks/artifacts/player-cards-2026-10-26/observed-view-01/OBSERVED-VIEW.json",
+    "tasks/artifacts/player-cards-2026-10-26/observed-view-01/OWNERSHIP.json",
+    "tasks/artifacts/player-cards-2026-10-26/observed-view-01/before/web/lib/player-cards/cardEvidenceVerdict.ts",
+    "tasks/artifacts/player-cards-2026-10-26/observed-view-01/before/web/lib/player-cards/shareExport.ts",
+    "tasks/artifacts/player-cards-2026-10-26/observed-view-01/browser-check.mjs",
+    "tasks/artifacts/player-cards-2026-10-26/observed-view-01/browser-command.json",
+    "tasks/artifacts/player-cards-2026-10-26/observed-view-01/browser-results.json",
+    "tasks/artifacts/player-cards-2026-10-26/observed-view-01/browser.log",
+    "tasks/artifacts/player-cards-2026-10-26/observed-view-01/export-lint-command.json",
+    "tasks/artifacts/player-cards-2026-10-26/observed-view-01/export-lint.log",
+    "tasks/artifacts/player-cards-2026-10-26/observed-view-01/export-tests-command.json",
+    "tasks/artifacts/player-cards-2026-10-26/observed-view-01/export-tests.log",
+    "tasks/artifacts/player-cards-2026-10-26/observed-view-01/export-tsconfig.json",
+    "tasks/artifacts/player-cards-2026-10-26/observed-view-01/export-types-command.json",
+    "tasks/artifacts/player-cards-2026-10-26/observed-view-01/export-types.log",
+    "tasks/artifacts/player-cards-2026-10-26/observed-view-01/final-lint-command.json",
+    "tasks/artifacts/player-cards-2026-10-26/observed-view-01/final-lint.log",
+    "tasks/artifacts/player-cards-2026-10-26/observed-view-01/final-tests-command.json",
+    "tasks/artifacts/player-cards-2026-10-26/observed-view-01/final-tests.log",
+    "tasks/artifacts/player-cards-2026-10-26/observed-view-01/final-tsconfig.json",
+    "tasks/artifacts/player-cards-2026-10-26/observed-view-01/final-types-command.json",
+    "tasks/artifacts/player-cards-2026-10-26/observed-view-01/final-types.log",
+    "tasks/artifacts/player-cards-2026-10-26/observed-view-01/render-actual-inputs.mjs",
+    "tasks/artifacts/player-cards-2026-10-26/observed-view-01/render-command.json",
+    "tasks/artifacts/player-cards-2026-10-26/observed-view-01/render-initial-failure.log",
+    "tasks/artifacts/player-cards-2026-10-26/observed-view-01/render.log",
+    "tasks/artifacts/player-cards-2026-10-26/observed-view-01/source-files/web/components/player-cards/ObservedPlayerCard.test.tsx",
+    "tasks/artifacts/player-cards-2026-10-26/observed-view-01/source-files/web/components/player-cards/ObservedPlayerCard.tsx",
+    "tasks/artifacts/player-cards-2026-10-26/observed-view-01/source-files/web/lib/player-cards/cardEvidenceVerdict.ts",
+    "tasks/artifacts/player-cards-2026-10-26/observed-view-01/source-files/web/lib/player-cards/observedExport.test.ts",
+    "tasks/artifacts/player-cards-2026-10-26/observed-view-01/source-files/web/lib/player-cards/observedExport.ts",
+    "tasks/artifacts/player-cards-2026-10-26/observed-view-01/source-files/web/lib/player-cards/observedView.ts",
+    "tasks/artifacts/player-cards-2026-10-26/observed-view-01/source-files/web/lib/player-cards/shareExport.ts",
+    "tasks/artifacts/player-cards-2026-10-26/observed-view-01/source.patch",
+    "tasks/artifacts/player-cards-2026-10-26/observed-view-01/tests-command.json",
+    "tasks/artifacts/player-cards-2026-10-26/observed-view-01/tests.log",
+    "tasks/artifacts/player-cards-2026-10-26/observed-view-01/tsconfig.json",
+    "tasks/artifacts/player-cards-2026-10-26/report-qualification-01/EVIDENCE.json",
+    "tasks/artifacts/player-cards-2026-10-26/report-qualification-01/EVIDENCE.sha256",
+    "tasks/artifacts/player-cards-2026-10-26/report-qualification-01/HANDOFF.md",
+    "tasks/artifacts/player-cards-2026-10-26/report-qualification-01/REPORT-VALIDATION.json",
+    "tasks/artifacts/player-cards-2026-10-26/report-qualification-01/initial-REPORT-VALIDATION.json",
+    "tasks/artifacts/player-cards-2026-10-26/report-qualification-01/initial-tests-command.json",
+    "tasks/artifacts/player-cards-2026-10-26/report-qualification-01/initial-tests.log",
+    "tasks/artifacts/player-cards-2026-10-26/report-qualification-01/offline.setup.ts",
+    "tasks/artifacts/player-cards-2026-10-26/report-qualification-01/real-report-contract.test.ts",
+    "tasks/artifacts/player-cards-2026-10-26/report-qualification-01/run-check.py",
+    "tasks/artifacts/player-cards-2026-10-26/report-qualification-01/tests-command.json",
+    "tasks/artifacts/player-cards-2026-10-26/report-qualification-01/tests.log",
+    "tasks/artifacts/player-cards-2026-10-26/report-qualification-01/validate-reports.mjs",
+    "tasks/artifacts/player-cards-2026-10-26/report-qualification-01/validation.log",
+    "tasks/artifacts/player-cards-2026-10-26/resume-reconciliation-01/CHECKPOINT.md",
+    "tasks/artifacts/player-cards-2026-10-26/resume-reconciliation-01/CLAUDE-LEASES-OBSERVED.json",
+    "tasks/artifacts/player-cards-2026-10-26/resume-reconciliation-01/CURRENT-EVIDENCE-CHECK.json",
+    "tasks/artifacts/player-cards-2026-10-26/resume-reconciliation-01/HANDBACK-AND-READ-DETAILS.json",
+    "tasks/artifacts/player-cards-2026-10-26/resume-reconciliation-01/HANDBACK-AND-READ-DETAILS.md",
+    "tasks/artifacts/player-cards-2026-10-26/resume-reconciliation-01/HISTORY-FACTS.json",
+    "tasks/artifacts/player-cards-2026-10-26/resume-reconciliation-01/HISTORY-RAW.json",
+    "tasks/artifacts/player-cards-2026-10-26/resume-reconciliation-01/HISTORY-READ-RECEIPT.json",
+    "tasks/artifacts/player-cards-2026-10-26/resume-reconciliation-01/NEXT-READ-PROPOSAL.md",
+    "tasks/artifacts/player-cards-2026-10-26/resume-reconciliation-01/OWNERSHIP.json",
+    "tasks/artifacts/player-cards-2026-10-26/resume-reconciliation-01/RECEIPT-COMPARISON.json",
+    "tasks/artifacts/player-cards-2026-10-26/resume-reconciliation-01/SOURCE-PINS.json",
+    "tasks/artifacts/player-cards-2026-10-26/resume-reconciliation-01/capture-history.mjs",
+    "tasks/artifacts/player-cards-2026-10-26/resume-reconciliation-01/check-current-evidence.mjs",
+    "tasks/artifacts/player-cards-2026-10-26/resume-reconciliation-01/evidence-check.log",
+    "tasks/artifacts/player-cards-2026-10-26/resume-reconciliation-01/history-read.log"
+  ],
+  "conditionalArchiveGeneratedCandidates": [
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/initial-preview.html",
+      "bytes": 3421610,
+      "sha256": "0cdfc0b94cfbd3f79470bdee533ed362f4e9df233eac686d04f5d8ead8b69003"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/pixelated-team-colors-share.png",
+      "bytes": 574622,
+      "sha256": "a6f0d81a6b8900082be1162e461140adf62881845da1b22ca4f80b6c3f4b7efe"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/min-pixelated-card.png",
+      "bytes": 533873,
+      "sha256": "7b740beaa6b22013e65a096bf548289bae9005952b4239b7a93fa9bbdf4e6b41"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/posterized-team-colors-phone-card.png",
+      "bytes": 70346,
+      "sha256": "00e218eb3aa0aa4362827e18c32f4779a4b35067fc4cc08ebfe9be6b2e25840a"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/posterized-team-colors-card.png",
+      "bytes": 622257,
+      "sha256": "df50044a95d4d85eb4d4956bff76737b827720cfdc36e96de0193dca12861e60"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/social-square.png",
+      "bytes": 625711,
+      "sha256": "d64480b74cb667acb20930b7726bde9f525281a8662c00ce40bd9a09779523cd"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/comparison.png",
+      "bytes": 927427,
+      "sha256": "1a175d3b689b7459e90b6cd6926e92808ef8681c68e528c892d13e8eea1115cb"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/pixelated-team-colors-phone-card.png",
+      "bytes": 66858,
+      "sha256": "c0ac47b07d90211aa94766e72dcee3bc6a0ada2c350a732c34bb7a43ad485912"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/initial-posterized-team-colors-phone-page.png",
+      "bytes": 239375,
+      "sha256": "2d66b73d4a49cc7cff5c064a16aadac40c999f4db670b68d369fbbc0dfb0c917"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/posterized-team-colors-desktop.png",
+      "bytes": 403481,
+      "sha256": "70904bdb76021c0496ca642e675da9ca941827d36e75d3c3a3ba6b98fc95cb34"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/posterized-team-colors-phone-page.png",
+      "bytes": 214765,
+      "sha256": "2f67f2dc07c165d0c1a6a33f0f7e3a99eba75475d4e174fe612a13fff50da3f3"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/pixelated-team-colors-phone-page.png",
+      "bytes": 210936,
+      "sha256": "d8f80e94163cdd92181d8a9b225bcac1f04459df6f550967a8b39474789b9905"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/initial-pixelated-team-colors-phone-page.png",
+      "bytes": 234852,
+      "sha256": "24f75b2f965c15b674ecead818e6ee091ee6bfa67173116dbf5d7417195ff2ea"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/partial-card.png",
+      "bytes": 622512,
+      "sha256": "73b0030a8226660d2e9a8de63688489ea71de684ace8791b614d95da9fb4d0b9"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/min-posterized-card.png",
+      "bytes": 588980,
+      "sha256": "3e774a192e71de571f1b8099e91cfd9e4005a267df6cece7d69d3a88d62c41b5"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/posterized-team-colors-share.png",
+      "bytes": 622257,
+      "sha256": "df50044a95d4d85eb4d4956bff76737b827720cfdc36e96de0193dca12861e60"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/pixelated-team-colors-card.png",
+      "bytes": 574622,
+      "sha256": "a6f0d81a6b8900082be1162e461140adf62881845da1b22ca4f80b6c3f4b7efe"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/posterized-team-colors-portrait.png",
+      "bytes": 148289,
+      "sha256": "5fb49df44fabcf1c4026fde1f2d18268a6fcaadab75ae93d124940f42d4d8c52"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/pixelated-team-colors-portrait.png",
+      "bytes": 108666,
+      "sha256": "e7a98b553e33e29667da08460f2040f1099ed88dcf71d1b80aae9da4b4745b89"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/initial-comparison.png",
+      "bytes": 927427,
+      "sha256": "1a175d3b689b7459e90b6cd6926e92808ef8681c68e528c892d13e8eea1115cb"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/pixelated-team-colors-desktop.png",
+      "bytes": 362562,
+      "sha256": "a8ef60fdb70a4b660d66581ec50359bca163b69a0696d27ea662a47f1569fbd2"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/composition-variants-02/pixelated-team-colors-share.png",
+      "bytes": 574440,
+      "sha256": "355b050e74fafd946333bd37eb7e1fe8faff5e999dafe0a997149cc2d32fe939"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/composition-variants-02/min-pixelated-card.png",
+      "bytes": 533858,
+      "sha256": "86086e988eac7ff96a879ab2e8ab2773def9532d167f68b6bc9c6c4a08621771"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/composition-variants-02/posterized-team-colors-phone-card.png",
+      "bytes": 70364,
+      "sha256": "f268c488a53fbcba2e2facf5925b9f823545971630e2873c7acd5a7fb1ee992e"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/composition-variants-02/posterized-team-colors-card.png",
+      "bytes": 622305,
+      "sha256": "01b4a965cda4cf61c80f94eed0348b12a5888e8a4944d1dca4d021ff7426caff"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/composition-variants-02/social-square.png",
+      "bytes": 625478,
+      "sha256": "aa85eca2b163907c11108716e45efab479b6ba40a4f17e66b6800d9eb3148a80"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/composition-variants-02/comparison.png",
+      "bytes": 926715,
+      "sha256": "62cb92bc5c371909073110e89038b4f63f3776797ecef1f589554360b8483d87"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/composition-variants-02/pixelated-team-colors-phone-card.png",
+      "bytes": 66938,
+      "sha256": "d143d65ba96e248ca801f1ff09308f75b6c31fdc49c4dfd3c8253c329eb3c691"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/composition-variants-02/posterized-team-colors-desktop.png",
+      "bytes": 403187,
+      "sha256": "1abba68a7bfdd3e78ccd5eecdc6a7b83d688b4e9a160eaa6c1a2e254e3684b72"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/composition-variants-02/posterized-team-colors-phone-page.png",
+      "bytes": 214603,
+      "sha256": "dcdc36c44719a5b23b1382e51899af7fe776eca40deadd75f24466e83e4955f8"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/composition-variants-02/pixelated-team-colors-phone-page.png",
+      "bytes": 210951,
+      "sha256": "c68f502777ab29751046e55d5402f294408e134b0cbddbfc84897c3c35c581cc"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/composition-variants-02/partial-card.png",
+      "bytes": 622295,
+      "sha256": "abf21817126b0a3c9a78ba7ce3629e2f80260ab2886047056eb98d782c18bade"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/composition-variants-02/min-posterized-card.png",
+      "bytes": 588838,
+      "sha256": "7f16d5aaa506031f00fd9b4cf8a2b23e2ef020edff6aa588844ade9c52e72951"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/composition-variants-02/posterized-team-colors-share.png",
+      "bytes": 622305,
+      "sha256": "01b4a965cda4cf61c80f94eed0348b12a5888e8a4944d1dca4d021ff7426caff"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/composition-variants-02/pixelated-team-colors-card.png",
+      "bytes": 574440,
+      "sha256": "355b050e74fafd946333bd37eb7e1fe8faff5e999dafe0a997149cc2d32fe939"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/composition-variants-02/posterized-team-colors-portrait.png",
+      "bytes": 148289,
+      "sha256": "5fb49df44fabcf1c4026fde1f2d18268a6fcaadab75ae93d124940f42d4d8c52"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/composition-variants-02/pixelated-team-colors-portrait.png",
+      "bytes": 108666,
+      "sha256": "e7a98b553e33e29667da08460f2040f1099ed88dcf71d1b80aae9da4b4745b89"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-26/composition-variants-02/pixelated-team-colors-desktop.png",
+      "bytes": 362607,
+      "sha256": "5a32f41f59ca05212454044689fd3d33b356ea85f3057110653bfdb234df5941"
+    }
+  ],
+  "conditionalArchiveGeneratedBytes": 19377707,
+  "privateGeneratedCacheArchiveCandidates": [
+    "tasks/artifacts/player-cards-2026-10-24/slice-01-review/.npm-cache",
+    "tasks/artifacts/player-cards-2026-10-24/slice-01-review/.npm-logs",
+    "tasks/artifacts/player-cards-2026-10-24/slice-03-r1-review/.npm-cache",
+    "tasks/artifacts/player-cards-2026-10-24/slice-03-r1-review/.npm-logs",
+    "tasks/artifacts/player-cards-2026-10-24/slice-03-r1/.npm-cache",
+    "tasks/artifacts/player-cards-2026-10-24/slice-03-r1/.npm-logs",
+    "tasks/artifacts/player-cards-2026-10-24/slice-03-review/.npm-cache",
+    "tasks/artifacts/player-cards-2026-10-24/slice-03-review/.npm-logs",
+    "tasks/artifacts/player-cards-2026-10-24/visual-checkpoint-01/.npm-cache",
+    "tasks/artifacts/player-cards-2026-10-24/visual-checkpoint-01/.npm-logs",
+    "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/.npm-cache",
+    "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/.npm-logs",
+    "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/.npm-cache",
+    "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/.npm-logs",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-technical-review-01/.npm-cache",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-technical-review-01/.npm-logs",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/.npm-cache",
+    "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/.npm-logs",
+    "tasks/artifacts/player-cards-2026-10-25/team-colors-default-01/.npm-cache",
+    "tasks/artifacts/player-cards-2026-10-25/team-colors-default-01/.npm-logs",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/.npm-cache",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-01/.npm-logs",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-02/.npm-cache",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-02/.npm-logs",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-03/.npm-cache",
+    "tasks/artifacts/player-cards-2026-10-26/composition-variants-03/.npm-logs",
+    "tasks/artifacts/player-cards-2026-10-26/date-finality-01/.npm-cache",
+    "tasks/artifacts/player-cards-2026-10-26/observed-pipeline-01/.npm-cache",
+    "tasks/artifacts/player-cards-2026-10-26/observed-view-01/.npm-cache",
+    "tasks/artifacts/player-cards-2026-10-26/report-qualification-01/.npm-cache",
+    "tasks/artifacts/player-cards-2026-10-26/report-qualification-01/.npm-logs"
+  ],
+  "conditions": [
+    "Claude owns cleanup and Git; this is a retention handoff, not a move/delete action",
+    "Keep runtime lookup paths and pending-upload regular files in place",
+    "Preserve receipts/hashes/patches and before/source snapshots; older generated payloads only move with exactSHAverified readable archive and old-to-new pathmanifest",
+    "Verify no current source/test/render/bootstrap/upload reference before moving a listed candidate; restore stable paths or update coordinated consumers if necessary",
+    "Do not rerun approvedpublic/private reads or recreate imagebatches to recover missing evidence",
+    "Do not archive other owners assets without their explicit handoff"
+  ],
+  "outsideRepoAssetRootsToPreserve": [
+    "/Users/tim/Documents/FHFH-local-image-tests/2026-10-24-birefnet-validation/",
+    "/Users/tim/Documents/FHFH-local-image-tests/2026-10-25-birefnet-roster805/"
+  ],
+  "foreignOwnerEvidenceHold": [
+    "tasks/artifacts/wigo-player-card-investigation-2026-10-24/**; source provenance dependency\u2014coordinate with WiGO owner; no blanket card archive release"
+  ]
+}

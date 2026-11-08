@@ -1,0 +1,300 @@
+{
+  "version": "luna-v4-e02-e16-continuation-v1",
+  "preparedAt": "2026-10-31T21:08:14.309133+00:00",
+  "authority": "preparation_only_no_paid_dispatch",
+  "independentReview": "pending",
+  "selectedCaseIds": [
+    "E02",
+    "E03",
+    "E04",
+    "E05",
+    "E06",
+    "E07",
+    "E08",
+    "E09",
+    "E10",
+    "E11",
+    "E12",
+    "E13",
+    "E14",
+    "E15",
+    "E16"
+  ],
+  "excludedCaseIds": [
+    "E01"
+  ],
+  "provenance": {
+    "split": "exposed_synthetic_development",
+    "independentHoldout": false,
+    "humanGroundTruth": false,
+    "rightsBasis": "Fictional assistant-authored local synthetic reports/candidates; no fetched S01–S10 source material.",
+    "uncalledDoesNotMeanHoldout": true,
+    "selectedReportsPreviouslyPaid": false,
+    "excludedE01": "Already attempted, failed goalie label, used for v4 tuning. No changed-prompt rerun or receipt replay in this continuation."
+  },
+  "referencePackage": {
+    "version": "luna-hockey-reference-v4",
+    "mode": "rules-and-synthetic-only",
+    "hash": "9b8a10fd458596b75ba2c0900dea1b72b9ec446d5e0e660ca5c18341920abdb3",
+    "rulesVersion": "luna-hockey-rules-v4",
+    "libraryVersion": null
+  },
+  "basePins": {
+    "candidateManifestPath": "tasks/artifacts/luna-reference-package-2026-10-31/omission-diagnosis/FILE-PINS.json",
+    "candidateManifestSha256": "1eb99a61790d88b5b44c79da220a2d914e3dbb67f07f22975c285595859415e3",
+    "v4FullOfflineBatchSha256": "2d7ed6d130fbd4fb3debfe3cc01328e8ef004667597547079974fd908504fa10",
+    "paidEvidenceManifestSha256": "824bf5722469f6e459896361384b62c8671d895505a57c9f34f5b7e313153828",
+    "realLedgerPath": "tasks/artifacts/luna-reference-package-2026-10-31/paid-evaluation/ledger.json",
+    "realLedgerSha256": "e992f8e85a70e3c4c46630904ff6b278cbbd67f96c4886d357e453f0bf268c7e",
+    "historicalLedgerSha256": "e8418735afaeff893177e550df6774600c6c6fec4f49c2b01c183712cdc064f2",
+    "packetsSha256": "4bdd7328c3fd201a4c6c6db4ac394161c552ad725221c0982f1ddf9cae1765a6",
+    "requestsSha256": "0380caaf035b971c4db22e408e5a0f9efc5e6a8d7092f687bf041f05ee70a62f"
+  },
+  "applicationPins": {
+    "web/lib/sources/tweetLunaReference.ts": "9070da4a660da3240ffca1cbe55d0b8e4d411b895ba679d6c24d49695afb4927",
+    "web/lib/sources/tweetLunaReference.md": "0421aeeefa558e38895c4da5d8fe7879972b4328b6f72e1d943b32ce768b1110",
+    "web/lib/sources/tweetLunaReview.test.ts": "400d62a094787c1324fd48e65fd7bfaa639d3e03bf2d994a2aa6a76e76c5d75a",
+    "web/lib/sources/tweetLunaReview.ts": "0aca5d80fd409eb8b1840df65dff37aa5f659dcab664c22b8e14fcc77358b2ce",
+    "web/lib/sources/fixtures/tweetLunaSyntheticCases.ts": "9bc96553a92bdfcfd63ba1ab2235025026e8d88726846183da88d6a31ff52013",
+    "web/lib/sources/tweetLunaGoalieWording.ts": "eb2ceadb1db0d5d16fcab03f2c835ac2d9dce44e4e97853d9fd3159c610b949a",
+    "web/lib/sources/fixtures/tweetLunaEvaluation.ts": "6f441f341627a8296ad0bf7810ee9c72e076bc16b2e9a67ac7afcd92c4dfac09",
+    "web/scripts/rehearse-luna-evaluation.ts": "f510038e837a24ce88df5fe6a9aa00e2e17ed873d871ddcaa3f03456904d6e66",
+    "web/lib/sources/tweetLunaEvaluationScoring.ts": "22797d003c321c3e52ef31945bbc5a4dfb7365ff4dfcfc93454c5bf041f6363d",
+    "web/lib/sources/tweetLunaTransport.ts": "6f67f0e819766eb8b7e712114f063681833ea87266b08443701231461e4d12d1",
+    "web/lib/sources/tweetLunaLocalStore.ts": "52977c7949d2f60ee4274da0c7d1e0583bc8c5c1324bb6ffb187a32037a2d543",
+    "web/scripts/review-ifttt-luna.ts": "b3407da148f11fe4dd3185e8521f3c1c9b4688232acbff675c9d104902cec8e8",
+    "web/lib/sources/fixtures/tweetLunaAdjudicatedLibrary.json": "e787036b54c89f8fa06e4b28032c8895fbbed81feef1fa04e357435f3229726a",
+    "web/lib/sources/decisionsReference/adapter.mjs": "055bc80ccf9874de8a976da6106bc34af15e424d6b905d39fccf57ecfd2b92a1",
+    "web/lib/sources/tweetIdentityProposal.ts": "a73df0483313bc75e94b36bc3fcf9087e1adb7d96afd0895db7a9c8bad7c9a27",
+    "web/lib/sources/tweetPlayerEvents.ts": "14c421d37506f33df08cac5914e30c38a578b2588ae46f3c6e461b70efadc88c"
+  },
+  "carryForward": {
+    "ledgerEnabled": false,
+    "blockedReason": "bounded_evaluation_stopped",
+    "approvedPolicyId": "owner-authorized-r2-467ae6dc553c05744ff5ff7e434a25f849d41497b746b82cef9d1dee806be3f9",
+    "priorExposureNanoUsd": 262519843,
+    "historicalUncertainReservationNanoUsd": 254394800,
+    "existingAttempts": [
+      {
+        "hash": "e462a1fdead8678a2fc4cf1991b0515f0b7b19d87954c8597ae427e163310423",
+        "endpoint": "responses",
+        "state": "settled",
+        "requestId": "req_4fcb802531754e388253b4e7d481c96a",
+        "chargeNanoUsd": 417341
+      },
+      {
+        "hash": "fd281e98c460607c2e7b3c740c75a417ac86703eceaf8dfe45bc47f128143a38",
+        "endpoint": "decisions",
+        "state": "settled",
+        "requestId": "req_c4eda22b6eed4875899808677e96db42",
+        "chargeNanoUsd": 98011
+      }
+    ]
+  },
+  "budget": {
+    "cumulativeMaxCalls": 20,
+    "previouslyUsedCalls": 2,
+    "maximumNewCalls": 18,
+    "responsesMaximum": 15,
+    "decisionsMaximum": 3,
+    "maxRetries": 0,
+    "concurrency": 1,
+    "aggregateCapNanoUsd": 1000000000,
+    "startingAggregateExposureNanoUsd": 263035195,
+    "maximumAdditionalExposureNanoUsd": 736964805,
+    "reservationNanoUsd": 233000000,
+    "promotionalSafetyReserveNanoUsd": 5000000000,
+    "expiresAt": "2026-11-01T23:59:59Z",
+    "diagnosticNewCostEstimateNanoUsd": 44959871,
+    "estimateIsNotInvoiceOrTokenCeiling": true
+  },
+  "sequence": [
+    {
+      "sequence": 1,
+      "cumulativeCallNumber": 3,
+      "caseId": "E02",
+      "endpoint": "responses",
+      "hash": "a008002a2f52e504b17262b7907edc00494d834e58c9420c7a3450406dfd3ed2",
+      "bytes": 14844
+    },
+    {
+      "sequence": 2,
+      "cumulativeCallNumber": 4,
+      "caseId": "E03",
+      "endpoint": "responses",
+      "hash": "cb4ebd599a52911bd995fd7089baf7062544dabdf3efd093e05d7782cf540084",
+      "bytes": 15142
+    },
+    {
+      "sequence": 3,
+      "cumulativeCallNumber": 5,
+      "caseId": "E04",
+      "endpoint": "responses",
+      "hash": "ea9e7d92269db5fb02f815d908e235536892cb75b5923bb6e8b69f2200ab5ab8",
+      "bytes": 14839
+    },
+    {
+      "sequence": 4,
+      "cumulativeCallNumber": 6,
+      "caseId": "E05",
+      "endpoint": "responses",
+      "hash": "afff9e4835346591f2e624c4473ac0542db178a459557b6a0dd7d2e397ba88af",
+      "bytes": 14847
+    },
+    {
+      "sequence": 5,
+      "cumulativeCallNumber": 7,
+      "caseId": "E06",
+      "endpoint": "responses",
+      "hash": "a3f5c84126412a9d3e070017013f03152caeeb776aa488be61c0a4a64d82ab7e",
+      "bytes": 15109
+    },
+    {
+      "sequence": 6,
+      "cumulativeCallNumber": 8,
+      "caseId": "E06",
+      "endpoint": "decisions",
+      "hash": "c670c21fbde1ddba42ebd5165cee7793fa4924d6839df431ec3e00c6d03a45f5",
+      "bytes": 3223
+    },
+    {
+      "sequence": 7,
+      "cumulativeCallNumber": 9,
+      "caseId": "E07",
+      "endpoint": "responses",
+      "hash": "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6",
+      "bytes": 14843
+    },
+    {
+      "sequence": 8,
+      "cumulativeCallNumber": 10,
+      "caseId": "E08",
+      "endpoint": "responses",
+      "hash": "9d1a891a46a38128e08f272045e5ec9d95a656d413ac5fbb1574e01230c9dec9",
+      "bytes": 15113
+    },
+    {
+      "sequence": 9,
+      "cumulativeCallNumber": 11,
+      "caseId": "E09",
+      "endpoint": "responses",
+      "hash": "fbe771b131918b3cf739b357ce324baaf38dac818b98fc3100b33b6498c7846c",
+      "bytes": 15548
+    },
+    {
+      "sequence": 10,
+      "cumulativeCallNumber": 12,
+      "caseId": "E10",
+      "endpoint": "responses",
+      "hash": "af1ac22d172d4127a04c08b0b7f2227e59be75059043ee7052802d531b62893d",
+      "bytes": 15147
+    },
+    {
+      "sequence": 11,
+      "cumulativeCallNumber": 13,
+      "caseId": "E10",
+      "endpoint": "decisions",
+      "hash": "6d44c708b3e1173a25d906f2348bd28ac47f20ec262ece430ffda3430754183e",
+      "bytes": 3203
+    },
+    {
+      "sequence": 12,
+      "cumulativeCallNumber": 14,
+      "caseId": "E11",
+      "endpoint": "responses",
+      "hash": "9841ce0f388de9ca206cf22abe7dbd82afb5a3f9500fe6f7a1215e72ad758cba",
+      "bytes": 16047
+    },
+    {
+      "sequence": 13,
+      "cumulativeCallNumber": 15,
+      "caseId": "E11",
+      "endpoint": "decisions",
+      "hash": "5781feae2b9115b7068461d20b8cb0fcb34746baa4cbd2df0b1790702c951740",
+      "bytes": 3162
+    },
+    {
+      "sequence": 14,
+      "cumulativeCallNumber": 16,
+      "caseId": "E12",
+      "endpoint": "responses",
+      "hash": "e344741ac77450ec7be9655f6ea7ca57933d26d6b185450ee9df473776a77b2f",
+      "bytes": 16057
+    },
+    {
+      "sequence": 15,
+      "cumulativeCallNumber": 17,
+      "caseId": "E13",
+      "endpoint": "responses",
+      "hash": "7270c5fa8947367d749d52bb2b0917adc03760b9785b59b7fdbb3e9d5955576d",
+      "bytes": 14839
+    },
+    {
+      "sequence": 16,
+      "cumulativeCallNumber": 18,
+      "caseId": "E14",
+      "endpoint": "responses",
+      "hash": "102d9692c07022f282ba3c3c29aed0636aced6adce77164ddb5545a851bccafa",
+      "bytes": 15137
+    },
+    {
+      "sequence": 17,
+      "cumulativeCallNumber": 19,
+      "caseId": "E15",
+      "endpoint": "responses",
+      "hash": "06fe01bba0cb4d29d1967fc072951c2ce42cf76dc9059c825b04ea0f728233f2",
+      "bytes": 14853
+    },
+    {
+      "sequence": 18,
+      "cumulativeCallNumber": 20,
+      "caseId": "E16",
+      "endpoint": "responses",
+      "hash": "7308c16d8d1b5c68a6db90c1d4be843203390ba20c5a47c62eb15cecc14cf3b7",
+      "bytes": 14741
+    }
+  ],
+  "execution": {
+    "implementation": "Existing pinned web/scripts/review-ifttt-luna.ts, one saved packet at a time; no new HTTP runner.",
+    "inputDirectory": "tasks/artifacts/luna-reference-package-2026-10-31/continuation-v4/inputs",
+    "outputDirectoryProposed": "tasks/artifacts/luna-reference-package-2026-10-31/continuation-v4/future-paid-reviews",
+    "ledger": "Reuse the same real ledger only after separately reviewed activation; preserve both existing attempts verbatim.",
+    "perReportOrder": "Responses first; Decisions only for E06/E10/E11 if Responses validates. Grade full report before next.",
+    "noE01": true,
+    "noAutomaticResume": true,
+    "stopOn": [
+      "provider or CLI error",
+      "uncertain or unsettled outcome",
+      "schema/validator failure",
+      "frozen label mismatch",
+      "unresolved Decisions",
+      "request hash/sequence/source pin mismatch",
+      "budget/expiry/funding failure"
+    ],
+    "completedLedgerState": "disabled; retain all actual receipts and reservations"
+  },
+  "activationProposalOnly": {
+    "requires": "Independent continuation review plus explicit execution authorization and fresh funding/scope checks. Do not activate in this preparation turn.",
+    "setOnlyAfterReview": {
+      "approvedPolicyId": "owner-reviewed-v4-e02-e16-continuation-v1",
+      "enabled": true,
+      "blockedReason": null
+    },
+    "preserveUnchanged": [
+      "version",
+      "attempts",
+      "priorExposureNanoUsd",
+      "capNanoUsd",
+      "maxCalls",
+      "expiresAt"
+    ],
+    "onPreflightFailure": "Do not activate; no request.",
+    "notAReset": true
+  },
+  "production": {
+    "hostedDispatchAuthorized": false,
+    "databaseMutationAuthorized": false,
+    "deploymentAuthorized": false,
+    "verifiedRevocationRotationBeforeProduction": "pending; separate production gate"
+  }
+}

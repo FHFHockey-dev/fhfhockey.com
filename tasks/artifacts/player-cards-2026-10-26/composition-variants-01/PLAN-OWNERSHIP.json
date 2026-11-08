@@ -1,0 +1,11 @@
+{
+  "id": "CODEX-PLAYER-CARDS-STAT-SUITE-PLAN-20261026",
+  "at": "2026-10-26T16:32:04.369263+00:00",
+  "owner_thread": "01a16ec2-f81c-717b-8961-8c3832fdc00f",
+  "source": "TJ16:29:56UTC explicit append-to-plan approval",
+  "source_paths": [
+    "tasks/tasks-prd-shareable-player-cards.md"
+  ],
+  "baseline_sha256": "ad0b5aba690dfb7b1735beed308e924be5232bf542f068727adb66eff1db817b",
+  "status": "Append-only proposed stat-suite backlog; no format implementation"
+}

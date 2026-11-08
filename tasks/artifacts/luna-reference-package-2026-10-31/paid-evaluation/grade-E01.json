@@ -1,0 +1,68 @@
+{
+  "caseId": "E01",
+  "scoredAt": "2026-10-31T20:53:35.066Z",
+  "status": "review_only",
+  "score": {
+    "identity": true,
+    "goalie": false,
+    "decisions": true,
+    "labelMatch": false
+  },
+  "holds": [
+    "human_review_required",
+    "no_publication_authority"
+  ],
+  "proceed": false,
+  "admittedRequests": 2,
+  "requestIds": [
+    "req_4fcb802531754e388253b4e7d481c96a",
+    "req_c4eda22b6eed4875899808677e96db42"
+  ],
+  "usagePricedCeilingNanoUsd": 515352,
+  "aggregateExposureNanoUsd": 263035195,
+  "reportProcessDurationMs": 3856,
+  "providerUsage": [
+    {
+      "hash": "e462a1fdead8678a2fc4cf1991b0515f0b7b19d87954c8597ae427e163310423",
+      "state": "settled",
+      "endpoint": "responses",
+      "model": "gpt-6-luna",
+      "usage": {
+        "input_tokens": 2954,
+        "input_tokens_details": {
+          "cache_write_tokens": 0,
+          "cache_write_tokens_details": {
+            "ttl_12h_tokens": 0,
+            "ttl_30m_tokens": 0
+          },
+          "cached_tokens": 0
+        },
+        "output_tokens": 168,
+        "output_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "total_tokens": 3122
+      },
+      "requestId": "req_4fcb802531754e388253b4e7d481c96a"
+    },
+    {
+      "hash": "fd281e98c460607c2e7b3c740c75a417ac86703eceaf8dfe45bc47f128143a38",
+      "state": "settled",
+      "endpoint": "decisions",
+      "model": "gpt-6-luna",
+      "usage": {
+        "input_tokens": 891,
+        "input_tokens_details": {
+          "cached_tokens": 0,
+          "cache_write_tokens": 0
+        },
+        "output_tokens": 0,
+        "output_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "total_tokens": 891
+      },
+      "requestId": "req_c4eda22b6eed4875899808677e96db42"
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "id": "CODEX-PLAYER-CARDS-OBSERVED-VIEW-20261026",
+  "at": "2026-10-26T16:05:00.775063+00:00",
+  "owner_thread": "01a16ec2-f81c-717b-8961-8c3832fdc00f",
+  "status": "Active bounded observed presentation with unknowns; existing synthetic page/export unchanged",
+  "source_paths": [
+    "web/lib/player-cards/observedView.ts",
+    "web/components/player-cards/ObservedPlayerCard.tsx",
+    "web/components/player-cards/ObservedPlayerCard.test.tsx",
+    "web/lib/player-cards/cardEvidenceVerdict.ts"
+  ],
+  "baseline_sha256": {
+    "web/lib/player-cards/observedView.ts": null,
+    "web/components/player-cards/ObservedPlayerCard.tsx": null,
+    "web/components/player-cards/ObservedPlayerCard.test.tsx": null,
+    "web/lib/player-cards/cardEvidenceVerdict.ts": "c181fe190e6831b4804f8ae4233eeeaab16aca0c4f7a7cd3465d61b0e51ecbec"
+  },
+  "artifact_root": "tasks/artifacts/player-cards-2026-10-26/observed-view-01/",
+  "scope": "Sanitized observed snapshot from existing admitted pipeline, original editorial-style observed SVG, tests and offline actual-input preview; no new runtime page, auth, sharedsocial, realadmission, artwork or liveactivation"
+}

@@ -1,0 +1,558 @@
+diff --git a/web/__tests__/pages/api/v1/db/cron-auth-boundaries.test.ts b/web/__tests__/pages/api/v1/db/cron-auth-boundaries.test.ts
+index f625a225a..e86629e95 100644
+--- a/web/__tests__/pages/api/v1/db/cron-auth-boundaries.test.ts
++++ b/web/__tests__/pages/api/v1/db/cron-auth-boundaries.test.ts
+@@ -6,7 +6,7 @@ const {
+   authMaybeSingleMock,
+   createClientMock,
+   serviceFromMock,
+-  yahooGamesUserMock,
++  yahooRefreshMock,
+   replayCoverageMock,
+ } = vi.hoisted(() => ({
+   auditInsertMock: vi.fn(),
+@@ -14,7 +14,7 @@ const {
+   authMaybeSingleMock: vi.fn(),
+   createClientMock: vi.fn(),
+   serviceFromMock: vi.fn(),
+-  yahooGamesUserMock: vi.fn(),
++  yahooRefreshMock: vi.fn(),
+   replayCoverageMock: vi.fn(),
+ }));
+ 
+@@ -22,12 +22,9 @@ vi.mock("@supabase/supabase-js", () => ({
+   createClient: createClientMock,
+ }));
+ 
+-vi.mock("yahoo-fantasy", () => ({
+-  default: class YahooFantasyMock {
+-    games = { user: yahooGamesUserMock };
+-    setUserToken = vi.fn();
+-    setRefreshToken = vi.fn();
+-  },
++vi.mock("lib/integrations/yahoo/refreshGlobalCredentials", async (importOriginal) => ({
++  ...await importOriginal<typeof import("lib/integrations/yahoo/refreshGlobalCredentials")>(),
++  refreshYahooGlobalCredentials: yahooRefreshMock,
+ }));
+ 
+ vi.mock("lib/supabase/server", () => ({
+@@ -74,6 +71,7 @@ import wgoHandler from "../../../../../pages/api/v1/db/update-wgo-goalies";
+ import refreshYahooHandler from "../../../../../pages/api/v1/db/manual-refresh-yahoo-token";
+ import updateYahooPlayersHandler from "../../../../../pages/api/v1/db/update-yahoo-players";
+ import updateYahooWeeksHandler from "../../../../../pages/api/v1/db/update-yahoo-weeks";
++import { YahooGlobalRefreshError } from "lib/integrations/yahoo/refreshGlobalCredentials";
+ 
+ const originalCronSecret = process.env.CRON_SECRET;
+ const originalServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+@@ -234,9 +232,75 @@ describe("season and WGO cron authorization boundaries", () => {
+     }
+ 
+     expect(createClientMock).not.toHaveBeenCalled();
++    expect(yahooRefreshMock).not.toHaveBeenCalled();
+     expect(auditInsertMock).toHaveBeenCalledTimes(3);
+   });
+ 
++  it.each([
++    new YahooGlobalRefreshError("yahoo_reauth_required", 409, "not_refreshed"),
++    new YahooGlobalRefreshError("yahoo_refresh_rate_limited", 429, "not_refreshed"),
++    new YahooGlobalRefreshError("yahoo_refresh_invalid_response", 502, "unknown"),
++    new YahooGlobalRefreshError("yahoo_refresh_store_failed", 503, "unknown"),
++    new YahooGlobalRefreshError("yahoo_refresh_timeout", 504, "unknown"),
++  ])("returns a completed, redacted response and audit for $code", async (failure) => {
++    const credentials = {
++      id: 1, consumer_key: "synthetic-consumer", consumer_secret: "synthetic-secret",
++      access_token: "synthetic-access", refresh_token: "synthetic-refresh",
++    };
++    createClientMock.mockReturnValue({
++      from: vi.fn(() => ({
++        select: vi.fn(() => ({
++          single: vi.fn().mockResolvedValue({ data: credentials, error: null }),
++        })),
++      })),
++    });
++    yahooRefreshMock.mockRejectedValue(failure);
++    const res = createMockRes();
++    await refreshYahooHandler(
++      createReq(yahooProtectedRoutes[0] as any, "Bearer configured-test-secret"), res,
++    );
++    expect(res.statusCode).toBe(failure.statusCode);
++    expect(res.body).toEqual({
++      success: false, retries: 0,
++      rateLimitEvents: failure.code === "yahoo_refresh_rate_limited" ? 1 : 0,
++      error: "Yahoo token refresh failed", code: failure.code,
++      refreshOutcome: failure.refreshOutcome,
++    });
++    expect(yahooRefreshMock).toHaveBeenCalledTimes(1);
++    expect(auditInsertMock).toHaveBeenCalledTimes(1);
++    expect(JSON.stringify([res.body, auditInsertMock.mock.calls])).not.toMatch(/synthetic-/);
++  });
++
++  it("reports refresh success only after the refresh and storage operation resolves", async () => {
++    const credentials = {
++      id: 1, consumer_key: "synthetic-consumer", consumer_secret: "synthetic-secret",
++      access_token: "synthetic-access", refresh_token: "synthetic-refresh",
++    };
++    createClientMock.mockReturnValue({
++      from: vi.fn(() => ({
++        select: vi.fn(() => ({
++          single: vi.fn().mockResolvedValue({ data: credentials, error: null }),
++        })),
++      })),
++    });
++    let finish!: () => void;
++    yahooRefreshMock.mockReturnValue(new Promise<void>((resolve) => { finish = resolve; }));
++    const res = createMockRes();
++    const request = refreshYahooHandler(
++      createReq(yahooProtectedRoutes[0] as any, "Bearer configured-test-secret"), res,
++    );
++    await vi.waitFor(() => expect(yahooRefreshMock).toHaveBeenCalledTimes(1));
++    expect(res.headersSent).toBe(false);
++    finish();
++    await request;
++    expect(res.statusCode).toBe(200);
++    expect(res.body).toEqual({
++      success: true, refreshed: true, refreshedAt: expect.any(String),
++      retries: 0, rateLimitEvents: 0,
++    });
++    expect(auditInsertMock).toHaveBeenCalledTimes(1);
++  });
++
+   it("redacts Yahoo provider failures from the manual refresh response and audit", async () => {
+     const credentials = {
+       id: 1,
+@@ -252,7 +316,7 @@ describe("season and WGO cron authorization boundaries", () => {
+         })),
+       })),
+     });
+-    yahooGamesUserMock.mockRejectedValue(
++    yahooRefreshMock.mockRejectedValue(
+       new Error("provider failure with sensitive-fragment"),
+     );
+     const route = yahooProtectedRoutes[0];
+@@ -268,6 +332,8 @@ describe("season and WGO cron authorization boundaries", () => {
+       success: false,
+       retries: 0,
+       rateLimitEvents: 0,
++      code: "yahoo_refresh_failed",
++      refreshOutcome: "unknown",
+       error: "Yahoo token refresh failed",
+     });
+     expect(JSON.stringify(auditInsertMock.mock.calls)).not.toContain(
+diff --git a/web/lib/integrations/yahoo/globalCredentials.test.ts b/web/lib/integrations/yahoo/globalCredentials.test.ts
+index e6567f0db..3c98137ec 100644
+--- a/web/lib/integrations/yahoo/globalCredentials.test.ts
++++ b/web/lib/integrations/yahoo/globalCredentials.test.ts
+@@ -168,9 +168,8 @@ describe("Yahoo global credential owner", () => {
+     expect(source).not.toContain("fallback: full pagination scan");
+   });
+ 
+-  it("keeps every active global provider call on bounded retry telemetry", () => {
++  it("keeps read-only global provider calls on bounded retry telemetry", () => {
+     for (const route of [
+-      "manual-refresh-yahoo-token.ts",
+       "update-yahoo-players.ts",
+       "update-yahoo-weeks.ts",
+     ]) {
+@@ -184,6 +183,17 @@ describe("Yahoo global credential owner", () => {
+     }
+   });
+ 
++  it("never retries a potentially rotating global token refresh", () => {
++    const source = fs.readFileSync(
++      path.join(process.cwd(), "pages/api/v1/db/manual-refresh-yahoo-token.ts"),
++      "utf8",
++    );
++    expect(source).toContain("await refreshYahooGlobalCredentials");
++    expect(source).not.toContain("withYahooRetry");
++    expect(source).not.toContain("yahoo-fantasy");
++    expect(source).toContain("retries: 0");
++  });
++
+   it("keeps the sheet-sync mutation exact-cron-only and value-free on failure", () => {
+     const source = fs.readFileSync(
+       path.join(
+diff --git a/web/pages/api/v1/db/manual-refresh-yahoo-token.ts b/web/pages/api/v1/db/manual-refresh-yahoo-token.ts
+index a3f0ac717..8c05620ed 100644
+--- a/web/pages/api/v1/db/manual-refresh-yahoo-token.ts
++++ b/web/pages/api/v1/db/manual-refresh-yahoo-token.ts
+@@ -1,14 +1,15 @@
+ // pages/api/v1/db/manual-refresh-token.ts
+ import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+ import {
+-  loadYahooGlobalCredentials,
+-  persistYahooGlobalTokens
++  loadYahooGlobalCredentials
+ } from "lib/integrations/yahoo/globalCredentials";
++import {
++  refreshYahooGlobalCredentials,
++  YahooGlobalRefreshError
++} from "lib/integrations/yahoo/refreshGlobalCredentials";
+ import { NextApiRequest, NextApiResponse } from "next";
+ import { createClient } from "@supabase/supabase-js";
+-import YahooFantasy from "yahoo-fantasy";
+ import adminOnly from "utils/adminOnlyMiddleware";
+-import { withYahooRetry } from "lib/integrations/yahoo/ingestionLifecycle";
+ 
+ async function handler(req: NextApiRequest, res: NextApiResponse) {
+   if (!["GET", "POST"].includes(req.method || "")) {
+@@ -29,48 +30,23 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
+     return res.status(500).json({ error: "Failed to fetch Yahoo credentials" });
+   }
+ 
+-  const yf = new YahooFantasy(
+-    yahooCredentials.consumer_key,
+-    yahooCredentials.consumer_secret,
+-    async ({
+-      access_token,
+-      refresh_token
+-    }: {
+-      access_token: string;
+-      refresh_token: string;
+-    }) => {
+-      await persistYahooGlobalTokens(supabase, yahooCredentials.id, {
+-        access_token,
+-        refresh_token
+-      });
+-    }
+-  );
+-
+-  yf.setUserToken(yahooCredentials.access_token);
+-  yf.setRefreshToken(yahooCredentials.refresh_token);
+-
+-  let retries = 0;
+-  let rateLimitEvents = 0;
+   try {
+-    await withYahooRetry(() => yf.games.user(), {
+-      maxAttempts: 3,
+-      onRetry: ({ rateLimited }) => {
+-        retries += 1;
+-        if (rateLimited) rateLimitEvents += 1;
+-      }
+-    }); // trivial call to trigger refresh
++    await refreshYahooGlobalCredentials(supabase, yahooCredentials);
+     return res.status(200).json({
+       success: true,
+       refreshed: true,
+       refreshedAt: new Date().toISOString(),
+-      retries,
+-      rateLimitEvents
++      retries: 0,
++      rateLimitEvents: 0
+     });
+-  } catch {
+-    return res.status(500).json({
++  } catch (error) {
++    const failure = error instanceof YahooGlobalRefreshError ? error : null;
++    return res.status(failure?.statusCode ?? 500).json({
+       success: false,
+-      retries,
+-      rateLimitEvents,
++      retries: 0,
++      rateLimitEvents: failure?.code === "yahoo_refresh_rate_limited" ? 1 : 0,
++      code: failure?.code ?? "yahoo_refresh_failed",
++      refreshOutcome: failure?.refreshOutcome ?? "unknown",
+       error: "Yahoo token refresh failed"
+     });
+   }
+diff --git a/web/lib/integrations/yahoo/refreshGlobalCredentials.ts b/web/lib/integrations/yahoo/refreshGlobalCredentials.ts
+new file mode 100644
+index 000000000..e5962bb54
+--- /dev/null
++++ b/web/lib/integrations/yahoo/refreshGlobalCredentials.ts
+@@ -0,0 +1,131 @@
++import type { SupabaseClient } from "@supabase/supabase-js";
++
++import {
++  persistYahooGlobalTokens,
++  type YahooGlobalCredentials,
++} from "./globalCredentials";
++
++type RefreshFailureCode =
++  | "yahoo_reauth_required"
++  | "yahoo_refresh_rejected"
++  | "yahoo_refresh_rate_limited"
++  | "yahoo_refresh_invalid_response"
++  | "yahoo_refresh_transport_failed"
++  | "yahoo_refresh_timeout"
++  | "yahoo_refresh_store_failed";
++
++export class YahooGlobalRefreshError extends Error {
++  constructor(
++    readonly code: RefreshFailureCode,
++    readonly statusCode: number,
++    readonly refreshOutcome: "not_refreshed" | "unknown",
++  ) {
++    // Never retain provider bodies, request headers, tokens, or database errors.
++    super("Yahoo token refresh failed");
++    this.name = "YahooGlobalRefreshError";
++  }
++}
++
++function nonBlankString(value: unknown): value is string {
++  return typeof value === "string" && value.trim().length > 0;
++}
++
++/** A refresh can rotate credentials, so neither transport nor storage is retried. */
++export async function refreshYahooGlobalCredentials(
++  supabase: SupabaseClient,
++  credentials: YahooGlobalCredentials,
++  fetchImpl: typeof fetch = fetch,
++): Promise<void> {
++  const controller = new AbortController();
++  let timer: ReturnType<typeof setTimeout> | undefined;
++  const timeoutError = new YahooGlobalRefreshError(
++    "yahoo_refresh_timeout", 504, "unknown",
++  );
++  const timeout = new Promise<never>((_, reject) => {
++    timer = setTimeout(() => {
++      reject(timeoutError);
++      controller.abort();
++    }, 10_000);
++  });
++
++  const refresh = async () => {
++    let response: Response;
++    try {
++      response = await fetchImpl("https://api.login.yahoo.com/oauth2/get_token", {
++        method: "POST",
++        cache: "no-store",
++        redirect: "error",
++        signal: controller.signal,
++        headers: {
++          Accept: "application/json",
++          Authorization: `Basic ${Buffer.from(
++            `${credentials.consumer_key}:${credentials.consumer_secret}`,
++          ).toString("base64")}`,
++          "Content-Type": "application/x-www-form-urlencoded",
++        },
++        body: new URLSearchParams({
++          grant_type: "refresh_token",
++          refresh_token: credentials.refresh_token,
++        }),
++      });
++    } catch {
++      throw new YahooGlobalRefreshError(
++        "yahoo_refresh_transport_failed", 502, "unknown",
++      );
++    }
++
++    let payload: unknown;
++    try {
++      payload = await response.json();
++    } catch {
++      // An unreadable success may already have rotated the provider's tokens.
++      payload = null;
++    }
++    const token = payload && typeof payload === "object" && !Array.isArray(payload)
++      ? payload as Record<string, unknown>
++      : null;
++    if (!response.ok || token?.error !== undefined) {
++      const reauthRequired = [400, 401].includes(response.status)
++        && token?.error === "invalid_grant";
++      throw new YahooGlobalRefreshError(
++        reauthRequired ? "yahoo_reauth_required"
++          : response.status === 429 ? "yahoo_refresh_rate_limited"
++            : "yahoo_refresh_rejected",
++        reauthRequired ? 409 : response.status === 429 ? 429 : 502,
++        response.status >= 400 && response.status < 500 ? "not_refreshed" : "unknown",
++      );
++    }
++    if (
++      !token || !nonBlankString(token.access_token)
++      || (token.refresh_token !== undefined && !nonBlankString(token.refresh_token))
++    ) {
++      throw new YahooGlobalRefreshError(
++        "yahoo_refresh_invalid_response", 502, "unknown",
++      );
++    }
++
++    // OAuth refresh responses may omit a new refresh token. Never substitute for
++    // a malformed supplied token, and never write after the deadline has elapsed.
++    if (controller.signal.aborted) throw timeoutError;
++    try {
++      await persistYahooGlobalTokens(supabase, credentials.id, {
++        access_token: token.access_token,
++        refresh_token: token.refresh_token === undefined
++          ? credentials.refresh_token : token.refresh_token as string,
++      });
++    } catch {
++      // Yahoo may have rotated tokens even if the local write failed or timed out.
++      throw new YahooGlobalRefreshError(
++        "yahoo_refresh_store_failed", 503, "unknown",
++      );
++    }
++  };
++
++  try {
++    // Bound body parsing and storage as well as connection setup. A storage
++    // timeout is uncertain: the database may complete the already-started write.
++    await Promise.race([refresh(), timeout]);
++  } finally {
++    clearTimeout(timer);
++  }
++}
+diff --git a/web/lib/integrations/yahoo/refreshGlobalCredentials.test.ts b/web/lib/integrations/yahoo/refreshGlobalCredentials.test.ts
+new file mode 100644
+index 000000000..9ed8f02b8
+--- /dev/null
++++ b/web/lib/integrations/yahoo/refreshGlobalCredentials.test.ts
+@@ -0,0 +1,159 @@
++import { afterEach, describe, expect, it, vi } from "vitest";
++
++import {
++  refreshYahooGlobalCredentials,
++  YahooGlobalRefreshError,
++} from "./refreshGlobalCredentials";
++
++const credentials = {
++  id: 7,
++  consumer_key: "synthetic-consumer",
++  consumer_secret: "synthetic-secret",
++  access_token: "synthetic-old-access",
++  refresh_token: "synthetic-old-refresh",
++};
++
++function setup(payload: unknown = { access_token: "synthetic-new-access" }, status = 200) {
++  const eq = vi.fn().mockResolvedValue({ error: null });
++  const update = vi.fn(() => ({ eq }));
++  const from = vi.fn(() => ({ update }));
++  const client = { from } as any;
++  const json = vi.fn().mockResolvedValue(payload);
++  const fetchImpl = vi.fn().mockResolvedValue({
++    ok: status >= 200 && status < 300, status, json,
++  });
++  return { client, from, update, eq, json, fetchImpl };
++}
++
++afterEach(() => vi.useRealTimers());
++
++describe("single-attempt global Yahoo refresh", () => {
++  it("awaits one validated refresh and persistence, without a secondary games call", async () => {
++    const test = setup({
++      access_token: "synthetic-new-access", refresh_token: "synthetic-new-refresh",
++    });
++    await expect(refreshYahooGlobalCredentials(test.client, credentials, test.fetchImpl))
++      .resolves.toBeUndefined();
++    expect(test.fetchImpl).toHaveBeenCalledTimes(1);
++    const [url, request] = test.fetchImpl.mock.calls[0];
++    expect(url).toBe("https://api.login.yahoo.com/oauth2/get_token");
++    expect(request).toMatchObject({ method: "POST", cache: "no-store", redirect: "error" });
++    expect(request.signal).toBeInstanceOf(AbortSignal);
++    expect(request.headers.Authorization).toBe(
++      `Basic ${Buffer.from("synthetic-consumer:synthetic-secret").toString("base64")}`,
++    );
++    expect(Object.fromEntries(request.body)).toEqual({
++      grant_type: "refresh_token", refresh_token: "synthetic-old-refresh",
++    });
++    expect(test.update).toHaveBeenCalledWith({
++      access_token: "synthetic-new-access", refresh_token: "synthetic-new-refresh",
++      updated_at: expect.any(String),
++    });
++    expect(test.eq).toHaveBeenCalledWith("id", 7);
++  });
++
++  it("retains the previous refresh token only when a successful response omits it", async () => {
++    const test = setup();
++    await refreshYahooGlobalCredentials(test.client, credentials, test.fetchImpl);
++    expect(test.update).toHaveBeenCalledWith(expect.objectContaining({
++      access_token: "synthetic-new-access", refresh_token: "synthetic-old-refresh",
++    }));
++  });
++
++  it.each([
++    null, [], {}, { access_token: " " }, { access_token: 12 },
++    { access_token: "synthetic-new-access", refresh_token: null },
++    { access_token: "synthetic-new-access", refresh_token: "" },
++    { access_token: "synthetic-new-access", refresh_token: 123 },
++  ])("does not persist a malformed successful response: %j", async (payload) => {
++    const test = setup(payload);
++    await expect(refreshYahooGlobalCredentials(test.client, credentials, test.fetchImpl))
++      .rejects.toMatchObject({ code: "yahoo_refresh_invalid_response", refreshOutcome: "unknown" });
++    expect(test.from).not.toHaveBeenCalled();
++    expect(test.fetchImpl).toHaveBeenCalledTimes(1);
++  });
++
++  it.each([
++    [400, "invalid_grant", "yahoo_reauth_required", 409, "not_refreshed"],
++    [401, "invalid_client", "yahoo_refresh_rejected", 502, "not_refreshed"],
++    [429, "rate_limit", "yahoo_refresh_rate_limited", 429, "not_refreshed"],
++    [503, "unavailable", "yahoo_refresh_rejected", 502, "unknown"],
++    [200, "invalid_grant", "yahoo_refresh_rejected", 502, "unknown"],
++  ])("rejects HTTP/OAuth failures without retries or secret leakage (%s/%s)", async (
++    status, error, code, statusCode, refreshOutcome,
++  ) => {
++    const test = setup({
++      error, error_description: "sensitive-fragment",
++      access_token: "must-not-persist", refresh_token: "must-not-persist",
++    }, Number(status));
++    const promise = refreshYahooGlobalCredentials(test.client, credentials, test.fetchImpl);
++    await expect(promise).rejects.toMatchObject({ code, statusCode, refreshOutcome });
++    await expect(promise).rejects.toThrow("Yahoo token refresh failed");
++    await expect(promise).rejects.not.toThrow(/sensitive-fragment/);
++    expect(test.from).not.toHaveBeenCalled();
++    expect(test.fetchImpl).toHaveBeenCalledTimes(1);
++  });
++
++  it("redacts transport errors and leaves rotation outcome uncertain", async () => {
++    const test = setup();
++    test.fetchImpl.mockRejectedValue(new Error("sensitive-fragment"));
++    await expect(refreshYahooGlobalCredentials(test.client, credentials, test.fetchImpl))
++      .rejects.toEqual(new YahooGlobalRefreshError("yahoo_refresh_transport_failed", 502, "unknown"));
++    expect(test.from).not.toHaveBeenCalled();
++    expect(test.fetchImpl).toHaveBeenCalledTimes(1);
++  });
++
++  it("rejects invalid JSON without updating tokens or losing control of the promise", async () => {
++    const test = setup();
++    test.json.mockRejectedValue(new Error("sensitive-fragment"));
++    await expect(refreshYahooGlobalCredentials(test.client, credentials, test.fetchImpl))
++      .rejects.toMatchObject({ code: "yahoo_refresh_invalid_response", refreshOutcome: "unknown" });
++    expect(test.from).not.toHaveBeenCalled();
++  });
++
++  it.each(["returned", "thrown"])("awaits and redacts %s storage errors without refreshing again", async (kind) => {
++    const test = setup();
++    if (kind === "returned") test.eq.mockResolvedValue({ error: { message: "sensitive-fragment" } });
++    else test.eq.mockRejectedValue(new Error("sensitive-fragment"));
++    await expect(refreshYahooGlobalCredentials(test.client, credentials, test.fetchImpl))
++      .rejects.toEqual(new YahooGlobalRefreshError("yahoo_refresh_store_failed", 503, "unknown"));
++    expect(test.fetchImpl).toHaveBeenCalledTimes(1);
++    expect(test.update).toHaveBeenCalledTimes(1);
++  });
++
++  it.each(["fetch", "body"])("bounds a hung %s and prevents late persistence", async (stage) => {
++    vi.useFakeTimers();
++    const test = setup();
++    let resolve!: (value: any) => void;
++    const hung = new Promise((done) => { resolve = done; });
++    if (stage === "fetch") test.fetchImpl.mockReturnValue(hung);
++    else test.json.mockReturnValue(hung);
++    const promise = refreshYahooGlobalCredentials(test.client, credentials, test.fetchImpl);
++    const assertion = expect(promise).rejects.toMatchObject({
++      code: "yahoo_refresh_timeout", statusCode: 504, refreshOutcome: "unknown",
++    });
++    await vi.advanceTimersByTimeAsync(10_000);
++    await assertion;
++    expect(test.fetchImpl.mock.calls[0][1].signal.aborted).toBe(true);
++    resolve(stage === "fetch"
++      ? { ok: true, status: 200, json: async () => ({ access_token: "late-access" }) }
++      : { access_token: "late-access" });
++    await vi.advanceTimersByTimeAsync(0);
++    expect(test.from).not.toHaveBeenCalled();
++    expect(test.fetchImpl).toHaveBeenCalledTimes(1);
++  });
++
++  it("bounds a hung store, reports uncertainty, and never retries the refresh or write", async () => {
++    vi.useFakeTimers();
++    const test = setup();
++    test.eq.mockReturnValue(new Promise(() => {}));
++    const promise = refreshYahooGlobalCredentials(test.client, credentials, test.fetchImpl);
++    const assertion = expect(promise).rejects.toMatchObject({
++      code: "yahoo_refresh_timeout", refreshOutcome: "unknown",
++    });
++    await vi.advanceTimersByTimeAsync(10_000);
++    await assertion;
++    expect(test.fetchImpl).toHaveBeenCalledTimes(1);
++    expect(test.update).toHaveBeenCalledTimes(1);
++  });
++});

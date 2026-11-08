@@ -1,0 +1,1686 @@
+{
+  "status": "READ_ONLY_PREFLIGHT_COMPLETE_RECOVERY_NOT_AUTHORIZED",
+  "deployed_candidate": "b4033ad65ffba6835ba0754dd665e5d694301f64",
+  "project_id": "fyhftlxokyjtpndbkfse",
+  "manifest": {
+    "teams": 32,
+    "checked_at": "2026-11-07T21:15:56.135782+00:00",
+    "latest_forge": [
+      {
+        "resume": {
+          "version": "forge-run-resume-v1",
+          "scope_key": "h1:full",
+          "invocations": 1,
+          "lease_owner": "8e2b7f33-8281-463f-b923-b491003d009c",
+          "released_by": "8e2b7f33-8281-463f-b923-b491003d009c",
+          "lease_expires_at": "2026-11-07T10:18:07.080Z",
+          "completed_game_ids": [
+            2026020270,
+            2026020271,
+            2026020272,
+            2026020273,
+            2026020274,
+            2026020275,
+            2026020276,
+            2026020265,
+            2026020266,
+            2026020267,
+            2026020268,
+            2026020269
+          ]
+        },
+        "run_id": "81bdf163-4bb2-4e96-bea4-6c99b9c717ad",
+        "status": "succeeded",
+        "git_sha": "c09aa95ace52f8da26ef9ee1b2e635dc0245f201",
+        "as_of_date": "2026-11-07",
+        "created_at": "2026-11-07T10:15:56.727755+00:00",
+        "updated_at": "2026-11-07T10:18:07.08+00:00",
+        "producer_identity": {
+          "version": "forge-producer-closure-v1",
+          "invocations": [
+            "abb563452f17dbcd802a5debd8af86425a01775bf2fb9693c9a14fb9f468f454"
+          ],
+          "code_versions": [
+            null
+          ]
+        }
+      },
+      {
+        "resume": {
+          "version": "forge-run-resume-v1",
+          "scope_key": "h1:full",
+          "invocations": 1,
+          "lease_owner": "1b1eb5ee-17c9-47af-9dc3-04a1c0868f95",
+          "released_by": "1b1eb5ee-17c9-47af-9dc3-04a1c0868f95",
+          "lease_expires_at": "2026-11-07T10:21:35.121Z",
+          "completed_game_ids": [
+            2026020282,
+            2026020277,
+            2026020278,
+            2026020279,
+            2026020280,
+            2026020281
+          ]
+        },
+        "run_id": "cfea5881-3d9f-4677-b0fa-575102d53e46",
+        "status": "succeeded",
+        "git_sha": "c09aa95ace52f8da26ef9ee1b2e635dc0245f201",
+        "as_of_date": "2026-11-08",
+        "created_at": "2026-11-07T10:20:42.383127+00:00",
+        "updated_at": "2026-11-07T10:21:35.121+00:00",
+        "producer_identity": {
+          "version": "forge-producer-closure-v1",
+          "invocations": [
+            "abb563452f17dbcd802a5debd8af86425a01775bf2fb9693c9a14fb9f468f454"
+          ],
+          "code_versions": [
+            null
+          ]
+        }
+      },
+      {
+        "resume": {
+          "version": "forge-run-resume-v1",
+          "scope_key": "h1:full",
+          "invocations": 1,
+          "lease_owner": "842a39ea-cd80-429f-a193-0a60e8761f35",
+          "released_by": "842a39ea-cd80-429f-a193-0a60e8761f35",
+          "lease_expires_at": "2026-11-07T10:22:09.904Z",
+          "completed_game_ids": [
+            2026020283,
+            2026020284,
+            2026020285
+          ]
+        },
+        "run_id": "36312338-2bfa-4395-9b4e-b9097e3e74ed",
+        "status": "succeeded",
+        "git_sha": "c09aa95ace52f8da26ef9ee1b2e635dc0245f201",
+        "as_of_date": "2026-11-09",
+        "created_at": "2026-11-07T10:21:42.475099+00:00",
+        "updated_at": "2026-11-07T10:22:09.904+00:00",
+        "producer_identity": {
+          "version": "forge-producer-closure-v1",
+          "invocations": [
+            "abb563452f17dbcd802a5debd8af86425a01775bf2fb9693c9a14fb9f468f454"
+          ],
+          "code_versions": [
+            null
+          ]
+        }
+      }
+    ],
+    "running_forge": null,
+    "slate_summary": [
+      {
+        "date": "2026-11-07",
+        "games": 12,
+        "game_ids": [
+          2026020265,
+          2026020266,
+          2026020267,
+          2026020268,
+          2026020269,
+          2026020270,
+          2026020271,
+          2026020272,
+          2026020273,
+          2026020274,
+          2026020275,
+          2026020276
+        ]
+      },
+      {
+        "date": "2026-11-08",
+        "games": 6,
+        "game_ids": [
+          2026020277,
+          2026020278,
+          2026020279,
+          2026020280,
+          2026020281,
+          2026020282
+        ]
+      },
+      {
+        "date": "2026-11-09",
+        "games": 3,
+        "game_ids": [
+          2026020283,
+          2026020284,
+          2026020285
+        ]
+      },
+      {
+        "date": "2026-11-10",
+        "games": 7,
+        "game_ids": [
+          2026020286,
+          2026020287,
+          2026020288,
+          2026020289,
+          2026020290,
+          2026020291,
+          2026020292
+        ]
+      },
+      {
+        "date": "2026-11-11",
+        "games": 6,
+        "game_ids": [
+          2026020293,
+          2026020294,
+          2026020295,
+          2026020296,
+          2026020297,
+          2026020298
+        ]
+      },
+      {
+        "date": "2026-11-12",
+        "games": 11,
+        "game_ids": [
+          2026020299,
+          2026020300,
+          2026020301,
+          2026020302,
+          2026020303,
+          2026020304,
+          2026020305,
+          2026020306,
+          2026020307,
+          2026020308,
+          2026020309
+        ]
+      },
+      {
+        "date": "2026-11-13",
+        "games": 2,
+        "game_ids": [
+          2026020310,
+          2026020311
+        ]
+      }
+    ],
+    "raw_candidates": 224,
+    "pipeline_schema": [
+      {
+        "type": "text",
+        "column": "pipeline_key"
+      },
+      {
+        "type": "text",
+        "column": "scope_key"
+      },
+      {
+        "type": "text",
+        "column": "operation_key"
+      },
+      {
+        "type": "bigint",
+        "column": "revision"
+      },
+      {
+        "type": "text",
+        "column": "status"
+      },
+      {
+        "type": "bigint",
+        "column": "cursor_game_id"
+      },
+      {
+        "type": "date",
+        "column": "cursor_date"
+      },
+      {
+        "type": "date",
+        "column": "range_start_date"
+      },
+      {
+        "type": "date",
+        "column": "range_end_date"
+      },
+      {
+        "type": "text",
+        "column": "lease_owner"
+      },
+      {
+        "type": "timestamp with time zone",
+        "column": "lease_expires_at"
+      },
+      {
+        "type": "text",
+        "column": "last_error"
+      },
+      {
+        "type": "timestamp with time zone",
+        "column": "created_at"
+      },
+      {
+        "type": "timestamp with time zone",
+        "column": "updated_at"
+      }
+    ],
+    "eligible_candidates": 216,
+    "eligible_duplicates": null,
+    "rejected_predicates": [
+      {
+        "date": "2026-11-07",
+        "name": "Spencer Martin",
+        "game_id": 2026020267,
+        "team_id": 3,
+        "persisted": true,
+        "player_id": 8477484,
+        "updated_at": "2026-11-02T10:15:41.881988+00:00",
+        "current_teams": null
+      },
+      {
+        "date": "2026-11-07",
+        "name": "Nico Daws",
+        "game_id": 2026020270,
+        "team_id": 1,
+        "persisted": true,
+        "player_id": 8482076,
+        "updated_at": "2026-11-02T10:15:41.881988+00:00",
+        "current_teams": [
+          52
+        ]
+      },
+      {
+        "date": "2026-11-08",
+        "name": "Nico Daws",
+        "game_id": 2026020279,
+        "team_id": 1,
+        "persisted": true,
+        "player_id": 8482076,
+        "updated_at": "2026-11-02T10:15:41.881988+00:00",
+        "current_teams": [
+          52
+        ]
+      },
+      {
+        "date": "2026-11-09",
+        "name": "Spencer Martin",
+        "game_id": 2026020283,
+        "team_id": 3,
+        "persisted": true,
+        "player_id": 8477484,
+        "updated_at": "2026-11-03T10:16:36.62418+00:00",
+        "current_teams": null
+      },
+      {
+        "date": "2026-11-10",
+        "name": "Nico Daws",
+        "game_id": 2026020291,
+        "team_id": 1,
+        "persisted": false,
+        "player_id": 8482076,
+        "updated_at": null,
+        "current_teams": [
+          52
+        ]
+      },
+      {
+        "date": "2026-11-11",
+        "name": "Spencer Martin",
+        "game_id": 2026020294,
+        "team_id": 3,
+        "persisted": false,
+        "player_id": 8477484,
+        "updated_at": null,
+        "current_teams": null
+      },
+      {
+        "date": "2026-11-12",
+        "name": "Nico Daws",
+        "game_id": 2026020303,
+        "team_id": 1,
+        "persisted": false,
+        "player_id": 8482076,
+        "updated_at": null,
+        "current_teams": [
+          52
+        ]
+      },
+      {
+        "date": "2026-11-13",
+        "name": "Spencer Martin",
+        "game_id": 2026020310,
+        "team_id": 3,
+        "persisted": false,
+        "player_id": 8477484,
+        "updated_at": null,
+        "current_teams": null
+      }
+    ],
+    "missing_eligible_sides": null,
+    "persisted_out_of_roster": [
+      {
+        "date": "2026-11-07",
+        "game_id": 2026020267,
+        "team_id": 3,
+        "player_id": 8477484,
+        "updated_at": "2026-11-02T10:15:41.881988+00:00"
+      },
+      {
+        "date": "2026-11-07",
+        "game_id": 2026020270,
+        "team_id": 1,
+        "player_id": 8482076,
+        "updated_at": "2026-11-02T10:15:41.881988+00:00"
+      },
+      {
+        "date": "2026-11-08",
+        "game_id": 2026020279,
+        "team_id": 1,
+        "player_id": 8482076,
+        "updated_at": "2026-11-02T10:15:41.881988+00:00"
+      },
+      {
+        "date": "2026-11-09",
+        "game_id": 2026020283,
+        "team_id": 3,
+        "player_id": 8477484,
+        "updated_at": "2026-11-03T10:16:36.62418+00:00"
+      }
+    ],
+    "ambiguous_current_memberships": null
+  },
+  "freshness": {
+    "teams": [
+      {
+        "goalies": [
+          8474596,
+          8476945
+        ],
+        "team_id": 1,
+        "line_date": "2026-11-05",
+        "line_game": 2026020254,
+        "role_players": 18,
+        "goalie_latest": "2026-11-05",
+        "skater_latest": "2026-11-05"
+      },
+      {
+        "goalies": [
+          8478009,
+          8473575
+        ],
+        "team_id": 2,
+        "line_date": "2026-11-05",
+        "line_game": 2026020255,
+        "role_players": 18,
+        "goalie_latest": "2026-11-05",
+        "skater_latest": "2026-11-05"
+      },
+      {
+        "goalies": [
+          8482193,
+          8473503
+        ],
+        "team_id": 3,
+        "line_date": "2026-11-05",
+        "line_game": 2026020256,
+        "role_players": 18,
+        "goalie_latest": "2026-11-05",
+        "skater_latest": "2026-11-05"
+      },
+      {
+        "goalies": [
+          8479361,
+          8478435
+        ],
+        "team_id": 4,
+        "line_date": "2026-11-05",
+        "line_game": 2026020256,
+        "role_players": 18,
+        "goalie_latest": "2026-11-05",
+        "skater_latest": "2026-11-05"
+      },
+      {
+        "goalies": [
+          8483703,
+          8481668
+        ],
+        "team_id": 5,
+        "line_date": "2026-11-05",
+        "line_game": 2026020257,
+        "role_players": 18,
+        "goalie_latest": "2026-11-05",
+        "skater_latest": "2026-11-05"
+      },
+      {
+        "goalies": [
+          8480280,
+          8480022
+        ],
+        "team_id": 6,
+        "line_date": "2026-11-05",
+        "line_game": 2026020257,
+        "role_players": 18,
+        "goalie_latest": "2026-11-05",
+        "skater_latest": "2026-11-05"
+      },
+      {
+        "goalies": [
+          8480045,
+          8481551
+        ],
+        "team_id": 7,
+        "line_date": "2026-11-06",
+        "line_game": 2026020262,
+        "role_players": 18,
+        "goalie_latest": "2026-11-04",
+        "skater_latest": "2026-11-04"
+      },
+      {
+        "goalies": [
+          8484170,
+          8482487
+        ],
+        "team_id": 8,
+        "line_date": "2026-11-05",
+        "line_game": 2026020251,
+        "role_players": 18,
+        "goalie_latest": "2026-11-05",
+        "skater_latest": "2026-11-05"
+      },
+      {
+        "goalies": [
+          8481035,
+          8477992
+        ],
+        "team_id": 9,
+        "line_date": "2026-11-04",
+        "line_game": 2026020247,
+        "role_players": 18,
+        "goalie_latest": "2026-11-04",
+        "skater_latest": "2026-11-04"
+      },
+      {
+        "goalies": [
+          8476932,
+          8475683
+        ],
+        "team_id": 10,
+        "line_date": "2026-11-03",
+        "line_game": 2026020236,
+        "role_players": 18,
+        "goalie_latest": "2026-11-03",
+        "skater_latest": "2026-11-03"
+      },
+      {
+        "goalies": [
+          8483548,
+          8481611
+        ],
+        "team_id": 12,
+        "line_date": "2026-11-05",
+        "line_game": 2026020255,
+        "role_players": 18,
+        "goalie_latest": "2026-11-05",
+        "skater_latest": "2026-11-05"
+      },
+      {
+        "goalies": [
+          8474593,
+          8481033
+        ],
+        "team_id": 13,
+        "line_date": "2026-11-04",
+        "line_game": 2026020248,
+        "role_players": 18,
+        "goalie_latest": "2026-11-04",
+        "skater_latest": "2026-11-04"
+      },
+      {
+        "goalies": [
+          8483710,
+          8476883
+        ],
+        "team_id": 14,
+        "line_date": "2026-11-05",
+        "line_game": 2026020253,
+        "role_players": 18,
+        "goalie_latest": "2026-11-05",
+        "skater_latest": "2026-11-05"
+      },
+      {
+        "goalies": [
+          8480313,
+          8479292
+        ],
+        "team_id": 15,
+        "line_date": "2026-11-03",
+        "line_game": 2026020243,
+        "role_players": 18,
+        "goalie_latest": "2026-11-03",
+        "skater_latest": "2026-11-03"
+      },
+      {
+        "goalies": [
+          8481519,
+          8482821
+        ],
+        "team_id": 16,
+        "line_date": "2026-11-05",
+        "line_game": 2026020253,
+        "role_players": 18,
+        "goalie_latest": "2026-11-05",
+        "skater_latest": "2026-11-05"
+      },
+      {
+        "goalies": [
+          8485545,
+          8480193
+        ],
+        "team_id": 17,
+        "line_date": "2026-11-05",
+        "line_game": 2026020252,
+        "role_players": 18,
+        "goalie_latest": "2026-11-05",
+        "skater_latest": "2026-11-05"
+      },
+      {
+        "goalies": [
+          8481020,
+          8477424
+        ],
+        "team_id": 18,
+        "line_date": "2026-11-05",
+        "line_game": 2026020261,
+        "role_players": 18,
+        "goalie_latest": "2026-11-05",
+        "skater_latest": "2026-11-05"
+      },
+      {
+        "goalies": [
+          8480981,
+          8476412
+        ],
+        "team_id": 19,
+        "line_date": "2026-11-05",
+        "line_game": 2026020254,
+        "role_players": 18,
+        "goalie_latest": "2026-11-05",
+        "skater_latest": "2026-11-05"
+      },
+      {
+        "goalies": [
+          8482445,
+          8481692
+        ],
+        "team_id": 20,
+        "line_date": "2026-11-06",
+        "line_game": 2026020264,
+        "role_players": 18,
+        "goalie_latest": "2026-11-04",
+        "skater_latest": "2026-11-04"
+      },
+      {
+        "goalies": [
+          8478406,
+          8475809
+        ],
+        "team_id": 21,
+        "line_date": "2026-11-05",
+        "line_game": 2026020261,
+        "role_players": 18,
+        "goalie_latest": "2026-11-05",
+        "skater_latest": "2026-11-05"
+      },
+      {
+        "goalies": [
+          8486540,
+          8477035
+        ],
+        "team_id": 22,
+        "line_date": "2026-11-05",
+        "line_game": 2026020260,
+        "role_players": 18,
+        "goalie_latest": "2026-11-05",
+        "skater_latest": "2026-11-05"
+      },
+      {
+        "goalies": [
+          8482447,
+          8480947
+        ],
+        "team_id": 23,
+        "line_date": "2026-11-05",
+        "line_game": 2026020259,
+        "role_players": 18,
+        "goalie_latest": "2026-11-05",
+        "skater_latest": "2026-11-05"
+      },
+      {
+        "goalies": [
+          8480843,
+          8478024
+        ],
+        "team_id": 24,
+        "line_date": "2026-11-06",
+        "line_game": 2026020264,
+        "role_players": 18,
+        "goalie_latest": "2026-11-05",
+        "skater_latest": "2026-11-05"
+      },
+      {
+        "goalies": [
+          8479193,
+          8479979
+        ],
+        "team_id": 25,
+        "line_date": "2026-11-05",
+        "line_game": 2026020258,
+        "role_players": 18,
+        "goalie_latest": "2026-11-05",
+        "skater_latest": "2026-11-05"
+      },
+      {
+        "goalies": [
+          8476341,
+          8475311
+        ],
+        "team_id": 26,
+        "line_date": "2026-11-04",
+        "line_game": 2026020249,
+        "role_players": 18,
+        "goalie_latest": "2026-11-04",
+        "skater_latest": "2026-11-04"
+      },
+      {
+        "goalies": [
+          8482137,
+          8477968
+        ],
+        "team_id": 28,
+        "line_date": "2026-11-06",
+        "line_game": 2026020263,
+        "role_players": 18,
+        "goalie_latest": "2026-11-04",
+        "skater_latest": "2026-11-04"
+      },
+      {
+        "goalies": [
+          8475660,
+          8482982
+        ],
+        "team_id": 29,
+        "line_date": "2026-11-06",
+        "line_game": 2026020262,
+        "role_players": 18,
+        "goalie_latest": "2026-11-05",
+        "skater_latest": "2026-11-05"
+      },
+      {
+        "goalies": [
+          8482661,
+          8475717
+        ],
+        "team_id": 30,
+        "line_date": "2026-11-06",
+        "line_game": 2026020263,
+        "role_players": 18,
+        "goalie_latest": "2026-11-03",
+        "skater_latest": "2026-11-03"
+      },
+      {
+        "goalies": [
+          8482076,
+          8479973
+        ],
+        "team_id": 52,
+        "line_date": "2026-11-05",
+        "line_game": 2026020259,
+        "role_players": 18,
+        "goalie_latest": "2026-11-05",
+        "skater_latest": "2026-11-05"
+      },
+      {
+        "goalies": [
+          8478499,
+          8479394
+        ],
+        "team_id": 54,
+        "line_date": "2026-11-05",
+        "line_game": 2026020252,
+        "role_players": 18,
+        "goalie_latest": "2026-11-05",
+        "skater_latest": "2026-11-05"
+      },
+      {
+        "goalies": [
+          8475831,
+          8478916
+        ],
+        "team_id": 55,
+        "line_date": "2026-11-04",
+        "line_game": 2026020250,
+        "role_players": 18,
+        "goalie_latest": "2026-11-04",
+        "skater_latest": "2026-11-04"
+      },
+      {
+        "goalies": [
+          8482657,
+          8478872
+        ],
+        "team_id": 68,
+        "line_date": "2026-11-05",
+        "line_game": 2026020251,
+        "role_players": 18,
+        "goalie_latest": "2026-11-05",
+        "skater_latest": "2026-11-05"
+      }
+    ],
+    "checked_at": "2026-11-07T21:17:19.377566+00:00",
+    "derived_latest": {
+      "team": "2026-11-05",
+      "goalie": "2026-11-05",
+      "player": "2026-11-05"
+    },
+    "active_pipeline_leases": 0,
+    "recent_projection_audit": [
+      {
+        "status": "failure",
+        "job_name": "run-projection-v2",
+        "run_time": "2026-11-07T10:22:35.586895+00:00",
+        "preflight": [
+          {
+            "status": "FAIL",
+            "asOfDate": "2026-11-13",
+            "gateCount": 10,
+            "failedGates": [
+              {
+                "detail": "scheduled_games=2, goalie_start_rows=0",
+                "status": "FAIL",
+                "gate_key": "goalie_start_priors_v2"
+              }
+            ],
+            "failedGateCount": 1
+          }
+        ],
+        "rows_affected": null
+      },
+      {
+        "status": "failure",
+        "job_name": "run-projection-v2",
+        "run_time": "2026-11-07T10:22:30.316103+00:00",
+        "preflight": [
+          {
+            "status": "FAIL",
+            "asOfDate": "2026-11-12",
+            "gateCount": 10,
+            "failedGates": [
+              {
+                "detail": "scheduled_games=11, goalie_start_rows=0",
+                "status": "FAIL",
+                "gate_key": "goalie_start_priors_v2"
+              }
+            ],
+            "failedGateCount": 1
+          }
+        ],
+        "rows_affected": null
+      },
+      {
+        "status": "failure",
+        "job_name": "run-projection-v2",
+        "run_time": "2026-11-07T10:22:23.544004+00:00",
+        "preflight": [
+          {
+            "status": "FAIL",
+            "asOfDate": "2026-11-11",
+            "gateCount": 11,
+            "failedGates": [
+              {
+                "detail": "scheduled_games=6, goalie_start_rows=0",
+                "status": "FAIL",
+                "gate_key": "goalie_start_priors_v2"
+              }
+            ],
+            "failedGateCount": 1
+          }
+        ],
+        "rows_affected": null
+      },
+      {
+        "status": "failure",
+        "job_name": "run-projection-v2",
+        "run_time": "2026-11-07T10:22:17.387966+00:00",
+        "preflight": [
+          {
+            "status": "FAIL",
+            "asOfDate": "2026-11-10",
+            "gateCount": 10,
+            "failedGates": [
+              {
+                "detail": "scheduled_games=7, goalie_start_rows=0",
+                "status": "FAIL",
+                "gate_key": "goalie_start_priors_v2"
+              }
+            ],
+            "failedGateCount": 1
+          }
+        ],
+        "rows_affected": null
+      },
+      {
+        "status": "success",
+        "job_name": "run-projection-v2",
+        "run_time": "2026-11-07T10:22:09.936843+00:00",
+        "preflight": [
+          {
+            "status": "PASS",
+            "asOfDate": "2026-11-09",
+            "gateCount": 11,
+            "failedGates": [],
+            "failedGateCount": 0
+          }
+        ],
+        "rows_affected": null
+      },
+      {
+        "status": "success",
+        "job_name": "run-projection-v2",
+        "run_time": "2026-11-07T10:21:35.161614+00:00",
+        "preflight": [
+          {
+            "status": "PASS",
+            "asOfDate": "2026-11-08",
+            "gateCount": 10,
+            "failedGates": [],
+            "failedGateCount": 0
+          }
+        ],
+        "rows_affected": null
+      },
+      {
+        "status": "success",
+        "job_name": "run-projection-v2",
+        "run_time": "2026-11-07T10:18:07.122205+00:00",
+        "preflight": [
+          {
+            "status": "PASS",
+            "asOfDate": "2026-11-07",
+            "gateCount": 11,
+            "failedGates": [],
+            "failedGateCount": 0
+          }
+        ],
+        "rows_affected": null
+      }
+    ],
+    "latest_goalie_candidate_bad_positions": null
+  },
+  "leases": {
+    "checked_at": "2026-11-07T21:16:18.551589+00:00",
+    "pipeline_states": [
+      {
+        "status": "running",
+        "scope_key": "daily_incremental:2026-11-01",
+        "last_error": null,
+        "updated_at": "2026-11-01T10:05:30.890798+00:00",
+        "pipeline_key": "rolling_forge_pipeline",
+        "operation_key": "upstream_skater_sources",
+        "cursor_game_id": null,
+        "range_end_date": "2026-11-01",
+        "lease_expires_at": "2026-11-01T10:09:59.402+00:00",
+        "range_start_date": "2026-11-01"
+      },
+      {
+        "status": "running",
+        "scope_key": "daily_incremental:2026-11-04",
+        "last_error": null,
+        "updated_at": "2026-11-04T10:05:28.932018+00:00",
+        "pipeline_key": "rolling_forge_pipeline",
+        "operation_key": "upstream_skater_sources",
+        "cursor_game_id": null,
+        "range_end_date": "2026-11-04",
+        "lease_expires_at": "2026-11-04T10:09:57.378+00:00",
+        "range_start_date": "2026-11-04"
+      },
+      {
+        "status": "complete",
+        "scope_key": "daily_incremental:2026-11-07",
+        "last_error": null,
+        "updated_at": "2026-11-07T10:10:28.94786+00:00",
+        "pipeline_key": "rolling_forge_pipeline",
+        "operation_key": "contextual_builders",
+        "cursor_game_id": null,
+        "range_end_date": "2026-11-07",
+        "lease_expires_at": null,
+        "range_start_date": "2026-11-07"
+      },
+      {
+        "status": "complete",
+        "scope_key": "daily_incremental:2026-11-07",
+        "last_error": null,
+        "updated_at": "2026-11-07T10:05:28.636511+00:00",
+        "pipeline_key": "rolling_forge_pipeline",
+        "operation_key": "core_entity_freshness",
+        "cursor_game_id": null,
+        "range_end_date": "2026-11-07",
+        "lease_expires_at": null,
+        "range_start_date": "2026-11-07"
+      },
+      {
+        "status": "complete",
+        "scope_key": "daily_incremental:2026-11-07",
+        "last_error": null,
+        "updated_at": "2026-11-07T10:15:32.30384+00:00",
+        "pipeline_key": "rolling_forge_pipeline",
+        "operation_key": "projection_derived_build",
+        "cursor_game_id": null,
+        "range_end_date": "2026-11-07",
+        "lease_expires_at": null,
+        "range_start_date": "2026-11-07"
+      },
+      {
+        "status": "failed",
+        "scope_key": "daily_incremental:2026-11-07",
+        "last_error": "stage_failed:attempt-2",
+        "updated_at": "2026-11-07T10:22:35.645702+00:00",
+        "pipeline_key": "rolling_forge_pipeline",
+        "operation_key": "projection_execution",
+        "cursor_game_id": 7,
+        "range_end_date": "2026-11-07",
+        "lease_expires_at": null,
+        "range_start_date": "2026-11-07"
+      },
+      {
+        "status": "complete",
+        "scope_key": "daily_incremental:2026-11-07",
+        "last_error": null,
+        "updated_at": "2026-11-07T10:15:27.728636+00:00",
+        "pipeline_key": "rolling_forge_pipeline",
+        "operation_key": "projection_input_ingest",
+        "cursor_game_id": null,
+        "range_end_date": "2026-11-07",
+        "lease_expires_at": null,
+        "range_start_date": "2026-11-07"
+      },
+      {
+        "status": "complete",
+        "scope_key": "daily_incremental:2026-11-07",
+        "last_error": null,
+        "updated_at": "2026-11-07T10:15:31.384694+00:00",
+        "pipeline_key": "rolling_forge_pipeline",
+        "operation_key": "projection_relationship_build",
+        "cursor_game_id": null,
+        "range_end_date": "2026-11-07",
+        "lease_expires_at": null,
+        "range_start_date": "2026-11-07"
+      },
+      {
+        "status": "complete",
+        "scope_key": "daily_incremental:2026-11-07",
+        "last_error": null,
+        "updated_at": "2026-11-07T10:12:26.279689+00:00",
+        "pipeline_key": "rolling_forge_pipeline",
+        "operation_key": "rolling_player_recompute",
+        "cursor_game_id": 8484806,
+        "range_end_date": "2026-11-07",
+        "lease_expires_at": null,
+        "range_start_date": "2026-11-07"
+      },
+      {
+        "status": "complete",
+        "scope_key": "daily_incremental:2026-11-07",
+        "last_error": null,
+        "updated_at": "2026-11-07T10:07:35.248735+00:00",
+        "pipeline_key": "rolling_forge_pipeline",
+        "operation_key": "upstream_skater_sources",
+        "cursor_game_id": null,
+        "range_end_date": "2026-11-07",
+        "lease_expires_at": null,
+        "range_start_date": "2026-11-07"
+      }
+    ]
+  },
+  "current_data": {
+    "games": [
+      {
+        "date": "2026-11-07",
+        "game_id": 2026020265,
+        "start_time": "2026-11-07T17:30:00+00:00",
+        "away_team_id": 13,
+        "home_team_id": 15
+      },
+      {
+        "date": "2026-11-07",
+        "game_id": 2026020266,
+        "start_time": "2026-11-07T18:00:00+00:00",
+        "away_team_id": 19,
+        "home_team_id": 18
+      },
+      {
+        "date": "2026-11-07",
+        "game_id": 2026020267,
+        "start_time": "2026-11-07T22:00:00+00:00",
+        "away_team_id": 3,
+        "home_team_id": 55
+      },
+      {
+        "date": "2026-11-07",
+        "game_id": 2026020268,
+        "start_time": "2026-11-08T00:00:00+00:00",
+        "away_team_id": 8,
+        "home_team_id": 10
+      },
+      {
+        "date": "2026-11-07",
+        "game_id": 2026020269,
+        "start_time": "2026-11-08T00:00:00+00:00",
+        "away_team_id": 68,
+        "home_team_id": 9
+      },
+      {
+        "date": "2026-11-07",
+        "game_id": 2026020270,
+        "start_time": "2026-11-08T00:00:00+00:00",
+        "away_team_id": 1,
+        "home_team_id": 2
+      },
+      {
+        "date": "2026-11-07",
+        "game_id": 2026020271,
+        "start_time": "2026-11-08T01:00:00+00:00",
+        "away_team_id": 16,
+        "home_team_id": 12
+      },
+      {
+        "date": "2026-11-07",
+        "game_id": 2026020272,
+        "start_time": "2026-11-08T01:00:00+00:00",
+        "away_team_id": 28,
+        "home_team_id": 25
+      },
+      {
+        "date": "2026-11-07",
+        "game_id": 2026020273,
+        "start_time": "2026-11-08T01:00:00+00:00",
+        "away_team_id": 14,
+        "home_team_id": 30
+      },
+      {
+        "date": "2026-11-07",
+        "game_id": 2026020274,
+        "start_time": "2026-11-08T02:00:00+00:00",
+        "away_team_id": 17,
+        "home_team_id": 21
+      },
+      {
+        "date": "2026-11-07",
+        "game_id": 2026020275,
+        "start_time": "2026-11-08T02:00:00+00:00",
+        "away_team_id": 5,
+        "home_team_id": 26
+      },
+      {
+        "date": "2026-11-07",
+        "game_id": 2026020276,
+        "start_time": "2026-11-08T03:00:00+00:00",
+        "away_team_id": 23,
+        "home_team_id": 22
+      },
+      {
+        "date": "2026-11-08",
+        "game_id": 2026020277,
+        "start_time": "2026-11-08T18:00:00+00:00",
+        "away_team_id": 13,
+        "home_team_id": 6
+      },
+      {
+        "date": "2026-11-08",
+        "game_id": 2026020278,
+        "start_time": "2026-11-08T20:30:00+00:00",
+        "away_team_id": 54,
+        "home_team_id": 7
+      },
+      {
+        "date": "2026-11-08",
+        "game_id": 2026020279,
+        "start_time": "2026-11-09T00:00:00+00:00",
+        "away_team_id": 1,
+        "home_team_id": 10
+      },
+      {
+        "date": "2026-11-08",
+        "game_id": 2026020280,
+        "start_time": "2026-11-08T23:00:00+00:00",
+        "away_team_id": 14,
+        "home_team_id": 52
+      },
+      {
+        "date": "2026-11-08",
+        "game_id": 2026020281,
+        "start_time": "2026-11-09T00:00:00+00:00",
+        "away_team_id": 4,
+        "home_team_id": 20
+      },
+      {
+        "date": "2026-11-08",
+        "game_id": 2026020282,
+        "start_time": "2026-11-09T01:00:00+00:00",
+        "away_team_id": 5,
+        "home_team_id": 24
+      },
+      {
+        "date": "2026-11-09",
+        "game_id": 2026020283,
+        "start_time": "2026-11-10T01:00:00+00:00",
+        "away_team_id": 3,
+        "home_team_id": 22
+      },
+      {
+        "date": "2026-11-09",
+        "game_id": 2026020284,
+        "start_time": "2026-11-10T02:30:00+00:00",
+        "away_team_id": 4,
+        "home_team_id": 23
+      },
+      {
+        "date": "2026-11-09",
+        "game_id": 2026020285,
+        "start_time": "2026-11-10T03:00:00+00:00",
+        "away_team_id": 2,
+        "home_team_id": 28
+      },
+      {
+        "date": "2026-11-10",
+        "game_id": 2026020286,
+        "start_time": "2026-11-11T00:00:00+00:00",
+        "away_team_id": 21,
+        "home_team_id": 10
+      },
+      {
+        "date": "2026-11-10",
+        "game_id": 2026020287,
+        "start_time": "2026-11-11T00:00:00+00:00",
+        "away_team_id": 30,
+        "home_team_id": 8
+      },
+      {
+        "date": "2026-11-10",
+        "game_id": 2026020288,
+        "start_time": "2026-11-11T00:00:00+00:00",
+        "away_team_id": 15,
+        "home_team_id": 9
+      },
+      {
+        "date": "2026-11-10",
+        "game_id": 2026020289,
+        "start_time": "2026-11-11T00:30:00+00:00",
+        "away_team_id": 13,
+        "home_team_id": 29
+      },
+      {
+        "date": "2026-11-10",
+        "game_id": 2026020290,
+        "start_time": "2026-11-11T01:00:00+00:00",
+        "away_team_id": 17,
+        "home_team_id": 19
+      },
+      {
+        "date": "2026-11-10",
+        "game_id": 2026020291,
+        "start_time": "2026-11-11T00:00:00+00:00",
+        "away_team_id": 1,
+        "home_team_id": 52
+      },
+      {
+        "date": "2026-11-10",
+        "game_id": 2026020292,
+        "start_time": "2026-11-11T03:00:00+00:00",
+        "away_team_id": 18,
+        "home_team_id": 26
+      },
+      {
+        "date": "2026-11-11",
+        "game_id": 2026020293,
+        "start_time": "2026-11-12T00:00:00+00:00",
+        "away_team_id": 14,
+        "home_team_id": 7
+      },
+      {
+        "date": "2026-11-11",
+        "game_id": 2026020294,
+        "start_time": "2026-11-12T00:30:00+00:00",
+        "away_team_id": 3,
+        "home_team_id": 20
+      },
+      {
+        "date": "2026-11-11",
+        "game_id": 2026020295,
+        "start_time": "2026-11-12T02:00:00+00:00",
+        "away_team_id": 4,
+        "home_team_id": 22
+      },
+      {
+        "date": "2026-11-11",
+        "game_id": 2026020296,
+        "start_time": "2026-11-12T02:30:00+00:00",
+        "away_team_id": 68,
+        "home_team_id": 54
+      },
+      {
+        "date": "2026-11-11",
+        "game_id": 2026020297,
+        "start_time": "2026-11-12T03:00:00+00:00",
+        "away_team_id": 18,
+        "home_team_id": 24
+      },
+      {
+        "date": "2026-11-11",
+        "game_id": 2026020298,
+        "start_time": "2026-11-12T03:00:00+00:00",
+        "away_team_id": 5,
+        "home_team_id": 28
+      },
+      {
+        "date": "2026-11-12",
+        "game_id": 2026020299,
+        "start_time": "2026-11-13T00:00:00+00:00",
+        "away_team_id": 8,
+        "home_team_id": 6
+      },
+      {
+        "date": "2026-11-12",
+        "game_id": 2026020300,
+        "start_time": "2026-11-13T00:00:00+00:00",
+        "away_team_id": 30,
+        "home_team_id": 10
+      },
+      {
+        "date": "2026-11-12",
+        "game_id": 2026020301,
+        "start_time": "2026-11-13T00:00:00+00:00",
+        "away_team_id": 21,
+        "home_team_id": 9
+      },
+      {
+        "date": "2026-11-12",
+        "game_id": 2026020302,
+        "start_time": "2026-11-13T00:30:00+00:00",
+        "away_team_id": 17,
+        "home_team_id": 13
+      },
+      {
+        "date": "2026-11-12",
+        "game_id": 2026020303,
+        "start_time": "2026-11-13T00:00:00+00:00",
+        "away_team_id": 15,
+        "home_team_id": 1
+      },
+      {
+        "date": "2026-11-12",
+        "game_id": 2026020304,
+        "start_time": "2026-11-13T00:00:00+00:00",
+        "away_team_id": 14,
+        "home_team_id": 29
+      },
+      {
+        "date": "2026-11-12",
+        "game_id": 2026020305,
+        "start_time": "2026-11-13T01:00:00+00:00",
+        "away_team_id": 7,
+        "home_team_id": 16
+      },
+      {
+        "date": "2026-11-12",
+        "game_id": 2026020306,
+        "start_time": "2026-11-13T01:00:00+00:00",
+        "away_team_id": 52,
+        "home_team_id": 25
+      },
+      {
+        "date": "2026-11-12",
+        "game_id": 2026020307,
+        "start_time": "2026-11-13T02:00:00+00:00",
+        "away_team_id": 19,
+        "home_team_id": 68
+      },
+      {
+        "date": "2026-11-12",
+        "game_id": 2026020308,
+        "start_time": "2026-11-13T03:00:00+00:00",
+        "away_team_id": 2,
+        "home_team_id": 26
+      },
+      {
+        "date": "2026-11-12",
+        "game_id": 2026020309,
+        "start_time": "2026-11-12T17:00:00+00:00",
+        "away_team_id": 12,
+        "home_team_id": 55
+      },
+      {
+        "date": "2026-11-13",
+        "game_id": 2026020310,
+        "start_time": "2026-11-14T02:00:00+00:00",
+        "away_team_id": 3,
+        "home_team_id": 23
+      },
+      {
+        "date": "2026-11-13",
+        "game_id": 2026020311,
+        "start_time": "2026-11-14T03:00:00+00:00",
+        "away_team_id": 18,
+        "home_team_id": 54
+      }
+    ],
+    "checked_at": "2026-11-07T21:21:03.688949+00:00",
+    "goalie_rows": [
+      {
+        "rows": 56,
+        "games": 12,
+        "game_date": "2026-11-07",
+        "newest_update": "2026-11-02T10:15:41.881988+00:00",
+        "oldest_update": "2026-11-02T10:15:41.881988+00:00"
+      },
+      {
+        "rows": 29,
+        "games": 6,
+        "game_date": "2026-11-08",
+        "newest_update": "2026-11-02T10:15:41.881988+00:00",
+        "oldest_update": "2026-11-02T10:15:41.881988+00:00"
+      },
+      {
+        "rows": 15,
+        "games": 3,
+        "game_date": "2026-11-09",
+        "newest_update": "2026-11-03T10:16:36.62418+00:00",
+        "oldest_update": "2026-11-03T10:16:36.62418+00:00"
+      }
+    ],
+    "forge_rows_all_runs": [
+      {
+        "rows": 2101,
+        "runs": 5,
+        "games": 12,
+        "as_of_date": "2026-11-07",
+        "newest_update": "2026-11-07T10:18:06.04+00:00"
+      },
+      {
+        "rows": 854,
+        "runs": 4,
+        "games": 6,
+        "as_of_date": "2026-11-08",
+        "newest_update": "2026-11-07T10:21:34.177+00:00"
+      },
+      {
+        "rows": 319,
+        "runs": 3,
+        "games": 3,
+        "as_of_date": "2026-11-09",
+        "newest_update": "2026-11-07T10:22:08.715+00:00"
+      }
+    ]
+  },
+  "proposed_goalie_operation": {
+    "request": "POST /api/v1/db/update-goalie-projections-v2?endDate=2026-11-13&limit=7",
+    "invocation_limit": 1,
+    "concurrency": 1,
+    "validity": "Only after approval and renewed checks, while server UTC date remains 2026-11-07.",
+    "game_ids": [
+      2026020265,
+      2026020266,
+      2026020267,
+      2026020268,
+      2026020269,
+      2026020270,
+      2026020271,
+      2026020272,
+      2026020273,
+      2026020274,
+      2026020275,
+      2026020276,
+      2026020277,
+      2026020278,
+      2026020279,
+      2026020280,
+      2026020281,
+      2026020282,
+      2026020283,
+      2026020284,
+      2026020285,
+      2026020286,
+      2026020287,
+      2026020288,
+      2026020289,
+      2026020290,
+      2026020291,
+      2026020292,
+      2026020293,
+      2026020294,
+      2026020295,
+      2026020296,
+      2026020297,
+      2026020298,
+      2026020299,
+      2026020300,
+      2026020301,
+      2026020302,
+      2026020303,
+      2026020304,
+      2026020305,
+      2026020306,
+      2026020307,
+      2026020308,
+      2026020309,
+      2026020310,
+      2026020311
+    ],
+    "source_requests": {
+      "nhl_season": 1,
+      "nhl_team_goalie_logs": 32,
+      "team_log_concurrency": 5,
+      "team_log_page_limit": 200,
+      "retries": 0
+    },
+    "upsert_expected_rows": 216,
+    "upsert_bound": "Eligible goalie candidates from fresh NHL logs for the 47 selected games; 216 is an estimate, not an enforced cap.",
+    "cleanup_expected_existing_rows": 4,
+    "cleanup_predicates": [
+      {
+        "date": "2026-11-07",
+        "name": "Spencer Martin",
+        "game_id": 2026020267,
+        "team_id": 3,
+        "persisted": true,
+        "player_id": 8477484,
+        "updated_at": "2026-11-02T10:15:41.881988+00:00",
+        "current_teams": null
+      },
+      {
+        "date": "2026-11-07",
+        "name": "Nico Daws",
+        "game_id": 2026020270,
+        "team_id": 1,
+        "persisted": true,
+        "player_id": 8482076,
+        "updated_at": "2026-11-02T10:15:41.881988+00:00",
+        "current_teams": [
+          52
+        ]
+      },
+      {
+        "date": "2026-11-08",
+        "name": "Nico Daws",
+        "game_id": 2026020279,
+        "team_id": 1,
+        "persisted": true,
+        "player_id": 8482076,
+        "updated_at": "2026-11-02T10:15:41.881988+00:00",
+        "current_teams": [
+          52
+        ]
+      },
+      {
+        "date": "2026-11-09",
+        "name": "Spencer Martin",
+        "game_id": 2026020283,
+        "team_id": 3,
+        "persisted": true,
+        "player_id": 8477484,
+        "updated_at": "2026-11-03T10:16:36.62418+00:00",
+        "current_teams": null
+      },
+      {
+        "date": "2026-11-10",
+        "name": "Nico Daws",
+        "game_id": 2026020291,
+        "team_id": 1,
+        "persisted": false,
+        "player_id": 8482076,
+        "updated_at": null,
+        "current_teams": [
+          52
+        ]
+      },
+      {
+        "date": "2026-11-11",
+        "name": "Spencer Martin",
+        "game_id": 2026020294,
+        "team_id": 3,
+        "persisted": false,
+        "player_id": 8477484,
+        "updated_at": null,
+        "current_teams": null
+      },
+      {
+        "date": "2026-11-12",
+        "name": "Nico Daws",
+        "game_id": 2026020303,
+        "team_id": 1,
+        "persisted": false,
+        "player_id": 8482076,
+        "updated_at": null,
+        "current_teams": [
+          52
+        ]
+      },
+      {
+        "date": "2026-11-13",
+        "name": "Spencer Martin",
+        "game_id": 2026020310,
+        "team_id": 3,
+        "persisted": false,
+        "player_id": 8477484,
+        "updated_at": null,
+        "current_teams": null
+      }
+    ],
+    "cleanup_bound": "Fresh-source rejected game/team/player predicates in the selected games, only after all upserts succeed. This endpoint does not enforce a supplied static predicate manifest or a four-row deletion cap.",
+    "output_tables": [
+      "goalie_start_projections",
+      "cron_job_audit"
+    ],
+    "platform_max_seconds": 240,
+    "stop": "Do not retry on timeout, partial, failure, uncertain response, source/roster/slate drift, or unexpected output. Inspect production receipts and row state first."
+  },
+  "proposed_forge_operation": {
+    "status": "BLOCKED_ON_CURRENT_COMPUTE_CONFIGURATION_AND_SEPARATE_APPROVAL",
+    "dates": [
+      {
+        "date": "2026-11-08",
+        "game_ids": [
+          2026020277,
+          2026020278,
+          2026020279,
+          2026020280,
+          2026020281,
+          2026020282
+        ]
+      },
+      {
+        "date": "2026-11-09",
+        "game_ids": [
+          2026020283,
+          2026020284,
+          2026020285
+        ]
+      },
+      {
+        "date": "2026-11-10",
+        "game_ids": [
+          2026020286,
+          2026020287,
+          2026020288,
+          2026020289,
+          2026020290,
+          2026020291,
+          2026020292
+        ]
+      },
+      {
+        "date": "2026-11-11",
+        "game_ids": [
+          2026020293,
+          2026020294,
+          2026020295,
+          2026020296,
+          2026020297,
+          2026020298
+        ]
+      },
+      {
+        "date": "2026-11-12",
+        "game_ids": [
+          2026020299,
+          2026020300,
+          2026020301,
+          2026020302,
+          2026020303,
+          2026020304,
+          2026020305,
+          2026020306,
+          2026020307,
+          2026020308,
+          2026020309
+        ]
+      },
+      {
+        "date": "2026-11-13",
+        "game_ids": [
+          2026020310,
+          2026020311
+        ]
+      }
+    ],
+    "invocations_max": 6,
+    "concurrency": 1,
+    "horizon_games": 1,
+    "maxDurationMs": 210000,
+    "route_response_deadline_ms": 225000,
+    "platform_max_ms": 240000,
+    "requests": "One POST /api/v1/db/run-projection-v2?date=DATE&horizonGames=1&maxDurationMs=210000 for each Nov8–13 full slate; omit gameIds, do not use ranges or resume automatically.",
+    "no_nov7_recompute_reason": "Two Nov7 games had already passed scheduled puck drop at preflight. Preserve today's pregame analytics and full-slate selection until separately approved.",
+    "output_tables_without_starter_board": [
+      "forge_runs",
+      "forge_player_projections",
+      "forge_team_projections",
+      "forge_goalie_projections",
+      "forge_reserve_projections",
+      "player_prediction_outputs",
+      "game_prediction_outputs",
+      "model_market_flags_daily",
+      "cron_job_audit"
+    ],
+    "sidecar_replacement": {
+      "model_name": "forge",
+      "model_version": "market-context-v1",
+      "scope": "same snapshot date and selected game; player/game prediction outputs additionally prediction_scope=pregame"
+    },
+    "flag_question": "Is Production STARTER_BOARD_COMPUTE_ENABLED explicitly false? If unset, what is START_CHART_GAME_REVISIONS? If effective compute is true, also establish capture, canary and season-bootstrap values before approving the larger scope.",
+    "flags_not_changed": true,
+    "gates": "Normal full preflight and lease checks remain enabled. Do not force/bypass, reset projection_pipeline_state, continue partial runs, or sweep old runs."
+  },
+  "limitations": [
+    "Stored WGO reconstruction exactly matches the earlier 224-row payload count but is not a fresh NHL response replay.",
+    "Read-only freshness checks verified team/line coverage and latest derived dates, not a complete fresh PBP/raw-shift parity scan. The ordinary route rechecks those gates if approved.",
+    "No production environment listing retried after denial. Starter Board configuration remains unknown.",
+    "No recovery endpoint, production data mutation, flag change, stage reset, calibration run, or deployment performed during this preflight.",
+    "All counts and leases must be refreshed immediately before any approved operation. No automatic continuation across UTC midnight."
+  ]
+}

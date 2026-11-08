@@ -1,0 +1,15 @@
+{
+  "retainedLeases": [
+    "CODEX-NST-GOALIE-WRITER-20261101-ROUTE",
+    "CODEX-NST-GOALIE-WRITER-20261101-RUNNER",
+    "CODEX-NST-GOALIE-WRITER-20261101-REPORT",
+    "CODEX-NST-GOALIE-CHECKPOINT-SQL-20261101",
+    "CODEX-NST-GOALIE-PREPARATION-20261101",
+    "CODEX-NST-GOALIE-WRITER-20261101-SHARED-ADMISSION",
+    "CODEX-NST-GOALIE-LIFECYCLE-20261101",
+    "CODEX-NST-GOALIE-WRITER-20261101-ENCLOSING-CALLERS",
+    "CODEX-NST-GOALIE-AGGREGATE-PROXY-20261101"
+  ],
+  "otherLeases": "preserved",
+  "sourceSnapshot": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/checkpoint-adapter/continuation2/LOCAL-CANDIDATE.json"
+}

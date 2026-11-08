@@ -1,0 +1,148 @@
+{
+  "version": "luna-r2-authorized-continuation-v1",
+  "createdAt": "2026-10-31T20:50:15.286870+00:00",
+  "batchHash": "467ae6dc553c05744ff5ff7e434a25f849d41497b746b82cef9d1dee806be3f9",
+  "r2PinsSha256": "9adcd79c7eac81b009289de9804790d242a88df64296d6b91c5d1a32caf4fe96",
+  "authorizingParentThread": "01a189f6-9a3a-7235-a989-e1af4f47b014",
+  "independentAcceptanceThread": "01a1936a-45ae-73d0-ae05-fe4339c5a022",
+  "credentialClearance": "Owner confirms exposed key revoked and replacement saved; masked in-memory comparison matches active restricted project key. No secret in artifacts.",
+  "budget": {
+    "version": "luna-evaluation-budget-v1",
+    "maxCalls": 20,
+    "maxRetries": 0,
+    "concurrency": 1,
+    "capNanoUsd": 1000000000,
+    "priorExposureNanoUsd": 262519843,
+    "reservationNanoUsd": 233000000,
+    "maxNewExposureNanoUsd": 737480157,
+    "promotionalSafetyReserveNanoUsd": 5000000000,
+    "expiresAt": "2026-11-01T23:59:59Z",
+    "stopOnHeldOrUncertain": true,
+    "paidDispatchAuthorizedByManifest": false
+  },
+  "historicalLedgerSha256": "e8418735afaeff893177e550df6774600c6c6fec4f49c2b01c183712cdc064f2",
+  "approvedPolicyId": "owner-authorized-r2-467ae6dc553c05744ff5ff7e434a25f849d41497b746b82cef9d1dee806be3f9",
+  "execution": "Existing pinned review-ifttt-luna.ts CLI, one report at a time; grade before next; no retries; no new HTTP runner. One fixed continuation ledger, never reset.",
+  "plannedRequests": [
+    {
+      "caseId": "E01",
+      "endpoint": "responses",
+      "hash": "e462a1fdead8678a2fc4cf1991b0515f0b7b19d87954c8597ae427e163310423",
+      "bytes": 14008
+    },
+    {
+      "caseId": "E01",
+      "endpoint": "decisions",
+      "hash": "fd281e98c460607c2e7b3c740c75a417ac86703eceaf8dfe45bc47f128143a38",
+      "bytes": 3136
+    },
+    {
+      "caseId": "E02",
+      "endpoint": "responses",
+      "hash": "a42e5635783be70956a4f039d81436fdd0bbd16aa333b2f653847dc835eab1cf",
+      "bytes": 13772
+    },
+    {
+      "caseId": "E03",
+      "endpoint": "responses",
+      "hash": "a78b0bcf63141f771b8c310bdd14c49d7f5ea016bb7317b4de233bf680db1129",
+      "bytes": 14070
+    },
+    {
+      "caseId": "E04",
+      "endpoint": "responses",
+      "hash": "42e91c01847a59b0435f59930a9733ad43cd3aed164a804dc9444011b6a8212d",
+      "bytes": 13767
+    },
+    {
+      "caseId": "E05",
+      "endpoint": "responses",
+      "hash": "cf9e76bdd01aca1d4e27a7a66865d10055d65545077a59cd58bc58f46b2c2eec",
+      "bytes": 13775
+    },
+    {
+      "caseId": "E06",
+      "endpoint": "responses",
+      "hash": "0bdb49a3c388f49f5b7b85da851a1f993b4674fce2eee8bd859f86800d7b569c",
+      "bytes": 14037
+    },
+    {
+      "caseId": "E06",
+      "endpoint": "decisions",
+      "hash": "c670c21fbde1ddba42ebd5165cee7793fa4924d6839df431ec3e00c6d03a45f5",
+      "bytes": 3223
+    },
+    {
+      "caseId": "E07",
+      "endpoint": "responses",
+      "hash": "82150f1bdbd24709c782017ea89a39540255668b99537d4bb9ba56a01ccb2645",
+      "bytes": 13771
+    },
+    {
+      "caseId": "E08",
+      "endpoint": "responses",
+      "hash": "e097e5bc9cd78ed9585b4157bd6876dcec2b42eedc8aacf854d2cd2ef7a975b6",
+      "bytes": 14041
+    },
+    {
+      "caseId": "E09",
+      "endpoint": "responses",
+      "hash": "0a3d16d1d28d790161f709fddd717ce08130bc1e9c2fe30345a899ffabc4aa6a",
+      "bytes": 14476
+    },
+    {
+      "caseId": "E10",
+      "endpoint": "responses",
+      "hash": "35646d8a9d36ad862fe4d450d5f0024271d06e067b42b02a651bd37dee4f288e",
+      "bytes": 14075
+    },
+    {
+      "caseId": "E10",
+      "endpoint": "decisions",
+      "hash": "6d44c708b3e1173a25d906f2348bd28ac47f20ec262ece430ffda3430754183e",
+      "bytes": 3203
+    },
+    {
+      "caseId": "E11",
+      "endpoint": "responses",
+      "hash": "59689a6ec9d0859d86d1663a251dc5af57d9e874f753a030d2f456ba57008e7e",
+      "bytes": 14975
+    },
+    {
+      "caseId": "E11",
+      "endpoint": "decisions",
+      "hash": "5781feae2b9115b7068461d20b8cb0fcb34746baa4cbd2df0b1790702c951740",
+      "bytes": 3162
+    },
+    {
+      "caseId": "E12",
+      "endpoint": "responses",
+      "hash": "1a902b0fa4275ec286835147584ed29039939ba61a6e2ec402c68bb74f0fb71b",
+      "bytes": 14985
+    },
+    {
+      "caseId": "E13",
+      "endpoint": "responses",
+      "hash": "3d15b0a51d1717737d5bead0111dd868ebdb4cbec8c60d8ef18f08f9870866da",
+      "bytes": 13767
+    },
+    {
+      "caseId": "E14",
+      "endpoint": "responses",
+      "hash": "991b2f60340f22e8a0c0cf1ec09ba50cefd5ca1ea23c12a63878d5c1616cfc73",
+      "bytes": 14065
+    },
+    {
+      "caseId": "E15",
+      "endpoint": "responses",
+      "hash": "eaf8fcb9cc536a3b0e09077cc282e8861cf3143bfea24be910150069469ef3d2",
+      "bytes": 13781
+    },
+    {
+      "caseId": "E16",
+      "endpoint": "responses",
+      "hash": "3ee9fd729fa58adfc3301ad98aa996e15ec8827a5bddd81d2650407be2d070a5",
+      "bytes": 13669
+    }
+  ]
+}

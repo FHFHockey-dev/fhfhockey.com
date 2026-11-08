@@ -1,0 +1,22 @@
+
+> web@0.1.0 test
+> vitest --run lib/socialShare/modules/lastNightsStandouts.test.ts lib/socialShare/modules/goaliePeriod.test.ts lib/socialShare/modules/goalieGsax.test.ts --maxWorkers=1 --minWorkers=1
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+(node:83518) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/socialShare/modules/goaliePeriod.test.ts (54 tests) 288ms
+(node:83524) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/socialShare/modules/goalieGsax.test.ts (38 tests) 63ms
+(node:83537) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/socialShare/modules/lastNightsStandouts.test.ts (81 tests) 14ms
+
+ Test Files  3 passed (3)
+      Tests  173 passed (173)
+   Start at  14:45:51
+   Duration  1.63s (transform 333ms, setup 5ms, collect 423ms, tests 366ms, environment 459ms, prepare 97ms)
+

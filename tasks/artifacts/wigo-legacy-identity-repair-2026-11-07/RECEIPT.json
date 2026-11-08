@@ -1,0 +1,72 @@
+{
+  "status": "prepared_not_executed",
+  "project": "fyhftlxokyjtpndbkfse",
+  "table": "public.wgo_skater_stats",
+  "rows": 273,
+  "players": 33,
+  "dates": 184,
+  "date_range": [
+    "2016-11-23",
+    "2023-04-14"
+  ],
+  "source_documents_captured": 45,
+  "source_documents_used": 44,
+  "source_stats_compared": [
+    "goals",
+    "assists",
+    "points",
+    "shots",
+    "plus_minus",
+    "penalty_minutes",
+    "toi_per_game"
+  ],
+  "season_corrections": [
+    {
+      "id": 2813678,
+      "player_id": 8476425,
+      "date": "2016-11-23",
+      "before": 20242025,
+      "after": 20162017,
+      "game_id": 2016020297
+    },
+    {
+      "id": 2814157,
+      "player_id": 8476425,
+      "date": "2016-11-25",
+      "before": 20242025,
+      "after": 20162017,
+      "game_id": 2016020311
+    },
+    {
+      "id": 2814495,
+      "player_id": 8476425,
+      "date": "2016-11-26",
+      "before": 20242025,
+      "after": 20162017,
+      "game_id": 2016020319
+    }
+  ],
+  "preflight": {
+    "changed_rows": 0,
+    "missing_rows": 0,
+    "conflicting_player_games": 0,
+    "schedule_conflicts": 0,
+    "schedule_missing": 4,
+    "noninternal_triggers": 0
+  },
+  "projected_frames": {
+    "players": 33,
+    "rows": 608,
+    "invalid_identity_rows": 0,
+    "duplicate_player_games": 0,
+    "planned_rows_outside_current_frames": 0
+  },
+  "tests_passed": 15,
+  "production_writes": 0,
+  "application_or_ingestion_endpoint_calls": 0,
+  "deployments_builds_pushes": 0,
+  "statement_timeout_seconds": 15,
+  "lock_timeout_seconds": 2,
+  "exact_sql_sha256": "718ce0010b330ff9291bfb36187a7deb85a419918cebd1cc5059f284c20023f2",
+  "source_plan_sha256": "23dda485e090ade484385bbc40731dd78d687aeefdadbd133c83e706ddebf4f3"
+}

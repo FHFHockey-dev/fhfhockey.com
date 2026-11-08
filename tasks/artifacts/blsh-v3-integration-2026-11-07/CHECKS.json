@@ -1,0 +1,53 @@
+{
+  "verifiedAtUTC": "2026-11-07T22:05:23.283526+00:00",
+  "sourceManifest": "MANIFEST.json",
+  "uiTests": {
+    "status": "passed",
+    "tests": 13,
+    "log": "tests-review-fixes.log"
+  },
+  "typecheck": {
+    "status": "passed",
+    "scope": "full canonical web tsc --noEmit",
+    "log": "types-review-fixes.log"
+  },
+  "lint": {
+    "status": "passed",
+    "scope": "three changed TSX files",
+    "log": "lint-review-fixes.log"
+  },
+  "browser": {
+    "status": "passed",
+    "receipt": "browser.json",
+    "log": "browser-review-fixes.log",
+    "scope": "Actual components/styles, local authenticated candidate, isolated presentation router; not full Next integration"
+  },
+  "packaging": {
+    "status": "passed",
+    "receipt": "/Users/tim/Documents/Codex/2026-11-07/blsh-v3-integration/PACKAGE-RECEIPT.json",
+    "summary": "package-summary.json"
+  },
+  "cleanup": {
+    "ownHeavyLockReleased": true,
+    "port3165Free": true
+  },
+  "productionWrites": 0,
+  "remoteBuilds": 0,
+  "deployments": 0,
+  "gitCommitsOrPushes": 0,
+  "reservedHoldoutReads": 0,
+  "runtimePinChanges": 0,
+  "independentReview": "Three findings corrected and independently re-reviewed; no new blocking issue.",
+  "pppEvidenceComposition": {
+    "status": "independently reviewed evidence-only",
+    "review": "PPP-COMPOSITION-REVIEW.md",
+    "artifact": "../blsh-ppp-later-composition-2026-11-07",
+    "tests": 28,
+    "changedPPPFields": 44,
+    "unresolvedPPP": 168,
+    "supportedSelectedWindows": 507,
+    "supportedFiveRecordWindows": 417,
+    "currentQualified": false,
+    "scoringAdmission": false
+  }
+}

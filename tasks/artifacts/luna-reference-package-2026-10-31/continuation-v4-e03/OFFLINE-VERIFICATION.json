@@ -1,0 +1,125 @@
+{
+  "version": "luna-v4-e03-continuation-offline-verification-v1",
+  "planSha256": "4714db6b50a246bc05ca2b7cd8f6f90a45e01d39e3a8627e0fece91da9016946",
+  "allPacketsLabelsBindingsUnchanged": true,
+  "excludedE01": true,
+  "excludedE02": true,
+  "actualProviderRequests": 0,
+  "retries": 0,
+  "realLedgerUnchangedAndDisabled": true,
+  "historicalLedgerUnchanged": true,
+  "scenarios": [
+    {
+      "scenario": "all-pass",
+      "reportsReached": 14,
+      "newMockCalls": 17,
+      "simulatedTotalAttempts": 20,
+      "startingAttemptsPreserved": true,
+      "aggregateExposureNanoUsd": 264057646,
+      "stopped": false,
+      "request21Rejected": true,
+      "blockedReason": null,
+      "firstReportScore": {
+        "identity": true,
+        "goalie": true,
+        "decisions": true,
+        "labelMatch": true
+      },
+      "dispatchedHashes": [
+        "cb4ebd599a52911bd995fd7089baf7062544dabdf3efd093e05d7782cf540084",
+        "ea9e7d92269db5fb02f815d908e235536892cb75b5923bb6e8b69f2200ab5ab8",
+        "afff9e4835346591f2e624c4473ac0542db178a459557b6a0dd7d2e397ba88af",
+        "a3f5c84126412a9d3e070017013f03152caeeb776aa488be61c0a4a64d82ab7e",
+        "c670c21fbde1ddba42ebd5165cee7793fa4924d6839df431ec3e00c6d03a45f5",
+        "ff98f830af9d75baffe2d39192a145fa777a257d5e99a057223590398348c5d6",
+        "9d1a891a46a38128e08f272045e5ec9d95a656d413ac5fbb1574e01230c9dec9",
+        "fbe771b131918b3cf739b357ce324baaf38dac818b98fc3100b33b6498c7846c",
+        "af1ac22d172d4127a04c08b0b7f2227e59be75059043ee7052802d531b62893d",
+        "6d44c708b3e1173a25d906f2348bd28ac47f20ec262ece430ffda3430754183e",
+        "9841ce0f388de9ca206cf22abe7dbd82afb5a3f9500fe6f7a1215e72ad758cba",
+        "5781feae2b9115b7068461d20b8cb0fcb34746baa4cbd2df0b1790702c951740",
+        "e344741ac77450ec7be9655f6ea7ca57933d26d6b185450ee9df473776a77b2f",
+        "7270c5fa8947367d749d52bb2b0917adc03760b9785b59b7fdbb3e9d5955576d",
+        "102d9692c07022f282ba3c3c29aed0636aced6adce77164ddb5545a851bccafa",
+        "06fe01bba0cb4d29d1967fc072951c2ce42cf76dc9059c825b04ea0f728233f2",
+        "7308c16d8d1b5c68a6db90c1d4be843203390ba20c5a47c62eb15cecc14cf3b7"
+      ]
+    },
+    {
+      "scenario": "uncertain-first-call",
+      "reportsReached": 1,
+      "newMockCalls": 1,
+      "simulatedTotalAttempts": 4,
+      "startingAttemptsPreserved": true,
+      "aggregateExposureNanoUsd": 496485646,
+      "stopped": true,
+      "request21Rejected": false,
+      "blockedReason": "unknown_billed_outcome",
+      "firstReportScore": {
+        "identity": false,
+        "goalie": false,
+        "decisions": true,
+        "labelMatch": false
+      },
+      "dispatchedHashes": [
+        "cb4ebd599a52911bd995fd7089baf7062544dabdf3efd093e05d7782cf540084"
+      ]
+    },
+    {
+      "scenario": "label-mismatch-first-report",
+      "reportsReached": 1,
+      "newMockCalls": 1,
+      "simulatedTotalAttempts": 4,
+      "startingAttemptsPreserved": true,
+      "aggregateExposureNanoUsd": 263524146,
+      "stopped": true,
+      "request21Rejected": false,
+      "blockedReason": null,
+      "firstReportScore": {
+        "identity": true,
+        "goalie": false,
+        "decisions": true,
+        "labelMatch": false
+      },
+      "dispatchedHashes": [
+        "cb4ebd599a52911bd995fd7089baf7062544dabdf3efd093e05d7782cf540084"
+      ]
+    },
+    {
+      "scenario": "disabled-ledger",
+      "reportsReached": 1,
+      "newMockCalls": 0,
+      "simulatedTotalAttempts": 3,
+      "startingAttemptsPreserved": true,
+      "aggregateExposureNanoUsd": 263485646,
+      "stopped": true,
+      "request21Rejected": false,
+      "blockedReason": "bounded_continuation_stopped",
+      "firstReportScore": {
+        "identity": false,
+        "goalie": false,
+        "decisions": true,
+        "labelMatch": false
+      },
+      "dispatchedHashes": []
+    },
+    {
+      "scenario": "insufficient-reservation",
+      "reportsReached": 1,
+      "newMockCalls": 0,
+      "simulatedTotalAttempts": 3,
+      "startingAttemptsPreserved": true,
+      "aggregateExposureNanoUsd": 263485646,
+      "stopped": true,
+      "request21Rejected": false,
+      "blockedReason": null,
+      "firstReportScore": {
+        "identity": false,
+        "goalie": false,
+        "decisions": true,
+        "labelMatch": false
+      },
+      "dispatchedHashes": []
+    }
+  ]
+}

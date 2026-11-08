@@ -1,0 +1,2030 @@
+[
+  {
+    "name": "UTC",
+    "exitCode": 0,
+    "result": {
+      "timezone": "UTC",
+      "originalReadback": {
+        "issuedAt": "2026-11-02T22:05:00.000002Z",
+        "observedAt": "2026-11-02T22:05:00.000001Z",
+        "before": {
+          "pass": true,
+          "issued": 1,
+          "coverage": {
+            "start_chart": {
+              "issued": 1,
+              "matched": 1,
+              "readbacks": 1
+            }
+          },
+          "settled": 0,
+          "sealedRows": 0,
+          "sealed": {
+            "from": "2026-10-23",
+            "to": "2026-10-30"
+          },
+          "tolerance": 0.0001,
+          "findingCodes": {}
+        },
+        "after": {
+          "pass": false,
+          "issued": 1,
+          "coverage": {
+            "start_chart": {
+              "issued": 1,
+              "matched": 1,
+              "readbacks": 1
+            }
+          },
+          "settled": 0,
+          "sealedRows": 0,
+          "sealed": {
+            "from": "2026-10-23",
+            "to": "2026-10-30"
+          },
+          "tolerance": 0.0001,
+          "findingCodes": {
+            "readback_before_issue": 1
+          }
+        }
+      },
+      "originalSettlement": {
+        "scheduledAt": "2026-11-03T00:00:00Z",
+        "recordedAt": "2026-11-03T00:00:00.000001Z",
+        "actual": 3,
+        "before": {
+          "pass": false,
+          "issued": 1,
+          "coverage": {
+            "rso": {
+              "issued": 1,
+              "matched": 1,
+              "readbacks": 1
+            },
+            "start_chart": {
+              "issued": 1,
+              "matched": 1,
+              "readbacks": 1
+            }
+          },
+          "settled": 0,
+          "sealedRows": 0,
+          "sealed": {
+            "from": "2026-10-23",
+            "to": "2026-10-30"
+          },
+          "tolerance": 0.0001,
+          "findingCodes": {
+            "settlement_before_game": 1
+          }
+        },
+        "after": {
+          "pass": true,
+          "issued": 1,
+          "coverage": {
+            "rso": {
+              "issued": 1,
+              "matched": 1,
+              "readbacks": 1
+            },
+            "start_chart": {
+              "issued": 1,
+              "matched": 1,
+              "readbacks": 1
+            }
+          },
+          "settled": 1,
+          "sealedRows": 0,
+          "sealed": {
+            "from": "2026-10-23",
+            "to": "2026-10-30"
+          },
+          "tolerance": 0.0001,
+          "findingCodes": {}
+        }
+      },
+      "boundaryCases": [
+        {
+          "boundary": "cutoff_issue",
+          "relativeMicroseconds": -1,
+          "expectedPass": true,
+          "summary": {
+            "pass": true,
+            "issued": 1,
+            "coverage": {
+              "rso": {
+                "issued": 1,
+                "matched": 1,
+                "readbacks": 1
+              },
+              "start_chart": {
+                "issued": 1,
+                "matched": 1,
+                "readbacks": 1
+              }
+            },
+            "settled": 1,
+            "sealedRows": 0,
+            "sealed": {
+              "from": "2026-10-23",
+              "to": "2026-10-30"
+            },
+            "tolerance": 0.0001,
+            "findingCodes": {}
+          }
+        },
+        {
+          "boundary": "cutoff_issue",
+          "relativeMicroseconds": 0,
+          "expectedPass": true,
+          "summary": {
+            "pass": true,
+            "issued": 1,
+            "coverage": {
+              "rso": {
+                "issued": 1,
+                "matched": 1,
+                "readbacks": 1
+              },
+              "start_chart": {
+                "issued": 1,
+                "matched": 1,
+                "readbacks": 1
+              }
+            },
+            "settled": 1,
+            "sealedRows": 0,
+            "sealed": {
+              "from": "2026-10-23",
+              "to": "2026-10-30"
+            },
+            "tolerance": 0.0001,
+            "findingCodes": {}
+          }
+        },
+        {
+          "boundary": "cutoff_issue",
+          "relativeMicroseconds": 1,
+          "expectedPass": false,
+          "summary": {
+            "pass": false,
+            "issued": 1,
+            "coverage": {
+              "rso": {
+                "issued": 1,
+                "matched": 1,
+                "readbacks": 1
+              },
+              "start_chart": {
+                "issued": 1,
+                "matched": 1,
+                "readbacks": 1
+              }
+            },
+            "settled": 1,
+            "sealedRows": 0,
+            "sealed": {
+              "from": "2026-10-23",
+              "to": "2026-10-30"
+            },
+            "tolerance": 0.0001,
+            "findingCodes": {
+              "cutoff_after_issue": 1
+            }
+          }
+        },
+        {
+          "boundary": "issue_start",
+          "relativeMicroseconds": -1,
+          "expectedPass": true,
+          "summary": {
+            "pass": true,
+            "issued": 1,
+            "coverage": {
+              "rso": {
+                "issued": 1,
+                "matched": 1,
+                "readbacks": 1
+              },
+              "start_chart": {
+                "issued": 1,
+                "matched": 1,
+                "readbacks": 1
+              }
+            },
+            "settled": 1,
+            "sealedRows": 0,
+            "sealed": {
+              "from": "2026-10-23",
+              "to": "2026-10-30"
+            },
+            "tolerance": 0.0001,
+            "findingCodes": {}
+          }
+        },
+        {
+          "boundary": "issue_start",
+          "relativeMicroseconds": 0,
+          "expectedPass": false,
+          "summary": {
+            "pass": false,
+            "issued": 1,
+            "coverage": {
+              "rso": {
+                "issued": 1,
+                "matched": 1,
+                "readbacks": 1
+              },
+              "start_chart": {
+                "issued": 1,
+                "matched": 1,
+                "readbacks": 1
+              }
+            },
+            "settled": 1,
+            "sealedRows": 0,
+            "sealed": {
+              "from": "2026-10-23",
+              "to": "2026-10-30"
+            },
+            "tolerance": 0.0001,
+            "findingCodes": {
+              "issued_after_puck_drop": 1,
+              "readback_not_pregame": 2
+            }
+          }
+        },
+        {
+          "boundary": "issue_start",
+          "relativeMicroseconds": 1,
+          "expectedPass": false,
+          "summary": {
+            "pass": false,
+            "issued": 1,
+            "coverage": {
+              "rso": {
+                "issued": 1,
+                "matched": 1,
+                "readbacks": 1
+              },
+              "start_chart": {
+                "issued": 1,
+                "matched": 1,
+                "readbacks": 1
+              }
+            },
+            "settled": 1,
+            "sealedRows": 0,
+            "sealed": {
+              "from": "2026-10-23",
+              "to": "2026-10-30"
+            },
+            "tolerance": 0.0001,
+            "findingCodes": {
+              "issued_after_puck_drop": 1,
+              "readback_not_pregame": 2
+            }
+          }
+        },
+        {
+          "boundary": "readback_issue",
+          "relativeMicroseconds": -1,
+          "expectedPass": false,
+          "summary": {
+            "pass": false,
+            "issued": 1,
+            "coverage": {
+              "rso": {
+                "issued": 1,
+                "matched": 1,
+                "readbacks": 1
+              },
+              "start_chart": {
+                "issued": 1,
+                "matched": 1,
+                "readbacks": 1
+              }
+            },
+            "settled": 1,
+            "sealedRows": 0,
+            "sealed": {
+              "from": "2026-10-23",
+              "to": "2026-10-30"
+            },
+            "tolerance": 0.0001,
+            "findingCodes": {
+              "readback_before_issue": 2
+            }
+          }
+        },
+        {
+          "boundary": "readback_issue",
+          "relativeMicroseconds": 0,
+          "expectedPass": true,
+          "summary": {
+            "pass": true,
+            "issued": 1,
+            "coverage": {
+              "rso": {
+                "issued": 1,
+                "matched": 1,
+                "readbacks": 1
+              },
+              "start_chart": {
+                "issued": 1,
+                "matched": 1,
+                "readbacks": 1
+              }
+            },
+            "settled": 1,
+            "sealedRows": 0,
+            "sealed": {
+              "from": "2026-10-23",
+              "to": "2026-10-30"
+            },
+            "tolerance": 0.0001,
+            "findingCodes": {}
+          }
+        },
+        {
+          "boundary": "readback_issue",
+          "relativeMicroseconds": 1,
+          "expectedPass": true,
+          "summary": {
+            "pass": true,
+            "issued": 1,
+            "coverage": {
+              "rso": {
+                "issued": 1,
+                "matched": 1,
+                "readbacks": 1
+              },
+              "start_chart": {
+                "issued": 1,
+                "matched": 1,
+                "readbacks": 1
+              }
+            },
+            "settled": 1,
+            "sealedRows": 0,
+            "sealed": {
+              "from": "2026-10-23",
+              "to": "2026-10-30"
+            },
+            "tolerance": 0.0001,
+            "findingCodes": {}
+          }
+        },
+        {
+          "boundary": "readback_start",
+          "relativeMicroseconds": -1,
+          "expectedPass": true,
+          "summary": {
+            "pass": true,
+            "issued": 1,
+            "coverage": {
+              "rso": {
+                "issued": 1,
+                "matched": 1,
+                "readbacks": 1
+              },
+              "start_chart": {
+                "issued": 1,
+                "matched": 1,
+                "readbacks": 1
+              }
+            },
+            "settled": 1,
+            "sealedRows": 0,
+            "sealed": {
+              "from": "2026-10-23",
+              "to": "2026-10-30"
+            },
+            "tolerance": 0.0001,
+            "findingCodes": {}
+          }
+        },
+        {
+          "boundary": "readback_start",
+          "relativeMicroseconds": 0,
+          "expectedPass": false,
+          "summary": {
+            "pass": false,
+            "issued": 1,
+            "coverage": {
+              "rso": {
+                "issued": 1,
+                "matched": 1,
+                "readbacks": 1
+              },
+              "start_chart": {
+                "issued": 1,
+                "matched": 1,
+                "readbacks": 1
+              }
+            },
+            "settled": 1,
+            "sealedRows": 0,
+            "sealed": {
+              "from": "2026-10-23",
+              "to": "2026-10-30"
+            },
+            "tolerance": 0.0001,
+            "findingCodes": {
+              "readback_not_pregame": 2
+            }
+          }
+        },
+        {
+          "boundary": "readback_start",
+          "relativeMicroseconds": 1,
+          "expectedPass": false,
+          "summary": {
+            "pass": false,
+            "issued": 1,
+            "coverage": {
+              "rso": {
+                "issued": 1,
+                "matched": 1,
+                "readbacks": 1
+              },
+              "start_chart": {
+                "issued": 1,
+                "matched": 1,
+                "readbacks": 1
+              }
+            },
+            "settled": 1,
+            "sealedRows": 0,
+            "sealed": {
+              "from": "2026-10-23",
+              "to": "2026-10-30"
+            },
+            "tolerance": 0.0001,
+            "findingCodes": {
+              "readback_not_pregame": 2
+            }
+          }
+        },
+        {
+          "boundary": "settlement_start",
+          "relativeMicroseconds": -1,
+          "expectedPass": false,
+          "summary": {
+            "pass": false,
+            "issued": 1,
+            "coverage": {
+              "rso": {
+                "issued": 1,
+                "matched": 1,
+                "readbacks": 1
+              },
+              "start_chart": {
+                "issued": 1,
+                "matched": 1,
+                "readbacks": 1
+              }
+            },
+            "settled": 0,
+            "sealedRows": 0,
+            "sealed": {
+              "from": "2026-10-23",
+              "to": "2026-10-30"
+            },
+            "tolerance": 0.0001,
+            "findingCodes": {
+              "settlement_before_game": 1
+            }
+          }
+        },
+        {
+          "boundary": "settlement_start",
+          "relativeMicroseconds": 0,
+          "expectedPass": false,
+          "summary": {
+            "pass": false,
+            "issued": 1,
+            "coverage": {
+              "rso": {
+                "issued": 1,
+                "matched": 1,
+                "readbacks": 1
+              },
+              "start_chart": {
+                "issued": 1,
+                "matched": 1,
+                "readbacks": 1
+              }
+            },
+            "settled": 0,
+            "sealedRows": 0,
+            "sealed": {
+              "from": "2026-10-23",
+              "to": "2026-10-30"
+            },
+            "tolerance": 0.0001,
+            "findingCodes": {
+              "settlement_before_game": 1
+            }
+          }
+        },
+        {
+          "boundary": "settlement_start",
+          "relativeMicroseconds": 1,
+          "expectedPass": true,
+          "summary": {
+            "pass": true,
+            "issued": 1,
+            "coverage": {
+              "rso": {
+                "issued": 1,
+                "matched": 1,
+                "readbacks": 1
+              },
+              "start_chart": {
+                "issued": 1,
+                "matched": 1,
+                "readbacks": 1
+              }
+            },
+            "settled": 1,
+            "sealedRows": 0,
+            "sealed": {
+              "from": "2026-10-23",
+              "to": "2026-10-30"
+            },
+            "tolerance": 0.0001,
+            "findingCodes": {}
+          }
+        }
+      ],
+      "invalidCases": [
+        {
+          "field": "cutoffAt",
+          "value": "undefined",
+          "findings": {
+            "issued_incomplete": 1,
+            "readback_unissued": 2
+          }
+        },
+        {
+          "field": "cutoffAt",
+          "value": null,
+          "findings": {
+            "issued_incomplete": 1,
+            "readback_unissued": 2
+          }
+        },
+        {
+          "field": "cutoffAt",
+          "value": 0,
+          "findings": {
+            "cutoff_after_issue": 1,
+            "identity_mismatch": 2
+          }
+        },
+        {
+          "field": "cutoffAt",
+          "value": false,
+          "findings": {
+            "cutoff_after_issue": 1,
+            "identity_mismatch": 2
+          }
+        },
+        {
+          "field": "cutoffAt",
+          "value": [],
+          "findings": {
+            "cutoff_after_issue": 1,
+            "identity_mismatch": 2
+          }
+        },
+        {
+          "field": "cutoffAt",
+          "value": {},
+          "findings": {
+            "cutoff_after_issue": 1,
+            "identity_mismatch": 2
+          }
+        },
+        {
+          "field": "cutoffAt",
+          "value": "not-a-date",
+          "findings": {
+            "cutoff_after_issue": 1,
+            "identity_mismatch": 2
+          }
+        },
+        {
+          "field": "cutoffAt",
+          "value": "2026-11-02T22:00:00",
+          "findings": {
+            "cutoff_after_issue": 1,
+            "identity_mismatch": 2
+          }
+        },
+        {
+          "field": "cutoffAt",
+          "value": "2026-11-31T22:00:00Z",
+          "findings": {
+            "cutoff_after_issue": 1,
+            "identity_mismatch": 2
+          }
+        },
+        {
+          "field": "cutoffAt",
+          "value": "2027-02-29T22:00:00Z",
+          "findings": {
+            "cutoff_after_issue": 1,
+            "identity_mismatch": 2
+          }
+        },
+        {
+          "field": "cutoffAt",
+          "value": "2026-11-02T22:00:00.1234567Z",
+          "findings": {
+            "cutoff_after_issue": 1,
+            "identity_mismatch": 2
+          }
+        },
+        {
+          "field": "issuedAt",
+          "value": "undefined",
+          "findings": {
+            "issued_incomplete": 1,
+            "readback_unissued": 2
+          }
+        },
+        {
+          "field": "issuedAt",
+          "value": null,
+          "findings": {
+            "issued_incomplete": 1,
+            "readback_unissued": 2
+          }
+        },
+        {
+          "field": "issuedAt",
+          "value": 0,
+          "findings": {
+            "cutoff_after_issue": 1,
+            "issued_after_puck_drop": 1,
+            "readback_before_issue": 2
+          }
+        },
+        {
+          "field": "issuedAt",
+          "value": false,
+          "findings": {
+            "cutoff_after_issue": 1,
+            "issued_after_puck_drop": 1,
+            "readback_before_issue": 2
+          }
+        },
+        {
+          "field": "issuedAt",
+          "value": [],
+          "findings": {
+            "cutoff_after_issue": 1,
+            "issued_after_puck_drop": 1,
+            "readback_before_issue": 2
+          }
+        },
+        {
+          "field": "issuedAt",
+          "value": {},
+          "findings": {
+            "cutoff_after_issue": 1,
+            "issued_after_puck_drop": 1,
+            "readback_before_issue": 2
+          }
+        },
+        {
+          "field": "issuedAt",
+          "value": "not-a-date",
+          "findings": {
+            "cutoff_after_issue": 1,
+            "issued_after_puck_drop": 1,
+            "readback_before_issue": 2
+          }
+        },
+        {
+          "field": "issuedAt",
+          "value": "2026-11-02T22:00:00",
+          "findings": {
+            "cutoff_after_issue": 1,
+            "issued_after_puck_drop": 1,
+            "readback_before_issue": 2
+          }
+        },
+        {
+          "field": "issuedAt",
+          "value": "2026-11-31T22:00:00Z",
+          "findings": {
+            "cutoff_after_issue": 1,
+            "issued_after_puck_drop": 1,
+            "readback_before_issue": 2
+          }
+        },
+        {
+          "field": "issuedAt",
+          "value": "2027-02-29T22:00:00Z",
+          "findings": {
+            "cutoff_after_issue": 1,
+            "issued_after_puck_drop": 1,
+            "readback_before_issue": 2
+          }
+        },
+        {
+          "field": "issuedAt",
+          "value": "2026-11-02T22:00:00.1234567Z",
+          "findings": {
+            "cutoff_after_issue": 1,
+            "issued_after_puck_drop": 1,
+            "readback_before_issue": 2
+          }
+        },
+        {
+          "field": "scheduledAt",
+          "value": "undefined",
+          "findings": {
+            "issued_incomplete": 1,
+            "readback_unissued": 2
+          }
+        },
+        {
+          "field": "scheduledAt",
+          "value": null,
+          "findings": {
+            "issued_incomplete": 1,
+            "readback_unissued": 2
+          }
+        },
+        {
+          "field": "scheduledAt",
+          "value": 0,
+          "findings": {
+            "issued_after_puck_drop": 1,
+            "readback_not_pregame": 2,
+            "settlement_before_game": 1
+          }
+        },
+        {
+          "field": "scheduledAt",
+          "value": false,
+          "findings": {
+            "issued_after_puck_drop": 1,
+            "readback_not_pregame": 2,
+            "settlement_before_game": 1
+          }
+        },
+        {
+          "field": "scheduledAt",
+          "value": [],
+          "findings": {
+            "issued_after_puck_drop": 1,
+            "readback_not_pregame": 2,
+            "settlement_before_game": 1
+          }
+        },
+        {
+          "field": "scheduledAt",
+          "value": {},
+          "findings": {
+            "issued_after_puck_drop": 1,
+            "readback_not_pregame": 2,
+            "settlement_before_game": 1
+          }
+        },
+        {
+          "field": "scheduledAt",
+          "value": "not-a-date",
+          "findings": {
+            "issued_after_puck_drop": 1,
+            "readback_not_pregame": 2,
+            "settlement_before_game": 1
+          }
+        },
+        {
+          "field": "scheduledAt",
+          "value": "2026-11-02T22:00:00",
+          "findings": {
+            "issued_after_puck_drop": 1,
+            "readback_not_pregame": 2,
+            "settlement_before_game": 1
+          }
+        },
+        {
+          "field": "scheduledAt",
+          "value": "2026-11-31T22:00:00Z",
+          "findings": {
+            "issued_after_puck_drop": 1,
+            "readback_not_pregame": 2,
+            "settlement_before_game": 1
+          }
+        },
+        {
+          "field": "scheduledAt",
+          "value": "2027-02-29T22:00:00Z",
+          "findings": {
+            "issued_after_puck_drop": 1,
+            "readback_not_pregame": 2,
+            "settlement_before_game": 1
+          }
+        },
+        {
+          "field": "scheduledAt",
+          "value": "2026-11-02T22:00:00.1234567Z",
+          "findings": {
+            "issued_after_puck_drop": 1,
+            "readback_not_pregame": 2,
+            "settlement_before_game": 1
+          }
+        },
+        {
+          "field": "observedAt",
+          "value": "undefined",
+          "findings": {
+            "readback_capture_time_missing_or_invalid": 1
+          }
+        },
+        {
+          "field": "observedAt",
+          "value": null,
+          "findings": {
+            "readback_capture_time_missing_or_invalid": 1
+          }
+        },
+        {
+          "field": "observedAt",
+          "value": 0,
+          "findings": {
+            "readback_capture_time_missing_or_invalid": 1
+          }
+        },
+        {
+          "field": "observedAt",
+          "value": false,
+          "findings": {
+            "readback_capture_time_missing_or_invalid": 1
+          }
+        },
+        {
+          "field": "observedAt",
+          "value": [],
+          "findings": {
+            "readback_capture_time_missing_or_invalid": 1
+          }
+        },
+        {
+          "field": "observedAt",
+          "value": {},
+          "findings": {
+            "readback_capture_time_missing_or_invalid": 1
+          }
+        },
+        {
+          "field": "observedAt",
+          "value": "not-a-date",
+          "findings": {
+            "readback_capture_time_missing_or_invalid": 1
+          }
+        },
+        {
+          "field": "observedAt",
+          "value": "2026-11-02T22:00:00",
+          "findings": {
+            "readback_capture_time_missing_or_invalid": 1
+          }
+        },
+        {
+          "field": "observedAt",
+          "value": "2026-11-31T22:00:00Z",
+          "findings": {
+            "readback_capture_time_missing_or_invalid": 1
+          }
+        },
+        {
+          "field": "observedAt",
+          "value": "2027-02-29T22:00:00Z",
+          "findings": {
+            "readback_capture_time_missing_or_invalid": 1
+          }
+        },
+        {
+          "field": "observedAt",
+          "value": "2026-11-02T22:00:00.1234567Z",
+          "findings": {
+            "readback_capture_time_missing_or_invalid": 1
+          }
+        },
+        {
+          "field": "recordedAt",
+          "value": "undefined",
+          "findings": {
+            "settlement_before_game": 1
+          }
+        },
+        {
+          "field": "recordedAt",
+          "value": null,
+          "findings": {
+            "settlement_before_game": 1
+          }
+        },
+        {
+          "field": "recordedAt",
+          "value": 0,
+          "findings": {
+            "settlement_before_game": 1
+          }
+        },
+        {
+          "field": "recordedAt",
+          "value": false,
+          "findings": {
+            "settlement_before_game": 1
+          }
+        },
+        {
+          "field": "recordedAt",
+          "value": [],
+          "findings": {
+            "settlement_before_game": 1
+          }
+        },
+        {
+          "field": "recordedAt",
+          "value": {},
+          "findings": {
+            "settlement_before_game": 1
+          }
+        },
+        {
+          "field": "recordedAt",
+          "value": "not-a-date",
+          "findings": {
+            "settlement_before_game": 1
+          }
+        },
+        {
+          "field": "recordedAt",
+          "value": "2026-11-02T22:00:00",
+          "findings": {
+            "settlement_before_game": 1
+          }
+        },
+        {
+          "field": "recordedAt",
+          "value": "2026-11-31T22:00:00Z",
+          "findings": {
+            "settlement_before_game": 1
+          }
+        },
+        {
+          "field": "recordedAt",
+          "value": "2027-02-29T22:00:00Z",
+          "findings": {
+            "settlement_before_game": 1
+          }
+        },
+        {
+          "field": "recordedAt",
+          "value": "2026-11-02T22:00:00.1234567Z",
+          "findings": {
+            "settlement_before_game": 1
+          }
+        }
+      ],
+      "equivalentOffsetAccepted": true,
+      "leapDaySixDigitAccepted": true,
+      "reportSerializationPassed": true
+    }
+  },
+  {
+    "name": "America/New_York",
+    "exitCode": 0,
+    "result": {
+      "timezone": "America/New_York",
+      "originalReadback": {
+        "issuedAt": "2026-11-02T22:05:00.000002Z",
+        "observedAt": "2026-11-02T22:05:00.000001Z",
+        "before": {
+          "pass": true,
+          "issued": 1,
+          "coverage": {
+            "start_chart": {
+              "issued": 1,
+              "matched": 1,
+              "readbacks": 1
+            }
+          },
+          "settled": 0,
+          "sealedRows": 0,
+          "sealed": {
+            "from": "2026-10-23",
+            "to": "2026-10-30"
+          },
+          "tolerance": 0.0001,
+          "findingCodes": {}
+        },
+        "after": {
+          "pass": false,
+          "issued": 1,
+          "coverage": {
+            "start_chart": {
+              "issued": 1,
+              "matched": 1,
+              "readbacks": 1
+            }
+          },
+          "settled": 0,
+          "sealedRows": 0,
+          "sealed": {
+            "from": "2026-10-23",
+            "to": "2026-10-30"
+          },
+          "tolerance": 0.0001,
+          "findingCodes": {
+            "readback_before_issue": 1
+          }
+        }
+      },
+      "originalSettlement": {
+        "scheduledAt": "2026-11-03T00:00:00Z",
+        "recordedAt": "2026-11-03T00:00:00.000001Z",
+        "actual": 3,
+        "before": {
+          "pass": false,
+          "issued": 1,
+          "coverage": {
+            "rso": {
+              "issued": 1,
+              "matched": 1,
+              "readbacks": 1
+            },
+            "start_chart": {
+              "issued": 1,
+              "matched": 1,
+              "readbacks": 1
+            }
+          },
+          "settled": 0,
+          "sealedRows": 0,
+          "sealed": {
+            "from": "2026-10-23",
+            "to": "2026-10-30"
+          },
+          "tolerance": 0.0001,
+          "findingCodes": {
+            "settlement_before_game": 1
+          }
+        },
+        "after": {
+          "pass": true,
+          "issued": 1,
+          "coverage": {
+            "rso": {
+              "issued": 1,
+              "matched": 1,
+              "readbacks": 1
+            },
+            "start_chart": {
+              "issued": 1,
+              "matched": 1,
+              "readbacks": 1
+            }
+          },
+          "settled": 1,
+          "sealedRows": 0,
+          "sealed": {
+            "from": "2026-10-23",
+            "to": "2026-10-30"
+          },
+          "tolerance": 0.0001,
+          "findingCodes": {}
+        }
+      },
+      "boundaryCases": [
+        {
+          "boundary": "cutoff_issue",
+          "relativeMicroseconds": -1,
+          "expectedPass": true,
+          "summary": {
+            "pass": true,
+            "issued": 1,
+            "coverage": {
+              "rso": {
+                "issued": 1,
+                "matched": 1,
+                "readbacks": 1
+              },
+              "start_chart": {
+                "issued": 1,
+                "matched": 1,
+                "readbacks": 1
+              }
+            },
+            "settled": 1,
+            "sealedRows": 0,
+            "sealed": {
+              "from": "2026-10-23",
+              "to": "2026-10-30"
+            },
+            "tolerance": 0.0001,
+            "findingCodes": {}
+          }
+        },
+        {
+          "boundary": "cutoff_issue",
+          "relativeMicroseconds": 0,
+          "expectedPass": true,
+          "summary": {
+            "pass": true,
+            "issued": 1,
+            "coverage": {
+              "rso": {
+                "issued": 1,
+                "matched": 1,
+                "readbacks": 1
+              },
+              "start_chart": {
+                "issued": 1,
+                "matched": 1,
+                "readbacks": 1
+              }
+            },
+            "settled": 1,
+            "sealedRows": 0,
+            "sealed": {
+              "from": "2026-10-23",
+              "to": "2026-10-30"
+            },
+            "tolerance": 0.0001,
+            "findingCodes": {}
+          }
+        },
+        {
+          "boundary": "cutoff_issue",
+          "relativeMicroseconds": 1,
+          "expectedPass": false,
+          "summary": {
+            "pass": false,
+            "issued": 1,
+            "coverage": {
+              "rso": {
+                "issued": 1,
+                "matched": 1,
+                "readbacks": 1
+              },
+              "start_chart": {
+                "issued": 1,
+                "matched": 1,
+                "readbacks": 1
+              }
+            },
+            "settled": 1,
+            "sealedRows": 0,
+            "sealed": {
+              "from": "2026-10-23",
+              "to": "2026-10-30"
+            },
+            "tolerance": 0.0001,
+            "findingCodes": {
+              "cutoff_after_issue": 1
+            }
+          }
+        },
+        {
+          "boundary": "issue_start",
+          "relativeMicroseconds": -1,
+          "expectedPass": true,
+          "summary": {
+            "pass": true,
+            "issued": 1,
+            "coverage": {
+              "rso": {
+                "issued": 1,
+                "matched": 1,
+                "readbacks": 1
+              },
+              "start_chart": {
+                "issued": 1,
+                "matched": 1,
+                "readbacks": 1
+              }
+            },
+            "settled": 1,
+            "sealedRows": 0,
+            "sealed": {
+              "from": "2026-10-23",
+              "to": "2026-10-30"
+            },
+            "tolerance": 0.0001,
+            "findingCodes": {}
+          }
+        },
+        {
+          "boundary": "issue_start",
+          "relativeMicroseconds": 0,
+          "expectedPass": false,
+          "summary": {
+            "pass": false,
+            "issued": 1,
+            "coverage": {
+              "rso": {
+                "issued": 1,
+                "matched": 1,
+                "readbacks": 1
+              },
+              "start_chart": {
+                "issued": 1,
+                "matched": 1,
+                "readbacks": 1
+              }
+            },
+            "settled": 1,
+            "sealedRows": 0,
+            "sealed": {
+              "from": "2026-10-23",
+              "to": "2026-10-30"
+            },
+            "tolerance": 0.0001,
+            "findingCodes": {
+              "issued_after_puck_drop": 1,
+              "readback_not_pregame": 2
+            }
+          }
+        },
+        {
+          "boundary": "issue_start",
+          "relativeMicroseconds": 1,
+          "expectedPass": false,
+          "summary": {
+            "pass": false,
+            "issued": 1,
+            "coverage": {
+              "rso": {
+                "issued": 1,
+                "matched": 1,
+                "readbacks": 1
+              },
+              "start_chart": {
+                "issued": 1,
+                "matched": 1,
+                "readbacks": 1
+              }
+            },
+            "settled": 1,
+            "sealedRows": 0,
+            "sealed": {
+              "from": "2026-10-23",
+              "to": "2026-10-30"
+            },
+            "tolerance": 0.0001,
+            "findingCodes": {
+              "issued_after_puck_drop": 1,
+              "readback_not_pregame": 2
+            }
+          }
+        },
+        {
+          "boundary": "readback_issue",
+          "relativeMicroseconds": -1,
+          "expectedPass": false,
+          "summary": {
+            "pass": false,
+            "issued": 1,
+            "coverage": {
+              "rso": {
+                "issued": 1,
+                "matched": 1,
+                "readbacks": 1
+              },
+              "start_chart": {
+                "issued": 1,
+                "matched": 1,
+                "readbacks": 1
+              }
+            },
+            "settled": 1,
+            "sealedRows": 0,
+            "sealed": {
+              "from": "2026-10-23",
+              "to": "2026-10-30"
+            },
+            "tolerance": 0.0001,
+            "findingCodes": {
+              "readback_before_issue": 2
+            }
+          }
+        },
+        {
+          "boundary": "readback_issue",
+          "relativeMicroseconds": 0,
+          "expectedPass": true,
+          "summary": {
+            "pass": true,
+            "issued": 1,
+            "coverage": {
+              "rso": {
+                "issued": 1,
+                "matched": 1,
+                "readbacks": 1
+              },
+              "start_chart": {
+                "issued": 1,
+                "matched": 1,
+                "readbacks": 1
+              }
+            },
+            "settled": 1,
+            "sealedRows": 0,
+            "sealed": {
+              "from": "2026-10-23",
+              "to": "2026-10-30"
+            },
+            "tolerance": 0.0001,
+            "findingCodes": {}
+          }
+        },
+        {
+          "boundary": "readback_issue",
+          "relativeMicroseconds": 1,
+          "expectedPass": true,
+          "summary": {
+            "pass": true,
+            "issued": 1,
+            "coverage": {
+              "rso": {
+                "issued": 1,
+                "matched": 1,
+                "readbacks": 1
+              },
+              "start_chart": {
+                "issued": 1,
+                "matched": 1,
+                "readbacks": 1
+              }
+            },
+            "settled": 1,
+            "sealedRows": 0,
+            "sealed": {
+              "from": "2026-10-23",
+              "to": "2026-10-30"
+            },
+            "tolerance": 0.0001,
+            "findingCodes": {}
+          }
+        },
+        {
+          "boundary": "readback_start",
+          "relativeMicroseconds": -1,
+          "expectedPass": true,
+          "summary": {
+            "pass": true,
+            "issued": 1,
+            "coverage": {
+              "rso": {
+                "issued": 1,
+                "matched": 1,
+                "readbacks": 1
+              },
+              "start_chart": {
+                "issued": 1,
+                "matched": 1,
+                "readbacks": 1
+              }
+            },
+            "settled": 1,
+            "sealedRows": 0,
+            "sealed": {
+              "from": "2026-10-23",
+              "to": "2026-10-30"
+            },
+            "tolerance": 0.0001,
+            "findingCodes": {}
+          }
+        },
+        {
+          "boundary": "readback_start",
+          "relativeMicroseconds": 0,
+          "expectedPass": false,
+          "summary": {
+            "pass": false,
+            "issued": 1,
+            "coverage": {
+              "rso": {
+                "issued": 1,
+                "matched": 1,
+                "readbacks": 1
+              },
+              "start_chart": {
+                "issued": 1,
+                "matched": 1,
+                "readbacks": 1
+              }
+            },
+            "settled": 1,
+            "sealedRows": 0,
+            "sealed": {
+              "from": "2026-10-23",
+              "to": "2026-10-30"
+            },
+            "tolerance": 0.0001,
+            "findingCodes": {
+              "readback_not_pregame": 2
+            }
+          }
+        },
+        {
+          "boundary": "readback_start",
+          "relativeMicroseconds": 1,
+          "expectedPass": false,
+          "summary": {
+            "pass": false,
+            "issued": 1,
+            "coverage": {
+              "rso": {
+                "issued": 1,
+                "matched": 1,
+                "readbacks": 1
+              },
+              "start_chart": {
+                "issued": 1,
+                "matched": 1,
+                "readbacks": 1
+              }
+            },
+            "settled": 1,
+            "sealedRows": 0,
+            "sealed": {
+              "from": "2026-10-23",
+              "to": "2026-10-30"
+            },
+            "tolerance": 0.0001,
+            "findingCodes": {
+              "readback_not_pregame": 2
+            }
+          }
+        },
+        {
+          "boundary": "settlement_start",
+          "relativeMicroseconds": -1,
+          "expectedPass": false,
+          "summary": {
+            "pass": false,
+            "issued": 1,
+            "coverage": {
+              "rso": {
+                "issued": 1,
+                "matched": 1,
+                "readbacks": 1
+              },
+              "start_chart": {
+                "issued": 1,
+                "matched": 1,
+                "readbacks": 1
+              }
+            },
+            "settled": 0,
+            "sealedRows": 0,
+            "sealed": {
+              "from": "2026-10-23",
+              "to": "2026-10-30"
+            },
+            "tolerance": 0.0001,
+            "findingCodes": {
+              "settlement_before_game": 1
+            }
+          }
+        },
+        {
+          "boundary": "settlement_start",
+          "relativeMicroseconds": 0,
+          "expectedPass": false,
+          "summary": {
+            "pass": false,
+            "issued": 1,
+            "coverage": {
+              "rso": {
+                "issued": 1,
+                "matched": 1,
+                "readbacks": 1
+              },
+              "start_chart": {
+                "issued": 1,
+                "matched": 1,
+                "readbacks": 1
+              }
+            },
+            "settled": 0,
+            "sealedRows": 0,
+            "sealed": {
+              "from": "2026-10-23",
+              "to": "2026-10-30"
+            },
+            "tolerance": 0.0001,
+            "findingCodes": {
+              "settlement_before_game": 1
+            }
+          }
+        },
+        {
+          "boundary": "settlement_start",
+          "relativeMicroseconds": 1,
+          "expectedPass": true,
+          "summary": {
+            "pass": true,
+            "issued": 1,
+            "coverage": {
+              "rso": {
+                "issued": 1,
+                "matched": 1,
+                "readbacks": 1
+              },
+              "start_chart": {
+                "issued": 1,
+                "matched": 1,
+                "readbacks": 1
+              }
+            },
+            "settled": 1,
+            "sealedRows": 0,
+            "sealed": {
+              "from": "2026-10-23",
+              "to": "2026-10-30"
+            },
+            "tolerance": 0.0001,
+            "findingCodes": {}
+          }
+        }
+      ],
+      "invalidCases": [
+        {
+          "field": "cutoffAt",
+          "value": "undefined",
+          "findings": {
+            "issued_incomplete": 1,
+            "readback_unissued": 2
+          }
+        },
+        {
+          "field": "cutoffAt",
+          "value": null,
+          "findings": {
+            "issued_incomplete": 1,
+            "readback_unissued": 2
+          }
+        },
+        {
+          "field": "cutoffAt",
+          "value": 0,
+          "findings": {
+            "cutoff_after_issue": 1,
+            "identity_mismatch": 2
+          }
+        },
+        {
+          "field": "cutoffAt",
+          "value": false,
+          "findings": {
+            "cutoff_after_issue": 1,
+            "identity_mismatch": 2
+          }
+        },
+        {
+          "field": "cutoffAt",
+          "value": [],
+          "findings": {
+            "cutoff_after_issue": 1,
+            "identity_mismatch": 2
+          }
+        },
+        {
+          "field": "cutoffAt",
+          "value": {},
+          "findings": {
+            "cutoff_after_issue": 1,
+            "identity_mismatch": 2
+          }
+        },
+        {
+          "field": "cutoffAt",
+          "value": "not-a-date",
+          "findings": {
+            "cutoff_after_issue": 1,
+            "identity_mismatch": 2
+          }
+        },
+        {
+          "field": "cutoffAt",
+          "value": "2026-11-02T22:00:00",
+          "findings": {
+            "cutoff_after_issue": 1,
+            "identity_mismatch": 2
+          }
+        },
+        {
+          "field": "cutoffAt",
+          "value": "2026-11-31T22:00:00Z",
+          "findings": {
+            "cutoff_after_issue": 1,
+            "identity_mismatch": 2
+          }
+        },
+        {
+          "field": "cutoffAt",
+          "value": "2027-02-29T22:00:00Z",
+          "findings": {
+            "cutoff_after_issue": 1,
+            "identity_mismatch": 2
+          }
+        },
+        {
+          "field": "cutoffAt",
+          "value": "2026-11-02T22:00:00.1234567Z",
+          "findings": {
+            "cutoff_after_issue": 1,
+            "identity_mismatch": 2
+          }
+        },
+        {
+          "field": "issuedAt",
+          "value": "undefined",
+          "findings": {
+            "issued_incomplete": 1,
+            "readback_unissued": 2
+          }
+        },
+        {
+          "field": "issuedAt",
+          "value": null,
+          "findings": {
+            "issued_incomplete": 1,
+            "readback_unissued": 2
+          }
+        },
+        {
+          "field": "issuedAt",
+          "value": 0,
+          "findings": {
+            "cutoff_after_issue": 1,
+            "issued_after_puck_drop": 1,
+            "readback_before_issue": 2
+          }
+        },
+        {
+          "field": "issuedAt",
+          "value": false,
+          "findings": {
+            "cutoff_after_issue": 1,
+            "issued_after_puck_drop": 1,
+            "readback_before_issue": 2
+          }
+        },
+        {
+          "field": "issuedAt",
+          "value": [],
+          "findings": {
+            "cutoff_after_issue": 1,
+            "issued_after_puck_drop": 1,
+            "readback_before_issue": 2
+          }
+        },
+        {
+          "field": "issuedAt",
+          "value": {},
+          "findings": {
+            "cutoff_after_issue": 1,
+            "issued_after_puck_drop": 1,
+            "readback_before_issue": 2
+          }
+        },
+        {
+          "field": "issuedAt",
+          "value": "not-a-date",
+          "findings": {
+            "cutoff_after_issue": 1,
+            "issued_after_puck_drop": 1,
+            "readback_before_issue": 2
+          }
+        },
+        {
+          "field": "issuedAt",
+          "value": "2026-11-02T22:00:00",
+          "findings": {
+            "cutoff_after_issue": 1,
+            "issued_after_puck_drop": 1,
+            "readback_before_issue": 2
+          }
+        },
+        {
+          "field": "issuedAt",
+          "value": "2026-11-31T22:00:00Z",
+          "findings": {
+            "cutoff_after_issue": 1,
+            "issued_after_puck_drop": 1,
+            "readback_before_issue": 2
+          }
+        },
+        {
+          "field": "issuedAt",
+          "value": "2027-02-29T22:00:00Z",
+          "findings": {
+            "cutoff_after_issue": 1,
+            "issued_after_puck_drop": 1,
+            "readback_before_issue": 2
+          }
+        },
+        {
+          "field": "issuedAt",
+          "value": "2026-11-02T22:00:00.1234567Z",
+          "findings": {
+            "cutoff_after_issue": 1,
+            "issued_after_puck_drop": 1,
+            "readback_before_issue": 2
+          }
+        },
+        {
+          "field": "scheduledAt",
+          "value": "undefined",
+          "findings": {
+            "issued_incomplete": 1,
+            "readback_unissued": 2
+          }
+        },
+        {
+          "field": "scheduledAt",
+          "value": null,
+          "findings": {
+            "issued_incomplete": 1,
+            "readback_unissued": 2
+          }
+        },
+        {
+          "field": "scheduledAt",
+          "value": 0,
+          "findings": {
+            "issued_after_puck_drop": 1,
+            "readback_not_pregame": 2,
+            "settlement_before_game": 1
+          }
+        },
+        {
+          "field": "scheduledAt",
+          "value": false,
+          "findings": {
+            "issued_after_puck_drop": 1,
+            "readback_not_pregame": 2,
+            "settlement_before_game": 1
+          }
+        },
+        {
+          "field": "scheduledAt",
+          "value": [],
+          "findings": {
+            "issued_after_puck_drop": 1,
+            "readback_not_pregame": 2,
+            "settlement_before_game": 1
+          }
+        },
+        {
+          "field": "scheduledAt",
+          "value": {},
+          "findings": {
+            "issued_after_puck_drop": 1,
+            "readback_not_pregame": 2,
+            "settlement_before_game": 1
+          }
+        },
+        {
+          "field": "scheduledAt",
+          "value": "not-a-date",
+          "findings": {
+            "issued_after_puck_drop": 1,
+            "readback_not_pregame": 2,
+            "settlement_before_game": 1
+          }
+        },
+        {
+          "field": "scheduledAt",
+          "value": "2026-11-02T22:00:00",
+          "findings": {
+            "issued_after_puck_drop": 1,
+            "readback_not_pregame": 2,
+            "settlement_before_game": 1
+          }
+        },
+        {
+          "field": "scheduledAt",
+          "value": "2026-11-31T22:00:00Z",
+          "findings": {
+            "issued_after_puck_drop": 1,
+            "readback_not_pregame": 2,
+            "settlement_before_game": 1
+          }
+        },
+        {
+          "field": "scheduledAt",
+          "value": "2027-02-29T22:00:00Z",
+          "findings": {
+            "issued_after_puck_drop": 1,
+            "readback_not_pregame": 2,
+            "settlement_before_game": 1
+          }
+        },
+        {
+          "field": "scheduledAt",
+          "value": "2026-11-02T22:00:00.1234567Z",
+          "findings": {
+            "issued_after_puck_drop": 1,
+            "readback_not_pregame": 2,
+            "settlement_before_game": 1
+          }
+        },
+        {
+          "field": "observedAt",
+          "value": "undefined",
+          "findings": {
+            "readback_capture_time_missing_or_invalid": 1
+          }
+        },
+        {
+          "field": "observedAt",
+          "value": null,
+          "findings": {
+            "readback_capture_time_missing_or_invalid": 1
+          }
+        },
+        {
+          "field": "observedAt",
+          "value": 0,
+          "findings": {
+            "readback_capture_time_missing_or_invalid": 1
+          }
+        },
+        {
+          "field": "observedAt",
+          "value": false,
+          "findings": {
+            "readback_capture_time_missing_or_invalid": 1
+          }
+        },
+        {
+          "field": "observedAt",
+          "value": [],
+          "findings": {
+            "readback_capture_time_missing_or_invalid": 1
+          }
+        },
+        {
+          "field": "observedAt",
+          "value": {},
+          "findings": {
+            "readback_capture_time_missing_or_invalid": 1
+          }
+        },
+        {
+          "field": "observedAt",
+          "value": "not-a-date",
+          "findings": {
+            "readback_capture_time_missing_or_invalid": 1
+          }
+        },
+        {
+          "field": "observedAt",
+          "value": "2026-11-02T22:00:00",
+          "findings": {
+            "readback_capture_time_missing_or_invalid": 1
+          }
+        },
+        {
+          "field": "observedAt",
+          "value": "2026-11-31T22:00:00Z",
+          "findings": {
+            "readback_capture_time_missing_or_invalid": 1
+          }
+        },
+        {
+          "field": "observedAt",
+          "value": "2027-02-29T22:00:00Z",
+          "findings": {
+            "readback_capture_time_missing_or_invalid": 1
+          }
+        },
+        {
+          "field": "observedAt",
+          "value": "2026-11-02T22:00:00.1234567Z",
+          "findings": {
+            "readback_capture_time_missing_or_invalid": 1
+          }
+        },
+        {
+          "field": "recordedAt",
+          "value": "undefined",
+          "findings": {
+            "settlement_before_game": 1
+          }
+        },
+        {
+          "field": "recordedAt",
+          "value": null,
+          "findings": {
+            "settlement_before_game": 1
+          }
+        },
+        {
+          "field": "recordedAt",
+          "value": 0,
+          "findings": {
+            "settlement_before_game": 1
+          }
+        },
+        {
+          "field": "recordedAt",
+          "value": false,
+          "findings": {
+            "settlement_before_game": 1
+          }
+        },
+        {
+          "field": "recordedAt",
+          "value": [],
+          "findings": {
+            "settlement_before_game": 1
+          }
+        },
+        {
+          "field": "recordedAt",
+          "value": {},
+          "findings": {
+            "settlement_before_game": 1
+          }
+        },
+        {
+          "field": "recordedAt",
+          "value": "not-a-date",
+          "findings": {
+            "settlement_before_game": 1
+          }
+        },
+        {
+          "field": "recordedAt",
+          "value": "2026-11-02T22:00:00",
+          "findings": {
+            "settlement_before_game": 1
+          }
+        },
+        {
+          "field": "recordedAt",
+          "value": "2026-11-31T22:00:00Z",
+          "findings": {
+            "settlement_before_game": 1
+          }
+        },
+        {
+          "field": "recordedAt",
+          "value": "2027-02-29T22:00:00Z",
+          "findings": {
+            "settlement_before_game": 1
+          }
+        },
+        {
+          "field": "recordedAt",
+          "value": "2026-11-02T22:00:00.1234567Z",
+          "findings": {
+            "settlement_before_game": 1
+          }
+        }
+      ],
+      "equivalentOffsetAccepted": true,
+      "leapDaySixDigitAccepted": true,
+      "reportSerializationPassed": true
+    }
+  },
+  {
+    "name": "loader",
+    "exitCode": 0,
+    "result": {
+      "standaloneImportSucceeded": true,
+      "cwd": "/private/tmp",
+      "projectModules": [
+        "/Users/tim/Code/fhfhockey.com/web/lib/projections/evidenceTime.ts"
+      ],
+      "filesystemMutationAttempts": [
+        {
+          "operation": "mkdirSync",
+          "path": "/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/v8-compile-cache-501/12.4.254.21-node.21"
+        },
+        {
+          "operation": "writeFileSync",
+          "path": "/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/v8-compile-cache-501/12.4.254.21-node.21/zSprivatezStmp.LOCK"
+        }
+      ],
+      "environmentUnchanged": true,
+      "networkDenied": true,
+      "localTypescriptHookRegistered": true
+    }
+  }
+]

@@ -1,0 +1,1676 @@
+--- a/functions/lib/nst_admission.py
++++ b/functions/lib/nst_admission.py
+@@ -8,6 +8,8 @@
+ import uuid
+ from contextlib import contextmanager
+ from contextvars import ContextVar
++from functools import wraps
++import inspect
+ from urllib.parse import urlparse
+ import requests
+ 
+@@ -31,6 +33,41 @@
+     if response.status_code != 200:
+         raise NstAdmissionError("NST lifecycle acknowledgement unavailable.")
+     return response.json()
++
++
++def assert_nst_job_active():
++    job = _job.get()
++    if job is None:
++        if os.environ.get("NST_JOB_LIFECYCLE_ENABLED") == "true":
++            raise NstAdmissionError("This NST operation requires an enclosing job.")
++        return
++    if job["closed"] or job.get("uncertain") or time.monotonic() >= job["deadline"]:
++        raise NstAdmissionError("NST job is closed, uncertain or expired.")
++
++
++def mark_nst_job_uncertain():
++    job = _job.get()
++    if job is not None:
++        job["uncertain"] = True
++
++
++def nst_job_scope(owner, timeout_seconds=3600):
++    """Explicit whole-entrypoint scope; no per-fetch finish or implicit resume."""
++    if not 0 < timeout_seconds <= 3600:
++        raise ValueError("NST job scope must be bounded to at most one hour.")
++    def decorate(work):
++        if inspect.iscoroutinefunction(work):
++            @wraps(work)
++            async def asynchronous(*args, **kwargs):
++                with nst_job(owner, time.monotonic() + timeout_seconds):
++                    return await work(*args, **kwargs)
++            return asynchronous
++        @wraps(work)
++        def synchronous(*args, **kwargs):
++            with nst_job(owner, time.monotonic() + timeout_seconds):
++                return work(*args, **kwargs)
++        return synchronous
++    return decorate
+ 
+ 
+ @contextmanager
+@@ -59,7 +96,7 @@
+     try:
+         yield
+         state["closed"] = True
+-        if time.monotonic() >= deadline_at:
++        if state.get("uncertain") or time.monotonic() >= deadline_at:
+             raise NstAdmissionError("NST job expired; reconciliation required.")
+         receipt = _job_rpc("nst_job_finish_v1", {"p_token": token}, deadline_at)
+         if not isinstance(receipt, dict) or receipt.get("status") != "finished" or receipt.get("token") != token:
+@@ -94,6 +131,7 @@
+ 
+ 
+ def admit_nst_attempt(dispatch=lambda: None, deadline_at=None, planned_requests=None, min_interval_ms=21000):
++    assert_nst_job_active()
+     deadline_at = deadline_at if deadline_at is not None else time.monotonic() + 220
+     origin = (os.environ.get("NEXT_PUBLIC_SUPABASE_URL") or os.environ.get("SUPABASE_URL") or "").strip()
+     key = (os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or "").strip()
+@@ -111,6 +149,7 @@
+     if job:
+         body.update({"p_kind": job["kind"], "p_token": job["token"]})
+     while time.monotonic() < deadline_at:
++        assert_nst_job_active()
+         started = time.monotonic()
+         try:
+             response = requests.post(endpoint, json=body, timeout=min(5, deadline_at - started),
+@@ -127,6 +166,7 @@
+         if receipt["allowed"]:
+             if time.monotonic() - started >= 1 or time.monotonic() >= deadline_at:
+                 raise NstAdmissionError("NST shared permit expired before dispatch; no provider request started.")
++            assert_nst_job_active()
+             return dispatch()
+         wait = max(0.025, receipt["waitMs"] / 1000)
+         if time.monotonic() + wait >= deadline_at:
+@@ -136,6 +176,7 @@
+ 
+ 
+ def nst_get(url, **kwargs):
++    assert_nst_job_active()
+     parsed = urlparse(url)
+     if parsed.scheme != "https" or parsed.hostname not in {"data.naturalstattrick.com", "www.naturalstattrick.com", "naturalstattrick.com"}:
+         raise NstAdmissionError("NST dispatcher only accepts approved HTTPS provider hosts.")
+--- a/functions/tests/test_nst_legacy_lifecycle.py
++++ b/functions/tests/test_nst_legacy_lifecycle.py
+@@ -0,0 +1,160 @@
++"""Execute real legacy function ASTs with isolated dependencies, never .env or NST.
++
++The historical entrypoints are not imported: several create production clients at
++module scope. This proves lifecycle settlement, not their old data semantics.
++"""
++import ast
++import asyncio
++from datetime import datetime, timedelta
++import inspect
++import json
++import os
++from pathlib import Path
++import sys
++from types import SimpleNamespace
++from typing import Dict, List, Optional
++from unittest.mock import AsyncMock, Mock
++import pytest
++from bs4 import BeautifulSoup
++from lib import nst_admission as admission
++
++ROOT = Path(__file__).resolve().parents[2]
++SKATER = "web/pages/api/v1/db/nst_gamelog_scraper.py"
++GOALIE = "web/pages/api/v1/db/nst_gamelog_goalie_scraper.py"
++PLAYER = "web/pages/api/ThreeYearAverages/nstgamelog.py"
++TABLE = "web/scripts/fetch_team_table.py"
++EXPERIMENT = "web/pages/api/ThreeYearAverages/nsttest.py"
++
++
++@pytest.fixture
++def lifecycle(monkeypatch):
++    monkeypatch.setenv("NST_JOB_LIFECYCLE_ENABLED", "true")
++    monkeypatch.setenv("NST_KEY", "offline-fixture")
++    calls = []
++    def rpc(name, body, deadline):
++        calls.append((name, body))
++        return {"status": "started" if "begin" in name else "finished" if "finish" in name else "held", "token": body["p_token"]}
++    monkeypatch.setattr(admission, "_job_rpc", rpc)
++    monkeypatch.setattr(admission.requests, "get", Mock(side_effect=AssertionError("Unexpected NST request")))
++    monkeypatch.setattr(admission.requests, "post", Mock(side_effect=AssertionError("Unexpected database request")))
++    return calls
++
++
++def load_functions(path, names, extra=None):
++    tree = ast.parse((ROOT / path).read_text())
++    selected = [n for n in tree.body if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef)) and n.name in names]
++    assert {n.name for n in selected} == set(names)
++    namespace = {
++        "nst_job_scope": admission.nst_job_scope, "assert_nst_job_active": admission.assert_nst_job_active,
++        "mark_nst_job_uncertain": admission.mark_nst_job_uncertain, "Dict": Dict, "List": List, "Optional": Optional,
++        "datetime": datetime, "timedelta": timedelta, "time": SimpleNamespace(time=lambda: 0),
++        "print": Mock(), "troublesome_players": [], "DELAY_SECONDS": 21,
++    }
++    namespace.update(extra or {})
++    exec(compile(ast.Module(body=selected, type_ignores=[]), path, "exec"), namespace)
++    return namespace
++
++
++@pytest.mark.parametrize("path", [SKATER, GOALIE, PLAYER])
++@pytest.mark.parametrize("failed", [False, True])
++def test_writer_entrypoint_encloses_every_output_and_holds_swallowed_failure(lifecycle, path, failed):
++    seen = []
++    def output(*args):
++        admission.assert_nst_job_active()
++        seen.append(admission._job.get()["token"])
++        assert [n for n, _ in lifecycle] == ["nst_job_begin_v1"]
++        if failed:
++            admission.mark_nst_job_uncertain()
++    extra = {"get_dates_between": lambda *a: ["2024-10-01"],
++        "construct_urls_for_date": lambda *a: {"first": "fixture-one", "second": "fixture-two"},
++        "print_delay_countdown": lambda: None, "get_latest_date_supabase": AsyncMock(return_value=None),
++        "get_player_ids": lambda: [1, 2], "scrape_player_stats": lambda *a: [{}], "upsert_player_stats": output,
++        "process_url": AsyncMock(side_effect=output) if path == SKATER else output}
++    fn = load_functions(path, ["main"], extra)["main"]
++    def run():
++        if inspect.iscoroutinefunction(fn): asyncio.run(fn())
++        else: fn()
++    if failed:
++        with pytest.raises(admission.NstAdmissionError): run()
++    else:
++        run()
++    assert len(seen) == (1 if failed else 2)
++    assert len(set(seen)) == 1
++    assert [n for n, _ in lifecycle] == ["nst_job_begin_v1", "nst_job_hold_v1" if failed else "nst_job_finish_v1"]
++
++
++@pytest.mark.parametrize("path, name", [(SKATER, "upsert_data"), (PLAYER, "upsert_player_stats"), (GOALIE, "process_url")])
++@pytest.mark.parametrize("failure", ["exception", "error"])
++def test_real_legacy_output_functions_cannot_clear_failed_writes(lifecycle, path, name, failure):
++    execute = Mock(side_effect=RuntimeError("write unknown")) if failure == "exception" else Mock(return_value=SimpleNamespace(error="write rejected"))
++    builder = SimpleNamespace(upsert=lambda *a, **kw: SimpleNamespace(execute=execute))
++    ns = load_functions(path, [name], {
++        "supabase": SimpleNamespace(table=lambda *a: builder), "get_table_name": lambda *a: "fixture",
++        "check_data_exists": lambda *a: False, "nst_get": lambda *a: SimpleNamespace(status_code=200, text="fixture"),
++        "parse_html": lambda *a: [{"player_name": "Fixture", "team": "BOS"}], "get_goalie_id_by_name": lambda *a: 1,
++    })
++    with pytest.raises((admission.NstAdmissionError, RuntimeError)):
++        with admission.nst_job("fixture"):
++            if name == "upsert_data": asyncio.run(ns[name]("fixture", [{"player_id": 1}]))
++            elif name == "upsert_player_stats": ns[name]([{"player_id": 1}])
++            else: ns[name]({"datasetType": "fixture", "url": "fixture", "date": "2024-10-01", "seasonId": "20242025"}, 1, 1, {})
++    assert execute.call_count == 1
++    assert [n for n, _ in lifecycle] == ["nst_job_begin_v1", "nst_job_hold_v1"]
++
++
++def test_goalie_write_rechecks_expiry_after_identity_lookup(lifecycle, monkeypatch):
++    now = [0.0]; monkeypatch.setattr(admission.time, "monotonic", lambda: now[0])
++    execute = Mock()
++    def identity(*args):
++        now[0] = 20
++        return 1
++    ns = load_functions(GOALIE, ["process_url"], {
++        "supabase": SimpleNamespace(table=lambda *a: SimpleNamespace(upsert=lambda *a, **kw: SimpleNamespace(execute=execute))),
++        "get_table_name": lambda *a: "fixture", "check_data_exists": lambda *a: False,
++        "nst_get": lambda *a: SimpleNamespace(status_code=200, text="fixture"),
++        "parse_html": lambda *a: [{"player_name": "Fixture", "team": "BOS"}], "get_goalie_id_by_name": identity,
++    })
++    with pytest.raises(admission.NstAdmissionError):
++        with admission.nst_job("fixture", deadline_at=10):
++            ns["process_url"]({"datasetType": "fixture", "url": "fixture", "date": "2024-10-01", "seasonId": "20242025"}, 1, 1, {})
++    execute.assert_not_called()
++    assert lifecycle[-1][0] == "nst_job_hold_v1"
++
++
++@pytest.mark.parametrize("missing_table", [False, True])
++def test_legacy_team_cli_finishes_after_json_or_holds_system_exit(lifecycle, missing_table):
++    events = []
++    html = "<table id='teams'><thead><tr><th>Team</th></tr></thead><tbody><tr><td>BOS</td></tr></tbody></table>"
++    def provider(*a, **kw):
++        events.append("body")
++        return SimpleNamespace(text="" if missing_table else html, raise_for_status=lambda: None)
++    def output(value):
++        events.append("json"); assert lifecycle[-1][0] == "nst_job_begin_v1"
++        assert isinstance(json.loads(value), dict)
++    ns = load_functions(TABLE, ["fetch_team_table"], {"nst_get": provider, "BeautifulSoup": BeautifulSoup,
++        "clean_header": lambda v: v, "validate_percentage": lambda v: v, "ensure_loaded_for": lambda *a: None,
++        "os": os, "sys": sys, "json": json, "requests": admission.requests, "print": output})
++    if missing_table:
++        with pytest.raises(SystemExit): ns["fetch_team_table"]()
++    else: ns["fetch_team_table"]()
++    assert events == ["body", "json"]
++    assert lifecycle[-1][0] == ("nst_job_hold_v1" if missing_table else "nst_job_finish_v1")
++
++
++def test_experiment_is_import_inert_and_holds_parse_failure(lifecycle):
++    tree = ast.parse((ROOT / EXPERIMENT).read_text())
++    # Only function definitions/the explicit __main__ block may contain NST calls.
++    for node in tree.body:
++        if isinstance(node, (ast.FunctionDef, ast.If)): continue
++        assert not any(isinstance(n, ast.Call) and isinstance(n.func, ast.Name) and n.func.id == "nst_get" for n in ast.walk(node))
++    ns = load_functions(EXPERIMENT, ["main"], {"nst_get": lambda *a: SimpleNamespace(status_code=200, content=b""), "BeautifulSoup": BeautifulSoup})
++    with pytest.raises(AttributeError): ns["main"]()
++    assert [n for n, _ in lifecycle] == ["nst_job_begin_v1", "nst_job_hold_v1"]
++
++
++def test_enabled_unscoped_provider_is_rejected_before_any_io(lifecycle):
++    with pytest.raises(admission.NstAdmissionError, match="enclosing job"):
++        admission.nst_get("https://data.naturalstattrick.com/teamtable.php")
++    admission.requests.get.assert_not_called()
++    admission.requests.post.assert_not_called()
++    assert lifecycle == []
+--- a/web/__tests__/pages/api/SustainabilityStats/[playerId].test.ts
++++ b/web/__tests__/pages/api/SustainabilityStats/[playerId].test.ts
+@@ -1,4 +1,5 @@
+-import { beforeEach, describe, expect, it, vi } from "vitest";
++import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
++import { withNstJobDispatch } from "lib/nst/jobLifecycle.server";
+ 
+ const { fetchNstTextWithCacheByUrlMock, getPlayerMock } = vi.hoisted(() => ({
+   fetchNstTextWithCacheByUrlMock: vi.fn(),
+@@ -33,6 +34,32 @@
+ describe("/api/SustainabilityStats/[playerId]", () => {
+   beforeEach(() => {
+     vi.clearAllMocks();
++  });
++  afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); });
++
++  it("holds the whole parallel read when one source fails while the other is still active", async () => {
++    vi.stubEnv("NST_JOB_LIFECYCLE_ENABLED", "true");
++    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://offline.invalid");
++    vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "fixture");
++    const calls: string[] = [];
++    vi.stubGlobal("fetch", vi.fn(async (url, init) => {
++      const name = String(url).split("/").at(-1)!; calls.push(name);
++      return new Response(JSON.stringify({ status: name.includes("begin") ? "started" : "held", token: JSON.parse(init!.body as string).p_token }));
++    }));
++    getPlayerMock.mockResolvedValue({ fullName: "Fixture", teamName: "Toronto Maple Leafs", teamId: 10 });
++    let release!: () => void; let attempts = 0;
++    fetchNstTextWithCacheByUrlMock.mockImplementation(() => withNstJobDispatch(async () => {
++      if (++attempts === 1) throw new Error("fixture source failed");
++      await new Promise<void>(resolve => { release = resolve; });
++      return { text: "<body></body>" };
++    }));
++    const res = createMockRes();
++    await handler({ query: { playerId: "fixture" }, body: { Season: "20262027" } } as any, res);
++    expect(attempts).toBe(2);
++    expect(res.statusCode).toBe(503);
++    expect(calls).toEqual(["nst_job_begin_v1", "nst_job_hold_v1"]);
++    release();
++    await Promise.resolve();
+   });
+ 
+   it("preserves representative playerteams skater metrics through the migrated NST client", async () => {
+--- a/web/__tests__/pages/api/fetch_team_table.test.ts
++++ b/web/__tests__/pages/api/fetch_team_table.test.ts
+@@ -1,4 +1,5 @@
+ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
++import { withNstJobDispatch } from "lib/nst/jobLifecycle.server";
+ 
+ const { fetchNstTextByUrlMock, getUserMock, roleMock, serviceFromMock } = vi.hoisted(() => ({
+   fetchNstTextByUrlMock: vi.fn(),
+@@ -55,6 +56,25 @@
+   afterEach(() => {
+     vi.unstubAllEnvs();
+     vi.unstubAllGlobals();
++  });
++
++  it("finishes the compatibility job after parsing and holds an invalid table", async () => {
++    vi.stubEnv("NST_JOB_LIFECYCLE_ENABLED", "true");
++    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://offline.invalid");
++    vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "fixture");
++    for (const invalid of [false, true]) {
++      const calls: string[] = [];
++      vi.stubGlobal("fetch", vi.fn(async (url, init) => {
++        const name = String(url).split("/").at(-1)!; calls.push(name);
++        return new Response(JSON.stringify({ status: name.includes("begin") ? "started" : name.includes("finish") ? "finished" : "held", token: JSON.parse(init!.body as string).p_token }));
++      }));
++      fetchNstTextByUrlMock.mockImplementation(() => withNstJobDispatch(async () => ({ response: { ok: true },
++        text: invalid ? "<body></body>" : "<table id='teams'><thead><tr><th>Team</th></tr></thead><tbody><tr><td>BOS</td></tr></tbody></table>" })));
++      const res = createMockRes();
++      await handler({ method: "GET", query: {}, headers: { authorization: "Bearer synthetic-cron-secret" } } as any, res);
++      expect(res.statusCode).toBe(invalid ? 503 : 200);
++      expect(calls).toEqual(["nst_job_begin_v1", invalid ? "nst_job_hold_v1" : "nst_job_finish_v1"]);
++    }
+   });
+ 
+   it.each(["Bearer synthetic-cron-secret", "Bearer admin-token"])("preserves representative NST teamtable row parsing for %s", async (authorization) => {
+--- a/web/__tests__/pages/api/v1/db/update-nst-gamelog.test.ts
++++ b/web/__tests__/pages/api/v1/db/update-nst-gamelog.test.ts
+@@ -1,4 +1,5 @@
+ import { admitSharedNstAttempt } from "lib/nst/sharedAdmission";
++import { currentNstJob, withNstJobDispatch } from "lib/nst/jobLifecycle.server";
+ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+ import { mkdtempSync, rmSync } from "node:fs";
+ import { tmpdir } from "node:os";
+@@ -415,6 +416,7 @@
+     vi.useRealTimers();
+     vi.restoreAllMocks();
+     vi.unstubAllGlobals();
++    vi.unstubAllEnvs();
+   });
+ 
+   async function run(query: Record<string, string> = {}, method = "GET") {
+@@ -443,6 +445,30 @@
+         db.tables.players.map((player) => `<tr><td>${player.fullName}</td><td>BOS</td><td>C</td><td>10:00</td></tr>`).join("")
+       }</tbody></table>` });
+   }
++
++  it.each([false, true])("settles lifecycle only after the manual audit (lost audit: %s)", async lostAudit => {
++    vi.stubEnv("NST_JOB_LIFECYCLE_ENABLED", "true");
++    supplyThreePlayerRows();
++    const text = fetchNstTextByUrlMock.getMockImplementation()!;
++    fetchNstTextByUrlMock.mockImplementation((...args: any[]) => withNstJobDispatch(async () => {
++      expect(currentNstJob()?.kind).toBe("direct");
++      return text(...args);
++    }));
++    if (lostAudit) db.auditWriteFailure = "lost_ack";
++    const calls: string[] = [];
++    vi.stubGlobal("fetch", vi.fn(async (url, init) => {
++      const name = String(url).split("/").at(-1)!; calls.push(name);
++      const args = JSON.parse(init!.body as string);
++      if (name.includes("finish") || name.includes("hold")) {
++        expect(db.upsertCalls).toHaveLength(1);
++        expect(db.auditWriteCalls).toBeGreaterThan(0);
++      }
++      return new Response(JSON.stringify({ status: name.includes("begin") ? "started" : name.includes("finish") ? "finished" : "held", token: args.p_token }));
++    }));
++    const res = await run({ dates: "2026-10-03", datasetType: "fiveOnFiveCounts" });
++    expect(res.statusCode).toBe(lostAudit ? 503 : 200);
++    expect(calls).toEqual(["nst_job_begin_v1", lostAudit ? "nst_job_hold_v1" : "nst_job_finish_v1"]);
++  });
+ 
+   it.each(["timeout", "lost_ack", "malformed_ack", "null_ack"])(
+     "stops after ambiguous %s batch acknowledgement without replaying rows or the source", async (failure) => {
+--- a/web/lib/api/averages/helpers.ts
++++ b/web/lib/api/averages/helpers.ts
+@@ -1,3 +1,4 @@
++import { requireNstJob } from "lib/nst/jobLifecycle.server";
+ // Shared averages API parsing helpers.
+ 
+ import { HTMLElement, parse } from "node-html-parser";
+@@ -136,6 +137,7 @@
+   individualRows: Array<{ [key: string]: string }>;
+   onIceRows: Array<{ [key: string]: string }>;
+ }> {
++  requireNstJob();
+   const URL = buildNstUrlString("playerreport.php", {
+     stype: 2,
+     sit: "all",
+--- a/web/lib/nst/callerLifecycle.test.ts
++++ b/web/lib/nst/callerLifecycle.test.ts
+@@ -0,0 +1,144 @@
++// @vitest-environment node
++import { readFileSync } from "node:fs";
++import { resolve } from "node:path";
++import ts from "typescript";
++import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
++import { assertNstJobActive, currentNstJob, markNstJobUncertain, requireNstJob, runNstJob, withNstJobDispatch, withNstJobLifecycle, type NstLifecycleRpc } from "./jobLifecycle.server";
++
++const { aggregate } = vi.hoisted(() => ({ aggregate: vi.fn() }));
++vi.mock("lib/api/averages/statsService", () => ({ getAggregatedCountsData: aggregate, getAggregatedRatesData: aggregate }));
++import averages from "../../pages/api/Averages/[playerId]";
++
++beforeEach(() => {
++  vi.stubEnv("NST_JOB_LIFECYCLE_ENABLED", "true");
++  vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://offline.invalid");
++  vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "fixture");
++  aggregate.mockReset();
++});
++afterEach(() => { vi.unstubAllEnvs(); vi.unstubAllGlobals(); vi.restoreAllMocks(); vi.useRealTimers(); });
++
++// Execute the real private function without loading route-level credentials,
++// clients or long-running orchestration. Dependencies below are fixture-only.
++function isolatedFunction(path: string, name: string, globals: Record<string, unknown>) {
++  const source = ts.createSourceFile(path, readFileSync(resolve(path), "utf8"), ts.ScriptTarget.Latest, true);
++  const fn = source.statements.find(node => ts.isFunctionDeclaration(node) && node.name?.text === name);
++  if (!fn) throw new Error(`Missing function ${name}`);
++  const js = ts.transpileModule(fn.getText(source).replace(/^export /, ""), { compilerOptions: { target: ts.ScriptTarget.ES2022 } }).outputText;
++  return new Function(...Object.keys(globals), `${js}; return ${name};`)(...Object.values(globals));
++}
++
++describe("NST caller enclosing settlement", () => {
++  it.each(["Teams/[teamAbbreviation]", "CareerAverages/[playerId]", "ThreeYearAverages/[playerId]"])("%s encloses its full aggregation and rejects failed parsing", async route => {
++    for (const failed of [false, true]) {
++      const events: string[] = [];
++      const stats = vi.fn(async () => {
++        await withNstJobDispatch(async () => { events.push("body"); });
++        events.push("parse");
++        if (failed) throw new Error("parse failed");
++        return {};
++      });
++      const source = readFileSync(resolve(`pages/api/${route}.ts`), "utf8");
++      expect(source).toContain(`export default withNstJobLifecycle(handler, "${route}", undefined, { lazy: true })`);
++      const handler = isolatedFunction(`pages/api/${route}.ts`, "handler", { getStats: stats,
++        GetThreeYearStats: stats, GetThreeYearRates: stats, GetCareerStats: stats, GetCareerRates: stats });
++      vi.stubGlobal("fetch", vi.fn(async (url, init) => {
++        const name = String(url).split("/").at(-1)!; events.push(name);
++        return new Response(JSON.stringify({ status: name.includes("begin") ? "started" : name.includes("finish") ? "finished" : "held", token: JSON.parse(init!.body as string).p_token }));
++      }));
++      const res: any = { statusCode: 200, headersSent: false, status(code: number) { this.statusCode = code; return this; }, json() { events.push("json"); return this; } };
++      await withNstJobLifecycle(handler, route, undefined, { lazy: true })({ query: { playerId: "fixture" } } as any, res);
++      expect(events.at(-2)).toBe(failed ? "nst_job_hold_v1" : "nst_job_finish_v1");
++      expect(stats).toHaveBeenCalledTimes(failed || !route.startsWith("ThreeYear") ? 1 : 4);
++      expect(res.statusCode).toBe(failed ? 503 : 200);
++    }
++  });
++
++  it("requires the Averages helper's parent scope before fetching", async () => {
++    const fetch = vi.fn();
++    const helper = isolatedFunction("lib/api/averages/helpers.ts", "fetchPlayerData", { requireNstJob,
++      buildNstUrlString: () => "fixture", fetchNstTextWithCacheByUrl: fetch });
++    await expect(helper("fixture", "n")).rejects.toThrow("enclosing job");
++    expect(fetch).not.toHaveBeenCalled();
++  });
++
++  it("keeps the CTPI CLI's seasons and report generation inside one job", async () => {
++    const events: string[] = []; const tokens: unknown[] = [];
++    const main = isolatedFunction("scripts/audit-ctpi-multiseason.ts", "main", {
++      parseArg: () => undefined, assertNstJobActive,
++      fetchSeasonData: async (seasonId: number) => {
++        await withNstJobDispatch(async () => { events.push("body"); tokens.push(currentNstJob()?.token); });
++        return { seasonId, coverage: {} };
++      },
++      buildSamples: () => ({ samples: [], candidateEligibility: {} }), validationSummary: () => ({}), rankStability: () => ({}),
++      RECENT_TEAM_FORM_V2_CANDIDATE_FORMULA_VERSION: "fixture", RECENT_TEAM_FORM_V2_CANDIDATE_INPUT_VERSION: "fixture",
++      process: { stderr: { write() {} }, stdout: { write(value: string) { expect(JSON.parse(value).readOnly).toBe(true); events.push("output"); } } }
++    });
++    const rpc: NstLifecycleRpc = async (name, args) => { events.push(name); return { status: name.includes("begin") ? "started" : "finished", token: args.p_token }; };
++    await runNstJob({ owner: "fixture-cli", deadlineAt: Date.now() + 1000, settled: () => true, rpc }, main);
++    expect(events).toEqual(["nst_job_begin_v1", "body", "body", "body", "output", "nst_job_finish_v1"]);
++    expect(new Set(tokens).size).toBe(1);
++  });
++  it.each([false, true])("keeps all four Averages reports inside one job (cache only: %s)", async cached => {
++    const events: string[] = []; const tokens: unknown[] = [];
++    const res: any = { statusCode: 200, headersSent: false,
++      status(code: number) { this.statusCode = code; return this; },
++      json(body: any) { events.push("json"); expect(body.success).toBe(true); return this; } };
++    vi.stubGlobal("fetch", vi.fn(async (url, init) => {
++      const name = String(url).split("/").at(-1)!; events.push(name);
++      const args = JSON.parse(init!.body as string);
++      return new Response(JSON.stringify({ status: name.includes("begin") ? "started" : "finished", token: args.p_token }));
++    }));
++    aggregate.mockImplementation(async () => {
++      if (!cached) await withNstJobDispatch(async () => { tokens.push(currentNstJob()?.token); events.push("body"); });
++      events.push("aggregate"); return { yearlyData: [], averages: {} };
++    });
++    await averages({ query: { playerId: "fixture" } } as any, res);
++    expect(aggregate).toHaveBeenCalledTimes(4);
++    expect(events).toEqual(cached ? ["aggregate", "aggregate", "aggregate", "aggregate", "json"] :
++      ["nst_job_begin_v1", "body", "aggregate", "body", "aggregate", "body", "aggregate", "body", "aggregate", "nst_job_finish_v1", "json"]);
++    if (!cached) expect(new Set(tokens).size).toBe(1);
++  });
++
++  const legacy = ["check-missing-goalie-data", "update-nst-player-reports", "update-nst-last-ten"];
++  it.each(legacy)("%s holds a swallowed write failure and refuses an expired write", async route => {
++    vi.spyOn(console, "log").mockImplementation(() => {}); vi.spyOn(console, "error").mockImplementation(() => {});
++    const upsert = vi.fn(async () => ({ error: { message: "fixture rejected" } }));
++    const fn = isolatedFunction(`pages/api/v1/db/${route}.ts`, "upsertData", {
++      assertNstJobActive, markNstJobUncertain, getTableName: () => "fixture", getGoalieTableName: () => "fixture",
++      getGoalieIdByName: async () => 1, supabase: { from: () => ({ upsert }) }, console
++    });
++    const rpc = vi.fn<NstLifecycleRpc>(async (name, args) => ({ status: name.includes("begin") ? "started" : "held", token: args.p_token }));
++    const input = { owner: route, deadlineAt: Date.now() + 1000, settled: () => true, rpc };
++    await expect(runNstJob(input, () => fn("fixture", [{ player_name: "fixture", team: "BOS" }]))).rejects.toThrow("reconciliation");
++    expect(upsert).toHaveBeenCalledTimes(1);
++    expect(rpc.mock.calls.map(c => c[0])).toEqual(["nst_job_begin_v1", "nst_job_hold_v1"]);
++    upsert.mockClear(); vi.useFakeTimers();
++    await expect(runNstJob(input, async () => { vi.setSystemTime(input.deadlineAt); await fn("fixture", [{}]); })).rejects.toThrow("expired");
++    expect(upsert).not.toHaveBeenCalled();
++  });
++
++  it("rechecks the goalie write fence after awaited identity lookups", async () => {
++    vi.useFakeTimers(); vi.spyOn(console, "log").mockImplementation(() => {});
++    const deadlineAt = Date.now() + 1000; const upsert = vi.fn();
++    const fn = isolatedFunction("pages/api/v1/db/check-missing-goalie-data.ts", "upsertData", {
++      assertNstJobActive, markNstJobUncertain, getGoalieTableName: () => "fixture", console,
++      getGoalieIdByName: async () => { vi.setSystemTime(deadlineAt); return 1; }, supabase: { from: () => ({ upsert }) }
++    });
++    await expect(runNstJob({ owner: "fixture", deadlineAt, settled: () => true,
++      rpc: async (name, args) => ({ status: name.includes("begin") ? "started" : "held", token: args.p_token }) },
++    () => fn("fixture", [{ player_name: "fixture", team: "BOS" }]))).rejects.toThrow("expired");
++    expect(upsert).not.toHaveBeenCalled();
++  });
++
++  it("awaits player-report work before its enabled route response", async () => {
++    let release!: () => void; const events: string[] = [];
++    const work = new Promise<void>(resolve => { release = resolve; });
++    const handler = isolatedFunction("pages/api/v1/db/update-nst-player-reports.ts", "handler", {
++      main: async () => { events.push("work"); await work; events.push("settled"); }, process, console
++    });
++    const res: any = { status() { return this; }, json() { events.push("json"); return this; } };
++    const pending = handler({ method: "POST" }, res);
++    await Promise.resolve(); expect(events).toEqual(["work"]);
++    release(); await pending; expect(events).toEqual(["work", "settled", "json"]);
++  });
++});
+--- a/web/lib/nst/jobLifecycle.server.test.ts
++++ b/web/lib/nst/jobLifecycle.server.test.ts
+@@ -1,6 +1,6 @@
+ // @vitest-environment node
+ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+-import { currentNstJob, nstLifecycleRpc, runNstJob, withNstJobLifecycle, withGoalieJob, withNstJobDispatch, type NstLifecycleRpc } from "./jobLifecycle.server";
++import { assertNstJobActive, currentNstJob, markNstJobUncertain, nstLifecycleRpc, runNstJob, withNstJobLifecycle, withGoalieJob, withNstJobDispatch, type NstLifecycleRpc } from "./jobLifecycle.server";
+ import { admitSharedNstAttempt } from "./sharedAdmission";
+ 
+ beforeEach(() => { vi.stubEnv("NST_JOB_LIFECYCLE_ENABLED", "true"); });
+@@ -36,7 +36,10 @@
+     });
+     const work = async () => {
+       if (kind === "rejected") throw new Error("Write unknown");
+-      if (kind === "unfinished") void withNstJobDispatch(() => new Promise<void>(resolve => { release = resolve; }));
++      if (kind === "unfinished") {
++        void withNstJobDispatch(() => new Promise<void>(resolve => { release = resolve; })).catch(() => {});
++        await Promise.resolve();
++      }
+       return kind !== "unsettled";
+     };
+     await expect(runNstJob(f.input, work)).rejects.toThrow(); release?.();
+@@ -88,4 +91,61 @@
+     await vi.advanceTimersByTimeAsync(5000); await assertion;
+     expect(fetch.mock.calls[0][1]!.signal!.aborted).toBe(true);
+   });
++  it("opens no lifecycle for cached reads, but shares one begin across concurrent cache misses", async () => {
++    const f = fixture();
++    await runNstJob({ ...f.input, lazy: true }, async () => true);
++    expect(f.rpc).not.toHaveBeenCalled();
++    const tokens: unknown[] = [];
++    await runNstJob({ ...f.input, lazy: true }, async () => {
++      await Promise.all([1, 2].map(() => withNstJobDispatch(async () => { tokens.push(currentNstJob()?.token); })));
++      expect(f.rpc).toHaveBeenCalledTimes(1);
++      return true;
++    });
++    expect(new Set(tokens).size).toBe(1);
++    expect(f.rpc.mock.calls.map(c => c[0])).toEqual(["nst_job_begin_v1", "nst_job_finish_v1"]);
++  });
++  it("holds swallowed output errors and prevents a later write", async () => {
++    const f = fixture(); const write = vi.fn();
++    await expect(runNstJob(f.input, async () => {
++      markNstJobUncertain();
++      expect(() => { assertNstJobActive(); write(); }).toThrow("uncertain");
++      return true;
++    })).rejects.toThrow("reconciliation");
++    expect(write).not.toHaveBeenCalled();
++    expect(f.rpc.mock.calls.map(c => c[0])).toEqual(["nst_job_begin_v1", "nst_job_hold_v1"]);
++  });
++  it("rejects an unscoped dispatch when enabled", async () => {
++    const dispatch = vi.fn(async () => true);
++    await expect(withNstJobDispatch(dispatch)).rejects.toThrow("enclosing job");
++    expect(dispatch).not.toHaveBeenCalled();
++  });
++  it("holds a detached admission wait and never dispatches its late permit", async () => {
++    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://offline.invalid"); vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "fixture");
++    const f = fixture(); let release!: (value: Response) => void;
++    let entered!: () => void; const admissionStarted = new Promise<void>(resolve => { entered = resolve; });
++    vi.stubGlobal("fetch", vi.fn(() => { entered(); return new Promise<Response>(resolve => { release = resolve; }); }));
++    const dispatch = vi.fn(async () => true); let late!: Promise<unknown>;
++    await expect(runNstJob(f.input, async () => {
++      late = admitSharedNstAttempt(Date.now() + 5000, dispatch);
++      void late.catch(() => {});
++      await admissionStarted;
++      return true;
++    })).rejects.toThrow("reconciliation");
++    release(new Response(JSON.stringify({ version: 1, scope: "global-nst", allowed: true, waitMs: 0, permitTtlMs: 1000 })));
++    await expect(late).rejects.toThrow("closed");
++    expect(dispatch).not.toHaveBeenCalled();
++    expect(f.rpc.mock.calls.at(-1)?.[0]).toBe("nst_job_hold_v1");
++  });
++  it("checks the enclosing deadline again after admission acknowledgement", async () => {
++    vi.useFakeTimers();
++    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://offline.invalid"); vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "fixture");
++    const f = fixture(); const dispatch = vi.fn(async () => true);
++    vi.stubGlobal("fetch", vi.fn(async () => {
++      vi.setSystemTime(f.input.deadlineAt);
++      return new Response(JSON.stringify({ version: 1, scope: "global-nst", allowed: true, waitMs: 0, permitTtlMs: 1000 }));
++    }));
++    await expect(runNstJob(f.input, () => admitSharedNstAttempt(f.input.deadlineAt + 5000, dispatch))).rejects.toThrow("expired");
++    expect(dispatch).not.toHaveBeenCalled();
++    expect(f.rpc.mock.calls.at(-1)?.[0]).toBe("nst_job_hold_v1");
++  });
+ });
+--- a/web/lib/nst/jobLifecycle.server.ts
++++ b/web/lib/nst/jobLifecycle.server.ts
+@@ -3,7 +3,8 @@
+ 
+ export class NstJobLifecycleError extends Error {}
+ export type NstJobToken = { kind: "direct" | "goalie"; token: string };
+-type JobContext = NstJobToken & { deadlineAt: number; active: number; closed: boolean };
++type JobContext = NstJobToken & { deadlineAt: number; active: number; closed: boolean;
++  uncertain?: boolean; begun?: boolean; beginPending?: Promise<void>; begin?: () => Promise<void> };
+ const jobs = new AsyncLocalStorage<JobContext>();
+ const UUID = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
+ export type NstLifecycleRpc = (name: string, args: Record<string, unknown>, deadlineAt: number) => Promise<any>;
+@@ -33,23 +34,42 @@
+ 
+ export function currentNstJob(): NstJobToken | undefined {
+   const job = jobs.getStore();
+-  if (job && (job.closed || Date.now() >= job.deadlineAt)) throw new NstJobLifecycleError("NST job is closed or expired.");
++  if (job && (job.closed || job.uncertain || Date.now() >= job.deadlineAt)) throw new NstJobLifecycleError("NST job is closed, uncertain or expired.");
+   return job && { kind: job.kind, token: job.token };
++}
++
++export function markNstJobUncertain() {
++  const job = jobs.getStore();
++  if (job) job.uncertain = true;
++}
++
++/** Check before persistence/loop work as well as before provider dispatch. */
++export function assertNstJobActive() { requireNstJob(); }
++
++export function requireNstJob() {
++  const job = currentNstJob();
++  if (process.env.NST_JOB_LIFECYCLE_ENABLED === "true" && !job) {
++    throw new NstJobLifecycleError("This NST helper requires an enclosing job.");
++  }
+ }
+ 
+ /** Keep the enclosing lease open through provider body consumption. */
+ export async function withNstJobDispatch<T>(dispatch: () => Promise<T>): Promise<T> {
+   const job = jobs.getStore();
+-  currentNstJob();
++  requireNstJob();
+   if (!job) return dispatch();
+   job.active++;
+-  try { return await dispatch(); } finally { job.active--; }
++  try {
++    await job.begin?.();
++    currentNstJob();
++    return await dispatch();
++  } finally { job.active--; }
+ }
+ 
+ /** Callers must await all provider and persistence work and explicitly classify
+  * its final outcome. Disabled by default until every caller is qualified. */
+ export async function runNstJob<T>(input: {
+-  owner: string; deadlineAt: number; settled: (result: T) => boolean; rpc?: NstLifecycleRpc;
++  owner: string; deadlineAt: number; settled: (result: T) => boolean; rpc?: NstLifecycleRpc; lazy?: boolean;
+ }, work: () => Promise<T>): Promise<T> {
+   if (process.env.NST_JOB_LIFECYCLE_ENABLED !== "true") return work();
+   if (jobs.getStore()) throw new NstJobLifecycleError("Nested NST jobs require the existing parent lease.");
+@@ -57,19 +77,26 @@
+   const token = randomUUID();
+   if (!input.owner.trim() || input.owner.length > 128 || !Number.isFinite(input.deadlineAt) ||
+       input.deadlineAt <= Date.now() || input.deadlineAt > Date.now() + 3_600_000) throw new NstJobLifecycleError("Invalid NST job bounds.");
+-  const receipt = await rpc("nst_job_begin_v1", { p_token: token, p_owner: input.owner, p_deadline_at: new Date(input.deadlineAt).toISOString() }, input.deadlineAt);
+-  if (receipt?.status !== "started" || receipt.token !== token) throw new NstJobLifecycleError("NST job begin is unacknowledged; no work started.");
+   const context: JobContext = { kind: "direct", token, deadlineAt: input.deadlineAt, active: 0, closed: false };
++  context.begin = () => context.beginPending ??= (async () => {
++    const receipt = await rpc("nst_job_begin_v1", { p_token: token, p_owner: input.owner, p_deadline_at: new Date(input.deadlineAt).toISOString() }, input.deadlineAt);
++    if (receipt?.status !== "started" || receipt.token !== token) throw new NstJobLifecycleError("NST job begin is unacknowledged; no work started.");
++    context.begun = true;
++  })();
++  if (!input.lazy) await context.begin();
+   try {
+     const result = await jobs.run(context, work);
+     context.closed = true;
+-    if (context.active || Date.now() >= input.deadlineAt || !input.settled(result)) throw new NstJobLifecycleError("NST job outcome requires reconciliation.");
++    if (!context.beginPending) return result; // Cache-only read: no NST occupancy was acquired.
++    if (!context.begun || context.uncertain || context.active || Date.now() >= input.deadlineAt || !input.settled(result)) throw new NstJobLifecycleError("NST job outcome requires reconciliation.");
+     const finished = await rpc("nst_job_finish_v1", { p_token: token }, input.deadlineAt);
+     if (finished?.status !== "finished" || finished.token !== token) throw new NstJobLifecycleError("NST job finish is unacknowledged.");
+     return result;
+   } catch (error) {
+     context.closed = true;
+-    try { await rpc("nst_job_hold_v1", { p_token: token, p_reason: "Unacknowledged enclosing job outcome" }, Date.now() + 5_000); } catch { /* The active/expired row already prevents clearance. */ }
++    if (context.beginPending) {
++      try { await rpc("nst_job_hold_v1", { p_token: token, p_reason: "Unacknowledged enclosing job outcome" }, Date.now() + 5_000); } catch { /* The active/expired row already prevents clearance. */ }
++    }
+     throw error;
+   }
+ }
+@@ -94,6 +121,7 @@
+   handler: (req: import("next").NextApiRequest, res: import("next").NextApiResponse) => Promise<unknown>,
+   owner: string,
+   skip?: (req: import("next").NextApiRequest) => boolean,
++  options?: { lazy?: boolean },
+ ) {
+   return async (req: import("next").NextApiRequest, res: import("next").NextApiResponse) => {
+     if (process.env.NST_JOB_LIFECYCLE_ENABLED !== "true" || skip?.(req)) return handler(req, res);
+@@ -102,7 +130,7 @@
+     let body: any;
+     res.json = ((value: unknown) => { captured = true; body = value; return res; }) as typeof res.json;
+     try {
+-      await runNstJob({ owner, deadlineAt: Date.now() + 240_000, settled: () => captured && !res.headersSent &&
++      await runNstJob({ owner, deadlineAt: Date.now() + 240_000, lazy: options?.lazy, settled: () => captured && !res.headersSent &&
+         res.statusCode >= 200 && res.statusCode < 300 && body?.success !== false && body?.retrySafe !== false &&
+         body?.operationStatus !== "failed" && body?.auditPersisted !== false }, async () => { await handler(req, res); });
+       res.json = originalJson;
+--- a/web/lib/nst/sharedAdmission.ts
++++ b/web/lib/nst/sharedAdmission.ts
+@@ -7,6 +7,7 @@
+ // Requires the reviewed nst_admit_attempt_v1 RPC. Missing/failed coordination
+ // never falls back to instance-local /tmp, an alternate key, or a burst.
+ export async function admitSharedNstAttempt<T>(deadlineAt: number, dispatch: () => Promise<T>, control?: Pick<NstRequestControl, "minIntervalMs" | "plannedRequestCount">): Promise<T> {
++  return withNstJobDispatch(async () => {
+   const origin = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+   const key = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+   if (!origin || !key) throw new NstSharedAdmissionError("NST shared admission is not configured; no provider request started.");
+@@ -17,6 +18,7 @@
+   const body = JSON.stringify({ p_burst: burst, p_planned_requests: burst ? control!.plannedRequestCount : null,
+     ...(job ? { p_kind: job.kind, p_token: job.token } : {}) });
+   while (Date.now() < deadlineAt) {
++    currentNstJob();
+     const started = performance.now();
+     const controller = new AbortController();
+     const timeout = setTimeout(() => controller.abort(), Math.min(5000, deadlineAt - Date.now()));
+@@ -39,11 +41,13 @@
+       if (performance.now() - started >= receipt.permitTtlMs || Date.now() >= deadlineAt) {
+         throw new NstSharedAdmissionError("NST shared permit expired before dispatch; no provider request started.");
+       }
+-      return withNstJobDispatch(dispatch);
++      currentNstJob();
++      return dispatch();
+     }
+     const waitMs = Math.max(25, receipt.waitMs);
+     if (Date.now() + waitMs >= deadlineAt) throw new NstExecutionLimitError("NST shared budget cannot fit inside the run deadline.");
+     await new Promise<void>((resolve) => setTimeout(resolve, waitMs));
+   }
+   throw new NstExecutionLimitError("NST run deadline reached before shared admission.");
++  });
+ }
+--- a/web/pages/api/Averages/[playerId].ts
++++ b/web/pages/api/Averages/[playerId].ts
+@@ -1,3 +1,4 @@
++import { withNstJobLifecycle } from "lib/nst/jobLifecycle.server";
+ // /Users/tim/Desktop/FHFH/fhfhockey.com/web/pages/api/Averages/[playerId].ts
+ 
+ import type { NextApiRequest, NextApiResponse } from "next";
+@@ -7,7 +8,7 @@
+   getAggregatedRatesData
+ } from "lib/api/averages/statsService";
+ 
+-export default async function handler(
++async function handler(
+   req: NextApiRequest,
+   res: NextApiResponse<Response>
+ ) {
+@@ -57,3 +58,5 @@
+     });
+   }
+ }
++
++export default withNstJobLifecycle(handler, "Averages/[playerId]", undefined, { lazy: true });
+--- a/web/pages/api/CareerAverages/[playerId].ts
++++ b/web/pages/api/CareerAverages/[playerId].ts
+@@ -1,3 +1,4 @@
++import { withNstJobLifecycle } from "lib/nst/jobLifecycle.server";
+ import type { NextApiRequest, NextApiResponse } from "next";
+ import { HTMLElement, parse } from "node-html-parser";
+ 
+@@ -24,7 +25,7 @@
+   data?: Data;
+ };
+ 
+-export default async function handler(
++async function handler(
+   req: NextApiRequest,
+   res: NextApiResponse<Response>
+ ) {
+@@ -246,3 +247,5 @@
+   };
+   return data;
+ }
++
++export default withNstJobLifecycle(handler, "CareerAverages/[playerId]", undefined, { lazy: true });
+--- a/web/pages/api/SustainabilityStats/[playerId].ts
++++ b/web/pages/api/SustainabilityStats/[playerId].ts
+@@ -1,3 +1,4 @@
++import { withNstJobLifecycle } from "lib/nst/jobLifecycle.server";
+ import type { NextApiRequest, NextApiResponse } from "next";
+ import { parse } from "node-html-parser";
+ 
+@@ -13,7 +14,7 @@
+   data?: Data;
+ };
+ 
+-export default async function handler(
++async function handler(
+   req: NextApiRequest,
+   res: NextApiResponse<Response>
+ ) {
+@@ -203,3 +204,5 @@
+   "Winnipeg Jets": "WPG",
+   "Washington Capitals": "WSH"
+ };
++
++export default withNstJobLifecycle(handler, "SustainabilityStats/[playerId]", undefined, { lazy: true });
+--- a/web/pages/api/Teams/[teamAbbreviation].ts
++++ b/web/pages/api/Teams/[teamAbbreviation].ts
+@@ -1,3 +1,4 @@
++import { withNstJobLifecycle } from "lib/nst/jobLifecycle.server";
+ // https://github.com/FHFHockey-dev/fhfhockey.com/pull/15#issuecomment-1208254068
+ //
+ // Legacy compatibility route.
+@@ -35,7 +36,7 @@
+   data?: Data;
+ };
+ 
+-export default async function handler(
++async function handler(
+   req: NextApiRequest,
+   res: NextApiResponse<Response>
+ ) {
+@@ -205,3 +206,5 @@
+   };
+   return data;
+ }
++
++export default withNstJobLifecycle(handler, "Teams/[teamAbbreviation]", undefined, { lazy: true });
+--- a/web/pages/api/ThreeYearAverages/[playerId].ts
++++ b/web/pages/api/ThreeYearAverages/[playerId].ts
+@@ -1,3 +1,4 @@
++import { withNstJobLifecycle } from "lib/nst/jobLifecycle.server";
+ // Import statements remain unchanged
+ import type { NextApiRequest, NextApiResponse } from "next";
+ import { HTMLElement, parse } from "node-html-parser";
+@@ -229,7 +230,7 @@
+   return minutes * 60 + seconds;
+ }
+ 
+-export default async function handler(
++async function handler(
+   req: NextApiRequest,
+   res: NextApiResponse<Response>
+ ) {
+@@ -2067,3 +2068,5 @@
+     careerAverageRates: data
+   };
+ }
++
++export default withNstJobLifecycle(handler, "ThreeYearAverages/[playerId]", undefined, { lazy: true });
+--- a/web/pages/api/ThreeYearAverages/nstgamelog.py
++++ b/web/pages/api/ThreeYearAverages/nstgamelog.py
+@@ -7,7 +7,7 @@
+     raise RuntimeError("NST shared admission helper unavailable")
+ if str(_nst_root) not in _nst_sys.path:
+     _nst_sys.path.insert(0, str(_nst_root))
+-from lib.nst_admission import nst_get
++from lib.nst_admission import nst_get, nst_job_scope, assert_nst_job_active, mark_nst_job_uncertain
+ 
+ # LEGACY MANUAL SCRIPT
+ # This file is not part of the production NST migration path.
+@@ -36,14 +36,17 @@
+ 
+ # Function to fetch player IDs from Supabase
+ def get_player_ids():
++    assert_nst_job_active()
+     response = supabase.table('players').select('id').execute()
+     if response.error:
++        mark_nst_job_uncertain()
+         print(f"Error fetching player IDs: {response.error}")
+         return []
+     return [player['id'] for player in response.data]
+ 
+ # Function to scrape player stats from Natural Stat Trick
+ def scrape_player_stats(player_id):
++    assert_nst_job_active()
+     url = f"https://naturalstattrick.com/playerreport.php?fromseason=20232024&thruseason=20232024&stype=2&sit=5v5&stdoi=std&rate=n&v=g&playerid={player_id}"
+     headers = {
+         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) ' 
+@@ -53,6 +56,7 @@
+     
+     response = nst_get(url, headers=headers)
+     if response.status_code != 200:
++        mark_nst_job_uncertain()
+         print(f"Failed to fetch data for player ID {player_id}: Status code {response.status_code}")
+         return []
+     
+@@ -61,6 +65,7 @@
+     # Find the table with id 'indreg'
+     table = soup.find('table', id='indreg')
+     if not table:
++        mark_nst_job_uncertain()
+         print(f"No table found for player ID {player_id}")
+         return []
+     
+@@ -73,6 +78,7 @@
+             header_text = th.get_text(strip=True).replace(' ', '_').lower()
+             headers.append(header_text)
+     else:
++        mark_nst_job_uncertain()
+         print(f"No table headers found for player ID {player_id}")
+         return []
+     
+@@ -112,6 +118,7 @@
+ 
+ # Function to upsert data into Supabase
+ def upsert_player_stats(stats):
++    assert_nst_job_active()
+     if not stats:
+         return
+     
+@@ -156,15 +163,20 @@
+             continue
+         
+         # Upsert based on player_id and game_description
+-        supabase.table('player_stats') \
++        assert_nst_job_active()
++        response = supabase.table('player_stats') \
+             .upsert(stat, on_conflict=['player_id', 'game_description']) \
+             .execute()
++        if getattr(response, "error", None):
++            mark_nst_job_uncertain()
+ 
++@nst_job_scope("legacy/nstgamelog")
+ def main():
+     player_ids = get_player_ids()
+     print(f"Found {len(player_ids)} players.")
+ 
+     for idx, player_id in enumerate(player_ids, start=1):
++        assert_nst_job_active()
+         print(f"Processing player {idx}/{len(player_ids)} with ID: {player_id}")
+         stats = scrape_player_stats(player_id)
+         print(f"Found {len(stats)} records for player ID {player_id}")
+--- a/web/pages/api/ThreeYearAverages/nsttest.py
++++ b/web/pages/api/ThreeYearAverages/nsttest.py
+@@ -7,7 +7,7 @@
+     raise RuntimeError("NST shared admission helper unavailable")
+ if str(_nst_root) not in _nst_sys.path:
+     _nst_sys.path.insert(0, str(_nst_root))
+-from lib.nst_admission import nst_get
++from lib.nst_admission import nst_get, nst_job_scope, assert_nst_job_active, mark_nst_job_uncertain
+ 
+ # LEGACY MANUAL TEST SCRIPT
+ # This file is not part of the production NST migration path.
+@@ -19,85 +19,92 @@
+ from bs4 import BeautifulSoup
+ import pandas as pd
+ 
+-# URL for the data
+-url = "https://naturalstattrick.com/playerreport.php?fromseason=20232024&thruseason=20232024&stype=2&sit=5v5&stdoi=std&rate=n&v=g&playerid=8478402"
+-req = nst_get(url)
++@nst_job_scope("legacy/nsttest", timeout_seconds=220)
++def main():
++    # URL for the data
++    url = "https://naturalstattrick.com/playerreport.php?fromseason=20232024&thruseason=20232024&stype=2&sit=5v5&stdoi=std&rate=n&v=g&playerid=8478402"
++    req = nst_get(url)
+ 
+-# Check if the request was successful
+-if req.status_code == 200:
+-    print("Successfully fetched the webpage.")
+-else:
+-    print(f"Failed to fetch the webpage. Status code: {req.status_code}")
++    # Check if the request was successful
++    if req.status_code == 200:
++        print("Successfully fetched the webpage.")
++    else:
++        mark_nst_job_uncertain()
++        print(f"Failed to fetch the webpage. Status code: {req.status_code}")
+ 
+-# Parse the HTML content using BeautifulSoup
+-soup = BeautifulSoup(req.content, 'html.parser')
++    # Parse the HTML content using BeautifulSoup
++    soup = BeautifulSoup(req.content, 'html.parser')
+ 
+-# Find the target table
+-target_table = soup.find('table')
++    # Find the target table
++    target_table = soup.find('table')
+ 
+-# Extract initial headers from <th> elements
+-headers = [header.get_text(strip=True) for header in target_table.find_all('th')]
++    # Extract initial headers from <th> elements
++    headers = [header.get_text(strip=True) for header in target_table.find_all('th')]
+ 
+-# Extract data rows
+-table_data = []
+-extra_headers_added = False  # Flag to check if extra headers have been added
++    # Extract data rows
++    table_data = []
++    extra_headers_added = False  # Flag to check if extra headers have been added
+ 
+-for row in target_table.find_all('tr'):
+-    cells = row.find_all('td')
+-    if cells:
+-        cell_data = [cell.get_text(strip=True) for cell in cells]
+-        # Check if this row contains the extra headers
+-        if cell_data == ['On-Ice SH%', 'On-Ice SV%', 'PDO']:
+-            # Append these to the headers
+-            headers.extend(cell_data)
+-            extra_headers_added = True
+-            continue  # Skip this row as it's part of the headers
+-        else:
+-            table_data.append(cell_data)
++    for row in target_table.find_all('tr'):
++        cells = row.find_all('td')
++        if cells:
++            cell_data = [cell.get_text(strip=True) for cell in cells]
++            # Check if this row contains the extra headers
++            if cell_data == ['On-Ice SH%', 'On-Ice SV%', 'PDO']:
++                # Append these to the headers
++                headers.extend(cell_data)
++                extra_headers_added = True
++                continue  # Skip this row as it's part of the headers
++            else:
++                table_data.append(cell_data)
+ 
+-# Now, check for mismatches and adjust rows if necessary
+-print(f"Number of headers: {len(headers)}")
+-print(f"Number of data rows: {len(table_data)}")
+-for i, row in enumerate(table_data):
+-    if len(row) != len(headers):
+-        print(f"Row {i} has {len(row)} columns, expected {len(headers)}.")
+-        # Adjust the row length
+-        if len(row) < len(headers):
+-            row += [None] * (len(headers) - len(row))
+-        elif len(row) > len(headers):
+-            row = row[:len(headers)]
+-        table_data[i] = row  # Update the row
++    # Now, check for mismatches and adjust rows if necessary
++    print(f"Number of headers: {len(headers)}")
++    print(f"Number of data rows: {len(table_data)}")
++    for i, row in enumerate(table_data):
++        if len(row) != len(headers):
++            print(f"Row {i} has {len(row)} columns, expected {len(headers)}.")
++            # Adjust the row length
++            if len(row) < len(headers):
++                row += [None] * (len(headers) - len(row))
++            elif len(row) > len(headers):
++                row = row[:len(headers)]
++            table_data[i] = row  # Update the row
+ 
+-# Create DataFrame
+-df = pd.DataFrame(table_data, columns=headers)
++    # Create DataFrame
++    df = pd.DataFrame(table_data, columns=headers)
+ 
+-# Display the first few rows of the DataFrame
+-print("\nFirst 5 rows of the DataFrame:")
+-print(df.head())
++    # Display the first few rows of the DataFrame
++    print("\nFirst 5 rows of the DataFrame:")
++    print(df.head())
+ 
+-# Proceed with restructuring the data as needed
+-# For example, extract 'homeTeam' and 'awayTeam' from 'Game' column
+-structured_data = {}
++    # Proceed with restructuring the data as needed
++    # For example, extract 'homeTeam' and 'awayTeam' from 'Game' column
++    structured_data = {}
+ 
+-for index, row in df.iterrows():
+-    game_info = row['Game']
+-    if pd.isna(game_info):
+-        continue  # Skip rows with missing game information
+-    date_and_teams = game_info.split()
+-    if len(date_and_teams) >= 2:
+-        date = date_and_teams[0]
+-        teams = ' '.join(date_and_teams[1:])
+-        if ' at ' in teams:
+-            away_team, home_team = teams.split(' at ')
+-        else:
+-            continue  # Skip if the format is unexpected
+-        # Remove 'Game' column from row data
+-        row_data = row.drop(labels=['Game']).to_dict()
+-        # Add 'homeTeam' and 'awayTeam'
+-        row_data['homeTeam'] = home_team
+-        row_data['awayTeam'] = away_team
+-        structured_data[date] = row_data
++    for index, row in df.iterrows():
++        game_info = row['Game']
++        if pd.isna(game_info):
++            continue  # Skip rows with missing game information
++        date_and_teams = game_info.split()
++        if len(date_and_teams) >= 2:
++            date = date_and_teams[0]
++            teams = ' '.join(date_and_teams[1:])
++            if ' at ' in teams:
++                away_team, home_team = teams.split(' at ')
++            else:
++                continue  # Skip if the format is unexpected
++            # Remove 'Game' column from row data
++            row_data = row.drop(labels=['Game']).to_dict()
++            # Add 'homeTeam' and 'awayTeam'
++            row_data['homeTeam'] = home_team
++            row_data['awayTeam'] = away_team
++            structured_data[date] = row_data
+ 
+-# Output the restructured data
+-print("\nRestructured Data:")
+-print(pd.DataFrame(structured_data).transpose())
++    # Output the restructured data
++    print("\nRestructured Data:")
++    print(pd.DataFrame(structured_data).transpose())
++
++
++if __name__ == "__main__":
++    main()
+--- a/web/pages/api/fetch_team_table.ts
++++ b/web/pages/api/fetch_team_table.ts
+@@ -1,3 +1,4 @@
++import { withNstJobLifecycle } from "lib/nst/jobLifecycle.server";
+ import type { NextApiRequest, NextApiResponse } from "next";
+ import * as cheerio from "cheerio";
+ import { fetchNstTextByUrl } from "lib/nst/client";
+@@ -154,4 +155,4 @@
+   }
+ }
+ 
+-export default adminOnly(handler);
++export default adminOnly(withNstJobLifecycle(handler, "fetch_team_table", req => req.method !== "GET"));
+--- a/web/pages/api/v1/db/check-missing-goalie-data.ts
++++ b/web/pages/api/v1/db/check-missing-goalie-data.ts
+@@ -1,3 +1,4 @@
++import { assertNstJobActive, markNstJobUncertain, withNstJobLifecycle } from "lib/nst/jobLifecycle.server";
+ // /pages/api/v1/db/check-missing-goalie-data.ts
+ 
+ import {
+@@ -179,7 +180,10 @@
+     .eq("position", goaliePosition)
+     .limit(1)
+     .maybeSingle();
+-  if (error) return null;
++  if (error) {
++    markNstJobUncertain();
++    return null;
++  }
+   if (!data) {
+     troublesomePlayers.push(`${fullName} (${position})`);
+     return null;
+@@ -295,6 +299,7 @@
+         error.message
+       );
+       if (attempt === retries) {
++        markNstJobUncertain();
+         console.error(
+           `Failed to fetch data from ${url} after ${retries} attempts.`
+         );
+@@ -307,6 +312,7 @@
+ }
+ 
+ async function upsertData(datasetType: string, dataRows: any[]) {
++  assertNstJobActive();
+   if (dataRows.length === 0) {
+     console.warn(`No data rows to upsert for datasetType "${datasetType}".`);
+     return;
+@@ -333,10 +339,13 @@
+   console.log(
+     `Upserting ${dataRowsWithPlayerIds.length} rows into table "${tableName}".`
+   );
++  assertNstJobActive();
+   const { error } = await supabase
+     .from(tableName)
+     .upsert(dataRowsWithPlayerIds, { onConflict: "player_id,date_scraped" });
++  if (process.env.NST_JOB_LIFECYCLE_ENABLED === "true" && error !== null) markNstJobUncertain();
+   if (error) {
++    markNstJobUncertain();
+     console.error(
+       `Error upserting into ${tableName}:`,
+       error.details || error.message
+@@ -363,6 +372,7 @@
+     .eq("date_scraped", date)
+     .limit(1);
+   if (error) {
++    markNstJobUncertain();
+     console.error(`Error checking data in ${tableName}:`, error.message);
+     return false;
+   }
+@@ -420,11 +430,13 @@
+   // Iterate over each dataset type (each goalie table)
+   const datasetTypes = Object.keys(goalieTableMapping);
+   for (const datasetType of datasetTypes) {
++    assertNstJobActive();
+     const tableName = getGoalieTableName(datasetType);
+     const { data, error } = await supabase
+       .from(tableName)
+       .select("date_scraped");
+     if (error) {
++      markNstJobUncertain();
+       console.error(`Error fetching dates from ${tableName}:`, error.message);
+       continue;
+     }
+@@ -451,6 +463,7 @@
+ 
+   // Process each missing URL sequentially with a delay
+   for (let i = 0; i < missingUrlsQueue.length; i++) {
++    assertNstJobActive();
+     const { datasetType, url, date, seasonId } = missingUrlsQueue[i];
+     console.log(`\nFetching missing data for ${datasetType} on ${date}`);
+     await processSingleUrl({ datasetType, url, date, seasonId });
+@@ -486,6 +499,6 @@
+ };
+ 
+ export default withOperationalRouteAuth(
+-  handler,
++  withNstJobLifecycle(handler, "check-missing-goalie-data", req => req.method !== "POST"),
+   operationalRouteContracts.checkMissingGoalieData,
+ );
+--- a/web/pages/api/v1/db/nst_gamelog_goalie_scraper.py
++++ b/web/pages/api/v1/db/nst_gamelog_goalie_scraper.py
+@@ -7,7 +7,7 @@
+     raise RuntimeError("NST shared admission helper unavailable")
+ if str(_nst_root) not in _nst_sys.path:
+     _nst_sys.path.insert(0, str(_nst_root))
+-from lib.nst_admission import nst_get
++from lib.nst_admission import nst_get, nst_job_scope, assert_nst_job_active, mark_nst_job_uncertain
+ 
+ # LEGACY MANUAL SCRIPT
+ # This file is not part of the production NST migration path.
+@@ -226,6 +226,7 @@
+ troublesome_players: List[str] = []
+ 
+ def get_goalie_id_by_name(fullName: str, team: str) -> Optional[int]:
++    assert_nst_job_active()
+     mappedName = goalie_name_mapping.get(fullName, {"fullName": fullName})["fullName"]
+     normalized_fullName = normalize_name(mappedName)
+     goaliePosition = "G"  # Ensure we only get goalies
+@@ -237,6 +238,7 @@
+             troublesome_players.append(f"{fullName} ({team})")
+             return None
+     except Exception as e:
++        mark_nst_job_uncertain()
+         print(f"Error fetching goalie ID for {fullName}: {e}")
+         troublesome_players.append(f"{fullName} ({team})")
+         return None
+@@ -248,16 +250,19 @@
+     print("\nDelay complete.")
+ 
+ def check_data_exists(dataset_type: str, date: str) -> bool:
++    assert_nst_job_active()
+     """Check if data already exists in the database for the given dataset type and date."""
+     table_name = get_table_name(dataset_type)
+     try:
+         response = supabase.table(table_name).select("id").eq("date_scraped", date).limit(1).execute()
+         return len(response.data) > 0
+     except Exception as e:
++        mark_nst_job_uncertain()
+         print(f"Error checking if data exists: {e}")
+         return False
+ 
+ def process_url(url_info: Dict, current_url_num: int, total_urls: int, date_counts: Dict[str, Dict[str, int]]):
++    assert_nst_job_active()
+     dataset_type = url_info["datasetType"]
+     url = url_info["url"]
+     date = url_info["date"]
+@@ -282,15 +287,22 @@
+                     row["player_id"] = goalie_id
+                     data_rows_with_ids.append(row)
+                 table_name = get_table_name(dataset_type)
++                assert_nst_job_active()
+                 res = supabase.table(table_name).upsert(data_rows_with_ids, on_conflict=["player_id", "date_scraped"]).execute()
++                if getattr(res, "error", None):
++                    mark_nst_job_uncertain()
++                    return
+                 print(f"Upserted {len(data_rows_with_ids)} rows into {table_name}.")
+             else:
+                 print("No rows parsed.")
+         else:
++            mark_nst_job_uncertain()
+             print(f"Failed to fetch {url}: Status Code {response.status_code}")
+     except Exception as e:
++        mark_nst_job_uncertain()
+         print(f"Error processing URL {url}: {e}")
+ 
++@nst_job_scope("legacy/nst_gamelog_goalie_scraper")
+ def main():
+     start_time = time.time()
+     # For example purposes, assume season_id "20242025" and season start "2024-10-01"
+@@ -320,6 +332,7 @@
+     total_urls = len(urls_queue)
+     print(f"Total URLs to process: {total_urls}")
+     for i, url_info in enumerate(urls_queue):
++        assert_nst_job_active()
+         if i > 0:
+             print(f"\nWaiting {DELAY_SECONDS} seconds before next request...")
+             print_delay_countdown()
+--- a/web/pages/api/v1/db/nst_gamelog_scraper.py
++++ b/web/pages/api/v1/db/nst_gamelog_scraper.py
+@@ -7,7 +7,7 @@
+     raise RuntimeError("NST shared admission helper unavailable")
+ if str(_nst_root) not in _nst_sys.path:
+     _nst_sys.path.insert(0, str(_nst_root))
+-from lib.nst_admission import nst_get
++from lib.nst_admission import nst_get, nst_job_scope, assert_nst_job_active, mark_nst_job_uncertain
+ 
+ # LEGACY MANUAL SCRIPT
+ # This file is not part of the production NST migration path.
+@@ -262,6 +262,7 @@
+     return mapping.get(dataset_type, "unknown_table")
+ 
+ async def get_latest_date_supabase() -> Optional[str]:
++    assert_nst_job_active()
+     """Retrieves the latest date_scraped from all relevant Supabase tables."""
+     table_names = [
+         "nst_gamelog_as_counts",
+@@ -293,6 +294,7 @@
+                 if not latest_date or table_latest_datetime > latest_date:
+                     latest_date = table_latest_datetime
+         except Exception as e:
++            mark_nst_job_uncertain()
+             print(f"Error fetching latest date from {table}: {e}")
+             continue
+ 
+@@ -478,6 +480,7 @@
+     return data_rows_collected
+ 
+ async def get_player_id_by_name(full_name: str, position: str) -> Optional[int]:
++    assert_nst_job_active()
+     """Retrieves the player ID from Supabase based on full name and position."""
+     mapped_name = player_name_mapping.get(full_name, {"fullName": full_name})["fullName"]
+     normalized_full_name = normalize_name(mapped_name)
+@@ -496,11 +499,13 @@
+             troublesome_players.append(f"{full_name} ({position})")
+             return None
+     except Exception as e:
++        mark_nst_job_uncertain()
+         print(f"Error fetching player ID for {full_name}: {e}")
+         troublesome_players.append(f"{full_name} ({position})")
+         return None
+ 
+ async def upsert_data(dataset_type: str, data_rows: List[Dict]):
++    assert_nst_job_active()
+     """Upserts data rows into the corresponding Supabase table."""
+     if not data_rows:
+         return 0
+@@ -543,13 +548,19 @@
+     # ────────────────────────────────────────────────────────────────
+ 
+     try:
++        assert_nst_job_active()
+         response = supabase.table(table_name).upsert(data_rows, on_conflict=["player_id", "date_scraped"]).execute()
++        if getattr(response, "error", None):
++            mark_nst_job_uncertain()
++            return 0
+         return len(data_rows)
+     except Exception as e:
++        mark_nst_job_uncertain()
+         print(f"Error upserting data into {table_name}: {e}")
+         return 0
+ 
+ async def check_data_exists(dataset_type: str, date: str) -> bool:
++    assert_nst_job_active()
+     """Checks if data already exists for the specific dataset type and date."""
+     table_name = get_table_name(dataset_type)
+     if table_name == "unknown_table":
+@@ -559,10 +570,12 @@
+         response = supabase.table(table_name).select("player_id").eq("date_scraped", date).limit(1).execute()
+         return len(response.data) > 0
+     except Exception as e:
++        mark_nst_job_uncertain()
+         print(f"Error checking data existence: {e}")
+         return False
+ 
+ async def process_url(url_info: Dict, current_url_num: int, total_urls: int, date_counts: Dict[str, Dict[str, int]]):
++    assert_nst_job_active()
+     """Process a single URL with proper rate limiting."""
+     dataset_type = url_info['datasetType']
+     url = url_info['url']
+@@ -609,8 +622,10 @@
+                 # Upsert to database
+                 rows_upserted = await upsert_data(dataset_type, data_rows_with_ids)
+             else:
++                mark_nst_job_uncertain()
+                 print(f"Failed to fetch {url}: Status Code {response.status_code}")
+         except Exception as e:
++            mark_nst_job_uncertain()
+             print(f"Error processing URL {url}: {e}")
+     else:
+         print(f"Data already exists for {dataset_type} on date {date}. Skipping.")
+@@ -644,6 +659,7 @@
+         "rows_upserted": rows_upserted
+     }
+ 
++@nst_job_scope("legacy/nst_gamelog_scraper")
+ async def main():
+     """Main function to orchestrate scraping and upserting."""
+     start_time = time.time()
+@@ -708,6 +724,7 @@
+ 
+         # Process URLs sequentially with proper rate limiting
+         for i, url_info in enumerate(unique_urls_queue):
++            assert_nst_job_active()
+             # Apply wait time between requests (except for the first one)
+             if i > 0:
+                 print(f"\nWaiting {DELAY_SECONDS} seconds before next request...")
+@@ -728,4 +745,5 @@
+                 print(f"- {player}")
+     
+     except Exception as e:
++        mark_nst_job_uncertain()
+         print(f"An error occurred in main(): {e}")
+--- a/web/pages/api/v1/db/update-nst-gamelog.ts
++++ b/web/pages/api/v1/db/update-nst-gamelog.ts
+@@ -1,3 +1,4 @@
++import { withNstJobLifecycle } from "lib/nst/jobLifecycle.server";
+ // pages/api/v1/db/update-nst-gamelog.ts
+ 
+ /**
+@@ -3153,4 +3154,4 @@
+   }
+ }
+ 
+-export default adminOnly(withNhlOffSeasonSkip(handler as any));
++export default adminOnly(withNstJobLifecycle(withNhlOffSeasonSkip(handler as any), "update-nst-gamelog", req => !["GET", "POST"].includes(req.method ?? "")));
+--- a/web/pages/api/v1/db/update-nst-last-ten.ts
++++ b/web/pages/api/v1/db/update-nst-last-ten.ts
+@@ -1,3 +1,4 @@
++import { assertNstJobActive, markNstJobUncertain, withNstJobLifecycle } from "lib/nst/jobLifecycle.server";
+ // pages/api/v1/db/update-nst-last-ten.ts
+ 
+ import {
+@@ -299,6 +300,7 @@
+   let latestDate: string | null = null;
+ 
+   for (const table of tableNames) {
++    assertNstJobActive();
+     const { data, error } = await supabase
+       .from(table)
+       .select("date_scraped")
+@@ -307,6 +309,7 @@
+       .maybeSingle();
+ 
+     if (error) {
++      markNstJobUncertain();
+       continue;
+     }
+ 
+@@ -566,6 +569,7 @@
+         error.message
+       );
+       if (attempt === retries) {
++        markNstJobUncertain();
+         console.error(
+           `Failed to fetch data from ${url} after ${retries} attempts.`
+         );
+@@ -604,7 +608,10 @@
+ 
+   const { data, error } = await query.limit(1).maybeSingle();
+ 
+-  if (error) return null;
++  if (error) {
++    markNstJobUncertain();
++    return null;
++  }
+   if (!data) {
+     troublesomePlayers.push(`${fullName} (${position})`);
+     return null;
+@@ -614,6 +621,7 @@
+ }
+ 
+ async function upsertData(datasetType: string, dataRows: any[]) {
++  assertNstJobActive();
+   if (dataRows.length === 0) {
+     console.warn(`No data rows to upsert for datasetType "${datasetType}".`);
+     return;
+@@ -634,7 +642,9 @@
+     .from(tableName)
+     .upsert(dataRows, { onConflict: "player_id,date_scraped" });
+ 
++  if (process.env.NST_JOB_LIFECYCLE_ENABLED === "true" && error !== null) markNstJobUncertain();
+   if (error) {
++    markNstJobUncertain();
+     console.error(
+       `Error upserting data into ${tableName}:`,
+       error.details || error.message
+@@ -663,6 +673,7 @@
+     .limit(1);
+ 
+   if (error) {
++    markNstJobUncertain();
+     console.error(
+       `Error checking data existence in ${tableName}:`,
+       error.message
+@@ -801,6 +812,7 @@
+   }
+ 
+   for (let i = 0; i < urlsQueue.length; i++) {
++    assertNstJobActive();
+     const { datasetType, url, date, seasonId } = urlsQueue[i];
+     console.log(
+       `\nProcessing URL ${i + 1}/${totalUrls}: ${datasetType} for date ${date}`
+@@ -831,6 +843,7 @@
+           rowsUpserted = dataRows.length;
+         }
+       } catch (error) {
++        markNstJobUncertain();
+         console.error(`Error processing URL ${url}:`, error);
+       }
+     } else {
+@@ -943,6 +956,7 @@
+       );
+     }
+   } catch (error: any) {
++    markNstJobUncertain();
+     console.error("An error occurred:", error.message);
+   }
+ }
+@@ -966,6 +980,6 @@
+ }
+ 
+ export default withOperationalRouteAuth(
+-  handler,
++  withNstJobLifecycle(handler, "update-nst-last-ten", req => req.method !== "POST"),
+   operationalRouteContracts.updateNstLastTen,
+ );
+--- a/web/pages/api/v1/db/update-nst-player-reports.ts
++++ b/web/pages/api/v1/db/update-nst-player-reports.ts
+@@ -1,3 +1,4 @@
++import { assertNstJobActive, markNstJobUncertain, withNstJobLifecycle } from "lib/nst/jobLifecycle.server";
+ // pages/api/v1/db/update-nst-player-reports.ts
+ 
+ // TO DO:
+@@ -343,6 +344,7 @@
+       .range(offset, offset + PLAYER_FETCH_BATCH_SIZE - 1);
+ 
+     if (error) {
++      markNstJobUncertain();
+       console.error(`Error fetching from view ${VIEW_NAME}:`, error.message);
+       throw error; // Stop execution on error
+     }
+@@ -451,6 +453,7 @@
+         error.message
+       );
+       if (attempt === retries) {
++        markNstJobUncertain();
+         console.error(
+           `Failed to process Player ${playerId} from ${url} after ${retries} attempts.`
+         );
+@@ -611,6 +614,7 @@
+  * Upserts parsed data into the appropriate Supabase table.
+  */
+ async function upsertData(tableName: string, dataRows: any[]): Promise<number> {
++  assertNstJobActive();
+   if (!dataRows || dataRows.length === 0) {
+     return 0;
+   }
+@@ -620,7 +624,9 @@
+     count: "exact"
+   });
+ 
++  if (process.env.NST_JOB_LIFECYCLE_ENABLED === "true" && error !== null) markNstJobUncertain();
+   if (error) {
++    markNstJobUncertain();
+     console.error(
+       `Error upserting data into ${tableName}:`,
+       error.details || error.message // Keep original error
+@@ -755,6 +761,7 @@
+         `Targeting current season: ${currentSeasonId} (for URL construction)`
+       );
+     } catch (seasonError: any) {
++      markNstJobUncertain();
+       // Use today's date to determine the likely season as fallback
+       currentSeasonId = "20242025";
+       console.warn(
+@@ -777,6 +784,7 @@
+ 
+     // 3. Process each active player sequentially
+     for (let i = 0; i < totalPlayers; i++) {
++      assertNstJobActive();
+       const playerId = playerIds[i];
+       const playerCount = { current: i + 1, total: totalPlayers };
+ 
+@@ -792,6 +800,7 @@
+       }
+     } // End player loop
+   } catch (error: any) {
++    markNstJobUncertain();
+     console.error("\n--- SCRIPT FAILED ---");
+   }
+ }
+@@ -813,6 +822,11 @@
+     `API endpoint /api/v1/db/update-nst-player-reports triggered via ${req.method}.`
+   );
+ 
++  if (process.env.NST_JOB_LIFECYCLE_ENABLED === "true") {
++    await main();
++    return res.status(200).json({ message: "Player report invocation settled." });
++  }
++
+   // Run main function asynchronously - DO NOT await here for long-running tasks in serverless env
+   main().catch((err) => {
+     console.error("Error running main function triggered by API:", err);
+@@ -827,6 +841,6 @@
+ }
+ 
+ export default withOperationalRouteAuth(
+-  handler,
++  withNstJobLifecycle(handler, "update-nst-player-reports", req => !["GET", "POST"].includes(req.method ?? "")),
+   operationalRouteContracts.updateNstPlayerReports,
+ );
+--- a/web/scripts/audit-ctpi-multiseason.ts
++++ b/web/scripts/audit-ctpi-multiseason.ts
+@@ -1,3 +1,4 @@
++import { assertNstJobActive, runNstJob } from "lib/nst/jobLifecycle.server";
+ import * as cheerio from "cheerio";
+ import dotenv from "dotenv";
+ 
+@@ -821,6 +822,7 @@
+ 
+   const seasonData: SeasonData[] = [];
+   for (const season of seasons) {
++    assertNstJobActive();
+     process.stderr.write(`Reading NST team-game rows for ${season}...\n`);
+     seasonData.push(await fetchSeasonData(season));
+   }
+@@ -895,7 +897,7 @@
+   process.stdout.write(`${JSON.stringify(output, null, 2)}\n`);
+ }
+ 
+-main().catch((error) => {
++runNstJob({ owner: "audit-ctpi-multiseason", deadlineAt: Date.now() + 3_600_000, settled: () => true }, main).catch((error) => {
+   console.error(error instanceof Error ? error.message : String(error));
+   process.exitCode = 1;
+ });
+--- a/web/scripts/fetch_team_table.py
++++ b/web/scripts/fetch_team_table.py
+@@ -7,7 +7,7 @@
+     raise RuntimeError("NST shared admission helper unavailable")
+ if str(_nst_root) not in _nst_sys.path:
+     _nst_sys.path.insert(0, str(_nst_root))
+-from lib.nst_admission import nst_get
++from lib.nst_admission import nst_get, nst_job_scope, assert_nst_job_active, mark_nst_job_uncertain
+ 
+ # scripts/fetch_team_table.py
+ # /Users/tim/Desktop/FHFH/fhfhockey.com/web/scripts/fetch_team_table.py
+@@ -46,6 +46,7 @@
+     except:
+         return None
+ 
++@nst_job_scope("legacy/fetch_team_table", timeout_seconds=220)
+ def fetch_team_table(from_season='20242025', thru_season='20242025',
+                     stype='2', sit='pk', score='all', rate='n',
+                     team='all', loc='B', gpf='410', fd='', td=''):
+@@ -159,6 +160,7 @@
+         sys.exit(1)  # Exit with non-zero status
+ 
+ if __name__ == "__main__":
++    ensure_loaded_for(["NST_KEY", "NEXT_PUBLIC_SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"])
+     parser = argparse.ArgumentParser(description='Fetch team table data.')
+     parser.add_argument('--from_season', default='20242025', help='From season')
+     parser.add_argument('--thru_season', default='20242025', help='Thru season')

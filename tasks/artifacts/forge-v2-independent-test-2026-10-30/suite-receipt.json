@@ -1,0 +1,14 @@
+{
+  "check": "suite",
+  "command": [
+    "node",
+    "node_modules/vitest/vitest.mjs",
+    "run",
+    "--reporter=verbose"
+  ],
+  "cwd": "/tmp/forge-v2-independent-hkh8ulbm/web",
+  "exit": 1,
+  "durationSeconds": 14.329112768173218,
+  "environment": "allowlisted; no inherited credentials; no env files copied",
+  "log": "suite.log"
+}

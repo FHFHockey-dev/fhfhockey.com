@@ -1,0 +1,14 @@
+{
+  "command": [
+    "npx",
+    "--no-install",
+    "tsc",
+    "--noEmit",
+    "--project",
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-29/recent-comparison-15/tsconfig.json"
+  ],
+  "cwd": "/Users/tim/Code/fhfhockey.com/web",
+  "exitCode": 0,
+  "elapsedSeconds": 1.968,
+  "sharedSlot": "parent run-check.py verify owns token"
+}

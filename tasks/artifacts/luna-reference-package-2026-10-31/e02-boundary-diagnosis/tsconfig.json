@@ -1,0 +1,10 @@
+{
+  "extends": "../tsconfig.json",
+  "include": [
+    "diagnose.ts",
+    "../../../../web/next-bootstrap.d.ts",
+    "../../../../web/yahoo-fantasy.d.ts",
+    "../../../../web/lib/sources/tweetLunaReview.test.ts"
+  ],
+  "exclude": ["../../../../web/node_modules", "../../../../web/.next"]
+}

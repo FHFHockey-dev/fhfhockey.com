@@ -1,0 +1,45 @@
+{
+  "externalRequests": [],
+  "errors": [],
+  "checks": [
+    {
+      "name": "desktop",
+      "viewport": 1440,
+      "width": 1440
+    },
+    {
+      "name": "320px detail",
+      "viewport": 320,
+      "width": 320
+    },
+    {
+      "name": "200% text resize",
+      "viewport": 1280,
+      "width": 1280
+    }
+  ],
+  "accessibility": [
+    {
+      "name": "desktop",
+      "violations": []
+    },
+    {
+      "name": "320px expanded detail",
+      "violations": []
+    }
+  ],
+  "observations": [],
+  "focusStyle": {
+    "width": "2px",
+    "style": "solid",
+    "color": "rgb(255, 193, 8)"
+  },
+  "accessibilityTree": "- region \"Brent Burns · selected-game evidence\":\n  - heading \"Brent Burns · selected-game evidence\" [level=2]\n  - button \"Close details\"\n  - paragraph: 5 selected appearances · 2026-10-20 to 2026-10-31 · 82.12 minutes.\n  - paragraph: \"Latest selected game: 0 days before the saved 2026-10-31 cutoff. This is window age, not evidence completeness.\"\n  - heading \"Fantasy points\" [level=3]\n  - term: Total across selected appearances\n  - definition: \"8.85\"\n  - term: Per appearance\n  - definition: \"1.77\"\n  - term: Per 60 minutes of ice time\n  - definition: \"6.47\"\n  - paragraph: 5 / 5 records have complete metric inputs.\n  - heading \"Raw points (G + A)\" [level=3]\n  - term: Total across selected appearances\n  - definition: \"2\"\n  - term: Per appearance\n  - definition: \"0.4\"\n  - term: Per 60 minutes of ice time\n  - definition: \"1.46\"\n  - paragraph: 5 / 5 records have complete metric inputs.\n  - heading \"FHFH WiGO Game Score\" [level=3]\n  - term: Total across selected appearances\n  - definition: \"2.08\"\n  - term: Per appearance\n  - definition: \"0.42\"\n  - term: Per 60 minutes of ice time\n  - definition: \"1.52\"\n  - paragraph: 5 / 5 records have complete metric inputs.\n  - paragraph:\n    - strong: Support and baseline comparisons unavailable.\n    - text: Verified scoring-chance inputs and the reference comparison are not supplied in this candidate. No buy/sell score is inferred from these totals.\n  - heading \"Selected games and field evidence\" [level=3]\n  - paragraph: Counts below are per game. Recorded values remain visible even when their evidence is unresolved.\n  - group: 2026-10-20 · COL · ice time matched\n  - group: 2026-10-23 · COL · ice time matched\n  - group: 2026-10-25 · COL · ice time matched\n  - group:\n    - text: 2026-10-28 · COL · ice time matched\n    - paragraph: \"Recorded ice time: 1,069 seconds; retained official evidence: 1,069 seconds.\"\n    - list:\n      - listitem: \"Goals: 0 — supported (official box check)\"\n      - listitem: \"Assists: 2 — supported (official box check)\"\n      - listitem: \"Shots: 4 — supported (official box check)\"\n      - listitem: \"Hits: 2 — supported (official box check)\"\n      - listitem: \"Blocked shots: 4 — supported (official box check)\"\n      - listitem: \"Power-play points: 0 — supported (credited PP goals and assists)\"\n    - paragraph: \"Game 2026020201 · source record 5599412. Evidence: newly captured; no original publication time established.\"\n  - group: 2026-10-31 · COL · ice time matched",
+  "forcedColors": {
+    "outline": "none",
+    "width": "3px",
+    "color": "rgb(0, 0, 0)"
+  },
+  "state": "FAILED",
+  "failure": "AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n\n'3px' !== '2px'\n\n    at /Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-current-evidence-visual-audit-2026-11-01/browser-review.cjs:33:294"
+}

@@ -1,0 +1,80 @@
+{
+  "at": "2026-10-28T03:35:01.717609+00:00",
+  "scope": "Recheck prior valid5v5 filtering defect only; current source already includes repair and five-strength regression",
+  "source_files": [
+    {
+      "path": "web/lib/supabase/Upserts/rollingPlayerValidationPayload.ts",
+      "sha256": "e1e3357737d5a570522cadc6a999be23a1e2270f5c28d880ea34e7666ad4ae6c",
+      "bytes": 82968
+    },
+    {
+      "path": "web/lib/supabase/Upserts/rollingPlayerValidationPayload.test.ts",
+      "sha256": "c312b820ffb8a3bca609565a7e4f921c8cec576441ec6925a67a8d08a3680c66",
+      "bytes": 39170
+    },
+    {
+      "path": "web/pages/api/v1/debug/rolling-player-metrics.ts",
+      "sha256": "2f97f1bbda7f433fcad160316eb050b0acfebffb7b87acd560ce9d07b01160d0",
+      "bytes": 3518
+    },
+    {
+      "path": "web/lib/api/queryParams.ts",
+      "sha256": "60148f4671f7e8c411a45cc5db9d32b9ae68fbfbe5b578b7c9a45efe097d9c6d",
+      "bytes": 1105
+    },
+    {
+      "path": "web/lib/supabase/Upserts/rollingDroppedColumns.ts",
+      "sha256": "5960da3c1782199103f6e94ac66fcaac306f28fc1f8a1d55437f2df2f3093a11",
+      "bytes": 15818
+    }
+  ],
+  "lease_receipts": [
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/CODEX-LEASES.json",
+      "sha256": "bfe168b39c7d0c63f4db5a51190dc0624adc51d6fb7d5fd1a58b3b5e751c2d70",
+      "as_of_utc": "2026-10-27T02:45:25.749500+00:00",
+      "exact_path_mentions": []
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/CLAUDE-LEASES.json",
+      "sha256": "98b303b3325ea39ebdeef1b7646757bbfacdd6d91d44b88c5ebb09ea6482ffae",
+      "as_of_utc": "2026-10-26T19:56:22Z",
+      "exact_path_mentions": []
+    }
+  ],
+  "source_mutations": false,
+  "branch": "octoberBranch per repository instruction; not inspected via Git",
+  "heavy_lock_observed": {
+    "owner": "Codex Scout V63 sprint",
+    "pid": 91323,
+    "token": "accab5eb-4906-4004-b89c-96d9a2937b35",
+    "action": "single-thread Scout geometry and motion work",
+    "created_utc": "2026-10-28T03:31:58.469543+00:00"
+  },
+  "heavy_lock_action": "untouched; package test not started",
+  "next": "lightweight exact source-extracted filter/identity/comparison check; preserve evidence",
+  "completedAt": "2026-10-28T03:37:33.827929+00:00",
+  "outcome": "prior valid5v5 filtering defect already repaired in current checkout; no source edit needed",
+  "checks": {
+    "sourceExtractedProbe": {
+      "exitCode": 0,
+      "passed": 8,
+      "failed": 0,
+      "attempts": 2,
+      "initialHarnessFailure": "missing isLegacyField extraction, corrected locally"
+    },
+    "existingFocusedVitest": "never run this turn; shared heavy-check lock occupied",
+    "lint": "not run; no application changes",
+    "typecheck": "not run; no application changes"
+  },
+  "heavy_lock_at_handoff": {
+    "owner": "Codex Scout V63 sprint",
+    "pid": 91323,
+    "token": "accab5eb-4906-4004-b89c-96d9a2937b35",
+    "action": "single-thread Scout geometry and motion work",
+    "created_utc": "2026-10-28T03:31:58.469543+00:00"
+  },
+  "sourcePinsUnchanged": true,
+  "activeOperations": [],
+  "remainingBlocker": "Full Vitest was not started while shared heavy lock was held; lightweight current-function verification completed. No implementation blocker remains."
+}

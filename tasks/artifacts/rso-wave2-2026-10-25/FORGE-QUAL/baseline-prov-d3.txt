@@ -1,0 +1,24 @@
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  lib/rosterScheduleData/planning.test.ts [ lib/rosterScheduleData/planning.test.ts ]
+TypeError: forgeModelIdentity is not a function
+ ❯ lib/rosterScheduleData/planning.test.ts:229:53
+    227|     it.each([
+    228|       ["an older revision without one", undefined],
+    229|       ["an artifact hash for another code version", forgeModelIdentity…
+       |                                                     ^
+    230|       ["another identity version", { ...forgeModelIdentity("sha-1", en…
+    231|       ["a fitted-artifact claim", { ...forgeModelIdentity("sha-1", env…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  no tests
+   Start at  20:01:37
+   Duration  895ms (transform 457ms, setup 3ms, collect 0ms, tests 0ms, environment 0ms, prepare 31ms)
+

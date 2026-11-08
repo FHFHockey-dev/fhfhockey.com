@@ -1,0 +1,14 @@
+{
+  "action": "types",
+  "command": [
+    "npx",
+    "--no-install",
+    "tsc",
+    "--noEmit",
+    "--project",
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-26/outline-colors-07/tsconfig.json"
+  ],
+  "exitCode": 0,
+  "elapsedSeconds": 1.766,
+  "heldBy": "qualify parent resource slot"
+}

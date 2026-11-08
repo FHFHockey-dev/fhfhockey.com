@@ -1,0 +1,1366 @@
+{
+  "version": "fhfh-analysis-export-v1",
+  "dimensions": {
+    "width": 1200,
+    "height": 1020
+  },
+  "presentation": {
+    "snapshot": {
+      "version": "fhfh-card-analysis-v1",
+      "capture": {
+        "version": "fhfh-card-analysis-v1",
+        "id": "synthetic-12",
+        "player": {
+          "id": 8484136,
+          "name": "Max Sasson",
+          "team": "VAN",
+          "position": "F"
+        },
+        "season": 20262027,
+        "gameType": "regular",
+        "source": "retained",
+        "observedAt": "2026-10-29T18:41:12.798646+00:00",
+        "strength": "all",
+        "history": {
+          "complete": false,
+          "seasonAppearances": null,
+          "reason": "NHL comparison capture unavailable for this review player."
+        },
+        "fields": {},
+        "finality": "NHL comparison capture unavailable; only separately dated BLSH research supplied.",
+        "games": []
+      },
+      "settings": {
+        "period": {
+          "mode": "appearances",
+          "count": 5
+        },
+        "baseline": "previous",
+        "basis": "per-game",
+        "visual": "bars"
+      },
+      "recent": {
+        "label": "Last 5",
+        "gameIds": [],
+        "dates": [],
+        "gp": 0,
+        "reason": "NHL comparison capture unavailable for this review player.",
+        "readings": [
+          {
+            "metric": "goals",
+            "value": null,
+            "state": "missing",
+            "reason": "NHL comparison capture unavailable for this review player.",
+            "gp": 0,
+            "unit": "goals/GP",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",20262027,\"regular\",\"2026-10-29T18:41:12.798646+00:00\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Last 5\",\"goals\",\"per-game\",[null]]"
+          },
+          {
+            "metric": "assists",
+            "value": null,
+            "state": "missing",
+            "reason": "NHL comparison capture unavailable for this review player.",
+            "gp": 0,
+            "unit": "assists/GP",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",20262027,\"regular\",\"2026-10-29T18:41:12.798646+00:00\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Last 5\",\"assists\",\"per-game\",[null]]"
+          },
+          {
+            "metric": "points",
+            "value": null,
+            "state": "missing",
+            "reason": "NHL comparison capture unavailable for this review player.",
+            "gp": 0,
+            "unit": "points/GP",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",20262027,\"regular\",\"2026-10-29T18:41:12.798646+00:00\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Last 5\",\"points\",\"per-game\",[null]]"
+          },
+          {
+            "metric": "ppPoints",
+            "value": null,
+            "state": "missing",
+            "reason": "NHL comparison capture unavailable for this review player.",
+            "gp": 0,
+            "unit": "points/GP",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",20262027,\"regular\",\"2026-10-29T18:41:12.798646+00:00\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Last 5\",\"ppPoints\",\"per-game\",[null]]"
+          },
+          {
+            "metric": "shots",
+            "value": null,
+            "state": "missing",
+            "reason": "NHL comparison capture unavailable for this review player.",
+            "gp": 0,
+            "unit": "shots/GP",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",20262027,\"regular\",\"2026-10-29T18:41:12.798646+00:00\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Last 5\",\"shots\",\"per-game\",[null]]"
+          },
+          {
+            "metric": "blocks",
+            "value": null,
+            "state": "missing",
+            "reason": "NHL comparison capture unavailable for this review player.",
+            "gp": 0,
+            "unit": "blocks/GP",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",20262027,\"regular\",\"2026-10-29T18:41:12.798646+00:00\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Last 5\",\"blocks\",\"per-game\",[null]]"
+          },
+          {
+            "metric": "hits",
+            "value": null,
+            "state": "missing",
+            "reason": "NHL comparison capture unavailable for this review player.",
+            "gp": 0,
+            "unit": "hits/GP",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",20262027,\"regular\",\"2026-10-29T18:41:12.798646+00:00\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Last 5\",\"hits\",\"per-game\",[null]]"
+          },
+          {
+            "metric": "bsh",
+            "value": null,
+            "state": "missing",
+            "reason": "NHL comparison capture unavailable for this review player.",
+            "gp": 0,
+            "unit": "events/GP",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",20262027,\"regular\",\"2026-10-29T18:41:12.798646+00:00\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Last 5\",\"bsh\",\"per-game\",[null,null,null]]"
+          },
+          {
+            "metric": "toiSeconds",
+            "value": null,
+            "state": "missing",
+            "reason": "NHL comparison capture unavailable for this review player.",
+            "gp": 0,
+            "unit": "min/GP",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",20262027,\"regular\",\"2026-10-29T18:41:12.798646+00:00\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Last 5\",\"toiSeconds\",\"per-game\",[null]]"
+          },
+          {
+            "metric": "ppToiSeconds",
+            "value": null,
+            "state": "missing",
+            "reason": "NHL comparison capture unavailable for this review player.",
+            "gp": 0,
+            "unit": "min/GP",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",20262027,\"regular\",\"2026-10-29T18:41:12.798646+00:00\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Last 5\",\"ppToiSeconds\",\"per-game\",[null,null]]"
+          },
+          {
+            "metric": "ixg",
+            "value": null,
+            "state": "missing",
+            "reason": "NHL comparison capture unavailable for this review player.",
+            "gp": 0,
+            "unit": "xG/GP",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",20262027,\"regular\",\"2026-10-29T18:41:12.798646+00:00\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Last 5\",\"ixg\",\"per-game\",[null]]"
+          },
+          {
+            "metric": "xgf",
+            "value": null,
+            "state": "missing",
+            "reason": "NHL comparison capture unavailable for this review player.",
+            "gp": 0,
+            "unit": "xG/GP",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",20262027,\"regular\",\"2026-10-29T18:41:12.798646+00:00\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Last 5\",\"xgf\",\"per-game\",[null]]"
+          },
+          {
+            "metric": "xga",
+            "value": null,
+            "state": "missing",
+            "reason": "NHL comparison capture unavailable for this review player.",
+            "gp": 0,
+            "unit": "xG/GP",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",20262027,\"regular\",\"2026-10-29T18:41:12.798646+00:00\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Last 5\",\"xga\",\"per-game\",[null]]"
+          },
+          {
+            "metric": "xgPct",
+            "value": null,
+            "state": "missing",
+            "reason": "NHL comparison capture unavailable for this review player.",
+            "gp": 0,
+            "unit": "%",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",20262027,\"regular\",\"2026-10-29T18:41:12.798646+00:00\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Last 5\",\"xgPct\",\"pooled-percentage\",[null,null]]"
+          }
+        ]
+      },
+      "baseline": {
+        "label": "Previous",
+        "gameIds": [],
+        "dates": [],
+        "gp": 0,
+        "reason": "NHL comparison capture unavailable for this review player.",
+        "readings": [
+          {
+            "metric": "goals",
+            "value": null,
+            "state": "missing",
+            "reason": "NHL comparison capture unavailable for this review player.",
+            "gp": 0,
+            "unit": "goals/GP",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",20262027,\"regular\",\"2026-10-29T18:41:12.798646+00:00\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Previous\",\"goals\",\"per-game\",[null]]"
+          },
+          {
+            "metric": "assists",
+            "value": null,
+            "state": "missing",
+            "reason": "NHL comparison capture unavailable for this review player.",
+            "gp": 0,
+            "unit": "assists/GP",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",20262027,\"regular\",\"2026-10-29T18:41:12.798646+00:00\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Previous\",\"assists\",\"per-game\",[null]]"
+          },
+          {
+            "metric": "points",
+            "value": null,
+            "state": "missing",
+            "reason": "NHL comparison capture unavailable for this review player.",
+            "gp": 0,
+            "unit": "points/GP",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",20262027,\"regular\",\"2026-10-29T18:41:12.798646+00:00\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Previous\",\"points\",\"per-game\",[null]]"
+          },
+          {
+            "metric": "ppPoints",
+            "value": null,
+            "state": "missing",
+            "reason": "NHL comparison capture unavailable for this review player.",
+            "gp": 0,
+            "unit": "points/GP",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",20262027,\"regular\",\"2026-10-29T18:41:12.798646+00:00\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Previous\",\"ppPoints\",\"per-game\",[null]]"
+          },
+          {
+            "metric": "shots",
+            "value": null,
+            "state": "missing",
+            "reason": "NHL comparison capture unavailable for this review player.",
+            "gp": 0,
+            "unit": "shots/GP",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",20262027,\"regular\",\"2026-10-29T18:41:12.798646+00:00\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Previous\",\"shots\",\"per-game\",[null]]"
+          },
+          {
+            "metric": "blocks",
+            "value": null,
+            "state": "missing",
+            "reason": "NHL comparison capture unavailable for this review player.",
+            "gp": 0,
+            "unit": "blocks/GP",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",20262027,\"regular\",\"2026-10-29T18:41:12.798646+00:00\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Previous\",\"blocks\",\"per-game\",[null]]"
+          },
+          {
+            "metric": "hits",
+            "value": null,
+            "state": "missing",
+            "reason": "NHL comparison capture unavailable for this review player.",
+            "gp": 0,
+            "unit": "hits/GP",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",20262027,\"regular\",\"2026-10-29T18:41:12.798646+00:00\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Previous\",\"hits\",\"per-game\",[null]]"
+          },
+          {
+            "metric": "bsh",
+            "value": null,
+            "state": "missing",
+            "reason": "NHL comparison capture unavailable for this review player.",
+            "gp": 0,
+            "unit": "events/GP",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",20262027,\"regular\",\"2026-10-29T18:41:12.798646+00:00\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Previous\",\"bsh\",\"per-game\",[null,null,null]]"
+          },
+          {
+            "metric": "toiSeconds",
+            "value": null,
+            "state": "missing",
+            "reason": "NHL comparison capture unavailable for this review player.",
+            "gp": 0,
+            "unit": "min/GP",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",20262027,\"regular\",\"2026-10-29T18:41:12.798646+00:00\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Previous\",\"toiSeconds\",\"per-game\",[null]]"
+          },
+          {
+            "metric": "ppToiSeconds",
+            "value": null,
+            "state": "missing",
+            "reason": "NHL comparison capture unavailable for this review player.",
+            "gp": 0,
+            "unit": "min/GP",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",20262027,\"regular\",\"2026-10-29T18:41:12.798646+00:00\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Previous\",\"ppToiSeconds\",\"per-game\",[null,null]]"
+          },
+          {
+            "metric": "ixg",
+            "value": null,
+            "state": "missing",
+            "reason": "NHL comparison capture unavailable for this review player.",
+            "gp": 0,
+            "unit": "xG/GP",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",20262027,\"regular\",\"2026-10-29T18:41:12.798646+00:00\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Previous\",\"ixg\",\"per-game\",[null]]"
+          },
+          {
+            "metric": "xgf",
+            "value": null,
+            "state": "missing",
+            "reason": "NHL comparison capture unavailable for this review player.",
+            "gp": 0,
+            "unit": "xG/GP",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",20262027,\"regular\",\"2026-10-29T18:41:12.798646+00:00\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Previous\",\"xgf\",\"per-game\",[null]]"
+          },
+          {
+            "metric": "xga",
+            "value": null,
+            "state": "missing",
+            "reason": "NHL comparison capture unavailable for this review player.",
+            "gp": 0,
+            "unit": "xG/GP",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",20262027,\"regular\",\"2026-10-29T18:41:12.798646+00:00\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Previous\",\"xga\",\"per-game\",[null]]"
+          },
+          {
+            "metric": "xgPct",
+            "value": null,
+            "state": "missing",
+            "reason": "NHL comparison capture unavailable for this review player.",
+            "gp": 0,
+            "unit": "%",
+            "rank": null,
+            "rankReason": "Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.",
+            "definitionKey": "[\"fhfh-card-analysis-v1\",20262027,\"regular\",\"2026-10-29T18:41:12.798646+00:00\",\"all\",{\"mode\":\"appearances\",\"count\":5},\"Previous\",\"xgPct\",\"pooled-percentage\",[null,null]]"
+          }
+        ]
+      },
+      "overlap": 0,
+      "disclosure": "Equal, non-overlapping appearance windows; short preceding history is withheld.",
+      "rankPolicy": "proposal-only"
+    },
+    "view": "evidence",
+    "blsh": {
+      "status": "exploratory",
+      "heading": "BLSH · retained provisional research",
+      "direction": "positive",
+      "receipt": null,
+      "market": "Market reference unavailable",
+      "retained": {
+        "snapshotSHA256": "2f380c2539390f6931ec92ab1d0b1d8cced2b55f5f4cefb8c6e88a694909f2c8",
+        "reviewReference": "tasks/artifacts/blsh-snapshot-coordination-2026-10-29/INSTALLATION-AND-NEXT-SLICE.md; portable-install-01/INSTALLATION-RECEIPT.json",
+        "asOfUTC": "2026-10-29T18:41:12.798646+00:00",
+        "eventThroughDate": "2026-10-28",
+        "dates": [
+          "2026-10-17",
+          "2026-10-20",
+          "2026-10-22",
+          "2026-10-25",
+          "2026-10-27"
+        ],
+        "methodVersion": "support-conditioned-production-gap-v1",
+        "profile": {
+          "playerId": 8484136,
+          "name": "Max Sasson",
+          "displayName": "Max Sasson",
+          "team": "VAN",
+          "position": "F",
+          "score": {
+            "version": "support-conditioned-production-gap-v1",
+            "value": 13.269823517937136,
+            "normalizedGap": 0.15300122813288106,
+            "baselineNormalizedGap": 0.1659925228274938,
+            "gapSign": "buy_low_evidence",
+            "gapSignLabel": "Buy-low evidence",
+            "status": "concordant_research_candidate",
+            "statusLabel": "Production and support agree in direction",
+            "list": "BL",
+            "listLabel": "Buy-low research candidate",
+            "rank": 257,
+            "reason": null,
+            "reasonText": null,
+            "trusted": false,
+            "calibratedProbability": null,
+            "indexTransform": "100·g / (1 + |g|) of the normalized gap g"
+          },
+          "tracks": [
+            {
+              "track": "fantasy_points",
+              "label": "FP",
+              "observed": 8.25,
+              "referenceAtCurrentTOI": 7.849795054887428,
+              "supportConditioned": 8.094545151381004,
+              "gap": -0.15545484861899617,
+              "components": [
+                {
+                  "id": "production_vs_reference",
+                  "kind": "reference_gap",
+                  "kindLabel": "Reference vs recorded",
+                  "value": -0.40020494511257176,
+                  "note": "Reference production at the score window's total ice time minus recorded production. No personal production history: the reference is the position cohort's rate. Power-play share, role and linemates are not modelled separately.",
+                  "processDelta": null,
+                  "referenceKind": null
+                },
+                {
+                  "id": "process:individual_xG60",
+                  "kind": "model_sensitivity",
+                  "kindLabel": "Process change × frozen sensitivity",
+                  "value": 0.25823213066307515,
+                  "note": "Change in the player's own expected goals per 60 versus their reference, times the frozen sensitivity. Reference is not the player's own measured history.",
+                  "processDelta": 0.2111913278443338,
+                  "referenceKind": "cohort"
+                },
+                {
+                  "id": "process:shared_onice_xGF60",
+                  "kind": "model_sensitivity",
+                  "kindLabel": "Process change × frozen sensitivity",
+                  "value": -0.018872281878938867,
+                  "note": "Change in on-ice expected goals for per 60 versus the reference, times the frozen sensitivity. Reference is not the player's own measured history.",
+                  "processDelta": -0.0714935579072642,
+                  "referenceKind": "cohort"
+                },
+                {
+                  "id": "process:shared_onice_xGA60",
+                  "kind": "model_sensitivity",
+                  "kindLabel": "Process change × frozen sensitivity",
+                  "value": 0.005390247709440104,
+                  "note": "Change in on-ice expected goals against per 60 versus the reference, times the frozen sensitivity. Reference is not the player's own measured history.",
+                  "processDelta": 1.2957373024183725,
+                  "referenceKind": "cohort"
+                }
+              ],
+              "componentSum": -0.15545484861899536,
+              "normalizationMultiplier": 0.08081130033609477,
+              "normalizedGapContribution": -0.012562508460451845,
+              "baselineNormalizedGapContribution": -0.03234108201548236
+            },
+            {
+              "track": "goals_plus_assists",
+              "label": "G+A",
+              "observed": 2,
+              "referenceAtCurrentTOI": 1.8266293110215304,
+              "supportConditioned": 1.8560184695756627,
+              "gap": -0.14398153042433726,
+              "components": [
+                {
+                  "id": "production_vs_reference",
+                  "kind": "reference_gap",
+                  "kindLabel": "Reference vs recorded",
+                  "value": -0.17337068897846963,
+                  "note": "Reference production at the score window's total ice time minus recorded production. No personal production history: the reference is the position cohort's rate. Power-play share, role and linemates are not modelled separately.",
+                  "processDelta": null,
+                  "referenceKind": null
+                },
+                {
+                  "id": "process:individual_xG60",
+                  "kind": "model_sensitivity",
+                  "kindLabel": "Process change × frozen sensitivity",
+                  "value": 0.044165719995001004,
+                  "note": "Change in the player's own expected goals per 60 versus their reference, times the frozen sensitivity. Reference is not the player's own measured history.",
+                  "processDelta": 0.2111913278443338,
+                  "referenceKind": "cohort"
+                },
+                {
+                  "id": "process:shared_onice_xGF60",
+                  "kind": "model_sensitivity",
+                  "kindLabel": "Process change × frozen sensitivity",
+                  "value": -0.009521048359124368,
+                  "note": "Change in on-ice expected goals for per 60 versus the reference, times the frozen sensitivity. Reference is not the player's own measured history.",
+                  "processDelta": -0.0714935579072642,
+                  "referenceKind": "cohort"
+                },
+                {
+                  "id": "process:shared_onice_xGA60",
+                  "kind": "model_sensitivity",
+                  "kindLabel": "Process change × frozen sensitivity",
+                  "value": -0.00525551308174429,
+                  "note": "Change in on-ice expected goals against per 60 versus the reference, times the frozen sensitivity. Reference is not the player's own measured history.",
+                  "processDelta": 1.2957373024183725,
+                  "referenceKind": "cohort"
+                }
+              ],
+              "componentSum": -0.14398153042433728,
+              "normalizationMultiplier": 0.22934437436053964,
+              "normalizedGapContribution": -0.03302135401464263,
+              "baselineNormalizedGapContribution": -0.03976159219622282
+            },
+            {
+              "track": "wigo_game_score",
+              "label": "FHFH WiGO Game Score",
+              "observed": 0.5999999999999999,
+              "referenceAtCurrentTOI": 1.8453748917736459,
+              "supportConditioned": 1.6387142991509007,
+              "gap": 1.0387142991509009,
+              "components": [
+                {
+                  "id": "production_vs_reference",
+                  "kind": "reference_gap",
+                  "kindLabel": "Reference vs recorded",
+                  "value": 1.245374891773646,
+                  "note": "Reference production at the score window's total ice time minus recorded production. No personal production history: the reference is the position cohort's rate. Power-play share, role and linemates are not modelled separately.",
+                  "processDelta": null,
+                  "referenceKind": null
+                },
+                {
+                  "id": "process:individual_xG60",
+                  "kind": "model_sensitivity",
+                  "kindLabel": "Process change × frozen sensitivity",
+                  "value": 0.07576092760768047,
+                  "note": "Change in the player's own expected goals per 60 versus their reference, times the frozen sensitivity. Reference is not the player's own measured history.",
+                  "processDelta": 0.2111913278443338,
+                  "referenceKind": "cohort"
+                },
+                {
+                  "id": "process:shared_onice_xGF60",
+                  "kind": "model_sensitivity",
+                  "kindLabel": "Process change × frozen sensitivity",
+                  "value": -0.018392162464794633,
+                  "note": "Change in on-ice expected goals for per 60 versus the reference, times the frozen sensitivity. Reference is not the player's own measured history.",
+                  "processDelta": -0.0714935579072642,
+                  "referenceKind": "cohort"
+                },
+                {
+                  "id": "process:shared_onice_xGA60",
+                  "kind": "model_sensitivity",
+                  "kindLabel": "Process change × frozen sensitivity",
+                  "value": -0.26402935776563097,
+                  "note": "Change in on-ice expected goals against per 60 versus the reference, times the frozen sensitivity. Reference is not the player's own measured history.",
+                  "processDelta": 1.2957373024183725,
+                  "referenceKind": "cohort"
+                }
+              ],
+              "componentSum": 1.0387142991509009,
+              "normalizationMultiplier": 0.19118355333156511,
+              "normalizedGapContribution": 0.19858509060797552,
+              "baselineNormalizedGapContribution": 0.23809519703919899
+            }
+          ],
+          "evidence": {
+            "window": {
+              "games": 5,
+              "spanDays": 10,
+              "dates": [
+                "2026-10-17",
+                "2026-10-20",
+                "2026-10-22",
+                "2026-10-25",
+                "2026-10-27"
+              ],
+              "sourceIds": [
+                5589645,
+                5595292,
+                5596566,
+                5598063,
+                5598977
+              ],
+              "seconds": 3556,
+              "minutes": 59.266666666666666,
+              "lastGameDaysBeforeRecordedThrough": 1,
+              "recordedThroughDate": "2026-10-28",
+              "fresh": true,
+              "freshnessText": "Last game 1 days before the recorded-through date (2026-10-28)"
+            },
+            "reference": {
+              "personalGames": 0,
+              "estimatorWeight": 0,
+              "cohortEstimatorWeight": 1,
+              "estimatorWeightNote": "Estimator weights, shown as decimals; not confidence percentages",
+              "ageDays": null,
+              "ageText": "No personal reference window",
+              "seasons": [],
+              "staleDevelopmentReference": false,
+              "sourceIds": [],
+              "dates": []
+            },
+            "donorPlayers": 516,
+            "tier": "provisional_estimated_or_extrapolated",
+            "tierLabel": "Provisional: estimated or extrapolated",
+            "tierNote": "A coverage tier, not calibrated confidence",
+            "outsidePriorSpan": false,
+            "outsidePriorComponentRange": false,
+            "extrapolationText": null,
+            "calibratedProbability": null,
+            "calibratedProbabilityText": "Unavailable (no calibrated probability exists)"
+          },
+          "coverage": {
+            "notes": [
+              {
+                "source": "explanation",
+                "component": "history_process_gate",
+                "state": "estimated",
+                "reason": "dry_run_simplified_gate_not_sealed_transport",
+                "text": "History process gate is a disclosed simplification, not the sealed v1 transport",
+                "games": null
+              },
+              {
+                "source": "explanation",
+                "component": "process:individual_xG60",
+                "state": "estimated",
+                "reason": "no_personal_reference_cohort_mean_used",
+                "text": "Process reference is the cohort mean, not the player's own",
+                "games": null
+              },
+              {
+                "source": "explanation",
+                "component": "process:shared_onice_xGF60",
+                "state": "estimated",
+                "reason": "no_personal_reference_cohort_mean_used",
+                "text": "Process reference is the cohort mean, not the player's own",
+                "games": null
+              },
+              {
+                "source": "explanation",
+                "component": "process:shared_onice_xGA60",
+                "state": "estimated",
+                "reason": "no_personal_reference_cohort_mean_used",
+                "text": "Process reference is the cohort mean, not the player's own",
+                "games": null
+              },
+              {
+                "source": "explanation",
+                "component": "reference_window_context",
+                "state": "unavailable",
+                "reason": "reference_window_not_supplied",
+                "text": "No personal reference window supplied; context comparison unavailable",
+                "games": null
+              },
+              {
+                "source": "explanation",
+                "component": "assists_per_teammate_on_ice_goal",
+                "state": "unavailable",
+                "reason": "no_teammate_on_ice_goals_ratio_undefined",
+                "text": "Undefined: no teammate goals while on ice",
+                "games": null
+              },
+              {
+                "source": "slot",
+                "component": "personal_reference",
+                "state": null,
+                "reason": "no_personal_history_cohort",
+                "text": "No personal history; the position-cohort reference is used",
+                "games": null
+              }
+            ],
+            "imputedProcesses": [],
+            "physicalFloors": [],
+            "context": {
+              "current": {
+                "verified": true,
+                "reason": null,
+                "text": null
+              },
+              "reference": {
+                "verified": false,
+                "reason": "reference_window_not_supplied",
+                "text": "No personal reference window supplied; context comparison unavailable"
+              }
+            }
+          },
+          "context": {
+            "heading": "Context, not part of the score",
+            "opportunity": [
+              {
+                "metric": "total_TOI_per_game",
+                "label": "Total TOI per game",
+                "kind": "measured",
+                "units": "seconds/appearance",
+                "current": 711.2,
+                "reference": null,
+                "delta": null,
+                "status": "available",
+                "reason": null,
+                "referenceReason": "window_not_supplied",
+                "deltaReason": "no_reference_value",
+                "reasonText": null,
+                "referenceReasonText": "No window for this side (no personal reference, or context withheld); value unavailable",
+                "deltaReasonText": "No reference value to compare",
+                "revisionVerified": null,
+                "revisionText": null
+              },
+              {
+                "metric": "ES_TOI_per_game",
+                "label": "ES TOI per game",
+                "kind": "measured",
+                "units": "seconds/appearance",
+                "current": 612.8,
+                "reference": null,
+                "delta": null,
+                "status": "available",
+                "reason": null,
+                "referenceReason": "window_not_supplied",
+                "deltaReason": "no_reference_value",
+                "reasonText": null,
+                "referenceReasonText": "No window for this side (no personal reference, or context withheld); value unavailable",
+                "deltaReasonText": "No reference value to compare",
+                "revisionVerified": null,
+                "revisionText": null
+              },
+              {
+                "metric": "PP_TOI_per_game",
+                "label": "PP TOI per game",
+                "kind": "measured",
+                "units": "seconds/appearance",
+                "current": 0,
+                "reference": null,
+                "delta": null,
+                "status": "available",
+                "reason": null,
+                "referenceReason": "window_not_supplied",
+                "deltaReason": "no_reference_value",
+                "reasonText": null,
+                "referenceReasonText": "No window for this side (no personal reference, or context withheld); value unavailable",
+                "deltaReasonText": "No reference value to compare",
+                "revisionVerified": null,
+                "revisionText": null
+              }
+            ],
+            "signals": [
+              {
+                "metric": "goals_minus_individual_xG_per_60",
+                "label": "Goals minus individual xG per 60",
+                "kind": "provider_model_relative",
+                "units": "goals/60 minus provider xG/60, per 60 of the operands' scope",
+                "current": 0.9820022497187851,
+                "reference": null,
+                "delta": null,
+                "status": "available",
+                "reason": null,
+                "referenceReason": "window_not_supplied",
+                "deltaReason": "no_reference_value",
+                "reasonText": null,
+                "referenceReasonText": "No window for this side (no personal reference, or context withheld); value unavailable",
+                "deltaReasonText": "No reference value to compare",
+                "revisionVerified": null,
+                "revisionText": null,
+                "scoreInput": false,
+                "interpretation": "hypothesis",
+                "hypothesesHeading": "Possible explanations (not identified)",
+                "hypotheses": [
+                  "goals and xG drawn from different sources or game states",
+                  "empty-net goals or the goaltending faced",
+                  "short-window finishing variance",
+                  "shot quality the provider's xG model does not capture",
+                  "a real change in finishing ability"
+                ],
+                "scale": {
+                  "value": 1.0274468401105734,
+                  "units": "goals/60 of the same scope",
+                  "assumption": "Upper-bound spread if window goals were Poisson with mean equal to provider xG; per-shot variance is smaller, and it ignores the reference's own uncertainty."
+                }
+              },
+              {
+                "metric": "on_ice_goals_minus_xGF_per_60",
+                "label": "On-ice goals minus xGF per 60",
+                "kind": "provider_model_relative",
+                "units": "on-ice goals/60 minus provider xGF/60, per 60 of the operands' scope",
+                "current": -0.9212598425196852,
+                "reference": null,
+                "delta": null,
+                "status": "available",
+                "reason": null,
+                "referenceReason": "window_not_supplied",
+                "deltaReason": "no_reference_value",
+                "reasonText": null,
+                "referenceReasonText": "No window for this side (no personal reference, or context withheld); value unavailable",
+                "deltaReasonText": "No reference value to compare",
+                "revisionVerified": null,
+                "revisionText": null,
+                "scoreInput": false,
+                "interpretation": "hypothesis",
+                "hypothesesHeading": "Possible explanations (not identified)",
+                "hypotheses": [
+                  "goals and xGF drawn from different sources or game states",
+                  "the player's own finishing",
+                  "teammates' finishing variance",
+                  "opposing goaltending",
+                  "linemate or role change"
+                ],
+                "scale": null
+              },
+              {
+                "metric": "assists_per_teammate_on_ice_goal",
+                "label": "Assists per teammate on-ice goal",
+                "kind": "measured",
+                "units": "assists / (on-ice goals for − own goals)",
+                "current": null,
+                "reference": null,
+                "delta": null,
+                "status": "unavailable",
+                "reason": "no_teammate_on_ice_goals_ratio_undefined",
+                "referenceReason": "window_not_supplied",
+                "deltaReason": "no_reference_value",
+                "reasonText": "Undefined: no teammate goals while on ice",
+                "referenceReasonText": "No window for this side (no personal reference, or context withheld); value unavailable",
+                "deltaReasonText": "No reference value to compare",
+                "revisionVerified": null,
+                "revisionText": null,
+                "scoreInput": false,
+                "interpretation": "hypothesis",
+                "hypothesesHeading": "Possible explanations (not identified)",
+                "hypotheses": [
+                  "assists and on-ice goals drawn from different game states",
+                  "variance on few goals",
+                  "role or linemate change",
+                  "a real change in playmaking"
+                ],
+                "scale": null
+              },
+              {
+                "metric": "shots_per_60",
+                "label": "Shots per 60",
+                "kind": "measured",
+                "units": "shots/60 of the shots' scope",
+                "current": 6.074240719910011,
+                "reference": null,
+                "delta": null,
+                "status": "available",
+                "reason": null,
+                "referenceReason": "window_not_supplied",
+                "deltaReason": "no_reference_value",
+                "reasonText": null,
+                "referenceReasonText": "No window for this side (no personal reference, or context withheld); value unavailable",
+                "deltaReasonText": "No reference value to compare",
+                "revisionVerified": null,
+                "revisionText": null,
+                "scoreInput": false,
+                "interpretation": "hypothesis",
+                "hypothesesHeading": "Possible explanations (not identified)",
+                "hypotheses": [
+                  "deployment change",
+                  "a real change in shot volume (process, not a finishing signal)"
+                ],
+                "scale": null
+              }
+            ]
+          },
+          "streak": null,
+          "streakText": "No current-season streak is saved; streak unavailable",
+          "claims": {
+            "luckIdentified": false,
+            "marketValue": false,
+            "forecast": false,
+            "trusted": false
+          },
+          "claimsText": "Not a luck finding, a market value, a forecast or a trusted recommendation."
+        },
+        "limits": [
+          "Retrospective research comparison of recorded games; not a forecast, probability, market value or trade recommendation.",
+          "The reference is the 2022-24 development history and is stale; each profile shows its own reference age.",
+          "Coverage tiers are not calibrated confidence; personal estimator weights are not confidence percentages.",
+          "History process gate is a disclosed simplification, not the sealed v1 transport.",
+          "List membership is the frozen concordant-direction rule with no count or value cutoff; withheld and unavailable profiles stay inspectable.",
+          "No current-season streak is saved.",
+          "Fresh capture: 2026-10-29T18:41:12.798646+00:00; events through 2026-10-28. October 27 has 116 rows and October 28 has 22 rows with missing six-field inputs; they remain unavailable.",
+          "Calendar/NST finality and publication watermarks are not established by the four captured tables. Official goal receipts cover the repaired game set."
+        ],
+        "provenance": {
+          "state": "reviewed-retained-only",
+          "currentBinding": false,
+          "captureStale": true,
+          "sourceMap": {
+            "version": "fhfh.blsh.player-card-research-provenance.v1",
+            "sidecarSHA256": "0b98ebc0fa2bbf0554b781d6c7548b820c37768b4868d11784ca837dad070d57",
+            "snapshotSHA256": "2f380c2539390f6931ec92ab1d0b1d8cced2b55f5f4cefb8c6e88a694909f2c8",
+            "independentReviewPending": true,
+            "generatedAtUTC": "2026-11-01T16:32:16.987Z",
+            "asOfUTC": "2026-10-29T18:41:12.798646+00:00",
+            "eventThroughDate": "2026-10-28",
+            "maxCaptureAgeHours": 24,
+            "playerId": 8484136,
+            "team": "VAN",
+            "season": 20262027,
+            "rows": [
+              {
+                "sourceId": 5589645,
+                "gameId": 2026020123,
+                "playerId": 8484136,
+                "season": 20262027,
+                "date": "2026-10-17",
+                "team": "VAN",
+                "regularSeasonCalendarMatched": true,
+                "finalityEstablished": false
+              },
+              {
+                "sourceId": 5595292,
+                "gameId": 2026020150,
+                "playerId": 8484136,
+                "season": 20262027,
+                "date": "2026-10-20",
+                "team": "VAN",
+                "regularSeasonCalendarMatched": true,
+                "finalityEstablished": false
+              },
+              {
+                "sourceId": 5596566,
+                "gameId": 2026020165,
+                "playerId": 8484136,
+                "season": 20262027,
+                "date": "2026-10-22",
+                "team": "VAN",
+                "regularSeasonCalendarMatched": true,
+                "finalityEstablished": false
+              },
+              {
+                "sourceId": 5598063,
+                "gameId": 2026020184,
+                "playerId": 8484136,
+                "season": 20262027,
+                "date": "2026-10-25",
+                "team": "VAN",
+                "regularSeasonCalendarMatched": true,
+                "finalityEstablished": false
+              },
+              {
+                "sourceId": 5598977,
+                "gameId": 2026020197,
+                "playerId": 8484136,
+                "season": 20262027,
+                "date": "2026-10-27",
+                "team": "VAN",
+                "regularSeasonCalendarMatched": true,
+                "finalityEstablished": false
+              }
+            ],
+            "limitations": [
+              "Snapshot is exploratory/provisional, not production-adopted or a current live recommendation.",
+              "No original publication watermark/revision is known; capture proves presence by capture time only.",
+              "Universal game finality is not established; official-goal receipts cover only matched repaired rows.",
+              "NST strength scope is the reviewed source-table/feed declaration; per-row strength/model-revision receipts are not in the captured DTO. Advanced metric admission must retain this limit.",
+              "Retrospective support/production comparison is not measured market discount, ROI, forecast or confidence probability.",
+              "No saved current streak or absence-decay result is part of this snapshot.",
+              "Independent review scope: dated stale provisional research only; no current recommendation or advanced observed-metric admission.",
+              "Current team labels are carried from WGO; calendar capture lacks home/away fields for independent team verification.",
+              "Historical baseline review covers three fixed 50-row cases, not all 729 references; 49 of 150 PPP values still rely on WGO because official boxes lack PP assists."
+            ],
+            "review": {
+              "reference": "tasks/artifacts/rso-blsh-independent-review-2026-11-01/PROVENANCE-REVIEW.md",
+              "sha256": "54fbf0418908263ce5a0ed3e2b4812c78d70d152aacc818df0568567aa265701",
+              "sidecarSHA256": "0b98ebc0fa2bbf0554b781d6c7548b820c37768b4868d11784ca837dad070d57",
+              "scope": "dated-stale-research-only"
+            }
+          },
+          "message": "5 recorded source rows mapped. Independently reviewed for dated stale research only. Capture stale at sidecar build (69.9 hours; 24-hour budget). Finality evidence for 0/5 rows in this original sidecar. This mapping does not admit current binding or advanced metrics."
+        },
+        "currentBoxes": {
+          "state": "reviewed-comparison-only",
+          "currentBinding": false,
+          "summary": "Box TOI + 5 counts: 3 match / 1 differ / 1 unknown · G/A/SOG differ",
+          "evidence": {
+            "version": "fhfh.card-retained-box-comparison.v1",
+            "rowsSHA256": "314a48ef45dbad11b48192bdbada730ccc82fb355895e2dde56b484ece0a6d36",
+            "boxEvidenceSHA256": "b83fc6bff7bd470bb245f1053a489aeebab6b17f1f734a2ed18d5753f715447f",
+            "receiptSHA256": "e51173a80e5f0f55e45abf7e914b127b2c8d0cf6f7543a38aa18a9df4f4190a0",
+            "sourceSidecarSHA256": "0b98ebc0fa2bbf0554b781d6c7548b820c37768b4868d11784ca837dad070d57",
+            "snapshotSHA256": "2f380c2539390f6931ec92ab1d0b1d8cced2b55f5f4cefb8c6e88a694909f2c8",
+            "wgoCapturedAt": "2026-10-29T18:41:12.798646+00:00",
+            "review": {
+              "reference": "tasks/artifacts/rso-blsh-independent-review-2026-11-01/CURRENT-BOX-REVIEW.md",
+              "sha256": "166b65ff7be1a16883d2546c4a1a03b54f286963324e494b1ebba0a41aeb2ce9",
+              "scope": "dated-source-comparison-only"
+            },
+            "rows": [
+              {
+                "sourceId": 5589645,
+                "playerId": 8484136,
+                "gameId": 2026020123,
+                "date": "2026-10-17",
+                "wgoTeam": "VAN",
+                "state": "identity_team_exposure_qualified",
+                "gameFinality": "final",
+                "appearance": "positive_official_TOI",
+                "team": "match",
+                "TOI": {
+                  "wgo": 674,
+                  "official": 674,
+                  "state": "match"
+                },
+                "counts": {
+                  "goals": {
+                    "wgo": 0,
+                    "official": 0,
+                    "state": "match"
+                  },
+                  "assists": {
+                    "wgo": 0,
+                    "official": 0,
+                    "state": "match"
+                  },
+                  "shots": {
+                    "wgo": 1,
+                    "official": 1,
+                    "state": "match"
+                  },
+                  "hits": {
+                    "wgo": 1,
+                    "official": 1,
+                    "state": "match"
+                  },
+                  "blocked_shots": {
+                    "wgo": 1,
+                    "official": 1,
+                    "state": "match"
+                  }
+                },
+                "PPP": {
+                  "wgo": 0,
+                  "official": 0,
+                  "state": "match"
+                },
+                "reasons": [],
+                "officialTeam": "VAN",
+                "officialTeamId": 23,
+                "sourceRowSHA256": "333beef6f14e0ed4172d6cc7e90b678e02247ccd0eb7bf034d7eeb78699f56e0",
+                "evidenceGameId": 2026020123,
+                "box": {
+                  "url": "https://api-web.nhle.com/v1/gamecenter/2026020123/boxscore",
+                  "bodySHA256": "e19e4ba5c6f031ce72eab4acdcd82f7eddb6c6394e9e5492b3a44f7e31646900",
+                  "receiptSHA256": "e75c5bf87356cf8cc5f92cb2fb89e8289b534f0fe18e9379ed23607b3571fda3",
+                  "retrievedAtUTC": "2026-10-27T20:12:31.736528+00:00",
+                  "originalPublicationUTC": null
+                }
+              },
+              {
+                "sourceId": 5595292,
+                "playerId": 8484136,
+                "gameId": 2026020150,
+                "date": "2026-10-20",
+                "wgoTeam": "VAN",
+                "state": "identity_team_exposure_qualified",
+                "gameFinality": "final",
+                "appearance": "positive_official_TOI",
+                "team": "match",
+                "TOI": {
+                  "wgo": 824,
+                  "official": 824,
+                  "state": "match"
+                },
+                "counts": {
+                  "goals": {
+                    "wgo": 1,
+                    "official": 0,
+                    "state": "mismatch"
+                  },
+                  "assists": {
+                    "wgo": 0,
+                    "official": 1,
+                    "state": "mismatch"
+                  },
+                  "shots": {
+                    "wgo": 3,
+                    "official": 2,
+                    "state": "mismatch"
+                  },
+                  "hits": {
+                    "wgo": 2,
+                    "official": 2,
+                    "state": "match"
+                  },
+                  "blocked_shots": {
+                    "wgo": 0,
+                    "official": 0,
+                    "state": "match"
+                  }
+                },
+                "PPP": {
+                  "wgo": 0,
+                  "official": null,
+                  "state": "unknown_PP_assists_not_supplied"
+                },
+                "reasons": [],
+                "officialTeam": "VAN",
+                "officialTeamId": 23,
+                "sourceRowSHA256": "7aacffb0c912d21277055bd664519091fe37f77a44b3f3ec8328d8ad41bd2c2c",
+                "evidenceGameId": 2026020150,
+                "box": {
+                  "url": "https://api-web.nhle.com/v1/gamecenter/2026020150/boxscore",
+                  "bodySHA256": "e5cb1ed5626eafa0e1ffee34cb93369f66c3d6bdcdbb1a93084bfe13087d1440",
+                  "receiptSHA256": "680df34e2d1f9923ac83924846ac4019f27cea5a21a1fdacbf20bb1e0fd2063a",
+                  "retrievedAtUTC": "2026-10-27T20:15:08.223550+00:00",
+                  "originalPublicationUTC": null
+                }
+              },
+              {
+                "sourceId": 5596566,
+                "playerId": 8484136,
+                "gameId": 2026020165,
+                "date": "2026-10-22",
+                "wgoTeam": "VAN",
+                "state": "identity_team_exposure_qualified",
+                "gameFinality": "final",
+                "appearance": "positive_official_TOI",
+                "team": "match",
+                "TOI": {
+                  "wgo": 803,
+                  "official": 803,
+                  "state": "match"
+                },
+                "counts": {
+                  "goals": {
+                    "wgo": 0,
+                    "official": 0,
+                    "state": "match"
+                  },
+                  "assists": {
+                    "wgo": 0,
+                    "official": 0,
+                    "state": "match"
+                  },
+                  "shots": {
+                    "wgo": 1,
+                    "official": 1,
+                    "state": "match"
+                  },
+                  "hits": {
+                    "wgo": 0,
+                    "official": 0,
+                    "state": "match"
+                  },
+                  "blocked_shots": {
+                    "wgo": 0,
+                    "official": 0,
+                    "state": "match"
+                  }
+                },
+                "PPP": {
+                  "wgo": 0,
+                  "official": 0,
+                  "state": "match"
+                },
+                "reasons": [],
+                "officialTeam": "VAN",
+                "officialTeamId": 23,
+                "sourceRowSHA256": "71d25dfec1e31c15fef1fac2a6c4c4faf52b677fc917fb8f99687016464b28ba",
+                "evidenceGameId": 2026020165,
+                "box": {
+                  "url": "https://api-web.nhle.com/v1/gamecenter/2026020165/boxscore",
+                  "bodySHA256": "926ff80bffe07cb765fe5a63a5b0da97e2b0f3ba06f8a4896bc41ad3d7156308",
+                  "receiptSHA256": "249ded3ce65d81b300d505b4e318127eeece1f3273f0527d5d6dddf86137b6fe",
+                  "retrievedAtUTC": "2026-10-27T20:16:38.300605+00:00",
+                  "originalPublicationUTC": null
+                }
+              },
+              {
+                "sourceId": 5598063,
+                "playerId": 8484136,
+                "gameId": 2026020184,
+                "date": "2026-10-25",
+                "wgoTeam": "VAN",
+                "state": "identity_team_exposure_qualified",
+                "gameFinality": "final",
+                "appearance": "positive_official_TOI",
+                "team": "match",
+                "TOI": {
+                  "wgo": 673,
+                  "official": 673,
+                  "state": "match"
+                },
+                "counts": {
+                  "goals": {
+                    "wgo": 1,
+                    "official": 1,
+                    "state": "match"
+                  },
+                  "assists": {
+                    "wgo": 0,
+                    "official": 0,
+                    "state": "match"
+                  },
+                  "shots": {
+                    "wgo": 1,
+                    "official": 1,
+                    "state": "match"
+                  },
+                  "hits": {
+                    "wgo": 1,
+                    "official": 1,
+                    "state": "match"
+                  },
+                  "blocked_shots": {
+                    "wgo": 0,
+                    "official": 0,
+                    "state": "match"
+                  }
+                },
+                "PPP": {
+                  "wgo": 0,
+                  "official": 0,
+                  "state": "match"
+                },
+                "reasons": [],
+                "officialTeam": "VAN",
+                "officialTeamId": 23,
+                "sourceRowSHA256": "c2668a7724a57a32e3aaf51763771a12f5a9a3d0189bb975eacd8923bb58106a",
+                "evidenceGameId": 2026020184,
+                "box": {
+                  "url": "https://api-web.nhle.com/v1/gamecenter/2026020184/boxscore",
+                  "bodySHA256": "dbc4877a682d5578ea72eeff2477224b23be888454bb2c635f959203d3c1cd54",
+                  "receiptSHA256": "76956dbb50a6b728d694ae45a31cefa5696ffb38dcdfd7eaeb1338c42e1c5187",
+                  "retrievedAtUTC": "2026-10-27T20:18:32.678983+00:00",
+                  "originalPublicationUTC": null
+                }
+              },
+              {
+                "sourceId": 5598977,
+                "playerId": 8484136,
+                "gameId": 2026020197,
+                "date": "2026-10-27",
+                "wgoTeam": "VAN",
+                "state": "held",
+                "gameFinality": "unknown",
+                "appearance": "unknown",
+                "team": "unknown",
+                "TOI": null,
+                "counts": {},
+                "PPP": null,
+                "reasons": [
+                  "no_pinned_cached_official_box"
+                ],
+                "sourceRowSHA256": "f1519fe2ae5559e3ecf32c997d622e6e9ab50819829e5b6164bfde2add42f80f",
+                "evidenceGameId": null,
+                "box": null
+              }
+            ]
+          },
+          "lines": [
+            "4/5 rows have later-attached final-game/player/team box evidence. Match covers TOI plus G/A/SOG/HIT/BLK only; exposure qualification alone does not certify counts.",
+            "PPP: 3 compared, 1 unknown without PP assists, 1 without a box. Missing boxes are not DNP or zero.",
+            "These are dated source comparisons, not repairs or a verdict on the later capture. Saved research scores and values are unchanged; no current or advanced-metric admission. Original publication/revision time remains unknown.",
+            "2026-10-17 · game 2026020123 · source row 5589645: identity, team and exposure match; counts checked separately. WGO captured 2026-10-29T18:41:12.798646+00:00; box captured 2026-10-27T20:12:31.736528+00:00. TOI seconds matches: WGO 674, box 674; G matches: WGO 0, box 0; A matches: WGO 0, box 0; SOG matches: WGO 1, box 1; HIT matches: WGO 1, box 1; BLK matches: WGO 1, box 1; PPP matches: WGO 0, box 0.",
+            "2026-10-20 · game 2026020150 · source row 5595292: identity, team and exposure match; counts checked separately. WGO captured 2026-10-29T18:41:12.798646+00:00; box captured 2026-10-27T20:15:08.223550+00:00. TOI seconds matches: WGO 824, box 824; G differs: WGO 1, box 0; A differs: WGO 0, box 1; SOG differs: WGO 3, box 2; HIT matches: WGO 2, box 2; BLK matches: WGO 0, box 0; PPP unknown: WGO 0, box PP assists unavailable.",
+            "2026-10-22 · game 2026020165 · source row 5596566: identity, team and exposure match; counts checked separately. WGO captured 2026-10-29T18:41:12.798646+00:00; box captured 2026-10-27T20:16:38.300605+00:00. TOI seconds matches: WGO 803, box 803; G matches: WGO 0, box 0; A matches: WGO 0, box 0; SOG matches: WGO 1, box 1; HIT matches: WGO 0, box 0; BLK matches: WGO 0, box 0; PPP matches: WGO 0, box 0.",
+            "2026-10-25 · game 2026020184 · source row 5598063: identity, team and exposure match; counts checked separately. WGO captured 2026-10-29T18:41:12.798646+00:00; box captured 2026-10-27T20:18:32.678983+00:00. TOI seconds matches: WGO 673, box 673; G matches: WGO 1, box 1; A matches: WGO 0, box 0; SOG matches: WGO 1, box 1; HIT matches: WGO 1, box 1; BLK matches: WGO 0, box 0; PPP matches: WGO 0, box 0.",
+            "2026-10-27 · game 2026020197 · source row 5598977: no pinned box in the reviewed bundle; finality, appearance, team and fields unknown."
+          ]
+        }
+      },
+      "lines": [
+        "Separate saved window: 2026-10-17 to 2026-10-27; 5 recorded game rows, 59.266666666666666 minutes. NHL controls do not change this evidence window.",
+        "Production and support agree in direction; positive support gap.",
+        "FP: recorded 8.25; support-conditioned 8.09; gap -0.16 (window totals).",
+        "G+A: recorded 2.00; support-conditioned 1.86; gap -0.14 (window totals).",
+        "FHFH WiGO Game Score: recorded 0.60; support-conditioned 1.64; gap 1.04 (window totals).",
+        "Opportunity: Total TOI per game 711.20 seconds/appearance; ES TOI per game 612.80 seconds/appearance; PP TOI per game 0.00 seconds/appearance.",
+        "Reference: 0 games; age unknown days; stale development history. A coverage tier, not calibrated confidence.",
+        "Limits: History process gate is a disclosed simplification, not the sealed v1 transport; Process reference is the cohort mean, not the player's own; No personal reference window supplied; context comparison unavailable; Undefined: no teammate goals while on ice; No personal history; the position-cohort reference is used.",
+        "Retrospective support evidence; no calibrated confidence, forecast, market price or trade recommendation."
+      ]
+    },
+    "trades": {
+      "status": "unavailable",
+      "records": [],
+      "lines": [
+        "Qualified Yahoo observed-trade records and owner review receipt unavailable.",
+        "Market reference unavailable. No trade collection was attempted."
+      ]
+    }
+  },
+  "comparison": [
+    {
+      "metric": "goals",
+      "value": null,
+      "reason": "A comparison value is unavailable."
+    },
+    {
+      "metric": "assists",
+      "value": null,
+      "reason": "A comparison value is unavailable."
+    },
+    {
+      "metric": "points",
+      "value": null,
+      "reason": "A comparison value is unavailable."
+    },
+    {
+      "metric": "ppPoints",
+      "value": null,
+      "reason": "A comparison value is unavailable."
+    },
+    {
+      "metric": "shots",
+      "value": null,
+      "reason": "A comparison value is unavailable."
+    },
+    {
+      "metric": "blocks",
+      "value": null,
+      "reason": "A comparison value is unavailable."
+    },
+    {
+      "metric": "hits",
+      "value": null,
+      "reason": "A comparison value is unavailable."
+    },
+    {
+      "metric": "bsh",
+      "value": null,
+      "reason": "A comparison value is unavailable."
+    },
+    {
+      "metric": "toiSeconds",
+      "value": null,
+      "reason": "A comparison value is unavailable."
+    },
+    {
+      "metric": "ppToiSeconds",
+      "value": null,
+      "reason": "A comparison value is unavailable."
+    },
+    {
+      "metric": "ixg",
+      "value": null,
+      "reason": "A comparison value is unavailable."
+    },
+    {
+      "metric": "xgf",
+      "value": null,
+      "reason": "A comparison value is unavailable."
+    },
+    {
+      "metric": "xga",
+      "value": null,
+      "reason": "A comparison value is unavailable."
+    },
+    {
+      "metric": "xgPct",
+      "value": null,
+      "reason": "A comparison value is unavailable."
+    }
+  ],
+  "artwork": {
+    "state": "unavailable",
+    "reason": "No qualified matching artwork supplied."
+  },
+  "artworkKey": "image-unavailable",
+  "key": "[{\"snapshot\":{\"version\":\"fhfh-card-analysis-v1\",\"capture\":{\"version\":\"fhfh-card-analysis-v1\",\"id\":\"synthetic-12\",\"player\":{\"id\":8484136,\"name\":\"Max Sasson\",\"team\":\"VAN\",\"position\":\"F\"},\"season\":20262027,\"gameType\":\"regular\",\"source\":\"retained\",\"observedAt\":\"2026-10-29T18:41:12.798646+00:00\",\"strength\":\"all\",\"history\":{\"complete\":false,\"seasonAppearances\":null,\"reason\":\"NHL comparison capture unavailable for this review player.\"},\"fields\":{},\"finality\":\"NHL comparison capture unavailable; only separately dated BLSH research supplied.\",\"games\":[]},\"settings\":{\"period\":{\"mode\":\"appearances\",\"count\":5},\"baseline\":\"previous\",\"basis\":\"per-game\",\"visual\":\"bars\"},\"recent\":{\"label\":\"Last 5\",\"gameIds\":[],\"dates\":[],\"gp\":0,\"reason\":\"NHL comparison capture unavailable for this review player.\",\"readings\":[{\"metric\":\"goals\",\"value\":null,\"state\":\"missing\",\"reason\":\"NHL comparison capture unavailable for this review player.\",\"gp\":0,\"unit\":\"goals/GP\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",20262027,\\\"regular\\\",\\\"2026-10-29T18:41:12.798646+00:00\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Last 5\\\",\\\"goals\\\",\\\"per-game\\\",[null]]\"},{\"metric\":\"assists\",\"value\":null,\"state\":\"missing\",\"reason\":\"NHL comparison capture unavailable for this review player.\",\"gp\":0,\"unit\":\"assists/GP\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",20262027,\\\"regular\\\",\\\"2026-10-29T18:41:12.798646+00:00\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Last 5\\\",\\\"assists\\\",\\\"per-game\\\",[null]]\"},{\"metric\":\"points\",\"value\":null,\"state\":\"missing\",\"reason\":\"NHL comparison capture unavailable for this review player.\",\"gp\":0,\"unit\":\"points/GP\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",20262027,\\\"regular\\\",\\\"2026-10-29T18:41:12.798646+00:00\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Last 5\\\",\\\"points\\\",\\\"per-game\\\",[null]]\"},{\"metric\":\"ppPoints\",\"value\":null,\"state\":\"missing\",\"reason\":\"NHL comparison capture unavailable for this review player.\",\"gp\":0,\"unit\":\"points/GP\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",20262027,\\\"regular\\\",\\\"2026-10-29T18:41:12.798646+00:00\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Last 5\\\",\\\"ppPoints\\\",\\\"per-game\\\",[null]]\"},{\"metric\":\"shots\",\"value\":null,\"state\":\"missing\",\"reason\":\"NHL comparison capture unavailable for this review player.\",\"gp\":0,\"unit\":\"shots/GP\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",20262027,\\\"regular\\\",\\\"2026-10-29T18:41:12.798646+00:00\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Last 5\\\",\\\"shots\\\",\\\"per-game\\\",[null]]\"},{\"metric\":\"blocks\",\"value\":null,\"state\":\"missing\",\"reason\":\"NHL comparison capture unavailable for this review player.\",\"gp\":0,\"unit\":\"blocks/GP\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",20262027,\\\"regular\\\",\\\"2026-10-29T18:41:12.798646+00:00\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Last 5\\\",\\\"blocks\\\",\\\"per-game\\\",[null]]\"},{\"metric\":\"hits\",\"value\":null,\"state\":\"missing\",\"reason\":\"NHL comparison capture unavailable for this review player.\",\"gp\":0,\"unit\":\"hits/GP\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",20262027,\\\"regular\\\",\\\"2026-10-29T18:41:12.798646+00:00\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Last 5\\\",\\\"hits\\\",\\\"per-game\\\",[null]]\"},{\"metric\":\"bsh\",\"value\":null,\"state\":\"missing\",\"reason\":\"NHL comparison capture unavailable for this review player.\",\"gp\":0,\"unit\":\"events/GP\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",20262027,\\\"regular\\\",\\\"2026-10-29T18:41:12.798646+00:00\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Last 5\\\",\\\"bsh\\\",\\\"per-game\\\",[null,null,null]]\"},{\"metric\":\"toiSeconds\",\"value\":null,\"state\":\"missing\",\"reason\":\"NHL comparison capture unavailable for this review player.\",\"gp\":0,\"unit\":\"min/GP\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",20262027,\\\"regular\\\",\\\"2026-10-29T18:41:12.798646+00:00\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Last 5\\\",\\\"toiSeconds\\\",\\\"per-game\\\",[null]]\"},{\"metric\":\"ppToiSeconds\",\"value\":null,\"state\":\"missing\",\"reason\":\"NHL comparison capture unavailable for this review player.\",\"gp\":0,\"unit\":\"min/GP\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",20262027,\\\"regular\\\",\\\"2026-10-29T18:41:12.798646+00:00\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Last 5\\\",\\\"ppToiSeconds\\\",\\\"per-game\\\",[null,null]]\"},{\"metric\":\"ixg\",\"value\":null,\"state\":\"missing\",\"reason\":\"NHL comparison capture unavailable for this review player.\",\"gp\":0,\"unit\":\"xG/GP\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",20262027,\\\"regular\\\",\\\"2026-10-29T18:41:12.798646+00:00\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Last 5\\\",\\\"ixg\\\",\\\"per-game\\\",[null]]\"},{\"metric\":\"xgf\",\"value\":null,\"state\":\"missing\",\"reason\":\"NHL comparison capture unavailable for this review player.\",\"gp\":0,\"unit\":\"xG/GP\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",20262027,\\\"regular\\\",\\\"2026-10-29T18:41:12.798646+00:00\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Last 5\\\",\\\"xgf\\\",\\\"per-game\\\",[null]]\"},{\"metric\":\"xga\",\"value\":null,\"state\":\"missing\",\"reason\":\"NHL comparison capture unavailable for this review player.\",\"gp\":0,\"unit\":\"xG/GP\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",20262027,\\\"regular\\\",\\\"2026-10-29T18:41:12.798646+00:00\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Last 5\\\",\\\"xga\\\",\\\"per-game\\\",[null]]\"},{\"metric\":\"xgPct\",\"value\":null,\"state\":\"missing\",\"reason\":\"NHL comparison capture unavailable for this review player.\",\"gp\":0,\"unit\":\"%\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",20262027,\\\"regular\\\",\\\"2026-10-29T18:41:12.798646+00:00\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Last 5\\\",\\\"xgPct\\\",\\\"pooled-percentage\\\",[null,null]]\"}]},\"baseline\":{\"label\":\"Previous\",\"gameIds\":[],\"dates\":[],\"gp\":0,\"reason\":\"NHL comparison capture unavailable for this review player.\",\"readings\":[{\"metric\":\"goals\",\"value\":null,\"state\":\"missing\",\"reason\":\"NHL comparison capture unavailable for this review player.\",\"gp\":0,\"unit\":\"goals/GP\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",20262027,\\\"regular\\\",\\\"2026-10-29T18:41:12.798646+00:00\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Previous\\\",\\\"goals\\\",\\\"per-game\\\",[null]]\"},{\"metric\":\"assists\",\"value\":null,\"state\":\"missing\",\"reason\":\"NHL comparison capture unavailable for this review player.\",\"gp\":0,\"unit\":\"assists/GP\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",20262027,\\\"regular\\\",\\\"2026-10-29T18:41:12.798646+00:00\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Previous\\\",\\\"assists\\\",\\\"per-game\\\",[null]]\"},{\"metric\":\"points\",\"value\":null,\"state\":\"missing\",\"reason\":\"NHL comparison capture unavailable for this review player.\",\"gp\":0,\"unit\":\"points/GP\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",20262027,\\\"regular\\\",\\\"2026-10-29T18:41:12.798646+00:00\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Previous\\\",\\\"points\\\",\\\"per-game\\\",[null]]\"},{\"metric\":\"ppPoints\",\"value\":null,\"state\":\"missing\",\"reason\":\"NHL comparison capture unavailable for this review player.\",\"gp\":0,\"unit\":\"points/GP\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",20262027,\\\"regular\\\",\\\"2026-10-29T18:41:12.798646+00:00\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Previous\\\",\\\"ppPoints\\\",\\\"per-game\\\",[null]]\"},{\"metric\":\"shots\",\"value\":null,\"state\":\"missing\",\"reason\":\"NHL comparison capture unavailable for this review player.\",\"gp\":0,\"unit\":\"shots/GP\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",20262027,\\\"regular\\\",\\\"2026-10-29T18:41:12.798646+00:00\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Previous\\\",\\\"shots\\\",\\\"per-game\\\",[null]]\"},{\"metric\":\"blocks\",\"value\":null,\"state\":\"missing\",\"reason\":\"NHL comparison capture unavailable for this review player.\",\"gp\":0,\"unit\":\"blocks/GP\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",20262027,\\\"regular\\\",\\\"2026-10-29T18:41:12.798646+00:00\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Previous\\\",\\\"blocks\\\",\\\"per-game\\\",[null]]\"},{\"metric\":\"hits\",\"value\":null,\"state\":\"missing\",\"reason\":\"NHL comparison capture unavailable for this review player.\",\"gp\":0,\"unit\":\"hits/GP\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",20262027,\\\"regular\\\",\\\"2026-10-29T18:41:12.798646+00:00\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Previous\\\",\\\"hits\\\",\\\"per-game\\\",[null]]\"},{\"metric\":\"bsh\",\"value\":null,\"state\":\"missing\",\"reason\":\"NHL comparison capture unavailable for this review player.\",\"gp\":0,\"unit\":\"events/GP\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",20262027,\\\"regular\\\",\\\"2026-10-29T18:41:12.798646+00:00\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Previous\\\",\\\"bsh\\\",\\\"per-game\\\",[null,null,null]]\"},{\"metric\":\"toiSeconds\",\"value\":null,\"state\":\"missing\",\"reason\":\"NHL comparison capture unavailable for this review player.\",\"gp\":0,\"unit\":\"min/GP\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",20262027,\\\"regular\\\",\\\"2026-10-29T18:41:12.798646+00:00\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Previous\\\",\\\"toiSeconds\\\",\\\"per-game\\\",[null]]\"},{\"metric\":\"ppToiSeconds\",\"value\":null,\"state\":\"missing\",\"reason\":\"NHL comparison capture unavailable for this review player.\",\"gp\":0,\"unit\":\"min/GP\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",20262027,\\\"regular\\\",\\\"2026-10-29T18:41:12.798646+00:00\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Previous\\\",\\\"ppToiSeconds\\\",\\\"per-game\\\",[null,null]]\"},{\"metric\":\"ixg\",\"value\":null,\"state\":\"missing\",\"reason\":\"NHL comparison capture unavailable for this review player.\",\"gp\":0,\"unit\":\"xG/GP\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",20262027,\\\"regular\\\",\\\"2026-10-29T18:41:12.798646+00:00\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Previous\\\",\\\"ixg\\\",\\\"per-game\\\",[null]]\"},{\"metric\":\"xgf\",\"value\":null,\"state\":\"missing\",\"reason\":\"NHL comparison capture unavailable for this review player.\",\"gp\":0,\"unit\":\"xG/GP\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",20262027,\\\"regular\\\",\\\"2026-10-29T18:41:12.798646+00:00\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Previous\\\",\\\"xgf\\\",\\\"per-game\\\",[null]]\"},{\"metric\":\"xga\",\"value\":null,\"state\":\"missing\",\"reason\":\"NHL comparison capture unavailable for this review player.\",\"gp\":0,\"unit\":\"xG/GP\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",20262027,\\\"regular\\\",\\\"2026-10-29T18:41:12.798646+00:00\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Previous\\\",\\\"xga\\\",\\\"per-game\\\",[null]]\"},{\"metric\":\"xgPct\",\"value\":null,\"state\":\"missing\",\"reason\":\"NHL comparison capture unavailable for this review player.\",\"gp\":0,\"unit\":\"%\",\"rank\":null,\"rankReason\":\"Rank unavailable: complete all-NHL same-definition population and observed rank-policy approval required.\",\"definitionKey\":\"[\\\"fhfh-card-analysis-v1\\\",20262027,\\\"regular\\\",\\\"2026-10-29T18:41:12.798646+00:00\\\",\\\"all\\\",{\\\"mode\\\":\\\"appearances\\\",\\\"count\\\":5},\\\"Previous\\\",\\\"xgPct\\\",\\\"pooled-percentage\\\",[null,null]]\"}]},\"overlap\":0,\"disclosure\":\"Equal, non-overlapping appearance windows; short preceding history is withheld.\",\"rankPolicy\":\"proposal-only\"},\"view\":\"evidence\",\"blsh\":{\"status\":\"exploratory\",\"heading\":\"BLSH · retained provisional research\",\"direction\":\"positive\",\"receipt\":null,\"market\":\"Market reference unavailable\",\"retained\":{\"snapshotSHA256\":\"2f380c2539390f6931ec92ab1d0b1d8cced2b55f5f4cefb8c6e88a694909f2c8\",\"reviewReference\":\"tasks/artifacts/blsh-snapshot-coordination-2026-10-29/INSTALLATION-AND-NEXT-SLICE.md; portable-install-01/INSTALLATION-RECEIPT.json\",\"asOfUTC\":\"2026-10-29T18:41:12.798646+00:00\",\"eventThroughDate\":\"2026-10-28\",\"dates\":[\"2026-10-17\",\"2026-10-20\",\"2026-10-22\",\"2026-10-25\",\"2026-10-27\"],\"methodVersion\":\"support-conditioned-production-gap-v1\",\"profile\":{\"playerId\":8484136,\"name\":\"Max Sasson\",\"displayName\":\"Max Sasson\",\"team\":\"VAN\",\"position\":\"F\",\"score\":{\"version\":\"support-conditioned-production-gap-v1\",\"value\":13.269823517937136,\"normalizedGap\":0.15300122813288106,\"baselineNormalizedGap\":0.1659925228274938,\"gapSign\":\"buy_low_evidence\",\"gapSignLabel\":\"Buy-low evidence\",\"status\":\"concordant_research_candidate\",\"statusLabel\":\"Production and support agree in direction\",\"list\":\"BL\",\"listLabel\":\"Buy-low research candidate\",\"rank\":257,\"reason\":null,\"reasonText\":null,\"trusted\":false,\"calibratedProbability\":null,\"indexTransform\":\"100·g / (1 + |g|) of the normalized gap g\"},\"tracks\":[{\"track\":\"fantasy_points\",\"label\":\"FP\",\"observed\":8.25,\"referenceAtCurrentTOI\":7.849795054887428,\"supportConditioned\":8.094545151381004,\"gap\":-0.15545484861899617,\"components\":[{\"id\":\"production_vs_reference\",\"kind\":\"reference_gap\",\"kindLabel\":\"Reference vs recorded\",\"value\":-0.40020494511257176,\"note\":\"Reference production at the score window's total ice time minus recorded production. No personal production history: the reference is the position cohort's rate. Power-play share, role and linemates are not modelled separately.\",\"processDelta\":null,\"referenceKind\":null},{\"id\":\"process:individual_xG60\",\"kind\":\"model_sensitivity\",\"kindLabel\":\"Process change × frozen sensitivity\",\"value\":0.25823213066307515,\"note\":\"Change in the player's own expected goals per 60 versus their reference, times the frozen sensitivity. Reference is not the player's own measured history.\",\"processDelta\":0.2111913278443338,\"referenceKind\":\"cohort\"},{\"id\":\"process:shared_onice_xGF60\",\"kind\":\"model_sensitivity\",\"kindLabel\":\"Process change × frozen sensitivity\",\"value\":-0.018872281878938867,\"note\":\"Change in on-ice expected goals for per 60 versus the reference, times the frozen sensitivity. Reference is not the player's own measured history.\",\"processDelta\":-0.0714935579072642,\"referenceKind\":\"cohort\"},{\"id\":\"process:shared_onice_xGA60\",\"kind\":\"model_sensitivity\",\"kindLabel\":\"Process change × frozen sensitivity\",\"value\":0.005390247709440104,\"note\":\"Change in on-ice expected goals against per 60 versus the reference, times the frozen sensitivity. Reference is not the player's own measured history.\",\"processDelta\":1.2957373024183725,\"referenceKind\":\"cohort\"}],\"componentSum\":-0.15545484861899536,\"normalizationMultiplier\":0.08081130033609477,\"normalizedGapContribution\":-0.012562508460451845,\"baselineNormalizedGapContribution\":-0.03234108201548236},{\"track\":\"goals_plus_assists\",\"label\":\"G+A\",\"observed\":2,\"referenceAtCurrentTOI\":1.8266293110215304,\"supportConditioned\":1.8560184695756627,\"gap\":-0.14398153042433726,\"components\":[{\"id\":\"production_vs_reference\",\"kind\":\"reference_gap\",\"kindLabel\":\"Reference vs recorded\",\"value\":-0.17337068897846963,\"note\":\"Reference production at the score window's total ice time minus recorded production. No personal production history: the reference is the position cohort's rate. Power-play share, role and linemates are not modelled separately.\",\"processDelta\":null,\"referenceKind\":null},{\"id\":\"process:individual_xG60\",\"kind\":\"model_sensitivity\",\"kindLabel\":\"Process change × frozen sensitivity\",\"value\":0.044165719995001004,\"note\":\"Change in the player's own expected goals per 60 versus their reference, times the frozen sensitivity. Reference is not the player's own measured history.\",\"processDelta\":0.2111913278443338,\"referenceKind\":\"cohort\"},{\"id\":\"process:shared_onice_xGF60\",\"kind\":\"model_sensitivity\",\"kindLabel\":\"Process change × frozen sensitivity\",\"value\":-0.009521048359124368,\"note\":\"Change in on-ice expected goals for per 60 versus the reference, times the frozen sensitivity. Reference is not the player's own measured history.\",\"processDelta\":-0.0714935579072642,\"referenceKind\":\"cohort\"},{\"id\":\"process:shared_onice_xGA60\",\"kind\":\"model_sensitivity\",\"kindLabel\":\"Process change × frozen sensitivity\",\"value\":-0.00525551308174429,\"note\":\"Change in on-ice expected goals against per 60 versus the reference, times the frozen sensitivity. Reference is not the player's own measured history.\",\"processDelta\":1.2957373024183725,\"referenceKind\":\"cohort\"}],\"componentSum\":-0.14398153042433728,\"normalizationMultiplier\":0.22934437436053964,\"normalizedGapContribution\":-0.03302135401464263,\"baselineNormalizedGapContribution\":-0.03976159219622282},{\"track\":\"wigo_game_score\",\"label\":\"FHFH WiGO Game Score\",\"observed\":0.5999999999999999,\"referenceAtCurrentTOI\":1.8453748917736459,\"supportConditioned\":1.6387142991509007,\"gap\":1.0387142991509009,\"components\":[{\"id\":\"production_vs_reference\",\"kind\":\"reference_gap\",\"kindLabel\":\"Reference vs recorded\",\"value\":1.245374891773646,\"note\":\"Reference production at the score window's total ice time minus recorded production. No personal production history: the reference is the position cohort's rate. Power-play share, role and linemates are not modelled separately.\",\"processDelta\":null,\"referenceKind\":null},{\"id\":\"process:individual_xG60\",\"kind\":\"model_sensitivity\",\"kindLabel\":\"Process change × frozen sensitivity\",\"value\":0.07576092760768047,\"note\":\"Change in the player's own expected goals per 60 versus their reference, times the frozen sensitivity. Reference is not the player's own measured history.\",\"processDelta\":0.2111913278443338,\"referenceKind\":\"cohort\"},{\"id\":\"process:shared_onice_xGF60\",\"kind\":\"model_sensitivity\",\"kindLabel\":\"Process change × frozen sensitivity\",\"value\":-0.018392162464794633,\"note\":\"Change in on-ice expected goals for per 60 versus the reference, times the frozen sensitivity. Reference is not the player's own measured history.\",\"processDelta\":-0.0714935579072642,\"referenceKind\":\"cohort\"},{\"id\":\"process:shared_onice_xGA60\",\"kind\":\"model_sensitivity\",\"kindLabel\":\"Process change × frozen sensitivity\",\"value\":-0.26402935776563097,\"note\":\"Change in on-ice expected goals against per 60 versus the reference, times the frozen sensitivity. Reference is not the player's own measured history.\",\"processDelta\":1.2957373024183725,\"referenceKind\":\"cohort\"}],\"componentSum\":1.0387142991509009,\"normalizationMultiplier\":0.19118355333156511,\"normalizedGapContribution\":0.19858509060797552,\"baselineNormalizedGapContribution\":0.23809519703919899}],\"evidence\":{\"window\":{\"games\":5,\"spanDays\":10,\"dates\":[\"2026-10-17\",\"2026-10-20\",\"2026-10-22\",\"2026-10-25\",\"2026-10-27\"],\"sourceIds\":[5589645,5595292,5596566,5598063,5598977],\"seconds\":3556,\"minutes\":59.266666666666666,\"lastGameDaysBeforeRecordedThrough\":1,\"recordedThroughDate\":\"2026-10-28\",\"fresh\":true,\"freshnessText\":\"Last game 1 days before the recorded-through date (2026-10-28)\"},\"reference\":{\"personalGames\":0,\"estimatorWeight\":0,\"cohortEstimatorWeight\":1,\"estimatorWeightNote\":\"Estimator weights, shown as decimals; not confidence percentages\",\"ageDays\":null,\"ageText\":\"No personal reference window\",\"seasons\":[],\"staleDevelopmentReference\":false,\"sourceIds\":[],\"dates\":[]},\"donorPlayers\":516,\"tier\":\"provisional_estimated_or_extrapolated\",\"tierLabel\":\"Provisional: estimated or extrapolated\",\"tierNote\":\"A coverage tier, not calibrated confidence\",\"outsidePriorSpan\":false,\"outsidePriorComponentRange\":false,\"extrapolationText\":null,\"calibratedProbability\":null,\"calibratedProbabilityText\":\"Unavailable (no calibrated probability exists)\"},\"coverage\":{\"notes\":[{\"source\":\"explanation\",\"component\":\"history_process_gate\",\"state\":\"estimated\",\"reason\":\"dry_run_simplified_gate_not_sealed_transport\",\"text\":\"History process gate is a disclosed simplification, not the sealed v1 transport\",\"games\":null},{\"source\":\"explanation\",\"component\":\"process:individual_xG60\",\"state\":\"estimated\",\"reason\":\"no_personal_reference_cohort_mean_used\",\"text\":\"Process reference is the cohort mean, not the player's own\",\"games\":null},{\"source\":\"explanation\",\"component\":\"process:shared_onice_xGF60\",\"state\":\"estimated\",\"reason\":\"no_personal_reference_cohort_mean_used\",\"text\":\"Process reference is the cohort mean, not the player's own\",\"games\":null},{\"source\":\"explanation\",\"component\":\"process:shared_onice_xGA60\",\"state\":\"estimated\",\"reason\":\"no_personal_reference_cohort_mean_used\",\"text\":\"Process reference is the cohort mean, not the player's own\",\"games\":null},{\"source\":\"explanation\",\"component\":\"reference_window_context\",\"state\":\"unavailable\",\"reason\":\"reference_window_not_supplied\",\"text\":\"No personal reference window supplied; context comparison unavailable\",\"games\":null},{\"source\":\"explanation\",\"component\":\"assists_per_teammate_on_ice_goal\",\"state\":\"unavailable\",\"reason\":\"no_teammate_on_ice_goals_ratio_undefined\",\"text\":\"Undefined: no teammate goals while on ice\",\"games\":null},{\"source\":\"slot\",\"component\":\"personal_reference\",\"state\":null,\"reason\":\"no_personal_history_cohort\",\"text\":\"No personal history; the position-cohort reference is used\",\"games\":null}],\"imputedProcesses\":[],\"physicalFloors\":[],\"context\":{\"current\":{\"verified\":true,\"reason\":null,\"text\":null},\"reference\":{\"verified\":false,\"reason\":\"reference_window_not_supplied\",\"text\":\"No personal reference window supplied; context comparison unavailable\"}}},\"context\":{\"heading\":\"Context, not part of the score\",\"opportunity\":[{\"metric\":\"total_TOI_per_game\",\"label\":\"Total TOI per game\",\"kind\":\"measured\",\"units\":\"seconds/appearance\",\"current\":711.2,\"reference\":null,\"delta\":null,\"status\":\"available\",\"reason\":null,\"referenceReason\":\"window_not_supplied\",\"deltaReason\":\"no_reference_value\",\"reasonText\":null,\"referenceReasonText\":\"No window for this side (no personal reference, or context withheld); value unavailable\",\"deltaReasonText\":\"No reference value to compare\",\"revisionVerified\":null,\"revisionText\":null},{\"metric\":\"ES_TOI_per_game\",\"label\":\"ES TOI per game\",\"kind\":\"measured\",\"units\":\"seconds/appearance\",\"current\":612.8,\"reference\":null,\"delta\":null,\"status\":\"available\",\"reason\":null,\"referenceReason\":\"window_not_supplied\",\"deltaReason\":\"no_reference_value\",\"reasonText\":null,\"referenceReasonText\":\"No window for this side (no personal reference, or context withheld); value unavailable\",\"deltaReasonText\":\"No reference value to compare\",\"revisionVerified\":null,\"revisionText\":null},{\"metric\":\"PP_TOI_per_game\",\"label\":\"PP TOI per game\",\"kind\":\"measured\",\"units\":\"seconds/appearance\",\"current\":0,\"reference\":null,\"delta\":null,\"status\":\"available\",\"reason\":null,\"referenceReason\":\"window_not_supplied\",\"deltaReason\":\"no_reference_value\",\"reasonText\":null,\"referenceReasonText\":\"No window for this side (no personal reference, or context withheld); value unavailable\",\"deltaReasonText\":\"No reference value to compare\",\"revisionVerified\":null,\"revisionText\":null}],\"signals\":[{\"metric\":\"goals_minus_individual_xG_per_60\",\"label\":\"Goals minus individual xG per 60\",\"kind\":\"provider_model_relative\",\"units\":\"goals/60 minus provider xG/60, per 60 of the operands' scope\",\"current\":0.9820022497187851,\"reference\":null,\"delta\":null,\"status\":\"available\",\"reason\":null,\"referenceReason\":\"window_not_supplied\",\"deltaReason\":\"no_reference_value\",\"reasonText\":null,\"referenceReasonText\":\"No window for this side (no personal reference, or context withheld); value unavailable\",\"deltaReasonText\":\"No reference value to compare\",\"revisionVerified\":null,\"revisionText\":null,\"scoreInput\":false,\"interpretation\":\"hypothesis\",\"hypothesesHeading\":\"Possible explanations (not identified)\",\"hypotheses\":[\"goals and xG drawn from different sources or game states\",\"empty-net goals or the goaltending faced\",\"short-window finishing variance\",\"shot quality the provider's xG model does not capture\",\"a real change in finishing ability\"],\"scale\":{\"value\":1.0274468401105734,\"units\":\"goals/60 of the same scope\",\"assumption\":\"Upper-bound spread if window goals were Poisson with mean equal to provider xG; per-shot variance is smaller, and it ignores the reference's own uncertainty.\"}},{\"metric\":\"on_ice_goals_minus_xGF_per_60\",\"label\":\"On-ice goals minus xGF per 60\",\"kind\":\"provider_model_relative\",\"units\":\"on-ice goals/60 minus provider xGF/60, per 60 of the operands' scope\",\"current\":-0.9212598425196852,\"reference\":null,\"delta\":null,\"status\":\"available\",\"reason\":null,\"referenceReason\":\"window_not_supplied\",\"deltaReason\":\"no_reference_value\",\"reasonText\":null,\"referenceReasonText\":\"No window for this side (no personal reference, or context withheld); value unavailable\",\"deltaReasonText\":\"No reference value to compare\",\"revisionVerified\":null,\"revisionText\":null,\"scoreInput\":false,\"interpretation\":\"hypothesis\",\"hypothesesHeading\":\"Possible explanations (not identified)\",\"hypotheses\":[\"goals and xGF drawn from different sources or game states\",\"the player's own finishing\",\"teammates' finishing variance\",\"opposing goaltending\",\"linemate or role change\"],\"scale\":null},{\"metric\":\"assists_per_teammate_on_ice_goal\",\"label\":\"Assists per teammate on-ice goal\",\"kind\":\"measured\",\"units\":\"assists / (on-ice goals for − own goals)\",\"current\":null,\"reference\":null,\"delta\":null,\"status\":\"unavailable\",\"reason\":\"no_teammate_on_ice_goals_ratio_undefined\",\"referenceReason\":\"window_not_supplied\",\"deltaReason\":\"no_reference_value\",\"reasonText\":\"Undefined: no teammate goals while on ice\",\"referenceReasonText\":\"No window for this side (no personal reference, or context withheld); value unavailable\",\"deltaReasonText\":\"No reference value to compare\",\"revisionVerified\":null,\"revisionText\":null,\"scoreInput\":false,\"interpretation\":\"hypothesis\",\"hypothesesHeading\":\"Possible explanations (not identified)\",\"hypotheses\":[\"assists and on-ice goals drawn from different game states\",\"variance on few goals\",\"role or linemate change\",\"a real change in playmaking\"],\"scale\":null},{\"metric\":\"shots_per_60\",\"label\":\"Shots per 60\",\"kind\":\"measured\",\"units\":\"shots/60 of the shots' scope\",\"current\":6.074240719910011,\"reference\":null,\"delta\":null,\"status\":\"available\",\"reason\":null,\"referenceReason\":\"window_not_supplied\",\"deltaReason\":\"no_reference_value\",\"reasonText\":null,\"referenceReasonText\":\"No window for this side (no personal reference, or context withheld); value unavailable\",\"deltaReasonText\":\"No reference value to compare\",\"revisionVerified\":null,\"revisionText\":null,\"scoreInput\":false,\"interpretation\":\"hypothesis\",\"hypothesesHeading\":\"Possible explanations (not identified)\",\"hypotheses\":[\"deployment change\",\"a real change in shot volume (process, not a finishing signal)\"],\"scale\":null}]},\"streak\":null,\"streakText\":\"No current-season streak is saved; streak unavailable\",\"claims\":{\"luckIdentified\":false,\"marketValue\":false,\"forecast\":false,\"trusted\":false},\"claimsText\":\"Not a luck finding, a market value, a forecast or a trusted recommendation.\"},\"limits\":[\"Retrospective research comparison of recorded games; not a forecast, probability, market value or trade recommendation.\",\"The reference is the 2022-24 development history and is stale; each profile shows its own reference age.\",\"Coverage tiers are not calibrated confidence; personal estimator weights are not confidence percentages.\",\"History process gate is a disclosed simplification, not the sealed v1 transport.\",\"List membership is the frozen concordant-direction rule with no count or value cutoff; withheld and unavailable profiles stay inspectable.\",\"No current-season streak is saved.\",\"Fresh capture: 2026-10-29T18:41:12.798646+00:00; events through 2026-10-28. October 27 has 116 rows and October 28 has 22 rows with missing six-field inputs; they remain unavailable.\",\"Calendar/NST finality and publication watermarks are not established by the four captured tables. Official goal receipts cover the repaired game set.\"],\"provenance\":{\"state\":\"reviewed-retained-only\",\"currentBinding\":false,\"captureStale\":true,\"sourceMap\":{\"version\":\"fhfh.blsh.player-card-research-provenance.v1\",\"sidecarSHA256\":\"0b98ebc0fa2bbf0554b781d6c7548b820c37768b4868d11784ca837dad070d57\",\"snapshotSHA256\":\"2f380c2539390f6931ec92ab1d0b1d8cced2b55f5f4cefb8c6e88a694909f2c8\",\"independentReviewPending\":true,\"generatedAtUTC\":\"2026-11-01T16:32:16.987Z\",\"asOfUTC\":\"2026-10-29T18:41:12.798646+00:00\",\"eventThroughDate\":\"2026-10-28\",\"maxCaptureAgeHours\":24,\"playerId\":8484136,\"team\":\"VAN\",\"season\":20262027,\"rows\":[{\"sourceId\":5589645,\"gameId\":2026020123,\"playerId\":8484136,\"season\":20262027,\"date\":\"2026-10-17\",\"team\":\"VAN\",\"regularSeasonCalendarMatched\":true,\"finalityEstablished\":false},{\"sourceId\":5595292,\"gameId\":2026020150,\"playerId\":8484136,\"season\":20262027,\"date\":\"2026-10-20\",\"team\":\"VAN\",\"regularSeasonCalendarMatched\":true,\"finalityEstablished\":false},{\"sourceId\":5596566,\"gameId\":2026020165,\"playerId\":8484136,\"season\":20262027,\"date\":\"2026-10-22\",\"team\":\"VAN\",\"regularSeasonCalendarMatched\":true,\"finalityEstablished\":false},{\"sourceId\":5598063,\"gameId\":2026020184,\"playerId\":8484136,\"season\":20262027,\"date\":\"2026-10-25\",\"team\":\"VAN\",\"regularSeasonCalendarMatched\":true,\"finalityEstablished\":false},{\"sourceId\":5598977,\"gameId\":2026020197,\"playerId\":8484136,\"season\":20262027,\"date\":\"2026-10-27\",\"team\":\"VAN\",\"regularSeasonCalendarMatched\":true,\"finalityEstablished\":false}],\"limitations\":[\"Snapshot is exploratory/provisional, not production-adopted or a current live recommendation.\",\"No original publication watermark/revision is known; capture proves presence by capture time only.\",\"Universal game finality is not established; official-goal receipts cover only matched repaired rows.\",\"NST strength scope is the reviewed source-table/feed declaration; per-row strength/model-revision receipts are not in the captured DTO. Advanced metric admission must retain this limit.\",\"Retrospective support/production comparison is not measured market discount, ROI, forecast or confidence probability.\",\"No saved current streak or absence-decay result is part of this snapshot.\",\"Independent review scope: dated stale provisional research only; no current recommendation or advanced observed-metric admission.\",\"Current team labels are carried from WGO; calendar capture lacks home/away fields for independent team verification.\",\"Historical baseline review covers three fixed 50-row cases, not all 729 references; 49 of 150 PPP values still rely on WGO because official boxes lack PP assists.\"],\"review\":{\"reference\":\"tasks/artifacts/rso-blsh-independent-review-2026-11-01/PROVENANCE-REVIEW.md\",\"sha256\":\"54fbf0418908263ce5a0ed3e2b4812c78d70d152aacc818df0568567aa265701\",\"sidecarSHA256\":\"0b98ebc0fa2bbf0554b781d6c7548b820c37768b4868d11784ca837dad070d57\",\"scope\":\"dated-stale-research-only\"}},\"message\":\"5 recorded source rows mapped. Independently reviewed for dated stale research only. Capture stale at sidecar build (69.9 hours; 24-hour budget). Finality evidence for 0/5 rows in this original sidecar. This mapping does not admit current binding or advanced metrics.\"},\"currentBoxes\":{\"state\":\"reviewed-comparison-only\",\"currentBinding\":false,\"summary\":\"Box TOI + 5 counts: 3 match / 1 differ / 1 unknown · G/A/SOG differ\",\"evidence\":{\"version\":\"fhfh.card-retained-box-comparison.v1\",\"rowsSHA256\":\"314a48ef45dbad11b48192bdbada730ccc82fb355895e2dde56b484ece0a6d36\",\"boxEvidenceSHA256\":\"b83fc6bff7bd470bb245f1053a489aeebab6b17f1f734a2ed18d5753f715447f\",\"receiptSHA256\":\"e51173a80e5f0f55e45abf7e914b127b2c8d0cf6f7543a38aa18a9df4f4190a0\",\"sourceSidecarSHA256\":\"0b98ebc0fa2bbf0554b781d6c7548b820c37768b4868d11784ca837dad070d57\",\"snapshotSHA256\":\"2f380c2539390f6931ec92ab1d0b1d8cced2b55f5f4cefb8c6e88a694909f2c8\",\"wgoCapturedAt\":\"2026-10-29T18:41:12.798646+00:00\",\"review\":{\"reference\":\"tasks/artifacts/rso-blsh-independent-review-2026-11-01/CURRENT-BOX-REVIEW.md\",\"sha256\":\"166b65ff7be1a16883d2546c4a1a03b54f286963324e494b1ebba0a41aeb2ce9\",\"scope\":\"dated-source-comparison-only\"},\"rows\":[{\"sourceId\":5589645,\"playerId\":8484136,\"gameId\":2026020123,\"date\":\"2026-10-17\",\"wgoTeam\":\"VAN\",\"state\":\"identity_team_exposure_qualified\",\"gameFinality\":\"final\",\"appearance\":\"positive_official_TOI\",\"team\":\"match\",\"TOI\":{\"wgo\":674,\"official\":674,\"state\":\"match\"},\"counts\":{\"goals\":{\"wgo\":0,\"official\":0,\"state\":\"match\"},\"assists\":{\"wgo\":0,\"official\":0,\"state\":\"match\"},\"shots\":{\"wgo\":1,\"official\":1,\"state\":\"match\"},\"hits\":{\"wgo\":1,\"official\":1,\"state\":\"match\"},\"blocked_shots\":{\"wgo\":1,\"official\":1,\"state\":\"match\"}},\"PPP\":{\"wgo\":0,\"official\":0,\"state\":\"match\"},\"reasons\":[],\"officialTeam\":\"VAN\",\"officialTeamId\":23,\"sourceRowSHA256\":\"333beef6f14e0ed4172d6cc7e90b678e02247ccd0eb7bf034d7eeb78699f56e0\",\"evidenceGameId\":2026020123,\"box\":{\"url\":\"https://api-web.nhle.com/v1/gamecenter/2026020123/boxscore\",\"bodySHA256\":\"e19e4ba5c6f031ce72eab4acdcd82f7eddb6c6394e9e5492b3a44f7e31646900\",\"receiptSHA256\":\"e75c5bf87356cf8cc5f92cb2fb89e8289b534f0fe18e9379ed23607b3571fda3\",\"retrievedAtUTC\":\"2026-10-27T20:12:31.736528+00:00\",\"originalPublicationUTC\":null}},{\"sourceId\":5595292,\"playerId\":8484136,\"gameId\":2026020150,\"date\":\"2026-10-20\",\"wgoTeam\":\"VAN\",\"state\":\"identity_team_exposure_qualified\",\"gameFinality\":\"final\",\"appearance\":\"positive_official_TOI\",\"team\":\"match\",\"TOI\":{\"wgo\":824,\"official\":824,\"state\":\"match\"},\"counts\":{\"goals\":{\"wgo\":1,\"official\":0,\"state\":\"mismatch\"},\"assists\":{\"wgo\":0,\"official\":1,\"state\":\"mismatch\"},\"shots\":{\"wgo\":3,\"official\":2,\"state\":\"mismatch\"},\"hits\":{\"wgo\":2,\"official\":2,\"state\":\"match\"},\"blocked_shots\":{\"wgo\":0,\"official\":0,\"state\":\"match\"}},\"PPP\":{\"wgo\":0,\"official\":null,\"state\":\"unknown_PP_assists_not_supplied\"},\"reasons\":[],\"officialTeam\":\"VAN\",\"officialTeamId\":23,\"sourceRowSHA256\":\"7aacffb0c912d21277055bd664519091fe37f77a44b3f3ec8328d8ad41bd2c2c\",\"evidenceGameId\":2026020150,\"box\":{\"url\":\"https://api-web.nhle.com/v1/gamecenter/2026020150/boxscore\",\"bodySHA256\":\"e5cb1ed5626eafa0e1ffee34cb93369f66c3d6bdcdbb1a93084bfe13087d1440\",\"receiptSHA256\":\"680df34e2d1f9923ac83924846ac4019f27cea5a21a1fdacbf20bb1e0fd2063a\",\"retrievedAtUTC\":\"2026-10-27T20:15:08.223550+00:00\",\"originalPublicationUTC\":null}},{\"sourceId\":5596566,\"playerId\":8484136,\"gameId\":2026020165,\"date\":\"2026-10-22\",\"wgoTeam\":\"VAN\",\"state\":\"identity_team_exposure_qualified\",\"gameFinality\":\"final\",\"appearance\":\"positive_official_TOI\",\"team\":\"match\",\"TOI\":{\"wgo\":803,\"official\":803,\"state\":\"match\"},\"counts\":{\"goals\":{\"wgo\":0,\"official\":0,\"state\":\"match\"},\"assists\":{\"wgo\":0,\"official\":0,\"state\":\"match\"},\"shots\":{\"wgo\":1,\"official\":1,\"state\":\"match\"},\"hits\":{\"wgo\":0,\"official\":0,\"state\":\"match\"},\"blocked_shots\":{\"wgo\":0,\"official\":0,\"state\":\"match\"}},\"PPP\":{\"wgo\":0,\"official\":0,\"state\":\"match\"},\"reasons\":[],\"officialTeam\":\"VAN\",\"officialTeamId\":23,\"sourceRowSHA256\":\"71d25dfec1e31c15fef1fac2a6c4c4faf52b677fc917fb8f99687016464b28ba\",\"evidenceGameId\":2026020165,\"box\":{\"url\":\"https://api-web.nhle.com/v1/gamecenter/2026020165/boxscore\",\"bodySHA256\":\"926ff80bffe07cb765fe5a63a5b0da97e2b0f3ba06f8a4896bc41ad3d7156308\",\"receiptSHA256\":\"249ded3ce65d81b300d505b4e318127eeece1f3273f0527d5d6dddf86137b6fe\",\"retrievedAtUTC\":\"2026-10-27T20:16:38.300605+00:00\",\"originalPublicationUTC\":null}},{\"sourceId\":5598063,\"playerId\":8484136,\"gameId\":2026020184,\"date\":\"2026-10-25\",\"wgoTeam\":\"VAN\",\"state\":\"identity_team_exposure_qualified\",\"gameFinality\":\"final\",\"appearance\":\"positive_official_TOI\",\"team\":\"match\",\"TOI\":{\"wgo\":673,\"official\":673,\"state\":\"match\"},\"counts\":{\"goals\":{\"wgo\":1,\"official\":1,\"state\":\"match\"},\"assists\":{\"wgo\":0,\"official\":0,\"state\":\"match\"},\"shots\":{\"wgo\":1,\"official\":1,\"state\":\"match\"},\"hits\":{\"wgo\":1,\"official\":1,\"state\":\"match\"},\"blocked_shots\":{\"wgo\":0,\"official\":0,\"state\":\"match\"}},\"PPP\":{\"wgo\":0,\"official\":0,\"state\":\"match\"},\"reasons\":[],\"officialTeam\":\"VAN\",\"officialTeamId\":23,\"sourceRowSHA256\":\"c2668a7724a57a32e3aaf51763771a12f5a9a3d0189bb975eacd8923bb58106a\",\"evidenceGameId\":2026020184,\"box\":{\"url\":\"https://api-web.nhle.com/v1/gamecenter/2026020184/boxscore\",\"bodySHA256\":\"dbc4877a682d5578ea72eeff2477224b23be888454bb2c635f959203d3c1cd54\",\"receiptSHA256\":\"76956dbb50a6b728d694ae45a31cefa5696ffb38dcdfd7eaeb1338c42e1c5187\",\"retrievedAtUTC\":\"2026-10-27T20:18:32.678983+00:00\",\"originalPublicationUTC\":null}},{\"sourceId\":5598977,\"playerId\":8484136,\"gameId\":2026020197,\"date\":\"2026-10-27\",\"wgoTeam\":\"VAN\",\"state\":\"held\",\"gameFinality\":\"unknown\",\"appearance\":\"unknown\",\"team\":\"unknown\",\"TOI\":null,\"counts\":{},\"PPP\":null,\"reasons\":[\"no_pinned_cached_official_box\"],\"sourceRowSHA256\":\"f1519fe2ae5559e3ecf32c997d622e6e9ab50819829e5b6164bfde2add42f80f\",\"evidenceGameId\":null,\"box\":null}]},\"lines\":[\"4/5 rows have later-attached final-game/player/team box evidence. Match covers TOI plus G/A/SOG/HIT/BLK only; exposure qualification alone does not certify counts.\",\"PPP: 3 compared, 1 unknown without PP assists, 1 without a box. Missing boxes are not DNP or zero.\",\"These are dated source comparisons, not repairs or a verdict on the later capture. Saved research scores and values are unchanged; no current or advanced-metric admission. Original publication/revision time remains unknown.\",\"2026-10-17 · game 2026020123 · source row 5589645: identity, team and exposure match; counts checked separately. WGO captured 2026-10-29T18:41:12.798646+00:00; box captured 2026-10-27T20:12:31.736528+00:00. TOI seconds matches: WGO 674, box 674; G matches: WGO 0, box 0; A matches: WGO 0, box 0; SOG matches: WGO 1, box 1; HIT matches: WGO 1, box 1; BLK matches: WGO 1, box 1; PPP matches: WGO 0, box 0.\",\"2026-10-20 · game 2026020150 · source row 5595292: identity, team and exposure match; counts checked separately. WGO captured 2026-10-29T18:41:12.798646+00:00; box captured 2026-10-27T20:15:08.223550+00:00. TOI seconds matches: WGO 824, box 824; G differs: WGO 1, box 0; A differs: WGO 0, box 1; SOG differs: WGO 3, box 2; HIT matches: WGO 2, box 2; BLK matches: WGO 0, box 0; PPP unknown: WGO 0, box PP assists unavailable.\",\"2026-10-22 · game 2026020165 · source row 5596566: identity, team and exposure match; counts checked separately. WGO captured 2026-10-29T18:41:12.798646+00:00; box captured 2026-10-27T20:16:38.300605+00:00. TOI seconds matches: WGO 803, box 803; G matches: WGO 0, box 0; A matches: WGO 0, box 0; SOG matches: WGO 1, box 1; HIT matches: WGO 0, box 0; BLK matches: WGO 0, box 0; PPP matches: WGO 0, box 0.\",\"2026-10-25 · game 2026020184 · source row 5598063: identity, team and exposure match; counts checked separately. WGO captured 2026-10-29T18:41:12.798646+00:00; box captured 2026-10-27T20:18:32.678983+00:00. TOI seconds matches: WGO 673, box 673; G matches: WGO 1, box 1; A matches: WGO 0, box 0; SOG matches: WGO 1, box 1; HIT matches: WGO 1, box 1; BLK matches: WGO 0, box 0; PPP matches: WGO 0, box 0.\",\"2026-10-27 · game 2026020197 · source row 5598977: no pinned box in the reviewed bundle; finality, appearance, team and fields unknown.\"]}},\"lines\":[\"Separate saved window: 2026-10-17 to 2026-10-27; 5 recorded game rows, 59.266666666666666 minutes. NHL controls do not change this evidence window.\",\"Production and support agree in direction; positive support gap.\",\"FP: recorded 8.25; support-conditioned 8.09; gap -0.16 (window totals).\",\"G+A: recorded 2.00; support-conditioned 1.86; gap -0.14 (window totals).\",\"FHFH WiGO Game Score: recorded 0.60; support-conditioned 1.64; gap 1.04 (window totals).\",\"Opportunity: Total TOI per game 711.20 seconds/appearance; ES TOI per game 612.80 seconds/appearance; PP TOI per game 0.00 seconds/appearance.\",\"Reference: 0 games; age unknown days; stale development history. A coverage tier, not calibrated confidence.\",\"Limits: History process gate is a disclosed simplification, not the sealed v1 transport; Process reference is the cohort mean, not the player's own; No personal reference window supplied; context comparison unavailable; Undefined: no teammate goals while on ice; No personal history; the position-cohort reference is used.\",\"Retrospective support evidence; no calibrated confidence, forecast, market price or trade recommendation.\"]},\"trades\":{\"status\":\"unavailable\",\"records\":[],\"lines\":[\"Qualified Yahoo observed-trade records and owner review receipt unavailable.\",\"Market reference unavailable. No trade collection was attempted.\"]}},\"image-unavailable\"]",
+  "disclosure": "Local consumer presentation; qualification and unavailable reasons are retained per field. No source refresh or deployment implied."
+}

@@ -1,0 +1,97 @@
+[
+  {
+    "checked_at": "2026-11-01 17:50:18.230535+00",
+    "schedules": [
+      {
+        "jobid": 17,
+        "active": false,
+        "jobname": "update-nst-tables-all",
+        "schedule": "10 8 * * *",
+        "uses_pg_net": true,
+        "command_fingerprint": "0d0f905978a67f79ad479bdd22e13190",
+        "destination_without_query": "https://fhfhockey.com/api/Teams/nst-team-stats"
+      },
+      {
+        "jobid": 99,
+        "active": true,
+        "jobname": "update-nst-goalies",
+        "schedule": "30 8 * * *",
+        "uses_pg_net": true,
+        "command_fingerprint": "6af85756ea175e7ec11243603b5e3f0b",
+        "destination_without_query": "https://fhfhockey.com/api/v1/db/update-nst-goalies"
+      },
+      {
+        "jobid": 220,
+        "active": true,
+        "jobname": "update-nst-current-season",
+        "schedule": "45 8 * * *",
+        "uses_pg_net": true,
+        "command_fingerprint": "aa50c331ba041cf55bdf044a6cd9a09b",
+        "destination_without_query": "https://fhfhockey.com/api/v1/db/update-nst-current-season"
+      },
+      {
+        "jobid": 234,
+        "active": false,
+        "jobname": "daily-cron-report",
+        "schedule": "15 21 * * *",
+        "uses_pg_net": true,
+        "command_fingerprint": "8826ff4d216707ef7e305c99cee58fc2",
+        "destination_without_query": "https://fhfhockey.com/api/v1/db/cron-report"
+      },
+      {
+        "jobid": 271,
+        "active": true,
+        "jobname": "daily-refresh-nstwgo-matview",
+        "schedule": "00 04 * * *",
+        "uses_pg_net": false,
+        "command_fingerprint": "cc7ffb29c78461cf6c83374ee66cdd02",
+        "destination_without_query": null
+      },
+      {
+        "jobid": 275,
+        "active": false,
+        "jobname": "update-nst-team-daily",
+        "schedule": "55 9 * * *",
+        "uses_pg_net": true,
+        "command_fingerprint": "a7d1f8c0e1eb93ee46d4f0a9cca47e4d",
+        "destination_without_query": "https://fhfhockey.com/api/v1/db/update-nst-team-daily"
+      },
+      {
+        "jobid": 328,
+        "active": true,
+        "jobname": "update-nst-team-daily-incremental",
+        "schedule": "55 9 * * *",
+        "uses_pg_net": true,
+        "command_fingerprint": "b6ded8047de466467b230de1c34b7378",
+        "destination_without_query": "https://fhfhockey.com/api/v1/db/update-nst-team-daily"
+      },
+      {
+        "jobid": 329,
+        "active": true,
+        "jobname": "update-nst-team-stats-all",
+        "schedule": "15 9 * * *",
+        "uses_pg_net": true,
+        "command_fingerprint": "98a88c36bfab55d6b494ffbb1a94aa55",
+        "destination_without_query": "https://fhfhockey.com/api/Teams/nst-team-stats"
+      },
+      {
+        "jobid": 399,
+        "active": true,
+        "jobname": "route-runner-tick",
+        "schedule": "* * * * *",
+        "uses_pg_net": true,
+        "command_fingerprint": "ef82966f053f5394148e689b620c8fa0",
+        "destination_without_query": "https://fhfhockey.com/api/v1/db/route-runner-tick"
+      }
+    ],
+    "available_control_functions": null,
+    "available_control_relations": [
+      {
+        "schema": "public",
+        "relkind": "r",
+        "relname": "route_runner_jobs",
+        "relrowsecurity": true
+      }
+    ]
+  }
+]

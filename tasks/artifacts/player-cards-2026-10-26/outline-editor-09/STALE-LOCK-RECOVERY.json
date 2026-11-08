@@ -1,0 +1,26 @@
+{
+  "at": "2026-10-27T01:00:23.283983+00:00",
+  "approval": "TJyes Sentinel_279dab0afd508191bb62d8378bb39a45 2026-10-27T00:58:07Z",
+  "expectedInode": 215707084,
+  "expectedSha256": "a9ee8dc706b0d15a62ae6d404ced3fe15037a6ff958f3036b76b7b8c6d517737",
+  "reversibleArchive": true,
+  "processesKilled": 0,
+  "lockAcquired": true,
+  "ownSlotReleased": true,
+  "knownChainPresent": [],
+  "activeHeavyWork": [],
+  "existingGuiOnly": [],
+  "originalMetadata": {
+    "inode": 215707084,
+    "size": 43,
+    "mode": "0o100644",
+    "uid": 501,
+    "gid": 0,
+    "mtimeNs": 1793061404985626366,
+    "ctimeNs": 1793061404985626366
+  },
+  "archivePath": "/private/tmp/fhfh-heavy-stale-20261027-yq0akm7t/original.lock",
+  "archivedInode": 215707084,
+  "qualificationExitCode": 2,
+  "finishedAt": "2026-10-27T01:00:46.577810+00:00"
+}

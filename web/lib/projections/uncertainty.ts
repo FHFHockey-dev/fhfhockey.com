@@ -585,6 +585,18 @@ export function buildTeamUncertainty(
   };
 }
 
+export const JOINT_GOALIE_COUNT_VERSION = "goalie-shots-binomial-ga-v1";
+
+/** Conditional shot accounting. Kept separate so final draws can be independently validated. */
+export function sampleGoalieShotCounts(shots: number, goalsPerShot: number, rand: () => number) {
+  if (!Number.isSafeInteger(shots) || shots < 0 || !Number.isFinite(goalsPerShot) || goalsPerShot < 0 || goalsPerShot > 1) throw new Error("Invalid joint goalie count inputs");
+  let goalsAllowed = goalsPerShot === 1 ? shots : 0;
+  if (goalsPerShot > 0 && goalsPerShot < 1) {
+    for (let shot = 0; shot < shots; shot++) if (rand() < goalsPerShot) goalsAllowed++;
+  }
+  return { shotsAgainst: shots, goalsAllowed, saves: shots - goalsAllowed };
+}
+
 export function buildGoalieUncertainty(
   u: {
     shotsAgainst: number;
@@ -601,6 +613,15 @@ export function buildGoalieUncertainty(
   }>,
   countModel?: CountModelOptions
 ) {
+  if (countModel?.jointGoalieCounts) {
+    for (const line of [u, ...(scenarioMixture ?? [])]) {
+      if (![line.shotsAgainst, line.goalsAllowed, line.saves].every(value => Number.isFinite(value) && value >= 0)
+        || line.goalsAllowed > line.shotsAgainst
+        // Existing projection means are rounded to three decimal places.
+        || Math.abs(line.shotsAgainst - line.goalsAllowed - line.saves) > 0.001 + 1e-9) throw new Error("Incoherent joint goalie means");
+    }
+    if (perGameScalars?.some(value => !Number.isFinite(value) || value < 0)) throw new Error("Invalid goalie exposure scalar");
+  }
   const effectiveHorizon = Math.max(1, Math.floor(horizonGames));
   const scalars =
     perGameScalars?.length === effectiveHorizon
@@ -688,7 +709,9 @@ export function buildGoalieUncertainty(
         baseShotsScaled > 0
           ? scenarioGoals * scalar * (shots / baseShotsScaled)
           : scenarioGoals * scalar;
-      const goals = samplePoisson(goalsMean, rand);
+      const goals = countModel?.jointGoalieCounts
+        ? sampleGoalieShotCounts(shots, scenarioShots > 0 ? scenarioGoals / scenarioShots : 0, rand).goalsAllowed
+        : samplePoisson(goalsMean, rand);
       const saves = Math.max(0, shots - goals);
 
       totalShots += shots;
@@ -704,7 +727,8 @@ export function buildGoalieUncertainty(
   return {
     shots_against: quantilesFromSamples(samplesShots),
     goals_allowed: quantilesFromSamples(samplesGoals),
-    saves: quantilesFromSamples(samplesSaves)
+    saves: quantilesFromSamples(samplesSaves),
+    ...(countModel?.jointGoalieCounts ? { count_model_version: JOINT_GOALIE_COUNT_VERSION } : {})
   };
 }
 
@@ -723,6 +747,9 @@ const NB_MIN_ALPHA = 1e-9;
 export type CountModelOptions = {
   /** Draw SOG/hits/blocks (skaters) or shots against (goalies) from the fitted NB. */
   negativeBinomial?: boolean;
+  /** Experimental conditional GA|SA binomial; default preserves incumbent interval bytes.
+   * Record JOINT_GOALIE_COUNT_VERSION in the candidate's model identity before evaluation. */
+  jointGoalieCounts?: boolean;
   /** F/C/L/R/D/G; unknown positions fall back to Poisson. */
   position?: string | null;
 };

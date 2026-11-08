@@ -1,0 +1,14 @@
+import {createRequire} from 'node:module';
+import {fileURLToPath} from 'node:url';
+import path from 'node:path';
+import {readFileSync} from 'node:fs';
+import {createHash} from 'node:crypto';
+const here=path.dirname(fileURLToPath(import.meta.url)),web=path.resolve(here,'../../../web'),require=createRequire(path.join(web,'package.json')),ts=require('typescript');
+const receipt=JSON.parse(readFileSync(path.join(here,'INTEGRATION-PREIMAGE.json'),'utf8'));
+const original=path.resolve(web,'components/player-cards/CurrentPlayerCardStudio.tsx');
+if(createHash('sha256').update(readFileSync(original)).digest('hex')!==receipt.beforeSHA256)throw new Error('Existing studio changed: integration needs reconciliation');
+const config=ts.getParsedCommandLineOfConfigFile(path.join(here,'tsconfig.json'),{}, {...ts.sys,onUnRecoverableConfigFileDiagnostic:d=>{throw new Error(ts.flattenDiagnosticMessageText(d.messageText,' '))}});
+const host=ts.createCompilerHost(config.options),read=host.readFile.bind(host);host.readFile=p=>path.resolve(p)===original?readFileSync(path.join(here,'integration/CurrentPlayerCardStudio.tsx'),'utf8'):read(p);
+const program=ts.createProgram([...config.fileNames,original,path.resolve(web,'components/player-cards/CurrentPlayerCardStudio.test.tsx')],config.options,host),diagnostics=ts.getPreEmitDiagnostics(program);
+for(const d of diagnostics)console.error(ts.flattenDiagnosticMessageText(d.messageText,' '));
+console.log(JSON.stringify({candidateAppliedToMemoryOnly:true,diagnostics:diagnostics.length}));process.exitCode=diagnostics.length?1:0;

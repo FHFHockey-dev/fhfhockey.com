@@ -1,0 +1,457 @@
+--- a/functions/api/fetch_team_table.py
++++ b/functions/api/fetch_team_table.py
+@@ -377,7 +377,8 @@
+     parser.add_argument('--td', default='', help='TD')
+     
+     args = parser.parse_args()
+-    
++
++    ensure_loaded_for(["NST_KEY", "NEXT_PUBLIC_SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"])
+     with nst_job("functions/fetch_team_table"):
+         result = fetch_team_table(
+             from_season=args.from_season,
+--- a/functions/tests/test_fetch_team_table_contract.py
++++ b/functions/tests/test_fetch_team_table_contract.py
+@@ -1,5 +1,9 @@
+ import importlib
++import ast
++from pathlib import Path
+ import socket
++import sys
++from types import SimpleNamespace
+ from unittest.mock import Mock
+ 
+ import pytest
+@@ -8,6 +12,59 @@
+ 
+ CALLER_SECRET = "test-caller-secret"
+ PROVIDER_KEY = "test-provider-key"
++
++
++@pytest.mark.parametrize("outcome", ["success", "loader-failure", "output-failure"])
++def test_cli_bootstraps_before_real_lifecycle(monkeypatch, local_only, outcome):
++    # Execute the actual __main__ body with fixture environment/I/O. Importing
++    # or running this test never reads a local env file or contacts a service.
++    module = team_table_module
++    admission = importlib.import_module("lib.nst_admission")
++    events = []
++    for key in ("NST_KEY", "NEXT_PUBLIC_SUPABASE_URL", "SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"):
++        monkeypatch.delenv(key, raising=False)
++    monkeypatch.setenv("NST_JOB_LIFECYCLE_ENABLED", "true")
++    monkeypatch.setattr(sys, "argv", ["fetch_team_table.py", "--sit", "5v5", "--rate", "n"])
++
++    def bootstrap(keys):
++        events.append("bootstrap")
++        assert keys == ["NST_KEY", "NEXT_PUBLIC_SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
++        if outcome == "loader-failure":
++            raise RuntimeError("Fixture bootstrap failed")
++        monkeypatch.setenv("NST_KEY", "fixture-provider")
++        monkeypatch.setenv("NEXT_PUBLIC_SUPABASE_URL", "https://offline.invalid")
++        monkeypatch.setenv("SUPABASE_SERVICE_ROLE_KEY", "fixture-service")
++
++    def post(url, **kwargs):
++        name = url.rsplit("/", 1)[-1]
++        events.append(name)
++        assert kwargs["headers"]["apikey"] == "fixture-service"
++        assert url.startswith("https://offline.invalid/rest/v1/rpc/")
++        assert name in ("nst_job_begin_v1", "nst_job_finish_v1", "nst_job_hold_v1")
++        return SimpleNamespace(status_code=200, json=lambda: {
++            "status": "started" if "begin" in name else "finished" if "finish" in name else "held",
++            "token": kwargs["json"]["p_token"],
++        })
++
++    def fetch(**_kwargs):
++        admission.assert_nst_job_active()
++        events.append("fetch-and-output")
++        return SimpleNamespace(status_code=503 if outcome == "output-failure" else 200)
++
++    monkeypatch.setattr(admission.requests, "post", post)
++    tree = ast.parse(Path(module.__file__).read_text())
++    main = next(node for node in tree.body if isinstance(node, ast.If) and
++                isinstance(node.test, ast.Compare) and getattr(node.test.left, "id", None) == "__name__")
++    namespace = {**vars(module), "__name__": "__main__", "ensure_loaded_for": bootstrap, "fetch_team_table": fetch}
++    code = compile(ast.Module(body=[main], type_ignores=[]), module.__file__, "exec")
++    if outcome == "success":
++        exec(code, namespace)
++    else:
++        with pytest.raises(RuntimeError):
++            exec(code, namespace)
++    assert events == (["bootstrap"] if outcome == "loader-failure" else
++        ["bootstrap", "nst_job_begin_v1", "fetch-and-output",
++         "nst_job_finish_v1" if outcome == "success" else "nst_job_hold_v1"])
+ 
+ 
+ @pytest.fixture(autouse=True)
+--- a/supabase/migrations/20261101161622_nst_goalie_catchup_v1.sql
++++ b/supabase/migrations/20261101161622_nst_goalie_catchup_v1.sql
+@@ -619,9 +619,15 @@
+ create function public.nst_goalie_progress_v1(p_season integer)
+ returns jsonb language plpgsql security invoker set search_path=pg_catalog,public as $$
+ declare ctl public.nst_goalie_control; t timestamptz=clock_timestamp(); datasets jsonb; no_progress integer=0;
+-  pending integer; held integer; active integer; last_commit timestamptz;
++  pending integer; held integer; active integer; last_commit timestamptz; preparation jsonb; configuration_known boolean;
+ begin
+   select * into strict ctl from public.nst_goalie_control where singleton;
++  preparation=public.nst_goalie_preparation_state_v1();
++  -- Preparation returns a season only after validating activation, a unique
++  -- eligible season and the bootstrap aperture. An empty queue proves none of
++  -- these. Off-season preparation stays not due; progress for a requested
++  -- season cannot attest a configured active writer without that context.
++  configuration_known=not ctl.enabled or coalesce((preparation->'season'->>'id')::integer=p_season,false);
+   select count(*) filter(where state='pending'),count(*) filter(where state='held'),count(*) filter(where state='in_flight')
+     into pending,held,active from public.nst_goalie_units where season=p_season;
+   select max(r.committed_at) into last_commit from public.nst_goalie_unit_receipts r
+@@ -647,9 +653,10 @@
+         where u.season=p_season and r.committed_at>=opened and r.committed_at<closed) stalled from latest
+   ) select case when bool_and(stalled) and count(*)=2 then 2
+       when coalesce((array_agg(stalled order by closed desc))[1],false) then 1 else 0 end into no_progress from stalled_windows;
+-  return jsonb_build_object('version',1,'enabled',ctl.enabled,'configurationKnown',not ctl.enabled or ctl.enabled_at is not null,
++  return jsonb_build_object('version',1,'enabled',ctl.enabled,'configurationKnown',configuration_known,
+     'pending',pending,'held',held,'inFlight',active,'datasets',coalesce(datasets,'[]'::jsonb),'lastCommitAt',last_commit,
+-    'noProgressWindows',no_progress,'reviewRequired',(public.nst_job_state_v1()->>'reviewRequired')::boolean or held>0 or exists(select 1 from public.nst_goalie_claims
++    'noProgressWindows',no_progress,'reviewRequired',not configuration_known or (preparation->>'reviewRequired')::boolean or
++      (public.nst_job_state_v1()->>'reviewRequired')::boolean or held>0 or exists(select 1 from public.nst_goalie_claims
+       where state='held' or (state='claimed' and deadline_at<=t)));
+ end $$;
+ 
+--- a/supabase/tests/nst_goalie_catchup_v1.py
++++ b/supabase/tests/nst_goalie_catchup_v1.py
+@@ -291,6 +291,30 @@
+             q('reset role;update public.nst_goalie_control set enabled_at=null;set role service_role')
+             assert not rpc('nst_goalie_progress_v1',[20262027])['configurationKnown']
+         check('Durable progress distinguishes two stalled windows, progress, hold and unknown activation',progress_checks)
++        def invalid_activation_checks():
++            for settings in ["bootstrap_date=null", "bootstrap_date='2026-10-06'", "bootstrap_date='2026-11-01'",
++                    "enabled_at=null", "enabled_at='2026-11-02T07:00Z'"]:
++                reset();q('reset role;update public.nst_goalie_control set '+settings+';set role service_role')
++                assert rpc('nst_goalie_preparation_state_v1',[])['reviewRequired'],settings
++                progress=rpc('nst_goalie_progress_v1',[20262027])
++                assert not progress['configurationKnown'] and progress['reviewRequired'],(settings,progress)
++                assert progress['pending']==progress['held']==progress['inFlight']==progress['noProgressWindows']==0
++            reset()
++            progress=rpc('nst_goalie_progress_v1',[20262027])
++            assert progress['configurationKnown'] and not progress['reviewRequired'],progress
++            assert not rpc('nst_goalie_progress_v1',[20252026])['configurationKnown']
++            q('reset role;insert into public.seasons(id,"startDate","endDate","regularSeasonEndDate","numberOfGames") select 20262028,"startDate","endDate","regularSeasonEndDate","numberOfGames" from public.seasons where id=20262027;set role service_role')
++            assert rpc('nst_goalie_preparation_state_v1',[])['reviewRequired']
++            assert not rpc('nst_goalie_progress_v1',[20262027])['configurationKnown']
++            q('reset role;delete from public.seasons where id=20262028;update public.fixture_clock set at=\'2027-07-01T11:10Z\';set role service_role')
++            preparation=rpc('nst_goalie_preparation_state_v1',[])
++            assert not preparation['reviewRequired'] and preparation['startDate'] is None
++            progress=rpc('nst_goalie_progress_v1',[20262027])
++            assert not progress['configurationKnown'] and progress['reviewRequired']
++            q('reset role;update public.nst_goalie_control set enabled=false;set role service_role')
++            progress=rpc('nst_goalie_progress_v1',[20262027])
++            assert progress['configurationKnown'] and not progress['enabled']
++        check('Empty queues cannot mask invalid bootstrap, activation, ambiguous or ineligible season',invalid_activation_checks)
+         def lifecycle_checks():
+             reset();m=manifest();ensure(m);token=str(uuid.uuid4());deadline='2026-11-01T11:13Z'
+             assert rpc('nst_job_state_v1',[])['qualified']
+--- a/web/__tests__/pages/api/v1/db/update-nst-gamelog.test.ts
++++ b/web/__tests__/pages/api/v1/db/update-nst-gamelog.test.ts
+@@ -446,7 +446,7 @@
+       }</tbody></table>` });
+   }
+ 
+-  it.each([false, true])("settles lifecycle only after the manual audit (lost audit: %s)", async lostAudit => {
++  it.each(["complete", "partial", "lost-audit", "unresolved-source", "lost-write"])("settles lifecycle only after acknowledged gamelog I/O: %s", async outcome => {
+     vi.stubEnv("NST_JOB_LIFECYCLE_ENABLED", "true");
+     supplyThreePlayerRows();
+     const text = fetchNstTextByUrlMock.getMockImplementation()!;
+@@ -454,20 +454,36 @@
+       expect(currentNstJob()?.kind).toBe("direct");
+       return text(...args);
+     }));
+-    if (lostAudit) db.auditWriteFailure = "lost_ack";
++    if (outcome === "lost-audit") db.auditWriteFailure = "lost_ack";
++    if (outcome === "unresolved-source") fetchNstTextByUrlMock.mockResolvedValue({ text: "gateway page", response: { status: 200 } });
++    if (outcome === "lost-write") db.upsertPlan = [{ reject: "transport lost", commit: true }];
+     const calls: string[] = [];
+     vi.stubGlobal("fetch", vi.fn(async (url, init) => {
+       const name = String(url).split("/").at(-1)!; calls.push(name);
+       const args = JSON.parse(init!.body as string);
+       if (name.includes("finish") || name.includes("hold")) {
+-        expect(db.upsertCalls).toHaveLength(1);
++        expect(db.upsertCalls).toHaveLength(outcome === "unresolved-source" ? 0 : 1);
+         expect(db.auditWriteCalls).toBeGreaterThan(0);
+       }
+       return new Response(JSON.stringify({ status: name.includes("begin") ? "started" : name.includes("finish") ? "finished" : "held", token: args.p_token }));
+     }));
+-    const res = await run({ dates: "2026-10-03", datasetType: "fiveOnFiveCounts" });
+-    expect(res.statusCode).toBe(lostAudit ? 503 : 200);
+-    expect(calls).toEqual(["nst_job_begin_v1", lostAudit ? "nst_job_hold_v1" : "nst_job_finish_v1"]);
++    const directory = mkdtempSync(join(tmpdir(), "nst-lifecycle-continuation-"));
++    const store = createNstFileBudgetStore(directory);
++    try {
++    // Actual request budget produces an acknowledged one-of-twenty continuation.
++    if (outcome === "partial") {
++      const source = await text();
++      fetchNstTextByUrlMock.mockImplementation((url, options) => withNstJobDispatch(() =>
++        withNstRequestBudget(url, options.requestControl, async () => source, store)));
++    }
++    const res = await run(outcome === "partial" ? { dates: "2026-10-03", maxRequests: "1" }
++      : { dates: "2026-10-03", datasetType: "fiveOnFiveCounts" });
++    const safe = outcome === "complete" || outcome === "partial";
++    expect(res.statusCode).toBe(safe ? outcome === "partial" ? 207 : 200 : 503);
++    expect(calls).toEqual(["nst_job_begin_v1", safe ? "nst_job_finish_v1" : "nst_job_hold_v1"]);
++    if (outcome === "partial") expect(res.body).toMatchObject({ success: false, operationStatus: "continuation_required",
++      resume: { required: true }, nstProgress: { auditPersistence: "confirmed", continuation: { nextIndex: 1, blocked: false } } });
++    } finally { rmSync(directory, { recursive: true, force: true }); }
+   });
+ 
+   it.each(["timeout", "lost_ack", "malformed_ack", "null_ack"])(
+--- a/web/__tests__/pages/api/v1/db/update-nst-goalies.route.test.ts
++++ b/web/__tests__/pages/api/v1/db/update-nst-goalies.route.test.ts
+@@ -1,3 +1,4 @@
++import { currentNstJob, withNstJobDispatch } from "lib/nst/jobLifecycle.server";
+ import { GOALIE_DATASETS } from "lib/nst/goalieCatchup";
+ import { createMemoryRouteRunnerStore, makeJob } from "lib/routeRunner/memoryStore.testHelper";
+ import { runRouteRunnerTick } from "lib/routeRunner/tick";
+@@ -76,10 +77,6 @@
+   };
+ });
+ 
+-vi.mock("../../../../../lib/cron/withCronJobAudit", () => ({
+-  withCronJobAudit: (handler: unknown) => handler
+-}));
+-
+ vi.mock("@supabase/supabase-js", () => ({
+   createClient: createClientMock
+ }));
+@@ -123,12 +120,14 @@
+     vi.useFakeTimers();
+     vi.stubEnv("CRON_SECRET", "unit-test-cron-secret");
+     vi.clearAllMocks();
++    auditInsertMock.mockReset().mockResolvedValue({ error: null });
++    upsertMock.mockReset().mockResolvedValue({ error: null });
+     existsMock.mockReset().mockResolvedValue({ data: [], error: null });
+     checkpointRpcMock.mockReset();
+     exactIdentityMock.mockReset().mockResolvedValue({ data: { id: 8478402 }, error: null });
+   });
+ 
+-  afterEach(() => { vi.useRealTimers(); vi.unstubAllEnvs(); });
++  afterEach(() => { vi.useRealTimers(); vi.unstubAllEnvs(); vi.unstubAllGlobals(); });
+ 
+   it("keeps disabled daily preparation bounded and separate from provider work", async () => {
+     checkpointRpcMock.mockResolvedValue({ data: { version: 1, enabled: false, reviewRequired: false }, error: null });
+@@ -252,6 +251,42 @@
+     await vi.runAllTimersAsync();await pending;return res;
+   }
+   const html=`<table><thead><tr><th>Player</th><th>Team</th><th>GP</th></tr></thead><tbody><tr><td>John Goalie</td><td>TOR</td><td>1</td></tr></tbody></table>`;
++  it.each(["complete", "partial", "deferred", "source", "parse", "write", "audit", "provider-unknown"])(
++    "enabled real goalie wrappers settle only acknowledged invocation I/O: %s", async outcome => {
++      vi.stubEnv("NST_JOB_LIFECYCLE_ENABLED", "true");
++      fetchCurrentSeasonMock.mockResolvedValue({ id: 20252026, startDate: "2025-10-01", endDate: "2025-10-01" });
++      const dispatched: string[] = [], events: string[] = [];
++      fetchNstTextByUrlMock.mockReset().mockImplementation((url: string) => withNstJobDispatch(async () => {
++        expect(currentNstJob()?.kind).toBe("direct");
++        if (outcome === "deferred") throw new NstExecutionLimitError("No shared headroom; not dispatched");
++        dispatched.push(url);
++        if (outcome === "source") throw new Error("Unresolved source");
++        if (outcome === "provider-unknown") throw Object.assign(new NstExecutionLimitError("Lost provider completion"), { dispatchStarted: true });
++        return { text: outcome === "parse" ? "gateway page" : html };
++      }));
++      if (outcome === "write") upsertMock.mockRejectedValueOnce(new Error("Lost output acknowledgement"));
++      auditInsertMock.mockImplementationOnce(async () => {
++        events.push("audit");
++        if (outcome === "audit") throw new Error("Lost audit acknowledgement");
++        return { error: null };
++      });
++      vi.stubGlobal("fetch", vi.fn(async (url, init) => {
++        const name = String(url).split("/").at(-1)!; events.push(name);
++        const args = JSON.parse(init!.body as string);
++        expect(["nst_job_begin_v1", "nst_job_finish_v1", "nst_job_hold_v1"]).toContain(name);
++        return new Response(JSON.stringify({ status: name.includes("begin") ? "started" : name.includes("finish") ? "finished" : "held", token: args.p_token }));
++      }));
++      const safe = ["complete", "partial", "deferred"].includes(outcome);
++      const result = await invoke(outcome === "complete" ? { datasetType: "allCounts" } : { maxUrls: "1" });
++      expect(result.statusCode).toBe(safe ? outcome === "complete" ? 200 : 207 : 503);
++      expect(events).toEqual(["nst_job_begin_v1", "audit", safe ? "nst_job_finish_v1" : "nst_job_hold_v1"]);
++      expect(dispatched).toHaveLength(outcome === "deferred" ? 0 : 1);
++      expect(upsertMock).toHaveBeenCalledTimes(["deferred", "source", "parse", "provider-unknown"].includes(outcome) ? 0 : 1);
++      if (safe) expect(result.body).toMatchObject({ complete: outcome === "complete", retrySafe: outcome !== "complete",
++        nextCursor: outcome === "deferred" ? 0 : 1, requiresReview: false, finalAudit: { status: "persisted" } });
++      else expect(result.body.lifecycle.requiresReview).toBe(true);
++    });
++
+   it("excludes the current New York date from provider work", async () => {
+     vi.setSystemTime(new Date("2026-11-01T13:00:00Z"));
+     fetchCurrentSeasonMock.mockResolvedValue({ id: 20262027, startDate: "2026-10-28", endDate: "2027-04-15" });
+@@ -341,14 +376,13 @@
+   });
+ 
+   it("records actual wrapped deferral as continued and provider failure as failure, never healthy completion",async()=>{
+-    const actual=await vi.importActual<typeof import("lib/cron/withCronJobAudit")>("lib/cron/withCronJobAudit");
+     fetchCurrentSeasonMock.mockResolvedValue({id:20252026,startDate:"2025-10-01",endDate:"2025-10-01"});
+     fetchNstTextByUrlMock.mockRejectedValue(new NstExecutionLimitError("shared headroom"));
+-    const deferred=await invoke({},actual.withCronJobAudit(handler as any) as any);
++    const deferred=await invoke({},handler);
+     expect(deferred.statusCode).toBe(207);expect(deferred.body).toMatchObject({success:false,complete:false,nextCursor:0});
+     expect(auditInsertMock).toHaveBeenLastCalledWith(expect.objectContaining({status:"continued",rows_affected:null}));
+     fetchNstTextByUrlMock.mockRejectedValue(new Error("upstream timeout"));
+-    const failed=await invoke({},actual.withCronJobAudit(handler as any) as any);
++    const failed=await invoke({},handler);
+     expect(failed.statusCode).toBe(500);expect(auditInsertMock).toHaveBeenLastCalledWith(expect.objectContaining({status:"failure"}));
+   });
+ 
+@@ -367,8 +401,7 @@
+     const job=makeJob({route_path:path,contract:"next_start_date",initial_query:query,next_query:query,
+       created_at:new Date().toISOString(),expires_at:"2026-10-30T10:00:00Z"});
+     const memory=createMemoryRouteRunnerStore([job]);
+-    const actual=await vi.importActual<typeof import("lib/cron/withCronJobAudit")>("lib/cron/withCronJobAudit");
+-    const audited=actual.withCronJobAudit(handler as any);
++    const audited=handler;
+     for(let n=0;n<15;n++){
+       const pending=runRouteRunnerTick({store:memory.store,handlers:{[path]:audited},cronSecret:"unit-test-cron-secret",now:Date.now});
+       await vi.runAllTimersAsync();await pending;
+@@ -393,8 +426,7 @@
+     upsertMock.mockReset().mockResolvedValue({error:null});fetchNstTextByUrlMock.mockReset().mockResolvedValue({text:html});
+     auditInsertMock.mockReset().mockResolvedValue({error:null});
+     if(kind==="unpersisted audit")auditInsertMock.mockResolvedValueOnce({error:{message:"audit rejected"}} as any);
+-    const actual=await vi.importActual<typeof import("lib/cron/withCronJobAudit")>("lib/cron/withCronJobAudit");
+-    const audited=actual.withCronJobAudit(handler as any);const path="/api/v1/db/update-nst-goalies";
++    const audited=handler;const path="/api/v1/db/update-nst-goalies";
+     const query={startDate:"2025-10-01",maxDays:"1",overwrite:"yes",maxUrls:"1"};
+     const job=makeJob({route_path:path,initial_query:query,next_query:query,expires_at:"2026-10-30T10:00:00Z"});
+     const memory=createMemoryRouteRunnerStore([job]);
+@@ -480,11 +512,10 @@
+   it("runs the checkpoint route through the audited runner and completes its frozen scope", async () => {
+     const { scope } = checkpointFixture();
+     auditInsertMock.mockReset().mockResolvedValue({ error: null });
+-    const actual = await vi.importActual<typeof import("lib/cron/withCronJobAudit")>("lib/cron/withCronJobAudit");
+     const path = "/api/v1/db/update-nst-goalies", query = { catchupScope: scope };
+     const job = makeJob({ route_path: path, contract: null, initial_query: query, next_query: query, expires_at: "2026-11-04T11:10:00Z" });
+     const memory = createMemoryRouteRunnerStore([job]);
+-    const pending = runRouteRunnerTick({ store: memory.store, handlers: { [path]: actual.withCronJobAudit(handler as any) },
++    const pending = runRouteRunnerTick({ store: memory.store, handlers: { [path]: handler },
+       cronSecret: "unit-test-cron-secret", now: Date.now });
+     await vi.runAllTimersAsync();
+     expect((await pending).outcome).toBe("complete");
+--- a/web/lib/nst/goalieFreshness.server.test.ts
++++ b/web/lib/nst/goalieFreshness.server.test.ts
+@@ -110,6 +110,12 @@
+     f.rpc.mockImplementation(() => { throw new Error("RPC missing"); });
+     expect((await read(f.client)).checkpoint?.status).toBe("unknown");
+   });
++  it("never reports an empty queue healthy when activation prerequisites are invalid", async () => {
++    const f = fixture();
++    Object.assign(f.progress, { configurationKnown: false, reviewRequired: true });
++    expect(await read(f.client)).toMatchObject({ status: "unknown", matched: 4, missing: [],
++      checkpoint: { status: "unknown", pending: null, noProgressWindows: null } });
++  });
+   it("bounds a hung progress RPC independently of successful coverage reads", async () => {
+     const f = fixture(); f.rpc.mockImplementation(() => ({ abortSignal: () => new Promise(() => {}) }));
+     const pending = read(f.client); await vi.runAllTimersAsync();
+--- a/web/lib/nst/jobLifecycle.server.test.ts
++++ b/web/lib/nst/jobLifecycle.server.test.ts
+@@ -91,6 +91,24 @@
+     await vi.advanceTimersByTimeAsync(5000); await assertion;
+     expect(fetch.mock.calls[0][1]!.signal!.aborted).toBe(true);
+   });
++  it.each(["default-success-false", "default-retry-false", "review", "audit", "http"])(
++    "never weakens generic or common settlement vetoes: %s", async failure => {
++      vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://offline.invalid"); vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "fixture");
++      const calls: string[] = [];
++      vi.stubGlobal("fetch", vi.fn(async (url, init) => {
++        const name = String(url).split("/").at(-1)!; calls.push(name);
++        const args = JSON.parse(init!.body as string);
++        return new Response(JSON.stringify({ status: name.includes("begin") ? "started" : "held", token: args.p_token }));
++      }));
++      const res: any = { statusCode: 200, status(code: number) { this.statusCode = code; return this; }, json: vi.fn() };
++      const route = withNstJobLifecycle(async (_req, output) => {
++        output.status(failure === "http" ? 503 : 207).json({ success: failure !== "default-success-false",
++          retrySafe: failure !== "default-retry-false", requiresReview: failure === "review", auditPersisted: failure !== "audit" });
++      }, "fixture", undefined, failure.startsWith("default") ? undefined : { settled: () => true });
++      await route({} as any, res);
++      expect(res.statusCode).toBe(503);
++      expect(calls).toEqual(["nst_job_begin_v1", "nst_job_hold_v1"]);
++    });
+   it("opens no lifecycle for cached reads, but shares one begin across concurrent cache misses", async () => {
+     const f = fixture();
+     await runNstJob({ ...f.input, lazy: true }, async () => true);
+--- a/web/lib/nst/jobLifecycle.server.ts
++++ b/web/lib/nst/jobLifecycle.server.ts
+@@ -121,7 +121,7 @@
+   handler: (req: import("next").NextApiRequest, res: import("next").NextApiResponse) => Promise<unknown>,
+   owner: string,
+   skip?: (req: import("next").NextApiRequest) => boolean,
+-  options?: { lazy?: boolean },
++  options?: { lazy?: boolean; settled?: (body: any, statusCode: number) => boolean },
+ ) {
+   return async (req: import("next").NextApiRequest, res: import("next").NextApiResponse) => {
+     if (process.env.NST_JOB_LIFECYCLE_ENABLED !== "true" || skip?.(req)) return handler(req, res);
+@@ -131,8 +131,13 @@
+     res.json = ((value: unknown) => { captured = true; body = value; return res; }) as typeof res.json;
+     try {
+       await runNstJob({ owner, deadlineAt: Date.now() + 240_000, lazy: options?.lazy, settled: () => captured && !res.headersSent &&
+-        res.statusCode >= 200 && res.statusCode < 300 && body?.success !== false && body?.retrySafe !== false &&
+-        body?.operationStatus !== "failed" && body?.auditPersisted !== false }, async () => { await handler(req, res); });
++        res.statusCode >= 200 && res.statusCode < 300 && body?.requiresReview !== true &&
++        body?.operationStatus !== "failed" && body?.auditPersisted !== false &&
++        // Some routes report queue completion/replay safety separately from
++        // this invocation's acknowledged I/O. Only their explicit classifier
++        // may accept those outcomes; all other callers keep the strict default.
++        (options?.settled ? options.settled(body, res.statusCode)
++          : body?.success !== false && body?.retrySafe !== false) }, async () => { await handler(req, res); });
+       res.json = originalJson;
+       return res.json(body);
+     } catch {
+--- a/web/pages/api/v1/db/update-nst-gamelog.ts
++++ b/web/pages/api/v1/db/update-nst-gamelog.ts
+@@ -3154,4 +3154,17 @@
+   }
+ }
+ 
+-export default adminOnly(withNstJobLifecycle(withNhlOffSeasonSkip(handler as any), "update-nst-gamelog", req => !["GET", "POST"].includes(req.method ?? "")));
++export default adminOnly(withNstJobLifecycle(withNhlOffSeasonSkip(handler as any), "update-nst-gamelog",
++  req => !["GET", "POST"].includes(req.method ?? ""),
++  { settled: (body, status) => {
++    if (body?.success === true && body.skipped === true && body.reason === "nhl_off_season") return true;
++    const progress = body?.nstProgress;
++    if (progress?.auditPersistence !== "confirmed" || progress.sourceOutcomes?.unresolvedCount !== 0) return false;
++    if (status === 200 && body.success === true && progress.stoppedEarly === false) return true;
++    return status === 207 && body.success === false && body.operationStatus === "continuation_required" &&
++      body.resume?.required === true && progress.state === "continuation_required" && progress.stoppedEarly === true &&
++      progress.continuation?.blocked === false && progress.continuation.nextIndex > 0 &&
++      progress.continuation.nextIndex < progress.plannedRequestCount && !progress.sourceDown &&
++      Array.isArray(progress.missingScheduleDates) && progress.missingScheduleDates.length === 0;
++  } },
++));
+--- a/web/pages/api/v1/db/update-nst-goalies.ts
++++ b/web/pages/api/v1/db/update-nst-goalies.ts
+@@ -659,6 +659,7 @@
+         `Start date ${startDate.toISOString().split("T")[0]} is after regular season end ${regularSeasonEndDateIso}. No regular-season NST goalie dates to scrape.`
+       );
+       return {
++        success: true, complete: true, operationStatus: "complete", requiresReview: false,
+         message: "No regular-season NST goalie dates to scrape.",
+         pendingUrlsProcessed: 0,
+         totalQueuedUrls: 0,
+@@ -698,6 +699,7 @@
+     if (datesToScrape.length === 0) {
+       console.log("No new dates to scrape.");
+       return {
++        success: true, complete: true, operationStatus: "complete", requiresReview: false,
+         message: "No new dates to scrape.",
+         pendingUrlsProcessed: 0,
+         totalQueuedUrls: 0,
+@@ -949,4 +951,18 @@
+   return latestDate;
+ }
+ 
+-export default adminOnly(withNstJobLifecycle(withCronJobAudit(withNhlOffSeasonSkip(handler as any)), "update-nst-goalies", req => req.method !== "GET" || req.query.prepareCatchup === "true" || typeof req.query.catchupScope === "string"));
++export default adminOnly(withNstJobLifecycle(
++  withCronJobAudit(withNhlOffSeasonSkip(handler as any), { includeFinalAuditReceipt: true }),
++  "update-nst-goalies",
++  req => req.method !== "GET" || req.query.prepareCatchup === "true" || typeof req.query.catchupScope === "string",
++  { settled: (body, status) => {
++    if (body?.finalAudit?.owner !== "withCronJobAudit" || body.finalAudit.status !== "persisted") return false;
++    if (body.success === true && body.skipped === true && body.reason === "nhl_off_season") return true;
++    if (body.requiresReview !== false) return false;
++    if (status === 200 && body.success === true && body.complete === true && body.operationStatus === "complete") return true;
++    return status === 207 && body.success === false && body.complete === false && body.operationStatus === "partial" &&
++      body.retrySafe === true && body.resume?.required === true && body.stoppedEarly === true &&
++      Array.isArray(body.urlProgress) && body.urlProgress.every((url: { status: string }) =>
++        ["processed", "skipped", "empty_valid", "deferred"].includes(url.status));
++  } },
++));

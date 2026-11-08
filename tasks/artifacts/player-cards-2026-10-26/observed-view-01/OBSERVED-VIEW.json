@@ -1,0 +1,130 @@
+{
+  "id": "observed-6b8c204b26e3120552c123a367bb67e182db7e3be7e7c0d3a09a975627c12c92",
+  "source": "local-observed",
+  "evidenceState": "incomplete",
+  "player": {
+    "id": 8476453,
+    "name": "Nikita Kucherov",
+    "team": "TBL"
+  },
+  "settings": {
+    "season": 20262027,
+    "gameType": "regular",
+    "strength": "all",
+    "cutoff": "2026-10-24T00:00:00Z",
+    "period": {
+      "mode": "appearances",
+      "count": 5
+    },
+    "seasonPolicy": "season-only-proposed",
+    "shortSamplePolicy": "allow-known-short-proposed",
+    "rankPolicy": "competition-midrank-proposed"
+  },
+  "capturedAt": "2026-10-26T15:42:14.608Z",
+  "sample": {
+    "gp": null,
+    "toiSeconds": null,
+    "firstDate": null,
+    "lastDate": null
+  },
+  "readings": [
+    {
+      "id": "atoi",
+      "value": null,
+      "state": "missing",
+      "rank": null,
+      "reason": "Metric source or period evidence incomplete",
+      "rankReason": "Rank unavailable: comparison pool incomplete"
+    },
+    {
+      "id": "sog60",
+      "value": null,
+      "state": "missing",
+      "rank": null,
+      "reason": "Metric source or period evidence incomplete",
+      "rankReason": "Rank unavailable: comparison pool incomplete"
+    },
+    {
+      "id": "icf60",
+      "value": null,
+      "state": "missing",
+      "rank": null,
+      "reason": "Metric source or period evidence incomplete",
+      "rankReason": "Rank unavailable: comparison pool incomplete"
+    },
+    {
+      "id": "iscf60",
+      "value": null,
+      "state": "missing",
+      "rank": null,
+      "reason": "Metric source or period evidence incomplete",
+      "rankReason": "Rank unavailable: comparison pool incomplete"
+    },
+    {
+      "id": "ixg60",
+      "value": null,
+      "state": "missing",
+      "rank": null,
+      "reason": "Metric source or period evidence incomplete",
+      "rankReason": "Rank unavailable: comparison pool incomplete"
+    },
+    {
+      "id": "cf60",
+      "value": null,
+      "state": "missing",
+      "rank": null,
+      "reason": "Metric source or period evidence incomplete",
+      "rankReason": "Rank unavailable: comparison pool incomplete"
+    },
+    {
+      "id": "scf60",
+      "value": null,
+      "state": "missing",
+      "rank": null,
+      "reason": "Metric source or period evidence incomplete",
+      "rankReason": "Rank unavailable: comparison pool incomplete"
+    },
+    {
+      "id": "xgf60",
+      "value": null,
+      "state": "missing",
+      "rank": null,
+      "reason": "Metric source or period evidence incomplete",
+      "rankReason": "Rank unavailable: comparison pool incomplete"
+    },
+    {
+      "id": "xgPct",
+      "value": null,
+      "state": "missing",
+      "rank": null,
+      "reason": "Metric source or period evidence incomplete",
+      "rankReason": "Rank unavailable: comparison pool incomplete"
+    },
+    {
+      "id": "ipp",
+      "value": null,
+      "state": "missing",
+      "rank": null,
+      "reason": "Metric source or period evidence incomplete",
+      "rankReason": "Rank unavailable: comparison pool incomplete"
+    },
+    {
+      "id": "shPct",
+      "value": null,
+      "state": "missing",
+      "rank": null,
+      "reason": "Metric source or period evidence incomplete",
+      "rankReason": "Rank unavailable: comparison pool incomplete"
+    },
+    {
+      "id": "oiShPct",
+      "value": null,
+      "state": "missing",
+      "rank": null,
+      "reason": "Metric source or period evidence incomplete",
+      "rankReason": "Rank unavailable: comparison pool incomplete"
+    }
+  ],
+  "poolComplete": false,
+  "exportable": false
+}

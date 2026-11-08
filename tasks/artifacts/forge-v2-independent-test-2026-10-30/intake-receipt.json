@@ -1,0 +1,15 @@
+{
+  "check": "intake",
+  "command": [
+    "python3",
+    "-m",
+    "unittest",
+    "-v",
+    "test_intake_check.py"
+  ],
+  "cwd": "/tmp/forge-v2-independent-hkh8ulbm/tasks/artifacts/forge-v2-remediation-2026-10-30",
+  "exit": 0,
+  "durationSeconds": 0.2234959602355957,
+  "environment": "allowlisted; no inherited credentials; no env files copied",
+  "log": "intake.log"
+}

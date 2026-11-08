@@ -1,0 +1,675 @@
+--- handoff/web/pages/api/v1/db/update-nst-goalies.ts
++++ web/pages/api/v1/db/update-nst-goalies.ts
+@@ -1,5 +1,6 @@
+ import { createHash } from "node:crypto";
+ import { NstExecutionLimitError, type NstRequestControl } from "lib/nst/requestBudget";
++import { completedGoalieDate } from "lib/nst/goalieCatchup";
+ // /Users/tim/Desktop/FHFH/fhfhockey.com/web/pages/api/v1/db/update-nst-goalies.ts
+ 
+ /**
+@@ -259,9 +260,27 @@
+ 
+ const troublesomePlayers: string[] = [];
+ 
++async function boundedGoalieQuery<T>(query: PromiseLike<T>, deadlineAt: number, timeoutMs = 5_000): Promise<T> {
++  const controller = new AbortController();
++  const remaining = Math.min(timeoutMs, deadlineAt - Date.now());
++  if (remaining <= 0) throw new Error("Goalie database deadline exhausted.");
++  const abortable = query as PromiseLike<T> & { abortSignal?: (signal: AbortSignal) => PromiseLike<T> };
++  let timer: ReturnType<typeof setTimeout> | undefined;
++  try {
++    return await Promise.race([
++      abortable.abortSignal ? abortable.abortSignal(controller.signal) : query,
++      new Promise<never>((_, reject) => { timer = setTimeout(() => {
++        controller.abort();
++        reject(new Error("Goalie database acknowledgement timed out."));
++      }, remaining); }),
++    ]);
++  } finally { clearTimeout(timer); }
++}
++
+ async function getGoalieIdByName(
+   fullName: string,
+-  position: string
++  position: string,
++  deadlineAt: number
+ ): Promise<number | null> {
+   const mappedName = goalieNameMapping[fullName]
+     ? goalieNameMapping[fullName].fullName
+@@ -269,13 +288,13 @@
+   const normalizedFullName = normalizeName(mappedName);
+   const goaliePosition = "G"; // Force goalie position
+ 
+-  const { data, error } = await supabase
++  const { data, error } = await boundedGoalieQuery(supabase
+     .from("players")
+     .select("id")
+     .ilike("fullName", `%${mappedName}%`)
+     .eq("position", goaliePosition)
+     .limit(1)
+-    .maybeSingle();
++    .maybeSingle(), deadlineAt);
+ 
+   if (error) return null;
+   if (!data) {
+@@ -418,7 +437,7 @@
+   return [];
+ }
+ 
+-async function upsertData(datasetType: string, dataRows: any[]) {
++async function upsertData(datasetType: string, dataRows: any[], deadlineAt = Date.now() + 20_000) {
+   if (dataRows.length === 0) {
+     console.warn(`No data rows to upsert for datasetType "${datasetType}".`);
+     return;
+@@ -430,7 +449,7 @@
+ 
+   const dataRowsWithPlayerIds: any[] = [];
+   for (const row of dataRows) {
+-    const goalieId = await getGoalieIdByName(row["player_name"], row["team"]);
++    const goalieId = await getGoalieIdByName(row["player_name"], row["team"], deadlineAt);
+     if (!goalieId) {
+       console.warn(
+         `Player ID not found for ${row["player_name"]} (${row["team"]})`
+@@ -445,16 +464,17 @@
+   console.log(
+     `Upserting ${dataRowsWithPlayerIds.length} rows into table "${tableName}".`
+   );
+-  const receipt = await supabase
++  const receipt = await boundedGoalieQuery(supabase
+     .from(tableName)
+-    .upsert(dataRowsWithPlayerIds, { onConflict: "player_id,date_scraped" });
++    .upsert(dataRowsWithPlayerIds, { onConflict: "player_id,date_scraped" }), deadlineAt, 15_000);
+   if (!receipt || receipt.error !== null) throw new Error("Goalie output persistence was not acknowledged; inspect before replaying.");
+   console.log(`Successfully acknowledged goalie upsert into "${tableName}".`);
+ }
+ 
+ async function checkDataExists(
+   datasetType: string,
+-  date: string
++  date: string,
++  deadlineAt = Date.now() + 5_000
+ ): Promise<boolean> {
+   const tableName = getGoalieTableName(datasetType);
+   if (tableName === "unknown_goalie_table") {
+@@ -463,14 +483,13 @@
+     );
+     return false;
+   }
+-  const { data, error } = await supabase
++  const { data, error } = await boundedGoalieQuery(supabase
+     .from(tableName)
+     .select("player_id")
+     .eq("date_scraped", date)
+-    .limit(1);
++    .limit(1), deadlineAt);
+   if (error) {
+-    console.error(`Error checking data in ${tableName}:`, error.message);
+-    return false;
++    throw new Error(`Goalie coverage read failed for ${tableName}; no missing-work assumption is safe.`);
+   }
+   const exists = data && data.length > 0;
+   console.log(`Data existence check for "${tableName}" on ${date}: ${exists}`);
+@@ -505,7 +524,7 @@
+ async function processUrlsSequentially(
+   urlsQueue: { datasetType: string; url: string; date: string; seasonId: string }[],
+   options: { requestIntervalMs: number; maxPendingUrls?: number; overwrite: boolean;
+-    requestControl: NstRequestControl; startIndex: number }
++    requestControl: NstRequestControl; startIndex: number; existing: readonly boolean[] }
+ ) {
+   let pendingProcessedCount = 0;
+   let nextCursor = options.startIndex;
+@@ -521,7 +540,7 @@
+     const startedAt = Date.now();
+     let writeStarted = false;
+     try {
+-      const exists = !options.overwrite && await checkDataExists(datasetType, date);
++      const exists = options.existing[i];
+       let rows: any[] = [];
+       if (!exists) {
+         if (Date.now() + options.requestIntervalMs + 35_000 >= options.requestControl.deadlineAt) {
+@@ -529,7 +548,7 @@
+         }
+         if (options.requestIntervalMs > 0) await delay(options.requestIntervalMs);
+         rows = await fetchAndParseData(url, datasetType, date, seasonId, 1, options.requestControl);
+-        if (rows.length) { writeStarted = true; await upsertData(datasetType, rows); acknowledgedWriteUrls++; }
++        if (rows.length) { writeStarted = true; await upsertData(datasetType, rows, options.requestControl.deadlineAt); acknowledgedWriteUrls++; }
+         else emptyValidUrls++;
+         pendingProcessedCount++;
+       }
+@@ -564,15 +583,18 @@
+     datasetType?: string;
+     cursor?: number;
+     resumeScope?: string;
++    plannedUrls?: number;
++    deadlineAt?: number;
+   } = {}
+ ) {
+   const startedAt = Date.now();
++  const deadlineAt = Math.min(startedAt + 220_000, options.deadlineAt ?? Infinity);
+   try {
+     const runMode = options.runMode ?? "incremental";
+     const overwrite =
+       options.overwrite ?? (runMode === "incremental" ? false : true);
+ 
+-    const seasonInfo = await fetchCurrentSeason();
++    const seasonInfo = await boundedGoalieQuery(fetchCurrentSeason(), deadlineAt);
+     const seasonId = seasonInfo.id.toString();
+     const seasonStartDate = parseISO(seasonInfo.startDate);
+     const regularSeasonEndDateIso =
+@@ -581,16 +603,16 @@
+       throw new Error("Current season is missing a regular-season end date.");
+     }
+     const regularSeasonEndDate = parseISO(regularSeasonEndDateIso);
+-    const today = new Date();
++    const lastCompletedDate = parseISO(completedGoalieDate(new Date()));
+     const scrapingEndDate =
+-      today < regularSeasonEndDate ? today : regularSeasonEndDate;
++      lastCompletedDate < regularSeasonEndDate ? lastCompletedDate : regularSeasonEndDate;
+ 
+     let startDate = seasonStartDate;
+     if (options.startDate) {
+       startDate = parseISO(options.startDate);
+       console.log(`Using explicit startDate ${options.startDate}.`);
+     } else if (runMode === "incremental") {
+-      const latestDateStr = await getLatestDateSupabase();
++      const latestDateStr = await getLatestDateSupabase(deadlineAt);
+       if (latestDateStr) {
+         startDate = parseISO(latestDateStr);
+         console.log(
+@@ -676,12 +698,35 @@
+       }
+     });
+ 
++    const startIndex = options.cursor ?? 0;
++    if (!Number.isSafeInteger(startIndex) || startIndex < 0 || startIndex > urlsQueue.length ||
++        (startIndex > 0 && !options.resumeScope) ||
++        (options.resumeScope !== undefined && options.plannedUrls === undefined) ||
++        (options.resumeScope === undefined && options.plannedUrls !== undefined)) {
++      throw new Error("Goalie continuation needs its acknowledged whole-job request plan; reconcile legacy progress before resuming.");
++    }
++    const existing: boolean[] = Array(urlsQueue.length).fill(false);
++    for (let index = startIndex; index < urlsQueue.length; index++) {
++      if (Date.now() + 35_000 >= deadlineAt) throw new Error("Goalie coverage preflight exceeded its read budget; no provider request started.");
++      existing[index] = !overwrite && await checkDataExists(urlsQueue[index].datasetType, urlsQueue[index].date, deadlineAt);
++    }
++    const pendingUrlsAtStart = existing.slice(startIndex).filter(value => !value).length;
++    const plannedUrls = options.plannedUrls ?? pendingUrlsAtStart;
++    if (!Number.isSafeInteger(plannedUrls) || plannedUrls < pendingUrlsAtStart || plannedUrls > urlsQueue.length) {
++      throw new Error("Goalie pending work no longer fits its acknowledged whole-job plan.");
++    }
++    const scope = createHash("sha256").update(JSON.stringify({ runMode, overwrite, plannedUrls,
++      queue: urlsQueue.map(({date,datasetType})=>[date,datasetType]) })).digest("hex");
++    if (options.resumeScope !== undefined && options.resumeScope !== scope) {
++      throw new Error("Goalie resume cursor/scope does not match the complete queue and request plan.");
++    }
+     const requestedMaxPendingUrls =
+       options.maxPendingUrls ??
+       (runMode === "forward" ? undefined : DEFAULT_MAX_PENDING_URLS_PER_RUN);
+     const preliminaryNstRequestPlan = resolveGoalieNstRequestPlan({
+       queuedDates: datesToScrape.length,
+       totalQueuedUrls: urlsQueue.length,
++      plannedRequestCount: plannedUrls,
+       maxPendingUrls: requestedMaxPendingUrls ?? urlsQueue.length,
+       explicitRequestIntervalMs: options.requestIntervalMs
+     });
+@@ -694,23 +739,20 @@
+     const nstRequestPlan = resolveGoalieNstRequestPlan({
+       queuedDates: datesToScrape.length,
+       totalQueuedUrls: urlsQueue.length,
++      plannedRequestCount: plannedUrls,
+       maxPendingUrls: maxPendingUrls ?? urlsQueue.length,
+       explicitRequestIntervalMs: options.requestIntervalMs
+     });
+     const requestIntervalMs = nstRequestPlan.requestIntervalMs;
+ 
+-    const scope = createHash("sha256").update(JSON.stringify({ runMode, overwrite,
+-      queue: urlsQueue.map(({date,datasetType})=>[date,datasetType]) })).digest("hex");
+-    const startIndex = options.cursor ?? 0;
+-    if (!Number.isSafeInteger(startIndex) || startIndex < 0 || startIndex > urlsQueue.length ||
+-        (startIndex > 0 && options.resumeScope !== scope)) throw new Error("Goalie resume cursor/scope does not match the complete queue.");
+     const result = await processUrlsSequentially(urlsQueue, {
+       requestIntervalMs,
+       maxPendingUrls,
+       overwrite,
+       startIndex,
+-      requestControl: { deadlineAt: startedAt + 220_000, maxAttempts: urlsQueue.length * 3,
+-        attemptsStarted: 0, minIntervalMs: requestIntervalMs, plannedRequestCount: urlsQueue.length }
++      existing,
++      requestControl: { deadlineAt, maxAttempts: Math.max(1, plannedUrls * 3),
++        attemptsStarted: 0, minIntervalMs: requestIntervalMs, plannedRequestCount: plannedUrls }
+     });
+ 
+     if (troublesomePlayers.length > 0) {
+@@ -724,6 +766,7 @@
+     const canResume = result.stoppedEarly && !result.failed;
+     const resumeQuery: Record<string,string> = { runMode, overwrite: String(overwrite),
+       startDate: datesToScrape[0], maxDays: String(datesToScrape.length), cursor: String(result.nextCursor), resumeScope: scope,
++      plannedUrls: String(plannedUrls),
+       ...(options.datasetType ? {datasetType:options.datasetType}:{}),
+       ...(options.maxPendingUrls !== undefined ? {maxUrls:String(options.maxPendingUrls)}:{}),
+       ...(options.requestIntervalMs !== undefined ? {requestIntervalMs:String(options.requestIntervalMs)}:{}) };
+@@ -746,6 +789,8 @@
+       ...(canResume ? { resume: { required: true, request: { query: resumeQuery } } } : {}),
+       pendingUrlsProcessed: result.pendingProcessedCount,
+       totalQueuedUrls: urlsQueue.length,
++      plannedUrls,
++      pendingUrlsAtStart,
+       stoppedEarly: result.stoppedEarly,
+       datesQueued: datesToScrape.length,
+       requestIntervalMs,
+@@ -789,6 +834,9 @@
+         : req.query.datasetType,
+       cursor: req.query.cursor === undefined ? undefined : Number(req.query.cursor),
+       resumeScope: typeof req.query.resumeScope === "string" ? req.query.resumeScope : undefined,
++      plannedUrls: req.query.plannedUrls === undefined ? undefined : Number(req.query.plannedUrls),
++      deadlineAt: typeof req.query.deadlineAt === "string" && Number.isFinite(Number(req.query.deadlineAt))
++        ? Number(req.query.deadlineAt) : undefined,
+       startDate: Array.isArray(req.query.startDate)
+         ? req.query.startDate[0]
+         : req.query.startDate
+@@ -801,7 +849,7 @@
+   }
+ }
+ 
+-async function getLatestDateSupabase(): Promise<string | null> {
++async function getLatestDateSupabase(deadlineAt: number): Promise<string | null> {
+   const tableNames = [
+     "nst_gamelog_goalie_5v5_counts",
+     "nst_gamelog_goalie_5v5_rates",
+@@ -816,13 +864,13 @@
+   ];
+   let latestDate: string | null = null;
+   for (const table of tableNames) {
+-    const { data, error } = await supabase
++    const { data, error } = await boundedGoalieQuery(supabase
+       .from(table)
+       .select("date_scraped")
+       .order("date_scraped", { ascending: false })
+       .limit(1)
+-      .maybeSingle();
+-    if (error) continue;
++      .maybeSingle(), deadlineAt);
++    if (error) throw new Error("Goalie high-water read failed; no provider request started.");
+     if (data && data.date_scraped) {
+       if (!latestDate || parseISO(data.date_scraped) > parseISO(latestDate)) {
+         latestDate = data.date_scraped;
+--- handoff/web/__tests__/pages/api/v1/db/update-nst-goalies.route.test.ts
++++ web/__tests__/pages/api/v1/db/update-nst-goalies.route.test.ts
+@@ -10,11 +10,12 @@
+   fetchCurrentSeasonMock,
+   fetchNstTextByUrlMock,
+   isNstConfigErrorMock,
+-  upsertMock
++  upsertMock, existsMock
+ } = vi.hoisted(() => {
+   process.env.NEXT_PUBLIC_SUPABASE_URL = "https://example.supabase.co";
+   process.env.SUPABASE_SERVICE_ROLE_KEY = "service-role-key";
+ 
++  const existsMock = vi.fn().mockResolvedValue({ data: [], error: null });
+   const upsertMock = vi.fn().mockResolvedValue({ error: null });
+ 
+   const supabaseClient = {
+@@ -49,7 +50,7 @@
+           return {
+             eq() {
+               return {
+-                limit: vi.fn().mockResolvedValue({ data: [], error: null })
++                limit: existsMock
+               };
+             }
+           };
+@@ -66,7 +67,7 @@
+     isNstConfigErrorMock: vi.fn((error: unknown) =>
+       error instanceof Error && error.name === "NstConfigError"
+     ),
+-    upsertMock
++    upsertMock, existsMock
+   };
+ });
+ 
+@@ -117,6 +118,7 @@
+     vi.useFakeTimers();
+     vi.stubEnv("CRON_SECRET", "unit-test-cron-secret");
+     vi.clearAllMocks();
++    existsMock.mockReset().mockResolvedValue({ data: [], error: null });
+   });
+ 
+   afterEach(() => { vi.useRealTimers(); vi.unstubAllEnvs(); });
+@@ -229,6 +231,52 @@
+     await vi.runAllTimersAsync();await pending;return res;
+   }
+   const html=`<table><thead><tr><th>Player</th><th>Team</th><th>GP</th></tr></thead><tbody><tr><td>John Goalie</td><td>TOR</td><td>1</td></tr></tbody></table>`;
++  it("excludes the current New York date from provider work", async () => {
++    vi.setSystemTime(new Date("2026-11-01T13:00:00Z"));
++    fetchCurrentSeasonMock.mockResolvedValue({ id: 20262027, startDate: "2026-10-28", endDate: "2027-04-15" });
++    fetchNstTextByUrlMock.mockResolvedValue({ text: html });
++    const result = await invoke({ startDate: "2026-10-28", maxDays: "5", datasetType: "allCounts" });
++    expect(result.body).toMatchObject({ datesQueued: 4, totalQueuedUrls: 4, plannedUrls: 4 });
++    expect(result.body.urlProgress.map((row: any) => row.date)).toEqual(["2026-10-28", "2026-10-29", "2026-10-30", "2026-10-31"]);
++  });
++  it("plans all missing URLs before applying a per-call cap and freezes that plan across continuation", async () => {
++    fetchCurrentSeasonMock.mockResolvedValue({ id: 20252026, startDate: "2025-10-01", endDate: "2025-10-04" });
++    fetchNstTextByUrlMock.mockResolvedValue({ text: html });
++    existsMock.mockResolvedValueOnce({ data: [{ player_id: 1 }], error: null });
++    const first = await invoke({ maxDays: "4", maxUrls: "1" });
++    expect(first.body).toMatchObject({ totalQueuedUrls: 40, plannedUrls: 39, pendingUrlsAtStart: 39, requestIntervalMs: 0, nextCursor: 2 });
++    const second = await invoke(first.body.resume.request.query);
++    expect(second.body).toMatchObject({ plannedUrls: 39, pendingUrlsAtStart: 38, nextCursor: 3 });
++    expect(second.body.resume.request.query.resumeScope).toBe(first.body.resume.request.query.resumeScope);
++  });
++  it("retains strict pacing when a 40-URL plan has fewer than 40 URLs remaining", async () => {
++    fetchCurrentSeasonMock.mockResolvedValue({ id: 20252026, startDate: "2025-10-01", endDate: "2025-10-04" });
++    fetchNstTextByUrlMock.mockResolvedValue({ text: html });
++    const first = await invoke({ maxDays: "4", maxUrls: "1" });
++    const second = await invoke(first.body.resume.request.query);
++    expect(second.body).toMatchObject({ plannedUrls: 40, pendingUrlsAtStart: 39, requestIntervalMs: 21000 });
++  });
++  it.each(["error", "timeout"])("fails closed on a coverage read %s before NST dispatch", async kind => {
++    fetchCurrentSeasonMock.mockResolvedValue({ id: 20252026, startDate: "2025-10-01", endDate: "2025-10-01" });
++    if (kind === "error") existsMock.mockResolvedValue({ data: null, error: { message: "unavailable" } });
++    else existsMock.mockImplementation(() => new Promise(() => {}));
++    const result = await invoke();
++    expect(result.statusCode).toBe(500);
++    expect(fetchNstTextByUrlMock).not.toHaveBeenCalled();
++    expect(upsertMock).not.toHaveBeenCalled();
++  });
++  it("does not start NST when the runner deadline leaves insufficient headroom", async () => {
++    fetchCurrentSeasonMock.mockResolvedValue({ id: 20252026, startDate: "2025-10-01", endDate: "2025-10-01" });
++    const result = await invoke({ deadlineAt: String(Date.now() + 30_000) });
++    expect(result.statusCode).toBe(500);
++    expect(fetchNstTextByUrlMock).not.toHaveBeenCalled();
++  });
++  it.each([{ plannedUrls: "1" }, { cursor: "1", resumeScope: "a".repeat(64) }] as Record<string, string>[])("rejects unscoped or legacy request plans", async query => {
++    fetchCurrentSeasonMock.mockResolvedValue({ id: 20252026, startDate: "2025-10-01", endDate: "2025-10-01" });
++    const result = await invoke(query);
++    expect(result.statusCode).toBe(500);
++    expect(fetchNstTextByUrlMock).not.toHaveBeenCalled();
++  });
+   it.each(["minute headroom","five-minute headroom","late deadline"])("defers %s without dispatch, upsert, completed URL or cursor advance",async(reason)=>{
+     fetchCurrentSeasonMock.mockResolvedValue({id:20252026,startDate:"2025-10-01",endDate:"2025-10-01"});
+     fetchNstTextByUrlMock.mockRejectedValue(new NstExecutionLimitError(reason));
+@@ -364,7 +412,8 @@
+     const memory=createMemoryRouteRunnerStore([job]);
+     const pending=runRouteRunnerTick({store:memory.store,handlers:{[path]:handler},cronSecret:"unit-test-cron-secret",now:Date.now});
+     await vi.runAllTimersAsync();const result=await pending;
+-    expect(result.action).toBe("timed_out");expect(memory.jobs.get(job.id)!.status).toBe("failed");
++    expect(result).toMatchObject({ action: "stepped", outcome: "fail" });expect(memory.jobs.get(job.id)!.status).toBe("failed");
++    expect(Date.now()).toBe(new Date("2026-10-27T10:00:15Z").getTime());
+     expect(upsertMock).toHaveBeenCalledTimes(1);
+     await runRouteRunnerTick({store:memory.store,handlers:{[path]:handler},cronSecret:"unit-test-cron-secret",now:Date.now});
+     expect(upsertMock).toHaveBeenCalledTimes(1);
+--- handoff/web/lib/cron/nstBurstPlans.ts
++++ web/lib/cron/nstBurstPlans.ts
+@@ -67,17 +67,20 @@
+ export function resolveGoalieNstRequestPlan(options: {
+   queuedDates: number;
+   totalQueuedUrls: number;
++  /** Complete preflight-missing cohort, frozen across continuation; not maxUrls. */
++  plannedRequestCount?: number;
+   maxPendingUrls: number;
+   explicitRequestIntervalMs?: number;
+ }) {
+-  const requestCountBudget = Math.min(
+-    options.totalQueuedUrls,
+-    options.maxPendingUrls
+-  );
++  const requestCount = options.plannedRequestCount ?? options.totalQueuedUrls;
++  if (!Number.isSafeInteger(requestCount) || requestCount < 0 || requestCount > options.totalQueuedUrls) {
++    throw new Error("Invalid complete goalie request count.");
++  }
++  const requestCountBudget = Math.min(requestCount, options.maxPendingUrls);
+   const sharedPlan = resolveSharedSmallDateBurstPlan({
+     jobName: "update-nst-goalies",
+     queuedDates: options.queuedDates,
+-    requestCount: options.totalQueuedUrls,
++    requestCount,
+     safeIntervalMs: NST_GOALIES_REQUEST_INTERVAL_MS,
+     explicitRequestIntervalMs: options.explicitRequestIntervalMs
+   });
+@@ -85,6 +88,7 @@
+   return {
+     queuedDates: options.queuedDates,
+     totalQueuedUrls: options.totalQueuedUrls,
++    plannedRequestCount: requestCount,
+     urlsPerDate: GOALIE_URLS_PER_DATE,
+     requestCountBudget,
+     requestIntervalMs: sharedPlan.requestIntervalMs,
+--- handoff/web/lib/cron/nstBurstPlans.test.ts
++++ web/lib/cron/nstBurstPlans.test.ts
+@@ -161,6 +161,12 @@
+       requestIntervalMs: 30_000, usedExplicitInterval: true, explicitIntervalRejected: false });
+   });
+ 
++  it("uses the whole pending plan while retaining full queue bounds", () => {
++    expect(resolveGoalieNstRequestPlan({ queuedDates: 4, totalQueuedUrls: 40, plannedRequestCount: 37, maxPendingUrls: 6 })).toMatchObject({ burstAllowed: true, plannedRequestCount: 37 });
++    for (const plannedRequestCount of [-1, 41, NaN, 1.5]) {
++      expect(() => resolveGoalieNstRequestPlan({ queuedDates: 4, totalQueuedUrls: 40, plannedRequestCount, maxPendingUrls: 6 })).toThrow();
++    }
++  });
+   it("does not hide a large goalie backlog behind a small per-run cap", () => {
+     const plan = resolveGoalieNstRequestPlan({
+       queuedDates: 5,
+--- handoff/web/lib/routeRunner/core.ts
++++ web/lib/routeRunner/core.ts
+@@ -408,7 +408,7 @@
+ }
+ 
+ const GOALIE_QUERY_KEYS = ["runMode", "startDate", "maxDays", "overwrite", "datasetType",
+-  "maxUrls", "requestIntervalMs", "cursor", "resumeScope"];
++  "maxUrls", "requestIntervalMs", "cursor", "resumeScope", "plannedUrls"];
+ const GOALIE_ADMISSION_WAIT_MS = 60_000;
+ 
+ function urlCursor(value: unknown): number | null {
+@@ -434,6 +434,12 @@
+   if (!raw || Object.keys(raw).some(key=>!GOALIE_QUERY_KEYS.includes(key))) return fail("missing query or unapproved field.");
+   const nextQuery = scalarQuery(raw);
+   if (!nextQuery || !/^[a-f0-9]{64}$/.test(nextQuery.resumeScope ?? "")) return fail("invalid scoped query.");
++  if (nextQuery.plannedUrls !== undefined) {
++    const planned = urlCursor(nextQuery.plannedUrls);
++    if (planned == null || total == null || planned > total || body.plannedUrls !== planned) {
++      return fail("whole-job request count is invalid or disagrees with the response.");
++    }
++  }
+   const cursor = urlCursor(nextQuery.cursor);
+   const prior = sent.cursor === undefined ? 0 : urlCursor(sent.cursor);
+   if (cursor == null || prior == null || total == null || cursor < prior || cursor >= total || body.nextCursor !== cursor) {
+--- handoff/web/lib/routeRunner/core.test.ts
++++ web/lib/routeRunner/core.test.ts
+@@ -446,6 +446,15 @@
+     expect(classifyStepResult("goalie_url_cursor",result(),sent)).toMatchObject({kind:"continue",nextQuery:{...scope,cursor:"1"},progressDone:1});
+     expect(classifyStepResult("goalie_url_cursor",result(2),{...scope,cursor:"1"})).toMatchObject({kind:"continue",nextQuery:{...scope,cursor:"2"}});
+   });
++  it("acknowledges and freezes the producer's whole-job request count", () => {
++    const answer: any = result(1, { ...scope, cursor: "1", plannedUrls: "10" });
++    answer.body.plannedUrls = 10;
++    expect(classifyStepResult("goalie_url_cursor", answer, sent).kind).toBe("continue");
++    answer.body.plannedUrls = 9;
++    expect(classifyStepResult("goalie_url_cursor", answer, sent).kind).toBe("fail");
++    answer.body.resume.request.query.plannedUrls = "9";
++    expect(classifyStepResult("goalie_url_cursor", answer, { ...scope, cursor: "0", plannedUrls: "10" }).kind).toBe("fail");
++  });
+   it("waits with the frozen query when no URL was dispatched",()=>{
+     expect(classifyStepResult("goalie_url_cursor",result(0),sent)).toMatchObject({kind:"wait",nextQuery:{...scope,cursor:"0"}});
+     const paused=result(1);paused.body.pendingUrlsProcessed=0;paused.body.acknowledgedWriteUrls=0;paused.body.urlProgress=[{status:"deferred"}];
+--- handoff/web/lib/routeRunner/registry.ts
++++ web/lib/routeRunner/registry.ts
+@@ -124,6 +124,9 @@
+   "/api/v1/db/update-nst-goalies": {
+     label: "NST goalies",
+     contract: "goalie_url_cursor",
++    deadlineParam: "deadlineAt",
++    deadlineHeadroomMs: 20_000,
++    runnerParams: ["deadlineAt"],
+     example:
+       "/api/v1/db/update-nst-goalies?runMode=incremental&startDate=2025-10-07&overwrite=no",
+     notes:
+--- handoff/web/pages/api/v1/db/cron-report.ts
++++ web/pages/api/v1/db/cron-report.ts
+@@ -4,6 +4,7 @@
+ import vercelConfiguration from "../../../../vercel.json";
+ 
+ import { CronAuditEmail } from "components/CronReportEmail/CronAuditEmail";
++import { readGoalieFreshness } from "lib/nst/goalieFreshness.server";
+ import {
+   getBenchmarkAnnotations,
+   hasBenchmarkAnnotationKind,
+@@ -1718,6 +1719,13 @@
+     return { ...auditRow, expectedWorkWarning: expectedWorkWarning(auditRow, seasonWindow, gameDataRoutes) };
+   };
+   const auditRows = audits.map(toAuditRow);
++  // Coverage is independent of writer audit success (or a missing audit).
++  const goalieFreshnessPromise = readGoalieFreshness({ client: supabase, now,
++    season: seasonWindow, sourceDeadlineAt,
++    writerAuditPresent: auditRows.some(row => row.parsed.routePath === "/api/v1/db/update-nst-goalies"),
++    // Durable catch-up receipts must establish no-progress windows before this
++    // signal can be asserted. Age-based escalation remains independently active.
++    noProgressWindows: 0 });
+   const configuredVercelSchedules = Array.from(new Map(vercelConfiguration.crons.map((entry) => {
+     const route = canonicalRoute(entry.path);
+     const schedule = entry.schedule.trim().replace(/\s+/g, " ");
+@@ -1754,6 +1762,7 @@
+   const lastKnownSuccessMap = buildLastKnownSuccessMap([
+     ...auditRows, ...(successHistorySource?.rows ?? []).map(toAuditRow),
+   ], successHistory.complete);
++  const goalieFreshness = await goalieFreshnessPromise;
+   const sourceElapsedMs = Date.now() - now.getTime();
+   const auditGapGraceStartedAt =
+     auditRows
+@@ -2375,8 +2384,11 @@
+                 ? `⚠️ Daily Cron Report — ${counts.jobsUnknownLast} unknown`
+                 : counts.jobsDisabledLast > 0
+                   ? `⚠️ Daily Cron Report — ${counts.jobsDisabledLast} quarantined`
+-                  : `✅ Daily Cron Report — ${counts.jobsOkLast}/${counts.scheduledJobs} jobs ok`,
++                  : ["warning", "critical", "unknown"].includes(goalieFreshness.status)
++                    ? `⚠️ Daily Cron Report — goalie coverage ${goalieFreshness.status}`
++                    : `✅ Daily Cron Report — ${counts.jobsOkLast}/${counts.scheduledJobs} jobs ok`,
+         react: CronAuditEmail({
++          goalieFreshness,
+           configuredVercelSchedules,
+           audits: [...auditBriefings, ...notableUnscheduledRuns],
+           sinceDate: since,
+@@ -2487,6 +2499,7 @@
+     },
+     successHistory,
+     totalsComplete: runSource.complete && auditSource.complete,
++    goalieFreshness,
+     countScope: "observed",
+     scheduleInventory: { denominatorScope: "pg_cron entries enabled in repository inventory and due in this window; hosted activation separately reconciled",
+       notDueJobs: notDueJobs.map((job) => ({ name: job.name, schedule: job.cronExpression })),
+--- handoff/web/__tests__/pages/api/v1/db/cron-report.test.ts
++++ web/__tests__/pages/api/v1/db/cron-report.test.ts
+@@ -12,7 +12,9 @@
+   readFileMock,
+   cronAuditEmailMock,
+   loadNhlSeasonWindowMock,
++  readGoalieFreshnessMock,
+ } = vi.hoisted(() => ({
++  readGoalieFreshnessMock: vi.fn(),
+   cronJobReportSelectMock: vi.fn(),
+   cronJobAuditSelectMock: vi.fn(),
+   cronJobAuditHistorySelectMock: vi.fn(),
+@@ -49,6 +51,8 @@
+   return query;
+ }
+ 
++vi.mock("lib/nst/goalieFreshness.server", () => ({ readGoalieFreshness: readGoalieFreshnessMock }));
++
+ vi.mock("@supabase/supabase-js", () => ({
+   createClient: vi.fn(() => ({
+     from: vi.fn((table: string) => {
+@@ -125,6 +129,16 @@
+ }
+ 
+ describe("/api/v1/db/cron-report", () => {
++  it("reports goalie coverage independently when writer audit receipts are missing", async () => {
++    const coverage = { status: "critical", checkedAt: "2026-03-20T13:00:00Z", cutoffDate: "2026-03-19", expected: 60, matched: 0,
++      missing: [{ season: "20252026", goalieId: 1, date: "2026-03-17", reason: "missing_row" }], oldestGap: "2026-03-17", warnings: ["Writer audit is missing."] };
++    readGoalieFreshnessMock.mockResolvedValue(coverage);
++    const res = createMockRes();
++    await handler({ method: "GET" } as any, res);
++    expect(readGoalieFreshnessMock).toHaveBeenCalledWith(expect.objectContaining({ writerAuditPresent: false, noProgressWindows: 0 }));
++    expect(res.body.goalieFreshness).toEqual(coverage);
++    expect(cronAuditEmailMock).toHaveBeenCalledWith(expect.objectContaining({ goalieFreshness: coverage }));
++  });
+   it("excludes weekly and calendar jobs that are not due without inventing missing runs", async () => {
+     readFileMock.mockResolvedValue(`SELECT cron.schedule('weekly','15 8 * * 0',$$SELECT 1;$$);
+ SELECT cron.schedule('daily','0 8 * * *',$$SELECT 1;$$);`);
+@@ -312,6 +326,7 @@
+ 
+   beforeEach(() => {
+     vi.clearAllMocks();
++    readGoalieFreshnessMock.mockResolvedValue({ status: "not_due", warnings: [], missing: [], cutoffDate: "2026-03-19", expected: null, matched: null });
+     adminAdmissionMock.mockReturnValue(true);
+     cronJobAuditHistorySelectMock.mockResolvedValue({ data: [], error: null });
+     vi.stubGlobal("AbortSignal", { timeout: vi.fn(() => new AbortController().signal) });
+--- handoff/web/components/CronReportEmail/CronAuditEmail.tsx
++++ web/components/CronReportEmail/CronAuditEmail.tsx
+@@ -2,6 +2,7 @@
+ 
+ import { formatExecutionDuration, isNearRepositoryLimit } from "lib/cron/reportMetrics";
+ import { formatReportTime } from "lib/cron/reportSource";
++import type { GoalieFreshness } from "lib/nst/goalieFreshness";
+ 
+ type BenchmarkAnnotation = { kind: string; note: string };
+ 
+@@ -35,6 +36,7 @@
+ }
+ 
+ interface CronAuditEmailProps {
++  goalieFreshness?: GoalieFreshness;
+   audits: AuditEntry[];
+   configuredVercelSchedules?: Array<{ route: string; schedule: string; activation: "unverified"; receiptCount?: number; latestReceiptStatus?: string; latestReceiptAt?: string | null }>;
+   sinceDate: string;
+@@ -86,7 +88,7 @@
+ 
+ type FailureGroup = { jobName: string; rows: AuditEntry[]; latest: AuditEntry; lastSuccess: string | null; recovered: boolean };
+ 
+-export const CronAuditEmail: React.FC<CronAuditEmailProps> = ({ audits, sinceDate, untilDate, totalsComplete = true, fetchErrors = [], successHistory, summary, configuredVercelSchedules = [] }) => {
++export const CronAuditEmail: React.FC<CronAuditEmailProps> = ({ audits, sinceDate, untilDate, totalsComplete = true, fetchErrors = [], successHistory, summary, configuredVercelSchedules = [], goalieFreshness }) => {
+   const globalWarnings = Array.from(new Set([
+     ...fetchErrors,
+     ...audits.flatMap((row) => row.missingObservationWarnings ?? []).filter((warning) => warning.includes("Telemetry source unavailable")),
+@@ -156,7 +158,8 @@
+   const sectionTitle = (title: string) => <h2 style={{ fontSize: 16, margin: "22px 0 10px" }}>{title}</h2>;
+   const hasFailures = summary.auditFailures > 0 || (summary.cronFailures ?? 0) > 0;
+   const allRecovered = hasFailures && openFailures.length === 0 && recovered.length > 0 && !(summary.omittedFailureObservations ?? 0) && !(summary.cronFailures ?? 0);
+-  const headline = allRecovered ? "Earlier failures have recovered." : hasFailures ? "Failures need attention." : audits.length === 0 ? "Execution health is unknown." : !totalsComplete ? "Coverage needs attention." : exceptionLines.length > 0 ? "A few jobs need a look." : "Runs look healthy.";
++  const goalieCoverageNeedsAttention = goalieFreshness && ["warning", "critical", "unknown"].includes(goalieFreshness.status);
++  const headline = hasFailures && !allRecovered ? "Failures need attention." : goalieCoverageNeedsAttention ? "Goalie coverage needs attention." : allRecovered ? "Earlier failures have recovered." : audits.length === 0 ? "Execution health is unknown." : !totalsComplete ? "Coverage needs attention." : exceptionLines.length > 0 ? "A few jobs need a look." : "Runs look healthy.";
+ 
+   return <div style={{ backgroundColor: "#F7F7F2", fontFamily: "Arial, sans-serif", fontSize: 14, lineHeight: 1.5, color: "#202020", maxWidth: 640, margin: "0 auto", padding: 20 }}>
+     <div style={{ borderTop: "4px solid #B45309", paddingTop: 16 }}>
+@@ -173,6 +176,13 @@
+       <strong style={{ fontSize: 13 }}>Telemetry coverage incomplete; totals unknown.</strong>
+       {globalWarnings.map((warning, index) => <div key={index} style={{ fontSize: 12, marginTop: 4 }}>{concise(warning)}</div>)}
+       <div style={{ fontSize: 12, marginTop: 4 }}>Missing receipts do not establish success.</div>
++    </div> : null}
++
++    {goalieFreshness ? <div style={{ margin: "16px 0", fontSize: 13 }}>
++      <strong>NST goalie coverage: {goalieFreshness.status.replace("_", " ").toUpperCase()}</strong>
++      <div>Through {goalieFreshness.cutoffDate}: {number(goalieFreshness.matched)} of {number(goalieFreshness.expected)} retained WGO goalie-games have HD data.</div>
++      {goalieFreshness.missing.length > 0 ? <div style={{ color: red }}>{goalieFreshness.missing.length} missing or incomplete; oldest gap {goalieFreshness.oldestGap}.</div> : null}
++      {goalieFreshness.warnings.map((warning, index) => <div key={index} style={muted}>{warning}</div>)}
+     </div> : null}
+ 
+     {openFailures.length > 0 ? <>
+--- handoff/web/__tests__/components/CronReportEmail/CronAuditEmail.test.tsx
++++ web/__tests__/components/CronReportEmail/CronAuditEmail.test.tsx
+@@ -6,6 +6,17 @@
+ import { CronAuditEmail } from "components/CronReportEmail/CronAuditEmail";
+ 
+ describe("CronAuditEmail", () => {
++  it("shows missing HD coverage independently from execution health", () => {
++    const html = renderToStaticMarkup(<CronAuditEmail audits={[]} sinceDate="2026-11-01T13:00:00Z"
++      summary={{ auditRuns: 0, auditSuccesses: 0, auditFailures: 0, auditUnknown: 0, totalRowsUpserted: 0, totalFailedRows: 0 }}
++      goalieFreshness={{ status: "critical", checkedAt: "2026-11-01T13:00:00Z", cutoffDate: "2026-10-31", expected: 60, matched: 59,
++        missing: [{ season: "20262027", goalieId: 1, date: "2026-10-28", reason: "missing_hd" }], oldestGap: "2026-10-28",
++        latestExpectedDate: "2026-10-31", latestCompleteDate: "2026-10-31", perDate: [], warnings: ["Writer audit is missing."] }} />);
++    expect(html).toContain("NST goalie coverage: CRITICAL");
++    expect(html).toContain("59 of 60 retained WGO goalie-games");
++    expect(html).toContain("oldest gap 2026-10-28");
++    expect(html).toContain("Writer audit is missing.");
++  });
+   it("keeps a planned continuation visible as in progress", () => {
+     const html = renderToStaticMarkup(<CronAuditEmail sinceDate="2026-10-20T00:00:00Z"
+       summary={{ auditRuns: 1, auditSuccesses: 0, auditFailures: 0, auditUnknown: 0, totalRowsUpserted: 1, totalFailedRows: 0 }}

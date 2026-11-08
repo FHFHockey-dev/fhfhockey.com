@@ -1,0 +1,23 @@
+{
+  "state": "P2_CLOSED_NO_ADDITIONAL_FINDINGS",
+  "files": {
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-pagination-rereview-2026-11-01/RESOLVED-REVIEW.md": "eb13dfb2b18da16377cd6624706aef0b484c8980827d0d84f27aac14792dbfd9",
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-pagination-rereview-2026-11-01/RESULT.json": "434b40af160c9bef31d4d797915ce2384fbb435b1bf13a4f0f968f18999ba528",
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-pagination-rereview-2026-11-01/BROWSER.log": "823b55811e485021d8d740650b4d81f4f7faf5ffa9f1362626f558f33ce7a29a",
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-pagination-rereview-2026-11-01/runtime-02/RESULT.json": "84fb9c1091cc049d872f52ae386458510c10d026f1caf73911f1f74f1273d1fb",
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-pagination-rereview-2026-11-01/runtime-02/PINS.json": "48f74e9c0ec6974f97999fd8e8f69f02e91bcea4746af5311b798c9fd465d738",
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-pagination-rereview-2026-11-01/BROWSER-02.log": "a97de0979c0eb40976bb71ce7bf3bc93f1c174bea71c06b786b6c5f71ce859f8",
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-pagination-rereview-2026-11-01/review.cjs": "63e0ce79edaafd9c49fb45a78e2218f9756960271cfe553ad3771a0d343531a8",
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-pagination-rereview-2026-11-01/review-resume.cjs": "ca22127632e32f2b14f04b62ecde503c7176a85ed5840d0a1a0156a1e6fbeec1",
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-pagination-rereview-2026-11-01/runtime-02/final-1440.png": "ff38173ccb387b9ac42cf76a8f14bf6df472aa27e845cc481465885098a6caf4",
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/blsh-pagination-rereview-2026-11-01/runtime-02/final-320.png": "7cb4206ace278f139946073605e7bbe4b056d4f63491b9daccd4df909fed0802"
+  },
+  "finalCasesPassed": 8,
+  "intermediateCasesPassed": 6,
+  "unchangedInputPins": 56,
+  "externalRequests": 0,
+  "sourceEdits": 0,
+  "holdoutAccess": 0,
+  "ownedLock": false,
+  "pendingApproval": false
+}

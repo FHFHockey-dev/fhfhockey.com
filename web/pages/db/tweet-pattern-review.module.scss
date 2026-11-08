@@ -45,6 +45,22 @@
   }
 }
 
+.trainerLink {
+  padding: 4px 10px;
+  border: 1px solid v.$primary-color;
+  border-radius: v.$radius-control;
+  color: v.$color-white;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+
+  &:hover,
+  &:focus-visible {
+    outline: none;
+    background: rgba(v.$primary-color, 0.16);
+  }
+}
+
 .statusMessage {
   margin-left: auto;
   min-width: 0;

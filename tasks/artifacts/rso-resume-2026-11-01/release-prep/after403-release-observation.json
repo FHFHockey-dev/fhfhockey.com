@@ -1,0 +1,22 @@
+{
+  "observedAt": "2026-11-01T20:22:30.575Z",
+  "projectId": "prj_LV0wbwH5gRjOsZlowzEFNGRuX7Lw",
+  "teamId": "team_KVFicHhQJARTbO6wRD2x6jpq",
+  "operation": "list_deployments, exact SHA and production target, limit 3",
+  "deployments": [
+    {
+      "id": "dpl_2cVCwMEth7cnVSdMQuoB6L1ZqXyn",
+      "url": "fhfhockey-kuch443wl-fhfhockeydevs-projects.vercel.app",
+      "state": "READY",
+      "target": "production",
+      "created": 1793563686279,
+      "commit": "295b384da47f2a4665a76d841d3d1aa701912d8c",
+      "branch": "master",
+      "inspectorUrl": "https://vercel.com/fhfhockeydevs-projects/fhfhockey/2cVCwMEth7cnVSdMQuoB6L1ZqXyn"
+    }
+  ],
+  "newBuilds": 0,
+  "newDeployments": 0,
+  "applicationRequests": 0,
+  "doesNotEstablishIssuedModelIdentity": true
+}

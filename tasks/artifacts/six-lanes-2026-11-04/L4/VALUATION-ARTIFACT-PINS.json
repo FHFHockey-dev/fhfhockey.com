@@ -1,0 +1,11 @@
+{
+  "installed_observation_hashes_still_match": true,
+  "artifacts": {
+    "DECISION-RECEIPTS.json": "4ac2d23c22c9b36350b2d59e0d20e1916844dec102c9ab379887861a65a8755b",
+    "DECISIONS-AND-NEXT-ADAPTER.md": "c611c5d1fff12e01d4553d95e4bf56ee9d9ba23a946768f6e4e6e41000865950",
+    "valuationAdapter.ts": "f98b59822ac8572b736d0e7143d6348a531d448d7da67942c281c3f1339da4af",
+    "valuationAdapter.checks.ts": "892cbb5bf94b1a026aaad65faa4dc14db4778f57bdcd83da13b19eb227f3ae36",
+    "valuation-check.config.mts": "2c357284b30ffb082ec75d76679727e782ba8446eb62a7699564e839eed0a96f",
+    "VALUATION-CHECKS.json": "23bb3925e18425137655f39dd0df9395e91279dbb0ce33b351d105236a3a1bfd"
+  }
+}

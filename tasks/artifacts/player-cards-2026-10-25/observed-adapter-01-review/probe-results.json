@@ -1,0 +1,31 @@
+{
+  "node": "v22.11.0",
+  "networkAttempts": 0,
+  "syntheticOnly": true,
+  "results": [
+    {
+      "name": "Distinct player windows, known-short and zero PP exposure stay in applicable metric pools",
+      "status": "passed"
+    },
+    {
+      "name": "Missing peer component blocks only dependent ranks; never becomes zero or shrinks pool silently",
+      "status": "passed"
+    },
+    {
+      "name": "Wrong player/season/date cannot backfill missing exact identity; duplicates are not pooled",
+      "status": "passed"
+    },
+    {
+      "name": "Mixed batch capture times cannot hide pre-final on-ice data behind fresh individual data",
+      "status": "passed"
+    },
+    {
+      "name": "UTC/history/participation/finality/model evidence gates cannot produce qualified selected values",
+      "status": "passed"
+    },
+    {
+      "name": "Same-date distinct official games fail closed and incomplete declared population cannot rank",
+      "status": "passed"
+    }
+  ]
+}

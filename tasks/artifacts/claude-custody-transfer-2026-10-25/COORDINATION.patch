@@ -1,0 +1,617 @@
+--- tasks/artifacts/cross-platform/2026-10-24-coordination/CODEX-LEASES.json
++++ tasks/artifacts/cross-platform/2026-10-24-coordination/CODEX-LEASES.json
+@@ -1,7 +1,7 @@
+ {
+   "type": "scope_reservations_not_claim_of_active_editing",
+   "owner": "Scout / Codex",
+-  "as_of_utc": "2026-10-25T14:59:24.884974+00:00",
++  "as_of_utc": "2026-10-25T16:32:28.072974+00:00",
+   "reserved_path_patterns": [
+     "web/lib/projections/**",
+     "web/lib/player-forecasts/**",
+@@ -543,6 +543,12 @@
+         "auth_budget": "0of1hostedAuthreadsused perworker; coordinator0. No profile/settingswrite reported.",
+         "remaining": "Authenticatedsampleviewing requires narrowlyreviewedcontainment for inheritedprofile/settingswrites and repeated gate verification. Frozen/sharedauthlease unchanged. No newUUIDinput/manualreload needed for thissetting.",
+         "controller_question": "Prior async terminal-controller question no longer a prerequisite for this completed hotreload step; only relevant if laterrestartneeded. No controller inferred."
++      },
++      "implementation_handoff": {
++        "at": "2026-10-25T16:32:28.072974+00:00",
++        "status": "COMPLETED IDLE / source custody handed to Claude; original accepted/config receipts historical",
++        "manifest": "tasks/artifacts/claude-custody-transfer-2026-10-25/TRANSFER-MANIFEST.json",
++        "no_active_codex_write": true
+       }
+     },
+     {
+@@ -1996,14 +2002,17 @@
+         "render-preview.mjs",
+         "preview.html"
+       ],
+-      "status": "Frozen handback; independent review/visual verification pending; no further edits under this slice while S03-R1 is prioritized.",
++      "status": "RELEASED / FROZEN HANDOFF TO CLAUDE \u2014 original Codex owner completed; no further Codex source write. Existing source/artifact receipts preserved; fresh exact Claude leases required.",
+       "scope": "Synthetic fixture-only UI using frozen accepted operational progress/data-health contracts; installed Sass tokens; focused DOM/static checks and self-contained local HTML only",
+       "limits": "No slice03 imports or mutations, real launch/cancel/reveal/repair, requests, server/Next build/browser slot, shared page/auth/navigation/style/token/tooling writes, installations, hosted calls, spend or Git mutation.",
+       "future_integration_request": {
+         "path": "web/pages/forge/testing-grounds.tsx",
+         "exists_at_coordinator_read": false,
+         "status": "Outside current lease; exact parent transfer and reviewed server owner gate required before activation. No transfer or page/auth/nav write authorized here."
+-      }
++      },
++      "historical_status_before_owner_handoff": "Frozen handback; independent review/visual verification pending; no further edits under this slice while S03-R1 is prioritized.",
++      "handoff_at": "2026-10-25T16:32:28.072974+00:00",
++      "current_codex_implementation_write_paths": []
+     },
+     {
+       "id": "CODEX-C3-CLEANUP-20261024",
+@@ -2051,8 +2060,11 @@
+         "r1.vitest.config.mts",
+         "config-generated local test cache"
+       ],
+-      "status": "Frozen correction handback; same independent Sol reviewer reportedly received packet; Scout acceptance pending. No active editing/check operation reported.",
+-      "limits": "Remaining slice03 source, original packets/reviewer evidence and slice04 read-only. Only original unchanged S03-R1 reproducer/adjacent control and focused runner regressions/scoped static checks. No route/shared/server/live/model/migration/spend/Git."
++      "status": "RELEASED / FROZEN HANDOFF TO CLAUDE \u2014 original Codex owner completed; no further Codex source write. Existing source/artifact receipts preserved; fresh exact Claude leases required.",
++      "limits": "Remaining slice03 source, original packets/reviewer evidence and slice04 read-only. Only original unchanged S03-R1 reproducer/adjacent control and focused runner regressions/scoped static checks. No route/shared/server/live/model/migration/spend/Git.",
++      "historical_status_before_owner_handoff": "Frozen correction handback; same independent Sol reviewer reportedly received packet; Scout acceptance pending. No active editing/check operation reported.",
++      "handoff_at": "2026-10-25T16:32:28.072974+00:00",
++      "current_codex_implementation_write_paths": []
+     },
+     {
+       "id": "CODEX-TG-SLICE05-20261024",
+@@ -2072,7 +2084,7 @@
+         "web/pages/api/v1/forge/testing-grounds/runs/index.ts",
+         "web/pages/api/v1/forge/testing-grounds/runs/[runId]/[operation].ts"
+       ],
+-      "status": "Frozen handback; no further edits/operations reported; Scout independent acceptance pending.",
++      "status": "RELEASED / FROZEN HANDOFF TO CLAUDE \u2014 original Codex owner completed; no further Codex source write. Existing source/artifact receipts preserved; fresh exact Claude leases required.",
+       "scope": "Dedicated request-scoped server-verified owner boundary, inactive owner API wrappers and generic locked SSR frame with no protected data/private props. Workspace/data/actions only after verified owner, with independent verification per API call.",
+       "limits": "No shared auth/context/_app/nav/styles changes, no owner/environment configuration changes or values, no hosted DB/provider/session calls, activation, migrations, spend or Git. No localhost auth bypass. Missing owner configuration remains fail-closed.",
+       "localhost_viewing_exception": {
+@@ -2088,7 +2100,10 @@
+           "web/lib/forge-testing-grounds/TestingGroundsOwnerGate.test.tsx"
+         ],
+         "status": "Only2returned to same owner for active correction; other8and original/review artifacts frozen."
+-      }
++      },
++      "historical_status_before_owner_handoff": "Frozen handback; no further edits/operations reported; Scout independent acceptance pending.",
++      "handoff_at": "2026-10-25T16:32:28.072974+00:00",
++      "current_codex_implementation_write_paths": []
+     },
+     {
+       "id": "CODEX-PLAYER-CARDS-S01-20261024",
+@@ -2129,7 +2144,7 @@
+         "tasks/tasks-prd-shareable-player-cards.md"
+       ],
+       "diary": "tasks/diaries/2026-10-24-codex-player-cards.md",
+-      "status": "Frozen handback;9source/UI/artifacts read-only for independent review. Existing static preview continues; S02 work disjoint.",
++      "status": "RELEASED / FROZEN HANDOFF TO CLAUDE \u2014 original Codex owner completed; no further Codex source write. Existing source/artifact receipts preserved; fresh exact Claude leases required.",
+       "scope": "Independent fixture-only player-card slice using installed esbuild/Sass, self-contained preview/browser-canvas export; no shared auth/Next/provider/export imports or edits",
+       "required_model": "GPT-6.1 Sol per user staffing rule; actual model not independently verified here",
+       "excluded": [
+@@ -2144,7 +2159,10 @@
+       ],
+       "route": "web/pages/player-cards.tsx remains absent/ungranted until explicit exact route lease after preview acceptance.",
+       "identity_correction": "01a16ebb-511a-7303-b18f-ad27997d9852 was a Library preparation scid, not the owner.",
+-      "parent_acceptance": "Locally accepted with limits; frozen; phone design review/live data remain open."
++      "parent_acceptance": "Locally accepted with limits; frozen; phone design review/live data remain open.",
++      "historical_status_before_owner_handoff": "Frozen handback;9source/UI/artifacts read-only for independent review. Existing static preview continues; S02 work disjoint.",
++      "handoff_at": "2026-10-25T16:32:28.072974+00:00",
++      "current_codex_implementation_write_paths": []
+     },
+     {
+       "id": "CODEX-C2-NEWS-COPY-20261024",
+@@ -2186,7 +2204,7 @@
+         "web/lib/player-cards/registry.ts",
+         "web/lib/player-cards/ranking.ts"
+       ],
+-      "status": "Frozen S02 handback for Scout independent review; no further source edit/route/live activation grant inferred.",
++      "status": "RELEASED / FROZEN HANDOFF TO CLAUDE \u2014 original Codex owner completed; no further Codex source write. Existing source/artifact receipts preserved; fresh exact Claude leases required.",
+       "scope": "Pure supplied-record appearance windows, pooled aggregation math, coverage/adapter-unavailable contracts and focused tests only",
+       "limits": "Preserve all9 frozen S01 source pins/UI/artifacts/server; no shared/WiGO/source repair, route/UI activation, fetch/service/provider/production calls, paid capabilities, broad architecture, dependency/migration or Git action",
+       "required_model": "GPT-6.1 Sol; no new worker dispatched by coordinator",
+@@ -2197,7 +2215,10 @@
+           "web/lib/player-cards/domain.test.ts"
+         ],
+         "status": "Exactly2source returned to same owner; original packet/probes preserved"
+-      }
++      },
++      "historical_status_before_owner_handoff": "Frozen S02 handback for Scout independent review; no further source edit/route/live activation grant inferred.",
++      "handoff_at": "2026-10-25T16:32:28.072974+00:00",
++      "current_codex_implementation_write_paths": []
+     },
+     {
+       "id": "CODEX-TG-S05-R1-20261024",
+@@ -2230,8 +2251,11 @@
+       ],
+       "scope": "Hidden-page auth-refresh P2 correction: document foreground plus independent pagehide latch before session reads/verification and after async completion; only legitimate pageshow/visible return can reverify. Preserve session generations/capabilities/inactive actions/APIs.",
+       "limits": "Original slice05/review/reproducer/failure packets frozen; no other8source/shared auth/config/fixture/live/server/browser/Git/paid changes. Focused original reproducer/adjacent lifecycle races then scoped static only.",
+-      "status": "Frozen S05-R1 correction handback; Scout-routed focused independent re-review pending; no further edits/operations reported.",
+-      "parent_acceptance": "Locally accepted lifecycle correction; frozen; activation blocked0of1read used."
++      "status": "RELEASED / FROZEN HANDOFF TO CLAUDE \u2014 original Codex owner completed; no further Codex source write. Existing source/artifact receipts preserved; fresh exact Claude leases required.",
++      "parent_acceptance": "Locally accepted lifecycle correction; frozen; activation blocked0of1read used.",
++      "historical_status_before_owner_handoff": "Frozen S05-R1 correction handback; Scout-routed focused independent re-review pending; no further edits/operations reported.",
++      "handoff_at": "2026-10-25T16:32:28.072974+00:00",
++      "current_codex_implementation_write_paths": []
+     },
+     {
+       "id": "CODEX-PLAYER-CARDS-S03-20261024",
+@@ -2249,7 +2273,7 @@
+         "web/components/player-cards/PlayerCardFlow.test.tsx"
+       ],
+       "artifact_root": "tasks/artifacts/player-cards-2026-10-24/slice-03/",
+-      "status": "S03 frozen checkpoint for independent Scout review; no new source edit or activation authority.",
++      "status": "RELEASED / FROZEN HANDOFF TO CLAUDE \u2014 original Codex owner completed; no further Codex source write. Existing source/artifact receipts preserved; fresh exact Claude leases required.",
+       "scope": "Fixture-only multi-player labeled synthetic cohort, ownL5/L10/L20/inclusive calendar/history-unavailable flow through frozen contracts; consistent displayed SVG/nativeCanvas PNG+manifest. New dynamic renderer only, reuse frozen metric formatting/cardPng read-only.",
+       "frozen_integrity": "All55S01/S02source+artifact pins unchanged at grant check:37S01+18S02. No source or browser tests rerun by coordinator.",
+       "limits": "No S01/S02/frozen/shared source/UI/auth/nav/styles/export/entitlement edits, candidate page route, live/provider/production/services/WiGO repair, dependency/migration/Git or new workers.",
+@@ -2262,7 +2286,10 @@
+           "web/components/player-cards/PlayerCardFlow.test.tsx"
+         ],
+         "status": "Exactly3returned for presentation/accessibility correction; original packet/evidence preserved."
+-      }
++      },
++      "historical_status_before_owner_handoff": "S03 frozen checkpoint for independent Scout review; no new source edit or activation authority.",
++      "handoff_at": "2026-10-25T16:32:28.072974+00:00",
++      "current_codex_implementation_write_paths": []
+     },
+     {
+       "id": "CODEX-PLAYER-CARDS-S02-R1-20261024",
+@@ -2281,7 +2308,7 @@
+         "web/lib/player-cards/domain.test.ts": "d24196f3844d151ed6de16427bd34ba5f41a61b2164a49a710a54b0e1a0d9978",
+         "web/lib/player-cards/aggregation.r1.test.ts": null
+       },
+-      "status": "Locally accepted bounded correction; frozen, no new edits granted.",
++      "status": "RELEASED / FROZEN HANDOFF TO CLAUDE \u2014 original Codex owner completed; no further Codex source write. Existing source/artifact receipts preserved; fresh exact Claude leases required.",
+       "before_snapshot_requirement": "Before any canonical mutation, worker must preserve exact aggregation.ts/domain.test.ts source bytes in R1 evidence and verify hashes above. Coordinator did not write worker-owned snapshots.",
+       "artifact_root": "tasks/artifacts/player-cards-2026-10-24/slice-02-r1/",
+       "scope": "Two P2 per-row logical component-validity corrections before pooling: metric-specific positive-event/exposure consistency and ratio numerator/denominator consistency, including impossible positive/zero rows. Correct old inconsistent fixture assertions; six regressions/nearby controls.",
+@@ -2296,7 +2323,10 @@
+         "disposition": "Bounded player-card S02-R1 locally accepted; bothP2findings closed locally",
+         "evidence": "29/29original probes,26/26unit tests,scopedTS/lint,exact patch/pin verification by independent review/Scout",
+         "limits": "Production/source-readiness/population/rights/live/premium/route/deploy gates unchanged; frozen original packets/failures preserved. No tests duplicated by coordinator."
+-      }
++      },
++      "historical_status_before_owner_handoff": "Locally accepted bounded correction; frozen, no new edits granted.",
++      "handoff_at": "2026-10-25T16:32:28.072974+00:00",
++      "current_codex_implementation_write_paths": []
+     },
+     {
+       "id": "CODEX-PLAYER-CARDS-S03-R1-20261024",
+@@ -2315,7 +2345,7 @@
+         "web/components/player-cards/PlayerCardFlow.tsx": "83d75fc766229367aa7599b89413f9dc1b8754b00910bd75bf4b0e20f22d0926",
+         "web/components/player-cards/PlayerCardFlow.test.tsx": "a3372616fa57559d7717e7b43d667986e7fdbe2ece06fbf948c8ec23b123f7dc"
+       },
+-      "status": "Locally accepted bounded correction,frozen; no iteration/source edits granted.",
++      "status": "RELEASED / FROZEN HANDOFF TO CLAUDE \u2014 original Codex owner completed; no further Codex source write. Existing source/artifact receipts preserved; fresh exact Claude leases required.",
+       "before_snapshot_requirement": "Worker must copy/verify exact3baseline source bytes before canonical edit; preserve original65review inputs/probes/failure evidence and frozen source patch. No coordinator snapshots/source write.",
+       "artifact_root": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1/",
+       "scope": "P2PC-S03-02: declared missing/incomplete versus known-undefined state/reason inside SVG/PNG, combined short/source warning context, truthful availability banner. P3PC-S03-01: nullableGP accessible wording without a fabricated count. Focused unchanged probes and nearby controls.",
+@@ -2328,7 +2358,10 @@
+         "disposition": "Locally accepted bounded correction; PC-S03-02 andPC-S03-01closed locally",
+         "evidence": "3preserved failures pass,8focusedtests,4browsergroups,161pinsunchanged per independent review/Scout",
+         "limits": "Functional semantic/accessibility acceptance only; no design,realdata/rights/paywall/live/app/publication/Library scope. No coordinator test duplication."
+-      }
++      },
++      "historical_status_before_owner_handoff": "Locally accepted bounded correction,frozen; no iteration/source edits granted.",
++      "handoff_at": "2026-10-25T16:32:28.072974+00:00",
++      "current_codex_implementation_write_paths": []
+     },
+     {
+       "id": "CODEX-PLAYER-CARDS-VISUAL01-20261024",
+@@ -2340,7 +2373,7 @@
+         "web/components/player-cards/EditorialPlayerCard.tsx",
+         "web/components/player-cards/EditorialPlayerCard.test.tsx"
+       ],
+-      "status": "Visual01 one-card checkpoint frozen; pause for TJ direct feedback. No iteration, rollout or design acceptance inferred.",
++      "status": "RELEASED / FROZEN HANDOFF TO CLAUDE \u2014 original Codex owner completed; no further Codex source write. Existing source/artifact receipts preserved; fresh exact Claude leases required.",
+       "mandatory_input_gate": "View all5supplied Library image pixels locally before any image-dependent design; materialization in progress,completion not yet verified by coordinator. Report missing/view blocker promptly; do not infer images from names/text.",
+       "input_workflow": "New supported Library input materialization only; unrelated blocked output uploads not retried or bypassed.",
+       "bounded_design_brief": "One landscape FHFH editorial-identity prototype; aligned metric/value/percentile bars; actual ratios distinct; no overall ratings,portraits,live or premium. Not fullrollout/finaldesign acceptance.",
+@@ -2433,7 +2466,10 @@
+         "to_lease": "CODEX-CLAUDE-C2-CARD-READABILITY-20261025",
+         "mailbox": "CODEX-20261025-081",
+         "rule": "Only canonical paths transfer; frozen historical packets remain immutable; canonical replay held pending coordinator write window."
+-      }
++      },
++      "historical_status_before_owner_handoff": "Visual01 one-card checkpoint frozen; pause for TJ direct feedback. No iteration, rollout or design acceptance inferred.",
++      "handoff_at": "2026-10-25T16:32:28.072974+00:00",
++      "current_codex_implementation_write_paths": []
+     },
+     {
+       "id": "CODEX-SOCIAL-EDITOR-ACCESS-20261024",
+@@ -2457,7 +2493,7 @@
+         "web/components/SocialShare/SocialShareAccessGate.test.tsx"
+       ],
+       "artifact_root": "tasks/artifacts/production-release-coordination-2026-10-24/social-editor-access/",
+-      "status": "Accepted source reconciled into merged full release; frozen, no further implementation custody under this completed slice",
++      "status": "COMPLETED HISTORICAL SLICE \u2014 no active Codex writer. Social product source returns to Claude; shared auth/access/security remain read-only pending separate owner coordination.",
+       "scope": "Server-verified session plus exact social_editor access without admin inheritance; protect workspace mount and edition API, identity-scoped bearer transport, private/no-store responses and focused authorization/session/cache regressions. Existing administrator access may remain explicitly checked; never promote social_editor to administrator.",
+       "boundaries": [
+         "No account grant, signup, role/database/RLS/configuration change, live request, server, publication, deployment or Git mutation.",
+@@ -2495,14 +2531,17 @@
+         "source_edits": 0,
+         "external_application_requests": 0
+       },
+-      "release_receipt": "tasks/artifacts/production-release-coordination-2026-10-24/full-reconciliation-2026-10-25/qualified-a7f6954/PRODUCTION-RELEASE-RECEIPT.json"
++      "release_receipt": "tasks/artifacts/production-release-coordination-2026-10-24/full-reconciliation-2026-10-25/qualified-a7f6954/PRODUCTION-RELEASE-RECEIPT.json",
++      "historical_status_before_owner_handoff": "Accepted source reconciled into merged full release; frozen, no further implementation custody under this completed slice",
++      "current_codex_implementation_write_paths": [],
++      "product_path_owner": "Claude"
+     },
+     {
+       "id": "CODEX-PLAYER-CARDS-HERO-SHARE-20261025",
+       "at": "2026-10-25T04:37:53.177782+00:00",
+       "owner_thread": "01a16ec2-f81c-717b-8961-8c3832fdc00f",
+       "source": "Owner handed existing task back; parent resumed Astra for hero header and social-share integration; exact worker request verified",
+-      "status": "Frozen owner handoff; independent acceptance pending; no further source edits under this slice",
++      "status": "RELEASED / FROZEN HANDOFF TO CLAUDE \u2014 original Codex owner completed; no further Codex source write. Existing source/artifact receipts preserved; fresh exact Claude leases required.",
+       "source_paths": [
+         "web/components/player-cards/EditorialPlayerCard.tsx",
+         "web/components/player-cards/HeroPlayerCard.tsx",
+@@ -2605,13 +2644,16 @@
+         "to_lease": "CODEX-CLAUDE-C2-CARD-READABILITY-20261025",
+         "mailbox": "CODEX-20261025-081",
+         "rule": "Only canonical paths transfer; frozen historical packets remain immutable; canonical replay held pending coordinator write window."
+-      }
++      },
++      "historical_status_before_owner_handoff": "Frozen owner handoff; independent acceptance pending; no further source edits under this slice",
++      "handoff_at": "2026-10-25T16:32:28.072974+00:00",
++      "current_codex_implementation_write_paths": []
+     },
+     {
+       "id": "CODEX-PLAYER-CARDS-NST-CAPTURE-20261025",
+       "at": "2026-10-25T05:00:03.462280+00:00",
+       "owner_thread": "01a16ec2-f81c-717b-8961-8c3832fdc00f",
+-      "status": "Frozen handback for parent independent review; no active implementation or further source edits under this slice",
++      "status": "RELEASED / FROZEN HANDOFF TO CLAUDE \u2014 original Codex owner completed; no further Codex source write. Existing source/artifact receipts preserved; fresh exact Claude leases required.",
+       "source_paths": [
+         "web/lib/player-cards/nstCapture.ts",
+         "web/lib/player-cards/nstCapture.test.ts"
+@@ -2650,13 +2692,16 @@
+         "sha256": "1322a20d87ae5958fad2c893433a0c5210c5a417fee183d8c699f8602303c498",
+         "result": "Fresh reviewer reports6groupedprobes passed, no actionable defect,39pins preserved. Coordinator read report and matched both source hashes; no rerun.",
+         "acceptance": "Scout final acceptance pending; no history/finality/model/population acceptance or5rowSELECT execution."
+-      }
++      },
++      "historical_status_before_owner_handoff": "Frozen handback for parent independent review; no active implementation or further source edits under this slice",
++      "handoff_at": "2026-10-25T16:32:28.072974+00:00",
++      "current_codex_implementation_write_paths": []
+     },
+     {
+       "id": "CODEX-PLAYER-CARDS-PORTRAIT-TREATMENTS-20261025",
+       "at": "2026-10-25T05:22:34.937631+00:00",
+       "owner_thread": "01a16ec2-f81c-717b-8961-8c3832fdc00f",
+-      "status": "Frozen portrait checkpoint; pause for TJ style feedback and independent review; no further edits or propagation under this slice",
++      "status": "RELEASED / FROZEN HANDOFF TO CLAUDE \u2014 original Codex owner completed; no further Codex source write. Existing source/artifact receipts preserved; fresh exact Claude leases required.",
+       "source_paths": [
+         "web/lib/player-cards/portraitTreatment.ts",
+         "web/lib/player-cards/portraitTreatment.test.ts",
+@@ -2748,13 +2793,16 @@
+           "web/components/player-cards/PlayerCardShareStudio.test.tsx"
+         ],
+         "rule": "Original7pathpacket/source-files remain frozen; only these2canonicalfiles are transferred. Other variants retained and other5paths read-only."
+-      }
++      },
++      "historical_status_before_owner_handoff": "Frozen portrait checkpoint; pause for TJ style feedback and independent review; no further edits or propagation under this slice",
++      "handoff_at": "2026-10-25T16:32:28.072974+00:00",
++      "current_codex_implementation_write_paths": []
+     },
+     {
+       "id": "CODEX-PLAYER-CARDS-TEAM-COLORS-DEFAULT-20261025",
+       "at": "2026-10-25T06:11:03.446181+00:00",
+       "owner_thread": "01a16ec2-f81c-717b-8961-8c3832fdc00f",
+-      "status": "Granted: exact two-file Team Colors default follow-on, subject to focused verification",
++      "status": "RELEASED / FROZEN HANDOFF TO CLAUDE \u2014 original Codex owner completed; no further Codex source write. Existing source/artifact receipts preserved; fresh exact Claude leases required.",
+       "source_paths": [
+         "web/components/player-cards/PlayerCardShareStudio.tsx",
+         "web/components/player-cards/PlayerCardShareStudio.test.tsx"
+@@ -2773,7 +2821,10 @@
+       "scope": "Fresh sessions, invalid storage and unavailable-storage fallback default to team-colors. Preserve explicit valid saved choices and all other selectable variants. Focused tests may inject portrait preparation and cover fresh/default/fallback/saved-choice behavior.",
+       "read_only": "All portrait transforms, assets, comparison artifacts, source/math/NST/Editorial, shared navigation/auth/routes/Library and all other application files. Original hero and portrait packets immutable.",
+       "resource": "Conditional same-owned127.0.0.1:3125 handoff after focused offline browser verification. Keep served bytes until QA passes. Reverify exact current ownedPID/command/listener before stopping only that process or binding a freeport. Last reportedPID44618 is not fresh liveness evidence. Preserve historical hero/functional/editorial/comparison artifacts and routes, record PID and exact byte/hash readbacks. No otherport/process action.",
+-      "excluded": "No production, uploads, Git, shared config, live/premium activation or broader styling iteration."
++      "excluded": "No production, uploads, Git, shared config, live/premium activation or broader styling iteration.",
++      "historical_status_before_owner_handoff": "Granted: exact two-file Team Colors default follow-on, subject to focused verification",
++      "handoff_at": "2026-10-25T16:32:28.072974+00:00",
++      "current_codex_implementation_write_paths": []
+     },
+     {
+       "id": "CODEX-CLAUDE-C1-EVIDENCE-BUNDLE-20261025",
+@@ -4601,7 +4652,9 @@
+             "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C1/"
+           }
+         ],
+-        "status": "reclaimed for release integration; no further Claude writes without new exact coordination"
++        "status": "HISTORICAL \u2014 completed Codex release-integration claim, no present Codex implementation custody; existing Claude agreements/leases govern",
++        "previous_status_before_owner_return": "reclaimed for release integration; no further Claude writes without new exact coordination",
++        "owner_return_at": "2026-10-25T16:32:28.072974+00:00"
+       },
+       {
+         "lane": "C4",
+@@ -4622,7 +4675,9 @@
+             "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C4/"
+           }
+         ],
+-        "status": "reclaimed for release integration; no further Claude writes without new exact coordination"
++        "status": "RELEASED TO CLAUDE \u2014 WiGO/social implementation custody; refresh existing Claude exact leases; no Codex writer",
++        "previous_status_before_owner_return": "reclaimed for release integration; no further Claude writes without new exact coordination",
++        "owner_return_at": "2026-10-25T16:32:28.072974+00:00"
+       },
+       {
+         "lane": "C5",
+@@ -4658,7 +4713,9 @@
+             "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C5/"
+           }
+         ],
+-        "status": "reclaimed for release integration; no further Claude writes without new exact coordination"
++        "status": "HISTORICAL \u2014 completed Codex release-integration claim, no present Codex implementation custody; existing Claude agreements/leases govern",
++        "previous_status_before_owner_return": "reclaimed for release integration; no further Claude writes without new exact coordination",
++        "owner_return_at": "2026-10-25T16:32:28.072974+00:00"
+       },
+       {
+         "lane": "C7",
+@@ -4668,7 +4725,9 @@
+           "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C7/",
+           "isolated review scratch outside web/ source"
+         ],
+-        "status": "reclaimed for release integration; no further Claude writes without new exact coordination"
++        "status": "HISTORICAL \u2014 completed Codex release-integration claim, no present Codex implementation custody; existing Claude agreements/leases govern",
++        "previous_status_before_owner_return": "reclaimed for release integration; no further Claude writes without new exact coordination",
++        "owner_return_at": "2026-10-25T16:32:28.072974+00:00"
+       },
+       {
+         "lane": "C3",
+@@ -4678,7 +4737,9 @@
+           "/private/tmp/fhfh-c3-isolated/web/** (snapshot copy of working-tree web/, no .env*/node_modules/.next*)",
+           "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C3/"
+         ],
+-        "status": "reclaimed for release integration; no further Claude writes without new exact coordination"
++        "status": "HISTORICAL \u2014 completed Codex release-integration claim, no present Codex implementation custody; existing Claude agreements/leases govern",
++        "previous_status_before_owner_return": "reclaimed for release integration; no further Claude writes without new exact coordination",
++        "owner_return_at": "2026-10-25T16:32:28.072974+00:00"
+       },
+       {
+         "lane": "SS1",
+@@ -4692,7 +4753,9 @@
+           "web/e2e/social-share.spec.ts",
+           "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/SS1/"
+         ],
+-        "status": "reclaimed for release integration; no further Claude writes without new exact coordination"
++        "status": "RELEASED TO CLAUDE \u2014 WiGO/social implementation custody; refresh existing Claude exact leases; no Codex writer",
++        "previous_status_before_owner_return": "reclaimed for release integration; no further Claude writes without new exact coordination",
++        "owner_return_at": "2026-10-25T16:32:28.072974+00:00"
+       },
+       {
+         "lane": "C2",
+@@ -4702,7 +4765,9 @@
+           "/private/tmp/fhfh-c2-isolated/web/** (snapshot)",
+           "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C2/"
+         ],
+-        "status": "reclaimed for release integration; no further Claude writes without new exact coordination"
++        "status": "HISTORICAL \u2014 completed Codex release-integration claim, no present Codex implementation custody; existing Claude agreements/leases govern",
++        "previous_status_before_owner_return": "reclaimed for release integration; no further Claude writes without new exact coordination",
++        "owner_return_at": "2026-10-25T16:32:28.072974+00:00"
+       },
+       {
+         "lane": "C6",
+@@ -4723,7 +4788,9 @@
+             "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C6/"
+           }
+         ],
+-        "status": "reclaimed for release integration; no further Claude writes without new exact coordination"
++        "status": "HISTORICAL \u2014 completed Codex release-integration claim, no present Codex implementation custody; existing Claude agreements/leases govern",
++        "previous_status_before_owner_return": "reclaimed for release integration; no further Claude writes without new exact coordination",
++        "owner_return_at": "2026-10-25T16:32:28.072974+00:00"
+       },
+       {
+         "lane": "RSO-FREE",
+@@ -4733,7 +4800,9 @@
+           "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/RSO-FREE/FREE-RSO-ANALYSIS.md",
+           "its own tasks/diaries/ diary"
+         ],
+-        "status": "reclaimed for release integration; no further Claude writes without new exact coordination"
++        "status": "HISTORICAL \u2014 completed Codex release-integration claim, no present Codex implementation custody; existing Claude agreements/leases govern",
++        "previous_status_before_owner_return": "reclaimed for release integration; no further Claude writes without new exact coordination",
++        "owner_return_at": "2026-10-25T16:32:28.072974+00:00"
+       }
+     ],
+     "evidence": {
+@@ -4751,10 +4820,11 @@
+       "readiness/design lanes artifact-only folders, no application transfer"
+     ],
+     "resources": {
+-      "Git_index_refs_release_branch_merge": "release coordinator only",
++      "Git_index_refs_release_branch_merge": "SUPERSEDED: Claude owns LOCAL commits per TJ16:27UTC. Each push requires separate TJapproval; no standing push/deploy/merge authority. Codex performs no Git mutation.",
+       "heavy_lock": "atomic /private/tmp/fhfh-heavy.lock; one heavy check",
+       "ports": "old Claude slots observed free, not newly reserved;3000/3125 untouched",
+-      "shared_register_mailbox_steers": "Codex coordinator only; Claude-owned files preserved"
++      "shared_register_mailbox_steers": "Codex coordinator only; Claude-owned files preserved",
++      "previous_Git_index_refs_release_branch_merge": "release coordinator only"
+     },
+     "pending_reclaimed_ticket": {
+       "id": "REL-SS1-LOW-YEAR-R1",
+@@ -4764,11 +4834,15 @@
+         "web/components/SocialShare/SocialShare.tsx",
+         "web/components/SocialShare/SocialShare.test.tsx"
+       ],
+-      "status": "queued bounded release bug fix; new worker Astra",
+-      "source": "CLAUDE-057 recorded TJ post-push ticket; prior qualified branch push completed; owner now reclaims lane"
+-    },
+-    "status": "Original completed Claude source reconciled and live; root integration operations complete. New changes require exact custody.",
+-    "release_receipt": "tasks/artifacts/production-release-coordination-2026-10-24/full-reconciliation-2026-10-25/qualified-a7f6954/PRODUCTION-RELEASE-RECEIPT.json"
++      "status": "RELEASED TO CLAUDE SS1 \u2014 no Codex worker queued; schedule.ts/test and SocialShare.tsx/test belong to the same Claude exact ticket lease",
++      "source": "CLAUDE-057 recorded TJ post-push ticket; prior qualified branch push completed; owner now reclaims lane",
++      "previous_status": "queued bounded release bug fix; new worker Astra",
++      "implementation_owner": "Claude SS1, existing session observed in CLAUDE-LEASES; no new session assumed"
++    },
++    "status": "HISTORICAL / COMPLETED \u2014 CODEX-063 is not a current implementation lease; owner returned agreed Claude lanes. WiGO/social implementation explicitly Claude.",
++    "release_receipt": "tasks/artifacts/production-release-coordination-2026-10-24/full-reconciliation-2026-10-25/qualified-a7f6954/PRODUCTION-RELEASE-RECEIPT.json",
++    "previous_status_before_owner_return": "Original completed Claude source reconciled and live; root integration operations complete. New changes require exact custody.",
++    "owner_return_receipt": "tasks/artifacts/claude-custody-transfer-2026-10-25/TRANSFER-MANIFEST.json"
+   },
+   "workspace_reconciliation_20261025": {
+     "at": "2026-10-25T14:35:12.693028+00:00",
+@@ -4812,12 +4886,13 @@
+     "canonical_write_start": "AFTER cleanup coordinator explicit handback only, then fresh HEAD/hash/absence recheck and exact custody. No canonical replay before handback.",
+     "external_authority": "None",
+     "review_writer_state": "FROZEN all source/docs writes for cleanup after final checkpoint",
+-    "sequencing_mailbox": "CODEX-20261025-083"
++    "sequencing_mailbox": "CODEX-20261025-083",
++    "current_scope_override": "Review writer remains frozen; no Codex source replay/dispatch after BLSH-onlysteer. Existing Claude agreed installs/receipts govern. C3d FORGE patch remains held/unassigned, not an active Codex job."
+   },
+   "final_clean_workspace_20261025": {
+     "at": "2026-10-25T15:24:21.116288+00:00",
+     "application_baseline": "1ee5127dc22c34ef9658f96ed4d72823b1d5ea29",
+-    "status": "Archival verified and protected records checkpointed. Handback is effective only after coordinator final chat confirms empty status and HEAD==origin/octoberBranch; read Git for the exact metadata commit identity.",
++    "status": "COMPLETED / shared freeze released \u2014 parent verified cleanup/push2f2b432 at15:40UTC. Historical pre-push conditions below are receipts, not a current hold.",
+     "archive_index": "tasks/ARCHIVE-INDEX.md",
+     "archive_root": "/Users/tim/Code/fhfhockey-workspace-recovery-2026-10-24/clean-checkout-2026-10-25-1505",
+     "archived_files": 12601,
+@@ -4826,6 +4901,98 @@
+     "handoff_entry": "CODEX-20261025-084",
+     "authority": "Normal October fast-forward push only. No new source integration, worker dispatch, deployment or production/data action.",
+     "fresh_source_requirements": "After verified handback, current HEAD/hash/absence checks and exact existing/new custody are required.",
+-    "barrier_scope": "Only shared canonical checkout mutations during final publication verification; independent read-only/isolated-copy visual work may continue. New WiGO outbox is protected from the closed archive batch."
++    "barrier_scope": "Only shared canonical checkout mutations during final publication verification; independent read-only/isolated-copy visual work may continue. New WiGO outbox is protected from the closed archive batch.",
++    "previous_status_before_verified_handback": "Archival verified and protected records checkpointed. Handback is effective only after coordinator final chat confirms empty status and HEAD==origin/octoberBranch; read Git for the exact metadata commit identity."
++  },
++  "current_owner_division_20261025": {
++    "at": "2026-10-25T16:32:28.072974+00:00",
++    "authority": "TJ16:22WiGO/socialtoClaude;16:24BLSHonlyCodex;16:25freeze-then-handover;16:27Claudelocalcommits",
++    "codex_only_active_implementation_research": "BLSH, existing01a173a7-7cba-7738-b7df-d5a64513d0c6 read-onlyGameScore/goalieweight prerequisite check; no non-BLSH dispatch",
++    "claude_implementation": "Agreed Claude lanes including WiGO/social; frozen goalie-share, card and TestingGrounds sources handed over subject fresh exact leases and all retained gates. Existing active Claude paths preserved.",
++    "local_git_owner": "Claude; Codex no competing commit process",
++    "pushes": "Each requires separate TJapproval; completed cleanup grants are not standing authority",
++    "held_unrelated": "Auth/security, general FORGE/RSO/scientific contracts and activation gates remain coordinated/read-only; not active Codex lanes",
++    "reserved_pattern_exceptions": [
++      "web/components/GoalieShareChart/GoalieShareChart.pagination.test.tsx",
++      "web/components/GoalieShareChart/GoalieShareChart.test.ts",
++      "web/components/GoalieShareChart/index.tsx",
++      "web/components/player-cards/EditorialPlayerCard.test.tsx",
++      "web/components/player-cards/EditorialPlayerCard.tsx",
++      "web/components/player-cards/HeroPlayerCard.tsx",
++      "web/components/player-cards/InteractiveCard.tsx",
++      "web/components/player-cards/PlayerCard.module.scss",
++      "web/components/player-cards/PlayerCard.tsx",
++      "web/components/player-cards/PlayerCardFlow.module.scss",
++      "web/components/player-cards/PlayerCardFlow.test.tsx",
++      "web/components/player-cards/PlayerCardFlow.tsx",
++      "web/components/player-cards/PlayerCardPreview.test.tsx",
++      "web/components/player-cards/PlayerCardPreview.tsx",
++      "web/components/player-cards/PlayerCardShareStudio.module.scss",
++      "web/components/player-cards/PlayerCardShareStudio.test.tsx",
++      "web/components/player-cards/PlayerCardShareStudio.tsx",
++      "web/lib/forge-testing-grounds/TestingGroundsOwnerGate.test.tsx",
++      "web/lib/forge-testing-grounds/TestingGroundsOwnerGate.tsx",
++      "web/lib/forge-testing-grounds/boundedWorker.test.ts",
++      "web/lib/forge-testing-grounds/boundedWorker.ts",
++      "web/lib/forge-testing-grounds/dataHealth.test.ts",
++      "web/lib/forge-testing-grounds/dataHealth.ts",
++      "web/lib/forge-testing-grounds/memoryRunStore.ts",
++      "web/lib/forge-testing-grounds/operationalProgress.test.ts",
++      "web/lib/forge-testing-grounds/operationalProgress.ts",
++      "web/lib/forge-testing-grounds/ownerPolicy.test.ts",
++      "web/lib/forge-testing-grounds/ownerPolicy.ts",
++      "web/lib/forge-testing-grounds/ownerRoutes.test.ts",
++      "web/lib/forge-testing-grounds/ownerRoutes.ts",
++      "web/lib/forge-testing-grounds/preview/TestingGroundsPreview.module.scss",
++      "web/lib/forge-testing-grounds/preview/TestingGroundsPreview.test.tsx",
++      "web/lib/forge-testing-grounds/preview/TestingGroundsPreview.tsx",
++      "web/lib/forge-testing-grounds/preview/previewFixtures.ts",
++      "web/lib/forge-testing-grounds/runStore.ts",
++      "web/lib/forge-testing-grounds/runnerContracts.ts",
++      "web/lib/forge-testing-grounds/serverOwnerBoundary.test.ts",
++      "web/lib/forge-testing-grounds/serverOwnerBoundary.ts",
++      "web/lib/goalieWorkload.ts",
++      "web/lib/player-cards/adapter.ts",
++      "web/lib/player-cards/aggregation.r1.test.ts",
++      "web/lib/player-cards/aggregation.ts",
++      "web/lib/player-cards/contracts.ts",
++      "web/lib/player-cards/domain.test.ts",
++      "web/lib/player-cards/evidenceBundle.test.ts",
++      "web/lib/player-cards/evidenceBundle.ts",
++      "web/lib/player-cards/fixtures.ts",
++      "web/lib/player-cards/interactionFixtures.ts",
++      "web/lib/player-cards/interactionSnapshot.ts",
++      "web/lib/player-cards/nstCapture.test.ts",
++      "web/lib/player-cards/nstCapture.ts",
++      "web/lib/player-cards/portraitTreatment.test.ts",
++      "web/lib/player-cards/portraitTreatment.ts",
++      "web/lib/player-cards/ranking.test.ts",
++      "web/lib/player-cards/ranking.ts",
++      "web/lib/player-cards/registry.ts",
++      "web/lib/player-cards/reviewedHeroSamples.ts",
++      "web/lib/player-cards/shareExport.test.ts",
++      "web/lib/player-cards/shareExport.ts",
++      "web/lib/player-cards/windows.ts",
++      "web/lib/projections/goalie/workloadEvidence.test.ts",
++      "web/lib/projections/goalie/workloadEvidence.ts",
++      "web/pages/api/v1/forge/testing-grounds/**",
++      "web/pages/api/v1/forge/testing-grounds/access.ts",
++      "web/pages/api/v1/forge/testing-grounds/runs/[runId]/[operation].ts",
++      "web/pages/api/v1/forge/testing-grounds/runs/index.ts",
++      "web/pages/forge/testing-grounds.tsx",
++      "web/pages/social-share/player-cards.tsx",
++      "web/public/player-cards/hero-samples/8478864.png",
++      "web/public/player-cards/hero-samples/8479318.png"
++    ],
++    "security_read_only": [
++      "web/contexts/AuthProviderContext/index.tsx",
++      "web/__tests__/contexts/AuthProviderContext.test.tsx",
++      "web/components/SocialShare/SocialShareAccessGate.tsx",
++      "web/components/SocialShare/SocialShareAccessGate.test.tsx",
++      "web/lib/socialShare/access.ts",
++      "web/lib/socialShare/access.test.ts"
++    ],
++    "no_codex_schedule_writer": "Only old queued REL-SS1-LOW-YEAR-R1 claim found, now released to Claude; no competing writer declared or reported",
++    "fresh_lease_rule": "Refresh actual source pins; keep existing Claude C1/SS1/WIGO leases and establish new exact leases for handed-back scopes. Do not assume session IDs or overwrite Claude leases."
+   }
+ }
+--- tasks/today-plan-2026-10-25.md
++++ tasks/today-plan-2026-10-25.md
+@@ -1,4 +1,7 @@
+ # October 25 plan — PROPOSED Claude and Codex lanes
++
++> CURRENT OWNER DIVISION 2026-10-25T16:32:28.072974+00:00: BLSH is Codex’s ONLY active implementation/research lane. Earlier D1/D2/D3 and card/social Codex proposals below are historical, not dispatch authority. Goalie-share, player cards and Testing Grounds are frozen/completed handoffs to Claude with fresh exact leases and all activation gates retained; WiGO/social implementation stays with Claude. Claude owns LOCAL commits; EACH push needs TJ’s separate approval. No Codex Git mutations or competing commit process. See the current mailbox custody decision and tasks/artifacts/claude-custody-transfer-2026-10-25/TRANSFER-MANIFEST.json.
++
+ 
+ Prepared from local registers, final handoffs/diaries and narrowly inspected source on October 25 around 09:30 Eastern. This resumes planning/documentation only. TJ brings this plan to Claude; no worker has been dispatched by this document. All prior sprint workers remain stopped except the explicitly resumed Codex goalie-share task `01a1733c-05e7-74ef-8d82-929fc77040eb`.
+ 
+--- tasks/artifacts/cross-platform/2026-10-24-coordination/TODAY-PROPOSALS-2026-10-25.md
++++ tasks/artifacts/cross-platform/2026-10-24-coordination/TODAY-PROPOSALS-2026-10-25.md
+@@ -1,4 +1,7 @@
+ # PROPOSED October25 assignments — no dispatch or lease grant
++
++> CURRENT OWNER DIVISION 2026-10-25T16:32:28.072974+00:00: BLSH is Codex’s ONLY active implementation/research lane. Earlier D1/D2/D3 and card/social Codex proposals below are historical, not dispatch authority. Goalie-share, player cards and Testing Grounds are frozen/completed handoffs to Claude with fresh exact leases and all activation gates retained; WiGO/social implementation stays with Claude. Claude owns LOCAL commits; EACH push needs TJ’s separate approval. No Codex Git mutations or competing commit process. See the current mailbox custody decision and tasks/artifacts/claude-custody-transfer-2026-10-25/TRANSFER-MANIFEST.json.
++
+ 
+ Plan: `tasks/today-plan-2026-10-25.md`. TJ will bring it to Claude. Prior sprint workers remain stopped; this is a documentation-only proposal. No active register entry or held source lease is changed.
+ 
+--- tasks/artifacts/cross-platform/2026-10-24-coordination/CODEX-TO-CLAUDE.md
++++ tasks/artifacts/cross-platform/2026-10-24-coordination/CODEX-TO-CLAUDE.md
+@@ -718,3 +718,27 @@
+ The historical archival inventory is closed. No newly arriving WiGO outbox is historical clutter, and none is moved by the cleanup batch. During the short final commit/push verification window, queue any new export/coordination file outside the shared checkout; then deliver it normally after the coordinator's final chat handback. This is not a freeze on independent research/design, nor an instruction to touch its isolated copy. No new outbox file was present in the closed-inventory delta at the policy commit.
+ 
+ Current application baseline remains1ee5127dc. The cleanup policy commit is25cb5decf113acc21e1d9788ec3f88f86bab589e; remaining record commit/push outcome is reported in the final chat and private recovery receipt. All current C1/C2/C3/CODEX-REVIEW, coordination and preview artifacts are protected. Canonical implementation still follows exact grants and fresh pins after explicit final handback; no blanket sprint resume, deployment or live-data permission.
++
++
++## CODEX-20261025-086 — OWNER DECISION: WiGO/social and frozen handoffs to Claude; Codex BLSH-only; Claude local commits
++
++2026-10-25T16:32:28.072974+00:00
++
++TJ16:22: WiGO and social share should be with Claude. TJ16:24: BLSH should be Codex's only lane. Freeze-then-handover applies to the existing goalie-share, player-card and Testing Grounds tasks. TJ16:27 selects Claude for LOCAL commits; EACH push needs TJapproval separately. Completed cleanup/push2f2b432 is not standing push permission. Codex performs no competing Git mutation or non-BLSH engineering dispatch.
++
++**CODEX-063 resolution:** historical release-integration custody, completed with0619f912. Its C4/SS1 reclaim labels and queued REL-SS1-LOW-YEAR-R1 were stale, not a running schedule writer. Current Codex record has no active application worker; reviewer01a17386 froze after080–083, source never applied; coordinator completed cleanup and released the barrier. Existing BLSH researcher01a173a7 is repo-read-only and owns no WiGO/social writes. Corrected Codex statuses retain all original pins/receipts; Claude's leases/outboxes/patches are untouched.
++
++**WiGO → Claude:** web/pages/wigoCharts.tsx + web/__tests__/pages/wigoCharts.test.tsx; web/components/WiGO/**; web/hooks/useWigoPlayerDashboard.ts + test; web/utils/fetchWigo* and calculateWigo*; web/styles/wigoCharts.module.scss and wigoColors.ts. Actual current Claude register already declares WIGO sessionlocal_ec8a69cc-dc02-4a39-9df0-1fedcbae16f4 (wigo-charts-full-audit); 63application paths plus its artifact root are pinned in TRANSFER-MANIFEST.json. Preserve the released fetchWigoPlayerStats correction and all current Claude patches. Refresh its own exact lease; no new session inferred.
++
++**Social implementation → Claude:** web/lib/socialShare/** INCLUDING schedule.ts and schedule.test.ts; web/components/SocialShare/**; web/pages/social-share/[format].tsx; web/pages/api/v1/social-share/[format].ts; web/e2e/social-share.spec.ts and existing SS1 handoffs. Existing Claude SS1 sessionlocal_4542f7f4-e6a6-4e51-83eb-74e26e54ff0f (ss1-gamegrid-share) already declares active17+18/low-year work. No Codex low-year ticket will dispatch. Exact exceptions remain READ-ONLY: SocialShareAccessGate.tsx/.test.tsx, lib/socialShare/access.ts/access.test.ts, sharedAuthProvider/contexttests and auth lines in page/API. Shared forecast/GameGrid/ownership contracts remain separately coordinated. These exceptions do not block ordinary schedule/product edits. No competing active Codex schedule writer was found in declarations/verified owner state.
++
++**Frozen lane handoffs:** full exact current path/hash and resolved artifact packages are in `tasks/artifacts/claude-custody-transfer-2026-10-25/TRANSFER-MANIFEST.json`.
++- Goalie-share01a1733c-05e7-74ef-8d82-929fc77040eb is FROZEN/locally independently accepted; six files from e5fc66e3b/reconciled2f2b432,37focused+299controls/1skip and scopedTS/lint. Hand over those SIX exact files only, including lib/projections/goalie/workloadEvidence.ts and its test; not the general FORGE namespace. Dormant seam/authoritative-start/team-trade/calibration/model gates remain. Do not restart the old worker.
++- Player-card01a16ec2-f81c-717b-8961-8c3832fdc00f is completed/stopped per actual parent thread read. Later16be41899/dd31a947a sources, TeamColorsdefault7tests/TS/lint/3offlinebrowsergroups and independentportraitreadbacks retained. Five-rowquery ran once; history/gameend/population still unqualified. Manifest enumerates card/domain/UI/route/assets; preserve already Claude-owned C1evidenceBundle installs. C2readability was not approved byTJ and is closed; do not apply the candidate solely because081 granted technical custody. PreviewPID48266 is historical, not current resource authority.
++- TestingGrounds01a16e4b-590b-72f9-9ced-5684a8c9e030 was directly read IDLE, latest turn01a16eec-c0f9-74aa-b3a5-fa0230b0b466 COMPLETED; parent independently confirmed. No stop needed. Transfer only the dedicated namespace/page/APIs enumerated in manifest, approved input specs read-only, not allFORGE/sharedauth. Retain S03/S05-R1 corrections and exact test receipts. Local owner-setting receipt is historical; no env/credential values inspected or handed over. TJlaterreportedpageopens: don't resurrect old blanketUIblock or claim independent auth verification. No live runner/captures/storage/resource/cost/retention/scientific/model gates are waived; historical0/1Authread is not a new budget.
++
++Fresh Claude exact leases must incorporate current hashes, preserve existing active Claude slices and recorded security boundaries, and renew actual resource custody before any runtime action. Source snapshots are coordination pins, not permission to overwrite advancing Claude files. Original/archive artifact locations are recorded without restoring or moving anything.
++
++**Current plan override:** BLSH alone stays active on Codex; goalie-share, healthyIR, cards, social, WiGO, TestingGrounds or C3d are not queued Codex execution. Claude keeps its agreed lanes and17:00Eastern reset objective; this note adds no unapproved project or worker. Local commits belong to Claude. Source/data/policy gates, EACH push approval and separate deploy/activation authority remain.
++
++**Frozen docs for Claude local commit custody:** CODEX-LEASES.json; this mailbox append; tasks/today-plan-2026-10-25.md and shared TODAY-PROPOSALS-2026-10-25.md current-division insertions; this custody transfer's manifest/decision/diff/doc index; diary checkpoint. Also the already frozen BLSH P1 master/LEDGER3files and tasks/artifacts/blsh-p1-registration-2026-10-25/{OWNER-REGISTRATION.md,CHANGELOG.json,REGISTER.patch}. Exact latest hashes/list are in DOCS-FOR-CLAUDE.json; don't stage unrelated active source or another person's unreported changes. No commit/push/app/test/DB/process/deploy action by this coordination task.

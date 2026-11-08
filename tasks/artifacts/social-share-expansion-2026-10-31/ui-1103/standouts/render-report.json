@@ -1,0 +1,67 @@
+[
+ {
+  "name": "real-forwards-blank",
+  "kind": "real",
+  "state": "ready",
+  "slate": "2026-11-02",
+  "headline": "LAST NIGHTS STANDOUTS",
+  "legend": "Top 8 of 96 by points, then SOG, xG, TOI. Last night, then STD: the player's season per game before this slate. % compares them; — means no baseline or value.",
+  "exportEnabled": true,
+  "png": "real-forwards-blank.png",
+  "status": "",
+  "fit": "fits",
+  "phoneScrollWidth": 375
+ },
+ {
+  "name": "real-goalies-blank",
+  "kind": "real",
+  "state": "ready",
+  "slate": "2026-11-02",
+  "headline": "LAST NIGHTS STANDOUTS",
+  "legend": "GSAx isn't available for this slate, so these 8 of 8 goalies with 15+ shots against are unranked, by SV%, then saves. Last night, then STD per appearance before it. SV% changes in points of save percentage, GAA and GSAx in goals, the rest in %. SA is workload, so uncoloured.",
+  "exportEnabled": true,
+  "png": "real-goalies-blank.png",
+  "status": "",
+  "fit": "fits",
+  "phoneScrollWidth": 375
+ },
+ {
+  "name": "real-all-nov2",
+  "kind": "real",
+  "state": "ready",
+  "slate": "2026-11-02",
+  "headline": "LAST NIGHTS STANDOUTS",
+  "legend": "Picked by hand, in this order. Last night, then STD: the player's season per game before this slate. % compares them; — means no baseline or value.",
+  "exportEnabled": true,
+  "png": "real-all-nov2.png",
+  "status": "",
+  "fit": "fits",
+  "phoneScrollWidth": 375
+ },
+ {
+  "name": "fixture-all-late-team-feed",
+  "kind": "fixture",
+  "state": "ready",
+  "slate": "2026-11-02",
+  "headline": "LAST NIGHTS STANDOUTS",
+  "legend": "Picked by hand, in this order. Last night, then STD: the player's season per game before this slate. % compares them; — means no baseline or value.",
+  "exportEnabled": false,
+  "png": "fixture-all-late-team-feed-preview.png",
+  "status": "Offline fixture data cannot be exported.",
+  "fit": "fits",
+  "phoneScrollWidth": 375
+ },
+ {
+  "name": "fixture-goalies-late-team-feed",
+  "kind": "fixture",
+  "state": "ready",
+  "slate": "2026-11-02",
+  "headline": "LAST NIGHTS STANDOUTS",
+  "legend": "GSAx isn't available for this slate, so these 4 of 4 goalies with 15+ shots against are unranked, by SV%, then saves. Last night, then STD per appearance before it. SV% changes in points of save percentage, GAA and GSAx in goals, the rest in %. SA is workload, so uncoloured.",
+  "exportEnabled": false,
+  "png": "fixture-goalies-late-team-feed-preview.png",
+  "status": "Offline fixture data cannot be exported.",
+  "fit": "fits",
+  "phoneScrollWidth": 375
+ }
+]

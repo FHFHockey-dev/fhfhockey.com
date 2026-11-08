@@ -1,0 +1,17 @@
+[
+  {
+    "command": [
+      "node",
+      "node_modules/vitest/vitest.mjs",
+      "run",
+      "--config",
+      "/Users/tim/Code/fhfhockey.com/tasks/artifacts/goalie-workload-forge-2026-10-25/vitest.config.mts",
+      "components/GoalieShareChart/GoalieShareChart.test.ts",
+      "components/GoalieShareChart/GoalieShareChart.pagination.test.tsx",
+      "lib/projections/goalie/workloadEvidence.test.ts"
+    ],
+    "cwd": "/Users/tim/Code/fhfhockey.com/web",
+    "exitCode": 0,
+    "log": "tasks/artifacts/goalie-workload-forge-2026-10-25/focused-1.log"
+  }
+]

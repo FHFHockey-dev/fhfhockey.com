@@ -1,0 +1,106 @@
+{
+  "startedAt": "2026-10-26T17:26:46.530Z",
+  "maxRequests": 9,
+  "concurrency": 1,
+  "retries": 0,
+  "perRequestTimeoutMs": 5000,
+  "overallProcessTimeoutMs": 50000,
+  "perResponseByteCap": 262144,
+  "totalByteCap": 2097152,
+  "results": [
+    {
+      "gameId": 2026020151,
+      "url": "https://www.nhl.com/scores/htmlreports/20262027/GS020151.HTM",
+      "startedAt": "2026-10-26T17:26:46.531Z",
+      "status": "captured-unadmitted",
+      "httpStatus": 200,
+      "bytes": 38222,
+      "sha256": "aee30e0fa80004269377f0c23b4bfc2643ba49aaae375e7e355db61de9a1fad6",
+      "finishedAt": "2026-10-26T17:26:46.903Z"
+    },
+    {
+      "gameId": 2026020123,
+      "url": "https://www.nhl.com/scores/htmlreports/20262027/GS020123.HTM",
+      "startedAt": "2026-10-26T17:26:46.904Z",
+      "status": "captured-unadmitted",
+      "httpStatus": 200,
+      "bytes": 35280,
+      "sha256": "c9ff67fc8f29a39a308776ac266c6c8234f04d7aad824cfc86f41b2bf9bb2e9e",
+      "finishedAt": "2026-10-26T17:26:47.139Z"
+    },
+    {
+      "gameId": 2026020111,
+      "url": "https://www.nhl.com/scores/htmlreports/20262027/GS020111.HTM",
+      "startedAt": "2026-10-26T17:26:47.140Z",
+      "status": "captured-unadmitted",
+      "httpStatus": 200,
+      "bytes": 36384,
+      "sha256": "3c91b1645252b49a64df1eed59386f0bfc60ce8b76b663e9b37dc8243216f584",
+      "finishedAt": "2026-10-26T17:26:47.270Z"
+    },
+    {
+      "gameId": 2026020095,
+      "url": "https://www.nhl.com/scores/htmlreports/20262027/GS020095.HTM",
+      "startedAt": "2026-10-26T17:26:47.270Z",
+      "status": "captured-unadmitted",
+      "httpStatus": 200,
+      "bytes": 36000,
+      "sha256": "720bdce5a38b6dc067de9ca9840ea7d085b475e2f49aa35c55fe206d64d719df",
+      "finishedAt": "2026-10-26T17:26:47.437Z"
+    },
+    {
+      "gameId": 2026020081,
+      "url": "https://www.nhl.com/scores/htmlreports/20262027/GS020081.HTM",
+      "startedAt": "2026-10-26T17:26:47.438Z",
+      "status": "captured-unadmitted",
+      "httpStatus": 200,
+      "bytes": 38083,
+      "sha256": "d3c5f047b907a9cb17f619aead5b034ffddb35f9090c34eb41f3f372e8480cfb",
+      "finishedAt": "2026-10-26T17:26:47.571Z"
+    },
+    {
+      "gameId": 2026020060,
+      "url": "https://www.nhl.com/scores/htmlreports/20262027/GS020060.HTM",
+      "startedAt": "2026-10-26T17:26:47.571Z",
+      "status": "captured-unadmitted",
+      "httpStatus": 200,
+      "bytes": 34087,
+      "sha256": "cd8fe0406fbfdf122fb83c676289d0eadffd8921f44c1187afd0c35b6f9ed1b6",
+      "finishedAt": "2026-10-26T17:26:47.816Z"
+    },
+    {
+      "gameId": 2026020040,
+      "url": "https://www.nhl.com/scores/htmlreports/20262027/GS020040.HTM",
+      "startedAt": "2026-10-26T17:26:47.817Z",
+      "status": "captured-unadmitted",
+      "httpStatus": 200,
+      "bytes": 34766,
+      "sha256": "7fc79e40c757d14f5c7867ec5649afbd04b86edb7b466514d5df34040ac30a5c",
+      "finishedAt": "2026-10-26T17:26:47.958Z"
+    },
+    {
+      "gameId": 2026020024,
+      "url": "https://www.nhl.com/scores/htmlreports/20262027/GS020024.HTM",
+      "startedAt": "2026-10-26T17:26:47.959Z",
+      "status": "captured-unadmitted",
+      "httpStatus": 200,
+      "bytes": 35130,
+      "sha256": "53b258ca8bbdb48db0a003ee164fe75f8713df2bb2d70e924bd7b6d832530256",
+      "finishedAt": "2026-10-26T17:26:48.184Z"
+    },
+    {
+      "gameId": 2026020010,
+      "url": "https://www.nhl.com/scores/htmlreports/20262027/GS020010.HTM",
+      "startedAt": "2026-10-26T17:26:48.185Z",
+      "status": "captured-unadmitted",
+      "httpStatus": 200,
+      "bytes": 36952,
+      "sha256": "9c9f65ef6a1b6e6a3afde3a285003fb84952d3c30f126181d40fa5f7a12608ff",
+      "finishedAt": "2026-10-26T17:26:48.343Z"
+    }
+  ],
+  "totalBytes": 324904,
+  "status": "captured-unadmitted",
+  "admissionsChanged": false,
+  "finishedAt": "2026-10-26T17:26:48.343Z"
+}

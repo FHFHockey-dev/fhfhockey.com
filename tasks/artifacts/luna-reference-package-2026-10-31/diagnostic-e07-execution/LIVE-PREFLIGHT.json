@@ -1,0 +1,35 @@
+{
+  "checkedAt": "2026-10-31T23:18:39.861212+00:00",
+  "parentAuthorizationThread": "01a189f6-9a3a-7235-a989-e1af4f47b014",
+  "independentAcceptanceThread": "01a1936a-45ae-73d0-ae05-fe4339c5a022",
+  "planSha256": "af1499f51ffd1baba22aee3fbefd20a0bc1919b12bbc972289bcf0f7d5d431b5",
+  "funding": {
+    "promotionalDisplayedUsd": 85,
+    "promotionalExpiresOn": "2026-11-13",
+    "purchasedDisplayedUsd": 10,
+    "reportingRoundedAndMayLag": true,
+    "reserveUsd": 5
+  },
+  "access": {
+    "organization": "FHFHockey",
+    "project": "FHFH IFTTT",
+    "projectId": "proj_l5N9PpHQz2IQY3Em5vTxw66P",
+    "keyTrackingId": "key_QjphyUQhdUMUJnLn",
+    "status": "Active",
+    "expires": "Never",
+    "permissions": [
+      "api.responses.write",
+      "api.responses.read",
+      "api.decisions.write"
+    ],
+    "localMaskMatch": true,
+    "lastUsedDisplayed": "2026-10-31T20:53:31Z",
+    "rotationRevocationBeforeProductionRequired": true
+  },
+  "concurrentSpendChecked": true,
+  "concurrentSpendEvidence": "Fresh all-project/all-key/all-API-source last-7-days usage shows six Responses with 18518 input tokens plus one Decisions with 891 input tokens, exactly matching seven retained receipts. Other active Test Project key shows never used; historical evaluation key expired. UI has rounded and lagging totals; no additional usage observed.",
+  "noSettingsChanged": true,
+  "reviewedPinsMatched": 263,
+  "expiry": "2026-11-01T23:59:59Z",
+  "scope": "Exact R2 E07-E16 only; maximum12 new/19 cumulative, zero retries, $1 cumulative cap, original grades separate from unapplied candidates; operational stops and supervised checkpoints."
+}

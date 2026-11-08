@@ -168,9 +168,8 @@ describe("Yahoo global credential owner", () => {
     expect(source).not.toContain("fallback: full pagination scan");
   });
 
-  it("keeps every active global provider call on bounded retry telemetry", () => {
+  it("keeps read-only global provider calls on bounded retry telemetry", () => {
     for (const route of [
-      "manual-refresh-yahoo-token.ts",
       "update-yahoo-players.ts",
       "update-yahoo-weeks.ts",
     ]) {
@@ -182,6 +181,17 @@ describe("Yahoo global credential owner", () => {
       expect(source, route).toContain("rateLimitEvents");
       expect(source, route).toContain("retries");
     }
+  });
+
+  it("never retries a potentially rotating global token refresh", () => {
+    const source = fs.readFileSync(
+      path.join(process.cwd(), "pages/api/v1/db/manual-refresh-yahoo-token.ts"),
+      "utf8",
+    );
+    expect(source).toContain("await refreshYahooGlobalCredentials");
+    expect(source).not.toContain("withYahooRetry");
+    expect(source).not.toContain("yahoo-fantasy");
+    expect(source).toContain("retries: 0");
   });
 
   it("keeps the sheet-sync mutation exact-cron-only and value-free on failure", () => {

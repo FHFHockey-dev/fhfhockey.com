@@ -1,0 +1,32 @@
+{
+  "identity": {
+    "version": "tweet-identity-proposal-v1",
+    "requestHash": "78dfee451d97ca1194482377bcd2cdbd49088baa94d57cc78091b94af910a9ed",
+    "directoryHash": "88dbd1e19c22a04fba95f07d049c38af533b548723bd17106f639191667ae16f",
+    "occurrences": [
+      {
+        "occurrenceId": "subject-4",
+        "canonicalId": "nhl:900001",
+        "status": "matched",
+        "evidence": {
+          "start": 4,
+          "end": 16,
+          "text": "Avery Keeper"
+        },
+        "identityConfidence": "strong"
+      }
+    ]
+  },
+  "goalieStatuses": [
+    {
+      "occurrenceId": "subject-4",
+      "canonicalId": "nhl:900001",
+      "status": "confirmed",
+      "evidence": {
+        "start": 4,
+        "end": 57,
+        "text": "Avery Keeper starts tonight, as confirmed during warmups."
+      }
+    }
+  ]
+}

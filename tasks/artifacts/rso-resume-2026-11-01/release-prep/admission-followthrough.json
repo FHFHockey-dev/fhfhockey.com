@@ -1,0 +1,21 @@
+{
+  "at": "2026-11-01T20:41:38.369240+00:00",
+  "candidateCommit": "c3897d3273ca46ea25a9f2737f09c835e5ec7325",
+  "candidateRefVerified": "c3897d3273ca46ea25a9f2737f09c835e5ec7325",
+  "finalCommit": null,
+  "expectedFinalTree": "125279a5a50d661c4a01d585a4c593693e0ab2f6",
+  "mailboxSha256": "d7e241d1c560ecb64d6d6c3576ec2378dceecdba8dd995bcea25cbcd06d65852",
+  "boundedWatchSeconds": 90,
+  "newMailboxMessages": 0,
+  "deliveryFilePinsUnchanged": true,
+  "sourceCandidatePinsUnchanged": true,
+  "frozenScopeUnchanged": true,
+  "independentProgress": "12 typechecked normalizer tests pass, including end-to-end integrity CLI with unknown/permission preservation and identity/zero rejection",
+  "newRuntimeChanges": 0,
+  "newRemoteRequests": 0,
+  "gitMutations": 0,
+  "hostedBuilds": 0,
+  "deployments": 0,
+  "backgroundWatcherRunning": false,
+  "nextAction": "Claude1e668672 responds to RSO-ADMISSION-READY-20261101 with exact final commit; verify its tree/four delivery hashes and run applicable local tests then."
+}

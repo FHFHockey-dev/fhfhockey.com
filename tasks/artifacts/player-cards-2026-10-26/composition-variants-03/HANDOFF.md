@@ -1,0 +1,25 @@
+# Sequential treatments / visible logo — current served checkpoint03
+
+Working current local URL: http://127.0.0.1:3125/player-cards/compositions?checkpoint=sequential03 . Look for `FHFH / VISUAL CHECKPOINT 03`. The root/player-cards landing nowdirectlyshowsbothcombinedresults; interactivecontrolstudio is /player-cards/studio?checkpoint=sequential03 . TeamColors staysdefaultinthatstudio; originalstyles remainavailable.
+
+Actual oldpage diagnosis: freshChromium GET ofexact /player-cards/compositions?checkpoint=inspect-prior02 returned200/1597033bytes/hash5a65a4... and exact2PNGhashes withTORlogos. Actualprior screenshotcontainslogo. No missingasset/loadfailure/staleresponse reproduced, so causeofTJseeingnoneisnotestablished. Confirmedvisualissues: ordinaryTeamColorsmainlandinghidcomparisonuntilselection; oldcombinedposterizationuseddifferentmapquantization/fusedloop; firststageeffectsweak andlogoheavilycropped/overlappedplayer. Preserve actualcapture/SERVED-PRIOR02-INSPECTION ratherthanclaimanunobservedcachebug.
+
+Implemented7ownedfiles: explicit2-passbufferpipeline `compositionPixels`: posterizeFIRST (four-toneluminancefirststage)→applyunchangedTeamColorsmappertoTHATbuffer; pixelateFIRST(coarsenearest-sourceRGB)→sameTeamColorsmappertoTHATbuffer. First/finalpixelSHA,stageorder/preset/version inmanifest andSVGpipelinekey. Exportguardchecksorder/version/hashshapes/currentSVGkey. Browser independentlyrecomputesbothbuffersfromoriginalcutout andmatcheshashes; alphaallunchanged. OriginalTeamColorsbytes/treatment equalacceptedOct25goldencontrol. Standaloneoldposter/pixelpresets remainunchanged; onlycombinations use strongerfirststagepresets soeffectsarevisibleaftercolor mapping. Noimagegen/sourceassetedits.
+
+SameKirillKaprizovsource/identity/crop/layout/fabricatedstatsforbothcombinedpreviews. MINprimaryisapresentationfixture, nothardcodedsourcepipeline; TORsecondarycontrol passes. Actualteamlogo480×480 atx630,y−100, beforeheroinSVG, shiftedleftofhero forclearexposurewhileoverlappingbehindit. ActualopaqueMINpixelscrossframe, testedagainstdecodedlogoalpha(notjusttransparentimagepadding). Heroimage x730,width560 forbothcombinations; originalTeamColorsgeometryunchanged. Leftmost25%logoopacity.75→1, rightmost75%solid. No identitytextoverlapininspectedscreenshots. AnalyticsbytesidenticalacrossnewPNGexports.
+
+Verification:24focusedtests/4files,scopedTypeScript,7-fileESLint,4offlineChromiumgroupspass;0externalHTTP/pageerrors. OneTSliteralinferenceerror correctedwithnarrowannotation; originalerrorpreserved. Earlierofflinecandidatebeforefinalopaquecropchange retained. Sharedheavylock30swaitexpiredonce, thenreleasedslotusedforchecks; no takeover. Nofullbuild/broadsuite. Actualservedverificationthenfreshlyopenedversionedcomparisonandstudio,checkedlatestHTMLSHAand2PNGhashes,checkpointmarker/orderlabels,desktop/phoneactualscreenshots,interactive2pipelines+logolayering.0externalrequests/pageerrors. Thisisactualservedproof, notsource/unitclaimalone.
+
+Readable exports/screenshots:
+- served-comparison-desktop.png — actualURLdesktop
+- served-comparison-phone.png — actualURLphone390
+- served-studio-posterized-team-colors.png / served-studio-pixelated-team-colors.png — actualservedinteractiveSVGs
+- posterized-team-colors-card.png / pixelated-team-colors-card.png — full1200×1020PNGexports
+- corresponding stage1.png and portrait.png — actualfirststageandteam-coloredsecondstage; comparisonhasexpandable stageview
+- comparison.png — sidebysideexportcomposite
+
+Guardedownpreview55021exactcommandverified→PID70975 detached127.0.0.1:3125. FiveHTTP200readbackhashesmatchnewcomparison/studioandpreservedprior02/observedview. Prior01/02fullHTML/PNGhashespreserved; routes /compositions-01,/compositions-02,/studio-02 andearlierhero/functional/editorial/portrait/teamcolors/observedevidence retained. Localonly/notdeployment;hoststopendsprocess/noautorestart. Current23deduplicatedappsourcepinsverifiedwith7authorizedsuccessors. Nootherports/process/cachetouched.
+
+Limits: illustrativefictionalstats, no livepopulation/rank/dataactivation orpremium. Phonefineprintstillneedszoom; nounrequesteddesignoverhaul. NewcompositionLibraryreference remainsunseenfromearlierfailedmaterialization; writteninstructionsgovern. Independent/TJvisualacceptancepending. NoNHL/privateDB/externalreads,dataqualificationexpansion,Git/push/deploy/delete/newworkers/sharedTuesdaychanges.
+
+Libraryupload remainsblockedbyautomaticapprovalreviewfromcomposition02 because trustedstatusrequestdidnotexplicitlyauthorizeexternalLibrarydestination.0uploads/IDs/noattemptthisslice/noalternate. DirectTJapprovaltosavethetwocorrectedPNGstotheirChatGPTLibrary isrequired; localfilesandpreviewarereadyforapproval. No security/TLSbypass. Datafinalityread/reportpacket preservedforlaterqualification.

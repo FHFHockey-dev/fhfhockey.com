@@ -1,0 +1,16 @@
+{
+  "extends": "../../../../web/tsconfig.json",
+  "compilerOptions": {
+    "incremental": false
+  },
+  "include": [
+    "../../../../web/lib/player-cards/observedView.ts",
+    "../../../../web/components/player-cards/ObservedPlayerCard.tsx",
+    "../../../../web/components/player-cards/ObservedPlayerCard.test.tsx",
+    "../../../../web/lib/player-cards/cardEvidenceVerdict.ts",
+    "../../../../web/next-env.d.ts"
+  ],
+  "exclude": [
+    "../../../../web/node_modules"
+  ]
+}

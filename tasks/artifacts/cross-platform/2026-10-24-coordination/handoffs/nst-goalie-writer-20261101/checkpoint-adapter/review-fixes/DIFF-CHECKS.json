@@ -1,0 +1,71 @@
+{
+  "checks": [
+    {
+      "path": "functions/api/fetch_team_table.py",
+      "exitCode": 1,
+      "output": "",
+      "status": "PASS (exit1 means different files in no-index mode)"
+    },
+    {
+      "path": "functions/tests/test_fetch_team_table_contract.py",
+      "exitCode": 1,
+      "output": "",
+      "status": "PASS (exit1 means different files in no-index mode)"
+    },
+    {
+      "path": "supabase/migrations/20261101161622_nst_goalie_catchup_v1.sql",
+      "exitCode": 1,
+      "output": "",
+      "status": "PASS (exit1 means different files in no-index mode)"
+    },
+    {
+      "path": "supabase/tests/nst_goalie_catchup_v1.py",
+      "exitCode": 1,
+      "output": "",
+      "status": "PASS (exit1 means different files in no-index mode)"
+    },
+    {
+      "path": "web/__tests__/pages/api/v1/db/update-nst-gamelog.test.ts",
+      "exitCode": 1,
+      "output": "",
+      "status": "PASS (exit1 means different files in no-index mode)"
+    },
+    {
+      "path": "web/__tests__/pages/api/v1/db/update-nst-goalies.route.test.ts",
+      "exitCode": 1,
+      "output": "",
+      "status": "PASS (exit1 means different files in no-index mode)"
+    },
+    {
+      "path": "web/lib/nst/goalieFreshness.server.test.ts",
+      "exitCode": 1,
+      "output": "",
+      "status": "PASS (exit1 means different files in no-index mode)"
+    },
+    {
+      "path": "web/lib/nst/jobLifecycle.server.test.ts",
+      "exitCode": 1,
+      "output": "",
+      "status": "PASS (exit1 means different files in no-index mode)"
+    },
+    {
+      "path": "web/lib/nst/jobLifecycle.server.ts",
+      "exitCode": 1,
+      "output": "",
+      "status": "PASS (exit1 means different files in no-index mode)"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-nst-gamelog.ts",
+      "exitCode": 1,
+      "output": "",
+      "status": "PASS (exit1 means different files in no-index mode)"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-nst-goalies.ts",
+      "exitCode": 1,
+      "output": "",
+      "status": "PASS (exit1 means different files in no-index mode)"
+    }
+  ],
+  "scope": "Eleven actual source-pair diffs; diff-as-file and exit0-only assertions were harness mistakes, superseded by these empty diagnostic results."
+}

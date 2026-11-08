@@ -1,0 +1,26 @@
+[
+  {
+    "path": "web/lib/player-cards/currentNhl.ts",
+    "match": true
+  },
+  {
+    "path": "web/lib/player-cards/currentNhlExport.ts",
+    "match": true
+  },
+  {
+    "path": "web/components/player-cards/CurrentPlayerCard.tsx",
+    "match": true
+  },
+  {
+    "path": "web/components/player-cards/CurrentPlayerCardStudio.test.tsx",
+    "match": true
+  },
+  {
+    "path": "web/components/player-cards/ProductionGameChart.tsx",
+    "match": true
+  },
+  {
+    "path": "tasks/tasks-prd-shareable-player-cards.md",
+    "match": true
+  }
+]

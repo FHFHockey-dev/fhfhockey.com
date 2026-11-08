@@ -1,0 +1,583 @@
+{
+  "status": "passed",
+  "tests": 16,
+  "authenticatedFiles": 558,
+  "visual": {
+    "players": 740,
+    "selectedRecords": 3461,
+    "FPWindows": 482,
+    "unresolvedPPP": 212,
+    "zeroShotWindows": 20,
+    "allDisplayValuesAgreeWithPinnedInputs": true
+  },
+  "earlierEvidence": {
+    "games": 60,
+    "targets": 197,
+    "outsideTargets": 10,
+    "bytes": 76175670,
+    "originalMatches": 138,
+    "extensionMatches": 12,
+    "unionMatches": 150,
+    "originalHeld": 59,
+    "unionHeld": 47,
+    "originalZeros": 78,
+    "extensionZeros": 8,
+    "previousFiveHolds": [
+      5598688,
+      5599832,
+      5600780,
+      5600805,
+      5600831
+    ],
+    "FPWindowsBefore": 482,
+    "FPWindowsAfterOriginal": 580,
+    "FPWindowsAfterUnion": 592,
+    "FPWindowLengthsAfterUnion": {
+      "5": 498,
+      "2": 20,
+      "3": 25,
+      "1": 25,
+      "4": 24
+    },
+    "FPRecordsAfterUnion": 3290,
+    "unresolvedAfterUnion": 62,
+    "earliestEvidence": "2026-10-27T20:01:06.576126+00:00",
+    "latestEvidence": "2026-10-27T20:18:46.994758+00:00",
+    "sourceCapture": "2026-11-01T19:57:38.026058+00:00",
+    "controls": {
+      "skaterControlCells": 6480,
+      "goals": 417,
+      "shootoutGoalEvents": 15
+    },
+    "gamesChecked": [
+      {
+        "gameId": 2026020011,
+        "skaterControls": 36,
+        "regulationOTGoals": 9,
+        "originalHold": null,
+        "extensionHold": "not_in_extension_scope",
+        "goalieCredits": []
+      },
+      {
+        "gameId": 2026020013,
+        "skaterControls": 36,
+        "regulationOTGoals": 6,
+        "originalHold": null,
+        "extensionHold": "not_in_extension_scope",
+        "goalieCredits": []
+      },
+      {
+        "gameId": 2026020021,
+        "skaterControls": 36,
+        "regulationOTGoals": 7,
+        "originalHold": null,
+        "extensionHold": "not_in_extension_scope",
+        "goalieCredits": []
+      },
+      {
+        "gameId": 2026020023,
+        "skaterControls": 36,
+        "regulationOTGoals": 5,
+        "originalHold": null,
+        "extensionHold": "not_in_extension_scope",
+        "goalieCredits": []
+      },
+      {
+        "gameId": 2026020034,
+        "skaterControls": 36,
+        "regulationOTGoals": 9,
+        "originalHold": null,
+        "extensionHold": "not_in_extension_scope",
+        "goalieCredits": []
+      },
+      {
+        "gameId": 2026020046,
+        "skaterControls": 36,
+        "regulationOTGoals": 8,
+        "originalHold": null,
+        "extensionHold": "not_in_extension_scope",
+        "goalieCredits": []
+      },
+      {
+        "gameId": 2026020050,
+        "skaterControls": 36,
+        "regulationOTGoals": 6,
+        "originalHold": null,
+        "extensionHold": "not_in_extension_scope",
+        "goalieCredits": []
+      },
+      {
+        "gameId": 2026020051,
+        "skaterControls": 36,
+        "regulationOTGoals": 8,
+        "originalHold": null,
+        "extensionHold": "not_in_extension_scope",
+        "goalieCredits": []
+      },
+      {
+        "gameId": 2026020053,
+        "skaterControls": 36,
+        "regulationOTGoals": 8,
+        "originalHold": null,
+        "extensionHold": "not_in_extension_scope",
+        "goalieCredits": []
+      },
+      {
+        "gameId": 2026020061,
+        "skaterControls": 36,
+        "regulationOTGoals": 9,
+        "originalHold": null,
+        "extensionHold": "not_in_extension_scope",
+        "goalieCredits": []
+      },
+      {
+        "gameId": 2026020062,
+        "skaterControls": 36,
+        "regulationOTGoals": 5,
+        "originalHold": null,
+        "extensionHold": "not_in_extension_scope",
+        "goalieCredits": []
+      },
+      {
+        "gameId": 2026020065,
+        "skaterControls": 36,
+        "regulationOTGoals": 6,
+        "originalHold": "unrecognized_assist_credit",
+        "extensionHold": "penalty_shot_attribution_held",
+        "goalieCredits": []
+      },
+      {
+        "gameId": 2026020074,
+        "skaterControls": 36,
+        "regulationOTGoals": 5,
+        "originalHold": null,
+        "extensionHold": "not_in_extension_scope",
+        "goalieCredits": []
+      },
+      {
+        "gameId": 2026020076,
+        "skaterControls": 36,
+        "regulationOTGoals": 4,
+        "originalHold": null,
+        "extensionHold": "not_in_extension_scope",
+        "goalieCredits": []
+      },
+      {
+        "gameId": 2026020081,
+        "skaterControls": 36,
+        "regulationOTGoals": 8,
+        "originalHold": null,
+        "extensionHold": "not_in_extension_scope",
+        "goalieCredits": []
+      },
+      {
+        "gameId": 2026020082,
+        "skaterControls": 36,
+        "regulationOTGoals": 6,
+        "originalHold": null,
+        "extensionHold": "not_in_extension_scope",
+        "goalieCredits": []
+      },
+      {
+        "gameId": 2026020089,
+        "skaterControls": 36,
+        "regulationOTGoals": 6,
+        "originalHold": null,
+        "extensionHold": "not_in_extension_scope",
+        "goalieCredits": []
+      },
+      {
+        "gameId": 2026020090,
+        "skaterControls": 36,
+        "regulationOTGoals": 9,
+        "originalHold": null,
+        "extensionHold": "not_in_extension_scope",
+        "goalieCredits": []
+      },
+      {
+        "gameId": 2026020092,
+        "skaterControls": 36,
+        "regulationOTGoals": 6,
+        "originalHold": null,
+        "extensionHold": "not_in_extension_scope",
+        "goalieCredits": []
+      },
+      {
+        "gameId": 2026020094,
+        "skaterControls": 36,
+        "regulationOTGoals": 4,
+        "originalHold": "unknown_or_goalie_credit_held",
+        "extensionHold": "not_in_extension_scope",
+        "goalieCredits": [
+          {
+            "event": 250,
+            "playerId": 8478435,
+            "role": "assist"
+          }
+        ]
+      },
+      {
+        "gameId": 2026020096,
+        "skaterControls": 36,
+        "regulationOTGoals": 9,
+        "originalHold": null,
+        "extensionHold": "not_in_extension_scope",
+        "goalieCredits": []
+      },
+      {
+        "gameId": 2026020098,
+        "skaterControls": 36,
+        "regulationOTGoals": 8,
+        "originalHold": null,
+        "extensionHold": "not_in_extension_scope",
+        "goalieCredits": []
+      },
+      {
+        "gameId": 2026020099,
+        "skaterControls": 36,
+        "regulationOTGoals": 7,
+        "originalHold": null,
+        "extensionHold": "not_in_extension_scope",
+        "goalieCredits": []
+      },
+      {
+        "gameId": 2026020100,
+        "skaterControls": 36,
+        "regulationOTGoals": 5,
+        "originalHold": null,
+        "extensionHold": "not_in_extension_scope",
+        "goalieCredits": []
+      },
+      {
+        "gameId": 2026020102,
+        "skaterControls": 36,
+        "regulationOTGoals": 9,
+        "originalHold": "unknown_or_goalie_credit_held",
+        "extensionHold": "not_in_extension_scope",
+        "goalieCredits": [
+          {
+            "event": 211,
+            "playerId": 8476932,
+            "role": "assist"
+          }
+        ]
+      },
+      {
+        "gameId": 2026020104,
+        "skaterControls": 36,
+        "regulationOTGoals": 5,
+        "originalHold": null,
+        "extensionHold": "not_in_extension_scope",
+        "goalieCredits": []
+      },
+      {
+        "gameId": 2026020108,
+        "skaterControls": 36,
+        "regulationOTGoals": 9,
+        "originalHold": null,
+        "extensionHold": "not_in_extension_scope",
+        "goalieCredits": []
+      },
+      {
+        "gameId": 2026020115,
+        "skaterControls": 36,
+        "regulationOTGoals": 4,
+        "originalHold": null,
+        "extensionHold": "not_in_extension_scope",
+        "goalieCredits": []
+      },
+      {
+        "gameId": 2026020117,
+        "skaterControls": 36,
+        "regulationOTGoals": 6,
+        "originalHold": null,
+        "extensionHold": "not_in_extension_scope",
+        "goalieCredits": []
+      },
+      {
+        "gameId": 2026020118,
+        "skaterControls": 36,
+        "regulationOTGoals": 8,
+        "originalHold": null,
+        "extensionHold": "not_in_extension_scope",
+        "goalieCredits": []
+      },
+      {
+        "gameId": 2026020121,
+        "skaterControls": 36,
+        "regulationOTGoals": 6,
+        "originalHold": "unknown_or_goalie_credit_held",
+        "extensionHold": "not_in_extension_scope",
+        "goalieCredits": [
+          {
+            "event": 74,
+            "playerId": 8480313,
+            "role": "assist"
+          }
+        ]
+      },
+      {
+        "gameId": 2026020122,
+        "skaterControls": 36,
+        "regulationOTGoals": 5,
+        "originalHold": null,
+        "extensionHold": "not_in_extension_scope",
+        "goalieCredits": []
+      },
+      {
+        "gameId": 2026020124,
+        "skaterControls": 36,
+        "regulationOTGoals": 11,
+        "originalHold": null,
+        "extensionHold": "not_in_extension_scope",
+        "goalieCredits": []
+      },
+      {
+        "gameId": 2026020126,
+        "skaterControls": 36,
+        "regulationOTGoals": 7,
+        "originalHold": null,
+        "extensionHold": "not_in_extension_scope",
+        "goalieCredits": []
+      },
+      {
+        "gameId": 2026020127,
+        "skaterControls": 36,
+        "regulationOTGoals": 6,
+        "originalHold": null,
+        "extensionHold": "not_in_extension_scope",
+        "goalieCredits": []
+      },
+      {
+        "gameId": 2026020128,
+        "skaterControls": 36,
+        "regulationOTGoals": 4,
+        "originalHold": null,
+        "extensionHold": "not_in_extension_scope",
+        "goalieCredits": []
+      },
+      {
+        "gameId": 2026020130,
+        "skaterControls": 36,
+        "regulationOTGoals": 4,
+        "originalHold": null,
+        "extensionHold": "not_in_extension_scope",
+        "goalieCredits": []
+      },
+      {
+        "gameId": 2026020133,
+        "skaterControls": 36,
+        "regulationOTGoals": 8,
+        "originalHold": null,
+        "extensionHold": "not_in_extension_scope",
+        "goalieCredits": []
+      },
+      {
+        "gameId": 2026020134,
+        "skaterControls": 36,
+        "regulationOTGoals": 8,
+        "originalHold": "unrecognized_goal_credit",
+        "extensionHold": null,
+        "goalieCredits": []
+      },
+      {
+        "gameId": 2026020138,
+        "skaterControls": 36,
+        "regulationOTGoals": 5,
+        "originalHold": "unrecognized_assist_credit",
+        "extensionHold": null,
+        "goalieCredits": []
+      },
+      {
+        "gameId": 2026020139,
+        "skaterControls": 36,
+        "regulationOTGoals": 4,
+        "originalHold": null,
+        "extensionHold": "not_in_extension_scope",
+        "goalieCredits": []
+      },
+      {
+        "gameId": 2026020140,
+        "skaterControls": 36,
+        "regulationOTGoals": 9,
+        "originalHold": null,
+        "extensionHold": "not_in_extension_scope",
+        "goalieCredits": []
+      },
+      {
+        "gameId": 2026020144,
+        "skaterControls": 36,
+        "regulationOTGoals": 7,
+        "originalHold": null,
+        "extensionHold": "not_in_extension_scope",
+        "goalieCredits": []
+      },
+      {
+        "gameId": 2026020154,
+        "skaterControls": 36,
+        "regulationOTGoals": 6,
+        "originalHold": null,
+        "extensionHold": "not_in_extension_scope",
+        "goalieCredits": []
+      },
+      {
+        "gameId": 2026020155,
+        "skaterControls": 36,
+        "regulationOTGoals": 9,
+        "originalHold": null,
+        "extensionHold": "not_in_extension_scope",
+        "goalieCredits": []
+      },
+      {
+        "gameId": 2026020156,
+        "skaterControls": 36,
+        "regulationOTGoals": 8,
+        "originalHold": null,
+        "extensionHold": "not_in_extension_scope",
+        "goalieCredits": []
+      },
+      {
+        "gameId": 2026020159,
+        "skaterControls": 36,
+        "regulationOTGoals": 5,
+        "originalHold": "unknown_or_goalie_credit_held",
+        "extensionHold": "not_in_extension_scope",
+        "goalieCredits": [
+          {
+            "event": 333,
+            "playerId": 8475311,
+            "role": "assist"
+          }
+        ]
+      },
+      {
+        "gameId": 2026020165,
+        "skaterControls": 36,
+        "regulationOTGoals": 7,
+        "originalHold": null,
+        "extensionHold": "not_in_extension_scope",
+        "goalieCredits": []
+      },
+      {
+        "gameId": 2026020167,
+        "skaterControls": 36,
+        "regulationOTGoals": 9,
+        "originalHold": null,
+        "extensionHold": "not_in_extension_scope",
+        "goalieCredits": []
+      },
+      {
+        "gameId": 2026020168,
+        "skaterControls": 36,
+        "regulationOTGoals": 9,
+        "originalHold": null,
+        "extensionHold": "not_in_extension_scope",
+        "goalieCredits": []
+      },
+      {
+        "gameId": 2026020170,
+        "skaterControls": 36,
+        "regulationOTGoals": 10,
+        "originalHold": null,
+        "extensionHold": "not_in_extension_scope",
+        "goalieCredits": []
+      },
+      {
+        "gameId": 2026020171,
+        "skaterControls": 36,
+        "regulationOTGoals": 11,
+        "originalHold": "unknown_or_goalie_credit_held",
+        "extensionHold": "not_in_extension_scope",
+        "goalieCredits": [
+          {
+            "event": 309,
+            "playerId": 8477992,
+            "role": "assist"
+          }
+        ]
+      },
+      {
+        "gameId": 2026020174,
+        "skaterControls": 36,
+        "regulationOTGoals": 3,
+        "originalHold": null,
+        "extensionHold": "not_in_extension_scope",
+        "goalieCredits": []
+      },
+      {
+        "gameId": 2026020175,
+        "skaterControls": 36,
+        "regulationOTGoals": 4,
+        "originalHold": null,
+        "extensionHold": "not_in_extension_scope",
+        "goalieCredits": []
+      },
+      {
+        "gameId": 2026020176,
+        "skaterControls": 36,
+        "regulationOTGoals": 9,
+        "originalHold": "unrecognized_goal_credit",
+        "extensionHold": null,
+        "goalieCredits": []
+      },
+      {
+        "gameId": 2026020177,
+        "skaterControls": 36,
+        "regulationOTGoals": 9,
+        "originalHold": "unrecognized_goal_credit",
+        "extensionHold": "unknown_or_goalie_credit_held",
+        "goalieCredits": [
+          {
+            "event": 351,
+            "playerId": 8478872,
+            "role": "assist"
+          }
+        ]
+      },
+      {
+        "gameId": 2026020183,
+        "skaterControls": 36,
+        "regulationOTGoals": 8,
+        "originalHold": null,
+        "extensionHold": "not_in_extension_scope",
+        "goalieCredits": []
+      },
+      {
+        "gameId": 2026020184,
+        "skaterControls": 36,
+        "regulationOTGoals": 6,
+        "originalHold": null,
+        "extensionHold": "not_in_extension_scope",
+        "goalieCredits": []
+      },
+      {
+        "gameId": 2026020185,
+        "skaterControls": 36,
+        "regulationOTGoals": 9,
+        "originalHold": null,
+        "extensionHold": "not_in_extension_scope",
+        "goalieCredits": []
+      },
+      {
+        "gameId": 2026020186,
+        "skaterControls": 36,
+        "regulationOTGoals": 7,
+        "originalHold": "unknown_or_goalie_credit_held",
+        "extensionHold": "not_in_extension_scope",
+        "goalieCredits": [
+          {
+            "event": 127,
+            "playerId": 8482445,
+            "role": "assist"
+          }
+        ]
+      }
+    ]
+  },
+  "providerRequests": 0,
+  "databaseRequests": 0,
+  "productionRequests": 0,
+  "sourceEdits": 0,
+  "producerMainCalls": 0,
+  "holdoutAccess": 0
+}

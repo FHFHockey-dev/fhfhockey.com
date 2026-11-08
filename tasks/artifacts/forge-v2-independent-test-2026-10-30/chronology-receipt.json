@@ -1,0 +1,12 @@
+{
+  "check": "chronology",
+  "command": [
+    "node",
+    "/tmp/forge-v2-independent-hkh8ulbm/chronology.cjs"
+  ],
+  "cwd": "/tmp/forge-v2-independent-hkh8ulbm/web",
+  "exit": 0,
+  "durationSeconds": 0.05778908729553223,
+  "environment": "allowlisted; no inherited credentials; no env files copied",
+  "log": "chronology.log"
+}

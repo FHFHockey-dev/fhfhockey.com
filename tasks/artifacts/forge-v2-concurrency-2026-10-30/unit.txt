@@ -1,0 +1,49 @@
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v3.2.7 /private/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/forge-v2-concurrency-8iniyhsd/web
+
+ ✓ lib/forge-v2/preparation.test.ts > issues H10 to H1 through queue, prepares immutable corrections and serves the API without fabricated publications 4333ms
+stdout | lib/forge-v2/preparation.test.ts > concurrent older preparation must not replace a newer corrected read head
+Independent race evidence {"olderRejected":true,"newer":"2026-01-14T04:00:00.000Z","lastInserted":"2026-01-14T04:00:00.000Z","expectedOutcome":"independent-new-correction","servedOutcome":"independent-new-correction"}
+
+ ✓ lib/forge-v2/preparation.test.ts > concurrent older preparation must not replace a newer corrected read head 2385ms
+ ✓ lib/forge-v2/pipeline.test.ts > prepared local issuance > keeps default joint support coherent when zero-weight PIM is only partially observed 17ms
+ ✓ lib/forge-v2/pipeline.test.ts > prepared local issuance > retains a profile-addressable calibration bundle and supported joint profile identities 23ms
+ ✓ lib/forge-v2/pipeline.test.ts > prepared local issuance > retains original episode and lock lineage across same-horizon trade and schedule revisions 13ms
+ ✓ lib/forge-v2/pipeline.test.ts > prepared local issuance > connects normalized inputs, actual math, pinned files and immutable publication 13ms
+ ✓ lib/forge-v2/pipeline.test.ts > prepared local issuance > retains observations across source failures and refuses development authority escalation 2ms
+ ✓ lib/forge-v2/pipeline.test.ts > prepared local issuance > publishes explicit unavailable heads when no candidate model exists 1ms
+ ✓ lib/forge-v2/pipeline.test.ts > prepared local issuance > retains only a compatible calibration artifact (late=false) 23ms
+ ✓ lib/forge-v2/pipeline.test.ts > prepared local issuance > retains only a compatible calibration artifact (late=true) 12ms
+ ✓ lib/forge-v2/pipeline.test.ts > prepared local issuance > reuses exact stored clocks and sequence after lost publication acknowledgement 13ms
+ ✓ lib/forge-v2/pipeline.test.ts > append-only prepared ledger capture > persists entry, closure and reentry snapshots with deterministic predecessor links 1ms
+ ✓ lib/forge-v2/pipeline.test.ts > append-only prepared ledger capture > rejects entry mutation and broken predecessor identity before writing 1ms
+ ✓ lib/forge-v2/pipeline.test.ts > prepared scope reconciliation > fences obsolete work before capture, preserves same-horizon trade lineage, then closes and reopens once 40ms
+ ✓ lib/forge-v2/pipeline.test.ts > prepared scope reconciliation > captures nothing when reconciliation loses queue CAS 1ms
+ ✓ lib/forge-v2/pipeline.test.ts > durable prepared queue execution > fails closed before oversized recovery batches perform receipt reads or queue writes 4ms
+ ✓ lib/forge-v2/pipeline.test.ts > durable prepared queue execution > retains the failed acknowledgement without a false terminal gap when the last attempt committed 13ms
+ ✓ lib/forge-v2/pipeline.test.ts > durable prepared queue execution > recovers a committed receipt after lock without issuing again or declaring a missing refresh 13ms
+ ✓ lib/forge-v2/pipeline.test.ts > durable prepared queue execution > does not commit stale expiry evidence when a receipt arrives during recovery reads 13ms
+ ✓ lib/forge-v2/pipeline.test.ts > durable prepared queue execution > rejects a substituted receipt rather than hiding a missing refresh 15ms
+ ✓ lib/forge-v2/pipeline.test.ts > durable prepared queue execution > does not retain a phantom expiry when the queue CAS loses to a concurrent acknowledgement 1ms
+ ✓ lib/forge-v2/pipeline.test.ts > durable prepared queue execution > retains an executed failure after lease loss without changing the newer queue claim 1ms
+ ✓ lib/forge-v2/pipeline.test.ts > durable prepared queue execution > retains missing-input attempts and gaps after queue archival without duplicate rescans 1ms
+ ✓ lib/forge-v2/pipeline.test.ts > durable prepared queue execution > captures expired leases and lock gaps before mutable queue transitions 1ms
+ ✓ lib/forge-v2/pipeline.test.ts > durable prepared queue execution > does no work when the durable claim CAS loses a revision race 0ms
+ ✓ lib/forge-v2/pipeline.test.ts > durable prepared queue execution > merges acknowledgement into fresh queue state without losing a concurrent follow-up 12ms
+ ✓ lib/forge-v2/pipeline.test.ts > durable prepared queue execution > rejects an attempt replaced after claim before any model/storage work 1ms
+ ✓ lib/forge-v2/pipeline.test.ts > durable prepared queue execution > fences a claim replacement between the last read and publication write 12ms
+ ✓ lib/forge-v2/pipeline.test.ts > durable prepared queue execution > recovers a genuine earlier receipt under a later claim without recomputing its draft 12ms
+ ✓ lib/forge-v2/api.test.ts > bounded prepared read API > parses canonical signed scoring and rejects ambiguous or unbounded queries 1ms
+ ✓ lib/forge-v2/api.test.ts > bounded prepared read API > passes the selected scoring identity into accountability reads 1ms
+ ✓ lib/forge-v2/api.test.ts > bounded prepared read API > keeps private fields out and abstains on unqualified forecasts while scoring official outcomes 4ms
+ ✓ lib/forge-v2/api.test.ts > bounded prepared read API > pins pagination to context and scoring and starts old-game reads independently of active queue 1ms
+ ✓ lib/forge-v2/api.test.ts > bounded prepared read API > gates before reads, validates input, and never leaks server failures 1ms
+ ✓ lib/forge-v2/api.test.ts > bounded prepared read API > returns explicit absence and rejects oversized prepared responses 3ms
+ ✓ lib/forge-v2/api.test.ts > bounded prepared read API > refuses future or foreign outcome evidence in a prepared read context 1ms
+
+ Test Files  3 passed (3)
+      Tests  36 passed (36)
+   Start at  08:24:31
+   Duration  7.52s (transform 122ms, setup 3ms, collect 191ms, tests 6.99s, environment 0ms, prepare 99ms)
+

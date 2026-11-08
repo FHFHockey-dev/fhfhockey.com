@@ -1,4 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
+import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import supabase from "lib/supabase/server";
 import { starterBoardFlags } from "lib/projections/starterBoardFlags";
 import { dispatchStarterBoardJobs } from "lib/projections/starterBoardQueue";
@@ -11,6 +12,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const secret = process.env.CRON_SECRET;
   if (!secret?.trim()) return res.status(503).json({ error: "Scheduler not configured" });
   if (req.headers.authorization !== `Bearer ${secret}`) return res.status(401).end();
+  return auditedWork(req, res);
+}
+
+const auditedWork = withCronJobAudit(async (req: NextApiRequest, res: NextApiResponse) => {
+  const secret = process.env.CRON_SECRET!;
   const flags = starterBoardFlags();
   if (!flags.scheduler) return res.status(200).json({ disabled: true });
   // Never derive a credential-bearing destination from an incoming Host header.
@@ -41,4 +47,4 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       capture: capture.value,
     });
   } catch { return res.status(503).json({ error: "Starter Board dispatch unavailable" }); }
-}
+}, { jobName: "/api/internal/starter-board", recordRowMetrics: false, responsePreviewKeys: ["mode", "disabled", "error"] });

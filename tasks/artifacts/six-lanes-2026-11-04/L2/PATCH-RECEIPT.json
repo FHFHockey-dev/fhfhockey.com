@@ -1,0 +1,8 @@
+{
+  "target": "web/__tests__/pages/api/internal/yahoo-live-draft.test.ts",
+  "source_sha256": "f1d3238b68c45d43eb15c77825bed0a6e718779c8bccf34efccadafdefc6c8c6",
+  "proposed_sha256": "36e296269135ee08ae822511d00b51c7f5f47bd200b21929e146e3e91e376a71",
+  "patch_sha256": "dbe4089cff623f74c08bba1a6ec18a2eeec8c14e630f0f455d1d65a5b500a9d0",
+  "application_written": false,
+  "tests_run": false
+}

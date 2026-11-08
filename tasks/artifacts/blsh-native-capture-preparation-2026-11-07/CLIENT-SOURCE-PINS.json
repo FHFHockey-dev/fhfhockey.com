@@ -1,0 +1,17 @@
+{
+  "canonicalPath": "web/lib/nst/client.ts",
+  "baseSHA256": "48d82fc40ca06d9abe4675f4a1896add55c4e53d4dee661bbe082d424c944e4f",
+  "candidateSHA256": "99ad45c5ffc88f8ccb24b2d69f5fbad7c6dbcb800fcbd1962c0ab6c7f8945388",
+  "patchSHA256": "827445c19e2791dfc0fb1c7255581a559097e29fd8d37312322f0e51cf64d3f0",
+  "canonicalModified": false,
+  "custody": "Claude NST lane; owner integration pending",
+  "liveExecution": false,
+  "frozenSources": {
+    "web/lib/nst/client.ts": "48d82fc40ca06d9abe4675f4a1896add55c4e53d4dee661bbe082d424c944e4f",
+    "web/lib/nst/requestBudget.ts": "ccbab70aee15aba93818df4ef42d41195eceb39757af0ad3eef3b3dd15437e5a",
+    "web/lib/nst/sharedAdmission.ts": "f1c407170c9085c5f57b543c418bb8341859b4034d4f1d9d286bea0afabc36ac",
+    "web/lib/nst/jobLifecycle.server.ts": "365dcca44fc79e12cd0a2b4be9edc9e58e99f3a5344c4dc23b7b4332c982e0e3",
+    "web/lib/cron/nstRateLimitPolicy.ts": "f90686ed0e22f7dcc8685c111c62445004cb32744284ae22f3e37f9b6e491f2c",
+    "web/lib/buyLowSellHigh/currentProcessEvidence.server.ts": "9011207c1d16af7a2834a80b4d19d85d0b772a02093eef822e0dd44a9959af83"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "status": "CONCRETE_CANDIDATE_NOT_ADMITTED",
+  "newCandidateFile": "tasks/artifacts/forge-v2-concurrency-2026-10-30/retained-source-candidate.json",
+  "candidateSha256": "09b9bb2844ebcd3e3302fe1c392e69c446c90d238c9c22310e391fd149c3faca",
+  "verifiedPayloadBytes": 182713,
+  "metadataPins": 10,
+  "schemaAndIdentityChecks": "passed",
+  "taskCheckboxesChanged": false,
+  "productCodeChanged": false,
+  "adapterImplemented": false,
+  "reason": "Exact source-use/custody approval and semantic scope unresolved; no assumption from presence",
+  "protectedDataOpened": false,
+  "networkCalls": 0,
+  "realTestExecuted": false,
+  "denied": [],
+  "pendingToolApprovals": [],
+  "uncertain": [],
+  "baseAtVerification": "4661ec6cbfe6fe2fa26d85d85d357610b73b8634"
+}

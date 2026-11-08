@@ -1,0 +1,39 @@
+{
+  "scope": "F1 atomic context publication repair and minimum real-data rehearsal readiness",
+  "base": "514614ed79a75498c81ad1df0c812150d51a46b0",
+  "branch": "octoberBranch",
+  "chefRuntime": "Not exposed; cannot attest model/effort. Feasible explicit worker settings under mise runtime limitation.",
+  "budget": {
+    "workers": 2,
+    "model": "gpt-6-astra",
+    "effort": "medium",
+    "reviewPasses": 1,
+    "correctionPasses": 1
+  },
+  "chefFiles": [
+    "web/lib/forge-v2/history.server.ts",
+    "web/lib/forge-v2/history.test.ts",
+    "web/lib/forge-v2/preparation.server.ts",
+    "web/lib/forge-v2/preparation.test.ts",
+    "web/lib/forge-v2/fixtureHarness.server.ts",
+    "web/lib/forge-v2/api.server.ts",
+    "tasks/tasks-prd-forge-v2-skater-game-forecasts.md"
+  ],
+  "artifactRoot": "tasks/artifacts/forge-v2-concurrency-2026-10-30",
+  "workers": {
+    "readiness": [
+      "real-data-readiness.json"
+    ],
+    "review": [
+      "independent-review.json",
+      "review reproductions/logs only"
+    ]
+  },
+  "restrictions": "No real/protected data access, provider acquisition, hosted actions, activation, deploy, push or spend",
+  "state": "handed_back_local_repair_accepted; real_data_source_clearance_missing",
+  "candidate": "5ceb68e4b114397e692010c70c9036eccc7e2538",
+  "workersHandedBack": [
+    "real_test_readiness",
+    "concurrency_review"
+  ]
+}

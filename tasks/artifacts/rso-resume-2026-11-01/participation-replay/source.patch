@@ -1,0 +1,94 @@
+--- a/web/lib/player-forecasts/rsoUsePolicy.ts
++++ b/web/lib/player-forecasts/rsoUsePolicy.ts
+@@ -110,10 +110,12 @@
+   bridgeRevisionIds: string[] };
+ 
+ /** The per-issuance half of a method-bound lineage: this row's own revision, issued context and issuance window. */
+-function issuanceIntact(forecast: GameForecast, source: { sourceId: string; issuedAt: string; expiresAt: string } | undefined,
++function issuanceIntact(forecast: GameForecast, source: ({ sourceId: string } | { revisionId: string }) & { issuedAt: string; expiresAt: string } | undefined,
+   issuance: string, now: string): boolean {
+   const clock = Date.parse(now), issuedAt = Date.parse(source?.issuedAt ?? forecast.issuedAt), expiresAt = Date.parse(source?.expiresAt ?? forecast.expiresAt ?? "");
+-  return issuance === (source?.sourceId ?? forecast.revisionId)
++  const matches = !source ? issuance === forecast.revisionId : "sourceId" in source ? issuance === source.sourceId
++    : ["participation", "appearance", "start"].some(suffix => source.revisionId === `${issuance}:${suffix}`);
++  return matches
+     && forecast.issuedContext?.playerId === forecast.playerId && forecast.issuedContext.gameId === forecast.gameId
+     && Number.isFinite(clock) && Number.isFinite(issuedAt) && issuedAt <= clock && Number.isFinite(expiresAt) && clock < expiresAt;
+ }
+@@ -134,12 +136,12 @@
+     const inputs = forecast.contributions?.[target]?.inputs;
+     const source = inputs?.detailed;
+     // A baseline-only row may still depend on reviewed issued participation.
+-    // Its aggregate cutoff can be newer than that participation's own cutoff.
++    // Its aggregate revision and timestamps describe the rates, not the borrowed issuance.
+     const participation = inputs?.participation && !inputs.participation.model ? inputs.participation : undefined;
+     const issuance = lineageParts(binding?.participationLineage ?? null).issuance;
+     const bound = binding?.targetKey === target && binding.codeVersion === (source?.policyVersion ?? forecast.modelVersion)
+       && binding.cutoffAt === (source?.cutoffAt ?? participation?.cutoffAt ?? forecast.cutoffAt)
+-      && (issuance === null || issuanceIntact(forecast, source, issuance, now));
++      && (issuance === null || issuanceIntact(forecast, source ?? participation, issuance, now));
+     const decision = resolveRsoTargetUse(compatible && bound ? binding : undefined, now, policy);
+     targetUses[target] = intersectRsoUses(forecast.targetAllowedUses?.[target] ?? forecast.allowedUses, decision.allowedUses);
+     const row = contributions?.[target];
+--- a/web/lib/rosterScheduleOptimizer/planningReproducibility.test.ts
++++ b/web/lib/rosterScheduleOptimizer/planningReproducibility.test.ts
+@@ -222,6 +222,59 @@
+     expect(resolvePlanningContributions(saved, { consumer: "rso" }).forecasts).toEqual(resolved.forecasts);
+   });
+ 
++  it.each(["points", "goalie"] as const)("preserves native %s participation approval through baseline save/replay", profile => {
++    vi.spyOn(Date, "now").mockReturnValue(CLOCK);
++    const snapshot = qualityFixture("baseline", profile);
++    const kind = profile === "goalie" ? "goalie" : "skater";
++    const targets = Object.keys(snapshot.forecasts[0].stats);
++    const policy = fixtureRsoPolicy(["fixture-forge-v1"], targets);
++    policy.reviews = policy.reviews.map(review => ({ ...review, binding: { ...review.binding,
++      participationLineage: `${rsoPolicy.ISSUED_PARTICIPATION_METHOD}:${kind}` } }));
++    vi.spyOn(rsoPolicy, "currentRsoUsePolicy").mockReturnValue(policy);
++    for (const row of snapshot.forecasts) for (const binding of Object.values(row.rsoTargetBindings!)) {
++      binding.participationLineage = rsoPolicy.issuedParticipationLineage(kind, row.revisionId);
++    }
++    snapshot.baselineSources = snapshot.baselineSources!.map(source => ({ ...source,
++      cutoffAt: "2026-10-03T02:00:00Z", issuedAt: "2026-10-03T03:00:00Z" }));
++    const resolved = resolvePlanningContributions(snapshot, { consumer: "rso" });
++    const target = profile === "goalie" ? "SAVES_GOALIE" : "GOALS";
++    expect(resolved.forecasts[0].stats[target]).toBeGreaterThan(0);
++    expect(resolved.forecasts[0].revisionId).not.toBe(snapshot.forecasts[0].revisionId);
++    const saved: PlanningSnapshot = JSON.parse(JSON.stringify(resolved));
++    const replayed = resolvePlanningContributions(saved, { consumer: "rso" });
++    expect(replayed.forecasts).toEqual(resolved.forecasts);
++    for (const provider of ["manual", "yahoo"] as const) {
++      const context = { ...saved.context, provider };
++      const result = evaluatePlan({ ...saved, context }, intent, profile === "goalie" ? "agp" : "outcome");
++      expect(result.legal).toBe(true);
++      expect(result.comparisonEligible).toBe(true);
++      expect(result.projectedStats[target]).toBeGreaterThan(0);
++    }
++    for (const failure of ["wrong_revision", "missing_suffix", "unknown_suffix", "foreign_player", "future_issuance", "expired_participation"] as const) {
++      const changed: PlanningSnapshot = JSON.parse(JSON.stringify(saved));
++      for (const row of changed.forecasts) for (const contribution of Object.values(row.contributions!)) {
++        const participation = contribution.inputs!.participation!;
++        if (failure === "wrong_revision") participation.revisionId = "another-revision:participation";
++        if (failure === "missing_suffix") participation.revisionId = participation.revisionId.replace(/:(appearance|start)$/, "");
++        if (failure === "unknown_suffix") participation.revisionId += ":unknown";
++        if (failure === "foreign_player") participation.nhlPlayerId++;
++        if (failure === "future_issuance") participation.issuedAt = "2026-10-04T01:00:00Z";
++        if (failure === "expired_participation") participation.expiresAt = changed.context.asOf;
++      }
++      const rejected = resolvePlanningContributions(changed, { consumer: "rso" });
++      for (const row of rejected.forecasts) {
++        expect(row.stats[target], failure).toBeNull();
++        expect(row.contributions?.[target].allowedUses.comparison, failure).toBe(false);
++      }
++    }
++    // A longer-lived rate/aggregate must not renew the participation's own issuance window.
++    const retained = { ...resolved.forecasts[0], expiresAt: "2100-01-01T00:00:00Z" };
++    expect(rsoPolicy.restrictRsoForecast(retained, undefined, "2026-10-16T00:00:00Z", policy)
++      .contributions?.[target].allowedUses.comparison).toBe(false);
++    const revoked = { ...policy, revokedReviewIds: policy.reviews.map(review => review.id) };
++    expect(resolvePlanningContributions(saved, { consumer: "rso", usePolicy: revoked }).forecasts[0].stats[target]).toBeNull();
++  });
++
+   it.each(["missing_review", "rate_review_only", "revoked_review", "expired_review", "missing_binding",
+     "changed_model", "changed_cutoff", "changed_artifact", "participation_identity", "expired_participation", "revoked_revision"])
+   ("withholds borrowed baseline participation after %s on replay", kind => {

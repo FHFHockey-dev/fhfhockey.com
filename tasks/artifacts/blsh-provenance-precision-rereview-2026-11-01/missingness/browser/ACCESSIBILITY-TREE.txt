@@ -1,0 +1,38 @@
+- group:
+  - text: "Saved Game Score inputs: 11 of 17 present"
+  - paragraph: Game Score cannot be calculated from these saved counts because inputs are missing or invalid. No missing value is treated as zero.
+  - paragraph: These are per-game saved counts. Even strength is kept as the source definition; it is not relabelled 5-on-5. Separate research evidence has not been applied to fill these values.
+  - term: Goals
+  - definition: 0 — observed zero
+  - term: Primary assists
+  - definition: 0 — observed zero
+  - term: Secondary assists
+  - definition: 0 — observed zero
+  - term: Shots on goal
+  - definition: 0 — observed zero
+  - term: Blocked shots
+  - definition: 2 — saved count
+  - term: Penalties drawn
+  - definition: 1 — saved count
+  - term: Penalties taken
+  - definition: 0 — observed zero
+  - term: Faceoff wins
+  - definition: 0 — observed zero
+  - term: Faceoff losses
+  - definition: 0 — observed zero
+  - term: Shot attempts for
+  - definition: 6 — saved count
+  - term: Shot attempts against
+  - definition: 11 — saved count
+  - term: On-ice goals for — even strength
+  - definition: Unavailable — saved null
+  - term: On-ice goals for — power play
+  - definition: Unavailable — saved null
+  - term: On-ice goals for — short-handed
+  - definition: Unavailable — saved null
+  - term: On-ice goals against — even strength
+  - definition: Unavailable — saved null
+  - term: On-ice goals against — power play
+  - definition: Unavailable — saved null
+  - term: On-ice goals against — short-handed
+  - definition: Unavailable — saved null
