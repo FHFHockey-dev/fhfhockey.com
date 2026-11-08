@@ -124,7 +124,7 @@ export const NAVIGATION_LINKS = {
     type: "link",
     label: "Variance Skaters",
     href: "/variance/skaters",
-    icon: "trend",
+    icon: "variance",
     description: "Explore skater variance",
   },
   goalies: {
