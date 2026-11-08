@@ -6,7 +6,8 @@ import { lineTestDatabase } from "./testDatabase";
 describe("append-only persistence", () => {
   it("writes captures before interpretations and never updates or deletes existing rows", async () => {
     const calls: Array<{ table: string; rows: any[]; options: unknown }> = [];
-    const db = { from: (table: string) => ({ upsert: async (rows: any[], options: unknown) => { calls.push({ table, rows, options }); return { error: null }; } }) };
+    const db = { from: (table: string) => ({ upsert: (rows: any[], options: unknown) => {
+      calls.push({ table, rows, options }); const done = Promise.resolve({ error: null, data: rows }); return Object.assign(done, { select: () => done }); } }) };
     await appendLineEvidence(db, [fixtureClaim()], [fixtureGame]);
     expect(calls.map((call) => call.table)).toEqual(["line_source_captures", "line_claim_revisions", "line_game_state_observations"]);
     expect(calls.every((call) => (call.options as any).ignoreDuplicates === true)).toBe(true);
@@ -77,9 +78,10 @@ describe("append-only persistence", () => {
   it("retries a racing writer only after re-reading the current decisions", async () => {
     let reads = 0;
     const db = { from: (table: string) => {
-      const q: any = { select: () => q, in: () => q, lte: () => q, order: () => q, eq: () => q, range: async () => ({ data: table === "line_claim_revisions" ? [{ payload: fixtureClaim() }] : [], error: null }), limit: async () => { reads++; return { data: [], error: null }; } }; return q;
+      const q: any = { select: () => q, in: () => q, lte: () => q, order: () => q, eq: () => q, range: async () => ({ data: table === "line_claim_revisions" ? [{ payload: fixtureClaim() }] : [], error: null }), limit: async () => { if (table === "line_entry_revisions") reads++; return { data: [], error: null }; } }; return q;
     }, rpc: vi.fn().mockResolvedValueOnce({ data: false, error: null }).mockResolvedValueOnce({ data: true, error: null }) };
     const result = await persistLineReconciliation(db, { game: fixtureGame, teamId: 14, games: [fixtureGame], now: fixtureNow, carryForward: true });
+    // One current-entry read per attempt (PP1 and PP2 are read beside it, one row each).
     expect(result.entry.status).toBe("frozen"); expect(reads).toBe(2); expect(db.rpc).toHaveBeenCalledTimes(2);
   });
 });

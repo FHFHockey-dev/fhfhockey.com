@@ -8,8 +8,9 @@ import { claimsFromReport, relationshipClaimKey, type LineEvidenceContext } from
 import { produceLineEvidence, type PPSwap } from "./decisions";
 import { fetchReviewedDecisions, matchingDecision, reviewedSwaps, reviewUnit } from "./trainerDecisions";
 import { appendLineEvidence, fetchLineClaims, persistLineReconciliation } from "./storage";
-import { fetchLineGames, hydrateLineGameStates } from "./service";
-import { instant, lineSnapshotFlags, unitKey, type LineClaim } from "./types";
+import { fetchLineGames, latestLineGameStates } from "./service";
+import { trustworthyState } from "./gameState";
+import { instant, lineSnapshotFlags, unitKey, type LineClaim, type LineGame } from "./types";
 
 const fxIds = (source: ParsedLinesCccSource) => {
   const fx = (source.rawPayload as { provider?: unknown; fx?: Record<string, unknown> } | undefined);
@@ -17,21 +18,42 @@ const fxIds = (source: ParsedLinesCccSource) => {
 };
 import { evidenceKey } from "./reconcile";
 
-/** Additive adapter: no mutation of the classifier's interpretation or forecast capture. */
-export async function processLineSnapshotEvidence(supabase: any, sources: ParsedLinesCccSource[], scheduledTeamIds: number[], now = new Date().toISOString()) {
+/** Minimum time between NHL game-state observations of one game (equal to the trusted-state age, so a reused state stays trusted). */
+export const LINE_OBSERVE_INTERVAL_MS = 5 * 60_000;
+const DAY_MS = 86_400_000;
+/** Games the processor reads per team: back far enough for PP carry-forward staleness (3 team games), forward for binding. */
+const GAME_WINDOW = { backDays: 21, forwardDays: 3 };
+const day = (now: string, offsetDays: number) => new Date(Date.parse(now) + offsetDays * DAY_MS).toISOString().slice(0, 10);
+
+/**
+ * Additive adapter: no mutation of the classifier's interpretation or forecast capture.
+ * Load (production incident 2026-11-07): only teams with new evidence in this call are processed, never the scheduled
+ * slate (`scheduledTeamIds` is accepted for the call sites and ignored); an empty call makes no database request. Reads are
+ * bounded to a date window and to the latest state/decision rows; a game is observed at most every 5 minutes; a team is
+ * reconciled only when this call stored a new claim for it or a freshly observed game changed phase.
+ */
+export async function processLineSnapshotEvidence(supabase: any, sources: ParsedLinesCccSource[], _scheduledTeamIds: number[], now = new Date().toISOString()) {
   const flags = lineSnapshotFlags();
   if (!flags.observations) return { enabled: false, claims: 0, reconciled: 0 };
-  const teamIds = [...new Set([...scheduledTeamIds, ...sources.flatMap((source) => source.team ? [source.team.id] : [])])];
+  // Pure: a source without an accepted interpretation and team is no evidence and costs nothing.
+  const candidates = sources.map((source) => ({ source, report: projectionReportFromSource(source) })).filter((value) => value.report != null && value.source.team != null);
+  const teamIds = [...new Set(candidates.map(({ source }) => source.team!.id))];
+  if (!teamIds.length) return { enabled: true, claims: 0, reconciled: 0 };
   let count = 0, reconciled = 0;
   // Reviewed trainer answer keys, read-only, keyed by any tweet id the source carries.
-  const reviewed = sources.length ? await fetchReviewedDecisions(supabase, sources.flatMap((source) => [source.tweetId, source.quotedTweetId, ...fxIds(source)].filter((value): value is string => !!value))) : new Map();
+  const reviewed = await fetchReviewedDecisions(supabase, candidates.flatMap(({ source }) => [source.tweetId, source.quotedTweetId, ...fxIds(source)].filter((value): value is string => !!value)));
   for (const teamId of teamIds) {
-    let games = await hydrateLineGameStates(supabase, await fetchLineGames(supabase, { teamId }), now);
-    const near = games.filter((game) => Math.abs(Date.parse(`${game.date}T12:00:00Z`) - Date.parse(now)) < 2 * 86400000);
-    const observed = await Promise.all(near.map((game) => observeLineGame(game, now)));
-    const states = new Map(observed.map((game) => [game.id, game]));
+    let games = await fetchLineGames(supabase, { teamId, dateFrom: day(now, -GAME_WINDOW.backDays), dateTo: day(now, GAME_WINDOW.forwardDays) });
+    const near = games.filter((game) => Math.abs(Date.parse(`${game.date}T12:00:00Z`) - Date.parse(now)) < 2 * DAY_MS);
+    const stored = await latestLineGameStates(supabase, near);
+    // Reuse a stored state younger than the interval; otherwise observe the NHL feed once and store the new state.
+    const fresh = (game: LineGame) => trustworthyState(game, now) && Date.parse(now) - (instant(game.observedAt) ?? -Infinity) < LINE_OBSERVE_INTERVAL_MS;
+    const observed = await Promise.all(stored.filter((game) => !fresh(game)).map((game) => observeLineGame(game, now)));
+    // A real transition (pregame -> live, live -> final) against the stored phase; a failed read ("unknown") is not one.
+    const phaseChanged = new Set(observed.filter((game) => game.phase !== "unknown" && game.phase !== stored.find((previous) => previous.id === game.id)!.phase).map((game) => game.id));
+    const states = new Map([...stored.filter(fresh), ...observed].map((game) => [game.id, game]));
     games = games.map((game) => states.get(game.id) ?? game);
-    const relevant = sources.filter((source) => source.team?.id === teamId).map((source) => ({ source, report: projectionReportFromSource(source) })).filter((value) => value.report != null);
+    const relevant = candidates.filter(({ source }) => source.team!.id === teamId).map(({ source, report }) => ({ source, report: structuredClone(report) }));
     const ids = [...new Set(relevant.flatMap(({ report }) => report!.interpretation.units.flatMap((unit) => unit.players.map((player) => player.playerId))))];
     // Reviewed swap players by id; the raw tweet name must still resolve (approved alias for a misspelling).
     for (const decision of [...reviewed.values()].flat()) for (const swap of decision.swaps) for (const slot of [...swap.playersIn, ...swap.playersOut])
@@ -200,16 +222,17 @@ export async function processLineSnapshotEvidence(supabase: any, sources: Parsed
       }
     }
     if (claims.some((claim) => claim.supersedes.length || claim.retracts.length)) {
-      const targets = new Map([...await fetchLineClaims(supabase, [teamId], now), ...claims].map((claim) => [claim.id, claim]));
+      const targets = new Map([...await fetchLineClaims(supabase, [teamId], now, day(now, -GAME_WINDOW.backDays)), ...claims].map((claim) => [claim.id, claim]));
       for (const claim of claims) for (const id of [...claim.supersedes, ...claim.retracts]) {
         const target = targets.get(id);
         if (!target || target.teamId !== claim.teamId || target.gameId !== claim.gameId || id === claim.id) claim.reviewReasons.push(`relation_target_unresolved:${id}`);
       }
     }
-    await appendLineEvidence(supabase, claims, observed);
+    const { insertedClaims } = await appendLineEvidence(supabase, claims, observed);
     count += claims.length;
-    for (const game of observed) {
-      await persistLineReconciliation(supabase, { game, teamId, games, now, carryForward: flags.carryForward });
+    for (const game of near.map((candidate) => states.get(candidate.id)!)) {
+      if (!insertedClaims && !phaseChanged.has(game.id)) continue;
+      await persistLineReconciliation(supabase, { game, teamId, games, now, carryForward: flags.carryForward, claimsSince: day(now, -GAME_WINDOW.backDays) });
       reconciled++;
     }
   }

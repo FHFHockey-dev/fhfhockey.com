@@ -17,21 +17,27 @@ export function lineTestDatabase(seed: Record<string, any[]>) {
       select: () => q,
       eq: (key: string, value: unknown) => { filters.push((row) => row[key] === value); return q; },
       lte: (key: string, value: any) => { filters.push((row) => row[key] <= value); return q; },
+      gte: (key: string, value: any) => { filters.push((row) => row[key] >= value); return q; },
       in: (key: string, values: unknown[]) => { filters.push((row) => values.includes(row[key])); return q; },
       or: (value: string) => { const choices = value.split(",").map((value) => value.split(".eq.")); filters.push((row) => choices.some(([key, value]) => String(row[key!]) === value)); return q; },
       order: (key: string, options?: { ascending?: boolean }) => { orders.push({ key, ascending: options?.ascending !== false }); return q; },
       range: (from: number, to: number) => { start = from; end = to; return q; },
       limit: (value: number) => { end = value - 1; return q; },
       then: (resolve: (value: unknown) => void) => Promise.resolve(result()).then(resolve),
-      upsert: async (rows: any[], options: { onConflict: string }) => {
+      // Like PostgREST: awaitable directly, or with .select() for the rows actually inserted (duplicates ignored).
+      upsert: (rows: any[], options: { onConflict: string }) => {
         writes.push(table); tables[table] ??= [];
+        let outcome: { error: Error | null; data: any[] };
         if (table === "line_claim_relations" && rows.some((row) => !tables.line_claim_revisions?.some((claim) => claim.claim_id === row.claim_id)
           || !tables.line_claim_revisions?.some((claim) => claim.claim_id === row.target_claim_id))) {
-          return { error: new Error("23503 line_claim_relations_target_claim_id_fkey") };
+          outcome = { error: new Error("23503 line_claim_relations_target_claim_id_fkey"), data: [] };
+        } else {
+          const keys = options.onConflict.split(","), inserted: any[] = [];
+          for (const row of rows) if (!tables[table]!.some((existing) => keys.every((key) => existing[key] === row[key]))) { tables[table]!.push(row); inserted.push(row); }
+          outcome = { error: null, data: inserted };
         }
-        const keys = options.onConflict.split(",");
-        for (const row of rows) if (!tables[table]!.some((existing) => keys.every((key) => existing[key] === row[key]))) tables[table]!.push(row);
-        return { error: null };
+        const done = Promise.resolve(outcome);
+        return { select: () => done, then: (resolve: (value: unknown) => void, reject?: (reason: unknown) => void) => done.then(resolve, reject) };
       },
     }; return q;
   });

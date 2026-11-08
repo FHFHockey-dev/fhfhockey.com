@@ -7,17 +7,33 @@ import { chooseDefaultGame, observeLineGame, stateAtRead, trustworthyState } fro
 import { fetchCarryMemberships, fetchEntryHistory, fetchLineClaims, latestLineDecisions } from "./storage";
 import { instant, lineSnapshotFlags, type EntryRevision, type EntryView, type GameLinesResponse, type LineClaim, type LineGame, type SelectedLineUnit, type SourceFeedItem } from "./types";
 
-export async function fetchLineGames(supabase: any, args: { teamId?: number; gameId?: number }): Promise<LineGame[]> {
+/** `dateFrom` / `dateTo` (YYYY-MM-DD, inclusive) bound the processor's read; readers omit them. */
+export async function fetchLineGames(supabase: any, args: { teamId?: number; gameId?: number; dateFrom?: string; dateTo?: string }): Promise<LineGame[]> {
   const rows = await fetchAllSupabasePages<any>(({ from, to }) => {
     let query = supabase.from("games").select("id,date,startTime,homeTeamId,awayTeamId,home:teams!games_homeTeamId_fkey(abbreviation),away:teams!games_awayTeamId_fkey(abbreviation)");
     if (args.teamId) query = query.or(`homeTeamId.eq.${args.teamId},awayTeamId.eq.${args.teamId}`);
     else if (args.gameId) query = query.eq("id", args.gameId);
+    if (args.dateFrom) query = query.gte("date", args.dateFrom);
+    if (args.dateTo) query = query.lte("date", args.dateTo);
     return query.order("date", { ascending: false }).order("id").range(from, to);
   });
   return rows.map((row) => ({ id: row.id, date: row.date, homeTeamId: row.homeTeamId, awayTeamId: row.awayTeamId,
     homeAbbreviation: row.home?.abbreviation ?? String(row.homeTeamId), awayAbbreviation: row.away?.abbreviation ?? String(row.awayTeamId),
     scheduledStart: instant(row.startTime) == null ? null : row.startTime, phase: "unknown", actualStart: null, observedAt: null,
     stateSource: null, scheduleIdentity: `${row.id}:${row.startTime ?? row.date}:OK`, replacesGameId: null }));
+}
+
+/**
+ * The latest stored state of each game, as stored (not aged by stateAtRead): one indexed single-row read per game
+ * (line_game_state_history). A schedule amendment invalidates the stored state, as in hydrateLineGameStates.
+ */
+export async function latestLineGameStates(supabase: any, games: LineGame[]): Promise<LineGame[]> {
+  return Promise.all(games.map(async (game) => {
+    const result = await supabase.from("line_game_state_observations").select("payload").eq("game_id", game.id).order("observed_at", { ascending: false }).limit(1);
+    if (result.error) throw result.error;
+    const state = result.data?.[0]?.payload as LineGame | undefined;
+    return state && state.scheduledStart === game.scheduledStart ? { ...game, ...state } : game;
+  }));
 }
 
 export async function hydrateLineGameStates(supabase: any, games: LineGame[], now: string): Promise<LineGame[]> {
