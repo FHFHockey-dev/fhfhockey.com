@@ -208,3 +208,36 @@ PP TOI (`toi_pp_seconds`) comes from `shift_charts.total_pp_toi`, a separate bui
 That can happen in the update-stats writer, or `/api/toi` can read one of these directly. Otherwise, mark the columns as not populated.
 
 **Owner:** the game-stats ingestion route `update-stats/[gameId].ts` plus the `/api/toi` reader. Ownership is not settled.
+
+## 8. team_unit_toi even-strength gap: root cause and fix (TJ, 2026-11-08; backfill held)
+
+**Root cause.** In `web/lib/rankings/teamUnitToiBuilder.ts`, `positionGroup` treated only `C`, `LW`, `RW` and `F` as forwards. `players.position` stores NHL's single-letter wing codes, `L` and `R`; there are 701 `L` and 668 `R` rows and no `LW`/`RW` at all. So every winger had no position group, almost no 5v5 segment had exactly 3 forwards and 2 defensemen, and forward lines and defense pairs nearly disappeared. In game 2026020003, 10 of the 24 forwards (6 `R`, 4 `L`) fell out this way. The existing tests used `LW`/`RW` fixtures, so they never caught it.
+
+**Replay (local, read-only inputs, no writes).** The 09-29 inputs (5 games, 3,996 shifts, 190 players, 120 PP rows) are identical to the production dry run:
+
+| Builder | Rows | Forward lines | Defense pairs | PP | Team-games with ES rows |
+|---|---|---|---|---|---|
+| Released (HEAD) | 34 | 2 | 2 | 30 | 2/10 (matches the production dry run exactly) |
+| Fixed | 656 | 486 | 140 | 30 | 10/10 |
+
+Game 2026020003 alone goes from 10 rows to 131.
+
+**Fix (local, not released).**
+1. `positionGroup` now also accepts `L` and `R`.
+2. Source coverage gating: any team-game with a skater whose position is missing or unrecognised now gets `coverage_status: "partial"` with the warning `unclassified_skater_positions:<ids>`, instead of `complete`. The team-matrix reader already surfaces `partial`.
+3. The writer's `coverage` result reports `teamGamesWithoutEvenStrengthRows` and `partialRows`, so a dry run shows any gap before writing.
+
+Two regression tests were added: L/R wingers form lines, and an unknown position marks only that team-game partial. Builder tests pass 6/6, the rankings folder 32 files / 246 tests, eslint is clean and `npm run typecheck` exits 0. The production route still runs the released code, so **a backfill needs this released first.**
+
+**Source coverage (2026-27, SELECT).** All 264 regular-season games through 11-06 have shift rows for both teams plus `powerPlayCombinations` rows, including all 216 in 09-29 → 10-30. The minimum is 41,765 skater-seconds per game, so no game is short. In the 09-29 replay, no player had an unrecognised position.
+
+**Preseason does not belong.**
+- Only 31 of 65 preseason games have shift rows.
+- The existing 2025-26 rows are regular season (`02`) and playoffs (`03`) only.
+- The window 09-29 → 10-30 contains no preseason games.
+
+The builder filters by season and date but not by game type, so any future range must start on or after 2026-09-29 (or be filtered to game types 02 and 03).
+
+**Snapshot pinning (reader contract).** `teamMatrix.ts` `fetchLatestTeamUnitToiSnapshotDate` takes the newest `snapshot_date` for the whole season, then reads only that snapshot. A backfill must therefore write every game under one pinned `snapshot_date`, passed explicitly on every call. Per-day writes are not atomic, so readers will see a partial season until the last day lands. Run the days back to back and verify the total row count once at the end.
+
+**2025-26 is affected too.** The existing 12,929 rows (one snapshot, 2026-06-22) average 9.5 rows per regular-season game: 2,514 forward-line and 2,744 defense-pair rows across 1,308 games. They were built with the same broken mapping. A rebuild would need its own pinned snapshot covering the whole season, because the reader uses the latest snapshot only.

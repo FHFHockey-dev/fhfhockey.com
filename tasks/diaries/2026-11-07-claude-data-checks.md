@@ -179,3 +179,21 @@ Q23 `select endpoint/kind columns of nhl_api_game_payloads_raw` + for one 2026 g
 - 00:38 UTC rolling DONE: call 31 HTTP 200. 752/752 players, 47,515 rows (= all window rows). pp_unit vs powerPlayCombinations.unit 6,181/6,181. updated_at not bumped by upserts (no trigger).
 - team_unit_toi 1-day dry run: ?season=20262027&startDate=2026-09-29&endDate=2026-09-29&dryRun=true (activity=9)
 - team_unit_toi 1-day dry run: HTTP 200 1 s, 34 rows (30 PP, 2 F, 2 D for 10 team-games). TJ pop-up: 'Stop; log the coverage gap'. Not populated.
+
+## TJ (direct, 11-08): hold the team_unit_toi backfill; diagnose ES-unit gap
+- Builder positionGroup (teamUnitToiBuilder.ts:94) maps C/LW/RW/F → forward, D → defense. Hypothesis: players.position uses L/R.
+Q25 `select position, count(*) from players where id in (select distinct player_id from nhl_api_shift_rows where game_id=2026020003) group by 1;`
+Q26 league-wide `select position, count(*) from players group by 1 order by 2 desc;`
+Q27 export for replay (read-only, pooler): nhl_api_shift_rows (builder columns) + players(id,position) + powerPlayCombinations(gameId,playerId,unit,PPTOI) for game 2026020003 → scratchpad replay/game-2026020003.json
+Q28 export 09-29 five games' builder inputs (shift rows season 20262027 game_date 2026-09-29, players, PP rows) → scratchpad replay/day-2026-09-29.json; replay HEAD vs fixed builder locally (no writes).
+- Replay 09-29 (5 games, inputs identical to the prod dry run): HEAD 34 rows (F2 D2 PP30, ES on 2/10 team-games);
+  FIXED 656 rows (F486 D140 PP30, ES on 10/10). 0 unrecognised positions. Builder test 6/6 (2 new).
+Q29 coverage: games 2026-27 by type vs games with nhl_api_shift_rows (both teams) and with powerPlayCombinations;
+    per-game shift seconds per team (min/median) for 09-29..11-06.
+Q30 existing team_unit_toi: game types and snapshot_date values present (2025-26).
+- Q29: 2026-27 regular 264/264 games have shifts (both teams) + PP rows; window 216/216; min 41,765 skater-s.
+  Preseason 31/65 with shifts. Q30: existing team_unit_toi = 2025-26 types 02/03, one snapshot 2026-06-22, 9.5 rows/game
+  (F 2,514 / D 2,744 over 1,308 games) → built with the same broken mapping.
+- Fix: positionGroup + L/R; partial coverage on unclassified skaters; writer coverage counters. eslint 0, rankings tests
+  32 files/246, typecheck exit 0. Reader takes latest snapshot for the whole season → pin one snapshot_date.
+- Backfill HELD (TJ). Needs release first.

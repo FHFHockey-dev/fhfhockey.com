@@ -88,6 +88,70 @@ describe("teamUnitToiBuilder", () => {
     });
   });
 
+  it("treats players.position wing codes L and R as forwards", () => {
+    // players.position stores NHL's single-letter codes; LW/RW never appear there.
+    const nhlCodes = players.map((player) => ({
+      ...player,
+      position: player.position === "LW" ? "L" : player.position === "RW" ? "R" : player.position,
+    }));
+    const shifts = [101, 102, 103, 104, 105, 106].map((playerId) =>
+      shift({ playerId, teamId: 1, teamAbbrev: "AAA", start: 0, end: 60 }),
+    ).concat([201, 202, 203, 204, 205, 206].map((playerId) =>
+      shift({ playerId, teamId: 2, teamAbbrev: "BBB", start: 0, end: 60 }),
+    ));
+
+    const rows = buildEvenStrengthTeamUnitToiRows({
+      shifts,
+      players: nhlCodes,
+      season: 20262027,
+      snapshotDate: "2026-11-08",
+    });
+
+    expect(rows).toHaveLength(4);
+    expect(
+      rows.find((row) => row.team_id === 1 && row.unit_type === "forward_line"),
+    ).toMatchObject({ player_ids: [101, 102, 103], unit_toi_seconds: 180, coverage_status: "complete" });
+    expect(
+      rows.find((row) => row.team_id === 2 && row.unit_type === "defense_pair"),
+    ).toMatchObject({ player_ids: [204, 205], coverage_status: "complete" });
+  });
+
+  it("marks a team-game partial when a skater's position is unknown", () => {
+    // 107 has no position: segment 0-60 cannot be read as 5v5 for team 1 and is skipped,
+    // so team 1's units from 60-120 are incomplete. Team 2 is unaffected.
+    const withUnknown = [...players, { id: 107, position: null }];
+    const shifts = [
+      ...[101, 102, 103, 104, 107, 106].map((playerId) =>
+        shift({ playerId, teamId: 1, teamAbbrev: "AAA", start: 0, end: 60 }),
+      ),
+      ...[101, 102, 103, 104, 105, 106].map((playerId) =>
+        shift({ playerId, teamId: 1, teamAbbrev: "AAA", start: 60, end: 120 }),
+      ),
+      ...[201, 202, 203, 204, 205, 206].map((playerId) =>
+        shift({ playerId, teamId: 2, teamAbbrev: "BBB", start: 0, end: 120 }),
+      ),
+    ];
+
+    const rows = buildEvenStrengthTeamUnitToiRows({
+      shifts,
+      players: withUnknown,
+      season: 20262027,
+      snapshotDate: "2026-11-08",
+    });
+
+    const team1 = rows.filter((row) => row.team_id === 1);
+    expect(team1.length).toBeGreaterThan(0);
+    team1.forEach((row) =>
+      expect(row).toMatchObject({
+        coverage_status: "partial",
+        coverage_warnings: ["unclassified_skater_positions:107"],
+      }),
+    );
+    rows
+      .filter((row) => row.team_id === 2)
+      .forEach((row) => expect(row).toMatchObject({ coverage_status: "complete", coverage_warnings: [] }));
+  });
+
   it("skips non-5v5 segments instead of fabricating unit usage", () => {
     const rows = buildEvenStrengthTeamUnitToiRows({
       shifts: [
