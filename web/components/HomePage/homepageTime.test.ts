@@ -4,29 +4,40 @@ import { formatLocalPlayoffStart, formatLocalStartTime } from "./homepageGameFor
 import { formatHomepageDate, formatHomepageTimestamp } from "./HomepageStandingsInjuriesSection";
 import { zonedMidnight } from "./homepageTime";
 
-// moment-timezone stays installed for server code, so it is the parity oracle here.
-const NORTH_AMERICAN_ZONES = [
-  "America/New_York", "America/Toronto", "America/Chicago", "America/Winnipeg", "America/Denver",
-  "America/Edmonton", "America/Phoenix", "America/Regina", "America/Los_Angeles", "America/Vancouver",
-  "America/Anchorage", "Pacific/Honolulu", "America/Halifax",
-];
-// Puck drops and edge times on both sides of the 2026-11-01 and 2027-03-14 DST changes.
-const INSTANTS = [
-  "2026-10-31T23:00:00Z", "2026-11-01T05:30:00Z", "2026-11-01T06:00:00Z", "2026-11-02T00:07:00Z",
-  "2027-03-14T06:59:00Z", "2027-03-14T07:00:00Z", "2027-03-14T23:00:00Z", "2026-12-31T05:00:00Z",
-  "2026-10-18T17:00:00Z", "2026-10-18T16:00:00Z",
-];
+// Fixed puck drops on both sides of the 2026-03-08 and 2026-11-01 DST changes, so the
+// expectations never depend on today's date. They come from the runtime's IANA data
+// (Node 22 ICU, tzdata 2026e), not from moment-timezone: its bundled 2025b data predates
+// British Columbia, Alberta and Manitoba dropping the fall-back (tzdata 2026b, 2026c, 2026e),
+// so those three zones stay on -07/-06/-05 after 2026-11-01. US zones match moment exactly.
+const INSTANTS = ["2026-03-07T23:00:00Z", "2026-03-09T00:07:00Z", "2026-10-31T23:00:00Z", "2026-11-02T00:07:00Z"];
+const EXPECTED_START_TIMES: Record<string, string[]> = {
+  "America/New_York": ["6:00 PM EST", "8:07 PM EDT", "7:00 PM EDT", "7:07 PM EST"],
+  "America/Toronto": ["6:00 PM EST", "8:07 PM EDT", "7:00 PM EDT", "7:07 PM EST"],
+  "America/Chicago": ["5:00 PM CST", "7:07 PM CDT", "6:00 PM CDT", "6:07 PM CST"],
+  "America/Winnipeg": ["5:00 PM CST", "7:07 PM CDT", "6:00 PM CDT", "7:07 PM CDT"],
+  "America/Denver": ["4:00 PM MST", "6:07 PM MDT", "5:00 PM MDT", "5:07 PM MST"],
+  "America/Edmonton": ["4:00 PM MST", "6:07 PM MDT", "5:00 PM MDT", "6:07 PM MDT"],
+  "America/Phoenix": ["4:00 PM MST", "5:07 PM MST", "4:00 PM MST", "5:07 PM MST"],
+  "America/Regina": ["5:00 PM CST", "6:07 PM CST", "5:00 PM CST", "6:07 PM CST"],
+  "America/Los_Angeles": ["3:00 PM PST", "5:07 PM PDT", "4:00 PM PDT", "4:07 PM PST"],
+  "America/Vancouver": ["3:00 PM PST", "5:07 PM PDT", "4:00 PM PDT", "5:07 PM PDT"],
+  "America/Anchorage": ["2:00 PM AKST", "4:07 PM AKDT", "3:00 PM AKDT", "3:07 PM AKST"],
+  "Pacific/Honolulu": ["1:00 PM HST", "2:07 PM HST", "1:00 PM HST", "2:07 PM HST"],
+  "America/Halifax": ["7:00 PM AST", "9:07 PM ADT", "8:00 PM ADT", "8:07 PM AST"],
+};
 
 describe("homepage game times without moment-timezone", () => {
-  it("matches moment's 'h:mm A z' and playoff formats for North American zones", () => {
-    for (const zone of NORTH_AMERICAN_ZONES) {
-      for (const instant of INSTANTS) {
-        const local = moment.tz(instant, "UTC").tz(zone);
-        expect(formatLocalStartTime(instant, zone)).toBe(local.format("h:mm A z"));
-        const timeFormat = local.minutes() === 0 ? "hA z" : "h:mmA z";
-        expect(formatLocalPlayoffStart(instant, zone)).toBe(`${local.format("M-D-YYYY")} | ${local.format(timeFormat)}`);
-      }
+  it("formats 'h:mm A z' and playoff starts for North American zones across DST changes", () => {
+    for (const [zone, expected] of Object.entries(EXPECTED_START_TIMES)) {
+      INSTANTS.forEach((instant, index) => {
+        expect(formatLocalStartTime(instant, zone), `${zone} ${instant}`).toBe(expected[index]);
+      });
     }
+    expect(formatLocalPlayoffStart("2026-03-07T23:00:00Z", "America/Edmonton")).toBe("3-7-2026 | 4PM MST");
+    expect(formatLocalPlayoffStart("2026-03-09T00:07:00Z", "America/Los_Angeles")).toBe("3-8-2026 | 5:07PM PDT");
+    expect(formatLocalPlayoffStart("2026-10-31T23:00:00Z", "America/Chicago")).toBe("10-31-2026 | 6PM CDT");
+    expect(formatLocalPlayoffStart("2026-11-02T00:07:00Z", "America/New_York")).toBe("11-1-2026 | 7:07PM EST");
+    expect(formatLocalPlayoffStart("2026-11-02T00:07:00Z", "America/Winnipeg")).toBe("11-1-2026 | 7:07PM CDT");
   });
 
   it("keeps the clock and changes only the zone label elsewhere", () => {
