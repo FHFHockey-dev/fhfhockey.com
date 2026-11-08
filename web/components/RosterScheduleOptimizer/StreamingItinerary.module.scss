@@ -27,6 +27,8 @@
 .options small { color: s.$ink-muted; font-size: s.$text-micro; }
 .use { align-self: flex-start; }
 .note { color: s.$ink-muted; font-size: s.$text-xs; }
+// The panel's standard button, on its own line under the reason.
+.noteAction { display: block; margin-top: v.$space-xs; }
 .gate { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin: 0; color: s.$ink-muted; font-size: s.$text-xs; }
 
 @media (max-width: 480px) {
