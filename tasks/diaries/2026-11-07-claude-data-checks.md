@@ -232,3 +232,14 @@ Q7 rosters is_current stamp counts; Q32 stamps by team (newest stamp per team, c
 - Tests: nightly module 8, route 3, rankings+routeRunner 37 files/337; eslint 0; typecheck exit 0.
 - Schedule NOT added (activation is its own TJ pop-up after release); suggested pg_cron:
   GET /api/v1/db/update-team-unit-toi?season=<current>&mode=nightly&dryRun=false after shift ingest (~10:30 UTC).
+- (b) 2025-26 one-date prod dry run: ?season=20252026&startDate=2025-10-07&endDate=2025-10-07&dryRun=true (conn check first).
+- (b) 2025-10-07 prod dry run: HTTP 200 1 s, 3 games, 396 rows (F294 D84 PP18), partial 0, noES 0.
+  Sizing: reg 1,312 games (1,311 with shifts both teams), 167 dates; playoffs 105 sched / 82 with shifts, 51 dates;
+  ~184k rows, 218 one-day calls, ~45-55 min. Old snapshot 2026-06-22: 12,929 rows (1,390 games), winger bug.
+  Proposed: NEW snapshot 2026-11-08 (rollback = delete it; readers fall back to 2026-06-22); partial view during run.
+- TJ (~09:15 UTC 11-08): closing laptop, flying; resume ~12:30 CDT (17:30 UTC). 2025-26 decision PENDING. NOT run.
+- (a) not started: list Schwindt/Hryckowian tweet_pattern_review_items IDs, dry-run released resolver, pop-up TJ.
+## Next (on TJ's return)
+1. Re-ask the 2025-26 snapshot pop-up; if approved run with the tut-fill guards (scratchpad runs/tut-fill.sh pattern).
+2. (a) bounded replay: list IDs (DAL 19, FLA 4, CAR 1, untagged 51), dry-run resolver, pop-up, replay only on OK.
+3. Schedule activation for nightly team_unit_toi after release (own TJ pop-up).
