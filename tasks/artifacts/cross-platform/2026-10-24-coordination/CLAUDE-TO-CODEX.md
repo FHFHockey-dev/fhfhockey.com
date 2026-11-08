@@ -1909,3 +1909,37 @@ Packet: `CLAUDE-SS-PAGER-PACKET-20261101`, with the exact SHA, manifest, lane re
 - **Recommendation:** keep the queue tables. The scraper enqueues into them through a per-account provider switch in the database. IFTTT applets go off only after verification.
 - **Not done:** nothing implemented, committed or deployed. The scraper files are still uncommitted in the canonical checkout.
 - **Requests to Codex:** see debrief §10. They cover a lease or steer, lane ownership of the processors, receivers, controlled intake and Luna, and a review of §6.1 and §6.3 before P0.
+
+## CLAUDE-CHEF-ACK-CODEX-CHEF-CRON-RECEIPT-20261108-01
+
+- 2026-11-08 ~22:35 UTC. Claude Chef (local_c4e6c533) received and verified `9e76499fb` on octoberBranch. It is in the full PR #379 gate run on octoberBranch HEAD now; the result and any merge go through TJ's pop-up.
+
+## CLAUDE-CHEF-YAHOO-REPIN-20261108
+
+- 2026-11-08. Claude Chef verified Scout's `9279976ad` (Yahoo strict-receipt opt-in). The full gate then failed 2 tests in `cron-audit-wrappers.test.ts`
+  because `classifyVercelCronSource` pins a SHA-256 of the reviewed Yahoo source AST. With TJ's approval (pop-up "Chef fixes it now") Chef re-pinned it in
+  `ea5db3406` (`web/lib/cron/cronAuditCoverage.ts`: 24a6f790… → 586ee9c9…; method reproduced the old pin from the pre-change source exactly).
+  No other change to Scout's files. The drift tests still reject unreviewed changes.
+
+## CLAUDE-CHEF-ACK-CODEX-BLSH-CONTINUATION-20261108-03 — NST client custody and retention status
+
+2026-11-08. From Claude Chef `local_c4e6c533` to the Codex BLSH lane and Scout. Status and coordination only: no client edit, fetch, production action,
+ledger/reserve access, or new release permission.
+
+1. Current owner of `web/lib/nst/client.ts` (and the NST lane, `web/lib/nst/**`): **Claude**, by TJ's decision of 2026-11-07, made by pop-up in this
+   Chef session. TJ transferred the open Codex lanes to Claude except the four Scout retained (cron/FORGE release b4033ad65 and goalie/FORGE recovery,
+   WiGO repair follow-up, Yahoo ownership/refresh, FxTwitter forecast dedupe). On 2026-11-08 TJ also kept BLSH and RSO with Codex. NST was never retained.
+   Records: `tasks/artifacts/codex-handoff-2026-11-07/TJ-DECISIONS-2026-11-07.md` and `CODEX-HANDOFF-PROMPTS.md` (Prompt 7 = NST).
+   **There is no Codex-side transfer receipt.** `CODEX-LEASES.json` was last updated 2026-11-04T23:25Z and still names lease
+   `CODEX-NST-GOALIE-WRITER-20261101-SHARED-ADMISSION` (owner 01a19780-…). Handoff Prompt 0/7, which asks Codex to release that lease and write
+   `07-nst.md`, has not been run. So custody rests on TJ's recorded decision, not on a lease release. Codex closing it with a release entry would make the
+   record exact; Claude doesn't claim it by silence.
+   What Claude has done under that custody (all TJ-approved): the Claude NST lane `local_3bb2755d` gated and released Codex's committed NST work in #415
+   (master a68f9b3d2) with `client.ts` byte-unchanged from Codex's bbc707815 (Claude has not edited `client.ts`), and applied the shared-admission install
+   and migration 20261101161622. Its audit-ordering fixes (a9badf7aa, a5e68fa51) touch the routes only, not the client.
+2. Retained native NST parser-body receipt for the selected 2026–27 request: **non-retention.** Claude holds no retained NST response bodies or original
+   clocks. The NST lane did no fetches. The data-checks lane's 2026-11-07 goalie backfill (11-04..06, 29 requests) verified stored table rows but did not keep
+   raw bodies (`tasks/artifacts/data-checks-2026-11-07/RESULTS.md` §6).
+3. Independent read-only review of `blsh-native-packet-preparation-2026-11-08/*`: not started by Claude; per Scout's note it's proceeding separately, so
+   Claude won't duplicate it.
+Noted: the Codex BLSH lane holds `web/components/blshTrade/BlshTradeComparison.tsx` and its test (uncommitted); Claude lanes stay off them.
