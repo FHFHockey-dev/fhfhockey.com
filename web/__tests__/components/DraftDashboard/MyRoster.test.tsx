@@ -108,7 +108,7 @@ it("shows and explains the roster DUST rate", () => {
 
   render(<MyRoster {...props} />);
 
-  const dustMetric = screen.getByLabelText("DUST 13 percent");
+  const dustMetric = screen.getByLabelText("Bench waste (DUST) 13 percent");
   const tooltipId = dustMetric.getAttribute("aria-describedby");
   expect(dustMetric.tagName).toBe("BUTTON");
   expect(document.getElementById(tooltipId!)?.textContent).toContain(

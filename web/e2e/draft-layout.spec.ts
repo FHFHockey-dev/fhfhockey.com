@@ -238,13 +238,13 @@ test("Draft Order fits every required viewport and resizes its contents", async 
     await page.setViewportSize({ width, height });
     const states = [];
     for (const expanded of [false, true]) {
-      if (expanded) await page.getByRole("button", { name: "Expand God View - Pro" }).click();
+      if (expanded) await page.getByRole("button", { name: "Expand All teams · God View Pro" }).click();
       await page.waitForTimeout(150);
       const result = await audit(page);
       states.push(result.heights);
       measurements.push({ width, height, expanded, ...result.heights });
       await page.screenshot({ path: testInfo.outputPath(`${width}-${height}-${expanded ? "expanded" : "collapsed"}.png`), fullPage: true });
-      if (expanded) await page.getByRole("button", { name: "Collapse God View - Pro" }).click();
+      if (expanded) await page.getByRole("button", { name: "Collapse All teams · God View Pro" }).click();
     }
     expect(states[1].workspace).toBeLessThan(states[0].workspace);
     if (width === 1920) {
@@ -255,7 +255,7 @@ test("Draft Order fits every required viewport and resizes its contents", async 
   }
   await writeFile(testInfo.outputPath("measurements.json"), JSON.stringify({ previousToolbarHeights, measurements }, null, 2));
   // Probe continuous resize and former breakpoint boundaries with the strip open.
-  await page.getByRole("button", { name: "Expand God View - Pro" }).click();
+  await page.getByRole("button", { name: "Expand All teams · God View Pro" }).click();
   for (let step = 0; step <= 12; step++) {
     await page.setViewportSize({ width: Math.round(1366 + step * 554 / 12), height: Math.round(768 + step * 312 / 12) });
     await audit(page);
@@ -271,7 +271,7 @@ test("selection, snake turns, undo, graph dismissal and alternate rosters stay f
   test.setTimeout(120_000);
   await page.setViewportSize({ width: 1366, height: 768 });
   await openFixture(page);
-  await page.getByRole("button", { name: "Expand God View - Pro" }).click();
+  await page.getByRole("button", { name: "Expand All teams · God View Pro" }).click();
   const strip = page.getByRole("region", { name: "Draft Order" });
   const cards = strip.locator('button[data-on-clock]');
   await expect(cards.nth(11)).toHaveAccessibleName(/Team 12 roster, pick 12, on the clock/);
@@ -302,7 +302,7 @@ test("selection, snake turns, undo, graph dismissal and alternate rosters stay f
   await page.evaluate(() => (document.activeElement as HTMLElement)?.blur());
   await page.keyboard.press("u");
   await expect(cards.nth(11)).toHaveAccessibleName(/pick 12, on the clock/);
-  await page.getByRole("button", { name: "Collapse God View - Pro" }).click();
+  await page.getByRole("button", { name: "Collapse All teams · God View Pro" }).click();
   await expect(roster.locator("select").first()).toHaveValue("Team 1");
   await page.getByRole("button", { name: "Settings", exact: true }).click();
   await expect(page.getByRole("button", { name: "Done", exact: true })).toBeVisible();
@@ -354,7 +354,7 @@ test("table controls, roster search and free graph metrics remain available", as
   const players = page.locator("#mobile-draft-panel-players");
   const search = players.getByRole("textbox", { name: "Search players", exact: true });
   await search.fill("Fixture Skater 1");
-  await page.getByRole("button", { name: "Expand God View - Pro" }).click();
+  await page.getByRole("button", { name: "Expand All teams · God View Pro" }).click();
   await expect(search).toHaveValue("Fixture Skater 1");
   await players.getByLabel("Position filter").selectOption("D");
   await players.getByRole("columnheader", { name: "Player", exact: true }).click();
@@ -433,7 +433,7 @@ test("Settings names and order persist downstream, and reset reopens League & Dr
   await shell.getByRole("button", { name: "Move Ice Owls down" }).click();
   await expect(shell.getByLabel("Team name at draft position 2")).toHaveValue("Ice Owls");
   await shell.getByRole("button", { name: "Done", exact: true }).click();
-  await page.getByRole("button", { name: "Expand God View - Pro" }).click();
+  await page.getByRole("button", { name: "Expand All teams · God View Pro" }).click();
   await expect(page.locator('button[data-pick="2"]')).toHaveAccessibleName(/Ice Owls/);
   await expect(page.locator('#mobile-draft-panel-roster select').first().locator('option[value="Team 1"]')).toHaveText("Ice Owls");
   await expect(page.getByRole("region", { name: "League Standings", exact: true }).getByText(/Ice Owls/)).toBeVisible();

@@ -781,9 +781,9 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
         >
         {tierView && <div ref={tiersRef} className={`${styles.cardsRow} ${styles.tierRow}`} onScroll={updateScrollEdges} role="list" tabIndex={0}>
           {!draftProEligible ? <div className={styles.tierCard}><p>Positional tiers and pick advice require existing Draft Pro access. New purchases are closed.</p><a href="/account?section=draft-pro">View existing Draft Pro access</a></div> : tierError || isLoading || error ? <p className={styles.tierCard} role="status">{tierError || (isLoading ? "Loading positional tiers…" : "Tier analysis is unavailable while projections recover. Ordinary Picks remain available.")}</p> : <>
-            <article className={styles.tierCard} role="listitem"><h3>Scoring-based tiers</h3><p>{leagueType === "categories" ? "Weighted category score" : "Custom projected fantasy points"} · {forwardGrouping === "fwd" ? "Combined forwards" : "Split forwards"}</p>
+            <div className={styles.tierCard} role="listitem"><h3>Scoring-based tiers</h3><p>{leagueType === "categories" ? "Weighted category score" : "Custom projected fantasy points"} · {forwardGrouping === "fwd" ? "Combined forwards" : "Split forwards"}</p>
               <details><summary>How tiers and advice work</summary><p>Automatic value bands use the full projection pool. Bands wider than 5% of the positional value range are split into tighter groups at scoring boundaries. Drafted players keep their tier. A meaningful break exceeds three times the median adjacent gap and one quarter of the positional interquartile range.</p><p>{adpSource} ADP estimates use a {availabilitySpread}-pick spread, conditional on availability now. Take now means fewer than 0.5 comparable players estimated to remain before a meaningful drop; Can wait requires at least 1.5, or consecutive picks. These are heuristics, not calibrated probabilities for the whole tier.</p><p>Automatic tiers do not overwrite manual tiers or reorder ordinary Picks.</p></details>
-            </article>
+            </div>
             <TierCards positions={tierPositions} available={availableTierIds} filter={posFilter} selectedPositions={selectedPositions} horizon={selectionHorizon} spread={availabilitySpread} onClock={onClock} contextReady={tierContextReady} rosterProgress={rosterProgress} leagueType={leagueType ?? "points"} onExplore={position => { setSelectedPositions(new Set()); setPosFilter(position); }} onSelect={onCardClick} selectedId={selectedId} onDraft={onDraftPlayer} canDraft={canDraft} />
           </>}
         </div>}
@@ -827,7 +827,7 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
               const visibleSpan = Math.min(top.length, nextOffset) - idx;
               const fadeScale = pickWindow ? (nextOffset - idx) / visibleSpan : 1;
               return (
-                <article
+                <div
                   key={id}
                   role="listitem"
                   className={`${styles.card} ${selected ? styles.cardSelected : ""}`}
@@ -849,8 +849,9 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
                   </span>}
                   <div className={styles.header}>
                     <div className={styles.rankBadge}>#{idx + 1}</div>
+                    {/* First initial + full last name fits the card; the title keeps the full name. */}
                     <div className={styles.name} title={name}>
-                      {name}
+                      {shortPlayerName(name)}
                     </div>
                     <div className={styles.tagsRow}>
                       <span className={styles.tag}>VONA {typeof r.vona === "number" ? r.vona.toFixed(1) : "—"}</span>
@@ -955,7 +956,7 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
                       )}
                     </div>
                   </div>
-                </article>
+                </div>
               );
             })
           )}
@@ -1036,5 +1037,11 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
     </section>
   );
 };
+
+/** "Connor McDavid" → "C. McDavid"; single names and names with no space stay as they are. */
+export function shortPlayerName(name: string): string {
+  const parts = name.trim().split(/\s+/);
+  return parts.length > 1 ? `${parts[0][0]}. ${parts.slice(1).join(" ")}` : name;
+}
 
 export default SuggestedPicks;
