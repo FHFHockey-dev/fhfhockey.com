@@ -7,6 +7,7 @@ Scout (Codex) then RETAINED four lanes, which are NOT handed over and must not b
 3. Yahoo ownership / refresh (uncertain refresh outcome; no blind retry; local error-handling patch is Scout's).
 4. FxTwitter forecast dedupe — Claude must not edit `web/lib/player-forecasts/sourceObservations.ts` or `playerForecasts.test.ts`.
 No broad Codex stop or transfer is authorized. Prompts 1–4 below are therefore WITHDRAWN; use Prompt 0 and 5–11 only.
+Update 2026-11-08 (TJ): Codex also keeps the BLSH (Prompt 6) and RSO (Prompt 9) lanes, so send only Prompts 0, 5, 7, 8, 10, 11.
 Paste each remaining prompt into Codex, one per Codex thread. Each writes one handoff file into
 `tasks/artifacts/codex-handoff-2026-11-07/` and changes nothing else.
 
@@ -70,7 +71,7 @@ Write tasks/artifacts/codex-handoff-2026-11-07/05-player-cards.md using the temp
 No git mutations, pushes, deploys, production reads/writes. Never set GIT_DIR.
 ```
 
-## Prompt 6 — Buy Low / Sell High (BLSH)
+## Prompt 6 — Buy Low / Sell High (BLSH)  — WITHDRAWN (TJ 2026-11-08: Codex keeps this lane; do not send)
 
 ```
 Read-only handoff to Claude. Lane: BLSH (diaries 2026-10-27-codex-blsh-current-input.md, 2026-10-29-codex-blsh-*.md, 2026-11-01-codex-blsh-*.md, 2026-11-02-codex-blsh-*.md, 2026-11-04-codex-blsh-sko-vudu-audit.md; web/lib/buyLowSellHigh, web/components/buyLowSellHigh, web/components/blshTrade, web/pages/buy-low-sell-high).
@@ -94,7 +95,7 @@ Write tasks/artifacts/codex-handoff-2026-11-07/08-forge-projections.md using the
 No git mutations, pushes, deploys, production reads/writes, recomputes. Never set GIT_DIR.
 ```
 
-## Prompt 9 — Roster Schedule Optimizer (RSO)
+## Prompt 9 — Roster Schedule Optimizer (RSO)  — WITHDRAWN (TJ 2026-11-08: Codex keeps this lane; do not send)
 
 ```
 Read-only handoff to Claude. Lane: RSO (diaries 2026-11-01-codex-rso-*.md, 2026-11-04-codex-rso-audit.md, 2026-10-29-codex-rso-*.md; web/lib/rosterScheduleOptimizer, web/components/RosterScheduleOptimizer; artifacts tasks/artifacts/rso-resume-2026-11-01/).

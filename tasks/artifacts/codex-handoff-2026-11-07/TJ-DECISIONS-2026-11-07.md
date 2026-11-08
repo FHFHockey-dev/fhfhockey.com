@@ -31,3 +31,5 @@ Housekeeping
 - Retire six-lane candidate04 + L3 plan, the L3 r3 / L5 r2 reviews, and retirable diaries (keep refs).
 - SS 5.6 Player vs Player: TJ supplies one sourced matchup.
 - web/web: keep as is (owner-retained default; not asked).
+
+2026-11-08 (TJ): Codex owns the BLSH and RSO lanes (handoff prompts 6 and 9 withdrawn).
