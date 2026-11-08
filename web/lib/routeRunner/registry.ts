@@ -153,6 +153,14 @@ export const ROUTE_RUNNER_ROUTES = {
     notes:
       "No continuation contract or runtime bound: runs once. A step still running at about 228 s is stopped and retried, up to 3 times."
   },
+  "/api/v1/db/update-team-unit-toi": {
+    label: "Team unit TOI",
+    contract: "once",
+    requiredParams: ["season"],
+    example: "/api/v1/db/update-team-unit-toi?season=20262027&mode=nightly&dryRun=false",
+    notes:
+      "Runs once. mode=nightly adds completed games missing from the season's latest snapshot to that same snapshot (up to 40 a call; games without usable shifts are skipped and retried next run). For a date-range build, pass startDate/endDate and the snapshot_date to write into. dryRun defaults to true."
+  },
   "/api/v1/db/update-wgo-totals": {
     label: "WGO skater totals",
     contract: "once",

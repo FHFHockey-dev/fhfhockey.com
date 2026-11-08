@@ -404,6 +404,34 @@ export const ROUTE_RUNNER_OPTIONS = {
       help: "One date, without a run mode or action."
     }
   ],
+  "/api/v1/db/update-team-unit-toi": [
+    season("Required. One season id."),
+    {
+      key: "mode",
+      label: "Mode",
+      kind: "choice",
+      group: "mode",
+      values: ["nightly"],
+      help: "nightly: add completed games missing from the season's latest snapshot to that same snapshot. Unset: build the dates or games given below."
+    },
+    {
+      key: "dryRun",
+      label: "Dry run",
+      kind: "choice",
+      group: "mode",
+      values: ["true", "false"],
+      help: "Defaults to true (nothing written). Set false to write."
+    },
+    startDate("Without mode: first game date to build. Keep each step to a few days."),
+    endDate("Without mode: last game date to build."),
+    {
+      key: "snapshot_date",
+      label: "Snapshot date",
+      kind: "date",
+      group: "scope",
+      help: "Without mode: the snapshot to write into. Reuse the season's existing snapshot; the reader shows only the latest one."
+    }
+  ],
   "/api/v1/db/update-wgo-totals": [
     season("A season id, or all for every season (may not fit one step).")
   ]

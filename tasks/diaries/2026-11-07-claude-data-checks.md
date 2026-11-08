@@ -222,3 +222,13 @@ Q7 rosters is_current stamp counts; Q32 stamps by team (newest stamp per team, c
   snapshot 2026-11-08, all complete, F1+D1 on 528/528, 0 non-regular. RESULTS §4 + §8 follow-ups written.
 - Left: queue replay for Schwindt/Hryckowian items (write → TJ); 2025-26 team_unit_toi rebuild (separate decision);
   no cron writes team_unit_toi (new dates need runs with the same snapshot).
+
+## 11-08 (c) nightly team_unit_toi (TJ via Chef: "Nightly route-runner job")
+- New lib/rankings/teamUnitToiNightly.ts: planner (reuse latest snapshot; oldest completed reg/playoff games
+  before today ET lacking top F line for both teams; cap 40; no snapshot → no_snapshot), completeGameIds,
+  paged loader (Supabase 1,000-row cap). Route update-team-unit-toi mode=nightly (dryRun default true; 409 when
+  no snapshot; writes only games with F1+D1 for both teams; skipped games retried next run; asOf/maxGames).
+  Registered in routeRunner registry ("once", requires season) + tick handler map + runner page options.
+- Tests: nightly module 8, route 3, rankings+routeRunner 37 files/337; eslint 0; typecheck exit 0.
+- Schedule NOT added (activation is its own TJ pop-up after release); suggested pg_cron:
+  GET /api/v1/db/update-team-unit-toi?season=<current>&mode=nightly&dryRun=false after shift ingest (~10:30 UTC).
