@@ -256,3 +256,16 @@ Q33 (a) IDs: select id, team_abbreviation, review_status, parser_classification,
 Q34 the 37 pending rows: id, team, created, tweet_id, context_text, metadata candidates.
 - (a) TJ pop-up: 'Run the 36 updates' + FLA 09-20 'Ignore it' → 34 assign_occurrence (FLA→Cole 8481655 x15, DAL→Justin 8484829 x19) + 3 ignore (CAR 0884b8b4, DAL AHL badb7ffa, FLA 09-20 b1c9dff4). Plan file scratchpad runs/queue-plan.tsv.
 - (a) DONE: 37/37 HTTP 200; readback 34 resolved (occurrence) + 3 ignored, 0 pending, 0 new aliases.
+- 2025-26 rebuild STOPPED 2025-12-21 (74/218 days) noES=4: game 2025020565 NJD(1)-BUF(7) shift rows have 4 teams (stray 54/28 + NJD/BUF doubled) — only such game in either season. TJ asked for the surgical fix. Q35: duplicate analysis of that game's shift rows + origin of VGK/SJS rows.
+- Diagnosis: 565's stored NHL shiftcharts payload (2026-04-02) itself has 2,179 entries all gameId 565: NJD/BUF
+  doubled + 676 VGK/SJS shifts. JSON PBP has no on-ice players (keys checked) → cannot build shifts from it.
+  Scan: 2025030411 (SCF G1) truncated at P3 4:53; exact-duplicate shift rows (type 517, dur>0): 2025-26 257 games
+  /1,795 rows, 2026-27 89 games/496 rows (dup player breaks 5v5 count → segment silently dropped).
+- TJ pop-up: shift source = HTML TOI reports; duplicates = dedupe in builder (+ drop off-game teams), next release;
+  resume 2025-26 now. tut-2526-rest.sh: 144 dates from 2025-12-22.
+- Builder hardening (TJ: dedupe in builder): cleanTeamUnitToiShifts collapses exact dups (game, player, period,
+  start, end) and drops non home/away teams (writer passes games home/away); coverage adds droppedDuplicateShifts /
+  droppedOffGameTeamShifts; noES counted on cleaned shifts. Tests 38 files/343, eslint 0, typecheck 0.
+  Real replay: 565 released 2 rows → repaired 122 (NJD 52.3 / BUF 52.6 5v5 min); 2026020019 5v5 44→49 min/team
+  (61 dup rows). → after release: rebuild 565 + the 89 dup-affected 2026-27 games + 257 2025-26 games into the same
+  snapshots (gameIds batches). SCF G1 2025030411 truncated → needs HTML TOI reports (own approval).

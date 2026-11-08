@@ -4,6 +4,8 @@ import type { Database } from "lib/supabase/database-generated.types";
 
 import {
   buildTeamUnitToiRows,
+  cleanTeamUnitToiShifts,
+  type TeamUnitToiGameTeams,
   type TeamUnitToiInsert,
   type TeamUnitToiPlayerPositionRow,
   type TeamUnitToiPowerPlayRow,
@@ -36,6 +38,10 @@ type TeamUnitToiBuildResult = {
     teamGamesWithoutEvenStrengthRows: number;
     /** Rows not marked complete (for example a skater with an unknown position). */
     partialRows: number;
+    /** Exact duplicate shift rows collapsed before building. */
+    droppedDuplicateShifts: number;
+    /** Shift rows dropped because their team is not the game's home or away team. */
+    droppedOffGameTeamShifts: number;
   };
 };
 
@@ -170,25 +176,46 @@ async function fetchPowerPlayRows(
   return rows;
 }
 
+async function fetchGameTeams(supabase: SupabaseClient<Database>, gameIds: number[]) {
+  const teams: TeamUnitToiGameTeams = new Map();
+  for (let index = 0; index < gameIds.length; index += 500) {
+    const chunk = gameIds.slice(index, index + 500);
+    const page = await fetchPaged<{ id: number; homeTeamId: number; awayTeamId: number }>(
+      async (from, to) =>
+        (supabase
+          .from("games")
+          .select("id,homeTeamId,awayTeamId")
+          .in("id", chunk)
+          .range(from, to) as unknown as Promise<{
+          data: { id: number; homeTeamId: number; awayTeamId: number }[] | null;
+          error: unknown;
+        }>),
+      "Failed to fetch game teams for team unit TOI",
+    );
+    page.forEach((game) => teams.set(Number(game.id), { homeTeamId: Number(game.homeTeamId), awayTeamId: Number(game.awayTeamId) }));
+  }
+  return teams;
+}
+
 export async function buildTeamUnitToiSnapshotRows(
   supabase: SupabaseClient<Database>,
   request: TeamUnitToiBuildRequest,
 ): Promise<TeamUnitToiBuildResult> {
   const shifts = await fetchShiftRows(supabase, request);
-  const [players, ppRows] = await Promise.all([
+  const shiftGameIds = uniqueNumbers(shifts.map((row) => row.game_id));
+  const [players, ppRows, gameTeams] = await Promise.all([
     fetchPlayersForShifts(supabase, shifts),
-    fetchPowerPlayRows(
-      supabase,
-      request,
-      uniqueNumbers(shifts.map((row) => row.game_id)),
-    ),
+    fetchPowerPlayRows(supabase, request, shiftGameIds),
+    fetchGameTeams(supabase, shiftGameIds),
   ]);
+  const cleaned = cleanTeamUnitToiShifts(shifts, gameTeams);
   const rows = buildTeamUnitToiRows({
     shifts,
     players,
     ppRows,
     season: request.season,
     snapshotDate: request.snapshotDate,
+    gameTeams,
   });
   const teamGames = new Set(
     rows.map((row) => [row.game_id, row.team_id].join(":")),
@@ -214,9 +241,11 @@ export async function buildTeamUnitToiSnapshotRows(
       defenseRows: rows.filter((row) => row.unit_type === "defense_pair").length,
       powerPlayRows: rows.filter((row) => row.unit_type === "power_play").length,
       teamGamesWithoutEvenStrengthRows: [
-        ...new Set(shifts.map((row) => [row.game_id, row.team_id].join(":"))),
+        ...new Set(cleaned.shifts.map((row) => [row.game_id, row.team_id].join(":"))),
       ].filter((key) => !evenStrengthTeamGames.has(key)).length,
       partialRows: rows.filter((row) => row.coverage_status !== "complete").length,
+      droppedDuplicateShifts: cleaned.droppedDuplicates,
+      droppedOffGameTeamShifts: cleaned.droppedOffGameTeam,
     },
   };
 }

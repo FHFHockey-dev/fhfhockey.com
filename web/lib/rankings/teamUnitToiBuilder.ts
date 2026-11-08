@@ -472,23 +472,58 @@ export function buildPowerPlayTeamUnitToiRows(args: {
     });
 }
 
+/** Home and away team ids per game, from the games table. */
+export type TeamUnitToiGameTeams = Map<number, { homeTeamId: number; awayTeamId: number }>;
+
+/**
+ * Repairs known shift-feed faults before units are built:
+ * - exact duplicates (same game, player, period, start and end) are collapsed. A doubled shift
+ *   puts one player on the ice twice, which breaks the 5v5 skater count and drops the segment;
+ * - shifts whose team is not the game's home or away team are dropped (NHL served game
+ *   2025020565 with another game's VGK and SJS shifts mixed in). Games without known teams keep
+ *   every team.
+ */
+export function cleanTeamUnitToiShifts(shifts: TeamUnitToiShiftRow[], gameTeams?: TeamUnitToiGameTeams) {
+  const seen = new Set<string>();
+  const kept: TeamUnitToiShiftRow[] = [];
+  let droppedDuplicates = 0;
+  let droppedOffGameTeam = 0;
+  for (const shift of shifts) {
+    const teams = gameTeams?.get(shift.game_id);
+    if (teams && shift.team_id !== teams.homeTeamId && shift.team_id !== teams.awayTeamId) {
+      droppedOffGameTeam += 1;
+      continue;
+    }
+    const key = [shift.game_id, shift.player_id, shift.period, shift.start_seconds, shift.end_seconds].join(":");
+    if (seen.has(key)) {
+      droppedDuplicates += 1;
+      continue;
+    }
+    seen.add(key);
+    kept.push(shift);
+  }
+  return { shifts: kept, droppedDuplicates, droppedOffGameTeam };
+}
+
 export function buildTeamUnitToiRows(args: {
   shifts: TeamUnitToiShiftRow[];
   players: TeamUnitToiPlayerPositionRow[];
   ppRows: TeamUnitToiPowerPlayRow[];
   season: number;
   snapshotDate: string;
+  gameTeams?: TeamUnitToiGameTeams;
 }) {
+  const { shifts } = cleanTeamUnitToiShifts(args.shifts, args.gameTeams);
   return [
     ...buildEvenStrengthTeamUnitToiRows({
-      shifts: args.shifts,
+      shifts,
       players: args.players,
       season: args.season,
       snapshotDate: args.snapshotDate,
     }),
     ...buildPowerPlayTeamUnitToiRows({
       ppRows: args.ppRows,
-      shifts: args.shifts,
+      shifts,
       season: args.season,
       snapshotDate: args.snapshotDate,
     }),
