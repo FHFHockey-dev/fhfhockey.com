@@ -11,6 +11,8 @@ import requests
 
 
 CALLER_SECRET = "test-caller-secret"
+# Captured before the autouse fixture swaps in a pass-through admission.
+REAL_ADMIT_NST_ATTEMPT = importlib.import_module("lib.nst_admission").admit_nst_attempt
 PROVIDER_KEY = "test-provider-key"
 
 
@@ -361,6 +363,26 @@ def test_proxy_budget_deferral_is_explicit_and_not_empty_success(monkeypatch, lo
     assert response.status_code==503
     assert response.get_json()["error"]["code"]=="admission_deferred"
     assert response.get_json()["data"]==[]
+
+
+def test_proxy_missing_admission_env_is_a_named_configuration_failure(monkeypatch, local_only):
+    # Real admission (not the autouse pass-through): no ledger URL on the deployment.
+    admission = importlib.import_module("lib.nst_admission")
+    monkeypatch.setattr(team_table_module, "nst_get", admission.nst_get)
+    monkeypatch.setattr(admission, "admit_nst_attempt", REAL_ADMIT_NST_ATTEMPT)
+    for key in ("NEXT_PUBLIC_SUPABASE_URL", "SUPABASE_URL"):
+        monkeypatch.delenv(key, raising=False)
+    monkeypatch.setenv("SUPABASE_SERVICE_ROLE_KEY", "fixture-service")
+    post = Mock(side_effect=AssertionError("no admission POST without a pinned ledger"))
+    monkeypatch.setattr(admission.requests, "post", post)
+    payload = _assert_same_json_response(_responses(QUERY), 503)
+    assert payload["error"]["code"] == "admission_unconfigured"
+    # The route truncates failure bodies to 300 characters; the marker must lead them.
+    standalone = standalone_app.test_client().get("/api/fetch_team_table?" + QUERY,
+        headers={"Authorization": f"Bearer {CALLER_SECRET}"})
+    assert "admission_unconfigured" in standalone.get_data(as_text=True)[:300]
+    post.assert_not_called()
+    local_only["provider_get"].assert_not_called()
 
 
 def test_enforced_proxy_requires_parent_before_provider(local_only, monkeypatch):

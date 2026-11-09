@@ -153,6 +153,10 @@ export async function warmPlayerStatsLandingSeasonAggregateCache(args: {
   }
 }
 
+// Each summary row is ~37 kB with per-row lock triggers; 100-row statements (~3.7 MB) hit the
+// statement timeout during the 2026-11-09 probe, so keep each statement small.
+export const PLAYER_SUMMARY_UPSERT_BATCH_SIZE = 25;
+
 async function upsertSummarySnapshots(args: {
   supabase: SupabaseClient;
   rows: Awaited<ReturnType<typeof buildPlayerStatsLandingSummarySnapshotsForGameIds>>;
@@ -160,8 +164,8 @@ async function upsertSummarySnapshots(args: {
   let count = 0;
   let busyRetries = 0;
 
-  for (let index = 0; index < args.rows.length; index += 100) {
-    const batch = args.rows.slice(index, index + 100);
+  for (let index = 0; index < args.rows.length; index += PLAYER_SUMMARY_UPSERT_BATCH_SIZE) {
+    const batch = args.rows.slice(index, index + PLAYER_SUMMARY_UPSERT_BATCH_SIZE);
     let attempts = 0;
     while (true) {
       attempts += 1;

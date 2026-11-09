@@ -312,3 +312,9 @@ Q42 chunked inputs (40 games/chunk, statement_timeout 60 s) same columns as Q40,
   - Unique tiebreaks on 9 paged reads: the route fetchSeasonGameIdSet (per-table PK) and payload read; player refresh payload + season game-id reads; goalie shared-seed + season game-id reads; landing summary + official payload Supabase reads; team official payload read.
   - New rebuild-team-underlying-summaries route (dryRun default, ≤14 days, ≤120 games, stale keys reported).
   - Checks: tests 27 files / 251 passing plus cron registry 37 / 366; typecheck exit 0; eslint 0. The unpaged direct-PG reads in playerStatsLandingServer still order by game_id, fetched_at only; no paging, so out of scope.
+- 11-09 15:00 UTC (amnesty over; TJ pop-up "Run all 3 probes"):
+  - Team: 40 s, 7,000 rows. Goalie: 33 s, 399 rows. Player: 504 at 240 s, 400 of about 1,400 rows (statement timeout on the 5th 100-row upsert; DB-wide 504/522 from 15:03:42 to 15:05:09, recovered by 15:07).
+  - Backups in scratchpad probe/ (team sha 33c22562).
+  - GOTCHA: nhl_api_game_payloads_raw is immutable (no-delete/no-update triggers), so the player rollback by delete is impossible. Told Chef and TJ.
+  - The plan is appended to UNDERLYING-SUMMARIES-SIZING-2026-11-09.md. The full rebuild is not started.
+- 11-09 ~15:20 UTC Chef-approved code: player summary upsert batch 100 → 25 (PLAYER_SUMMARY_UPSERT_BATCH_SIZE) with a new test plus updated retry tests. 23 files / 171 tests pass, typecheck exit 0, eslint 0. Next: size the team/goalie full rebuilds and pop up TJ. P3 is live since 15:15; finish before 21:00 UTC.

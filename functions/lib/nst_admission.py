@@ -18,6 +18,13 @@ class NstAdmissionError(RuntimeError):
     pass
 
 
+class NstAdmissionConfigError(NstAdmissionError):
+    """The deployment cannot reach the pinned ledger (missing key or URL).
+
+    Not a budget deferral: retrying cannot help until the environment is fixed.
+    """
+
+
 # The one Supabase project whose ledger enforces the global NST rate windows.
 # Any other project would hold a separate ledger, so admission and lifecycle
 # refuse it: no admission POST and no provider GET.
@@ -53,8 +60,10 @@ def _job_rpc(name, body, deadline_at):
     origin = _admission_origin()
     key = (os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or "").strip()
     remaining = min(5, deadline_at - time.monotonic())
-    if not key or origin is None or remaining <= 0:
-        raise NstAdmissionError("NST lifecycle configuration or deadline unavailable (pinned production project required).")
+    if not key or origin is None:
+        raise NstAdmissionConfigError("NST lifecycle configuration unavailable (pinned production project required).")
+    if remaining <= 0:
+        raise NstAdmissionError("NST lifecycle deadline unavailable.")
     response = requests.post(origin + "/rest/v1/rpc/" + name, json=body, timeout=remaining,
         headers={"apikey": key, "Authorization": "Bearer " + key}, allow_redirects=False)
     if response.status_code != 200:
@@ -163,9 +172,9 @@ def admit_nst_attempt(dispatch=lambda: None, deadline_at=None, planned_requests=
     origin = _admission_origin()
     key = (os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or "").strip()
     if not key:
-        raise NstAdmissionError("NST shared admission is not configured; no provider request started.")
+        raise NstAdmissionConfigError("NST shared admission is not configured; no provider request started.")
     if origin is None:
-        raise NstAdmissionError("NST shared admission requires the pinned production project; no provider request started.")
+        raise NstAdmissionConfigError("NST shared admission requires the pinned production project; no provider request started.")
     job = _job.get()
     if job and (job["closed"] or time.monotonic() >= job["deadline"]):
         raise NstAdmissionError("NST job is closed or expired.")

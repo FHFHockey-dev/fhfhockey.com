@@ -10,7 +10,9 @@ export function isNstConfigurationFailure(reason: string): boolean {
   return (
     reason.includes('"code":"missing_key"') ||
     reason.includes("NST_KEY missing") ||
-    /"code"\s*:\s*"(?:caller_auth_unavailable|caller_unauthorized)"/.test(reason)
+    // The proxy leads debug.Error with this marker so a truncated body still carries it.
+    reason.includes('"Error":"admission_unconfigured:') ||
+    /"code"\s*:\s*"(?:caller_auth_unavailable|caller_unauthorized|admission_unconfigured)"/.test(reason)
   );
 }
 

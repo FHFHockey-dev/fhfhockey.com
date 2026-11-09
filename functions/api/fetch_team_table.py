@@ -2,7 +2,7 @@
 # functions/api/fetch_team_table.py
 
 import requests
-from lib.nst_admission import nst_get, nst_job, nst_parent_job, NstAdmissionError
+from lib.nst_admission import nst_get, nst_job, nst_parent_job, NstAdmissionConfigError, NstAdmissionError
 from contextlib import nullcontext
 import time
 from bs4 import BeautifulSoup
@@ -206,6 +206,12 @@ def fetch_team_table(from_season='20242025', thru_season='20242025',
         result["data"] = rows
 
 
+    except NstAdmissionConfigError:
+        # The detail leads debug.Error so callers that truncate the body still see it.
+        return _error_result(result, code="admission_unconfigured",
+            message="NST shared admission is not configured on this deployment; no provider dispatch occurred.",
+            detail="admission_unconfigured: NEXT_PUBLIC_SUPABASE_URL (pinned project) and SUPABASE_SERVICE_ROLE_KEY are required",
+            status_code=503)
     except NstAdmissionError:
         return _error_result(result, code="admission_deferred",
             message="Shared NST admission unavailable within this request budget; no provider dispatch occurred.",

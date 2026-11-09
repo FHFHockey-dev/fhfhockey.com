@@ -25,6 +25,7 @@ vi.mock("./playerStatsLandingServer", async () => {
 });
 
 import {
+  PLAYER_SUMMARY_UPSERT_BATCH_SIZE,
   PlayerStatsSummaryWriteBusyError,
   refreshPlayerUnderlyingSummarySnapshotsForGameIds,
   warmPlayerStatsLandingSeasonAggregateCache,
@@ -63,8 +64,18 @@ describe("player summary snapshot contention", () => {
     return { rows, upsert, run };
   }
 
+  it("writes summary rows in small statements", async () => {
+    const { rows, upsert, run } = context(PLAYER_SUMMARY_UPSERT_BATCH_SIZE * 2 + 1);
+    await run();
+
+    expect(PLAYER_SUMMARY_UPSERT_BATCH_SIZE).toBe(25);
+    expect(upsert.mock.calls.map((call) => call[0].length)).toEqual([25, 25, 1]);
+    expect(upsert.mock.calls.flatMap((call) => call[0])).toEqual(rows);
+  });
+
   it("retries an aborted summary statement once using the identical built payload", async () => {
-    const { rows, upsert, run } = context(101);
+    const B = PLAYER_SUMMARY_UPSERT_BATCH_SIZE;
+    const { rows, upsert, run } = context(B + 1);
     const original = JSON.stringify(rows);
     upsert.mockResolvedValueOnce({ error: busy });
     const pending = run();
@@ -73,10 +84,10 @@ describe("player summary snapshot contention", () => {
     await vi.advanceTimersByTimeAsync(1);
     const result = await pending;
 
-    expect(result).toMatchObject({ rowsUpserted: 101, summaryWriteBusyRetries: 1 });
+    expect(result).toMatchObject({ rowsUpserted: B + 1, summaryWriteBusyRetries: 1 });
     expect(upsert).toHaveBeenCalledTimes(3);
     expect(upsert.mock.calls[0][0]).toBe(upsert.mock.calls[1][0]);
-    expect(upsert.mock.calls[2][0]).toEqual([rows[100]]);
+    expect(upsert.mock.calls[2][0]).toEqual([rows[B]]);
     expect(upsert.mock.calls[0][1]).toEqual({
       onConflict: "game_id,endpoint,payload_hash", ignoreDuplicates: true,
     });
@@ -87,7 +98,7 @@ describe("player summary snapshot contention", () => {
   });
 
   it("shares one retry across batches and preserves the later exhausted stage", async () => {
-    const { upsert, run } = context(101);
+    const { rows, upsert, run } = context(PLAYER_SUMMARY_UPSERT_BATCH_SIZE + 1);
     upsert.mockResolvedValueOnce({ error: busy })
       .mockResolvedValueOnce({ error: null })
       .mockResolvedValueOnce({ error: busy });
@@ -98,7 +109,7 @@ describe("player summary snapshot contention", () => {
     expect(error).toBeInstanceOf(PlayerStatsSummaryWriteBusyError);
     expect(error).toMatchObject({
       code: "P0001", stage: "persist_player_summaries", endpoint: "landing",
-      gameIds: [2026020042], attempts: 1,
+      gameIds: [rows[PLAYER_SUMMARY_UPSERT_BATCH_SIZE].game_id], attempts: 1,
     });
     expect(upsert).toHaveBeenCalledTimes(3);
     expect(buildSnapshotsMock).toHaveBeenCalledTimes(1);

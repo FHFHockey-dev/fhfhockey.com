@@ -67,3 +67,50 @@ Other paged reads that feed these summaries still lack a unique order:
 
 - **Stale keys:** goalie and team never delete keys that a rebuild no longer produces. Compare keys per game after each call, and delete exact keys (backed up) the way the team_unit_toi run did.
 - **DB load:** each one-week call reads about 50 games' events, shifts (about 50 pages), roster spots and payloads in 50-game chunks. That is similar to one team_unit_toi batch, which kept activity at 16–21.
+
+## Probe results, 2026-11-09 15:00 UTC
+
+Approved by TJ by pop-up. Week 2026-10-12→18 of 2026-27, 50 games. Live routes after #423 (a5816ce6d).
+
+| Entity | Route | Time | Rows | Readback |
+|---|---|---|---|---|
+| Team | `rebuild-team-underlying-summaries` dry run | 22 s | 7,000 generated, 0 stale | — |
+| Team | the same route with `dryRun=false` | 40 s | 7,000 upserted | 7,000 rows / 50 games. Before: 4,760 rows on 34 games, so 16 games were missing. |
+| Goalie | `update-goalie-underlying-summaries` date_range | 33 s | 399 | 399 rows / 50 games. None existed before. |
+| Player | `update-player-underlying-summaries` date_range | **504 at 240 s** | 400 of about 1,400 inserted | Partial: 14 games complete (28 partitions each); game 2026020101 has 8 of 28 partitions new. Readers take the newest row per partition `source_url`, so each partition stays internally consistent. |
+
+Peak DB conns during the probes: 13–14.
+
+### Why the player probe failed
+
+- The build took about 30 s. Four upsert statements of 100 rows each landed at 15:03:31–35.
+- The fifth hit a statement timeout (PostgREST 504 at 15:03:42). The function then hung until Vercel's 240 s cutoff.
+- Each row is about 37 kB (the individual and onIce partitions), so each statement carries about 3.7 MB, and every row fires per-row triggers (`projection-game` advisory lock, snapshot-head advance).
+- From 15:03:42 to 15:05:09, unrelated API calls also returned 504/522 (players, forge_runs, line_source events).
+- But statement timeouts on `wgo_skater_stats` started earlier (14:56, 15:02:32), so the database was already marginal; the probe is not the only cause.
+- No other payload writers were active in the window.
+- The database recovered by 15:07: 0 5xx errors, 28 conns, no lock waits.
+
+### Rollback correction
+
+`nhl_api_game_payloads_raw` is **immutable**: BEFORE DELETE and BEFORE UPDATE triggers raise an exception. The probe pop-up offered "delete player rows with fetched_at ≥ run start", and that rollback is **not possible**.
+
+A real rollback would be to re-insert the backed-up previous payloads. The insert trigger lets a game revert to an earlier identity by moving its snapshot head back. That is untested.
+
+The team and goalie rollbacks (CSV reload) are unaffected.
+
+## Full both-season rebuild plan (not started; needs TJ's go)
+
+**Guards on every call:**
+- Check conns before the call and stop if they are over 40.
+- 21 s gap between calls; never run in 08:25–10:05 UTC.
+- Stop on any non-2xx, or on any `statement timeout` in postgres_logs since the previous call (checked through the logs API).
+- No NST and no external API calls.
+
+| Entity | Calls | Est. runtime | Backup | Rollback |
+|---|---|---|---|---|
+| Team (rebuild route, `gameType`=2 then 3) | 2025-26: about 27 regular + 9 playoff one-week windows. 2026-27: 6. About 42 in all, each ≤ 120 games. | about 42 × (40 s + 21 s) ≈ **45 min** | Chunked CSV of each season (183,680 + 34,580 rows) | Delete the rows for the rebuilt games, then reload the CSV. Stale keys are listed per call; delete those only by exact key, after a backup. |
+| Goalie (date_range) | the same 42 windows | about 42 × (33 s + 21 s) ≈ **40 min** | CSV of 2025-26 (9,725 rows); 2026-27 is new | Delete the rebuilt games' rows, then reload the CSV |
+| Player (date_range) | **Not runnable as is.** Needs either 1-day windows (about 270 calls, ≈ **2.7 h**, about 4 statements of 3.7 MB each per call) or, preferably, a small code change: `upsertSummarySnapshots` batches of 25 rows instead of 100 (keep one-week windows: about 42 calls, about 1 h). | see the previous column | None possible to delete. The previous payloads are already kept, and the CSV holds them. | Re-insert the previous payloads (untested) |
+
+**Order:** team, then goalie, then player, after the player batch fix ships. Total about 2.5 h over one or two sessions.
