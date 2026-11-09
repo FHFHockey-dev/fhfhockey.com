@@ -171,8 +171,9 @@ function goalieResults(games: ObservedTeamGame[]): GoalieResults {
     startShare: starts.value === null ? na(starts.reason!) : ok(starts.value / games.length) };
 }
 
-function interpretGoalie(recentGames: ObservedTeamGame[], priorGames: ObservedTeamGame[], forecast: ForgeForecastInput, horizonOk: boolean, expired: boolean): GoalieInterpretation {
+function interpretGoalie(recentGames: ObservedTeamGame[], priorGames: ObservedTeamGame[], forecast: ForgeForecastInput | undefined, horizonOk: boolean, expired: boolean): GoalieInterpretation {
   const expectedRatio = (key: string) => {
+    if (!forecast) return na("no_forecast");
     if (!horizonOk) return na("horizon_mismatch");
     if (expired) return na("forecast_expired");
     const value = forecast.player.ratios[key];
@@ -182,7 +183,7 @@ function interpretGoalie(recentGames: ObservedTeamGame[], priorGames: ObservedTe
   return {
     observed: goalieResults(recentGames), personalReference: goalieResults(priorGames),
     expected: { savePercentage: expectedRatio("SAVE_PERCENTAGE"), goalsAgainstAverage: expectedRatio("GOALS_AGAINST_AVERAGE"),
-      expectedStarts: !horizonOk ? na("horizon_mismatch") : expired ? na("forecast_expired") : finite(forecast.player.expectedStarts) ? ok(forecast.player.expectedStarts) : na("start_participation_unavailable"),
+      expectedStarts: !forecast ? na("no_forecast") : !horizonOk ? na("horizon_mismatch") : expired ? na("forecast_expired") : finite(forecast.player.expectedStarts) ? ok(forecast.player.expectedStarts) : na("start_participation_unavailable"),
       interpretation: "ratio_of_expected_totals" },
     gap: { status: "pending_goalie_adapter", reason: "VuDu gaps await an accepted goalie adapter and goalie evidence; ratios are shown as context only." },
   };
@@ -193,7 +194,12 @@ const signed = (value: number) => `${value > 0 ? "+" : ""}${value.toFixed(2)}`;
 
 export type InterpretInput = {
   evidence: ObservedEvidence;
-  forecast: ForgeForecastInput;
+  /**
+   * The FORGE forecast. Omit it for an observation-only record: observed and personal-reference
+   * values are produced, every expected value is withheld as `no_forecast`, and the horizon is
+   * incomplete so consumers never treat the record as a forecast. Nothing is fabricated.
+   */
+  forecast?: ForgeForecastInput;
   /** An earlier FORGE issuance for the same player, used only for outlook change. */
   priorForecast?: ForgeForecastInput;
   config: InterpretationConfig;
@@ -206,8 +212,9 @@ export type InterpretInput = {
 export function interpretPlayer(input: InterpretInput): InterpretationRecord {
   const { evidence, forecast, priorForecast, config, horizon } = input;
   if (!validTime(input.asOf)) throw new Error("Invalid asOf time.");
-  if (forecast.player.playerId !== evidence.playerId) throw new Error("Evidence and forecast identify different players.");
-  if ((evidence.modelClass === "G") !== (forecast.player.playerClass === "goalie")) throw new Error("Model class does not match forecast player class.");
+  if (forecast && forecast.player.playerId !== evidence.playerId) throw new Error("Evidence and forecast identify different players.");
+  if (forecast && (evidence.modelClass === "G") !== (forecast.player.playerClass === "goalie")) throw new Error("Model class does not match forecast player class.");
+  if (!forecast && !evidence.playerName?.trim()) throw new Error("Observation-only interpretation needs evidence.playerName.");
   if (priorForecast && priorForecast.player.playerId !== evidence.playerId) throw new Error("Prior forecast identifies a different player.");
   const asOfMs = Date.parse(input.asOf);
   const normalized = normalizeTeamGames(evidence, asOfMs);
@@ -220,8 +227,8 @@ export function interpretPlayer(input: InterpretInput): InterpretationRecord {
   const cutoffMs = validTime(evidence.sourceCutoffAt) ? Date.parse(evidence.sourceCutoffAt) : NaN;
   const evidenceAgeHours = Number.isFinite(cutoffMs) && cutoffMs <= asOfMs ? (asOfMs - cutoffMs) / 3_600_000 : null;
   const evidenceStatus = evidenceAgeHours === null ? "invalid" as const : evidenceAgeHours > config.maxEvidenceAgeHours ? "stale" as const : "fresh" as const;
-  const expiry = forecastExpiry(forecast, asOfMs);
-  const horizonOk = forecast.scope.mode === "next_n" && forecast.scope.games === horizon;
+  const expiry = forecast ? forecastExpiry(forecast, asOfMs) : { expiresAt: null, status: "unknown" as const };
+  const horizonOk = !!forecast && forecast.scope.mode === "next_n" && forecast.scope.games === horizon;
   const isGoalie = evidence.modelClass === "G";
 
   const metrics: MetricInterpretation[] = isGoalie ? [] : SKATER_TARGETS.map(target => {
@@ -239,15 +246,15 @@ export function interpretPlayer(input: InterpretInput): InterpretationRecord {
       changePerTeamGame: observedPerTeamGame.value !== null && priorPerTeamGame.value !== null
         ? ok(observedPerTeamGame.value - priorPerTeamGame.value) : na(observedPerTeamGame.reason ?? priorPerTeamGame.reason ?? "unavailable") };
     const expected = expectedPerTeamGame(forecast, horizon, target, expiry.status === "expired");
-    const conditional = expiry.status === "expired" ? na("forecast_expired") : horizonOk && forecast.player.games.length
+    const conditional = !forecast ? na("no_forecast") : expiry.status === "expired" ? na("forecast_expired") : horizonOk && forecast.player.games.length
       && forecast.player.games.every(game => finite(game.targets[target]?.conditional))
       ? ok(mean(forecast.player.games.map(game => game.targets[target].conditional as number))) : na(horizonOk ? "conditional_not_permitted_or_missing" : "horizon_mismatch");
     const gap = evidenceStatus !== "fresh" ? na(`${evidenceStatus}_evidence`)
       : expected.value === null ? na(`expected_${expected.reason}`)
         : observedPerTeamGame.value === null ? na(`observed_${observedPerTeamGame.reason}`)
           : ok(expected.value - observedPerTeamGame.value);
-    let outlook: Measured = na("no_prior_forecast");
-    if (priorForecast) {
+    let outlook: Measured = na(!forecast ? "no_forecast" : "no_prior_forecast");
+    if (priorForecast && forecast) {
       const prior = expectedPerTeamGame(priorForecast, horizon, target, false);
       outlook = Date.parse(priorForecast.readAsOf) >= Date.parse(forecast.readAsOf) ? na("prior_not_earlier")
         : prior.value === null ? na(`prior_${prior.reason}`) : expected.value === null ? na(`expected_${expected.reason}`)
@@ -283,8 +290,8 @@ export function interpretPlayer(input: InterpretInput): InterpretationRecord {
 
   const opportunity = isGoalie ? null : interpretOpportunity(recentGames, priorGames, evidence, config, asOfMs);
   const goalie = isGoalie ? interpretGoalie(recentGames, priorGames, forecast, horizonOk, expiry.status === "expired") : null;
-  const player = forecast.player;
-  const horizonReason = !horizonOk ? "horizon_mismatch" : !player.horizonComplete ? "incomplete_horizon" : null;
+  const player = forecast?.player;
+  const horizonReason = !forecast ? "no_forecast" : !horizonOk ? "horizon_mismatch" : !player!.horizonComplete ? "incomplete_horizon" : null;
 
   const explanations: InterpretationRecord["explanations"] = [];
   const points = metrics.find(metric => metric.target === "POINTS");
@@ -315,7 +322,7 @@ export function interpretPlayer(input: InterpretInput): InterpretationRecord {
     ...(unknownGames ? [`${unknownGames} recent team game(s) have unknown participation; per-team-game rates are withheld.`] : []),
     ...(normalized.conflictingGameIds.length ? [`Conflicting source rows for ${normalized.conflictingGameIds.join(", ")} were excluded, not summed.`] : []),
     ...(evidenceStatus === "stale" ? ["Observed evidence is stale; gaps are withheld."] : []),
-    ...forecast.limitations,
+    ...(forecast ? forecast.limitations : ["No FORGE forecast was supplied: observed results only; every expected value and gap is withheld."]),
   ])];
 
   return {
@@ -324,14 +331,16 @@ export function interpretPlayer(input: InterpretInput): InterpretationRecord {
     fixture: input.fixture,
     asOf: input.asOf,
     identity: {
-      playerId: player.playerId, name: player.name, team: player.team, modelClass: evidence.modelClass, eligibility: [...evidence.eligibility],
-      evidenceSnapshotId: evidence.evidenceSnapshotId, forecastVersion: forecast.version, forecastManifestId: forecast.manifestId,
-      forecastReadAsOf: forecast.readAsOf, baselineChecksum: forecast.baselineChecksum,
+      playerId: evidence.playerId, name: player?.name ?? evidence.playerName!.trim(),
+      team: player ? player.team : normalized.games.at(-1)?.team ?? null,
+      modelClass: evidence.modelClass, eligibility: [...evidence.eligibility],
+      evidenceSnapshotId: evidence.evidenceSnapshotId, forecastVersion: forecast?.version ?? null, forecastManifestId: forecast?.manifestId ?? null,
+      forecastReadAsOf: forecast?.readAsOf ?? null, baselineChecksum: forecast?.baselineChecksum ?? null,
     },
     horizon: {
-      requestedGames: horizon, scheduledGames: player.scheduledOpportunities, complete: horizonOk && player.horizonComplete,
-      gameIds: player.games.map(game => game.gameId), startDate: player.games[0]?.date ?? null, endDate: player.games.at(-1)?.date ?? null,
-      expectedAppearances: player.expectedAppearances, expectedStarts: player.expectedStarts, reason: horizonReason,
+      requestedGames: horizon, scheduledGames: player?.scheduledOpportunities ?? 0, complete: !!player && horizonOk && player.horizonComplete,
+      gameIds: player?.games.map(game => game.gameId) ?? [], startDate: player?.games[0]?.date ?? null, endDate: player?.games.at(-1)?.date ?? null,
+      expectedAppearances: player?.expectedAppearances ?? null, expectedStarts: player?.expectedStarts ?? null, reason: horizonReason,
     },
     recentWindow: {
       requestedTeamGames: k, teamGames: recentGames.length, appearances, unknownGames,
@@ -342,7 +351,7 @@ export function interpretPlayer(input: InterpretInput): InterpretationRecord {
     personalReferenceWindow: { teamGames: priorGames.length, appearances: priorGames.filter(g => g.status === "appeared").length,
       unknownGames: priorGames.filter(g => g.status === "unknown").length, startDate: priorGames[0]?.date ?? null,
       endDate: priorGames.at(-1)?.date ?? null, method: "preceding_disjoint_team_game_block" },
-    forecastTotals: Object.fromEntries(Object.entries(player.totals).map(([key, total]) =>
+    forecastTotals: Object.fromEntries(Object.entries(player?.totals ?? {}).map(([key, total]) =>
       [key, { expected: total.expected, unit: total.unit, reason: total.reason }])),
     metrics, ipp, opportunity, goalie,
     uncertainty: { predictiveSpread: na("not_supplied_by_forge_v1"), meanUncertainty: na("not_supplied_by_forge_v1") },
