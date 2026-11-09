@@ -32,8 +32,16 @@ CAS re-read of heads, 25-row inserts, readback that each partition's head is the
 - ts-node `--verify` on a local fixture backup works (no DB).
 - Runbook: side-session-notes/<chef>/player-summaries-rollback-runbook.md.
 
-## Next
-- Commit, report to Chef. Production runs need TJ's pop-up (amnesty ended).
+## Checkpoint (2026-11-09, late; TJ's wifi ending)
+- Code committed in fb964e2c2 on octoberBranch; Chef reports it shipped in #426. Nothing has been run against production.
+- Production DB was unreachable from ~20:34 UTC; Chef ordered no production queries until it says the DB is back.
+- Chef stated the untracked scripts broke typecheck, but that was stale: they were already committed, and a fresh `npm run typecheck` exited 0.
+
+## Next (for TJ's next session)
+- Follow the runbook at side-session-notes/local_c4e6c533-.../player-summaries-rollback-runbook.md (9 steps).
+- Before step 1, confirm the DB is reachable and healthy again. Every production write needs TJ's own pop-up (the amnesty has ended).
+- Order: backup and verify → baseline dry run (expect restore 0) → rebuild → check → only if needed, rollback dry run, then apply with `--expect-plan-sha256`.
+- Status: paused, not finished. Keep this diary until the rebuild/rollback outcome is recorded.
 
 ## Gotchas
 - Sweep-gamecenter-normalization treats `individual/allStrengths` marker fetched_at >= normalization completed_at as
