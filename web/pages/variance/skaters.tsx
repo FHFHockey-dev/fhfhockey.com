@@ -5,6 +5,10 @@ import { useEffect, useState } from "react";
 import supabase from "lib/supabase";
 import SkaterList from "components/SkaterPage/SkaterList";
 import Spinner from "components/Spinner/Spinner";
+import {
+  fetchSeasonSkaterRowsPage,
+  type SkaterRowsCursor
+} from "components/SkaterPage/seasonSkaterRows";
 import type {
   SkaterGameRow,
   SkaterWeek,
@@ -12,37 +16,6 @@ import type {
 } from "components/SkaterPage/skaterTypes";
 
 import styles from "./variance.module.scss";
-
-const SKATER_SELECT_FIELDS = [
-  "player_id",
-  "player_name",
-  "team_abbrev",
-  "current_team_abbreviation",
-  "position_code",
-  "date",
-  "season_id",
-  "games_played",
-  "points",
-  "points_per_game",
-  "goals",
-  "assists",
-  "shots",
-  "shooting_percentage",
-  "plus_minus",
-  "pp_points",
-  "pp_goals",
-  "pp_assists",
-  "pp_toi",
-  "pp_toi_per_game",
-  "sh_points",
-  "sh_goals",
-  "sh_assists",
-  "hits",
-  "blocked_shots",
-  "penalty_minutes",
-  "toi_per_game",
-  "individual_sat_for_per_60"
-].join(",");
 
 const YAHOO_SKATER_SELECT_FIELDS = [
   "player_id",
@@ -59,12 +32,8 @@ const YAHOO_SKATER_SELECT_FIELDS = [
 ].join(",");
 
 const INITIAL_PAGE_SIZE = 200;
-const PAGE_SIZE = 200;
-
-type PagedSkaterRowsResult = {
-  rows: SkaterGameRow[];
-  hasMore: boolean;
-};
+// Keyset pages are cheap; 1000 matches the API row cap.
+const PAGE_SIZE = 1000;
 
 type YahooNhlPlayerMapRow = {
   nhl_player_id: string | null;
@@ -128,32 +97,6 @@ async function fetchLatestSeasonId() {
   }
 
   return typeof data?.season_id === "number" ? data.season_id : null;
-}
-
-async function fetchSeasonSkaterRowsPage(
-  seasonId: number,
-  page: number,
-  pageSize = PAGE_SIZE
-): Promise<PagedSkaterRowsResult> {
-  const from = page * pageSize;
-  const to = from + pageSize - 1;
-  const { data, error } = await supabase
-    .from("wgo_skater_stats")
-    .select(SKATER_SELECT_FIELDS)
-    .eq("season_id", seasonId)
-    .gt("games_played", 0)
-    .order("id", { ascending: true })
-    .range(from, to);
-
-  if (error) {
-    throw error;
-  }
-
-  const rows = (data ?? []) as unknown as SkaterGameRow[];
-  return {
-    rows,
-    hasMore: rows.length === pageSize
-  };
 }
 
 function getYahooSeasonFromNhlSeasonId(seasonId: number) {
@@ -347,15 +290,20 @@ export default function VarianceSkatersPage() {
 
     const loadRemainingRows = async (
       nextSeasonId: number,
-      startPage: number
+      startCursor: SkaterRowsCursor
     ) => {
       setLoadingMore(true);
 
       try {
-        let page = startPage;
+        let cursor: SkaterRowsCursor | null = startCursor;
 
-        while (!cancelled) {
-          const nextPage = await fetchSeasonSkaterRowsPage(nextSeasonId, page);
+        while (!cancelled && cursor) {
+          const nextPage = await fetchSeasonSkaterRowsPage(
+            supabase,
+            nextSeasonId,
+            cursor,
+            PAGE_SIZE
+          );
           const nextPlayerIds = collectNewPlayerIds(nextPage.rows);
           const nextYahooRows = await loadYahooRowsForPlayers(
             nextSeasonId,
@@ -377,13 +325,8 @@ export default function VarianceSkatersPage() {
               mergeYahooRows(currentRows, nextYahooRows)
             );
           }
-          setHasMoreRows(nextPage.hasMore);
-
-          if (!nextPage.hasMore) {
-            return;
-          }
-
-          page += 1;
+          setHasMoreRows(nextPage.nextCursor !== null);
+          cursor = nextPage.nextCursor;
         }
       } catch (loadError) {
         console.error("Error loading additional skater variance rows:", loadError);
@@ -418,7 +361,12 @@ export default function VarianceSkatersPage() {
         }
 
         const [firstPage, nextMatchupWeeks] = await Promise.all([
-          fetchSeasonSkaterRowsPage(latestSeasonId, 0, INITIAL_PAGE_SIZE),
+          fetchSeasonSkaterRowsPage(
+            supabase,
+            latestSeasonId,
+            null,
+            INITIAL_PAGE_SIZE
+          ),
           fetchYahooMatchupWeeks(latestSeasonId).catch((weekError) => {
             console.warn("Yahoo matchup weeks are unavailable:", weekError);
             return [] as SkaterWeek[];
@@ -435,11 +383,11 @@ export default function VarianceSkatersPage() {
           setYahooRows(nextYahooRows);
           setMatchupWeeks(nextMatchupWeeks);
           setGameRows(firstPage.rows);
-          setHasMoreRows(firstPage.hasMore);
+          setHasMoreRows(firstPage.nextCursor !== null);
           setLoading(false);
 
-          if (firstPage.hasMore) {
-            void loadRemainingRows(latestSeasonId, 1);
+          if (firstPage.nextCursor) {
+            void loadRemainingRows(latestSeasonId, firstPage.nextCursor);
           }
         }
       } catch (loadError) {

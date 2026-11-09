@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import supabase from "lib/supabase";
 import { getTeamAbbreviationById } from "lib/teamsInfo";
+import { fetchTeamBoxScoreDates } from "components/PlayerStats/boxScoreCoverage";
 import {
   leagueDateKey,
   seasonDateWindow
@@ -192,18 +193,16 @@ export function useMissedGames(
         const pastRegularDates = missed
           .filter((game) => !game.isFuture && !game.isPlayoff)
           .map((game) => game.date);
-        let covered: Set<string> | null = null;
-        if (teamAbbrev && pastRegularDates.length > 0) {
-          const { data: coverageRows, error: coverageError } = await supabase
-            .from("wgo_skater_stats")
-            .select("date")
-            .eq("team_abbrev", teamAbbrev)
-            .in("date", pastRegularDates)
-            .limit(5000);
-          if (!coverageError) {
-            covered = new Set((coverageRows ?? []).map((row) => row.date));
-          }
-        }
+        const covered =
+          pastRegularDates.length > 0
+            ? await fetchTeamBoxScoreDates(
+                supabase,
+                "wgo_skater_stats",
+                "team_abbrev",
+                teamAbbrev,
+                pastRegularDates
+              )
+            : null;
         missed.forEach((game) => {
           if (!game.isFuture && (game.isPlayoff || !covered?.has(game.date))) {
             game.isUnconfirmed = true;
