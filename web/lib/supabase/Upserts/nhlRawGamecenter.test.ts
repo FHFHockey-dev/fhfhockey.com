@@ -1031,21 +1031,30 @@ describe("shift payload validation", () => {
     vi.unstubAllGlobals();
   });
 
-  it("drops exact-content duplicates under distinct ids, keeping the lowest id (2026020019 shape)", () => {
+  it("selects one row per exact-content duplicate, keeping the lowest id (2026020019 shape)", () => {
     const gameId = 2026020019;
     const game = finalGame(gameId, 52, 10);
     const away = fullGameShifts(gameId, 52, 100);
     const home = fullGameShifts(gameId, 10, 200);
     const duplicate = { ...away[0], id: 900 };
-    const rows = normalizeShiftRows(
-      game,
-      { total: 7, data: [duplicate, ...away, ...home], source: "json-api" } as any,
-      "b".repeat(64),
-    );
+    const payload = { total: 7, data: [duplicate, ...away, ...home], source: "json-api" } as any;
 
-    expect(rows).toHaveLength(6);
-    expect(rows.map((row: any) => row.shift_id).sort((a: number, b: number) => a - b))
+    const selected = selectShiftRowsForGame(game, payload);
+    expect(selected.map((row: any) => row.id).sort((a: number, b: number) => a - b))
       .toEqual([100, 101, 102, 200, 201, 202]);
+  });
+
+  it("normalizes one row per raw entry, as the persist RPC's row-count check requires", () => {
+    // persist_nhl_api_gamecenter_normalized_v1 raises NHL_NORMALIZATION_SHIFT_HEAD_MISMATCH
+    // unless the shift scope has exactly jsonb_array_length(raw head data) rows.
+    const gameId = 2026020019;
+    const game = finalGame(gameId, 52, 10);
+    const away = fullGameShifts(gameId, 52, 100);
+    const home = fullGameShifts(gameId, 10, 200);
+    const payload = { total: 7, data: [{ ...away[0], id: 900 }, ...away, ...home], source: "json-api" } as any;
+    const rows = normalizeShiftRows(game, payload, "b".repeat(64));
+
+    expect(rows).toHaveLength(payload.data.length);
     expect(rows.every((row: any) => row.game_id === gameId)).toBe(true);
   });
 
