@@ -22,6 +22,19 @@ describe("NST team stats diagnostics", () => {
     expect(isNstConfigurationFailure("HTTP 429: rate limited")).toBe(false);
   });
 
+  it("treats a proxy with no admission ledger configured as fatal, even in a truncated body", () => {
+    // 2026-11-08..09: every request failed before any admission POST, reported as a deferral.
+    const body = JSON.stringify({
+      data: [],
+      debug: { Error: "admission_unconfigured: NEXT_PUBLIC_SUPABASE_URL (pinned project) and SUPABASE_SERVICE_ROLE_KEY are required", "Fetching URL": "https://data.naturalstattrick.com/teamtable.php?fromseason=20262027" },
+      error: { code: "admission_unconfigured" },
+    });
+    expect(isNstConfigurationFailure(`Failed for nst_team_stats: HTTP 503: ${body.slice(0, 300)}`)).toBe(true);
+    expect(isNstConfigurationFailure(`HTTP 503: {"error":{"code":"admission_unconfigured"}}`)).toBe(true);
+    const deferred = JSON.stringify({ data: [], debug: { Error: "Shared NST admission unavailable within this request budget; no provider dispatch occurred." }, error: { code: "admission_deferred" } });
+    expect(isNstConfigurationFailure(`HTTP 503: ${deferred.slice(0, 300)}`)).toBe(false);
+  });
+
   it("keeps backlog dates and empty-source skips outside failed row counts", () => {
     expect(
       buildNstTeamStatsDiagnostics({

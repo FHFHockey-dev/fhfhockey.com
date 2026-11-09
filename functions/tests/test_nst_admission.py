@@ -17,10 +17,29 @@ def response(payload):
 
 def test_missing_config_never_dispatches(monkeypatch):
     monkeypatch.setenv("SUPABASE_SERVICE_ROLE_KEY", "")
-    with pytest.raises(admission.NstAdmissionError, match="not configured"):
+    with pytest.raises(admission.NstAdmissionConfigError, match="not configured"):
         admission.nst_get("https://data.naturalstattrick.com/teamtable.php")
     admission.requests.get.assert_not_called()
     admission.requests.post.assert_not_called()
+
+@pytest.mark.parametrize("unset", ["NEXT_PUBLIC_SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"])
+def test_missing_deployment_env_is_a_config_error_not_a_deferral(monkeypatch, unset):
+    # 2026-11-08..09: functions-fhfhockey lacked this env, so every team-table call
+    # failed before any admission POST yet was reported as a budget deferral.
+    monkeypatch.delenv(unset, raising=False)
+    monkeypatch.delenv("SUPABASE_URL", raising=False)
+    with pytest.raises(admission.NstAdmissionConfigError):
+        admission.nst_get("https://data.naturalstattrick.com/teamtable.php")
+    admission.requests.post.assert_not_called()
+    admission.requests.get.assert_not_called()
+
+
+def test_budget_refusal_is_not_a_config_error(monkeypatch):
+    monkeypatch.setattr(admission.requests, "post", Mock(return_value=response(receipt(False, 60000))))
+    with pytest.raises(admission.NstAdmissionError) as raised:
+        admission.nst_get("https://data.naturalstattrick.com/teamtable.php", deadline_at=admission.time.monotonic() + 7)
+    assert not isinstance(raised.value, admission.NstAdmissionConfigError)
+
 
 @pytest.mark.parametrize("payload", [None, {}, {**receipt(), "scope":"local"}, {**receipt(),"allowed":1}, {**receipt(),"waitMs":-1}])
 def test_invalid_receipt_never_dispatches(monkeypatch, payload):
@@ -126,7 +145,7 @@ def test_parent_proxy_cannot_finish_whole_job(monkeypatch):
 ])
 def test_non_pinned_project_never_posts_or_dispatches(monkeypatch, origin):
     monkeypatch.setenv("NEXT_PUBLIC_SUPABASE_URL", origin)
-    with pytest.raises(admission.NstAdmissionError, match="pinned production project"):
+    with pytest.raises(admission.NstAdmissionConfigError, match="pinned production project"):
         admission.nst_get("https://data.naturalstattrick.com/teamtable.php")
     admission.requests.post.assert_not_called()
     admission.requests.get.assert_not_called()
@@ -134,7 +153,7 @@ def test_non_pinned_project_never_posts_or_dispatches(monkeypatch, origin):
 
 def test_non_pinned_project_refuses_lifecycle_rpc(monkeypatch):
     monkeypatch.setenv("NEXT_PUBLIC_SUPABASE_URL", "https://otherproject.supabase.co")
-    with pytest.raises(admission.NstAdmissionError, match="pinned production project"):
+    with pytest.raises(admission.NstAdmissionConfigError, match="pinned production project"):
         admission._job_rpc("nst_job_begin_v1", {}, admission.time.monotonic() + 60)
     admission.requests.post.assert_not_called()
 

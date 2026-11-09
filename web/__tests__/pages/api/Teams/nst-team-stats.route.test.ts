@@ -181,7 +181,7 @@ describe("NST team stats current-season refresh", () => {
     expect(JSON.stringify(vi.mocked(console.error).mock.calls)).not.toContain("test-team-table-secret");
   });
 
-  it.each([["caller_unauthorized", 401], ["caller_auth_unavailable", 503]] as const)("stops on downstream caller code %s after one failed request", async (code, status) => {
+  it.each([["caller_unauthorized", 401], ["caller_auth_unavailable", 503], ["admission_unconfigured", 503]] as const)("stops on downstream caller code %s after one failed request", async (code, status) => {
     state.failureScope = "current";
     state.failureCode = code;
     state.failureStatus = status;
