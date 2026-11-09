@@ -28,6 +28,6 @@ select cron.schedule('x-timeline-watchdog', '*/5 * * * *', $$select public.x_tim
 -- Stop: select cron.unschedule('x-timeline-watchdog');
 
 -- Poller run history for the cron report (migration 20261106201221_x_timeline_poll_runs, cron-report lane 2): every
--- 15 minutes, copies the poller's results and the job's runs before pg_net's ~6 h retention drops them.
-select cron.schedule('x-timeline-poll-capture', '*/15 * * * *', $$select public.x_timeline_capture_poll_runs()$$);
+-- 5 minutes, copies the poller's results and the job's runs before pg_net's ~6 h retention drops them.
+select cron.schedule('x-timeline-poll-capture', '*/5 * * * *', $$select public.x_timeline_capture_poll_runs()$$);
 -- Stop: select cron.unschedule('x-timeline-poll-capture');

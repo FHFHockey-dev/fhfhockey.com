@@ -114,3 +114,28 @@ The team and goalie rollbacks (CSV reload) are unaffected.
 | Player (date_range) | **Not runnable as is.** Needs either 1-day windows (about 270 calls, ≈ **2.7 h**, about 4 statements of 3.7 MB each per call) or, preferably, a small code change: `upsertSummarySnapshots` batches of 25 rows instead of 100 (keep one-week windows: about 42 calls, about 1 h). | see the previous column | None possible to delete. The previous payloads are already kept, and the CSV holds them. | Re-insert the previous payloads (untested) |
 
 **Order:** team, then goalie, then player, after the player batch fix ships. Total about 2.5 h over one or two sessions.
+
+## Progress, 2026-11-09
+
+All runs approved by TJ by pop-up.
+
+**Diagnosis of the 15:03 and 15:27 incidents (Chef, edge logs).**
+- 15:03–15:06: the player probe's ~3.7 MB upserts stalled the API. Fixed by 25-row statements (be71f5802, #425).
+- 15:11 and 15:23–15:24: Next.js build prerender storms from the #424/#425 releases collided with team windows 2–3, and the 503 burst followed at 15:27.
+- The id tiebreak was not the cause, and neither was P3.
+- 14:56: a minor blip, unexplained. The wgo_skater_stats statement timeouts recur (14:56, 15:02, 20:21, 20:22) independently of this work.
+
+**Team.** Windows 1–25 are done (2025-10-07→2026-03-30): 1,177 games, 164,780 rows, every count exact, 0 stale keys. Stops:
+- After window 24: a line_source_snapshots 500 and timeout, not from this route.
+- After window 25: wgo_skater_stats timeouts.
+- The 21:00 UTC cutoff.
+
+**Remaining.**
+
+| Entity | Windows left | Calls | Time at the slow pace |
+|---|---|---|---|
+| Team | 26–28 (2026-03-31→04-16) and 29–34 (all of 2026-27) | 9 | about 18 min |
+| Goalie | 1–34 | 34 | about 70 min |
+| Player | — | — | Waits for the #425 release and a rollback decision (re-insert old payloads, tested locally, or TJ accepting forward-only). |
+
+**Suggestion.** The wgo_skater_stats timeouts are background noise. Scope the stop rule to errors on this route's own paths (`nhl_api_game_payloads_raw`, `nhl_api_shift_rows`, `nhl_api_pbp_events`, `team_underlying_stats_summary`, `goalie_underlying_summary_partitions`), plus any site-wide 5xx burst of 5 or more in a minute. That is TJ's call.

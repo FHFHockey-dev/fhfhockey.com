@@ -46,6 +46,10 @@ import {
 import { fetchAllSupabasePages } from "lib/supabase/pagination";
 import { getTeamAbbreviationById, getTeamInfoById } from "lib/teamsInfo";
 import {
+  fetchTeamBoxScoreDates,
+  resolveSeasonTeamId
+} from "components/PlayerStats/boxScoreCoverage";
+import {
   leagueDateKey,
   rollingAverage,
   seasonDateWindow,
@@ -444,20 +448,8 @@ async function fetchBoxScoreCoverage(
   teamAbbrev: string | undefined,
   dates: string[]
 ): Promise<Set<string> | null> {
-  if (!teamAbbrev) return null;
-  if (dates.length === 0) return new Set();
   try {
-    const rows = await fetchAllSupabasePages<{ date: string }>(
-      ({ from, to }) =>
-        (supabase as any)
-          .from(table)
-          .select("date")
-          .eq(teamColumn, teamAbbrev)
-          .in("date", dates)
-          .order("date", { ascending: true })
-          .range(from, to)
-    );
-    return new Set(rows.map((row) => String(row.date).slice(0, 10)));
+    return await fetchTeamBoxScoreDates(supabase, table, teamColumn, teamAbbrev, dates);
   } catch (error) {
     console.warn(`[SSR] Box score coverage unavailable for ${table}:`, error);
     return null;
@@ -767,7 +759,7 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
     gameLog = await fetchSeasonLogRows(
       "wgo_goalie_stats",
       "goalie_id",
-      `date, games_played, games_started, wins, losses, ot_losses, save_pct, goals_against_avg, shutouts, saves, shots_against, goals_against`
+      `date, team_abbreviation, games_played, games_started, wins, losses, ot_losses, save_pct, goals_against_avg, shutouts, saves, shots_against, goals_against`
     );
 
     // Fallback: fetch 10 most recent games if empty
@@ -814,7 +806,7 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
     gameLog = await fetchSeasonLogRows(
       "wgo_skater_stats",
       "player_id",
-      `date, games_played, goals, assists, points, plus_minus, shots, shooting_percentage, pp_points, gw_goals, fow_percentage, toi_per_game, blocked_shots, hits, takeaways, giveaways, sat_pct, zone_start_pct`
+      `date, team_abbrev, games_played, goals, assists, points, plus_minus, shots, shooting_percentage, pp_points, gw_goals, fow_percentage, toi_per_game, blocked_shots, hits, takeaways, giveaways, sat_pct, zone_start_pct`
     );
 
     // Fetch NST advanced stats for skaters
@@ -1102,13 +1094,25 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
     return (deploymentRows ?? []) as PlayerLineupDeploymentTally[];
   };
 
+  // A past season spent with another team is judged against that team's
+  // schedule, not the current team's (which would list every game as missed).
+  const seasonTeamId = resolveSeasonTeamId(
+    player.team_id,
+    player.team_id ? getTeamAbbreviationById(player.team_id) : undefined,
+    gameLog
+      .filter((game) => Number(game.games_played) > 0)
+      .map((game) => {
+        const row = game as { team_abbrev?: string; team_abbreviation?: string };
+        return isGoalie ? row.team_abbreviation : row.team_abbrev;
+      })
+  );
   const [missedGamesData, lineupDeploymentTallies] = await Promise.all([
     usedGameLogFallback
       ? Promise.resolve(null)
       : fetchMissedGames(
           Number(selectedSeason),
           seasonWindow,
-          player.team_id ?? undefined,
+          seasonTeamId ?? undefined,
           playedDates,
           asOfDate,
           !isGoalie,

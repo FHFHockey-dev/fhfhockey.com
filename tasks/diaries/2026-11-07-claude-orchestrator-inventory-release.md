@@ -94,3 +94,47 @@ Push + master merge need TJ pop-up approval (Vercel builds).
   trends' button-mixin changes deliberately NOT included). 135 files, all web/. CSS pure 46/46. Vitest/tsc/eslint running.
 - PR #416 squash-merged: master 46f971753, tree == 4ca36df87. Gate: pure 46/46, vitest 16917/1 existing fail, tsc 0, eslint 0 errors. Build watch pending.
 - #416 prod (11-08 ~08:25 UTC): fhfhockey dpl_DuzWLXvM READY; cms/functions/fhfhockey.com CANCELED. Smoke 5/5 200 (/, /stats, /lines/EDM, /game-grid/7-Day-Forecast, /stats/player/8478402). P3 still off.
+
+## 11-08 ~08:55 UTC: TJ "resolve conflicts, then push octoberBranch to master" -> chose "Full merge to master" (pop-up)
+- origin/octoberBranch had 9346a63ff "11-08" (03:47, 399 files: Scout cron/Yahoo/forecast + BLSH/RSO artifacts) pushed by TJ/Codex.
+- merge-tree HEAD(e8ee0fb0e) x origin/master(46f971753): 13 conflicts. Resolved "ours" (octoberBranch newer supersets: cron audit hardening,
+  configured Vercel schedules, GameByGame/GoalieShare evolutions, registry 83/28, tasks) except cron-report.test.ts = both sides' tests.
+  Merge commit ee985ff12 (refs/rc/octoberbranch-merge-20261108), not yet on octoberBranch. Master would gain 279 web + 6246 tasks files; output/ removed.
+- Gotcha: update-line-sources/ccc comment says "The starter board polls this processor every minute" -> explains P3's constant 180/min load.
+- Gate running (export5): pure, vitest, typecheck, eslint, pytest.
+- Merge landed on octoberBranch: 1bbf83353 (merge of ee985ff12 onto b30ce9343) + 85d8bcb4e (registry pending 8). Pushed 9346a63ff..85d8bcb4e.
+- Full gate of merged tree: tsc 0, eslint 0, pytest 169; vitest 26 PRE-EXISTING fails (same on e8ee0fb0e): 19 cron-route 503s (Scout's
+  withCronJobAudit hardening) + 13 CurrentPlayerCardStudio duplicates + homepageTime. TJ: "Push merge, fix, then merge". #379 NOT merged.
+  Scout note: tasks/artifacts/codex-handoff-2026-11-07/SCOUT-CRON-503-NOTE.md. player-cards-fix lane blocked by Remote Control (OUTBOX).
+- data-checks: (c) nightly writer b30ce9343 (in pushed octoberBranch; schedule = TJ pop-up after release, suggested ~10:30 UTC); (b) 2025-26 sized ~184k rows/218 calls, NOT run, TJ wants it after travel (~17:30 UTC); (a) replay not started. Lanes paused while TJ is away.
+- Push watch: 0 Vercel deployments, 0 checks for 85d8bcb4e; PR #379 now MERGEABLE/CLEAN (head 85d8bcb4e). Merge waits on Scout 503 fix + player-cards fix + green gate.
+- 11-08 ~21:05 UTC TJ back: Codex keeps BLSH + RSO (prompts 6/9 withdrawn). Started player-cards-fix local_3a3b6c5c, home-times local_bea274fc; data-checks: 2025-26 TOI rebuild + queue replay dry run. Rankings superstyle session (not mine) active in checkout.
+- 2025-26 TOI: stopped at 12-21 by noES guard (game 565 corrupt payload), TJ resumed; builder dedupe bab719dff. Shift ingest corruption (257+89 games dup, 565 wrong-game, SCF G1 truncated). TJ: new Claude shift-ingest lane (blocked by Remote Control; OUTBOX).
+- 2025-26 TOI DONE 22:07 UTC: verified 183,328 rows / 1,394 games in snapshot 2026-11-08 (old 2026-06-22: 12,929 rows, hidden). Post-release queue: gameIds rebuilds (565+257 / 89), SCF G1 HTML rebuild, nightly schedule, old-snapshot delete decision.
+- Scout cron fix 9e76499fb received (CODEX-TO-CLAUDE receipt 20261108-01, ack written). Full gate of HEAD running (gate6).
+- Gate6 (HEAD b732c7005): 8 fails = 2 yahoo-live-draft + 5 run-rolling-forge-pipeline (regressed by 9e76499fb: missing strict-audit opt-in) + 1 flake. Note SCOUT-CRON-OPTIN-FOLLOWUP.md. #379 held.
+- Gate7 (9279976ad): last real fail cron-audit-wrappers (Yahoo AST pin). TJ: Chef fixes. Re-pinned ea5db3406 (383/383 cron tests). Final gate8 running.
+- #379 MERGED: master 620276ede (merge commit, 2nd parent ea5db3406, tree == octoberBranch). Final gate: vitest 17796 + 6 load-flake files pass alone (468/468), tsc 0, eslint 0, pytest 169, pure 20/20. Build watch pending.
+- #379 prod: fhfhockey dpl_Fys3xCQ7 READY (cms/functions/fhfhockey.com CANCELED). Smoke 5/5 200 (/, /stats, /player-cards, /trade-analyzer, /lines/EDM; 3-6.5 s cold). DB 32 conns / 1 active; edge ~0.4-2.7k/5min, line_* ~120-150/5min. master == octoberBranch content.
+- Job 403 update-team-unit-toi-nightly scheduled 55 8 * * * (TJ 'Schedule now'); readback ok; inventory + test counts committed.
+- 11-09: targeted TOI rebuild stopped by design at batch 8/34 (80 games written, backup CSV 42,772 rows). Root cause: offset paging over non-unique order in teamUnitToiWriter; fix f4033d3ed. Job 403 affected until released. Small release gate9 running (4 web files).
+- PR #417 merged: master 1e170b6d0 (tree == 483205af5): team_unit_toi paging fix f4033d3ed + job 403 inventory. Build watch pending; then tell data-checks to size the full both-season rebuild.
+- #417 prod: fhfhockey dpl_GashU7Ce READY (3 cancels). Smoke 3/3 200 (/ 10s cold, /stats, /lines/EDM). data-checks told to size full both-season rebuild.
+- During full TOI rebuild: gamegrid-desktop -> e2e player-pickup spec refresh; nst-writer -> read-only verify of 08:30 run; shift-ingest lane started local_a06f6e5b (phase 1 code-only; phase 2 sizing after rebuild).
+- PR #418 merged: master 8d95a28a5 (tree == fd131d278): shift ingest validation 280e4ce00, shift paging fd131d278, NST season= 91dc3e5a4, e2e 5d6f87c13. Gate fully green (17,830/0). Build watch pending. Rebuild at batch 53 (~33 s/batch).
+- #418 prod: fhfhockey dpl_BtQHF4BH READY (3 cancels); smoke 3/3 200. NST season= lane told live. Started NST client hook/cap on local_3bb2755d and goalie seam on local_237a0955 (TJ via Scout: 'Yes or hand them over'); mailbox ab324d97b.
+- 01:40 UTC AMNESTY NIGHT (TJ pop-up: code + gated releases + bounded data runs + reviewed migrations; default hard limits). Rules + ledger: side-session-notes/<chef>/AMNESTY-2026-11-09.md; Codex told (6730e9ade). Lanes briefed: nst-writer, data-checks, shift-ingest, NST refill session. Gotcha: outgoing SendMessage pauses after ~10 sends without TJ typing; 4 used.
+- 01:45 UTC ledger: a11cf33cd + 6c3837ef7 queued for next release; NST refill NOT run (TJ rejected run-now at 01:25 in that lane).
+- #419 merged master 83cba85f8 (NST controls/pin/guard, Sko seam, draft post-burst migration unapplied).
+- #420 live (master a0354f891, dpl_93YMSawK): NST goalie same-name fix 10efbc687.
+- #421 merged master 2505114e8: shift writer hotfix 142d301bb (RPC row-count contract).
+- #421 live dpl_7oUJJhiv. Morning summary written in AMNESTY-2026-11-09.md.
+- 2026-11-09 03:35 UTC: v2 shift-dedupe migration 20261109034000 applied by Chef (psql via the session pooler, exact file; readback md5 094e05fb, v1 unchanged, service_role only). Registry fix 64b3431c3. Writer release (bffe5ee5c + 64b3431c3) waits on the lane's 1-game canary, then ships before 07:45 UTC.
+
+## Checkpoint 2026-11-09 ~15:40 UTC (TJ landing, wifi going down)
+- Live: master d66408de3. Releases today: #424 (Rankings superstyle 1–7 + X poller run key, P3 env ON) and #425 (NST team-stats proxy reporting + player summary 25-row upserts). Builds: #424 1, #425 2.
+- DB: NST post-burst migration 20261109015836 applied (md5 5e854308). Registry 122/86/8 (0e6fd60a8). functions-fhfhockey now has NEXT_PUBLIC_SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY (TJ).
+- Data: NST team stats back-filled 11-07 and 11-08 (tables at 11-08; 11-09 → 09:15 cron). Summaries probes: team/goalie OK; player probe stalled the DB (fixed by 25-row batches). Team rebuild paused after windows 1–3 (149 games); resume from window 4 at 1 call per 2 min on TJ's pop-up; goalie next; the player rebuild needs a tested rollback (raw payloads are immutable).
+- Diagnosis: 15:03 stall = player probe; 15:11/15:23 = build prerender storms (600–1000 req/min) colliding with the rebuild. Rule: no releases during rebuilds.
+- Open: P3 first game night (watch script in scratchpad, 22:00–05:30 UTC; it needs wifi); FORGE served-forecast snapshot timeout (Scout); Yahoo players partial (Scout); xG instability ticket; 565 raw head; Codex prompts 0/5/7/8/10/11; uncommitted lib/rankings matrix/composite files belong to an earlier Codex lane.
+- Ledger: side-notes AMNESTY-2026-11-09.md (Morning section).

@@ -1569,6 +1569,8 @@ export async function fetchPlayerStatsOfficialLandingPayloadRows(args: {
         .from("nhl_api_game_payloads_raw")
         .select("game_id,payload,fetched_at,source_url")
         .eq("endpoint", PLAYER_STATS_SUMMARY_STORAGE_ENDPOINT)
+        // Official payloads only, like the direct PG read: derived copies are ~99% of these rows.
+        .not("source_url", "like", "derived://%")
         .in("game_id", [...gameIdChunk])
         .order("game_id", { ascending: true })
         .order("fetched_at", { ascending: false })

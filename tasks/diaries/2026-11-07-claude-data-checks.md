@@ -318,3 +318,49 @@ Q42 chunked inputs (40 games/chunk, statement_timeout 60 s) same columns as Q40,
   - GOTCHA: nhl_api_game_payloads_raw is immutable (no-delete/no-update triggers), so the player rollback by delete is impossible. Told Chef and TJ.
   - The plan is appended to UNDERLYING-SUMMARIES-SIZING-2026-11-09.md. The full rebuild is not started.
 - 11-09 ~15:20 UTC Chef-approved code: player summary upsert batch 100 → 25 (PLAYER_SUMMARY_UPSERT_BATCH_SIZE) with a new test plus updated retry tests. 23 files / 171 tests pass, typecheck exit 0, eslint 0. Next: size the team/goalie full rebuilds and pop up TJ. P3 is live since 15:15; finish before 21:00 UTC.
+- 11-09 15:20 TJ pop-up "Run team + goalie" (34 windows each, regular season; backups team 218,820 sha 8dfb2cc9, goalie 10,124 sha 90051ae5, in the notes folder).
+- 15:24–15:28 team windows 1–3 done: 2025-10-07..10-27, 149 games, 20,860 rows, 0 stale. Call times rose 35 → 72 → 60 s.
+- STOPPED. My activity check lost its SSL connection. The API logs show my route's official payload reads failing (500 at 15:25:07, 503 at 15:26:46), 3 statement timeouts at 15:25, then a site-wide 503 burst at 15:27:09–17 (auth refresh, user_profiles, rosters, cron_job_audit). DB recovered by 15:28 (13 conns).
+- EXPLAIN shows the id tiebreak only adds a cheap incremental sort, so it is not a likely cause. Timeouts began at 14:56 before any of my calls; P3 went live at 15:15. Cause unresolved. Goalie not started; team windows 4–34 not run.
+- 11-09 15:33 TJ pop-up "Resume, slow pace". Windows 4–24 ran one per call, with an API log check after each; all clean until 24.
+- 16:00 STOP after window 24: 1 line_source_snapshots 500 + 1 statement timeout, not from my route.
+- TJ pop-up "Continue, slower", but the answer arrived at 20:21. Ran window 25.
+- 20:21–20:22 STOP: 2 wgo_skater_stats timeouts (recurring, not from my route; also at 14:56 and 15:02). Stopped for today because of the 21:00 cutoff.
+- Team done: windows 1–25 (2025-10-07..2026-03-30), 1,177 games, 164,780 rows, all exact, 0 stale. Table totals unchanged (183,680 / 35,140). updated_at does not change on upsert, so the run log is the readback.
+- LEFT: team windows 26–34 (2025-26 03-31..04-16 = 3; 2026-27 all = 6), goalie 1–34, player (after #425 and a rollback decision).
+- Runner: scratchpad full-summ/run.sh <team|goalie> N N; windows-games.txt.
+
+## CHECKPOINT 2026-11-09 ~20:30 UTC (Chef request; TJ travelling). No production runs in flight.
+- **Resume point:** team window **26** (2025-26, 2026-03-31..04-06), NOT window 4.
+  - Chef's checkpoint message said "window 4"; that was stale. Windows 1–25 are already done with exact counts.
+  - Then team windows 27–34 (27–28: 2025-26 to 04-16; 29–34: all of 2026-27, 2026-09-29..11-08).
+  - Then goalie windows 1–34 (none run yet).
+  - Command (scratchpad full-summ, windows-games.txt): `run.sh team 26 26` … `run.sh team 34 34`, then `run.sh goalie 1 1` … `34 34`. One window per call, an API log check after each.
+  - The scratchpad is temporary; if it's gone, rebuild the windows. Team: 7-day windows over 2025-10-07..2026-04-16 and 2026-09-29..2026-11-08, gameType=2, dryRun=false. Goalie: the same windows on update-goalie-underlying-summaries.
+- **Backups** (notes folder):
+  - backup-team-both-seasons.csv: 218,820 rows, sha 8dfb2cc9.
+  - backup-goalie-all.csv: 10,124 rows, sha 90051ae5.
+  - Probe week: backup-team-2026-10-12_18.csv (4,760 rows, sha 33c22562) and backup-player-payloads-2026-10-12_18.csv (2,539 rows).
+  - Rollback for team/goalie: delete the rebuilt games' rows and reload the CSV.
+- **Diagnosis (Chef, edge logs):**
+  - 15:03–15:06 stall: the player probe's ~3.7 MB, 100-row upserts. Fixed by 25-row batches (be71f5802, #425).
+  - 15:11 and 15:23–15:24: Next.js build prerender storms from #424/#425 collided with team windows 2–3; the 15:27 503 burst followed.
+  - P3 is not implicated; the id tiebreak is not the cause.
+  - wgo_skater_stats timeouts recur on their own (14:56, 15:02, 20:21, 20:22).
+- **Plan:**
+  - 1 call per ~2 min. conns ≤ 40 before each call. Check the API logs after each call; stop on any 5xx or statement timeout.
+  - No releases during the run. Finish before 21:00 UTC and avoid 08:25–10:05 UTC.
+  - Open question for TJ: scope the stop rule to the rebuild's own tables plus any site-wide burst of 5+ 5xx/min.
+  - Each resume needs TJ's pop-up.
+- **Player rollback gap:**
+  - nhl_api_game_payloads_raw is immutable (no-delete/no-update triggers), so a player rebuild can't be rolled back by deleting rows.
+  - Options: (a) re-insert the old payloads (the insert trigger lets a game revert to an earlier identity), tested locally first; or (b) TJ explicitly accepts forward-only.
+  - The player rebuild waits for that decision, with #425 live.
+  - Probe leftover: 2026-10-12..18 has 14 games fully rebuilt; game 2026020101 has 8 of 28 partitions new. Readers take the newest per partition, so it stays consistent.
+- 20:27 TJ pop-up "Yes, both changes" (run to 22:05, scoped stop rule). Window 26 done (2026-03-31..04-06, 55 games, 7,700 rows exact, 0 stale) but took 78 s.
+- STOPPED (scoped rule): the route's own official-payload read GET nhl_api_game_payloads_raw (endpoint=landing, game_id in 2025021178…) returned 500 at 20:26:38; it succeeded on retry. It's the same read as the 15:25:07 failure.
+- The read selects every landing payload for ~55 games, including all the derived player-summary copies (~37 kB each, several per partition from repeated rebuilds), only to pick the official one. Fix idea: filter `source_url not like 'derived://%'` server-side in fetchOfficialGamePayloadByGameId (teamStatsSummaryRefresh) and fetchPlayerStatsOfficialLandingPayloadRows (landing server).
+- RESUME POINT now: team window 27 (2026-04-07..04-13), then 28–34, then goalie 1–34. Team done: windows 1–26, 1,232 games, 172,480 rows.
+- 20:35 Chef-approved code: the official-payload reads exclude derived:// rows server-side (`.not("source_url","like","derived://%")`) in teamStatsSummaryRefresh.fetchOfficialGamePayloadByGameId and the playerStatsLandingServer Supabase fallback. source_url is NOT NULL, so this is equivalent to the JS filters, which stay; the PG path already filtered in SQL.
+- Tests: 3 new in pagedReadOrder.test.ts; 26 files / 191 tests pass; eslint 0.
+- typecheck exit 2, ONLY in the untracked scripts/player-summaries-{backup,rollback}*.ts (the player-rollback lane's work in progress), none in my files.

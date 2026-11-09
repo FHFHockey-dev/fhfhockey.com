@@ -1,0 +1,31 @@
+-- DRAFT, not applied. Needs TJ's pop-up approval before it runs anywhere.
+--
+-- The player stats page checks which of a team's scheduled dates have a loaded
+-- box score: select date from wgo_skater_stats where team_abbrev = $1 and
+-- date in (...). wgo_skater_stats (2,257,972 rows, 2.2 GB heap on 2026-11-09)
+-- had no index leading on team_abbrev, so the plan was an index scan on
+-- idx_wgo_skater_stats_date that read every league row on each listed date
+-- (about 450 a date) and filtered by team. A season of dates is tens of
+-- thousands of heap reads; 2026-11-09 14:12-20:22 UTC these hit the 3 s anon
+-- statement timeout and returned 500 several times an hour.
+--
+-- wgo_goalie_stats already has the matching (team_abbreviation, date desc)
+-- index. With this one the coverage read is a range scan of the team's own
+-- rows (index-only when the visibility map allows). Expected size about
+-- 60-80 MB.
+--
+-- Applying by hand (recommended, does not block the WGO upserts while it
+-- builds; CONCURRENTLY cannot run inside a transaction, so run it on its own
+-- in the SQL editor or psql, not through apply_migration):
+--   set statement_timeout = '15min';
+--   create index concurrently if not exists idx_wgo_skater_stats_team_date
+--     on public.wgo_skater_stats (team_abbrev, date);
+-- Then check it is valid before recording the ledger row:
+--   select indisvalid, indisready from pg_index
+--    where indexrelid = 'public.idx_wgo_skater_stats_team_date'::regclass;
+-- If a concurrent build fails it leaves an INVALID index: drop index
+-- concurrently if exists public.idx_wgo_skater_stats_team_date; and retry.
+-- Rollback: drop index concurrently if exists public.idx_wgo_skater_stats_team_date;
+
+create index if not exists idx_wgo_skater_stats_team_date
+  on public.wgo_skater_stats (team_abbrev, date);
