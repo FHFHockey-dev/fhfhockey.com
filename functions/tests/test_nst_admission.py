@@ -116,3 +116,50 @@ def test_parent_proxy_cannot_finish_whole_job(monkeypatch):
     assert post.call_count == 1
     assert post.call_args.args[0].endswith("nst_admit_job_attempt_v1")
     assert post.call_args.kwargs["json"]["p_token"] == token
+
+
+@pytest.mark.parametrize("origin", [
+    "https://otherproject.supabase.co", "http://fyhftlxokyjtpndbkfse.supabase.co",
+    "https://fyhftlxokyjtpndbkfse.supabase.co.evil.example", "https://fyhftlxokyjtpndbkfse.supabase.co:8443",
+    "https://user:pw@fyhftlxokyjtpndbkfse.supabase.co", "https://fyhftlxokyjtpndbkfse.supabase.co/proxy",
+    "https://invalid.example", "not a url",
+])
+def test_non_pinned_project_never_posts_or_dispatches(monkeypatch, origin):
+    monkeypatch.setenv("NEXT_PUBLIC_SUPABASE_URL", origin)
+    with pytest.raises(admission.NstAdmissionError, match="pinned production project"):
+        admission.nst_get("https://data.naturalstattrick.com/teamtable.php")
+    admission.requests.post.assert_not_called()
+    admission.requests.get.assert_not_called()
+
+
+def test_non_pinned_project_refuses_lifecycle_rpc(monkeypatch):
+    monkeypatch.setenv("NEXT_PUBLIC_SUPABASE_URL", "https://otherproject.supabase.co")
+    with pytest.raises(admission.NstAdmissionError, match="pinned production project"):
+        admission._job_rpc("nst_job_begin_v1", {}, admission.time.monotonic() + 60)
+    admission.requests.post.assert_not_called()
+
+
+def test_pinned_production_project_is_the_admission_endpoint(monkeypatch):
+    monkeypatch.setenv("NEXT_PUBLIC_SUPABASE_URL", "https://fyhftlxokyjtpndbkfse.supabase.co/")
+    post = Mock(return_value=response(receipt()))
+    monkeypatch.setattr(admission.requests, "post", post)
+    monkeypatch.setattr(admission.requests, "get", Mock(return_value=Mock(status_code=200)))
+    admission.nst_get("https://data.naturalstattrick.com/teamtable.php")
+    assert post.call_args.args[0] == "https://fyhftlxokyjtpndbkfse.supabase.co/rest/v1/rpc/nst_admit_attempt_v1"
+
+
+def test_post_burst_sixty_second_wait_is_honoured(monkeypatch):
+    post = Mock(side_effect=[response(receipt(False, 60000)), response(receipt())])
+    monkeypatch.setattr(admission.requests, "post", post)
+    sleep = Mock(); monkeypatch.setattr(admission.time, "sleep", sleep)
+    get = Mock(return_value=Mock(status_code=200)); monkeypatch.setattr(admission.requests, "get", get)
+    admission.nst_get("https://data.naturalstattrick.com/teamtable.php", deadline_at=admission.time.monotonic() + 120)
+    sleep.assert_called_once_with(60.0)
+    assert post.call_count == 2 and get.call_count == 1
+
+
+def test_post_burst_gap_that_cannot_fit_never_dispatches(monkeypatch):
+    monkeypatch.setattr(admission.requests, "post", Mock(return_value=response(receipt(False, 60000))))
+    with pytest.raises(admission.NstAdmissionError, match="cannot fit"):
+        admission.nst_get("https://data.naturalstattrick.com/teamtable.php", deadline_at=admission.time.monotonic() + 30)
+    admission.requests.get.assert_not_called()

@@ -15,7 +15,7 @@ const {
   isNstConfigErrorMock,
   upsertMock, existsMock, checkpointRpcMock, exactIdentityMock, seasonsMaybeSingleMock
 } = vi.hoisted(() => {
-  process.env.NEXT_PUBLIC_SUPABASE_URL = "https://example.supabase.co";
+  process.env.NEXT_PUBLIC_SUPABASE_URL = "https://offline.invalid"; // reserved TLD: the pinned-admission test seam
   process.env.SUPABASE_SERVICE_ROLE_KEY = "service-role-key";
 
   const existsMock = vi.fn().mockResolvedValue({ data: [], error: null });

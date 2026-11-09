@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { InterpretationRecord, ObservedEvidence } from "./contract";
 import { FIXTURE_AS_OF, FIXTURE_CONFIG, FIXTURE_PLAYERS, fixtureRecords } from "./fixtures";
 import { interpretPlayer, normalizeTeamGames, weightedPointsGap } from "./interpret";
+import { forecastQualification } from "lib/buyLowSellHigh/trade";
 
 const fixture = (key: string) => FIXTURE_PLAYERS.find(player => player.key === key)!;
 const run = (key: string, overrides: Partial<Parameters<typeof interpretPlayer>[0]> = {}) => {
@@ -289,6 +290,71 @@ describe("VuDu goalie context", () => {
     expect(goalie.expected.expectedStarts.value).toBe(fixture("g1").forecasts[10].player.expectedStarts);
     expect(goalie.gap.status).toBe("pending_goalie_adapter");
     expect(record.metrics).toEqual([]);
+  });
+});
+
+describe("observation-only records (no FORGE forecast)", () => {
+  const observedOnly = (key: string, mutate?: (evidence: ObservedEvidence) => void) => {
+    const evidence = structuredClone(fixture(key).evidence);
+    evidence.playerName = "Observed Goalie";
+    mutate?.(evidence);
+    return run(key, { evidence, forecast: undefined, priorForecast: undefined });
+  };
+
+  it("produces the same observed goalie results as the forecast-present path, with every expected value withheld", () => {
+    const withForecast = run("g1");
+    const record = observedOnly("g1");
+    expect(record.goalie!.observed).toEqual(withForecast.goalie!.observed);
+    expect(record.goalie!.personalReference).toEqual(withForecast.goalie!.personalReference);
+    expect(record.recentWindow).toEqual(withForecast.recentWindow);
+    expect(record.goalie!.expected).toEqual({
+      savePercentage: { value: null, reason: "no_forecast" },
+      goalsAgainstAverage: { value: null, reason: "no_forecast" },
+      expectedStarts: { value: null, reason: "no_forecast" },
+      interpretation: "ratio_of_expected_totals",
+    });
+    expect(record.goalie!.gap.status).toBe("pending_goalie_adapter");
+    expect(record.horizon).toMatchObject({ complete: false, scheduledGames: 0, gameIds: [], reason: "no_forecast",
+      expectedAppearances: null, expectedStarts: null });
+    expect(record.forecastTotals).toEqual({});
+    expect(record.identity).toMatchObject({ playerId: fixture("g1").evidence.playerId, name: "Observed Goalie",
+      forecastVersion: null, forecastManifestId: null, forecastReadAsOf: null, baselineChecksum: null });
+    expect(record.identity.team).toBe(fixture("g1").evidence.teamGames.at(-1)!.team);
+    expect(record.freshness).toMatchObject({ forecastStatus: "unknown", forecastExpiresAt: null });
+    expect(record.limitations).toContain("No FORGE forecast was supplied: observed results only; every expected value and gap is withheld.");
+  });
+
+  it("keeps unknown team games in the window as unknown instead of dropping them", () => {
+    const record = observedOnly("g1", evidence => {
+      const last = evidence.teamGames.at(-1)!;
+      last.status = "unknown";
+      last.goalie = undefined;
+    });
+    const k = FIXTURE_CONFIG.recentWindowTeamGames;
+    expect(record.recentWindow.teamGames).toBe(k);
+    expect(record.recentWindow.unknownGames).toBe(1);
+    expect(record.recentWindow.endDate).toBe(fixture("g1").evidence.teamGames.at(-1)!.date);
+    expect(record.goalie!.observed.savePercentage.reason).toBe("unknown_team_game_status");
+    expect(record.goalie!.observed.starts.reason).toBe("start_relief_evidence_unavailable");
+    expect(record.limitations.some(text => text.includes("1 recent team game(s) have unknown participation"))).toBe(true);
+  });
+
+  it("is never qualified as a forecast by Buy Low/Sell High", () => {
+    expect(forecastQualification(observedOnly("g1")).status).toBe("unavailable");
+  });
+
+  it("requires a sourced display name rather than inventing one", () => {
+    expect(() => run("g1", { forecast: undefined, priorForecast: undefined })).toThrow("needs evidence.playerName");
+  });
+
+  it("works for skaters too: observed rates stay, expected values and gaps are withheld", () => {
+    const record = observedOnly("f5");
+    const points = metric(record, "POINTS");
+    expect(points.observedPerTeamGame).toEqual(metric(run("f5"), "POINTS").observedPerTeamGame);
+    expect(points.expectedPerTeamGame.reason).toBe("no_forecast");
+    expect(points.expectedPerAppearanceConditional.reason).toBe("no_forecast");
+    expect(points.gapPerTeamGame.reason).toBe("expected_no_forecast");
+    expect(points.outlookChangePerTeamGame.reason).toBe("no_forecast");
   });
 });
 

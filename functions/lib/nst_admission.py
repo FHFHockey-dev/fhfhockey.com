@@ -18,17 +18,44 @@ class NstAdmissionError(RuntimeError):
     pass
 
 
+# The one Supabase project whose ledger enforces the global NST rate windows.
+# Any other project would hold a separate ledger, so admission and lifecycle
+# refuse it: no admission POST and no provider GET.
+NST_ADMISSION_PROJECT_HOST = "fyhftlxokyjtpndbkfse.supabase.co"
+
+
+def _admission_origin():
+    """Validated https origin for NST RPCs, or None.
+
+    Test seam: hosts under the reserved ``.invalid`` TLD (RFC 6761) never
+    resolve, so offline tests may use one with mocked requests; it cannot reach
+    any ledger or NST, and a deployment configured that way still fails closed.
+    """
+    origin = (os.environ.get("NEXT_PUBLIC_SUPABASE_URL") or os.environ.get("SUPABASE_URL") or "").strip()
+    try:
+        parsed = urlparse(origin)
+        port = parsed.port
+    except ValueError:
+        return None
+    host = (parsed.hostname or "").lower()
+    if (parsed.scheme != "https" or not host or parsed.username or parsed.password or port is not None
+            or parsed.path not in ("", "/") or parsed.query or parsed.fragment):
+        return None
+    if host == NST_ADMISSION_PROJECT_HOST or host == "invalid" or host.endswith(".invalid"):
+        return "https://" + host
+    return None
+
+
 _job = ContextVar("nst_job", default=None)
 
 
 def _job_rpc(name, body, deadline_at):
-    origin = (os.environ.get("NEXT_PUBLIC_SUPABASE_URL") or os.environ.get("SUPABASE_URL") or "").strip()
+    origin = _admission_origin()
     key = (os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or "").strip()
-    parsed = urlparse(origin)
     remaining = min(5, deadline_at - time.monotonic())
-    if not key or parsed.scheme != "https" or not parsed.hostname or parsed.username or parsed.password or remaining <= 0:
-        raise NstAdmissionError("NST lifecycle configuration or deadline unavailable.")
-    response = requests.post(origin.rstrip("/") + "/rest/v1/rpc/" + name, json=body, timeout=remaining,
+    if not key or origin is None or remaining <= 0:
+        raise NstAdmissionError("NST lifecycle configuration or deadline unavailable (pinned production project required).")
+    response = requests.post(origin + "/rest/v1/rpc/" + name, json=body, timeout=remaining,
         headers={"apikey": key, "Authorization": "Bearer " + key}, allow_redirects=False)
     if response.status_code != 200:
         raise NstAdmissionError("NST lifecycle acknowledgement unavailable.")
@@ -133,17 +160,18 @@ def nst_parent_job(token, deadline_at):
 def admit_nst_attempt(dispatch=lambda: None, deadline_at=None, planned_requests=None, min_interval_ms=21000):
     assert_nst_job_active()
     deadline_at = deadline_at if deadline_at is not None else time.monotonic() + 220
-    origin = (os.environ.get("NEXT_PUBLIC_SUPABASE_URL") or os.environ.get("SUPABASE_URL") or "").strip()
+    origin = _admission_origin()
     key = (os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or "").strip()
-    parsed = urlparse(origin)
-    if not key or parsed.scheme != "https" or not parsed.hostname or parsed.username or parsed.password:
+    if not key:
         raise NstAdmissionError("NST shared admission is not configured; no provider request started.")
+    if origin is None:
+        raise NstAdmissionError("NST shared admission requires the pinned production project; no provider request started.")
     job = _job.get()
     if job and (job["closed"] or time.monotonic() >= job["deadline"]):
         raise NstAdmissionError("NST job is closed or expired.")
     if job:
         deadline_at = min(deadline_at, job["deadline"])
-    endpoint = origin.rstrip("/") + "/rest/v1/rpc/" + ("nst_admit_job_attempt_v1" if job else "nst_admit_attempt_v1")
+    endpoint = origin + "/rest/v1/rpc/" + ("nst_admit_job_attempt_v1" if job else "nst_admit_attempt_v1")
     burst = min_interval_ms == 0 and type(planned_requests) is int and 1 <= planned_requests <= 78
     body = {"p_burst": burst, "p_planned_requests": planned_requests if burst else None}
     if job:

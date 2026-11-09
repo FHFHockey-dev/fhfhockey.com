@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { admitSharedNstAttempt } from "./sharedAdmission";
+import { NST_ADMISSION_PROJECT_HOST, nstAdmissionOrigin } from "./admissionOrigin";
 const permit = (allowed = true, waitMs = 0) => ({ version: 1, scope: "global-nst", allowed, waitMs, permitTtlMs: 1000 });
 afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); vi.unstubAllEnvs(); });
 const setup = () => { vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://offline.invalid"); vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "mock"); };
@@ -65,4 +66,45 @@ describe("shared NST dispatch admission", () => {
     expect(dispatch).not.toHaveBeenCalled();
   });
 
+  describe("pinned admission project", () => {
+    it.each([
+      "https://otherproject.supabase.co", "http://fyhftlxokyjtpndbkfse.supabase.co", "https://fyhftlxokyjtpndbkfse.supabase.co.evil.example",
+      "https://fyhftlxokyjtpndbkfse.supabase.co:8443", "https://user:pw@fyhftlxokyjtpndbkfse.supabase.co", "https://fyhftlxokyjtpndbkfse.supabase.co/proxy",
+      "https://staging.invalid.example", "not a url",
+    ])("refuses %s with no admission POST and no dispatch", async (origin) => {
+      vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", origin); vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "mock");
+      const fetch = vi.fn(); vi.stubGlobal("fetch", fetch); const dispatch = vi.fn();
+      await expect(admitSharedNstAttempt(Date.now() + 5000, dispatch)).rejects.toThrow("pinned production project");
+      expect(fetch).not.toHaveBeenCalled(); expect(dispatch).not.toHaveBeenCalled();
+    });
+    it("posts to the pinned production project", async () => {
+      vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", `https://${NST_ADMISSION_PROJECT_HOST}/`); vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "mock");
+      const fetch = vi.fn(async () => new Response(JSON.stringify(permit()))); vi.stubGlobal("fetch", fetch);
+      expect(await admitSharedNstAttempt(Date.now() + 5000, async () => "ok")).toBe("ok");
+      expect(String((fetch.mock.calls[0] as any[])[0])).toBe(`https://${NST_ADMISSION_PROJECT_HOST}/rest/v1/rpc/nst_admit_attempt_v1`);
+    });
+    it("accepts only the reserved never-resolving .invalid TLD as the offline test seam", () => {
+      expect(nstAdmissionOrigin("https://offline.invalid")?.origin).toBe("https://offline.invalid");
+      expect(nstAdmissionOrigin("https://invalid.example")).toBeNull();
+      expect(nstAdmissionOrigin("https://localhost")).toBeNull();
+      expect(nstAdmissionOrigin(undefined)).toBeNull();
+    });
+  });
+
+  describe("post-burst 60 s gap (ledger draft 20261109015836)", () => {
+    it("waits out a 60 s post-burst refusal, re-polls, then dispatches once", async () => {
+      setup(); vi.useFakeTimers(); const dispatch = vi.fn(async () => "fixture");
+      const fetch = vi.fn().mockResolvedValueOnce(new Response(JSON.stringify(permit(false, 60000))))
+        .mockResolvedValueOnce(new Response(JSON.stringify(permit()))); vi.stubGlobal("fetch", fetch);
+      const pending = admitSharedNstAttempt(Date.now() + 120000, dispatch);
+      await vi.advanceTimersByTimeAsync(59000); expect(dispatch).not.toHaveBeenCalled(); expect(fetch).toHaveBeenCalledTimes(1);
+      await vi.advanceTimersByTimeAsync(1000); expect(await pending).toBe("fixture"); expect(fetch).toHaveBeenCalledTimes(2);
+    });
+    it("fails without dispatch when the post-burst gap cannot fit before the deadline", async () => {
+      setup(); const dispatch = vi.fn();
+      vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify(permit(false, 60000)))));
+      await expect(admitSharedNstAttempt(Date.now() + 30000, dispatch)).rejects.toThrow("cannot fit");
+      expect(dispatch).not.toHaveBeenCalled();
+    });
+  });
 });

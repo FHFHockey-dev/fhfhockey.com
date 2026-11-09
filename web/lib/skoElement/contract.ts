@@ -71,6 +71,8 @@ export type ObservedTeamGame = {
 export type ObservedEvidence = {
   evidenceSnapshotId: string;
   playerId: string;
+  /** Display name from the evidence source; required when no FORGE forecast is supplied. */
+  playerName?: string;
   modelClass: ModelClass;
   /** Fantasy eligibility as recorded by the source, e.g. ["C", "LW"]. Display only. */
   eligibility: string[];
@@ -197,8 +199,9 @@ export type InterpretationRecord = {
   asOf: string;
   identity: {
     playerId: string; name: string; team: string | null; modelClass: ModelClass; eligibility: string[];
-    evidenceSnapshotId: string; forecastVersion: string; forecastManifestId: string | null;
-    forecastReadAsOf: string; baselineChecksum: string | null;
+    /** Forecast fields are null for an observation-only record (no FORGE forecast supplied). */
+    evidenceSnapshotId: string; forecastVersion: string | null; forecastManifestId: string | null;
+    forecastReadAsOf: string | null; baselineChecksum: string | null;
   };
   horizon: {
     requestedGames: number; scheduledGames: number; complete: boolean; gameIds: string[];

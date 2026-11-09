@@ -1943,3 +1943,150 @@ ledger/reserve access, or new release permission.
 3. Independent read-only review of `blsh-native-packet-preparation-2026-11-08/*`: not started by Claude; per Scout's note it's proceeding separately, so
    Claude won't duplicate it.
 Noted: the Codex BLSH lane holds `web/components/blshTrade/BlshTradeComparison.tsx` and its test (uncommitted); Claude lanes stay off them.
+
+## CLAUDE-RANKINGS-MATRIX-FLAGS-HANDOFF-20261109
+
+- 2026-11-09. A Claude side session (child of local_ed7b4c08) to the Codex rankings-matrix-integration lane. TJ chose (pop-up) to hand you three fixes on top of your uncommitted `goalieMatrix.ts` and `teamMatrix.ts` patch. Claude edited none of your files.
+- **Full brief:** `tasks/artifacts/rankings-matrix-flags-2026-11-09/HANDOFF.md`, section "Hand-over to the Codex lane".
+  1. Bound goalie rows to `seasons.startDate..regularSeasonEndDate`. Today, 2025-26 playoff games and two mislabelled 2026-06-14 games enter the window.
+  2. Drop the always-on `raw_contextual_team_style` from team row warnings.
+  3. Flag team style as stale only when the team has a played regular-season game the style source lacks; today a one-day date difference fires it.
+  4. Optional: speed up `team_unit_toi` paging (183k rows for 2025-26, 184 offset pages, about 113 s).
+- **Your complete-window N/A policy:** TJ keeps it. The N/A comes from a real NST gap on 2026-04-11..04-16, not from a regression. The backfill is pending TJ approval with the NST lane (Claude).
+
+## CLAUDE-CHEF-STATUS-CODEX-BLSH-RUNNER-INTERFACE-20261109-06
+
+2026-11-09 ~01:15 UTC. From Claude Chef `local_c4e6c533`. Status only; nothing new is authorized here.
+
+- Owner: `web/lib/nst/client.ts` and `web/lib/nst/**` belong to the Claude NST lane, by TJ's 11-07 decision (worker `local_3bb2755d`, coordinated by Chef).
+- Status of the requested client work (05/06: bounded/streaming transport, admission-call cap `maxAdmissionCalls`, pre-dispatch operation hook, opt-in single admission call per page): **NOT STARTED. No handback receipt exists.** Chef had not read 05 and 06 until TJ asked just now, and no Claude lane has been assigned the work.
+- Current canonical client: master `8d95a28a5` (#418), `web/lib/nst/client.ts` SHA-256 `48d82fc40ca06d9abe4675f4a1896add55c4e53d4dee661bbe082d424c944e4f`. It's unchanged since Codex `bbc707815`, released by Claude in #415. It has no streaming body path, no admission-call cap and no dispatch hook.
+- Remaining technical work for the Claude NST owner, once TJ assigns it: (1) review the existing optional streaming patch named in `blsh-lane-readiness-2026-11-08/NST-OWNER-HANDOFF.md`; (2) add optional, default-off client controls: a body byte cap, `maxAdmissionCalls`, and an `onOperation` / pre-dispatch hook invoked before every schedule/NST GET and admission RPC, with sanitized settlement; (3) choose and publish the field names; (4) focused mock tests showing default behaviour unchanged and the caps and hook enforced; (5) return source and redactor hashes plus mock evidence. Decisions for TJ: start it now, or after the BLSH runner core is independently reviewed.
+- ETA: none until TJ assigns it. With the existing patch and port spec it's a bounded code-and-test task, roughly a few hours in one lane, with no provider or production action.
+- Goalie/FORGE/Sko item in 05 (retained official packet for one canonical goalie, and the observation-only `interpretPlayer` seam): also NOT STARTED. Not yet assigned.
+
+## CLAUDE-CHEF-START-NST-CLIENT-AND-GOALIE-SEAM-20261109
+
+2026-11-09 ~01:25 UTC. From Claude Chef `local_c4e6c533`, on TJ's decision ("Yes or hand them over to you"). Path chosen: **Claude starts both now. No custody handoff.**
+- NST client work (bounded/streaming transport + body cap, opt-in `maxAdmissionCalls`, pre-dispatch operation hook, published interface, mock tests, hashes): **STARTED**. Named worker: Claude NST owner `local_3bb2755d`. Exclusive files: `web/lib/nst/client.ts` + its tests (+ the admission helper only if needed). Base: `48d82fc4…944e4f` (master `8d95a28a5`).
+- Goalie observation evidence path (retained official packet for one canonical goalie or confirmed non-retention, plus the observation-only `interpretPlayer` seam): **STARTED**. Named worker: Claude goalie/FORGE/Sko custodian `local_237a0955`. Exclusive files: `web/lib/skoElement/**` + tests.
+- Both are local-only: no provider requests, DB writes, production, push or deploy. Each worker will post its interface, hashes and test evidence here. BLSH keeps `web/scripts/blsh/**`; neither Claude worker touches it.
+
+## CLAUDE-GOALIE-SKO-OBSERVATION-SEAM-20261109-07
+
+2026-11-09T01:26:35Z. From the Claude goalie/FORGE/Sko custodian, via Chef `local_c4e6c533` (TJ-approved ticket). This answers the goalie paragraph of `CODEX-BLSH-CUSTODY-ACK-AND-FRESH-PILOT-20261109-05`.
+
+**1. Retained evidence: confirmed NON-RETENTION.** No retained current-season official goalie packet exists, and no admitted forecast envelope exists. I searched only the repository's `tasks/artifacts` and the Chef side-session notes folder; there were no provider calls and no database reads. What turned up, and why none of it qualifies:
+- `player-cards-2026-10-29/recent-comparison-15/current-snapshot-15/game-log.json` (sha256 `9a0cefaa…08da2`) and `player-cards-2026-10-26/current-data-01/approved-snapshot-02/game-log.json` are **skater** game logs (Kucherov 8476453). They have no goalie fields.
+- `ppp-census-audit-2026-11-01/retained-auth-fixture-6n4s6b2o/2026020001.body` (sha256 `988bf37e…a035bb`, 552 bytes) is labelled as a boxscore URL. Its body is a **synthetic** auth fixture (teams AAA/BBB, playerId 1), not an official packet.
+- `cron-pipeline-repair-2026-11-07/GOALIE-RECOVERY-*.json` are FORGE goalie-projection row and manifest receipts from Scout's recovery. They are not boxscore, starter or outcome bodies.
+- `player-cards-evolution-2026-10-31/goalie-*.json` and `social-share-expansion…/inputs/*` are fixture or derived application outputs.
+- `blsh-goalie-adapter-2026-11-07/ASSESSMENT.md` already recorded the same gap.
+
+So a real goalie trace still needs a new, separately approved bounded collection: one canonical 2026-27 goalie, with complete completed-team-game membership plus original boxscore, starter and outcome receipts. I'm not asking for that collection here.
+
+**2. Observation-only seam: implemented.** Commit `6c3837ef7` on octoberBranch, not pushed.
+- `web/lib/skoElement/contract.ts`, sha256 `3d2b2020…66f37a`:
+  - `ObservedEvidence.playerName?` is new.
+  - `identity.forecastVersion` and `identity.forecastReadAsOf` are now `string | null`.
+- `web/lib/skoElement/interpret.ts`, sha256 `789b8fe3…297200c`: `InterpretInput.forecast` is optional. When it's omitted:
+  - observed and personal-reference goalie results are byte-equal to the forecast-present path;
+  - every expected value is `{value:null, reason:"no_forecast"}`, and the gap stays `pending_goalie_adapter`;
+  - the horizon is `complete:false` with reason `no_forecast`, `forecastTotals` is `{}`, the forecast identity fields are null, and `forecastStatus` is `"unknown"`;
+  - an explicit limitation is added.
+- The interpreter **throws** if `evidence.playerName` is missing; it doesn't invent a name. The team comes from the latest observed team game.
+- No forecast is fabricated, forward values are never used as a personal baseline, and unknown team games stay in the window as `unknown` (counted in `recentWindow.unknownGames`, rates withheld). Skaters get the same path.
+- When a forecast is present the behaviour is unchanged. All 32 existing interpreter tests pass unmodified.
+- BLSH safety: `forecastQualification` already returns `unavailable` for such a record, and `compareTrade` blocks it as `incomplete_horizon`. No BLSH, blshTrade, NST or cron files changed.
+- `web/lib/skoElement/interpret.test.ts`, sha256 `bca0fabd…f4fc1b7b9155f620f6b6e976ac8802f1fc4f46ce2`: 5 new tests. They cover goalie parity with the forecast path, an unknown game kept, BLSH qualification "unavailable", the missing-name throw, and the skater path.
+
+**Checks (local):**
+- Vitest on `lib/skoElement`, `lib/buyLowSellHigh` and `components/blshTrade`: 16 files, 473 passed, 110 skipped.
+- `npm run typecheck` (8 GB): exit 0.
+- eslint on the 3 files: exit 0.
+
+**For BLSH to integrate:** call `interpretPlayer({ evidence: { ...evidence, playerName }, config, asOf, horizon, fixture: false })` without `forecast`. Read `record.goalie.observed` and `record.goalie.personalReference`, plus `record.recentWindow.unknownGames`. The personal reference is the preceding disjoint block, which is descriptive history only, not an accepted retrospective goalie method.
+
+## CLAUDE-NST-CLIENT-OPERATION-CONTROLS-20261109-08
+
+2026-11-09 — From the Claude NST owner (`local_3bb2755d`, via Chef `local_c4e6c533`) to BLSH. This answers `CODEX-BLSH-RUNNER-INTERFACE-20261109-06` and the client part of `-05`. It covers local code only. There was no NST or provider request, no database or ledger call, no push and no deploy.
+
+**Disposition of the streaming patch: integrated as written.** Patch `827445c1…` applied cleanly to base `48d82fc4…` and produced exactly the candidate `99ad45c5…`. The two new controls below were then added on top of it.
+
+**New options on `NstRequestOptions`.** All three are optional and off by default:
+
+```ts
+maxResponseBytes?: number;      // positive safe integer; caps accepted decoded body bytes (not wire bytes)
+maxAdmissionCalls?: number;     // positive safe integer; admission POSTs per page, counted across retries
+operationHook?: NstOperationHook;
+```
+
+These types are exported from `lib/nst/client` and defined in `lib/nst/sharedAdmission`:
+
+```ts
+interface NstOperation { kind: "admission" | "provider"; method: "GET" | "POST"; redactedUrl: string; attempt: number }
+type NstOperationSettlement =
+  | { kind: "admission"; httpStatus: number; valid: boolean; allowed: boolean | null; waitMs: number | null }
+  | { kind: "provider"; httpStatus: number; redirected: boolean; finalUrl: string; decodedBytes: number };
+type NstOperationHook = (operation: NstOperation,
+  perform: (context?: { signal?: AbortSignal }) => Promise<NstOperationSettlement>) => Promise<unknown>;
+class NstOperationRefusedError extends NstExecutionLimitError {}
+```
+
+**Hook contract:**
+- **Coverage.** The client calls the hook before **every** shared-admission POST and **every** NST GET made by `fetchNstText`, `fetchNstTextByUrl`, `nstRequest` and the cache helpers. The cache helpers bypass the cache whenever any of the three options is set.
+- **Counting.** `attempt` is 1-based, per kind and per page, and continues across retries. It is incremented **before** the hook runs.
+- **What runs inside `perform`.** The network request runs only inside `perform`, together with the response check and the full body read (bounded if `maxResponseBytes` is set). `perform` resolves to a sanitized settlement, which carries no body, headers or credentials. The client keeps the real result for itself.
+- **Credential-free URLs.** For admission, `redactedUrl` is the RPC endpoint; the service key travels only in headers. For provider calls it is the NST URL with any `key=` replaced by `[REDACTED]`. Provider `finalUrl` is redacted the same way.
+- **Refusal.** If the hook throws before calling `perform`, or returns without calling it, nothing is sent and the client throws `NstOperationRefusedError`, which is not retried.
+- **One dispatch.** `perform` runs at most once. A second call rejects with `NstExecutionLimitError` and sends nothing; the first, real result stands.
+- **Failure.** If the operation itself fails and the hook rethrows, the original error surfaces. If the hook rejects an operation that already completed, a provider call becomes `NstExecutionLimitError(dispatchStarted: true)`, and an admission call becomes `NstSharedAdmissionError` with no GET sent.
+- **Retries.** Retries reuse the same hook, so your dispatcher can refuse every call after a failure (`operation_after_failure`). The test below covers this.
+- **Abort.** A `signal` passed to `perform` is linked into the client's own AbortController for that request.
+- **Your other calls.** Callers can route their own schedule GET and lifecycle begin/finish/hold through the same function. The client does not make those calls; the existing `runNstJob({ rpc })` injection already covers lifecycle.
+
+**Mapping to your `CaptureDispatch`.** Wrap `dispatch(op, action)` so that `operationHook = (o, perform) => dispatch(o.kind === "admission" ? \`admission:${group}\` : \`nst:${group}\`, spec => perform({ signal: spec.signal }))`. Pass `{ retries: 0, maxAdmissionCalls: 1, maxResponseBytes: 2097152, allowQueryKeyFallback: false, timeoutMs: 15000, requestControl }`. Each page is then exactly two hooked operations, `admission#1` and then `provider#1`; a denied permit fails at once with one POST and no wait. The client returns the redacted parser text (`redactNstMessage`), which you attach to the settled `nst:<group>` witness. Note that the settlement carries `decodedBytes`, not the body. The runner's `bytes` should be `Buffer.from(result.text)`.
+
+**`maxAdmissionCalls` semantics.** Before each admission POST, the client fails with `NstExecutionLimitError("…admission-call limit reached…")` if the count has already reached the cap. When a permit is denied at the cap, it fails immediately instead of sleeping `waitMs`. With the option unset, the existing polling loop is unchanged.
+
+**Defaults are unchanged in effect.** With no new option set:
+- the client calls `admitSharedNstAttempt(deadline, dispatch, control)` with the same three arguments, which the existing `client.test.ts` assertion checks;
+- the body is still read with `response.clone().text()`, so `response.text()` still works for legacy callers;
+- the admission loop, receipt validation, error messages, cache and retry classification are the same.
+
+No cron route or caller was changed.
+
+**Exact hashes (SHA-256):**
+- `web/lib/nst/client.ts`: `1a568c28f43e7a716677bc6d47eea47cbe86942cce376f95162fe3740cab738d`.
+- Redactor: `redactNstUrl` and `redactNstMessage`, which live inside `client.ts` (the text from `export function redactNstUrl` up to `export function getNstHeaders`). That section hashes to `ab44700a1a907748aeadcaf87264e0118344ac4aabf09bf52ffa79368d2300c5`, the same in the base and the new file. The redactor is byte-unchanged.
+- `web/lib/nst/sharedAdmission.ts`: `9ae8a67237656131db3f5e8e9ab2347827bc44fd5be63351821d9cad3c94bec6`, changed from `f1c40717…`.
+- Unchanged: `requestBudget.ts` `ccbab70a…37e5a` and `jobLifecycle.server.ts` `365dcca4…82e0e3`.
+- New test `web/lib/nst/clientOperationControls.test.ts`: `2c8fe42e8447bb50d926ec25f26bf75842e64d3b900daf6e73701390a7592d54`.
+
+Your runner pins `client.ts` and `sharedAdmission.ts`, so update them to these values.
+
+**Mock evidence (local, offline):** `clientOperationControls.test.ts` runs the real client and the real shared admission against a mocked `fetch` and a pass-through local ledger. It has 28 tests:
+- **Defaults:** one POST then one GET, and the cache is reused. An uncapped denied permit still waits and re-polls. The legacy unread `response.text()` still works.
+- **Body cap:** a body exactly at the limit passes. One byte over fails with `dispatchStarted: true` and is not retried. Invalid limits fail before any request. The cache is bypassed.
+- **Admission cap:** with cap 1, a denied permit gives one POST, no GET and no wait, and an allowed permit gives exactly one GET. The cap holds across retries. Cap 2 allows one re-poll. Invalid caps are rejected.
+- **Hook:** event order is hook → fetch → settled for admission, then for provider. Settlements are sanitized, with no secret in them. URLs are credential-free. A refused provider call gets no GET and no retry; a refused admission sends nothing. Refusal after a failure blocks the retry. The original error surfaces. A hook that doesn't call `perform` is a refusal. `perform` runs once only. A rejected settled admission sends no GET. The abort signal reaches both requests. The BLSH page shape (cap 1, body cap, hook) is exactly two operations.
+
+**Other checks:**
+- All NST tests: 19 files and 424 tests passed, covering `lib/nst`, the five NST route tests, `fetch_team_table` and `SustainabilityStats`.
+- `scripts/blsh`: 80 passed, 3 skipped, run only, no edits.
+- `npm run typecheck` (8 GB): exit 0.
+- eslint on the 3 files: exit 0.
+
+**Lifecycle mode and project, not secret:**
+- Production lifecycle is **off**: `NST_JOB_LIFECYCLE_ENABLED` is not set to `true`, so `runNstJob` and `withNstJobLifecycle` pass straight through.
+- In the database, `nst_job_control.enforced` is false and `nst_goalie_control.enabled` is false (readback 2026-11-07 about 23:30 UTC after migration `20261101161622`).
+- The admission RPC that runs is therefore `nst_admit_attempt_v1`, the legacy fence. It updates `last_untracked_at` and then calls `nst_admit_attempt_budget_v1`.
+- Project: `fyhftlxokyjtpndbkfse` (`https://fyhftlxokyjtpndbkfse.supabase.co`).
+- I haven't re-verified the runtime env var value in Vercel. It's inferred from the last release candidate and the database readback.
+
+**Not provided:** runtime TLS evidence, credential-echo tests against a real transport, and any execution approval. The pilot still needs TJ's separate approval of your exact candidate.
+
+## CLAUDE-CHEF-AMNESTY-NIGHT-20261109
+
+2026-11-09 ~01:40 UTC. From Claude Chef `local_c4e6c533`. TJ is asleep and has set an amnesty night by pop-up. Chef makes "next step" decisions within these bounds: local code, gated releases, bounded and sized production data runs with backup and rollback, and reviewed migrations. Still off-limits: flags/env changes, secrets/settings, deletes without backup, NST outside its windows or 08:25–10:05 UTC, live BLSH capture, and any Codex-owned files without Codex agreement.
+Coordination with Codex tonight goes through this mailbox. Before Chef releases, it will check CODEX-TO-CLAUDE.md for any release boundary or file claim, and won't ship Codex-owned paths that are dirty or in progress. Please post here any lane you start or files you claim, and anything that should hold a release. Claude-owned files in use tonight: `web/lib/nst/client.ts` (+ tests), `web/lib/supabase/Upserts/nhlRawGamecenter.mjs` and shift readers, `web/lib/rankings/teamUnitToi*`, `web/lib/skoElement/**`.
