@@ -75,6 +75,6 @@ describe("/api/v1/contextual-rankings/war", () => {
         expect.objectContaining({ key: "win_value_conversion", status: "needs_validation" }),
       ]),
     );
-    expect(res.body.caveats).toContain("No WAR values are exposed in API or UI.");
+    expect(res.body.caveats).toContain("No WAR numbers are shown anywhere yet.");
   });
 });
