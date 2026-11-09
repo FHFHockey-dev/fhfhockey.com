@@ -622,7 +622,7 @@ describe("nhlRawGamecenter", () => {
       idempotent: true,
     });
     expect(rpc).toHaveBeenCalledWith(
-      "persist_nhl_api_gamecenter_normalized_v1",
+      "persist_nhl_api_gamecenter_normalized_v2",
       expect.objectContaining({
         p_expected_pbp_payload_hash: scope.pbpPayloadHash,
         p_expected_shift_payload_hash: scope.shiftPayloadHash,
@@ -979,7 +979,7 @@ describe("nhlRawGamecenter", () => {
       rpc.mock.invocationCallOrder[0],
     );
     expect(rpc).toHaveBeenCalledWith(
-      "persist_nhl_api_gamecenter_normalized_v1",
+      "persist_nhl_api_gamecenter_normalized_v2",
       expect.objectContaining({
         p_expected_current_fingerprint: null,
         p_expected_current_version: null,
@@ -1045,9 +1045,7 @@ describe("shift payload validation", () => {
       .toEqual([100, 101, 102, 200, 201, 202]);
   });
 
-  it("normalizes one row per raw entry, as the persist RPC's row-count check requires", () => {
-    // persist_nhl_api_gamecenter_normalized_v1 raises NHL_NORMALIZATION_SHIFT_HEAD_MISMATCH
-    // unless the shift scope has exactly jsonb_array_length(raw head data) rows.
+  it("normalizes the canonical rows only: one per exact-content interval, lowest id", () => {
     const gameId = 2026020019;
     const game = finalGame(gameId, 52, 10);
     const away = fullGameShifts(gameId, 52, 100);
@@ -1055,31 +1053,46 @@ describe("shift payload validation", () => {
     const payload = { total: 7, data: [{ ...away[0], id: 900 }, ...away, ...home], source: "json-api" } as any;
     const rows = normalizeShiftRows(game, payload, "b".repeat(64));
 
-    expect(rows).toHaveLength(payload.data.length);
+    expect(rows.map((row: any) => row.shift_id).sort((a: number, b: number) => a - b))
+      .toEqual([100, 101, 102, 200, 201, 202]);
     expect(rows.every((row: any) => row.game_id === gameId)).toBe(true);
   });
 
-  it("passes the persist RPC's raw-head row-count rule for a feed with duplicates", async () => {
-    const gameId = 2026020019;
-    const game = finalGame(gameId, 52, 10);
-    const away = fullGameShifts(gameId, 52, 100);
-    const home = fullGameShifts(gameId, 10, 200);
-    // Stored raw head: NHL's duplicate interval under its own id stays in the payload.
-    const head = { total: 7, data: [{ ...away[0], id: 900 }, ...away, ...home], source: "json-api" } as any;
+  // The rule persist_nhl_api_gamecenter_normalized_v2 applies to the raw shiftcharts head
+  // (migration 20261109034000): group entries by the `->>` text of playerId, teamId, period,
+  // startTime, endTime, typeCode; the scope's shift ids must equal the lowest id of each group.
+  function v2CanonicalShiftIds(head: { data: any[] }) {
+    const text = (value: unknown) =>
+      value == null ? null : typeof value === "object" ? JSON.stringify(value) : String(value);
+    const groups = new Map<string, number>();
+    for (const entry of head.data) {
+      const key = JSON.stringify(
+        ["playerId", "teamId", "period", "startTime", "endTime", "typeCode"].map((field) => text(entry[field])),
+      );
+      groups.set(key, Math.min(groups.get(key) ?? Infinity, entry.id));
+    }
+    return [...groups.values()].sort((a, b) => a - b);
+  }
+
+  function v2RuleClient(head: { data: any[] }) {
     const statusChain: any = {
       select: vi.fn(() => statusChain),
       eq: vi.fn(() => statusChain),
       maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
     };
-    // The SQL rule from persist_nhl_api_gamecenter_normalized_v1 (migration 20260722010355):
-    // jsonb_array_length(head.payload->'data') <> p_expected_shift_rows raises SHIFT_HEAD_MISMATCH.
-    const rpc = vi.fn(async (_name: string, args: any) => {
-      if (head.data.length !== args.p_expected_shift_rows || args.p_shift_rows.length !== args.p_expected_shift_rows) {
+    const rpc = vi.fn(async (name: string, args: any) => {
+      const canonical = v2CanonicalShiftIds(head);
+      const sent = args.p_shift_rows.map((row: any) => row.shift_id).sort((a: number, b: number) => a - b);
+      if (
+        name !== "persist_nhl_api_gamecenter_normalized_v2" ||
+        canonical.length !== args.p_expected_shift_rows ||
+        JSON.stringify(sent) !== JSON.stringify(canonical)
+      ) {
         return { data: null, error: { message: "NHL_NORMALIZATION_SHIFT_HEAD_MISMATCH" } };
       }
       return {
         data: [{
-          game_id: gameId, normalization_status: "complete", normalization_version: 1,
+          game_id: args.p_game_id, normalization_status: "complete", normalization_version: 1,
           normalization_fingerprint: "c".repeat(64), source_fingerprint: "d".repeat(64),
           parser_fingerprint: args.p_parser_fingerprint,
           pbp_raw_payload_id: 1, pbp_raw_snapshot_version: 1, pbp_raw_payload_hash: args.p_expected_pbp_payload_hash,
@@ -1093,17 +1106,37 @@ describe("shift payload validation", () => {
         error: null,
       };
     });
+    return { client: { from: vi.fn(() => statusChain), rpc } as any, rpc };
+  }
 
-    const receipt = await persistCapturedGameNormalization(
-      { from: vi.fn(() => statusChain), rpc } as any,
-      {
-        gameId, seasonId: 20252026, gameDate: "2025-12-21",
-        pbp: game, pbpPayloadHash: "a".repeat(64),
-        shiftPayload: head, shiftPayloadHash: "b".repeat(64),
-      },
-    );
+  it.each([
+    ["one duplicate (2026020019 shape)", (away: any[], home: any[]) => [{ ...away[0], id: 900 }, ...away, ...home], 6],
+    ["a doubled feed whose copies carry lower ids", (away: any[], home: any[]) =>
+      [...away, ...home, ...[...away, ...home].map((row, index) => ({ ...row, id: 10 + index }))], 6],
+    ["no duplicates", (away: any[], home: any[]) => [...away, ...home], 6],
+  ])("passes the v2 persist RPC's canonical-row rule with %s", async (_name, build, expected) => {
+    const gameId = 2026020019;
+    const game = finalGame(gameId, 52, 10);
+    const head = { total: 0, data: build(fullGameShifts(gameId, 52, 100), fullGameShifts(gameId, 10, 200)), source: "json-api" } as any;
+    head.total = head.data.length;
+    const { client, rpc } = v2RuleClient(head);
+
+    const receipt = await persistCapturedGameNormalization(client, {
+      gameId, seasonId: 20252026, gameDate: "2025-12-21",
+      pbp: game, pbpPayloadHash: "a".repeat(64),
+      shiftPayload: head, shiftPayloadHash: "b".repeat(64),
+    });
     expect(rpc).toHaveBeenCalledTimes(1);
-    expect(receipt.shiftCount).toBe(7);
+    expect(receipt.shiftCount).toBe(expected);
+  });
+
+  it("keeps a null type code apart from an empty one, as Postgres ->> does", () => {
+    const gameId = 2026020019;
+    const game = { ...finalGame(gameId, 52, 10), gameState: "LIVE" };
+    const [row] = fullGameShifts(gameId, 52, 100);
+    const payload = { total: 2, data: [{ ...row, typeCode: null }, { ...row, id: 101, typeCode: "" }] } as any;
+    expect(selectShiftRowsForGame(game, payload)).toHaveLength(2);
+    expect(v2CanonicalShiftIds(payload)).toEqual([100, 101]);
   });
 
   it("refuses a doubled feed mixed with another game's teams (2025020565 shape)", () => {

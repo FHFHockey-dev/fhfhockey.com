@@ -764,24 +764,35 @@ export function normalizePbpEvents(game, pbpHash) {
 // before the period's last PBP event before the feed counts as truncated.
 const SHIFT_COVERAGE_TOLERANCE_SECONDS = 10;
 
+// Must group exactly as persist_nhl_api_gamecenter_normalized_v2 does: Postgres
+// `->>` text of playerId, teamId, period, startTime, endTime and typeCode, with
+// a missing or null value as its own group member.
 function shiftContentKey(shift) {
-  return [
-    shift.playerId,
-    shift.teamId,
-    shift.period,
-    shift.startTime,
-    shift.endTime,
-    shift.typeCode ?? "",
-  ].join("|");
+  return JSON.stringify(
+    [
+      shift.playerId,
+      shift.teamId,
+      shift.period,
+      shift.startTime,
+      shift.endTime,
+      shift.typeCode,
+    ].map((value) =>
+      value == null
+        ? null
+        : typeof value === "object"
+          ? JSON.stringify(value)
+          : String(value),
+    ),
+  );
 }
 
 /**
  * Validates a shiftcharts payload against its game and returns the rows to
  * store. Every row must carry this game's id and one of its two teams; a feed
  * mixing in another game's rows is refused, never trimmed. NHL can publish the
- * same interval twice under different ids: only the lowest id is kept in the
- * returned rows (normalizeShiftRows still stores every raw row; see there). For
- * a final game each team's shifts must reach the last PBP event of every period.
+ * same interval twice under different ids: only the lowest id is kept, which is
+ * the canonical scope persist_nhl_api_gamecenter_normalized_v2 accepts. For a
+ * final game each team's shifts must reach the last PBP event of every period.
  */
 export function selectShiftRowsForGame(game, shiftPayload) {
   const gameId = Number(game?.id);
@@ -862,12 +873,9 @@ export function selectShiftRowsForGame(game, shiftPayload) {
 
 export function normalizeShiftRows(game, shiftPayload, shiftHash) {
   const seasonId = Number(game.season);
-  // Validate (game, teams, final-game coverage) but keep one row per raw
-  // entry: persist_nhl_api_gamecenter_normalized_v1 refuses a shift scope
-  // whose row count differs from the raw head's data length, so exact
-  // duplicates can only be dropped once the raw payload itself is deduped.
-  selectShiftRowsForGame(game, shiftPayload);
-  return (shiftPayload.data ?? []).map((shift) => ({
+  // The raw head keeps NHL's duplicates; the v2 persist RPC accepts exactly
+  // the canonical rows (one per exact-content interval, lowest id).
+  return selectShiftRowsForGame(game, shiftPayload).map((shift) => ({
     game_id: game.id,
     shift_id: shift.id,
     season_id: seasonId,
@@ -1151,7 +1159,7 @@ export async function persistNormalizedGameScope(
 ) {
   let result;
   try {
-    result = await supabase.rpc("persist_nhl_api_gamecenter_normalized_v1", {
+    result = await supabase.rpc("persist_nhl_api_gamecenter_normalized_v2", {
       p_game_id: scope.gameId,
       p_season_id: scope.seasonId,
       p_game_date: scope.gameDate,
