@@ -286,3 +286,12 @@ Q40 (pooler psql, read-only) per listed game: json of shift rows (cols as writer
 - 11-08 TJ pop-up 'run it as planned … 21 s delay if NST' (route reads Supabase only, no NST; 21 s used anyway). Backup CSV 42,772 rows sha256 1406459511fb… in side-session notes folder + scratchpad rebuild/. run.sh started (34 batches).
 - 00:03 UTC 11-09 STOP at batch ah (8/34): generated 1,361 vs replay 1,362. Cause: writer offset paging over non-unique order (game, period, start) → repeated+skipped shift rows (route dup counts exceed true dups in every batch). Fix: order shift_id tiebreak + PP/players/games ordered; teamUnitToiWriter.test.ts. Tests 4 files/20 pass, eslint 0, typecheck 0. Affects every multi-page call ever (both snapshots). Next: release fix, then re-size (likely full-season rebuild into same snapshots) + pop-up.
 - TJ pop-up (post-stop): 'Both seasons, full' after the paging-fix release: re-size, backup, rewrite every 2025-26 + 2026-27 game into the 2026-11-08 snapshots, delete stale rows, exact-numbers pop-up before writing.
+## 11-09 full both-season rebuild sizing (Chef: paging fix live, master 1e170b6d0)
+- Prod dry run of batch ah on fixed code: ?season=20252026&gameIds=<ah ids>&snapshot_date=2026-11-08&dryRun=true (expect 1,362 rows, 27 dups).
+Q41 game lists: select id from games where season=? and substr(id::text,5,2) in ('02','03') and exists shifts (nhl_api_shift_rows game_id) and date < today ET, union games in team_unit_toi snapshot 2026-11-08; exclude 2025030411 (SCF G1, shift-ingest lane).
+Q42 chunked inputs (40 games/chunk, statement_timeout 60 s) same columns as Q40, for the replay.
+- 11-09 ~00:50 UTC TJ pop-up 'Run it as planned' (full both seasons, 168 batches, 21 s gap, stale 70). Backup full snapshot 2026-11-08 → CSV.
+- Backup: 218,114 rows (= live count, ids 12952..241117) sha256 5bc6d3a7d4718732…, notes folder + scratchpad full/. run.sh started (168 batches).
+- 01:34 UTC 11-09: session ended mid-run after 82/168 batches (all exact). Chef amnesty: finish as approved + stale delete + readback, report to Chef. Resuming 86 batches (run-resume.sh).
+- 02:13 UTC DONE 168/168 exact (resume 86 + 82), total upserted this session-run 112,001 in resume. Q43 stale pre-check (count of 70 keys at snapshot 2026-11-08) then delete with returning count (must be 70); backup sha 5bc6d3a7.
+- 02:20 UTC full rebuild DONE + verified: 2025-26 183,972 / 2026-27 36,472, per-game 1,669/1,669 exact, stale 70 deleted (0 left), all complete, F1/D1 both teams everywhere.
