@@ -329,3 +329,31 @@ Q42 chunked inputs (40 games/chunk, statement_timeout 60 s) same columns as Q40,
 - Team done: windows 1–25 (2025-10-07..2026-03-30), 1,177 games, 164,780 rows, all exact, 0 stale. Table totals unchanged (183,680 / 35,140). updated_at does not change on upsert, so the run log is the readback.
 - LEFT: team windows 26–34 (2025-26 03-31..04-16 = 3; 2026-27 all = 6), goalie 1–34, player (after #425 and a rollback decision).
 - Runner: scratchpad full-summ/run.sh <team|goalie> N N; windows-games.txt.
+
+## CHECKPOINT 2026-11-09 ~20:30 UTC (Chef request; TJ travelling). No production runs in flight.
+- **Resume point:** team window **26** (2025-26, 2026-03-31..04-06), NOT window 4.
+  - Chef's checkpoint message said "window 4"; that was stale. Windows 1–25 are already done with exact counts.
+  - Then team windows 27–34 (27–28: 2025-26 to 04-16; 29–34: all of 2026-27, 2026-09-29..11-08).
+  - Then goalie windows 1–34 (none run yet).
+  - Command (scratchpad full-summ, windows-games.txt): `run.sh team 26 26` … `run.sh team 34 34`, then `run.sh goalie 1 1` … `34 34`. One window per call, an API log check after each.
+  - The scratchpad is temporary; if it's gone, rebuild the windows. Team: 7-day windows over 2025-10-07..2026-04-16 and 2026-09-29..2026-11-08, gameType=2, dryRun=false. Goalie: the same windows on update-goalie-underlying-summaries.
+- **Backups** (notes folder):
+  - backup-team-both-seasons.csv: 218,820 rows, sha 8dfb2cc9.
+  - backup-goalie-all.csv: 10,124 rows, sha 90051ae5.
+  - Probe week: backup-team-2026-10-12_18.csv (4,760 rows, sha 33c22562) and backup-player-payloads-2026-10-12_18.csv (2,539 rows).
+  - Rollback for team/goalie: delete the rebuilt games' rows and reload the CSV.
+- **Diagnosis (Chef, edge logs):**
+  - 15:03–15:06 stall: the player probe's ~3.7 MB, 100-row upserts. Fixed by 25-row batches (be71f5802, #425).
+  - 15:11 and 15:23–15:24: Next.js build prerender storms from #424/#425 collided with team windows 2–3; the 15:27 503 burst followed.
+  - P3 is not implicated; the id tiebreak is not the cause.
+  - wgo_skater_stats timeouts recur on their own (14:56, 15:02, 20:21, 20:22).
+- **Plan:**
+  - 1 call per ~2 min. conns ≤ 40 before each call. Check the API logs after each call; stop on any 5xx or statement timeout.
+  - No releases during the run. Finish before 21:00 UTC and avoid 08:25–10:05 UTC.
+  - Open question for TJ: scope the stop rule to the rebuild's own tables plus any site-wide burst of 5+ 5xx/min.
+  - Each resume needs TJ's pop-up.
+- **Player rollback gap:**
+  - nhl_api_game_payloads_raw is immutable (no-delete/no-update triggers), so a player rebuild can't be rolled back by deleting rows.
+  - Options: (a) re-insert the old payloads (the insert trigger lets a game revert to an earlier identity), tested locally first; or (b) TJ explicitly accepts forward-only.
+  - The player rebuild waits for that decision, with #425 live.
+  - Probe leftover: 2026-10-12..18 has 14 games fully rebuilt; game 2026020101 has 8 of 28 partitions new. Readers take the newest per partition, so it stays consistent.
