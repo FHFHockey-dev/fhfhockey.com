@@ -1241,6 +1241,16 @@
       "migrationClass": "performance",
       "rolloutGate": "Adds idx_wgo_skater_stats_team_date (team_abbrev, date) so the player page's box-score coverage read (team_abbrev = X and date in a season of dates) stops hitting the 3 s statement timeout. Needs TJ's pop-up approval; apply by hand with the CONCURRENTLY form in the file header (not inside a transaction), check indisvalid, then record the ledger row.",
       "stateEvidence": "Not applied. Drafted 2026-11-09 after edge/postgres logs showed about 30 statement timeouts 14:12-20:22 UTC on wgo_skater_stats coverage and variance reads. Read-only EXPLAIN 2026-11-09: coverage plan is an index scan on idx_wgo_skater_stats_date filtering team_abbrev; no index leads on team_abbrev (2,257,972 rows, 2.2 GB heap). Diary: tasks/diaries/2026-11-09-claude-wgo-skater-timeouts.md."
+    },
+    {
+      "order": 124,
+      "path": "supabase/migrations/20261109213000_line_source_observed_at_indexes.sql",
+      "sha256": "e33c8a67d8aa2e5dbfd70cfa6877a941e87de2cdbb63789bf34f1879ce26211f",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "pending",
+      "migrationClass": "performance",
+      "rolloutGate": "Adds line_source_snapshots_observed_at_idx and lines_ccc_observed_at_idx (observed_at desc) so the auto-news-feed review sync's newest-500 reads are index scans instead of full scans and sorts. Needs TJ's pop-up approval; the plain form runs through apply_migration, or apply by hand with the CONCURRENTLY form in the file header (not inside a transaction), check indisvalid, then record the ledger row.",
+      "stateEvidence": "Not applied. Drafted 2026-11-09 after /api/v1/db/auto-news-feed-items failed at 16:00 UTC: postgres log 'canceling statement due to statement timeout' on the sync's line_source_snapshots read ordered by observed_at desc limit 500 (7,505 rows, 55 MB; no index serves that order; lines_ccc has none either). Verified on local PostgreSQL 15 with supabase/tests/line_source_observed_at_indexes.py (8/8): seq scan + sort before, index scan after, re-applies, CONCURRENTLY header form builds valid indexes."
     }
   ],
   "sourceExtensionApproval": {
