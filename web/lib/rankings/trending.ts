@@ -5,6 +5,7 @@ import {
   type ContextualRankingMetricKey,
 } from "./metricDefinitions";
 import { buildContextualRankingsSurfaces } from "./rankingQueries";
+import { minGpForComparisonWindow } from "./rankingUrlState";
 import {
   ContextualRankingsQueryError,
   parseContextualRankingsRequest,
@@ -307,7 +308,8 @@ function windowRequest(args: {
     deployment: args.base.deployment,
     strength: args.base.strength,
     metric: args.metric,
-    minGp: args.base.minGp,
+    // Trending has no base window; its Min GP follows the page default for Season.
+    minGp: minGpForComparisonWindow(args.base.minGp, "season", args.window),
     minToiSeconds: args.base.minToiSeconds,
     teamId: args.base.teamId,
     peerGroupType: args.base.peerGroupType,

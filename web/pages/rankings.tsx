@@ -1,9 +1,10 @@
 import Head from "next/head";
 import { useRouter } from "next/router";
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import useSWR from "swr";
 
 import ComparisonSummaryPanel from "components/Rankings/ComparisonSummaryPanel";
+import { formatCaveat, formatCaveats } from "components/Rankings/caveatLabels";
 import DeploymentTiersPanel from "components/Rankings/DeploymentTiersPanel";
 import ExperimentalToolkitPanel from "components/Rankings/ExperimentalToolkitPanel";
 import GoalieMatrixTable from "components/Rankings/GoalieMatrixTable";
@@ -48,6 +49,7 @@ import {
   buildWarRequestPath,
   DEFAULT_RANKINGS_FILTERS,
   defaultDirectionForSort,
+  defaultMinGpForWindow,
   normalizeRankingsFilters,
 } from "lib/rankings/rankingUrlState";
 import type { ContextualRankingsMetadataResponse } from "lib/rankings/rankingMetadata";
@@ -65,6 +67,7 @@ import styles from "styles/Rankings.module.scss";
 const TABS: Array<{
   key: RankingsFilterState["tab"];
   label: string;
+  shortLabel?: string;
   planned?: boolean;
   icon: SmallIconName;
 }> = [
@@ -76,6 +79,7 @@ const TABS: Array<{
   {
     key: "war",
     label: "Wins Above Replacement",
+    shortLabel: "WAR",
     icon: "target",
     planned: true,
   },
@@ -129,6 +133,7 @@ function filtersToQuery(filters: RankingsFilterState) {
     page: filters.page,
     page_size: filters.pageSize,
   };
+  if (filters.density === "detailed") query.density = "detailed";
   if (filters.sampleConfidence !== "all") {
     query.sample_confidence = filters.sampleConfidence;
   }
@@ -236,8 +241,8 @@ function pageLabels(filters: RankingsFilterState) {
   };
 }
 
-function formatSnapshotDate(value?: string | null) {
-  if (!value) return "Loading";
+function formatSnapshotDate(value?: string | null, isLoading = true) {
+  if (!value) return isLoading ? "Loading" : "Unavailable";
   const [year, month, day] = value.slice(0, 10).split("-").map(Number);
   if (!year || !month || !day) return value;
   return new Intl.DateTimeFormat("en-US", {
@@ -362,27 +367,26 @@ function UnsupportedSecondaryTabState({
     <section className={styles.statePanel} aria-label={`${title} status`}>
       <h2>{title}</h2>
       <p>
-        {title} is Source Pending for {entityLabel} rankings. The ranking matrix
-        and snapshot panels are live for this entity, but this secondary tab has
-        no verified row contract yet.
+        {title} isn&apos;t available for {entityLabel} rankings yet.{" "}
+        {entityLabel === "goalie" ? "Goalie" : "Team"} rankings and snapshots are
+        live in the Rankings tab.
       </p>
       <div className={styles.secondaryTabGrid}>
         {[
           {
-            label: "Current state",
-            text: `${entityLabel} rankings remain available in the Rankings tab.`,
+            label: "Available now",
+            text: `${entityLabel === "goalie" ? "Goalie" : "Team"} rankings and snapshots in the Rankings tab.`,
           },
           {
-            label: "Data contract",
-            text: "No fake values are generated while the secondary-tab source contract is pending.",
+            label: "Why it's empty",
+            text: `We only show ${title} once its numbers are verified; nothing here is estimated.`,
           },
           {
-            label: "Next gate",
-            text: "Publish verified rows, methodology metadata, and sample semantics before enabling this tab.",
+            label: "What's next",
+            text: "This tab turns on once verified data and methodology notes are published.",
           },
         ].map((item) => (
           <article key={item.label}>
-            <span className={styles.secondaryTabPlanned}>Source Pending</span>
             <h3>{item.label}</h3>
             <p>{item.text}</p>
           </article>
@@ -510,8 +514,8 @@ function activeMethodologySummary({
     sample: definition?.sampleRequirements
       ? `Min ${definition.sampleRequirements.minimumGp} GP · Min ${Math.round(
           definition.sampleRequirements.minimumToiSeconds / 60,
-        )} TOI min · ${definition.sampleRequirements.windowSource}`
-      : `Min ${filters.minGp} GP · Min ${Math.round((Number(filters.minToi) || 0) / 60)} TOI min`,
+        )}:00 TOI · ${definition.sampleRequirements.windowSource}`
+      : `Min ${filters.minGp} GP · Min ${Math.round((Number(filters.minToi) || 0) / 60)}:00 TOI`,
     source:
       filters.tab === "rankings"
         ? matrixSource
@@ -608,10 +612,18 @@ function WorkstationMethodologyPanel({
               </dd>
             </div>
             <div>
+              <dt>Sample</dt>
+              <dd>
+                Sample labels reflect the selected minimums, not forecast
+                reliability.
+              </dd>
+            </div>
+            <div>
               <dt>States</dt>
               <dd>
-                N/A, Source Pending, Low Sample, and Stale Source are distinct
-                states.
+                N/A, Planned, Source Pending, Low Sample, and Stale Source are
+                distinct states. Planned and N/A mean the metric is not live or
+                lacks source data.
               </dd>
             </div>
           </dl>
@@ -638,13 +650,13 @@ function WorkstationMethodologyPanel({
             {active.sourceQualityFlags.length ? (
               <li>
                 <strong>Source Flags</strong>
-                <span>{active.sourceQualityFlags.join(", ")}</span>
+                <span>{formatCaveats(active.sourceQualityFlags)}</span>
               </li>
             ) : null}
             {active.sourceWarnings.length ? (
               <li>
                 <strong>Source Warnings</strong>
-                <span>{active.sourceWarnings.join(", ")}</span>
+                <span>{formatCaveats(active.sourceWarnings)}</span>
               </li>
             ) : null}
             {glossaryItems.map((entry) => (
@@ -897,7 +909,7 @@ function GoalieSnapshotPanel({
             ? payload.meta.sourceWarnings
             : row.warnings
           ).map((warning) => (
-            <li key={warning}>{warning}</li>
+            <li key={warning}>{formatCaveat(warning)}</li>
           ))}
         </ul>
       </section>
@@ -1101,7 +1113,7 @@ function TeamSnapshotPanel({
             ? payload.meta.sourceWarnings
             : row.warnings
           ).map((warning) => (
-            <li key={warning}>{warning}</li>
+            <li key={warning}>{formatCaveat(warning)}</li>
           ))}
         </ul>
       </section>
@@ -1217,6 +1229,35 @@ export default function RankingsPage() {
   const router = useRouter();
   const [rankMode, setRankMode] = useState<"overall" | "deployment">("overall");
   const [isControlShellCollapsed, setIsControlShellCollapsed] = useState(false);
+  // Compact desktop matrix: the snapshot + comparison rail becomes a drawer.
+  const [isSnapshotOpen, setIsSnapshotOpen] = useState(false);
+  const snapshotButtonRef = useRef<HTMLButtonElement>(null);
+  const drawerCloseRef = useRef<HTMLButtonElement>(null);
+  const drawerWasOpen = useRef(false);
+  // The desktop workstation locks to the viewport; under 1100px tall the filter grid would
+  // leave the matrix ~3 rows, so it starts collapsed there (the toggle still opens it).
+  useEffect(() => {
+    if (window.innerWidth > 1240 && window.innerHeight < 1100) {
+      setIsControlShellCollapsed(true);
+    }
+  }, []);
+  // Keyboard focus follows the drawer: into Close × when it opens, back to the trigger when it closes.
+  useEffect(() => {
+    if (isSnapshotOpen) {
+      drawerCloseRef.current?.focus();
+    } else if (drawerWasOpen.current) {
+      snapshotButtonRef.current?.focus();
+    }
+    drawerWasOpen.current = isSnapshotOpen;
+  }, [isSnapshotOpen]);
+  useEffect(() => {
+    if (!isSnapshotOpen) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setIsSnapshotOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [isSnapshotOpen]);
   const filters = useMemo(
     () => normalizeRankingsFilters(router.query),
     [router.query],
@@ -1394,10 +1435,34 @@ export default function RankingsPage() {
     RANKINGS_SWR_OPTIONS,
   );
   const labels = pageLabels(filters);
+  const compactMatrix =
+    filters.tab === "rankings" && filters.density === "compact";
+  const railClassName = compactMatrix
+    ? `${styles.contextRail} ${styles.contextRailDrawer} ${
+        isSnapshotOpen ? styles.contextRailDrawerOpen : ""
+      }`
+    : styles.contextRail;
+  const workstationClassName = compactMatrix
+    ? `${styles.workstation} ${styles.workstationCompact}`
+    : styles.workstation;
+  // Selecting a row opens the drawer on desktop, where the compact matrix hides the rail.
+  const openSnapshotOnDesktop = () => {
+    if (compactMatrix && window.matchMedia?.("(min-width: 1241px)").matches) {
+      setIsSnapshotOpen(true);
+    }
+  };
 
   const updateFilters = (patch: Partial<RankingsFilterState>) => {
+    // When the window changes and Min GP is still the old window's default, follow the new default.
+    const followMinGp =
+      patch.window &&
+      patch.window !== filters.window &&
+      patch.minGp === undefined &&
+      filters.minGp === defaultMinGpForWindow(filters.window)
+        ? { minGp: defaultMinGpForWindow(patch.window) }
+        : {};
     const next = normalizeRankingsFilters(
-      filtersToQuery({ ...filters, ...patch }),
+      filtersToQuery({ ...filters, ...patch, ...followMinGp }),
     );
     void router.replace(
       { pathname: router.pathname, query: filtersToQuery(next) },
@@ -1427,6 +1492,20 @@ export default function RankingsPage() {
     });
   };
   let latestSnapshotDate: string | null = null;
+  // WAR and the goalie/team secondary tabs have no dataset snapshot; the box says so.
+  const snapshotApplies =
+    filters.tab !== "war" &&
+    (filters.entity === "skaters" || filters.tab === "rankings");
+  const snapshotLoading =
+    filters.tab === "rankings"
+      ? matrixLoading || goalieMatrixLoading || teamMatrixLoading
+      : filters.tab === "metric_explorer"
+        ? explorerLoading
+        : filters.tab === "deployment_tiers"
+          ? deploymentTiersLoading
+          : filters.tab === "trending"
+            ? trendingLoading
+            : splitsLoading;
   switch (filters.tab) {
     case "rankings":
       latestSnapshotDate = (filters.entity === "skaters" ? matrixData?.meta.snapshotDate
@@ -1476,9 +1555,25 @@ export default function RankingsPage() {
                 <SmallIcon name="calendar" />
                 <div>
                   <span>Dataset snapshot</span>
-                  <strong>{formatSnapshotDate(latestSnapshotDate)}</strong>
+                  <strong>
+                    {snapshotApplies
+                      ? formatSnapshotDate(latestSnapshotDate, snapshotLoading)
+                      : "No snapshot"}
+                  </strong>
                 </div>
               </div>
+              {compactMatrix ? (
+                <button
+                  ref={snapshotButtonRef}
+                  className={`${styles.collapseControlButton} ${styles.snapshotDrawerButton}`}
+                  type="button"
+                  aria-expanded={isSnapshotOpen}
+                  aria-controls="rankings-snapshot-drawer"
+                  onClick={() => setIsSnapshotOpen((value) => !value)}
+                >
+                  {isSnapshotOpen ? "Snapshot ◂" : "Snapshot ▸"}
+                </button>
+              ) : null}
               <button
                 className={styles.collapseControlButton}
                 type="button"
@@ -1515,55 +1610,80 @@ export default function RankingsPage() {
                 />
               }
             />
+          </div>
 
-            <div className={styles.matrixActionBar}>
-              <nav className={styles.tabs} aria-label="Rankings views">
-                {TABS.map((tab) => (
+          <div className={styles.matrixActionBar}>
+            <nav className={styles.tabs} aria-label="Rankings views">
+              {TABS.map((tab) => (
+                <button
+                  key={tab.key}
+                  type="button"
+                  aria-pressed={filters.tab === tab.key}
+                  aria-label={tab.shortLabel ? tab.label : undefined}
+                  title={tab.shortLabel ? tab.label : undefined}
+                  onClick={() => updateFilters({ tab: tab.key, page: "1" })}
+                >
+                  <SmallIcon name={tab.icon} />
+                  {tab.shortLabel ?? tab.label}
+                  {tab.planned ? <span>Planned</span> : null}
+                </button>
+              ))}
+            </nav>
+            <div className={styles.matrixToolbar}>
+              {filters.tab === "rankings" ? (
+                <div
+                  className={`${styles.rankModeToggle} ${styles.densityToggle}`}
+                  role="group"
+                  aria-label="Matrix layout"
+                >
                   <button
-                    key={tab.key}
                     type="button"
-                    aria-pressed={filters.tab === tab.key}
-                    onClick={() => updateFilters({ tab: tab.key, page: "1" })}
+                    aria-pressed={filters.density === "compact"}
+                    onClick={() => updateFilters({ density: "compact" })}
                   >
-                    <SmallIcon name={tab.icon} />
-                    {tab.label}
-                    {tab.planned ? <span>Planned</span> : null}
+                    Compact
                   </button>
-                ))}
-              </nav>
-              <div className={styles.matrixToolbar}>
-                {filters.entity === "skaters" && filters.tab === "rankings" ? (
-                  <div
-                    className={styles.rankModeToggle}
-                    aria-label="Rank display mode"
+                  <button
+                    type="button"
+                    aria-pressed={filters.density === "detailed"}
+                    onClick={() => {
+                      setIsSnapshotOpen(false);
+                      updateFilters({ density: "detailed" });
+                    }}
                   >
-                    <button
-                      type="button"
-                      aria-pressed={rankMode === "overall"}
-                      onClick={() => setRankMode("overall")}
-                    >
-                      <SmallIcon name="bar" />
-                      Overall
-                    </button>
-                    <button
-                      type="button"
-                      aria-pressed={rankMode === "deployment"}
-                      onClick={() => setRankMode("deployment")}
-                    >
-                      <SmallIcon name="user" />
-                      Deployment
-                    </button>
-                  </div>
-                ) : (
-                  <span>Snapshot {formatSnapshotDate(latestSnapshotDate)}</span>
-                )}
-              </div>
+                    Detailed
+                  </button>
+                </div>
+              ) : null}
+              {filters.entity === "skaters" && filters.tab === "rankings" ? (
+                <div
+                  className={styles.rankModeToggle}
+                  aria-label="Rank display mode"
+                >
+                  <button
+                    type="button"
+                    aria-pressed={rankMode === "overall"}
+                    onClick={() => setRankMode("overall")}
+                  >
+                    <SmallIcon name="bar" />
+                    Overall
+                  </button>
+                  <button
+                    type="button"
+                    aria-pressed={rankMode === "deployment"}
+                    onClick={() => setRankMode("deployment")}
+                  >
+                    <SmallIcon name="user" />
+                    Deployment
+                  </button>
+                </div>
+              ) : null}
             </div>
           </div>
         </div>
 
         {filters.entity === "teams" && filters.tab === "rankings" ? (
-          <section className={styles.workstation}>
+          <section className={workstationClassName}>
             <div className={styles.matrixMain}>
               <h2 className={styles.visuallyHidden}>Team Rankings Matrix</h2>
               <TeamMatrixTable
@@ -1586,11 +1706,30 @@ export default function RankingsPage() {
                   updateFilters({ page: "1", pageSize: String(pageSize) })
                 }
                 selectedTeam={selectedTeam}
-                onSelectTeam={(team) => updateFilters({ selectedTeam: team })}
+                onSelectTeam={(team) => {
+                  updateFilters({ selectedTeam: team });
+                  openSnapshotOnDesktop();
+                }}
                 displayMode={filters.displayMode}
+                density={filters.density}
               />
             </div>
-            <div className={styles.contextRail}>
+            <div
+              id="rankings-snapshot-drawer"
+              className={railClassName}
+              aria-label={compactMatrix ? "Snapshot drawer" : undefined}
+              role={compactMatrix ? "dialog" : undefined}
+            >
+              {compactMatrix ? (
+                <button
+                  ref={drawerCloseRef}
+                  className={styles.drawerCloseButton}
+                  type="button"
+                  onClick={() => setIsSnapshotOpen(false)}
+                >
+                  Close ×
+                </button>
+              ) : null}
               <TeamSnapshotPanel
                 payload={teamMatrixData ?? null}
                 selectedTeam={selectedTeam}
@@ -1611,7 +1750,7 @@ export default function RankingsPage() {
         ) : null}
 
         {filters.entity === "goalies" && filters.tab === "rankings" ? (
-          <section className={styles.workstation}>
+          <section className={workstationClassName}>
             <div className={styles.matrixMain}>
               <h2 className={styles.visuallyHidden}>Goalie Rankings Matrix</h2>
               <GoalieMatrixTable
@@ -1634,13 +1773,30 @@ export default function RankingsPage() {
                   updateFilters({ page: "1", pageSize: String(pageSize) })
                 }
                 selectedGoalieId={selectedGoalieId}
-                onSelectGoalie={(goalieId) =>
-                  updateFilters({ selectedGoalieId: String(goalieId) })
-                }
+                onSelectGoalie={(goalieId) => {
+                  updateFilters({ selectedGoalieId: String(goalieId) });
+                  openSnapshotOnDesktop();
+                }}
                 displayMode={filters.displayMode}
+                density={filters.density}
               />
             </div>
-            <div className={styles.contextRail}>
+            <div
+              id="rankings-snapshot-drawer"
+              className={railClassName}
+              aria-label={compactMatrix ? "Snapshot drawer" : undefined}
+              role={compactMatrix ? "dialog" : undefined}
+            >
+              {compactMatrix ? (
+                <button
+                  ref={drawerCloseRef}
+                  className={styles.drawerCloseButton}
+                  type="button"
+                  onClick={() => setIsSnapshotOpen(false)}
+                >
+                  Close ×
+                </button>
+              ) : null}
               <GoalieSnapshotPanel
                 payload={goalieMatrixData ?? null}
                 selectedGoalieId={selectedGoalieId}
@@ -1662,7 +1818,7 @@ export default function RankingsPage() {
 
         {filters.entity === "skaters" && filters.tab === "rankings" ? (
           <>
-            <section className={styles.workstation}>
+            <section className={workstationClassName}>
               <div className={styles.matrixMain}>
                 <h2 className={styles.visuallyHidden}>Rankings Matrix</h2>
                 <PlayerMatrixTable
@@ -1674,19 +1830,36 @@ export default function RankingsPage() {
                       : undefined
                   }
                   selectedPlayerId={selectedPlayerId}
-                  onSelectPlayer={(playerId) =>
-                    updateFilters({ selectedPlayerId: String(playerId) })
-                  }
+                  onSelectPlayer={(playerId) => {
+                    updateFilters({ selectedPlayerId: String(playerId) });
+                    openSnapshotOnDesktop();
+                  }}
                   onSortMetric={updateMatrixSort}
                   onPageChange={(page) => updateFilters({ page: String(page) })}
                   onPageSizeChange={(pageSize) =>
                     updateFilters({ page: "1", pageSize: String(pageSize) })
                   }
                   displayMode={filters.displayMode}
+                density={filters.density}
                   rankMode={rankMode}
                 />
               </div>
-              <div className={styles.contextRail}>
+              <div
+              id="rankings-snapshot-drawer"
+              className={railClassName}
+              aria-label={compactMatrix ? "Snapshot drawer" : undefined}
+              role={compactMatrix ? "dialog" : undefined}
+            >
+              {compactMatrix ? (
+                <button
+                  ref={drawerCloseRef}
+                  className={styles.drawerCloseButton}
+                  type="button"
+                  onClick={() => setIsSnapshotOpen(false)}
+                >
+                  Close ×
+                </button>
+              ) : null}
                 <PlayerSnapshotPanel
                   payload={matrixData ?? null}
                   selectedPlayerId={selectedPlayerId}

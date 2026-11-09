@@ -5,6 +5,8 @@ import type {
 } from "lib/rankings/splits";
 import { formatDeploymentLabel } from "lib/rankings/rankingFormatters";
 
+import ScrollRegion from "./ScrollRegion";
+
 import styles from "styles/Rankings.module.scss";
 
 type SplitsPanelProps = {
@@ -28,12 +30,30 @@ function SplitMetricCell({
 }: {
   value: RankingsSplitRow["base"] | null;
 }) {
+  if (value?.percentile == null) {
+    // Unranked contexts stay quiet so the ranked ones stand out; the value lives in the tooltip.
+    const label =
+      value?.formattedValue == null
+        ? "No data"
+        : `${value.formattedValue}, not ranked (below the minimum sample)`;
+    return (
+      <span
+        className={`${styles.splitMetricPill} ${styles.splitMetricMuted}`}
+        title={label}
+        aria-label={label}
+      >
+        <strong aria-hidden="true">–</strong>
+      </span>
+    );
+  }
+
   return (
     <span className={styles.splitMetricPill}>
-      <strong>{value?.formattedValue ?? "-"}</strong>
+      <strong>{value.formattedValue ?? "–"}</strong>
       <span>
-        {formatPercentile(value?.percentile ?? null)} · Rk{" "}
-        {formatRank(value?.rank ?? null)}
+        {value.rank == null
+          ? formatPercentile(value.percentile)
+          : `${formatPercentile(value.percentile)} · #${formatRank(value.rank)}`}
       </span>
     </span>
   );
@@ -52,14 +72,16 @@ function PlayerCell({ row }: { row: RankingsSplitRow }) {
 }
 
 function SectionTable({
+  label,
   rows,
   comparisons,
 }: {
+  label: string;
   rows: RankingsSplitRow[];
   comparisons: RankingsSplitComparison[];
 }) {
   return (
-    <div className={styles.tableWrap}>
+    <ScrollRegion className={styles.tableWrap} label={`${label} table`}>
       <table className={styles.splitsTable}>
         <thead>
           <tr>
@@ -90,7 +112,7 @@ function SectionTable({
           ))}
         </tbody>
       </table>
-    </div>
+    </ScrollRegion>
   );
 }
 
@@ -129,7 +151,7 @@ export default function SplitsPanel({
           </p>
         </div>
         <span>
-          Snapshot {payload.meta.baseSnapshotDate ?? "-"} · {payload.meta.rowCount} rows
+          {payload.meta.rowCount} players
         </span>
       </div>
 
@@ -142,7 +164,7 @@ export default function SplitsPanel({
             </div>
             <span>{section.sourceState}</span>
           </div>
-          <SectionTable rows={payload.rows} comparisons={section.comparisons} />
+          <SectionTable label={section.label} rows={payload.rows} comparisons={section.comparisons} />
         </article>
       ))}
 

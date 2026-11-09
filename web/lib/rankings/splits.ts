@@ -14,6 +14,7 @@ import {
   type ContextualRankingsResponse,
 } from "./rankingTypes";
 import type { ContextualRankingPeerGroupType } from "./rankingCalculator";
+import { minGpForComparisonWindow } from "./rankingUrlState";
 import type {
   SkaterProductionWindow,
   SkaterWindowStrengthState,
@@ -155,16 +156,17 @@ function buildRequest(
   entityIds: number[],
 ): ContextualRankingsRequest {
   const deployment = overrides.deployment ?? base.deployment;
+  const window = overrides.window ?? base.window;
   return {
     entity: "skaters",
     season: base.season,
     asOfDate: base.asOfDate,
-    window: overrides.window ?? base.window,
+    window,
     position: base.position,
     deployment,
     strength: overrides.strength ?? base.strength,
     metric: base.metric,
-    minGp: base.minGp,
+    minGp: minGpForComparisonWindow(base.minGp, base.window, window),
     minToiSeconds: base.minToiSeconds,
     teamId: base.teamId,
     peerGroupType: derivePeerGroupType({

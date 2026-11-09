@@ -11,6 +11,10 @@ import type { PlayerMatrixResponse } from "lib/rankings/playerMatrix";
 
 import PlayerMatrixTable from "./PlayerMatrixTable";
 
+// Score labels render the % sign in its own span (hidden in the compact heatmap).
+const scoreText = (label: string) => (_content: string, element: Element | null) =>
+  element?.tagName === "STRONG" && element.textContent === label;
+
 afterEach(() => {
   cleanup();
 });
@@ -250,16 +254,17 @@ describe("PlayerMatrixTable", () => {
 
     expect(screen.getByText("Offense")).toBeTruthy();
     expect(screen.getByText("Defense / On-Ice")).toBeTruthy();
-    expect(screen.getByText("Sort Rank")).toBeTruthy();
+    expect(screen.getByText("Rank")).toBeTruthy();
     expect(screen.getByText("Matt Savoie")).toBeTruthy();
     expect(screen.queryByRole("columnheader", { name: "Team" })).toBeNull();
     expect(screen.queryByRole("columnheader", { name: "Pos" })).toBeNull();
     expect(screen.getByText("11:40")).toBeTruthy();
     expect(screen.getByText("15:00")).toBeTruthy();
     expect(screen.queryByText("Val")).toBeNull();
-    expect(screen.getByLabelText("Deployment L2 / PP1")).toBeTruthy();
-    expect(screen.getByText("92%")).toBeTruthy();
-    expect(screen.getByText("84%")).toBeTruthy();
+    // Desktop and phone copies of the badge (CSS shows one at a time).
+    expect(screen.getAllByLabelText("Deployment L2 / PP1")).toHaveLength(2);
+    expect(screen.getByText(scoreText("92%"))).toBeTruthy();
+    expect(screen.getByText(scoreText("84%"))).toBeTruthy();
     expect(screen.getAllByText("#2").length).toBeGreaterThan(0);
     expect(screen.getByText("#4")).toBeTruthy();
     expect(
@@ -274,19 +279,14 @@ describe("PlayerMatrixTable", () => {
     ).toBeTruthy();
     expect(
       screen.getByLabelText(
-        /xGA\/60.*Caveats: context_influenced_unadjusted_on_ice/,
+        /xGA\/60.*Caveats: On-ice result, not adjusted for teammates or opponents/,
       ),
     ).toBeTruthy();
     expect(screen.getByText("Showing 1 of 18")).toBeTruthy();
     expect(
-      screen.getByText("Color = better-than-peer percentile"),
+      screen.getByText("Percentile vs peers"),
     ).toBeTruthy();
     expect(screen.getByText("95-100")).toBeTruthy();
-    expect(
-      screen.getByText(
-        "Lower-is-better metrics still use better-is-greener percentile coloring",
-      ),
-    ).toBeTruthy();
 
     fireEvent.click(screen.getByRole("button", { name: /P\/60/i }));
     expect(onSortMetric).toHaveBeenCalledWith("points_per_60", "asc");
@@ -316,7 +316,7 @@ describe("PlayerMatrixTable", () => {
       />,
     );
     expect(screen.getAllByText("#1").length).toBeGreaterThan(0);
-    expect(screen.getByText("99%")).toBeTruthy();
+    expect(screen.getByText(scoreText("99%"))).toBeTruthy();
     expect(
       screen.getByLabelText(
         /Points\/60.*Deployment Rank 1.*Deployment Percentile 98\.5%/,
@@ -388,9 +388,9 @@ describe("PlayerMatrixTable", () => {
       />,
     );
 
-    expect(screen.queryByText("92%")).toBeNull();
+    expect(screen.queryByText(scoreText("92%"))).toBeNull();
     expect(screen.queryByText("#4")).toBeNull();
-    expect(screen.getByRole("button", { name: "P/60 Val DESC" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "P/60 Val descending" })).toBeTruthy();
     expect(screen.getByText("xGA/60 Val")).toBeTruthy();
     expect(screen.getByText("3.20")).toBeTruthy();
     expect(screen.getByText("1.70")).toBeTruthy();
@@ -572,7 +572,7 @@ describe("PlayerMatrixTable", () => {
       />,
     );
 
-    expect(screen.getByText("0%")).toBeTruthy();
+    expect(screen.getByText(scoreText("0%"))).toBeTruthy();
     expect(screen.queryByText("Low sample")).toBeNull();
     expect(screen.queryByText("True zero")).toBeNull();
     expect(
@@ -584,5 +584,103 @@ describe("PlayerMatrixTable", () => {
     expect(
       screen.getByLabelText(/xGA\/60.*Lower raw values are better/).className,
     ).toContain("scoreToneStrong");
+  });
+
+  it("hides composite columns that are unpublished on every row and says so in the footer", () => {
+    const mcmColumn = {
+      ...payload.meta.metricColumns[0],
+      metricKey: "mcm_score",
+      groupKey: "overall_context",
+      shortLabel: "MCM",
+      fullLabel: "MCM Score",
+    } as PlayerMatrixResponse["meta"]["metricColumns"][number];
+    const unpublishedPayload: PlayerMatrixResponse = {
+      ...payload,
+      rows: payload.rows.map((row) => ({
+        ...row,
+        metrics: {
+          ...row.metrics,
+          mcm_score: {
+            ...row.metrics.points_per_60,
+            metricKey: "mcm_score",
+            shortLabel: "MCM",
+            fullLabel: "MCM Score",
+            rawValue: null,
+            formattedValue: null,
+            percentile: null,
+            rank: null,
+            availabilityState: "unavailable",
+          },
+        },
+      })),
+      meta: {
+        ...payload.meta,
+        metricColumns: [...payload.meta.metricColumns, mcmColumn],
+      },
+    };
+
+    render(
+      <PlayerMatrixTable
+        payload={unpublishedPayload}
+        isLoading={false}
+        selectedPlayerId={1}
+        onSelectPlayer={vi.fn()}
+        onSortMetric={vi.fn()}
+        onPageChange={vi.fn()}
+        onPageSizeChange={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByRole("button", { name: /MCM/ })).toBeNull();
+    expect(screen.getByText("MCM not published for 2025\u201326 yet")).toBeTruthy();
+  });
+
+  it("shows a muted dash, not N/A, for scored players without a BEAST tier", () => {
+    const beastColumn = {
+      ...payload.meta.metricColumns[0],
+      metricKey: "beast_tier",
+      groupKey: "overall_context",
+      shortLabel: "BEAST",
+      fullLabel: "BEAST Tier",
+    } as PlayerMatrixResponse["meta"]["metricColumns"][number];
+    const tierPayload: PlayerMatrixResponse = {
+      ...payload,
+      rows: payload.rows.map((row) => ({
+        ...row,
+        metrics: {
+          ...row.metrics,
+          beast_tier: {
+            ...row.metrics.points_per_60,
+            metricKey: "beast_tier",
+            shortLabel: "BEAST",
+            fullLabel: "BEAST Tier",
+            rawValue: 76.01,
+            formattedValue: null,
+            percentile: 76.01,
+            rank: null,
+            availabilityState: "unavailable",
+            availabilityReason: "Composite metric is not available for this player/context.",
+          },
+        },
+      })),
+      meta: {
+        ...payload.meta,
+        metricColumns: [...payload.meta.metricColumns, beastColumn],
+      },
+    };
+
+    render(
+      <PlayerMatrixTable
+        payload={tierPayload}
+        isLoading={false}
+        selectedPlayerId={1}
+        onSelectPlayer={vi.fn()}
+        onSortMetric={vi.fn()}
+        onPageChange={vi.fn()}
+        onPageSizeChange={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByLabelText("BEAST Tier: no tier").textContent).toBe("–");
   });
 });

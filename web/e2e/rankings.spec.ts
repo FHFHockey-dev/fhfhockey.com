@@ -2,6 +2,9 @@ import { expect, test } from "@playwright/test";
 import { writeFile } from "node:fs/promises";
 
 test.describe("/rankings", () => {
+  // Under 1100px tall the desktop page starts with its filters collapsed; these specs drive the filters.
+  test.use({ viewport: { width: 1280, height: 1200 } });
+
   test("loads the historical fantasy snapshot and comparison without a history-scan timeout", async ({ page }, testInfo) => {
     const pageErrors: string[] = [];
     const requestFailures: Array<{ path: string; error: string | undefined }> = [];
@@ -46,8 +49,8 @@ test.describe("/rankings", () => {
     const matrixPayload = await matrix.json();
     expect(matrixPayload.meta.sortMetricAvailableRowCount).toEqual(expect.any(Number));
     const contextSummary = matrixPayload.meta.sortMetricAvailableRowCount === 0
-      ? "2025–2026 performance · No eligible values for MCM Score across all skaters · ALL · Season · Min 1 GP · Min 600s TOI"
-      : "2025–2026 performance · Sorted by MCM Score percentile across all skaters · ALL · Season · Min 1 GP · Min 600s TOI";
+      ? "2025–2026 performance · No eligible values for MCM Score across all skaters · All strengths · Season · Min 1 GP · Min 10:00 TOI"
+      : "2025–2026 performance · Sorted by MCM Score percentile across all skaters · All strengths · Season · Min 1 GP · Min 10:00 TOI";
     await expect(page.getByText(contextSummary, { exact: true })).toBeVisible();
     await page.getByRole("button", { name: "Hide controls" }).click();
     await expect(page.getByText(contextSummary, { exact: true })).toBeVisible();
@@ -108,7 +111,7 @@ test.describe("/rankings", () => {
       expect(params.has("team")).toBe(false);
       await page.reload();
       await expect(page.getByRole("combobox", { name: "Strength" })).toHaveValue("all");
-      await page.getByText("Fantasy preset basis", { exact: true }).click();
+      await page.locator("summary", { hasText: "About the preset" }).click();
       await expect(page.getByText(/eligibility rules, not reliability guarantees/)).toBeVisible();
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
     }
@@ -173,7 +176,7 @@ test.describe("/rankings", () => {
       page.getByRole("heading", { name: "Goalie Rankings" }),
     ).toBeVisible();
     await expect(
-      page.getByLabel("Ranking quick info").getByText("Rel SV% Percentile"),
+      page.getByText(/Sorted by Rel SV% percentile/),
     ).toBeVisible();
     await expect(
       page.getByRole("complementary", { name: "Comparison context" }),
@@ -182,7 +185,7 @@ test.describe("/rankings", () => {
     await page.getByRole("button", { name: "Trending" }).click();
     await expect(page.getByRole("region", { name: "Trending status" })).toBeVisible();
     await expect(
-      page.getByText(/Trending is Source Pending for goalie rankings/),
+      page.getByText(/Trending isn't available for goalie rankings yet/),
     ).toBeVisible();
   });
 
@@ -195,9 +198,7 @@ test.describe("/rankings", () => {
       page.getByRole("heading", { name: "Team Rankings" }),
     ).toBeVisible();
     await expect(
-      page.getByLabel("Ranking quick info").getByText(
-        "Forward Top Load Percentile",
-      ),
+      page.getByText(/Sorted by Fwd Top Load percentile/),
     ).toBeVisible();
     await expect(
       page.getByRole("heading", { name: "Team Rankings Matrix" }),

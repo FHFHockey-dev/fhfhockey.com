@@ -1,3 +1,4 @@
+import type React from "react";
 import type {
   TeamMatrixMetricKey,
   TeamMatrixResponse,
@@ -9,6 +10,10 @@ import {
   formatPercentileScore,
   getScoreTileTone,
 } from "./matrixScoreFormatting";
+
+import { formatCaveats } from "./caveatLabels";
+import ScoreText from "./ScoreText";
+import ScrollRegion from "./ScrollRegion";
 
 import styles from "styles/Rankings.module.scss";
 
@@ -25,7 +30,43 @@ type TeamMatrixTableProps = {
   selectedTeam: string;
   onSelectTeam: (team: string) => void;
   displayMode?: RankingsFilterState["displayMode"];
+  density?: RankingsFilterState["density"];
 };
+
+type TeamMatrixRow = TeamMatrixResponse["rows"][number];
+
+// Glyph position: x = share of play (chasing → controls), y = pace (high → low events).
+// The text line carries xGF%; pace reads from the glyph and the Event Rate column.
+const CONTROL_X: Record<string, string> = { chasing_play: "18%", controls_play: "82%" };
+const PACE_Y: Record<string, string> = { high_event: "18%", low_event: "82%" };
+
+function TeamStyleCell({ row }: { row: TeamMatrixRow }) {
+  const label =
+    row.style.label === "Balanced raw profile" ? "Balanced" : row.style.label;
+  const xgf = row.metrics.xgf_percentage?.formattedValue;
+  return (
+    <div
+      className={styles.teamStyle}
+      data-control={row.style.controlAxis ?? "even"}
+      title={`${row.style.displayLabel}. ${row.style.interpretation}`}
+    >
+      <span
+        className={styles.teamStyleGlyph}
+        aria-hidden="true"
+        style={
+          {
+            "--style-x": CONTROL_X[row.style.controlAxis ?? ""] ?? "50%",
+            "--style-y": PACE_Y[row.style.paceAxis ?? ""] ?? "50%",
+          } as React.CSSProperties
+        }
+      />
+      <span className={styles.teamStyleText}>
+        <strong>{label}</strong>
+        <span>xGF {xgf ?? "N/A"}</span>
+      </span>
+    </div>
+  );
+}
 
 function sortDirectionForMetric(args: {
   metricKey: TeamMatrixMetricKey;
@@ -134,20 +175,26 @@ function TeamMetricCell({
     cell.percentile == null ? null : `Percentile ${cell.percentile.toFixed(1)}%`,
     column.lowerIsBetter ? "Lower raw values are better" : null,
     unitCoverage
-      ? `Unit coverage ${unitCoverage.status}; resolved games ${unitCoverage.games}; latest ${unitCoverage.latestDate ?? "none"}`
+      ? `Line usage ${
+          unitCoverage.status === "complete"
+            ? "complete"
+            : unitCoverage.status === "partial"
+              ? "partial"
+              : "no data"
+        }; ${unitCoverage.games} resolved games; latest ${unitCoverage.latestDate ?? "none"}`
       : null,
     unitCoverage?.warnings.length
-      ? `Unit coverage warnings: ${unitCoverage.warnings.join(", ")}`
+      ? `Line-usage coverage: ${formatCaveats(unitCoverage.warnings)}`
       : null,
     staleMatrixSnapshot ? "Snapshot is older than latest available team matrix snapshot" : null,
     staleStyleSource
       ? `Team style source ${row.record.styleSnapshotDate} differs from team power snapshot ${row.record.latestPowerDate}`
       : null,
-    row.warnings.length ? `Caveats: ${row.warnings.join(", ")}` : null,
+    row.warnings.length ? `Caveats: ${formatCaveats(row.warnings)}` : null,
     column.source,
   ].filter(Boolean).join(" | ");
   const percentileLabel = formatPercentileScore(cell.percentile);
-  const rankLabel = cell.rank == null ? "UR" : `#${cell.rank}`;
+  const rankLabel = cell.rank == null ? "–" : `#${cell.rank}`;
   const primaryLabel =
     displayMode === "raw_rank"
       ? unavailable
@@ -169,7 +216,9 @@ function TeamMetricCell({
       >
         <div className={styles.metricScoreStack}>
           <div className={styles.metricScoreTile}>
-            <strong>{primaryLabel}</strong>
+            <strong>
+              <ScoreText label={primaryLabel} />
+            </strong>
           </div>
           {showRank ? (
             <span className={styles.metricRankLine}>
@@ -204,6 +253,7 @@ export default function TeamMatrixTable({
   selectedTeam,
   onSelectTeam,
   displayMode = "both",
+  density = "detailed",
 }: TeamMatrixTableProps) {
   const metricColumnCount = payload?.meta.metricColumns.length ?? 0;
   const colSpan = 7 + metricColumnCount;
@@ -215,13 +265,15 @@ export default function TeamMatrixTable({
 
   return (
     <section className={styles.matrixSection}>
-      <div className={styles.matrixWrap}>
-        <table className={styles.matrixTable}>
+      <ScrollRegion className={styles.matrixWrap} label="Team rankings matrix">
+        <table
+          className={`${styles.matrixTable} ${styles.matrixTableFlatHeader} ${density === "compact" ? styles.matrixCompact : ""}`}
+        >
           <thead>
             <tr>
-              <th>Sort Rank</th>
-              <th>Team</th>
-              <th>Style</th>
+              <th className={styles.stickyRankCell} scope="col">Rank</th>
+              <th className={styles.stickyPlayerCell} scope="col">Team</th>
+              <th className={styles.teamStyleCell} scope="col">Style</th>
               <th>Games</th>
               <th>PP</th>
               <th>PK</th>
@@ -280,15 +332,14 @@ export default function TeamMatrixTable({
                   </td>
                   <td className={styles.stickyPlayerCell}>
                     <div className={styles.playerCell}>
-                      <strong>{row.team.abbreviation}</strong>
-                      <span>{row.team.name ?? "Team name unavailable"}</span>
+                      <span className={styles.playerIdentity}>
+                        <strong>{row.team.abbreviation}</strong>
+                        <span>{row.team.name ?? "Team name unavailable"}</span>
+                      </span>
                     </div>
                   </td>
-                  <td>
-                    <div className={styles.playerCell}>
-                      <strong>{row.style.displayLabel}</strong>
-                      <span>{row.style.interpretation}</span>
-                    </div>
+                  <td className={styles.textCell}>
+                    <TeamStyleCell row={row} />
                   </td>
                   <td>{row.record.styleGames || "-"}</td>
                   <td>{row.record.ppTier ?? "-"}</td>
@@ -316,37 +367,37 @@ export default function TeamMatrixTable({
             </tbody>
           )}
         </table>
-      </div>
+      </ScrollRegion>
       <div className={styles.inlineNotice}>
-        Team style caveat: badges are raw/contextual environment descriptors, not
-        score-, venue-, or opponent-adjusted coach/system claims.
+        Team style describes raw 5v5 results; it is not adjusted for score,
+        venue or opponent, and it is not a read on the coach&apos;s system.
         {payload?.meta.sourceWarnings.length
-          ? ` ${payload.meta.sourceWarnings.join(" ")}.`
+          ? ` Data notes: ${formatCaveats(payload.meta.sourceWarnings)}.`
           : ""}
         {payload?.meta.sourcePendingMetricContracts.length
-          ? ` Source-pending team contracts: ${payload.meta.sourcePendingMetricContracts
+          ? ` Not published yet: ${payload.meta.sourcePendingMetricContracts
               .map((contract) => contract.label)
               .join(", ")}.`
           : ""}
       </div>
       {payload ? (
         <footer className={styles.matrixFooter}>
-          <span>
-            Showing {payload.meta.rowCount} of {payload.meta.totalRankedRows} teams
-          </span>
           <div className={styles.matrixLegend} aria-label="Team source state legend">
+            <span>
+              Showing {payload.meta.rowCount} of {payload.meta.totalRankedRows} teams
+            </span>
             <span className={styles.legendPill}>? Source pending/no sample</span>
             <span className={styles.legendPill}>~ Stale source</span>
             <span className={styles.legendPill}>! Raw context/caveat</span>
             <span className={styles.legendPill}>0 True zero</span>
           </div>
-          <div>
+          <div className={styles.paginationControls}>
             <button
               type="button"
               disabled={payload.meta.page <= 1}
               onClick={() => onPageChange(payload.meta.page - 1)}
             >
-              Prev
+              <span aria-hidden="true">‹ </span>Prev
             </button>
             <span>
               Page {payload.meta.page} of {payload.meta.pageCount}
@@ -356,18 +407,21 @@ export default function TeamMatrixTable({
               disabled={payload.meta.page >= payload.meta.pageCount}
               onClick={() => onPageChange(payload.meta.page + 1)}
             >
-              Next
+              Next<span aria-hidden="true"> ›</span>
             </button>
-            <select
-              value={payload.meta.pageSize}
-              onChange={(event) => onPageSizeChange(Number(event.target.value))}
-            >
-              {[10, 25, 50].map((pageSize) => (
-                <option key={pageSize} value={pageSize}>
-                  {pageSize}
-                </option>
-              ))}
-            </select>
+            <label>
+              Rows
+              <select
+                value={payload.meta.pageSize}
+                onChange={(event) => onPageSizeChange(Number(event.target.value))}
+              >
+                {[10, 25, 50].map((pageSize) => (
+                  <option key={pageSize} value={pageSize}>
+                    {pageSize}
+                  </option>
+                ))}
+              </select>
+            </label>
           </div>
         </footer>
       ) : null}

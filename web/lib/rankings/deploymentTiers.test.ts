@@ -355,10 +355,12 @@ describe("deploymentTiers", () => {
           deployment: (request as ContextualRankingsRequest).deployment,
           position: (request as ContextualRankingsRequest).position,
           strength: (request as ContextualRankingsRequest).strength,
+          peerGroupType: (request as ContextualRankingsRequest).peerGroupType,
         }),
       ),
     ).toEqual([
-      { deployment: "all", position: "all", strength: "5v5" },
+      // Position peers, not each bucket against itself (which pinned every tier near 50%).
+      { deployment: "all", position: "all", strength: "5v5", peerGroupType: "position" },
     ]);
     const l1 = response.sections[0]?.buckets[0];
     expect(l1).toMatchObject({

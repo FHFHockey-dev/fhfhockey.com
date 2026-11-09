@@ -317,6 +317,7 @@ describe("skaterWindowAggregation", () => {
         strength_state: "ev",
         season_games_played: null,
         season_participation_games: 6,
+        toi_seconds_total_last10: 5400, // 6 games at 900s: the window holds only this season's games
         goals_per_60_last10: 1,
         goals_per_60_total_last10: 2,
       }),
@@ -325,6 +326,56 @@ describe("skaterWindowAggregation", () => {
 
     expect(goalsLast10.gamesPlayed).toBe(6);
     expect(goalsLast10.strengthState).toBe("ev");
+  });
+
+  it("counts last-N games from the window itself when it reaches into the prior season", () => {
+    // 4 games this season, but the last-20 window covers 20 games (11,925s at 596.25s a game).
+    const [goalsLast20] = buildSkaterWindowAggregatesFromRollingRow(
+      rollingRow({
+        strength_state: "5v5",
+        season_games_played: 4,
+        season_participation_games: 4,
+        toi_seconds_total_last20: 11925,
+        toi_seconds_avg_last20: 596.25,
+        goals_per_60_last20: 1,
+        goals_per_60_total_last20: 2,
+      }),
+      { windows: ["last20"], metricKeys: ["goals_per_60"] },
+    );
+
+    expect(goalsLast20.gamesPlayed).toBe(20);
+
+    // No stored last-20 average: TOI well above this season's 4 games means the window is full.
+    const [withoutAverage] = buildSkaterWindowAggregatesFromRollingRow(
+      rollingRow({
+        strength_state: "5v5",
+        season_games_played: 4,
+        season_participation_games: 4,
+        toi_seconds_avg_season: 503.25,
+        toi_seconds_total_last20: 11925,
+        toi_seconds_avg_last20: null,
+        goals_per_60_last20: 1,
+        goals_per_60_total_last20: 2,
+      }),
+      { windows: ["last20"], metricKeys: ["goals_per_60"] },
+    );
+    expect(withoutAverage.gamesPlayed).toBe(20);
+
+    // A rookie whose window TOI equals this season's TOI keeps this season's games.
+    const [rookie] = buildSkaterWindowAggregatesFromRollingRow(
+      rollingRow({
+        strength_state: "5v5",
+        season_games_played: 4,
+        season_participation_games: 4,
+        toi_seconds_avg_season: 500,
+        toi_seconds_total_last20: 2000,
+        toi_seconds_avg_last20: null,
+        goals_per_60_last20: 1,
+        goals_per_60_total_last20: 2,
+      }),
+      { windows: ["last20"], metricKeys: ["goals_per_60"] },
+    );
+    expect(rookie.gamesPlayed).toBe(4);
   });
 
   it("documents the existing refresh surfaces instead of adding a redundant rebuild path", () => {

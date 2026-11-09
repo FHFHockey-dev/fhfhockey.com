@@ -439,6 +439,19 @@ $chart-tooltip-bg: rgba($background-dark, 0.9);
 $chart-tooltip-border: $border-secondary;
 $chart-tooltip-text: $text-primary;
 
+// Percentile band palette (rankings tiles, heatmap cells, band key, snapshot bars; TJ 2026-11-08).
+// Colour-blind-safe diverging: navy-blue (high) ↔ grey (middle) ↔ burnt orange (low). Poles separate
+// for deutan/protan readers (ΔE 23 vs 4.6 for the old red/green). At the tiles' 78% fill every band
+// is ≥3:1 against the page; 95–100 and 0–19 take light text, the rest dark text (≥4.6:1).
+$percentile-band-95: #487cc8; // 95–100
+$percentile-band-90: #619fe3; // 90–94
+$percentile-band-80: #82b6ec; // 80–89
+$percentile-band-60: #a6c8ea; // 60–79
+$percentile-band-40: #d0d5d9; // 40–59
+$percentile-band-20: #e49b68; // 20–39
+$percentile-band-0: #c65e23; // 0–19
+$percentile-band-na: #969ea6; // N/A
+
 // =============================================
 // Desktop vs Mobile Theming Tokens (now safely after color + semantic vars)
 // =============================================

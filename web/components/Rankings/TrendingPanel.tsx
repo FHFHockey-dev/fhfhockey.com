@@ -1,4 +1,5 @@
 import type {
+  OpportunitySignal,
   TrendingMetricSummary,
   TrendingResponse,
   TrendingRow,
@@ -7,6 +8,8 @@ import {
   formatDeploymentLabel,
   formatToiClock,
 } from "lib/rankings/rankingFormatters";
+
+import ScrollRegion from "./ScrollRegion";
 
 import styles from "styles/Rankings.module.scss";
 
@@ -38,6 +41,18 @@ function primaryMetric(row: TrendingRow) {
     null;
 }
 
+// Green for gains, red for losses, muted when there is no value yet.
+function deltaClass(value: number | null) {
+  if (value == null) return styles.deltaNone;
+  return value >= 0 ? styles.deltaPositive : styles.deltaNegative;
+}
+
+const FALLING_SIGNALS = new Set<OpportunitySignal["type"]>([
+  "usage_drop",
+  "goalie_starter_share_falling",
+  "pp2_to_pp1_threat",
+]);
+
 function Row({ row }: { row: TrendingRow }) {
   const primary = primaryMetric(row);
   const supportingMetrics = row.metrics
@@ -55,7 +70,7 @@ function Row({ row }: { row: TrendingRow }) {
       <td>{row.team.abbreviation ?? "-"}</td>
       <td>{formatDeploymentLabel(row.deployment)}</td>
       <td>
-        <strong className={row.trendScore != null && row.trendScore >= 0 ? styles.deltaPositive : styles.deltaNegative}>
+        <strong className={deltaClass(row.trendScore)}>
           {formatScore(row.trendScore)}
         </strong>
       </td>
@@ -63,7 +78,7 @@ function Row({ row }: { row: TrendingRow }) {
       <td>{primary ? formatMetricValue(primary, "last5") : "-"}</td>
       <td>{primary ? formatMetricValue(primary, "last20") : "-"}</td>
       <td>
-        <strong className={row.primaryDeltaLast5VsLast20 != null && row.primaryDeltaLast5VsLast20 >= 0 ? styles.deltaPositive : styles.deltaNegative}>
+        <strong className={deltaClass(row.primaryDeltaLast5VsLast20)}>
           {formatDelta(row.primaryDeltaLast5VsLast20, " pct")}
         </strong>
       </td>
@@ -75,7 +90,9 @@ function Row({ row }: { row: TrendingRow }) {
             row.opportunitySignals.slice(0, 3).map((signal) => (
               <span
                 key={signal.type}
-                className={styles.opportunitySignal}
+                className={`${styles.opportunitySignal} ${
+                  FALLING_SIGNALS.has(signal.type) ? styles.opportunitySignalFalling : ""
+                }`}
                 title={signal.evidence}
               >
                 {signal.label}
@@ -122,14 +139,11 @@ export default function TrendingPanel({
         <div>
           <h2>Trending Players</h2>
           <p>
-            Last 5 vs last 20 movement across verified rolling metrics and opportunity signals.
+            Last 5 games against the last 20: who is rising, with changes in ice time and role.
           </p>
         </div>
-        <span>
-          Snapshot {payload?.meta.latestAvailableSnapshotDate ?? "-"}
-        </span>
       </div>
-      <div className={styles.tableWrap}>
+      <ScrollRegion className={styles.tableWrap} label="Trending players table">
         <table className={styles.trendingTable}>
           <thead>
             <tr>
@@ -162,7 +176,7 @@ export default function TrendingPanel({
             </tbody>
           ) : null}
         </table>
-      </div>
+      </ScrollRegion>
       {payload?.meta.opportunitySignalContracts.length ? (
         <div className={styles.inlineNotice}>
           Opportunity contracts:{" "}

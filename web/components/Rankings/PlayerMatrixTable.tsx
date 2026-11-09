@@ -15,6 +15,10 @@ import {
   getScoreTileTone,
 } from "./matrixScoreFormatting";
 
+import { formatCaveats } from "./caveatLabels";
+import ScoreText from "./ScoreText";
+import ScrollRegion from "./ScrollRegion";
+
 import styles from "styles/Rankings.module.scss";
 
 type PlayerMatrixTableProps = {
@@ -30,6 +34,7 @@ type PlayerMatrixTableProps = {
   onPageChange: (page: number) => void;
   onPageSizeChange: (pageSize: number) => void;
   displayMode?: RankingsFilterState["displayMode"];
+  density?: RankingsFilterState["density"];
   rankMode?: RankDisplayMode;
 };
 
@@ -97,7 +102,7 @@ function metricCellTitle(
     cell.lowerIsBetter ? "Lower raw values are better" : null,
     cell.availabilityReason,
     cell.sourceQualityFlags.length > 0
-      ? `Caveats: ${cell.sourceQualityFlags.join(", ")}`
+      ? `Caveats: ${formatCaveats(cell.sourceQualityFlags)}`
       : null,
   ].filter(Boolean);
   return parts.join(" | ");
@@ -134,12 +139,31 @@ function MatrixMetricCell({
       : unavailable
         ? "N/A"
         : formatPercentileScore(rank.percentile);
-  const rankLabel = rank.rank == null ? "UR" : `#${rank.rank}`;
+  const rankLabel = rank.rank == null ? "–" : `#${rank.rank}`;
   const title = metricCellTitle(cell, staleSource, rankMode);
   const toneClass = unavailable
     ? styles.scoreToneMuted
     : getScoreTileTone(rank.percentile);
   const showValue = displayMode === "metric_value";
+  // BEAST is a tier only the top players earn; a scored player without one is not missing data.
+  const noBeastTier =
+    cell.metricKey === "beast_tier" &&
+    cell.availabilityState === "unavailable" &&
+    cell.rawValue != null;
+
+  if (noBeastTier) {
+    return (
+      <td className={styles.matrixMetricScoreCell}>
+        <span
+          className={styles.matrixNoTier}
+          title="No BEAST tier"
+          aria-label={`${cell.fullLabel}: no tier`}
+        >
+          –
+        </span>
+      </td>
+    );
+  }
 
   return (
     <td className={styles.matrixMetricScoreCell}>
@@ -161,7 +185,9 @@ function MatrixMetricCell({
         >
           <div className={styles.metricScoreStack}>
             <div className={styles.metricScoreTile}>
-              <strong>{score}</strong>
+              <strong>
+                <ScoreText label={score} />
+              </strong>
             </div>
             <span className={styles.metricRankLine}>
               {unavailable ? "N/A" : rankLabel}
@@ -379,10 +405,22 @@ function Row({
             <strong>{playerName}</strong>
             <span>
               {row.entity.position ?? "-"} ·{" "}
-              {row.team.name ?? row.team.abbreviation ?? "Team unavailable"}
+              <span className={styles.teamNameFull}>
+                {row.team.name ?? row.team.abbreviation ?? "Team unavailable"}
+              </span>
+              <span className={styles.teamNameShort}>
+                {row.team.abbreviation ?? row.team.name ?? "-"}
+              </span>
+              {/* Phones show the badge in this line; only one copy is displayed at a time. */}
+              <span className={styles.metaBadges}>
+                {" · "}
+                <DeploymentBadges deployment={row.deployment} />
+              </span>
             </span>
           </span>
-          <DeploymentBadges deployment={row.deployment} />
+          <span className={styles.rowBadges}>
+            <DeploymentBadges deployment={row.deployment} />
+          </span>
         </div>
       </td>
       <td className={styles.sampleCell}>{row.sample.gamesPlayed ?? "-"}</td>
@@ -400,8 +438,50 @@ function Row({
   );
 }
 
+// Composite scores publish separately; when a season has none yet, every row is unavailable.
+// Drop those columns (never the active sort column) and say so once in the footer.
+const COMPOSITE_METRIC_KEYS = new Set([
+  "offense_rating",
+  "defense_rating",
+  "mcm_score",
+  "beast_tier",
+]);
+
+function hideUnpublishedComposites(payload: PlayerMatrixResponse | null) {
+  if (!payload || payload.rows.length === 0) return { payload, hidden: [] as string[] };
+  const hiddenColumns = payload.meta.metricColumns.filter(
+    (column) =>
+      COMPOSITE_METRIC_KEYS.has(column.metricKey) &&
+      column.metricKey !== payload.meta.sortMetric &&
+      payload.rows.every((row) => {
+        const cell = row.metrics[column.metricKey];
+        // A BEAST cell with a score but no tier is published; only scoreless cells count.
+        return cell?.availabilityState === "unavailable" && cell.rawValue == null;
+      }),
+  );
+  if (hiddenColumns.length === 0) return { payload, hidden: [] as string[] };
+  const hiddenKeys = new Set(hiddenColumns.map((column) => column.metricKey));
+  return {
+    payload: {
+      ...payload,
+      meta: {
+        ...payload.meta,
+        metricColumns: payload.meta.metricColumns.filter(
+          (column) => !hiddenKeys.has(column.metricKey),
+        ),
+      },
+    },
+    hidden: hiddenColumns.map((column) => column.shortLabel),
+  };
+}
+
+function seasonLabel(season: number) {
+  const start = Math.floor(season / 10000);
+  return `${start}\u2013${String(start + 1).slice(2)}`;
+}
+
 export default function PlayerMatrixTable({
-  payload,
+  payload: rawPayload,
   isLoading,
   errorMessage,
   selectedPlayerId,
@@ -410,8 +490,10 @@ export default function PlayerMatrixTable({
   onPageChange,
   onPageSizeChange,
   displayMode = "both",
+  density = "detailed",
   rankMode,
 }: PlayerMatrixTableProps) {
+  const { payload, hidden: hiddenComposites } = hideUnpublishedComposites(rawPayload);
   const activeRankMode = rankMode ?? "overall";
   const metricColumnCount = payload?.meta.metricColumns.length ?? 0;
   const colSpan = 4 + metricColumnCount;
@@ -426,8 +508,10 @@ export default function PlayerMatrixTable({
             .join("; ")}
         </div>
       ) : null}
-      <div className={styles.matrixWrap}>
-        <table className={styles.matrixTable}>
+      <ScrollRegion className={styles.matrixWrap} label="Skater rankings matrix">
+        <table
+          className={`${styles.matrixTable} ${density === "compact" ? styles.matrixCompact : ""}`}
+        >
           <thead>
             <tr>
               <th
@@ -440,7 +524,7 @@ export default function PlayerMatrixTable({
                     : "Sort rank"
                 }
               >
-                <span>Sort Rank</span>
+                <span>Rank</span>
                 {payload ? <small>{sortMetricLabel(payload)}</small> : null}
               </th>
               <th className={styles.stickyPlayerCell} scope="col" rowSpan={2}>
@@ -487,9 +571,14 @@ export default function PlayerMatrixTable({
                       <span>{metricHeaderLabel({ column, displayMode })}</span>
                       {active ? (
                         <small>
-                          {payload.meta.sortDirection === "asc"
-                            ? "ASC"
-                            : "DESC"}
+                          <span aria-hidden="true">
+                            {payload.meta.sortDirection === "asc" ? "▲" : "▼"}
+                          </span>
+                          <span className={styles.visuallyHidden}>
+                            {payload.meta.sortDirection === "asc"
+                              ? " ascending"
+                              : " descending"}
+                          </span>
                         </small>
                       ) : null}
                     </button>
@@ -531,14 +620,14 @@ export default function PlayerMatrixTable({
             </tbody>
           ) : null}
         </table>
-      </div>
+      </ScrollRegion>
       {payload ? (
         <footer className={styles.matrixFooter}>
           <div className={styles.matrixLegend}>
             <span>
               Showing {payload.meta.rowCount} of {payload.meta.totalRankedRows}
             </span>
-            <span>Color = better-than-peer percentile</span>
+            <span>Percentile vs peers</span>
             {SCORE_TILE_LEGEND.map((band) => (
               <span
                 key={band.label}
@@ -547,14 +636,12 @@ export default function PlayerMatrixTable({
                 {band.label}
               </span>
             ))}
-            <span className={styles.lowerBetterLegend}>
-              Lower-is-better metrics still use better-is-greener percentile
-              coloring
-            </span>
-            <span className={styles.legendPill}>Sample labels reflect selected minimums, not forecast reliability</span>
-            <span className={styles.legendPill}>
-              Planned/N/A = not live or not enough source data
-            </span>
+            {hiddenComposites.length ? (
+              <span className={styles.matrixLegendNote}>
+                {hiddenComposites.join(", ")} not published for{" "}
+                {seasonLabel(payload.request.season)} yet
+              </span>
+            ) : null}
           </div>
           <div className={styles.paginationControls}>
             <button
@@ -562,7 +649,7 @@ export default function PlayerMatrixTable({
               disabled={payload.meta.page <= 1}
               onClick={() => onPageChange(payload.meta.page - 1)}
             >
-              Prev
+              <span aria-hidden="true">‹ </span>Prev
             </button>
             <span>
               Page {payload.meta.page} of {payload.meta.pageCount}
@@ -572,7 +659,7 @@ export default function PlayerMatrixTable({
               disabled={payload.meta.page >= payload.meta.pageCount}
               onClick={() => onPageChange(payload.meta.page + 1)}
             >
-              Next
+              Next<span aria-hidden="true"> ›</span>
             </button>
             <label>
               Rows
