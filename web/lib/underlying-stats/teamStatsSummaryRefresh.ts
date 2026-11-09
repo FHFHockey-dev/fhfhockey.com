@@ -1077,7 +1077,7 @@ async function upsertTeamSummaryRows(args: {
   return count;
 }
 
-async function fetchOfficialGamePayloadByGameId(args: {
+export async function fetchOfficialGamePayloadByGameId(args: {
   gameIds: readonly number[];
   supabase: TeamUnderlyingSupabaseClient;
 }): Promise<Map<number, unknown>> {
@@ -1093,6 +1093,8 @@ async function fetchOfficialGamePayloadByGameId(args: {
       .in("game_id", [...args.gameIds])
       .order("game_id", { ascending: true })
       .order("fetched_at", { ascending: false })
+      // Unique tiebreak: offset paging over a non-unique order repeats and skips rows.
+      .order("id", { ascending: true })
       .range(from, to)
   );
 
@@ -1175,12 +1177,78 @@ export async function warmTeamStatsLandingSeasonAggregateCache(_args: {
   return;
 }
 
+type TeamSummaryKey = {
+  game_id: number;
+  team_id: number;
+  strength: string;
+  score_state: string;
+};
+
+const teamSummaryKey = (row: TeamSummaryKey) =>
+  `${row.game_id}:${row.team_id}:${row.strength}:${row.score_state}`;
+
+// Stored keys for these games that the rebuilt rows no longer contain. Upserts never remove them.
+export async function findStaleTeamSummaryKeys(args: {
+  gameIds: readonly number[];
+  rows: readonly TeamSummaryKey[];
+  supabase?: TeamUnderlyingSupabaseClient;
+}): Promise<TeamSummaryKey[]> {
+  if (args.gameIds.length === 0) return [];
+  const databaseClient = (args.supabase ?? serviceRoleClient) as any;
+  const stored = await fetchAllRows<TeamSummaryKey>((from, to) =>
+    databaseClient
+      .from(TEAM_STATS_SUMMARY_TABLE)
+      .select("game_id,team_id,strength,score_state")
+      .in("game_id", [...args.gameIds])
+      .order("game_id", { ascending: true })
+      .order("team_id", { ascending: true })
+      .order("strength", { ascending: true })
+      .order("score_state", { ascending: true })
+      .range(from, to)
+  );
+  const rebuilt = new Set(args.rows.map(teamSummaryKey));
+  return stored
+    .map((row) => ({ ...row, game_id: Number(row.game_id), team_id: Number(row.team_id) }))
+    .filter((row) => !rebuilt.has(teamSummaryKey(row)));
+}
+
+// Finished games in an explicit date window, for rebuilding games that already have summaries.
+export async function fetchTeamSummaryRebuildGameIds(args: {
+  seasonId: number;
+  startDate: string;
+  endDate: string;
+  gameType?: number | null;
+  supabase?: TeamUnderlyingSupabaseClient;
+}): Promise<number[]> {
+  const databaseClient = (args.supabase ?? serviceRoleClient) as any;
+  const today = new Date().toISOString().slice(0, 10);
+  const rows = await fetchAllRows<{ id: number | string | null; date: string | null }>(
+    (from, to) => {
+      let query = databaseClient
+        .from("games")
+        .select("id,date")
+        .eq("seasonId", args.seasonId)
+        .gte("date", args.startDate)
+        .lte("date", args.endDate);
+      if (args.gameType != null) query = query.eq("type", args.gameType);
+      return query.order("id", { ascending: true }).range(from, to);
+    }
+  );
+  return rows
+    .filter((row) => typeof row.date === "string" && row.date < today)
+    .map((row) => Number(row.id))
+    .filter((id) => Number.isFinite(id));
+}
+
 export async function refreshTeamUnderlyingSummaryRowsForGameIds(args: {
   gameIds: readonly number[];
   seasonId?: number | null;
   requestedGameType?: number | null;
   shouldWarmLandingCache?: boolean;
   supabase?: TeamUnderlyingSupabaseClient;
+  /** Build the rows and report stale keys without writing. */
+  dryRun?: boolean;
+  reportStaleKeys?: boolean;
 }) {
   const supabase = args.supabase ?? serviceRoleClient;
   const games = await fetchPlayerStatsLandingGamesByIds(args.gameIds, supabase);
@@ -1188,7 +1256,9 @@ export async function refreshTeamUnderlyingSummaryRowsForGameIds(args: {
   if (games.length === 0) {
     return {
       rowsUpserted: 0,
+      rowsGenerated: 0,
       gameIdsProcessed: [],
+      staleKeys: [] as TeamSummaryKey[],
     };
   }
 
@@ -1209,12 +1279,17 @@ export async function refreshTeamUnderlyingSummaryRowsForGameIds(args: {
       officialPayload: officialPayloadByGameId.get(gameParity.game.id),
     })
   );
-  const rowsUpserted = await upsertTeamSummaryRows({
-    supabase,
-    rows,
-  });
+  const staleKeys = args.reportStaleKeys
+    ? await findStaleTeamSummaryKeys({ gameIds: games.map((game) => game.id), rows, supabase })
+    : [];
+  const rowsUpserted = args.dryRun
+    ? 0
+    : await upsertTeamSummaryRows({
+        supabase,
+        rows,
+      });
 
-  if (args.shouldWarmLandingCache && args.seasonId != null) {
+  if (!args.dryRun && args.shouldWarmLandingCache && args.seasonId != null) {
     await warmTeamStatsLandingSeasonAggregateCache({
       seasonId: args.seasonId,
       gameType: args.requestedGameType,
@@ -1224,6 +1299,8 @@ export async function refreshTeamUnderlyingSummaryRowsForGameIds(args: {
 
   return {
     rowsUpserted,
+    rowsGenerated: rows.length,
     gameIdsProcessed: games.map((game) => game.id),
+    staleKeys,
   };
 }

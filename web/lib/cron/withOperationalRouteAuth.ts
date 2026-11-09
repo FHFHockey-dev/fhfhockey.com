@@ -30,6 +30,11 @@ export const operationalRouteContracts = {
     methods: ["POST"],
     audit: { jobName: "check-missing-goalie-data" },
   },
+  rebuildTeamUnderlyingSummaries: {
+    methods: ["POST"],
+    defaultDryRun: true,
+    audit: { jobName: "rebuild-team-underlying-summaries" },
+  },
   updateGoalieStarterMixtures: {
     methods: ["POST"],
     defaultDryRun: true,

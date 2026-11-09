@@ -50,7 +50,7 @@ async function fetchAllRows<TRow>(
   return fetchAllSupabasePages<TRow>(({ from, to }) => fetchPage(from, to) as any);
 }
 
-async function fetchSummaryPayloadRowsByGameIds(args: {
+export async function fetchSummaryPayloadRowsByGameIds(args: {
   supabase: SupabaseClient;
   gameIds: readonly number[];
   sourceUrlPrefix: string;
@@ -73,6 +73,8 @@ async function fetchSummaryPayloadRowsByGameIds(args: {
       .in("game_id", [...args.gameIds])
       .order("game_id", { ascending: true })
       .order("fetched_at", { ascending: false })
+      // Unique tiebreak: offset paging over a non-unique order repeats and skips rows.
+      .order("id", { ascending: true })
       .range(from, to)
   );
 
@@ -208,7 +210,10 @@ export async function fetchSeasonSummaryGameIdSet(args: {
       query = query.like("source_url", `${args.sourceUrlPrefix}%`);
     }
 
-    return query.range(from, to);
+    return query
+      .order("game_id", { ascending: true })
+      .order("id", { ascending: true })
+      .range(from, to);
   });
 
   return new Set(

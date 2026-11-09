@@ -147,7 +147,7 @@ function dedupeGoalieSummaryPartitions(rows: readonly GoalieSummaryPartitionRow[
   return [...rowsByKey.values()];
 }
 
-async function fetchSharedGoalieSummarySnapshotsByGameIds(args: {
+export async function fetchSharedGoalieSummarySnapshotsByGameIds(args: {
   supabase: SupabaseClient;
   gameIds: readonly number[];
 }): Promise<SharedGoalieSummarySnapshotRow[]> {
@@ -176,6 +176,8 @@ async function fetchSharedGoalieSummarySnapshotsByGameIds(args: {
       .in("game_id", [...args.gameIds])
       .order("game_id", { ascending: true })
       .order("fetched_at", { ascending: false })
+      // Unique tiebreak: every partition of a game shares fetched_at.
+      .order("id", { ascending: true })
       .range(from, to)
   );
 
@@ -245,6 +247,9 @@ export async function fetchSeasonGoalieSummaryGameIdSet(args: {
       .from(GOALIE_STATS_SUMMARY_TABLE)
       .select("game_id")
       .eq("season_id", args.seasonId)
+      .order("game_id", { ascending: true })
+      .order("strength", { ascending: true })
+      .order("score_state", { ascending: true })
       .range(from, to)
   );
 

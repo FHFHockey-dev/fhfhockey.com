@@ -41,7 +41,7 @@ vi.mock("lib/underlying-stats/playerStatsRefreshWindow", () => ({
     resolvePlayerStatsIncrementalSelectionMock,
 }));
 
-import handler from "../../../../../pages/api/v1/db/update-player-underlying-summaries";
+import handler, { fetchSeasonGameIdSet } from "../../../../../pages/api/v1/db/update-player-underlying-summaries";
 
 function createMockApiContext(args?: {
   method?: string;
@@ -585,5 +585,26 @@ describe("/api/v1/db/update-player-underlying-summaries", () => {
       gameIds: [2025021184, 2025021196, 2025021197],
       rowsUpserted: 3,
     });
+  });
+
+  it.each([
+    ["nhl_api_pbp_events", ["game_id", "event_id"]],
+    ["nhl_api_shift_rows", ["game_id", "shift_id"]],
+    ["nhl_api_game_payloads_raw", ["game_id", "id"]],
+  ] as const)("pages the %s season game-id read by its unique key", async (table, expected) => {
+    const orders: string[] = [];
+    const chain: any = {
+      select: () => chain,
+      eq: () => chain,
+      like: () => chain,
+      order: (column: string) => (orders.push(column), chain),
+      range: () => Promise.resolve({ data: [{ game_id: 1 }], error: null }),
+    };
+    serviceRoleFromMock.mockImplementation(() => chain);
+
+    const ids = await fetchSeasonGameIdSet({ table, seasonId: 20252026 });
+
+    expect([...ids]).toEqual([1]);
+    expect(orders).toEqual(expected);
   });
 });
