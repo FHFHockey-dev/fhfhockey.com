@@ -91,4 +91,20 @@ describe("shared NST dispatch admission", () => {
     });
   });
 
+  describe("post-burst 60 s gap (ledger draft 20261109015836)", () => {
+    it("waits out a 60 s post-burst refusal, re-polls, then dispatches once", async () => {
+      setup(); vi.useFakeTimers(); const dispatch = vi.fn(async () => "fixture");
+      const fetch = vi.fn().mockResolvedValueOnce(new Response(JSON.stringify(permit(false, 60000))))
+        .mockResolvedValueOnce(new Response(JSON.stringify(permit()))); vi.stubGlobal("fetch", fetch);
+      const pending = admitSharedNstAttempt(Date.now() + 120000, dispatch);
+      await vi.advanceTimersByTimeAsync(59000); expect(dispatch).not.toHaveBeenCalled(); expect(fetch).toHaveBeenCalledTimes(1);
+      await vi.advanceTimersByTimeAsync(1000); expect(await pending).toBe("fixture"); expect(fetch).toHaveBeenCalledTimes(2);
+    });
+    it("fails without dispatch when the post-burst gap cannot fit before the deadline", async () => {
+      setup(); const dispatch = vi.fn();
+      vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify(permit(false, 60000)))));
+      await expect(admitSharedNstAttempt(Date.now() + 30000, dispatch)).rejects.toThrow("cannot fit");
+      expect(dispatch).not.toHaveBeenCalled();
+    });
+  });
 });

@@ -1201,6 +1201,16 @@
       "migrationClass": "feature",
       "rolloutGate": "Additive rosters.official_seen_at, stamped by upsert_current_roster_membership on every nightly update-players upsert (TJ parked ending camp memberships, 2026-11-07). is_current and ended_at are unchanged and no membership ends. Tweet identity reads it only to break same-team, same-name ties. Applied with TJ's pop-up approval (2026-11-07); the stamp fills on the first nightly update-players run after it, and the reader and tie-break ship with the next web/ release.",
       "stateEvidence": "Production schema_migrations version 20261107192933 (rosters_official_seen_at); applied 2026-11-07 about 19:29 UTC with TJ's pop-up approval (roster-last-seen session, Supabase MCP apply_migration). The file was renamed from 20261107210000 to match the ledger. Readback: rosters.official_seen_at timestamptz present with 0 rows stamped; the function body stamps on insert and conflict; search_path pg_catalog, public, extensions, pg_temp kept; EXECUTE grants unchanged (PUBLIC, anon, authenticated, postgres, service_role). Verified first on local PostgreSQL 15 (applies twice, stamps only listed rows, a team change still ends the old row)."
+    },
+    {
+      "order": 120,
+      "path": "supabase/migrations/20261109015836_nst_admission_post_burst_gap.sql",
+      "sha256": "52c611205361d41a97c9cf06bee7ff7ee15488d7a72456bc3ad1948c7cd6f4aa",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "pending",
+      "migrationClass": "feature",
+      "rolloutGate": "DRAFT for Chef review, not applied (TJ rule 2026-11-09: after any NST burst, at least 60 s before any following call; 22 s pacing and the 39/1m, 80/5m, 100/15m, 180/h windows all still hold together). Replaces nst_admit_attempt_budget_v1 and adds burst_remaining and burst_last_at to nst_request_admission_state. Needs TJ's explicit approval to apply; rollback is supabase/tests/nst_admission_post_burst_gap_rollback.sql.",
+      "stateEvidence": "Not in production schema_migrations (draft written 2026-11-09). Verified only on disposable local PostgreSQL 15 with supabase/tests/nst_admission_post_burst_gap.py (36/36 checks, 0 hosted calls)."
     }
   ],
   "sourceExtensionApproval": {
