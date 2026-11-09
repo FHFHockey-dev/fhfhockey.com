@@ -317,3 +317,4 @@ Q42 chunked inputs (40 games/chunk, statement_timeout 60 s) same columns as Q40,
   - Backups in scratchpad probe/ (team sha 33c22562).
   - GOTCHA: nhl_api_game_payloads_raw is immutable (no-delete/no-update triggers), so the player rollback by delete is impossible. Told Chef and TJ.
   - The plan is appended to UNDERLYING-SUMMARIES-SIZING-2026-11-09.md. The full rebuild is not started.
+- 11-09 ~15:20 UTC Chef-approved code: player summary upsert batch 100 → 25 (PLAYER_SUMMARY_UPSERT_BATCH_SIZE) with a new test plus updated retry tests. 23 files / 171 tests pass, typecheck exit 0, eslint 0. Next: size the team/goalie full rebuilds and pop up TJ. P3 is live since 15:15; finish before 21:00 UTC.
