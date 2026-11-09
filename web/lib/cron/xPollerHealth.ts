@@ -89,14 +89,29 @@ export type PollerHealth = {
   status: HealthStatus;
   windowStart: string;
   windowEnd: string;
-  /** started: pg_cron runs of the job (x_timeline_poll_job_runs); missed: started runs that left no poller body. */
-  runs: { started: number | null; captured: number; missed: number | null; longestGapMinutes: number | null; lastRunAt: string | null } | null;
+  /**
+   * started: pg_cron runs of the job (x_timeline_poll_job_runs); missed: started runs that left no captured poller body.
+   * postsDuringLongestGap: shadow posts first stored inside the longest gap. Posts stored there mean the poller kept
+   * running and the gap is in the run capture, not in intake.
+   */
+  runs: {
+    started: number | null;
+    captured: number;
+    missed: number | null;
+    longestGapMinutes: number | null;
+    longestGapFrom: string | null;
+    longestGapTo: string | null;
+    postsDuringLongestGap?: number;
+    lastRunAt: string | null;
+  } | null;
   accounts: AccountPollerHealth[];
   incidents: Array<{ key: string; since: string | null; note: string | null }>;
   warnings: string[];
 };
 
 const ms = (value: string | null | undefined) => (value ? Date.parse(value) : Number.NaN);
+/** One poller run. pg_net reuses response ids after a restart, so an id alone can name several runs. */
+const runKey = (run: PollRunRow) => `${ms(run.run_at)}|${run.response_id}`;
 const snippet = (text: string | null | undefined) => (text ?? "").replace(/\s+/g, " ").trim().slice(0, 120);
 const rank: Record<HealthStatus, number> = { healthy: 0, unknown: 1, warning: 2, critical: 3 };
 export const worstStatus = (statuses: HealthStatus[]): HealthStatus =>
@@ -104,17 +119,17 @@ export const worstStatus = (statuses: HealthStatus[]): HealthStatus =>
 
 /** Read success and failure streaks for one account over the window's runs, oldest first. */
 export function summariseReads(runs: PollRunRow[], sourceKey: string): NonNullable<AccountPollerHealth["reads"]> {
-  const byRun = new Map<number, { at: string; ok: boolean }>();
+  const byRun = new Map<string, { at: string; ok: boolean }>();
   let mirrorReads = 0;
   let unrecoveredGaps = 0;
   for (const run of runs) {
-    const entry = byRun.get(run.response_id) ?? { at: run.run_at, ok: false };
+    const entry = byRun.get(runKey(run)) ?? { at: run.run_at, ok: false };
     if (run.source_key === sourceKey) {
       entry.ok = run.ok;
       if (run.ok && run.via === "mirror") mirrorReads++;
       if (run.gap_state === "unrecovered") unrecoveredGaps++;
     }
-    byRun.set(run.response_id, entry);
+    byRun.set(runKey(run), entry);
   }
   const ordered = [...byRun.values()].sort((left, right) => ms(left.at) - ms(right.at));
   let longest = 0;
@@ -145,13 +160,16 @@ const BODY_AFTER_START_MS = 90_000;
 export function summariseRunCadence(
   runs: PollRunRow[], windowStart: string, windowEnd: string, startedRunTimes: string[] | null = null,
 ): NonNullable<PollerHealth["runs"]> {
-  const byResponse = new Map<number, number>();
-  for (const run of runs) if (!byResponse.has(run.response_id)) byResponse.set(run.response_id, ms(run.run_at));
-  const times = [...byResponse.values()].sort((left, right) => left - right);
+  const byRun = new Map<string, number>();
+  for (const run of runs) if (!byRun.has(runKey(run))) byRun.set(runKey(run), ms(run.run_at));
+  const times = [...byRun.values()].sort((left, right) => left - right);
   const started = (startedRunTimes ?? []).map(ms).sort((left, right) => left - right);
   const edge = started.length ? started[started.length - 1]! : null;
-  let longestGap = times.length ? Math.max(0, (edge ?? 0) - times[times.length - 1]!) : ms(windowEnd) - ms(windowStart);
-  for (let index = 1; index < times.length; index++) longestGap = Math.max(longestGap, times[index]! - times[index - 1]!);
+  let gap: [number, number] = times.length ? [times[times.length - 1]!, Math.max(times[times.length - 1]!, edge ?? 0)]
+    : [ms(windowStart), ms(windowEnd)];
+  for (let index = 1; index < times.length; index++)
+    if (times[index]! - times[index - 1]! > gap[1] - gap[0]) gap = [times[index - 1]!, times[index]!];
+  const longestGap = gap[1] - gap[0];
   const settled = edge === null ? [] : started.filter((at) => at <= edge - BODY_AFTER_START_MS - 30_000);
   const missed = startedRunTimes === null ? null
     : settled.filter((at) => !times.some((time) => time >= at - 5_000 && time <= at + BODY_AFTER_START_MS)).length;
@@ -160,6 +178,8 @@ export function summariseRunCadence(
     captured: times.length,
     missed,
     longestGapMinutes: Math.round(longestGap / 60_000),
+    longestGapFrom: longestGap > 0 ? new Date(gap[0]).toISOString() : null,
+    longestGapTo: longestGap > 0 ? new Date(gap[1]).toISOString() : null,
     lastRunAt: times.length ? new Date(times[times.length - 1]!).toISOString() : null,
   };
 }
@@ -293,14 +313,21 @@ export function assessPollerHealth(input: {
 
   const incidents = incidentsFor(alerts, (alertKey) => !alertKey.includes(":"));
   const cadence = runs ? summariseRunCadence(runs, input.windowStart, input.windowEnd, input.startedRunTimes ?? null) : null;
+  if (cadence?.longestGapFrom && cadence.longestGapTo) {
+    const [from, to] = [ms(cadence.longestGapFrom), ms(cadence.longestGapTo)];
+    cadence.postsDuringLongestGap = shadow.filter((row) => ms(row.first_seen_at) > from && ms(row.first_seen_at) < to).length;
+  }
   const overall: HealthStatus[] = accounts.map((account) => account.status);
   if (incidents.length) overall.push("critical");
-  if (cadence && cadence.longestGapMinutes !== null && cadence.longestGapMinutes >= 12) overall.push("warning");
-  if (cadence && cadence.longestGapMinutes !== null && cadence.longestGapMinutes >= 12)
-    warnings.push(`The poller went ${cadence.longestGapMinutes} minutes without a captured run.`);
+  if (cadence && cadence.longestGapMinutes !== null && cadence.longestGapMinutes >= 12) {
+    overall.push("warning");
+    const posts = cadence.postsDuringLongestGap ?? 0;
+    warnings.push(`The poller went ${cadence.longestGapMinutes} minutes without a captured run`
+      + (posts ? `, but ${posts} post${posts === 1 ? " was" : "s were"} stored in that time, so the poller kept running and the gap is in the run capture.` : "."));
+  }
   if (cadence?.missed) {
     overall.push("warning");
-    warnings.push(`${cadence.missed} of ${cadence.started} poller runs left no result (auth failure, timeout or empty body).`);
+    warnings.push(`${cadence.missed} of ${cadence.started} poller runs left no captured result (auth failure, timeout, empty body or a lost capture).`);
   }
   return { status: worstStatus(overall), windowStart: input.windowStart, windowEnd: input.windowEnd, runs: cadence, accounts, incidents, warnings };
 }
