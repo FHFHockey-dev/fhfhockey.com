@@ -39,11 +39,32 @@ export type NewsFeedItem = NewsFeedItemRow & {
   source_attribution?: PublicNewsSourceDecision;
 };
 
-export function getPublicNewsClaimPresentation(item: Pick<NewsFeedItem, "headline" | "blurb" | "metadata">) {
+/** Card text for the claim check: URLs stripped (the card blurb never shows them), whitespace collapsed. */
+function claimText(value: string | null | undefined): string {
+  return normalizeWhitespace(sanitizePublicNewsText(value).replace(/https?:\/\/\S+/gi, " "));
+}
+
+const NAME_SUFFIXES = new Set(["jr", "jr.", "sr", "sr.", "ii", "iii", "iv"]);
+
+/** A player's surname: the last word of the name, skipping a suffix such as "Jr.". */
+function claimSurname(playerName: string): string | null {
+  const words = playerName.trim().split(/\s+/);
+  while (words.length > 1 && NAME_SUFFIXES.has(words[words.length - 1]!.toLowerCase())) words.pop();
+  return words.length > 1 ? words[words.length - 1]! : null;
+}
+
+function containsWord(text: string, word: string): boolean {
+  const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`(?<![\\p{L}\\p{N}])${escaped}(?![\\p{L}\\p{N}])`, "u").test(text);
+}
+
+export function getPublicNewsClaimPresentation(
+  item: Pick<NewsFeedItem, "headline" | "blurb" | "metadata"> & { players?: Array<Partial<NewsFeedItemPlayer>> | null },
+) {
   const interpretation = item.metadata?.interpretation as Record<string, unknown> | undefined;
   const events = interpretation?.events;
   const unresolved = interpretation?.unresolved;
-  const sourceText = sanitizePublicNewsText(item.blurb);
+  const sourceText = claimText(item.blurb);
   const claims: TweetPlayerEvent[] = [];
   const unverified = { headline: "Source report", claims: [] as TweetPlayerEvent[], unresolvedReason: "Subject-to-claim evidence unavailable" as string | null };
   // No interpretation: nothing was checked, so no claim and no "couldn't verify" line.
@@ -52,6 +73,22 @@ export function getPublicNewsClaimPresentation(item: Pick<NewsFeedItem, "headlin
   if (typeof interpretation.version !== "string" || !Array.isArray(events) || !Array.isArray(unresolved) || unresolved.length > 0) {
     return unverified;
   }
+  // The card's player context for the surname rule: every player its events and its player rows name.
+  const contextPlayers = [
+    ...events.map((candidate) => candidate as Partial<TweetPlayerEvent> | null)
+      .map((event) => ({ id: event?.playerId ?? null, name: typeof event?.playerName === "string" ? event.playerName : null })),
+    ...(item.players ?? []).map((player) => ({ id: player?.player_id ?? null, name: player?.player_name ?? null })),
+  ].filter((player): player is { id: number | null; name: string } => typeof player.name === "string" && Boolean(player.name.trim()));
+  // The evidence names the player in full, or by a surname no other player in the card's context shares (TJ,
+  // 2026-11-09). The event must carry a resolved playerId, which the check below already requires.
+  const namesPlayer = (evidence: string, event: TweetPlayerEvent) => {
+    const fullName = sanitizePublicNewsText(event.playerName);
+    if (evidence.includes(fullName)) return true;
+    const surname = claimSurname(fullName);
+    if (!surname || !containsWord(evidence, surname)) return false;
+    return !contextPlayers.some((other) => other.id !== event.playerId &&
+      claimSurname(sanitizePublicNewsText(other.name))?.toLowerCase() === surname.toLowerCase());
+  };
   for (const candidate of events) {
     const event = candidate as TweetPlayerEvent | null;
     const states = event?.kind === "goalie" ? ["projected", "likely", "confirmed", "ruled_out"]
@@ -62,9 +99,9 @@ export function getPublicNewsClaimPresentation(item: Pick<NewsFeedItem, "headlin
       (event.observation != null && !["warmup", "first_off", "practice"].includes(event.observation)) ||
       !states.includes(event.state) || !["out", "available", "uncertain", "unknown"].includes(event.availability) ||
       !["tentative", "negated", "affirmative", "observation"].includes(event.modality ?? "") ||
-      typeof event.evidence?.text !== "string" || !sanitizePublicNewsText(event.evidence.text).trim() ||
-      !sourceText.includes(sanitizePublicNewsText(event.evidence.text)) ||
-      !sanitizePublicNewsText(event.evidence.text).includes(sanitizePublicNewsText(event.playerName)) ||
+      typeof event.evidence?.text !== "string" || !claimText(event.evidence.text) ||
+      !sourceText.includes(claimText(event.evidence.text)) ||
+      !namesPlayer(claimText(event.evidence.text), event) ||
       (["confirmed", "confirmed_return"].includes(event.state) && event.modality !== "affirmative")) {
       return unverified;
     }

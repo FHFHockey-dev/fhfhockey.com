@@ -241,6 +241,34 @@ describe("public subject-to-claim presentation", () => {
       { headline: "Carson Soucy signing", blurb: 'RT @mark_scheig: Don Waddell on Carson Soucy: "Our goal is to get him signed." DW said they need to determine where the cap space will come from. #CBJ', metadata: null },
     ]) expect(getPublicNewsClaimPresentation(item)).toMatchObject({ headline: "Source report", claims: [], unresolvedReason: null });
   });
+  it("matches evidence and blurb with URLs stripped on both sides", () => {
+    const blurb = "Victor Hedman will not play tonight. https://t.co/abc123";
+    const event = { playerId: 8475167, playerName: "Victor Hedman", kind: "injury", state: "unknown", modality: "affirmative",
+      availability: "out", evidence: { text: "Victor Hedman will not play tonight. https://t.co/abc123", start: 0, end: 55 } };
+    const item = (text: string) => ({ headline: "x", blurb: "Victor Hedman will not play tonight.",
+      metadata: { interpretation: { version: "2026-10-13.1", unresolved: [], events: [{ ...event, evidence: { ...event.evidence, text } }] } } });
+    expect(getPublicNewsClaimPresentation(item(event.evidence.text)).claims).toHaveLength(1);
+    expect(getPublicNewsClaimPresentation({ ...item("Victor Hedman will not play tonight."), blurb }).claims).toHaveLength(1);
+    // Different words are still a mismatch.
+    expect(getPublicNewsClaimPresentation(item("Victor Hedman will play tonight. https://t.co/x")).claims).toEqual([]);
+  });
+  it("accepts a surname only when no other player in the card's context shares it", () => {
+    const blurb = "Hughes will not play tonight.";
+    const hughes = { playerId: 8481559, playerName: "Jack Hughes", kind: "injury", state: "unknown", modality: "affirmative",
+      availability: "out", evidence: { text: blurb, start: 0, end: blurb.length } };
+    const item = (extra: Record<string, unknown> = {}, events: unknown[] = [hughes]) => ({ headline: "x", blurb,
+      metadata: { interpretation: { version: "2026-10-13.1", unresolved: [], events } }, ...extra });
+    expect(getPublicNewsClaimPresentation(item())).toMatchObject({ headline: "Jack Hughes source report", unresolvedReason: null });
+    // Another Hughes in the card's events or player rows makes the surname ambiguous: the full name is required.
+    const luke = { ...hughes, playerId: 8482691, playerName: "Luke Hughes" };
+    expect(getPublicNewsClaimPresentation(item({}, [hughes, luke]))).toMatchObject({ claims: [], unresolvedReason: "Subject-to-claim evidence unavailable" });
+    expect(getPublicNewsClaimPresentation(item({ players: [{ player_id: 8482691, player_name: "Luke Hughes" }] }))).toMatchObject({ claims: [] });
+    // The same player listed again is not ambiguity; a surname inside another word is not a match; no id, no claim.
+    expect(getPublicNewsClaimPresentation(item({ players: [{ player_id: 8481559, player_name: "Jack Hughes" }] })).claims).toHaveLength(1);
+    expect(getPublicNewsClaimPresentation({ ...item(), blurb: "Hughesville will not play tonight.", metadata: { interpretation: { version: "2026-10-13.1", unresolved: [],
+      events: [{ ...hughes, evidence: { text: "Hughesville will not play tonight.", start: 0, end: 34 } }] } } }).claims).toEqual([]);
+    expect(getPublicNewsClaimPresentation(item({}, [{ ...hughes, playerId: 0 }])).claims).toEqual([]);
+  });
   it("calls a card unverified only when an interpretation exists and fails the check", () => {
     const base = { headline: "Kevin He injury update", blurb: barzalText };
     const reason = (interpretation: unknown) => getPublicNewsClaimPresentation({ ...base, metadata: { interpretation } }).unresolvedReason;
