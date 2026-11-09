@@ -5,6 +5,7 @@ import { runRouteRunnerTick } from "lib/routeRunner/tick";
 const { auditInsertMock } = vi.hoisted(()=>({auditInsertMock:vi.fn(async(_row:any)=>({error:null}))}));
 vi.mock("lib/supabase/server",()=>({default:{from:()=>({insert:auditInsertMock})}}));
 import { NstExecutionLimitError } from "lib/nst/requestBudget";
+import { createHash } from "node:crypto";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
@@ -12,7 +13,7 @@ const {
   fetchCurrentSeasonMock,
   fetchNstTextByUrlMock,
   isNstConfigErrorMock,
-  upsertMock, existsMock, checkpointRpcMock, exactIdentityMock
+  upsertMock, existsMock, checkpointRpcMock, exactIdentityMock, seasonsMaybeSingleMock
 } = vi.hoisted(() => {
   process.env.NEXT_PUBLIC_SUPABASE_URL = "https://example.supabase.co";
   process.env.SUPABASE_SERVICE_ROLE_KEY = "service-role-key";
@@ -22,9 +23,13 @@ const {
 
   const checkpointRpcMock = vi.fn();
   const exactIdentityMock = vi.fn().mockResolvedValue({ data: { id: 8478402 }, error: null });
+  const seasonsMaybeSingleMock = vi.fn();
   const supabaseClient = {
     rpc: checkpointRpcMock,
     from(table: string) {
+      if (table === "seasons") {
+        return { select: () => ({ eq: (_column: string, id: number) => ({ maybeSingle: () => seasonsMaybeSingleMock(id) }) }) };
+      }
       if (table === "players") {
         return {
           select() {
@@ -73,7 +78,7 @@ const {
     isNstConfigErrorMock: vi.fn((error: unknown) =>
       error instanceof Error && error.name === "NstConfigError"
     ),
-    upsertMock, existsMock, checkpointRpcMock, exactIdentityMock
+    upsertMock, existsMock, checkpointRpcMock, exactIdentityMock, seasonsMaybeSingleMock
   };
 });
 
@@ -100,6 +105,8 @@ vi.mock("dotenv", () => ({
 
 import handler from "../../../../../pages/api/v1/db/update-nst-goalies";
 
+const GOALIE_ROUTE_ORDER = ["5v5Counts", "5v5Rates", "evCounts", "evRates", "allCounts", "allRates", "ppCounts", "ppRates", "pkCounts", "pkRates"];
+
 function createMockRes() {
   return {
     statusCode: 200,
@@ -125,6 +132,7 @@ describe("/api/v1/db/update-nst-goalies", () => {
     existsMock.mockReset().mockResolvedValue({ data: [], error: null });
     checkpointRpcMock.mockReset();
     exactIdentityMock.mockReset().mockResolvedValue({ data: { id: 8478402 }, error: null });
+    seasonsMaybeSingleMock.mockReset();
   });
 
   afterEach(() => { vi.useRealTimers(); vi.unstubAllEnvs(); vi.unstubAllGlobals(); });
@@ -556,6 +564,97 @@ describe("/api/v1/db/update-nst-goalies", () => {
     const res = await invokeCheckpoint({ catchupScope: scope });
     expect(res.statusCode).toBe(409); expect(res.body.requiresReview).toBe(true);
     expect(checkpointRpcMock.mock.calls.some(([name]) => name === "nst_goalie_commit_unit_v1")).toBe(false);
+    expect(upsertMock).not.toHaveBeenCalled();
+  });
+
+  describe("past-season refill (season=)", () => {
+    const pastSeasonRow = { id: 20252026, startDate: "2025-10-07", regularSeasonEndDate: "2026-04-17", endDate: "2026-06-20" };
+    function seasonFixture() {
+      vi.setSystemTime(new Date("2026-11-08T15:00:00Z"));
+      fetchCurrentSeasonMock.mockResolvedValue({ id: 20262027, startDate: "2026-10-07", regularSeasonEndDate: "2027-04-15", endDate: "2027-06-20" });
+      seasonsMaybeSingleMock.mockImplementation(async (id: number) => ({ data: id === 20252026 ? pastSeasonRow : null, error: null }));
+      fetchNstTextByUrlMock.mockResolvedValue({ text: html });
+    }
+    async function invokeRaw(query: Record<string, string>) {
+      const res = createMockRes();
+      const pending = handler({ method: "GET", headers: { host: "localhost", authorization: "Bearer unit-test-cron-secret" }, query } as any, res);
+      await vi.runAllTimersAsync(); await pending; return res;
+    }
+
+    it("builds past-season URLs, tags rows with that season and resumes inside it", async () => {
+      seasonFixture();
+      const first = await invokeRaw({ season: "20252026", startDate: "2026-04-11", maxDays: "6" });
+      expect(first.statusCode).toBe(207);
+      expect(first.body).toMatchObject({ season: 20252026, datesQueued: 6, totalQueuedUrls: 60, plannedUrls: 60,
+        maxPendingUrls: 6, requestIntervalMs: 21000, pendingUrlsProcessed: 6, nextCursor: 6, regularSeasonEndDate: "2026-04-17" });
+      expect(fetchNstTextByUrlMock).toHaveBeenCalledTimes(6);
+      const urls = fetchNstTextByUrlMock.mock.calls.map(([url]) => String(url));
+      for (const url of urls) {
+        expect(url).toContain("fromseason=20252026&thruseason=20252026");
+        expect(url).toContain("fd=2026-04-11&td=2026-04-11");
+      }
+      expect(upsertMock.mock.calls[0][0][0]).toMatchObject({ season: 20252026, date_scraped: "2026-04-11" });
+      expect(first.body.resume.request.query).toMatchObject({ season: "20252026", startDate: "2026-04-11", maxDays: "6", maxUrls: "6", plannedUrls: "60" });
+      const second = await invokeRaw(first.body.resume.request.query);
+      expect(second.body).toMatchObject({ season: 20252026, plannedUrls: 60, nextCursor: 12 });
+      expect(second.body.resume.request.query.resumeScope).toBe(first.body.resume.request.query.resumeScope);
+      expect(String(fetchNstTextByUrlMock.mock.calls[6][0])).toContain("fromseason=20252026&thruseason=20252026&");
+      expect(fetchNstTextByUrlMock).toHaveBeenCalledTimes(12);
+    });
+
+    it("drops dates after the regular-season end instead of extending past it", async () => {
+      seasonFixture();
+      const res = await invokeRaw({ season: "20252026", startDate: "2026-04-15", maxDays: "6", datasetType: "allCounts" });
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toMatchObject({ datesQueued: 3, totalQueuedUrls: 3, complete: true });
+      expect(res.body.urlProgress.map((row: any) => row.date)).toEqual(["2026-04-15", "2026-04-16", "2026-04-17"]);
+    });
+
+    it.each([
+      ["a short season id", { season: "2025", startDate: "2026-04-11", maxDays: "6" }],
+      ["a non-consecutive season id", { season: "20252027", startDate: "2026-04-11", maxDays: "6" }],
+      ["no startDate", { season: "20252026", maxDays: "6" }],
+      ["an impossible startDate", { season: "20252026", startDate: "2026-02-30", maxDays: "6" }],
+      ["no maxDays (open-ended sweep)", { season: "20252026", startDate: "2026-04-11" }],
+      ["maxDays over 14", { season: "20252026", startDate: "2026-04-01", maxDays: "15" }],
+      ["maxUrls over 6", { season: "20252026", startDate: "2026-04-11", maxDays: "6", maxUrls: "7" }],
+      ["runMode=forward", { season: "20252026", startDate: "2026-04-11", maxDays: "6", runMode: "forward" }],
+      ["runMode=reverse", { season: "20252026", startDate: "2026-04-11", maxDays: "6", runMode: "reverse" }],
+      ["the current season", { season: "20262027", startDate: "2026-10-08", maxDays: "1" }],
+      ["a future season", { season: "20272028", startDate: "2027-10-08", maxDays: "1" }],
+      ["a season missing from the seasons table", { season: "20152016", startDate: "2016-01-05", maxDays: "1" }],
+      ["a startDate before the season start", { season: "20252026", startDate: "2025-09-30", maxDays: "6" }],
+      ["a startDate after the regular-season end", { season: "20252026", startDate: "2026-04-18", maxDays: "1" }],
+    ])("rejects %s before any provider work", async (_label, query) => {
+      seasonFixture();
+      const res = await invokeRaw(query as Record<string, string>);
+      expect(res.statusCode).toBe(400);
+      expect(res.body.error).toEqual(expect.any(String));
+      expect(fetchNstTextByUrlMock).not.toHaveBeenCalled();
+      expect(existsMock).not.toHaveBeenCalled();
+      expect(upsertMock).not.toHaveBeenCalled();
+    });
+
+    it("keeps the current-season request, plan scope and response unchanged without season", async () => {
+      seasonFixture();
+      const res = await invokeRaw({ startDate: "2026-10-08", maxDays: "2", maxUrls: "1" });
+      expect(seasonsMaybeSingleMock).not.toHaveBeenCalled();
+      expect(String(fetchNstTextByUrlMock.mock.calls[0][0])).toContain("fromseason=20262027&thruseason=20262027&");
+      expect(res.body).not.toHaveProperty("season");
+      expect(res.body.resume.request.query).not.toHaveProperty("season");
+      const queue = ["2026-10-08", "2026-10-09"].flatMap(date => GOALIE_ROUTE_ORDER.map(dataset => [date, dataset]));
+      const legacyScope = createHash("sha256").update(JSON.stringify({ runMode: "incremental", overwrite: false, plannedUrls: 20, queue })).digest("hex");
+      expect(res.body.resume.request.query.resumeScope).toBe(legacyScope);
+    });
+  });
+
+  it("refuses season totals returned for a single-date request and writes nothing", async () => {
+    fetchCurrentSeasonMock.mockResolvedValue({ id: 20252026, startDate: "2025-10-01", endDate: "2025-10-01" });
+    fetchNstTextByUrlMock.mockResolvedValue({ text: html.replace("<td>1</td>", "<td>64</td>") });
+    const res = await invoke({ maxUrls: "1" });
+    expect(res.statusCode).toBe(500);
+    expect(res.body).toMatchObject({ operationStatus: "failed", acknowledgedWriteUrls: 0 });
+    expect(res.body.urlProgress[0]).toMatchObject({ status: "failed", reason: expect.stringContaining("multi-game totals") });
     expect(upsertMock).not.toHaveBeenCalled();
   });
 

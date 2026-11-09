@@ -6,6 +6,8 @@ loadEnvConfig(process.cwd(), true);
 
 test("candidate drawer preserves readable provider positions and honest availability", async ({ page }, testInfo) => {
   const errors: string[] = [];
+  // Ownership only counts as known when it is dated and fresh (3 days); undated values read as unknown.
+  const ownershipToday = (value: number) => [{ date: new Date().toISOString().slice(0, 10), value }];
   page.on("pageerror", error => errors.push(error.message));
   await page.route("**/api/v1/season", route => route.fulfill({ json: { seasonId: 20262027 } }));
   await page.route("**/api/v1/team/**", route => route.fulfill({ json: [] }));
@@ -15,8 +17,8 @@ test("candidate drawer preserves readable provider positions and honest availabi
     if (!["GET", "HEAD"].includes(route.request().method())) return route.abort();
     const json = table === "yahoo_players" ? [{ player_key: "477.p.1", player_id: "1", percent_ownership: 0 }, { player_key: "477.p.2", player_id: "2", percent_ownership: 95 }]
       : table === "yahoo_nhl_player_map_read" ? [
-        { nhl_player_id: "1", nhl_player_name: "Fixture Candidate", yahoo_player_id: "477.p.1", yahoo_team: "BOS", percent_ownership: 0, eligible_positions: [{ position: "C" }, { position: "LW" }] },
-        { nhl_player_id: "2", nhl_player_name: "Owned Fixture", yahoo_player_id: "477.p.2", yahoo_team: "TOR", percent_ownership: 95, eligible_positions: ["C"] },
+        { nhl_player_id: "1", nhl_player_name: "Fixture Candidate", yahoo_player_id: "477.p.1", yahoo_team: "BOS", percent_ownership: 0, ownership_timeline: ownershipToday(0), eligible_positions: [{ position: "C" }, { position: "LW" }] },
+        { nhl_player_id: "2", nhl_player_name: "Owned Fixture", yahoo_player_id: "477.p.2", yahoo_team: "TOR", percent_ownership: 95, ownership_timeline: ownershipToday(95), eligible_positions: ["C"] },
       ]
       : [];
     return route.fulfill({ json });
@@ -33,9 +35,18 @@ test("candidate drawer preserves readable provider positions and honest availabi
     await expect(page.getByRole("heading", { name: "Best Players Available", exact: true }).first()).toBeVisible();
     await expect(page.getByRole("heading", { name: "Best Players Available", exact: true }).first()).toHaveText("Best Players Available");
     await expect(page.getByText("F. Candidate").first()).toBeVisible();
-    await expect(page.getByText("C, LW").first()).toBeVisible();
-    await expect(page.getByText(/Availability in your league and waiver status are unknown/).first()).toBeVisible();
+    // Readable provider positions: "C, LW" on wide tables, "C/LW" in the compact phone table.
+    await expect(page.getByText(/^C(, |\/)LW$/).first()).toBeVisible();
+    // Signed out: the pool is honest that ownership is Yahoo-wide, not league availability, and offers sign-in.
+    await expect(page.getByText("Ownership here is Yahoo-wide, not your league's.").first()).toBeVisible();
+    await expect(page.getByRole("link", { name: "Sign in", exact: true }).first()).toHaveAttribute("href", "/auth?mode=sign-in");
     await expect(page.getByText(/\[object Object\]/)).toHaveCount(0);
+    if (width < 768) {
+      // Phones fold the filters and metrics behind summary rows; open them the way a user would.
+      for (const details of await page.locator("details").filter({ has: page.locator("summary", { hasText: /^(Filters|Metrics) ·/ }) }).all()) {
+        if (!(await details.evaluate(el => (el as HTMLDetailsElement).open))) await details.locator("summary").first().click();
+      }
+    }
     await page.getByRole("checkbox", { name: "C", exact: true }).uncheck();
     await expect(page.getByText("F. Candidate").first()).toBeVisible();
     await page.getByRole("checkbox", { name: "LW", exact: true }).uncheck();
@@ -94,6 +105,9 @@ for (const width of [1180, 390]) {
       const fictionalSession = localStorage.getItem("sb-127-auth-token");
       if (fictionalSession) localStorage.setItem(key, fictionalSession);
     }, storageKey);
+    // League sync is gated on premium provider-sync access (fd58ba245), not on Draft Pro account access.
+    await page.route("**/api/v1/account/provider-sync**", route => route.fulfill({ json: { data: { access: {
+      eligible: true, expiresAt: null, nextVerificationAt: null, reason: "eligible" } } } }));
     await page.route("**/api/v1/season", route => route.fulfill({ json: { seasonId: 20262027 } }));
     await page.route("**/api/v1/team/**", route => route.fulfill({ json: [] }));
     await page.route("**/api/v1/schedule/**", route => route.fulfill({ json: { data: {}, numGamesPerDay: [0, 0, 0, 0, 0, 0, 0] } }));
