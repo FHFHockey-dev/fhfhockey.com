@@ -56,3 +56,14 @@ Queries (written before running):
 - 02:55 UTC Step 3 STOPPED at its first RPC (2026010008): NHL_NORMALIZATION_SHIFT_HEAD_MISMATCH, nothing written. Cause: the RPC requires shift scope rows == jsonb_array_length(raw shiftcharts head data) (migration 20260722010355 l.720). 280e4ce00's normalizeShiftRows dedupe breaks that for every game with NHL duplicates. LIVE since #418; no game ingested since (last 00:25 UTC; 2026020279–282 pending).
 - HOTFIX: normalizeShiftRows validates via selectShiftRowsForGame but maps every raw row again (row parity). Tests 37/37 + 10 related suites 145/145, eslint 0, typecheck 0. Real dedupe at storage = follow-up (dedupe the raw payload before capture, or change the RPC).
 - Gotcha: the 2025-26 rows deleted in step 2 would come back if one of those games were re-normalized through the RPC from its raw head (the heads still contain the duplicates).
+- 03:08 UTC TJ: run step 4 now (25 conns).
+- 03:08 UTC Step 4 DONE: 2 NHL HTML requests (TV/TH030411, 5 s apart, both 200), saved as step4-TV030411.HTM / step4-TH030411.HTM in the backup dir. 824 rows; every team/period reaches 1200 s; P1/P2 counts equal the old JSON. New shiftcharts head raw 94589 (snapshot v2, hash 2070bfdf…). RPC v1 complete: roster 40 / events 342, pruned 0/0, shifts pruned 612. Receipt: step4-receipt.json.
+- Step 5 readback: 2025-26 dups 0, off-game 0 (both seasons), 565 = 753 rows / 2 teams, 030411 status complete 824 hash_ok, 2025-26 rows 1,052,829 (= 1,052,617 − 612 + 824). 2026-27: 496 extra rows remain (step 3 held). 25 conns.
+- Rollback 030411: delete its shift rows + status row, re-insert c_030411_shift_rows.jsonl, point the shiftcharts head back to raw 77619 (c_030411_heads.jsonl).
+
+## Storage-side dedupe (Chef, code only, 2026-11-09 ~03:15 UTC)
+- Chose (b) a new RPC v2 over (a) a deduped raw payload: the shiftcharts raw head is shared with the projection ingest, which keeps duplicates and hashes the exact envelope.
+- Migration 20261109034000 (NOT applied): v1 body (md5 = prod 8a056d72…) with the head check replaced by a canonical-set check (group by ->> text of playerId/teamId/period/startTime/endTime/typeCode, lowest id). Writer: canonical rows again, calls v2, SQL-matching content key.
+- Proof: supabase/tests/gamecenter_normalized_v2_shift_dedupe.py 15/15 (local PG15, scopes built by the real writer). Vitest 12 suites 194/194; eslint 0; typecheck 0. Read-only prod: writer scopes 89/89 (496 pruned); SQL grouping on heads 68,023 raw / 67,527 canonical / 496 dups, all canonical ids stored.
+- Plan + release order: side-session-notes/<chef>/shift-ingest-storage-dedupe-plan.md; scripts copied to shift-repair-scripts/.
+- ORDER: migration first, then writer; otherwise every normalization fails (function missing).

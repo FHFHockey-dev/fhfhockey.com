@@ -295,3 +295,14 @@ Q42 chunked inputs (40 games/chunk, statement_timeout 60 s) same columns as Q40,
 - 01:34 UTC 11-09: session ended mid-run after 82/168 batches (all exact). Chef amnesty: finish as approved + stale delete + readback, report to Chef. Resuming 86 batches (run-resume.sh).
 - 02:13 UTC DONE 168/168 exact (resume 86 + 82), total upserted this session-run 112,001 in resume. Q43 stale pre-check (count of 70 keys at snapshot 2026-11-08) then delete with returning count (must be 70); backup sha 5bc6d3a7.
 - 02:20 UTC full rebuild DONE + verified: 2025-26 183,972 / 2026-27 36,472, per-game 1,669/1,669 exact, stale 70 deleted (0 left), all complete, F1/D1 both teams everywhere.
+
+## 11-09 03:16 UTC — Chef amnesty ticket (3 steps, finish by 07:30 UTC)
+1. team_unit_toi for SCF G1 2025030411 into snapshot 2026-11-08 (Chef-approved). Back up its 117 rows to CSV, dry run, write, read back F1/D1 both teams all periods. SELECTs: count/copy of team_unit_toi where game_id=2025030411 and snapshot_date='2026-11-08'.
+2. nhl_xg_adjusted_player_impacts 2025-26 rerun (Chef-approved if ≤30 min and one model only). Back up first.
+3. Underlying summaries: size only, read-only.
+- 03:20 Step 1 done: 2025030411 117→130 rows, no stale rows, all complete; backup sha d47c43fd. Reported to Chef.
+- 03:30 Step 2 sizing: the existing run is 2026-06-09, iterations=100, 118,610 predictions over 1,386 games, about 1.05M shift rows. Backed up 802 + 1 rows (sha 53f8f180 / 4f7d25ab), copies in the notes folder. The shift tiebreak fix fd131d278 is on master. Next: one dry-run POST, timed, which reads ~2.6k PostgREST queries.
+- 03:22 Prod dry-run POST (xG impacts) → 504 at 240 s, nothing written.
+- 03:35 Local dry run took 612 s: 800 players vs 802 stored (stale 8478173 and 8483687), held-out passes at 6.67%. Coefficients have Spearman −0.08 vs stored and |coef| ≈ SE/10, so the fit is noise-dominated. Table is diagnostic-only. Sent Chef options A (local write + delete the 2 stale rows) / B (hold). Waiting.
+- 03:40 Step 3 sized: UNDERLYING-SUMMARIES-SIZING-2026-11-09.md. Not runnable as-is (no dryRun, no team rebuild mode, unordered game-id paging). Sent to Chef.
+- Gotcha: a vite-node runner outside web/ needs its own config (root=web, aliases for lib/ etc., fs.strict=false). The runner writes its JSON to cwd.

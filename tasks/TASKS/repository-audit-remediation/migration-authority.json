@@ -1211,6 +1211,16 @@
       "migrationClass": "feature",
       "rolloutGate": "DRAFT for Chef review, not applied (TJ rule 2026-11-09: after any NST burst, at least 60 s before any following call; 22 s pacing and the 39/1m, 80/5m, 100/15m, 180/h windows all still hold together). Replaces nst_admit_attempt_budget_v1 and adds burst_remaining and burst_last_at to nst_request_admission_state. Needs TJ's explicit approval to apply; rollback is supabase/tests/nst_admission_post_burst_gap_rollback.sql.",
       "stateEvidence": "Not in production schema_migrations (draft written 2026-11-09). Verified only on disposable local PostgreSQL 15 with supabase/tests/nst_admission_post_burst_gap.py (36/36 checks, 0 hosted calls)."
+    },
+    {
+      "order": 121,
+      "path": "supabase/migrations/20261109034000_gamecenter_normalized_v2_shift_dedupe.sql",
+      "sha256": "71eedd1e027d9373ea16d97d12176b64c3f22a2ca9e32566c6f8dff7ee47f53d",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "applied",
+      "migrationClass": "feature",
+      "rolloutGate": "Additive persist_nhl_api_gamecenter_normalized_v2: v1 except the shift-head check, which accepts exactly the raw head's canonical rows (one per exact-content interval, lowest id). v1 is unchanged and stays the rollback target. Must be applied before the writer that calls v2 ships. Applied by Chef under TJ's 2026-11-09 amnesty-night approval (migrations allowed).",
+      "stateEvidence": "Production schema_migrations version 20261109034000 (gamecenter_normalized_v2_shift_dedupe); applied 2026-11-09 about 03:35 UTC via psql on the session pooler from this exact file. Readback: v2 body md5 094e05fb3400e63fee7eac475037459d equals the file; v1 body md5 8a056d7265d8b62bd907e61f1140de67 unchanged; security invoker; EXECUTE for service_role only (anon and authenticated false). Verified first on local PostgreSQL 15 with supabase/tests/gamecenter_normalized_v2_shift_dedupe.py (15/15)."
     }
   ],
   "sourceExtensionApproval": {
