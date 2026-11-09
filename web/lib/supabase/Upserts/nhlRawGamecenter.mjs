@@ -779,8 +779,9 @@ function shiftContentKey(shift) {
  * Validates a shiftcharts payload against its game and returns the rows to
  * store. Every row must carry this game's id and one of its two teams; a feed
  * mixing in another game's rows is refused, never trimmed. NHL can publish the
- * same interval twice under different ids: only the lowest id is kept. For a
- * final game each team's shifts must reach the last PBP event of every period.
+ * same interval twice under different ids: only the lowest id is kept in the
+ * returned rows (normalizeShiftRows still stores every raw row; see there). For
+ * a final game each team's shifts must reach the last PBP event of every period.
  */
 export function selectShiftRowsForGame(game, shiftPayload) {
   const gameId = Number(game?.id);
@@ -861,7 +862,12 @@ export function selectShiftRowsForGame(game, shiftPayload) {
 
 export function normalizeShiftRows(game, shiftPayload, shiftHash) {
   const seasonId = Number(game.season);
-  return selectShiftRowsForGame(game, shiftPayload).map((shift) => ({
+  // Validate (game, teams, final-game coverage) but keep one row per raw
+  // entry: persist_nhl_api_gamecenter_normalized_v1 refuses a shift scope
+  // whose row count differs from the raw head's data length, so exact
+  // duplicates can only be dropped once the raw payload itself is deduped.
+  selectShiftRowsForGame(game, shiftPayload);
+  return (shiftPayload.data ?? []).map((shift) => ({
     game_id: game.id,
     shift_id: shift.id,
     season_id: seasonId,
