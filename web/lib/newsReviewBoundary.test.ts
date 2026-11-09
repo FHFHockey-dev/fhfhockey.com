@@ -20,15 +20,21 @@ async function publicProjection(table: string, retained: unknown) {
   const db = { from(name: string) { const q: any = { select() { return q; }, order() { return q; }, limit() { return q; }, eq() { return q; }, in() { return q; }, then(resolve: any) { return Promise.resolve(resolve({ data: rows[name] ?? [], error: null })); } }; return q; } };
   const loaded = (await fetchNewsFeedItems({ supabase: db, status: "published" }))[0]; return { ...f, review, loaded };
 }
-describe("review storage stays outside the public news DTO", () => {
-  it.each(["lines_ccc", "line_source_snapshots"])("retains %s interpretation in storage without public disclosure or new claims", async table => {
+// TJ granted public claim authority on 2026-11-09: the source interpretation's claim fields (version, events,
+// unresolved) reach the card, and getPublicNewsClaimPresentation shows a claim only when they pass its strict check.
+// Everything else in the retained interpretation and the source's lineage stays in storage.
+describe("source interpretation reaches the public card only as checked claim fields", () => {
+  it.each(["lines_ccc", "line_source_snapshots"])("carries %s interpretation claim fields, nothing else", async table => {
     const f = await publicProjection(table, interpretation);
     expect(f.review.metadata.retainedInterpretation).toEqual(interpretation);
     expect(f.selects[table]).toContain("interpretation:metadata->interpretation");
     expect(f.selects[table].split(",").map(x => x.trim())).not.toContain("metadata");
     const serialized = JSON.stringify(f.loaded); expect(serialized).not.toContain("retainedInterpretation"); expect(serialized).not.toContain("REVIEW_ONLY_SENTINEL"); expect(serialized).not.toContain("NOT_PUBLIC");
-    expect(getPublicNewsClaimPresentation(f.loaded).claims).toEqual([]);
-    const baseline = await publicProjection(table, null); expect(JSON.stringify(f.loaded)).toBe(JSON.stringify(baseline.loaded));
+    expect(f.loaded.metadata?.interpretation).toEqual({ version: interpretation.version, events: interpretation.events, unresolved: [] });
+    expect(getPublicNewsClaimPresentation(f.loaded)).toMatchObject({ headline: "Victor Hedman source report", claims: [{ playerId: 8475167 }], unresolvedReason: null });
+    const baseline = await publicProjection(table, null);
+    expect(baseline.loaded.metadata?.interpretation).toBeUndefined();
+    expect(getPublicNewsClaimPresentation(baseline.loaded)).toMatchObject({ claims: [], unresolvedReason: null });
     expect(sanitizePublicNewsFeedItem(f.loaded)).toEqual(f.loaded);
   });
   it("allowlists known public metadata while excluding lineage and review fields", () => {

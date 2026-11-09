@@ -33,6 +33,12 @@ octoberBranch, /Users/tim/Code/fhfhockey.com (shared checkout).
 - eslint on changed files: exit 0.
 - npm run typecheck: exit 2, only 4 errors in scripts/player-summaries-* (player-rollback lane), none in this lane's files.
 
+## State (checkpoint 2026-11-09, end of TJ's wifi window)
+- Code commit 96abd4dfe (octoberBranch). Chef reports the fix is live in #426.
+- Twitter lane stacked order 124 on top (5ab13bce5); registry test 21/21 after it.
+- Production DB was unreachable from ~20:34 UTC; no production queries after that (last EXPLAIN ~19:30, last log read covered to 20:22).
+
 ## Next / pending approvals
-- TJ pop-up to apply the index by hand (CONCURRENTLY form in header), then readback indisvalid + ledger row.
-- Chef releases code.
+- Index (migration 20261109210000) is in TJ's queue for a quiet, watched window next session: TJ pop-up, then hand-apply the CONCURRENTLY form from the header, readback indisvalid/indisready, flip registry row 123 to applied with evidence, record the ledger row.
+- After the index: re-EXPLAIN the coverage query (expect idx_wgo_skater_stats_team_date range scan) and watch edge logs for coverage 500s.
+- Open note to Chef: summary sentence "Five migrations remain pending" is stale; left unchanged (not this lane's line).

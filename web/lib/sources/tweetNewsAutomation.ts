@@ -401,6 +401,23 @@ function choosePrimaryAssignment(
   );
 }
 
+/**
+ * The fields of the source's interpretation that the public card's claim check reads (version, events, unresolved),
+ * from the review row's retainedInterpretation (written by the review sync). TJ granted public claim authority on
+ * 2026-11-09: getPublicNewsClaimPresentation shows a claim only when these pass its strict check. Lineup units and
+ * any other review-only fields are not copied. Null when the source has no interpretation object.
+ */
+export function publicClaimInterpretation(
+  metadata: Record<string, unknown> | null | undefined,
+): Record<string, unknown> | null {
+  const source = metadata?.retainedInterpretation ?? metadata?.interpretation;
+  if (!source || typeof source !== "object" || Array.isArray(source)) return null;
+  const picked = Object.fromEntries(["version", "events", "unresolved"]
+    .filter((key) => key in source)
+    .map((key) => [key, (source as Record<string, unknown>)[key]]));
+  return picked;
+}
+
 function buildBlurb(text: string): string {
   const normalized = normalizeNewsText(text)
     .replace(/https?:\/\/\S+/gi, "")
@@ -620,6 +637,8 @@ export function buildTweetNewsAutomationCandidate(args: {
       autoPublish: shouldPublish,
     },
   };
+  const claimInterpretation = publicClaimInterpretation(args.row.metadata);
+  if (claimInterpretation) metadata.interpretation = claimInterpretation;
 
   if (lineupCard) {
     metadata.lineupCard = lineupCard;
@@ -696,6 +715,8 @@ export function buildTweetNewsAmbiguousCandidate(args: {
       autoPublish: false,
     },
   };
+  const claimInterpretation = publicClaimInterpretation(args.row.metadata);
+  if (claimInterpretation) metadata.interpretation = claimInterpretation;
 
   if (context.preliminaryLineupCard) {
     metadata.lineupCard = context.preliminaryLineupCard;

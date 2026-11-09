@@ -343,7 +343,8 @@ describe("NewsCard", () => {
     expect(screen.queryByText("Kevin He")).toBeNull();
     expect(screen.queryByText("Kevin He injury update")).toBeNull();
     expect(screen.getByText(/Mathew Barzal is with/)).toBeTruthy();
-    expect(screen.getByText(UNVERIFIED)).toBeTruthy();
+    // No interpretation was checked, so there is nothing to call unverified.
+    expect(screen.queryByText(UNVERIFIED)).toBeNull();
     expect(screen.queryByText(/subject-to-claim/i)).toBeNull();
   });
 
@@ -360,14 +361,17 @@ describe("NewsCard", () => {
       screen.getByRole("heading", { name: "Source report" }),
     ).toBeTruthy();
   });
-  // Retained sanitized receipt rows: the reader cannot say which check failed, so one plain state is shown.
-  it.each(receipt.pageProps.recentInjuryNews.matches.map(r => [r.id, r] as const))("shows plain unverified-details copy for retained card %s", (_id, row) => {
+  // Retained sanitized receipt rows. Without an interpretation nothing was checked, so no unverified line shows; with
+  // one that fails the check, the reader cannot say which part failed, so one plain line shows.
+  const failingInterpretation = { version: "2026-10-13.1", events: [], unresolved: [{ reason: "ambiguous" }] };
+  it.each(receipt.pageProps.recentInjuryNews.matches.flatMap(r => [[r.id, "no interpretation", 0, r], [r.id, "a failing interpretation", 1, r]] as const))("retained card %s with %s shows the unverified line %i time(s)", (_id, _variant, copies, row) => {
     const item = sanitizePublicNewsFeedItem({ ...row, blurb: row.blurb_prefix, source_label: null, source_account: null,
-      metadata: { automation: { source: "tweet_news_phrase_dictionary", autoPublish: false, primaryRuleId: "manual-review" } },
+      metadata: { automation: { source: "tweet_news_phrase_dictionary", autoPublish: false, primaryRuleId: "manual-review" },
+        ...(copies ? { interpretation: failingInterpretation } : {}) },
       players: row.players.map(p => ({ ...p, player_name: p.name })), card_status: "published" } as any);
     const { container } = render(<NewsCard item={item} />);
     expect(screen.getByRole("heading", { name: "Source report" })).toBeTruthy();
-    expect(screen.getAllByText(UNVERIFIED)).toHaveLength(1);
+    expect(screen.queryAllByText(UNVERIFIED)).toHaveLength(copies);
     expect(container.textContent).not.toMatch(/subject-to-claim|claim evidence/i);
     expect(container.textContent).toContain(item.blurb.replace(/^RT @\w+:\s*/, "").slice(0, 20));
     for (const p of row.players) expect(screen.queryByText(new RegExp(`${p.name} ·`))).toBeNull();
@@ -377,7 +381,7 @@ describe("NewsCard", () => {
   });
 
   it("keeps a valid original-post link beside the unverified-details copy", () => {
-    render(<NewsCard item={makeItem()} />);
+    render(<NewsCard item={makeItem({ metadata: { interpretation: failingInterpretation } })} />);
     expect(screen.getByText(UNVERIFIED)).toBeTruthy();
     expect(screen.getByRole("link", { name: /view original post/i }).getAttribute("href")).toBe("https://x.com/FriedgeHNIC/status/2073877758803935434");
   });
