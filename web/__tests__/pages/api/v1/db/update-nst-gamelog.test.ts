@@ -6,7 +6,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 const { db, fetchNstTextByUrlMock, fetchCurrentSeasonMock } = vi.hoisted(() => {
-  process.env.NEXT_PUBLIC_SUPABASE_URL = "https://example.supabase.co";
+  process.env.NEXT_PUBLIC_SUPABASE_URL = "https://offline.invalid"; // reserved TLD: the pinned-admission test seam
   process.env.SUPABASE_SERVICE_ROLE_KEY = "service-role-key";
   return {
     db: {

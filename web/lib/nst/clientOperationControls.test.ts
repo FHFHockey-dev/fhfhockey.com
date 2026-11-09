@@ -241,4 +241,11 @@ describe("NST client opt-in operation controls", () => {
       expect(calls).toHaveLength(0);
     });
   });
+
+  it("a non-pinned admission project sends no admission POST and no NST GET", async () => {
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://otherproject.supabase.co");
+    const calls = stubNetwork([permit()]);
+    await expect(fetchNstTextByUrl(page(25), { retries: 2 })).rejects.toThrow("pinned production project");
+    expect(calls).toHaveLength(0);
+  });
 });

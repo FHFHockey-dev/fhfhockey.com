@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { admitSharedNstAttempt } from "./sharedAdmission";
+import { NST_ADMISSION_PROJECT_HOST, nstAdmissionOrigin } from "./admissionOrigin";
 const permit = (allowed = true, waitMs = 0) => ({ version: 1, scope: "global-nst", allowed, waitMs, permitTtlMs: 1000 });
 afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); vi.unstubAllEnvs(); });
 const setup = () => { vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://offline.invalid"); vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "mock"); };
@@ -63,6 +64,31 @@ describe("shared NST dispatch admission", () => {
     setup();const dispatch=vi.fn();vi.stubGlobal("fetch",vi.fn(async()=>new Response(JSON.stringify(permit(false,61001)))));
     await expect(admitSharedNstAttempt(Date.now()+50000,dispatch,{minIntervalMs:0,plannedRequestCount:40})).rejects.toThrow("deadline");
     expect(dispatch).not.toHaveBeenCalled();
+  });
+
+  describe("pinned admission project", () => {
+    it.each([
+      "https://otherproject.supabase.co", "http://fyhftlxokyjtpndbkfse.supabase.co", "https://fyhftlxokyjtpndbkfse.supabase.co.evil.example",
+      "https://fyhftlxokyjtpndbkfse.supabase.co:8443", "https://user:pw@fyhftlxokyjtpndbkfse.supabase.co", "https://fyhftlxokyjtpndbkfse.supabase.co/proxy",
+      "https://staging.invalid.example", "not a url",
+    ])("refuses %s with no admission POST and no dispatch", async (origin) => {
+      vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", origin); vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "mock");
+      const fetch = vi.fn(); vi.stubGlobal("fetch", fetch); const dispatch = vi.fn();
+      await expect(admitSharedNstAttempt(Date.now() + 5000, dispatch)).rejects.toThrow("pinned production project");
+      expect(fetch).not.toHaveBeenCalled(); expect(dispatch).not.toHaveBeenCalled();
+    });
+    it("posts to the pinned production project", async () => {
+      vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", `https://${NST_ADMISSION_PROJECT_HOST}/`); vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "mock");
+      const fetch = vi.fn(async () => new Response(JSON.stringify(permit()))); vi.stubGlobal("fetch", fetch);
+      expect(await admitSharedNstAttempt(Date.now() + 5000, async () => "ok")).toBe("ok");
+      expect(String((fetch.mock.calls[0] as any[])[0])).toBe(`https://${NST_ADMISSION_PROJECT_HOST}/rest/v1/rpc/nst_admit_attempt_v1`);
+    });
+    it("accepts only the reserved never-resolving .invalid TLD as the offline test seam", () => {
+      expect(nstAdmissionOrigin("https://offline.invalid")?.origin).toBe("https://offline.invalid");
+      expect(nstAdmissionOrigin("https://invalid.example")).toBeNull();
+      expect(nstAdmissionOrigin("https://localhost")).toBeNull();
+      expect(nstAdmissionOrigin(undefined)).toBeNull();
+    });
   });
 
 });

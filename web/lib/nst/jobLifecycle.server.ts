@@ -1,5 +1,6 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 import { randomUUID } from "node:crypto";
+import { nstAdmissionOrigin } from "./admissionOrigin";
 
 export class NstJobLifecycleError extends Error {}
 export type NstJobToken = { kind: "direct" | "goalie"; token: string };
@@ -14,8 +15,9 @@ export const nstLifecycleRpc: NstLifecycleRpc = async (name, args, deadlineAt) =
   const origin = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
   if (!origin || !key) throw new NstJobLifecycleError("NST job lifecycle is not configured.");
-  const url = new URL(`/rest/v1/rpc/${name}`, origin);
-  if (url.protocol !== "https:" || url.username || url.password) throw new NstJobLifecycleError("Invalid NST lifecycle origin.");
+  const pinned = nstAdmissionOrigin(origin);
+  if (!pinned) throw new NstJobLifecycleError("Invalid NST lifecycle origin: only the pinned production project is allowed.");
+  const url = new URL(`/rest/v1/rpc/${name}`, pinned);
   const controller = new AbortController();
   const remaining = Math.min(5_000, deadlineAt - Date.now());
   if (remaining <= 0) throw new NstJobLifecycleError("NST lifecycle deadline exhausted.");

@@ -166,4 +166,11 @@ describe("explicit enclosing NST lifecycle", () => {
     expect(dispatch).not.toHaveBeenCalled();
     expect(f.rpc.mock.calls.at(-1)?.[0]).toBe("nst_job_hold_v1");
   });
+
+  it("refuses a lifecycle RPC to any project but the pinned one, without a request", async () => {
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://otherproject.supabase.co"); vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "mock");
+    const fetch = vi.fn(); vi.stubGlobal("fetch", fetch);
+    await expect(nstLifecycleRpc("nst_job_begin_v1", {}, Date.now() + 60000)).rejects.toThrow("pinned production project");
+    expect(fetch).not.toHaveBeenCalled();
+  });
 });

@@ -2,6 +2,7 @@ import { currentNstJob, withNstJobDispatch } from "./jobLifecycle.server";
 import { performance } from "node:perf_hooks";
 import { canUseNstSemiBurst } from "lib/cron/nstRateLimitPolicy";
 import { NstExecutionLimitError, type NstRequestControl } from "./requestBudget";
+import { nstAdmissionOrigin } from "./admissionOrigin";
 export class NstSharedAdmissionError extends Error {}
 /** An operation hook refused (or did not perform) an operation; nothing was sent. */
 export class NstOperationRefusedError extends NstExecutionLimitError {}
@@ -70,8 +71,10 @@ export async function admitSharedNstAttempt<T>(deadlineAt: number, dispatch: () 
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
   if (!origin || !key) throw new NstSharedAdmissionError("NST shared admission is not configured; no provider request started.");
   const job = currentNstJob();
-  const endpoint = new URL(`/rest/v1/rpc/${job ? "nst_admit_job_attempt_v1" : "nst_admit_attempt_v1"}`, origin);
-  if (endpoint.protocol !== "https:") throw new NstSharedAdmissionError("NST shared admission requires HTTPS.");
+  // Only the pinned project's ledger is global; any other origin fails closed.
+  const pinned = nstAdmissionOrigin(origin);
+  if (!pinned) throw new NstSharedAdmissionError("NST shared admission requires the pinned production project; no provider request started.");
+  const endpoint = new URL(`/rest/v1/rpc/${job ? "nst_admit_job_attempt_v1" : "nst_admit_attempt_v1"}`, pinned);
   const burst = control?.minIntervalMs === 0 && canUseNstSemiBurst(control.plannedRequestCount ?? NaN);
   const body = JSON.stringify({ p_burst: burst, p_planned_requests: burst ? control!.plannedRequestCount : null,
     ...(job ? { p_kind: job.kind, p_token: job.token } : {}) });
