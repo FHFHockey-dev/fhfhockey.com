@@ -318,3 +318,7 @@ Q42 chunked inputs (40 games/chunk, statement_timeout 60 s) same columns as Q40,
   - GOTCHA: nhl_api_game_payloads_raw is immutable (no-delete/no-update triggers), so the player rollback by delete is impossible. Told Chef and TJ.
   - The plan is appended to UNDERLYING-SUMMARIES-SIZING-2026-11-09.md. The full rebuild is not started.
 - 11-09 ~15:20 UTC Chef-approved code: player summary upsert batch 100 → 25 (PLAYER_SUMMARY_UPSERT_BATCH_SIZE) with a new test plus updated retry tests. 23 files / 171 tests pass, typecheck exit 0, eslint 0. Next: size the team/goalie full rebuilds and pop up TJ. P3 is live since 15:15; finish before 21:00 UTC.
+- 11-09 15:20 TJ pop-up "Run team + goalie" (34 windows each, regular season; backups team 218,820 sha 8dfb2cc9, goalie 10,124 sha 90051ae5, in the notes folder).
+- 15:24–15:28 team windows 1–3 done: 2025-10-07..10-27, 149 games, 20,860 rows, 0 stale. Call times rose 35 → 72 → 60 s.
+- STOPPED. My activity check lost its SSL connection. The API logs show my route's official payload reads failing (500 at 15:25:07, 503 at 15:26:46), 3 statement timeouts at 15:25, then a site-wide 503 burst at 15:27:09–17 (auth refresh, user_profiles, rosters, cron_job_audit). DB recovered by 15:28 (13 conns).
+- EXPLAIN shows the id tiebreak only adds a cheap incremental sort, so it is not a likely cause. Timeouts began at 14:56 before any of my calls; P3 went live at 15:15. Cause unresolved. Goalie not started; team windows 4–34 not run.
