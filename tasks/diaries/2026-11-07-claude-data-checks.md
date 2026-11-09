@@ -357,3 +357,7 @@ Q42 chunked inputs (40 games/chunk, statement_timeout 60 s) same columns as Q40,
   - Options: (a) re-insert the old payloads (the insert trigger lets a game revert to an earlier identity), tested locally first; or (b) TJ explicitly accepts forward-only.
   - The player rebuild waits for that decision, with #425 live.
   - Probe leftover: 2026-10-12..18 has 14 games fully rebuilt; game 2026020101 has 8 of 28 partitions new. Readers take the newest per partition, so it stays consistent.
+- 20:27 TJ pop-up "Yes, both changes" (run to 22:05, scoped stop rule). Window 26 done (2026-03-31..04-06, 55 games, 7,700 rows exact, 0 stale) but took 78 s.
+- STOPPED (scoped rule): the route's own official-payload read GET nhl_api_game_payloads_raw (endpoint=landing, game_id in 2025021178…) returned 500 at 20:26:38; it succeeded on retry. It's the same read as the 15:25:07 failure.
+- The read selects every landing payload for ~55 games, including all the derived player-summary copies (~37 kB each, several per partition from repeated rebuilds), only to pick the official one. Fix idea: filter `source_url not like 'derived://%'` server-side in fetchOfficialGamePayloadByGameId (teamStatsSummaryRefresh) and fetchPlayerStatsOfficialLandingPayloadRows (landing server).
+- RESUME POINT now: team window 27 (2026-04-07..04-13), then 28–34, then goalie 1–34. Team done: windows 1–26, 1,232 games, 172,480 rows.
