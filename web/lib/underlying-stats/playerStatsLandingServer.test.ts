@@ -16,6 +16,7 @@ import {
   buildPlayerStatsNativeGameParity,
   buildStoredPbpEventSequence,
   fetchPlayerStatsLandingIdentityMaps,
+  fetchPlayerStatsLandingSourceBundleForGames,
   fetchSupabaseRowsForGameChunks,
   flattenPersistedSummaryRows,
   filterPlayerStatsLandingSourceGames,
@@ -318,6 +319,69 @@ describe("fetchSupabaseRowsForGameChunks", () => {
         source_url: "derived://underlying-player-summary-v2/onIce/fiveOnFive/301",
       },
     ]);
+  });
+});
+
+// Offset paging over a non-unique ORDER BY lets Postgres break ties differently on each page
+// request. This fake flips the tie direction on every page request per table.
+function tieFlippingClient(rowsByTable: Record<string, Array<Record<string, number>>>) {
+  const calls: Record<string, number> = {};
+  return {
+    from(table: string) {
+      const orders: Array<{ column: string; ascending: boolean }> = [];
+      let range: [number, number] = [0, Number.MAX_SAFE_INTEGER];
+      const builder: any = new Proxy(
+        {},
+        {
+          get(_target, prop) {
+            if (prop === "order")
+              return (column: string, options?: { ascending?: boolean }) => (
+                orders.push({ column, ascending: options?.ascending !== false }), builder
+              );
+            if (prop === "range") return (start: number, end: number) => ((range = [start, end]), builder);
+            if (prop === "then")
+              return (resolve: (value: unknown) => unknown) => {
+                calls[table] = (calls[table] ?? 0) + 1;
+                const flip = calls[table] % 2 === 1 ? -1 : 1;
+                const sorted = (rowsByTable[table] ?? [])
+                  .map((row, index) => ({ row, index }))
+                  .sort((a, b) => {
+                    for (const { column, ascending } of orders) {
+                      const diff = (a.row[column] ?? 0) - (b.row[column] ?? 0);
+                      if (diff !== 0) return ascending ? diff : -diff;
+                    }
+                    return flip * (a.index - b.index);
+                  })
+                  .map(({ row }) => row);
+                return Promise.resolve({ data: sorted.slice(range[0], range[1] + 1), error: null }).then(resolve);
+              };
+            return () => builder;
+          },
+        },
+      );
+      return builder;
+    },
+  };
+}
+
+describe("fetchPlayerStatsLandingSourceBundleForGames shift paging", () => {
+  it("returns every shift exactly once across a page boundary", async () => {
+    const gameId = 2025020001;
+    const shifts = Array.from({ length: 1500 }, (_, index) => ({
+      game_id: gameId,
+      shift_id: index + 1,
+      period: 1,
+      start_seconds: 0,
+    }));
+    const bundle = await fetchPlayerStatsLandingSourceBundleForGames({
+      games: [{ id: gameId } as PlayerStatsSourceGameRow],
+      shouldFetchRosterSpots: false,
+      client: tieFlippingClient({ nhl_api_shift_rows: shifts }) as any,
+    });
+
+    const ids = (bundle.shiftRowsByGameId.get(gameId) ?? []).map((row) => Number(row.shift_id));
+    expect(ids).toHaveLength(1500);
+    expect(new Set(ids).size).toBe(1500);
   });
 });
 

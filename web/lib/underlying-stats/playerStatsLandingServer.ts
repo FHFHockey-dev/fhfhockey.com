@@ -1219,6 +1219,8 @@ export async function fetchPlayerStatsLandingSourceBundleForGames(args: {
           .order("game_id", { ascending: true })
           .order("period", { ascending: true })
           .order("start_seconds", { ascending: true })
+          // Unique tiebreak (PK game_id, shift_id): offset paging over a non-unique order repeats and skips rows.
+          .order("shift_id", { ascending: true })
           .range(from, to),
     }),
     args.shouldFetchRosterSpots

@@ -26,5 +26,12 @@ Phase 1 (code only, NO prod queries while team_unit_toi rebuild runs): fix the `
 - Effect on sweep: games whose stored raw head is corrupt (565, SCF G1) now fail normalization in sweep-gamecenter-normalization (reported as failures, no write) until Phase 2 replaces their heads.
 - A persistently truncated NHL JSON feed for a final game now fails that game's ingest each run (visible failure) instead of storing it; no automatic HTML fallback for non-empty feeds.
 
+- Phase 1 commit: 280e4ce00 (Chef verified).
+
+## Phase 1b (TJ: "Yes, code-only now")
+- Added `.order("shift_id")` tiebreak to the nhl_api_shift_rows paged reads in update-nhl-xg-adjusted-impact, update-nhl-xg-qot-qoc (fetchShiftRows now exported for tests) and playerStatsLandingServer (Supabase path). Sweep of every `.range(` over nhl_api_shift_rows / shift_charts: all others already end on shift_id or id.
+- Tests: new __tests__/pages/api/v1/db/update-nhl-xg-shift-paging.test.ts (no route test existed) + a case in playerStatsLandingServer.test.ts; fake client flips tie order per page request. 1,500 tied rows → 1,500 unique with the fix, 1,000 unique without (verified by temporarily removing the tiebreak).
+- Not changed (noted): qot-qoc limitGames game-id query orders by game_date only and limits shift ROWS, not games (picks few, arbitrary games); playerStatsLanding raw-payload reads order (game_id, fetched_at desc) without id.
+
 ## Next
-typecheck → commit → report to Chef. Phase 2 waits for Chef "rebuild done".
+typecheck → commit → report to Chef. Phase 2 waits for Chef "rebuild done"; it must also list the stored outputs of the three readers that a re-run would change.

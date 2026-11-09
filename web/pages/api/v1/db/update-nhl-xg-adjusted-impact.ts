@@ -186,7 +186,7 @@ async function fetchGameRows(gameIds: number[]) {
   return rows;
 }
 
-async function fetchShiftRows(args: { gameIds: number[]; seasonId: number | null }) {
+export async function fetchShiftRows(args: { gameIds: number[]; seasonId: number | null }) {
   const rows: Array<Record<string, unknown>> = [];
   for (const chunk of chunkRows(Array.from(new Set(args.gameIds)), 200)) {
     for (let from = 0; ; from += PAGE_SIZE) {
@@ -199,6 +199,8 @@ async function fetchShiftRows(args: { gameIds: number[]; seasonId: number | null
         .order("game_id", { ascending: true })
         .order("period", { ascending: true })
         .order("start_seconds", { ascending: true })
+        // Unique tiebreak (PK game_id, shift_id): offset paging over a non-unique order repeats and skips rows.
+        .order("shift_id", { ascending: true })
         .range(from, from + PAGE_SIZE - 1);
 
       if (args.seasonId != null) query = query.eq("season_id", args.seasonId);

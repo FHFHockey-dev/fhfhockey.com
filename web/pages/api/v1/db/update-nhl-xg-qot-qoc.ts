@@ -177,7 +177,7 @@ async function fetchPlayerPositions(playerIds: number[]): Promise<Map<number, Qo
   return positions;
 }
 
-async function fetchShiftRows(args: {
+export async function fetchShiftRows(args: {
   seasonId: number | null;
   gameIds: number[];
   limitGames: number | null;
@@ -213,6 +213,8 @@ async function fetchShiftRows(args: {
         .order("game_id", { ascending: true })
         .order("period", { ascending: true })
         .order("start_seconds", { ascending: true })
+        // Unique tiebreak (PK game_id, shift_id): offset paging over a non-unique order repeats and skips rows.
+        .order("shift_id", { ascending: true })
         .range(from, from + PAGE_SIZE - 1);
       if (args.seasonId != null) query = query.eq("season_id", args.seasonId);
       if (gameChunk) query = query.in("game_id", gameChunk);
