@@ -27,6 +27,7 @@ import {
 const activeRoutes = [
   ["audit-nhl-xg-backfill.ts", "auditNhlXgBackfill"],
   ["check-missing-goalie-data.ts", "checkMissingGoalieData"],
+  ["rebuild-team-underlying-summaries.ts", "rebuildTeamUnderlyingSummaries"],
   ["update-goalie-starter-mixtures.ts", "updateGoalieStarterMixtures"],
   ["update-last-7-14-30.ts", "updateLast71430"],
   ["update-nhl-xg-adjusted-impact.ts", "updateNhlXgAdjustedImpact"],

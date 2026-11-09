@@ -1399,7 +1399,7 @@ export async function fetchPlayerStatsLandingGamesByIds(
   });
 }
 
-async function fetchPlayerStatsSummaryPayloadRows(args: {
+export async function fetchPlayerStatsSummaryPayloadRows(args: {
   gameIds: readonly number[];
   sourceUrlPrefix: string;
   sourceUrls?: readonly string[];
@@ -1466,6 +1466,8 @@ async function fetchPlayerStatsSummaryPayloadRows(args: {
         .in("game_id", [...gameIdChunk])
         .order("game_id", { ascending: true })
         .order("fetched_at", { ascending: false })
+        // Unique tiebreak: offset paging over a non-unique order repeats and skips rows.
+        .order("id", { ascending: true })
         .range(from, to);
 
       const sourceUrlChunk = sourceUrlChunks?.[gameIdChunkIndex] ?? null;
@@ -1511,7 +1513,7 @@ async function fetchPlayerStatsSummaryPayloadRowsViaPg(args: {
   );
 }
 
-async function fetchPlayerStatsOfficialLandingPayloadRows(args: {
+export async function fetchPlayerStatsOfficialLandingPayloadRows(args: {
   gameIds: readonly number[];
   client?: PlayerStatsSupabaseClient;
 }): Promise<PlayerStatsSummaryPayloadRow[]> {
@@ -1570,6 +1572,8 @@ async function fetchPlayerStatsOfficialLandingPayloadRows(args: {
         .in("game_id", [...gameIdChunk])
         .order("game_id", { ascending: true })
         .order("fetched_at", { ascending: false })
+        // Unique tiebreak: offset paging over a non-unique order repeats and skips rows.
+        .order("id", { ascending: true })
         .range(from, to),
   });
 

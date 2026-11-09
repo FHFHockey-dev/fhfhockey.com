@@ -306,3 +306,9 @@ Q42 chunked inputs (40 games/chunk, statement_timeout 60 s) same columns as Q40,
 - 03:35 Local dry run took 612 s: 800 players vs 802 stored (stale 8478173 and 8483687), held-out passes at 6.67%. Coefficients have Spearman −0.08 vs stored and |coef| ≈ SE/10, so the fit is noise-dominated. Table is diagnostic-only. Sent Chef options A (local write + delete the 2 stale rows) / B (hold). Waiting.
 - 03:40 Step 3 sized: UNDERLYING-SUMMARIES-SIZING-2026-11-09.md. Not runnable as-is (no dryRun, no team rebuild mode, unordered game-id paging). Sent to Chef.
 - Gotcha: a vite-node runner outside web/ needs its own config (root=web, aliases for lib/ etc., fs.strict=false). The runner writes its JSON to cwd.
+- 03:37–03:53 Step 2 WRITE (Chef option A, amnesty). Local runner, 965 s, peak activity 28. Wrote 1 model_runs row and 800 upserts, then a guarded delete of 2 stale rows (8478173, 8483687). Readback: 800 players, all fresh, 0 stale; model run training_rows 117,988, val MSE 0.024181 (6.67%), matching the dry run. Rollback: delete the version's rows and reload the backup CSVs.
+- Morning tickets (notes folder morning-ticket-xg-impact-instability.md): model instability, and the underlying summaries rebuild (release → probe per entity → rebuild).
+- Code ticket (Chef-approved, CODE ONLY):
+  - Unique tiebreaks on 9 paged reads: the route fetchSeasonGameIdSet (per-table PK) and payload read; player refresh payload + season game-id reads; goalie shared-seed + season game-id reads; landing summary + official payload Supabase reads; team official payload read.
+  - New rebuild-team-underlying-summaries route (dryRun default, ≤14 days, ≤120 games, stale keys reported).
+  - Checks: tests 27 files / 251 passing plus cron registry 37 / 366; typecheck exit 0; eslint 0. The unpaged direct-PG reads in playerStatsLandingServer still order by game_id, fetched_at only; no paging, so out of scope.

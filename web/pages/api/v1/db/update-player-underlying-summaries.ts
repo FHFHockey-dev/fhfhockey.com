@@ -130,7 +130,14 @@ async function fetchFinishedSeasonGames(args: {
   });
 }
 
-async function fetchSeasonGameIdSet(args: {
+// Unique key per table, so offset paging neither repeats nor skips rows.
+const SEASON_GAME_ID_READ_ORDER = {
+  nhl_api_pbp_events: ["game_id", "event_id"],
+  nhl_api_shift_rows: ["game_id", "shift_id"],
+  nhl_api_game_payloads_raw: ["game_id", "id"],
+} as const;
+
+export async function fetchSeasonGameIdSet(args: {
   table: "nhl_api_pbp_events" | "nhl_api_shift_rows" | "nhl_api_game_payloads_raw";
   seasonId: number;
   endpoint?: string;
@@ -148,6 +155,10 @@ async function fetchSeasonGameIdSet(args: {
 
     if (args.sourceUrlPrefix) {
       query = query.like("source_url", `${args.sourceUrlPrefix}%`);
+    }
+
+    for (const column of SEASON_GAME_ID_READ_ORDER[args.table]) {
+      query = query.order(column, { ascending: true });
     }
 
     return query.range(from, to);
@@ -182,6 +193,8 @@ async function fetchSummaryPayloadRowsByGameIds(args: {
       .in("game_id", [...args.gameIds])
       .order("game_id", { ascending: true })
       .order("fetched_at", { ascending: false })
+      // Unique tiebreak: offset paging over a non-unique order repeats and skips rows.
+      .order("id", { ascending: true })
       .range(from, to)
   );
 
