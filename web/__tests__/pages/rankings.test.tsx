@@ -540,8 +540,8 @@ const splitsPayload: RankingsSplitsResponse = {
         "window:last5": {
           value: 1.8,
           formattedValue: "1.80",
-          percentile: 97.1,
-          rank: 1,
+          percentile: null,
+          rank: null,
           qualifiedPeerCount: 18,
         },
       },
@@ -1711,8 +1711,8 @@ describe("RankingsPage interactions", () => {
     });
     render(<RankingsPage />);
     const summary = screen.getByText(availableRows === 0
-      ? "2025–2026 performance · No eligible values for MCM Score across all skaters · ALL · Season · Min 1 GP · Min 600s TOI"
-      : "2025–2026 performance · Sorted by MCM Score percentile across all skaters · ALL · Season · Min 1 GP · Min 600s TOI");
+      ? "2025–2026 performance · No eligible values for MCM Score across all skaters · All strengths · Season · Min 1 GP · Min 10:00 TOI"
+      : "2025–2026 performance · Sorted by MCM Score percentile across all skaters · All strengths · Season · Min 1 GP · Min 10:00 TOI");
     expect(summary).toBeTruthy();
     expect(screen.getByRole("combobox", { name: "Strength" })).toHaveProperty("value", "all");
     fireEvent.click(screen.getByRole("button", { name: "Hide controls" }));
@@ -1734,9 +1734,7 @@ describe("RankingsPage interactions", () => {
       "Contextual NHL skater rankings with deployment filters, percentiles, multi-metric matrices, and player snapshots.",
     );
     expect(
-      within(screen.getByLabelText("Ranking quick info")).getByText(
-        "Points/60 Percentile",
-      ),
+      screen.getByText(/Sorted by Points\/60 percentile/),
     ).toBeTruthy();
     expect(screen.getByText("Rankings Matrix")).toBeTruthy();
     expect(screen.getAllByText("Matt Savoie").length).toBeGreaterThan(0);
@@ -1923,6 +1921,9 @@ describe("RankingsPage interactions", () => {
     expect(screen.getByRole("region", { name: "Ranking splits" })).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Splits" })).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Strength Splits" })).toBeTruthy();
+    expect(
+      screen.getByLabelText("1.80, not ranked (below the minimum sample)"),
+    ).toBeTruthy();
     expect(screen.getByText("Home/away is not exposed by the verified rolling rankings surface.")).toBeTruthy();
     expect(swrMock).toHaveBeenCalledWith(
       expect.stringMatching(/^\/api\/v1\/contextual-rankings\/splits\?/),
@@ -1959,15 +1960,13 @@ describe("RankingsPage interactions", () => {
     expect(screen.getByText("2025–2026 performance · Sorted by SV% percentile · Season · all goalie roles · Min 3 starts · Min 100 shots")).toBeTruthy();
     expect(document.title).toBe("Goalie Rankings | FHFHockey");
     expect(
-      within(screen.getByLabelText("Ranking quick info")).getByText(
-        "SV% Percentile",
-      ),
+      screen.getByText(/Sorted by SV% percentile/),
     ).toBeTruthy();
     expect(
       screen.getByRole("heading", { name: "Goalie Rankings Matrix" }),
     ).toBeTruthy();
     expect(screen.getAllByText("Trent Miner").length).toBeGreaterThan(0);
-    expect(screen.getByText(/Goalie roles use latest projected season start share/)).toBeTruthy();
+    expect(screen.getByText(/Roles come from projected season start share/)).toBeTruthy();
     expect(screen.getByLabelText("Goalie snapshot")).toBeTruthy();
     expect(screen.getByRole("complementary", { name: "Comparison context" })).toBeTruthy();
     expect(
@@ -2037,8 +2036,8 @@ describe("RankingsPage interactions", () => {
     rerender(<RankingsPage />);
 
     expect(screen.getByRole("region", { name: "Trending status" })).toBeTruthy();
-    expect(screen.getByText(/Trending is Source Pending for goalie rankings/)).toBeTruthy();
-    expect(screen.getByText("No fake values are generated while the secondary-tab source contract is pending.")).toBeTruthy();
+    expect(screen.getByText(/Trending isn't available for goalie rankings yet/)).toBeTruthy();
+    expect(screen.getByText(/nothing here is estimated/)).toBeTruthy();
 
     swrMock.mockClear();
     routerState.query = { entity: "goalies", tab: "metric_explorer" };
@@ -2046,7 +2045,7 @@ describe("RankingsPage interactions", () => {
 
     expect(screen.getByRole("region", { name: "Metric Explorer status" })).toBeTruthy();
     expect(
-      screen.getByText(/Metric Explorer is Source Pending for goalie rankings/),
+      screen.getByText(/Metric Explorer isn't available for goalie rankings yet/),
     ).toBeTruthy();
     expect(
       swrMock.mock.calls.some(
@@ -2063,16 +2062,14 @@ describe("RankingsPage interactions", () => {
     expect(screen.getByText("2025–2026 performance · Sorted by Off Rating percentile · raw/contextual team style · 32 teams")).toBeTruthy();
     expect(document.title).toBe("Team Rankings | FHFHockey");
     expect(
-      within(screen.getByLabelText("Ranking quick info")).getByText(
-        "Off Rating Percentile",
-      ),
+      screen.getByText(/Sorted by Off Rating percentile/),
     ).toBeTruthy();
     expect(
       screen.getByRole("heading", { name: "Team Rankings Matrix" }),
     ).toBeTruthy();
     expect(screen.getAllByText("Carolina Hurricanes").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Controls play (raw/contextual)").length).toBeGreaterThan(0);
-    expect(screen.getByText(/Team style caveat:/)).toBeTruthy();
+    expect(screen.getByText(/Team style describes raw 5v5 results/)).toBeTruthy();
     expect(screen.getAllByText(/Source-pending team contracts:/).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/not a coach\/system claim/).length).toBeGreaterThan(0);
     expect(screen.getByLabelText("Team snapshot")).toBeTruthy();
@@ -2149,11 +2146,6 @@ describe("RankingsPage interactions", () => {
     render(<RankingsPage />);
 
     expect(screen.getByRole("heading", { name: "Team Rankings" })).toBeTruthy();
-    expect(
-      within(screen.getByLabelText("Ranking quick info")).getByText(
-        "Forward Top Load Percentile",
-      ),
-    ).toBeTruthy();
     expect(
       swrMock.mock.calls.some(
         ([key]) =>

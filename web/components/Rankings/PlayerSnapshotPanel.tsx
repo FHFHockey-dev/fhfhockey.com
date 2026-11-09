@@ -20,6 +20,8 @@ import {
   SKATER_COMPOSITE_SOURCE_TABLE,
 } from "lib/rankings/skaterCompositeMethodology";
 
+import { getScoreTileTone } from "./matrixScoreFormatting";
+
 import styles from "styles/Rankings.module.scss";
 
 type SnapshotRankMode = "overall" | "deployment";
@@ -404,7 +406,14 @@ export default function PlayerSnapshotPanel({
         {metricCells.map(({ cell, scope }) => {
           const pct = scope.percentile ?? 0;
           return (
-            <div key={cell.metricKey} className={styles.snapshotMetricBar}>
+            <div
+              key={cell.metricKey}
+              className={`${styles.snapshotMetricBar} ${
+                cell.availabilityState === "available"
+                  ? getScoreTileTone(scope.percentile)
+                  : styles.scoreToneMuted
+              }`}
+            >
               <span>{cell.shortLabel}</span>
               <div>
                 <i style={{ width: `${Math.max(4, Math.min(100, pct))}%` }} />

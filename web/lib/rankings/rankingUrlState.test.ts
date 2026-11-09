@@ -12,14 +12,24 @@ import {
   buildWarRequestPath,
   normalizeRankingsFilters,
   type RankingsFilterState,
+  minGpForComparisonWindow,
 } from "./rankingUrlState";
 
 describe("rankingUrlState", () => {
+  it("scales Min GP for comparison windows", () => {
+    expect(minGpForComparisonWindow(10, "season", "last5")).toBe(2);
+    expect(minGpForComparisonWindow(10, "season", "last20")).toBe(5);
+    expect(minGpForComparisonWindow(10, "season", "season")).toBe(10);
+    expect(minGpForComparisonWindow(8, "season", "last5")).toBe(5);
+    expect(minGpForComparisonWindow(8, "season", "last20")).toBe(8);
+    expect(minGpForComparisonWindow(null, "season", "last5")).toBeNull();
+  });
+
   it("keeps season and both selected minimums in matrix and explorer summaries", () => {
     const filters = normalizeRankingsFilters({ season: "20252026", strength: "all", min_gp: "1", min_toi: "600", sort_metric: "mcm_score" });
-    expect(buildRankingsContextSummary(filters, 0)).toBe("2025–2026 performance · No eligible values for MCM Score across all skaters · ALL · Season · Min 1 GP · Min 600s TOI");
-    expect(buildRankingsContextSummary({ ...filters, tab: "metric_explorer", metric: "sog_per_60", window: "last5" })).toContain("2025–2026 performance · SOG/60 explorer across all skaters · ALL · Last 5 games · Min 1 GP · Min 600s TOI");
-    expect(buildRankingsContextSummary({ ...filters, minGp: "0", minToi: "0" })).toContain("Min 0 GP · Min 0s TOI");
+    expect(buildRankingsContextSummary(filters, 0)).toBe("2025–2026 performance · No eligible values for MCM Score across all skaters · All strengths · Season · Min 1 GP · Min 10:00 TOI");
+    expect(buildRankingsContextSummary({ ...filters, tab: "metric_explorer", metric: "sog_per_60", window: "last5" })).toContain("2025–2026 performance · SOG/60 explorer across all skaters · All strengths · Last 5 games · Min 1 GP · Min 10:00 TOI");
+    expect(buildRankingsContextSummary({ ...filters, minGp: "0", minToi: "0" })).toContain("Min 0 GP · Min 0:00 TOI");
   });
 
   it("summarizes only the context applied by advanced views", () => {
@@ -39,6 +49,14 @@ describe("rankingUrlState", () => {
       ?.filters.metrics.filter((metric) => metric.status === "available")
       .map((metric) => metric.value) ?? [];
 
+  it("scales the default minimum games with the window but keeps an explicit value", () => {
+    expect(normalizeRankingsFilters({}).minGp).toBe("10");
+    expect(normalizeRankingsFilters({ window: "last20" }).minGp).toBe("5");
+    expect(normalizeRankingsFilters({ window: "last10" }).minGp).toBe("3");
+    expect(normalizeRankingsFilters({ window: "last5" }).minGp).toBe("2");
+    expect(normalizeRankingsFilters({ window: "season", min_gp: "1" }).minGp).toBe("1");
+  });
+
   it("normalizes URL query defaults for a first-load skater leaderboard", () => {
     expect(normalizeRankingsFilters({})).toMatchObject({
       entity: "skaters",
@@ -48,7 +66,7 @@ describe("rankingUrlState", () => {
       deployment: "all",
       strength: "5v5",
       metric: "goals_per_60",
-      minGp: "1",
+      minGp: "10",
       minToi: "300",
       team: "",
       search: "",
@@ -103,7 +121,7 @@ describe("rankingUrlState", () => {
     expect(filters.page).toBe("2");
     expect(filters.pageSize).toBe("25");
     expect(buildMatrixRequestPath(filters)).toBe(
-      "/api/v1/contextual-rankings/matrix?entity=skaters&season=20252026&window=season&position=all&deployment=all&strength=5v5&min_gp=1&min_toi=300&sort_metric=xga_per_60&sort_direction=asc&page=2&page_size=25&ranking_source=entity_metric_rankings&search=Savoie&sample_confidence=high&selected_player=8478402",
+      "/api/v1/contextual-rankings/matrix?entity=skaters&season=20252026&window=season&position=all&deployment=all&strength=5v5&min_gp=10&min_toi=300&sort_metric=xga_per_60&sort_direction=asc&page=2&page_size=25&ranking_source=entity_metric_rankings&search=Savoie&sample_confidence=high&selected_player=8478402",
     );
   });
 
@@ -311,7 +329,7 @@ describe("rankingUrlState", () => {
     });
 
     expect(buildSnapshotRequestPath(filters)).toBe(
-      "/api/v1/contextual-rankings/snapshot?entity=goalies&season=20252026&window=season&position=all&deployment=all&strength=5v5&min_gp=1&min_toi=300&sort_metric=points_per_60&goalie_metric=gsax&goalie_role=g1_workhorse&team_metric=off_rating&sort_direction=desc&team=DAL&search=DeSmith&selected_goalie=32",
+      "/api/v1/contextual-rankings/snapshot?entity=goalies&season=20252026&window=season&position=all&deployment=all&strength=5v5&min_gp=10&min_toi=300&sort_metric=points_per_60&goalie_metric=gsax&goalie_role=g1_workhorse&team_metric=off_rating&sort_direction=desc&team=DAL&search=DeSmith&selected_goalie=32",
     );
   });
 });

@@ -11,6 +11,10 @@ import {
   getScoreTileTone,
 } from "./matrixScoreFormatting";
 
+import { formatCaveats } from "./caveatLabels";
+import ScoreText from "./ScoreText";
+import ScrollRegion from "./ScrollRegion";
+
 import styles from "styles/Rankings.module.scss";
 
 type GoalieMatrixTableProps = {
@@ -26,6 +30,7 @@ type GoalieMatrixTableProps = {
   selectedGoalieId: number | null;
   onSelectGoalie: (goalieId: number) => void;
   displayMode?: RankingsFilterState["displayMode"];
+  density?: RankingsFilterState["density"];
 };
 
 function sortDirectionForMetric(args: {
@@ -107,11 +112,11 @@ function GoalieMetricCell({
     !row.sample.minimumSampleMet || row.sample.confidence === "low"
       ? "Low sample"
       : null,
-    row.warnings.length ? `Caveats: ${row.warnings.join(", ")}` : null,
+    row.warnings.length ? `Caveats: ${formatCaveats(row.warnings)}` : null,
     column.source,
   ].filter(Boolean).join(" | ");
   const percentileLabel = formatPercentileScore(cell.percentile);
-  const rankLabel = cell.rank == null ? "UR" : `#${cell.rank}`;
+  const rankLabel = cell.rank == null ? "–" : `#${cell.rank}`;
   const primaryLabel =
     displayMode === "raw_rank"
       ? unavailable
@@ -133,7 +138,9 @@ function GoalieMetricCell({
       >
         <div className={styles.metricScoreStack}>
           <div className={styles.metricScoreTile}>
-            <strong>{primaryLabel}</strong>
+            <strong>
+              <ScoreText label={primaryLabel} />
+            </strong>
           </div>
           {showRank ? (
             <span className={styles.metricRankLine}>
@@ -158,6 +165,26 @@ function GoalieMetricCell({
   );
 }
 
+// Role cell: depth code on top (G1, G1A, G1B, G2) colour-coded by depth, meaning below
+// ("Workhorse", "Tandem Lead"). Labels come from formatGoalieDeploymentBucket.
+function GoalieRoleLabel({ label }: { label: string | null }) {
+  if (!label) {
+    return (
+      <span className={styles.goalieRole} data-role-code="none">
+        <strong>—</strong>
+        <span>Unclassified</span>
+      </span>
+    );
+  }
+  const [code, ...rest] = label.split(" ");
+  return (
+    <span className={styles.goalieRole} data-role-code={code}>
+      <strong>{code}</strong>
+      <span>{rest.join(" ")}</span>
+    </span>
+  );
+}
+
 export default function GoalieMatrixTable({
   payload,
   isLoading,
@@ -168,6 +195,7 @@ export default function GoalieMatrixTable({
   selectedGoalieId,
   onSelectGoalie,
   displayMode = "both",
+  density = "detailed",
 }: GoalieMatrixTableProps) {
   const metricColumnCount = payload?.meta.metricColumns.length ?? 0;
   const colSpan = 10 + metricColumnCount;
@@ -178,14 +206,16 @@ export default function GoalieMatrixTable({
 
   return (
     <section className={styles.matrixSection}>
-      <div className={styles.matrixWrap}>
-        <table className={styles.matrixTable}>
+      <ScrollRegion className={styles.matrixWrap} label="Goalie rankings matrix">
+        <table
+          className={`${styles.matrixTable} ${styles.matrixTableFlatHeader} ${density === "compact" ? styles.matrixCompact : ""}`}
+        >
           <thead>
             <tr>
-              <th>Sort Rank</th>
-              <th>Goalie</th>
+              <th className={styles.stickyRankCell} scope="col">Rank</th>
+              <th className={styles.stickyPlayerCell} scope="col">Goalie</th>
               <th>Team</th>
-              <th>Role</th>
+              <th className={styles.goalieRoleHeader} scope="col">Role</th>
               <th>GP</th>
               <th>Starts</th>
               <th>Raw Start%</th>
@@ -244,21 +274,24 @@ export default function GoalieMatrixTable({
                   </td>
                   <td className={styles.stickyPlayerCell}>
                     <div className={styles.playerCell}>
-                      <strong>{row.entity.name ?? `Goalie ${row.entity.id}`}</strong>
-                      <span>
-                        {row.sample.confidence} sample
-                        {" · "}
-                        {row.role.roleConfidence} role
-                        {row.role.confirmedStatus ? " · confirmed starter" : ""}
+                      <span className={styles.playerIdentity}>
+                        <strong>{row.entity.name ?? `Goalie ${row.entity.id}`}</strong>
+                        <span>
+                          Sample {row.sample.confidence}
+                          {" · "}
+                          Role {row.role.roleConfidence}
+                          {row.role.confirmedStatus ? " · confirmed starter" : ""}
+                        </span>
                       </span>
                     </div>
                   </td>
                   <td>{row.team.abbreviation ?? "-"}</td>
                   <td
+                    className={styles.textCell}
                     title={row.role.roleNotes.join(" | ")}
                     aria-label={`${row.role.deploymentLabel ?? "Unclassified"} role, ${row.role.roleConfidence} confidence`}
                   >
-                    {row.role.deploymentLabel ?? "Unclassified"}
+                    <GoalieRoleLabel label={row.role.deploymentLabel} />
                   </td>
                   <td>{row.sample.gamesPlayed}</td>
                   <td>{row.sample.gamesStarted}</td>
@@ -284,40 +317,39 @@ export default function GoalieMatrixTable({
             </tbody>
           )}
         </table>
-      </div>
+      </ScrollRegion>
       <div className={styles.inlineNotice}>
-        Goalie roles use latest projected season start share when available,
-        with inferred top-two/core selected-window start share and raw team
-        start share as fallbacks. Adjusted workload context is labeled with
-        confidence and should not be treated as confirmed injury status.
+        Roles come from projected season start share when available, otherwise
+        from this window&apos;s starts among each team&apos;s top two goalies.
+        Workload notes are estimates, not injury news.
         {payload?.meta.sourceWarnings.length
-          ? ` Source caveats: ${payload.meta.sourceWarnings.join(", ")}.`
+          ? ` Data notes: ${formatCaveats(payload.meta.sourceWarnings)}.`
           : ""}
         {payload?.meta.sourcePendingMetricContracts.length
-          ? ` Source-pending goalie contracts: ${payload.meta.sourcePendingMetricContracts
+          ? ` Not published yet: ${payload.meta.sourcePendingMetricContracts
               .map((contract) => contract.label)
               .join(", ")}.`
           : ""}
       </div>
       {payload ? (
         <footer className={styles.matrixFooter}>
-          <span>
-            Showing {payload.meta.rowCount} of {payload.meta.totalRankedRows} goalies
-          </span>
           <div className={styles.matrixLegend} aria-label="Goalie source state legend">
+            <span>
+              Showing {payload.meta.rowCount} of {payload.meta.totalRankedRows} goalies
+            </span>
             <span className={styles.legendPill}>? Source pending/no sample</span>
             <span className={styles.legendPill}>~ Stale source</span>
             <span className={styles.legendPill}>! Source caveat</span>
             <span className={styles.legendPill}>L Low sample</span>
             <span className={styles.legendPill}>0 True zero</span>
           </div>
-          <div>
+          <div className={styles.paginationControls}>
             <button
               type="button"
               disabled={payload.meta.page <= 1}
               onClick={() => onPageChange(payload.meta.page - 1)}
             >
-              Prev
+              <span aria-hidden="true">‹ </span>Prev
             </button>
             <span>
               Page {payload.meta.page} of {payload.meta.pageCount}
@@ -327,18 +359,21 @@ export default function GoalieMatrixTable({
               disabled={payload.meta.page >= payload.meta.pageCount}
               onClick={() => onPageChange(payload.meta.page + 1)}
             >
-              Next
+              Next<span aria-hidden="true"> ›</span>
             </button>
-            <select
-              value={payload.meta.pageSize}
-              onChange={(event) => onPageSizeChange(Number(event.target.value))}
-            >
-              {[10, 25, 50].map((pageSize) => (
-                <option key={pageSize} value={pageSize}>
-                  {pageSize}
-                </option>
-              ))}
-            </select>
+            <label>
+              Rows
+              <select
+                value={payload.meta.pageSize}
+                onChange={(event) => onPageSizeChange(Number(event.target.value))}
+              >
+                {[10, 25, 50].map((pageSize) => (
+                  <option key={pageSize} value={pageSize}>
+                    {pageSize}
+                  </option>
+                ))}
+              </select>
+            </label>
           </div>
         </footer>
       ) : null}

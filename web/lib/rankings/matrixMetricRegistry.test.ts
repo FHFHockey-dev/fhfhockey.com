@@ -70,8 +70,8 @@ describe("matrixMetricRegistry", () => {
       defaultVisible: true,
       fullLabel: "Offense Rating",
     });
-    expect(offense?.tooltip).toContain("contextual descriptive");
-    expect(offense?.tooltip).toContain("not an adjusted isolated-impact metric");
+    expect(offense?.tooltip).toContain("describes production");
+    expect(offense?.tooltip).toContain("not isolated impact");
     expect(offense?.definition?.sourceTable).toBe("skater_composite_ratings");
     expect(defense).toMatchObject({
       availabilityState: "available",
@@ -85,8 +85,8 @@ describe("matrixMetricRegistry", () => {
 
     const mcm = getMatrixMetricColumn("mcm_score");
     const beast = getMatrixMetricColumn("beast_tier");
-    expect(mcm?.tooltip).toContain("including live PP points");
-    expect(beast?.tooltip).toContain("including live PP points");
+    expect(mcm?.tooltip).toContain("including power-play points");
+    expect(beast?.tooltip).toContain("including power-play points");
 
     const ppPoints = getMatrixMetricColumn("pp_points_per_60");
     expect(ppPoints).toMatchObject({

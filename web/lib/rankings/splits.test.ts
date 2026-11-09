@@ -174,4 +174,47 @@ describe("rankings splits", () => {
       expect.objectContaining({ entityIds: [1], strength: "pp" }),
     );
   });
+
+  it("scales Min GP to each window so short windows can still rank", async () => {
+    const minGpFor = (window: string) =>
+      buildContextualRankingsSurfaceMock.mock.calls
+        .map(([request]) => request as ContextualRankingsRequest)
+        .find((request) => request.window === window && request.strength === "5v5" && request.deployment === "L2")
+        ?.minGp;
+
+    await buildRankingsSplitsSurface(
+      parseRankingsSplitsRequest({
+        entity: "skaters",
+        season: "20252026",
+        window: "season",
+        position: "F",
+        deployment: "L2",
+        strength: "5v5",
+        metric: "points_per_60",
+        min_gp: "10",
+        min_toi: "300",
+      }),
+    );
+    expect(minGpFor("season")).toBe(10);
+    expect(minGpFor("last20")).toBe(5);
+    expect(minGpFor("last10")).toBe(3);
+    expect(minGpFor("last5")).toBe(2);
+
+    vi.clearAllMocks();
+    await buildRankingsSplitsSurface(
+      parseRankingsSplitsRequest({
+        entity: "skaters",
+        season: "20252026",
+        window: "season",
+        position: "F",
+        deployment: "L2",
+        strength: "5v5",
+        metric: "points_per_60",
+        min_gp: "8",
+        min_toi: "300",
+      }),
+    );
+    expect(minGpFor("last20")).toBe(8);
+    expect(minGpFor("last5")).toBe(5);
+  });
 });

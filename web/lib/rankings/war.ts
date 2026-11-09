@@ -141,9 +141,9 @@ export function buildWarSurface(request: WarSurfaceRequest): WarSurfaceResponse 
       direction: "higher_is_better",
     },
     summary:
-      "WAR remains unavailable until a defensible replacement-level model is documented, validated, and populated.",
+      "WAR is coming. Until then, use the Offense and Defense ratings and MCM score in the Rankings tab.",
     sourcePendingReason:
-      "The current rankings snapshots publish descriptive rates, percentiles, deployment context, and composites, but they do not define replacement baselines, position adjustments, or win-value conversion.",
+      "Today's rankings publish rates, percentiles, deployment and composite scores. They don't yet define a replacement level, position adjustments or a goals-to-wins conversion.",
     sourceTables: [
       "rolling_player_game_metrics",
       "skater_composite_ratings",
@@ -156,34 +156,33 @@ export function buildWarSurface(request: WarSurfaceRequest): WarSurfaceResponse 
         label: "Replacement Baseline",
         status: "missing",
         detail:
-          "No approved skater, goalie, or team replacement baseline is published for this ranking surface.",
+          "No replacement-level baseline has been set for skaters, goalies or teams.",
       },
       {
         key: "position_adjustment",
         label: "Position Adjustment",
         status: "missing",
         detail:
-          "Forward, defense, goalie, and team contexts need separately validated adjustment rules before WAR can be shown.",
+          "Forwards, defense, goalies and teams each need their own tested adjustment.",
       },
       {
         key: "win_value_conversion",
         label: "Win Conversion",
         status: "needs_validation",
         detail:
-          "Existing percentile composites are not a goals-to-wins or replacement-value model.",
+          "Current percentile scores don't convert goals into wins.",
       },
       {
         key: "source_join",
         label: "Snapshot Join",
         status: "available_not_joined",
         detail:
-          "Ranking snapshots expose inputs that could feed a future model, but no WAR row contract is populated.",
+          "The inputs exist in our ranking snapshots, but WAR values aren't built yet.",
       },
     ],
     caveats: [
-      "No WAR values are exposed in API or UI.",
-      "Current matrix metrics are not a WAR substitute.",
-      "Do not compare source-pending WAR state against live percentile rankings.",
+      "No WAR numbers are shown anywhere yet.",
+      "Matrix metrics aren't a stand-in for WAR.",
     ],
     rows: [],
     meta: {
@@ -191,7 +190,7 @@ export function buildWarSurface(request: WarSurfaceRequest): WarSurfaceResponse 
       sourceStatus: "source_pending",
       rowCount: 0,
       message:
-        "Wins Above Replacement is Source Pending for this entity and filter context.",
+        "Wins Above Replacement isn't available for these filters yet.",
     },
   };
 }

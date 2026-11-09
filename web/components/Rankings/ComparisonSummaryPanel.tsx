@@ -2,6 +2,8 @@ import type { ContextualRankingComparisonResponse } from "lib/rankings/compariso
 import { formatPercentile, formatSampleConfidence, formatSampleMinimums, formatToiClock } from "lib/rankings/rankingFormatters";
 import type { TrendingResponse } from "lib/rankings/trending";
 
+import { formatCaveat, formatCaveats } from "./caveatLabels";
+
 import styles from "styles/Rankings.module.scss";
 
 type ComparisonSubject = ContextualRankingComparisonResponse["subjects"][number];
@@ -70,7 +72,7 @@ function caveatLabel(subject: ComparisonSubject, row: ComparisonRow | null) {
     caveats.add("minimum sample not met");
   }
   if (caveats.size === 0) return "Clean source context";
-  return Array.from(caveats).slice(0, 3).join("; ");
+  return formatCaveats(Array.from(caveats).slice(0, 3));
 }
 
 function metricLabel(cell: ComparisonMetricCell | undefined) {
@@ -191,7 +193,7 @@ export default function ComparisonSummaryPanel({
               <h3>Source Notes</h3>
               <ul>
                 {payload.caveats.slice(0, 4).map((caveat) => (
-                  <li key={caveat}>{caveat}</li>
+                  <li key={caveat}>{formatCaveat(caveat)}</li>
                 ))}
               </ul>
             </section>

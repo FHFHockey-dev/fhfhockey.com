@@ -9,8 +9,8 @@ type WarPanelProps = {
 };
 
 function statusLabel(status: WarSurfaceResponse["prerequisites"][number]["status"]) {
-  if (status === "available_not_joined") return "Available, not joined";
-  if (status === "needs_validation") return "Needs validation";
+  if (status === "available_not_joined") return "Inputs ready";
+  if (status === "needs_validation") return "Needs testing";
   return "Missing";
 }
 
@@ -62,7 +62,7 @@ export default function WarPanel({
         ))}
       </div>
       <div className={styles.sourcePendingList}>
-        <strong>Source Pending</strong>
+        <strong>Why WAR isn&apos;t here yet</strong>
         <ul>
           <li>{payload.sourcePendingReason}</li>
           {payload.caveats.map((caveat) => (

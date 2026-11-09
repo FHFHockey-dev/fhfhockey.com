@@ -16,19 +16,43 @@ $text-soft: v.$text-secondary;
 $border-muted: v.$border-soft;
 $border-strong: rgba(v.$primary-color, 0.36);
 
+// Page buttons (TJ, 2026-11-08): same shape as the active toggle, but blue text on a light
+// primary tint. Toggles = white text on the 40% fill; buttons = primary text on 12% (5.3:1),
+// 20% on hover (4.7:1). 2px primary ring on both.
+@mixin page-button {
+  border: 2px solid v.$primary-color;
+  background: rgba(v.$primary-color, 0.12);
+  color: v.$primary-color;
+
+  &:hover:not(:disabled) {
+    background: rgba(v.$primary-color, 0.2);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+  }
+}
+
 .page {
-  width: min(1880px, calc(100% - 32px));
+  width: 100%;
+  max-width: v.$page-max-width; // 90% centred workspace (fhfh-styles §2.1)
   margin: 0 auto;
   overflow-x: hidden;
-  padding: 14px 0 48px;
+  padding: 14px 0 v.$space-xxl;
   color: v.$text-primary;
+}
+
+// Form controls don't inherit the page font by default; without this the tabs, rank
+// buttons, Reset/Fantasy preset and pagination fell back to Arial.
+.page :where(button, select) {
+  font-family: inherit; // (0,1,0): class rules later in this file that set a font still win
 }
 
 .rankingsControlShell {
   @include panel.panel-shell($radius: v.$radius-md, $padding: 0, $variant: standard);
 
   flex: 0 0 auto;
-  margin-bottom: 8px;
+  margin-bottom: v.$space-sm;
   border-color: $border-muted;
   background: $surface-panel;
 }
@@ -54,10 +78,10 @@ $border-strong: rgba(v.$primary-color, 0.36);
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 10px 16px 8px;
+  padding: 10px v.$space-md v.$space-sm;
 
   h1 {
-    margin: 0 0 4px;
+    margin: 0 0 v.$space-xs;
     color: v.$color-brand-white;
     font-family: v.$font-family-accent, sans-serif;
     font-size: clamp(20px, 1.6vw, 26px);
@@ -84,7 +108,7 @@ $border-strong: rgba(v.$primary-color, 0.36);
 .controlShellHeaderActions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: v.$space-sm;
   flex: 0 0 auto;
 }
 
@@ -93,13 +117,14 @@ $border-strong: rgba(v.$primary-color, 0.36);
   min-height: 30px;
   align-items: center;
   justify-content: center;
-  border: 1px solid $border-muted;
+  @include page-button;
+
   border-radius: v.$radius-sm;
   padding: 0 10px;
-  background: $surface-inset;
-  color: v.$primary-color;
-  font-size: 11px;
-  font-weight: v.$font-weight-bold;
+  font-family: v.$font-family-accent; // control label face (brand cheat sheet §3); 400 is its only weight
+  font-size: 12px;
+  font-weight: v.$font-weight-regular;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
   cursor: pointer;
 }
@@ -108,7 +133,7 @@ $border-strong: rgba(v.$primary-color, 0.36);
   margin: 0;
   color: v.$primary-color;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: v.$font-weight-bold;
   letter-spacing: 0;
   text-transform: uppercase;
 }
@@ -116,7 +141,7 @@ $border-strong: rgba(v.$primary-color, 0.36);
 .metaPanel {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: v.$space-sm;
   min-width: 158px;
   border: 1px solid $border-muted;
   border-radius: v.$radius-sm;
@@ -129,14 +154,14 @@ $border-strong: rgba(v.$primary-color, 0.36);
   }
 
   > span {
-    margin-bottom: 4px;
+    margin-bottom: v.$space-xs;
     color: $text-soft;
     font-size: 12px;
     text-transform: uppercase;
   }
 
   div > span {
-    margin-bottom: 2px;
+    margin-bottom: v.$space-xxs;
     color: v.$text-secondary;
     font-size: 9px;
     font-weight: v.$font-weight-bold;
@@ -163,7 +188,7 @@ $border-strong: rgba(v.$primary-color, 0.36);
   grid-template-columns: repeat(4, minmax(0, 1fr));
   align-items: start;
   gap: 10px 18px;
-  margin: 0 16px;
+  margin: 0 v.$space-md;
   border-color: $border-muted;
   background: color.adjust($surface-panel, $lightness: -1%);
 }
@@ -172,7 +197,7 @@ $border-strong: rgba(v.$primary-color, 0.36);
   display: flex;
   min-width: 0;
   flex-direction: column;
-  gap: 4px;
+  gap: v.$space-xs;
 
   > span {
     overflow: hidden;
@@ -218,13 +243,13 @@ $border-strong: rgba(v.$primary-color, 0.36);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 8px;
-    border: 1px solid $border-muted;
+    gap: v.$space-sm;
+    @include page-button;
+
     border-radius: v.$radius-sm;
     padding: 0 10px;
-    background: $surface-inset;
-    color: v.$text-primary;
     font-weight: v.$font-weight-bold;
+    white-space: nowrap;
   }
 }
 
@@ -246,7 +271,7 @@ $border-strong: rgba(v.$primary-color, 0.36);
 .moreFiltersGrid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
+  gap: v.$space-sm;
   margin-bottom: 10px;
 }
 
@@ -263,7 +288,7 @@ $border-strong: rgba(v.$primary-color, 0.36);
     margin-bottom: 6px;
     color: $text-strong;
     font-size: 12px;
-    font-weight: 800;
+    font-weight: v.$font-weight-bold;
   }
 }
 
@@ -278,9 +303,9 @@ $border-strong: rgba(v.$primary-color, 0.36);
     align-items: center;
     gap: 6px;
     min-height: 28px;
-    padding: 4px 6px;
+    padding: v.$space-xs 6px;
     border: 1px solid $border-muted;
-    border-radius: 6px;
+    border-radius: v.$radius-sm;
     background: $surface-inset;
   }
 
@@ -336,7 +361,11 @@ $border-strong: rgba(v.$primary-color, 0.36);
   grid-row: 3;
 }
 
-.filterMinShots,
+.filterMinShots {
+  grid-column: 2;
+  grid-row: 3;
+}
+
 .filterPosition {
   grid-column: span 2;
 }
@@ -351,22 +380,20 @@ $border-strong: rgba(v.$primary-color, 0.36);
 }
 
 .filtersSideRail {
-  position: absolute;
-  top: 10px;
-  right: 14px;
-  bottom: 12px;
   display: grid;
+  grid-column: 4;
+  grid-row: 1 / span 3;
   grid-template-rows: auto auto auto;
   align-content: space-between;
-  gap: 8px;
-  width: calc((100% - 86px) / 4);
+  align-self: stretch;
+  gap: v.$space-sm;
   min-width: 0;
 }
 
 .filtersActions {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 8px;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: v.$space-sm;
   align-items: end;
 }
 
@@ -386,7 +413,7 @@ $border-strong: rgba(v.$primary-color, 0.36);
 
 .segmentedControl {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(5, auto); // label-sized columns: "All Skaters"/"Defensemen" need more room than "Teams"
   overflow: hidden;
   border: 1px solid $border-muted;
   border-radius: v.$radius-sm;
@@ -397,22 +424,29 @@ $border-strong: rgba(v.$primary-color, 0.36);
     min-height: 36px;
     align-items: center;
     justify-content: center;
-    gap: 6px;
+    gap: v.$space-xs;
     border: 0;
     border-right: 1px solid rgba(v.$color-white, 0.08);
-    padding: 0 8px;
+    padding: 0 6px;
     background: transparent;
     color: v.$text-primary;
-    font-size: 13px;
-    font-weight: v.$font-weight-bold;
+    font-family: v.$font-family-accent; // toggle labels match the tabs (Train One, 400 only)
+    font-size: 12px;
+    font-weight: v.$font-weight-regular;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+    text-transform: uppercase;
     cursor: pointer;
 
     &:last-child {
       border-right: 0;
     }
 
+    // Canonical active toggle (brand cheat sheet): opaque primary fill + 2px primary ring + white
+    // text, 9.7:1. White on solid $primary-color was 2.94:1.
     &[aria-pressed="true"] {
-      background: v.$primary-color;
+      background: v.$primary-color-opaque;
+      box-shadow: inset 0 0 0 2px v.$primary-color;
       color: v.$color-white;
     }
 
@@ -428,7 +462,7 @@ $border-strong: rgba(v.$primary-color, 0.36);
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  gap: 8px;
+  gap: v.$space-sm;
   min-height: 36px;
   border: 1px solid $border-muted;
   border-radius: v.$radius-sm;
@@ -482,7 +516,7 @@ $border-strong: rgba(v.$primary-color, 0.36);
   gap: 5px;
   min-height: 36px;
   border: 0;
-  padding: 0 4px;
+  padding: 0 v.$space-xs;
   background: transparent;
   color: v.$primary-color;
   font-size: 13px;
@@ -490,57 +524,55 @@ $border-strong: rgba(v.$primary-color, 0.36);
   cursor: pointer;
 }
 
-.quickInfoPanel {
-  @include panel.panel-shell($radius: v.$radius-md, $padding: 9px 10px, $variant: flat);
+.presetNote {
+  position: relative;
+  align-self: end;
+  margin-bottom: v.$space-sm; // centres the 20px icon on the 36px control row
 
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
+  summary {
+    display: grid;
+    width: 20px;
+    height: 20px;
+    place-items: center;
+    border: 1px solid v.$text-secondary;
+    border-radius: v.$radius-pill;
+    color: v.$text-secondary;
+    font-size: 12px;
+    font-weight: v.$font-weight-bold;
+    line-height: 1;
+    list-style: none;
+    cursor: pointer;
 
-  header {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    margin-bottom: 8px;
+    &::-webkit-details-marker {
+      display: none;
+    }
+
+    &:hover {
+      border-color: v.$primary-color;
+      color: v.$primary-color;
+    }
+  }
+
+  &[open] summary {
+    border-color: v.$primary-color;
     color: v.$primary-color;
   }
 
-  h2 {
+  p {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    z-index: 40;
+    width: min(320px, calc(100vw - 48px));
     margin: 0;
+    border: 1px solid $border-strong;
+    border-radius: v.$radius-md;
+    padding: 10px 12px;
+    background: $surface-flat;
+    box-shadow: v.$shadow-panel-hover;
     color: v.$text-primary;
-    font-size: 11px;
-    font-weight: v.$font-weight-bold;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-  }
-
-  dl {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 0.8fr);
-    gap: 8px;
-    margin: 0;
-    align-items: end;
-    flex: 1;
-  }
-
-  dt {
-    color: v.$text-secondary;
-    font-size: 11px;
-  }
-
-  dd {
-    margin: 3px 0 0;
-    color: v.$text-primary;
-    font-size: 13px;
-    line-height: 1.2;
-  }
-
-  dd:first-of-type {
-    display: inline-flex;
-    border-radius: v.$radius-sm;
-    padding: 3px 7px;
-    background: rgba(v.$color-white, 0.04);
-    color: v.$color-brand-white;
+    font-size: 12px;
+    line-height: 1.45;
   }
 }
 
@@ -564,7 +596,7 @@ $border-strong: rgba(v.$primary-color, 0.36);
     align-items: center;
     justify-content: space-between;
     min-height: 36px;
-    gap: 8px;
+    gap: v.$space-sm;
     border-radius: v.$radius-sm;
     padding: 0;
     color: v.$text-primary;
@@ -590,7 +622,7 @@ $border-strong: rgba(v.$primary-color, 0.36);
       overflow: hidden;
       color: v.$text-primary;
       font-size: 11px;
-      font-weight: 800;
+      font-weight: v.$font-weight-bold;
       text-overflow: ellipsis;
       white-space: nowrap;
     }
@@ -605,16 +637,20 @@ $border-strong: rgba(v.$primary-color, 0.36);
       flex: 0 0 auto;
       align-items: center;
       min-height: 30px;
-      border: 1px solid $border-muted;
+      border: 2px solid v.$primary-color; // page-button look on a pseudo-element
       border-radius: v.$radius-sm;
-      padding: 0 8px;
-      background: $surface-inset;
-      color: v.$text-primary;
+      padding: 0 v.$space-sm;
+      background: rgba(v.$primary-color, 0.12);
+      color: v.$primary-color;
       font-size: 10px;
       font-weight: v.$font-weight-medium;
       line-height: 1;
       text-align: center;
     }
+  }
+
+  summary:hover::after {
+    background: rgba(v.$primary-color, 0.2);
   }
 
   &[open] summary {
@@ -625,7 +661,7 @@ $border-strong: rgba(v.$primary-color, 0.36);
 
   h2,
   h3 {
-    margin: 0 0 8px;
+    margin: 0 0 v.$space-sm;
     color: $text-strong;
     font-size: 14px;
     letter-spacing: 0;
@@ -641,7 +677,7 @@ $border-strong: rgba(v.$primary-color, 0.36);
   dt {
     color: $text-soft;
     font-size: 11px;
-    font-weight: 800;
+    font-weight: v.$font-weight-bold;
     text-transform: uppercase;
   }
 
@@ -676,7 +712,7 @@ $border-strong: rgba(v.$primary-color, 0.36);
   }
 
   span {
-    margin-top: 2px;
+    margin-top: v.$space-xxs;
     color: $text-soft;
     font-size: 11px;
     line-height: 1.45;
@@ -729,12 +765,12 @@ $border-strong: rgba(v.$primary-color, 0.36);
 .clearButton {
   min-height: 32px;
   border: 1px solid $border-muted;
-  border-radius: 6px;
+  border-radius: v.$radius-sm;
   padding: 0 10px;
   background: $surface-inset;
   color: v.$primary-color;
   font-size: 13px;
-  font-weight: 700;
+  font-weight: v.$font-weight-bold;
   cursor: pointer;
 }
 
@@ -762,7 +798,7 @@ $border-strong: rgba(v.$primary-color, 0.36);
   }
 
   span {
-    margin-top: 2px;
+    margin-top: v.$space-xxs;
     color: $text-soft;
     font-size: 12px;
   }
@@ -770,23 +806,57 @@ $border-strong: rgba(v.$primary-color, 0.36);
   dl {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
+    gap: v.$space-sm;
     margin: 12px 0 0;
   }
 
   dt {
     color: $text-soft;
     font-size: 11px;
-    font-weight: 800;
+    font-weight: v.$font-weight-bold;
     text-transform: uppercase;
   }
 
   dd {
-    margin: 2px 0 0;
+    margin: v.$space-xxs 0 0;
     color: $text-strong;
     font-size: 13px;
-    font-weight: 700;
+    font-weight: v.$font-weight-bold;
   }
+}
+
+// Scrollable tables are focusable regions (WCAG 2.1.1) so keyboard users can scroll them.
+.tableWrap:focus-visible,
+.matrixWrap:focus-visible {
+  outline: 2px solid v.$primary-color;
+  outline-offset: -2px; // inset: parent panels clip overflow, so an outset ring loses its sides
+}
+
+.scrollFrame {
+  position: relative;
+  min-width: 0;
+}
+
+// Arrow-key hint, shown only while the scroll region has keyboard focus (TJ, 2026-11-08).
+.scrollHint {
+  position: absolute;
+  top: v.$space-sm;
+  right: 12px;
+  z-index: 40; // above the sticky header cells
+  display: none;
+  border: 1px solid v.$primary-color;
+  border-radius: v.$radius-pill;
+  padding: v.$space-xxs v.$space-sm;
+  background: $surface-flat;
+  color: v.$primary-color;
+  font-size: 11px;
+  font-weight: v.$font-weight-bold;
+  pointer-events: none;
+}
+
+.tableWrap:focus-visible + .scrollHint,
+.matrixWrap:focus-visible + .scrollHint {
+  display: block;
 }
 
 .tableWrap {
@@ -814,7 +884,7 @@ $border-strong: rgba(v.$primary-color, 0.36);
     background: $surface-table-header;
     color: $text-soft;
     font-size: 12px;
-    font-weight: 800;
+    font-weight: v.$font-weight-bold;
     text-transform: uppercase;
   }
 
@@ -825,7 +895,7 @@ $border-strong: rgba(v.$primary-color, 0.36);
   summary {
     cursor: pointer;
     color: v.$primary-color;
-    font-weight: 700;
+    font-weight: v.$font-weight-bold;
   }
 }
 
@@ -836,7 +906,7 @@ $border-strong: rgba(v.$primary-color, 0.36);
   align-items: center;
   justify-content: space-between;
   gap: 9px;
-  padding: 0 10px 0 8px;
+  padding: 0 10px 0 v.$space-sm;
 
   strong {
     display: block;
@@ -864,6 +934,15 @@ $border-strong: rgba(v.$primary-color, 0.36);
   min-width: 0;
 }
 
+.teamNameShort,
+.metaBadges {
+  display: none;
+}
+
+.rowBadges {
+  display: contents;
+}
+
 .playerMedia {
   position: relative;
   display: inline-flex;
@@ -879,7 +958,7 @@ $border-strong: rgba(v.$primary-color, 0.36);
   height: 60px;
   overflow: hidden;
   border: 2px solid $border-strong;
-  border-radius: 8px;
+  border-radius: v.$border-radius-md;
   background: $surface-inset;
   object-fit: cover;
 }
@@ -891,10 +970,10 @@ $border-strong: rgba(v.$primary-color, 0.36);
   width: 28px;
   height: 28px;
   border: 1px solid $border-muted;
-  border-radius: 999px;
+  border-radius: v.$radius-pill;
   background: $surface-flat;
   object-fit: contain;
-  padding: 2px;
+  padding: v.$space-xxs;
 }
 
 .deploymentBadges {
@@ -914,11 +993,11 @@ $border-strong: rgba(v.$primary-color, 0.36);
   align-items: center;
   justify-content: center;
   border: 2px solid $border-muted;
-  border-radius: 8px;
+  border-radius: v.$border-radius-md;
   padding: 0 7px;
   background: $surface-inset;
   font-size: 12px;
-  font-weight: 900;
+  font-weight: v.$font-weight-bold;
   line-height: 1;
   text-transform: uppercase;
 }
@@ -997,15 +1076,15 @@ $border-strong: rgba(v.$primary-color, 0.36);
 }
 
 .tableStateCell {
-  padding: 22px 16px;
+  padding: 22px v.$space-md;
   color: $text-soft;
   white-space: normal;
 }
 
 .inlineNotice {
-  margin-top: 8px;
+  margin-top: v.$space-sm;
   border: 1px solid rgba(v.$warning-color, 0.35);
-  border-radius: 8px;
+  border-radius: v.$border-radius-md;
   padding: 7px 10px;
   background: rgba(v.$warning-color, 0.08);
   color: v.$warning-color;
@@ -1025,12 +1104,12 @@ $border-strong: rgba(v.$primary-color, 0.36);
   min-height: 22px;
   align-items: center;
   border: 1px solid $border-strong;
-  border-radius: 6px;
+  border-radius: v.$radius-sm;
   padding: 0 7px;
   background: rgba(v.$primary-color, 0.12);
   color: v.$color-blue-300;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: v.$font-weight-bold;
   text-transform: none;
 }
 
@@ -1061,21 +1140,21 @@ $border-strong: rgba(v.$primary-color, 0.36);
   dl {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
+    gap: v.$space-sm;
     margin: 0 0 10px;
   }
 
   dt {
     color: $text-soft;
     font-size: 12px;
-    font-weight: 800;
+    font-weight: v.$font-weight-bold;
     text-transform: uppercase;
   }
 
   dd {
-    margin: 2px 0 0;
+    margin: v.$space-xxs 0 0;
     color: $text-strong;
-    font-weight: 700;
+    font-weight: v.$font-weight-bold;
   }
 
   ul {
@@ -1135,11 +1214,13 @@ $border-strong: rgba(v.$primary-color, 0.36);
   @include panel.panel-shell($radius: v.$radius-md, $padding: 0, $variant: flat);
 }
 
-.deploymentTiersHeader {
+// Shared secondary-tab panel heading (Deployment Tiers, Trending, Splits).
+.deploymentTiersHeader,
+.panelHeading {
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
-  gap: 16px;
+  gap: v.$space-md;
   padding: 14px;
 
   h2,
@@ -1154,7 +1235,7 @@ $border-strong: rgba(v.$primary-color, 0.36);
   }
 
   p {
-    margin-top: 4px;
+    margin-top: v.$space-xs;
     color: $text-soft;
     font-size: 13px;
   }
@@ -1162,7 +1243,7 @@ $border-strong: rgba(v.$primary-color, 0.36);
   span {
     color: $text-soft;
     font-size: 12px;
-    font-weight: 800;
+    font-weight: v.$font-weight-bold;
     text-transform: uppercase;
     white-space: nowrap;
   }
@@ -1190,7 +1271,7 @@ $border-strong: rgba(v.$primary-color, 0.36);
     }
 
     p {
-      margin-top: 4px;
+      margin-top: v.$space-xs;
       color: $text-soft;
       font-size: 12px;
       line-height: 1.45;
@@ -1198,12 +1279,12 @@ $border-strong: rgba(v.$primary-color, 0.36);
 
     span {
       border: 1px solid $border-muted;
-      border-radius: 6px;
-      padding: 5px 8px;
+      border-radius: v.$radius-sm;
+      padding: 5px v.$space-sm;
       background: $surface-inset;
       color: v.$primary-color;
       font-size: 11px;
-      font-weight: 900;
+      font-weight: v.$font-weight-bold;
     }
   }
 }
@@ -1231,7 +1312,7 @@ $border-strong: rgba(v.$primary-color, 0.36);
       margin-bottom: 3px;
       color: v.$primary-color;
       font-size: 10px;
-      font-weight: 900;
+      font-weight: v.$font-weight-bold;
       text-transform: uppercase;
     }
 
@@ -1253,23 +1334,23 @@ $border-strong: rgba(v.$primary-color, 0.36);
   dl {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 8px;
+    gap: v.$space-sm;
     margin: 0 0 10px;
   }
 
   dt {
     color: $text-soft;
     font-size: 10px;
-    font-weight: 900;
+    font-weight: v.$font-weight-bold;
     text-transform: uppercase;
   }
 
   dd {
     overflow: hidden;
-    margin: 2px 0 0;
+    margin: v.$space-xxs 0 0;
     color: v.$text-primary;
     font-size: 12px;
-    font-weight: 700;
+    font-weight: v.$font-weight-bold;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
@@ -1285,10 +1366,10 @@ $border-strong: rgba(v.$primary-color, 0.36);
   li {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
-    gap: 8px;
+    gap: v.$space-sm;
     align-items: center;
     min-height: 28px;
-    border-radius: 6px;
+    border-radius: v.$radius-sm;
     padding: 5px 7px;
     background: $surface-table-header;
 
@@ -1321,13 +1402,13 @@ $border-strong: rgba(v.$primary-color, 0.36);
   gap: 12px;
   margin: 0;
   border-top: 0;
-  padding: 0 16px;
+  padding: 0 v.$space-md;
   background: transparent;
 }
 
 .tabs {
   display: flex;
-  gap: 16px;
+  gap: 12px;
   min-width: 0;
   margin: 0;
   overflow-x: auto;
@@ -1339,11 +1420,14 @@ $border-strong: rgba(v.$primary-color, 0.36);
     gap: 6px;
     border: 0;
     border-bottom: 2px solid transparent;
-    padding: 0 2px;
+    padding: 0 v.$space-xxs;
     background: transparent;
     color: v.$text-secondary;
-    font-size: 13px;
-    font-weight: v.$font-weight-bold;
+    font-family: v.$font-family-accent; // tab labels use the display face, uppercase, 400 only
+    font-size: 12px;
+    font-weight: v.$font-weight-regular;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
     white-space: nowrap;
     cursor: pointer;
 
@@ -1356,10 +1440,12 @@ $border-strong: rgba(v.$primary-color, 0.36);
       margin-left: 0;
       border: 1px solid rgba(v.$primary-color, 0.28);
       border-radius: v.$radius-sm;
-      padding: 2px 6px;
+      padding: v.$space-xxs 6px;
       color: v.$primary-color;
+      font-family: v.$font-family-primary; // outlined Train One goes hollow at 10px
       font-size: 10px;
       font-weight: v.$font-weight-bold;
+      letter-spacing: 0;
       text-transform: uppercase;
     }
   }
@@ -1394,9 +1480,9 @@ $border-strong: rgba(v.$primary-color, 0.36);
   align-items: center;
   justify-content: flex-end;
   flex: 0 0 auto;
-  gap: 8px;
+  gap: v.$space-sm;
   min-height: 40px;
-  padding-left: 8px;
+  padding-left: v.$space-sm;
 
   strong,
   span {
@@ -1406,7 +1492,7 @@ $border-strong: rgba(v.$primary-color, 0.36);
   strong {
     color: $text-strong;
     font-size: 10px;
-    font-weight: 900;
+    font-weight: v.$font-weight-bold;
     text-transform: uppercase;
   }
 
@@ -1436,8 +1522,12 @@ $border-strong: rgba(v.$primary-color, 0.36);
     padding: 0 10px;
     background: transparent;
     color: v.$text-primary;
+    font-family: v.$font-family-accent; // toggle labels match the tabs (Train One, 400 only)
     font-size: 12px;
-    font-weight: v.$font-weight-bold;
+    font-weight: v.$font-weight-regular;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+    text-transform: uppercase;
     cursor: pointer;
 
     &:last-child {
@@ -1445,9 +1535,9 @@ $border-strong: rgba(v.$primary-color, 0.36);
     }
 
     &[aria-pressed="true"] {
-      background: v.$primary-color;
+      background: v.$primary-color-opaque;
+      box-shadow: inset 0 0 0 2px v.$primary-color;
       color: v.$color-white;
-      box-shadow: inset 0 0 0 1px rgba(v.$color-white, 0.08);
     }
   }
 }
@@ -1490,11 +1580,11 @@ $border-strong: rgba(v.$primary-color, 0.36);
     background: $surface-table-header;
     color: $text-soft;
     font-size: 10px;
-    font-weight: 900;
+    font-weight: v.$font-weight-bold;
     text-transform: uppercase;
     small {
       display: block;
-      margin-top: 2px;
+      margin-top: v.$space-xxs;
       color: v.$primary-color;
       font-size: 9px;
       line-height: 1;
@@ -1560,6 +1650,91 @@ $border-strong: rgba(v.$primary-color, 0.36);
   text-align: left !important;
 }
 
+.teamStyleCell {
+  width: 170px;
+  text-align: left !important;
+}
+
+.teamStyle {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 10px;
+  padding: 0 10px;
+  text-align: left;
+}
+
+// Pace × control map: a 22px board with centre lines; the dot sits where the team plays.
+.teamStyleGlyph {
+  position: relative;
+  flex: 0 0 22px;
+  width: 22px;
+  height: 22px;
+  border: 1px solid $border-muted;
+  border-radius: v.$radius-xs;
+  background:
+    linear-gradient($border-muted, $border-muted) center / 100% 1px no-repeat,
+    linear-gradient($border-muted, $border-muted) center / 1px 100% no-repeat,
+    $surface-inset;
+
+  &::after {
+    content: "";
+    position: absolute;
+    top: var(--style-y);
+    left: var(--style-x);
+    width: 6px;
+    height: 6px;
+    border-radius: v.$radius-pill;
+    background: v.$color-neutral-400;
+    transform: translate(-50%, -50%);
+  }
+
+}
+
+// Dot and label tint follow the control axis: green controls play, red chases it, even stays neutral.
+.teamStyle[data-control="controls_play"] {
+  .teamStyleGlyph::after {
+    background: v.$schedule-green;
+  }
+
+  .teamStyleText strong {
+    color: v.$schedule-green;
+  }
+}
+
+.teamStyle[data-control="chasing_play"] {
+  .teamStyleGlyph::after {
+    background: v.$danger-color;
+  }
+
+  .teamStyleText strong {
+    color: v.$danger-color;
+  }
+}
+
+.teamStyleText {
+  min-width: 0;
+
+  strong {
+    display: block;
+    overflow: hidden;
+    color: $text-strong;
+    font-size: 14px;
+    line-height: 1.2;
+    text-overflow: ellipsis;
+  }
+
+  span {
+    display: block;
+    margin-top: 3px;
+    overflow: hidden;
+    color: $text-soft;
+    font-family: v.$font-family-numbers;
+    font-size: 10px;
+    text-overflow: ellipsis;
+  }
+}
+
 .sampleCell {
   z-index: 1;
   width: 56px;
@@ -1577,6 +1752,12 @@ th.stickyPlayerCell {
   height: calc(var(--matrix-header-row-height) * 2);
   background: $surface-table-header;
   background-clip: padding-box;
+}
+
+// Goalie and team matrices have a one-row header.
+.matrixTableFlatHeader th.stickyRankCell,
+.matrixTableFlatHeader th.stickyPlayerCell {
+  height: var(--matrix-header-row-height);
 }
 
 td.stickyRankCell,
@@ -1609,11 +1790,11 @@ td.stickyPlayerCell {
   min-width: 40px;
   min-height: 36px;
   border: 1px solid $border-muted;
-  border-radius: 8px;
+  border-radius: v.$border-radius-md;
   background: $surface-inset;
   color: $text-strong;
   font-size: 15px;
-  font-weight: 900;
+  font-weight: v.$font-weight-bold;
   cursor: pointer;
 
   &:focus-visible {
@@ -1640,7 +1821,7 @@ td.stickyPlayerCell {
   cursor: pointer;
 
   small {
-    margin-top: 2px;
+    margin-top: v.$space-xxs;
     color: v.$primary-color;
     font-size: 8px;
   }
@@ -1665,7 +1846,7 @@ td.stickyPlayerCell {
   min-height: 27px;
   color: v.$text-primary;
   font-size: 12px;
-  font-weight: 900;
+  font-weight: v.$font-weight-bold;
   line-height: 1;
 
   + .toiCellRow {
@@ -1675,7 +1856,7 @@ td.stickyPlayerCell {
   b {
     color: $text-soft;
     font-size: 9px;
-    font-weight: 900;
+    font-weight: v.$font-weight-bold;
   }
 }
 
@@ -1685,9 +1866,10 @@ td.stickyPlayerCell {
   --score-tile-rgb: 123, 137, 152;
   min-width: 0;
   min-height: 58px;
-  margin: 8px auto;
+  margin: v.$space-sm auto;
   padding: 0 5px;
-  color: var(--score-tile-color);
+  --score-tile-ink: #{color.mix(v.$color-white, v.$text-secondary, 16%)};
+  color: var(--score-tile-ink);
   font-family: v.$font-family-primary;
   font-variant-numeric: tabular-nums;
 }
@@ -1699,11 +1881,8 @@ td.stickyPlayerCell {
   overflow: hidden;
   grid-template-rows: 1fr 1fr;
   border: 1px solid rgba(var(--score-tile-rgb), 0.62);
-  border-radius: 8px;
-  background: rgba(var(--score-tile-rgb), 0.08);
-  box-shadow:
-    inset 0 0 0 1px rgba(v.$color-white, 0.035),
-    0 5px 12px rgba(0, 0, 0, 0.14);
+  border-radius: v.$border-radius-md;
+  background: rgba(var(--score-tile-rgb), 0.08); // flat tile: no gloss, no drop shadow (fhfh-styles §2.2)
 }
 
 .metricScoreTile {
@@ -1714,14 +1893,12 @@ td.stickyPlayerCell {
   justify-content: center;
   border-bottom: 1px solid rgba(var(--score-tile-rgb), 0.32);
   border-radius: 0;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0)),
-    rgba(var(--score-tile-rgb), 0.16);
+  background: rgba(var(--score-tile-rgb), 0.16);
 
   strong {
     color: currentColor;
     font-size: 16px;
-    font-weight: 900;
+    font-weight: v.$font-weight-bold;
     line-height: 1;
   }
 }
@@ -1733,11 +1910,10 @@ td.stickyPlayerCell {
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  color: var(--score-tile-color);
-  font-weight: 900;
+  color: var(--score-tile-ink);
+  font-weight: v.$font-weight-bold;
   line-height: 1;
   text-overflow: ellipsis;
-  text-shadow: 0 0 8px rgba(var(--score-tile-rgb), 0.22);
   white-space: nowrap;
 }
 
@@ -1747,9 +1923,8 @@ td.stickyPlayerCell {
 }
 
 .metricValueLine {
-  color: $text-soft;
+  color: v.$text-primary; // $text-soft at 88% opacity was 3.9–4.4:1 on tinted tiles
   font-size: 8px;
-  opacity: 0.88;
 }
 
 .metricValueTile {
@@ -1762,12 +1937,12 @@ td.stickyPlayerCell {
   justify-content: center;
   overflow: hidden;
   border: 1px solid rgba(var(--score-tile-rgb), 0.34);
-  border-radius: 8px;
+  border-radius: v.$border-radius-md;
   background: rgba(var(--score-tile-rgb), 0.08);
   color: v.$text-primary;
   font-family: v.$font-family-primary;
   font-size: 11px;
-  font-weight: 900;
+  font-weight: v.$font-weight-bold;
   font-variant-numeric: tabular-nums;
   line-height: 1;
   text-overflow: ellipsis;
@@ -1777,12 +1952,12 @@ td.stickyPlayerCell {
   max-width: calc(100% - 4px);
   overflow: hidden;
   border: 1px solid rgba(var(--score-tile-rgb), 0.34);
-  border-radius: 999px;
-  padding: 2px 5px;
+  border-radius: v.$radius-pill;
+  padding: v.$space-xxs 5px;
   background: rgba(v.$background-dark, 0.82);
   color: v.$text-primary;
   font-size: 9px;
-  font-weight: 900;
+  font-weight: v.$font-weight-bold;
   line-height: 1;
   text-overflow: ellipsis;
   text-transform: uppercase;
@@ -1804,44 +1979,70 @@ td.stickyPlayerCell {
   color: v.$text-primary;
 }
 
+// Tile border/fill alpha needs the tone as an "r, g, b" triplet; derive it from the same
+// token as the text so text, border and fill are always one colour. Tile text uses
+// --score-tile-ink: the tone lifted toward white just enough for 4.5:1 on its own layered tint
+// (16% tile over 8% stack, or the 14% compact rank line) over base, hover and selected rows.
+// --score-tile-text: dark or light ink for numbers on the 78% compact fill and the band key.
+@function rgb-triplet($c) {
+  @return color.channel($c, "red", $space: rgb), color.channel($c, "green", $space: rgb),
+    color.channel($c, "blue", $space: rgb);
+}
+
 .scoreTonePeak {
-  --score-tile-color: #{v.$color-violet-400};
-  --score-tile-rgb: 180, 124, 255;
+  --score-tile-color: #{v.$percentile-band-95};
+  --score-tile-rgb: #{rgb-triplet(v.$percentile-band-95)};
+  --score-tile-ink: #{color.mix(v.$color-white, v.$percentile-band-95, 46%)};
+  --score-tile-text: #{v.$color-brand-white};
 }
 
 .scoreToneElite {
-  --score-tile-color: #{v.$info-color};
-  --score-tile-rgb: 127, 140, 255;
+  --score-tile-color: #{v.$percentile-band-90};
+  --score-tile-rgb: #{rgb-triplet(v.$percentile-band-90)};
+  --score-tile-ink: #{color.mix(v.$color-white, v.$percentile-band-90, 37%)};
+  --score-tile-text: #{v.$text-on-primary};
 }
 
 .scoreToneStrong {
-  --score-tile-color: #{v.$primary-color};
-  --score-tile-rgb: 79, 180, 255;
+  --score-tile-color: #{v.$percentile-band-80};
+  --score-tile-rgb: #{rgb-triplet(v.$percentile-band-80)};
+  --score-tile-ink: #{color.mix(v.$color-white, v.$percentile-band-80, 29%)};
+  --score-tile-text: #{v.$text-on-primary};
 }
 
 .scoreTonePositive {
-  --score-tile-color: #{v.$success-color};
-  --score-tile-rgb: 85, 217, 135;
+  --score-tile-color: #{v.$percentile-band-60};
+  --score-tile-rgb: #{rgb-triplet(v.$percentile-band-60)};
+  --score-tile-ink: #{color.mix(v.$color-white, v.$percentile-band-60, 15%)};
+  --score-tile-text: #{v.$text-on-primary};
 }
 
 .scoreToneNeutral {
-  --score-tile-color: #{v.$warning-color};
-  --score-tile-rgb: 210, 179, 95;
+  --score-tile-color: #{v.$percentile-band-40};
+  --score-tile-rgb: #{rgb-triplet(v.$percentile-band-40)};
+  --score-tile-ink: #{color.mix(v.$color-white, v.$percentile-band-40, 2%)};
+  --score-tile-text: #{v.$text-on-primary};
 }
 
 .scoreToneWeak {
-  --score-tile-color: #{v.$color-orange};
-  --score-tile-rgb: 217, 144, 79;
+  --score-tile-color: #{v.$percentile-band-20};
+  --score-tile-rgb: #{rgb-triplet(v.$percentile-band-20)};
+  --score-tile-ink: #{color.mix(v.$color-white, v.$percentile-band-20, 27%)};
+  --score-tile-text: #{v.$text-on-primary};
 }
 
 .scoreTonePoor {
-  --score-tile-color: #{v.$danger-color};
-  --score-tile-rgb: 199, 91, 82;
+  --score-tile-color: #{v.$percentile-band-0};
+  --score-tile-rgb: #{rgb-triplet(v.$percentile-band-0)};
+  --score-tile-ink: #{color.mix(v.$color-white, v.$percentile-band-0, 43%)};
+  --score-tile-text: #{v.$color-brand-white};
 }
 
 .scoreToneMuted {
-  --score-tile-color: #{v.$text-secondary};
-  --score-tile-rgb: 123, 137, 152;
+  --score-tile-color: #{v.$percentile-band-na};
+  --score-tile-rgb: #{rgb-triplet(v.$percentile-band-na)};
+  --score-tile-ink: #{color.mix(v.$color-white, v.$percentile-band-na, 35%)};
+  --score-tile-text: #{v.$text-on-primary};
 }
 
 .matrixFooter {
@@ -1851,52 +2052,75 @@ td.stickyPlayerCell {
   gap: 12px;
   border: 1px solid $border-muted;
   border-top: 0;
-  border-radius: 0 0 8px 8px;
-  padding: 10px 12px;
+  border-radius: 0 0 v.$border-radius-md v.$border-radius-md;
+  padding: 7px 12px;
   background: $surface-panel;
 }
 
-.matrixLegend,
+// One line on desktop: row count, the percentile bands, then pagination on the right.
+.matrixNoTier {
+  display: block;
+  color: $text-soft;
+  font-family: v.$font-family-numbers;
+  text-align: center;
+}
+
+.matrixLegendNote {
+  overflow: hidden;
+  margin-left: v.$space-xs;
+  text-overflow: ellipsis;
+}
+
+.matrixLegend {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+  color: $text-soft;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
 .paginationControls {
   display: flex;
+  flex: none;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
+  flex-wrap: nowrap;
+  gap: v.$space-sm;
   color: $text-soft;
   font-size: 12px;
 }
 
+// Tone comes from the scoreTone* class on each pill (declared above, so no defaults here).
 .matrixColorBand {
-  --score-tile-color: #{v.$text-secondary};
-  --score-tile-rgb: 123, 137, 152;
   min-width: 48px;
   border: 2px solid var(--score-tile-color);
-  border-radius: 7px;
-  padding: 3px 8px;
-  background: rgba(var(--score-tile-rgb), 0.15);
-  color: var(--score-tile-color);
-  font-weight: 800;
+  border-radius: v.$radius-sm;
+  padding: 3px v.$space-sm;
+  background: rgba(var(--score-tile-rgb), 0.78); // same fill as the tiles it explains
+  color: var(--score-tile-text);
+  font-weight: v.$font-weight-bold;
   text-align: center;
 }
 
-.lowerBetterLegend,
 .legendPill {
   border: 1px solid $border-muted;
-  border-radius: 6px;
-  padding: 4px 8px;
+  border-radius: v.$radius-sm;
+  padding: v.$space-xs v.$space-sm;
   background: $surface-inset;
   color: $text-soft;
-  font-weight: 800;
+  font-weight: v.$font-weight-bold;
 }
 
 .paginationControls {
   button,
   select {
+    @include page-button;
+
     min-height: 30px;
-    border: 1px solid $border-muted;
-    border-radius: 6px;
-    background: $surface-inset;
-    color: $text-strong;
+    border-radius: v.$radius-sm;
   }
 
   button {
@@ -1905,7 +2129,6 @@ td.stickyPlayerCell {
 
     &:disabled {
       cursor: not-allowed;
-      color: color.adjust(v.$text-secondary, $lightness: -20%);
     }
   }
 
@@ -1938,7 +2161,7 @@ td.stickyPlayerCell {
     margin-bottom: 9px;
     color: $text-soft;
     font-size: 12px;
-    font-weight: 900;
+    font-weight: v.$font-weight-bold;
     text-transform: uppercase;
   }
 }
@@ -1951,7 +2174,7 @@ td.stickyPlayerCell {
   margin-bottom: 14px;
 
   p {
-    margin-top: 4px;
+    margin-top: v.$space-xs;
     color: $text-soft;
     font-size: 12px;
   }
@@ -1963,7 +2186,7 @@ td.stickyPlayerCell {
   width: 64px;
   height: 64px;
   border: 1px solid $border-muted;
-  border-radius: 8px;
+  border-radius: v.$border-radius-md;
   background: rgba(v.$primary-color, 0.12);
 
   > img:first-child {
@@ -1981,31 +2204,31 @@ td.stickyPlayerCell {
   width: 22px;
   height: 22px;
   border: 1px solid $border-muted;
-  border-radius: 4px;
+  border-radius: v.$radius-xs;
   background: $surface-flat;
   object-fit: contain;
-  padding: 2px;
+  padding: v.$space-xxs;
 }
 
 .snapshotFacts {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-  margin: 0 0 16px;
+  gap: v.$space-sm;
+  margin: 0 0 v.$space-md;
 }
 
 .snapshotFacts {
   div {
     border: 1px solid $border-muted;
-    border-radius: 6px;
-    padding: 8px;
+    border-radius: v.$radius-sm;
+    padding: v.$space-sm;
     background: $surface-inset;
   }
 
   dt {
     color: $text-soft;
     font-size: 10px;
-    font-weight: 900;
+    font-weight: v.$font-weight-bold;
     text-transform: uppercase;
   }
 
@@ -2013,23 +2236,23 @@ td.stickyPlayerCell {
     margin: 3px 0 0;
     color: v.$color-white;
     font-size: 13px;
-    font-weight: 800;
+    font-weight: v.$font-weight-bold;
   }
 }
 
 .snapshotScores {
-  margin-top: 16px;
+  margin-top: v.$space-md;
 
   > div {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
+    gap: v.$space-sm;
   }
 }
 
 .snapshotScoreCard {
   border: 1px solid $border-muted;
-  border-radius: 6px;
+  border-radius: v.$radius-sm;
   padding: 9px;
   background: $surface-inset;
 
@@ -2042,18 +2265,18 @@ td.stickyPlayerCell {
   span {
     color: $text-soft;
     font-size: 10px;
-    font-weight: 900;
+    font-weight: v.$font-weight-bold;
     text-transform: uppercase;
   }
 
   strong {
-    margin-top: 4px;
+    margin-top: v.$space-xs;
     color: v.$warning-color;
     font-size: 14px;
   }
 
   small {
-    margin-top: 2px;
+    margin-top: v.$space-xxs;
     color: $text-soft;
     font-size: 11px;
     line-height: 1.3;
@@ -2065,13 +2288,13 @@ td.stickyPlayerCell {
 .snapshotBullets,
 .snapshotCaveats,
 .snapshotPlanned {
-  margin-top: 16px;
+  margin-top: v.$space-md;
 }
 
 .snapshotProfile,
 .snapshotCaveats {
   border: 1px solid $border-muted;
-  border-radius: 6px;
+  border-radius: v.$radius-sm;
   padding: 10px;
   background: $surface-inset;
 
@@ -2085,7 +2308,7 @@ td.stickyPlayerCell {
 .snapshotMetricBar {
   display: grid;
   grid-template-columns: 74px minmax(0, 1fr) 48px;
-  gap: 8px;
+  gap: v.$space-sm;
   align-items: center;
   margin: 7px 0;
   color: v.$text-primary;
@@ -2094,7 +2317,7 @@ td.stickyPlayerCell {
   div {
     height: 8px;
     overflow: hidden;
-    border-radius: 999px;
+    border-radius: v.$radius-pill;
     background: $surface-table-header;
   }
 
@@ -2102,7 +2325,7 @@ td.stickyPlayerCell {
     display: block;
     height: 100%;
     border-radius: inherit;
-    background: linear-gradient(90deg, v.$success-color, v.$primary-color, v.$color-violet-400);
+    background: var(--score-tile-color, #{v.$percentile-band-na}); // band colour, same scale as the matrix
   }
 
   strong {
@@ -2166,7 +2389,7 @@ td.stickyPlayerCell {
     }
 
     p {
-      margin-top: 4px;
+      margin-top: v.$space-xs;
       color: $text-soft;
       font-size: 12px;
       line-height: 1.35;
@@ -2183,12 +2406,12 @@ td.stickyPlayerCell {
   span {
     overflow: hidden;
     border: 1px solid $border-muted;
-    border-radius: 6px;
+    border-radius: v.$radius-sm;
     padding: 6px;
     background: $surface-inset;
     color: $text-soft;
     font-size: 10px;
-    font-weight: 900;
+    font-weight: v.$font-weight-bold;
     text-overflow: ellipsis;
     text-transform: uppercase;
     white-space: nowrap;
@@ -2197,17 +2420,17 @@ td.stickyPlayerCell {
 
 .comparisonRows {
   display: grid;
-  gap: 8px;
+  gap: v.$space-sm;
 
   article {
     border: 1px solid $border-muted;
-    border-radius: 6px;
+    border-radius: v.$radius-sm;
     padding: 9px;
     background: $surface-inset;
   }
 
   h3 {
-    margin-bottom: 8px;
+    margin-bottom: v.$space-sm;
     font-size: 13px;
     line-height: 1.25;
   }
@@ -2220,12 +2443,12 @@ td.stickyPlayerCell {
   dt {
     color: $text-soft;
     font-size: 10px;
-    font-weight: 900;
+    font-weight: v.$font-weight-bold;
     text-transform: uppercase;
   }
 
   dd {
-    margin: 2px 0 0;
+    margin: v.$space-xxs 0 0;
     color: v.$text-primary;
     font-size: 12px;
     line-height: 1.35;
@@ -2236,10 +2459,10 @@ td.stickyPlayerCell {
   margin-top: 12px;
 
   h3 {
-    margin-bottom: 8px;
+    margin-bottom: v.$space-sm;
     color: $text-soft;
     font-size: 11px;
-    font-weight: 900;
+    font-weight: v.$font-weight-bold;
     text-transform: uppercase;
   }
 
@@ -2258,9 +2481,9 @@ td.stickyPlayerCell {
 
 .secondaryTabGrid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); // one row for 3 or 4 cards, no orphan
   gap: 10px;
-  margin-top: 16px;
+  margin-top: v.$space-md;
 
   article {
     border: 1px solid $border-muted;
@@ -2270,7 +2493,7 @@ td.stickyPlayerCell {
   }
 
   h3 {
-    margin: 8px 0 6px;
+    margin: v.$space-sm 0 6px;
     color: $text-strong;
     font-size: 13px;
   }
@@ -2285,10 +2508,10 @@ td.stickyPlayerCell {
 .secondaryTabVerified,
 .secondaryTabPlanned {
   display: inline-block;
-  border-radius: 4px;
+  border-radius: v.$radius-xs;
   padding: 3px 6px;
   font-size: 10px;
-  font-weight: 900;
+  font-weight: v.$font-weight-bold;
   text-transform: uppercase;
 }
 
@@ -2303,7 +2526,7 @@ td.stickyPlayerCell {
 }
 
 .sourcePendingList {
-  margin-top: 16px;
+  margin-top: v.$space-md;
   border: 1px solid $border-muted;
   border-radius: v.$radius-md;
   padding: 12px;
@@ -2311,10 +2534,10 @@ td.stickyPlayerCell {
 
   strong {
     display: block;
-    margin-bottom: 8px;
+    margin-bottom: v.$space-sm;
     color: v.$warning-color;
     font-size: 12px;
-    font-weight: 900;
+    font-weight: v.$font-weight-bold;
     text-transform: uppercase;
   }
 
@@ -2364,18 +2587,18 @@ td.stickyPlayerCell {
   }
 
   p {
-    margin: 4px 0 0;
+    margin: v.$space-xs 0 0;
     color: $text-soft;
     font-size: 12px;
   }
 
   > span {
     border: 1px solid $border-muted;
-    border-radius: 999px;
-    padding: 4px 8px;
+    border-radius: v.$radius-pill;
+    padding: v.$space-xs v.$space-sm;
     color: v.$text-primary;
     font-size: 10px;
-    font-weight: 900;
+    font-weight: v.$font-weight-bold;
     text-transform: uppercase;
   }
 }
@@ -2401,7 +2624,7 @@ td.stickyPlayerCell {
     background: $surface-table-header;
     color: $text-soft;
     font-size: 11px;
-    font-weight: 900;
+    font-weight: v.$font-weight-bold;
     text-transform: uppercase;
   }
 
@@ -2423,9 +2646,9 @@ td.stickyPlayerCell {
   display: inline-grid;
   min-width: 76px;
   place-items: center;
-  gap: 2px;
+  gap: v.$space-xxs;
   border: 1px solid rgba(v.$primary-color, 0.72);
-  border-radius: 7px;
+  border-radius: v.$radius-sm;
   padding: 5px 7px;
   background: rgba(v.$primary-color, 0.14);
   color: $text-strong;
@@ -2440,21 +2663,30 @@ td.stickyPlayerCell {
   span {
     color: $text-soft;
     font-size: 10px;
-    font-weight: 800;
+    font-weight: v.$font-weight-bold;
     line-height: 1.1;
+  }
+}
+
+.splitMetricMuted {
+  border-color: $border-muted;
+  background: transparent;
+
+  strong {
+    color: $text-soft;
   }
 }
 
 .splitCaveats {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: v.$space-sm;
   padding: 0 14px 14px;
 
   span {
     border: 1px solid rgba(v.$warning-color, 0.35);
-    border-radius: 6px;
-    padding: 6px 8px;
+    border-radius: v.$radius-sm;
+    padding: 6px v.$space-sm;
     background: rgba(v.$warning-color, 0.08);
     color: v.$warning-color;
     font-size: 11px;
@@ -2491,7 +2723,7 @@ td.stickyPlayerCell {
 
   span {
     border: 1px solid $border-muted;
-    border-radius: 6px;
+    border-radius: v.$radius-sm;
     padding: 3px 6px;
     background: $surface-inset;
     color: v.$text-primary;
@@ -2509,13 +2741,19 @@ td.stickyPlayerCell {
 
 .opportunitySignal {
   border: 1px solid rgba(v.$success-color, 0.48);
-  border-radius: 6px;
+  border-radius: v.$radius-sm;
   padding: 3px 6px;
   background: rgba(v.$success-color, 0.1);
   color: v.$success-color;
   font-size: 10px;
-  font-weight: 900;
+  font-weight: v.$font-weight-bold;
   text-transform: uppercase;
+}
+
+.opportunitySignalFalling {
+  border-color: rgba(v.$warning-color, 0.48);
+  background: rgba(v.$warning-color, 0.1);
+  color: v.$warning-color;
 }
 
 .opportunityEmpty {
@@ -2528,6 +2766,25 @@ td.stickyPlayerCell {
 
 .deltaNegative {
   color: v.$danger-color;
+}
+
+.deltaNone {
+  color: $text-soft;
+}
+
+// 1241–1439px: the Tools column is too narrow for More Filters + Fantasy preset + ⓘ on one row.
+@media (min-width: 1241px) and (max-width: 1439px) {
+  .filtersActions {
+    grid-template-columns: auto auto 1fr;
+  }
+
+  .moreFiltersControl {
+    grid-column: 1 / -1;
+  }
+
+  .filtersActions > .resetFiltersButton:last-child {
+    justify-self: end;
+  }
 }
 
 @media (max-width: 1240px) {
@@ -2550,6 +2807,9 @@ td.stickyPlayerCell {
   .filtersSideRail,
   .filterMethodologyControl {
     grid-column: span 1;
+    // Desktop pins each control to a row; reset so narrower grids flow in DOM order
+    // instead of stacking several controls in one cell.
+    grid-row: auto;
   }
 
   .playerTypeControl,
@@ -2568,14 +2828,14 @@ td.stickyPlayerCell {
   .matrixActionBar {
     flex-direction: column;
     gap: 0;
-    padding: 0 8px 8px;
+    padding: 0 v.$space-sm v.$space-sm;
   }
 
   .matrixToolbar {
     justify-content: space-between;
     border-top: 1px solid $border-muted;
     border-left: 0;
-    padding: 8px 0 0;
+    padding: v.$space-sm 0 0;
   }
 
   .workstation {
@@ -2601,11 +2861,11 @@ td.stickyPlayerCell {
     height: calc(100dvh - 65px);
     flex-direction: column;
     overflow: hidden;
-    padding: 8px 0;
+    padding: v.$space-sm 0;
   }
 
   .workstation {
-    flex: 1 1 auto;
+    flex: 0 1 auto; // fit the matrix so the roadmap follows directly under it
     grid-template-rows: minmax(0, 1fr);
     align-items: stretch;
     min-height: 0;
@@ -2620,8 +2880,9 @@ td.stickyPlayerCell {
     overflow: hidden;
   }
 
+  // Shrink to the rows on short pages (no dead band above the footer); still scroll when taller.
   .matrixSection {
-    flex: 1 1 0;
+    flex: 0 1 auto;
   }
 
   .matrixToolbar,
@@ -2629,8 +2890,15 @@ td.stickyPlayerCell {
     flex: 0 0 auto;
   }
 
+  .scrollFrame {
+    display: flex;
+    flex: 0 1 auto;
+    min-height: 0;
+    flex-direction: column;
+  }
+
   .matrixWrap {
-    flex: 1 1 auto;
+    flex: 0 1 auto;
     min-height: 0;
   }
 
@@ -2656,7 +2924,8 @@ td.stickyPlayerCell {
 
 @media (max-width: 720px) {
   .page {
-    width: min(100% - 20px, 1440px);
+    width: calc(100% - 20px);
+    max-width: none; // phones use nearly the full width for the matrix (TJ, 2026-11-08)
     padding-top: 20px;
   }
 
@@ -2703,12 +2972,67 @@ td.stickyPlayerCell {
   }
 
   .matrixWrap {
-    border-radius: 6px;
+    border-radius: v.$radius-sm;
+  }
+
+  // Phones: a 350px sticky name column filled the screen; keep names, drop the headshot stack.
+  .stickyPlayerCell {
+    left: 44px;
+    width: 170px;
+    min-width: 170px;
+  }
+
+  .stickyRankCell {
+    width: 44px;
+  }
+
+  .playerMedia,
+  .teamNameFull,
+  .rowBadges {
+    display: none;
+  }
+
+  .teamNameShort,
+  .metaBadges {
+    display: inline;
+  }
+
+  .metaBadges .deploymentBadges {
+    display: inline-flex;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    gap: 3px;
+    width: auto;
+    vertical-align: middle;
+  }
+
+  // Phones: deployment reads as tone-coloured text in the meta line, no box.
+  .metaBadges .deploymentBadge,
+  .metaBadges .deploymentBadgeMuted {
+    width: auto;
+    min-height: 0;
+    border: 0;
+    padding: 0;
+    background: none;
+    box-shadow: none;
+    font-size: inherit;
+  }
+
+  .playerCell strong {
+    font-size: 14px;
+  }
+
+  .playerCell .playerIdentity > span {
+    font-size: 12px;
   }
 
   .matrixLegend,
   .paginationControls {
     width: 100%;
+  }
+
+  .matrixLegend {
+    flex-wrap: wrap;
   }
 
   .snapshotScores > div,
@@ -2723,22 +3047,6 @@ td.stickyPlayerCell {
 }
 
 @media (max-width: v.$breakpoint-mobile-max) {
-  .filters {
-    grid-template-columns: 1fr;
-  }
-
-  .metricControl {
-    grid-column: span 1;
-  }
-
-  .playerTypeControl,
-  .searchControl,
-  .filterTeam,
-  .filtersSideRail,
-  .filterMethodologyControl {
-    grid-column: span 1;
-  }
-
   .segmentedControl {
     grid-template-columns: 1fr 1fr;
   }
@@ -2752,4 +3060,336 @@ td.stickyPlayerCell {
     left: 0;
     width: min(100%, calc(100vw - 24px));
   }
+}
+
+// ---------------------------------------------------------------------------
+// Compact heatmap matrix + snapshot drawer (desktop ≥1241px; TJ, 2026-11-08).
+// Every metric fits without horizontal scroll: value on a 78% tone fill with dark ink,
+// rank below on a 14% tint, numbers in Martian Mono. Phones keep the detailed tiles.
+// ---------------------------------------------------------------------------
+.snapshotDrawerButton,
+.drawerCloseButton {
+  display: none;
+}
+
+// Heatmap cell (Compact and Detailed share it; TJ 2026-11-08): value over rank, filling the cell
+// edge to edge (square, no radius). Only the row heights and type sizes differ by density.
+@mixin heatmap-cells($value-row, $rank-row, $value-size, $rank-size) {
+  .matrixMetricCell {
+    position: relative;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+  }
+
+  .metricScoreStack {
+    min-height: $value-row + $rank-row;
+    grid-template-rows: $value-row $rank-row;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+  }
+
+  .metricScoreTile {
+    border-bottom: 0;
+    background: rgba(var(--score-tile-rgb), 0.78);
+
+    strong {
+      color: var(--score-tile-text, #{v.$text-on-primary});
+      font-family: v.$font-family-numbers;
+      font-size: $value-size;
+      letter-spacing: -0.02em;
+    }
+
+    .pctSign {
+      display: none; // bare numbers; the band key says these are percentiles
+    }
+  }
+
+  .metricRankLine {
+    justify-content: center;
+    background: rgba(var(--score-tile-rgb), 0.14);
+    color: var(--score-tile-ink);
+    font-family: v.$font-family-numbers;
+    font-size: $rank-size;
+  }
+
+  .metricValueLine {
+    display: none;
+  }
+
+  // Caveat chips shrink to a 6px state-coloured dot in the cell corner (glyph and label stay
+  // in the accessible name and tooltip), so they never collide with the value or rank.
+  .metricStateChip {
+    position: absolute;
+    top: 3px;
+    right: 3px;
+    width: 6px;
+    min-width: 0;
+    height: 6px;
+    min-height: 0;
+    overflow: hidden;
+    border: 1px solid v.$text-on-primary;
+    border-radius: v.$radius-pill;
+    padding: 0;
+    background: currentColor;
+    font-size: 0;
+  }
+}
+
+@media (min-width: 1241px) {
+  .snapshotDrawerButton {
+    display: inline-flex;
+  }
+
+  .workstationCompact {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .contextRailDrawer {
+    position: fixed;
+    top: calc(#{v.$site-header-offset} + #{v.$space-sm});
+    right: 12px;
+    bottom: 12px;
+    z-index: v.$z-desktop-overlay;
+    width: 360px;
+    max-height: none;
+    overflow: auto;
+    border: 1px solid $border-muted;
+    border-radius: v.$radius-md;
+    padding: v.$space-sm;
+    background: $surface-panel;
+    box-shadow: v.$shadow-panel-hover;
+    transform: translateX(calc(100% + 24px));
+    visibility: hidden; // closed drawer leaves the tab order and accessibility tree
+    // Closing: hide only after the slide-out. Opening (below): visible at once so focus can move in.
+    transition:
+      transform 0.2s ease,
+      visibility 0s linear 0.2s;
+
+    @media (prefers-reduced-motion: reduce) {
+      transition: none;
+    }
+  }
+
+  .contextRailDrawerOpen {
+    transform: none;
+    visibility: visible;
+    transition:
+      transform 0.2s ease,
+      visibility 0s;
+  }
+
+  .drawerCloseButton {
+    @include page-button;
+
+    display: inline-flex;
+    align-self: start;
+    justify-self: end;
+    height: 28px;
+    align-items: center;
+    border-radius: v.$radius-sm;
+    padding: 0 10px;
+    font-family: v.$font-family-accent;
+    font-size: 12px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+
+  .matrixCompact {
+    width: 100%;
+    min-width: 0;
+
+    th {
+      padding: 0 2px; // height stays --matrix-header-row-height so the sticky second row lines up
+      font-size: 9px;
+      white-space: normal;
+      line-height: 1.1;
+    }
+
+    td {
+      height: 46px;
+      padding: 0 2px;
+      font-family: v.$font-family-numbers; // every number column (GP, Starts, Shots, TOI…) in the numbers face
+      font-size: 10px;
+    }
+
+    // Text columns stay in the table's UI face (Roboto); rank buttons are numbers too.
+    td.stickyPlayerCell,
+    td.textCell,
+    td[colspan] {
+      font-family: inherit; // loading/empty/error state rows are text too
+      font-size: 13px;
+    }
+
+    .rowSelectButton {
+      font-family: v.$font-family-numbers;
+      font-size: 12px;
+    }
+
+    .matrixMetricHeader,
+    .matrixMetricScoreCell {
+      width: auto; // metric columns share whatever the identity columns leave
+    }
+
+    th.stickyRankCell,
+    td.stickyRankCell {
+      width: 36px;
+    }
+
+    th.stickyPlayerCell,
+    td.stickyPlayerCell {
+      left: 36px;
+      width: 170px;
+      min-width: 170px;
+    }
+
+    .sampleCell {
+      width: 36px;
+    }
+
+    .toiCell {
+      width: 72px;
+      padding: 0 3px !important;
+    }
+
+    .toiCellRow {
+      grid-template-columns: 22px minmax(0, 1fr);
+      gap: 3px;
+      min-height: 22px;
+      font-family: v.$font-family-numbers;
+      font-size: 10px;
+    }
+
+    .teamStyleCell {
+      width: 150px;
+    }
+
+    .goalieRoleHeader {
+      width: 96px; // fits "Tandem Secondary" under the code
+    }
+
+    .rowSelectButton {
+      min-width: 28px;
+      min-height: 28px;
+    }
+
+    // Name column: name over "R · TBL · L1", no headshot stack (same as phones).
+    .playerMedia,
+    .teamNameFull,
+    .rowBadges {
+      display: none;
+    }
+
+    .teamNameShort,
+    .metaBadges {
+      display: inline;
+    }
+
+    .metaBadges .deploymentBadges {
+      display: inline-flex;
+      flex-wrap: nowrap;
+      justify-content: flex-start;
+      gap: 3px;
+      width: auto;
+      vertical-align: middle;
+    }
+
+    .metaBadges .deploymentBadge,
+    .metaBadges .deploymentBadgeMuted {
+      width: auto;
+      min-height: 0;
+      border: 0;
+      padding: 0;
+      background: none;
+      box-shadow: none;
+      font-size: inherit;
+    }
+
+    .playerCell {
+      padding: 0 v.$space-xs 0 v.$space-sm;
+    }
+
+    .playerCell strong {
+      font-size: 13px;
+    }
+
+    .playerCell .playerIdentity > span {
+      font-size: 11px;
+    }
+
+    .matrixSortButton {
+      white-space: normal;
+      font-size: 9px;
+      line-height: 1.1;
+
+      span {
+        overflow: visible;
+        overflow-wrap: anywhere; // "A1+A2/60" breaks at the slash instead of truncating
+        text-overflow: clip;
+        white-space: normal;
+      }
+    }
+
+    @include heatmap-cells(25px, 21px, 11px, 9px);
+  }
+
+  .matrixTable:not(.matrixCompact) {
+    td.matrixMetricScoreCell {
+      padding: 0 2px;
+    }
+
+    @include heatmap-cells(34px, 24px, 14px, 11px);
+  }
+}
+
+// Marker for text columns inside numeric matrices (compact keeps them in the UI face).
+.textCell {
+  text-align: center;
+}
+
+// Goalie role cell: colour-coded depth code over its meaning (TJ, 2026-11-08).
+.goalieRole {
+  display: grid;
+  gap: 2px;
+  justify-items: center;
+  line-height: 1.1;
+
+  strong {
+    color: color.mix(v.$color-white, v.$percentile-band-na, 4%); // 4.5:1 on base/hover/selected rows
+    font-family: v.$font-family-numbers;
+    font-size: 12px;
+    font-weight: v.$font-weight-bold;
+  }
+
+  > span {
+    max-width: 100%;
+    overflow: hidden;
+    color: $text-soft;
+    font-family: v.$font-family-primary;
+    font-size: 11px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &[data-role-code="G1"] strong {
+    color: color.mix(v.$color-white, v.$percentile-band-95, 30%); // navy lifted to 4.5:1
+  }
+
+  &[data-role-code="G1A"] strong {
+    color: color.mix(v.$color-white, v.$percentile-band-90, 6%);
+  }
+
+  &[data-role-code="G1B"] strong {
+    color: v.$percentile-band-60;
+  }
+
+  &[data-role-code="G2"] strong {
+    color: v.$percentile-band-40;
+  }
+}
+
+.goalieRoleHeader {
+  width: 110px;
 }

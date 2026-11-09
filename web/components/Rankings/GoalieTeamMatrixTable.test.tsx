@@ -11,6 +11,10 @@ import {
 import GoalieMatrixTable from "./GoalieMatrixTable";
 import TeamMatrixTable from "./TeamMatrixTable";
 
+// Score labels render the % sign in its own span (hidden in the compact heatmap).
+const scoreText = (label: string) => (_content: string, element: Element | null) =>
+  element?.tagName === "STRONG" && element.textContent === label;
+
 afterEach(() => {
   cleanup();
 });
@@ -520,19 +524,19 @@ describe("GoalieMatrixTable and TeamMatrixTable", () => {
       />,
     );
 
-    expect(screen.getByText("Sort Rank")).toBeTruthy();
+    expect(screen.getByText("Rank")).toBeTruthy();
     expect(screen.getByText("Test Goalie")).toBeTruthy();
-    expect(screen.getByText("G1 Workhorse")).toBeTruthy();
+    expect(screen.getByLabelText(/^G1 Workhorse role/)).toBeTruthy();
     expect(screen.getByText("83.0%")).toBeTruthy();
     expect(screen.getByText("100.0%")).toBeTruthy();
     expect(screen.getByLabelText("G1 Workhorse role, high confidence")).toBeTruthy();
-    expect(screen.getByText("88%")).toBeTruthy();
+    expect(screen.getByText(scoreText("88%"))).toBeTruthy();
     expect(screen.getByText("xGA/Shot")).toBeTruthy();
     expect(screen.getByText("0.092")).toBeTruthy();
     expect(screen.getByText("HD SV%")).toBeTruthy();
     expect(screen.getByText("81.8%")).toBeTruthy();
     expect(
-      screen.getByText(/Source-pending goalie contracts: Under Pressure/),
+      screen.getByText(/Not published yet: Under Pressure/),
     ).toBeTruthy();
     expect(screen.getAllByText("#3").length).toBeGreaterThan(0);
     expect(screen.getByText(".925")).toBeTruthy();
@@ -590,13 +594,13 @@ describe("GoalieMatrixTable and TeamMatrixTable", () => {
       />,
     );
 
-    expect(screen.getByText("Sort Rank")).toBeTruthy();
-    expect(screen.getByText("High Event (raw/contextual)")).toBeTruthy();
-    expect(screen.getByText(/not a coach\/system claim/)).toBeTruthy();
-    expect(screen.getAllByText("84%").length).toBeGreaterThan(0);
+    expect(screen.getByText("Rank")).toBeTruthy();
+    expect(screen.getByText("High Event")).toBeTruthy();
+    expect(screen.getByTitle(/not a coach\/system claim/)).toBeTruthy();
+    expect(screen.getAllByText(scoreText("84%")).length).toBeGreaterThan(0);
     expect(screen.getAllByText("#4").length).toBeGreaterThan(0);
     expect(screen.getByText("2.85")).toBeTruthy();
-    expect(screen.getByText("80%")).toBeTruthy();
+    expect(screen.getByText(scoreText("80%"))).toBeTruthy();
     expect(screen.getAllByText("#5").length).toBeGreaterThan(0);
     expect(screen.getByText("2.20")).toBeTruthy();
     expect(screen.getByText("1-Goal%")).toBeTruthy();
@@ -613,7 +617,7 @@ describe("GoalieMatrixTable and TeamMatrixTable", () => {
     expect(screen.getByText("49.4%")).toBeTruthy();
     expect(screen.getByText("PP1/PP2 Share")).toBeTruthy();
     expect(screen.getByText("91.5%")).toBeTruthy();
-    expect(screen.getByText(/Source-pending team contracts:/)).toBeTruthy();
+    expect(screen.getByText(/Not published yet:/)).toBeTruthy();
     expect(screen.getAllByLabelText("Source pending").length).toBeGreaterThan(0);
     expect(screen.getAllByLabelText("Raw context").length).toBeGreaterThan(0);
     expect(screen.getByLabelText("Team source state legend")).toBeTruthy();
@@ -718,7 +722,7 @@ describe("GoalieMatrixTable and TeamMatrixTable", () => {
     expect(screen.getByLabelText("No unit coverage")).toBeTruthy();
     expect(
       screen.getByLabelText(
-        /Fwd Top Load.*Unit coverage source_gap; resolved games 0; latest none.*forward_lines_unresolved/,
+        /Fwd Top Load.*Line usage no data; 0 resolved games; latest none.*Line-usage coverage: Forward lines unresolved/,
       ),
     ).toBeTruthy();
   });

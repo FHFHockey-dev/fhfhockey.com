@@ -236,11 +236,32 @@ function resolveGamesPlayed(
     readNumber(row, getSeasonParticipationField(strengthState)) ??
     readNumber(row, "games_played");
 
-  if (window === "season" || seasonGames == null) {
+  if (window === "season") {
     return seasonGames;
   }
 
-  return Math.min(seasonGames, getSkaterProductionWindowSize(window));
+  // Last-N windows span the player's last N games and reach into the prior season, so count the
+  // window's own games, not this season's. The writer fills toi_seconds_avg_last5 but not last10/20.
+  const windowSize = getSkaterProductionWindowSize(window);
+  const windowToi = readNumber(row, `toi_seconds_total_${window}`);
+  const windowAvgToi = readNumber(row, `toi_seconds_avg_${window}`);
+  if (windowToi != null && windowAvgToi != null && windowAvgToi > 0) {
+    return Math.min(windowSize, Math.round(windowToi / windowAvgToi));
+  }
+  if (seasonGames == null) return null;
+  if (seasonGames >= windowSize) return windowSize;
+
+  // Window TOI clearly above this season's TOI: it includes prior-season games, so it is full.
+  const seasonAvgToi = readNumber(row, "toi_seconds_avg_season");
+  if (
+    windowToi != null &&
+    seasonAvgToi != null &&
+    windowToi > seasonAvgToi * seasonGames * 1.05
+  ) {
+    return windowSize;
+  }
+
+  return seasonGames;
 }
 
 function resolveToiSeconds(args: {

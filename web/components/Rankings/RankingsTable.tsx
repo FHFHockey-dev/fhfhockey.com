@@ -14,6 +14,8 @@ import {
 
 import RankingExplanation from "./RankingExplanation";
 
+import ScrollRegion from "./ScrollRegion";
+
 import styles from "styles/Rankings.module.scss";
 
 type RankingsTableProps = {
@@ -134,7 +136,7 @@ export default function RankingsTable({
           narrow.
         </div>
       ) : null}
-      <div className={styles.tableWrap}>
+      <ScrollRegion className={styles.tableWrap} label="Metric explorer results">
         <table className={styles.table}>
           <thead>
             <tr>
@@ -226,7 +228,7 @@ export default function RankingsTable({
             </tbody>
           ) : null}
         </table>
-      </div>
+      </ScrollRegion>
     </>
   );
 }

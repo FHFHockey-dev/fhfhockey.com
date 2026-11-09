@@ -29,12 +29,20 @@ describe("summariseRunCadence", () => {
     // Started at 30, 32, 34 (no result), 50, 52 (no result) and 54, the capture's newest run: 54 is too recent to judge.
     // Nothing captured before 30 is not a gap, and the trailing gap runs to the capture's edge (54), not the window end.
     expect(summariseRunCadence(runs, START, END, [at(29.9), at(31.9), at(34), at(49.95), at(52), at(54)]))
-      .toEqual({ started: 5, captured: 3, missed: 2, longestGapMinutes: 18, lastRunAt: at(50) });
+      .toEqual({ started: 5, captured: 3, missed: 2, longestGapMinutes: 18, longestGapFrom: at(32), longestGapTo: at(50), lastRunAt: at(50) });
     // Results stopped while the job kept starting runs: the trailing gap shows it.
     expect(summariseRunCadence(runs, START, END, [at(29.9), at(31.9), at(34), at(49.95), at(52), at(80)]))
       .toMatchObject({ started: 5, missed: 2, longestGapMinutes: 30 });
     expect(summariseRunCadence(runs, START, END)).toMatchObject({ started: null, missed: null });
     expect(summariseRunCadence([], START, END, [])).toMatchObject({ captured: 0, started: 0, missed: 0, longestGapMinutes: 60 });
+  });
+
+  it("counts two runs that share a response id as two runs (pg_net restarts its ids)", () => {
+    // Ids 1 and 2 before a restart at minute 20, then reused: four runs, not two.
+    const runs = [run(1, 2, "a", true), run(2, 4, "a", false), run(1, 22, "a", false), run(2, 24, "a", true)];
+    expect(summariseRunCadence(runs, START, END, [at(2), at(4), at(22), at(24), at(30)]))
+      .toMatchObject({ started: 4, captured: 4, missed: 0, longestGapMinutes: 18, longestGapFrom: at(4), longestGapTo: at(22) });
+    expect(summariseReads(runs, "a")).toMatchObject({ runs: 4, ok: 2, longestFailStreak: 2, lastOkAt: at(24) });
   });
 });
 
@@ -140,8 +148,20 @@ describe("assessPollerHealth", () => {
       accounts: [accounts[0]!], windowStart: START, windowEnd: END, providers, alerts: [], shadow: [], ifttt: [], queueRows: [],
       runs: [run(1, 1, "dfofantasy", true), run(2, 59, "dfofantasy", true)], startedRunTimes: [at(1), at(20), at(40), at(59)],
     });
-    expect(health.runs).toMatchObject({ longestGapMinutes: 58, started: 3, captured: 2, missed: 2 });
+    expect(health.runs).toMatchObject({ longestGapMinutes: 58, started: 3, captured: 2, missed: 2, postsDuringLongestGap: 0 });
     expect(health.status).toBe("warning");
-    expect(health.warnings).toEqual([expect.stringMatching(/58 minutes/), "2 of 3 poller runs left no result (auth failure, timeout or empty body)."]);
+    expect(health.warnings).toEqual(["The poller went 58 minutes without a captured run.",
+      "2 of 3 poller runs left no captured result (auth failure, timeout, empty body or a lost capture)."]);
+  });
+
+  it("says when posts were stored during the longest capture gap", () => {
+    const health = assessPollerHealth({
+      accounts: [accounts[0]!], windowStart: START, windowEnd: END, providers, alerts: [], ifttt: [], queueRows: [],
+      shadow: [sighting("dfofantasy", "t1", 10), sighting("dfofantasy", "t2", 30), sighting("dfofantasy", "t3", 59.5)],
+      runs: [run(1, 1, "dfofantasy", true), run(2, 59, "dfofantasy", true)], startedRunTimes: [at(1), at(59)],
+    });
+    expect(health.runs).toMatchObject({ longestGapMinutes: 58, postsDuringLongestGap: 2 });
+    expect(health.warnings[0]).toBe("The poller went 58 minutes without a captured run, but 2 posts were stored in that time, "
+      + "so the poller kept running and the gap is in the run capture.");
   });
 });

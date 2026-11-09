@@ -16,8 +16,9 @@ function formatPercentile(value: number | null) {
   return `${value.toFixed(1)}%`;
 }
 
+// Live is the normal state, so only flag buckets that are partial or unavailable.
 function sourceLabel(bucket: DeploymentTierBucket) {
-  if (bucket.sourceState === "available") return "Live";
+  if (bucket.sourceState === "available") return null;
   if (bucket.sourceState === "partial") return "Partial";
   return "Unavailable";
 }
@@ -34,7 +35,7 @@ function BucketCard({ bucket }: { bucket: DeploymentTierBucket }) {
     <article className={styles.deploymentTierBucket}>
       <header>
         <div>
-          <span>{sourceLabel(bucket)}</span>
+          {sourceLabel(bucket) ? <span>{sourceLabel(bucket)}</span> : null}
           <h3>{bucket.label}</h3>
         </div>
         <strong>{formatPercentile(bucket.averagePercentile)}</strong>
@@ -113,14 +114,13 @@ export default function DeploymentTiersPanel({
         <div>
           <h2>Deployment Tiers</h2>
           <p>
-            Percentile rollups by verified EV, PP, and PK deployment buckets.
+            Average percentiles by deployment: forward lines, defense pairs, power-play and penalty-kill units.
           </p>
         </div>
-        <span>
-          {payload.meta.snapshotDates.length > 0
-            ? `Snapshots ${payload.meta.snapshotDates.join(", ")}`
-            : "Live API"}
-        </span>
+        {/* The header box shows the snapshot date; only call out tiers built from mixed dates. */}
+        {payload.meta.snapshotDates.length > 1 ? (
+          <span>Snapshots {payload.meta.snapshotDates.join(", ")}</span>
+        ) : null}
       </header>
       {payload.sections.map((section) => (
         <section key={section.key} className={styles.deploymentTierSection}>

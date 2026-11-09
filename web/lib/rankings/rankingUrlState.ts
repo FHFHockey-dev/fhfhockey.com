@@ -49,6 +49,8 @@ export type RankingsFilterState = {
   sampleConfidence: "all" | "medium_plus" | "high";
   sourceQuality: "all" | "clean_only" | "caveats_only";
   displayMode: "percentile" | "raw_rank" | "both" | "metric_value";
+  // Desktop matrix layout: compact heatmap cells (default) or the detailed tiles.
+  density: "compact" | "detailed";
   metricGroups: string;
   metricColumns: string;
   page: string;
@@ -57,6 +59,41 @@ export type RankingsFilterState = {
   selectedGoalieId: string;
   selectedTeam: string;
 };
+
+// Default minimum games scale with the window so short samples don't top the
+// season view (a 1-GP player at the 100th percentile reads as a broken ranking).
+export const DEFAULT_MIN_GP_BY_WINDOW: Record<RankingsFilterState["window"], string> = {
+  season: "10",
+  last20: "5",
+  last10: "3",
+  last5: "2",
+};
+
+export function defaultMinGpForWindow(window: RankingsFilterState["window"]) {
+  return DEFAULT_MIN_GP_BY_WINDOW[window];
+}
+
+const WINDOW_GAME_COUNT: Partial<Record<RankingsFilterState["window"], number>> = {
+  last20: 20,
+  last10: 10,
+  last5: 5,
+};
+
+// Min GP for a comparison window (Splits, Trending). The page's Season default of 10 games would leave
+// nobody qualified in Last 5, so follow the per-window default when the base uses its own default;
+// otherwise cap a custom minimum at the window length.
+export function minGpForComparisonWindow(
+  baseMinGp: number | null,
+  baseWindow: RankingsFilterState["window"],
+  window: RankingsFilterState["window"],
+): number | null {
+  if (baseMinGp == null || window === baseWindow) return baseMinGp;
+  if (baseMinGp === Number(defaultMinGpForWindow(baseWindow))) {
+    return Number(defaultMinGpForWindow(window));
+  }
+  const windowGames = WINDOW_GAME_COUNT[window];
+  return windowGames == null ? baseMinGp : Math.min(baseMinGp, windowGames);
+}
 
 export const DEFAULT_RANKINGS_FILTERS: RankingsFilterState = {
   entity: "skaters",
@@ -67,7 +104,7 @@ export const DEFAULT_RANKINGS_FILTERS: RankingsFilterState = {
   deployment: "all",
   strength: "5v5",
   metric: "goals_per_60",
-  minGp: "1",
+  minGp: DEFAULT_MIN_GP_BY_WINDOW.season,
   minToi: "300",
   team: "",
   search: "",
@@ -81,6 +118,7 @@ export const DEFAULT_RANKINGS_FILTERS: RankingsFilterState = {
   sampleConfidence: "all",
   sourceQuality: "all",
   displayMode: "both",
+  density: "compact",
   metricGroups: "",
   metricColumns: "",
   page: "1",
@@ -297,6 +335,12 @@ export function normalizeRankingsFilters(query: RankingsQuery) {
   )
     ? (queryValue(query.sort_metric) as ContextualRankingMetricKey)
     : DEFAULT_RANKINGS_FILTERS.matrixSortMetric;
+  const window: RankingsFilterState["window"] =
+    queryValue(query.window) === "last5" ||
+    queryValue(query.window) === "last10" ||
+    queryValue(query.window) === "last20"
+      ? (queryValue(query.window) as RankingsFilterState["window"])
+      : "season";
   const next: RankingsFilterState = {
     ...DEFAULT_RANKINGS_FILTERS,
     entity:
@@ -306,12 +350,7 @@ export function normalizeRankingsFilters(query: RankingsQuery) {
         : "skaters",
     tab: parseTab(queryValue(query.tab)),
     season: queryValue(query.season) || DEFAULT_RANKINGS_FILTERS.season,
-    window:
-      queryValue(query.window) === "last5" ||
-      queryValue(query.window) === "last10" ||
-      queryValue(query.window) === "last20"
-        ? (queryValue(query.window) as RankingsFilterState["window"])
-        : "season",
+    window,
     position:
       queryValue(query.position) === "F" || queryValue(query.position) === "D"
         ? (queryValue(query.position) as RankingsFilterState["position"])
@@ -328,7 +367,7 @@ export function normalizeRankingsFilters(query: RankingsQuery) {
     metric: getContextualRankingMetricDefinition(queryValue(query.metric))
       ? (queryValue(query.metric) as ContextualRankingMetricKey)
       : DEFAULT_RANKINGS_FILTERS.metric,
-    minGp: queryValue(query.min_gp) || DEFAULT_RANKINGS_FILTERS.minGp,
+    minGp: queryValue(query.min_gp) || defaultMinGpForWindow(window),
     minToi: queryValue(query.min_toi) || DEFAULT_RANKINGS_FILTERS.minToi,
     team: queryValue(query.team),
     search: queryValue(query.search).trim().slice(0, 80),
@@ -344,6 +383,7 @@ export function normalizeRankingsFilters(query: RankingsQuery) {
     ),
     sourceQuality: parseSourceQuality(queryValue(query.source_quality)),
     displayMode: parseDisplayMode(queryValue(query.display)),
+    density: queryValue(query.density) === "detailed" ? "detailed" : "compact",
     metricGroups: parseCsvFilter(queryValue(query.groups), (entry) =>
       MATRIX_METRIC_GROUPS.some((group) => group.key === entry),
     ),
@@ -361,6 +401,14 @@ export function normalizeRankingsFilters(query: RankingsQuery) {
   }
   return next;
 }
+
+const STRENGTH_LABELS: Record<RankingsFilterState["strength"], string> = {
+  "5v5": "5v5",
+  all: "All strengths",
+  ev: "Even strength",
+  pp: "Power play",
+  pk: "Penalty kill",
+};
 
 export function buildRankingsContextSummary(
   filters: RankingsFilterState,
@@ -387,7 +435,7 @@ export function buildRankingsContextSummary(
     filters.window === "season"
       ? "Season"
       : `${filters.window.replace("last", "Last ")} games`;
-  const strength = filters.strength.toUpperCase();
+  const strength = STRENGTH_LABELS[filters.strength] ?? filters.strength;
   const context = [
     strength,
     ...(filters.tab === "trending" ? [] : [window]),
@@ -396,7 +444,11 @@ export function buildRankingsContextSummary(
     const minGp = Number(filters.minGp);
     const minToi = Number(filters.minToi);
     if (Number.isFinite(minGp) && minGp >= 0) context.push(`Min ${minGp} GP`);
-    if (Number.isFinite(minToi) && minToi >= 0) context.push(`Min ${minToi}s TOI`);
+    if (Number.isFinite(minToi) && minToi >= 0) {
+      // TOI minimum in seconds, shown as a clock ("Min 5:00 TOI").
+      const seconds = Math.round(minToi);
+      context.push(`Min ${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")} TOI`);
+    }
   }
   let description: string;
 

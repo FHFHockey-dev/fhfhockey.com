@@ -3,7 +3,6 @@ import { useMemo, useState } from "react";
 
 import {
   CONTEXTUAL_RANKING_METRIC_DEFINITIONS,
-  getContextualRankingMetricDefinition,
   type ContextualRankingMetricKey,
 } from "lib/rankings/metricDefinitions";
 import { GOALIE_ROLE_FILTER_OPTIONS } from "lib/rankings/goalieMethodology";
@@ -56,42 +55,6 @@ const DISPLAY_MODE_OPTIONS = [
   { value: "both", label: "Percentile + Rank" },
   { value: "metric_value", label: "Metric Value" },
 ] as const;
-
-const GOALIE_METRIC_LABELS: Record<RankingsFilterState["goalieMetric"], string> = {
-  save_percentage: "SV%",
-  relative_save_percentage: "Rel SV%",
-  gsax: "GSAx",
-  gsaa_per_60: "GSAA/60",
-  xga_per_shot_against: "xGA/Shot",
-  goalie_value_signal: "Value Signal",
-  high_danger_save_percentage: "HD SV%",
-  quality_start_pct: "QS%",
-  really_bad_start_rate: "RBS%",
-  steal_rate: "Steal Rate",
-  start_share: "Start Share",
-};
-
-const TEAM_METRIC_LABELS: Record<RankingsFilterState["teamMetric"], string> = {
-  off_rating: "Off Rating",
-  def_rating: "Def Rating",
-  xgf60: "xGF/60",
-  xga60: "xGA/60",
-  xgf_percentage: "xGF%",
-  shot_quality: "Shot Quality",
-  event_rate: "Event Rate",
-  finishing_luck: "Finishing Luck",
-  save_luck: "Save Luck",
-  net_luck: "Net Luck",
-  pace_rating: "Pace Rating",
-  special_rating: "Special Teams Rating",
-  one_goal_game_rate: "1-Goal Game Rate",
-  home_road_point_pct_gap: "Home Edge",
-  pp_opportunity_rate: "PP Opp/G",
-  penalties_taken_per_60: "Penalties/60",
-  forward_top_load_index: "Forward Top Load",
-  defense_pair_top_load_index: "Defense Pair Top Load",
-  pp1_pp2_usage_share: "PP1/PP2 Usage Share",
-};
 
 function deploymentOptions(position: ContextualRankingsPositionFilter) {
   const ev =
@@ -298,28 +261,6 @@ function formatSeasonLabel(season: string) {
   return season;
 }
 
-function peerGroupLabel(value: RankingsFilterState) {
-  if (value.entity === "teams") return "Teams";
-  if (value.entity === "goalies") return "Goalies";
-  if (value.position === "F") return "Forwards";
-  if (value.position === "D") return "Defensemen";
-  return "All Skaters";
-}
-
-function rankingMetricLabel(value: RankingsFilterState) {
-  if (value.entity === "goalies") {
-    return `${GOALIE_METRIC_LABELS[value.goalieMetric] ?? value.goalieMetric} Percentile`;
-  }
-  if (value.entity === "teams") {
-    return `${TEAM_METRIC_LABELS[value.teamMetric] ?? value.teamMetric} Percentile`;
-  }
-
-  const activeMetric = getContextualRankingMetricDefinition(
-    value.tab === "rankings" ? value.matrixSortMetric : value.metric,
-  );
-  return activeMetric ? `${activeMetric.displayName} Percentile` : "Skater Metric";
-}
-
 export default function RankingsFilters({
   value,
   onChange,
@@ -351,7 +292,6 @@ export default function RankingsFilters({
           value: option,
           label: option === "all" ? "All Deployments" : option,
         }));
-  const activeMetricLabel = rankingMetricLabel(value);
   const showMoreFilters = true;
 
   return (
@@ -841,6 +781,19 @@ export default function RankingsFilters({
             Fantasy preset
           </button>
 
+          <details className={styles.presetNote}>
+            <summary>
+              <span aria-hidden="true">i</span>
+              <span className={styles.visuallyHidden}>About the preset</span>
+            </summary>
+            <p id="fantasy-preset-description">
+              Skater fantasy categories and MCM, across all strengths for the selected season.
+              Uses existing minimums of {FANTASY_RANKINGS_PRESET.minGp} GP and {FANTASY_RANKINGS_PRESET.minToi} TOI seconds;
+              these are eligibility rules, not reliability guarantees. Historical comparison, not a forecast.
+              Missing components remain unavailable. Expert filters stay editable.
+            </p>
+          </details>
+
           {onReset ? (
             <button
               className={styles.resetFiltersButton}
@@ -853,34 +806,6 @@ export default function RankingsFilters({
           ) : null}
         </div>
 
-        <aside
-          className={styles.quickInfoPanel}
-          aria-label="Ranking quick info"
-        >
-          <header>
-            <ToolbarIcon name="spark" />
-            <h2>Quick Info</h2>
-          </header>
-          <dl>
-            <div>
-              <dt>Ranking metric</dt>
-              <dd>{activeMetricLabel}</dd>
-            </div>
-            <div>
-              <dt>Peer group</dt>
-              <dd>{peerGroupLabel(value)}</dd>
-            </div>
-          </dl>
-          <details>
-            <summary>Fantasy preset basis</summary>
-            <p id="fantasy-preset-description">
-              Skater fantasy categories and MCM, across all strengths for the selected season.
-              Uses existing minimums of {FANTASY_RANKINGS_PRESET.minGp} GP and {FANTASY_RANKINGS_PRESET.minToi} TOI seconds;
-              these are eligibility rules, not reliability guarantees. Historical comparison, not a forecast.
-              Missing components remain unavailable. Expert filters stay editable.
-            </p>
-          </details>
-        </aside>
 
         {methodologyControl ? (
           <div

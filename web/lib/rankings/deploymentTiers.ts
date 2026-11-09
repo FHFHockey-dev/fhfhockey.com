@@ -222,7 +222,7 @@ function sectionDefinitions(request: DeploymentTiersRequest): BucketSectionDefin
           {
             key: "ev_forwards" as const,
             label: "EV Forward Lines",
-            description: "L1-L4 buckets from verified line-combination context.",
+            description: "Forward lines 1–4, from line-combination data.",
             strength: "5v5" as const,
             position: "F" as const,
             buckets: ["L1", "L2", "L3", "L4"] as DeploymentTierBucketKey[],
@@ -234,7 +234,7 @@ function sectionDefinitions(request: DeploymentTiersRequest): BucketSectionDefin
           {
             key: "ev_defense" as const,
             label: "EV Defense Pairs",
-            description: "P1-P3 buckets from verified pair context.",
+            description: "Defense pairs 1–3, from pair data.",
             strength: "5v5" as const,
             position: "D" as const,
             buckets: ["P1", "P2", "P3"] as DeploymentTierBucketKey[],
@@ -244,7 +244,7 @@ function sectionDefinitions(request: DeploymentTiersRequest): BucketSectionDefin
     {
       key: "power_play",
       label: "Power Play Units",
-      description: "PP1-PP3 buckets from verified PP unit labels in the true PP rolling snapshot.",
+      description: "Power-play units 1–3, from PP unit data.",
       strength: "pp",
       position,
       buckets: ["PP1", "PP2", "PP3"],
@@ -252,7 +252,7 @@ function sectionDefinitions(request: DeploymentTiersRequest): BucketSectionDefin
     {
       key: "penalty_kill",
       label: "Penalty Kill Usage",
-      description: "PK1-PK2 buckets from conservative PK TOI usage in the true PK rolling snapshot.",
+      description: "Penalty-kill units 1–2, from short-handed ice time.",
       strength: "pk",
       position,
       buckets: ["PK1", "PK2"],
@@ -342,7 +342,7 @@ function bucketFromRows(args: {
       playerIds.size === 0
         ? "No qualified players matched this deployment bucket."
         : sourceState === "partial"
-          ? "Some metrics were unavailable for this bucket/context."
+          ? "Some metrics aren't available for this group."
           : null,
   };
 }
@@ -782,8 +782,10 @@ async function buildDirectSpecialTeamsSection(args: {
   };
 }
 
+// Rank 5v5 lines and pairs against their whole position (forwards vs forwards, D vs D). Ranking each
+// bucket only against itself made every tier average ~50% by construction.
 function sectionPeerGroupType(section: BucketSectionDefinition) {
-  if (section.strength === "5v5") return "deployment" as const;
+  if (section.strength === "5v5") return "position" as const;
   if (section.position === "F" || section.position === "D") return "position" as const;
   return "all_skaters" as const;
 }

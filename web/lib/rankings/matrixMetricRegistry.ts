@@ -66,7 +66,7 @@ export const MATRIX_METRIC_GROUPS: MatrixMetricGroup[] = [
   {
     key: "physical_fantasy",
     label: "Physical / Fantasy",
-    description: "Fantasy-relevant peripherals from verified rolling sources.",
+    description: "Fantasy-relevant peripherals.",
   },
   {
     key: "regression_finishing",
@@ -149,7 +149,7 @@ const MATRIX_METRIC_COLUMNS: MatrixMetricColumn[] = [
     groupKey: "shot_volume",
     shortLabel: "iCF/60",
     fullLabel: "Shot Attempts/60",
-    tooltip: "Individual shot attempts per 60 minutes from verified ICF source data.",
+    tooltip: "Individual shot attempts per 60 minutes.",
     defaultVisible: true,
     playerTypes: ["skater"],
   },
@@ -281,7 +281,7 @@ const MATRIX_METRIC_COLUMNS: MatrixMetricColumn[] = [
     shortLabel: "Off",
     fullLabel: "Offense Rating",
     tooltip:
-      "Published contextual descriptive offensive composite from skater_composite_ratings; not an adjusted isolated-impact metric.",
+      "Offensive output composite in context; describes production, not isolated impact.",
     defaultVisible: true,
     playerTypes: ["skater"],
   },
@@ -291,7 +291,7 @@ const MATRIX_METRIC_COLUMNS: MatrixMetricColumn[] = [
     shortLabel: "Def",
     fullLabel: "Defensive Impact",
     tooltip:
-      "Published contextual defensive-impact-in-context composite from skater_composite_ratings; uses unadjusted on-ice inputs and is not isolated defensive talent.",
+      "Defensive results in context from raw on-ice inputs; not isolated defensive talent.",
     defaultVisible: true,
     playerTypes: ["skater"],
   },
@@ -301,7 +301,7 @@ const MATRIX_METRIC_COLUMNS: MatrixMetricColumn[] = [
     shortLabel: "MCM",
     fullLabel: "MCM Score",
     tooltip:
-      "Multi-category fantasy composite from verified contextual percentile components, including live PP points where PP rows are available.",
+      "Multi-category fantasy score from percentile components, including power-play points where available.",
     defaultVisible: true,
     playerTypes: ["skater"],
   },
@@ -311,7 +311,7 @@ const MATRIX_METRIC_COLUMNS: MatrixMetricColumn[] = [
     shortLabel: "BEAST",
     fullLabel: "BEAST Tier",
     tooltip:
-      "Fantasy tier label from verified MCM component gates, including live PP points where PP rows are available.",
+      "Fantasy tier from MCM score thresholds, including power-play points where available.",
     defaultVisible: true,
     playerTypes: ["skater"],
   },

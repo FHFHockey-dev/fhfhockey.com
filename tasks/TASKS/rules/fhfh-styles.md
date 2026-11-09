@@ -992,6 +992,13 @@ Shared implementation: wrap a control region in the `Controls.module.scss` `.sco
 
 `@include v.button-ghost($active)` is the mixin form of the ghost and active states for modules that can't use the scope.
 
+**Toggles vs buttons (TJ, 2026-11-08).** Toggles and buttons share one shape: a 2px `$primary-color` ring. They differ in text and fill:
+
+- Active toggle (segmented and rank-mode toggles, `aria-pressed="true"`): `$primary-color-opaque` fill and white text (9.7:1). Never white on solid `$primary-color` (2.9:1).
+- Button (Show/Hide controls, More Filters, Open, Prev/Next, page-size select): `rgba($primary-color, .12)` fill and `$primary-color` text (5.3:1); hover `rgba($primary-color, .2)` (4.7:1). Disabled: opacity 0.5.
+- Blue text on the 40% opaque fill is only 3.3:1, so buttons must use the light tint.
+- Reference: `@mixin page-button` in `web/styles/Rankings.module.scss`.
+
 #### Primary Button
 
 - Strong action emphasis
