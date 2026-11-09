@@ -239,7 +239,17 @@ describe("public subject-to-claim presentation", () => {
     for (const item of [
       { headline: "Kevin He injury update", blurb: barzalText, metadata: { automation: { primaryRuleId: "manual-review" } } },
       { headline: "Carson Soucy signing", blurb: 'RT @mark_scheig: Don Waddell on Carson Soucy: "Our goal is to get him signed." DW said they need to determine where the cap space will come from. #CBJ', metadata: null },
-    ]) expect(getPublicNewsClaimPresentation(item)).toMatchObject({ headline: "Source report", claims: [], unresolvedReason: "Subject-to-claim evidence unavailable" });
+    ]) expect(getPublicNewsClaimPresentation(item)).toMatchObject({ headline: "Source report", claims: [], unresolvedReason: null });
+  });
+  it("calls a card unverified only when an interpretation exists and fails the check", () => {
+    const base = { headline: "Kevin He injury update", blurb: barzalText };
+    const reason = (interpretation: unknown) => getPublicNewsClaimPresentation({ ...base, metadata: { interpretation } }).unresolvedReason;
+    expect(getPublicNewsClaimPresentation({ ...base, metadata: { automation: {} } }).unresolvedReason).toBeNull();
+    expect(reason({ version: "2026-10-01.1", events: [], unresolved: [] })).toBeNull();
+    for (const failing of [{ events: [], unresolved: [] }, { version: "2026-10-01.1", events: [], unresolved: [{ reason: "ambiguous" }] },
+      { version: "2026-10-01.1", unresolved: [] }, { version: "2026-10-01.1", events: [{ playerId: 1 }], unresolved: [] }]) {
+      expect(reason(failing)).toBe("Subject-to-claim evidence unavailable");
+    }
   });
   it("retains a supported upstream claim and rejects mismatched, tentative-confirmed and unresolved payloads", () => {
     const event = { playerId: 8478445, playerName: "Mathew Barzal", kind: "injury", state: "ongoing",

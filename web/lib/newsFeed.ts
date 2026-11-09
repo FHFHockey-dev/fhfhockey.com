@@ -45,31 +45,36 @@ export function getPublicNewsClaimPresentation(item: Pick<NewsFeedItem, "headlin
   const unresolved = interpretation?.unresolved;
   const sourceText = sanitizePublicNewsText(item.blurb);
   const claims: TweetPlayerEvent[] = [];
-  if (typeof interpretation?.version === "string" && Array.isArray(events) && events.length > 0 &&
-    Array.isArray(unresolved) && unresolved.length === 0) {
-    for (const candidate of events) {
-      const event = candidate as TweetPlayerEvent | null;
-      const states = event?.kind === "goalie" ? ["projected", "likely", "confirmed", "ruled_out"]
-        : event?.kind === "injury" ? ["new_injury", "ongoing", "setback", "possible_return", "confirmed_return", "unknown"]
-        : event?.kind === "participation" ? ["observed"] : [];
-      if (!event || !Number.isSafeInteger(event.playerId) || event.playerId <= 0 ||
-        typeof event.playerName !== "string" || !sanitizePublicNewsText(event.playerName).trim() || event.reviewReason ||
-        (event.observation != null && !["warmup", "first_off", "practice"].includes(event.observation)) ||
-        !states.includes(event.state) || !["out", "available", "uncertain", "unknown"].includes(event.availability) ||
-        !["tentative", "negated", "affirmative", "observation"].includes(event.modality ?? "") ||
-        typeof event.evidence?.text !== "string" || !sanitizePublicNewsText(event.evidence.text).trim() ||
-        !sourceText.includes(sanitizePublicNewsText(event.evidence.text)) ||
-        !sanitizePublicNewsText(event.evidence.text).includes(sanitizePublicNewsText(event.playerName)) ||
-        (["confirmed", "confirmed_return"].includes(event.state) && event.modality !== "affirmative")) {
-        return { headline: "Source report", claims: [], unresolvedReason: "Subject-to-claim evidence unavailable" };
-      }
-      claims.push({ ...event, playerName: sanitizePublicNewsText(event.playerName) });
-    }
+  const unverified = { headline: "Source report", claims: [] as TweetPlayerEvent[], unresolvedReason: "Subject-to-claim evidence unavailable" as string | null };
+  // No interpretation: nothing was checked, so no claim and no "couldn't verify" line.
+  if (!interpretation || typeof interpretation !== "object") return { ...unverified, unresolvedReason: null };
+  // An interpretation that is malformed or leaves names unresolved fails the check.
+  if (typeof interpretation.version !== "string" || !Array.isArray(events) || !Array.isArray(unresolved) || unresolved.length > 0) {
+    return unverified;
   }
+  for (const candidate of events) {
+    const event = candidate as TweetPlayerEvent | null;
+    const states = event?.kind === "goalie" ? ["projected", "likely", "confirmed", "ruled_out"]
+      : event?.kind === "injury" ? ["new_injury", "ongoing", "setback", "possible_return", "confirmed_return", "unknown"]
+      : event?.kind === "participation" ? ["observed"] : [];
+    if (!event || !Number.isSafeInteger(event.playerId) || event.playerId <= 0 ||
+      typeof event.playerName !== "string" || !sanitizePublicNewsText(event.playerName).trim() || event.reviewReason ||
+      (event.observation != null && !["warmup", "first_off", "practice"].includes(event.observation)) ||
+      !states.includes(event.state) || !["out", "available", "uncertain", "unknown"].includes(event.availability) ||
+      !["tentative", "negated", "affirmative", "observation"].includes(event.modality ?? "") ||
+      typeof event.evidence?.text !== "string" || !sanitizePublicNewsText(event.evidence.text).trim() ||
+      !sourceText.includes(sanitizePublicNewsText(event.evidence.text)) ||
+      !sanitizePublicNewsText(event.evidence.text).includes(sanitizePublicNewsText(event.playerName)) ||
+      (["confirmed", "confirmed_return"].includes(event.state) && event.modality !== "affirmative")) {
+      return unverified;
+    }
+    claims.push({ ...event, playerName: sanitizePublicNewsText(event.playerName) });
+  }
+  // A valid interpretation with no player events has nothing to verify.
   return {
     headline: claims.length === 1 ? `${claims[0].playerName} source report` : "Source report",
     claims,
-    unresolvedReason: claims.length ? null : "Subject-to-claim evidence unavailable",
+    unresolvedReason: null,
   };
 }
 
