@@ -364,3 +364,8 @@ Q42 chunked inputs (40 games/chunk, statement_timeout 60 s) same columns as Q40,
 - 20:35 Chef-approved code: the official-payload reads exclude derived:// rows server-side (`.not("source_url","like","derived://%")`) in teamStatsSummaryRefresh.fetchOfficialGamePayloadByGameId and the playerStatsLandingServer Supabase fallback. source_url is NOT NULL, so this is equivalent to the JS filters, which stay; the PG path already filtered in SQL.
 - Tests: 3 new in pagedReadOrder.test.ts; 26 files / 191 tests pass; eslint 0.
 - typecheck exit 2, ONLY in the untracked scripts/player-summaries-{backup,rollback}*.ts (the player-rollback lane's work in progress), none in my files.
+- 20:51–22:01 resumed after #426 (788668cb5) went live, under TJ's 20:27 approval (scoped stop rule, stop by 22:05).
+  - The first call confirmed the payload reads carry source_url=not.like (0 unfiltered).
+  - TEAM COMPLETE: all 34 windows, 1,594 games, 223,160 rows, every count exact, 0 stale. Totals 183,680 (2025-26, 1,312 games) and 39,480 (2026-27, 282 games). Calls dropped from 30–78 s to 8–28 s.
+  - GOALIE: windows 1–29 done (2025-26 complete: 1,312 games, 10,356 rows; 2026-27 window 29 = 43 games). 0 5xx throughout, conns 7–19.
+- STOPPED CLEANLY at 22:01 (TJ offline ~22:20). RESUME POINT: goalie window 30 (2026-10-06..10-12), then 31–34 (2026-10-13..11-08; 31 is the probe week, rerun anyway). About 5 calls / 10 min. Each resume needs TJ's pop-up. Then the player rebuild after the rollback design.

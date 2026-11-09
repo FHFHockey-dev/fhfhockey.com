@@ -139,3 +139,13 @@ All runs approved by TJ by pop-up.
 | Player | — | — | Waits for the #425 release and a rollback decision (re-insert old payloads, tested locally, or TJ accepting forward-only). |
 
 **Suggestion.** The wgo_skater_stats timeouts are background noise. Scope the stop rule to errors on this route's own paths (`nhl_api_game_payloads_raw`, `nhl_api_shift_rows`, `nhl_api_pbp_events`, `team_underlying_stats_summary`, `goalie_underlying_summary_partitions`), plus any site-wide 5xx burst of 5 or more in a minute. That is TJ's call.
+
+## Status, 2026-11-09 22:01 UTC
+
+**Fixed before resuming.** The official-payload reads downloaded every derived copy, 156 MB for one week, to keep the 1.8 MB of official payloads. They now exclude derived rows in the query (0a438aa9b, #426). Calls fell from 30–78 s to 8–28 s.
+
+| Entity | Done | Rows | Remaining |
+|---|---|---|---|
+| Team | **Complete**: 34/34 windows, 1,594 games | 223,160 (183,680 + 39,480), 0 stale | — |
+| Goalie | Windows 1–29: all of 2025-26 (1,312 games) and the first 2026-27 week | 10,356 for 2025-26 | Windows 30–34, the rest of 2026-27 (about 5 calls, ~10 min) |
+| Player | Not started | — | Waits for the rollback design |
