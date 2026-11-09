@@ -314,14 +314,6 @@ const goalieNameMapping: Record<string, { fullName: string }> = {
   // Add additional goalie mappings here if needed.
 };
 
-function normalizeName(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/[\s\-']/g, "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
-}
-
 const troublesomePlayers: string[] = [];
 
 async function boundedGoalieQuery<T>(query: PromiseLike<T>, deadlineAt: number, timeoutMs = 5_000): Promise<T> {
@@ -341,34 +333,56 @@ async function boundedGoalieQuery<T>(query: PromiseLike<T>, deadlineAt: number, 
   } finally { clearTimeout(timer); }
 }
 
+// Resolves an NST goalie name to one players.id. Two goalies can share a name (two
+// Matt Murrays), so several candidates are narrowed by who has a WGO row that date,
+// then by current team; anything still ambiguous returns null and nothing is written.
 async function getGoalieIdByName(
   fullName: string,
-  position: string,
+  team: string,
+  date: string,
   deadlineAt: number,
   exactIdentity = false
 ): Promise<number | null> {
   const mappedName = goalieNameMapping[fullName]
     ? goalieNameMapping[fullName].fullName
     : fullName;
-  const normalizedFullName = normalizeName(mappedName);
-  const goaliePosition = "G"; // Force goalie position
 
-  const identityQuery = supabase
-    .from("players")
-    .select("id");
-  const { data, error } = await boundedGoalieQuery((exactIdentity
-    ? identityQuery.eq("fullName", mappedName)
-    : identityQuery.ilike("fullName", `%${mappedName}%`))
-    .eq("position", goaliePosition)
-    .limit(exactIdentity ? 2 : 1)
-    .maybeSingle(), deadlineAt);
+  const findCandidates = (exact: boolean) => {
+    const query = supabase.from("players").select("id,team_id").eq("position", "G");
+    return boundedGoalieQuery((exact ? query.eq("fullName", mappedName) : query.ilike("fullName", `%${mappedName}%`))
+      .limit(5), deadlineAt);
+  };
+  let { data, error } = await findCandidates(true);
+  if (!error && !exactIdentity && (data ?? []).length === 0) ({ data, error } = await findCandidates(false));
+  const candidates = (data ?? []) as Array<{ id: number; team_id: number | null }>;
 
   if (error) return null;
-  if (!data) {
-    troublesomePlayers.push(`${fullName} (${position})`);
+  if (candidates.length === 1) return candidates[0].id;
+  if (candidates.length === 0) {
+    troublesomePlayers.push(`${fullName} (${team})`);
     return null;
   }
-  return data.id;
+
+  const ids = candidates.map((candidate) => candidate.id);
+  const wgo = await boundedGoalieQuery(supabase
+    .from("wgo_goalie_stats")
+    .select("goalie_id")
+    .eq("date", date)
+    .in("goalie_id", ids), deadlineAt);
+  const playedThatDate = [...new Set(((wgo.data ?? []) as Array<{ goalie_id: number }>).map((row) => row.goalie_id))];
+  if (!wgo.error && playedThatDate.length === 1) return playedThatDate[0];
+
+  const teamRow = await boundedGoalieQuery(supabase
+    .from("teams")
+    .select("id")
+    .eq("abbreviation", team)
+    .maybeSingle(), deadlineAt);
+  const teamId: number | undefined = teamRow.data?.id;
+  const onTeam = teamId === undefined ? [] : candidates.filter((candidate) => candidate.team_id === teamId);
+  if (!teamRow.error && onTeam.length === 1) return onTeam[0].id;
+
+  troublesomePlayers.push(`${fullName} (${team}, ${date}: ambiguous)`);
+  return null;
 }
 
 function constructGoalieUrlsForDate(
@@ -533,7 +547,7 @@ async function upsertData(datasetType: string, dataRows: any[], deadlineAt = Dat
 
   const dataRowsWithPlayerIds: any[] = [];
   for (const row of dataRows) {
-    const goalieId = await getGoalieIdByName(row["player_name"], row["team"], deadlineAt);
+    const goalieId = await getGoalieIdByName(row["player_name"], row["team"], row["date_scraped"], deadlineAt);
     if (!goalieId) {
       console.warn(
         `Player ID not found for ${row["player_name"]} (${row["team"]})`
@@ -949,7 +963,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
             unit.dataset, unit.date, season, 1, control, proof);
           for (const row of rows) {
             if (signal.aborted) throw new Error("Checkpoint source deadline elapsed after dispatch.");
-            const id = await getGoalieIdByName(row.player_name, "G", control.deadlineAt - 20_000, true);
+            const id = await getGoalieIdByName(row.player_name, row.team, unit.date, control.deadlineAt - 20_000, true);
             if (!id) throw new Error("Goalie identity is missing or ambiguous; review required.");
             row.player_id = id;
           }
