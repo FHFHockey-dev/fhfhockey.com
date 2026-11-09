@@ -50,7 +50,14 @@ import { prepareGoalieCatchup } from "lib/nst/goaliePreparation.server";
  *    Useful for debugging or targeting a specific table.
  *    Example: /api/v1/db/update-nst-goalies?runMode=forward&datasetType=ppRates
  *
- * 5. `catchupScope`: Runs one bounded step of a previously persisted checkpoint
+ * 5. `season` (optional): Refills specific dates of a completed season, resolved from the
+ *    `seasons` table. Requires `startDate` (inside that season's startDate..regularSeasonEndDate)
+ *    and `maxDays` (at most 14); `maxUrls` defaults to and may not exceed 6. Only
+ *    `runMode=incremental` (or no runMode) is accepted, and the current or a future season is
+ *    rejected. Dates after the regular-season end are dropped, never clamped into range.
+ *    Example: /api/v1/db/update-nst-goalies?season=20252026&startDate=2026-04-11&maxDays=6&maxUrls=6
+ *
+ * 6. `catchupScope`: Runs one bounded step of a previously persisted checkpoint
  *    cohort. May only be combined with the runner's `deadlineAt`. Requires the
  *    checkpoint SQL, final-day evidence and exclusive NST clearance; disabled
  *    control or missing prerequisites never fall back to legacy provider work.
@@ -219,6 +226,55 @@ function parsePositiveIntParam(
 }
 
 type RunMode = "incremental" | "forward" | "reverse";
+
+const PAST_SEASON_MAX_DAYS = 14;
+
+class PastSeasonRequestError extends Error {}
+
+type PastSeasonQuery = { season: number; startDate: string; maxDays: number; maxPendingUrls: number };
+
+// Validates a `season=` refill request before any database or provider work.
+function parsePastSeasonQuery(query: NextApiRequest["query"]): PastSeasonQuery | string {
+  const { season, startDate, maxDays, maxUrls, runMode } = query;
+  const seasonMatch = typeof season === "string" ? /^(\d{4})(\d{4})$/.exec(season) : null;
+  if (!seasonMatch || Number(seasonMatch[2]) !== Number(seasonMatch[1]) + 1) {
+    return "season must be an 8-digit season id such as 20252026.";
+  }
+  if (typeof startDate !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(startDate) ||
+      Number.isNaN(Date.parse(`${startDate}T00:00:00Z`)) ||
+      new Date(Date.parse(`${startDate}T00:00:00Z`)).toISOString().slice(0, 10) !== startDate) {
+    return "season requires an explicit startDate (YYYY-MM-DD).";
+  }
+  if (typeof maxDays !== "string" || !/^\d+$/.test(maxDays) || Number(maxDays) < 1 || Number(maxDays) > PAST_SEASON_MAX_DAYS) {
+    return `season requires maxDays between 1 and ${PAST_SEASON_MAX_DAYS}.`;
+  }
+  if (maxUrls !== undefined && (typeof maxUrls !== "string" || !/^\d+$/.test(maxUrls) ||
+      Number(maxUrls) < 1 || Number(maxUrls) > NST_STRICT_MAX_URLS_PER_RUN)) {
+    return `season allows maxUrls between 1 and ${NST_STRICT_MAX_URLS_PER_RUN}.`;
+  }
+  if (runMode !== undefined && runMode !== "incremental") {
+    return "season supports only runMode=incremental.";
+  }
+  return { season: Number(season), startDate, maxDays: Number(maxDays),
+    maxPendingUrls: maxUrls === undefined ? NST_STRICT_MAX_URLS_PER_RUN : Number(maxUrls) };
+}
+
+async function fetchPastSeason(seasonId: number, deadlineAt: number) {
+  const current = await boundedGoalieQuery(fetchCurrentSeason(), deadlineAt);
+  if (!(seasonId < current.id)) {
+    throw new PastSeasonRequestError(`season ${seasonId} is not a completed season (current is ${current.id}).`);
+  }
+  const { data, error } = await boundedGoalieQuery(supabase
+    .from("seasons")
+    .select("id,startDate,regularSeasonEndDate,endDate")
+    .eq("id", seasonId)
+    .maybeSingle(), deadlineAt);
+  if (error) throw new Error("Season lookup failed; no provider request started.");
+  if (!data?.startDate || !data.regularSeasonEndDate) {
+    throw new PastSeasonRequestError(`season ${seasonId} is not in the seasons table.`);
+  }
+  return data as { id: number; startDate: string; regularSeasonEndDate: string; endDate: string };
+}
 
 function parseRunMode(value: string | string[] | undefined): RunMode {
   const raw = (Array.isArray(value) ? value[0] : value)?.toLowerCase();
@@ -431,6 +487,11 @@ async function fetchAndParseData(
       });
 
       if (dataRowsCollected.length !== table.find("tbody tr").length) throw new Error("NST goalie rows could not be completely parsed.");
+      // Every URL covers one date, so a goalie can have at most one game. NST answers a
+      // no-game date after the season's last game with season totals (2026-04-17 rows).
+      if (dataRowsCollected.some(row => typeof row.gp === "number" && row.gp > 1)) {
+        throw new Error("NST returned multi-game totals for a single-date goalie request; nothing written.");
+      }
       console.log(
         `Parsed ${dataRowsCollected.length} rows for datasetType "${datasetType}".`
       );
@@ -608,6 +669,7 @@ async function main(
     resumeScope?: string;
     plannedUrls?: number;
     deadlineAt?: number;
+    season?: number;
   } = {}
 ) {
   const startedAt = Date.now();
@@ -617,7 +679,10 @@ async function main(
     const overwrite =
       options.overwrite ?? (runMode === "incremental" ? false : true);
 
-    const seasonInfo = await boundedGoalieQuery(fetchCurrentSeason(), deadlineAt);
+    const pastSeason = options.season !== undefined;
+    const seasonInfo = pastSeason
+      ? await fetchPastSeason(options.season!, deadlineAt)
+      : await boundedGoalieQuery(fetchCurrentSeason(), deadlineAt);
     const seasonId = seasonInfo.id.toString();
     const seasonStartDate = parseISO(seasonInfo.startDate);
     const regularSeasonEndDateIso =
@@ -648,6 +713,12 @@ async function main(
           }.`
         );
       }
+    }
+
+    if (pastSeason && (startDate < seasonStartDate || startDate > regularSeasonEndDate)) {
+      throw new PastSeasonRequestError(
+        `startDate must fall inside season ${seasonId} (${seasonInfo.startDate}..${regularSeasonEndDateIso}).`
+      );
     }
 
     if (startDate < seasonStartDate) {
@@ -741,7 +812,8 @@ async function main(
       throw new Error("Goalie pending work no longer fits its acknowledged whole-job plan.");
     }
     const scope = createHash("sha256").update(JSON.stringify({ runMode, overwrite, plannedUrls,
-      queue: urlsQueue.map(({date,datasetType})=>[date,datasetType]) })).digest("hex");
+      queue: urlsQueue.map(({date,datasetType})=>[date,datasetType]),
+      ...(pastSeason ? { season: seasonId } : {}) })).digest("hex");
     if (options.resumeScope !== undefined && options.resumeScope !== scope) {
       throw new Error("Goalie resume cursor/scope does not match the complete queue and request plan.");
     }
@@ -792,6 +864,7 @@ async function main(
     const resumeQuery: Record<string,string> = { runMode, overwrite: String(overwrite),
       startDate: datesToScrape[0], maxDays: String(datesToScrape.length), cursor: String(result.nextCursor), resumeScope: scope,
       plannedUrls: String(plannedUrls),
+      ...(pastSeason ? { season: seasonId } : {}),
       ...(options.datasetType ? {datasetType:options.datasetType}:{}),
       ...(options.maxPendingUrls !== undefined ? {maxUrls:String(options.maxPendingUrls)}:{}),
       ...(options.requestIntervalMs !== undefined ? {requestIntervalMs:String(options.requestIntervalMs)}:{}) };
@@ -821,6 +894,7 @@ async function main(
       requestIntervalMs,
       maxPendingUrls: maxPendingUrls ?? null,
       runMode,
+      ...(pastSeason ? { season: Number(seasonId) } : {}),
       seasonStartDate: seasonInfo.startDate,
       regularSeasonEndDate: regularSeasonEndDateIso,
       overwrite,
@@ -889,6 +963,15 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         resume: { required: !complete && !result.requiresReview, request: { query: { catchupScope: scope } } } });
       return;
     }
+    let pastSeason: PastSeasonQuery | undefined;
+    if (req.query.season !== undefined) {
+      const parsed = parsePastSeasonQuery(req.query);
+      if (typeof parsed === "string") {
+        res.status(400).json({ error: parsed });
+        return;
+      }
+      pastSeason = parsed;
+    }
     const runMode = parseRunMode(req.query.runMode);
     const overwriteParam = parseBooleanParam(req.query.overwrite);
     const overwrite =
@@ -897,7 +980,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     const result = await main({
       runMode,
       overwrite,
-      maxPendingUrls: parsePositiveIntParam(req.query.maxUrls),
+      ...(pastSeason ? { season: pastSeason.season } : {}),
+      maxPendingUrls: pastSeason ? pastSeason.maxPendingUrls : parsePositiveIntParam(req.query.maxUrls),
       requestIntervalMs: parsePositiveIntParam(req.query.requestIntervalMs),
       maxDays: parsePositiveIntParam(req.query.maxDays),
       datasetType: Array.isArray(req.query.datasetType)
@@ -915,6 +999,10 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     res.status("operationStatus" in result && result.operationStatus === "failed" ? 500
       : result.stoppedEarly ? 207 : 200).json(result);
   } catch (error: any) {
+    if (error instanceof PastSeasonRequestError) {
+      res.status(400).json({ error: error.message });
+      return;
+    }
     console.error("Error in API handler:", error.message);
     res.status(500).json({ message: "Internal Server Error" });
   }
