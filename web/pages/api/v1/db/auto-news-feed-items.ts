@@ -27,13 +27,43 @@ import {
 import { syncTweetPatternReviewItems } from "pages/api/v1/db/tweet-pattern-review";
 import adminOnly from "utils/adminOnlyMiddleware";
 
+type ExistingNewsItemPlayer = {
+  player_id: number | null;
+  player_name: string | null;
+  team_id: number | null;
+  role: string | null;
+};
+
 type ExistingNewsItemRow = {
   id: string;
   source_review_item_id: string | null;
   card_status: "draft" | "published" | "archived";
   published_at: string | null;
   metadata: Record<string, unknown> | null;
+  original_tweet_id?: string | null;
+  source_tweet_id?: string | null;
+  source_url?: string | null;
+  tweet_url?: string | null;
+  source_label?: string | null;
+  source_account?: string | null;
+  team_id?: number | null;
+  team_abbreviation?: string | null;
+  headline?: string | null;
+  blurb?: string | null;
+  category?: string | null;
+  subcategory?: string | null;
+  observed_at?: string | null;
+  /** Undefined when not loaded: the players are then rewritten. */
+  players?: ExistingNewsItemPlayer[];
 };
+
+/** The news_feed_items columns a run writes, read back so an unchanged card is not rewritten. */
+const EXISTING_NEWS_ITEM_COLUMNS = [
+  "id", "source_review_item_id", "card_status", "published_at", "metadata", "original_tweet_id", "source_tweet_id",
+  "source_url", "tweet_url", "source_label", "source_account", "team_id", "team_abbreviation", "headline", "blurb",
+  "category", "subcategory", "observed_at",
+].join(", ");
+const EXISTING_FETCH_CHUNK = 100;
 
 type TweetNewsInferenceStateRow = {
   id: string;
@@ -321,32 +351,109 @@ async function fetchExistingNewsItems(args: {
 }): Promise<Map<string, ExistingNewsItemRow>> {
   if (args.reviewItemIds.length === 0) return new Map();
 
-  const { data, error } = await args.supabase
-    .from("news_feed_items" as any)
-    .select("id, source_review_item_id, card_status, published_at, metadata")
-    .in("source_review_item_id", args.reviewItemIds);
-  if (error) throw error;
+  const rows: ExistingNewsItemRow[] = [];
+  for (let index = 0; index < args.reviewItemIds.length; index += EXISTING_FETCH_CHUNK) {
+    const { data, error } = await args.supabase
+      .from("news_feed_items" as any)
+      .select(EXISTING_NEWS_ITEM_COLUMNS)
+      .in("source_review_item_id", args.reviewItemIds.slice(index, index + EXISTING_FETCH_CHUNK));
+    if (error) throw error;
+    rows.push(...((data ?? []) as ExistingNewsItemRow[]));
+  }
+
+  const itemIds = rows.map((row) => row.id);
+  const playersByItem = new Map<string, ExistingNewsItemPlayer[]>(itemIds.map((id) => [id, []]));
+  for (let index = 0; index < itemIds.length; index += EXISTING_FETCH_CHUNK) {
+    const { data, error } = await args.supabase
+      .from("news_feed_item_players" as any)
+      .select("news_item_id, player_id, player_name, team_id, role")
+      .in("news_item_id", itemIds.slice(index, index + EXISTING_FETCH_CHUNK));
+    if (error) throw error;
+    for (const player of (data ?? []) as Array<ExistingNewsItemPlayer & { news_item_id: string }>) {
+      playersByItem.get(player.news_item_id)?.push(player);
+    }
+  }
 
   return new Map(
-    ((data ?? []) as ExistingNewsItemRow[])
+    rows
       .filter((row) => row.source_review_item_id)
-      .map((row) => [row.source_review_item_id!, row]),
+      .map((row) => [row.source_review_item_id!, { ...row, players: playersByItem.get(row.id) ?? [] }]),
   );
 }
 
-async function persistAutomatedNewsItem(args: {
+/** JSON with object keys sorted, so jsonb read back from Postgres compares equal to the object written. */
+function stableJson(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(stableJson).join(",")}]`;
+  if (value && typeof value === "object") {
+    return `{${Object.keys(value as Record<string, unknown>).sort()
+      .map((key) => `${JSON.stringify(key)}:${stableJson((value as Record<string, unknown>)[key])}`).join(",")}}`;
+  }
+  return JSON.stringify(value ?? null);
+}
+
+/** Card metadata without automation.generatedAt, which is the run's own clock and changes every run. */
+function comparableMetadata(metadata: Record<string, unknown> | null | undefined): string {
+  const automation = metadata?.automation;
+  if (!automation || typeof automation !== "object") return stableJson(metadata ?? null);
+  const { generatedAt: _generatedAt, ...rest } = automation as Record<string, unknown>;
+  return stableJson({ ...metadata, automation: rest });
+}
+
+function sameInstant(left: string | null | undefined, right: string | null | undefined): boolean {
+  if (!left || !right) return !left && !right;
+  return Date.parse(left) === Date.parse(right);
+}
+
+/** True when writing `payload` would leave the stored card as it is (updated_at aside). */
+export function newsItemPayloadUnchanged(existing: ExistingNewsItemRow, payload: Record<string, unknown>): boolean {
+  for (const [key, value] of Object.entries(payload)) {
+    if (key === "updated_at") continue;
+    const stored = (existing as unknown as Record<string, unknown>)[key];
+    if (key === "metadata") {
+      if (comparableMetadata(stored as Record<string, unknown> | null) !== comparableMetadata(value as Record<string, unknown> | null)) return false;
+    } else if (key === "observed_at" || key === "published_at") {
+      if (!sameInstant(stored as string | null, value as string | null)) return false;
+    } else if ((stored ?? null) !== (value ?? null)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function playerKeys(players: ExistingNewsItemPlayer[]): string {
+  return players.map((player) => [player.player_id, player.player_name, player.team_id, player.role].join("|")).sort().join("\n");
+}
+
+export type PersistNewsItemAction = "inserted" | "updated" | "unchanged" | "duplicate_original";
+
+/**
+ * Write one automated card. One card per original tweet (news_feed_items.original_tweet_id is unique): when another
+ * card already holds this candidate's original, that card wins and nothing is written ("duplicate_original"), for a
+ * new item and for an item with its own older card alike (a relay whose source URL later resolved to the original
+ * collided on update, 2026-11-09). A relay takes over the holder only to publish a draft automated card. An unchanged
+ * card and unchanged players are not rewritten.
+ */
+export async function persistAutomatedNewsItem(args: {
   supabase: any;
   existing: ExistingNewsItemRow | null;
   candidate: NonNullable<ReturnType<typeof buildTweetNewsAutomationCandidate>>;
   validTeamIds: ReadonlySet<number>;
   nowIso: string;
-}): Promise<{ itemId: string; action: "inserted" | "updated" }> {
+}): Promise<{ itemId: string; action: PersistNewsItemAction }> {
   const originalId = tweetPipelineFlags().publishing ? verifiedOriginalTweetUrl(args.candidate.sourceUrl)?.match(/\/status\/(\d+)/)?.[1] ?? null : null;
-  if (!args.existing && originalId) {
-    const existing = await args.supabase.from("news_feed_items").select("id,source_review_item_id,card_status,published_at,metadata").eq("original_tweet_id", originalId).maybeSingle();
-    if (existing.error) throw existing.error;
-    if (existing.data?.card_status !== "draft" && existing.data) return { itemId: existing.data.id, action: "updated" };
-    if (existing.data) args.existing = existing.data;
+  const findOriginalHolder = async (): Promise<ExistingNewsItemRow | null> => {
+    const holder = await args.supabase.from("news_feed_items" as any).select(EXISTING_NEWS_ITEM_COLUMNS).eq("original_tweet_id", originalId).maybeSingle();
+    if (holder.error) throw holder.error;
+    return (holder.data as ExistingNewsItemRow | null) ?? null;
+  };
+  if (originalId && args.existing?.original_tweet_id !== originalId) {
+    const holder = await findOriginalHolder();
+    if (holder && holder.id !== args.existing?.id) {
+      const takeOver = !args.existing && holder.card_status === "draft" && args.candidate.cardStatus === "published"
+        && getAutomationSource(holder.metadata) === "tweet_news_phrase_dictionary";
+      if (!takeOver) return { itemId: holder.id, action: "duplicate_original" };
+      args.existing = holder;
+    }
   }
   const cardStatus = resolveAutomatedNewsCardStatus({
     existingStatus: args.existing?.card_status,
@@ -378,12 +485,18 @@ async function persistAutomatedNewsItem(args: {
   };
 
   let itemId = args.existing?.id ?? null;
-  let action: "inserted" | "updated" = "updated";
-  if (args.existing) {
+  let action: PersistNewsItemAction = "updated";
+  if (args.existing && newsItemPayloadUnchanged(args.existing, payload)) {
+    action = "unchanged";
+  } else if (args.existing) {
     const { error } = await args.supabase
       .from("news_feed_items" as any)
       .update(payload)
       .eq("id", args.existing.id);
+    if (error?.code === "23505" && originalId) {
+      const holder = await findOriginalHolder();
+      if (holder) return { itemId: holder.id, action: "duplicate_original" };
+    }
     if (error) throw error;
   } else {
     const { data, error } = await args.supabase
@@ -394,7 +507,7 @@ async function persistAutomatedNewsItem(args: {
     if (error?.code === "23505" && originalId) {
       const winner = await args.supabase.from("news_feed_items").select("id").eq("original_tweet_id", originalId).single();
       if (winner.error) throw winner.error;
-      return { itemId: winner.data.id, action: "updated" };
+      return { itemId: winner.data.id, action: "duplicate_original" };
     }
     if (error) throw error;
     itemId = data?.id ?? null;
@@ -403,22 +516,30 @@ async function persistAutomatedNewsItem(args: {
 
   if (!itemId) throw new Error("Unable to resolve saved news item id.");
 
+  const nextPlayers: ExistingNewsItemPlayer[] = args.candidate.playerAssignments.map((player) => ({
+    player_id: player.playerId,
+    player_name: player.playerName,
+    team_id: normalizeNewsTeamId(player.teamId, args.validTeamIds),
+    role: "subject",
+  }));
+  if (args.existing?.players && playerKeys(args.existing.players) === playerKeys(nextPlayers)) {
+    return { itemId, action };
+  }
+  if (action === "unchanged") action = "updated";
+
   const { error: deleteError } = await args.supabase
     .from("news_feed_item_players" as any)
     .delete()
     .eq("news_item_id", itemId);
   if (deleteError) throw deleteError;
 
-  if (args.candidate.playerAssignments.length > 0) {
+  if (nextPlayers.length > 0) {
     const { error: playerError } = await args.supabase
       .from("news_feed_item_players" as any)
       .insert(
-        args.candidate.playerAssignments.map((player) => ({
+        nextPlayers.map((player) => ({
           news_item_id: itemId,
-          player_id: player.playerId,
-          player_name: player.playerName,
-          team_id: normalizeNewsTeamId(player.teamId, args.validTeamIds),
-          role: "subject",
+          ...player,
           created_at: args.nowIso,
           updated_at: args.nowIso,
         })),
@@ -597,6 +718,8 @@ export default withCronJobAudit(
 
     let insertedCount = 0;
     let updatedCount = 0;
+    let unchangedCount = 0;
+    let duplicateOriginalCount = 0;
     let publishedCount = 0;
     let draftCount = 0;
     let assignmentsSynced = 0;
@@ -629,6 +752,8 @@ export default withCronJobAudit(
         });
         if (result.action === "inserted") insertedCount += 1;
         if (result.action === "updated") updatedCount += 1;
+        if (result.action === "unchanged") unchangedCount += 1;
+        if (result.action === "duplicate_original") duplicateOriginalCount += 1;
         if (candidate.cardStatus === "published") publishedCount += 1;
         if (candidate.cardStatus === "draft") draftCount += 1;
 
@@ -690,6 +815,8 @@ export default withCronJobAudit(
         skippedExistingManual,
         insertedCount,
         updatedCount,
+        unchangedCount,
+        duplicateOriginalCount,
         publishedCount,
         draftCount,
         assignmentsSynced,
