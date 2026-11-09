@@ -322,3 +322,10 @@ Q42 chunked inputs (40 games/chunk, statement_timeout 60 s) same columns as Q40,
 - 15:24–15:28 team windows 1–3 done: 2025-10-07..10-27, 149 games, 20,860 rows, 0 stale. Call times rose 35 → 72 → 60 s.
 - STOPPED. My activity check lost its SSL connection. The API logs show my route's official payload reads failing (500 at 15:25:07, 503 at 15:26:46), 3 statement timeouts at 15:25, then a site-wide 503 burst at 15:27:09–17 (auth refresh, user_profiles, rosters, cron_job_audit). DB recovered by 15:28 (13 conns).
 - EXPLAIN shows the id tiebreak only adds a cheap incremental sort, so it is not a likely cause. Timeouts began at 14:56 before any of my calls; P3 went live at 15:15. Cause unresolved. Goalie not started; team windows 4–34 not run.
+- 11-09 15:33 TJ pop-up "Resume, slow pace". Windows 4–24 ran one per call, with an API log check after each; all clean until 24.
+- 16:00 STOP after window 24: 1 line_source_snapshots 500 + 1 statement timeout, not from my route.
+- TJ pop-up "Continue, slower", but the answer arrived at 20:21. Ran window 25.
+- 20:21–20:22 STOP: 2 wgo_skater_stats timeouts (recurring, not from my route; also at 14:56 and 15:02). Stopped for today because of the 21:00 cutoff.
+- Team done: windows 1–25 (2025-10-07..2026-03-30), 1,177 games, 164,780 rows, all exact, 0 stale. Table totals unchanged (183,680 / 35,140). updated_at does not change on upsert, so the run log is the readback.
+- LEFT: team windows 26–34 (2025-26 03-31..04-16 = 3; 2026-27 all = 6), goalie 1–34, player (after #425 and a rollback decision).
+- Runner: scratchpad full-summ/run.sh <team|goalie> N N; windows-games.txt.
