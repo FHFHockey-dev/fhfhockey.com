@@ -1,7 +1,12 @@
 // @ts-expect-error memory-cache has no declarations in this project
 import cacheData from "memory-cache";
 import { NstExecutionLimitError, withNstRequestBudget, type NstRequestControl } from "./requestBudget";
-import { admitSharedNstAttempt, NstSharedAdmissionError } from "./sharedAdmission";
+import {
+  admitSharedNstAttempt, NstSharedAdmissionError, runNstOperation,
+  type NstOperationCounters, type NstOperationHook, type NstOperationSettlement,
+} from "./sharedAdmission";
+export { NstOperationRefusedError } from "./sharedAdmission";
+export type { NstOperation, NstOperationHook, NstOperationSettlement } from "./sharedAdmission";
 import { NstJobLifecycleError } from "./jobLifecycle.server";
 import { NST_MIN_REQUEST_INTERVAL_MS } from "lib/cron/nstRateLimitPolicy";
 
@@ -55,6 +60,17 @@ export interface NstRequestOptions {
   query?: Record<string, string | number | boolean | null | undefined>;
   timeoutMs?: number;
   retries?: number;
+  /** Opt-in bound on accepted decoded body bytes, NOT received/network bytes.
+   * Consumes the original response body. Use returned text, not response.text().
+   */
+  maxResponseBytes?: number;
+  /** Opt-in cap on shared-admission POSTs for this page, counted across retries.
+   * 1 = one admission call: a denied permit fails instead of waiting. */
+  maxAdmissionCalls?: number;
+  /** Opt-in pre-dispatch wrapper for every admission POST and NST GET this
+   * call makes (see NstOperationHook). Callers may route their own schedule
+   * GETs and lifecycle RPCs through the same function. */
+  operationHook?: NstOperationHook;
   headers?: Record<string, string>;
   allowQueryKeyFallback?: boolean;
   requestControl?: NstRequestControl;
@@ -214,17 +230,60 @@ export function buildNstRequestUrlFromAbsoluteUrl(
   );
 }
 
+/** No tee/clone in bounded mode: unread clone buffers would defeat the bound.
+ * The transport can prefetch bytes or deliver one oversized chunk before we
+ * cancel. Only retained/accepted decoded body bytes are bounded, not exact
+ * received or downloaded bytes.
+ */
+async function readBoundedNstText(response: Response, maximum: number, controller: AbortController): Promise<string> {
+  if (!response.body) return "";
+  const reader = response.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      if (value.byteLength > maximum - total) {
+        throw new NstExecutionLimitError("NST response byte limit reached.", true);
+      }
+      total += value.byteLength;
+      chunks.push(value.slice());
+    }
+    const bytes = new Uint8Array(total);
+    let offset = 0;
+    for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength; }
+    return new TextDecoder().decode(bytes);
+  } catch (error) {
+    controller.abort();
+    void reader.cancel().catch(() => {});
+    throw error;
+  } finally {
+    reader.releaseLock();
+  }
+}
+
 async function executeNstUrl(
   url: URL,
-  options: Omit<NstRequestOptions, "path" | "query">
+  options: Omit<NstRequestOptions, "path" | "query">,
+  counters: NstOperationCounters = { admission: 0, provider: 0 }
 ): Promise<NstRequestResult> {
   const headers = getNstHeaders(options);
   const control = options.requestControl!;
-  return withNstRequestBudget(url.toString(), control, () => admitSharedNstAttempt(
-    control.deadlineAt - (options.timeoutMs ?? NST_DEFAULT_TIMEOUT_MS) - 5_000, async () => {
+  const redactedRequestUrl = redactNstUrl(url);
+  // Pass admission options only when a caller opted in, so default calls are unchanged.
+  const admission = options.maxAdmissionCalls !== undefined || options.operationHook !== undefined
+    ? { maxCalls: options.maxAdmissionCalls, hook: options.operationHook, counters } : undefined;
+  const admit = <T>(deadlineAt: number, dispatch: () => Promise<T>) => admission === undefined
+    ? admitSharedNstAttempt(deadlineAt, dispatch, control)
+    : admitSharedNstAttempt(deadlineAt, dispatch, control, admission);
+  return withNstRequestBudget(url.toString(), control, () => admit(
+    control.deadlineAt - (options.timeoutMs ?? NST_DEFAULT_TIMEOUT_MS) - 5_000, () => runNstOperation(
+    options.operationHook, { kind: "provider", method: "GET", redactedUrl: redactedRequestUrl }, counters, async (signal) => {
     const controller = new AbortController();
     const timeoutMs = Math.min(options.timeoutMs ?? NST_DEFAULT_TIMEOUT_MS, control.deadlineAt - Date.now());
     const timeout = setTimeout(() => controller.abort(), timeoutMs);
+    if (signal?.aborted) controller.abort(); else signal?.addEventListener("abort", () => controller.abort(), { once: true });
     try {
       const response = await fetch(url.toString(), {
         method: "GET", signal: controller.signal, headers, cache: "no-store", redirect: "error"
@@ -235,26 +294,42 @@ async function executeNstUrl(
         throw new NstResponseError({ status: response.status, redactedUrl });
       }
       // Keep the abort timer active through body consumption, not only headers.
-      const text = await response.clone().text();
+      const text = options.maxResponseBytes === undefined
+        ? await response.clone().text()
+        : await readBoundedNstText(response, options.maxResponseBytes, controller);
       return { response, url: url.toString(), redactedUrl, text };
     } finally {
       clearTimeout(timeout);
     }
-  }, control));
+  }, (result): NstOperationSettlement => ({ kind: "provider", httpStatus: result.response.status,
+    redirected: result.response.redirected, finalUrl: result.response.url ? redactNstUrl(result.response.url) : "",
+    decodedBytes: new TextEncoder().encode(result.text ?? "").byteLength }))));
 }
 
-async function executeNstRequest(options: NstRequestOptions): Promise<NstRequestResult> {
-  return executeNstUrl(buildNstRequestUrl(options.path, options.query, options.allowQueryKeyFallback ?? false), options);
+async function executeNstRequest(options: NstRequestOptions, counters: NstOperationCounters): Promise<NstRequestResult> {
+  return executeNstUrl(buildNstRequestUrl(options.path, options.query, options.allowQueryKeyFallback ?? false), options, counters);
 }
 
 async function executeNstRequestUrl(
   inputUrl: string,
-  options: Omit<NstRequestOptions, "path" | "query">
+  options: Omit<NstRequestOptions, "path" | "query">,
+  counters: NstOperationCounters
 ): Promise<NstRequestResult> {
-  return executeNstUrl(buildNstRequestUrlFromAbsoluteUrl(inputUrl, options.allowQueryKeyFallback ?? false), options);
+  return executeNstUrl(buildNstRequestUrlFromAbsoluteUrl(inputUrl, options.allowQueryKeyFallback ?? false), options, counters);
 }
 
 function withRequestControl<T extends Omit<NstRequestOptions, "path" | "query">>(options: T): T {
+  if (options.maxResponseBytes !== undefined &&
+      (!Number.isSafeInteger(options.maxResponseBytes) || options.maxResponseBytes < 1)) {
+    throw new NstConfigError("NST response byte limit must be a positive safe integer.");
+  }
+  if (options.maxAdmissionCalls !== undefined &&
+      (!Number.isSafeInteger(options.maxAdmissionCalls) || options.maxAdmissionCalls < 1)) {
+    throw new NstConfigError("NST admission-call limit must be a positive safe integer.");
+  }
+  if (options.operationHook !== undefined && typeof options.operationHook !== "function") {
+    throw new NstConfigError("NST operation hook must be a function.");
+  }
   return {
     ...options,
     requestControl: options.requestControl ?? {
@@ -288,12 +363,13 @@ export async function nstRequest(
 ): Promise<NstRequestResult> {
   options = withRequestControl(options);
   const retries = options.retries ?? NST_DEFAULT_RETRIES;
+  const counters: NstOperationCounters = { admission: 0, provider: 0 };
   let lastError: unknown = null;
   let lastResponse: Response | null = null;
 
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
-      const result = await executeNstRequest(options);
+      const result = await executeNstRequest(options, counters);
       lastResponse = result.response;
       if (result.response.ok || !shouldRetry(result.response, null) || attempt === retries) {
         return result;
@@ -323,11 +399,12 @@ async function nstRequestUrl(
 ): Promise<NstRequestResult> {
   options = withRequestControl(options ?? {});
   const retries = options.retries ?? NST_DEFAULT_RETRIES;
+  const counters: NstOperationCounters = { admission: 0, provider: 0 };
   let lastError: unknown = null;
 
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
-      return await executeNstRequestUrl(url, options);
+      return await executeNstRequestUrl(url, options, counters);
     } catch (error) {
       lastError = error;
       if (attempt === retries || !shouldRetry(null, error)) {
@@ -374,6 +451,12 @@ export async function fetchNstTextWithCacheByUrl(
   url: string,
   options?: Omit<NstRequestOptions, "path" | "query">
 ): Promise<{ text: string; redactedUrl: string }> {
+  // An old cache hit cannot establish an opt-in bound, admission cap, hooked
+  // operation or a fresh retrieval.
+  if (options?.maxResponseBytes !== undefined || options?.maxAdmissionCalls !== undefined || options?.operationHook !== undefined) {
+    const result = await fetchNstTextByUrl(url, options);
+    return { text: result.text, redactedUrl: result.redactedUrl };
+  }
   const redactedUrl = redactNstUrl(buildNstRequestUrlFromAbsoluteUrl(url, options?.allowQueryKeyFallback ?? false));
   const cacheKey = `nst-budgeted:${redactedUrl}`;
   const cached = cacheData.get(cacheKey);
