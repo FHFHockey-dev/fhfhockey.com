@@ -99,6 +99,8 @@ async function fetchShiftRows(
         .order("game_id", { ascending: true })
         .order("period", { ascending: true })
         .order("start_seconds", { ascending: true })
+        // Unique tiebreak: offset paging over a non-unique order repeats some rows and skips others.
+        .order("shift_id", { ascending: true })
         .range(from, to);
 
       if (request.gameIds != null && request.gameIds.length > 0) {
@@ -134,6 +136,7 @@ async function fetchPlayersForShifts(
           .from("players")
           .select("id,position")
           .in("id", chunk)
+          .order("id", { ascending: true })
           .range(from, to) as unknown as Promise<{
           data: TeamUnitToiPlayerPositionRow[] | null;
           error: unknown;
@@ -165,6 +168,8 @@ async function fetchPowerPlayRows(
           .from("powerPlayCombinations")
           .select("gameId,playerId,unit,PPTOI")
           .in("gameId", chunk)
+          .order("gameId", { ascending: true })
+          .order("playerId", { ascending: true })
           .range(from, to) as unknown as Promise<{
           data: TeamUnitToiPowerPlayRow[] | null;
           error: unknown;
@@ -186,6 +191,7 @@ async function fetchGameTeams(supabase: SupabaseClient<Database>, gameIds: numbe
           .from("games")
           .select("id,homeTeamId,awayTeamId")
           .in("id", chunk)
+          .order("id", { ascending: true })
           .range(from, to) as unknown as Promise<{
           data: { id: number; homeTeamId: number; awayTeamId: number }[] | null;
           error: unknown;
