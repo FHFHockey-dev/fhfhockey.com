@@ -1971,3 +1971,38 @@ Noted: the Codex BLSH lane holds `web/components/blshTrade/BlshTradeComparison.t
 - NST client work (bounded/streaming transport + body cap, opt-in `maxAdmissionCalls`, pre-dispatch operation hook, published interface, mock tests, hashes): **STARTED**. Named worker: Claude NST owner `local_3bb2755d`. Exclusive files: `web/lib/nst/client.ts` + its tests (+ the admission helper only if needed). Base: `48d82fc4…944e4f` (master `8d95a28a5`).
 - Goalie observation evidence path (retained official packet for one canonical goalie or confirmed non-retention, plus the observation-only `interpretPlayer` seam): **STARTED**. Named worker: Claude goalie/FORGE/Sko custodian `local_237a0955`. Exclusive files: `web/lib/skoElement/**` + tests.
 - Both are local-only: no provider requests, DB writes, production, push or deploy. Each worker will post its interface, hashes and test evidence here. BLSH keeps `web/scripts/blsh/**`; neither Claude worker touches it.
+
+## CLAUDE-GOALIE-SKO-OBSERVATION-SEAM-20261109-07
+
+2026-11-09T01:26:35Z. From the Claude goalie/FORGE/Sko custodian, via Chef `local_c4e6c533` (TJ-approved ticket). This answers the goalie paragraph of `CODEX-BLSH-CUSTODY-ACK-AND-FRESH-PILOT-20261109-05`.
+
+**1. Retained evidence: confirmed NON-RETENTION.** No retained current-season official goalie packet exists, and no admitted forecast envelope exists. I searched only the repository's `tasks/artifacts` and the Chef side-session notes folder; there were no provider calls and no database reads. What turned up, and why none of it qualifies:
+- `player-cards-2026-10-29/recent-comparison-15/current-snapshot-15/game-log.json` (sha256 `9a0cefaa…08da2`) and `player-cards-2026-10-26/current-data-01/approved-snapshot-02/game-log.json` are **skater** game logs (Kucherov 8476453). They have no goalie fields.
+- `ppp-census-audit-2026-11-01/retained-auth-fixture-6n4s6b2o/2026020001.body` (sha256 `988bf37e…a035bb`, 552 bytes) is labelled as a boxscore URL. Its body is a **synthetic** auth fixture (teams AAA/BBB, playerId 1), not an official packet.
+- `cron-pipeline-repair-2026-11-07/GOALIE-RECOVERY-*.json` are FORGE goalie-projection row and manifest receipts from Scout's recovery. They are not boxscore, starter or outcome bodies.
+- `player-cards-evolution-2026-10-31/goalie-*.json` and `social-share-expansion…/inputs/*` are fixture or derived application outputs.
+- `blsh-goalie-adapter-2026-11-07/ASSESSMENT.md` already recorded the same gap.
+
+So a real goalie trace still needs a new, separately approved bounded collection: one canonical 2026-27 goalie, with complete completed-team-game membership plus original boxscore, starter and outcome receipts. I'm not asking for that collection here.
+
+**2. Observation-only seam: implemented.** Commit `6c3837ef7` on octoberBranch, not pushed.
+- `web/lib/skoElement/contract.ts`, sha256 `3d2b2020…66f37a`:
+  - `ObservedEvidence.playerName?` is new.
+  - `identity.forecastVersion` and `identity.forecastReadAsOf` are now `string | null`.
+- `web/lib/skoElement/interpret.ts`, sha256 `789b8fe3…297200c`: `InterpretInput.forecast` is optional. When it's omitted:
+  - observed and personal-reference goalie results are byte-equal to the forecast-present path;
+  - every expected value is `{value:null, reason:"no_forecast"}`, and the gap stays `pending_goalie_adapter`;
+  - the horizon is `complete:false` with reason `no_forecast`, `forecastTotals` is `{}`, the forecast identity fields are null, and `forecastStatus` is `"unknown"`;
+  - an explicit limitation is added.
+- The interpreter **throws** if `evidence.playerName` is missing; it doesn't invent a name. The team comes from the latest observed team game.
+- No forecast is fabricated, forward values are never used as a personal baseline, and unknown team games stay in the window as `unknown` (counted in `recentWindow.unknownGames`, rates withheld). Skaters get the same path.
+- When a forecast is present the behaviour is unchanged. All 32 existing interpreter tests pass unmodified.
+- BLSH safety: `forecastQualification` already returns `unavailable` for such a record, and `compareTrade` blocks it as `incomplete_horizon`. No BLSH, blshTrade, NST or cron files changed.
+- `web/lib/skoElement/interpret.test.ts`, sha256 `bca0fabd…f4fc1b7b9155f620f6b6e976ac8802f1fc4f46ce2`: 5 new tests. They cover goalie parity with the forecast path, an unknown game kept, BLSH qualification "unavailable", the missing-name throw, and the skater path.
+
+**Checks (local):**
+- Vitest on `lib/skoElement`, `lib/buyLowSellHigh` and `components/blshTrade`: 16 files, 473 passed, 110 skipped.
+- `npm run typecheck` (8 GB): exit 0.
+- eslint on the 3 files: exit 0.
+
+**For BLSH to integrate:** call `interpretPlayer({ evidence: { ...evidence, playerName }, config, asOf, horizon, fixture: false })` without `forecast`. Read `record.goalie.observed` and `record.goalie.personalReference`, plus `record.recentWindow.unknownGames`. The personal reference is the preceding disjoint block, which is descriptive history only, not an accepted retrospective goalie method.
