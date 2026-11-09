@@ -11,6 +11,7 @@ import {
   insertPayloadSnapshot,
   NORMALIZATION_PARSER_FINGERPRINT,
   normalizeShiftRows,
+  persistCapturedGameNormalization,
   persistNormalizedGameScope,
   readNormalizedGameManifest,
   selectShiftRowsForGame,
@@ -1056,6 +1057,53 @@ describe("shift payload validation", () => {
 
     expect(rows).toHaveLength(payload.data.length);
     expect(rows.every((row: any) => row.game_id === gameId)).toBe(true);
+  });
+
+  it("passes the persist RPC's raw-head row-count rule for a feed with duplicates", async () => {
+    const gameId = 2026020019;
+    const game = finalGame(gameId, 52, 10);
+    const away = fullGameShifts(gameId, 52, 100);
+    const home = fullGameShifts(gameId, 10, 200);
+    // Stored raw head: NHL's duplicate interval under its own id stays in the payload.
+    const head = { total: 7, data: [{ ...away[0], id: 900 }, ...away, ...home], source: "json-api" } as any;
+    const statusChain: any = {
+      select: vi.fn(() => statusChain),
+      eq: vi.fn(() => statusChain),
+      maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+    };
+    // The SQL rule from persist_nhl_api_gamecenter_normalized_v1 (migration 20260722010355):
+    // jsonb_array_length(head.payload->'data') <> p_expected_shift_rows raises SHIFT_HEAD_MISMATCH.
+    const rpc = vi.fn(async (_name: string, args: any) => {
+      if (head.data.length !== args.p_expected_shift_rows || args.p_shift_rows.length !== args.p_expected_shift_rows) {
+        return { data: null, error: { message: "NHL_NORMALIZATION_SHIFT_HEAD_MISMATCH" } };
+      }
+      return {
+        data: [{
+          game_id: gameId, normalization_status: "complete", normalization_version: 1,
+          normalization_fingerprint: "c".repeat(64), source_fingerprint: "d".repeat(64),
+          parser_fingerprint: args.p_parser_fingerprint,
+          pbp_raw_payload_id: 1, pbp_raw_snapshot_version: 1, pbp_raw_payload_hash: args.p_expected_pbp_payload_hash,
+          shift_raw_payload_id: 2, shift_raw_snapshot_version: 1, shift_raw_payload_hash: args.p_expected_shift_payload_hash,
+          expected_roster_rows: args.p_expected_roster_rows, observed_roster_rows: args.p_expected_roster_rows,
+          expected_event_rows: args.p_expected_event_rows, observed_event_rows: args.p_expected_event_rows,
+          expected_shift_rows: args.p_expected_shift_rows, observed_shift_rows: args.p_expected_shift_rows,
+          pruned_roster_rows: 0, pruned_event_rows: 0, pruned_shift_rows: 0,
+          idempotent: false, completed_at: "2026-11-09T03:00:00.000Z",
+        }],
+        error: null,
+      };
+    });
+
+    const receipt = await persistCapturedGameNormalization(
+      { from: vi.fn(() => statusChain), rpc } as any,
+      {
+        gameId, seasonId: 20252026, gameDate: "2025-12-21",
+        pbp: game, pbpPayloadHash: "a".repeat(64),
+        shiftPayload: head, shiftPayloadHash: "b".repeat(64),
+      },
+    );
+    expect(rpc).toHaveBeenCalledTimes(1);
+    expect(receipt.shiftCount).toBe(7);
   });
 
   it("refuses a doubled feed mixed with another game's teams (2025020565 shape)", () => {
