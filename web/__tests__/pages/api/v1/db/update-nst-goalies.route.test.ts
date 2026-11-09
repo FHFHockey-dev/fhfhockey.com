@@ -13,7 +13,7 @@ const {
   fetchCurrentSeasonMock,
   fetchNstTextByUrlMock,
   isNstConfigErrorMock,
-  upsertMock, existsMock, checkpointRpcMock, exactIdentityMock, seasonsMaybeSingleMock
+  upsertMock, existsMock, checkpointRpcMock, exactIdentityMock, seasonsMaybeSingleMock, wgoIdentityMock, teamIdentityMock
 } = vi.hoisted(() => {
   process.env.NEXT_PUBLIC_SUPABASE_URL = "https://offline.invalid"; // reserved TLD: the pinned-admission test seam
   process.env.SUPABASE_SERVICE_ROLE_KEY = "service-role-key";
@@ -22,7 +22,9 @@ const {
   const upsertMock = vi.fn().mockResolvedValue({ error: null });
 
   const checkpointRpcMock = vi.fn();
-  const exactIdentityMock = vi.fn().mockResolvedValue({ data: { id: 8478402 }, error: null });
+  const exactIdentityMock = vi.fn().mockResolvedValue({ data: [{ id: 8478402, team_id: 10 }], error: null });
+  const wgoIdentityMock = vi.fn().mockResolvedValue({ data: [], error: null });
+  const teamIdentityMock = vi.fn().mockResolvedValue({ data: null, error: null });
   const seasonsMaybeSingleMock = vi.fn();
   const supabaseClient = {
     rpc: checkpointRpcMock,
@@ -30,32 +32,21 @@ const {
       if (table === "seasons") {
         return { select: () => ({ eq: (_column: string, id: number) => ({ maybeSingle: () => seasonsMaybeSingleMock(id) }) }) };
       }
-      if (table === "players") {
-        return {
-          select() {
-            return {
-              eq: () => ({ eq: () => ({ limit: () => ({ maybeSingle: exactIdentityMock }) }) }),
-              ilike() {
-                return {
-                  eq() {
-                    return {
-                      limit() {
-                        return {
-                          maybeSingle: vi.fn().mockResolvedValue({
-                            data: { id: 8478402 },
-                            error: null
-                          })
-                        };
-                      }
-                    };
-                  }
-                };
-              }
-            };
-          }
+      // Thenable query builder: records filters and resolves through the table's mock.
+      const lookup = (resolve: (filters: Record<string, unknown>) => Promise<any>) => {
+        const filters: Record<string, unknown> = {};
+        const builder: any = {
+          select: () => builder, limit: () => builder, maybeSingle: () => builder,
+          eq: (column: string, value: unknown) => { filters[column] = value; return builder; },
+          ilike: (column: string, value: unknown) => { filters[`ilike:${column}`] = value; return builder; },
+          in: (column: string, value: unknown) => { filters[`in:${column}`] = value; return builder; },
+          then: (ok: any, fail: any) => resolve(filters).then(ok, fail),
         };
-      }
-
+        return builder;
+      };
+      if (table === "players") return lookup(exactIdentityMock);
+      if (table === "wgo_goalie_stats") return lookup(wgoIdentityMock);
+      if (table === "teams") return lookup(teamIdentityMock);
       return {
         select() {
           return {
@@ -78,7 +69,7 @@ const {
     isNstConfigErrorMock: vi.fn((error: unknown) =>
       error instanceof Error && error.name === "NstConfigError"
     ),
-    upsertMock, existsMock, checkpointRpcMock, exactIdentityMock, seasonsMaybeSingleMock
+    upsertMock, existsMock, checkpointRpcMock, exactIdentityMock, seasonsMaybeSingleMock, wgoIdentityMock, teamIdentityMock
   };
 });
 
@@ -131,7 +122,9 @@ describe("/api/v1/db/update-nst-goalies", () => {
     upsertMock.mockReset().mockResolvedValue({ error: null });
     existsMock.mockReset().mockResolvedValue({ data: [], error: null });
     checkpointRpcMock.mockReset();
-    exactIdentityMock.mockReset().mockResolvedValue({ data: { id: 8478402 }, error: null });
+    exactIdentityMock.mockReset().mockResolvedValue({ data: [{ id: 8478402, team_id: 10 }], error: null });
+    wgoIdentityMock.mockReset().mockResolvedValue({ data: [], error: null });
+    teamIdentityMock.mockReset().mockResolvedValue({ data: null, error: null });
     seasonsMaybeSingleMock.mockReset();
   });
 
@@ -565,6 +558,50 @@ describe("/api/v1/db/update-nst-goalies", () => {
     expect(res.statusCode).toBe(409); expect(res.body.requiresReview).toBe(true);
     expect(checkpointRpcMock.mock.calls.some(([name]) => name === "nst_goalie_commit_unit_v1")).toBe(false);
     expect(upsertMock).not.toHaveBeenCalled();
+  });
+
+  describe("goalies who share a name", () => {
+    const murrayHtml = `<table><thead><tr><th>Player</th><th>Team</th><th>GP</th></tr></thead><tbody><tr><td>Matt Murray</td><td>NSH</td><td>1</td></tr></tbody></table>`;
+    const twoMurrays = { data: [{ id: 8476899, team_id: 55 }, { id: 8483575, team_id: 18 }], error: null };
+    beforeEach(() => {
+      fetchCurrentSeasonMock.mockResolvedValue({ id: 20262027, startDate: "2026-10-07", endDate: "2026-10-31" });
+      fetchNstTextByUrlMock.mockResolvedValue({ text: murrayHtml });
+      exactIdentityMock.mockResolvedValue(twoMurrays);
+    });
+    const run = () => invoke({ startDate: "2026-10-10", maxDays: "1", datasetType: "allCounts" });
+
+    it("keeps the candidate WGO has playing that date", async () => {
+      wgoIdentityMock.mockResolvedValue({ data: [{ goalie_id: 8483575 }], error: null });
+      const res = await run();
+      expect(res.statusCode).toBe(200);
+      expect(wgoIdentityMock).toHaveBeenCalledWith(expect.objectContaining({ date: "2026-10-10", "in:goalie_id": [8476899, 8483575] }));
+      expect(upsertMock.mock.calls[0][0][0]).toMatchObject({ player_name: "Matt Murray", team: "NSH", player_id: 8483575 });
+      expect(teamIdentityMock).not.toHaveBeenCalled();
+    });
+
+    it("falls back to the candidate on the NST team when WGO cannot tell them apart", async () => {
+      teamIdentityMock.mockResolvedValue({ data: { id: 18 }, error: null });
+      const res = await run();
+      expect(res.statusCode).toBe(200);
+      expect(teamIdentityMock).toHaveBeenCalledWith(expect.objectContaining({ abbreviation: "NSH" }));
+      expect(upsertMock.mock.calls[0][0][0]).toMatchObject({ player_id: 8483575 });
+    });
+
+    it("writes nothing when the name stays ambiguous", async () => {
+      teamIdentityMock.mockResolvedValue({ data: { id: 1 }, error: null });
+      const res = await run();
+      expect(res.statusCode).toBe(500);
+      expect(res.body.urlProgress[0]).toMatchObject({ status: "failed", reason: expect.stringContaining("unresolved") });
+      expect(upsertMock).not.toHaveBeenCalled();
+    });
+
+    it("tries an exact name before the loose match", async () => {
+      exactIdentityMock.mockResolvedValueOnce({ data: [], error: null }).mockResolvedValueOnce({ data: [{ id: 8483575, team_id: 18 }], error: null });
+      await run();
+      expect(exactIdentityMock.mock.calls[0][0]).toMatchObject({ position: "G", fullName: "Matt Murray" });
+      expect(exactIdentityMock.mock.calls[1][0]).toMatchObject({ position: "G", "ilike:fullName": "%Matt Murray%" });
+      expect(upsertMock.mock.calls[0][0][0]).toMatchObject({ player_id: 8483575 });
+    });
   });
 
   describe("past-season refill (season=)", () => {

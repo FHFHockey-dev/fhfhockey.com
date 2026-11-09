@@ -46,3 +46,24 @@ Delete the snapshot-2026-11-08 rows for the 330 games, then reload the backup CS
 - Scope: every call over 1,000 shift rows was affected (every day-based run, including the full 2025-26 rebuild and the 2026-27 fill). The loss is small (about 1–6 shifts per 10 games) but spread across both snapshots.
 - Fix (local commit, needs release): order by `shift_id` as a unique tiebreak (PK game_id, shift_id), and order the power-play, players and games reads by their keys. Regression test: `teamUnitToiWriter.test.ts`.
 - Backup CSV for the 330 games (42,772 rows, sha256 1406459511fb…) is in the side-session notes folder.
+
+## Full both-season rebuild (TJ: "Both seasons, full"), sized 11-09 on the released fix (master 1e170b6d0)
+- Check: batch ah dry run on fixed code → 1,362 rows, 27 dups. Matches the replay exactly (before the fix: 1,361 and 33).
+- Games: `full-rebuild-2025-26-game-ids.txt` 1,393 (every 02/03 game with shifts; SCF G1 2025030411 excluded, 117 rows untouched). `full-rebuild-2026-27-game-ids.txt` 276 (264 in snapshot plus the twelve 11-07 games not built yet).
+- Replay vs stored (`full-rebuild-expected-per-game.tsv`):
+
+| Season | Stored rows | New rows | Unchanged | Changed | Added | Stale |
+|---|---|---|---|---|---|---|
+| 2025-26 | 183,367 | 183,855 | 149,834 | 33,469 | 552 | 64 |
+| 2026-27 | 34,630 | 36,472 | 23,412 | 11,212 | 1,848 | 6 |
+
+  Partial rows: 0. Team-games without ES units: 0. The 70 stale rows are in `full-rebuild-stale-rows.tsv`.
+- Snapshot totals after: 2025-26 183,484 → 183,972; 2026-27 34,630 → 36,472.
+- Run: 168 calls (140 + 28) of 10 games, 21 s gap, about 70 min. Finishes well before job 403 at 08:55 UTC. Same stop rules, with the exact per-batch count matched against the replay.
+- Backup: the whole 2026-11-08 snapshot for both seasons (218,114 rows) to CSV in the notes folder. Stale delete: 70 exact keys, must report 70. Rollback: delete snapshot 2026-11-08 rows for the listed games, then `\copy` the CSV back.
+
+## Full rebuild result (11-09 00:47–02:13 UTC)
+- 168/168 batches, each matching the replay row count exactly; no stops. The run ended with the session after batch 82 (01:23) and was resumed from batch 83 at 01:34 (idempotent upserts). Gap stayed at 21 s.
+- Stale delete: 70 exact keys matched before, then 70 deleted inside a block that rolls back on any other count; 0 remain.
+- Readback, snapshot 2026-11-08: 2025-26 183,972 rows / 1,394 games; 2026-27 36,472 rows / 276 games. Both equal the plan. Per-game counts match the replay for all 1,669 games. Every row complete; F1 and D1 on both teams in every game (565 included). SCF G1 2025030411 untouched (117 rows).
+- DB activity 16–21 throughout. Backup (pre-run, 218,114 rows, sha256 5bc6d3a7d4718732…) kept in the notes folder.
