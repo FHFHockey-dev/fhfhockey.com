@@ -353,6 +353,10 @@ declare module "lib/supabase/Upserts/nhlRawGamecenter.mjs" {
     game: PlayByPlayPayload,
     pbpHash: string,
   ): NormalizedEventRow[];
+  export function selectShiftRowsForGame(
+    game: PlayByPlayPayload,
+    shiftPayload: ShiftChartsPayload,
+  ): ShiftChartRow[];
   export function normalizeShiftRows(
     game: PlayByPlayPayload,
     shiftPayload: ShiftChartsPayload,

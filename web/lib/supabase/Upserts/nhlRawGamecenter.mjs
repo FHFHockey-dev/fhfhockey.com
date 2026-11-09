@@ -421,10 +421,24 @@ export async function fetchShiftCharts(gameId, fetchOptions = {}) {
   while (start < total) {
     const url = `https://api.nhle.com/stats/rest/en/shiftcharts?cayenneExp=gameId=${gameId}&start=${start}&limit=${pageSize}`;
     const payload = await fetchJsonWithRetry(url, fetchOptions);
-    total = payload.total ?? 0;
-    rows.push(...(payload.data ?? []));
-    if (!payload.data?.length) break;
-    start += pageSize;
+    const pageTotal = payload.total ?? 0;
+    const data = payload.data ?? [];
+    if (
+      !isNonnegativeSafeInteger(pageTotal) ||
+      !Array.isArray(data) ||
+      data.length > pageSize ||
+      (Number.isFinite(total) && pageTotal !== total) ||
+      rows.length + data.length > pageTotal
+    ) {
+      throw new Error(`Inconsistent NHL shift pagination for game ${gameId}`);
+    }
+    total = pageTotal;
+    rows.push(...data);
+    if (data.length === 0) break;
+    start += data.length;
+  }
+  if (Number.isFinite(total) && rows.length !== total) {
+    throw new Error(`Incomplete NHL shift pagination for game ${gameId}`);
   }
 
   return { total: rows.length, data: rows };
@@ -583,6 +597,12 @@ export async function fetchNhlApiRawGamePayloads(gameId, fetchOptions = {}) {
     landing,
     fetchOptions,
   );
+  // Refuse an off-game, mixed or truncated feed before any raw snapshot is
+  // captured, so a corrupt payload never becomes the stored head.
+  selectShiftRowsForGame(
+    { ...pbp, gameState: pbp.gameState ?? landing?.gameState },
+    shiftPayload,
+  );
 
   return {
     gameId,
@@ -740,9 +760,108 @@ export function normalizePbpEvents(game, pbpHash) {
   });
 }
 
+// A final game's last shift per team and period may end this many seconds
+// before the period's last PBP event before the feed counts as truncated.
+const SHIFT_COVERAGE_TOLERANCE_SECONDS = 10;
+
+function shiftContentKey(shift) {
+  return [
+    shift.playerId,
+    shift.teamId,
+    shift.period,
+    shift.startTime,
+    shift.endTime,
+    shift.typeCode ?? "",
+  ].join("|");
+}
+
+/**
+ * Validates a shiftcharts payload against its game and returns the rows to
+ * store. Every row must carry this game's id and one of its two teams; a feed
+ * mixing in another game's rows is refused, never trimmed. NHL can publish the
+ * same interval twice under different ids: only the lowest id is kept. For a
+ * final game each team's shifts must reach the last PBP event of every period.
+ */
+export function selectShiftRowsForGame(game, shiftPayload) {
+  const gameId = Number(game?.id);
+  const homeTeamId = game?.homeTeam?.id;
+  const awayTeamId = game?.awayTeam?.id;
+  const rows = shiftPayload?.data ?? [];
+  if (!Array.isArray(rows)) {
+    throw new Error(`Shift payload for game ${gameId} has no row list`);
+  }
+  if (rows.length === 0) return [];
+  if (
+    !isPositiveSafeInteger(gameId) ||
+    !isPositiveSafeInteger(homeTeamId) ||
+    !isPositiveSafeInteger(awayTeamId) ||
+    homeTeamId === awayTeamId
+  ) {
+    throw new Error(`Shift payload game ${gameId} has invalid team identity`);
+  }
+
+  const seen = new Set();
+  const unique = [];
+  const sorted = [...rows].sort((left, right) => left?.id - right?.id);
+  for (const shift of sorted) {
+    if (!isRecord(shift) || !isPositiveSafeInteger(shift.id)) {
+      throw new Error(`Shift payload for game ${gameId} has a row without an id`);
+    }
+    if (Number(shift.gameId) !== gameId) {
+      throw new Error(
+        `Shift payload for game ${gameId} contains shift ${shift.id} from game ${shift.gameId}`,
+      );
+    }
+    if (shift.teamId !== homeTeamId && shift.teamId !== awayTeamId) {
+      throw new Error(
+        `Shift payload for game ${gameId} contains shift ${shift.id} for team ${shift.teamId}, not ${awayTeamId}/${homeTeamId}`,
+      );
+    }
+    const key = shiftContentKey(shift);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    unique.push(shift);
+  }
+
+  if (
+    FINISHED_GAME_STATES.has(normalizeWhitespace(game.gameState).toUpperCase())
+  ) {
+    const lastEventByPeriod = new Map();
+    for (const play of game.plays ?? []) {
+      const period = play?.periodDescriptor?.number;
+      const seconds = parseClockToSeconds(play?.timeInPeriod);
+      if (!isPositiveSafeInteger(period) || seconds == null) continue;
+      lastEventByPeriod.set(
+        period,
+        Math.max(lastEventByPeriod.get(period) ?? 0, seconds),
+      );
+    }
+    const lastShiftEnd = new Map();
+    for (const shift of unique) {
+      if (shift.typeCode != null && shift.typeCode !== 517) continue;
+      const end = parseClockToSeconds(shift.endTime);
+      if (end == null) continue;
+      const key = `${shift.teamId}|${shift.period}`;
+      lastShiftEnd.set(key, Math.max(lastShiftEnd.get(key) ?? 0, end));
+    }
+    for (const [period, lastEvent] of lastEventByPeriod) {
+      for (const teamId of [awayTeamId, homeTeamId]) {
+        const covered = lastShiftEnd.get(`${teamId}|${period}`) ?? 0;
+        if (covered < lastEvent - SHIFT_COVERAGE_TOLERANCE_SECONDS) {
+          throw new Error(
+            `Shift payload for final game ${gameId} is truncated: team ${teamId} period ${period} ends at ${covered}s, last event at ${lastEvent}s`,
+          );
+        }
+      }
+    }
+  }
+
+  return unique;
+}
+
 export function normalizeShiftRows(game, shiftPayload, shiftHash) {
   const seasonId = Number(game.season);
-  return (shiftPayload.data ?? []).map((shift) => ({
+  return selectShiftRowsForGame(game, shiftPayload).map((shift) => ({
     game_id: game.id,
     shift_id: shift.id,
     season_id: seasonId,

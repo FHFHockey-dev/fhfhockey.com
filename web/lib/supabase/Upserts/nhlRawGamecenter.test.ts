@@ -4,13 +4,16 @@ import type { PlayByPlayPayload } from "lib/supabase/Upserts/nhlRawGamecenter.mj
 import {
   buildNormalizedGameScope,
   fetchJsonWithRetry,
+  fetchShiftCharts,
   fetchNhlApiRawGamePayloads,
   ingestNhlApiRawGame,
   ingestNhlApiRawGamesBestEffort,
   insertPayloadSnapshot,
   NORMALIZATION_PARSER_FINGERPRINT,
+  normalizeShiftRows,
   persistNormalizedGameScope,
   readNormalizedGameManifest,
+  selectShiftRowsForGame,
   upsertInBatches,
 } from "./nhlRawGamecenter.mjs";
 
@@ -156,7 +159,7 @@ describe("nhlRawGamecenter", () => {
     const landing = { summary: "done" };
     const shiftcharts = {
       total: 1,
-      data: [{ id: 1, playerId: 99, duration: "0:30" }],
+      data: [{ id: 1, gameId: 2025021103, playerId: 99, teamId: 28, duration: "0:30" }],
     };
 
     const fetchMock = vi.fn((url: string) => {
@@ -863,6 +866,7 @@ describe("nhlRawGamecenter", () => {
             data: [
               {
                 id: 8,
+                gameId,
                 playerId: 99,
                 teamId: 28,
                 period: 1,
@@ -986,5 +990,170 @@ describe("nhlRawGamecenter", () => {
     expect(from).not.toHaveBeenCalledWith("nhl_api_game_roster_spots");
     expect(from).not.toHaveBeenCalledWith("nhl_api_pbp_events");
     expect(from).not.toHaveBeenCalledWith("nhl_api_shift_rows");
+  });
+});
+
+describe("shift payload validation", () => {
+  function finalGame(gameId: number, awayTeamId: number, homeTeamId: number) {
+    return {
+      id: gameId,
+      season: 20252026,
+      gameDate: "2025-12-21",
+      gameState: "OFF",
+      awayTeam: { id: awayTeamId, abbrev: "AWY" },
+      homeTeam: { id: homeTeamId, abbrev: "HOM" },
+      rosterSpots: [],
+      plays: [1, 2, 3].map((period) => ({
+        eventId: period,
+        periodDescriptor: { number: period },
+        timeInPeriod: "20:00",
+        typeDescKey: "period-end",
+      })),
+    } as any;
+  }
+
+  function fullGameShifts(gameId: number, teamId: number, firstId: number) {
+    return [1, 2, 3].map((period, index) => ({
+      id: firstId + index,
+      gameId,
+      playerId: teamId * 100 + 1,
+      teamId,
+      period,
+      shiftNumber: index + 1,
+      startTime: "19:00",
+      endTime: "20:00",
+      duration: "01:00",
+      typeCode: 517,
+    }));
+  }
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("drops exact-content duplicates under distinct ids, keeping the lowest id (2026020019 shape)", () => {
+    const gameId = 2026020019;
+    const game = finalGame(gameId, 52, 10);
+    const away = fullGameShifts(gameId, 52, 100);
+    const home = fullGameShifts(gameId, 10, 200);
+    const duplicate = { ...away[0], id: 900 };
+    const rows = normalizeShiftRows(
+      game,
+      { total: 7, data: [duplicate, ...away, ...home], source: "json-api" } as any,
+      "b".repeat(64),
+    );
+
+    expect(rows).toHaveLength(6);
+    expect(rows.map((row: any) => row.shift_id).sort((a: number, b: number) => a - b))
+      .toEqual([100, 101, 102, 200, 201, 202]);
+    expect(rows.every((row: any) => row.game_id === gameId)).toBe(true);
+  });
+
+  it("refuses a doubled feed mixed with another game's teams (2025020565 shape)", () => {
+    const gameId = 2025020565;
+    const game = finalGame(gameId, 1, 7);
+    const njd = fullGameShifts(gameId, 1, 100);
+    const buf = fullGameShifts(gameId, 7, 200);
+    const doubled = [...njd, ...buf].map((row, index) => ({ ...row, id: 500 + index }));
+    // The stored 565 payload labels the stray VGK/SJS shifts with game 565 too.
+    const stray = [
+      ...fullGameShifts(gameId, 54, 700),
+      ...fullGameShifts(gameId, 28, 800),
+    ];
+    const payload = {
+      total: 18,
+      data: [...njd, ...buf, ...doubled, ...stray],
+      source: "json-api",
+    } as any;
+
+    expect(() => selectShiftRowsForGame(game, payload)).toThrow(
+      "for team 54, not 1/7",
+    );
+    expect(() => normalizeShiftRows(game, payload, "b".repeat(64))).toThrow();
+    // Without the stray teams the doubled copy collapses to one per interval.
+    expect(
+      selectShiftRowsForGame(game, {
+        ...payload,
+        data: [...njd, ...buf, ...doubled],
+      }),
+    ).toHaveLength(6);
+  });
+
+  it("refuses rows labelled with another game id", () => {
+    const game = finalGame(2025020565, 1, 7);
+    const rows = [
+      ...fullGameShifts(2025020565, 1, 100),
+      ...fullGameShifts(2025020566, 7, 200),
+    ];
+    expect(() =>
+      selectShiftRowsForGame(game, { total: 6, data: rows } as any),
+    ).toThrow("from game 2025020566");
+  });
+
+  it("refuses a final game's feed that stops early in a period (2025030411 shape)", () => {
+    const gameId = 2025030411;
+    const game = finalGame(gameId, 22, 13);
+    const away = fullGameShifts(gameId, 22, 100);
+    const home = fullGameShifts(gameId, 13, 200);
+    // Both teams' feeds stop at 4:53 of the third period.
+    away[2] = { ...away[2], startTime: "04:00", endTime: "04:53", duration: "00:53" };
+    home[2] = { ...home[2], startTime: "04:00", endTime: "04:53", duration: "00:53" };
+
+    expect(() =>
+      selectShiftRowsForGame(game, { total: 6, data: [...away, ...home] } as any),
+    ).toThrow("period 3 ends at 293s, last event at 1200s");
+    // A live game is not held to full-period coverage.
+    expect(
+      selectShiftRowsForGame(
+        { ...game, gameState: "LIVE" },
+        { total: 6, data: [...away, ...home] } as any,
+      ),
+    ).toHaveLength(6);
+  });
+
+  it("captures no raw snapshot when the fetched feed is mixed", async () => {
+    const gameId = 2025020565;
+    const game = finalGame(gameId, 1, 7);
+    const data = [
+      ...fullGameShifts(gameId, 1, 100),
+      ...fullGameShifts(gameId, 7, 200),
+      ...fullGameShifts(gameId, 54, 700),
+    ];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((url: string) => {
+        if (url.includes("/play-by-play")) return Promise.resolve(createJsonResponse(game));
+        if (url.includes("/boxscore")) return Promise.resolve(createJsonResponse({ id: gameId }));
+        if (url.includes("/landing")) return Promise.resolve(createJsonResponse({ gameState: "OFF" }));
+        if (url.includes("shiftcharts"))
+          return Promise.resolve(createJsonResponse({ total: data.length, data }));
+        return Promise.reject(new Error(`Unexpected URL: ${url}`));
+      }) as unknown as typeof fetch,
+    );
+    const rawUpsert = vi.fn();
+    const rpc = vi.fn();
+    const from = vi.fn(() => ({ upsert: rawUpsert }));
+
+    await expect(
+      ingestNhlApiRawGame({ from, rpc } as any, gameId, { retries: 1, retryDelayMs: 0 }),
+    ).rejects.toThrow("for team 54");
+    expect(rawUpsert).not.toHaveBeenCalled();
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it("refuses inconsistent shiftcharts pagination", async () => {
+    const gameId = 2025021103;
+    const row = fullGameShifts(gameId, 28, 1)[0];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((url: string) => {
+        if (url.includes("start=0"))
+          return Promise.resolve(createJsonResponse({ total: 1001, data: Array(1000).fill(row) }));
+        return Promise.resolve(createJsonResponse({ total: 1500, data: [row] }));
+      }) as unknown as typeof fetch,
+    );
+    await expect(
+      fetchShiftCharts(gameId, { retries: 1, retryDelayMs: 0, timeoutMs: 50 }),
+    ).rejects.toThrow("Inconsistent NHL shift pagination");
   });
 });
