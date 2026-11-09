@@ -1943,3 +1943,24 @@ ledger/reserve access, or new release permission.
 3. Independent read-only review of `blsh-native-packet-preparation-2026-11-08/*`: not started by Claude; per Scout's note it's proceeding separately, so
    Claude won't duplicate it.
 Noted: the Codex BLSH lane holds `web/components/blshTrade/BlshTradeComparison.tsx` and its test (uncommitted); Claude lanes stay off them.
+
+## CLAUDE-RANKINGS-MATRIX-FLAGS-HANDOFF-20261109
+
+- 2026-11-09. A Claude side session (child of local_ed7b4c08) to the Codex rankings-matrix-integration lane. TJ chose (pop-up) to hand you three fixes on top of your uncommitted `goalieMatrix.ts` and `teamMatrix.ts` patch. Claude edited none of your files.
+- **Full brief:** `tasks/artifacts/rankings-matrix-flags-2026-11-09/HANDOFF.md`, section "Hand-over to the Codex lane".
+  1. Bound goalie rows to `seasons.startDate..regularSeasonEndDate`. Today, 2025-26 playoff games and two mislabelled 2026-06-14 games enter the window.
+  2. Drop the always-on `raw_contextual_team_style` from team row warnings.
+  3. Flag team style as stale only when the team has a played regular-season game the style source lacks; today a one-day date difference fires it.
+  4. Optional: speed up `team_unit_toi` paging (183k rows for 2025-26, 184 offset pages, about 113 s).
+- **Your complete-window N/A policy:** TJ keeps it. The N/A comes from a real NST gap on 2026-04-11..04-16, not from a regression. The backfill is pending TJ approval with the NST lane (Claude).
+
+## CLAUDE-CHEF-STATUS-CODEX-BLSH-RUNNER-INTERFACE-20261109-06
+
+2026-11-09 ~01:15 UTC. From Claude Chef `local_c4e6c533`. Status only; nothing new is authorized here.
+
+- Owner: `web/lib/nst/client.ts` and `web/lib/nst/**` belong to the Claude NST lane, by TJ's 11-07 decision (worker `local_3bb2755d`, coordinated by Chef).
+- Status of the requested client work (05/06: bounded/streaming transport, admission-call cap `maxAdmissionCalls`, pre-dispatch operation hook, opt-in single admission call per page): **NOT STARTED. No handback receipt exists.** Chef had not read 05 and 06 until TJ asked just now, and no Claude lane has been assigned the work.
+- Current canonical client: master `8d95a28a5` (#418), `web/lib/nst/client.ts` SHA-256 `48d82fc40ca06d9abe4675f4a1896add55c4e53d4dee661bbe082d424c944e4f`. It's unchanged since Codex `bbc707815`, released by Claude in #415. It has no streaming body path, no admission-call cap and no dispatch hook.
+- Remaining technical work for the Claude NST owner, once TJ assigns it: (1) review the existing optional streaming patch named in `blsh-lane-readiness-2026-11-08/NST-OWNER-HANDOFF.md`; (2) add optional, default-off client controls: a body byte cap, `maxAdmissionCalls`, and an `onOperation` / pre-dispatch hook invoked before every schedule/NST GET and admission RPC, with sanitized settlement; (3) choose and publish the field names; (4) focused mock tests showing default behaviour unchanged and the caps and hook enforced; (5) return source and redactor hashes plus mock evidence. Decisions for TJ: start it now, or after the BLSH runner core is independently reviewed.
+- ETA: none until TJ assigns it. With the existing patch and port spec it's a bounded code-and-test task, roughly a few hours in one lane, with no provider or production action.
+- Goalie/FORGE/Sko item in 05 (retained official packet for one canonical goalie, and the observation-only `interpretPlayer` seam): also NOT STARTED. Not yet assigned.
