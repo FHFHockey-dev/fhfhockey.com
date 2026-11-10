@@ -24,3 +24,11 @@ Facts Chef checked after W1-1 (2026-11-10):
 - Confirmed: the champion's 0.934 AUC is inflated by outcome leakage. The corrected candidate is 0.712 overall and 0.736 at even strength on 17,834 held-out shots. The 0.748–0.761 refit is a small-sample experiment, not a production result.
 - Agreed: FORGE's team xG prior falls back to another source, so it does not read the leaky model through the env override.
 - **Fix-plan constraint:** demoting cfg9bac2706 in the registry will **not** hide its existing aggregates, because some pages read them directly. The xG fix must enumerate and handle **every consumer** of the old aggregates (team Metrics Timeline, homepage game analytics, xG Lab and any others) rather than relying on the champion flag.
+
+## Decisions from the W1-2 audit chat (TJ, 2026-11-10; recorded by Chef from audits/nst-derived-stats.md)
+9. **NST-named metrics must equal NST's definitions.** On-ice tables count every attempt or chance by the player's team while he's on the ice; individual tables count the player's own. HDCF, SCF, Rush Attempts, OZS% and OZFO% follow NST (War-On-Ice style scoring-chance values, 4 s rush, OZ/(OZ+DZ)).
+10. **The goalie column is whatever NST labels it: GSAA** = shots against × league SV% − GA, computed at the aggregate level (same season, strength and date range), never by summing NST's per-game values. GSAx can be added later as its own column.
+11. **Leading and Trailing include one-goal margins** (any lead or deficit); Up 1 and Down 1 are subsets.
+12. **Bucket heuristic xG: hide now, then fix.** Hide the xG columns on the player, goalie and team underlying-stats pages and move the default sort off xGF%. xG returns only from a clean trained model (see 6).
+13. **A penalty-shot infraction is not a penalty** in a player's totals.
+14. **NST burst rule: a job may burst only when it needs fewer than 40 unique URLs** (the 78-request semi-burst in code and in the deployed `nst_admit_attempt_budget_v1` violates it).
