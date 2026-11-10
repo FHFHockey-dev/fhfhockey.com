@@ -189,23 +189,28 @@ export default async function handler(
     const yahooPlayerIds = Array.from(
       new Set(idResolution.map((entry) => entry.yahooPlayerId).filter((id): id is string => id !== null))
     );
+    // Canonical mappings contain seasonal player keys; the legacy name
+    // fallback still returns numeric Yahoo IDs. Keep the namespaces separate.
+    const isPlayerKey = (id: string) => /^\d+\.p\.\d+$/.test(id);
 
     const loadRows = async (requestedSeason: number | null) => {
       const loaded: Array<Record<string, unknown>> = [];
-      for (const idChunk of chunk(yahooPlayerIds)) {
-        let query = supabase
-        .from("yahoo_players_with_normalized_history")
-          .select(
-            "player_id, percent_ownership, ownership_timeline:normalized_ownership_timeline, season", { count: "exact" }
-          )
-          .in("player_id", idChunk)
-          .order("player_id", { ascending: true })
-          .order("season", { ascending: true, nullsFirst: true })
-          .range(0, 999);
-        if (requestedSeason != null) query = query.eq("season", requestedSeason);
-        const { data, error, count } = await query;
-        if (error) throw error;
-        loaded.push(...completeRows(data, count));
+      for (const keyed of [true, false]) {
+        for (const idChunk of chunk(yahooPlayerIds.filter(id => isPlayerKey(id) === keyed))) {
+          let query = supabase
+            .from("yahoo_players_with_normalized_history")
+            .select(
+              "player_key, player_id, percent_ownership, ownership_timeline:normalized_ownership_timeline, season", { count: "exact" }
+            )
+            .in(keyed ? "player_key" : "player_id", idChunk)
+            .order("player_id", { ascending: true })
+            .order("season", { ascending: true, nullsFirst: true })
+            .range(0, 999);
+          if (requestedSeason != null) query = query.eq("season", requestedSeason);
+          const { data, error, count } = await query;
+          if (error) throw error;
+          loaded.push(...completeRows(data, count));
+        }
       }
       return loaded;
     };
@@ -219,24 +224,26 @@ export default async function handler(
     const byPlayer = new Map<string, Record<string, unknown>>();
 
     rows.forEach((row) => {
-      const playerId = row.player_id != null ? String(row.player_id) : null;
-      if (!playerId) return;
-      const existing = byPlayer.get(playerId);
-      const existingTimelineDate = existing ? getLatestTimelineDate(existing) : null;
-      const nextTimelineDate = getLatestTimelineDate(row);
-      if (
-        !existing ||
-        (nextTimelineDate && (!existingTimelineDate || nextTimelineDate > existingTimelineDate))
-      ) {
-        byPlayer.set(playerId, row);
-        return;
-      }
-      const existingSeason =
-        existing && typeof existing.season === "number" ? existing.season : -Infinity;
-      const nextSeason = typeof row.season === "number" ? row.season : -Infinity;
-      if (!existingTimelineDate && !nextTimelineDate && nextSeason >= existingSeason) {
-        byPlayer.set(playerId, row);
-      }
+      const rowIds = [row.player_key, row.player_id].filter(id => id != null && yahooPlayerIds.includes(String(id)));
+      rowIds.forEach((id) => {
+        const playerId = String(id);
+        const existing = byPlayer.get(playerId);
+        const existingTimelineDate = existing ? getLatestTimelineDate(existing) : null;
+        const nextTimelineDate = getLatestTimelineDate(row);
+        if (
+          !existing ||
+          (nextTimelineDate && (!existingTimelineDate || nextTimelineDate > existingTimelineDate))
+        ) {
+          byPlayer.set(playerId, row);
+          return;
+        }
+        const existingSeason =
+          existing && typeof existing.season === "number" ? existing.season : -Infinity;
+        const nextSeason = typeof row.season === "number" ? row.season : -Infinity;
+        if (!existingTimelineDate && !nextTimelineDate && nextSeason >= existingSeason) {
+          byPlayer.set(playerId, row);
+        }
+      });
     });
 
     const players: SnapshotRow[] = idResolution.map((entry) => ({

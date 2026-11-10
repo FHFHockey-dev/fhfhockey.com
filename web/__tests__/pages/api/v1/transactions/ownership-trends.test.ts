@@ -16,6 +16,7 @@ import ownershipTrendsHandler, {
   buildAdpTimelines,
   calculateTrendMovement,
   fetchYahooPlayerRows,
+  fetchYahooToNhlMap,
   latestOwnershipTimelineDate,
   matchesPositionFilter
 } from "../../../../../pages/api/v1/transactions/ownership-trends";
@@ -103,6 +104,67 @@ describe("ownership-trends data contract", () => {
       [1000, 1999]
     ]);
     expect(seasons).toEqual([2025, 2025]);
+  });
+
+  it("hydrates each history once without OFFSET aggregates and preserves page order", async () => {
+    const rows = Array.from({ length: 4438 }, (_, index) => ({
+      player_key: `477.p.${index}`, player_id: String(index), season: 2026,
+      ownership_timeline: [{ date: "2025-01-01", value: 10 }, { date: "2026-11-10", value: 20 }],
+    }));
+    let historyRowsRead = 0;
+    const historyOffsets: number[] = [];
+    const historySizes: number[] = [];
+    const client = { from() {
+      let select = "", from = 0, to = 999, keys: string[] | null = null;
+      const query = {
+        select(value: string) { select = value; return query; },
+        order: () => query,
+        eq(column: string, value: number) { expect([column, value]).toEqual(["season", 2026]); return query; },
+        range(start: number, end: number) { from = start; to = end; return query; },
+        in(column: string, values: string[]) { expect(column).toBe("player_key"); keys = values; return query; },
+        then(resolve: (value: unknown) => unknown) {
+          if (select === "player_key") return Promise.resolve({ data: rows.slice(from, to + 1).map(({ player_key }) => ({ player_key })), error: null }).then(resolve);
+          expect(keys).not.toBeNull();
+          const selected = rows.filter(row => keys!.includes(row.player_key)).reverse();
+          historyRowsRead += selected.length;
+          historyOffsets.push(from); historySizes.push(keys!.length);
+          return Promise.resolve({ data: selected.slice(from, to + 1), error: null }).then(resolve);
+        },
+      };
+      return query;
+    } };
+    const result = await fetchYahooPlayerRows({ supabase: client, select: "player_key,player_id,ownership_timeline:normalized_ownership_timeline", season: 2026 });
+    expect(result).toEqual(rows);
+    expect(historyRowsRead).toBe(4438);
+    expect(historyOffsets).toEqual(Array(9).fill(0));
+    expect(Math.max(...historySizes)).toBe(500);
+  });
+
+  it("rejects a truncated history chunk instead of silently dropping players", async () => {
+    const client = { from() {
+      let select = "";
+      const query = {
+        select(value: string) { select = value; return query; },
+        order: () => query, range: () => query, in: () => query,
+        then(resolve: (value: unknown) => unknown) { return Promise.resolve({ data: select === "player_key" ? [{ player_key: "477.p.1" }] : [], error: null }).then(resolve); },
+      };
+      return query;
+    } };
+    await expect(fetchYahooPlayerRows({ supabase: client, select: "player_key,ownership_timeline:normalized_ownership_timeline" })).rejects.toThrow("Incomplete ownership history page");
+  });
+
+  it("uses exact seasonal mapping keys and rejects ambiguous or malformed identities", async () => {
+    const query = { select: () => query, in: vi.fn(async () => ({ error: null, data: [
+      { yahoo_player_id: "477.p.112", nhl_player_id: "12" },
+      { yahoo_player_id: "465.p.112", nhl_player_id: "13" },
+      { yahoo_player_id: "477.p.113", nhl_player_id: "14" },
+      { yahoo_player_id: "477.p.113", nhl_player_id: "15" },
+      { yahoo_player_id: "477.p.114", nhl_player_id: null },
+      { yahoo_player_id: "112", nhl_player_id: "99" },
+    ] })) };
+    const result = await fetchYahooToNhlMap({ from: () => query }, ["477.p.112", "465.p.112", "477.p.113", "477.p.114", "112", ""]);
+    expect(query.in).toHaveBeenCalledWith("yahoo_player_id", ["477.p.112", "465.p.112", "477.p.113", "477.p.114"]);
+    expect([...result]).toEqual([["477.p.112", 12], ["465.p.112", 13]]);
   });
 
   it("treats Yahoo forward eligibility as C/LW/RW/F rather than exact F only", () => {
@@ -253,7 +315,7 @@ describe("ownership snapshot provenance", () => {
     const reads = database({
       yahoo_players_with_normalized_history: [{ player_id: "112", player_key: "477.p.112", season: 2026,
         ownership_timeline: [{ date: "2026-11-05", value: 30 }, { date: "2026-11-07", value: 45 }, { date: "2026-11-10", value: 50 }] }],
-      yahoo_nhl_player_map_read: [{ nhl_player_id: 12, yahoo_player_id: 112 }],
+      yahoo_nhl_player_map_read: [{ nhl_player_id: 12, yahoo_player_id: "477.p.112" }],
     });
     try {
       const three = createMockRes();
@@ -263,13 +325,33 @@ describe("ownership snapshot provenance", () => {
         ownershipTrendsHandler({ method: "GET", query: { window: "5", season: "2026" } } as any, five),
       ]);
       expect(three.body.risers[0]).toMatchObject({ playerId: 12, delta: 5 });
+      expect(three.body).toMatchObject({ mappedPlayerCount: 1, unmappedPlayerCount: 0 });
       expect(five.body.risers[0]).toMatchObject({ playerId: 12, delta: 20 });
-      expect(reads).toEqual(["yahoo_players_with_normalized_history", "yahoo_nhl_player_map_read"]);
+      expect(reads).toEqual(["yahoo_players_with_normalized_history", "yahoo_players_with_normalized_history", "yahoo_nhl_player_map_read"]);
       const again = createMockRes();
       await ownershipTrendsHandler({ method: "GET", query: { window: "3", season: "2026" } } as any, again);
       expect(again.body.sourceDate).toBe("2026-11-10");
-      expect(reads).toHaveLength(2);
+      expect(reads).toHaveLength(3);
     } finally { vi.useRealTimers(); }
+  });
+
+  it("does not substitute another season with the same numeric Yahoo id", async () => {
+    database({ yahoo_nhl_player_map_read: [{ nhl_player_id: 12, yahoo_player_id: "477.p.112" }],
+      yahoo_players_with_normalized_history: [
+        { player_key: "477.p.112", player_id: "112", season: 2026, percent_ownership: 25 },
+        { player_key: "465.p.112", player_id: "112", season: 2026, percent_ownership: 99 },
+      ] });
+    const response = createMockRes();
+    await ownershipSnapshotsHandler(request("12"), response);
+    expect(response.body.players[0].ownership).toBe(25);
+  });
+
+  it("retains numeric legacy-reader compatibility without confusing it with a seasonal key", async () => {
+    database({ yahoo_nhl_player_map_read: [{ nhl_player_id: 12, yahoo_player_id: "112" }],
+      yahoo_players_with_normalized_history: [{ player_key: "477.p.112", player_id: "112", season: 2026, percent_ownership: 25 }] });
+    const response = createMockRes();
+    await ownershipSnapshotsHandler(request("12"), response);
+    expect(response.body.players[0].ownership).toBe(25);
   });
 
   it.each([
@@ -277,8 +359,8 @@ describe("ownership snapshot provenance", () => {
     ["", null], ["   ", null], [false, null], [true, null], ["invalid", null],
     ["1e1", null], ["0x10", null], [[], null], [{}, null], [-1, null], [101, null], [Infinity, null]
   ])("keeps malformed ownership unknown and actual zero known (%j)", async (value, expected) => {
-    database({ yahoo_nhl_player_map_read: [{ nhl_player_id: 12, yahoo_player_id: 112 }],
-      yahoo_players_with_normalized_history: [{ player_id: "112", season: 2026, percent_ownership: value }] });
+    database({ yahoo_nhl_player_map_read: [{ nhl_player_id: 12, yahoo_player_id: "477.p.112" }],
+      yahoo_players_with_normalized_history: [{ player_key: "477.p.112", player_id: "112", season: 2026, percent_ownership: value }] });
     const response = createMockRes();
     await ownershipSnapshotsHandler(request("12"), response);
     expect(response.statusCode).toBe(200);
@@ -286,10 +368,10 @@ describe("ownership snapshot provenance", () => {
   });
 
   it("keeps each last valid observation's own date rather than another player's or an invalid newer point", async () => {
-    database({ yahoo_nhl_player_map_read: [{ nhl_player_id: 12, yahoo_player_id: 112 }, { nhl_player_id: 13, yahoo_player_id: 113 }],
+    database({ yahoo_nhl_player_map_read: [{ nhl_player_id: 12, yahoo_player_id: "477.p.112" }, { nhl_player_id: 13, yahoo_player_id: "477.p.113" }],
       yahoo_players_with_normalized_history: [
-        { player_id: "112", season: 2026, percent_ownership: 75, ownership_timeline: [{ date: "2026-10-18", value: 0 }, { date: "2026-10-22", value: "" }] },
-        { player_id: "113", season: 2026, ownership_timeline: [{ date: "2026-10-21", value: "45" }] }
+        { player_key: "477.p.112", player_id: "112", season: 2026, percent_ownership: 75, ownership_timeline: [{ date: "2026-10-18", value: 0 }, { date: "2026-10-22", value: "" }] },
+        { player_key: "477.p.113", player_id: "113", season: 2026, ownership_timeline: [{ date: "2026-10-21", value: "45" }] }
       ] });
     const response = createMockRes();
     await ownershipSnapshotsHandler(request("12,13"), response);
@@ -309,7 +391,7 @@ describe("ownership snapshot provenance", () => {
   });
 
   it.each(["mapping", "name"])("does not choose one of conflicting %s identities", async mode => {
-    database({ yahoo_nhl_player_map_read: mode === "mapping" ? [{ nhl_player_id: 12, yahoo_player_id: 112 }, { nhl_player_id: 12, yahoo_player_id: 113 }] : [],
+    database({ yahoo_nhl_player_map_read: mode === "mapping" ? [{ nhl_player_id: 12, yahoo_player_id: "477.p.112" }, { nhl_player_id: 12, yahoo_player_id: "477.p.113" }] : [],
       players: [{ id: 12, fullName: "Same Name" }],
       yahoo_players_with_normalized_history: [
         { player_id: "112", full_name: "Same Name", season: 2026, ownership_timeline: [{ date: "2026-10-20", value: 15 }] },
@@ -321,8 +403,8 @@ describe("ownership snapshot provenance", () => {
   });
 
   it("fails closed on a truncated ownership response", async () => {
-    database({ yahoo_nhl_player_map_read: [{ nhl_player_id: 12, yahoo_player_id: 112 }],
-      yahoo_players_with_normalized_history: Array.from({ length: 1001 }, () => ({ player_id: "112", season: 2026, percent_ownership: 50 })) });
+    database({ yahoo_nhl_player_map_read: [{ nhl_player_id: 12, yahoo_player_id: "477.p.112" }],
+      yahoo_players_with_normalized_history: Array.from({ length: 1001 }, () => ({ player_key: "477.p.112", player_id: "112", season: 2026, percent_ownership: 50 })) });
     const log = vi.spyOn(console, "error").mockImplementation(() => undefined);
     try {
       const response = createMockRes();
@@ -353,8 +435,8 @@ describe("ownership snapshot provenance", () => {
 
   it("accepts the 500-player bound with one mapping and one ownership query", async () => {
     const ids = Array.from({ length: 500 }, (_, index) => index + 1);
-    const reads = database({ yahoo_nhl_player_map_read: ids.map(id => ({ nhl_player_id: id, yahoo_player_id: id + 1000 })),
-      yahoo_players_with_normalized_history: ids.map(id => ({ player_id: String(id + 1000), season: 2026,
+    const reads = database({ yahoo_nhl_player_map_read: ids.map(id => ({ nhl_player_id: id, yahoo_player_id: `477.p.${id + 1000}` })),
+      yahoo_players_with_normalized_history: ids.map(id => ({ player_key: `477.p.${id + 1000}`, player_id: String(id + 1000), season: 2026,
         ownership_timeline: [{ date: "2026-10-21", value: 0 }] })) });
     const response = createMockRes();
     await ownershipSnapshotsHandler(request(ids.join(",")), response);
@@ -368,8 +450,8 @@ describe("ownership snapshot provenance", () => {
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(new Date("2026-10-22T12:00:00Z"));
     clearClientFetchCache();
-    database({ yahoo_nhl_player_map_read: [{ nhl_player_id: 12, yahoo_player_id: 112 },
-      ...(ambiguous ? [{ nhl_player_id: 12, yahoo_player_id: 113 }] : [])],
+    database({ yahoo_nhl_player_map_read: [{ nhl_player_id: 12, yahoo_player_id: "477.p.112" },
+      ...(ambiguous ? [{ nhl_player_id: 12, yahoo_player_id: "477.p.113" }] : [])],
       yahoo_players_with_normalized_history: [
         { player_key: "477.p.112", player_id: "112", season: 2026, ownership_timeline: [{ date: "2026-10-17", value: 50 }, { date: "2026-10-22", value: 60 }] },
         { player_key: "477.p.113", player_id: "113", season: 2026, ownership_timeline: [{ date: "2026-10-22", value: 20 }] }

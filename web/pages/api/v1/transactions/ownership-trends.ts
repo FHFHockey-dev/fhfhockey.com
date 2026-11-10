@@ -27,7 +27,7 @@ type TrendPlayer = {
   sparkline: TrendPoint[];
 };
 
-type YahooToNhlMap = Map<number, number>;
+type YahooToNhlMap = Map<string, number>;
 
 type SupabaseQueryClient = {
   from(table: string): any;
@@ -73,10 +73,13 @@ export async function fetchYahooPlayerRows(args: {
   season?: number;
 }): Promise<any[]> {
   const rows: any[] = [];
+  const includesHistory = args.select.includes("normalized_ownership_timeline");
   for (let from = 0; ; from += PAGE_SIZE) {
     let query = args.supabase
       .from("yahoo_players_with_normalized_history")
-      .select(args.select)
+      // OFFSET applies after the view's history aggregate. Page cheap keys
+      // first so skipped players never have their histories rebuilt.
+      .select(includesHistory ? "player_key" : args.select)
       .order("player_id", { ascending: true })
       .order("season", { ascending: true, nullsFirst: true })
       .range(from, from + PAGE_SIZE - 1);
@@ -84,7 +87,32 @@ export async function fetchYahooPlayerRows(args: {
     const { data, error } = await query;
     if (error) throw error;
     if (!data || data.length === 0) break;
-    rows.push(...data);
+    if (includesHistory) {
+      const keys = data.map((row: any) => row.player_key);
+      if (keys.some((key: unknown) => typeof key !== "string" || !key) || new Set(keys).size !== keys.length) {
+        throw new Error("Invalid ownership page identities");
+      }
+      const byKey = new Map<string, any>();
+      for (const keyChunk of chunk<string>(keys, MAP_CHUNK_SIZE)) {
+        let historyQuery = args.supabase
+          .from("yahoo_players_with_normalized_history")
+          .select(args.select)
+          .in("player_key", keyChunk)
+          .order("player_key", { ascending: true })
+          .range(0, keyChunk.length - 1);
+        if (args.season != null) historyQuery = historyQuery.eq("season", args.season);
+        const { data: historyRows, error: historyError } = await historyQuery;
+        if (historyError) throw historyError;
+        for (const row of historyRows ?? []) byKey.set(row.player_key, row);
+        if ((historyRows?.length ?? 0) !== keyChunk.length || keyChunk.some(key => !byKey.has(key))) {
+          throw new Error("Incomplete ownership history page");
+        }
+      }
+      // Preserve the original player_id/season ordering, including tied deltas.
+      rows.push(...keys.map((key: string) => byKey.get(key)));
+    } else {
+      rows.push(...data);
+    }
     if (data.length < PAGE_SIZE) break;
   }
   return rows;
@@ -222,30 +250,33 @@ function resolveKey(): { url: string; key: string } {
   return { url, key };
 }
 
-async function fetchYahooToNhlMap(
+export async function fetchYahooToNhlMap(
   supabase: SupabaseQueryClient,
-  yahooPlayerIds: number[]
+  yahooPlayerKeys: string[]
 ): Promise<YahooToNhlMap> {
-  const uniqueIds = Array.from(
-    new Set(yahooPlayerIds.filter((id) => Number.isFinite(id)))
+  const uniqueKeys = Array.from(
+    new Set(yahooPlayerKeys.filter((key) => /^\d+\.p\.\d+$/.test(key)))
   );
-  if (uniqueIds.length === 0) return new Map();
+  if (uniqueKeys.length === 0) return new Map();
 
   const map: YahooToNhlMap = new Map();
-  for (const idChunk of chunk(uniqueIds, MAP_CHUNK_SIZE)) {
+  const ambiguous = new Set<string>();
+  for (const keyChunk of chunk(uniqueKeys, MAP_CHUNK_SIZE)) {
     const { data, error } = await supabase
       .from("yahoo_nhl_player_map_read")
       .select("nhl_player_id, yahoo_player_id")
-      .in("yahoo_player_id", idChunk.map(String));
+      .in("yahoo_player_id", keyChunk);
     if (error) throw error;
     (data ?? []).forEach((row: any) => {
-      const yahooId = Number(row?.yahoo_player_id);
+      const yahooKey = row?.yahoo_player_id;
       const nhlId = Number(row?.nhl_player_id);
-      if (Number.isFinite(yahooId) && Number.isFinite(nhlId)) {
-        map.set(yahooId, nhlId);
+      if (keyChunk.includes(yahooKey) && Number.isSafeInteger(nhlId) && nhlId > 0) {
+        if (map.has(yahooKey) && map.get(yahooKey) !== nhlId) ambiguous.add(yahooKey);
+        map.set(yahooKey, nhlId);
       }
     });
   }
+  for (const key of ambiguous) map.delete(key);
   return map;
 }
 
@@ -336,9 +367,7 @@ async function loadTrendSnapshot(
     }
     const yahooToNhl = await fetchYahooToNhlMap(
       supabase,
-      rows
-        .map((row) => Number(row?.player_id))
-        .filter((id) => Number.isFinite(id))
+      rows.map((row) => String(row?.player_key ?? ""))
     );
 
     return { rows, seasonFallbackApplied, adpTimelines, yahooToNhl };
@@ -457,12 +486,8 @@ export default async function handler(
         if (!matchesPositionFilter(posFilter, eligiblePositions, displayPosTokens)) continue;
       }
 
-      const yahooPlayerId =
-        row.player_id == null || Number.isNaN(Number(row.player_id))
-          ? null
-          : Number(row.player_id);
       const nhlPlayerId =
-        yahooPlayerId != null ? yahooToNhl.get(yahooPlayerId) ?? null : null;
+        yahooToNhl.get(String(row.player_key)) ?? null;
 
       const obj: TrendPlayer = {
         playerKey: row.player_key,
@@ -507,8 +532,7 @@ export default async function handler(
         ? latestTimelineDate(Array.from(adpTimelines.values()))
         : latestOwnershipTimelineDate(rows);
     const mappedPlayerCount = rows.filter((row) => {
-      const yahooId = Number(row?.player_id);
-      return Number.isFinite(yahooId) && yahooToNhl.has(yahooId);
+      return yahooToNhl.has(String(row?.player_key));
     }).length;
     const unmappedPlayerCount = rows.length - mappedPlayerCount;
     const risersPage = risers.slice(offset, offset + limit);
