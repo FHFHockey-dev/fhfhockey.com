@@ -118,6 +118,22 @@ export const VERIFIED_FORGE_PRODUCER_CLOSURES: readonly VerifiedForgeProducerClo
     verifierVersion: "forge-release-sha-verifier-v1",
     note: "Isolated cron repair producer: current-team goalie priors and exact-run calibration proof, 195-module commit closure, 0 findings. Exclusion proof only, not forecast-quality or native-use approval.",
   },
+  {
+    closureSha256: "9b1821fff8b64983f5e28c572a054cdc7d49f2a320b8e2e18dec514e4ad4c219",
+    commit: "a5816ce6d1eeeba4b7213d1f66c96025f0b5818e",
+    receipt: "tasks/artifacts/rso-daily-beta-2026-11-08/forecast-trace-2026-11-09/a5816ce6d1eeeba4b7213d1f66c96025f0b5818e.json",
+    receiptSha256: "c5d83514d35cbabf095f23480997ada5ddf7d8dda28b08b03e98ca2b868c0d0e",
+    verifierVersion: "forge-release-sha-verifier-v1",
+    note: "Release #423 producer: 199-module exact commit closure, 0 findings; matches the seven Nov 9-issued h1 runs. Exclusion proof only, not forecast-quality or native-use approval.",
+  },
+  {
+    closureSha256: "ce9cdbc7dc5c9afb0c09580b090ba7fcbfb984f126442361e2a6e06411a99420",
+    commit: "d66408de3a0d1ccea1daaadfce8a3a9ae20cb680",
+    receipt: "tasks/artifacts/rso-daily-beta-2026-11-08/forecast-trace-2026-11-09/d66408de3a0d1ccea1daaadfce8a3a9ae20cb680.json",
+    receiptSha256: "0b290aecd9157d6f919634f49de72b966d9f70529fb03ec41a6e5a9f0013a36b",
+    verifierVersion: "forge-release-sha-verifier-v1",
+    note: "Release #425 producer: 199-module exact commit closure, 0 findings; producer modules unchanged in #426. Exclusion proof only, not forecast-quality or native-use approval.",
+  },
 ];
 
 const FULL_SHA = /^[0-9a-f]{40}$/, SHA256 = /^[0-9a-f]{64}$/;
