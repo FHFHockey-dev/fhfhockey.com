@@ -1,0 +1,2215 @@
+# Audit packet: Game predictions & odds
+
+Master entries M-GPR-001 to M-GPR-045 (45 of 45 in this family). Built from the merged Opus and Codex inventories; see [../MASTER.md](../MASTER.md) and [../MERGE-NOTES.md](../MERGE-NOTES.md).
+
+How to read: each entry gives both inventories' descriptions side by side. **Conflicts** are places where the two descriptions disagree; they are unresolved. **Leads** are Opus red flags and Codex unknowns: observations to check, not audited findings. Tags are keyword heuristics. Line numbers were valid when each inventory was written on 2026-11-10 (Opus at d31dcb33f, Codex at 11e4192d3); re-check against the current checkout.
+
+| ID | Name | Match | Conflicts | Leads |
+|---|---|---|---:|---:|
+| M-GPR-001 | Simple baseline comparators (bounded edge probability) | Both | 0 | 3 |
+| M-GPR-002 | Accountability candlesticks and rolling accuracy | Both | 0 | 2 |
+| M-GPR-003 | Feature signal analysis (correlation, mutual information, odds ratios) | Both | 0 | 2 |
+| M-GPR-004 | Prediction evaluation metrics (log loss, Brier, accuracy, AUC, calibr… | Both | 0 | 5 |
+| M-GPR-005 | Walk-forward backtest splits and retrain cadence | Both | 0 | 2 |
+| M-GPR-006 | Baseline feature vector transform (53 home-minus-away keys) | Both | 0 | 57 |
+| M-GPR-007 | Roster-prior vs current-form blend weights | Both | 0 | 2 |
+| M-GPR-008 | Season phase derivation | Both | 0 | 2 |
+| M-GPR-009 | Rest / back-to-back schedule features | Both | 0 | 2 |
+| M-GPR-010 | Team power rating difference features | Both | 0 | 2 |
+| M-GPR-011 | Recent team form windows (last 5/10/20/40, season-to-date, cross-seas… | Both | 0 | 12 |
+| M-GPR-012 | Roster impact (TOI-weighted player impact ratings) | Both | 0 | 3 |
+| M-GPR-013 | Goalie start blend and start uncertainty | Both | 0 | 5 |
+| M-GPR-014 | Past-opponent schedule strength (last 5/10 opponents composite power) | Both | 0 | 2 |
+| M-GPR-015 | Opponent-adjusted recent form (SOS-adjusted GD and xGF%) | Both | 0 | 4 |
+| M-GPR-016 | Game Grid Poisson heatmap tie-breaker matrix | Both | 0 | 3 |
+| M-GPR-017 | Legacy Poisson game goal projection (att x def x league avg) and win … | Both | 5 | 9 |
+| M-GPR-018 | Probability calibration in backtests (Platt / isotonic) | Both | 0 | 2 |
+| M-GPR-019 | Training season recency weight | Both | 0 | 2 |
+| M-GPR-020 | ExtraTrees candidate model | Both | 0 | 4 |
+| M-GPR-021 | Top factors / explanation contributions | Both | 0 | 1 |
+| M-GPR-022 | Probability floor, rounding, winner threshold, confidence label, mark… | Both | 0 | 56 |
+| M-GPR-023 | Data-quality dampening toward 50% | Both | 0 | 4 |
+| M-GPR-024 | Training-set feature standardization | Both | 0 | 2 |
+| M-GPR-025 | Regularized logistic training (candidate/backtest) | Both | 0 | 4 |
+| M-GPR-026 | Served pregame home-win probability (INITIAL_BASELINE_MODEL hand-weig… | Both | 0 | 5 |
+| M-GPR-027 | American odds -> implied probability and no-vig (proportional) normal… | Both | 0 | 3 |
+| M-GPR-028 | Promotion gate and segment regression guardrails | Both | 0 | 3 |
+| M-GPR-029 | Homepage win-probability favoured/underdog tone | Opus only | 0 | 1 |
+| M-GPR-030 | Start-chart defense ease grade | Opus only | 0 | 1 |
+| M-GPR-031 | Game stats page moneyline implied win probability with proportional d… | Opus only | 0 | 2 |
+| M-GPR-032 | Game prediction recent-team-form audit: retrain + goal-differential e… | Opus only | 0 | 2 |
+| M-GPR-033 | Game prediction source audit: SQL math-identity and range checks | Opus only | 0 | 1 |
+| M-GPR-034 | Prediction health checks and admin health report | Opus only | 0 | 1 |
+| M-GPR-035 | FORGE team projection features | Opus only | 0 | 1 |
+| M-GPR-036 | Source freshness / staleness flags | Opus only | 0 | 1 |
+| M-GPR-037 | Team game fact normalization (cumulative-difference derivation) | Opus only | 0 | 1 |
+| M-GPR-038 | Goalie workload context | Opus only | 0 | 1 |
+| M-GPR-039 | Game page Poisson score distribution (client) | Opus only | 0 | 3 |
+| M-GPR-040 | Probability blend variants (training home prior, GD anchor, standings… | Opus only | 0 | 1 |
+| M-GPR-041 | Game preview odds bar (ESPN/NHL odds implied probability) | Opus only | 0 | 1 |
+| M-GPR-042 | Market odds snapshot selection (pre-cutoff) | Opus only | 0 | 0 |
+| M-GPR-043 | Poisson PMF and factorial | Codex only | 0 | 1 |
+| M-GPR-044 | Promotion evidence and segment regressions | Codex only | 0 | 1 |
+| M-GPR-045 | Displayed score outcomes and conditional win odds | Codex only | 0 | 1 |
+
+## M-GPR-001 Simple baseline comparators (bounded edge probability)
+
+- **Match:** Both; Opus GPR-006; Codex core-303
+- **Purpose:** Naive benchmarks the model must beat (home 54%, market, standings, goal diff, power composite, goalie).
+- **Where:** `web/lib/game-predictions/accountability.ts:1354 (boundedEdgeProbability)`; `web/lib/game-predictions/accountability.ts:1531 (buildBaselineComparison)`; `web/lib/game-predictions/accountability.ts:1568 (buildBacktestBaselineComparisons)`; `web/lib/game-predictions/accountability.ts:1897 (strongestSimpleBaselineFloor)`; `web/lib/game-predictions/accountability.ts:1568 buildBacktestBaselineComparisons`
+- **Tags (heuristic):** percent scale: fraction 0-1; generation: research, current
+- **Opus view (GPR-006):**
+  - Method: p = 0.5 if edge≈0 else base + min(max-base, \|edge\|/scale) toward the favoured side. home_team_fixed_54 p=0.54; standings point% scale 0.3 (0.53-0.68); goal diff scale 100 (0.53-0.68); recent10 GD/game scale 3 (0.53-0.68); power composite sum of 4 rating diffs scale 120 (0.53-0.72); goalie GSAA scale 2 (0.52-0.65); market no-vig. Clip [0.05,0.95]; correct if p>=0.5. Strongest floor = lowest log loss excluding market.
+  - Inputs/units: see method; sources: —
+  - Output scale: probability 0.05-0.95; writes: —
+  - Status: live in backtest/accountability admin routes
+  - Consumers: decidePromotion
+- **Codex view (core-303, calculation, location; Codex family 'game prediction evaluation'):** Simple benchmark probabilities
+  - Formula: Build source-defined simple baselines; score with shared evaluation metrics; exact anchor transforms in source.
+  - Purpose: Calculate simple benchmark probabilities.
+  - Inputs/units: Held-out game examples and training home-win prior.
+  - Output scale: Coinflip, home-prior, standings and goal-differential benchmark scores.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f.  Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracked/untracked status entry at the final status check.
+- **Audit context:**
+  - Intent (Opus): UNDOCUMENTED
+  - Intended contract (Codex core-303): Checked-in evaluation/promotion code is the located contract; this inventory does not assert any model passed its gates.
+  - External references: Naive forecasts (home-ice prior, standings log5)
+  - Fixtures/test data: none listed
+  - Tests: `Located only; not run for this inventory.`; `web/__tests__/pages/api/v1/game-predictions/accuracy-loop.test.ts`; `web/lib/game-predictions/accountability.test.ts`
+- **Leads (not audited):**
+  - (opus) boundedEdgeProbability jumps from 0.5 to base (0.53) on any nonzero edge (discontinuous), so tiny edges get 53%
+  - (opus) home baseline is not a log5/Elo model
+  - (codex:core-303) ["Inventory only, not validation of the formula, source semantics or model quality."]
+
+## M-GPR-002 Accountability candlesticks and rolling accuracy
+
+- **Match:** Both; Opus GPR-007; Codex core-300, core-301
+- **Purpose:** Per-game open/low/high/final probability and cumulative/rolling accuracy, Brier, log loss.
+- **Where:** `web/lib/game-predictions/accountability.ts:1405 (buildPredictionCandlestick)`; `web/lib/game-predictions/accountability.ts:1461 (buildAccountabilityDailySeries)`; `web/lib/game-predictions/accountability.ts:1505 (buildAccountabilitySummary)`; `web/lib/game-predictions/accountability.ts:851 (accuracyFor)`; `web/lib/game-predictions/accountability.ts:1405 buildPredictionCandlestick`; `web/lib/game-predictions/accountability.ts:1461 buildAccountabilityDailySeries`
+- **Tags (heuristic):** percent scale: fraction 0-1; generation: current
+- **Opus view (GPR-007):**
+  - Method: open = first pregame prediction, final = last pregame; probabilitySpread = max - min; daily cumulative accuracy; rolling 10/25/50 by game order; Brier/log loss via evaluateProbabilityMetrics.
+  - Inputs/units: probability; sources: game_prediction_history, games
+  - Output scale: fractions; writes: —
+  - Status: live — /api/v1/game-predictions/accountability
+  - Consumers: /api/v1/game-predictions/accountability
+- **Codex view (core-300, calculation, location; Codex family 'game prediction evaluation'):** Prediction probability candlestick
+  - Formula: Spread=max-min; final pregame issuance selected; actual winner from final score.
+  - Purpose: Calculate prediction probability candlestick.
+  - Inputs/units: All valid pregame predictions and completed outcome.
+  - Output scale: Open, min, max, final probability, spread, count, correctness.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f.  Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracked/untracked status entry at the final status check.
+- **Codex view (core-301, calculation, location; Codex family 'game prediction evaluation'):** Cumulative and rolling accuracy series
+  - Formula: Correct/N on each prefix/window; probability metrics from final home probability.
+  - Purpose: Calculate cumulative and rolling accuracy series.
+  - Inputs/units: Ordered final prediction candlesticks.
+  - Output scale: Cumulative and last 10/25/50 accuracy; Brier/log loss.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f.  Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracked/untracked status entry at the final status check.
+- **Audit context:**
+  - Intent (Opus): UNDOCUMENTED
+  - Intended contract (Codex core-300): Checked-in evaluation/promotion code is the located contract; this inventory does not assert any model passed its gates.
+  - Intended contract (Codex core-301): Checked-in evaluation/promotion code is the located contract; this inventory does not assert any model passed its gates.
+  - External references: Forecast verification (Brier, log loss)
+  - Fixtures/test data: none listed
+  - Tests: `Located only; not run for this inventory.`; `web/__tests__/pages/api/v1/game-predictions/accuracy-loop.test.ts`; `web/lib/game-predictions/accountability.test.ts`
+- **Leads (not audited):**
+  - (codex:core-300) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-301) ["Inventory only, not validation of the formula, source semantics or model quality."]
+
+## M-GPR-003 Feature signal analysis (correlation, mutual information, odds ratios)
+
+- **Match:** Both; Opus GPR-008; Codex core-294
+- **Purpose:** Ranks baseline features by univariate and multivariate signal for promotion review.
+- **Where:** `web/lib/game-predictions/baselineModel.ts:1159 (analyzeBaselineFeatureSignals)`; `web/lib/game-predictions/baselineModel.ts:352 (pearsonCorrelation)`; `web/lib/game-predictions/baselineModel.ts:370 (mutualInformationScore)`; `web/lib/game-predictions/accountability.ts:432 (buildFeatureSignalSegmentAnalyses)`; `web/lib/game-predictions/baselineModel.ts:1159 analyzeBaselineFeatureSignals`
+- **Tags (heuristic):** generation: current
+- **Opus view (GPR-008):**
+  - Method: Pearson r(feature,label); MI with rank-binned feature into min(5,unique) quantile bins (natural log); univariate and multivariate L2 logistic (800 iters lr 0.03 l2 0.02) on standardized features; odds ratio per SD = exp(clamp(w,-20,20)); sorted by \|multivariate weight\| then \|r\|.
+  - Inputs/units: feature units; sources: —
+  - Output scale: r in [-1,1], MI nats, odds ratio; writes: —
+  - Status: live admin route (manual)
+  - Consumers: /api/v1/game-predictions/feature-signal-analysis
+- **Codex view (core-294, calculation, location; Codex family 'game prediction model'):** Feature signal diagnostics
+  - Formula: Centered Pearson; discretized mutual information; exp(weight) odds ratio.
+  - Purpose: Calculate feature signal diagnostics.
+  - Inputs/units: Training feature values and outcome labels.
+  - Output scale: Pearson correlation, mutual information, coefficient odds ratios and feature summaries.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Audit context:**
+  - Intent (Opus): UNDOCUMENTED
+  - Intended contract (Codex core-294): Source types and implementation in web/lib/game-predictions/baselineModel.ts:1159; separate acceptance not verified.
+  - External references: Point-biserial correlation; mutual information
+  - Fixtures/test data: none listed
+  - Tests: `Located only; not run for this inventory.`; `web/lib/game-predictions/baselineModel.test.ts`
+- **Leads (not audited):**
+  - (opus) MI binning is O(n^2) per feature and uses population std
+  - (codex:core-294) ["Inventory only, not validation of the formula, source semantics or model quality."]
+
+## M-GPR-004 Prediction evaluation metrics (log loss, Brier, accuracy, AUC, calibration bins)
+
+- **Match:** Both; Opus GPR-009; Codex XG-15, core-296, core-297, core-298
+- **Purpose:** Scores stored predictions against outcomes by segment.
+- **Where:** `web/lib/game-predictions/evaluation.ts:91 (deriveOutcomeFromScore)`; `web/lib/game-predictions/evaluation.ts:163 (buildCalibrationBins)`; `web/lib/game-predictions/evaluation.ts:192 (calculateAuc)`; `web/lib/game-predictions/evaluation.ts:209 (calculateSegmentMetric)`; `web/lib/game-predictions/evaluation.ts:237 (buildSegmentMetrics)`; `web/lib/xg/calibration.ts:106 (evaluateProbabilityMetrics)`; `web/lib/xg/calibration.ts:106 evaluateProbabilityMetrics`; `web/lib/xg/hardeningAudit.ts:112 buildXgSegmentCalibrationAudit`; `web/scripts/train_nhl_xg_challengers.py:20 metrics`; `web/lib/game-predictions/evaluation.ts:209 calculateSegmentMetric`; `web/lib/game-predictions/evaluation.ts:192 calculateAuc`; `web/lib/game-predictions/evaluation.ts:163 buildCalibrationBins`
+- **Tags (heuristic):** percent scale: fraction 0-1; generation: current
+- **Opus view (GPR-009):**
+  - Method: label = homeScore > awayScore (ties dropped); log loss = mean(-ln p) with p clipped 1e-9; Brier = mean((p-y)^2); accuracy via predicted_winner_team_id (else p>=0.5); AUC = pairwise wins + 0.5 ties; 10 equal-width calibration bins. Segments: overall, confidence_label, season_phase, predicted_side, goalie_confirmation_state, goalie uncertainty bucket (max >= 0.75 high, >= 0.25 medium), market_edge_bucket, has_stale_source, game_type.
+  - Inputs/units: probability 0-1; goals; sources: game_prediction_history, pp_timeframes (scores), pbp_games (fallback)
+  - Output scale: log loss nats; Brier 0-1; AUC 0-1; writes: game_prediction_model_metrics
+  - Status: live — /api/v1/game-predictions/score route
+  - Consumers: /api/v1/game-predictions/score; admin health; promotion gate; public payload
+- **Codex view (XG-15, calculation, location; Codex family 'Expected goals'):** Probability evaluation and calibration bins
+  - Purpose: Compute evaluation measures already implemented for xG models.
+  - Inputs/units: Predictions [0,1] and binary observed outcomes; segment keys.
+  - Output scale: Log loss, Brier, count, positive rate, mean prediction, bin gaps; Python adds ROC AUC/ECE.
+  - Version/status: Evaluation tools inventoried only. Production deployment/active database state not checked.
+- **Codex view (core-296, calculation, codex_part_of_opus; Codex family 'game prediction evaluation'):** Outcome and prediction accuracy
+  - Formula: Correct winner count/N; calls shared probability metrics for Brier/log loss.
+  - Purpose: Calculate outcome and prediction accuracy.
+  - Inputs/units: Completed game score and final predicted winner/probability.
+  - Output scale: Accuracy 0..1, evaluated count, Brier/log loss/AUC/calibration.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f.  Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracked/untracked status entry at the final status check.
+- **Codex view (core-297, calculation, codex_part_of_opus; Codex family 'game prediction evaluation'):** AUC pairwise concordance
+  - Formula: (Concordant pairs+.5*ties)/(positiveCount*negativeCount).
+  - Purpose: Calculate auc pairwise concordance.
+  - Inputs/units: Positive and negative home-win examples with probabilities.
+  - Output scale: AUC 0..1 or null if either class absent.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f.  Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracked/untracked status entry at the final status check.
+- **Codex view (core-298, calculation, codex_part_of_opus; Codex family 'game prediction evaluation'):** Probability calibration bins
+  - Formula: Bin on [i/10, (i+1)/10); last includes 1; average values within bins.
+  - Purpose: Calculate probability calibration bins.
+  - Inputs/units: Predicted home probabilities and binary outcomes; default 10 bins.
+  - Output scale: Mean prediction and observed win rate per probability bucket.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f.  Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracked/untracked status entry at the final status check.
+- **Audit context:**
+  - Intent (Opus): UNDOCUMENTED
+  - Intended contract (Codex XG-15): Metrics functions and segment taxonomies, not a newly performed audit. Repository design sources: tasks/TASKS/xg-model/docs/definitions-and-parity.md; tasks/TASKS/xg-model/docs/data-contract-boundaries.md; tasks/TASKS/xg-model/baseline/xg-training-feature-contract.md. These document historical intent, not deployment evidence.
+  - Intended contract (Codex core-296): Source types and implementation in web/lib/game-predictions/evaluation.ts:209; separate acceptance not verified.
+  - Intended contract (Codex core-297): Source types and implementation in web/lib/game-predictions/evaluation.ts:192; separate acceptance not verified.
+  - Intended contract (Codex core-298): Source types and implementation in web/lib/game-predictions/evaluation.ts:163; separate acceptance not verified.
+  - External references: Proper scoring rules (log loss, Brier); ROC AUC; reliability diagrams
+  - Fixtures/test data: none listed
+  - Tests: `Located only; not run for this inventory.`; `web/lib/game-predictions/evaluation.test.ts`; `web/lib/xg/calibration.test.ts`; `web/lib/xg/hardeningAudit.test.ts`
+- **Leads (not audited):**
+  - (opus) outcome from final score includes OT/SO goals, fine for winner, but completedAt uses updated_at/created_at
+  - (codex:XG-15) No mathematical accuracy or fitness assessment performed. Tests listed, not run.
+  - (codex:core-296) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-297) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-298) ["Inventory only, not validation of the formula, source semantics or model quality."]
+
+## M-GPR-005 Walk-forward backtest splits and retrain cadence
+
+- **Match:** Both; Opus GPR-010; Codex core-304
+- **Purpose:** Time-ordered train/replay splits for backtests.
+- **Where:** `web/lib/game-predictions/workflow.ts:1343 (buildWalkForwardSplits)`; `web/lib/game-predictions/accountability.ts:2949 (selectWalkForwardBacktestGameWindows)`; `web/lib/game-predictions/accountability.ts:3761 (runWalkForwardBacktest)`; `web/lib/game-predictions/accountability.ts:657 (syntheticBacktestPredictionCutoffAt)`; `web/lib/game-predictions/workflow.ts:851 (historicalPregamePredictionCutoffAt)`; `web/lib/game-predictions/accountability.ts:3761 runWalkForwardBacktest`
+- **Tags (heuristic):** generation: current
+- **Opus view (GPR-010):**
+  - Method: Train = games <= blindDate (or first half if no dates), replay = after; retrain every N replayed games (default 1); synthetic cutoff = start - 1 h (bounded 0-48) else `${date}T16:00:00Z`.
+  - Inputs/units: dates; sources: —
+  - Output scale: —; writes: —
+  - Status: live admin routes (manual)
+  - Consumers: backtest, ablation, accuracy loop routes
+- **Codex view (core-304, calculation, location; Codex family 'game prediction evaluation'):** Walk-forward model/phase/segment evaluation
+  - Formula: Train using earlier games; evaluate held-out windows; fit phase models above minimum examples; aggregate benchmarks.
+  - Purpose: Calculate walk-forward model/phase/segment evaluation.
+  - Inputs/units: Time-ordered game windows, training horizon, candidate model/calibration options.
+  - Output scale: Out-of-time metrics, phase and monitored-segment summaries, predictions.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f.  Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracked/untracked status entry at the final status check.
+- **Audit context:**
+  - Intent (Opus): UNDOCUMENTED
+  - Intended contract (Codex core-304): Checked-in evaluation/promotion code is the located contract; this inventory does not assert any model passed its gates.
+  - External references: Walk-forward / rolling-origin evaluation
+  - Fixtures/test data: none listed
+  - Tests: `Located only; not run for this inventory.`; `web/__tests__/pages/api/v1/game-predictions/accuracy-loop.test.ts`; `web/lib/game-predictions/accountability.test.ts`; `web/lib/game-predictions/workflow.test.ts`
+- **Leads (not audited):**
+  - (opus) fallback cutoff 16:00 UTC (noon ET) hard-coded
+  - (codex:core-304) ["Inventory only, not validation of the formula, source semantics or model quality."]
+
+## M-GPR-006 Baseline feature vector transform (53 home-minus-away keys)
+
+- **Match:** Both; Opus GPR-012; Codex core-233, core-234, core-235, core-236, core-237, core-238, core-239, core-240, core-241, core-242, core-243, core-244, core-245, core-246, core-247, core-248, core-249, core-250, core-251, core-252, core-253, core-254, core-255, core-256, core-257, core-258, core-259, core-260, core-261, core-262, core-263, core-264, core-265, core-266, core-267, core-268, core-269, core-270, core-271, core-272, core-273, core-274, core-275, core-276, core-277, core-278, core-279, core-280, core-281, core-282, core-283, core-284, core-285, core-286
+- **Purpose:** Turns a feature snapshot into the numeric vector used by logistic and ExtraTrees models.
+- **Where:** `web/lib/game-predictions/baselineModel.ts:22 (BASELINE_FEATURE_KEYS)`; `web/lib/game-predictions/baselineModel.ts:641 (buildBaselineFeatureVector)`; `web/lib/game-predictions/baselineModel.ts:267 (getExcludedFeatureKeys)`; `web/lib/game-predictions/baselineModel.ts:641 buildBaselineFeatureVector`; `web/lib/game-predictions/baselineModel.ts:22 BASELINE_FEATURE_KEYS`
+- **Tags (heuristic):** denominators: per 60, per game, unblocked attempts; generation: current
+- **Opus view (GPR-012):**
+  - Method: Scalings: goalDifferential/50; per-game GD (recent5/10/20/40, adjusted, weighted) /3; xGA/60 /3; CTPI diff /100 (only if both sides 'approved' recent-team-form payload, else null); opponent composite ratings /100; FORGE projected goals /3, shots /10; rest days clipped [-3,3]/3; games-played diff clipped [-20,20]/20; seasonPhaseOrdinal/3; market no-vig prob - 0.5. Shares (xGF%, shot/Fenwick/GF%) unscaled fractions. Missing -> 0; excluded keys (homeMinusAwayRecent10PointPct + 36 CANDIDATE_ONLY keys) -> 0.
+  - Inputs/units: see method; ratings center 100; sources: game_prediction_feature_snapshots.feature_payload
+  - Output scale: unbounded reals, roughly [-1,1] per feature; writes: —
+  - Status: live — cron /api/v1/game-predictions/forecast in web/vercel.json:99 (generatePregamePredictionsForWindow)
+  - Consumers: predictGameWithBaselineModel; predictGameWithExtraTreesModel; buildBaselineTrainingDataset; explainBaselineModelPrediction
+- **Codex view (core-233, calculation, location; Codex family 'game prediction model'):** Baseline feature transformations
+  - Formula: Rescale GD/50, recent GD and xGA60 /3, CTPI and opponent ratings /100, projected goals /3, projected shots /10; clamp rest±3 then /3; clamp GPdiff±20 then /20; phase/3; marketP-.5.
+  - Purpose: Calculate baseline feature transformations.
+  - Inputs/units: Named matchup differences plus market probability.
+  - Output scale: Dimensionless ordered feature vector; unavailable/excluded features become 0.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-234, calculation, location; Codex family 'game prediction model feature'):** Home Minus Away Off Rating
+  - Formula: Retain the supplied contrast without additional rescaling. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away off rating feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayOffRating; source rating points. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-235, calculation, location; Codex family 'game prediction model feature'):** Home Minus Away Def Rating
+  - Formula: Retain the supplied contrast without additional rescaling. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away def rating feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayDefRating; source rating points. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-236, calculation, location; Codex family 'game prediction model feature'):** Home Minus Away Goalie Rating
+  - Formula: Retain the supplied contrast without additional rescaling. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away goalie rating feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayGoalieRating; source rating points. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-237, calculation, location; Codex family 'game prediction model feature'):** Home Minus Away Special Rating
+  - Formula: Retain the supplied contrast without additional rescaling. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away special rating feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwaySpecialRating; source rating points. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-238, calculation, location; Codex family 'game prediction model feature'):** Home Minus Away Point Pctg
+  - Formula: Retain the supplied contrast without additional rescaling. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away point pctg feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayPointPctg; fractions. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-239, calculation, location; Codex family 'game prediction model feature'):** Home Minus Away Goal Differential
+  - Formula: Divide the goal differential contrast by 50. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away goal differential feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayGoalDifferential; goals. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-240, calculation, location; Codex family 'game prediction model feature'):** Home Minus Away Recent 5 Goal Differential Per Game
+  - Formula: Divide the per-game or per-60 contrast by 3. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away recent 5 goal differential per game feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayRecent5GoalDifferentialPerGame; goals per game. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-241, calculation, location; Codex family 'game prediction model feature'):** Home Minus Away Recent 10 Goal Differential Per Game
+  - Formula: Divide the per-game or per-60 contrast by 3. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away recent 10 goal differential per game feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayRecent10GoalDifferentialPerGame; goals per game. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-242, calculation, location; Codex family 'game prediction model feature'):** Home Minus Away Recent 20 Goal Differential Per Game
+  - Formula: Divide the per-game or per-60 contrast by 3. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away recent 20 goal differential per game feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayRecent20GoalDifferentialPerGame; goals per game. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-243, calculation, location; Codex family 'game prediction model feature'):** Home Minus Away Recent 40 Goal Differential Per Game
+  - Formula: Divide the per-game or per-60 contrast by 3. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away recent 40 goal differential per game feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayRecent40GoalDifferentialPerGame; goals per game. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-244, calculation, location; Codex family 'game prediction model feature'):** Home Minus Away Recent 5 Xgf Pct
+  - Formula: Retain the supplied contrast without additional rescaling. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away recent 5 xgf pct feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayRecent5XgfPct; fractions. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-245, calculation, location; Codex family 'game prediction model feature'):** Home Minus Away Recent 10 Xgf Pct
+  - Formula: Retain the supplied contrast without additional rescaling. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away recent 10 xgf pct feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayRecent10XgfPct; fractions. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-246, calculation, location; Codex family 'game prediction model feature'):** Home Minus Away Recent 20 Xgf Pct
+  - Formula: Retain the supplied contrast without additional rescaling. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away recent 20 xgf pct feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayRecent20XgfPct; fractions. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-247, calculation, location; Codex family 'game prediction model feature'):** Home Minus Away Recent 40 Xgf Pct
+  - Formula: Retain the supplied contrast without additional rescaling. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away recent 40 xgf pct feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayRecent40XgfPct; fractions. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-248, calculation, location; Codex family 'game prediction model feature'):** Home Minus Away Season To Date Xgf Pct
+  - Formula: Retain the supplied contrast without additional rescaling. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away season to date xgf pct feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwaySeasonToDateXgfPct; fractions. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-249, calculation, location; Codex family 'game prediction model feature'):** Home Minus Away Cross Season Prior Xgf Pct
+  - Formula: Retain the supplied contrast without additional rescaling. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away cross season prior xgf pct feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayCrossSeasonPriorXgfPct; fractions. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-250, calculation, location; Codex family 'game prediction model feature'):** Home Minus Away Recent 10 Point Pct
+  - Formula: Retain the supplied contrast without additional rescaling. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away recent 10 point pct feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayRecent10PointPct; fractions. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-251, calculation, location; Codex family 'game prediction model feature'):** Home Minus Away Season To Date Point Pct
+  - Formula: Retain the supplied contrast without additional rescaling. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away season to date point pct feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwaySeasonToDatePointPct; fractions. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-252, calculation, location; Codex family 'game prediction model feature'):** Home Minus Away Recent 20 Shot Share
+  - Formula: Retain the supplied contrast without additional rescaling. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away recent 20 shot share feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayRecent20ShotShare; fractions. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-253, calculation, location; Codex family 'game prediction model feature'):** Home Minus Away Recent 40 Shot Share
+  - Formula: Retain the supplied contrast without additional rescaling. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away recent 40 shot share feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayRecent40ShotShare; fractions. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-254, calculation, location; Codex family 'game prediction model feature'):** Home Minus Away Recent 20 Fenwick Share
+  - Formula: Retain the supplied contrast without additional rescaling. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away recent 20 fenwick share feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayRecent20FenwickShare; fractions. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-255, calculation, location; Codex family 'game prediction model feature'):** Home Minus Away Recent 40 Fenwick Share
+  - Formula: Retain the supplied contrast without additional rescaling. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away recent 40 fenwick share feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayRecent40FenwickShare; fractions. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-256, calculation, location; Codex family 'game prediction model feature'):** Home Minus Away Recent 20 Gf Pct
+  - Formula: Retain the supplied contrast without additional rescaling. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away recent 20 gf pct feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayRecent20GfPct; fractions. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-257, calculation, location; Codex family 'game prediction model feature'):** Home Minus Away Recent 40 Gf Pct
+  - Formula: Retain the supplied contrast without additional rescaling. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away recent 40 gf pct feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayRecent40GfPct; fractions. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-258, calculation, location; Codex family 'game prediction model feature'):** Home Minus Away Recent 20 Xga Per 60
+  - Formula: Divide the per-game or per-60 contrast by 3. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away recent 20 xga per 60 feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayRecent20XgaPer60; expected goals against per 60 minutes. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-259, calculation, location; Codex family 'game prediction model feature'):** Home Minus Away Recent 40 Xga Per 60
+  - Formula: Divide the per-game or per-60 contrast by 3. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away recent 40 xga per 60 feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayRecent40XgaPer60; expected goals against per 60 minutes. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-260, calculation, location; Codex family 'game prediction model feature'):** Home Minus Away Ctpi
+  - Formula: Divide the rating contrast by 100; CTPI also requires recent-form eligibility. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away ctpi feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayCtpi; source rating points. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-261, calculation, location; Codex family 'game prediction model feature'):** Home Minus Away Past Opponent Composite Rating
+  - Formula: Divide the rating contrast by 100; CTPI also requires recent-form eligibility. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away past opponent composite rating feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayPastOpponentCompositeRating; source rating points. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-262, calculation, location; Codex family 'game prediction model feature'):** Home Minus Away Last 5 Opponent Composite Rating
+  - Formula: Divide the rating contrast by 100; CTPI also requires recent-form eligibility. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away last 5 opponent composite rating feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayLast5OpponentCompositeRating; source rating points. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-263, calculation, location; Codex family 'game prediction model feature'):** Home Minus Away Last 10 Opponent Composite Rating
+  - Formula: Divide the rating contrast by 100; CTPI also requires recent-form eligibility. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away last 10 opponent composite rating feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayLast10OpponentCompositeRating; source rating points. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-264, calculation, location; Codex family 'game prediction model feature'):** Home Minus Away Adjusted Recent 5 Goal Differential Per Game
+  - Formula: Divide the per-game or per-60 contrast by 3. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away adjusted recent 5 goal differential per game feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayAdjustedRecent5GoalDifferentialPerGame; goals per game. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-265, calculation, location; Codex family 'game prediction model feature'):** Home Minus Away Adjusted Recent 10 Goal Differential Per Game
+  - Formula: Divide the per-game or per-60 contrast by 3. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away adjusted recent 10 goal differential per game feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayAdjustedRecent10GoalDifferentialPerGame; goals per game. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-266, calculation, location; Codex family 'game prediction model feature'):** Home Minus Away Adjusted Recent 5 Xgf Pct
+  - Formula: Retain the supplied contrast without additional rescaling. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away adjusted recent 5 xgf pct feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayAdjustedRecent5XgfPct; fractions. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-267, calculation, location; Codex family 'game prediction model feature'):** Home Minus Away Adjusted Recent 10 Xgf Pct
+  - Formula: Retain the supplied contrast without additional rescaling. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away adjusted recent 10 xgf pct feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayAdjustedRecent10XgfPct; fractions. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-268, calculation, location; Codex family 'game prediction model feature'):** Home Minus Away Forge Projected Goals
+  - Formula: Divide the projected-goal contrast by 3. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away forge projected goals feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayForgeProjectedGoals; projected goals. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-269, calculation, location; Codex family 'game prediction model feature'):** Home Minus Away Forge Projected Shots
+  - Formula: Divide the projected-shot contrast by 10. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away forge projected shots feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayForgeProjectedShots; projected shots. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-270, calculation, location; Codex family 'game prediction model feature'):** Home Minus Away Roster Off Impact
+  - Formula: Retain the supplied contrast without additional rescaling. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away roster off impact feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayRosterOffImpact; roster impact units from the source rating model; per-60-only variants undo source shrinkage. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-271, calculation, location; Codex family 'game prediction model feature'):** Home Minus Away Roster Def Impact
+  - Formula: Retain the supplied contrast without additional rescaling. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away roster def impact feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayRosterDefImpact; roster impact units from the source rating model; per-60-only variants undo source shrinkage. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-272, calculation, location; Codex family 'game prediction model feature'):** Home Minus Away Roster Goalie Impact
+  - Formula: Retain the supplied contrast without additional rescaling. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away roster goalie impact feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayRosterGoalieImpact; roster impact units from the source rating model; per-60-only variants undo source shrinkage. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-273, calculation, location; Codex family 'game prediction model feature'):** Home Minus Away Roster Off Impact Per 60 Only
+  - Formula: Retain the supplied contrast without additional rescaling. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away roster off impact per 60 only feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayRosterOffImpactPer60Only; roster impact units from the source rating model; per-60-only variants undo source shrinkage. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-274, calculation, location; Codex family 'game prediction model feature'):** Home Minus Away Roster Def Impact Per 60 Only
+  - Formula: Retain the supplied contrast without additional rescaling. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away roster def impact per 60 only feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayRosterDefImpactPer60Only; roster impact units from the source rating model; per-60-only variants undo source shrinkage. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-275, calculation, location; Codex family 'game prediction model feature'):** Home Minus Away Roster Goalie Impact Per 60 Only
+  - Formula: Retain the supplied contrast without additional rescaling. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away roster goalie impact per 60 only feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayRosterGoalieImpactPer60Only; roster impact units from the source rating model; per-60-only variants undo source shrinkage. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-276, calculation, location; Codex family 'game prediction model feature'):** Home Minus Away Weighted Roster Off Impact
+  - Formula: Retain the supplied contrast without additional rescaling. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away weighted roster off impact feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayWeightedRosterOffImpact; roster impact units from the source rating model; per-60-only variants undo source shrinkage. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-277, calculation, location; Codex family 'game prediction model feature'):** Home Minus Away Weighted Roster Def Impact
+  - Formula: Retain the supplied contrast without additional rescaling. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away weighted roster def impact feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayWeightedRosterDefImpact; roster impact units from the source rating model; per-60-only variants undo source shrinkage. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-278, calculation, location; Codex family 'game prediction model feature'):** Home Minus Away Weighted Roster Goalie Impact
+  - Formula: Retain the supplied contrast without additional rescaling. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away weighted roster goalie impact feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayWeightedRosterGoalieImpact; roster impact units from the source rating model; per-60-only variants undo source shrinkage. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-279, calculation, location; Codex family 'game prediction model feature'):** Home Minus Away Weighted Recent 10 Goal Differential Per Game
+  - Formula: Divide the per-game or per-60 contrast by 3. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away weighted recent 10 goal differential per game feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayWeightedRecent10GoalDifferentialPerGame; goals per game. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-280, calculation, location; Codex family 'game prediction model feature'):** Home Minus Away Weighted Recent 10 Xgf Pct
+  - Formula: Retain the supplied contrast without additional rescaling. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away weighted recent 10 xgf pct feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayWeightedRecent10XgfPct; fractions. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-281, calculation, location; Codex family 'game prediction model feature'):** Home Minus Away Weighted Goalie Gsaa Per 60
+  - Formula: Retain the supplied contrast without additional rescaling. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away weighted goalie gsaa per 60 feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayWeightedGoalieGsaaPer60; goals saved above average per 60 minutes. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-282, calculation, location; Codex family 'game prediction model feature'):** Home Minus Away Goalie Start Uncertainty
+  - Formula: Retain the supplied contrast without additional rescaling. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away goalie start uncertainty feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayGoalieStartUncertainty; fractions. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-283, calculation, codex_part_of_opus; Codex family 'game prediction model feature'):** Home Rest Advantage Days
+  - Formula: Clamp the rest-day contrast to [-3,3], then divide by 3. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home rest advantage days feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeRestAdvantageDays; days. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-284, calculation, location; Codex family 'game prediction model feature'):** Home Minus Away Games Played As Of
+  - Formula: Clamp the games-played contrast to [-20,20], then divide by 20. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away games played as of feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayGamesPlayedAsOf; games. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-285, calculation, codex_part_of_opus; Codex family 'game prediction model feature'):** Season Phase Ordinal
+  - Formula: Divide the phase ordinal by 3. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the season phase ordinal feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key seasonPhaseOrdinal; phase ordinal 0–3. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-286, calculation, codex_part_of_opus; Codex family 'game prediction model feature'):** Home Market No Vig Probability
+  - Formula: Subtract 0.5 from the market home-win probability. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home market no vig probability feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMarketNoVigProbability; fractions. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Audit context:**
+  - Intent (Opus): Leakage rules per key in buildBaselineFeatureLeakageChecks (baselineModel.ts:432): strict_before_game_date; candidate-only features excluded 'until ablation evidence supports promotion' (baselineModel.ts:457)
+  - Intended contract (Codex core-233): Source types and implementation in web/lib/game-predictions/baselineModel.ts:641; separate acceptance not verified.
+  - Intended contract (Codex core-234): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-235): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-236): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-237): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-238): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-239): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-240): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-241): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-242): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-243): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-244): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-245): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-246): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-247): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-248): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-249): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-250): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-251): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-252): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-253): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-254): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-255): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-256): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-257): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-258): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-259): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-260): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-261): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-262): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-263): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-264): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-265): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-266): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-267): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-268): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-269): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-270): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-271): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-272): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-273): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-274): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-275): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-276): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-277): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-278): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-279): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-280): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-281): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-282): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-283): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-284): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-285): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-286): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - External references: Standard feature engineering for logistic game models (difference features, z-scoring)
+  - Fixtures/test data: none listed
+  - Tests: `Located only; not run for this inventory.`; `web/lib/game-predictions/baselineModel.test.ts`
+- **Leads (not audited):**
+  - (opus) missing values imputed as 0 = 'teams equal'; for un-normalized model 0 is neutral but after z-scoring 0 is not the mean, so masked/missing features still add (0-mean)/scale*w (comment at baselineModel.ts:841 acknowledges)
+  - (opus) magic divisors (/50, /3, /100, /10) undocumented
+  - (opus) homeMinusAwayCtpi is gated on approved publication status which update-team-ctpi-daily never writes (always legacy_unapproved), so CTPI is always 0
+  - (codex:core-233) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-234) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-235) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-236) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-237) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-238) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-239) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-240) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-241) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-242) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-243) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-244) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-245) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-246) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-247) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-248) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-249) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-250) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-251) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-252) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-253) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-254) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-255) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-256) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-257) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-258) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-259) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-260) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-261) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-262) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-263) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-264) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-265) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-266) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-267) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-268) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-269) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-270) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-271) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-272) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-273) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-274) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-275) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-276) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-277) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-278) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-279) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-280) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-281) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-282) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-283) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-284) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-285) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-286) ["Inventory only, not validation of the formula, source semantics or model quality."]
+
+## M-GPR-007 Roster-prior vs current-form blend weights
+
+- **Match:** Both; Opus GPR-014; Codex core-229
+- **Purpose:** Interpolated weight between preseason roster prior and current form by games played.
+- **Where:** `web/lib/game-predictions/featureBuilder.ts:1698 (ROSTER_FORM_BLEND_CHECKPOINTS)`; `web/lib/game-predictions/featureBuilder.ts:1706 (rosterFormBlendWeights)`; `web/lib/game-predictions/featureBuilder.ts:1670 (subtractWeightedNullable)`; `web/lib/game-predictions/featureBuilder.ts:1706 rosterFormBlendWeights`
+- **Tags (heuristic):** denominators: per team game; generation: development
+- **Opus view (GPR-014):**
+  - Method: Piecewise-linear rosterPriorWeight at GP checkpoints 0:0.8, 10:0.7, 25:0.5, 50:0.15, 82:0.1 (GP clamped 0-82); currentFormWeight = 1 - prior. Weighted diffs = home*wH - away*wA.
+  - Inputs/units: games played; sources: —
+  - Output scale: weights 0.1-0.8; writes: —
+  - Status: draft — candidate-only
+  - Consumers: candidate-only features
+- **Codex view (core-229, calculation, location; Codex family 'game prediction features'):** Seasonal roster/form blend weights
+  - Formula: Linear interpolation of roster weights .8 at 0 GP, .7 at 10, .5 at 25, .15 at 50, .1 at 82.
+  - Purpose: Calculate seasonal roster/form blend weights.
+  - Inputs/units: Team games played 0..82.
+  - Output scale: Roster prior/current-form weights summing 1.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. Feature-set and version constants in featureBuilder/sourceOwnership; exact promoted model unknown. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracked/untra…
+- **Audit context:**
+  - Intent (Opus): UNDOCUMENTED
+  - Intended contract (Codex core-229): Source types and implementation in web/lib/game-predictions/featureBuilder.ts:1706; separate acceptance not verified.
+  - External references: Bayesian prior/likelihood blending; Tango regression to mean
+  - Fixtures/test data: none listed
+  - Tests: `Located only; not run for this inventory.`; `web/lib/game-predictions/featureBuilder.test.ts`
+- **Leads (not audited):**
+  - (opus) weighting each side by its own weight before subtracting means a GP gap between teams changes the feature even if impacts are equal
+  - (codex:core-229) ["Inventory only, not validation of the formula, source semantics or model quality."]
+
+## M-GPR-008 Season phase derivation
+
+- **Match:** Both; Opus GPR-015; Codex core-230
+- **Purpose:** Classifies game into early/middle/late/playoff.
+- **Where:** `web/lib/game-predictions/featureBuilder.ts:1734 (deriveSeasonPhase)`; `web/lib/game-predictions/featureBuilder.ts:1681 (gamesPlayedAsOf)`; `web/lib/game-predictions/evaluation.ts:347 (getSeasonPhase fallback)`; `web/lib/game-predictions/featureBuilder.ts:1734 deriveSeasonPhase`
+- **Tags (heuristic):** generation: current
+- **Opus view (GPR-015):**
+  - Method: avgGP = (homeGP+awayGP)/2; playoff if gameType 3; early < 20; middle < 60; else late; ordinal 0-3. Evaluation fallback by snapshot month: Oct/Nov early, Mar-Jun late, else middle.
+  - Inputs/units: games; sources: —
+  - Output scale: ordinal 0-3; writes: —
+  - Status: live — cron /api/v1/game-predictions/forecast in web/vercel.json:99 (generatePregamePredictionsForWindow)
+  - Consumers: seasonPhaseOrdinal feature; phase-specific models; evaluation segments
+- **Codex view (core-230, calculation, location; Codex family 'game prediction features'):** Season phase ordinal
+  - Formula: Average GP<20 early, <60 middle, otherwise late; gameType 3 playoff.
+  - Purpose: Calculate season phase ordinal.
+  - Inputs/units: Game type and both teams games played.
+  - Output scale: Early 0, middle 1, late 2, playoff 3.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. Feature-set and version constants in featureBuilder/sourceOwnership; exact promoted model unknown. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracked/untra…
+- **Audit context:**
+  - Intent (Opus): UNDOCUMENTED
+  - Intended contract (Codex core-230): Source types and implementation in web/lib/game-predictions/featureBuilder.ts:1734; separate acceptance not verified.
+  - External references: none suggested
+  - Fixtures/test data: none listed
+  - Tests: `Located only; not run for this inventory.`; `web/lib/game-predictions/evaluation.test.ts`; `web/lib/game-predictions/featureBuilder.test.ts`
+- **Leads (not audited):**
+  - (opus) two different phase definitions (games-played vs month)
+  - (codex:core-230) ["Inventory only, not validation of the formula, source semantics or model quality."]
+
+## M-GPR-009 Rest / back-to-back schedule features
+
+- **Match:** Both; Opus GPR-017; Codex core-214
+- **Purpose:** Days of rest and back-to-back flag per team before a game.
+- **Where:** `web/lib/game-predictions/featureBuilder.ts:828 (buildScheduleContextFeatures)`; `web/lib/game-predictions/featureBuilder.ts:2063 (homeRestAdvantageDays)`; `web/lib/game-predictions/featureBuilder.ts:828 buildScheduleContextFeatures`
+- **Tags (heuristic):** generation: current
+- **Opus view (GPR-017):**
+  - Method: daysRest = max(0, days(game.date - lastGame.date) - 1); isBackToBack = daysRest==0; gamesInLast3Days = count prior games within <=3 days; homeRestAdvantageDays = homeRest - awayRest (model clips [-3,3]/3).
+  - Inputs/units: calendar days; sources: games
+  - Output scale: days; writes: —
+  - Status: live — cron /api/v1/game-predictions/forecast in web/vercel.json:99 (generatePregamePredictionsForWindow)
+  - Consumers: baseline feature vector; public matchup panel
+- **Codex view (core-214, calculation, location; Codex family 'game prediction features'):** Rest and recent schedule density
+  - Formula: max(0, date difference-1); rest 0 means back-to-back; count prior games within 3 days.
+  - Purpose: Calculate rest and recent schedule density.
+  - Inputs/units: Game dates, team identity and strictly prior games.
+  - Output scale: Days rest, back-to-back flag, games in last 3 days.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. Feature-set and version constants in featureBuilder/sourceOwnership; exact promoted model unknown. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracked/untra…
+- **Audit context:**
+  - Intent (Opus): UNDOCUMENTED
+  - Intended contract (Codex core-214): Source types and implementation in web/lib/game-predictions/featureBuilder.ts:828; separate acceptance not verified.
+  - External references: Rest-advantage effects in NHL (back-to-back road penalty ~ -0.1 goals)
+  - Fixtures/test data: none listed
+  - Tests: `Located only; not run for this inventory.`; `web/lib/game-predictions/featureBuilder.test.ts`
+- **Leads (not audited):**
+  - (opus) weight 0 in served model; first game of season -> null -> 0
+  - (codex:core-214) ["Inventory only, not validation of the formula, source semantics or model quality."]
+
+## M-GPR-010 Team power rating difference features
+
+- **Match:** Both; Opus GPR-018; Codex core-231
+- **Purpose:** Home-minus-away off/def/goalie/special ratings and standings deltas.
+- **Where:** `web/lib/game-predictions/featureBuilder.ts:855 (buildTeamPowerFeatures)`; `web/lib/game-predictions/featureBuilder.ts:877 (buildStandingsFeatures)`; `web/lib/game-predictions/featureBuilder.ts:1838 (buildMatchupFeatures)`; `web/lib/game-predictions/featureBuilder.ts:1838 buildMatchupFeatures`
+- **Tags (heuristic):** generation: current
+- **Opus view (GPR-018):**
+  - Method: subtractNullable(home, away) for each rating and standings field.
+  - Inputs/units: ratings centered 100 (sd 15); point% fraction; goal diff count; sources: team_power_ratings_daily (latest date < sourceAsOfDate), nhl_standings_details (season, latest date < sourceAsOfDate, limit 100)
+  - Output scale: differences; writes: —
+  - Status: live — cron /api/v1/game-predictions/forecast in web/vercel.json:99 (generatePregamePredictionsForWindow)
+  - Consumers: baseline feature vector; goal_differential/standings anchor baselines
+- **Codex view (core-231, calculation, location; Codex family 'game prediction features'):** Home-away matchup contrasts
+  - Formula: Home-minus-away for comparable features; roster/form weighting applied where explicitly named.
+  - Purpose: Calculate home-away matchup contrasts.
+  - Inputs/units: Home/away source rates, ratings, roster priors, form weights, goalie uncertainty.
+  - Output scale: Named signed differences and weighted differences.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. Feature-set and version constants in featureBuilder/sourceOwnership; exact promoted model unknown. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracked/untra…
+- **Audit context:**
+  - Intent (Opus): UNDOCUMENTED
+  - Intended contract (Codex core-231): Source types and implementation in web/lib/game-predictions/featureBuilder.ts:1838; separate acceptance not verified.
+  - External references: none suggested
+  - Fixtures/test data: none listed
+  - Tests: `Located only; not run for this inventory.`; `web/lib/game-predictions/featureBuilder.test.ts`
+- **Leads (not audited):**
+  - (opus) nhl_standings_details limit(100) across all 32 teams covers ~3 days; a team without a row in that slice gets null
+  - (codex:core-231) ["Inventory only, not validation of the formula, source semantics or model quality."]
+
+## M-GPR-011 Recent team form windows (last 5/10/20/40, season-to-date, cross-season prior)
+
+- **Match:** Both; Opus GPR-019; Codex core-215, core-216, core-217, core-218, core-219, core-220, core-221, core-222, core-223
+- **Purpose:** Rolling team results/possession summaries from NST one-game rows.
+- **Where:** `web/lib/game-predictions/featureBuilder.ts:928 (summarizeRecentTeamRows)`; `web/lib/game-predictions/featureBuilder.ts:974 (buildTeamRecentFormFeatures)`; `web/lib/game-predictions/featureBuilder.ts:918 (shareFromCounts)`; `web/lib/game-predictions/featureBuilder.ts:928 summarizeRecentTeamRows`
+- **Tags (heuristic):** percent scale: fraction 0-1; denominators: per 60, per game; generation: current
+- **Opus view (GPR-019):**
+  - Method: Ratio of sums per window: GD/game, GF/game, GA/game; share = for/(for+against) falling back to first row's NST pct (percent->fraction if >1); xGA/60 = xga/toi*3600 (fallback mean of per-game xga_per_60); pointPct = points/(2*games). Windows from current-season rows only; cross-season prior used when currentSeasonGames < 20 (prior-season last 20 -> crossSeasonPriorXgfPct).
+  - Inputs/units: counts; toi seconds; sources: nst_team_gamelogs_as_counts (gp=1 rows only, date < sourceAsOfDate, limit 240 rows for both teams)
+  - Output scale: per game; fractions 0-1; per 60; writes: —
+  - Status: live — cron /api/v1/game-predictions/forecast in web/vercel.json:99 (generatePregamePredictionsForWindow)
+  - Consumers: buildMatchupFeatures; opponent-adjusted form
+- **Codex view (core-215, calculation, codex_part_of_opus; Codex family 'game prediction recent form'):** Goal differential per game
+  - Formula: (sum GF-sum GA)/games.
+  - Purpose: Calculate goal differential per game.
+  - Inputs/units: Admitted GP=1 rows strictly before source cutoff; last 5/10/20/40, season-to-date and explicit cross-season windows.
+  - Output scale: Goals/game per window; null where denominator unavailable.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. Feature-set and version constants in featureBuilder/sourceOwnership; exact promoted model unknown. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracked/untra…
+- **Codex view (core-216, calculation, codex_part_of_opus; Codex family 'game prediction recent form'):** Goals for and against per game
+  - Formula: sum GF/games and sum GA/games.
+  - Purpose: Calculate goals for and against per game.
+  - Inputs/units: Admitted GP=1 rows strictly before source cutoff; last 5/10/20/40, season-to-date and explicit cross-season windows.
+  - Output scale: Goals/game per window; null where denominator unavailable.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. Feature-set and version constants in featureBuilder/sourceOwnership; exact promoted model unknown. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracked/untra…
+- **Codex view (core-217, calculation, codex_part_of_opus; Codex family 'game prediction recent form'):** Expected-goal share
+  - Formula: sum xGF/(sum xGF+sum xGA), or source percentage fallback.
+  - Purpose: Calculate expected-goal share.
+  - Inputs/units: Admitted GP=1 rows strictly before source cutoff; last 5/10/20/40, season-to-date and explicit cross-season windows.
+  - Output scale: Fraction 0..1 per window; null where denominator unavailable.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. Feature-set and version constants in featureBuilder/sourceOwnership; exact promoted model unknown. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracked/untra…
+- **Codex view (core-218, calculation, codex_part_of_opus; Codex family 'game prediction recent form'):** Shot share
+  - Formula: sum SF/(sum SF+sum SA), or source percentage fallback.
+  - Purpose: Calculate shot share.
+  - Inputs/units: Admitted GP=1 rows strictly before source cutoff; last 5/10/20/40, season-to-date and explicit cross-season windows.
+  - Output scale: Fraction 0..1 per window; null where denominator unavailable.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. Feature-set and version constants in featureBuilder/sourceOwnership; exact promoted model unknown. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracked/untra…
+- **Codex view (core-219, calculation, codex_part_of_opus; Codex family 'game prediction recent form'):** Fenwick share
+  - Formula: sum FF/(sum FF+sum FA), or source percentage fallback.
+  - Purpose: Calculate fenwick share.
+  - Inputs/units: Admitted GP=1 rows strictly before source cutoff; last 5/10/20/40, season-to-date and explicit cross-season windows.
+  - Output scale: Fraction 0..1 per window; null where denominator unavailable.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. Feature-set and version constants in featureBuilder/sourceOwnership; exact promoted model unknown. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracked/untra…
+- **Codex view (core-220, calculation, codex_part_of_opus; Codex family 'game prediction recent form'):** Corsi share
+  - Formula: sum CF/(sum CF+sum CA), or source percentage fallback.
+  - Purpose: Calculate corsi share.
+  - Inputs/units: Admitted GP=1 rows strictly before source cutoff; last 5/10/20/40, season-to-date and explicit cross-season windows.
+  - Output scale: Fraction 0..1 per window; null where denominator unavailable.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. Feature-set and version constants in featureBuilder/sourceOwnership; exact promoted model unknown. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracked/untra…
+- **Codex view (core-221, calculation, codex_part_of_opus; Codex family 'game prediction recent form'):** Goal share
+  - Formula: sum GF/(sum GF+sum GA), or source percentage fallback.
+  - Purpose: Calculate goal share.
+  - Inputs/units: Admitted GP=1 rows strictly before source cutoff; last 5/10/20/40, season-to-date and explicit cross-season windows.
+  - Output scale: Fraction 0..1 per window; null where denominator unavailable.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. Feature-set and version constants in featureBuilder/sourceOwnership; exact promoted model unknown. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracked/untra…
+- **Codex view (core-222, calculation, codex_part_of_opus; Codex family 'game prediction recent form'):** Expected goals against per60
+  - Formula: 3600*sum xGA/sum TOI seconds; fallback mean available xGA60.
+  - Purpose: Calculate expected goals against per 60.
+  - Inputs/units: Admitted GP=1 rows strictly before source cutoff; last 5/10/20/40, season-to-date and explicit cross-season windows.
+  - Output scale: Expected goals/60 minutes per window; null where denominator unavailable.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. Feature-set and version constants in featureBuilder/sourceOwnership; exact promoted model unknown. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracked/untra…
+- **Codex view (core-223, calculation, codex_part_of_opus; Codex family 'game prediction recent form'):** Standings point percentage
+  - Formula: sum standings points/(2*games), or source percentage fallback.
+  - Purpose: Calculate standings point percentage.
+  - Inputs/units: Admitted GP=1 rows strictly before source cutoff; last 5/10/20/40, season-to-date and explicit cross-season windows.
+  - Output scale: Fraction 0..1 per window; null where denominator unavailable.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. Feature-set and version constants in featureBuilder/sourceOwnership; exact promoted model unknown. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracked/untra…
+- **Audit context:**
+  - Intent (Opus): UNDOCUMENTED
+  - Intended contract (Codex core-215): buildTeamRecentFormFeatures excludes mixed-grain cumulative rows; cross-season prior only below20 current-season games.
+  - Intended contract (Codex core-216): buildTeamRecentFormFeatures excludes mixed-grain cumulative rows; cross-season prior only below20 current-season games.
+  - Intended contract (Codex core-217): buildTeamRecentFormFeatures excludes mixed-grain cumulative rows; cross-season prior only below20 current-season games.
+  - Intended contract (Codex core-218): buildTeamRecentFormFeatures excludes mixed-grain cumulative rows; cross-season prior only below20 current-season games.
+  - Intended contract (Codex core-219): buildTeamRecentFormFeatures excludes mixed-grain cumulative rows; cross-season prior only below20 current-season games.
+  - Intended contract (Codex core-220): buildTeamRecentFormFeatures excludes mixed-grain cumulative rows; cross-season prior only below20 current-season games.
+  - Intended contract (Codex core-221): buildTeamRecentFormFeatures excludes mixed-grain cumulative rows; cross-season prior only below20 current-season games.
+  - Intended contract (Codex core-222): buildTeamRecentFormFeatures excludes mixed-grain cumulative rows; cross-season prior only below20 current-season games.
+  - Intended contract (Codex core-223): buildTeamRecentFormFeatures excludes mixed-grain cumulative rows; cross-season prior only below20 current-season games.
+  - External references: NST all-situations team counts; ratio-of-sums convention
+  - Fixtures/test data: none listed
+  - Tests: `Located only; not run for this inventory.`; `web/lib/game-predictions/featureBuilder.test.ts`; `web/lib/game-predictions/teamGameNormalization.test.ts`
+- **Leads (not audited):**
+  - (opus) fallback share uses rows[0] (most recent single game) pct instead of window value
+  - (opus) shares are all-situations, not score/venue-adjusted 5v5 (close-score explicitly omitted, featureBuilder.ts:2577)
+  - (opus) limit(240) rows across two teams and ~420 days may truncate last40/cross-season windows
+  - (codex:core-215) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-216) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-217) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-218) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-219) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-220) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-221) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-222) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-223) ["Inventory only, not validation of the formula, source semantics or model quality."]
+
+## M-GPR-012 Roster impact (TOI-weighted player impact ratings)
+
+- **Match:** Both; Opus GPR-020; Codex core-232
+- **Purpose:** Team offense/defense/goalie impact from projected lineup player ratings.
+- **Where:** `web/lib/game-predictions/rosterImpact.ts:54 (weightedImpact)`; `web/lib/game-predictions/rosterImpact.ts:82 (per60OnlyRating)`; `web/lib/game-predictions/rosterImpact.ts:89 (buildRosterImpactFeatures)`; `web/lib/game-predictions/rosterImpact.ts:88 buildRosterImpactFeatures`
+- **Tags (heuristic):** denominators: per 60; generation: development, current
+- **Opus view (GPR-020):**
+  - Method: impact = sum(rating*max(1,toi))/sum(max(1,toi)); per60-only = rating_raw/shrinkage; coverage = covered/playerCount; goalie impact uses ALL roster goalies, not the projected starter.
+  - Inputs/units: rating_raw (impact units); toi seconds; sources: player_impact_ratings / skater_offensive_ratings_daily / skater_defensive_ratings_daily / goalie_ratings_daily (latest < sourceAsOfDate), lineCombinations, rosters
+  - Output scale: TOI-weighted mean rating; writes: —
+  - Status: draft — candidate-only
+  - Consumers: homeMinusAwayRoster* features (candidate-only)
+- **Codex view (core-232, calculation, location; Codex family 'game prediction features'):** TOI-weighted roster impact and coverage
+  - Formula: Weighted mean with weight=max(1, sampleTOI); per60Only=rating/shrinkage; skater coverage=covered/max(1, playerCount); goalie coverage is count.
+  - Purpose: Calculate toi-weighted roster impact and coverage.
+  - Inputs/units: As-of player offense/defense/goalie ratings, sample TOI seconds, shrinkage and projected/current roster.
+  - Output scale: Offense/defense/goalie weighted impact, per 60-only variants and coverage.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. player_impact_ratings_v1_toi_weighted; current-roster fallback flagged. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracked/untracked status entry at the fi…
+- **Audit context:**
+  - Intent (Opus): UNDOCUMENTED
+  - Intended contract (Codex core-232): Source types and implementation in web/lib/game-predictions/rosterImpact.ts:88; separate acceptance not verified.
+  - External references: Lineup-weighted player ratings (e.g. Evolving-Hockey GAR/WAR team sums)
+  - Fixtures/test data: none listed
+  - Tests: `Located only; not run for this inventory.`; `web/lib/game-predictions/rosterImpact.test.ts`
+- **Leads (not audited):**
+  - (opus) goalie impact averages the whole roster's goalies weighted by TOI rather than the projected starter
+  - (opus) latest lineCombinations row chosen by max gameId without a date filter (featureBuilder.ts:2150)
+  - (codex:core-232) ["Inventory only, not validation of the formula, source semantics or model quality."]
+
+## M-GPR-013 Goalie start blend and start uncertainty
+
+- **Match:** Both; Opus GPR-022; Codex core-227, core-228
+- **Purpose:** Selects the likely starter and computes start-probability-weighted GSAA/60 and start uncertainty.
+- **Where:** `web/lib/game-predictions/featureBuilder.ts:1310 (buildGoalieBlendFeatures)`; `web/lib/game-predictions/featureBuilder.ts:1469 (goalieStartUncertainty)`; `web/lib/game-predictions/featureBuilder.ts:1497 (buildRecentUsageGoalieFeatures)`; `web/lib/game-predictions/featureBuilder.ts:1631 (latestGoaliePerformanceGsaa)`; `web/lib/game-predictions/featureBuilder.ts:1310 buildGoalieBlendFeatures`; `web/lib/game-predictions/featureBuilder.ts:1469 goalieStartUncertainty`
+- **Tags (heuristic):** percent scale: fraction 0-1; denominators: per 60; generation: current
+- **Opus view (GPR-022):**
+  - Method: Priority: lines_ccc (confirmed, p=1) > goalie_start_projections (confirmed rows equal weight else start_probability normalized) > current lineCombinations first goalie (p=1) > recent usage (mode of last 5 starters, p = count/5) > fallback. weighted GSAA/60 = sum(w * clamp(gsaa,-3,3)). uncertainty: confirmed 0; fallback 1; else max(floor, 1 - topStartProb) with floor 0.1 if >1 candidate else 0.25.
+  - Inputs/units: GSAA per 60; probabilities 0-1; sources: lines_ccc, goalie_start_projections, lineCombinations, vw_goalie_stats_unified
+  - Output scale: GSAA/60 clamped -3..3; uncertainty 0-1; writes: —
+  - Status: live — cron /api/v1/game-predictions/forecast in web/vercel.json:99 (generatePregamePredictionsForWindow)
+  - Consumers: homeMinusAwayWeightedGoalieGsaaPer60; homeMinusAwayGoalieStartUncertainty; data-quality penalties; goalie_gsaa baseline
+- **Codex view (core-227, calculation, location; Codex family 'game prediction features'):** Goalie candidate performance blend
+  - Formula: Normalize nonnegative starter probabilities; confirmed candidates equal weight; GSAA clamp±3 where projection present; weighted sum.
+  - Purpose: Calculate goalie candidate performance blend.
+  - Inputs/units: Starter probabilities, confirmed status, projected GSAA60 and fallback performance.
+  - Output scale: Probability mass, normalized top-start probability, weighted GSAA60.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. Feature-set and version constants in featureBuilder/sourceOwnership; exact promoted model unknown. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracked/untra…
+- **Codex view (core-228, calculation, location; Codex family 'game prediction features'):** Goalie starter uncertainty
+  - Formula: Confirmed 0; fallback 1; otherwise max(1-topP, .1 if multiple candidates else .25).
+  - Purpose: Calculate goalie starter uncertainty.
+  - Inputs/units: Confirmation, candidate count and top-start probability.
+  - Output scale: Uncertainty 0..1.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. Feature-set and version constants in featureBuilder/sourceOwnership; exact promoted model unknown. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracked/untra…
+- **Audit context:**
+  - Intent (Opus): UNDOCUMENTED
+  - Intended contract (Codex core-227): Source types and implementation in web/lib/game-predictions/featureBuilder.ts:1310; separate acceptance not verified.
+  - Intended contract (Codex core-228): Source types and implementation in web/lib/game-predictions/featureBuilder.ts:1469; separate acceptance not verified.
+  - External references: Goalie GSAx/60 (MoneyPuck, Evolving-Hockey); starter probability models
+  - Fixtures/test data: none listed
+  - Tests: `Located only; not run for this inventory.`; `web/lib/game-predictions/featureBuilder.test.ts`
+- **Leads (not audited):**
+  - (opus) GSAA prefers nst_all over 5v5 and mixes them silently
+  - (opus) projected_gsaa_per_60 and NST GSAA are different estimators combined in one weighted sum
+  - (opus) served model weight 0 for goalie GSAA (goalie only enters through team goalie_rating diff at 0.02)
+  - (codex:core-227) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-228) ["Inventory only, not validation of the formula, source semantics or model quality."]
+
+## M-GPR-014 Past-opponent schedule strength (last 5/10 opponents composite power)
+
+- **Match:** Both; Opus GPR-024; Codex core-224
+- **Purpose:** Average power-rating composite of each team's last 10 prior opponents.
+- **Where:** `web/lib/game-predictions/featureBuilder.ts:1124 (teamPowerComposite)`; `web/lib/game-predictions/featureBuilder.ts:1133 (priorOpponentGames)`; `web/lib/game-predictions/featureBuilder.ts:1155 (buildTeamScheduleStrengthFeatures)`; `web/lib/game-predictions/featureBuilder.ts:1155 buildTeamScheduleStrengthFeatures`
+- **Tags (heuristic):** generation: current
+- **Opus view (GPR-024):**
+  - Method: composite = mean(off, def, goalie, special) (null if any missing); last5 / last10 = complete average (null if any slot missing/ambiguous); component averages; last5 - last10.
+  - Inputs/units: ratings centered 100; sources: games, team_power_ratings_daily
+  - Output scale: rating ~100; writes: —
+  - Status: live — cron /api/v1/game-predictions/forecast in web/vercel.json:99 (generatePregamePredictionsForWindow) (weight 0)
+  - Consumers: homeMinusAwayPastOpponentCompositeRating (/100); opponent-adjusted form
+- **Codex view (core-224, calculation, location; Codex family 'game prediction features'):** Opponent power composite and schedule strength
+  - Formula: Per opponent mean of 4 required components; average complete game slots; missing latest slot not replaced.
+  - Purpose: Calculate opponent power composite and schedule strength.
+  - Inputs/units: Latest pregame opponent offense/defense/goalie/special ratings for prior 5/10 games.
+  - Output scale: Centered 100-scale 15 opponent averages and last 5 minus last 10.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. Feature-set and version constants in featureBuilder/sourceOwnership; exact promoted model unknown. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracked/untra…
+- **Audit context:**
+  - Intent (Opus): UNDOCUMENTED
+  - Intended contract (Codex core-224): Source types and implementation in web/lib/game-predictions/featureBuilder.ts:1155; separate acceptance not verified.
+  - External references: RPI-style OWP / opponent-strength SOS
+  - Fixtures/test data: none listed
+  - Tests: `Located only; not run for this inventory.`; `web/lib/game-predictions/featureBuilder.test.ts`
+- **Leads (not audited):**
+  - (opus) goalie_rating here is team xGA-GA, and special_rating has a compressed 0.2-weighted scale, so the equal-weight composite mixes scales
+  - (codex:core-224) ["Inventory only, not validation of the formula, source semantics or model quality."]
+
+## M-GPR-015 Opponent-adjusted recent form (SOS-adjusted GD and xGF%)
+
+- **Match:** Both; Opus GPR-025; Codex core-225, core-226
+- **Purpose:** Adjusts last-5/10 goal differential and xGF% for opponent quality.
+- **Where:** `web/lib/game-predictions/featureBuilder.ts:1224 (adjustGoalDifferentialForOpponentQuality)`; `web/lib/game-predictions/featureBuilder.ts:1233 (adjustXgfPctForOpponentQuality)`; `web/lib/game-predictions/featureBuilder.ts:1244 (buildOpponentAdjustedFormFeatures)`; `web/lib/game-predictions/featureBuilder.ts:466 (SOS_ADJUSTED_FORM_VERSION)`; `web/lib/game-predictions/featureBuilder.ts:1224 adjustGoalDifferentialForOpponentQuality`; `web/lib/game-predictions/featureBuilder.ts:1233 adjustXgfPctForOpponentQuality`
+- **Tags (heuristic):** percent scale: fraction 0-1; denominators: per game; generation: development
+- **Opus view (GPR-025):**
+  - Method: adjGD = GD + (oppComposite - 50)/50; adjXGF% = clamp01(xGF% + ((oppComposite - 50)/50)*0.05).
+  - Inputs/units: ratings centered 100; GD per game; fraction; sources: —
+  - Output scale: GD per game; fraction 0-1; writes: —
+  - Status: draft — candidate-only (default excluded)
+  - Consumers: candidate-only features
+- **Codex view (core-225, calculation, location; Codex family 'game prediction features'):** Opponent-adjusted goal differential
+  - Formula: raw+(opponentComposite-50)/50.
+  - Purpose: Calculate opponent-adjusted goal differential.
+  - Inputs/units: Raw recent GD/game and opponent composite rating.
+  - Output scale: Adjusted goals/game.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. Feature-set and version constants in featureBuilder/sourceOwnership; exact promoted model unknown. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracked/untra…
+- **Codex view (core-226, calculation, location; Codex family 'game prediction features'):** Opponent-adjusted xGF share
+  - Formula: clamp(raw+((opponentComposite-50)/50)*.05, 0, 1).
+  - Purpose: Calculate opponent-adjusted xgf share.
+  - Inputs/units: Raw xGF fraction and opponent composite.
+  - Output scale: Adjusted fraction 0..1.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. Feature-set and version constants in featureBuilder/sourceOwnership; exact promoted model unknown. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracked/untra…
+- **Audit context:**
+  - Intent (Opus): UNDOCUMENTED
+  - Intended contract (Codex core-225): Source types and implementation in web/lib/game-predictions/featureBuilder.ts:1224; separate acceptance not verified.
+  - Intended contract (Codex core-226): Source types and implementation in web/lib/game-predictions/featureBuilder.ts:1233; separate acceptance not verified.
+  - External references: Opponent-adjusted ratings (e.g. SRS / ridge-adjusted team ratings)
+  - Fixtures/test data: none listed
+  - Tests: `Located only; not run for this inventory.`; `web/lib/game-predictions/featureBuilder.test.ts`
+- **Leads (not audited):**
+  - (opus) neutral point is 50 but power ratings are centered at 100 (comment featureBuilder.ts:463-465), so every team gets about +1 goal/game and +0.05 xGF% before differencing
+  - (opus) harder schedule ADDs to the stat with fixed scale, no fitted coefficient
+  - (codex:core-225) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-226) ["Inventory only, not validation of the formula, source semantics or model quality."]
+
+## M-GPR-016 Game Grid Poisson heatmap tie-breaker matrix
+
+- **Match:** Both; Opus GPR-026; Codex core-318
+- **Purpose:** Probability matrix shown in the Game Grid matchup heatmap.
+- **Where:** `web/components/GameGrid/utils/poissonHelpers.ts:6 (generateProbabilityMatrixWithTieBreaker)`; `web/components/GameGrid/PDHC/PoissonHeatMap.tsx:123 (fetchExpectedGoals)`; `web/components/GameGrid/utils/calcWinOdds.ts:6 (calculateBlendedWinOdds)`; `web/components/GameGrid/utils/poissonHelpers.ts:6 generateProbabilityMatrixWithTieBreaker`
+- **Tags (heuristic):** percent scale: fraction 0-1; denominators: per game; generation: current
+- **Opus view (GPR-026):**
+  - Method: Poisson matrix 0..10; 'redistributes' draw cells by originalProb*homeRatio + originalProb*awayRatio back into the same cell; 'blended' odds returns winOdds whether or not api odds exist.
+  - Inputs/units: goals per game; percent; sources: expected_goals
+  - Output scale: probabilities; percent; writes: —
+  - Status: live — Game Grid (overlaps GameGrid/weekScore slice)
+  - Consumers: GameGrid TeamRow, VerticalMatchupCell
+- **Codex view (core-318, calculation, location; Codex family 'GameGrid'):** Poisson matrix tie-breaker helper
+  - Formula: Multiply independent Poisson probabilities; calculate strict-win ratios; diagonal cell is reassigned both proportional shares within that same cell.
+  - Purpose: Calculate poisson matrix tie-breaker helper.
+  - Inputs/units: Home/away lambda; max goals 10 by default.
+  - Output scale: Truncated joint matrix.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f.  Deployment not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracked/untracked status entry at the final status check.
+- **Audit context:**
+  - Intent (Opus): UNDOCUMENTED
+  - Intended contract (Codex core-318): Source types and implementation in web/components/GameGrid/utils/poissonHelpers.ts:6; separate acceptance not verified.
+  - External references: Poisson score matrix
+  - Fixtures/test data: none listed
+  - Tests: `No directly named test located; tests not run.`; `web/components/GameGrid/utils/calcWinOdds.test.js`
+- **Leads (not audited):**
+  - (opus) tie-breaker redistribution is a no-op (ratios sum to 1, written back to the same diagonal cell)
+  - (opus) calculateBlendedWinOdds ignores apiWinOdds on both branches (no blend)
+  - (codex:core-318) ["Inventory only; no correctness verdict."]
+
+## M-GPR-017 Legacy Poisson game goal projection (att x def x league avg) and win odds
+
+- **Match:** Both; Opus GPR-028; Codex core-208, core-209, core-210, core-211, core-212
+- **Possible related records (low-confidence location link, unconfirmed):** core-213
+- **Purpose:** Projected goals per team and Poisson win odds stored for the Game Grid heatmap.
+- **Where:** `web/lib/gameGoalProjections/calculations.ts:31 (calculateProjectedGoals)`; `web/lib/gameGoalProjections/calculations.ts:42 (generatePoissonProbabilityMatrix)`; `web/lib/gameGoalProjections/calculations.ts:74 (calculateWinOdds)`; `web/lib/gameGoalProjections/calculations.ts:108 (convertAmericanOddsToPercentage)`; `web/lib/gameGoalProjections/calculations.ts:124 (buildGameGoalProjections)`; `web/lib/gameGoalProjections/utils.ts:8 (poissonProbability)`; `web/lib/gameGoalProjections/calculations.ts:32 calculateProjectedGoals`; `web/lib/gameGoalProjections/calculations.ts:43 generatePoissonProbabilityMatrix`; `web/lib/gameGoalProjections/calculations.ts:77 calculateWinOdds`; `web/lib/gameGoalProjections/calculations.ts:113 convertAmericanOddsToPercentage`; `web/lib/gameGoalProjections/calculations.ts:129 buildGameGoalProjections`
+- **Tags (heuristic):** percent scale: both/ambiguous; denominators: per game; generation: legacy, current
+- **Opus view (GPR-028):**
+  - Method: lambda_home = homeAtt * awayDef * leagueAvgGF; lambda_away symmetric; independent Poisson 0..10 x 0..10 matrix renormalized; home% = (P(H>A) + P(draw)/2)*100 then renormalized to 100; API odds: each American price -> implied % and averaged across books without vig removal.
+  - Inputs/units: att/def multiplicative indices (1 = average); goals per game; sources: nst_att_def_scores, nst_league_averages, NHL schedule API
+  - Output scale: goals; percent 0-100; writes: expected_goals
+  - Status: live — manual admin route /api/v1/db/update-game-goal-projections (cronAuditCoverage.ts:125 browser-admin)
+  - Consumers: components/GameGrid/PDHC/PoissonHeatMap.tsx; GameGrid win-odds / weekScore
+- **Codex view (core-208, calculation, codex_part_of_opus; Codex family 'legacy game goals'):** Legacy projected team goals
+  - Formula: attack*opponentDefense*leagueAverageGoals.
+  - Purpose: Calculate legacy projected team goals.
+  - Inputs/units: Team attack multiplier, opponent defense multiplier, league average goals/game.
+  - Output scale: Expected team goals/game.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. Source explicitly calls this legacy; not shot-level xG. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracked/untracked status entry at the final status check.
+- **Codex view (core-209, calculation, codex_part_of_opus; Codex family 'legacy game goals'):** Independent Poisson score matrix
+  - Formula: Poisson(home goals)*Poisson(away goals); renormalize truncated mass if difference exceeds 1e-6.
+  - Purpose: Calculate independent poisson score matrix.
+  - Inputs/units: Home/away expected goals, maximum goals default 10.
+  - Output scale: Joint probabilities on 0..10 by 0..10 score grid.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. Source explicitly calls this legacy; not shot-level xG. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracked/untracked status entry at the final status check.
+- **Codex view (core-210, calculation, codex_part_of_opus; Codex family 'legacy game goals'):** Legacy win odds with half-draw allocation
+  - Formula: Sum strict-win cells plus half diagonal; normalize sum to 100.
+  - Purpose: Calculate legacy win odds with half-draw allocation.
+  - Inputs/units: Joint score matrix.
+  - Output scale: Home and away win percentages rounded 2 decimals.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. Source explicitly calls this legacy; not shot-level xG. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracked/untracked status entry at the final status check.
+- **Codex view (core-211, calculation, codex_part_of_opus; Codex family 'legacy game goals'):** American odds to implied probability
+  - Formula: Positive:10000/(odds+100); otherwise 100*(-odds)/(-odds+100).
+  - Purpose: Calculate american odds to implied probability.
+  - Inputs/units: Signed American odds string.
+  - Output scale: Implied probability percent.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. Source explicitly calls this legacy; not shot-level xG. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracked/untracked status entry at the final status check.
+- **Codex view (core-212, calculation, codex_part_of_opus; Codex family 'legacy game goals'):** Provider-odds average
+  - Formula: Convert each odds value, mean, round 2 decimals; absent list omitted.
+  - Purpose: Calculate provider-odds average.
+  - Inputs/units: Multiple bookmaker American odds per team.
+  - Output scale: Arithmetic mean implied probability percent.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. Source explicitly calls this legacy; not shot-level xG. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracked/untracked status entry at the final status check.
+- **CONFLICTS (unresolved, for the auditor):**
+  - [status] vs core-208: Opus says live — manual admin route /api/v1/db/update-game-goal-projections (cronAuditCoverage.ts:125 browser-admin) / Codex says Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. Source explicitly calls this legacy; not shot-level xG. Deployment and persisted data state not verified. The scan was non-atomic: HEAD la — check mechanical rule: live vs legacy wording
+  - [status] vs core-209: Opus says live — manual admin route /api/v1/db/update-game-goal-projections (cronAuditCoverage.ts:125 browser-admin) / Codex says Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. Source explicitly calls this legacy; not shot-level xG. Deployment and persisted data state not verified. The scan was non-atomic: HEAD la — check mechanical rule: live vs legacy wording
+  - [status] vs core-210: Opus says live — manual admin route /api/v1/db/update-game-goal-projections (cronAuditCoverage.ts:125 browser-admin) / Codex says Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. Source explicitly calls this legacy; not shot-level xG. Deployment and persisted data state not verified. The scan was non-atomic: HEAD la — check mechanical rule: live vs legacy wording
+  - [status] vs core-211: Opus says live — manual admin route /api/v1/db/update-game-goal-projections (cronAuditCoverage.ts:125 browser-admin) / Codex says Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. Source explicitly calls this legacy; not shot-level xG. Deployment and persisted data state not verified. The scan was non-atomic: HEAD la — check mechanical rule: live vs legacy wording
+  - [status] vs core-212: Opus says live — manual admin route /api/v1/db/update-game-goal-projections (cronAuditCoverage.ts:125 browser-admin) / Codex says Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. Source explicitly calls this legacy; not shot-level xG. Deployment and persisted data state not verified. The scan was non-atomic: HEAD la — check mechanical rule: live vs legacy wording
+- **Audit context:**
+  - Intent (Opus): 'Legacy game-goal projection calculations... not shot-level hockey xG' (calculations.ts:1, 26-30)
+  - Intended contract (Codex core-208): Source types and implementation in web/lib/gameGoalProjections/calculations.ts:32; separate acceptance not verified.
+  - Intended contract (Codex core-209): Source types and implementation in web/lib/gameGoalProjections/calculations.ts:43; separate acceptance not verified.
+  - Intended contract (Codex core-210): Source types and implementation in web/lib/gameGoalProjections/calculations.ts:77; separate acceptance not verified.
+  - Intended contract (Codex core-211): Source types and implementation in web/lib/gameGoalProjections/calculations.ts:113; separate acceptance not verified.
+  - Intended contract (Codex core-212): Source types and implementation in web/lib/gameGoalProjections/calculations.ts:129; separate acceptance not verified.
+  - External references: Maher / Dixon-Coles bivariate Poisson; Skellam for goal difference; vig removal
+  - Fixtures/test data: none listed
+  - Tests: `No directly named test located; tests not run.`
+- **Leads (not audited):**
+  - (opus) no home-ice factor
+  - (opus) independent Poisson, no Dixon-Coles low-score correlation; draws split 50/50 instead of OT model
+  - (opus) API win odds averaged with vig included (sum > 100%)
+  - (opus) poissonProbability returns 1 at k=0 when lambda <= 0
+  - (codex:core-208) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-209) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-210) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-211) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-212) ["Inventory only, not validation of the formula, source semantics or model quality."]
+
+## M-GPR-018 Probability calibration in backtests (Platt / isotonic)
+
+- **Match:** Both; Opus GPR-030; Codex XG-14
+- **Purpose:** Optional calibrator fit on training predictions.
+- **Where:** `web/lib/game-predictions/accountability.ts:3251 (buildBacktestProbabilityCalibrator)`; `web/lib/game-predictions/accountability.ts:3283 (buildPhaseModelState)`; `web/lib/xg/calibration.ts:368 (fitProbabilityCalibrator)`; `web/lib/xg/calibration.ts:368 fitProbabilityCalibrator`; `web/lib/xg/calibration.ts:401 predictWithSerializedCalibrator`; `web/lib/xg/calibration.ts:491 assessCalibration`
+- **Tags (heuristic):** percent scale: fraction 0-1; generation: development, current
+- **Opus view (GPR-030):**
+  - Method: Requires >= 10 examples and both classes; fits Platt or isotonic on the SAME training examples the model was fit on; phase-specific models/calibrators when phase has >= 40 examples (DEFAULT_MINIMUM_PHASE_TRAINING_EXAMPLES).
+  - Inputs/units: probability; sources: —
+  - Output scale: probability; writes: —
+  - Status: draft — ablation only
+  - Consumers: predictGameWithBacktestModel
+- **Codex view (XG-14, calculation, location; Codex family 'Expected goals'):** Probability calibration: raw, Platt and isotonic
+  - Purpose: Fit calibration mapping and choose/report calibrated output.
+  - Inputs/units: Validation predictions [0,1], binary labels and calibrator family.
+  - Output scale: Calibrated probabilities [0,1], model parameters and eligibility/warnings.
+  - Version/status: Raw/platt/isotonic coexist; artifact determines use. Production deployment/active database state not checked.
+- **Audit context:**
+  - Intent (Opus): UNDOCUMENTED
+  - Intended contract (Codex XG-14): Serialized raw/Platt/isotonic models; held-out positive/rush/rebound minimum gates. Repository design sources: tasks/TASKS/xg-model/docs/definitions-and-parity.md; tasks/TASKS/xg-model/docs/data-contract-boundaries.md; tasks/TASKS/xg-model/baseline/xg-training-feature-contract.md. These document historical intent, not deployment evidence.
+  - External references: Platt scaling; isotonic regression (fit on held-out data)
+  - Fixtures/test data: none listed
+  - Tests: `web/__tests__/pages/api/v1/game-predictions/accuracy-loop.test.ts`; `web/lib/game-predictions/accountability.test.ts`; `web/lib/xg/calibration.test.ts`
+- **Leads (not audited):**
+  - (opus) calibrator fit in-sample on training predictions, not a held-out fold, so it under-corrects overfit
+  - (codex:XG-14) No mathematical accuracy or fitness assessment performed. Tests listed, not run.
+
+## M-GPR-019 Training season recency weight
+
+- **Match:** Both; Opus GPR-031; Codex core-299
+- **Purpose:** Down-weights older seasons in walk-forward training.
+- **Where:** `web/lib/game-predictions/accountability.ts:372 (trainingSeasonRecencyWeight)`; `web/lib/game-predictions/accountability.ts:372 trainingSeasonRecencyWeight`
+- **Tags (heuristic):** generation: research, development
+- **Opus view (GPR-031):**
+  - Method: seasonsBack = startYear(target) - startYear(example): 0 -> 1, 1 -> 0.65, 2 -> 0.35, >=3 -> 0.2.
+  - Inputs/units: season ids YYYYYYYY; sources: —
+  - Output scale: weight 0.2-1; writes: —
+  - Status: draft — backtests only
+  - Consumers: toTrainingExample (accountability.ts:3185)
+- **Codex view (core-299, calculation, location; Codex family 'game prediction evaluation'):** Training season recency weights
+  - Formula: Current/future: 1; previous 1 season: .65; previous 2 .35; older: .2.
+  - Purpose: Calculate training season recency weights.
+  - Inputs/units: Target and training season start years.
+  - Output scale: Weights 1, .65, .35, .2.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f.  Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracked/untracked status entry at the final status check.
+- **Audit context:**
+  - Intent (Opus): UNDOCUMENTED
+  - Intended contract (Codex core-299): Checked-in evaluation/promotion code is the located contract; this inventory does not assert any model passed its gates.
+  - External references: none suggested
+  - Fixtures/test data: none listed
+  - Tests: `Located only; not run for this inventory.`; `web/__tests__/pages/api/v1/game-predictions/accuracy-loop.test.ts`; `web/lib/game-predictions/accountability.test.ts`
+- **Leads (not audited):**
+  - (opus) ExtraTrees training ignores example.weight (bootstrap sampling is unweighted)
+  - (codex:core-299) ["Inventory only, not validation of the formula, source semantics or model quality."]
+
+## M-GPR-020 ExtraTrees candidate model
+
+- **Match:** Both; Opus GPR-032; Codex core-292, core-293
+- **Purpose:** Randomized-tree ensemble candidate for home-win probability.
+- **Where:** `web/lib/game-predictions/baselineModel.ts:1106 (trainGamePredictionExtraTreesModel)`; `web/lib/game-predictions/baselineModel.ts:919 (extraTreesOptions)`; `web/lib/game-predictions/baselineModel.ts:955 (buildExtraTreesLeaf)`; `web/lib/game-predictions/baselineModel.ts:1304 (predictExtraTreesHomeWinProbability)`; `web/lib/game-predictions/baselineModel.ts:1323 (buildExtraTreesTopFactors)`; `web/lib/game-predictions/baselineModel.ts:1106 trainGamePredictionExtraTreesModel`; `web/lib/game-predictions/baselineModel.ts:1304 predictExtraTreesHomeWinProbability`
+- **Tags (heuristic):** percent scale: fraction 0-1; generation: development
+- **Opus view (GPR-032):**
+  - Method: 41 trees, maxDepth 4, minLeaf 8, featuresPerSplit floor(sqrt(F)), sampleRate 0.85 with replacement, LCG seed 20260615; split threshold uniform random in [min,max]; Gini impurity reduction; leaf p = (pos + prior*6)/(n+6) (Beta smoothing, leafSmoothing 6); prediction = mean of leaves; importances normalized impurity*n. Top factors = value*importance.
+  - Inputs/units: transformed features; sources: —
+  - Output scale: probability 0-1; writes: —
+  - Status: draft — ablation only
+  - Consumers: extra_trees_candidate ablation variants
+- **Codex view (core-292, calculation, location; Codex family 'game prediction model'):** Extremely randomized tree candidate fitting
+  - Formula: Random feature/threshold splits maximizing Gini reduction; smoothed leaf=(wins+prior*smoothing)/(n+smoothing).
+  - Purpose: Calculate extremely randomized tree candidate fitting.
+  - Inputs/units: Feature examples and tree options.
+  - Output scale: Tree ensemble and impurity importance.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-293, calculation, location; Codex family 'game prediction model'):** ExtraTrees win probability
+  - Formula: Average tree leaf probabilities; prior if no trees; clip to probability limits.
+  - Purpose: Calculate extratrees win probability.
+  - Inputs/units: Fitted trees and feature vector.
+  - Output scale: Probability 0..1.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Audit context:**
+  - Intent (Opus): UNDOCUMENTED
+  - Intended contract (Codex core-292): Source types and implementation in web/lib/game-predictions/baselineModel.ts:1106; separate acceptance not verified.
+  - Intended contract (Codex core-293): Source types and implementation in web/lib/game-predictions/baselineModel.ts:1304; separate acceptance not verified.
+  - External references: Geurts et al. Extremely Randomized Trees (sklearn ExtraTreesClassifier)
+  - Fixtures/test data: none listed
+  - Tests: `Located only; not run for this inventory.`; `web/lib/game-predictions/baselineModel.test.ts`
+- **Leads (not audited):**
+  - (opus) 'top factor contribution' = raw value*importance is not a signed attribution
+  - (opus) sampling with replacement differs from canonical ExtraTrees (no bootstrap)
+  - (codex:core-292) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-293) ["Inventory only, not validation of the formula, source semantics or model quality."]
+
+## M-GPR-021 Top factors / explanation contributions
+
+- **Match:** Both; Opus GPR-033; Codex core-295
+- **Purpose:** Public 'why' factors for a prediction.
+- **Where:** `web/lib/game-predictions/baselineModel.ts:1268 (buildTopFactors)`; `web/lib/game-predictions/baselineModel.ts:813 (explainBaselineModelPrediction)`; `web/lib/game-predictions/publicPredictions.ts:223 (extractTopFactors)`; `web/lib/game-predictions/baselineModel.ts:813 explainBaselineModelPrediction`
+- **Tags (heuristic):** generation: current
+- **Opus view (GPR-033):**
+  - Method: contribution = normalized_x * w (raw x if no normalization); top 5 by \|contribution\|; public direction neutral if \|c\|<0.0001 else home/away by sign; filtered to public_explanation_feature_keys.
+  - Inputs/units: —; sources: —
+  - Output scale: logit contributions; writes: —
+  - Status: live — cron /api/v1/game-predictions/forecast in web/vercel.json:99 (generatePregamePredictionsForWindow)
+  - Consumers: /api/v1/game-predictions/latest; game prediction UI
+- **Codex view (core-295, calculation, location; Codex family 'game prediction model'):** Prediction feature attribution
+  - Formula: Coefficient*normalized feature and selection metadata; no evidence of historical availability inferred.
+  - Purpose: Calculate prediction feature attribution.
+  - Inputs/units: Supplied model and feature payload.
+  - Output scale: Raw/transformed/normalized values, coefficient contribution, inclusion/fallback.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Audit context:**
+  - Intent (Opus): UNDOCUMENTED
+  - Intended contract (Codex core-295): Source types and implementation in web/lib/game-predictions/baselineModel.ts:813; separate acceptance not verified.
+  - External references: Linear-model attribution (coef*x)
+  - Fixtures/test data: none listed
+  - Tests: `Located only; not run for this inventory.`; `web/lib/game-predictions/baselineModel.test.ts`; `web/lib/game-predictions/publicPredictions.test.ts`
+- **Leads (not audited):**
+  - (codex:core-295) ["Inventory only, not validation of the formula, source semantics or model quality."]
+
+## M-GPR-022 Probability floor, rounding, winner threshold, confidence label, market edge bucket
+
+- **Match:** Both; Opus GPR-034; Codex core-234, core-235, core-236, core-237, core-238, core-239, core-240, core-241, core-242, core-243, core-244, core-245, core-246, core-247, core-248, core-249, core-250, core-251, core-252, core-253, core-254, core-255, core-256, core-257, core-258, core-259, core-260, core-261, core-262, core-263, core-264, core-265, core-266, core-267, core-268, core-269, core-270, core-271, core-272, core-273, core-274, core-275, core-276, core-277, core-278, core-279, core-280, core-281, core-282, core-283, core-284, core-285, core-286, core-291
+- **Purpose:** Final post-processing of the home-win probability into labels used on the page and in metrics.
+- **Where:** `web/lib/game-predictions/baselineModel.ts:318 (applyProbabilityFloor)`; `web/lib/game-predictions/baselineModel.ts:1250 (getConfidenceLabel)`; `web/lib/game-predictions/baselineModel.ts:1259 (marketEdgeBucket)`; `web/lib/game-predictions/baselineModel.ts:18-20 (constants)`; `web/lib/game-predictions/baselineModel.ts:641 buildBaselineFeatureVector`; `web/lib/game-predictions/baselineModel.ts:22 BASELINE_FEATURE_KEYS`; `web/lib/game-predictions/baselineModel.ts:1250 getConfidenceLabel`
+- **Tags (heuristic):** percent scale: fraction 0-1; denominators: per 60, per game, unblocked attempts; generation: current
+- **Opus view (GPR-034):**
+  - Method: floor = model.probabilityFloor ?? 0.05, bounded [0,0.49]; p clipped [floor, 1-floor]; round 6 dp. predicted winner = home if p >= 0.52 (BASELINE_WINNER_DECISION_THRESHOLD, clamp 0.01-0.99) also reports threshold-50 winner. confidence: \|p-0.5\| >= 0.15 high, >= 0.07 medium else low. modelVsMarketEdge = p - marketNoVig; bucket \|edge\| >= 0.08 large, >= 0.04 medium, >= 0.015 small, else efficient; null -> no_market.
+  - Inputs/units: probability 0-1; sources: —
+  - Output scale: probability 0.05-0.95; labels; writes: —
+  - Status: live — cron /api/v1/game-predictions/forecast in web/vercel.json:99 (generatePregamePredictionsForWindow)
+  - Consumers: public prediction payload; evaluation segments (confidence_label, market_edge_bucket)
+- **Codex view (core-234, calculation, codex_part_of_opus; Codex family 'game prediction model feature'):** Home Minus Away Off Rating
+  - Formula: Retain the supplied contrast without additional rescaling. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away off rating feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayOffRating; source rating points. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-235, calculation, codex_part_of_opus; Codex family 'game prediction model feature'):** Home Minus Away Def Rating
+  - Formula: Retain the supplied contrast without additional rescaling. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away def rating feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayDefRating; source rating points. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-236, calculation, codex_part_of_opus; Codex family 'game prediction model feature'):** Home Minus Away Goalie Rating
+  - Formula: Retain the supplied contrast without additional rescaling. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away goalie rating feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayGoalieRating; source rating points. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-237, calculation, codex_part_of_opus; Codex family 'game prediction model feature'):** Home Minus Away Special Rating
+  - Formula: Retain the supplied contrast without additional rescaling. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away special rating feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwaySpecialRating; source rating points. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-238, calculation, codex_part_of_opus; Codex family 'game prediction model feature'):** Home Minus Away Point Pctg
+  - Formula: Retain the supplied contrast without additional rescaling. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away point pctg feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayPointPctg; fractions. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-239, calculation, codex_part_of_opus; Codex family 'game prediction model feature'):** Home Minus Away Goal Differential
+  - Formula: Divide the goal differential contrast by 50. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away goal differential feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayGoalDifferential; goals. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-240, calculation, codex_part_of_opus; Codex family 'game prediction model feature'):** Home Minus Away Recent 5 Goal Differential Per Game
+  - Formula: Divide the per-game or per-60 contrast by 3. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away recent 5 goal differential per game feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayRecent5GoalDifferentialPerGame; goals per game. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-241, calculation, codex_part_of_opus; Codex family 'game prediction model feature'):** Home Minus Away Recent 10 Goal Differential Per Game
+  - Formula: Divide the per-game or per-60 contrast by 3. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away recent 10 goal differential per game feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayRecent10GoalDifferentialPerGame; goals per game. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-242, calculation, codex_part_of_opus; Codex family 'game prediction model feature'):** Home Minus Away Recent 20 Goal Differential Per Game
+  - Formula: Divide the per-game or per-60 contrast by 3. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away recent 20 goal differential per game feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayRecent20GoalDifferentialPerGame; goals per game. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-243, calculation, codex_part_of_opus; Codex family 'game prediction model feature'):** Home Minus Away Recent 40 Goal Differential Per Game
+  - Formula: Divide the per-game or per-60 contrast by 3. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away recent 40 goal differential per game feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayRecent40GoalDifferentialPerGame; goals per game. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-244, calculation, codex_part_of_opus; Codex family 'game prediction model feature'):** Home Minus Away Recent 5 Xgf Pct
+  - Formula: Retain the supplied contrast without additional rescaling. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away recent 5 xgf pct feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayRecent5XgfPct; fractions. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-245, calculation, codex_part_of_opus; Codex family 'game prediction model feature'):** Home Minus Away Recent 10 Xgf Pct
+  - Formula: Retain the supplied contrast without additional rescaling. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away recent 10 xgf pct feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayRecent10XgfPct; fractions. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-246, calculation, codex_part_of_opus; Codex family 'game prediction model feature'):** Home Minus Away Recent 20 Xgf Pct
+  - Formula: Retain the supplied contrast without additional rescaling. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away recent 20 xgf pct feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayRecent20XgfPct; fractions. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-247, calculation, codex_part_of_opus; Codex family 'game prediction model feature'):** Home Minus Away Recent 40 Xgf Pct
+  - Formula: Retain the supplied contrast without additional rescaling. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away recent 40 xgf pct feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayRecent40XgfPct; fractions. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-248, calculation, codex_part_of_opus; Codex family 'game prediction model feature'):** Home Minus Away Season To Date Xgf Pct
+  - Formula: Retain the supplied contrast without additional rescaling. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away season to date xgf pct feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwaySeasonToDateXgfPct; fractions. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-249, calculation, codex_part_of_opus; Codex family 'game prediction model feature'):** Home Minus Away Cross Season Prior Xgf Pct
+  - Formula: Retain the supplied contrast without additional rescaling. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away cross season prior xgf pct feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayCrossSeasonPriorXgfPct; fractions. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-250, calculation, codex_part_of_opus; Codex family 'game prediction model feature'):** Home Minus Away Recent 10 Point Pct
+  - Formula: Retain the supplied contrast without additional rescaling. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away recent 10 point pct feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayRecent10PointPct; fractions. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-251, calculation, codex_part_of_opus; Codex family 'game prediction model feature'):** Home Minus Away Season To Date Point Pct
+  - Formula: Retain the supplied contrast without additional rescaling. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away season to date point pct feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwaySeasonToDatePointPct; fractions. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-252, calculation, codex_part_of_opus; Codex family 'game prediction model feature'):** Home Minus Away Recent 20 Shot Share
+  - Formula: Retain the supplied contrast without additional rescaling. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away recent 20 shot share feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayRecent20ShotShare; fractions. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-253, calculation, codex_part_of_opus; Codex family 'game prediction model feature'):** Home Minus Away Recent 40 Shot Share
+  - Formula: Retain the supplied contrast without additional rescaling. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away recent 40 shot share feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayRecent40ShotShare; fractions. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-254, calculation, codex_part_of_opus; Codex family 'game prediction model feature'):** Home Minus Away Recent 20 Fenwick Share
+  - Formula: Retain the supplied contrast without additional rescaling. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away recent 20 fenwick share feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayRecent20FenwickShare; fractions. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-255, calculation, codex_part_of_opus; Codex family 'game prediction model feature'):** Home Minus Away Recent 40 Fenwick Share
+  - Formula: Retain the supplied contrast without additional rescaling. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away recent 40 fenwick share feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayRecent40FenwickShare; fractions. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-256, calculation, codex_part_of_opus; Codex family 'game prediction model feature'):** Home Minus Away Recent 20 Gf Pct
+  - Formula: Retain the supplied contrast without additional rescaling. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away recent 20 gf pct feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayRecent20GfPct; fractions. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-257, calculation, codex_part_of_opus; Codex family 'game prediction model feature'):** Home Minus Away Recent 40 Gf Pct
+  - Formula: Retain the supplied contrast without additional rescaling. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away recent 40 gf pct feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayRecent40GfPct; fractions. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-258, calculation, codex_part_of_opus; Codex family 'game prediction model feature'):** Home Minus Away Recent 20 Xga Per 60
+  - Formula: Divide the per-game or per-60 contrast by 3. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away recent 20 xga per 60 feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayRecent20XgaPer60; expected goals against per 60 minutes. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-259, calculation, codex_part_of_opus; Codex family 'game prediction model feature'):** Home Minus Away Recent 40 Xga Per 60
+  - Formula: Divide the per-game or per-60 contrast by 3. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away recent 40 xga per 60 feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayRecent40XgaPer60; expected goals against per 60 minutes. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-260, calculation, codex_part_of_opus; Codex family 'game prediction model feature'):** Home Minus Away Ctpi
+  - Formula: Divide the rating contrast by 100; CTPI also requires recent-form eligibility. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away ctpi feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayCtpi; source rating points. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-261, calculation, codex_part_of_opus; Codex family 'game prediction model feature'):** Home Minus Away Past Opponent Composite Rating
+  - Formula: Divide the rating contrast by 100; CTPI also requires recent-form eligibility. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away past opponent composite rating feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayPastOpponentCompositeRating; source rating points. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-262, calculation, codex_part_of_opus; Codex family 'game prediction model feature'):** Home Minus Away Last 5 Opponent Composite Rating
+  - Formula: Divide the rating contrast by 100; CTPI also requires recent-form eligibility. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away last 5 opponent composite rating feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayLast5OpponentCompositeRating; source rating points. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-263, calculation, codex_part_of_opus; Codex family 'game prediction model feature'):** Home Minus Away Last 10 Opponent Composite Rating
+  - Formula: Divide the rating contrast by 100; CTPI also requires recent-form eligibility. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away last 10 opponent composite rating feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayLast10OpponentCompositeRating; source rating points. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-264, calculation, codex_part_of_opus; Codex family 'game prediction model feature'):** Home Minus Away Adjusted Recent 5 Goal Differential Per Game
+  - Formula: Divide the per-game or per-60 contrast by 3. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away adjusted recent 5 goal differential per game feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayAdjustedRecent5GoalDifferentialPerGame; goals per game. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-265, calculation, codex_part_of_opus; Codex family 'game prediction model feature'):** Home Minus Away Adjusted Recent 10 Goal Differential Per Game
+  - Formula: Divide the per-game or per-60 contrast by 3. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away adjusted recent 10 goal differential per game feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayAdjustedRecent10GoalDifferentialPerGame; goals per game. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-266, calculation, codex_part_of_opus; Codex family 'game prediction model feature'):** Home Minus Away Adjusted Recent 5 Xgf Pct
+  - Formula: Retain the supplied contrast without additional rescaling. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away adjusted recent 5 xgf pct feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayAdjustedRecent5XgfPct; fractions. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-267, calculation, codex_part_of_opus; Codex family 'game prediction model feature'):** Home Minus Away Adjusted Recent 10 Xgf Pct
+  - Formula: Retain the supplied contrast without additional rescaling. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away adjusted recent 10 xgf pct feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayAdjustedRecent10XgfPct; fractions. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-268, calculation, codex_part_of_opus; Codex family 'game prediction model feature'):** Home Minus Away Forge Projected Goals
+  - Formula: Divide the projected-goal contrast by 3. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away forge projected goals feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayForgeProjectedGoals; projected goals. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-269, calculation, codex_part_of_opus; Codex family 'game prediction model feature'):** Home Minus Away Forge Projected Shots
+  - Formula: Divide the projected-shot contrast by 10. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away forge projected shots feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayForgeProjectedShots; projected shots. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-270, calculation, codex_part_of_opus; Codex family 'game prediction model feature'):** Home Minus Away Roster Off Impact
+  - Formula: Retain the supplied contrast without additional rescaling. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away roster off impact feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayRosterOffImpact; roster impact units from the source rating model; per-60-only variants undo source shrinkage. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-271, calculation, codex_part_of_opus; Codex family 'game prediction model feature'):** Home Minus Away Roster Def Impact
+  - Formula: Retain the supplied contrast without additional rescaling. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away roster def impact feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayRosterDefImpact; roster impact units from the source rating model; per-60-only variants undo source shrinkage. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-272, calculation, codex_part_of_opus; Codex family 'game prediction model feature'):** Home Minus Away Roster Goalie Impact
+  - Formula: Retain the supplied contrast without additional rescaling. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away roster goalie impact feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayRosterGoalieImpact; roster impact units from the source rating model; per-60-only variants undo source shrinkage. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-273, calculation, codex_part_of_opus; Codex family 'game prediction model feature'):** Home Minus Away Roster Off Impact Per 60 Only
+  - Formula: Retain the supplied contrast without additional rescaling. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away roster off impact per 60 only feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayRosterOffImpactPer60Only; roster impact units from the source rating model; per-60-only variants undo source shrinkage. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-274, calculation, codex_part_of_opus; Codex family 'game prediction model feature'):** Home Minus Away Roster Def Impact Per 60 Only
+  - Formula: Retain the supplied contrast without additional rescaling. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away roster def impact per 60 only feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayRosterDefImpactPer60Only; roster impact units from the source rating model; per-60-only variants undo source shrinkage. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-275, calculation, codex_part_of_opus; Codex family 'game prediction model feature'):** Home Minus Away Roster Goalie Impact Per 60 Only
+  - Formula: Retain the supplied contrast without additional rescaling. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away roster goalie impact per 60 only feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayRosterGoalieImpactPer60Only; roster impact units from the source rating model; per-60-only variants undo source shrinkage. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-276, calculation, codex_part_of_opus; Codex family 'game prediction model feature'):** Home Minus Away Weighted Roster Off Impact
+  - Formula: Retain the supplied contrast without additional rescaling. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away weighted roster off impact feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayWeightedRosterOffImpact; roster impact units from the source rating model; per-60-only variants undo source shrinkage. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-277, calculation, codex_part_of_opus; Codex family 'game prediction model feature'):** Home Minus Away Weighted Roster Def Impact
+  - Formula: Retain the supplied contrast without additional rescaling. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away weighted roster def impact feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayWeightedRosterDefImpact; roster impact units from the source rating model; per-60-only variants undo source shrinkage. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-278, calculation, codex_part_of_opus; Codex family 'game prediction model feature'):** Home Minus Away Weighted Roster Goalie Impact
+  - Formula: Retain the supplied contrast without additional rescaling. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away weighted roster goalie impact feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayWeightedRosterGoalieImpact; roster impact units from the source rating model; per-60-only variants undo source shrinkage. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-279, calculation, codex_part_of_opus; Codex family 'game prediction model feature'):** Home Minus Away Weighted Recent 10 Goal Differential Per Game
+  - Formula: Divide the per-game or per-60 contrast by 3. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away weighted recent 10 goal differential per game feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayWeightedRecent10GoalDifferentialPerGame; goals per game. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-280, calculation, codex_part_of_opus; Codex family 'game prediction model feature'):** Home Minus Away Weighted Recent 10 Xgf Pct
+  - Formula: Retain the supplied contrast without additional rescaling. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away weighted recent 10 xgf pct feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayWeightedRecent10XgfPct; fractions. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-281, calculation, codex_part_of_opus; Codex family 'game prediction model feature'):** Home Minus Away Weighted Goalie Gsaa Per 60
+  - Formula: Retain the supplied contrast without additional rescaling. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away weighted goalie gsaa per 60 feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayWeightedGoalieGsaaPer60; goals saved above average per 60 minutes. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-282, calculation, codex_part_of_opus; Codex family 'game prediction model feature'):** Home Minus Away Goalie Start Uncertainty
+  - Formula: Retain the supplied contrast without additional rescaling. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away goalie start uncertainty feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayGoalieStartUncertainty; fractions. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-283, calculation, codex_part_of_opus; Codex family 'game prediction model feature'):** Home Rest Advantage Days
+  - Formula: Clamp the rest-day contrast to [-3,3], then divide by 3. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home rest advantage days feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeRestAdvantageDays; days. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-284, calculation, codex_part_of_opus; Codex family 'game prediction model feature'):** Home Minus Away Games Played As Of
+  - Formula: Clamp the games-played contrast to [-20,20], then divide by 20. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home minus away games played as of feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMinusAwayGamesPlayedAsOf; games. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-285, calculation, codex_part_of_opus; Codex family 'game prediction model feature'):** Season Phase Ordinal
+  - Formula: Divide the phase ordinal by 3. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the season phase ordinal feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key seasonPhaseOrdinal; phase ordinal 0–3. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-286, calculation, codex_part_of_opus; Codex family 'game prediction model feature'):** Home Market No Vig Probability
+  - Formula: Subtract 0.5 from the market home-win probability. Missing, rejected or explicitly excluded features are encoded as zero.
+  - Purpose: Supply the home market no vig probability feature to the baseline game-prediction model.
+  - Inputs/units: Named payload key homeMarketNoVigProbability; fractions. Home-minus-away keys are signed contrasts.
+  - Output scale: Numeric model feature in the transformed units stated in the formula; zero fallback. A later training transform centers and scales features.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Codex view (core-291, calculation, location; Codex family 'game prediction model'):** Confidence and market edge labels
+  - Formula: Confidence high if \|p-.5\|>=.15, medium>=.07; edge=p-marketP; bucket thresholds .015, .04, .08.
+  - Purpose: Calculate confidence and market edge labels.
+  - Inputs/units: Home-win probability and no-vig market home probability.
+  - Output scale: Low/medium/high; signed model-market edge and edge bucket.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Audit context:**
+  - Intent (Opus): UNDOCUMENTED
+  - Intended contract (Codex core-234): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-235): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-236): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-237): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-238): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-239): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-240): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-241): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-242): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-243): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-244): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-245): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-246): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-247): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-248): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-249): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-250): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-251): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-252): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-253): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-254): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-255): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-256): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-257): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-258): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-259): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-260): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-261): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-262): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-263): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-264): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-265): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-266): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-267): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-268): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-269): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-270): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-271): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-272): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-273): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-274): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-275): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-276): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-277): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-278): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-279): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-280): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-281): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-282): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-283): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-284): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-285): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-286): BASELINE_FEATURE_KEYS is the vector order; CANDIDATE_ONLY_FEATURE_KEYS and model selection govern activation.
+  - Intended contract (Codex core-291): Source types and implementation in web/lib/game-predictions/baselineModel.ts:1250; separate acceptance not verified.
+  - External references: none suggested
+  - Fixtures/test data: none listed
+  - Tests: `Located only; not run for this inventory.`; `web/lib/game-predictions/baselineModel.test.ts`
+- **Leads (not audited):**
+  - (opus) 0.52 threshold means p in [0.50,0.52) shows home as favourite in probability but away as predicted winner
+  - (opus) accuracy and calibration buckets use the 0.52 winner while confidence uses max(p,1-p), inconsistent for p in [0.5,0.52)
+  - (codex:core-234) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-235) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-236) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-237) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-238) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-239) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-240) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-241) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-242) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-243) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-244) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-245) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-246) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-247) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-248) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-249) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-250) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-251) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-252) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-253) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-254) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-255) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-256) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-257) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-258) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-259) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-260) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-261) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-262) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-263) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-264) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-265) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-266) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-267) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-268) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-269) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-270) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-271) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-272) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-273) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-274) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-275) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-276) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-277) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-278) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-279) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-280) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-281) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-282) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-283) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-284) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-285) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-286) ["Inventory only, not validation of the formula, source semantics or model quality."]
+  - (codex:core-291) ["Inventory only, not validation of the formula, source semantics or model quality."]
+
+## M-GPR-023 Data-quality dampening toward 50%
+
+- **Match:** Both; Opus GPR-035; Codex core-289
+- **Purpose:** Shrinks probabilities toward a coin flip when inputs are stale, missing or uncertain.
+- **Where:** `web/lib/game-predictions/baselineModel.ts:498 (buildDataQualityMultiplier)`; `web/lib/game-predictions/baselineModel.ts:494 (dampenTowardCoinFlip)`; `web/lib/game-predictions/baselineModel.ts:498 buildDataQualityMultiplier`
+- **Tags (heuristic):** percent scale: fraction 0-1; generation: current
+- **Opus view (GPR-035):**
+  - Method: penalties: stale_sources min(0.18, 0.03*n); missing_features min(0.18, 0.025*n); goalie_fallback 0.06 per side; projected (unconfirmed) goalie 0.025 per side; goalie_start_uncertainty min(0.06, 0.025*(uH+uA)); market_odds_unavailable 0.01 or market stale (>24h) 0.02; missing_lineup 0.03 per side; prediction_horizon min(0.14, 0.02*days). multiplier = clamp(1 - sum, 0.55, 1). p' = 0.5 + (p-0.5)*multiplier.
+  - Inputs/units: counts, hours, days; sources: —
+  - Output scale: multiplier 0.55-1; probability 0-1; writes: —
+  - Status: live — cron /api/v1/game-predictions/forecast in web/vercel.json:99 (generatePregamePredictionsForWindow)
+  - Consumers: predictGameWithBaselineModel; predictGameWithExtraTreesModel; explainBaselineModelPrediction
+- **Codex view (core-289, calculation, location; Codex family 'game prediction model'):** Data-quality probability dampening
+  - Formula: 1-sum capped penalties; max floor.55; adjustedP=.5+(P-.5)*multiplier.
+  - Purpose: Calculate data-quality probability dampening.
+  - Inputs/units: Source stale/missing counts, goalie certainty, lineup, market age, prediction horizon.
+  - Output scale: Multiplier .55..1 and probability closer to .5.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Audit context:**
+  - Intent (Opus): UNDOCUMENTED
+  - Intended contract (Codex core-289): Source types and implementation in web/lib/game-predictions/baselineModel.ts:498; separate acceptance not verified.
+  - External references: Ad hoc shrinkage; compare with calibrated uncertainty (Platt/isotonic) rather than fixed penalties
+  - Fixtures/test data: none listed
+  - Tests: `Located only; not run for this inventory.`; `web/lib/game-predictions/baselineModel.test.ts`
+- **Leads (not audited):**
+  - (opus) penalties are hand-tuned constants; source staleness counted per cutoff entry, and both home and away push the same tables (team_power_ratings_daily appears twice per side), so stale counts double
+  - (opus) dampening is applied after calibration, so a calibrated model is de-calibrated again
+  - (opus) goalie start uncertainty double-penalised (projected_goalie and goalie_start_uncertainty both fire)
+  - (codex:core-289) ["Inventory only, not validation of the formula, source semantics or model quality."]
+
+## M-GPR-024 Training-set feature standardization
+
+- **Match:** Both; Opus GPR-036; Codex core-287
+- **Purpose:** Weighted z-score normalization of features before logistic training/prediction.
+- **Where:** `web/lib/game-predictions/baselineModel.ts:578 (buildFeatureNormalization)`; `web/lib/game-predictions/baselineModel.ts:607 (normalizeFeatureVector)`; `web/lib/game-predictions/baselineModel.ts:578 buildFeatureNormalization`
+- **Tags (heuristic):** generation: research, current
+- **Opus view (GPR-036):**
+  - Method: mean_j = sum(w*x)/sum(w); scale_j = sqrt(sum(w*(x-mean)^2)/sum(w)) (population, weighted); scale 1 if < 1e-9. x' = (x-mean)/scale.
+  - Inputs/units: feature units; sources: —
+  - Output scale: z-scores; writes: —
+  - Status: live in backtest/ablation training; not on served model
+  - Consumers: trainGamePredictionBaselineModel; analyzeBaselineFeatureSignals; predictBaselineModelRawHomeWinProbability
+- **Codex view (core-287, calculation, location; Codex family 'game prediction model'):** Weighted feature standardization
+  - Formula: Weighted population mean/variance; SD<=1e-9 becomes 1; normalize(x-mean)/scale.
+  - Purpose: Calculate weighted feature standardization.
+  - Inputs/units: Training feature vectors and example weights.
+  - Output scale: Feature means and SD scales.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Audit context:**
+  - Intent (Opus): UNDOCUMENTED
+  - Intended contract (Codex core-287): Source types and implementation in web/lib/game-predictions/baselineModel.ts:578; separate acceptance not verified.
+  - External references: Standard scaling (sklearn StandardScaler)
+  - Fixtures/test data: none listed
+  - Tests: `Located only; not run for this inventory.`; `web/lib/game-predictions/baselineModel.test.ts`
+- **Leads (not audited):**
+  - (opus) not used by the served INITIAL_BASELINE_MODEL (no featureNormalization field)
+  - (codex:core-287) ["Inventory only, not validation of the formula, source semantics or model quality."]
+
+## M-GPR-025 Regularized logistic training (candidate/backtest)
+
+- **Match:** Both; Opus GPR-037; Codex XG-11, core-288
+- **Purpose:** Fits candidate logistic models for walk-forward backtests and promotion evidence.
+- **Where:** `web/lib/game-predictions/baselineModel.ts:893 (trainGamePredictionBaselineModel: iterations 800, lr 0.05, l2 0.01)`; `web/lib/game-predictions/workflow.ts:1365 (trainCandidateBaselineModel: 1000 iters, lr 0.03, l2 0.02)`; `web/lib/game-predictions/accountability.ts:3212 (trainBacktestModel: 800 iters, lr 0.03, l2 0.02)`; `web/lib/xg/binaryLogistic.ts:84 (trainBinaryLogisticModel, shared with xG)`; `web/lib/xg/binaryLogistic.ts:84 trainBinaryLogisticModel`; `web/lib/xg/binaryLogistic.ts:135 predictBinaryLogisticProbability`; `web/lib/game-predictions/baselineModel.ts:893 trainGamePredictionBaselineModel`
+- **Tags (heuristic):** percent scale: fraction 0-1; generation: research, development, current
+- **Opus view (GPR-037):**
+  - Method: Gradient-descent binary logistic with L2 penalty and per-example weights; probabilityFloor 0.05 attached. Three different hyperparameter sets across call sites.
+  - Inputs/units: z-scores; sources: —
+  - Output scale: logit weights; writes: —
+  - Status: draft — backtest/accuracy-loop admin routes only
+  - Consumers: runWalkForwardBacktest; runWalkForwardBacktestAblations; decidePromotion evidence
+- **Codex view (XG-11, calculation, location; Codex family 'Expected goals'):** Logistic shot-goal and rebound-creation probability
+  - Purpose: Train and score weighted binary logistic classifiers.
+  - Inputs/units: Encoded features, binary goal/rebound labels, optional sample weights, L1/L2, learning rate.
+  - Output scale: Sigmoid probability clipped to [1e-9,1−1e-9]; weights/intercept.
+  - Version/status: logistic_unregularized and logistic_l2 artifact families. Production deployment/active database state not checked.
+- **Codex view (core-288, calculation, location; Codex family 'game prediction model'):** Logistic model fitting and raw probability
+  - Formula: Delegates L2 binary logistic training to lib/xg/binaryLogistic; default 800 iterations, .05 learning rate, .01 L2.
+  - Purpose: Calculate logistic model fitting and raw probability.
+  - Inputs/units: Normalized feature vectors and binary home-win labels.
+  - Output scale: Fitted logistic coefficients and raw home-win probability.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Audit context:**
+  - Intent (Opus): UNDOCUMENTED
+  - Intended contract (Codex XG-11): 800 default gradient iterations and .05 default rate; probabilities stored separately for shot_goal/rebound_creation. Repository design sources: tasks/TASKS/xg-model/docs/definitions-and-parity.md; tasks/TASKS/xg-model/docs/data-contract-boundaries.md; tasks/TASKS/xg-model/baseline/xg-training-feature-contract.md. These document historical intent, not deployment evidence.
+  - Intended contract (Codex core-288): Source types and implementation in web/lib/game-predictions/baselineModel.ts:893; separate acceptance not verified.
+  - External references: Regularized logistic regression
+  - Fixtures/test data: none listed
+  - Tests: `Located only; not run for this inventory.`; `web/__tests__/pages/api/v1/game-predictions/accuracy-loop.test.ts`; `web/lib/game-predictions/accountability.test.ts`; `web/lib/game-predictions/baselineModel.test.ts`; `web/lib/xg/binaryLogistic.test.ts`
+- **Leads (not audited):**
+  - (opus) three inconsistent hyperparameter sets (0.05/0.01, 0.03/0.02 at 1000 iters, 0.03/0.02 at 800)
+  - (opus) promoted weights are never loaded by the serving path (serving uses INITIAL_BASELINE_MODEL)
+  - (codex:XG-11) No mathematical accuracy or fitness assessment performed. Tests listed, not run.
+  - (codex:core-288) ["Inventory only, not validation of the formula, source semantics or model quality."]
+
+## M-GPR-026 Served pregame home-win probability (INITIAL_BASELINE_MODEL hand-weighted logistic)
+
+- **Match:** Both; Opus GPR-038; Codex core-290
+- **Purpose:** The probability actually served for NHL games: logistic score over the baseline feature vector using hard-coded weights.
+- **Where:** `web/lib/game-predictions/workflow.ts:48 (INITIAL_BASELINE_MODEL)`; `web/lib/game-predictions/workflow.ts:902 (generatePregamePredictionForGame: model = args.model ?? INITIAL_BASELINE_MODEL)`; `web/lib/game-predictions/baselineModel.ts:1516 (predictGameWithBaselineModel)`; `web/lib/game-predictions/baselineModel.ts:619 (predictBaselineModelRawHomeWinProbability)`; `web/lib/game-predictions/baselineModel.ts:1516 predictGameWithBaselineModel`
+- **Tags (heuristic):** percent scale: fraction 0-1; denominators: per game; generation: current
+- **Opus view (GPR-038):**
+  - Method: p = sigmoid(bias + sum w_i*x_i) with bias=0 and weights [0.018 offRatingDiff, 0.008 defRatingDiff, 0.02 goalieRatingDiff, 0.008 specialRatingDiff, 0.35 pointPctgDiff, 0.18 goalDiff/50, 0.08 recent5GD/3, 0.06 recent10GD/3, 0.18 recent20GD/3, 0.12 recent40GD/3, 0 recent5xGF%, 0.2 recent10xGF%, 0.08 recent20xGF%, 0.04 recent40xGF%, 0.04 seasonToDate xGF%, 0.02 crossSeason xGF%, 0 recent10PointPct] and 0 for all remaining 36 keys. No featureNormalization on this model (raw transformed features), no calibrator. Then data-quality dampening, probability floor 0.05, rounding to 6 dp, winner threshold 0.52.
+  - Inputs/units: mixed: power ratings centered 100 (15 per sd), point% fraction 0-1, goal diff /50, per-game GD /3, xGF% fraction 0-1; sources: game_prediction_feature_snapshots (via featureBuilder inputs)
+  - Output scale: probability 0-1, floored to [0.05, 0.95], 6 dp; writes: game_prediction_history, game_prediction_outputs
+  - Status: live — cron /api/v1/game-predictions/forecast in web/vercel.json:99 (generatePregamePredictionsForWindow)
+  - Consumers: /api/v1/game-predictions/forecast (cron); /api/v1/game-predictions/generate; publicPredictions.ts -> /api/v1/game-predictions/latest; accountability dashboard
+- **Codex view (core-290, calculation, location; Codex family 'game prediction model'):** Final home/away win probabilities and winner
+  - Formula: Raw logistic -> optional calibration -> quality dampening -> probability floor(default.05, .95); home>=.52 selects home by default.
+  - Purpose: Calculate final home/away win probabilities and winner.
+  - Inputs/units: Model, feature snapshot, optional calibrator, decision threshold.
+  - Output scale: Complementary probabilities, winner, confidence label, factors.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. nhl_game_baseline_logistic; v6_roster_ctpi_sos_threshold_52; candidate features not automatically active. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracke…
+- **Audit context:**
+  - Intent (Opus): Pregame win probability with refresh windows 24/6/1 h before start (workflow.ts:34 PREGAME_PREDICTION_REFRESH_POLICY); runbook tasks/artifacts/forge-prediction-operator-runbook.md
+  - Intended contract (Codex core-290): Source types and implementation in web/lib/game-predictions/baselineModel.ts:1516; separate acceptance not verified.
+  - External references: Fitted logistic/Elo-style win models (e.g. MoneyPuck, Evolving-Hockey game models); Elo home-ice term ~ +0.08–0.10 logit / ~54-55% home win rate
+  - Fixtures/test data: `tasks/artifacts/nhl-game-prediction-supabase-source-audit.md`
+  - Tests: `Located only; not run for this inventory.`; `web/__tests__/pages/api/v1/game-predictions/forecast.test.ts`; `web/__tests__/pages/api/v1/game-predictions/generate.test.ts`; `web/lib/game-predictions/baselineModel.test.ts`; `web/lib/game-predictions/workflow.test.ts`
+- **Leads (not audited):**
+  - (opus) bias = 0 so the served model has no home-ice term although training data (smoothedHomeWinRate fallback 0.54) shows home edge
+  - (opus) weights are hand-set constants labelled algorithm 'regularized_logistic_baseline' and model version 'v6_roster_ctpi_sos_threshold_52', yet CTPI, SOS, roster, goalie, rest, market features all have weight 0
+  - (opus) 5 of the non-zero weights (recent20/40 GD, recent20/40/seasonToDate/crossSeason xGF%) hit default-excluded features that are forced to 0, so they never contribute
+  - (opus) no normalization, so offRating diff (center 100, sd 15 scale) and pointPctg diff (fraction) enter on raw, very different scales
+  - (codex:core-290) ["Inventory only, not validation of the formula, source semantics or model quality."]
+
+## M-GPR-027 American odds -> implied probability and no-vig (proportional) normalization
+
+- **Match:** Both; Opus GPR-040; Codex core-340
+- **Purpose:** Market win probabilities from ESPN moneylines.
+- **Where:** `web/lib/game-predictions/espnOdds.ts:474 (parseAmericanOdds)`; `web/lib/game-predictions/espnOdds.ts:498 (americanOddsToImpliedProbability)`; `web/lib/game-predictions/espnOdds.ts:507 (calculateNoVigMoneylineProbabilities)`; `web/lib/game-predictions/espnOdds.ts:722 (buildEspnMarketOddsSnapshotInsert)`; `web/lib/game-predictions/espnOdds.ts:912 (buildHistoricalMarketOddsImportInsert)`; `web/lib/game-predictions/espnOdds.ts:507 calculateNoVigMoneylineProbabilities`
+- **Tags (heuristic):** percent scale: fraction 0-1; generation: current
+- **Opus view (GPR-040):**
+  - Method: implied = 100/(odds+100) for +odds, \|odds\|/(\|odds\|+100) for -odds, rounded 6 dp; noVig_home = implied_home/(implied_home+implied_away); overround = sum - 1. Spread/total lines parsed but not converted.
+  - Inputs/units: American odds; sources: ESPN site scoreboard API, historical odds import
+  - Output scale: probability 0-1; overround fraction; writes: game_prediction_market_odds_snapshots
+  - Status: live — cron ingest-espn-odds in web/vercel.json:87-95
+  - Consumers: homeMarketNoVigProbability feature; market baseline comparison; model_vs_market_edge
+- **Codex view (core-340, calculation, location; Codex family 'game prediction market'):** No-vig moneyline probabilities and overround
+  - Formula: Convert each line to implied fraction; divide each by sum; overround=sum-1.
+  - Purpose: Calculate no-vig moneyline probabilities and overround.
+  - Inputs/units: Both signed American moneylines.
+  - Output scale: Home/away fair-probability fractions and overround.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f.  Deployment not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracked/untracked status entry at the final status check.
+- **Audit context:**
+  - Intent (Opus): UNDOCUMENTED
+  - Intended contract (Codex core-340): Source types and implementation in web/lib/game-predictions/espnOdds.ts:507; separate acceptance not verified.
+  - External references: Standard multiplicative vig removal; alternatives Shin / power method
+  - Fixtures/test data: none listed
+  - Tests: `Located only; not run for this inventory.`; `web/__tests__/pages/api/v1/game-predictions/import-market-odds.test.ts`; `web/__tests__/pages/api/v1/game-predictions/ingest-espn-odds.test.ts`; `web/lib/game-predictions/espnOdds.test.ts`
+- **Leads (not audited):**
+  - (opus) reads ESPN 'close' odds fields at capture time (live ingestion), not opening/current explicitly
+  - (opus) rounding to 6 dp before normalization (minor)
+  - (codex:core-340) ["Inventory only; no correctness verdict."]
+
+## M-GPR-028 Promotion gate and segment regression guardrails
+
+- **Match:** Both; Opus GPR-042; Codex core-302
+- **Purpose:** Decides whether a candidate model can replace production.
+- **Where:** `web/lib/game-predictions/workflow.ts:1375 (decidePromotion)`; `web/lib/game-predictions/workflow.ts:503 (evaluatePersistedModelVersionPromotionGate)`; `web/lib/game-predictions/accountability.ts:1927 (countBacktestSegmentRegressions)`; `web/lib/game-predictions/accountability.ts:1773 (buildConfidenceCalibrationBuckets)`; `web/lib/game-predictions/accountability.ts:1817 (calibrationMaxGapFromBuckets)`; `web/lib/game-predictions/accountability.ts:4173 (recommendAblationVariant)`; `web/lib/game-predictions/accountability.ts:1773 buildConfidenceCalibrationBuckets`
+- **Tags (heuristic):** generation: current
+- **Opus view (GPR-042):**
+  - Method: promote only if: evaluatedGames >= 100; logLoss improvement >= 0.002; candidate calibration max gap <= 0.05 and regression <= 0.005; Brier not worse; simple baseline coverage >= 95% of candidate games and candidate beats strongest simple baseline on log loss and Brier; no market features unless pre-cutoff snapshots; no phase segment regression (>= 20 games, Brier +0.005 or log loss +0.01); public explanation ready. Calibration buckets on confidence max(p,1-p) edges 0.5/0.55/0.6/0.65/0.7/0.8/0.9; gap = \|accuracy - avg confidence\|. Ablation recommend keep/reject/review by sign of accuracy, Brier, log loss deltas.
+  - Inputs/units: metrics; sources: —
+  - Output scale: boolean; writes: game_prediction_model_versions (status)
+  - Status: live admin route (manual promote)
+  - Consumers: /api/v1/game-predictions/promote-model-version
+- **Codex view (core-302, calculation, location; Codex family 'game prediction evaluation'):** Winner confidence calibration and maximum gap
+  - Formula: Confidence=max(p, 1-p); buckets .50, .55, .60, .65, .70, .80, .90, 1; max\|accuracy-meanConfidence\|.
+  - Purpose: Calculate winner confidence calibration and maximum gap.
+  - Inputs/units: Final home probability and winner correctness.
+  - Output scale: Bucket accuracy, average confidence, max absolute gap.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f.  Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracked/untracked status entry at the final status check.
+- **Audit context:**
+  - Intent (Opus): UNDOCUMENTED
+  - Intended contract (Codex core-302): Checked-in evaluation/promotion code is the located contract; this inventory does not assert any model passed its gates.
+  - External references: none suggested
+  - Fixtures/test data: none listed
+  - Tests: `Located only; not run for this inventory.`; `web/__tests__/pages/api/v1/game-predictions/accuracy-loop.test.ts`; `web/__tests__/pages/api/v1/game-predictions/promote-model-version.test.ts`; `web/lib/game-predictions/accountability.test.ts`; `web/lib/game-predictions/workflow.test.ts`
+- **Leads (not audited):**
+  - (opus) promotion changes model version status but the serving path still uses INITIAL_BASELINE_MODEL weights
+  - (opus) calibration gap uses accuracy of the 0.52-threshold winner vs max(p,1-p)
+  - (codex:core-302) ["Inventory only, not validation of the formula, source semantics or model quality."]
+
+## M-GPR-029 Homepage win-probability favoured/underdog tone
+
+- **Match:** Opus only; Opus GPR-001; Codex —
+- **Purpose:** Classifies pregame win probabilities for homepage game cards.
+- **Where:** `web/components/HomePage/HomepageGamesSection.tsx:263 (probabilityTone)`; `web/components/HomePage/HomepageDesktopGameSlates.tsx:64 (Win metric)`
+- **Tags (heuristic):** generation: current
+- **Opus view (GPR-001):**
+  - Method: tone favored if p > 0.5, underdog if < 0.5, even if = 0.5. Desktop slate: shows favoured team and round(p*100)%, '50 / 50' when equal.
+  - Inputs/units: probability 0-1; sources: homepage game analytics (game predictions)
+  - Output scale: 3-level tone; percent; writes: —
+  - Status: live — homepage
+  - Consumers: pages/index (homepage)
+- **Audit context:**
+  - Intent (Opus): UNDOCUMENTED
+  - External references: none suggested
+  - Fixtures/test data: none listed
+  - Tests: none listed
+- **Leads (not audited):**
+  - (opus) exact 0.5 equality test; 0.501 vs 0.499 render as favoured/underdog
+
+## M-GPR-030 Start-chart defense ease grade
+
+- **Match:** Opus only; Opus GPR-002; Codex —
+- **Purpose:** Grade each slate opponent's defensive ease from team xGA/60 for the start chart.
+- **Where:** `web/pages/api/v1/start-chart.ts:715 (computeDefenseEaseGrades)`
+- **Tags (heuristic):** percent scale: 0-100; denominators: per 60; generation: current
+- **Opus view (GPR-002):**
+  - Method: Sort slate teams by xga60 ascending; ties share the average rank; grade = averageRank/(n-1)*100 (higher xGA/60 = easier = higher grade); single team = 50.
+  - Inputs/units: xGA per 60; sources: team_power_ratings_daily via lib/teamRatingsService
+  - Output scale: 0-100 grade; writes: —
+  - Status: live — start-chart page and FORGE dashboard; route ledger calls=14
+  - Consumers: web/pages/start-chart.tsx; web/components/forge-dashboard/SlateStripCard.tsx; web/pages/FORGE.tsx
+- **Audit context:**
+  - Intent (Opus): UNDOCUMENTED
+  - External references: Percentile rank with average ties
+  - Fixtures/test data: none listed
+  - Tests: `web/__tests__/pages/api/v1/start-chart.test.ts`
+- **Leads (not audited):**
+  - (opus) grade is relative to teams on that night's slate only, so the same opponent's grade changes with slate size
+
+## M-GPR-031 Game stats page moneyline implied win probability with proportional de-vig
+
+- **Match:** Opus only; Opus GPR-003; Codex —
+- **Purpose:** Show each team's market-implied win probability on the single-game stats page.
+- **Where:** `web/pages/stats/game/[gameId].tsx:118 (getImpliedProb)`; `web/pages/stats/game/[gameId].tsx:186-197 (normalise away/home, round to %)`
+- **Tags (heuristic):** percent scale: 0-100; generation: current
+- **Opus view (GPR-003):**
+  - Method: Decimal odds d>1: p = 1/d*100. American +X: 100/(X+100)*100; -X: X/(X+100)*100. Proportional de-vig: awayProb = round(rawAway/(rawAway+rawHome)*100); homeProb = 100 - awayProb; null unless both sides parse.
+  - Inputs/units: American or decimal odds (auto-detected by sign); sources: NHL gamecenter odds payload (gameOdds.awayTeam/homeTeam.odds)
+  - Output scale: integer percent 0-100; writes: —
+  - Status: live — /stats/game/[gameId]
+  - Consumers: /stats/game/[gameId] 'Implied Win Probability' panel
+- **Audit context:**
+  - Intent (Opus): In-code comment 'Normalize probabilities (removing the vig)' (web/pages/stats/game/[gameId].tsx:190)
+  - External references: Standard implied probability from American/decimal odds; proportional (multiplicative) vig removal
+  - Fixtures/test data: `web/__tests__/pages/statsGame.test.tsx`
+  - Tests: `web/__tests__/pages/statsGame.test.tsx`
+- **Leads (not audited):**
+  - (opus) duplicate implementation of GPR-038 'American odds -> implied probability and no-vig (proportional) normalization' (web/lib/game-predictions/espnOdds.ts) and GPR-037 (GamePreview getImpliedProbability)
+  - (opus) a string without +/- is treated as decimal odds, so an unsigned American line like '150' would read as decimal 150 -> 0.67%
+
+## M-GPR-032 Game prediction recent-team-form audit: retrain + goal-differential edge benchmark
+
+- **Match:** Opus only; Opus GPR-004; Codex —
+- **Purpose:** Retrain the baseline game model on snapshots to 2026-01-31 and gate it against history and a goal-differential heuristic on 2026-05-01..06-17
+- **Where:** `web/scripts/audit-game-prediction-team-form.ts:104 (boundedEdgeProbability)`; `web/scripts/audit-game-prediction-team-form.ts:119 (summarizeProbabilities)`; `web/scripts/audit-game-prediction-team-form.ts:145 (main)`
+- **Tags (heuristic):** percent scale: fraction 0-1; denominators: per game; generation: development
+- **Opus view (GPR-004):**
+  - Method: model v6_roster_ctpi_sos_threshold_52 / features game_features_v4_roster_sos_context trained via lib trainGamePredictionBaselineModel on snapshots <= 2026-01-31 (latest snapshot per game); candidate prob clamped [0.05,0.95], predicted home if p>=0.52; benchmark: confidence = 0.53 + min(0.15, \|homeMinusAwayGoalDifferential\|/100), sign by edge, 0.5 when edge ~0; accuracy, Brier, log loss (lib evaluateProbabilityMetrics); gate needs >=30 games, no worse than historical accuracy/Brier/LL, strictly better than goal-diff heuristic
+  - Inputs/units: goal differential (goals), probabilities 0-1; sources: game_prediction_feature_snapshots, game_prediction_history, games / completed outcomes via lib fetchCompletedGameOutcomes
+  - Output scale: probability 0-1; accuracy fraction; writes: —
+  - Status: draft — manual read-only audit; model version matches lib/game-predictions/baselineModel.ts:17 BASELINE_MODEL_VERSION
+  - Consumers: game prediction model promotion decisions
+- **Audit context:**
+  - Intent (Opus): UNDOCUMENTED in script (constants only)
+  - External references: Brier/log loss vs naive baselines; market-implied probabilities
+  - Fixtures/test data: none listed
+  - Tests: `web/lib/game-predictions/baselineModel.test.ts`; `web/lib/game-predictions/evaluation.test.ts`
+- **Leads (not audited):**
+  - (opus) hard-coded training/evaluation dates (2026-01-31, 2026-05-01..2026-06-17) put the evaluation window in playoffs
+  - (opus) home-pick threshold 0.52 vs 0.5 for the heuristic changes accuracy comparability
+
+## M-GPR-033 Game prediction source audit: SQL math-identity and range checks
+
+- **Match:** Opus only; Opus GPR-005; Codex —
+- **Purpose:** Inventory and sanity-check every source table feeding game predictions
+- **Where:** `web/scripts/audit-nhl-game-prediction-sources.ts:1155 (buildManagementTeamPowerChecks)`; `web/scripts/audit-nhl-game-prediction-sources.ts:1338 (buildManagementNstTeamChecks)`; `web/scripts/audit-nhl-game-prediction-sources.ts:1708 (buildManagementWgoStandingsChecks)`; `web/scripts/audit-nhl-game-prediction-sources.ts:2054 (buildManagementGoalieChecks)`; `web/scripts/audit-nhl-game-prediction-sources.ts:2728 (buildManagementDataQualityChecks)`; `web/scripts/audit-nhl-game-prediction-sources.ts:3050 (buildManagementAsOfLeakageChecks)`
+- **Tags (heuristic):** denominators: per 60, per game, per team game; generation: current
+- **Opus view (GPR-005):**
+  - Method: audit re-derivation of identities: pct = 100*for/(for+against) within 0.25 (or fraction within 0.0005); per-60 = count*3600/TOI seconds within 0.1; point_pct = points/(2*GP) within 0.005; GF/GP and GA/GP within 0.01; team power ratings expected 40-160 around 100 (z-score derived) and directionality corr(off,xgf60)>0, corr(def,xga60)<0, corr(pace,pace60)>0; PP/PK tiers in 1..3; \|projected_gsaa_per_60\|<=10; goalie start probabilities sum per team-game; NST goalie rate bounds (SA/60, SV/60 <=120, GAA<=20, \|GSAA/60\|<=20, xGA/60<=20); home+away win prob within 0.05 of 1; strict pregame as-of leakage checks
+  - Inputs/units: TOI seconds; NST percents 0-100 or fractions; per-60 rates; sources: team_power_ratings_daily, nst_team_gamelogs_* (as/pp/pk counts & rates), wgo_team_stats, standings, goalie_start_projections, wgo_goalie_stats, nst goalie tables, line_combinations, forge projections, game_prediction_outputs/history, market odds snapshots
+  - Output scale: pass/warn/block flags; writes: —
+  - Status: live — manual read-only audit using Supabase management API
+  - Consumers: game prediction readiness review
+- **Audit context:**
+  - Intent (Opus): check descriptions inline e.g. web/scripts/audit-nhl-game-prediction-sources.ts:1220,1552,2633 ('Gamelog per-60 fields should match count * 3600 / TOI seconds')
+  - External references: NST per-60 convention (count*3600/TOI seconds)
+  - Fixtures/test data: none listed
+  - Tests: none listed
+- **Leads (not audited):**
+  - (opus) win-probability sum tolerance 0.05 is loose for a two-outcome model
+
+## M-GPR-034 Prediction health checks and admin health report
+
+- **Match:** Opus only; Opus GPR-011; Codex —
+- **Purpose:** Operational warnings: stale sources, missing predictions, failed jobs, model age, log-loss drift.
+- **Where:** `web/lib/game-predictions/workflow.ts:1479 (buildPredictionHealthChecks)`; `web/lib/game-predictions/adminHealth.ts:422 (buildGamePredictionHealthReport)`; `web/lib/game-predictions/accountability.ts:2620 (buildMarketOddsSourceReadiness)`
+- **Tags (heuristic):** generation: current
+- **Opus view (GPR-011):**
+  - Method: warn if staleSources > 0, missing predictions > 0, failed jobs > 0, model age > 14 days, recentLogLoss - reference > 0.02; odds coverage pct = covered/required.
+  - Inputs/units: days, counts; sources: —
+  - Output scale: status labels; writes: —
+  - Status: live admin route
+  - Consumers: /api/v1/game-predictions/health; debug routes
+- **Audit context:**
+  - Intent (Opus): UNDOCUMENTED
+  - External references: none suggested
+  - Fixtures/test data: none listed
+  - Tests: `web/lib/game-predictions/adminHealth.test.ts`; `web/lib/game-predictions/workflow.test.ts`
+- **Leads (not audited):**
+  - (opus) publicPredictions.summarizeCalibration counts bins with bin.count > 0 but bins store 'predictions', so it always returns null (publicPredictions.ts:552)
+
+## M-GPR-035 FORGE team projection features
+
+- **Match:** Opus only; Opus GPR-013; Codex —
+- **Purpose:** Projected team goals/shots from FORGE for the game.
+- **Where:** `web/lib/game-predictions/featureBuilder.ts:1276 (buildForgeTeamProjectionFeatures)`; `web/lib/game-predictions/featureBuilder.ts:499 (forgeProjectionAdmissible)`
+- **Tags (heuristic):** denominators: per game; generation: current
+- **Opus view (GPR-013):**
+  - Method: projected = ES + PP (sumModeledHeads with pk omitted); admissible if proof status proven, or unproven unless GAME_PREDICTIONS_REQUIRE_FORGE_PROOF='true'.
+  - Inputs/units: goals, shots per game; sources: forge_team_projections
+  - Output scale: per game; writes: —
+  - Status: live — cron /api/v1/game-predictions/forecast in web/vercel.json:99 (generatePregamePredictionsForWindow) (weight 0); env flag GAME_PREDICTIONS_REQUIRE_FORGE_PROOF
+  - Consumers: homeMinusAwayForgeProjectedGoals (/3); homeMinusAwayForgeProjectedShots (/10); public matchup
+- **Audit context:**
+  - Intent (Opus): UNDOCUMENTED
+  - External references: none suggested
+  - Fixtures/test data: none listed
+  - Tests: `web/lib/game-predictions/featureBuilder.test.ts`
+- **Leads (not audited):**
+  - (opus) PK head (proj_goals_pk) not passed, while lib/projections/modeledHeadTotals.ts:37 includes it elsewhere
+
+## M-GPR-036 Source freshness / staleness flags
+
+- **Match:** Opus only; Opus GPR-016; Codex —
+- **Purpose:** Marks sources stale for warnings and data-quality penalties.
+- **Where:** `web/lib/game-predictions/featureBuilder.ts:749 (collectSourceCutoff)`; `web/lib/predictions/contracts.ts:78 (buildSourceFreshnessContract)`; `web/lib/predictions/sourceProvenance.ts:53 (buildGamePredictionSourceProvenanceRows)`
+- **Tags (heuristic):** generation: current
+- **Opus view (GPR-016):**
+  - Method: stale if source date null or > 14 days before sourceAsOfDate (staleThresholdDays default 14); market stale if captured > 24 h before cutoff.
+  - Inputs/units: days, hours; sources: —
+  - Output scale: boolean; writes: game_prediction_source_provenance
+  - Status: live — cron /api/v1/game-predictions/forecast in web/vercel.json:99 (generatePregamePredictionsForWindow)
+  - Consumers: buildDataQualityMultiplier; has_stale_source segment; admin health
+- **Audit context:**
+  - Intent (Opus): UNDOCUMENTED
+  - External references: none suggested
+  - Fixtures/test data: none listed
+  - Tests: `web/lib/game-predictions/featureBuilder.test.ts`; `web/lib/predictions/contracts.test.ts`
+- **Leads (not audited):**
+  - (opus) 14-day threshold is lenient for daily-refreshed ratings
+
+## M-GPR-037 Team game fact normalization (cumulative-difference derivation)
+
+- **Match:** Opus only; Opus GPR-021; Codex —
+- **Purpose:** Converts cumulative NST snapshots to one-game facts with point-in-time availability checks.
+- **Where:** `web/lib/game-predictions/teamGameNormalization.ts:52 (normalizeTeamGameFacts)`
+- **Tags (heuristic):** denominators: per game; generation: development, current
+- **Opus view (GPR-021):**
+  - Method: If gp!=1 or cumulative: subtract immediately preceding cumulative snapshot (same team/season/phase/strength) when gp increases by exactly 1 and exactly one completed game lies in the interval; deltas for wins..toi_seconds; pct fields nulled. Excludes rows with future availability, negative counts, ambiguous games; dedups identical facts.
+  - Inputs/units: counts, ISO timestamps; sources: nst_team_gamelogs_as_counts, games
+  - Output scale: per-game counts; writes: —
+  - Status: draft — no production caller found outside tests
+  - Consumers: tests / future leak-free feature builder
+- **Audit context:**
+  - Intent (Opus): UNDOCUMENTED
+  - External references: none suggested
+  - Fixtures/test data: none listed
+  - Tests: `web/lib/game-predictions/teamGameNormalization.test.ts`
+- **Leads (not audited):**
+  - (opus) not wired into buildTeamRecentFormFeatures (which simply drops gp!=1 rows)
+
+## M-GPR-038 Goalie workload context
+
+- **Match:** Opus only; Opus GPR-023; Codex —
+- **Purpose:** Recent goalie usage and save context for display/diagnostics.
+- **Where:** `web/lib/game-predictions/featureBuilder.ts:1550 (buildGoalieContextFeatures)`
+- **Tags (heuristic):** percent scale: fraction 0-1; denominators: per 60; generation: current
+- **Opus view (GPR-023):**
+  - Method: start = toi_seconds >= 1200; startsLast14Days; daysSinceLastStart; back-to-back if <= 1 day; last5 SA/game; last5 SV% = saves/SA; WGO season SV%, SA/60, QS%, rest-split GP/SV%.
+  - Inputs/units: seconds; counts; sources: forge_goalie_game, wgo_goalie_stats
+  - Output scale: counts, fractions; writes: —
+  - Status: live — cron /api/v1/game-predictions/forecast in web/vercel.json:99 (generatePregamePredictionsForWindow) (context only)
+  - Consumers: warnings (sparse_goalie_workload)
+- **Audit context:**
+  - Intent (Opus): UNDOCUMENTED
+  - External references: none suggested
+  - Fixtures/test data: none listed
+  - Tests: `web/lib/game-predictions/featureBuilder.test.ts`
+- **Leads (not audited):**
+  - (opus) 20-minute TOI threshold for 'start' misclassifies early-pulled starters
+
+## M-GPR-039 Game page Poisson score distribution (client)
+
+- **Match:** Opus only; Opus GPR-027; Codex —
+- **Purpose:** Score heatmap, win% and 'model prediction' text on the game page.
+- **Where:** `web/components/PoissonDistributionChart.jsx:8 (poissonProbability)`; `web/components/PoissonDistributionChart.jsx:86-147 (matrix + adjusted win prob)`; `web/pages/game/[gameId].tsx:606-627 (lambda inputs)`
+- **Tags (heuristic):** percent scale: 0-100; denominators: per game; generation: current
+- **Opus view (GPR-027):**
+  - Method: Independent Poisson 0..10; drop cells < 1e-9; renormalize only if \|1-total\| > 0.01; win% = P(home win)/(P(home)+P(away))*100 (draws removed, not split); prediction = most likely score, or most likely non-draw score if the mode is a draw.
+  - Inputs/units: goals per game; sources: NHL team stats API (season GF/GP)
+  - Output scale: percent 0-100; writes: —
+  - Status: live — game page
+  - Consumers: pages/game/[gameId].tsx
+- **Audit context:**
+  - Intent (Opus): UNDOCUMENTED
+  - External references: Poisson / Dixon-Coles goal models with attack x defence x home-ice
+  - Fixtures/test data: none listed
+  - Tests: none listed
+- **Leads (not audited):**
+  - (opus) lambda uses each team's own GF/GP only, ignoring opponent GA and home ice
+  - (opus) draw handling differs from the stored legacy model (excludes draws vs splits 50/50)
+  - (opus) comment 'Assuming this is the intended value' at [gameId].tsx:607
+
+## M-GPR-040 Probability blend variants (training home prior, GD anchor, standings anchor)
+
+- **Match:** Opus only; Opus GPR-029; Codex —
+- **Purpose:** Ablation variants that blend the model with a prior anchor.
+- **Where:** `web/lib/game-predictions/accountability.ts:1120-1151 (variant definitions)`; `web/lib/game-predictions/accountability.ts:3409-3436 (blend)`; `web/lib/game-predictions/accountability.ts:880 (smoothedHomeWinRate)`
+- **Tags (heuristic):** percent scale: fraction 0-1; generation: development
+- **Opus view (GPR-029):**
+  - Method: blended = anchor + w*(p - anchor); training_home_prior w=0.2 anchor = (weightedHomeWins+1)/(weightedN+2) (Laplace, fallback 0.54); goal_differential_anchor w=0.5 anchor boundedEdge(GD,100,0.53,0.68); standings_point_pct_anchor w=0.5 boundedEdge(pt%,0.3,0.53,0.68).
+  - Inputs/units: probability; sources: —
+  - Output scale: probability; writes: —
+  - Status: draft — ablation only
+  - Consumers: ablation comparisons
+- **Audit context:**
+  - Intent (Opus): UNDOCUMENTED
+  - External references: Shrinkage toward prior / ensemble averaging
+  - Fixtures/test data: none listed
+  - Tests: `web/__tests__/pages/api/v1/game-predictions/accuracy-loop.test.ts`; `web/lib/game-predictions/accountability.test.ts`
+- **Leads (not audited):**
+  - (opus) home-prior blend at w=0.2 pulls 80% toward a constant
+
+## M-GPR-041 Game preview odds bar (ESPN/NHL odds implied probability)
+
+- **Match:** Opus only; Opus GPR-039; Codex —
+- **Purpose:** Client-side win% bar on the game preview from bookmaker odds.
+- **Where:** `web/components/GamePreview/GamePreview.tsx:74 (getImpliedProbability)`; `web/components/GamePreview/GamePreview.tsx:93 (findPreferredOdds)`; `web/components/GamePreview/GamePreview.tsx:216-227 (normalization)`
+- **Tags (heuristic):** percent scale: 0-100; generation: current
+- **Opus view (GPR-039):**
+  - Method: American -> implied % as standard; plain number > 1 treated as decimal odds -> 100/decimal; away% = round(rawAway/(rawAway+rawHome)*100), home = 100 - away.
+  - Inputs/units: American or decimal odds; sources: NHL web API game odds
+  - Output scale: integer percent 0-100; writes: —
+  - Status: live — components/GamePreview
+  - Consumers: GamePreview component
+- **Audit context:**
+  - Intent (Opus): UNDOCUMENTED
+  - External references: Proportional vig removal
+  - Fixtures/test data: none listed
+  - Tests: `web/components/GamePreview/GamePreview.test.tsx`
+- **Leads (not audited):**
+  - (opus) a decimal price written without sign but < 100 vs an American price without '+' is ambiguous (e.g. '150' treated as decimal 150)
+
+## M-GPR-042 Market odds snapshot selection (pre-cutoff)
+
+- **Match:** Opus only; Opus GPR-041; Codex —
+- **Purpose:** Picks the latest odds snapshot captured strictly before prediction cutoff and puck drop.
+- **Where:** `web/lib/game-predictions/featureBuilder.ts:1765 (buildMarketOddsFeatures)`; `web/lib/game-predictions/espnOdds.ts:292 (resolveMarketOddsCaptureTimestamps)`
+- **Tags (heuristic):** generation: current
+- **Opus view (GPR-041):**
+  - Method: eligible if same game/teams and captured_at < cutoff and < event start; latest wins; capturedAgeHours = (cutoff - captured)/3.6e6. Live capture rejected if clock skew > 5 min.
+  - Inputs/units: ISO timestamps; sources: game_prediction_market_odds_snapshots
+  - Output scale: hours; writes: —
+  - Status: live
+  - Consumers: feature vector; dampening penalties
+- **Audit context:**
+  - Intent (Opus): UNDOCUMENTED
+  - External references: none suggested
+  - Fixtures/test data: none listed
+  - Tests: `web/lib/game-predictions/espnOdds.test.ts`; `web/lib/game-predictions/featureBuilder.test.ts`
+
+## M-GPR-043 Poisson PMF and factorial
+
+- **Match:** Codex only; Opus —; Codex core-213
+- **Possible related records (low-confidence location link, unconfirmed):** FRG-006, GPR-028
+- **Purpose:** Calculate poisson pmf and factorial.
+- **Where:** `web/lib/gameGoalProjections/utils.ts:8 poissonProbability`
+- **Tags (heuristic):** percent scale: fraction 0-1; generation: legacy
+- **Codex view (core-213, calculation; Codex family 'legacy game goals'):** Poisson PMF and factorial
+  - Formula: lambda^k*exp(-lambda)/k!; lambda<=0 gives mass 1 at k = 0.
+  - Purpose: Calculate poisson pmf and factorial.
+  - Inputs/units: Integer event count k and mean lambda.
+  - Output scale: Probability 0..1.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f. Source explicitly calls this legacy; not shot-level xG. Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracked/untracked status entry at the final status check.
+  - Consumers: ["web/pages/api/v1/db/update-game-goal-projections/index.ts"]
+- **Audit context:**
+  - Intended contract (Codex core-213): Source types and implementation in web/lib/gameGoalProjections/utils.ts:8; separate acceptance not verified.
+  - External references: none suggested
+  - Fixtures/test data: none listed
+  - Tests: `No directly named test located; tests not run.`
+- **Leads (not audited):**
+  - (codex:core-213) ["Inventory only, not validation of the formula, source semantics or model quality."]
+
+## M-GPR-044 Promotion evidence and segment regressions
+
+- **Match:** Codex only; Opus —; Codex core-305
+- **Purpose:** Calculate promotion evidence and segment regressions.
+- **Where:** `web/lib/game-predictions/accountability.ts:1973 buildBacktestPromotionEvidence`
+- **Codex view (core-305, calculation; Codex family 'game prediction evaluation'):** Promotion evidence and segment regressions
+  - Formula: Threshold comparisons in countBacktestSegmentRegressions and promotion policy; not a predictive score.
+  - Purpose: Calculate promotion evidence and segment regressions.
+  - Inputs/units: Candidate vs baseline accuracy, Brier/log loss, calibration, source readiness, segment summaries.
+  - Output scale: Gate decisions, regression counts and metric evidence.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f.  Deployment and persisted data state not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracked/untracked status entry at the final status check.
+  - Consumers: ["web/pages/api/v1/game-predictions/accountability.ts", "web/pages/api/v1/game-predictions/backtest.ts", "web/pages/api/v1/game-predictions/accuracy-loop.ts"]
+- **Audit context:**
+  - Intended contract (Codex core-305): Checked-in evaluation/promotion code is the located contract; this inventory does not assert any model passed its gates.
+  - External references: none suggested
+  - Fixtures/test data: none listed
+  - Tests: `web/lib/game-predictions/accountability.test.ts`; `Located only; not run for this inventory.`
+- **Leads (not audited):**
+  - (codex:core-305) ["Inventory only, not validation of the formula, source semantics or model quality."]
+
+## M-GPR-045 Displayed score outcomes and conditional win odds
+
+- **Match:** Codex only; Opus —; Codex core-321
+- **Purpose:** Calculate displayed score outcomes and conditional win odds.
+- **Where:** `web/components/PoissonDistributionChart.jsx:29 PoissonDistributionChart`
+- **Codex view (core-321, calculation; Codex family 'Poisson chart'):** Displayed score outcomes and conditional win odds
+  - Formula: Independent Poisson grid 0..10; omit mass<1e-9; optionally normalize if mass error>.01; displayed win percentages exclude draws and renormalize strict wins.
+  - Purpose: Calculate displayed score outcomes and conditional win odds.
+  - Inputs/units: Positive home/away expected goals.
+  - Output scale: Most-likely score, most-likely non-draw/draw, home/away percentages.
+  - Version/status: Local octoberBranch d31dcb33f72d4c9d69b507874c388f0cd549fe2f.  Deployment not verified. The scan was non-atomic: HEAD later changed to 11e4192d36ecc4ac4b338f9ab48e529c7049c618; no full historical revalidation was performed. Referenced implementation files had no tracked/untracked status entry at the final status check.
+  - Consumers: ["Associated UI components; complete runtime consumer graph not traced."]
+- **Audit context:**
+  - Intended contract (Codex core-321): Source types and implementation in web/components/PoissonDistributionChart.jsx:29; separate acceptance not verified.
+  - External references: none suggested
+  - Fixtures/test data: none listed
+  - Tests: `web/components/PoissonDistributionChart.jsx`; `Located only; not run for this inventory.`
+- **Leads (not audited):**
+  - (codex:core-321) ["Inventory only; no correctness verdict."]
+
