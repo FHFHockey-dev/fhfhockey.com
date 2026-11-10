@@ -9,3 +9,7 @@ These answer TRIAGE.md section 5. Auditors treat them as the intended contract.
 
 Facts Chef checked (2026-11-10):
 - `NHL_XG_MODEL_ARTIFACT_PATH` is **not set** in the `fhfhockey` Vercel project (env names checked, no values read). The xG audit must establish what the prediction and aggregate routes do when it is unset: default path, failure, or skip. It also needs to establish which xG the site actually serves.
+
+Facts Chef checked after W1-1 (2026-11-10):
+- The full `fhfhockey` production env list (101 names, via `vercel env ls production`; names only) has **no `NHL_XG_*` variables**: not `NHL_XG_MODEL_ARTIFACT_PATH`, `NHL_XG_MODEL_VERSION` or `NHL_XG_TEAM_AGGREGATE_MODEL_VERSION`. FORGE is therefore not pinned to the leaky team xG prior through an env override; downstream audits should confirm the default path that code takes when the variable is unset.
+- Refits must run against a **local copy** of the shot features (export once, bounded and paged, with owner approval), never as repeated full-table reads of production.
