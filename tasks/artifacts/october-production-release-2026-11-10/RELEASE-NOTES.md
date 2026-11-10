@@ -8,6 +8,7 @@
 - BEAST/MCM complete-component and complete-population publishing guards, provenance and bounded atomic upsert. The repair preparation tool has no write mode. No source repair or composite publication is performed by this release.
 - BLSH evidence-only local preview selection and inert capture/preparation tooling. Production trade-page gate and capture-execution/independent-acceptance gates remain unchanged.
 - Reviewed offline qualification-checker fixes and safe archival tooling/docs.
+- Concurrently completed calculation-inventory reports are retained from Claude's descendant commit. Their source/privacy scan passed; application bytes are identical to the tested candidate. The author's diary stays on disk, outside the final release tree.
 
 ## Verification
 
