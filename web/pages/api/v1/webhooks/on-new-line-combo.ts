@@ -2,6 +2,7 @@ import adminOnly from "utils/adminOnlyMiddleware";
 import puppeteer from "puppeteer-core";
 import supabase from "lib/supabase/server";
 import { linemateMatrixCaptureSelector } from "lib/lines/matrixCapture";
+import { webhookErrorDiagnostic } from "lib/lines/webhookErrorDiagnostic";
 
 const BASE_URL = true ? "https://fhfhockey.com" : "http://localhost:3000";
 
@@ -27,6 +28,7 @@ export default adminOnly(async (req, res) => {
   const gameId = Number(req.query.gameId);
   const teamId = Number(req.query.teamId);
   console.log(`start to handle new line combo for ${gameId} team: ${teamId}`);
+  let stage: "screenshots" | "discord" = "screenshots";
   try {
     let start = performance.now();
     await retryAsyncOperation(() => saveLinemateMatrixImages(gameId, [teamId]));
@@ -39,6 +41,7 @@ export default adminOnly(async (req, res) => {
 
     start = performance.now();
 
+    stage = "discord";
     await retryAsyncOperation(() => sendLineComboToDiscord(gameId, teamId));
 
     console.log(
@@ -50,8 +53,13 @@ export default adminOnly(async (req, res) => {
     res.json({
       message: "Successfully handled the line combo for " + gameId
     });
-  } catch (e: any) {
-    console.error("on-new-line-combo error:", e);
+  } catch (e: unknown) {
+    console.error("on-new-line-combo error:", {
+      gameId,
+      teamId,
+      stage,
+      error: webhookErrorDiagnostic(e)
+    });
     res.status(500).json({
       success: false,
       error: "Line-combination webhook processing failed."
@@ -70,21 +78,13 @@ async function saveLinemateMatrixImages(gameId: number, teamIds: number[]) {
     browser = await puppeteer.connect({
       browserWSEndpoint: process.env.PUPPETEER_ENDPOINT
     });
-  } catch (err: any) {
-    // Attempt to serialize the error with JSON.stringify; fall back to util.inspect
-    let errSerialized: string;
-    try {
-      errSerialized = JSON.stringify(err, Object.getOwnPropertyNames(err), 2);
-    } catch (_) {
-      // Use dynamic import to avoid require() (keeps lint happy and works in ESM)
-      // import() returns a module namespace object
-      const util = await import("util");
-      // util.inspect is available on the imported module
-      errSerialized = (util as any).inspect(err, { depth: 4 });
-    }
-    console.error("Failed to connect to puppeteer:", err);
+  } catch (err: unknown) {
+    console.error("Failed to connect to puppeteer:", {
+      gameId,
+      error: webhookErrorDiagnostic(err)
+    });
     throw new NonRetryableWebhookError(
-      `Failed to connect to puppeteer: browser endpoint is unavailable. ${errSerialized}`
+      "Failed to connect to puppeteer: browser endpoint is unavailable."
     );
   }
 
@@ -184,7 +184,7 @@ async function retryAsyncOperation(
       if (retryCount >= maxRetries) {
         throw error; // If max retries reached, rethrow the error
       }
-      console.error(`Attempt ${retryCount + 1} failed: ${error.message}`);
+      console.error(`Attempt ${retryCount + 1} failed:`, webhookErrorDiagnostic(error));
       retryCount++;
       await new Promise((resolve) => setTimeout(resolve, delay)); // Wait before retrying
     }
