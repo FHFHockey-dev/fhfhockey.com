@@ -59,6 +59,7 @@ export type ContextualRankingsRequest = {
 };
 
 export type ContextualRankingApiRow = {
+  sourceSnapshot?: { date: string | null; updatedAt: string | null };
   entity: {
     id: number;
     name: string | null;

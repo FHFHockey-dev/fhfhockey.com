@@ -47,6 +47,7 @@ type TeamMeta = {
 };
 
 type CandidateContext = {
+  sourceSnapshot: { date: string | null; updatedAt: string | null };
   player: PlayerMeta | null;
   team: TeamMeta | null;
   evDeploymentBucket: EvDeploymentBucket | null;
@@ -393,6 +394,16 @@ async function buildRankedSnapshot(
     snapshotDate,
     candidateSnapshotDates,
   );
+  return buildRankedSnapshotFromRows(request, snapshotDate, rows, metricKeys);
+}
+
+async function buildRankedSnapshotFromRows(
+  request: ContextualRankingsRequest,
+  snapshotDate: string,
+  sourceRows: RollingPlayerGameMetricRow[],
+  metricKeys: ContextualRankingMetricKey[],
+) {
+  const rows = sourceRows.filter((row) => request.teamId == null || row.team_id === request.teamId);
   const playerIds = rows
     .map((row) => row.player_id)
     .filter((id): id is number => typeof id === "number");
@@ -547,6 +558,7 @@ function buildCandidates(args: {
       });
     }
     contextByEntityId.set(row.player_id, {
+      sourceSnapshot: { date: row.game_date ?? null, updatedAt: row.updated_at ?? null },
       player,
       team: row.team_id == null ? null : args.teamsById.get(row.team_id) ?? null,
       evDeploymentBucket,
@@ -564,6 +576,7 @@ function toApiRow(args: {
 }): ContextualRankingApiRow {
   const toiPerGameSeconds = getWindowToiPerGame(args.row);
   return {
+    sourceSnapshot: args.context?.sourceSnapshot,
     entity: {
       id: args.row.entityId,
       name: args.context?.player?.fullName ?? null,
@@ -644,6 +657,7 @@ export type ContextualRankingSnapshotMetricRows = {
 async function resolveRankedSnapshotsForMetrics(
   request: ContextualRankingsRequest,
   metricKeys: ContextualRankingMetricKey[],
+  completeSeasonRows?: RollingPlayerGameMetricRow[],
 ): Promise<RankedSnapshotResolution> {
   const uniqueMetricKeys = Array.from(new Set(metricKeys));
   const availableMetricKeys: ContextualRankingMetricKey[] = [];
@@ -667,6 +681,26 @@ async function resolveRankedSnapshotsForMetrics(
       latestAvailableSnapshotDate: null,
       latestEvaluatedSnapshot: null,
       selectedSnapshotsByMetric: new Map(),
+    };
+  }
+
+  // Publication supplies every latest regular-season player identity explicitly.
+  // The interactive fallback's 200-game/30-date search is not a population bound.
+  if (completeSeasonRows) {
+    const snapshotDate = completeSeasonRows.map((row) => row.game_date).filter(
+      (date): date is string => typeof date === "string",
+    ).sort().at(-1) ?? null;
+    const snapshot = snapshotDate == null ? null : await buildRankedSnapshotFromRows(
+      request, snapshotDate, completeSeasonRows, availableMetricKeys,
+    );
+    return {
+      uniqueMetricKeys, availableMetricKeys, unavailableMetricKeys,
+      latestAvailableSnapshotDate: snapshotDate,
+      latestEvaluatedSnapshot: snapshot,
+      selectedSnapshotsByMetric: new Map(availableMetricKeys.flatMap((metricKey) =>
+        snapshot && hasCalculableMetricValue(snapshot.rankedRowsByMetric.get(metricKey) ?? [])
+          ? [[metricKey, snapshot] as const] : [],
+      )),
     };
   }
 
@@ -873,9 +907,10 @@ function metricResponseFromSnapshot(args: {
 export async function buildContextualRankingsSurfaces(
   request: ContextualRankingsRequest,
   metricKeys: ContextualRankingMetricKey[],
+  options?: { completeSeasonRows: RollingPlayerGameMetricRow[] },
 ): Promise<Map<ContextualRankingMetricKey, ContextualRankingsResponse>> {
   const generatedAt = new Date().toISOString();
-  const resolution = await resolveRankedSnapshotsForMetrics(request, metricKeys);
+  const resolution = await resolveRankedSnapshotsForMetrics(request, metricKeys, options?.completeSeasonRows);
   const responses = new Map<
     ContextualRankingMetricKey,
     ContextualRankingsResponse

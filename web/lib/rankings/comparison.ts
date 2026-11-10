@@ -7,7 +7,7 @@ import {
 } from "./goalieMatrix";
 import {
   buildPlayerMatrixSurface,
-  parsePlayerMatrixRequest,
+  parsePlayerMatrixRequestWithResolvedTeam,
   type PlayerMatrixResponse,
 } from "./playerMatrix";
 import { ContextualRankingsQueryError } from "./rankingTypes";
@@ -338,7 +338,7 @@ export async function buildContextualRankingComparisonSurface(
     minItems: 1,
     maxItems: 6,
   });
-  const request = parsePlayerMatrixRequest({
+  const request = await parsePlayerMatrixRequestWithResolvedTeam({
     ...query,
     entity: "skaters",
     page_size: "50",

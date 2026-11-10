@@ -55,16 +55,33 @@ export const MCM_COMPONENTS = {
   ],
 } as const;
 
+// PP is a structural component only in source strengths containing PP events.
+// Never decide the component universe from whether a particular player's data exists.
+export function getMcmComponentGroups(strength: "all" | "5v5" | "ev" | "pp" | "pk") {
+  return {
+    riff: MCM_COMPONENTS.riff,
+    scoring: MCM_COMPONENTS.scoring.filter(
+      (metric) => metric !== "pp_points_per_60" || strength === "all" || strength === "pp",
+    ),
+  };
+}
+
+export const MCM_MINIMUM_PEER_COUNT = 3;
+export const SKATER_COMPOSITE_METHODOLOGY_VERSION = "contextual_composites_v2";
 export const MCM_SOURCE_PENDING_COMPONENTS = [] as const;
 
 export const MCM_SCORE_CONTRACT = {
   label: "MCM Score",
   outputField: "mcm_score",
   peerGroup: "deployment",
-  scale: "percentile_0_to_100",
+  scale: "weighted_score_0_to_100",
   formula:
     "0.45 * average(top_2(riff_percentiles)) + 0.35 * max(scoring_percentiles) + 0.20 * average(component_percentiles)",
   componentGroups: MCM_COMPONENTS,
+  componentPolicy: "All six non-PP inputs are required. PP points are also required for all/pp strength; PP is excluded for 5v5/ev/pk. Missing required inputs never reweight the formula.",
+  percentileConvention: "100 * strictly worse qualified peers / (qualified peers - 1); tied values receive the same percentile.",
+  minimumPeerCount: MCM_MINIMUM_PEER_COUNT,
+  tierComparison: "Compare the unrounded weighted score; round only for display.",
   sourcePendingComponents: MCM_SOURCE_PENDING_COMPONENTS,
   requiredOutputFields: [
     "mcm_score",
@@ -78,6 +95,9 @@ export const MCM_SCORE_CONTRACT = {
     "Hits and blocks are rink/scorekeeper-sensitive until a rink-adjusted source is verified.",
     "Power-play points use verified rolling PP points and PP TOI rows when the selected source strength is PP-capable.",
     "MCM is a fantasy multi-category signal, not a pure NHL talent rating.",
+    "The weighted score is not itself a percentile or a calibrated prediction of future fantasy value.",
+    "Goals, primary assists, points and PP points overlap; flag counts are signals, not independent fantasy categories.",
+    "Rates describe the selected strength/window. Six-input and seven-input variants are not interchangeable, and small GP/TOI samples remain volatile.",
   ],
 } as const;
 

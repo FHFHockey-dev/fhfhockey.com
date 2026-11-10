@@ -61,6 +61,7 @@ describe("/api/v1/db/update-skater-composite-ratings", () => {
         },
       ],
       unavailableMetrics: [],
+      publication: { ready: true, blockers: [], candidateCount: 2, scoredCount: 2, unscoredCount: 0, truncated: false },
     });
     upsertRowsMock.mockResolvedValue(2);
   });
@@ -153,6 +154,15 @@ describe("/api/v1/db/update-skater-composite-ratings", () => {
       dryRun: false,
       rowsUpserted: 2,
     });
+  });
+
+  it("never writes a cohort that fails publication checks", async () => {
+    buildRowsMock.mockResolvedValueOnce({ rows: [], publication: { ready: false, blockers: ["source unavailable"] } });
+    const res = createMockRes();
+    await handler({ method: "POST", query: { season: "20262027", dryRun: "false" } } as any, res);
+    expect(res.statusCode).toBe(409);
+    expect(res.body.rowsUpserted).toBe(0);
+    expect(upsertRowsMock).not.toHaveBeenCalled();
   });
 
   it("returns 400 when season is missing", async () => {

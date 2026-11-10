@@ -1,8 +1,13 @@
 import Head from "next/head";
+import dynamic from "next/dynamic";
 
-import ClientOnly from "components/ClientOnly";
 import Container from "components/Layout/Container";
-import RosterScheduleOptimizer from "components/RosterScheduleOptimizer";
+import RsoLoading from "components/RosterScheduleOptimizer/RsoLoading";
+
+const RosterScheduleOptimizer = dynamic(() => import("components/RosterScheduleOptimizer"), {
+  ssr: false,
+  loading: RsoLoading,
+});
 
 export default function RosterScheduleOptimizerPage() {
   return (
@@ -15,9 +20,7 @@ export default function RosterScheduleOptimizerPage() {
         />
       </Head>
       <Container contentVariant="full">
-        <ClientOnly>
-          <RosterScheduleOptimizer />
-        </ClientOnly>
+        <RosterScheduleOptimizer />
       </Container>
     </>
   );

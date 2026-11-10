@@ -142,8 +142,8 @@ export default function CandidateCard({ player, rank, plan, comparison, diagnost
         </div>
         {plan && selectPlan ? <button className={styles.action} disabled={!canSelectPlan || !selectionAvailable}
           aria-describedby={!canSelectPlan ? selectPlanReasonId : undefined}
-          aria-label={`Preview swap: add ${player.name}${drops.length ? `, drop ${drops.map(nameOf).join(", ")}` : ""}`}
-          onClick={() => selectPlan(plan.steps)}>Preview swap</button>
+          aria-label={`Use this swap: add ${player.name}${drops.length ? `, drop ${drops.map(nameOf).join(", ")}` : ""}`}
+          onClick={() => selectPlan(plan.steps)}>Use this swap</button>
           : ACQUIRABLE.includes(player.availability) && <button className={styles.textButton} onClick={() => add(player)}>Select add</button>}
         {!plan && evaluationState === "completed" && diagnostic?.status === "not_selected" && compare
           && <button className={styles.textButton} onClick={() => compare(player.id)}>Compare this player</button>}

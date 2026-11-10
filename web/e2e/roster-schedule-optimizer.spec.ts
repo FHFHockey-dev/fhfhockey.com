@@ -124,11 +124,11 @@ test("manual workspace retains reviewed intent, protections and locks through re
     await expect(page.getByRole("button", { name: "Remove Alpha Center" })).toBeVisible();
     await manage.click();
     await page.getByText("League rules and scoring", { exact: true }).click();
-    const confirm = page.getByRole("region", { name: "Roster and setup" }).getByRole("button", { name: "Confirm planning inputs", exact: true });
+    const confirm = page.getByRole("region", { name: "Roster and setup" }).getByRole("button", { name: "Confirm manual lineup settings", exact: true });
     await expect(confirm).toBeEnabled();
     await confirm.focus();
     await page.keyboard.press("Enter");
-    await expect(page.getByText("Inputs reviewed for this session. Unknown values still need verification.", { exact: false })).toBeVisible();
+    await expect(confirm).toHaveCount(0);
     await page.getByRole("combobox", { name: "Lineup mode", exact: true }).selectOption("weekly");
     await expect(page.getByRole("combobox", { name: "Lineup mode", exact: true })).toHaveValue("weekly");
     if (width === 1440) await expect(confirm).toBeEnabled();
@@ -148,7 +148,8 @@ test("manual workspace retains reviewed intent, protections and locks through re
     await expect(page.getByRole("button", { name: "Remove Alpha Center" })).toBeVisible();
     await page.getByLabel("Manage Alpha Center", { exact: true }).click();
     await page.getByText("League rules and scoring", { exact: true }).click();
-    await expect(confirm).toBeEnabled();
+    if (width === 1440) await expect(confirm).toBeEnabled();
+    else await expect(confirm).toHaveCount(0);
     await page.getByText("League rules and scoring", { exact: true }).click();
     await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1:anonymous")!))).toMatchObject({
       intent: saved.intent, lockedAssignments: saved.lockedAssignments, roster: saved.roster,
@@ -229,7 +230,7 @@ test("readiness controls reach existing inputs across the required viewports", a
     await page.getByRole("button", { name: "Review rules", exact: true }).focus();
     await page.keyboard.press("Space");
     await expect(page.locator("#rso-rule-settings > summary")).toBeFocused();
-    await expect(page.getByText("Review league rules, scoring, locked assignments and player availability. Confirm again when these inputs change.", { exact: false })).toBeVisible();
+    await expect(page.getByText("Provider facts and manager inputs keep their sources. Saved confirmations are reused until the relevant settings change.", { exact: false })).toBeVisible();
     await expect(page.getByRole("combobox", { name: "Lineup mode", exact: true })).toHaveValue("daily");
     await page.getByRole("button", { name: "Review coverage", exact: true }).focus();
     await page.keyboard.press("Enter");
@@ -246,13 +247,13 @@ test("readiness controls reach existing inputs across the required viewports", a
     await page.getByRole("button", { name: "Review rules", exact: true }).focus();
     await page.keyboard.press("Enter");
     await expect(page.locator("#rso-rule-settings > summary")).toBeFocused();
-    const confirm = page.getByRole("region", { name: "Roster and setup" }).getByRole("button", { name: "Confirm planning inputs", exact: true });
+    const confirm = page.getByRole("region", { name: "Roster and setup" }).getByRole("button", { name: "Confirm manual lineup settings", exact: true });
     await expect(confirm).toBeVisible();
     await expect(confirm).toBeEnabled();
     await confirm.focus();
     await page.keyboard.press("Space");
-    await expect(confirm).toBeDisabled();
-    await expect(page.getByText(/Inputs reviewed for this session/)).toBeVisible();
+    await expect(confirm).toHaveCount(0);
+    await expect(page.getByText(/Inputs reviewed for this session/)).toHaveCount(0);
     await expect(readiness).toContainText("Acquisition legality, budget or scoring is unresolved.");
     await expect(page.getByText(/Rule checks passed/)).toHaveCount(0);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
@@ -293,7 +294,7 @@ test("streams A to B to C through successive conditional acquisitions and keeps 
   await showScheduleView(page, "player");
   await openPlanningSetup(page);
   await page.getByText("League rules and scoring").click();
-  await page.getByRole("region", { name: "Roster and setup" }).getByRole("button", { name: "Confirm planning inputs", exact: true }).click();
+  await page.getByRole("region", { name: "Roster and setup" }).getByRole("button", { name: "Confirm manual lineup settings", exact: true }).click();
   await openPlanDetails(page);
   await expect(page.getByText("Recheck availability and clearance before this conditional move.", { exact: false })).toBeVisible();
   await page.evaluate(() => {
@@ -305,7 +306,7 @@ test("streams A to B to C through successive conditional acquisitions and keeps 
   await openPlanDetails(page);
   await openPlanningSetup(page);
   await page.getByText("League rules and scoring").click();
-  await page.getByRole("region", { name: "Roster and setup" }).getByRole("button", { name: "Confirm planning inputs", exact: true }).click();
+  await expect(page.getByRole("region", { name: "Roster and setup" }).getByRole("button", { name: "Confirm manual lineup settings", exact: true })).toHaveCount(0);
   await expect(page.getByText("Review inputs and rule checks before acting.", { exact: false })).toBeVisible();
   await expect(page.getByText("Recheck availability and clearance before this conditional move.", { exact: false })).toHaveCount(0);
   await page.getByText("Scoring, budgets, and lock windows", { exact: true }).click();
@@ -471,10 +472,10 @@ test("provider refresh proposes repairs while keeping a selected move", async ({
   await expect(health.getByRole("list")).toContainText("Yahoo does not report a league time zone");
   await page.keyboard.press("Enter");
   await page.getByText("League rules and scoring", { exact: true }).click();
-  const confirm = page.locator("#rso-rule-settings").getByText("Confirm planning inputs", { exact: true });
+  const confirm = page.locator("#rso-rule-settings").getByRole("button", { name: /^Confirm .* day boundary$/ });
   await expect(confirm).toBeEnabled();
   await confirm.click();
-  await expect(confirm).toBeDisabled();
+  await expect(confirm).toHaveCount(0);
   await page.getByText("League rules and scoring", { exact: true }).click();
   await openDisclosure(page, "Find & filter");
   await page.getByRole("searchbox", { name: "Find candidate" }).fill("Alpha");
@@ -513,8 +514,7 @@ test("provider refresh proposes repairs while keeping a selected move", async ({
   await expect(page.locator("#rso-provider-refresh-status")).toHaveText("Provider refresh completed. Inputs are unchanged; selected moves were kept.");
   expect(reads).toBe(5);
   await page.getByText("League rules and scoring", { exact: true }).click();
-  await expect(confirm).toBeEnabled();
-  await confirm.click();
+  await expect(confirm).toHaveCount(0);
   await page.getByRole("button", { name: "Save to account" }).click();
   await expect(page.getByRole("button", { name: /Save to account|Saving/ })).toBeDisabled();
   await expect(page.getByRole("status").filter({ hasText: /Saving/ })).toBeVisible();
@@ -523,11 +523,11 @@ test("provider refresh proposes repairs while keeping a selected move", async ({
   releaseSave();
   await expect(page.getByText("Saved to account.")).toBeVisible();
   await page.getByRole("button", { name: "View account save" }).click();
-  await expect(confirm).toBeDisabled();
-  await expect(page.getByText(/Review league rules, scoring, locked assignments and player availability/)).toBeVisible();
+  await expect(confirm).toHaveCount(0);
+  await expect(page.getByText(/Provider facts and manager inputs keep their sources/)).toBeVisible();
   await page.locator('[class*="navStatus"]').hover();
   await page.getByRole("button", { name: "Continue manually" }).click();
-  await expect(confirm).toBeEnabled();
+  await expect(page.locator("#rso-rule-settings").getByRole("button", { name: "Confirm manual lineup settings", exact: true })).toBeEnabled();
   await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1:principal:00000000-0000-4000-8000-000000000001")!))).toMatchObject({
     context: { provider: "manual" }, intent: selected, lockedAssignments: retained.lockedAssignments,
   });
@@ -737,7 +737,7 @@ test("Yahoo timeout retains schedule analysis and matchup-week navigation withou
   await openDisclosure(page, "Find & filter");
   await page.getByRole("button", { name: "All players", exact: true }).click();
   const candidateBrowser = page.getByRole("region", { name: "Candidate browser" });
-  await expect(candidateBrowser.getByRole("button", { name: /^Preview swap/ })).toHaveCount(0);
+  await expect(candidateBrowser.getByRole("button", { name: /^Use this swap/ })).toHaveCount(0);
   await expect(candidateBrowser.getByText("Net AGP", { exact: true })).toHaveCount(0);
   await openDisclosure(page, /^More tools$/);
   await openDisclosure(page, /^Why add\/drop plans may be unavailable$/);
@@ -752,7 +752,7 @@ test("Yahoo timeout retains schedule analysis and matchup-week navigation withou
   await expect(page.getByRole("region", { name: "Week", exact: true }).getByRole("table")).toContainText("Alpha Center");
   await openDisclosure(page, "Find & filter");
   await page.getByRole("button", { name: "All players", exact: true }).click();
-  await expect(candidateBrowser.getByRole("button", { name: /^Preview swap/ })).toHaveCount(0);
+  await expect(candidateBrowser.getByRole("button", { name: /^Use this swap/ })).toHaveCount(0);
   await expect(candidateBrowser.getByText("Net AGP", { exact: true })).toHaveCount(0);
   await expectDesktopFrameVisible(page);
   await page.screenshot({ path: testInfo.outputPath("rso-timeout-schedule.png"), fullPage: true });
@@ -798,10 +798,13 @@ test("mixed Kaprizov coverage stays unresolved until complete evidence supports 
     await readiness.locator(":scope > summary").focus();
     await page.keyboard.press("Enter");
     await page.getByRole("button", { name: "Review rules", exact: true }).click();
-    await page.getByRole("region", { name: "Roster and setup" }).getByRole("button", { name: "Confirm planning inputs", exact: true }).focus();
-    await page.keyboard.press("Space");
     await openDisclosure(page, /^League rules and scoring$/);
-    await expect(page.getByText("Inputs reviewed for this session. Unknown values still need verification.", { exact: false })).toBeVisible();
+    const confirm = page.getByRole("region", { name: "Roster and setup" }).getByRole("button", { name: "Confirm manual lineup settings", exact: true });
+    if (await confirm.count()) {
+      await confirm.focus();
+      await page.keyboard.press("Space");
+    }
+    await expect(confirm).toHaveCount(0);
     await page.locator("#rso-rule-settings > summary").click();
     await page.getByRole("button", { name: "View plan", exact: true }).click();
     await openPlanDetails(page);
@@ -1697,12 +1700,19 @@ test("Audit1 native candidate Worker finds complete swaps before any plan is sel
   const card = page.locator('[data-rso-candidate-id="fhfh:140"]');
   await expect(card.getByText("Net Pts", { exact: true }).locator("..").locator("strong")).toHaveText("+999");
   await expect(card).toContainText("Owned Weak");
-  await expect(card.getByRole("button", { name: /^Preview swap: add Strongest Last Candidate, drop Owned Weak$/ })).toBeDisabled();
+  await expect(card.getByRole("button", { name: /^Use this swap: add Strongest Last Candidate, drop Owned Weak$/ })).toBeDisabled();
   await page.getByText("League rules and scoring", { exact: true }).click();
-  await page.getByRole("region", { name: "Roster and setup" }).getByRole("button", { name: "Confirm planning inputs", exact: true }).click();
+  await page.getByRole("region", { name: "Roster and setup" }).getByRole("button", { name: "Confirm manual lineup settings", exact: true }).click();
   await page.getByText("League rules and scoring", { exact: true }).click();
-  await expect(card.getByRole("button", { name: /^Preview swap: add Strongest Last Candidate, drop Owned Weak$/ })).toBeEnabled();
+  await expect(card.getByRole("button", { name: /^Use this swap: add Strongest Last Candidate, drop Owned Weak$/ })).toBeEnabled();
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1:anonymous")!).intent.steps)).toEqual([]);
+  await page.reload();
+  const useSwap = card.getByRole("button", { name: /^Use this swap: add Strongest Last Candidate, drop Owned Weak$/ });
+  await expect(useSwap).toBeEnabled();
+  await expect(page.getByRole("button", { name: "Confirm manual lineup settings", exact: true })).toHaveCount(0);
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1:anonymous")!).intent.steps)).toEqual([]);
+  await useSwap.click();
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1:anonymous")!).intent.steps)).toMatchObject([{ type: "add", playerId: "fhfh:140", dropPlayerId: "fhfh:3" }]);
   await writeFile(testInfo.outputPath("audit1-native-worker.json"), JSON.stringify({
     scope: "Native browser Worker and served local UI; intercepted synthetic inputs, not genuine feed acceptance", metrics,
   }, null, 2));

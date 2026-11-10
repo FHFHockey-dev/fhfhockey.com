@@ -8,7 +8,8 @@ import {
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import TransactionTrends from "./TransactionTrends";
+import { StrictMode } from "react";
+import TransactionTrends, { transactionTrendRequests } from "./TransactionTrends";
 
 vi.mock("next/link", () => ({
   default: ({ href, children, ...props }: any) => (
@@ -123,8 +124,18 @@ const renderOwnershipTrends = () =>
   render(<TransactionTrends defaultMetric="ownership" />);
 
 describe("TransactionTrends", () => {
+  it("shares the initial request through StrictMode remounts", async () => {
+    const fetchMock = mockResponse(makeResponse());
+    vi.stubGlobal("fetch", fetchMock);
+    render(<StrictMode><TransactionTrends defaultMetric="ownership" /></StrictMode>);
+    expect(screen.getByText("Loading ownership movement...")).toBeTruthy();
+    await screen.findByRole("heading", { name: "Top Risers (Δ 3D)" });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   afterEach(() => {
     cleanup();
+    transactionTrendRequests.clear();
     vi.restoreAllMocks();
   });
 

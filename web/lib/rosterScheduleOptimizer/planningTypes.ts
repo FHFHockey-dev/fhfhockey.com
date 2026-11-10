@@ -187,6 +187,7 @@ export type AcquisitionEvidence = {
 };
 export type PlanningSnapshot = {
   acquisitionEvidence?: AcquisitionEvidence;
+  matchupWeeks?: PlanningData["matchupWeeks"];
   baselineSources?: ContributionSource[];
   participationSources?: ContributionParticipation[];
   forecastManifest?: ForecastManifest;

@@ -72,6 +72,7 @@ type TeamPowerRow = {
 };
 
 type TeamUnderlyingRow = {
+  game_id?: number | null;
   game_date: string;
   team_id: number;
   xgf: number;
@@ -98,13 +99,14 @@ type TeamGameContextRow = {
 
 type GameVenueRow = {
   id: number;
+  date: string;
   homeTeamId: number | null;
   awayTeamId: number | null;
 };
 
 type NstTeamRow = {
+  date: string;
   team_abbreviation: string;
-  team_name: string | null;
   gp: number | null;
   xgf: number | null;
   xga: number | null;
@@ -114,8 +116,6 @@ type NstTeamRow = {
   fa: number | null;
   cf: number | null;
   ca: number | null;
-  pdo: number | null;
-  situation: string | null;
 };
 
 type TeamMeta = {
@@ -137,7 +137,7 @@ type TeamStyleAggregate = {
   fa: number | null;
   cf: number | null;
   ca: number | null;
-  source: "team_underlying_stats_summary" | "nst_team_stats" | "none";
+  source: "team_underlying_stats_summary" | "nst_team_5v5" | "none";
 };
 
 type TeamGameContextAggregate = {
@@ -1017,22 +1017,46 @@ export function aggregateTeamUnitToiRows(
   return aggregates;
 }
 
-function styleAggregateFromNst(row: NstTeamRow): TeamStyleAggregate {
-  return {
-    teamId: null,
-    teamAbbreviation: row.team_abbreviation,
-    gamesCount: finite(row.gp) ?? 0,
-    latestDate: null,
-    xgf: finite(row.xgf),
-    xga: finite(row.xga),
-    gf: finite(row.gf),
-    ga: finite(row.ga),
-    ff: finite(row.ff),
-    fa: finite(row.fa),
-    cf: finite(row.cf),
-    ca: finite(row.ca),
-    source: "nst_team_stats",
-  };
+function aggregateNstTeamStyleRows(rows: readonly NstTeamRow[]) {
+  const rowsByTeam = new Map<string, NstTeamRow[]>();
+  for (const row of rows) {
+    const current = rowsByTeam.get(row.team_abbreviation) ?? [];
+    current.push(row);
+    rowsByTeam.set(row.team_abbreviation, current);
+  }
+  const aggregates = new Map<string, TeamStyleAggregate>();
+  for (const [abbreviation, teamRows] of rowsByTeam) {
+    const validGames = teamRows.every(
+      (row) => row.gp != null && Number.isInteger(row.gp) && row.gp > 0,
+    );
+    const completeTotal = (
+      key: "xgf" | "xga" | "gf" | "ga" | "ff" | "fa" | "cf" | "ca",
+    ) => {
+      const values = teamRows.map((row) => finite(row[key]));
+      return validGames && values.every((value) => value != null && value >= 0)
+        ? sum(values)
+        : null;
+    };
+    aggregates.set(abbreviation, {
+      teamId: null,
+      teamAbbreviation: abbreviation,
+      gamesCount: validGames ? sum(teamRows.map((row) => row.gp)) ?? 0 : 0,
+      latestDate: teamRows.reduce(
+        (latest, row) => row.date > latest ? row.date : latest,
+        teamRows[0].date,
+      ),
+      xgf: completeTotal("xgf"),
+      xga: completeTotal("xga"),
+      gf: completeTotal("gf"),
+      ga: completeTotal("ga"),
+      ff: completeTotal("ff"),
+      fa: completeTotal("fa"),
+      cf: completeTotal("cf"),
+      ca: completeTotal("ca"),
+      source: "nst_team_5v5",
+    });
+  }
+  return aggregates;
 }
 
 function buildStylePayload(args: {
@@ -1076,14 +1100,53 @@ function buildStylePayload(args: {
   };
 }
 
-async function fetchLatestPowerDate(asOfDate: string | null) {
-  let query = supabase
+type TeamEventWindow = { startDate: string; endDate: string };
+
+async function fetchTeamSeasonWindow(
+  request: TeamMatrixRequest,
+): Promise<TeamEventWindow> {
+  const { data, error } = await supabase
+    .from("seasons")
+    .select("startDate,regularSeasonEndDate")
+    .eq("id", request.season)
+    .maybeSingle();
+  if (error) throw new Error(`Unable to load team season bounds: ${error.message}`);
+
+  const dateOnly = (value: unknown) => {
+    if (typeof value !== "string") return null;
+    const date = value.slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return null;
+    const parsed = new Date(`${date}T00:00:00.000Z`);
+    return Number.isFinite(parsed.getTime()) &&
+      parsed.toISOString().slice(0, 10) === date
+      ? date
+      : null;
+  };
+  const startDate = dateOnly(data?.startDate);
+  const seasonEndDate = dateOnly(data?.regularSeasonEndDate);
+  if (startDate == null || seasonEndDate == null || startDate > seasonEndDate) {
+    throw new ContextualRankingsQueryError(
+      "No valid regular-season date bounds available for requested season",
+    );
+  }
+  return {
+    startDate,
+    endDate:
+      request.asOfDate != null && request.asOfDate < seasonEndDate
+        ? request.asOfDate
+        : seasonEndDate,
+  };
+}
+
+async function fetchLatestPowerDate(window: TeamEventWindow) {
+  const { data, error } = await supabase
     .from("team_power_ratings_daily")
     .select("date")
+    .gte("date", window.startDate)
+    .lte("date", window.endDate)
     .order("date", { ascending: false })
-    .limit(1);
-  if (asOfDate != null) query = query.lte("date", asOfDate);
-  const { data, error } = await query.maybeSingle();
+    .limit(1)
+    .maybeSingle();
   if (error) throw new Error(`Unable to load team power date: ${error.message}`);
   return data?.date ?? null;
 }
@@ -1138,12 +1201,15 @@ async function fetchTeamMeta() {
   };
 }
 
-async function fetchUnderlyingStyleRows(request: TeamMatrixRequest) {
+async function fetchUnderlyingStyleRows(
+  request: TeamMatrixRequest,
+  window: TeamEventWindow,
+) {
   const rows: TeamUnderlyingRow[] = [];
   for (let from = 0;; from += TEAM_QUERY_PAGE_SIZE) {
     let query = supabase
       .from("team_underlying_stats_summary")
-      .select("game_date,team_id,xgf,xga,gf,ga,ff,fa,cf,ca")
+      .select("game_id,game_date,team_id,xgf,xga,gf,ga,ff,fa,cf,ca")
       .eq("season_id", request.season)
       .eq("strength", "fiveOnFive")
       .eq("score_state", "allScores")
@@ -1151,7 +1217,7 @@ async function fetchUnderlyingStyleRows(request: TeamMatrixRequest) {
       .order("game_id", { ascending: true })
       .order("team_id", { ascending: true })
       .range(from, from + TEAM_QUERY_PAGE_SIZE - 1);
-    if (request.asOfDate != null) query = query.lte("game_date", request.asOfDate);
+    query = query.gte("game_date", window.startDate).lte("game_date", window.endDate);
     const { data, error } = await query;
     if (error) {
       throw new Error(`Unable to load team style source rows: ${error.message}`);
@@ -1162,17 +1228,32 @@ async function fetchUnderlyingStyleRows(request: TeamMatrixRequest) {
   return rows;
 }
 
-async function fetchNstTeamRows(season: number) {
-  const { data, error } = await supabase
-    .from("nst_team_stats")
-    .select("team_abbreviation,team_name,gp,xgf,xga,gf,ga,ff,fa,cf,ca,pdo,situation")
-    .eq("season", season)
-    .eq("situation", "all");
-  if (error) throw new Error(`Unable to load NST team rows: ${error.message}`);
-  return (data ?? []) as unknown as NstTeamRow[];
+async function fetchNstTeamRows(window: TeamEventWindow, abbreviations: string[]) {
+  // The season-total table is all-strength and has no historical cutoff.
+  // This dedicated table is written by the counts5v5 path; legacy rows may
+  // still have situation="all", so do not infer strength from that field.
+  const rows: NstTeamRow[] = [];
+  for (let from = 0;; from += TEAM_QUERY_PAGE_SIZE) {
+    const { data, error } = await supabase
+      .from("nst_team_5v5")
+      .select("date,team_abbreviation,gp,xgf,xga,gf,ga,ff,fa,cf,ca")
+      .in("team_abbreviation", abbreviations)
+      .gte("date", window.startDate)
+      .lte("date", window.endDate)
+      .order("date", { ascending: false })
+      .order("team_abbreviation", { ascending: true })
+      .range(from, from + TEAM_QUERY_PAGE_SIZE - 1);
+    if (error) throw new Error(`Unable to load NST 5v5 team rows: ${error.message}`);
+    rows.push(...((data ?? []) as unknown as NstTeamRow[]));
+    if ((data ?? []).length < TEAM_QUERY_PAGE_SIZE) break;
+  }
+  return rows;
 }
 
-async function fetchTeamGameContextRows(request: TeamMatrixRequest) {
+async function fetchTeamGameContextRows(
+  request: TeamMatrixRequest,
+  window: TeamEventWindow,
+) {
   const rows: TeamGameContextRow[] = [];
   for (let from = 0;; from += TEAM_QUERY_PAGE_SIZE) {
     let query = supabase
@@ -1193,7 +1274,7 @@ async function fetchTeamGameContextRows(request: TeamMatrixRequest) {
       .order("date", { ascending: false })
       .order("id", { ascending: true })
       .range(from, from + TEAM_QUERY_PAGE_SIZE - 1);
-    if (request.asOfDate != null) query = query.lte("date", request.asOfDate);
+    query = query.gte("date", window.startDate).lte("date", window.endDate);
     const { data, error } = await query;
     if (error) {
       throw new Error(`Unable to load team game context rows: ${error.message}`);
@@ -1202,58 +1283,52 @@ async function fetchTeamGameContextRows(request: TeamMatrixRequest) {
     if ((data ?? []).length < TEAM_QUERY_PAGE_SIZE) break;
   }
 
-  const gameIds = Array.from(
-    new Set(
-      rows
-        .map((row) => finite(row.game_id))
-        .filter((gameId): gameId is number => gameId != null),
-    ),
-  );
-  const venuesByGameId = await fetchGameVenueRows(gameIds);
-  return rows.map((row) => {
-    const gameId = finite(row.game_id);
-    const venue = gameId == null ? null : venuesByGameId.get(gameId) ?? null;
-    const homeRoad =
-      venue == null || row.team_id == null
-        ? null
-        : row.team_id === venue.homeTeamId
-          ? "home"
-          : row.team_id === venue.awayTeamId
-            ? "road"
-            : null;
-    return { ...row, home_road: homeRoad };
-  });
+  return rows;
 }
 
-async function fetchGameVenueRows(gameIds: number[]) {
+async function fetchRegularSeasonGames(
+  request: TeamMatrixRequest,
+  window: TeamEventWindow,
+) {
   const rows: GameVenueRow[] = [];
-  for (let index = 0; index < gameIds.length; index += TEAM_QUERY_PAGE_SIZE) {
-    const chunk = gameIds.slice(index, index + TEAM_QUERY_PAGE_SIZE);
-    if (chunk.length === 0) continue;
+  for (let from = 0;; from += TEAM_QUERY_PAGE_SIZE) {
     const { data, error } = await supabase
       .from("games")
-      .select("id,homeTeamId,awayTeamId")
-      .in("id", chunk);
-    if (error) throw new Error(`Unable to load game venue rows: ${error.message}`);
+      .select("id,date,homeTeamId,awayTeamId")
+      .eq("seasonId", request.season)
+      .eq("type", 2)
+      .gte("date", window.startDate)
+      .lte("date", window.endDate)
+      .order("date", { ascending: false })
+      .order("id", { ascending: true })
+      .range(from, from + TEAM_QUERY_PAGE_SIZE - 1);
+    if (error) throw new Error(`Unable to load regular-season games: ${error.message}`);
     rows.push(...((data ?? []) as unknown as GameVenueRow[]));
+    if ((data ?? []).length < TEAM_QUERY_PAGE_SIZE) break;
   }
   return new Map(rows.map((row) => [Number(row.id), row]));
 }
 
-async function fetchLatestTeamUnitToiSnapshotDate(season: number) {
-  const { data, error } = await supabase
+async function fetchLatestTeamUnitToiSnapshotDate(request: TeamMatrixRequest) {
+  let query = supabase
     .from("team_unit_toi")
     .select("snapshot_date")
-    .eq("season_id", season)
+    .eq("season_id", request.season)
     .order("snapshot_date", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+    .limit(1);
+  if (request.asOfDate != null) {
+    query = query.lte("snapshot_date", request.asOfDate);
+  }
+  const { data, error } = await query.maybeSingle();
   if (error) throw new Error(`Unable to load team unit-TOI snapshot: ${error.message}`);
   return data?.snapshot_date ?? null;
 }
 
-async function fetchTeamUnitToiRows(request: TeamMatrixRequest) {
-  const snapshotDate = await fetchLatestTeamUnitToiSnapshotDate(request.season);
+async function fetchTeamUnitToiRows(
+  request: TeamMatrixRequest,
+  window: TeamEventWindow,
+) {
+  const snapshotDate = await fetchLatestTeamUnitToiSnapshotDate(request);
   if (snapshotDate == null) {
     return { snapshotDate: null, rows: [] as TeamUnitToiRow[] };
   }
@@ -1268,7 +1343,7 @@ async function fetchTeamUnitToiRows(request: TeamMatrixRequest) {
       .order("game_date", { ascending: false })
       .order("id", { ascending: true })
       .range(from, from + TEAM_QUERY_PAGE_SIZE - 1);
-    if (request.asOfDate != null) query = query.lte("game_date", request.asOfDate);
+    query = query.gte("game_date", window.startDate).lte("game_date", window.endDate);
     const { data, error } = await query;
     if (error) throw new Error(`Unable to load team unit-TOI rows: ${error.message}`);
     rows.push(...((data ?? []) as TeamUnitToiRow[]));
@@ -1295,28 +1370,74 @@ export async function buildTeamMatrixSurface(
   const cached = teamMatrixResponseCache.get(cacheKey);
   if (cached && cached.expiresAt > now) return cached.response;
 
-  const latestPowerDate = await fetchLatestPowerDate(request.asOfDate);
+  const seasonWindow = await fetchTeamSeasonWindow(request);
+  const latestPowerDate = await fetchLatestPowerDate(seasonWindow);
   if (latestPowerDate == null) {
     throw new ContextualRankingsQueryError("No team power snapshot available");
   }
-  const [powerRows, teamMeta, underlyingRows, nstRows, gameContextRows, unitToi] =
+  // All event-backed components stop at the selected power snapshot, even
+  // when a more recent source row exists.
+  const eventWindow = { ...seasonWindow, endDate: latestPowerDate };
+  const [powerRows, teamMeta, underlyingRows, gameContextRows, unitToi, gamesById] =
     await Promise.all([
       fetchTeamPowerRows(latestPowerDate),
       fetchTeamMeta(),
-      fetchUnderlyingStyleRows(request),
-      fetchNstTeamRows(request.season),
-      fetchTeamGameContextRows(request),
-      fetchTeamUnitToiRows(request),
+      fetchUnderlyingStyleRows(request, eventWindow),
+      fetchTeamGameContextRows(request, eventWindow),
+      fetchTeamUnitToiRows(request, eventWindow),
+      fetchRegularSeasonGames(request, eventWindow),
     ]);
+  const belongsToTeamGame = (
+    gameId: number | null | undefined,
+    teamId: number | null,
+  ) => {
+    const game = gameId == null ? null : gamesById.get(gameId);
+    return game != null && teamId != null &&
+      (game.homeTeamId === teamId || game.awayTeamId === teamId);
+  };
   const styleByAbbreviation = aggregateTeamStyleRows({
-    rows: underlyingRows,
+    rows: underlyingRows.filter((row) =>
+      belongsToTeamGame(row.game_id, row.team_id),
+    ),
     teamsById: teamMeta.byId,
   });
-  const contextByTeamId = aggregateTeamGameContextRows(gameContextRows);
-  const unitUsageByTeamId = aggregateTeamUnitToiRows(unitToi.rows);
-  for (const row of nstRows) {
-    if (!styleByAbbreviation.has(row.team_abbreviation)) {
-      styleByAbbreviation.set(row.team_abbreviation, styleAggregateFromNst(row));
+  const contextByTeamId = aggregateTeamGameContextRows(
+    gameContextRows
+      .filter((row) => belongsToTeamGame(row.game_id, row.team_id))
+      .map((row) => ({
+        ...row,
+        home_road:
+          gamesById.get(row.game_id!)?.homeTeamId === row.team_id ? "home" : "road",
+      })),
+  );
+  const qualifiedUnitRows = unitToi.rows.filter((row) =>
+    belongsToTeamGame(row.game_id, row.team_id),
+  );
+  const unitUsageByTeamId = aggregateTeamUnitToiRows(qualifiedUnitRows);
+  const regularTeamDates = new Set<string>();
+  for (const game of gamesById.values()) {
+    for (const teamId of [game.homeTeamId, game.awayTeamId]) {
+      const abbreviation =
+        teamId == null ? null : teamMeta.byId.get(teamId)?.abbreviation;
+      if (abbreviation) regularTeamDates.add(`${abbreviation}:${game.date}`);
+    }
+  }
+  const fallbackTeams = Array.from(
+    new Set(
+      powerRows
+        .map((row) => row.team_abbreviation)
+        .filter((abbreviation) => !styleByAbbreviation.has(abbreviation)),
+    ),
+  );
+  const nstRows = fallbackTeams.length > 0
+    ? await fetchNstTeamRows(eventWindow, fallbackTeams)
+    : [];
+  const qualifiedNstRows = nstRows.filter((row) =>
+    regularTeamDates.has(`${row.team_abbreviation}:${row.date}`),
+  );
+  for (const [abbreviation, aggregate] of aggregateNstTeamStyleRows(qualifiedNstRows)) {
+    if (!styleByAbbreviation.has(abbreviation)) {
+      styleByAbbreviation.set(abbreviation, aggregate);
     }
   }
 
@@ -1345,7 +1466,9 @@ export async function buildTeamMatrixSurface(
         ]
       : []),
     "team style is raw/contextual, not score- or venue-adjusted",
-    ...(unitToi.rows.length > 0
+    `team event sources use regular-season dates ${eventWindow.startDate} through ${eventWindow.endDate}`,
+    "team power ratings retain their source strength context; only team style inputs are verified as 5v5",
+    ...(qualifiedUnitRows.length > 0
       ? [
           "team unit-usage metrics use pooled player-seconds; forward/defense overlap coverage is partial when raw shifts cannot resolve complete 5v5 position groups",
         ]
@@ -1484,8 +1607,15 @@ export async function buildTeamMatrixSurface(
       metrics,
       warnings: [
         ...(aggregate == null ? ["team_style_source_missing"] : []),
-        ...(aggregate?.source === "nst_team_stats"
-          ? ["team_style_using_season_level_nst_fallback"]
+        ...(aggregate?.source === "nst_team_5v5"
+          ? ["team_style_using_dated_nst_5v5_fallback"]
+          : []),
+        ...(aggregate?.source === "nst_team_5v5" &&
+          [
+            aggregate.xgf, aggregate.xga, aggregate.gf, aggregate.ga,
+            aggregate.ff, aggregate.fa, aggregate.cf, aggregate.ca,
+          ].some((value) => value == null)
+          ? ["partial_nst_5v5_style_source"]
           : []),
         ...(context == null ? ["team_game_context_source_missing"] : []),
         ...(unitUsage == null ? ["team_unit_toi_source_missing"] : []),
@@ -1530,15 +1660,16 @@ export async function buildTeamMatrixSurface(
       latestAvailableSnapshotDate: latestPowerDate,
       styleSnapshotDate,
       sourceTables: [
+        "seasons",
         "team_power_ratings_daily",
         "team_underlying_stats_summary",
-        "nst_team_stats",
+        "nst_team_5v5",
         "wgo_team_stats",
         "games",
         "team_unit_toi",
       ],
-      methodologyVersion: "team_rankings_v1_team_unit_toi_v1",
-      methodologyUpdatedAt: "2026-06-24",
+      methodologyVersion: "team_rankings_v2_season_5v5_asof",
+      methodologyUpdatedAt: "2026-11-08",
       sourceQualityFlags: [
         "raw_contextual_team_style",
         "team_unit_toi_partial_forward_defense_coverage",

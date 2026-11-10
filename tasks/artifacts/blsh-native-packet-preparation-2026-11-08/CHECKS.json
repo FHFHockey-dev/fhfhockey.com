@@ -1,0 +1,69 @@
+{
+  "scope": "artifact_only_offline_packet_preparation",
+  "unitTests": {
+    "command": "PYTHONDONTWRITEBYTECODE=1 python3 test_prepare_packet.py -v",
+    "tests": 23,
+    "exitCode": 0,
+    "durationSeconds": 33.202,
+    "log": "review-fixes-tests.log",
+    "logSHA256": "87d6a173326762bd1bd766b58c7a80e041df50f40bc8d69ba2efbc3f157b7053"
+  },
+  "syntax": {
+    "pythonAst": "passed_after_corrections",
+    "nodeCheck": "prior_pass_reused_at_unchanged_bridge_hash"
+  },
+  "versions": {
+    "python": "3.13.0",
+    "node": "v22.23.4",
+    "beautifulsoup4": "4.12.3",
+    "typescript": "5.7.3"
+  },
+  "retainedDataReplay": {
+    "receipt": "RETAINED-EMPTY-REPLAY.json",
+    "receiptSHA256": "9c202535db392b2087ac7d91ad04591e285dc2400be5cb8700f7bb8d185c52d6",
+    "exitCode": 0,
+    "selectedRows": 3461,
+    "heldGroups": 6922,
+    "admissions": 0,
+    "scores": 0,
+    "implementationScope": "historical_pre_correction_run_not_repeated_or_rewritten"
+  },
+  "notRun": [
+    "application test suite",
+    "application-wide typecheck or lint",
+    "browser",
+    "build",
+    "live source capture"
+  ],
+  "independentCodeReview": "two_reproduced_findings_corrected_pending_reviewer_recheck",
+  "providerRequests": 0,
+  "databaseRequests": 0,
+  "deployments": 0,
+  "previousUnitTests": {
+    "command": "PYTHONDONTWRITEBYTECODE=1 python3 test_prepare_packet.py -v",
+    "tests": 19,
+    "exitCode": 0,
+    "durationSeconds": 9.426,
+    "logSHA256": "ff18e66f387bb9fb7794978f332fa5a5c7afbf8fd9b3742f9d43d72a125f0ec4"
+  },
+  "reviewRegressionReproduction": {
+    "command": "PYTHONDONTWRITEBYTECODE=1 python3 -m unittest -v test_prepare_packet.PreparationTests.test_invalid_receipt_and_frame_clocks_match_the_real_gate test_prepare_packet.PreparationTests.test_mid_manifest_write_failure_never_publishes_a_completion_manifest",
+    "tests": 2,
+    "reportedFailures": 14,
+    "durationSeconds": 17.369,
+    "log": "review-regressions-before.log",
+    "logSHA256": "acb2029f486c542dd5a22b76f1c85a0beb8dbc1059d93c04c101c444edd902eb",
+    "outcome": "both_findings_reproduced_before_composer_fix"
+  },
+  "clockCompatibilityCases": {
+    "invalid": 42,
+    "valid": 12,
+    "oracle": "unchanged_pinned_TypeScript_gate_with_synthetic_only_test_policies"
+  },
+  "manifestFailureCases": [
+    "mid_write_no_final_manifest",
+    "fsync_failure_no_final_manifest",
+    "existing_final_preserved",
+    "atomic_publication_after_fsync_with_matching_packet_hashes"
+  ]
+}

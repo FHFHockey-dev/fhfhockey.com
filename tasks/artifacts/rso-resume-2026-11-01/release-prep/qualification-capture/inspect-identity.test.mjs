@@ -1,5 +1,10 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { mkdtempSync, writeFileSync, symlinkSync, rmSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { canonicalHash } from "../qualification-readbacks/tooling/check-readbacks.mjs";
 import { inspectIdentity } from "./inspect-identity.mjs";
 
@@ -65,4 +70,21 @@ test("a mixed identity slate cannot silently select one model", () => {
   const rows = [...fixture(), ...fixture()]; rows[1].gameId = 2; rows[1].revisionId = "other";
   rows[1].method = rows[1].snapshotMethod = "candidate";
   has(rows, "mixed_model_identities");
+});
+
+test("CLI executes through a symlink and rejects empty identity evidence", () => {
+  const dir = mkdtempSync(join(tmpdir(), "rso-identity-alias-"));
+  try {
+    const cli = join(dir, "identity alias.mjs"), file = join(dir, "metadata.json");
+    symlinkSync(fileURLToPath(new URL("inspect-identity.mjs", import.meta.url)), cli);
+    writeFileSync(file, JSON.stringify(fixture()));
+    const good = spawnSync(process.execPath, [cli, file, date], { encoding: "utf8" });
+    assert.equal(good.status, 0, good.stderr);
+    assert.equal(JSON.parse(good.stdout).pass, true);
+    assert.equal(JSON.parse(good.stdout).qualificationReady, false);
+    writeFileSync(file, "[]");
+    const bad = spawnSync(process.execPath, [cli, file, date], { encoding: "utf8" });
+    assert.equal(bad.status, 1, bad.stderr);
+    assert.equal(JSON.parse(bad.stdout).pass, false);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
 });

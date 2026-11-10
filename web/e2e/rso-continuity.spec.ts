@@ -148,8 +148,6 @@ test("3. a 409 lock_version save conflict is surfaced and the local plan is not 
   const before = await savedWorkspace(page, RSO_FIXTURE_PRINCIPAL);
   await showScheduleView(page, "details");
   await page.getByText("League rules and scoring", { exact: true }).click();
-  const confirm = page.locator("#rso-rule-settings").getByText("Confirm planning inputs", { exact: true });
-  if (await confirm.isEnabled()) await confirm.click();
   const save = page.getByRole("button", { name: "Save to account" });
   await save.click();
   await expect.poll(() => puts).toBe(1);

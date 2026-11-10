@@ -1,0 +1,145 @@
+// Local-only runtime evidence. Optional candidate imports never invoke capture.
+// No credential values, .env loading or admission ledger. Fixture keys are removed.
+import { createHash, X509Certificate } from "node:crypto";
+import { execFile, execFileSync } from "node:child_process";
+import { chmodSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { createServer } from "node:https";
+import { tmpdir } from "node:os";
+import { dirname, join, resolve } from "node:path";
+import * as tls from "node:tls";
+import { fileURLToPath } from "node:url";
+import { promisify } from "node:util";
+
+const here = dirname(fileURLToPath(import.meta.url));
+const root = resolve(here, "../../..");
+const importCandidate = process.argv.includes("--import-candidate");
+const sha256 = bytes => createHash("sha256").update(bytes).digest("hex");
+const exec = promisify(execFile);
+const openssl = "/opt/homebrew/bin/openssl";
+const options = process.env.NODE_OPTIONS || "";
+const presence = names => Object.fromEntries(names.map(name => [name, Boolean(process.env[name])]));
+const pins = JSON.parse(readFileSync(join(here, "ADAPTER-CHECKS.json"))).sourcePins.map(pin => {
+  const bytes = readFileSync(join(root, pin.path));
+  return { ...pin, matches: bytes.length === pin.bytes && sha256(bytes) === pin.sha256 };
+});
+if (pins.some(pin => !pin.matches)) throw new Error("candidate_pin_mismatch");
+const evidence = {
+  purpose: "local_runtime_and_synthetic_loopback_TLS_observation_not_provider_TLS_attestation",
+  startedAtUTC: new Date().toISOString(),
+  candidatePins: pins,
+  probeSHA256: sha256(readFileSync(fileURLToPath(import.meta.url))),
+  runtime: {
+    node: process.version, execPath: process.execPath,
+    execRealPath: realpathSync(process.execPath), execSHA256: sha256(readFileSync(process.execPath)),
+    platform: process.platform, arch: process.arch,
+    openssl: process.versions.openssl, undici: process.versions.undici,
+    nvmrc: readFileSync(join(root, "web/.nvmrc"), "utf8").trim(),
+    packageLockSHA256: sha256(readFileSync(join(root, "web/package-lock.json"))),
+    minTLS: tls.DEFAULT_MIN_VERSION, maxTLS: tls.DEFAULT_MAX_VERSION,
+    bundledCACount: tls.rootCertificates.length,
+    bundledCASHA256: sha256([...tls.rootCertificates].sort().join("\n")),
+    defaultCACount: tls.getCACertificates("default").length,
+    defaultCASHA256: sha256([...tls.getCACertificates("default")].sort().join("\n")),
+    fetchSourceSHA256: sha256(String(globalThis.fetch)),
+    nodeOptions: { present: !!options, sha256: options ? sha256(options) : null,
+      hasPreload: /--(?:require|import|experimental-loader|loader)(?:=|\s)/.test(options),
+      hasTLSFlags: /--[^\s=]*(?:tls|openssl|ca|cert)[^\s=]*/i.test(options) },
+    rejectUnauthorized: process.env.NODE_TLS_REJECT_UNAUTHORIZED === undefined ? "unset"
+      : process.env.NODE_TLS_REJECT_UNAUTHORIZED === "0" ? "disabled" : "set_nonzero",
+    environmentPresence: presence(["NODE_EXTRA_CA_CERTS", "SSL_CERT_FILE", "SSL_CERT_DIR", "NODE_USE_ENV_PROXY",
+      "HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "NO_PROXY", "NST_KEY", "SUPABASE_SERVICE_ROLE_KEY"]),
+    lifecycleMode: process.env.NST_JOB_LIFECYCLE_ENABLED === "true" ? "enabled" : "disabled",
+    project: ["NEXT_PUBLIC_SUPABASE_URL", "SUPABASE_URL"].map(name => ({ name,
+      present: Boolean(process.env[name]), matchesExpected: process.env[name]?.trim() === "https://fyhftlxokyjtpndbkfse.supabase.co" })),
+  },
+  fixtures: { opensslPath: openssl, opensslRealPath: realpathSync(openssl),
+    opensslSHA256: sha256(readFileSync(openssl)),
+    opensslVersion: execFileSync(openssl, ["version"], { encoding: "utf8" }).trim(),
+    certificates: [] },
+  childEnvironment: "allowlist PATH and TMPDIR; trusted cases add synthetic NODE_EXTRA_CA_CERTS; candidate-import mode adds NODE_PATH and explicit ts-node compiler options",
+  candidateModulesImportedBeforeTLS: importCandidate,
+  tests: [], externalRequests: 0, providerTLSVerified: null, futureCaptureRuntimeVerified: false,
+};
+const work = mkdtempSync(join(tmpdir(), "blsh-tls-probe-"));
+chmodSync(work, 0o700);
+const fixtureEnv = { PATH: process.env.PATH, TMPDIR: work };
+const runSSL = args => execFileSync(openssl, args, { cwd: work, env: fixtureEnv, stdio: "ignore", timeout: 10000 });
+const childSource = `
+import { createRequire } from 'node:module';
+const url = process.argv[1];
+const target = new URL(url);
+if (target.protocol !== 'https:' || target.hostname !== '127.0.0.1' || !target.port
+    || target.pathname !== '/' || target.username || target.password || target.search || target.hash) throw new Error('non_loopback_target');
+if (${importCandidate}) {
+  const require = createRequire(${JSON.stringify(join(root, "web/package.json"))});
+  require('./scripts/blsh/nativeProcessCaptureRunner.ts');
+  require('./scripts/blsh/nativeProcessCaptureAdapter.ts');
+}
+let result;
+try {
+  const response = await fetch(url, { redirect: 'error', signal: AbortSignal.timeout(3000) });
+  result = { outcome: 'resolved', status: response.status, bodyMatched: await response.text() === 'blsh-tls-local-fixture' };
+} catch (error) {
+  result = { outcome: 'rejected', code: /^[A-Z_]+$/.test(error?.cause?.code || '') ? error.cause.code : 'UNCLASSIFIED' };
+}
+process.stdout.write(JSON.stringify(result));
+process.exit(0);
+`;
+
+try {
+  runSSL(["req", "-x509", "-newkey", "rsa:2048", "-sha256", "-nodes", "-days", "2",
+    "-subj", "/CN=BLSH synthetic probe CA", "-addext", "basicConstraints=critical,CA:TRUE",
+    "-keyout", "ca.key", "-out", "ca.pem"]);
+  for (const name of ["valid", "wrong-host", "expired"]) {
+    runSSL(["req", "-new", "-newkey", "rsa:2048", "-nodes", "-subj", "/CN=BLSH synthetic loopback",
+      "-keyout", `${name}.key`, "-out", `${name}.csr`]);
+    const ext = `basicConstraints=critical,CA:FALSE\nkeyUsage=critical,digitalSignature,keyEncipherment\nextendedKeyUsage=serverAuth\nsubjectAltName=${name === "wrong-host" ? "DNS:wrong-host.invalid" : "IP:127.0.0.1"}\n`;
+    if (name === "expired") {
+      writeFileSync(join(work, "index.txt"), "", { mode: 0o600 });
+      writeFileSync(join(work, "serial"), "1000\n", { mode: 0o600 });
+      writeFileSync(join(work, "ca.cnf"), `[ca]\ndefault_ca=fixture\n[fixture]\ndatabase=index.txt\nserial=serial\nnew_certs_dir=.\ncertificate=ca.pem\nprivate_key=ca.key\ndefault_md=sha256\ndefault_days=2\npolicy=policy\n[policy]\ncommonName=supplied\n[server]\n${ext}`, { mode: 0o600 });
+      runSSL(["ca", "-batch", "-config", "ca.cnf", "-in", `${name}.csr`, "-out", `${name}.pem`,
+        "-startdate", "20200101000000Z", "-enddate", "20200102000000Z", "-extensions", "server", "-notext"]);
+    } else {
+      writeFileSync(join(work, `${name}.ext`), ext, { mode: 0o600 });
+      runSSL(["x509", "-req", "-in", `${name}.csr`, "-CA", "ca.pem", "-CAkey", "ca.key", "-CAcreateserial",
+        "-days", "2", "-sha256", "-extfile", `${name}.ext`, "-out", `${name}.pem`]);
+    }
+    const cert = new X509Certificate(readFileSync(join(work, `${name}.pem`)));
+    evidence.fixtures.certificates.push({ name, sha256: sha256(cert.raw), validFrom: cert.validFrom, validTo: cert.validTo, subjectAltName: cert.subjectAltName });
+  }
+  for (const [name, trusted] of [["valid", false], ["valid", true], ["wrong-host", true], ["expired", true]]) {
+    let requestsReceived = 0;
+    const protocols = [];
+    const server = createServer({ key: readFileSync(join(work, `${name}.key`)), cert: readFileSync(join(work, `${name}.pem`)) }, (_, response) => {
+      requestsReceived++; response.end("blsh-tls-local-fixture");
+    });
+    server.on("secureConnection", socket => { protocols.push(socket.getProtocol()); });
+    try {
+      await new Promise((done, reject) => { server.once("error", reject); server.listen(0, "127.0.0.1", done); });
+      const url = `https://127.0.0.1:${server.address().port}/`;
+      const env = { ...fixtureEnv, ...(trusted ? { NODE_EXTRA_CA_CERTS: join(work, "ca.pem") } : {}),
+        ...(importCandidate ? { NODE_PATH: ".", TS_NODE_COMPILER_OPTIONS: JSON.stringify({ module: "commonjs", moduleResolution: "node" }) } : {}) };
+      const args = [...(importCandidate ? ["--require", join(root, "web/node_modules/ts-node/register/transpile-only")] : []), "--input-type=module", "-e", childSource, url];
+      const { stdout, stderr } = await exec(process.execPath, args, { cwd: join(root, "web"), env, timeout: 6000, maxBuffer: 4096 });
+      if (stderr) throw new Error("unexpected_probe_stderr");
+      const result = JSON.parse(stdout);
+      const passed = name === "valid" && trusted ? result.outcome === "resolved" && result.status === 200 && result.bodyMatched && requestsReceived === 1
+        : result.outcome === "rejected" && requestsReceived === 0 && (name === "expired" ? result.code === "CERT_HAS_EXPIRED"
+          : name === "wrong-host" ? result.code === "ERR_TLS_CERT_ALTNAME_INVALID"
+            : ["UNABLE_TO_VERIFY_LEAF_SIGNATURE", "UNABLE_TO_GET_ISSUER_CERT_LOCALLY"].includes(result.code));
+      evidence.tests.push({ name, trustsSyntheticCA: trusted, ...result, requestsReceived, negotiatedProtocols: protocols, passed });
+    } finally {
+      server.closeAllConnections();
+      await new Promise(done => server.close(done));
+    }
+  }
+  evidence.passed = evidence.tests.length === 4 && evidence.tests.every(test => test.passed);
+  evidence.completedAtUTC = new Date().toISOString();
+  evidence.syntheticPrivateKeysRetained = false;
+  if (process.argv[2]) writeFileSync(resolve(process.argv[2]), `${JSON.stringify(evidence, null, 2)}\n`, { flag: "wx", mode: 0o600 });
+  process.stdout.write(`${JSON.stringify({ passed: evidence.passed, tests: evidence.tests, providerTLSVerified: null }, null, 2)}\n`);
+  if (!evidence.passed) process.exitCode = 1;
+} finally {
+  rmSync(work, { recursive: true, force: true });
+}

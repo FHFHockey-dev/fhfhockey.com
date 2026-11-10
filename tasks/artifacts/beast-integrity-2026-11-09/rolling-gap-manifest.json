@@ -1,0 +1,1312 @@
+{
+  "version": 1,
+  "season": 20262027,
+  "date": "2026-11-07",
+  "strength": "5v5",
+  "players": [
+    {
+      "playerId": 8477450,
+      "gameId": 2026020276
+    },
+    {
+      "playerId": 8477451,
+      "gameId": 2026020273
+    },
+    {
+      "playerId": 8477456,
+      "gameId": 2026020274
+    },
+    {
+      "playerId": 8477476,
+      "gameId": 2026020274
+    },
+    {
+      "playerId": 8477478,
+      "gameId": 2026020271
+    },
+    {
+      "playerId": 8477479,
+      "gameId": 2026020271
+    },
+    {
+      "playerId": 8477488,
+      "gameId": 2026020270
+    },
+    {
+      "playerId": 8477492,
+      "gameId": 2026020274
+    },
+    {
+      "playerId": 8477495,
+      "gameId": 2026020265
+    },
+    {
+      "playerId": 8477498,
+      "gameId": 2026020272
+    },
+    {
+      "playerId": 8477500,
+      "gameId": 2026020270
+    },
+    {
+      "playerId": 8477511,
+      "gameId": 2026020270
+    },
+    {
+      "playerId": 8477527,
+      "gameId": 2026020266
+    },
+    {
+      "playerId": 8477903,
+      "gameId": 2026020265
+    },
+    {
+      "playerId": 8477919,
+      "gameId": 2026020267
+    },
+    {
+      "playerId": 8477932,
+      "gameId": 2026020265
+    },
+    {
+      "playerId": 8477933,
+      "gameId": 2026020265
+    },
+    {
+      "playerId": 8477934,
+      "gameId": 2026020276
+    },
+    {
+      "playerId": 8477935,
+      "gameId": 2026020265
+    },
+    {
+      "playerId": 8477939,
+      "gameId": 2026020268
+    },
+    {
+      "playerId": 8477940,
+      "gameId": 2026020271
+    },
+    {
+      "playerId": 8477949,
+      "gameId": 2026020265
+    },
+    {
+      "playerId": 8477950,
+      "gameId": 2026020270
+    },
+    {
+      "playerId": 8477951,
+      "gameId": 2026020269
+    },
+    {
+      "playerId": 8477953,
+      "gameId": 2026020276
+    },
+    {
+      "playerId": 8477960,
+      "gameId": 2026020275
+    },
+    {
+      "playerId": 8477969,
+      "gameId": 2026020267
+    },
+    {
+      "playerId": 8477971,
+      "gameId": 2026020274
+    },
+    {
+      "playerId": 8477986,
+      "gameId": 2026020267
+    },
+    {
+      "playerId": 8477987,
+      "gameId": 2026020271
+    },
+    {
+      "playerId": 8478010,
+      "gameId": 2026020273
+    },
+    {
+      "playerId": 8478020,
+      "gameId": 2026020269
+    },
+    {
+      "playerId": 8478038,
+      "gameId": 2026020274
+    },
+    {
+      "playerId": 8478042,
+      "gameId": 2026020274
+    },
+    {
+      "playerId": 8478055,
+      "gameId": 2026020265
+    },
+    {
+      "playerId": 8478057,
+      "gameId": 2026020268
+    },
+    {
+      "playerId": 8478104,
+      "gameId": 2026020269
+    },
+    {
+      "playerId": 8478133,
+      "gameId": 2026020268
+    },
+    {
+      "playerId": 8478147,
+      "gameId": 2026020265
+    },
+    {
+      "playerId": 8478173,
+      "gameId": 2026020269
+    },
+    {
+      "playerId": 8478178,
+      "gameId": 2026020268
+    },
+    {
+      "playerId": 8478399,
+      "gameId": 2026020270
+    },
+    {
+      "playerId": 8478402,
+      "gameId": 2026020276
+    },
+    {
+      "playerId": 8478407,
+      "gameId": 2026020267
+    },
+    {
+      "playerId": 8478413,
+      "gameId": 2026020271
+    },
+    {
+      "playerId": 8478414,
+      "gameId": 2026020270
+    },
+    {
+      "playerId": 8478416,
+      "gameId": 2026020273
+    },
+    {
+      "playerId": 8478420,
+      "gameId": 2026020272
+    },
+    {
+      "playerId": 8478427,
+      "gameId": 2026020271
+    },
+    {
+      "playerId": 8478434,
+      "gameId": 2026020274
+    },
+    {
+      "playerId": 8478438,
+      "gameId": 2026020275
+    },
+    {
+      "playerId": 8478440,
+      "gameId": 2026020265
+    },
+    {
+      "playerId": 8478443,
+      "gameId": 2026020266
+    },
+    {
+      "playerId": 8478444,
+      "gameId": 2026020276
+    },
+    {
+      "playerId": 8478449,
+      "gameId": 2026020272
+    },
+    {
+      "playerId": 8478454,
+      "gameId": 2026020274
+    },
+    {
+      "playerId": 8478458,
+      "gameId": 2026020268
+    },
+    {
+      "playerId": 8478462,
+      "gameId": 2026020274
+    },
+    {
+      "playerId": 8478463,
+      "gameId": 2026020265
+    },
+    {
+      "playerId": 8478465,
+      "gameId": 2026020276
+    },
+    {
+      "playerId": 8478469,
+      "gameId": 2026020269
+    },
+    {
+      "playerId": 8478472,
+      "gameId": 2026020276
+    },
+    {
+      "playerId": 8478474,
+      "gameId": 2026020269
+    },
+    {
+      "playerId": 8478493,
+      "gameId": 2026020273
+    },
+    {
+      "playerId": 8478498,
+      "gameId": 2026020276
+    },
+    {
+      "playerId": 8478508,
+      "gameId": 2026020273
+    },
+    {
+      "playerId": 8478519,
+      "gameId": 2026020273
+    },
+    {
+      "playerId": 8478542,
+      "gameId": 2026020270
+    },
+    {
+      "playerId": 8478550,
+      "gameId": 2026020275
+    },
+    {
+      "playerId": 8478831,
+      "gameId": 2026020269
+    },
+    {
+      "playerId": 8478851,
+      "gameId": 2026020268
+    },
+    {
+      "playerId": 8478854,
+      "gameId": 2026020276
+    },
+    {
+      "playerId": 8478859,
+      "gameId": 2026020265
+    },
+    {
+      "playerId": 8478864,
+      "gameId": 2026020273
+    },
+    {
+      "playerId": 8478874,
+      "gameId": 2026020272
+    },
+    {
+      "playerId": 8478882,
+      "gameId": 2026020267
+    },
+    {
+      "playerId": 8478911,
+      "gameId": 2026020265
+    },
+    {
+      "playerId": 8478970,
+      "gameId": 2026020271
+    },
+    {
+      "playerId": 8478975,
+      "gameId": 2026020272
+    },
+    {
+      "playerId": 8479314,
+      "gameId": 2026020265
+    },
+    {
+      "playerId": 8479318,
+      "gameId": 2026020268
+    },
+    {
+      "playerId": 8479323,
+      "gameId": 2026020267
+    },
+    {
+      "playerId": 8479337,
+      "gameId": 2026020274
+    },
+    {
+      "playerId": 8479343,
+      "gameId": 2026020269
+    },
+    {
+      "playerId": 8479345,
+      "gameId": 2026020265
+    },
+    {
+      "playerId": 8479351,
+      "gameId": 2026020272
+    },
+    {
+      "playerId": 8479365,
+      "gameId": 2026020276
+    },
+    {
+      "playerId": 8479368,
+      "gameId": 2026020276
+    },
+    {
+      "playerId": 8479369,
+      "gameId": 2026020269
+    },
+    {
+      "playerId": 8479372,
+      "gameId": 2026020267
+    },
+    {
+      "playerId": 8479378,
+      "gameId": 2026020270
+    },
+    {
+      "playerId": 8479385,
+      "gameId": 2026020265
+    },
+    {
+      "playerId": 8479398,
+      "gameId": 2026020275
+    },
+    {
+      "playerId": 8479400,
+      "gameId": 2026020265
+    },
+    {
+      "playerId": 8479407,
+      "gameId": 2026020270
+    },
+    {
+      "playerId": 8479410,
+      "gameId": 2026020269
+    },
+    {
+      "playerId": 8479425,
+      "gameId": 2026020276
+    },
+    {
+      "playerId": 8479442,
+      "gameId": 2026020268
+    },
+    {
+      "playerId": 8479520,
+      "gameId": 2026020268
+    },
+    {
+      "playerId": 8479525,
+      "gameId": 2026020266
+    },
+    {
+      "playerId": 8479542,
+      "gameId": 2026020273
+    },
+    {
+      "playerId": 8479619,
+      "gameId": 2026020269
+    },
+    {
+      "playerId": 8479638,
+      "gameId": 2026020275
+    },
+    {
+      "playerId": 8479675,
+      "gameId": 2026020275
+    },
+    {
+      "playerId": 8479705,
+      "gameId": 2026020273
+    },
+    {
+      "playerId": 8479772,
+      "gameId": 2026020268
+    },
+    {
+      "playerId": 8479992,
+      "gameId": 2026020274
+    },
+    {
+      "playerId": 8479996,
+      "gameId": 2026020270
+    },
+    {
+      "playerId": 8479998,
+      "gameId": 2026020275
+    },
+    {
+      "playerId": 8480002,
+      "gameId": 2026020270
+    },
+    {
+      "playerId": 8480003,
+      "gameId": 2026020270
+    },
+    {
+      "playerId": 8480009,
+      "gameId": 2026020267
+    },
+    {
+      "playerId": 8480012,
+      "gameId": 2026020276
+    },
+    {
+      "playerId": 8480018,
+      "gameId": 2026020268
+    },
+    {
+      "playerId": 8480023,
+      "gameId": 2026020266
+    },
+    {
+      "playerId": 8480027,
+      "gameId": 2026020272
+    },
+    {
+      "playerId": 8480029,
+      "gameId": 2026020276
+    },
+    {
+      "playerId": 8480039,
+      "gameId": 2026020274
+    },
+    {
+      "playerId": 8480043,
+      "gameId": 2026020265
+    },
+    {
+      "playerId": 8480069,
+      "gameId": 2026020274
+    },
+    {
+      "playerId": 8480074,
+      "gameId": 2026020268
+    },
+    {
+      "playerId": 8480084,
+      "gameId": 2026020269
+    },
+    {
+      "playerId": 8480185,
+      "gameId": 2026020265
+    },
+    {
+      "playerId": 8480188,
+      "gameId": 2026020269
+    },
+    {
+      "playerId": 8480192,
+      "gameId": 2026020270
+    },
+    {
+      "playerId": 8480208,
+      "gameId": 2026020269
+    },
+    {
+      "playerId": 8480246,
+      "gameId": 2026020266
+    },
+    {
+      "playerId": 8480281,
+      "gameId": 2026020266
+    },
+    {
+      "playerId": 8480326,
+      "gameId": 2026020274
+    },
+    {
+      "playerId": 8480336,
+      "gameId": 2026020271
+    },
+    {
+      "playerId": 8480426,
+      "gameId": 2026020273
+    },
+    {
+      "playerId": 8480448,
+      "gameId": 2026020274
+    },
+    {
+      "playerId": 8480459,
+      "gameId": 2026020266
+    },
+    {
+      "playerId": 8480748,
+      "gameId": 2026020272
+    },
+    {
+      "playerId": 8480762,
+      "gameId": 2026020271
+    },
+    {
+      "playerId": 8480796,
+      "gameId": 2026020265
+    },
+    {
+      "playerId": 8480800,
+      "gameId": 2026020273
+    },
+    {
+      "playerId": 8480801,
+      "gameId": 2026020265
+    },
+    {
+      "playerId": 8480803,
+      "gameId": 2026020276
+    },
+    {
+      "playerId": 8480817,
+      "gameId": 2026020271
+    },
+    {
+      "playerId": 8480829,
+      "gameId": 2026020271
+    },
+    {
+      "playerId": 8480830,
+      "gameId": 2026020271
+    },
+    {
+      "playerId": 8480834,
+      "gameId": 2026020276
+    },
+    {
+      "playerId": 8480835,
+      "gameId": 2026020266
+    },
+    {
+      "playerId": 8480848,
+      "gameId": 2026020272
+    },
+    {
+      "playerId": 8480849,
+      "gameId": 2026020269
+    },
+    {
+      "playerId": 8480855,
+      "gameId": 2026020269
+    },
+    {
+      "playerId": 8480865,
+      "gameId": 2026020268
+    },
+    {
+      "playerId": 8480878,
+      "gameId": 2026020272
+    },
+    {
+      "playerId": 8480891,
+      "gameId": 2026020272
+    },
+    {
+      "playerId": 8480980,
+      "gameId": 2026020275
+    },
+    {
+      "playerId": 8480990,
+      "gameId": 2026020270
+    },
+    {
+      "playerId": 8480995,
+      "gameId": 2026020273
+    },
+    {
+      "playerId": 8481024,
+      "gameId": 2026020276
+    },
+    {
+      "playerId": 8481030,
+      "gameId": 2026020265
+    },
+    {
+      "playerId": 8481032,
+      "gameId": 2026020276
+    },
+    {
+      "playerId": 8481056,
+      "gameId": 2026020275
+    },
+    {
+      "playerId": 8481077,
+      "gameId": 2026020274
+    },
+    {
+      "playerId": 8481133,
+      "gameId": 2026020265
+    },
+    {
+      "playerId": 8481186,
+      "gameId": 2026020274
+    },
+    {
+      "playerId": 8481237,
+      "gameId": 2026020270
+    },
+    {
+      "playerId": 8481477,
+      "gameId": 2026020273
+    },
+    {
+      "playerId": 8481481,
+      "gameId": 2026020275
+    },
+    {
+      "playerId": 8481523,
+      "gameId": 2026020268
+    },
+    {
+      "playerId": 8481525,
+      "gameId": 2026020267
+    },
+    {
+      "playerId": 8481527,
+      "gameId": 2026020275
+    },
+    {
+      "playerId": 8481528,
+      "gameId": 2026020269
+    },
+    {
+      "playerId": 8481532,
+      "gameId": 2026020275
+    },
+    {
+      "playerId": 8481535,
+      "gameId": 2026020266
+    },
+    {
+      "playerId": 8481540,
+      "gameId": 2026020268
+    },
+    {
+      "playerId": 8481542,
+      "gameId": 2026020274
+    },
+    {
+      "playerId": 8481553,
+      "gameId": 2026020273
+    },
+    {
+      "playerId": 8481554,
+      "gameId": 2026020267
+    },
+    {
+      "playerId": 8481557,
+      "gameId": 2026020273
+    },
+    {
+      "playerId": 8481559,
+      "gameId": 2026020270
+    },
+    {
+      "playerId": 8481568,
+      "gameId": 2026020271
+    },
+    {
+      "playerId": 8481577,
+      "gameId": 2026020269
+    },
+    {
+      "playerId": 8481580,
+      "gameId": 2026020266
+    },
+    {
+      "playerId": 8481581,
+      "gameId": 2026020272
+    },
+    {
+      "playerId": 8481582,
+      "gameId": 2026020275
+    },
+    {
+      "playerId": 8481593,
+      "gameId": 2026020266
+    },
+    {
+      "playerId": 8481596,
+      "gameId": 2026020269
+    },
+    {
+      "playerId": 8481598,
+      "gameId": 2026020266
+    },
+    {
+      "playerId": 8481601,
+      "gameId": 2026020270
+    },
+    {
+      "playerId": 8481604,
+      "gameId": 2026020267
+    },
+    {
+      "playerId": 8481606,
+      "gameId": 2026020269
+    },
+    {
+      "playerId": 8481617,
+      "gameId": 2026020276
+    },
+    {
+      "playerId": 8481618,
+      "gameId": 2026020268
+    },
+    {
+      "playerId": 8481624,
+      "gameId": 2026020273
+    },
+    {
+      "playerId": 8481641,
+      "gameId": 2026020272
+    },
+    {
+      "playerId": 8481655,
+      "gameId": 2026020265
+    },
+    {
+      "playerId": 8481656,
+      "gameId": 2026020265
+    },
+    {
+      "playerId": 8481721,
+      "gameId": 2026020270
+    },
+    {
+      "playerId": 8481726,
+      "gameId": 2026020266
+    },
+    {
+      "playerId": 8481732,
+      "gameId": 2026020275
+    },
+    {
+      "playerId": 8481789,
+      "gameId": 2026020267
+    },
+    {
+      "playerId": 8482055,
+      "gameId": 2026020276
+    },
+    {
+      "playerId": 8482062,
+      "gameId": 2026020271
+    },
+    {
+      "playerId": 8482070,
+      "gameId": 2026020270
+    },
+    {
+      "playerId": 8482073,
+      "gameId": 2026020267
+    },
+    {
+      "playerId": 8482077,
+      "gameId": 2026020266
+    },
+    {
+      "playerId": 8482078,
+      "gameId": 2026020274
+    },
+    {
+      "playerId": 8482079,
+      "gameId": 2026020276
+    },
+    {
+      "playerId": 8482087,
+      "gameId": 2026020268
+    },
+    {
+      "playerId": 8482088,
+      "gameId": 2026020265
+    },
+    {
+      "playerId": 8482089,
+      "gameId": 2026020266
+    },
+    {
+      "playerId": 8482093,
+      "gameId": 2026020271
+    },
+    {
+      "playerId": 8482094,
+      "gameId": 2026020266
+    },
+    {
+      "playerId": 8482095,
+      "gameId": 2026020269
+    },
+    {
+      "playerId": 8482100,
+      "gameId": 2026020271
+    },
+    {
+      "playerId": 8482105,
+      "gameId": 2026020269
+    },
+    {
+      "playerId": 8482109,
+      "gameId": 2026020267
+    },
+    {
+      "playerId": 8482111,
+      "gameId": 2026020266
+    },
+    {
+      "playerId": 8482116,
+      "gameId": 2026020269
+    },
+    {
+      "playerId": 8482124,
+      "gameId": 2026020275
+    },
+    {
+      "playerId": 8482145,
+      "gameId": 2026020266
+    },
+    {
+      "playerId": 8482146,
+      "gameId": 2026020270
+    },
+    {
+      "playerId": 8482148,
+      "gameId": 2026020275
+    },
+    {
+      "playerId": 8482155,
+      "gameId": 2026020275
+    },
+    {
+      "playerId": 8482157,
+      "gameId": 2026020267
+    },
+    {
+      "playerId": 8482166,
+      "gameId": 2026020276
+    },
+    {
+      "playerId": 8482171,
+      "gameId": 2026020274
+    },
+    {
+      "playerId": 8482176,
+      "gameId": 2026020271
+    },
+    {
+      "playerId": 8482201,
+      "gameId": 2026020273
+    },
+    {
+      "playerId": 8482245,
+      "gameId": 2026020269
+    },
+    {
+      "playerId": 8482259,
+      "gameId": 2026020267
+    },
+    {
+      "playerId": 8482460,
+      "gameId": 2026020267
+    },
+    {
+      "playerId": 8482475,
+      "gameId": 2026020275
+    },
+    {
+      "playerId": 8482476,
+      "gameId": 2026020270
+    },
+    {
+      "playerId": 8482482,
+      "gameId": 2026020266
+    },
+    {
+      "playerId": 8482516,
+      "gameId": 2026020270
+    },
+    {
+      "playerId": 8482641,
+      "gameId": 2026020273
+    },
+    {
+      "playerId": 8482655,
+      "gameId": 2026020273
+    },
+    {
+      "playerId": 8482665,
+      "gameId": 2026020267
+    },
+    {
+      "playerId": 8482666,
+      "gameId": 2026020267
+    },
+    {
+      "playerId": 8482684,
+      "gameId": 2026020270
+    },
+    {
+      "playerId": 8482699,
+      "gameId": 2026020269
+    },
+    {
+      "playerId": 8482702,
+      "gameId": 2026020271
+    },
+    {
+      "playerId": 8482713,
+      "gameId": 2026020267
+    },
+    {
+      "playerId": 8482730,
+      "gameId": 2026020275
+    },
+    {
+      "playerId": 8482737,
+      "gameId": 2026020268
+    },
+    {
+      "playerId": 8482740,
+      "gameId": 2026020272
+    },
+    {
+      "playerId": 8482745,
+      "gameId": 2026020266
+    },
+    {
+      "playerId": 8482751,
+      "gameId": 2026020267
+    },
+    {
+      "playerId": 8482758,
+      "gameId": 2026020275
+    },
+    {
+      "playerId": 8482768,
+      "gameId": 2026020274
+    },
+    {
+      "playerId": 8482775,
+      "gameId": 2026020268
+    },
+    {
+      "playerId": 8482802,
+      "gameId": 2026020274
+    },
+    {
+      "playerId": 8482809,
+      "gameId": 2026020271
+    },
+    {
+      "playerId": 8482858,
+      "gameId": 2026020267
+    },
+    {
+      "playerId": 8482866,
+      "gameId": 2026020267
+    },
+    {
+      "playerId": 8482877,
+      "gameId": 2026020267
+    },
+    {
+      "playerId": 8482964,
+      "gameId": 2026020268
+    },
+    {
+      "playerId": 8483395,
+      "gameId": 2026020276
+    },
+    {
+      "playerId": 8483398,
+      "gameId": 2026020275
+    },
+    {
+      "playerId": 8483424,
+      "gameId": 2026020268
+    },
+    {
+      "playerId": 8483425,
+      "gameId": 2026020272
+    },
+    {
+      "playerId": 8483428,
+      "gameId": 2026020272
+    },
+    {
+      "playerId": 8483431,
+      "gameId": 2026020269
+    },
+    {
+      "playerId": 8483436,
+      "gameId": 2026020269
+    },
+    {
+      "playerId": 8483447,
+      "gameId": 2026020273
+    },
+    {
+      "playerId": 8483450,
+      "gameId": 2026020271
+    },
+    {
+      "playerId": 8483457,
+      "gameId": 2026020268
+    },
+    {
+      "playerId": 8483463,
+      "gameId": 2026020266
+    },
+    {
+      "playerId": 8483466,
+      "gameId": 2026020271
+    },
+    {
+      "playerId": 8483476,
+      "gameId": 2026020276
+    },
+    {
+      "playerId": 8483493,
+      "gameId": 2026020271
+    },
+    {
+      "playerId": 8483497,
+      "gameId": 2026020267
+    },
+    {
+      "playerId": 8483499,
+      "gameId": 2026020276
+    },
+    {
+      "playerId": 8483506,
+      "gameId": 2026020271
+    },
+    {
+      "playerId": 8483513,
+      "gameId": 2026020266
+    },
+    {
+      "playerId": 8483515,
+      "gameId": 2026020268
+    },
+    {
+      "playerId": 8483516,
+      "gameId": 2026020266
+    },
+    {
+      "playerId": 8483524,
+      "gameId": 2026020266
+    },
+    {
+      "playerId": 8483525,
+      "gameId": 2026020273
+    },
+    {
+      "playerId": 8483570,
+      "gameId": 2026020267
+    },
+    {
+      "playerId": 8483675,
+      "gameId": 2026020275
+    },
+    {
+      "playerId": 8483676,
+      "gameId": 2026020269
+    },
+    {
+      "playerId": 8483678,
+      "gameId": 2026020276
+    },
+    {
+      "playerId": 8483679,
+      "gameId": 2026020274
+    },
+    {
+      "playerId": 8483686,
+      "gameId": 2026020268
+    },
+    {
+      "playerId": 8483690,
+      "gameId": 2026020267
+    },
+    {
+      "playerId": 8483695,
+      "gameId": 2026020270
+    },
+    {
+      "playerId": 8483766,
+      "gameId": 2026020273
+    },
+    {
+      "playerId": 8483771,
+      "gameId": 2026020265
+    },
+    {
+      "playerId": 8484136,
+      "gameId": 2026020276
+    },
+    {
+      "playerId": 8484144,
+      "gameId": 2026020271
+    },
+    {
+      "playerId": 8484158,
+      "gameId": 2026020268
+    },
+    {
+      "playerId": 8484164,
+      "gameId": 2026020266
+    },
+    {
+      "playerId": 8484186,
+      "gameId": 2026020265
+    },
+    {
+      "playerId": 8484197,
+      "gameId": 2026020271
+    },
+    {
+      "playerId": 8484210,
+      "gameId": 2026020267
+    },
+    {
+      "playerId": 8484227,
+      "gameId": 2026020272
+    },
+    {
+      "playerId": 8484241,
+      "gameId": 2026020267
+    },
+    {
+      "playerId": 8484258,
+      "gameId": 2026020274
+    },
+    {
+      "playerId": 8484304,
+      "gameId": 2026020265
+    },
+    {
+      "playerId": 8484321,
+      "gameId": 2026020269
+    },
+    {
+      "playerId": 8484386,
+      "gameId": 2026020269
+    },
+    {
+      "playerId": 8484390,
+      "gameId": 2026020271
+    },
+    {
+      "playerId": 8484421,
+      "gameId": 2026020272
+    },
+    {
+      "playerId": 8484471,
+      "gameId": 2026020274
+    },
+    {
+      "playerId": 8484783,
+      "gameId": 2026020271
+    },
+    {
+      "playerId": 8484790,
+      "gameId": 2026020266
+    },
+    {
+      "playerId": 8484794,
+      "gameId": 2026020274
+    },
+    {
+      "playerId": 8484798,
+      "gameId": 2026020276
+    },
+    {
+      "playerId": 8484800,
+      "gameId": 2026020267
+    },
+    {
+      "playerId": 8484801,
+      "gameId": 2026020272
+    },
+    {
+      "playerId": 8484806,
+      "gameId": 2026020272
+    },
+    {
+      "playerId": 8484829,
+      "gameId": 2026020272
+    },
+    {
+      "playerId": 8484873,
+      "gameId": 2026020265
+    },
+    {
+      "playerId": 8484911,
+      "gameId": 2026020272
+    },
+    {
+      "playerId": 8484938,
+      "gameId": 2026020272
+    },
+    {
+      "playerId": 8484999,
+      "gameId": 2026020265
+    },
+    {
+      "playerId": 8485366,
+      "gameId": 2026020270
+    },
+    {
+      "playerId": 8485388,
+      "gameId": 2026020270
+    },
+    {
+      "playerId": 8485391,
+      "gameId": 2026020271
+    },
+    {
+      "playerId": 8485402,
+      "gameId": 2026020272
+    },
+    {
+      "playerId": 8485414,
+      "gameId": 2026020275
+    },
+    {
+      "playerId": 8485468,
+      "gameId": 2026020272
+    },
+    {
+      "playerId": 8485554,
+      "gameId": 2026020271
+    },
+    {
+      "playerId": 8485702,
+      "gameId": 2026020273
+    },
+    {
+      "playerId": 8486067,
+      "gameId": 2026020268
+    },
+    {
+      "playerId": 8486103,
+      "gameId": 2026020272
+    },
+    {
+      "playerId": 8486161,
+      "gameId": 2026020276
+    },
+    {
+      "playerId": 8486171,
+      "gameId": 2026020274
+    },
+    {
+      "playerId": 8486189,
+      "gameId": 2026020266
+    }
+  ]
+}

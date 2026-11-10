@@ -235,7 +235,7 @@ it("orders unranked discovery by verified upcoming team games without inventing 
   expect(screen.queryAllByLabelText(/^Result /)).toHaveLength(0);
   for (const article of screen.getAllByRole("article")) {
     expect(within(article).queryByLabelText("Net plan comparison")).toBeNull();
-    expect(within(article).queryByRole("button", { name: /^Preview swap/ })).toBeNull();
+    expect(within(article).queryByRole("button", { name: /^Use this swap/ })).toBeNull();
   }
   fixture.candidates = [{ playerId: "alpha", complete: true, plans: [{ objective: "outcome", steps: [], netAGP: 1, netPoints: -3, dropped: [], displacedPlayerIds: [] }] }];
   view.rerender(<CandidateBrowser {...props} calendar={calendar} />);

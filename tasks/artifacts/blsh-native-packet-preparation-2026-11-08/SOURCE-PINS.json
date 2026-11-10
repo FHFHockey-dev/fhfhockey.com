@@ -1,0 +1,18 @@
+{
+  "intake": {
+    "path": "/Users/tim/Documents/Codex/2026-10-27/task-3/nst-selected-receipt-intake-20261101-01/intake.py",
+    "sha256": "7cb3e091200ae35f245e7a4e105696382101879a3f0abb3f6b99cb82f5879b92"
+  },
+  "lineage": {
+    "path": "/Users/tim/Documents/Codex/2026-10-27/task-3/nst-lineage-and-gs-alternatives-20261101-01/nst_lineage.py",
+    "sha256": "14e0816c65fd8988b1401e21952b0873fcb142da6866523f6c87d8f1b72ff4da"
+  },
+  "currentInput": {
+    "path": "web/lib/buyLowSellHigh/currentInput.ts",
+    "sha256": "58a87ea119a98b33d7d67fb6849a269e375c22210610b607dfa30ba034c76232"
+  },
+  "gate": {
+    "path": "web/lib/buyLowSellHigh/currentProcessEvidence.server.ts",
+    "sha256": "e69db2c0ee67669df2725636dda689f036780d7809f0e2f49ec89ca504eac724"
+  }
+}

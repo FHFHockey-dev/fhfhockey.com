@@ -1,0 +1,243 @@
+{
+  "purpose": "local_capture_candidate_with_mocked_transport_and_local_runtime_TLS_probes_not_live_capture_or_acceptance",
+  "checkedAtUTC": "2026-11-09T20:51:53.713624+00:00",
+  "branch": "octoberBranch",
+  "startHEAD": "4f58fd53c4850852742069ef12b023d0aea400ab",
+  "lastObservedHEAD": "fb964e2c21f679bf068c84a650f5c34e77281db3",
+  "sourcePins": [
+    {
+      "path": "web/scripts/blsh/nativeProcessCaptureRunner.ts",
+      "sha256": "f0cad82ee881c9b7c9900527910410c83311017a57479a8df76cbe50813ed8a8",
+      "bytes": 24339
+    },
+    {
+      "path": "web/scripts/blsh/nativeProcessCaptureRunner.test.ts",
+      "sha256": "c98006c5a66b27ef705380945a683f18d72d49273216940d273297ffb6721624",
+      "bytes": 25715
+    },
+    {
+      "path": "web/scripts/blsh/nativeProcessCaptureAdapter.ts",
+      "sha256": "0162fb52fe3df0b3c1b70f11b0739792a5b0f32b8dbd35b92255597a506c5368",
+      "bytes": 8741
+    },
+    {
+      "path": "web/scripts/blsh/nativeProcessCaptureAdapter.test.ts",
+      "sha256": "1d46be8304247ebe397324323dc95d3cdf902e122ba78375918f4d269720d030",
+      "bytes": 15563
+    },
+    {
+      "path": "web/scripts/blsh/nativeProcessCapturePreparation.ts",
+      "sha256": "7f562056c16f446641917c90b41425c8c13ae97f11d6383f38e5c3cf12c3b0a7",
+      "bytes": 10312
+    },
+    {
+      "path": "web/lib/nst/client.ts",
+      "sha256": "1a568c28f43e7a716677bc6d47eea47cbe86942cce376f95162fe3740cab738d",
+      "bytes": 16346
+    },
+    {
+      "path": "web/lib/nst/sharedAdmission.ts",
+      "sha256": "a5f62acc1781205672c0e19aaf9c12b6cb1f6e16053876b746bc45aa210b9e4a",
+      "bytes": 7834
+    },
+    {
+      "path": "web/lib/nst/admissionOrigin.ts",
+      "sha256": "1ffe197f90c577b477f94b54e404713a2b001c78edf12d92a249441281cdccba",
+      "bytes": 1231
+    },
+    {
+      "path": "web/lib/nst/jobLifecycle.server.ts",
+      "sha256": "c28bf71b51a879f2ad7793f640e640f101bcea6318423ac3e168618f6bc3f1a8",
+      "bytes": 8955
+    },
+    {
+      "path": "web/lib/nst/requestBudget.ts",
+      "sha256": "ccbab70aee15aba93818df4ef42d41195eceb39757af0ad3eef3b3dd15437e5a",
+      "bytes": 6944
+    },
+    {
+      "path": "web/lib/cron/nstRateLimitPolicy.ts",
+      "sha256": "f90686ed0e22f7dcc8685c111c62445004cb32744284ae22f3e37f9b6e491f2c",
+      "bytes": 4288
+    },
+    {
+      "path": "web/components/blshTrade/BlshTradeComparison.tsx",
+      "sha256": "75ae6985773cc3f2d81322883acd77ed0162bcd5b938e0cc49ab28661fdc0880",
+      "bytes": 25115
+    },
+    {
+      "path": "web/components/blshTrade/BlshTradeComparison.test.tsx",
+      "sha256": "490471e3d87fb77791e332a657e26a5349b73d6ebf9b71e3a20641d17bb099cf",
+      "bytes": 22695
+    },
+    {
+      "path": "web/lib/skoElement/contract.ts",
+      "sha256": "3d2b202003b8c0379bbf7b5e0d04ebc722c52815327ce7e8b96d67538966f37a",
+      "bytes": 11358
+    },
+    {
+      "path": "web/lib/skoElement/interpret.ts",
+      "sha256": "789b8fe3480e564a9f24e47658b5d03d4e514b0dc6e94d5aae4fbd08a297200c",
+      "bytes": 28478
+    },
+    {
+      "path": "web/lib/skoElement/fixtures.ts",
+      "sha256": "b4e7e6b31c9fd9d1e541aba1e0f19993caa413bab8112b1cd05bc10e1b7f2fa2",
+      "bytes": 17583
+    }
+  ],
+  "redactorSectionSHA256": "ab44700a1a907748aeadcaf87264e0118344ac4aabf09bf52ffa79368d2300c5",
+  "pr419": {
+    "mergeObject": "83cba85f8",
+    "selectedSourceBlobsMatch": [
+      "web/lib/nst/client.ts",
+      "web/lib/nst/sharedAdmission.ts",
+      "web/lib/nst/admissionOrigin.ts",
+      "web/lib/nst/jobLifecycle.server.ts",
+      "web/lib/skoElement/contract.ts",
+      "web/lib/skoElement/interpret.ts"
+    ],
+    "mergeCommitIsAncestorOfEditingHEAD": false,
+    "gitSynchronizationPerformed": false
+  },
+  "checks": [
+    {
+      "command": "npm test -- --run scripts/blsh/nativeProcessCaptureRunner.test.ts scripts/blsh/nativeProcessCaptureAdapter.test.ts",
+      "cwd": "web",
+      "status": "passed",
+      "exitCode": 0,
+      "files": {
+        "nativeProcessCaptureRunner.test.ts": 63,
+        "nativeProcessCaptureAdapter.test.ts": 29
+      },
+      "tests": 92,
+      "durationSeconds": 8.05,
+      "note": "November 9 20:45 UTC successor after durable pre-dispatch correction; eight new timing regressions and stricter queued-operation refusal."
+    },
+    {
+      "command": "npm test -- --run scripts/blsh/nativeProcessCaptureAdapter.test.ts components/blshTrade/BlshTradeComparison.test.tsx",
+      "cwd": "web",
+      "status": "passed",
+      "exitCode": 0,
+      "files": {
+        "nativeProcessCaptureAdapter.test.ts": 29,
+        "BlshTradeComparison.test.tsx": 22
+      },
+      "tests": 51,
+      "durationSeconds": 3.1,
+      "note": "Historical 15:31 sprint run. UI and adapter source unchanged; runner successor has its new current check above. Counts overlap; do not sum command totals."
+    },
+    {
+      "command": "npx eslint scripts/blsh/nativeProcessCaptureRunner.ts scripts/blsh/nativeProcessCaptureRunner.test.ts",
+      "cwd": "web",
+      "status": "passed",
+      "exitCode": 0
+    },
+    {
+      "command": "NODE_OPTIONS=--max-old-space-size=8192 npx tsc --noEmit",
+      "cwd": "web",
+      "status": "passed",
+      "exitCode": 0
+    },
+    {
+      "command": "git diff --check",
+      "cwd": ".",
+      "status": "passed",
+      "exitCode": 0,
+      "note": "Scoped git whitespace check plus explicit untracked-source whitespace scan; current source not committed."
+    }
+  ],
+  "nodeVersion": "v22.23.4",
+  "initialAdapterRun": {
+    "commandExitCode": 1,
+    "runnerTestsPassed": 53,
+    "adapterTestsPassed": 27,
+    "adapterTestsFailed": 1,
+    "failure": "Synthetic Response did not model fetched-body abortion. Fixture now propagates the fetch abort signal into its body; subsequent runs pass."
+  },
+  "transportTestScope": {
+    "realModules": [
+      "canonical NST client",
+      "shared admission",
+      "runNstJob lifecycle"
+    ],
+    "mocked": [
+      "HTTP fetch",
+      "local file ledger"
+    ],
+    "credentials": "synthetic only",
+    "realSocketsBlocked": true
+  },
+  "bounds": {
+    "disabledLifecycleOperations": 5,
+    "enabledSuccessOperations": 7,
+    "uncertainFinishAndHoldOperations": 8,
+    "admissionCallsPerPage": 1,
+    "nstStartSpacingMs": 22000,
+    "providerTimeoutMs": 15000,
+    "rpcTimeoutMs": 5000,
+    "workDeadlineMs": 120000,
+    "maximumExtraHoldMs": 5000,
+    "scheduleAcceptedBytes": 1048576,
+    "nstAcceptedBytesPerPage": 2097152,
+    "lifecycleAcceptedBytesPerRPC": 65536,
+    "admissionRPCBodyByteCap": null,
+    "maximumRowsPerPage": 5000,
+    "packetBytes": 8388608,
+    "wireBytesBounded": false
+  },
+  "lifecycleReconciliation": "original job UUID retained privately before begin; same reference required on finish and hold; no credentials or full RPC bodies retained",
+  "goalieConsumer": "actual merged observation-only interpreter exercised in trade UI with explicit fixtures; unknown participation retained, forecasts withheld",
+  "goalieSourceStatus": "owner-confirmed non-retention of official goalie packet and admitted forecast envelope; no historical search repeated",
+  "sprint": {
+    "checkpointStartedUTC": "2026-11-09T15:31:00Z",
+    "checkpointDeadlineUTC": "2026-11-09T15:50:00Z",
+    "hardStopUTC": "2026-11-09T15:55:00Z"
+  },
+  "remaining": [
+    "fresh-context independent exact-successor review (verified staffing/routing pending)",
+    "actual intended invocation, configured project/lifecycle and non-secret TLS provenance",
+    "separate exact-candidate execution approval",
+    "current official per-player evidence and complete membership",
+    "source/model qualification and operational serving"
+  ],
+  "sharedNSTOrSkoFilesEdited": false,
+  "liveCaptureAuthorized": false,
+  "providerRequests": 0,
+  "databaseRequests": 0,
+  "localOrSharedLedgerOperations": 0,
+  "reserveReads": 0,
+  "gitMutations": 0,
+  "builds": 0,
+  "deployments": 0,
+  "sourceAcceptance": false,
+  "scoresComputed": 0,
+  "reviewCorrection": {
+    "status": "local_verified_independent_review_pending",
+    "baseline": "review-baseline-2026-11-09/MANIFEST.json",
+    "reproduction": "REVIEW-PREDISPATCH-REPRO.json",
+    "finding": "STARTED durability work could expire permits/deadlines and reduce actual start spacing before dispatch",
+    "correction": "Revalidate at action boundary using wall and monotonic permit/operation deadlines; deduct durability time; anchor spacing to action dispatch; cancel queued actions after circuit closes",
+    "regressionsAdded": 8,
+    "sharedFilesChanged": false,
+    "actualAdapterRecheck": "REVIEW-PREDISPATCH-RECHECK.json"
+  },
+  "runtimeEvidence": {
+    "handoff": "REVIEW-AND-RUNTIME.md",
+    "imports": "RUNTIME-IMPORT-RECHECK.json",
+    "TLSAfterImports": "RUNTIME-POST-IMPORT-TLS.json",
+    "localTLSCasesPassed": 4,
+    "allSuccessfulRoundsLoopbackTLSAttempts": 8,
+    "allSuccessfulRoundsAcceptedLoopbackHTTPRequests": 2,
+    "providerTLSVerified": null,
+    "captureExecutionEnvironmentVerified": false,
+    "credentialsOrEnvFilesLoaded": false
+  },
+  "reviewWindow": {
+    "userWindowStartedUTC": "2026-11-09T20:19:47.317816Z",
+    "laneStartedUTC": "2026-11-09T20:23:30Z",
+    "conservativeStopByUTC": "2026-11-09T22:19:00Z",
+    "independentReviewerStarted": false,
+    "actualModelAndEffortVerified": false
+  }
+}

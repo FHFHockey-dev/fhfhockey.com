@@ -7,7 +7,7 @@ import {
 } from "./goalieMatrix";
 import {
   buildPlayerMatrixSurface,
-  parsePlayerMatrixRequest,
+  parsePlayerMatrixRequestWithResolvedTeam,
   type PlayerMatrixResponse,
 } from "./playerMatrix";
 import { ContextualRankingsQueryError } from "./rankingTypes";
@@ -313,7 +313,7 @@ export async function buildContextualRankingSnapshotSurface(
     "player_id",
     true,
   );
-  const request = parsePlayerMatrixRequest({
+  const request = await parsePlayerMatrixRequestWithResolvedTeam({
     ...query,
     entity: "skaters",
     selected_player: String(selectedPlayerId),

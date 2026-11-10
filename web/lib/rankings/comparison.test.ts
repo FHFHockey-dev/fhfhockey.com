@@ -5,14 +5,14 @@ const {
   buildPlayerMatrixSurfaceMock,
   buildTeamMatrixSurfaceMock,
   parseGoalieMatrixRequestMock,
-  parsePlayerMatrixRequestMock,
+  parsePlayerMatrixRequestWithResolvedTeamMock,
   parseTeamMatrixRequestMock,
 } = vi.hoisted(() => ({
   buildGoalieMatrixSurfaceMock: vi.fn(),
   buildPlayerMatrixSurfaceMock: vi.fn(),
   buildTeamMatrixSurfaceMock: vi.fn(),
   parseGoalieMatrixRequestMock: vi.fn(),
-  parsePlayerMatrixRequestMock: vi.fn(),
+  parsePlayerMatrixRequestWithResolvedTeamMock: vi.fn(),
   parseTeamMatrixRequestMock: vi.fn(),
 }));
 
@@ -23,7 +23,7 @@ vi.mock("./goalieMatrix", () => ({
 
 vi.mock("./playerMatrix", () => ({
   buildPlayerMatrixSurface: buildPlayerMatrixSurfaceMock,
-  parsePlayerMatrixRequest: parsePlayerMatrixRequestMock,
+  parsePlayerMatrixRequestWithResolvedTeam: parsePlayerMatrixRequestWithResolvedTeamMock,
 }));
 
 vi.mock("./teamMatrix", () => ({
@@ -141,7 +141,7 @@ describe("buildContextualRankingComparisonSurface", () => {
   });
 
   it("scans skater matrix pages until requested subjects are found", async () => {
-    parsePlayerMatrixRequestMock.mockReturnValue({
+    parsePlayerMatrixRequestWithResolvedTeamMock.mockResolvedValue({
       season: 20252026,
       window: "last10",
       sortMetric: "points_per_60",

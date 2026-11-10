@@ -1,7 +1,8 @@
 import { expect, test, type Page } from "@playwright/test";
 import { routeCurrentPlanning, showScheduleView, setPlanningTime, installPlanningClock, RSO_FIXTURE_PRINCIPAL } from "./roster-schedule-optimizer-fixtures";
 import { routeTeamSchedule } from "./fixtures/rso-acceptance";
-import { compactWorkspace, connectedWorkspace, expectNoPageOverflow, fixturePlayer, grantedAccess, isolateNetwork, openPlanningSetup, providerSnapshot, savedWorkspace, seedWorkspace, signIn } from "./fixtures/rso-continuity";
+import { compactWorkspace, connectedWorkspace, expectNoPageOverflow, fixturePlayer, fixtureGame, fixtureForecast, grantedAccess, isolateNetwork, openPlanningSetup, providerSnapshot, savedWorkspace, seedWorkspace, signIn } from "./fixtures/rso-continuity";
+import { INFERRED_ACQUISITION_TIMING_KEY, INFERRED_ACQUISITION_TIMING_SOURCE } from "../lib/rosterScheduleOptimizer/providerRules";
 
 // FR18 re-verification (Astra audit): one workspace, desktop roster/players/available, mobile
 // itinerary/roster/candidates/matchup, at most 20 visible slot rows with internal labels, and
@@ -10,6 +11,117 @@ test.beforeEach(async ({ page }) => {
   await isolateNetwork(page);
   await page.route("**/api/v1/roster-schedule-optimizer/access", route => route.fulfill({ json: { data: { eligible: false, capabilities: [], grantingSources: [], expiresAt: null, reason: "manual" } } }));
   await page.route("**/api/v1/roster-schedule-optimizer/workspace?**", route => route.fulfill({ status: 401, json: { error: "unauthorized" } }));
+});
+
+test("RSO loading acknowledges navigation before the route arrives and shows a skeleton before the workspace bundle", async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await setPlanningTime(page, new Date("2026-10-11T12:00:00Z"));
+  await routeCurrentPlanning(page, route => route.fulfill({ json: { success: true, data: { players: [], games: [], forecasts: [], evidence: {} } } }));
+  let releaseRoute!: () => void, releaseWorkspace!: () => void;
+  const routeGate = new Promise<void>(resolve => { releaseRoute = resolve; });
+  const workspaceGate = new Promise<void>(resolve => { releaseWorkspace = resolve; });
+  await page.route("**/_next/static/chunks/pages/roster-schedule-optimizer.js*", async route => { await routeGate; await route.continue(); });
+  await page.route(/\/_next\/static\/chunks\/[^/]*RosterScheduleOptimizer[^/]*\.js/, async route => { await workspaceGate; await route.continue(); });
+  try {
+    await page.goto("/privacy");
+    await page.getByRole("navigation", { name: "Primary navigation" }).getByRole("button", { name: "Tools", exact: true }).click();
+    const started = performance.now();
+    await page.getByRole("navigation", { name: "Primary navigation" }).getByRole("link", { name: /^Roster Schedule Optimizer/ }).click();
+    await expect(page.getByRole("status").filter({ hasText: "Opening Roster Schedule Optimizer…" })).toBeVisible();
+    const feedbackMs = performance.now() - started;
+    expect(feedbackMs).toBeLessThan(1_000);
+    await expect(page.getByRole("heading", { name: "Privacy policy", exact: true })).toBeVisible();
+    releaseRoute();
+    const skeleton = page.getByRole("region", { name: "Roster Schedule Optimizer loading" });
+    await expect(skeleton).toBeVisible();
+    await expect(skeleton).toHaveAttribute("aria-busy", "true");
+    await page.screenshot({ path: testInfo.outputPath("rso-loading-skeleton.png") });
+    releaseWorkspace();
+    await expect(page.getByRole("heading", { name: "Current Roster", exact: true })).toBeVisible();
+    await expect(skeleton).toHaveCount(0);
+    await expect(page).toHaveTitle("NHL Roster Schedule Optimizer | FHFH");
+    await testInfo.attach("navigation-feedback-timing", { body: JSON.stringify({ feedbackMs, conditions: "Route and workspace chunks held independently; synthetic responses; no real login" }), contentType: "application/json" });
+  } finally { releaseRoute(); releaseWorkspace(); }
+});
+
+test("RSO loading recovers a stalled access check with one retry and preserves the connected plan", async ({ page }) => {
+  await installPlanningClock(page, { time: new Date("2026-10-11T12:00:00Z") });
+  await signIn(page);
+  const players = [fixturePlayer(1, "Alpha Center", "CAR"), { ...fixturePlayer(2, "Bravo Center", "NJD"), availability: "free_agent" as const }];
+  const workspace = connectedWorkspace(players);
+  await seedWorkspace(page, workspace, RSO_FIXTURE_PRINCIPAL);
+  await page.route("**/api/v1/roster-schedule-optimizer/workspace?**", route => route.fulfill({ json: { data: null } }));
+  await routeCurrentPlanning(page, route => route.fulfill({ json: { success: true, data: { players, games: [], forecasts: [], evidence: {} } } }));
+  let accessReads = 0, providerReads = 0;
+  await page.route("**/api/v1/roster-schedule-optimizer/access", async route => {
+    if (++accessReads === 1) return; // Deliberately unresolved; the client deadline must settle it.
+    await route.fulfill({ json: grantedAccess(["rso_sync"]) });
+  });
+  await page.route("**/api/v1/roster-schedule-optimizer/provider", route => {
+    providerReads += 1;
+    return route.fulfill({ json: { success: true, snapshot: providerSnapshot(workspace, players, "recovered"), capabilities: { roster: true, availability: true, limitations: [] } } });
+  });
+  await page.goto("/roster-schedule-optimizer");
+  await expect.poll(() => accessReads).toBe(1);
+  await page.clock.runFor(15_001);
+  await expect(page.getByRole("button", { name: "Retry access check" })).toBeVisible();
+  expect(providerReads).toBe(0);
+  await page.clock.runFor(3_000);
+  await expect.poll(() => accessReads).toBe(2);
+  await expect(page.getByRole("button", { name: "Refresh provider" })).toBeEnabled();
+  await expect.poll(() => providerReads).toBe(1);
+  await expect(page.getByRole("button", { name: "Retry access check" })).toHaveCount(0);
+  expect((await savedWorkspace(page, RSO_FIXTURE_PRINCIPAL)).intent).toEqual(workspace.intent);
+});
+
+test("RSO inputs reuse connected answers on reload without selecting a plan or certifying a missing allowance", async ({ page }) => {
+  await installPlanningClock(page, { time: new Date("2026-10-11T12:00:00Z") });
+  await signIn(page);
+  const players = [fixturePlayer(1, "Owned Center", "CAR"), fixturePlayer(2, "Available Center", "CAR"), fixturePlayer(3, "Other Center", "CAR")];
+  const workspace = connectedWorkspace(players);
+  workspace.intent = { ...workspace.intent, steps: [], protectedPlayerIds: [], excludedPlayerIds: [] };
+  workspace.lockedAssignments = [];
+  workspace.rules = { ...workspace.rules, rosterSlots: { C: 1, BN: 0 },
+    periods: workspace.rules.periods.map(period => ({ ...period, id: "yahoo-week-1", source: "provider" })) };
+  await seedWorkspace(page, workspace, RSO_FIXTURE_PRINCIPAL);
+  const game = fixtureGame("input-confirmation", "2026-10-12", "CAR");
+  const forecasts = players.map((player, index) => fixtureForecast(player, game, [1, 8, 4][index]));
+  await page.route("**/api/v1/roster-schedule-optimizer/access", route => route.fulfill({ json: grantedAccess() }));
+  await routeCurrentPlanning(page, route => route.fulfill({ json: { success: true, data: { players, games: [game], forecasts, evidence: {} } } }));
+  let reads = 0, missingAllowance = false;
+  await page.route("**/api/v1/roster-schedule-optimizer/provider", route => {
+    const snapshot = providerSnapshot(workspace, players, `input-confirmation-${++reads}`);
+    snapshot.games = [game];
+    snapshot.forecasts = forecasts;
+    snapshot.rules = { ...snapshot.rules, periods: snapshot.rules.periods.map(period => ({ ...period, remaining: missingAllowance ? null : 2 })) };
+    snapshot.evidence = {
+      schedule: { source: "Complete synthetic provider schedule", asOf: workspace.context.asOf, seasonId: workspace.context.seasonId, completeness: "complete", limitations: [] },
+      [INFERRED_ACQUISITION_TIMING_KEY]: { source: INFERRED_ACQUISITION_TIMING_SOURCE, asOf: null, seasonId: workspace.context.seasonId, completeness: "partial", limitations: ["Same-day add timing is inferred."] },
+    };
+    return route.fulfill({ json: { success: true, snapshot, capabilities: { roster: true, availability: true, rules: false, matchup: false, acquisitions: true, limitations: [] } } });
+  });
+  await page.goto("/roster-schedule-optimizer");
+  const candidates = page.getByRole("region", { name: "Candidates and detail" });
+  const card = candidates.locator('[data-rso-candidate-id="fhfh:2"]');
+  const useSwap = card.getByRole("button", { name: /^Use this swap:/ });
+  await expect(useSwap).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Confirm planning inputs", exact: true })).toHaveCount(0);
+  await expect(card.getByText("Net Pts", { exact: true }).locator("..").locator("strong")).toHaveText("+7");
+  for (const name of ["Confirm UTC day boundary", "Confirm same-day adds", "Confirm weekly acquisition reset"]) {
+    await candidates.getByRole("button", { name, exact: true }).click();
+  }
+  await expect(useSwap).toBeEnabled();
+  expect((await savedWorkspace(page, RSO_FIXTURE_PRINCIPAL)).intent.steps).toEqual([]);
+  await page.reload();
+  await expect(useSwap).toBeEnabled();
+  await expect(candidates.getByRole("button", { name: /^Confirm / })).toHaveCount(0);
+  expect((await savedWorkspace(page, RSO_FIXTURE_PRINCIPAL)).intent.steps).toEqual([]);
+  missingAllowance = true;
+  await page.getByRole("button", { name: "Refresh provider", exact: true }).click();
+  await expect(candidates).toContainText("Enter the acquisition cost and remaining allowance for the planning period.");
+  await expect(candidates.getByRole("button", { name: /^Confirm / })).toHaveCount(0);
+  await expect(useSwap).toHaveCount(0);
+  expect((await savedWorkspace(page, RSO_FIXTURE_PRINCIPAL)).intent.steps).toEqual([]);
 });
 
 async function openCompact(page: Page, count: number) {

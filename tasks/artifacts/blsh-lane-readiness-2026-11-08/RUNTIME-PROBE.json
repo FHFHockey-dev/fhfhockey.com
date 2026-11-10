@@ -1,0 +1,231 @@
+{
+  "purpose": "local_runtime_and_synthetic_loopback_TLS_observation_not_provider_TLS_attestation",
+  "startedAtUTC": "2026-11-09T20:34:11.685Z",
+  "candidatePins": [
+    {
+      "path": "web/scripts/blsh/nativeProcessCaptureRunner.ts",
+      "sha256": "c8474d7478640aeee69c0a96aac12ac8a8957e8a89b64bdc3332af74b83961e9",
+      "bytes": 23001,
+      "matches": true
+    },
+    {
+      "path": "web/scripts/blsh/nativeProcessCaptureRunner.test.ts",
+      "sha256": "96ea409fc37329337e2d192ac1d2e23b694236bf2d0b87e30c2a9f0c0803b8d7",
+      "bytes": 22378,
+      "matches": true
+    },
+    {
+      "path": "web/scripts/blsh/nativeProcessCaptureAdapter.ts",
+      "sha256": "0162fb52fe3df0b3c1b70f11b0739792a5b0f32b8dbd35b92255597a506c5368",
+      "bytes": 8741,
+      "matches": true
+    },
+    {
+      "path": "web/scripts/blsh/nativeProcessCaptureAdapter.test.ts",
+      "sha256": "1d46be8304247ebe397324323dc95d3cdf902e122ba78375918f4d269720d030",
+      "bytes": 15563,
+      "matches": true
+    },
+    {
+      "path": "web/scripts/blsh/nativeProcessCapturePreparation.ts",
+      "sha256": "7f562056c16f446641917c90b41425c8c13ae97f11d6383f38e5c3cf12c3b0a7",
+      "bytes": 10312,
+      "matches": true
+    },
+    {
+      "path": "web/lib/nst/client.ts",
+      "sha256": "1a568c28f43e7a716677bc6d47eea47cbe86942cce376f95162fe3740cab738d",
+      "bytes": 16346,
+      "matches": true
+    },
+    {
+      "path": "web/lib/nst/sharedAdmission.ts",
+      "sha256": "a5f62acc1781205672c0e19aaf9c12b6cb1f6e16053876b746bc45aa210b9e4a",
+      "bytes": 7834,
+      "matches": true
+    },
+    {
+      "path": "web/lib/nst/admissionOrigin.ts",
+      "sha256": "1ffe197f90c577b477f94b54e404713a2b001c78edf12d92a249441281cdccba",
+      "bytes": 1231,
+      "matches": true
+    },
+    {
+      "path": "web/lib/nst/jobLifecycle.server.ts",
+      "sha256": "c28bf71b51a879f2ad7793f640e640f101bcea6318423ac3e168618f6bc3f1a8",
+      "bytes": 8955,
+      "matches": true
+    },
+    {
+      "path": "web/lib/nst/requestBudget.ts",
+      "sha256": "ccbab70aee15aba93818df4ef42d41195eceb39757af0ad3eef3b3dd15437e5a",
+      "bytes": 6944,
+      "matches": true
+    },
+    {
+      "path": "web/lib/cron/nstRateLimitPolicy.ts",
+      "sha256": "f90686ed0e22f7dcc8685c111c62445004cb32744284ae22f3e37f9b6e491f2c",
+      "bytes": 4288,
+      "matches": true
+    },
+    {
+      "path": "web/components/blshTrade/BlshTradeComparison.tsx",
+      "sha256": "75ae6985773cc3f2d81322883acd77ed0162bcd5b938e0cc49ab28661fdc0880",
+      "bytes": 25115,
+      "matches": true
+    },
+    {
+      "path": "web/components/blshTrade/BlshTradeComparison.test.tsx",
+      "sha256": "490471e3d87fb77791e332a657e26a5349b73d6ebf9b71e3a20641d17bb099cf",
+      "bytes": 22695,
+      "matches": true
+    },
+    {
+      "path": "web/lib/skoElement/contract.ts",
+      "sha256": "3d2b202003b8c0379bbf7b5e0d04ebc722c52815327ce7e8b96d67538966f37a",
+      "bytes": 11358,
+      "matches": true
+    },
+    {
+      "path": "web/lib/skoElement/interpret.ts",
+      "sha256": "789b8fe3480e564a9f24e47658b5d03d4e514b0dc6e94d5aae4fbd08a297200c",
+      "bytes": 28478,
+      "matches": true
+    },
+    {
+      "path": "web/lib/skoElement/fixtures.ts",
+      "sha256": "b4e7e6b31c9fd9d1e541aba1e0f19993caa413bab8112b1cd05bc10e1b7f2fa2",
+      "bytes": 17583,
+      "matches": true
+    }
+  ],
+  "probeSHA256": "528c6e3ce0197f82fc0a1303405b7cb54b6f11cbb51869462901963ca24cf2eb",
+  "runtime": {
+    "node": "v22.23.4",
+    "execPath": "/usr/local/bin/node",
+    "execRealPath": "/usr/local/bin/node",
+    "execSHA256": "daa77e22e1b8778361b392461e9921a6d292d0382ebf4ae872a0081f02f01fef",
+    "platform": "darwin",
+    "arch": "arm64",
+    "openssl": "3.5.9",
+    "undici": "6.29.1",
+    "nvmrc": "22.23.4",
+    "packageLockSHA256": "fe7b9cac6900e841cd6c0fbad2a077ff04d611e99cc5a769409b23cd7c420378",
+    "minTLS": "TLSv1.2",
+    "maxTLS": "TLSv1.3",
+    "bundledCACount": 116,
+    "bundledCASHA256": "98c3b15085b7ebf6691d07a7235e256c53c5f0c2fea71178b72ec62de9255dd9",
+    "defaultCACount": 116,
+    "defaultCASHA256": "98c3b15085b7ebf6691d07a7235e256c53c5f0c2fea71178b72ec62de9255dd9",
+    "fetchSourceSHA256": "c78de68d19b50d7efcc3d7ec3db637f3400cc941012afae13dde2ee8f529fd14",
+    "nodeOptions": {
+      "present": false,
+      "sha256": null,
+      "hasPreload": false,
+      "hasTLSFlags": false
+    },
+    "rejectUnauthorized": "unset",
+    "environmentPresence": {
+      "NODE_EXTRA_CA_CERTS": false,
+      "SSL_CERT_FILE": false,
+      "SSL_CERT_DIR": false,
+      "NODE_USE_ENV_PROXY": false,
+      "HTTP_PROXY": false,
+      "HTTPS_PROXY": false,
+      "ALL_PROXY": false,
+      "NO_PROXY": false,
+      "NST_KEY": false,
+      "SUPABASE_SERVICE_ROLE_KEY": false
+    },
+    "lifecycleMode": "disabled",
+    "project": [
+      {
+        "name": "NEXT_PUBLIC_SUPABASE_URL",
+        "present": false,
+        "matchesExpected": false
+      },
+      {
+        "name": "SUPABASE_URL",
+        "present": false,
+        "matchesExpected": false
+      }
+    ]
+  },
+  "fixtures": {
+    "opensslPath": "/opt/homebrew/bin/openssl",
+    "opensslRealPath": "/opt/homebrew/Cellar/openssl@4/4.1.0/bin/openssl",
+    "opensslSHA256": "da101a01999a93ea6eddfe1392752bce2b5a91a41e4b00e1d9656fc682a1dc85",
+    "opensslVersion": "OpenSSL 4.1.0 23 Oct 2026 (Library: OpenSSL 4.1.0 23 Oct 2026)",
+    "certificates": [
+      {
+        "name": "valid",
+        "sha256": "e891b961bfd59f56c5c5ab061a52ab66c7bf01891169929b75f8390ed1028ed1",
+        "validFrom": "Nov  9 20:34:11 2026 GMT",
+        "validTo": "Nov 11 20:34:11 2026 GMT",
+        "subjectAltName": "IP Address:127.0.0.1"
+      },
+      {
+        "name": "wrong-host",
+        "sha256": "b2d84a5fea83d06b26ce1a084a901df7257c1b7e3a311284991731f87517a730",
+        "validFrom": "Nov  9 20:34:12 2026 GMT",
+        "validTo": "Nov 11 20:34:12 2026 GMT",
+        "subjectAltName": "DNS:wrong-host.invalid"
+      },
+      {
+        "name": "expired",
+        "sha256": "406ceb40c46c401129c6b852e367b0bc7dfdfc66df438d476b0524dfa7d98204",
+        "validFrom": "Jan  1 00:00:00 2020 GMT",
+        "validTo": "Jan  2 00:00:00 2020 GMT",
+        "subjectAltName": "IP Address:127.0.0.1"
+      }
+    ]
+  },
+  "childEnvironment": "allowlist PATH and TMPDIR only; trusted cases additionally use one synthetic NODE_EXTRA_CA_CERTS file",
+  "tests": [
+    {
+      "name": "valid",
+      "trustsSyntheticCA": false,
+      "outcome": "rejected",
+      "code": "UNABLE_TO_VERIFY_LEAF_SIGNATURE",
+      "requestsReceived": 0,
+      "negotiatedProtocols": [],
+      "passed": true
+    },
+    {
+      "name": "valid",
+      "trustsSyntheticCA": true,
+      "outcome": "resolved",
+      "status": 200,
+      "bodyMatched": true,
+      "requestsReceived": 1,
+      "negotiatedProtocols": [
+        "TLSv1.3"
+      ],
+      "passed": true
+    },
+    {
+      "name": "wrong-host",
+      "trustsSyntheticCA": true,
+      "outcome": "rejected",
+      "code": "ERR_TLS_CERT_ALTNAME_INVALID",
+      "requestsReceived": 0,
+      "negotiatedProtocols": [],
+      "passed": true
+    },
+    {
+      "name": "expired",
+      "trustsSyntheticCA": true,
+      "outcome": "rejected",
+      "code": "CERT_HAS_EXPIRED",
+      "requestsReceived": 0,
+      "negotiatedProtocols": [],
+      "passed": true
+    }
+  ],
+  "externalRequests": 0,
+  "providerTLSVerified": null,
+  "futureCaptureRuntimeVerified": false,
+  "passed": true,
+  "completedAtUTC": "2026-11-09T20:34:12.443Z",
+  "syntheticPrivateKeysRetained": false
+}

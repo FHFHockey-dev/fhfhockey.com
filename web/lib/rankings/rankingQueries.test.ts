@@ -223,6 +223,7 @@ vi.mock("lib/supabase/server", () => ({
 import {
   buildContextualRankingSnapshotRowsByMetric,
   buildContextualRankingsSurface,
+  buildContextualRankingsSurfaces,
   buildSnapshotFirstContextualRankingsSurface,
   clearContextualRankingsQueryCachesForTests,
 } from "./rankingQueries";
@@ -602,6 +603,7 @@ describe("rankingQueries", () => {
 
     expect(response.meta.latestAvailableSnapshotDate).toBe("2026-04-16");
     expect(response.meta.snapshotDate).toBe("2026-04-11");
+    expect(response.rankings[0].sourceSnapshot).toEqual({ date: "2026-04-11", updatedAt: "2026-04-11T06:00:00.000Z" });
     expect(response.meta.snapshotSelectionReason).toBe(
       "latest_calculable_metric",
     );
@@ -780,4 +782,34 @@ describe("rankingQueries", () => {
     expect(response.rankings.map((row) => row.entity.id)).toEqual([1, 2]);
     expect(response.rankings.map((row) => row.metric.value)).toEqual([9, 8]);
   });
+
+  it("ranks an explicitly complete publication cohort without the recent-game/date cap or cache", async () => {
+    const makeRow = (player_id: number, game_date: string, goals_per_60_last5: number) => ({
+      player_id, season: 20252026, strength_state: "all", team_id: 10,
+      game_date, updated_at: `${game_date}T06:00:00.000Z`, games_played: 5,
+      season_games_played: 5, toi_seconds_total_last5: 1800,
+      goals_per_60_last5, goals_per_60_total_last5: goals_per_60_last5 / 2,
+    });
+    const request = {
+      entity: "skaters", season: 20252026, asOfDate: "2026-04-16", window: "last5",
+      position: "all", deployment: "all", strength: "all", metric: "goals_per_60",
+      minGp: 1, minToiSeconds: 300, teamId: null, peerGroupType: "all_skaters",
+      sort: "percentile", direction: "desc", limit: null, entityIds: null,
+    } as const;
+    const result = await buildContextualRankingsSurfaces(request, ["goals_per_60"], {
+      completeSeasonRows: [makeRow(1, "2026-04-16", 1), makeRow(2, "2025-10-15", 9), makeRow(3, "2026-02-01", 5)] as any,
+    });
+    const surface = result.get("goals_per_60")!;
+    expect(surface.rankings.map((row) => row.entity.id)).toEqual([2, 3, 1]);
+    expect(surface.rankings.map((row) => row.metric.percentile)).toEqual([100, 50, 0]);
+    expect(surface.rankings[0].sourceSnapshot?.date).toBe("2025-10-15");
+    expect(surface.meta.snapshotDate).toBe("2026-04-16");
+    expect(queryCalls.some((call) => call.table === "games" || call.table === "rolling_player_game_metrics")).toBe(false);
+
+    const empty = await buildContextualRankingsSurfaces(request, ["goals_per_60"], { completeSeasonRows: [] });
+    expect(empty.get("goals_per_60")!.rankings).toEqual([]);
+    expect(empty.get("goals_per_60")!.meta.snapshotDate).toBeNull();
+    expect(queryCalls.some((call) => call.table === "games" || call.table === "rolling_player_game_metrics")).toBe(false);
+  });
+
 });

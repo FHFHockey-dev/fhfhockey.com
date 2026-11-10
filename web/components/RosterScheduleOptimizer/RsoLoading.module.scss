@@ -1,0 +1,11 @@
+@use "styles/vars" as v;
+@use "scale" as s;
+
+.loading { width: 100%; min-width: 0; min-height: 50vh; padding: v.$space-md; box-sizing: border-box; color: s.$ink; background: v.$draft-canvas; font-family: v.$font-family-primary; }
+.loading h1 { margin: 0; color: s.$ink-strong; font-family: v.$font-family-accent; font-size: v.$font-size-xxl; }
+.loading p { color: s.$ink-muted; }
+.panels { display: grid; grid-template-columns: 1fr 2fr 1fr; gap: v.$space-sm; }
+.panel { min-width: 0; padding: v.$space-md; border: v.$border-subtle; border-radius: s.$radius-card; background: v.$draft-surface; }
+.row { height: 38px; margin-top: v.$space-sm; border-radius: s.$radius-small; background: v.$draft-surface-raised; }
+.navigation { position: fixed; z-index: 1000; top: v.$space-md; left: 50%; transform: translateX(-50%); max-width: calc(100vw - 32px); padding: v.$space-sm v.$space-md; box-sizing: border-box; border: v.$border-subtle; border-left: 4px solid s.$accent; border-radius: s.$radius-small; background: v.$draft-surface; color: s.$ink-strong; font-family: v.$font-family-primary; pointer-events: none; }
+@media (max-width: 700px) { .panels { grid-template-columns: 1fr; } .panel:nth-child(n + 2) { display: none; } }

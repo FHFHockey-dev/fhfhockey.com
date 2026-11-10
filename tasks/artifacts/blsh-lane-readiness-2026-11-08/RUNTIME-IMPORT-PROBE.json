@@ -1,0 +1,100 @@
+{
+  "purpose": "real_module_import_and_factory_probe_no_capture_execution",
+  "checkedAtUTC": "2026-11-09T20:35:46.396Z",
+  "node": "v22.23.4",
+  "execPath": "/usr/local/bin/node",
+  "execSHA256": "daa77e22e1b8778361b392461e9921a6d292d0382ebf4ae872a0081f02f01fef",
+  "probeSHA256": "fab2ddbc34aada875b5c2e70869f340e13b150b536d7482da357ed244a8946a7",
+  "loader": "ts-node/register/transpile-only",
+  "compilerOptions": {
+    "module": "commonjs",
+    "moduleResolution": "node"
+  },
+  "tsconfigSHA256": "bf729d54eb8c1f8647c54f2406025cfce9e02c0b33b2a427032a83a1a963207b",
+  "dependencies": [
+    {
+      "name": "ts-node",
+      "version": "10.9.2",
+      "entry": "node_modules/ts-node/dist/index.js",
+      "entrySHA256": "87ec393a2dc38640a2a88a806163eb77a63badd805a9fa96c6e9434a7cdf2324",
+      "manifestSHA256": "80961faab4990ab53d33976bf716aa32444d70c64f73a487c23c21b0ca81398e"
+    },
+    {
+      "name": "typescript",
+      "version": "5.7.3",
+      "entry": "node_modules/typescript/lib/typescript.js",
+      "entrySHA256": "0fba5508ecbe50cd00a45f132a76582fb22a4ec55769fd3d794fd0e026f9fb67",
+      "manifestSHA256": "1e03325943793f3bf11667b94fca412fe5ba617c85b84c16f0474933da156baa"
+    },
+    {
+      "name": "cheerio",
+      "version": "1.1.2",
+      "entry": "node_modules/cheerio/dist/commonjs/index.js",
+      "entrySHA256": "ed43f738462a3ce5f277d8626dad1a0210464e38331064b3b43e1083b1ffd494",
+      "manifestSHA256": "ff0b5a83f1728f43695a00b920c20d3a8998c61b791712c1e20dcd24ad0a96b4"
+    },
+    {
+      "name": "memory-cache",
+      "version": "0.2.0",
+      "entry": "node_modules/memory-cache/index.js",
+      "entrySHA256": "080bbdd424b66ccb062e39e8439653f2058c50fe94e830b2e4051db929084123",
+      "manifestSHA256": "b512a5712769e5d7e50b73bd2ded3a2247fb1c348cf9171a59fbf6e90e958daf"
+    }
+  ],
+  "loaded": [
+    {
+      "path": "web/scripts/blsh/nativeProcessCaptureRunner.ts",
+      "sha256": "c8474d7478640aeee69c0a96aac12ac8a8957e8a89b64bdc3332af74b83961e9",
+      "loadedFromPinnedPath": true
+    },
+    {
+      "path": "web/scripts/blsh/nativeProcessCaptureAdapter.ts",
+      "sha256": "0162fb52fe3df0b3c1b70f11b0739792a5b0f32b8dbd35b92255597a506c5368",
+      "loadedFromPinnedPath": true
+    },
+    {
+      "path": "web/scripts/blsh/nativeProcessCapturePreparation.ts",
+      "sha256": "7f562056c16f446641917c90b41425c8c13ae97f11d6383f38e5c3cf12c3b0a7",
+      "loadedFromPinnedPath": true
+    },
+    {
+      "path": "web/lib/nst/client.ts",
+      "sha256": "1a568c28f43e7a716677bc6d47eea47cbe86942cce376f95162fe3740cab738d",
+      "loadedFromPinnedPath": true
+    },
+    {
+      "path": "web/lib/nst/sharedAdmission.ts",
+      "sha256": "a5f62acc1781205672c0e19aaf9c12b6cb1f6e16053876b746bc45aa210b9e4a",
+      "loadedFromPinnedPath": true
+    },
+    {
+      "path": "web/lib/nst/admissionOrigin.ts",
+      "sha256": "1ffe197f90c577b477f94b54e404713a2b001c78edf12d92a249441281cdccba",
+      "loadedFromPinnedPath": true
+    },
+    {
+      "path": "web/lib/nst/jobLifecycle.server.ts",
+      "sha256": "c28bf71b51a879f2ad7793f640e640f101bcea6318423ac3e168618f6bc3f1a8",
+      "loadedFromPinnedPath": true
+    },
+    {
+      "path": "web/lib/nst/requestBudget.ts",
+      "sha256": "ccbab70aee15aba93818df4ef42d41195eceb39757af0ad3eef3b3dd15437e5a",
+      "loadedFromPinnedPath": true
+    },
+    {
+      "path": "web/lib/cron/nstRateLimitPolicy.ts",
+      "sha256": "f90686ed0e22f7dcc8685c111c62445004cb32744284ae22f3e37f9b6e491f2c",
+      "loadedFromPinnedPath": true
+    }
+  ],
+  "missingProjectRefused": true,
+  "sourcePathMatchesPinnedAdapter": true,
+  "syntheticFactoryMode": "disabled",
+  "attemptedNetwork": 0,
+  "attemptedWrites": 0,
+  "runInvoked": false,
+  "providerTLSVerified": null,
+  "captureExecutionEnvironmentVerified": false,
+  "passed": true
+}

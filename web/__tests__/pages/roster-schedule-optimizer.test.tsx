@@ -1,11 +1,9 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
+import { renderToString } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("components/RosterScheduleOptimizer", () => ({
   default: () => <div>Optimizer workspace</div>,
-}));
-vi.mock("components/ClientOnly", () => ({
-  default: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 vi.mock("next/head", () => ({
   default: ({ children }: { children: React.ReactNode }) => <>{children}</>,
@@ -14,16 +12,19 @@ vi.mock("next/head", () => ({
 import RosterScheduleOptimizerPage from "pages/roster-schedule-optimizer";
 
 afterEach(() => {
+  cleanup();
   document.title = "";
 });
 
 describe("Roster Schedule Optimizer route", () => {
-  it("renders the full-width client workspace with route metadata", async () => {
-    render(<RosterScheduleOptimizerPage />);
+  it("renders a loading workspace in the initial HTML instead of an empty client-only page", () => {
+    expect(renderToString(<RosterScheduleOptimizerPage />)).toContain("Loading your planning workspace…");
+  });
 
-    expect(screen.getByText("Optimizer workspace")).toBeTruthy();
-    await waitFor(() => {
-      expect(document.title).toBe("NHL Roster Schedule Optimizer | FHFH");
-    });
+  it("renders the full-width client workspace with route metadata", async () => {
+    const view = render(<RosterScheduleOptimizerPage />);
+
+    expect(await screen.findByText("Optimizer workspace")).toBeTruthy();
+    expect(view.container.querySelector("title")?.textContent).toBe("NHL Roster Schedule Optimizer | FHFH");
   });
 });

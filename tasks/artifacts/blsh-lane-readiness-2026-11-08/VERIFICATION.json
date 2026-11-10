@@ -1,0 +1,1005 @@
+{
+  "schemaVersion": 1,
+  "capturedAtUTC": "2026-11-08T21:10:24.844270+00:00",
+  "scope": "local_source_and_receipt_reconciliation_only",
+  "branch": "octoberBranch",
+  "refsContextOnly": {
+    "HEAD": "adb0309945f9e6aa5dc002c92da15358798acefc",
+    "master": "457435eb3010c5b3dd92d2e1a46d9c75d851780a",
+    "origin/master": "46f9717532774337e0866829828fd46471597301"
+  },
+  "remoteRefsRefreshed": false,
+  "manifestChecks": [
+    {
+      "manifest": "tasks/artifacts/blsh-first-pass-readiness-2026-11-07/CHECKPOINT.json",
+      "manifestSHA256": "6a0feb5cb7abcdb0ad1728fbb4f392c0cf16adf765175d4340a4407b2dcfaa4e",
+      "entries": 13,
+      "drift": [],
+      "comparisons": [
+        {
+          "path": "tasks/artifacts/blsh-first-pass-readiness-2026-11-07/STATUS.md",
+          "expectedSHA256": "b47614f2fdd69c26c04cf20e8f911a88e4a58f2de8bc04b33ac1da212713d466",
+          "actualSHA256": "b47614f2fdd69c26c04cf20e8f911a88e4a58f2de8bc04b33ac1da212713d466",
+          "match": true,
+          "bytes": 14358
+        },
+        {
+          "path": "tasks/artifacts/blsh-fresh-source-readiness-2026-11-07/FINDINGS.md",
+          "expectedSHA256": "520e532fd82cbc271570dc2e8047f610703a31ddeba26da58da2b5272f5a3933",
+          "actualSHA256": "520e532fd82cbc271570dc2e8047f610703a31ddeba26da58da2b5272f5a3933",
+          "match": true,
+          "bytes": 10661
+        },
+        {
+          "path": "tasks/artifacts/blsh-goalie-adapter-2026-11-07/ASSESSMENT.md",
+          "expectedSHA256": "abc043222a4462fd2c58ab2e80bad8924182dac31ba63fca65aafb40cc32e658",
+          "actualSHA256": "abc043222a4462fd2c58ab2e80bad8924182dac31ba63fca65aafb40cc32e658",
+          "match": true,
+          "bytes": 11018
+        },
+        {
+          "path": "tasks/artifacts/blsh-baseline-2026-11-04/REPORT.md",
+          "expectedSHA256": "fc723207f8634b5263d214155c9540fa995c10857305901bc245e38f04438e35",
+          "actualSHA256": "fc723207f8634b5263d214155c9540fa995c10857305901bc245e38f04438e35",
+          "match": true,
+          "bytes": 19571
+        },
+        {
+          "path": "tasks/artifacts/blsh-brief-decisions-2026-11-03/DECISIONS.md",
+          "expectedSHA256": "950a7a0d40f27236557fdacc84b08e20e8842faeb60049a259cdd016c95731b6",
+          "actualSHA256": "950a7a0d40f27236557fdacc84b08e20e8842faeb60049a259cdd016c95731b6",
+          "match": true,
+          "bytes": 6318
+        },
+        {
+          "path": "web/pages/buy-low-sell-high/preview.tsx",
+          "expectedSHA256": "92c01d412e1d28eef7fa3e782a7a23847dd1607df512f588a4023d8a2acc2614",
+          "actualSHA256": "92c01d412e1d28eef7fa3e782a7a23847dd1607df512f588a4023d8a2acc2614",
+          "match": true,
+          "bytes": 1118
+        },
+        {
+          "path": "web/pages/buy-low-sell-high/trade.tsx",
+          "expectedSHA256": "7bc9d950124cc5e60b467ac5ff2dd7efe7769ec73a695c5c1c594ad4213f5a66",
+          "actualSHA256": "7bc9d950124cc5e60b467ac5ff2dd7efe7769ec73a695c5c1c594ad4213f5a66",
+          "match": true,
+          "bytes": 1454
+        },
+        {
+          "path": "web/pages/buyLowSellHigh.js",
+          "expectedSHA256": "d0ea21797e0e84801497ccba3887602c94ebfe34f5bde1e53fc1d627eef0f3c1",
+          "actualSHA256": "d0ea21797e0e84801497ccba3887602c94ebfe34f5bde1e53fc1d627eef0f3c1",
+          "match": true,
+          "bytes": 3971
+        },
+        {
+          "path": "web/lib/buyLowSellHigh/researchSnapshot.server.ts",
+          "expectedSHA256": "dc251e7430085e70bed0a30168a36de24fe11b19d9d1ee6b58fe9ead82bea7a0",
+          "actualSHA256": "dc251e7430085e70bed0a30168a36de24fe11b19d9d1ee6b58fe9ead82bea7a0",
+          "match": true,
+          "bytes": 2494
+        },
+        {
+          "path": "web/lib/buyLowSellHigh/currentProcessEvidence.server.ts",
+          "expectedSHA256": "e69db2c0ee67669df2725636dda689f036780d7809f0e2f49ec89ca504eac724",
+          "actualSHA256": "e69db2c0ee67669df2725636dda689f036780d7809f0e2f49ec89ca504eac724",
+          "match": true,
+          "bytes": 20149
+        },
+        {
+          "path": "tasks/artifacts/blsh-local-persistence-2026-11-07/RESULT.md",
+          "expectedSHA256": "2576ec2ec40cbd93ca5c9e579b2b2587e055ac6ea65d77e6322524fbf15eae9d",
+          "actualSHA256": "2576ec2ec40cbd93ca5c9e579b2b2587e055ac6ea65d77e6322524fbf15eae9d",
+          "match": true,
+          "bytes": 6687
+        },
+        {
+          "path": "tasks/artifacts/blsh-local-persistence-2026-11-07/CHECKS.json",
+          "expectedSHA256": "7f804d32184f5572b07865a3750791c1ae4839214030c925fdd6ce4b3bee32e8",
+          "actualSHA256": "7f804d32184f5572b07865a3750791c1ae4839214030c925fdd6ce4b3bee32e8",
+          "match": true,
+          "bytes": 85
+        },
+        {
+          "path": "tasks/artifacts/blsh-local-persistence-review-2026-11-07/MANIFEST.json",
+          "expectedSHA256": "856db30b093a99348683ed682de9fbd738249898c04e9de4ea1a7f3848c906e7",
+          "actualSHA256": "856db30b093a99348683ed682de9fbd738249898c04e9de4ea1a7f3848c906e7",
+          "match": true,
+          "bytes": 2554
+        }
+      ]
+    },
+    {
+      "manifest": "tasks/artifacts/blsh-native-capture-preparation-2026-11-07/MANIFEST.json",
+      "manifestSHA256": "2abb5c021e28542841fc4806288d0ffb10c2a21d14eaf51eea6a3afd90271de4",
+      "entries": 20,
+      "drift": [],
+      "comparisons": [
+        {
+          "path": "web/scripts/blsh/nativeProcessCapturePreparation.ts",
+          "expectedSHA256": "7f562056c16f446641917c90b41425c8c13ae97f11d6383f38e5c3cf12c3b0a7",
+          "actualSHA256": "7f562056c16f446641917c90b41425c8c13ae97f11d6383f38e5c3cf12c3b0a7",
+          "match": true,
+          "bytes": 10312
+        },
+        {
+          "path": "web/scripts/blsh/nativeProcessCapturePreparation.test.ts",
+          "expectedSHA256": "275423bd778dd5838917f03074c79a89e3c007101ba86957d87c02c7258895fb",
+          "actualSHA256": "275423bd778dd5838917f03074c79a89e3c007101ba86957d87c02c7258895fb",
+          "match": true,
+          "bytes": 9791
+        },
+        {
+          "path": "tasks/artifacts/blsh-native-capture-preparation-2026-11-07/CHECKS.json",
+          "expectedSHA256": "4db21a7a1d97b0414c0f8b749b4a6240e221edc19dd7b0fe8f8751ebf5f5bfde",
+          "actualSHA256": "4db21a7a1d97b0414c0f8b749b4a6240e221edc19dd7b0fe8f8751ebf5f5bfde",
+          "match": true,
+          "bytes": 922
+        },
+        {
+          "path": "tasks/artifacts/blsh-native-capture-preparation-2026-11-07/CLIENT-SOURCE-PINS.json",
+          "expectedSHA256": "01695226a68b7873ce657c93934a40aab3c0713a463fa51f8f9fc3e3ee8dab38",
+          "actualSHA256": "01695226a68b7873ce657c93934a40aab3c0713a463fa51f8f9fc3e3ee8dab38",
+          "match": true,
+          "bytes": 1103
+        },
+        {
+          "path": "tasks/artifacts/blsh-native-capture-preparation-2026-11-07/DRY-RUN-EXAMPLE.json",
+          "expectedSHA256": "164178d6134ae3b42de443cba9cbf4efbd6423cc5df5514a42b095caeb813871",
+          "actualSHA256": "164178d6134ae3b42de443cba9cbf4efbd6423cc5df5514a42b095caeb813871",
+          "match": true,
+          "bytes": 2115
+        },
+        {
+          "path": "tasks/artifacts/blsh-native-capture-preparation-2026-11-07/HANDOFF.md",
+          "expectedSHA256": "0689971269e01acd14a27bc778f08d8f3b06fa00746420b0ffd2370ecb791723",
+          "actualSHA256": "0689971269e01acd14a27bc778f08d8f3b06fa00746420b0ffd2370ecb791723",
+          "match": true,
+          "bytes": 10764
+        },
+        {
+          "path": "tasks/artifacts/blsh-native-capture-preparation-2026-11-07/artifact-lint.log",
+          "expectedSHA256": "57746240256bdae0b423a9caec400eb183de1fb044f783b066306eb3b154c9da",
+          "actualSHA256": "57746240256bdae0b423a9caec400eb183de1fb044f783b066306eb3b154c9da",
+          "match": true,
+          "bytes": 230
+        },
+        {
+          "path": "tasks/artifacts/blsh-native-capture-preparation-2026-11-07/client-lint.log",
+          "expectedSHA256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "actualSHA256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "match": true,
+          "bytes": 0
+        },
+        {
+          "path": "tasks/artifacts/blsh-native-capture-preparation-2026-11-07/client-tests.log",
+          "expectedSHA256": "95b41d3f7bad3b1b4d1379b0af54b264b48bf67c469cb283ce3370edfc640a0b",
+          "actualSHA256": "95b41d3f7bad3b1b4d1379b0af54b264b48bf67c469cb283ce3370edfc640a0b",
+          "match": true,
+          "bytes": 395
+        },
+        {
+          "path": "tasks/artifacts/blsh-native-capture-preparation-2026-11-07/lint.log",
+          "expectedSHA256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "actualSHA256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "match": true,
+          "bytes": 0
+        },
+        {
+          "path": "tasks/artifacts/blsh-native-capture-preparation-2026-11-07/nativeProcessCaptureCandidate.vitest.mts",
+          "expectedSHA256": "d7f82051fc5b130ee5794de36605abc09c41e254f3610d8d35edc0f86f4193bd",
+          "actualSHA256": "d7f82051fc5b130ee5794de36605abc09c41e254f3610d8d35edc0f86f4193bd",
+          "match": true,
+          "bytes": 1253
+        },
+        {
+          "path": "tasks/artifacts/blsh-native-capture-preparation-2026-11-07/nativeProcessCaptureClient.base.ts",
+          "expectedSHA256": "48d82fc40ca06d9abe4675f4a1896add55c4e53d4dee661bbe082d424c944e4f",
+          "actualSHA256": "48d82fc40ca06d9abe4675f4a1896add55c4e53d4dee661bbe082d424c944e4f",
+          "match": true,
+          "bytes": 11733
+        },
+        {
+          "path": "tasks/artifacts/blsh-native-capture-preparation-2026-11-07/nativeProcessCaptureClient.candidate.ts",
+          "expectedSHA256": "99ad45c5ffc88f8ccb24b2d69f5fbad7c6dbcb800fcbd1962c0ab6c7f8945388",
+          "actualSHA256": "99ad45c5ffc88f8ccb24b2d69f5fbad7c6dbcb800fcbd1962c0ab6c7f8945388",
+          "match": true,
+          "bytes": 13727
+        },
+        {
+          "path": "tasks/artifacts/blsh-native-capture-preparation-2026-11-07/nativeProcessCaptureClient.patch",
+          "expectedSHA256": "827445c19e2791dfc0fb1c7255581a559097e29fd8d37312322f0e51cf64d3f0",
+          "actualSHA256": "827445c19e2791dfc0fb1c7255581a559097e29fd8d37312322f0e51cf64d3f0",
+          "match": true,
+          "bytes": 3454
+        },
+        {
+          "path": "tasks/artifacts/blsh-native-capture-preparation-2026-11-07/nativeProcessCaptureClient.test.ts",
+          "expectedSHA256": "c1cf956c73bc518d1abfcd6005b36fc71a04693027290cba76943707721f5d63",
+          "actualSHA256": "c1cf956c73bc518d1abfcd6005b36fc71a04693027290cba76943707721f5d63",
+          "match": true,
+          "bytes": 6283
+        },
+        {
+          "path": "tasks/artifacts/blsh-native-capture-preparation-2026-11-07/nativeProcessCaptureNetworkBlock.setup.ts",
+          "expectedSHA256": "2dc7a4ab72805f3e5cc330c7d08d4a6996c842c07ec2f5d6a19368c1f19bfd64",
+          "actualSHA256": "2dc7a4ab72805f3e5cc330c7d08d4a6996c842c07ec2f5d6a19368c1f19bfd64",
+          "match": true,
+          "bytes": 694
+        },
+        {
+          "path": "tasks/artifacts/blsh-native-capture-preparation-2026-11-07/nativeProcessCaptureTypecheck.cjs",
+          "expectedSHA256": "bfe7a3aeeeee105a77882a61bd6b834dd63c12a0cc9ec6b381df7d5be6499f7c",
+          "actualSHA256": "bfe7a3aeeeee105a77882a61bd6b834dd63c12a0cc9ec6b381df7d5be6499f7c",
+          "match": true,
+          "bytes": 1995
+        },
+        {
+          "path": "tasks/artifacts/blsh-native-capture-preparation-2026-11-07/ordinary-candidate-discovery.log",
+          "expectedSHA256": "ae4e7dc398893a80205e576f6d3e2ea33fa14be10ba09f3d52feda15cb54968d",
+          "actualSHA256": "ae4e7dc398893a80205e576f6d3e2ea33fa14be10ba09f3d52feda15cb54968d",
+          "match": true,
+          "bytes": 53
+        },
+        {
+          "path": "tasks/artifacts/blsh-native-capture-preparation-2026-11-07/preparation-tests.log",
+          "expectedSHA256": "8beaa5a9cd636b0d476788caf11e189fbcf7856166ae6ae63f4be7c81b89f225",
+          "actualSHA256": "8beaa5a9cd636b0d476788caf11e189fbcf7856166ae6ae63f4be7c81b89f225",
+          "match": true,
+          "bytes": 305
+        },
+        {
+          "path": "tasks/artifacts/blsh-native-capture-preparation-2026-11-07/types.log",
+          "expectedSHA256": "cfbbde19b2e1b6df6d3ee6f719ac7fc059dd07d2f53d7a6d097d2f0d000d4181",
+          "actualSHA256": "cfbbde19b2e1b6df6d3ee6f719ac7fc059dd07d2f53d7a6d097d2f0d000d4181",
+          "match": true,
+          "bytes": 95
+        }
+      ]
+    },
+    {
+      "manifest": "tasks/artifacts/blsh-local-persistence-2026-11-07/MANIFEST.json",
+      "manifestSHA256": "156fda5451268347c7ffbf4abce309af25d3ec54e13c22300dddbd76cc6e0e36",
+      "entries": 39,
+      "drift": [],
+      "comparisons": [
+        {
+          "path": "web/lib/buyLowSellHigh/storage.ts",
+          "expectedSHA256": "ee1dbe605c1103b212f1659b1439caedf23252acb6b45b3f6144b019206cb3c4",
+          "actualSHA256": "ee1dbe605c1103b212f1659b1439caedf23252acb6b45b3f6144b019206cb3c4",
+          "match": true,
+          "bytes": 6027
+        },
+        {
+          "path": "web/lib/buyLowSellHigh/storage.test.ts",
+          "expectedSHA256": "eee5db10d56c89134c18eed26778c3c5a6357b190e3f079bb31f9c464ed703c6",
+          "actualSHA256": "eee5db10d56c89134c18eed26778c3c5a6357b190e3f079bb31f9c464ed703c6",
+          "match": true,
+          "bytes": 6828
+        },
+        {
+          "path": "web/lib/buyLowSellHigh/useBlshLocalState.ts",
+          "expectedSHA256": "4a84f620492520ab9483cf259895ff44f9543702c52f9f84b53381cee4ebad2e",
+          "actualSHA256": "4a84f620492520ab9483cf259895ff44f9543702c52f9f84b53381cee4ebad2e",
+          "match": true,
+          "bytes": 3124
+        },
+        {
+          "path": "web/components/buyLowSellHigh/BlshCandidateLists.tsx",
+          "expectedSHA256": "c64ed8194051f481a4eeca3f0f97536618a9ea3a799c0a936450ec79ccc70bbb",
+          "actualSHA256": "c64ed8194051f481a4eeca3f0f97536618a9ea3a799c0a936450ec79ccc70bbb",
+          "match": true,
+          "bytes": 17308
+        },
+        {
+          "path": "web/components/buyLowSellHigh/BlshCandidateLists.test.tsx",
+          "expectedSHA256": "787988ada70f9b57391a4caf8a1df42739d998271666fd6061c92e4346c53cbf",
+          "actualSHA256": "787988ada70f9b57391a4caf8a1df42739d998271666fd6061c92e4346c53cbf",
+          "match": true,
+          "bytes": 18857
+        },
+        {
+          "path": "web/components/buyLowSellHigh/BlshCandidateLists.module.scss",
+          "expectedSHA256": "920b74bde6f1b55eaca4dfdc104fb22d10e60aaa5aa177691363b48b627a3f0c",
+          "actualSHA256": "920b74bde6f1b55eaca4dfdc104fb22d10e60aaa5aa177691363b48b627a3f0c",
+          "match": true,
+          "bytes": 1689
+        },
+        {
+          "path": "web/components/blshTrade/BlshTradeComparison.tsx",
+          "expectedSHA256": "01b6bbdfba1c0b246abfdcbbea13e05c3dda79f308a28d38e5c6846691171774",
+          "actualSHA256": "01b6bbdfba1c0b246abfdcbbea13e05c3dda79f308a28d38e5c6846691171774",
+          "match": true,
+          "bytes": 24708
+        },
+        {
+          "path": "web/components/blshTrade/BlshTradeComparison.test.tsx",
+          "expectedSHA256": "d70910a3d14a4fed85b9e7bdbd46cbcdbfbc0389e024ee532e19d6d7cc0a0887",
+          "actualSHA256": "d70910a3d14a4fed85b9e7bdbd46cbcdbfbc0389e024ee532e19d6d7cc0a0887",
+          "match": true,
+          "bytes": 16785
+        },
+        {
+          "path": "web/components/blshTrade/BlshTrade.module.scss",
+          "expectedSHA256": "b853cce71f265e8e56db8045a8c92fc5be76fcd8cc60c4fd03e17baacfe683ba",
+          "actualSHA256": "b853cce71f265e8e56db8045a8c92fc5be76fcd8cc60c4fd03e17baacfe683ba",
+          "match": true,
+          "bytes": 7294
+        },
+        {
+          "path": "web/components/buyLowSellHigh/BuyLowSellHighPreview.tsx",
+          "expectedSHA256": "b3fcf950e56f7cc33bc70ac62e3044414cc194ddb5aed04bf5667e6b715ad685",
+          "actualSHA256": "b3fcf950e56f7cc33bc70ac62e3044414cc194ddb5aed04bf5667e6b715ad685",
+          "match": true,
+          "bytes": 15824
+        },
+        {
+          "path": "web/components/buyLowSellHigh/BlshPlayerDetail.tsx",
+          "expectedSHA256": "6419b05cec243ed5f3f66b40ad7d79b4a3bcba2fd61994bf93d99f5bd8d92a03",
+          "actualSHA256": "6419b05cec243ed5f3f66b40ad7d79b4a3bcba2fd61994bf93d99f5bd8d92a03",
+          "match": true,
+          "bytes": 21772
+        },
+        {
+          "path": "web/components/blshTrade/fixtureEvidence.ts",
+          "expectedSHA256": "49adbe6c9abb878f2a6a2bbaf9c4bde4f90d63f305006e940bfd3366ee8535d4",
+          "actualSHA256": "49adbe6c9abb878f2a6a2bbaf9c4bde4f90d63f305006e940bfd3366ee8535d4",
+          "match": true,
+          "bytes": 8675
+        },
+        {
+          "path": "web/components/blshTrade/retrospective.ts",
+          "expectedSHA256": "9c5869cce3b6ce1ce961dab2ab9272917a84e5ed0a463e29e280ed5d4185fba1",
+          "actualSHA256": "9c5869cce3b6ce1ce961dab2ab9272917a84e5ed0a463e29e280ed5d4185fba1",
+          "match": true,
+          "bytes": 3887
+        },
+        {
+          "path": "web/lib/buyLowSellHigh/displayProfile.ts",
+          "expectedSHA256": "6de7898a08f4ece36307b9817ce0dae33f1ee238ebf5eb52dad7f583f4d7178c",
+          "actualSHA256": "6de7898a08f4ece36307b9817ce0dae33f1ee238ebf5eb52dad7f583f4d7178c",
+          "match": true,
+          "bytes": 44623
+        },
+        {
+          "path": "web/lib/buyLowSellHigh/researchSnapshot.ts",
+          "expectedSHA256": "dc4cbb57a93a6e2cdae66d48b0519704c17f0a7d49451bfa546eafeb885b2cb7",
+          "actualSHA256": "dc4cbb57a93a6e2cdae66d48b0519704c17f0a7d49451bfa546eafeb885b2cb7",
+          "match": true,
+          "bytes": 31655
+        },
+        {
+          "path": "web/lib/buyLowSellHigh/trade.ts",
+          "expectedSHA256": "18b9fe9302c5933f3182e2af2fd0ca2e20fa541d361e40606d4fc195a431dce3",
+          "actualSHA256": "18b9fe9302c5933f3182e2af2fd0ca2e20fa541d361e40606d4fc195a431dce3",
+          "match": true,
+          "bytes": 13527
+        },
+        {
+          "path": "web/lib/buyLowSellHigh/market.ts",
+          "expectedSHA256": "44df9313b86bbc078dc6f314a5884deb490e266509bec4a44f6f9ff08e537f60",
+          "actualSHA256": "44df9313b86bbc078dc6f314a5884deb490e266509bec4a44f6f9ff08e537f60",
+          "match": true,
+          "bytes": 6848
+        },
+        {
+          "path": "web/lib/skoElement/contract.ts",
+          "expectedSHA256": "b262b18374d78e292dc45e4c1510e14489fb31a2f945ebe08fc685a3cb7b9904",
+          "actualSHA256": "b262b18374d78e292dc45e4c1510e14489fb31a2f945ebe08fc685a3cb7b9904",
+          "match": true,
+          "bytes": 11131
+        },
+        {
+          "path": "web/lib/skoElement/fixtures.ts",
+          "expectedSHA256": "b4e7e6b31c9fd9d1e541aba1e0f19993caa413bab8112b1cd05bc10e1b7f2fa2",
+          "actualSHA256": "b4e7e6b31c9fd9d1e541aba1e0f19993caa413bab8112b1cd05bc10e1b7f2fa2",
+          "match": true,
+          "bytes": 17583
+        },
+        {
+          "path": "web/pages/buy-low-sell-high/trade.tsx",
+          "expectedSHA256": "7bc9d950124cc5e60b467ac5ff2dd7efe7769ec73a695c5c1c594ad4213f5a66",
+          "actualSHA256": "7bc9d950124cc5e60b467ac5ff2dd7efe7769ec73a695c5c1c594ad4213f5a66",
+          "match": true,
+          "bytes": 1454
+        },
+        {
+          "path": "web/pages/buy-low-sell-high/preview.tsx",
+          "expectedSHA256": "92c01d412e1d28eef7fa3e782a7a23847dd1607df512f588a4023d8a2acc2614",
+          "actualSHA256": "92c01d412e1d28eef7fa3e782a7a23847dd1607df512f588a4023d8a2acc2614",
+          "match": true,
+          "bytes": 1118
+        },
+        {
+          "path": "web/components/blshTrade/retrospective.test.ts",
+          "expectedSHA256": "2b588c6bdd8a1ea49eea671414c13d5ee7061695f6451d3ca49f2da7f3b7c4d4",
+          "actualSHA256": "2b588c6bdd8a1ea49eea671414c13d5ee7061695f6451d3ca49f2da7f3b7c4d4",
+          "match": true,
+          "bytes": 5684
+        },
+        {
+          "path": "tasks/artifacts/blsh-local-persistence-2026-11-07/RESULT.md",
+          "expectedSHA256": "2576ec2ec40cbd93ca5c9e579b2b2587e055ac6ea65d77e6322524fbf15eae9d",
+          "actualSHA256": "2576ec2ec40cbd93ca5c9e579b2b2587e055ac6ea65d77e6322524fbf15eae9d",
+          "match": true,
+          "bytes": 6687
+        },
+        {
+          "path": "tasks/artifacts/blsh-local-persistence-2026-11-07/CHECKS.json",
+          "expectedSHA256": "7f804d32184f5572b07865a3750791c1ae4839214030c925fdd6ce4b3bee32e8",
+          "actualSHA256": "7f804d32184f5572b07865a3750791c1ae4839214030c925fdd6ce4b3bee32e8",
+          "match": true,
+          "bytes": 85
+        },
+        {
+          "path": "tasks/artifacts/blsh-local-persistence-2026-11-07/tests-candidate.log",
+          "expectedSHA256": "4cee87fa5def9a1c9307ff40e07a52843f75160f80080d31de0ad42e0c1c0379",
+          "actualSHA256": "4cee87fa5def9a1c9307ff40e07a52843f75160f80080d31de0ad42e0c1c0379",
+          "match": true,
+          "bytes": 1647
+        },
+        {
+          "path": "tasks/artifacts/blsh-local-persistence-2026-11-07/types-final.log",
+          "expectedSHA256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "actualSHA256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "match": true,
+          "bytes": 0
+        },
+        {
+          "path": "tasks/artifacts/blsh-local-persistence-2026-11-07/lint-candidate.log",
+          "expectedSHA256": "cf2f2e1841f6be8bebbc51d89be96c80ed8cf36bfaa24056748b6ea15a970701",
+          "actualSHA256": "cf2f2e1841f6be8bebbc51d89be96c80ed8cf36bfaa24056748b6ea15a970701",
+          "match": true,
+          "bytes": 425
+        },
+        {
+          "path": "tasks/artifacts/blsh-local-persistence-2026-11-07/browser.json",
+          "expectedSHA256": "f646cc1e6e170a16a38ce7ac1190ad118daf69d9450a818b1a79c01fa881d7a3",
+          "actualSHA256": "f646cc1e6e170a16a38ce7ac1190ad118daf69d9450a818b1a79c01fa881d7a3",
+          "match": true,
+          "bytes": 6029
+        },
+        {
+          "path": "tasks/artifacts/blsh-local-persistence-2026-11-07/browser-final.log",
+          "expectedSHA256": "b1dc63278dbf4ad329e349ffa2e5d5c6d39432e8eeafa7e8d3db3f44d03ddb8f",
+          "actualSHA256": "b1dc63278dbf4ad329e349ffa2e5d5c6d39432e8eeafa7e8d3db3f44d03ddb8f",
+          "match": true,
+          "bytes": 65
+        },
+        {
+          "path": "tasks/artifacts/blsh-local-persistence-2026-11-07/verify-browser.mjs",
+          "expectedSHA256": "589e3e1fc84f9d3d5984d70908313fae8252236e89247bda083f33568719235a",
+          "actualSHA256": "589e3e1fc84f9d3d5984d70908313fae8252236e89247bda083f33568719235a",
+          "match": true,
+          "bytes": 18746
+        },
+        {
+          "path": "tasks/artifacts/blsh-local-persistence-2026-11-07/browser-entry.tsx",
+          "expectedSHA256": "5d37ee13a3341c2658d3df60e74f96d209635df6012dce216ddd457b5af2ce03",
+          "actualSHA256": "5d37ee13a3341c2658d3df60e74f96d209635df6012dce216ddd457b5af2ce03",
+          "match": true,
+          "bytes": 1538
+        },
+        {
+          "path": "tasks/artifacts/blsh-local-persistence-2026-11-07/browser-router.tsx",
+          "expectedSHA256": "dbd3fbaf14acd27512c7c4101d20e648ed877cbccc14ce1d6aba1d8b5fc65806",
+          "actualSHA256": "dbd3fbaf14acd27512c7c4101d20e648ed877cbccc14ce1d6aba1d8b5fc65806",
+          "match": true,
+          "bytes": 767
+        },
+        {
+          "path": "tasks/artifacts/blsh-local-persistence-2026-11-07/loopback-only.cjs",
+          "expectedSHA256": "41b4926493e231a27dd5c056369ba09b6f366ebffae3192e2e529ed4b34b9b38",
+          "actualSHA256": "41b4926493e231a27dd5c056369ba09b6f366ebffae3192e2e529ed4b34b9b38",
+          "match": true,
+          "bytes": 1024
+        },
+        {
+          "path": "tasks/artifacts/blsh-local-persistence-2026-11-07/desktop.png",
+          "expectedSHA256": "23fed9400345ddff61ceae389b9f69766d91d8425af2307c7bec9dfd9757f153",
+          "actualSHA256": "23fed9400345ddff61ceae389b9f69766d91d8425af2307c7bec9dfd9757f153",
+          "match": true,
+          "bytes": 159170
+        },
+        {
+          "path": "tasks/artifacts/blsh-local-persistence-2026-11-07/mobile.png",
+          "expectedSHA256": "802abbd7fe9b91d721029fa5c9d07ca22c3e13e07c17411e0943bd5772256708",
+          "actualSHA256": "802abbd7fe9b91d721029fa5c9d07ca22c3e13e07c17411e0943bd5772256708",
+          "match": true,
+          "bytes": 94471
+        },
+        {
+          "path": "tasks/artifacts/blsh-local-persistence-2026-11-07/mobile-detail.png",
+          "expectedSHA256": "3f950a06902bd37c48a131b7bd10bc2c03579504fd66f93c6fd7d1c41e4091b6",
+          "actualSHA256": "3f950a06902bd37c48a131b7bd10bc2c03579504fd66f93c6fd7d1c41e4091b6",
+          "match": true,
+          "bytes": 573552
+        },
+        {
+          "path": "tasks/artifacts/blsh-local-persistence-2026-11-07/mobile-list.png",
+          "expectedSHA256": "b2ab7975c13ef65eccfbff5b7a5e2d158a8c7cb1050a72a7603b4b5f071a9168",
+          "actualSHA256": "b2ab7975c13ef65eccfbff5b7a5e2d158a8c7cb1050a72a7603b4b5f071a9168",
+          "match": true,
+          "bytes": 85836
+        },
+        {
+          "path": "tasks/artifacts/blsh-local-persistence-2026-11-07/trade-desktop.png",
+          "expectedSHA256": "af2e20db29d778fe3f5662463a96284d4f56e05bfb9fb320f22d0f97ba03cd47",
+          "actualSHA256": "af2e20db29d778fe3f5662463a96284d4f56e05bfb9fb320f22d0f97ba03cd47",
+          "match": true,
+          "bytes": 313234
+        },
+        {
+          "path": "tasks/artifacts/blsh-local-persistence-2026-11-07/trade-mobile.png",
+          "expectedSHA256": "3386fad6048ba2695886364294b2a1343d70a2fa2b170e5d6eb51eb002ac3e6c",
+          "actualSHA256": "3386fad6048ba2695886364294b2a1343d70a2fa2b170e5d6eb51eb002ac3e6c",
+          "match": true,
+          "bytes": 323677
+        }
+      ]
+    },
+    {
+      "manifest": "tasks/artifacts/blsh-local-persistence-review-2026-11-07/MANIFEST.json",
+      "manifestSHA256": "856db30b093a99348683ed682de9fbd738249898c04e9de4ea1a7f3848c906e7",
+      "entries": 12,
+      "drift": [],
+      "comparisons": [
+        {
+          "path": "web/lib/buyLowSellHigh/storage.ts",
+          "expectedSHA256": "ee1dbe605c1103b212f1659b1439caedf23252acb6b45b3f6144b019206cb3c4",
+          "actualSHA256": "ee1dbe605c1103b212f1659b1439caedf23252acb6b45b3f6144b019206cb3c4",
+          "match": true,
+          "bytes": 6027
+        },
+        {
+          "path": "web/lib/buyLowSellHigh/storage.test.ts",
+          "expectedSHA256": "eee5db10d56c89134c18eed26778c3c5a6357b190e3f079bb31f9c464ed703c6",
+          "actualSHA256": "eee5db10d56c89134c18eed26778c3c5a6357b190e3f079bb31f9c464ed703c6",
+          "match": true,
+          "bytes": 6828
+        },
+        {
+          "path": "web/lib/buyLowSellHigh/useBlshLocalState.ts",
+          "expectedSHA256": "4a84f620492520ab9483cf259895ff44f9543702c52f9f84b53381cee4ebad2e",
+          "actualSHA256": "4a84f620492520ab9483cf259895ff44f9543702c52f9f84b53381cee4ebad2e",
+          "match": true,
+          "bytes": 3124
+        },
+        {
+          "path": "web/components/buyLowSellHigh/BlshCandidateLists.tsx",
+          "expectedSHA256": "c64ed8194051f481a4eeca3f0f97536618a9ea3a799c0a936450ec79ccc70bbb",
+          "actualSHA256": "c64ed8194051f481a4eeca3f0f97536618a9ea3a799c0a936450ec79ccc70bbb",
+          "match": true,
+          "bytes": 17308
+        },
+        {
+          "path": "web/components/buyLowSellHigh/BlshCandidateLists.test.tsx",
+          "expectedSHA256": "787988ada70f9b57391a4caf8a1df42739d998271666fd6061c92e4346c53cbf",
+          "actualSHA256": "787988ada70f9b57391a4caf8a1df42739d998271666fd6061c92e4346c53cbf",
+          "match": true,
+          "bytes": 18857
+        },
+        {
+          "path": "web/components/buyLowSellHigh/BlshCandidateLists.module.scss",
+          "expectedSHA256": "920b74bde6f1b55eaca4dfdc104fb22d10e60aaa5aa177691363b48b627a3f0c",
+          "actualSHA256": "920b74bde6f1b55eaca4dfdc104fb22d10e60aaa5aa177691363b48b627a3f0c",
+          "match": true,
+          "bytes": 1689
+        },
+        {
+          "path": "web/components/buyLowSellHigh/BuyLowSellHighPreview.tsx",
+          "expectedSHA256": "b3fcf950e56f7cc33bc70ac62e3044414cc194ddb5aed04bf5667e6b715ad685",
+          "actualSHA256": "b3fcf950e56f7cc33bc70ac62e3044414cc194ddb5aed04bf5667e6b715ad685",
+          "match": true,
+          "bytes": 15824
+        },
+        {
+          "path": "web/components/blshTrade/BlshTradeComparison.tsx",
+          "expectedSHA256": "01b6bbdfba1c0b246abfdcbbea13e05c3dda79f308a28d38e5c6846691171774",
+          "actualSHA256": "01b6bbdfba1c0b246abfdcbbea13e05c3dda79f308a28d38e5c6846691171774",
+          "match": true,
+          "bytes": 24708
+        },
+        {
+          "path": "web/components/blshTrade/BlshTradeComparison.test.tsx",
+          "expectedSHA256": "d70910a3d14a4fed85b9e7bdbd46cbcdbfbc0389e024ee532e19d6d7cc0a0887",
+          "actualSHA256": "d70910a3d14a4fed85b9e7bdbd46cbcdbfbc0389e024ee532e19d6d7cc0a0887",
+          "match": true,
+          "bytes": 16785
+        },
+        {
+          "path": "web/components/blshTrade/BlshTrade.module.scss",
+          "expectedSHA256": "b853cce71f265e8e56db8045a8c92fc5be76fcd8cc60c4fd03e17baacfe683ba",
+          "actualSHA256": "b853cce71f265e8e56db8045a8c92fc5be76fcd8cc60c4fd03e17baacfe683ba",
+          "match": true,
+          "bytes": 7294
+        },
+        {
+          "path": "web/components/blshTrade/retrospective.ts",
+          "expectedSHA256": "9c5869cce3b6ce1ce961dab2ab9272917a84e5ed0a463e29e280ed5d4185fba1",
+          "actualSHA256": "9c5869cce3b6ce1ce961dab2ab9272917a84e5ed0a463e29e280ed5d4185fba1",
+          "match": true,
+          "bytes": 3887
+        },
+        {
+          "path": "web/components/blshTrade/retrospective.test.ts",
+          "expectedSHA256": "2b588c6bdd8a1ea49eea671414c13d5ee7061695f6451d3ca49f2da7f3b7c4d4",
+          "actualSHA256": "2b588c6bdd8a1ea49eea671414c13d5ee7061695f6451d3ca49f2da7f3b7c4d4",
+          "match": true,
+          "bytes": 5684
+        }
+      ]
+    },
+    {
+      "manifest": "tasks/artifacts/blsh-freshness-separation-2026-11-07/MANIFEST.json",
+      "manifestSHA256": "55cc12cf9dcaea6fb9e5a1e40d9f3c740d4a94e03399a0a1213fe7e21102dcf7",
+      "entries": 14,
+      "drift": [],
+      "comparisons": [
+        {
+          "path": "web/lib/buyLowSellHigh/currentProcessEvidence.server.ts",
+          "expectedSHA256": "e69db2c0ee67669df2725636dda689f036780d7809f0e2f49ec89ca504eac724",
+          "actualSHA256": "e69db2c0ee67669df2725636dda689f036780d7809f0e2f49ec89ca504eac724",
+          "match": true,
+          "bytes": 20149
+        },
+        {
+          "path": "web/lib/buyLowSellHigh/currentProcessEvidence.server.test.ts",
+          "expectedSHA256": "cc9905ca12e2399fba400ff54e7eccbc821235d38c24df82bcbdfaee2593f7d0",
+          "actualSHA256": "cc9905ca12e2399fba400ff54e7eccbc821235d38c24df82bcbdfaee2593f7d0",
+          "match": true,
+          "bytes": 29688
+        },
+        {
+          "path": "tasks/artifacts/blsh-freshness-separation-2026-11-07/BASE-PINS.json",
+          "expectedSHA256": "ae55fb45eca1f7719c6b4954071bd848ab4b86c7fdbedd58ca55219d349a39e5",
+          "actualSHA256": "ae55fb45eca1f7719c6b4954071bd848ab4b86c7fdbedd58ca55219d349a39e5",
+          "match": true,
+          "bytes": 710
+        },
+        {
+          "path": "tasks/artifacts/blsh-freshness-separation-2026-11-07/CHECKS.json",
+          "expectedSHA256": "a456e6205e0ee28c8cf7fd9079d105b4f5d07f20eb2e69d642fd9f906c51f83b",
+          "actualSHA256": "a456e6205e0ee28c8cf7fd9079d105b4f5d07f20eb2e69d642fd9f906c51f83b",
+          "match": true,
+          "bytes": 614
+        },
+        {
+          "path": "tasks/artifacts/blsh-freshness-separation-2026-11-07/HANDOFF.md",
+          "expectedSHA256": "d289f587f64fa7ff9ee86ab6a49170339858b4d1ea31bd76e2f575263d12ebb6",
+          "actualSHA256": "d289f587f64fa7ff9ee86ab6a49170339858b4d1ea31bd76e2f575263d12ebb6",
+          "match": true,
+          "bytes": 6295
+        },
+        {
+          "path": "tasks/artifacts/blsh-freshness-separation-2026-11-07/LEGACY-PARITY.json",
+          "expectedSHA256": "cf38d33390a4f4125de4bda4027be28042eaf04f4252b30a17d6a4bcc3c516a7",
+          "actualSHA256": "cf38d33390a4f4125de4bda4027be28042eaf04f4252b30a17d6a4bcc3c516a7",
+          "match": true,
+          "bytes": 10622
+        },
+        {
+          "path": "tasks/artifacts/blsh-freshness-separation-2026-11-07/LINT.log",
+          "expectedSHA256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "actualSHA256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "match": true,
+          "bytes": 0
+        },
+        {
+          "path": "tasks/artifacts/blsh-freshness-separation-2026-11-07/TESTS-New-York.log",
+          "expectedSHA256": "0959c59e301104b6e263badc4b8a48488b445c0c43a3c43cdad0b55261df9ad6",
+          "actualSHA256": "0959c59e301104b6e263badc4b8a48488b445c0c43a3c43cdad0b55261df9ad6",
+          "match": true,
+          "bytes": 688
+        },
+        {
+          "path": "tasks/artifacts/blsh-freshness-separation-2026-11-07/TESTS.log",
+          "expectedSHA256": "02a009f16e5478746096d7ac3709f42a8ed1b80372f83c9456321a7cf35d85b9",
+          "actualSHA256": "02a009f16e5478746096d7ac3709f42a8ed1b80372f83c9456321a7cf35d85b9",
+          "match": true,
+          "bytes": 600
+        },
+        {
+          "path": "tasks/artifacts/blsh-freshness-separation-2026-11-07/TYPES.log",
+          "expectedSHA256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "actualSHA256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "match": true,
+          "bytes": 0
+        },
+        {
+          "path": "tasks/artifacts/blsh-freshness-separation-2026-11-07/change.patch",
+          "expectedSHA256": "8050cf65dfed93379539bace1a3e09f847cb7a3d67142d5c5303d4b58bb524f6",
+          "actualSHA256": "8050cf65dfed93379539bace1a3e09f847cb7a3d67142d5c5303d4b58bb524f6",
+          "match": true,
+          "bytes": 16576
+        },
+        {
+          "path": "tasks/artifacts/blsh-freshness-separation-2026-11-07/compare-legacy.cjs",
+          "expectedSHA256": "427b82c8f26574ab39302fc2a5295513ac29a3ba39a3ab110698357299e2517c",
+          "actualSHA256": "427b82c8f26574ab39302fc2a5295513ac29a3ba39a3ab110698357299e2517c",
+          "match": true,
+          "bytes": 3774
+        },
+        {
+          "path": "tasks/artifacts/blsh-freshness-separation-2026-11-07/currentProcessEvidence.server.base.ts",
+          "expectedSHA256": "9011207c1d16af7a2834a80b4d19d85d0b772a02093eef822e0dd44a9959af83",
+          "actualSHA256": "9011207c1d16af7a2834a80b4d19d85d0b772a02093eef822e0dd44a9959af83",
+          "match": true,
+          "bytes": 16728
+        },
+        {
+          "path": "tasks/artifacts/blsh-freshness-separation-2026-11-07/currentProcessEvidence.server.test.base.ts",
+          "expectedSHA256": "0e3a7dfdb02b4e6271ddc14371e8f6fcf39f1ab80929fc503bdfa6f44b584a23",
+          "actualSHA256": "0e3a7dfdb02b4e6271ddc14371e8f6fcf39f1ab80929fc503bdfa6f44b584a23",
+          "match": true,
+          "bytes": 22204
+        }
+      ]
+    },
+    {
+      "manifest": "tasks/artifacts/blsh-freshness-independent-review-2026-11-07/MANIFEST.json",
+      "manifestSHA256": "1f8a8da8e1f7aa17852bf56642ad3a03c94e528d6e1bf9679378d3c3cc063257",
+      "entries": 5,
+      "drift": [],
+      "comparisons": [
+        {
+          "path": "tasks/artifacts/blsh-freshness-independent-review-2026-11-07/review.cjs",
+          "expectedSHA256": "a064c8ee5c2aaea3faf47ff9e92437f20029da5038f8f6641750b44c1608cab3",
+          "actualSHA256": "a064c8ee5c2aaea3faf47ff9e92437f20029da5038f8f6641750b44c1608cab3",
+          "match": true,
+          "bytes": 9027
+        },
+        {
+          "path": "tasks/artifacts/blsh-freshness-independent-review-2026-11-07/RESULT.json",
+          "expectedSHA256": "65c8011570d4c48cb09d7c08506b0a825d6f4ccd4d485ac07617b1a722fc2264",
+          "actualSHA256": "65c8011570d4c48cb09d7c08506b0a825d6f4ccd4d485ac07617b1a722fc2264",
+          "match": true,
+          "bytes": 1290
+        },
+        {
+          "path": "tasks/artifacts/blsh-freshness-independent-review-2026-11-07/REVIEW.md",
+          "expectedSHA256": "956d9cdc114b3602233b1dc24e4fe6a38ab91b3f64c490db1d6bc5350009599d",
+          "actualSHA256": "956d9cdc114b3602233b1dc24e4fe6a38ab91b3f64c490db1d6bc5350009599d",
+          "match": true,
+          "bytes": 3553
+        },
+        {
+          "path": "web/lib/buyLowSellHigh/currentProcessEvidence.server.ts",
+          "expectedSHA256": "e69db2c0ee67669df2725636dda689f036780d7809f0e2f49ec89ca504eac724",
+          "actualSHA256": "e69db2c0ee67669df2725636dda689f036780d7809f0e2f49ec89ca504eac724",
+          "match": true,
+          "bytes": 20149
+        },
+        {
+          "path": "web/lib/buyLowSellHigh/currentProcessEvidence.server.test.ts",
+          "expectedSHA256": "cc9905ca12e2399fba400ff54e7eccbc821235d38c24df82bcbdfaee2593f7d0",
+          "actualSHA256": "cc9905ca12e2399fba400ff54e7eccbc821235d38c24df82bcbdfaee2593f7d0",
+          "match": true,
+          "bytes": 29688
+        }
+      ]
+    }
+  ],
+  "historicalCaptureDependencies": [
+    {
+      "path": "web/lib/nst/client.ts",
+      "historicalSHA256": "48d82fc40ca06d9abe4675f4a1896add55c4e53d4dee661bbe082d424c944e4f",
+      "actualSHA256": "48d82fc40ca06d9abe4675f4a1896add55c4e53d4dee661bbe082d424c944e4f",
+      "match": true
+    },
+    {
+      "path": "web/lib/nst/requestBudget.ts",
+      "historicalSHA256": "ccbab70aee15aba93818df4ef42d41195eceb39757af0ad3eef3b3dd15437e5a",
+      "actualSHA256": "ccbab70aee15aba93818df4ef42d41195eceb39757af0ad3eef3b3dd15437e5a",
+      "match": true
+    },
+    {
+      "path": "web/lib/nst/sharedAdmission.ts",
+      "historicalSHA256": "f1c407170c9085c5f57b543c418bb8341859b4034d4f1d9d286bea0afabc36ac",
+      "actualSHA256": "f1c407170c9085c5f57b543c418bb8341859b4034d4f1d9d286bea0afabc36ac",
+      "match": true
+    },
+    {
+      "path": "web/lib/nst/jobLifecycle.server.ts",
+      "historicalSHA256": "365dcca44fc79e12cd0a2b4be9edc9e58e99f3a5344c4dc23b7b4332c982e0e3",
+      "actualSHA256": "365dcca44fc79e12cd0a2b4be9edc9e58e99f3a5344c4dc23b7b4332c982e0e3",
+      "match": true
+    },
+    {
+      "path": "web/lib/cron/nstRateLimitPolicy.ts",
+      "historicalSHA256": "f90686ed0e22f7dcc8685c111c62445004cb32744284ae22f3e37f9b6e491f2c",
+      "actualSHA256": "f90686ed0e22f7dcc8685c111c62445004cb32744284ae22f3e37f9b6e491f2c",
+      "match": true
+    },
+    {
+      "path": "web/lib/buyLowSellHigh/currentProcessEvidence.server.ts",
+      "historicalSHA256": "9011207c1d16af7a2834a80b4d19d85d0b772a02093eef822e0dd44a9959af83",
+      "actualSHA256": "e69db2c0ee67669df2725636dda689f036780d7809f0e2f49ec89ca504eac724",
+      "match": false,
+      "disposition": "explained_by_independently_reviewed_additive_freshness_successor",
+      "successorManifest": "tasks/artifacts/blsh-freshness-separation-2026-11-07/MANIFEST.json"
+    }
+  ],
+  "clientPatchCheck": {
+    "command": "git apply --check tasks/artifacts/blsh-native-capture-preparation-2026-11-07/nativeProcessCaptureClient.patch",
+    "exitCode": 0,
+    "applied": false
+  },
+  "candidates": [
+    {
+      "path": "/Users/tim/Documents/Codex/2026-11-07/blsh-v3-integration/2026-10-28.arm-a.mapper-v3.candidate.json",
+      "sha256": "daf447b70fd8e08dc88a2e17162e0c1dd04863275cd7e23dbd923acca34e4485",
+      "bytes": 10243796,
+      "eventThroughDate": "2026-10-28",
+      "counts": {
+        "profiles": 729,
+        "numeric": 551,
+        "BL": 169,
+        "SH": 112,
+        "withheld": 448,
+        "withheldNoPersonalHistory": 84,
+        "withheldPersonalHistoryUnavailable": 0,
+        "withheldInsufficientPersonalHistory": 39,
+        "withheldShortWindow": 15,
+        "withheldHeadlineConflict": 29,
+        "withheldHeadlineUnavailable": 0,
+        "directionWithheld": 163,
+        "opportunityAttached": 0,
+        "opportunityListCheck": {
+          "agrees": 0,
+          "qualified": 0,
+          "balanced": 0,
+          "contradicts": 0,
+          "withheld": 0,
+          "unavailable": 0
+        },
+        "byPosition": {
+          "F": {
+            "BL": 103,
+            "SH": 82
+          },
+          "D": {
+            "BL": 66,
+            "SH": 30
+          }
+        },
+        "unavailableTier": 178,
+        "referenceContextAbsent": 152,
+        "zeroShotWindows": 19,
+        "zeroShotNumeric": 14,
+        "zeroShotListed": 0,
+        "personalReference1to4": 36,
+        "referenceAgeDays": {
+          "n": 577,
+          "min": 894,
+          "max": 1451
+        }
+      },
+      "newObservation": false
+    },
+    {
+      "path": "/Users/tim/Code/fhfhockey.com/web/lib/buyLowSellHigh/research-snapshots/2026-10-28.arm-a-canonical-repaired.v2.json",
+      "sha256": "2f380c2539390f6931ec92ab1d0b1d8cced2b55f5f4cefb8c6e88a694909f2c8",
+      "bytes": 9559567,
+      "eventThroughDate": "2026-10-28",
+      "counts": {
+        "profiles": 729,
+        "numeric": 551,
+        "BL": 264,
+        "SH": 184,
+        "withheld": 281,
+        "unavailableTier": 178,
+        "referenceContextAbsent": 152,
+        "zeroShotWindows": 19,
+        "zeroShotNumeric": 14,
+        "zeroShotListed": 7,
+        "personalReference1to4": 36,
+        "referenceAgeDays": {
+          "n": 577,
+          "min": 894,
+          "max": 1451
+        }
+      },
+      "newObservation": false
+    }
+  ],
+  "savedReleaseComparison": [
+    {
+      "path": "web/lib/nst/client.ts",
+      "workingSHA256": "48d82fc40ca06d9abe4675f4a1896add55c4e53d4dee661bbe082d424c944e4f",
+      "savedOriginMasterPresent": true,
+      "savedOriginMasterSHA256": "48d82fc40ca06d9abe4675f4a1896add55c4e53d4dee661bbe082d424c944e4f",
+      "savedOriginMasterMatchesWorkingTree": true
+    },
+    {
+      "path": "web/lib/buyLowSellHigh/currentProcessEvidence.server.ts",
+      "workingSHA256": "e69db2c0ee67669df2725636dda689f036780d7809f0e2f49ec89ca504eac724",
+      "savedOriginMasterPresent": false,
+      "savedOriginMasterSHA256": null,
+      "savedOriginMasterMatchesWorkingTree": false
+    },
+    {
+      "path": "web/lib/buyLowSellHigh/researchSnapshot.server.ts",
+      "workingSHA256": "dc251e7430085e70bed0a30168a36de24fe11b19d9d1ee6b58fe9ead82bea7a0",
+      "savedOriginMasterPresent": false,
+      "savedOriginMasterSHA256": null,
+      "savedOriginMasterMatchesWorkingTree": false
+    },
+    {
+      "path": "web/components/buyLowSellHigh/BlshCandidateLists.tsx",
+      "workingSHA256": "c64ed8194051f481a4eeca3f0f97536618a9ea3a799c0a936450ec79ccc70bbb",
+      "savedOriginMasterPresent": false,
+      "savedOriginMasterSHA256": null,
+      "savedOriginMasterMatchesWorkingTree": false
+    },
+    {
+      "path": "web/components/blshTrade/BlshTradeComparison.tsx",
+      "workingSHA256": "01b6bbdfba1c0b246abfdcbbea13e05c3dda79f308a28d38e5c6846691171774",
+      "savedOriginMasterPresent": false,
+      "savedOriginMasterSHA256": null,
+      "savedOriginMasterMatchesWorkingTree": false
+    },
+    {
+      "path": "web/lib/buyLowSellHigh/storage.ts",
+      "workingSHA256": "ee1dbe605c1103b212f1659b1439caedf23252acb6b45b3f6144b019206cb3c4",
+      "savedOriginMasterPresent": true,
+      "savedOriginMasterSHA256": "99855ab0a9d00c38e06745193c015be100e65c52bc57c6f0e3c465d4f85aeadc",
+      "savedOriginMasterMatchesWorkingTree": false
+    },
+    {
+      "path": "web/pages/buy-low-sell-high/preview.tsx",
+      "workingSHA256": "92c01d412e1d28eef7fa3e782a7a23847dd1607df512f588a4023d8a2acc2614",
+      "savedOriginMasterPresent": true,
+      "savedOriginMasterSHA256": "1b18b3571cb781af96eb2994afa04141d017288cbe641787b1f239fc55117741",
+      "savedOriginMasterMatchesWorkingTree": false
+    },
+    {
+      "path": "web/pages/buy-low-sell-high/trade.tsx",
+      "workingSHA256": "7bc9d950124cc5e60b467ac5ff2dd7efe7769ec73a695c5c1c594ad4213f5a66",
+      "savedOriginMasterPresent": false,
+      "savedOriginMasterSHA256": null,
+      "savedOriginMasterMatchesWorkingTree": false
+    },
+    {
+      "path": "web/scripts/blsh/nativeProcessCapturePreparation.ts",
+      "workingSHA256": "7f562056c16f446641917c90b41425c8c13ae97f11d6383f38e5c3cf12c3b0a7",
+      "savedOriginMasterPresent": false,
+      "savedOriginMasterSHA256": null,
+      "savedOriginMasterMatchesWorkingTree": false
+    }
+  ],
+  "sourceFacts": {
+    "defaultPolicyLiteralEmpty": true,
+    "boundedNonTestReferences": [
+      "web/lib/buyLowSellHigh/currentProcessEvidence.server.ts:17:export const CLOSED_PROCESS_EVIDENCE_POLICY: ProcessEvidencePolicy = Object.freeze({ acceptances: Object.freeze([]) });",
+      "web/lib/buyLowSellHigh/currentProcessEvidence.server.ts:113:export function createCurrentProcessEvidenceGate(policy: ProcessEvidencePolicy = CLOSED_PROCESS_EVIDENCE_POLICY) {"
+    ],
+    "production404InBothPages": true,
+    "tradePageUsesFixtureRecords": true
+  },
+  "checksRunThisCheckpoint": [
+    "hash and size comparisons",
+    "saved Git-tree comparison",
+    "bounded source reference inspection",
+    "patch applicability"
+  ],
+  "testsRunThisCheckpoint": [],
+  "priorTestsReusedAtMatchedPins": {
+    "uiPersistenceTrade": 73,
+    "offlineCapturePreparation": 27,
+    "isolatedCandidateAndLegacyClient": 37,
+    "freshnessGate": 59,
+    "freshnessTimezone": 7,
+    "independentFreshnessScenarios": 9,
+    "independentLegacyComparisons": 54
+  },
+  "liveProviderRequests": 0,
+  "productionApplicationRequests": 0,
+  "databaseRequests": 0,
+  "sharedAdmissionRequests": 0,
+  "builds": 0,
+  "deployments": 0,
+  "holdoutRead": false,
+  "runtimeSourceEdits": false,
+  "gitMutations": false
+}

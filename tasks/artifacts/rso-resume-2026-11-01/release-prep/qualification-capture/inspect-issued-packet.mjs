@@ -1,7 +1,7 @@
 // Offline E1 binding preflight. Validates saved RPC bytes against saved metadata; grants no admission.
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync, realpathSync } from "node:fs";
 import { createHash } from "node:crypto";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath } from "node:url";
 import { canonicalHash } from "../qualification-readbacks/tooling/check-readbacks.mjs";
 import { inspectIdentity } from "./inspect-identity.mjs";
 import timestampParser from "./timestamp-parser.cjs";
@@ -75,7 +75,7 @@ export function inspectIssuedPacket({ capture, metadata, revisions }) {
     participationLineageManufactured: false, forecastValuesCalculated: false };
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (process.argv[1] && existsSync(process.argv[1]) && realpathSync(fileURLToPath(import.meta.url)) === realpathSync(process.argv[1])) {
   try {
     const [file] = process.argv.slice(2);
     if (!file) throw new Error("usage: inspect-issued-packet.mjs saved-packet.json");

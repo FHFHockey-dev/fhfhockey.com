@@ -1,8 +1,8 @@
 // Offline self-tests: node --test tooling/check-readbacks.test.mjs (no network, no DB, synthetic fixtures only).
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { execFileSync } from "node:child_process";
-import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { execFileSync, spawnSync } from "node:child_process";
+import { mkdtempSync, readFileSync, writeFileSync, symlinkSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -108,6 +108,25 @@ test("the CLI exits 0 on the clean fixture and 1 with findings", () => {
   try { execFileSync(process.execPath, [join(here, "check-readbacks.mjs"), ...args.slice(0, 2), "--rso", bad], { encoding: "utf8" }); }
   catch (error) { status = error.status; }
   assert.equal(status, 1);
+});
+
+test("CLI executes through a symlink and rejects empty issuance", () => {
+  const dir = mkdtempSync(join(tmpdir(), "forge-qual-alias-"));
+  try {
+    const cli = join(dir, "readback alias.mjs"), issued = join(dir, "issued.json"), fixtures = join(here, "fixtures");
+    symlinkSync(join(here, "check-readbacks.mjs"), cli);
+    writeFileSync(issued, JSON.stringify(fixture("issued.json")));
+    const args = [cli, "--issued", issued, "--rso", join(fixtures, "rso.json"),
+      "--start-chart", join(fixtures, "start-chart.json"), "--scope", join(fixtures, "scope.json")];
+    const good = spawnSync(process.execPath, args, { encoding: "utf8" });
+    assert.equal(good.status, 0, good.stderr);
+    assert.equal(JSON.parse(good.stdout).summary.pass, true);
+    writeFileSync(issued, "[]");
+    const bad = spawnSync(process.execPath, args, { encoding: "utf8" });
+    assert.equal(bad.status, 1, bad.stderr);
+    assert.equal(JSON.parse(bad.stdout).summary.pass, false);
+    assert.equal(JSON.parse(bad.stdout).summary.findingCodes.issued_empty, 1);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
 });
 
 test("the predeclared scope: its protocol hash must match, and an unpinned identity is refused outside dry runs", () => {

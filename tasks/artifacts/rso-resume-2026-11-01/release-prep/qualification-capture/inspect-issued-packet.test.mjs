@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
+import { mkdtempSync, writeFileSync, symlinkSync, rmSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -106,5 +106,22 @@ test("CLI reports binding results from saved JSON only", () => {
     const result = spawnSync(process.execPath, [fileURLToPath(new URL("inspect-issued-packet.mjs", import.meta.url)), file], { encoding: "utf8" });
     assert.equal(result.status, 0, result.stderr); assert.equal(JSON.parse(result.stdout).pass, true);
     assert.match(JSON.parse(result.stdout).packetSha256, /^[a-f0-9]{64}$/);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test("CLI executes through a symlink and rejects missing issued revisions", () => {
+  const dir = mkdtempSync(join(tmpdir(), "rso-issued-alias-"));
+  try {
+    const cli = join(dir, "issued alias.mjs"), file = join(dir, "packet.json"), input = fixture();
+    symlinkSync(fileURLToPath(new URL("inspect-issued-packet.mjs", import.meta.url)), cli);
+    writeFileSync(file, JSON.stringify(input));
+    const good = spawnSync(process.execPath, [cli, file], { encoding: "utf8" });
+    assert.equal(good.status, 0, good.stderr);
+    assert.equal(JSON.parse(good.stdout).pass, true);
+    assert.match(JSON.parse(good.stdout).packetSha256, /^[a-f0-9]{64}$/);
+    input.revisions = []; writeFileSync(file, JSON.stringify(input));
+    const bad = spawnSync(process.execPath, [cli, file], { encoding: "utf8" });
+    assert.equal(bad.status, 1, bad.stderr);
+    assert.equal(JSON.parse(bad.stdout).pass, false);
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });

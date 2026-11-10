@@ -1,0 +1,23 @@
+{
+  "purpose": "frozen_pre_correction_candidate_with_reproduced_predispatch_timing_defect",
+  "files": [
+    {
+      "source": "web/scripts/blsh/nativeProcessCaptureRunner.ts",
+      "snapshot": "nativeProcessCaptureRunner.ts.snapshot",
+      "bytes": 23001,
+      "sha256": "c8474d7478640aeee69c0a96aac12ac8a8957e8a89b64bdc3332af74b83961e9"
+    },
+    {
+      "source": "web/scripts/blsh/nativeProcessCaptureRunner.test.ts",
+      "snapshot": "nativeProcessCaptureRunner.test.ts.snapshot",
+      "bytes": 22378,
+      "sha256": "96ea409fc37329337e2d192ac1d2e23b694236bf2d0b87e30c2a9f0c0803b8d7"
+    },
+    {
+      "source": "tasks/artifacts/blsh-lane-readiness-2026-11-08/ADAPTER-CHECKS.json",
+      "snapshot": "ADAPTER-CHECKS.json.snapshot",
+      "bytes": 7618,
+      "sha256": "1cd107b315d0a42d03ce45119d84a19c99724f82baf03254b618d9723679592c"
+    }
+  ]
+}

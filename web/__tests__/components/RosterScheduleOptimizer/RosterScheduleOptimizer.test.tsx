@@ -14,6 +14,7 @@ import { forecastFromContributions } from "lib/player-forecasts/resolvedPlanning
 import { saveWorkspaceSchema } from "lib/in-season/workspaceSchema";
 import { useCanonicalSchedule } from "components/RosterScheduleOptimizer/canonicalSchedule";
 import { yahooPlanningReadBroker } from "hooks/yahooPlanningReadBroker";
+import { INFERRED_ACQUISITION_TIMING_KEY, INFERRED_ACQUISITION_TIMING_SOURCE } from "lib/rosterScheduleOptimizer/providerRules";
 
 const { authState, planningState } = vi.hoisted(() => ({ authState: { user: null as { id: string } | null, teams: [] as unknown[] }, planningState: { evaluate: null as null | ((snapshot: PlanningSnapshot, intent: PlanIntent) => PlanningResult), metrics: undefined as unknown } }));
 vi.mock("components/RosterScheduleOptimizer/canonicalSchedule", async importOriginal => ({ ...await importOriginal<typeof import("components/RosterScheduleOptimizer/canonicalSchedule")>(), useCanonicalSchedule: vi.fn(() => ({ games: [], teams: [], complete: false, error: "Isolated canonical calendar fixture" })) }));
@@ -123,7 +124,7 @@ const benchReceipt: NonNullable<BenchDecision["evidence"]> = { startDate: "2026-
   sources: [{ playerId: "batherson", kinds: ["blended"], revisionIds: ["private-revision-id"],
     participation: [{ gameId: "game", basis: "appearance", probability: 0.5, confirmed: false }] }] };
 // The rules section's confirmation; an inline prompt may also offer one where selection is blocked.
-const rulesConfirm = () => within(document.getElementById("rso-rule-settings")!).getByRole("button", { name: "Confirm planning inputs" });
+const rulesConfirm = () => within(document.getElementById("rso-rule-settings")!).getByRole("button", { name: "Confirm manual lineup settings" });
 afterEach(() => { cleanup(); window.localStorage.clear(); window.sessionStorage.clear(); vi.useRealTimers(); vi.unstubAllGlobals(); vi.restoreAllMocks(); fetchMock.mockClear(); authState.user = null; authState.teams = []; planningState.evaluate = null; planningState.metrics = undefined; });
 
 describe("active provider refresh scheduling", () => {
@@ -1258,13 +1259,13 @@ describe("RosterScheduleOptimizer workspace", () => {
     await act(async () => { worker.onmessage?.({ data: { metrics: { candidates: [{ playerId: candidate.id, plans: [agp, points], complete: false }] } } }); });
     fireEvent.click(screen.getByRole("button", { name: "All players" }));
     expect(netPlan()).toBe("Net Pts +5 Net AGP 0");
-    expect(screen.getByRole("button", { name: "Preview swap: add Alpha Center, drop Dropped Player" })).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: /^Preview swap/ }));
+    expect(screen.getByRole("button", { name: "Use this swap: add Alpha Center, drop Dropped Player" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: /^Use this swap/ }));
     expect(selectPlan).toHaveBeenLastCalledWith([step]);
     fireEvent.click(screen.getByRole("button", { name: "By more starts" }));
     expect(netPlan()).toBe("Net Pts -3 Net AGP +2");
     expect(screen.getByLabelText("Net plan comparison").textContent).not.toContain("+5");
-    fireEvent.click(screen.getByRole("button", { name: /^Preview swap/ }));
+    fireEvent.click(screen.getByRole("button", { name: /^Use this swap/ }));
     expect(selectPlan).toHaveBeenLastCalledWith(agp.steps);
   });
 
@@ -1283,7 +1284,7 @@ describe("RosterScheduleOptimizer workspace", () => {
       objective: "agp", steps: [], netAGP: mode === "no gain" ? 0 : 1, netPoints: mode === "no gain" ? 0 : null,
       dropped: [{ playerId: "drop", lostAGP: 1, lostPoints: null }], displacedPlayerIds: [] }] }] } } }); });
     fireEvent.click(screen.getByRole("button", { name: "All players" }));
-    expect(screen.getByRole("button", { name: /^Preview swap/ })).toHaveProperty("disabled", true);
+    expect(screen.getByRole("button", { name: /^Use this swap/ })).toHaveProperty("disabled", true);
   });
 
   it("uses schedule ordering and category-plan guidance instead of points claims in category leagues", () => {
@@ -1511,7 +1512,7 @@ describe("RosterScheduleOptimizer workspace", () => {
     expect(document.activeElement?.closest("details")?.open).toBe(true);
     expect(screen.getByText("Check these against your league settings.")).toBeTruthy();
   });
-  it("requires input review and renews it after rule changes without certifying unknown scoring", async () => {
+  it("remembers manual lineup confirmation through unrelated edits without certifying missing scoring or budgets", async () => {
     // Mid-week clock: "tomorrow" must stay inside the current Mon–Sun week (it does not on Sundays).
     vi.useFakeTimers({ toFake: ["Date"] }); vi.setSystemTime(new Date("2026-10-14T16:00:00Z"));
     const workspace = defaultWorkspace();
@@ -1545,25 +1546,20 @@ describe("RosterScheduleOptimizer workspace", () => {
     expect((select()?.hasAttribute("disabled") ?? true)).toBe(false);
     expect(screen.getByText(/Rule checks passed/)).toBeTruthy();
     fireEvent.change(screen.getByLabelText("Weight"), { target: { value: "2" } });
-    expect(screen.queryByText(/Selected plan passes the current rule checks/)).toBeNull();
-    expect((select()?.hasAttribute("disabled") ?? true)).toBe(true);
-    expect(await screen.findByText(/Review and confirm the current planning inputs/)).toBeTruthy();
-    fireEvent.click(confirm);
-    await waitFor(() => expect(select()).not.toBeNull());
-    expect(screen.getByText(/Selected plan passes the current rule checks/)).toBeTruthy();
+    await waitFor(() => expect((select()?.hasAttribute("disabled") ?? true)).toBe(false));
+    expect(screen.queryByRole("button", { name: "Confirm manual lineup settings" })).toBeNull();
     fireEvent.change(screen.getByRole("combobox", { name: "Alpha Center roster position" }), { target: { value: "bench" } });
-    expect(screen.queryByText(/Selected plan passes the current rule checks/)).toBeNull();
-    expect((select()?.hasAttribute("disabled") ?? true)).toBe(true);
-    fireEvent.click(confirm);
+    await waitFor(() => expect((select()?.hasAttribute("disabled") ?? true)).toBe(false));
+    expect(screen.queryByRole("button", { name: "Confirm manual lineup settings" })).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Remove GOALS weight", hidden: true }));
-    fireEvent.click(confirm);
+
     expect(screen.queryByText(/Selected plan passes the current rule checks/)).toBeNull();
     expect(screen.getByText(/Acquisition legality, budget or scoring is unresolved/)).toBeTruthy();
     expect((select()?.hasAttribute("disabled") ?? true)).toBe(true);
     expect(JSON.parse(window.localStorage.getItem(activeKey())!).rules.scoring.weights).toEqual({});
     fireEvent.click(screen.getByText("Add point weight", { selector: "button" }));
     fireEvent.change(screen.getByLabelText("Acquisition cost"), { target: { value: "" } });
-    fireEvent.click(confirm);
+
     expect(screen.getByText(/Acquisition legality, budget or scoring is unresolved/)).toBeTruthy();
     expect((select()?.hasAttribute("disabled") ?? true)).toBe(true);
     expect(JSON.parse(window.localStorage.getItem(activeKey())!).rules.acquisitionCost).toBeNull();
@@ -2465,14 +2461,66 @@ describe("RosterScheduleOptimizer workspace", () => {
     });
     it("never leaves Checking access up when the check hangs", async () => {
       vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "setInterval", "clearInterval"] });
+      vi.spyOn(document, "visibilityState", "get").mockReturnValue("visible");
       connected();
-      vi.stubGlobal("fetch", vi.fn((url: string) => url.endsWith("/access") ? new Promise(() => undefined)
-        : Promise.resolve({ ok: true, json: async () => url.includes("/data?") ? { success: true, data } : { data: null } })));
-      render(<RosterScheduleOptimizer />);
+      const requests = vi.fn((url: string) => url.endsWith("/access") ? new Promise(() => undefined)
+        : Promise.resolve({ ok: true, json: async () => url.includes("/data?") ? { success: true, data } : { data: null } }));
+      vi.stubGlobal("fetch", requests);
+      const view = render(<RosterScheduleOptimizer />);
       await act(async () => { await vi.advanceTimersByTimeAsync(1_000); });
       expect(reason()).toBe("Checking access for provider synchronization…");
       await act(async () => { await vi.advanceTimersByTimeAsync(15_000); });
       expect(reason()).toBe("Provider refresh is disabled until access can be verified. Try again shortly.");
+      await act(async () => { await vi.advanceTimersByTimeAsync(45_000); });
+      expect(requests.mock.calls.filter(([url]) => url.endsWith("/access"))).toHaveLength(2);
+      expect(requests.mock.calls.some(([url]) => url.endsWith("/provider"))).toBe(false);
+      fireEvent.click(screen.getByRole("button", { name: "Retry access check" }));
+      await act(async () => { await vi.advanceTimersByTimeAsync(1); });
+      expect(requests.mock.calls.filter(([url]) => url.endsWith("/access"))).toHaveLength(3);
+      view.unmount();
+      await act(async () => { await vi.advanceTimersByTimeAsync(30_000); });
+      expect(requests.mock.calls.filter(([url]) => url.endsWith("/access"))).toHaveLength(3);
+    });
+
+    it("recovers once after a cold access timeout without waiting five minutes or changing the selected plan", async () => {
+      vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "setInterval", "clearInterval"] });
+      vi.spyOn(document, "visibilityState", "get").mockReturnValue("visible");
+      const workspace = connected();
+      let accessReads = 0;
+      let finishInitial!: (response: unknown) => void;
+      const requests = vi.fn((url: string) => {
+        if (url.endsWith("/access") && ++accessReads === 1) return new Promise(resolve => { finishInitial = resolve; });
+        return Promise.resolve({ ok: true, json: async () => url.endsWith("/access")
+          ? { data: { eligible: true, capabilities: ["rso_sync"] } }
+          : url.includes("/data?") ? { success: true, data } : { data: null } });
+      });
+      vi.stubGlobal("fetch", requests);
+      render(<RosterScheduleOptimizer />);
+      await act(async () => { await vi.advanceTimersByTimeAsync(16_000); });
+      expect(reason()).toBe("Provider refresh is disabled until access can be verified. Try again shortly.");
+      expect(requests.mock.calls.some(([url]) => url.endsWith("/provider"))).toBe(false);
+      await act(async () => { await vi.advanceTimersByTimeAsync(3_000); });
+      expect(accessReads).toBe(2);
+      expect((screen.getByRole("button", { name: "Refresh provider" }) as HTMLButtonElement).disabled).toBe(false);
+      expect(screen.queryByRole("button", { name: "Retry access check" })).toBeNull();
+      await act(async () => { finishInitial({ ok: true, json: async () => ({ data: { eligible: false, capabilities: [] } }) }); });
+      expect((screen.getByRole("button", { name: "Refresh provider" }) as HTMLButtonElement).disabled).toBe(false);
+      expect(JSON.parse(localStorage.getItem(activeKey())!)).toMatchObject({ roster: workspace.roster, intent: workspace.intent });
+    });
+
+    it.each([200, 403, 503])("retries only transient access responses, without granting sync after status %s", async status => {
+      vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "setInterval", "clearInterval"] });
+      vi.spyOn(document, "visibilityState", "get").mockReturnValue("visible");
+      connected();
+      const requests = vi.fn((url: string) => Promise.resolve(url.endsWith("/access")
+        ? { ok: status === 200, status, json: async () => ({ data: { eligible: false, capabilities: [] } }) }
+        : { ok: true, json: async () => url.includes("/data?") ? { success: true, data } : { data: null } }));
+      vi.stubGlobal("fetch", requests);
+      render(<RosterScheduleOptimizer />);
+      await act(async () => { await vi.advanceTimersByTimeAsync(10_000); });
+      expect(requests.mock.calls.filter(([url]) => url.endsWith("/access"))).toHaveLength(status === 503 ? 2 : 1);
+      expect(requests.mock.calls.some(([url]) => url.endsWith("/provider"))).toBe(false);
+      expect((screen.getByRole("button", { name: "Refresh provider" }) as HTMLButtonElement).disabled).toBe(true);
     });
   });
 
@@ -2976,7 +3024,8 @@ describe("RosterScheduleOptimizer workspace", () => {
     reason("Undo", "No edits to undo.");
     reason("Review pasted names", "Paste at least one roster name to review.");
     fireEvent.click(screen.getByText("League rules and scoring", { selector: "summary" }));
-    await waitFor(() => reason("Confirm planning inputs", "Add roster players before confirming inputs."));
+    expect(screen.queryByRole("button", { name: "Confirm manual lineup settings" })).toBeNull();
+    expect(within(document.getElementById("rso-rule-settings")!).getByText("Add roster players before selecting a plan.")).toBeTruthy();
     fireEvent.click(screen.getByText("Locked lineup assignments", { selector: "summary" }));
     reason("Add confirmed lock", "Add a roster player before entering a confirmed lock.");
     reason("Previous matchup week", "No matchup weeks are available");
@@ -2985,8 +3034,8 @@ describe("RosterScheduleOptimizer workspace", () => {
     fireEvent.click(screen.getByRole("button", { name: "Add" }));
     fireEvent.change(screen.getByRole("searchbox", { name: "Find a player" }), { target: { value: "Alpha" } });
     reason("Add", "Already in your roster.");
-    fireEvent.click(screen.getByRole("button", { name: "Confirm planning inputs" }));
-    reason("Confirm planning inputs", "Inputs are already confirmed for this session.");
+    fireEvent.click(rulesConfirm());
+    expect(screen.queryByRole("button", { name: "Confirm manual lineup settings" })).toBeNull();
     fireEvent.click(screen.getByText("Scoring, budgets, and lock windows", { selector: "summary" }));
     fireEvent.change(screen.getByLabelText("Through"), { target: { value: "2026-01-01" } });
     reason("Add acquisition period", "Start date must be on or before end date.");
@@ -3026,12 +3075,14 @@ describe("RosterScheduleOptimizer workspace", () => {
     expect(previous.disabled).toBe(true); expect(next.disabled).toBe(true);
   });
 
-  it("offers Confirm planning inputs where Preview swap and the streaming plan wait, then enables both", async () => {
+  it("asks only for missing manual lineup settings, preserves points, then explicitly selects a swap", async () => {
     vi.stubGlobal("fetch", fetchMock);
     const workspace = defaultWorkspace(), day = workspace.context.endDate;
     const candidate = { ...player, id: "fhfh:2", nhlId: 2, name: "Beta Wing", availability: "free_agent" as const };
     workspace.roster = [{ playerId: player.id, position: "bench" }]; workspace.manualPlayers = [player, candidate];
     workspace.rules.scoring.weights = { GOALS: 1 };
+    workspace.rules.acquisitionTiming = "same_day"; workspace.rules.acquisitionCost = 1;
+    workspace.rules.periods = [{ id: "week", start: `${day}T00:00:00Z`, end: `${day}T23:59:59Z`, remaining: 2, source: "manager" }];
     const step: PlanStep = { id: "stream-swap", type: "add", playerId: candidate.id, dropPlayerId: player.id, at: `${day}T12:00:00Z`, effectiveAt: `${day}T12:00:00Z`, conditional: false, dependsOn: [] };
     const option = { playerId: candidate.id, games: 1, gameDates: [day], points: 2, recentPointsPerGame: null, recentGames: null };
     planningState.evaluate = (snapshot, intent) => ({ ...planRoster(snapshot, intent), streaming: { policyVersion: "rso-stream-v1", recommended: 1, limitations: [], chains: [{
@@ -3043,22 +3094,28 @@ describe("RosterScheduleOptimizer workspace", () => {
     render(<RosterScheduleOptimizer />);
     const use = await screen.findByRole("button", { name: "Use this streaming plan" }) as HTMLButtonElement;
     fireEvent.click(screen.getByRole("button", { name: "All players" }));
-    const swap = await screen.findByRole("button", { name: /^Preview swap: add Beta Wing/ }) as HTMLButtonElement;
+    const swap = await screen.findByRole("button", { name: /^Use this swap: add Beta Wing/ }) as HTMLButtonElement;
     const described = (button: HTMLElement) => document.getElementById(button.getAttribute("aria-describedby") ?? "")?.textContent;
     expect(use.disabled).toBe(true); expect(swap.disabled).toBe(true);
-    expect(described(use)).toBe("Confirm planning inputs to enable this streaming plan.");
-    expect(described(swap)).toBe("Confirm planning inputs to enable Preview swap.");
-    const prompts = () => screen.queryAllByRole("button", { name: "Confirm planning inputs" }).filter(button => !button.closest("#rso-rule-settings"));
+    expect(described(use)).toContain("Check this manual league:");
+    expect(described(swap)).toBe(described(use));
+    const prompts = () => screen.queryAllByRole("button", { name: "Confirm manual lineup settings" }).filter(button => !button.closest("#rso-rule-settings"));
     await waitFor(() => expect(prompts()).toHaveLength(2));
     const panel = screen.getByRole("region", { name: "Candidates and detail" });
-    expect(within(panel).getByRole("button", { name: "Confirm planning inputs" })).toBe(prompts().find(button => panel.contains(button)));
-    fireEvent.click(within(panel).getByRole("button", { name: "Confirm planning inputs" }));
-    await waitFor(() => expect(use.disabled).toBe(false));
-    expect(swap.disabled).toBe(false);
-    expect(use.hasAttribute("aria-describedby")).toBe(false); expect(swap.hasAttribute("aria-describedby")).toBe(false);
+    expect(within(panel).getByRole("button", { name: "Confirm manual lineup settings" })).toBe(prompts().find(button => panel.contains(button)));
+    // Confirmation enables selecting a move; it must not hide available projected points.
+    const beforeConfirmation = within(panel).getByLabelText("Net plan comparison").textContent;
+    expect(beforeConfirmation).toContain("+2");
+    expect(beforeConfirmation).toContain("Net Pts");
+    fireEvent.click(within(panel).getByRole("button", { name: "Confirm manual lineup settings" }));
+    await waitFor(() => expect((screen.getByRole("button", { name: "Use this streaming plan" }) as HTMLButtonElement).disabled).toBe(false));
+    const selectedSwap = screen.getByRole("button", { name: /^Use this swap: add Beta Wing/ }) as HTMLButtonElement;
+    expect(selectedSwap.disabled).toBe(false);
+    expect(screen.getByRole("button", { name: "Use this streaming plan" }).hasAttribute("aria-describedby")).toBe(false); expect(selectedSwap.hasAttribute("aria-describedby")).toBe(false);
     expect(prompts()).toHaveLength(0);
-    expect(screen.queryByText(/Confirm planning inputs to enable/)).toBeNull();
-    fireEvent.click(swap);
+    expect(screen.queryByText(/Confirm manual lineup settings to enable/)).toBeNull();
+    expect(within(panel).getByLabelText("Net plan comparison").textContent).toBe(beforeConfirmation);
+    fireEvent.click(selectedSwap);
     expect(JSON.parse(window.localStorage.getItem(activeKey())!).intent.steps.map((row: PlanStep) => row.id)).toEqual(["stream-swap"]);
   });
 
@@ -3069,15 +3126,14 @@ describe("RosterScheduleOptimizer workspace", () => {
     window.localStorage.setItem(activeKey(), JSON.stringify(workspace));
     render(<RosterScheduleOptimizer />);
     const panel = screen.getByRole("region", { name: "Candidates and detail" });
-    expect(await within(panel).findByText("Confirm planning inputs to enable Preview swap.")).toBeTruthy();
+    expect(await within(panel).findByText("Add roster players before selecting a plan.")).toBeTruthy();
     // No roster yet: confirming is unavailable, so the prompt gives that reason rather than a button.
-    expect(within(panel).getByText("Add roster players before confirming inputs.")).toBeTruthy();
-    expect(within(panel).queryByRole("button", { name: "Confirm planning inputs" })).toBeNull();
+    expect(within(panel).queryByRole("button", { name: "Confirm manual lineup settings" })).toBeNull();
   });
 
   it.each([
-    { gate: "input", reason: "Review and confirm planning inputs before selecting this plan." },
-    { gate: "scoring", reason: "Enter league scoring before selecting this plan." },
+    { gate: "input", reason: "manual-lineup" },
+    { gate: "scoring", reason: "Enter league scoring before selecting a plan." },
     { gate: "legal", reason: "Plan rule checks failed. Selected player is protected." },
     { gate: "budget", reason: "Acquisition budget is unverified. Review acquisition periods and remaining moves." },
     { gate: "hold", reason: "This plan keeps the roster unchanged; there are no moves to select." },
@@ -3096,19 +3152,23 @@ describe("RosterScheduleOptimizer workspace", () => {
     };
     window.localStorage.setItem(activeKey(), JSON.stringify(workspace));
     render(<RosterScheduleOptimizer />);
-    const select = await screen.findByRole("button", { name: "Select plan" }) as HTMLButtonElement;
+    await screen.findByRole("button", { name: "Select plan" });
+    const select = () => screen.getByRole("button", { name: "Select plan" }) as HTMLButtonElement;
     if (gate !== "hold") expect(screen.getByText("Hypothetical schedule comparison only. Net fantasy points and drop cost are unknown; additional games do not establish a better roster.")).toBeTruthy();
     fireEvent.click(screen.getByText("League rules and scoring", { selector: "summary" }));
     if (gate !== "input") fireEvent.click(rulesConfirm());
+    await waitFor(() => expect(screen.queryByText("Loading schedule and forecasts…")).toBeNull());
     if (reason) {
-      expect(select.disabled).toBe(true);
-      expect(document.getElementById(select.getAttribute("aria-describedby")!)?.textContent).toBe(reason);
-      fireEvent.click(select);
+      await waitFor(() => expect(select().disabled).toBe(true));
+      const description = document.getElementById(select().getAttribute("aria-describedby")!)?.textContent;
+      if (reason === "manual-lineup") expect(description).toContain("Check this manual league:");
+      else expect(description).toBe(reason);
+      fireEvent.click(select());
       expect(JSON.parse(window.localStorage.getItem(activeKey())!).intent).toEqual(workspace.intent);
     } else {
-      expect(select.disabled).toBe(false);
+      await waitFor(() => expect(select().disabled).toBe(false));
       const summary = screen.getByRole("region", { name: "Plan summary" }).textContent;
-      fireEvent.click(select);
+      fireEvent.click(select());
       await act(async () => {});
       expect(screen.getByText("Alternative 1 selected. Confirm roster changes with your provider.").getAttribute("role")).toBe("status");
       expect(screen.getByRole("region", { name: "Plan summary" }).textContent).toBe(summary);
@@ -3212,7 +3272,7 @@ describe("RosterScheduleOptimizer workspace", () => {
     fireEvent.click(await screen.findByRole("button", { name: "View account save" }));
     expect(planningTimeText(/^Saved /).textContent).toContain("Sep 1");
     expect((screen.getByLabelText("Planning setup") as HTMLFieldSetElement).disabled).toBe(true);
-    expect(screen.getByText("Confirm planning inputs", { selector: "button" }).hasAttribute("disabled")).toBe(true);
+    expect(screen.queryByRole("button", { name: "Confirm manual lineup settings" })).toBeNull();
     await waitFor(() => expect(JSON.parse(window.localStorage.getItem(activeKey())!)).toMatchObject({
       intent: saved.intent, lockedAssignments: saved.lockedAssignments,
     }));
@@ -3226,8 +3286,8 @@ describe("RosterScheduleOptimizer workspace", () => {
     expect(JSON.parse(window.localStorage.getItem(activeKey())!).context.asOf).toBe(saved.context.asOf);
     fireEvent.click(screen.getByRole("button", { name: "Continue manually" }));
     expect((screen.getByLabelText("Planning setup") as HTMLFieldSetElement).disabled).toBe(false);
-    await waitFor(() => expect(screen.getByText("Confirm planning inputs", { selector: "button" }).hasAttribute("disabled")).toBe(false));
-    expect(screen.getByText(/Review league rules, scoring, locked assignments and player availability/)).toBeTruthy();
+    await waitFor(() => expect(rulesConfirm().hasAttribute("disabled")).toBe(false));
+    expect(screen.getAllByText(/Check this manual league:/).length).toBeGreaterThan(0);
     expect(screen.getByRole("button", { name: "Remove Alpha Center" })).toBeTruthy();
     await waitFor(() => expect(JSON.parse(window.localStorage.getItem(activeKey())!)).toMatchObject({
       intent: saved.intent, lockedAssignments: saved.lockedAssignments, roster: saved.roster,
@@ -3945,7 +4005,7 @@ describe("stored Yahoo eligibility while provider verification is pending", () =
     expect(fetch.mock.calls.filter(([url]) => url.endsWith("/provider"))).toHaveLength(1);
     expect(fetch.mock.calls.some(([, init]: any[]) => init?.method === "PUT")).toBe(false);
   });
-  it("says inputs are complete when only Yahoo rule notes remain, and clears each note once confirmed", async () => {
+  it.each(["manager override", "saved answer"])("keeps complete Yahoo inputs and clears rule notes with a %s", async answer => {
     vi.useFakeTimers({ toFake: ["Date"] }); vi.setSystemTime(new Date("2026-10-13T12:00:00Z"));
     authState.user = { id: "rule-note-manager" };
     const workspace = defaultWorkspace();
@@ -3955,7 +4015,9 @@ describe("stored Yahoo eligibility while provider verification is pending", () =
     const owned = { ...player, id: "owned", name: "Owned Player", eligibilityVerified: true, availability: "rostered" as const };
     workspace.roster = [{ playerId: owned.id, position: "bench" }]; workspace.manualPlayers = [owned];
     const complete: PlanningSnapshot = { id: "complete-provider", context: workspace.context, players: [owned], roster: workspace.roster,
-      rules: workspace.rules, lockedAssignments: [], games: [], forecasts: [], realized: {}, opponent: null, evidence: {} };
+      rules: workspace.rules, lockedAssignments: [], games: [], forecasts: [], realized: {}, opponent: null, evidence: {
+        [INFERRED_ACQUISITION_TIMING_KEY]: { source: INFERRED_ACQUISITION_TIMING_SOURCE, asOf: null, seasonId: workspace.context.seasonId, completeness: "partial", limitations: [] },
+      } };
     const timingNote = "Add timing is inferred from Yahoo's weekly deadline (same-day); change it in League rules if your league differs.";
     const rulesNote = "Yahoo does not report these league rules; confirm them in League rules: whether the add timing inferred from Yahoo's weekly deadline is right; the exact weekly add reset time (league-local midnight is assumed).";
     writeWorkspace(window.localStorage, workspace, [], authState.user?.id ?? null);
@@ -3975,8 +4037,9 @@ describe("stored Yahoo eligibility while provider verification is pending", () =
     fireEvent.click(within(within(health).getByText(rulesNote).closest("li")!).getByRole("button", { name: "Confirm" }));
     expect(within(health).queryByText(rulesNote)).toBeNull();
     expect(within(health).getByText("1 item to review · Provider inputs complete")).toBeTruthy();
-    // A manager timing choice answers the inferred-timing note.
-    fireEvent.change(screen.getByLabelText("Acquisition timing"), { target: { value: "next_day" } });
+    // A manager value or a specific saved answer resolves the same timing question.
+    if (answer === "manager override") fireEvent.change(screen.getByLabelText("Acquisition timing"), { target: { value: "next_day" } });
+    else fireEvent.click(within(screen.getByRole("region", { name: "Candidates and detail" })).getByRole("button", { name: "Confirm same-day adds" }));
     expect(within(health).queryByText(timingNote)).toBeNull();
     expect(within(health).getByText("No items to review · Provider inputs complete")).toBeTruthy();
     expect(fetch.mock.calls.filter(([url]) => url.endsWith("/provider"))).toHaveLength(1);

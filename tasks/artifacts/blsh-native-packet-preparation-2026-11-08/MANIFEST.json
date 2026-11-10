@@ -1,0 +1,88 @@
+{
+  "purpose": "offline_native_packet_preparation_not_source_or_release_acceptance",
+  "capturedAtUTC": "2026-11-08T23:33:22.344147+00:00",
+  "headContextOnly": "aab92b7a60ccd8fd71d93b7767d23152d3b1b13c",
+  "sharedClientUnchanged": {
+    "path": "web/lib/nst/client.ts",
+    "sha256": "48d82fc40ca06d9abe4675f4a1896add55c4e53d4dee661bbe082d424c944e4f"
+  },
+  "dependencies": {
+    "intake": {
+      "path": "/Users/tim/Documents/Codex/2026-10-27/task-3/nst-selected-receipt-intake-20261101-01/intake.py",
+      "sha256": "7cb3e091200ae35f245e7a4e105696382101879a3f0abb3f6b99cb82f5879b92"
+    },
+    "lineage": {
+      "path": "/Users/tim/Documents/Codex/2026-10-27/task-3/nst-lineage-and-gs-alternatives-20261101-01/nst_lineage.py",
+      "sha256": "14e0816c65fd8988b1401e21952b0873fcb142da6866523f6c87d8f1b72ff4da"
+    },
+    "currentInput": {
+      "path": "web/lib/buyLowSellHigh/currentInput.ts",
+      "sha256": "58a87ea119a98b33d7d67fb6849a269e375c22210610b607dfa30ba034c76232"
+    },
+    "gate": {
+      "path": "web/lib/buyLowSellHigh/currentProcessEvidence.server.ts",
+      "sha256": "e69db2c0ee67669df2725636dda689f036780d7809f0e2f49ec89ca504eac724"
+    }
+  },
+  "files": [
+    {
+      "path": "tasks/artifacts/blsh-native-packet-preparation-2026-11-08/CHECKS.json",
+      "sha256": "7ae1c2b55a0bfea6a5fadef995146ae240daf415fc19822551e4b55528793020",
+      "bytes": 2453
+    },
+    {
+      "path": "tasks/artifacts/blsh-native-packet-preparation-2026-11-08/HANDOFF.md",
+      "sha256": "ced0f7b44fbc642054c05dbf551eda0560c73835a0f50ade3dd785d9fc21b82d",
+      "bytes": 10696
+    },
+    {
+      "path": "tasks/artifacts/blsh-native-packet-preparation-2026-11-08/RETAINED-EMPTY-REPLAY.json",
+      "sha256": "9c202535db392b2087ac7d91ad04591e285dc2400be5cb8700f7bb8d185c52d6",
+      "bytes": 3171
+    },
+    {
+      "path": "tasks/artifacts/blsh-native-packet-preparation-2026-11-08/SOURCE-PINS.json",
+      "sha256": "bf7d4410a25cbf3a93a0bb95bd0d87a157c2aab03ad0d806fb2460da48190ceb",
+      "bytes": 762
+    },
+    {
+      "path": "tasks/artifacts/blsh-native-packet-preparation-2026-11-08/closed_gate.cjs",
+      "sha256": "b5578fd7d794d233ac7672ecbddf40f30f855121c658e86987c9031216be353c",
+      "bytes": 4275
+    },
+    {
+      "path": "tasks/artifacts/blsh-native-packet-preparation-2026-11-08/prepare_packet.py",
+      "sha256": "b8a5fc7f270f040c46e0602ea4d377662676042e39a818dd889369c0ed7e05f3",
+      "bytes": 18232
+    },
+    {
+      "path": "tasks/artifacts/blsh-native-packet-preparation-2026-11-08/test_prepare_packet.py",
+      "sha256": "0371c877a19dfadf9dd8d2be6aeed7640e28070c639d6e1657e9462a4d4937f2",
+      "bytes": 26176
+    },
+    {
+      "path": "tasks/artifacts/blsh-native-packet-preparation-2026-11-08/tests-initial.log",
+      "sha256": "2db52c6cbaae5ab691c1556fb1e026df95164943b4dd650124aad6b08f357164",
+      "bytes": 2470
+    },
+    {
+      "path": "tasks/artifacts/blsh-native-packet-preparation-2026-11-08/tests.log",
+      "sha256": "ff18e66f387bb9fb7794978f332fa5a5c7afbf8fd9b3742f9d43d72a125f0ec4",
+      "bytes": 3128
+    },
+    {
+      "path": "tasks/artifacts/blsh-native-packet-preparation-2026-11-08/review-regressions-before.log",
+      "sha256": "acb2029f486c542dd5a22b76f1c85a0beb8dbc1059d93c04c101c444edd902eb",
+      "bytes": 14138
+    },
+    {
+      "path": "tasks/artifacts/blsh-native-packet-preparation-2026-11-08/review-fixes-tests.log",
+      "sha256": "87d6a173326762bd1bd766b58c7a80e041df50f40bc8d69ba2efbc3f157b7053",
+      "bytes": 3811
+    }
+  ],
+  "previousImplementation": {
+    "prepare_packet.py": "76c458159de7e35ed53e59e470d5fcebf56e936116956246e523df84a414dc41",
+    "test_prepare_packet.py": "9c6eb4c4bd35f6784a6cf3309d3604615c1a1ec1651002207651f93672a17fd0"
+  }
+}

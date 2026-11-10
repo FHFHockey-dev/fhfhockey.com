@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 
 import PanelStatus from "components/common/PanelStatus";
+import { createTrendRequestCache } from "lib/transactions/trendRequestCache";
 import { buildHomepageModulePresentation } from "lib/dashboard/freshness";
 import {
   formatTrendPlayerMetadata,
@@ -46,6 +47,8 @@ interface ApiResponse {
   fallers: TrendPlayer[];
   error?: string;
 }
+
+export const transactionTrendRequests = createTrendRequestCache<ApiResponse>(30_000, 32);
 
 const WINDOWS = [1, 3, 5, 10];
 const POSITION_FILTERS = ["", "F", "C", "LW", "RW", "D", "G"] as const;
@@ -266,7 +269,7 @@ export default function TransactionTrends({
   const [pos, setPos] = useState<string>("");
   const [offset, setOffset] = useState(0);
   const [data, setData] = useState<ApiResponse | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTable, setActiveTable] = useState<TrendDirection>("risers");
 
@@ -284,19 +287,18 @@ export default function TransactionTrends({
         params.set("offset", String(offset));
         if (pos) params.set("pos", pos);
 
-        const response = await fetch(
-          `/api/v1/transactions/ownership-trends?${params.toString()}`,
-        );
-        const body = await response.text();
-        if (!response.ok) {
-          throw new Error(
-            summarizeTransactionTrendError(response.status, body),
-          );
-        }
-
-        const json: ApiResponse = JSON.parse(body);
+        const url = `/api/v1/transactions/ownership-trends?${params.toString()}`;
+        const json = await transactionTrendRequests.get(url, async () => {
+          const response = await fetch(url);
+          const body = await response.text();
+          if (!response.ok) {
+            throw new Error(summarizeTransactionTrendError(response.status, body));
+          }
+          const result: ApiResponse = JSON.parse(body);
+          if (!result.success) throw new Error(result.error || "Unknown error");
+          return result;
+        });
         if (!active) return;
-        if (!json.success) throw new Error(json.error || "Unknown error");
         setData(json);
       } catch (caught) {
         if (!active) return;

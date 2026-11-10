@@ -1,6 +1,6 @@
 // Offline E3 adapter for saved forge_player_game_strength rows. No database, network or file writes.
-import { readFileSync } from "node:fs";
-import { pathToFileURL } from "node:url";
+import { existsSync, readFileSync, realpathSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import timestampParser from "./timestamp-parser.cjs";
 
 const clock = timestampParser.timestampMicros;
@@ -69,7 +69,7 @@ export function normalizeSettlement({ capture, issued, outcomes }) {
     doesNotEstablishFinalGameStatus: true, nonDresserZeroInferred: false, qualificationGranted: false } };
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (process.argv[1] && existsSync(process.argv[1]) && realpathSync(fileURLToPath(import.meta.url)) === realpathSync(process.argv[1])) {
   try {
     const [captureFile, issuedFile, outcomeFile] = process.argv.slice(2);
     requireValue(captureFile && issuedFile && outcomeFile, "usage: normalize-settlement.mjs capture.json issued.json strength.json");

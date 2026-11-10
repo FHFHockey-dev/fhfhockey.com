@@ -4,7 +4,8 @@ import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testi
 
 import { BLSH_FIXTURE_STORAGE_KEY, BLSH_STORAGE_KEY, emptyBlshState } from "lib/buyLowSellHigh/storage";
 import { HORIZON_OPTIONS, type HorizonGames, type InterpretationRecord } from "lib/skoElement/contract";
-import { fixtureRecords } from "lib/skoElement/fixtures";
+import { FIXTURE_AS_OF, FIXTURE_CONFIG, FIXTURE_PLAYERS, fixtureRecords } from "lib/skoElement/fixtures";
+import { interpretPlayer } from "lib/skoElement/interpret";
 import BlshTradeComparison from "./BlshTradeComparison";
 import { FIXTURE_BLSH_EVIDENCE } from "./fixtureEvidence";
 
@@ -68,6 +69,32 @@ describe("BlshTradeComparison", () => {
     expect(within(result()).queryByText(/no scored statistic/)).toBeNull();
   });
 
+  it("renders the merged observation-only goalie seam without presenting history as a forecast", () => {
+    const goalie = FIXTURE_PLAYERS.find(player => player.key === "g1")!;
+    const evidence = structuredClone(goalie.evidence);
+    evidence.playerName = "Observed Fixture Goalie";
+    evidence.teamGames.at(-1)!.status = "unknown";
+    evidence.teamGames.at(-1)!.goalie = undefined;
+    const observedByHorizon = Object.fromEntries(HORIZON_OPTIONS.map(horizon => {
+      const record = interpretPlayer({ evidence, config: FIXTURE_CONFIG, asOf: FIXTURE_AS_OF, horizon, fixture: true });
+      expect(record.recentWindow.unknownGames).toBe(1);
+      expect(record.goalie!.observed.savePercentage.value).toBeNull();
+      expect(record.goalie!.gap.status).toBe("pending_goalie_adapter");
+      return [horizon, [...recordsByHorizon[horizon].filter(item => item.identity.playerId !== evidence.playerId), record]];
+    })) as Record<HorizonGames, InterpretationRecord[]>;
+    render(<BlshTradeComparison recordsByHorizon={observedByHorizon} evidence={FIXTURE_BLSH_EVIDENCE}
+      fixtureBanner="FIXTURE DATA" initialGive={[evidence.playerId]} initialReceive={["fx-f1"]} />);
+    const player = card("Observed Fixture Goalie");
+    expect(within(player).getByText("Forecast unavailable")).toBeTruthy();
+    expect(within(player).getByText("No forecast number is shown for this player.")).toBeTruthy();
+    expect(within(player).getByText("Buy Low / Sell High covers skaters only; no evidence for goalies.")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Categories" }));
+    fireEvent.click(screen.getByRole("checkbox", { name: "SV%" }));
+    const savePercentage = within(result()).getByRole("rowheader", { name: "SV%" }).closest("tr")!;
+    expect(within(savePercentage).getAllByText(/^Withheld/).length).toBeGreaterThan(0);
+    expect(within(player).queryByText("Experimental forecast")).toBeNull();
+  });
+
   it("shows a withheld direction from v3 history gating as text, not as buy or sell evidence", () => {
     renderView(["fx-f5"], ["fx-d1"]);
     const evidence = within(card("Fixture Defense One")).getByRole("region", { name: /Buy Low \/ Sell High evidence/ });
@@ -83,6 +110,52 @@ describe("BlshTradeComparison", () => {
     expect(card("Fixture Forward Six")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Remove Fixture Forward Six" }));
     expect(screen.queryByRole("article", { name: "Fixture Forward Six" })).toBeNull();
+  });
+
+  it("selects, saves and reloads evidence-only identities for a retrospective comparison with no forecasts", async () => {
+    const props = {
+      recordsByHorizon: { 5: [], 10: [], 20: [] },
+      evidence: { "captured-a": FIXTURE_BLSH_EVIDENCE["fx-f5"], "captured-b": FIXTURE_BLSH_EVIDENCE["fx-f3"] },
+      fixtureBanner: "FIXTURE DATA",
+    };
+    let view = render(<BlshTradeComparison {...props} />);
+    fireEvent.change(screen.getByLabelText("Add a player you give"), { target: { value: "captured-a" } });
+    fireEvent.change(screen.getByLabelText("Add a player you receive"), { target: { value: "captured-b" } });
+    expect(within(card("Fixture Forward Five")).getByText("Forecast unavailable")).toBeTruthy();
+    expect(within(card("Fixture Forward Three")).getByText("No forecast number is shown for this player.")).toBeTruthy();
+    expect(within(result()).getAllByText(/^Withheld/).length).toBe(3);
+    fireEvent.click(screen.getByRole("button", { name: /Show a retrospective comparison instead/ }));
+    const retro = screen.getByRole("region", { name: "Recorded FHFH Standard points per game" });
+    expect(within(retro).getByText("Receive − give, recorded per game").nextSibling?.textContent).toBe(String((4.6 / 5 - 26.2 / 5).toFixed(2)));
+    fireEvent.click(screen.getByRole("button", { name: "Save draft selections" }));
+    await waitFor(() => expect(screen.getByText("Draft selections saved on this device.")).toBeTruthy());
+    expect(JSON.parse(localStorage.getItem(BLSH_FIXTURE_STORAGE_KEY)!).draft).toEqual({ give: ["captured-a"], receive: ["captured-b"] });
+    expect(localStorage.getItem(BLSH_STORAGE_KEY)).toBeNull();
+    view.unmount(); view = render(<BlshTradeComparison {...props} />);
+    expect(card("Fixture Forward Five")).toBeTruthy();
+    expect(card("Fixture Forward Three")).toBeTruthy();
+    expect(within(screen.getByLabelText("Add a player you receive")).getAllByRole("option")).toHaveLength(1);
+    fireEvent.click(screen.getByRole("button", { name: "Remove Fixture Forward Five" }));
+    expect(within(screen.getByLabelText("Add a player you receive")).getByRole("option", { name: /Fixture Forward Five.*forecast unavailable/ }).getAttribute("value")).toBe("captured-a");
+  });
+
+  it("keeps evidence identities selectable across forecast horizon gaps without duplicate or inherited options", () => {
+    const evidence = Object.assign(Object.create({ "inherited-player": FIXTURE_BLSH_EVIDENCE["fx-f3"] }), {
+      "fx-f5": FIXTURE_BLSH_EVIDENCE["fx-f5"], "missing-evidence": undefined,
+    });
+    const forecasts = { ...recordsByHorizon, 20: recordsByHorizon[20].filter(record => record.identity.playerId !== "fx-f5") };
+    render(<BlshTradeComparison recordsByHorizon={forecasts} evidence={evidence} fixtureBanner="FIXTURE DATA" />);
+    const selector = screen.getByLabelText("Add a player you give");
+    expect(within(selector).getAllByRole("option", { name: /Fixture Forward Five/ })).toHaveLength(1);
+    expect([...selector.querySelectorAll("option")].map(option => option.value)).not.toContain("inherited-player");
+    expect([...selector.querySelectorAll("option")].map(option => option.value)).not.toContain("missing-evidence");
+    fireEvent.click(screen.getByRole("button", { name: "Next 20 team games" }));
+    expect(within(selector).getByRole("option", { name: /Fixture Forward Five.*forecast unavailable/ }).getAttribute("value")).toBe("fx-f5");
+    fireEvent.change(selector, { target: { value: "fx-f5" } });
+    expect(within(card("Fixture Forward Five")).getByText("Forecast unavailable")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Next 10 team games (default)" }));
+    expect(within(card("Fixture Forward Five")).queryByText("Forecast unavailable")).toBeNull();
+    expect(within(selector).queryByRole("option", { name: /Fixture Forward Five/ })).toBeNull();
   });
 });
 

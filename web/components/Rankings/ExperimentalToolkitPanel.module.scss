@@ -16,7 +16,7 @@
   padding: v.$space-sm v.$space-md;
   color: v.$text-color-primary;
   cursor: pointer;
-  font-weight: 700;
+  font-weight: v.$font-weight-bold;
 
   &:focus-visible {
     outline: none;
@@ -28,7 +28,7 @@
 .plannedBadge {
   display: inline-flex;
   align-items: center;
-  border-radius: 999px;
+  border-radius: v.$radius-pill;
   padding: 3px 8px;
   font-size: 10px;
   letter-spacing: 0.06em;
@@ -97,7 +97,7 @@
 
 .subtitle {
   color: v.$secondary-color;
-  font-weight: 700;
+  font-weight: v.$font-weight-bold;
 }
 
 .destination {
@@ -114,7 +114,7 @@
 }
 
 .metricList li {
-  border-radius: 999px;
+  border-radius: v.$radius-pill;
   padding: 3px 7px;
   color: v.$text-color-primary;
   background: rgba(v.$secondary-color, 0.1);

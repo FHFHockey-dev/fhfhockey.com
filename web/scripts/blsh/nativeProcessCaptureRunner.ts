@@ -1,0 +1,348 @@
+/** Durable capture orchestration. No client import, credentials or CLI in this core.
+ * An adapter must route EVERY HTTP attempt through dispatch, retain the existing
+ * shared/local NST controls, and consume bodies inside that dispatch. The adapter
+ * may attach the canonical client's redacted text afterward, keeping its witness.
+ * Source pins bind a candidate; they do not certify the adapter or accept evidence.
+ */
+import { createHash } from "node:crypto";
+import { closeSync, fsyncSync, linkSync, lstatSync, mkdirSync, openSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
+import { join, resolve } from "node:path";
+import { load } from "cheerio";
+import { prepareNativeProcessCapture, type NativeProcessCapturePlan } from "./nativeProcessCapturePreparation";
+
+const ORIGIN = "https://fyhftlxokyjtpndbkfse.supabase.co";
+const DATE = "2026-11-07";
+const MIB = 1024 * 1024;
+const GROUPS = ["individual", "onIce"] as const;
+type Group = typeof GROUPS[number];
+export type CaptureOperation = "schedule" | "begin" | "finish" | "hold" | `admission:${Group}` | `nst:${Group}`;
+type Mode = "enabled" | "disabled";
+const fail = (code: string): never => { throw new Error(code); };
+const need = (value: unknown, code: string): void => { if (!value) fail(code); };
+type CaptureBytes = Uint8Array | Buffer;
+const hash = (bytes: CaptureBytes) => createHash("sha256").update(new Uint8Array(bytes)).digest("hex");
+const json = (value: unknown) => Buffer.from(`${JSON.stringify(value, null, 2)}\n`);
+const isObject = (value: unknown): value is Record<string, unknown> => !!value && typeof value === "object" && !Array.isArray(value);
+
+export interface CaptureDispatchSpec {
+  url: string;
+  method: "GET" | "POST";
+  redirect: "error";
+  signal: AbortSignal;
+  timeoutMs: number;
+  maxResponseBytes: number;
+}
+export interface Captured<T> { operation: CaptureOperation; completedAtUTC: string; witness: object; value: T }
+export type CaptureDispatch = <T>(operation: CaptureOperation, action: (spec: CaptureDispatchSpec) => Promise<T>, reference?: { jobToken: string }) => Promise<Captured<T>>;
+export interface CaptureResponse {
+  status: number;
+  finalUrl: string;
+  redirected: boolean;
+  // Schedule: original decoded body. NST: exact UTF-8 parser input returned by
+  // the authenticated redacting client. Never re-redact or normalize in this core.
+  bytes: CaptureBytes;
+}
+export interface NativeCaptureAdapter {
+  supabaseOrigin: string;
+  lifecycleMode: Mode;
+  // Pinned source of the adapter actually supplied. Review must establish this
+  // binding, the runtime TLS policy, authentication/redaction and all hook paths.
+  sourcePath: string;
+  schedule(dispatch: CaptureDispatch): Promise<Captured<CaptureResponse>>;
+  withJob(options: { deadlineAt: number; settled: () => boolean; dispatch: CaptureDispatch }, work: () => Promise<void>): Promise<void>;
+  nst(group: Group, url: string, options: {
+    dispatch: CaptureDispatch; requestControl: {
+      deadlineAt: number; maxAttempts: 2; attemptsStarted: number; minIntervalMs: 22000; plannedRequestCount: 2;
+    };
+    retries: 0; allowQueryKeyFallback: false; timeoutMs: 15000; maxResponseBytes: 2097152;
+    // Enforced by the canonical client's optional admission-call control.
+    maxAdmissionCalls: 1;
+  }): Promise<Captured<CaptureResponse>>;
+}
+
+const sourcePaths = {
+  runner: __filename,
+  preparation: resolve(__dirname, "nativeProcessCapturePreparation.ts"),
+  client: resolve(__dirname, "../../lib/nst/client.ts"),
+  budget: resolve(__dirname, "../../lib/nst/requestBudget.ts"),
+  admission: resolve(__dirname, "../../lib/nst/sharedAdmission.ts"),
+  admissionOrigin: resolve(__dirname, "../../lib/nst/admissionOrigin.ts"),
+  lifecycle: resolve(__dirname, "../../lib/nst/jobLifecycle.server.ts"),
+  ratePolicy: resolve(__dirname, "../../lib/cron/nstRateLimitPolicy.ts"),
+};
+type SourceRole = keyof typeof sourcePaths | "adapter";
+export interface NativeCaptureRunInput {
+  plan: NativeProcessCapturePlan;
+  supabaseOrigin: string;
+  lifecycleMode: Mode;
+  sourceSHA256: Record<SourceRole, string>;
+}
+
+function sourceSnapshot(input: NativeCaptureRunInput, adapter: NativeCaptureAdapter) {
+  const paths = { ...sourcePaths, adapter: adapter.sourcePath };
+  need(Object.keys(input.sourceSHA256).sort().join() === Object.keys(paths).sort().join(), "source_roles_invalid");
+  return Object.entries(paths).map(([role, path]) => {
+    const stat = lstatSync(path);
+    need(stat.isFile() && !stat.isSymbolicLink() && stat.size <= MIB / 2, "source_file_invalid");
+    const bytes = readFileSync(path);
+    need(bytes.length <= MIB / 2 && hash(bytes) === input.sourceSHA256[role as SourceRole], "source_pin_mismatch");
+    return { role, file: `source-${role}.ts`, sha256: hash(bytes), bytes };
+  });
+}
+
+function completedGames(bytes: CaptureBytes) {
+  let data: unknown;
+  try {
+    const text = new TextDecoder("utf-8", { fatal: true, ignoreBOM: true }).decode(new Uint8Array(bytes));
+    data = JSON.parse(text);
+    // JSON.parse collapses duplicate names. Scan its already-valid tokens so a
+    // contradictory (including escaped) status/date key cannot become finality.
+    const tokens = [...text.matchAll(/"(?:\\.|[^"\\])*"|[{}\[\]:,]/g)].map(match => match[0]);
+    const objects: (Set<string> | null)[] = [];
+    for (let index = 0; index < tokens.length; index++) {
+      const token = tokens[index];
+      if (token === "{" || token === "[") { objects.push(token === "{" ? new Set() : null); need(objects.length <= 32, "schedule_json_depth"); }
+      else if (token === "}" || token === "]") objects.pop();
+      else if (token.startsWith('"') && tokens[index + 1] === ":") {
+        const key = JSON.parse(token) as string, keys = objects[objects.length - 1];
+        need(keys && !keys.has(key), "schedule_duplicate_key"); keys!.add(key);
+      }
+    }
+  } catch { return fail("schedule_json_invalid"); }
+  need(isObject(data) && Array.isArray(data.gameWeek), "schedule_shape_invalid");
+  const days = (data as { gameWeek: unknown[] }).gameWeek.filter(day => isObject(day) && day.date === DATE);
+  need(days.length === 1 && isObject(days[0]) && Array.isArray(days[0].games) && days[0].games.length > 0, "schedule_day_ambiguous_or_empty");
+  const games = (days[0] as { games: unknown[] }).games;
+  const ids = new Set<number>(), teamIds = new Set<number>(), abbreviations = new Set<string>();
+  for (const game of games) {
+    need(isObject(game), "schedule_game_invalid");
+    const row = game as Record<string, unknown>;
+    need(Number.isSafeInteger(row.id) && /^202602\d{4}$/.test(String(row.id)) && !ids.has(row.id as number), "schedule_game_identity_invalid");
+    need(row.season === 20262027 && row.gameType === 2 && ["OFF", "FINAL"].includes(String(row.gameState)) && row.gameScheduleState === "OK", "schedule_game_incomplete_or_wrong_scope");
+    ids.add(row.id as number);
+    for (const team of [row.homeTeam, row.awayTeam]) {
+      need(isObject(team), "schedule_team_invalid");
+      const item = team as Record<string, unknown>;
+      need(Number.isSafeInteger(item.id) && (item.id as number) > 0 && !teamIds.has(item.id as number) && typeof item.abbrev === "string" && /^[A-Z]{2,3}$/.test(item.abbrev) && !abbreviations.has(item.abbrev), "schedule_team_identity_invalid");
+      teamIds.add(item.id as number); abbreviations.add(item.abbrev as string);
+    }
+  }
+  return [...ids].sort((a, b) => a - b);
+}
+
+export async function runNativeProcessCapture(input: NativeCaptureRunInput, adapter: NativeCaptureAdapter, outputDirectory: string) {
+  // Rebuild the plan; never accept caller-modified URLs/budgets or a substituted date.
+  need(JSON.stringify(input.plan) === JSON.stringify(prepareNativeProcessCapture(input.plan.input)), "plan_modified");
+  need(input.plan.input.date === DATE, "pilot_date_not_approved");
+  need(input.supabaseOrigin === ORIGIN && adapter.supabaseOrigin === ORIGIN, "wrong_project");
+  need(["enabled", "disabled"].includes(input.lifecycleMode) && adapter.lifecycleMode === input.lifecycleMode, "lifecycle_mode_mismatch");
+  const sources = sourceSnapshot(input, adapter);
+  const start = Date.now(), deadlineAt = start + 120_000;
+  const scheduleUrl = `https://api-web.nhle.com/v1/schedule/${DATE}`;
+  const files: { file: string; bytes: number; sha256: string }[] = [];
+  let retainedBytes = 0;
+  mkdirSync(outputDirectory, { mode: 0o700 }); // Existing file/directory/symlink fails before any network.
+  const write = (file: string, bytes: CaptureBytes) => {
+    need(retainedBytes + bytes.byteLength <= 8 * MIB, "packet_byte_limit");
+    const fd = openSync(join(outputDirectory, file), "wx", 0o600);
+    // Count before writing; a partial failed write cannot buy another attempt.
+    retainedBytes += bytes.byteLength;
+    try { writeFileSync(fd, new Uint8Array(bytes)); fsyncSync(fd); } finally { closeSync(fd); }
+    files.push({ file, bytes: bytes.byteLength, sha256: hash(bytes) });
+  };
+  const writeJson = (file: string, value: unknown) => write(file, json(value));
+  const syncDirectory = () => { const fd = openSync(outputDirectory, "r"); try { fsyncSync(fd); } finally { closeSync(fd); } };
+  const bindings = sources.map(source => ({ role: source.role, file: source.file, sha256: source.sha256, bytes: source.bytes.length }));
+  writeJson("STARTED.json", { version: "fhfh.blsh.native-capture-run.v1", startedAtUTC: new Date(start).toISOString(), supabaseOrigin: ORIGIN, lifecycleMode: input.lifecycleMode, sourceBindings: bindings });
+  writeJson("PLAN.json", input.plan);
+  for (const source of sources) write(source.file, source.bytes);
+  syncDirectory();
+
+  let active = false, stopped = false, phase: "schedule" | Group | "settled" = "schedule";
+  let activeAbort: AbortController | undefined;
+  let lastNstStart: number | undefined;
+  let jobToken: string | undefined;
+  const calls = new Map<CaptureOperation, { startedAt: number; state: "started" | "settled" | "uncertain"; completedAtUTC?: string }>();
+  const observed = new Map<CaptureOperation, Captured<unknown>>();
+  const permits = new Map<Group, { wall: number; monotonic: number }>();
+  const dispatch: CaptureDispatch = async (operation, action, reference) => {
+    const guard = (value: unknown, code: string) => { if (!value) { stopped = true; fail(code); } };
+    const now = Date.now(), monotonicNow = performance.now(), hold = operation === "hold";
+    const enabled = input.lifecycleMode === "enabled";
+    guard(!active, "concurrent_operation_blocked");
+    guard(!stopped || hold, "operation_after_failure");
+    guard(!calls.has(operation) && calls.size < (enabled ? 8 : 5), "operation_budget_exhausted");
+    guard(now >= start && now < (hold ? deadlineAt + 5000 : deadlineAt), "capture_deadline");
+    const lifecycle = ["begin", "finish", "hold"].includes(operation);
+    if (lifecycle) {
+      guard(reference && Object.keys(reference).join() === "jobToken" && /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(reference.jobToken), "lifecycle_reference_missing_or_invalid");
+      guard(operation === "begin" ? jobToken === undefined : jobToken === reference!.jobToken, "lifecycle_reference_changed");
+    } else guard(reference === undefined, "unexpected_operation_reference");
+    if (operation === "schedule") guard(phase === "schedule" && calls.size === 0, "schedule_order_invalid");
+    else if (["begin", "finish", "hold"].includes(operation)) {
+      guard(enabled && phase !== "schedule", "lifecycle_operation_invalid");
+      if (operation === "begin") guard(phase === "individual" && calls.size === 1, "begin_order_invalid");
+      else guard(calls.has("begin"), "lifecycle_without_begin");
+      if (operation === "finish") guard(phase === "settled", "finish_before_retention");
+      if (hold) guard(stopped && !active, "hold_without_failure");
+    } else {
+      guard(phase === "individual" || phase === "onIce", "provider_order_invalid");
+      guard(operation === `admission:${phase}` || operation === `nst:${phase}`, "provider_group_invalid");
+      if (enabled) guard(calls.get("begin")?.state === "settled", "provider_before_begin");
+      if (operation.startsWith("nst:")) {
+        const permit = permits.get(phase as Group);
+        guard(calls.get(`admission:${phase as Group}`)?.state === "settled" && now < (permit?.wall ?? 0) && monotonicNow < (permit?.monotonic ?? 0), "provider_without_current_permit");
+        guard(lastNstStart === undefined || now - lastNstStart >= 22_000, "provider_spacing_invalid");
+      }
+    }
+    const provider = operation === "schedule" || operation.startsWith("nst:");
+    const rpc = operation.startsWith("admission:") ? (enabled ? "nst_admit_job_attempt_v1" : "nst_admit_attempt_v1") : `nst_job_${operation}_v1`;
+    const url = operation === "schedule" ? scheduleUrl : operation.startsWith("nst:") ? input.plan.pages.find(page => operation === `nst:${page.group}`)!.url : `${ORIGIN}/rest/v1/rpc/${rpc}`;
+    const timeoutMs = Math.min(provider ? 15_000 : 5000, (hold ? deadlineAt + 5000 : deadlineAt) - now);
+    const operationDeadline = now + timeoutMs;
+    const monotonicDeadline = monotonicNow + timeoutMs;
+    const record = { startedAt: now, state: "started" as "started" | "settled" | "uncertain", completedAtUTC: undefined as string | undefined };
+    // Persist the attempted call before transmission. Interruption means unknown,
+    // never a made-up success or permission to repeat the operation.
+    writeJson(`operation-${calls.size + 1}-STARTED.json`, { operation, url, method: provider ? "GET" : "POST", startedAtUTC: new Date(now).toISOString(),
+      ...(reference ? { jobToken: reference.jobToken } : {}) });
+    if (operation === "begin") jobToken = reference!.jobToken;
+    calls.set(operation, record); active = true;
+    const controller = new AbortController();
+    activeAbort = controller;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const timeout = new Promise<never>((_, reject) => { timer = setTimeout(() => { controller.abort(); reject(new Error("operation_timeout")); }, Math.max(0, Math.min(operationDeadline - Date.now(), monotonicDeadline - performance.now()))); });
+    const pending = Promise.resolve().then(() => {
+      // Durable writes can consume a permit or deadline while timers cannot run.
+      // Recheck at the actual action boundary; never extend the original budget.
+      const dispatchedAt = Date.now(), dispatchedMonotonic = performance.now();
+      guard(!controller.signal.aborted && (!stopped || hold) && dispatchedAt >= now && dispatchedAt < operationDeadline && dispatchedMonotonic < monotonicDeadline, "dispatch_after_stop_or_deadline");
+      if (operation.startsWith("nst:")) {
+        const permit = permits.get(phase as Group);
+        guard(dispatchedAt < (permit?.wall ?? 0) && dispatchedMonotonic < (permit?.monotonic ?? 0), "provider_without_current_permit");
+        guard(lastNstStart === undefined || dispatchedAt - lastNstStart >= 22_000, "provider_spacing_invalid");
+        lastNstStart = dispatchedAt;
+      }
+      return action({ url, method: provider ? "GET" : "POST", redirect: "error", signal: controller.signal, timeoutMs: Math.min(operationDeadline - dispatchedAt, monotonicDeadline - dispatchedMonotonic), maxResponseBytes: operation === "schedule" ? MIB : provider ? 2 * MIB : 64 * 1024 });
+    });
+    // Keep the concurrency guard until the underlying adapter settles, including
+    // after timeout. An uncooperative transport cannot start cleanup/follow-ups.
+    void pending.then(() => { active = false; }, () => { active = false; });
+    try {
+      const value = await Promise.race([pending, timeout]);
+      need(!controller.signal.aborted && Date.now() >= now && Date.now() < operationDeadline && performance.now() < monotonicDeadline, "operation_timeout");
+      record.state = "settled"; record.completedAtUTC = new Date().toISOString();
+      let permit: "allowed" | "denied" | "expired" | "invalid" | null = null;
+      if (operation.startsWith("admission:")) {
+        const receipt: Record<string, unknown> = isObject(value) ? value : {};
+        // The canonical hook exposes its validation result, not the raw RPC body.
+        // Its pinned validator checks version/scope/TTL before valid can be true.
+        const valid = receipt.kind === "admission" && receipt.httpStatus === 200 && receipt.valid === true && typeof receipt.allowed === "boolean" && Number.isSafeInteger(receipt.waitMs) && (receipt.waitMs as number) >= 0;
+        permit = !valid ? "invalid" : !receipt.allowed ? "denied" : Date.now() - now >= 1000 || performance.now() - monotonicNow >= 1000 ? "expired" : "allowed";
+        if (permit === "allowed") permits.set(phase as Group, { wall: now + 1000, monotonic: monotonicNow + 1000 });
+      }
+      const facts = provider && isObject(value) ? {
+        httpStatus: Number.isInteger(value.status) && (value.status as number) >= 100 && (value.status as number) <= 599 ? value.status : null,
+        finalUrlMatchesRequested: value.finalUrl === url, redirected: typeof value.redirected === "boolean" ? value.redirected : null,
+        decodedBytes: value.bytes instanceof Uint8Array ? value.bytes.byteLength : Number.isSafeInteger(value.decodedBytes) && (value.decodedBytes as number) >= 0 ? value.decodedBytes : null,
+      } : null;
+      writeJson(`operation-${calls.size}-SETTLED.json`, { operation, completedAtUTC: record.completedAtUTC, permit, transport: facts });
+      need(permit === null || permit === "allowed", "permit_not_usable");
+      const captured = { operation, completedAtUTC: record.completedAtUTC, witness: Object.freeze({}), value };
+      observed.set(operation, captured);
+      return captured;
+    } catch {
+      stopped = true; if (record.state === "started") record.state = "uncertain";
+      // Do not persist thrown text, headers, credentials, RPC bodies or local paths.
+      return fail("operation_failed_or_uncertain");
+    } finally { if (timer !== undefined) clearTimeout(timer); if (activeAbort === controller) activeAbort = undefined; }
+  };
+
+  const retain = (name: "schedule" | Group, captured: Captured<CaptureResponse>) => {
+    need(!stopped && Date.now() < deadlineAt, "retention_after_stop");
+    const operation: CaptureOperation = name === "schedule" ? "schedule" : `nst:${name}`;
+    const record = calls.get(operation);
+    const observation = observed.get(operation);
+    need(observation && observation.witness === captured.witness && captured.operation === operation && record?.state === "settled" && record.completedAtUTC === captured.completedAtUTC, "response_without_observed_dispatch");
+    const expectedUrl = name === "schedule" ? scheduleUrl : input.plan.pages.find(page => page.group === name)!.url;
+    const response = captured.value;
+    const transport = observation!.value;
+    need(isObject(transport) && transport.status === response.status && transport.finalUrl === response.finalUrl && transport.redirected === response.redirected, "response_transport_facts_changed");
+    need(response.status === 200 && response.finalUrl === expectedUrl && response.redirected === false, "response_transport_invalid");
+    need(response.bytes instanceof Uint8Array && response.bytes.length > 0 && response.bytes.length <= (name === "schedule" ? MIB : 2 * MIB), "response_byte_limit");
+    const bytes = Buffer.from(new Uint8Array(response.bytes));
+    let parsedRows: number | null = null, games: number[] | null = null;
+    if (name === "schedule") games = completedGames(bytes);
+    else {
+      let text: string;
+      try { text = new TextDecoder("utf-8", { fatal: true }).decode(new Uint8Array(bytes)); } catch { return fail("parser_utf8_invalid"); }
+      const $ = load(text);
+      parsedRows = $("table tr").filter((_, element) => $(element).children("td").length > 0).length;
+      need(parsedRows > 0 && parsedRows <= 5000, "parser_shape_or_row_limit");
+    }
+    const file = `${name}.${name === "schedule" ? "raw.json" : "parser-input.html"}`;
+    write(file, bytes);
+    writeJson(`${name}.TRANSPORT-OBSERVATION.json`, {
+      status: "candidate_requires_adapter_and_source_review", operation, file, sha256: hash(bytes), bytes: bytes.length,
+      retrievedAtUTC: captured.completedAtUTC, retainedAtUTC: new Date().toISOString(), httpStatus: response.status,
+      finalUrl: response.finalUrl, redirected: response.redirected, TLSVerified: null,
+      tlsEvidence: "pending_runtime_review", representation: name === "schedule" ? "original_decoded_body" : "client_redacted_parser_input",
+      sourceBindings: bindings, parsedRows, completedGameIds: games,
+      originalPublicationUTC: null, modelDefinition: "unknown", independentlyAccepted: false, advancedAdmission: false, score: null,
+    });
+    syncDirectory();
+  };
+
+  const retained: Group[] = [];
+  let workStarted = false;
+  const stopTimer = setTimeout(() => { stopped = true; activeAbort?.abort(); }, Math.max(0, deadlineAt - Date.now()));
+  let terminalTimer: ReturnType<typeof setTimeout> | undefined;
+  const terminal = new Promise<never>((_, reject) => {
+    terminalTimer = setTimeout(() => { stopped = true; activeAbort?.abort(); reject(new Error("capture_deadline")); }, Math.max(0, deadlineAt - Date.now()) + (input.lifecycleMode === "enabled" ? 5000 : 0));
+  });
+  try {
+    const work = (async () => {
+      retain("schedule", await adapter.schedule(dispatch));
+      phase = "individual";
+      const requestControl = { deadlineAt, maxAttempts: 2 as const, attemptsStarted: 0, minIntervalMs: 22000 as const, plannedRequestCount: 2 as const };
+      await adapter.withJob({ deadlineAt, settled: () => retained.length === 2 && !active && !stopped, dispatch }, async () => {
+        need(!workStarted, "duplicate_job_work"); workStarted = true;
+        try {
+          for (const group of GROUPS) {
+            phase = group;
+            if (lastNstStart !== undefined) {
+              const wait = Math.max(0, lastNstStart + 22_000 - Date.now());
+              need(Date.now() + wait + 20_000 < deadlineAt, "capture_deadline");
+              if (wait > 0) await new Promise<void>(resolveWait => setTimeout(resolveWait, wait));
+            }
+            const url = input.plan.pages.find(page => page.group === group)!.url;
+            retain(group, await adapter.nst(group, url, { dispatch, requestControl, retries: 0, allowQueryKeyFallback: false, timeoutMs: 15_000, maxResponseBytes: 2097152, maxAdmissionCalls: 1 }));
+            retained.push(group);
+          }
+          phase = "settled";
+        } catch { stopped = true; fail("capture_work_failed"); }
+      });
+      need(workStarted && retained.length === 2 && !active && !stopped && Date.now() < deadlineAt, "capture_not_settled");
+      need(input.lifecycleMode === "disabled" || calls.get("finish")?.state === "settled", "lifecycle_not_finished");
+    })();
+    await Promise.race([work, terminal]);
+    const result = { state: "packet_complete_pending_review", retained, operationCount: calls.size, lifecycleMode: input.lifecycleMode,
+      independentlyAccepted: false, advancedAdmission: false, score: null };
+    // Completion is the final durable step, after lifecycle settlement. No replace:
+    // failed writes/fsync leave only the temporary name; collision preserves final.
+    const manifest = json({ ...result, files, completedAtUTC: new Date().toISOString() });
+    write(".MANIFEST.json.tmp", manifest);
+    syncDirectory();
+    need(!stopped && Date.now() < deadlineAt, "publication_after_deadline");
+    linkSync(join(outputDirectory, ".MANIFEST.json.tmp"), join(outputDirectory, "MANIFEST.json"));
+    syncDirectory();
+    unlinkSync(join(outputDirectory, ".MANIFEST.json.tmp"));
+    return result;
+  } catch {
+    stopped = true;
+    // A best-effort failure receipt is never a completion marker. Keep successful
+    // pages and STARTED call receipts if storage itself is unavailable.
+    try { writeJson("FAILED.json", { state: "partial_packet", retained, operations: [...calls].map(([operation, record]) => ({ operation, ...record })), activeTransportUnsettled: active, reason: "capture_or_retention_failed", independentlyAccepted: false }); syncDirectory(); } catch { /* Preserve partial files. */ }
+    return fail("native_capture_incomplete_see_retained_packet");
+  } finally { clearTimeout(stopTimer); if (terminalTimer !== undefined) clearTimeout(terminalTimer); }
+}

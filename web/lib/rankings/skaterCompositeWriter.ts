@@ -3,8 +3,13 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Json } from "lib/supabase/database-generated.types";
 import supabase from "lib/supabase/server";
 
+import {
+  loadSkaterCompositeSeasonSources,
+  type CompositeSourceCoverage,
+} from "./skaterCompositeSourceCoverage";
+
 import type { ContextualRankingMetricKey } from "./metricDefinitions";
-import { buildContextualRankingsSurface } from "./rankingQueries";
+import { buildContextualRankingsSurfaces } from "./rankingQueries";
 import type {
   ContextualRankingApiRow,
   ContextualRankingsDeploymentFilter,
@@ -28,7 +33,9 @@ import {
 import {
   BEAST_TIER_GATES,
   DEFENSE_RATING_CONTRACT,
-  MCM_COMPONENTS,
+  getMcmComponentGroups,
+  MCM_MINIMUM_PEER_COUNT,
+  SKATER_COMPOSITE_METHODOLOGY_VERSION,
   MCM_SCORE_CONTRACT,
   OFFENSE_RATING_CONTRACT,
   RESULTS_LUCK_BASELINE_PERSISTENCE_CONTRACT,
@@ -63,6 +70,8 @@ type MetricSurfaceEntry = {
   snapshotUpdatedAt: string | null;
   unavailable: boolean;
   message: string | null;
+  latestAvailableSnapshotDate: string | null;
+  duplicatePlayerIds: boolean;
 };
 
 export type SkaterCompositeSourceFreshness = {
@@ -80,13 +89,22 @@ export type SkaterCompositeBuildResult = {
   snapshotUpdatedAt: string | null;
   sourceMetrics: ContextualRankingMetricKey[];
   sourceFreshness: SkaterCompositeSourceFreshness[];
+  sourceCoverage: CompositeSourceCoverage;
+  publication: {
+    ready: boolean;
+    blockers: string[];
+    candidateCount: number;
+    scoredCount: number;
+    unscoredCount: number;
+    truncated: boolean;
+  };
   unavailableMetrics: Array<{
     metricKey: ContextualRankingMetricKey;
     reason: string;
   }>;
 };
 
-const METHODOLOGY_VERSION = "contextual_composites_v1";
+const METHODOLOGY_VERSION = SKATER_COMPOSITE_METHODOLOGY_VERSION;
 const UPSERT_CONFLICT_COLUMNS =
   "player_id,season_id,snapshot_date,window_type,window_size,strength_state,peer_group_type,peer_group_key";
 
@@ -153,16 +171,56 @@ function countAtLeast(values: Array<number | null>, threshold: number) {
   return values.filter((value) => value != null && value >= threshold).length;
 }
 
+function validPercentile(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value) && value >= 0 && value <= 100;
+}
+
 function percentilesFor(
   metricRows: MetricSurfaceEntry[],
-  playerId: number,
+  baseRow: ContextualRankingApiRow,
+  snapshotDate: string,
 ): MetricPercentileMap {
   const percentiles: MetricPercentileMap = {};
   for (const entry of metricRows) {
+    const row = entry.rowsByPlayerId.get(baseRow.entity.id);
     percentiles[entry.metricKey] =
-      entry.rowsByPlayerId.get(playerId)?.metric.percentile ?? null;
+      !entry.unavailable && entry.snapshotDate === snapshotDate &&
+      row?.sample.minimumSampleMet &&
+      row.metric.qualifiedPeerCount >= MCM_MINIMUM_PEER_COUNT &&
+      row.peerGroup.type === baseRow.peerGroup.type &&
+      row.peerGroup.key === baseRow.peerGroup.key &&
+      row.sourceSnapshot?.date === baseRow.sourceSnapshot?.date &&
+      row.sourceSnapshot?.updatedAt === baseRow.sourceSnapshot?.updatedAt &&
+      validPercentile(row.metric.percentile)
+        ? row.metric.percentile : null;
   }
   return percentiles;
+}
+
+// Independent check of the published percentile metadata against the full raw
+// population. Every MCM component is higher-is-better. Do not clamp bad inputs.
+function metricPercentilesMatchPopulation(entry: MetricSurfaceEntry) {
+  const groups = new Map<string, ContextualRankingApiRow[]>();
+  for (const row of entry.rowsByPlayerId.values()) {
+    const key = `${row.peerGroup.type}:${row.peerGroup.key}`;
+    const group = groups.get(key) ?? [];
+    group.push(row);
+    groups.set(key, group);
+  }
+  for (const rows of groups.values()) {
+    const qualified = rows.filter((row) => row.sample.minimumSampleMet && finite(row.metric.value) != null);
+    for (const row of rows) {
+      if (row.metric.qualifiedPeerCount !== qualified.length) return false;
+      if (!row.sample.minimumSampleMet || finite(row.metric.value) == null) {
+        if (row.metric.percentile != null) return false;
+        continue;
+      }
+      const worse = qualified.filter((peer) => peer.metric.value! < row.metric.value!).length;
+      const expected = qualified.length === 1 ? 100 : round(100 * worse / (qualified.length - 1), 3)!;
+      if (!validPercentile(row.metric.percentile) || Math.abs(row.metric.percentile - expected) > 0.000001) return false;
+    }
+  }
+  return true;
 }
 
 function windowType(window: SkaterProductionWindow) {
@@ -212,23 +270,29 @@ function contextualRequestForMetric(
     deployment: request.deployment,
     strength: request.strength,
     metric,
-    minGp: request.minGp,
-    minToiSeconds: request.minToiSeconds,
+    minGp: request.minGp ?? 1,
+    minToiSeconds: request.minToiSeconds ?? 300,
     teamId: request.teamId,
     peerGroupType: request.peerGroupType,
     sort: "percentile",
     direction: "desc",
-    limit: request.limit,
+    // Rank/join the complete cohort before applying the output bound.
+    limit: null,
     entityIds: null,
   };
 }
 
 function sourceSnapshotDate(entries: MetricSurfaceEntry[]) {
-  return entries.find((entry) => entry.snapshotDate != null)?.snapshotDate ?? null;
+  return entries.flatMap((entry) =>
+    [entry.latestAvailableSnapshotDate, entry.snapshotDate].filter(
+      (date): date is string => date != null,
+    ),
+  ).sort().at(-1) ?? null;
 }
 
 function sourceSnapshotUpdatedAt(entries: MetricSurfaceEntry[]) {
-  return entries.find((entry) => entry.snapshotUpdatedAt != null)?.snapshotUpdatedAt ?? null;
+  return entries.flatMap((entry) => entry.snapshotUpdatedAt ? [entry.snapshotUpdatedAt] : [])
+    .sort().at(-1) ?? null;
 }
 
 function sourceRowsByPlayerId(entries: MetricSurfaceEntry[]) {
@@ -317,46 +381,47 @@ export function calculateDefenseRating(percentiles: MetricPercentileMap) {
   );
 }
 
-export function calculateMcmScore(percentiles: MetricPercentileMap) {
-  const riffPercentiles = MCM_COMPONENTS.riff.map((metric) => percentiles[metric]);
-  const scoringPercentiles = MCM_COMPONENTS.scoring.map((metric) => percentiles[metric]);
-  const riffScore = averageTopN(riffPercentiles, 2);
-  const scoringScore = averageTopN(scoringPercentiles, 1);
-  const depthScore = average([...riffPercentiles, ...scoringPercentiles]);
-  if (riffScore == null || scoringScore == null || depthScore == null) return null;
-  return round(
-    clampPercentile(0.45 * riffScore + 0.35 * scoringScore + 0.2 * depthScore),
-  );
+function calculateUnroundedMcmScore(
+  percentiles: MetricPercentileMap,
+  strength: SkaterWindowStrengthState,
+) {
+  const components = getMcmComponentGroups(strength);
+  const riffPercentiles = components.riff.map((metric) => percentiles[metric]);
+  const scoringPercentiles = components.scoring.map((metric) => percentiles[metric]);
+  const allPercentiles = [...riffPercentiles, ...scoringPercentiles];
+  if (!allPercentiles.every(validPercentile)) return null;
+  const riffScore = averageTopN(riffPercentiles, 2)!;
+  const scoringScore = averageTopN(scoringPercentiles, 1)!;
+  const depthScore = average(allPercentiles)!;
+  return 0.45 * riffScore + 0.35 * scoringScore + 0.2 * depthScore;
+}
+
+export function calculateMcmScore(
+  percentiles: MetricPercentileMap,
+  strength: SkaterWindowStrengthState = "all",
+) {
+  return round(calculateUnroundedMcmScore(percentiles, strength));
 }
 
 export function resolveBeastTier(
   percentiles: MetricPercentileMap,
   mcmScore: number | null,
+  strength: SkaterWindowStrengthState = "all",
 ) {
-  const riffPercentiles = MCM_COMPONENTS.riff.map((metric) => percentiles[metric]);
-  const scoringPercentiles = MCM_COMPONENTS.scoring.map((metric) => percentiles[metric]);
+  const score = calculateUnroundedMcmScore(percentiles, strength);
+  if (!validPercentile(mcmScore) || score == null) return null;
+  const components = getMcmComponentGroups(strength);
+  const riffPercentiles = components.riff.map((metric) => percentiles[metric]);
+  const scoringPercentiles = components.scoring.map((metric) => percentiles[metric]);
   const allPercentiles = [...riffPercentiles, ...scoringPercentiles];
 
   for (const gate of BEAST_TIER_GATES) {
-    if (gate.minimumMcmScore != null && (mcmScore == null || mcmScore < gate.minimumMcmScore)) {
-      continue;
-    }
-    if (countAtLeast(riffPercentiles, gate.riffThresholds.percentile) < gate.riffThresholds.count) {
-      continue;
-    }
-    if (
-      countAtLeast(scoringPercentiles, gate.scoringThresholds.percentile) <
-      gate.scoringThresholds.count
-    ) {
-      continue;
-    }
-    if (
-      gate.allCategoryThresholds &&
-      countAtLeast(allPercentiles, gate.allCategoryThresholds.percentile) <
-        gate.allCategoryThresholds.count
-    ) {
-      continue;
-    }
+    if (gate.minimumMcmScore != null && score < gate.minimumMcmScore) continue;
+    if (countAtLeast(riffPercentiles, gate.riffThresholds.percentile) < gate.riffThresholds.count) continue;
+    if (countAtLeast(scoringPercentiles, gate.scoringThresholds.percentile) < gate.scoringThresholds.count) continue;
+    if (gate.allCategoryThresholds &&
+      countAtLeast(allPercentiles, gate.allCategoryThresholds.percentile) < gate.allCategoryThresholds.count
+    ) continue;
     return gate.tier;
   }
   return null;
@@ -444,9 +509,10 @@ function archetypeTags(args: {
   return [...new Set(tags)];
 }
 
-function flagCounts(percentiles: MetricPercentileMap) {
-  const riffPercentiles = MCM_COMPONENTS.riff.map((metric) => percentiles[metric]);
-  const scoringPercentiles = MCM_COMPONENTS.scoring.map((metric) => percentiles[metric]);
+function flagCounts(percentiles: MetricPercentileMap, strength: SkaterWindowStrengthState) {
+  const components = getMcmComponentGroups(strength);
+  const riffPercentiles = components.riff.map((metric) => percentiles[metric]);
+  const scoringPercentiles = components.scoring.map((metric) => percentiles[metric]);
   return {
     totalAt70: countAtLeast([...riffPercentiles, ...scoringPercentiles], 70),
     riffAt70: countAtLeast(riffPercentiles, 70),
@@ -466,15 +532,15 @@ export function buildSkaterCompositeRatingRow(args: {
 }): SkaterCompositeRatingInsert {
   const offenseRating = calculateOffenseRating(args.percentiles);
   const defenseRating = calculateDefenseRating(args.percentiles);
-  const mcmScore = calculateMcmScore(args.percentiles);
-  const beastTier = resolveBeastTier(args.percentiles, mcmScore);
+  const mcmScore = calculateMcmScore(args.percentiles, args.request.strength);
+  const beastTier = resolveBeastTier(args.percentiles, mcmScore, args.request.strength);
   const archetypeScores = calculateArchetypeScores(args.percentiles);
   const tags = archetypeTags({
     percentiles: args.percentiles,
     scores: archetypeScores,
   });
   if (beastTier) tags.push(beastTier);
-  const counts = flagCounts(args.percentiles);
+  const counts = flagCounts(args.percentiles, args.request.strength);
   const isDeploymentContext = args.request.deployment !== "all";
   const resultsLuckScore = args.resultsLuckSource
     ? calculateComponentAwareResultsLuckIndex({
@@ -519,7 +585,14 @@ export function buildSkaterCompositeRatingRow(args: {
       percentiles: args.percentiles,
       mcm: {
         formula: MCM_SCORE_CONTRACT.formula,
-        liveComponents: MCM_SCORE_CONTRACT.componentGroups,
+        liveComponents: getMcmComponentGroups(args.request.strength),
+        componentPolicy: MCM_SCORE_CONTRACT.componentPolicy,
+        scale: MCM_SCORE_CONTRACT.scale,
+        percentileConvention: MCM_SCORE_CONTRACT.percentileConvention,
+        minimumPeerCount: MCM_MINIMUM_PEER_COUNT,
+        status: mcmScore == null ? "unavailable" : "computed",
+        missingRequiredComponents: Object.values(getMcmComponentGroups(args.request.strength))
+          .flat().filter((metric) => !validPercentile(args.percentiles[metric])),
         sourcePendingComponents: MCM_SCORE_CONTRACT.sourcePendingComponents,
         flagCounts: counts,
         visibleThresholds: BEAST_TIER_GATES,
@@ -543,6 +616,7 @@ export function buildSkaterCompositeRatingRow(args: {
     provenance: {
       methodologyVersion: METHODOLOGY_VERSION,
       snapshotUpdatedAt: args.snapshotUpdatedAt,
+      sourceSnapshot: args.baseRow.sourceSnapshot ?? null,
       peerGroupType: args.request.peerGroupType,
       peerGroupKey: requestPeerGroupKey(args.request),
       deployment: args.request.deployment,
@@ -562,23 +636,30 @@ export function buildSkaterCompositeRatingRow(args: {
 export async function buildSkaterCompositeRatingRows(
   request: SkaterCompositeBuildRequest,
 ): Promise<SkaterCompositeBuildResult> {
-  const metricEntries = await Promise.all(
-    SKATER_COMPOSITE_SOURCE_METRICS.map(async (metricKey) => {
-      const surface = await buildContextualRankingsSurface(
-        contextualRequestForMetric(request, metricKey),
-      );
-      return {
-        metricKey,
-        rowsByPlayerId: new Map(
-          surface.rankings.map((row) => [row.entity.id, row]),
-        ),
-        snapshotDate: surface.meta.snapshotDate,
-        snapshotUpdatedAt: surface.meta.snapshotUpdatedAt,
-        unavailable: surface.meta.unavailable,
-        message: surface.meta.message,
-      } satisfies MetricSurfaceEntry;
-    }),
+  const { report: sourceCoverage, rows: sourceRows } = await loadSkaterCompositeSeasonSources(supabase, {
+    season: request.season,
+    strength: request.strength,
+    cutoffDate: request.asOfDate ?? new Date().toISOString().slice(0, 10),
+  });
+  const surfaces = await buildContextualRankingsSurfaces(
+    contextualRequestForMetric(request, "goals_per_60"),
+    [...SKATER_COMPOSITE_SOURCE_METRICS],
+    { completeSeasonRows: sourceRows },
   );
+  const metricEntries = SKATER_COMPOSITE_SOURCE_METRICS.map((metricKey) => {
+    const surface = surfaces.get(metricKey);
+    const sourceRows = surface?.rankings ?? [];
+    return {
+      metricKey,
+      rowsByPlayerId: new Map(sourceRows.map((row) => [row.entity.id, row])),
+      snapshotDate: surface?.meta.snapshotDate ?? null,
+      snapshotUpdatedAt: surface?.meta.snapshotUpdatedAt ?? null,
+      latestAvailableSnapshotDate: surface?.meta.latestAvailableSnapshotDate ?? null,
+      unavailable: !surface || surface.meta.unavailable,
+      message: surface?.meta.message ?? null,
+      duplicatePlayerIds: new Set(sourceRows.map((row) => row.entity.id)).size !== sourceRows.length,
+    } satisfies MetricSurfaceEntry;
+  });
   const unavailableMetrics = metricEntries.flatMap((entry) =>
     entry.unavailable
       ? [
@@ -594,7 +675,7 @@ export async function buildSkaterCompositeRatingRows(
   const freshness = sourceFreshness(metricEntries);
   const baseRows = sourceRowsByPlayerId(metricEntries);
   const resultsLuckSources =
-    snapshotDate == null
+    snapshotDate == null || !sourceCoverage.verified
       ? new Map<number, ResultsLuckRollingSource>()
       : await fetchResultsLuckRollingSources(supabase, {
           playerIds: [...baseRows.keys()],
@@ -604,25 +685,72 @@ export async function buildSkaterCompositeRatingRows(
           window: request.window,
         });
 
-  const rows =
+  const allRows =
     snapshotDate == null
       ? []
-      : [...baseRows.values()].map((baseRow) =>
+      : [...baseRows.values()].sort((a, b) => a.entity.id - b.entity.id).map((baseRow) =>
           buildSkaterCompositeRatingRow({
             request,
             baseRow,
             snapshotDate,
             snapshotUpdatedAt,
-            percentiles: percentilesFor(metricEntries, baseRow.entity.id),
+            percentiles: percentilesFor(metricEntries, baseRow, snapshotDate),
             unavailableMetrics,
             sourceFreshness: freshness,
             resultsLuckSource: resultsLuckSources.get(baseRow.entity.id) ?? null,
           }),
         );
 
+  const rows = allRows.slice(0, request.limit);
+  const requiredMetrics = Object.values(getMcmComponentGroups(request.strength)).flat();
+  const blockers: string[] = sourceCoverage.verified ? [] : [
+    "Source coverage is not verified",
+    ...sourceCoverage.blockers.map((reason) => `Source coverage: ${reason}`),
+  ];
+  for (const entry of metricEntries.filter((entry) => requiredMetrics.includes(entry.metricKey as typeof requiredMetrics[number]))) {
+    if (entry.unavailable) blockers.push(`${entry.metricKey}: source unavailable`);
+    if (entry.snapshotDate !== snapshotDate) blockers.push(`${entry.metricKey}: snapshot does not match ${snapshotDate}`);
+    if (!entry.unavailable && !metricPercentilesMatchPopulation(entry)) {
+      blockers.push(`${entry.metricKey}: percentile or peer count does not match the complete raw population`);
+    }
+    if (entry.duplicatePlayerIds) blockers.push(`${entry.metricKey}: duplicate player IDs`);
+    if ([...entry.rowsByPlayerId.values()].some((row) =>
+      row.metric.percentile != null && !validPercentile(row.metric.percentile),
+    )) blockers.push(`${entry.metricKey}: percentile outside finite [0, 100]`);
+    if ([...entry.rowsByPlayerId.values()].some((row) => {
+      const base = baseRows.get(row.entity.id);
+      return row.peerGroup.type !== request.peerGroupType ||
+        row.peerGroup.type !== base?.peerGroup.type || row.peerGroup.key !== base?.peerGroup.key;
+    })) blockers.push(`${entry.metricKey}: inconsistent peer group`);
+    if ([...entry.rowsByPlayerId.values()].some((row) => {
+      const base = baseRows.get(row.entity.id);
+      return row.sourceSnapshot?.date !== base?.sourceSnapshot?.date ||
+        row.sourceSnapshot?.updatedAt !== base?.sourceSnapshot?.updatedAt;
+    })) blockers.push(`${entry.metricKey}: inconsistent per-player source snapshot`);
+  }
+  const scoredCount = allRows.filter((row) => row.mcm_score != null).length;
+  if (!scoredCount) blockers.push("No complete, qualified MCM rows");
+  if (allRows.length > rows.length) blockers.push("Output limit truncates the cohort; partial publication is not allowed");
+  // The durable uniqueness key does not encode combined filters or custom samples.
+  const filters = [request.teamId != null, request.deployment !== "all", request.position !== "all"];
+  if (filters.filter(Boolean).length > 1) blockers.push("Combined filters are not representable in the durable peer-group key");
+  if ((request.minGp ?? 1) !== 1 || (request.minToiSeconds ?? 300) !== 300) {
+    blockers.push("Custom sample thresholds are not representable in the durable key");
+  }
+  const publication = {
+    ready: blockers.length === 0,
+    blockers,
+    candidateCount: allRows.length,
+    scoredCount,
+    unscoredCount: allRows.length - scoredCount,
+    truncated: rows.length < allRows.length,
+  };
+
   return {
     request,
     rows,
+    publication,
+    sourceCoverage,
     snapshotDate,
     snapshotUpdatedAt,
     sourceMetrics: [...SKATER_COMPOSITE_SOURCE_METRICS],
@@ -635,19 +763,15 @@ export async function upsertSkaterCompositeRatingRows(
   client: SupabaseClient<Database>,
   rows: SkaterCompositeRatingInsert[],
 ) {
-  const chunkSize = 250;
-  let rowsUpserted = 0;
-
-  for (let index = 0; index < rows.length; index += chunkSize) {
-    const chunk = rows.slice(index, index + chunkSize);
-    const { error } = await client
-      .from("skater_composite_ratings")
-      .upsert(chunk, { onConflict: UPSERT_CONFLICT_COLUMNS });
-    if (error) {
-      throw new Error(`Failed to upsert skater_composite_ratings: ${error.message}`);
-    }
-    rowsUpserted += chunk.length;
+  if (rows.length === 0) return 0;
+  if (rows.length > 1000) throw new Error("Composite publication exceeds the 1000-row cohort bound.");
+  // One PostgREST bulk statement is atomic. Chunked upserts could expose a
+  // partly replaced cohort when a later chunk fails.
+  const { error } = await client
+    .from("skater_composite_ratings")
+    .upsert(rows, { onConflict: UPSERT_CONFLICT_COLUMNS });
+  if (error) {
+    throw new Error(`Failed to upsert skater_composite_ratings: ${error.message}`);
   }
-
-  return rowsUpserted;
+  return rows.length;
 }

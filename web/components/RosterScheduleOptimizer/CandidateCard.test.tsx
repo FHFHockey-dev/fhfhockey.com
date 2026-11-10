@@ -14,7 +14,7 @@ const props = { player, plan, rank: 1, snapshot: null, categories: false, exclud
   details: () => "Lost active contribution: 1 AGP, 3 points.", select: vi.fn(), add: vi.fn(),
   selectPlan: vi.fn(), canSelectPlan: true, markAvailable: vi.fn() };
 
-const swap = { name: "Preview swap: add Available Wing, drop drop" };
+const swap = { name: "Use this swap: add Available Wing, drop drop" };
 
 describe("complete acquisition card presentation", () => {
   it("keeps conditional status visible and previews the exact compared steps", () => {
@@ -37,7 +37,7 @@ describe("complete acquisition card presentation", () => {
     render(<CandidateCard {...props} players={[player, dropped]} />);
     expect(screen.getByRole("button", { name: "Rostered Center" })).toBeTruthy();
     expect(screen.getByText("BOS · C")).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Preview swap: add Available Wing, drop Rostered Center" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Use this swap: add Available Wing, drop Rostered Center" })).toBeTruthy();
   });
   it("omits an unranked ordinal, metrics and diagnostic prose for a discovery row", () => {
     render(<CandidateCard {...props} rank={null} plan={undefined} upcomingGames={3} />);
@@ -123,7 +123,7 @@ describe("complete acquisition card presentation", () => {
     const { container } = render(<CandidateCard {...props} player={{ ...player, lastFive: { games: 5, stats: { GOALS: 2, POINTS: 2, SHOTS_ON_GOAL: 14 } } }} />);
     const card = container.querySelector("article")!, footer = card.querySelector('[class*="footer"]')!;
     expect(footer.querySelector('[class*="notes"]')?.textContent).toContain("+1 active game, +4 projected points");
-    expect(footer.querySelector("button")?.textContent).toBe("Preview swap");
+    expect(footer.querySelector("button")?.textContent).toBe("Use this swap");
     expect(card.querySelectorAll('[class*="boxScore"]')).toHaveLength(1);
     // Moves, schedule (when dated), box score and footer are the only body rows.
     expect([...card.querySelector('[class*="body"]')!.children].map(child => child.className.match(/(top|boxScore|footer)/)?.[1])).toEqual(["top", "boxScore", "footer"]);

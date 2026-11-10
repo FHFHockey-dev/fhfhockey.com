@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// FORGE qualification readback checker. Offline only: it reads local JSON files and writes a report, nothing else.
+// FORGE qualification readback checker. Offline only: local inputs/report and the repository timestamp parser.
 //
 // Inputs (normalized evidence; see ../QUALIFICATION-PLAN.md §4 for how each is extracted):
 //   --issued <file>        originally issued rows, one per player/game/target (the immutable record)
@@ -14,7 +14,22 @@
 // Exit code: 0 pass, 1 findings, 2 bad input.
 
 import { createHash } from "node:crypto";
-import { readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
+import { createRequire } from "node:module";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+
+// Works from the retained tooling or an isolated supplement, independent of the calling directory.
+let repository = dirname(fileURLToPath(import.meta.url));
+while (!existsSync(join(repository, "web/lib/projections/evidenceTime.ts"))) {
+  const parent = dirname(repository);
+  if (parent === repository) throw new Error("Run this checker inside the FHFH repository with web dependencies installed");
+  repository = parent;
+}
+const require = createRequire(join(repository, "web/package.json"));
+if (!require.extensions[".ts"]) require("ts-node").register({ project: join(repository, "web/tsconfig.json"),
+  transpileOnly: true, compilerOptions: { module: "CommonJS", moduleResolution: "node" } });
+const { timestampMicros: time } = require(join(repository, "web/lib/projections/evidenceTime.ts"));
 
 /** Identity fields a readback must carry unchanged from the issued row, when the consumer exposes them. */
 export const IDENTITY_FIELDS = ["revisionId", "target", "method", "codeVersion", "configurationHash", "artifactHash", "cutoffAt",
@@ -43,7 +58,6 @@ export function readScope(scope, { allowDraft = false } = {}) {
   }
   return { scope, problems };
 }
-const time = value => (typeof value === "string" ? Date.parse(value) : NaN);
 const finite = value => typeof value === "number" && Number.isFinite(value);
 
 /** Pure: returns { findings, summary }. Never throws on bad rows; each problem is a finding. */
@@ -53,8 +67,19 @@ export function checkReadbacks({ issued, consumers, settlement = null, scope = n
   const add = (code, detail) => findings.push({ code, ...detail });
   const inSealed = date => typeof date === "string" && date >= sealed.from && date <= sealed.to;
   const issuedByKey = new Map();
+  const sealedKeys = new Set();
+  let sealedRows = 0;
+  if (issued.length === 0) add("issued_empty", {});
+  for (const consumer of scope?.protocol?.readback?.consumers ?? [])
+    if (!Object.hasOwn(consumers, consumer)) add("consumer_missing", { consumer });
 
   for (const row of issued) {
+    if (inSealed(row.gameDate)) {
+      sealedRows++;
+      sealedKeys.add(key(row));
+      add("sealed_issued_present", { key: key(row), gameDate: row.gameDate });
+      continue;
+    }
     const missing = REQUIRED_ISSUED.filter(field => row[field] === undefined || row[field] === null || row[field] === "");
     if (missing.length) { add("issued_incomplete", { key: key(row), missing }); continue; }
     if (issuedByKey.has(key(row))) { add("issued_duplicate", { key: key(row) }); continue; }
@@ -63,8 +88,9 @@ export function checkReadbacks({ issued, consumers, settlement = null, scope = n
       if (identity[field] !== undefined && identity[field] !== null && row[field] !== identity[field])
         add("issued_out_of_scope", { key: key(row), field, issued: row[field], scope: identity[field] });
     // Chronology of issuance: inputs cut off no later than issue, issue strictly before puck drop.
-    if (!(time(row.cutoffAt) <= time(row.issuedAt))) add("cutoff_after_issue", { key: key(row), cutoffAt: row.cutoffAt, issuedAt: row.issuedAt });
-    if (!(time(row.issuedAt) < time(row.scheduledAt))) add("issued_after_puck_drop", { key: key(row), issuedAt: row.issuedAt, scheduledAt: row.scheduledAt });
+    const cutoffAt = time(row.cutoffAt), issuedAt = time(row.issuedAt), scheduledAt = time(row.scheduledAt);
+    if (cutoffAt === null || issuedAt === null || cutoffAt > issuedAt) add("cutoff_after_issue", { key: key(row), cutoffAt: row.cutoffAt, issuedAt: row.issuedAt });
+    if (issuedAt === null || scheduledAt === null || issuedAt >= scheduledAt) add("issued_after_puck_drop", { key: key(row), issuedAt: row.issuedAt, scheduledAt: row.scheduledAt });
     issuedByKey.set(key(row), row);
   }
 
@@ -73,6 +99,10 @@ export function checkReadbacks({ issued, consumers, settlement = null, scope = n
     const seen = new Map();
     for (const row of rows) {
       const k = key(row);
+      if (sealedKeys.has(k) || inSealed(row.gameDate)) {
+        add("sealed_readback_present", { consumer, key: k });
+        continue;
+      }
       if (seen.has(k)) { add("readback_duplicate", { consumer, key: k }); continue; }
       seen.set(k, row);
       const source = issuedByKey.get(k);
@@ -91,15 +121,23 @@ export function checkReadbacks({ issued, consumers, settlement = null, scope = n
       // A consumer may never allow a use the claim does not cover (before any review, RSO allows none).
       if (allowedRsoUses && consumer === "rso" && row.allowedUses) for (const [use, allowed] of Object.entries(row.allowedUses))
         if (allowed === true && !allowedRsoUses.includes(use)) add("use_beyond_scope", { consumer, key: k, use });
-      if (row.observedAt !== undefined && !(time(row.observedAt) >= time(source.issuedAt)))
-        add("readback_before_issue", { consumer, key: k, observedAt: row.observedAt, issuedAt: source.issuedAt });
+      const observedAt = time(row.observedAt);
+      if ((scope?.protocol?.readback || row.observedAt !== undefined) && observedAt === null)
+        add("readback_capture_time_missing_or_invalid", { consumer, key: k });
+      else if (observedAt !== null) {
+        const issuedAt = time(source.issuedAt), scheduledAt = time(source.scheduledAt);
+        if (issuedAt === null || observedAt < issuedAt)
+          add("readback_before_issue", { consumer, key: k, observedAt: row.observedAt, issuedAt: source.issuedAt });
+        if (scheduledAt === null || observedAt >= scheduledAt)
+          add("readback_not_pregame", { consumer, key: k, observedAt: row.observedAt, scheduledAt: source.scheduledAt });
+      }
     }
     let matched = 0;
     for (const k of issuedByKey.keys()) if (seen.has(k)) matched++; else add("readback_missing", { consumer, key: k });
     coverage[consumer] = { issued: issuedByKey.size, matched, readbacks: rows.length };
   }
 
-  let settled = 0, sealedRows = 0;
+  let settled = 0;
   if (settlement) {
     const outcomes = new Map();
     for (const row of settlement) {
@@ -107,15 +145,15 @@ export function checkReadbacks({ issued, consumers, settlement = null, scope = n
       outcomes.set(key(row), row);
     }
     for (const [k, row] of issuedByKey) {
-      if (inSealed(row.gameDate)) { sealedRows++; continue; }
       const outcome = outcomes.get(k);
       if (!outcome) continue;
       // An outcome counts only when recorded after the game started and after the forecast was issued.
-      if (!(time(outcome.recordedAt) > time(row.scheduledAt))) { add("settlement_before_game", { key: k, recordedAt: outcome.recordedAt }); continue; }
+      const recordedAt = time(outcome.recordedAt), scheduledAt = time(row.scheduledAt);
+      if (recordedAt === null || scheduledAt === null || recordedAt <= scheduledAt) { add("settlement_before_game", { key: k, recordedAt: outcome.recordedAt }); continue; }
       if (!finite(outcome.actual)) { add("settlement_not_numeric", { key: k }); continue; }
       settled++;
     }
-  } else for (const row of issuedByKey.values()) if (inSealed(row.gameDate)) sealedRows++;
+  }
 
   const codes = {};
   for (const finding of findings) codes[finding.code] = (codes[finding.code] ?? 0) + 1;
@@ -148,6 +186,7 @@ function main() {
   if (args.sealed) {
     const [from, to] = args.sealed.split("..");
     if (!/^\d{4}-\d{2}-\d{2}$/.test(from ?? "") || !/^\d{4}-\d{2}-\d{2}$/.test(to ?? "")) { console.error("--sealed is YYYY-MM-DD..YYYY-MM-DD"); process.exit(2); }
+    if (scope && (from !== sealed.from || to !== sealed.to)) { console.error("--sealed cannot change the declared scope"); process.exit(2); }
     sealed = { from, to };
   }
   const consumers = {};
@@ -162,4 +201,4 @@ function main() {
   process.exit(report.summary.pass ? 0 : 1);
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) main();
+if (process.argv[1] && existsSync(process.argv[1]) && realpathSync(fileURLToPath(import.meta.url)) === realpathSync(process.argv[1])) main();

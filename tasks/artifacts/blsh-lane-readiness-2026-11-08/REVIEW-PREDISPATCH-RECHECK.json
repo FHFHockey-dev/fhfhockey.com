@@ -1,0 +1,28 @@
+{
+  "checkedAtUTC": "2026-11-09T20:46:46.158Z",
+  "probeSHA256": "c8d565f45c5e3abe1ae01e02ffa4ecfa09db5673e49d51106db61a93f8b56382",
+  "runnerSHA256": "f0cad82ee881c9b7c9900527910410c83311017a57479a8df76cbe50813ed8a8",
+  "adapterSHA256": "0162fb52fe3df0b3c1b70f11b0739792a5b0f32b8dbd35b92255597a506c5368",
+  "tests": [
+    {
+      "kind": "permit_expired_during_durable_write",
+      "calls": [
+        "schedule",
+        "admission"
+      ],
+      "delayInjected": true,
+      "providerDispatched": false
+    },
+    {
+      "kind": "deadline_passed_during_durable_write",
+      "calls": [
+        "schedule",
+        "admission"
+      ],
+      "delayInjected": true,
+      "providerDispatched": false
+    }
+  ],
+  "realNetworkRequests": 0,
+  "realLedgerOperations": 0
+}

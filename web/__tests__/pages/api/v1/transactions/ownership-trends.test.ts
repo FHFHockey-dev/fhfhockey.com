@@ -12,6 +12,7 @@ import ownershipSnapshotsHandler from "../../../../../pages/api/v1/transactions/
 import { fetchOwnershipContextMap } from "lib/dashboard/playerOwnership";
 import { clearClientFetchCache } from "lib/dashboard/clientFetchCache";
 import ownershipTrendsHandler, {
+  clearOwnershipTrendCache,
   buildAdpTimelines,
   calculateTrendMovement,
   fetchYahooPlayerRows,
@@ -46,6 +47,7 @@ function createMockRes() {
 describe("ownership-trends data contract", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    clearOwnershipTrendCache();
     process.env.NEXT_PUBLIC_SUPABASE_URL = "https://example.test";
     process.env.SUPABASE_SERVICE_ROLE_KEY = "service-role-test-key";
   });
@@ -240,8 +242,34 @@ describe("ownership snapshot provenance", () => {
   }
   beforeEach(() => {
     vi.clearAllMocks();
+    clearOwnershipTrendCache();
     process.env.NEXT_PUBLIC_SUPABASE_URL = "https://unit-tests.supabase.invalid";
     process.env.SUPABASE_SERVICE_ROLE_KEY = "synthetic-service-role-key";
+  });
+
+  it("shares source scans across concurrent windows without sharing their result filters", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-11-10T12:00:00Z"));
+    const reads = database({
+      yahoo_players_with_normalized_history: [{ player_id: "112", player_key: "477.p.112", season: 2026,
+        ownership_timeline: [{ date: "2026-11-05", value: 30 }, { date: "2026-11-07", value: 45 }, { date: "2026-11-10", value: 50 }] }],
+      yahoo_nhl_player_map_read: [{ nhl_player_id: 12, yahoo_player_id: 112 }],
+    });
+    try {
+      const three = createMockRes();
+      const five = createMockRes();
+      await Promise.all([
+        ownershipTrendsHandler({ method: "GET", query: { window: "3", season: "2026" } } as any, three),
+        ownershipTrendsHandler({ method: "GET", query: { window: "5", season: "2026" } } as any, five),
+      ]);
+      expect(three.body.risers[0]).toMatchObject({ playerId: 12, delta: 5 });
+      expect(five.body.risers[0]).toMatchObject({ playerId: 12, delta: 20 });
+      expect(reads).toEqual(["yahoo_players_with_normalized_history", "yahoo_nhl_player_map_read"]);
+      const again = createMockRes();
+      await ownershipTrendsHandler({ method: "GET", query: { window: "3", season: "2026" } } as any, again);
+      expect(again.body.sourceDate).toBe("2026-11-10");
+      expect(reads).toHaveLength(2);
+    } finally { vi.useRealTimers(); }
   });
 
   it.each([

@@ -1,0 +1,137 @@
+{
+  "purpose": "durable_runner_core_verification_not_live_adapter_or_execution_approval",
+  "checkedAtUTC": "2026-11-09T01:03:48.965960+00:00",
+  "branch": "octoberBranch",
+  "initialHEAD": "483205af5338c6ba66765e5a88189e99ec0d2969",
+  "lastObservedHEAD": "91dc3e5a43e73f0f33a1f01ea4209f075a86cb46",
+  "sourcePins": [
+    {
+      "path": "web/scripts/blsh/nativeProcessCaptureRunner.ts",
+      "sha256": "c31189afbb906c8f1950722e264dbcd4144cb833ae3c03f81cb35c24997fdaca",
+      "bytes": 21989
+    },
+    {
+      "path": "web/scripts/blsh/nativeProcessCaptureRunner.test.ts",
+      "sha256": "93958ec14499887a0bfb28813a738a7e2c323641f9d023e496be53705f653e71",
+      "bytes": 21467
+    },
+    {
+      "path": "web/scripts/blsh/nativeProcessCapturePreparation.ts",
+      "sha256": "7f562056c16f446641917c90b41425c8c13ae97f11d6383f38e5c3cf12c3b0a7",
+      "bytes": 10312
+    },
+    {
+      "path": "web/lib/nst/client.ts",
+      "sha256": "48d82fc40ca06d9abe4675f4a1896add55c4e53d4dee661bbe082d424c944e4f",
+      "bytes": 11733
+    },
+    {
+      "path": "web/lib/nst/requestBudget.ts",
+      "sha256": "ccbab70aee15aba93818df4ef42d41195eceb39757af0ad3eef3b3dd15437e5a",
+      "bytes": 6944
+    },
+    {
+      "path": "web/lib/nst/sharedAdmission.ts",
+      "sha256": "f1c407170c9085c5f57b543c418bb8341859b4034d4f1d9d286bea0afabc36ac",
+      "bytes": 3451
+    },
+    {
+      "path": "web/lib/nst/jobLifecycle.server.ts",
+      "sha256": "365dcca44fc79e12cd0a2b4be9edc9e58e99f3a5344c4dc23b7b4332c982e0e3",
+      "bytes": 8857
+    },
+    {
+      "path": "web/lib/cron/nstRateLimitPolicy.ts",
+      "sha256": "f90686ed0e22f7dcc8685c111c62445004cb32744284ae22f3e37f9b6e491f2c",
+      "bytes": 4288
+    }
+  ],
+  "checks": [
+    {
+      "command": "npm test -- --run scripts/blsh/nativeProcessCaptureRunner.test.ts",
+      "cwd": "web",
+      "status": "passed",
+      "exitCode": 0,
+      "tests": 53,
+      "durationSeconds": 4.88,
+      "testDurationSeconds": 4.568,
+      "realTransportsAndLedgersBlocked": true
+    },
+    {
+      "command": "npx eslint scripts/blsh/nativeProcessCaptureRunner.ts scripts/blsh/nativeProcessCaptureRunner.test.ts",
+      "cwd": "web",
+      "status": "passed",
+      "exitCode": 0
+    },
+    {
+      "command": "NODE_OPTIONS=--max-old-space-size=8192 npx tsc --noEmit",
+      "cwd": "web",
+      "status": "passed",
+      "exitCode": 0
+    },
+    {
+      "command": "git diff --check",
+      "cwd": ".",
+      "status": "passed",
+      "exitCode": 0
+    }
+  ],
+  "priorRuns": [
+    {
+      "tests": 46,
+      "status": "passed",
+      "supersededByFinalRun": true
+    },
+    {
+      "tests": 51,
+      "status": "passed",
+      "supersededByFinalRun": true
+    },
+    {
+      "tests": 52,
+      "status": "passed",
+      "supersededByFinalRun": true
+    },
+    {
+      "check": "full TypeScript",
+      "status": "failed_then_fixed",
+      "failedRuns": 2,
+      "cause": "Local Buffer/Uint8Array declaration mismatch and inference errors; explicit byte views and typed records fixed the successor."
+    }
+  ],
+  "mockedLimits": {
+    "disabledLifecycleOperations": 5,
+    "enabledSuccessOperations": 7,
+    "uncertainFinishPlusHoldOperations": 8,
+    "admissionCallsPerPage": 1,
+    "nstSpacingMs": 22000,
+    "providerTimeoutMs": 15000,
+    "rpcTimeoutMs": 5000,
+    "workDeadlineMs": 120000,
+    "maximumExtraHoldMs": 5000,
+    "scheduleBytes": 1048576,
+    "nstBytesPerPage": 2097152,
+    "rowsPerPage": 5000,
+    "packetBytes": 8388608
+  },
+  "unverified": [
+    "real NST adapter and every-path dispatch hook",
+    "canonical shared single-admission cap and streaming integration",
+    "actual runtime mode/target and TLS/credential-echo evidence",
+    "independent runner/adapter review",
+    "native source/model acceptance",
+    "complete current-player membership",
+    "real goalie/application serving"
+  ],
+  "liveAdapterAvailable": false,
+  "sharedFilesEditedByThisLane": false,
+  "providerRequests": 0,
+  "databaseRequests": 0,
+  "localOrSharedLedgerOperations": 0,
+  "reserveReads": 0,
+  "pushes": 0,
+  "builds": 0,
+  "deployments": 0,
+  "sourceAcceptance": false,
+  "scoresComputed": 0
+}

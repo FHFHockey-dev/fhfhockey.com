@@ -26,8 +26,7 @@ import { getCurrentSeason } from "lib/NHL/server";
 import { fetchNewsFeedItems } from "lib/newsFeed";
 import { fetchHomepagePulse } from "lib/homepagePulse";
 import { enrichHomepageGames } from "lib/homepageGameAnalytics";
-import { fetchCurrentSeason } from "utils/fetchCurrentSeason";
-import { checkIsOffseason } from "../hooks/useOffseason";
+import { resolveHomepageSeason } from "lib/homepageSeason";
 import Fetch from "lib/cors-fetch";
 import supabaseServer from "lib/supabase/server";
 import {
@@ -415,7 +414,7 @@ export async function getServerSideProps({ req, res }) {
 
   const fetchStandings = async () => {
     try {
-      const currentSeason = await fetchCurrentSeason(); // Assuming this returns valid start/end dates
+      const currentSeason = homepageSeason;
       const now = new Date();
       let dateForStandings = moment().utc().format("YYYY-MM-DD"); // Use UTC for server
 
@@ -498,11 +497,29 @@ export async function getServerSideProps({ req, res }) {
   };
 
   // Check if we're in the offseason first
-  const isOffseason = await checkIsOffseason();
   const currentSeason = await getCurrentSeason();
+  const homepageSeason = resolveHomepageSeason(currentSeason);
+  const { isOffseason } = homepageSeason;
   let playoffsActive = !isOffseason && isPlayoffsActive(currentSeason);
 
   const today = moment().format("YYYY-MM-DD");
+  // These sections do not depend on the slate or one another. Start them
+  // together rather than extending the time before the first HTML response.
+  const secondaryData = Promise.all([
+    fetchInjuries(),
+    fetchStandings(),
+    fetchNewsFeedItems({ supabase: supabaseServer, status: "published", limit: 40 })
+      .catch((error) => { console.error("Error fetching homepage news cards:", error.message); return []; }),
+    fetchNewsFeedItems({ supabase: supabaseServer, status: "published",
+      categories: ["INJURY", "REPORTED INJURY", "RETURN", "RETURNING"], limit: 32 })
+      .catch((error) => { console.error("Error fetching homepage injury news:", error.message); return []; }),
+    Promise.resolve(supabaseServer.from("players").select("id", { count: "exact", head: true }))
+      .then(({ count, error }) => { if (error) throw error; return count ?? 0; })
+      .catch((error) => { console.error("Error fetching homepage player count:", error.message); return 0; }),
+    fetchHomepagePulse({ supabase: supabaseServer, currentDate: today })
+      .catch((error) => { console.error("Error fetching homepage pulse:", error.message); return []; }),
+  ]);
+
   let gamesToday = [];
   let playoffWeekGames = [];
   let nextGameDateFound = today;
@@ -611,65 +628,13 @@ export async function getServerSideProps({ req, res }) {
     });
   }
 
-  const injuriesResult = await fetchInjuries();
-  const standingsResult = await fetchStandings();
-  let latestNews = [];
-  let recentTransactions = [];
-  let recentInjuryNews = [];
-  let homepagePlayerCount = 0;
-  let homepagePulsePoints = [];
-  try {
-    const publishedNews = await fetchNewsFeedItems({
-      supabase: supabaseServer,
-      status: "published",
-      limit: 40,
-    });
-    latestNews = publishedNews.slice(0, 8);
-    recentTransactions = publishedNews
-      .filter((item) =>
-        [
-          "TRANSACTION",
-          "TRADE",
-          "SIGNING",
-          "ROSTER MOVE",
-          "WAIVER",
-          "NEWS UPDATE",
-          "RETIREMENT",
-        ].includes(
-          String(item.category ?? "")
-            .trim()
-            .toUpperCase(),
-        ),
-      )
-      .slice(0, 32);
-    recentInjuryNews = await fetchNewsFeedItems({
-      supabase: supabaseServer,
-      status: "published",
-      categories: ["INJURY", "REPORTED INJURY", "RETURN", "RETURNING"],
-      limit: 32,
-    });
-  } catch (error: any) {
-    console.error("Error fetching homepage news cards:", error.message);
-  }
-
-  try {
-    const { count, error } = await supabaseServer
-      .from("players")
-      .select("id", { count: "exact", head: true });
-    if (error) throw error;
-    homepagePlayerCount = count ?? 0;
-  } catch (error: any) {
-    console.error("Error fetching homepage player count:", error.message);
-  }
-
-  try {
-    homepagePulsePoints = await fetchHomepagePulse({
-      supabase: supabaseServer,
-      currentDate: today,
-    });
-  } catch (error: any) {
-    console.error("Error fetching homepage pulse:", error.message);
-  }
+  const [injuriesResult, standingsResult, publishedNews, recentInjuryNews,
+    homepagePlayerCount, homepagePulsePoints] = await secondaryData;
+  const latestNews = publishedNews.slice(0, 8);
+  const recentTransactions = publishedNews
+    .filter((item) => ["TRANSACTION", "TRADE", "SIGNING", "ROSTER MOVE", "WAIVER", "NEWS UPDATE", "RETIREMENT"]
+      .includes(String(item.category ?? "").trim().toUpperCase()))
+    .slice(0, 32);
 
   return {
     props: {

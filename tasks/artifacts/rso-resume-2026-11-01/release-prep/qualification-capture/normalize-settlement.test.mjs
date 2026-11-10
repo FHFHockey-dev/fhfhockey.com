@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
+import { mkdtempSync, writeFileSync, symlinkSync, rmSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -133,6 +133,26 @@ test("CLI returns checker-compatible rows and a separate audit without writing i
     assert.equal(result.status, 0, result.stderr);
     assert.deepEqual(JSON.parse(result.stdout), normalizeSettlement(input).rows);
     assert.equal(JSON.parse(result.stderr).sourceRows, 1);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test("CLI executes through a symlink and rejects an empty issued population", () => {
+  const dir = mkdtempSync(join(tmpdir(), "rso-settlement-alias-"));
+  try {
+    const cli = join(dir, "settlement alias.mjs"), input = fixture();
+    symlinkSync(fileURLToPath(new URL("normalize-settlement.mjs", import.meta.url)), cli);
+    const files = ["capture", "issued", "outcomes"].map(name => {
+      const file = join(dir, name + ".json"); writeFileSync(file, JSON.stringify(input[name])); return file;
+    });
+    const good = spawnSync(process.execPath, [cli, ...files], { encoding: "utf8" });
+    assert.equal(good.status, 0, good.stderr);
+    assert.deepEqual(JSON.parse(good.stdout), normalizeSettlement(input).rows);
+    assert.equal(JSON.parse(good.stderr).sourceRows, 1);
+    writeFileSync(files[1], "[]");
+    const bad = spawnSync(process.execPath, [cli, ...files], { encoding: "utf8" });
+    assert.equal(bad.status, 1, bad.stderr);
+    assert.match(bad.stderr, /issued_population_invalid/);
+    assert.equal(bad.stdout, "");
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
 

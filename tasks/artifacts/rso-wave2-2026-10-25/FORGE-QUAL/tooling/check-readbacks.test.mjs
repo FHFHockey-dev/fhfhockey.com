@@ -1,8 +1,8 @@
 // Offline self-tests: node --test tooling/check-readbacks.test.mjs (no network, no DB, synthetic fixtures only).
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { execFileSync } from "node:child_process";
-import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { execFileSync, spawnSync } from "node:child_process";
+import { mkdtempSync, readFileSync, writeFileSync, symlinkSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -83,7 +83,7 @@ test("the sealed Release C window: present outcomes fail, sealed rows are counte
   input.issued[0].gameDate = "2026-10-27";
   input.settlement[0].gameDate = "2026-10-27";
   const report = checkReadbacks(input);
-  assert.deepEqual(codes(report), ["sealed_outcome_present"]);
+  assert.deepEqual(codes(report), ["sealed_issued_present", "sealed_outcome_present", "sealed_readback_present"]);
   assert.equal(report.summary.sealedRows, 1);
   assert.equal(report.summary.settled, 1);
 });
@@ -110,6 +110,25 @@ test("the CLI exits 0 on the clean fixture and 1 with findings", () => {
   assert.equal(status, 1);
 });
 
+test("CLI executes through a symlink and rejects empty issuance", () => {
+  const dir = mkdtempSync(join(tmpdir(), "forge-qual-alias-"));
+  try {
+    const cli = join(dir, "readback alias.mjs"), issued = join(dir, "issued.json"), fixtures = join(here, "fixtures");
+    symlinkSync(join(here, "check-readbacks.mjs"), cli);
+    writeFileSync(issued, JSON.stringify(fixture("issued.json")));
+    const args = [cli, "--issued", issued, "--rso", join(fixtures, "rso.json"),
+      "--start-chart", join(fixtures, "start-chart.json"), "--scope", join(fixtures, "scope.json")];
+    const good = spawnSync(process.execPath, args, { encoding: "utf8" });
+    assert.equal(good.status, 0, good.stderr);
+    assert.equal(JSON.parse(good.stdout).summary.pass, true);
+    writeFileSync(issued, "[]");
+    const bad = spawnSync(process.execPath, args, { encoding: "utf8" });
+    assert.equal(bad.status, 1, bad.stderr);
+    assert.equal(JSON.parse(bad.stdout).summary.pass, false);
+    assert.equal(JSON.parse(bad.stdout).summary.findingCodes.issued_empty, 1);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
 test("the predeclared scope: its protocol hash must match, and an unpinned identity is refused outside dry runs", () => {
   const real = JSON.parse(readFileSync(join(here, "..", "scope.json"), "utf8"));
   assert.equal(canonicalHash(real.protocol), real.protocolHash);
@@ -134,10 +153,144 @@ test("an RSO readback that allows a use the claim does not cover fails", () => {
 
 test("the CLI refuses a draft scope unless explicitly allowed", () => {
   const dir = join(here, "fixtures"), base = [join(here, "check-readbacks.mjs"), "--issued", join(dir, "issued.json"), "--rso", join(dir, "rso.json"),
+    "--start-chart", join(dir, "start-chart.json"),
     "--scope", join(here, "..", "scope.json")];
   let status = 0;
   try { execFileSync(process.execPath, base, { encoding: "utf8", stdio: "pipe" }); } catch (error) { status = error.status; }
   assert.equal(status, 2);
   const report = JSON.parse(execFileSync(process.execPath, [...base, "--allow-draft-scope", "true"], { encoding: "utf8" }));
   assert.equal(report.summary.protocolHash, JSON.parse(readFileSync(join(here, "..", "scope.json"), "utf8")).protocolHash);
+});
+
+
+test("a scoped check requires every declared consumer, not just those supplied", () => {
+  const input = clean();
+  delete input.consumers.start_chart;
+  const report = checkReadbacks(input);
+  assert.equal(report.summary.pass, false);
+  assert.ok(codes(report).includes("consumer_missing"));
+  assert.ok(report.findings.some(row => row.code === "consumer_missing" && row.consumer === "start_chart"));
+});
+
+test("an empty issued population cannot pass integrity", () => {
+  const input = clean();
+  input.issued = [];
+  input.consumers = { rso: [], start_chart: [] };
+  input.settlement = [];
+  const report = checkReadbacks(input);
+  assert.equal(report.summary.pass, false);
+  assert.ok(codes(report).includes("issued_empty"));
+});
+
+test("sealed issued rows and their readbacks fail even without outcomes", () => {
+  const input = clean();
+  input.issued[0].gameDate = "2026-10-27";
+  input.settlement = null;
+  const report = checkReadbacks(input);
+  assert.equal(report.summary.pass, false);
+  assert.ok(codes(report).includes("sealed_issued_present"));
+  assert.equal(report.summary.findingCodes.sealed_readback_present, 2);
+  assert.equal(report.summary.sealedRows, 1);
+  assert.equal(report.summary.issued, 1);
+});
+
+test("an independently dated sealed readback is rejected", () => {
+  const input = clean();
+  input.consumers.rso[0].gameDate = "2026-10-27";
+  const report = checkReadbacks(input);
+  assert.equal(report.summary.pass, false);
+  assert.ok(codes(report).includes("sealed_readback_present"));
+});
+
+test("the CLI cannot narrow the frozen scope's sealed window", () => {
+  const dir = join(here, "fixtures"), args = [join(here, "check-readbacks.mjs"), "--issued", join(dir, "issued.json"),
+    "--rso", join(dir, "rso.json"), "--start-chart", join(dir, "start-chart.json"), "--scope", join(dir, "scope.json"),
+    "--sealed", "2026-10-23..2026-10-24"];
+  let status = 0;
+  try { execFileSync(process.execPath, args, { encoding: "utf8", stdio: "pipe" }); }
+  catch (error) { status = error.status; }
+  assert.equal(status, 2);
+});
+
+test("scoped readbacks require an actual capture timestamp from each consumer", () => {
+  for (const consumer of ["rso", "start_chart"]) for (const timestamp of [undefined, "not-a-time"]) {
+    const input = clean();
+    input.consumers[consumer][0].observedAt = timestamp;
+    const report = checkReadbacks(input);
+    assert.equal(report.summary.pass, false);
+    assert.ok(report.findings.some(row => row.code === "readback_capture_time_missing_or_invalid" && row.consumer === consumer));
+  }
+});
+
+test("a matching readback at or after puck drop cannot pass prospective integrity", () => {
+  for (const consumer of ["rso", "start_chart"]) for (const timestamp of ["2026-11-03T23:00:00Z", "2026-11-04T12:00:00Z"]) {
+    const input = clean();
+    input.consumers[consumer][0].observedAt = timestamp;
+    const report = checkReadbacks(input);
+    assert.equal(report.summary.pass, false);
+    assert.ok(report.findings.some(row => row.code === "readback_not_pregame" && row.consumer === consumer));
+  }
+});
+
+test("microsecond cutoff ordering allows equality but rejects a later input", () => {
+  for (const digit of [1, 2, 3]) {
+    const input = clean(), row = input.issued[0];
+    row.issuedAt = "2026-11-03T16:00:00.000002Z";
+    row.cutoffAt = `2026-11-03T16:00:00.00000${digit}Z`;
+    for (const rows of Object.values(input.consumers)) rows[0].cutoffAt = row.cutoffAt;
+    assert.equal(codes(checkReadbacks(input)).includes("cutoff_after_issue"), digit > 2);
+  }
+});
+
+test("microsecond issuance must be strictly before puck drop", () => {
+  for (const digit of [1, 2, 3]) {
+    const input = clean(), row = input.issued[0];
+    row.scheduledAt = "2026-11-03T23:00:00.000002Z";
+    row.issuedAt = `2026-11-03T23:00:00.00000${digit}Z`;
+    assert.equal(codes(checkReadbacks(input)).includes("issued_after_puck_drop"), digit >= 2);
+  }
+});
+
+test("microsecond readbacks may equal issue time but cannot precede it", () => {
+  for (const digit of [1, 2, 3]) {
+    const input = clean(); input.issued[0].issuedAt = "2026-11-03T16:00:00.000002Z";
+    for (const rows of Object.values(input.consumers)) rows[0].observedAt = `2026-11-03T11:00:00.00000${digit}-05:00`;
+    assert.equal(codes(checkReadbacks(input)).includes("readback_before_issue"), digit < 2);
+  }
+});
+
+test("microsecond readbacks must remain strictly before puck drop", () => {
+  for (const digit of [1, 2, 3]) {
+    const input = clean(); input.issued[0].scheduledAt = "2026-11-03T23:00:00.000002Z";
+    for (const rows of Object.values(input.consumers)) rows[0].observedAt = `2026-11-03T23:00:00.00000${digit}Z`;
+    assert.equal(codes(checkReadbacks(input)).includes("readback_not_pregame"), digit >= 2);
+  }
+});
+
+test("microsecond settlement must be strictly after puck drop", () => {
+  for (const digit of [1, 2, 3]) {
+    const input = clean(); input.issued[0].scheduledAt = "2026-11-03T23:00:00.000002Z";
+    input.settlement[0].recordedAt = `2026-11-03T23:00:00.00000${digit}Z`;
+    const result = checkReadbacks(input);
+    assert.equal(codes(result).includes("settlement_before_game"), digit <= 2);
+    assert.equal(result.summary.settled, digit > 2 ? 2 : 1);
+  }
+});
+
+test("raw readback clocks require explicit zones, real dates and supported precision", () => {
+  for (const observedAt of ["2026-11-03T16:30:00", "2026-11-31T16:30:00Z", "2027-02-29T16:30:00Z", "2026-11-03T16:30:00.1234567Z"]) {
+    const input = clean(); input.consumers.rso[0].observedAt = observedAt;
+    assert.ok(codes(checkReadbacks(input)).includes("readback_capture_time_missing_or_invalid"), observedAt);
+  }
+});
+
+test("raw issued and settlement clocks cannot coerce an invalid timestamp into a comparison", () => {
+  for (const [field, value, code] of [["cutoffAt", "2026-11-03T15:00:00", "cutoff_after_issue"],
+    ["issuedAt", "2026-11-03T16:00:00", "issued_after_puck_drop"],
+    ["scheduledAt", "2026-11-03T23:00:00", "issued_after_puck_drop"],
+    ["recordedAt", "2026-11-04T03:00:00", "settlement_before_game"]]) {
+    const input = clean();
+    (field === "recordedAt" ? input.settlement[0] : input.issued[0])[field] = value;
+    assert.ok(codes(checkReadbacks(input)).includes(code), field);
+  }
 });

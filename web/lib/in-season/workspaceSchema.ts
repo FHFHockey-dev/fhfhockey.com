@@ -13,8 +13,10 @@ const periodTimeZone = timeZone.refine(value => value === "UTC" || value.include
 const nullableNumber = z.number().finite().nullable();
 const positiveInteger = z.number().int().positive();
 const stringArray = z.array(id).max(1000);
+// Human-readable evidence and reserve explanations are longer than identifiers.
+const explanatoryNotes = z.array(z.string().trim().min(1).max(1000)).max(1000);
 const statLine = z.record(z.string().min(1).max(50), nullableNumber);
-const evidence = z.object({ source: id, asOf: instant.nullable(), completeness: z.enum(["complete", "partial", "unknown"]), seasonId: z.number().int().nullable(), limitations: stringArray }).strict();
+const evidence = z.object({ source: id, asOf: instant.nullable(), completeness: z.enum(["complete", "partial", "unknown"]), seasonId: z.number().int().nullable(), limitations: explanatoryNotes }).strict();
 
 const contextObjectSchema = z.object({
   provider: z.enum(["manual", "yahoo", "fantrax"]),
@@ -108,7 +110,7 @@ const forecast = z.object({ playerId: id, gameId: id, stats: statLine,
   contributions: z.record(z.string().min(1).max(50), resolvedContribution).optional(),
   cutoffAt: instant.optional(), expiresAt: instant.optional(),
   conditioning: z.literal("unconditional"), startProbability: z.number().finite().min(0).max(1).nullable(),
-  confirmedStart: z.boolean(), revisionId: z.string().min(1).max(4096), issuedAt: instant, modelVersion: id.nullable(), limitations: stringArray }).strict();
+  confirmedStart: z.boolean(), revisionId: z.string().min(1).max(4096), issuedAt: instant, modelVersion: id.nullable(), limitations: explanatoryNotes }).strict();
 const forecastExclusionReason = z.enum(["serving_disabled", "no_issued_revision", "unreleased_source",
   "identity_conflict", "missing_target", "stale_source", "future_input", "unsupported_conditioning",
   "missing_participation", "incompatible_overlap", "incompatible_component_basis", "outside_horizon",
@@ -188,6 +190,8 @@ export const snapshotSchema: z.ZodType<PlanningSnapshot> = z.object({ id, contex
   forecasts: z.array(forecast).max(15000), baselineSources: z.array(contributionSource).max(15000).optional(),
   participationSources: z.array(contributionParticipation).max(15000).optional(),
   forecastInputExclusions: forecastManifest.shape.exclusions,
+  matchupWeeks: z.array(z.object({ gameKey: id, week: positiveInteger, startDate: date, endDate: date }).strict()
+    .refine(week => week.endDate >= week.startDate, "Matchup week ends before it starts.")).max(60).optional(),
   forecastManifest: forecastManifest.optional(), rules, lockedAssignments: z.array(lockedAssignment).max(1000), pastLineups: z.array(pastLineup).max(14).optional(),
   realized: statLine, opponent, evidence: z.record(z.string().min(1), evidence), laterImpactScenario: laterImpactScenarioSchema.optional() }).strict();
 

@@ -143,6 +143,16 @@ async function handler(req: RequestWithSupabase, res: NextApiResponse) {
     const request = parseRequest(req.query);
     const dryRun = readBoolean(req.query.dryRun, true);
     const built = await buildSkaterCompositeRatingRows(request);
+    if (!dryRun && !built.publication.ready) {
+      return res.status(409).json({
+        success: false,
+        dryRun,
+        error: "Composite publication blocked by source/cohort integrity checks.",
+        publication: built.publication,
+        sourceCoverage: built.sourceCoverage,
+        rowsUpserted: 0,
+      });
+    }
     const rowsUpserted = dryRun
       ? 0
       : await upsertSkaterCompositeRatingRows(req.supabase, built.rows);
@@ -154,6 +164,8 @@ async function handler(req: RequestWithSupabase, res: NextApiResponse) {
       snapshotDate: built.snapshotDate,
       snapshotUpdatedAt: built.snapshotUpdatedAt,
       generatedRows: built.rows.length,
+      publication: built.publication,
+      sourceCoverage: built.sourceCoverage,
       rowsUpserted,
       sourceMetrics: built.sourceMetrics,
       sourceFreshness: built.sourceFreshness,

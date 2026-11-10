@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { act, cleanup, render, screen } from "@testing-library/react";
 import { renderToString } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -72,6 +72,39 @@ describe("app credential-route telemetry boundary", () => {
     cleanup();
     vi.unstubAllGlobals();
     window.history.replaceState({}, "", "/");
+  });
+
+  it("acknowledges RSO navigation immediately, keeps the old page mounted, and clears on completion or cancellation", () => {
+    const listeners = new Map<string, Set<(...args: any[]) => void>>();
+    const events = {
+      on: (name: string, listener: (...args: any[]) => void) => {
+        if (!listeners.has(name)) listeners.set(name, new Set());
+        listeners.get(name)!.add(listener);
+      },
+      off: (name: string, listener: (...args: any[]) => void) => listeners.get(name)?.delete(listener),
+      emit: (name: string, ...args: any[]) => act(() => { listeners.get(name)?.forEach(listener => listener(...args)); }),
+    };
+    const input = props("/"); input.router.events = events as AppProps["router"]["events"];
+    const view = render(<MyApp {...input} />);
+    const originalPage = screen.getByText("Synthetic page content");
+    const target = "/roster-schedule-optimizer";
+    events.emit("routeChangeStart", target, { shallow: false });
+    expect(screen.getByRole("status").textContent).toBe("Opening Roster Schedule Optimizer…");
+    expect(screen.getByText("Synthetic page content")).toBe(originalPage);
+    events.emit("routeChangeComplete", target);
+    expect(screen.queryByRole("status")).toBeNull();
+    events.emit("routeChangeStart", target, { shallow: false });
+    events.emit("routeChangeError", { cancelled: true }, target);
+    expect(screen.queryByRole("status")).toBeNull();
+    events.emit("routeChangeStart", target, { shallow: true });
+    expect(screen.queryByRole("status")).toBeNull();
+    events.emit("routeChangeStart", "/news", { shallow: false });
+    expect(screen.queryByRole("status")).toBeNull();
+    events.emit("routeChangeStart", `${target}?week=next`, { shallow: false });
+    events.emit("routeChangeError", { cancelled: true }, target);
+    expect(screen.getByRole("status")).toBeTruthy();
+    view.unmount();
+    expect([...listeners.values()].every(set => set.size === 0)).toBe(true);
   });
 
   it.each([

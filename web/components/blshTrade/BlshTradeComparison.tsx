@@ -31,7 +31,7 @@ const reasonLabel = (reason: string | null) => (reason ?? "unavailable").replace
 export type BlshTradeComparisonProps = {
   /** Interpretation records per horizon; FORGE totals inside them are passed through unchanged. */
   recordsByHorizon: Record<HorizonGames, InterpretationRecord[]>;
-  /** BLSH display profiles keyed by the record player id. */
+  /** BLSH display profiles keyed by the caller's player identity, even when no forecast record exists. */
   evidence: Readonly<Record<string, DisplayProfile | undefined>>;
   /** Shown above everything when the data is synthetic. */
   fixtureBanner?: string | null;
@@ -80,6 +80,15 @@ function BlshTradeEditor({ recordsByHorizon, evidence, fixtureBanner = null, ini
 
   const records = recordsByHorizon[horizon];
   const byId = useMemo(() => new Map(records.map(record => [record.identity.playerId, record])), [records]);
+  const selectablePlayers = useMemo(() => {
+    const players = new Map(records.map(record => [record.identity.playerId,
+      `${record.identity.name} (${record.identity.team ?? "team unknown"}, ${record.identity.modelClass})`]));
+    for (const [id, profile] of Object.entries(evidence)) {
+      if (profile && !players.has(id)) players.set(id,
+        `${profile.displayName} (${profile.team ?? "team unknown"}, ${profile.position ?? "position unknown"}) · forecast unavailable`);
+    }
+    return [...players];
+  }, [records, evidence]);
   const scoring = useMemo((): TradeScoring => (mode === "fhfh" ? FHFH_STANDARD_SCORING
     : mode === "points" ? { mode: "points", scoringBasis: "points:custom", weights }
       : { mode: "categories", categories: CATEGORY_OPTIONS.filter(key => categories.includes(key)) }), [mode, weights, categories]);
@@ -167,10 +176,8 @@ function BlshTradeEditor({ recordsByHorizon, evidence, fixtureBanner = null, ini
                 <span className={styles.srOnly}>Add a player you {side === "give" ? "give" : "receive"}</span>
                 <select value="" disabled={!local.hydrated || local.pending} onChange={event => event.target.value && update(side, [...sides[side], event.target.value])}>
                   <option value="">Add a player…</option>
-                  {records.filter(record => !chosen.has(record.identity.playerId)).map(record => (
-                    <option key={record.identity.playerId} value={record.identity.playerId}>
-                      {record.identity.name} ({record.identity.team ?? "team unknown"}, {record.identity.modelClass})
-                    </option>
+                  {selectablePlayers.filter(([id]) => !chosen.has(id)).map(([id, label]) => (
+                    <option key={id} value={id}>{label}</option>
                   ))}
                 </select>
               </label>

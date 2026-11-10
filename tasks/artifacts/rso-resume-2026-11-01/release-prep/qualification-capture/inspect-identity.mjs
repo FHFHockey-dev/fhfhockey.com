@@ -1,6 +1,6 @@
 // Offline metadata consistency check. Never pins a scope or grants release/forecast admission.
-import { readFileSync } from "node:fs";
-import { pathToFileURL } from "node:url";
+import { existsSync, readFileSync, realpathSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { canonicalHash } from "../qualification-readbacks/tooling/check-readbacks.mjs";
 
 const envKeys = ["FORGE_SKATER_MODEL_MODE", "NHL_XG_TEAM_AGGREGATE_MODEL_VERSION", "NHL_XG_TEAM_AGGREGATE_FEATURE_VERSION",
@@ -51,7 +51,7 @@ export function inspectIdentity(rows, date) {
     consumerSelection: "latest_per_game_metadata_only_not_selected_RPC_or_readback" };
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (process.argv[1] && existsSync(process.argv[1]) && realpathSync(fileURLToPath(import.meta.url)) === realpathSync(process.argv[1])) {
   try {
     const [input, date] = process.argv.slice(2);
     const result = inspectIdentity(JSON.parse(readFileSync(input, "utf8")), date);

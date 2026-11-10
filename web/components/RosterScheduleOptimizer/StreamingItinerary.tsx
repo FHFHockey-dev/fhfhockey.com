@@ -50,7 +50,7 @@ function goalieStatus(minimum: StreamingGoalieMinimum, chain: StreamingChain, ch
  * by the goal it is best for (points alternatives also show their projected FPts).
  * Ranked by the average of projected FPts and last-10 FPts/G over the games each player would start; totals show projections.
  * Days from today before `from` (the plan start) or after `through` (the range end) are listed greyed, unplanned.
- * `confirm` is an inline way past `selectDisabled` (the planning-inputs confirmation), shown beside the reason. */
+ * `confirm` contains the relevant input questions beside the disabled reason. */
 const REVIEW_RULES = "Review League rules and scoring.";
 
 export default function StreamingItinerary({ plan, dates, from, through, today, nameOf, teamOf, selectDisabled, confirm, onSelect, onReviewRules, defaultOpen = true }: {
@@ -136,7 +136,7 @@ export default function StreamingItinerary({ plan, dates, from, through, today, 
         </div>;
       })}</div>
     </li>)}</ol>
-    {selectDisabled && <p className={styles.gate}><small id="rso-streaming-reason">{selectDisabled}</small>{confirm}</p>}
+    {selectDisabled && <div className={styles.gate}><small id="rso-streaming-reason">{selectDisabled}</small>{confirm}</div>}
     <button className={styles.use} disabled={Boolean(selectDisabled)} aria-describedby={selectDisabled ? "rso-streaming-reason" : undefined}
       onClick={() => onSelect(streamingChainSteps(chain, state.overrides))}>Use this streaming plan</button>
     <p className={styles.note}>Ranked by the average of projected fantasy points and fantasy points per game over the last 10 played games (the projection alone when there is no last 10), over the games each player would start.</p>

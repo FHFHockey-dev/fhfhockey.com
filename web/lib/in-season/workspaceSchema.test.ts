@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { saveWorkspaceSchema, workspaceQuerySchema } from "./workspaceSchema";
 import { deniedRsoUses, restrictRsoForecast } from "../player-forecasts/rsoUsePolicy";
+import { RESERVE_FORECAST_NOTES, reserveCodeOf } from "../rosterScheduleData/bridgeForecastWire";
 
 const context = { provider: "manual", seasonId: 20262027, leagueId: "league", teamId: "team", startDate: "2026-10-01", endDate: "2026-10-07", timeZone: "America/New_York", asOf: "2026-10-01T12:00:00Z" };
 const rules = { lineupMode: "daily", rosterSlots: { C: 1 }, lineupPeriods: [{ id: "week", start: "2026-10-01T00:00:00Z", end: "2026-10-08T00:00:00Z", lockAt: null }], acquisitionTiming: "unknown", acquisitionCost: null, periods: [], scoring: { mode: "points", weights: {}, categories: [] }, goalieMinimum: { required: null, credited: null, periodStart: "2026-10-01", periodEnd: "2026-10-07", counts: "unknown", penalty: "unknown" }, unsupported: [] };
@@ -12,6 +13,45 @@ const modeledMetadata = { version: "skater-participation-frequency-v1", event: "
 const snapshot = { id: "snapshot", context, players: [], roster: [], games: [], forecasts: [], rules, lockedAssignments: [], realized: {}, opponent: null, evidence: {} };
 
 describe("saved in-season workspace validation", () => {
+  it("preserves full FORGE explanations and reserve codes without granting forecast use", () => {
+    const forecasts = Object.values(RESERVE_FORECAST_NOTES).map((note, index) => ({
+      playerId: `p${index}`, gameId: "g", stats: { GOALS: null }, conditionalStats: { GOALS: 0.4 },
+      conditioning: "unconditional", startProbability: null, confirmedStart: false,
+      revisionId: `unreviewed-${index}`, issuedAt: context.asOf, cutoffAt: context.asOf,
+      expiresAt: "2026-10-08T00:00:00Z", modelVersion: null,
+      allowedUses: deniedRsoUses(), limitations: [note],
+    }));
+    const note = "A newer run cannot prove it excluded third-party fantasy projections; its players remain unknown. ".repeat(5).trim();
+    const evidence = { forecasts: { source: "fixture", asOf: context.asOf, seasonId: 20262027,
+      completeness: "partial", limitations: [note] } };
+    expect(note.length).toBeGreaterThan(200);
+    const parsed = saveWorkspaceSchema.parse(JSON.parse(JSON.stringify({ workspace,
+      snapshot: { ...snapshot, forecasts, evidence }, expectedVersion: null })));
+    expect(parsed.snapshot?.forecasts).toEqual(forecasts);
+    expect(parsed.snapshot?.evidence).toEqual(evidence);
+    expect(parsed.snapshot?.forecasts.map(reserveCodeOf)).toEqual(Object.keys(RESERVE_FORECAST_NOTES));
+    expect(parsed.snapshot?.forecasts.every(row => row.stats.GOALS === null
+      && Object.values(row.allowedUses!).every(value => value === false))).toBe(true);
+    for (const invalid of ["", "x".repeat(1001)]) {
+      expect(saveWorkspaceSchema.safeParse({ workspace, snapshot: { ...snapshot,
+        forecasts: [{ ...forecasts[0], limitations: [invalid] }] }, expectedVersion: null }).success).toBe(false);
+      expect(saveWorkspaceSchema.safeParse({ workspace, snapshot: { ...snapshot,
+        evidence: { forecasts: { ...evidence.forecasts, limitations: [invalid] } } }, expectedVersion: null }).success).toBe(false);
+    }
+    expect(saveWorkspaceSchema.safeParse({ workspace, snapshot: { ...snapshot,
+      forecasts: [{ ...forecasts[0], playerId: "x".repeat(201) }] }, expectedVersion: null }).success).toBe(false);
+  });
+  it("retains Yahoo matchup weeks through a saved snapshot while validating their shape", () => {
+    const week = { gameKey: "453", week: 1, startDate: "2026-09-28", endDate: "2026-10-04" };
+    const parsed = saveWorkspaceSchema.parse({ workspace, snapshot: { ...snapshot, matchupWeeks: [week] }, expectedVersion: null });
+    expect(parsed.snapshot?.matchupWeeks).toEqual([week]);
+    for (const invalid of [{ ...week, week: 0 }, { ...week, startDate: "2026-02-30" },
+      { ...week, endDate: "2026-09-27" }, { ...week, extra: true }]) {
+      expect(saveWorkspaceSchema.safeParse({ workspace, snapshot: { ...snapshot, matchupWeeks: [invalid] }, expectedVersion: null }).success).toBe(false);
+    }
+    expect(saveWorkspaceSchema.safeParse({ workspace, snapshot: { ...snapshot,
+      matchupWeeks: Array.from({ length: 61 }, () => week) }, expectedVersion: null }).success).toBe(false);
+  });
   it("round-trips optional period zones across rules, manager overrides and account snapshots without adding legacy defaults", () => {
     const period = { id: "Current week", start: "2026-10-12T07:00:00.000Z", end: "2026-10-19T07:00:00.000Z",
       timeZone: "America/New_York", remaining: 2, source: "manager" };

@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   buildPlayerMatrixSurface: vi.fn(),
-  parsePlayerMatrixRequest: vi.fn(),
+  parsePlayerMatrixRequestWithResolvedTeam: vi.fn(),
   buildGoalieMatrixSurface: vi.fn(),
   parseGoalieMatrixRequest: vi.fn(),
   buildTeamMatrixSurface: vi.fn(),
@@ -11,7 +11,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("./playerMatrix", () => ({
   buildPlayerMatrixSurface: mocks.buildPlayerMatrixSurface,
-  parsePlayerMatrixRequest: mocks.parsePlayerMatrixRequest,
+  parsePlayerMatrixRequestWithResolvedTeam: mocks.parsePlayerMatrixRequestWithResolvedTeam,
 }));
 
 vi.mock("./goalieMatrix", () => ({
@@ -74,7 +74,7 @@ function teamPayload(rows: any[], page = 1, pageCount = 1) {
 describe("buildContextualRankingSnapshotSurface", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.parsePlayerMatrixRequest.mockReturnValue({
+    mocks.parsePlayerMatrixRequestWithResolvedTeam.mockResolvedValue({
       entity: "skaters",
       season: 20252026,
       window: "season",

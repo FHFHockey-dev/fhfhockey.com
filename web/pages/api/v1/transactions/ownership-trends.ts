@@ -1,5 +1,6 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { createClient } from "@supabase/supabase-js";
+import { createTrendRequestCache } from "lib/transactions/trendRequestCache";
 import { normalizeDependencyError } from "lib/cron/normalizeDependencyError";
 import {
   normalizeTrendPositions,
@@ -248,47 +249,20 @@ async function fetchYahooToNhlMap(
   return map;
 }
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
-  if (req.method !== "GET") {
-    res.setHeader("Allow", "GET");
-    return res
-      .status(405)
-      .json({ success: false, error: "Method not allowed" });
-  }
+type TrendSnapshot = {
+  rows: any[];
+  seasonFallbackApplied: boolean;
+  adpTimelines: Map<string, TrendPoint[]>;
+  yahooToNhl: YahooToNhlMap;
+};
+const trendSnapshots = createTrendRequestCache<TrendSnapshot>(60_000, 4);
+export function clearOwnershipTrendCache() { trendSnapshots.clear(); }
 
-  try {
-    const windowParam = parseInt(String(req.query.window ?? "5"), 10);
-    const windowDays = ALLOWED_WINDOWS.includes(windowParam) ? windowParam : 5;
-    const metric: TrendMetric =
-      String(req.query.metric ?? "").toLowerCase() === "adp"
-        ? "adp"
-        : "ownership";
-    const limit = Math.min(
-      50,
-      Math.max(1, parseInt(String(req.query.limit ?? "10"), 10))
-    );
-    const offset = Math.max(0, parseInt(String(req.query.offset ?? "0"), 10));
-    const posFilterRaw = String(req.query.pos ?? "").trim();
-    const posFilter = posFilterRaw ? posFilterRaw.toUpperCase() : null;
-    const season = req.query.season ? Number(req.query.season) : undefined;
-    const playerIds = String(req.query.playerIds ?? "")
-      .split(",")
-      .map((value) => Number(value.trim()))
-      .filter((value) => Number.isFinite(value));
-    const playerIdSet =
-      playerIds.length > 0 ? new Set(playerIds) : null;
-    const includeFlat =
-      String(req.query.includeFlat ?? "").toLowerCase() === "1" ||
-      String(req.query.includeFlat ?? "").toLowerCase() === "true";
-
-    const { url, key } = resolveKey();
-    const supabase = createClient(url, key, {
-      auth: { persistSession: false }
-    });
-
+async function loadTrendSnapshot(
+  supabase: SupabaseQueryClient,
+  metric: TrendMetric,
+  season?: number,
+): Promise<TrendSnapshot> {
     const metricSelect =
       metric === "adp"
         ? "average_draft_pick"
@@ -366,6 +340,56 @@ export default async function handler(
         .map((row) => Number(row?.player_id))
         .filter((id) => Number.isFinite(id))
     );
+
+    return { rows, seasonFallbackApplied, adpTimelines, yahooToNhl };
+}
+
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
+  if (req.method !== "GET") {
+    res.setHeader("Allow", "GET");
+    return res
+      .status(405)
+      .json({ success: false, error: "Method not allowed" });
+  }
+
+  try {
+    const windowParam = parseInt(String(req.query.window ?? "5"), 10);
+    const windowDays = ALLOWED_WINDOWS.includes(windowParam) ? windowParam : 5;
+    const metric: TrendMetric =
+      String(req.query.metric ?? "").toLowerCase() === "adp"
+        ? "adp"
+        : "ownership";
+    const limit = Math.min(
+      50,
+      Math.max(1, parseInt(String(req.query.limit ?? "10"), 10))
+    );
+    const offset = Math.max(0, parseInt(String(req.query.offset ?? "0"), 10));
+    const posFilterRaw = String(req.query.pos ?? "").trim();
+    const posFilter = posFilterRaw ? posFilterRaw.toUpperCase() : null;
+    const season = req.query.season ? Number(req.query.season) : undefined;
+    const playerIds = String(req.query.playerIds ?? "")
+      .split(",")
+      .map((value) => Number(value.trim()))
+      .filter((value) => Number.isFinite(value));
+    const playerIdSet =
+      playerIds.length > 0 ? new Set(playerIds) : null;
+    const includeFlat =
+      String(req.query.includeFlat ?? "").toLowerCase() === "1" ||
+      String(req.query.includeFlat ?? "").toLowerCase() === "true";
+
+    const { url, key } = resolveKey();
+    const supabase = createClient(url, key, {
+      auth: { persistSession: false }
+    });
+
+    // Share public source reads across pages/filters and simultaneous mounts.
+    // Date remains part of the key because ownership windows use today's date.
+    const snapshotKey = JSON.stringify([url, metric, season ?? null, new Date().toISOString().slice(0, 10)]);
+    const { rows, seasonFallbackApplied, adpTimelines, yahooToNhl } =
+      await trendSnapshots.get(snapshotKey, () => loadTrendSnapshot(supabase, metric, season));
 
     const risers: TrendPlayer[] = [];
     const fallers: TrendPlayer[] = [];

@@ -1,0 +1,327 @@
+{
+  "purpose": "local_readiness_and_actual_adapter_integration_not_live_execution_release_or_source_acceptance",
+  "files": [
+    {
+      "path": "tasks/artifacts/blsh-lane-readiness-2026-11-08/NST-OWNER-HANDOFF.md",
+      "sha256": "b7a6a8f03462ccbc4d4905a5e841567b74cd07ee91fcf99de59ba68c4443af29",
+      "bytes": 5418
+    },
+    {
+      "path": "tasks/artifacts/blsh-lane-readiness-2026-11-08/STATUS.md",
+      "sha256": "a3a46067ba0065043855539604e6c1ebfd99525c4ae83cfa6b88054729f31bdf",
+      "bytes": 15441
+    },
+    {
+      "path": "tasks/artifacts/blsh-lane-readiness-2026-11-08/VERIFICATION.json",
+      "sha256": "36d5a4db60135b19a90064c24dfa410b798e1c1e1f4457ef1c4d48779b1b8c82",
+      "bytes": 45729
+    },
+    {
+      "path": "web/components/blshTrade/BlshTradeComparison.tsx",
+      "sha256": "75ae6985773cc3f2d81322883acd77ed0162bcd5b938e0cc49ab28661fdc0880",
+      "bytes": 25115
+    },
+    {
+      "path": "web/components/blshTrade/BlshTradeComparison.test.tsx",
+      "sha256": "490471e3d87fb77791e332a657e26a5349b73d6ebf9b71e3a20641d17bb099cf",
+      "bytes": 22695
+    },
+    {
+      "path": "tasks/artifacts/blsh-lane-readiness-2026-11-08/FRESH-CAPTURE-PROPOSAL.md",
+      "sha256": "4833a5b7ca06dfac5297373f7289d4e525dfae002a0d0f3dc0704da7cba4021e",
+      "bytes": 14182
+    },
+    {
+      "path": "web/scripts/blsh/nativeProcessCaptureRunner.ts",
+      "sha256": "f0cad82ee881c9b7c9900527910410c83311017a57479a8df76cbe50813ed8a8",
+      "bytes": 24339
+    },
+    {
+      "path": "web/scripts/blsh/nativeProcessCaptureRunner.test.ts",
+      "sha256": "c98006c5a66b27ef705380945a683f18d72d49273216940d273297ffb6721624",
+      "bytes": 25715
+    },
+    {
+      "path": "tasks/artifacts/blsh-lane-readiness-2026-11-08/RUNNER-HANDOFF.md",
+      "sha256": "ba47d0a7d501ea182e31b95b3d551d9c68f2492c634af2ab7451e0e08dfe83a3",
+      "bytes": 9367
+    },
+    {
+      "path": "tasks/artifacts/blsh-lane-readiness-2026-11-08/RUNNER-CHECKS.json",
+      "sha256": "676c92cc84aa59fdf6b6e32d6b86c1c7c6479447e228becf2c67961b4500bcf5",
+      "bytes": 4130
+    },
+    {
+      "path": "web/scripts/blsh/nativeProcessCaptureAdapter.ts",
+      "sha256": "0162fb52fe3df0b3c1b70f11b0739792a5b0f32b8dbd35b92255597a506c5368",
+      "bytes": 8741
+    },
+    {
+      "path": "web/scripts/blsh/nativeProcessCaptureAdapter.test.ts",
+      "sha256": "1d46be8304247ebe397324323dc95d3cdf902e122ba78375918f4d269720d030",
+      "bytes": 15563
+    },
+    {
+      "path": "tasks/artifacts/blsh-lane-readiness-2026-11-08/ADAPTER-HANDOFF.md",
+      "sha256": "239675766dd776b1cb04d0f36fef943867b4cfe0da031d7581b12a364d27d317",
+      "bytes": 8555
+    },
+    {
+      "path": "tasks/artifacts/blsh-lane-readiness-2026-11-08/ADAPTER-CHECKS.json",
+      "sha256": "af42d6bb40f7cd7716913b67a38be283da0a7fccfeb6e271b9b59eda1405aede",
+      "bytes": 9204
+    },
+    {
+      "path": "tasks/artifacts/blsh-lane-readiness-2026-11-08/REVIEW-AND-RUNTIME.md",
+      "sha256": "cb29bd670f39b58a3895ef1786b4235f3e7097b542686503fcc0a897795ebfe5",
+      "bytes": 6671
+    },
+    {
+      "path": "tasks/artifacts/blsh-lane-readiness-2026-11-08/RUNTIME-PROBE.mjs",
+      "sha256": "265e45c360b963d0272e87d2d6e8622031bebd4eac73306e489d1a01cf4e9830",
+      "bytes": 9810
+    },
+    {
+      "path": "tasks/artifacts/blsh-lane-readiness-2026-11-08/RUNTIME-PROBE.json",
+      "sha256": "58a4ad241d504cd39c0ad9b2da099db405dbfe2e18215b52b87aea0d70740978",
+      "bytes": 7455
+    },
+    {
+      "path": "tasks/artifacts/blsh-lane-readiness-2026-11-08/RUNTIME-IMPORT-PROBE.cjs",
+      "sha256": "fab2ddbc34aada875b5c2e70869f340e13b150b536d7482da357ed244a8946a7",
+      "bytes": 4792
+    },
+    {
+      "path": "tasks/artifacts/blsh-lane-readiness-2026-11-08/RUNTIME-IMPORT-PROBE.json",
+      "sha256": "0e0cec52ba0c5831658050e8b59f37120133d90bf04b25ef48815ca68c3e383e",
+      "bytes": 3779
+    },
+    {
+      "path": "tasks/artifacts/blsh-lane-readiness-2026-11-08/RUNTIME-IMPORT-RECHECK.json",
+      "sha256": "08a0e2ff062880ef9e9a1731de7bfec2afea458938dcd4ba823372486088ce6c",
+      "bytes": 3779
+    },
+    {
+      "path": "tasks/artifacts/blsh-lane-readiness-2026-11-08/RUNTIME-POST-IMPORT-TLS.json",
+      "sha256": "bad3d4bd1de949221a29a7cf2f115be633fcf3b48857573a7a3a45554437d875",
+      "bytes": 7549
+    },
+    {
+      "path": "tasks/artifacts/blsh-lane-readiness-2026-11-08/REVIEW-PREDISPATCH-REPRO.cjs",
+      "sha256": "c8d565f45c5e3abe1ae01e02ffa4ecfa09db5673e49d51106db61a93f8b56382",
+      "bytes": 6105
+    },
+    {
+      "path": "tasks/artifacts/blsh-lane-readiness-2026-11-08/REVIEW-PREDISPATCH-REPRO.json",
+      "sha256": "0f707986d397c806cc96e60903f7ffed3c44b1e8b984b043eb7b711c083b705d",
+      "bytes": 972
+    },
+    {
+      "path": "tasks/artifacts/blsh-lane-readiness-2026-11-08/REVIEW-PREDISPATCH-RECHECK.json",
+      "sha256": "6f08651193ce3ef9666a4cb6d43ec7ccf55189d4e4824df22493e77b50e7f539",
+      "bytes": 772
+    },
+    {
+      "path": "tasks/artifacts/blsh-lane-readiness-2026-11-08/review-baseline-2026-11-09/ADAPTER-CHECKS.json.snapshot",
+      "sha256": "1cd107b315d0a42d03ce45119d84a19c99724f82baf03254b618d9723679592c",
+      "bytes": 7618
+    },
+    {
+      "path": "tasks/artifacts/blsh-lane-readiness-2026-11-08/review-baseline-2026-11-09/MANIFEST.json",
+      "sha256": "39e8bbcf49cee9d14e846e4109033db26434b7a03d7f00b2004d975eaa6cd5d7",
+      "bytes": 861
+    },
+    {
+      "path": "tasks/artifacts/blsh-lane-readiness-2026-11-08/review-baseline-2026-11-09/RUNTIME-PROBE.mjs.snapshot",
+      "sha256": "528c6e3ce0197f82fc0a1303405b7cb54b6f11cbb51869462901963ca24cf2eb",
+      "bytes": 9052
+    },
+    {
+      "path": "tasks/artifacts/blsh-lane-readiness-2026-11-08/review-baseline-2026-11-09/nativeProcessCaptureRunner.test.ts.snapshot",
+      "sha256": "96ea409fc37329337e2d192ac1d2e23b694236bf2d0b87e30c2a9f0c0803b8d7",
+      "bytes": 22378
+    },
+    {
+      "path": "tasks/artifacts/blsh-lane-readiness-2026-11-08/review-baseline-2026-11-09/nativeProcessCaptureRunner.ts.snapshot",
+      "sha256": "c8474d7478640aeee69c0a96aac12ac8a8957e8a89b64bdc3332af74b83961e9",
+      "bytes": 23001
+    }
+  ],
+  "freshCaptureProposal": {
+    "checkedAtUTC": "2026-11-09T00:38:30.537689+00:00",
+    "status": "proposed_bounds_require_owner_implementation_and_separate_execution_approval",
+    "exactNSTURLsMatchCanonicalOfflinePlan": true,
+    "currentExecutionRefused": true,
+    "currentSharedAdmissionCallCap": null,
+    "proposedApplicationLevelOperations": 8,
+    "proposedSupabaseRPCs": 5,
+    "networkRequestsPerformed": 0,
+    "sourcePins": [
+      {
+        "path": "web/lib/nst/client.ts",
+        "sha256": "48d82fc40ca06d9abe4675f4a1896add55c4e53d4dee661bbe082d424c944e4f"
+      },
+      {
+        "path": "web/lib/nst/requestBudget.ts",
+        "sha256": "ccbab70aee15aba93818df4ef42d41195eceb39757af0ad3eef3b3dd15437e5a"
+      },
+      {
+        "path": "web/lib/nst/sharedAdmission.ts",
+        "sha256": "f1c407170c9085c5f57b543c418bb8341859b4034d4f1d9d286bea0afabc36ac"
+      },
+      {
+        "path": "web/lib/nst/jobLifecycle.server.ts",
+        "sha256": "365dcca44fc79e12cd0a2b4be9edc9e58e99f3a5344c4dc23b7b4332c982e0e3"
+      },
+      {
+        "path": "web/lib/cron/nstRateLimitPolicy.ts",
+        "sha256": "f90686ed0e22f7dcc8685c111c62445004cb32744284ae22f3e37f9b6e491f2c"
+      },
+      {
+        "path": "web/scripts/blsh/nativeProcessCapturePreparation.ts",
+        "sha256": "7f562056c16f446641917c90b41425c8c13ae97f11d6383f38e5c3cf12c3b0a7"
+      },
+      {
+        "path": "supabase/migrations/20261101161622_nst_goalie_catchup_v1.sql",
+        "sha256": "d99730b43d2658861259e81f01c687217e161a38c293843de0192dc1fd69e291"
+      },
+      {
+        "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/nst-goalie-writer-20261101/rollout-approval-20261101/PROPOSED-admission-install.sql",
+        "sha256": "c262a45040d5e090a0f9a6640cad899a2c7da299eae12de1be42cbe908f038b0"
+      },
+      {
+        "path": "web/lib/player-forecasts/rollingParticipationFrame.ts",
+        "sha256": "7a217722b0e164a822e899dd123ecb31ec70685f116f50222182835b1986df6c"
+      },
+      {
+        "path": "web/lib/skoElement/interpret.ts",
+        "sha256": "d5b2d8a5033cc87ae606b03a79e9bf9ba023c6e6f9d7255b6d33011a9890b497"
+      },
+      {
+        "path": "tasks/artifacts/codex-handoff-2026-11-07/TJ-DECISIONS-2026-11-07.md",
+        "sha256": "22f6fea942ea8b43e95a9f17fce5a913f9ee5b2cc8b5d28b0854b797558b1cce"
+      },
+      {
+        "path": "tasks/diaries/2026-11-07-claude-nst-writer.md",
+        "sha256": "7633fc7cb089261008f78bb6446ccc9fb50695bcd30cc7b5539c25c2281413ce"
+      }
+    ],
+    "historical": true,
+    "supersededBy": "adapterIntegration"
+  },
+  "durableRunner": {
+    "status": "predispatch_correction_mock_verified_runtime_TLS_observed_independent_review_pending",
+    "checks": "ADAPTER-CHECKS.json",
+    "handoff": "REVIEW-AND-RUNTIME.md",
+    "runnerTests": 63,
+    "adapterTests": 29,
+    "tradeUITests": 22,
+    "fullTypecheckPassed": true,
+    "scopedLintPassed": true,
+    "liveExecutionAuthorized": false
+  },
+  "historicalCoreCheckpoint": {
+    "status": "core_implemented_and_mock_tested_live_adapter_pending_owner_interface",
+    "checks": "RUNNER-CHECKS.json",
+    "handoff": "RUNNER-HANDOFF.md",
+    "focusedTestsPassed": 53,
+    "fullTypecheckPassed": true,
+    "scopedLintPassed": true,
+    "liveExecutionAuthorized": false
+  },
+  "adapterIntegration": {
+    "status": "corrected_successor_verified_locally_independent_review_and_actual_execution_environment_pending",
+    "checks": "ADAPTER-CHECKS.json",
+    "sourcePins": [
+      {
+        "path": "web/scripts/blsh/nativeProcessCaptureRunner.ts",
+        "sha256": "f0cad82ee881c9b7c9900527910410c83311017a57479a8df76cbe50813ed8a8",
+        "bytes": 24339
+      },
+      {
+        "path": "web/scripts/blsh/nativeProcessCaptureRunner.test.ts",
+        "sha256": "c98006c5a66b27ef705380945a683f18d72d49273216940d273297ffb6721624",
+        "bytes": 25715
+      },
+      {
+        "path": "web/scripts/blsh/nativeProcessCaptureAdapter.ts",
+        "sha256": "0162fb52fe3df0b3c1b70f11b0739792a5b0f32b8dbd35b92255597a506c5368",
+        "bytes": 8741
+      },
+      {
+        "path": "web/scripts/blsh/nativeProcessCaptureAdapter.test.ts",
+        "sha256": "1d46be8304247ebe397324323dc95d3cdf902e122ba78375918f4d269720d030",
+        "bytes": 15563
+      },
+      {
+        "path": "web/scripts/blsh/nativeProcessCapturePreparation.ts",
+        "sha256": "7f562056c16f446641917c90b41425c8c13ae97f11d6383f38e5c3cf12c3b0a7",
+        "bytes": 10312
+      },
+      {
+        "path": "web/lib/nst/client.ts",
+        "sha256": "1a568c28f43e7a716677bc6d47eea47cbe86942cce376f95162fe3740cab738d",
+        "bytes": 16346
+      },
+      {
+        "path": "web/lib/nst/sharedAdmission.ts",
+        "sha256": "a5f62acc1781205672c0e19aaf9c12b6cb1f6e16053876b746bc45aa210b9e4a",
+        "bytes": 7834
+      },
+      {
+        "path": "web/lib/nst/admissionOrigin.ts",
+        "sha256": "1ffe197f90c577b477f94b54e404713a2b001c78edf12d92a249441281cdccba",
+        "bytes": 1231
+      },
+      {
+        "path": "web/lib/nst/jobLifecycle.server.ts",
+        "sha256": "c28bf71b51a879f2ad7793f640e640f101bcea6318423ac3e168618f6bc3f1a8",
+        "bytes": 8955
+      },
+      {
+        "path": "web/lib/nst/requestBudget.ts",
+        "sha256": "ccbab70aee15aba93818df4ef42d41195eceb39757af0ad3eef3b3dd15437e5a",
+        "bytes": 6944
+      },
+      {
+        "path": "web/lib/cron/nstRateLimitPolicy.ts",
+        "sha256": "f90686ed0e22f7dcc8685c111c62445004cb32744284ae22f3e37f9b6e491f2c",
+        "bytes": 4288
+      },
+      {
+        "path": "web/components/blshTrade/BlshTradeComparison.tsx",
+        "sha256": "75ae6985773cc3f2d81322883acd77ed0162bcd5b938e0cc49ab28661fdc0880",
+        "bytes": 25115
+      },
+      {
+        "path": "web/components/blshTrade/BlshTradeComparison.test.tsx",
+        "sha256": "490471e3d87fb77791e332a657e26a5349b73d6ebf9b71e3a20641d17bb099cf",
+        "bytes": 22695
+      },
+      {
+        "path": "web/lib/skoElement/contract.ts",
+        "sha256": "3d2b202003b8c0379bbf7b5e0d04ebc722c52815327ce7e8b96d67538966f37a",
+        "bytes": 11358
+      },
+      {
+        "path": "web/lib/skoElement/interpret.ts",
+        "sha256": "789b8fe3480e564a9f24e47658b5d03d4e514b0dc6e94d5aae4fbd08a297200c",
+        "bytes": 28478
+      },
+      {
+        "path": "web/lib/skoElement/fixtures.ts",
+        "sha256": "b4e7e6b31c9fd9d1e541aba1e0f19993caa413bab8112b1cd05bc10e1b7f2fa2",
+        "bytes": 17583
+      }
+    ],
+    "ownerInterfaceRequestResolved": true,
+    "sharedFilesUnchangedByThisLane": true
+  },
+  "runtimeReview": {
+    "handoff": "REVIEW-AND-RUNTIME.md",
+    "baseline": "review-baseline-2026-11-09/MANIFEST.json",
+    "providerTLSVerified": null,
+    "independentAcceptance": false,
+    "executionAuthorized": false
+  }
+}
