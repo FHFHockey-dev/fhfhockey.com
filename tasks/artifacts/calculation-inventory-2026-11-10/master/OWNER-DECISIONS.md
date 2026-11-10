@@ -13,3 +13,9 @@ Facts Chef checked (2026-11-10):
 Facts Chef checked after W1-1 (2026-11-10):
 - The full `fhfhockey` production env list (101 names, via `vercel env ls production`; names only) has **no `NHL_XG_*` variables**: not `NHL_XG_MODEL_ARTIFACT_PATH`, `NHL_XG_MODEL_VERSION` or `NHL_XG_TEAM_AGGREGATE_MODEL_VERSION`. FORGE is therefore not pinned to the leaky team xG prior through an env override; downstream audits should confirm the default path that code takes when the variable is unset.
 - Refits must run against a **local copy** of the shot features (export once, bounded and paged, with owner approval), never as repeated full-table reads of production.
+
+## Decisions after W1-1 (TJ, 2026-11-10, by pop-up)
+5. **Leaky champion xG model cfg9bac2706**: leave it serving for now. Demotion waits for the fix plan, as its own approved step with a registry backup.
+6. **Headline xG**: **Natural Stat Trick's xG (labelled as NST) is the headline** until a leak-free, converged in-house model is approved. The bucket heuristic (0.18/0.08/0.02 with a 0.25 goal floor) is to be retired.
+7. **Empty-net shots**: **excluded** from team, player and goalie xG totals (and from GSAx/xGA) and **reported separately**. The model should distinguish shooting at an empty net from the shooter's own net being empty.
+8. **Rush definition**: **4-second window**, no faceoff sources (the common MoneyPuck-style convention).
