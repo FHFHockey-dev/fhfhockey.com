@@ -206,3 +206,38 @@ Facts Chef checked after W1-1 (2026-11-10):
     - Backtest the newer tiers using only pregame information, against both the current model and a **no-rest baseline**, with the impact measured **after full team reconciliation**. Check outcomes and calibration on held-out dates, with enough samples per tier.
     - Adopt them if better. If not, try a simpler rest feature before deciding what to remove.
     - Never keep an unreachable tier as though it were active.
+
+## Decisions on the Batch B/C consolidation's open questions (TJ, 2026-11-11, by pop-up; intent preserved, condensed by Chef)
+61. **Sustainability windows support both views.**
+    - The default is a **current-season** view showing the actual n when fewer than N games exist.
+    - An optional **last-N across seasons** view is labelled with its seasons, dates and sample size.
+    - In both views, evaluated games are excluded from the player baseline and from any league prior used to judge them, and only pre-window information is used for historical evaluation.
+    - Account for team, role and opportunity changes, and show uncertainty for small samples. Calendar L7/L14/L30 windows (decision 18) stay distinct from last-N windows.
+62. **Category value contract.**
+    - Use a league-aware pool (rostered positions, slots, bench, goalie requirements) when settings exist. Generic rankings use a clearly labelled, configurable reference pool, with eligibility and replacement level explicit.
+    - Value SV% and GAA by their effect on the combined roster's saves, shots against, GA and playing time, not raw rate z alone. Respect direction and minimums.
+    - No second shrink without justification. Missing or insufficient exposure is not zero.
+    - Test pool and valuation approaches against baselines on held-out league outcomes. Show source, assumptions, sample and uncertainty, and never present an unvalidated z as a guaranteed standings gain.
+63. **Unconditional goalie lines include relief.**
+    - Line = P(start)·E[stats | start] + P(relief)·E[stats | relief]. Roles are mutually exclusive for the target game, and no-appearance is accounted for.
+    - Relief probability, minutes and outcomes are estimated from history, with shrinkage and uncertainty.
+    - Conditional-start, conditional-relief and unconditional lines stay distinct. SA, saves and GA reconcile, and W, regulation L, OTL and no-decision follow the actual credited outcome, never "starter gets the decision".
+    - Validate against a labelled zero-relief baseline on held-out games, and disclose the omission until relief is qualified.
+64. **Game Grid win odds are withheld now**, along with their Week Score nudge, behind a "model odds unavailable" message. The rest of the grid and Week Score keep working, with the calculation explained.
+    - Repair and evaluate on genuinely pregame, held-out games with home ice and aligned inputs, against baselines and (where authorized) de-vigged market probabilities.
+    - Restore only when the model and its consumers qualify. A separately labelled, authorized market probability may be shown, never silently substituted.
+65. **Mean forecasts are evaluated with proper scores.** Use squared error, or Poisson/NB deviance and log score where a valid distribution is supplied with appropriate zero handling. MAE is secondary only.
+    - Evaluate by stat, population and horizon against baselines on held-out games, plus downstream decision impact for fantasy uses.
+    - Don't force one distribution on every stat. Document the scoring rule, exclusions and sample sizes.
+66. **Starter-board baseline policy.**
+    - Evaluate the existing 300-minute policy alongside the grid's values and baselines, using pregame inputs on time-based held-out games.
+    - Select by the documented process. The issuer then consumes the **exact versioned artifact** selected, and each issuance records version, training cutoff and selection evidence.
+    - If no candidate qualifies, keep production behaviour explicitly labelled and never claim it won. Test that the issuer matches the artifact, and that a missing or stale artifact produces a clear, safe state.
+67. **Manual RSO comparisons with an unknown drop are allowed when the manager explicitly requests them.**
+    - Show the known in-range effects, name the player whose value is unavailable, and label the result **incomplete: dropped-player value unknown**.
+    - No definitive net gain, no "safe" label, never ranked above complete comparisons, never auto-proposed or executed.
+    - A defensible fallback shows its source and uncertainty, never a fabricated zero. The manager controls any move.
+68. **Sustainability league reference** is versioned and point-in-time, built only from pre-window information.
+    - Define and label the comparison population (position, per-metric minimum exposure), kept separate from the player's own baseline.
+    - When current-season evidence is thin, use a documented, appropriately weighted earlier reference or prior, with weighting and thresholds validated (no one-size cutoff).
+    - Record source seasons, cutoff, sample and version so history is reproducible. Show when the reference is sparse or unavailable, and never describe a percentile or standardised score as a calibrated probability.
