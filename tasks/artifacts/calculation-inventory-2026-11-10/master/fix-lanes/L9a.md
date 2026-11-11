@@ -49,3 +49,6 @@ Three P0s fixed and proven on final payload fixtures; market items fixed behind 
 
 ## Reader tickets from L4a (2026-11-11; migrations 125–132 written, unapplied)
 `nhl_team_data` (migration 129) becomes one row per team with `nst_season` and `nst_updated_at`; NST columns NULL when the standings season has no NST row; per-game values NULL at 0 GP. Join on `nst_season` in `team-context-queries.ts`.
+
+## Reader tickets from L6 (2026-11-11)
+Rolling availability is by team of record by date; `*_team_games_available` and availability ratios can be null. xSH% is ixG ÷ iFF × 100 on 0–100. `windowCountSupport` carries per-window counts and game ids.
