@@ -288,3 +288,8 @@ Source: `WAVE2-CONSOLIDATED.md`, "Owner decisions still open" Q1, 5, 6, 9, 18, 1
 79. **External use of `/api/v1/forge/scoreboard` is unknown.** (Q36)
     - Check documented integrations and available access logs or other evidence. Absence from the codebase isn't proof of no external use.
     - Keep the endpoint contract while investigating. Set W2-8 D1's priority from verified consumers and impact; make no production change on this answer alone.
+
+## sKO and VuDu (TJ, 2026-11-11)
+The binding definitions are in `OWNER-INTENT-SKO-VUDU.md` (TJ, written with Codex, 2026-11-11). w3-7 is handed to Astra.
+
+80. **The other sKO variants are kept and defined, not discarded.** The legacy points × stability score, sustainability "sKO score model v3" and `combineSKO` all describe the *likelihood of sustaining current production relative to baselines*. Each gets a written definition and its own name. Any of them may be blended into sKO **if evidence shows it is useful** (decision 32: inputs and weights earn their place out of sample). None is reinstated as sKO merely to resolve the name, and none is deleted (rule 6).
