@@ -1,6 +1,8 @@
 @use "styles/vars" as v;
 
 .card { flex: 1; display: flex; flex-direction: column; gap: 5px; min-height: 0; }
+/* The plain-words line under the shell's title, centred with it. Its 26px line and the 5px gap are the 32px that ROWS_HEIGHT and STACKED_HEIGHT leave it. */
+.subtitle { margin: 0; text-align: center; font-size: 22px; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: v.$text-secondary; }
 .table { flex: 1; min-height: 0; display: grid; grid-template-columns: auto auto minmax(0, 1fr) repeat(4, auto); column-gap: 11px; }
 .head { align-self: end; padding-bottom: 2px; border-bottom: 1px solid v.$border-soft; text-align: right; white-space: nowrap; font-size: 13px; letter-spacing: v.$mobile-letter-spacing-wide; color: v.$text-secondary; }
 .cell { display: flex; align-items: center; justify-content: flex-end; min-width: 0; padding: 2px 0; border-bottom: 1px solid v.$border-soft; text-align: right; white-space: nowrap; }
@@ -13,6 +15,7 @@
 .lines { display: grid; gap: 1px; line-height: 1.15; }
 .chart { display: block; }
 .span { margin-right: 6px; font-size: 13px; color: v.$text-secondary; }
+.arrow { margin-right: 0.12em; font-size: 0.72em; }
 .note { margin: 0; font-size: 14px; line-height: 1.2; white-space: nowrap; color: v.$text-secondary; }
 .card[data-size="large"] .cell { font-size: 22px; }
 .card[data-size="medium"] .cell { font-size: 19px; }
@@ -22,7 +25,7 @@
 .card[data-stacked] .head { font-size: 15px; }
 .card[data-stacked] .cell[data-band] { border-bottom: 0; padding: 8px 0 0; }
 .card[data-stacked] .cell[data-chart] { grid-column: 1 / -1; align-items: flex-end; }
-.card[data-stacked] .team small { font-size: 17px; }
+.card[data-stacked] .team small, .card[data-stacked] .span { font-size: 17px; }
 .card[data-size="rows-1"] .cell { font-size: 34px; }
 .card[data-size="rows-2"] .cell { font-size: 30px; }
 .card[data-size="rows-3"] .cell { font-size: 27px; }
