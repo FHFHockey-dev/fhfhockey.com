@@ -31,4 +31,8 @@ Facts Chef checked after W1-1 (2026-11-10):
 11. **Leading and Trailing include one-goal margins** (any lead or deficit); Up 1 and Down 1 are subsets.
 12. **Bucket heuristic xG: hide now, then fix.** Hide the xG columns on the player, goalie and team underlying-stats pages and move the default sort off xGF%. xG returns only from a clean trained model (see 6).
 13. **A penalty-shot infraction is not a penalty** in a player's totals.
-14. **NST burst rule: a job may burst only when it needs fewer than 40 unique URLs** (the 78-request semi-burst in code and in the deployed `nst_admit_attempt_budget_v1` violates it).
+14. **NST burst rule (TJ, clarified):** all four windows hold together across every caller: 40/1 min, 80/5 min, 100/15 min, 180/60 min. A burst may be **39 or fewer** URLs and must be followed by **at least 60 s** before the next call. **Two bursts in a row must be followed by a 5-minute pause.**
+    - Chef's read of the deployed function (`nst_admit_attempt_budget_v1` plus migration 20261109015836): a "78 semi-burst" is two 39-request waves. The 39/1 min cap forces about 60 s between them, and the 80/5 min cap then leaves at most 2 more requests for anyone until the 5-minute window clears. So it is **mostly compliant**, NOT the violation W1-2 D10 describes.
+    - **Remaining gap:** after two bursts, up to 2 more requests can still go out inside the 5 minutes. TJ's rule wants a full 5-minute pause. Fix: once a plan's second wave ends, deny all callers for 300 s (a small admission-function change plus a TS/Python test). It goes in the fix plan's NST work.
+
+15. **Player radar: move to 5v5** and label it "5v5".
