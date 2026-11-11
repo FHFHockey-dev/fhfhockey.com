@@ -1,0 +1,2360 @@
+{
+  "targetCommit": "7174249cb7eae7e711039e495c63a990112e22ea",
+  "runAt": "2026-11-11T20:55:44.996Z",
+  "node": "v22.23.4",
+  "method": "Actual pure modules and exact AST-selected route helper bodies, isolated VM with no network/client/environment capabilities. SQL case is explicitly a JS mirror, not PostgreSQL execution.",
+  "passed": 32,
+  "results": [
+    {
+      "name": "legacy midpoint, scale/translation invariance, and constant short-series exception",
+      "result": {
+        "base": {
+          "player_id": 99,
+          "as_of_date": "2026-11-11",
+          "horizon_games": 5,
+          "pred_points": 2.7,
+          "pred_points_per_game": 0.54,
+          "stability_cv": 0.5,
+          "stability_multiplier": 0.9,
+          "sko": 2.43,
+          "top_features": null,
+          "model_name": "baseline-moving-average",
+          "model_version": "v0.3"
+        },
+        "shifted": {
+          "player_id": 99,
+          "as_of_date": "2026-11-11",
+          "horizon_games": 5,
+          "pred_points": 27.699999999999996,
+          "pred_points_per_game": 5.539999999999999,
+          "stability_cv": 0.5,
+          "stability_multiplier": 0.9,
+          "sko": 24.929999999999996,
+          "top_features": null,
+          "model_name": "baseline-moving-average",
+          "model_version": "v0.3"
+        },
+        "scaled": {
+          "player_id": 99,
+          "as_of_date": "2026-11-11",
+          "horizon_games": 5,
+          "pred_points": 8.100000000000001,
+          "pred_points_per_game": 1.6200000000000003,
+          "stability_cv": 1.5,
+          "stability_multiplier": 0.9,
+          "sko": 7.290000000000002,
+          "top_features": null,
+          "model_name": "baseline-moving-average",
+          "model_version": "v0.3"
+        },
+        "constant": {
+          "player_id": 99,
+          "as_of_date": "2026-11-11",
+          "horizon_games": 5,
+          "pred_points": 5,
+          "pred_points_per_game": 1,
+          "stability_cv": 0,
+          "stability_multiplier": 1,
+          "sko": 5,
+          "top_features": null,
+          "model_name": "baseline-moving-average",
+          "model_version": "v0.3"
+        },
+        "one": {
+          "player_id": 99,
+          "as_of_date": "2026-11-11",
+          "horizon_games": 5,
+          "pred_points": 10,
+          "pred_points_per_game": 2,
+          "stability_cv": 0,
+          "stability_multiplier": 1,
+          "sko": 10,
+          "top_features": null,
+          "model_name": "baseline-moving-average",
+          "model_version": "v0.3"
+        }
+      }
+    },
+    {
+      "name": "legacy SD is not CV",
+      "result": {
+        "a": {
+          "player_id": 99,
+          "as_of_date": "2026-11-11",
+          "horizon_games": 5,
+          "pred_points": 5,
+          "pred_points_per_game": 1,
+          "stability_cv": 1,
+          "stability_multiplier": 0.9,
+          "sko": 4.5,
+          "top_features": null,
+          "model_name": "baseline-moving-average",
+          "model_version": "v0.3"
+        },
+        "b": {
+          "player_id": 99,
+          "as_of_date": "2026-11-11",
+          "horizon_games": 5,
+          "pred_points": 10,
+          "pred_points_per_game": 2,
+          "stability_cv": 1,
+          "stability_multiplier": 0.9,
+          "sko": 9,
+          "top_features": null,
+          "model_name": "baseline-moving-average",
+          "model_version": "v0.3"
+        },
+        "trueCV": [
+          1,
+          0.5
+        ]
+      }
+    },
+    {
+      "name": "legacy contrasting level shifts both reduce multiplier",
+      "result": {
+        "up": {
+          "player_id": 99,
+          "as_of_date": "2026-11-11",
+          "horizon_games": 5,
+          "pred_points": 3.5,
+          "pred_points_per_game": 0.7,
+          "stability_cv": 0.5,
+          "stability_multiplier": 0.8071141773202902,
+          "sko": 2.8248996206210157,
+          "top_features": null,
+          "model_name": "baseline-moving-average",
+          "model_version": "v0.3"
+        },
+        "down": {
+          "player_id": 99,
+          "as_of_date": "2026-11-11",
+          "horizon_games": 5,
+          "pred_points": 1.5,
+          "pred_points_per_game": 0.3,
+          "stability_cv": 0.5,
+          "stability_multiplier": 0.8071141773202902,
+          "sko": 1.2106712659804353,
+          "top_features": null,
+          "model_name": "baseline-moving-average",
+          "model_version": "v0.3"
+        }
+      }
+    },
+    {
+      "name": "live-ingest helper preserves incomplete and impossible IPP defect",
+      "result": {
+        "incomplete": {
+          "player_id": 99,
+          "player_name": "Synthetic",
+          "date": "2026-11-11",
+          "season_id": 20262027,
+          "position_code": null,
+          "games_played": 1,
+          "goals": null,
+          "assists": null,
+          "points": 2,
+          "shots": 3,
+          "shooting_percentage": null,
+          "time_on_ice": 1200,
+          "on_ice_shooting_pct": null,
+          "zone_start_pct": null,
+          "pp_toi_pct_per_game": null,
+          "es_goals_for": 2,
+          "pp_goals_for": null,
+          "sh_goals_for": 0,
+          "total_primary_assists": null,
+          "total_secondary_assists": null,
+          "ipp": 100,
+          "sog_per_60": 9,
+          "assists_5v5": null,
+          "assists_per_60_5v5": null,
+          "primary_assists_5v5": null,
+          "primary_assists_per_60_5v5": null,
+          "secondary_assists_5v5": null,
+          "secondary_assists_per_60_5v5": null
+        },
+        "impossible": {
+          "player_id": 99,
+          "player_name": "Synthetic",
+          "date": "2026-11-11",
+          "season_id": 20262027,
+          "position_code": null,
+          "games_played": 1,
+          "goals": null,
+          "assists": null,
+          "points": 2,
+          "shots": 3,
+          "shooting_percentage": null,
+          "time_on_ice": 1200,
+          "on_ice_shooting_pct": null,
+          "zone_start_pct": null,
+          "pp_toi_pct_per_game": null,
+          "es_goals_for": 1,
+          "pp_goals_for": 0,
+          "sh_goals_for": 0,
+          "total_primary_assists": null,
+          "total_secondary_assists": null,
+          "ipp": 200,
+          "sog_per_60": 9,
+          "assists_5v5": null,
+          "assists_per_60_5v5": null,
+          "primary_assists_5v5": null,
+          "primary_assists_per_60_5v5": null,
+          "secondary_assists_5v5": null,
+          "secondary_assists_per_60_5v5": null
+        }
+      }
+    },
+    {
+      "name": "future forecast issuance remains admitted as current and qualified",
+      "result": {
+        "asOf": "2026-10-18T15:00:00.000Z",
+        "forecastReadAsOf": "2026-10-19T10:00:00Z",
+        "points": {
+          "target": "POINTS",
+          "label": "Points",
+          "unit": "count",
+          "observedPerTeamGame": {
+            "value": 0.9,
+            "reason": null
+          },
+          "observedPerAppearance": {
+            "value": 0.9,
+            "reason": null
+          },
+          "personalReference": {
+            "perTeamGame": {
+              "value": 0.5,
+              "reason": null
+            },
+            "perAppearance": {
+              "value": 0.5,
+              "reason": null
+            },
+            "changePerTeamGame": {
+              "value": 0.4,
+              "reason": null
+            }
+          },
+          "expectedPerTeamGame": {
+            "value": 0.75,
+            "reason": null
+          },
+          "expectedPerAppearanceConditional": {
+            "value": 0.7894736842105264,
+            "reason": null
+          },
+          "gapPerTeamGame": {
+            "value": -0.15000000000000002,
+            "reason": null
+          },
+          "direction": "cooling",
+          "outlookChangePerTeamGame": {
+            "value": 0.29999999999999993,
+            "reason": null
+          },
+          "observedVariability": {
+            "value": 0.7378647873726218,
+            "reason": null
+          },
+          "sparse": false
+        },
+        "qualification": {
+          "status": "qualified",
+          "reasons": []
+        }
+      }
+    },
+    {
+      "name": "one missing forecast expiry is masked by other current targets",
+      "result": {
+        "freshness": {
+          "evidenceCutoffAt": "2026-10-15T08:00:00.000Z",
+          "evidenceAgeHours": 79,
+          "evidenceStatus": "fresh",
+          "forecastExpiresAt": "2026-10-19T12:00:00.000Z",
+          "forecastStatus": "current"
+        },
+        "points": {
+          "target": "POINTS",
+          "label": "Points",
+          "unit": "count",
+          "observedPerTeamGame": {
+            "value": 0.9,
+            "reason": null
+          },
+          "observedPerAppearance": {
+            "value": 0.9,
+            "reason": null
+          },
+          "personalReference": {
+            "perTeamGame": {
+              "value": 0.5,
+              "reason": null
+            },
+            "perAppearance": {
+              "value": 0.5,
+              "reason": null
+            },
+            "changePerTeamGame": {
+              "value": 0.4,
+              "reason": null
+            }
+          },
+          "expectedPerTeamGame": {
+            "value": 0.75,
+            "reason": null
+          },
+          "expectedPerAppearanceConditional": {
+            "value": 0.7894736842105264,
+            "reason": null
+          },
+          "gapPerTeamGame": {
+            "value": -0.15000000000000002,
+            "reason": null
+          },
+          "direction": "cooling",
+          "outlookChangePerTeamGame": {
+            "value": 0.29999999999999993,
+            "reason": null
+          },
+          "observedVariability": {
+            "value": 0.7378647873726218,
+            "reason": null
+          },
+          "sparse": false
+        },
+        "qualification": {
+          "status": "qualified",
+          "reasons": []
+        }
+      }
+    },
+    {
+      "name": "all missing forecast expiry is experimental but comparison still complete",
+      "result": {
+        "statuses": [
+          "unknown",
+          "unknown"
+        ],
+        "comparison": {
+          "issues": [],
+          "complete": true,
+          "horizonGames": 10,
+          "experimental": true,
+          "players": [
+            {
+              "playerId": "fx-f1",
+              "side": "give",
+              "name": "Fixture Forward One",
+              "modelClass": "F",
+              "startDate": "2026-10-20",
+              "endDate": "2026-11-07",
+              "scheduledGames": 10,
+              "qualification": {
+                "status": "experimental",
+                "reasons": [
+                  "Forecast expiry unknown"
+                ]
+              },
+              "expectedAppearances": 9.5,
+              "expectedStarts": null
+            },
+            {
+              "playerId": "fx-f2",
+              "side": "receive",
+              "name": "Fixture Forward Two",
+              "modelClass": "F",
+              "startDate": "2026-10-20",
+              "endDate": "2026-11-07",
+              "scheduledGames": 10,
+              "qualification": {
+                "status": "experimental",
+                "reasons": [
+                  "Forecast expiry unknown"
+                ]
+              },
+              "expectedAppearances": 9.5,
+              "expectedStarts": null
+            }
+          ],
+          "rows": [
+            {
+              "key": "FANTASY_POINTS",
+              "label": "Fantasy points",
+              "lowerIsBetter": false,
+              "give": {
+                "value": 7.5,
+                "missingPlayerIds": [],
+                "reason": null
+              },
+              "receive": {
+                "value": 5.999999999999999,
+                "missingPlayerIds": [],
+                "reason": null
+              },
+              "net": -1.5000000000000009,
+              "favorableForReceiver": false
+            }
+          ],
+          "summary": "Experimental forecast. Raw projected production over each player's next 10 scheduled team games: the receive side is behind by 1.50 fantasy points. Offer scenario only; not roster-aware and not proof the other manager accepts."
+        }
+      }
+    },
+    {
+      "name": "totals-only approved expectation still enters a comparison",
+      "result": {
+        "producerTarget": {
+          "expected": 0.75,
+          "conditional": 0.7894736842105263,
+          "basis": "unconditional_game",
+          "unit": "count",
+          "allowedUses": {
+            "assignment": false,
+            "totals": true,
+            "comparison": false,
+            "conditionalTieBreak": true
+          },
+          "sourceKind": null,
+          "sourceIds": [
+            "test-totals-only"
+          ],
+          "methodVersions": [
+            "test-v1"
+          ],
+          "sourceWatermarks": [
+            "test"
+          ],
+          "cutoffAt": "2026-10-18T08:00:00Z",
+          "issuedAt": "2026-10-18T12:00:00Z",
+          "expiresAt": "2026-10-19T12:00:00Z",
+          "sources": [
+            {
+              "sourceId": "test-totals-only",
+              "kind": "detailed",
+              "methodVersion": "test-v1",
+              "sourceWatermark": "test",
+              "cutoffAt": "2026-10-18T08:00:00Z",
+              "issuedAt": "2026-10-18T12:00:00Z",
+              "expiresAt": "2026-10-19T12:00:00Z"
+            }
+          ],
+          "participation": null,
+          "participationRevisionId": null,
+          "limitations": [],
+          "reasons": []
+        },
+        "points": {
+          "target": "POINTS",
+          "label": "Points",
+          "unit": "count",
+          "observedPerTeamGame": {
+            "value": 0.9,
+            "reason": null
+          },
+          "observedPerAppearance": {
+            "value": 0.9,
+            "reason": null
+          },
+          "personalReference": {
+            "perTeamGame": {
+              "value": 0.5,
+              "reason": null
+            },
+            "perAppearance": {
+              "value": 0.5,
+              "reason": null
+            },
+            "changePerTeamGame": {
+              "value": 0.4,
+              "reason": null
+            }
+          },
+          "expectedPerTeamGame": {
+            "value": 0.75,
+            "reason": null
+          },
+          "expectedPerAppearanceConditional": {
+            "value": 0.7894736842105264,
+            "reason": null
+          },
+          "gapPerTeamGame": {
+            "value": -0.15000000000000002,
+            "reason": null
+          },
+          "direction": "cooling",
+          "outlookChangePerTeamGame": {
+            "value": 0.29999999999999993,
+            "reason": null
+          },
+          "observedVariability": {
+            "value": 0.7378647873726218,
+            "reason": null
+          },
+          "sparse": false
+        },
+        "qualification": {
+          "status": "qualified",
+          "reasons": []
+        },
+        "tradeValue": {
+          "value": 7.5,
+          "missingPlayerIds": [],
+          "reason": null
+        },
+        "comparison": {
+          "issues": [],
+          "complete": true,
+          "horizonGames": 10,
+          "experimental": false,
+          "players": [
+            {
+              "playerId": "fx-f1",
+              "side": "give",
+              "name": "Fixture Forward One",
+              "modelClass": "F",
+              "startDate": "2026-10-20",
+              "endDate": "2026-11-07",
+              "scheduledGames": 10,
+              "qualification": {
+                "status": "qualified",
+                "reasons": []
+              },
+              "expectedAppearances": 9.5,
+              "expectedStarts": null
+            },
+            {
+              "playerId": "fx-f2",
+              "side": "receive",
+              "name": "Fixture Forward Two",
+              "modelClass": "F",
+              "startDate": "2026-10-20",
+              "endDate": "2026-11-07",
+              "scheduledGames": 10,
+              "qualification": {
+                "status": "qualified",
+                "reasons": []
+              },
+              "expectedAppearances": 9.5,
+              "expectedStarts": null
+            }
+          ],
+          "rows": [
+            {
+              "key": "FANTASY_POINTS",
+              "label": "Fantasy points",
+              "lowerIsBetter": false,
+              "give": {
+                "value": 7.5,
+                "missingPlayerIds": [],
+                "reason": null
+              },
+              "receive": {
+                "value": 5.999999999999999,
+                "missingPlayerIds": [],
+                "reason": null
+              },
+              "net": -1.5000000000000009,
+              "favorableForReceiver": false
+            }
+          ],
+          "summary": "Raw projected production over each player's next 10 scheduled team games: the receive side is behind by 1.50 fantasy points. Offer scenario only; not roster-aware and not proof the other manager accepts."
+        }
+      }
+    },
+    {
+      "name": "coverage mismatch admitted at interpreter and trade boundary",
+      "result": {
+        "inputTotal": {
+          "expected": 7.5,
+          "coveredSum": 7.5,
+          "coveredGames": 1,
+          "requiredGames": 10,
+          "unit": "count",
+          "reason": null
+        },
+        "points": {
+          "target": "POINTS",
+          "label": "Points",
+          "unit": "count",
+          "observedPerTeamGame": {
+            "value": 0.9,
+            "reason": null
+          },
+          "observedPerAppearance": {
+            "value": 0.9,
+            "reason": null
+          },
+          "personalReference": {
+            "perTeamGame": {
+              "value": 0.5,
+              "reason": null
+            },
+            "perAppearance": {
+              "value": 0.5,
+              "reason": null
+            },
+            "changePerTeamGame": {
+              "value": 0.4,
+              "reason": null
+            }
+          },
+          "expectedPerTeamGame": {
+            "value": 0.75,
+            "reason": null
+          },
+          "expectedPerAppearanceConditional": {
+            "value": 0.7894736842105264,
+            "reason": null
+          },
+          "gapPerTeamGame": {
+            "value": -0.15000000000000002,
+            "reason": null
+          },
+          "direction": "cooling",
+          "outlookChangePerTeamGame": {
+            "value": 0.29999999999999993,
+            "reason": null
+          },
+          "observedVariability": {
+            "value": 0.7378647873726218,
+            "reason": null
+          },
+          "sparse": false
+        },
+        "value": {
+          "value": 7.5,
+          "missingPlayerIds": [],
+          "reason": null
+        }
+      }
+    },
+    {
+      "name": "nonfinite expected total propagates to a NaN gap labelled level",
+      "result": {
+        "gap": "NaN",
+        "direction": "level",
+        "explanation": {
+          "id": "points-gap",
+          "facts": [
+            "recent window 2026-10-05 to 2026-10-14",
+            "10 team games",
+            "10 appearances"
+          ],
+          "text": "Recent 0.90 points per team game; FORGE expects NaN per scheduled team game over the next 10. Gap NaN (level). This is descriptive, not a probability or trade instruction."
+        }
+      }
+    },
+    {
+      "name": "invalid recent availability time drops known game and fills from older history",
+      "result": {
+        "removed": "FX1-PRE-020",
+        "before": {
+          "window": {
+            "requestedTeamGames": 10,
+            "teamGames": 10,
+            "appearances": 10,
+            "unknownGames": 0,
+            "confirmedAbsences": 0,
+            "startDate": "2026-10-05",
+            "endDate": "2026-10-14",
+            "rule": "last 10 completed team games available at as-of"
+          },
+          "points": {
+            "target": "POINTS",
+            "label": "Points",
+            "unit": "count",
+            "observedPerTeamGame": {
+              "value": 0.9,
+              "reason": null
+            },
+            "observedPerAppearance": {
+              "value": 0.9,
+              "reason": null
+            },
+            "personalReference": {
+              "perTeamGame": {
+                "value": 0.5,
+                "reason": null
+              },
+              "perAppearance": {
+                "value": 0.5,
+                "reason": null
+              },
+              "changePerTeamGame": {
+                "value": 0.4,
+                "reason": null
+              }
+            },
+            "expectedPerTeamGame": {
+              "value": 0.75,
+              "reason": null
+            },
+            "expectedPerAppearanceConditional": {
+              "value": 0.7894736842105264,
+              "reason": null
+            },
+            "gapPerTeamGame": {
+              "value": -0.15000000000000002,
+              "reason": null
+            },
+            "direction": "cooling",
+            "outlookChangePerTeamGame": {
+              "value": 0.29999999999999993,
+              "reason": null
+            },
+            "observedVariability": {
+              "value": 0.7378647873726218,
+              "reason": null
+            },
+            "sparse": false
+          },
+          "ipp": {
+            "observed": {
+              "value": 0.47368421052631576,
+              "reason": null
+            },
+            "reference": {
+              "value": 0.65,
+              "reason": null
+            },
+            "deviation": {
+              "value": -0.17631578947368426,
+              "reason": null
+            },
+            "referenceSource": "fixture forward reference (illustrative)",
+            "strength": "all_situations"
+          },
+          "opportunity": {
+            "recent": {
+              "startDate": "2026-10-05",
+              "endDate": "2026-10-14",
+              "teamGames": 10,
+              "appearances": 10,
+              "toiPerAppearance": {
+                "value": 18,
+                "reason": null
+              },
+              "ppToiPerAppearance": {
+                "value": 3.1999999999999997,
+                "reason": null
+              }
+            },
+            "prior": {
+              "startDate": "2026-09-25",
+              "endDate": "2026-10-04",
+              "teamGames": 10,
+              "appearances": 10,
+              "toiPerAppearance": {
+                "value": 13,
+                "reason": null
+              },
+              "ppToiPerAppearance": {
+                "value": 0.5,
+                "reason": null
+              }
+            },
+            "toiChangeMinutes": {
+              "value": 5,
+              "reason": null
+            },
+            "ppToiChangeMinutes": {
+              "value": 2.6999999999999997,
+              "reason": null
+            },
+            "direction": "rising",
+            "label": "Opportunity rising; durability uncertain",
+            "ruleId": "fixture-opportunity-rule",
+            "ruleStatus": "provisional_fixture",
+            "observedDuration": {
+              "appearances": 10,
+              "startDate": "2026-10-05",
+              "endDate": "2026-10-14"
+            },
+            "powerPlayRole": {
+              "value": "PP1 (fixture lineup report)",
+              "status": "sourced",
+              "source": "fixture lineup source",
+              "effectiveAt": "2026-10-05T16:00:00.000Z"
+            },
+            "scenarios": {
+              "status": "not_supplied",
+              "reason": "FORGE game expectations v1 supply no role-continuation, reversal or teammate-return scenarios."
+            }
+          },
+          "freshness": {
+            "evidenceCutoffAt": "2026-10-15T08:00:00.000Z",
+            "evidenceAgeHours": 79,
+            "evidenceStatus": "fresh",
+            "forecastExpiresAt": "2026-10-19T12:00:00.000Z",
+            "forecastStatus": "current"
+          },
+          "explanations": [
+            {
+              "id": "points-gap",
+              "facts": [
+                "recent window 2026-10-05 to 2026-10-14",
+                "10 team games",
+                "10 appearances"
+              ],
+              "text": "Recent 0.90 points per team game; FORGE expects 0.75 per scheduled team game over the next 10. Gap -0.15 (Cooling watch: less expected than recently produced). This is descriptive, not a probability or trade instruction."
+            },
+            {
+              "id": "cooling-with-upgrade",
+              "facts": [
+                "outlook +0.30"
+              ],
+              "text": "Expected cooling from the recent run coexists with a higher FORGE outlook than the prior issuance."
+            },
+            {
+              "id": "opportunity",
+              "facts": [
+                "prior 2026-09-25 to 2026-10-04",
+                "10 prior appearances"
+              ],
+              "text": "Opportunity rising; durability uncertain. Total TOI +5.00 min per appearance, PP TOI +2.70 min versus the prior block. Observed over 10 appearances; this does not predict how long it lasts."
+            },
+            {
+              "id": "ipp",
+              "facts": [
+                "reference fixture forward reference (illustrative)"
+              ],
+              "text": "IPP 0.474 versus the forward reference 0.650 (-0.18), all situations. IPP overlaps with points; it is not an independent vote."
+            }
+          ]
+        },
+        "after": {
+          "window": {
+            "requestedTeamGames": 10,
+            "teamGames": 10,
+            "appearances": 10,
+            "unknownGames": 0,
+            "confirmedAbsences": 0,
+            "startDate": "2026-10-04",
+            "endDate": "2026-10-13",
+            "rule": "last 10 completed team games available at as-of"
+          },
+          "points": {
+            "target": "POINTS",
+            "label": "Points",
+            "unit": "count",
+            "observedPerTeamGame": {
+              "value": 0.8,
+              "reason": null
+            },
+            "observedPerAppearance": {
+              "value": 0.8,
+              "reason": null
+            },
+            "personalReference": {
+              "perTeamGame": {
+                "value": 0.5555555555555556,
+                "reason": null
+              },
+              "perAppearance": {
+                "value": 0.5555555555555556,
+                "reason": null
+              },
+              "changePerTeamGame": {
+                "value": 0.24444444444444446,
+                "reason": null
+              }
+            },
+            "expectedPerTeamGame": {
+              "value": 0.75,
+              "reason": null
+            },
+            "expectedPerAppearanceConditional": {
+              "value": 0.7894736842105264,
+              "reason": null
+            },
+            "gapPerTeamGame": {
+              "value": -0.050000000000000044,
+              "reason": null
+            },
+            "direction": "cooling",
+            "outlookChangePerTeamGame": {
+              "value": 0.29999999999999993,
+              "reason": null
+            },
+            "observedVariability": {
+              "value": 0.7888106377466155,
+              "reason": null
+            },
+            "sparse": false
+          },
+          "ipp": {
+            "observed": {
+              "value": 0.4444444444444444,
+              "reason": null
+            },
+            "reference": {
+              "value": 0.65,
+              "reason": null
+            },
+            "deviation": {
+              "value": -0.2055555555555556,
+              "reason": null
+            },
+            "referenceSource": "fixture forward reference (illustrative)",
+            "strength": "all_situations"
+          },
+          "opportunity": {
+            "recent": {
+              "startDate": "2026-10-04",
+              "endDate": "2026-10-13",
+              "teamGames": 10,
+              "appearances": 10,
+              "toiPerAppearance": {
+                "value": 17.5,
+                "reason": null
+              },
+              "ppToiPerAppearance": {
+                "value": 2.9299999999999997,
+                "reason": null
+              }
+            },
+            "prior": {
+              "startDate": "2026-09-25",
+              "endDate": "2026-10-03",
+              "teamGames": 9,
+              "appearances": 9,
+              "toiPerAppearance": {
+                "value": 13,
+                "reason": null
+              },
+              "ppToiPerAppearance": {
+                "value": 0.5,
+                "reason": null
+              }
+            },
+            "toiChangeMinutes": {
+              "value": 4.5,
+              "reason": null
+            },
+            "ppToiChangeMinutes": {
+              "value": 2.4299999999999997,
+              "reason": null
+            },
+            "direction": "rising",
+            "label": "Opportunity rising; durability uncertain",
+            "ruleId": "fixture-opportunity-rule",
+            "ruleStatus": "provisional_fixture",
+            "observedDuration": {
+              "appearances": 10,
+              "startDate": "2026-10-04",
+              "endDate": "2026-10-13"
+            },
+            "powerPlayRole": {
+              "value": "PP1 (fixture lineup report)",
+              "status": "sourced",
+              "source": "fixture lineup source",
+              "effectiveAt": "2026-10-05T16:00:00.000Z"
+            },
+            "scenarios": {
+              "status": "not_supplied",
+              "reason": "FORGE game expectations v1 supply no role-continuation, reversal or teammate-return scenarios."
+            }
+          },
+          "freshness": {
+            "evidenceCutoffAt": "2026-10-15T08:00:00.000Z",
+            "evidenceAgeHours": 79,
+            "evidenceStatus": "fresh",
+            "forecastExpiresAt": "2026-10-19T12:00:00.000Z",
+            "forecastStatus": "current"
+          },
+          "explanations": [
+            {
+              "id": "points-gap",
+              "facts": [
+                "recent window 2026-10-04 to 2026-10-13",
+                "10 team games",
+                "10 appearances"
+              ],
+              "text": "Recent 0.80 points per team game; FORGE expects 0.75 per scheduled team game over the next 10. Gap -0.05 (Cooling watch: less expected than recently produced). This is descriptive, not a probability or trade instruction."
+            },
+            {
+              "id": "cooling-with-upgrade",
+              "facts": [
+                "outlook +0.30"
+              ],
+              "text": "Expected cooling from the recent run coexists with a higher FORGE outlook than the prior issuance."
+            },
+            {
+              "id": "opportunity",
+              "facts": [
+                "prior 2026-09-25 to 2026-10-03",
+                "9 prior appearances"
+              ],
+              "text": "Opportunity rising; durability uncertain. Total TOI +4.50 min per appearance, PP TOI +2.43 min versus the prior block. Observed over 10 appearances; this does not predict how long it lasts."
+            },
+            {
+              "id": "ipp",
+              "facts": [
+                "reference fixture forward reference (illustrative)"
+              ],
+              "text": "IPP 0.444 versus the forward reference 0.650 (-0.21), all situations. IPP overlaps with points; it is not an independent vote."
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "negative-value control holds known game as unknown without backfill",
+      "result": {
+        "window": {
+          "requestedTeamGames": 10,
+          "teamGames": 10,
+          "appearances": 9,
+          "unknownGames": 1,
+          "confirmedAbsences": 0,
+          "startDate": "2026-10-05",
+          "endDate": "2026-10-14",
+          "rule": "last 10 completed team games available at as-of"
+        },
+        "points": {
+          "target": "POINTS",
+          "label": "Points",
+          "unit": "count",
+          "observedPerTeamGame": {
+            "value": null,
+            "reason": "unknown_team_game_status"
+          },
+          "observedPerAppearance": {
+            "value": 0.8888888888888888,
+            "reason": null
+          },
+          "personalReference": {
+            "perTeamGame": {
+              "value": 0.5,
+              "reason": null
+            },
+            "perAppearance": {
+              "value": 0.5,
+              "reason": null
+            },
+            "changePerTeamGame": {
+              "value": null,
+              "reason": "unknown_team_game_status"
+            }
+          },
+          "expectedPerTeamGame": {
+            "value": 0.75,
+            "reason": null
+          },
+          "expectedPerAppearanceConditional": {
+            "value": 0.7894736842105264,
+            "reason": null
+          },
+          "gapPerTeamGame": {
+            "value": null,
+            "reason": "observed_unknown_team_game_status"
+          },
+          "direction": "unavailable",
+          "outlookChangePerTeamGame": {
+            "value": 0.29999999999999993,
+            "reason": null
+          },
+          "observedVariability": {
+            "value": null,
+            "reason": "unknown_team_game_status"
+          },
+          "sparse": false
+        },
+        "ipp": {
+          "observed": {
+            "value": 0.47058823529411764,
+            "reason": null
+          },
+          "reference": {
+            "value": 0.65,
+            "reason": null
+          },
+          "deviation": {
+            "value": -0.17941176470588238,
+            "reason": null
+          },
+          "referenceSource": "fixture forward reference (illustrative)",
+          "strength": "all_situations"
+        },
+        "opportunity": {
+          "recent": {
+            "startDate": "2026-10-05",
+            "endDate": "2026-10-14",
+            "teamGames": 10,
+            "appearances": 9,
+            "toiPerAppearance": {
+              "value": 18,
+              "reason": null
+            },
+            "ppToiPerAppearance": {
+              "value": 3.1999999999999997,
+              "reason": null
+            }
+          },
+          "prior": {
+            "startDate": "2026-09-25",
+            "endDate": "2026-10-04",
+            "teamGames": 10,
+            "appearances": 10,
+            "toiPerAppearance": {
+              "value": 13,
+              "reason": null
+            },
+            "ppToiPerAppearance": {
+              "value": 0.5,
+              "reason": null
+            }
+          },
+          "toiChangeMinutes": {
+            "value": 5,
+            "reason": null
+          },
+          "ppToiChangeMinutes": {
+            "value": 2.6999999999999997,
+            "reason": null
+          },
+          "direction": "rising",
+          "label": "Opportunity rising; durability uncertain",
+          "ruleId": "fixture-opportunity-rule",
+          "ruleStatus": "provisional_fixture",
+          "observedDuration": {
+            "appearances": 9,
+            "startDate": "2026-10-05",
+            "endDate": "2026-10-14"
+          },
+          "powerPlayRole": {
+            "value": "PP1 (fixture lineup report)",
+            "status": "sourced",
+            "source": "fixture lineup source",
+            "effectiveAt": "2026-10-05T16:00:00.000Z"
+          },
+          "scenarios": {
+            "status": "not_supplied",
+            "reason": "FORGE game expectations v1 supply no role-continuation, reversal or teammate-return scenarios."
+          }
+        },
+        "freshness": {
+          "evidenceCutoffAt": "2026-10-15T08:00:00.000Z",
+          "evidenceAgeHours": 79,
+          "evidenceStatus": "fresh",
+          "forecastExpiresAt": "2026-10-19T12:00:00.000Z",
+          "forecastStatus": "current"
+        },
+        "explanations": [
+          {
+            "id": "points-gap",
+            "facts": [
+              "recent window 2026-10-05 to 2026-10-14",
+              "10 team games",
+              "9 appearances"
+            ],
+            "text": "Points gap unavailable (observed unknown team game status). Observed and expected values are shown where available."
+          },
+          {
+            "id": "opportunity",
+            "facts": [
+              "prior 2026-09-25 to 2026-10-04",
+              "10 prior appearances"
+            ],
+            "text": "Opportunity rising; durability uncertain. Total TOI +5.00 min per appearance, PP TOI +2.70 min versus the prior block. Observed over 9 appearances; this does not predict how long it lasts."
+          },
+          {
+            "id": "ipp",
+            "facts": [
+              "reference fixture forward reference (illustrative)"
+            ],
+            "text": "IPP 0.471 versus the forward reference 0.650 (-0.18), all situations. IPP overlaps with points; it is not an independent vote."
+          }
+        ]
+      }
+    },
+    {
+      "name": "impossible calendar date passes regex guard",
+      "result": {
+        "window": {
+          "requestedTeamGames": 10,
+          "teamGames": 10,
+          "appearances": 10,
+          "unknownGames": 0,
+          "confirmedAbsences": 0,
+          "startDate": "2026-10-05",
+          "endDate": "2026-99-99",
+          "rule": "last 10 completed team games available at as-of"
+        },
+        "diagnostics": {
+          "excludedFutureRows": 0,
+          "invalidRows": 0,
+          "duplicateRows": 0,
+          "conflictingGameIds": [],
+          "retrospective": false
+        }
+      }
+    },
+    {
+      "name": "unknown participation withholds production but IPP and opportunity use partial games",
+      "result": {
+        "window": {
+          "requestedTeamGames": 10,
+          "teamGames": 10,
+          "appearances": 9,
+          "unknownGames": 1,
+          "confirmedAbsences": 0,
+          "startDate": "2026-10-05",
+          "endDate": "2026-10-14",
+          "rule": "last 10 completed team games available at as-of"
+        },
+        "points": {
+          "target": "POINTS",
+          "label": "Points",
+          "unit": "count",
+          "observedPerTeamGame": {
+            "value": null,
+            "reason": "unknown_team_game_status"
+          },
+          "observedPerAppearance": {
+            "value": 1,
+            "reason": null
+          },
+          "personalReference": {
+            "perTeamGame": {
+              "value": 1,
+              "reason": null
+            },
+            "perAppearance": {
+              "value": 1,
+              "reason": null
+            },
+            "changePerTeamGame": {
+              "value": null,
+              "reason": "unknown_team_game_status"
+            }
+          },
+          "expectedPerTeamGame": {
+            "value": 0.75,
+            "reason": null
+          },
+          "expectedPerAppearanceConditional": {
+            "value": 0.7894736842105264,
+            "reason": null
+          },
+          "gapPerTeamGame": {
+            "value": null,
+            "reason": "observed_unknown_team_game_status"
+          },
+          "direction": "unavailable",
+          "outlookChangePerTeamGame": {
+            "value": 0.29999999999999993,
+            "reason": null
+          },
+          "observedVariability": {
+            "value": null,
+            "reason": "unknown_team_game_status"
+          },
+          "sparse": false
+        },
+        "ipp": {
+          "observed": {
+            "value": 0.5,
+            "reason": null
+          },
+          "reference": {
+            "value": 0.65,
+            "reason": null
+          },
+          "deviation": {
+            "value": -0.15000000000000002,
+            "reason": null
+          },
+          "referenceSource": "fixture forward reference (illustrative)",
+          "strength": "all_situations"
+        },
+        "opportunity": {
+          "recent": {
+            "startDate": "2026-10-05",
+            "endDate": "2026-10-14",
+            "teamGames": 10,
+            "appearances": 9,
+            "toiPerAppearance": {
+              "value": 18,
+              "reason": null
+            },
+            "ppToiPerAppearance": {
+              "value": 2,
+              "reason": null
+            }
+          },
+          "prior": {
+            "startDate": "2026-09-25",
+            "endDate": "2026-10-04",
+            "teamGames": 10,
+            "appearances": 10,
+            "toiPerAppearance": {
+              "value": 18,
+              "reason": null
+            },
+            "ppToiPerAppearance": {
+              "value": 2,
+              "reason": null
+            }
+          },
+          "toiChangeMinutes": {
+            "value": 0,
+            "reason": null
+          },
+          "ppToiChangeMinutes": {
+            "value": 0,
+            "reason": null
+          },
+          "direction": "steady",
+          "label": "No opportunity change beyond rule fixture-opportunity-rule",
+          "ruleId": "fixture-opportunity-rule",
+          "ruleStatus": "provisional_fixture",
+          "observedDuration": {
+            "appearances": 9,
+            "startDate": "2026-10-05",
+            "endDate": "2026-10-14"
+          },
+          "powerPlayRole": {
+            "value": "PP1 (fixture lineup report)",
+            "status": "sourced",
+            "source": "fixture lineup source",
+            "effectiveAt": "2026-10-05T16:00:00.000Z"
+          },
+          "scenarios": {
+            "status": "not_supplied",
+            "reason": "FORGE game expectations v1 supply no role-continuation, reversal or teammate-return scenarios."
+          }
+        },
+        "freshness": {
+          "evidenceCutoffAt": "2026-10-15T08:00:00.000Z",
+          "evidenceAgeHours": 79,
+          "evidenceStatus": "fresh",
+          "forecastExpiresAt": "2026-10-19T12:00:00.000Z",
+          "forecastStatus": "current"
+        },
+        "explanations": [
+          {
+            "id": "points-gap",
+            "facts": [
+              "recent window 2026-10-05 to 2026-10-14",
+              "10 team games",
+              "9 appearances"
+            ],
+            "text": "Points gap unavailable (observed unknown team game status). Observed and expected values are shown where available."
+          },
+          {
+            "id": "opportunity",
+            "facts": [
+              "prior 2026-09-25 to 2026-10-04",
+              "10 prior appearances"
+            ],
+            "text": "No opportunity change beyond rule fixture-opportunity-rule. Total TOI 0.00 min per appearance, PP TOI 0.00 min versus the prior block. Observed over 9 appearances; this does not predict how long it lasts."
+          },
+          {
+            "id": "ipp",
+            "facts": [
+              "reference fixture forward reference (illustrative)"
+            ],
+            "text": "IPP 0.500 versus the forward reference 0.650 (-0.15), all situations. IPP overlaps with points; it is not an independent vote."
+          }
+        ]
+      }
+    },
+    {
+      "name": "null PP time yields steady label and conversion-not-role statement",
+      "result": {
+        "window": {
+          "requestedTeamGames": 10,
+          "teamGames": 10,
+          "appearances": 10,
+          "unknownGames": 0,
+          "confirmedAbsences": 0,
+          "startDate": "2026-10-05",
+          "endDate": "2026-10-14",
+          "rule": "last 10 completed team games available at as-of"
+        },
+        "points": {
+          "target": "POINTS",
+          "label": "Points",
+          "unit": "count",
+          "observedPerTeamGame": {
+            "value": 0.9,
+            "reason": null
+          },
+          "observedPerAppearance": {
+            "value": 0.9,
+            "reason": null
+          },
+          "personalReference": {
+            "perTeamGame": {
+              "value": 0.5,
+              "reason": null
+            },
+            "perAppearance": {
+              "value": 0.5,
+              "reason": null
+            },
+            "changePerTeamGame": {
+              "value": 0.4,
+              "reason": null
+            }
+          },
+          "expectedPerTeamGame": {
+            "value": 0.75,
+            "reason": null
+          },
+          "expectedPerAppearanceConditional": {
+            "value": 0.7894736842105264,
+            "reason": null
+          },
+          "gapPerTeamGame": {
+            "value": -0.15000000000000002,
+            "reason": null
+          },
+          "direction": "cooling",
+          "outlookChangePerTeamGame": {
+            "value": 0.29999999999999993,
+            "reason": null
+          },
+          "observedVariability": {
+            "value": 0.7378647873726218,
+            "reason": null
+          },
+          "sparse": false
+        },
+        "ipp": {
+          "observed": {
+            "value": 0.47368421052631576,
+            "reason": null
+          },
+          "reference": {
+            "value": 0.65,
+            "reason": null
+          },
+          "deviation": {
+            "value": -0.17631578947368426,
+            "reason": null
+          },
+          "referenceSource": "fixture forward reference (illustrative)",
+          "strength": "all_situations"
+        },
+        "opportunity": {
+          "recent": {
+            "startDate": "2026-10-05",
+            "endDate": "2026-10-14",
+            "teamGames": 10,
+            "appearances": 10,
+            "toiPerAppearance": {
+              "value": 18,
+              "reason": null
+            },
+            "ppToiPerAppearance": {
+              "value": null,
+              "reason": "minutes_unknown"
+            }
+          },
+          "prior": {
+            "startDate": "2026-09-25",
+            "endDate": "2026-10-04",
+            "teamGames": 10,
+            "appearances": 10,
+            "toiPerAppearance": {
+              "value": 18,
+              "reason": null
+            },
+            "ppToiPerAppearance": {
+              "value": 2,
+              "reason": null
+            }
+          },
+          "toiChangeMinutes": {
+            "value": 0,
+            "reason": null
+          },
+          "ppToiChangeMinutes": {
+            "value": null,
+            "reason": "recent_minutes_unknown"
+          },
+          "direction": "steady",
+          "label": "No opportunity change beyond rule fixture-opportunity-rule",
+          "ruleId": "fixture-opportunity-rule",
+          "ruleStatus": "provisional_fixture",
+          "observedDuration": {
+            "appearances": 10,
+            "startDate": "2026-10-05",
+            "endDate": "2026-10-14"
+          },
+          "powerPlayRole": {
+            "value": "PP1 (fixture lineup report)",
+            "status": "sourced",
+            "source": "fixture lineup source",
+            "effectiveAt": "2026-10-05T16:00:00.000Z"
+          },
+          "scenarios": {
+            "status": "not_supplied",
+            "reason": "FORGE game expectations v1 supply no role-continuation, reversal or teammate-return scenarios."
+          }
+        },
+        "freshness": {
+          "evidenceCutoffAt": "2026-10-15T08:00:00.000Z",
+          "evidenceAgeHours": 79,
+          "evidenceStatus": "fresh",
+          "forecastExpiresAt": "2026-10-19T12:00:00.000Z",
+          "forecastStatus": "current"
+        },
+        "explanations": [
+          {
+            "id": "points-gap",
+            "facts": [
+              "recent window 2026-10-05 to 2026-10-14",
+              "10 team games",
+              "10 appearances"
+            ],
+            "text": "Recent 0.90 points per team game; FORGE expects 0.75 per scheduled team game over the next 10. Gap -0.15 (Cooling watch: less expected than recently produced). This is descriptive, not a probability or trade instruction."
+          },
+          {
+            "id": "conversion-not-role",
+            "facts": [
+              "No opportunity change beyond rule fixture-opportunity-rule"
+            ],
+            "text": "Measured minutes did not change beyond the rule, so the recent excess is not explained by an opportunity change. It may reflect conversion or omitted context; it is not proven luck."
+          },
+          {
+            "id": "cooling-with-upgrade",
+            "facts": [
+              "outlook +0.30"
+            ],
+            "text": "Expected cooling from the recent run coexists with a higher FORGE outlook than the prior issuance."
+          },
+          {
+            "id": "opportunity",
+            "facts": [
+              "prior 2026-09-25 to 2026-10-04",
+              "10 prior appearances"
+            ],
+            "text": "No opportunity change beyond rule fixture-opportunity-rule. Total TOI 0.00 min per appearance versus the prior block. Observed over 10 appearances; this does not predict how long it lasts."
+          },
+          {
+            "id": "ipp",
+            "facts": [
+              "reference fixture forward reference (illustrative)"
+            ],
+            "text": "IPP 0.474 versus the forward reference 0.650 (-0.18), all situations. IPP overlaps with points; it is not an independent vote."
+          }
+        ]
+      }
+    },
+    {
+      "name": "IPP aggregate can hide an impossible game",
+      "result": {
+        "observed": {
+          "value": 0.5,
+          "reason": null
+        },
+        "reference": {
+          "value": 0.65,
+          "reason": null
+        },
+        "deviation": {
+          "value": -0.15000000000000002,
+          "reason": null
+        },
+        "referenceSource": "fixture forward reference (illustrative)",
+        "strength": "all_situations"
+      }
+    },
+    {
+      "name": "opportunity duration is the window, not a detected change duration",
+      "result": {
+        "changedGames": 1,
+        "opportunity": {
+          "recent": {
+            "startDate": "2026-10-05",
+            "endDate": "2026-10-14",
+            "teamGames": 10,
+            "appearances": 10,
+            "toiPerAppearance": {
+              "value": 20,
+              "reason": null
+            },
+            "ppToiPerAppearance": {
+              "value": 2,
+              "reason": null
+            }
+          },
+          "prior": {
+            "startDate": "2026-09-25",
+            "endDate": "2026-10-04",
+            "teamGames": 10,
+            "appearances": 10,
+            "toiPerAppearance": {
+              "value": 18,
+              "reason": null
+            },
+            "ppToiPerAppearance": {
+              "value": 2,
+              "reason": null
+            }
+          },
+          "toiChangeMinutes": {
+            "value": 2,
+            "reason": null
+          },
+          "ppToiChangeMinutes": {
+            "value": 0,
+            "reason": null
+          },
+          "direction": "rising",
+          "label": "Opportunity rising; durability uncertain",
+          "ruleId": "fixture-opportunity-rule",
+          "ruleStatus": "provisional_fixture",
+          "observedDuration": {
+            "appearances": 10,
+            "startDate": "2026-10-05",
+            "endDate": "2026-10-14"
+          },
+          "powerPlayRole": {
+            "value": "PP1 (fixture lineup report)",
+            "status": "sourced",
+            "source": "fixture lineup source",
+            "effectiveAt": "2026-10-05T16:00:00.000Z"
+          },
+          "scenarios": {
+            "status": "not_supplied",
+            "reason": "FORGE game expectations v1 supply no role-continuation, reversal or teammate-return scenarios."
+          }
+        }
+      }
+    },
+    {
+      "name": "appearance opportunity halves while per-appearance minutes still say steady",
+      "result": {
+        "opportunity": {
+          "recent": {
+            "startDate": "2026-10-05",
+            "endDate": "2026-10-14",
+            "teamGames": 10,
+            "appearances": 5,
+            "toiPerAppearance": {
+              "value": 18,
+              "reason": null
+            },
+            "ppToiPerAppearance": {
+              "value": 2,
+              "reason": null
+            }
+          },
+          "prior": {
+            "startDate": "2026-09-25",
+            "endDate": "2026-10-04",
+            "teamGames": 10,
+            "appearances": 10,
+            "toiPerAppearance": {
+              "value": 18,
+              "reason": null
+            },
+            "ppToiPerAppearance": {
+              "value": 2,
+              "reason": null
+            }
+          },
+          "toiChangeMinutes": {
+            "value": 0,
+            "reason": null
+          },
+          "ppToiChangeMinutes": {
+            "value": 0,
+            "reason": null
+          },
+          "direction": "steady",
+          "label": "No opportunity change beyond rule fixture-opportunity-rule",
+          "ruleId": "fixture-opportunity-rule",
+          "ruleStatus": "provisional_fixture",
+          "observedDuration": {
+            "appearances": 5,
+            "startDate": "2026-10-05",
+            "endDate": "2026-10-14"
+          },
+          "powerPlayRole": {
+            "value": "PP1 (fixture lineup report)",
+            "status": "sourced",
+            "source": "fixture lineup source",
+            "effectiveAt": "2026-10-05T16:00:00.000Z"
+          },
+          "scenarios": {
+            "status": "not_supplied",
+            "reason": "FORGE game expectations v1 supply no role-continuation, reversal or teammate-return scenarios."
+          }
+        },
+        "perTeamGameMinutes": {
+          "recent": 9,
+          "prior": 18
+        }
+      }
+    },
+    {
+      "name": "small IPP denominator has no distinct exposure warning",
+      "result": {
+        "ipp": {
+          "observed": {
+            "value": 1,
+            "reason": null
+          },
+          "reference": {
+            "value": 0.65,
+            "reason": null
+          },
+          "deviation": {
+            "value": 0.35,
+            "reason": null
+          },
+          "referenceSource": "fixture forward reference (illustrative)",
+          "strength": "all_situations"
+        },
+        "metricSparse": false,
+        "onIceGoals": 1,
+        "appearances": 10
+      }
+    },
+    {
+      "name": "forecast conditional mean differs from participation-weighted exposure ratio",
+      "result": {
+        "shownConditional": 5.5,
+        "ratioOfExpectedTotalToExpectedAppearances": 1.9,
+        "points": {
+          "target": "POINTS",
+          "label": "Points",
+          "unit": "count",
+          "observedPerTeamGame": {
+            "value": 0.9,
+            "reason": null
+          },
+          "observedPerAppearance": {
+            "value": 0.9,
+            "reason": null
+          },
+          "personalReference": {
+            "perTeamGame": {
+              "value": 0.5,
+              "reason": null
+            },
+            "perAppearance": {
+              "value": 0.5,
+              "reason": null
+            },
+            "changePerTeamGame": {
+              "value": 0.4,
+              "reason": null
+            }
+          },
+          "expectedPerTeamGame": {
+            "value": 0.95,
+            "reason": null
+          },
+          "expectedPerAppearanceConditional": {
+            "value": 5.5,
+            "reason": null
+          },
+          "gapPerTeamGame": {
+            "value": 0.04999999999999993,
+            "reason": null
+          },
+          "direction": "rebound",
+          "outlookChangePerTeamGame": {
+            "value": 0.4999999999999999,
+            "reason": null
+          },
+          "observedVariability": {
+            "value": 0.7378647873726218,
+            "reason": null
+          },
+          "sparse": false
+        }
+      }
+    },
+    {
+      "name": "outlook compares different scheduled game sets and accepts malformed prior readAsOf",
+      "result": {
+        "outlook": {
+          "value": 0.29999999999999993,
+          "reason": null
+        },
+        "priorReadAsOf": "not-a-time",
+        "gameSetSame": false
+      }
+    },
+    {
+      "name": "VuDu matched shot-population and GSAx sign controls",
+      "result": {
+        "matched": -4.999999999999993,
+        "matchedGSAx": 5,
+        "blocked": null,
+        "lower": {
+          "gap": -1,
+          "orientedGap": 1,
+          "basis": "per_60"
+        }
+      }
+    },
+    {
+      "name": "VuDu pools start and relief exposure correctly",
+      "result": {
+        "observed": {
+          "appearances": 2,
+          "saves": 29,
+          "shotsAgainst": 33,
+          "goalsAgainst": 4,
+          "minutes": 70,
+          "savePercentage": {
+            "value": 0.8787878787878788,
+            "reason": null
+          },
+          "goalsAgainstAverage": {
+            "value": 3.4285714285714284,
+            "reason": null
+          },
+          "starts": {
+            "value": 1,
+            "reason": null
+          },
+          "reliefAppearances": {
+            "value": 1,
+            "reason": null
+          },
+          "startShare": {
+            "value": 0.5,
+            "reason": null
+          }
+        },
+        "personalReference": {
+          "appearances": 0,
+          "saves": null,
+          "shotsAgainst": null,
+          "goalsAgainst": null,
+          "minutes": null,
+          "savePercentage": {
+            "value": null,
+            "reason": "no_appearances"
+          },
+          "goalsAgainstAverage": {
+            "value": null,
+            "reason": "no_appearances"
+          },
+          "starts": {
+            "value": null,
+            "reason": "start_relief_evidence_unavailable"
+          },
+          "reliefAppearances": {
+            "value": null,
+            "reason": "start_relief_evidence_unavailable"
+          },
+          "startShare": {
+            "value": null,
+            "reason": "start_relief_evidence_unavailable"
+          }
+        },
+        "expected": {
+          "savePercentage": {
+            "value": 0.9285714285714286,
+            "reason": null
+          },
+          "goalsAgainstAverage": {
+            "value": 2.121212121212121,
+            "reason": null
+          },
+          "expectedStarts": {
+            "value": 6.6000000000000005,
+            "reason": null
+          },
+          "interpretation": "ratio_of_expected_totals"
+        },
+        "gap": {
+          "status": "pending_goalie_adapter",
+          "reason": "VuDu gaps await an accepted goalie adapter and goalie evidence; ratios are shown as context only."
+        }
+      }
+    },
+    {
+      "name": "VuDu unknown participation suppresses pooled ratios",
+      "result": {
+        "observed": {
+          "appearances": 6,
+          "saves": null,
+          "shotsAgainst": null,
+          "goalsAgainst": null,
+          "minutes": null,
+          "savePercentage": {
+            "value": null,
+            "reason": "unknown_team_game_status"
+          },
+          "goalsAgainstAverage": {
+            "value": null,
+            "reason": "unknown_team_game_status"
+          },
+          "starts": {
+            "value": null,
+            "reason": "start_relief_evidence_unavailable"
+          },
+          "reliefAppearances": {
+            "value": null,
+            "reason": "start_relief_evidence_unavailable"
+          },
+          "startShare": {
+            "value": null,
+            "reason": "start_relief_evidence_unavailable"
+          }
+        },
+        "personalReference": {
+          "appearances": 7,
+          "saves": 196,
+          "shotsAgainst": 214,
+          "goalsAgainst": 18,
+          "minutes": 420,
+          "savePercentage": {
+            "value": 0.9158878504672897,
+            "reason": null
+          },
+          "goalsAgainstAverage": {
+            "value": 2.5714285714285716,
+            "reason": null
+          },
+          "starts": {
+            "value": null,
+            "reason": "start_relief_evidence_unavailable"
+          },
+          "reliefAppearances": {
+            "value": null,
+            "reason": "start_relief_evidence_unavailable"
+          },
+          "startShare": {
+            "value": null,
+            "reason": "start_relief_evidence_unavailable"
+          }
+        },
+        "expected": {
+          "savePercentage": {
+            "value": 0.9285714285714286,
+            "reason": null
+          },
+          "goalsAgainstAverage": {
+            "value": 2.121212121212121,
+            "reason": null
+          },
+          "expectedStarts": {
+            "value": 6.6000000000000005,
+            "reason": null
+          },
+          "interpretation": "ratio_of_expected_totals"
+        },
+        "gap": {
+          "status": "pending_goalie_adapter",
+          "reason": "VuDu gaps await an accepted goalie adapter and goalie evidence; ratios are shown as context only."
+        }
+      }
+    },
+    {
+      "name": "VuDu rejects inconsistent goalie primitives",
+      "result": {
+        "appearances": 1,
+        "saves": null,
+        "shotsAgainst": null,
+        "goalsAgainst": null,
+        "minutes": null,
+        "savePercentage": {
+          "value": null,
+          "reason": "inconsistent_goalie_primitives"
+        },
+        "goalsAgainstAverage": {
+          "value": null,
+          "reason": "inconsistent_goalie_primitives"
+        },
+        "starts": {
+          "value": 1,
+          "reason": null
+        },
+        "reliefAppearances": {
+          "value": 0,
+          "reason": null
+        },
+        "startShare": {
+          "value": 1,
+          "reason": null
+        }
+      }
+    },
+    {
+      "name": "VuDu expected starts accept impossible finite count",
+      "result": {
+        "horizon": 10,
+        "expected": {
+          "savePercentage": {
+            "value": 0.9285714285714286,
+            "reason": null
+          },
+          "goalsAgainstAverage": {
+            "value": 2.121212121212121,
+            "reason": null
+          },
+          "expectedStarts": {
+            "value": 11,
+            "reason": null
+          },
+          "interpretation": "ratio_of_expected_totals"
+        }
+      }
+    },
+    {
+      "name": "legacy positive SD below one is not floored",
+      "result": {
+        "mean": 0.5,
+        "stdDev": 0.5
+      }
+    },
+    {
+      "name": "legacy identical primary-only games remain uncharacteristic",
+      "result": {
+        "results": [
+          {
+            "gameDate": "2026-10-01",
+            "statResults": {
+              "shooting_percentage": "Highly Characteristic",
+              "ipp": "Uncharacteristic",
+              "on_ice_shooting_pct": "Uncharacteristic",
+              "zone_start_pct": "Uncharacteristic",
+              "time_on_ice": "Uncharacteristic",
+              "pa_to_sa_ratio": "Uncharacteristic",
+              "sog_per_60": "Uncharacteristic",
+              "pp_toi_pct_per_game": "Uncharacteristic"
+            },
+            "gameStats": {
+              "date": "2026-10-01",
+              "total_primary_assists": 1,
+              "total_secondary_assists": 0,
+              "shooting_percentage": 0,
+              "ipp": 50,
+              "on_ice_shooting_pct": 9,
+              "zone_start_pct": 50,
+              "time_on_ice": 1080,
+              "sog_per_60": 6.7,
+              "pp_toi_pct_per_game": 40,
+              "pa_to_sa_ratio": 10
+            },
+            "sumOfWeightedSquaredZScores": null,
+            "overallStatus": "Insufficient History"
+          },
+          {
+            "gameDate": "2026-10-02",
+            "statResults": {
+              "shooting_percentage": "Highly Characteristic",
+              "ipp": "Highly Characteristic",
+              "on_ice_shooting_pct": "Highly Characteristic",
+              "zone_start_pct": "Highly Characteristic",
+              "time_on_ice": "Highly Characteristic",
+              "pa_to_sa_ratio": "Uncharacteristic",
+              "sog_per_60": "Highly Characteristic",
+              "pp_toi_pct_per_game": "Highly Characteristic"
+            },
+            "gameStats": {
+              "date": "2026-10-02",
+              "total_primary_assists": 1,
+              "total_secondary_assists": 0,
+              "shooting_percentage": 0,
+              "ipp": 50,
+              "on_ice_shooting_pct": 9,
+              "zone_start_pct": 50,
+              "time_on_ice": 1080,
+              "sog_per_60": 6.7,
+              "pp_toi_pct_per_game": 40,
+              "pa_to_sa_ratio": 10
+            },
+            "sumOfWeightedSquaredZScores": 2.3908117459680405,
+            "overallStatus": "Uncharacteristic"
+          },
+          {
+            "gameDate": "2026-10-03",
+            "statResults": {
+              "shooting_percentage": "Highly Characteristic",
+              "ipp": "Highly Characteristic",
+              "on_ice_shooting_pct": "Highly Characteristic",
+              "zone_start_pct": "Highly Characteristic",
+              "time_on_ice": "Highly Characteristic",
+              "pa_to_sa_ratio": "Uncharacteristic",
+              "sog_per_60": "Highly Characteristic",
+              "pp_toi_pct_per_game": "Highly Characteristic"
+            },
+            "gameStats": {
+              "date": "2026-10-03",
+              "total_primary_assists": 1,
+              "total_secondary_assists": 0,
+              "shooting_percentage": 0,
+              "ipp": 50,
+              "on_ice_shooting_pct": 9,
+              "zone_start_pct": 50,
+              "time_on_ice": 1080,
+              "sog_per_60": 6.7,
+              "pp_toi_pct_per_game": 40,
+              "pa_to_sa_ratio": 10
+            },
+            "sumOfWeightedSquaredZScores": 2.3908117459680405,
+            "overallStatus": "Uncharacteristic"
+          },
+          {
+            "gameDate": "2026-10-04",
+            "statResults": {
+              "shooting_percentage": "Highly Characteristic",
+              "ipp": "Highly Characteristic",
+              "on_ice_shooting_pct": "Highly Characteristic",
+              "zone_start_pct": "Highly Characteristic",
+              "time_on_ice": "Highly Characteristic",
+              "pa_to_sa_ratio": "Uncharacteristic",
+              "sog_per_60": "Highly Characteristic",
+              "pp_toi_pct_per_game": "Highly Characteristic"
+            },
+            "gameStats": {
+              "date": "2026-10-04",
+              "total_primary_assists": 1,
+              "total_secondary_assists": 0,
+              "shooting_percentage": 0,
+              "ipp": 50,
+              "on_ice_shooting_pct": 9,
+              "zone_start_pct": 50,
+              "time_on_ice": 1080,
+              "sog_per_60": 6.7,
+              "pp_toi_pct_per_game": 40,
+              "pa_to_sa_ratio": 10
+            },
+            "sumOfWeightedSquaredZScores": 2.3908117459680405,
+            "overallStatus": "Uncharacteristic"
+          },
+          {
+            "gameDate": "2026-10-05",
+            "statResults": {
+              "shooting_percentage": "Highly Characteristic",
+              "ipp": "Highly Characteristic",
+              "on_ice_shooting_pct": "Highly Characteristic",
+              "zone_start_pct": "Highly Characteristic",
+              "time_on_ice": "Highly Characteristic",
+              "pa_to_sa_ratio": "Uncharacteristic",
+              "sog_per_60": "Highly Characteristic",
+              "pp_toi_pct_per_game": "Highly Characteristic"
+            },
+            "gameStats": {
+              "date": "2026-10-05",
+              "total_primary_assists": 1,
+              "total_secondary_assists": 0,
+              "shooting_percentage": 0,
+              "ipp": 50,
+              "on_ice_shooting_pct": 9,
+              "zone_start_pct": 50,
+              "time_on_ice": 1080,
+              "sog_per_60": 6.7,
+              "pp_toi_pct_per_game": 40,
+              "pa_to_sa_ratio": 10
+            },
+            "sumOfWeightedSquaredZScores": 2.3908117459680405,
+            "overallStatus": "Uncharacteristic"
+          },
+          {
+            "gameDate": "2026-10-06",
+            "statResults": {
+              "shooting_percentage": "Highly Characteristic",
+              "ipp": "Highly Characteristic",
+              "on_ice_shooting_pct": "Highly Characteristic",
+              "zone_start_pct": "Highly Characteristic",
+              "time_on_ice": "Highly Characteristic",
+              "pa_to_sa_ratio": "Uncharacteristic",
+              "sog_per_60": "Highly Characteristic",
+              "pp_toi_pct_per_game": "Highly Characteristic"
+            },
+            "gameStats": {
+              "date": "2026-10-06",
+              "total_primary_assists": 1,
+              "total_secondary_assists": 0,
+              "shooting_percentage": 0,
+              "ipp": 50,
+              "on_ice_shooting_pct": 9,
+              "zone_start_pct": 50,
+              "time_on_ice": 1080,
+              "sog_per_60": 6.7,
+              "pp_toi_pct_per_game": 40,
+              "pa_to_sa_ratio": 10
+            },
+            "sumOfWeightedSquaredZScores": 2.3908117459680405,
+            "overallStatus": "Uncharacteristic"
+          }
+        ],
+        "T1": 1,
+        "T2": 2.017097864595383
+      }
+    },
+    {
+      "name": "legacy null and omitted IPP already behave identically, so proposed equality test is vacuous",
+      "result": {
+        "nullScore": 3.2646334785115383,
+        "omittedScore": 3.2646334785115383
+      }
+    },
+    {
+      "name": "legacy helper mixed luck orientation is real but not wired to combineSKO",
+      "result": {
+        "deltas": {
+          "xG_minus_G": -2,
+          "onIceSH_delta": 0.039999999999999994,
+          "PDO_delta": 0.050000000000000044,
+          "IPP_delta": 0.15000000000000002
+        },
+        "exampleComposite": {
+          "skillOffense": 50,
+          "skillDefense": 50,
+          "onIceImpact": 50,
+          "luckInflation": 50,
+          "sustainability": 33
+        }
+      }
+    },
+    {
+      "name": "SQL endpoint flags and cumulative IDs mirror inspected expressions, not PostgreSQL execution",
+      "result": {
+        "L": 3,
+        "series": [
+          {
+            "flag": 1,
+            "start": 0,
+            "id": null
+          },
+          {
+            "flag": 0,
+            "start": 0,
+            "id": null
+          },
+          {
+            "flag": 1,
+            "start": 1,
+            "id": 1
+          },
+          {
+            "flag": 1,
+            "start": 0,
+            "id": 1
+          },
+          {
+            "flag": 1,
+            "start": 1,
+            "id": 2
+          },
+          {
+            "flag": 1,
+            "start": 1,
+            "id": 3
+          },
+          {
+            "flag": 0,
+            "start": 0,
+            "id": 3
+          }
+        ],
+        "correctRetrospectiveRun": {
+          "start": 3,
+          "end": 6
+        },
+        "zeroMADAtMean": {
+          "hot": true,
+          "cold": true
+        }
+      }
+    },
+    {
+      "name": "all 13 stock fixtures, independent windows, and final watchlist coverage",
+      "result": [
+        {
+          "recent": 5,
+          "players": 13,
+          "rebound": 2,
+          "cooling": 6,
+          "level": 1,
+          "unranked": 4
+        },
+        {
+          "recent": 10,
+          "players": 13,
+          "rebound": 2,
+          "cooling": 6,
+          "level": 1,
+          "unranked": 4
+        },
+        {
+          "recent": 20,
+          "players": 13,
+          "rebound": 3,
+          "cooling": 3,
+          "level": 3,
+          "unranked": 4
+        }
+      ]
+    }
+  ],
+  "manifest": [
+    {
+      "file": "web/lib/NHL/server/index.ts",
+      "sha256": "0499ac3f3fdedb228efdd2091d2c93b6e79ef35b8fa56328ed60b7201fc3d435"
+    },
+    {
+      "file": "web/lib/buyLowSellHigh/market.ts",
+      "sha256": "44df9313b86bbc078dc6f314a5884deb490e266509bec4a44f6f9ff08e537f60"
+    },
+    {
+      "file": "web/lib/buyLowSellHigh/productionReference.ts",
+      "sha256": "ec3afb69ff6001068586d50faf718585f17392524196cb343020f3b98eda192e"
+    },
+    {
+      "file": "web/lib/buyLowSellHigh/trade.ts",
+      "sha256": "18b9fe9302c5933f3182e2af2fd0ca2e20fa541d361e40606d4fc195a431dce3"
+    },
+    {
+      "file": "web/lib/player-forecasts/gameExpectations.ts",
+      "sha256": "6e3995d94f1898322ad14ef74d4cae805dffcae2780c90ffe448543354b59c2c"
+    },
+    {
+      "file": "web/lib/sko/gap.ts",
+      "sha256": "fda168904af69c64c492dd0b64a8ec1a63ad1d0b85278fb161138dc57ca2911b"
+    },
+    {
+      "file": "web/lib/skoElement/contract.ts",
+      "sha256": "3d2b202003b8c0379bbf7b5e0d04ebc722c52815327ce7e8b96d67538966f37a"
+    },
+    {
+      "file": "web/lib/skoElement/fixtures.ts",
+      "sha256": "b4e7e6b31c9fd9d1e541aba1e0f19993caa413bab8112b1cd05bc10e1b7f2fa2"
+    },
+    {
+      "file": "web/lib/skoElement/interpret.ts",
+      "sha256": "789b8fe3480e564a9f24e47658b5d03d4e514b0dc6e94d5aae4fbd08a297200c"
+    },
+    {
+      "file": "web/lib/supabase/utils/constants.ts",
+      "sha256": "6d433f9c567b9c9bdfcba42eb90efa6868127cb2ebea4e5b848537a0c4115f69"
+    },
+    {
+      "file": "web/lib/supabase/utils/statistics.ts",
+      "sha256": "13f793bbf3773d5e61304341278e5b1497b6c76f4aff299f3e38088a44fff894"
+    },
+    {
+      "file": "web/lib/trends/utils.ts",
+      "sha256": "fa827cc992d20b438f8d8b0fc5622472ed01e9fdf0f3a2e3f38daf5b21e8d4c6"
+    },
+    {
+      "file": "web/pages/api/v1/db/update-sko-stats.ts",
+      "sha256": "a24656c35b3ad5c646c24ee2139cc4aceb66e3c30dd3e7fe35dfd28942eca718"
+    },
+    {
+      "file": "web/pages/api/v1/ml/update-predictions-sko.ts",
+      "sha256": "95ddfd1ff88f4d419e1087a83be712db368ea3f3bf346ddadbbce469aef6b392"
+    },
+    {
+      "file": "web/sql/functions/analytics.rpc_sko_player_series.sql",
+      "sha256": "b52cd1854a82932c3e8f0267074a42621a8ff4e977e39ab07c269bfe922fbf9e"
+    }
+  ]
+}

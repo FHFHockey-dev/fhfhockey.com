@@ -1,0 +1,701 @@
+{
+  "fixtureVersion": 1,
+  "mode": "offline; no env files, network or database access",
+  "sourceHashes": {
+    "utils/projectionsRanking.ts": "4337ef15e7106d602a5b1d722803470102641109433a5e5ccd58fd687f6ac1d8",
+    "utils/tierUtils.ts": "eee6cc8023e1a064816e8c90f640301e86d2ff9dbc41efba90abca14531864f1",
+    "styles/wigoColors.ts": "a7150b03bc04ef8953fb9b994d0d66f1a3a3d062598cef204bc9f58b64c84366",
+    "utils/calculateWigoRatings.ts": "7d932c1d4212d95b31a98de6be2d5fd18eb959bffff9c298bd1afc7cf325d4ce",
+    "components/WiGO/ratingWeights.ts": "85b954bbf5dd8ebed467a6c707161f712895b99936de20b81f1c977acbdb691a",
+    "utils/calculatePercentiles.ts": "ec46e70a8ac6323c50b2531ae1a9de719ae60e2ec10d344a74c3588e477b52b2",
+    "components/WiGO/RateStatPercentiles.tsx": "2eeca7df55ea2bb2d20cd96ac6b8e92dc5ea6733e3d4a20bafac6ad7c7f356fb",
+    "utils/fetchWigoPlayerStats.ts": "aa4e7165e41705d033abb2f923b8210c3198594d9ae98a689a110835ee71f4c0",
+    "components/WiGO/statMetadata.ts": "8ef22249e8066164e3bf1ce13fe4693f3e37fba9d907cc881c1af8c9c2b435d3",
+    "utils/formattingUtils.ts": "3f4b75b950cfe9832d992dcb56a7ccb6cad8640e030794f16fa821868b88383d",
+    "pages/api/v1/db/calculate-wigo-stats.ts": "4373cb9985998335c3bede1699e90156718104aa760a1e9ca0229958087dfaec",
+    "components/WiGO/teamPerformanceDriverModel.ts": "a4e78233161baeba6da12731ca411ca25e08e4f9e0ad6c003cd8d3a373974580",
+    "lib/xg/calibration.ts": "1195b91ea177794712dca4eac2dac1682273123e3c2748ded310390b7419a940",
+    "lib/xg/binaryLogistic.ts": "819565c6fbc24c7d0bd584d3979feb8ef9005728c536db9a19734dcc5d25b5c9",
+    "scripts/train-nhl-xg-baseline.ts": "4b03313e5c3330848b578a6affbc998ac03f7f708a9f009fdfe379ccd9e36948",
+    "lib/xg/baselineDataset.ts": "9b345cc7258b628b04c9dbd2f4c64e272df28604bb117e61cd0125e867ee1f0f",
+    "scripts/benchmark-nhl-xg-baselines.ts": "0df2fdca69cce0715d800b4ab4d04f4de009a9022f786993ea2824615311c035",
+    "lib/xg/aggregates.ts": "322f766bf8badfa2632c4ea2db52feff545d625ee5a7b59105486e9e2d434b3c",
+    "lib/xg/flurryAdjusted.ts": "217d4337904dbf823cbdf58634eaa1cbb95546269c76cbee3772954fc1fd1220",
+    "lib/underlying-stats/xgExplorer.ts": "0de75e7a21e2eaa5499e742617498ace9f5c9584cb3e0c24481e191f9852fc8a"
+  },
+  "results": {
+    "ranks": [
+      {
+        "id": 4,
+        "projected": 100,
+        "rank": 1,
+        "actualRank": 1
+      },
+      {
+        "id": 5,
+        "projected": 100,
+        "rank": 2,
+        "actualRank": 2
+      },
+      {
+        "id": 1,
+        "projected": 10,
+        "rank": 3,
+        "actualRank": 3
+      },
+      {
+        "id": 2,
+        "projected": null,
+        "rank": 4,
+        "actualRank": 4
+      },
+      {
+        "id": 3,
+        "projected": -2,
+        "rank": 5,
+        "actualRank": 5
+      }
+    ],
+    "tiers": {
+      "bands": [
+        {
+          "name": "Tier 1",
+          "minFP": 5,
+          "maxFP": null,
+          "color": "#14a2d2"
+        },
+        {
+          "name": "Tier 3",
+          "minFP": 4.1,
+          "maxFP": 5.4,
+          "color": "#98d8a8"
+        },
+        {
+          "name": "Replacement Level",
+          "minFP": 0,
+          "maxFP": 4.1,
+          "color": "#505050"
+        }
+      ],
+      "overlapsAt5_2": [
+        "Tier 1",
+        "Tier 3"
+      ],
+      "negativeCovered": false
+    },
+    "partialRating": {
+      "offense": 97.61904761904762,
+      "overall": 97.61904761904762,
+      "validWeight": 25,
+      "totalWeight": 100
+    },
+    "panelAlone": {
+      "calculatedPercentiles": {
+        "toi_per_gp_calc": 0.5,
+        "ixg_per_60": 0.5
+      },
+      "calculatedRanks": {
+        "toi_per_gp_calc": 1,
+        "ixg_per_60": 1
+      }
+    },
+    "revivedRate": {
+      "label": "ixG/60",
+      "STD": 1.5,
+      "LY": null,
+      "3YA": null,
+      "CA": null,
+      "L5": null,
+      "L10": null,
+      "L20": null
+    },
+    "seasonalNulls": {
+      "player_id": 1,
+      "std_gp": 10,
+      "std_atoi": 20,
+      "std_pptoi": null,
+      "std_pp_pct": null,
+      "std_g": 0,
+      "std_a": 0,
+      "std_pts": 0,
+      "std_sog": 40,
+      "std_ppg": 0,
+      "std_ppa": 0,
+      "std_ppp": 0,
+      "std_hit": 0,
+      "std_blk": 0,
+      "std_pim": 0,
+      "std_pts1_pct": null,
+      "std_s_pct": 0,
+      "std_ixg": 0,
+      "std_icf": 100,
+      "std_ipp": null,
+      "std_oi_sh_pct": null,
+      "std_ozs_pct": null,
+      "std_g_per_60": 0,
+      "std_a_per_60": 0,
+      "std_pts_per_60": 0,
+      "std_pts1_per_60": 0,
+      "std_sog_per_60": 12,
+      "std_hit_per_60": 0,
+      "std_blk_per_60": 0,
+      "std_pim_per_60": 0,
+      "std_ixg_per_60": 0,
+      "std_icf_per_60": 30,
+      "std_ihdcf_per_60": 0,
+      "std_iscf_per_60": 0,
+      "std_ppg_per_60": null,
+      "std_ppa_per_60": null,
+      "std_ppp_per_60": null,
+      "ya3_seasons_used": 0,
+      "ca_seasons_used": 0
+    },
+    "nullToiEndToEnd": {
+      "publishedRate": null,
+      "publishedCount": 5,
+      "served": {
+        "label": "ixG/60",
+        "STD": 1.5,
+        "LY": null,
+        "3YA": null,
+        "CA": null,
+        "L5": null,
+        "L10": null,
+        "L20": null
+      }
+    },
+    "teamComposite": {
+      "id": 3,
+      "display": {
+        "key": "specialTeams",
+        "label": "Special Teams",
+        "valueLabel": "PP 3.0% · PK 74.0%",
+        "percentile": 27,
+        "status": "concern",
+        "explanation": "Combined league-relative power-play and penalty-kill percentile."
+      },
+      "composite": 26.5625,
+      "truePercentile": 15.625
+    },
+    "weakGate": {
+      "gate": {
+        "isEligible": true,
+        "blockingReasons": []
+      },
+      "appliedCalibration": {
+        "selectedMethod": "raw",
+        "fitSplit": "none",
+        "fitExampleCount": 9,
+        "applied": false,
+        "reason": "Skipped post-calibration because validation coverage was too small or lacked both outcome classes.",
+        "model": {
+          "method": "raw"
+        }
+      },
+      "requiresPostCalibration": true,
+      "adoptableMethod": "platt",
+      "testEvaluation": {
+        "exampleCount": 140,
+        "goalCount": 10,
+        "goalRate": 0.071429,
+        "averagePrediction": 0.5,
+        "logLoss": 0.693147,
+        "brierScore": 0.25
+      },
+      "baseRateBrier": 0.0663265306122449,
+      "baseRateLogLoss": 0.25731864054383163
+    },
+    "benchmark": [
+      [],
+      []
+    ],
+    "missingGames": {
+      "gameLedgerSize": 12,
+      "playerLatest": {
+        "model_version": "fixture-model",
+        "feature_version": 1,
+        "season_id": 20252026,
+        "player_id": 91,
+        "team_id": 10,
+        "as_of_game_id": 2025020012,
+        "as_of_game_date": "2025-10-12",
+        "window_games": 10,
+        "games_count": 8,
+        "ixg": 2,
+        "flurry_adjusted_ixg": 2,
+        "goals": 0,
+        "shot_attempts": 8,
+        "provenance": {
+          "sourceTable": "nhl_xg_shot_predictions",
+          "sourcePredictionType": "shot_goal",
+          "sourceModelApproved": true,
+          "modelVersion": "fixture-model",
+          "featureVersion": 1,
+          "rollingWindowGames": 10,
+          "generatedAt": "offline"
+        },
+        "updated_at": "offline"
+      },
+      "goalieLatest": {
+        "model_version": "fixture-model",
+        "feature_version": 1,
+        "season_id": 20252026,
+        "goalie_player_id": 31,
+        "team_id": 20,
+        "as_of_game_id": 2025020012,
+        "as_of_game_date": "2025-10-12",
+        "window_games": 10,
+        "games_count": 8,
+        "xg_against": 2,
+        "flurry_adjusted_xg_against": 2,
+        "goals_against": 0,
+        "shots_against": 8,
+        "goals_saved_above_expected": 2,
+        "flurry_adjusted_goals_saved_above_expected": 2,
+        "provenance": {
+          "sourceTable": "nhl_xg_shot_predictions",
+          "sourcePredictionType": "shot_goal",
+          "sourceModelApproved": true,
+          "modelVersion": "fixture-model",
+          "featureVersion": 1,
+          "rollingWindowGames": 10,
+          "generatedAt": "offline"
+        },
+        "updated_at": "offline"
+      },
+      "teamLatest": {
+        "model_version": "fixture-model",
+        "feature_version": 1,
+        "season_id": 20252026,
+        "team_id": 20,
+        "as_of_game_id": 2025020012,
+        "as_of_game_date": "2025-10-12",
+        "window_games": 10,
+        "games_count": 10,
+        "xg_for": 0,
+        "xg_against": 4.25,
+        "flurry_adjusted_xg_for": 0,
+        "flurry_adjusted_xg_against": 4.25,
+        "goals_for": 0,
+        "goals_against": 0,
+        "shot_attempts_for": 0,
+        "shot_attempts_against": 17,
+        "provenance": {
+          "sourceTable": "nhl_xg_shot_predictions",
+          "sourcePredictionType": "shot_goal",
+          "sourceModelApproved": true,
+          "modelVersion": "fixture-model",
+          "featureVersion": 1,
+          "rollingWindowGames": 10,
+          "generatedAt": "offline"
+        },
+        "updated_at": "offline"
+      }
+    },
+    "mixedVersions": {
+      "player": [
+        {
+          "model_version": "fixture-model",
+          "feature_version": 1,
+          "season_id": 20252026,
+          "player_id": 91,
+          "team_id": 10,
+          "as_of_game_id": 2025020001,
+          "as_of_game_date": "2025-10-01",
+          "window_games": 10,
+          "games_count": 1,
+          "ixg": 0.25,
+          "flurry_adjusted_ixg": 0.5,
+          "goals": 0,
+          "shot_attempts": 1,
+          "provenance": {
+            "sourceTable": "nhl_xg_shot_predictions",
+            "sourcePredictionType": "shot_goal",
+            "sourceModelApproved": true,
+            "modelVersion": "fixture-model",
+            "featureVersion": 1,
+            "rollingWindowGames": 10,
+            "generatedAt": "offline"
+          },
+          "updated_at": "offline"
+        },
+        {
+          "model_version": "fixture-model",
+          "feature_version": 2,
+          "season_id": 20252026,
+          "player_id": 91,
+          "team_id": 10,
+          "as_of_game_id": 2025020001,
+          "as_of_game_date": "2025-10-01",
+          "window_games": 10,
+          "games_count": 2,
+          "ixg": 0.75,
+          "flurry_adjusted_ixg": 1,
+          "goals": 0,
+          "shot_attempts": 2,
+          "provenance": {
+            "sourceTable": "nhl_xg_shot_predictions",
+            "sourcePredictionType": "shot_goal",
+            "sourceModelApproved": true,
+            "modelVersion": "fixture-model",
+            "featureVersion": 2,
+            "rollingWindowGames": 10,
+            "generatedAt": "offline"
+          },
+          "updated_at": "offline"
+        }
+      ],
+      "goalie": [
+        {
+          "model_version": "fixture-model",
+          "feature_version": 1,
+          "season_id": 20252026,
+          "goalie_player_id": 31,
+          "team_id": 20,
+          "as_of_game_id": 2025020001,
+          "as_of_game_date": "2025-10-01",
+          "window_games": 10,
+          "games_count": 1,
+          "xg_against": 0.25,
+          "flurry_adjusted_xg_against": 0.5,
+          "goals_against": 0,
+          "shots_against": 1,
+          "goals_saved_above_expected": 0.25,
+          "flurry_adjusted_goals_saved_above_expected": 0.5,
+          "provenance": {
+            "sourceTable": "nhl_xg_shot_predictions",
+            "sourcePredictionType": "shot_goal",
+            "sourceModelApproved": true,
+            "modelVersion": "fixture-model",
+            "featureVersion": 1,
+            "rollingWindowGames": 10,
+            "generatedAt": "offline"
+          },
+          "updated_at": "offline"
+        },
+        {
+          "model_version": "fixture-model",
+          "feature_version": 2,
+          "season_id": 20252026,
+          "goalie_player_id": 31,
+          "team_id": 20,
+          "as_of_game_id": 2025020001,
+          "as_of_game_date": "2025-10-01",
+          "window_games": 10,
+          "games_count": 2,
+          "xg_against": 0.75,
+          "flurry_adjusted_xg_against": 1,
+          "goals_against": 0,
+          "shots_against": 2,
+          "goals_saved_above_expected": 0.75,
+          "flurry_adjusted_goals_saved_above_expected": 1,
+          "provenance": {
+            "sourceTable": "nhl_xg_shot_predictions",
+            "sourcePredictionType": "shot_goal",
+            "sourceModelApproved": true,
+            "modelVersion": "fixture-model",
+            "featureVersion": 2,
+            "rollingWindowGames": 10,
+            "generatedAt": "offline"
+          },
+          "updated_at": "offline"
+        }
+      ],
+      "team": [
+        {
+          "model_version": "fixture-model",
+          "feature_version": 1,
+          "season_id": 20252026,
+          "team_id": 10,
+          "as_of_game_id": 2025020001,
+          "as_of_game_date": "2025-10-01",
+          "window_games": 10,
+          "games_count": 1,
+          "xg_for": 0.25,
+          "xg_against": 0,
+          "flurry_adjusted_xg_for": 0.5,
+          "flurry_adjusted_xg_against": 0,
+          "goals_for": 0,
+          "goals_against": 0,
+          "shot_attempts_for": 1,
+          "shot_attempts_against": 0,
+          "provenance": {
+            "sourceTable": "nhl_xg_shot_predictions",
+            "sourcePredictionType": "shot_goal",
+            "sourceModelApproved": true,
+            "modelVersion": "fixture-model",
+            "featureVersion": 1,
+            "rollingWindowGames": 10,
+            "generatedAt": "offline"
+          },
+          "updated_at": "offline"
+        },
+        {
+          "model_version": "fixture-model",
+          "feature_version": 2,
+          "season_id": 20252026,
+          "team_id": 10,
+          "as_of_game_id": 2025020001,
+          "as_of_game_date": "2025-10-01",
+          "window_games": 10,
+          "games_count": 2,
+          "xg_for": 0.75,
+          "xg_against": 0,
+          "flurry_adjusted_xg_for": 1,
+          "flurry_adjusted_xg_against": 0,
+          "goals_for": 0,
+          "goals_against": 0,
+          "shot_attempts_for": 2,
+          "shot_attempts_against": 0,
+          "provenance": {
+            "sourceTable": "nhl_xg_shot_predictions",
+            "sourcePredictionType": "shot_goal",
+            "sourceModelApproved": true,
+            "modelVersion": "fixture-model",
+            "featureVersion": 2,
+            "rollingWindowGames": 10,
+            "generatedAt": "offline"
+          },
+          "updated_at": "offline"
+        },
+        {
+          "model_version": "fixture-model",
+          "feature_version": 1,
+          "season_id": 20252026,
+          "team_id": 20,
+          "as_of_game_id": 2025020001,
+          "as_of_game_date": "2025-10-01",
+          "window_games": 10,
+          "games_count": 1,
+          "xg_for": 0,
+          "xg_against": 0.25,
+          "flurry_adjusted_xg_for": 0,
+          "flurry_adjusted_xg_against": 0.5,
+          "goals_for": 0,
+          "goals_against": 0,
+          "shot_attempts_for": 0,
+          "shot_attempts_against": 1,
+          "provenance": {
+            "sourceTable": "nhl_xg_shot_predictions",
+            "sourcePredictionType": "shot_goal",
+            "sourceModelApproved": true,
+            "modelVersion": "fixture-model",
+            "featureVersion": 1,
+            "rollingWindowGames": 10,
+            "generatedAt": "offline"
+          },
+          "updated_at": "offline"
+        },
+        {
+          "model_version": "fixture-model",
+          "feature_version": 2,
+          "season_id": 20252026,
+          "team_id": 20,
+          "as_of_game_id": 2025020001,
+          "as_of_game_date": "2025-10-01",
+          "window_games": 10,
+          "games_count": 2,
+          "xg_for": 0,
+          "xg_against": 0.75,
+          "flurry_adjusted_xg_for": 0,
+          "flurry_adjusted_xg_against": 1,
+          "goals_for": 0,
+          "goals_against": 0,
+          "shot_attempts_for": 0,
+          "shot_attempts_against": 2,
+          "provenance": {
+            "sourceTable": "nhl_xg_shot_predictions",
+            "sourcePredictionType": "shot_goal",
+            "sourceModelApproved": true,
+            "modelVersion": "fixture-model",
+            "featureVersion": 2,
+            "rollingWindowGames": 10,
+            "generatedAt": "offline"
+          },
+          "updated_at": "offline"
+        }
+      ]
+    },
+    "crossSeason": {
+      "model_version": "fixture-model",
+      "feature_version": 1,
+      "season_id": 20262027,
+      "player_id": 91,
+      "team_id": 10,
+      "as_of_game_id": 2026020001,
+      "as_of_game_date": "2026-10-01",
+      "window_games": 10,
+      "games_count": 2,
+      "ixg": 0.5,
+      "flurry_adjusted_ixg": 0.5,
+      "goals": 0,
+      "shot_attempts": 2,
+      "provenance": {
+        "sourceTable": "nhl_xg_shot_predictions",
+        "sourcePredictionType": "shot_goal",
+        "sourceModelApproved": true,
+        "modelVersion": "fixture-model",
+        "featureVersion": 1,
+        "rollingWindowGames": 10,
+        "generatedAt": "offline"
+      },
+      "updated_at": "offline"
+    },
+    "emptyNet": {
+      "team": [
+        {
+          "model_version": "fixture-model",
+          "feature_version": 1,
+          "season_id": 20252026,
+          "game_id": 2025020001,
+          "game_date": "2025-10-01",
+          "team_id": 10,
+          "opponent_team_id": 20,
+          "is_home": true,
+          "xg_for": 0.9,
+          "xg_against": 0,
+          "flurry_adjusted_xg_for": 0.9,
+          "flurry_adjusted_xg_against": 0,
+          "goals_for": 1,
+          "goals_against": 0,
+          "shot_attempts_for": 1,
+          "shot_attempts_against": 0,
+          "source_prediction_type": "shot_goal",
+          "source_model_approved": true,
+          "provenance": {
+            "sourceTable": "nhl_xg_shot_predictions",
+            "sourcePredictionType": "shot_goal",
+            "sourceModelApproved": true,
+            "modelVersion": "fixture-model",
+            "featureVersion": 1,
+            "rollingWindowGames": null,
+            "generatedAt": "offline"
+          },
+          "updated_at": "offline"
+        },
+        {
+          "model_version": "fixture-model",
+          "feature_version": 1,
+          "season_id": 20252026,
+          "game_id": 2025020001,
+          "game_date": "2025-10-01",
+          "team_id": 20,
+          "opponent_team_id": 10,
+          "is_home": false,
+          "xg_for": 0,
+          "xg_against": 0.9,
+          "flurry_adjusted_xg_for": 0,
+          "flurry_adjusted_xg_against": 0.9,
+          "goals_for": 0,
+          "goals_against": 1,
+          "shot_attempts_for": 0,
+          "shot_attempts_against": 1,
+          "source_prediction_type": "shot_goal",
+          "source_model_approved": true,
+          "provenance": {
+            "sourceTable": "nhl_xg_shot_predictions",
+            "sourcePredictionType": "shot_goal",
+            "sourceModelApproved": true,
+            "modelVersion": "fixture-model",
+            "featureVersion": 1,
+            "rollingWindowGames": null,
+            "generatedAt": "offline"
+          },
+          "updated_at": "offline"
+        }
+      ],
+      "player": [
+        {
+          "model_version": "fixture-model",
+          "feature_version": 1,
+          "season_id": 20252026,
+          "game_id": 2025020001,
+          "game_date": "2025-10-01",
+          "player_id": 91,
+          "team_id": 10,
+          "ixg": 0.9,
+          "flurry_adjusted_ixg": 0.9,
+          "goals": 1,
+          "shot_attempts": 1,
+          "source_prediction_type": "shot_goal",
+          "source_model_approved": true,
+          "provenance": {
+            "sourceTable": "nhl_xg_shot_predictions",
+            "sourcePredictionType": "shot_goal",
+            "sourceModelApproved": true,
+            "modelVersion": "fixture-model",
+            "featureVersion": 1,
+            "rollingWindowGames": null,
+            "generatedAt": "offline"
+          },
+          "updated_at": "offline"
+        }
+      ],
+      "goalie": []
+    },
+    "explorer": {
+      "id": 1,
+      "name": "Player 1",
+      "teamId": 10,
+      "teamAbbreviation": null,
+      "position": null,
+      "asOfGameDate": "2026-01-10",
+      "gamesCount": 5,
+      "ixg": 1,
+      "goals": 1,
+      "shotAttempts": 20,
+      "createdXg": 4,
+      "shotAssistCreatedXg": 0,
+      "shotAssistEvents": 0,
+      "transitionCreatedXg": 0,
+      "transitionEvents": 0,
+      "transitionCreatedShots": 0,
+      "expectedPrimaryAssists": 0,
+      "controlledEntries": 0,
+      "controlledExits": 0,
+      "entryAssists": 0,
+      "expectedReboundsCreated": 0,
+      "actualReboundsCreated": 0
+    },
+    "playoffReader": {
+      "rows": [
+        {
+          "date": "2026-04-01",
+          "value": 0.2
+        },
+        {
+          "date": "2026-05-01",
+          "value": 0.8
+        }
+      ],
+      "traces": [
+        {
+          "table": "nst_gamelog_as_counts",
+          "calls": [
+            [
+              "select",
+              "date_scraped, ixg"
+            ],
+            [
+              "eq",
+              "player_id",
+              1
+            ],
+            [
+              "eq",
+              "season",
+              20252026
+            ],
+            [
+              "order",
+              "date_scraped",
+              {
+                "ascending": true
+              }
+            ]
+          ]
+        }
+      ]
+    }
+  }
+}
