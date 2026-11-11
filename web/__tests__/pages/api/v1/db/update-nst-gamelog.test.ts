@@ -441,8 +441,8 @@ describe("update-nst-gamelog automatic season cursor", () => {
   function supplyThreePlayerRows() {
     db.tables.players = Array.from({ length: 3 }, (_, i) => ({ id: i + 1, fullName: `Test Player ${i}`, position: "C" }));
     fetchNstTextByUrlMock.mockResolvedValue({ response: { status: 200 }, text:
-      `<table><thead><tr><th>Player</th><th>Team</th><th>Position</th><th>TOI</th></tr></thead><tbody>${
-        db.tables.players.map((player) => `<tr><td>${player.fullName}</td><td>BOS</td><td>C</td><td>10:00</td></tr>`).join("")
+      `<table><thead><tr><th>Player</th><th>Team</th><th>Position</th><th>GP</th><th>TOI</th></tr></thead><tbody>${
+        db.tables.players.map((player) => `<tr><td>${player.fullName}</td><td>BOS</td><td>C</td><td>1</td><td>10:00</td></tr>`).join("")
       }</tbody></table>` });
   }
 
@@ -997,8 +997,8 @@ describe("update-nst-gamelog automatic season cursor", () => {
       id: i + 1, fullName: `Test Player ${i}`, position: "C"
     }));
     fetchNstTextByUrlMock.mockResolvedValue({ response: { status: 200 }, text:
-      `<table><thead><tr><th>Player</th><th>Team</th><th>Position</th><th>TOI</th></tr></thead><tbody>${
-        db.tables.players.map((player) => `<tr><td>${player.fullName}</td><td>BOS</td><td>C</td><td>10:00</td></tr>`).join("")
+      `<table><thead><tr><th>Player</th><th>Team</th><th>Position</th><th>GP</th><th>TOI</th></tr></thead><tbody>${
+        db.tables.players.map((player) => `<tr><td>${player.fullName}</td><td>BOS</td><td>C</td><td>1</td><td>10:00</td></tr>`).join("")
       }</tbody></table>` });
     for (let i = 0; i < 4; i++) await run();
     expect(fetchNstTextByUrlMock).toHaveBeenCalledTimes(24);
@@ -1238,8 +1238,8 @@ describe("update-nst-gamelog automatic season cursor", () => {
   it.each([401, 429])("stops immediately on provider %s and retains earlier confirmed row writes", async (status) => {
     db.tables.players = Array.from({ length: 5 }, (_, i) => ({ id: i + 1, fullName: `Test Player ${i}`, position: "C" }));
     fetchNstTextByUrlMock.mockResolvedValueOnce({ response: { status: 200 }, text:
-      `<table><thead><tr><th>Player</th><th>Team</th><th>Position</th><th>TOI</th></tr></thead><tbody>${
-        db.tables.players.map((player) => `<tr><td>${player.fullName}</td><td>BOS</td><td>C</td><td>10:00</td></tr>`).join("")
+      `<table><thead><tr><th>Player</th><th>Team</th><th>Position</th><th>GP</th><th>TOI</th></tr></thead><tbody>${
+        db.tables.players.map((player) => `<tr><td>${player.fullName}</td><td>BOS</td><td>C</td><td>1</td><td>10:00</td></tr>`).join("")
       }</tbody></table>` }).mockRejectedValue(new NstResponseError({ status, redactedUrl: "https://data.naturalstattrick.com/playerteams.php" }));
     const res = await run();
     expect(res.statusCode).toBe(500);
@@ -1257,8 +1257,8 @@ describe("update-nst-gamelog automatic season cursor", () => {
       ...Array.from({ length: 179 }, (_, i) => ({ id: 9000000 + i, fullName: `Fixture Player ${i}`, position: "C" }))
     ];
     fetchNstTextByUrlMock.mockResolvedValue({ response: { status: 200 }, text:
-      `<table><thead><tr><th>Player</th><th>Team</th><th>Position</th><th>TOI</th></tr></thead><tbody>${
-        db.tables.players.map((player) => `<tr><td>${player.id === 8480813 ? "Joseph Veleno" : player.fullName}</td><td>NYR</td><td>C</td><td>10:00</td></tr>`).join("")
+      `<table><thead><tr><th>Player</th><th>Team</th><th>Position</th><th>GP</th><th>TOI</th></tr></thead><tbody>${
+        db.tables.players.map((player) => `<tr><td>${player.id === 8480813 ? "Joseph Veleno" : player.fullName}</td><td>NYR</td><td>C</td><td>1</td><td>10:00</td></tr>`).join("")
       }</tbody></table>` });
     const res = await run({ dates: "2026-09-29", datasetType: "allStrengthsCounts", overwrite: "yes" });
     expect(fetchNstTextByUrlMock).toHaveBeenCalledTimes(1);
@@ -1305,7 +1305,7 @@ describe("update-nst-gamelog automatic season cursor", () => {
     if (href?.includes("8483456")) db.tables.players[0].fullName = "Different Player";
     const name = href === undefined ? "Jack Hughes" : '<a href="' + href + '">Jack Hughes</a>';
     fetchNstTextByUrlMock.mockResolvedValue({ response: { status: 200 }, text:
-      '<table><thead><tr><th>Player</th><th>Team</th><th>Position</th><th>TOI</th></tr></thead><tbody><tr><td>' + name + '</td><td>N.J</td><td>C</td><td>25:48</td></tr></tbody></table>' });
+      '<table><thead><tr><th>Player</th><th>Team</th><th>Position</th><th>GP</th><th>TOI</th></tr></thead><tbody><tr><td>' + name + '</td><td>N.J</td><td>C</td><td>1</td><td>25:48</td></tr></tbody></table>' });
     db.games.push({ date: "2026-10-01", seasonId: 20262027, type: 2 });
     const res = await run({ dates: "2026-10-01", datasetType: "allStrengthsCounts", overwrite: "yes" });
     expect(db.tables.nst_gamelog_as_counts ?? []).toHaveLength(0);
@@ -1324,11 +1324,33 @@ describe("update-nst-gamelog automatic season cursor", () => {
     expect(db.tables.nst_gamelog_pk_rates_oi.map((row) => row.on_the_fly_starts_per_60)).toEqual([41.22, 156.52]);
   });
 
+  it("quarantines GP 2, missing-GP and other-season rows instead of stamping them as one game on the requested date", async () => {
+    db.tables.players = Array.from({ length: 4 }, (_, i) => ({ id: 8470000 + i, fullName: "Test Player " + i, position: "C" }));
+    const link = (id: number, season: string, stype = "2") =>
+      `<a href="playerreport.php?fromseason=${season}&amp;thruseason=${season}&amp;playerid=${8470000 + id}&amp;sit=all&amp;stype=${stype}">Test Player ${id}</a>`;
+    // Row 0 is one regular-season game; row 1 is an aggregate that looks like a game
+    // (GP 2, two games of TOI); row 2 has no GP; row 3's link is last season's playoffs.
+    fetchNstTextByUrlMock.mockResolvedValue({ response: { status: 200 }, text:
+      "<table><thead><tr><th>Player</th><th>Team</th><th>Position</th><th>GP</th><th>TOI</th><th>Goals</th></tr></thead><tbody>" +
+      `<tr><td>${link(0, "20262027")}</td><td>BOS</td><td>C</td><td>1</td><td>18:00</td><td>1</td></tr>` +
+      `<tr><td>${link(1, "20262027")}</td><td>BOS</td><td>C</td><td>2</td><td>36:00</td><td>2</td></tr>` +
+      `<tr><td>${link(2, "20262027")}</td><td>BOS</td><td>C</td><td></td><td>18:00</td><td>0</td></tr>` +
+      `<tr><td>${link(3, "20252026", "3")}</td><td>BOS</td><td>C</td><td>1</td><td>18:00</td><td>1</td></tr>` +
+      "</tbody></table>" });
+    const res = await run({ dates: "2026-10-03", datasetType: "allStrengthsCounts", overwrite: "yes" });
+    const rows = db.tables.nst_gamelog_as_counts ?? [];
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ player_id: 8470000, gp: 1, toi: 1080, goals: 1, date_scraped: "2026-10-03", season: 20262027 });
+    // The source is reported unresolved, so the cursor never certifies it complete.
+    expect(res.body.nstProgress.sourceOutcomes.counts.parse_or_identity_unresolved).toBe(1);
+    expect(res.body.nstProgress.sourceOutcomes.counts.rows_persisted).toBe(0);
+  });
+
   it("refetches a partially resolved source instead of certifying five stored rows as complete", async () => {
     db.tables.players = Array.from({ length: 5 }, (_, i) => ({ id: i + 1, fullName: "Test Player " + i, position: "C" }));
-    const source = "<table><thead><tr><th>Player</th><th>Team</th><th>Position</th><th>TOI</th></tr></thead><tbody>" +
-      db.tables.players.map((player) => "<tr><td>" + player.fullName + "</td><td>BOS</td><td>C</td><td>10:00</td></tr>").join("") +
-      "<tr><td>Unmatched Example</td><td>BOS</td><td>C</td><td>10:00</td></tr></tbody></table>";
+    const source = "<table><thead><tr><th>Player</th><th>Team</th><th>Position</th><th>GP</th><th>TOI</th></tr></thead><tbody>" +
+      db.tables.players.map((player) => "<tr><td>" + player.fullName + "</td><td>BOS</td><td>C</td><td>1</td><td>10:00</td></tr>").join("") +
+      "<tr><td>Unmatched Example</td><td>BOS</td><td>C</td><td>1</td><td>10:00</td></tr></tbody></table>";
     fetchNstTextByUrlMock.mockResolvedValue({ response: { status: 200 }, text: source });
     const first = await run({ dates: "2026-10-03", datasetType: "allStrengthsCounts" });
     expect(db.tables.nst_gamelog_as_counts).toHaveLength(5);
@@ -1350,9 +1372,9 @@ describe("update-nst-gamelog automatic season cursor", () => {
   it("retains unresolved identity evidence even when matched rows can be persisted", async () => {
     db.tables.players = [{ id: 1, fullName: "Test Player 0", position: "C" }];
     fetchNstTextByUrlMock.mockResolvedValue({ response: { status: 200 }, text:
-      "<table><thead><tr><th>Player</th><th>Team</th><th>Position</th><th>TOI</th></tr></thead><tbody>" +
-      "<tr><td>Test Player 0</td><td>BOS</td><td>C</td><td>10:00</td></tr>" +
-      "<tr><td>Unmatched Example</td><td>BOS</td><td>C</td><td>10:00</td></tr></tbody></table>" });
+      "<table><thead><tr><th>Player</th><th>Team</th><th>Position</th><th>GP</th><th>TOI</th></tr></thead><tbody>" +
+      "<tr><td>Test Player 0</td><td>BOS</td><td>C</td><td>1</td><td>10:00</td></tr>" +
+      "<tr><td>Unmatched Example</td><td>BOS</td><td>C</td><td>1</td><td>10:00</td></tr></tbody></table>" });
     const res = await run({ dates: "2026-10-03", datasetType: "fiveOnFiveCounts" });
     expect(db.tables.nst_gamelog_5v5_counts).toHaveLength(1);
     expect(res.body.success).toBe(false);
