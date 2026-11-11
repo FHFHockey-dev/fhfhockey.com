@@ -18,7 +18,7 @@
 | W2-1 D9 | P2 | live | OZS% / OZFO% in `nst_seasonlong_*_rates_oi` include neutral zone; zero denominators return 0/50/100: OZ/(OZ+DZ), null on zero; `goalie_weekly_aggregates` league SV% null when all shots zero. | W2 §W2-1 A D9; decision 9 |
 | W2-1 D8, D10–D14, D16 | P2 | mixed | `get_skaters_avg_stats` game-type filter; `player_totals_unified` columns; `gameOutcomes` final-state filter and **team loss ≠ goalie credited loss**; current-team `percent_games` (decision 16); inventory only for D16 (no deletion). D15 Human Mock ADP **withdrawn**; M-SUS-001 weight argument **withdrawn**. | W2 §W2-1 A |
 | W2-1 D6 | P1 | live | Game Score goal terms are all-strength: label "FHFH Game Score (all-situation goals)" with its formula (Q2); no 5v5 claim. | W2 §W2-1 A D6 |
-| W2-1 D7 (forward slot) | P1 | live | Lineup deployment share labels forwards by current roster position; two centres on one line: use line slot. The denominator is **not** a defect (Q4). | W2 §W2-1 A D7 |
+| W2-1 D7 (forward slot) | P1 | live | Lineup deployment share labels forwards by current roster position; two centres on one line: use line slot. Denominator per **decision 86**: publish both labelled measures (share of games with a recorded PP-unit assignment; share of games dressed), each with its verified denominator and coverage; missing assignments stay unknown. | W2 §W2-1 A D7 |
 | W3-7 D9 / A5 | P2 | dormant | `rpc_sko_player_series` streaks: only if kept in use (no caller); runs after baseline, scale and onset are defined; tests L = 1–3, interrupted runs, zero MAD. Default: leave, record as deferred. | W3 §W3-7 A D9, B A5, E #6 |
 | BA W1-2 B | P2 | — | Migration `20261109015836` header still reads DRAFT though applied 2026-11-09: header comment fix is **not allowed** in an applied file; note it in the authority JSON instead (ask Chef). | BA §W1-2 B |
 
@@ -31,8 +31,8 @@ Readers: WiGO percentiles and ratings (L4b), radar (L4b), Roster Matrix (L3), Ga
 ## Production steps (TJ approval, one migration per pop-up)
 Each new migration file (NST season views, Game Score RPC, `nhl_team_data`, `goalie_weekly_aggregates`, `player_totals_unified`, `gameOutcomes`, others) applied singly via the IPv4 session pooler with psql and recorded in `schema_migrations` and `migration-authority.json`. The `wgo_skater_stats` 2010–2017 label repair (data repair, own approval). Physical-totals migration `20261020211500` only after its season/cutoff guard (Q3, with L9a). Unapplied index migrations `20261109210000`, `20261109213000` (Chef confirms still needed).
 
-## Tier B questions (Chef asks at start)
-Q2 Game Score definition; Q4 PP deployment share denominator; Q40 `team_discipline_stats` trigger.
+## Tier B questions
+Answered 2026-11-11: decision 85 (Q2 house Game Score, labelled), decision 86 (Q4 both PP share measures), decision 87 (Q40 leave trigger for cleanup).
 
 ## Out of scope
 NST admission cadence (decision 14: `web/lib/cron/nstRateLimitPolicy.ts` and `web/lib/nst/**` admission are Codex/coordination); WiGO TS readers (L4b); applying anything.

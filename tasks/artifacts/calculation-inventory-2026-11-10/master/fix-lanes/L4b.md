@@ -30,7 +30,7 @@ Readers: `/wigoCharts` comparison matrix, DIFF, reference lines, game-log/PPG/Co
 WiGO seasonal rows rebuilt by `calculate-wigo-stats` after the writer fix (bounded, TJ approval). Depends on L4a's view migrations being applied first.
 
 ## Tier B questions (Chef asks at start)
-Q41 one percentile convention (recommended: keep both, label each; WiGO, social and the radar mid-rank). Q2 Game Score label if L4a has not asked it yet.
+Q41 one percentile convention (recommended: keep both, label each; WiGO, social and the radar mid-rank). Q2 answered: decision 85 (house Game Score, labelled).
 
 ## Out of scope
 SQL views (L4a); `components/PlayerStats/**` other than the radar (L17); rankings percentile (L5).
