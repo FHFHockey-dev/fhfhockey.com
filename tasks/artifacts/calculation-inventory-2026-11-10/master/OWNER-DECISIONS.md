@@ -65,3 +65,17 @@ Facts Chef checked after W1-1 (2026-11-10):
   - The Top Adds NaN reproduces in a local fixture; its visible impact is unchecked.
   - The proposed SOS helper can count an in-progress game as completed, so correct it before reuse.
   - Restoring early-season shrinkage alone won't work if the next normalisation step cancels it out.
+
+## Decisions on the Batch A open questions (TJ, 2026-11-11, by pop-up)
+16. **Rolling availability follows the player's team of record by date.** Label it "games available"; the "with current team" wording was TJ's starting point, but the rule follows the trade date. Fix the denominator and clamp bugs.
+    - The last-N window is the player's team-of-record games by date. Each possible game belongs to the team he was rostered with on that date: before a trade it counts the old team's games, after it the new team's.
+    - Numerator: games played. Denominator: team games of the team of record on each date.
+    - TJ's worked example: in the window 11-01 to 11-11 the player is on team A for 4 team games (plays 3), is traded on 11-06, and is on team B for 6 team games (plays 5). Availability = (3 + 5)/(4 + 6) = 8/10.
+    - Needs the roster or trade effective date. Where that date is unknown, say so (unknown, or an appearance-bounded proxy labelled as such); don't guess.
+17. **Expected shooting % = ixG ÷ unblocked attempts (Fenwick), as a 0–100% scale, with one name and one definition everywhere** (rolling, trends, rankings). Retire the ixG/SOG and ixG/all-attempts variants or rename them if anything still needs them.
+18. **"Last 7/14/30 days" means calendar days ending today.** An idle player shows few or no games.
+19. **The team power-rating headline is a shrunk strength estimate.** Early-season values regress toward average by games played, with an approved prior applied **after** normalisation against a fixed reference distribution, so the final standardisation can't cancel it.
+20. **CTPI PP/PK rates are pooled by ice time:** Σ(w·xG) ÷ Σ(w·TOI) × 3600 over the same valid observations.
+21. **Strength of schedule "past" means final only** (completed with a known result). Started or postponed games go to an explicit pending or in-progress bucket and are never counted as played.
+22. **Created-xG credit is exclusive and capped.** The contributors on one shot sum to at most that shot's xG, so credit adds up across players and teams.
+23. **Results luck compares rates per 60:** (G − ixG)/60 in the window against the non-overlapping baseline (G − ixG)/60, using explicit count fields and matched exposure.
