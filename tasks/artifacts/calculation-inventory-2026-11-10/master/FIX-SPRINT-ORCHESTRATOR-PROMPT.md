@@ -24,7 +24,7 @@ Your job is to turn the findings into **fix lanes**, run them as Opus sessions, 
 3. The P0 lists and cross-packet maps:
    - `BATCH-BC-CONSOLIDATED.md` "Wave 1 P0 list" and "Cross-packet defect map" (Wave 1 includes Batch A);
    - `WAVE2-CONSOLIDATED.md` "Wave 2 P0 list", "Cross-packet defect map (Wave 2)", "Owner decisions still open" and **"Suggested fix-lane grouping"** (draft lanes L1–L15 plus Codex BLSH, with an order);
-   - the matching sections of `WAVE3-CONSOLIDATED.md`.
+   - `WAVE3-CONSOLIDATED.md` "Wave 3 P0 list" (with the combined Waves 1–3 counts), "Cross-packet defect map (Wave 3)", "Owner decisions still open" and **"Lane-grouping update"** (how Wave 3 slots into L1–L15, new lanes and ownership conflicts). Its per-pass sections carry a condensed fix-agent handoff with Astra corrections applied.
 4. For each lane you build, its sources:
    - the per-pass sections of the consolidations;
    - the **"Final analysis and fix-agent handoff"** section of each Wave 3 audit in `audits/`;
