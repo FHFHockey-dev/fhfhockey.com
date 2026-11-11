@@ -202,3 +202,7 @@ Facts Chef checked after W1-1 (2026-11-10):
     - Define how OT and extra-attacker time are classified, with an explicit other/unknown bucket if needed. The categories are mutually exclusive and reconcile to total TOI, with no double-counted PK.
     - Update consumers and migrations together, keep units, and test missing data and unusual states.
     - Never relabel historical values as true ES.
+60. **FORGE rest buckets.** Keep legacy in production, clearly documented, until a replacement is qualified.
+    - Backtest the newer tiers using only pregame information, against both the current model and a **no-rest baseline**, with the impact measured **after full team reconciliation**. Check outcomes and calibration on held-out dates, with enough samples per tier.
+    - Adopt them if better. If not, try a simpler rest feature before deciding what to remove.
+    - Never keep an unreachable tier as though it were active.
