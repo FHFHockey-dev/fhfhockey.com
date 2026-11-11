@@ -241,3 +241,50 @@ Facts Chef checked after W1-1 (2026-11-10):
     - Define and label the comparison population (position, per-metric minimum exposure), kept separate from the player's own baseline.
     - When current-season evidence is thin, use a documented, appropriately weighted earlier reference or prior, with weighting and thresholds validated (no one-size cutoff).
     - Record source seasons, cutoff, sample and version so history is reproducible. Show when the reference is sparse or unavailable, and never describe a percentile or standardised score as a calibrated probability.
+
+## Decisions on the Wave 2 consolidation's Tier A questions (TJ, 2026-11-11, by pop-up; intent preserved, condensed by Chef)
+Source: `WAVE2-CONSOLIDATED.md`, "Owner decisions still open" Q1, 5, 6, 9, 18, 19, 22, 26, 27, 33 and 36. The 29 Tier B questions are asked by pop-up when the lane that needs them starts.
+
+69. **NST season-long views are regular season only** (game type 2). Playoff views come later as their own views. (Q1, W2-P0-1)
+70. **Strength classification follows the penalty and manpower context, not a raw skater count.** (Q5, W2-P0-2)
+    - PP/PK come from actual penalty-advantage context. 4v4 and 3v3 with no penalty advantage are ES.
+    - Empty net / extra attacker is a **separate attribute that can overlap** ES, PP or PK. A 6v5 is not automatically a PP, and pulled-goalie events are not forced into their own exclusive bucket.
+    - Verify and save the current NST and official NHL definitions before mapping their numbers or claiming parity. Where they differ, keep source-specific definitions and label the difference; never silently mix them.
+    - Apply one classification to events and exposure time. Fixtures: 6v5 without a penalty, pulled goalie during a real PP or PK, 4v4, 3v3, penalty expiry, overtime.
+    - The mutually exclusive strength totals reconcile to total time, and the overlapping empty-net attribute is not double-counted.
+71. **One qualified, source-attributed PP clock drives displayed PP time and shares.** (Q6, W2-P0-13)
+    - Evaluate the penalty-box simulation against official game records and the saved NHL/NST definitions across regulation, OT, penalty expiry, overlapping penalties and extra-attacker states.
+    - Confirm complete game and player coverage; a verified zero is distinct from a missing or partial record.
+    - It becomes the canonical display source once those checks pass.
+    - FORGE's modelled split stays labelled as a model input, repaired or reconciled where needed, and is never displayed as observed PP time.
+    - Player PP time and share use matching team/game exposure and the same classification. **Never cap an impossible percentage**: flag and investigate the mismatch.
+72. **Line-card goalie record = the goalie's own credited decisions.** (Q9, W2-P0-12)
+73. **Variance-page skater advanced columns.** (Q18, W2-P0-8)
+    - **Now:** show iCF/60 only when it uses the player's individual attempts with matching, complete TOI exposure. Hide IPP and ixG/60, or mark them unavailable, until their inputs are wired and verified; never show missing data as zero. Don't delay this display correction for the integration.
+    - **Same workstream:** implement the intended metrics from matched NST or other qualified sources. Keep individual iCF/60 and ixG/60 distinct from on-ice CF/60, and compute IPP from matching on-ice goal and point definitions.
+    - Before any join, verify source, season, strength, game window, player identity, units and coverage. Pool numerators and denominators; never average per-game rates.
+    - Test the actual page output on single- and multi-game fixtures, including missing TOI and partial coverage. Restore each column only when its data and label are verified.
+74. **Rankings composites are 0–100 scores, labelled with what they measure, never formatted as percentiles.** (Q19)
+    - A percentile, if shown, is computed separately: the player's actual rank in a clearly identified, qualified cohort (same season, position, strength and window), with cohort size, minimum-sample rules and consistent ties.
+    - A weighted average of percentiles is never presented as a true percentile.
+    - BEAST thresholds stay tied to the scale they were designed for until the score and inputs are repaired and validated. If the scale or cohort changes, re-evaluate and **version** the thresholds; don't carry old cutoffs over automatically.
+    - Missing inputs follow an explicit, visible policy, never silent zeros.
+75. **Ranked GAx and Unrealized xG are window counts in goals**, with per-60 as separate, labelled columns. (Q22, W2-P0-11)
+76. **Draft base score = a qualified, league-aware VORP, with VONA shown separately.** (Q26, W2-P0-14)
+    - First correct and validate replacement level: positional eligibility, multi-position assignment, league slots and bench assumptions.
+    - VONA joins the score only once its definition is fixed **and** a blend improves decisions in held-out draft replays.
+    - Roster need and positional scarcity stay visible as separate factors, and can't arbitrarily reverse comparable players without an explainable reason.
+    - Show the league settings and reference pool. Label incomplete replacement values or projections as such.
+77. **Replacement reference.** (Q27)
+    - Season totals, awards and cross-scenario comparisons use a **frozen, league-aware, versioned and labelled** replacement reference.
+    - Bench treatment comes from the league's settings and the measure's purpose; it isn't universally excluded.
+    - Live draft decisions separately evaluate the available pool and actual roster fills (multi-position eligibility and UTIL), labelled as current availability or scarcity. They never silently change the frozen VORP baseline.
+    - Slot assignment is globally consistent, not greedy, with multi-position counterexample tests.
+    - Document pool, settings, cutoff and missing-player treatment, and validate both measures before they drive recommendations.
+78. **Non-appearance settlement uses identity-complete receipts from stored final official boxscores**, with no new provider calls, when those records carry the roster and participation details. (Q33, W2-8 D1)
+    - Verify game finality, player identity and team/roster scope. Distinguish an official non-appearance from a missing, incomplete or unparseable record; a matching row count is not proof.
+    - When stored evidence can't establish the eligible universe and outcome, leave the player **unresolved** and name the evidence or producer needed.
+    - Confirmed non-appearance scores 0 **only on unconditional forecasts**; verify that the accuracy scorer includes them. Keep the receipt, source version and settlement time.
+79. **External use of `/api/v1/forge/scoreboard` is unknown.** (Q36)
+    - Check documented integrations and available access logs or other evidence. Absence from the codebase isn't proof of no external use.
+    - Keep the endpoint contract while investigating. Set W2-8 D1's priority from verified consumers and impact; make no production change on this answer alone.

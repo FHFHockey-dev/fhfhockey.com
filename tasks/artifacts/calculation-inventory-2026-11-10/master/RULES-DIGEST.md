@@ -1,6 +1,6 @@
 # Math audit: binding rules digest (Chef, 2026-11-11)
 
-One-line form of `OWNER-DECISIONS.md` 1–68 and the consolidations' cross-cutting rules 1–12. It is binding. Where the code differs from a decision, that is a defect. Open `OWNER-DECISIONS.md` only for the numbered decisions your packet touches; it holds the full wording and wins on any conflict.
+One-line form of `OWNER-DECISIONS.md` 1–79 and the consolidations' cross-cutting rules 1–12. It is binding. Where the code differs from a decision, that is a defect. Open `OWNER-DECISIONS.md` only for the numbered decisions your packet touches; it holds the full wording and wins on any conflict.
 
 ## Cross-cutting rules (apply to every finding and test)
 1. Magnitudes are dated samples: give the sample size, date and reproducible inputs, never population rates.
@@ -94,6 +94,19 @@ One-line form of `OWNER-DECISIONS.md` 1–68 and the consolidations' cross-cutti
 58. Power Terminal: a 100-centred rating on a diverging bar; a rating is never a percentile; sparklines come from real history.
 62. Category value: a league-aware pool (or a labelled reference pool). SV%/GAA are valued by their effect on roster totals, not raw z. No second shrink; missing exposure ≠ zero.
 67. Manual RSO comparisons with an unknown drop are allowed, labelled "incomplete", never ranked above complete ones.
+
+**Wave 2 decisions (69–79)**
+69. NST season-long views are regular season only; playoff views come later as their own views.
+70. PP/PK follow the penalty context, and 4v4/3v3 without a penalty are ES. Empty net / extra attacker is an overlapping attribute (6v5 ≠ automatic PP). Save the NHL/NST definitions first; the exclusive totals reconcile to TOI.
+71. One qualified, source-attributed PP clock (the penalty-box simulation, once validated and coverage-checked) drives displayed PP time and share. FORGE's split is a labelled model input. Never cap an impossible %.
+72. A line-card goalie record shows his own credited decisions.
+73. Variance page: show iCF/60 only with matched complete TOI, and hide IPP/ixG/60 now. Then wire qualified sources, pooling numerators and denominators.
+74. Composites are 0–100 scores, never formatted as percentiles. Any percentile is computed separately in a stated cohort. BEAST thresholds are versioned if the scale changes.
+75. Ranked GAx and Unrealized xG are window counts in goals; per-60 goes in separate columns.
+76. The draft base score is league-aware VORP with VONA separate. Fix replacement level first; blend only if held-out replays improve.
+77. The replacement reference is frozen, league-aware and versioned. The live board shows availability or scarcity separately. Slot assignment is global, not greedy.
+78. Non-appearance is settled from identity-complete stored boxscore receipts; otherwise the player stays unresolved. Zero is scored only on unconditional forecasts.
+79. External `/forge/scoreboard` use is unknown: investigate, keep the contract, and set priority from evidence.
 
 **Process**
 4. Auditors may run bounded reads under the read-hygiene rules (see the prompt).

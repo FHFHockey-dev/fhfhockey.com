@@ -9,7 +9,7 @@ You are auditing the mathematics and methodology of FHFHockey.com, a fantasy-hoc
 All paths below are under `tasks/artifacts/calculation-inventory-2026-11-10/master/` unless they start with `web/`, `functions/`, `modeling/` or `supabase/`.
 
 ## Read these, and only these, before the code
-1. `RULES-DIGEST.md` (about 10 KB): owner decisions 1–68 and cross-cutting rules 1–12, one line each. **Binding**: where code differs from a decision, it is a defect. Key decisions here: 1, 42, 43, 45 and 64 (placeholder game model, no-model notice and labelled market probability, no 0.52 rule, OT split, Grid odds withheld), plus rules 8 and 9. Open `OWNER-DECISIONS.md` only for the full text of a numbered decision you are applying. If `WAVE2-CONSOLIDATED.md` exists, read only its cross-cutting rules section and any decisions above 68.
+1. `RULES-DIGEST.md` (about 10 KB): owner decisions 1–79 and cross-cutting rules 1–12, one line each. **Binding**: where code differs from a decision, it is a defect. Key decisions here: 1, 42, 43, 45 and 64 (placeholder game model, no-model notice and labelled market probability, no 0.52 rule, OT split, Grid odds withheld), plus rules 8 and 9. Open `OWNER-DECISIONS.md` only for the full text of a numbered decision you are applying. If `WAVE2-CONSOLIDATED.md` exists, read only its cross-cutting rules section and any decisions above 68.
 2. Your entries (boilerplate removed; leads are hypotheses, not findings): `packets-slim/player-cards-homepage-stats.md`, `packets-slim/trade-value.md`. Open the matching file in `packets/` only when a slim entry says "full text in the original packet" and you need it.
 3. Upstream context: `BATCH-BC-CONSOLIDATED.md`, section "W1-10 · Game predictions and odds" (for the homepage edge and win odds); `audits/game-predictions-odds.md` and `audits/blsh-buy-low-sell-high.md` (summaries and defects only).
 
@@ -41,7 +41,7 @@ Write `audits/player-cards-trade-value.md` with:
 - a summary: verdict counts and the top 5 findings by user impact;
 - a per-entry table with **one short line per entry** (id, verdict or "covered by …", evidence file:line, reach live/conditional/dormant/research, downstream). Sound and covered entries need no prose;
 - defects only in detail: fix, test, priority (P0 = user-visible wrong numbers now, P1, P2), reach;
-- owner questions **not already answered by the decisions**;
+- owner questions **not already answered by decisions 1–79** or listed as Tier B in `WAVE2-CONSOLIDATED.md`;
 - limits;
 - **Final analysis and fix-agent handoff** (the last section; Opus fix agents will work from it, one lane per code area, without re-reading this audit's evidence):
   - final analysis: what is actually wrong in this area and why, in a few paragraphs, with Astra's upstream corrections applied;
