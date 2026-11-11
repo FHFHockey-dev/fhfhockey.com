@@ -604,7 +604,7 @@ function sumEmptyNet<T extends Record<string, number>>(
   return total as T;
 }
 
-type GameAggregateBase = {
+export type GameAggregateBase = {
   model_version: string;
   feature_version: number;
   season_id: number | null;
@@ -613,7 +613,7 @@ type GameAggregateBase = {
   provenance: Record<string, unknown>;
 };
 
-type DressedRollingWindow<T> = {
+export type DressedRollingWindow<T> = {
   modelVersion: string;
   featureVersion: number;
   asOf: XgParticipationRow;
@@ -632,7 +632,7 @@ function participationSort(left: XgParticipationRow, right: XgParticipationRow):
  * aggregate row is a zero only when its predictions are proven complete;
  * otherwise the window is unknown and no row is written.
  */
-function buildDressedRollingWindows<T extends GameAggregateBase>(args: {
+export function buildDressedRollingWindows<T extends GameAggregateBase>(args: {
   scope: XgRollingScope;
   rows: T[];
   entityIdOf: (row: T) => number;
@@ -808,6 +808,14 @@ function buildRollingGoalieRows(
       updated_at: generatedAt,
     };
   });
+}
+
+export function emptyXgRollingCoverageReport(): XgRollingCoverageReport {
+  return {
+    team: { rowsEmitted: 0, incompleteWindows: 0, unavailableReason: null },
+    player: { rowsEmitted: 0, incompleteWindows: 0, unavailableReason: null },
+    goalie: { rowsEmitted: 0, incompleteWindows: 0, unavailableReason: null },
+  };
 }
 
 export function isXgEmptyNetTarget(
@@ -1080,11 +1088,7 @@ export function buildXgAggregates(
     `${gameSortValue(left)}:${left.goalie_player_id}`.localeCompare(`${gameSortValue(right)}:${right.goalie_player_id}`)
   );
 
-  const rollingCoverage: XgRollingCoverageReport = {
-    team: { rowsEmitted: 0, incompleteWindows: 0, unavailableReason: null },
-    player: { rowsEmitted: 0, incompleteWindows: 0, unavailableReason: null },
-    goalie: { rowsEmitted: 0, incompleteWindows: 0, unavailableReason: null },
-  };
+  const rollingCoverage = emptyXgRollingCoverageReport();
   const rollingInputs = {
     modelFeaturePairs,
     windows,

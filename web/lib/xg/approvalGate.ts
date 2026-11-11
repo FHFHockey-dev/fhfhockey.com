@@ -430,3 +430,64 @@ export function isAffirmativelyApprovedXgEligibility(eligibility: unknown): bool
   ];
   return required.every((key) => checks[key] === true);
 }
+
+export type XgCalibrationSummary = {
+  count: number;
+  goals: number;
+  goalRate: number | null;
+  logLoss: number | null;
+  baseRateLogLoss: number | null;
+  brierScore: number | null;
+  baseRateBrierScore: number | null;
+  calibrationInTheLargeZ: number | null;
+  spiegelhalterZ: number | null;
+  zLimit: number;
+  reliabilityBins: XgReliabilityBin[];
+  /** Both calibration z statistics within the limit. Drift alone never sets this. */
+  calibrated: boolean;
+};
+
+/**
+ * Calibration monitor for served predictions with known outcomes: proper
+ * scores against the base rate, calibration-in-the-large and Spiegelhalter z,
+ * and reliability bins. A matching mean (no drift) can still be miscalibrated.
+ */
+export function summarizeXgCalibration(scores: XgApprovalScore[]): XgCalibrationSummary {
+  const valid = scores.filter((score) => (score.label === 0 || score.label === 1) && Number.isFinite(score.probability));
+  const count = valid.length;
+  const goals = valid.reduce((sum, score) => sum + score.label, 0);
+  const goalRate = count > 0 ? goals / count : null;
+  let logLoss: number | null = null;
+  let brierScore: number | null = null;
+  let baseRateLogLoss: number | null = null;
+  let baseRateBrierScore: number | null = null;
+  if (count > 0 && goalRate != null) {
+    logLoss = -valid.reduce((sum, score) => {
+      const probability = clip(score.probability);
+      return sum + (score.label === 1 ? Math.log(probability) : Math.log(1 - probability));
+    }, 0) / count;
+    brierScore = valid.reduce((sum, score) => sum + (score.probability - score.label) ** 2, 0) / count;
+    const base = clip(goalRate);
+    baseRateLogLoss = -(goalRate * Math.log(base) + (1 - goalRate) * Math.log(1 - base));
+    baseRateBrierScore = goalRate * (1 - goalRate);
+  }
+  const zLarge = calibrationInTheLargeZ(valid);
+  const zSpiegelhalter = spiegelhalterZ(valid);
+  return {
+    count,
+    goals,
+    goalRate,
+    logLoss,
+    baseRateLogLoss,
+    brierScore,
+    baseRateBrierScore,
+    calibrationInTheLargeZ: zLarge,
+    spiegelhalterZ: zSpiegelhalter,
+    zLimit: XG_APPROVAL_CALIBRATION_Z_LIMIT,
+    reliabilityBins: reliabilityBins(valid),
+    calibrated:
+      zLarge != null && zSpiegelhalter != null &&
+      Math.abs(zLarge) <= XG_APPROVAL_CALIBRATION_Z_LIMIT &&
+      Math.abs(zSpiegelhalter) <= XG_APPROVAL_CALIBRATION_Z_LIMIT,
+  };
+}

@@ -23,8 +23,12 @@ import {
 import {
   predictBinaryLogisticProbability,
   trainBinaryLogisticModel,
+  diagnoseBinaryLogisticFit,
+  selectL2ByValidation,
+  type BinaryLogisticFitDiagnostics,
   type BinaryLogisticModel,
   type BinaryLogisticFitOptions,
+  type L2SweepResult,
 } from "../lib/xg/binaryLogistic";
 import {
   assessCalibration,
@@ -87,6 +91,7 @@ type CliOptions = {
   learningRate: number | null;
   l1: number | null;
   l2: number | null;
+  l2Sweep: number[] | null;
   maxDepth: number | null;
   minChildWeight: number | null;
   numRounds: number | null;
@@ -234,6 +239,8 @@ type ModelArtifactPayload = {
   };
   approvalGradeEligibility: ApprovalGradeEligibility;
   featureImportance?: Array<{ featureKey: string; importance: number }>;
+  fitDiagnostics?: BinaryLogisticFitDiagnostics | null;
+  l2Sweep?: L2SweepResult | null;
   model: unknown;
 };
 
@@ -315,6 +322,7 @@ Options:
   --learningRate <n>           Optional override for optimizer learning rate
   --l1 <n>                     Optional override for L1 penalty strength
   --l2 <n>                     Optional override for L2 penalty strength
+  --l2Sweep <csv>              Optional L2 grid; the strength with the lowest validation log loss is used
   --maxDepth <n>               Optional boosting tree depth override
   --minChildWeight <n>         Optional boosting min-child-weight override
   --numRounds <n>              Optional boosting round-count override
@@ -477,6 +485,8 @@ export function buildApprovalGradeEligibility(args: {
   splitDateRanges: SplitDateRanges;
   calibration: ModelArtifactPayload["calibration"] | null | undefined;
   calibrationAssessment: CalibrationAssessment;
+  /** Logistic fits only; null when not applicable (e.g. boosting). */
+  fitConverged?: boolean | null;
   featureCoverage?: XgFeatureCoverageProfile | null;
   selectedFeatures: {
     numeric: string[];
@@ -512,14 +522,18 @@ export function buildApprovalGradeEligibility(args: {
     relevantSubgroups: ["strengthState", "rebound", "rush"],
   });
 
-  const extraReasons =
-    args.predictionType === "rebound_creation"
+  const extraReasons = [
+    ...(args.fitConverged === false
+      ? ["The logistic fit did not converge (objective gradient above tolerance); the served coefficients are not an optimum."]
+      : []),
+    ...(args.predictionType === "rebound_creation"
       ? buildReboundCreationApprovalBlockingReasons({
           evaluation: args.evaluation,
           holdoutEvaluation: args.holdoutEvaluation,
           calibrationAssessment: args.calibrationAssessment,
         }).filter((reason) => !gate.blockingReasons.includes(reason))
-      : [];
+      : []),
+  ];
 
   return {
     ...gate,
@@ -648,6 +662,12 @@ function parseCliArgs(argv: string[]): CliOptions {
     learningRate: options.learningRate ? Number(options.learningRate) : null,
     l1: options.l1 ? Number(options.l1) : null,
     l2: options.l2 ? Number(options.l2) : null,
+    l2Sweep: options.l2Sweep
+      ? options.l2Sweep
+          .split(",")
+          .map((entry) => Number(entry.trim()))
+          .filter((entry) => Number.isFinite(entry) && entry >= 0)
+      : null,
     maxDepth: options.maxDepth ? Number(options.maxDepth) : null,
     minChildWeight: options.minChildWeight ? Number(options.minChildWeight) : null,
     numRounds: options.numRounds ? Number(options.numRounds) : null,
@@ -1606,6 +1626,8 @@ export function buildBaselineArtifactPayloads(args: {
   calibrationAssessment: CalibrationAssessment;
   calibration?: ModelArtifactPayload["calibration"];
   featureImportance?: Array<{ featureKey: string; importance: number }>;
+  fitDiagnostics?: BinaryLogisticFitDiagnostics | null;
+  l2Sweep?: L2SweepResult | null;
   model: unknown;
 }): {
   datasetArtifact: DatasetArtifactPayload;
@@ -1624,6 +1646,7 @@ export function buildBaselineArtifactPayloads(args: {
     splitDateRanges,
     calibration: args.calibration,
     calibrationAssessment: args.calibrationAssessment,
+    fitConverged: args.fitDiagnostics?.converged ?? null,
     featureCoverage: args.featureCoverage ?? null,
     selectedFeatures: args.selectedFeatures,
     featureKeys: args.dataset.featureKeys,
@@ -1697,6 +1720,8 @@ export function buildBaselineArtifactPayloads(args: {
     calibration: args.calibration,
     approvalGradeEligibility,
     featureImportance: args.featureImportance,
+    fitDiagnostics: args.fitDiagnostics ?? null,
+    l2Sweep: args.l2Sweep ?? null,
     model: args.model,
   };
 
@@ -1942,6 +1967,8 @@ async function main(): Promise<void> {
     let featureImportance:
       | Array<{ featureKey: string; importance: number }>
       | undefined;
+    let fitDiagnostics: BinaryLogisticFitDiagnostics | null = null;
+    let l2Sweep: L2SweepResult | null = null;
     let rawScoredExamples: ScoredExample[];
     let scoredExamples: ScoredExample[];
     let calibration:
@@ -1961,7 +1988,19 @@ async function main(): Promise<void> {
       options.family === "logistic_elastic_net"
     ) {
       fitOptions = resolveFitOptions(options);
+      if (options.l2Sweep?.length && options.family !== "logistic_unregularized") {
+        const validationExamples = transformedExamples
+          .filter((example) => example.split === "validation")
+          .map((example) => ({ features: example.features, label: example.label }));
+        l2Sweep = selectL2ByValidation(trainExamples, validationExamples, options.l2Sweep, {
+          iterations: fitOptions.iterations,
+          learningRate: fitOptions.learningRate,
+          l1: fitOptions.l1,
+        });
+        fitOptions = { ...fitOptions, l2: l2Sweep.selectedL2 };
+      }
       const logisticModel = trainBinaryLogisticModel(trainExamples, fitOptions);
+      fitDiagnostics = diagnoseBinaryLogisticFit(logisticModel, trainExamples, fitOptions);
       model = logisticModel;
       rawScoredExamples = scoreExamples(logisticModel, transformedExamples);
     } else if (options.family === "xgboost_js") {
@@ -2106,6 +2145,8 @@ async function main(): Promise<void> {
       calibrationAssessment,
       calibration,
       featureImportance,
+      fitDiagnostics,
+      l2Sweep,
       model,
     });
 

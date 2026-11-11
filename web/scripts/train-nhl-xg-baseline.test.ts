@@ -392,7 +392,7 @@ describe("train-nhl-xg-baseline", () => {
     });
   });
 
-  const buildEligibilityFixture = (holdoutScores: Array<Record<string, unknown>>) => {
+  const buildEligibilityFixture = (holdoutScores: Array<Record<string, unknown>>, extra: Record<string, unknown> = {}) => {
     const dataset = buildEncodedBaselineDataset([
       createShotRow({ gameId: 2025021001, eventId: 1, gameDate: "2026-01-01", isGoal: true }),
       createShotRow({ gameId: 2025021002, eventId: 2, gameDate: "2026-01-02" }),
@@ -477,6 +477,7 @@ describe("train-nhl-xg-baseline", () => {
         rebound: [],
         rush: [],
       },
+      ...extra,
       holdoutScores: holdoutScores as never,
       calibrationAssessment: {
         requiresPostCalibration: false,
@@ -545,6 +546,15 @@ describe("train-nhl-xg-baseline", () => {
     // The same served model with only a validation holdout has no untouched evidence.
     const validationOnly = buildEligibilityFixture(scored("validation", 20000));
     expect(validationOnly.modelArtifact.approvalGradeEligibility.isEligible).toBe(false);
+    // An unconverged logistic fit is blocked even with a passing holdout.
+    state = 7;
+    const unconverged = buildEligibilityFixture([...scored("validation", 500), ...scored("test", 20000)], {
+      fitDiagnostics: { objective: 0.3, gradientNorm: 0.02, meanPrediction: 0.0767, meanLabel: 0.0717, tolerance: 1e-4, converged: false },
+    });
+    expect(unconverged.modelArtifact.approvalGradeEligibility.isEligible).toBe(false);
+    expect(unconverged.modelArtifact.approvalGradeEligibility.blockingReasons).toEqual([
+      "The logistic fit did not converge (objective gradient above tolerance); the served coefficients are not an optimum.",
+    ]);
   });
 
   it("applies rebound-creation-specific approval gates", () => {

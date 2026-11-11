@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   evaluateXgApprovalGate,
   isAffirmativelyApprovedXgEligibility,
+  summarizeXgCalibration,
   type XgApprovalGateInput,
   type XgApprovalScore,
 } from "./approvalGate";
@@ -144,5 +145,25 @@ describe("isAffirmativelyApprovedXgEligibility", () => {
     expect(
       isAffirmativelyApprovedXgEligibility({ ...approved, evidence: { ...approved.evidence, testExampleCount: undefined } })
     ).toBe(false);
+  });
+});
+
+describe("summarizeXgCalibration (drift is not calibration, BA W1-1 B)", () => {
+  it("flags miscalibration that a mean-xG drift check cannot see", () => {
+    // Frozen data: labels drawn from p, then predictions shrunk toward their
+    // mean (underconfident), which keeps the mean exactly.
+    const truth = calibratedHoldout(30000, 23);
+    const mean = truth.reduce((sum, score) => sum + score.probability, 0) / truth.length;
+    const stretched = truth.map((score) => ({
+      ...score,
+      probability: mean + 0.4 * (score.probability - mean),
+    }));
+    const goalRate = truth.reduce((sum, score) => sum + score.label, 0) / truth.length;
+    const stretchedMean = stretched.reduce((sum, score) => sum + score.probability, 0) / stretched.length;
+    // A 0.015 mean-drift alarm stays quiet...
+    expect(Math.abs(stretchedMean - goalRate)).toBeLessThan(0.015);
+    // ...while the calibration monitor flags it, and passes the honest version.
+    expect(summarizeXgCalibration(stretched).calibrated).toBe(false);
+    expect(summarizeXgCalibration(truth).calibrated).toBe(true);
   });
 });
