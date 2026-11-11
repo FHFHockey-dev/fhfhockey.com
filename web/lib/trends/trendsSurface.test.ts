@@ -4,14 +4,22 @@ import {
   describeLockedBaselines,
   LOCKED_PLAYER_BASELINES,
   buildSkaterRecentSummaryCards,
+  classifyTeamTemperature,
   formatGoalieTrendValue,
   formatPercentileOrdinal,
   formatRecentFormValue,
+  formatRollingMetricValue,
   formatSkaterTrendWindowLabel,
   isLockedPlayerBaselineMode,
+  summarizeTrendStreak,
   isPlayerQuickViewId
 } from "./trendsSurface";
-import { summarizePairedCorrelation } from "./utils";
+import {
+  combineSkillMinusLuckComposite,
+  computeLuck,
+  computeLuckDeltas,
+  summarizePairedCorrelation
+} from "./utils";
 
 describe("trendsSurface helpers", () => {
   it("formats skater window labels consistently", () => {
@@ -191,5 +199,91 @@ describe("trendsSurface helpers", () => {
       r: null,
       r2: null
     });
+  });
+});
+
+describe("player trend page scale formatting and streaks (P0 #11)", () => {
+  it("formats each metric by its declared scale", () => {
+    // Fraction scale (0–1): multiply by 100.
+    expect(formatRollingMetricValue("primary_points_pct", 0.167)).toBe("16.7%");
+    expect(formatRollingMetricValue("pp_share_pct", 0.42)).toBe("42.0%");
+    // Percent scale (0–100): shown as stored.
+    expect(formatRollingMetricValue("shooting_pct", 21.7)).toBe("21.7%");
+    expect(formatRollingMetricValue("expected_sh_pct", 12)).toBe("12.0%");
+    // PDO is an index, not a percentage.
+    expect(formatRollingMetricValue("pdo", 1.093)).toBe("1.093");
+    expect(formatRollingMetricValue("toi_seconds", 1474)).toBe("24:34");
+    expect(formatRollingMetricValue("goals_per_60", 1.234)).toBe("1.23");
+    expect(formatRollingMetricValue("ipp", null)).toBe("—");
+  });
+
+  it("counts a streak only while games stay beyond the label threshold", () => {
+    // Latest +12 and +9 are hot; +3 is not, so the streak is 2 games, not 4.
+    expect(summarizeTrendStreak([10, 3, 9, 12])).toEqual({
+      direction: "hot",
+      games: 2
+    });
+    expect(summarizeTrendStreak([-9, -2, -10])).toEqual({
+      direction: "cold",
+      games: 1
+    });
+    expect(summarizeTrendStreak([20, 5])).toEqual({ direction: "steady", games: 0 });
+    expect(summarizeTrendStreak([])).toEqual({ direction: "steady", games: 0 });
+  });
+});
+
+describe("luck deltas and the skill-minus-luck composite (decision 80, W3-7 D6)", () => {
+  it("orients each luck component as observed minus expectation", () => {
+    // Checked one component at a time: positive = above expectation.
+    expect(computeLuckDeltas({ goals: 5, xg: 3 }).goals_minus_ixG).toBe(2);
+    expect(computeLuckDeltas({ goals: 1, xg: 3 }).goals_minus_ixG).toBe(-2);
+    expect(computeLuckDeltas({ onIceSH: 0.11 }).onIceSH_delta).toBeCloseTo(0.03, 9);
+    expect(computeLuckDeltas({ pdo: 0.97 }).PDO_delta).toBeCloseTo(-0.03, 9);
+    expect(computeLuckDeltas({ ipp: 70, ippBaseline: 60 }).IPP_delta).toBe(10);
+    expect(computeLuck).toBe(computeLuckDeltas);
+  });
+
+  it("leaves a delta absent when its input is missing", () => {
+    expect(computeLuckDeltas({ goals: 2 })).toEqual({});
+    expect(computeLuckDeltas({ ipp: 50 })).toEqual({});
+  });
+
+  it("subtracts the luck deduction in the composite", () => {
+    const base = { skillOffense01: 0.6, skillDefense01: 0.4, onIceImpact01: 0.5 };
+    const lucky = combineSkillMinusLuckComposite({ ...base, luckInflation01: 0.8 });
+    const unlucky = combineSkillMinusLuckComposite({ ...base, luckInflation01: 0.1 });
+    expect(lucky.sustainability).toBeLessThan(unlucky.sustainability);
+  });
+});
+
+describe("team temperature lists (W3-3 D8)", () => {
+  it("puts a low team that moved up in one list only", () => {
+    const rows = [
+      { team: "AAA", percentile: 30, delta: 2 },
+      { team: "BBB", percentile: 80, delta: 0 },
+      { team: "CCC", percentile: 50, delta: 3 },
+      { team: "DDD", percentile: 50, delta: -4 }
+    ];
+    const { hot, cold } = classifyTeamTemperature(rows);
+    const hotTeams = hot.map((row) => row.team);
+    const coldTeams = cold.map((row) => row.team);
+    expect(hotTeams).toEqual(["BBB", "CCC"]);
+    expect(coldTeams).toEqual(["AAA", "DDD"]);
+    expect(hotTeams.filter((team) => coldTeams.includes(team))).toEqual([]);
+  });
+
+  it("does not depend on input order", () => {
+    const rows = [
+      { team: "AAA", percentile: 75, delta: 1 },
+      { team: "BBB", percentile: 90, delta: 0 },
+      { team: "CCC", percentile: 75, delta: 3 },
+      { team: "DDD", percentile: 72, delta: 0 }
+    ];
+    const forward = classifyTeamTemperature(rows).hot.map((row) => row.team);
+    const reversed = classifyTeamTemperature([...rows].reverse()).hot.map(
+      (row) => row.team
+    );
+    expect(forward).toEqual(["BBB", "CCC", "AAA"]);
+    expect(reversed).toEqual(forward);
   });
 });

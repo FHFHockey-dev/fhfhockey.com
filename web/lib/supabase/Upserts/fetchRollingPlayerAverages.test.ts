@@ -531,6 +531,7 @@ describe("fetchRollingPlayerAverages main runtime budget", () => {
       goals: 0,
       total_assists: 0,
       shots: 4,
+      iff: 5,
       ixg: 0.6
     };
     const collect = async (countsRows: Record<string, unknown>[]) => {
@@ -563,20 +564,134 @@ describe("fetchRollingPlayerAverages main runtime budget", () => {
     };
 
     // Only the second game lacks ixG: its five WGO shots must not dilute the rate.
+    // Decision 17: ixG ÷ unblocked attempts × 100 = 0.6 / 5 × 100 = 12, not
+    // ixG ÷ shots (0.15 or 15).
     const withNst = await collect([nstCounts]);
     const second = withNst.get("2026-10-15")!;
-    expect(second.expected_sh_pct_all).toBe(0.15);
-    expect(second.expected_sh_pct_last3).toBe(0.15);
-    expect(second.expected_sh_pct_season).toBe(0.15);
-    expect(second.expected_sh_pct_3ya).toBe(0.15);
-    expect(second.expected_sh_pct_career).toBe(0.15);
-    expect(withNst.get("2026-10-09")!.expected_sh_pct_all).toBe(0.15);
+    expect(second.expected_sh_pct_all).toBe(12);
+    expect(second.expected_sh_pct_last3).toBe(12);
+    expect(second.expected_sh_pct_season).toBe(12);
+    expect(second.expected_sh_pct_3ya).toBe(12);
+    expect(second.expected_sh_pct_career).toBe(12);
+    expect(withNst.get("2026-10-09")!.expected_sh_pct_all).toBe(12);
 
     // With no NST row at all, WGO shots contribute nothing.
     const wgoOnly = await collect([]);
     expect(wgoOnly.get("2026-10-15")!.expected_sh_pct_all ?? null).toBeNull();
     expect(wgoOnly.get("2026-10-15")!.expected_sh_pct_season ?? null).toBeNull();
     expect(wgoOnly.get("2026-10-15")!.expected_sh_pct_career ?? null).toBeNull();
+  });
+
+  it("pairs season support and window counts from the same observations (rule 13, P0 #10)", async () => {
+    silenceConsole();
+    const history = (playerId: unknown) =>
+      [
+        ["2026-10-09", 2026020020, 4],
+        ["2026-10-15", 2026020100, 0]
+      ].map(([date, game_id, shots]) => ({
+        player_id: playerId,
+        game_id,
+        date,
+        season_id: 20262027,
+        team_abbrev: "TOR",
+        goals: date === "2026-10-09" ? 1 : 0,
+        assists: 0,
+        shots,
+        points: date === "2026-10-09" ? 1 : 0,
+        toi_per_game: 1000
+      }));
+    const byDate = new Map<string, Record<string, unknown>>();
+    const supportByDate = new Map<string, any>();
+    const main = await importMainWithClient(
+      createWindowClient(history, [], undefined, undefined, {
+        nst_gamelog_as_counts: [
+          {
+            player_id: PLAYER_IDS[0],
+            date_scraped: "2026-10-09",
+            season: 20262027,
+            toi: 1000,
+            goals: 1,
+            total_assists: 0,
+            shots: 4,
+            iff: 5,
+            ixg: 0.6
+          }
+        ]
+      })
+    );
+    await main({
+      playerId: PLAYER_IDS[0],
+      strengths: ["all"],
+      dryRunUpsert: true,
+      skipDiagnostics: true,
+      dryRunBatchObserver: (batch) => {
+        for (const row of batch.rankingRows) {
+          byDate.set(String(row.game_date), { ...row });
+        }
+        for (const row of batch.supportRows) {
+          supportByDate.set(row.game_date, row.support_payload);
+        }
+      }
+    });
+
+    const second = byDate.get("2026-10-15")!;
+    // The second game has TOI but no ixG: its 1,000 s must not enter the
+    // ixG/60 exposure (independent accumulators gave 0.6 over 2,000 s).
+    expect(second.ixg_per_60_ixg_season).toBe(0.6);
+    expect(second.ixg_per_60_toi_seconds_season).toBe(1000);
+    expect(second.ixg_per_60_season).toBeCloseTo((0.6 * 3600) / 1000, 6);
+
+    // Zero shots in the second game: shooting % there is undefined, not 0.
+    expect(byDate.get("2026-10-09")!.shooting_pct_last5).toBe(25);
+    expect(second.shooting_pct_last5).toBe(25);
+
+    const counts = supportByDate.get("2026-10-15")?.windowCountSupport;
+    expect(counts?.version).toBe("rolling-player-window-counts-v1");
+    expect(counts.windows.last5.gameDates).toEqual(["2026-10-09", "2026-10-15"]);
+    expect(counts.windows.last5.gameIds).toEqual([
+      byDate.get("2026-10-09")!.game_id ?? null,
+      second.game_id ?? null
+    ]);
+    expect(counts.windows.last5.appearances).toBe(2);
+    // Goals and TOI over both games; the per-60 alias is a rate, not a count.
+    expect(counts.windows.last5.ratio.goals_per_60).toEqual([1, 2000, 2]);
+    expect(second.goals_per_60_total_last5).toBeCloseTo(1.8, 6);
+    // ixG is known for one of the two appearances: a covered subset.
+    expect(counts.windows.last5.ratio.ixg_per_60).toEqual([0.6, 1000, 1]);
+    expect(counts.game.appeared).toBe(true);
+    expect(counts.game.additive.goals).toBe(0);
+    expect(counts.game.ratio.shooting_pct).toBeNull();
+  });
+
+  it("returns null, not 0, for a ratio with no denominator", async () => {
+    silenceConsole();
+    const history = (playerId: unknown) => [
+      {
+        player_id: playerId,
+        game_id: 2026020020,
+        date: "2026-10-09",
+        season_id: 20262027,
+        team_abbrev: "TOR",
+        goals: 0,
+        assists: 0,
+        shots: 0,
+        points: 0,
+        toi_per_game: 900
+      }
+    ];
+    const rows: Record<string, unknown>[] = [];
+    const main = await importMainWithClient(createWindowClient(history, []));
+    await main({
+      playerId: PLAYER_IDS[0],
+      strengths: ["all"],
+      dryRunUpsert: true,
+      skipDiagnostics: true,
+      dryRunBatchObserver: (batch) => rows.push(...batch.rankingRows)
+    });
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0].shooting_pct_last5 ?? null).toBeNull();
+    expect(rows[0].shooting_pct_season ?? null).toBeNull();
   });
 
   it("keeps the incoming cursor when the budget is spent before any player is claimed", async () => {

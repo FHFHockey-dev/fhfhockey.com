@@ -1,7 +1,16 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 import dotenv from "dotenv";
 import { createAlignedCountSupportBuilder, readAlignedCountSupport } from "lib/rollingPlayerCountSupport";
+import {
+  buildRollingWindowCountSupport,
+  WINDOW_COUNT_SUPPORT_WINDOWS,
+  type AppearanceRef,
+  type RatioComponentTuple,
+  type RollingWindowCountSupport,
+  type WindowCountSupportWindow
+} from "lib/rollingPlayerWindowCountSupport";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import { ROLLING_RATIO_METRIC_SPECS } from "./rollingRatioMetricSpecs";
 import { teamsInfo } from "lib/teamsInfo";
 import {
   createHistoricalAverageAccumulator,
@@ -19,6 +28,7 @@ import {
   getRatioRollingComponentSnapshot,
   getHistoricalRatioSnapshot,
   getRatioRollingSnapshot,
+  normalizeRatioWindowEntry,
   updateHistoricalRatioAccumulator,
   updateRatioRollingAccumulator,
   type HistoricalRatioAccumulator,
@@ -426,6 +436,7 @@ export function compactRollingUpsertRowForRankingStorage(
 ): RollingUpsertRow {
   const compacted: RollingUpsertRow = { ...row };
   delete compacted.aligned_count_support;
+  delete compacted.window_count_support;
   for (const key of Object.keys(compacted)) {
     if (isPrunableRollingStorageField(key)) {
       compacted[key] = null;
@@ -469,6 +480,12 @@ export function splitRollingUpsertRowForDurableStorage(row: RollingUpsertRow): {
   let prunedFieldCount = 0;
   const hasAlignedCounts = Object.prototype.hasOwnProperty.call(row, "aligned_count_support");
   delete rankingRow.aligned_count_support;
+  // Explicit window counts live only in the support payload (no wide columns).
+  const windowCountSupport = row.window_count_support as
+    | RollingWindowCountSupport
+    | undefined;
+  delete rankingRow.window_count_support;
+  if (windowCountSupport) supportPayload.windowCountSupport = windowCountSupport;
   if (hasAlignedCounts) {
     const value = row.aligned_count_support;
     const validated = (row.strength_state === "ev" || row.strength_state === "pp")
@@ -500,7 +517,7 @@ export function splitRollingUpsertRowForDurableStorage(row: RollingUpsertRow): {
     appendSupportPayloadValue(supportPayload, key, value);
   }
 
-  if (prunedFieldCount === 0 && !hasAlignedCounts) {
+  if (prunedFieldCount === 0 && !hasAlignedCounts && !windowCountSupport) {
     return { rankingRow, supportRow: null };
   }
 
@@ -846,6 +863,8 @@ export interface NstCountsRow {
   total_points: number | null;
   shots: number | null;
   icf: number | null;
+  /** Unblocked individual attempts (Fenwick), the xSH% denominator. */
+  iff?: number | null;
   sh_percentage: number | null;
   ixg: number | null;
   iscfs: number | null;
@@ -1175,10 +1194,7 @@ const METRICS: MetricDefinition[] = [
     key: "sog_per_60",
     aggregation: "ratio",
     windowFamily: "weighted_rate_performance",
-    ratioSpec: {
-      scale: 3600,
-      noPrimaryDenominatorBehavior: "null"
-    },
+    ratioSpec: ROLLING_RATIO_METRIC_SPECS.sog_per_60,
     getComponents: (game) =>
       resolvePer60Components({
         rawValue: getShots(game),
@@ -1190,10 +1206,7 @@ const METRICS: MetricDefinition[] = [
     key: "ixg_per_60",
     aggregation: "ratio",
     windowFamily: "weighted_rate_performance",
-    ratioSpec: {
-      scale: 3600,
-      noPrimaryDenominatorBehavior: "null"
-    },
+    ratioSpec: ROLLING_RATIO_METRIC_SPECS.ixg_per_60,
     getComponents: (game) =>
       resolveIxgPer60Components({
         strength: game.strength,
@@ -1207,10 +1220,7 @@ const METRICS: MetricDefinition[] = [
     key: "shot_attempts_per_60",
     aggregation: "ratio",
     windowFamily: "weighted_rate_performance",
-    ratioSpec: {
-      scale: 3600,
-      noPrimaryDenominatorBehavior: "null"
-    },
+    ratioSpec: ROLLING_RATIO_METRIC_SPECS.shot_attempts_per_60,
     getComponents: (game) =>
       resolvePer60Components({
         rawValue: game.counts?.icf ?? null,
@@ -1221,10 +1231,7 @@ const METRICS: MetricDefinition[] = [
     key: "goals_per_60",
     aggregation: "ratio",
     windowFamily: "weighted_rate_performance",
-    ratioSpec: {
-      scale: 3600,
-      noPrimaryDenominatorBehavior: "null"
-    },
+    ratioSpec: ROLLING_RATIO_METRIC_SPECS.goals_per_60,
     getComponents: (game) =>
       resolvePer60Components({
         rawValue: getGoals(game),
@@ -1235,10 +1242,7 @@ const METRICS: MetricDefinition[] = [
     key: "assists_per_60",
     aggregation: "ratio",
     windowFamily: "weighted_rate_performance",
-    ratioSpec: {
-      scale: 3600,
-      noPrimaryDenominatorBehavior: "null"
-    },
+    ratioSpec: ROLLING_RATIO_METRIC_SPECS.assists_per_60,
     getComponents: (game) =>
       resolvePer60Components({
         rawValue: game.counts?.total_assists ?? null,
@@ -1249,10 +1253,7 @@ const METRICS: MetricDefinition[] = [
     key: "penalties_drawn_per_60",
     aggregation: "ratio",
     windowFamily: "weighted_rate_performance",
-    ratioSpec: {
-      scale: 3600,
-      noPrimaryDenominatorBehavior: "null"
-    },
+    ratioSpec: ROLLING_RATIO_METRIC_SPECS.penalties_drawn_per_60,
     getComponents: (game) =>
       resolvePer60Components({
         rawValue: getPenaltiesDrawn(game),
@@ -1263,10 +1264,7 @@ const METRICS: MetricDefinition[] = [
     key: "penalties_taken_per_60",
     aggregation: "ratio",
     windowFamily: "weighted_rate_performance",
-    ratioSpec: {
-      scale: 3600,
-      noPrimaryDenominatorBehavior: "null"
-    },
+    ratioSpec: ROLLING_RATIO_METRIC_SPECS.penalties_taken_per_60,
     getComponents: (game) =>
       resolvePer60Components({
         rawValue: getPenaltiesTaken(game),
@@ -1289,10 +1287,7 @@ const METRICS: MetricDefinition[] = [
     key: "primary_assists_per_60",
     aggregation: "ratio",
     windowFamily: "weighted_rate_performance",
-    ratioSpec: {
-      scale: 3600,
-      noPrimaryDenominatorBehavior: "null"
-    },
+    ratioSpec: ROLLING_RATIO_METRIC_SPECS.primary_assists_per_60,
     getComponents: (game) =>
       resolvePer60Components({
         rawValue: game.counts?.first_assists ?? null,
@@ -1303,10 +1298,7 @@ const METRICS: MetricDefinition[] = [
     key: "secondary_assists_per_60",
     aggregation: "ratio",
     windowFamily: "weighted_rate_performance",
-    ratioSpec: {
-      scale: 3600,
-      noPrimaryDenominatorBehavior: "null"
-    },
+    ratioSpec: ROLLING_RATIO_METRIC_SPECS.secondary_assists_per_60,
     getComponents: (game) =>
       resolvePer60Components({
         rawValue: game.counts?.second_assists ?? null,
@@ -1317,10 +1309,7 @@ const METRICS: MetricDefinition[] = [
     key: "shooting_pct",
     aggregation: "ratio",
     windowFamily: "ratio_performance",
-    ratioSpec: {
-      scale: 100,
-      noPrimaryDenominatorBehavior: "zero"
-    },
+    ratioSpec: ROLLING_RATIO_METRIC_SPECS.shooting_pct,
     getComponents: (game) => ({
       numerator: getGoals(game),
       denominator: getShots(game)
@@ -1348,15 +1337,16 @@ const METRICS: MetricDefinition[] = [
     key: "primary_points_pct",
     aggregation: "ratio",
     windowFamily: "ratio_performance",
-    ratioSpec: {
-      scale: 1,
-      noPrimaryDenominatorBehavior: "zero"
-    },
+    ratioSpec: ROLLING_RATIO_METRIC_SPECS.primary_points_pct,
     getComponents: ({ counts }) => {
       if (!counts) return null;
+      // An unknown goal or first-assist count is unknown, never zero.
+      if (counts.goals == null || counts.first_assists == null) {
+        return { numerator: null, denominator: counts.total_points ?? null };
+      }
       return {
-        numerator: (counts.goals ?? 0) + (counts.first_assists ?? 0),
-        denominator: counts.total_points ?? 0
+        numerator: counts.goals + counts.first_assists,
+        denominator: counts.total_points ?? null
       };
     }
   },
@@ -1364,30 +1354,25 @@ const METRICS: MetricDefinition[] = [
     key: "expected_sh_pct",
     aggregation: "ratio",
     windowFamily: "ratio_performance",
-    ratioSpec: {
-      scale: 1,
-      noPrimaryDenominatorBehavior: "null"
-    },
+    ratioSpec: ROLLING_RATIO_METRIC_SPECS.expected_sh_pct,
     getComponents: (game) => {
       const ixg = resolveIxgValue({
         strength: game.strength,
         countsIxg: game.counts?.ixg ?? null,
         wgoIxg: getWgoNumber(game, "ixg")
       });
-      // WGO supplies shots but no xG, so a game without an NST row must not
-      // count as zero-xG shots; it keeps its appearance slot without components.
+      // Decision 17: xSH% = ixG ÷ unblocked attempts (Fenwick). WGO supplies
+      // neither xG nor unblocked attempts, so a game without an NST row keeps
+      // its appearance slot without components instead of counting as zero.
       if (ixg == null) return null;
-      return { numerator: ixg, denominator: getShots(game) };
+      return { numerator: ixg, denominator: game.counts?.iff ?? null };
     }
   },
   {
     key: "ipp",
     aggregation: "ratio",
     windowFamily: "ratio_performance",
-    ratioSpec: {
-      scale: 100,
-      noPrimaryDenominatorBehavior: "zero"
-    },
+    ratioSpec: ROLLING_RATIO_METRIC_SPECS.ipp,
     getComponents: (game) => ({
       numerator: getPoints(game),
       denominator: game.countsOi?.gf ?? null
@@ -1475,10 +1460,7 @@ const METRICS: MetricDefinition[] = [
     key: "hits_per_60",
     aggregation: "ratio",
     windowFamily: "weighted_rate_performance",
-    ratioSpec: {
-      scale: 3600,
-      noPrimaryDenominatorBehavior: "null"
-    },
+    ratioSpec: ROLLING_RATIO_METRIC_SPECS.hits_per_60,
     getComponents: (game) =>
       resolvePer60Components({
         rawValue: getHits(game),
@@ -1489,10 +1471,7 @@ const METRICS: MetricDefinition[] = [
     key: "blocks_per_60",
     aggregation: "ratio",
     windowFamily: "weighted_rate_performance",
-    ratioSpec: {
-      scale: 3600,
-      noPrimaryDenominatorBehavior: "null"
-    },
+    ratioSpec: ROLLING_RATIO_METRIC_SPECS.blocks_per_60,
     getComponents: (game) =>
       resolvePer60Components({
         rawValue: getBlocks(game),
@@ -1503,10 +1482,7 @@ const METRICS: MetricDefinition[] = [
     key: "oz_start_pct",
     aggregation: "ratio",
     windowFamily: "ratio_performance",
-    ratioSpec: {
-      scale: 100,
-      noPrimaryDenominatorBehavior: "null"
-    },
+    ratioSpec: ROLLING_RATIO_METRIC_SPECS.oz_start_pct,
     getComponents: ({ countsOi }) => ({
       numerator: countsOi?.off_zone_starts ?? null,
       denominator:
@@ -1517,20 +1493,14 @@ const METRICS: MetricDefinition[] = [
     key: "pp_share_pct",
     aggregation: "ratio",
     windowFamily: "ratio_performance",
-    ratioSpec: {
-      scale: 1,
-      noPrimaryDenominatorBehavior: "null"
-    },
+    ratioSpec: ROLLING_RATIO_METRIC_SPECS.pp_share_pct,
     getComponents: (game) => getPpShareComponents(game)
   },
   {
     key: "on_ice_sh_pct",
     aggregation: "ratio",
     windowFamily: "ratio_performance",
-    ratioSpec: {
-      scale: 100,
-      noPrimaryDenominatorBehavior: "null"
-    },
+    ratioSpec: ROLLING_RATIO_METRIC_SPECS.on_ice_sh_pct,
     getComponents: ({ countsOi }) => ({
       numerator: countsOi?.gf ?? null,
       denominator: countsOi?.sf ?? null
@@ -1540,10 +1510,7 @@ const METRICS: MetricDefinition[] = [
     key: "on_ice_sv_pct",
     aggregation: "ratio",
     windowFamily: "ratio_performance",
-    ratioSpec: {
-      scale: 100,
-      noPrimaryDenominatorBehavior: "null"
-    },
+    ratioSpec: ROLLING_RATIO_METRIC_SPECS.on_ice_sv_pct,
     getComponents: ({ countsOi }) => ({
       numerator:
         countsOi?.sa != null && countsOi?.ga != null
@@ -1556,13 +1523,7 @@ const METRICS: MetricDefinition[] = [
     key: "pdo",
     aggregation: "ratio",
     windowFamily: "ratio_performance",
-    ratioSpec: {
-      scale: 100,
-      combine: "sum",
-      outputScale: 0.01,
-      noPrimaryDenominatorBehavior: "null",
-      noSecondaryDenominatorBehavior: "null"
-    },
+    ratioSpec: ROLLING_RATIO_METRIC_SPECS.pdo,
     getComponents: ({ countsOi }) => ({
       numerator: countsOi?.gf ?? null,
       denominator: countsOi?.sf ?? null,
@@ -1589,14 +1550,14 @@ const METRICS: MetricDefinition[] = [
     key: "cf_pct",
     aggregation: "ratio",
     windowFamily: "ratio_performance",
-    ratioSpec: {
-      scale: 100,
-      noPrimaryDenominatorBehavior: "null"
-    },
-    getComponents: ({ countsOi }) => ({
-      numerator: countsOi?.cf ?? null,
-      denominator: (countsOi?.cf ?? 0) + (countsOi?.ca ?? 0)
-    })
+    ratioSpec: ROLLING_RATIO_METRIC_SPECS.cf_pct,
+    getComponents: ({ countsOi }) => {
+      const forCount = countsOi?.cf ?? null;
+      const againstCount = countsOi?.ca ?? null;
+      // Both sides are needed; a missing side is unknown, never zero.
+      if (forCount == null || againstCount == null) return null;
+      return { numerator: forCount, denominator: forCount + againstCount };
+    }
   },
   {
     key: "ff",
@@ -1614,14 +1575,14 @@ const METRICS: MetricDefinition[] = [
     key: "ff_pct",
     aggregation: "ratio",
     windowFamily: "ratio_performance",
-    ratioSpec: {
-      scale: 100,
-      noPrimaryDenominatorBehavior: "null"
-    },
-    getComponents: ({ countsOi }) => ({
-      numerator: countsOi?.ff ?? null,
-      denominator: (countsOi?.ff ?? 0) + (countsOi?.fa ?? 0)
-    })
+    ratioSpec: ROLLING_RATIO_METRIC_SPECS.ff_pct,
+    getComponents: ({ countsOi }) => {
+      const forCount = countsOi?.ff ?? null;
+      const againstCount = countsOi?.fa ?? null;
+      // Both sides are needed; a missing side is unknown, never zero.
+      if (forCount == null || againstCount == null) return null;
+      return { numerator: forCount, denominator: forCount + againstCount };
+    }
   },
   {
     key: "goals",
@@ -2338,7 +2299,6 @@ function applyRatioSupportOutputs(
         );
       return;
     case "shooting_pct":
-    case "expected_sh_pct":
     case "cf_pct":
     case "ff_pct":
     case "sog_per_60":
@@ -2359,95 +2319,68 @@ function applyRatioSupportOutputs(
 
   const simpleSupportPairs: Record<
     string,
-    { numeratorKey: string; denominatorKey: string; numeratorPrefix: string; denominatorPrefix: string }
+    {
+      numeratorPrefix: string;
+      denominatorPrefix: string;
+      /** The stored second field is denominator − numerator (CA = (CF+CA) − CF). */
+      denominatorIsComplement?: boolean;
+    }
   > = {
     shooting_pct: {
-      numeratorKey: "goals",
-      denominatorKey: "shots",
       numeratorPrefix: "shooting_pct_goals",
       denominatorPrefix: "shooting_pct_shots"
     },
-    expected_sh_pct: {
-      numeratorKey: "ixg",
-      denominatorKey: "shots",
-      numeratorPrefix: "expected_sh_pct_ixg",
-      denominatorPrefix: "expected_sh_pct_shots"
-    },
     cf_pct: {
-      numeratorKey: "cf",
-      denominatorKey: "ca",
       numeratorPrefix: "cf_pct_cf",
-      denominatorPrefix: "cf_pct_ca"
+      denominatorPrefix: "cf_pct_ca",
+      denominatorIsComplement: true
     },
     ff_pct: {
-      numeratorKey: "ff",
-      denominatorKey: "fa",
       numeratorPrefix: "ff_pct_ff",
-      denominatorPrefix: "ff_pct_fa"
+      denominatorPrefix: "ff_pct_fa",
+      denominatorIsComplement: true
     },
     sog_per_60: {
-      numeratorKey: "shots",
-      denominatorKey: "toi_seconds",
       numeratorPrefix: "sog_per_60_shots",
       denominatorPrefix: "sog_per_60_toi_seconds"
     },
     ixg_per_60: {
-      numeratorKey: "ixg",
-      denominatorKey: "toi_seconds",
       numeratorPrefix: "ixg_per_60_ixg",
       denominatorPrefix: "ixg_per_60_toi_seconds"
     },
     shot_attempts_per_60: {
-      numeratorKey: "shot_attempts_per_60_shot_attempts",
-      denominatorKey: "toi_seconds",
       numeratorPrefix: "shot_attempts_per_60_shot_attempts",
       denominatorPrefix: "shot_attempts_per_60_toi_seconds"
     },
     goals_per_60: {
-      numeratorKey: "goals",
-      denominatorKey: "toi_seconds",
       numeratorPrefix: "goals_per_60_goals",
       denominatorPrefix: "goals_per_60_toi_seconds"
     },
     assists_per_60: {
-      numeratorKey: "assists",
-      denominatorKey: "toi_seconds",
       numeratorPrefix: "assists_per_60_assists",
       denominatorPrefix: "assists_per_60_toi_seconds"
     },
     penalties_drawn_per_60: {
-      numeratorKey: "penalties_drawn",
-      denominatorKey: "toi_seconds",
       numeratorPrefix: "penalties_drawn_per_60_penalties_drawn",
       denominatorPrefix: "penalties_drawn_per_60_toi_seconds"
     },
     penalties_taken_per_60: {
-      numeratorKey: "penalties_taken",
-      denominatorKey: "toi_seconds",
       numeratorPrefix: "penalties_taken_per_60_penalties_taken",
       denominatorPrefix: "penalties_taken_per_60_toi_seconds"
     },
     primary_assists_per_60: {
-      numeratorKey: "primary_assists_per_60_primary_assists",
-      denominatorKey: "toi_seconds",
       numeratorPrefix: "primary_assists_per_60_primary_assists",
       denominatorPrefix: "primary_assists_per_60_toi_seconds"
     },
     secondary_assists_per_60: {
-      numeratorKey: "secondary_assists_per_60_secondary_assists",
-      denominatorKey: "toi_seconds",
       numeratorPrefix: "secondary_assists_per_60_secondary_assists",
       denominatorPrefix: "secondary_assists_per_60_toi_seconds"
     },
     hits_per_60: {
-      numeratorKey: "hits",
-      denominatorKey: "toi_seconds",
       numeratorPrefix: "hits_per_60_hits",
       denominatorPrefix: "hits_per_60_toi_seconds"
     },
     blocks_per_60: {
-      numeratorKey: "blocks",
-      denominatorKey: "toi_seconds",
       numeratorPrefix: "blocks_per_60_blocks",
       denominatorPrefix: "blocks_per_60_toi_seconds"
     }
@@ -2456,47 +2389,33 @@ function applyRatioSupportOutputs(
   const pair = simpleSupportPairs[metricKey];
   if (!pair) return;
 
-  const getHistoricalPairTotal = (
-    key: string,
-    scope: "season" | "threeYear" | "career"
-  ) =>
-    getHistoricalSupportAccumulatorTotal(
-      historicalSimpleMetricsState,
-      key,
-      currentSeason,
-      scope
-    ) ??
-    getHistoricalSupportAccumulatorTotal(
-      historicalSupportMetricsState,
-      key,
-      currentSeason,
-      scope
-    );
+  // Rule 13: the season/3ya/career pair comes from the ratio's own paired
+  // components, accumulated from the same observations as the published
+  // ratio, not from independent count and TOI accumulators.
+  const pairComponent = (
+    totals: RatioComponentTotals,
+    side: "numerator" | "denominator"
+  ): number | null => {
+    const numerator = getRatioComponentValue(totals, "numerator");
+    if (side === "numerator") return numerator;
+    const denominator = getRatioComponentValue(totals, "denominator");
+    if (!pair.denominatorIsComplement) return denominator;
+    return numerator == null || denominator == null
+      ? null
+      : Number((denominator - numerator).toFixed(6));
+  };
 
-  output[`${pair.numeratorPrefix}_season`] = getHistoricalPairTotal(
-    pair.numeratorKey,
-    "season"
-  );
-  output[`${pair.denominatorPrefix}_season`] = getHistoricalPairTotal(
-    pair.denominatorKey,
-    "season"
-  );
-  output[`${pair.numeratorPrefix}_3ya`] = getHistoricalPairTotal(
-    pair.numeratorKey,
-    "threeYear"
-  );
-  output[`${pair.denominatorPrefix}_3ya`] = getHistoricalPairTotal(
-    pair.denominatorKey,
-    "threeYear"
-  );
-  output[`${pair.numeratorPrefix}_career`] = getHistoricalPairTotal(
-    pair.numeratorKey,
-    "career"
-  );
-  output[`${pair.denominatorPrefix}_career`] = getHistoricalPairTotal(
-    pair.denominatorKey,
-    "career"
-  );
+  for (const [suffix, totals] of [
+    ["season", historicalComponents.season],
+    ["3ya", historicalComponents.threeYear],
+    ["career", historicalComponents.career]
+  ] as const) {
+    output[`${pair.numeratorPrefix}_${suffix}`] = pairComponent(totals, "numerator");
+    output[`${pair.denominatorPrefix}_${suffix}`] = pairComponent(
+      totals,
+      "denominator"
+    );
+  }
 }
 
 function createEmptySourceTrackingSummary(): SourceTrackingSummary {
@@ -3174,7 +3093,7 @@ async function fetchCounts(
         const { data, error } = await db
           .from(tableName as any)
           .select(
-            "id, player_id, date_scraped, season, toi, goals, total_assists, first_assists, second_assists, total_points, shots, icf, ixg, iscfs, hdcf, ipp, penalties_drawn, total_penalties, hits, shots_blocked"
+            "id, player_id, date_scraped, season, toi, goals, total_assists, first_assists, second_assists, total_points, shots, icf, iff, ixg, iscfs, hdcf, ipp, penalties_drawn, total_penalties, hits, shots_blocked"
           )
           .eq("player_id", playerId)
           .gte("date_scraped", startDate)
@@ -3927,6 +3846,7 @@ async function processPlayer(
             startDate, canonicalGames, countsRows,
           }) : null;
       const strengthOutputs: any[] = [];
+      const appearanceRefs: AppearanceRef[] = [];
       const historicalGpPctState = createHistoricalGpPctAccumulator();
       const derivePhaseStartedAt = Date.now();
       logPipelinePhase({
@@ -3941,10 +3861,27 @@ async function processPlayer(
       try {
         for (const game of games) {
         const playedThisGame = didPlayerCountAsAppearance(config.state, game);
+        if (playedThisGame) {
+          appearanceRefs.push({ gameId: game.gameId ?? null, gameDate: game.gameDate });
+        }
+        const gameRatio: Record<string, RatioComponentTuple | null> = {};
+        const gameAdditive: Record<string, number | null> = {};
 
         METRICS.forEach((metric) => {
           if (metric.aggregation === "ratio") {
             const components = metric.getComponents(game);
+            const normalized = normalizeRatioWindowEntry(
+              components,
+              metric.windowFamily
+            ).aggregatedComponents;
+            gameRatio[metric.key] = normalized
+              ? [
+                  normalized.numerator,
+                  normalized.denominator,
+                  normalized.secondaryNumerator,
+                  normalized.secondaryDenominator
+                ]
+              : null;
             updateRatioRollingAccumulator(
               ratioMetricsState[metric.key],
               components,
@@ -3962,6 +3899,8 @@ async function processPlayer(
           }
 
           const value = metric.getValue(game);
+          gameAdditive[metric.key] =
+            value == null || !Number.isFinite(Number(value)) ? null : Number(value);
           updateAccumulator(simpleMetricsState[metric.key], value);
           updateHistoricalAverageAccumulator(
             historicalSimpleMetricsState[metric.key],
@@ -4055,6 +3994,26 @@ async function processPlayer(
           gp_semantic_type: getGpOutputCompatibilityMode(config.state).semanticType,
           ...metricOutputs,
           ...(alignedCounts ? { aligned_count_support: alignedCountSupport } : {}),
+          window_count_support: buildRollingWindowCountSupport({
+            strengthState: config.state,
+            anchor: {
+              gameId: game.gameId ?? null,
+              gameDate: game.gameDate,
+              season: game.season
+            },
+            appeared: playedThisGame,
+            gameRatio,
+            gameAdditive,
+            appearances: appearanceRefs,
+            windowComponents: Object.fromEntries(
+              Object.entries(ratioMetricsState).map(([key, acc]) => [
+                key,
+                getRatioRollingComponentSnapshot(acc, [
+                  ...WINDOW_COUNT_SUPPORT_WINDOWS
+                ]).windows as Record<WindowCountSupportWindow, RatioComponentTotals>
+              ])
+            )
+          }),
         };
         outputs.push(output);
         strengthOutputs.push(output);

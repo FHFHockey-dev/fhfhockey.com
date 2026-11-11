@@ -1,4 +1,5 @@
 import type { RollingPlayerAlignedCountSupport } from "lib/rollingPlayerCountSupport";
+import type { RollingWindowCountSupport } from "lib/rollingPlayerWindowCountSupport";
 
 export const ROLLING_PLAYER_SUPPORT_PAYLOAD_TABLE =
   "rolling_player_metric_support_payloads" as const;
@@ -9,6 +10,8 @@ export type RollingPlayerSupportScalar = string | number | boolean | null;
 
 export type RollingPlayerSupportPayload = {
   alignedCountSupport?: RollingPlayerAlignedCountSupport | null;
+  /** Explicit window counts and per-game components (window-counts-v1). */
+  windowCountSupport?: RollingWindowCountSupport;
   recomputeSupport?: Record<string, RollingPlayerSupportScalar>;
   historicalCompatibility?: Record<string, RollingPlayerSupportScalar>;
   deprecatedCompatibility?: Record<string, RollingPlayerSupportScalar>;

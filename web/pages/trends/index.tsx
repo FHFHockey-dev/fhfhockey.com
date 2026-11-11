@@ -27,6 +27,7 @@ import { TRENDS_SURFACE_LINKS } from "lib/navigation/siteSurfaceLinks";
 import {
   describeLockedBaselines,
   buildSkaterRecentSummaryCards,
+  classifyTeamTemperature,
   formatGoalieTrendValue,
   formatPercentileOrdinal,
   formatRecentFormValue,
@@ -724,16 +725,10 @@ const TrendsDashboardPage: NextPage<TrendsPageProps> = ({ initialDate }) => {
     return { improved, degraded };
   }, [data, teamTrendRankings]);
 
-  const teamTemperature = useMemo(() => {
-    const hot = [...teamTrendRankings]
-      .filter((row) => row.percentile >= 70 || row.delta >= 2)
-      .slice(0, 3);
-    const cold = [...teamTrendRankings]
-      .filter((row) => row.percentile <= 35 || row.delta <= -2)
-      .sort((a, b) => a.percentile - b.percentile)
-      .slice(0, 3);
-    return { hot, cold };
-  }, [teamTrendRankings]);
+  const teamTemperature = useMemo(
+    () => classifyTeamTemperature(teamTrendRankings),
+    [teamTrendRankings]
+  );
 
   const activeTeamCategory = useMemo(
     () =>
