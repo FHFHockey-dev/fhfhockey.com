@@ -70,7 +70,8 @@ test("crease shift: official share over team games, labeled comparison, and it e
   await page.goto("/social-share/posts?post=crease-shift&minComparisonGames=2");
   const square = page.getByTestId("share-square");
   await expect(page.getByTestId("post-evidence")).toContainText("Official starts ÷ completed team games");
-  await expect(square).toContainText("PREV 2 GP");
+  await expect(square).toContainText("PRIOR 2");
+  await expect(page.getByTestId("crease-shift-subtitle")).toHaveText("Share of each team's starts in net: last 2 games vs the 2 before");
   await expect(square).toContainText("Fictional Goalie 2");
   await expect(square).not.toContainText(/probab|likely|odds/i);
   await expect(page.getByTestId("post-watermark")).toHaveText("OBSERVED RESULTS");
@@ -301,16 +302,17 @@ async function serveCrease(page: Page, league = creaseLeague()) {
   });
   return requests;
 }
-/** No row keeps an empty band over or beside its chart, and nothing in the table runs into the note under it. */
+/** No row keeps an empty band over or beside its chart, nothing in the table runs into the note under it, and the subtitle and note each fit their one line. */
 const expectCreaseRowsFilled = async (page: Page) => {
   const rows = await page.getByTestId("crease-shift-card").evaluate(card => {
-    const scale = card.closest("[data-testid=share-square]")!.getBoundingClientRect().width / 1080, table = card.firstElementChild as HTMLElement, note = card.lastElementChild!;
+    const scale = card.closest("[data-testid=share-square]")!.getBoundingClientRect().width / 1080, subtitle = card.querySelector('[data-testid="crease-shift-subtitle"]')!, table = subtitle.nextElementSibling as HTMLElement, note = card.querySelector('[data-testid="crease-shift-note"]')!;
     const charts = [...card.querySelectorAll("svg[role=img]")];
-    return { overflow: table.scrollHeight - table.clientHeight, gap: (note.getBoundingClientRect().top - charts.at(-1)!.getBoundingClientRect().bottom) / scale, slack: charts.map(svg => (svg.parentElement!.getBoundingClientRect().height - svg.getBoundingClientRect().height) / scale) };
+    return { overflow: table.scrollHeight - table.clientHeight, gap: (note.getBoundingClientRect().top - charts.at(-1)!.getBoundingClientRect().bottom) / scale, slack: charts.map(svg => (svg.parentElement!.getBoundingClientRect().height - svg.getBoundingClientRect().height) / scale), clipped: [subtitle, note].filter(line => line.scrollWidth > line.clientWidth).map(line => line.textContent) };
   });
   expect(rows.overflow).toBeLessThanOrEqual(0);
   expect(rows.gap).toBeGreaterThanOrEqual(0);
   for (const slack of rows.slack) expect(slack).toBeLessThan(24);
+  expect(rows.clipped).toEqual([]);
 };
 
 for (const teamCount of [6, 12]) test(`crease shift: ${teamCount} ranked teams fill the body`, async ({ page }) => {
@@ -339,6 +341,30 @@ for (const [picked, window] of [[["NJD"], 10], [["NJD"], 1], [["NJD", "NYR"], 10
   await expectBodyFilled(page, "crease-shift-card");
   await expectCreaseRowsFilled(page);
   await download(page);
+});
+
+test("crease shift: the headers, subtitle and note follow the window and the comparison", async ({ page }) => {
+  await install(page);
+  const requests = await serveCrease(page), heads = page.locator('[data-testid="crease-shift-card"] [class*="head"]');
+  await page.goto("/social-share/posts?post=crease-shift&minComparisonGames=2&window=5&comparison=std&teams=NJD,NYR");
+  await expect(heads).toHaveText(["RK", "TEAM", "GOALIE", "LAST 5", "SEASON", "CHANGE"]);
+  await expect(page.getByTestId("crease-shift-subtitle")).toHaveText("Share of each team's starts in net: last 5 games vs the season so far (20 games)");
+  await expect(page.getByTestId("crease-shift-note")).toContainText("ending at LAST 5. CHANGE is LAST 5 minus SEASON in percentage points.");
+  // Starters go two and two, so the last 5 are 40/60 against a 50/50 season: arrows, in the row's own text colour.
+  const card = page.getByTestId("crease-shift-card");
+  await expect(card).toContainText("▲10");
+  await expect(card).toContainText("▼10");
+  expect(await card.locator('[class*="arrow"]').evaluateAll(arrows => arrows.map(arrow => getComputedStyle(arrow).color === getComputedStyle(arrow.closest('[data-testid="crease-shift-card"]')!).color))).toEqual([true, true, true, true]);
+  await expect(page.getByTestId("post-evidence")).toContainText("CHANGE is LAST 5 minus SEASON in percentage points");
+  await openOptions(page);
+  await page.getByRole("combobox", { name: "Comparison" }).selectOption("previous");
+  await expect.poll(() => requests.at(-1)?.get("comparison")).toBe("previous");
+  await expect(heads).toHaveText(["RK", "TEAM", "GOALIE", "LAST 5", "PRIOR 5", "CHANGE"]);
+  await expect(page.getByTestId("crease-shift-subtitle")).toHaveText("Share of each team's starts in net: last 5 games vs the 5 before");
+  await expect(page.getByTestId("crease-shift-note")).toContainText("CHANGE is LAST 5 minus PRIOR 5 in percentage points.");
+  // The 5 before were 40/60 too: no change, so no arrow.
+  await expect(card).not.toContainText(/[▲▼]/);
+  await expectCreaseRowsFilled(page);
 });
 
 test("crease shift: teams are picked from a capped grid, blank goes back to the top 12, and old window links still work", async ({ page }) => {
