@@ -299,3 +299,11 @@ Source: `WAVE3-CONSOLIDATED.md`, "Owner decisions still open" Q42 and Q49. The 1
 
 81. **WiGO PP/PK cohorts get a per-strength minutes floor, and forwards and defencemen are compared separately.** (Q42, W3-1 D3) The floor is visible and user-lowerable (the Wave 2 sample-floor pattern), validated by split-half stability, with "insufficient sample" shown below it.
 82. **Share cards show the goalie's credited W-L-OTL**, extending decision 72; the record is unavailable if any decision is unknown. (Q49, W3-3 D2)
+
+## Decisions on Tier B questions at fix-lane start (TJ, 2026-11-11, by pop-up in the fix-sprint Chef session)
+83. **Missing stats placeholders** (Q30, L1): the writer stores null when PP/SH TOI or faceoffs are absent; labels come from WGO or shift seconds; repairing historical `00:00` / `0/0` rows is a separate approved step.
+84. **Empty-net goals** (Q31, L1): EN = scored into the opponent's empty net. A goal scored while the scorer's own net is empty keeps its official strength.
+85. **Game Score** (Q2, L4a/L4b): keep the house variant, labelled "FHFH Game Score (all-situation goals)" with its formula shown, until a verified 5v5 goal source exists.
+86. **PP deployment share** (Q4, L4a/L8): show **both** as separately labelled measures: PP1 share of games with a recorded PP-unit assignment, and PP1 share of games dressed. Each uses its own matching, verified denominator and shows coverage; missing assignments stay unknown, never confirmed non-PP games. Downstream tallies, social cards, draft and RSO readers name the measure they use explicitly.
+87. **`team_discipline_stats` trigger** (Q40, L4a): leave it for the cleanup inventory (rule 6); any disable is its own production step.
+88. **xG approval floor** (Q44, L14): the 5% relative standard-error rule is a minimum, computed from the actual holdout (not a fixed goal count). Evaluate the exact artifact that would be served, including its applied calibration, on a separate untouched chronological holdout. It must beat the base-rate benchmark on proper scores, pass calibration and relevant subgroup checks, and show no outcome leakage. With insufficient evidence the model stays unapproved.
