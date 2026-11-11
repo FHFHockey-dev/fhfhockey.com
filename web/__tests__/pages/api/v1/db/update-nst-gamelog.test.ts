@@ -1344,6 +1344,17 @@ describe("update-nst-gamelog automatic season cursor", () => {
     expect(db.tables.nst_gamelog_as_counts_oi[0]).toMatchObject({
       ga: 0, on_ice_sv_pct: null, pdo: null, off_zone_start_pct: null
     });
+
+    // Zero-TOI rates row: every per-60 rate is undefined, so "-" stays unknown; TOI itself is a count.
+    fetchNstTextByUrlMock.mockResolvedValue({ response: { status: 200 }, text:
+      "<table><thead><tr><th>Player</th><th>Team</th><th>Position</th><th>GP</th><th>TOI</th><th>TOI/GP</th>" +
+      "<th>Goals/60</th><th>Shots/60</th><th>ixG/60</th></tr></thead><tbody>" +
+      "<tr><td>Test Player 0</td><td>BOS</td><td>C</td><td>1</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>" +
+      "</tbody></table>" });
+    await run({ dates: source.date, datasetType: "penaltyKillRates", overwrite: "yes" });
+    expect(db.tables.nst_gamelog_pk_rates[0]).toMatchObject({
+      gp: 1, toi: 0, toi_per_gp: 0, goals_per_60: null, shots_per_60: null, ixg_per_60: null
+    });
   });
 
   it("quarantines GP 2, missing-GP and other-season rows instead of stamping them as one game on the requested date", async () => {

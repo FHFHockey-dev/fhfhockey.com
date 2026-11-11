@@ -843,12 +843,13 @@ function isDashPlaceholder(value: string): boolean {
 }
 
 /**
- * Ratio columns (SH%, IPP, FO%, on-ice %, PDO, zone-start %) where NST's "-"
- * means undefined (empty denominator): stored as unknown, never 0. Counts and
- * other columns keep NST's "-" as 0.
+ * Ratio and rate columns (SH%, IPP, FO%, on-ice %, PDO, zone-start %, every
+ * per-60 rate) where NST's "-" means undefined (empty denominator, e.g. zero
+ * TOI): stored as unknown, never 0. Count columns keep NST's "-" as 0.
  */
 export function isNstRatioColumn(column: string): boolean {
-  return column.endsWith("_percentage") || column.endsWith("_pct") || column === "ipp" || column === "pdo";
+  return column.endsWith("_percentage") || column.endsWith("_pct") || column.endsWith("_per_60") ||
+    column === "ipp" || column === "pdo";
 }
 
 export type PlayerCacheRow = { id: number; position: string };
