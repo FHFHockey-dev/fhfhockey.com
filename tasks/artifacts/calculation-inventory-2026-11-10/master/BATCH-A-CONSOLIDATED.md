@@ -203,7 +203,7 @@ Chef, 2026-11-11. Sources: Fable audits in [audits/](audits/) (W1-1 to W1-5), As
 
 ---
 
-## Owner decisions still needed (from Batch A)
+## Owner decisions from Batch A: SETTLED 2026-11-11 (see OWNER-DECISIONS.md 16–23)
 1. **Rolling availability:** keep current-team last-N, which is the existing contract, or follow the player across teams?
 2. **Expected shooting %:** pick one definition or three honestly named ones (ixG/SOG, ixG/unblocked, ixG/all attempts)?
 3. **Calendar windows:** does "last 7 days" mean calendar recency or the span ending at the last game?
