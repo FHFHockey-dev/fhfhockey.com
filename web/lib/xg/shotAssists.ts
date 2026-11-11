@@ -1,5 +1,8 @@
 export type ShotAssistFeatureRow = {
   feature_version: number;
+  /** With no goalie in net: a shot at an empty net, outside every xG total (decision 7). */
+  is_empty_net_event?: boolean | null;
+  goalie_in_net_id?: number | null;
   game_id: number;
   event_id: number;
   season_id: number | null;
@@ -212,6 +215,8 @@ export function buildShotAssistCandidateRows(args: {
     if (!feature.is_unblocked_shot_attempt) continue;
     if (feature.is_rebound_shot) continue;
     if (feature.is_penalty_shot_event || feature.is_shootout_event) continue;
+    // A shot at an empty net carries no creditable xG (decision 7).
+    if (feature.is_empty_net_event === true && feature.goalie_in_net_id == null) continue;
     if (feature.previous_event_id == null) continue;
     if (feature.previous_event_same_team !== true) continue;
     if (

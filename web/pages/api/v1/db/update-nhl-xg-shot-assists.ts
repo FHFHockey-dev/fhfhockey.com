@@ -73,6 +73,8 @@ async function fetchFeatureRows(args: {
           "is_rebound_shot",
           "is_penalty_shot_event",
           "is_shootout_event",
+          "is_empty_net_event",
+          "goalie_in_net_id",
           "previous_event_id",
           "previous_event_type_desc_key",
           "previous_event_team_id",
@@ -115,6 +117,8 @@ async function fetchFeatureRows(args: {
         is_rebound_shot: row.is_rebound_shot === true,
         is_penalty_shot_event: row.is_penalty_shot_event === true,
         is_shootout_event: row.is_shootout_event === true,
+        is_empty_net_event: row.is_empty_net_event === true,
+        goalie_in_net_id: row.goalie_in_net_id == null ? null : Number(row.goalie_in_net_id),
         previous_event_id:
           row.previous_event_id == null ? null : Number(row.previous_event_id),
         previous_event_type_desc_key: row.previous_event_type_desc_key ?? null,

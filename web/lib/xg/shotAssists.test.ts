@@ -136,6 +136,28 @@ describe("buildShotAssistCandidateRows", () => {
   });
 });
 
+describe("shot-assist candidates at an empty net (decision 7)", () => {
+  const args = (overrides: Partial<ShotAssistFeatureRow>) => ({
+    features: [feature(overrides)],
+    predictions: [
+      { model_version: "model-v1", prediction_type: "shot_goal", feature_version: 1, game_id: 2025020001, event_id: 102, xg: 0.4, model_approved: true },
+    ],
+    priorEvents: [
+      {
+        game_id: 2025020001, event_id: 101, type_desc_key: "takeaway", event_owner_team_id: 10, player_id: 92,
+        shooting_player_id: null, scoring_player_id: null, winning_player_id: null, hitting_player_id: null,
+        blocking_player_id: null, zone_code: "N",
+      },
+    ],
+    generatedAt: "2026-05-27T20:00:00.000Z",
+  });
+
+  it("credits no assist xG on a shot at an empty net, but keeps the shooter's own empty net", () => {
+    expect(buildShotAssistCandidateRows(args({ is_empty_net_event: true, goalie_in_net_id: null }))).toEqual([]);
+    expect(buildShotAssistCandidateRows(args({ is_empty_net_event: true, goalie_in_net_id: 31 }))).toHaveLength(1);
+  });
+});
+
 describe("fetchShotAssistPriorEvents (capped client, BA W1-1 B)", () => {
   /** PostgREST-like fake: filters, orders and applies range, but never returns more than `cap` rows. */
   function cappedClient(table: Array<{ game_id: number; event_id: number }>, cap = 1000) {
