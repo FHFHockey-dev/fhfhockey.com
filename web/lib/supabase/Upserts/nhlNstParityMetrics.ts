@@ -473,6 +473,10 @@ export const PARITY_CHANCE_DEFINITIONS = {
     maxDistanceFeet: 40,
     maxAngleDegrees: 50,
   },
+  /** md* columns: inside the scoring-chance area but not high-danger. */
+  mediumDanger: { label: "FHFH medium-danger", source: "fhfh-house", nstEquivalent: false },
+  /** ld* columns: outside the scoring-chance area (measured geometry only). */
+  lowDanger: { label: "FHFH low-danger", source: "fhfh-house", nstEquivalent: false },
 } as const;
 
 /**
