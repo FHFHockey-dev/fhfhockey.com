@@ -13,6 +13,8 @@ All paths below are under `tasks/artifacts/calculation-inventory-2026-11-10/mast
 2. Your entries (boilerplate removed; leads are hypotheses, not findings): `packets-slim/sustainability-part2.md`, `packets-slim/rolling-player-averages-trends-part2.md`, `packets-slim/rankings-part2.md`. Open the matching file in `packets/` only when a slim entry says "full text in the original packet" and you need it.
 3. Upstream context: `BATCH-A-CONSOLIDATED.md`, section "W1-3 · Rolling"; `BATCH-BC-CONSOLIDATED.md`, section "W1-9 · Sustainability"; `audits/rolling-player-averages-trends-part1.md`, `audits/sustainability-part1.md` and `audits/rankings-part1.md` (per-entry tables and defects).
 
+4. **Upstream Astra peer reviews** (owner-required): `W1-Astra-PR/rolling-players.md`, `W1-Astra-PR/sustainability-part1.md`, `W1-Astra-PR/w2-rankings-part1.md`. In each, read only its verdict or decision section and its corrections / new-findings sections; skip the per-entry disposition, fixture and verification sections. Where Astra corrected or withdrew an upstream finding, use the corrected version and cite the review. Treat Astra's new findings in your area as leads to confirm or refute.
+
 **Do not read** `MASTER.md`, `TRIAGE.md`, whole consolidation files, or other audits in full. What you need from them is here:
 - sustainability-part2 (rank 23, S): Codex-only band-metric records; inherits the part 1 baseline problem.
 - rolling-player-averages-trends-part2 (rank 24, S): Codex-only per-metric records; inherits part 1's unit issues. Related confirmed issues: C39 (H) the trend per-60 fallback assumes minutes (`web/lib/trends/playerTrendCalculator.ts:251-255`, `:270-274`; M-ROLL-018); C40 (L) `shooting_pct` is 0–100 and returns 0 with no shots while `expected_sh_pct` is 0–1 and returns null (M-ROLL-005).
@@ -24,6 +26,7 @@ These are Codex-only records that re-describe code the part 1/2 audits already j
 - For each record: find the upstream audit entry or finding that covers the same code (same function or file range). If it is covered and the record adds nothing, write one line: "covered by <audit> <id>". If the record shows something the upstream audit missed or got wrong, audit that point properly.
 - Locate code by symbol and read **only the function involved** with `rg -n` and narrow `sed -n` ranges, not whole files.
 - For each new or contradicting point: classify it (**sound**, **mis-specified**, **wrong** or **undetermined**), cite file:line, and give the magnitude where you can (dated, with sample size), downstream readers, a fix and a valid test. **Change no code.**
+- Apply Astra's upstream corrections. Where your evidence disagrees with Astra or with an upstream audit, say so with evidence; don't silently pick one.
 - **No sub-agents.** Work in one pass. Don't re-read a file you have already read.
 
 ## Database rules (owner-approved)
@@ -32,13 +35,18 @@ These are Codex-only records that re-describe code the part 1/2 audits already j
 - Not allowed: jsonb/payload reads, whole-table jsonb detoast, unbounded joins, full scans of large tables, any writes.
 - No NST, NHL API or Yahoo calls. Don't print secrets. Never set GIT_DIR. No migrations, cron routes or deployments.
 
-## Output (keep it tight: about 10 KB, never more than 18 KB)
+## Output (keep it tight: about 15 KB, never more than 25 KB)
 Write `audits/sus-rolling-rankings-part2-crosscheck.md` with:
 - section 0, the brief;
 - a summary: verdict counts (including how many are covered upstream) and the top 5 findings by user impact;
 - a per-entry table with **one short line per entry** (id, verdict or "covered by …", evidence file:line, reach live/conditional/dormant/research, downstream). Sound and covered entries need no prose;
 - defects only in detail: fix, test, priority (P0 = user-visible wrong numbers now, P1, P2), reach;
 - owner questions **not already answered by the decisions**;
-- limits.
+- limits;
+- **Final analysis and fix-agent handoff** (the last section; Opus fix agents will work from it, one lane per code area, without re-reading this audit's evidence):
+  - final analysis: what is actually wrong in this area and why, in a few paragraphs, with Astra's upstream corrections applied;
+  - recommendations and proposed fixes, ordered by priority, each naming the files and symbols to change, every reader to update (rule 4), and the test that proves it;
+  - directional suggestions: longer-term improvements that are not defects (label them as such);
+  - context a fix agent needs: owner decisions that apply, traps (units, scales, null handling, ownership such as Codex-owned paths), what must not be changed, which steps need a production action (migration, backfill, rebuild, env change) and therefore the owner's approval, and the suggested fix lane.
 
-Commit only that file on `octoberBranch` (no push). Finish with a short report: verdict counts, P0 defects, open questions.
+Commit only that file on `octoberBranch` (no push). Finish with a short report: verdict counts, P0 defects, open questions, and the fix lanes you suggest.
