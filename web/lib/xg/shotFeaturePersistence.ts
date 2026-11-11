@@ -119,7 +119,7 @@ type XgBoostNode = {
   isLeaf: boolean;
 };
 
-type XgBoostModel = {
+export type XgBoostModel = {
   trees: Array<{ root: XgBoostNode }>;
   params?: {
     learningRate?: number;
@@ -590,7 +590,14 @@ function predictXgBoostNode(features: number[], node: XgBoostNode): number {
   return child ? predictXgBoostNode(features, child) : 0;
 }
 
-function predictXgBoost(model: XgBoostModel, features: number[]): number {
+/**
+ * xgboost-js fits additively in probability space: it starts every row at
+ * 0.5 and fits each tree to the residual y - p. The ensemble sum is therefore
+ * the probability estimate itself. Its own `predictSingle` applies a sigmoid
+ * on top, which squeezes every shot toward 0.5; training evaluation and
+ * serving both use this function so the evaluated and served values agree.
+ */
+export function scoreXgBoostEnsemble(model: XgBoostModel, features: number[]): number {
   const learningRate = model.params?.learningRate ?? 0.3;
   let prediction = 0.5;
 
@@ -598,7 +605,7 @@ function predictXgBoost(model: XgBoostModel, features: number[]): number {
     prediction += learningRate * predictXgBoostNode(features, tree.root);
   }
 
-  return clipProbability(sigmoid(prediction));
+  return clipProbability(prediction);
 }
 
 export function predictShotGoalProbability(
@@ -625,7 +632,7 @@ export function predictShotGoalProbabilities(
   ) {
     rawProbability = predictLogistic(artifact.model as LogisticModel, features);
   } else if (artifact.family === "xgboost_js") {
-    rawProbability = predictXgBoost(artifact.model as XgBoostModel, features);
+    rawProbability = scoreXgBoostEnsemble(artifact.model as XgBoostModel, features);
   } else {
     throw new Error(`Unsupported xG model family: ${artifact.family}`);
   }

@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { buildXgModelRegistryRow } from "./modelRegistry";
+import {
+  buildXgModelRegistryRow,
+  pickActiveXgModel,
+  type XgActiveModelRegistryRow,
+} from "./modelRegistry";
 import type { PersistedXgModelArtifact } from "./shotFeaturePersistence";
 
 function artifact(overrides: Partial<PersistedXgModelArtifact> = {}): PersistedXgModelArtifact {
@@ -143,5 +147,56 @@ describe("modelRegistry", () => {
         promotionConfirmed: true,
       })
     ).toThrow("must also be active");
+  });
+});
+
+describe("pickActiveXgModel (registry pin)", () => {
+  const row = (overrides: Partial<XgActiveModelRegistryRow>): XgActiveModelRegistryRow => ({
+    model_version: "cfg-champion",
+    feature_version: 1,
+    prediction_type: "shot_goal",
+    approval_status: "approved",
+    model_approved: true,
+    is_active: true,
+    is_champion: true,
+    ...overrides,
+  });
+  const champion = row({});
+  const shadow = row({
+    model_version: "cfg-shadow",
+    feature_version: 2,
+    approval_status: "candidate",
+    model_approved: false,
+    is_active: false,
+    is_champion: false,
+  });
+  const otherActive = row({ model_version: "cfg-other", feature_version: 2, is_champion: false });
+
+  it("pins the unique active approved champion whatever the row order", () => {
+    for (const rows of [[champion, shadow, otherActive], [otherActive, shadow, champion]]) {
+      expect(pickActiveXgModel(rows)).toEqual({
+        model: { modelVersion: "cfg-champion", featureVersion: 1, predictionType: "shot_goal" },
+        reason: "unique_active_champion",
+      });
+    }
+  });
+
+  it("never selects an unapproved, inactive or other-type row", () => {
+    expect(pickActiveXgModel([shadow]).model).toBeNull();
+    expect(pickActiveXgModel([row({ approval_status: "retired" })]).model).toBeNull();
+    expect(pickActiveXgModel([row({ is_active: false })]).model).toBeNull();
+    expect(pickActiveXgModel([row({ prediction_type: "rebound_creation" })]).model).toBeNull();
+  });
+
+  it("returns unknown, not the first row, when two active rows tie", () => {
+    const a = row({ is_champion: false });
+    expect(pickActiveXgModel([a, otherActive])).toEqual({
+      model: null,
+      reason: "ambiguous_active_models",
+    });
+    expect(pickActiveXgModel([champion, row({ model_version: "cfg-two" })])).toEqual({
+      model: null,
+      reason: "ambiguous_active_models",
+    });
   });
 });

@@ -6,6 +6,7 @@ import {
   assertXgArtifactSupportsPredictionType,
   predictShotGoalProbabilities,
   resolveXgArtifactPredictionType,
+  scoreXgBoostEnsemble,
   type PersistedXgModelArtifact,
 } from "./shotFeaturePersistence";
 
@@ -255,5 +256,33 @@ describe("shotFeaturePersistence", () => {
         actual: 1,
       })
     );
+  });
+});
+
+describe("xgboost_js scoring space (BA W1-1 A, xgboost)", () => {
+  // The library fits additively in probability space (start 0.5, residual
+  // y - p), so the fitted ensemble sum is itself the probability estimate.
+  const { XGBoost } = require("@fractal-solutions/xgboost-js") as {
+    XGBoost: new (config: Record<string, number>) => {
+      fit: (x: number[][], y: number[]) => void;
+      toJSON: () => unknown;
+    };
+  };
+
+  it("scores in the space the booster was fitted in, recovering the training goal rate", () => {
+    // 200 shots with one constant feature and a 10% goal rate.
+    const x = Array.from({ length: 200 }, () => [1]);
+    const y = Array.from({ length: 200 }, (_, index) => (index % 10 === 0 ? 1 : 0));
+    const booster = new XGBoost({ learningRate: 0.3, maxDepth: 2, minChildWeight: 1, numRounds: 40 });
+    booster.fit(x, y);
+    const probability = scoreXgBoostEnsemble(booster.toJSON() as never, [1]);
+    // A sigmoid of the probability-space sum would give about 0.525.
+    expect(probability).toBeCloseTo(0.1, 3);
+  });
+
+  it("clips the ensemble sum into a probability", () => {
+    const leaf = (value: number) => ({ featureIndex: null, threshold: null, left: null, right: null, value, isLeaf: true });
+    expect(scoreXgBoostEnsemble({ trees: [{ root: leaf(0.2) }], params: { learningRate: 0.3 } }, [0])).toBeCloseTo(0.56, 12);
+    expect(scoreXgBoostEnsemble({ trees: [{ root: leaf(-5) }], params: { learningRate: 1 } }, [0])).toBeGreaterThan(0);
   });
 });

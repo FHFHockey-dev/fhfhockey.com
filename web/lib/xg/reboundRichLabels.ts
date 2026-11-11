@@ -123,8 +123,13 @@ export function buildRichReboundLabels(
 ): RichReboundLabel[] {
   const windowSeconds = options.windowSeconds ?? DEFAULT_REBOUND_WINDOW_SECONDS;
   const sorted = sortEvents(events);
+  // Event ids repeat across games: key every lookup by (gameId, eventId).
+  const eventKey = (gameId: number, eventId: number) => `${gameId}:${eventId}`;
   const possessionByEvent = new Map(
-    buildPossessionChainContexts(sorted).map((context) => [context.eventId, context])
+    buildPossessionChainContexts(sorted).map((context) => [
+      eventKey(context.gameId, context.eventId),
+      context,
+    ])
   );
   const labels: RichReboundLabel[] = [];
 
@@ -132,7 +137,8 @@ export function buildRichReboundLabels(
     const source = sorted[sourceIndex]!;
     if (!eligibleSource(source)) continue;
     const sourceTeamId = source.event_owner_team_id!;
-    const sourcePossession = possessionByEvent.get(source.event_id)?.possessionSequenceId ?? null;
+    const sourcePossession =
+      possessionByEvent.get(eventKey(source.game_id, source.event_id))?.possessionSequenceId ?? null;
     if (!sourcePossession) continue;
 
     let termination: RichReboundTermination = "window_expired";
@@ -171,7 +177,7 @@ export function buildRichReboundLabels(
         break;
       }
       const candidatePossession =
-        possessionByEvent.get(candidate.event_id)?.possessionSequenceId ?? null;
+        possessionByEvent.get(eventKey(candidate.game_id, candidate.event_id))?.possessionSequenceId ?? null;
       if (candidatePossession !== sourcePossession) {
         termination = "possession_break";
         targetDelta = delta;

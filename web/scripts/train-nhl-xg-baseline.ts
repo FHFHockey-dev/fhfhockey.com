@@ -51,6 +51,7 @@ import {
   buildShooterPositionGroup,
   normalizeRosterPosition,
 } from "../lib/xg/rosterPosition";
+import { scoreXgBoostEnsemble, type XgBoostModel } from "../lib/xg/shotFeaturePersistence";
 const { XGBoost } = require("@fractal-solutions/xgboost-js") as {
   XGBoost: new (config: Record<string, number>) => {
     fit: (features: number[][], labels: number[]) => void;
@@ -2016,12 +2017,12 @@ async function main(): Promise<void> {
         trainExamples.map((example) => example.label)
       );
       model = booster.toJSON();
+      // Score with the serving function, not the library's predictSingle
+      // (which applies a sigmoid to a probability-space sum).
+      const servedModel = model as XgBoostModel;
       rawScoredExamples = transformedExamples.map((example) => ({
         ...example,
-        prediction: Math.min(
-          1,
-          Math.max(0, Number(booster.predictSingle(example.features)))
-        ),
+        prediction: scoreXgBoostEnsemble(servedModel, example.features),
       }));
       featureImportance = dataset.featureKeys.map((featureKey, index) => ({
         featureKey,

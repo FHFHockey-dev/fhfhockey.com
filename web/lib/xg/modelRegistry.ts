@@ -234,3 +234,88 @@ export async function upsertXgModelRegistryRow(args: {
     });
   if (error) throw error;
 }
+
+/**
+ * Registry-pinned active xG model: the one (model_version, feature_version)
+ * pair every in-house aggregate reader must filter on.
+ *
+ * Contract (order-independent; ambiguity is unknown, never "first row"):
+ * - eligible rows: the requested prediction type, `model_approved = true`,
+ *   `approval_status = 'approved'`, `is_active = true`;
+ * - exactly one eligible champion wins; with no eligible champion, exactly one
+ *   eligible row wins;
+ * - anything else (none, two active non-champions, two champions) returns
+ *   `model: null` with a reason, and readers show in-house xG as unavailable.
+ */
+export type XgActiveModelPin = {
+  modelVersion: string;
+  featureVersion: number;
+  predictionType: XgShotPredictionType;
+};
+
+export type XgActiveModelSelection =
+  | { model: XgActiveModelPin; reason: "unique_active_champion" | "unique_active" }
+  | { model: null; reason: "no_active_approved_model" | "ambiguous_active_models" };
+
+export type XgActiveModelRegistryRow = Pick<
+  XgModelRegistryRow,
+  | "model_version"
+  | "feature_version"
+  | "prediction_type"
+  | "approval_status"
+  | "model_approved"
+  | "is_active"
+  | "is_champion"
+>;
+
+export const XG_ACTIVE_MODEL_REGISTRY_COLUMNS =
+  "model_version,feature_version,prediction_type,approval_status,model_approved,is_active,is_champion";
+
+export function pickActiveXgModel(
+  rows: readonly XgActiveModelRegistryRow[],
+  predictionType: XgShotPredictionType = "shot_goal"
+): XgActiveModelSelection {
+  const eligible = rows.filter(
+    (row) =>
+      row.prediction_type === predictionType &&
+      row.model_approved === true &&
+      row.approval_status === "approved" &&
+      row.is_active === true &&
+      typeof row.model_version === "string" &&
+      row.model_version.length > 0 &&
+      Number.isSafeInteger(Number(row.feature_version))
+  );
+  const toPin = (row: XgActiveModelRegistryRow): XgActiveModelPin => ({
+    modelVersion: row.model_version,
+    featureVersion: Number(row.feature_version),
+    predictionType,
+  });
+  const champions = eligible.filter((row) => row.is_champion === true);
+  if (champions.length === 1) {
+    return { model: toPin(champions[0]!), reason: "unique_active_champion" };
+  }
+  if (champions.length > 1) return { model: null, reason: "ambiguous_active_models" };
+  if (eligible.length === 1) return { model: toPin(eligible[0]!), reason: "unique_active" };
+  return {
+    model: null,
+    reason: eligible.length === 0 ? "no_active_approved_model" : "ambiguous_active_models",
+  };
+}
+
+/** Server-side only: the registry has no anon SELECT policy. */
+export async function fetchActiveXgModel(args: {
+  supabase: SupabaseClient<Database>;
+  predictionType?: XgShotPredictionType;
+}): Promise<XgActiveModelSelection> {
+  const predictionType = args.predictionType ?? "shot_goal";
+  const { data, error } = await args.supabase
+    .from("nhl_xg_model_registry" as never)
+    .select(XG_ACTIVE_MODEL_REGISTRY_COLUMNS)
+    .eq("prediction_type", predictionType)
+    .eq("is_active", true);
+  if (error) throw error;
+  return pickActiveXgModel(
+    (data ?? []) as unknown as XgActiveModelRegistryRow[],
+    predictionType
+  );
+}

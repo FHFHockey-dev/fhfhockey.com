@@ -155,6 +155,20 @@ export type XgGoalieRollingAggregateRow = {
   updated_at: string;
 };
 
+export type XgRollingScope = "team" | "player" | "goalie";
+
+export type XgRollingCoverageReport = Record<
+  XgRollingScope,
+  {
+    /** Rolling rows written: every dressed game in the window is observed or a proven zero. */
+    rowsEmitted: number;
+    /** Windows left unknown because a dressed game lacks complete prediction coverage. */
+    incompleteWindows: number;
+    /** Set when no rolling rows can be built for the scope at all. */
+    unavailableReason: "participation_ledger_missing" | "prediction_coverage_unproven" | null;
+  }
+>;
+
 export type XgAggregateBuildResult = {
   teamGameRows: XgTeamGameAggregateRow[];
   playerGameRows: XgPlayerGameAggregateRow[];
@@ -163,11 +177,45 @@ export type XgAggregateBuildResult = {
   playerRollingRows: XgPlayerRollingAggregateRow[];
   goalieRollingRows: XgGoalieRollingAggregateRow[];
   skippedPredictionRows: Array<{ gameId: number; eventId: number; reason: string }>;
+  rollingCoverage: XgRollingCoverageReport;
+};
+
+/**
+ * One proven appearance: a team in a played game, a skater on a boxscore,
+ * a goalie with time in net. Rolling windows count these games, never rows
+ * that merely happened to contain an attempt.
+ */
+export type XgParticipationRow = {
+  entity_id: number;
+  game_id: number;
+  game_date: string | null;
+  season_id: number | null;
+  team_id?: number | null;
 };
 
 export type BuildXgAggregatesOptions = {
   generatedAt?: string;
   rollingWindows?: number[];
+  /**
+   * `xgFeatureEventKey` of shots at an empty net (no goalie in the defending
+   * net). They are excluded from xG, goals and attempt totals and reported
+   * separately under `provenance.emptyNet` (decision 7). A shot taken while
+   * the shooter's own net is empty is not in this set and stays in totals.
+   */
+  emptyNetEventKeys?: Set<string>;
+  /**
+   * `xgCoverageGameKey` of games whose every scoring-eligible shot has a
+   * prediction from the aggregated model. Without it nothing is proven
+   * complete: game rows are still built, but no rolling window can be.
+   * With it, predictions from uncovered games are skipped.
+   */
+  coveredGameKeys?: Set<string>;
+  /** Appearance ledgers; teams default to the home/away sides of `games`. */
+  participation?: {
+    teams?: XgParticipationRow[];
+    players?: XgParticipationRow[];
+    goalies?: XgParticipationRow[];
+  };
 };
 
 export type XgAggregateReconciliationIssue = {
@@ -206,6 +254,8 @@ export type ValidateXgAggregateReconciliationOptions = {
   tolerance?: number;
   issueLimit?: number;
   emptyNetEventKeys?: Set<string>;
+  /** Same coverage proof the builder used; uncovered games are not expected. */
+  coveredGameKeys?: Set<string>;
 };
 
 export type XgArtifactDriftBaseline = {
@@ -307,6 +357,65 @@ export function xgFeatureEventKey(args: {
   eventId: number;
 }): string {
   return `${args.featureVersion}:${args.gameId}:${args.eventId}`;
+}
+
+export function xgCoverageGameKey(args: {
+  modelVersion: string;
+  featureVersion: number;
+  gameId: number;
+}): string {
+  return `${args.modelVersion}:${args.featureVersion}:${args.gameId}`;
+}
+
+export type XgCoverageFeatureRow = {
+  feature_version: number;
+  game_id: number;
+  event_id: number;
+  is_unblocked_shot_attempt: boolean | null;
+  is_penalty_shot_event: boolean | null;
+  is_shootout_event: boolean | null;
+};
+
+/**
+ * Games whose scoring-eligible shots (unblocked, not penalty shot, not
+ * shootout: the shot-goal scorer's own filter) all carry a prediction from
+ * the given model. A game with no eligible feature rows is not proven.
+ */
+export function buildXgPredictionCoverage(args: {
+  predictions: Pick<XgAggregatePredictionRow, "model_version" | "feature_version" | "game_id" | "event_id" | "prediction_type" | "model_approved">[];
+  features: XgCoverageFeatureRow[];
+}): Set<string> {
+  const eligibleByFeatureGame = new Map<string, Set<number>>();
+  for (const row of args.features) {
+    if (row.is_unblocked_shot_attempt !== true || row.is_penalty_shot_event === true || row.is_shootout_event === true) continue;
+    const key = `${Number(row.feature_version)}:${Number(row.game_id)}`;
+    const events = eligibleByFeatureGame.get(key) ?? new Set<number>();
+    events.add(Number(row.event_id));
+    eligibleByFeatureGame.set(key, events);
+  }
+  const predictedByModelGame = new Map<
+    string,
+    { modelVersion: string; featureVersion: number; gameId: number; events: Set<number> }
+  >();
+  for (const row of args.predictions) {
+    if (row.prediction_type !== "shot_goal" || row.model_approved !== true) continue;
+    const key = xgCoverageGameKey({ modelVersion: row.model_version, featureVersion: row.feature_version, gameId: row.game_id });
+    const entry = predictedByModelGame.get(key) ?? {
+      modelVersion: row.model_version,
+      featureVersion: row.feature_version,
+      gameId: row.game_id,
+      events: new Set<number>(),
+    };
+    entry.events.add(row.event_id);
+    predictedByModelGame.set(key, entry);
+  }
+  const covered = new Set<string>();
+  for (const [key, entry] of predictedByModelGame) {
+    const eligible = eligibleByFeatureGame.get(`${entry.featureVersion}:${entry.gameId}`);
+    if (!eligible || eligible.size === 0) continue;
+    if ([...eligible].every((eventId) => entry.events.has(eventId))) covered.add(key);
+  }
+  return covered;
 }
 
 export function mergeXgFlurryMetadata(
@@ -449,170 +558,291 @@ function addTeamGameRow(args: {
     shot_attempts_against: 0,
     source_prediction_type: "shot_goal",
     source_model_approved: true,
-    provenance: predictionProvenance({
-      modelVersion: args.prediction.model_version,
-      featureVersion: args.prediction.feature_version,
-      generatedAt: args.generatedAt,
-    }),
+    provenance: {
+      ...predictionProvenance({
+        modelVersion: args.prediction.model_version,
+        featureVersion: args.prediction.feature_version,
+        generatedAt: args.generatedAt,
+      }),
+      emptyNet: emptyTeamEmptyNet(),
+    },
     updated_at: args.generatedAt,
   };
   args.rowsByKey.set(key, row);
   return row;
 }
 
-function buildRollingTeamRows(args: {
-  rows: XgTeamGameAggregateRow[];
+/** Shots at an empty net, kept out of the xG/goal/attempt totals (decision 7). */
+type TeamEmptyNet = {
+  xgFor: number;
+  goalsFor: number;
+  shotAttemptsFor: number;
+  xgAgainst: number;
+  goalsAgainst: number;
+  shotAttemptsAgainst: number;
+};
+type PlayerEmptyNet = { ixg: number; goals: number; shotAttempts: number };
+
+function emptyTeamEmptyNet(): TeamEmptyNet {
+  return { xgFor: 0, goalsFor: 0, shotAttemptsFor: 0, xgAgainst: 0, goalsAgainst: 0, shotAttemptsAgainst: 0 };
+}
+
+function emptyPlayerEmptyNet(): PlayerEmptyNet {
+  return { ixg: 0, goals: 0, shotAttempts: 0 };
+}
+
+function sumEmptyNet<T extends Record<string, number>>(
+  zero: T,
+  rows: ReadonlyArray<{ provenance: Record<string, unknown> } | null>
+): T {
+  const total = { ...zero } as Record<string, number>;
+  for (const row of rows) {
+    const part = row?.provenance.emptyNet as Record<string, number> | undefined;
+    if (!part) continue;
+    for (const key of Object.keys(total)) total[key] = roundMetric(total[key]! + (part[key] ?? 0));
+  }
+  return total as T;
+}
+
+type GameAggregateBase = {
+  model_version: string;
+  feature_version: number;
+  season_id: number | null;
+  game_id: number;
+  game_date: string | null;
+  provenance: Record<string, unknown>;
+};
+
+type DressedRollingWindow<T> = {
+  modelVersion: string;
+  featureVersion: number;
+  asOf: XgParticipationRow;
+  windowGames: number;
+  /** One entry per dressed game in the window; null is a proven zero. */
+  rows: Array<T | null>;
+};
+
+function participationSort(left: XgParticipationRow, right: XgParticipationRow): number {
+  return gameSortValue(left).localeCompare(gameSortValue(right));
+}
+
+/**
+ * Rolling windows over the last N games an entity actually played, within one
+ * (model, feature version, season, entity) partition. A dressed game with no
+ * aggregate row is a zero only when its predictions are proven complete;
+ * otherwise the window is unknown and no row is written.
+ */
+function buildDressedRollingWindows<T extends GameAggregateBase>(args: {
+  scope: XgRollingScope;
+  rows: T[];
+  entityIdOf: (row: T) => number;
+  participation: XgParticipationRow[] | undefined;
+  modelFeaturePairs: Array<{ modelVersion: string; featureVersion: number }>;
   windows: number[];
-  generatedAt: string;
-}): XgTeamRollingAggregateRow[] {
-  const byTeam = new Map<number, XgTeamGameAggregateRow[]>();
-  for (const row of args.rows) {
-    const current = byTeam.get(row.team_id) ?? [];
-    current.push(row);
-    byTeam.set(row.team_id, current);
+  coveredGameKeys: Set<string> | undefined;
+  report: XgRollingCoverageReport;
+}): DressedRollingWindow<T>[] {
+  const report = args.report[args.scope];
+  if (!args.participation) {
+    report.unavailableReason = "participation_ledger_missing";
+    return [];
+  }
+  if (!args.coveredGameKeys) {
+    report.unavailableReason = "prediction_coverage_unproven";
+    return [];
+  }
+  const rowByKey = new Map(
+    args.rows.map((row) => [
+      `${row.model_version}:${row.feature_version}:${args.entityIdOf(row)}:${row.game_id}`,
+      row,
+    ])
+  );
+  const ledger = new Map<string, Map<number, XgParticipationRow>>();
+  for (const row of args.participation) {
+    const key = `${row.season_id ?? "none"}:${row.entity_id}`;
+    const games = ledger.get(key) ?? new Map<number, XgParticipationRow>();
+    if (!games.has(row.game_id)) games.set(row.game_id, row);
+    ledger.set(key, games);
   }
 
-  const out: XgTeamRollingAggregateRow[] = [];
-  for (const [teamId, rows] of byTeam) {
-    const sorted = [...rows].sort((left, right) =>
-      gameSortValue(left).localeCompare(gameSortValue(right))
-    );
-    for (let index = 0; index < sorted.length; index += 1) {
-      const current = sorted[index]!;
-      for (const windowGames of args.windows) {
-        const windowRows = sorted.slice(Math.max(0, index - windowGames + 1), index + 1);
-        out.push({
-          model_version: current.model_version,
-          feature_version: current.feature_version,
-          season_id: current.season_id,
-          team_id: teamId,
-          as_of_game_id: current.game_id,
-          as_of_game_date: current.game_date,
-          window_games: windowGames,
-          games_count: windowRows.length,
-          xg_for: roundMetric(windowRows.reduce((sum, row) => sum + row.xg_for, 0)),
-          xg_against: roundMetric(windowRows.reduce((sum, row) => sum + row.xg_against, 0)),
-          flurry_adjusted_xg_for: roundMetric(windowRows.reduce((sum, row) => sum + row.flurry_adjusted_xg_for, 0)),
-          flurry_adjusted_xg_against: roundMetric(windowRows.reduce((sum, row) => sum + row.flurry_adjusted_xg_against, 0)),
-          goals_for: windowRows.reduce((sum, row) => sum + row.goals_for, 0),
-          goals_against: windowRows.reduce((sum, row) => sum + row.goals_against, 0),
-          shot_attempts_for: windowRows.reduce((sum, row) => sum + row.shot_attempts_for, 0),
-          shot_attempts_against: windowRows.reduce((sum, row) => sum + row.shot_attempts_against, 0),
-          provenance: predictionProvenance({
-            modelVersion: current.model_version,
-            featureVersion: current.feature_version,
-            generatedAt: args.generatedAt,
-            rollingWindowGames: windowGames,
-          }),
-          updated_at: args.generatedAt,
-        });
+  const out: DressedRollingWindow<T>[] = [];
+  for (const { modelVersion, featureVersion } of args.modelFeaturePairs) {
+    for (const games of ledger.values()) {
+      const dressed = [...games.values()].sort(participationSort);
+      for (let index = 0; index < dressed.length; index += 1) {
+        const asOf = dressed[index]!;
+        for (const windowGames of args.windows) {
+          const window = dressed.slice(Math.max(0, index - windowGames + 1), index + 1);
+          const rows: Array<T | null> = [];
+          let complete = true;
+          for (const game of window) {
+            const row = rowByKey.get(`${modelVersion}:${featureVersion}:${game.entity_id}:${game.game_id}`);
+            if (row) {
+              rows.push(row);
+            } else if (
+              args.coveredGameKeys.has(xgCoverageGameKey({ modelVersion, featureVersion, gameId: game.game_id }))
+            ) {
+              rows.push(null);
+            } else {
+              complete = false;
+              break;
+            }
+          }
+          if (!complete) {
+            report.incompleteWindows += 1;
+            continue;
+          }
+          report.rowsEmitted += 1;
+          out.push({ modelVersion, featureVersion, asOf, windowGames, rows });
+        }
       }
     }
   }
   return out;
 }
 
-function buildRollingPlayerRows(args: {
-  rows: XgPlayerGameAggregateRow[];
-  windows: number[];
-  generatedAt: string;
-}): XgPlayerRollingAggregateRow[] {
-  const byPlayer = new Map<number, XgPlayerGameAggregateRow[]>();
-  for (const row of args.rows) {
-    const current = byPlayer.get(row.player_id) ?? [];
-    current.push(row);
-    byPlayer.set(row.player_id, current);
-  }
-
-  const out: XgPlayerRollingAggregateRow[] = [];
-  for (const [playerId, rows] of byPlayer) {
-    const sorted = [...rows].sort((left, right) =>
-      gameSortValue(left).localeCompare(gameSortValue(right))
-    );
-    for (let index = 0; index < sorted.length; index += 1) {
-      const current = sorted[index]!;
-      for (const windowGames of args.windows) {
-        const windowRows = sorted.slice(Math.max(0, index - windowGames + 1), index + 1);
-        out.push({
-          model_version: current.model_version,
-          feature_version: current.feature_version,
-          season_id: current.season_id,
-          player_id: playerId,
-          team_id: current.team_id,
-          as_of_game_id: current.game_id,
-          as_of_game_date: current.game_date,
-          window_games: windowGames,
-          games_count: windowRows.length,
-          ixg: roundMetric(windowRows.reduce((sum, row) => sum + row.ixg, 0)),
-          flurry_adjusted_ixg: roundMetric(windowRows.reduce((sum, row) => sum + row.flurry_adjusted_ixg, 0)),
-          goals: windowRows.reduce((sum, row) => sum + row.goals, 0),
-          shot_attempts: windowRows.reduce((sum, row) => sum + row.shot_attempts, 0),
-          provenance: predictionProvenance({
-            modelVersion: current.model_version,
-            featureVersion: current.feature_version,
-            generatedAt: args.generatedAt,
-            rollingWindowGames: windowGames,
-          }),
-          updated_at: args.generatedAt,
-        });
-      }
-    }
-  }
-  return out;
+function sumOf<T>(rows: ReadonlyArray<T | null>, value: (row: T) => number): number {
+  return rows.reduce((sum, row) => sum + (row ? value(row) : 0), 0);
 }
 
-function buildRollingGoalieRows(args: {
-  rows: XgGoalieGameAggregateRow[];
-  windows: number[];
-  generatedAt: string;
-}): XgGoalieRollingAggregateRow[] {
-  const byGoalie = new Map<number, XgGoalieGameAggregateRow[]>();
-  for (const row of args.rows) {
-    const current = byGoalie.get(row.goalie_player_id) ?? [];
-    current.push(row);
-    byGoalie.set(row.goalie_player_id, current);
-  }
+function rollingProvenance(window: DressedRollingWindow<unknown>, generatedAt: string) {
+  return predictionProvenance({
+    modelVersion: window.modelVersion,
+    featureVersion: window.featureVersion,
+    generatedAt,
+    rollingWindowGames: window.windowGames,
+  });
+}
 
-  const out: XgGoalieRollingAggregateRow[] = [];
-  for (const [goaliePlayerId, rows] of byGoalie) {
-    const sorted = [...rows].sort((left, right) =>
-      gameSortValue(left).localeCompare(gameSortValue(right))
-    );
-    for (let index = 0; index < sorted.length; index += 1) {
-      const current = sorted[index]!;
-      for (const windowGames of args.windows) {
-        const windowRows = sorted.slice(Math.max(0, index - windowGames + 1), index + 1);
-        const xgAgainst = roundMetric(windowRows.reduce((sum, row) => sum + row.xg_against, 0));
-        const flurryAdjustedXgAgainst = roundMetric(windowRows.reduce((sum, row) => sum + row.flurry_adjusted_xg_against, 0));
-        const goalsAgainst = windowRows.reduce((sum, row) => sum + row.goals_against, 0);
-        out.push({
-          model_version: current.model_version,
-          feature_version: current.feature_version,
-          season_id: current.season_id,
-          goalie_player_id: goaliePlayerId,
-          team_id: current.team_id,
-          as_of_game_id: current.game_id,
-          as_of_game_date: current.game_date,
-          window_games: windowGames,
-          games_count: windowRows.length,
-          xg_against: xgAgainst,
-          flurry_adjusted_xg_against: flurryAdjustedXgAgainst,
-          goals_against: goalsAgainst,
-          shots_against: windowRows.reduce((sum, row) => sum + row.shots_against, 0),
-          goals_saved_above_expected: roundMetric(xgAgainst - goalsAgainst),
-          flurry_adjusted_goals_saved_above_expected: roundMetric(flurryAdjustedXgAgainst - goalsAgainst),
-          provenance: predictionProvenance({
-            modelVersion: current.model_version,
-            featureVersion: current.feature_version,
-            generatedAt: args.generatedAt,
-            rollingWindowGames: windowGames,
-          }),
-          updated_at: args.generatedAt,
-        });
-      }
-    }
-  }
-  return out;
+function buildRollingTeamRows(
+  windows: DressedRollingWindow<XgTeamGameAggregateRow>[],
+  generatedAt: string
+): XgTeamRollingAggregateRow[] {
+  return windows.map((window) => {
+    const rows = window.rows;
+    return {
+      model_version: window.modelVersion,
+      feature_version: window.featureVersion,
+      season_id: window.asOf.season_id,
+      team_id: window.asOf.entity_id,
+      as_of_game_id: window.asOf.game_id,
+      as_of_game_date: window.asOf.game_date,
+      window_games: window.windowGames,
+      games_count: rows.length,
+      xg_for: roundMetric(sumOf(rows, (row) => row.xg_for)),
+      xg_against: roundMetric(sumOf(rows, (row) => row.xg_against)),
+      flurry_adjusted_xg_for: roundMetric(sumOf(rows, (row) => row.flurry_adjusted_xg_for)),
+      flurry_adjusted_xg_against: roundMetric(sumOf(rows, (row) => row.flurry_adjusted_xg_against)),
+      goals_for: sumOf(rows, (row) => row.goals_for),
+      goals_against: sumOf(rows, (row) => row.goals_against),
+      shot_attempts_for: sumOf(rows, (row) => row.shot_attempts_for),
+      shot_attempts_against: sumOf(rows, (row) => row.shot_attempts_against),
+      provenance: {
+        ...rollingProvenance(window, generatedAt),
+        windowBasis: "dressed_games",
+        emptyNet: sumEmptyNet(emptyTeamEmptyNet(), rows),
+      },
+      updated_at: generatedAt,
+    };
+  });
+}
+
+function buildRollingPlayerRows(
+  windows: DressedRollingWindow<XgPlayerGameAggregateRow>[],
+  generatedAt: string
+): XgPlayerRollingAggregateRow[] {
+  return windows.map((window) => {
+    const rows = window.rows;
+    const asOfRow = rows[rows.length - 1] ?? null;
+    return {
+      model_version: window.modelVersion,
+      feature_version: window.featureVersion,
+      season_id: window.asOf.season_id,
+      player_id: window.asOf.entity_id,
+      team_id: window.asOf.team_id ?? asOfRow?.team_id ?? null,
+      as_of_game_id: window.asOf.game_id,
+      as_of_game_date: window.asOf.game_date,
+      window_games: window.windowGames,
+      games_count: rows.length,
+      ixg: roundMetric(sumOf(rows, (row) => row.ixg)),
+      flurry_adjusted_ixg: roundMetric(sumOf(rows, (row) => row.flurry_adjusted_ixg)),
+      goals: sumOf(rows, (row) => row.goals),
+      shot_attempts: sumOf(rows, (row) => row.shot_attempts),
+      provenance: {
+        ...rollingProvenance(window, generatedAt),
+        windowBasis: "dressed_games",
+        emptyNet: sumEmptyNet(emptyPlayerEmptyNet(), rows),
+      },
+      updated_at: generatedAt,
+    };
+  });
+}
+
+function buildRollingGoalieRows(
+  windows: DressedRollingWindow<XgGoalieGameAggregateRow>[],
+  generatedAt: string
+): XgGoalieRollingAggregateRow[] {
+  return windows.map((window) => {
+    const rows = window.rows;
+    const asOfRow = rows[rows.length - 1] ?? null;
+    const xgAgainst = roundMetric(sumOf(rows, (row) => row.xg_against));
+    const flurryAdjustedXgAgainst = roundMetric(sumOf(rows, (row) => row.flurry_adjusted_xg_against));
+    const goalsAgainst = sumOf(rows, (row) => row.goals_against);
+    return {
+      model_version: window.modelVersion,
+      feature_version: window.featureVersion,
+      season_id: window.asOf.season_id,
+      goalie_player_id: window.asOf.entity_id,
+      team_id: window.asOf.team_id ?? asOfRow?.team_id ?? null,
+      as_of_game_id: window.asOf.game_id,
+      as_of_game_date: window.asOf.game_date,
+      window_games: window.windowGames,
+      games_count: rows.length,
+      xg_against: xgAgainst,
+      flurry_adjusted_xg_against: flurryAdjustedXgAgainst,
+      goals_against: goalsAgainst,
+      shots_against: sumOf(rows, (row) => row.shots_against),
+      goals_saved_above_expected: roundMetric(xgAgainst - goalsAgainst),
+      flurry_adjusted_goals_saved_above_expected: roundMetric(flurryAdjustedXgAgainst - goalsAgainst),
+      provenance: { ...rollingProvenance(window, generatedAt), windowBasis: "appearances" },
+      updated_at: generatedAt,
+    };
+  });
+}
+
+export function isXgEmptyNetTarget(
+  prediction: Pick<XgAggregatePredictionRow, "feature_version" | "game_id" | "event_id" | "goalie_in_net_id">,
+  emptyNetEventKeys: Set<string> | undefined
+): boolean {
+  return (
+    prediction.goalie_in_net_id == null &&
+    emptyNetEventKeys != null &&
+    emptyNetEventKeys.has(
+      xgFeatureEventKey({
+        featureVersion: prediction.feature_version,
+        gameId: prediction.game_id,
+        eventId: prediction.event_id,
+      })
+    )
+  );
+}
+
+function modelFeatureKey(row: { model_version: string; feature_version: number }): string {
+  return `${row.model_version}:${row.feature_version}`;
+}
+
+function teamParticipationFromGames(games: XgAggregateGameRow[]): XgParticipationRow[] {
+  return games.flatMap((game) =>
+    [game.homeTeamId, game.awayTeamId]
+      .filter((teamId): teamId is number => teamId != null)
+      .map((teamId) => ({
+        entity_id: teamId,
+        game_id: game.id,
+        game_date: game.date,
+        season_id: game.seasonId,
+        team_id: teamId,
+      }))
+  );
 }
 
 export function buildXgAggregates(
@@ -629,19 +859,33 @@ export function buildXgAggregates(
   const teamRowsByKey = new Map<string, XgTeamGameAggregateRow>();
   const playerRowsByKey = new Map<string, XgPlayerGameAggregateRow>();
   const goalieRowsByKey = new Map<string, XgGoalieGameAggregateRow>();
-  const flurryAdjustedByEvent = new Map(
-    buildFlurryAdjustedPredictions(
-      predictions
-        .filter((row) => row.prediction_type === "shot_goal" && row.model_approved === true)
-        .map((row) => ({
-          gameId: row.game_id,
-          eventId: row.event_id,
-          rawXg: row.xg,
-          flurrySequenceId: row.flurry_sequence_id ?? null,
-          flurryShotIndex: row.flurry_shot_index ?? null,
-        }))
-    ).map((row) => [`${row.gameId}:${row.eventId}`, row.flurryAdjustedXg])
+  const approved = predictions.filter(
+    (row) => row.prediction_type === "shot_goal" && row.model_approved === true
   );
+  // Flurry survival chains are computed per model and feature version: the
+  // same game scored under two versions must never share one sequence.
+  const approvedByVersion = new Map<string, XgAggregatePredictionRow[]>();
+  for (const row of approved) {
+    const group = approvedByVersion.get(modelFeatureKey(row)) ?? [];
+    group.push(row);
+    approvedByVersion.set(modelFeatureKey(row), group);
+  }
+  const flurryAdjustedByEvent = new Map<string, number>();
+  const modelFeaturePairs: Array<{ modelVersion: string; featureVersion: number }> = [];
+  for (const [versionKey, rows] of approvedByVersion) {
+    modelFeaturePairs.push({ modelVersion: rows[0]!.model_version, featureVersion: rows[0]!.feature_version });
+    for (const adjusted of buildFlurryAdjustedPredictions(
+      rows.map((row) => ({
+        gameId: row.game_id,
+        eventId: row.event_id,
+        rawXg: row.xg,
+        flurrySequenceId: row.flurry_sequence_id ?? null,
+        flurryShotIndex: row.flurry_shot_index ?? null,
+      }))
+    )) {
+      flurryAdjustedByEvent.set(`${versionKey}:${adjusted.gameId}:${adjusted.eventId}`, adjusted.flurryAdjustedXg);
+    }
+  }
 
   for (const prediction of predictions) {
     if (prediction.prediction_type !== "shot_goal" || prediction.model_approved !== true) {
@@ -663,6 +907,24 @@ export function buildXgAggregates(
       continue;
     }
 
+    if (
+      options.coveredGameKeys &&
+      !options.coveredGameKeys.has(
+        xgCoverageGameKey({
+          modelVersion: prediction.model_version,
+          featureVersion: prediction.feature_version,
+          gameId: prediction.game_id,
+        })
+      )
+    ) {
+      skippedPredictionRows.push({
+        gameId: prediction.game_id,
+        eventId: prediction.event_id,
+        reason: "incomplete_prediction_coverage",
+      });
+      continue;
+    }
+
     const ownerTeamId = prediction.event_owner_team_id;
     if (ownerTeamId == null) {
       skippedPredictionRows.push({
@@ -677,8 +939,9 @@ export function buildXgAggregates(
     const isGoal = prediction.label === true ? 1 : 0;
     const xg = Number.isFinite(prediction.xg) ? prediction.xg : 0;
     const flurryAdjustedXg = flurryAdjustedByEvent.get(
-      `${prediction.game_id}:${prediction.event_id}`
+      `${modelFeatureKey(prediction)}:${prediction.game_id}:${prediction.event_id}`
     ) ?? xg;
+    const emptyNetTarget = isXgEmptyNetTarget(prediction, options.emptyNetEventKeys);
     const forRow = addTeamGameRow({
       rowsByKey: teamRowsByKey,
       prediction,
@@ -686,12 +949,19 @@ export function buildXgAggregates(
       teamId: ownerTeamId,
       generatedAt,
     });
-    forRow.xg_for = roundMetric(forRow.xg_for + xg);
-    forRow.flurry_adjusted_xg_for = roundMetric(
-      forRow.flurry_adjusted_xg_for + flurryAdjustedXg
-    );
-    forRow.goals_for += isGoal;
-    forRow.shot_attempts_for += 1;
+    if (emptyNetTarget) {
+      const emptyNet = forRow.provenance.emptyNet as TeamEmptyNet;
+      emptyNet.xgFor = roundMetric(emptyNet.xgFor + xg);
+      emptyNet.goalsFor += isGoal;
+      emptyNet.shotAttemptsFor += 1;
+    } else {
+      forRow.xg_for = roundMetric(forRow.xg_for + xg);
+      forRow.flurry_adjusted_xg_for = roundMetric(
+        forRow.flurry_adjusted_xg_for + flurryAdjustedXg
+      );
+      forRow.goals_for += isGoal;
+      forRow.shot_attempts_for += 1;
+    }
 
     if (opponentId != null) {
       const againstRow = addTeamGameRow({
@@ -701,12 +971,19 @@ export function buildXgAggregates(
         teamId: opponentId,
         generatedAt,
       });
-      againstRow.xg_against = roundMetric(againstRow.xg_against + xg);
-      againstRow.flurry_adjusted_xg_against = roundMetric(
-        againstRow.flurry_adjusted_xg_against + flurryAdjustedXg
-      );
-      againstRow.goals_against += isGoal;
-      againstRow.shot_attempts_against += 1;
+      if (emptyNetTarget) {
+        const emptyNet = againstRow.provenance.emptyNet as TeamEmptyNet;
+        emptyNet.xgAgainst = roundMetric(emptyNet.xgAgainst + xg);
+        emptyNet.goalsAgainst += isGoal;
+        emptyNet.shotAttemptsAgainst += 1;
+      } else {
+        againstRow.xg_against = roundMetric(againstRow.xg_against + xg);
+        againstRow.flurry_adjusted_xg_against = roundMetric(
+          againstRow.flurry_adjusted_xg_against + flurryAdjustedXg
+        );
+        againstRow.goals_against += isGoal;
+        againstRow.shot_attempts_against += 1;
+      }
     }
 
     if (prediction.shooter_player_id != null) {
@@ -725,19 +1002,29 @@ export function buildXgAggregates(
         shot_attempts: 0,
         source_prediction_type: "shot_goal" as const,
         source_model_approved: true as const,
-        provenance: predictionProvenance({
-          modelVersion: prediction.model_version,
-          featureVersion: prediction.feature_version,
-          generatedAt,
-        }),
+        provenance: {
+          ...predictionProvenance({
+            modelVersion: prediction.model_version,
+            featureVersion: prediction.feature_version,
+            generatedAt,
+          }),
+          emptyNet: emptyPlayerEmptyNet(),
+        },
         updated_at: generatedAt,
       };
-      current.ixg = roundMetric(current.ixg + xg);
-      current.flurry_adjusted_ixg = roundMetric(
-        current.flurry_adjusted_ixg + flurryAdjustedXg
-      );
-      current.goals += isGoal;
-      current.shot_attempts += 1;
+      if (emptyNetTarget) {
+        const emptyNet = current.provenance.emptyNet as PlayerEmptyNet;
+        emptyNet.ixg = roundMetric(emptyNet.ixg + xg);
+        emptyNet.goals += isGoal;
+        emptyNet.shotAttempts += 1;
+      } else {
+        current.ixg = roundMetric(current.ixg + xg);
+        current.flurry_adjusted_ixg = roundMetric(
+          current.flurry_adjusted_ixg + flurryAdjustedXg
+        );
+        current.goals += isGoal;
+        current.shot_attempts += 1;
+      }
       playerRowsByKey.set(playerKey, current);
     }
 
@@ -793,14 +1080,54 @@ export function buildXgAggregates(
     `${gameSortValue(left)}:${left.goalie_player_id}`.localeCompare(`${gameSortValue(right)}:${right.goalie_player_id}`)
   );
 
+  const rollingCoverage: XgRollingCoverageReport = {
+    team: { rowsEmitted: 0, incompleteWindows: 0, unavailableReason: null },
+    player: { rowsEmitted: 0, incompleteWindows: 0, unavailableReason: null },
+    goalie: { rowsEmitted: 0, incompleteWindows: 0, unavailableReason: null },
+  };
+  const rollingInputs = {
+    modelFeaturePairs,
+    windows,
+    coveredGameKeys: options.coveredGameKeys,
+    report: rollingCoverage,
+  };
+
   return {
     teamGameRows,
     playerGameRows,
     goalieGameRows,
-    teamRollingRows: buildRollingTeamRows({ rows: teamGameRows, windows, generatedAt }),
-    playerRollingRows: buildRollingPlayerRows({ rows: playerGameRows, windows, generatedAt }),
-    goalieRollingRows: buildRollingGoalieRows({ rows: goalieGameRows, windows, generatedAt }),
+    teamRollingRows: buildRollingTeamRows(
+      buildDressedRollingWindows({
+        ...rollingInputs,
+        scope: "team",
+        rows: teamGameRows,
+        entityIdOf: (row) => row.team_id,
+        participation: options.participation?.teams ?? teamParticipationFromGames(games),
+      }),
+      generatedAt
+    ),
+    playerRollingRows: buildRollingPlayerRows(
+      buildDressedRollingWindows({
+        ...rollingInputs,
+        scope: "player",
+        rows: playerGameRows,
+        entityIdOf: (row) => row.player_id,
+        participation: options.participation?.players,
+      }),
+      generatedAt
+    ),
+    goalieRollingRows: buildRollingGoalieRows(
+      buildDressedRollingWindows({
+        ...rollingInputs,
+        scope: "goalie",
+        rows: goalieGameRows,
+        entityIdOf: (row) => row.goalie_player_id,
+        participation: options.participation?.goalies,
+      }),
+      generatedAt
+    ),
     skippedPredictionRows,
+    rollingCoverage,
   };
 }
 
@@ -835,28 +1162,42 @@ export function validateXgAggregateReconciliation(
     }
     const game = gameById.get(prediction.game_id);
     if (!game || prediction.event_owner_team_id == null) continue;
+    if (
+      options.coveredGameKeys &&
+      !options.coveredGameKeys.has(
+        xgCoverageGameKey({
+          modelVersion: prediction.model_version,
+          featureVersion: prediction.feature_version,
+          gameId: prediction.game_id,
+        })
+      )
+    ) continue;
 
     const ownerTeamId = prediction.event_owner_team_id;
     const opponentId = opponentTeamId(game, ownerTeamId);
     const isGoal = prediction.label === true ? 1 : 0;
     const xg = Number.isFinite(prediction.xg) ? prediction.xg : 0;
+    // Shots at an empty net are outside every total (decision 7); they are
+    // counted in the emptyNet exclusions below.
+    const emptyNetTarget = isXgEmptyNetTarget(prediction, emptyNetEventKeys);
     const teamForKey = `${prediction.model_version}:${prediction.feature_version}:${prediction.game_id}:${ownerTeamId}`;
-    incrementMetric(teamExpected, teamForKey, "xg_for", xg);
-    incrementMetric(teamExpected, teamForKey, "goals_for", isGoal);
-    incrementMetric(teamExpected, teamForKey, "shot_attempts_for", 1);
+    const counted = emptyNetTarget ? 0 : 1;
+    incrementMetric(teamExpected, teamForKey, "xg_for", xg * counted);
+    incrementMetric(teamExpected, teamForKey, "goals_for", isGoal * counted);
+    incrementMetric(teamExpected, teamForKey, "shot_attempts_for", counted);
 
     if (opponentId != null) {
       const teamAgainstKey = `${prediction.model_version}:${prediction.feature_version}:${prediction.game_id}:${opponentId}`;
-      incrementMetric(teamExpected, teamAgainstKey, "xg_against", xg);
-      incrementMetric(teamExpected, teamAgainstKey, "goals_against", isGoal);
-      incrementMetric(teamExpected, teamAgainstKey, "shot_attempts_against", 1);
+      incrementMetric(teamExpected, teamAgainstKey, "xg_against", xg * counted);
+      incrementMetric(teamExpected, teamAgainstKey, "goals_against", isGoal * counted);
+      incrementMetric(teamExpected, teamAgainstKey, "shot_attempts_against", counted);
     }
 
     if (prediction.shooter_player_id != null) {
       const playerKey = `${prediction.model_version}:${prediction.feature_version}:${prediction.game_id}:${prediction.shooter_player_id}`;
-      incrementMetric(playerExpected, playerKey, "ixg", xg);
-      incrementMetric(playerExpected, playerKey, "goals", isGoal);
-      incrementMetric(playerExpected, playerKey, "shot_attempts", 1);
+      incrementMetric(playerExpected, playerKey, "ixg", xg * counted);
+      incrementMetric(playerExpected, playerKey, "goals", isGoal * counted);
+      incrementMetric(playerExpected, playerKey, "shot_attempts", counted);
     } else {
       missingShooterRows += 1;
       missingShooterXg = roundMetric(missingShooterXg + xg);
