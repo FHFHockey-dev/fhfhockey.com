@@ -33,6 +33,12 @@ Facts Chef checked after W1-1 (2026-11-10):
 13. **A penalty-shot infraction is not a penalty** in a player's totals.
 14. **NST burst rule (TJ, clarified):** all four windows hold together across every caller: 40/1 min, 80/5 min, 100/15 min, 180/60 min. A burst may be **39 or fewer** URLs and must be followed by **at least 60 s** before the next call. **Two bursts in a row must be followed by a 5-minute pause.**
     - Chef's read of the deployed function (`nst_admit_attempt_budget_v1` plus migration 20261109015836): a "78 semi-burst" is two 39-request waves. The 39/1 min cap forces about 60 s between them, and the 80/5 min cap then leaves at most 2 more requests for anyone until the 5-minute window clears. So it is **mostly compliant**, NOT the violation W1-2 D10 describes.
-    - **Remaining gap:** after two bursts, up to 2 more requests can still go out inside the 5 minutes. TJ's rule wants a full 5-minute pause. Fix: once a plan's second wave ends, deny all callers for 300 s (a small admission-function change plus a TS/Python test). It goes in the fix plan's NST work.
+    - **Remaining gap:** after two bursts, up to 2 more requests can still go out inside the 5 minutes. TJ's rule wants a full 5-minute pause. Fix: once a plan's second wave ends, deny all callers for 300 s. The cadence correction must cover **every layer**, not just the database function:
+      - the deployed `nst_admit_attempt_budget_v1`, as a committed migration;
+      - the TypeScript client and gate (`web/lib/nst/client.ts`, `web/lib/nst/sharedAdmission.ts`, `web/lib/cron/nstRateLimitPolicy.ts` `canUseNstSemiBurst`);
+      - the **Python admission gate** (`functions/lib/nst_admission.py`, `nst_get`) and the Python callers that plan bursts (`functions/api/fetch_team_table.py`);
+      - **resumable callers** (catch-up/backfill jobs that stop and resume across invocations: NST goalie catch-up, bounded past-season backfill, team-stats date queue). These must re-check the post-burst and post-double-burst cooldowns on resume rather than relying on in-process timers.
+    - Tests for each layer, run together: a 39-request burst then any call within 60 s is denied; two bursts then any call within 300 s is denied; 40 or more planned requests pace at ≥21 s; the same answers in TS, Python and SQL.
+    - It goes in the fix plan's NST work.
 
 15. **Player radar: move to 5v5** and label it "5v5".
