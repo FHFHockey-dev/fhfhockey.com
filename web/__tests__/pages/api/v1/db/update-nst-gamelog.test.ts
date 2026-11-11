@@ -1324,6 +1324,28 @@ describe("update-nst-gamelog automatic season cursor", () => {
     expect(db.tables.nst_gamelog_pk_rates_oi.map((row) => row.on_the_fly_starts_per_60)).toEqual([41.22, 156.52]);
   });
 
+  it("stores NST's dash as unknown for ratio columns and as 0 for counts", async () => {
+    db.tables.players = [{ id: 8476539, fullName: "Jonathan Marchessault", position: "R" }];
+    // Retained Oct 1 row: 0 shots, 0 on-ice goals and 0 faceoffs, so NST shows "-" for SH%, IPP and FO%.
+    const source = retainedNst.slices.find((slice) => slice.datasetType === "allStrengthsCounts")!;
+    fetchNstTextByUrlMock.mockResolvedValue({ response: { status: 200 }, text: source.html });
+    db.games.push({ date: source.date, seasonId: 20262027, type: 2 });
+    await run({ dates: source.date, datasetType: "allStrengthsCounts", overwrite: "yes" });
+    const row = db.tables.nst_gamelog_as_counts.find((r) => r.player_id === 8476539);
+    expect(row).toMatchObject({ shots: 0, goals: 0, faceoffs_won: 0, ipp: null, sh_percentage: null, faceoffs_percentage: null });
+
+    db.tables.players = [{ id: 8470000, fullName: "Test Player 0", position: "C" }];
+    fetchNstTextByUrlMock.mockResolvedValue({ response: { status: 200 }, text:
+      "<table><thead><tr><th>Player</th><th>Team</th><th>Position</th><th>GP</th><th>TOI</th><th>GA</th>" +
+      "<th>On-Ice SV%</th><th>PDO</th><th>Off.&nbsp;Zone Start %</th></tr></thead><tbody>" +
+      "<tr><td>Test Player 0</td><td>BOS</td><td>C</td><td>1</td><td>1:00</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>" +
+      "</tbody></table>" });
+    await run({ dates: source.date, datasetType: "allStrengthsCountsOi", overwrite: "yes" });
+    expect(db.tables.nst_gamelog_as_counts_oi[0]).toMatchObject({
+      ga: 0, on_ice_sv_pct: null, pdo: null, off_zone_start_pct: null
+    });
+  });
+
   it("quarantines GP 2, missing-GP and other-season rows instead of stamping them as one game on the requested date", async () => {
     db.tables.players = Array.from({ length: 4 }, (_, i) => ({ id: 8470000 + i, fullName: "Test Player " + i, position: "C" }));
     const link = (id: number, season: string, stype = "2") =>

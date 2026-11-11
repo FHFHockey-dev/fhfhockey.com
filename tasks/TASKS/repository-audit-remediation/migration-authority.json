@@ -1210,7 +1210,7 @@
       "deploymentState": "applied",
       "migrationClass": "feature",
       "rolloutGate": "Applied with TJ's pop-up approval 2026-11-09 (TJ rule 2026-11-09: after any NST burst, at least 60 s before any following call; 22 s pacing and the 39/1m, 80/5m, 100/15m, 180/h windows all still hold together). Replaces nst_admit_attempt_budget_v1 and adds burst_remaining and burst_last_at to nst_request_admission_state. Rollback is supabase/tests/nst_admission_post_burst_gap_rollback.sql.",
-      "stateEvidence": "Production schema_migrations version 20261109015836 (nst_admission_post_burst_gap); applied 2026-11-09 about 14:45 UTC via psql on the session pooler from this exact file, with TJ's pop-up approval. Pre-state body md5 b1821941 (as expected). Readback: nst_admit_attempt_budget_v1 body md5 5e8543085513e308b92ce55b0090557b equals the file; ACL postgres and service_role only (anon and authenticated false); search_path pg_catalog, public; burst_remaining integer not null default 0 and burst_last_at timestamptz added. Verified first on local PostgreSQL 15 with supabase/tests/nst_admission_post_burst_gap.py (36/36)."
+      "stateEvidence": "Production schema_migrations version 20261109015836 (nst_admission_post_burst_gap); applied 2026-11-09 about 14:45 UTC via psql on the session pooler from this exact file, with TJ's pop-up approval. Pre-state body md5 b1821941 (as expected). Readback: nst_admit_attempt_budget_v1 body md5 5e8543085513e308b92ce55b0090557b equals the file; ACL postgres and service_role only (anon and authenticated false); search_path pg_catalog, public; burst_remaining integer not null default 0 and burst_last_at timestamptz added. Verified first on local PostgreSQL 15 with supabase/tests/nst_admission_post_burst_gap.py (36/36). Note (2026-11-11, math-audit BA W1-2 B): the file header still reads \"DRAFT, NOT APPLIED\" although it was applied 2026-11-09; the applied file is left unchanged (its sha256 is pinned), so this row is the record of its applied state."
     },
     {
       "order": 121,
@@ -1331,6 +1331,16 @@
       "migrationClass": "feature",
       "rolloutGate": "Lineup deployment tallies: forward slot from line-card order; decision 86 second PP measure (share_of_dressed, pp_record_coverage, dressed counts) as added columns; nightly cron 391 then rewrites the table (D7; decision 86). Math-audit fix lane L4a; source only. Apply singly via the IPv4 session pooler with psql only after Chef review and TJ's own pop-up approval for this file, run its READBACK, then record schema_migrations and flip this row. Rollback: supabase/tests/l4a_lineup_deployment_rollback.sql.",
       "stateEvidence": "Not applied. Written 2026-11-11 by fix lane L4a (diary tasks/diaries/2026-11-11-claude-fix-l4a.md). Verified on local PostgreSQL 15 with supabase/tests/l4a_lineup_deployment.py: checks fail on the baseline definitions and pass after the migration; rollback restores the baseline answers."
+    },
+    {
+      "order": 133,
+      "path": "supabase/migrations/20261111180800_fix_percent_games_multi_team_unknown.sql",
+      "sha256": "31c224d84dc17fbd171b20e2730759c83d2cb4efeeeacfec97411b834f9c0daa",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "pending",
+      "migrationClass": "feature",
+      "rolloutGate": "wgo_skater_stats_per_game and wgo_goalie_stats_per_game: percent_games is NULL when the season shows another team (skater per-game rows in the season window with a different team_abbrev; goalie team_abbrevs with more than one team), interim fail-closed until a team-of-record-by-date denominator exists (W2-1 D12; decision 16). Math-audit fix lane L4a; source only. Apply singly via the IPv4 session pooler with psql only after Chef review and TJ's own pop-up approval for this file, run its READBACK (including the EXPLAIN), then record schema_migrations and flip this row. Rollback: supabase/tests/l4a_percent_games_rollback.sql.",
+      "stateEvidence": "Not applied. Written 2026-11-11 by fix lane L4a (diary tasks/diaries/2026-11-11-claude-fix-l4a.md). Verified on local PostgreSQL 15 with supabase/tests/l4a_percent_games.py: traded-skater and multi-team-goalie checks fail on the baseline views and pass after; single-team controls unchanged; columns and types unchanged; rollback restores the baseline answers."
     }
   ],
   "sourceExtensionApproval": {

@@ -842,6 +842,15 @@ function isDashPlaceholder(value: string): boolean {
   );
 }
 
+/**
+ * Ratio columns (SH%, IPP, FO%, on-ice %, PDO, zone-start %) where NST's "-"
+ * means undefined (empty denominator): stored as unknown, never 0. Counts and
+ * other columns keep NST's "-" as 0.
+ */
+export function isNstRatioColumn(column: string): boolean {
+  return column.endsWith("_percentage") || column.endsWith("_pct") || column === "ipp" || column === "pdo";
+}
+
 export type PlayerCacheRow = { id: number; position: string };
 let playerIdCache: Map<string, PlayerCacheRow[]> | null = null;
 const playerIdMemo = new Map<string, number | null>();
@@ -1459,7 +1468,7 @@ async function fetchAndParseData(
             if (cellText === "") {
               cellText = null;
             } else if (isDashPlaceholder(cellText)) {
-              cellText = "0";
+              cellText = isNstRatioColumn(column) ? null : "0";
             }
 
             if (cellText !== null) {
