@@ -3,7 +3,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { parseShareSettings } from "./contract";
-import { buildCreaseShift, colorDistance, CREASE_MIN_COLOR_DISTANCE, creaseColors, creaseShiftModule, creaseShiftShown, editionCutoff, reconcileSchedule, type CreaseShiftData, type ScheduledGame } from "./creaseShift";
+import { buildCreaseShift, colorDistance, CREASE_MIN_COLOR_DISTANCE, creaseColors, creaseShiftModule, creaseShiftShown, creaseShiftWords, editionCutoff, reconcileSchedule, type CreaseShiftData, type ScheduledGame } from "./creaseShift";
 import type { CompletedTeamGame, GoalieAppearance } from "./shared/goalieLedger";
 import { contrast, NEON_CARD } from "lib/socialShare/teamNeon";
 import { teamsInfo } from "lib/teamsInfo";
@@ -78,7 +78,7 @@ describe("crease shift", () => {
     const appearances = twenty.map((_, index) => row(1, "NJD", index));
     const result = buildCreaseShift({ ...base, comparison: "std", reported: reportBoth(twenty), appearances, scheduled: schedule(twenty) });
     expect(result.data!.teams[0]).toMatchObject({ comparisonGames: 10, overlap: 5 });
-    expect(result.evidence.sample).toMatch(/season to date, which contains the recent games/);
+    expect(result.evidence.sample).toMatch(/SEASON is the season to date, which contains the recent games/);
   });
   it("shares a rank when changes are equal on different denominators", () => {
     // Both go from 50% to 100%: NJD on 1 of 2 comparison games, NYR on 2 of 4.
@@ -146,7 +146,7 @@ describe("blocks and running share", () => {
       expect(blocks.filter(block => block.getAttribute("data-block") === "empty")).toHaveLength(1);
     }
   });
-  it("holds across a scheduled game with no report, which SHARE does not count, so the line still ends at SHARE", async () => {
+  it("holds across a scheduled game with no report, which LAST n does not count, so the line still ends at LAST n", async () => {
     const data = run(index => index === 9 ? 2 : 1, [], { reported: reportBoth(twentyGames).filter(entry => !(entry.team === "NJD" && entry.gameId === 1015)) });
     const team = data.teams.find(entry => entry.team === "NJD")!, point = team.series.findIndex(entry => entry.state === "missing");
     expect(team.series[point]).toMatchObject({ gameId: 1015, starterId: null });
@@ -188,31 +188,55 @@ describe("blocks and running share", () => {
       expect(cx).toBeLessThan(blocks[index].right);
     });
   });
-  it("keeps the legend to one line, with the full method in the evidence", async () => {
+  it("keeps the subtitle and the note to a line each, in plain words, with the full method in the evidence", async () => {
     const result = buildCreaseShift({ ...base, window: 10, minComparisonGames: 1, reported: reportBoth(twentyGames), appearances: twentyGames.map((_, index) => row(1, "NJD", index)), scheduled: schedule(twentyGames) });
-    const root = await render(result.data!), note = root.querySelector("p")!;
-    expect(root.querySelectorAll("p")).toHaveLength(1);
-    // About 5.8px a character at 14px condensed, in 1008px.
-    expect(note.textContent!.length).toBeLessThanOrEqual(170);
-    expect(note.textContent).toContain("Line: running start share, ending at SHARE");
-    expect(note.textContent).toContain("Describes past starts only");
-    for (const method of ["Official starts ÷ completed team games", "no resolved starter", "starts so far ÷ team games so far", "relief is not a start", "guides at 0, 50 and 100%", "describes past starts only"]) expect(result.evidence.sample).toContain(method);
+    const root = await render(result.data!), note = root.querySelector('[data-testid="crease-shift-note"]')!;
+    expect(root.querySelectorAll("p")).toHaveLength(2);
+    expect(root.querySelector('[data-testid="crease-shift-subtitle"]')!.textContent).toBe("Share of each team's starts in net: last 10 games vs the 10 before");
+    // Two-digit windows are the longest; the export fits this 175 characters on the 1008px line at 14px (e2e checks the fit).
+    expect(note.textContent!.length).toBeLessThanOrEqual(175);
+    expect(note.textContent).toBe("Blocks show who started each game, oldest to newest. The line is the running share, ending at LAST 10. CHANGE is LAST 10 minus PRIOR 10 in percentage points. Past starts only.");
+    for (const method of ["Official starts ÷ completed team games", "LAST 10 is each team's last 10", "PRIOR is up to the 10 games before them", "CHANGE is LAST 10 minus PRIOR 10 in percentage points", "no resolved starter", "starts so far ÷ team games so far", "ending at LAST 10", "relief is not a start", "guides at 0, 50 and 100%", "describes past starts only"]) expect(result.evidence.sample).toContain(method);
+    expect(result.evidence.sample).not.toMatch(/\bPTS\b|\bSHARE\b|\bPREV\b/);
     expect(root.body.textContent).not.toContain("RELIEF");
     expect(root.body.textContent).not.toMatch(/probab|likely|odds|will start/i);
   });
-  it("puts the real comparison span in the header when every team shown shares it", async () => {
-    expect(heads(await render(run(() => 1)))).toContain("PREV 10 GP");
+  const subtitle = (root: Document) => root.querySelector('[data-testid="crease-shift-subtitle"]')!.textContent;
+  it("names the columns in plain words, with the real comparison span in the header when every team shown shares it", async () => {
+    const root = await render(run(() => 1));
+    expect(heads(root)).toEqual(["RK", "TEAM", "GOALIE", "LAST 10", "PRIOR 10", "CHANGE"]);
     const short = twentyGames.slice(0, 14), overrides = { reported: reportBoth(short), appearances: short.map((_, index) => row(1, "NJD", index)), scheduled: schedule(short) };
-    const root = await render(run(() => 1, [], overrides));
-    expect(heads(root)).toContain("PREV 4 GP");
+    const four = await render(run(() => 1, [], overrides));
+    expect(heads(four)).toContain("PRIOR 4");
+    expect(subtitle(four)).toBe("Share of each team's starts in net: last 10 games vs the 4 before");
+    expect(four.querySelector('[data-testid="crease-shift-span"]')).toBeNull();
+  });
+  it("calls season to date SEASON, with its games in the subtitle, and CHANGE the difference from it", async () => {
+    const root = await render(run(() => 1, [], { comparison: "std" }));
+    expect(heads(root)).toEqual(["RK", "TEAM", "GOALIE", "LAST 10", "SEASON", "CHANGE"]);
+    expect(subtitle(root)).toBe("Share of each team's starts in net: last 10 games vs the season so far (20 games)");
+    expect(root.querySelector('[data-testid="crease-shift-note"]')!.textContent).toContain("CHANGE is LAST 10 minus SEASON in percentage points");
     expect(root.querySelector('[data-testid="crease-shift-span"]')).toBeNull();
-    expect(heads(await render(run(() => 1, [], { comparison: "std" })))).toContain("STD 20 GP");
   });
   it("prints the span per team when it varies, so one header can't mislead", async () => {
     const data = run(() => 1), root = await render({ ...data, teams: [data.teams[0], { ...data.teams[0], team: "NYR", comparisonGames: 6 }] });
-    expect(heads(root)).toContain("PREV");
-    expect(heads(root).some(head => /GP/.test(head ?? ""))).toBe(false);
+    expect(heads(root)).toContain("PRIOR");
+    expect(heads(root).some(head => /GP|\d/.test(head?.replace("LAST 10", "") ?? ""))).toBe(false);
+    expect(subtitle(root)).toBe("Share of each team's starts in net: last 10 games vs up to the 10 before");
     expect([...root.querySelectorAll('[data-testid="crease-shift-span"]')].map(entry => entry.textContent)).toEqual(["10 GP", "6 GP"]);
+    const std = await render({ ...data, comparison: "std", teams: [data.teams[0], { ...data.teams[0], team: "NYR", comparisonGames: 6 }] });
+    expect(heads(std)).toContain("SEASON");
+    expect(subtitle(std)).toBe("Share of each team's starts in net: last 10 games vs the season so far");
+    expect([...std.querySelectorAll('[data-testid="crease-shift-span"]')].map(entry => entry.textContent)).toEqual(["10 GP", "6 GP"]);
+  });
+  it("reads a change as an arrow and its points, in the row's own colour, and a change that rounds to 0 as 0", async () => {
+    const data = run(() => 1), team = data.teams[0], at = (change: number | null) => ({ ...team.goalies[0], change });
+    const root = await render({ ...data, teams: [{ ...team, goalies: [at(60), { ...at(-60), goalieId: 2 }, { ...at(0.4), goalieId: 3 }, { ...at(-0.4), goalieId: 4 }, { ...at(null), goalieId: 5 }] }] });
+    const cells = [...root.querySelectorAll('[class*="cell"]')][5].querySelectorAll('[class*="lines"] > span');
+    expect([...cells].map(cell => cell.textContent)).toEqual(["▲60", "▼60", "0", "0", "—"]);
+    expect([...cells].every(cell => !cell.hasAttribute("style") && !cell.querySelector("[style]"))).toBe(true);
+    expect(cells[0].querySelector('[class*="arrow"]')!.textContent).toBe("▲");
+    expect(root.body.textContent).not.toMatch(/[+−]\d/);
   });
   it("leaves out a goalie with only relief in both windows, who has no line and nothing to show", async () => {
     const root = await render(run(() => 1, [row(2, "NJD", 12, false)]));
@@ -220,16 +244,18 @@ describe("blocks and running share", () => {
     expect(root.querySelector('g[data-goalie="1"]')).not.toBeNull();
     expect(root.body.textContent).not.toContain("G2");
   });
-  it("sizes the chart to fit twelve rows in the 820px budget, and grows it for fewer", async () => {
+  it("sizes the chart to fit twelve rows in the 768px under the subtitle and header, and grows it for fewer", async () => {
     const height = async (count: number) => {
       const data = run(() => 1), teams = Array.from({ length: count }, (_, index) => ({ ...data.teams[0], team: `T${index}` }));
       return Number((await render({ ...data, teams })).querySelector("svg[role=img]")!.getAttribute("height"));
     };
-    expect(await height(12)).toBe(60);
-    expect(await height(6)).toBe(128);
-    expect(await height(12) + 5).toBeLessThanOrEqual(820 / 12);
+    expect(await height(12)).toBe(56);
+    expect(await height(6)).toBe(120);
+    // Each row: its chart and the cell's 5px of padding and rule, at five teams (the tallest side-by-side chart) and twelve.
+    expect(await height(12) + 5).toBeLessThanOrEqual(768 / 12);
+    expect(await height(5) + 5).toBeLessThanOrEqual(768 / 5);
   });
-  it("stacks one to four teams over a full-width chart that grows as teams drop, inside the 797px under the header", async () => {
+  it("stacks one to four teams over a full-width chart that grows as teams drop, inside the 765px under the subtitle and header", async () => {
     const sized = async (count: number) => {
       const data = run(() => 1), teams = Array.from({ length: count }, (_, index) => ({ ...data.teams[0], team: `T${index}` }));
       const root = await render({ ...data, teams }), svg = root.querySelector("svg[role=img]")!, card = root.querySelector('[data-testid="crease-shift-card"]')!;
@@ -240,7 +266,7 @@ describe("blocks and running share", () => {
     few.forEach((size, index) => {
       expect(size).toMatchObject({ stacked: true, size: `rows-${index + 1}`, width: 1008 });
       // Each row: its band, its chart and the chart cell's 5px of padding and rule.
-      expect((index + 1) * (size.band + size.height + 5)).toBeLessThanOrEqual(797);
+      expect((index + 1) * (size.band + size.height + 5)).toBeLessThanOrEqual(765);
       expect(size.heads).not.toContain("BY GAME");
     });
     expect(few.map(size => size.height)).toEqual([...few.map(size => size.height)].sort((a, b) => b - a));
@@ -248,7 +274,7 @@ describe("blocks and running share", () => {
     expect(few[1].height).toBeGreaterThan(200);
     expect(few.map(size => size.band)).toEqual([...few.map(size => size.band)].sort((a, b) => b - a));
     expect(await sized(5)).toMatchObject({ stacked: false, size: "large", width: 410 });
-    expect(await sized(12)).toMatchObject({ stacked: false, size: "small", width: 480, height: 60 });
+    expect(await sized(12)).toMatchObject({ stacked: false, size: "small", width: 480, height: 56 });
   });
   /** One picked team over `count` games with `window` and a season-to-date comparison, dated past October. */
   const long = (count: number, window: number) => {
@@ -362,13 +388,13 @@ describe("minimum comparison games", () => {
     expect(html).not.toContain("NYR");
     expect(result.evidence.cohort).toBe("1 of 2 teams ranked; 1 short comparison");
   });
-  it("puts unresolved teams and the fine print in the evidence, with one note line on the card", async () => {
+  it("puts unresolved teams and the fine print in the evidence, with one subtitle and one note line on the card", async () => {
     const list = games(10), appearances = list.slice(0, 9).map((_, index) => row(1, "NJD", index));
     const result = buildCreaseShift({ ...base, minComparisonGames: 1, reported: reportBoth(list), appearances, scheduled: schedule(list) });
     expect(result.evidence.sample).toContain("Unranked: NJD");
     expect(result.evidence.sample).toContain("relief is not a start");
     const full = run(10, 5), root = new DOMParser().parseFromString(await render(full), "text/html");
-    expect(root.querySelectorAll("p")).toHaveLength(1);
+    expect(root.querySelectorAll("p")).toHaveLength(2);
     expect(root.body.textContent).not.toMatch(/Showing|Unranked/);
   });
   it("stacks a lone ranked team in its largest size, and fills the rows at any count", async () => {
@@ -397,6 +423,23 @@ describe("window and team settings", () => {
     const field = creaseShiftModule.fields.find(entry => entry.id === "teams")!;
     expect(field).toMatchObject({ kind: "text", maxChoices: 12, blank: "the top 12 by share change" });
     expect(field.kind === "text" && field.choices?.length).toBe(32);
+  });
+});
+
+describe("plain words", () => {
+  /** Teams shown with these comparison spans; the words read only the spans, the window and the comparison. */
+  const words = (window: number, comparison: "previous" | "std", ...spans: number[]) => creaseShiftWords({ window, comparison, picked: [], teams: spans.map((comparisonGames, index) => ({ team: `T${index}`, rank: 1, comparisonGames }) as CreaseShiftData["teams"][number]) });
+  const lead = "Share of each team's starts in net: ";
+  it("follows the window, the comparison and the span, in the singular where it is one game", () => {
+    expect(words(10, "previous", 10)).toEqual({ span: 10, last: "LAST 10", prior: "PRIOR 10", compared: "last 10 games vs the 10 before", subtitle: `${lead}last 10 games vs the 10 before` });
+    expect(words(1, "previous", 1)).toMatchObject({ span: 1, last: "LAST 1", prior: "PRIOR 1", subtitle: `${lead}last game vs the game before` });
+    expect(words(20, "previous", 0)).toMatchObject({ prior: "PRIOR 0", subtitle: `${lead}last 20 games vs no earlier games` });
+    expect(words(84, "std", 84)).toMatchObject({ span: 84, last: "LAST 84", prior: "SEASON", subtitle: `${lead}last 84 games vs the season so far (84 games)` });
+    expect(words(1, "std", 1).subtitle).toBe(`${lead}last game vs the season so far (1 game)`);
+  });
+  it("leaves the span to each row when the teams shown differ", () => {
+    expect(words(10, "previous", 10, 6)).toMatchObject({ span: null, last: "LAST 10", prior: "PRIOR", subtitle: `${lead}last 10 games vs up to the 10 before` });
+    expect(words(10, "std", 20, 18)).toMatchObject({ span: null, last: "LAST 10", prior: "SEASON", subtitle: `${lead}last 10 games vs the season so far` });
   });
 });
 
@@ -448,15 +491,16 @@ describe("picked teams", () => {
     const result = build(["BOS", "NJD"]), root = await render(result.data!);
     expect(ranks(root)).toEqual(["4", "—"]);
     const alt = creaseShiftModule.altText({ evidence: result.evidence } as never, result.data, settings(["BOS", "NJD"]));
+    expect(alt).toMatch(/^FHFH Crease Shift: share of each team's starts in net, last 5 games vs up to the 5 before, through \d{4}-\d{2}-\d{2}\. /);
     expect(alt).toContain("4. NJD: G1 4 of 5, G2 1 of 5");
     expect(alt).toContain("BOS (unranked): G41 5 of 5");
     expect(alt).not.toContain("NYR");
-    // BOS's change is withheld, so its PTS reads "—", while its blocks and line draw as usual.
+    // BOS's change is withheld, so its CHANGE reads "—", while its blocks and line draw as usual.
     const bos = root.querySelector('svg[aria-label^="BOS"]')!;
     expect(bos.querySelectorAll('rect[data-block="started"]')).toHaveLength(5);
     expect(bos.querySelectorAll("g[data-goalie]")).toHaveLength(1);
     expect(result.data!.teams.find(team => team.team === "BOS")!.goalies.every(goalie => goalie.change === null)).toBe(true);
-    expect(root.body.textContent).toContain("+20");
+    expect(root.body.textContent).toContain("▲20");
   });
   it("shows a pick with no games as dashes, and has nothing to export when no pick has a game", async () => {
     const lone = build(["CAR"]);

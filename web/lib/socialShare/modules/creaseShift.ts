@@ -93,7 +93,7 @@ function shareSeries(team: string, recent: TeamStartShare, input: { games: reado
   return points.sort((a, b) => a.date.localeCompare(b.date) || a.gameId - b.gameId);
 }
 
-/** A completed game with no resolved starter counts as a team game and credits no one. A game with no report is not in SHARE's denominator either, so the value holds across it. */
+/** A completed game with no resolved starter counts as a team game and credits no one. A game with no report is not in LAST n's denominator either, so the value holds across it. */
 function runningShare(points: readonly CreaseShiftPoint[], goalieId: number) {
   let games = 0, starts = 0;
   return points.map(point => {
@@ -165,8 +165,9 @@ function buildCreaseWindow(input: CreaseShiftInput): SharePostLoadResult<CreaseS
   const state = reasons.length ? "partial" : "ready";
   const asOf = schedule.games.reduce<string | null>((latest, game) => !latest || game.date > latest ? game.date : latest, null);
   const others = rows.filter(row => row.withheld !== null && !row.shortComparison).map(row => row.team);
-  const compared = input.comparison === "std" ? "season to date, which contains the recent games" : `up to the ${input.window} games before them`;
-  // A picked team that cannot rank still shows, so the editor sees why beside the card; RK and PTS print "—".
+  const words = creaseShiftWords({ window: input.window, comparison: input.comparison, teams, picked });
+  const compared = input.comparison === "std" ? "SEASON is the season to date, which contains the recent games" : `PRIOR is up to the ${input.window} games before them`;
+  // A picked team that cannot rank still shows, so the editor sees why beside the card; RK and CHANGE print "—".
   const pageNotes = shown.filter(team => team.rank === null).map(team => `${team.team} is unranked: ${team.withheld ?? "no share change to rank."}`);
   return {
     state, reasons, ttlSeconds: 900, teams: shown.map(team => team.team), ...pageNotes.length ? { pageNotes } : {},
@@ -176,7 +177,7 @@ function buildCreaseWindow(input: CreaseShiftInput): SharePostLoadResult<CreaseS
         { name: "NHL.com team game stats", tables: ["wgo_team_stats", "games"], state: schedule.missing ? "partial" : "ready", asOf, updatedAt: null },
         { name: "NHL.com goalie game stats", tables: ["wgo_goalie_stats"], state: unresolved ? "partial" : "ready", asOf: input.appearances.reduce<string | null>((latest, row) => !latest || row.date > latest ? row.date : latest, null), updatedAt: null },
       ],
-      sample: `Official starts ÷ completed team games: last ${input.window} per team through ${input.through}, compared with ${compared}, with the games behind that comparison printed as GP. PTS is share change in percentage points. Blocks show who started each game, oldest to newest, and an empty block has no resolved starter. The line is the running start share, starts so far ÷ team games so far, ending at SHARE, with guides at 0, 50 and 100%; a game with no resolved starter counts as a team game and credits no one; relief is not a start; describes past starts only${picked.length ? `. Teams picked: ${picked.join(", ")}; RK is each team's rank among all ${input.teams.length}` : ""}${others.length ? `. Unranked: ${others.join(", ")}` : ""}`,
+      sample: `Official starts ÷ completed team games. ${words.last} is each team's last ${input.window} through ${input.through}; ${compared}; ${input.comparison === "std" ? "the subtitle" : "the header"} gives its games, or each row as GP when teams differ. CHANGE is ${words.last} minus ${words.prior} in percentage points. Blocks show who started each game, oldest to newest, and an empty block has no resolved starter. The line is the running start share, starts so far ÷ team games so far, ending at ${words.last}, with guides at 0, 50 and 100%; a game with no resolved starter counts as a team game and credits no one; relief is not a start; describes past starts only${picked.length ? `. Teams picked: ${picked.join(", ")}; RK is each team's rank among all ${input.teams.length}` : ""}${others.length ? `. Unranked: ${others.join(", ")}` : ""}`,
       strength: "All situations (official starter labels)", cohort: `${ranked.length} of ${input.teams.length} teams ranked; ${rows.filter(row => row.shortComparison).length} short comparison`,
       coverage: { observed: schedule.observed, expected: schedule.expected, missing: schedule.missing, unit: "team games" },
     },
@@ -220,6 +221,20 @@ export const creaseShiftHasRows = (data: Pick<CreaseShiftData, "teams" | "picked
 const TEAM_CHOICES = [...activeTeamAbbreviations].map(String).sort().map(team => ({ value: team, label: team }));
 /** The picked team abbreviations, in the field's order. */
 export const creaseShiftPicks = (teams: string | null | undefined) => (teams ?? "").split(",").filter(Boolean);
+/**
+ * The card's plain words (TJ, 2026-11-11), shared by its headers, subtitle and note, the alt text and the evidence. `span` is
+ * the comparison's games when every team shown has the same number, else null and each row prints its own.
+ */
+export function creaseShiftWords(data: Pick<CreaseShiftData, "window" | "comparison" | "teams" | "picked">) {
+  const spans = new Set(creaseShiftShown(data).map(team => team.comparisonGames)), span = spans.size === 1 ? [...spans][0] : null;
+  const last = `LAST ${data.window}`, prior = data.comparison === "std" ? "SEASON" : span === null ? "PRIOR" : `PRIOR ${span}`;
+  const games = (count: number) => count === 1 ? "1 game" : `${count} games`;
+  const recent = data.window === 1 ? "last game" : `last ${data.window} games`;
+  const against = data.comparison === "std" ? `the season so far${span ? ` (${games(span)})` : ""}`
+    : span === null ? `up to the ${data.window} before` : span === 0 ? "no earlier games" : span === 1 ? "the game before" : `the ${span} before`;
+  const compared = `${recent} vs ${against}`;
+  return { span, last, prior, compared, subtitle: `Share of each team's starts in net: ${compared}` };
+}
 export const creaseShiftWindowLabel = (team: Pick<CreaseShiftTeam, "games" | "short">, requested: number) => team.short ? `${team.games} of ${requested}` : `${team.games}`;
 
 export const creaseShiftModule = defineShareModule<CreaseShiftSettings, CreaseShiftData>({
@@ -240,5 +255,5 @@ export const creaseShiftModule = defineShareModule<CreaseShiftSettings, CreaseSh
   load: () => import("./creaseShift.sources").then(sources => sources.loadCreaseShift),
   card: () => import("components/SocialShare/modules/CreaseShiftCard").then(card => card.default),
   hasRows: creaseShiftHasRows,
-  altText: (snapshot, data) => `FHFH Crease Shift: official start share over each team's last ${data.window} completed games through ${data.through}. ${creaseShiftShown(data).map(team => `${team.rank === null ? `${team.team} (unranked)` : `${team.rank}. ${team.team}`}: ${team.goalies.filter(goalie => goalie.starts > 0).map(goalie => `${goalie.name ?? goalie.goalieId} ${goalie.starts} of ${team.games}`).join(", ") || "no starts in the window"}`).join("; ")}. Describes past starts only. ${snapshot.evidence.sample}.`,
+  altText: (snapshot, data) => `FHFH Crease Shift: share of each team's starts in net, ${creaseShiftWords(data).compared}, through ${data.through}. ${creaseShiftShown(data).map(team => `${team.rank === null ? `${team.team} (unranked)` : `${team.rank}. ${team.team}`}: ${team.goalies.filter(goalie => goalie.starts > 0).map(goalie => `${goalie.name ?? goalie.goalieId} ${goalie.starts} of ${team.games}`).join(", ") || "no starts in the window"}`).join("; ")}. Describes past starts only. ${snapshot.evidence.sample}.`,
 });

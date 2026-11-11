@@ -1,19 +1,30 @@
-import { Fragment } from "react";
-import { creaseColors, creaseShiftHasRows, creaseShiftShown, type CreaseShiftData, type CreaseShiftGoalie, type CreaseShiftSettings, type CreaseShiftTeam } from "lib/socialShare/modules/creaseShift";
+import { Fragment, type ReactNode } from "react";
+import { creaseColors, creaseShiftHasRows, creaseShiftShown, creaseShiftWords, type CreaseShiftData, type CreaseShiftGoalie, type CreaseShiftSettings, type CreaseShiftTeam } from "lib/socialShare/modules/creaseShift";
 import type { SharePostCardProps } from "lib/socialShare/modules/contract";
 import { PostEmpty, PostTeamMark } from "./kit";
 import styles from "./CreaseShiftCard.module.scss";
 
 const percent = (share: number | null) => share === null ? "—" : `${Math.round(share * 100)}%`;
-const signed = (value: number | null) => value === null ? "—" : `${value > 0 ? "+" : value < 0 ? "−" : ""}${Math.abs(Math.round(value))}`;
+/**
+ * CHANGE in percentage points, its arrow in the row's own colour (TJ, 2026-11-11); a change that rounds to 0 has no arrow. The
+ * share font has no triangles, so the fallback glyph is set smaller to sit with the digits.
+ */
+const change = (value: number | null): ReactNode => {
+  if (value === null) return "—";
+  const points = Math.round(value);
+  return points ? <><span className={styles.arrow}>{points > 0 ? "▲" : "▼"}</span>{Math.abs(points)}</> : "0";
+};
 const crease = (team: CreaseShiftTeam) => team.startersUsed > 1 ? `Split, ${team.startersUsed} starters` : team.startersUsed === 1 ? "One starter" : "—";
 /** Relief has no column, so a goalie with no start in either window has nothing to show here. */
 const listed = (team: CreaseShiftTeam) => team.goalies.filter(goalie => goalie.starts > 0 || (goalie.comparisonStarts ?? 0) > 0);
 
-/** The table's width in the 1080 square, and the rows' height under the header and over the note. A stacked band has 8px over its names. */
-const TABLE_WIDTH = 1008, ROWS_HEIGHT = 820, ROW_CHROME = 8, BAND_PADDING = 8;
-/** Stacked rows share the 818px table under a 21px header, less a few pixels so the last chart never meets the note. */
-const STACKED_HEIGHT = 790;
+/**
+ * The table's width in the 1080 square, and its rows' height side by side: the 786px table, under the 32px subtitle and over
+ * the note, less its 18px header. A stacked band has 8px over its names.
+ */
+const TABLE_WIDTH = 1008, ROWS_HEIGHT = 768, ROW_CHROME = 8, BAND_PADDING = 8;
+/** Stacked rows share the 786px table under a 21px header, less a few pixels so the last chart never meets the note. */
+const STACKED_HEIGHT = 758;
 /**
  * Up to four teams, each row stacks: its names and numbers in larger type over a chart the table's full width, so the chart
  * grows both ways and the square has no empty band (TJ, 2026-11-11). More teams sit side by side, the chart filling each row.
@@ -77,18 +88,18 @@ function CreaseChart({ team, width, height, size }: { team: CreaseShiftTeam; wid
 export default function CreaseShiftCard({ data, logos }: SharePostCardProps<CreaseShiftSettings, CreaseShiftData>) {
   const shown = creaseShiftShown(data);
   if (!creaseShiftHasRows(data)) return <PostEmpty>{data.picked.length ? `No completed games in this window for ${data.picked.join(", ")}` : `No team has both windows resolved with ${data.minComparisonGames} comparison games`}</PostEmpty>;
-  const size = sizeFor(shown.length, Math.max(1, ...shown.map(team => listed(team).length))), compared = data.comparison === "std" ? "STD" : "PREV";
+  const size = sizeFor(shown.length, Math.max(1, ...shown.map(team => listed(team).length))), words = creaseShiftWords(data);
   // A team with nothing to list (no games in the window) still prints a dash in each column, as an unranked rank does.
-  const lines = (team: CreaseShiftTeam, cell: (goalie: CreaseShiftGoalie) => string | number, colored = false) => <span className={styles.lines}>{listed(team).length ? listed(team).map(goalie => {
+  const lines = (team: CreaseShiftTeam, cell: (goalie: CreaseShiftGoalie) => ReactNode, colored = false) => <span className={styles.lines}>{listed(team).length ? listed(team).map(goalie => {
     const color = colored ? goalieColor(team, goalie) : undefined;
     return <span key={goalie.goalieId} style={color ? { color } : undefined} data-goalie-color={color}>{cell(goalie)}</span>;
   }) : <span>—</span>}</span>;
-  // One span across every team shown goes in the header; otherwise each team prints its own, so a shared label can't mislead.
-  const spans = new Set(shown.map(team => team.comparisonGames)), sharedSpan = spans.size === 1 ? shown[0].comparisonGames : null;
-  const heads = ["RK", "TEAM", "GOALIE", "SHARE", sharedSpan === null ? compared : `${compared} ${sharedSpan} GP`, "PTS", ...size.stacked ? [] : ["BY GAME"]];
+  // One span across every team shown goes in the header (PRIOR) or the subtitle (SEASON); otherwise each team prints its own, so a shared label can't mislead.
+  const sharedSpan = words.span, heads = ["RK", "TEAM", "GOALIE", words.last, words.prior, "CHANGE", ...size.stacked ? [] : ["BY GAME"]];
   const chart = (team: CreaseShiftTeam) => <CreaseChart team={team} width={size.chartWidth - (sharedSpan === null && !size.stacked ? SPAN_WIDTH : 0)} height={size.chartHeight} size={size} />;
   const band = size.stacked || undefined;
   return <div className={styles.card} data-testid="crease-shift-card" data-size={size.name} data-stacked={band}>
+    <p className={styles.subtitle} data-testid="crease-shift-subtitle">{words.subtitle}</p>
     <div className={styles.table} style={{ gridTemplateRows: `auto repeat(${shown.length}, ${size.stacked ? `minmax(${size.band}px, auto) minmax(min-content, 1fr)` : "minmax(min-content, 1fr)"})` }}>
       {heads.map((head, index) => <span key={head} className={styles.head} data-left={index === 1 || index === 2 || index === 6 || undefined}>{head}</span>)}
       {shown.map(team => <Fragment key={team.team}>
@@ -97,10 +108,10 @@ export default function CreaseShiftCard({ data, logos }: SharePostCardProps<Crea
         <span className={styles.cell} data-band={band} data-left="">{lines(team, goalie => `${goalie.name ?? goalie.goalieId}${goalie.otherTeams.length ? ` (also ${goalie.otherTeams.join(", ")})` : ""}`, true)}</span>
         <span className={styles.cell} data-band={band}>{lines(team, goalie => percent(goalie.share), true)}</span>
         <span className={styles.cell} data-band={band}>{sharedSpan === null && <small className={styles.span} data-testid="crease-shift-span">{team.comparisonGames} GP</small>}{lines(team, goalie => percent(goalie.comparisonShare))}</span>
-        <span className={styles.cell} data-band={band}>{lines(team, goalie => signed(goalie.change))}</span>
+        <span className={styles.cell} data-band={band}>{lines(team, goalie => change(goalie.change))}</span>
         <span className={styles.cell} data-chart={band}>{chart(team)}</span>
       </Fragment>)}
     </div>
-    <p className={styles.note}>Blocks: who started each game, oldest to newest. Line: running start share, ending at SHARE. PTS: share change. Describes past starts only.</p>
+    <p className={styles.note} data-testid="crease-shift-note">Blocks show who started each game, oldest to newest. The line is the running share, ending at {words.last}. CHANGE is {words.last} minus {words.prior} in percentage points. Past starts only.</p>
   </div>;
 }
