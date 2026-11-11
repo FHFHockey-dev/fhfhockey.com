@@ -127,3 +127,78 @@ Facts Chef checked after W1-1 (2026-11-10):
     - Check for an untouched, time-appropriate historical holdout with documented provenance. If one exists, use it for a single evaluation, and never relabel examined or tuned-on data as fresh.
     - Until independent evidence supports calibration, label intervals **uncalibrated**.
     - Collect prospective 2026-27 forecasts frozen before each game and evaluate them against outcomes, reporting sample size, coverage and uncertainty, including discreteness. Don't claim calibration because a small sample lands near target.
+
+## Decisions on Batch B/C open questions, round 2 (TJ, 2026-11-11, by pop-up; intent preserved, condensed by Chef)
+40. **Quality Start means Vollman's definition everywhere it is labelled "Quality Start".**
+    - SV% above that season's league-average SV%, or ≥ .885 when allowing ≤ 2 GA. Verify the exact boundaries against the original, and take league average for the matching season and scope.
+    - Credited starter only, no relief. One shared implementation, with edge tests (threshold, low shots). Missing league average or shots means unavailable.
+    - Any fixed-threshold variant is a separately named FHFH measure.
+41. **Forecast ledger: score each forecast on its declared basis.**
+    - Unconditional forecasts are scored over the full eligible pregame universe, with confirmed non-participation as 0. Conditional forecasts are scored only on players who dressed or played, per an explicit target.
+    - Persist participation probability, basis, issuance time and eligible population with every forecast.
+    - Compare like with like. A conversion uses a documented participation model, is labelled, and never divides by a missing, zero or unqualified probability.
+    - Exclude unresolved participation or missing outcomes, never zero them. Evaluate participation calibration separately, on frozen pregame forecasts.
+42. **No production game model:**
+    - Show a clear "FHFH predictions unavailable while the model is developed and validated" notice.
+    - If a current, authorized odds source exists, also show a separately labelled de-vigged market probability with source and timestamp, never as an FHFH prediction. If odds are stale, unavailable or not authorized, show the unavailable state.
+    - The cron reports "no production model" as an explicit non-success or skipped state.
+    - Verify actual page and homepage behaviour before describing it.
+43. **Drop the 0.52 pick rule.** The pick follows the displayed probabilities; at exactly 50% show a tie or no pick. Home ice belongs in a qualified model. This doesn't activate or validate the unserved model.
+44. **Game-page Poisson chart:**
+    - First verify reachability (Astra: imported but maybe not rendered), and keep it unserved until inputs and output are accurate and defined.
+    - Goal: a score distribution grounded in a qualified game model (both teams plus context), sharing Game Grid's calculation where definitions match.
+    - Any illustrative historical-rate version is labelled as such and never presented as a win forecast. Define tie, OT and SO handling first; test both the distribution and the win-odds conversion. Relabelling alone doesn't activate it.
+45. **Overtime rule:** one shared, documented rule converts regulation ties to final win probabilities.
+    - Use a split fitted on historical tied-after-regulation games only if it beats 50/50 in time-based held-out testing, with season and rule context, sample size and uncertainty. No assumed home edge.
+    - Until then, use **50/50, labelled as an approximation**. Probabilities sum to 100%, and regulation and OT/SO outcomes are tested separately.
+    - Verify which conventions are actually reachable.
+46. **Yahoo goalie W/L/OTL:**
+    - Verify Yahoo's official definitions and stat IDs, and score only what each league uses.
+    - Keep regulation L and OT/SO L distinct in the forecast; combine only where a verified provider category says to.
+    - W, regulation L, OTL and no-decision reconcile to the start/appearance probability, never L = 1 − W. Add tests per outcome and per league type.
+    - Until verified, label the mapping **unresolved**; the 35% estimate is not assumed.
+47. **Forecast coverage in RSO:**
+    - Goal: every eligible player has a usable, qualified forecast. Investigate and fix missing FORGE lines (reserve path, eligibility, freshness), with an evidence-based sparse-history fallback that shows its source and uncertainty. Never a fabricated zero or a full-confidence label on an unvalidated fallback.
+    - Until coverage is complete, lineup totals are **incomplete** with the missing count, and those players are **unknown** for drops and rankings (no auto-drop).
+    - Measure coverage across the eligible pool, and test fallback, totals and recommendations. Any migration, backfill or activation is a separately scoped action.
+48. **Streaming rank.** Until a form blend is validated, rank on **qualified projections** on the same scoring, participation and horizon basis.
+    - Account for the full legal swap and usable games. A missing projection is not 0, and a one-game streak never beats a stronger forecast.
+    - In parallel, build and evaluate a same-basis, sample-aware, shrunk form component against projection-only and other baselines on held-out dates, with role, opportunity and schedule context where supported.
+    - Adopt it only if it improves real roster decisions, showing evidence and uncertainty. Shrinkage strength is a parameter to validate.
+49. **"Most starts" plans with a drop are not safe when the dropped player's value is unknown.** Fix coverage so the full swap can be valued. Until then, mark the plan "needs review", say whose value is unknown, and never auto-recommend or execute it. A known points cost still isn't automatically safe: league scoring, roster fit and longer-term value matter.
+50. **Last-day drops:** evaluate the full tradeoff (in-range gain, the dropped player's value beyond the range, replacement path, league settings, matchup).
+    - If the longer-term cost is known and favourable under the user's objective, it may be suggested. Don't assume the player can be reclaimed.
+    - If the cost is unknown, mark it "needs review" with a warning. The manager decides.
+    - Support planning horizons (including a final matchup), with assumptions visible.
+51. **Category leagues: show starts versus ratio as a tradeoff** until category-aware valuation is ready. Never auto-rank one more start above a materially worse GAA or SV%.
+    - Show the projected impact per category, including volume, ratio denominators and minimum starts.
+    - Build toward a real category objective (league settings, matchup or standings, full-roster totals), comparing category win probability and standings gain on held-out outcomes. Uncertainty stays visible and the manager sets priorities.
+52. **Reserve projections are prepared for activation as a separately reviewed production step.**
+    - Verify the migration against the current schema, check coverage of the eligible missing players, and confirm the inputs, scoring, participation, hits, blocks and shutouts are sound.
+    - Test sparse-history players, with the fallback's source and uncertainty visible.
+    - Measure coverage before and after with one eligible-player definition.
+    - Present the migration, rollout, resource impact, recovery plan and checks for approval before applying anything. Meanwhile, unknown plus incomplete totals.
+53. **Off-night value is measured, not fixed.**
+    - Measure incremental usable games from schedule and roster configurations (off-night and busy-night lineup fit), and use the user's own fit where roster and settings are known.
+    - General tools (Game Grid) get a transparent default derived and validated from representative scenarios, with assumptions shown. 1.67× and 1.25× are not facts.
+    - Share the definition where the products measure the same thing, and label any differences. Test on held-out weeks, and show off-night games and raw games separately.
+54. **Default points weights are labelled "FHFH default".** Connected leagues use their own verified settings, and unconnected users can edit. Never call them Yahoo defaults unless verified. Show the active scoring source and weights, and flag unmappable league categories rather than silently applying defaults.
+55. **OT losses in category value follow each league's settings**, with direction from the provider (Yahoo `sort_order`, ESPN reverse flag) through one stat registry.
+56. **Pickup boost and idle teams:**
+    - In the selected window, mark players whose teams have no games left, and show their in-window contribution as 0 when the schedule is verified.
+    - Exclude idle teams from the boost normalisation.
+    - Immediate-streaming views rank them after players with usable games but keep them visible and searchable. Longer-horizon views evaluate them on that horizon.
+    - Users can filter them out. A verified empty schedule ≠ missing schedule data (unknown).
+57. **A real category-aware Roster Optimizer.**
+    - Evaluate the full lineup and swap against the league's actual categories, direction, slots and scoring period, with ratio denominators, goalie minimums and combined roster impact, not just summed z-scores.
+    - Fix and qualify the category scoring first. Compare roster-relative z against matchup or standings gain on held-out periods, show tradeoffs and uncertainty, and let the manager set priorities.
+    - Until qualified, label schedule-capacity results as such.
+58. **Team Power Terminal:**
+    - The 100-centred rating is primary, on a diverging bar centred at 100 with a labelled, consistent scale.
+    - Rank or percentile only if the population is complete and correct, labelled separately; the rating is never a percentile.
+    - Sort risers and fallers by actual change over a stated period. Sparklines come from real dated history, or show "unavailable".
+    - Fix the underlying all-team rating first.
+59. **Ice time is split into ES, PP and PK** (`proj_toi_pk_seconds`).
+    - Define how OT and extra-attacker time are classified, with an explicit other/unknown bucket if needed. The categories are mutually exclusive and reconcile to total TOI, with no double-counted PK.
+    - Update consumers and migrations together, keep units, and test missing data and unusual states.
+    - Never relabel historical values as true ES.
