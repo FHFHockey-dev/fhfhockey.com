@@ -41,3 +41,5 @@ Radar P0 fixed with cohort/value 5v5 tests; P1s fixed with reader-level tests; r
 ## Reader tickets from L4a (2026-11-11; migrations 125–132 written, unapplied)
 NST season views (migrations 125/126) return NULL, not 0/50/100, for unknown or zero-denominator rates and shares, and fewer GP (regular season only). WiGO percentiles, `radarSeasonStats.ts`, `fetchWigoRatingStats.ts` and `fetchWigoPlayerStats.ts` must render NULL as unknown. Game Score RPC (127) is scoped to the season's type-2 games; the visible chart label (`GameScoreLineChart`) is yours (decision 85). Also own `web/pages/api/v1/player/[id]/percentile-rank.ts` (granted): it returns zeros for a player with no games (rule 5).
 Migration 133 (`percent_games`): NULL for multi-team seasons; the radar (`radarSeasonStats.ts`, `PlayerRadarChart.tsx`) must treat NULL as unknown.
+
+Q41 answered 2026-11-11: decision 90 (keep both percentile conventions and label each: mid-rank in WiGO, social and the radar; rankings exclusive, "ties share the lower bound").
