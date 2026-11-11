@@ -11,6 +11,8 @@ type MobileLeaderRow = {
   href: string;
   context: string;
   value: string | number;
+  // Raw sort value; tied rows share a rank.
+  rankValue: number | null;
   detail?: string;
 };
 
@@ -32,6 +34,9 @@ type MobileTabInterfaceProps = {
   goalieLeadersSavePct: GoalieStat[];
   goalieLeadersGAA: GoalieStat[];
   goalieLeadersQS: GoalieStat[];
+  // Printed goalie qualifier (decision 89) and the message for withheld boards.
+  goalieQualifierNote?: string;
+  goalieEmptyMessage?: string;
 };
 
 const formatDecimal = (value: number | null | undefined, digits: number) =>
@@ -58,30 +63,38 @@ function mapSkaterRows(
   valueKey: keyof SkaterStat,
   detailBuilder?: (player: SkaterStat) => string
 ): MobileLeaderRow[] {
-  return leaders.slice(0, 5).map((player) => ({
+  // Boards arrive sized by the fetch's tie policy (ties at fifth kept).
+  return leaders.map((player) => ({
     id: player.player_id,
     name: player.fullName,
     href: `/stats/player/${player.player_id}`,
     context: skaterContext(player),
     value: player[valueKey] as number,
+    rankValue: player[valueKey] as number,
     detail: detailBuilder?.(player)
   }));
 }
 
 function mapGoalieRows(
   leaders: GoalieStat[],
+  rankKey: "wins" | "save_pct" | "goals_against_avg" | "quality_starts_pct",
   valueBuilder: (goalie: GoalieStat) => string | number,
   detailBuilder?: (goalie: GoalieStat) => string
 ): MobileLeaderRow[] {
-  return leaders.slice(0, 5).map((goalie) => ({
+  return leaders.map((goalie) => ({
     id: goalie.goalie_id,
     name: goalie.fullName,
     href: `/stats/player/${goalie.goalie_id}`,
     context: goalieContext(goalie),
     value: valueBuilder(goalie),
+    rankValue: goalie[rankKey],
     detail: detailBuilder?.(goalie)
   }));
 }
+
+/** Competition rank on a best-first board: tied rows share the first rank. */
+const competitionRank = (rows: MobileLeaderRow[], index: number) =>
+  rows.findIndex((row) => row.rankValue === rows[index].rankValue) + 1;
 
 export default function MobileTabInterface({
   playerType = "all",
@@ -93,7 +106,9 @@ export default function MobileTabInterface({
   goalieLeadersWins,
   goalieLeadersSavePct,
   goalieLeadersGAA,
-  goalieLeadersQS
+  goalieLeadersQS,
+  goalieQualifierNote,
+  goalieEmptyMessage = "No goalie leaders available."
 }: MobileTabInterfaceProps) {
   const [activeTab, setActiveTab] = useState<MobileTabKey>("skaters");
   const visibleTab = playerType === "all" ? activeTab : playerType;
@@ -155,6 +170,7 @@ export default function MobileTabInterface({
           label: "SV%",
           rows: mapGoalieRows(
             goalieLeadersSavePct,
+            "save_pct",
             (goalie) => formatSavePct(goalie.save_pct),
             (goalie) => `${goalie.games_played} GP`
           )
@@ -165,6 +181,7 @@ export default function MobileTabInterface({
           label: "W",
           rows: mapGoalieRows(
             goalieLeadersWins,
+            "wins",
             (goalie) => goalie.wins,
             (goalie) => `${goalie.games_played} GP`
           )
@@ -175,6 +192,7 @@ export default function MobileTabInterface({
           label: "GAA",
           rows: mapGoalieRows(
             goalieLeadersGAA,
+            "goals_against_avg",
             (goalie) => formatDecimal(goalie.goals_against_avg, 2),
             (goalie) => `${goalie.games_played} GP`
           )
@@ -185,6 +203,7 @@ export default function MobileTabInterface({
           label: "QS%",
           rows: mapGoalieRows(
             goalieLeadersQS,
+            "quality_starts_pct",
             (goalie) => formatQualityStarts(goalie.quality_starts_pct),
             (goalie) => `${goalie.games_played} GP`
           )
@@ -239,6 +258,9 @@ export default function MobileTabInterface({
           role="tabpanel"
           className={styles.mobileTabPanel}
         >
+          {visibleTab === "goalies" && goalieQualifierNote ? (
+            <p className={styles.mobileLeaderTeam}>{goalieQualifierNote}</p>
+          ) : null}
           {sections[visibleTab].map((section) => {
             const isExpanded = Boolean(expandedSections[section.id]);
             return (
@@ -261,7 +283,9 @@ export default function MobileTabInterface({
                         href={row.href}
                         className={styles.mobileLeaderItem}
                       >
-                        <span className={styles.mobileLeaderRank}>{index + 1}</span>
+                        <span className={styles.mobileLeaderRank}>
+                          {competitionRank(section.rows, index)}
+                        </span>
                         <span className={styles.mobileLeaderInfo}>
                           <span className={styles.mobileLeaderName}>{row.name}</span>
                           <span className={styles.mobileLeaderTeam}>
@@ -275,7 +299,7 @@ export default function MobileTabInterface({
                   </div>
                 ) : isExpanded ? (
                   <div id={`${section.id}-rows`} className={styles.mobileEmptyState}>
-                    {visibleTab === "skaters" ? skaterEmptyMessage : "No goalie leaders available."}
+                    {visibleTab === "skaters" ? skaterEmptyMessage : goalieEmptyMessage}
                   </div>
                 ) : null}
               </article>

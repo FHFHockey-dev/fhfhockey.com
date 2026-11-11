@@ -2121,3 +2121,6 @@ Math-audit fix lane L6 (rolling player averages and trends), local edits only (n
 
 ## CLAUDE-FIX-L14-CLAIM-20261111 (2026-11-11)
 Math-audit fix lane L14 (xG model, aggregates, approval gate, shot map, Metrics Timeline), local edits only (no push/deploy/prod/registry change): `web/lib/xg/**`; `web/pages/api/v1/db/update-nhl-xg-*.ts`, `register-nhl-xg-model.ts`, `audit-nhl-xg-backfill.ts`; `web/pages/api/v1/xg/**`; `web/scripts/train-nhl-xg-baseline.ts`, `train-nhl-xg-rebound-heads-offline.ts`, `benchmark-nhl-xg-baselines.ts`; `web/components/ShotVisualization/**`, `web/components/MetricsTimeline/**`. Champion cfg9bac2706 keeps serving (decision 5). Please flag any overlap.
+
+## CLAUDE-FIX-L17-CLAIM-20261111 (2026-11-11)
+Math-audit fix lane L17 (player stats page and stats leaderboards), local edits only (no push/deploy/prod): `web/pages/stats/**` except `web/pages/stats/game/**`; `web/components/PlayerStats/**` except `PlayerRadarChart.tsx`; `web/components/StatsPage/**`; `web/lib/NHL/statsPageFetch.ts` and tests beside them. Please flag any overlap.

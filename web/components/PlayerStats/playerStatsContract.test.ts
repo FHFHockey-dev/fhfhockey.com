@@ -256,14 +256,37 @@ describe("summary aggregation", () => {
     expect(aggregateSummaryStat([{ date: "1", saves: 0, shots_against: 10 }], "save_pct")).toBe(0);
   });
 
-  it("partial data: null rows are skipped, never treated as zero", () => {
+  it("partial data: a window with a missing value is unavailable, never a smaller sample or zero", () => {
     const log = [
-      { date: "1", games_played: 1, cf_pct: 60, goals_per_60: 0, hits: null },
+      { date: "1", games_played: 1, cf_pct: 60, goals_per_60: 0, hits: 2 },
       { date: "2", games_played: 1, cf_pct: null, goals_per_60: 2, hits: null }
     ];
-    expect(aggregateSummaryStat(log, "cf_pct")).toBe(60);
-    expect(aggregateSummaryStat(log, "goals_per_60")).toBe(1);
+    expect(aggregateSummaryStat(log, "cf_pct")).toBeNull();
+    expect(aggregateSummaryStat(log, "goals_per_60")).toBeNull();
     expect(aggregateSummaryStat(log, "hits")).toBeNull();
+    expect(aggregateSummaryStat([log[0]], "hits")).toBe(2);
+  });
+
+  it("rates and shares without primitives are not averaged across games", () => {
+    // WGO SAT% has no source-matched denominator loaded: one game shows its
+    // value, a multi-game window is unavailable rather than a mean of games.
+    const log = [
+      { date: "1", games_played: 1, sat_pct: 0.6 },
+      { date: "2", games_played: 1, sat_pct: 0.4 }
+    ];
+    expect(aggregateSummaryStat([log[0]], "sat_pct")).toBe(0.6);
+    expect(aggregateSummaryStat(log, "sat_pct")).toBeNull();
+  });
+
+  it("FO% pools faceoff wins over faceoffs taken", () => {
+    const log = [
+      { date: "1", games_played: 1, total_fow: 9, total_fol: 1, fow_percentage: 0.9 },
+      { date: "2", games_played: 1, total_fow: 3, total_fol: 7, fow_percentage: 0.3 }
+    ];
+    // 12 / 20 = 60%; the mean of games is also 60% here, so check unequal volume.
+    expect(aggregateSummaryStat(log, "fow_percentage")).toBeCloseTo(0.6);
+    const unequal = [log[0], { date: "2", games_played: 1, total_fow: 3, total_fol: 27 }];
+    expect(aggregateSummaryStat(unequal, "fow_percentage")).toBeCloseTo(12 / 40);
   });
 });
 
@@ -330,7 +353,7 @@ describe("chart units", () => {
 });
 
 describe("rolling average", () => {
-  it("averages the trailing window over present values; all-missing is a gap", () => {
+  it("averages complete trailing windows; any missing value is a gap", () => {
     const log = [
       { date: "1", points: 1 },
       { date: "2", points: null },
@@ -341,7 +364,9 @@ describe("rolling average", () => {
       { date: "7", points: null },
       { date: "8", points: null }
     ];
-    expect(rollingAverage(log, "points", 5)).toEqual([1, 1, 2, 2, 2, 3, 3, null]);
+    expect(rollingAverage(log, "points", 5)).toEqual([1, null, null, null, null, null, null, null]);
+    const complete = [1, 2, 3, 4, 5, 6].map((points, i) => ({ date: String(i), points }));
+    expect(rollingAverage(complete, "points", 5)).toEqual([1, 1.5, 2, 2.5, 3, 4]);
   });
 });
 
@@ -357,11 +382,9 @@ describe("relative to season average (5-game index)", () => {
   });
 
   it("missing values are gaps and never count as zero", () => {
+    // A season baseline with a missing game is incomplete: no index at all.
     const withGap = rows.map((row, i) => (i === 5 ? { ...row, points: null } : row));
-    const series = seasonIndexSeries(withGap, "points");
-    // Season average over present values (1..5) = 3; game 6 window = 2..5 -> 3.5.
-    expect(series[4]).toBeCloseTo(100);
-    expect(series[5]).toBeCloseTo((3.5 / 3) * 100);
+    expect(seasonIndexSeries(withGap, "points").every((v) => v === null)).toBe(true);
     const allMissing = rows.map((row) => ({ ...row, points: null }));
     expect(seasonIndexSeries(allMissing, "points").every((v) => v === null)).toBe(true);
   });
