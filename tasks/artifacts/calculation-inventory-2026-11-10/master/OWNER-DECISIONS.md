@@ -309,3 +309,11 @@ Source: `WAVE3-CONSOLIDATED.md`, "Owner decisions still open" Q42 and Q49. The 1
 88. **xG approval floor** (Q44, L14): the 5% relative standard-error rule is a minimum, computed from the actual holdout (not a fixed goal count). Evaluate the exact artifact that would be served, including its applied calibration, on a separate untouched chronological holdout. It must beat the base-rate benchmark on proper scores, pass calibration and relevant subgroup checks, and show no outcome leakage. With insufficient evidence the model stays unapproved.
 89. **Stats-page goalie qualifier** (Q46, L17): keep the house rule (a quarter of mean team GP, by appearances), print it on the page, compute it from the displayed season, show "unknown" when standings fail, and use an explicit tie policy.
 90. **Percentile conventions** (Q41, L4b/L5/L17/L18; TJ replaced his first answer the same day): **mid-rank everywhere**, including Rankings, WiGO, social cards and the player radar. Tied players get the same mid-rank percentile. Rankings values and tests for tied players are updated accordingly (this supersedes Wave 2 W2-4 D11 / Wave 3 W3-6 "do not change the exclusive percentile in `rankingCalculator.ts`").
+91. **Ratings overlay on historical tables** (Q12, L2): hide it for non-current seasons or ranges; when current, show it with its snapshot date.
+92. **Record columns under split filters** (Q13, L2): hide W/L/OTL and points outside all strengths and all score states.
+93. **Landing SOS** (Q14, L2): record-only for now, labelled as such; revisit after L12's ratings fixes.
+94. **"Last N" on a split** (Q15, L2): the player's last N games played (decision 16), with split numbers inside them; split GP = games with time in the split, labelled.
+95. **Team "# of GP"** (Q16, L2): each team's own last N games by date, merged with "# of Team GP".
+96. **Players with no position** (Q17, L2): shown, labelled "position unknown".
+97. **Goalie week tiers** (Q10, L3): starters only (≥ 1 start, ≥ 20 min); ties get half credit (all-tied = Average); missed weeks excluded; weeks played shown.
+98. **Sample floors** (Q11, L3 and L5 composites): a visible, user-lowerable default floor (e.g. 5 starts) with "insufficient sample" below it.
