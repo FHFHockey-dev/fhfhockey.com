@@ -42,3 +42,9 @@ Facts Chef checked after W1-1 (2026-11-10):
     - It goes in the fix plan's NST work.
 
 15. **Player radar: move to 5v5** and label it "5v5".
+
+## Review notes on W1-5 goalie-starters (TJ, 2026-11-10)
+- The "named starter's saves/wins about 37% too high, partner's about 56% too low" figures are **inferred from average starter probabilities**, not measured errors in saves or wins. Treat them as an upper-level indication, not a measured magnitude.
+- The Start Chart issue is **conditional**: its production serving flag is unverified. Chef checked env names only: `STARTER_BOARD_SERVING_ENABLED` exists in production, value not read. A **second fallback flag** also has to be checked before the Start Chart finding is confirmed.
+- **Fix order:** first the actual-start outcome (who really started), the timestamps (`goalie_start_projections.updated_at` is never updated) and the pregame cutoffs (no look-ahead). Only then fit and validate replacement start probabilities.
+- The proposed shrinkage (about 0.3 before the sigmoid) and the back-to-back adjustments are **hypotheses, not validated models**. They must be fit and validated on held-out dates before use.
