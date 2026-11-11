@@ -5,6 +5,7 @@
 ## Owned files
 - New migration files under `supabase/migrations/` named `20261111xxxxxx_fix_<topic>.sql` (one topic per file). Check which tree `web/lib/supabase/supportedBaselineMigration.test.ts` and `tasks/TASKS/repository-audit-remediation/migration-authority.json` expect before adding; keep that test green. Do **not** edit existing applied migrations.
 - `web/sql/functions/**`
+- `tasks/TASKS/repository-audit-remediation/migration-authority.json` and `web/lib/supabase/supportedBaselineMigration.test.ts` (granted 2026-11-11: add rows for your new migrations, deploymentState "pending", and bump the test counts in the same commit; leave existing rows alone). L4a is the only lane that writes migrations; other lanes ticket SQL needs through Chef.
 - `web/pages/api/v1/db/update-nst-gamelog.ts` and its tests.
 
 ## Findings
