@@ -5,7 +5,32 @@ import {
   pickActiveXgModel,
   type XgActiveModelRegistryRow,
 } from "./modelRegistry";
+import { XG_APPROVAL_GATE_VERSION } from "./approvalGate";
 import type { PersistedXgModelArtifact } from "./shotFeaturePersistence";
+
+/** A decision-88 gate record with every check passed. */
+const AFFIRMATIVE_APPROVAL = {
+  gateVersion: XG_APPROVAL_GATE_VERSION,
+  isEligible: true,
+  blockingReasons: [],
+  evidence: {
+    testExampleCount: 20000,
+    relativeStandardError: 0.03,
+    checks: {
+      holdoutPresent: true,
+      chronologicalUntouchedTest: true,
+      sufficientEvidence: true,
+      beatsBaseRateLogLoss: true,
+      beatsBaseRateBrier: true,
+      calibrationInTheLarge: true,
+      spiegelhalter: true,
+      subgroupCalibration: true,
+      noOutcomeLeakage: true,
+      calibrationAppliedFromValidation: true,
+      featureCoverage: true,
+    },
+  },
+};
 
 function artifact(overrides: Partial<PersistedXgModelArtifact> = {}): PersistedXgModelArtifact {
   return {
@@ -28,10 +53,7 @@ function artifact(overrides: Partial<PersistedXgModelArtifact> = {}): PersistedX
       validation: { startDate: "2026-01-02", endDate: "2026-02-01" },
       test: { startDate: "2026-02-02", endDate: "2026-04-15" },
     },
-    approvalGradeEligibility: {
-      isEligible: true,
-      blockingReasons: [],
-    },
+    approvalGradeEligibility: AFFIRMATIVE_APPROVAL,
     selectedFeatures: {
       numeric: ["shotDistanceFeet"],
       boolean: ["isReboundShot"],
@@ -116,6 +138,15 @@ describe("modelRegistry", () => {
       isEligible: false,
       blockingReasons: ["not enough test goals"],
     });
+  });
+
+  it("does not approve or promote an old-schema record without decision-88 evidence (W3-1 D6)", () => {
+    const oldSchema = artifact({ approvalGradeEligibility: { isEligible: true, blockingReasons: [] } });
+    const row = buildXgModelRegistryRow({ artifact: oldSchema, artifactChecksum: "checksum" });
+    expect(row).toMatchObject({ approval_status: "candidate", model_approved: false });
+    expect(() =>
+      buildXgModelRegistryRow({ artifact: oldSchema, isActive: true, isChampion: true, promotionConfirmed: true })
+    ).toThrow("Only an approved artifact can be activated or promoted.");
   });
 
   it("rejects approved lifecycle state for an ineligible artifact", () => {

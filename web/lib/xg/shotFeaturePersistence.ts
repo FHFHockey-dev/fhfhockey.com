@@ -14,6 +14,7 @@ import {
   predictWithSerializedCalibrator,
   type SerializedCalibrationModel
 } from "./calibration";
+import { isAffirmativelyApprovedXgEligibility } from "./approvalGate";
 import { findForbiddenBaselineFeatureKeys } from "./baselineDataset";
 
 const EPSILON = 1e-9;
@@ -48,8 +49,11 @@ export type PersistedXgModelArtifact = {
     test?: { startDate: string | null; endDate: string | null };
   };
   approvalGradeEligibility?: {
+    /** Approval counts only for a decision-88 gate record (see approvalGate.ts). */
+    gateVersion?: string;
     isEligible?: boolean;
     blockingReasons?: string[];
+    evidence?: unknown;
   };
   evaluation?: unknown;
   calibrationAssessment?: unknown;
@@ -663,7 +667,7 @@ export function buildPredictionDbRow(args: {
   xg: number;
 }) {
   const featurePayload = args.feature.feature_payload;
-  const approved = args.artifact.approvalGradeEligibility?.isEligible === true;
+  const approved = isAffirmativelyApprovedXgEligibility(args.artifact.approvalGradeEligibility);
 
   return {
     model_version: args.artifact.artifactTag,

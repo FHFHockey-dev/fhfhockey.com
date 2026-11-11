@@ -8,6 +8,10 @@ import {
   enrichShotRowsWithHandedness,
   enrichShotRowsWithTrainingContext,
 } from "./train-nhl-xg-baseline";
+import {
+  isAffirmativelyApprovedXgEligibility,
+  XG_APPROVAL_GATE_VERSION,
+} from "../lib/xg/approvalGate";
 
 function createShotRow(
   overrides: Partial<NhlShotFeatureRow> = {}
@@ -322,19 +326,14 @@ describe("train-nhl-xg-baseline", () => {
         boolean: ["isReboundShot"],
         categorical: ["shotType"],
       },
-      approvalGradeEligibility: {
+      approvalGradeEligibility: expect.objectContaining({
+        gateVersion: XG_APPROVAL_GATE_VERSION,
         isEligible: false,
-        blockingReasons: [
-          "Dedicated test split is empty; approval-grade benchmark artifacts require at least one test example.",
-          "Dedicated test split has 0 goals; approval-grade benchmark artifacts require at least 10.",
-          "Validation+test holdout has 0 goals; approval-grade benchmark artifacts require at least 10.",
-          "No dedicated test split is available; calibration cannot be treated as adoptable.",
-          "Holdout positive-goal coverage is below the adoptability minimum of 10.",
-          "Positive rebound holdout coverage is below the adoptability minimum of 1.",
-          "Positive rush holdout coverage is below the adoptability minimum of 1.",
-          "Post-calibration is required, but no calibration method is currently adoptable.",
-        ],
-      },
+        blockingReasons: expect.arrayContaining([
+          "The untouched test split has no scored examples.",
+          "Post-calibration is required but the artifact does not carry a calibration fitted on the validation split and applied.",
+        ]),
+      }),
       rowCount: 3,
     });
     expect(datasetArtifact.rowIds).toEqual(["2025021001:1", "2025021002:2", "2025021003:3"]);
@@ -379,26 +378,21 @@ describe("train-nhl-xg-baseline", () => {
           "Positive rush holdout coverage is below the adoptability minimum of 1.",
         ],
       },
-      approvalGradeEligibility: {
+      approvalGradeEligibility: expect.objectContaining({
+        gateVersion: XG_APPROVAL_GATE_VERSION,
         isEligible: false,
-        blockingReasons: [
-          "Dedicated test split is empty; approval-grade benchmark artifacts require at least one test example.",
-          "Dedicated test split has 0 goals; approval-grade benchmark artifacts require at least 10.",
-          "Validation+test holdout has 0 goals; approval-grade benchmark artifacts require at least 10.",
-          "No dedicated test split is available; calibration cannot be treated as adoptable.",
-          "Holdout positive-goal coverage is below the adoptability minimum of 10.",
-          "Positive rebound holdout coverage is below the adoptability minimum of 1.",
-          "Positive rush holdout coverage is below the adoptability minimum of 1.",
-          "Post-calibration is required, but no calibration method is currently adoptable.",
-        ],
-      },
+        blockingReasons: expect.arrayContaining([
+          "The untouched test split has no scored examples.",
+          "Post-calibration is required but the artifact does not carry a calibration fitted on the validation split and applied.",
+        ]),
+      }),
       model: {
         bias: -1.2,
       },
     });
   });
 
-  it("marks artifacts as approval-grade eligible when a dedicated test split exists", () => {
+  const buildEligibilityFixture = (holdoutScores: Array<Record<string, unknown>>) => {
     const dataset = buildEncodedBaselineDataset([
       createShotRow({ gameId: 2025021001, eventId: 1, gameDate: "2026-01-01", isGoal: true }),
       createShotRow({ gameId: 2025021002, eventId: 2, gameDate: "2026-01-02" }),
@@ -406,7 +400,7 @@ describe("train-nhl-xg-baseline", () => {
       createShotRow({ gameId: 2025021004, eventId: 4, gameDate: "2026-01-04" }),
     ]);
 
-    const { datasetArtifact, modelArtifact } = buildBaselineArtifactPayloads({
+    return buildBaselineArtifactPayloads({
       artifactTag: "logistic_unregularized-s20252026-p1-st1-f1-cfgtest456",
       generatedAt: "2026-03-31T15:00:00.000Z",
       sourceCommitSha: "def456",
@@ -483,7 +477,7 @@ describe("train-nhl-xg-baseline", () => {
         rebound: [],
         rush: [],
       },
-      holdoutScores: [],
+      holdoutScores: holdoutScores as never,
       calibrationAssessment: {
         requiresPostCalibration: false,
         requirementReason:
@@ -506,16 +500,51 @@ describe("train-nhl-xg-baseline", () => {
       },
     });
 
-    expect(datasetArtifact.approvalGradeEligibility).toEqual({
-      isEligible: true,
-      blockingReasons: [],
-    });
+  };
+
+  it("does not approve a test split of 125 rows and 10 goals with no served scores (W3-1 D6, decision 88)", () => {
+    const { datasetArtifact, modelArtifact } = buildEligibilityFixture([]);
+    for (const eligibility of [datasetArtifact.approvalGradeEligibility, modelArtifact.approvalGradeEligibility]) {
+      expect(eligibility).toMatchObject({
+        gateVersion: XG_APPROVAL_GATE_VERSION,
+        isEligible: false,
+        evidence: { checks: { holdoutPresent: false, sufficientEvidence: false } },
+      });
+      expect(isAffirmativelyApprovedXgEligibility(eligibility)).toBe(false);
+    }
     expect(datasetArtifact.featureFamily).toBe("expanded_v2");
-    expect(modelArtifact.approvalGradeEligibility).toEqual({
-      isEligible: true,
-      blockingReasons: [],
-    });
     expect(modelArtifact.featureFamily).toBe("expanded_v2");
+  });
+
+  it("approves only on served test-split scores with enough evidence, ignoring validation scores", () => {
+    // Labels drawn from their own probabilities with a frozen PRNG.
+    let state = 7;
+    const random = () => {
+      state = (state + 0x6d2b79f5) >>> 0;
+      let t = state;
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+    const scored = (split: string, count: number) =>
+      Array.from({ length: count }, (_, index) => {
+        const prediction = 0.01 + 0.25 * random() ** 2.5;
+        return {
+          rowId: `${split}-${index}`,
+          split,
+          label: random() < prediction ? 1 : 0,
+          prediction,
+          strengthState: index % 5 === 0 ? "PP" : "EV",
+          isReboundShot: index % 9 === 0,
+          isRushShot: index % 7 === 0,
+        };
+      });
+    const approved = buildEligibilityFixture([...scored("validation", 500), ...scored("test", 20000)]);
+    expect(approved.modelArtifact.approvalGradeEligibility.blockingReasons).toEqual([]);
+    expect(isAffirmativelyApprovedXgEligibility(approved.modelArtifact.approvalGradeEligibility)).toBe(true);
+    // The same served model with only a validation holdout has no untouched evidence.
+    const validationOnly = buildEligibilityFixture(scored("validation", 20000));
+    expect(validationOnly.modelArtifact.approvalGradeEligibility.isEligible).toBe(false);
   });
 
   it("applies rebound-creation-specific approval gates", () => {
@@ -732,14 +761,18 @@ describe("train-nhl-xg-baseline", () => {
       },
     });
 
-    const expected = {
-      isEligible: false,
-      blockingReasons: [
-        "Artifact uses forbidden post-event features: isShortSideMiss, missReasonBucket, missReasonBucket:wide.",
-      ],
-    };
-    expect(datasetArtifact.approvalGradeEligibility).toEqual(expected);
-    expect(modelArtifact.approvalGradeEligibility).toEqual(expected);
+    for (const eligibility of [datasetArtifact.approvalGradeEligibility, modelArtifact.approvalGradeEligibility]) {
+      expect(eligibility).toMatchObject({
+        isEligible: false,
+        evidence: {
+          forbiddenFeatures: ["isShortSideMiss", "missReasonBucket", "missReasonBucket:wide"],
+          checks: { noOutcomeLeakage: false },
+        },
+      });
+      expect(eligibility.blockingReasons).toContain(
+        "The artifact uses features that are not backward-only or are post-event: isShortSideMiss, missReasonBucket, missReasonBucket:wide."
+      );
+    }
   });
 
   it("rejects leaked shotEventType metadata during artifact generation", () => {

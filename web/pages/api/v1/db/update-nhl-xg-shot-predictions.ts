@@ -17,6 +17,7 @@ import {
   type PersistedFeatureRow,
   type XgShotPredictionType
 } from "lib/xg/shotFeaturePersistence";
+import { isAffirmativelyApprovedXgEligibility } from "lib/xg/approvalGate";
 import { withXgExecutionLeaseApi } from "lib/xg/executionLease";
 import adminOnly from "utils/adminOnlyMiddleware";
 
@@ -98,7 +99,7 @@ function buildArtifactHealthResponse(resolution: ArtifactPathResolution) {
 
   try {
     const artifact = loadXgModelArtifact(resolution.path);
-    const modelApproved = artifact.approvalGradeEligibility?.isEligible === true;
+    const modelApproved = isAffirmativelyApprovedXgEligibility(artifact.approvalGradeEligibility);
     const artifactPredictionType = resolveXgArtifactPredictionType(artifact);
     const featureContract = auditXgArtifactFeatureContract({ artifact });
 
@@ -377,7 +378,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     const artifactPredictionType = resolveXgArtifactPredictionType(artifact);
     const artifactFeatureContract = auditXgArtifactFeatureContract({ artifact });
     const allowUnapproved = parseBoolean(firstQueryValue(req.query.allowUnapproved));
-    const modelApproved = artifact.approvalGradeEligibility?.isEligible === true;
+    const modelApproved = isAffirmativelyApprovedXgEligibility(artifact.approvalGradeEligibility);
 
     if (artifactPredictionType !== predictionType) {
       return res.status(409).json({

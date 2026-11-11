@@ -2,6 +2,8 @@ import fs from "fs";
 import path from "path";
 import dotenv from "dotenv";
 
+import { isAffirmativelyApprovedXgEligibility } from "../lib/xg/approvalGate";
+
 dotenv.config({ path: path.resolve(process.cwd(), ".env.local") });
 
 type CliOptions = {
@@ -43,8 +45,10 @@ type ModelArtifact = {
     }>;
   };
   approvalGradeEligibility?: {
+    gateVersion?: string;
     isEligible: boolean;
     blockingReasons: string[];
+    evidence?: unknown;
   };
 };
 
@@ -112,19 +116,24 @@ function loadArtifact(filePath: string): ModelArtifact {
   return JSON.parse(fs.readFileSync(filePath, "utf8")) as ModelArtifact;
 }
 
+/**
+ * Strict: an artifact is approval-grade only with an affirmative decision-88
+ * eligibility record. A missing record, `{ isEligible: false,
+ * blockingReasons: [] }`, an older schema or an absent test count all fail.
+ */
 export function getApprovalGradeBlockingReasons(artifact: ModelArtifact): string[] {
-  if (artifact.approvalGradeEligibility?.blockingReasons?.length) {
-    return artifact.approvalGradeEligibility.blockingReasons;
-  }
-
-  const blockingReasons: string[] = [];
-  if (artifact.testExampleCount === 0) {
+  const blockingReasons = [...(artifact.approvalGradeEligibility?.blockingReasons ?? [])];
+  if (!(typeof artifact.testExampleCount === "number" && artifact.testExampleCount > 0)) {
     blockingReasons.push(
-      "Dedicated test split is empty; approval-grade benchmark artifacts require at least one test example."
+      "Dedicated test split is empty or its size is unknown; approval-grade benchmark artifacts require test examples."
     );
   }
-
-  return blockingReasons;
+  if (!isAffirmativelyApprovedXgEligibility(artifact.approvalGradeEligibility)) {
+    blockingReasons.push(
+      "Artifact has no affirmative decision-88 approval record (xg_approval_gate_v2_decision88 with every check passed)."
+    );
+  }
+  return Array.from(new Set(blockingReasons));
 }
 
 export function assertApprovalGradeArtifacts(artifacts: ModelArtifact[]): void {

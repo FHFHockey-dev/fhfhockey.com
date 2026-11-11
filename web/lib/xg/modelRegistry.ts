@@ -4,6 +4,7 @@ import fs from "fs";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "../supabase/database-generated.types";
+import { isAffirmativelyApprovedXgEligibility } from "./approvalGate";
 import {
   resolveXgArtifactPredictionType,
   type PersistedXgModelArtifact,
@@ -87,7 +88,7 @@ function inferApprovalStatus(
   explicitStatus?: XgModelApprovalStatus | null
 ): XgModelApprovalStatus {
   if (explicitStatus) return explicitStatus;
-  return artifact.approvalGradeEligibility?.isEligible === true ? "approved" : "candidate";
+  return isAffirmativelyApprovedXgEligibility(artifact.approvalGradeEligibility) ? "approved" : "candidate";
 }
 
 function dateRange(
@@ -123,7 +124,7 @@ export function buildXgModelRegistryRow(args: {
     calibrationAssessment: args.artifact.calibrationAssessment ?? null,
   };
   const now = new Date().toISOString();
-  const modelApproved = args.artifact.approvalGradeEligibility?.isEligible === true;
+  const modelApproved = isAffirmativelyApprovedXgEligibility(args.artifact.approvalGradeEligibility);
   const approvalStatus = inferApprovalStatus(args.artifact, args.approvalStatus);
   const requestsPromotion = args.isActive === true || args.isChampion === true;
 

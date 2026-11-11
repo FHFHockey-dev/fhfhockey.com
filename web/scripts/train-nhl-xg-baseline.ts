@@ -13,7 +13,6 @@ import {
   buildEncodedBaselineDataset,
   BOOLEAN_FEATURE_KEYS,
   CATEGORICAL_FEATURE_KEYS,
-  findForbiddenBaselineFeatureKeys,
   type BaselinePredictionType,
   type BaselineFeatureFamilyName,
   NUMERIC_FEATURE_KEYS,
@@ -52,6 +51,7 @@ import {
   normalizeRosterPosition,
 } from "../lib/xg/rosterPosition";
 import { scoreXgBoostEnsemble, type XgBoostModel } from "../lib/xg/shotFeaturePersistence";
+import { evaluateXgApprovalGate, type XgApprovalEligibility } from "../lib/xg/approvalGate";
 const { XGBoost } = require("@fractal-solutions/xgboost-js") as {
   XGBoost: new (config: Record<string, number>) => {
     fit: (features: number[][], labels: number[]) => void;
@@ -143,10 +143,7 @@ type SliceEvaluation = {
   sliceValue: string;
   evaluation: SplitEvaluation;
 };
-type ApprovalGradeEligibility = {
-  isEligible: boolean;
-  blockingReasons: string[];
-};
+type ApprovalGradeEligibility = XgApprovalEligibility;
 type FeatureTransforms = {
   numericStandardization?: Record<string, { mean: number; std: number }>;
 };
@@ -331,10 +328,6 @@ Options:
 }
 
 const SUPABASE_PAGE_SIZE = 1000;
-const MIN_APPROVAL_HOLDOUT_POSITIVES = 10;
-const MIN_APPROVAL_TEST_POSITIVES = 10;
-const MIN_NON_COLLAPSED_AVERAGE_PREDICTION = 0.001;
-const MAX_NON_COLLAPSED_AVERAGE_PREDICTION = 0.999;
 const MIN_REBOUND_CREATION_VALIDATION_EXAMPLES = 1000;
 const MIN_REBOUND_CREATION_TEST_EXAMPLES = 1000;
 const MIN_REBOUND_CREATION_VALIDATION_POSITIVES = 100;
@@ -470,12 +463,19 @@ function buildReboundCreationApprovalBlockingReasons(args: {
   return blockingReasons;
 }
 
-function buildApprovalGradeEligibility(args: {
+/**
+ * Decision 88 gate on the untouched test split only: the calibrator is fitted
+ * on validation, so a validation+test holdout would grade the calibrator on
+ * its own fit data. The test scores are the served values (calibration
+ * applied). Rebound-creation keeps its extra diagnostics as further blockers.
+ */
+export function buildApprovalGradeEligibility(args: {
   predictionType: BaselinePredictionType;
-  splitCounts: Record<"train" | "validation" | "test", number>;
   evaluation: Record<"overall" | "train" | "validation" | "test", SplitEvaluation>;
   holdoutEvaluation: SplitEvaluation;
-  testEvaluation: SplitEvaluation;
+  holdoutScores: HoldoutScoreRow[];
+  splitDateRanges: SplitDateRanges;
+  calibration: ModelArtifactPayload["calibration"] | null | undefined;
   calibrationAssessment: CalibrationAssessment;
   featureCoverage?: XgFeatureCoverageProfile | null;
   selectedFeatures: {
@@ -485,92 +485,46 @@ function buildApprovalGradeEligibility(args: {
   };
   featureKeys: string[];
 }): ApprovalGradeEligibility {
-  const forbiddenFeatures = findForbiddenBaselineFeatureKeys([
-    ...args.selectedFeatures.numeric,
-    ...args.selectedFeatures.boolean,
-    ...args.selectedFeatures.categorical,
-    ...args.featureKeys,
-  ]);
-  const forbiddenFeatureReason = forbiddenFeatures.length
-    ? `Artifact uses forbidden post-event features: ${forbiddenFeatures.join(", ")}.`
-    : null;
+  const gate = evaluateXgApprovalGate({
+    testScores: args.holdoutScores
+      .filter((score) => score.split === "test")
+      .map((score) => ({
+        label: score.label,
+        probability: score.prediction,
+        subgroups: {
+          strengthState: score.strengthState ?? "unknown",
+          rebound: score.isReboundShot ? "rebound" : "non-rebound",
+          rush: score.isRushShot ? "rush" : "non-rush",
+        },
+      })),
+    splitDateRanges: args.splitDateRanges,
+    calibration: args.calibration
+      ? { applied: args.calibration.applied, fitSplit: args.calibration.fitSplit, method: args.calibration.selectedMethod }
+      : null,
+    calibrationRequired: args.calibrationAssessment.requiresPostCalibration,
+    featureKeys: [
+      ...args.selectedFeatures.numeric,
+      ...args.selectedFeatures.boolean,
+      ...args.selectedFeatures.categorical,
+      ...args.featureKeys,
+    ],
+    featureCoverageBlockingReasons: args.featureCoverage?.blockingReasons ?? [],
+    relevantSubgroups: ["strengthState", "rebound", "rush"],
+  });
 
-  if (args.predictionType === "rebound_creation") {
-    const blockingReasons = buildReboundCreationApprovalBlockingReasons({
-      evaluation: args.evaluation,
-      holdoutEvaluation: args.holdoutEvaluation,
-      calibrationAssessment: args.calibrationAssessment,
-    });
-    if (forbiddenFeatureReason) {
-      blockingReasons.unshift(forbiddenFeatureReason);
-    }
-    for (const reason of args.featureCoverage?.blockingReasons ?? []) {
-      if (!blockingReasons.includes(reason)) {
-        blockingReasons.push(reason);
-      }
-    }
-
-    return {
-      isEligible: blockingReasons.length === 0,
-      blockingReasons,
-    };
-  }
-
-  const blockingReasons: string[] = forbiddenFeatureReason ? [forbiddenFeatureReason] : [];
-
-  for (const reason of args.featureCoverage?.blockingReasons ?? []) {
-    if (!blockingReasons.includes(reason)) {
-      blockingReasons.push(reason);
-    }
-  }
-
-  if (args.splitCounts.test <= 0) {
-    blockingReasons.push(
-      "Dedicated test split is empty; approval-grade benchmark artifacts require at least one test example."
-    );
-  }
-
-  if (args.testEvaluation.goalCount < MIN_APPROVAL_TEST_POSITIVES) {
-    blockingReasons.push(
-      `Dedicated test split has ${args.testEvaluation.goalCount} goals; approval-grade benchmark artifacts require at least ${MIN_APPROVAL_TEST_POSITIVES}.`
-    );
-  }
-
-  if (args.holdoutEvaluation.goalCount < MIN_APPROVAL_HOLDOUT_POSITIVES) {
-    blockingReasons.push(
-      `Validation+test holdout has ${args.holdoutEvaluation.goalCount} goals; approval-grade benchmark artifacts require at least ${MIN_APPROVAL_HOLDOUT_POSITIVES}.`
-    );
-  }
-
-  const averagePrediction = args.holdoutEvaluation.averagePrediction;
-  if (
-    averagePrediction == null ||
-    averagePrediction <= MIN_NON_COLLAPSED_AVERAGE_PREDICTION ||
-    averagePrediction >= MAX_NON_COLLAPSED_AVERAGE_PREDICTION
-  ) {
-    blockingReasons.push(
-      "Validation+test holdout average prediction is collapsed or unavailable; approval-grade artifacts require non-degenerate probabilities."
-    );
-  }
-
-  for (const reason of args.calibrationAssessment.adoptabilityBlockingReasons) {
-    if (!blockingReasons.includes(reason)) {
-      blockingReasons.push(reason);
-    }
-  }
-
-  if (
-    args.calibrationAssessment.requiresPostCalibration &&
-    args.calibrationAssessment.adoptableMethod == null
-  ) {
-    blockingReasons.push(
-      "Post-calibration is required, but no calibration method is currently adoptable."
-    );
-  }
+  const extraReasons =
+    args.predictionType === "rebound_creation"
+      ? buildReboundCreationApprovalBlockingReasons({
+          evaluation: args.evaluation,
+          holdoutEvaluation: args.holdoutEvaluation,
+          calibrationAssessment: args.calibrationAssessment,
+        }).filter((reason) => !gate.blockingReasons.includes(reason))
+      : [];
 
   return {
-    isEligible: blockingReasons.length === 0,
-    blockingReasons,
+    ...gate,
+    isEligible: gate.isEligible && extraReasons.length === 0,
+    blockingReasons: [...gate.blockingReasons, ...extraReasons],
   };
 }
 
@@ -1664,10 +1618,11 @@ export function buildBaselineArtifactPayloads(args: {
   const splitDateRanges = buildSplitDateRanges(args.dataset.examples);
   const approvalGradeEligibility = buildApprovalGradeEligibility({
     predictionType: args.dataset.predictionType,
-    splitCounts: args.dataset.splitCounts,
     evaluation: args.evaluation,
     holdoutEvaluation: args.holdoutEvaluation,
-    testEvaluation: args.evaluation.test,
+    holdoutScores: args.holdoutScores,
+    splitDateRanges,
+    calibration: args.calibration,
     calibrationAssessment: args.calibrationAssessment,
     featureCoverage: args.featureCoverage ?? null,
     selectedFeatures: args.selectedFeatures,
