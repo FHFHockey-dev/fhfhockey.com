@@ -207,6 +207,30 @@ export const classifyTeamTemperature = <T extends TeamTemperatureEntry>(
   return { hot, cold };
 };
 
+/**
+ * Splits rows into exclusive "above" and "below" lists around a neutral value
+ * (Hot/Cold card): a row is above only when its score exceeds `neutral` and
+ * below only when it is under it, so with few rows a player can never appear
+ * on both sides. Each side is sorted by distance from neutral, then by
+ * `playerId`, so the result does not depend on input order.
+ */
+export const splitAroundNeutral = <T extends { playerId: number }>(
+  rows: readonly T[],
+  score: (row: T) => number,
+  neutral: number,
+  limit: number
+): { above: T[]; below: T[] } => {
+  const above = rows
+    .filter((row) => score(row) > neutral)
+    .sort((a, b) => score(b) - score(a) || a.playerId - b.playerId)
+    .slice(0, limit);
+  const below = rows
+    .filter((row) => score(row) < neutral)
+    .sort((a, b) => score(a) - score(b) || a.playerId - b.playerId)
+    .slice(0, limit);
+  return { above, below };
+};
+
 export type TrendStreak = {
   direction: "hot" | "cold" | "steady";
   /** Consecutive latest games beyond the same threshold that names the label. */

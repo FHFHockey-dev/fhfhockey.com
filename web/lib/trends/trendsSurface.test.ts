@@ -11,6 +11,7 @@ import {
   formatRollingMetricValue,
   formatSkaterTrendWindowLabel,
   isLockedPlayerBaselineMode,
+  splitAroundNeutral,
   summarizeTrendStreak,
   isPlayerQuickViewId
 } from "./trendsSurface";
@@ -306,5 +307,34 @@ describe("computeMidRankPercentiles (D10)", () => {
     expect(computeMidRankPercentiles([...entries].reverse())).toEqual(forward);
     expect(computeMidRankPercentiles(entries, false).get("d")).toBe(0);
     expect(computeMidRankPercentiles([{ key: "x", value: 1 }]).get("x")).toBe(50);
+  });
+});
+
+describe("Hot/Cold card sides (splitAroundNeutral)", () => {
+  it("never lists a player on both sides of a small filtered set", () => {
+    // Three players: the old top-4 / bottom-4 put all three in both lists.
+    const rows = [
+      { playerId: 3, currentScore: 62 },
+      { playerId: 1, currentScore: 41 },
+      { playerId: 2, currentScore: 50 }
+    ];
+    const { above, below } = splitAroundNeutral(rows, (row) => row.currentScore, 50, 4);
+    expect(above.map((row) => row.playerId)).toEqual([3]);
+    expect(below.map((row) => row.playerId)).toEqual([1]);
+  });
+
+  it("sorts by distance from neutral with an id tie-break, independent of order", () => {
+    const rows = [
+      { playerId: 9, movementScore: 2 },
+      { playerId: 4, movementScore: 2 },
+      { playerId: 7, movementScore: 5 },
+      { playerId: 5, movementScore: -1 }
+    ];
+    const forward = splitAroundNeutral(rows, (row) => row.movementScore, 0, 4);
+    expect(forward.above.map((row) => row.playerId)).toEqual([7, 4, 9]);
+    expect(forward.below.map((row) => row.playerId)).toEqual([5]);
+    expect(splitAroundNeutral([...rows].reverse(), (row) => row.movementScore, 0, 4)).toEqual(
+      forward
+    );
   });
 });
