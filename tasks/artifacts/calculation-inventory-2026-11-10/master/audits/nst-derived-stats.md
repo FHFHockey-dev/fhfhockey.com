@@ -130,7 +130,7 @@ Priority: **P0** user-visible wrong numbers, **P1** wrong or misleading with low
 - Test: a 4-minute MIN is one minor; a 10-minute MIS is a misconduct; a PS adds nothing to a player's totals.
 
 **D4. "GSAA" is xGA minus GA** (M-NST-020)
-- Fix: GSAA = shots against × league SV% − goals against, with league SV% taken over the same season, strength and date range as the row. Compute it at the aggregate level. Do not sum stored NST per-game values: each is relative to that single day's league SV% (.890, .901 and .930 on three dates in the sample), so they do not add up to a season figure.
+- Fix: GSAA = shots against × (1 − league SV%) − goals against (corrected by TJ 2026-11-10; the original draft omitted the 1 −), with league SV% taken over the same season, strength and date range as the row. Compute it at the aggregate level. Do not sum stored NST per-game values: each is relative to that single day's league SV% (.890, .901 and .930 on three dates in the sample), so they do not add up to a season figure.
 - Test: a goalie at league-average SV% has GSAA 0 whatever the shot locations.
 
 **D5. Danger, scoring-chance and rush definitions** (M-NST-004, 014, 021)

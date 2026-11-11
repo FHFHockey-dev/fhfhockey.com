@@ -27,7 +27,7 @@ Facts Chef checked after W1-1 (2026-11-10):
 
 ## Decisions from the W1-2 audit chat (TJ, 2026-11-10; recorded by Chef from audits/nst-derived-stats.md)
 9. **NST-named metrics must equal NST's definitions.** On-ice tables count every attempt or chance by the player's team while he's on the ice; individual tables count the player's own. HDCF, SCF, Rush Attempts, OZS% and OZFO% follow NST (War-On-Ice style scoring-chance values, 4 s rush, OZ/(OZ+DZ)).
-10. **The goalie column is whatever NST labels it: GSAA** = shots against × league SV% − GA, computed at the aggregate level (same season, strength and date range), never by summing NST's per-game values. GSAx can be added later as its own column.
+10. **The goalie column is whatever NST labels it: GSAA** = shots against × (1 − league SV%) − GA (expected goals against at league-average save percentage minus actual goals against), computed at the aggregate level (same season, strength and date range), never by summing NST's per-game values. GSAx can be added later as its own column.
 11. **Leading and Trailing include one-goal margins** (any lead or deficit); Up 1 and Down 1 are subsets.
 12. **Bucket heuristic xG: hide now, then fix.** Hide the xG columns on the player, goalie and team underlying-stats pages and move the default sort off xGF%. xG returns only from a clean trained model (see 6).
 13. **A penalty-shot infraction is not a penalty** in a player's totals.
