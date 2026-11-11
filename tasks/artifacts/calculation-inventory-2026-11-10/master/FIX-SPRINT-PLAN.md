@@ -1,6 +1,6 @@
 # Math audit → fix sprint: plan (TJ, 2026-11-11)
 
-TJ's sequence, with his pop-up answers of 2026-11-11 applied. Chef owns steps 1 and 3 and starts step 4.
+TJ's sequence, with his pop-up answers of 2026-11-11 applied. **Updated by TJ (2026-11-11, later): audit Chef merges Wave 3 and writes the orchestrator prompt (`FIX-SPRINT-ORCHESTRATOR-PROMPT.md`); the new fix-sprint orchestrator builds the lanes (step 3) and runs everything after it.**
 
 ## Settled
 - **Astra input to Wave 3:** each Wave 3 Fable chat reads its upstream Astra reviews: the verdict/decision and corrections/new-findings sections only, plus the Astra-merged consolidation sections.
@@ -12,7 +12,8 @@ TJ's sequence, with his pop-up answers of 2026-11-11 applied. Chef owns steps 1 
 0. **Wave 2 merge** (waiting on Astra's last three reviews): `WAVE2-CONSOLIDATED.md`, the same shape as the Batch A and B/C consolidations; new owner questions settled by pop-up. Wave 3 starts after it.
 1. **Wave 3 Fable audits** (`wave3-prompts/`, slim): they use the upstream Astra reviews, audit as instructed, and end with a **final analysis and fix-agent handoff** (analysis, prioritised fixes with files, readers and tests, directional suggestions, fix-agent context, suggested lane). w3-7 waits for `OWNER-INTENT-SKO-VUDU.md`.
 2. **Astra reviews each Wave 3 audit** (TJ runs it), into `W1-Astra-PR/w3-*.md`.
-3. **Chef merges Fable and Astra findings into fix lanes:**
+2b. **Wave 3 merge** (audit Chef): `WAVE3-CONSOLIDATED.md`, the same shape as Wave 2; blocking owner questions settled by pop-up.
+3. **The fix-sprint orchestrator merges Fable and Astra findings into fix lanes:**
    - `FIX-LANES.md`, the index: lanes, order, dependencies, which can run in parallel;
    - `fix-lanes/<lane>.md`, one brief per lane: scope; owned files (exact paths, with no overlap between lanes); findings with sources (audit and Astra ids) and the corrected version where Astra disagreed; applicable decisions and rules; required tests; production steps needing approval; out of scope (Codex-owned paths such as `web/scripts/blsh/**` and Scout's lanes; anything needing an owner decision not yet made).
    - Lanes are ordered by the P0 list and dependencies: units and definitions first, then readers, then models and evaluation.
