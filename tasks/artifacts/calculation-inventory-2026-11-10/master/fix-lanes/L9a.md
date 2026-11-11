@@ -46,3 +46,6 @@ Goalie stage and starters (L9b); `run-projection-accuracy.ts` and `update-goalie
 
 ## Done
 Three P0s fixed and proven on final payload fixtures; market items fixed behind their dormant flag; research items listed as backlog.
+
+## Reader tickets from L4a (2026-11-11; migrations 125–132 written, unapplied)
+`nhl_team_data` (migration 129) becomes one row per team with `nst_season` and `nst_updated_at`; NST columns NULL when the standings season has no NST row; per-game values NULL at 0 GP. Join on `nst_season` in `team-context-queries.ts`.
