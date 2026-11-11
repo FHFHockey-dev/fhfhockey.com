@@ -1341,6 +1341,16 @@
       "migrationClass": "feature",
       "rolloutGate": "wgo_skater_stats_per_game and wgo_goalie_stats_per_game: percent_games is NULL when the season shows another team (skater per-game rows in the season window with a different team_abbrev; goalie team_abbrevs with more than one team), interim fail-closed until a team-of-record-by-date denominator exists (W2-1 D12; decision 16). Math-audit fix lane L4a; source only. Apply singly via the IPv4 session pooler with psql only after Chef review and TJ's own pop-up approval for this file, run its READBACK (including the EXPLAIN), then record schema_migrations and flip this row. Rollback: supabase/tests/l4a_percent_games_rollback.sql.",
       "stateEvidence": "Not applied. Written 2026-11-11 by fix lane L4a (diary tasks/diaries/2026-11-11-claude-fix-l4a.md). Verified on local PostgreSQL 15 with supabase/tests/l4a_percent_games.py: traded-skater and multi-team-goalie checks fail on the baseline views and pass after; single-team controls unchanged; columns and types unchanged; rollback restores the baseline answers."
+    },
+    {
+      "order": 134,
+      "path": "supabase/migrations/20261111180900_fix_skater_game_stats_placeholders_nullable.sql",
+      "sha256": "934be7806aecec9f956b229f15cd6364d382aa56b1e5db68c4584495a5b99d83",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "pending",
+      "migrationClass": "feature",
+      "rolloutGate": "skatersGameStats.faceoffs, \"powerPlayToi\" and \"shorthandedToi\" become nullable and persist_complete_game_stats_v1 accepts null for exactly those three skater fields (decision 83; lane L1 writer change ships together). No data change; the historical 0/0 / 00:00 repair is a separate approval. Math-audit fix lane L4a; source only. Apply singly via the IPv4 session pooler with psql only after Chef review and TJ's own pop-up approval, before or with the L1 writer release, run its READBACK, then record schema_migrations and flip this row. Rollback: supabase/tests/l4a_game_stats_nullable_rollback.sql (refuses while null rows exist).",
+      "stateEvidence": "Not applied. Written 2026-11-11 by fix lane L4a for L1 (diary tasks/diaries/2026-11-11-claude-fix-l4a.md). Verified on local PostgreSQL 15 with supabase/tests/l4a_game_stats_nullable.py: the null payload is rejected by the baseline function and stored as NULL after; placeholder strings, required skater toi and team powerPlayToi behave as before; only the three columns changed; rollback restores the baseline and refuses while null rows exist."
     }
   ],
   "sourceExtensionApproval": {
