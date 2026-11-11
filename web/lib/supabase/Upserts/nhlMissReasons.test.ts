@@ -25,17 +25,23 @@ function parseEvents(plays: Record<string, unknown>[]) {
 }
 
 describe("nhlMissReasons", () => {
-  it("classifies the common missed-shot reason buckets", () => {
-    expect(classifyMissReasonBucket("short-side")).toBe("short-side");
+  it("maps each exact NHL miss reason to its named bucket", () => {
+    expect(classifyMissReasonBucket("short")).toBe("short-of-net");
     expect(classifyMissReasonBucket("wide-left")).toBe("wide");
+    expect(classifyMissReasonBucket("wide-right")).toBe("wide");
+    expect(classifyMissReasonBucket("high-and-wide-left")).toBe("high-and-wide");
+    expect(classifyMissReasonBucket("high-and-wide-right")).toBe("high-and-wide");
+    expect(classifyMissReasonBucket("hit-left-post")).toBe("post");
     expect(classifyMissReasonBucket("hit-right-post")).toBe("post");
-    expect(classifyMissReasonBucket("above-crossbar")).toBe("crossbar");
-    expect(classifyMissReasonBucket("over-net")).toBe("over-net");
-    expect(classifyMissReasonBucket("blocked")).toBe("blocked-like");
+    expect(classifyMissReasonBucket("hit-crossbar")).toBe("crossbar");
+    // Over the net, not off the bar.
+    expect(classifyMissReasonBucket("above-crossbar")).toBe("over-net");
+    expect(classifyMissReasonBucket("failed-bank-attempt")).toBe("other");
+    expect(classifyMissReasonBucket("short-side")).toBe("other");
     expect(classifyMissReasonBucket(null)).toBe("unknown");
   });
 
-  it("keeps short-side missed shots in parity, sequence context, and xG feature eligibility while flagging them explicitly", () => {
+  it("keeps short-of-net missed shots in parity, sequence context, and xG feature eligibility", () => {
     const [event] = parseEvents([
       {
         eventId: 100,
@@ -50,7 +56,7 @@ describe("nhlMissReasons", () => {
         details: {
           eventOwnerTeamId: 10,
           shootingPlayerId: 91,
-          reason: "short-side",
+          reason: "short",
           shotType: "wrist",
           xCoord: 76,
           yCoord: 9,
@@ -61,15 +67,16 @@ describe("nhlMissReasons", () => {
     expect(buildMissReasonContext(event)).toEqual({
       gameId: 2025020418,
       eventId: 100,
-      missReasonRaw: "short-side",
-      missReasonBucket: "short-side",
+      missReasonRaw: "short",
+      missReasonBucket: "short-of-net",
       isMissedShotEvent: true,
-      isShortSideMiss: true,
+      // "short" is short of the net, not a short-side miss.
+      isShortSideMiss: false,
       includeInParityMissCounts: true,
       includeInSequenceContext: true,
       includeInXgShotFeatures: true,
       excludeFromXgForMissReason: false,
-      missReasonVersion: 1,
+      missReasonVersion: 2,
     });
   });
 
@@ -98,7 +105,7 @@ describe("nhlMissReasons", () => {
 
     expect(buildMissReasonContext(event)).toMatchObject({
       eventId: 200,
-      missReasonBucket: "crossbar",
+      missReasonBucket: "over-net",
       includeInParityMissCounts: true,
       includeInSequenceContext: true,
       includeInXgShotFeatures: true,

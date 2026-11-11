@@ -6,11 +6,23 @@ import {
   type ParsedNhlPbpEvent,
 } from "./nhlPlayByPlayParser";
 import {
-  classifyTeamStrengthState,
+  classifyTeamManpower,
   formatStrengthExact,
+  getEventOwnerSide,
   parseSituationCode,
-  type StrengthState,
+  type ParsedSituationCode,
+  type TeamManpowerContext,
 } from "./nhlStrengthState";
+import {
+  buildRunningScoreByEventKey,
+  getSideScoreDiff,
+  matchesScoreState,
+  runningScoreEventKey,
+  type EventRunningScore,
+  type RunningScore,
+  type ScoreStateFilter,
+} from "./nhlScoreState";
+import { buildRushContexts, NST_RUSH_OPTIONS } from "./nhlRush";
 import {
   buildOnIceAttributionForEvent,
   type EventOnIceAttribution,
@@ -60,14 +72,6 @@ type GoalieSplitKey =
   | "againstEmptyNet";
 type TeamRelativeZoneCode = "O" | "N" | "D";
 type DangerBucket = "high" | "medium" | "low";
-type ScoreStateFilter =
-  | "allScores"
-  | "tied"
-  | "leading"
-  | "trailing"
-  | "withinOne"
-  | "upOne"
-  | "downOne";
 
 export type SkaterCountsRow = {
   player_id: number;
@@ -267,6 +271,15 @@ export type GoalieCountsRow = {
   rebound_attempts_against: number;
   avg_shot_distance: number | null;
   avg_goal_distance: number | null;
+  /**
+   * Distance sums and the number of shots / goals with a measured distance.
+   * Merge games with Σ total ÷ Σ count; never reweight an average by all
+   * shots against (W2-2 PR-U3).
+   */
+  shot_distance_total: number;
+  shot_distance_count: number;
+  goal_distance_total: number;
+  goal_distance_count: number;
 };
 
 export type GoalieRatesRow = {
@@ -332,14 +345,9 @@ type StrengthSegment = {
   startSecond: number;
   endSecond: number;
   strengthExact: string | null;
-  homeState: StrengthState | null;
-  awayState: StrengthState | null;
-  awayGoalie: number;
-  awaySkaters: number;
-  homeSkaters: number;
-  homeGoalie: number;
-  homeScore: number | null;
-  awayScore: number | null;
+  situation: ParsedSituationCode;
+  /** Running score after the event that starts the segment. */
+  score: RunningScore;
 };
 
 type RawSkaterAccumulator = Omit<
@@ -354,7 +362,17 @@ type RawSkaterOiAccumulator = Omit<
 
 type RawGoalieAccumulator = Omit<
   GoalieCountsRow,
-  "player_id" | "season" | "date_scraped" | "gp" | "toi" | "avg_shot_distance" | "avg_goal_distance"
+  | "player_id"
+  | "season"
+  | "date_scraped"
+  | "gp"
+  | "toi"
+  | "avg_shot_distance"
+  | "avg_goal_distance"
+  | "shot_distance_total"
+  | "shot_distance_count"
+  | "goal_distance_total"
+  | "goal_distance_count"
 > & {
   shotDistanceTotal: number;
   shotDistanceCount: number;
@@ -382,6 +400,43 @@ const ZONE_START_PREVIOUS_TYPES = new Set([
   "delayed-penalty",
 ]);
 
+export type ParityPenaltyClass =
+  | "minor"
+  | "major"
+  | "misconduct"
+  | "penalty-shot"
+  | "unknown";
+
+/**
+ * Penalty class by the NHL penalty type code (W1-2 D3, decision 13): MIN and
+ * BEN are minors (a 4-minute double minor is one minor), MAJ is a major, MIS /
+ * GMIS / GAM / MAT are misconducts, and PS (penalty-shot infraction) is not a
+ * penalty in player totals. Without a type code, fall back to the duration;
+ * otherwise the class is unknown (counted in totals, not in a class).
+ */
+export function classifyParityPenalty(event: {
+  penalty_type_code?: string | null;
+  penalty_desc_key?: string | null;
+  penalty_duration_minutes?: number | null;
+}): ParityPenaltyClass {
+  const typeCode = event.penalty_type_code?.trim().toUpperCase() ?? null;
+  if (typeCode === "PS" || /^ps-/i.test(event.penalty_desc_key ?? "")) {
+    return "penalty-shot";
+  }
+  if (typeCode === "MIN" || typeCode === "BEN") return "minor";
+  if (typeCode === "MAJ") return "major";
+  if (typeCode === "MIS" || typeCode === "GMIS" || typeCode === "GAM" || typeCode === "MAT") {
+    return "misconduct";
+  }
+  if (typeCode == null) {
+    const minutes = event.penalty_duration_minutes ?? null;
+    if (minutes === 2 || minutes === 4) return "minor";
+    if (minutes === 5) return "major";
+    if (minutes === 10) return "misconduct";
+  }
+  return "unknown";
+}
+
 function getEventOrder(event: ParsedNhlPbpEvent): number {
   return event.sort_order ?? event.event_id;
 }
@@ -396,11 +451,57 @@ function sortEvents(events: ParsedNhlPbpEvent[]): ParsedNhlPbpEvent[] {
   });
 }
 
+/**
+ * Danger and scoring-chance geometry used by parity's `hdcf`, `scf` and
+ * related columns. These are FHFH HOUSE definitions, not NST's War-On-Ice
+ * scoring-chance definitions: no archived NST reference has been saved
+ * (decision 9; W1-2 D5). Readers must display them under these labels, never
+ * as NST "HDCF" / "SCF", until a saved reference lets parity match NST.
+ */
+export const PARITY_CHANCE_DEFINITIONS = {
+  highDanger: {
+    label: "FHFH high-danger",
+    source: "fhfh-house",
+    nstEquivalent: false,
+    maxDistanceFeet: 20,
+    maxAngleDegrees: 35,
+  },
+  scoringChance: {
+    label: "FHFH scoring chance",
+    source: "fhfh-house",
+    nstEquivalent: false,
+    maxDistanceFeet: 40,
+    maxAngleDegrees: 50,
+  },
+} as const;
+
+/**
+ * Parity PDO is on-ice SH% + on-ice SV% on the 0-100 percent scale (about
+ * 100). NST stores PDO on a 1.0 scale. Convert at the adapter, never by
+ * guessing from magnitude (rule 17).
+ */
+export const PARITY_PDO_SCALE = "percent-points-100" as const;
+
+export function parityPdoToNstScale(pdo: number | null | undefined): number | null {
+  return pdo == null ? null : pdo / 100;
+}
+
 function getDangerBucket(shot: ParityShotFeatureRow): DangerBucket | null {
   if (shot.dangerBucket) return shot.dangerBucket;
   if (shot.shotDistanceFeet == null || shot.shotAngleDegrees == null) return null;
-  if (shot.shotDistanceFeet <= 20 && shot.shotAngleDegrees <= 35) return "high";
-  if (shot.shotDistanceFeet <= 40 && shot.shotAngleDegrees <= 50) return "medium";
+  const { highDanger, scoringChance } = PARITY_CHANCE_DEFINITIONS;
+  if (
+    shot.shotDistanceFeet <= highDanger.maxDistanceFeet &&
+    shot.shotAngleDegrees <= highDanger.maxAngleDegrees
+  ) {
+    return "high";
+  }
+  if (
+    shot.shotDistanceFeet <= scoringChance.maxDistanceFeet &&
+    shot.shotAngleDegrees <= scoringChance.maxAngleDegrees
+  ) {
+    return "medium";
+  }
   return "low";
 }
 
@@ -585,11 +686,120 @@ function getOrCreate<T>(
   return next;
 }
 
-function buildStrengthSegments(
+function periodKey(gameId: number, periodNumber: number): string {
+  return `${gameId}:${periodNumber}`;
+}
+
+/**
+ * Penalty-expiry times, as (game, period) -> period seconds (W1-2 D8).
+ *
+ * Situation codes only change at events, so a penalty that expires between
+ * events would otherwise leave the old manpower state running until the next
+ * event. Minors expire after 2:00 unless a goal against the shorthanded team
+ * ends them first; a double minor's halves run 2:00 each (a goal in a half
+ * ends that half); majors and other 5:00 penalties always run 5:00.
+ * Misconducts and penalty-shot infractions change no manpower. A boundary
+ * where nothing changed is harmless: the slice after it takes the next
+ * event's situation code, which is the state once the penalty ended.
+ */
+function buildPenaltyExpiryBoundaries(
   events: ParsedNhlPbpEvent[],
   homeTeamId: number,
   awayTeamId: number
+): Map<string, number[]> {
+  const periodStartGameSecond = new Map<string, number>();
+  const periodLength = new Map<string, number>();
+  for (const event of events) {
+    if (
+      event.period_number == null ||
+      event.period_seconds_elapsed == null ||
+      event.game_seconds_elapsed == null
+    ) {
+      continue;
+    }
+    const key = periodKey(event.game_id, event.period_number);
+    periodStartGameSecond.set(key, event.game_seconds_elapsed - event.period_seconds_elapsed);
+    if (event.period_duration_seconds != null) {
+      periodLength.set(key, event.period_duration_seconds);
+    }
+  }
+
+  const goals = events.filter(
+    (event) =>
+      event.is_goal &&
+      event.game_seconds_elapsed != null &&
+      evaluateNormalizedEventInclusion(event).includeInParity
+  );
+  const goalAgainstShorthanded = (
+    teamId: number,
+    fromGameSecond: number,
+    toGameSecond: number
+  ): number | null => {
+    const side = getEventOwnerSide(teamId, homeTeamId, awayTeamId);
+    for (const goal of goals) {
+      const at = goal.game_seconds_elapsed!;
+      if (at <= fromGameSecond || at > toGameSecond) continue;
+      if (goal.event_owner_team_id == null || goal.event_owner_team_id === teamId) continue;
+      const context = classifyTeamManpower(parseSituationCode(goal.situation_code), side);
+      if (context?.manpowerState === "PK") return at;
+    }
+    return null;
+  };
+
+  const expiriesByGame = new Map<number, number[]>();
+  const addExpiry = (gameId: number, gameSecond: number) => {
+    const list = expiriesByGame.get(gameId) ?? [];
+    list.push(gameSecond);
+    expiriesByGame.set(gameId, list);
+  };
+
+  for (const event of events) {
+    if (event.type_desc_key !== "penalty") continue;
+    if (!evaluateNormalizedEventInclusion(event).includeInParity) continue;
+    if (event.game_seconds_elapsed == null || event.event_owner_team_id == null) continue;
+    const penaltyClass = classifyParityPenalty(event);
+    const minutes = event.penalty_duration_minutes ?? null;
+    const start = event.game_seconds_elapsed;
+    const teamId = event.event_owner_team_id;
+
+    if (penaltyClass === "minor" && minutes === 2) {
+      if (goalAgainstShorthanded(teamId, start, start + 120) == null) {
+        addExpiry(event.game_id, start + 120);
+      }
+    } else if (penaltyClass === "minor" && minutes === 4) {
+      const firstHalfGoal = goalAgainstShorthanded(teamId, start, start + 120);
+      const secondStart = firstHalfGoal ?? start + 120;
+      if (goalAgainstShorthanded(teamId, secondStart, secondStart + 120) == null) {
+        addExpiry(event.game_id, secondStart + 120);
+      }
+    } else if (penaltyClass === "major" && minutes != null && minutes > 0) {
+      addExpiry(event.game_id, start + minutes * 60);
+    }
+  }
+
+  const boundaries = new Map<string, number[]>();
+  for (const [key, startGameSecond] of periodStartGameSecond) {
+    const gameId = Number(key.split(":")[0]);
+    const length = periodLength.get(key);
+    for (const expiry of expiriesByGame.get(gameId) ?? []) {
+      const second = expiry - startGameSecond;
+      if (second <= 0 || (length != null && second >= length)) continue;
+      const list = boundaries.get(key) ?? [];
+      list.push(second);
+      boundaries.set(key, list);
+    }
+  }
+  for (const list of boundaries.values()) list.sort((left, right) => left - right);
+  return boundaries;
+}
+
+function buildStrengthSegments(
+  events: ParsedNhlPbpEvent[],
+  runningScoreByEvent: Map<string, EventRunningScore>,
+  homeTeamId: number,
+  awayTeamId: number
 ): StrengthSegment[] {
+  const expiryBoundaries = buildPenaltyExpiryBoundaries(events, homeTeamId, awayTeamId);
   const sorted = sortEvents(events).filter(
     (event) =>
       evaluateNormalizedEventInclusion(event).includeInOnIceParity &&
@@ -621,141 +831,100 @@ function buildStrengthSegments(
       continue;
     }
 
-    segments.push({
-      gameId: event.game_id,
-      periodNumber: event.period_number!,
-      startSecond,
-      endSecond,
-      strengthExact: formatStrengthExact(parsed),
-      homeState: classifyTeamStrengthState(
-        parsed,
-        homeTeamId,
-        homeTeamId,
-        awayTeamId
-      ),
-      awayState: classifyTeamStrengthState(
-        parsed,
-        awayTeamId,
-        homeTeamId,
-        awayTeamId
-      ),
-      awayGoalie: parsed.awayGoalie,
-      awaySkaters: parsed.awaySkaters,
-      homeSkaters: parsed.homeSkaters,
-      homeGoalie: parsed.homeGoalie,
-      homeScore: event.home_score ?? null,
-      awayScore: event.away_score ?? null
-    });
+    const score =
+      runningScoreByEvent.get(runningScoreEventKey(event.game_id, event.event_id))
+        ?.after ?? { homeScore: null, awayScore: null };
+    const nextParsed = next ? parseSituationCode(next.situation_code) : null;
+    // A penalty that expires inside this segment hands the rest of it to the
+    // situation the next event records.
+    const expiry =
+      nextParsed == null
+        ? undefined
+        : (expiryBoundaries.get(periodKey(event.game_id, event.period_number!)) ?? []).find(
+            (second) => second > startSecond && second < endSecond
+          );
+    const pieces: Array<[number, number, ParsedSituationCode]> =
+      expiry === undefined
+        ? [[startSecond, endSecond, parsed]]
+        : [
+            [startSecond, expiry, parsed],
+            [expiry, endSecond, nextParsed!],
+          ];
+
+    for (const [pieceStart, pieceEnd, situation] of pieces) {
+      segments.push({
+        gameId: event.game_id,
+        periodNumber: event.period_number!,
+        startSecond: pieceStart,
+        endSecond: pieceEnd,
+        strengthExact: formatStrengthExact(situation),
+        situation,
+        score,
+      });
+    }
   }
 
   return segments;
 }
 
-function resolveTeamRelativeSituation(args: {
+function resolveTeamManpower(args: {
   teamId: number;
   homeTeamId: number;
   awayTeamId: number;
-  awayGoalie: number;
-  awaySkaters: number;
-  homeSkaters: number;
-  homeGoalie: number;
-  homeState: StrengthState | null;
-  awayState: StrengthState | null;
-}) {
-  if (args.teamId === args.homeTeamId) {
-    return {
-      teamSkaters: args.homeSkaters,
-      opponentSkaters: args.awaySkaters,
-      teamGoalie: args.homeGoalie,
-      opponentGoalie: args.awayGoalie,
-      teamState: args.homeState,
-    };
-  }
-
-  if (args.teamId === args.awayTeamId) {
-    return {
-      teamSkaters: args.awaySkaters,
-      opponentSkaters: args.homeSkaters,
-      teamGoalie: args.awayGoalie,
-      opponentGoalie: args.homeGoalie,
-      teamState: args.awayState,
-    };
-  }
-
-  return null;
+  situation: ParsedSituationCode | null;
+}): TeamManpowerContext | null {
+  return classifyTeamManpower(
+    args.situation,
+    getEventOwnerSide(args.teamId, args.homeTeamId, args.awayTeamId)
+  );
 }
 
-function matchesRelativeStrengthSplit(args: {
-  split: Exclude<SkaterSplitKey, "all">;
-  teamSkaters: number;
-  opponentSkaters: number;
-  teamGoalie: number;
-  opponentGoalie: number;
-  teamState: StrengthState | null;
-}) {
-  const {
-    split,
-    teamSkaters,
-    opponentSkaters,
-    teamGoalie,
-    opponentGoalie,
-    teamState,
-  } = args;
+/**
+ * Splits use the shared manpower predicate (decision 70): EV/PP/PK are
+ * exclusive penalty-advantage states; the empty-net splits are overlapping
+ * attributes; the exact-count splits require both goalies in net.
+ */
+function matchesRelativeStrengthSplit(
+  split: Exclude<SkaterSplitKey, "all">,
+  context: TeamManpowerContext
+) {
+  const bothGoaliesIn = !context.ownNetEmpty && !context.opponentNetEmpty;
+  const { teamSkaters, opponentSkaters, manpowerState } = context;
 
-  if (split === "ev") {
-    return teamState === "EV";
+  switch (split) {
+    case "ev":
+      return manpowerState === "ES";
+    case "pp":
+      return manpowerState === "PP";
+    case "pk":
+      return manpowerState === "PK";
+    case "fiveOnFive":
+      return bothGoaliesIn && teamSkaters === 5 && opponentSkaters === 5;
+    case "fiveOnFourPP":
+      return manpowerState === "PP" && bothGoaliesIn && teamSkaters === 5 && opponentSkaters === 4;
+    case "fourOnFivePK":
+      return manpowerState === "PK" && bothGoaliesIn && teamSkaters === 4 && opponentSkaters === 5;
+    case "threeOnThree":
+      return bothGoaliesIn && teamSkaters === 3 && opponentSkaters === 3;
+    case "withEmptyNet":
+      return context.ownNetEmpty;
+    case "againstEmptyNet":
+      return context.opponentNetEmpty;
   }
-
-  if (split === "fiveOnFive") {
-    return teamGoalie > 0 && opponentGoalie > 0 && teamSkaters === 5 && opponentSkaters === 5;
-  }
-
-  if (split === "pp") {
-    return teamState === "PP";
-  }
-
-  if (split === "pk") {
-    return teamState === "SH";
-  }
-
-  if (split === "fiveOnFourPP") {
-    return teamState === "PP" && teamGoalie > 0 && opponentGoalie > 0 && teamSkaters === 5 && opponentSkaters === 4;
-  }
-
-  if (split === "fourOnFivePK") {
-    return teamState === "SH" && teamGoalie > 0 && opponentGoalie > 0 && teamSkaters === 4 && opponentSkaters === 5;
-  }
-
-  if (split === "threeOnThree") {
-    return teamGoalie > 0 && opponentGoalie > 0 && teamSkaters === 3 && opponentSkaters === 3;
-  }
-
-  if (split === "withEmptyNet") {
-    return teamGoalie === 0;
-  }
-
-  return opponentGoalie === 0;
 }
 
 function getSplitKeysForTeamSituation(args: {
   teamId: number;
   homeTeamId: number;
   awayTeamId: number;
-  awayGoalie: number;
-  awaySkaters: number;
-  homeSkaters: number;
-  homeGoalie: number;
-  homeState: StrengthState | null;
-  awayState: StrengthState | null;
+  situation: ParsedSituationCode | null;
 }): Array<Exclude<SkaterSplitKey, "all">> {
-  const relative = resolveTeamRelativeSituation(args);
-  if (!relative) {
+  const context = resolveTeamManpower(args);
+  if (!context) {
     return [];
   }
 
-  const splits: Array<Exclude<SkaterSplitKey, "all">> = [];
-
-  for (const split of [
+  return ([
     "ev",
     "fiveOnFive",
     "pp",
@@ -765,125 +934,45 @@ function getSplitKeysForTeamSituation(args: {
     "threeOnThree",
     "withEmptyNet",
     "againstEmptyNet",
-  ] as const) {
-    if (
-      matchesRelativeStrengthSplit({
-        split,
-        ...relative,
-      })
-    ) {
-      splits.push(split);
-    }
-  }
-
-  return splits;
+  ] as const).filter((split) => matchesRelativeStrengthSplit(split, context));
 }
 
-function getScoreStateBucketFromDiff(diff: number): Exclude<ScoreStateFilter, "allScores"> {
-  if (diff === 0) {
-    return "tied";
-  }
-
-  if (diff === 1) {
-    return "upOne";
-  }
-
-  if (diff === -1) {
-    return "downOne";
-  }
-
-  if (diff > 0) {
-    return "leading";
-  }
-
-  return "trailing";
-}
-
-function matchesScoreStateFromDiff(scoreState: ScoreStateFilter, diff: number | null) {
-  if (scoreState === "allScores") {
-    return true;
-  }
-
-  if (diff == null) {
-    return false;
-  }
-
-  if (scoreState === "withinOne") {
-    return Math.abs(diff) <= 1;
-  }
-
-  return getScoreStateBucketFromDiff(diff) === scoreState;
-}
-
-function getTeamScoreDiff(args: {
+function teamScoreDiff(args: {
   teamId: number;
   homeTeamId: number;
   awayTeamId: number;
-  homeScore: number | null;
-  awayScore: number | null;
+  score: RunningScore | null | undefined;
 }): number | null {
-  if (args.homeScore == null || args.awayScore == null) {
-    return null;
-  }
-
-  if (args.teamId === args.homeTeamId) {
-    return args.homeScore - args.awayScore;
-  }
-
-  if (args.teamId === args.awayTeamId) {
-    return args.awayScore - args.homeScore;
-  }
-
-  return null;
+  return getSideScoreDiff(
+    args.score,
+    getEventOwnerSide(args.teamId, args.homeTeamId, args.awayTeamId)
+  );
 }
 
-function getPreEventScores(
-  event: ParsedNhlPbpEvent,
-  homeTeamId: number,
-  awayTeamId: number
-) {
-  let homeScore = event.home_score ?? null;
-  let awayScore = event.away_score ?? null;
-
-  if (event.type_desc_key === "goal") {
-    const goalOwnerTeamId = event.event_owner_team_id;
-
-    if (goalOwnerTeamId != null) {
-      if (goalOwnerTeamId === homeTeamId && homeScore != null) {
-        homeScore -= 1;
-      } else if (goalOwnerTeamId === awayTeamId && awayScore != null) {
-        awayScore -= 1;
-      }
-    }
-  }
-
-  return { homeScore, awayScore };
-}
-
+/** Events are classified by the score before they happened. */
 function matchesEventScoreState(args: {
   scoreState: ScoreStateFilter;
   teamId: number;
   homeTeamId: number;
   awayTeamId: number;
   event: ParsedNhlPbpEvent;
+  runningScoreByEvent: Map<string, EventRunningScore>;
 }) {
-  const { homeScore, awayScore } = getPreEventScores(
-    args.event,
-    args.homeTeamId,
-    args.awayTeamId
-  );
-  return matchesScoreStateFromDiff(
+  if (args.scoreState === "allScores") return true;
+  return matchesScoreState(
     args.scoreState,
-    getTeamScoreDiff({
+    teamScoreDiff({
       teamId: args.teamId,
       homeTeamId: args.homeTeamId,
       awayTeamId: args.awayTeamId,
-      homeScore,
-      awayScore,
+      score: args.runningScoreByEvent.get(
+        runningScoreEventKey(args.event.game_id, args.event.event_id)
+      )?.before,
     })
   );
 }
 
+/** Intervals are classified by the score after the event that starts them. */
 function matchesSegmentScoreState(args: {
   scoreState: ScoreStateFilter;
   teamId: number;
@@ -891,14 +980,13 @@ function matchesSegmentScoreState(args: {
   awayTeamId: number;
   segment: StrengthSegment;
 }) {
-  return matchesScoreStateFromDiff(
+  return matchesScoreState(
     args.scoreState,
-    getTeamScoreDiff({
+    teamScoreDiff({
       teamId: args.teamId,
       homeTeamId: args.homeTeamId,
       awayTeamId: args.awayTeamId,
-      homeScore: args.segment.homeScore,
-      awayScore: args.segment.awayScore,
+      score: args.segment.score,
     })
   );
 }
@@ -966,12 +1054,7 @@ function accumulateToiBySplit(
         teamId: interval.teamId,
         homeTeamId,
         awayTeamId,
-        awayGoalie: segment.awayGoalie,
-        awaySkaters: segment.awaySkaters,
-        homeSkaters: segment.homeSkaters,
-        homeGoalie: segment.homeGoalie,
-        homeState: segment.homeState,
-        awayState: segment.awayState,
+        situation: segment.situation,
       });
 
       for (const split of splits) {
@@ -1051,12 +1134,7 @@ function accumulateGoalieToiBySplit(
         teamId: interval.teamId,
         homeTeamId,
         awayTeamId,
-        awayGoalie: segment.awayGoalie,
-        awaySkaters: segment.awaySkaters,
-        homeSkaters: segment.homeSkaters,
-        homeGoalie: segment.homeGoalie,
-        homeState: segment.homeState,
-        awayState: segment.awayState,
+        situation: segment.situation,
       });
 
       for (const split of splits) {
@@ -1134,8 +1212,17 @@ export function buildNstParityMetrics(
       .map((interval) => interval.playerId)
       .filter((playerId) => !goalieIds.has(playerId))
   );
+  const runningScoreByEvent = buildRunningScoreByEventKey(sortedEvents);
+  // Decision 8 rush (4 s, no faceoff sources) for the NST-named rush columns.
+  // Shot features keep their own rush flag, which is an xG model input.
+  const nstRushEventKeys = new Set(
+    buildRushContexts(sortedEvents, NST_RUSH_OPTIONS)
+      .filter((context) => context.isRushShot)
+      .map((context) => runningScoreEventKey(context.gameId, context.eventId))
+  );
   const strengthSegments = buildStrengthSegments(
     sortedEvents,
+    runningScoreByEvent,
     options.homeTeamId,
     options.awayTeamId
   );
@@ -1204,17 +1291,8 @@ export function buildNstParityMetrics(
 
     const previous = index > 0 ? sortedEvents[index - 1] : null;
     const parsedSituation = parseSituationCode(event.situation_code);
-    const homeState = classifyTeamStrengthState(
-      parsedSituation,
-      options.homeTeamId,
-      options.homeTeamId,
-      options.awayTeamId
-    );
-    const awayState = classifyTeamStrengthState(
-      parsedSituation,
-      options.awayTeamId,
-      options.homeTeamId,
-      options.awayTeamId
+    const isNstRushAttempt = nstRushEventKeys.has(
+      runningScoreEventKey(event.game_id, event.event_id)
     );
     const shot = shotFeatureByEventId.get(event.event_id) ?? null;
     const attribution = buildOnIceAttributionForEvent(
@@ -1238,26 +1316,18 @@ export function buildNstParityMetrics(
           homeTeamId: options.homeTeamId,
           awayTeamId: options.awayTeamId,
           event,
+          runningScoreByEvent,
         })
       ) {
         return;
       }
 
-      const parsedSituationForEvent = parseSituationCode(event.situation_code);
-      const splits =
-        parsedSituationForEvent == null
-          ? []
-          : getSplitKeysForTeamSituation({
-              teamId,
-              homeTeamId: options.homeTeamId,
-              awayTeamId: options.awayTeamId,
-              awayGoalie: parsedSituationForEvent.awayGoalie,
-              awaySkaters: parsedSituationForEvent.awaySkaters,
-              homeSkaters: parsedSituationForEvent.homeSkaters,
-              homeGoalie: parsedSituationForEvent.homeGoalie,
-              homeState,
-              awayState,
-            });
+      const splits = getSplitKeysForTeamSituation({
+        teamId,
+        homeTeamId: options.homeTeamId,
+        awayTeamId: options.awayTeamId,
+        situation: parsedSituation,
+      });
       increment(getOrCreate(skaterCountsAcc.all, playerId, defaultSkaterAccumulator));
       for (const split of splits) {
         increment(getOrCreate(skaterCountsAcc[split], playerId, defaultSkaterAccumulator));
@@ -1281,26 +1351,18 @@ export function buildNstParityMetrics(
             homeTeamId: options.homeTeamId,
             awayTeamId: options.awayTeamId,
             event,
+            runningScoreByEvent,
           })
         ) {
           continue;
         }
 
-        const parsedSituationForEvent = parseSituationCode(event.situation_code);
-        const splits =
-          parsedSituationForEvent == null
-            ? []
-            : getSplitKeysForTeamSituation({
-                teamId,
-                homeTeamId: options.homeTeamId,
-                awayTeamId: options.awayTeamId,
-                awayGoalie: parsedSituationForEvent.awayGoalie,
-                awaySkaters: parsedSituationForEvent.awaySkaters,
-                homeSkaters: parsedSituationForEvent.homeSkaters,
-                homeGoalie: parsedSituationForEvent.homeGoalie,
-                homeState,
-                awayState,
-              });
+        const splits = getSplitKeysForTeamSituation({
+          teamId,
+          homeTeamId: options.homeTeamId,
+          awayTeamId: options.awayTeamId,
+          situation: parsedSituation,
+        });
 
         increment(getOrCreate(skaterOiAcc.all, playerId, defaultSkaterOiAccumulator));
         for (const split of splits) {
@@ -1339,7 +1401,7 @@ export function buildNstParityMetrics(
         acc.icf += 1;
         if (shot) {
           acc.ixg = addToNullableNumber(acc.ixg, getApproximateXgValue(shot));
-          if (shot.isRushShot) acc.rush_attempts += 1;
+          if (isNstRushAttempt) acc.rush_attempts += 1;
           if (shot.createsRebound) acc.rebounds_created += 1;
           const scoringChance = isScoringChance(shot);
           const dangerBucket = getDangerBucket(shot);
@@ -1354,13 +1416,15 @@ export function buildNstParityMetrics(
       });
     }
 
-    if (event.type_desc_key === "penalty") {
+    const penaltyClass =
+      event.type_desc_key === "penalty" ? classifyParityPenalty(event) : null;
+    if (penaltyClass != null && penaltyClass !== "penalty-shot") {
       addSkaterStat(event.committed_by_player_id, (acc) => {
         acc.pim += event.penalty_duration_minutes ?? 0;
         acc.total_penalties += 1;
-        if ((event.penalty_duration_minutes ?? 0) === 2) acc.minor_penalties += 1;
-        else if ((event.penalty_duration_minutes ?? 0) >= 5) acc.major_penalties += 1;
-        else acc.misconduct_penalties += 1;
+        if (penaltyClass === "minor") acc.minor_penalties += 1;
+        else if (penaltyClass === "major") acc.major_penalties += 1;
+        else if (penaltyClass === "misconduct") acc.misconduct_penalties += 1;
       });
       addSkaterStat(event.drawn_by_player_id, (acc) => {
         acc.penalties_drawn += 1;
@@ -1470,16 +1534,15 @@ export function buildNstParityMetrics(
           event.event_owner_team_id === options.homeTeamId
             ? options.awayTeamId
             : options.homeTeamId;
-        const parsedSituationForEvent = parseSituationCode(event.situation_code);
-
         if (
-          parsedSituationForEvent == null ||
+          parsedSituation == null ||
           !matchesEventScoreState({
             scoreState,
             teamId: goalieTeamId,
             homeTeamId: options.homeTeamId,
             awayTeamId: options.awayTeamId,
             event,
+            runningScoreByEvent,
           })
         ) {
           continue;
@@ -1489,12 +1552,7 @@ export function buildNstParityMetrics(
           teamId: goalieTeamId,
           homeTeamId: options.homeTeamId,
           awayTeamId: options.awayTeamId,
-          awayGoalie: parsedSituationForEvent.awayGoalie,
-          awaySkaters: parsedSituationForEvent.awaySkaters,
-          homeSkaters: parsedSituationForEvent.homeSkaters,
-          homeGoalie: parsedSituationForEvent.homeGoalie,
-          homeState,
-          awayState,
+          situation: parsedSituation,
         });
 
         for (const split of ["all", ...goalieSplits] as const) {
@@ -1514,7 +1572,7 @@ export function buildNstParityMetrics(
               acc.goalDistanceCount += 1;
             }
           }
-          if (!shot.isOwnGoal && shot.isRushShot) acc.rush_attempts_against += 1;
+          if (!shot.isOwnGoal && isNstRushAttempt) acc.rush_attempts_against += 1;
           if (!shot.isOwnGoal && shot.isReboundShot) acc.rebound_attempts_against += 1;
           const xgValueForGoalie = getApproximateXgValue(shot);
           if (!shot.isOwnGoal) {
@@ -1825,6 +1883,10 @@ export function buildNstParityMetrics(
           raw.goalDistanceCount > 0
             ? raw.goalDistanceTotal / raw.goalDistanceCount
             : null,
+        shot_distance_total: raw.shotDistanceTotal,
+        shot_distance_count: raw.shotDistanceCount,
+        goal_distance_total: raw.goalDistanceTotal,
+        goal_distance_count: raw.goalDistanceCount,
       };
     });
 

@@ -125,7 +125,7 @@ describe("nhlOnIceAttribution", () => {
     expect(isEntityOnIce(attribution, "line", 20, [21, 22, 23])).toBe(false);
   });
 
-  it("marks empty-net events as EN for both team contexts while using stint membership", () => {
+  it("marks only the team attacking the empty net as EN while using stint membership", () => {
     const stints = buildShiftStints([
       createShiftRow({ shift_id: 1, player_id: 31, team_id: 10, period: 3, end_seconds: 50, duration_seconds: 50 }) as any,
       createShiftRow({ shift_id: 2, player_id: 32, team_id: 10, period: 3, end_seconds: 50, duration_seconds: 50 }) as any,
@@ -152,8 +152,10 @@ describe("nhlOnIceAttribution", () => {
       20
     );
 
+    // 0651: away pulled its goalie (6v5, no penalty). Home attacks an empty
+    // net (EN); away keeps its manpower state (EV).
     expect(attribution.homeTeam.strengthState).toBe("EN");
-    expect(attribution.awayTeam.strengthState).toBe("EN");
+    expect(attribution.awayTeam.strengthState).toBe("EV");
     expect(attribution.ownerPlayerIds).toEqual([41, 42, 43, 44, 45, 46]);
     expect(attribution.opponentPlayerIds).toEqual([31, 32]);
   });

@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 
 import { parseNhlPlayByPlayEvents } from "./nhlPlayByPlayParser";
-import { buildRushContexts, DEFAULT_RUSH_WINDOW_SECONDS } from "./nhlRush";
+import {
+  buildRushContexts,
+  DEFAULT_RUSH_WINDOW_SECONDS,
+  NST_RUSH_OPTIONS,
+} from "./nhlRush";
 
 function parseEvents(plays: Record<string, unknown>[]) {
   return parseNhlPlayByPlayEvents(
@@ -238,5 +242,47 @@ describe("nhlRush", () => {
       { eventId: 400, isRushShot: false },
       { eventId: 401, isRushShot: false, rushSourceEventId: null },
     ]);
+  });
+
+  describe("decision 8 rush (NST_RUSH_OPTIONS: 4 s, no faceoff sources)", () => {
+    const play = (
+      eventId: number,
+      second: number,
+      typeDescKey: string,
+      details: Record<string, unknown>
+    ) => ({
+      eventId,
+      sortOrder: eventId,
+      periodDescriptor: { number: 1, periodType: "REG" },
+      timeInPeriod: `${String(Math.floor(second / 60)).padStart(2, "0")}:${String(second % 60).padStart(2, "0")}`,
+      timeRemaining: "10:00",
+      situationCode: "1551",
+      homeTeamDefendingSide: "left",
+      typeDescKey,
+      details,
+    });
+    const shotAfter = (sourceType: string, seconds: number, zoneCode = "N") => {
+      const events = parseEvents([
+        play(1, 100, sourceType, { eventOwnerTeamId: 10, playerId: 16, winningPlayerId: 16, losingPlayerId: 26, zoneCode }),
+        play(2, 100 + seconds, "shot-on-goal", { eventOwnerTeamId: 10, shootingPlayerId: 91, xCoord: 73, yCoord: -4, zoneCode: "O" }),
+      ]);
+      return {
+        nst: buildRushContexts(events, NST_RUSH_OPTIONS).find((c) => c.eventId === 2)!.isRushShot,
+        feature: buildRushContexts(events).find((c) => c.eventId === 2)!.isRushShot,
+      };
+    };
+
+    it("4 s after a neutral-zone takeaway is a rush; 5 s is not", () => {
+      expect(shotAfter("takeaway", 4).nst).toBe(true);
+      expect(shotAfter("takeaway", 5).nst).toBe(false);
+      // The shot-feature window (an xG input) is unchanged.
+      expect(shotAfter("takeaway", 5).feature).toBe(true);
+    });
+
+    it("a faceoff win 1-4 s before the shot never starts an NST rush", () => {
+      for (const seconds of [1, 2, 3, 4]) {
+        expect(shotAfter("faceoff", seconds).nst).toBe(false);
+      }
+    });
   });
 });
