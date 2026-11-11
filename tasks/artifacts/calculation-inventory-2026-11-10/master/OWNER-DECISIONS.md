@@ -79,3 +79,51 @@ Facts Chef checked after W1-1 (2026-11-10):
 21. **Strength of schedule "past" means final only** (completed with a known result). Started or postponed games go to an explicit pending or in-progress bucket and are never counted as played.
 22. **Created-xG credit is exclusive and capped.** The contributors on one shot sum to at most that shot's xG, so credit adds up across players and teams.
 23. **Results luck compares rates per 60:** (G − ixG)/60 in the window against the non-overlapping baseline (G − ixG)/60, using explicit count fields and matched exposure.
+
+## Decisions on Batch B/C open questions, round 1 (TJ, 2026-11-11, by pop-up)
+24. **FORGE skater lines are all-situation totals:** ES + PP + PK + extra-attacker, with empty-net goals in their own named bucket (decision 7).
+25. **FORGE goalies: one row per candidate.** Each row carries the if-he-starts line, the start probability and the unconditional product. The API shows the goalie's own Win and, separately, the team win %, and the slot rescale is removed.
+26. **Sustainability trend band in FORGE regresses toward the band.** Above-band form is expected to come back down, never treated as momentum. The size is fitted and validated before use.
+27. **Opponent and venue change team shot volume** through fitted terms (opponent shot suppression, home/away), sized on held-out games.
+28. **The multi-game FORGE horizon is kept and fixed** (TJ chose this over removal). Probabilities are never multiplied by a horizon scalar: report per-game values or 1 − ∏(1 − p) as the definition requires. Fix the dead zero-rest branch, the goalie opponent averaging and the game-type filter, and keep the horizon option tested.
+29. **Bands become a "typical range" with the real coverage shown.** Quantiles come from the exact distribution, not 400 draws. Calibration is judged by PIT and interval score per stat.
+30. **Sportsbook odds ingestion comes back after the fixes.** Spread uses a cover probability against the de-vigged price (overtime rule stated), lines stay per book and are never averaged, and yes-only de-vig must be monotone. Only then resume.
+31. **Healthy scratch: show his "if he plays" line, labelled** "scratched / not expected to dress", with 0 expected for that slate. A scratch is scoped to a game id, and injuries end with a RETURN event, not a 30-hour timer.
+
+## Sustainability: owner definition (TJ, 2026-11-11, verbatim intent, binding for the fix plan)
+32. **Definition.** Sustainability assesses whether a player's current level of production is **supported and likely to persist relative to his own established baseline**. Luck is one component, not the whole definition.
+    - Inputs: recent production, underlying process and chance creation, and changes in opportunity or deployment. A promotion or reduced ice time can explain a change in results and is not automatically discounted; the stability of that opportunity is itself part of the question.
+    - Goals: understand hot and cold stretches and whether they look supported, and research signals that may precede a streak starting or ending.
+    - Baselines: player-specific, with forwards and defencemen distinguished. Goalies get the same conceptual goal using goalie evidence.
+    - Output: a clear summary with its component evidence, coverage and uncertainty visible. **Do not preserve the current blended formula.** Inputs and weights are determined from evidence and **tested out of sample**.
+    - Separate descriptive findings from predictions. Claim no continuation probability or predictive skill without validation.
+33. **Usual range (Sandbox band).** A player-specific expectation range for a window of this size, from an appropriate baseline and adjusted for sample size and uncertainty.
+    - Hot or cold when observed performance is meaningfully outside it.
+    - Show baseline, window, sample size and range, and say whether the range is descriptive or validated as predictive.
+    - Sparse histories and rookies: a peer-informed baseline with visible uncertainty, never false precision.
+    - The band describes how unusual results are. Whether the stretch is supported is judged **separately**, through process, opportunity and luck. Crossing the band is not proof a streak continues or ends. Validate range and coverage on later held-out data before calling it predictive.
+34. **Baselines** use only information available **before the evaluated window**: prior completed seasons plus, when appropriate, earlier current-season games. Never the judged games or future information.
+    - Weight recent evidence and shrink sparse histories toward a position-based prior, with the method and weights validated on held-out data.
+    - Rookies and limited histories: a position-informed prior, plus eligible early-season evidence as it accumulates. Label limited or no history, and show sample size and uncertainty.
+    - A player's recent games are never both the streak and his own baseline.
+    - Role, deployment and opportunity changes are shown as context, neither assumed permanent nor discarded.
+35. **Dashboard lists:**
+    - Rename the current lists to what they measure (e.g. "Potentially Unlucky", "Potentially Running Hot"), and only if the evidence supports those labels.
+    - Show supporting results, process and opportunity context. A luck signal alone is never a trust or fade recommendation.
+    - Keep **"Trust These Risers"** as a separate potential feature: only players whose production or opportunity is genuinely rising with supporting evidence. Define and validate it before presenting it.
+    - Keep confidence and evidence coverage separate from the signal. Use a percentile only from an appropriate, labelled comparison group; a percentile is not confidence.
+36. **Trend-band history:** a **bounded rebuild** after the 60× fix ships, as its own approved step.
+37. **Sustainability count projections stay unserved and are tracked as open implementation work, not abandoned.** Before scheduling:
+    - fix and test the opponent-PK direction and scale;
+    - reconcile them with definition 32;
+    - verify inputs and downstream consumers;
+    - evaluate on held-out games.
+    - Then bring the activation plan and schedule for approval.
+38. **Native player-forecast path.** The goal is a qualified native path serving useful skater and goalie projections to FORGE, RSO and the Start Chart. Evaluate and complete it; don't activate it as-is or abandon it.
+    - Implement and test evidence-supported skater shrinkage and goalie regression, including a defensible approach to wins and start probability. Don't assume a shrinkage constant, or that team win alone is a goalie's win probability.
+    - Compare the native path with the bridge and sensible baselines on genuinely held-out games, with consistent conditional and unconditional definitions, calibrated probabilities and verified input coverage.
+    - Keep it unserved until those checks pass and its consumers, fallback and rollout are reviewed. The activation plan and any data repair or configuration change come back for approval.
+39. **Calibration evidence for v4/v5.** The 2025-26 lockbox is **consumed**, as the model contract already says.
+    - Check for an untouched, time-appropriate historical holdout with documented provenance. If one exists, use it for a single evaluation, and never relabel examined or tuned-on data as fresh.
+    - Until independent evidence supports calibration, label intervals **uncalibrated**.
+    - Collect prospective 2026-27 forecasts frozen before each game and evaluate them against outcomes, reporting sample size, coverage and uncertainty, including discreteness. Don't claim calibration because a small sample lands near target.
