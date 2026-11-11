@@ -30,6 +30,8 @@
   /* Native boxes, not the studio's field box: no field padding, border or 44px height. */
   input[type="checkbox"] { width: v.$control-checkbox-size; height: v.$control-checkbox-size; min-height: 0; margin: 0; padding: 0; accent-color: v.$primary-color; cursor: pointer; }
   input[type="checkbox"]:disabled { cursor: default; }
+  /* A box held off at the post's cap (or held on as its last) reads as unavailable, not just unticked. */
+  label:has(input:disabled) { color: v.$text-secondary; cursor: default; }
 }
 /* Outranks `.group legend` (the Options header's blue caps): this legend names one field, like the field labels. */
 .fields .choices legend { float: left; width: 100%; padding: 0; margin-bottom: v.$space-xs; color: v.$text-primary; font-size: v.$font-size-sm; font-weight: 600; text-transform: none; letter-spacing: normal; }

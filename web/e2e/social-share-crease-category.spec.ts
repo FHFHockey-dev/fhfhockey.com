@@ -1,6 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { readFile } from "node:fs/promises";
-import { buildCreaseShift, reconcileSchedule } from "../lib/socialShare/modules/creaseShift";
+import { parseShareSettings } from "../lib/socialShare/modules/contract";
+import { buildCreaseShift, creaseShiftModule, reconcileSchedule } from "../lib/socialShare/modules/creaseShift";
 import { buildGoalieGsax } from "../lib/socialShare/modules/goalieGsax";
 import { buildGoaliePeriod } from "../lib/socialShare/modules/goaliePeriod";
 import { rangePeriod, seasonPeriod, weekPeriod } from "../lib/socialShare/modules/shared/categoryCounts";
@@ -63,7 +64,7 @@ const openOptions = async (page: Page) => { const toggle = page.getByRole("butto
 test("crease shift: official share over team games, labeled comparison, and it exports the same snapshot", async ({ page }) => {
   await install(page);
   const result = buildCreaseShift({ reported, appearances, scheduled, teams: ["NJD", "NYR"], window: 2, comparison: "previous", minComparisonGames: 2, through: "2026-10-30" });
-  const settings = { window: "10", comparison: "previous", minComparisonGames: 2 };
+  const settings = { window: 10, comparison: "previous", minComparisonGames: 2, teams: "" };
   let requests = 0;
   await page.route("**/api/v1/social-share/posts/**", route => { requests++; return route.fulfill({ json: edition("crease-shift", settings, result) }); });
   await page.goto("/social-share/posts?post=crease-shift&minComparisonGames=2");
@@ -73,7 +74,7 @@ test("crease shift: official share over team games, labeled comparison, and it e
   await expect(square).toContainText("Fictional Goalie 2");
   await expect(square).not.toContainText(/probab|likely|odds/i);
   await expect(page.getByTestId("post-watermark")).toHaveText("OBSERVED RESULTS");
-  await expect(square).toHaveAttribute("data-export-token", 'crease-shift-e2e|crease-shift|[["window","10"],["comparison","previous"],["minComparisonGames",2]]');
+  await expect(square).toHaveAttribute("data-export-token", 'crease-shift-e2e|crease-shift|[["window",10],["comparison","previous"],["minComparisonGames",2],["teams",""]]');
   const before = requests;
   await download(page);
   expect(requests).toBe(before);
@@ -83,7 +84,7 @@ test("crease shift: a schedule gap previews as partial and cannot export", async
   await install(page);
   const result = buildCreaseShift({ reported: reported.slice(1), appearances, scheduled, teams: ["NJD", "NYR"], window: 2, comparison: "previous", minComparisonGames: 2, through: "2026-10-30" });
   expect(reconcileSchedule(scheduled, reported.slice(1)).missing).toBe(1);
-  await page.route("**/api/v1/social-share/posts/**", route => route.fulfill({ json: edition("crease-shift", { window: "10", comparison: "previous", minComparisonGames: 2 }, result) }));
+  await page.route("**/api/v1/social-share/posts/**", route => route.fulfill({ json: edition("crease-shift", { window: 10, comparison: "previous", minComparisonGames: 2, teams: "" }, result) }));
   await page.goto("/social-share/posts?post=crease-shift&minComparisonGames=2");
   await expect(page.getByTestId("post-watermark")).toHaveText("PARTIAL · NOT FOR EXPORT");
   await expect(page.getByRole("button", { name: "Download PNG", exact: true })).toBeDisabled();
@@ -280,16 +281,41 @@ test("GSAx: ten rows a side fill the body", async ({ page }) => {
   await expectBodyFilled(page, "goalie-gsax-card");
 });
 
-for (const teamCount of [6, 12]) test(`crease shift: ${teamCount} ranked teams fill the body`, async ({ page }) => {
-  await install(page);
-  const teams = ["NJD", "NYR", "PHI", "PIT", "BOS", "BUF", "MTL", "OTT", "TOR", "DET", "FLA", "TBL"].slice(0, teamCount) as (keyof typeof teamsInfo)[];
+/** Crease Shift fixtures: `teams` in pairs over 20 games, each starter split two and two, so every team ranks at 0. */
+const CREASE_TEAMS = ["NJD", "NYR", "PHI", "PIT", "BOS", "BUF", "MTL", "OTT", "TOR", "DET", "FLA", "TBL", "EDM", "VAN"] as (keyof typeof teamsInfo)[];
+function creaseLeague(teams = CREASE_TEAMS) {
   const twenty = Array.from({ length: 20 }, (_, game) => game), day = (game: number) => `2026-10-${String(game + 1).padStart(2, "0")}`;
   const games = teams.flatMap((team, index) => index % 2 ? [] : twenty.map(game => ({ id: 100 * (index + 1) + game, date: day(game), homeTeamId: teamsInfo[team].id, awayTeamId: teamsInfo[teams[index + 1]].id })));
   const reportedGames = teams.flatMap((team, index) => twenty.map(game => ({ gameId: 100 * ((index - index % 2) + 1) + game, date: day(game), team: String(team) })));
   const stats = reportedGames.map((game, index) => stat((teams.indexOf(game.team as keyof typeof teamsInfo) + 1) * 10 + (index % 4 < 2 ? 1 : 2), game.team, game.gameId, game.date, { name: "Ukko-Pekka Luukkonen" }));
-  const result = buildCreaseShift({ reported: reportedGames, appearances: stats, scheduled: games, teams: teams.map(String), window: 10, comparison: "previous", minComparisonGames: 2, through: "2026-10-30" });
-  const settings = { window: "10", comparison: "previous", minComparisonGames: 2 };
-  await page.route("**/api/v1/social-share/posts/**", route => route.fulfill({ json: edition("crease-shift", settings, result) }));
+  return { reported: reportedGames, appearances: stats, scheduled: games, teams: teams.map(String), through: "2026-10-30" };
+}
+/** Serves each request's own settings, as the route would, and counts the requests. */
+async function serveCrease(page: Page, league = creaseLeague()) {
+  const requests: URLSearchParams[] = [];
+  await page.route("**/api/v1/social-share/posts/**", route => {
+    const query = new URL(route.request().url()).searchParams, settings = parseShareSettings(creaseShiftModule, Object.fromEntries(query));
+    requests.push(query);
+    const result = buildCreaseShift({ ...league, picked: String(settings.teams).split(",").filter(Boolean), window: Number(settings.window), comparison: settings.comparison === "std" ? "std" : "previous", minComparisonGames: Number(settings.minComparisonGames) });
+    return route.fulfill({ json: { ...edition("crease-shift", settings, result), pageNotes: result.pageNotes } });
+  });
+  return requests;
+}
+/** No row keeps an empty band over or beside its chart, and nothing in the table runs into the note under it. */
+const expectCreaseRowsFilled = async (page: Page) => {
+  const rows = await page.getByTestId("crease-shift-card").evaluate(card => {
+    const scale = card.closest("[data-testid=share-square]")!.getBoundingClientRect().width / 1080, table = card.firstElementChild as HTMLElement, note = card.lastElementChild!;
+    const charts = [...card.querySelectorAll("svg[role=img]")];
+    return { overflow: table.scrollHeight - table.clientHeight, gap: (note.getBoundingClientRect().top - charts.at(-1)!.getBoundingClientRect().bottom) / scale, slack: charts.map(svg => (svg.parentElement!.getBoundingClientRect().height - svg.getBoundingClientRect().height) / scale) };
+  });
+  expect(rows.overflow).toBeLessThanOrEqual(0);
+  expect(rows.gap).toBeGreaterThanOrEqual(0);
+  for (const slack of rows.slack) expect(slack).toBeLessThan(24);
+};
+
+for (const teamCount of [6, 12]) test(`crease shift: ${teamCount} ranked teams fill the body`, async ({ page }) => {
+  await install(page);
+  await serveCrease(page, creaseLeague(CREASE_TEAMS.slice(0, teamCount)));
   await page.goto("/social-share/posts?post=crease-shift&minComparisonGames=2");
   await expect(page.getByTestId("crease-shift-rank")).toHaveCount(teamCount);
   // Ten blocks and a line per starter in each row, in the PNG's own attributes.
@@ -298,7 +324,60 @@ for (const teamCount of [6, 12]) test(`crease shift: ${teamCount} ranked teams f
   await expect(page.locator('[data-testid="crease-shift-card"] svg g[data-goalie]')).toHaveCount(teamCount * 2);
   await expect(page.locator('[data-testid="crease-shift-card"] svg g[data-goalie] path').first()).toHaveAttribute("stroke", /^#/);
   await expectBodyFilled(page, "crease-shift-card");
+  await expectCreaseRowsFilled(page);
   await download(page);
+});
+
+for (const [picked, window] of [[["NJD"], 10], [["NJD"], 1], [["NJD", "NYR"], 10], [["EDM", "NJD", "TOR"], 10], [["BOS", "NJD", "NYR", "PHI"], 10], [["NJD", "NYR", "PHI", "PIT"], 20]] as const) test(`crease shift: ${picked.length} picked over ${window} game${window === 1 ? "" : "s"} stack and fill the body`, async ({ page }) => {
+  await install(page);
+  await serveCrease(page);
+  await page.goto(`/social-share/posts?post=crease-shift&minComparisonGames=2&window=${window}&teams=${picked.join(",")}`);
+  await expect(page.getByTestId("crease-shift-rank")).toHaveCount(picked.length);
+  await expect(page.getByTestId("crease-shift-card")).toHaveAttribute("data-size", `rows-${picked.length}`);
+  await expect(page.locator('[data-testid="crease-shift-card"] svg[role=img]').first()).toHaveAttribute("width", "1008");
+  await expect(page.locator('[data-testid="crease-shift-card"] svg rect[data-block]')).toHaveCount(picked.length * window);
+  await expectBodyFilled(page, "crease-shift-card");
+  await expectCreaseRowsFilled(page);
+  await download(page);
+});
+
+test("crease shift: teams are picked from a capped grid, blank goes back to the top 12, and old window links still work", async ({ page }) => {
+  await install(page);
+  // Fourteen teams, so blank shows twelve of them; an old L5 link opens a 5-game window, whose 5-game comparison is short of 6.
+  const requests = await serveCrease(page);
+  await page.goto("/social-share/posts?post=crease-shift&minComparisonGames=2&window=5");
+  await expect(page.getByTestId("crease-shift-rank")).toHaveCount(12);
+  await openOptions(page);
+  await expect(page.getByRole("spinbutton", { name: "Window (team games)" })).toHaveValue("5");
+  const grid = page.getByRole("group", { name: "Teams (up to 12)" }), box = (team: string) => grid.getByRole("checkbox", { name: team, exact: true });
+  await expect(grid.getByRole("checkbox")).toHaveCount(32);
+  await expect(page.getByText("Leave blank for the top 12 by share change.")).toBeVisible();
+
+  await box("NJD").check();
+  await expect.poll(() => requests.at(-1)?.get("teams")).toBe("NJD");
+  await expect(page.getByTestId("crease-shift-rank")).toHaveCount(1);
+  // RK is NJD's rank among every team, not 1 of 1: all fourteen tie at 0, so it is 1 here, and a short comparison prints "—".
+  await expect(page.getByTestId("crease-shift-rank")).toHaveText("1");
+  await page.getByRole("spinbutton", { name: /^Min comparison games/ }).fill("6");
+  await expect(page.getByTestId("crease-shift-rank")).toHaveText("—");
+  await expect(page.getByTestId("post-page-notes")).toContainText("NJD is unranked: Only 5 comparison games outside the window, under the minimum of 6.");
+  await expect(page.getByRole("button", { name: "Download PNG", exact: true })).toBeEnabled();
+
+  // The last box can come off: blank is the top 12 again.
+  await page.getByRole("spinbutton", { name: /^Min comparison games/ }).fill("2");
+  await box("NJD").uncheck();
+  await expect.poll(() => requests.at(-1)?.get("teams")).toBe("");
+  await expect(page.getByTestId("crease-shift-rank")).toHaveCount(12);
+
+  const twelve = ["BOS", "BUF", "DET", "EDM", "FLA", "MTL", "NJD", "NYR", "OTT", "PHI", "PIT", "TBL"];
+  for (const team of twelve) await box(team).check();
+  await expect.poll(() => requests.at(-1)?.get("teams")).toBe(twelve.join(","));
+  await expect(box("TOR")).toBeDisabled();
+  await expect(box("NJD")).toBeEnabled();
+  await expect(page.getByTestId("crease-shift-rank")).toHaveCount(12);
+  await expect(page.getByTestId("post-evidence")).toContainText(`Teams picked: ${twelve.join(", ")}; RK is each team's rank among all 14`);
+  await box("NJD").uncheck();
+  await expect(box("TOR")).toBeEnabled();
 });
 
 test("goalie of the period: a failed TGV read shows grades as unavailable and cannot export", async ({ page }) => {

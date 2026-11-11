@@ -3,7 +3,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { parseShareSettings } from "./contract";
-import { buildCreaseShift, colorDistance, CREASE_MIN_COLOR_DISTANCE, creaseColors, creaseShiftModule, editionCutoff, reconcileSchedule, type CreaseShiftData, type ScheduledGame } from "./creaseShift";
+import { buildCreaseShift, colorDistance, CREASE_MIN_COLOR_DISTANCE, creaseColors, creaseShiftModule, creaseShiftShown, editionCutoff, reconcileSchedule, type CreaseShiftData, type ScheduledGame } from "./creaseShift";
 import type { CompletedTeamGame, GoalieAppearance } from "./shared/goalieLedger";
 import { contrast, NEON_CARD } from "lib/socialShare/teamNeon";
 import { teamsInfo } from "lib/teamsInfo";
@@ -97,7 +97,7 @@ describe("blocks and running share", () => {
   const run = (starter: (index: number) => number, extra: GoalieAppearance[] = [], overrides: Partial<Parameters<typeof buildCreaseShift>[0]> = {}) => buildCreaseShift({ ...base, window: 10, minComparisonGames: 1, reported: reportBoth(twentyGames), appearances: [...twentyGames.map((_, index) => row(starter(index), "NJD", index)), ...extra], scheduled: schedule(twentyGames), ...overrides }).data!;
   const render = async (data: CreaseShiftData) => {
     const Card = await creaseShiftModule.card();
-    return new DOMParser().parseFromString(renderToStaticMarkup(createElement(Card, { data, logos: {}, settings: { window: "10", comparison: "previous", minComparisonGames: 1 }, snapshot: {} as never })), "text/html");
+    return new DOMParser().parseFromString(renderToStaticMarkup(createElement(Card, { data, logos: {}, settings: { window: 10, comparison: "previous", minComparisonGames: 1, teams: "" }, snapshot: {} as never })), "text/html");
   };
   const heads = (root: Document) => [...root.querySelectorAll('[class*="head"]')].map(entry => entry.textContent);
   it("names each game's one starter, oldest to newest", () => {
@@ -229,6 +229,55 @@ describe("blocks and running share", () => {
     expect(await height(6)).toBe(128);
     expect(await height(12) + 5).toBeLessThanOrEqual(820 / 12);
   });
+  it("stacks one to four teams over a full-width chart that grows as teams drop, inside the 797px under the header", async () => {
+    const sized = async (count: number) => {
+      const data = run(() => 1), teams = Array.from({ length: count }, (_, index) => ({ ...data.teams[0], team: `T${index}` }));
+      const root = await render({ ...data, teams }), svg = root.querySelector("svg[role=img]")!, card = root.querySelector('[data-testid="crease-shift-card"]')!;
+      const band = Number(/minmax\((\d+)px, auto\)/.exec(root.querySelector("div[style]")!.getAttribute("style")!)?.[1] ?? 0);
+      return { stacked: card.hasAttribute("data-stacked"), size: card.getAttribute("data-size"), width: Number(svg.getAttribute("width")), height: Number(svg.getAttribute("height")), band, heads: heads(root) };
+    };
+    const few = await Promise.all([1, 2, 3, 4].map(sized));
+    few.forEach((size, index) => {
+      expect(size).toMatchObject({ stacked: true, size: `rows-${index + 1}`, width: 1008 });
+      // Each row: its band, its chart and the chart cell's 5px of padding and rule.
+      expect((index + 1) * (size.band + size.height + 5)).toBeLessThanOrEqual(797);
+      expect(size.heads).not.toContain("BY GAME");
+    });
+    expect(few.map(size => size.height)).toEqual([...few.map(size => size.height)].sort((a, b) => b - a));
+    expect(few[0].height).toBeGreaterThan(600);
+    expect(few[1].height).toBeGreaterThan(200);
+    expect(few.map(size => size.band)).toEqual([...few.map(size => size.band)].sort((a, b) => b - a));
+    expect(await sized(5)).toMatchObject({ stacked: false, size: "large", width: 410 });
+    expect(await sized(12)).toMatchObject({ stacked: false, size: "small", width: 480, height: 60 });
+  });
+  /** One picked team over `count` games with `window` and a season-to-date comparison, dated past October. */
+  const long = (count: number, window: number) => {
+    const day = (index: number) => new Date(Date.UTC(2026, 9, 1 + index)).toISOString().slice(0, 10);
+    const games = Array.from({ length: count }, (_, index) => ({ gameId: 9000 + index, date: day(index), team: "NJD" }));
+    const appearances = games.map((entry, index) => ({ ...row(index % 3 ? 1 : 2, "NJD", 0, true, entry.gameId), date: entry.date }));
+    return buildCreaseShift({ ...base, window, comparison: "std", minComparisonGames: 1, picked: ["NJD"], appearances, through: day(count), ...vsPhi(games) }).data!;
+  };
+  it("draws an 84-game window as 84 blocks edge to edge, with the line but no dot once a block is under 14px", async () => {
+    const data = long(84, 84), root = await render(data), svg = root.querySelector("svg[role=img]")!, width = Number(svg.getAttribute("width"));
+    const blocks = [...svg.querySelectorAll("rect[data-block]")].map(block => ({ left: Number(block.getAttribute("x")), right: Number(block.getAttribute("x")) + Number(block.getAttribute("width")) }));
+    expect(data.teams.find(team => team.team === "NJD")!.rank).toBeNull();
+    expect(blocks).toHaveLength(84);
+    expect(blocks[0].left).toBe(0);
+    expect(blocks[83].right).toBeCloseTo(width);
+    expect(blocks.every((block, index) => !index || block.left > blocks[index - 1].right)).toBe(true);
+    expect(svg.querySelectorAll("circle")).toHaveLength(0);
+    expect(svg.querySelector('g[data-goalie="1"] path')!.getAttribute("d")).toContain(`L${width} `);
+  });
+  it("draws a 1-game window as one block across the chart and a level line to both edges", async () => {
+    const root = await render(long(2, 1)), svg = root.querySelector("svg[role=img]")!, width = Number(svg.getAttribute("width"));
+    const block = svg.querySelector("rect[data-block]")!;
+    expect(svg.querySelectorAll("rect[data-block]")).toHaveLength(1);
+    expect([Number(block.getAttribute("x")), Number(block.getAttribute("width"))]).toEqual([0, width]);
+    const d = svg.querySelector("g[data-goalie] path")!.getAttribute("d")!;
+    expect(d.startsWith("M0 ")).toBe(true);
+    expect(d.endsWith(`L${width} ${d.split(" ")[1].split("L")[0]}`)).toBe(true);
+    expect(svg.querySelectorAll("circle")).toHaveLength(1);
+  });
 });
 
 describe("goalie colours", () => {
@@ -274,7 +323,7 @@ describe("minimum comparison games", () => {
     expect(short.data!.teams[0]).toMatchObject({ comparisonGames: 4, shortComparison: true, shift: null, rank: null, withheld: "Only 4 comparison games outside the window, under the minimum of 5." });
     expect(short.data!.teams[0].goalies.every(goalie => goalie.change === null)).toBe(true);
     expect(short.evidence.cohort).toBe("0 of 1 teams ranked; 1 short comparison");
-    expect(creaseShiftModule.hasRows(short.data, { window: "5", comparison: "previous", minComparisonGames: 5 })).toBe(false);
+    expect(creaseShiftModule.hasRows(short.data, { window: 5, comparison: "previous", minComparisonGames: 5, teams: "" })).toBe(false);
   });
   it("never ranks a 1-game comparison at the default, however large the swing", () => {
     const team = run(6, 5).data!.teams[0];
@@ -294,13 +343,15 @@ describe("minimum comparison games", () => {
     const result = buildCreaseShift({ ...base, teams: ["NJD", "PHI"], minComparisonGames: 5, reported: reportBoth(list), appearances, scheduled: schedule(list) });
     expect(result.evidence.cohort).toBe("1 of 2 teams ranked; 0 short comparison");
   });
-  it("defaults to 5 and leaves the window at L10", () => {
-    expect(parseShareSettings(creaseShiftModule, {})).toEqual({ window: "10", comparison: "previous", minComparisonGames: 5 });
+  it("defaults to 5, a 10-game window and no picked teams", () => {
+    expect(parseShareSettings(creaseShiftModule, {})).toEqual({ window: 10, comparison: "previous", minComparisonGames: 5, teams: "" });
     expect(() => parseShareSettings(creaseShiftModule, { minComparisonGames: "0" })).toThrow();
+    expect(parseShareSettings(creaseShiftModule, { minComparisonGames: "84" }).minComparisonGames).toBe(84);
+    expect(() => parseShareSettings(creaseShiftModule, { minComparisonGames: "85" })).toThrow();
   });
   const render = async (result: ReturnType<typeof run>) => {
     const Card = await creaseShiftModule.card();
-    return renderToStaticMarkup(createElement(Card, { data: result.data, logos: {}, settings: { window: "5", comparison: "previous", minComparisonGames: 5 }, snapshot: {} as never }));
+    return renderToStaticMarkup(createElement(Card, { data: result.data, logos: {}, settings: { window: 5, comparison: "previous", minComparisonGames: 5, teams: "" }, snapshot: {} as never }));
   };
   it("shows short teams only as a count in the note", async () => {
     const list = games(10), other = Array.from({ length: 6 }, (_, index) => game("NYR", index, 2000 + index));
@@ -320,13 +371,107 @@ describe("minimum comparison games", () => {
     expect(root.querySelectorAll("p")).toHaveLength(1);
     expect(root.body.textContent).not.toMatch(/Showing|Unranked/);
   });
-  it("uses larger type when few teams rank, and fills the rows at any count", async () => {
+  it("stacks a lone ranked team in its largest size, and fills the rows at any count", async () => {
     const root = new DOMParser().parseFromString(await render(run(10, 5)), "text/html");
-    expect(root.querySelector('[data-testid="crease-shift-card"]')!.getAttribute("data-size")).toBe("large");
-    expect(root.querySelector('[class*="table"], div[style]')!.getAttribute("style")).toContain("repeat(1, minmax(min-content, 1fr))");
+    expect(root.querySelector('[data-testid="crease-shift-card"]')!.getAttribute("data-size")).toBe("rows-1");
+    expect(root.querySelector('[class*="table"], div[style]')!.getAttribute("style")).toMatch(/repeat\(1, minmax\(\d+px, auto\) minmax\(min-content, 1fr\)\)/);
   });
   it("uses the honest empty state when nothing qualifies", async () => {
     expect(await render(run(9, 5))).toContain("No team has both windows resolved");
+  });
+});
+
+describe("window and team settings", () => {
+  const parse = (query: Record<string, string>) => parseShareSettings(creaseShiftModule, query);
+  it("reads the old L5, L10 and L20 links as their numbers, and takes any whole window from 1 to 84", () => {
+    expect(["5", "10", "20"].map(window => parse({ window }).window)).toEqual([5, 10, 20]);
+    expect([parse({ window: "1" }).window, parse({ window: "84" }).window]).toEqual([1, 84]);
+    for (const window of ["0", "85", "10.5", ""]) expect(() => parse({ window }), window).toThrow();
+  });
+  it("takes up to 12 known teams once each, and blank for the top 12", () => {
+    expect(parse({ teams: "NJD,NYR" }).teams).toBe("NJD,NYR");
+    expect(parse({ teams: "" }).teams).toBe("");
+    const twelve = ["ANA", "BOS", "BUF", "CAR", "CBJ", "CGY", "CHI", "COL", "DAL", "DET", "EDM", "FLA"];
+    expect(parse({ teams: twelve.join(",") }).teams).toBe(twelve.join(","));
+    for (const teams of ["XXX", "NJD,NJD", "njd", [...twelve, "LAK"].join(",")]) expect(() => parse({ teams }), teams).toThrow();
+    const field = creaseShiftModule.fields.find(entry => entry.id === "teams")!;
+    expect(field).toMatchObject({ kind: "text", maxChoices: 12, blank: "the top 12 by share change" });
+    expect(field.kind === "text" && field.choices?.length).toBe(32);
+  });
+});
+
+describe("picked teams", () => {
+  const TEAMS = ["NJD", "NYR", "PHI", "PIT", "BOS", "BUF", "CAR"] as const;
+  /** G2 takes this many of each team's last 5 starts after G1 took all 5 before, so the shift is 20 points a start. */
+  const swing: Record<string, number> = { NJD: 1, NYR: 4, PHI: 2, PIT: 3, BOS: 0, BUF: 5 };
+  /** Pairs play each other; BOS and BUF play 7, so their comparison is 2 games, short of 5. CAR has no games. */
+  const pairs = [["NJD", "NYR", 10], ["PHI", "PIT", 10], ["BOS", "BUF", 7]] as const;
+  const league = () => {
+    const scheduled: ScheduledGame[] = [], reported: CompletedTeamGame[] = [], appearances: GoalieAppearance[] = [];
+    pairs.forEach(([home, away, count], pair) => Array.from({ length: count }, (_, index) => {
+      const gameId = 7000 + pair * 100 + index;
+      scheduled.push({ id: gameId, date: date(index), homeTeamId: teamsInfo[home].id, awayTeamId: teamsInfo[away].id });
+      for (const team of [home, away]) {
+        const recent = index - (count - 5);
+        reported.push(game(team, index, gameId));
+        appearances.push(row(TEAMS.indexOf(team) * 10 + (recent >= 0 && recent < swing[team] ? 2 : 1), team, index, true, gameId));
+      }
+    }));
+    return { scheduled, reported, appearances };
+  };
+  const build = (picked: string[], overrides: Partial<Parameters<typeof buildCreaseShift>[0]> = {}) => buildCreaseShift({ ...base, ...league(), teams: TEAMS, picked, window: 5, minComparisonGames: 5, ...overrides });
+  const render = async (data: CreaseShiftData) => {
+    const Card = await creaseShiftModule.card();
+    return new DOMParser().parseFromString(renderToStaticMarkup(createElement(Card, { data, logos: {}, settings: { window: 5, comparison: "previous", minComparisonGames: 5, teams: data.picked.join(",") }, snapshot: {} as never })), "text/html");
+  };
+  const ranks = (root: Document) => [...root.querySelectorAll('[data-testid="crease-shift-rank"]')].map(cell => cell.textContent);
+  const settings = (picked: string[]) => ({ window: 5, comparison: "previous", minComparisonGames: 5, teams: picked.join(",") });
+
+  it("ranks all teams and, blank, shows only the ranked ones", () => {
+    const result = build([]);
+    expect(result.data!.teams.map(team => [team.team, team.rank])).toEqual([["NYR", 1], ["PIT", 2], ["PHI", 3], ["NJD", 4], ["BOS", null], ["BUF", null], ["CAR", null]]);
+    expect(result.teams).toEqual(["NYR", "PIT", "PHI", "NJD"]);
+    expect(result.pageNotes).toBeUndefined();
+    expect(result.evidence.sample).not.toContain("Teams picked");
+  });
+  it("shows exactly the picked teams, ranked ones first by league rank, and lists them for logos and the evidence", () => {
+    const result = build(["BUF", "NJD", "PIT"]);
+    expect(creaseShiftShown(result.data!).map(team => [team.team, team.rank])).toEqual([["PIT", 2], ["NJD", 4], ["BUF", null]]);
+    expect(result.teams).toEqual(["PIT", "NJD", "BUF"]);
+    expect(result.data!.picked).toEqual(["BUF", "NJD", "PIT"]);
+    expect(result.evidence.sample).toContain("Teams picked: BUF, NJD, PIT; RK is each team's rank among all 7");
+    expect(result.evidence.cohort).toBe("4 of 7 teams ranked; 2 short comparison");
+    expect(result.pageNotes).toEqual(["BUF is unranked: Only 2 comparison games outside the window, under the minimum of 5."]);
+    expect(creaseShiftModule.hasRows(result.data, settings(["BUF", "NJD", "PIT"]))).toBe(true);
+  });
+  it("keeps RK as the league rank, never a rank among the picks, and prints a dash for an unranked pick", async () => {
+    const result = build(["BOS", "NJD"]), root = await render(result.data!);
+    expect(ranks(root)).toEqual(["4", "—"]);
+    const alt = creaseShiftModule.altText({ evidence: result.evidence } as never, result.data, settings(["BOS", "NJD"]));
+    expect(alt).toContain("4. NJD: G1 4 of 5, G2 1 of 5");
+    expect(alt).toContain("BOS (unranked): G41 5 of 5");
+    expect(alt).not.toContain("NYR");
+    // BOS's change is withheld, so its PTS reads "—", while its blocks and line draw as usual.
+    const bos = root.querySelector('svg[aria-label^="BOS"]')!;
+    expect(bos.querySelectorAll('rect[data-block="started"]')).toHaveLength(5);
+    expect(bos.querySelectorAll("g[data-goalie]")).toHaveLength(1);
+    expect(result.data!.teams.find(team => team.team === "BOS")!.goalies.every(goalie => goalie.change === null)).toBe(true);
+    expect(root.body.textContent).toContain("+20");
+  });
+  it("shows a pick with no games as dashes, and has nothing to export when no pick has a game", async () => {
+    const lone = build(["CAR"]);
+    expect(creaseShiftModule.hasRows(lone.data, settings(["CAR"]))).toBe(false);
+    expect((await render(lone.data!)).body.textContent).toContain("No completed games in this window for CAR");
+    const both = build(["CAR", "NJD"]), root = await render(both.data!);
+    expect(creaseShiftModule.hasRows(both.data, settings(["CAR", "NJD"]))).toBe(true);
+    expect(ranks(root)).toEqual(["4", "—"]);
+    expect(both.pageNotes).toEqual(["CAR is unranked: No completed games in this window."]);
+    expect(root.querySelector('svg[aria-label^="CAR"]')!.querySelectorAll("rect[data-block]")).toHaveLength(0);
+  });
+  it("adds an unranked pick's note after a late night's note", () => {
+    const appearances = twenty.map((_, index) => row(1, "NJD", index)), reported = reportBoth(twenty).filter(entry => !(entry.gameId === 1009 && entry.team === "NJD"));
+    const result = buildCreaseShift({ ...base, minComparisonGames: 10, picked: ["NJD"], reported, appearances, scheduled: schedule(twenty) });
+    expect(result.pageNotes).toEqual(["Oct 10 is not fully reported yet, so this card ends Oct 9.", "NJD is unranked: Only 4 comparison games outside the window, under the minimum of 10."]);
   });
 });
 
@@ -350,7 +495,7 @@ describe("schedule reconciliation", () => {
     expect(njd).toMatchObject({ games: 5, lastDate: "2026-10-09", missingGames: 0 });
     expect(njd.goalies.map(goalie => goalie.goalieId)).toEqual([1]);
     expect(result.evidence.coverage).toEqual({ observed: 18, expected: 18, missing: 0, unit: "team games" });
-    expect(creaseShiftModule.hasRows(result.data, { window: "5", comparison: "previous", minComparisonGames: 1 })).toBe(true);
+    expect(creaseShiftModule.hasRows(result.data, { window: 5, comparison: "previous", minComparisonGames: 1, teams: "" })).toBe(true);
   });
   it("still blocks an older gap when the newest night is also late", () => {
     const reported = reportBoth(twenty).filter(entry => entry.gameId !== 1009 && !(entry.gameId === 1002 && entry.team === "NYR"));
@@ -377,18 +522,18 @@ describe("crease shift card", () => {
   const load = buildCreaseShift({ ...base, reported: reportBoth(twenty), appearances, scheduled: schedule(twenty) });
   const render = async (data: CreaseShiftData) => {
     const Card = await creaseShiftModule.card();
-    return renderToStaticMarkup(createElement(Card, { data, logos: {}, settings: { window: "5", comparison: "previous", minComparisonGames: 1 }, snapshot: {} as never }));
+    return renderToStaticMarkup(createElement(Card, { data, logos: {}, settings: { window: 5, comparison: "previous", minComparisonGames: 1, teams: "" }, snapshot: {} as never }));
   };
   it("names official starts and team games, and claims nothing about the next start", async () => {
     const html = await render(load.data!);
     expect(load.evidence.sample).toContain("Official starts ÷ completed team games");
     expect(html).toContain("60%");
     expect(html).not.toMatch(/probab|likely|odds|expected to start|will start|appearance share/i);
-    expect(creaseShiftModule.altText({ evidence: load.evidence } as never, load.data, { window: "5", comparison: "previous", minComparisonGames: 1 })).not.toMatch(/probab|likely|odds|will start/i);
+    expect(creaseShiftModule.altText({ evidence: load.evidence } as never, load.data, { window: 5, comparison: "previous", minComparisonGames: 1, teams: "" })).not.toMatch(/probab|likely|odds|will start/i);
   });
   it("has nothing to export when no team resolves", async () => {
     const empty = buildCreaseShift({ ...base, reported: [], appearances: [], scheduled: [] });
-    expect(creaseShiftModule.hasRows(empty.data, { window: "5", comparison: "previous", minComparisonGames: 1 })).toBe(false);
+    expect(creaseShiftModule.hasRows(empty.data, { window: 5, comparison: "previous", minComparisonGames: 1, teams: "" })).toBe(false);
     expect(await render(empty.data!)).toContain("No team has both windows resolved");
   });
   it("leaves the appearance pie alone: this post reads no appearance share", () => {
