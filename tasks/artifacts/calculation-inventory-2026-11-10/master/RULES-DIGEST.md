@@ -1,6 +1,6 @@
 # Math audit: binding rules digest (Chef, 2026-11-11)
 
-One-line form of `OWNER-DECISIONS.md` 1–80 and the consolidations' cross-cutting rules 1–12. It is binding. Where the code differs from a decision, that is a defect. Open `OWNER-DECISIONS.md` only for the numbered decisions your packet touches; it holds the full wording and wins on any conflict.
+One-line form of `OWNER-DECISIONS.md` 1–82 and the consolidations' cross-cutting rules 1–12. It is binding. Where the code differs from a decision, that is a defect. Open `OWNER-DECISIONS.md` only for the numbered decisions your packet touches; it holds the full wording and wins on any conflict.
 
 ## Cross-cutting rules (apply to every finding and test)
 1. Magnitudes are dated samples: give the sample size, date and reproducible inputs, never population rates.
@@ -109,6 +109,9 @@ One-line form of `OWNER-DECISIONS.md` 1–80 and the consolidations' cross-cutti
 79. External `/forge/scoreboard` use is unknown: investigate, keep the contract, and set priority from evidence.
 
 80. The other sKO variants (legacy points × stability, sustainability v3, `combineSKO`) are kept, defined and renamed. Blend them into sKO only if evidence shows they're useful; none is deleted. sKO/VuDu definitions: `OWNER-INTENT-SKO-VUDU.md`.
+
+81. WiGO PP/PK cohorts: a visible, user-lowerable per-strength minutes floor (split-half validated) and separate F/D cohorts.
+82. Share cards show the goalie's credited W-L-OTL, or unavailable if any decision is unknown.
 
 **Process**
 4. Auditors may run bounded reads under the read-hygiene rules (see the prompt).

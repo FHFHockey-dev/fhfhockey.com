@@ -11,7 +11,7 @@ You are **Chef for the math-audit fix sprint** on FHFHockey.com, a fantasy-hocke
 A three-wave math audit is finished:
 - 35 packets and 1,358 calculations, each audited by Fable and peer-reviewed by Codex "Astra";
 - consolidated per batch and wave;
-- 80 binding owner decisions.
+- 82 binding owner decisions.
 
 Your job is to turn the findings into **fix lanes**, run them as Opus sessions, gate production steps with TJ, write the debrief, and hand the sprint to Astra for audit. All paths below are under `tasks/artifacts/calculation-inventory-2026-11-10/master/` unless stated.
 
@@ -20,7 +20,7 @@ Your job is to turn the findings into **fix lanes**, run them as Opus sessions, 
    - lanes cover all three waves;
    - production actions need TJ's pop-up **per action**;
    - at most **4 lanes at once**.
-2. `RULES-DIGEST.md`: decisions 1–80 and cross-cutting rules 1–12, one line each. Also read the "New cross-cutting rules (13 onward)" sections of `WAVE2-CONSOLIDATED.md` and `WAVE3-CONSOLIDATED.md`. Open `OWNER-DECISIONS.md` for the full text of any decision a lane applies. `OWNER-INTENT-SKO-VUDU.md` is binding for sKO and VuDu.
+2. `RULES-DIGEST.md`: decisions 1–82 and cross-cutting rules 1–12, one line each. Also read the "New cross-cutting rules (13 onward)" sections of `WAVE2-CONSOLIDATED.md` and `WAVE3-CONSOLIDATED.md`. Open `OWNER-DECISIONS.md` for the full text of any decision a lane applies. `OWNER-INTENT-SKO-VUDU.md` is binding for sKO and VuDu.
 3. The P0 lists and cross-packet maps:
    - `BATCH-BC-CONSOLIDATED.md` "Wave 1 P0 list" and "Cross-packet defect map" (Wave 1 includes Batch A);
    - `WAVE2-CONSOLIDATED.md` "Wave 2 P0 list", "Cross-packet defect map (Wave 2)", "Owner decisions still open" and **"Suggested fix-lane grouping"** (draft lanes L1–L15 plus Codex BLSH, with an order);

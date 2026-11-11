@@ -293,3 +293,9 @@ Source: `WAVE2-CONSOLIDATED.md`, "Owner decisions still open" Q1, 5, 6, 9, 18, 1
 The binding definitions are in `OWNER-INTENT-SKO-VUDU.md` (TJ, written with Codex, 2026-11-11). w3-7 is handed to Astra.
 
 80. **The other sKO variants are kept and defined, not discarded.** The legacy points × stability score, sustainability "sKO score model v3" and `combineSKO` all describe the *likelihood of sustaining current production relative to baselines*. Each gets a written definition and its own name. Any of them may be blended into sKO **if evidence shows it is useful** (decision 32: inputs and weights earn their place out of sample). None is reinstated as sKO merely to resolve the name, and none is deleted (rule 6).
+
+## Decisions on the Wave 3 consolidation's Tier A questions (TJ, 2026-11-11, by pop-up)
+Source: `WAVE3-CONSOLIDATED.md`, "Owner decisions still open" Q42 and Q49. The 15 Tier B questions (and Wave 2's 29) are asked by pop-up when the lane that needs them starts.
+
+81. **WiGO PP/PK cohorts get a per-strength minutes floor, and forwards and defencemen are compared separately.** (Q42, W3-1 D3) The floor is visible and user-lowerable (the Wave 2 sample-floor pattern), validated by split-half stability, with "insufficient sample" shown below it.
+82. **Share cards show the goalie's credited W-L-OTL**, extending decision 72; the record is unavailable if any decision is unknown. (Q49, W3-3 D2)
