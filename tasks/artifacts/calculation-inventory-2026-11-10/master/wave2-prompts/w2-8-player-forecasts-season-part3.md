@@ -1,50 +1,42 @@
-# Fable Wave 2 audit prompt: w2-8 · player-forecasts-season-part3
+# Fable Wave 2 audit prompt: w2-8 · player-forecasts-season-part3 (slim)
 
-Copy everything below the line into a **new** Fable session opened on `/Users/tim/Code/fhfhockey.com`.
+Copy everything below the line into a **new** Fable session opened on `/Users/tim/Code/fhfhockey.com`. This is the token-lean version: the context is pre-digested, so read only what is listed.
 
 ---
 
-You are auditing the mathematics and methodology of one calculation area of FHFHockey.com, a fantasy-hockey analytics site: Next.js in `web/`, Python in `functions/` and `modeling/`, SQL in `supabase/migrations/`, data in Supabase Postgres. Your job is a **skeptical, evidence-based audit**. Is each calculation correct, grounded in its stated definition, logically sound, and consistent with how the hockey-analytics and fantasy communities define it? Where no single community formula exists, judge internal soundness and honest labelling.
+You are auditing the mathematics and methodology of one calculation area of FHFHockey.com, a fantasy-hockey analytics site: Next.js in `web/`, Python in `functions/` and `modeling/`, SQL in `supabase/migrations/`, data in Supabase Postgres. Do a **skeptical, evidence-based audit**: is each calculation correct, true to its stated definition, logically sound, and consistent with how the hockey-analytics and fantasy communities define it? Where no community formula exists, judge internal soundness and honest labelling.
 
-## Your scope
-- Packet: `tasks/artifacts/calculation-inventory-2026-11-10/master/packets/player-forecasts-season-part3.md` (entries, intent, references, fixtures, leads).
-- Your brief: TRIAGE.md gives only a one-line reason for this packet (section 1 table row "player-forecasts-season-part3") plus the owner-intent gaps in section 4. **Write your own brief first, as section 0 of your report:** the questions to answer, the reference standards (credible public definitions, cited by name; don't invent citations), the fixtures and data to test with, and the done-criteria. Then execute it.
-- Extra scope: Includes the planning-contribution resolver that feeds RSO, and the goalie start-mass check (C20). Owner decisions 47–49 and the Batch A rule 'keep unknowns unknown' apply.
+All paths below are under `tasks/artifacts/calculation-inventory-2026-11-10/master/` unless they start with `web/`, `functions/`, `modeling/` or `supabase/`.
 
-## Read first (binding context)
-- `tasks/artifacts/calculation-inventory-2026-11-10/master/OWNER-DECISIONS.md`: decisions 1–60 are the owner's intended contract. Where the code differs, it is a defect.
-- `tasks/artifacts/calculation-inventory-2026-11-10/master/BATCH-A-CONSOLIDATED.md` and `tasks/artifacts/calculation-inventory-2026-11-10/master/BATCH-BC-CONSOLIDATED.md`: Wave 1 findings merged with peer reviews. Their cross-cutting rules are mandatory:
-  - quote magnitudes as dated samples with their sample size;
-  - treat AUC and Brier as alarms, not proofs;
-  - test invariants must be mathematically right;
-  - fix every reader, not just a flag;
-  - unknowns stay unknown;
-  - no deletion because of a math finding.
-- `tasks/artifacts/calculation-inventory-2026-11-10/master/TRIAGE.md` (ranking, dependencies, section 4 undocumented intent) and `tasks/artifacts/calculation-inventory-2026-11-10/master/MASTER.md`. The inventory's "leads" are hypotheses, not findings.
-- The Wave 1 audits in `tasks/artifacts/calculation-inventory-2026-11-10/master/audits/` that are upstream of your area: cite them rather than re-auditing them.
+## Read these, and only these, before the code
+1. `RULES-DIGEST.md` (about 10 KB): owner decisions 1–68 and cross-cutting rules 1–12, one line each. **Binding**: where code differs from a decision, it is a defect. For this packet the key decisions are 3, 25, 41, 47–49, 63 and 67 (unknown players, goalie candidate rows, ledger basis, RSO coverage and unknown drops, relief in unconditional goalie lines); rules 5 and 9 matter most here. Open `OWNER-DECISIONS.md` only to read the full text of a numbered decision you are applying.
+2. `packets-slim/player-forecasts-season-part3.md`: your entries (boilerplate removed). The inventory's leads are hypotheses, not findings. Open `packets/player-forecasts-season-part3.md` only when a slim entry says "full text in the original packet" and you need it.
+3. Upstream context: `BATCH-BC-CONSOLIDATED.md`, sections "W1-8 · Player forecasts and season models" and "W1-11 · RSO / roster optimizer" plus the M-PFC and M-RSO rows of "Cross-packet defect map" and "Wave 1 P0 list". Upstream audits: `audits/player-forecasts-season-part1.md` and `audits/rso-roster-optimizer.md` (summaries and defects only).
+
+**Do not read** `MASTER.md`, `TRIAGE.md`, `BATCH-A-CONSOLIDATED.md`, all of `BATCH-BC-CONSOLIDATED.md`, or other audits in full. What you need from them is here:
+- Triage: Rank 18 (M): the planning-contribution resolver feeds RSO; the goalie start-mass check only rejects sums above 1. Confirmed issue C20 (L): `web/lib/player-forecasts/planningContributions.ts:112` rejects only start-probability sums above 1, so a team summing to 0.6 passes and team goalie starts are under-allocated without warning (M-PFC-122). Feeds: part 1/2 and FORGE → RSO, Start Chart. The Codex-only SQL records in this packet were covered by the SQL cross-cut (`audits/sql-cross-cut.md`): cite it rather than re-reading the SQL.
 
 ## Method
-1. For every entry, read the code at the cited location (line numbers drift; re-locate by symbol) and trace the data from source to consumers.
-2. Classify each entry: **sound**, **mis-specified** (works as coded, but not what it claims or intends), **wrong** (a defect), or **undetermined** (say what would settle it). Cite file:line for every claim.
-3. For each defect, estimate its **magnitude** on real or fixture data where you can, and name the downstream readers.
-4. Compare against the reference standards. Flag deliberate FHFH differences and whether the label says so.
-5. Recommend a fix and a test for each defect. **Change no code.**
-6. Keep your evidence reproducible. Save any query text and its id/date bounds into the report's limits section. Scratch scripts must be described well enough to re-run.
+- **Write a short brief first** as section 0 (≤ 15 lines): questions, reference standards (credible public definitions cited by name; don't invent citations), the fixtures/data you'll use, done-criteria.
+- For each entry: locate the code by symbol (line numbers drift), and read **only the function and its direct callers** with `rg -n` and narrow `sed -n` ranges, not whole files. Trace data from source to consumers.
+- Classify each entry: **sound**, **mis-specified** (works as coded, but not what it claims or intends), **wrong** (a defect), or **undetermined** (say what would settle it). Cite file:line.
+- For each defect: magnitude on real or fixture data where you can (dated, with sample size), downstream readers, a fix, and a valid test. **Change no code.**
+- Keep evidence reproducible: put query text and id/date bounds in the limits section.
+- **No sub-agents.** Work in one pass. Don't re-read a file you have already read.
 
 ## Database rules (owner-approved)
-- Read-only. Check `pg_stat_activity` before each heavier read; stop if more than 5 queries are active or any query has run longer than 10 s.
+- Read-only. Check `pg_stat_activity` before each heavier read; stop if more than 5 queries are active or any has run longer than 10 s.
 - Allowed: small LIMIT-ed reads by id or date; catalog reads (`pg_proc`, `pg_views`, `pg_matviews`); server-side aggregates on indexed columns.
-- Not allowed: **no jsonb/payload reads, no whole-table jsonb detoast, no unbounded joins, no full scans of large tables**, no writes. (A Wave 1 auditor broke this once; the database crashed on 2026-11-09 after heavy diagnostic reads.)
+- Not allowed: jsonb/payload reads, whole-table jsonb detoast, unbounded joins, full scans of large tables, any writes.
 - No NST, NHL API or Yahoo calls. Don't print secrets. Never set GIT_DIR. No migrations, cron routes or deployments.
-- Keep sub-agents to a minimum: the owner's usage window is limited.
 
-## Output
-Write `tasks/artifacts/calculation-inventory-2026-11-10/master/audits/player-forecasts-season-part3.md` with:
-- section 0 (your brief, if you wrote one);
-- a summary with verdict counts and the top 5 findings by user impact;
-- the per-entry table (id, verdict, evidence, reference, magnitude, downstream);
-- defects with fix, test and priority (P0 = user-visible wrong numbers now, P1, P2);
-- owner questions not already answered by decisions 1–60;
+## Output (keep it tight: about 15 KB, never more than 25 KB)
+Write `audits/player-forecasts-season-part3.md` with:
+- section 0, the brief;
+- a summary: verdict counts and the top 5 findings by user impact;
+- a per-entry table with **one short line per entry** (id, verdict, evidence file:line, reach live/conditional/dormant/research, downstream). Sound entries need no prose;
+- defects only in detail: fix, test, priority (P0 = user-visible wrong numbers now, P1, P2), reach;
+- owner questions **not already answered by decisions 1–68**;
 - limits.
 
-Commit only that file on `octoberBranch` (no push). Finish with a short report: verdict counts, P0 defects, and open questions.
+Commit only that file on `octoberBranch` (no push). Finish with a short report: verdict counts, P0 defects, open questions.
