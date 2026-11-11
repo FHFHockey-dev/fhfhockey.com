@@ -16,6 +16,7 @@ import {
 } from "./trendsSurface";
 import {
   combineSkillMinusLuckComposite,
+  computeMidRankPercentiles,
   computeLuck,
   computeLuckDeltas,
   summarizePairedCorrelation
@@ -285,5 +286,25 @@ describe("team temperature lists (W3-3 D8)", () => {
     );
     expect(forward).toEqual(["BBB", "CCC", "AAA"]);
     expect(reversed).toEqual(forward);
+  });
+});
+
+describe("computeMidRankPercentiles (D10)", () => {
+  it("shares mid-ranks across ties, mirrors for lower-is-better, ignores order", () => {
+    const entries = [
+      { key: "a", value: 2 },
+      { key: "b", value: 7 },
+      { key: "c", value: 2 },
+      { key: "d", value: 9 },
+      { key: "e", value: 2 }
+    ];
+    const forward = computeMidRankPercentiles(entries);
+    // Three ties at positions 0–2 of 0–4 → mid-rank 1 → 25.
+    expect([forward.get("a"), forward.get("c"), forward.get("e")]).toEqual([25, 25, 25]);
+    expect(forward.get("b")).toBe(75);
+    expect(forward.get("d")).toBe(100);
+    expect(computeMidRankPercentiles([...entries].reverse())).toEqual(forward);
+    expect(computeMidRankPercentiles(entries, false).get("d")).toBe(0);
+    expect(computeMidRankPercentiles([{ key: "x", value: 1 }]).get("x")).toBe(50);
   });
 });

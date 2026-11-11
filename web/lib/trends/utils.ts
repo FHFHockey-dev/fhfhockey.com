@@ -34,6 +34,39 @@ export function percentile(xs: number[], x: number): number {
   return (idx / (sorted.length - 1)) * 100;
 }
 
+/**
+ * Mid-rank percentiles on 0–100 within one cohort (BA W1-3 D10): equal values
+ * share the mean of their positions, so ties never get different raw
+ * percentiles and the result does not depend on input order. A single entry
+ * is 50. `higherIsBetter=false` mirrors the scale.
+ */
+export function computeMidRankPercentiles<TKey>(
+  entries: ReadonlyArray<{ key: TKey; value: number }>,
+  higherIsBetter = true
+): Map<TKey, number> {
+  const result = new Map<TKey, number>();
+  if (entries.length === 0) return result;
+  if (entries.length === 1) {
+    result.set(entries[0].key, 50);
+    return result;
+  }
+  const sorted = [...entries].sort((a, b) => a.value - b.value);
+  const denom = sorted.length - 1;
+  let start = 0;
+  while (start < sorted.length) {
+    let end = start;
+    while (end + 1 < sorted.length && sorted[end + 1].value === sorted[start].value) {
+      end += 1;
+    }
+    const percentile = (((start + end) / 2) / denom) * 100;
+    for (let index = start; index <= end; index += 1) {
+      result.set(sorted[index].key, higherIsBetter ? percentile : 100 - percentile);
+    }
+    start = end + 1;
+  }
+  return result;
+}
+
 export function winsorize(xs: number[], p = 0.01): number[] {
   if (!xs.length) return xs;
   const sorted = [...xs].sort((a, b) => a - b);

@@ -25,289 +25,161 @@ describe("rollingHistoricalAverages", () => {
     });
   });
 
-  it("computes healthy one-team availability as full participation across season, 3YA, career, and rolling windows", () => {
-    const acc = createHistoricalGpPctAccumulator();
-    [1, 2, 3, 4].forEach((teamGamesPlayed) => {
+  // Decision 16: availability follows the team of record by date. These
+  // replace the pre-decision tests that pinned current-team-only windows.
+  const days = (from: number, to: number, month = "11") =>
+    Array.from({ length: to - from + 1 }, (_, i) =>
+      `2025-${month}-${String(from + i).padStart(2, "0")}`
+    );
+  const feed = (
+    acc: ReturnType<typeof createHistoricalGpPctAccumulator>,
+    rows: Array<{
+      date: string;
+      teamId: number | null;
+      schedule: string[] | null;
+      played?: boolean;
+      season?: number;
+      regularSeason?: boolean;
+    }>
+  ) =>
+    rows.forEach((row) =>
       updateHistoricalGpPctAccumulator(acc, {
-        season: 20252026,
-        teamId: 10,
-        playedThisGame: true,
-        teamGamesPlayed
-      });
-    });
+        season: row.season ?? 20252026,
+        teamId: row.teamId,
+        date: row.date,
+        playedThisGame: row.played ?? true,
+        teamScheduleDates: row.schedule,
+        regularSeason: row.regularSeason
+      })
+    );
 
-    expect(getHistoricalGpPctSnapshot(acc, 20252026)).toEqual({
-      season: 1,
-      threeYear: 1,
-      career: 1,
-      seasonPlayerGames: 4,
-      seasonTeamGames: 4,
-      threeYearPlayerGames: 4,
-      threeYearTeamGames: 4,
-      careerPlayerGames: 4,
-      careerTeamGames: 4
-    });
+  it("reproduces TJ's worked example: (3 + 5) / (4 + 6) after a trade", () => {
+    // Team A plays 11-01, 11-02, 11-04, 11-05; the player misses 11-04.
+    // Traded; team B plays 11-06 … 11-11; the player misses 11-08.
+    const teamA = ["2025-11-01", "2025-11-02", "2025-11-04", "2025-11-05", "2025-11-08"];
+    const teamB = days(6, 11);
+    const acc = createHistoricalGpPctAccumulator();
+    feed(acc, [
+      { date: "2025-11-01", teamId: 1, schedule: teamA },
+      { date: "2025-11-02", teamId: 1, schedule: teamA },
+      { date: "2025-11-05", teamId: 1, schedule: teamA },
+      ...["2025-11-06", "2025-11-07", "2025-11-09", "2025-11-10", "2025-11-11"].map(
+        (date) => ({ date, teamId: 2, schedule: teamB })
+      )
+    ]);
 
-    expect(
-      getRollingGpPctSnapshot(acc, {
-        currentSeason: 20252026,
-        currentTeamId: 10,
-        currentTeamGamesPlayed: 4
-      }).windows
-    ).toEqual({
-      3: { playerGames: 3, teamGames: 3, ratio: 1 },
-      5: { playerGames: 4, teamGames: 4, ratio: 1 },
-      10: { playerGames: 4, teamGames: 4, ratio: 1 },
-      20: { playerGames: 4, teamGames: 4, ratio: 1 }
+    expect(getRollingGpPctSnapshot(acc, { currentSeason: 20252026 }).windows[10]).toEqual({
+      playerGames: 8,
+      teamGames: 10,
+      ratio: 0.8
+    });
+    expect(getHistoricalGpPctSnapshot(acc, 20252026)).toMatchObject({
+      season: 0.8,
+      seasonPlayerGames: 8,
+      seasonTeamGames: 10
     });
   });
 
-  it("computes season, 3-year, and career gp ratios across season stints", () => {
+  it("does not re-add the new team's earlier games after a trade", () => {
+    // Team B played 12 games before the trade; only the 5 after count.
+    const teamA = days(1, 10);
+    const teamB = [...days(1, 12, "10"), ...days(11, 15)];
     const acc = createHistoricalGpPctAccumulator();
-    updateHistoricalGpPctAccumulator(acc, {
-      season: 20252026,
-      teamId: 1,
-      playedThisGame: true,
-      teamGamesPlayed: 10
-    });
-    updateHistoricalGpPctAccumulator(acc, {
-      season: 20252026,
-      teamId: 2,
-      playedThisGame: true,
-      teamGamesPlayed: 8
-    });
-    updateHistoricalGpPctAccumulator(acc, {
-      season: 20242025,
-      teamId: 2,
-      playedThisGame: true,
-      teamGamesPlayed: 5
-    });
-    updateHistoricalGpPctAccumulator(acc, {
-      season: 20252026,
-      teamId: 1,
-      playedThisGame: true,
-      teamGamesPlayed: 12
-    });
-
-    expect(getHistoricalGpPctSnapshot(acc, 20252026)).toEqual({
-      season: 0.15,
-      threeYear: Number((4 / 25).toFixed(6)),
-      career: Number((4 / 25).toFixed(6)),
-      seasonPlayerGames: 3,
-      seasonTeamGames: 20,
-      threeYearPlayerGames: 4,
-      threeYearTeamGames: 25,
-      careerPlayerGames: 4,
-      careerTeamGames: 25
-    });
-  });
-
-  it("counts missed games in the denominator for availability scopes", () => {
-    const acc = createHistoricalGpPctAccumulator();
-    updateHistoricalGpPctAccumulator(acc, {
-      season: 20252026,
-      teamId: 20,
-      playedThisGame: true,
-      teamGamesPlayed: 1
-    });
-    updateHistoricalGpPctAccumulator(acc, {
-      season: 20252026,
-      teamId: 20,
-      playedThisGame: false,
-      teamGamesPlayed: 2
-    });
-    updateHistoricalGpPctAccumulator(acc, {
-      season: 20252026,
-      teamId: 20,
-      playedThisGame: false,
-      teamGamesPlayed: 3
-    });
-    updateHistoricalGpPctAccumulator(acc, {
-      season: 20242025,
-      teamId: 20,
-      playedThisGame: true,
-      teamGamesPlayed: 4
-    });
-
-    expect(getHistoricalGpPctSnapshot(acc, 20252026)).toEqual({
-      season: Number((1 / 3).toFixed(6)),
-      threeYear: Number((2 / 7).toFixed(6)),
-      career: Number((2 / 7).toFixed(6)),
-      seasonPlayerGames: 1,
-      seasonTeamGames: 3,
-      threeYearPlayerGames: 2,
-      threeYearTeamGames: 7,
-      careerPlayerGames: 2,
-      careerTeamGames: 7
-    });
-  });
-
-  it("keeps season availability player-centered after a trade instead of collapsing to the current team bucket", () => {
-    const acc = createHistoricalGpPctAccumulator();
-    updateHistoricalGpPctAccumulator(acc, {
-      season: 20252026,
-      teamId: 1,
-      playedThisGame: true,
-      teamGamesPlayed: 4
-    });
-    updateHistoricalGpPctAccumulator(acc, {
-      season: 20252026,
-      teamId: 1,
-      playedThisGame: true,
-      teamGamesPlayed: 9
-    });
-    updateHistoricalGpPctAccumulator(acc, {
-      season: 20252026,
-      teamId: 1,
-      playedThisGame: false,
-      teamGamesPlayed: 12
-    });
-    updateHistoricalGpPctAccumulator(acc, {
-      season: 20252026,
-      teamId: 2,
-      playedThisGame: true,
-      teamGamesPlayed: 3
-    });
-    updateHistoricalGpPctAccumulator(acc, {
-      season: 20252026,
-      teamId: 2,
-      playedThisGame: false,
-      teamGamesPlayed: 8
-    });
+    feed(acc, [
+      ...teamA.map((date) => ({ date, teamId: 1, schedule: teamA })),
+      ...days(11, 15).map((date) => ({ date, teamId: 2, schedule: teamB }))
+    ]);
 
     expect(getHistoricalGpPctSnapshot(acc, 20252026)).toMatchObject({
-      season: 0.15,
-      seasonPlayerGames: 3,
-      seasonTeamGames: 20
+      season: 1,
+      seasonPlayerGames: 15,
+      seasonTeamGames: 15
+    });
+    // A player who missed nothing reads N of N across the trade.
+    expect(getRollingGpPctSnapshot(acc, { currentSeason: 20252026 }).windows[10]).toEqual({
+      playerGames: 10,
+      teamGames: 10,
+      ratio: 1
     });
   });
 
-  it("accumulates cross-stint historical gp scopes directly and excludes seasons outside 3YA", () => {
+  it("counts missed team games between appearances in the denominator", () => {
+    const schedule = days(1, 6);
     const acc = createHistoricalGpPctAccumulator();
-    updateHistoricalGpPctAccumulator(acc, {
-      season: 20252026,
-      teamId: 1,
-      playedThisGame: true,
-      teamGamesPlayed: 10
-    });
-    updateHistoricalGpPctAccumulator(acc, {
-      season: 20252026,
-      teamId: 2,
-      playedThisGame: false,
-      teamGamesPlayed: 5
-    });
-    updateHistoricalGpPctAccumulator(acc, {
-      season: 20242025,
-      teamId: 3,
-      playedThisGame: true,
-      teamGamesPlayed: 20
-    });
-    updateHistoricalGpPctAccumulator(acc, {
-      season: 20232024,
-      teamId: 4,
-      playedThisGame: false,
-      teamGamesPlayed: 7
-    });
-    updateHistoricalGpPctAccumulator(acc, {
-      season: 20232024,
-      teamId: 5,
-      playedThisGame: true,
-      teamGamesPlayed: 4
-    });
-    updateHistoricalGpPctAccumulator(acc, {
-      season: 20222023,
-      teamId: 6,
-      playedThisGame: true,
-      teamGamesPlayed: 9
-    });
+    feed(acc, [
+      { date: "2025-11-01", teamId: 7, schedule },
+      { date: "2025-11-05", teamId: 7, schedule },
+      { date: "2025-11-06", teamId: 7, schedule, played: false }
+    ]);
 
-    expect(acc.bySeason.get(20252026)).toEqual({
+    expect(getHistoricalGpPctSnapshot(acc, 20252026)).toMatchObject({
+      season: Number((2 / 6).toFixed(6)),
+      seasonPlayerGames: 2,
+      seasonTeamGames: 6
+    });
+    expect(getRollingGpPctSnapshot(acc, { currentSeason: 20252026 }).windows[3]).toEqual({
       playerGames: 1,
-      teamGames: 15
-    });
-    expect(acc.bySeason.get(20232024)).toEqual({
-      playerGames: 1,
-      teamGames: 11
-    });
-    expect(acc.careerPlayerGames).toBe(4);
-    expect(acc.careerTeamGames).toBe(55);
-
-    expect(getHistoricalGpPctSnapshot(acc, 20252026)).toEqual({
-      season: Number((1 / 15).toFixed(6)),
-      threeYear: Number((3 / 46).toFixed(6)),
-      career: Number((4 / 55).toFixed(6)),
-      seasonPlayerGames: 1,
-      seasonTeamGames: 15,
-      threeYearPlayerGames: 3,
-      threeYearTeamGames: 46,
-      careerPlayerGames: 4,
-      careerTeamGames: 55
+      teamGames: 3,
+      ratio: Number((1 / 3).toFixed(6))
     });
   });
 
-  it("computes rolling gp windows from exact current-team team-game windows", () => {
+  it("starts an incumbent's season at the team's first game", () => {
+    const lastSeason = ["2025-04-10", "2025-04-12"];
+    const thisSeason = days(1, 4, "10");
     const acc = createHistoricalGpPctAccumulator();
-    [1, 3, 4, 7, 8].forEach((teamGamesPlayed) => {
-      updateHistoricalGpPctAccumulator(acc, {
-        season: 20252026,
-        teamId: 10,
-        playedThisGame: true,
-        teamGamesPlayed
-      });
-    });
-    [2, 5].forEach((teamGamesPlayed) => {
-      updateHistoricalGpPctAccumulator(acc, {
-        season: 20252026,
-        teamId: 11,
-        playedThisGame: true,
-        teamGamesPlayed
-      });
-    });
+    feed(acc, [
+      { date: "2025-04-12", teamId: 3, schedule: lastSeason, season: 20242025 },
+      // Misses the first two games of the new season with the same team.
+      { date: "2025-10-03", teamId: 3, schedule: thisSeason },
+      { date: "2025-10-04", teamId: 3, schedule: thisSeason }
+    ]);
 
-    expect(
-      getRollingGpPctSnapshot(acc, {
-        currentSeason: 20252026,
-        currentTeamId: 10,
-        currentTeamGamesPlayed: 8
-      }).windows
-    ).toEqual({
-      3: { playerGames: 2, teamGames: 3, ratio: Number((2 / 3).toFixed(6)) },
-      5: { playerGames: 3, teamGames: 5, ratio: 0.6 },
-      10: { playerGames: 5, teamGames: 8, ratio: 0.625 },
-      20: { playerGames: 5, teamGames: 8, ratio: 0.625 }
+    expect(getHistoricalGpPctSnapshot(acc, 20252026)).toMatchObject({
+      season: 0.5,
+      seasonTeamGames: 4
     });
   });
 
-  it("uses exact current-team windows after a trade and excludes prior-team appearances", () => {
+  it("skips preseason and playoff rows", () => {
+    const schedule = days(1, 2);
     const acc = createHistoricalGpPctAccumulator();
-    [10, 11, 12].forEach((teamGamesPlayed) => {
-      updateHistoricalGpPctAccumulator(acc, {
-        season: 20252026,
-        teamId: 1,
-        playedThisGame: true,
-        teamGamesPlayed
-      });
-    });
-    [2, 4, 9, 12].forEach((teamGamesPlayed) => {
-      updateHistoricalGpPctAccumulator(acc, {
-        season: 20252026,
-        teamId: 2,
-        playedThisGame: true,
-        teamGamesPlayed
-      });
-    });
+    feed(acc, [
+      { date: "2025-09-25", teamId: 4, schedule, regularSeason: false },
+      { date: "2025-11-01", teamId: 4, schedule },
+      { date: "2025-11-02", teamId: 4, schedule }
+    ]);
 
-    expect(
-      getRollingGpPctSnapshot(acc, {
-        currentSeason: 20252026,
-        currentTeamId: 2,
-        currentTeamGamesPlayed: 12
-      }).windows
-    ).toEqual({
-      3: { playerGames: 1, teamGames: 3, ratio: Number((1 / 3).toFixed(6)) },
-      5: { playerGames: 2, teamGames: 5, ratio: 0.4 },
-      10: { playerGames: 3, teamGames: 10, ratio: 0.3 },
-      20: { playerGames: 4, teamGames: 12, ratio: Number((4 / 12).toFixed(6)) }
+    expect(getHistoricalGpPctSnapshot(acc, 20252026)).toMatchObject({
+      season: 1,
+      seasonPlayerGames: 2,
+      seasonTeamGames: 2
+    });
+  });
+
+  it("leaves availability unknown, never clamped, when the team of record is unknown", () => {
+    const schedule = days(1, 2);
+    const acc = createHistoricalGpPctAccumulator();
+    feed(acc, [
+      // An older season with no team abbreviation on the log row.
+      { date: "2023-01-10", teamId: null, schedule: null, season: 20222023 },
+      { date: "2023-01-12", teamId: null, schedule: null, season: 20222023 },
+      { date: "2025-11-01", teamId: 5, schedule },
+      { date: "2025-11-02", teamId: 5, schedule }
+    ]);
+
+    const snapshot = getHistoricalGpPctSnapshot(acc, 20252026);
+    expect(snapshot).toMatchObject({
+      season: 1,
+      seasonTeamGames: 2,
+      career: null,
+      careerTeamGames: null,
+      careerPlayerGames: 4
+    });
+    expect(getHistoricalGpPctSnapshot(acc, 20222023)).toMatchObject({
+      season: null,
+      seasonPlayerGames: 2,
+      seasonTeamGames: null
     });
   });
 });

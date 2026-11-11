@@ -915,6 +915,14 @@ export interface GameRow {
   homeTeamId: number;
   awayTeamId: number;
   seasonId: number;
+  /** NHL game type: 1 preseason, 2 regular season, 3 playoffs. */
+  type?: number | null;
+}
+
+/** Availability counts regular-season games only (decision 16, BA D5). */
+function isRegularSeasonGame(game: Pick<GameRow, "type">): boolean {
+  // Production rows carry a type; a row without one is kept as regular.
+  return game.type == null || game.type === 2;
 }
 
 export interface LineCombinationRow {
@@ -1152,7 +1160,10 @@ function getPpShareComponents(game: PlayerGameData): RatioComponents | null {
     builderPlayerPpToi: game.ppCombination?.PPTOI ?? null,
     builderTeamShare: game.ppCombination?.pp_share_of_team ?? null,
     wgoPlayerPpToi: game.wgo?.pp_toi ?? null,
-    wgoTeamShare: game.wgo?.pp_toi_pct_per_game ?? null
+    wgoTeamShare: game.wgo?.pp_toi_pct_per_game ?? null,
+    // No qualified team PP clock exists yet (decision 71, L8). Until one is
+    // wired here, games with no player PP time cannot add team PP seconds.
+    teamPpClock: null
   });
 }
 
@@ -1852,6 +1863,7 @@ function buildTeamGameLedger(games: GameRow[]): TeamGameLedger {
   };
 
   games.forEach((game) => {
+    if (!isRegularSeasonGame(game)) return;
     pushGame(game.homeTeamId, game.seasonId, game.date);
     pushGame(game.awayTeamId, game.seasonId, game.date);
   });
@@ -1869,29 +1881,14 @@ function buildTeamGameLedger(games: GameRow[]): TeamGameLedger {
   return ledger;
 }
 
-function getTeamGamesPlayed(
+function getTeamScheduleDates(
   ledger: TeamGameLedger,
   teamId: number | null,
-  seasonId: number,
-  date: string
-): number {
-  if (!teamId) return 0;
+  seasonId: number
+): string[] | null {
+  if (!teamId) return null;
   const entries = ledger[`${teamId}:${seasonId}`];
-  if (!entries) return 0;
-  let left = 0;
-  let right = entries.length - 1;
-  let result = 0;
-  while (left <= right) {
-    const mid = Math.floor((left + right) / 2);
-    const midDate = entries[mid].date;
-    if (midDate <= date) {
-      result = entries[mid].cumulative;
-      left = mid + 1;
-    } else {
-      right = mid - 1;
-    }
-  }
-  return result;
+  return entries ? entries.map((entry) => entry.date) : null;
 }
 
 function initAccumulator(): RollingAccumulator {
@@ -2854,7 +2851,7 @@ async function fetchGames(): Promise<GameRow[]> {
       async () => {
         const { data, error } = await supabase
           .from("games")
-          .select("id, date, homeTeamId, awayTeamId, seasonId")
+          .select("id, date, homeTeamId, awayTeamId, seasonId, type")
           .order("date", { ascending: true })
           .order("id", { ascending: true })
           .range(from, from + pageSize - 1);
@@ -3596,6 +3593,7 @@ async function processPlayer(
   options: FetchOptions
 ): Promise<ProcessPlayerResult> {
   const historyReadOptions = buildPlayerHistoryReadOptions(options);
+  const canonicalGameById = new Map(canonicalGames.map((game) => [game.id, game]));
   assertBeforeRunDeadline(`player ${playerId} history read`);
   const wgoRows = await fetchWgoRowsForPlayer(playerId, historyReadOptions);
   if (wgoRows.length === 0) {
@@ -3918,17 +3916,19 @@ async function processPlayer(
           );
         });
 
-        const teamGamesPlayed = getTeamGamesPlayed(
-          ledger,
-          game.teamId ?? null,
-          game.season,
-          game.gameDate
-        );
+        const canonicalGame =
+          game.gameId != null ? canonicalGameById.get(game.gameId) : undefined;
         updateHistoricalGpPctAccumulator(historicalGpPctState, {
           season: game.season,
           teamId: game.teamId ?? null,
+          date: game.gameDate,
           playedThisGame,
-          teamGamesPlayed
+          teamScheduleDates: getTeamScheduleDates(
+            ledger,
+            game.teamId ?? null,
+            game.season
+          ),
+          regularSeason: canonicalGame ? isRegularSeasonGame(canonicalGame) : true
         });
 
         // The aligned-count builder is stateful, so it advances on every game.
@@ -3945,11 +3945,7 @@ async function processPlayer(
         );
         const rollingGpPctSnapshot = getRollingGpPctSnapshot(
           historicalGpPctState,
-          {
-            currentSeason: game.season,
-            currentTeamId: game.teamId ?? null,
-            currentTeamGamesPlayed: teamGamesPlayed
-          }
+          { currentSeason: game.season }
         );
 
         const metricOutputs = deriveOutputs(

@@ -89,7 +89,10 @@ describe("player trend rebuild batching", () => {
 });
 
 describe("player trend playoff source normalization", () => {
-  it("converts playoff TOI seconds while retaining full regular-season accumulators", () => {
+  // P0 #9: TOI is seconds for regular-season and playoff rows alike, so the
+  // shots/60 fallback is shots × 3600 ÷ seconds. (This test previously pinned
+  // a 20-"minute" regular-season row and a playoff row converted to minutes.)
+  it("keeps playoff TOI in seconds while retaining full regular-season accumulators", () => {
     const regularRow = {
       player_id: 8478402,
       date: "2026-04-16",
@@ -97,7 +100,7 @@ describe("player trend playoff source normalization", () => {
       position_code: "C",
       games_played: 1,
       shots: 4,
-      toi_per_game: 20,
+      toi_per_game: 1200,
     } as any;
     const playoffRow = normalizePlayoffSkaterTrendRow({
       player_id: 8478402,
@@ -115,11 +118,16 @@ describe("player trend playoff source normalization", () => {
     const shotRate = records.find(
       (record) => record.metric_key === "shots_per_60",
     );
+    const toi = records.find((record) => record.metric_key === "toi");
 
-    expect(playoffRow.toi_per_game).toBeCloseTo(20.05, 6);
-    expect(shotRate?.raw_value).toBeCloseTo(11.970075, 6);
-    expect(shotRate?.average_value).toBeCloseTo(11.985037, 6);
+    expect(playoffRow.toi_per_game).toBe(1203);
+    expect(shotRate?.raw_value).toBeCloseTo((4 * 3600) / 1203, 6);
+    expect(shotRate?.average_value).toBeCloseTo(
+      (12 + (4 * 3600) / 1203) / 2,
+      6,
+    );
     expect(shotRate?.sample_size).toBe(2);
+    expect(toi?.average_value).toBeCloseTo((1200 + 1203) / 2, 6);
   });
 });
 
