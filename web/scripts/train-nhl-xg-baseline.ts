@@ -56,6 +56,7 @@ import {
 } from "../lib/xg/rosterPosition";
 import { scoreXgBoostEnsemble, type XgBoostModel } from "../lib/xg/shotFeaturePersistence";
 import { evaluateXgApprovalGate, type XgApprovalEligibility } from "../lib/xg/approvalGate";
+import { CURRENT_XG_FEATURE_STRENGTH_VERSION, CURRENT_XG_FEATURE_VERSION } from "../lib/xg/featureVersion";
 const { XGBoost } = require("@fractal-solutions/xgboost-js") as {
   XGBoost: new (config: Record<string, number>) => {
     fit: (features: number[][], labels: number[]) => void;
@@ -307,8 +308,8 @@ Options:
   --predictionType <name>      Prediction target: shot_goal or rebound_creation. Default: shot_goal
   --featureFamily <name>       Feature family preset. Default: first_pass_v1
   --parserVersion <n>          Required parser version. Default: 1
-  --strengthVersion <n>        Required strength version. Default: 1
-  --featureVersion <n>         Feature version recorded in the artifact. Default: 1
+  --strengthVersion <n>        Required strength version. Default: current (2)
+  --featureVersion <n>         Feature version to train on. Default: current (2, see lib/xg/featureVersion.ts)
   --limitGames <n>             Optional cap on games for local smoke runs
   --gameIds <csv>              Optional explicit game id list override
   --seed <n>                   Deterministic seed for split assignment. Default: 42
@@ -635,8 +636,8 @@ function parseCliArgs(argv: string[]): CliOptions {
     predictionType: requestedPredictionType as BaselinePredictionType,
     featureFamily: requestedFeatureFamily as BaselineFeatureFamilyName,
     parserVersion: Number(options.parserVersion ?? 1),
-    strengthVersion: Number(options.strengthVersion ?? 1),
-    featureVersion: Number(options.featureVersion ?? 1),
+    strengthVersion: Number(options.strengthVersion ?? CURRENT_XG_FEATURE_STRENGTH_VERSION),
+    featureVersion: Number(options.featureVersion ?? CURRENT_XG_FEATURE_VERSION),
     limitGames: options.limitGames ? Number(options.limitGames) : null,
     gameIds: parseIntegerList(options.gameIds),
     seed: Number(options.seed ?? 42),

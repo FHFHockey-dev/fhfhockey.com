@@ -11,6 +11,12 @@ import { buildShotFeatureRows, type NhlShotFeatureRow } from "lib/supabase/Upser
 import type { ParsedNhlPbpEvent } from "lib/supabase/Upserts/nhlPlayByPlayParser";
 import { enrichShotRowsWithPersistedTrainingContext } from "lib/xg/shotFeatureEnrichment";
 import { withXgExecutionLeaseApi } from "lib/xg/executionLease";
+import {
+  assertBuildableXgFeatureVersion,
+  CURRENT_XG_FEATURE_STRENGTH_VERSION,
+  CURRENT_XG_FEATURE_VERSION,
+  XgFeatureVersionError,
+} from "lib/xg/featureVersion";
 import { upsertXgShotFeatureRows } from "lib/xg/shotFeaturePersistence";
 
 type GameRow = {
@@ -425,8 +431,23 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
   try {
   const parserVersion = parseInteger(firstQueryValue(req.query.parserVersion), 1);
-  const strengthVersion = parseInteger(firstQueryValue(req.query.strengthVersion), 1);
-  const featureVersion = parseInteger(firstQueryValue(req.query.featureVersion), 1);
+  const strengthVersion = parseInteger(
+    firstQueryValue(req.query.strengthVersion),
+    CURRENT_XG_FEATURE_STRENGTH_VERSION
+  );
+  const featureVersion = parseInteger(
+    firstQueryValue(req.query.featureVersion),
+    CURRENT_XG_FEATURE_VERSION
+  );
+  // Rule 21: never write new-definition rows under an older feature version.
+  try {
+    assertBuildableXgFeatureVersion({ featureVersion, strengthVersion });
+  } catch (error) {
+    if (error instanceof XgFeatureVersionError) {
+      return res.status(409).json({ success: false, featureVersion, strengthVersion, error: error.message });
+    }
+    throw error;
+  }
   const gameBatchSize = Math.max(
     1,
     parseInteger(firstQueryValue(req.query.gameBatchSize), DEFAULT_GAME_BATCH_SIZE)
