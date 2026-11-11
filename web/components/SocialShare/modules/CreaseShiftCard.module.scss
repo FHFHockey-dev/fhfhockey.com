@@ -17,3 +17,13 @@
 .card[data-size="large"] .cell { font-size: 22px; }
 .card[data-size="medium"] .cell { font-size: 19px; }
 .card[data-size="small"] .cell { font-size: 17px; }
+/* Stacked rows (four teams or fewer): names and numbers over a chart the table's full width; the font sizes match STACKED in the card. */
+.card[data-stacked] .table { grid-template-columns: auto auto minmax(0, 1fr) repeat(3, auto); }
+.card[data-stacked] .head { font-size: 15px; }
+.card[data-stacked] .cell[data-band] { border-bottom: 0; padding: 8px 0 0; }
+.card[data-stacked] .cell[data-chart] { grid-column: 1 / -1; align-items: flex-end; }
+.card[data-stacked] .team small { font-size: 17px; }
+.card[data-size="rows-1"] .cell { font-size: 34px; }
+.card[data-size="rows-2"] .cell { font-size: 30px; }
+.card[data-size="rows-3"] .cell { font-size: 27px; }
+.card[data-size="rows-4"] .cell { font-size: 25px; }

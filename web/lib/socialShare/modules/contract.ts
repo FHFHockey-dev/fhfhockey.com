@@ -39,7 +39,9 @@ export type ShareSettingField =
   | FieldBase & { kind: "date"; default: string | null }
   | FieldBase & { kind: "text"; default: string; maxLength?: number;
     /** A fixed set to pick from, drawn as checkboxes: the value stays the chosen values comma-joined, in this order. */
-    choices?: readonly { value: string; label: string }[] };
+    choices?: readonly { value: string; label: string }[];
+    /** The most choices that may be on at once; the rest disable at the cap. With `blank` set, the last may come off too. */
+    maxChoices?: number };
 
 export type SharePostSource = {
   /** Reader-facing name, e.g. "NHL.com game stats"; `tables` names the exact relations read. */
