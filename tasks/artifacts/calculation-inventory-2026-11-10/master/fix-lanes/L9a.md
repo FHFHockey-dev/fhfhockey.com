@@ -52,3 +52,7 @@ Three P0s fixed and proven on final payload fixtures; market items fixed behind 
 
 ## Reader tickets from L6 (2026-11-11)
 Rolling availability is by team of record by date; `*_team_games_available` and availability ratios can be null. xSH% is ixG ÷ iFF × 100 on 0–100. `windowCountSupport` carries per-window counts and game ids.
+
+## Reader tickets from L1 (2026-11-11; decision 83, writer 3e6562f9a + L4a migration 134)
+Skater `faceoffs`, `powerPlayToi`, `shorthandedToi` are now NULL when absent (unknown, not 0). Full ticket: Chef side-session note `L1-tickets-placeholders-null.md`.
+- `seasonBootstrap.ts:63` `minutes(row.powerPlayToi)` already returns null; confirm averaging skips null.

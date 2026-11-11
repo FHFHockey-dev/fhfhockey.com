@@ -38,3 +38,7 @@ Skater stage (L9a); ledger (L10); RSO bridge (L11); Codex-owned accuracy and v2 
 
 ## Done
 Credited-start label and P0 #20 contract landed with payload tests; #16 steps 1–3 landed and refit plan written; #17 branch established and served path fixed; Codex proposal filed.
+
+## Reader tickets from L1 (2026-11-11; decision 83, writer 3e6562f9a + L4a migration 134)
+Skater `faceoffs`, `powerPlayToi`, `shorthandedToi` are now NULL when absent (unknown, not 0). Full ticket: Chef side-session note `L1-tickets-placeholders-null.md`.
+- Daily-board goalie/skater inputs from `daily_board_data.py` (L15) may carry null `pp_toi`/`pk_toi`; treat as unknown.
