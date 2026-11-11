@@ -48,3 +48,20 @@ Facts Chef checked after W1-1 (2026-11-10):
 - The Start Chart issue is **conditional**: its production serving flag is unverified. Chef checked env names only: `STARTER_BOARD_SERVING_ENABLED` exists in production, value not read. A **second fallback flag** also has to be checked before the Start Chart finding is confirmed.
 - **Fix order:** first the actual-start outcome (who really started), the timestamps (`goalie_start_projections.updated_at` is never updated) and the pregame cutoffs (no look-ahead). Only then fit and validate replacement start probabilities.
 - The proposed shrinkage (about 0.3 before the sigmoid) and the back-to-back adjustments are **hypotheses, not validated models**. They must be fit and validated on held-out dates before use.
+
+## Review notes on W1-3 rolling and W1-4 team ratings (Codex/Astra reviews relayed by TJ, 2026-11-10)
+**W1-3 rolling-player-averages-trends-part1**
+- The four main defects are verified in current code: the seconds/minutes per-60 error, Rankings reading a rate where it expects a count, the trend display errors, and FORGE's exposure input. The FORGE issue affects **one evidence-weight component**, not necessarily the whole weight.
+- Missing-row counts are from the audit's 2026-11-10 snapshot, not a fresh live check.
+- Rolling/FORGE runs are currently held on `nst_persistence_unconfirmed` (also flagged to Scout). **First step: reconcile what those runs actually wrote before any retry or rebuild.**
+- **Test correction:** don't assert "shots/60 ≥ 1". A value below 1 can be legitimate. The test recomputes the rate from the matching shot count and ice time instead.
+
+**W1-4 team-ratings-power-ctpi-sos: recommended direction**
+- Power ratings: compute from genuine games (one row per game, no all/5v5 mixing), then standardise **all 32 teams against the same daily baseline**. Keep pace separate. Label the 25-game, 10-game half-life rating as **descriptive**, not a proven predictor.
+- PP/PK: displayed rates, ranks and tiers use **pooled season-to-date opportunities and results**. A recent-window view can be added separately.
+- Game Grid: **fix or temporarily withhold** the misleading odds. Don't switch straight to the game-prediction model, which is still a placeholder (decision 1).
+- CTPI: keep the newer candidate gated until it is validated. **Inventory dependencies before considering any legacy deletion.**
+- Extra catches:
+  - The Top Adds NaN reproduces in a local fixture; its visible impact is unchecked.
+  - The proposed SOS helper can count an in-progress game as completed, so correct it before reuse.
+  - Restoring early-season shrinkage alone won't work if the next normalisation step cancels it out.
