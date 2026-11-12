@@ -445,9 +445,11 @@ describe("starter candidate filtering", () => {
 });
 
 describe("deployment TOI prior helpers", () => {
-  it("normalizes minute-based WGO TOI values to seconds", () => {
-    expect(normalizeWgoToiToSeconds(15)).toBe(900);
-    expect(normalizeWgoToiToSeconds(22.5)).toBe(1350);
+  // WGO TOI is declared seconds (rule 17); the former "<= 60 means minutes" guess turned a
+  // 45-second PP game into 45 minutes (BC W1-7 D8).
+  it("keeps sub-minute WGO TOI values in seconds", () => {
+    expect(normalizeWgoToiToSeconds(45)).toBe(45);
+    expect(normalizeWgoToiToSeconds(22.5)).toBe(22.5);
   });
 
   it("keeps second-like WGO TOI values in seconds", () => {

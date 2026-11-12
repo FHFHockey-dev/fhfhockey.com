@@ -11,7 +11,7 @@ vi.mock("lib/supabase/server", () => ({ default: {
       then: (resolve: (value: unknown) => void) => resolve(result()),
       maybeSingle: () => Promise.resolve(result())
     };
-    for (const name of ["select", "eq", "or", "lt", "in", "order", "limit"]) {
+    for (const name of ["select", "eq", "or", "lt", "lte", "in", "order", "limit"]) {
       query[name] = (...args: unknown[]) => { db.calls.push([table, name, args]); return query; };
     }
     return query;
@@ -21,9 +21,17 @@ vi.mock("lib/supabase/server", () => ({ default: {
 import {
   buildTeamStrengthPriorFromInHouseXgAggregateRow,
   buildTeamStrengthPriorFromNhlTeamDataRows,
+  fetchTeamNstExpectedGoalsProfile,
   fetchTeamOfficialPpUsage,
   fetchTeamStrengthAverages
 } from "./team-context-queries";
+
+describe("fetchTeamNstExpectedGoalsProfile (BC W1-6 D6)", () => {
+  it("converts NST team TOI seconds to xGA per 60: 3 xGA in 3,600 s is 3.0", async () => {
+    db.tables = { nst_team_all: { date: "2026-10-20", gp: 1, toi: 3600, xga: 3 } };
+    expect(await fetchTeamNstExpectedGoalsProfile("EDM", "2026-10-21")).toMatchObject({ source: "nst_team_all", xgaPer60: 3 });
+  });
+});
 
 describe("fetchTeamOfficialPpUsage", () => {
   const games = (count: number) => Array.from({ length: count }, (_, i) => ({ id: 2026020100 - i, date: `2026-10-${String(20 - i).padStart(2, "0")}` }));

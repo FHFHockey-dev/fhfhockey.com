@@ -424,11 +424,13 @@ export async function fetchTeamNstExpectedGoalsProfile(
   assertSupabase();
   const normalizedAbbrev = teamAbbrev.trim().toUpperCase();
   if (!normalizedAbbrev) return null;
-  const calcPer60 = (xga: number | null, toi: number | null): number | null => {
-    if (!Number.isFinite(xga) || !Number.isFinite(toi) || (toi as number) <= 0) {
+  // Declared adapter (rule 17): NST team TOI is stored in seconds (the writer converts "MM:SS"),
+  // so xGA per 60 = xGA x 3600 / seconds (BC W1-6 D6: 3 xGA in 3,600 s is 3.0, not 0.05).
+  const calcPer60 = (xga: number | null, toiSeconds: number | null): number | null => {
+    if (!Number.isFinite(xga) || !Number.isFinite(toiSeconds) || (toiSeconds as number) <= 0) {
       return null;
     }
-    return Number((Number(xga) * 60 / Number(toi)).toFixed(4));
+    return Number((Number(xga) * 3600 / Number(toiSeconds)).toFixed(4));
   };
   const toFiniteOrNull = (value: any): number | null =>
     typeof value === "number" && Number.isFinite(value) ? Number(value) : null;

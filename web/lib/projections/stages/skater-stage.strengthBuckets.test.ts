@@ -27,6 +27,7 @@ const fx = vi.hoisted(() => ({
   // Opponent goalie fixtures (#21): start rows by team, history by goalie id.
   goalieStarts: new Map<number, Array<{ player_id: number; start_probability: number }>>(),
   goalieHistory: new Map<number, Array<{ shots_against: number; goals_allowed: number }>>(),
+  evOverride: new Map<number, Record<string, unknown>>(),
 }));
 vi.mock("lib/supabase/server", () => ({ default: { from: (table: string) => {
   // The league save % read falls back to its fitted constant (with a warning) on this throw.
@@ -56,7 +57,7 @@ vi.mock("../queries/skater-queries", () => ({
     const base = { player_id: id, game_id: 2026020001, game_date: "2026-10-06", season: 20262027, strength_state: strength };
     if (strength === "all") return [fx.allRow(id)];
     if (strength === "ev") return [{ ...base, toi_seconds_avg_all: 800, toi_seconds_avg_last5: 800, sog_per_60_all: 6, shots_total_all: 80,
-      goals_total_all: 8, assists_total_all: 10, ipp_all: 60, toi_seconds_total_all: 48000 }];
+      goals_total_all: 8, assists_total_all: 10, ipp_all: 60, toi_seconds_total_all: 48000, ...fx.evOverride.get(id) }];
     if (strength === "pp") return [{ ...base, toi_seconds_avg_all: 120, toi_seconds_avg_last5: 120, sog_per_60_all: 12, shots_total_all: 12,
       goals_total_all: 2, assists_total_all: 3, ipp_all: 70, toi_seconds_total_all: 3600 }];
     // PK: the first six skaters of each team kill penalties; one has a known zero-shot record.
@@ -237,5 +238,19 @@ describe("FORGE opponent goalie context (W1 P0 #21)", () => {
     expect(sum(strong, "proj_goals_pk")).toBeLessThan(sum(average, "proj_goals_pk"));
     fx.goalieStarts.clear();
     fx.goalieHistory.clear();
+  });
+});
+
+describe("known zero-shot history keeps its exposure (BC W1-6 A2)", () => {
+  it("projects fewer ES shots for a skater with zero shots over 100 ES hours than for his teammates", async () => {
+    fx.evOverride.set(1003, { shots_total_all: 0, sog_per_60_all: 0, toi_seconds_total_all: 360_000, goals_total_all: 0 });
+    const { players } = await runStage({ toiEsSecondsAvg: 15000, toiPpSecondsAvg: 1200, toiPkSecondsAvg: 1800,
+      shotsEsAvg: 25, shotsPpAvg: 6, shotsPkAvg: 3 });
+    fx.evOverride.clear();
+    const zero = players.find(row => row.player_id === 1003)!;
+    const teammate = players.find(row => row.player_id === 1010)!;
+    // Same ES TOI and role inputs; only the shot history differs.
+    expect(Math.abs(zero.proj_toi_es_seconds - teammate.proj_toi_es_seconds)).toBeLessThanOrEqual(1);
+    expect(zero.proj_shots_es).toBeLessThan(0.5 * teammate.proj_shots_es);
   });
 });

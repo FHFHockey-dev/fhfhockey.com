@@ -29,7 +29,7 @@ vi.mock("lib/supabase/server", () => ({ default: {
 } }));
 
 import { ROLLING_ROW_SELECT_CLAUSE, fetchRollingRows, fetchCurrentRosterPlayerIds, fetchSkaterRecencyEvents, fetchLatestSkaterContextProfiles,
-  fetchLeaguePhysicalTotals } from "./skater-queries";
+  fetchLeaguePhysicalTotals, fetchLatestWgoSkaterDeploymentProfiles } from "./skater-queries";
 import { captureProjectionInputs, interceptProjectionQuery, replayProjectionInputs } from "../inputCapture";
 import { pickLatestByPlayer } from "../utils/collection-utils";
 import { computeSkaterPhysicalEventRates } from "../calculators/skater-adjustments";
@@ -589,6 +589,15 @@ describe("latest rolling row per player (forge_latest_rolling_rows)", () => {
     const replayed = await replayProjectionInputs(captured.reads, read);
     expect(replayed.result).toEqual(captured.result);
     expect([...pickLatestByPlayer(captured.result).values()]).toEqual(await fetchRollingRows([7, 8, 9], "ev", cutoff));
+  });
+});
+
+describe("WGO deployment TOI adapter (BC W1-7 D8)", () => {
+  it("reads WGO per-game TOI as seconds, so a 45-second PP game stays 45 s", async () => {
+    dbState.calls = [];
+    dbState.rows = [{ player_id: 7, date: "2026-10-20", toi_per_game: 1000, es_toi_per_game: 955, pp_toi_per_game: 45 }];
+    const profile = (await fetchLatestWgoSkaterDeploymentProfiles([7], "2026-10-21")).get(7);
+    expect(profile).toEqual({ toiPerGameSec: 1000, esToiPerGameSec: 955, ppToiPerGameSec: 45 });
   });
 });
 

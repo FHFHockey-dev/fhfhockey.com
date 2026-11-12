@@ -141,12 +141,12 @@ export const ROLLING_ROW_SELECT_CLAUSE =
     "blocks_per_60_toi_seconds_season"
   ].join(",");
 
+// Declared adapter (rule 17): WGO per-game TOI fields come from the NHL stats API in seconds, so a
+// 45-second PP game stays 45 s. Magnitude is never used to guess minutes (BC W1-7 D8).
 function normalizeWgoToiToSeconds(value: number | null | undefined): number | null {
   const n = finiteOrNull(value);
   if (n == null || n <= 0) return null;
-  if (n <= 60) return Number((n * 60).toFixed(3));
-  if (n <= 3600) return Number(n.toFixed(3));
-  return 3600;
+  return Number(n.toFixed(3));
 }
 
 export type SkaterTrendAdjustmentFetchDiagnostics = {

@@ -349,10 +349,8 @@ export function normalizeWgoToiToSeconds(
 ): number | null {
   const n = finiteOrNull(value);
   if (n == null || n <= 0) return null;
-  // WGO TOI/game fields are typically in minutes, but tolerate second-like values.
-  if (n <= 60) return Number((n * 60).toFixed(3));
-  if (n <= 3600) return Number(n.toFixed(3));
-  return 3600;
+  // Declared adapter (rule 17): WGO per-game TOI is seconds; magnitude never selects minutes.
+  return Number(n.toFixed(3));
 }
 
 export function blendToiSecondsWithDeploymentPrior(args: {
@@ -2242,14 +2240,14 @@ export async function runPerGameSkaterStage(args: {
         teamLevelContextAdjustment.shotRateMultiplier *
         restScheduleAdjustment.shotRateMultiplier;
       const sogPer60EvPreBound = clamp(
-        computeSkaterShotRatePer60({ position: shotPosition, strength: "es", shotsAll: ev?.shots_total_all,
+        computeSkaterShotRatePer60({ position: shotPosition, strength: "es", shotsAll: ev?.shots_total_all, toiSecondsAll: ev?.toi_seconds_total_all,
           ratePer60All: resolveNullableCompatibilityValue("weighted_rate", ev?.sog_per_60_all, ev?.sog_per_60_avg_all),
           shotsRecent: ev?.shots_total_last5, toiRecentSeconds: ev?.toi_seconds_total_last5 }) * shotRateMultiplier,
         1.5,
         20,
       );
       const sogPer60PpPreBound = clamp(
-        computeSkaterShotRatePer60({ position: shotPosition, strength: "pp", shotsAll: pp?.shots_total_all,
+        computeSkaterShotRatePer60({ position: shotPosition, strength: "pp", shotsAll: pp?.shots_total_all, toiSecondsAll: pp?.toi_seconds_total_all,
           ratePer60All: resolveNullableCompatibilityValue("weighted_rate", pp?.sog_per_60_all, pp?.sog_per_60_avg_all),
           shotsRecent: pp?.shots_total_last5, toiRecentSeconds: pp?.toi_seconds_total_last5 }) * shotRateMultiplier,
         2,
