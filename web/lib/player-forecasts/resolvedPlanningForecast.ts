@@ -1,4 +1,4 @@
-import { CONTRIBUTION_RESOLVER_POLICY_VERSION, admittedModeledStart, catalogParticipation, resolveContribution, type ContributionGame, type ContributionParticipation, type ContributionSource, type ResolvedContribution } from "./contributions";
+import { CONTRIBUTION_RESOLVER_POLICY_VERSION, admittedModeledStart, catalogParticipation, resolveContribution, startMassExceedsOne, type ContributionGame, type ContributionParticipation, type ContributionSource, type ResolvedContribution } from "./contributions";
 import type { ContributionPlanningSnapshot, GameForecast, StatLine } from "../rosterScheduleOptimizer/planningTypes";
 
 type Contributions = NonNullable<GameForecast["contributions"]>;
@@ -98,7 +98,7 @@ function retainedModeledStart(forecast: GameForecast | undefined, snapshot: Cont
 /** Check all available teammates before selecting players. Conflicting start metadata
  * is withheld without reweighting independent appearance-conditioned expectations. */
 export function applyModeledStartMetadata<T extends ContributionPlanningSnapshot>(snapshot: T): T {
-  const selected = new Map<string, ContributionParticipation>(), mass = new Map<string, number>();
+  const selected = new Map<string, ContributionParticipation>(), mass = new Map<string, number[]>();
   const forecasts = new Map(snapshot.forecasts.map(row => [`${row.playerId}:${row.gameId}`, row]));
   for (const player of snapshot.players) {
     if (player.playerClass !== "goalie" || !player.nhlId || !player.nhlTeamId || !player.rosterRevision) continue;
@@ -115,7 +115,7 @@ export function applyModeledStartMetadata<T extends ContributionPlanningSnapshot
         : forecast?.startParticipation || existing == null ? candidate?.probability : existing;
       if (probability != null && Number.isFinite(probability)) {
         const group = `${game.id}:${player.nhlTeamId}`;
-        mass.set(group, (mass.get(group) ?? 0) + probability);
+        mass.set(group, [...(mass.get(group) ?? []), probability]);
       }
     }
   }
@@ -123,7 +123,7 @@ export function applyModeledStartMetadata<T extends ContributionPlanningSnapshot
     if (!forecast.contributions) return { ...forecast, powerPlayRole: unavailablePowerPlayRole(
       snapshot.players.find(player => player.id === forecast.playerId)?.playerClass === "goalie") };
     const candidate = selected.get(`${forecast.playerId}:${forecast.gameId}`);
-    const conflict = candidate && (mass.get(`${candidate.gameId}:${candidate.teamId}`) ?? 0) > 1.000001;
+    const conflict = candidate && startMassExceedsOne(mass.get(`${candidate.gameId}:${candidate.teamId}`) ?? []);
     return forecastFromContributions(conflict ? { ...forecast, limitations: [...new Set([...forecast.limitations,
       "Modeled start probabilities conflict within this team-game; start metadata is unavailable."])] } : forecast,
     forecast.contributions, snapshot.players.find(player => player.id === forecast.playerId)?.playerClass === "goalie",

@@ -1,5 +1,6 @@
 import type { GameForecast, PlanEvaluation, PlanningSnapshot, StatLine } from "lib/rosterScheduleOptimizer/planningTypes";
 import { validForecastCalendarPolicy } from "./contributions";
+import { getCategoryRegistryEntry } from "../projectionsConfig/statsMasterList";
 
 export type PlanScenario = {
   id: string;
@@ -145,14 +146,15 @@ export function comparePlanScenarios(snapshot: PlanningSnapshot, baseline: PlanE
       ...(inputs ? [] : ["Complete comparable resolved forecast inputs are unavailable."])] };
 }
 
-/** Explicit ±20% counting-stat stresses. No invented forecast distribution or probability. */
+/** Explicit ±20% counting-stat stresses. Only the stat registry's ratio keys are exempt (L13, BC W1-12 D3): penalty and
+ * goalie minutes are counts and are stressed like any other count. No invented forecast distribution or probability. */
 export function comparePlanSensitivity(snapshot: PlanningSnapshot, baseline: PlanEvaluation, candidate: PlanEvaluation): PairedPlanComparison {
   const inputs = comparisonInputs(snapshot, baseline, candidate);
   const scenarios = [0.8, 1, 1.2].map(factor => ({
     id: `counting:${factor}`, label: factor === 1 ? "Resolved means" : `${factor < 1 ? "−" : "+"}20% counting contributions`,
     games: [...(inputs?.values() ?? [])].map(forecast => ({ playerId: forecast.playerId, gameId: forecast.gameId,
       stats: Object.fromEntries(Object.entries(forecast.stats).map(([key, value]) => [key,
-        finite(value) && !/MINUTES|TIME_ON_ICE|PERCENTAGE|AVERAGE/.test(key) ? value * factor : value])),
+        finite(value) && getCategoryRegistryEntry(key)?.aggregation !== "ratio" ? value * factor : value])),
     })),
   }));
   return comparePlanScenarios(snapshot, baseline, candidate, scenarios);

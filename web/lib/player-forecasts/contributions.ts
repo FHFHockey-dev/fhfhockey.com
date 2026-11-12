@@ -63,6 +63,15 @@ export function forecastCalendarWindow(now: Date, policy: AnyForecastCalendarPol
   return { startDate, endDate: new Date(Date.parse(`${startDate}T12:00:00Z`) + (policy.calendarDays - 1) * DAY_MS).toISOString().slice(0, 10) };
 }
 
+/** W2-8 D2: a team-game's start probabilities may sum above 1 only by rounding. Exact (unrounded) vectors get the
+ * 1e-6 float allowance; a vector proven rounded to 4 dp (every value a multiple of 0.0001) gets n × 0.00005, the most
+ * that rounding a coherent vector can add. Anything larger is incoherent and the group is rejected. */
+export function startMassExceedsOne(probabilities: readonly number[]): boolean {
+  const sum = probabilities.reduce((total, value) => total + value, 0);
+  const rounded4dp = probabilities.length > 0 && probabilities.every(value => Math.abs(value * 1e4 - Math.round(value * 1e4)) < 1e-7);
+  return sum > 1 + (rounded4dp ? probabilities.length * 0.00005 : 0) + 1e-6;
+}
+
 export type ContributionSourceKind = "detailed" | "baseline";
 export type ContributionBasis = "per_appearance" | "per_start" | "per_team_game" | "unconditional_game";
 export type ContributionExclusion = "serving_disabled" | "no_issued_revision" | "unreleased_source"

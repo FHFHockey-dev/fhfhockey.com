@@ -4,7 +4,7 @@ import { assignmentStats, forecastAllows, sanitizeForecastInputs } from "../rost
 import type { ContributionPlanningSnapshot, ForecastExclusionReason, PlanningData } from "../rosterScheduleOptimizer/planningTypes";
 import { resolvePlanningContributions } from "./planningContributions";
 import type { PlayerForecastCalendarScope } from "./schedule";
-import { forecastCalendarPolicy, forecastCalendarWindow } from "./contributions";
+import { forecastCalendarPolicy, forecastCalendarWindow, startMassExceedsOne } from "./contributions";
 import type { CalendarForgeScopeReceipts } from "./orchestration";
 
 export type CalendarCoverageProfile = { skaterTargets: string[]; goalieTargets: string[] };
@@ -99,7 +99,7 @@ export function summarizeCalendarConsumerCoverage(data: PlanningData, scopes: Pl
         return probability == null ? [] : [probability];
       });
     const invalidCompetition = starterProbabilities.some(value => !Number.isFinite(value) || value < 0 || value > 1)
-      || starterProbabilities.reduce((sum, value) => sum + value, 0) > 1.000001;
+      || startMassExceedsOne(starterProbabilities);
     if (profile.goalieTargets.length && !invalidCompetition) {
       const residual = Math.max(0, 1 - starterProbabilities.reduce((sum, value) => sum + value, 0));
       goalieStartMass.teamGames++;

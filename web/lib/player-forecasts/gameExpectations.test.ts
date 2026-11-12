@@ -148,6 +148,9 @@ describe("shared per-game expectation view (synthetic engineering fixtures)", ()
     expect(candidate.forecast.conditionalStats).toMatchObject({ GOALS: 2, TIME_ON_ICE_PER_GAME: 20 });
     data.forecasts = [candidate.forecast];
     expect(buildGameExpectations(data, { ...scope, games: 1 }, now).players[0].totals.GOALS.expected).toBeNull();
+    // W2-8 D5: preview permissions stay denied, so its per-appearance conditionalStats are never served as a tie-break basis.
+    expect(candidate.forecast.allowedUses).toEqual({ assignment: false, totals: false, comparison: false, conditionalTieBreak: false });
+    expect(buildGameExpectations(data, { ...scope, games: 1 }, now).players[0].games[0].targets.GOALS.conditional).toBeNull();
     // Synthetic approval only exercises downstream compatibility; the preview never grants this permission.
     data.forecasts[0] = { ...candidate.forecast, allowedUses: uses };
     const target = buildGameExpectations(data, { ...scope, games: 1 }, now).players[0].games[0].targets.GOALS;
@@ -361,6 +364,13 @@ describe("shared per-game expectation view (synthetic engineering fixtures)", ()
     const player = buildGameExpectations(data, scope, now).players[0];
     expect(player.games[0].targets.PENALTY_MINUTES.unit).toBe("minutes");
     expect(player.totals.PENALTY_MINUTES).toMatchObject({ expected: 5, unit: "minutes" });
+  });
+  it("declares penalty minutes in minutes for raw forecasts too, so a mixed horizon still sums (M-PFC-120)", () => {
+    const data = fixture();
+    data.forecasts = [detail(data, 0, { PENALTY_MINUTES: 2 }), detail(data, 1, { PENALTY_MINUTES: 3 })];
+    const raw = buildGameExpectations(data, scope, now).players[0];
+    expect(raw.games.map(game => game.targets.PENALTY_MINUTES.unit)).toEqual(["minutes", "minutes"]);
+    expect(raw.totals.PENALTY_MINUTES).toMatchObject({ expected: 5, unit: "minutes", reason: null });
   });
 });
 

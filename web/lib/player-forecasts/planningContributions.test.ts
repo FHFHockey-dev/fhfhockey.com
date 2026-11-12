@@ -5,7 +5,7 @@ import { forecastAllows } from "../rosterScheduleOptimizer/planning";
 import { inspectCalendarConsumerCoverage, parseCalendarCoverageProfile, summarizeCalendarConsumerCoverage } from "./calendarCoverage";
 import * as publicPlanning from "../rosterScheduleData/planning";
 import type { PlayerForecastCalendarScope } from "./schedule";
-import { forecastCalendarPolicy, type ContributionParticipation, type ContributionSource } from "./contributions";
+import { forecastCalendarPolicy, startMassExceedsOne, type ContributionParticipation, type ContributionSource } from "./contributions";
 import type { GameForecast, PlanningSnapshot } from "../rosterScheduleOptimizer/planningTypes";
 import { buildForgeCalendarManifest, parseForgeCalendarArgs } from "../../scripts/run-forge-calendar-local";
 
@@ -840,6 +840,24 @@ describe("calendar consumer target coverage", () => {
     data.forecasts = [line("7", 0.6, 15), line("8", 0.4, 10), line("9", 0, 0)];
     expect(summarizeCalendarConsumerCoverage(data, scopes, goalieProfile, data.context)).toMatchObject({
       eligiblePlayerGameTargets: 3, goalieStartMass: { unresolvedTeamGames: 1, unresolvedStartMass: 1 } });
+  });
+  it("accepts a proven 4-dp rounded start vector up to n × 0.00005 over 1 and nothing more (W2-8 D2)", () => {
+    const goalieProfile = { skaterTargets: [], goalieTargets: ["SAVES_GOALIE"] };
+    const line = (playerId: string, startProbability: number) => detailed({ playerId, stats: { SAVES_GOALIE: 25 * startProbability },
+      conditionalStats: { SAVES_GOALIE: 25 }, startProbability, appearanceProbability: null,
+      issuedContext: { ...issuedContext, playerId, nhlPlayerId: Number(playerId) * 11 } });
+    const coverage = (probabilities: number[]) => {
+      const data = input([], probabilities.map((p, index) => line(String(7 + index), p)));
+      data.players.forEach(player => { player.playerClass = "goalie"; });
+      return summarizeCalendarConsumerCoverage(data, scopes, goalieProfile, data.context);
+    };
+    // .33335/.33335/.3333 rounded half-up to 4 dp: the bridge's wire shape. v1 rejected all three lines.
+    expect(coverage([0.3334, 0.3334, 0.3333])).toMatchObject({ eligiblePlayerGameTargets: 3 });
+    // The same excess without proof of rounding, and a rounded vector beyond what rounding can add, stay rejected.
+    expect(coverage([0.33337, 0.33337, 0.33336])).toMatchObject({ eligiblePlayerGameTargets: 0, exclusions: { unsupported_conditioning: 3 } });
+    expect(coverage([0.3334, 0.3334, 0.3334])).toMatchObject({ eligiblePlayerGameTargets: 0, exclusions: { unsupported_conditioning: 3 } });
+    expect(startMassExceedsOne([0.5, 0.5000005])).toBe(false);
+    expect(startMassExceedsOne([0.5, 0.500002])).toBe(true);
   });
   it("keeps unmapped players and incomplete inputs visible and rejects lost or changed schedule sides", () => {
     const data = input();

@@ -305,14 +305,17 @@ export function baselineSkaterTargets(player: Record<string, any>): Record<strin
   if (points != null && goals != null && assists != null && points !== goals + assists) {
     throw new Error("Conflicting boxscore point components");
   }
+  // "won/taken" (W2-7 D10, M-PFC-088): lost = taken − won; a missing or impossible pair is unknown.
   const faceoffs = /^(\d+)\/(\d+)$/.exec(String(player.faceoffs ?? ""));
+  const faceoffsWon = faceoffs ? Number(faceoffs[1]) : null, faceoffsTaken = faceoffs ? Number(faceoffs[2]) : null;
+  const faceoffPair = faceoffsWon !== null && faceoffsTaken !== null && faceoffsWon <= faceoffsTaken;
   return { GOALS: goals, ASSISTS: assists, POINTS: points,
     PLUS_MINUS: Number.isSafeInteger(baselineNumber(player.plusMinus)) ? baselineNumber(player.plusMinus) : null,
     PENALTY_MINUTES: count("pim"),
     HITS: count("hits"), BLOCKED_SHOTS: count("blockedShots"), PP_GOALS: count("powerPlayGoals"),
     PP_POINTS: count("powerPlayPoints"), SH_GOALS: count("shorthandedGoals"), SH_POINTS: count("shPoints"),
-    SHOTS_ON_GOAL: shots, FACEOFFS_WON: faceoffs ? Number(faceoffs[1]) : null,
-    FACEOFFS_LOST: faceoffs ? Number(faceoffs[2]) : null };
+    SHOTS_ON_GOAL: shots, FACEOFFS_WON: faceoffPair ? faceoffsWon : null,
+    FACEOFFS_LOST: faceoffPair ? faceoffsTaken! - faceoffsWon! : null };
 }
 
 export function baselineGoalieComponents(player: Record<string, any>) {

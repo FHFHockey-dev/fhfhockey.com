@@ -1,4 +1,4 @@
-import { calendarLeadDay, catalogParticipation, forecastCalendarPolicy, validForecastCalendarPolicy, resolveContribution, type ContributionGame, type ContributionParticipation, type ContributionSource } from "./contributions";
+import { calendarLeadDay, catalogParticipation, startMassExceedsOne, forecastCalendarPolicy, validForecastCalendarPolicy, resolveContribution, type ContributionGame, type ContributionParticipation, type ContributionSource } from "./contributions";
 import { currentRsoUsePolicy, restrictRsoForecast, type RsoUsePolicy } from "./rsoUsePolicy";
 import { currentPlanningTime } from "../rosterScheduleOptimizer/currentPlanningRead";
 import { applyModeledStartMetadata, forecastFromContributions, revalidateResolvedForecast } from "./resolvedPlanningForecast";
@@ -95,7 +95,7 @@ export function resolvePlanningContributions(snapshot: ContributionPlanningSnaps
   }
   // Validate fresh competition before limiting the requested player set or
   // assigning slots. A benched teammate is still part of the same start event.
-  const goalieMass = new Map<string, number>(), invalidGoalieGroups = new Set<string>();
+  const goalieMass = new Map<string, number[]>(), invalidGoalieGroups = new Set<string>();
   for (const forecast of snapshot.forecasts) {
     // Independent start metadata has its own whole-team check and does not
     // invalidate appearance-conditioned means when its marginals conflict.
@@ -107,9 +107,9 @@ export function resolvePlanningContributions(snapshot: ContributionPlanningSnaps
     const probability = forecast.confirmedStart ? 1 : forecast.startProbability;
     if (modelProbability != null && (!Number.isFinite(modelProbability) || modelProbability < 0 || modelProbability > 1)) {
       invalidGoalieGroups.add(key);
-    } else if (probability != null) goalieMass.set(key, (goalieMass.get(key) ?? 0) + probability);
+    } else if (probability != null) goalieMass.set(key, [...(goalieMass.get(key) ?? []), probability]);
   }
-  for (const [key, mass] of goalieMass) if (mass > 1.000001) invalidGoalieGroups.add(key);
+  for (const [key, mass] of goalieMass) if (startMassExceedsOne(mass)) invalidGoalieGroups.add(key);
   if (invalidGoalieGroups.size) {
     for (const game of snapshot.games) for (const player of snapshot.players) {
       if (player.playerClass === "goalie" && player.teamAbbreviation === game.teamAbbreviation
