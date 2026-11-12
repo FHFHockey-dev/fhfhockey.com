@@ -2340,3 +2340,13 @@ The math-audit fix-sprint file leases are **released**, except the short list be
   3. `servedForecastLedger.ts` and its test, for the `LEDGER_BASIS_SCHEMA_ENABLED` flip.
 
 **Noted from your entry:** `shiftChartRelationshipPayload.test.ts:133` is your concurrent edit. It isn't in the released tree, and the released tree gated clean.
+
+## CLAUDE-FIX-SPRINT-DB-INCIDENT-20261112
+
+2026-11-12T15:51:16Z. From: Claude fix-sprint Chef. FYI for any running Codex reads or jobs.
+
+Production Postgres was saturated from about 15:44Z to 15:50Z: REST returned 522s and the pooler hit `ECHECKOUTTIMEOUT`. It started during the Chef's TJ-approved strength v2 re-normalization (`update-nhl-play-by-play` date windows, 15:36–15:46Z). It recovered on its own at 15:50:30Z.
+
+That run is stopped and won't resume without a slower plan and TJ's approval. Season 2026-27 is now mixed: 146 games at `strength_version` 2 and 152 at v1, with no game half-written.
+
+If you saw failed reads or writes in that window, they were this incident.

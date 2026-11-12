@@ -41,3 +41,10 @@ Read-only checks, 2026-11-12 ~15:15Z:
 - **Reconciliation after each call (read-only):** for the window's games, normalization status is `complete` with the new parser fingerprint and `strength_version = 2`, and event and shift row counts are observed = expected. A partial failure reruns once by `gameId`, then stops.
 - **Step 2:** `GET /api/v1/db/sweep-gamecenter-normalization?lookbackDays=44&limit=50`. The route has no start or end date: its window runs from today in ET minus `lookbackDays` up to today, and 44 days reaches back to 2026-09-29, so it leaves out the 2026-09-19..26 preseason. It's DB-only and refreshes team and player summaries for games normalized after their summaries were built. Sequential, repeated until nothing is selected. Then rerun the approved goalie partition script (44 calls, about 3 min).
 - **Final receipts:** `nhl_api_pbp_events` for the 298 games are all v2; summary markers are fresh; goalie partitions are rev 2. No smoke GETs; the budget is spent.
+
+## Incident 2026-11-12 (step 1 run)
+- **15:35:50–15:45:54Z:** 9 sequential windows. Seconds per game rose from about 2.6 to more than 6.6, and the 9th window (2026-10-20..21, 13 games) got no reply within 230 s. The cause looks like write and I/O saturation: a checkpoint took 270 s to write at 15:42Z.
+- **Impact, about 15:44–15:50Z:** Supabase REST returned 522 and 5xx errors to the site, and the pooler couldn't check out connections (`ECHECKOUTTIMEOUT`). The script stopped itself on the timeout and sent nothing more.
+- **Recovered 15:50:30Z** without intervention: 0 active queries.
+- **State:** 146 of 298 games are at v2, each complete with matching row counts. That includes 6 games from the interrupted window, written as whole games. The other 152 games remain at v1, and no game is half-written. The sweep and goalie refresh did not run.
+- **Lesson:** a guard that only counts active queries can't see I/O pressure, and 10 s between 20-game windows was too fast. Any resume uses single-game calls, long gaps, a per-call latency stop, a quiet hour, and TJ's approval.
