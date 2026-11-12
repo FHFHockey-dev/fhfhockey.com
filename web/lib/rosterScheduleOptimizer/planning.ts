@@ -89,6 +89,8 @@ function opponentStats(snapshot: PlanningSnapshot): StatLine | null {
   return stats;
 }
 type Applicability = Record<"skater" | "goalie", Set<string>>;
+/** Floating-point slack for a team-game's summed start probabilities (unrounded since W2-8 D2). */
+const START_MASS_TOLERANCE = 1e-9;
 const GOALIE_STATS = new Set(["SAVES_GOALIE", "GOALS_AGAINST_GOALIE", "WINS_GOALIE", "LOSSES_GOALIE", "OTL_GOALIE", "SHUTOUTS_GOALIE", "SHOTS_AGAINST_GOALIE", "GAMES_STARTED", "GOALIE_MINUTES", "SAVES", "GOALSAGAINST", "SHOTSAGAINST", "WINS", "SHUTOUTS", "GAA", "SV%", "SAVE_PERCENTAGE"]);
 function statApplicability(snapshot: PlanningSnapshot): Applicability {
   const playerClass = new Map(snapshot.players.map(player => [player.id, player.playerClass]));
@@ -544,7 +546,10 @@ function refineOutcomeLineup(
         const probability = forecast.confirmedStart ? 1 : forecast.startProbability;
         if (!finite(probability)) return invalid;
         const key = `${play.game.id}:${play.player.teamAbbreviation}`;
-        goalieGroups.set(key, Math.min(1, (goalieGroups.get(key) ?? 0) + probability));
+        // A team-game's start chances above 1 are inconsistent evidence: rejected, never capped (W2-8 D2).
+        const mass = (goalieGroups.get(key) ?? 0) + probability;
+        if (mass > 1 + START_MASS_TOLERANCE) return invalid;
+        goalieGroups.set(key, mass);
       }
     }
     const credited = snapshot.rules.goalieMinimum.credited;
@@ -967,8 +972,13 @@ function evaluatePreparedPlan(prepared: ReturnType<typeof prepareEvaluation>, in
     if (play.forecast?.confirmedStart) confirmed++;
     const probability = play.forecast?.confirmedStart ? 1 : play.forecast?.startProbability;
     const key = `${play.game.id}:${play.player.teamAbbreviation}`;
-    if (finite(probability)) goalieByTeamGame.set(key, Math.min(1, (goalieByTeamGame.get(key) ?? 0) + probability));
-    else { startsKnown = false; if (!minimumAlreadyMet) projected = null; }
+    const mass = finite(probability) ? (goalieByTeamGame.get(key) ?? 0) + probability : null;
+    // Above 1 is inconsistent evidence: the team-game's starts are unknown, never capped at 1 (W2-8 D2).
+    if (mass !== null && mass <= 1 + START_MASS_TOLERANCE) goalieByTeamGame.set(key, mass);
+    else {
+      if (mass !== null) limitations.add("Goalie start chances for one team-game sum above 1; its expected starts are unknown.");
+      startsKnown = false; if (!minimumAlreadyMet) projected = null;
+    }
   }
   const expectedStarts = startsKnown ? [...goalieByTeamGame.values()].reduce((sum, value) => sum + value, 0) : null;
   if (minimum.counts === "appearances" && hasMinimum) {

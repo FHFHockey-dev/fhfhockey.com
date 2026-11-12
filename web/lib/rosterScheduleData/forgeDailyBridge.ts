@@ -201,9 +201,18 @@ function retargetGoalieLine(line: StatLine, from: Context, to: Context, venue: {
   const shots = (1 + to.shotsAgainst) / (1 + from.shotsAgainst) * (1 + venue.to) / (1 + venue.from);
   const against = (1 + to.goalsAgainst) / (1 + from.goalsAgainst) * (1 + venue.to) / (1 + venue.from);
   const scale = (value: number | null, factor: number) => value === null ? null : round(value * factor);
-  return { ...line, SAVES_GOALIE: scale(line.SAVES_GOALIE, shots), SHOTS_AGAINST_GOALIE: scale(line.SHOTS_AGAINST_GOALIE, shots),
+  const moved = { ...line, SAVES_GOALIE: scale(line.SAVES_GOALIE, shots), SHOTS_AGAINST_GOALIE: scale(line.SHOTS_AGAINST_GOALIE, shots),
     GOALS_AGAINST_GOALIE: scale(line.GOALS_AGAINST_GOALIE, against),
     SHUTOUTS_GOALIE: line.SHUTOUTS_GOALIE === null ? null : round(Math.min(1, line.SHUTOUTS_GOALIE / against)) };
+  return reconcileSaves(moved);
+}
+/** SA = SV + GA (Astra PR1): shots and goals against move by different factors, so saves are derived as SA − GA. Goals
+ * against above shots against is an impossible line: its three components become unknown, never a negative save count. */
+function reconcileSaves(line: StatLine): StatLine {
+  const shots = line.SHOTS_AGAINST_GOALIE, goals = line.GOALS_AGAINST_GOALIE;
+  if (!finite(shots) || !finite(goals)) return line;
+  if (goals > shots) return { ...line, SAVES_GOALIE: null, SHOTS_AGAINST_GOALIE: null, GOALS_AGAINST_GOALIE: null };
+  return { ...line, SAVES_GOALIE: round(shots - goals) };
 }
 /** A team's chance to win one game (OT/SO included), kept apart from any goalie's wins. Both teams of a game sum to 1.
  * `forge`: FORGE projected the game; `forge_paired`: 1 − the opponent's FORGE value; `forge_model`: FORGE's win model on
@@ -637,8 +646,10 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
         emitReserve(goalie, game, runs.get(source.run_id)!, line, teamLine ? "goalie:start_unknown_team_line" : "goalie:start_unknown");
         reserveGoalieGames++; continue;
       }
-      emit(goalie, game, runs.get(source.run_id)!, Object.fromEntries(Object.entries(line).map(([key, value]) => [key, value === null ? null : round(value * p)])),
-        round(p), line, confirmedId === String(goalie.nhlId), teamLine && inputs.reserves !== undefined ? "goalie:team_line" : undefined);
+      // Start probabilities stay unrounded through emission and the wire (W2-8 D2): four-decimal rounding can lift a
+      // group above 1 and void every line in it. Counts round, with saves re-derived so SA = SV + GA still holds.
+      emit(goalie, game, runs.get(source.run_id)!, reconcileSaves(Object.fromEntries(Object.entries(line).map(([key, value]) => [key, value === null ? null : round(value * p)]))),
+        p, line, confirmedId === String(goalie.nhlId), teamLine && inputs.reserves !== undefined ? "goalie:team_line" : undefined);
     }
   }
   // No FORGE line: an identified player still without a row for a game in the horizon gets a labelled unknown row

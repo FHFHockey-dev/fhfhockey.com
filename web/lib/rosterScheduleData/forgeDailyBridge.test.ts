@@ -581,7 +581,7 @@ describe("FORGE daily bridge", () => {
       it("thin the starter on a back-to-back without handing his chance to known teammates past an unknown one", () => {
         const teamGames = [{ id: 2026020101, date: "2026-10-19", homeTeamId: 10, awayTeamId: 8 }, { id: 2026020102, date: "2026-10-20", homeTeamId: 10, awayTeamId: 8 }];
         const all = run(known([201, 0.6], [202, 0.4]), players, { teamGames });
-        expect([all.chance("g1"), all.chance("g2")]).toEqual([0.33, 0.67]);
+        expect([all.chance("g1"), all.chance("g2")]).toEqual([expect.closeTo(0.33, 12), expect.closeTo(0.67, 12)]);
         const { chance } = run(known([201, 0.6], [202, 0.3]), [...players, g3], { teamGames });
         expect([chance("g1"), chance("g2"), chance("g3")]).toEqual([0.33, 0.3, null]);
       });
@@ -652,6 +652,43 @@ describe("FORGE daily bridge", () => {
     expect(row.stats.SAVES_GOALIE).toBeCloseTo(25 * expected);
     expect(row.stats.GOALS_AGAINST_GOALIE).toBeCloseTo(2.5 * expected);
     expect(forecasts.find(row => row.playerId === "g1" && row.gameId === "1")!.startProbability).toBeCloseTo(1 - expected);
+  });
+
+  it("keeps SA = SV + GA when a goalie line is moved to a new opponent (BC W1-11 A re-aim, Astra PR1)", () => {
+    const base = inputs();
+    // FORGE projected g1's 10-19 game against MTL; game 2 (10-21) is against SJS, a stronger attack.
+    base.goalies = base.goalies.map(row => ({ ...row, opponent_team_id: 8 }));
+    const opponentGames = games.map(game => game.id === "2" ? { ...game, opponent: "SJS" } : game.id === "1" ? { ...game, opponent: "MTL" } : game);
+    const prior = (team_abbrev: string, xga_per_game: number, xgf_per_game: number) =>
+      ({ team_abbrev, date: "2026-10-19", games_played: 50, xga: 50 * xga_per_game, xga_per_game, xgf_per_game });
+    const teamPriors = [prior("TOR", 2.9, 3), prior("MTL", 2.6, 2.4), prior("SJS", 3.5, 3.7)];
+    const { forecasts } = buildForgeDailyBridgeForecasts({ ...base, teamPriors }, players, opponentGames, now, 20262027, policy);
+    const g1 = forecasts.find(row => row.playerId === "g1" && row.gameId === "2")!;
+    const line = g1.conditionalStats!;
+    // Re-aimed: shots and goals against move by different factors.
+    expect(line.SHOTS_AGAINST_GOALIE).not.toBe(27.5);
+    expect(line.GOALS_AGAINST_GOALIE! / 2.5).not.toBeCloseTo(line.SHOTS_AGAINST_GOALIE! / 27.5, 3);
+    for (const stats of [line, g1.stats]) {
+      expect(stats.GOALS_AGAINST_GOALIE!).toBeLessThanOrEqual(stats.SHOTS_AGAINST_GOALIE!);
+      expect(stats.SAVES_GOALIE! + stats.GOALS_AGAINST_GOALIE! - stats.SHOTS_AGAINST_GOALIE!).toBeCloseTo(0, 9);
+    }
+  });
+
+  it("emits unrounded start probabilities, so a rounded-up group never exceeds 1 (W2-8 D2)", () => {
+    const base = inputs();
+    const g3 = member("g3", 203, "TOR", 10, "goalie");
+    // Astra's .33337 / .33337 / .33326 group: rounding each to 4 decimals gives 1.0001, which the resolver rejects.
+    base.goalieShares = [shareRow(201, 10, 2026020001, "2026-10-19", 0.33337), shareRow(202, 10, 2026020001, "2026-10-19", 0.33337),
+      shareRow(203, 10, 2026020001, "2026-10-19", 0.33326)];
+    const { forecasts } = buildForgeDailyBridgeForecasts(base, [...players, g3], games, now, 20262027, policy);
+    const group = forecasts.filter(row => row.gameId === "2" && ["g1", "g2", "g3"].includes(row.playerId));
+    expect(group.map(row => row.startProbability)).toEqual([0.33337, 0.33337, 0.33326].map(value => expect.closeTo(value, 12)));
+    const mass = group.reduce((sum, row) => sum + row.startProbability!, 0);
+    expect(mass).toBeLessThanOrEqual(1 + 1e-12);
+    // Through the wire too: the client rebuilds the same unrounded values.
+    const { wire } = compactBridgeForecasts(forecasts, { players: [...players, g3], games }, 20262027);
+    const rebuilt = expandBridgeForecasts(JSON.parse(JSON.stringify(wire)), { players: [...players, g3], games });
+    expect(rebuilt.filter(row => row.gameId === "2" && row.playerId.startsWith("g")).reduce((sum, row) => sum + row.startProbability!, 0)).toBeLessThanOrEqual(1 + 1e-12);
   });
 
   it("moves future games to their opponent with FORGE's team-strength adjustment", () => {
@@ -865,7 +902,7 @@ describe("FORGE daily bridge", () => {
       const [yahoo, plain] = [await read(snapshot), await read({ ...snapshot, players })];
       const row = (rows: typeof forecasts, id: string, gameId: string) => rows.find(item => item.playerId === id && item.gameId === gameId)!;
       expect(row(yahoo.rows, "g1", "1")).toMatchObject({ startProbability: 0.8, confirmedStart: false, stats: { SAVES_GOALIE: 20 } });
-      expect(row(yahoo.rows, "g2", "1").startProbability).toBe(0.2);
+      expect(row(yahoo.rows, "g2", "1").startProbability).toBeCloseTo(0.2, 12);
       expect(row(yahoo.rows, "g1", "2").startProbability).toBe(0.7);
       // Only the unchanged current server rows receive authority; serialized labels cannot change either goalie.
       expect(plain.points.get("g1")).toBeCloseTo(0.8 * 25 * 0.2 + 0.7 * 25 * 0.2);

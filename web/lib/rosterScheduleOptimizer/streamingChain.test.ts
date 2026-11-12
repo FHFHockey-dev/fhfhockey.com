@@ -358,6 +358,20 @@ describe("unknown roster players are never automatic drops (decisions 3, 47, 49)
   });
 });
 
+describe("team-game start mass above 1 (W2-8 D2)", () => {
+  it("reads the team-game's expected starts as unknown instead of capping them at 1", () => {
+    const goalies = (second: number): Spec[] => [
+      { id: "g1", team: "GT", days: [3], perGame: 1, rostered: true, positions: ["G"], startProbability: 0.7 },
+      { id: "g2", team: "GT", days: [3], perGame: 1, rostered: true, positions: ["G"], startProbability: second }];
+    const evaluate = (second: number) => evaluatePlan(week(goalies(second), { slots: { G: 2, BN: 0 } }), intent(), "agp", [], false);
+    // 0.7 + 0.3 is a consistent team-game: one expected start.
+    expect(evaluate(0.3).goalie.expectedStarts).toBeCloseTo(1, 12);
+    // 0.7 + 0.6 is inconsistent evidence; the old cap reported exactly 1 start.
+    expect(evaluate(0.6).goalie.expectedStarts).toBeNull();
+    expect(evaluate(0.6).limitations).toContain("Goalie start chances for one team-game sum above 1; its expected starts are unknown.");
+  });
+});
+
 /** C/LW/RW play daily for little, so they rank first to drop, but dropping one loses as many games as the D streamer adds.
  * The D plays Monday only (4th in drop order): only his drop gains. */
 const fourthDrop: Spec[] = [
