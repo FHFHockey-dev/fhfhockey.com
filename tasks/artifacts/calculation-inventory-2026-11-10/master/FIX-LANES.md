@@ -58,6 +58,7 @@ Chef may pull an independent lane (L17, L3, L13, L19–L21) forward when the nex
 | NST admission cadence (decision 14: SQL, TS, Python, resumable callers) | `web/lib/cron/nstRateLimitPolicy.ts` is Codex's; `web/lib/nst/**` admission is shared | Chef asks Codex in the mailbox whether its admission candidate covers decision 14 |
 | `update-goalie-projections-v2.ts` | Codex-owned | Readers listed in L9b only |
 | L9b files (FORGE goalie stage, starters, Start Chart, goalies API) | Handed to Codex 2026-11-11 after L9b closed (TJ); contract `forge_goalie_candidates_v1` preserved | `CLAUDE-FIX-L9B-HANDOFF-TO-CODEX-20261111` |
+| Crease Shift (`lib/socialShare/modules/creaseShift.*`, `CreaseShiftCard.tsx`, crease e2e spec) | Handed to Codex 2026-11-11 after L18 closed (TJ) | `CLAUDE-FIX-L18-CREASE-SHIFT-HANDOFF-TO-CODEX-20261111` |
 | Game Grid UI (goalie grid work, TJ-approved 2026-11-11) | Codex holds `components/GameGrid/{GameGrid,TeamRow,DesktopMasterTable,...}`, `pages/game-grid/index.tsx`, game-grid-previews e2e (see L12 brief) | L12 waits for handback or proposes via mailbox |
 
 ## Not in any lane (owner design first)
