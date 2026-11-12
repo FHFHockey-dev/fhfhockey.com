@@ -372,4 +372,41 @@ describe("FORGE landing page", () => {
       )
     ).toBeTruthy();
   });
+
+  it("ranks a complete Top Add above a missing-head row and never prints NaN (W3-2 D3, decision 118)", async () => {
+    const objectUncertainty = { model: { skater_selection: { role_continuity: { volatility_index: 0.4 } } } };
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/api/v1/forge/players")) {
+        return jsonResponse({
+          asOfDate: "2026-03-14",
+          data: [
+            { player_id: 1, player_name: "Missing Head", team_name: "New Jersey Devils", position: "C",
+              g: null, a: 0.5, pts: null, ppp: 0.3, sog: 3, hit: 1, blk: 1, uncertainty: objectUncertainty },
+            { player_id: 2, player_name: "Complete Add", team_name: "New Jersey Devils", position: "C",
+              g: 0.3, a: 0.4, pts: 0.7, ppp: 0.2, sog: 2.5, hit: 1, blk: 0.5, uncertainty: objectUncertainty },
+          ],
+        });
+      }
+      if (url.includes("/api/v1/transactions/ownership-trends")) {
+        return jsonResponse({
+          success: true,
+          risers: [
+            { playerId: 1, name: "Missing Head", latest: 40, delta: 9, teamAbbrev: "NJD" },
+            { playerId: 2, name: "Complete Add", latest: 40, delta: 1, teamAbbrev: "NJD" },
+          ],
+          fallers: [],
+        });
+      }
+      return jsonResponse({}, false);
+    }));
+
+    render(<FORGEPage />);
+
+    const complete = await screen.findByText("Complete Add");
+    const missing = screen.getByText("Missing Head");
+    expect(complete.compareDocumentPosition(missing) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(document.body.textContent).not.toContain("NaN");
+    expect(missing.closest("a")?.textContent).toMatch(/incomplete/i);
+  });
 });

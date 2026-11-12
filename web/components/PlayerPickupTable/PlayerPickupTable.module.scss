@@ -1106,6 +1106,14 @@ $selected-border-width: 2px; // The width of the indicator
   letter-spacing: 0.5px;
 }
 
+// Decision 56: a team with no games left in the window stays visible, labelled.
+.teamWindowNote {
+  display: block;
+  font-size: 0.75em;
+  color: v.$text-color-secondary;
+  white-space: nowrap;
+}
+
 .tableContainer {
   margin-top: 0;
   overflow-x: auto;

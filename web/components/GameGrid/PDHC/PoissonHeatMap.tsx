@@ -6,7 +6,14 @@ import { useTeam } from "../contexts/GameGridContext";
 import { generateProbabilityMatrixWithTieBreaker } from "../utils/poissonHelpers";
 import styles from "styles/PoissonHeatmap.module.scss";
 import publicSupabase from "lib/supabase/public-client";
-import { calculateBlendedWinOdds, formatWinOdds } from "../utils/calcWinOdds";
+import {
+  calculateBlendedWinOdds,
+  formatWinOdds,
+  GAME_GRID_WIN_ODDS
+} from "../utils/calcWinOdds";
+
+/** Decision 64: the placeholder score grid and its odds are withheld. */
+const ODDS_WITHHELD = GAME_GRID_WIN_ODDS.status === "unavailable";
 import Image from "next/legacy/image";
 import { teamsInfo } from "lib/teamsInfo";
 
@@ -169,6 +176,7 @@ const PoissonHeatmap: React.FC<PoissonHeatmapProps> = ({
         HeatmapConfig.maxGoals
       );
 
+      if (!probabilityMatrix) throw new Error("Invalid expected-goals rates");
       setData(probabilityMatrix);
     } catch (err: any) {
       console.error("Error fetching expected goals:", err);
@@ -178,8 +186,12 @@ const PoissonHeatmap: React.FC<PoissonHeatmapProps> = ({
     }
   }, [gameId]);
 
-  // Effect for data fetching
+  // Effect for data fetching (skipped while the odds are withheld)
   useEffect(() => {
+    if (ODDS_WITHHELD) {
+      setLoading(false);
+      return;
+    }
     fetchExpectedGoals();
   }, [fetchExpectedGoals]);
 
@@ -339,6 +351,22 @@ const PoissonHeatmap: React.FC<PoissonHeatmapProps> = ({
       axisLabels
     ]
   );
+
+  if (ODDS_WITHHELD) {
+    return (
+      <div className={styles.chartContainer} style={cssVariables}>
+        <h4 className={styles.pdchTitle}>
+          {homeTeamSafe.abbreviation || homeTeamSafe.name} vs.{" "}
+          {awayTeamSafe.abbreviation || awayTeamSafe.name}
+        </h4>
+        <p className={styles.winOddsLabels} role="status">
+          <strong>{GAME_GRID_WIN_ODDS.message}</strong>
+          <br />
+          {GAME_GRID_WIN_ODDS.detail}
+        </p>
+      </div>
+    );
+  }
 
   // Loading and error states
   if (loading) {

@@ -19,7 +19,9 @@ import {
   type PlayerOwnershipContext,
 } from "lib/dashboard/playerOwnership";
 import {
+  extractTopAddsUncertainty,
   scoreTopAddsCandidate,
+  toTopAddsProjection,
   type TopAddsMode,
 } from "lib/dashboard/topAddsRanking";
 import { buildTopAddsScheduleContextMap } from "lib/dashboard/topAddsScheduleContext";
@@ -54,12 +56,15 @@ type ForgePlayersResponse = {
     team_name: string | null;
     teamIdentity?: ProjectionTeamIdentity | null;
     position: string | null;
-    pts: number;
-    ppp: number;
-    sog: number;
-    hit: number;
-    blk: number;
-    uncertainty: number | null;
+    g?: number | null;
+    a?: number | null;
+    pts: number | null;
+    ppp: number | null;
+    sog: number | null;
+    hit: number | null;
+    blk: number | null;
+    /** A number or FORGE's uncertainty object; read only through the adapter. */
+    uncertainty: unknown;
     degradedProjectionContext?: {
       summary: string | null;
       isDegraded: boolean;
@@ -334,6 +339,9 @@ export default function ForgePlayerDetailPage({
 
   const opportunityScore = useMemo(() => {
     if (!projectionRow || !ownershipContext) return null;
+    // Decision 118 scores per-game (one-game) lines over the games left; the
+    // week view loads five-game totals, which are never divided back down.
+    const perGameLine = mode !== "week";
 
     return scoreTopAddsCandidate(
       {
@@ -343,15 +351,16 @@ export default function ForgePlayerDetailPage({
         teamAbbr: teamMeta?.abbrev ?? null,
         position: projectionRow.position ?? null,
         headshot: null,
-        ownership: ownershipContext.ownership ?? 0,
+        // Unknown ownership stays unknown (never 0%, W3-2 D3).
+        ownership: ownershipContext.ownership ?? null,
         ownershipTimeline: ownershipContext.sparkline,
         delta: ownershipContext.delta ?? 0,
-        projectionPts: projectionRow.pts ?? 0,
-        ppp: projectionRow.ppp ?? 0,
-        sog: projectionRow.sog ?? 0,
-        hit: projectionRow.hit ?? 0,
-        blk: projectionRow.blk ?? 0,
-        uncertainty: projectionRow.uncertainty,
+        ...(perGameLine
+          ? toTopAddsProjection(projectionRow)
+          : {
+              ...toTopAddsProjection({}),
+              uncertainty: extractTopAddsUncertainty(projectionRow.uncertainty),
+            }),
         scheduleGamesRemaining: weekContext?.gamesRemaining ?? null,
         scheduleOffNightsRemaining: weekContext?.offNightsRemaining ?? null,
         scheduleLabel: weekContext?.summaryLabel ?? null,
@@ -533,11 +542,17 @@ export default function ForgePlayerDetailPage({
                     </article>
                     <article className={styles.detailMetricCard}>
                       <span className={styles.previewSubheading}>
-                        Add Model Score
+                        Add: Exp. FHFH pts
                       </span>
                       <strong>{formatMetric(opportunityScore?.total)}</strong>
                       <span>
-                        Risk {formatMetric(opportunityScore?.riskPenaltyScore)}
+                        {opportunityScore?.status === "incomplete"
+                          ? mode === "week"
+                            ? "Needs per-game lines for the week"
+                            : `Incomplete: missing ${opportunityScore.missing.join(", ")}`
+                          : opportunityScore
+                            ? `${formatMetric(opportunityScore.perGamePoints)} per game × ${opportunityScore.games}`
+                            : "--"}
                       </span>
                     </article>
                   </div>

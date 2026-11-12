@@ -1,7 +1,8 @@
 import { buildLinearWeights, isOneGameTeamRow, type TeamGameRow } from "./ctpi";
 
+/** candidate-2: pooled PP/PK rates (decision 20) and per-metric confidence. */
 export const RECENT_TEAM_FORM_V2_CANDIDATE_FORMULA_VERSION =
-  "recent-team-form-v2-candidate";
+  "recent-team-form-v2-candidate-2";
 export const RECENT_TEAM_FORM_V2_CANDIDATE_INPUT_VERSION =
   "ctpi-one-team-game-input-v3-candidate";
 
@@ -111,6 +112,20 @@ const COMPONENT_WEIGHTS: Record<RecentTeamFormComponentKey, number> = {
   specialTeams: 0.15,
 };
 
+/** Each scored metric's share of the score (component weight × metric weight). */
+const SCORED_METRIC_WEIGHTS = {
+  xgf_per_60: 0.35 * 0.5,
+  hdcf_per_60: 0.35 * 0.3,
+  gf_per_60: 0.35 * 0.2,
+  xga_per_60: 0.3 * 0.5,
+  hdca_per_60: 0.3 * 0.3,
+  ca_per_60: 0.3 * 0.2,
+  gsax_per_60_season: 0.2 * 0.4,
+  gsax_per_60_last10: 0.2 * 0.6,
+  pp_xgf_per_60: 0.15 * 0.55,
+  pk_xga_per_60: 0.15 * 0.45,
+} as const;
+
 const isFiniteNumber = (value: unknown): value is number =>
   typeof value === "number" && Number.isFinite(value);
 
@@ -137,24 +152,40 @@ function weightedMean(
   };
 }
 
+/**
+ * Pooled rate (decision 20): Σ(w·numerator) ÷ Σ(w·TOI) × 3600 over the same
+ * valid games, never a weighted mean of per-game ratios.
+ */
 function weightedRatio(
   rows: TeamGameRow[],
   weights: number[],
   numerator: keyof TeamGameRow,
   denominator: keyof TeamGameRow,
 ): WeightedValue {
-  return weightedMean(
-    rows.map((row) => {
-      const numeratorValue = row[numerator];
-      const denominatorValue = row[denominator];
-      return isFiniteNumber(numeratorValue) &&
-        isFiniteNumber(denominatorValue) &&
-        denominatorValue > 0
-        ? (numeratorValue / denominatorValue) * 3600
-        : null;
-    }),
-    weights,
-  );
+  let numeratorTotal = 0;
+  let denominatorTotal = 0;
+  let observationCount = 0;
+  rows.forEach((row, index) => {
+    const numeratorValue = row[numerator];
+    const denominatorValue = row[denominator];
+    const weight = weights[index];
+    if (
+      !isFiniteNumber(numeratorValue) ||
+      !isFiniteNumber(denominatorValue) ||
+      denominatorValue <= 0 ||
+      !isFiniteNumber(weight)
+    ) {
+      return;
+    }
+    numeratorTotal += weight * numeratorValue;
+    denominatorTotal += weight * denominatorValue;
+    observationCount += 1;
+  });
+  return {
+    value:
+      denominatorTotal > 0 ? (numeratorTotal / denominatorTotal) * 3600 : null,
+    observationCount,
+  };
 }
 
 function normalizePdo(value: unknown): number | null {
@@ -411,8 +442,24 @@ export function computeRecentTeamFormCandidateV2(
       0,
       1,
     );
+    // Confidence counts each scored metric's own observations (BA W1-4 A):
+    // one measured game among ten rows is not a full sample.
     const confidenceValue = clamp(
-      recentGameFraction * metricWeightCoverage,
+      (Object.keys(SCORED_METRIC_WEIGHTS) as Array<
+        keyof typeof SCORED_METRIC_WEIGHTS
+      >).reduce(
+        (total, key) =>
+          total +
+          SCORED_METRIC_WEIGHTS[key] *
+            (isFiniteNumber(team.values[key])
+              ? Math.min(
+                  1,
+                  team.observationCounts[key] /
+                    RECENT_TEAM_FORM_V2_TARGET_GAMES,
+                )
+              : 0),
+        0,
+      ),
       0,
       1,
     );

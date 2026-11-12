@@ -1,64 +1,59 @@
 // components/GameGrid/utils/poissonHelpers.ts
 
 import { poissonProbability } from "./poisson";
+import {
+  finalWinProbabilitiesFromRegulation,
+  type FinalWinProbabilities
+} from "lib/game-predictions/overtimeRule";
 
-// Function to generate probability matrix with tie-breaker
+/**
+ * Regulation score grid for two independent Poisson rates (home goals on the
+ * rows, away goals on the columns). The diagonal keeps the regulation-tie mass;
+ * overtime is resolved only through the shared rule (decision 45) in
+ * `matrixFinalWinProbabilities`. Invalid (negative, NaN, infinite) rates give
+ * null rather than a fabricated 0-0 certainty (BC W1-10 A).
+ */
 export const generateProbabilityMatrixWithTieBreaker = (
   homeLambda: number,
   awayLambda: number,
   maxGoals: number = 10
-): number[][] => {
-  const matrix: number[][] = [];
+): number[][] | null => {
+  if (
+    ![homeLambda, awayLambda].every(
+      (lambda) => Number.isFinite(lambda) && lambda >= 0
+    )
+  ) {
+    return null;
+  }
 
-  // First pass: calculate probabilities
+  const matrix: number[][] = [];
   for (let i = 0; i <= maxGoals; i++) {
     matrix[i] = [];
     for (let j = 0; j <= maxGoals; j++) {
-      // i: home team goals (Y-axis)
-      // j: away team goals (X-axis)
-      const homeProb = poissonProbability(i, homeLambda); // Home team scoring i goals
-      const awayProb = poissonProbability(j, awayLambda); // Away team scoring j goals
-      matrix[i][j] = homeProb * awayProb;
+      matrix[i][j] =
+        poissonProbability(i, homeLambda) * poissonProbability(j, awayLambda);
     }
   }
-
-  // Sum probabilities for home wins, away wins, and draws
-  let homeWinProb = 0;
-  let awayWinProb = 0;
-  let drawProb = 0;
-
-  for (let i = 0; i <= maxGoals; i++) {
-    for (let j = 0; j <= maxGoals; j++) {
-      if (i > j) {
-        // Home team wins
-        homeWinProb += matrix[i][j];
-      } else if (i < j) {
-        // Away team wins
-        awayWinProb += matrix[i][j];
-      } else {
-        // Draw
-        drawProb += matrix[i][j];
-      }
-    }
-  }
-
-  // Calculate redistribution ratios based on Lambdas
-  const totalWinProb = homeWinProb + awayWinProb;
-  const homeWinRatio = homeWinProb / totalWinProb;
-  const awayWinRatio = awayWinProb / totalWinProb;
-
-  // Redistribute draw probabilities
-  for (let i = 0; i <= maxGoals; i++) {
-    for (let j = 0; j <= maxGoals; j++) {
-      if (i === j) {
-        const originalProb = matrix[i][j];
-        matrix[i][j] = 0;
-        // Redistribute draw probability proportionally
-        matrix[i][j] += originalProb * homeWinRatio;
-        matrix[i][j] += originalProb * awayWinRatio;
-      }
-    }
-  }
-
   return matrix;
+};
+
+/** Final (OT/SO included) win probabilities from the grid, via the shared OT rule. */
+export const matrixFinalWinProbabilities = (
+  matrix: number[][]
+): FinalWinProbabilities | null => {
+  let homeRegulationWin = 0;
+  let awayRegulationWin = 0;
+  let regulationTie = 0;
+  matrix.forEach((row, i) =>
+    row.forEach((p, j) => {
+      if (i > j) homeRegulationWin += p;
+      else if (i < j) awayRegulationWin += p;
+      else regulationTie += p;
+    })
+  );
+  return finalWinProbabilitiesFromRegulation({
+    homeRegulationWin,
+    awayRegulationWin,
+    regulationTie
+  });
 };

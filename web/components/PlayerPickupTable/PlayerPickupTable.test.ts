@@ -252,3 +252,65 @@ describe("mounted pickup ownership freshness", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 });
+
+describe("pickup team boost with an idle team (W1 P0 #29, decision 56)", () => {
+  it("labels players whose team has no games left and ranks them after players with games", async () => {
+    const teamWeekData = [
+      { teamAbbreviation: "BOS", gamesPlayed: 0, offNights: 0, avgOpponentPointPct: 0.5, weekScore: -100 },
+      { teamAbbreviation: "TOR", gamesPlayed: 2, offNights: 1, avgOpponentPointPct: 0.5, weekScore: 9 },
+    ];
+    state.rows = state.rows.map((row) => row.nhl_player_id === "3" ? { ...row, yahoo_team: "TOR" } : row);
+    render(React.createElement(PlayerPickupTable, { teamWeekData }));
+    await screen.findByText("F. Agent");
+    expect(screen.getAllByText("No games left").length).toBeGreaterThan(0);
+    const names = screen.getAllByText(/^(F\. Agent|M\. Player|O\. Player)$/).map((node) => node.textContent);
+    const firstRanked = names[0];
+    expect(firstRanked).toBe("O. Player");
+  });
+});
+
+describe("pickup composite and missing metrics (W3-3 D7, decision 16)", () => {
+  const withGamesPlayed = (skaterTotals: Record<string, unknown>[]) => {
+    const base = state.from.getMockImplementation()!;
+    state.from.mockImplementation((table: string) => {
+      if (table !== "wgo_skater_stats_totals" && table !== "nhl_standings_details") return base(table);
+      const data: any = table === "wgo_skater_stats_totals" ? skaterTotals
+        : Object.assign([{ team_abbrev: "BOS", games_played: 20 }, { team_abbrev: "TOR", games_played: 20 }], { date: "2026-10-21" });
+      const builder: any = { then: (resolve: any) => Promise.resolve({ data, error: null }).then(resolve) };
+      for (const method of ["select", "eq", "range", "order", "in", "not", "limit", "gte", "lte", "maybeSingle"]) builder[method] = () => builder;
+      return builder;
+    });
+  };
+
+  it("shows a missing metric as — (never 0%) and does not count GP% twice in the score", async () => {
+    state.rows = state.rows.map((row) =>
+      row.nhl_player_id === "1" ? { ...row, points: 10 }
+        : row.nhl_player_id === "3" ? { ...row, points: 20 } : row);
+    withGamesPlayed([
+      { player_id: 1, games_played: 20, current_team_abbreviation: "BOS" },
+      { player_id: 3, games_played: 10, current_team_abbreviation: "BOS" },
+    ]);
+    render(React.createElement(PlayerPickupTable));
+    await screen.findByText("F. Agent");
+    const rowOf = (name: string) => screen.getByText(name).closest("tr")!;
+    const hitBox = within(rowOf("F. Agent")).getAllByText("HIT")[0].nextElementSibling!;
+    expect(hitBox.textContent).toBe("—");
+    // Points percentiles 25 and 75; GP% (100% vs 50%) is shown, not re-counted.
+    await waitFor(() => expect(within(rowOf("F. Agent")).getByText("25.0")).toBeTruthy());
+    expect(within(rowOf("O. Player")).getByText("75.0")).toBeTruthy();
+  });
+
+  it("keeps a multi-team season's GP% unknown rather than dividing by the current team", async () => {
+    withGamesPlayed([
+      { player_id: 1, games_played: 20, current_team_abbreviation: "TOR, BOS" },
+      { player_id: 3, games_played: 10, current_team_abbreviation: "BOS" },
+    ]);
+    render(React.createElement(PlayerPickupTable));
+    await screen.findByText("F. Agent");
+    const rowOf = (name: string) => screen.getByText(name).closest("tr")!;
+    await waitFor(() => expect(within(rowOf("O. Player")).getByText("50%")).toBeTruthy());
+    // GP% cell: O. Player gets a value box; the traded F. Agent shows N/A.
+    expect(within(rowOf("O. Player")).queryAllByText("GP%").length).toBeGreaterThan(0);
+    expect(within(rowOf("F. Agent")).queryAllByText("GP%")).toHaveLength(0);
+  });
+});

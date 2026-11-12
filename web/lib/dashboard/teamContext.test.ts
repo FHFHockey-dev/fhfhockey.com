@@ -8,7 +8,7 @@ import {
 } from "./teamContext";
 
 describe("teamContext helpers", () => {
-  it("computes team power score with normalized special-team tiers", () => {
+  it("computes the one power score: mean of offense and defense (TJ 2026-11-12)", () => {
     expect(
       computeTeamPowerScore({
         offRating: 82,
@@ -18,20 +18,15 @@ describe("teamContext helpers", () => {
         pkTier: 2,
         trend10: 1.1
       })
-    ).toBeCloseTo(84.8333333333, 5);
+    ).toBeCloseTo(80.5, 9);
   });
 
-  it("falls back missing rating inputs to neutral defaults", () => {
-    expect(
-      computeTeamPowerScore({
-        offRating: null,
-        defRating: null,
-        paceRating: null,
-        ppTier: null,
-        pkTier: 9,
-        trend10: null
-      })
-    ).toBeCloseTo(3, 5);
+  it("does not let pace or an unknown special-teams tier move the score", () => {
+    const base = { offRating: 104, defRating: 98, trend10: 0 };
+    const known = computeTeamPowerScore({ ...base, paceRating: 120, ppTier: 1, pkTier: 1 });
+    const unknown = computeTeamPowerScore({ ...base, paceRating: 80, ppTier: null, pkTier: null });
+    expect(known).toBe(101);
+    expect(unknown).toBe(101);
     expect(normalizeSpecialTeamTier(null)).toBe(2);
     expect(normalizeSpecialTeamTier(9)).toBe(2);
   });

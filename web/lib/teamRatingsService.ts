@@ -18,8 +18,9 @@ export type TeamRating = {
   offRating: number;
   defRating: number;
   paceRating: number;
-  ppTier: SpecialTeamTier;
-  pkTier: SpecialTeamTier;
+  /** Pooled season-to-date tier; null when unknown (never tier 0 or 3). */
+  ppTier: SpecialTeamTier | null;
+  pkTier: SpecialTeamTier | null;
   trend10: number;
   components: RatingComponents;
   finishingRating: number | null;
@@ -41,14 +42,19 @@ const cache = new Map<string, CacheEntry>();
 const buildCacheKey = (date: string, teamAbbr?: string): string =>
   [date, teamAbbr ?? ""].join("|");
 
+const toSpecialTeamTier = (value: unknown): SpecialTeamTier | null => {
+  const tier = value == null ? null : Number(value);
+  return tier === 1 || tier === 2 || tier === 3 ? tier : null;
+};
+
 const mapRowToTeamRating = (row: Record<string, unknown>): TeamRating => ({
   teamAbbr: String(row.team_abbreviation),
   date: String(row.date),
   offRating: Number(row.off_rating),
   defRating: Number(row.def_rating),
   paceRating: Number(row.pace_rating),
-  ppTier: Number(row.pp_tier) as SpecialTeamTier,
-  pkTier: Number(row.pk_tier) as SpecialTeamTier,
+  ppTier: toSpecialTeamTier(row.pp_tier),
+  pkTier: toSpecialTeamTier(row.pk_tier),
   trend10: Number(row.trend10),
   components: {
     xgf60: Number(row.xgf60),

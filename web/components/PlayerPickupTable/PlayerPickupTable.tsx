@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
+import { buildTeamBoost, teamBoostFor, type TeamWindowStatus } from "./teamBoost";
 import publicSupabase from "lib/supabase/public-client";
 import styles from "./PlayerPickupTable.module.scss";
 import Image from "next/image";
@@ -61,8 +62,9 @@ export type UnifiedPlayerData = {
 type RawDataFromDb = UnifiedPlayerData;
 
 export interface PlayerWithPercentiles extends UnifiedPlayerData {
-  percentiles: Record<MetricKey, number>;
-  composite: number; // Original overall score based on all relevant metrics
+  /** Null when the player's value is unknown (never percentile 0, rule 5). */
+  percentiles: Record<MetricKey, number | null>;
+  composite: number; // Mean percentile of the known season-total metrics, GP% excluded
 }
 
 export interface PlayerWithScores extends PlayerWithPercentiles {
@@ -70,6 +72,8 @@ export interface PlayerWithScores extends PlayerWithPercentiles {
   sortByValue: number; // The value used when sorting by the 'Score' column
   filterMode: "all" | "single" | "multiple" | "none"; // What kind of filtering is active for this player
   activeSelectedMetrics: MetricKey[]; // Which metrics were actually used for the score calculation
+  /** Team boost window status (decision 56); set only while the boost is on. */
+  teamWindowStatus?: TeamWindowStatus;
 }
 
 export type MetricKey =
@@ -527,6 +531,10 @@ const normalizeTeamAbbreviation = (
   }
   return fallback.toUpperCase();
 };
+
+/** A season-totals row listing more than one team (e.g. "TOR, BOS"). */
+export const isMultiTeamTotalsRow = (team: unknown): boolean =>
+  typeof team === "string" && /[,/]/.test(team);
 
 function getRankColorStyle(
   percentile: number | undefined | null
@@ -1349,6 +1357,9 @@ const DesktopTable: React.FC<DesktopTableProps> = ({
                     ) : (
                       "N/A"
                     )}
+                    {player.teamWindowStatus === "idle" ? (
+                      <span className={styles.teamWindowNote}>No games left</span>
+                    ) : null}
                   </td>
                   <td className={styles.numCell}>
                     <span title={player.ownershipEvidence?.observedOn ? `Yahoo ownership · ${player.ownershipEvidence.observedOn}` : undefined}>
@@ -1437,7 +1448,7 @@ const DesktopTable: React.FC<DesktopTableProps> = ({
                               >
                                 {pctVal !== undefined && pctVal !== null
                                   ? `${pctVal.toFixed(0)}%`
-                                  : "0%"}
+                                  : "—"}
                               </div>
                             </div>
                           );
@@ -1578,7 +1589,7 @@ const MobileTable: React.FC<MobileTableProps> = ({
                     displayValue:
                       pctVal !== undefined && pctVal !== null
                         ? `${pctVal.toFixed(0)}%`
-                        : "0%" // Handle undefined/null
+                        : "—" // Unknown, never 0% (rule 5)
                   };
                 })
             ];
@@ -1644,6 +1655,9 @@ const MobileTable: React.FC<MobileTableProps> = ({
                     ) : (
                       "N/A"
                     )}
+                    {player.teamWindowStatus === "idle" ? (
+                      <span className={styles.teamWindowNote}>No games left</span>
+                    ) : null}
                   </td>
                   <td>
                     {" "}
@@ -2372,7 +2386,7 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
         for (const chunk of chunkArray(skaterIds, 500)) {
           const { data, error } = await publicSupabase
             .from("wgo_skater_stats_totals")
-            .select("player_id,games_played")
+            .select("player_id,games_played,current_team_abbreviation")
             .eq("season", nhlSeasonIdString)
             .in("player_id", chunk);
           if (error) throw error;
@@ -2388,6 +2402,9 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
                   ? Number(row.games_played)
                   : NaN;
             if (!playerId || Number.isNaN(gamesPlayed)) return;
+            // Decision 16: a multi-team season has no single team-of-record
+            // denominator here, so its GP% stays unknown.
+            if (isMultiTeamTotalsRow(row?.current_team_abbreviation)) return;
             combined[playerId] = gamesPlayed;
           });
         }
@@ -2395,7 +2412,7 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
         for (const chunk of chunkArray(goalieIds, 500)) {
           const { data, error } = await publicSupabase
             .from("wgo_goalie_stats_totals")
-            .select("goalie_id,games_played")
+            .select("goalie_id,games_played,current_team_abbreviation")
             .eq("season_id", nhlSeasonIdNumber)
             .in("goalie_id", chunk);
           if (error) throw error;
@@ -2411,6 +2428,7 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
                   ? Number(row.games_played)
                   : NaN;
             if (!goalieId || Number.isNaN(gamesPlayed)) return;
+            if (isMultiTeamTotalsRow(row?.current_team_abbreviation)) return;
             combined[goalieId] = gamesPlayed;
           });
         }
@@ -2485,10 +2503,13 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
           ? Math.max(0, Math.min(1, playerGamesPlayed / teamGamesPlayed))
           : null;
 
+      // Without a single-team computation, keep the source's value, which is
+      // null (unknown) for multi-team seasons (migration 133, decision 16).
       return {
         ...player,
         ...currentPickupOwnership(player.ownershipEvidence ?? null, ownershipNow),
-        percent_games: computed ?? player.percent_games
+        percent_games:
+          computed ?? (playerGamesPlayed === null ? player.percent_games : null)
       };
     });
   }, [playersData, playerGamesPlayedById, teamGamesPlayedByAbbr, ownershipNow]);
@@ -2543,8 +2564,8 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
     function computePercentile(
       values: (number | null)[],
       value: number | null
-    ): number {
-      if (value === null || value === undefined) return 0;
+    ): number | null {
+      if (value === null || value === undefined) return null;
       const validValues = values.filter(
         (v) => v !== null && v !== undefined
       ) as number[];
@@ -2564,8 +2585,8 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
     function computeInvertedPercentile(
       values: (number | null)[],
       value: number | null
-    ): number {
-      if (value === null || value === undefined) return 0;
+    ): number | null {
+      if (value === null || value === undefined) return null;
       const validValues = values.filter(
         (v) => v !== null && v !== undefined
       ) as number[];
@@ -2600,7 +2621,7 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
       });
 
       return group.map((player) => {
-        const percentiles: Partial<Record<MetricKey, number>> = {};
+        const percentiles: Partial<Record<MetricKey, number | null>> = {};
         let sum = 0;
         let count = 0;
 
@@ -2609,16 +2630,15 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
             | number
             | null;
           const allValues = metricValuesMap.get(key) || [];
-          let pct = 0;
-
-          if (key === "goals_against_avg") {
-            pct = computeInvertedPercentile(allValues, rawVal);
-          } else {
-            pct = computePercentile(allValues, rawVal);
-          }
+          const pct =
+            key === "goals_against_avg"
+              ? computeInvertedPercentile(allValues, rawVal)
+              : computePercentile(allValues, rawVal);
 
           percentiles[key] = pct;
-          if (rawVal !== null && rawVal !== undefined) {
+          // Season totals already reward games played, so GP% is shown but
+          // not counted a second time in the composite (W3-3 D7).
+          if (pct !== null && key !== "percent_games") {
             sum += pct;
             count++;
           }
@@ -2628,10 +2648,10 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
 
         const finalPercentiles = metrics.reduce(
           (acc, { key }) => {
-            acc[key] = percentiles[key] ?? 0;
+            acc[key] = percentiles[key] ?? null;
             return acc;
           },
-          {} as Record<MetricKey, number>
+          {} as Record<MetricKey, number | null>
         );
 
         return {
@@ -2751,33 +2771,10 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
     return result;
   }, [playersWithPercentiles, selectedMetrics, allPossibleMetrics]);
 
-  // --- Compute team-based multiplier from weekly team scores ---
-  const teamScoreMultiplierMap = useMemo(() => {
-    if (!teamWeekData || teamWeekData.length === 0)
-      return {} as Record<string, number>;
-    const entries = teamWeekData.filter(
-      (t) => typeof t.weekScore === "number"
-    ) as Array<TeamWeekData & { weekScore: number }>;
-    if (entries.length === 0) return {} as Record<string, number>;
-
-    // Normalize scores to 0..1 based on min..max this week
-    let min = Infinity;
-    let max = -Infinity;
-    for (const e of entries) {
-      if (e.weekScore < min) min = e.weekScore;
-      if (e.weekScore > max) max = e.weekScore;
-    }
-    const range = max - min;
-    const intensity = 0.25; // up to ±25% boost/dilution
-    const map: Record<string, number> = {};
-    for (const e of entries) {
-      const norm = range === 0 ? 0.5 : (e.weekScore - min) / range; // 0..1
-      const centered = norm * 2 - 1; // -1..1
-      const multiplier = 1 + centered * intensity; // 0.75..1.25 with intensity=0.25
-      map[e.teamAbbreviation] = Number.isFinite(multiplier) ? multiplier : 1;
-    }
-    return map;
-  }, [teamWeekData]);
+  // --- Team boost from the window's Week Scores (decision 56, W1 P0 #29) ---
+  // Idle teams are excluded from the normalisation and ranked after players
+  // with usable games; a missing schedule is unknown (no boost), never idle.
+  const teamBoost = useMemo(() => buildTeamBoost(teamWeekData), [teamWeekData]);
 
   // --- Apply team multiplier to players' display/sort values (non-destructive) ---
   const playersWithScoresBoosted: PlayerWithScores[] = useMemo(() => {
@@ -2789,14 +2786,16 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
         p.current_team_abbreviation || p.yahoo_team,
         p.yahoo_team
       );
-      const mult = (abbr && teamScoreMultiplierMap[abbr]) || 1;
+      const { status, multiplier } = teamBoostFor(teamBoost, abbr);
+      const mult = multiplier ?? 1;
       return {
         ...p,
         displayScore: p.displayScore * mult,
-        sortByValue: p.sortByValue * mult
+        sortByValue: p.sortByValue * mult,
+        teamWindowStatus: status
       };
     });
-  }, [playersWithScores, teamScoreMultiplierMap, teamWeekData]);
+  }, [playersWithScores, teamBoost, teamWeekData]);
 
   // --- Sorted Players (Logic unchanged) ---
   // Choose boosted vs base scores based on toggle
@@ -2813,11 +2812,20 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
     if (scoresPending && sortKey === "composite") {
       // Sort on the name as displayed ("A. Ekblad"), so the order reads as A–Z.
       const name = (p: PlayerWithScores) => normalizePlayerName(p.yahoo_player_name || p.nhl_player_name || "").toLowerCase();
-      return sortablePlayers.sort((a, b) => name(a).localeCompare(name(b)));
+      const idle = (p: PlayerWithScores) => (p.teamWindowStatus === "idle" ? 1 : 0);
+      return sortablePlayers.sort((a, b) => idle(a) - idle(b) || name(a).localeCompare(name(b)));
     }
     sortablePlayers.sort((a, b) => {
       let aValue: any;
       let bValue: any;
+
+      // Players whose team has no games left in the window rank after those
+      // with usable games, in either direction (decision 56).
+      if (sortKey === "composite") {
+        const aIdle = a.teamWindowStatus === "idle";
+        const bIdle = b.teamWindowStatus === "idle";
+        if (aIdle !== bIdle) return aIdle ? 1 : -1;
+      }
 
       if (sortKey === "composite") {
         aValue = a.sortByValue;

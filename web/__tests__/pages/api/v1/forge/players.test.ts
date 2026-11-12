@@ -490,6 +490,44 @@ describe("/api/v1/forge/players", () => {
     expect(res.body.data[0].sog).toBeCloseTo(2.5, 6);
   });
 
+  it("keeps missing hits/blocks unknown and labels an unknown PK bucket (W3-2 D3; L9a ticket)", async () => {
+    const prior = fromMock.getMockImplementation()!;
+    fromMock.mockImplementation((table: string) => {
+      if (table === "forge_player_projections") {
+        return createQueryBuilder(() => ({
+          data: [
+            {
+              player_id: 8478403,
+              team_id: 8,
+              players: { fullName: "No Physical Line", position: "C" },
+              teams: { id: 8, abbreviation: "MTL", name: "Montréal Canadiens" },
+              proj_goals_es: 0.2, proj_goals_pp: 0.05, proj_goals_pk: 0.01,
+              proj_assists_es: 0.3, proj_assists_pp: 0.1, proj_assists_pk: null,
+              proj_shots_es: 2, proj_shots_pp: 0.5, proj_shots_pk: null,
+              proj_hits: null,
+              proj_blocks: null,
+              uncertainty: { model: { skater_selection: { strength_accounting: { pk_status: "unknown_team_pk_exposure" } } } },
+            },
+          ],
+          count: 1,
+          error: null,
+        }));
+      }
+      if (table === "rosters") {
+        return createQueryBuilder(() => ({ data: [{ playerId: 8478403 }], error: null }));
+      }
+      return prior(table);
+    });
+    const res = createMockRes();
+
+    await handler({ method: "GET", query: { date: "2026-02-07", horizon: "1" } } as any, res);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body.data[0]).toMatchObject({ hit: null, blk: null, pk_status: "unknown_team_pk_exposure" });
+    // A known PK goals head is summed (ES + PP + PK).
+    expect(res.body.data[0].g).toBeCloseTo(0.26, 6);
+  });
+
   it.each([
     {
       seasonId: 20232024,

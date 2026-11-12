@@ -13,6 +13,8 @@ import {
 } from "lib/dashboard/normalizers";
 import {
   rankTopAddsCandidates,
+  toTopAddsProjection,
+  type RankedTopAddsCandidate,
   type TopAddsCandidateInput,
 } from "lib/dashboard/topAddsRanking";
 import { teamsInfo } from "lib/teamsInfo";
@@ -41,12 +43,15 @@ type ForgePlayersResponse = {
     player_name: string | null;
     team_name: string | null;
     position: string | null;
-    pts: number;
-    ppp: number;
-    sog: number;
-    hit: number;
-    blk: number;
-    uncertainty: number | null;
+    g?: number | null;
+    a?: number | null;
+    pts: number | null;
+    ppp: number | null;
+    sog: number | null;
+    hit: number | null;
+    blk: number | null;
+    /** A number or FORGE's uncertainty object; read only through the adapter. */
+    uncertainty: unknown;
     degradedProjectionContext?: TopAddsCandidateInput["degradedProjectionContext"];
     confidenceDrivers?: TopAddsCandidateInput["confidenceDrivers"];
   }>;
@@ -109,6 +114,13 @@ function formatSigned(value: number | null | undefined, suffix = ""): string {
   return `${sign}${value.toFixed(1)}${suffix}`;
 }
 
+/** Decision 118: expected FHFH default points, or the typed incomplete state. */
+function formatTopAddsExpected(row: RankedTopAddsCandidate): string {
+  return row.score.total == null
+    ? `Exp. pts incomplete (missing ${row.score.missing.join(", ")})`
+    : `Exp. pts ${row.score.total.toFixed(1)}`;
+}
+
 function formatConfidenceDrivers(
   drivers: TopAddsCandidateInput["confidenceDrivers"],
 ): string {
@@ -164,9 +176,7 @@ const ForgeLandingPage: NextPage = () => {
   const [slateGames, setSlateGames] = useState<
     Array<ReturnType<typeof normalizeStartChartResponse>["games"][number]>
   >([]);
-  const [topAdds, setTopAdds] = useState<
-    Array<TopAddsCandidateInput & { score: { total: number } }>
-  >([]);
+  const [topAdds, setTopAdds] = useState<RankedTopAddsCandidate[]>([]);
   const [sustainablePreview, setSustainablePreview] = useState<
     Array<{
       playerId: number;
@@ -348,12 +358,9 @@ const ForgeLandingPage: NextPage = () => {
                 headshot: ownershipRow.headshot ?? null,
                 ownership: ownershipRow.latest,
                 delta: ownershipRow.delta,
-                projectionPts: row.pts ?? 0,
-                ppp: row.ppp ?? 0,
-                sog: row.sog ?? 0,
-                hit: row.hit ?? 0,
-                blk: row.blk ?? 0,
-                uncertainty: row.uncertainty,
+                // Missing heads stay null; object uncertainty is read by the
+                // adapter, never added as an object (W3-2 D3).
+                ...toTopAddsProjection(row),
                 degradedProjectionContext:
                   row.degradedProjectionContext ?? null,
                 confidenceDrivers: row.confidenceDrivers ?? null,
@@ -706,9 +713,11 @@ const ForgeLandingPage: NextPage = () => {
                             <strong>{row.name}</strong>
                             <span>
                               {row.teamAbbr ?? row.team ?? "--"} • Own{" "}
-                              {row.ownership.toFixed(0)}% • 5D{" "}
-                              {formatSigned(row.delta, " pts")} • Add score{" "}
-                              {row.score.total.toFixed(1)}
+                              {row.ownership == null
+                                ? "unknown"
+                                : `${row.ownership.toFixed(0)}%`}{" "}
+                              • 5D {formatSigned(row.delta, " pts")} •{" "}
+                              {formatTopAddsExpected(row)}
                             </span>
                             <span>
                               {formatConfidenceDrivers(row.confidenceDrivers)}

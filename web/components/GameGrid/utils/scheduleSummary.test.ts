@@ -42,7 +42,7 @@ describe("selected Game Grid scoring period", () => {
       expect(counts).toEqual([0, 1, 0, 0, 0, 0, 0]);
       expect(getTeamScheduleSummary(row, counts)).toMatchObject({ totalGamesPlayed: 1, totalOffNights: 1 });
       expect(getSelectedOpponentIds(row)).toEqual([2]);
-      expect(convertTeamRowToWinOddsList(row)).toEqual([null, 50, null, null, null, null, null]);
+      expect(convertTeamRowToWinOddsList(row)).toEqual([null, null, null, null, null, null, null]); // odds withheld (decision 64)
     }
   });
 
@@ -62,19 +62,19 @@ describe("selected Game Grid scoring period", () => {
     const summary = getTeamScheduleSummary(row, counts, [], DAYS);
     expect(summary.totalGamesPlayed).toBe(3);
     expect(summary.totalOffNights).toBe(2);
-    expect(convertTeamRowToWinOddsList(row)).toEqual([20, 60, null, null, null, null, 60]);
-    expect(summary.weekScore).toBeCloseTo(6 * (3 - 24 / 16) + 4 * 2 + (140 / 3) / 100 - .5);
+    expect(convertTeamRowToWinOddsList(row)).toEqual([null, null, null, null, null, null, null]); // odds withheld (decision 64)
+    expect(summary.weekScore).toBeCloseTo(6 * (3 - 24 / 16) + 4 * 2);
     expect(getTeamScheduleSummary({ ...row, nWED: game(5, 0) }, counts)).toEqual(summary);
     expect(getSelectedOpponentIds(row)).toEqual([2, 2, 2]);
   });
 
   it("includes all ten days, including a Sunday-to-next-Monday back-to-back", () => {
     const odds = convertTeamRowToWinOddsList(row, [], EXTENDED_DAYS);
-    expect(odds).toEqual([20, 60, null, null, null, null, 60, 30, null, 100]);
+    expect(odds).toEqual(Array(10).fill(null)); // odds withheld (decision 64)
     const summary = getTeamScheduleSummary(row, counts, [], EXTENDED_DAYS);
     expect(summary.totalGamesPlayed).toBe(5);
     expect(summary.totalOffNights).toBe(4);
-    expect(summary.weekScore).toBeCloseTo(6 * (5 - 32 / 16) + 4 * 4 + .54 - .5);
+    expect(summary.weekScore).toBeCloseTo(6 * (5 - 32 / 16) + 4 * 4);
     expect(getSelectedOpponentIds(row, [], EXTENDED_DAYS)).toEqual([2, 2, 2, 3, 4]);
   });
 
@@ -82,17 +82,17 @@ describe("selected Game Grid scoring period", () => {
     const summary = getTeamScheduleSummary(row, counts, ["nMON"], EXTENDED_DAYS);
     expect(summary.totalGamesPlayed).toBe(4);
     expect(summary.totalOffNights).toBe(3);
-    expect(summary.weekScore).toBeCloseTo(6 * (4 - 25 / 16) + 4 * 3 + .60 - .5);
+    expect(summary.weekScore).toBeCloseTo(6 * (4 - 25 / 16) + 4 * 3);
     expect(calcTotalGP(counts, ["nMON"], EXTENDED_DAYS)).toBe(25);
     expect(getSelectedOpponentIds(row, ["nMON"], EXTENDED_DAYS)).toEqual([2, 2, 2, 4]);
   });
 
   it("excludes Monday odds but retains Tuesday's existing schedule fatigue", () => {
-    expect(convertTeamRowToWinOddsList(row, ["MON"]).slice(0, 2)).toEqual([null, 60]);
+    expect(convertTeamRowToWinOddsList(row, ["MON"]).slice(0, 2)).toEqual([null, null]); // withheld
     const summary = getTeamScheduleSummary(row, counts, ["MON"]);
     expect(summary.totalGamesPlayed).toBe(2);
     expect(summary.totalOffNights).toBe(1);
-    expect(summary.weekScore).toBeCloseTo(6 * (2 - 17 / 16) + 4 + .60 - .5);
+    expect(summary.weekScore).toBeCloseTo(6 * (2 - 17 / 16) + 4);
     expect(getTeamScheduleSummary({ ...row, MON: game(1, 99) }, counts, ["MON"])).toEqual(summary);
   });
 
@@ -100,7 +100,7 @@ describe("selected Game Grid scoring period", () => {
     expect(getTeamScheduleSummary(row, counts, [...EXTENDED_DAYS], EXTENDED_DAYS).weekScore).toBe(-100);
     const missing = { teamId: 1, MON: game(1, null), WED: game(2, 40) };
     expect(getTeamScheduleSummary(missing, [7, 0, 7, 0, 0, 0, 0]).weekScore)
-      .toBeCloseTo(6 * (2 - 14 / 16) + 4 * 2 + (.40 - .5) / 2);
+      .toBeCloseTo(6 * (2 - 14 / 16) + 4 * 2);
   });
 
   it("uses the same regular-season definition and 8-game off-night threshold", () => {
@@ -109,7 +109,7 @@ describe("selected Game Grid scoring period", () => {
     expect(summary.totalGamesPlayed).toBe(2);
     expect(summary.totalOffNights).toBe(1);
     expect(getSelectedOpponentIds(mixed)).toEqual([2, 2]);
-    expect(convertTeamRowToWinOddsList({ ...mixed, weekNumber: 1 })).toEqual([50, 37.5, null, null, null, null, null]);
+    expect(convertTeamRowToWinOddsList({ ...mixed, weekNumber: 1 })).toEqual([null, null, null, null, null, null, null]); // withheld
   });
 
   it("deduplicates both team appearances and excludes preseason/playoff league games", () => {
@@ -142,6 +142,16 @@ describe("selected Game Grid scoring period", () => {
     expect(games + offNights + matchup + crowding).toBe(extended.weekScore);
   });
 
+  it("withholds matchup odds from Week Score (decision 64): stored odds cannot move it", () => {
+    const withOdds = { teamId: 1, MON: game(1, 95), TUE: game(2, 95), THU: game(3, 5) };
+    const withoutOdds = { teamId: 1, MON: game(1, null), TUE: game(2, null), THU: game(3, null) };
+    const counts = [4, 9, 3, 10, 4, 14, 3];
+    const a = getTeamScheduleSummary(withOdds, counts);
+    const b = getTeamScheduleSummary(withoutOdds, counts);
+    expect(a.weekScore).toBe(b.weekScore);
+    expect(a.scoreDecomposition).toMatchObject({ matchup: 0, matchupStatus: "unavailable" });
+  });
+
   it("reverses the recorded PIT 4GP/3ON versus CAR 4GP/1ON inversion", () => {
     // Production schedule captured Oct 5, 2026; odds are percentages.
     const matchup = (id: number, homeId: number, homeOdds: number, awayId: number, awayOdds: number): GameData => ({
@@ -165,10 +175,11 @@ describe("selected Game Grid scoring period", () => {
     const carSummary = getTeamScheduleSummary(car, counts);
     expect(pitSummary).toMatchObject({ totalGamesPlayed: 4, totalOffNights: 3 });
     expect(carSummary).toMatchObject({ totalGamesPlayed: 4, totalOffNights: 1 });
-    expect(pitSummary.weekScore).toBeCloseTo(18.18289375);
-    expect(carSummary.weekScore).toBeCloseTo(10.4743125);
+    // Odds withheld (decision 64): schedule terms only.
+    expect(pitSummary.weekScore).toBeCloseTo(6 * (4 - 47 / 16) + 4 * 3);
+    expect(carSummary.weekScore).toBeCloseTo(6 * (4 - 47 / 16) + 4 * 1);
     expect(pitSummary.weekScore).toBeGreaterThan(carSummary.weekScore);
-    expect(getTeamScheduleSummary(pit, counts, ["MON"]).weekScore).toBeCloseTo(9.6979583333);
+    expect(getTeamScheduleSummary(pit, counts, ["MON"]).weekScore).toBeCloseTo(6 * (3 - 43 / 16) + 4 * 2);
   });
 });
 

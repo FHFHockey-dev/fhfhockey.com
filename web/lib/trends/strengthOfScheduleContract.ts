@@ -1,5 +1,6 @@
 /** Event-level research contract. Legacy aggregate snapshots cannot satisfy it. */
-export const DESCRIPTIVE_SOS_VERSION = "descriptive-sos-v1" as const;
+/** v2: "past" means final only; started or postponed fixtures are pending (decision 21). */
+export const DESCRIPTIVE_SOS_VERSION = "descriptive-sos-v2" as const;
 export type SosMetric = "win-pct" | "points-pct";
 export type SosView = "past-as-known-then" | "past-retrospective" | "future";
 
@@ -115,12 +116,21 @@ export function computeDescriptiveSos({
     });
     return { value: recordPercentage(wins, losses, otLosses, metric), games: wins + losses + otLosses };
   };
-  const selected = fixtures.filter((game) => {
+  // Decision 21: a past fixture counts only with its own final result known
+  // before the cutoff. Started, unfinished or postponed fixtures are pending.
+  const finalIds = new Set(historical.map((game) => game.id));
+  const inView = fixtures.filter((game) => {
     const start = timestamp(game.startsAt);
     const knowledgeCutoff = view === "past-as-known-then" ? Math.min(start, cutoffMs) : cutoffMs;
     return opponentOf(game, team) && timestamp(game.scheduleKnownAt) < knowledgeCutoff &&
       (view === "future" ? start >= cutoffMs : start < cutoffMs);
   });
+  const selected = view === "future"
+    ? inView
+    : inView.filter((game) => finalIds.has(game.id));
+  const pendingFixtureIds = view === "future"
+    ? []
+    : inView.filter((game) => !finalIds.has(game.id)).map((game) => game.id);
   const observations = selected.map((fixture) => {
     const opponent = opponentOf(fixture, team)!;
     const at = view === "past-as-known-then" ? timestamp(fixture.startsAt) : cutoffMs;
@@ -149,6 +159,8 @@ export function computeDescriptiveSos({
     kind: "descriptive-schedule" as const,
     team, cutoff, view, metric,
     fixtures: observations.length,
+    pendingFixtures: pendingFixtureIds.length,
+    pendingFixtureIds,
     directSupportedFixtures: observations.filter((item) => item.direct !== null).length,
     indirectSupportedFixtures: observations.filter((item) => item.indirect !== null).length,
     direct: mean("direct"),

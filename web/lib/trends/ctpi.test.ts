@@ -219,6 +219,39 @@ describe("Recent Team Form v2 candidate", () => {
     expect(score?.missingMetrics).toEqual(["pp_xgf_per_60", "pk_xga_per_60"]);
   });
 
+  it("pools PP/PK rates by ice time, not a weighted mean of per-game ratios (decision 20)", () => {
+    // Two games: 1.0 xGF in 60 s of PP, then 0.2 xGF in 600 s.
+    const rows = [
+      teamGame("PP", 1, { pp_xgf: 1, powerPlayToi: 60 }),
+      teamGame("PP", 2, { pp_xgf: 0.2, powerPlayToi: 600 }),
+    ];
+    const metrics = computeRecentTeamFormCandidateMetrics(rows);
+    // Linear recency weights: latest game 1.0, the one before 0.9.
+    const [w1, w2] = [0.9, 1];
+    expect(metrics.values.pp_xgf_per_60).toBeCloseTo(
+      ((w1 * 1 + w2 * 0.2) / (w1 * 60 + w2 * 600)) * 3600,
+      9,
+    );
+  });
+
+  it("counts per-metric observations in confidence: one measured game in ten is not ready", () => {
+    const sparse = teamGames("SPARSE", {}, 10).map((row, index) =>
+      index === 9 ? row : {
+        ...row, xgf_per_60: null, hdcf_per_60: null, gf_per_60: null, xga_per_60: null,
+        hdca_per_60: null, ca_per_60: null, pp_xgf: null, pk_xga: null, xga: null, goals_against: null,
+      },
+    );
+    const scores = computeRecentTeamFormCandidateV2([
+      computeRecentTeamFormCandidateMetrics(sparse),
+      computeRecentTeamFormCandidateMetrics(teamGames("FULL")),
+      computeRecentTeamFormCandidateMetrics(teamGames("OTHER", { xgf_per_60: 2 })),
+    ]);
+    const score = scores.find((row) => row.team === "SPARSE")!;
+    expect(score.confidence.value).toBeLessThan(0.2);
+    expect(score.status).not.toBe("ready");
+    expect(score.confidence.tier).toBe("low");
+  });
+
   it("withholds a score until the minimum recent-game sample exists", () => {
     const scores = computeRecentTeamFormCandidateV2([
       computeRecentTeamFormCandidateMetrics(teamGames("A", {}, 4)),

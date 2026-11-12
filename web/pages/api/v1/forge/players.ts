@@ -387,8 +387,14 @@ export default async function handler(
         pts: totals.points,
         ppp: totals.ppPoints,
         sog: totals.shots,
-        hit: row.proj_hits ?? 0,
-        blk: row.proj_blocks ?? 0,
+        // Unknown stays unknown (rule 5, W3-2 D3): never zero-filled here.
+        hit: row.proj_hits ?? null,
+        blk: row.proj_blocks ?? null,
+        // L9a: PK heads are summed when known; when the team's PK exposure is
+        // unknown, the row says so (ES then holds all non-PP time).
+        pk_status:
+          row.uncertainty?.model?.skater_selection?.strength_accounting
+            ?.pk_status ?? null,
         fw: 0,
         fl: 0,
         uncertainty: row.uncertainty,

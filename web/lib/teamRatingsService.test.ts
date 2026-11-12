@@ -101,6 +101,31 @@ describe("teamRatingsService", () => {
     ]);
   });
 
+  it("keeps an unknown PP/PK tier unknown instead of tier 0 (W1 P0 #13)", async () => {
+    fromMock.mockImplementation(() =>
+      createQueryBuilder(() => ({
+        data: [
+          {
+            team_abbreviation: "UTA",
+            date: "2026-02-07",
+            off_rating: 100,
+            def_rating: 100,
+            pace_rating: 100,
+            pp_tier: null,
+            pk_tier: 3,
+            trend10: 0
+          }
+        ],
+        error: null
+      }))
+    );
+
+    const [row] = await fetchTeamRatings("2026-02-07");
+
+    expect(row.ppTier).toBeNull();
+    expect(row.pkTier).toBe(3);
+  });
+
   it("falls back to core columns on the same canonical table when extended columns are unavailable", async () => {
     let callCount = 0;
     fromMock.mockImplementation((table: string) => {
