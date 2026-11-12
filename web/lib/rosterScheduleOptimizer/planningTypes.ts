@@ -1,4 +1,4 @@
-import type { ContributionAllowedUses, ContributionExclusion, ContributionParticipation, ContributionSource, ForecastCalendarPolicy, ResolvedContribution } from "../player-forecasts/contributions";
+import type { ContributionAllowedUses, ContributionExclusion, ContributionParticipation, ContributionSource, AnyForecastCalendarPolicy, ResolvedContribution } from "../player-forecasts/contributions";
 import type { RsoTargetUseBinding, RsoUsePolicyManifest } from "../player-forecasts/rsoUsePolicy";
 import type { GameExpectationPowerPlayRole } from "../player-forecasts/gameExpectations";
 export type ForecastExclusionReason = ContributionExclusion | "canary_excluded" | "discovery_timeout"
@@ -379,7 +379,7 @@ export type ForecastManifest = {
   version: "planning-forecasts-v1";
   rsoUsePolicy?: RsoUsePolicyManifest;
   /** Omitted only for retained legacy snapshots. */
-  calendarPolicy?: ForecastCalendarPolicy;
+  calendarPolicy?: AnyForecastCalendarPolicy;
   /** Opaque accepted-event receipt hash; null means no verified receipt set. */
   acceptedNewsRevision?: string | null;
   id: string;

@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { calendarLeadDay, validForecastCalendarPolicy, type ForecastCalendarPolicy } from "lib/player-forecasts/contributions";
+import { calendarLeadDay, validForecastCalendarPolicy, type AnyForecastCalendarPolicy } from "lib/player-forecasts/contributions";
 import { loadDailyBoardEvidence, type DailyBoardEvidence } from "lib/projections/dailyBoardEvidence";
 import { buildSkaterModeledHeadTotals } from "lib/projections/modeledHeadTotals";
 import { excludeOffReleaseRuns, restrictRunsToHorizon } from "lib/projections/releasedRunFence";
@@ -310,7 +310,7 @@ export type ForgeBridgeCapture = { startedAt: string; completedAt: string; runs:
 
 /** Pure: no reads. Rows from runs not in `inputs.runs`, or from runs without external-input exclusion proof, are ignored. */
 export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, players: PlanningPlayer[], games: PlanningGame[],
-  now: Date, seasonId: number, calendarPolicy: ForecastCalendarPolicy, byteBudget = FORGE_DAILY_BRIDGE_BYTE_BUDGET,
+  now: Date, seasonId: number, calendarPolicy: AnyForecastCalendarPolicy, byteBudget = FORGE_DAILY_BRIDGE_BYTE_BUDGET,
   expandedByteBudget = inputs.reserves === undefined ? FORGE_DAILY_BRIDGE_EXPANDED_BYTE_BUDGET : FORGE_RESERVE_EXPANDED_BYTE_BUDGET): ForgeDailyBridgeResult {
   const runs = new Map<string, Run>();
   let withheldRuns = 0;
@@ -763,7 +763,7 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
  * proof shows it excluded third-party fantasy inputs. Newer unproven runs of a date are passed on unread, only to be
  * counted. A later run of a date supersedes an earlier one for that date's games. */
 export async function loadForgeDailyBridgeForecasts(db: SupabaseClient<any>, players: PlanningPlayer[], games: PlanningGame[], now: Date,
-  seasonId: number, deadline: number, calendarPolicy: ForecastCalendarPolicy,
+  seasonId: number, deadline: number, calendarPolicy: AnyForecastCalendarPolicy,
   /** VORP S3 only (flag on): receives the admitted runs and their output rows as read; never changes the result. */
   capture?: (observation: ForgeBridgeCapture) => void): Promise<ForgeDailyBridgeResult> {
   const readDeadline = Math.min(deadline, Date.now() + 6000);

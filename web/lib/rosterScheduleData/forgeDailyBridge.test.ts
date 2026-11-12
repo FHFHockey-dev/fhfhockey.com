@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { forecastCalendarPolicy, type ForecastCalendarPolicy } from "lib/player-forecasts/contributions";
+import { forecastCalendarPolicy, type AnyForecastCalendarPolicy } from "lib/player-forecasts/contributions";
 import { candidateActivePoints, candidateHorizonPoints, forecastPointsReader, gameForecastPoints } from "lib/rosterScheduleOptimizer/planning";
 import { withCurrentPlanningRead } from "lib/rosterScheduleOptimizer/currentPlanningRead";
 import { currentRsoUsePolicy } from "lib/player-forecasts/rsoUsePolicy";
@@ -678,10 +678,10 @@ describe("FORGE daily bridge", () => {
     // TOR's 10-19 game starts 03:00Z on 10-20 (a late start). At 18:00Z on 10-19 with a one-day window, v1 (UTC days) puts
     // it at lead 1, outside; v2 uses its schedule date 10-19, lead 0, inside.
     const late = [game("1", "TOR", "2026-10-20T03:00:00Z")].map(row => ({ ...row, date: "2026-10-19" }));
-    const s1 = (calendar: ForecastCalendarPolicy) => buildForgeDailyBridgeForecasts(inputs(), players, late, now, 20262027, calendar)
+    const s1 = (calendar: AnyForecastCalendarPolicy) => buildForgeDailyBridgeForecasts(inputs(), players, late, now, 20262027, calendar)
       .forecasts.filter(row => row.playerId === "s1").map(row => row.gameId);
     expect(s1(forecastCalendarPolicy(1))).toEqual([]);
-    expect(s1(forecastCalendarPolicy(1, "forecast-calendar-v2") as unknown as ForecastCalendarPolicy)).toEqual(["1"]);
+    expect(s1(forecastCalendarPolicy(1, "forecast-calendar-v2"))).toEqual(["1"]);
   });
 
   it("emits unrounded start probabilities, so a rounded-up group never exceeds 1 (W2-8 D2)", () => {
