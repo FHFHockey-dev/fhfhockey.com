@@ -157,3 +157,10 @@ The first dry run reported 7 false failures from a GS parser bug ("TEAM TOTALS" 
 6. Readback: status complete v2 with expected = observed, and both raw shift rows kept.
 
 **Pacing:** after phase E, 60 s between games, with the same DB preflight. Stop on any failure; a partial write gets one DB-only rerun after reconciling.
+
+### Result: all 10 OT games recovered (2026-11-12 19:18–19:2xZ, TJ-approved, back to back)
+- **Recovered (10 games):** 2026020161, 163, 172, 173, 174, 177, 187, 188, 192, 197.
+  - Each: status complete, `strength_version` 2, expected = observed for events, roster and shifts.
+  - Each got one new raw HTML snapshot; every prior JSON snapshot is kept.
+  - 3–5 s per game.
+- **One transient failure:** 2026020172 hit `SocketError: other side closed` before any write. Its state was reconciled as unchanged (v1, head 88772, one raw row) and it succeeded on the next run.
