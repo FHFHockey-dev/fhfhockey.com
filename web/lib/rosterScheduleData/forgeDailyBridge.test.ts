@@ -149,6 +149,28 @@ describe("FORGE daily bridge", () => {
     expect([goalie("g1", "2").startProbability, goalie("g2", "2").startProbability]).toEqual([0.7, 0.3]);
   });
 
+  it("reads FORGE's per-row availability state: out is 0 for that game, uncertain or unknown is unknown (L9c, decision 132)", () => {
+    const withState = (state?: string, gameId = 1) => {
+      const base = inputs();
+      base.skaters = base.skaters.map(row => row.player_id === 101 && row.run_id === "r2"
+        ? { ...row, ...(state ? { availability_state: state, availability_game_id: String(gameId) } : {}) } : row);
+      const { forecasts } = buildForgeDailyBridgeForecasts(base, players, games, now, 20262027, policy);
+      return ["1", "2"].map(gameId => forecasts.find(row => row.playerId === "s1" && row.gameId === gameId)!)
+        .map(row => ({ goals: row.stats.GOALS, code: reserveCodeOf(row), ifPlays: row.conditionalStats?.GOALS ?? null, totals: row.allowedUses?.totals }));
+    };
+    const line = { goals: 0.35, code: null, ifPlays: null, totals: true };
+    // Older runs (no field) and a projected lineup read the line as today.
+    expect(withState()).toEqual([line, line]);
+    expect(withState("projected_lineup")).toEqual([line, line]);
+    // Out for game 1: a real 0 there with his "if he plays" line kept; game 2 is unknown, never his full line.
+    expect(withState("confirmed_out")).toEqual([{ goals: 0, code: "skater:roster_out", ifPlays: 0.35, totals: true },
+      { goals: null, code: "skater:availability_unknown", ifPlays: 0.35, totals: false }]);
+    // Day-to-day (no qualified participation chance) and unknown: unknown unconditional, line kept as "if he plays".
+    expect(withState("uncertain").map(row => [row.goals, row.code, row.ifPlays, row.totals]))
+      .toEqual([[null, "skater:availability_uncertain", 0.35, false], [null, "skater:availability_uncertain", 0.35, false]]);
+    expect(withState("unknown").map(row => [row.goals, row.code])).toEqual([[null, "skater:availability_unknown"], [null, "skater:availability_unknown"]]);
+  });
+
   it("keeps goalie regulation losses and OT losses unknown, never L = 1 − W (W1 P0 #28, decision 46)", () => {
     const { forecasts, limitations } = buildForgeDailyBridgeForecasts(inputs(), players, games, now, 20262027, policy);
     const g1 = forecasts.find(row => row.playerId === "g1" && row.gameId === "1")!;

@@ -47,8 +47,8 @@ const TOTAL_COLUMNS: Record<string, string> = { PENALTY_MINUTES: "penalty_minute
 const DAY_MS = 86400000;
 const VALID_DAYS = 8;
 const FORECAST_LIMITATION = "Interim FORGE projection: the player's latest FORGE game line, reused for this game.";
-const SKATER_COLUMNS = "run_id,as_of_date,horizon_games,game_id,player_id,team_id,opponent_team_id,proj_goals_es,proj_goals_pp,proj_goals_pk,proj_assists_es,proj_assists_pp,proj_assists_pk,proj_shots_es,proj_shots_pp,proj_shots_pk,proj_toi_es_seconds,proj_toi_pp_seconds,proj_toi_pk_seconds,proj_hits,proj_blocks,proj_pim,proj_plus_minus";
-const RESERVE_COLUMNS = "run_id,as_of_date,horizon_games,game_id,player_id,team_id,opponent_team_id,player_class,conditioning,reserve_reason,proj_goals_es,proj_goals_pp,proj_assists_es,proj_assists_pp,proj_shots_es,proj_shots_pp,proj_toi_es_seconds,proj_toi_pp_seconds,proj_hits,proj_blocks,proj_saves,proj_goals_allowed,proj_shots_against,proj_shutout_prob";
+const SKATER_COLUMNS = "run_id,as_of_date,horizon_games,game_id,player_id,team_id,opponent_team_id,proj_goals_es,proj_goals_pp,proj_goals_pk,proj_assists_es,proj_assists_pp,proj_assists_pk,proj_shots_es,proj_shots_pp,proj_shots_pk,proj_toi_es_seconds,proj_toi_pp_seconds,proj_toi_pk_seconds,proj_hits,proj_blocks,proj_pim,proj_plus_minus,availability_state:uncertainty->availability->>state,availability_game_id:uncertainty->availability->>game_id";
+const RESERVE_COLUMNS = "run_id,as_of_date,horizon_games,game_id,player_id,team_id,opponent_team_id,player_class,conditioning,reserve_reason,proj_goals_es,proj_goals_pp,proj_assists_es,proj_assists_pp,proj_shots_es,proj_shots_pp,proj_toi_es_seconds,proj_toi_pp_seconds,proj_hits,proj_blocks,proj_saves,proj_goals_allowed,proj_shots_against,proj_shutout_prob,availability_state:uncertainty->availability->>state,availability_game_id:uncertainty->availability->>game_id";
 const GOALIE_COLUMNS = "run_id,as_of_date,horizon_games,game_id,goalie_id,team_id,opponent_team_id,starter_probability,proj_saves,proj_goals_allowed,proj_shots_against,proj_win_prob,proj_shutout_prob";
 
 const finite = (value: unknown): value is number => typeof value === "number" && Number.isFinite(value);
@@ -451,13 +451,37 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
     if (availability) return "skater:uncertain";
     return reason === "ruled_out" ? "skater:ruled_out_at_run" : "skater:no_lineup_evidence";
   };
+  /** A reserve row's state: accepted news first, then FORGE's roster evidence out for this very game (L9c) as a real 0. */
+  const reserveState = (game: PlanningGame, player: PlanningPlayer, row: Row): ReserveCode => {
+    const news = skaterState(game, player, row.reserve_reason);
+    if (news === "skater:confirmed_lineup" || news === "skater:confirmed_out") return news;
+    return row.availability_state === "confirmed_out" && String(row.availability_game_id) === game.id ? "skater:roster_out" : news;
+  };
   const zeroed = (line: StatLine): StatLine => Object.fromEntries(Object.entries(line).map(([key, value]) => [key, value === null ? null : 0]));
   const unknownLine = (line: StatLine): StatLine => Object.fromEntries(Object.keys(line).map(key => [key, null]));
   const emitReserve = (player: PlanningPlayer, game: PlanningGame, run: Run, line: StatLine, code: ReserveCode, startProbability: number | null = null) => {
     // Confirmed in the lineup: the conditional line is his expectation. Confirmed out: a real 0. Otherwise his
     // participation is unknown, so the unconditional line is unknown (decisions 3, 47), never a fabricated 0.
-    emit(player, game, run, code === "skater:confirmed_lineup" ? line : code === "skater:confirmed_out" ? zeroed(line)
+    emit(player, game, run, code === "skater:confirmed_lineup" ? line : code === "skater:confirmed_out" || code === "skater:roster_out" ? zeroed(line)
       : unknownLine(line), startProbability, line, false, code);
+  };
+  // L9c (decision 132): FORGE rows carry his "if he plays" line plus `uncertainty.availability` for the row's game. Accepted
+  // news for this game decides first; then roster evidence out for this very game is a real 0; otherwise an uncertain or
+  // unknown state (or an out on another game) leaves the unconditional value unknown. Rows without the field (older runs)
+  // keep today's reading.
+  const rowAvailability = (player: PlanningPlayer, row: Row, game: PlanningGame): "line" | ReserveCode => {
+    const state = typeof row.availability_state === "string" ? row.availability_state : null;
+    if (!state || state === "projected_lineup") return "line";
+    const news = skaterState(game, player, null);
+    if (news === "skater:confirmed_lineup") return "line";
+    if (news === "skater:confirmed_out") return news;
+    if (state === "confirmed_out" && String(row.availability_game_id) === game.id) return "skater:roster_out";
+    return state === "uncertain" ? "skater:availability_uncertain" : "skater:availability_unknown";
+  };
+  const emitLineup = (player: PlanningPlayer, game: PlanningGame, run: Run, line: StatLine, row: Row) => {
+    const state = rowAvailability(player, row, game);
+    if (state === "line") emit(player, game, run, line, null);
+    else emitReserve(player, game, run, line, state);
   };
   for (const player of identified.filter(row => row.playerClass === "skater")) {
     const latestRow = skaterLatest.get(player.nhlId);
@@ -474,12 +498,12 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
         const own = exactSkater.get(`${game.id}:${player.nhlId}`);
         if (own && own.team_id === player.nhlTeamId) {
           const special = withPowerPlayZeros(own), ownStats = skaterStats(special.row, playerRates);
-          if (ownStats) { emit(player, game, runs.get(own.run_id)!, ownStats, null); continue; }
+          if (ownStats) { emitLineup(player, game, runs.get(own.run_id)!, ownStats, own); continue; }
         }
         const exact = exactReserve.get(`skater:${game.id}:${player.nhlId}`);
         if (exact) {
           const line = reserveLine(exact);
-          if (line) emitReserve(player, game, runs.get(exact.run_id)!, line, skaterState(game, player, exact.reserve_reason));
+          if (line) emitReserve(player, game, runs.get(exact.run_id)!, line, reserveState(game, player, exact));
           continue;
         }
         if (!baseLine) continue;
@@ -488,7 +512,7 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
         const rest = restScale(gameContext(reserve.game_id, reserve.team_id), gameContext(game.id, reserve.team_id));
         const tilt = tiltBetween(player, abbreviationById.get(reserve.opponent_team_id), game.opponent);
         emitReserve(player, game, runs.get(reserve.run_id)!, scale === 1 && !rest && !tilt ? baseLine : retargetSkater(baseLine, scale, rest, tilt),
-          skaterState(game, player, reserve.reserve_reason));
+          reserveState(game, player, reserve));
       }
       if (forecasts.length > emitted) { reserveSkaters.add(player.nhlId!); reserveSkaterGames += forecasts.length - emitted; }
       if (!baseLine && rates && !playerRates) unratedSkaters.add(player.nhlId!);
@@ -515,7 +539,7 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
       if (own && (stale || own !== latestRow) && own.team_id === player.nhlTeamId) {
         // Projected for this game itself: use that line as issued, no re-aiming.
         const ownStats = lineFor(own);
-        if (ownStats) { emit(player, game, runs.get(own.run_id)!, ownStats, null); continue; }
+        if (ownStats) { emitLineup(player, game, runs.get(own.run_id)!, ownStats, own); continue; }
       }
       if (!stats) continue;
       const row = latestRow;
@@ -523,7 +547,7 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
       const scale = projectedAgainst && facing ? (1 + facing.goalsFor) / (1 + projectedAgainst.goalsFor) : 1;
       const rest = String(row.game_id) === game.id ? null : restScale(gameContext(row.game_id, row.team_id), gameContext(game.id, row.team_id));
       const tilt = String(row.game_id) === game.id ? undefined : tiltBetween(player, abbreviationById.get(row.opponent_team_id), game.opponent);
-      emit(player, game, runs.get(row.run_id)!, scale === 1 && !rest && !tilt ? stats : retargetSkater(stats, scale, rest, tilt), null);
+      emitLineup(player, game, runs.get(row.run_id)!, scale === 1 && !rest && !tilt ? stats : retargetSkater(stats, scale, rest, tilt), row);
     }
     if (stale && forecasts.length === emitted) staleSkaters++;
   }
