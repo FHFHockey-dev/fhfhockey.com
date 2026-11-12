@@ -89,7 +89,7 @@ function opponentStats(snapshot: PlanningSnapshot): StatLine | null {
   return stats;
 }
 type Applicability = Record<"skater" | "goalie", Set<string>>;
-const GOALIE_STATS = new Set(["SAVES_GOALIE", "GOALS_AGAINST_GOALIE", "WINS_GOALIE", "LOSSES_GOALIE", "SHUTOUTS_GOALIE", "SHOTS_AGAINST_GOALIE", "GAMES_STARTED", "GOALIE_MINUTES", "SAVES", "GOALSAGAINST", "SHOTSAGAINST", "WINS", "SHUTOUTS", "GAA", "SV%", "SAVE_PERCENTAGE"]);
+const GOALIE_STATS = new Set(["SAVES_GOALIE", "GOALS_AGAINST_GOALIE", "WINS_GOALIE", "LOSSES_GOALIE", "OTL_GOALIE", "SHUTOUTS_GOALIE", "SHOTS_AGAINST_GOALIE", "GAMES_STARTED", "GOALIE_MINUTES", "SAVES", "GOALSAGAINST", "SHOTSAGAINST", "WINS", "SHUTOUTS", "GAA", "SV%", "SAVE_PERCENTAGE"]);
 function statApplicability(snapshot: PlanningSnapshot): Applicability {
   const playerClass = new Map(snapshot.players.map(player => [player.id, player.playerClass]));
   const result: Applicability = { skater: new Set(), goalie: new Set() };

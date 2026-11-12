@@ -626,7 +626,9 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
       // If he starts he is credited with FORGE's decision share of his team's wins; unknown stays unknown.
       const win = teamWin(game, teamId), startWin = win === null ? null : win.probability * STARTER_DECISION_SHARE;
       if (win === null) unknownWins++;
-      const line = { ...forgeLine, WINS_GOALIE: round(startWin), LOSSES_GOALIE: startWin === null ? null : round(1 - startWin) };
+      // Decision 46 (W1 P0 #28): W, regulation L, OT/SO L and no decision reconcile to the start, so L is never 1 − W.
+      // With no fitted overtime split and Yahoo's L/OTL mapping unverified, regulation L and OTL stay unknown.
+      const line = { ...forgeLine, WINS_GOALIE: round(startWin), LOSSES_GOALIE: null, OTL_GOALIE: null };
       // FORGE has no line of his own, so this "if he starts" line is his team starter's (selected-starter rows name their
       // goalie; reserve rows are always his own). With the reserve pass on, the forecast says so.
       const teamLine = finite(source.goalie_id) && source.goalie_id !== goalie.nhlId;
@@ -655,7 +657,7 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
   const noLineTemplate: Record<"skater" | "goalie", StatLine> = {
     skater: Object.fromEntries(["GOALS", "ASSISTS", "POINTS", "PP_GOALS", "PP_ASSISTS", "PP_POINTS", "SHOTS_ON_GOAL", "HITS", "BLOCKED_SHOTS",
       "TIME_ON_ICE_PER_GAME", ...FORGE_DAILY_BRIDGE_SEASON_RATED].map(key => [key, 0])),
-    goalie: { SAVES_GOALIE: 0, GOALS_AGAINST_GOALIE: 0, SHOTS_AGAINST_GOALIE: 0, SHUTOUTS_GOALIE: 0, GOALIE_MINUTES: 0, GAMES_STARTED: 0, WINS_GOALIE: 0, LOSSES_GOALIE: 0 },
+    goalie: { SAVES_GOALIE: 0, GOALS_AGAINST_GOALIE: 0, SHOTS_AGAINST_GOALIE: 0, SHUTOUTS_GOALIE: 0, GOALIE_MINUTES: 0, GAMES_STARTED: 0, WINS_GOALIE: 0, LOSSES_GOALIE: 0, OTL_GOALIE: 0 },
   };
   let noLineGames = 0;
   const noLinePlayers = new Set<number>(), withheldLinePlayers = new Set<number>();
@@ -716,6 +718,7 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
     priors.size ? `Future games move each FORGE line to that game's opponent with FORGE's team-strength adjustment (team xG for and against, ${priors.size} teams${inputs.lastSeasonTeams?.length ? `, last season blended in as ${LAST_SEASON_PRIOR_GAMES} games` : ""})${scheduleById.size ? ", plus FORGE's home-ice and rest model (back-to-backs included); a goalie's start chance drops on the second night of a back-to-back" : ""}${tilts.size ? ", and each opponent's tilt toward forwards or defencemen (points and shots allowed by position vs league, shrunk)" : ""}.`
       : "Team strength could not be read, so future games reuse each FORGE line without an opponent adjustment.",
     ...(teamWins.size ? [`Goalie wins: FORGE's per-game team win probability (both teams sum to 1) × ${STARTER_DECISION_SHARE} starter decision share, times his start chance; games FORGE has not projected yet use FORGE's same win model on team xG.`] : []),
+    ...(teamWins.size ? ["Goalie losses: regulation L and OT/SO L are unknown (no fitted overtime split, and the provider's L/OTL mapping is unverified), so totals that score them read unknown; L is never 1 − W, which would count overtime losses and no-decisions as losses."] : []),
     ...(unknownWins ? [`${unknownWins} goalie-games have no team win probability (FORGE left it blank, or a team-strength prior is missing), so their wins are unknown.`] : []),
     "Goalie starts use each goalie's last-10 start share (season share when missing) from start rows for his current team this season: the row for that game when one exists, otherwise his latest. FORGE's own starter probability applies to an already projected game. Per-start lines come from his latest FORGE line, or his team's when he has none.",
     ...(openTeamGames ? [`${openTeamGames} team-games have a goalie with no start share; the others keep their own shares, never scaled up, so start chances there sum to less than 1.`] : []),

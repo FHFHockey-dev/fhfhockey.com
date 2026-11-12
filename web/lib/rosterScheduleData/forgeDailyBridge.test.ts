@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { forecastCalendarPolicy } from "lib/player-forecasts/contributions";
-import { candidateActivePoints, candidateHorizonPoints, gameForecastPoints } from "lib/rosterScheduleOptimizer/planning";
+import { candidateActivePoints, candidateHorizonPoints, forecastPointsReader, gameForecastPoints } from "lib/rosterScheduleOptimizer/planning";
 import { withCurrentPlanningRead } from "lib/rosterScheduleOptimizer/currentPlanningRead";
 import { currentRsoUsePolicy } from "lib/player-forecasts/rsoUsePolicy";
 import type { PlanningData, PlanningGame, PlanningPlayer, PlanningSnapshot } from "lib/rosterScheduleOptimizer/planningTypes";
@@ -145,8 +145,31 @@ describe("FORGE daily bridge", () => {
     expect(goalie("g2", "1").startProbability).toBeCloseTo(0.2);
     // g2 has no FORGE line of his own, so the team's latest per-start line applies.
     expect(goalie("g2", "1").stats.SAVES_GOALIE).toBeCloseTo(5);
-    expect(goalie("g1", "1").conditionalStats).toMatchObject({ SAVES_GOALIE: 25, WINS_GOALIE: 0.55, LOSSES_GOALIE: 0.45 });
+    expect(goalie("g1", "1").conditionalStats).toMatchObject({ SAVES_GOALIE: 25, WINS_GOALIE: 0.55 });
     expect([goalie("g1", "2").startProbability, goalie("g2", "2").startProbability]).toEqual([0.7, 0.3]);
+  });
+
+  it("keeps goalie regulation losses and OT losses unknown, never L = 1 − W (W1 P0 #28, decision 46)", () => {
+    const { forecasts, limitations } = buildForgeDailyBridgeForecasts(inputs(), players, games, now, 20262027, policy);
+    const g1 = forecasts.find(row => row.playerId === "g1" && row.gameId === "1")!;
+    // If he starts: credited W 0.55 (team win × decision share). The other 0.45 is regulation L + OT/SO L + no decision;
+    // with no fitted overtime split and Yahoo's L/OTL mapping unverified, neither L nor OTL is known.
+    expect(g1.conditionalStats!.WINS_GOALIE).toBe(0.55);
+    expect(g1.conditionalStats!.LOSSES_GOALIE).toBeNull();
+    expect(g1.conditionalStats!.OTL_GOALIE).toBeNull();
+    // Unconditional: W scales by his start chance; L and OTL stay unknown rather than 0.8 × 0.45 = 0.36 of losses.
+    expect(g1.stats.WINS_GOALIE).toBeCloseTo(0.8 * 0.55, 6);
+    expect(g1.stats.LOSSES_GOALIE).toBeNull();
+    expect(g1.stats.OTL_GOALIE).toBeNull();
+    // Conservation: the known decision mass never exceeds the start probability (no mass invented for L).
+    expect(g1.stats.WINS_GOALIE! + (g1.stats.LOSSES_GOALIE ?? 0) + (g1.stats.OTL_GOALIE ?? 0)).toBeLessThanOrEqual(g1.startProbability! + 1e-9);
+    expect(limitations.some(text => text.startsWith("Goalie losses: regulation L and OT/SO L are unknown"))).toBe(true);
+    // At the planner reader: a league scoring W reads the goalie's points; one scoring L reads them as unknown, not 1 − W.
+    const snapshot = { players, forecasts, context: { asOf: now.toISOString() },
+      rules: { scoring: { mode: "points", weights: { WINS_GOALIE: 5 }, categories: [] } } } as unknown as PlanningSnapshot;
+    expect(forecastPointsReader(snapshot)("g1", "1")).toBeCloseTo(5 * 0.8 * 0.55, 6);
+    snapshot.rules.scoring.weights = { WINS_GOALIE: 5, LOSSES_GOALIE: -2 };
+    expect(forecastPointsReader(snapshot)("g1", "1")).toBeNull();
   });
 
   describe("external-input exclusion proof", () => {
