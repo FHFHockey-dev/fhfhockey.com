@@ -29,6 +29,8 @@ export type RollingRow = {
   game_date: string;
   toi_seconds_avg_last5: number | null;
   toi_seconds_avg_all: number | null;
+  /** Seconds behind the "all" window counts (shots_total_all, goals_total_all). */
+  toi_seconds_total_all?: number | null;
   sog_per_60_last5: number | null;
   sog_per_60_all: number | null;
   sog_per_60_avg_last5: number | null;

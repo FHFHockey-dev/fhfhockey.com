@@ -82,16 +82,16 @@ describe("fetchTeamOfficialPpUsage", () => {
 });
 
 describe("fetchTeamStrengthAverages", () => {
-  it("averages PK time alongside ES and PP", async () => {
+  it("averages PK time and PK shots alongside ES and PP", async () => {
     db.calls.length = 0;
     db.tables = { forge_team_game_strength: [
-      { game_date: "2026-10-20", toi_es_seconds: 15000, toi_pp_seconds: 600, toi_pk_seconds: 500, shots_es: 25, shots_pp: 5 },
-      { game_date: "2026-10-18", toi_es_seconds: 15400, toi_pp_seconds: 400, toi_pk_seconds: 700, shots_es: 27, shots_pp: 3 }
+      { game_date: "2026-10-20", toi_es_seconds: 15000, toi_pp_seconds: 600, toi_pk_seconds: 500, shots_es: 25, shots_pp: 5, shots_pk: 1 },
+      { game_date: "2026-10-18", toi_es_seconds: 15400, toi_pp_seconds: 400, toi_pk_seconds: 700, shots_es: 27, shots_pp: 3, shots_pk: 2 }
     ] };
     expect(await fetchTeamStrengthAverages(22, "2026-10-21")).toEqual({
-      toiEsSecondsAvg: 15200, toiPpSecondsAvg: 500, toiPkSecondsAvg: 600, shotsEsAvg: 26, shotsPpAvg: 4 });
+      toiEsSecondsAvg: 15200, toiPpSecondsAvg: 500, toiPkSecondsAvg: 600, shotsEsAvg: 26, shotsPpAvg: 4, shotsPkAvg: 1.5 });
     expect(db.calls).toContainEqual(["forge_team_game_strength", "select",
-      ["game_date,toi_es_seconds,toi_pp_seconds,toi_pk_seconds,shots_es,shots_pp"]]);
+      ["game_date,toi_es_seconds,toi_pp_seconds,toi_pk_seconds,shots_es,shots_pp,shots_pk"]]);
   });
 });
 

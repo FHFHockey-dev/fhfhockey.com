@@ -391,7 +391,8 @@ describe("counted rolling skater history (legacy window scan)", () => {
   });
   it("rejects an unsupported strength scope before reading", async () => {
     const db = fixture();
-    await expect(fetchRollingRows([7], "pk" as any, "2026-10-07")).rejects.toMatchObject({ status: "incomplete", reason: "invalid_scope" });
+    // PK is a supported FORGE bucket since L9a (decision 24); 5v5 is not a FORGE strength.
+    await expect(fetchRollingRows([7], "5v5" as any, "2026-10-07")).rejects.toMatchObject({ status: "incomplete", reason: "invalid_scope" });
     expect(db.from).not.toHaveBeenCalled();
   });
   it.each(["2026-02-30", "not-a-date", "2026-10-07T00:00:00Z"])("rejects invalid date scope %s before reading", async date => {

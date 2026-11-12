@@ -35,6 +35,8 @@ export type TeamStrengthAverages = {
   toiPkSecondsAvg: number | null;
   shotsEsAvg: number | null;
   shotsPpAvg: number | null;
+  /** PK shots per team-game; omitted by older fixtures (read as unknown). */
+  shotsPkAvg?: number | null;
 };
 
 export async function fetchTeamStrengthAverages(
@@ -44,7 +46,7 @@ export async function fetchTeamStrengthAverages(
   assertSupabase();
   const { data, error } = await supabase
     .from("forge_team_game_strength")
-    .select("game_date,toi_es_seconds,toi_pp_seconds,toi_pk_seconds,shots_es,shots_pp")
+    .select("game_date,toi_es_seconds,toi_pp_seconds,toi_pk_seconds,shots_es,shots_pp,shots_pk")
     .eq("team_id", teamId)
     .lt("game_date", cutoffDate)
     .order("game_date", { ascending: false })
@@ -52,7 +54,7 @@ export async function fetchTeamStrengthAverages(
   if (error) throw error;
 
   const rows = (data ?? []) as Array<
-    ForgeTeamGameStrengthRow & { toi_pk_seconds?: number | null }
+    ForgeTeamGameStrengthRow & { toi_pk_seconds?: number | null; shots_pk?: number | null }
   >;
   return {
     toiEsSecondsAvg: meanOrNull(
@@ -75,6 +77,9 @@ export async function fetchTeamStrengthAverages(
     ),
     shotsPpAvg: meanOrNull(
       rows.map((r) => (r?.shots_pp == null ? null : Number(r.shots_pp)))
+    ),
+    shotsPkAvg: meanOrNull(
+      rows.map((r) => (r?.shots_pk == null ? null : Number(r.shots_pk)))
     )
   };
 }

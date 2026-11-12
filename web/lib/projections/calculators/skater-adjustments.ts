@@ -305,6 +305,8 @@ export function computeSkaterTeamLevelContextAdjustments(args: {
   };
 }
 
+/** Legacy GSAA-per-60 lever (fixed .900 comparator, 0.18 coefficient, clamped). The skater stage
+ * no longer calls it (W1 P0 #21: opponentGoalieQuality.ts); kept for stored-row recomputation (rule 6). */
 export function computeSkaterOpponentGoalieContextAdjustments(args: {
   context: OpponentGoalieContext | null;
 }): {

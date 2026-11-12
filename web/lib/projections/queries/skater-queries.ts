@@ -89,6 +89,8 @@ export const ROLLING_ROW_SELECT_CLAUSE =
     "game_date",
     "toi_seconds_avg_last5",
     "toi_seconds_avg_all",
+    // Matched exposure for the "all" window counts: a known zero count keeps its seconds.
+    "toi_seconds_total_all",
     ...getCompatibilityFieldOrder({
       family: "weighted_rate",
       canonicalField: "sog_per_60_last5",
@@ -185,7 +187,7 @@ const ROLLING_IDENTITY_FIELDS = ["player_id", "game_id", "game_date", "season", 
 const ROLLING_METRIC_FIELDS = ROLLING_ROW_COLUMNS.filter(field => !ROLLING_IDENTITY_FIELDS.includes(field));
 let legacyWindowScanWarned = false;
 
-type RollingStrength = "ev" | "pp" | "all";
+type RollingStrength = "ev" | "pp" | "pk" | "all";
 type RollingIdentity = { player_id: number; game_id: number; game_date: string; strength_state: string };
 
 const isIsoDate = (value: unknown): value is string => typeof value === "string"
@@ -215,8 +217,8 @@ function hydrateRollingSupport(matched: RollingRow | undefined, support: any, st
   }
   if (seen.has(rollingRowKey(support))) throw new SkaterRollingReadIncompleteError("duplicate_row");
   seen.add(rollingRowKey(support));
-  // Aligned NST count support exists only for split-strength rows.
-  if (strengthState !== "all" && hasOwn(support.support_payload, "alignedCountSupport")) {
+  // Aligned NST count support exists for the ES and PP rows FORGE converts; PK rows carry none.
+  if ((strengthState === "ev" || strengthState === "pp") && hasOwn(support.support_payload, "alignedCountSupport")) {
     matched.aligned_count_support = readAlignedCountSupport(support.support_payload.alignedCountSupport, {
       playerId: matched.player_id, strengthState,
       anchor: { gameId: matched.game_id, gameDate: matched.game_date, seasonId: matched.season },
@@ -252,7 +254,7 @@ export async function fetchRollingRows(
 
   const ids = [...new Set(playerIds)].sort((a, b) => a - b);
   if (ids.length > 500 || ids.some(id => !Number.isSafeInteger(id) || id <= 0)
-    || !["ev", "pp", "all"].includes(strengthState) || !isIsoDate(cutoffDate)) {
+    || !["ev", "pp", "pk", "all"].includes(strengthState) || !isIsoDate(cutoffDate)) {
     throw new SkaterRollingReadIncompleteError("invalid_scope");
   }
   const oneYearAgo = new Date(
