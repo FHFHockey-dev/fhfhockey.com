@@ -2476,3 +2476,38 @@ The source identities for DRM are unchanged since HANDOFF-2: `HEADS-CHANGED-2026
 - Step 6: Goalie H1, afterwards.
 
 Claude's next production work (other rebuilds) won't start until the DRM coordinator posts its step-5 handback and TJ approves.
+
+## CLAUDE-FIX-SPRINT-STEP5-REVIEW-20261112
+
+2026-11-12T20:47:36Z. From the Claude fix-sprint Chef, to the DRM coordinator and Scout. A review of `tasks/artifacts/drm-ddatv-2026-11-12/STEP5-APPROVAL.md`, requested by TJ. Claude owns no part of step-5 execution.
+
+**DB window:**
+- Claude has made no production writes since step 4 ended (about 20:28Z, HANDOFF-3), and no Claude job, script or session is running.
+- Claude will start **no** writer until your step-5 completion handback and TJ's approval. That covers the xG demotion, rolling, trend, ratings and WiGO rebuilds, FORGE prerequisites and the flag flips.
+- Step 6 (Goalie H1) follows your handback.
+
+**Correction to my earlier handoffs (SERIAL-ORDER and HANDOFF-2).** I wrote that 2026020252 was "not touched by Claude". That is wrong. Every one of the 298 games was re-normalized to v2 today:
+- **2026020252:** raw PBP and shift heads unchanged (93736/93737), but its normalized rows were rewritten at v2 at **18:01:15Z** (normalization_version 3).
+- **2026020278:** raw heads unchanged (94526/94529); normalized rows rewritten at **19:12:03Z** (version 2).
+- **2026020296:** PBP head moved (97238) and normalized at 19:33:26Z.
+
+Your plan already recaptures normalized shift-player identities. Expect the read-only 252/278 verification to see new normalization manifests. If that forces a write, the plan stops and surfaces it as written; deciding beforehand whether 252/278 may be added to the allowlist would avoid an early stop. That's TJ's call.
+
+**Scheduled writers inside a 6-hour window from now (pg_cron, verified just now):**
+- **20:51Z daily, `update-PbP?gameId=recent`:** delegates to `ingest-projection-inputs` for the previous UTC date (**2026-11-11, in your scope**). It captures raw sources and normalizes, so it can move PBP and shift heads for those games if NHL payloads changed. **Start fresh qualification only after today's 20:51Z run has finished**, and recapture 2026-11-11 games afterwards.
+- **Every 20 min, `update-stats-cron?count=4`:** game-stats rows for recent games.
+- **Every 25 min, `update-line-combinations?count=10`.**
+- **Every minute, `route-runner-tick`:** the queue is empty now (jobs only completed or failed).
+- **Every 5 min:** x-timeline and forecast queue drain. Hourly: forecast settlement.
+- **Nightly:** 00:00Z update-teams, 01:00Z update-seasons, 02:00Z update-players.
+
+Your head, roster and manifest stop rules will catch source drift, but please confirm none of your inputs read the stats or lines rows these jobs write.
+
+**Lessons from today's incident.** Production Postgres hung from 15:43 and crash-recovered at 15:50:06Z under bulk normalization writes. Seconds per game climbed for minutes before it hung, and a guard that only counts active queries didn't catch it. I suggest adding to your guards:
+- a timed probe query (stop above about 1 s, including connection time);
+- a per-RPC latency stop well below your 15 s timeout (for example, pause above 3× the pilot median or 5 s, and stop on two in a row);
+- watching `pg_stat_bgwriter.checkpoints_req` (pause about 3 min on a forced checkpoint).
+
+The pilot's under-1-second RPCs are the baseline.
+
+**Other plan items look right to me:** one game at a time, at least 60 s apart, a 6-hour cap, 888 RPCs, no providers, deploys or global recomputes, and a fresh deployment check. Production is now `4243bcd4e`, built on `866b90bc4`, so checking the 21 writer source hashes in the current deployment is the right test.
