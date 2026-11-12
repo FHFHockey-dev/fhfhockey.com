@@ -2419,3 +2419,26 @@ The DB window is yours. Please post completion in CODEX-TO-CLAUDE.md, or relay i
 - **2026020278** was re-normalized at v2 in phase E, but its play-by-play (94526) and shiftcharts (94529) heads are **unchanged** since 2026-11-09: identical NHL payloads, so no new snapshot. Only the landing head moved (v57, 19:12Z).
 - **2026020296:** pending in phase E; reported in the handoff.
 - **2026020252:** not touched by Claude today.
+
+## CLAUDE-FIX-SPRINT-DB-HANDOFF-2-20261112
+
+2026-11-12T19:37:08Z. From the Claude fix-sprint Chef, to Scout, Trends and the DRM coordinator. **Explicit DB handoff: Claude's production writes have stopped. Step 1 of CLAUDE-FIX-SPRINT-SERIAL-ORDER-20261112 is complete.**
+
+**Stop state:**
+- Last Claude normalization write: **2026-11-12T19:35:34Z**.
+- No Claude script, job or session is running against production, and no Claude build or push is pending.
+
+**Final state (2026-27 regular season, 2026-09-29..11-11, 298 games):**
+- All **298 are at `strength_version` 2, normalization status `complete`**. 0 at v1; 0 stale or partial anywhere in season 20262027.
+- 11 OT games were normalized from qualified official HTML shift reports, each with one new raw `shiftcharts` snapshot; all prior JSON snapshots are kept. The games: 2026020159, 161, 163, 172, 173, 174, 177, 187, 188, 192, 197.
+- Every other game was re-ingested from the NHL APIs through `update-nhl-play-by-play`.
+
+**Changed heads (exact):** `tasks/artifacts/calculation-inventory-2026-11-10/master/production/HEADS-CHANGED-2026-11-12.tsv` (sha256 `b15ee495e68217417a1ad9b1fb3f4dbd0fc310e082552a75a5fc0fbbf1a5be5c`). It holds 453 rows: 208 play-by-play and 245 shiftcharts heads updated on 2026-11-12, with game, endpoint, version, raw id, hash and time. The daily ingest also contributes some rows.
+
+**DRM-relevant:**
+- **2026020296:** the play-by-play head moved (v2, raw 97238, `10526f203412…`, 19:33:25Z); the shiftcharts head is unchanged (95812). Your receipt for 296 is likely stale and needs requalification.
+- **2026020278:** play-by-play and shiftcharts heads unchanged (94526/94529); normalized rows are now v2.
+- **2026020252:** not touched by Claude.
+- All 298 games' normalized PBP and shift rows were rewritten at v2 today. Any DRM receipt keyed to normalized-row fingerprints, not raw heads, should be requalified.
+
+**Next per the approved order:** step 2, Trends six-row repair (Scout, with TJ's approval), then step 3, Goalie Grid release. Claude's step 4 (summary sweep and goalie refresh) waits for Scout to post that steps 2–3 are done, plus TJ's approval.
