@@ -12,6 +12,7 @@ import {
   getSandboxMetricLabel
 } from "./entitySurface";
 import { readUsualRange } from "./usualRange";
+import { assessSustainabilityScoreCoverage } from "./guardrails";
 
 type PlayerRow = Database["public"]["Tables"]["players"]["Row"];
 type LegacyScoreRow = Database["public"]["Tables"]["sustainability_scores"]["Row"];
@@ -110,8 +111,9 @@ export type SandboxScoreHistoryRow = {
   entitySubtitle: string | null;
   snapshotDate: string;
   windowCode: string;
-  score: number;
-  rawScore: number;
+  /** Null when the score's inputs were insufficient (BC W1-9 A2). */
+  score: number | null;
+  rawScore: number | null;
   expectationState: SandboxExpectationState;
   baselineValue: number | null;
   recentValue: number | null;
@@ -656,11 +658,18 @@ function buildUnifiedExpectationState(
   return "stable";
 }
 
+/** A stored score with no luck or no skill input is unavailable (A2). */
+function legacyScoreAvailable(row: LegacyScoreRow): boolean {
+  return assessSustainabilityScoreCoverage(parseJsonObject(row.components))
+    .sufficient;
+}
+
 function normalizeLegacyScoreRow(args: {
   row: LegacyScoreRow;
   player: PlayerRow | undefined;
   baseline: PlayerBaselineRow | undefined;
 }): SandboxScoreRow {
+  const available = legacyScoreAvailable(args.row);
   const playerName =
     args.baseline?.player_name ??
     (args.player as unknown as { fullName?: string | null })?.fullName ??
@@ -682,8 +691,8 @@ function normalizeLegacyScoreRow(args: {
     recentValue: null,
     expectedValue: null,
     zScore: null,
-    rawScore: Number(args.row.s_raw),
-    score: Number(args.row.s_100),
+    rawScore: available ? Number(args.row.s_raw) : null,
+    score: available ? Number(args.row.s_100) : null,
     expectationState: deriveLegacyExpectationState(Number(args.row.s_raw)),
     components: parseJsonObject(args.row.components),
     provenance: {
@@ -941,7 +950,10 @@ export async function fetchSandboxScores(args: {
       throw new Error(`Failed to load skater sustainability rows: ${error.message}`);
     }
 
-    const legacyRows = (data ?? []) as LegacyScoreRow[];
+    // Rows without sufficient inputs are unavailable, not ranked as 50.
+    const legacyRows = ((data ?? []) as LegacyScoreRow[]).filter(
+      legacyScoreAvailable
+    );
     const playerIds = legacyRows.map((row) => Number(row.player_id));
     const [playersById, baselinesById] = await Promise.all([
       fetchPlayersByIds(playerIds),
@@ -1378,7 +1390,9 @@ export async function fetchSandboxScoreHistory(args: {
       requestedDate,
       snapshotDate,
       windowCode,
-      rows: ((data ?? []) as LegacyScoreRow[]).map((row) => {
+      rows: ((data ?? []) as LegacyScoreRow[])
+        .filter(legacyScoreAvailable)
+        .map((row) => {
         const normalized = normalizeLegacyScoreRow({ row, player, baseline });
         return {
           entityType: normalized.entityType,

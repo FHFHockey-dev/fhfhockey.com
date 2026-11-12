@@ -117,6 +117,7 @@ export async function rebuildScoreHandler(
 
     let rows: any[] = [];
     let totalPlayers = 0;
+    let skippedInsufficientInputs = 0;
 
     for (const batchOffset of batchOffsets) {
       const batch = ids.slice(batchOffset, batchOffset + limit);
@@ -139,7 +140,8 @@ export async function rebuildScoreHandler(
               configHash: activeConfig.configHash
             }
           );
-          rows.push(row);
+          if (row) rows.push(row);
+          else skippedInsufficientInputs += 1;
         }
       }
     }
@@ -248,6 +250,7 @@ export async function rebuildScoreHandler(
       dry,
       processed_players: totalPlayers,
       rows_built: rows.length,
+      rows_skipped_insufficient_inputs: skippedInsufficientInputs,
       rows_upserted: inserted,
       anomaly_count: anomalyCount,
       recompute_verification: recomputeVerification,
@@ -270,6 +273,7 @@ export async function rebuildScoreHandler(
         run_all: runAll,
         processed_players: totalPlayers,
         rows_built: rows.length,
+        rows_skipped_insufficient_inputs: skippedInsufficientInputs,
         rows_upserted: inserted,
         write_chunks: chunks,
         anomaly_count: anomalyCount,

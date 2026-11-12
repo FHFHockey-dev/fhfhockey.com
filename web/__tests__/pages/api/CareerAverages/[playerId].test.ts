@@ -96,6 +96,13 @@ describe("/api/CareerAverages/[playerId] pooled career averages", () => {
     expect(data["oZS%"]).toBeCloseTo(130 / 240, 10);
     expect(data.goals).toBeCloseTo(10.5, 10);
     expect(data.seasons).toBe(3);
+    // Components behind the sample-aware /charts comparison (D12).
+    expect(data.components).toMatchObject({
+      "S%": { numerator: 21, denominator: 254 },
+      IPP: { numerator: 46, denominator: 68 },
+      "SOG/60": { numerator: 254, denominator: 1100 },
+      "oZS%": { numerator: 130, denominator: 240 }
+    });
   });
 
   it("returns null, not zero, when every completed season is unknown", async () => {

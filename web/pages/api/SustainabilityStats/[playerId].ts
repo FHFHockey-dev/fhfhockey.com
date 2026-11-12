@@ -142,6 +142,13 @@ async function getStats(
     Number.isFinite(toiMinutes) ? toiMinutes : null
   );
 
+  const parts = (
+    numerator: number | null,
+    denominator: number | null
+  ) => ({ numerator, denominator });
+  const oz = oi("Off. Zone Starts");
+  const dz = oi("Def. Zone Starts");
+
   return {
     "S%": fraction(ind("SH%")),
     // Decision 17: xS% = ixG / unblocked attempts (iFF).
@@ -155,7 +162,20 @@ async function getStats(
     iHDCF: ind("iHDCF"),
     iSCF: ind("iSCF"),
     ixG: ind("ixG"),
-    goals: ind("Goals")
+    goals: ind("Goals"),
+    // Window numerators and denominators for the sample-aware comparison.
+    components: {
+      "S%": parts(ind("Goals"), ind("Shots")),
+      "xS%": parts(ind("ixG"), ind("iFF")),
+      IPP: parts(ind("Total Points"), oi("GF")),
+      "oiSH%": parts(oi("GF"), oi("SF")),
+      "secA%": parts(ind("Second Assists"), ind("Total Assists")),
+      "SOG/60": parts(
+        ind("Shots"),
+        Number.isFinite(toiMinutes) ? toiMinutes : null
+      ),
+      "oZS%": parts(oz, oz != null && dz != null ? oz + dz : null)
+    }
   };
 }
 

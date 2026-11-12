@@ -2355,7 +2355,12 @@ export default function TrendsSandboxPage() {
       });
     }
 
-    const rows = scoreHistoryData?.rows ?? [];
+    // Scores without sufficient inputs are unavailable: left out, not 50.
+    const rows = (scoreHistoryData?.rows ?? []).flatMap((row) =>
+      typeof row.score === "number" && Number.isFinite(row.score)
+        ? [{ ...row, score: row.score }]
+        : []
+    );
     const baseline =
       rows.length > 0
         ? rows.reduce((sum, row) => sum + row.score, 0) / rows.length

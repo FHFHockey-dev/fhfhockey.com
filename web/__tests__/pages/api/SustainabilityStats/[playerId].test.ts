@@ -157,7 +157,13 @@ describe("/api/SustainabilityStats/[playerId]", () => {
     };
 
     // "20" is 20 minutes: 10 shots in 20 minutes = 30 SOG/60.
-    expect((await run("20"))["SOG/60"]).toBeCloseTo(30, 10);
+    const twenty = await run("20");
+    expect(twenty["SOG/60"]).toBeCloseTo(30, 10);
+    expect(twenty.components).toMatchObject({
+      "SOG/60": { numerator: 10, denominator: 20 },
+      "secA%": { numerator: 0, denominator: 0 },
+      "xS%": { numerator: 1.5, denominator: null }
+    });
     for (const toi of ["-", ""]) {
       expect(await run(toi)).toMatchObject({
         "SOG/60": null,

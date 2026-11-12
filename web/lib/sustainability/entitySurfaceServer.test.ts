@@ -23,6 +23,7 @@ vi.mock("lib/supabase/server", () => ({
         in: (key: string, values: unknown[]) => { rows = rows!.filter((row) => values.includes(row[key])); return query; },
         order: () => query,
         limit: (count: number) => { rows = rows!.slice(0, count); return query; },
+        single: () => Promise.resolve(rows!.length ? { data: rows![0], error: null } : { data: null, error: { code: "PGRST116" } }),
         then: (resolve: (value: unknown) => unknown) => Promise.resolve({ data: rows, count: rows!.length, error: null }).then(resolve),
       };
       return query;
@@ -120,5 +121,33 @@ describe("sandbox band status (W1 P0 #24, W3-6 N3)", () => {
     expect(readUsualRange(payload.currentRows[0]!.distribution)).toEqual({
       status: "unknown", range: null, reason: "not_computed",
     });
+  });
+});
+
+describe("sandbox score coverage (BC W1-9 A2)", () => {
+  beforeEach(() => {
+    fixtures.legacy = [];
+    fixtures.unified = [];
+    fixtures.bands = [];
+  });
+
+  it("leaves an all-missing score out of the list and shows the selected one as unavailable", async () => {
+    const missingComponents = {
+      warnings: [
+        "missing_window_z_shp", "missing_window_z_oishp", "missing_window_z_ipp",
+        "missing_window_z_ppshp", "missing_skill_window_ixg60",
+        "missing_skill_window_icf60", "missing_skill_window_hdcf60",
+      ],
+      fallbackFlags: { missing_luck_stats: true, missing_skill_stats: true },
+    };
+    fixtures.legacy = [
+      { ...baseRow, player_id: 1, s_raw: 0, s_100: 50, components: missingComponents },
+      { ...baseRow, player_id: 2, components: { warnings: [], fallbackFlags: {} } },
+    ];
+    const payload = await fetchSandboxScores({
+      entityType: "skater", requestedDate: "2026-10-19", windowCode: "l5", entityId: 1,
+    } as any);
+    expect(payload.rows.map((row) => row.entityId)).toEqual([2]);
+    expect(payload.selectedRow).toMatchObject({ entityId: 1, score: null, rawScore: null });
   });
 });

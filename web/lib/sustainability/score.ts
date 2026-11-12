@@ -206,6 +206,11 @@ export async function buildScoreForPlayerWindow(
   const rawZMap: Record<string, number> = {};
   const guardrailWarnings: string[] = [];
   for (const r of zrows ?? []) {
+    // A null or non-numeric window z is a missing input, not z = 0.
+    if (r.eb_z == null || !Number.isFinite(Number(r.eb_z))) {
+      guardrailWarnings.push(`guardrail_invalid_window_z_${r.stat_code}`);
+      continue;
+    }
     rawZMap[`z_${r.stat_code}`] = Number(r.eb_z);
     zmap[r.stat_code] = clampSustainabilityZScore(
       Number(r.eb_z),
@@ -277,6 +282,12 @@ export async function buildScoreForPlayerWindow(
     components
   });
 
+  // Insufficient inputs (no luck or no skill component known): no score is
+  // written, so no reader can show a fabricated neutral 50 (BC W1-9 A2).
+  if (guardedScore.state === "blocked") {
+    return { row: null, skipped: guardedScore.warnings, sample: { rates, zmap } };
+  }
+
   return {
     row: {
       player_id,
@@ -290,6 +301,7 @@ export async function buildScoreForPlayerWindow(
       model_version: modelVersion,
       config_hash: configHash
     },
+    skipped: null,
     sample: { rates, zmap }
   };
 }

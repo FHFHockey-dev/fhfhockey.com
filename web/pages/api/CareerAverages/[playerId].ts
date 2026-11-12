@@ -4,6 +4,10 @@ import { HTMLElement, parse } from "node-html-parser";
 
 import { buildNstUrlString, fetchNstTextWithCacheByUrl } from "lib/nst/client";
 import { parseTime } from "lib/NHL/TOI";
+import type {
+  CareerComparisonStat,
+  RatioComponents
+} from "lib/sustainability/careerComparison";
 
 export type Data = {
   IPP: number | null;
@@ -17,6 +21,8 @@ export type Data = {
   iSCF: number | null;
   ixG: number | null;
   goals: number | null;
+  /** Numerator and denominator behind each ratio, for sample-aware ranges. */
+  components?: Partial<Record<CareerComparisonStat, RatioComponents>>;
 };
 
 type Response = {
@@ -121,21 +127,29 @@ type SeasonRow = {
  * sum(numerator) / sum(denominator). Unknown seasons are skipped, never
  * zeroed; no known season or a zero denominator gives null.
  */
-function pooled(
+function pooledParts(
   rows: SeasonRow[],
   numerator: (row: SeasonRow) => number | null,
   denominator: (row: SeasonRow) => number | null
-): number | null {
+): RatioComponents {
   let num = 0;
   let den = 0;
+  let any = false;
   rows.forEach((row) => {
     const n = numerator(row);
     const d = denominator(row);
     if (n == null || d == null) return;
     num += n;
     den += d;
+    any = true;
   });
-  return den > 0 ? num / den : null;
+  return any ? { numerator: num, denominator: den } : { numerator: null, denominator: null };
+}
+
+function ratioOf(parts: RatioComponents): number | null {
+  return parts.numerator != null && parts.denominator != null && parts.denominator > 0
+    ? parts.numerator / parts.denominator
+    : null;
 }
 
 /** Mean of a per-season count over seasons where it is known. */
@@ -202,57 +216,62 @@ export function computeCareerAverages(
   const asPercentScale = (value: number | null) =>
     value == null ? null : value * 100;
 
-  return {
-    "S%": pooled(rows, (r) => r.get("Goals"), (r) => r.get("Shots")),
-    "xS%": pooled(rows, (r) => r.get("ixG"), (r) => r.get("iFF")),
-    IPP: pooled(
-      rows,
-      (r) => r.get("Total Points"),
-      (r) => onIceValue(r, "GF")
-    ),
-    "oiSH%": pooled(
-      rows,
-      (r) => onIceValue(r, "GF"),
-      (r) => onIceValue(r, "SF")
-    ),
-    "secA%": pooled(
+  const parts: Record<CareerComparisonStat, RatioComponents> = {
+    "S%": pooledParts(rows, (r) => r.get("Goals"), (r) => r.get("Shots")),
+    "xS%": pooledParts(rows, (r) => r.get("ixG"), (r) => r.get("iFF")),
+    IPP: pooledParts(rows, (r) => r.get("Total Points"), (r) => onIceValue(r, "GF")),
+    "oiSH%": pooledParts(rows, (r) => onIceValue(r, "GF"), (r) => onIceValue(r, "SF")),
+    "secA%": pooledParts(
       rows,
       (r) => r.get("Second Assists"),
       (r) => r.get("Total Assists")
     ),
-    "Primary Assists": seasonMean(rows, (r) => r.get("First Assists")),
-    "Secondary Assists": seasonMean(rows, (r) => r.get("Second Assists")),
-    "Total Points": seasonMean(rows, (r) => r.get("Total Points")),
-    "SOG/60": (() => {
-      const rate = pooled(rows, (r) => r.get("Shots"), (r) => r.minutes);
-      return rate == null ? null : rate * 60;
-    })(),
+    "SOG/60": pooledParts(rows, (r) => r.get("Shots"), (r) => r.minutes),
     // OZS% = OZ / (OZ + DZ) (decision 9).
-    "oZS%": pooled(
+    "oZS%": pooledParts(
       rows,
       (r) => onIceValue(r, "Off. Zone Starts"),
       (r) =>
         sum(onIceValue(r, "Off. Zone Starts"), onIceValue(r, "Def. Zone Starts"))
-    ),
+    )
+  };
+  const sogRate = ratioOf(parts["SOG/60"]);
+
+  return {
+    "S%": ratioOf(parts["S%"]),
+    "xS%": ratioOf(parts["xS%"]),
+    IPP: ratioOf(parts.IPP),
+    "oiSH%": ratioOf(parts["oiSH%"]),
+    "secA%": ratioOf(parts["secA%"]),
+    "Primary Assists": seasonMean(rows, (r) => r.get("First Assists")),
+    "Secondary Assists": seasonMean(rows, (r) => r.get("Second Assists")),
+    "Total Points": seasonMean(rows, (r) => r.get("Total Points")),
+    "SOG/60": sogRate == null ? null : sogRate * 60,
+    "oZS%": ratioOf(parts["oZS%"]),
     iHDCF: seasonMean(rows, (r) => r.get("iHDCF")),
     iSCF: seasonMean(rows, (r) => r.get("iSCF")),
     ixG: seasonMean(rows, (r) => r.get("ixG")),
     // On-ice shares keep their 0-100 scale.
     ixGpct: asPercentScale(
-      pooled(
-        rows,
-        (r) => onIceValue(r, "xGF"),
-        (r) => sum(onIceValue(r, "xGF"), onIceValue(r, "xGA"))
+      ratioOf(
+        pooledParts(
+          rows,
+          (r) => onIceValue(r, "xGF"),
+          (r) => sum(onIceValue(r, "xGF"), onIceValue(r, "xGA"))
+        )
       )
     ),
     goals: seasonMean(rows, (r) => r.get("Goals")),
     iCFpct: asPercentScale(
-      pooled(
-        rows,
-        (r) => onIceValue(r, "CF"),
-        (r) => sum(onIceValue(r, "CF"), onIceValue(r, "CA"))
+      ratioOf(
+        pooledParts(
+          rows,
+          (r) => onIceValue(r, "CF"),
+          (r) => sum(onIceValue(r, "CF"), onIceValue(r, "CA"))
+        )
       )
     ),
+    components: parts,
     seasons: rows.length
   };
 }

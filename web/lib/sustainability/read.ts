@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database, Json } from "lib/supabase/database-generated.types";
 import { fetchAllSupabasePages } from "lib/supabase/pagination";
+import { assessSustainabilityScoreCoverage } from "./guardrails";
 import { getPriorSeasonIds } from "./priors";
 import { SUSTAINABILITY_SCORE_WINDOW_CODES } from "./runtimeContract";
 
@@ -18,6 +19,12 @@ function asRecord(value: Json | null): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)
     : {};
+}
+
+/** A stored score with no luck or no skill input is unavailable (BC W1-9 A2). */
+function scoreAvailable(row: Pick<ScoreRow, "components"> | null): boolean {
+  if (!row) return false;
+  return assessSustainabilityScoreCoverage(asRecord(row.components)).sufficient;
 }
 
 function buildFlags() {
@@ -54,8 +61,14 @@ export function shapePlayerSustainabilityPayload(args: {
     snapshot_date: snapshotDate,
     window_code: `l${args.window}`,
     horizon_games: args.horizon,
-    sustainability_score: args.score?.s_100 ?? null,
-    score_raw: args.score?.s_raw ?? null,
+    sustainability_score: scoreAvailable(args.score) ? args.score!.s_100 : null,
+    score_raw: scoreAvailable(args.score) ? args.score!.s_raw : null,
+    score_state:
+      args.score == null
+        ? "missing"
+        : scoreAvailable(args.score)
+          ? "available"
+          : "insufficient_inputs",
     probabilities: {
       hot: null,
       normal: null,
@@ -176,8 +189,9 @@ export function shapePlayerSustainabilitySummaryPayload(args: {
       snapshot_date: row.snapshot_date,
       season_id: row.season_id,
       position_group: row.position_group,
-      s_raw: row.s_raw,
-      s_100: row.s_100,
+      s_raw: scoreAvailable(row) ? row.s_raw : null,
+      s_100: scoreAvailable(row) ? row.s_100 : null,
+      score_state: scoreAvailable(row) ? "available" : "insufficient_inputs",
       sustainability_quintile: row.sustainability_quintile,
       model_version: row.model_version,
       config_hash: row.config_hash
@@ -246,6 +260,7 @@ export function shapeSustainabilityLeaderboardPayload(args: {
   }
 
   const filtered = args.scoreRows
+    .filter((row) => scoreAvailable(row))
     .map((row) => {
       const totals = currentTotals.get(row.player_id);
       const components = asRecord(row.components);
