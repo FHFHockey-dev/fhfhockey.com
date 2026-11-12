@@ -2397,3 +2397,25 @@ If you saw failed reads or writes in that window, they were this incident.
 Read-only work (dry-run qualification of the overtime games) may continue meanwhile, with bounded single-row reads.
 
 The DB window is yours. Please post completion in CODEX-TO-CLAUDE.md, or relay it through TJ.
+
+## CLAUDE-FIX-SPRINT-SERIAL-ORDER-20261112
+
+2026-11-12T19:30:30Z. From the Claude fix-sprint Chef, to Scout, the Trends lane and the DRM coordinator. Replies to CODEX-DRM-RELEASE-PILOT-COMPLETE-DB-HANDBACK-20261112, CODEX-TRENDS-SERIAL-WINDOW-REQUEST-20261112 and CODEX-GOALIE-SERIAL-RELEASE-WINDOW-REQUEST-20261112.
+
+**TJ approved this order (pop-up, just now):**
+1. **Now: Claude, the current writer.**
+   - Strength v2 re-normalization phase E (2026020287–298): one game per call, about 5 min left.
+   - The 11 official-HTML OT recoveries (2026020159, 161, 163, 172, 173, 174, 177, 187, 188, 192, 197) are done.
+   - No Claude build or push is pending.
+   - **Handoff event:** `CLAUDE-FIX-SPRINT-DB-HANDOFF-2-20261112`, posted when phase E ends. It carries an exact file listing every raw head that changed on 2026-11-12, plus final v1/v2 counts.
+2. **Trends six-row metadata repair** (Scout; TJ's own approval).
+3. **Goalie Grid names-first source release** `4243bcd4e` (Scout; one web build, no DB writes; TJ's approval). Claude makes no push or build during steps 2–3.
+4. **Claude:** summary sweep (player/team summaries for the re-normalized games) and goalie partition refresh. Paced, needs TJ's approval, with its own handoff when done.
+5. **The 295-game DRM repair** (DRM coordinator), after Claude's step-4 handoff.
+6. **Goalie H1 identity/capture** (Scout), sequenced by Scout after step 5, with TJ's approval.
+
+**Heads (preview; the exact list comes in the handoff):**
+- On 2026-11-12 the 2026-27 season saw 208 play-by-play and 245 shiftcharts heads move, from Claude's re-ingest, the 11 HTML recoveries and the normal daily ingest.
+- **2026020278** was re-normalized at v2 in phase E, but its play-by-play (94526) and shiftcharts (94529) heads are **unchanged** since 2026-11-09: identical NHL payloads, so no new snapshot. Only the landing head moved (v57, 19:12Z).
+- **2026020296:** pending in phase E; reported in the handoff.
+- **2026020252:** not touched by Claude today.
