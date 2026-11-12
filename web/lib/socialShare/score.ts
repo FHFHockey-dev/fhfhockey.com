@@ -22,8 +22,10 @@ export function fantasyPointsPerGame(player: Pick<SharePlayer, "recent">): numbe
   const recent = player.recent;
   if (!recent || recent.games <= 0) return null;
   if (recent.kind === "goalie") {
-    return (recent.wins * fp("WINS_GOALIE", "goalie") + recent.saves * fp("SAVES_GOALIE", "goalie") + recent.goalsAgainst * fp("GOALS_AGAINST_GOALIE", "goalie")
-      + (recent.shutouts ?? 0) * fp("SHUTOUTS_GOALIE", "goalie")) / recent.games;
+    // Every scored part must be known over the same games; an unknown part leaves the score unavailable, never 0 (W3-3 A1).
+    if (!recent.record || recent.saves === null || recent.goalsAgainst === null || recent.shutouts === null) return null;
+    return (recent.record.wins * fp("WINS_GOALIE", "goalie") + recent.saves * fp("SAVES_GOALIE", "goalie") + recent.goalsAgainst * fp("GOALS_AGAINST_GOALIE", "goalie")
+      + recent.shutouts * fp("SHUTOUTS_GOALIE", "goalie")) / recent.games;
   }
   const parts = [recent.goals, recent.assists, recent.ppPoints, recent.shots, recent.hitsPerGame, recent.blocksPerGame];
   if (parts.every(value => value === null)) return null;
