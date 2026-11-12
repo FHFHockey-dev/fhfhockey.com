@@ -3,7 +3,7 @@ import { canEligibilityOccupySlot, normalizeEligibility } from "./eligibility";
 import { expandActiveSlots } from "./slots";
 import { acquisitionEffectiveAt } from "./planningTimeline";
 import { dropEligible, providerListsOut, reservedPlayerIds } from "./retention";
-import { comparablePointsDelta } from "./pointsComparison";
+import { comparablePointsDelta, ratioCategoriesWorse } from "./pointsComparison";
 import { recentPointsPerGame } from "./recentForm";
 import type { PlanEvaluation, PlanIntent, PlanStep, PlanningGame, PlanningPlayer, PlanningSnapshot, StreamingChain, StreamingLeg, StreamingOption, StreamingPlan } from "./planningTypes";
 
@@ -352,7 +352,10 @@ export function buildStreamingChains(inputs: StreamingInputs): StreamingPlanWith
     // Difference-based (TJ, 2026-11-12): an unknown player's unchanged games cancel; differing unknowns stay unknown.
     const netPoints = comparablePointsDelta(evaluation, baseline);
     const score = scoreOf(evaluation);
-    return { spots: spots.length as 1 | 2, legs, steps, evaluation, netGames: evaluation.activeGames - baseline.activeGames, netPoints,
+    const worse = rules.scoring.mode === "categories" ? ratioCategoriesWorse(snapshot, evaluation, baseline) : [];
+    const labelled = worse.length ? { ...evaluation, limitations: [...evaluation.limitations,
+      `Tradeoff: more starts with a worse or unknown ${worse.join(", ")} than holding; shown as a choice, not ranked above chains that keep every ratio.`] } : evaluation;
+    return { spots: spots.length as 1 | 2, legs, steps, evaluation: labelled, netGames: evaluation.activeGames - baseline.activeGames, netPoints,
       netScore: score !== null && baselineScore !== null ? score - baselineScore : null, addsUsed: steps.length, addsAvailable: budget };
   };
   /** The evaluator's certified net when known, else the projection over remaining assignments. */
@@ -368,7 +371,11 @@ export function buildStreamingChains(inputs: StreamingInputs): StreamingPlanWith
   const meets = (chain: StreamingChain) => !chain.evaluation.goalie.risk;
   // A chain that keeps (or reaches) the goalie minimum beats one that misses it, whatever its AGP or points.
   const chainOrder = (order: typeof objectiveBetter) => (a: StreamingChain, b: StreamingChain) => targeted && meets(a) !== meets(b) ? meets(a) : order(a, b);
-  const chainBetter = chainOrder(objectiveBetter);
+  // Decision 51 (category leagues): a chain whose ratio categories are worse than holding is a tradeoff; it never ranks
+  // above a chain that keeps every ratio, whatever its extra starts.
+  const categoryLeague = rules.scoring.mode === "categories";
+  const ratioTradeoff = (chain: StreamingChain) => categoryLeague && ratioCategoriesWorse(snapshot, chain.evaluation, baseline).length > 0;
+  const chainBetter = (a: StreamingChain, b: StreamingChain) => ratioTradeoff(a) !== ratioTradeoff(b) ? !ratioTradeoff(a) : chainOrder(objectiveBetter)(a, b);
   const certifyAll = (proposals: SpotPlan[][]) => {
     const seen = new Set<string>();
     return proposals.flatMap(spots => {

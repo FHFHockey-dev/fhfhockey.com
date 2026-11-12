@@ -6,7 +6,7 @@ import { canEligibilityOccupySlot, normalizeEligibility } from "./eligibility";
 import { expandActiveSlots } from "./slots";
 import { acquisitionEffectiveAt, buildTimeline } from "./planningTimeline";
 import { deferBenchDecisions, explainBenchDecisions, reserveBenchEvaluation, type BenchEvaluationBudget } from "./benchDecisions";
-import { comparablePointsDelta } from "./pointsComparison";
+import { comparablePointsDelta, ratioCategoriesWorse } from "./pointsComparison";
 import { dropEligible, droppedOwnership, knownDropOrder, orderDropCandidates, providerListsOut, reservedPlayerIds } from "./retention";
 import { buildStreamingChains } from "./streamingChain";
 import type { ContributionPlanningSnapshot, ForecastExclusionReason, ForecastOpportunityExclusion, GameForecast, PlanEvaluation, PlanIntent, PlanStep, PlanningAssignment, PlanningGame, PlanningObjective, PlanningPlayer, PlanningResult, PlanningSnapshot, ScoringCategory, StatLine } from "./planningTypes";
@@ -1127,14 +1127,6 @@ function evaluatePreparedPlan(prepared: ReturnType<typeof prepareEvaluation>, in
     } });
 }
 
-/** Ratio categories (those with a denominator) in which `plan` is worse than `reference`, or unknown in either; exact,
- * direction-aware and with no materiality threshold (decision 51). */
-function ratioCategoriesWorse(snapshot: PlanningSnapshot, plan: PlanEvaluation, reference: PlanEvaluation): string[] {
-  return snapshot.rules.scoring.categories.filter(category => category.denominator).flatMap(category => {
-    const own = plan.categoryResults.find(row => row.key === category.key)?.own, base = reference.categoryResults.find(row => row.key === category.key)?.own;
-    return !finite(own) || !finite(base) || (own - base) * (category.direction === "higher" ? 1 : -1) < 0 ? [category.key] : [];
-  });
-}
 function compareCategoryEvaluations(snapshot: PlanningSnapshot, a: PlanEvaluation, b: PlanEvaluation, target: number | null) {
   if (!a.comparisonEligible || !b.comparisonEligible || !a.legal || !b.legal || !a.budgetVerified || !b.budgetVerified
     || !a.forecastManifestId || a.forecastManifestId !== b.forecastManifestId) return "unknown";
