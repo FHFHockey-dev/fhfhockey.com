@@ -236,13 +236,16 @@ const pairedPer60 = (
 };
 
 /**
- * Individual shot attempts (iCF) per 60 at 5v5 (decision 73). The NHL
- * puck-possession report states `individualSatForPer60` over the same row's
- * `timeOnIcePerGame5v5`, so each game's attempts are rate x 5v5 seconds / 3600;
- * the window rate pools attempts over pooled 5v5 seconds. Never averaged
- * across games, never on-ice CF, and unknown when any game lacks either input.
+ * Individual shot attempts (iCF) per 60 from the NHL puck-possession report
+ * (decision 73). Each game's attempts are `individualSatForPer60` x the same
+ * row's `timeOnIcePerGame5v5` / 3600, and the window rate pools attempts over
+ * pooled TOI (the TOI weights cancel, so the result does not depend on the
+ * TOI unit). The report's strength basis for this rate is not verified in the
+ * repo, so the label names the source and makes no strength claim. Never
+ * averaged across games, never on-ice CF, and unknown when any game lacks
+ * either input.
  */
-const individualCorsiForPer60At5v5 = (rows: SkaterGameRow[]) =>
+const individualCorsiForPer60 = (rows: SkaterGameRow[]) =>
   pairedPer60(
     rows,
     (row) => {
@@ -413,7 +416,7 @@ export const buildSkaterAdvancedMetricsRows = (
         hitsPer60: allSituations("hits"),
         blocksPer60: allSituations("blocked_shots"),
         penaltyMinutesPer60: allSituations("penalty_minutes"),
-        individualCorsiForPer60At5v5: individualCorsiForPer60At5v5(playerRows)
+        individualCorsiForPer60: individualCorsiForPer60(playerRows)
       } satisfies SkaterAdvancedMetricsRow;
     })
     .sort(sortByBucketThenName);

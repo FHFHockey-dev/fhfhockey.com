@@ -222,6 +222,6 @@ export interface SkaterAdvancedMetricsRow {
   hitsPer60: number | null;
   blocksPer60: number | null;
   penaltyMinutesPer60: number | null;
-  /** Pooled 5v5 individual attempts / pooled 5v5 seconds (decision 73). IPP and ixG/60 stay hidden until a verified source is wired. */
-  individualCorsiForPer60At5v5: number | null;
+  /** Pooled individual attempts / pooled TOI from the NHL puck-possession report (decision 73; strength basis unverified). IPP and ixG/60 stay hidden until a verified source is wired. */
+  individualCorsiForPer60: number | null;
 }

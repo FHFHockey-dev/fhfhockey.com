@@ -86,6 +86,39 @@ export function parseTable(table: HTMLElement) {
   return { headers, data };
 }
 
+const knownCount = (text: string | undefined) => {
+  const trimmed = String(text ?? "").trim();
+  return /^\d+(\.\d+)?$/.test(trimmed) ? Number(trimmed) : null;
+};
+
+/**
+ * Career SOG/60 from NST's per-season rows: Σ shots ÷ Σ TOI minutes × 60.
+ * Never a mean of season rates; null when any season lacks shots or TOI, or
+ * the pooled TOI is zero.
+ */
+export function pooledShotsPerSixty(table: {
+  headers: string[];
+  data: string[][];
+}): number | null {
+  const shotsIdx = table.headers.indexOf("Shots");
+  const toiIdx = table.headers.indexOf("TOI");
+  if (shotsIdx < 0 || toiIdx < 0 || table.data.length === 0) {
+    return null;
+  }
+  let shots = 0;
+  let minutes = 0;
+  for (const row of table.data) {
+    const seasonShots = knownCount(row[shotsIdx]);
+    const seasonMinutes = parseTime(row[toiIdx]);
+    if (seasonShots === null || !Number.isFinite(seasonMinutes)) {
+      return null;
+    }
+    shots += seasonShots;
+    minutes += seasonMinutes;
+  }
+  return minutes > 0 ? (shots / minutes) * 60 : null;
+}
+
 async function getStats(playerId: string) {
   const URL = buildNstUrlString("playerreport.php", {
     stype: 2,
@@ -144,16 +177,9 @@ async function getStats(playerId: string) {
       0
     ) / individual.data.length;
 
-  // SOG/60 - (shots/toi)*60
-  const SOGPerSixty =
-    individual.data.reduce((prev, current) => {
-      return (
-        prev +
-        (Number(current[individual.headers.indexOf("Shots")]) /
-          parseTime(current[individual.headers.indexOf("TOI")]) || 0) *
-          60
-      );
-    }, 0) / individual.data.length;
+  // SOG/60: pooled shots over pooled TOI minutes (rule 26), unknown when any
+  // season's shots or TOI is unknown (W2-3 A5).
+  const SOGPerSixty = pooledShotsPerSixty(individual);
 
   // oZS% is offensive zone start % - Off. Zone Start %
   const oZSPct =

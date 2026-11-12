@@ -133,7 +133,7 @@ describe("buildSkaterAdvancedMetricsRows", () => {
     expect(rows[0].pointsPer60).toBeCloseTo(6.32, 2);
   });
 
-  // W2-P0-8 / decision 73: two games with unequal 5v5 TOI. Attempts are
+  // W2-P0-8 / decision 73: two games with unequal report TOI. Attempts are
   // 8 x 600/3600 = 1.333 and 20 x 1200/3600 = 6.667, so pooled iCF/60 is
   // 8 / 1800 s x 3600 = 16; the mean of game rates would be 14.
   const icfRows: SkaterGameRow[] = [
@@ -149,31 +149,32 @@ describe("buildSkaterAdvancedMetricsRows", () => {
     }
   ];
 
-  it("pools individual attempts over matched 5v5 TOI and renders iCF/60 (5v5)", () => {
+  it("pools individual attempts over the report's TOI and labels the source", () => {
     const rows = buildSkaterAdvancedMetricsRows(
       icfRows,
       weeklyAggregates,
       "ownership"
     );
-    expect(rows[0].individualCorsiForPer60At5v5).toBeCloseTo(16, 10);
+    expect(rows[0].individualCorsiForPer60).toBeCloseTo(16, 10);
 
     const markup = renderToStaticMarkup(
       React.createElement(SkaterAdvancedMetricsTable, { rows })
     );
-    expect(markup).toContain("iCF/60 (5v5)");
+    expect(markup).toContain("iCF/60 (NHL puck-possession report)");
+    expect(markup).not.toContain("5v5");
     expect(markup).toContain("<td>16.00</td>");
     expect(markup).not.toContain(">CF/60");
     expect(markup).not.toContain("IPP");
     expect(markup).not.toContain("iXG/60");
   });
 
-  it("shows iCF/60 as unknown when one game lacks 5v5 TOI", () => {
+  it("shows iCF/60 as unknown when one game lacks the report's TOI", () => {
     const rows = buildSkaterAdvancedMetricsRows(
       [icfRows[0], { ...icfRows[1], toi_per_game_5v5: null }],
       weeklyAggregates,
       "ownership"
     );
-    expect(rows[0].individualCorsiForPer60At5v5).toBeNull();
+    expect(rows[0].individualCorsiForPer60).toBeNull();
   });
 
   // W2-3 A3: two one-goal games, TOI 1,200 s and unknown. The rate over the

@@ -53,11 +53,12 @@ const columns: Column[] = [
   { key: "hitsPer60", label: "HIT/60", format: formatDefaultNumber },
   { key: "blocksPer60", label: "BLK/60", format: formatDefaultNumber },
   { key: "penaltyMinutesPer60", label: "PIM/60", format: formatDefaultNumber },
-  // Decision 73: individual attempts only, pooled over matched 5v5 TOI. IPP
-  // and ixG/60 stay hidden until a verified source is wired.
+  // Decision 73: individual attempts only, pooled over the report's own TOI.
+  // Labelled by source: its strength basis is not verified. IPP and ixG/60
+  // stay hidden until a verified source is wired.
   {
-    key: "individualCorsiForPer60At5v5",
-    label: "iCF/60 (5v5)",
+    key: "individualCorsiForPer60",
+    label: "iCF/60 (NHL puck-possession report)",
     format: formatDefaultNumber
   }
 ];
