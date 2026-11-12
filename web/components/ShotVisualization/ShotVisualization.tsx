@@ -15,7 +15,7 @@ import styles from "styles/TeamStatsPage.module.scss";
 import * as d3 from "d3";
 import { hexbin as d3Hexbin, HexbinBin } from "d3-hexbin";
 import { teamsInfo } from "lib/teamsInfo";
-import { shotToHalfRinkSvg } from "./shotMapTransform";
+import { shotToHalfRinkSvgForShot } from "./shotMapTransform";
 
 const DEFAULT_EVENT_TYPES = ["goal", "shot-on-goal"];
 const DEFAULT_GAME_TYPES = [GAME_TYPES.REGULAR_SEASON];
@@ -388,8 +388,9 @@ function InnerShotVisualization({
     // Calculate event statistics
     setStats(shotSummary(shotData));
 
-    // Team and opponent shots share one fold: the attacked net sits at the top
-    // of the half rink and the shooter's left stays on the viewer's left.
+    // Team and opponent shots share one placement: the net each shot attacked
+    // (from hometeamdefendingside) sits at the top of the half rink and the
+    // shooter's left stays on the viewer's left.
     // Prepare shot data points in [x, y] SVG space
     const points: [number, number][] = shotData
       .filter(
@@ -400,7 +401,7 @@ function InnerShotVisualization({
           typeof shot.ycoord === "number"
       )
       .map((shot) => {
-        return shotToHalfRinkSvg(shot.xcoord, shot.ycoord);
+        return shotToHalfRinkSvgForShot(shot);
       });
 
     // Create a hexbin generator with even smaller hexagons

@@ -1,3 +1,5 @@
+import { normalizeCoordinatesToAttackingDirection } from "lib/supabase/Upserts/nhlCoordinates";
+
 /**
  * Folds an NHL play-by-play shot location onto the vertical half rink drawn by
  * `drawHockeyRink(container, { vertical: true, halfRink: true })`, with the
@@ -12,9 +14,8 @@
  * branches must keep the same handedness, otherwise the same physical spot
  * plots on opposite sides depending on which end the team attacked.
  *
- * Folding by the sign of x assumes the shot was taken in the attacking half.
- * Attack direction from `hometeamdefendingside` needs the game's home team id
- * on each shot, which the shot-data hook does not carry yet.
+ * Folding by the sign of x assumes the shot was taken in the attacking half;
+ * it is only the fallback when the attack direction is unknown.
  */
 export function foldShotToHalfRink(x: number, y: number): [number, number] {
   return x > 0 ? [-y, -x] : [y, x];
@@ -24,4 +25,38 @@ export function foldShotToHalfRink(x: number, y: number): [number, number] {
 export function shotToHalfRinkSvg(x: number, y: number): [number, number] {
   const [tx, ty] = foldShotToHalfRink(x, y);
   return [tx + 42.5, ty + 100];
+}
+
+export type ShotMapShot = {
+  xcoord: number;
+  ycoord: number;
+  hometeamdefendingside?: string | null;
+  eventownerteamid?: number | null;
+  hometeamid?: number | null;
+};
+
+/**
+ * Places a shot by the net its team actually attacked: the play-by-play's
+ * `hometeamdefendingside` and whether the shooter's team is home (the same
+ * normalization the xG features use), so a shot from the team's own half
+ * stays in its own half instead of being folded onto the attacked end.
+ * Falls back to the sign-of-x fold only when the side or ids are missing.
+ */
+export function shotToHalfRinkSvgForShot(shot: ShotMapShot): [number, number] {
+  const side = shot.hometeamdefendingside;
+  if (
+    (side === "left" || side === "right") &&
+    shot.eventownerteamid != null &&
+    shot.hometeamid != null
+  ) {
+    const normalized = normalizeCoordinatesToAttackingDirection(shot.xcoord, shot.ycoord, {
+      homeTeamDefendingSide: side,
+      teamSide: shot.eventownerteamid === shot.hometeamid ? "home" : "away",
+    });
+    if (normalized.normalizedX != null && normalized.normalizedY != null) {
+      // Attacking +x: the same fold as the +x branch above.
+      return [-normalized.normalizedY + 42.5, -normalized.normalizedX + 100];
+    }
+  }
+  return shotToHalfRinkSvg(shot.xcoord, shot.ycoord);
 }
