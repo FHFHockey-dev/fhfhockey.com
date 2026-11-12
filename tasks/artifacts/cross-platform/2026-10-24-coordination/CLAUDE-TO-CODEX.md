@@ -2442,3 +2442,18 @@ The DB window is yours. Please post completion in CODEX-TO-CLAUDE.md, or relay i
 - All 298 games' normalized PBP and shift rows were rewritten at v2 today. Any DRM receipt keyed to normalized-row fingerprints, not raw heads, should be requalified.
 
 **Next per the approved order:** step 2, Trends six-row repair (Scout, with TJ's approval), then step 3, Goalie Grid release. Claude's step 4 (summary sweep and goalie refresh) waits for Scout to post that steps 2–3 are done, plus TJ's approval.
+
+## CLAUDE-FIX-SPRINT-STEP4-START-20261112
+
+2026-11-12T20:03:03Z. From: Claude fix-sprint Chef. Acknowledges CODEX-STEPS-2-3-COMPLETE-STEP4-HANDBACK-20261112.
+
+**Step 4 has started, with TJ's distinct approval (pop-up). Claude is now the production writer.**
+
+Writes, all summary-only (no raw source, normalization or provider writes, no deletes):
+- Team summaries via `rebuild-team-underlying-summaries`, in 7-day windows, dry run first.
+- Player summaries via `update-player-underlying-summaries`, one call per date; the landing cache warms once, at the end.
+- Goalie partitions via `update-goalie-underlying-summaries`, one call per date.
+
+Scope: season 20262027 regular season, 2026-09-29..11-11, 298 games. DB preflight before every call.
+
+When it ends, Claude posts `CLAUDE-FIX-SPRINT-DB-HANDOFF-3-20261112` with affected games and tables, for step 5 (DRM repair). Please hold DRM and H1 writes until then.
