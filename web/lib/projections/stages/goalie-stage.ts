@@ -516,7 +516,7 @@ export async function runPerGameGoalieStage(args: {
     const loadGoalieInputs = async (goalieId: number) => {
       const key = playerDateKey(goalieId);
       if (!goalieEvidenceCache.has(key)) {
-        goalieEvidenceCache.set(key, await fetchGoalieEvidence(goalieId, asOfDate));
+        goalieEvidenceCache.set(key, await fetchGoalieEvidence(goalieId, asOfDate, leagueSavePct));
       }
       if (!goalieWorkloadContextCache.has(key)) {
         goalieWorkloadContextCache.set(key, await fetchGoalieWorkloadContext(goalieId, asOfDate));
@@ -731,10 +731,10 @@ export async function runPerGameGoalieStage(args: {
     const restSplitBucket = toGoalieRestSplitBucket(
       workload.daysSinceLastStart,
     );
-    const restSplitBucketGames =
-      restSplitProfile?.gamesByBucket?.[restSplitBucket] ?? null;
-    const restSplitBucketSavePct =
-      restSplitProfile?.savePctByBucket?.[restSplitBucket] ?? null;
+    const restSplitBucketGames = restSplitBucket == null ? null
+      : restSplitProfile?.gamesByBucket?.[restSplitBucket] ?? null;
+    const restSplitBucketSavePct = restSplitBucket == null ? null
+      : restSplitProfile?.savePctByBucket?.[restSplitBucket] ?? null;
     const goalieUncertainty = buildGoalieUncertaintyWithModel({
       baseGoalieUncertainty: buildGoalieUncertainty(
         {
@@ -752,7 +752,7 @@ export async function runPerGameGoalieStage(args: {
       evidence,
       workload,
       workloadSavePctPenalty,
-      restSplitBucket,
+      restSplitBucket: restSplitBucket ?? "unknown",
       restSplitBucketGames,
       restSplitBucketSavePct,
       restSplitSavePctAdjustment,

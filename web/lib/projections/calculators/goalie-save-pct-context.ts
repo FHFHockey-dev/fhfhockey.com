@@ -27,10 +27,11 @@ export function computeWorkloadSavePctPenalty(
   return penalty;
 }
 
+/** Unknown rest stays unknown (W3-4 N1): null rest has no bucket, never the long-rest bonus. */
 export function toGoalieRestSplitBucket(
   daysSinceLastStart: number | null
-): GoalieRestSplitBucket {
-  if (daysSinceLastStart == null) return "4_plus";
+): GoalieRestSplitBucket | null {
+  if (daysSinceLastStart == null) return null;
   if (daysSinceLastStart <= 0) return "0";
   if (daysSinceLastStart === 1) return "1";
   if (daysSinceLastStart === 2) return "2";
@@ -46,6 +47,7 @@ export function computeGoalieRestSplitSavePctAdjustment(args: {
   if (!profile) return 0;
 
   const bucket = toGoalieRestSplitBucket(daysSinceLastStart);
+  if (bucket == null) return 0;
   const bucketGames = profile.gamesByBucket[bucket] ?? 0;
   const bucketSavePct = profile.savePctByBucket[bucket];
   if (
