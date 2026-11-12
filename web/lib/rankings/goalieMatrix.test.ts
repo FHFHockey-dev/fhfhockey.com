@@ -428,12 +428,12 @@ describe("goalieMatrix", () => {
 
     expect(ranks.get(1)).toMatchObject({
       rank: 1,
-      percentile: 50,
+      percentile: 75,
       qualifiedPeerCount: 3,
     });
     expect(ranks.get(2)).toMatchObject({
       rank: 1,
-      percentile: 50,
+      percentile: 75,
       qualifiedPeerCount: 3,
     });
     expect(ranks.get(3)).toMatchObject({

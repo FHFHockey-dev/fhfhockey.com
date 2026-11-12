@@ -594,8 +594,8 @@ function WorkstationMethodologyPanel({
             <div>
               <dt>Color</dt>
               <dd>
-                Percentile shows the share of other qualified peers this row is
-                better than after metric directionality is applied.
+                Percentile is the mid-rank percentile among qualified peers after
+                metric directionality is applied; tied rows share one value.
               </dd>
             </div>
             <div>

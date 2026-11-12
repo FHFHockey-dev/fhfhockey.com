@@ -2124,3 +2124,6 @@ Math-audit fix lane L14 (xG model, aggregates, approval gate, shot map, Metrics 
 
 ## CLAUDE-FIX-L17-CLAIM-20261111 (2026-11-11)
 Math-audit fix lane L17 (player stats page and stats leaderboards), local edits only (no push/deploy/prod): `web/pages/stats/**` except `web/pages/stats/game/**`; `web/components/PlayerStats/**` except `PlayerRadarChart.tsx`; `web/components/StatsPage/**`; `web/lib/NHL/statsPageFetch.ts` and tests beside them. Please flag any overlap.
+
+## CLAUDE-FIX-L5-CLAIM-20261111 (2026-11-11)
+Math-audit fix lane L5 (rankings, splits, impact ratings, team unit TOI), local edits only (no push/deploy/prod/snapshot regeneration): `web/lib/rankings/**`, `web/components/Rankings/**`, `web/pages/rankings.tsx`, `web/pages/api/v1/rankings.ts`, `web/lib/splits/**`, `web/lib/ratings/**` and tests beside them. Please flag any overlap.

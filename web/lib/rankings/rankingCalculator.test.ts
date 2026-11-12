@@ -58,7 +58,7 @@ describe("rankingCalculator", () => {
     ).toBe(2.5);
   });
 
-  it("calculates dense raw ranks with ties and better-than-peer percentiles", () => {
+  it("calculates dense raw ranks with ties and shared mid-rank percentiles (decision 90)", () => {
     const rows = buildContextualRankingRows({
       metricKey: "goals_per_60",
       peerGroupType: "all_skaters",
@@ -78,8 +78,8 @@ describe("rankingCalculator", () => {
         percentile: row.percentile,
       })),
     ).toEqual([
-      { id: 2, rank: 1, percentile: 66.667 },
-      { id: 3, rank: 1, percentile: 66.667 },
+      { id: 2, rank: 1, percentile: 83.333 },
+      { id: 3, rank: 1, percentile: 83.333 },
       { id: 1, rank: 2, percentile: 33.333 },
       { id: 4, rank: 3, percentile: 0 },
     ]);
@@ -110,7 +110,7 @@ describe("rankingCalculator", () => {
     ]);
   });
 
-  it("keeps the sole qualified row at 100 because there are no lower peers", () => {
+  it("gives the sole qualified row the mid-rank percentile 50 (decision 90)", () => {
     const rows = buildContextualRankingRows({
       metricKey: "goals_per_60",
       peerGroupType: "all_skaters",
@@ -121,7 +121,7 @@ describe("rankingCalculator", () => {
     expect(rows[0]).toMatchObject({
       entityId: 1,
       rawRank: 1,
-      percentile: 100,
+      percentile: 50,
       qualifiedPeerCount: 1,
     });
   });

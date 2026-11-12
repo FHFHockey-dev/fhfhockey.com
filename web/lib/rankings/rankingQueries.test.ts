@@ -284,7 +284,7 @@ describe("rankingQueries", () => {
         message: null,
       });
       expect(points.rankedRows).toHaveLength(1);
-      expect(points.rankedRows[0]).toMatchObject({ calculatedRawValue: 4, rawRank: 1, percentile: 100, qualifiedPeerCount: 1 });
+      expect(points.rankedRows[0]).toMatchObject({ calculatedRawValue: 4, rawRank: 1, percentile: 50, qualifiedPeerCount: 1 });
     } else {
       expect(queryCalls).toHaveLength(0);
     }
@@ -310,7 +310,7 @@ describe("rankingQueries", () => {
         snapshotSelectionReason: "latest_available", message: null,
       });
       expect(snapshot.rankedRows).toHaveLength(1);
-      expect(snapshot.rankedRows[0]).toMatchObject({ calculatedRawValue: value, rawRank: 1, percentile: 100, qualifiedPeerCount: 1 });
+      expect(snapshot.rankedRows[0]).toMatchObject({ calculatedRawValue: value, rawRank: 1, percentile: 50, qualifiedPeerCount: 1 });
     }
     expect(snapshots.get("rel_5v5_gf_percentage")).toMatchObject({
       unavailable: true, snapshotDate: null, snapshotUpdatedAt: null,
@@ -339,11 +339,11 @@ describe("rankingQueries", () => {
     const row = res.body.rankings[0];
     expect(row.sample).toMatchObject({ gamesPlayed, toiSeconds, minimumSampleMet: meets, confidence: meets ? "medium" : "low" });
     expect(row.metric.rawRank).toBe(meets ? 1 : null);
-    expect(row.metric.percentile).toBe(meets ? 100 : null);
+    expect(row.metric.percentile).toBe(meets ? 50 : null);
     expect(row.warnings.includes("sample_below_minimum")).toBe(!meets);
     expect(row.explanationItems).toEqual(meets ? [
       "Rank 1 of 1 in all_skaters:all.",
-      "Better than 100.0% of other qualified peers after metric directionality is applied.",
+      "Mid-rank percentile 50.0 among qualified peers after metric directionality is applied (ties share the mid-rank).",
     ] : ["Sample unavailable or below selected minimums; rank and percentile unavailable."]);
     const matrixQuery = { season: "20252026", strength: "5v5", sort_metric: "sog_per_60", min_gp: "3", min_toi: "300" };
     await matrixHandler({ method: "GET", query: matrixQuery } as any, res);
@@ -454,7 +454,7 @@ describe("rankingQueries", () => {
         key: "sog_per_60",
         value: 9.2,
         rawRank: 1,
-        percentile: 100,
+        percentile: 50,
       },
     });
     expect(
@@ -530,7 +530,7 @@ describe("rankingQueries", () => {
       key: "points_per_60",
       value: 3.1,
       rawRank: 1,
-      percentile: 100,
+      percentile: 50,
       qualifiedPeerCount: 1,
     });
   });

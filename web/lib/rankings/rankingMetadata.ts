@@ -66,7 +66,7 @@ export const CONTEXTUAL_RANKING_GLOSSARY = [
     key: "better_than_percentile",
     label: "Peer percentile",
     description:
-      "The share of other qualified peers a row is better than after metric directionality is applied; an untied leader displays as 100 and the worst qualified row displays as 0.",
+      "Mid-rank percentile among qualified peers after metric directionality is applied: (peers strictly worse + half of the other tied peers) ÷ (peers − 1) × 100. Tied rows share one value, an untied leader is 100, the untied worst row is 0 and a sole qualified row is 50.",
   },
   {
     key: "source_quality_flags",

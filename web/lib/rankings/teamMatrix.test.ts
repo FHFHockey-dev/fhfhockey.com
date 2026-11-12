@@ -410,12 +410,12 @@ describe("teamMatrix", () => {
 
     expect(ranks.get("BOS")).toMatchObject({
       rank: 1,
-      percentile: 50,
+      percentile: 75,
       qualifiedPeerCount: 3,
     });
     expect(ranks.get("DAL")).toMatchObject({
       rank: 1,
-      percentile: 50,
+      percentile: 75,
       qualifiedPeerCount: 3,
     });
     expect(ranks.get("TOR")).toMatchObject({

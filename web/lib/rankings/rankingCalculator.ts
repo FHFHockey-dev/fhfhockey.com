@@ -101,8 +101,11 @@ export function rankNormalizedMetricValues<Id extends number | string>(
       return compareIds(left.id, right.id);
     });
 
+  // Mid-rank percentile (decision 90): tied values share the mean of their
+  // positions on a 0–100 scale, (strictly worse + (tied − 1) / 2) / (n − 1).
+  // Untied best is 100 and worst 0; a single qualified row is 50.
   const qualifiedPeerCount = qualified.length;
-  const strictlyWorsePeerCountByValue = new Map<number, number>();
+  const midRankPositionByValue = new Map<number, number>();
   for (let index = 0; index < qualified.length;) {
     const value = qualified[index].normalizedValue;
     let nextIndex = index + 1;
@@ -112,7 +115,9 @@ export function rankNormalizedMetricValues<Id extends number | string>(
     ) {
       nextIndex += 1;
     }
-    strictlyWorsePeerCountByValue.set(value, qualifiedPeerCount - nextIndex);
+    const strictlyWorse = qualifiedPeerCount - nextIndex;
+    const tiedOthers = nextIndex - index - 1;
+    midRankPositionByValue.set(value, strictlyWorse + tiedOthers / 2);
     index = nextIndex;
   }
 
@@ -128,8 +133,8 @@ export function rankNormalizedMetricValues<Id extends number | string>(
       rank,
       percentile: round(
         qualifiedPeerCount === 1
-          ? 100
-          : ((strictlyWorsePeerCountByValue.get(row.normalizedValue) ?? 0) /
+          ? 50
+          : ((midRankPositionByValue.get(row.normalizedValue) ?? 0) /
               (qualifiedPeerCount - 1)) *
               100,
         3,

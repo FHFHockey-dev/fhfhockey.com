@@ -411,7 +411,7 @@ describe("entityMetricRankingReader", () => {
         value: 3.2,
         formattedValue: "3.20",
         rawRank: 1,
-        percentile: 100,
+        percentile: 50,
       },
     });
     expect(

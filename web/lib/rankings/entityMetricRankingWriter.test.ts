@@ -166,7 +166,7 @@ describe("entityMetricRankingWriter", () => {
       "Rank 1 of 2 in all_skaters:all.",
     );
     expect(result.rows[0]?.explanation_items).toContain(
-      "Better than 100.0% of other qualified peers after metric directionality is applied.",
+      "Mid-rank percentile 100.0 among qualified peers after metric directionality is applied (ties share the mid-rank).",
     );
     expect(result.rows[0]?.provenance).toMatchObject({
       sourceTable: "rolling_player_game_metrics",
