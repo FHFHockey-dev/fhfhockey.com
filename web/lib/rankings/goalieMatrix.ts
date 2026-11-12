@@ -383,7 +383,7 @@ const METRIC_COLUMNS_BY_STRENGTH: Record<GoalieMatrixStrength, GoalieMetricColum
       metricKey: "quality_start_pct",
       label: "QS% (Vollman)",
       description:
-        "Vollman Quality Starts divided by credited starts: start SV% above the league-average SV% for the season through the as-of date, or SV% of .885 or better while allowing 2 or fewer goals.",
+        "Vollman Quality Starts divided by credited starts: start SV% at or above the league-average SV% for the season through the as-of date, or SV% of .885 or better when facing 20 or fewer shots.",
       lowerIsBetter: false,
       source:
         "goalieMethodology.classifyVollmanQualityStart over wgo_goalie_stats credited starts; league SV% pooled from official regular-season appearances",

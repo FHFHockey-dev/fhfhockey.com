@@ -218,8 +218,8 @@ describe("goalieMatrix", () => {
       gamesStarted: 2,
       saves: 52,
       shotsAgainst: 57,
-      // Vollman: league SV% 52/57 = .912; 28/30 is above it, 24/27 with
-      // 3 GA is not.
+      // Vollman: league SV% 52/57 = .912; 28/30 is above it, 24/27 (27
+      // shots) is below it and outside the 20-shot clause.
       qualityStarts: 1,
       reallyBadStarts: 0,
       fhfhBadStarts: 0,
@@ -750,9 +750,9 @@ describe("goalieMatrix", () => {
 
     it("classifies Vollman Quality Starts from the league average, not the NHL flag or .910", async () => {
       // League official SV% = (27 + 25 + 900) / (30 + 28 + 1000) = .899811.
-      // Start A: 27/30 = .900 > league with 3 GA -> QS although the NHL flag
-      // says 0 and a .910 rule says no. Start B: 25/28 = .892857 with 3 GA ->
-      // not QS. NHL flag gives 0/2, .910 gives 0/2, Vollman gives 1/2.
+      // Start A: 27/30 = .900 >= league -> QS although the NHL flag says 0
+      // and a .910 rule says no. Start B: 25/28 = .892857 on 28 shots -> not
+      // QS. NHL flag gives 0/2, .910 gives 0/2, Vollman gives 1/2.
       const row = await loadPlayer([
         game({ date: "2026-04-15", saves: 27, shots_against: 30, goals_against: 3, quality_start: 0 }),
         game({ date: "2026-04-16", saves: 25, shots_against: 28, goals_against: 3, quality_start: 0 }),
@@ -916,10 +916,10 @@ describe("goalieMatrix", () => {
       expect(fiveOnFive.metrics.fhfh_5v5_bad_start_rate.rawValue).toBe(0);
       expect(fiveOnFive.metrics.steal_rate.rawValue).toBe(1);
       expect(fiveOnFive.metrics.gsax.rawValue).toBeNull();
-      // 27/30 equals the league average (both games identical): not above it,
-      // and 3 GA misses the .885 low-goals clause, so 0 QS of 1 credited start.
+      // 27/30 equals the league average (both games identical): at least the
+      // average is a Vollman QS, so 1 QS of 1 credited start.
       const allSituations = await loadPlayer(rows, "all");
-      expect(allSituations.metrics.quality_start_pct.rawValue).toBe(0);
+      expect(allSituations.metrics.quality_start_pct.rawValue).toBe(1);
       expect(allSituations.metrics.really_bad_start_rate.rawValue).toBe(0);
     });
 

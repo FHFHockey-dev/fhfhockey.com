@@ -172,19 +172,25 @@ describe("goalieMethodology", () => {
     });
     const league = 0.905;
 
-    it("credits a start strictly above the league average and not one equal to it", () => {
-      // 20/22 = .9091 > .905 with 2 GA; 181/200 = .905 exactly, 19 GA.
-      expect(classifyVollmanQualityStart(start(20, 22), league)).toBe(true);
-      expect(classifyVollmanQualityStart(start(181, 200), league)).toBe(false);
+    it("credits a start at exactly the league average and not one just below it", () => {
+      // League .905 = 181/200. 181/200 equals it (QS); 180/200 = .900 with
+      // 200 shots is below it and outside the low-shot clause.
+      const leagueAtAverage = 181 / 200;
+      expect(classifyVollmanQualityStart(start(181, 200), leagueAtAverage)).toBe(true);
+      expect(classifyVollmanQualityStart(start(180, 200), leagueAtAverage)).toBe(false);
       expect(classifyVollmanQualityStart(start(182, 200), league)).toBe(true);
     });
 
-    it("applies the .885 floor only when allowing two or fewer goals", () => {
-      // .885 exactly with 2 GA qualifies; .8846 with 2 GA does not.
-      expect(classifyVollmanQualityStart(start(177, 200, 2), league)).toBe(true);
-      expect(classifyVollmanQualityStart(start(23, 26, 2), league)).toBe(false);
-      // .8889 (24/27) with 3 GA is below league average and above two goals.
-      expect(classifyVollmanQualityStart(start(24, 27), league)).toBe(false);
+    it("applies the .885 floor at 20 shots against but not at 21", () => {
+      // 18/20 = .900 and 19/21 = .9048 are both below a .910 league average;
+      // only the 20-shot start reaches the low-shot clause.
+      expect(classifyVollmanQualityStart(start(18, 20), 0.91)).toBe(true);
+      expect(classifyVollmanQualityStart(start(19, 21), 0.91)).toBe(false);
+      // Below .885 at 20 shots: 17/20 = .850.
+      expect(classifyVollmanQualityStart(start(17, 20), 0.91)).toBe(false);
+      // The clause is shots, not goals: 19/21 above allowed only 2 GA and
+      // still fails; 23/26 = .8846 on 26 shots fails as well.
+      expect(classifyVollmanQualityStart(start(23, 26), 0.91)).toBe(false);
       // The .910 fixed threshold used by Splits would reject this start.
       expect(classifyVollmanQualityStart(start(25, 28), 0.89)).toBe(true);
     });

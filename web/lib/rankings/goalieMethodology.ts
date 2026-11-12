@@ -115,11 +115,11 @@ export type VollmanStartGame = {
   started: boolean | null;
   shotsAgainst: number | null;
   saves: number | null;
-  goalsAgainst: number | null;
+  goalsAgainst?: number | null;
 };
 
-const VOLLMAN_LOW_GOALS_SAVE_PCT = 0.885;
-const VOLLMAN_LOW_GOALS_MAX_GA = 2;
+const VOLLMAN_LOW_SHOT_SAVE_PCT = 0.885;
+const VOLLMAN_LOW_SHOT_MAX_SHOTS = 20;
 const VOLLMAN_REALLY_BAD_SAVE_PCT = 0.85;
 
 function vollmanStartSavePct(game: VollmanStartGame) {
@@ -134,15 +134,13 @@ function vollmanStartSavePct(game: VollmanStartGame) {
  * Vollman Quality Start (owner decision 40), the one implementation behind
  * every column labelled "Quality Start". Only a credited start qualifies; a
  * relief appearance returns null (not applicable). A start with missing or
- * zero shots, missing saves or goals against, or a missing league average
- * also returns null (unavailable), never false.
+ * zero shots, missing saves, or a missing league average also returns null
+ * (unavailable), never false.
  *
- * Rule as written in decision 40: the start's all-situations SV% is ABOVE
- * that season's league-average SV% (same scope), OR SV% >= .885 while
- * allowing 2 or fewer goals.
- * Original Vollman / Hockey-Reference wording, pending owner confirmation:
- * SV% AT LEAST the league average, OR SV% >= .885 when facing 20 or fewer
- * shots.
+ * Original Vollman definition (TJ confirmed 2026-11-11, superseding the
+ * decision 40 draft wording "above average, or >= .885 with <= 2 GA"): the
+ * start's all-situations SV% is AT LEAST that season's league-average SV%
+ * for the matching scope, OR SV% >= .885 when facing 20 or fewer shots.
  */
 export function classifyVollmanQualityStart(
   game: VollmanStartGame,
@@ -150,11 +148,11 @@ export function classifyVollmanQualityStart(
 ): boolean | null {
   if (game.started !== true) return null;
   const pct = vollmanStartSavePct(game);
-  const goalsAgainst = finite(game.goalsAgainst);
+  const shotsAgainst = finite(game.shotsAgainst);
   const leagueAverage = finite(leagueAverageSavePct);
-  if (pct == null || goalsAgainst == null || leagueAverage == null) return null;
-  if (pct > leagueAverage) return true;
-  return goalsAgainst <= VOLLMAN_LOW_GOALS_MAX_GA && pct >= VOLLMAN_LOW_GOALS_SAVE_PCT;
+  if (pct == null || shotsAgainst == null || leagueAverage == null) return null;
+  if (pct >= leagueAverage) return true;
+  return shotsAgainst <= VOLLMAN_LOW_SHOT_MAX_SHOTS && pct >= VOLLMAN_LOW_SHOT_SAVE_PCT;
 }
 
 /**
