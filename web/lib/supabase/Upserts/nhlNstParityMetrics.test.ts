@@ -1146,6 +1146,80 @@ describe("nhlNstParityMetrics", () => {
     });
   });
 
+  it("computes OZ start / OZ faceoff % as OZ / (OZ + DZ) and keeps neutral counts (decision 9)", () => {
+    // Five home-won faceoffs, each at the start of a new home shift: O, O, N, N, D.
+    const zones = ["O", "O", "N", "N", "D"] as const;
+    const clock = (seconds: number) =>
+      `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
+    const build = (zoneCodes: readonly string[]) => {
+      const at = (eventId: number, second: number) => ({
+        eventId,
+        sortOrder: eventId,
+        periodDescriptor: { number: 1, periodType: "REG" },
+        timeInPeriod: clock(second),
+        timeRemaining: clock(1200 - second),
+        situationCode: "1551",
+        homeTeamDefendingSide: "left",
+      });
+      // Each faceoff follows a stoppage on the same clock, so it is a zone start.
+      const events = parseEvents(
+        zoneCodes.flatMap((zoneCode, index) => [
+          { ...at(800 + index * 2, index * 100), typeCode: 516, typeDescKey: "stoppage", details: {} },
+          {
+            ...at(801 + index * 2, index * 100),
+            typeCode: 502,
+            typeDescKey: "faceoff",
+            details: { eventOwnerTeamId: 10, winningPlayerId: 91, losingPlayerId: 21, zoneCode },
+          },
+        ])
+      );
+      const shiftRows = [
+        ...zoneCodes.map((_, index) =>
+          createShiftRow({
+            shift_id: 900 + index,
+            player_id: 91,
+            team_id: 10,
+            start_seconds: index * 100,
+            end_seconds: index * 100 + 100,
+            duration_seconds: 100,
+          })
+        ),
+        createShiftRow({ shift_id: 950, player_id: 21, team_id: 20, team_abbrev: "NYR", start_seconds: 0, end_seconds: zoneCodes.length * 100, duration_seconds: zoneCodes.length * 100 }),
+        createShiftRow({ shift_id: 951, player_id: 31, team_id: 20, team_abbrev: "NYR", start_seconds: 0, end_seconds: zoneCodes.length * 100, duration_seconds: zoneCodes.length * 100 }),
+      ] as any[];
+      const shotFeatures = buildShotFeatureRows(events, shiftRows as any, 10, 20);
+      return buildNstParityMetrics(events, shotFeatures, shiftRows as any, {
+        date: "2026-03-30",
+        season: 20252026,
+        homeTeamId: 10,
+        awayTeamId: 20,
+      });
+    };
+
+    const output = build(zones);
+    const home = output.skaters.all.countsOi.find((row) => row.player_id === 91)!;
+    expect(home).toMatchObject({
+      off_zone_faceoffs: 2,
+      neu_zone_faceoffs: 2,
+      def_zone_faceoffs: 1,
+      off_zone_starts: 2,
+      neu_zone_starts: 2,
+      def_zone_starts: 1,
+    });
+    expect(home.off_zone_start_pct).toBeCloseTo(66.667, 2);
+    expect(home.off_zone_faceoff_pct).toBeCloseTo(66.667, 2);
+    // Away sees the same faceoffs from the other end: OZ 1, NZ 2, DZ 2.
+    const away = output.skaters.all.countsOi.find((row) => row.player_id === 21)!;
+    expect(away).toMatchObject({ off_zone_faceoffs: 1, neu_zone_faceoffs: 2, def_zone_faceoffs: 2 });
+    expect(away.off_zone_faceoff_pct).toBeCloseTo(33.333, 2);
+
+    // Neutral-zone-only: OZ + DZ = 0 → null, not 0.
+    const neutralOnly = build(["N", "N"]).skaters.all.countsOi.find((row) => row.player_id === 91)!;
+    expect(neutralOnly.neu_zone_faceoffs).toBe(2);
+    expect(neutralOnly.off_zone_start_pct).toBeNull();
+    expect(neutralOnly.off_zone_faceoff_pct).toBeNull();
+  });
+
   describe("L1 fixes: shared manpower predicate, score segments, penalties, distance, rush", () => {
     const HOME = 10;
     const AWAY = 20;

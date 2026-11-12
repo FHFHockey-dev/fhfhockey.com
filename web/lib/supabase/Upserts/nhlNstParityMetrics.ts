@@ -1724,13 +1724,15 @@ export function buildNstParityMetrics(
             : null,
         on_ice_sh_pct: onIceShPct,
         on_ice_sv_pct: onIceSvPct,
+        // Decision 9: OZ / (OZ + DZ); neutral counts stay stored but are not in
+        // the denominator. toPct returns null when OZ + DZ = 0.
         off_zone_start_pct: toPct(
           raw.off_zone_starts,
-          raw.off_zone_starts + raw.neu_zone_starts + raw.def_zone_starts
+          raw.off_zone_starts + raw.def_zone_starts
         ),
         off_zone_faceoff_pct: toPct(
           raw.off_zone_faceoffs,
-          raw.off_zone_faceoffs + raw.neu_zone_faceoffs + raw.def_zone_faceoffs
+          raw.off_zone_faceoffs + raw.def_zone_faceoffs
         ),
         pdo:
           onIceShPct != null && onIceSvPct != null ? onIceShPct + onIceSvPct : null,
