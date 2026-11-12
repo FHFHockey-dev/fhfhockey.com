@@ -530,7 +530,23 @@ export default function RankingsFilters({
             <ToolbarIcon name="chevron" />
           </div>
         </label>
-      ) : null}
+      ) : (
+        // Decision 98: the team sample floor is visible and user-lowerable;
+        // teams below it show "insufficient sample".
+        <label className={`${styles.filterControl} ${styles.filterMinGp}`}>
+          <span>Min GP</span>
+          <div className={styles.controlField}>
+            <ToolbarIcon name="barChart" />
+            <input
+              inputMode="numeric"
+              pattern="[0-9]*"
+              value={value.teamMinGp}
+              onChange={(event) => onChange({ teamMinGp: event.target.value })}
+            />
+            <ToolbarIcon name="chevron" />
+          </div>
+        </label>
+      )}
 
       {value.entity === "skaters" ? (
         <label className={`${styles.filterControl} ${styles.filterStrength}`}>

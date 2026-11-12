@@ -10,6 +10,7 @@ import {
   buildSnapshotRequestPath,
   buildTeamMatrixRequestPath,
   buildWarRequestPath,
+  DEFAULT_RANKINGS_FILTERS,
   normalizeRankingsFilters,
   type RankingsFilterState,
   minGpForComparisonWindow,
@@ -58,7 +59,8 @@ describe("rankingUrlState", () => {
   });
 
   it("normalizes URL query defaults for a first-load skater leaderboard", () => {
-    expect(normalizeRankingsFilters({})).toMatchObject({
+    // The resolved current season stands in for /api/v1/season (D12).
+    expect(normalizeRankingsFilters({}, { currentSeasonId: 20252026 })).toMatchObject({
       entity: "skaters",
       season: "20252026",
       window: "season",
@@ -326,10 +328,41 @@ describe("rankingUrlState", () => {
       goalie_role: "g1_workhorse",
       team: "DAL",
       search: "DeSmith",
-    });
+    }, { currentSeasonId: 20252026 });
 
     expect(buildSnapshotRequestPath(filters)).toBe(
       "/api/v1/contextual-rankings/snapshot?entity=goalies&season=20252026&window=season&position=all&deployment=all&strength=5v5&min_gp=10&min_toi=300&sort_metric=points_per_60&goalie_metric=gsax&goalie_role=g1_workhorse&team_metric=off_rating&sort_direction=desc&team=DAL&search=DeSmith&selected_goalie=32",
     );
+  });
+
+  it("resolves the default season from the current-season lookup, never a hard-coded season (W2-4 D12)", () => {
+    // The defect: an empty query always produced 20252026.
+    expect(normalizeRankingsFilters({}).season).toBe("");
+    expect(normalizeRankingsFilters({}, { currentSeasonId: 20262027 }).season).toBe("20262027");
+    // Rollover: the default follows the resolver when the active season changes.
+    expect(normalizeRankingsFilters({}, { currentSeasonId: 20272028 }).season).toBe("20272028");
+    // An explicit historical URL season is preserved.
+    expect(
+      normalizeRankingsFilters({ season: "20242025" }, { currentSeasonId: 20262027 }).season,
+    ).toBe("20242025");
+    // A failed or missing lookup stays unknown rather than guessing.
+    expect(normalizeRankingsFilters({}, { currentSeasonId: null }).season).toBe("");
+    expect(normalizeRankingsFilters({ season: "garbage" }, { currentSeasonId: 20262027 }).season).toBe(
+      "20262027",
+    );
+    expect(DEFAULT_RANKINGS_FILTERS.season).toBe("");
+  });
+
+  it("forwards a visible, user-lowerable team sample floor (decision 98)", () => {
+    const defaults = normalizeRankingsFilters({ entity: "teams" }, { currentSeasonId: 20262027 });
+    expect(defaults.teamMinGp).toBe("5");
+    expect(buildTeamMatrixRequestPath(defaults)).toContain("min_gp=5");
+    const lowered = normalizeRankingsFilters(
+      { entity: "teams", team_min_gp: "2" },
+      { currentSeasonId: 20262027 },
+    );
+    expect(buildTeamMatrixRequestPath(lowered)).toContain("min_gp=2");
+    // The skater Min GP default (10 for a season) is not the team floor.
+    expect(buildTeamMatrixRequestPath(lowered)).not.toContain("min_gp=10");
   });
 });

@@ -45,6 +45,8 @@ export type RankingsFilterState = {
   goalieMetric: GoalieMatrixMetricKey;
   goalieRole: GoalieMatrixRoleFilter;
   teamMetric: TeamMatrixMetricKey;
+  /** Team sample floor in games (decision 98), separate from skater Min GP. */
+  teamMinGp: string;
   matrixSortDirection: ContextualRankingsSortDirection;
   sampleConfidence: "all" | "medium_plus" | "high";
   sourceQuality: "all" | "clean_only" | "caveats_only";
@@ -68,6 +70,9 @@ export const DEFAULT_MIN_GP_BY_WINDOW: Record<RankingsFilterState["window"], str
   last10: "3",
   last5: "2",
 };
+
+// Decision 98: a visible, user-lowerable team floor; matches the team API default.
+export const DEFAULT_TEAM_MIN_GP = "5";
 
 export function defaultMinGpForWindow(window: RankingsFilterState["window"]) {
   return DEFAULT_MIN_GP_BY_WINDOW[window];
@@ -98,7 +103,9 @@ export function minGpForComparisonWindow(
 export const DEFAULT_RANKINGS_FILTERS: RankingsFilterState = {
   entity: "skaters",
   tab: "rankings",
-  season: "20252026",
+  // No hard-coded season (W2-4 D12): the page resolves the active season
+  // (or, in the off-season, the latest started one) from /api/v1/season.
+  season: "",
   window: "season",
   position: "all",
   deployment: "all",
@@ -114,6 +121,7 @@ export const DEFAULT_RANKINGS_FILTERS: RankingsFilterState = {
   goalieMetric: "save_percentage",
   goalieRole: "all",
   teamMetric: "off_rating",
+  teamMinGp: DEFAULT_TEAM_MIN_GP,
   matrixSortDirection: "desc",
   sampleConfidence: "all",
   sourceQuality: "all",
@@ -327,7 +335,27 @@ function parseDeployment(value: string): ContextualRankingsDeploymentFilter {
     : "all";
 }
 
-export function normalizeRankingsFilters(query: RankingsQuery) {
+/**
+ * The season the page shows: an explicit, valid URL season wins; otherwise the
+ * resolved current season (`/api/v1/season`: the latest season whose regular
+ * season has started, so future rows and the off-season are handled); with no
+ * resolved season it stays "" (unknown) and the page waits or reports the
+ * lookup failure instead of guessing.
+ */
+export function resolveRankingsSeason(
+  explicitSeason: string,
+  currentSeasonId: number | null | undefined,
+) {
+  if (/^\d{8}$/.test(explicitSeason)) return explicitSeason;
+  return currentSeasonId != null && Number.isSafeInteger(currentSeasonId) && currentSeasonId > 0
+    ? String(currentSeasonId)
+    : "";
+}
+
+export function normalizeRankingsFilters(
+  query: RankingsQuery,
+  options: { currentSeasonId?: number | null } = {},
+) {
   const sort = parseSort(queryValue(query.sort));
   const deployment = parseDeployment(queryValue(query.deployment));
   const matrixSortMetric = getContextualRankingMetricDefinition(
@@ -349,7 +377,7 @@ export function normalizeRankingsFilters(query: RankingsQuery) {
         ? (queryValue(query.entity) as RankingsFilterState["entity"])
         : "skaters",
     tab: parseTab(queryValue(query.tab)),
-    season: queryValue(query.season) || DEFAULT_RANKINGS_FILTERS.season,
+    season: resolveRankingsSeason(queryValue(query.season), options.currentSeasonId),
     window,
     position:
       queryValue(query.position) === "F" || queryValue(query.position) === "D"
@@ -377,6 +405,9 @@ export function normalizeRankingsFilters(query: RankingsQuery) {
     goalieMetric: parseGoalieMetric(queryValue(query.goalie_metric)),
     goalieRole: parseGoalieRole(queryValue(query.goalie_role)),
     teamMetric: parseTeamMetric(queryValue(query.team_metric)),
+    teamMinGp: /^\d+$/.test(queryValue(query.team_min_gp))
+      ? queryValue(query.team_min_gp)
+      : DEFAULT_TEAM_MIN_GP,
     matrixSortDirection: parseMatrixDirection(queryValue(query.sort_direction)),
     sampleConfidence: parseSampleConfidence(
       queryValue(query.sample_confidence),
@@ -600,6 +631,7 @@ export function buildTeamMatrixRequestPath(filters: RankingsFilterState) {
     season: filters.season,
     metric: filters.teamMetric,
     sort_direction: filters.matrixSortDirection,
+    min_gp: filters.teamMinGp,
     page: filters.page,
     page_size: filters.pageSize,
   });

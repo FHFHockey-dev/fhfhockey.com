@@ -20,6 +20,7 @@ import TrendingPanel from "components/Rankings/TrendingPanel";
 import WarPanel from "components/Rankings/WarPanel";
 import type { ContextualRankingComparisonResponse } from "lib/rankings/comparison";
 import { getContextualRankingMetricDefinition } from "lib/rankings/metricDefinitions";
+import { useCurrentSeasonQuery } from "hooks/useCurrentSeason";
 import type { DeploymentTiersResponse } from "lib/rankings/deploymentTiers";
 import type {
   GoalieMatrixMetricKey,
@@ -113,7 +114,6 @@ function filtersToQuery(filters: RankingsFilterState) {
   const query: Record<string, string> = {
     entity: filters.entity,
     tab: filters.tab,
-    season: filters.season,
     window: filters.window,
     position: filters.position,
     deployment: filters.deployment,
@@ -129,10 +129,12 @@ function filtersToQuery(filters: RankingsFilterState) {
     goalie_metric: filters.goalieMetric,
     goalie_role: filters.goalieRole,
     team_metric: filters.teamMetric,
+    team_min_gp: filters.teamMinGp,
     sort_direction: filters.matrixSortDirection,
     page: filters.page,
     page_size: filters.pageSize,
   };
+  if (filters.season !== "") query.season = filters.season;
   if (filters.density === "detailed") query.density = "detailed";
   if (filters.sampleConfidence !== "all") {
     query.sample_confidence = filters.sampleConfidence;
@@ -1188,6 +1190,7 @@ function buildComparisonRequestPath(args: {
       season: args.filters.season,
       metric: args.filters.teamMetric,
       sort_direction: args.filters.matrixSortDirection,
+      min_gp: args.filters.teamMinGp,
       teams: teams.join(","),
     });
     if (args.filters.search.trim() !== "") {
@@ -1258,37 +1261,45 @@ export default function RankingsPage() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [isSnapshotOpen]);
+  const currentSeasonQuery = useCurrentSeasonQuery();
+  const currentSeasonId = currentSeasonQuery.data?.seasonId ?? null;
   const filters = useMemo(
-    () => normalizeRankingsFilters(router.query),
-    [router.query],
+    () => normalizeRankingsFilters(router.query, { currentSeasonId }),
+    [router.query, currentSeasonId],
   );
+  // Requests wait for a season: an explicit URL season or the resolved one.
+  const seasonReady = router.isReady && filters.season !== "";
+  const seasonErrorMessage =
+    !seasonReady && currentSeasonQuery.isError
+      ? "Unable to load season info right now. Choose a season to continue."
+      : undefined;
   const matrixRequestPath =
-    router.isReady && filters.entity === "skaters" && filters.tab === "rankings"
+    seasonReady && filters.entity === "skaters" && filters.tab === "rankings"
       ? buildMatrixRequestPath(filters)
       : null;
   const goalieMatrixRequestPath =
-    router.isReady && filters.entity === "goalies" && filters.tab === "rankings"
+    seasonReady && filters.entity === "goalies" && filters.tab === "rankings"
       ? buildGoalieMatrixRequestPath(filters)
       : null;
   const teamMatrixRequestPath =
-    router.isReady && filters.entity === "teams" && filters.tab === "rankings"
+    seasonReady && filters.entity === "teams" && filters.tab === "rankings"
       ? buildTeamMatrixRequestPath(filters)
       : null;
   const explorerRequestPath =
-    router.isReady && filters.tab === "metric_explorer"
+    seasonReady && filters.tab === "metric_explorer"
       ? buildRankingsRequestPath(filters)
       : null;
   const deploymentTiersRequestPath =
-    router.isReady && filters.tab === "deployment_tiers"
+    seasonReady && filters.tab === "deployment_tiers"
       ? buildDeploymentTiersRequestPath(filters)
       : null;
   const trendingRequestPath =
-    router.isReady && filters.tab === "trending" ? buildTrendingRequestPath(filters) : null;
+    seasonReady && filters.tab === "trending" ? buildTrendingRequestPath(filters) : null;
   const splitsRequestPath =
-    router.isReady && filters.tab === "splits" ? buildSplitsRequestPath(filters) : null;
+    seasonReady && filters.tab === "splits" ? buildSplitsRequestPath(filters) : null;
   const warRequestPath =
-    router.isReady && filters.tab === "war" ? buildWarRequestPath(filters) : null;
-  const snapshotRequestPath = router.isReady ? buildSnapshotRequestPath(filters) : null;
+    seasonReady && filters.tab === "war" ? buildWarRequestPath(filters) : null;
+  const snapshotRequestPath = seasonReady ? buildSnapshotRequestPath(filters) : null;
   const metadataRequestPath = "/api/v1/contextual-rankings/metadata";
   const {
     data: matrixData,
@@ -1407,7 +1418,7 @@ export default function RankingsPage() {
     () => applyMatrixDisplayFilters(matrixData, filters),
     [matrixData, filters],
   );
-  const comparisonRequestPath = router.isReady ? buildComparisonRequestPath({
+  const comparisonRequestPath = seasonReady ? buildComparisonRequestPath({
     filters,
     selectedPlayerId,
     selectedGoalieId,
@@ -1417,7 +1428,7 @@ export default function RankingsPage() {
     teamMatrixData,
   }) : null;
   const comparisonOpportunityRequestPath =
-    router.isReady && filters.entity === "skaters" && filters.tab === "rankings"
+    seasonReady && filters.entity === "skaters" && filters.tab === "rankings"
       ? buildTrendingRequestPath(filters)
       : null;
   const {
@@ -1463,6 +1474,7 @@ export default function RankingsPage() {
         : {};
     const next = normalizeRankingsFilters(
       filtersToQuery({ ...filters, ...patch, ...followMinGp }),
+      { currentSeasonId },
     );
     void router.replace(
       { pathname: router.pathname, query: filtersToQuery(next) },
@@ -1597,7 +1609,7 @@ export default function RankingsPage() {
               matrixMetricGroups={matrixData?.meta.metricGroups ?? []}
               matrixMetricColumns={matrixData?.meta.metricColumns ?? []}
               onChange={(patch) => updateFilters({ ...patch, page: "1" })}
-              onReset={() => updateFilters(DEFAULT_RANKINGS_FILTERS)}
+              onReset={() => updateFilters({ ...DEFAULT_RANKINGS_FILTERS, season: "" })}
               methodologyControl={
                 <WorkstationMethodologyPanel
                   filters={filters}
@@ -1688,11 +1700,12 @@ export default function RankingsPage() {
               <h2 className={styles.visuallyHidden}>Team Rankings Matrix</h2>
               <TeamMatrixTable
                 payload={teamMatrixData ?? null}
-                isLoading={teamMatrixLoading}
+                isLoading={teamMatrixLoading || (!seasonReady && !seasonErrorMessage)}
                 errorMessage={
-                  teamMatrixError instanceof Error
+                  seasonErrorMessage ??
+                  (teamMatrixError instanceof Error
                     ? teamMatrixError.message
-                    : undefined
+                    : undefined)
                 }
                 onSortMetric={(metricKey, direction) =>
                   updateFilters({
@@ -1755,11 +1768,12 @@ export default function RankingsPage() {
               <h2 className={styles.visuallyHidden}>Goalie Rankings Matrix</h2>
               <GoalieMatrixTable
                 payload={goalieMatrixData ?? null}
-                isLoading={goalieMatrixLoading}
+                isLoading={goalieMatrixLoading || (!seasonReady && !seasonErrorMessage)}
                 errorMessage={
-                  goalieMatrixError instanceof Error
+                  seasonErrorMessage ??
+                  (goalieMatrixError instanceof Error
                     ? goalieMatrixError.message
-                    : undefined
+                    : undefined)
                 }
                 onSortMetric={(metricKey, direction) =>
                   updateFilters({
@@ -1823,11 +1837,12 @@ export default function RankingsPage() {
                 <h2 className={styles.visuallyHidden}>Rankings Matrix</h2>
                 <PlayerMatrixTable
                   payload={displayedMatrixData}
-                  isLoading={matrixLoading}
+                  isLoading={matrixLoading || (!seasonReady && !seasonErrorMessage)}
                   errorMessage={
-                    matrixError instanceof Error
+                    seasonErrorMessage ??
+                    (matrixError instanceof Error
                       ? matrixError.message
-                      : undefined
+                      : undefined)
                   }
                   selectedPlayerId={selectedPlayerId}
                   onSelectPlayer={(playerId) => {

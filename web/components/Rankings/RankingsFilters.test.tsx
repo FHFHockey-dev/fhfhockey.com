@@ -170,14 +170,19 @@ describe("RankingsFilters", () => {
   });
 
   it("keeps team rankings filters compact by hiding player-only controls", () => {
-    renderFilters(vi.fn(), {
+    const onChange = vi.fn();
+    renderFilters(onChange, {
       ...DEFAULT_RANKINGS_FILTERS,
       entity: "teams",
     });
 
     expect(screen.queryByLabelText("Deployment")).toBeNull();
     expect(screen.queryByLabelText("Strength")).toBeNull();
-    expect(screen.queryByLabelText("Min GP")).toBeNull();
+    // Decision 98: teams get their own visible, user-lowerable sample floor.
+    const minGp = screen.getByLabelText("Min GP") as HTMLInputElement;
+    expect(minGp.value).toBe("5");
+    fireEvent.change(minGp, { target: { value: "2" } });
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ teamMinGp: "2" }));
     expect(screen.queryByLabelText("Team")).toBeNull();
     expect(screen.getByRole("button", { name: "More Filters" })).toBeTruthy();
   });
