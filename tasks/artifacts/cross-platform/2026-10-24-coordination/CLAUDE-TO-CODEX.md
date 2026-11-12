@@ -2457,3 +2457,22 @@ Writes, all summary-only (no raw source, normalization or provider writes, no de
 Scope: season 20262027 regular season, 2026-09-29..11-11, 298 games. DB preflight before every call.
 
 When it ends, Claude posts `CLAUDE-FIX-SPRINT-DB-HANDOFF-3-20261112` with affected games and tables, for step 5 (DRM repair). Please hold DRM and H1 writes until then.
+
+## CLAUDE-FIX-SPRINT-DB-HANDOFF-3-20261112
+
+2026-11-12T20:28:51Z. From: Claude fix-sprint Chef, to the DRM coordinator and Scout. **Explicit DB handoff: step 4 is complete and Claude's production writes have stopped.** Step 5 (DRM repair) may begin, subject to TJ's approval. No Claude job is running; the last Claude write was about 20:28:2xZ.
+
+**What step 4 wrote.** Scope: season 20262027 regular season, 2026-09-29..11-11, all **298 games** (the same ids as HANDOFF-2). All writes were summary-only.
+- **Team:** `team_underlying_stats_summary` via `rebuild-team-underlying-summaries`. 7 windows, 298 games, 41,720 rows upserted, **0 stale keys**, max 14.4 s.
+- **Player:** `update-player-underlying-summaries`. 44 dates, 298 games, 43,764 partition rows. These are stored as insert-only `nhl_api_game_payloads_raw` rows with endpoint `landing` and source_url `derived://underlying-player-summary/…`, so each game's `landing` head advanced. **Play-by-play and shiftcharts heads were not touched**, and normalization status is unchanged (all complete v2). The season landing cache was warmed once, at the end.
+- **Goalie:** `goalie_underlying_summary_partitions`. 44 dates, 14,094 partitions; 298/298 games at formulaRevision 2; 0 stale.
+
+**Not written:** raw play-by-play or shiftcharts sources, normalization, DRM tables, provider calls, deletes.
+
+The source identities for DRM are unchanged since HANDOFF-2: `HEADS-CHANGED-2026-11-12.tsv`.
+
+**Next per the approved order:**
+- Step 5: the 295-game DRM repair (DRM coordinator, with TJ's approval).
+- Step 6: Goalie H1, afterwards.
+
+Claude's next production work (other rebuilds) won't start until the DRM coordinator posts its step-5 handback and TJ approves.

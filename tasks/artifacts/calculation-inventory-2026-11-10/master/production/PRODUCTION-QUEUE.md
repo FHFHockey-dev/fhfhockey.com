@@ -13,7 +13,7 @@ Release: PR #430 squash = master `631a00c19`. fhfhockey `dpl_137qFEpUhovkj9Q6NaP
 | # | Step | Lane / note | Depends on | Status |
 |---|---|---|---|---|
 | 1 | Strength v2 re-normalization, 2026-27 regular season (298 games) | L1 | release | **DONE 2026-11-12 19:35Z: 298/298 v2 complete.** Windowed run, then incident, then slow single-game phases A–E; 11 OT games recovered from official HTML (`GAME-2026020159-RECOVERY-PLAN.md`). Changed heads: `HEADS-CHANGED-2026-11-12.tsv`. |
-| 2 | Summary sweep (players + teams) for re-normalized games, then the goalie partition refresh again (same 44-call script) | L1, L2, L2-landing | 1 | plan with step 1 |
+| 2 | Summary refresh for the re-normalized games | L1, L2, L2-landing | 1 | **DONE 2026-11-12 20:03–20:28Z** (serial step 4): team 41,720 rows in 7 windows (0 stale); player 43,764 partition rows in 44 dates; goalie 14,094 partitions, 298/298 at rev 2. Handoff 3 posted to Codex. |
 | 3 | xG: v2 shot features for 2026-27; cfg9bac2706 demotion with per-consumer handling (decision 5); aggregate rebuilds; v2 model build, with training and approval separate | L14 `L14-cfg9bac2706-demotion-plan.md`, decision 99 | 1 | to prepare |
 | 4 | forge_team_game_strength rebuild (classifier change) | L9a | 1 | to prepare |
 | 5 | Rolling rebuild, after reconciling held rolling/FORGE writes; player-trend v3 rebuild | L6 `L6-production-steps.md` | 1, 3 | to prepare |
