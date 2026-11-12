@@ -1,14 +1,17 @@
 // Season-level NST values for the /stats/player radar league comparison.
 //
-// The radar ranks a skater's season row against every skater's season row. WGO's
-// wgo_skater_stats_per_game has no on-ice possession shares and no per-60 rates,
-// so those come from the all-strength NST season views, one row per player-season:
-//   nst_seasonlong_as_rates      individual per-60 rates and toi_seconds
-//   nst_seasonlong_as_counts_oi  on-ice for/against counts and toi_seconds_oi
-// The player's own value and the league values both come from these views, so
-// they are measured the same way.
+// The radar is 5v5 (decision 15). It ranks a skater's 5v5 season row against every
+// skater's 5v5 season row, from the regular-season NST 5v5 views (one row per
+// player-season; L4a's migration, NULL for unknown values):
+//   nst_seasonlong_5v5_rates      individual per-60 rates and toi_seconds
+//   nst_seasonlong_5v5_counts_oi  on-ice for/against counts and toi_seconds_oi
+// The player's own value and the cohort's come from the same view, season and
+// sample minimum, and the player is always one member of the cohort, so a rank
+// can never exceed the cohort size.
 
-export type NstRadarView = "nst_seasonlong_as_rates" | "nst_seasonlong_as_counts_oi";
+export type NstRadarView = "nst_seasonlong_5v5_rates" | "nst_seasonlong_5v5_counts_oi";
+
+export const RADAR_STRENGTH_LABEL = "5v5";
 
 type NstRow = Record<string, unknown>;
 
@@ -35,17 +38,28 @@ const share = (forCol: string, againstCol: string) => (row: NstRow) => {
 };
 
 const onIceShare = (forCol: string, againstCol: string, minEvents: number): NstRadarStat => ({
-  view: "nst_seasonlong_as_counts_oi",
+  view: "nst_seasonlong_5v5_counts_oi",
   columns: [forCol, againstCol],
   leagueMin: { column: `${forCol}+${againstCol}`, value: minEvents },
   value: share(forCol, againstCol),
 });
 
 const rate = (column: string): NstRadarStat => ({
-  view: "nst_seasonlong_as_rates",
+  view: "nst_seasonlong_5v5_rates",
   columns: [column, "toi_seconds"],
   leagueMin: { column: "toi_seconds", value: MIN_TOI_SECONDS },
   value: (row) => finite(row[column]),
+});
+
+const onIcePer60 = (column: string): NstRadarStat => ({
+  view: "nst_seasonlong_5v5_counts_oi",
+  columns: [column, "toi_seconds_oi"],
+  leagueMin: { column: "toi_seconds_oi", value: MIN_TOI_SECONDS },
+  value: (row) => {
+    const count = finite(row[column]);
+    const toi = finite(row.toi_seconds_oi);
+    return count === null || toi === null || toi <= 0 ? null : (count * 3600) / toi;
+  },
 });
 
 export const NST_RADAR_STATS: Record<string, NstRadarStat> = {
@@ -60,21 +74,12 @@ export const NST_RADAR_STATS: Record<string, NstRadarStat> = {
   shots_per_60: rate("shots_per_60"),
   ixg_per_60: rate("ixg_per_60"),
   icf_per_60: rate("icf_per_60"),
-  // Individual high-danger chances, the same measure as the game log's hdcf_per_60.
-  hdcf_per_60: rate("ihdcf_per_60"),
+  // NST's HDCF/60 is on-ice (decision 9): the team's high-danger chances while he is on.
+  hdcf_per_60: onIcePer60("hdcf"),
   hits_per_60: rate("hits_per_60"),
   pim_per_60: rate("pim_per_60"),
   // On-ice high-danger chances against per 60.
-  hdca_per_60: {
-    view: "nst_seasonlong_as_counts_oi",
-    columns: ["hdca", "toi_seconds_oi"],
-    leagueMin: { column: "toi_seconds_oi", value: MIN_TOI_SECONDS },
-    value: (row) => {
-      const hdca = finite(row.hdca);
-      const toi = finite(row.toi_seconds_oi);
-      return hdca === null || toi === null || toi <= 0 ? null : (hdca * 3600) / toi;
-    },
-  },
+  hdca_per_60: onIcePer60("hdca"),
 };
 
 export const isNstRadarStat = (stat: string) => stat in NST_RADAR_STATS;
@@ -90,12 +95,20 @@ const meetsLeagueMin = (stat: NstRadarStat, row: NstRow) => {
   return total !== null && total >= stat.leagueMin.value;
 };
 
-/** The stat's value for one NST season row; league rows must also clear the sample minimum. */
-export function nstRadarStatValue(stat: string, row: NstRow | null | undefined, forLeague: boolean) {
+/** The stat's value for one NST season row, or null when unknown or below the sample minimum. */
+export function nstRadarStatValue(stat: string, row: NstRow | null | undefined) {
   const def = NST_RADAR_STATS[stat];
   if (!def || !row) return null;
-  if (forLeague && !meetsLeagueMin(def, row)) return null;
+  if (!meetsLeagueMin(def, row)) return null;
   return def.value(row);
+}
+
+/** Plain-language sample minimum for a stat, for the "below the minimum" note. */
+export function nstRadarMinimumLabel(stat: string) {
+  const min = NST_RADAR_STATS[stat]?.leagueMin;
+  if (!min) return null;
+  if (min.column.startsWith("toi_seconds")) return `${min.value / 60} min of ${RADAR_STRENGTH_LABEL} ice time`;
+  return `${min.value} on-ice ${RADAR_STRENGTH_LABEL} events`;
 }
 
 // The subset of the Supabase query builder this module uses.
@@ -172,20 +185,29 @@ export async function fetchNstRadarSeason(
 }
 
 /**
- * The player's value and the league values for one stat. A failed read, a missing
- * player row or an empty league leaves the stat unranked, which the radar shows as
- * "No comparison data".
+ * The player's value and the other cohort members' values for one stat, all under
+ * the same view, season and sample minimum. The player's own row is left out of
+ * `peerValues` (the caller adds the player once). A failed read or a missing player
+ * row leaves the stat unranked ("No 5v5 comparison data"); a player row below the
+ * minimum is unranked too and reported as `belowMinimum`.
  */
 export function nstRadarComparison(stat: string, season: NstRadarSeason, playerId: number) {
   const def = NST_RADAR_STATS[stat];
   const result = def ? season.rowsByView[def.view] : undefined;
   if (!def || !result || result.error || season.positionError) {
-    return { playerValue: null, leagueValues: [] as number[], error: result?.error ?? season.positionError ?? null };
+    return {
+      playerValue: null, peerValues: [] as number[], belowMinimum: false,
+      error: result?.error ?? season.positionError ?? null,
+    };
   }
   const playerRow = result.rows.find((row) => Number(row.player_id) === playerId);
-  const leagueValues = result.rows
+  const peerValues = result.rows
+    .filter((row) => Number(row.player_id) !== playerId)
     .filter((row) => !season.allowedPlayerIds || season.allowedPlayerIds.has(Number(row.player_id)))
-    .map((row) => nstRadarStatValue(stat, row, true))
+    .map((row) => nstRadarStatValue(stat, row))
     .filter((v): v is number => v !== null);
-  return { playerValue: nstRadarStatValue(stat, playerRow, false), leagueValues, error: null };
+  const playerValue = nstRadarStatValue(stat, playerRow);
+  const belowMinimum =
+    playerValue === null && !!playerRow && def.value(playerRow) !== null && !meetsLeagueMin(def, playerRow);
+  return { playerValue, peerValues, belowMinimum, error: null };
 }

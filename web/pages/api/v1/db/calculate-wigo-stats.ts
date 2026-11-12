@@ -84,17 +84,17 @@ type RejectionRule =
 interface AggregatedSeasonData {
   season: number;
   gp: number;
-  wgo_g: number;
-  wgo_a: number;
-  wgo_pts: number;
-  wgo_a1: number;
-  wgo_sog: number;
-  wgo_ppg: number;
-  wgo_ppa: number;
-  wgo_ppp: number;
-  wgo_hit: number;
-  wgo_blk: number;
-  wgo_pim: number;
+  wgo_g: number | null;
+  wgo_a: number | null;
+  wgo_pts: number | null;
+  wgo_a1: number | null;
+  wgo_sog: number | null;
+  wgo_ppg: number | null;
+  wgo_ppa: number | null;
+  wgo_ppp: number | null;
+  wgo_hit: number | null;
+  wgo_blk: number | null;
+  wgo_pim: number | null;
   wgo_pp_toi_pct: number | null;
   wgo_pp_toi: number | null;
   wgo_gp: number;
@@ -102,16 +102,23 @@ interface AggregatedSeasonData {
   has_wgo: boolean;
   has_nst_ind: boolean;
   has_nst_oi: boolean;
-  toi_all: number;
-  ixg_all: number;
-  icf_all: number;
-  ihdcf_all: number; // From NST Seasonal ihdcf
-  iscfs_all: number; // From NST Seasonal iscfs
-  gf_all: number;
-  sf_all: number;
-  off_zs_all: number;
-  def_zs_all: number;
+  nst_oi_gp: number | null; // NST on-ice games, to match IPP's numerator and denominator
+  // NST seasonal sums; null when the source row published the value as unknown
+  // (A1: an unknown is never stored as 0).
+  toi_all: number | null;
+  ixg_all: number | null;
+  icf_all: number | null;
+  ihdcf_all: number | null; // From NST Seasonal ihdcf
+  iscfs_all: number | null; // From NST Seasonal iscfs
+  gf_all: number | null;
+  sf_all: number | null;
+  off_zs_all: number | null;
+  def_zs_all: number | null;
 }
+
+/** Adds a known value; any unknown (null) makes the total unknown. */
+const addKnown = (total: number | null, value: number | null | undefined) =>
+  total === null || value == null ? null : total + value;
 
 interface CombinedGameData {
   date: string;
@@ -164,14 +171,6 @@ const calculatePer60FromSeconds = (
   const toiMinutes = safeDivide(toiSeconds, 60);
   const toiSixtyMinUnits = safeDivide(toiMinutes, 60);
   return safeDivide(count, toiSixtyMinUnits);
-};
-const safeAverage = (values: (number | null | undefined)[]): number | null => {
-  const validValues = values.filter((v): v is number => v != null);
-  if (validValues.length === 0) {
-    return null;
-  }
-  const sum = validValues.reduce((acc, val) => acc + val, 0);
-  return sum / validValues.length;
 };
 
 // Pagination helper for fetching player IDs
@@ -497,6 +496,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         has_wgo: false,
         has_nst_ind: false,
         has_nst_oi: false,
+        nst_oi_gp: null,
         toi_all: 0,
         ixg_all: 0,
         icf_all: 0,
@@ -518,27 +518,28 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         }
         const seasonData = aggregatedDataBySeason[seasonKey];
 
-        // Always try to get the most accurate GP
+        // NST GP stands in only for a season without WGO (WGO, read next, overrides it).
         seasonData.gp = Math.max(seasonData.gp, record.gp ?? 0);
+        if (!isIndividualRecord) seasonData.nst_oi_gp = record.gp ?? null;
         // --- Only add TOI if it's from the individual counts record ---
         if (isIndividualRecord) seasonData.has_nst_ind = true;
         else seasonData.has_nst_oi = true;
         if (isIndividualRecord && "toi" in record) {
-          const toi = record.toi ?? 0; // toi is in minutes here
-          seasonData.toi_all += toi; // Add TOI (minutes) only once per season
+          // toi is in minutes here; added only once per season
+          seasonData.toi_all = addKnown(seasonData.toi_all, record.toi);
         }
         // -------------------------------------------------------------
 
-        if ("ixg" in record) seasonData.ixg_all += record.ixg ?? 0;
-        if ("icf" in record) seasonData.icf_all += record.icf ?? 0;
-        if ("ihdcf" in record) seasonData.ihdcf_all += record.ihdcf ?? 0;
-        if ("iscfs" in record) seasonData.iscfs_all += record.iscfs ?? 0;
-        if ("gf" in record) seasonData.gf_all += record.gf ?? 0;
-        if ("sf" in record) seasonData.sf_all += record.sf ?? 0;
+        if ("ixg" in record) seasonData.ixg_all = addKnown(seasonData.ixg_all, record.ixg);
+        if ("icf" in record) seasonData.icf_all = addKnown(seasonData.icf_all, record.icf);
+        if ("ihdcf" in record) seasonData.ihdcf_all = addKnown(seasonData.ihdcf_all, record.ihdcf);
+        if ("iscfs" in record) seasonData.iscfs_all = addKnown(seasonData.iscfs_all, record.iscfs);
+        if ("gf" in record) seasonData.gf_all = addKnown(seasonData.gf_all, record.gf);
+        if ("sf" in record) seasonData.sf_all = addKnown(seasonData.sf_all, record.sf);
         if ("off_zone_starts" in record)
-          seasonData.off_zs_all += record.off_zone_starts ?? 0;
+          seasonData.off_zs_all = addKnown(seasonData.off_zs_all, record.off_zone_starts);
         if ("def_zone_starts" in record)
-          seasonData.def_zs_all += record.def_zone_starts ?? 0;
+          seasonData.def_zs_all = addKnown(seasonData.def_zs_all, record.def_zone_starts);
       };
       // A traded player can hold a stale pre-trade row (`N.J`) beside the
       // cumulative one (`N.J, WPG`). Summing them inflates TOI and counts, so
@@ -567,18 +568,21 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         }
 
         const seasonData = aggregatedDataBySeason[seasonKey];
-        seasonData.gp = Math.max(seasonData.gp, rec.games_played ?? 0);
-        seasonData.wgo_g = rec.goals ?? 0;
-        seasonData.wgo_a = rec.assists ?? 0;
-        seasonData.wgo_pts = rec.points ?? 0;
-        seasonData.wgo_a1 = rec.total_primary_assists ?? 0;
-        seasonData.wgo_sog = rec.shots ?? 0;
-        seasonData.wgo_ppg = rec.pp_goals ?? 0;
-        seasonData.wgo_ppa = rec.pp_assists ?? 0;
-        seasonData.wgo_ppp = rec.pp_points ?? 0;
-        seasonData.wgo_hit = rec.hits ?? 0;
-        seasonData.wgo_blk = rec.blocked_shots ?? 0;
-        seasonData.wgo_pim = rec.penalty_minutes ?? 0;
+        // WGO's official games played is the season's GP (D11); NST's count is
+        // kept apart to check that on-ice totals cover the same games.
+        if (rec.games_played != null) seasonData.gp = rec.games_played;
+        // An unknown WGO count stays null (A1), so the metrics built on it do too.
+        seasonData.wgo_g = rec.goals ?? null;
+        seasonData.wgo_a = rec.assists ?? null;
+        seasonData.wgo_pts = rec.points ?? null;
+        seasonData.wgo_a1 = rec.total_primary_assists ?? null;
+        seasonData.wgo_sog = rec.shots ?? null;
+        seasonData.wgo_ppg = rec.pp_goals ?? null;
+        seasonData.wgo_ppa = rec.pp_assists ?? null;
+        seasonData.wgo_ppp = rec.pp_points ?? null;
+        seasonData.wgo_hit = rec.hits ?? null;
+        seasonData.wgo_blk = rec.blocked_shots ?? null;
+        seasonData.wgo_pim = rec.penalty_minutes ?? null;
         seasonData.wgo_pp_toi_pct = rec.pp_toi_pct_per_game;
         seasonData.wgo_pp_toi = rec.pp_toi;
         seasonData.has_wgo = true;
@@ -611,14 +615,17 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         const set = (metric: string, value: number | null) => {
           (careerStats as any)[`${prefix}_${metric}`] = value;
         };
+        // Metric-level support (A1): a sum over seasons is unknown when any
+        // included season's value is unknown, never a partial or zero total.
         const sum = (
           rows: AggregatedSeasonData[],
-          pick: (season: AggregatedSeasonData) => number
-        ) => rows.reduce((acc, season) => acc + pick(season), 0);
+          pick: (season: AggregatedSeasonData) => number | null
+        ) => rows.reduce<number | null>((acc, season) => addKnown(acc, pick(season)), 0);
         const perSeason = (
           rows: AggregatedSeasonData[],
-          pick: (season: AggregatedSeasonData) => number
+          pick: (season: AggregatedSeasonData) => number | null
         ) => safeDivide(sum(rows, pick), rows.length);
+        const plus = (a: number | null, b: number | null) => addKnown(a, b);
         const toiMinutes = (season: AggregatedSeasonData) =>
           season.wgo_toi ?? (season.has_nst_ind ? season.toi_all : null);
         const toiGp = (season: AggregatedSeasonData) =>
@@ -675,7 +682,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         set(
           "pts1_pct",
           safeDivide(
-            sum(wgo, (season) => season.wgo_g + season.wgo_a1),
+            sum(wgo, (season) => plus(season.wgo_g, season.wgo_a1)),
             sum(wgo, (season) => season.wgo_pts)
           )
         );
@@ -688,12 +695,17 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         );
         set("ixg", nstInd.length > 0 ? perSeason(nstInd, (season) => season.ixg_all) : null);
         set("icf", nstInd.length > 0 ? perSeason(nstInd, (season) => season.icf_all) : null);
+        // IPP divides WGO points by NST on-ice goals for: only when both cover the
+        // same games in every season (D11: 67 WGO vs 66 NST games is a mismatch).
+        const ippMatched = wgoOi.every((season) => season.nst_oi_gp === season.wgo_gp);
         set(
           "ipp",
-          safeDivide(
-            sum(wgoOi, (season) => season.wgo_pts),
-            sum(wgoOi, (season) => season.gf_all)
-          )
+          ippMatched
+            ? safeDivide(
+                sum(wgoOi, (season) => season.wgo_pts),
+                sum(wgoOi, (season) => season.gf_all)
+              )
+            : null
         );
         set(
           "oi_sh_pct",
@@ -706,14 +718,14 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
           "ozs_pct",
           safeDivide(
             sum(nstOi, (season) => season.off_zs_all),
-            sum(nstOi, (season) => season.off_zs_all + season.def_zs_all)
+            sum(nstOi, (season) => plus(season.off_zs_all, season.def_zs_all))
           )
         );
         const wgoRates = [
           ["g", (season: AggregatedSeasonData) => season.wgo_g],
           ["a", (season: AggregatedSeasonData) => season.wgo_a],
           ["pts", (season: AggregatedSeasonData) => season.wgo_pts],
-          ["pts1", (season: AggregatedSeasonData) => season.wgo_g + season.wgo_a1],
+          ["pts1", (season: AggregatedSeasonData) => plus(season.wgo_g, season.wgo_a1)],
           ["sog", (season: AggregatedSeasonData) => season.wgo_sog],
           ["hit", (season: AggregatedSeasonData) => season.wgo_hit],
           ["blk", (season: AggregatedSeasonData) => season.wgo_blk],
@@ -803,7 +815,15 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
               acc.wgo_hit += game.wgo_hit ?? 0;
               acc.wgo_blk += game.wgo_blk ?? 0;
               acc.wgo_pim += game.wgo_pim ?? 0;
-              acc.wgo_pp_toi_pct_values.push(game.wgo_pp_toi_pct);
+              // Team PP seconds = player PP seconds / player share, known only when
+              // the share is positive; otherwise the window's pooled share is unknown.
+              acc.team_pp_toi = addKnown(
+                acc.team_pp_toi,
+                typeof game.wgo_pp_toi_pct === "number" && game.wgo_pp_toi_pct > 0 &&
+                  typeof game.wgo_pp_toi === "number"
+                  ? game.wgo_pp_toi / game.wgo_pp_toi_pct
+                  : null
+              );
               acc.wgo_pp_toi += game.wgo_pp_toi ?? 0;
               acc.nst_ixg += game.nst_ixg ?? 0;
               acc.nst_oi_gf += game.nst_oi_gf ?? 0;
@@ -830,7 +850,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
               wgo_hit: 0,
               wgo_blk: 0,
               wgo_pim: 0,
-              wgo_pp_toi_pct_values: [] as (number | null)[],
+              team_pp_toi: 0 as number | null,
               wgo_pp_toi: 0,
               nst_ixg: 0,
               nst_oi_gf: 0,
@@ -852,8 +872,12 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
             totals.wgo_pp_toi,
             totals.gp
           );
-          (recentStats as any)[`${prefix}pp_pct`] = safeAverage(
-            totals.wgo_pp_toi_pct_values
+          // PP% pools PP time (D11): Σ player PP seconds ÷ Σ team PP seconds, not a
+          // mean of per-game shares. Provider shares stay labelled unqualified until
+          // the FHFH PP clock is qualified (decision 71).
+          (recentStats as any)[`${prefix}pp_pct`] = safeDivide(
+            totals.wgo_pp_toi,
+            totals.team_pp_toi
           );
           (recentStats as any)[`${prefix}g`] = totals.wgo_g;
           (recentStats as any)[`${prefix}a`] = totals.wgo_a;
@@ -968,7 +992,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
             { fields: ["wgo_hit"], metrics: ["hit", "hit_per_60"] },
             { fields: ["wgo_blk"], metrics: ["blk", "blk_per_60"] },
             { fields: ["wgo_pim"], metrics: ["pim", "pim_per_60"] },
-            { fields: ["wgo_pp_toi_pct"], metrics: ["pp_pct"] },
+            { fields: ["wgo_pp_toi_pct", "wgo_pp_toi"], metrics: ["pp_pct"] },
             { fields: ["nst_ixg"], metrics: ["ixg", "ixg_per_60"] },
             { fields: ["nst_icf"], metrics: ["icf", "icf_per_60"] },
             { fields: ["nst_ihdcf"], metrics: ["ihdcf_per_60"] },

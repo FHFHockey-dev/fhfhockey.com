@@ -24,6 +24,14 @@ import { WIGO_ERROR_MESSAGES } from "./errorMessages";
 import { formatSeasonRange } from "./tableUtils";
 import useCurrentSeason, { useSeasonPendingMessage } from "hooks/useCurrentSeason";
 import { WIGO_QUERY_DEFAULTS } from "components/WiGO/queryDefaults";
+import {
+  WIGO_ST_FLOOR_VALIDATED,
+  WIGO_ST_MIN_MINUTES_DEFAULT,
+  isWigoSpecialTeamsStrength,
+  meetsWigoMinutesFloor,
+  type WigoSpecialTeamsStrength
+} from "utils/calculateWigoRatings";
+import { fetchSkaterPositionGroups } from "utils/fetchWigoRatingStats";
 
 // Datalabels is passed to this chart only. Registered globally, it would join
 // charts created before this lazy panel loaded, whose plugin state it never
@@ -43,6 +51,9 @@ interface RateStatPercentilesProps {
   seasonId?: number | null;
   minGp: number;
   onMinGpChange: (newMinGp: number) => void;
+  // PP/PK cohorts use a minutes floor and rank F and D apart (decision 81).
+  stMinMinutes?: Record<WigoSpecialTeamsStrength, number>;
+  onStMinMinutesChange?: (strength: WigoSpecialTeamsStrength, minutes: number) => void;
 }
 
 const ALL_STATS_TO_DISPLAY: Array<{
@@ -72,6 +83,13 @@ type CalculatedData = {
   [key: string]: number | null;
 };
 
+/** Ice time in seconds, or null when unknown (rows may carry it as text). */
+const toiSecondsOf = (player: PlayerRawStats): number | null => {
+  if (player.toi == null || player.toi === "") return null;
+  const seconds = Number(player.toi);
+  return Number.isFinite(seconds) ? seconds : null;
+};
+
 const generateChartConfig = (
   statsToDisplay: Array<{
     label: string;
@@ -79,7 +97,8 @@ const generateChartConfig = (
     higherIsBetter: boolean;
   }>,
   percentiles: CalculatedData | null,
-  ranks: CalculatedData | null
+  ranks: CalculatedData | null,
+  cohortSizes: CalculatedData | null = null
 ): { data: ChartData<"bar">; options: ChartOptions<"bar"> } => {
   const labels = statsToDisplay.map((stat) => stat.label);
   const dataValues = statsToDisplay.map((stat) => {
@@ -193,7 +212,8 @@ const generateChartConfig = (
               if (value === null) return null;
               const statKey = statsToDisplay[context.dataIndex]?.key;
               const rank = statKey && ranks ? formatOrdinal(ranks[statKey]) : null;
-              return `${value}% · ${rank ?? "-"}`;
+              const size = statKey && cohortSizes ? cohortSizes[statKey] : null;
+              return `${value}% · ${rank ?? "-"}${rank && size ? `/${size}` : ""}`;
             }
           }
         }
@@ -209,6 +229,8 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
   seasonId,
   minGp,
   onMinGpChange,
+  stMinMinutes = WIGO_ST_MIN_MINUTES_DEFAULT,
+  onStMinMinutesChange,
   desktop = false
 }) => {
   const [selectedStrength, setSelectedStrength] =
@@ -236,6 +258,22 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
     () => percentileCohort?.stats ?? [],
     [percentileCohort?.stats]
   );
+  const specialTeams = isWigoSpecialTeamsStrength(selectedStrength) ? selectedStrength : null;
+  const floorMinutes = specialTeams ? stMinMinutes[specialTeams] : undefined;
+  const cohortSeasonId = percentileCohort?.appliedSeasonId ?? seasonId;
+  const positionQuery = useQuery({
+    queryKey: ["wigoPositionGroups", cohortSeasonId],
+    queryFn: () => fetchSkaterPositionGroups(cohortSeasonId as number),
+    ...WIGO_QUERY_DEFAULTS,
+    enabled: specialTeams !== null && typeof cohortSeasonId === "number"
+  });
+  const positionGroups = specialTeams ? positionQuery.data ?? null : null;
+  const playerGroup = playerId && positionGroups ? positionGroups.get(playerId) ?? null : null;
+  const selectedPlayerToiMinutes = useMemo(() => {
+    const player = allPlayersStats.find((row) => row.player_id === playerId);
+    const toi = player ? toiSecondsOf(player) : null;
+    return toi === null ? null : toi / 60;
+  }, [allPlayersStats, playerId]);
 
   // Regular-season length of the season shown, when the current-season record
   // knows it (current or previous season); otherwise null.
@@ -274,31 +312,58 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
     return cohortGp;
   }, [allPlayersStats, playerId]);
 
-  const { calculatedPercentiles, calculatedRanks } = useMemo(() => {
-    if (!playerId || allPlayersStats.length === 0) {
+  const { calculatedPercentiles, calculatedRanks, cohortSizes } = useMemo(() => {
+    if (!playerId || allPlayersStats.length === 0 || (specialTeams && positionQuery.isLoading)) {
       return {
         calculatedPercentiles: null as CalculatedData | null,
-        calculatedRanks: null as CalculatedData | null
+        calculatedRanks: null as CalculatedData | null,
+        cohortSizes: null as CalculatedData | null
       };
     }
 
-    const filteredPlayers = allPlayersStats.filter(
-      (player) =>
-        player.gp !== null &&
-        (player.gp >= minGp || player.player_id === playerId)
+    // PP/PK: same F/D group and a minutes floor for everyone, the selected player
+    // included (decision 81). Other strengths keep the games floor.
+    const filteredPlayers = allPlayersStats.filter((player) =>
+      specialTeams
+        ? playerGroup !== null &&
+          positionGroups?.get(player.player_id) === playerGroup &&
+          meetsWigoMinutesFloor(toiSecondsOf(player), floorMinutes)
+        : player.gp !== null &&
+          (player.gp >= minGp || player.player_id === playerId)
     );
 
     // A cohort of the selected player alone ranks them 1st at 50% on every
     // stat, which says nothing (C-23).
-    if (!filteredPlayers.some((player) => player.player_id !== playerId)) {
+    if (
+      !filteredPlayers.some((player) => player.player_id === playerId) ||
+      !filteredPlayers.some((player) => player.player_id !== playerId)
+    ) {
       return {
         calculatedPercentiles: {} as CalculatedData,
-        calculatedRanks: {} as CalculatedData
+        calculatedRanks: {} as CalculatedData,
+        cohortSizes: {} as CalculatedData
       };
     }
 
     const percentileResults: CalculatedData = {};
     const rankResults: CalculatedData = {};
+    const sizeResults: CalculatedData = {};
+    // Each stat ranks only the rows with a finite value for it; the selected player
+    // and at least one peer must be among them, or the stat is unranked (A3).
+    const rankStat = (
+      key: string,
+      rows: Array<{ player_id: number; value: number }>,
+      higherIsBetter: boolean
+    ) => {
+      const ranked =
+        rows.some((row) => row.player_id === playerId) &&
+        rows.some((row) => row.player_id !== playerId)
+          ? calculateRankingResult(rows, playerId, higherIsBetter)
+          : null;
+      percentileResults[key] = ranked?.percentile ?? null;
+      rankResults[key] = ranked?.rank ?? null;
+      sizeResults[key] = ranked ? rows.length : null;
+    };
 
     const toiGpData = filteredPlayers
       .map((player) => ({
@@ -313,9 +378,7 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
           player.value !== null && Number.isFinite(player.value)
       );
 
-    const toiRanking = calculateRankingResult(toiGpData, playerId, true);
-    percentileResults.toi_per_gp_calc = toiRanking?.percentile ?? null;
-    rankResults.toi_per_gp_calc = toiRanking?.rank ?? null;
+    rankStat("toi_per_gp_calc", toiGpData, true);
 
     ALL_STATS_TO_DISPLAY.forEach((stat) => {
       if (stat.key === "toi_per_gp_calc") {
@@ -333,16 +396,15 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
             player.value !== null && Number.isFinite(player.value)
         );
 
-      const ranking = calculateRankingResult(statData, playerId, stat.higherIsBetter);
-      percentileResults[validStatKey] = ranking?.percentile ?? null;
-      rankResults[validStatKey] = ranking?.rank ?? null;
+      rankStat(stat.key, statData, stat.higherIsBetter);
     });
 
     return {
       calculatedPercentiles: percentileResults,
-      calculatedRanks: rankResults
+      calculatedRanks: rankResults,
+      cohortSizes: sizeResults
     };
-  }, [allPlayersStats, minGp, playerId]);
+  }, [allPlayersStats, minGp, playerId, specialTeams, positionQuery.isLoading, playerGroup, positionGroups, floorMinutes]);
 
   const handleStrengthChange = useCallback((strength: PercentileStrength) => {
     setSelectedStrength(strength);
@@ -350,9 +412,11 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
 
   const handleSliderChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
-      onMinGpChange(Number(event.target.value));
+      const value = Number(event.target.value);
+      if (specialTeams) onStMinMinutesChange?.(specialTeams, value);
+      else onMinGpChange(value);
     },
-    [onMinGpChange]
+    [onMinGpChange, onStMinMinutesChange, specialTeams]
   );
 
   const selectedPlayerMeetsGpThreshold = useMemo(() => {
@@ -360,16 +424,23 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
   }, [selectedPlayerGp, minGp]);
 
   // Never below the current minimum, so the thumb stays on the track.
-  const sliderMax = Math.max(selectedPlayerGp ?? 0, maxPossibleGp, minGp, 1);
+  const maxToiMinutes = Math.ceil(
+    allPlayersStats.reduce((max, player) => Math.max(max, (toiSecondsOf(player) ?? 0) / 60), 0)
+  );
+  const sliderValue = specialTeams ? (floorMinutes ?? 0) : minGp;
+  const sliderMax = specialTeams
+    ? Math.max(maxToiMinutes, sliderValue, 1)
+    : Math.max(selectedPlayerGp ?? 0, maxPossibleGp, minGp, 1);
 
   const combinedChartConfig = useMemo(
     () =>
       generateChartConfig(
         ALL_STATS_TO_DISPLAY,
         calculatedPercentiles,
-        calculatedRanks
+        calculatedRanks,
+        cohortSizes
       ),
-    [calculatedPercentiles, calculatedRanks]
+    [calculatedPercentiles, calculatedRanks, cohortSizes]
   );
 
   const strengthLabel = selectedStrength.toUpperCase();
@@ -383,7 +454,24 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
   ) {
     thresholdMessages.push({ short: `${strengthLabel} data incomplete`, full: percentileCohort.fallbackReason });
   }
+  const groupName = playerGroup === "D" ? "defensemen" : "forwards";
+  if (specialTeams && calculatedPercentiles !== null && allPlayersStats.length > 0) {
+    const floorText = `${floorMinutes} ${strengthLabel} min`;
+    if (positionQuery.error || (playerId && playerGroup === null)) {
+      thresholdMessages.push({ short: "Position unknown", full: `The player's position is unknown, so there is no forward or defense ${strengthLabel} cohort to rank against.` });
+    } else if (selectedPlayerToiMinutes === null || !meetsWigoMinutesFloor(selectedPlayerToiMinutes * 60, floorMinutes)) {
+      thresholdMessages.push({
+        short: "Insufficient sample",
+        full: `Insufficient sample: ${selectedPlayerToiMinutes === null ? "no" : Math.round(selectedPlayerToiMinutes)} ${strengthLabel} minutes, below the ${floorText} floor.`
+      });
+    }
+    thresholdMessages.push({
+      short: `${groupName} · ${floorText}+`,
+      full: `${strengthLabel} ranks ${groupName} only, with at least ${floorText}. The ${floorText} default is provisional${WIGO_ST_FLOOR_VALIDATED ? "" : " (not yet validated by split-half stability)"}; lower it with the slider.`
+    });
+  }
   if (
+    !specialTeams &&
     calculatedPercentiles !== null &&
     allPlayersStats.length > 0 &&
     !allPlayersStats.some((player) => player.player_id !== playerId && player.gp !== null && player.gp >= minGp)
@@ -400,7 +488,7 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
       full: percentileCohort.fallbackReason
     });
   }
-  if (calculatedPercentiles !== null && !selectedPlayerMeetsGpThreshold && selectedPlayerGp !== null) {
+  if (!specialTeams && calculatedPercentiles !== null && !selectedPlayerMeetsGpThreshold && selectedPlayerGp !== null) {
     thresholdMessages.push({
       short: `GP ${selectedPlayerGp} below min ${minGp}`,
       full: `Selected Player GP (${selectedPlayerGp}) below threshold (${minGp}). Comparing against ${minGp}+ GP players.`
@@ -454,8 +542,8 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
               </div>
               <div className={styles.gpSliderContainer}>
                 <label htmlFor="gpSlider">
-                  Min GP:
-                  <span className={styles.minGpValue}>{minGp}</span>
+                  {specialTeams ? `Min ${strengthLabel} min:` : "Min GP:"}
+                  <span className={styles.minGpValue}>{sliderValue}</span>
                 </label>
                 <span className={styles.gpSliderMaxLabel}>
                   {sliderMax > 1
@@ -470,7 +558,7 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
                   id="gpSlider"
                   min="0"
                   max={sliderMax}
-                  value={minGp}
+                  value={sliderValue}
                   onChange={handleSliderChange}
                   disabled={isLoading || allPlayersStats.length === 0}
                   className={styles.gpSlider}
@@ -478,7 +566,7 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
                     {
                       "--min": 0,
                       "--max": sliderMax,
-                      "--val": minGp
+                      "--val": sliderValue
                     } as React.CSSProperties
                   }
                 />
@@ -490,8 +578,8 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
               {/* One-page mode keeps the requested and applied seasons for screen readers; the chip says when they differ. */}
               {desktop ? (
                 <div className={styles.percentileContext}>
-                  {/* F and D are pooled by design (TJ, 2026-11-01); say so. */}
-                  Player GP: {selectedPlayerGp ?? "—"} · all skaters
+                  {/* AS/ES pool F and D; PP/PK rank them apart (decision 81). */}
+                  Player GP: {selectedPlayerGp ?? "—"} · {specialTeams ? `${groupName} only` : "all skaters"}
                   <span className={styles.visuallyHidden}> · Requested {seasonId} · Applied {percentileCohort?.appliedSeasonId ?? seasonId}</span>
                 </div>
               ) : (
@@ -499,7 +587,7 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
                   Player GP: {selectedPlayerGp ?? "—"} ·{" "}
                   {percentileCohort && percentileCohort.appliedSeasonId !== percentileCohort.requestedSeasonId
                     ? `${formatSeasonRange(percentileCohort.appliedSeasonId)} values, not ${formatSeasonRange(seasonId)}`
-                    : "all skaters"}
+                    : specialTeams ? `${groupName} only` : "all skaters"}
                 </div>
               )}
               <div className={desktop ? styles.thresholdChips : styles.thresholdMessagesContainer}>
@@ -516,13 +604,14 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
             {ALL_STATS_TO_DISPLAY.map(stat => {
               const percentile = calculatedPercentiles?.[stat.key];
               const rank = calculatedRanks?.[stat.key];
+              const size = cohortSizes?.[stat.key];
               const available = percentile != null && Number.isFinite(percentile);
               return <div className={styles.percentileTile} key={stat.key}>
                 <span>{stat.label}</span>
                 <strong>{available ? `${Math.round(percentile * 100)}%` : "—"}</strong>
                 <meter aria-label={`${stat.label} percentile`} min={0} max={100} value={available ? percentile * 100 : 0} />
                 {/* A sparse tile shows one dash, in the value; "Rank unavailable" overflows 3x6 at 1280 (E proto2). */}
-                <small>{rank != null ? <>{formatOrdinal(rank)}<span className={styles.visuallyHidden}> rank</span></> : <span className={styles.visuallyHidden}>Rank unavailable</span>}</small>
+                <small>{rank != null ? <>{formatOrdinal(rank)}{size != null && <>/{size}</>}<span className={styles.visuallyHidden}> rank of {size} with this stat</span></> : <span className={styles.visuallyHidden}>Rank unavailable</span>}</small>
               </div>;
             })}
           </div> : <div className={styles.chartAndRanksArea}>

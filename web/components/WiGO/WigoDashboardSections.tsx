@@ -7,6 +7,10 @@ import PerGameStatsTable from "components/WiGO/PerGameStatsTable";
 import PlayerHeader from "components/WiGO/PlayerHeader";
 import { formatHeight, formatWeight, getAge, formatPosition } from "./playerBiography";
 import PlayerRatingsDisplay from "components/WiGO/PlayerRatingsDisplay";
+import {
+  WIGO_ST_MIN_MINUTES_DEFAULT,
+  type WigoSpecialTeamsStrength
+} from "utils/calculateWigoRatings";
 import NameSearchBar from "components/WiGO/NameSearchBar";
 import WigoSectionCard from "./WigoSectionCard";
 import WigoHelp from "./WigoHelp";
@@ -73,6 +77,7 @@ interface WigoOverviewSectionProps {
   teamIdForLog: number | null;
   currentSeasonId: number | null;
   minGp: number;
+  stMinMinutes?: Record<WigoSpecialTeamsStrength, number>;
   desktop?: boolean;
 }
 
@@ -89,6 +94,8 @@ interface WigoPercentilesSectionProps {
   seasonId: number | null;
   minGp: number;
   onMinGpChange: (minGp: number) => void;
+  stMinMinutes?: Record<WigoSpecialTeamsStrength, number>;
+  onStMinMinutesChange?: (strength: WigoSpecialTeamsStrength, minutes: number) => void;
   // Phone tab only: the radar, ratings and drivers join the rate percentiles.
   selectedPlayer?: Player | null;
   teamIdForLog?: number | null;
@@ -234,12 +241,13 @@ function WigoDashboardHeaderBody({
 function WigoRatingsPanel({
   selectedPlayer,
   currentSeasonId,
-  minGp
-}: Pick<WigoOverviewSectionProps, "selectedPlayer" | "currentSeasonId" | "minGp">) {
+  minGp,
+  stMinMinutes = WIGO_ST_MIN_MINUTES_DEFAULT
+}: Pick<WigoOverviewSectionProps, "selectedPlayer" | "currentSeasonId" | "minGp" | "stMinMinutes">) {
   return (
     <div className={styles.ratingsContainer} data-coverage="C07">
-      <WigoSectionCard title="Player ratings" toolbar={<WigoHelp label="Player rating methodology and cohort"><p>Weighted percentile composites, using the existing {currentSeasonId ? formatSeasonRange(currentSeasonId) : "current-season"} cohorts and minimum {minGp} GP. Overall All/Even combines offense and defense. Special combines PP offense and PK defense with ice-time weighting. Adjust the rate panel’s minimum GP to change the cohort. A stat needs at least {WIGO_RATING_MIN_COHORT_PEERS} other qualifying players; with fewer, its rating shows “-”. All needs all-situations data; while that is empty, All shows “-” and Overall uses Even and Special.</p></WigoHelp>}>
-        <PlayerRatingsDisplay playerId={selectedPlayer?.id} seasonId={currentSeasonId} minGp={minGp} />
+      <WigoSectionCard title="Player ratings" toolbar={<WigoHelp label="Player rating methodology and cohort"><p>Weighted percentile composites (0–100 scores, not percentiles), using the existing {currentSeasonId ? formatSeasonRange(currentSeasonId) : "current-season"} cohorts. All and Even use a minimum of {minGp} GP. PP and PK compare forwards with forwards and defensemen with defensemen, each with at least {stMinMinutes.pp} PP or {stMinMinutes.pk} PK minutes (a provisional floor, not yet validated by split-half stability); below the floor the rating shows “-”. Adjust both floors in the rate panel. Overall All/Even needs both offense and defense. Special combines PP offense and PK defense with ice-time weighting, and is blank when a side with ice time has no rating. A rating needs every weighted stat; with any missing it shows “-” and its weight coverage. A stat needs at least {WIGO_RATING_MIN_COHORT_PEERS} other qualifying players. All needs all-situations data; while that is empty, All shows “-”.</p></WigoHelp>}>
+        <PlayerRatingsDisplay playerId={selectedPlayer?.id} seasonId={currentSeasonId} minGp={minGp} stMinMinutes={stMinMinutes} />
       </WigoSectionCard>
     </div>
   );
@@ -270,6 +278,7 @@ function WigoOverviewSectionBody({
   teamIdForLog,
   currentSeasonId,
   minGp,
+  stMinMinutes,
   desktop = false,
 }: WigoOverviewSectionProps) {
   return (
@@ -297,7 +306,7 @@ function WigoOverviewSectionBody({
           hasPlayer={!!selectedPlayer}
         />
       </div>
-      {desktop && <WigoRatingsPanel selectedPlayer={selectedPlayer} currentSeasonId={currentSeasonId} minGp={minGp} />}
+      {desktop && <WigoRatingsPanel selectedPlayer={selectedPlayer} currentSeasonId={currentSeasonId} minGp={minGp} stMinMinutes={stMinMinutes} />}
       {desktop && <WigoDriversPanel selectedPlayer={selectedPlayer} teamIdForLog={teamIdForLog} teamAbbreviation={teamAbbreviation} currentSeasonId={currentSeasonId} />}
     </>
   );
@@ -365,6 +374,8 @@ function WigoPercentilesSectionBody({
   seasonId,
   minGp,
   onMinGpChange,
+  stMinMinutes,
+  onStMinMinutesChange,
   desktop = false,
   selectedPlayer = null,
   teamIdForLog = null,
@@ -377,6 +388,8 @@ function WigoPercentilesSectionBody({
         seasonId={seasonId}
         minGp={minGp}
         onMinGpChange={onMinGpChange}
+        stMinMinutes={stMinMinutes}
+        onStMinMinutesChange={onStMinMinutesChange}
         desktop={desktop}
       />
     </div>
@@ -396,7 +409,7 @@ function WigoPercentilesSectionBody({
         )}
       </div>
       {ratePercentiles}
-      <WigoRatingsPanel selectedPlayer={selectedPlayer} currentSeasonId={seasonId} minGp={minGp} />
+      <WigoRatingsPanel selectedPlayer={selectedPlayer} currentSeasonId={seasonId} minGp={minGp} stMinMinutes={stMinMinutes} />
       <WigoDriversPanel selectedPlayer={selectedPlayer} teamIdForLog={teamIdForLog} teamAbbreviation={teamAbbreviation} currentSeasonId={seasonId} />
     </>
   );

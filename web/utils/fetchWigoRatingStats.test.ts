@@ -6,7 +6,7 @@ vi.mock("./fetchWigoPlayerStats", () => ({
   fetchPaginatedData: mockFetchPaginatedData
 }));
 
-import { fetchRawStatsForAllStrengths } from "./fetchWigoRatingStats";
+import { fetchRawStatsForAllStrengths, fetchSkaterPositionGroups } from "./fetchWigoRatingStats";
 
 describe("fetchRawStatsForAllStrengths", () => {
   beforeEach(() => {
@@ -45,5 +45,24 @@ describe("fetchRawStatsForAllStrengths", () => {
     expect(result.pk?.offense).toEqual([]);
     expect(result.as?.offense).toHaveLength(1);
     expect(result.pk?.defense).toHaveLength(1);
+  });
+});
+
+describe("fetchSkaterPositionGroups", () => {
+  beforeEach(() => mockFetchPaginatedData.mockReset());
+
+  it("maps season totals to F/D and leaves unknown or conflicting positions out", async () => {
+    mockFetchPaginatedData.mockResolvedValueOnce([
+      { player_id: 1, position_code: "C" },
+      { player_id: 2, position_code: "D" },
+      { player_id: 3, position_code: null },
+      { player_id: 4, position_code: "D" },
+      { player_id: 4, position_code: "RW" }
+    ]);
+    const groups = await fetchSkaterPositionGroups(20252026);
+    expect(mockFetchPaginatedData).toHaveBeenCalledWith(
+      "wgo_skater_stats_totals", "player_id, position_code", { column: "season", value: "20252026" }
+    );
+    expect([...groups.entries()]).toEqual([[1, "F"], [2, "D"]]);
   });
 });

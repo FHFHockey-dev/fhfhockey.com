@@ -4,15 +4,45 @@ import { cleanup, render, screen, waitFor, within } from "@testing-library/react
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { RawStatsCollection } from "components/WiGO/types";
+import { RATING_WEIGHTS } from "components/WiGO/ratingWeights";
 import PlayerRatingsDisplay from "./PlayerRatingsDisplay";
 
 afterEach(cleanup);
 
 const mockFetchRawStatsForAllStrengths = vi.hoisted(() => vi.fn());
+const mockFetchSkaterPositionGroups = vi.hoisted(() => vi.fn());
 
 vi.mock("utils/fetchWigoRatingStats", () => ({
-  fetchRawStatsForAllStrengths: mockFetchRawStatsForAllStrengths
+  fetchRawStatsForAllStrengths: mockFetchRawStatsForAllStrengths,
+  fetchSkaterPositionGroups: mockFetchSkaterPositionGroups
 }));
+
+// Fixture skaters: 91, 1, 2 and 3 are forwards; 44 and 7 are defensemen.
+const POSITIONS = new Map([[91, "F"], [1, "F"], [2, "F"], [3, "F"], [44, "D"], [7, "D"]]);
+// Small fixtures predate the PP/PK minutes floor; they switch it off to test other rules.
+const NO_ST_FLOOR = { pp: 0, pk: 0 };
+
+// A rating needs every weighted stat (A3). Fixtures written with one stat per side
+// get every other weighted stat in the same player order (sign-flipped where higher
+// is better), so each stat's percentile, and so the rating, equals the one stat's.
+function withAllWeightedStats(raw: RawStatsCollection): RawStatsCollection {
+  const out: RawStatsCollection = {};
+  for (const [strength, sides] of Object.entries(raw) as [keyof RawStatsCollection, NonNullable<RawStatsCollection["as"]>][]) {
+    const fill = (rows: any[], type: "offense" | "defense") => rows.map((row) => {
+      const weights = RATING_WEIGHTS[strength]?.[type] ?? [];
+      const base = weights.find((w) => typeof row[w.stat] === "number");
+      if (!base) return row;
+      const value = row[base.stat] as number;
+      const filled = { ...row };
+      for (const w of weights) {
+        if (filled[w.stat] === undefined) filled[w.stat] = w.higherIsBetter === base.higherIsBetter ? value : -value;
+      }
+      return filled;
+    });
+    out[strength] = { offense: fill(sides.offense, "offense"), defense: fill(sides.defense, "defense") };
+  }
+  return out;
+}
 
 // The small fixtures below predate the minimum cohort; most tests switch it off and one turns it on.
 const cohortRule = vi.hoisted(() => ({ minPeers: 0 }));
@@ -40,6 +70,8 @@ function renderWithClient(ui: React.ReactElement) {
 describe("PlayerRatingsDisplay", () => {
   beforeEach(() => {
     mockFetchRawStatsForAllStrengths.mockReset();
+    mockFetchSkaterPositionGroups.mockReset();
+    mockFetchSkaterPositionGroups.mockResolvedValue(POSITIONS);
     cohortRule.minPeers = 0;
   });
 
@@ -65,12 +97,12 @@ describe("PlayerRatingsDisplay", () => {
     const rows = [91, 2, 3].map((player_id, index) => ({
       player_id, season: 20262027, gp: 12, toi_seconds: 800, total_points_per_60: 3 - index, xga_per_60: 1 + index
     }));
-    mockFetchRawStatsForAllStrengths.mockResolvedValue({
+    mockFetchRawStatsForAllStrengths.mockResolvedValue(withAllWeightedStats({
       as: { offense: [], defense: [] },
       es: { offense: rows, defense: rows },
       pp: { offense: rows, defense: [] },
       pk: { offense: [], defense: rows }
-    });
+    }));
 
     renderWithClient(<PlayerRatingsDisplay playerId={91} seasonId={20262027} minGp={10} />);
 
@@ -218,10 +250,10 @@ describe("PlayerRatingsDisplay", () => {
       }
     };
 
-    mockFetchRawStatsForAllStrengths.mockResolvedValue(rawStats);
+    mockFetchRawStatsForAllStrengths.mockResolvedValue(withAllWeightedStats(rawStats));
 
     renderWithClient(
-      <PlayerRatingsDisplay playerId={91} seasonId={20242025} minGp={10} />
+      <PlayerRatingsDisplay playerId={91} seasonId={20242025} minGp={10} stMinMinutes={NO_ST_FLOOR} />
     );
 
     await waitFor(() => {
@@ -348,10 +380,10 @@ describe("PlayerRatingsDisplay", () => {
       }
     };
 
-    mockFetchRawStatsForAllStrengths.mockResolvedValue(rawStats);
+    mockFetchRawStatsForAllStrengths.mockResolvedValue(withAllWeightedStats(rawStats));
 
     renderWithClient(
-      <PlayerRatingsDisplay playerId={44} seasonId={20242025} minGp={10} />
+      <PlayerRatingsDisplay playerId={44} seasonId={20242025} minGp={10} stMinMinutes={NO_ST_FLOOR} />
     );
 
     await waitFor(() => {
@@ -366,6 +398,38 @@ describe("PlayerRatingsDisplay", () => {
       )
     ).toBeNull();
     expect(screen.getAllByText("75.0").length).toBeGreaterThan(0);
+  });
+
+  it("withholds a rating whose weighted stats are partly missing and says how much was covered (A3)", async () => {
+    // Only Pts/60 (25 of 100 even-strength offense weight units) is published.
+    const rows = [1, 2, 3].map((player_id, index) => ({
+      player_id, season: 20252026, gp: 30, toi_seconds: 30000, total_points_per_60: 3 - index
+    }));
+    mockFetchRawStatsForAllStrengths.mockResolvedValue({ es: { offense: rows, defense: [] } });
+
+    renderWithClient(<PlayerRatingsDisplay playerId={1} seasonId={20252026} minGp={10} />);
+
+    await waitFor(() => expect(screen.getByText("Offense")).toBeTruthy());
+    // Before the fix: 83.3, the one stat's percentile rescaled to the whole rating.
+    expect(screen.queryByText("83.3")).toBeNull();
+    expect(screen.getAllByTitle("Insufficient data: 25 of 100 weight units have a percentile")).toHaveLength(1);
+  });
+
+  it("shows PP as an insufficient sample below the minutes floor (decision 81)", async () => {
+    const ppRow = (player_id: number, minutes: number, value: number) => ({
+      player_id, season: 20252026, gp: 40, toi_seconds: minutes * 60,
+      gf_per_60: value, xgf_per_60: value, total_points_per_60: value, scf_per_60: value,
+      shots_per_60: value, hdgf_per_60: value, penalties_drawn_per_60: value
+    });
+    mockFetchRawStatsForAllStrengths.mockResolvedValue({
+      pp: { offense: [ppRow(91, 20, 9), ppRow(2, 120, 5), ppRow(3, 120, 4)], defense: [] }
+    });
+
+    renderWithClient(<PlayerRatingsDisplay playerId={91} seasonId={20252026} minGp={10} stMinMinutes={{ pp: 30, pk: 30 }} />);
+
+    await waitFor(() => expect(screen.getByText("Offense")).toBeTruthy());
+    expect(screen.queryAllByRole("meter").map((m) => m.getAttribute("aria-label"))).not.toContain("Offense PP");
+    expect(screen.getByTitle("Insufficient sample: 20 PP min, below the provisional 30-min floor")).toBeTruthy();
   });
 
   it("does not expose dependency details when ratings fail", async () => {

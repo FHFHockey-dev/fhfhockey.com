@@ -1,5 +1,5 @@
 import { getPlayer } from "lib/NHL/server";
-import { PercentileRank } from "lib/NHL/types";
+import { calculateRankingResult } from "utils/calculatePercentiles";
 import supabase from "lib/supabase/public-client";
 import { NextApiRequest, NextApiResponse } from "next";
 import { getInterval } from "pages/api/toi";
@@ -24,11 +24,14 @@ export default async function handler(
     res.status(400).json({ message: e.message, success: false });
   }
 }
+// A stat is null when unknown: no games in the window or no finite value (rule 5).
+type PercentileRankOrUnknown = Record<Stat, number | null>;
+
 async function getPercentileRank(
   playerId: number,
   StartTime: string,
   EndTime: string
-): Promise<PercentileRank> {
+): Promise<PercentileRankOrUnknown> {
   const player = await getPlayer(playerId);
   const { data } = await supabase
     .rpc("get_skaters_avg_stats", {
@@ -40,16 +43,16 @@ async function getPercentileRank(
   if (data === null) throw new Error("No avg data found");
   const playerStats = data.find((stats) => stats.id === player.id);
   if (!playerStats) {
-    console.log("player did not play any game during these period.");
+    // No games in the window: every percentile is unknown, never 0 (rule 5).
     return {
-      goals: 0,
-      assists: 0,
-      plusMinus: 0,
-      pim: 0,
-      hits: 0,
-      blockedShots: 0,
-      powerPlayPoints: 0,
-      shots: 0
+      goals: null,
+      assists: null,
+      plusMinus: null,
+      pim: null,
+      hits: null,
+      blockedShots: null,
+      powerPlayPoints: null,
+      shots: null
     };
   }
 
@@ -80,16 +83,19 @@ const statMapping: Record<Stat, keyof PlayerAvgStats> = {
   shots: "avgshots"
 };
 
+// Mid-rank percentile (decision 90) over the finite values: ties share one value.
+// The old version sorted numbers as text and counted only strictly lower rows.
 function getSinglePercentileRank(
   allStats: PlayerAvgStats[],
   playerStats: PlayerAvgStats,
   statType: Stat
-) {
+): number | null {
   const key = statMapping[statType];
-  const sorted = allStats.map((stats) => stats[key]).sort();
-  const position = sorted.findIndex((item) => item === playerStats[key]);
-
-  return Number(((position / sorted.length) * 100).toFixed(2));
+  const rows = allStats
+    .filter((stats) => typeof stats[key] === "number" && Number.isFinite(stats[key]))
+    .map((stats) => ({ player_id: stats.id, value: stats[key] }));
+  const result = calculateRankingResult(rows, playerStats.id, true);
+  return result === null ? null : Number((result.percentile * 100).toFixed(2));
 }
 
 type Stat =

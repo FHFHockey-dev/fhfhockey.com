@@ -39,14 +39,73 @@ interface ComparisonRow {
   value: number;
 }
 
+export type WigoPositionGroup = "F" | "D";
+
+/** Forward or defenseman from a WGO position code; null when unknown or a goalie. */
+export function wigoPositionGroup(code: string | null | undefined): WigoPositionGroup | null {
+  const pos = (code ?? "").toUpperCase();
+  if (pos === "D" || pos === "LD" || pos === "RD") return "D";
+  if (["C", "L", "R", "LW", "RW", "W", "F"].includes(pos)) return "F";
+  return null;
+}
+
+// Special-teams cohorts (decision 81): a per-strength minutes floor instead of games,
+// and forwards and defensemen ranked apart. The default floor is a provisional
+// presentation choice (rule 12): it has not yet been validated by split-half
+// stability, and the page says so. Users can lower it.
+export const WIGO_SPECIAL_TEAMS_STRENGTHS = ["pp", "pk"] as const;
+export type WigoSpecialTeamsStrength = (typeof WIGO_SPECIAL_TEAMS_STRENGTHS)[number];
+export const WIGO_ST_MIN_MINUTES_DEFAULT: Record<WigoSpecialTeamsStrength, number> = {
+  pp: 30,
+  pk: 30
+};
+export const WIGO_ST_FLOOR_VALIDATED = false;
+export const isWigoSpecialTeamsStrength = (strength: string): strength is WigoSpecialTeamsStrength =>
+  (WIGO_SPECIAL_TEAMS_STRENGTHS as readonly string[]).includes(strength);
+
+export interface WigoCohortOptions {
+  /** Minutes at this strength a row needs to enter the cohort (the selected player too). */
+  minToiMinutes?: Partial<Record<Strength, number>>;
+  /** Position group by player id; strengths in `separatePositions` rank F and D apart. */
+  positionGroups?: ReadonlyMap<number, WigoPositionGroup> | null;
+  separatePositions?: readonly Strength[];
+}
+
+/** The F/D-and-minutes rule special-teams cohorts use on the page (decision 81). */
+export function wigoSpecialTeamsCohortOptions(
+  positionGroups: ReadonlyMap<number, WigoPositionGroup> | null,
+  minMinutes: Record<WigoSpecialTeamsStrength, number> = WIGO_ST_MIN_MINUTES_DEFAULT
+): WigoCohortOptions {
+  return {
+    minToiMinutes: { pp: minMinutes.pp, pk: minMinutes.pk },
+    positionGroups,
+    separatePositions: WIGO_SPECIAL_TEAMS_STRENGTHS
+  };
+}
+
+/** True when the row clears the strength's minutes floor (no floor → true). */
+export function meetsWigoMinutesFloor(
+  toiSeconds: number | null | undefined,
+  floorMinutes: number | undefined
+) {
+  if (floorMinutes === undefined) return true;
+  return typeof toiSeconds === "number" && Number.isFinite(toiSeconds) && toiSeconds / 60 >= floorMinutes;
+}
+
 function buildComparisonRows(
   playerDataArray: PlayerStrengthStats[],
   statKey: string,
   targetPlayerId: number,
-  cohortMinGp: number
+  cohortMinGp: number,
+  floorMinutes?: number,
+  sameGroup?: (playerId: number) => boolean
 ): ComparisonRow[] {
   return playerDataArray
+    .filter((player) => !sameGroup || sameGroup(player.player_id))
     .filter((player) => {
+      // A minutes floor applies to everyone, the selected player included: below
+      // it the sample is insufficient, so the stat is unranked (decision 81).
+      if (floorMinutes !== undefined) return meetsWigoMinutesFloor(player.toi_seconds, floorMinutes);
       const playerGp = player.gp ?? 0;
       return player.player_id === targetPlayerId || playerGp >= cohortMinGp;
     })
@@ -74,19 +133,23 @@ export function calculatePlayerRatings(
   weightsConfig: RatingWeightsConfig = RATING_WEIGHTS,
   regressionConfig: RegressionConfig = REGRESSION_CONFIG,
   cohortMinGp = 0,
-  minCohortPeers = 0
+  minCohortPeers = 0,
+  cohortOptions: WigoCohortOptions = {}
 ): CalculatedPlayerRatings | null {
   const strengths: Strength[] = ["as", "es", "pp", "pk"];
   const finalRatings: Partial<CalculatedPlayerRatings> & {
     offense: any;
     defense: any;
     overall: any;
+    coverage: CalculatedPlayerRatings["coverage"];
   } = {
     offense: { as: null, es: null, pp: null, pk: null },
     defense: { as: null, es: null, pp: null, pk: null },
     overall: { as: null, es: null, st: null, final: null },
+    coverage: { offense: {}, defense: {} },
     _debug: { percentiles: {}, regressedPercentiles: {} }
   };
+  const targetGroup = cohortOptions.positionGroups?.get(playerId) ?? null;
 
   let foundPlayerData = false;
 
@@ -125,6 +188,12 @@ export function calculatePlayerRatings(
       if (targetPlayerRow) foundPlayerData = true;
 
       const targetPlayerGP = targetPlayerRow?.gp ?? 0; // Player's GP for THIS strength
+      const floorMinutes = cohortOptions.minToiMinutes?.[strength];
+      const separate = cohortOptions.separatePositions?.includes(strength) ?? false;
+      // F and D ranked apart; an unknown position cannot be placed, so it is unranked.
+      const sameGroup = separate
+        ? (id: number) => targetGroup !== null && cohortOptions.positionGroups?.get(id) === targetGroup
+        : undefined;
 
       for (const weightInfo of weights) {
         const statKey = weightInfo.stat;
@@ -133,7 +202,9 @@ export function calculatePlayerRatings(
           playerDataArray,
           String(statKey),
           playerId,
-          cohortMinGp
+          cohortMinGp,
+          floorMinutes,
+          sameGroup
         );
 
         const peerCount = comparisonRows.filter(
@@ -207,48 +278,39 @@ export function calculatePlayerRatings(
   finalRatings._debug!.regressedPercentiles = regressedPercentiles;
 
   // --- Step 3: Calculate Weighted Sums ---
-  // (This part remains the same, using the values from regressedPercentiles)
+  // A rating needs every weighted stat (decision 102, A3): with any stat missing
+  // it is withheld and its weight coverage is reported, never rescaled over the
+  // weights that happen to be available.
   for (const strength of strengths) {
     const strengthWeights = weightsConfig[strength];
     if (!strengthWeights) continue;
 
-    let totalOffenseWeight = 0;
-    let weightedOffenseSum = 0;
-    for (const weightInfo of strengthWeights.offense) {
-      const percentile =
-        regressedPercentiles[strength]?.[String(weightInfo.stat)];
-      if (typeof percentile === "number") {
-        weightedOffenseSum += percentile * weightInfo.weight;
-        totalOffenseWeight += weightInfo.weight;
+    for (const type of ["offense", "defense"] as const) {
+      const weights = strengthWeights[type];
+      if (!weights || weights.length === 0) continue;
+      let available = 0;
+      let total = 0;
+      let weightedSum = 0;
+      for (const weightInfo of weights) {
+        total += weightInfo.weight;
+        const percentile = regressedPercentiles[strength]?.[String(weightInfo.stat)];
+        if (typeof percentile === "number") {
+          weightedSum += percentile * weightInfo.weight;
+          available += weightInfo.weight;
+        }
       }
+      finalRatings.coverage[type][strength] = { available, total };
+      finalRatings[type][strength] =
+        total > 0 && available === total ? weightedSum / total : null;
     }
-    finalRatings.offense[strength] =
-      totalOffenseWeight > 0 ? weightedOffenseSum / totalOffenseWeight : null;
-
-    let totalDefenseWeight = 0;
-    let weightedDefenseSum = 0;
-    for (const weightInfo of strengthWeights.defense) {
-      const percentile =
-        regressedPercentiles[strength]?.[String(weightInfo.stat)];
-      if (typeof percentile === "number") {
-        weightedDefenseSum += percentile * weightInfo.weight;
-        totalDefenseWeight += weightInfo.weight;
-      }
-    }
-    finalRatings.defense[strength] =
-      totalDefenseWeight > 0 ? weightedDefenseSum / totalDefenseWeight : null;
   }
 
   // --- Step 4: Calculate Overall Ratings ---
-  // (This part remains the same)
+  // Overall needs both sides; one side alone is not an overall rating (D9).
   const off = finalRatings.offense!;
   const def = finalRatings.defense!;
-  const avg = (a: number | null, b: number | null): number | null => {
-    if (a !== null && b !== null) return (a + b) / 2;
-    if (a !== null) return a;
-    if (b !== null) return b;
-    return null;
-  };
+  const avg = (a: number | null, b: number | null): number | null =>
+    a !== null && b !== null ? (a + b) / 2 : null;
 
   finalRatings.overall.as = avg(off.as, def.as);
   finalRatings.overall.es = avg(off.es, def.es);
@@ -261,21 +323,15 @@ export function calculatePlayerRatings(
   const ppTOI = ppOffenseRow?.toi_seconds ?? 0;
   const pkTOI = pkDefenseRow?.toi_seconds ?? 0;
   const totalStTOI = ppTOI + pkTOI;
+  // Special teams = PP offense and PK defense weighted by their ice time. A side
+  // with ice time but no rating makes the blend unknown; a side with no ice time
+  // carries no weight (D9: no silent one-side fallback).
   let overallST: number | null = null;
-  if (totalStTOI > 0 && (off.pp !== null || def.pk !== null)) {
-    const ppWeight = ppTOI / totalStTOI;
-    const pkWeight = pkTOI / totalStTOI;
-    const weightedPP = off.pp !== null ? off.pp * ppWeight : 0;
-    const weightedPK = def.pk !== null ? def.pk * pkWeight : 0;
-    let divisor = 0;
-    if (off.pp !== null && ppWeight > 0) divisor += ppWeight;
-    if (def.pk !== null && pkWeight > 0) divisor += pkWeight;
+  const ppKnown = ppTOI === 0 || off.pp !== null;
+  const pkKnown = pkTOI === 0 || def.pk !== null;
+  if (totalStTOI > 0 && ppKnown && pkKnown) {
     overallST =
-      divisor > 0.0001
-        ? (weightedPP + weightedPK) / divisor
-        : avg(off.pp, def.pk);
-  } else {
-    overallST = avg(off.pp, def.pk);
+      ((off.pp ?? 0) * ppTOI + (def.pk ?? 0) * pkTOI) / totalStTOI;
   }
   finalRatings.overall.st = overallST;
   const finalComponents = [
@@ -287,7 +343,7 @@ export function calculatePlayerRatings(
     (r): r is number => r !== null
   );
   finalRatings.overall.final =
-    validComponents.length > 0
+    validComponents.length === finalComponents.length
       ? validComponents.reduce((a, b) => a + b, 0) / validComponents.length
       : null;
 

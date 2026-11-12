@@ -5,7 +5,8 @@ import { TableAggregateData } from "./types";
 import {
   WIGO_STAT_ORDER,
   WigoStatLabel,
-  isWigoCountChartStat
+  isWigoCountChartStat,
+  isWigoPercentStat
 } from "./statMetadata";
 import {
   diffDirection,
@@ -46,7 +47,8 @@ export const COMPARISON_PERIODS = [
 // Hover definitions (U12) for the metrics whose label does not say what the
 // source column means (A-06). The spoken name stays the short full name.
 const WIGO_METRIC_DEFINITIONS: Partial<Record<WigoStatLabel, string>> = {
-  "PP%": "Share of the team's power-play time the player was on the ice",
+  // NHL-reported share (L8, decision 71): unqualified until FHFH's PP clock is validated.
+  "PP%": "NHL-reported share of the team's power-play time the player was on the ice; unqualified, not yet checked against FHFH's power-play clock",
   "PTS1%": "Share of points that were goals or primary assists",
   "PTS1/60": "Goals plus primary assists per 60 minutes",
   "OZS%": "Offensive-zone share of offensive and defensive zone starts, all strengths",
@@ -69,7 +71,7 @@ export const WIGO_METRIC_NAMES: Record<WigoStatLabel, string> = {
   PPG: "Power-play goals",
   PPA: "Power-play assists",
   PPTOI: "Power-play time on ice per game",
-  "PP%": "Share of team power-play time",
+  "PP%": "Share of team power-play time, NHL-reported, unqualified",
   HIT: "Hits",
   BLK: "Blocked shots",
   PIM: "Penalty minutes",
@@ -274,7 +276,9 @@ export default function WigoComparisonMatrix({
             <p>
               DIFF = (left − right) / absolute right × 100. Counting stats use
               per-game rates; rates, times and percentages are compared
-              directly. Both zero displays “-”; missing values or a zero baseline
+              directly. For a percentage stat DIFF is the relative change of
+              the percentage, not a difference in percentage points (10% to
+              12% is +20%). Both zero displays “-”; missing values or a zero baseline
               otherwise give no difference. An increase is not necessarily
               better.
             </p>
@@ -282,8 +286,10 @@ export default function WigoComparisonMatrix({
             <p>
               <strong>CA</strong> is the career average: a per-season average of
               every past season, excluding this one. <strong>3YA</strong> is the
-              three seasons before this one. <strong>PP%</strong> is the share
-              of the team&apos;s power-play time the player was on the ice.
+              three seasons before this one. <strong>PP%</strong> is the NHL-reported
+              share of the team&apos;s power-play time the player was on the ice,
+              pooled by power-play time; it is unqualified until FHFH&apos;s
+              power-play clock is validated.
               <strong> PTS1%</strong> is the share of points that were goals or
               primary assists. <strong>OZS%</strong> counts all strengths.
               PPP, PPG and PPA per 60 use power-play time, not all ice time.
@@ -443,7 +449,9 @@ export default function WigoComparisonMatrix({
                       className={`${styles.matrixDiffCell} ${isGroupStart(index) ? styles.matrixGroupStart : ""}`}
                       data-selected={label === selectedMetric || undefined}
                       data-diff-sign={diffDirection(diff, 0)}
-                      title={formatDiffPercent(diff)}
+                      title={isWigoPercentStat(label) && formatDiffPercent(diff)
+                        ? `${formatDiffPercent(diff)} relative change of the percentage, not percentage points`
+                        : formatDiffPercent(diff)}
                       style={typeof diff === "number" && Number.isFinite(diff)
                         ? { "--diff-strength": `${Math.min(Math.abs(diff), 100)}%` } as React.CSSProperties
                         : undefined}

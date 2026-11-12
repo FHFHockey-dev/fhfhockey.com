@@ -14,4 +14,9 @@ describe("GameScoreSection", () => {
     expect(help.textContent).toMatch(/Unlike the published 5v5 model, the on-ice goal term counts all situations/);
     expect(screen.getByTestId("game-score-chart")).toBeTruthy();
   });
+
+  it("names the house variant FHFH Game Score (all-situation goals) (decision 85)", () => {
+    render(<GameScoreSection playerId={1} seasonId={20252026} />);
+    expect(screen.getByText("FHFH Game Score (all-situation goals)")).toBeTruthy();
+  });
 });

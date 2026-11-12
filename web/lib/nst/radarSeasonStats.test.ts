@@ -4,7 +4,9 @@ import {
   fetchNstRadarSeason,
   isNstRadarStat,
   nstRadarComparison,
+  nstRadarMinimumLabel,
   nstRadarStatValue,
+  RADAR_STRENGTH_LABEL,
   type SupabaseLike,
 } from "./radarSeasonStats";
 
@@ -36,7 +38,7 @@ function fakeClient(tables: Record<string, { data?: unknown; error?: unknown; th
 }
 
 describe("NST radar column mapping", () => {
-  it("covers every NST metric the radar offers and reads only the two season views", () => {
+  it("covers every NST metric the radar offers and reads only the two 5v5 season views (decision 15)", () => {
     expect(Object.keys(NST_RADAR_STATS).sort()).toEqual(
       [
         "cf_pct", "ff_pct", "sf_pct", "gf_pct", "xgf_pct",
@@ -45,36 +47,39 @@ describe("NST radar column mapping", () => {
       ].sort(),
     );
     Object.values(NST_RADAR_STATS).forEach((def) =>
-      expect(["nst_seasonlong_as_rates", "nst_seasonlong_as_counts_oi"]).toContain(def.view),
+      expect(["nst_seasonlong_5v5_rates", "nst_seasonlong_5v5_counts_oi"]).toContain(def.view),
     );
-    expect(NST_RADAR_STATS.hdcf_per_60.columns).toContain("ihdcf_per_60");
+    // NST's HDCF/60 is on-ice (decision 9), not individual iHDCF/60.
+    expect(NST_RADAR_STATS.hdcf_per_60.columns).toEqual(["hdcf", "toi_seconds_oi"]);
+    expect(RADAR_STRENGTH_LABEL).toBe("5v5");
     expect(isNstRadarStat("cf_pct")).toBe(true);
     expect(isNstRadarStat("fow_percentage")).toBe(false);
     expect(isNstRadarStat("points")).toBe(false);
   });
 
   it("derives shares from on-ice for/against and per-60s from the rates view", () => {
-    expect(nstRadarStatValue("cf_pct", { cf: 492, ca: 281 }, false)).toBeCloseTo(63.65, 2);
-    expect(nstRadarStatValue("xgf_pct", { xgf: "10", xga: "5" }, false)).toBeCloseTo(66.67, 2);
-    expect(nstRadarStatValue("goals_per_60", { goals_per_60: 1.5, toi_seconds: 24046 }, false)).toBe(1.5);
-    expect(nstRadarStatValue("hdcf_per_60", { ihdcf_per_60: 3.9, toi_seconds: 24046 }, false)).toBe(3.9);
-    expect(nstRadarStatValue("hdca_per_60", { hdca: 60, toi_seconds_oi: 24046 }, false)).toBeCloseTo(8.98, 2);
+    expect(nstRadarStatValue("cf_pct", { cf: 492, ca: 281 })).toBeCloseTo(63.65, 2);
+    expect(nstRadarStatValue("xgf_pct", { xgf: "10", xga: "5" })).toBeCloseTo(66.67, 2);
+    expect(nstRadarStatValue("goals_per_60", { goals_per_60: 1.5, toi_seconds: 24046 })).toBe(1.5);
+    // On-ice: 72 team high-danger chances in 18,000 s on ice = 14.4 per 60.
+    expect(nstRadarStatValue("hdcf_per_60", { hdcf: 72, toi_seconds_oi: 18000, ihdcf_per_60: 3.9 })).toBeCloseTo(14.4, 6);
+    expect(nstRadarStatValue("hdca_per_60", { hdca: 60, toi_seconds_oi: 24046 })).toBeCloseTo(8.98, 2);
   });
 
   it("returns null for missing, zero or unknown inputs", () => {
-    expect(nstRadarStatValue("cf_pct", { cf: 0, ca: 0 }, false)).toBeNull();
-    expect(nstRadarStatValue("cf_pct", { cf: null, ca: 3 }, false)).toBeNull();
-    expect(nstRadarStatValue("hdca_per_60", { hdca: 4, toi_seconds_oi: 0 }, false)).toBeNull();
-    expect(nstRadarStatValue("points", { points: 3 }, false)).toBeNull();
-    expect(nstRadarStatValue("cf_pct", null, false)).toBeNull();
+    expect(nstRadarStatValue("cf_pct", { cf: 0, ca: 0 })).toBeNull();
+    expect(nstRadarStatValue("cf_pct", { cf: null, ca: 3 })).toBeNull();
+    expect(nstRadarStatValue("hdca_per_60", { hdca: 4, toi_seconds_oi: 0 })).toBeNull();
+    expect(nstRadarStatValue("points", { points: 3 })).toBeNull();
+    expect(nstRadarStatValue("cf_pct", null)).toBeNull();
   });
 
-  it("applies the sample minimum to league rows only", () => {
+  it("applies the same sample minimum to the player and the cohort", () => {
     const small = { cf: 5, ca: 5, goals_per_60: 6, toi_seconds: 600 };
-    expect(nstRadarStatValue("cf_pct", small, true)).toBeNull();
-    expect(nstRadarStatValue("cf_pct", small, false)).toBe(50);
-    expect(nstRadarStatValue("goals_per_60", small, true)).toBeNull();
-    expect(nstRadarStatValue("goals_per_60", small, false)).toBe(6);
+    expect(nstRadarStatValue("cf_pct", small)).toBeNull();
+    expect(nstRadarStatValue("goals_per_60", small)).toBeNull();
+    expect(nstRadarMinimumLabel("goals_per_60")).toBe("60 min of 5v5 ice time");
+    expect(nstRadarMinimumLabel("cf_pct")).toBe("20 on-ice 5v5 events");
   });
 });
 
@@ -91,13 +96,13 @@ describe("fetchNstRadarSeason and nstRadarComparison", () => {
 
   it("reads each view once with the needed columns and filters league rows by position", async () => {
     const { client, calls } = fakeClient({
-      nst_seasonlong_as_rates: { data: rates },
-      nst_seasonlong_as_counts_oi: { data: onIce },
+      nst_seasonlong_5v5_rates: { data: rates },
+      nst_seasonlong_5v5_counts_oi: { data: onIce },
       wgo_skater_stats_per_game: { data: [{ player_id: 1 }, { player_id: 3 }] },
     });
     const season = await fetchNstRadarSeason(client, 20262027, ["goals_per_60", "cf_pct", "points"], ["C"]);
 
-    const rateCall = calls.find((c) => c.table === "nst_seasonlong_as_rates")!;
+    const rateCall = calls.find((c) => c.table === "nst_seasonlong_5v5_rates")!;
     expect(rateCall.columns.split(",").sort()).toEqual(["goals_per_60", "player_id", "toi_seconds"]);
     expect(rateCall.filters).toEqual([["eq", "season", 20262027]]);
     expect(calls.find((c) => c.table === "wgo_skater_stats_per_game")!.filters).toEqual([
@@ -106,16 +111,21 @@ describe("fetchNstRadarSeason and nstRadarComparison", () => {
     ]);
     expect(calls.filter((c) => c.table.startsWith("nst_"))).toHaveLength(2);
 
-    expect(nstRadarComparison("goals_per_60", season, 1)).toEqual({ playerValue: 1.5, leagueValues: [1.5], error: null });
-    expect(nstRadarComparison("cf_pct", season, 1)).toEqual({ playerValue: 60, leagueValues: [60], error: null });
+    // The player's own row is not a peer; the caller adds the player once.
+    expect(nstRadarComparison("goals_per_60", season, 1)).toEqual({ playerValue: 1.5, peerValues: [], belowMinimum: false, error: null });
+    expect(nstRadarComparison("cf_pct", season, 1)).toEqual({ playerValue: 60, peerValues: [], belowMinimum: false, error: null });
+    // A player outside the position list still gets his value; peers stay position-filtered.
+    expect(nstRadarComparison("cf_pct", season, 2)).toEqual({ playerValue: 45, peerValues: [60], belowMinimum: false, error: null });
+    // Below the TOI minimum: unranked and reported, not ranked against qualified peers.
+    expect(nstRadarComparison("goals_per_60", season, 3)).toEqual({ playerValue: null, peerValues: [1.5], belowMinimum: true, error: null });
   });
 
   it("skips the position read when there is no position filter", async () => {
-    const { client, calls } = fakeClient({ nst_seasonlong_as_rates: { data: rates } });
+    const { client, calls } = fakeClient({ nst_seasonlong_5v5_rates: { data: rates } });
     const season = await fetchNstRadarSeason(client, 20262027, ["goals_per_60"], []);
-    expect(calls.map((c) => c.table)).toEqual(["nst_seasonlong_as_rates"]);
+    expect(calls.map((c) => c.table)).toEqual(["nst_seasonlong_5v5_rates"]);
     expect(season.allowedPlayerIds).toBeNull();
-    expect(nstRadarComparison("goals_per_60", season, 2).leagueValues).toEqual([1.5, 0.5]);
+    expect(nstRadarComparison("goals_per_60", season, 2).peerValues).toEqual([1.5]);
   });
 
   it("makes no reads when no NST stat is requested", async () => {
@@ -126,35 +136,35 @@ describe("fetchNstRadarSeason and nstRadarComparison", () => {
 
   it("falls back to no comparison data on errors, throws, missing players and empty leagues", async () => {
     const failed = await fetchNstRadarSeason(
-      fakeClient({ nst_seasonlong_as_rates: { error: { message: "timeout" } } }).client,
+      fakeClient({ nst_seasonlong_5v5_rates: { error: { message: "timeout" } } }).client,
       20262027, ["goals_per_60"], [],
     );
-    expect(nstRadarComparison("goals_per_60", failed, 1)).toMatchObject({ playerValue: null, leagueValues: [] });
+    expect(nstRadarComparison("goals_per_60", failed, 1)).toMatchObject({ playerValue: null, peerValues: [] });
     expect(nstRadarComparison("goals_per_60", failed, 1).error).toEqual({ message: "timeout" });
 
     const thrown = await fetchNstRadarSeason(
-      fakeClient({ nst_seasonlong_as_rates: { throws: true } }).client, 20262027, ["goals_per_60"], [],
+      fakeClient({ nst_seasonlong_5v5_rates: { throws: true } }).client, 20262027, ["goals_per_60"], [],
     );
-    expect(nstRadarComparison("goals_per_60", thrown, 1).leagueValues).toEqual([]);
+    expect(nstRadarComparison("goals_per_60", thrown, 1).peerValues).toEqual([]);
 
     const positionFailed = await fetchNstRadarSeason(
       fakeClient({
-        nst_seasonlong_as_rates: { data: rates },
+        nst_seasonlong_5v5_rates: { data: rates },
         wgo_skater_stats_per_game: { error: { message: "denied" } },
       }).client,
       20262027, ["goals_per_60"], ["D"],
     );
-    expect(nstRadarComparison("goals_per_60", positionFailed, 1)).toMatchObject({ playerValue: null, leagueValues: [] });
+    expect(nstRadarComparison("goals_per_60", positionFailed, 1)).toMatchObject({ playerValue: null, peerValues: [] });
 
     const ok = await fetchNstRadarSeason(
-      fakeClient({ nst_seasonlong_as_rates: { data: rates } }).client, 20262027, ["goals_per_60"], [],
+      fakeClient({ nst_seasonlong_5v5_rates: { data: rates } }).client, 20262027, ["goals_per_60"], [],
     );
     expect(nstRadarComparison("goals_per_60", ok, 999).playerValue).toBeNull();
-    expect(nstRadarComparison("cf_pct", ok, 1)).toMatchObject({ playerValue: null, leagueValues: [] });
+    expect(nstRadarComparison("cf_pct", ok, 1)).toMatchObject({ playerValue: null, peerValues: [] });
 
     const empty = await fetchNstRadarSeason(
-      fakeClient({ nst_seasonlong_as_rates: { data: [] } }).client, 20262027, ["goals_per_60"], [],
+      fakeClient({ nst_seasonlong_5v5_rates: { data: [] } }).client, 20262027, ["goals_per_60"], [],
     );
-    expect(nstRadarComparison("goals_per_60", empty, 1)).toMatchObject({ playerValue: null, leagueValues: [] });
+    expect(nstRadarComparison("goals_per_60", empty, 1)).toMatchObject({ playerValue: null, peerValues: [] });
   });
 });
