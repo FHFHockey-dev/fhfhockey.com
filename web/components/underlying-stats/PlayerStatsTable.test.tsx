@@ -821,7 +821,7 @@ describe("PlayerStatsTableState", () => {
     ).toBeTruthy();
   });
 
-  it("labels the leading column as a row ordinal that continues across server pages (W2-3 D16)", () => {
+  it("labels the leading column as a sort position that continues across server pages (W2-3 D16)", () => {
     render(
       <PlayerStatsTable
         family="goalieCounts"
@@ -836,7 +836,7 @@ describe("PlayerStatsTableState", () => {
     );
 
     expect(screen.queryByText("Rank")).toBeNull();
-    expect(screen.getByText("Row")).toBeTruthy();
+    expect(screen.getByTitle("Position in the current sort (not a quality rank)").textContent).toBe("#");
     const rows = screen.getAllByRole("row");
     expect(within(rows[1] as HTMLElement).getAllByRole("cell")[0]?.textContent).toBe("51");
     expect(within(rows[2] as HTMLElement).getAllByRole("cell")[0]?.textContent).toBe("52");
@@ -853,5 +853,23 @@ describe("PlayerStatsTableState", () => {
     );
 
     expect(screen.getByRole("button", { name: "Sort by Split GP" })).toBeTruthy();
+  });
+
+  it("renders the server's competition rank when the row carries one, so ties share a number (W2-3 D17)", () => {
+    render(
+      <PlayerStatsTable
+        family="goalieCounts"
+        rows={[
+          { rowKey: "t-1", playerId: 1, playerName: "Team One", teamLabel: "AAA", gamesPlayed: 1, toiSeconds: 3600, savePct: 0.9, rank: 1 },
+          { rowKey: "t-2", playerId: 2, playerName: "Team Two", teamLabel: "BBB", gamesPlayed: 1, toiSeconds: 3600, savePct: 0.9, rank: 1 },
+          { rowKey: "t-3", playerId: 3, playerName: "Team Three", teamLabel: "CCC", gamesPlayed: 1, toiSeconds: 3600, savePct: 0.8, rank: 3 },
+        ]}
+        sortState={{ sortKey: "savePct", direction: "desc" }}
+        showRankColumn
+      />,
+    );
+
+    const rows = screen.getAllByRole("row");
+    expect([1, 2, 3].map((index) => within(rows[index] as HTMLElement).getAllByRole("cell")[0]?.textContent)).toEqual(["1", "1", "3"]);
   });
 });

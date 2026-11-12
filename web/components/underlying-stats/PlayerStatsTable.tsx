@@ -220,7 +220,7 @@ export default function PlayerStatsTable<Row extends PlayerStatsTableRow>({
         {
           column: {
             key: "rank",
-            label: "Row",
+            label: "#",
             sortKey: "rank",
             format: "integer",
             align: "center",
@@ -234,8 +234,9 @@ export default function PlayerStatsTable<Row extends PlayerStatsTableRow>({
       ]
     : mergedHeaders;
   const stickyOffsets = getStickyOffsets(visibleHeaders);
-  // The "Row" column is an ordinal of the served sort order (W2-3 D16), not a
-  // rank: it continues across server pages and ties are not merged.
+  // The "#" column is a position in the served sort (W2-3 D16/D17, rule 20):
+  // the server's competition rank when it sends one (ties share), otherwise an
+  // ordinal that continues across server pages.
   const rowOrdinalOffset =
     renderingStrategy === "pagination" && pagination != null
       ? Math.max(pagination.page - 1, 0) * pagination.pageSize
@@ -295,9 +296,9 @@ export default function PlayerStatsTable<Row extends PlayerStatsTableRow>({
                     {isRankColumn ? (
                       <span
                         className={styles.rankHeaderLabel}
-                        title="Row number in the current sort, not a rank: tied values get different numbers"
+                        title="Position in the current sort (not a quality rank)"
                       >
-                        Row
+                        #
                       </span>
                     ) : (
                       <button
@@ -357,8 +358,12 @@ export default function PlayerStatsTable<Row extends PlayerStatsTableRow>({
                     {visibleHeaders.map((header) => {
                       const isRankColumn = header.column.key === "rank";
                       const rawValue = row[header.column.key];
+                      const sortPosition =
+                        typeof row.rank === "number"
+                          ? row.rank
+                          : rowOrdinalOffset + rowIndex + 1;
                       const formattedValue = isRankColumn
-                        ? String(rowOrdinalOffset + rowIndex + 1)
+                        ? String(sortPosition)
                         : formatPlayerStatsValue(
                             rawValue as string | number | null | undefined,
                             header.column.format,
@@ -391,7 +396,7 @@ export default function PlayerStatsTable<Row extends PlayerStatsTableRow>({
                         >
                           {isRankColumn ? (
                             <span className={styles.rankValue}>
-                              {rowOrdinalOffset + rowIndex + 1}
+                              {sortPosition}
                             </span>
                           ) : renderCell ? (
                             renderCell({

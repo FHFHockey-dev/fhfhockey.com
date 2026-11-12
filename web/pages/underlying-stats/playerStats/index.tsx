@@ -1,3 +1,4 @@
+import type { EntityRatingsOverlayStatus } from "lib/underlying-stats/entityRatingsOverlay";
 import Link from "next/link";
 import {
   useEffect,
@@ -659,43 +660,57 @@ export default function PlayerUnderlyingStatsLandingPage({
           ],
     [filterState.expandable.scope.kind],
   );
-  const ratingColumns = useMemo<PlayerStatsColumnDefinition[]>(
-    () =>
-      variant === "goalie"
-        ? [
-            {
-              key: "goalieRating",
-              label: "Goalie Rating",
-              sortKey: "goalieRating",
-              format: "decimal",
-              align: "right",
-            },
-            {
-              key: "goalieRatingRank",
-              label: "Goalie Rank",
-              sortKey: "goalieRatingRank",
-              format: "integer",
-              align: "right",
-            },
-          ]
-        : [
-            {
-              key: "offensiveRating",
-              label: "Off Rating",
-              sortKey: "offensiveRating",
-              format: "decimal",
-              align: "right",
-            },
-            {
-              key: "defensiveRating",
-              label: "Def Rating",
-              sortKey: "defensiveRating",
-              format: "decimal",
-              align: "right",
-            },
-          ],
-    [variant],
-  );
+  // Ratings are today's snapshot: shown only for the current season and an
+  // open-ended window, labelled with their snapshot dates (decision 91).
+  const ratingsOverlay = (
+    landingData as
+      | (PlayerStatsLandingApiResponse & {
+          ratingsOverlay?: EntityRatingsOverlayStatus;
+        })
+      | null
+  )?.ratingsOverlay;
+  const ratingColumns = useMemo<PlayerStatsColumnDefinition[]>(() => {
+    if (ratingsOverlay?.status !== "current") {
+      return [];
+    }
+
+    const withDate = (label: string, date: string | null) =>
+      date ? `${label} (as of ${formatRatingSnapshotDate(date)})` : label;
+
+    return variant === "goalie"
+      ? [
+          {
+            key: "goalieRating",
+            label: withDate("Goalie Rating", ratingsOverlay.goalieSnapshotDate),
+            sortKey: "goalieRating",
+            format: "decimal",
+            align: "right",
+          },
+          {
+            key: "goalieRatingRank",
+            label: withDate("Goalie Rank", ratingsOverlay.goalieSnapshotDate),
+            sortKey: "goalieRatingRank",
+            format: "integer",
+            align: "right",
+          },
+        ]
+      : [
+          {
+            key: "offensiveRating",
+            label: withDate("Off Rating", ratingsOverlay.offensiveSnapshotDate),
+            sortKey: "offensiveRating",
+            format: "decimal",
+            align: "right",
+          },
+          {
+            key: "defensiveRating",
+            label: withDate("Def Rating", ratingsOverlay.defensiveSnapshotDate),
+            sortKey: "defensiveRating",
+            format: "decimal",
+            align: "right",
+          },
+        ];
+  }, [ratingsOverlay, variant]);
   const activeTableFamily = landingData?.family ?? tableFamily;
   const chartMetricColumns = useMemo(
     () =>
@@ -1426,6 +1441,17 @@ function formatSeasonRange(
   }
 
   return `${formatSeason(fromSeasonId)} to ${formatSeason(throughSeasonId)}`;
+}
+
+function formatRatingSnapshotDate(value: string): string {
+  const parsed = new Date(`${value.slice(0, 10)}T00:00:00Z`);
+  return Number.isNaN(parsed.getTime())
+    ? value
+    : new Intl.DateTimeFormat("en-US", {
+        month: "short",
+        day: "numeric",
+        timeZone: "UTC",
+      }).format(parsed);
 }
 
 function formatSeason(seasonId: number): string {

@@ -28,7 +28,6 @@ import {
 import {
   buildRunningScoreByEventKey,
   getSideScoreDiff,
-  matchesScoreState,
   runningScoreEventKey,
 } from "lib/supabase/Upserts/nhlScoreState";
 import {
@@ -40,6 +39,10 @@ import {
   type PlayerStatsLandingChartPoint,
   type PlayerStatsLandingApiRow,
 } from "./playerStatsQueries";
+import {
+  matchesUnderlyingScoreState,
+  matchesUnderlyingStrength,
+} from "./underlyingStrengthPredicate";
 
 import type {
   PlayerStatsDetailFilterState,
@@ -2112,9 +2115,9 @@ function getPbpOnlyApproximateXgValue(
 }
 
 /**
- * PBP-only fallback strength predicate: the same manpower / net-state rule as
- * parity (decision 70, L1 `classifyTeamManpower`). The stored `strength_exact`
- * is away-first, so it is never compared literally here (W2-P0-2).
+ * PBP-only fallback strength: the shared underlying-stats predicate over L1's
+ * team-oriented manpower context (decision 70). The stored `strength_exact` is
+ * away-first, so it is never compared literally here (W2-P0-2).
  */
 function matchesPbpOnlyStrengthForTeam(args: {
   strength: PlayerStatsSupportedStrength;
@@ -2122,43 +2125,15 @@ function matchesPbpOnlyStrengthForTeam(args: {
   teamId: number;
   game: Pick<PlayerStatsSourceGameRow, "homeTeamId" | "awayTeamId">;
 }): boolean {
-  if (args.strength === "allStrengths") {
-    return true;
-  }
-
-  const context = classifyTeamManpowerById(
-    parseSituationCode(args.event.situation_code),
-    args.teamId,
-    args.game.homeTeamId,
-    args.game.awayTeamId
+  return matchesUnderlyingStrength(
+    args.strength,
+    classifyTeamManpowerById(
+      parseSituationCode(args.event.situation_code),
+      args.teamId,
+      args.game.homeTeamId,
+      args.game.awayTeamId
+    )
   );
-  if (!context || context.manpowerState == null) {
-    return false;
-  }
-
-  const bothGoaliesIn = !context.ownNetEmpty && !context.opponentNetEmpty;
-  const { teamSkaters, opponentSkaters, manpowerState } = context;
-
-  switch (args.strength) {
-    case "evenStrength":
-      return manpowerState === "ES";
-    case "powerPlay":
-      return manpowerState === "PP";
-    case "penaltyKill":
-      return manpowerState === "PK";
-    case "fiveOnFive":
-      return bothGoaliesIn && teamSkaters === 5 && opponentSkaters === 5;
-    case "fiveOnFourPP":
-      return manpowerState === "PP" && bothGoaliesIn && teamSkaters === 5 && opponentSkaters === 4;
-    case "fourOnFivePK":
-      return manpowerState === "PK" && bothGoaliesIn && teamSkaters === 4 && opponentSkaters === 5;
-    case "threeOnThree":
-      return bothGoaliesIn && teamSkaters === 3 && opponentSkaters === 3;
-    case "withEmptyNet":
-      return context.ownNetEmpty;
-    case "againstEmptyNet":
-      return context.opponentNetEmpty;
-  }
 }
 
 /**
@@ -2184,7 +2159,7 @@ function matchesPbpOnlyScoreStateForTeam(args: {
   const before = args.runningScoreByEventKey.get(
     runningScoreEventKey(args.event.game_id, args.event.event_id)
   )?.before;
-  return matchesScoreState(
+  return matchesUnderlyingScoreState(
     args.scoreState,
     getSideScoreDiff(
       before,
