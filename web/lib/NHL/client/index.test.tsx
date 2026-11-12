@@ -27,7 +27,9 @@ beforeEach(() => { clock += 60_000; vi.spyOn(Date, "now").mockReturnValue(clock)
 afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 
 describe("Game Grid shared public reads", () => {
-  it.each([false, true])("loads four windows and one team list with selected odds in extended=%s", async extended => {
+  // Decision 64: the Game Grid never requests win odds, so every grid read uses
+  // the odds-free key and the selected and four-week hooks share it.
+  it.each([false, true])("loads four odds-free windows and one team list in extended=%s", async extended => {
     const fetch = vi.fn(async (input: string) => transport(input));
     vi.stubGlobal("fetch", fetch);
     const view = renderHook(({ extended, excluded }) => {
@@ -40,8 +42,9 @@ describe("Game Grid shared public reads", () => {
     const schedules = () => fetch.mock.calls.filter(([url]) => url.includes("/schedule/"));
     expect(schedules()).toHaveLength(4);
     expect(new Set(schedules().map(([url]) => url.split("?")[0])).size).toBe(4);
+    expect(schedules().every(([url]) => url.endsWith("?includeOdds=0"))).toBe(true);
     expect(fetch.mock.calls.filter(([url]) => url.includes("/team/"))).toHaveLength(1);
-    expect(view.result.current.selected[0][0].WED?.homeTeam.winOdds).toBe(77);
+    expect(view.result.current.selected[0][0].WED?.homeTeam.winOdds).toBeNull();
     expect(view.result.current.selected[3].retrievedAtByDate?.["2026-10-07"]).toBe("2026-10-07T16:00:00Z");
     expect(view.result.current.selected[3].coverage.known).toBe(extended ? 10 : 7);
     expect(view.result.current.four[3].knownDays).toBe(28);
@@ -49,12 +52,12 @@ describe("Game Grid shared public reads", () => {
     expect(schedules()).toHaveLength(4);
     view.rerender({ extended: !extended, excluded: true });
     await waitFor(() => expect(view.result.current.selected[2]).toBe(false));
-    // Upgrading a previously fixture-only window needs odds from the existing endpoint.
-    expect(schedules()).toHaveLength(extended ? 4 : 5);
-    if (!extended) expect(view.result.current.selected[0][0].nWED?.homeTeam.winOdds).toBe(77);
+    // The next week is already shared from the four-week read: no odds upgrade.
+    expect(schedules()).toHaveLength(4);
+    if (!extended) expect(view.result.current.selected[0][0].nWED?.homeTeam.winOdds).toBeNull();
     view.rerender({ extended, excluded: true });
     await waitFor(() => expect(view.result.current.selected[2]).toBe(false));
-    expect(schedules()).toHaveLength(extended ? 4 : 5);
+    expect(schedules()).toHaveLength(4);
   });
 
   it("shares odds-bearing windows but never uses fixture-only payloads for an odds request", async () => {
@@ -74,7 +77,8 @@ describe("Game Grid shared public reads", () => {
     let finish!: (value: Response) => void;
     let sharedSignal!: AbortSignal;
     const fetch = vi.fn(async (input: string, init?: RequestInit) => {
-      if (input === "/api/v1/schedule/2026-12-07") {
+      // Both hooks share the odds-free key (decision 64).
+      if (input === "/api/v1/schedule/2026-12-07?includeOdds=0") {
         sharedSignal = init!.signal!;
         return new Promise<Response>(resolve => { finish = resolve; });
       }
@@ -88,9 +92,9 @@ describe("Game Grid shared public reads", () => {
     await act(async () => {});
     four.unmount();
     expect(sharedSignal.aborted).toBe(false);
-    await act(async () => finish(transport("/api/v1/schedule/2026-12-07")));
+    await act(async () => finish(transport("/api/v1/schedule/2026-12-07?includeOdds=0")));
     await waitFor(() => expect(selected.result.current[2]).toBe(false));
-    expect(selected.result.current[0][0].WED?.homeTeam.winOdds).toBe(77);
+    expect(selected.result.current[0][0].WED?.homeTeam.winOdds).toBeNull();
     expect(fetch.mock.calls.filter(([url]) => url.includes("/schedule/"))).toHaveLength(2);
   });
 
