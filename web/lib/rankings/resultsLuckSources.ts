@@ -2,7 +2,16 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "lib/supabase/database-generated.types";
 
+import {
+  ROLLING_WINDOW_COUNT_SUPPORT_VERSION,
+  type RollingWindowCountSupport,
+} from "lib/rollingPlayerWindowCountSupport";
+
 import type { SkaterProductionWindow, SkaterWindowStrengthState } from "./skaterWindowAggregation";
+import {
+  attachWindowCountSupport,
+  fetchWindowCountSupportForDate,
+} from "./rollingWindowCountSupportReader";
 import type {
   ResultsLuckBaselineProvenance,
   ResultsLuckSignalComponentInput,
@@ -38,20 +47,19 @@ export function resultsLuckRollingSelectFields(window: SkaterProductionWindow) {
     window === "season" ? "last20" : windowSuffix(window);
   return [
     ...BASE_RESULTS_LUCK_FIELDS,
-    `goals_per_60_total_${currentWindow}`,
-    `ixg_per_60_total_${currentWindow}`,
-    `shot_attempts_per_60_total_${currentWindow}`,
-    `ipp_points_${currentWindow}`,
-    `ipp_on_ice_goals_for_${currentWindow}`,
+    "season",
+    `toi_seconds_total_${currentWindow}`,
     `oi_gf_total_${currentWindow}`,
     `oi_xgf_total_${currentWindow}`,
     "goals_per_60_goals_season",
+    "goals_per_60_toi_seconds_season",
     "ixg_per_60_ixg_season",
-    "shot_attempts_per_60_shot_attempts_season",
+    "ixg_per_60_toi_seconds_season",
     "ipp_points_season",
     "ipp_on_ice_goals_for_season",
     "oi_gf_avg_season",
     "oi_xgf_avg_season",
+    "toi_seconds_avg_season",
   ];
 }
 
@@ -63,17 +71,23 @@ function text(value: unknown) {
   return typeof value === "string" ? value : null;
 }
 
-function percent(numerator: number | null, denominator: number | null) {
-  if (numerator == null || denominator == null || denominator <= 0) return null;
-  return Number(((numerator / denominator) * 100).toFixed(6));
+function round6(value: number) {
+  return Number(value.toFixed(6));
 }
 
-function subtractSeasonWindow(
-  seasonValue: number | null,
-  windowValue: number | null,
-) {
-  if (seasonValue == null || windowValue == null) return null;
-  return Number((seasonValue - windowValue).toFixed(6));
+function percent(numerator: number | null, denominator: number | null) {
+  if (numerator == null || denominator == null || denominator <= 0) return null;
+  return round6((numerator / denominator) * 100);
+}
+
+function per60(numerator: number | null, toiSeconds: number | null) {
+  if (numerator == null || toiSeconds == null || toiSeconds <= 0) return null;
+  return round6((numerator / toiSeconds) * 3600);
+}
+
+function minus(left: number | null, right: number | null) {
+  if (left == null || right == null) return null;
+  return round6(left - right);
 }
 
 function seasonGames(row: RollingRow) {
@@ -84,6 +98,39 @@ function seasonGames(row: RollingRow) {
   );
 }
 
+type SupportWindow = RollingWindowCountSupport["windows"]["last5"];
+
+function supportWindow(row: RollingRow, window: "last5" | "last10" | "last20") {
+  const support = row.windowCountSupport as RollingWindowCountSupport | null | undefined;
+  if (support?.version !== ROLLING_WINDOW_COUNT_SUPPORT_VERSION) return null;
+  return support.windows?.[window] ?? null;
+}
+
+/** `[numerator, denominator]` only when known in every window appearance. */
+function fullPair(window: SupportWindow | null, key: string): [number, number] | null {
+  const tuple = window?.ratio?.[key];
+  if (!window || !Array.isArray(tuple) || window.appearances <= 0) return null;
+  const [numerator, denominator, observations] = tuple;
+  if (finite(numerator) == null || finite(denominator) == null) return null;
+  return observations === window.appearances ? [numerator, denominator] : null;
+}
+
+function windowInsideSeason(window: SupportWindow | null, season: number | null) {
+  if (!window || season == null) return false;
+  const startYear = Math.floor(season / 10_000);
+  return window.gameIds.every(
+    (gameId) => gameId != null && Math.floor(gameId / 1_000_000) === startYear,
+  );
+}
+
+/**
+ * Results Luck sources (decision 23): (G − ixG)/60 in the window against the
+ * non-overlapping baseline (season minus window) on matched exposure, from
+ * explicit counts (L6 window counts and paired season count columns). The
+ * `_total_lastN` per-60 aliases are rates and are never read (W2-4 D3). A
+ * window that reaches into an earlier season has no "season minus window"
+ * baseline, so its baseline is unknown.
+ */
 export function buildResultsLuckRollingSourceFromRow(args: {
   row: RollingRow;
   window: SkaterProductionWindow;
@@ -101,68 +148,73 @@ export function buildResultsLuckRollingSourceFromRow(args: {
   const currentWindow =
     args.window === "season" ? "last20" : windowSuffix(args.window);
   const games = seasonGames(args.row);
+  const support = supportWindow(args.row, currentWindow);
+  if (!support) warnings.push("window_count_support_unavailable");
+  const insideSeason = windowInsideSeason(support, finite(args.row.season));
+  if (support && !insideSeason) warnings.push("window_crosses_seasons_no_baseline");
+  const baselineAllowed = args.window !== "season" && insideSeason;
 
-  const currentGoals = finite(args.row[`goals_per_60_total_${currentWindow}`]);
-  const currentIxg = finite(args.row[`ixg_per_60_total_${currentWindow}`]);
-  const currentAttempts = finite(
-    args.row[`shot_attempts_per_60_total_${currentWindow}`],
+  // Goals and ixG: window counts on the same games and TOI.
+  const goalsPair = fullPair(support, "goals_per_60");
+  const ixgPair = fullPair(support, "ixg_per_60");
+  const windowToi =
+    goalsPair && ixgPair && goalsPair[1] === ixgPair[1] ? goalsPair[1] : null;
+  const currentGax = per60(
+    windowToi == null ? null : minus(goalsPair![0], ixgPair![0]),
+    windowToi,
   );
   const seasonGoals = finite(args.row.goals_per_60_goals_season);
   const seasonIxg = finite(args.row.ixg_per_60_ixg_season);
-  const seasonAttempts = finite(args.row.shot_attempts_per_60_shot_attempts_season);
+  const seasonGoalsToi = finite(args.row.goals_per_60_toi_seconds_season);
+  const seasonIxgToi = finite(args.row.ixg_per_60_toi_seconds_season);
+  const seasonToi =
+    seasonGoalsToi != null && seasonGoalsToi === seasonIxgToi ? seasonGoalsToi : null;
+  const baselineGax =
+    baselineAllowed && windowToi != null && seasonToi != null
+      ? per60(
+          minus(
+            minus(seasonGoals, goalsPair![0]),
+            minus(seasonIxg, ixgPair![0]),
+          ),
+          minus(seasonToi, windowToi),
+        )
+      : null;
 
-  const baselineGoals =
-    args.window === "season"
-      ? null
-      : subtractSeasonWindow(seasonGoals, currentGoals);
-  const baselineIxg =
-    args.window === "season" ? null : subtractSeasonWindow(seasonIxg, currentIxg);
-  const baselineAttempts =
-    args.window === "season"
-      ? null
-      : subtractSeasonWindow(seasonAttempts, currentAttempts);
+  // IPP: points over on-ice goals for, window vs season minus window.
+  const ippPair = fullPair(support, "ipp");
+  const currentIppPoints = ippPair?.[0] ?? null;
+  const currentIppOnIceGoals = ippPair?.[1] ?? null;
+  const baselineIppPoints = baselineAllowed
+    ? minus(finite(args.row.ipp_points_season), currentIppPoints)
+    : null;
+  const baselineIppOnIceGoals = baselineAllowed
+    ? minus(finite(args.row.ipp_on_ice_goals_for_season), currentIppOnIceGoals)
+    : null;
 
-  const currentIppPoints = finite(args.row[`ipp_points_${currentWindow}`]);
-  const currentIppOnIceGoals = finite(
-    args.row[`ipp_on_ice_goals_for_${currentWindow}`],
-  );
-  const seasonIppPoints = finite(args.row.ipp_points_season);
-  const seasonIppOnIceGoals = finite(args.row.ipp_on_ice_goals_for_season);
-  const baselineIppPoints =
-    args.window === "season"
-      ? null
-      : subtractSeasonWindow(seasonIppPoints, currentIppPoints);
-  const baselineIppOnIceGoals =
-    args.window === "season"
-      ? null
-      : subtractSeasonWindow(seasonIppOnIceGoals, currentIppOnIceGoals);
-
+  // On-ice finishing: (GF − xGF)/60 on matched exposure.
   const currentOiGf = finite(args.row[`oi_gf_total_${currentWindow}`]);
   const currentOiXgf = finite(args.row[`oi_xgf_total_${currentWindow}`]);
-  const seasonOiGf =
-    games != null && finite(args.row.oi_gf_avg_season) != null
-      ? Number(((finite(args.row.oi_gf_avg_season) ?? 0) * games).toFixed(6))
-      : null;
-  const seasonOiXgf =
-    games != null && finite(args.row.oi_xgf_avg_season) != null
-      ? Number(((finite(args.row.oi_xgf_avg_season) ?? 0) * games).toFixed(6))
-      : null;
-  const baselineOiGf =
-    args.window === "season" ? null : subtractSeasonWindow(seasonOiGf, currentOiGf);
-  const baselineOiXgf =
-    args.window === "season" ? null : subtractSeasonWindow(seasonOiXgf, currentOiXgf);
+  const currentOiToi = finite(args.row[`toi_seconds_total_${currentWindow}`]);
+  const scaleByGames = (value: unknown) =>
+    games != null && finite(value) != null ? round6((finite(value) ?? 0) * games) : null;
+  const seasonOiGf = scaleByGames(args.row.oi_gf_avg_season);
+  const seasonOiXgf = scaleByGames(args.row.oi_xgf_avg_season);
+  const seasonOiToi = scaleByGames(args.row.toi_seconds_avg_season);
+  const currentOnIce = support
+    ? per60(minus(currentOiGf, currentOiXgf), currentOiToi)
+    : null;
+  const baselineOnIce = baselineAllowed
+    ? per60(
+        minus(minus(seasonOiGf, currentOiGf), minus(seasonOiXgf, currentOiXgf)),
+        minus(seasonOiToi, currentOiToi),
+      )
+    : null;
 
   const baselineWindowExcluded =
-    args.window !== "season" &&
-    [
-      baselineGoals,
-      baselineIxg,
-      baselineAttempts,
-      baselineIppPoints,
-      baselineIppOnIceGoals,
-      baselineOiGf,
-      baselineOiXgf,
-    ].every((value) => value != null);
+    baselineAllowed &&
+    [baselineGax, baselineIppPoints, baselineIppOnIceGoals, baselineOnIce].every(
+      (value) => value != null,
+    );
 
   if (!baselineWindowExcluded) {
     warnings.push("selected_window_exclusion_not_verified");
@@ -176,40 +228,24 @@ export function buildResultsLuckRollingSourceFromRow(args: {
       {
         key: "goals_above_expected",
         semantics: "signed_difference",
-        currentValue:
-          currentGoals != null && currentIxg != null
-            ? Number((currentGoals - currentIxg).toFixed(6))
-            : null,
-        baselineValue:
-          baselineGoals != null && baselineIxg != null
-            ? Number((baselineGoals - baselineIxg).toFixed(6))
-            : null,
-        scale: 2,
+        currentValue: currentGax,
+        baselineValue: baselineGax,
+        // Goals above expected per 60 minutes (decision 23).
+        scale: 1,
         weight: 0.35,
       },
       {
         key: "sax_percentage",
         semantics: "signed_difference",
-        currentValue:
-          percent(currentGoals, currentAttempts) != null &&
-          percent(currentIxg, currentAttempts) != null
-            ? Number(
-                (
-                  (percent(currentGoals, currentAttempts) ?? 0) -
-                  (percent(currentIxg, currentAttempts) ?? 0)
-                ).toFixed(6),
-              )
-            : null,
-        baselineValue:
-          percent(baselineGoals, baselineAttempts) != null &&
-          percent(baselineIxg, baselineAttempts) != null
-            ? Number(
-                (
-                  (percent(baselineGoals, baselineAttempts) ?? 0) -
-                  (percent(baselineIxg, baselineAttempts) ?? 0)
-                ).toFixed(6),
-              )
-            : null,
+        // Needs a season unblocked-attempt count for the baseline, which is
+        // not stored yet; unknown keeps the index unpublished.
+        currentValue: (() => {
+          const xsPair = fullPair(support, "expected_sh_pct");
+          return xsPair && goalsPair
+            ? percent(minus(goalsPair[0], xsPair[0]), xsPair[1])
+            : null;
+        })(),
+        baselineValue: null,
         scale: 10,
         weight: 0.25,
       },
@@ -223,15 +259,9 @@ export function buildResultsLuckRollingSourceFromRow(args: {
       {
         key: "on_ice_shooting_context",
         semantics: "contextual_on_ice",
-        currentValue:
-          currentOiGf != null && currentOiXgf != null
-            ? Number((currentOiGf - currentOiXgf).toFixed(6))
-            : null,
-        baselineValue:
-          baselineOiGf != null && baselineOiXgf != null
-            ? Number((baselineOiGf - baselineOiXgf).toFixed(6))
-            : null,
-        scale: 4,
+        currentValue: currentOnIce,
+        baselineValue: baselineOnIce,
+        scale: 2,
         weight: 0.2,
       },
     ],
@@ -267,8 +297,17 @@ export async function fetchResultsLuckRollingSources(
     .in("player_id", args.playerIds);
   if (error) throw error;
 
+  const supportRows = await fetchWindowCountSupportForDate(client as never, {
+    season: args.season,
+    strength: args.strength,
+    gameDate: args.snapshotDate,
+  });
+  const rows = attachWindowCountSupport(
+    (data ?? []) as never,
+    supportRows,
+  ) as unknown as RollingRow[];
   const sources = new Map<number, ResultsLuckRollingSource>();
-  for (const row of ((data ?? []) as unknown as RollingRow[])) {
+  for (const row of rows) {
     const source = buildResultsLuckRollingSourceFromRow({
       row,
       window: args.window,

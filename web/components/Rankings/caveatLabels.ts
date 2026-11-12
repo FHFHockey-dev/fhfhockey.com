@@ -6,6 +6,7 @@ const CAVEAT_LABELS: Record<string, string> = {
     "On-ice result, not adjusted for teammates or opponents",
   rink_scorekeeper_sensitive_unadjusted: "Rink scorekeepers count this differently",
   fenwick_xg_denominator_matched: "Based on unblocked shot attempts",
+  rolling_window_counts_v1_fenwick: "ixG over unblocked shot attempts (Fenwick), same games",
   on_ice_shooting_context: "Includes on-ice shooting luck",
   fallback_rolling_player_game_metrics: "Built from rolling game data (snapshot unavailable)",
   sample_below_minimum: "Below the selected minimum sample",

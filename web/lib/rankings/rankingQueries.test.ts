@@ -38,7 +38,46 @@ const { queryCalls, scenario, supabaseMock } = vi.hoisted(() => {
     return Array.isArray(value) ? value : value == null ? [] : [value];
   }
 
-  function resolveQuery(state: QueryState) {
+  // L6 window-count support mirroring each fixture row's own window: the
+  // fixture's games_played are the window's appearances.
+  function supportRowsFor(state: QueryState) {
+    const failures = scenario.rollingFailures;
+    scenario.rollingFailures = 0;
+    const rolling = resolveQuery({
+      ...state,
+      table: "rolling_player_game_metrics",
+      selectFields: "player_id,game_date,game_id,games_played,season_games_played,fixture_window_ratio",
+    });
+    scenario.rollingFailures = failures;
+    return (rolling.data ?? []).map((row: Record<string, unknown>) => {
+      const games = Number(row.games_played ?? row.season_games_played ?? 0);
+      const window = (size: number) => {
+        const count = Math.min(size, Number.isFinite(games) ? games : 0);
+        return {
+          appearances: count,
+          gameIds: Array.from({ length: count }, (_, index) => 2025020001 + index),
+          gameDates: Array.from({ length: count }, () => String(row.game_date)),
+          ratio: (row.fixture_window_ratio as Record<string, unknown> | undefined) ?? {},
+          secondary: {},
+        };
+      };
+      return {
+        player_id: row.player_id, game_date: row.game_date, game_id: row.game_id ?? null,
+        windowCountSupport: {
+          version: "rolling-player-window-counts-v1", strengthState: state.filters.strength_state,
+          anchor: { gameId: null, gameDate: row.game_date, season: 20252026 },
+          selection: "chronological_appearances_in_strength_state",
+          game: { appeared: true, ratio: {}, additive: {} },
+          windows: { last5: window(5), last10: window(10), last20: window(20) },
+        },
+      };
+    });
+  }
+
+  function resolveQuery(state: QueryState): { data: any; error: any } {
+    if (state.table === "rolling_player_metric_support_payloads") {
+      return { data: supportRowsFor(state), error: null };
+    }
     if (state.table === "skater_composite_ratings") {
       return { data: scenario.compositeRows, error: null };
     }
@@ -651,6 +690,28 @@ describe("rankingQueries", () => {
     expect(rows.get(6)?.metric.percentile).toBeNull();
   });
 
+  it("serves last-20 GAx in goals from L6 window counts, not per-60 alias differences (W2-P0-11)", async () => {
+    scenario.paginatedRows = [{
+      player_id: 1, season: 20252026, strength_state: "all", team_id: 10,
+      game_date: "2026-04-16", updated_at: "2026-04-16T06:00:00.000Z",
+      games_played: 20, season_games_played: 20, toi_seconds_total_last20: 18000,
+      // Rate aliases: 1.2 − 0.8 = 0.4 is the defect's answer.
+      goals_per_60_total_last20: 1.2, ixg_per_60_total_last20: 0.8,
+      fixture_window_ratio: { goals_per_60: [6, 18000, 20], ixg_per_60: [4, 18000, 20] },
+    }];
+    const base = {
+      entity: "skaters", season: 20252026, asOfDate: "2026-04-16", window: "last20",
+      position: "all", deployment: "all", strength: "all",
+      minGp: 1, minToiSeconds: 600, peerGroupType: "all_skaters", sort: "percentile",
+      direction: "desc", limit: 100, teamId: null, entityIds: null,
+    } as const;
+    const gax = await buildContextualRankingsSurface({ ...base, metric: "goals_above_expected" });
+    expect(gax.rankings[0]?.metric.value).toBe(2);
+    expect(gax.rankings[0]?.sample).toMatchObject({ gamesPlayed: 20, minimumSampleMet: true });
+    const perSixty = await buildContextualRankingsSurface({ ...base, metric: "goals_above_expected_per_60" });
+    expect(perSixty.rankings[0]?.metric.value).toBe(0.4);
+  });
+
   it("paginates rolling snapshot rows beyond Supabase's single-page limit", async () => {
     scenario.paginatedRows = Array.from({ length: 1001 }, (_, index) => ({
       player_id: index + 1,
@@ -789,6 +850,17 @@ describe("rankingQueries", () => {
       game_date, updated_at: `${game_date}T06:00:00.000Z`, games_played: 5,
       season_games_played: 5, toi_seconds_total_last5: 1800,
       goals_per_60_last5, goals_per_60_total_last5: goals_per_60_last5 / 2,
+      // Complete-cohort rows come from the source loader with L6 support joined.
+      windowCountSupport: {
+        version: "rolling-player-window-counts-v1", strengthState: "all",
+        anchor: { gameId: null, gameDate: game_date, season: 20252026 },
+        selection: "chronological_appearances_in_strength_state",
+        game: { appeared: true, ratio: {}, additive: {} },
+        windows: Object.fromEntries([5, 10, 20].map((size) => [`last${size}`, {
+          appearances: 5, gameIds: [1, 2, 3, 4, 5].map((n) => 2025020000 + n),
+          gameDates: Array(5).fill(game_date), ratio: {}, secondary: {},
+        }])),
+      },
     });
     const request = {
       entity: "skaters", season: 20252026, asOfDate: "2026-04-16", window: "last5",

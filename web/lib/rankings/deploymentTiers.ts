@@ -15,6 +15,10 @@ import {
 } from "./rankingQueries";
 import { ROLLING_RANKING_SELECT_FIELDS } from "./rollingRankingSelectFields";
 import {
+  attachWindowCountSupport,
+  fetchWindowCountSupportForDate,
+} from "./rollingWindowCountSupportReader";
+import {
   ContextualRankingsQueryError,
   parseContextualRankingsRequest,
   type ContextualRankingApiRow,
@@ -504,7 +508,14 @@ async function fetchRollingRowsForExactSnapshot(args: {
     if (page.length < ROLLING_QUERY_PAGE_SIZE) break;
   }
 
-  return rows;
+  if (rows.length === 0) return rows;
+  const supportRows = await fetchWindowCountSupportForDate(supabase as never, {
+    season: args.request.season,
+    strength: args.strength,
+    gameDate: args.snapshotDate,
+    teamId: args.request.teamId,
+  });
+  return attachWindowCountSupport(rows, supportRows);
 }
 
 function isNewerRollingRow(

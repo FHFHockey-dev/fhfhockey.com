@@ -78,29 +78,47 @@ describe("metricDefinitions", () => {
       sourceExcludes: ["expected_goals"],
     });
     expect(expectedShooting?.availabilityStatus).toBe("available");
+    // D5: the provenance is the L6 window-count contract (ixG ÷ iFF), not an
+    // iCF alias labelled "verified Fenwick".
     expect(expectedShooting?.metadata).toMatchObject({
-      denominatorStatus: "verified",
+      denominatorStatus: "rolling_window_counts_v1",
       xgShotUniverse: "fenwick_unblocked",
     });
     expect(expectedShooting?.denominatorKey).toBe(
       "individual_unblocked_attempts",
     );
-    expect(expectedShooting?.sourceTable).toBe("rolling_player_game_metrics");
+    expect(expectedShooting?.sourceFields.join(" ")).not.toContain(
+      "shot_attempts_per_60",
+    );
     expect(expectedShooting?.sourceFields).toContain(
-      "rolling_player_game_metrics.shot_attempts_per_60_total_{window}",
+      "rolling_player_metric_support_payloads.windowCountSupport.last{n}.expected_sh_pct",
     );
-    expect(expectedShooting?.sourceQualityFlags).toContain(
-      "fenwick_xg_denominator_matched",
-    );
+    expect(expectedShooting?.sourceQualityFlags).toEqual([
+      "rolling_window_counts_v1_fenwick",
+    ]);
     expect(sax?.denominatorKey).toBe("individual_unblocked_attempts");
     expect(sax?.availabilityStatus).toBe("available");
     expect(sax?.metadata).toMatchObject({
-      denominatorStatus: "verified",
+      denominatorStatus: "rolling_window_counts_v1",
       xgShotUniverse: "fenwick_unblocked",
     });
-    expect(sax?.sourceQualityFlags).toContain(
-      "fenwick_xg_denominator_matched",
-    );
+    expect(sax?.sourceFields.join(" ")).not.toContain("shot_attempts_per_60");
+    expect(sax?.sourceQualityFlags).toEqual(["rolling_window_counts_v1_fenwick"]);
+  });
+
+  it("labels GAx and Unrealized xG as goal counts with separate per-60 metrics (decision 75)", () => {
+    for (const key of ["goals_above_expected", "unrealized_xg"]) {
+      const definition = getContextualRankingMetricDefinition(key);
+      expect(definition?.isRateStat).toBe(false);
+      expect(definition?.metadata).toMatchObject({ unit: "goals" });
+      expect(definition?.sourceFields.join(" ")).not.toContain("_total_{window}");
+    }
+    for (const key of ["goals_above_expected_per_60", "unrealized_xg_per_60"]) {
+      const definition = getContextualRankingMetricDefinition(key);
+      expect(definition?.isRateStat).toBe(true);
+      expect(definition?.availabilityStatus).toBe("available");
+      expect(definition?.metadata).toMatchObject({ unit: "goals_per_60" });
+    }
   });
 
   it("publishes penalties taken as a selected-window lower-is-better rolling metric", () => {

@@ -31,6 +31,10 @@ import type {
   ContextualRankingsResponse,
 } from "./rankingTypes";
 import { ROLLING_RANKING_SELECT_FIELDS } from "./rollingRankingSelectFields";
+import {
+  attachWindowCountSupport,
+  fetchWindowCountSupportForDate,
+} from "./rollingWindowCountSupportReader";
 
 type PlayerMeta = {
   id: number;
@@ -365,7 +369,13 @@ async function fetchRollingRowsForGameDate(
     if (page.length < ROLLING_QUERY_PAGE_SIZE) break;
   }
 
-  return rows;
+  if (rows.length === 0) return rows;
+  const supportRows = await fetchWindowCountSupportForDate(supabase as never, {
+    season: request.season,
+    strength: request.strength,
+    gameDate,
+  });
+  return attachWindowCountSupport(rows, supportRows);
 }
 
 function isNewerRollingRow(

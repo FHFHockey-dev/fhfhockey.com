@@ -158,7 +158,26 @@ describe("playerMatrix", () => {
       { player_id: 28, game_date: "2026-04-16", updated_at: null, season_games_played: 10, toi_seconds_total_last5: null },
       { player_id: 28, game_date: "2026-04-15", updated_at: null, season_games_played: 10, toi_seconds_total_last5: 5000 },
     ];
+    // L6 last-5 appearances for the matched all-strength rows. Player 27 has
+    // two games this season but three in the window (one from last season).
+    const appearances: Record<number, number> = { 26: 5, 27: 3 };
     supabaseFromMock.mockImplementation((table: string) => {
+      if (table === "rolling_player_metric_support_payloads") {
+        let playerId: number | null = null;
+        const supportQuery = {
+          select: vi.fn(() => supportQuery),
+          eq: vi.fn((key: string, value: unknown) => {
+            if (key === "player_id") playerId = Number(value);
+            return supportQuery;
+          }),
+          limit: vi.fn(async () => ({
+            data: playerId != null && appearances[playerId] != null
+              ? [{ appearances: appearances[playerId] }] : [],
+            error: null,
+          })),
+        };
+        return supportQuery;
+      }
       if (table !== "rolling_player_game_metrics") return compositeQuery;
       let rows = [...history];
       const orders: Array<keyof typeof history[number]> = [];
@@ -271,7 +290,8 @@ describe("playerMatrix", () => {
     expect(response.meta.rowCount).toBe(25);
     expect(response.rows[0]?.entity.id).toBe(26);
     expect(response.rows[0]?.sample.allStrengthsToiPerGameSeconds).toBe(1400);
-    expect(response.rows[1]?.sample.allStrengthsToiPerGameSeconds).toBe(600);
+    // 1,200 s over the window's 3 appearances, not this season's 2 GP (D8).
+    expect(response.rows[1]?.sample.allStrengthsToiPerGameSeconds).toBe(400);
     expect(response.rows[2]?.sample.allStrengthsToiPerGameSeconds).toBeNull();
     expect(response.rows[3]?.sample.allStrengthsToiPerGameSeconds).toBeNull();
     expect(rollingQueries).toHaveLength(25);

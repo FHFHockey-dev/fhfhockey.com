@@ -39,6 +39,7 @@ import type {
   SkaterWindowStrengthState,
 } from "./skaterWindowAggregation";
 import { CONTEXTUAL_RANKINGS_METHODOLOGY_UPDATED_AT } from "./rankingMetadata";
+import { WINDOW_COUNT_SUPPORT_TABLE } from "./rollingWindowCountSupportReader";
 import {
   resolveTeamToken,
   type ResolvedTeamToken,
@@ -272,7 +273,10 @@ type AllStrengthToiRow = Pick<
   | "toi_seconds_total_last5"
   | "toi_seconds_total_last10"
   | "toi_seconds_total_last20"
->;
+> & {
+  /** Last-N appearances from L6 window-count support; null = unknown. */
+  window_appearances?: number | null;
+};
 
 export const MATRIX_COLOR_SCALE_BANDS = [
   { label: "0-19", min: 0, max: 19.999, tone: "poor" },
@@ -639,26 +643,17 @@ function finiteNumber(value: unknown): number | null {
   return value;
 }
 
-function windowSize(window: SkaterProductionWindow) {
-  if (window === "last5") return 5;
-  if (window === "last10") return 10;
-  if (window === "last20") return 20;
-  return null;
-}
-
 function allStrengthsToiPerGame(
   row: AllStrengthToiRow,
   window: SkaterProductionWindow,
 ) {
-  const seasonGames =
-    finiteNumber(row.season_games_played) ?? finiteNumber(row.games_played);
   if (window === "season") {
     return finiteNumber(row.toi_seconds_avg_season);
   }
 
-  const size = windowSize(window);
-  const gamesPlayed =
-    seasonGames == null || size == null ? null : Math.min(seasonGames, size);
+  // Divide the window's TOI by the window's own appearances (W2-4 D8/A2):
+  // season GP and TOI/N are both wrong once a window crosses seasons.
+  const gamesPlayed = finiteNumber(row.window_appearances);
   const field = `toi_seconds_total_${window}` as
     | "toi_seconds_total_last5"
     | "toi_seconds_total_last10"
@@ -712,7 +707,22 @@ async function fetchAllStrengthsToiByPlayerId(args: {
         .order("updated_at", { ascending: false, nullsFirst: false })
         .limit(1);
       if (error) throw error;
-      return (data?.[0] ?? null) as unknown as AllStrengthToiRow | null;
+      const row = (data?.[0] ?? null) as unknown as AllStrengthToiRow | null;
+      if (!row || args.request.window === "season") return row;
+      const support = await supabase
+        .from(WINDOW_COUNT_SUPPORT_TABLE)
+        .select(`appearances:support_payload->windowCountSupport->windows->${args.request.window}->appearances`)
+        .eq("season", args.request.season)
+        .eq("strength_state", "all")
+        .eq("player_id", playerId)
+        .eq("game_date", row.game_date)
+        .limit(1);
+      if (support.error) throw support.error;
+      const appearances = (support.data?.[0] as { appearances?: unknown } | undefined)?.appearances;
+      return {
+        ...row,
+        window_appearances: typeof appearances === "number" ? appearances : null,
+      };
     }));
     rows.push(...latestRows.filter((row): row is AllStrengthToiRow => row != null));
   }
