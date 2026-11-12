@@ -632,12 +632,21 @@ const ForgeLandingPage: NextPage = () => {
                               <strong>
                                 {awayTeam} @ {homeTeam}
                               </strong>
-                              <span>
-                                Away goalie likely{" "}
+                              <span
+                                title={
+                                  game.awayGoalies[0]?.start_probability_basis === "l10_start_share" ||
+                                  game.homeGoalies[0]?.start_probability_basis === "l10_start_share"
+                                    ? "Share of each team's last 10 starts. Not a start probability: it ignores back-to-backs and confirmations."
+                                    : undefined
+                                }
+                              >
+                                Away goalie{" "}
+                                {game.awayGoalies[0]?.start_probability_basis === "l10_start_share" ? "L10 start share" : "likely"}{" "}
                                 {game.awayGoalies[0]?.start_probability != null
                                   ? `${(game.awayGoalies[0].start_probability * 100).toFixed(0)}%`
                                   : "--"}{" "}
-                                • Home goalie likely{" "}
+                                • Home goalie{" "}
+                                {game.homeGoalies[0]?.start_probability_basis === "l10_start_share" ? "L10 start share" : "likely"}{" "}
                                 {game.homeGoalies[0]?.start_probability != null
                                   ? `${(game.homeGoalies[0].start_probability * 100).toFixed(0)}%`
                                   : "--"}

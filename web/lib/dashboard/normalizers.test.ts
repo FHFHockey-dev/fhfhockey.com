@@ -215,6 +215,7 @@ describe("dashboard normalizers", () => {
         requestedHadGames: null,
         resolvedHadGames: null
       },
+      goalieStartBasis: null,
       games: [
         {
           id: 2,
@@ -226,6 +227,7 @@ describe("dashboard normalizers", () => {
               player_id: 20,
               name: "Fallback Home Goalie",
               start_probability: 0.58,
+              start_probability_basis: null,
               projected_gsaa_per_60: null,
               confirmed_status: null,
               percent_ownership: null
@@ -303,6 +305,36 @@ describe("dashboard normalizers", () => {
       l10_starts: 7,
       opponent_context_adjustment_pct: -0.042
     });
+  });
+
+  it("carries the Start Chart goalie start basis onto every goalie (W1 P0 #17)", () => {
+    const game = { id: 1, date: "2026-03-14", homeTeamId: 1, awayTeamId: 2,
+      homeGoalies: [{ player_id: 10, name: "Home Goalie", start_probability: 0.7 }],
+      awayGoalies: [{ player_id: 11, name: "Away Goalie", start_probability: 0.6 }] };
+    const legacy = normalizeStartChartResponse({ dateUsed: "2026-03-14", goalieStartBasis: "l10_start_share", games: [game] });
+    expect(legacy.goalieStartBasis).toBe("l10_start_share");
+    expect([legacy.games[0].homeGoalies[0].start_probability_basis, legacy.games[0].awayGoalies[0].start_probability_basis])
+      .toEqual(["l10_start_share", "l10_start_share"]);
+    const unlabelled = normalizeStartChartResponse({ dateUsed: "2026-03-14", games: [game] });
+    expect(unlabelled.goalieStartBasis).toBeNull();
+    expect(unlabelled.games[0].homeGoalies[0].start_probability_basis).toBeNull();
+  });
+
+  it("keeps each candidate goalie's own Win apart from the team win (decision 25)", () => {
+    const normalized = normalizeGoalieResponse({ data: [
+      { goalie_id: 1, goalie_name: "Starter", row_basis: "candidate_goalie_game", is_projected_starter: true,
+        starter_probability: 0.62, proj_win_prob: 0.42, team_win_prob: 0.45, unconditional: { credited_win_prob: 0.27 } },
+      { goalie_id: 2, goalie_name: "Backup", row_basis: "candidate_goalie_game", is_projected_starter: false,
+        starter_probability: 0.38, proj_win_prob: 0.33, team_win_prob: 0.45, unconditional: { credited_win_prob: 0.13 } },
+      { goalie_id: 3, goalie_name: "Old slot", row_basis: "team_goalie_slot_legacy", starter_probability: 0.6,
+        proj_win_prob: null, team_win_prob: null, unconditional: null },
+    ] });
+    expect(normalized.data.map((row) => [row.goalie_id, row.row_basis, row.is_projected_starter, row.proj_win_prob,
+      row.team_win_prob, row.unconditional_win_prob])).toEqual([
+      [1, "candidate_goalie_game", true, 0.42, 0.45, 0.27],
+      [2, "candidate_goalie_game", false, 0.33, 0.45, 0.13],
+      [3, "team_goalie_slot_legacy", null, null, null, null],
+    ]);
   });
 
   it("normalizes skater trend serving metadata for degraded fallback scope", () => {

@@ -9,6 +9,7 @@ import {
 import type { CommandCenterData } from "lib/dashboard/commandCenterData";
 import { getGamePowerEdge, computeTeamPowerScore } from "lib/dashboard/teamContext";
 import { getTeamMetaById } from "lib/dashboard/teamMetadata";
+import { goalieStartLabel } from "lib/projections/startChartContract";
 import styles from "styles/ForgeCommandCenter.module.scss";
 
 type FocusedSlateContextProps = {
@@ -107,7 +108,7 @@ export default function FocusedSlateContext({
           <div className={styles.metricStrip}>
             <MetricPill label="Pace" value={formatMetric(pace, 0)} tone="good" />
             <MetricPill label="Env" value={formatMetric(environment, 1)} tone="good" />
-            <MetricPill label="Goalie" value={primaryGoalie ? formatPct(primaryGoalie.start_probability) : "--"} tone="warn" />
+            <MetricPill label={primaryGoalie?.start_probability_basis === "l10_start_share" ? "Goalie L10" : "Goalie"} value={primaryGoalie ? formatPct(primaryGoalie.start_probability) : "--"} tone="warn" />
             <MetricPill label="Stream" value={environment != null && environment >= 70 ? "A" : "B"} />
           </div>
 
@@ -144,8 +145,8 @@ export default function FocusedSlateContext({
               <div key={goalie.player_id}>
                 <span>{goalie.teamAbbr ?? "--"}</span>
                 <strong>{goalie.name}</strong>
-                <small>
-                  {goalie.confirmed_status ? "Confirmed" : "Projected"} {formatPct(goalie.start_probability)}
+                <small title={goalieStartLabel(goalie.start_probability_basis ?? undefined).title}>
+                  {goalie.confirmed_status ? "Confirmed" : goalieStartLabel(goalie.start_probability_basis ?? undefined).short} {formatPct(goalie.start_probability)}
                 </small>
               </div>
             ))}
