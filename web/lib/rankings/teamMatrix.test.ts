@@ -99,7 +99,7 @@ vi.mock("lib/supabase/server", () => ({
 import { buildContextualRankingsAvailableFilters } from "./availableFilters";
 import {
   aggregateTeamGameContextRows,
-  aggregateTeamStyleRows,
+  aggregateNstTeamStyleLedger,
   aggregateTeamUnitToiRows,
   buildTeamMatrixSurface,
   buildTeamUnitMetricInterpretation,
@@ -115,66 +115,43 @@ describe("teamMatrix", () => {
       ?.filters.metrics.filter((metric) => metric.status === "available")
       .map((metric) => metric.value) ?? [];
 
-  it("aggregates five-on-five team style rows by team abbreviation", () => {
-    const teamsById = new Map([
-      [1, { id: 1, abbreviation: "BOS", name: "Boston Bruins" }],
-      [2, { id: 2, abbreviation: "TOR", name: "Toronto Maple Leafs" }],
-    ]);
-    const aggregates = aggregateTeamStyleRows({
-      teamsById,
-      rows: [
-        {
-          game_date: "2026-04-01",
-          team_id: 1,
-          xgf: 2,
-          xga: 1,
-          gf: 3,
-          ga: 1,
-          ff: 20,
-          fa: 10,
-          cf: 30,
-          ca: 15,
-        },
-        {
-          game_date: "2026-04-03",
-          team_id: 1,
-          xgf: 1.5,
-          xga: 2,
-          gf: 1,
-          ga: 2,
-          ff: 18,
-          fa: 22,
-          cf: 28,
-          ca: 31,
-        },
-        {
-          game_date: "2026-04-02",
-          team_id: 2,
-          xgf: 3,
-          xga: 1,
-          gf: 2,
-          ga: 0,
-          ff: 25,
-          fa: 12,
-          cf: 33,
-          ca: 20,
-        },
+  it("aggregates NST 5v5 team style only over a fully covered eligible game ledger", () => {
+    const nstRow = (team_abbreviation: string, date: string, overrides: Record<string, unknown> = {}) => ({
+      team_abbreviation, date, gp: 1,
+      xgf: 2, xga: 1, gf: 3, ga: 1, ff: 20, fa: 10, cf: 30, ca: 15,
+      ...overrides,
+    });
+    const aggregates = aggregateNstTeamStyleLedger({
+      eligibleGames: [
+        { teamId: 1, teamAbbreviation: "BOS", date: "2026-04-01" },
+        { teamId: 1, teamAbbreviation: "BOS", date: "2026-04-03" },
+        { teamId: 2, teamAbbreviation: "TOR", date: "2026-04-02" },
+        { teamId: 2, teamAbbreviation: "TOR", date: "2026-04-04" },
+      ],
+      nstRows: [
+        nstRow("BOS", "2026-04-01"),
+        nstRow("BOS", "2026-04-03", { xgf: 1.5, xga: 2, gf: 1, ga: 2, ff: 18, fa: 22 }),
+        // Not in the ledger: never counted.
+        nstRow("BOS", "2026-04-05", { xgf: 100 }),
+        nstRow("TOR", "2026-04-02"),
       ],
     });
 
     expect(aggregates.get("BOS")).toMatchObject({
       teamId: 1,
       gamesCount: 2,
+      eligibleGames: 2,
+      coveredGames: 2,
+      coverageComplete: true,
       latestDate: "2026-04-03",
-      xgf: 3.5,
-      xga: 3,
-      gf: 4,
-      ga: 3,
-      ff: 38,
-      fa: 32,
-      source: "team_underlying_stats_summary",
+      xgf: 3.5, xga: 3, gf: 4, ga: 3, ff: 38, fa: 32,
+      source: "nst_team_5v5",
     });
-    expect(aggregates.get("TOR")?.gamesCount).toBe(1);
+    // TOR played two games but NST covers one: no partial totals (rule 13).
+    expect(aggregates.get("TOR")).toMatchObject({
+      gamesCount: 0, eligibleGames: 2, coveredGames: 1, coverageComplete: false,
+      xgf: null, xga: null, gf: null, ga: null, ff: null, fa: null,
+    });
   });
 
   it("parses team matrix requests with conservative defaults", () => {
@@ -192,7 +169,9 @@ describe("teamMatrix", () => {
       search: "Leafs",
       page: 1,
       pageSize: 25,
+      minGp: 5,
     });
+    expect(parseTeamMatrixRequest({ season: "20252026", min_gp: "2" }).minGp).toBe(2);
   });
 
   it("parses every published live team metric option", () => {
@@ -436,32 +415,6 @@ describe("teamMatrix", () => {
       clearTeamMatrixSurfaceCachesForTests();
     });
 
-    it("retains both teams when a tied game spans the 1,000-row boundary", async () => {
-      const sourceRows = [{ fixtureIndex: 0, game_id: 1, team_id: 1, game_date: "2026-04-16" }];
-      for (let game = 2; game <= 501; game += 1) {
-        for (const team_id of [1, 2]) {
-          sourceRows.push({ fixtureIndex: sourceRows.length, game_id: game, team_id, game_date: new Date(Date.UTC(2026, 3, 17 - game)).toISOString().slice(0, 10) });
-        }
-      }
-      pagingFixture.rows = {
-        team_underlying_stats_summary: sourceRows,
-        teams: [1, 2].map((id) => ({ id, abbreviation: `T${id}`, name: `Team ${id}` })),
-        games: Array.from(new Map(sourceRows.map((row) => [row.game_id, { id: row.game_id, date: row.game_date, seasonId: 20252026, type: 2, homeTeamId: 1, awayTeamId: 2 }])).values()),
-        team_power_ratings_daily: [1, 2].map((id) => ({ team_abbreviation: `T${id}`, off_rating: 100, def_rating: 100, pace_rating: 100 })),
-      };
-      const request = parseTeamMatrixRequest({ season: "20252026" });
-      const response = await buildTeamMatrixSurface(request);
-      const counts = (rows: typeof response.rows) => Object.fromEntries(rows.map((row) => [row.team.id, row.record.styleGames]));
-      expect(counts(response.rows)).toEqual({ 1: 501, 2: 500 });
-      expect(rangeCalls.filter((call) => call.table === "team_underlying_stats_summary").map((call) => [call.from, call.to])).toEqual([[0, 999], [1000, 1999]]);
-
-      // In-memory omission models the old query; no runtime source is edited.
-      pagingFixture.omitOrder = "team_id";
-      clearTeamMatrixSurfaceCachesForTests();
-      const unstable = await buildTeamMatrixSurface(request);
-      expect(counts(unstable.rows)).toEqual({ 1: 501, 2: 499 });
-    });
-
     it("orders every paged source read by a unique key", async () => {
       await buildTeamMatrixSurface(parseTeamMatrixRequest({ season: "20252026" }));
 
@@ -469,7 +422,6 @@ describe("teamMatrix", () => {
         rangeCalls.map((call) => [call.table, call.orders.map((order) => order.key)]),
       );
       expect(Object.fromEntries(ordersByTable)).toEqual({
-        team_underlying_stats_summary: ["game_date", "game_id", "team_id"],
         wgo_team_stats: ["date", "id"],
         team_unit_toi: ["game_date", "id"],
         games: ["date", "id"],
@@ -501,8 +453,9 @@ describe("teamMatrix", () => {
       coverage_status: "complete", coverage_warnings: [],
       ...overrides,
     });
+    // Floor 0 keeps the small fixtures above the sample floor; floor tests set it.
     const request = (query: Record<string, string> = {}) =>
-      parseTeamMatrixRequest({ season: "20252026", ...query });
+      parseTeamMatrixRequest({ season: "20252026", min_gp: "0", ...query });
 
     beforeEach(() => {
       queryCalls.length = 0;
@@ -577,13 +530,10 @@ describe("teamMatrix", () => {
     });
 
     it("uses the same power cutoff and regular-season 5v5 context for game sources", async () => {
-      pagingFixture.rows.team_underlying_stats_summary = [
-        underlying(), underlying({ game_date: "2026-04-10", game_id: 2, xgf: 1, xga: 3 }),
-        underlying({ game_date: "2026-04-11", xgf: 1000 }),
-        underlying({ game_date: "2025-09-01", xgf: 1000 }),
-        underlying({ season_id: 20242025, xgf: 1000 }),
-        underlying({ strength: "all", xgf: 1000 }),
-        underlying({ score_state: "tied", xgf: 1000 }),
+      pagingFixture.rows.nst_team_5v5 = [
+        nst({ xgf: 3, xga: 1 }), nst({ date: "2026-04-10", xgf: 1, xga: 3 }),
+        nst({ date: "2026-04-11", xgf: 1000 }),
+        nst({ date: "2025-09-01", xgf: 1000 }),
       ];
       const context = { id: 1, season_id: 20252026, date: "2026-04-09", team_id: 1, game_id: 1,
         goals_for: 3, goals_against: 2, point_pct: 1, pp_opportunities_per_game: 4, penalties_taken_per_60: 3 };
@@ -610,7 +560,7 @@ describe("teamMatrix", () => {
       expect(queryCalls.some((call) => call.table === "nst_team_stats")).toBe(false);
     });
 
-    it("pools dated 5v5 fallback counts with independent arithmetic and excludes out-of-window rows", async () => {
+    it("pools NST 5v5 counts with independent arithmetic and excludes out-of-window rows", async () => {
       pagingFixture.rows.nst_team_5v5 = [
         nst(), nst({ date: "2026-04-10", xgf: 4, xga: 1, gf: 5, ga: 3, ff: 30 }),
         nst({ date: "2026-04-11", xgf: 1000 }),
@@ -620,7 +570,10 @@ describe("teamMatrix", () => {
       const result = await buildTeamMatrixSurface(request());
       const row = result.rows[0];
       expect(row.style.source).toBe("nst_team_5v5");
-      expect(row.record).toMatchObject({ styleGames: 2, styleSnapshotDate: "2026-04-10" });
+      expect(row.record).toMatchObject({
+        styleGames: 2, styleSnapshotDate: "2026-04-10",
+        styleCoverage: { eligibleGames: 2, coveredGames: 2, complete: true },
+      });
       // 6/(6+4)*100, (6+4)/2, 6/(20+30), 8-6 and 4-5.
       expect(row.metrics.xgf_percentage.rawValue).toBe(60);
       expect(row.metrics.event_rate.rawValue).toBe(5);
@@ -628,16 +581,124 @@ describe("teamMatrix", () => {
       expect(row.metrics.finishing_luck.rawValue).toBe(2);
       expect(row.metrics.save_luck.rawValue).toBe(-1);
       expect(row.metrics.net_luck.rawValue).toBe(1);
-      expect(row.warnings).toContain("team_style_using_dated_nst_5v5_fallback");
     });
 
-    it("prefers the qualified primary 5v5 source over fallback for the same team", async () => {
-      pagingFixture.rows.team_underlying_stats_summary = [underlying()];
-      pagingFixture.rows.nst_team_5v5 = [nst({ xgf: 100 })];
+    it("never ranks bucket-heuristic xG and reads one NST source for every team (W2-P0-10)", async () => {
+      pagingFixture.rows.teams.push({ id: 2, abbreviation: "TOR", name: "Toronto" });
+      pagingFixture.rows.team_power_ratings_daily.push(power("2026-04-10", 100, "TOR"));
+      // BOS also has bucket-heuristic rows; before the fix they won its xGF% (75)
+      // while TOR fell back to NST, mixing two models in one ranked column.
+      pagingFixture.rows.team_underlying_stats_summary = [
+        underlying(), underlying({ game_date: "2026-04-10", game_id: 2 }),
+      ];
+      pagingFixture.rows.nst_team_5v5 = [
+        nst(), nst({ date: "2026-04-10" }),
+        nst({ team_abbreviation: "TOR", xgf: 3, xga: 2 }),
+        nst({ team_abbreviation: "TOR", date: "2026-04-10", xgf: 3, xga: 2 }),
+      ];
+      const result = await buildTeamMatrixSurface(request({ page_size: "50" }));
+      const byTeam = Object.fromEntries(result.rows.map((row) => [row.team.abbreviation, row]));
+      expect(byTeam.BOS.style.source).toBe("nst_team_5v5");
+      expect(byTeam.TOR.style.source).toBe("nst_team_5v5");
+      // NST oracle: BOS 4/(4+6) = 40, TOR 6/(6+4) = 60.
+      expect(byTeam.BOS.metrics.xgf_percentage.rawValue).toBe(40);
+      expect(byTeam.TOR.metrics.xgf_percentage.rawValue).toBe(60);
+      expect(byTeam.TOR.metrics.xgf_percentage.rank).toBe(1);
+      expect(queryCalls.some((call) => call.table === "team_underlying_stats_summary")).toBe(false);
+      expect(result.meta.sourceTables).not.toContain("team_underlying_stats_summary");
+      expect(result.meta.metricColumns.find((column) => column.metricKey === "xgf_percentage")?.label)
+        .toBe("xGF% (NST)");
+    });
+
+    it("scores net luck from oriented level-biased xG, not from a zero-sum identity (rule 15)", async () => {
+      pagingFixture.rows.games = [
+        { id: 1, date: "2026-04-09", seasonId: 20252026, type: 2, homeTeamId: 1, awayTeamId: 2 },
+      ];
+      pagingFixture.rows.teams.push({ id: 2, abbreviation: "TOR", name: "Toronto" });
+      pagingFixture.rows.team_power_ratings_daily.push(power("2026-04-10", 100, "TOR"));
+      pagingFixture.rows.nst_team_5v5 = [
+        // GF 3, GA 2, xGF 2, xGA 1: finishing +1, save -1, net 0.
+        nst({ xgf: 2, xga: 1, gf: 3, ga: 2 }),
+        // Same goals with every xG doubled: finishing -1, save 0, net -1.
+        nst({ team_abbreviation: "TOR", xgf: 4, xga: 2, gf: 3, ga: 2 }),
+      ];
+      const result = await buildTeamMatrixSurface(request({ page_size: "50", metric: "net_luck" }));
+      const byTeam = Object.fromEntries(result.rows.map((row) => [row.team.abbreviation, row]));
+      expect(byTeam.BOS.luck).toEqual({ finishingLuck: 1, saveLuck: -1, netGoalsAboveExpected: 0 });
+      expect(byTeam.TOR.luck).toEqual({ finishingLuck: -1, saveLuck: 0, netGoalsAboveExpected: -1 });
+      expect(result.rows.map((row) => row.team.abbreviation)).toEqual(["BOS", "TOR"]);
+    });
+
+    it("gives tied teams the shared mid-rank percentile at the served matrix (decision 90)", async () => {
+      pagingFixture.rows.games = [
+        { id: 1, date: "2026-04-09", seasonId: 20252026, type: 2, homeTeamId: 1, awayTeamId: 2 },
+        { id: 2, date: "2026-04-09", seasonId: 20252026, type: 2, homeTeamId: 3, awayTeamId: 4 },
+      ];
+      pagingFixture.rows.teams = ["BOS", "TOR", "DAL", "UTA"].map((abbreviation, index) =>
+        ({ id: index + 1, abbreviation, name: abbreviation }));
+      pagingFixture.rows.team_power_ratings_daily = ["BOS", "TOR", "DAL", "UTA"].map((abbreviation) =>
+        power("2026-04-10", 100, abbreviation));
+      pagingFixture.rows.nst_team_5v5 = [
+        nst({ xgf: 3, xga: 1 }), nst({ team_abbreviation: "TOR", xgf: 3, xga: 1 }),
+        nst({ team_abbreviation: "DAL", xgf: 1, xga: 1 }), nst({ team_abbreviation: "UTA", xgf: 1, xga: 3 }),
+      ];
+      const result = await buildTeamMatrixSurface(request({ page_size: "50", metric: "xgf_percentage" }));
+      const cells = Object.fromEntries(result.rows.map((row) => [row.team.abbreviation, row.metrics.xgf_percentage]));
+      // Two of four tied at the top: (2 below + 0.5 x 1 other tie) / 3 = 83.33.
+      expect(cells.BOS).toMatchObject({ rank: 1, qualifiedPeerCount: 4 });
+      expect(cells.TOR.rank).toBe(1);
+      expect(cells.BOS.percentile).toBeCloseTo(83.333, 2);
+      expect(cells.TOR.percentile).toBe(cells.BOS.percentile);
+    });
+
+    it("refuses partial xG totals: a played game without NST makes the window unknown (W2-4 A1)", async () => {
+      // Two played games (final WGO results); NST has only the first one.
+      // Before the fix the second game was silently dropped and the 1-game
+      // totals were shown as the full window.
+      const result0 = { id: 1, season_id: 20252026, date: "2026-04-09", team_id: 1, game_id: 1,
+        goals_for: 7, goals_against: 0, point_pct: 1, pp_opportunities_per_game: 4, penalties_taken_per_60: 3 };
+      pagingFixture.rows.wgo_team_stats = [
+        result0, { ...result0, id: 2, date: "2026-04-10", game_id: 2, goals_for: 1, goals_against: 2 },
+      ];
+      pagingFixture.rows.nst_team_5v5 = [nst({ xgf: 3, xga: 2, gf: 7, ga: 0 })];
       const result = await buildTeamMatrixSurface(request());
-      expect(result.rows[0].style.source).toBe("team_underlying_stats_summary");
-      expect(result.rows[0].metrics.xgf_percentage.rawValue).toBe(75);
-      expect(queryCalls.some((call) => call.table === "nst_team_5v5")).toBe(false);
+      const row = result.rows[0];
+      for (const key of ["xgf_percentage", "shot_quality", "event_rate", "finishing_luck", "save_luck", "net_luck"] as const) {
+        expect(row.metrics[key]).toMatchObject({ rawValue: null, rank: null, percentile: null });
+      }
+      expect(row.record.styleCoverage).toEqual({ eligibleGames: 2, coveredGames: 1, complete: false });
+      expect(row.record.styleGames).toBe(0);
+      expect(row.warnings).toContain("nst_5v5_coverage_incomplete:1/2");
+      expect(row.style.label).toBe("Insufficient data");
+    });
+
+    it("applies a visible, user-lowerable sample floor (decision 98)", async () => {
+      pagingFixture.rows.nst_team_5v5 = [nst(), nst({ date: "2026-04-10" })];
+      const blocked = await buildTeamMatrixSurface(request({ min_gp: "3" }));
+      expect(blocked.meta.sampleFloor).toEqual({
+        minGames: 3, label: "Min 3 GP; teams below show insufficient sample",
+      });
+      expect(blocked.rows[0].metrics.xgf_percentage.rawValue).toBeNull();
+      expect(blocked.rows[0].record.styleGames).toBe(2);
+      expect(blocked.rows[0].warnings).toContain("insufficient_sample:2<3");
+      expect(blocked.rows[0].style.label).toBe("Insufficient data");
+
+      clearTeamMatrixSurfaceCachesForTests();
+      const lowered = await buildTeamMatrixSurface(request({ min_gp: "2" }));
+      expect(lowered.rows[0].metrics.xgf_percentage.rawValue).toBe(40);
+      expect(lowered.rows[0].warnings.some((warning) => warning.startsWith("insufficient_sample"))).toBe(false);
+
+      clearTeamMatrixSurfaceCachesForTests();
+      const defaulted = await buildTeamMatrixSurface(parseTeamMatrixRequest({ season: "20252026" }));
+      expect(defaulted.meta.sampleFloor?.minGames).toBe(5);
+      expect(defaulted.rows[0].metrics.xgf_percentage.rawValue).toBeNull();
+    });
+
+    it("labels the style composite insufficient instead of a default when inputs are missing (decision 102)", async () => {
+      const result = await buildTeamMatrixSurface(request());
+      expect(result.rows[0].style.label).toBe("Insufficient data");
+      expect(result.rows[0].style.displayLabel).toBe("Insufficient data (raw/contextual)");
+      expect(result.rows[0].warnings).toContain("team_style_source_missing");
     });
 
     it("selects a unit generation no later than explicit as-of and bounds its event dates", async () => {
@@ -658,16 +719,16 @@ describe("teamMatrix", () => {
       expect(result.rows[0].metrics.forward_top_load_index).toMatchObject({ rawValue: null, rank: null });
     });
 
-    it("keeps incomplete daily fallback components unavailable instead of summing partial coverage", async () => {
+    it("keeps incomplete NST components unavailable instead of summing partial coverage", async () => {
       pagingFixture.rows.nst_team_5v5 = [nst(), nst({ date: "2026-04-10", xgf: null })];
       const result = await buildTeamMatrixSurface(request());
       expect(result.rows[0].metrics.xgf_percentage).toMatchObject({ rawValue: null, rank: null });
       expect(result.rows[0].metrics.shot_quality.rawValue).toBeNull();
       expect(result.rows[0].metrics.event_rate.rawValue).toBeNull();
-      expect(result.rows[0].warnings).toContain("partial_nst_5v5_style_source");
+      expect(result.rows[0].warnings).toContain("nst_5v5_coverage_incomplete:1/2");
     });
 
-    it("retains every daily fallback row across the 1,000-row boundary", async () => {
+    it("retains every NST row across the 1,000-row boundary", async () => {
       const abbreviations = Array.from({ length: 33 }, (_, index) => `T${String(index).padStart(2, "0")}`);
       pagingFixture.rows.teams = abbreviations.map((abbreviation, index) => ({ id: index + 1, abbreviation, name: abbreviation }));
       pagingFixture.rows.team_power_ratings_daily = abbreviations.map((abbreviation) => power("2026-04-10", 100, abbreviation));
@@ -702,10 +763,7 @@ describe("teamMatrix", () => {
       pagingFixture.rows.games!.push(
         { id: 3, date: "2026-04-09", seasonId: 20252026, type: 3, homeTeamId: 1, awayTeamId: 2 },
       );
-      pagingFixture.rows.team_underlying_stats_summary = [
-        underlying(), underlying({ game_id: 3, xgf: 1000 }),
-        underlying({ game_id: 99, xgf: 1000 }),
-      ];
+      pagingFixture.rows.nst_team_5v5 = [nst({ xgf: 3, xga: 1 })];
       pagingFixture.rows.wgo_team_stats = [1, 3, 99].map((game_id) => ({
         id: game_id, season_id: 20252026, date: "2026-04-09", team_id: 1, game_id,
         goals_for: 3, goals_against: 2, point_pct: 1, pp_opportunities_per_game: game_id === 1 ? 4 : 100,
@@ -719,7 +777,7 @@ describe("teamMatrix", () => {
       expect(result.rows[0].unitUsage).toMatchObject({ games: 1, forwardTopLoadIndex: 30 });
     });
 
-    it("requires a matching regular-season team/date before accepting daily fallback", async () => {
+    it("requires a matching regular-season team/date before accepting NST rows", async () => {
       pagingFixture.rows.games = [{ id: 1, date: "2026-04-09", seasonId: 20252026, type: 3, homeTeamId: 1, awayTeamId: 2 }];
       pagingFixture.rows.nst_team_5v5 = [nst()];
       const result = await buildTeamMatrixSurface(request());
