@@ -48,3 +48,32 @@ Read-only checks, 2026-11-12 ~15:15Z:
 - **Recovered 15:50:30Z** without intervention: 0 active queries.
 - **State:** 146 of 298 games are at v2, each complete with matching row counts. That includes 6 games from the interrupted window, written as whole games. The other 152 games remain at v1, and no game is half-written. The sweep and goalie refresh did not run.
 - **Lesson:** a guard that only counts active queries can't see I/O pressure, and 10 s between 20-game windows was too fast. Any resume uses single-game calls, long gaps, a per-call latency stop, a quiet hour, and TJ's approval.
+
+## Step 2 (serial-order step 4) verified plan: summaries for the 298 re-normalized games
+I'm not using the sweep route, because it re-warms the season landing cache on every call. These three summary-only routes, run in order, write no raw data, make no provider calls and delete nothing:
+
+**A. Team summaries:** `POST /api/v1/db/rebuild-team-underlying-summaries?seasonId=20262027&gameType=2&startDate=&endDate=`
+- The route allows at most 14 days and 120 games per call; it defaults to dryRun.
+- Windows of 7 days (about 45 games) or fewer.
+- First, one `dryRun=true` call on the first window, to time it and see `rowsGenerated` and `staleKeyCount`. Then real calls window by window (`dryRun=false`).
+- Stale keys are reported, not deleted.
+
+**B. Player summaries:** `GET /api/v1/db/update-player-underlying-summaries?seasonId=20262027&gameType=2&startDate=D&endDate=D`
+- Date-range mode builds from the stored v2 events and shifts.
+- 44 date calls; no cache warming until the final call (`warmLandingCache=true`).
+
+**C. Goalie partitions:** the approved 44-date goalie script again (it took about 3 min last time).
+
+**Guards for every call:**
+- DB preflight first: probe under 1 s, no query over 5 s, no I/O or lock waits.
+- 10 s between calls.
+- Stop on a non-200, `success:false`, 0 rows for a window that has games, any call over 150 s, or pressure that doesn't clear.
+- The first call of A and of B is the smallest window, to time it.
+
+**Readback:**
+- Team: rows per window as expected; stale keys listed.
+- Player: partition `formulaRevision` is 2 for all 298 games.
+- Goalie: 298/298 at rev 2.
+- Smoke: none (budget spent). If wanted, one GET each on the player and team landing APIs, with your OK.
+
+**Handoff:** when C ends, post Claude DB handoff 3 for the DRM repair (step 5).
