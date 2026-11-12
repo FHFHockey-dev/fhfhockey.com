@@ -1,14 +1,37 @@
 import type { ProcessedPlayer } from "hooks/useProcessedProjectionsData";
+import { competitionRanks } from "utils/projectionsRanking";
 
-export type SourceAccuracyMode = "total" | "perGame";
+/**
+ * Retrospective source comparison (W2-5 D1, §1.2). Not wired into any page:
+ * it compares the currently loaded source values with season-to-date actuals
+ * and makes no preseason-vintage or held-out claim.
+ *
+ * - Like with like: counting stats are compared per game ("perGame") or as
+ *   the season-to-date total against the source's projection pro-rated to
+ *   actual games played ("proratedTotal"); rate stats compare directly.
+ *   Season-to-date totals are never compared with full-season totals, and
+ *   games played (workload) is not scored here.
+ * - Proper score (decision 65): mean squared error per stat, in that stat's
+ *   own units. No cross-stat composite, no percentage-error floor.
+ * - Common support: within a stat, every source is scored on the same
+ *   players (those every source supplying that stat projected). A source's
+ *   missing projections are reported as unmatched, never as better accuracy.
+ */
+export type SourceAccuracyMode = "perGame" | "proratedTotal";
 
-export type SourceAccuracyRow = {
+export type SourceStatAccuracy = {
+  statKey: string;
+  statLabel: string;
   sourceName: string;
-  projectionObservations: number;
-  matchedActualObservations: number;
-  coveragePercent: number;
-  meanNormalizedErrorPercent: number | null;
-  accuracyScorePercent: number | null;
+  /** Players with a known actual (and, for counting stats, known games). */
+  universePlayers: number;
+  /** Players in the common support every supplying source is scored on. */
+  comparedPlayers: number;
+  /** Universe players this source did not project. */
+  unmatchedPlayers: number;
+  meanSquaredError: number | null;
+  /** Competition rank by mean squared error within the stat (1 = lowest). */
+  rank: number | null;
 };
 
 const finite = (value: unknown): value is number =>
@@ -18,13 +41,19 @@ const isRateStat = (key: string, dataType?: string) =>
   dataType === "percentage" ||
   /(?:PER_GAME|PER_60|AVERAGE|PERCENTAGE|_PCT|RATE)/.test(key);
 
+const isGamesStat = (key: string) =>
+  key === "GAMES_PLAYED" || /GAMES.*GOALIE/.test(key);
+
+type Observation = { actual: number; bySource: Map<string, number> };
+
 export function calculateSourceAccuracy(
   players: ProcessedPlayer[],
   mode: SourceAccuracyMode
-): SourceAccuracyRow[] {
-  const buckets = new Map<
+): SourceStatAccuracy[] {
+  const allSources = new Set<string>();
+  const stats = new Map<
     string,
-    { projected: number; matched: number; normalizedError: number }
+    { label: string; observations: Observation[]; suppliers: Set<string> }
   >();
 
   for (const player of players) {
@@ -41,62 +70,89 @@ export function calculateSourceAccuracy(
     }
 
     for (const [statKey, stat] of Object.entries(player.combinedStats)) {
-      if (statKey === "GAMES_PLAYED" || /GAMES.*GOALIE/.test(statKey)) continue;
+      for (const source of stat?.projectedDetail?.contributingSources ?? []) {
+        if (finite(source.value)) allSources.add(source.name);
+      }
+      if (isGamesStat(statKey)) continue;
+      const definition = stat?.projectedDetail?.statDefinition;
+      const entry = stats.get(statKey) ?? {
+        label: definition?.displayName ?? statKey,
+        observations: [],
+        suppliers: new Set<string>()
+      };
+      stats.set(statKey, entry);
+
+      const rate = isRateStat(statKey, definition?.dataType);
+      if (!finite(stat.actual)) continue;
+      if (!rate && !(finite(actualGames) && actualGames > 0)) continue;
+
+      const actual =
+        rate || mode === "proratedTotal"
+          ? stat.actual
+          : stat.actual / (actualGames as number);
+      const bySource = new Map<string, number>();
       for (const source of stat.projectedDetail?.contributingSources ?? []) {
         if (!finite(source.value)) continue;
-        const bucket = buckets.get(source.name) ?? {
-          projected: 0,
-          matched: 0,
-          normalizedError: 0
-        };
-        bucket.projected += 1;
-        if (!finite(stat.actual)) {
-          buckets.set(source.name, bucket);
-          continue;
-        }
-
-        let projected = source.value;
-        let actual = stat.actual;
-        if (
-          mode === "perGame" &&
-          !isRateStat(statKey, stat.projectedDetail?.statDefinition?.dataType)
-        ) {
+        let prediction = source.value;
+        if (!rate) {
           const projectedGames = projectedGamesBySource.get(source.name);
-          if (!finite(projectedGames) || projectedGames <= 0 || !finite(actualGames) || actualGames <= 0) {
-            buckets.set(source.name, bucket);
-            continue;
-          }
-          projected /= projectedGames;
-          actual /= actualGames;
+          if (!finite(projectedGames)) continue;
+          prediction =
+            mode === "perGame"
+              ? source.value / projectedGames
+              : (source.value * (actualGames as number)) / projectedGames;
         }
-
-        const denominator = Math.max(Math.abs(actual), 0.01);
-        bucket.matched += 1;
-        bucket.normalizedError += Math.abs(projected - actual) / denominator;
-        buckets.set(source.name, bucket);
+        bySource.set(source.name, prediction);
+        entry.suppliers.add(source.name);
       }
+      entry.observations.push({ actual, bySource });
     }
   }
 
-  return Array.from(buckets, ([sourceName, bucket]) => {
-    const meanError = bucket.matched
-      ? (bucket.normalizedError / bucket.matched) * 100
-      : null;
-    return {
-      sourceName,
-      projectionObservations: bucket.projected,
-      matchedActualObservations: bucket.matched,
-      coveragePercent: bucket.projected
-        ? (bucket.matched / bucket.projected) * 100
-        : 0,
-      meanNormalizedErrorPercent: meanError,
-      accuracyScorePercent:
-        meanError == null ? null : Math.max(0, Math.min(100, 100 - meanError))
-    };
-  }).sort(
-    (left, right) =>
-      (right.accuracyScorePercent ?? -1) - (left.accuracyScorePercent ?? -1) ||
-      right.coveragePercent - left.coveragePercent ||
-      left.sourceName.localeCompare(right.sourceName)
-  );
+  const rows: SourceStatAccuracy[] = [];
+  const sourceNames = Array.from(allSources).sort((a, b) => a.localeCompare(b));
+  for (const statKey of Array.from(stats.keys()).sort()) {
+    const { label, observations, suppliers } = stats.get(statKey)!;
+    const common = observations.filter((observation) =>
+      Array.from(suppliers).every((name) => observation.bySource.has(name))
+    );
+    const statRows = sourceNames.map((sourceName): SourceStatAccuracy => {
+      const scored = suppliers.has(sourceName) ? common : [];
+      const meanSquaredError = scored.length
+        ? scored.reduce(
+            (sum, observation) =>
+              sum + (observation.bySource.get(sourceName)! - observation.actual) ** 2,
+            0
+          ) / scored.length
+        : null;
+      return {
+        statKey,
+        statLabel: label,
+        sourceName,
+        universePlayers: observations.length,
+        comparedPlayers: scored.length,
+        unmatchedPlayers: observations.filter(
+          (observation) => !observation.bySource.has(sourceName)
+        ).length,
+        meanSquaredError,
+        rank: null
+      };
+    });
+    const ranks = competitionRanks(
+      statRows.map((row) =>
+        row.meanSquaredError == null ? null : -row.meanSquaredError
+      )
+    );
+    statRows.forEach((row, index) => {
+      row.rank = ranks[index];
+    });
+    rows.push(
+      ...statRows.sort(
+        (a, b) =>
+          (a.rank ?? Infinity) - (b.rank ?? Infinity) ||
+          a.sourceName.localeCompare(b.sourceName)
+      )
+    );
+  }
+  return rows;
 }

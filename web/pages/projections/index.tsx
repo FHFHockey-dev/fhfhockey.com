@@ -25,7 +25,11 @@ import {
   TableDataRow, // Import the new union type
   RoundSummaryRow,
   addRoundSummariesToPlayers, // Import helper
-  calculateDiffPercentage // Import helper
+  calculateDiffPercentage, // Import helper
+  buildRankColumns,
+  FP_DIFF_DEFINITION,
+  RANK_BASIS_DEFINITION,
+  STAT_DIFF_DEFINITION
 } from "hooks/useProcessedProjectionsData";
 import {
   PROJECTION_SOURCES_CONFIG,
@@ -553,6 +557,13 @@ const ProjectionsPage: NextPage = () => {
     Record<string, number>
   >(() => getDefaultFantasyPointsConfig("goalie"));
   const [scoringSettingsReady, setScoringSettingsReady] = useState(false);
+  // Decision 115: an overall skater-plus-goalie rank needs both point maps
+  // from one points-league scoring. Saved settings missing one side fall
+  // back to defaults for that side, which is not one basis.
+  const [scoringBasis, setScoringBasis] = useState<{
+    shared: boolean;
+    label: string;
+  }>({ shared: true, label: "FHFH default points scoring" });
   const hasLocalScoringRef = useRef(false);
   const manualScoringEditRef = useRef(false);
   const accountDefaultsUserRef = useRef<string | null>(null);
@@ -566,6 +577,7 @@ const ProjectionsPage: NextPage = () => {
     if (override?.settings.leagueType === "points") {
       setSkaterPointValues(override.settings.skaterScoringCategories);
       setGoaliePointValues(override.settings.goalieScoringCategories);
+      setScoringBasis({ shared: true, label: "ESPN league points scoring" });
       activeEspnOverrideRef.current = override.externalLeagueId;
       hasLocalScoringRef.current = true;
     }
@@ -591,6 +603,17 @@ const ProjectionsPage: NextPage = () => {
         if (defaults.leagueType !== "points") return;
         setSkaterPointValues(defaults.scoringCategories);
         setGoaliePointValues(defaults.goalieScoringCategories);
+        const isMap = (value: unknown) =>
+          value != null && typeof value === "object" && !Array.isArray(value);
+        const shared =
+          isMap(data.scoring_categories) &&
+          isMap(data.goalie_scoring_categories);
+        setScoringBasis({
+          shared,
+          label: shared
+            ? "your saved league points scoring"
+            : "saved skater and goalie scoring that are not from one league"
+        });
       });
     return () => {
       active = false;
@@ -803,7 +826,7 @@ const ProjectionsPage: NextPage = () => {
           },
           {
             id: "fp_diff",
-            header: "DIFF",
+            header: () => <span title={FP_DIFF_DEFINITION}>DIFF</span>,
             accessorFn: (row) => {
               const fp = row.fantasyPoints;
               if (showPerGameFantasyPoints) {
@@ -901,42 +924,38 @@ const ProjectionsPage: NextPage = () => {
         enableSorting: true,
         sortUndefined: "last"
       },
-      {
-        id: "projectedRank",
-        header: "P-Rank",
-        accessorFn: (player) => {
-          if ("type" in player && player.type === "summary") return undefined;
-          return (player as ProcessedPlayer).projectedRank ?? undefined;
-        },
-        cell: (info) => {
-          const val = info.getValue() as number | null;
-          return val !== null && val !== undefined ? val : "-";
-        },
-        meta: { columnType: "numeric", higherIsBetter: false },
-        enableSorting: true,
-        sortUndefined: "last"
-      },
-      {
-        id: "actualRank",
-        header: "A-Rank",
-        accessorFn: (player) => {
-          if ("type" in player && player.type === "summary") return undefined;
-          return (player as ProcessedPlayer).actualRank ?? undefined;
-        },
-        cell: (info) => {
-          const val = info.getValue() as number | null;
-          return val !== null && val !== undefined ? val : "-";
-        },
-        meta: { columnType: "numeric", higherIsBetter: false },
-        enableSorting: true,
-        sortUndefined: "last"
-      }
+      ...buildRankColumns()
     ],
     [
       showPerGameFantasyPoints,
       togglePerGameFantasyPoints,
       expandedRows,
       toggleRowExpansion
+    ]
+  );
+
+  // Ranks for every tab from one ranking of both pools (W3-1 D2, decision 115).
+  const rankedPlayers = useMemo(
+    () =>
+      assignGlobalRanks(
+        skaterTabData.processedPlayers.filter(
+          (p): p is ProcessedPlayer => !("type" in p)
+        ),
+        goalieTabData.processedPlayers.filter(
+          (p): p is ProcessedPlayer => !("type" in p)
+        ),
+        {
+          sharedPointsScoring: scoringBasis.shared,
+          skaterPointValues,
+          goaliePointValues
+        }
+      ),
+    [
+      skaterTabData.processedPlayers,
+      goalieTabData.processedPlayers,
+      scoringBasis.shared,
+      skaterPointValues,
+      goaliePointValues
     ]
   );
 
@@ -957,16 +976,7 @@ const ProjectionsPage: NextPage = () => {
         error: skaterTabData.error || goalieTabData.error
       };
     }
-    const rankedUnsorted = assignGlobalRanks(skaters, goalies);
-
-    const rankMap = new Map<number, ProcessedPlayer>();
-    rankedUnsorted.forEach((p) => rankMap.set(p.playerId, p));
-
-    const combinedPlayersWithRanks: ProcessedPlayer[] = [
-      ...skaters,
-      ...goalies
-    ].map((p) => {
-      const rankedPlayer = rankMap.get(p.playerId);
+    const combinedPlayersWithRanks: ProcessedPlayer[] = rankedPlayers.map((p) => {
       let projectedPerGame = p.fantasyPoints.projectedPerGame;
       let actualPerGame = p.fantasyPoints.actualPerGame;
 
@@ -999,9 +1009,7 @@ const ProjectionsPage: NextPage = () => {
           ...p.fantasyPoints,
           projectedPerGame: projectedPerGame,
           actualPerGame: actualPerGame
-        },
-        projectedRank: rankedPlayer?.projectedRank,
-        actualRank: rankedPlayer?.actualRank
+        }
       };
     });
 
@@ -1028,6 +1036,7 @@ const ProjectionsPage: NextPage = () => {
   }, [
     skaterTabData,
     goalieTabData,
+    rankedPlayers,
     overallColumns // Add overallColumns as a dependency here
   ]);
 
@@ -1070,9 +1079,24 @@ const ProjectionsPage: NextPage = () => {
     }
   }, [roundSummaryDataForContext]);
 
+  const skaterTabWithRanks = useMemo(
+    () => ({
+      ...skaterTabData,
+      processedPlayers: injectRanks(skaterTabData.processedPlayers, rankedPlayers)
+    }),
+    [skaterTabData, rankedPlayers]
+  );
+  const goalieTabWithRanks = useMemo(
+    () => ({
+      ...goalieTabData,
+      processedPlayers: injectRanks(goalieTabData.processedPlayers, rankedPlayers)
+    }),
+    [goalieTabData, rankedPlayers]
+  );
+
   let displayedData: ReturnType<typeof useProcessedProjectionsData> =
-    skaterTabData;
-  if (activePlayerType === "goalie") displayedData = goalieTabData;
+    skaterTabWithRanks;
+  if (activePlayerType === "goalie") displayedData = goalieTabWithRanks;
   if (activePlayerType === "overall") displayedData = overallData;
 
   const chartPresentationData = useMemo(() => {
@@ -1098,7 +1122,7 @@ const ProjectionsPage: NextPage = () => {
     const yAxisLabel =
       chartDataType === "actualFp"
         ? "Actual Fantasy Points"
-        : "Individual Player Difference %";
+        : "Player Diff % (to date vs projection pro-rated to GP)";
     const finalChartType: "line" | "boxplot" =
       chartDataType === "actualFp" ? "line" : "boxplot";
     let labels: string[] = [];
@@ -1385,6 +1409,7 @@ const ProjectionsPage: NextPage = () => {
       activeEspnOverrideRef.current = league.id;
       setSkaterPointValues(league.settings.skaterScoringCategories);
       setGoaliePointValues(league.settings.goalieScoringCategories);
+      setScoringBasis({ shared: true, label: `${league.name} points scoring` });
       try {
         saveEspnScoringOverride(window.sessionStorage, "legacy-projections", {
           version: 1,
@@ -1621,6 +1646,14 @@ const ProjectionsPage: NextPage = () => {
                           : undefined
                       }
                     />
+                    <p className={styles.tableFooterMessage}>
+                      Scoring basis: {scoringBasis.label}.{" "}
+                      {scoringBasis.shared
+                        ? RANK_BASIS_DEFINITION
+                        : "Overall P-Rank and A-Rank are withheld because skater and goalie points are not from one league scoring; P-Pos and A-Pos rank within the first listed position."}{" "}
+                      Stat DIFF: {STAT_DIFF_DEFINITION} Fantasy-point DIFF:{" "}
+                      {FP_DIFF_DEFINITION}
+                    </p>
                   </ExpandedPlayerRowChartContext.Provider>
                 )}
               </>

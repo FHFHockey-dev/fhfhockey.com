@@ -27,4 +27,14 @@ describe("projection source rank impact", () => {
       c: { previousRank: 2, currentRank: 9, delta: -7 }
     });
   });
+
+  it("gives tied projections the same competition rank, whatever the input order or ids", () => {
+    const players = [
+      { playerId: "b", displayPosition: "C", fantasyPoints: { projected: 10 } },
+      { playerId: "a", displayPosition: "C", fantasyPoints: { projected: 10 } },
+      { playerId: "c", displayPosition: "C", fantasyPoints: { projected: 4 } }
+    ];
+    expect(rankProjectionPlayers(players)).toEqual({ a: 1, b: 1, c: 3 });
+    expect(rankProjectionPlayers([...players].reverse())).toEqual({ a: 1, b: 1, c: 3 });
+  });
 });

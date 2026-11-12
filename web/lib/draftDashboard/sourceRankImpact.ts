@@ -21,17 +21,21 @@ export function rankProjectionPlayers(players: RankableProjection[]) {
     groups.get(player.displayPosition === "G" ? "goalie" : "skater")!.push(player);
   }
 
+  // Competition ranks (1, 2, 2, 4): tied projections share a rank, so the
+  // result never depends on input order or player id (rule 20).
   const ranks: Record<string, number> = {};
   for (const group of groups.values()) {
-    group
-      .sort(
-        (a, b) =>
-          b.fantasyPoints!.projected! - a.fantasyPoints!.projected! ||
-          String(a.playerId).localeCompare(String(b.playerId))
-      )
-      .forEach((player, index) => {
-        ranks[String(player.playerId)] = index + 1;
-      });
+    const sorted = [...group].sort(
+      (a, b) => b.fantasyPoints!.projected! - a.fantasyPoints!.projected!
+    );
+    sorted.forEach((player, index) => {
+      const previous = sorted[index - 1];
+      ranks[String(player.playerId)] =
+        previous &&
+        previous.fantasyPoints!.projected === player.fantasyPoints!.projected
+          ? ranks[String(previous.playerId)]
+          : index + 1;
+    });
   }
   return ranks;
 }
