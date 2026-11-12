@@ -28,6 +28,7 @@ Release: PR #430 squash = master `631a00c19`. fhfhockey `dpl_137qFEpUhovkj9Q6NaP
 | 14 | Log checks for legacy routes (decisions 79, 124) | L19, L20 | — | to prepare |
 | 15 | goalie_totals_unified_snapshot refresh | L4a | 0c | to prepare |
 | 16 | LEDGER_BASIS_SCHEMA_ENABLED flip (code constant: a commit plus a production release) | L10 | 0a (138) | batch with the next release |
+| 16b | Decision-127 default flip: `DEFAULT_FORECAST_CALENDAR_VERSION` in `web/lib/player-forecasts/contributions.ts:14` is still `forecast-calendar-v1`. L11's call sites accept v1 and v2 (`49c9b3501`), and L10 left the default at v1 for a joint flip that never landed. The flip is a one-line code change plus its test pins and a release. `contributions.ts` was released to Scout on 2026-11-12, so re-claim it through the mailbox or ask Scout. | L10, L11 | release | batch with 16 |
 | 17 | Comprehensive FIX-SPRINT-DEBRIEF.md and ASTRA-SPRINT-AUDIT-PROMPT.md | Chef | — | after production steps, or in parallel |
 
 ## Step 1 + 2 verified plan: strength v2 re-normalization, 2026-27 regular season
