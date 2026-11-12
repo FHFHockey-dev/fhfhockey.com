@@ -39,6 +39,8 @@ export type CreatedXgShotXgRow = {
   game_id: number;
   event_id: number;
   xg: number;
+  /** Only approved shot xG may anchor a credit (decision 101: shadow rows are never served). */
+  model_approved: boolean;
 };
 
 export type CreatedXgShotIdentityRow = {
@@ -394,7 +396,7 @@ export function buildCreatedXgAggregates(args: {
   let expectedTransitionEvents = 0;
   const shotXgByKey = new Map(
     args.shotXgRows
-      .filter((row) => Number.isFinite(row.xg) && row.xg >= 0)
+      .filter((row) => row.model_approved === true && Number.isFinite(row.xg) && row.xg >= 0)
       .map((row) => [creditShotKey(row.model_version, row.feature_version, row.game_id, row.event_id), row.xg])
   );
   const pendingByShot = new Map<string, PendingCredit[]>();

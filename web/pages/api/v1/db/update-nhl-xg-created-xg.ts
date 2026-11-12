@@ -246,8 +246,9 @@ async function fetchShotXgRows(args: {
     for (const eventIdChunk of chunkRows(Array.from(eventIds), 500)) {
       const { data, error } = await supabase
         .from("nhl_xg_shot_predictions" as any)
-        .select("model_version,feature_version,game_id,event_id,xg")
+        .select("model_version,feature_version,game_id,event_id,xg,model_approved")
         .eq("model_version", args.modelVersion)
+        .eq("model_approved", true)
         .eq("feature_version", args.featureVersion)
         .eq("prediction_type", "shot_goal")
         .eq("game_id", gameId)
@@ -260,6 +261,7 @@ async function fetchShotXgRows(args: {
           game_id: Number(row.game_id),
           event_id: Number(row.event_id),
           xg: Number(row.xg),
+          model_approved: row.model_approved === true,
         }))
       );
     }

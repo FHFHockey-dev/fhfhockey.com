@@ -15,6 +15,7 @@ import {
   type BinaryLogisticModel,
 } from "../lib/xg/binaryLogistic";
 import { buildRichReboundLabels, type RichReboundLabel } from "../lib/xg/reboundRichLabels";
+import { XG_FEATURE_VERSION_DEFINITIONS } from "../lib/xg/featureVersion";
 import {
   encodeFeatureVector,
   loadXgModelArtifact,
@@ -72,7 +73,28 @@ function createSupabaseClient() {
   });
 }
 
-async function fetchPbp(client: ReturnType<typeof createSupabaseClient>, gameIds: number[]) {
+type XgSourceVersions = { featureVersion: number; strengthVersion: number };
+
+/**
+ * Labels (PBP) and features must come from the same event-layer definitions
+ * as the reference artifact (rule 21): the feature version is the artifact's,
+ * and its PBP strength version comes from the feature-version contract.
+ */
+function sourceVersionsFor(artifact: PersistedXgModelArtifact): XgSourceVersions {
+  const featureVersion = Number(artifact.featureVersion);
+  const definition =
+    XG_FEATURE_VERSION_DEFINITIONS[featureVersion as keyof typeof XG_FEATURE_VERSION_DEFINITIONS];
+  if (!definition) {
+    throw new Error(`Unknown xG feature version ${artifact.featureVersion} on the reference artifact.`);
+  }
+  return { featureVersion, strengthVersion: definition.strengthVersion };
+}
+
+async function fetchPbp(
+  client: ReturnType<typeof createSupabaseClient>,
+  gameIds: number[],
+  versions: XgSourceVersions
+) {
   const rows: PbpRow[] = [];
   for (let from = 0; ; from += PAGE_SIZE) {
     const { data, error } = await client
@@ -80,7 +102,7 @@ async function fetchPbp(client: ReturnType<typeof createSupabaseClient>, gameIds
       .select("*")
       .in("game_id", gameIds)
       .eq("parser_version", 1)
-      .eq("strength_version", 1)
+      .eq("strength_version", versions.strengthVersion)
       .order("game_id", { ascending: true })
       .order("sort_order", { ascending: true, nullsFirst: false })
       .order("event_id", { ascending: true })
@@ -92,14 +114,18 @@ async function fetchPbp(client: ReturnType<typeof createSupabaseClient>, gameIds
   return rows;
 }
 
-async function fetchFeatures(client: ReturnType<typeof createSupabaseClient>, gameIds: number[]) {
+async function fetchFeatures(
+  client: ReturnType<typeof createSupabaseClient>,
+  gameIds: number[],
+  versions: XgSourceVersions
+) {
   const rows: FeatureRow[] = [];
   for (let from = 0; ; from += PAGE_SIZE) {
     const { data, error } = await client
       .from("nhl_xg_shot_features")
       .select("game_id,event_id,feature_payload")
       .in("game_id", gameIds)
-      .eq("feature_version", 1)
+      .eq("feature_version", versions.featureVersion)
       .order("game_id", { ascending: true })
       .order("event_id", { ascending: true })
       .range(from, from + PAGE_SIZE - 1);
@@ -211,6 +237,7 @@ async function main() {
   const referencePath = cliValue("--reference", DEFAULT_REFERENCE);
   const outputPath = cliValue("--output", DEFAULT_OUTPUT);
   const artifact = loadXgModelArtifact(artifactPath) as PersistedXgModelArtifact;
+  const sourceVersions = sourceVersionsFor(artifact);
   const reference = JSON.parse(fs.readFileSync(referencePath, "utf8")) as {
     splitAssignments: Array<{ gameId: number; split: Split }>;
   };
@@ -227,7 +254,10 @@ async function main() {
   const client = createSupabaseClient();
 
   for (const [chunkIndex, gameChunk] of chunks(gameIds, GAME_CHUNK_SIZE).entries()) {
-    const [pbp, features] = await Promise.all([fetchPbp(client, gameChunk), fetchFeatures(client, gameChunk)]);
+    const [pbp, features] = await Promise.all([
+      fetchPbp(client, gameChunk, sourceVersions),
+      fetchFeatures(client, gameChunk, sourceVersions),
+    ]);
     const featureByKey = new Map(features.map((row) => [key(row.game_id, row.event_id), row.feature_payload]));
     const labels = buildRichReboundLabels(pbp as unknown as ParsedNhlPbpEvent[]);
     labelRows += labels.length;

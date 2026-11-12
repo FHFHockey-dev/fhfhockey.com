@@ -661,6 +661,8 @@ export function buildPredictionDbRow(args: {
   feature: PersistedFeatureRow;
   artifact: PersistedXgModelArtifact;
   modelArtifactPath: string | null;
+  /** sha256 of the artifact file the scores came from (provenance). */
+  artifactChecksum?: string | null;
   predictionType: XgShotPredictionType;
   rawProbability: number;
   calibratedProbability: number | null;
@@ -700,6 +702,10 @@ export function buildPredictionDbRow(args: {
       calibration: args.artifact.calibration ?? null,
       predictionType: resolveXgArtifactPredictionType(args.artifact),
       approved,
+      // Decision 101: unapproved output is labelled shadow and never served.
+      scoringMode: approved ? "approved" : "shadow_unapproved",
+      modelVersion: args.artifact.artifactTag,
+      artifactChecksum: args.artifactChecksum ?? null,
       approvalBlockingReasons:
         args.artifact.approvalGradeEligibility?.blockingReasons ?? []
     },

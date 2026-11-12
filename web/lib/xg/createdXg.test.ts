@@ -10,7 +10,7 @@ import {
 import { xgCoverageGameKey } from "./aggregates";
 
 function shotXg(eventId: number, xg: number, gameId = 2025020001): CreatedXgShotXgRow {
-  return { model_version: "model-v1", feature_version: 1, game_id: gameId, event_id: eventId, xg };
+  return { model_version: "model-v1", feature_version: 1, game_id: gameId, event_id: eventId, xg, model_approved: true };
 }
 
 function shotAssist(
