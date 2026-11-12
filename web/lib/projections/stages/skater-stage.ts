@@ -613,7 +613,10 @@ export function roleTagFromRosterEvent(
   const lineNumber = Number(payload.lineNumber ?? payload.line_number);
   const ppUnit = Number(payload.ppUnit ?? payload.pp_unit);
 
+  // A line or PP tweet without a line/unit number names no role: unknown, never a default L3/PP2
+  // (BC W1-7 D2). The line combinations then supply the role.
   if (event.event_type === "LINE_CHANGE") {
+    if (role == null && !(Number.isFinite(lineNumber) && lineNumber >= 1)) return null;
     const rank = Number.isFinite(lineNumber)
       ? Math.max(1, Math.floor(lineNumber))
       : 3;
@@ -628,6 +631,7 @@ export function roleTagFromRosterEvent(
   }
 
   if (event.event_type === "PP_UNIT_CHANGE") {
+    if (role == null && !(Number.isFinite(ppUnit) && ppUnit >= 1)) return null;
     const rank = Number.isFinite(ppUnit) ? Math.max(1, Math.floor(ppUnit)) : 2;
     const clampedRank = Math.min(3, rank);
     return {

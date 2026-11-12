@@ -2,6 +2,7 @@ import type { TweetPatternReviewExportRow } from "lib/sources/tweetPatternReview
 
 export type ForgeRosterEventType =
   | "INJURY_OUT"
+  | "SCRATCH"
   | "DTD"
   | "RETURN"
   | "CALLUP"
@@ -89,7 +90,8 @@ function resolveEventType(
     if (s.includes("RETURN")) return "RETURN";
     return "DTD";
   }
-  if (c === "SCRATCHES") return "INJURY_OUT";
+  // Decision 31: a healthy scratch is not an injury; it is scoped to one game id.
+  if (c === "SCRATCHES") return "SCRATCH";
   if (c === "RETURN") return "RETURN";
   if (c === "TRANSACTION") {
     if (s.includes("SENT")) return "SENDDOWN";
@@ -113,6 +115,9 @@ export function buildRosterEventsFromReviewedTweet(
   options: {
     effectiveFrom?: string;
     defaultTtlHours?: number;
+    /** The team's game a reviewed scratch refers to. Without it the scratch is stored unresolved
+     * and never applied (decision 31: scratches are scoped to a game id, not a time window). */
+    scratchGameId?: number | null;
   } = {}
 ): ForgeRosterEventInsert[] {
   if (row.review_status !== "reviewed") return [];
@@ -136,9 +141,16 @@ export function buildRosterEventsFromReviewedTweet(
     (row as unknown as { source_created_at?: string | null }).source_created_at ??
     new Date().toISOString();
   const ttlHours = options.defaultTtlHours ?? 30;
-  const effectiveTo = new Date(
+  const ttlEffectiveTo = new Date(
     new Date(effectiveFrom).getTime() + ttlHours * 60 * 60 * 1000
   ).toISOString();
+  const scratchGameId =
+    options.scratchGameId != null && Number.isSafeInteger(options.scratchGameId) && options.scratchGameId > 0
+      ? options.scratchGameId
+      : null;
+  // An injury lasts until a RETURN event; a scratch lasts for its game. Neither uses a timer.
+  const effectiveToFor = (type: ForgeRosterEventType) =>
+    type === "INJURY_OUT" || type === "SCRATCH" ? null : ttlEffectiveTo;
 
   return assignments.flatMap((assignment) => {
     const type = resolveEventType(assignment.category, assignment.subcategory);
@@ -159,9 +171,12 @@ export function buildRosterEventsFromReviewedTweet(
       event_type: type,
       confidence: clamp(confidenceForEventType(type), 0, 1),
       effective_from: effectiveFrom,
-      effective_to: effectiveTo,
+      effective_to: effectiveToFor(type),
       source_text: primaryReviewText(row),
       payload: {
+        ...(type === "SCRATCH"
+          ? { game_id: scratchGameId, game_scope: scratchGameId == null ? "unresolved" : "game_id" }
+          : {}),
         source: "tweet_pattern_review",
         reviewItemId: row.id,
         assignmentId: assignment.id,
