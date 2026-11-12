@@ -3,6 +3,7 @@ import * as rsoPolicy from "../player-forecasts/rsoUsePolicy";
 import { defaultIntent, defaultWorkspace } from "./workspace";
 import { evaluatePlan, forecastPointsReader, noMoveDropOrder, planRoster, playerAssignedPoints } from "./planning";
 import { candidatePlanMetrics } from "./candidatePlanMetrics";
+import { comparablePointsDelta } from "./pointsComparison";
 import { lineupGapReport } from "./lineupGaps";
 import { knownDropOrder } from "./retention";
 import { reconcileIntent } from "./reconciliation";
@@ -355,6 +356,30 @@ describe("unknown roster players are never automatic drops (decisions 3, 47, 49)
     const report = lineupGapReport(snapshot, intent(), evaluatePlan(snapshot, intent(), "outcome", [], false));
     expect(report.bestDrop?.playerId).not.toBe("unknown");
     expect(report.unprojectedDrops).toEqual(["unknown"]);
+  });
+});
+
+describe("Best projected points with an unknown player in the lineup (decision 132.1)", () => {
+  it("keeps the points objective on the known part instead of silently planning for most starts", () => {
+    // unknown (no forecast) starts Monday in C; drop is idle; fa adds 2 a game Thu–Sun. Adding fa for drop leaves the
+    // unknown player's game unchanged, so the net (+8) is known and the plan can be recommended on points.
+    const snapshot = withoutForecast(week([
+      { id: "core", team: "CORE", days: [0, 1, 2, 3, 4, 5, 6], perGame: 3, rostered: true },
+      { id: "unknown", team: "UNK", days: [0], perGame: 1, rostered: true },
+      { id: "drop", team: "IDLE", days: [], perGame: 0, rostered: true },
+      { id: "fa", team: "FAS", days: [3, 4, 5, 6], perGame: 2 },
+    ], { slots: { C: 1, UTIL: 1, BN: 1 }, asOf: "2026-10-26T14:00:00Z", remaining: 1 }), "unknown");
+    const result = planRoster(snapshot, { ...intent(), objective: "outcome" });
+    expect(result.selected.objective).toBe("outcome");
+    expect(result.search.limitations).not.toContain("Best projected points needs projections for your whole lineup; planning for most starts until then.");
+    expect(result.search.limitations.some(text => text.startsWith("Best projected points compares plans on their known part: 1 player has unknown"))).toBe(true);
+    const swap = result.alternatives.find(plan => plan.steps.some(step => step.playerId === "fa" && step.dropPlayerId === "drop"))!;
+    expect(swap.objective).toBe("outcome");
+    expect(comparablePointsDelta(swap, result.noMoveOutcome)).toBeCloseTo(8, 9);
+    // Never a drop of the unknown player, and no outcome plan with an unknown net is offered.
+    expect(result.alternatives.flatMap(plan => plan.steps).some(step => step.dropPlayerId === "unknown")).toBe(false);
+    expect(result.alternatives.filter(plan => plan.steps.length && plan.objective === "outcome")
+      .every(plan => comparablePointsDelta(plan, result.noMoveOutcome) !== null)).toBe(true);
   });
 });
 

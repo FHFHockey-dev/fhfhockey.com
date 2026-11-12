@@ -1171,7 +1171,8 @@ function compareCategoryEvaluations(snapshot: PlanningSnapshot, a: PlanEvaluatio
   }
   return relation;
 }
-function compareEvaluations(a: PlanEvaluation, b: PlanEvaluation, intent: PlanIntent, preferred: PlanningObjective, pointsCoverageTarget: number | null, categoryMode: boolean): number {
+function compareEvaluations(a: PlanEvaluation, b: PlanEvaluation, intent: PlanIntent, preferred: PlanningObjective, pointsCoverageTarget: number | null, categoryMode: boolean,
+  outcomeReference?: PlanEvaluation): number {
   if (a.objective !== b.objective) return a.objective === preferred ? -1 : 1;
   // Category presentation orders only the declared starts objective. Partial
   // dominance is handled by frontier filtering, never used as a global sort.
@@ -1189,7 +1190,13 @@ function compareEvaluations(a: PlanEvaluation, b: PlanEvaluation, intent: PlanIn
     if (difference) return difference;
   }
   if (a.objective === "agp" && a.activeGames !== b.activeGames) return b.activeGames - a.activeGames;
-  if ((a.projectedValue ?? a.assignmentValue ?? -Infinity) !== (b.projectedValue ?? b.assignmentValue ?? -Infinity)) return (b.projectedValue ?? b.assignmentValue ?? -Infinity) - (a.projectedValue ?? a.assignmentValue ?? -Infinity);
+  // Points outcome against the no-move plan (TJ, 2026-11-12, decision 132.1): the difference-based net, so an unknown
+  // player's unchanged games cancel; a plan whose net is unknown ranks after every known one. With a fully priced
+  // reference this orders exactly as the totals do.
+  if (a.objective === "outcome" && outcomeReference) {
+    const left = comparablePointsDelta(a, outcomeReference) ?? -Infinity, right = comparablePointsDelta(b, outcomeReference) ?? -Infinity;
+    if (left !== right) return right - left;
+  } else if ((a.projectedValue ?? a.assignmentValue ?? -Infinity) !== (b.projectedValue ?? b.assignmentValue ?? -Infinity)) return (b.projectedValue ?? b.assignmentValue ?? -Infinity) - (a.projectedValue ?? a.assignmentValue ?? -Infinity);
   if (a.activeGames !== b.activeGames) return b.activeGames - a.activeGames;
   if (intent.goalieCoverage === "cover" && intent.goalieWindow !== "any") {
     const preferredCount = (evaluation: PlanEvaluation) => evaluation.assignments.filter(row => row.slotId.startsWith("G#") && preferredGoalieDate(row.date, intent)).length;
@@ -1217,8 +1224,10 @@ function safeAlternative(snapshot: PlanningSnapshot, baseline: PlanEvaluation, e
   const coverageImproves = evaluation.objective === "outcome" && pointsCoverageTarget !== null
     && finite(baseline.goalie.projected) && finite(evaluation.goalie.projected)
     && Math.min(pointsCoverageTarget, evaluation.goalie.projected) > Math.min(pointsCoverageTarget, baseline.goalie.projected);
-  if (!baseline.comparisonEligible || !evaluation.comparisonEligible || baseline.projectedValue === null || evaluation.projectedValue === null || evaluation.projectedValue < baseline.projectedValue && !coverageImproves) return false;
-  if (evaluation.projectedValue === baseline.projectedValue && evaluation.activeGames <= baseline.activeGames && !coverageImproves && !(baseline.goalie.risk && !evaluation.goalie.risk)) return false;
+  // Difference-based (decision 132.1): an unknown net is never a supported alternative (decision 49).
+  const delta = comparablePointsDelta(evaluation, baseline);
+  if (delta === null || delta < 0 && !coverageImproves) return false;
+  if (delta === 0 && evaluation.activeGames <= baseline.activeGames && !coverageImproves && !(baseline.goalie.risk && !evaluation.goalie.risk)) return false;
   for (const step of evaluation.steps) if (step.dropPlayerId) {
     const added = snapshot.players.find(player => player.id === step.playerId);
     const dropped = snapshot.players.find(player => player.id === step.dropPlayerId);
@@ -1410,7 +1419,13 @@ export function planRoster(snapshot: PlanningSnapshot, intent: PlanIntent, optio
   // The manager can ask for most starts or best projected points. Points need projections that qualify for the
   // whole lineup, so until then a points request (or "auto") plans for most starts.
   const outcomeEligible = noMoveOutcome.recommendation?.eligible === true;
-  const objective: PlanningObjective = intent.objective !== "agp" && outcomeEligible ? "outcome" : "agp";
+  // Unknown players in the lineup (decision 132.1): "Best projected points" stays the objective, compared on the known
+  // part; it falls back to most starts only when even the known part can't be priced.
+  const unknownPlayers = noMoveOutcome.knownComparison?.unknownPlayerIds ?? [];
+  // Needs a known part to compare: at least one active game with a priced projection.
+  const differenceOutcome = !categoryMode && !outcomeEligible && unknownPlayers.length > 0
+    && noMoveOutcome.assignments.length > (noMoveOutcome.knownComparison?.unknownActive.length ?? 0);
+  const objective: PlanningObjective = intent.objective !== "agp" && (outcomeEligible || differenceOutcome) ? "outcome" : "agp";
   const baseline = objective === "outcome" ? noMoveOutcome : noMoveAgp;
   const selected = evaluatePlan(snapshot, intent, objective, intent.steps, false);
   const noClaimContinuations = intent.steps.flatMap((step, index) => {
@@ -1433,7 +1448,8 @@ export function planRoster(snapshot: PlanningSnapshot, intent: PlanIntent, optio
   candidates.forEach(player => relevantPlayerIds.add(player.id));
   snapshot = resolvePlanningContributions(sourceSnapshot, { playerIds: relevantPlayerIds, consumer: "rso" });
   const limitations = new Set<string>();
-  if (intent.objective === "outcome" && !outcomeEligible) limitations.add("Best projected points needs projections for your whole lineup; planning for most starts until then.");
+  if (intent.objective !== "agp" && differenceOutcome) limitations.add(`Best projected points compares plans on their known part: ${unknownPlayers.length} player${unknownPlayers.length === 1 ? " has" : "s have"} unknown projections, so totals are incomplete, and a plan that changes their games is not ranked or recommended.`);
+  else if (intent.objective === "outcome" && !outcomeEligible) limitations.add("Best projected points needs projections for your whole lineup; planning for most starts until then.");
   if (fitResult.timeLimitReached) limitations.add("Schedule-fit analysis reached its time budget; additional team/position targets remain unevaluated.");
   if (fitResult.workQuotaReached) limitations.add("Schedule-fit analysis reached its work quota; additional team/position targets remain unevaluated.");
   if (snapshot.rules.acquisitionTiming === "unknown") limitations.add("Add/drop plans need acquisition-effective timing. Review League rules and scoring.");
@@ -1448,7 +1464,7 @@ export function planRoster(snapshot: PlanningSnapshot, intent: PlanIntent, optio
     const stableOrder = (a: State, b: State) => a.steps.map(step => step.id).join("|").localeCompare(b.steps.map(step => step.id).join("|"));
     const adds = (state: State) => state.steps.filter(step => step.type === "add").length;
     const drops = (state: State) => state.steps.filter(step => step.type === "drop" || step.dropPlayerId).length;
-    states.sort((a, b) => compareEvaluations(a.evaluation, b.evaluation, intent, preferred, coverageTarget, categoryMode) || stableOrder(a, b));
+    states.sort((a, b) => compareEvaluations(a.evaluation, b.evaluation, intent, preferred, coverageTarget, categoryMode, noMoveOutcome) || stableOrder(a, b));
     // Reorder only exact supported equivalents in their existing positions.
     // Pairwise category tradeoffs are not a transitive global sort relation.
     const groups = new Map<string, number[]>();

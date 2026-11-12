@@ -501,7 +501,8 @@ describe("planning engine", () => {
     for (const supplied of [[], forecasts.filter(f => f.playerId !== "kaprizov")]) {
       data.forecasts = supplied;
       const result = planRoster(data, intent, { maxSteps: 0 });
-      expect(result.baseline.objective).toBe("agp");
+      // Decision 132.1: with some priced games the points objective stays, compared on the known part; none priced = most starts.
+      expect(result.baseline.objective).toBe(supplied.length ? "outcome" : "agp");
       expect(result.baseline.projectedValue).toBeNull();
       expect(result.baseline.recommendation).toMatchObject({ eligible: false, mode: "schedule_capacity" });
       expect(result.baseline.recommendation!.unresolved.some(issue => issue.playerId === "kaprizov")).toBe(true);
