@@ -360,6 +360,7 @@ export default function ForgePlayerDetailPage({
           : {
               ...toTopAddsProjection({}),
               uncertainty: extractTopAddsUncertainty(projectionRow.uncertainty),
+              availability: toTopAddsProjection(projectionRow).availability,
             }),
         scheduleGamesRemaining: weekContext?.gamesRemaining ?? null,
         scheduleOffNightsRemaining: weekContext?.offNightsRemaining ?? null,
@@ -553,6 +554,9 @@ export default function ForgePlayerDetailPage({
                           : opportunityScore
                             ? `${formatMetric(opportunityScore.perGamePoints)} per game × ${opportunityScore.games}`
                             : "--"}
+                        {opportunityScore?.lineLabel
+                          ? ` · ${opportunityScore.lineLabel}`
+                          : ""}
                       </span>
                     </article>
                   </div>

@@ -116,9 +116,12 @@ function formatSigned(value: number | null | undefined, suffix = ""): string {
 
 /** Decision 118: expected FHFH default points, or the typed incomplete state. */
 function formatTopAddsExpected(row: RankedTopAddsCandidate): string {
-  return row.score.total == null
-    ? `Exp. pts incomplete (missing ${row.score.missing.join(", ")})`
-    : `Exp. pts ${row.score.total.toFixed(1)}`;
+  const expected =
+    row.score.total == null
+      ? `Exp. pts incomplete (missing ${row.score.missing.join(", ")})`
+      : `Exp. pts ${row.score.total.toFixed(1)}`;
+  // Decision 132: an unconfirmed appearance shows the line as "if he plays".
+  return row.score.lineLabel ? `${expected} • ${row.score.lineLabel}` : expected;
 }
 
 function formatConfidenceDrivers(

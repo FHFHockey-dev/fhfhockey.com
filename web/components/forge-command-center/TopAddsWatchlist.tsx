@@ -197,13 +197,15 @@ export default function TopAddsWatchlist({
               label={`${candidate.name} ownership trend`}
             />
             <strong
-              title={
+              title={[
                 candidate.score.total == null
                   ? `Expected FHFH points incomplete: missing ${candidate.score.missing.join(", ")}`
-                  : "Expected FHFH default points over the games counted"
-              }
+                  : "Expected FHFH default points over the games counted",
+                candidate.score.lineLabel
+              ].filter(Boolean).join(" · ")}
             >
               {candidate.score.total == null ? "inc." : formatMetric(candidate.score.total, 1)}
+              {candidate.score.lineLabel ? <small> if he plays</small> : null}
             </strong>
             <StatusChip tone={candidate.delta >= 0 ? "good" : "danger"}>
               {formatSigned(candidate.delta)}

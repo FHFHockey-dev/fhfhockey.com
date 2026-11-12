@@ -2,6 +2,11 @@ import { DEFAULT_SKATER_FANTASY_POINTS } from "lib/projectionsConfig/fantasyPoin
 
 export type TopAddsMode = "tonight" | "week";
 
+export type TopAddsAvailability = {
+  state: string | null;
+  label: string | null;
+};
+
 export type TopAddsCandidateInput = {
   playerId: number;
   name: string;
@@ -22,6 +27,11 @@ export type TopAddsCandidateInput = {
   hit: number | null;
   blk: number | null;
   uncertainty: number | null;
+  /**
+   * L9c availability for the projected game (decision 132). The heads are the
+   * line IF HE PLAYS; null (old runs) is treated as a projected lineup.
+   */
+  availability?: TopAddsAvailability | null;
   degradedProjectionContext?: {
     usedLineComboFallback: boolean;
     lineComboFallbackReason: "missing" | "hard_stale" | "empty" | null;
@@ -70,8 +80,10 @@ export type TopAddsScoreBreakdown = {
   perGamePoints: number | null;
   /** Games counted: 1 tonight; games actually left this week in week mode. */
   games: number | null;
-  /** Expected FHFH points over those games (decision 118); null if incomplete. */
+  /** Unconditional expected FHFH points over those games (decisions 118, 132); null if incomplete. */
   total: number | null;
+  /** "If he plays · …" when the line is conditional on an unconfirmed appearance. */
+  lineLabel: string | null;
 };
 
 export type RankedTopAddsCandidate = TopAddsCandidateInput & {
@@ -118,11 +130,30 @@ export function toTopAddsProjection(row: {
   hit?: unknown;
   blk?: unknown;
   uncertainty?: unknown;
+  availability?: unknown;
 }): Pick<
   TopAddsCandidateInput,
-  "goals" | "assists" | "projectionPts" | "ppp" | "sog" | "hit" | "blk" | "uncertainty"
+  | "goals"
+  | "assists"
+  | "projectionPts"
+  | "ppp"
+  | "sog"
+  | "hit"
+  | "blk"
+  | "uncertainty"
+  | "availability"
 > {
+  const availability =
+    row.availability && typeof row.availability === "object"
+      ? (row.availability as Record<string, unknown>)
+      : null;
   return {
+    availability: availability
+      ? {
+          state: typeof availability.state === "string" ? availability.state : null,
+          label: typeof availability.label === "string" ? availability.label : null,
+        }
+      : null,
     goals: finiteOrNull(row.g),
     assists: finiteOrNull(row.a),
     projectionPts: finiteOrNull(row.pts),
@@ -166,8 +197,24 @@ export function scoreTopAddsCandidate(
       ? 1
       : finiteOrNull(candidate.scheduleGamesRemaining);
   if (games == null) missing.push("schedule");
+
+  // Decision 132 (L9c): the heads are the line IF HE PLAYS. Confirmed out for
+  // tonight's game scores 0 for it; any other unconfirmed state has no
+  // qualified participation probability, so its unconditional value is unknown.
+  const state = candidate.availability?.state ?? null;
+  const inLineup = state == null || state === "projected_lineup";
+  const outTonight = state === "confirmed_out" && mode === "tonight";
+  if (!inLineup && !outTonight) missing.push("availability");
+  const lineLabel = inLineup
+    ? null
+    : `If he plays · ${candidate.availability?.label ?? state}`;
+
   const total =
-    perGamePoints == null || games == null ? null : perGamePoints * games;
+    missing.length > 0 || perGamePoints == null || games == null
+      ? null
+      : outTonight
+        ? 0
+        : perGamePoints * games;
 
   return {
     status: total == null ? "incomplete" : "complete",
@@ -175,6 +222,7 @@ export function scoreTopAddsCandidate(
     perGamePoints: perGamePoints == null ? null : round2(perGamePoints),
     games,
     total: total == null ? null : round2(total),
+    lineLabel,
   };
 }
 

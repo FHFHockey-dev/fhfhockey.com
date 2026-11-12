@@ -409,4 +409,41 @@ describe("FORGE landing page", () => {
     expect(document.body.textContent).not.toContain("NaN");
     expect(missing.closest("a")?.textContent).toMatch(/incomplete/i);
   });
+
+  it("never ranks a day-to-day add on his full line and labels it 'if he plays' (decision 132)", async () => {
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/api/v1/forge/players")) {
+        return jsonResponse({
+          asOfDate: "2026-03-14",
+          data: [
+            { player_id: 1, player_name: "DTD Star", team_name: "New Jersey Devils", position: "C",
+              g: 0.9, a: 1, pts: 1.9, ppp: 0.6, sog: 4, hit: 1, blk: 1, uncertainty: 0.2,
+              availability: { state: "uncertain", label: "day-to-day: participation probability not qualified" } },
+            { player_id: 2, player_name: "Healthy Depth", team_name: "New Jersey Devils", position: "C",
+              g: 0.1, a: 0.1, pts: 0.2, ppp: 0, sog: 1.5, hit: 1, blk: 0.5, uncertainty: 0.2,
+              availability: { state: "projected_lineup", label: "in projected lineup" } },
+          ],
+        });
+      }
+      if (url.includes("/api/v1/transactions/ownership-trends")) {
+        return jsonResponse({
+          success: true,
+          risers: [
+            { playerId: 1, name: "DTD Star", latest: 40, delta: 9, teamAbbrev: "NJD" },
+            { playerId: 2, name: "Healthy Depth", latest: 40, delta: 1, teamAbbrev: "NJD" },
+          ],
+          fallers: [],
+        });
+      }
+      return jsonResponse({}, false);
+    }));
+
+    render(<FORGEPage />);
+
+    const healthy = await screen.findByText("Healthy Depth");
+    const dtd = screen.getByText("DTD Star");
+    expect(healthy.compareDocumentPosition(dtd) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(dtd.closest("a")?.textContent).toContain("If he plays · day-to-day");
+  });
 });

@@ -257,9 +257,14 @@ function formatOwnership(value: number | null): string {
 
 /** Decision 118 expected points, or the typed incomplete state. */
 function formatExpected(candidate: RankedTopAddsCandidate): string {
-  return candidate.score.total == null
-    ? `incomplete (${candidate.score.missing.join(", ")})`
-    : formatProjection(candidate.score.total);
+  const expected =
+    candidate.score.total == null
+      ? `incomplete (${candidate.score.missing.join(", ")})`
+      : formatProjection(candidate.score.total);
+  // Decision 132: an unconfirmed appearance shows the line as "if he plays".
+  return candidate.score.lineLabel
+    ? `${expected} · ${candidate.score.lineLabel}`
+    : expected;
 }
 
 

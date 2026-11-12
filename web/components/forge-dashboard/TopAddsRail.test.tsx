@@ -52,6 +52,7 @@ function jsonResponse(data: unknown): Response {
 function installFetch(
   requestedDateFor: (date: string) => string = (date) => date,
   resolvedSeasonIdFor: (date: string) => number = () => 20232024,
+  availabilityFor: (playerId: number) => unknown = () => undefined,
 ) {
   vi.stubGlobal(
     "fetch",
@@ -80,6 +81,7 @@ function installFetch(
               hit: 1,
               blk: 1,
               uncertainty: 0.2,
+              availability: availabilityFor(53),
             },
             {
               player_id: 1,
@@ -95,6 +97,7 @@ function installFetch(
               hit: 1,
               blk: 1,
               uncertainty: 0.2,
+              availability: availabilityFor(1),
             },
           ],
         });
@@ -265,5 +268,20 @@ describe("TopAddsRail historical schedule ownership", () => {
     );
 
     expect(await screen.findByText("Schedule included")).toBeTruthy();
+  });
+
+  it("ranks a day-to-day add after a healthy one and labels it 'if he plays' (decision 132)", async () => {
+    installFetch(undefined, undefined, (playerId) =>
+      playerId === 1
+        ? { state: "uncertain", label: "day-to-day: participation probability not qualified" }
+        : { state: "projected_lineup", label: "in projected lineup" },
+    );
+    render(<TopAddsRail date="2024-03-14" position="all" positionLabel="All" />);
+
+    const historical = await screen.findByRole("link", { name: /Historical Stream/ });
+    const current = screen.getByRole("link", { name: /Current Stream/ });
+    expect(historical.compareDocumentPosition(current) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(current.textContent).toContain("If he plays · day-to-day");
+    expect(historical.textContent).not.toContain("If he plays");
   });
 });
