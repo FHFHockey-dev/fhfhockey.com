@@ -63,3 +63,7 @@ FORGE prior `team-context-queries.ts:204` (env-gated) must use the selector.
 
 ## Note (2026-11-11)
 L9b changed one line in `runProjectionV2.test.ts:2105` (null rest → null, W3-4 N1, rule 5) with Chef's grant while L9a was not running. Keep it.
+
+## Tickets from L9b (2026-11-11)
+- `utils/projection-metadata-builders.ts:444-460` still multiplies goalie metadata (shots against, saves, win, shutout) by `goalieHorizonTotalScalar`: decision 28 (no probability × horizon scalar; per-game values or 1 − ∏(1 − p)).
+- Goalie candidate contract `forge_goalie_candidates_v1` (reader `readGoalieCandidatesContract`, null on old rows, fails closed): Chef side note `L9b-goalie-candidates-contract.md`. Skater opponent-goalie weights read it.
