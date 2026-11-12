@@ -1,4 +1,4 @@
-import type { GapDirection, Measured } from "lib/skoElement/contract";
+import type { Measured } from "lib/skoElement/contract";
 
 export const reasonText = (reason: string | null) => (reason ?? "unavailable").replace(/_/g, " ");
 
@@ -9,11 +9,7 @@ export function formatMeasured(measured: Measured, digits = 2, signed = false): 
   return signed && measured.value > 0 ? `+${text}` : text;
 }
 
-export const DIRECTION_TEXT: Record<GapDirection, string> = {
-  rebound: "Rebound watch",
-  cooling: "Cooling watch",
-  level: "Level (not a stability or quality signal)",
-  unavailable: "Gap unavailable",
-};
+/** Units for a per-team-game difference, e.g. "Points per team game". Decision 130: units only, no alert words. */
+export const perTeamGameUnit = (label: string) => `${label} per team game`;
 
 export const percent = (value: number | null, digits = 1) => (value === null ? "Unavailable" : `${(value * 100).toFixed(digits)}%`);

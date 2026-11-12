@@ -23,9 +23,12 @@ describe("SkoElementPreview", () => {
     expect([...horizon.options].map(option => option.value)).toEqual(["5", "10", "20"]);
   });
 
-  it("labels gaps in text, not color alone, and shows unavailable states with reasons", () => {
-    render(<Harness />);
-    expect(within(rowFor("Fixture Forward Five")).getByText("Cooling watch")).toBeTruthy();
+  it("shows the signed gap with its units only, no Rebound/Cooling words (decision 130), and unavailable states with reasons", () => {
+    const { container } = render(<Harness />);
+    expect(container.textContent).not.toMatch(/rebound|cooling|watch/i);
+    const five = rowFor("Fixture Forward Five");
+    expect(within(five).getByText(/^-0\.\d\d$/)).toBeTruthy();
+    expect(within(five).getByText("Points per team game")).toBeTruthy();
     expect(within(rowFor("Fixture Forward Eight")).getAllByText(/Unavailable \(unknown team game status\)/).length).toBeGreaterThan(0);
     expect(within(rowFor("Fixture Forward One")).getByText("Opportunity rising; durability uncertain", { exact: false })).toBeTruthy();
   });
@@ -58,8 +61,18 @@ describe("SkoElementPreview", () => {
     const detail = screen.getByRole("region", { name: "Details for Fixture Forward One" });
     expect(within(detail).getByRole("heading", { name: "Current production versus this player’s prior block" })).toBeTruthy();
     expect(within(detail).getByText(/These games precede the current window/)).toBeTruthy();
-    expect(within(detail).getByText(/Expected cooling from the recent run coexists/)).toBeTruthy();
-    expect(within(detail).getByText(/PP1 \(fixture lineup report\)/)).toBeTruthy();
+    expect(within(detail).getByText(/FORGE expects less than the recent rate while its outlook is higher/)).toBeTruthy();
+    // Decision 131: gap, earlier-block comparison and same-window support stay separate components.
+    const comparisons = within(detail).getByRole("list", { name: "Separate comparisons for Points" });
+    expect(within(comparisons).getAllByRole("listitem").map(item => item.textContent)).toEqual([
+      expect.stringMatching(/^Forecast minus recent: -0\.\d\d points per team game/),
+      expect.stringMatching(/^Recent minus earlier block: \+0\.\d\d points per team game/),
+      "Recent versus same-window support: Unavailable (same window support expectation not supplied)",
+    ]);
+    expect(within(detail).getByText(/Forecast admission: admitted/)).toBeTruthy();
+    expect(within(detail).getByText(/comparison coverage, not how long a change has lasted/)).toBeTruthy();
+    expect(within(detail).getByText(/PP unit role: PP1 \(fixture lineup report/)).toBeTruthy();
+    expect(within(detail).getByText(/Role changes in the recent block: PP1 \(fixture lineup report\) \(effective 2026-10-05\)/)).toBeTruthy();
     expect(within(detail).getByText(/not supplied by FORGE game expectations v1/)).toBeTruthy();
     fireEvent.change(screen.getByLabelText("Search"), { target: { value: "Five" } });
     expect(screen.getByRole("region", { name: "Details for Fixture Forward One" })).toBeTruthy();

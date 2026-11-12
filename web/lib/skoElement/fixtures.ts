@@ -26,8 +26,10 @@ export const FIXTURE_CONFIG: InterpretationConfig = {
     minToiChangeMinutes: 1.5, minPpToiChangeMinutes: 1, minAppearancesEachBlock: 3,
   },
   ippReferences: {
-    F: { value: 0.65, source: "fixture forward reference (illustrative)", status: "fixture_illustrative" },
-    D: { value: 0.35, source: "fixture defense reference (illustrative)", status: "fixture_illustrative" },
+    F: { value: 0.65, source: "fixture forward reference (illustrative)", status: "fixture_illustrative",
+      version: "fixture-ipp-f-0.1", cutoffAt: "2026-09-01T00:00:00.000Z", population: "fixture forwards (illustrative)", sampleSize: null },
+    D: { value: 0.35, source: "fixture defense reference (illustrative)", status: "fixture_illustrative",
+      version: "fixture-ipp-d-0.1", cutoffAt: "2026-09-01T00:00:00.000Z", population: "fixture defensemen (illustrative)", sampleSize: null },
   },
 };
 
@@ -67,7 +69,9 @@ function forecastFor(player: PlayerSpec, horizon: HorizonGames, perGame: Record<
           unit: target === "GOALIE_MINUTES" || target === "TIME_ON_ICE_PER_GAME" ? "minutes" as const : "count" as const,
           allowedUses: { assignment: false, totals: true, comparison: true, conditionalTieBreak: true },
           sourceKind: "baseline" as const, sourceIds: ["fixture-source"], methodVersions: ["fixture"], sourceWatermarks: ["fixture"],
-          cutoffAt: "2026-10-18T08:00:00.000Z", issuedAt: options.readAsOf ?? FORECAST_READ_AS_OF, expiresAt: FORECAST_EXPIRES_AT,
+          // Each issuance's source cutoff precedes its own read time (the prior issuance included).
+          cutoffAt: new Date(Date.parse(options.readAsOf ?? FORECAST_READ_AS_OF) - 4 * 3_600_000).toISOString(),
+          issuedAt: options.readAsOf ?? FORECAST_READ_AS_OF, expiresAt: FORECAST_EXPIRES_AT,
           sources: [], participation: null, participationRevisionId: null,
           reasons: expected === null ? ["missing_target"] : [], limitations: [],
         }];
@@ -181,11 +185,11 @@ export const FIXTURE_PLAYERS: FixturePlayer[] = [
     { id: "fx-f1", name: "Fixture Forward One", team: "FX1", modelClass: "F", positions: ["C"] },
     [...rep(10, i => ({ toi: 13, pp: 0.5, g: every(i, 5), a: every(i, 4) })), ...rep(10, i => ({ toi: 18, pp: 3.2, g: every(i, 3), a: alt(i, 1, 0), ppp: every(i, 3) }))],
     0.75, { priorPoints: 0.45, extra: { toi: 17.5, ppp: 0.3 },
-      role: [{ kind: "pp_unit", label: "PP1 (fixture lineup report)", effectiveAt: "2026-10-05T16:00:00.000Z", source: "fixture lineup source" }] }),
+      role: [{ kind: "pp_unit", label: "PP1 (fixture lineup report)", effectiveAt: "2026-10-05T16:00:00.000Z", knownAt: "2026-10-05T18:00:00.000Z", source: "fixture lineup source" }] }),
   skater("f2", "Temporary promotion: covering for an injured teammate; reversal scenario not supplied",
     { id: "fx-f2", name: "Fixture Forward Two", team: "FX2", modelClass: "F", positions: ["LW"] },
     [...rep(10, i => ({ toi: 12.5, pp: 0.3, g: every(i, 6), a: every(i, 5) })), ...rep(10, i => ({ toi: 17, pp: 2.5, g: every(i, 4), a: every(i, 2) }))],
-    0.6, { priorPoints: 0.35, role: [{ kind: "injury_replacement", label: "Covering for injured fixture teammate", effectiveAt: "2026-10-05T16:00:00.000Z", source: "fixture injury note" }] }),
+    0.6, { priorPoints: 0.35, role: [{ kind: "injury_replacement", label: "Covering for injured fixture teammate", effectiveAt: "2026-10-05T16:00:00.000Z", knownAt: "2026-10-05T18:00:00.000Z", source: "fixture injury note" }] }),
   skater("f3", "Demotion: minutes fell and production went cold; short schedule leaves only 14 games",
     { id: "fx-f3", name: "Fixture Forward Three", team: "FX3", modelClass: "F", positions: ["RW"] },
     [...rep(10, i => ({ toi: 17.5, pp: 2.8, g: every(i, 3), a: every(i, 2) })), ...rep(10, i => ({ toi: 12, pp: 0.2, g: 0, a: every(i, 5) }))],
