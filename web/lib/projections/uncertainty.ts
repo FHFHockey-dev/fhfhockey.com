@@ -851,8 +851,18 @@ function simulationAlpha(
 ): number | null {
   const fit = getDispersionFit(stat, position);
   if (!fit) return null;
-  const residualCv = Math.sqrt(Math.max(0, fit.toiCv2 - simToiCv * simToiCv));
-  return resolveDispersionAlpha(stat, position, perGameMean, { toiCv: residualCv });
+  return resolveDispersionAlpha(stat, position, perGameMean, { toiCv: residualToiCv(fit.toiCv2, simToiCv) });
+}
+
+/**
+ * TOI CV left for the gamma multiplier once the simulator samples TOI with CV `simToiCv`. Independent
+ * multiplicative noises compound as (1 + r^2)(1 + s^2) - 1, so r^2 = (1 + fit^2)/(1 + s^2) - 1, not
+ * fit^2 - s^2 (W1-7 N4: F SOG, ES 1,000 s + PP 200 s gave .02483 against the fitted .0247).
+ */
+export function residualToiCv(fitToiCv2: number, simToiCv: number): number {
+  const fit2 = Math.max(0, Number.isFinite(fitToiCv2) ? fitToiCv2 : 0);
+  const sim2 = Math.max(0, Number.isFinite(simToiCv) ? simToiCv : 0) ** 2;
+  return Math.sqrt(Math.max(0, (1 + fit2) / (1 + sim2) - 1));
 }
 const COUNT_TAIL_EPS = 1e-12;
 const COUNT_MAX_SUPPORT = 20000;
