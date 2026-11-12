@@ -416,6 +416,9 @@ export const FORGE_AUDITED_INPUT_SOURCES: ReadonlySet<string> = new Set([
   "market_prices_daily", "prop_market_prices_daily",
   "forge_runs", "forge_player_projections", "forge_team_projections", "forge_goalie_projections", "forge_reserve_projections",
   "player_forecast_source_observations", "read_forge_game_revisions",
+  // In-house xG registry (L14 selector pins the team prior); the shot-feature table is reachable only
+  // through the registry module's imports and is not read by the run. Neither is a fantasy source.
+  "nhl_xg_model_registry", "nhl_xg_shot_features",
 ]);
 /** A third-party fantasy projection table: every configured source is a `PROJECTIONS_<season>_<source>` table, and so is
  * a new season's or source's. Matched by name so the runner never imports the provider configuration. */
