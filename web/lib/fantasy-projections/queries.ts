@@ -2,15 +2,17 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import {
   FANTASY_PROJECTION_BETA_LABEL,
-  FANTASY_PROJECTION_SUMMARY_ENCODING,
+  FANTASY_PROJECTION_SUMMARY_ENCODING_V2,
   FANTASY_PROJECTION_SUPPORTED_CONTRACTS,
-  type FantasyProjectionCompactPlayersResponse,
-  type FantasyProjectionPlayer,
-  type FantasyProjectionPlayerSummaryTuple,
+  nullableProjectionNumber,
+  type FantasyProjectionCompactPlayersResponseV2,
+  type FantasyProjectionNullablePlayer,
+  type FantasyProjectionPlayerSummaryTupleV2,
   type FantasyProjectionPopulation,
   type FantasyProjectionRelease,
   type FantasyProjectionTeam,
   type FantasyProjectionView,
+  type NullableProjectionValues,
   type ProjectionValues,
 } from "./contracts";
 
@@ -27,17 +29,31 @@ function record(value: unknown): Record<string, any> {
     : {};
 }
 
+/** Known values only; null, empty and non-finite values are dropped (absent = unknown). */
 function numberRecord(value: unknown): ProjectionValues {
   return Object.fromEntries(
-    Object.entries(record(value))
-      .map(([key, raw]) => [key, Number(raw)])
-      .filter(([, parsed]) => Number.isFinite(parsed)),
+    Object.entries(record(value)).flatMap(([key, raw]) => {
+      const parsed = nullableProjectionNumber(raw);
+      return parsed === null ? [] : [[key, parsed]];
+    }),
+  );
+}
+
+/** Projection values with unknowns kept as null, never 0 (W3-5 F6/PR3). */
+function nullableRecord(value: unknown): NullableProjectionValues {
+  return Object.fromEntries(
+    Object.entries(record(value)).map(([key, raw]) => [key, nullableProjectionNumber(raw)]),
   );
 }
 
 function summaryNumber(value: unknown): number {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? Number(parsed.toFixed(4)) : 0;
+}
+
+function nullableSummaryNumber(value: unknown): number | null {
+  const parsed = nullableProjectionNumber(value);
+  return parsed === null ? null : Number(parsed.toFixed(4));
 }
 
 function publicProvenance(value: unknown): Record<string, unknown> {
@@ -160,8 +176,8 @@ export async function loadFantasyProjectionPlayers(args: {
 }): Promise<{
   betaLabel: string;
   release: FantasyProjectionRelease;
-  players: FantasyProjectionPlayer[];
-} | Omit<FantasyProjectionCompactPlayersResponse, "success">> {
+  players: FantasyProjectionNullablePlayer[];
+} | Omit<FantasyProjectionCompactPlayersResponseV2, "success">> {
   const client = args.supabase as any;
   const release = await activeRelease(args.supabase, args.seasonId, args.view);
   const format = args.format ?? "full";
@@ -211,7 +227,7 @@ export async function loadFantasyProjectionPlayers(args: {
     return {
       betaLabel: FANTASY_PROJECTION_BETA_LABEL,
       release,
-      encoding: FANTASY_PROJECTION_SUMMARY_ENCODING,
+      encoding: FANTASY_PROJECTION_SUMMARY_ENCODING_V2,
       metricKeys,
       players: rows.map((row: any) =>
         mapPlayerSummary(row, teamAbbreviations, metricKeys),
@@ -229,7 +245,7 @@ function mapPlayerSummary(
   row: Record<string, any>,
   teamAbbreviations: Map<number, string>,
   metricKeys: string[],
-): FantasyProjectionPlayerSummaryTuple {
+): FantasyProjectionPlayerSummaryTupleV2 {
   const teamId = row.team_id == null ? null : Number(row.team_id);
   const population = row.population as FantasyProjectionPopulation;
   const fallbackFlags = Array.isArray(row.fallback_flags)
@@ -265,7 +281,7 @@ function mapPlayerSummary(
   const rawRating = ratings[ratingKey];
   const primaryRating =
     typeof rawRating === "number" ? rawRating : Number(record(rawRating).value ?? 0);
-  const values = numberRecord(row.published_values);
+  const values = record(row.published_values);
   return [
     Number(row.fhfh_player_id),
     teamId,
@@ -295,14 +311,15 @@ function mapPlayerSummary(
     ],
     row.adjusted ? 1 : 0,
     fallbackFlags,
-    metricKeys.map((key) => summaryNumber(values[key])),
+    // v2: an unknown or absent value stays null (W3-5 F6/PR3).
+    metricKeys.map((key) => nullableSummaryNumber(values[key])),
   ];
 }
 
 function mapPlayer(
   row: Record<string, any>,
   teamAbbreviations: Map<number, string>,
-): FantasyProjectionPlayer {
+): FantasyProjectionNullablePlayer {
   const teamId = row.team_id == null ? null : Number(row.team_id);
   const fallbackFlags = Array.isArray(row.fallback_flags)
     ? row.fallback_flags.map(String)
@@ -353,17 +370,17 @@ function mapPlayer(
       nhleMethod: rookie.nhleMethod ? String(rookie.nhleMethod) : null,
       sourceLeague: rookie.sourceLeague ? String(rookie.sourceLeague) : null,
     },
-    expectedGames: Number(row.expected_games),
-    expectedStarts: row.expected_starts == null ? null : Number(row.expected_starts),
-    expectedToi: numberRecord(row.expected_toi),
+    expectedGames: nullableProjectionNumber(row.expected_games),
+    expectedStarts: nullableProjectionNumber(row.expected_starts),
+    expectedToi: nullableRecord(row.expected_toi),
     ratings: record(row.ratings),
     deployment: record(row.deployment),
-    modelValues: numberRecord(row.base_values),
-    publishedValues: numberRecord(row.published_values),
-    p10: numberRecord(row.p10),
-    p50: numberRecord(row.p50),
-    p90: numberRecord(row.p90),
-    adjustmentDelta: numberRecord(row.adjustment_delta),
+    modelValues: nullableRecord(row.base_values),
+    publishedValues: nullableRecord(row.published_values),
+    p10: nullableRecord(row.p10),
+    p50: nullableRecord(row.p50),
+    p90: nullableRecord(row.p90),
+    adjustmentDelta: nullableRecord(row.adjustment_delta),
     adjusted: Boolean(row.adjusted),
     fallbackFlags,
     provenance: publicProvenance(row.provenance),
@@ -378,12 +395,12 @@ export async function loadFantasyProjectionPlayerDetail(args: {
 }): Promise<{
   betaLabel: string;
   release: FantasyProjectionRelease;
-  player: FantasyProjectionPlayer;
+  player: FantasyProjectionNullablePlayer;
   releaseHistory: Array<{
     view: FantasyProjectionView;
     releaseNumber: number;
     issuedAt: string;
-    publishedValues: ProjectionValues;
+    publishedValues: NullableProjectionValues;
     teamAbbreviation: string | null;
   }>;
 }> {
@@ -454,7 +471,7 @@ export async function loadFantasyProjectionPlayerDetail(args: {
           view: releaseRow.view_key as FantasyProjectionView,
           releaseNumber: Number(releaseRow.release_number),
           issuedAt: String(releaseRow.issued_at),
-          publishedValues: numberRecord(history.published_values),
+          publishedValues: nullableRecord(history.published_values),
           teamAbbreviation:
             teamId == null ? null : teamAbbreviations.get(teamId) ?? null,
         }];

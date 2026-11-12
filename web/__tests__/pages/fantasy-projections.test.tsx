@@ -412,10 +412,172 @@ describe("Fantasy Projections scoring modes", () => {
 
     render(<FantasyProjectionsPage />);
     await screen.findByText("0 players");
-    fireEvent.click(screen.getByRole("button", { name: "Team Ratings & Lines" }));
+    fireEvent.click(screen.getByRole("button", { name: "Team Ratings & Ice Time" }));
 
     expect(await screen.findByText("Advanced season forecast")).toBeTruthy();
     expect(screen.getByText("CF").nextElementSibling?.textContent).toBe("5701");
     expect(screen.getByText("FF").nextElementSibling?.textContent).toBe("4141");
+  });
+  it.each(["summary-v2", "full"] as const)("renders an unknown fantasy total as unknown and sorts it last in both directions (%s payload; W3-5 F6, L13)", async (format) => {
+    window.localStorage.setItem(
+      FANTASY_PROJECTION_SCORING_V2_KEY,
+      JSON.stringify({
+        version: 2,
+        leagueType: "points",
+        skaterPoints: { GOALS: 2, TAKEAWAYS: 1 },
+        goaliePoints: {},
+        categoryWeights: { GOALS: 1, TAKEAWAYS: 1 },
+      }),
+    );
+    const tuple = (id: number, name: string, values: Array<number | null>) => [
+      id, 1, "TST", name, "C", "forward", "verified_active", "active_nhl", 0.9, null,
+      0, 80, 0.9, [null, null, null, null, null], 0, [], values,
+    ];
+    const summary = {
+      success: true,
+      betaLabel: "beta",
+      release,
+      encoding: "player-summary-v2",
+      metricKeys: ["GOALS", "TAKEAWAYS"],
+      players: [
+        tuple(1, "Unknown Takeaways", [2, null]),
+        tuple(2, "Low Total", [1, 1]),
+        tuple(3, "High Total", [3, 0]),
+      ],
+    };
+    const full = {
+      success: true,
+      release,
+      players: [
+        { ...player("player-1", "Unknown Takeaways", "forward", { GOALS: 2 }),
+          publishedValues: { GOALS: 2, TAKEAWAYS: null } },
+        player("player-2", "Low Total", "forward", { GOALS: 1, TAKEAWAYS: 1 }),
+        player("player-3", "High Total", "forward", { GOALS: 3, TAKEAWAYS: 0 }),
+      ],
+    };
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.includes("/releases")) return response({ success: true, releases: [release] });
+        if (url.includes("/players")) return response(format === "full" ? full : summary);
+        if (url.includes("/teams")) return response({ success: true, release, teams: [] });
+        throw new Error(`Unexpected request: ${url}`);
+      }),
+    );
+    const order = () =>
+      screen
+        .getAllByRole("row")
+        .slice(1)
+        .map((row) => row.querySelector("th button")?.textContent);
+    const total = (name: string) =>
+      screen.getByRole("row", { name: new RegExp(name) }).querySelectorAll("td")[2]?.textContent;
+
+    render(<FantasyProjectionsPage />);
+    await screen.findByText("Unknown Takeaways");
+    await waitFor(() => expect(total("High Total")).toBe("6.0"));
+    expect(total("Unknown Takeaways")).toBe("—");
+    expect(total("Low Total")).toBe("3.0");
+    expect(order()).toEqual(["High Total", "Low Total", "Unknown Takeaways"]);
+    fireEvent.click(screen.getByRole("button", { name: "Fantasy total" }));
+    await waitFor(() =>
+      expect(order()).toEqual(["Low Total", "High Total", "Unknown Takeaways"]),
+    );
+
+    // Category mode: an absent category score is unknown, rendered and sorted last.
+    fireEvent.click(screen.getByText("Customize fantasy scoring"));
+    fireEvent.click(screen.getByRole("button", { name: "Categories" }));
+    await waitFor(() => expect(total("Unknown Takeaways")).toBe("—"));
+    expect(order()[2]).toBe("Unknown Takeaways");
+  });
+
+  it("labels a post-freeze newcomer as a population prior with no role odds (decision 122)", async () => {
+    const newcomer: FantasyProjectionPlayer = {
+      ...player("player-5", "New Arrival", "forward", { POINTS: 4 }),
+      rookieProfile: { rookie: true, rosterProbability: 0.4, sourceCoverage: [], nhleMethod: null },
+      deployment: {
+        confidence: 0.9,
+        mostLikelyRole: { forwardLine: "F2" },
+        roleProbabilities: { forwardLine: { F2: 0.6, F3: 0.4 } },
+      },
+      fallbackFlags: ["population_prior", "prior_based_projection"],
+    };
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.includes("/players/5?")) {
+          return response({ success: true, betaLabel: "beta", release, player: newcomer, releaseHistory: [] });
+        }
+        if (url.includes("/releases")) return response({ success: true, releases: [release] });
+        if (url.includes("/players")) return response({ success: true, release, players: [newcomer] });
+        if (url.includes("/teams")) return response({ success: true, release, teams: [] });
+        throw new Error(`Unexpected request: ${url}`);
+      }),
+    );
+
+    render(<FantasyProjectionsPage />);
+    const row = (await screen.findByRole("button", { name: "New Arrival" })).closest("tr")!;
+    expect(row.textContent).toContain("Population prior");
+    expect(row.textContent).toContain("Role unknown");
+    expect(row.textContent).not.toContain("F2");
+    fireEvent.click(screen.getByRole("button", { name: "New Arrival" }));
+    const dialog = await screen.findByRole("dialog", { name: "Player projection details" });
+    await waitFor(() => expect(dialog.textContent).toContain("heuristic"));
+    expect(dialog.textContent).not.toMatch(/F2 60%/);
+    expect(dialog.textContent).not.toContain("Rookie translation");
+  });
+
+  it("shows team deployment as projected ice-time order and withholds PP/PK units (decision 123)", async () => {
+    const roster = [1, 2, 3, 4].map((id) => player(`player-${id}`, `Skater ${id}`, "forward", { POINTS: 10 }));
+    const team: FantasyProjectionTeam = {
+      id: "team-release-1",
+      releaseId: release.id,
+      teamId: 1,
+      teamName: "Test Club",
+      abbreviation: "TST",
+      modelRatings: {},
+      publishedRatings: {},
+      // An issued release may still carry PP/PK units; they are not shown.
+      deployment: {
+        forwardLines: [[1, 2, 3]],
+        defensePairs: [],
+        powerPlayUnits: [[1, 2, 3, 4]],
+        penaltyKillUnits: [[2, 3]],
+        goalieOrder: [],
+      },
+      rosterCounts: {},
+      modelValues: {},
+      publishedValues: {},
+      p10: {},
+      p50: {},
+      p90: {},
+      adjustmentDelta: {},
+      adjusted: false,
+      confidence: 0.8,
+      provenance: {},
+    };
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.includes("/releases")) return response({ success: true, releases: [release] });
+        if (url.includes("/players")) return response({ success: true, release, players: roster });
+        if (url.includes("/teams")) return response({ success: true, release, teams: [team] });
+        throw new Error(`Unexpected request: ${url}`);
+      }),
+    );
+
+    render(<FantasyProjectionsPage />);
+    await screen.findByText("4 players");
+    fireEvent.click(screen.getByRole("button", { name: "Team Ratings & Ice Time" }));
+    expect(await screen.findByText("Projected ice-time order")).toBeTruthy();
+    expect(screen.getByText("Forwards 1–3").nextElementSibling?.textContent).toBe(
+      "Skater 1 · Skater 2 · Skater 3",
+    );
+    expect(screen.queryByText("Line 1")).toBeNull();
+    expect(screen.queryByText("PP1")).toBeNull();
+    expect(screen.queryByText("PK1")).toBeNull();
+    expect(screen.getByText(/units are withheld until strength-specific ice time/)).toBeTruthy();
   });
 });

@@ -22,9 +22,9 @@ import {
 } from "../lib/fantasy-projections/contracts";
 import { checksumCanonicalJson } from "../lib/fantasy-projections/evaluator";
 import {
-  allocateSeasonTotalAdjustment,
+  buildRemainingModelManifest,
+  evaluateSeasonOutput,
   FANTASY_PROJECTION_SCORING_VERSION,
-  scoreSeasonPrimitive,
 } from "../lib/fantasy-projections/settlement";
 import { getServiceRoleClient } from "../lib/supabase/server";
 
@@ -191,12 +191,12 @@ async function main(): Promise<void> {
   for (const release of releases) {
     const outputs = await selectAll(
       "player_forecast_season_game_outputs",
-      "schedule_game_id,fhfh_player_id,population,playing_probability,start_probability,unconditional_means,baseline_unconditional_means,quantiles",
+      "schedule_game_id,fhfh_player_id,population,playing_probability,start_probability,unconditional_means,baseline_unconditional_means,quantiles,component_hash",
       (query) => query.eq("run_id", release.run_id),
     );
     const players = await selectAll(
       "player_forecast_season_release_players",
-      "fhfh_player_id,base_values,published_values,adjustment_delta",
+      "fhfh_player_id,base_values,published_values,adjustment_delta,component_manifest",
       (query) => query.eq("release_id", release.id),
     );
     releaseInputs.push({
@@ -304,6 +304,15 @@ async function main(): Promise<void> {
   const evaluations: any[] = [];
   const evaluatedAt = new Date().toISOString();
   for (const input of releaseInputs) {
+    // W3-5 PR5: editorial deltas are allocated over the remaining-model
+    // manifest at issuance (the release player's component manifest), never
+    // over a season base that already includes actuals.
+    const outputsByPlayer = new Map<number, any[]>();
+    for (const output of input.outputs) {
+      const playerId = Number(output.fhfh_player_id);
+      outputsByPlayer.set(playerId, [...(outputsByPlayer.get(playerId) ?? []), output]);
+    }
+    const manifests = new Map<number, ReturnType<typeof buildRemainingModelManifest>>();
     for (const output of input.outputs) {
       const gameId = gameIdBySchedule.get(String(output.schedule_game_id));
       if (gameId == null || !completed.has(gameId)) continue;
@@ -312,32 +321,23 @@ async function main(): Promise<void> {
       if (!outcome) continue;
       const releasePlayer = input.players.get(playerId);
       const targets = primitiveTargets(output.population, manifest.contractVersion);
-      const modelLosses: Record<string, unknown> = {};
-      const publishedLosses: Record<string, unknown> = {};
-      for (const target of targets) {
-        const actual = Number(outcome.primitive_values?.[target] ?? 0);
-        const probability = target === "GAMES_PLAYED" || target === "GAMES_STARTED";
-        const modelForecast = probability
-          ? Number(target === "GAMES_STARTED" ? output.start_probability : output.playing_probability)
-          : Number(output.unconditional_means?.[target] ?? 0);
-        const baselineForecast = Number(output.baseline_unconditional_means?.[target] ?? 0);
-        const adjustmentDelta = Number(releasePlayer?.adjustment_delta?.[target] ?? 0);
-        const publishedForecast = allocateSeasonTotalAdjustment({
-          modelGameForecast: modelForecast,
-          modelRemainingTotal: Number(releasePlayer?.base_values?.[target] ?? 0),
-          adjustmentDelta,
-          remainingGames: Math.max(1, Number(releasePlayer?.base_values?.GAMES_PLAYED ?? 1)),
-        });
-        const common = {
-          actual,
-          baselineForecast,
-          p10: output.quantiles?.p10?.[target],
-          p90: output.quantiles?.p90?.[target],
-          probability,
-        };
-        modelLosses[target] = scoreSeasonPrimitive({ ...common, forecast: modelForecast });
-        publishedLosses[target] = scoreSeasonPrimitive({ ...common, forecast: publishedForecast });
+      if (!manifests.has(playerId)) {
+        manifests.set(playerId, buildRemainingModelManifest({
+          releasePlayer,
+          outputs: outputsByPlayer.get(playerId) ?? [],
+          gameIdForOutput: (candidate) =>
+            gameIdBySchedule.get(String(candidate.schedule_game_id)) ?? null,
+          targets,
+        }));
       }
+      // Null primitive outcomes and forecasts stay unknown (L15 ticket).
+      const { modelLosses, publishedLosses, unscoredTargets } = evaluateSeasonOutput({
+        output,
+        outcomePrimitiveValues: outcome.primitive_values,
+        releasePlayer,
+        manifest: manifests.get(playerId) ?? null,
+        targets,
+      });
       evaluations.push({
         release_id: input.release.id,
         outcome_revision_id: outcome.id,
@@ -351,6 +351,7 @@ async function main(): Promise<void> {
           releaseView: input.release.view_key,
           releaseNumber: input.release.release_number,
           settlementBundleHash: manifest.bundleHash,
+          unscoredTargets,
         },
       });
     }

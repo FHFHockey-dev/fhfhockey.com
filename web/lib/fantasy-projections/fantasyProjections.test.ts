@@ -657,21 +657,20 @@ describe("fantasy projection contracts", () => {
       p10: 0,
       p90: 1,
       probability: true,
-    });
-    expect(score).toMatchObject({
-      baselineAbsoluteError: 0.5,
-      interval80Covered: true,
-      skillIndex: 80,
-    });
-    expect(score.absoluteError).toBeCloseTo(0.2);
-    expect(score.brier).toBeCloseTo(0.04);
+    })!;
+    expect(score.baselineMetrics.absoluteError).toBe(0.5);
+    expect(score.metrics).toMatchObject({ interval80Available: true, interval80Covered: true });
+    // v2 has no per-row skill index (decision 65): skill is aggregated.
+    expect(score.metrics).not.toHaveProperty("skillIndex");
+    expect(score.metrics.absoluteError).toBeCloseTo(0.2);
+    expect(score.metrics.brier).toBeCloseTo(0.04);
     const adjusted = [1, 2, 3].map((modelGameForecast) =>
       allocateSeasonTotalAdjustment({
         modelGameForecast,
-        modelRemainingTotal: 6,
+        remainingModelTotal: 6,
         adjustmentDelta: 3,
         remainingGames: 3,
-      }),
+      })!,
     );
     expect(adjusted.reduce((total, value) => total + value, 0)).toBe(9);
   });
