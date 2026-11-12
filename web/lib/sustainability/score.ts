@@ -89,24 +89,31 @@ export async function fetchSkillWindowRates(
     .order("date", { ascending: false })
     .limit(nGames);
   if (error) throw error;
-  let ixg = 0,
-    icf = 0,
-    hdcf = 0,
-    toi = 0;
-  // Only games with NST ice time count; with none, the rates are unavailable rather than zero.
+  // Each count is pooled over the games where both it and NST ice time are
+  // known (W2-1 F2): a missing count is unknown, never zero events.
+  const pooled = { ixg: [0, 0], icf: [0, 0], hdcf: [0, 0] };
   for (const r of data ?? []) {
     const rowToi = Number(r.nst_toi);
     if (r.nst_toi == null || !Number.isFinite(rowToi) || rowToi <= 0) continue;
-    ixg += Number(r.nst_ixg) || 0;
-    icf += Number(r.nst_icf) || 0;
-    hdcf += Number(r.nst_hdcf) || 0;
-    toi += rowToi;
+    (
+      [
+        ["ixg", r.nst_ixg],
+        ["icf", r.nst_icf],
+        ["hdcf", r.nst_hdcf]
+      ] as const
+    ).forEach(([key, raw]) => {
+      const count = raw == null ? Number.NaN : Number(raw);
+      if (!Number.isFinite(count)) return;
+      pooled[key][0] += count;
+      pooled[key][1] += rowToi;
+    });
   }
-  const per60 = (count: number) => (toi > 0 ? (3600 * count) / toi : null);
+  const per60 = ([count, toi]: number[]) =>
+    toi > 0 ? (3600 * count) / toi : null;
   return {
-    ixg60: per60(ixg),
-    icf60: per60(icf),
-    hdcf60: per60(hdcf),
+    ixg60: per60(pooled.ixg),
+    icf60: per60(pooled.icf),
+    hdcf60: per60(pooled.hdcf),
     sourceDate:
       data?.[0]?.date == null ? null : String(data[0].date).slice(0, 10),
     appearanceCount: data?.length ?? 0

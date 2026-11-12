@@ -11,6 +11,7 @@ import {
   deriveLegacyExpectationState,
   getSandboxMetricLabel
 } from "./entitySurface";
+import { readUsualRange } from "./usualRange";
 
 type PlayerRow = Database["public"]["Tables"]["players"]["Row"];
 type LegacyScoreRow = Database["public"]["Tables"]["sustainability_scores"]["Row"];
@@ -397,14 +398,20 @@ function resolveBaselineBucketValue(args: {
 }
 
 function buildBandHistoryComparisonLookup<
-  TRow extends { metric_key: string; value: number | null }
+  TRow extends {
+    metric_key: string;
+    value: number;
+    ewma: number | null;
+    distribution: Json;
+  }
 >(rows: TRow[]) {
   const grouped = new Map<string, number[]>();
 
   rows.forEach((row) => {
-    if (typeof row.value !== "number" || !Number.isFinite(row.value)) return;
+    const observed = observedBandValue(row);
+    if (!Number.isFinite(observed)) return;
     const existing = grouped.get(row.metric_key) ?? [];
-    existing.push(row.value);
+    existing.push(observed);
     grouped.set(row.metric_key, existing);
   });
 
@@ -419,6 +426,20 @@ function buildBandHistoryComparisonLookup<
   });
 
   return lookup;
+}
+
+/**
+ * The window's observed value for comparisons (W3-6 N3): the usual range's
+ * observed total when present, else the window EWMA; never the shrunk value.
+ */
+function observedBandValue(row: {
+  value: number;
+  ewma: number | null;
+  distribution: Json;
+}): number {
+  const usual = readUsualRange(row.distribution);
+  if (usual.range) return usual.range.observed;
+  return typeof row.ewma === "number" ? row.ewma : Number(row.value);
 }
 
 function buildBandComparisons(args: {
@@ -765,7 +786,7 @@ function normalizeLegacyBandRow(args: {
     comparisons: buildBandComparisons({
       entityType: "skater",
       metricKey: args.row.metric_key,
-      currentValue: Number(args.row.value),
+      currentValue: observedBandValue(args.row),
       historyComparisons: args.historyComparisons,
       baseline: args.baseline
     })
@@ -812,7 +833,7 @@ function normalizeUnifiedBandRow(args: {
     comparisons: buildBandComparisons({
       entityType: args.row.entity_type as SandboxEntityType,
       metricKey: args.row.metric_key,
-      currentValue: Number(args.row.value),
+      currentValue: observedBandValue(args.row),
       historyComparisons: args.historyComparisons,
       baseline: undefined
     })

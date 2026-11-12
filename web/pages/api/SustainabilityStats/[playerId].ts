@@ -3,7 +3,12 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { parse } from "node-html-parser";
 
 import { fetchNstTextWithCacheByUrl } from "lib/nst/client";
-import { Data, parseTable } from "../CareerAverages/[playerId]";
+import {
+  Data,
+  nstHeaderIndex,
+  nstNumber,
+  parseTable
+} from "../CareerAverages/[playerId]";
 import { Input } from "../toi";
 import { parseTime } from "lib/NHL/TOI";
 import { getPlayer } from "lib/NHL/server";
@@ -95,6 +100,9 @@ async function getStats(
   const individualDocument = parse(individualHtml);
 
   const onIceDocument = parse(onIceHtml);
+  // NST identity here is matched by player name within the team table
+  // (BC W1-9 D12): a name collision or spelling difference finds the wrong
+  // or no player. Kept as-is; flagged for an id-based lookup.
   const onIces = parseTable(onIceDocument.getElementById("players"));
   const onIce = {
     headers: onIces.headers,
@@ -115,58 +123,39 @@ async function getStats(
     );
   }
 
-  // S%
-  const shootsPctIdx = individual.headers.indexOf("SH%");
-  const shootsPct = Number(individual.data[shootsPctIdx]);
-
-  // xS% (ixG/shots)
-  const xSPct =
-    Number(individual.data[individual.headers.indexOf("ixG")]) /
-    Number(individual.data[individual.headers.indexOf("Shots")]);
-
-  // IPP
-  const IPP = Number(individual.data[individual.headers.indexOf("IPP")]);
-
-  // oiSH% - "On-Ice SH%"
-  const oiSHPct = Number(onIce.data[onIce.headers.indexOf("On-Ice SH%")]);
-
-  // sec A% (Secondary assist %) - second assists/total Assists
-  const secAPct =
-    Number(individual.data[individual.headers.indexOf("Second Assists")]) /
-      Number(individual.data[individual.headers.indexOf("Total Assists")]) || 0;
-
-  // SOG/60 - (shots/toi)*60
-  const SOGPerSixty =
-    (Number(individual.data[individual.headers.indexOf("Shots")]) /
-      parseTime(individual.data[individual.headers.indexOf("TOI")]) || 0) * 60;
-
-  // oZS% is offensive zone start % - Off. Zone Start %
-  const oZSPct = Number(onIce.data[onIce.headers.indexOf("Off. Zone Start %")]);
-
-  // iHDCF - Individual High Danger Chances For
-  const iHDCF = Number(individual.data[individual.headers.indexOf("iHDCF")]);
-
-  // iSCF - Individual Scoring Chances For
-  const iSCF = Number(individual.data[individual.headers.indexOf("iSCF")]);
-
-  // ixG - Individual Expected Goals
-  const ixG = Number(individual.data[individual.headers.indexOf("ixG")]);
-
-  // goals - Goals
-  const goals = Number(individual.data[individual.headers.indexOf("Goals")]);
+  const ind = (header: string) => {
+    const idx = nstHeaderIndex(individual.headers, header);
+    return idx === -1 ? null : nstNumber(individual.data![idx]);
+  };
+  const oi = (header: string) => {
+    const idx = nstHeaderIndex(onIce.headers, header);
+    return idx === -1 ? null : nstNumber(onIce.data![idx]);
+  };
+  const ratio = (num: number | null, den: number | null) =>
+    num == null || den == null || den <= 0 ? null : num / den;
+  const fraction = (percent: number | null) =>
+    percent == null ? null : percent / 100;
+  const toiIdx = nstHeaderIndex(individual.headers, "TOI");
+  const toiMinutes = toiIdx === -1 ? Number.NaN : parseTime(individual.data[toiIdx]);
+  const shotsPer60 = ratio(
+    ind("Shots"),
+    Number.isFinite(toiMinutes) ? toiMinutes : null
+  );
 
   return {
-    "S%": shootsPct / 100,
-    "xS%": xSPct,
-    IPP: IPP / 100,
-    "oiSH%": oiSHPct / 100,
-    "secA%": secAPct,
-    "SOG/60": SOGPerSixty,
-    "oZS%": oZSPct / 100,
-    iHDCF: iHDCF,
-    iSCF: iSCF,
-    ixG: ixG,
-    goals: goals
+    "S%": fraction(ind("SH%")),
+    // Decision 17: xS% = ixG / unblocked attempts (iFF).
+    "xS%": ratio(ind("ixG"), ind("iFF")),
+    IPP: fraction(ind("IPP")),
+    "oiSH%": fraction(oi("On-Ice SH%")),
+    "secA%": ratio(ind("Second Assists"), ind("Total Assists")),
+    // Unknown or zero TOI is unknown, never 0 SOG/60 (L3 parseTime ticket).
+    "SOG/60": shotsPer60 == null ? null : shotsPer60 * 60,
+    "oZS%": fraction(oi("Off. Zone Start %")),
+    iHDCF: ind("iHDCF"),
+    iSCF: ind("iSCF"),
+    ixG: ind("ixG"),
+    goals: ind("Goals")
   };
 }
 

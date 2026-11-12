@@ -22,6 +22,10 @@ import {
   type SandboxEntityType,
   type SandboxScoreRow
 } from "lib/sustainability/entitySurface";
+import {
+  readUsualRange,
+  USUAL_RANGE_REASON_LABELS
+} from "lib/sustainability/usualRange";
 import styles from "./trends/sandbox.module.scss";
 
 type EntityOption = {
@@ -589,19 +593,17 @@ function ElasticityBandChart({
       .map((row) => {
         const date = new Date(row.snapshotDate);
         if (Number.isNaN(date.getTime())) return null;
-        const status =
-          row.value > row.ciUpper
-            ? "hot"
-            : row.value < row.ciLower
-              ? "cold"
-              : "neutral";
+        // Usual range = pre-window baseline predictive range (decision 33);
+        // snapshots without one are left out rather than drawn as neutral.
+        const usual = readUsualRange(row.distribution);
+        if (!usual.range || usual.status === "unknown") return null;
         return {
           date,
-          lower: row.ciLower,
-          upper: row.ciUpper,
-          value: row.value,
-          baseline: row.baseline,
-          status,
+          lower: usual.range.lower,
+          upper: usual.range.upper,
+          value: usual.range.observed,
+          baseline: usual.range.baseline,
+          status: usual.status,
           gameContext: row.gameContext ?? null
         } as {
           date: Date;
@@ -2310,17 +2312,18 @@ export default function TrendsSandboxPage() {
       averageLabel: "Band Trend",
       baselineLabel: "Baseline",
       baseline: fallbackBaseline,
-      rows: historyRows.map((row) => ({
-        snapshotDate: row.snapshotDate,
-        value: row.value,
-        rollingAverage: row.ewma,
-        status:
-          row.value > row.ciUpper
-            ? "hot"
-            : row.value < row.ciLower
-              ? "cold"
-              : "neutral"
-      }))
+      rows: historyRows.flatMap((row) => {
+        const usual = readUsualRange(row.distribution);
+        if (!usual.range || usual.status === "unknown") return [];
+        return [
+          {
+            snapshotDate: row.snapshotDate,
+            value: usual.range.observed,
+            rollingAverage: row.ewma,
+            status: usual.status
+          }
+        ];
+      })
     });
   }, [
     entityConfig.metrics,
@@ -2346,7 +2349,7 @@ export default function TrendsSandboxPage() {
         }),
         title: "Score Streaks",
         subtitle: "Brush and zoom the full-season fantasy score timeline",
-        valueLabel: "Fantasy Score",
+        valueLabel: "Fantasy Score (FHFH default)",
         averageLabel: `${windowCode.toUpperCase()} Avg`,
         baselineLabel: "Season Avg"
       });
@@ -2845,7 +2848,7 @@ export default function TrendsSandboxPage() {
                   <span>{formatNumber(skaterCorrelationSummary.xMean, 2)}</span>
                 </div>
                 <div>
-                  <strong>Fantasy Score Avg</strong>
+                  <strong>Fantasy Score (FHFH default) Avg</strong>
                   <span>{formatNumber(skaterCorrelationSummary.yMean, 2)}</span>
                 </div>
                 <div>
@@ -2957,10 +2960,11 @@ export default function TrendsSandboxPage() {
             <div className={styles.bandGrid}>
               {bandRows.length > 0 ? (
                 bandRows.map((row) => {
+                  const usual = readUsualRange(row.distribution);
                   const statusClass =
-                    row.value > row.ciUpper
+                    usual.status === "hot"
                       ? styles.bandHot
-                      : row.value < row.ciLower
+                      : usual.status === "cold"
                         ? styles.bandCold
                         : styles.bandNeutral;
                   return (
@@ -2979,15 +2983,30 @@ export default function TrendsSandboxPage() {
                       <div className={styles.bandSnapshotRow}>
                         <span className={styles.bandSnapshotLabel}>Current Window</span>
                         <span className={styles.bandValue}>
-                          {row.value.toFixed(2)}
+                          {usual.range
+                            ? usual.range.observed.toFixed(2)
+                            : row.ewma != null
+                              ? row.ewma.toFixed(2)
+                              : "—"}
                         </span>
                       </div>
-                      <div className={styles.bandRange}>
-                        Usual range {row.ciLower.toFixed(2)} – {row.ciUpper.toFixed(2)}
-                      </div>
-                      {row.baseline != null && (
-                        <div className={styles.bandBaseline}>
-                          Normal level {row.baseline.toFixed(2)}
+                      {usual.range ? (
+                        <>
+                          <div className={styles.bandRange}>
+                            Usual range {usual.range.lower.toFixed(2)} –{" "}
+                            {usual.range.upper.toFixed(2)} (descriptive, from
+                            prior seasons; {usual.range.gamesCovered} of{" "}
+                            {usual.range.gamesInWindow} games)
+                          </div>
+                          <div className={styles.bandBaseline}>
+                            Normal level {usual.range.baseline.toFixed(2)}
+                          </div>
+                        </>
+                      ) : (
+                        <div className={styles.bandRange}>
+                          Usual range unavailable:{" "}
+                          {USUAL_RANGE_REASON_LABELS[usual.reason ?? ""] ??
+                            "unavailable"}
                         </div>
                       )}
                       <div className={styles.bandComparisonList}>

@@ -75,6 +75,188 @@ export function parseTable(table: HTMLElement) {
   return { headers, data };
 }
 
+/** A numeric NST cell; "-", blanks and other non-numbers are unknown. */
+export function nstNumber(value: string | null | undefined): number | null {
+  const text = String(value ?? "").trim();
+  if (!text) return null;
+  const parsed = Number(text);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+/** NST TOI cell in minutes; unknown (NaN from parseTime) stays null. */
+function nstMinutes(value: string | null | undefined): number | null {
+  const minutes = parseTime(value);
+  return Number.isFinite(minutes) ? minutes : null;
+}
+
+/** Header lookup that treats NST's non-breaking spaces as spaces. */
+export function nstHeaderIndex(headers: string[], header: string): number {
+  return headers.findIndex(
+    (candidate) => candidate.replace(/\u00a0/g, " ").trim() === header
+  );
+}
+
+/** Start year of an NST season label ("20252026" or "2025-26"). */
+function seasonStartYear(value: string | null | undefined): number | null {
+  const match = /^(\d{4})\D?\d{2,4}$/.exec(String(value ?? "").trim());
+  return match ? Number(match[1]) : null;
+}
+
+/** Start year of the season in progress (or about to start) on `asOf`. */
+export function currentSeasonStartYear(asOf: Date): number {
+  const year = asOf.getUTCFullYear();
+  return asOf.getUTCMonth() >= 6 ? year : year - 1;
+}
+
+type ParsedTable = { headers: string[]; data: string[][] };
+
+type SeasonRow = {
+  get: (header: string) => number | null;
+  minutes: number | null;
+  onIce: ((header: string) => number | null) | null;
+};
+
+/**
+ * Pools a ratio over seasons where both parts are known (rule 26):
+ * sum(numerator) / sum(denominator). Unknown seasons are skipped, never
+ * zeroed; no known season or a zero denominator gives null.
+ */
+function pooled(
+  rows: SeasonRow[],
+  numerator: (row: SeasonRow) => number | null,
+  denominator: (row: SeasonRow) => number | null
+): number | null {
+  let num = 0;
+  let den = 0;
+  rows.forEach((row) => {
+    const n = numerator(row);
+    const d = denominator(row);
+    if (n == null || d == null) return;
+    num += n;
+    den += d;
+  });
+  return den > 0 ? num / den : null;
+}
+
+/** Mean of a per-season count over seasons where it is known. */
+function seasonMean(
+  rows: SeasonRow[],
+  value: (row: SeasonRow) => number | null
+): number | null {
+  const known = rows
+    .map(value)
+    .filter((entry): entry is number => entry != null);
+  return known.length
+    ? known.reduce((sum, entry) => sum + entry, 0) / known.length
+    : null;
+}
+
+/**
+ * Career averages from NST's per-season player report, pooled from matched
+ * components (W1 P0 #25): completed seasons only (the season in progress is
+ * the window being judged, decision 34), on-ice rows matched to individual
+ * rows by season and team, xS% = ixG / iFF (decision 17).
+ * Assumes NST lists disjoint season (or season-team) rows with no total row;
+ * that layout is not re-verified here (no provider call in the fix).
+ */
+export function computeCareerAverages(
+  individual: ParsedTable,
+  onIce: ParsedTable,
+  asOf: Date = new Date()
+) {
+  const currentStart = currentSeasonStartYear(asOf);
+  const column = (table: ParsedTable, header: string) =>
+    nstHeaderIndex(table.headers, header);
+  const key = (table: ParsedTable, cells: string[]) =>
+    `${cells[column(table, "Season")] ?? ""}|${cells[column(table, "Team")] ?? ""}`;
+
+  const onIceByKey = new Map<string, string[]>();
+  onIce.data.forEach((cells) => onIceByKey.set(key(onIce, cells), cells));
+
+  const rows: SeasonRow[] = individual.data
+    .filter((cells) => {
+      const start = seasonStartYear(cells[column(individual, "Season")]);
+      return start != null && start < currentStart;
+    })
+    .map((cells) => {
+      const onIceCells = onIceByKey.get(key(individual, cells)) ?? null;
+      const cell = (table: ParsedTable, source: string[], header: string) => {
+        const idx = column(table, header);
+        return idx === -1 ? null : nstNumber(source[idx]);
+      };
+      return {
+        get: (header: string) => cell(individual, cells, header),
+        minutes: nstMinutes(cells[column(individual, "TOI")]),
+        onIce: onIceCells
+          ? (header: string) => cell(onIce, onIceCells, header)
+          : null
+      };
+    });
+
+  const onIceValue = (row: SeasonRow, header: string) =>
+    row.onIce ? row.onIce(header) : null;
+  const sum = (...parts: Array<number | null>) =>
+    parts.some((part) => part == null)
+      ? null
+      : parts.reduce<number>((total, part) => total + (part as number), 0);
+  const asPercentScale = (value: number | null) =>
+    value == null ? null : value * 100;
+
+  return {
+    "S%": pooled(rows, (r) => r.get("Goals"), (r) => r.get("Shots")),
+    "xS%": pooled(rows, (r) => r.get("ixG"), (r) => r.get("iFF")),
+    IPP: pooled(
+      rows,
+      (r) => r.get("Total Points"),
+      (r) => onIceValue(r, "GF")
+    ),
+    "oiSH%": pooled(
+      rows,
+      (r) => onIceValue(r, "GF"),
+      (r) => onIceValue(r, "SF")
+    ),
+    "secA%": pooled(
+      rows,
+      (r) => r.get("Second Assists"),
+      (r) => r.get("Total Assists")
+    ),
+    "Primary Assists": seasonMean(rows, (r) => r.get("First Assists")),
+    "Secondary Assists": seasonMean(rows, (r) => r.get("Second Assists")),
+    "Total Points": seasonMean(rows, (r) => r.get("Total Points")),
+    "SOG/60": (() => {
+      const rate = pooled(rows, (r) => r.get("Shots"), (r) => r.minutes);
+      return rate == null ? null : rate * 60;
+    })(),
+    // OZS% = OZ / (OZ + DZ) (decision 9).
+    "oZS%": pooled(
+      rows,
+      (r) => onIceValue(r, "Off. Zone Starts"),
+      (r) =>
+        sum(onIceValue(r, "Off. Zone Starts"), onIceValue(r, "Def. Zone Starts"))
+    ),
+    iHDCF: seasonMean(rows, (r) => r.get("iHDCF")),
+    iSCF: seasonMean(rows, (r) => r.get("iSCF")),
+    ixG: seasonMean(rows, (r) => r.get("ixG")),
+    // On-ice shares keep their 0-100 scale.
+    ixGpct: asPercentScale(
+      pooled(
+        rows,
+        (r) => onIceValue(r, "xGF"),
+        (r) => sum(onIceValue(r, "xGF"), onIceValue(r, "xGA"))
+      )
+    ),
+    goals: seasonMean(rows, (r) => r.get("Goals")),
+    iCFpct: asPercentScale(
+      pooled(
+        rows,
+        (r) => onIceValue(r, "CF"),
+        (r) => sum(onIceValue(r, "CF"), onIceValue(r, "CA"))
+      )
+    ),
+    seasons: rows.length
+  };
+}
+
 async function getStats(playerId: string) {
   const URL = buildNstUrlString("playerreport.php", {
     stype: 2,
@@ -88,164 +270,7 @@ async function getStats(playerId: string) {
   const document = parse(html);
   const individual = parseTable(document.getElementById("indreg"));
   const onIce = parseTable(document.getElementById("reg"));
-
-  // S%
-  const shootsPctIdx = individual.headers.indexOf("S%");
-  const shootsPct =
-    individual.data.reduce(
-      (prev, current) => prev + Number(current[shootsPctIdx]),
-      0
-    ) / individual.data.length;
-
-  // xS% (ixG/shots)
-  const xSPct =
-    individual.data.reduce(
-      (prev, current) =>
-        prev +
-        Number(current[individual.headers.indexOf("ixG")]) /
-          Number(current[individual.headers.indexOf("Shots")]),
-      0
-    ) / individual.data.length;
-
-  // IPP
-  const IPP =
-    individual.data.reduce(
-      (prev, current) =>
-        prev + Number(current[individual.headers.indexOf("IPP")]) || 0,
-      0
-    ) / individual.data.length;
-
-  // oiSH% - "On-Ice SH%"
-  const oiSHPct =
-    onIce.data.reduce(
-      (prev, current) =>
-        prev + Number(current[onIce.headers.indexOf("On-Ice SH%")]) || 0,
-      0
-    ) / onIce.data.length;
-
-  // sec A% (Secondary assist %) - second assists/total Assists
-  const secAPct =
-    individual.data.reduce(
-      (prev, current) =>
-        prev +
-          Number(current[individual.headers.indexOf("Second Assists")]) /
-            Number(current[individual.headers.indexOf("Total Assists")]) || 0,
-      0
-    ) / individual.data.length;
-
-  const primaryAssists =
-    individual.data.reduce(
-      (prev, current) =>
-        prev + Number(current[individual.headers.indexOf("First Assists")]) ||
-        0,
-      0
-    ) / individual.data.length;
-
-  const secondaryAssists =
-    individual.data.reduce(
-      (prev, current) =>
-        prev + Number(current[individual.headers.indexOf("Second Assists")]) ||
-        0,
-      0
-    ) / individual.data.length;
-
-  const totalPoints =
-    individual.data.reduce(
-      (prev, current) =>
-        prev + Number(current[individual.headers.indexOf("Total Points")]) || 0,
-      0
-    ) / individual.data.length;
-
-  // SOG/60 - (shots/toi)*60
-  const SOGPerSixty =
-    individual.data.reduce((prev, current) => {
-      return (
-        prev +
-        (Number(current[individual.headers.indexOf("Shots")]) /
-          parseTime(current[individual.headers.indexOf("TOI")]) || 0) *
-          60
-      );
-    }, 0) / individual.data.length;
-
-  // oZS% is offensive zone start % - Off. Zone Start %
-  const oZSPct =
-    onIce.data.reduce(
-      (prev, current) =>
-        prev + Number(current[onIce.headers.indexOf("Off. Zone Start %")]) || 0,
-      0
-    ) / onIce.data.length;
-
-  // iHDCF - Individual High Danger Chances For
-  const iHDCF =
-    individual.data.reduce(
-      (prev, current) =>
-        prev + Number(current[individual.headers.indexOf("iHDCF")]) || 0,
-      0
-    ) / individual.data.length;
-
-  // iSCF - Individual Scoring Chance For
-  const iSCF =
-    individual.data.reduce(
-      (prev, current) =>
-        prev + Number(current[individual.headers.indexOf("iSCF")]) || 0,
-      0
-    ) / individual.data.length;
-
-  // ixG - Individual Expected Goals
-  const ixG =
-    individual.data.reduce(
-      (prev, current) =>
-        prev + Number(current[individual.headers.indexOf("ixG")]) || 0,
-      0
-    ) / individual.data.length;
-
-  const ixGpct =
-    onIce.data.reduce(
-      (prev, current) =>
-        prev + Number(current[onIce.headers.indexOf("xG%")]) || 0,
-      0
-    ) / onIce.data.length;
-
-  const iCFpct =
-    onIce.data.reduce(
-      (prev, current) =>
-        prev + Number(current[onIce.headers.indexOf("CF%")]) || 0,
-      0
-    ) / onIce.data.length;
-
-  // Goals
-  const goals =
-    individual.data.reduce(
-      (prev, current) =>
-        prev + Number(current[individual.headers.indexOf("Goals")]) || 0,
-      0
-    ) / individual.data.length;
-
-  const data = {
-    "S%": shootsPct / 100,
-    "xS%": xSPct,
-    IPP: IPP / 100,
-    "oiSH%": oiSHPct / 100,
-    "secA%": secAPct,
-    "Primary Assists": primaryAssists,
-    "Secondary Assists": secondaryAssists,
-    "Total Points": totalPoints,
-    "SOG/60": SOGPerSixty,
-
-    "oZS%": oZSPct / 100,
-
-    iHDCF: iHDCF,
-
-    iSCF: iSCF,
-
-    ixG: ixG,
-    ixGpct: ixGpct,
-
-    goals: goals,
-
-    iCFpct: iCFpct
-  };
-  return data;
+  return computeCareerAverages(individual, onIce);
 }
 
 export default withNstJobLifecycle(handler, "CareerAverages/[playerId]", undefined, { lazy: true });

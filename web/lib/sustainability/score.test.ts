@@ -131,6 +131,49 @@ describe("forwards and missing skill data", () => {
     expect(rates.icf60).toBeCloseTo(12);
     expect(rates.hdcf60).toBeCloseTo(4);
   });
+
+  it("keeps a missing NST count unknown when its game has ice time (W2-1 F2)", async () => {
+    const query = {
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      lte: vi.fn().mockReturnThis(),
+      order: vi.fn().mockReturnThis(),
+      limit: vi.fn().mockResolvedValue({
+        data: [
+          { date: "2026-11-01", nst_ixg: null, nst_icf: 3, nst_hdcf: 1, nst_toi: 900 },
+          { date: "2026-10-30", nst_ixg: 0.5, nst_icf: 3, nst_hdcf: null, nst_toi: 900 },
+          { date: "2026-10-28", nst_ixg: null, nst_icf: 3, nst_hdcf: null, nst_toi: 900 },
+        ],
+        error: null,
+      }),
+    };
+    const client = { from: vi.fn().mockReturnValue(query) };
+
+    const rates = await fetchSkillWindowRates(1, "2026-11-02", 10, { client });
+
+    // ixG known in one 15-minute game: 2/60, not 0.5 over 45 minutes.
+    expect(rates.ixg60).toBeCloseTo(2);
+    expect(rates.icf60).toBeCloseTo(12);
+    expect(rates.hdcf60).toBeCloseTo(4);
+  });
+
+  it("returns unknown, not zero, for an all-null count with ice time", async () => {
+    const query = {
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      lte: vi.fn().mockReturnThis(),
+      order: vi.fn().mockReturnThis(),
+      limit: vi.fn().mockResolvedValue({
+        data: [{ date: "2026-11-01", nst_ixg: null, nst_icf: 3, nst_hdcf: 1, nst_toi: 900 }],
+        error: null,
+      }),
+    };
+    const client = { from: vi.fn().mockReturnValue(query) };
+
+    const rates = await fetchSkillWindowRates(1, "2026-11-02", 10, { client });
+
+    expect(rates.ixg60).toBeNull();
+  });
 });
 
 describe("score source provenance", () => {
