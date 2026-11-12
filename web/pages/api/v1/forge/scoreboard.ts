@@ -78,7 +78,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       data: daily,
       pooled: rows.length ? scoreLedger(rows, undefined, universe) : [],
       pooledPaired: scorePairedLedger(rows),
-      marketStatus: LEDGER_MARKET_ENABLED ? "enabled" : "disabled_pending_migration",
+      // Decision 126: off until decision 30's market fixes ship and are validated (the migration itself was applied 2026-10-22).
+      marketStatus: LEDGER_MARKET_ENABLED ? "enabled" : "disabled_pending_market_fixes",
       ...(LEDGER_MARKET_ENABLED ? { pooledMarket: scoreMarketLedger(rows) } : {}),
       ...(rows.length ? {} : { empty: true })
     });

@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { provenSnapshotRow, unprovenSnapshotRow } from "lib/projections/externalInputProof.fixtures";
 
 const { tables, fromMock, upsertMock, bridgeMock, planningMock, flags } = vi.hoisted(() => ({
-  flags: { market: false, basis: false },
+  flags: { market: undefined as boolean | undefined, basis: false },
   fromMock: vi.fn(),
   tables: {} as Record<string, Record<string, any>[]>,
   upsertMock: vi.fn(async (..._args: any[]) => ({ error: null as null | { message: string } })),
@@ -17,7 +17,8 @@ vi.mock("lib/rosterScheduleData/planningInputs", async importOriginal => ({ ...(
 vi.mock("lib/rosterScheduleData/forgeDailyBridge", async importOriginal => ({ ...(await importOriginal<any>()), loadForgeDailyBridgeForecasts: bridgeMock }));
 vi.mock("lib/player-forecasts/servedForecastLedger", async importOriginal => {
   const actual = await importOriginal<any>();
-  return { ...actual, get LEDGER_MARKET_ENABLED() { return flags.market; }, get LEDGER_BASIS_SCHEMA_ENABLED() { return flags.basis; } };
+  // Unset: the real constant (decision 126); set: a scenario override.
+  return { ...actual, get LEDGER_MARKET_ENABLED() { return flags.market ?? actual.LEDGER_MARKET_ENABLED; }, get LEDGER_BASIS_SCHEMA_ENABLED() { return flags.basis; } };
 });
 vi.mock("lib/supabase/server", () => ({
   default: {
@@ -56,7 +57,7 @@ const side = (id: string, team: string, opponent: string, home: boolean, startsA
 describe("forge-served-forecast-snapshot", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    flags.market = false;
+    flags.market = undefined;
     flags.basis = false;
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(new Date("2026-10-21T12:30:00Z"));
@@ -118,7 +119,7 @@ describe("forge-served-forecast-snapshot", () => {
     expect(upsertMock).not.toHaveBeenCalled();
   });
 
-  it("writes no market rows while the market source is off", async () => {
+  it("writes no market rows: the shipped market source is off (decision 126)", async () => {
     const out = res();
     await handler({ method: "POST", query: { date: "2026-10-21" } } as any, out);
     expect(out.body.countsBySource.market).toBe(0);

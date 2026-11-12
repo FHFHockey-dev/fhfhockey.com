@@ -1,11 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { tables, readMock, selectMock, flags } = vi.hoisted(() => ({ tables: {} as Record<string, Record<string, any>[]>, readMock: vi.fn(), selectMock: vi.fn(),
-  flags: { market: false } }));
+  flags: { market: undefined as boolean | undefined } }));
 
 vi.mock("lib/player-forecasts/servedForecastLedger", async importOriginal => {
   const actual = await importOriginal<any>();
-  return { ...actual, get LEDGER_MARKET_ENABLED() { return flags.market; } };
+  // Unset: the real constant (decision 126); set: a scenario override.
+  return { ...actual, get LEDGER_MARKET_ENABLED() { return flags.market ?? actual.LEDGER_MARKET_ENABLED; } };
 });
 
 vi.mock("lib/supabase/server", () => ({
@@ -47,7 +48,7 @@ const row = (served_date: string, player_id: number, source: string, exp: number
 describe("/api/v1/forge/scoreboard", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    flags.market = false;
+    flags.market = undefined;
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(new Date("2026-10-22T16:00:00Z"));
     tables.forge_served_forecast_ledger = [row("2026-10-20", 1, "bridge_exact", 0.5, 1), row("2026-10-20", 1, "naive_season", 0.2, 1),
@@ -79,10 +80,10 @@ describe("/api/v1/forge/scoreboard", () => {
     expect(out.body.limitations).toMatchObject({ position: "unavailable_skater_position_not_captured", opportunityRate: "unavailable_expected_and_actual_toi_pp_toi_not_captured" });
   });
 
-  it("keeps the market source unread until its migration is applied", async () => {
+  it("keeps the shipped market source off and unread (decision 126)", async () => {
     const out = res();
     await handler({ method: "GET", query: {} } as any, out);
-    expect(out.body.marketStatus).toBe("disabled_pending_migration");
+    expect(out.body.marketStatus).toBe("disabled_pending_market_fixes");
     expect(out.body.pooledMarket).toBeUndefined();
     expect(out.body.data[0].market).toBeUndefined();
     expect(selectMock.mock.calls[0][0]).not.toContain("market_lines");

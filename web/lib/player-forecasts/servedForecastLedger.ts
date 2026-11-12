@@ -193,7 +193,9 @@ export function buildLedgerRows(input: BuildLedgerInput): { rows: LedgerRow[]; u
 
 /** Task 6.3 market source. Requires migration 99 (source 'market', column `market_lines`; applied 2026-10-22, ledger
  * 20261022181002). While false the snapshot writes no market rows and the scoreboard does not read the column. */
-export const LEDGER_MARKET_ENABLED = true;
+/** Decision 126 (TJ, Q32): off until decision 30's market fixes (cover probability vs de-vigged price, per book,
+ * monotone yes-only de-vig) ship and are validated; turning it back on is its own approval. */
+export const LEDGER_MARKET_ENABLED = false;
 /** v2 (decision 41): a prop prices a player who dresses, so only sources declared conditional on dressing get a model
  * P(over); v1 rows also carried unconditional means read as conditional, and the scorer skips those (rule 21). */
 export const MARKET_METHOD_VERSION = "served-ledger-market-v2";
