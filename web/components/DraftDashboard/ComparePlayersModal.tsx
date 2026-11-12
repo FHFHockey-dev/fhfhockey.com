@@ -136,27 +136,33 @@ export default function ComparePlayersModal({
         .sort((a, b) => a - b);
       byKeySorted.set(d.key, vals);
     });
+    // Mid-rank percentile among players with a projection for the stat
+    // (decision 90); an empty cohort or a missing value is unknown (null),
+    // never the 50th percentile.
     const percentile = (arr: number[], x: number, higherIsBetter: boolean) => {
-      if (!arr.length) return 50;
-      const idx = arr.findIndex((v) => v >= x);
-      const rank = idx < 0 ? arr.length : idx + 1;
-      let pct = (rank / arr.length) * 100;
-      if (!higherIsBetter) pct = 100 - pct;
-      return Math.max(0, Math.min(100, pct));
+      if (!arr.length) return null;
+      let below = 0;
+      let tied = 0;
+      for (const v of arr) {
+        if (v < x) below += 1;
+        else if (v === x) tied += 1;
+      }
+      const pct = ((below + 0.5 * tied) / arr.length) * 100;
+      return higherIsBetter ? pct : 100 - pct;
     };
     const left = players[0];
     const right = players[1];
     const leftData = left
       ? defs.map((d) => {
           const v = getVal(left, d.key);
-          if (typeof v !== "number" || !isFinite(v)) return 50;
+          if (typeof v !== "number" || !isFinite(v)) return null;
           return percentile(byKeySorted.get(d.key) || [], v, d.higherIsBetter);
         })
       : [];
     const rightData = right
       ? defs.map((d) => {
           const v = getVal(right, d.key);
-          if (typeof v !== "number" || !isFinite(v)) return 50;
+          if (typeof v !== "number" || !isFinite(v)) return null;
           return percentile(byKeySorted.get(d.key) || [], v, d.higherIsBetter);
         })
       : [];
@@ -164,14 +170,20 @@ export default function ComparePlayersModal({
     const rows = defs.map((d, i) => ({
       key: d.key,
       label: d.displayName,
-      p1: leftData[i] ?? 0,
-      p2: rightData[i] ?? 0,
+      p1: leftData[i] ?? null,
+      p2: rightData[i] ?? null,
     }));
-    const leftAvg = leftData.length
-      ? leftData.reduce((a, b) => a + b, 0) / leftData.length
+    // Averages use only the stats known for both players, so the two sides
+    // are compared on the same set.
+    const shared = rows.filter(
+      (row): row is typeof row & { p1: number; p2: number } =>
+        row.p1 != null && row.p2 != null,
+    );
+    const leftAvg = shared.length
+      ? shared.reduce((a, row) => a + row.p1, 0) / shared.length
       : 0;
-    const rightAvg = rightData.length
-      ? rightData.reduce((a, b) => a + b, 0) / rightData.length
+    const rightAvg = shared.length
+      ? shared.reduce((a, row) => a + row.p2, 0) / shared.length
       : 0;
     return { labels, rows, leftAvg, rightAvg };
   }, [players, allPlayers, metricKeys]);
@@ -191,11 +203,12 @@ export default function ComparePlayersModal({
             | null
             | undefined)
         : undefined;
-    const getGP = (p: ProcessedPlayer | undefined) =>
-      (getProjected(p, "GAMES_PLAYED") &&
-      typeof getProjected(p, "GAMES_PLAYED") === "number"
-        ? (getProjected(p, "GAMES_PLAYED") as number)
-        : 0) || 0;
+    // Unknown or zero games played gives an unknown per-game rate (NaN, shown
+    // as "-"), never 0.
+    const getGP = (p: ProcessedPlayer | undefined) => {
+      const gp = getProjected(p, "GAMES_PLAYED");
+      return typeof gp === "number" && isFinite(gp) && gp > 0 ? gp : null;
+    };
     const left = players[0];
     const right = players[1];
     const gpLeft = getGP(left);
@@ -209,9 +222,9 @@ export default function ComparePlayersModal({
       const rawLeft = getProjected(left, d.key);
       const rawRight = getProjected(right, d.key);
       const perLeft =
-        gpLeft > 0 && typeof rawLeft === "number" ? rawLeft / gpLeft : 0;
+        gpLeft != null && typeof rawLeft === "number" ? rawLeft / gpLeft : NaN;
       const perRight =
-        gpRight > 0 && typeof rawRight === "number" ? rawRight / gpRight : 0;
+        gpRight != null && typeof rawRight === "number" ? rawRight / gpRight : NaN;
       return {
         key: d.key,
         label: d.displayName,
@@ -405,7 +418,7 @@ export default function ComparePlayersModal({
                   {rows.map((r) => (
                     <div key={`l-${r.key}`} className={styles.statRow}>
                       <span className={styles.statLabel}>{r.label}</span>
-                      <span className={styles.statVal}>{Math.round(r.p1)}</span>
+                      <span className={styles.statVal}>{r.p1 == null ? "—" : Math.round(r.p1)}</span>
                     </div>
                   ))}
                 </div>
@@ -464,8 +477,8 @@ export default function ComparePlayersModal({
               </thead>
               <tbody>
                 {rows.map((r) => {
-                  const leftWins = r.p1 > r.p2;
-                  const rightWins = r.p2 > r.p1;
+                  const leftWins = r.p1 != null && r.p2 != null && r.p1 > r.p2;
+                  const rightWins = r.p1 != null && r.p2 != null && r.p2 > r.p1;
                   const arrow = leftWins ? "←" : rightWins ? "→" : "=";
                   const gradientClass = leftWins
                     ? styles.advLeft
@@ -485,7 +498,7 @@ export default function ComparePlayersModal({
                             : undefined
                         }
                       >
-                        {Math.round(r.p1)}
+                        {r.p1 == null ? "—" : Math.round(r.p1)}
                       </td>
                       <td className={`${styles.tdAdv}`}>
                         <div className={styles.advInner}>
@@ -515,7 +528,7 @@ export default function ComparePlayersModal({
                             : undefined
                         }
                       >
-                        {Math.round(r.p2)}
+                        {r.p2 == null ? "—" : Math.round(r.p2)}
                       </td>
                     </tr>
                   );
@@ -687,7 +700,7 @@ export default function ComparePlayersModal({
                   {rows.map((r) => (
                     <div key={`r-${r.key}`} className={styles.statRow}>
                       <span className={styles.statLabel}>{r.label}</span>
-                      <span className={styles.statVal}>{Math.round(r.p2)}</span>
+                      <span className={styles.statVal}>{r.p2 == null ? "—" : Math.round(r.p2)}</span>
                     </div>
                   ))}
                 </div>

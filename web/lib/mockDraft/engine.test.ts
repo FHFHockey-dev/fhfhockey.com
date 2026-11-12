@@ -175,6 +175,28 @@ describe("mock engine", () => {
     ).toThrow(/pool/);
     expect(run("pro", 4, "pro").picks).toHaveLength(20);
   });
+  it("treats split C/LW counts and the equivalent FWD count alike under FWD grouping (W2-5 D13)", () => {
+    const decisions = (roster: Record<string, number>) => {
+      const { config, players } = fixture(4, "pro");
+      config.roster = roster;
+      config.grouping = "fwd";
+      players.forEach((p) => {
+        if (p.positions.some((v) => v === "C" || v === "LW")) p.positions = ["FWD"];
+      });
+      let s = { ...newSession(config, players, "equiv", "id", null, false), status: "running" } as MockSession;
+      // Shortlist scores after each team holds one forward.
+      const shortlists: unknown[] = [];
+      for (let i = 0; i < 8; i += 1) {
+        const decision = decide(s);
+        shortlists.push(decision.shortlist);
+        s = commitPick(s, decision.playerId, "bot");
+      }
+      return shortlists;
+    };
+    expect(decisions({ C: 1, LW: 1, D: 1, G: 1, bench: 1, utility: 0 })).toEqual(
+      decisions({ FWD: 2, D: 1, G: 1, bench: 1, utility: 0 }),
+    );
+  });
   it("supports team boundaries and zero-goalie combined-forward category rosters", () => {
     for (const count of [2, 40]) {
       const { config, players } = fixture(count);

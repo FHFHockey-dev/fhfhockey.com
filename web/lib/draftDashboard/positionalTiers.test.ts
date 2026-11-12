@@ -109,7 +109,7 @@ describe("tier scoring adapter", () => {
     expect(inverted[0].bands[0].players[0].id).toBe("3");
   });
   it("requires goalie workloads for rate categories and never prorates goalie points", () => {
-    const goalies = [0.93, 0.92, 0.9, 0.89].map((rate, i) => ({ playerId: i, fullName: `G${i}`, displayPosition: "G", eligiblePositions: ["G"], fantasyPoints: { projected: 500 + i }, combinedStats: { SAVE_PERCENTAGE: { projected: rate }, SHOTS_AGAINST_GOALIE: { projected: 1000 }, WINS_GOALIE: { projected: 30 }, GOALS_AGAINST_GOALIE: { projected: 100 }, SAVES_GOALIE: { projected: 900 }, SHUTOUTS_GOALIE: { projected: 3 } } })) as any;
+    const goalies = [0.93, 0.92, 0.9, 0.89].map((rate, i) => ({ playerId: i, fullName: `G${i}`, displayPosition: "G", eligiblePositions: ["G"], fantasyPoints: { projected: 500 + i }, combinedStats: { SAVE_PERCENTAGE: { projected: rate }, SHOTS_AGAINST_GOALIE: { projected: 1000 }, WINS_GOALIE: { projected: 30 }, GOALS_AGAINST_GOALIE: { projected: Math.round(1000 * (1 - rate)) }, SAVES_GOALIE: { projected: Math.round(1000 * rate) }, SHUTOUTS_GOALIE: { projected: 3 } } })) as any;
     const categories = buildDashboardTiers({ ...input, players: goalies, leagueType: "categories", categoryWeights: { SAVE_PERCENTAGE: 1 } }).find(p => p.position === "G")!;
     expect(categories.bands[0].players[0].id).toBe("0");
     delete goalies[0].combinedStats.SHOTS_AGAINST_GOALIE;

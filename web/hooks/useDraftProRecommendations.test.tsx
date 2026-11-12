@@ -49,7 +49,7 @@ it("computes private roster-aware ranks only after authorization and clears them
   getSession.mockResolvedValue({ data: { session: { access_token: "token" } } });
   const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ data: { authorized: true } }) });
   vi.stubGlobal("fetch", fetchMock);
-  const privateInput = { ...input, dataOrigin: "local_csv" as const, needAlpha: 1, positionNeeds: { C: 0, D: 1 }, candidates: [input.candidates[0], { ...input.candidates[0], id: "2", name: "Private Defender", eligiblePositions: ["D"], rankValue: .95 }] };
+  const privateInput = { ...input, dataOrigin: "local_csv" as const, needAlpha: 1, positionNeeds: { C: 0, D: 1 }, candidates: [input.candidates[0], { ...input.candidates[0], id: "2", name: "Private Defender", eligiblePositions: ["D"], rankValue: .95 }, { ...input.candidates[0], id: "3", name: "Depth Centre", rankValue: 0 }] };
   const { result, rerender, unmount } = renderHook(({ enabled }) => useDraftProRecommendations(privateInput, enabled), { initialProps: { enabled: true } });
   expect(result.current.results).toBeNull();
   await act(async () => { await vi.advanceTimersByTimeAsync(200); });

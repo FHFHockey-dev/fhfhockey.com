@@ -57,7 +57,9 @@ interface ProjectionsTableProps {
   // VORP metrics map
   vorpMetrics?: Map<string, PlayerVorpMetrics>;
   //  replacement baselines for tooltip/context
-  replacementByPos?: Record<string, { vorp: number; vols: number }>;
+  replacementByPos?: Record<string, { vorp: number | null; vols: number | null }>;
+  /** Version label of the frozen replacement reference. */
+  referenceLabel?: string;
   //  baseline mode controls
   baselineMode?: "remaining" | "full";
   onBaselineModeChange?: (mode: "remaining" | "full") => void;
@@ -161,8 +163,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
   personalRankByPlayerId,
   vorpMetrics,
   replacementByPos,
-  baselineMode = "remaining",
-  onBaselineModeChange,
+  referenceLabel,
   expectedRuns,
   nextPickNumber,
   selectionHorizon,
@@ -708,12 +709,12 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
     const m = new Map<
       string,
       {
-        vorp: number;
-        vona: number;
-        vbd: number;
+        vorp: number | null;
+        vona: number | null;
+        vbd: number | null;
         bestPos?: string;
-        vbdAdj: number;
-        value?: number;
+        vbdAdj: number | null;
+        value?: number | null;
         unweightedValue?: number;
       }
     >();
@@ -819,8 +820,9 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
       } else if (sortField === "fantasyPoints") {
         const aMetrics = vorpMap.get(String(a.playerId));
         const bMetrics = vorpMap.get(String(b.playerId));
-        aValue = aMetrics?.unweightedValue ?? aMetrics?.value ?? a.fantasyPoints.projected;
-        bValue = bMetrics?.unweightedValue ?? bMetrics?.value ?? b.fantasyPoints.projected;
+        // A known-unknown value stays unknown (sorted last), never projected FP.
+        aValue = aMetrics ? aMetrics.unweightedValue ?? aMetrics.value : a.fantasyPoints.projected;
+        bValue = bMetrics ? bMetrics.unweightedValue ?? bMetrics.value : b.fantasyPoints.projected;
       } else if (sortField === "yahooAvgPick") {
         const aAdp = normAdp(a.yahooAvgPick);
         const bAdp = normAdp(b.yahooAvgPick);
@@ -838,19 +840,19 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
         if (bAdp == null) return sortDirection === "asc" ? -1 : 1;
         return sortDirection === "asc" ? aAdp - bAdp : bAdp - aAdp;
       } else if (sortField === "score") {
-        aValue = vorpMap.get(String(a.playerId))?.value ?? 0;
-        bValue = vorpMap.get(String(b.playerId))?.value ?? 0;
+        aValue = vorpMap.get(String(a.playerId))?.value ?? null;
+        bValue = vorpMap.get(String(b.playerId))?.value ?? null;
       } else if (sortField === "vorp") {
-        aValue = vorpMap.get(String(a.playerId))?.vorp ?? 0;
-        bValue = vorpMap.get(String(b.playerId))?.vorp ?? 0;
+        aValue = vorpMap.get(String(a.playerId))?.vorp ?? null;
+        bValue = vorpMap.get(String(b.playerId))?.vorp ?? null;
       } else if (sortField === "vona") {
-        aValue = vorpMap.get(String(a.playerId))?.vona ?? 0;
-        bValue = vorpMap.get(String(b.playerId))?.vona ?? 0;
+        aValue = vorpMap.get(String(a.playerId))?.vona ?? null;
+        bValue = vorpMap.get(String(b.playerId))?.vona ?? null;
       } else if (sortField === "vbd") {
         const aM = vorpMap.get(String(a.playerId));
         const bM = vorpMap.get(String(b.playerId));
-        aValue = aM?.vbd ?? 0;
-        bValue = bM?.vbd ?? 0;
+        aValue = aM?.vbd ?? null;
+        bValue = bM?.vbd ?? null;
       } else if (sortField === "valueDelta") {
         const aRank = leagueRankByPlayerId.get(String(a.playerId));
         const bRank = leagueRankByPlayerId.get(String(b.playerId));
@@ -873,10 +875,10 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
         }
       }
 
-      // Handle null/undefined
+      // Unknown values sort last in both directions (rule 20).
       if (aValue == null && bValue == null) return 0;
-      if (aValue == null) return sortDirection === "asc" ? 1 : -1;
-      if (bValue == null) return sortDirection === "asc" ? -1 : 1;
+      if (aValue == null) return 1;
+      if (bValue == null) return -1;
 
       if (typeof aValue === "string" && typeof bValue === "string") {
         return sortDirection === "asc"
@@ -952,16 +954,18 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
       g.valVals.sort((a, b) => a - b);
     });
 
+    // Mid-rank percentile within the stated cohort (decision 90): share of
+    // the cohort below the value plus half of the ties (including itself).
     const rank = (val: number, arr: number[]): number | null => {
       const n = arr.length;
       if (n < 2) return null;
-      // position of last <= val
-      let idx = 0;
-      for (let i = 0; i < n; i++) {
-        if (val >= arr[i]) idx = i;
-        else break;
+      let below = 0;
+      let tied = 0;
+      for (const item of arr) {
+        if (item < val) below += 1;
+        else if (item === val) tied += 1;
       }
-      return n > 1 ? idx / (n - 1) : 0;
+      return (below + 0.5 * tied) / n;
     };
 
     const toBand = (
@@ -1266,15 +1270,16 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                     <ul>
                       {leagueType === "categories" && (
                         <li>
-                          <strong>Score</strong>: percentile-weighted composite
-                          (0–100) across your selected categories, weighted by
-                          your category weights and by metric scarcity.
+                          <strong>Score</strong>: sum of your weighted category
+                          z-scores against the league&apos;s starting-slot pool
+                          (SV% and GAA by their effect on team totals). Not a
+                          percentile; unknown when a category is missing.
                         </li>
                       )}
-                      <li>VORP: Value over replacement.</li>
-                      <li>VONA: Over next available.</li>
-                      <li>VBD: Blended draft value.</li>
-                      <li>Bands: Percentile tiers.</li>
+                      <li>VORP: Value over the frozen league replacement level.</li>
+                      <li>VONA: Over the best player expected to be left at your next pick (shown separately).</li>
+                      <li>VBD: Draft base score (equals VORP; VONA is not blended in).</li>
+                      <li>Bands: Mid-rank percentile tiers among undrafted players in the chosen scope.</li>
                       <li>AVL%: Likely available at your next pick.</li>
                     </ul>
                   </div>
@@ -1511,18 +1516,13 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
             </section>
             <section className={styles.drawerSection}>
               <h4>VORP Baseline</h4>
-              <select
-                value={baselineMode}
-                onChange={(e) =>
-                  onBaselineModeChange &&
-                  onBaselineModeChange(e.target.value as any)
-                }
-                className={styles.drawerSelect}
-                aria-label="VORP baseline mode"
-              >
-                <option value="remaining">Remaining (AVAIL)</option>
-                <option value="full">Full Pool (ALL)</option>
-              </select>
+              <p className={styles.drawerNote}>
+                Frozen league reference: replacement levels come from the full
+                player pool with one global slot assignment (UTIL takes any
+                skater; bench slots take any position), so drafting does not
+                move VORP.
+                {referenceLabel ? ` Reference: ${referenceLabel}.` : ""}
+              </p>
             </section>
             <section className={styles.drawerSection}>
               <h4>Risk Model</h4>
@@ -1593,8 +1593,8 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                 <ul className={styles.baselineList}>
                   {Object.entries(replacementByPos).map(([pos, vals]) => (
                     <li key={pos}>
-                      <strong>{pos}</strong>: VORP {vals.vorp.toFixed(1)} | VOLS{" "}
-                      {vals.vols.toFixed(1)}
+                      <strong>{pos}</strong>: VORP {vals.vorp == null ? "unavailable" : vals.vorp.toFixed(1)} | VOLS{" "}
+                      {vals.vols == null ? "unavailable" : vals.vols.toFixed(1)}
                     </li>
                   ))}
                 </ul>
@@ -1904,9 +1904,9 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
               return displayPlayers.flatMap((player, rowIndex) => {
                 const key = String(player.playerId);
                 const m = vorpMap.get(key);
-                const vorp = m?.vorp ?? 0;
-                const vona = m?.vona ?? 0;
-                const vbdBase = m?.vbd ?? 0;
+                const vorp = m?.vorp ?? null;
+                const vona = m?.vona ?? null;
+                const vbdBase = m?.vbd ?? null;
                 const bestPos = m?.bestPos;
                 const vbdDisplay = vbdBase;
                 const vbdBand = percentileBands.vbdBandById.get(key);

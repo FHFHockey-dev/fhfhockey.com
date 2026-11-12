@@ -1,4 +1,8 @@
-import { STATS_MASTER_LIST } from "lib/projectionsConfig/statsMasterList";
+import {
+  resolveStatDirection,
+  statAppliesToRole,
+  type StatDirection,
+} from "lib/projectionsConfig/statsMasterList";
 
 export type AggregateQuality =
   | "exact-from-projected-inputs"
@@ -126,8 +130,17 @@ export function aggregateTeamCategoryTotals(
   return Object.fromEntries(
     categories.map((key) => {
       if (!RATE_CATEGORY_KEYS.has(key)) {
-        const value = players.reduce(
-          (total, player) => total + (finiteStat(player, key) ?? 0),
+        // A counting total is unknown when any player the category applies to
+        // lacks its projection (audit W2-5 §4.2): never a partial sum shown as
+        // complete.
+        const applicable = players.filter((player) =>
+          statAppliesToRole(key, isGoalie(player) ? "goalie" : "skater"),
+        );
+        if (applicable.some((player) => finiteStat(player, key) == null)) {
+          return [key, { value: null, quality: "unavailable" } satisfies TeamCategoryAggregate];
+        }
+        const value = applicable.reduce(
+          (total, player) => total + (finiteStat(player, key) as number),
           0,
         );
         return [
@@ -256,20 +269,25 @@ export function rankTeamCategories(
   teams: readonly { teamId: string; categoryTotals: Record<string, number | null> }[],
   categories: Record<string, number>,
   leagueType: "points" | "categories",
+  directions?: Readonly<Record<string, StatDirection>>,
 ) {
   const result: Record<string, Record<string, number | undefined>> = Object.fromEntries(
     teams.map((team) => [team.teamId, {}]),
   );
   for (const [key, weight] of Object.entries(categories)) {
-    const definition = STATS_MASTER_LIST.find((stat) => stat.key === key);
+    // Direction comes from the shared registry (decision 55). In a points
+    // league a negative weight is a negative point value; in a category
+    // league a legacy negative weight reverses the registry direction, the
+    // same reading the category-value score uses.
     const higherIsBetter =
-      leagueType === "points" && weight < 0
-        ? false
-        : (definition?.higherIsBetter ?? true);
+      leagueType === "points"
+        ? weight < 0
+          ? false
+          : resolveStatDirection(key) === "higher"
+        : resolveStatDirection(key, { overrides: directions, weight }) === "higher";
+    // A missing total is unknown, never 0.
     const value = (team: (typeof teams)[number]) =>
-      team.categoryTotals[key] === null
-        ? null
-        : team.categoryTotals[key] ?? (RATE_CATEGORY_KEYS.has(key) ? null : 0);
+      team.categoryTotals[key] ?? null;
     const sorted = teams.filter((team) => Number.isFinite(value(team))).sort(
       (a, b) =>
         (higherIsBetter ? -1 : 1) *

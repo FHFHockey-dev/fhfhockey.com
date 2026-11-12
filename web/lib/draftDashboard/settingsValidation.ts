@@ -179,19 +179,18 @@ export function validateDraftSettings({
       "draft-domain-scoring",
       "Add at least one scoring category with a nonzero weight.",
     );
+  // A negative category weight is a league's reversed direction for that
+  // category (decision 55); every category reader resolves it through the
+  // shared stat registry, so it is valid input rather than an error.
   if (
     scoring.some((group) =>
-      Object.values(group).some(
-        (value) =>
-          !Number.isFinite(value) ||
-          (settings.leagueType === "categories" && value < 0),
-      ),
+      Object.values(group).some((value) => !Number.isFinite(value)),
     )
   )
     add(
       "scoring",
       "draft-domain-scoring",
-      "Scoring weights must be finite numbers; category weights cannot be negative.",
+      "Scoring weights must be finite numbers.",
     );
   if (
     settings.positionWeights !== undefined &&

@@ -34,7 +34,10 @@ export function buildRoundRankHistory(args: {
       const scores = ids.map((playerId) => values.get(playerId));
       if (scores.some((score) => score == null || !Number.isFinite(score))) missing = true;
       const total = scores.reduce<number>((sum, score) => sum + (score ?? 0), 0);
-      return { id, value: args.leagueType === "categories" && ids.length ? total / ids.length : total };
+      // A roster-value summary: summed values in both league types. A mean
+      // would fall when a team adds any player below its own average (audit
+      // W2-5 §5); this is not projected category standings.
+      return { id, value: total };
     });
     return { round, picks: roundPicks, ranks: Object.fromEntries(totals.map((team) => [team.id,
       missing ? null : 1 + totals.filter((other) => other.value > team.value + 1e-9).length,
