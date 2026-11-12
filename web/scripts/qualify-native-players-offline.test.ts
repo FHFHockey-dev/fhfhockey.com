@@ -232,6 +232,18 @@ describe("offline current native player qualification", () => {
     expect(result.categoryCoverage.every(target => !target.admission.acceptedByUnchangedConsumer)).toBe(true);
   });
 
+  // The skater path reads matched all-window exposure (BC W1-6 A2) and team PK shots (W1 P0 #18).
+  // The fixture carries both; an export that omits either still blocks rather than defaulting.
+  it.each([["rolling_player_game_metrics", "toi_seconds_total_all"], ["forge_team_game_strength", "shots_pk"]])(
+    "rejects an export that omits %s.%s", async (table, column) => {
+      const inputs = input(), rows = inputs.tables[table].rows;
+      delete rows[0][column];
+      updateRows(inputs, table, rows);
+      const result = (await qualifyNativePlayersOffline(inputs, asOf)).result;
+      expect(result.blockers).toContain(`missing_export_column:${table}.${column}`);
+      expect(result.categoryCoverage.every(target => !target.admission.acceptedByUnchangedConsumer)).toBe(true);
+    });
+
   it("rejects later accepted-news evidence without backdating its receipt", async () => {
     const inputs = input();
     const newsAt = "2026-10-09T18:00:00.000Z";
