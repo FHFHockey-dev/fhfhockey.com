@@ -330,7 +330,23 @@ function sourceFreshness(entries: MetricSurfaceEntry[]): SkaterCompositeSourceFr
   }));
 }
 
+// Decision 102: a composite with any required input missing is refused
+// ("insufficient data"); the weights are never silently renormalised.
+function allComponentsKnown(percentiles: MetricPercentileMap, keys: readonly string[]) {
+  return keys.every((key) =>
+    validPercentile(percentiles[key as keyof MetricPercentileMap]),
+  );
+}
+
 export function calculateOffenseRating(percentiles: MetricPercentileMap) {
+  if (
+    !allComponentsKnown(
+      percentiles,
+      Object.values(OFFENSE_RATING_CONTRACT.components).flat(),
+    )
+  ) {
+    return null;
+  }
   const scoringRateScore = average([
     percentiles.goals_per_60,
     percentiles.points_per_60,
@@ -363,6 +379,14 @@ export function calculateOffenseRating(percentiles: MetricPercentileMap) {
 }
 
 export function calculateDefenseRating(percentiles: MetricPercentileMap) {
+  if (
+    !allComponentsKnown(
+      percentiles,
+      Object.values(DEFENSE_RATING_CONTRACT.components).flat(),
+    )
+  ) {
+    return null;
+  }
   const suppressionScore = average([percentiles.xga_per_60]);
   const onIceProcessScore = average([
     percentiles.on_ice_xgf_percentage,

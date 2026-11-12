@@ -644,25 +644,28 @@ describe("playerMatrix", () => {
     });
     expect(response.rows[0]?.metrics.offense_rating).toMatchObject({
       formattedValue: "91.2",
-      percentile: qualified ? 91.2 : null,
+      rawValue: 91.2,
+      // Decision 74: the score is not a percentile; a sole qualified player
+      // has the mid-rank percentile 50 in its cohort.
+      percentile: qualified ? 50 : null,
       sampleConfidence: confidence,
       availabilityState: "available",
     });
     expect(response.rows[0]?.metrics.defense_rating).toMatchObject({
       formattedValue: "72.4",
-      percentile: qualified ? 72.4 : null,
+      percentile: qualified ? 50 : null,
       sampleConfidence: confidence,
       availabilityState: "available",
     });
     expect(response.rows[0]?.metrics.mcm_score).toMatchObject({
       formattedValue: "88.6",
-      percentile: qualified ? 88.6 : null,
+      percentile: qualified ? 50 : null,
       sampleConfidence: confidence,
       availabilityState: "available",
     });
     expect(response.rows[0]?.metrics.beast_tier).toMatchObject({
       formattedValue: "BEAST+",
-      percentile: qualified ? 88.6 : null,
+      percentile: null,
       sampleConfidence: confidence,
       availabilityState: "available",
     });
@@ -674,8 +677,9 @@ describe("playerMatrix", () => {
     });
     expect(response.rows[0]?.sort).toMatchObject({
       rank: qualified ? 1 : null,
-      percentile: qualified ? 88.6 : null,
-      rankScopes: { overall: { rank: qualified ? 1 : null, percentile: qualified ? 88.6 : null, qualifiedPeerCount: qualified ? 1 : 0 } },
+      percentile: qualified ? 50 : null,
+      score: qualified ? 88.6 : null,
+      rankScopes: { overall: { rank: qualified ? 1 : null, percentile: qualified ? 50 : null, qualifiedPeerCount: qualified ? 1 : 0 } },
     });
     expect(response.meta.sortMetricAvailableRowCount).toBe(qualified ? 1 : 0);
     expect(response.meta).toMatchObject({
@@ -701,7 +705,7 @@ describe("playerMatrix", () => {
     }));
     expect(metricSorted.rows[0]?.metrics.mcm_score).toMatchObject({
       sampleConfidence: confidence,
-      percentile: qualified ? 88.6 : null,
+      percentile: qualified ? 50 : null,
     });
   });
 
@@ -789,13 +793,16 @@ describe("playerMatrix", () => {
     expect(response.meta.sortMetric).toBe("offense_rating");
     expect(response.meta.sortMetricAvailableRowCount).toBe(2);
     expect(response.rows.map((row) => row.entity.id)).toEqual([1, 3, 2]);
+    // Two tied scores of 90 share rank 1 and the mid-rank percentile 50.
     expect(response.rows[0]?.sort).toMatchObject({
       rank: 1,
-      percentile: 90,
+      percentile: 50,
+      score: 90,
     });
     expect(response.rows[1]?.sort).toMatchObject({
       rank: 1,
-      percentile: 90,
+      percentile: 50,
+      score: 90,
     });
     expect(response.rows[2]?.sort).toMatchObject({
       rank: null,
@@ -836,7 +843,7 @@ describe("playerMatrix", () => {
       season: "20252026", strength: "all", window: "season", sort_metric: "mcm_score", ranking_source: "fallback",
     }));
     expect(zeroAndMissing.meta.sortMetricAvailableRowCount).toBe(1);
-    expect(zeroAndMissing.rows[0]).toMatchObject({ entity: { id: 1 }, sort: { rank: 1, percentile: 0, rankScopes: { overall: { qualifiedPeerCount: 1 } } } });
+    expect(zeroAndMissing.rows[0]).toMatchObject({ entity: { id: 1 }, sort: { rank: 1, percentile: 50, score: 0, rankScopes: { overall: { qualifiedPeerCount: 1 } } } });
     expect(zeroAndMissing.rows[0]?.metrics.mcm_score).toMatchObject({ rawValue: 0, availabilityState: "available" });
     for (const id of [2, 3]) {
       const row = zeroAndMissing.rows.find(item => item.entity.id === id)!;
@@ -920,8 +927,57 @@ describe("playerMatrix", () => {
 
     expect(response.meta.sortMetric).toBe("results_luck_index");
     expect(response.rows[0]?.entity.id).toBe(2);
-    expect(response.rows[0]?.sort.percentile).toBe(120);
+    // The index (120) is the score; the percentile is its cohort mid-rank.
+    expect(response.rows[0]?.sort).toMatchObject({ rank: 1, percentile: 100, score: 120 });
     expect(response.rows[0]?.composite?.resultsLuckIndex).toBe(120);
+  });
+
+  it("keeps composite rank and percentile when the display sort is reversed (W2-4 A3)", async () => {
+    buildContextualRankingsSurfacesMock.mockImplementation(
+      async (request: ContextualRankingsRequest, metricKeys: string[]) => {
+        const surfaces = new Map();
+        for (const metricKey of metricKeys) {
+          const metricRequest = { ...request, metric: metricKey as any };
+          surfaces.set(metricKey, {
+            success: true,
+            request: metricRequest,
+            rankings: [1, 2].map((id) => rankingRow(id, metricRequest)),
+            meta: {
+              generatedAt: "2026-06-08T00:00:00.000Z", snapshotDate: "2026-04-16",
+              snapshotUpdatedAt: "2026-06-08T00:00:00.000Z", latestAvailableSnapshotDate: "2026-04-16",
+              snapshotSelectionReason: "latest_available", sourceTable: "rolling_player_game_metrics",
+              metric: {
+                key: metricKey, displayName: metricKey, availabilityStatus: "available", higherIsBetter: true,
+                description: null, formulaDescription: null, applicableStrengthStates: [request.strength],
+                denominatorKey: null, denominatorDescription: null, sampleRequirements: null,
+                methodologyVersion: null, methodologyUpdatedAt: null, sourceQualityFlags: [],
+              },
+              unavailable: false, rowCount: 2, limit: request.limit, message: null,
+            },
+          });
+        }
+        return surfaces;
+      },
+    );
+    mockCompositeRows([
+      { player_id: 1, snapshot_date: "2026-04-16", mcm_score: 80, offense_rating_overall: 80, defense_rating_overall: 50, methodology_version: "fixture" },
+      { player_id: 2, snapshot_date: "2026-04-16", mcm_score: 20, offense_rating_overall: 20, defense_rating_overall: 50, methodology_version: "fixture" },
+    ]);
+    const ranksFor = async (direction: "asc" | "desc") => {
+      clearPlayerMatrixSurfaceCachesForTests();
+      const response = await buildPlayerMatrixSurface(parsePlayerMatrixRequest({
+        season: "20262027", strength: "5v5", window: "season",
+        sort_metric: "mcm_score", sort_direction: direction, ranking_source: "fallback",
+      }));
+      return Object.fromEntries(response.rows.map((row) => [row.entity.id, {
+        rank: row.sort.rank, percentile: row.sort.percentile, score: row.sort.score,
+      }]));
+    };
+    const descending = await ranksFor("desc");
+    // The defect: MCM 80 was rank 1 descending and rank 2 ascending.
+    expect(await ranksFor("asc")).toEqual(descending);
+    expect(descending[1]).toEqual({ rank: 1, percentile: 100, score: 80 });
+    expect(descending[2]).toEqual({ rank: 2, percentile: 0, score: 20 });
   });
 
   it("normalizes stale unsupported page sizes to the default supported size", () => {

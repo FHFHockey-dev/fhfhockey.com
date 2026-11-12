@@ -417,8 +417,10 @@ describe("rankingQueries", () => {
     await matrixHandler({ method: "GET", query } as any, res);
     expect(res.statusCode).toBe(200);
     expect(res.body.rows[0].sample).toMatchObject({ gamesPlayed, toiSeconds, minimumSampleMet: meets, confidence: meets ? "medium" : "low" });
-    expect(res.body.rows[0].metrics.mcm_score).toMatchObject({ rawValue: 88.6, percentile: meets ? 88.6 : null, sampleConfidence: meets ? "medium" : "low" });
-    expect(res.body.rows[0].sort).toMatchObject({ rank: meets ? 1 : null, percentile: meets ? 88.6 : null });
+    // Decision 74: the score (88.6) is not a percentile; a sole qualified
+    // player has the cohort mid-rank percentile 50.
+    expect(res.body.rows[0].metrics.mcm_score).toMatchObject({ rawValue: 88.6, percentile: meets ? 50 : null, sampleConfidence: meets ? "medium" : "low" });
+    expect(res.body.rows[0].sort).toMatchObject({ rank: meets ? 1 : null, percentile: meets ? 50 : null, score: meets ? 88.6 : null });
     await matrixHandler({ method: "GET", query: { ...query, sample_confidence: "medium_plus" } } as any, res);
     expect(res.statusCode).toBe(200);
     expect(res.body.rows).toHaveLength(meets ? 1 : 0);

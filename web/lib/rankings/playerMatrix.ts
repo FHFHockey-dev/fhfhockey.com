@@ -27,6 +27,7 @@ import type {
 import { ContextualRankingsQueryError } from "./rankingTypes";
 import type {
   ContextualRankingPeerGroupType,
+  NormalizedRankingResult,
   RankingPeerGroupWarning,
   RankingSampleConfidence,
 } from "./rankingCalculator";
@@ -128,7 +129,10 @@ export type PlayerMatrixRow = {
   sort: {
     metricKey: ContextualRankingMetricKey;
     rank: number | null;
+    /** Mid-rank percentile in the matrix cohort (decision 74/90), never a score. */
     percentile: number | null;
+    /** The composite's 0–100 score when sorting by a composite; null otherwise. */
+    score?: number | null;
     rankScopes?: PlayerMatrixRankScopes;
   };
   composite: PlayerMatrixComposite | null;
@@ -884,21 +888,17 @@ function cellFromCompositeRow(args: {
   composite: CompositeRatingRow | null;
   sample: ContextualRankingApiRow["sample"];
   request: PlayerMatrixRequest;
-  totalRows: number;
+  cohortRank: NormalizedRankingResult | null;
   unavailableReason: string | null;
   rankScopes: PlayerMatrixRankScopes;
 }): PlayerMatrixMetricCell {
   const metricKey = args.column.metricKey as CompositeMetricKey;
   const sample = compositeSample(args.sample, metricKey, args.request);
   const rawValue = compositeMetricValue(args.composite ?? undefined, metricKey);
+  // Decision 74: the composite is a 0–100 score; its percentile is the
+  // player's mid-rank in the matrix cohort, a separate field (W2-4 D7/A3).
   const percentile =
-    args.column.metricKey === "results_luck_index"
-      ? rawValue == null
-        ? null
-        : Math.max(0, Math.min(100, rawValue))
-      : args.column.metricKey === "beast_tier"
-        ? rawValue
-        : rawValue;
+    metricKey === "beast_tier" ? null : (args.cohortRank?.percentile ?? null);
   const formattedValue =
     args.column.metricKey === "beast_tier"
       ? (args.composite?.beast_tier ?? null)
@@ -922,9 +922,9 @@ function cellFromCompositeRow(args: {
     groupKey: args.column.groupKey,
     rawValue,
     formattedValue,
-    rank: null,
+    rank: sample.minimumSampleMet ? (args.cohortRank?.rank ?? null) : null,
     percentile: sample.minimumSampleMet ? percentile : null,
-    qualifiedPeerCount: args.totalRows,
+    qualifiedPeerCount: args.cohortRank?.qualifiedPeerCount ?? 0,
     lowerIsBetter: args.column.lowerIsBetter,
     availabilityState: missingReason ? "unavailable" : "available",
     availabilityReason: missingReason,
@@ -1074,7 +1074,12 @@ export async function buildPlayerMatrixSurface(
     .filter((row) =>
       sampleConfidenceMatches(row.sample.confidence, request.sampleConfidence),
     );
-  const compositeSortRowsByPlayerId = sortUsesComposite
+  const anyCompositeColumn = metricColumns.some(
+    (column) =>
+      isCompositeMetricKey(column.metricKey) &&
+      !metricUnavailableReason({ column, request }),
+  );
+  const compositeSortRowsByPlayerId = sortUsesComposite || anyCompositeColumn
     ? await fetchCompositeRatingsByPlayerId({
         request,
         snapshotDate: sortSurface.meta.snapshotDate,
@@ -1098,24 +1103,28 @@ export async function buildPlayerMatrixSurface(
       return left.entity.id - right.entity.id;
     });
   }
-  const compositeSortRanksByPlayerId = sortUsesComposite
-    ? rankNormalizedMetricValues(
-        sortedRows.map((row) => {
-          const value = row.sample.minimumSampleMet
-            ? compositeMetricValue(compositeSortRowsByPlayerId.get(row.entity.id), sortMetric)
-            : null;
-          return {
-            id: row.entity.id,
-            normalizedValue:
-              value == null
-                ? null
-                : request.sortDirection === "asc"
-                  ? -value
-                  : value,
-          };
-        }),
-      )
-    : new Map();
+  // Composite ranks are computed once over the cohort, higher score first, so
+  // reversing the display sort never changes a player's rank (rule 20, A3).
+  const compositeCohortRanks = new Map<
+    CompositeMetricKey,
+    Map<number, NormalizedRankingResult>
+  >(
+    COMPOSITE_METRIC_KEYS.filter((key) => key !== "beast_tier").map((key) => [
+      key,
+      rankNormalizedMetricValues(
+        sortedRows.map((row) => ({
+          id: row.entity.id,
+          normalizedValue: row.sample.minimumSampleMet
+            ? compositeMetricValue(compositeSortRowsByPlayerId.get(row.entity.id), key)
+            : null,
+        })),
+      ),
+    ]),
+  );
+  const compositeSortRanksByPlayerId: Map<number, NormalizedRankingResult> =
+    sortUsesComposite
+      ? compositeCohortRanks.get(sortMetric as CompositeMetricKey) ?? new Map()
+      : new Map();
   sortedRows = sortedRows.filter((row) =>
     rowMatchesSearch(row, request.search),
   );
@@ -1191,7 +1200,7 @@ export async function buildPlayerMatrixSurface(
     overallSurfacesPromise,
     deploymentSurfacesPromise,
   ]);
-  const compositeRowsByPlayerId = sortUsesComposite
+  const compositeRowsByPlayerId = sortUsesComposite || anyCompositeColumn
     ? new Map(
         pageRows.flatMap((row) => {
           const composite = compositeSortRowsByPlayerId.get(row.entity.id);
@@ -1307,7 +1316,10 @@ export async function buildPlayerMatrixSurface(
           composite,
           sample: baseRow.sample,
           request,
-          totalRows: sortedRows.length,
+          cohortRank:
+            compositeCohortRanks
+              .get(entry.column.metricKey as CompositeMetricKey)
+              ?.get(baseRow.entity.id) ?? null,
           unavailableReason: entry.reason,
           rankScopes: emptyRankScopes(),
         });
@@ -1348,8 +1360,8 @@ export async function buildPlayerMatrixSurface(
       ? {
           rank:
             compositeSortRanksByPlayerId.get(baseRow.entity.id)?.rank ?? null,
-          percentile: baseRow.sample.minimumSampleMet
-            ? compositeMetricValue(composite ?? undefined, sortMetric) : null,
+          percentile:
+            compositeSortRanksByPlayerId.get(baseRow.entity.id)?.percentile ?? null,
           qualifiedPeerCount:
             compositeSortRanksByPlayerId.get(baseRow.entity.id)
               ?.qualifiedPeerCount ?? 0,
@@ -1378,9 +1390,11 @@ export async function buildPlayerMatrixSurface(
           ? (compositeSortRanksByPlayerId.get(baseRow.entity.id)?.rank ?? null)
           : baseRow.metric.rawRank,
         percentile: sortUsesComposite
-          ? baseRow.sample.minimumSampleMet
-            ? compositeMetricValue(composite ?? undefined, sortMetric) : null
+          ? (compositeSortRanksByPlayerId.get(baseRow.entity.id)?.percentile ?? null)
           : baseRow.metric.percentile,
+        score: sortUsesComposite && baseRow.sample.minimumSampleMet
+          ? compositeMetricValue(composite ?? undefined, sortMetric)
+          : null,
         rankScopes: {
           overall: sortOverallScope,
           deployment: sortUsesComposite

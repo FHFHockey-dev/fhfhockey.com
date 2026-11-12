@@ -88,7 +88,11 @@ function metricCellTitle(
   });
   const parts = [
     cell.fullLabel,
-    cell.formattedValue ? `Value ${cell.formattedValue}` : null,
+    cell.formattedValue
+      ? COMPOSITE_METRIC_KEYS.has(cell.metricKey) && cell.metricKey !== "beast_tier"
+        ? `Score ${cell.formattedValue} of 100 (a weighted score, not a percentile)`
+        : `Value ${cell.formattedValue}`
+      : null,
     rank.rank == null ? null : `${rankScopeLabel(rankMode)} Rank ${rank.rank}`,
     rank.percentile == null
       ? null
@@ -133,12 +137,20 @@ function MatrixMetricCell({
     fallbackPeerCount: cell.qualifiedPeerCount,
     mode: rankMode,
   });
+  // Composites are 0–100 scores, never formatted as percentiles (decision 74);
+  // their cohort percentile only sets the tile tone.
+  const isCompositeScore =
+    COMPOSITE_METRIC_KEYS.has(cell.metricKey) && cell.metricKey !== "beast_tier";
   const score =
     cell.availabilityState === "planned"
       ? "Planned"
       : unavailable
         ? "N/A"
-        : formatPercentileScore(rank.percentile);
+        : isCompositeScore
+          ? cell.rawValue == null
+            ? "N/A"
+            : String(Math.round(cell.rawValue))
+          : formatPercentileScore(rank.percentile);
   const rankLabel = rank.rank == null ? "–" : `#${rank.rank}`;
   const title = metricCellTitle(cell, staleSource, rankMode);
   const toneClass = unavailable

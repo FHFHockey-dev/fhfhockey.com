@@ -214,10 +214,10 @@ describe("PlayerSnapshotPanel", () => {
     expect(screen.getByText("Offense Rating")).toBeTruthy();
     expect(screen.getByText("91.4")).toBeTruthy();
     expect(
-      screen.getByText(/Offense Rating: deployment-peer percentile composite from skater_composite_ratings/),
+      screen.getByText(/Offense Rating: 0–100 score from deployment-peer component percentiles \(not itself a percentile\), from skater_composite_ratings/),
     ).toBeTruthy();
     expect(
-      screen.getByText(/Defensive Impact in Context: context-influenced defensive composite from skater_composite_ratings/),
+      screen.getByText(/Defensive Impact in Context: context-influenced 0–100 defensive score \(not a percentile\) from skater_composite_ratings/),
     ).toBeTruthy();
     expect(screen.getByText("BEAST+ · 88.6")).toBeTruthy();
     expect(

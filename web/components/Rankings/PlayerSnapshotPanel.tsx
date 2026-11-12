@@ -260,15 +260,19 @@ function compositeCards(row: PlayerMatrixRow) {
       title: "Offense Rating",
       value: row.composite?.offenseRating == null ? null : row.composite.offenseRating.toFixed(1),
       text: row.composite?.offenseRating == null
-        ? "Unavailable until composite source is populated"
-        : `${OFFENSE_RATING_CONTRACT.label}: deployment-peer percentile composite from ${source}.${snapshot}`,
+        ? row.composite
+          ? "Insufficient data: a required input is missing, so no rating is shown"
+          : "Unavailable until composite source is populated"
+        : `${OFFENSE_RATING_CONTRACT.label}: 0–100 score from deployment-peer component percentiles (not itself a percentile), from ${source}.${snapshot}`,
     },
     {
       title: "Defensive Impact",
       value: row.composite?.defenseRating == null ? null : row.composite.defenseRating.toFixed(1),
       text: row.composite?.defenseRating == null
-        ? "Unavailable until composite source is populated"
-        : `${DEFENSE_RATING_CONTRACT.label}: context-influenced defensive composite from ${source}.${snapshot}`,
+        ? row.composite
+          ? "Insufficient data: a required input is missing, so no rating is shown"
+          : "Unavailable until composite source is populated"
+        : `${DEFENSE_RATING_CONTRACT.label}: context-influenced 0–100 defensive score (not a percentile) from ${source}.${snapshot}`,
     },
     {
       title: "MCM / BEAST",

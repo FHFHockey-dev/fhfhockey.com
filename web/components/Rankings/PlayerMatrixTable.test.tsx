@@ -586,6 +586,55 @@ describe("PlayerMatrixTable", () => {
     ).toContain("scoreToneStrong");
   });
 
+  it("shows a composite as its 0–100 score, never as a percentile (decision 74)", () => {
+    const mcmColumn = {
+      ...payload.meta.metricColumns[0],
+      metricKey: "mcm_score",
+      groupKey: "overall_context",
+      shortLabel: "MCM",
+      fullLabel: "MCM Score",
+    } as PlayerMatrixResponse["meta"]["metricColumns"][number];
+    const scoredPayload: PlayerMatrixResponse = {
+      ...payload,
+      rows: payload.rows.map((row) => ({
+        ...row,
+        metrics: {
+          ...row.metrics,
+          mcm_score: {
+            ...row.metrics.points_per_60,
+            metricKey: "mcm_score",
+            shortLabel: "MCM",
+            fullLabel: "MCM Score",
+            rawValue: 61.4,
+            formattedValue: "61.4",
+            // Cohort mid-rank percentile, a separate field from the score.
+            percentile: 37.5,
+            rank: 6,
+            rankScopes: undefined,
+          },
+        },
+      })),
+      meta: { ...payload.meta, metricColumns: [...payload.meta.metricColumns, mcmColumn] },
+    };
+
+    render(
+      <PlayerMatrixTable
+        payload={scoredPayload}
+        isLoading={false}
+        selectedPlayerId={1}
+        onSelectPlayer={vi.fn()}
+        onSortMetric={vi.fn()}
+        onPageChange={vi.fn()}
+        onPageSizeChange={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText(scoreText("61"))).toBeTruthy();
+    expect(screen.queryByText(scoreText("61%"))).toBeNull();
+    expect(screen.queryByText(scoreText("38%"))).toBeNull();
+    expect(screen.getByLabelText(/MCM Score \| Score 61\.4 of 100 \(a weighted score, not a percentile\)/)).toBeTruthy();
+  });
+
   it("hides composite columns that are unpublished on every row and says so in the footer", () => {
     const mcmColumn = {
       ...payload.meta.metricColumns[0],
