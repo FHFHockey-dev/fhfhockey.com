@@ -91,6 +91,92 @@ const knownCount = (text: string | undefined) => {
   return /^\d+(\.\d+)?$/.test(trimmed) ? Number(trimmed) : null;
 };
 
+type NstTable = { headers: string[]; data: string[][] };
+
+/** Σ of one column over every season row; null if the column or any value is unknown. */
+const columnTotal = (table: NstTable, header: string) => {
+  const idx = table.headers.indexOf(header);
+  if (idx < 0 || table.data.length === 0) {
+    return null;
+  }
+  let total = 0;
+  for (const row of table.data) {
+    const value = knownCount(row[idx]);
+    if (value === null) {
+      return null;
+    }
+    total += value;
+  }
+  return total;
+};
+
+/** Σ numerator ÷ Σ denominator (Σ of several columns when given a list). */
+export function pooledRatio(
+  table: NstTable,
+  numerator: string,
+  denominator: string | string[],
+): number | null {
+  const top = columnTotal(table, numerator);
+  let bottom = 0;
+  for (const header of Array.isArray(denominator) ? denominator : [denominator]) {
+    const total = columnTotal(table, header);
+    if (total === null) {
+      return null;
+    }
+    bottom += total;
+  }
+  return top === null || bottom <= 0 ? null : top / bottom;
+}
+
+/** Season rows keyed by Season + Team; null when the key is missing or repeated. */
+const keyedRows = (table: NstTable) => {
+  const seasonIdx = table.headers.indexOf("Season");
+  const teamIdx = table.headers.indexOf("Team");
+  if (seasonIdx < 0) {
+    return null;
+  }
+  const rows = new Map<string, Record<string, string>>();
+  for (const row of table.data) {
+    const key = `${String(row[seasonIdx] ?? "").trim()}|${
+      teamIdx < 0 ? "" : String(row[teamIdx] ?? "").trim()
+    }`;
+    if (rows.has(key)) {
+      return null;
+    }
+    rows.set(
+      key,
+      Object.fromEntries(table.headers.map((header, i) => [header, row[i]])),
+    );
+  }
+  return rows;
+};
+
+/**
+ * IPP = Σ total points ÷ Σ on-ice GF over the same season rows (all
+ * situations, same NST report). Null when a season is missing from either
+ * table or any component is unknown.
+ */
+const pooledIpp = (
+  individualRows: Map<string, Record<string, string>> | null,
+  onIceRows: Map<string, Record<string, string>> | null,
+) => {
+  if (!individualRows || !onIceRows || individualRows.size === 0) {
+    return null;
+  }
+  let points = 0;
+  let goalsFor = 0;
+  for (const [key, row] of individualRows) {
+    const seasonPoints = knownCount(row["Total Points"]);
+    const seasonGoalsFor = knownCount(onIceRows.get(key)?.GF);
+    if (seasonPoints === null || seasonGoalsFor === null) {
+      return null;
+    }
+    points += seasonPoints;
+    goalsFor += seasonGoalsFor;
+  }
+  return goalsFor > 0 ? points / goalsFor : null;
+};
+
 /**
  * Career SOG/60 from NST's per-season rows: Σ shots ÷ Σ TOI minutes × 60.
  * Never a mean of season rates; null when any season lacks shots or TOI, or
@@ -133,102 +219,45 @@ async function getStats(playerId: string) {
   const individual = parseTable(document.getElementById("indreg"));
   const onIce = parseTable(document.getElementById("reg"));
 
-  // S%
-  const shootsPctIdx = individual.headers.indexOf("S%");
-  const shootsPct =
-    individual.data.reduce(
-      (prev, current) => prev + Number(current[shootsPctIdx]),
-      0
-    ) / individual.data.length;
+  // Career rates pool each value's own components across NST season rows
+  // (rule 26): never a mean of season rates, and null when any component is
+  // unknown (rule 5). Fractions, 0-1.
+  // S% = goals / shots; xS% = ixG / shots
+  const shootingPct = pooledRatio(individual, "Goals", "Shots");
+  const xSPct = pooledRatio(individual, "ixG", "Shots");
+  // secA% = second assists / total assists
+  const secAPct = pooledRatio(individual, "Second Assists", "Total Assists");
+  // On-ice SH% = on-ice GF / on-ice SF
+  const oiSHPct = pooledRatio(onIce, "GF", "SF");
+  // oZS% = OZ starts / (OZ + DZ starts) (decision 9)
+  const oZSPct = pooledRatio(onIce, "Off. Zone Starts", [
+    "Off. Zone Starts",
+    "Def. Zone Starts",
+  ]);
+  // IPP = points / on-ice GF, season rows joined on Season + Team
+  const IPP = pooledIpp(keyedRows(individual), keyedRows(onIce));
 
-  // xS% (ixG/shots)
-  const xSPct =
-    individual.data.reduce(
-      (prev, current) =>
-        prev +
-        Number(current[individual.headers.indexOf("ixG")]) /
-          Number(current[individual.headers.indexOf("Shots")]),
-      0
-    ) / individual.data.length;
-
-  // IPP
-  const IPP =
-    individual.data.reduce(
-      (prev, current) =>
-        prev + Number(current[individual.headers.indexOf("IPP")]) || 0,
-      0
-    ) / individual.data.length;
-
-  // oiSH% - "On-Ice SH%"
-  const oiSHPct =
-    onIce.data.reduce(
-      (prev, current) =>
-        prev + Number(current[onIce.headers.indexOf("On-Ice SH%")]) || 0,
-      0
-    ) / onIce.data.length;
-
-  // sec A% (Secondary assist %) - second assists/total Assists
-  const secAPct =
-    individual.data.reduce(
-      (prev, current) =>
-        prev +
-          Number(current[individual.headers.indexOf("Second Assists")]) /
-            Number(current[individual.headers.indexOf("Total Assists")]) || 0,
-      0
-    ) / individual.data.length;
-
-  // SOG/60: pooled shots over pooled TOI minutes (rule 26), unknown when any
-  // season's shots or TOI is unknown (W2-3 A5).
+  // SOG/60: pooled shots over pooled TOI minutes (W2-3 A5).
   const SOGPerSixty = pooledShotsPerSixty(individual);
 
-  // oZS% is offensive zone start % - Off. Zone Start %
-  const oZSPct =
-    onIce.data.reduce(
-      (prev, current) =>
-        prev + Number(current[onIce.headers.indexOf("Off. Zone Start %")]) || 0,
-      0
-    ) / onIce.data.length;
-
-  const iHDCF =
-    individual.data.reduce(
-      (prev, current) =>
-        prev + Number(current[individual.headers.indexOf("iHDCF")]) || 0,
-      0
-    ) / individual.data.length;
-
-  const iSCF =
-    individual.data.reduce(
-      (prev, current) =>
-        prev + Number(current[individual.headers.indexOf("iSCF")]) || 0,
-      0
-    ) / individual.data.length;
-
-  const ixG =
-    individual.data.reduce(
-      (prev, current) =>
-        prev + Number(current[individual.headers.indexOf("ixG")]) || 0,
-      0
-    ) / individual.data.length;
-
-  const goals =
-    individual.data.reduce(
-      (prev, current) =>
-        prev + Number(current[individual.headers.indexOf("Goals")]) || 0,
-      0
-    ) / individual.data.length;
+  // Per-season averages of counts; unknown when any season is unknown.
+  const seasonMean = (header: string) => {
+    const total = columnTotal(individual, header);
+    return total === null ? null : total / individual.data.length;
+  };
 
   const data = {
-    "S%": shootsPct / 100,
+    "S%": shootingPct,
     "xS%": xSPct,
-    IPP: IPP / 100,
-    "oiSH%": oiSHPct / 100,
+    IPP,
+    "oiSH%": oiSHPct,
     "secA%": secAPct,
     "SOG/60": SOGPerSixty,
-    "oZS%": oZSPct / 100,
-    iHDCF: iHDCF,
-    iSCF: iSCF,
-    ixG: ixG,
-    goals: goals,
+    "oZS%": oZSPct,
+    iHDCF: seasonMean("iHDCF"),
+    iSCF: seasonMean("iSCF"),
+    ixG: seasonMean("ixG"),
+    goals: seasonMean("Goals"),
   };
   return data;
 }
