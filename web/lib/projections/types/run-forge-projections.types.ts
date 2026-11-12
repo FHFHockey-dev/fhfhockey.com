@@ -244,7 +244,9 @@ export type SkaterTrendAdjustment = {
   snapshotDate: string;
   ageDays: number;
   recencyClass: "fresh" | "soft_stale" | "hard_stale";
-  effectState: "applied" | "neutralized_by_recency" | "within_band_neutral";
+  effectState: "applied" | "neutralized_by_recency" | "within_band_neutral" | "inert_pending_fitted_regression";
+  /** Version of the validated regression-toward-band fit (decision 26); absent while inert. */
+  regressionFitVersion?: string;
   value: number;
   ciLower: number;
   ciUpper: number;
