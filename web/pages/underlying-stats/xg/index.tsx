@@ -22,17 +22,17 @@ const SCOPE_LABELS: Record<XgExplorerScope, string> = {
 };
 
 function formatNumber(value: number | null | undefined, digits = 2): string {
-  if (value == null || !Number.isFinite(value)) return "-";
+  if (value == null || !Number.isFinite(value)) return "—";
   return value.toFixed(digits);
 }
 
 function formatInteger(value: number | null | undefined): string {
-  if (value == null || !Number.isFinite(value)) return "-";
+  if (value == null || !Number.isFinite(value)) return "—";
   return String(Math.round(value));
 }
 
 function formatPercent(value: number | null | undefined): string {
-  if (value == null || !Number.isFinite(value)) return "-";
+  if (value == null || !Number.isFinite(value)) return "—";
   return `${(value * 100).toFixed(1)}%`;
 }
 
@@ -41,8 +41,6 @@ function buildXgRequestPath(args: {
   seasonId: string;
   windowGames: string;
   limit: string;
-  modelVersion: string;
-  reboundModelVersion: string;
 }): string {
   const params = new URLSearchParams({
     scope: args.scope,
@@ -50,10 +48,6 @@ function buildXgRequestPath(args: {
     limit: args.limit,
   });
   if (args.seasonId.trim()) params.set("seasonId", args.seasonId.trim());
-  if (args.modelVersion.trim()) params.set("modelVersion", args.modelVersion.trim());
-  if (args.reboundModelVersion.trim()) {
-    params.set("reboundModelVersion", args.reboundModelVersion.trim());
-  }
   return `/api/v1/underlying-stats/xg?${params.toString()}`;
 }
 
@@ -87,15 +81,9 @@ function PlayerTable({ rows }: { rows: XgExplorerPlayerRow[] }) {
           <th>Shots</th>
           <th>Created xG</th>
           <th>Shot-Assist xG</th>
-          <th>xPrimary A</th>
           <th>SA Events</th>
-          <th>Entries</th>
-          <th>Exits</th>
-          <th>Entry A</th>
-          <th>Trans Shots</th>
           <th>Trans xG</th>
-          <th>xReb Created</th>
-          <th>Reb Created</th>
+          <th>Trans Events</th>
         </tr>
       </thead>
       <tbody>
@@ -110,15 +98,9 @@ function PlayerTable({ rows }: { rows: XgExplorerPlayerRow[] }) {
             <td>{formatInteger(row.shotAttempts)}</td>
             <td>{formatNumber(row.createdXg)}</td>
             <td>{formatNumber(row.shotAssistCreatedXg)}</td>
-            <td>{formatNumber(row.expectedPrimaryAssists)}</td>
             <td>{formatInteger(row.shotAssistEvents)}</td>
-            <td>{formatInteger(row.controlledEntries)}</td>
-            <td>{formatInteger(row.controlledExits)}</td>
-            <td>{formatInteger(row.entryAssists)}</td>
-            <td>{formatInteger(row.transitionCreatedShots)}</td>
             <td>{formatNumber(row.transitionCreatedXg)}</td>
-            <td>{formatNumber(row.expectedReboundsCreated)}</td>
-            <td>{formatInteger(row.actualReboundsCreated)}</td>
+            <td>{formatInteger(row.transitionEvents)}</td>
           </tr>
         ))}
       </tbody>
@@ -138,12 +120,6 @@ function TeamTable({ rows }: { rows: XgExplorerTeamRow[] }) {
           <th>xG%</th>
           <th>GF</th>
           <th>GA</th>
-          <th>Entries</th>
-          <th>Exits</th>
-          <th>Failed Exits Against</th>
-          <th>Trans xG</th>
-          <th>xReb For</th>
-          <th>xReb Against</th>
         </tr>
       </thead>
       <tbody>
@@ -156,12 +132,6 @@ function TeamTable({ rows }: { rows: XgExplorerTeamRow[] }) {
             <td>{formatPercent(row.xgPct)}</td>
             <td>{formatInteger(row.goalsFor)}</td>
             <td>{formatInteger(row.goalsAgainst)}</td>
-            <td>{formatInteger(row.controlledEntries)}</td>
-            <td>{formatInteger(row.controlledExits)}</td>
-            <td>{formatInteger(row.failedExitsAgainst)}</td>
-            <td>{formatNumber(row.transitionCreatedXg)}</td>
-            <td>{formatNumber(row.expectedReboundsFor)}</td>
-            <td>{formatNumber(row.expectedReboundsAgainst)}</td>
           </tr>
         ))}
       </tbody>
@@ -181,11 +151,6 @@ function GoalieTable({ rows }: { rows: XgExplorerGoalieRow[] }) {
           <th>GA</th>
           <th>GSAx</th>
           <th>SA</th>
-          <th>xReb Allowed</th>
-          <th>Reb Allowed</th>
-          <th>Reb Saved</th>
-          <th>Freezes</th>
-          <th>Covered</th>
         </tr>
       </thead>
       <tbody>
@@ -198,11 +163,6 @@ function GoalieTable({ rows }: { rows: XgExplorerGoalieRow[] }) {
             <td>{formatInteger(row.goalsAgainst)}</td>
             <td>{formatNumber(row.goalsSavedAboveExpected)}</td>
             <td>{formatInteger(row.shotsAgainst)}</td>
-            <td>{formatNumber(row.expectedReboundsAllowed)}</td>
-            <td>{formatInteger(row.actualReboundsAllowed)}</td>
-            <td>{formatNumber(row.reboundControlSavedAboveExpected)}</td>
-            <td>{formatInteger(row.goalieFreezes)}</td>
-            <td>{formatInteger(row.coveredPucks)}</td>
           </tr>
         ))}
       </tbody>
@@ -215,8 +175,6 @@ export default function XgUnderlyingStatsLabRoute() {
   const [seasonId, setSeasonId] = useState("20252026");
   const [windowGames, setWindowGames] = useState("10");
   const [limit, setLimit] = useState("50");
-  const [modelVersion, setModelVersion] = useState("");
-  const [reboundModelVersion, setReboundModelVersion] = useState("");
   const [refreshKey, setRefreshKey] = useState(0);
   const [data, setData] = useState<XgExplorerResponse | null>(null);
   const [status, setStatus] = useState<LoadState>("idle");
@@ -229,10 +187,8 @@ export default function XgUnderlyingStatsLabRoute() {
         seasonId,
         windowGames,
         limit,
-        modelVersion,
-        reboundModelVersion,
       }),
-    [limit, modelVersion, reboundModelVersion, scope, seasonId, windowGames]
+    [limit, scope, seasonId, windowGames]
   );
 
   useEffect(() => {
@@ -283,10 +239,10 @@ export default function XgUnderlyingStatsLabRoute() {
               <p className={styles.eyebrow}>Underlying Stats</p>
               <h1 className={styles.title}>xG Model Lab</h1>
               <p className={styles.description}>
-                Isolated read-only surface for in-house shot xG, created xG,
-                transition proxies, and rebound-control aggregates before those
-                outputs are promoted into the production player, goalie, and
-                team pages.
+                Isolated read-only surface for in-house shot xG and created xG
+                from the approved registry model, one window per row, before
+                those outputs are promoted into the production player, goalie,
+                and team pages.
               </p>
             </div>
 
@@ -339,51 +295,20 @@ export default function XgUnderlyingStatsLabRoute() {
               </label>
             </div>
 
-            <div className={styles.controls}>
-              <label className={styles.controlGroup}>
-                <span className={styles.label}>Shot xG model version</span>
-                <input
-                  className={styles.input}
-                  value={modelVersion}
-                  onChange={(event) => setModelVersion(event.target.value)}
-                  placeholder="latest available"
-                />
-              </label>
-              <label className={styles.controlGroup}>
-                <span className={styles.label}>Rebound model version</span>
-                <input
-                  className={styles.input}
-                  value={reboundModelVersion}
-                  onChange={(event) => setReboundModelVersion(event.target.value)}
-                  placeholder="latest available"
-                />
-              </label>
-            </div>
-
             <div className={styles.metaGrid}>
               <div className={styles.metaItem}>
                 <p className={styles.metaLabel}>Rows</p>
                 <p className={styles.metaValue}>{data?.counts.rows ?? 0}</p>
               </div>
               <div className={styles.metaItem}>
-                <p className={styles.metaLabel}>Source Rows</p>
-                <p className={styles.metaValue}>{data?.counts.sourceRows ?? 0}</p>
-              </div>
-              <div className={styles.metaItem}>
-                <p className={styles.metaLabel}>Supplemental</p>
-                <p className={styles.metaValue}>{data?.counts.supplementalRows ?? 0}</p>
-              </div>
-              <div className={styles.metaItem}>
-                <p className={styles.metaLabel}>Shot Model</p>
-                <p className={styles.metaValue}>{data?.modelVersion ?? "-"}</p>
-              </div>
-              <div className={styles.metaItem}>
-                <p className={styles.metaLabel}>Rebound Model</p>
-                <p className={styles.metaValue}>{data?.reboundModelVersion ?? "-"}</p>
+                <p className={styles.metaLabel}>Shot Model (registry)</p>
+                <p className={styles.metaValue}>
+                  {data == null ? "—" : data.modelVersion ?? "Unavailable"}
+                </p>
               </div>
               <div className={styles.metaItem}>
                 <p className={styles.metaLabel}>Coverage</p>
-                <p className={styles.metaValue}>{data?.coverage.status ?? "-"}</p>
+                <p className={styles.metaValue}>{data?.coverage.status ?? "—"}</p>
               </div>
             </div>
           </section>
@@ -402,6 +327,11 @@ export default function XgUnderlyingStatsLabRoute() {
 
             {status === "error" ? (
               <div className={styles.errorBox}>{error}</div>
+            ) : status === "ready" && data?.modelVersion == null ? (
+              <div className={styles.emptyBox}>
+                In-house xG is unavailable: no approved model is active. Natural Stat
+                Trick xG remains the headline xG on FHFH.
+              </div>
             ) : activeRows.length === 0 && status !== "loading" ? (
               <div className={styles.emptyBox}>
                 No rows returned for this scope, season, window, and model version.
