@@ -218,7 +218,8 @@ describe("fantasy projection contracts", () => {
       playProbability: 0.175,
       conditionalRates: { GOALS: 0.25 },
       conditionalVariances: { GOALS: 0.5625 },
-      deployment: { mostLikelyRole: { forwardLine: 4 } },
+      // Decision 122: no most-likely role or role odds for a newcomer.
+      deployment: { confidence: 0, roleBasis: "unknown_no_role_evidence" },
       rookieProfile: {
         rookie: true,
         nhleMethod: "generic_population_prior_pending_next_artifact_freeze",
@@ -557,9 +558,9 @@ describe("fantasy projection contracts", () => {
     expect(firstAggregate.quantiles.p50.SHOT_ATTEMPTS).toBeLessThanOrEqual(
       firstAggregate.quantiles.p90.SHOT_ATTEMPTS,
     );
-    expect(firstAggregate.quantiles.p50.GAMES_PLAYED).toBe(1.595495311);
-    expect(firstAggregate.quantiles.p50.SHOT_ATTEMPTS).toBe(6.3010162613);
-    expect(firstAggregate.quantiles.p50.EXPECTED_PRIMARY_ASSISTS).toBe(0.8010794892);
+    expect(firstAggregate.quantiles.p50.GAMES_PLAYED).toBe(1.6974147882);
+    expect(firstAggregate.quantiles.p50.SHOT_ATTEMPTS).toBe(6.297277017);
+    expect(firstAggregate.quantiles.p50.EXPECTED_PRIMARY_ASSISTS).toBe(0.7961342739);
   });
 
   it("uses cross-bound interval arithmetic for rate metrics", () => {
