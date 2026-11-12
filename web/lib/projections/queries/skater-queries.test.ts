@@ -683,6 +683,12 @@ describe("league physical totals", () => {
     }
   });
 
+  it("refuses a cutoff before the season window, where prior seasons would leak past it (W2-1 C8)", async () => {
+    const db = client([]);
+    await expect(fetchLeaguePhysicalTotals(20262027, "2026-05-01", db as any)).rejects.toMatchObject({ reason: "invalid_scope" });
+    expect(db.rpc).not.toHaveBeenCalled();
+  });
+
   it("distinguishes the unapplied RPC from provider and transport failures without a table-scan fallback", async () => {
     for (const [code, reason] of [["PGRST202", "rpc_missing"], ["42501", "read_failed"], ["57014", "read_failed"]]) {
       const error = { code };

@@ -224,16 +224,30 @@ export function buildTeamStrengthPriorFromInHouseXgAggregateRow(
   };
 }
 
-// `nhl_team_data` is a view that joins the latest standings to every season in
-// `nst_team_stats`, so one team and date can have one row per NST season. The
-// season-to-date row is the one whose xG denominator (xga / xga_per_game, the
-// NST games played) matches the standings `games_played`.
+// `nhl_team_data` joins the latest standings to NST team stats. Before L4a migration 129 it returned
+// one row per stored NST season and the season had to be guessed from implied games played; from 129
+// on it is one row per team with `nst_season` (the NST season joined, NULL NST columns when none) and
+// `nst_updated_at`. With `nst_season` present the row is chosen by exact season identity and the GP
+// match is only reported; without it the legacy GP match stays, but a tie is refused (rule 20).
+// Rows dated after the as-of date, or NST data updated after it, are never used (rules 10, 25).
 const NHL_TEAM_DATA_CANDIDATE_LIMIT = 20;
 const NHL_TEAM_DATA_GP_MATCH_TOLERANCE = 1.5;
 
+/** NHL season id ("20262027") for a date: seasons start in July for this purpose. */
+export function seasonIdForDate(isoDate: string): number {
+  const year = Number(isoDate.slice(0, 4));
+  const month = Number(isoDate.slice(5, 7));
+  const start = month >= 7 ? year : year - 1;
+  return start * 10000 + start + 1;
+}
+
 export function buildTeamStrengthPriorFromNhlTeamDataRows(
-  rows: any[]
+  inputRows: any[],
+  options: { asOfDate?: string } = {}
 ): TeamStrengthPrior | null {
+  const asOfDate = options.asOfDate ?? null;
+  const rows = asOfDate == null ? inputRows
+    : inputRows.filter((row) => typeof row?.date === "string" && row.date <= asOfDate);
   const latestDate = rows
     .map((row) => (typeof row?.date === "string" ? row.date : null))
     .filter((date): date is string => date != null)
@@ -241,44 +255,63 @@ export function buildTeamStrengthPriorFromNhlTeamDataRows(
     .at(-1);
   if (!latestDate) return null;
   const candidates = rows.filter((row) => row?.date === latestDate);
+  const gamesPlayed = toFiniteOrNull(candidates[0]?.games_played);
+  const impliedGp = (row: any) => {
+    const xga = toFiniteOrNull(row?.xga);
+    const xgaPerGame = toFiniteOrNull(row?.xga_per_game);
+    return xga == null || xgaPerGame == null || xgaPerGame <= 0 ? null : xga / xgaPerGame;
+  };
 
   let selected: any = null;
-  let impliedGamesPlayed: number | null = null;
-  let method: "implied_gp_match" | "single_row";
-  const gamesPlayed = toFiniteOrNull(candidates[0]?.games_played);
-  if (gamesPlayed != null && gamesPlayed > 0) {
+  let method: "exact_nst_season" | "implied_gp_match" | "single_row";
+  const seasonKeyed = candidates.some((row) => row != null && Object.prototype.hasOwnProperty.call(row, "nst_season"));
+  if (seasonKeyed) {
+    method = "exact_nst_season";
+    const expectedSeason = asOfDate != null ? seasonIdForDate(asOfDate) : null;
+    const matches = candidates.filter((row) => toFiniteOrNull(row?.nst_season) != null
+      && (expectedSeason == null || Number(row.nst_season) === expectedSeason));
+    const updatedOk = (row: any) => asOfDate == null || typeof row?.nst_updated_at !== "string"
+      || row.nst_updated_at.slice(0, 10) <= asOfDate;
+    if (matches.length === 1 && updatedOk(matches[0])) selected = matches[0];
+  } else if (gamesPlayed != null && gamesPlayed > 0) {
     method = "implied_gp_match";
     let bestGap = Number.POSITIVE_INFINITY;
+    let tied = false;
     for (const row of candidates) {
-      const xga = toFiniteOrNull(row?.xga);
-      const xgaPerGame = toFiniteOrNull(row?.xga_per_game);
-      if (xga == null || xgaPerGame == null || xgaPerGame <= 0) continue;
-      const implied = xga / xgaPerGame;
+      const implied = impliedGp(row);
+      if (implied == null) continue;
       const gap = Math.abs(implied - gamesPlayed);
-      if (gap <= NHL_TEAM_DATA_GP_MATCH_TOLERANCE && gap < bestGap) {
-        bestGap = gap;
-        selected = row;
-        impliedGamesPlayed = Number(implied.toFixed(2));
-      }
+      if (gap > NHL_TEAM_DATA_GP_MATCH_TOLERANCE) continue;
+      if (gap < bestGap) { bestGap = gap; selected = row; tied = false; }
+      else if (gap === bestGap) tied = true;
     }
+    if (tied) selected = null;
   } else {
     // Without a season-to-date games count only an unambiguous row is usable.
     method = "single_row";
     if (candidates.length === 1) selected = candidates[0];
   }
   if (!selected) return null;
+  const xgaPerGame = toFiniteOrNull(selected.xga_per_game);
+  const xgfPerGame = toFiniteOrNull(selected.xgf_per_game);
+  // A season-keyed row with no NST values is unknown, not last season's.
+  if (method === "exact_nst_season" && xgaPerGame == null && xgfPerGame == null) return null;
+  const implied = impliedGp(selected);
 
   return {
     source: "nhl_team_data",
     sourceDate: latestDate,
     xga: toFiniteOrNull(selected.xga),
-    xgaPerGame: toFiniteOrNull(selected.xga_per_game),
-    xgfPerGame: toFiniteOrNull(selected.xgf_per_game),
+    xgaPerGame,
+    xgfPerGame,
     rowSelection: {
       method,
       candidateRows: candidates.length,
       gamesPlayed,
-      impliedGamesPlayed
+      impliedGamesPlayed: method === "single_row" || implied == null ? null : Number(implied.toFixed(2)),
+      ...(method === "exact_nst_season"
+        ? { nstSeason: Number(selected.nst_season), nstUpdatedAt: typeof selected.nst_updated_at === "string" ? selected.nst_updated_at : null }
+        : {})
     }
   };
 }
@@ -368,28 +401,17 @@ export async function fetchTeamStrengthPrior(
     }
   }
 
-  const select = "date,games_played,xga,xga_per_game,xgf_per_game";
+  // "*" reads `nst_season`/`nst_updated_at` once migration 129 adds them and still works before.
   const historical = await supabase
     .from("nhl_team_data")
-    .select(select)
+    .select("*")
     .eq("team_abbrev", normalizedAbbrev)
     .lte("date", asOfDate)
     .order("date", { ascending: false })
     .limit(NHL_TEAM_DATA_CANDIDATE_LIMIT);
   if (historical.error) throw historical.error;
-
-  let rows: any[] = historical.data ?? [];
-  if (rows.length === 0) {
-    const latest = await supabase
-      .from("nhl_team_data")
-      .select(select)
-      .eq("team_abbrev", normalizedAbbrev)
-      .order("date", { ascending: false })
-      .limit(NHL_TEAM_DATA_CANDIDATE_LIMIT);
-    if (latest.error) throw latest.error;
-    rows = latest.data ?? [];
-  }
-  return buildTeamStrengthPriorFromNhlTeamDataRows(rows);
+  // No fallback to rows dated after the as-of date: a past replay must not read later standings.
+  return buildTeamStrengthPriorFromNhlTeamDataRows(historical.data ?? [], { asOfDate });
 }
 
 export async function fetchTeamFiveOnFiveProfile(

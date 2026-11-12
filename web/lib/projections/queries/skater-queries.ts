@@ -457,6 +457,10 @@ export async function fetchLeaguePhysicalTotals(
     || !isIsoDate(cutoffDate)) {
     throw new LeaguePhysicalTotalsReadError("invalid_scope");
   }
+  // W2-1 C8: the RPC's prior-season branch ends at the season window start (Sep 1), not at the
+  // cutoff, so a cutoff before that window would read prior-season games dated after it.
+  const seasonWindowStart = `${Math.floor(seasonId / 10000)}-09-01`;
+  if (cutoffDate < seasonWindowStart) throw new LeaguePhysicalTotalsReadError("invalid_scope");
   // Offline reconstruction has no league-totals table contract and forbids RPCs.
   // Select the unscaled fallback before dispatch, rather than swallowing a fence violation.
   if (isReadOnlyProjectionReconstruction()) {

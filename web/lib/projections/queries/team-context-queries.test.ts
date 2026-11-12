@@ -227,4 +227,38 @@ describe("buildTeamStrengthPriorFromNhlTeamDataRows", () => {
     });
     expect(buildTeamStrengthPriorFromNhlTeamDataRows([])).toBeNull();
   });
+
+  // W2-1 PR-SQL-2 / F3: after L4a migration 129 the view carries nst_season and nst_updated_at.
+  const keyed = (nst_season: number | null, extra: Record<string, unknown> = {}) => ({ date: "2026-10-19", games_played: 8,
+    xga: nst_season === 20262027 ? 24.8 : 246, xga_per_game: nst_season == null ? null : 3.1, xgf_per_game: nst_season == null ? null : 3.4,
+    nst_season, nst_updated_at: "2026-10-19T09:00:00Z", ...extra });
+
+  it("selects the row by exact NST season, in either order, even when an old season's GP matches better", () => {
+    // The current-season NST row lags one game (implied 7 vs 8); an old season's row implies exactly 8.
+    const current = keyed(20262027, { xga: 21.7 });
+    const old = keyed(20252026, { xga: 24.8 });
+    for (const order of [[current, old], [old, current]]) {
+      expect(buildTeamStrengthPriorFromNhlTeamDataRows(order, { asOfDate: "2026-10-20" })).toMatchObject({
+        xga: 21.7, rowSelection: { method: "exact_nst_season", nstSeason: 20262027, impliedGamesPlayed: 7 } });
+    }
+  });
+
+  it("keeps a missing current NST season unknown instead of using last season", () => {
+    expect(buildTeamStrengthPriorFromNhlTeamDataRows([keyed(null)], { asOfDate: "2026-10-20" })).toBeNull();
+    expect(buildTeamStrengthPriorFromNhlTeamDataRows([keyed(20252026)], { asOfDate: "2026-10-20" })).toBeNull();
+  });
+
+  it("never reads standings dated after the as-of date or NST data updated after it", () => {
+    expect(buildTeamStrengthPriorFromNhlTeamDataRows([keyed(20262027)], { asOfDate: "2026-10-18" })).toBeNull();
+    expect(buildTeamStrengthPriorFromNhlTeamDataRows([keyed(20262027, { date: "2026-10-17", nst_updated_at: "2026-10-19T09:00:00Z" })],
+      { asOfDate: "2026-10-18" })).toBeNull();
+  });
+
+  it("refuses a legacy tie instead of letting input order choose the season", () => {
+    const tie = [
+      { date: "2026-10-19", games_played: 8, xga: 16, xga_per_game: 2, xgf_per_game: 2 },
+      { date: "2026-10-19", games_played: 8, xga: 32, xga_per_game: 4, xgf_per_game: 4 },
+    ];
+    for (const order of [tie, [...tie].reverse()]) expect(buildTeamStrengthPriorFromNhlTeamDataRows(order)).toBeNull();
+  });
 });

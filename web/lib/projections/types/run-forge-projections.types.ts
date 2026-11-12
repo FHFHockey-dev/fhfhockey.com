@@ -297,10 +297,12 @@ export type TeamStrengthPrior = {
   windowGames?: number | null;
   /** How the `nhl_team_data` row was chosen among same-date rows (one per NST season). */
   rowSelection?: {
-    method: "implied_gp_match" | "single_row";
+    method: "exact_nst_season" | "implied_gp_match" | "single_row";
     candidateRows: number;
     gamesPlayed: number | null;
     impliedGamesPlayed: number | null;
+    nstSeason?: number;
+    nstUpdatedAt?: string | null;
   };
 };
 
