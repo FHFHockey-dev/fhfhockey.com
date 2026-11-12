@@ -23,7 +23,8 @@ const teams = Object.fromEntries(ABBREVIATIONS.map((abbreviation) => [idOf(abbre
   { id: idOf(abbreviation), name: `Team ${abbreviation}`, abbreviation, logo: `/${abbreviation}.svg` }]));
 
 vi.mock("hooks/useTeams", () => ({ useTeamsMap: () => teams }));
-vi.mock("./contexts/GameGridContext", () => ({ useTeam: (id: number) => teams[id] }));
+vi.mock("./contexts/GameGridContext", () => ({ useTeam: (id: number) => teams[id],
+  useGoaliePresentation: () => ({ enabled: false, requested: false, snapshot: null, contextKey: "", asOf: "2025-03-17T12:00:00Z", status: "unavailable" }) }));
 vi.mock("next/image", () => ({ default: ({ alt }: { alt: string }) => <span role="img" aria-label={alt} /> }));
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 

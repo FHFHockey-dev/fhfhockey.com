@@ -2,6 +2,9 @@ import React, { createElement, useEffect, useState, useSyncExternalStore } from 
 import { DAYS, GameData, Team } from 'lib/NHL/types';
 import { addDays, format, parseISO } from 'date-fns';
 import { REAL_WEEK_32 } from './real-week-32';
+import type { GoalieGridReader } from 'components/GameGrid/utils/useGoalieGameView';
+import type { GoalieCandidate, GoalieProbability, GoalieSource } from 'components/GameGrid/utils/goalieGameView';
+import type { GoalieWorkloadSnapshot } from 'components/GameGrid/utils/goalieWorkloadView';
 
 const logo = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="32" height="32"%3E%3Crect width="32" height="32" rx="8" fill="%232d9cdb"/%3E%3C/svg%3E';
 // `?teams=32` replays a real 32-team week; the default 24-team fixture is unchanged.
@@ -14,6 +17,16 @@ export const teams: Record<number, Team> = real32
     return [id, { id, name: `Fixture Team ${String(id).padStart(2, '0')}`, abbreviation: `F${id}`, logo }];
   }));
 export const useTeamsMap = () => teams;
+// The actual Date Range hook reads this local schedule seam; no NHL/provider request is made.
+export async function getSchedule(start: string) {
+  const data = Object.fromEntries([1, 2].map(teamId => [teamId, Object.fromEntries([3, 6].map(day => {
+    const date = format(addDays(parseISO(start), day), 'yyyy-MM-dd');
+    return [DAYS[day], { id: Number(date.replaceAll('-', '')), season: 20262027, gameType: 2,
+      gameDate: date, startTimeUTC: `${date}T23:00:00Z`, gameScheduleState: 'OK', gameState: 'FUT',
+      homeTeam: teams[1], awayTeam: teams[2] }];
+  }))]));
+  return { data };
+}
 export const useCurrentSeason = () => ({ seasonId: 20262027 });
 export function useCurrentSeasonQuery() {
   const ready = useFixtureDelay("season");
@@ -22,9 +35,57 @@ export function useCurrentSeasonQuery() {
 const summaries = Object.keys(teams).map((id) => ({ teamId: Number(id), gamesPlayed: 2, pointPct: .5 }));
 export const useTeamSummary = () => ({ teamSummaries: summaries, loading: false, error: null });
 export const useMatchupWeek = () => ({ weekNumber: 1 });
-const query = { startDate: '2026-10-05', endDate: '2026-10-11' };
-const router = { isReady: true, query, replace: () => {}, push: () => {} };
-export const useRouter = () => router;
+const query = { startDate: '2026-10-05', endDate: '2026-10-11', view: new URLSearchParams(location.search).get('view') ?? undefined };
+const routerListeners = new Set<() => void>();
+const router = { isReady: true, pathname: '/game-grid/[mode]', query,
+  replace: (url: { query?: typeof query }) => {
+    if (!url.query || JSON.stringify(url.query) === JSON.stringify(router.query)) return Promise.resolve(true);
+    router.query = url.query;
+    routerListeners.forEach(listener => listener());
+    return Promise.resolve(true);
+  }, push: () => Promise.resolve(true) };
+export function useRouter() {
+  useSyncExternalStore(listener => { routerListeners.add(listener); return () => { routerListeners.delete(listener); }; }, () => JSON.stringify(router.query));
+  return router;
+}
+export const goalieWorkloadFixture: GoalieWorkloadSnapshot = {
+  version: 'goalie-workload-view-v1', seasonId: 20262027, seasonStartsOn: '2026-10-01', source: 'Synthetic official-start fixture', revision: 'fixture-history-1',
+  observedAt: '2026-10-07T15:59:00Z', dataThrough: '2026-10-06', basis: 'current_recorded_results',
+  scheduleVerifiedThrough: '2026-10-07', scheduleComplete: true, appearancesComplete: true,
+  games: Array.from({ length: 6 }, (_, i) => ({ gameId: 9001 + i, date: `2026-10-0${i + 1}`, team: teams[1].abbreviation,
+    seasonId: 20262027, state: 'final', completedAt: `2026-10-0${i + 1}T23:00:00Z` })),
+  appearances: Array.from({ length: 6 }, (_, i) => ({ gameId: 9001 + i, goalieId: i % 2 ? 847002 : 847001,
+    name: i % 2 ? 'Ukko-Pekka Luukkonen' : 'Samuel Montembeault', date: `2026-10-0${i + 1}`, team: teams[1].abbreviation,
+    opponent: teams[2].abbreviation, home: true, started: i === 5 ? null : true, wins: null, losses: null, otLosses: null,
+    saves: null, shotsAgainst: null, goalsAgainst: null, toiSeconds: null, shutouts: null, qualityStart: null })),
+};
+// Synthetic presentation qualification only: never a model acceptance receipt.
+export const readGoalieFixture: GoalieGridReader = async ({ games, contextKey }) => {
+  if (params.has('goalie-error')) throw new Error('Fixture reader unavailable');
+  await new Promise(resolve => setTimeout(resolve, 25));
+  const source: GoalieSource = { source: 'Synthetic fixture', artifactId: 'fixture-only', revision: 'r1',
+    observedAt: '2026-10-07T13:00:00Z', availableAt: '2026-10-07T13:01:00Z', cutoffAt: '2026-10-07T14:00:00Z',
+    issuedAt: '2026-10-07T14:01:00Z', expiresAt: '2026-10-20T00:00:00Z' };
+  return { version: 'goalie-grid-v1', contextKey, boards: [...new Map(games.map(g => [g.id, g])).values()].flatMap(game =>
+    [game.homeTeam.id, game.awayTeam.id].map(teamId => {
+      const selectionRevision = state === 'goalie-change' ? 'r2' : 'r1';
+      const selectedPlayerId = state === 'goalie-change' ? 847002 : 847001;
+      const candidates: GoalieCandidate[] = [847001, 847002, 847003].map((playerId, index) => {
+        const metric = (target: GoalieProbability['target'], value: number): GoalieProbability => ({
+          playerId, gameId: game.id, teamId, selectionRevision: 'r1', target, value,
+          basis: 'individual_goalie_game', source, publishedAt: source.issuedAt,
+          qualification: { status: params.has('goalie-unqualified') ? 'unqualified' : 'qualified', reportId: 'synthetic-not-scientific', artifactId: source.artifactId, population: 'pregame_as_issued_goalie_game' },
+        });
+        return { playerId, name: [params.has('goalie-long-name') ? 'Alexandre Gauthier-Desjardins' : 'Samuel Montembeault', 'Ukko-Pekka Luukkonen', 'Jeremy Swayman'][index],
+          surname: [params.has('goalie-long-name') ? 'Gauthier-Desjardins' : 'Montembeault', 'Luukkonen', 'Swayman'][index], status: index === 0 ? 'confirmed' : 'projected', source,
+          start: metric('official_starter', params.has('goalie-extremes') ? index === 0 ? 1 : 0 : [.7, .2, .05][index]),
+          winIfStarting: metric('credited_win_if_starting', params.has('goalie-extremes') ? 1 : .57 - index * .1) };
+      });
+      return { gameId: game.id, seasonId: game.season, teamId,
+        opponentId: teamId === game.homeTeam.id ? game.awayTeam.id : game.homeTeam.id,
+        startsAt: game.startTimeUTC!, selectionRevision, selectedPlayerId, candidateCoverage: 'partial' as const, candidates };
+    })) };
+};
 export function Link({ href, children, ...props }: React.AnchorHTMLAttributes<HTMLAnchorElement>) {
   return createElement('a', { ...props, href }, children);
 }
@@ -70,7 +131,7 @@ export function useSchedule(start: string, extended: boolean) {
       return { teamId: team.id, ...(status === 'empty' ? {} : { THU: game(3), SUN: game(6), ...(team.id > 12 ? { SAT: game(5) } : {}), ...(extended ? { nMON: game(7) } : {}) }) };
     });
     const coveredDates = status === 'partial' ? dates.slice(0, 6) : dates;
-    const retrievedAt = status === 'stale' ? '2026-09-30T12:00:00Z' : '2026-10-07T15:59:00Z';
+    const retrievedAt = status === 'stale' ? '2026-09-30T12:00:00Z' : status === 'goalie-change' ? '2026-10-07T16:00:01Z' : '2026-10-07T15:59:00Z';
     snapshots.set(key, [rows, DAYS.map(() => 0), false, { coveredDates, coverage: { known: coveredDates.length, expected: dates.length }, error: null, retrievedAtByDate: Object.fromEntries(dates.map(date => [date, retrievedAt])) }]);
   }
   if (!ready) return [[], [], true, { coveredDates: [], coverage: { known: 0, expected: extended ? 10 : 7 }, error: null }];

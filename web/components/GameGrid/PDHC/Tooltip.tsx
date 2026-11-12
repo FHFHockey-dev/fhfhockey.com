@@ -8,6 +8,7 @@ import React, {
   useRef,
   useState,
 } from "react";
+import { createPortal } from "react-dom";
 import styles from "styles/pdhcTooltip.module.scss";
 import { teamsInfo } from "lib/teamsInfo";
 
@@ -15,9 +16,14 @@ type TooltipProps = {
   content: ReactNode;
   children: ReactNode;
   teamId?: number; // Optional prop to specify the team
+  label?: string;
+  dialogLabel?: string;
+  triggerClassName?: string;
+  dialogClassName?: string;
+  portal?: boolean;
 };
 
-const Tooltip: React.FC<TooltipProps> = ({ content, children, teamId }) => {
+const Tooltip: React.FC<TooltipProps> = ({ content, children, teamId, label, dialogLabel = "Game probability details", triggerClassName = "", dialogClassName = "", portal = false }) => {
   const [visible, setVisible] = useState(false);
   const tooltipRef = useRef<HTMLDivElement | null>(null);
   const targetRef = useRef<HTMLDivElement | null>(null);
@@ -44,7 +50,7 @@ const Tooltip: React.FC<TooltipProps> = ({ content, children, teamId }) => {
 
       const focusableElements =
         tooltipRef.current.querySelectorAll<HTMLElement>(
-          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+          'button:not([disabled]), summary, [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
         );
       const firstElement = focusableElements[0];
       const lastElement = focusableElements[focusableElements.length - 1];
@@ -95,9 +101,7 @@ const Tooltip: React.FC<TooltipProps> = ({ content, children, teamId }) => {
     }),
   } as React.CSSProperties;
 
-  return (
-    <>
-      {visible && (
+  const overlay = visible ? (
         <>
           {/* Backdrop to darken and blur the background */}
           <div
@@ -108,13 +112,13 @@ const Tooltip: React.FC<TooltipProps> = ({ content, children, teamId }) => {
             aria-hidden="true"
           ></div>
           <div
-            className={`${styles.tooltipContent} ${
+            className={`${styles.tooltipContent} ${dialogClassName} ${
               visible ? styles.visible : styles.hidden
             }`}
             ref={tooltipRef}
             role="dialog"
             aria-modal="true"
-            aria-label="Game probability details"
+            aria-label={dialogLabel}
             id={dialogId}
             tabIndex={-1}
             style={tooltipStyles}
@@ -124,16 +128,20 @@ const Tooltip: React.FC<TooltipProps> = ({ content, children, teamId }) => {
               type="button"
               className={styles.closeButton}
               onClick={() => closeTooltip()}
-              aria-label="Close game probability details"
+              aria-label={`Close ${dialogLabel.toLowerCase()}`}
             >
               ×
             </button>
             {content}
           </div>
         </>
-      )}
+      ) : null;
+
+  return (
+    <>
+      {overlay && (portal ? createPortal(overlay, document.body) : overlay)}
       <div
-        className={styles.tooltipWrapper}
+        className={`${styles.tooltipWrapper} ${triggerClassName}`}
         onClick={() => setVisible((previous) => !previous)}
         onKeyDown={(event) => {
           if (event.key === "Enter" || event.key === " ") {
@@ -143,6 +151,7 @@ const Tooltip: React.FC<TooltipProps> = ({ content, children, teamId }) => {
         }}
         ref={targetRef}
         role="button"
+        aria-label={label}
         tabIndex={0}
         aria-haspopup="dialog"
         aria-expanded={visible}

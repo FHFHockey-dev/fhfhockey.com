@@ -1,6 +1,7 @@
 import { useRouter } from "next/router";
 import Link from "next/link";
 import DateRangeTeamGrid from "components/GameGrid/DateRangeTeamGrid";
+import { readGoalieGrid } from "components/GameGrid/utils/readGoalieSources";
 
 export default function GameGridDateRangePage() {
   const router = useRouter();
@@ -17,5 +18,11 @@ export default function GameGridDateRangePage() {
     );
   }
 
-  return <DateRangeTeamGrid start={start} end={end} />;
+  return <DateRangeTeamGrid start={start} end={end} goalieView={router.query.view === "goalies"} goalieReader={readGoalieGrid}
+    onGoalieViewChange={enabled => {
+      const query = { ...router.query };
+      if (enabled) query.view = "goalies";
+      else delete query.view;
+      void router.replace({ pathname: router.pathname, query }, undefined, { shallow: true, scroll: false });
+    }} />;
 }

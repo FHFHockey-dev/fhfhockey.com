@@ -756,6 +756,32 @@ describe("Starter Board scoring and probability accounting", () => {
     evidence_cutoff_at: source.informationCutoffAt, participation: skaterParticipationFromEvidence(source, identity),
     same_day_evidence: { assertions: source.assertions, conflicts: source.conflicts } });
   const forecast = (source: DailyBoardEvidence) => boardSkaterForecast(row, { model: { skater_selection: selection(source) } }, { ...identity, evidence: source });
+  const coverage = (state = "uncertain") => ({ version: "forge-skater-coverage-v1", game_id: 1, state,
+    line_conditioning: "if_plays", participation_probability: null, participation_qualified: false,
+    expected_for_game: state === "confirmed_out" ? 0 : null, event_id: 42, event_type: state === "confirmed_out" ? "SCRATCH" : "DTD" });
+  it.each(["uncertain", "unknown", "projected_lineup"])("preserves the L9c if-plays line with %s availability", state => {
+    const result = boardSkaterForecast(row, { availability: coverage(state) }, identity);
+    expect(result).toMatchObject({ conditioning: "conditional_playing", participationProbability: null,
+      expected: null, legacy: null, conditional: { PP_POINTS: .4 }, availability: { gameId: 1, state } });
+    expect(normalizeStartChartResponse({ date: "2026-10-10", players: [{ player_id: 7, game_id: 1, forecast: result }] }).players[0].forecast?.availability).toEqual(result.availability);
+  });
+  it("uses game-scoped roster exclusions as zero expected while preserving the conditional line", () => {
+    const result = boardSkaterForecast(row, { availability: coverage("confirmed_out") }, identity);
+    expect(result.conditioning).toBe("unconditional");
+    expect(Object.values(result.expected!)).toEqual(Object.keys(result.expected!).map(() => 0));
+    expect(result.conditional?.PP_POINTS).toBe(.4);
+    expect(result.participationProbability).toBeNull();
+    for (const invalid of [{ ...coverage("confirmed_out"), game_id: 2 }, { ...coverage("confirmed_out"), event_id: null }]) {
+      expect(boardSkaterForecast(row, { availability: invalid }, identity).expected).toBeNull();
+    }
+    const source = evidence();
+    const superseding = boardSkaterForecast(row, { availability: coverage("confirmed_out"), model: { skater_selection: selection(source) } }, { ...identity, evidence: source });
+    expect(superseding.expected?.PP_POINTS).toBe(.4);
+    expect(superseding.availability).toBeUndefined();
+    const unboundNews = boardSkaterForecast(row, { availability: coverage("confirmed_out") }, { ...identity, evidence: source });
+    expect(unboundNews.expected).toBeNull();
+    expect(unboundNews.availability?.state).toBe("unknown");
+  });
   it("integrates scoped confirmed appearance once and retains unsupported full-strength heads", () => {
     expect(forecast(evidence())).toMatchObject({ conditioning: "unconditional", participationProbability: 1,
       expected: { GOALS: null, ASSISTS: null, SHOTS_ON_GOAL: null, PP_POINTS: 0.4 }, conditional: { PP_POINTS: 0.4 } });

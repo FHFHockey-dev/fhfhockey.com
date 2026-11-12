@@ -1124,7 +1124,9 @@ export default function StartChartPage() {
               ) : (
                 <ol className={styles.cardList}>
                   {visibleList.map((player) => {
-                    const confirmedOut = position !== "G" && player.forecast?.participationProbability === 0
+                    const rosterAvailability = position !== "G" && player.forecast?.availability?.gameId === player.game_id
+                      ? player.forecast.availability.state : null;
+                    const confirmedOut = rosterAvailability === "confirmed_out" || position !== "G" && player.forecast?.participationProbability === 0
                       && player.forecast.probabilityStatus === "confirmed_evidence"
                       && player.forecast.evidence.some(item => item.dimension === "availability" && item.value === "out");
                     const game = gamesById.get(player.game_id);
@@ -1184,7 +1186,7 @@ export default function StartChartPage() {
                           </Link>
                           <div className={styles.primaryProjection}>
                             <strong>{formatNumber(scoring.mode === "categories" ? player.boardScore?.categoryValue : player.proj_fantasy_points, 2)}</strong>
-                            <span>{scoring.mode === "categories" ? `${scoring.category?.replaceAll("_", " ") ?? "Category"}${player.forecast?.conditioning === "conditional_playing" ? ` ${conditionalLabel}` : ""}` : player.forecast?.conditioning === "conditional_playing" ? `FP ${conditionalLabel}` : position === "G" ? "Expected FP" : "FP"}</span>
+                            <span>{scoring.mode === "categories" ? `${scoring.category?.replaceAll("_", " ") ?? "Category"}${player.forecast?.conditioning === "conditional_playing" ? ` ${conditionalLabel}` : ""}` : player.forecast?.conditioning === "conditional_playing" ? `FP ${conditionalLabel}` : position === "G" || confirmedOut ? "Expected FP" : "FP"}</span>
                             {data?.contractVersion === 2 && (scoring.mode === "categories" ? player.boardScore?.categoryValue == null : player.proj_fantasy_points == null) ? (
                               <span>{scoring.mode === "categories"
                                 ? `${scoring.category?.replaceAll("_", " ") ?? "Category"} unavailable for this player.`
@@ -1219,6 +1221,8 @@ export default function StartChartPage() {
                           {position === "G" ? <span title={goalieStartLabel(player.start_probability_basis).title}>{formatPercent(player.start_probability)} {player.confirmed_status ? "confirmed" : player.start_probability == null ? "start unknown" : goalieStartLabel(player.start_probability_basis).short.replace("Projected", "projected")}</span>
                             : player.context?.unit_tier ? <span className={styles.positionBadge} title={player.context.pp_share != null ? `PP share ${formatPercent(player.context.pp_share)}` : undefined}>{player.context.unit_tier}</span> : null}
                           {confirmedOut ? <span>Confirmed out</span> : null}
+                          {rosterAvailability === "uncertain" || rosterAvailability === "unknown" ? <span>If he plays · availability uncertain</span>
+                            : rosterAvailability ? <span>Line if he plays</span> : null}
                           {player.boardScore?.comparisonAllowed === false ? <span>Primary rank unavailable{player.forecast?.conditioning === "conditional_playing" ? " · conditional values are secondary context only" : ""}</span> : null}
                         </div>
                         <StarterBoardPlayerDetails
@@ -1246,7 +1250,7 @@ export default function StartChartPage() {
                           ) : (
                             <>
                               <Metric
-                                label="G / A / S"
+                                label={rosterAvailability ? "G / A / S if he plays" : "G / A / S"}
                                 value={`${formatNumber(player.proj_goals)} / ${formatNumber(
                                   player.proj_assists,
                                 )} / ${formatNumber(player.proj_shots)}`}
@@ -1267,7 +1271,8 @@ export default function StartChartPage() {
                           {player.boardScore?.change != null ? ` · ${player.boardScore.change >= 0 ? "+" : ""}${formatNumber(player.boardScore.change, 2)} since prior revision` : ""}
                         </div> : null}
                           {player.forecast ? <>
-                            <p>{player.forecast.participationProbability == null
+                            <p>{confirmedOut && rosterAvailability ? "Expected values are zero for this game. The line if he plays is retained."
+                              : player.forecast.participationProbability == null
                               ? player.forecast.conditioning === "unconditional"
                                 ? "Participation detail unavailable. Game expectations use the admitted source."
                                 : "Participation probability unavailable. This is not an unconditional expectation."

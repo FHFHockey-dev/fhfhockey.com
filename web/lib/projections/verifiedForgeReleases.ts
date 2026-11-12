@@ -134,6 +134,14 @@ export const VERIFIED_FORGE_PRODUCER_CLOSURES: readonly VerifiedForgeProducerClo
     verifierVersion: "forge-release-sha-verifier-v1",
     note: "Release #425 producer: 199-module exact commit closure, 0 findings; producer modules unchanged in #426. Exclusion proof only, not forecast-quality or native-use approval.",
   },
+  {
+    closureSha256: "10aefb04aaf9f02bbe4041669063fecba7e7bba2e38853d1025fea22100fc147",
+    commit: "975e67b47cafb7d54e3613ab43344fbad731f886",
+    receipt: "tasks/artifacts/goalie-grid-producer-admission-2026-11-12/receipt.json",
+    receiptSha256: "6af75de826208e15ea86f7f2bc851d988a91da8d213bac0f462d190118209390",
+    verifierVersion: "forge-release-sha-verifier-v1",
+    note: "Goalie Grid and Start Chart coverage-label source candidate: 228-module exact commit closure, 0 findings. Released historical dependencies retained. Exclusion proof only, not deployment, probability qualification or native-use approval.",
+  },
 ];
 
 const FULL_SHA = /^[0-9a-f]{40}$/, SHA256 = /^[0-9a-f]{64}$/;

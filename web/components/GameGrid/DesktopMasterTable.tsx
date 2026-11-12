@@ -16,6 +16,9 @@ import { addDays, formatDate, getDayStr } from "./utils/date-func";
 import styles from "./GameGrid.module.scss";
 import detailStyles from "./TeamDetails.module.scss";
 import MetricInfoDisclosure from "./MetricInfoDisclosure";
+import { useGoaliePresentation } from "./contexts/GameGridContext";
+import { GOALIE_WIN_DEFINITION } from "./utils/goalieGameView";
+import GoalieWorkloadPanel from "./GoalieWorkloadPanel";
 import OpportunitySparkline from "./OpportunitySparkline";
 import RatingMeter from "./RatingMeter";
 import { LoadingCell, LoadingRows } from "./LoadingCells";
@@ -118,8 +121,8 @@ export const MASTER_COLUMNS = {
   percent: { base: 64, min: 50 },
   team: { base: 72, min: 56 },
   day: { base: 80, min: 50 },
-  summary: { base: 72, min: 40 },
-  score: { base: 104, min: 56 },
+  summary: { base: 44, min: 44 },
+  score: { base: 64, min: 64 },
   fourWeek: { base: 64, min: 48 },
   fourWeekValue: { base: 72, min: 56 },
   trend: { base: 104, min: 78 },
@@ -252,66 +255,41 @@ export function distributeMasterTableWidths(
   return widths;
 }
 
-// The pre-redesign table (7 source metrics, team, days, summary, four 72px four-week columns)
-// fixes the Game Grid geometry, so team and day columns never change with side-group state.
-const ORIGINAL_SIDE_METRIC_WIDTHS = [50, 50, 50, 50, 50, 50, 80];
-const ORIGINAL_FOUR_WEEK_WIDTHS = [72, 72, 72, 72];
-
-/**
- * Team and day columns keep the pre-redesign widths. The side groups and Week
- * Summary scale with them, then shrink toward their minimums so everything fits.
- * If that is still too wide, the day columns narrow toward their minimum; the
- * table scrolls only when even those minimums do not fit.
- */
-export function sizeMasterTableColumns({ metricColumns, dayCount, fourWeekCollapsed, containerWidth }: {
-  metricColumns: MasterColumnSpec[]; dayCount: number; fourWeekCollapsed: boolean; containerWidth: number;
+/** Equal side-group totals center the schedule; spare width goes to equal day columns.
+ * Side columns retain their own readable minimums. When those and the day minimums
+ * exceed the viewport, the existing table scroll container owns the overflow. */
+export function sizeMasterTableColumns({ metricColumns, dayCount, fourWeekCollapsed, containerWidth, goalieView = false }: {
+  metricColumns: MasterColumnSpec[]; dayCount: number; fourWeekCollapsed: boolean; containerWidth: number; goalieView?: boolean;
 }) {
   const { team, day, summary, score, fourWeek, percent, fourWeekValue, trend } = MASTER_COLUMNS;
   const sum = (widths: number[]) => widths.reduce((total, width) => total + width, 0);
-  const original = [...ORIGINAL_SIDE_METRIC_WIDTHS, team.base, ...Array(dayCount).fill(day.base),
-    summary.base, summary.base, score.base, ...ORIGINAL_FOUR_WEEK_WIDTHS];
-  const reference = distributeMasterTableWidths(original, containerWidth);
-  const scale = sum(reference) / sum(original);
-  const grid = reference.slice(ORIGINAL_SIDE_METRIC_WIDTHS.length, ORIGINAL_SIDE_METRIC_WIDTHS.length + 1 + dayCount);
-
-  const fourWeekColumns = fourWeekCollapsed ? [fourWeekValue, trend] : [fourWeek, fourWeek, percent, fourWeekValue, trend];
-  const flex = [...metricColumns, summary, summary, score, ...fourWeekColumns];
-  const widths = flex.map((spec) => spec.base * scale);
-  const available = containerWidth - sum(grid);
-  const excess = sum(widths) - available;
-  const room = sum(flex.map((spec, index) => widths[index] - spec.min));
-  if (containerWidth > 0 && excess > 0 && room > 0) {
-    const share = Math.min(excess, room) / room;
-    flex.forEach((spec, index) => { widths[index] -= (widths[index] - spec.min) * share; });
+  const right = fourWeekCollapsed ? [fourWeekValue, trend] : [fourWeek, fourWeek, percent, fourWeekValue, trend];
+  const dayMinimum = goalieView ? 80 : day.min;
+  if (metricColumns.length === 2 && fourWeekCollapsed) {
+    // Collapsed: Team alone keeps its width; every other visible column shares one width.
+    const count = metricColumns.length + dayCount + 3 + right.length;
+    const minimum = Math.max(dayMinimum, ...metricColumns.map(c => c.min), ...right.map(c => c.min), summary.min, score.min);
+    const width = Math.max(minimum, containerWidth > 0 ? (containerWidth - team.base) / count : day.base);
+    return [...Array(metricColumns.length).fill(width), team.base, ...Array(dayCount + 3 + right.length).fill(width)];
   }
-
-  // Narrower than its column (side groups collapsed): widen the side and summary columns so the
-  // table spans the same width as the header and controls above it; team and days stay pinned.
-  const spare = containerWidth > 0 ? available - sum(widths) : 0;
-  if (spare > 0) {
-    const total = sum(widths);
-    widths.forEach((width, index) => { widths[index] = width + spare * (width / total); });
-  }
-
-  // Still too wide (e.g. 7 days at 1024px): narrow the day columns toward their minimum
-  // before falling back to a horizontal scroll, so the 4-week columns stay on screen.
-  const shortfall = Math.round(sum(widths) - available);
-  if (containerWidth > 0 && shortfall > 0 && dayCount > 0) {
-    const cut = Math.min(shortfall, sum(grid.slice(1).map((width) => width - day.min)));
-    for (let i = 1; i <= dayCount; i += 1) {
-      grid[i] -= Math.floor(cut / dayCount) + (i <= cut % dayCount ? 1 : 0);
-    }
-  }
-
-  // Round down, then hand the leftover pixels to the largest fractions so the total is exact.
-  const rounded = widths.map(Math.floor);
-  widths.map((width, index) => ({ index, fraction: width - Math.floor(width) }))
-    .sort((a, b) => b.fraction - a.fraction)
-    .slice(0, Math.round(sum(widths)) - sum(rounded))
-    .forEach(({ index }) => { rounded[index] += 1; });
-
-  const metricCount = metricColumns.length;
-  return [...rounded.slice(0, metricCount), ...grid, ...rounded.slice(metricCount)];
+  const sideMin = Math.max(176, sum(metricColumns.map(c => c.min)), sum(right.map(c => c.min)));
+  const sideBase = Math.max(sum(metricColumns.map(c => c.base)), sum(right.map(c => c.base)));
+  const fixed = team.base + 2 * summary.base + score.base;
+  const minimum = fixed + dayCount * dayMinimum + 2 * sideMin;
+  const target = Math.max(minimum, containerWidth || fixed + dayCount * day.base + 2 * sideBase);
+  const preferredSideWidth = Math.max(sideMin, Math.min(sideBase, (target - fixed - dayCount * day.base) / 2));
+  const dayWidth = Math.floor((target - fixed - 2 * preferredSideWidth) / dayCount);
+  const sideWidth = (target - fixed - dayCount * dayWidth) / 2;
+  const fitSide = (columns: MasterColumnSpec[]) => {
+    const base = sum(columns.map(c => c.base)), minimum = sum(columns.map(c => c.min));
+    const spare = sideWidth - minimum;
+    const widths = columns.map(c => Math.floor(c.min + spare * (base > minimum ? (c.base - c.min) / (base - minimum) : 1 / columns.length)));
+    widths[widths.length - 1] += sideWidth - sum(widths);
+    return widths;
+  };
+  // Each day has the same whole-pixel width; any remainder is shared by the side groups.
+  return [...fitSide(metricColumns), team.base, ...Array(dayCount).fill(dayWidth),
+    summary.base, summary.base, score.base, ...fitSide(right)];
 }
 
 export default function DesktopMasterTable({
@@ -344,6 +322,7 @@ export default function DesktopMasterTable({
 }: DesktopMasterTableProps) {
   const teamsMap = useTeamsMap();
   const scrollRef = useRef<HTMLDivElement | null>(null);
+  const goaliePresentation = useGoaliePresentation();
   const tableRef = useRef<HTMLTableElement | null>(null);
   const theadRef = useRef<HTMLTableSectionElement | null>(null);
   const [sortConfig, setSortConfig] = useState<SortConfig>({
@@ -597,8 +576,8 @@ export default function DesktopMasterTable({
   const columnWidths = useMemo(() => sizeMasterTableColumns({
     metricColumns: visibleMetricColumns.map(({ key }) =>
       key === "atk" || key === "def" ? MASTER_COLUMNS.rating : key === "avgWinPct" ? MASTER_COLUMNS.percent : MASTER_COLUMNS.metric),
-    dayCount: dayKeys.length, fourWeekCollapsed: isFourWeekCollapsed, containerWidth,
-  }), [visibleMetricColumns, dayKeys.length, isFourWeekCollapsed, containerWidth]);
+    dayCount: dayKeys.length, fourWeekCollapsed: isFourWeekCollapsed, containerWidth, goalieView: goaliePresentation.requested,
+  }), [visibleMetricColumns, dayKeys.length, isFourWeekCollapsed, containerWidth, goaliePresentation.requested]);
 
   const tableWidth = useMemo(
     () => columnWidths.reduce((sum, width) => sum + width, 0),
@@ -1029,7 +1008,7 @@ export default function DesktopMasterTable({
   }, []);
 
   const metricInfo = (
-    <MetricInfoDisclosure label="Game Grid metrics" warningTarget={warningTarget} warnings={[
+    <MetricInfoDisclosure label="Game Grid metrics" overlay={goaliePresentation.requested} warningTarget={warningTarget} warnings={[
         ...(opponentMetricsError ? ["Opponent stats unavailable. Reload to retry."]
           : !opponentMetricsLoading && Object.values(opponentCoverageByTeamId ?? {}).some((coverage) => Object.values(coverage).some(({ known, expected }) => known < expected))
             ? ["Some opponent averages are unavailable. Check back after the next stats update."] : []),
@@ -1042,6 +1021,9 @@ export default function DesktopMasterTable({
               ? ["Some opponent strength values are unavailable. Check back after standings update."] : []),
       ]}>
         {/* Same plain-language wording as the phone Opponent and 4-Week panels; source and dates last. */}
+        {goaliePresentation.requested && <p><strong>{GOALIE_WIN_DEFINITION}</strong> Start % is the probability of starting.
+          Select a goalie cell for full names, written status, sources and unavailable reasons. ✓ Confirmed; ◇ Projected.
+          Narrow cells, mobile, transposed layout and Date Range retain the existing schedule content. Current forecasts stop at game start.</p>}
         <p>
           <strong>Attack</strong> and <strong>Defense</strong> rate each team&rsquo;s opponents from 0 to 100 against the
           league; 50 is average (the white tick). Attack uses the opponents&rsquo; expected goals for per game; Defense uses
@@ -1060,6 +1042,7 @@ export default function DesktopMasterTable({
         </p>
         {opponentSourceLabel && <p>Natural Stat Trick · {opponentSourceLabel}</p>}
         {fourWeekCalendar && <p>Four weeks: {formatInfoDate(fourWeekCalendar.start)} – {formatInfoDate(fourWeekCalendar.end)} · {fourWeekLoading ? "loading schedule…" : fourWeekCalendar.error ?? (fourWeekCalendar.knownDays === fourWeekCalendar.expectedDays ? "schedule complete" : "schedule incomplete; affected totals unavailable")}</p>}
+        {goaliePresentation.requested && <GoalieWorkloadPanel />}
       </MetricInfoDisclosure>
   );
 
@@ -1094,7 +1077,8 @@ export default function DesktopMasterTable({
         </div>
       )}
       {metricInfoTarget ? createPortal(metricInfo, metricInfoTarget) : metricInfo}
-      <div ref={scrollRef} className={styles.masterTableScroll}>
+      <div ref={scrollRef} className={styles.masterTableScroll} tabIndex={goaliePresentation.requested ? 0 : undefined}
+        role={goaliePresentation.requested ? "region" : undefined} aria-label={goaliePresentation.requested ? "Goalie schedule, horizontally scrollable" : undefined}>
         <table
           ref={tableRef}
           aria-busy={scheduleLoading}
@@ -1302,6 +1286,7 @@ export default function DesktopMasterTable({
                       >
                         {matchup && !(isPreseason && hidePreseason) ? (
                           <MatchUpCell
+                            game={matchup}
                             gameId={matchup.id}
                             home={matchup.homeTeam.id === row.teamId}
                             homeTeam={matchup.homeTeam}

@@ -23,6 +23,398 @@ async function fits(locator: Locator, width: number) {
   }
 }
 
+test('visible player view control enters and leaves goalie content without changing schedule state', async ({ page }) => {
+  await page.setViewportSize({ width: 1920, height: 1000 });
+  await fixture(page);
+  const group = page.getByRole('group', { name: 'Player view', exact: true });
+  await expect(group.getByRole('button', { name: 'Skater', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('[data-goalie-cell]')).toHaveCount(0);
+  await page.getByRole('button', { name: '10-Day', exact: true }).click();
+  const date = await page.getByLabel('Selected week range').textContent();
+  await group.getByRole('button', { name: 'Goalie', exact: true }).click();
+  await expect(page.locator('[data-goalie-id="847001"]').first()).toContainText('Win 57%');
+  await expect(page.locator('[data-goalie-id="847001"]').first()).toContainText('Start 70%');
+  await expect(page.getByRole('button', { name: '10-Day', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByLabel('Selected week range')).toHaveText(date!);
+  await group.getByRole('button', { name: 'Skater', exact: true }).focus();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('[data-goalie-cell]')).toHaveCount(0);
+  await expect(group.getByRole('button', { name: 'Skater', exact: true })).toHaveAttribute('aria-pressed', 'true');
+});
+
+test('goalie cells preserve structure with approved minimum geometry and restore Skater sizing', async ({ page }, testInfo) => {
+  await page.clock.install({ time: new Date('2026-10-07T16:00:00Z') });
+  await page.route('**/*', route => new URL(route.request().url()).hostname === '127.0.0.1' ? route.continue() : route.abort());
+  const shape = () => page.locator('[class*="masterTableScroll"] table, table[class*="teamPreviewGrid"], table[class*="mobileCompactTable"]').first().evaluate(table => {
+    const origin = table.getBoundingClientRect();
+    // The fixture-only toolbar wraps differently when its Change goalie button is present.
+    const appTop = document.querySelector('[class*="mainGridContainer"], [class*="mobileGameGridAll"]')!.getBoundingClientRect().top;
+    return { headers: [...table.querySelectorAll('thead th')].map(n => n.textContent),
+      surrounding: ['[class*="gameGridHeaderContent"]', '[class*="controlsBar"]', '[aria-label="Game Grid legend"]', '[aria-label="Info about Game Grid metrics"]', '[class*="titleRow"]', '[class*="mobileHeaderActions"]'].map(selector => {
+        const r = document.querySelector(selector)?.getBoundingClientRect();
+        return r ? [r.x, r.y - appTop, r.width, r.height].map(v => Math.round(v * 10) / 10) : null;
+      }),
+      table: [origin.x, origin.y - appTop, origin.width, origin.height].map(v => Math.round(v * 10) / 10),
+      cells: [...table.querySelectorAll('tr,th,td')].map(n => { const b = n.getBoundingClientRect();
+        return [b.x - origin.x, b.y - origin.y, b.width, b.height].map(v => Math.round(v * 10) / 10); }) };
+  });
+  for (const width of [1920, 1440, 1180, 1024, 768, 520, 390, 320]) {
+    await page.setViewportSize({ width, height: 1000 });
+    for (const mode of ['7-Day', '10-Day']) {
+      await page.goto('/?teams=32');
+      await (width < 480 ? page.getByRole('radio', { name: mode === '7-Day' ? '7 days' : '10 days', exact: true }) : page.getByRole('button', { name: mode, exact: true })).click();
+      await expect(page.locator('tbody tr').first()).toBeVisible();
+      const baseline = await shape();
+      await page.goto('/?teams=32&view=goalies&goalie-extremes');
+      await (width < 480 ? page.getByRole('radio', { name: mode === '7-Day' ? '7 days' : '10 days', exact: true }) : page.getByRole('button', { name: mode, exact: true })).click();
+      await expect(page.locator('tbody tr').first()).toBeVisible();
+      await expect(page.locator('td [data-goalie-id="847001"]').first()).toContainText('Start 100%');
+      const metrics = await page.locator('td [data-goalie-cell]').evaluateAll(nodes => nodes.map(n => {
+        const box = n.getBoundingClientRect(), cell = n.closest('td')!.getBoundingClientRect();
+        const top = n.firstElementChild!, [win, logo, start] = [...top.children].map(child => child.getBoundingClientRect());
+        const name = n.lastElementChild!.getBoundingClientRect();
+        return { size: getComputedStyle(n).fontSize, width: cell.width, height: cell.height, overflow: n.scrollWidth > n.clientWidth,
+          arranged: win.right <= logo.left + .5 && logo.right <= start.left + .5
+            && Math.abs((logo.left + logo.right) / 2 - (box.left + box.right) / 2) <= .5
+            && name.top >= top.getBoundingClientRect().bottom - .5 && Math.abs(name.width - box.width) <= .5,
+          probabilityOverflow: [top.children[0], top.children[2]].some(column => [...column.children].some(label => label.getBoundingClientRect().width > column.getBoundingClientRect().width + .5)),
+          outside: [...n.querySelectorAll('img, span')].some(child => { const r = child.getBoundingClientRect(); return r.left < box.left - .5 || r.right > box.right + .5 || r.bottom > box.bottom + .5; }) };
+      }));
+      expect(metrics.length).toBeGreaterThan(0);
+      expect(await page.locator('td [data-goalie-cell]').evaluateAll(nodes => nodes.every(n => !/[✓◇?]/.test(n.textContent ?? '')))).toBe(true);
+      expect(metrics.every(m => m.size === '12px' && m.width >= 79.9 && m.height >= 48.9 && m.arranged && !m.probabilityOverflow && !m.overflow && !m.outside)).toBe(true);
+      const goalieShape = await shape();
+      expect(goalieShape.headers).toEqual(baseline.headers);
+      expect(goalieShape.cells.length).toBe(baseline.cells.length);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+      if (width === 1440 && mode === '7-Day') await page.screenshot({ path: testInfo.outputPath('goalie-1440-100-percent.png') });
+      await page.getByRole('group', { name: 'Player view', exact: true }).getByRole('button', { name: 'Skater', exact: true }).click();
+      await expect(page.locator('[data-goalie-cell]')).toHaveCount(0);
+      expect(await shape()).toEqual(baseline);
+    }
+  }
+});
+
+test('goalie detail defines conditional win, handles keyboard focus and reopens after mobile layout change', async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.clock.install({ time: new Date('2026-10-07T16:00:00Z') });
+  await page.route('**/*', route => new URL(route.request().url()).hostname === '127.0.0.1' ? route.continue() : route.abort());
+  await page.goto('/?view=goalies');
+  const cell = page.locator('[data-goalie-id="847001"]').first();
+  await expect(cell).toContainText('Win 57%');
+  const button = cell.locator('..');
+  await expect(button).toHaveAccessibleName(/Samuel Montembeault.*Win if starting 57%.*Start 70%/);
+  await button.focus(); await button.press('Enter');
+  await expect(page.getByRole('dialog')).toContainText("chance of receiving the credited win if they start");
+  await expect(page.getByRole('dialog')).toContainText('Samuel Montembeault');
+  await expect(page.getByRole('dialog')).toContainText('Confirmed');
+  await page.keyboard.press('Tab');
+  await expect(page.getByText('Source and timing for Samuel Montembeault', { exact: true })).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('dialog')).toContainText('synthetic-not-scientific');
+  await page.keyboard.press('Escape'); await expect(button).toBeFocused();
+  await button.press('Space'); await expect(page.getByRole('dialog')).toBeVisible();
+  await page.addScriptTag({ content: axe.source });
+  const result = await page.evaluate(async () => (window as any).axe.run(document.querySelector('[role="dialog"]')));
+  expect(result.violations).toEqual([]);
+  await page.screenshot({ path: testInfo.outputPath('goalie-details.png') });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(page.locator('td [data-goalie-id="847001"]').first()).toContainText('Start 70%');
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await expect(page.locator('[data-goalie-id="847001"]').first()).toContainText('Start 70%');
+  await page.getByRole('button', { name: 'Open grid controls' }).click();
+  await page.getByRole('button', { name: 'Toggle orientation' }).click();
+  await expect(page.locator('[data-goalie-id="847001"]').first()).toContainText('Start 70%');
+});
+
+test('mobile goalie cells truncate long names and open full accessible details by touch', async ({ browser }, testInfo) => {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+  const page = await context.newPage();
+  try {
+    await fixture(page);
+    await page.goto('/?view=goalies&goalie-long-name&goalie-extremes');
+    const cell = page.locator('td [data-goalie-id="847001"]').first();
+    await expect(cell).toContainText('Win 100%');
+    const surname = cell.locator('[title="Alexandre Gauthier-Desjardins"]');
+    expect(await surname.evaluate(n => getComputedStyle(n).textOverflow === 'ellipsis' && n.scrollWidth > n.clientWidth)).toBe(true);
+    const button = cell.locator('..');
+    await expect(button).toHaveAccessibleName(/Alexandre Gauthier-Desjardins/);
+    await button.tap();
+    const dialog = page.getByRole('dialog', { name: 'Goalie matchup details', exact: true });
+    await expect(dialog).toContainText('Alexandre Gauthier-Desjardins');
+    await expect(dialog).toContainText('Confirmed');
+    await fits(dialog, 390);
+    await page.addScriptTag({ content: axe.source });
+    expect((await page.evaluate(async () => (window as any).axe.run(document.querySelector('[role="dialog"]')))).violations).toEqual([]);
+    await page.screenshot({ path: testInfo.outputPath('mobile-goalie-details.png') });
+    await dialog.getByRole('button', { name: 'Close goalie matchup details' }).tap();
+    await expect(button).toBeFocused();
+  } finally { await context.close(); }
+});
+
+test('goalie replacement never pairs a new name with old percentages; puck drop removes forecasts', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.clock.install({ time: new Date('2026-10-08T22:59:59Z') });
+  await page.route('**/*', route => new URL(route.request().url()).hostname === '127.0.0.1' ? route.continue() : route.abort());
+  await page.goto('/?view=goalies');
+  await expect(page.locator('[data-goalie-id="847001"]').first()).toContainText('Win 57%');
+  await page.evaluate(() => {
+    (window as any).__goalieFrames = [];
+    new MutationObserver(() => (window as any).__goalieFrames.push([...document.querySelectorAll('[data-goalie-id="847002"]')].map(n => n.textContent))).observe(document.body, { childList: true, subtree: true, characterData: true, attributes: true });
+  });
+  await page.getByRole('button', { name: 'Change goalie fixture' }).click();
+  const changed = page.locator('[data-goalie-id="847002"]').first();
+  await expect(changed).toContainText('Luukkonen');
+  await expect(changed).toContainText('Win —'); await expect(changed).toContainText('Start —');
+  expect(await page.evaluate(() => (window as any).__goalieFrames.flat().every((s: string) => !/57%|70%/.test(s)))).toBe(true);
+  await page.clock.fastForward(1000);
+  const closed = page.getByRole('button', { name: /^Pregame window ended,/ }).first();
+  await expect(closed).toBeVisible();
+  await expect(closed).toContainText('Win —');
+  await expect(closed.locator('[data-goalie-cell] > span')).toHaveText('—');
+});
+
+test('goalie cells show unavailable for unqualified, failed and partial-source states', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.clock.install({ time: new Date('2026-10-07T16:00:00Z') });
+  await page.route('**/*', route => new URL(route.request().url()).hostname === '127.0.0.1' ? route.continue() : route.abort());
+  await page.goto('/?view=goalies&goalie-unqualified');
+  const named = page.locator('[data-goalie-id="847001"]').first();
+  await expect(named).toContainText('Win —'); await expect(named).toContainText('Start —');
+  await page.goto('/?view=goalies&goalie-error');
+  await expect(page.locator('[data-goalie-cell] > span').first()).toHaveText('—');
+  await expect(page.getByRole('button', { name: /^Goalie unavailable,/ }).first()).toBeVisible();
+  await expect(page.locator('[data-goalie-cell]').first()).toContainText('Win —');
+  await page.goto('/?view=goalies');
+  await expect(named).toContainText('Win 57%');
+  await page.getByRole('button', { name: 'Partial schedule fixture' }).click();
+  await expect(page.locator('[data-goalie-id="847001"]')).toHaveCount(0);
+  // Preserve the existing grid's incomplete-schedule state, including withheld cells.
+  await expect(page.locator('[data-schedule-state="unavailable"]')).toBeVisible();
+  await expect(page.locator('[data-goalie-cell]')).toHaveCount(0);
+});
+
+test('goalie workload opens from existing Info without layout shifts, with honest windows and keyboard controls', async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.clock.install({ time: new Date('2026-10-07T16:00:00Z') });
+  await page.route('**/*', route => new URL(route.request().url()).hostname === '127.0.0.1' ? route.continue() : route.abort());
+  await page.goto('/');
+  const skaterInfo = page.locator('summary[aria-label="Info about Game Grid metrics"]');
+  await skaterInfo.press('Enter');
+  await expect(skaterInfo.locator('..')).toHaveAttribute('open');
+  await expect(page.getByText(/Based on results so far, not a forecast/)).toBeVisible();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await skaterInfo.press('Enter');
+  await expect(skaterInfo.locator('..')).not.toHaveAttribute('open');
+  await page.goto('/?view=goalies');
+  await expect(page.locator('[data-goalie-id="847001"]').first()).toBeVisible();
+  const info = page.getByLabel('Info about Game Grid metrics');
+  const layout = () => page.evaluate(() => ({
+    height: document.documentElement.scrollHeight,
+    boxes: ['[class*="gameGridHeaderContent"]', '[class*="controlsBar"]', '[aria-label="Game Grid legend"]', '[aria-label="Info about Game Grid metrics"]', '[class*="masterTableScroll"] table'].map(selector => {
+      const r = document.querySelector(selector)!.getBoundingClientRect();
+      return [r.x + scrollX, r.y + scrollY, r.width, r.height].map(v => Math.round(v * 10) / 10);
+    }),
+  }));
+  const before = await layout();
+  await info.focus(); await info.press('Enter');
+  const dialog = page.getByRole('dialog', { name: 'Game Grid metrics', exact: true });
+  const close = dialog.getByRole('button', { name: 'Close game grid metrics' });
+  await expect(close).toBeFocused();
+  await expect(dialog).toContainText('chance of receiving the credited win if they start');
+  expect(await layout()).toEqual(before);
+  const history = page.getByRole('region', { name: 'Historical goalie workload' });
+  await expect(history).toContainText('5 resolved starts; 1 unresolved');
+  await expect(history).toContainText('Data through: 2026-10-06');
+  await expect(history).toContainText('through 2026-10-07');
+  await history.getByLabel('Historical lookback').selectOption('days-7');
+  await expect(history).toContainText('Lookback: 2026-10-01 through 2026-10-07');
+  await history.getByLabel('Team', { exact: true }).selectOption('F2');
+  await expect(history).toContainText('No completed games in this lookback');
+  await history.getByLabel('Team', { exact: true }).selectOption('F1');
+  const segments = await history.locator('[role="img"] > span').evaluateAll(nodes => nodes.map(node => ({
+    share: node.getBoundingClientRect().width / node.parentElement!.getBoundingClientRect().width,
+    color: getComputedStyle(node).backgroundColor,
+  })));
+  expect(segments.map(s => s.color)).toEqual(['rgb(110, 215, 224)', 'rgb(255, 205, 117)', 'rgb(120, 125, 134)']);
+  for (const [i, share] of [3 / 6, 2 / 6, 1 / 6].entries()) expect(segments[i].share).toBeCloseTo(share, 2);
+  await page.addScriptTag({ content: axe.source });
+  const result = await page.evaluate(async () => (window as any).axe.run(document.querySelector('[role="dialog"]')));
+  expect(result.violations).toEqual([]);
+  await close.focus(); await page.keyboard.press('Shift+Tab');
+  await expect(history.getByLabel('Historical lookback')).toBeFocused();
+  await page.keyboard.press('Tab'); await expect(close).toBeFocused();
+  expect(await history.evaluate(el => el.getBoundingClientRect().width)).toBeGreaterThan(450);
+  await fits(dialog, 1440);
+  expect(await dialog.evaluate(el => [...el.querySelectorAll('p, select, h2')].every(child => {
+    const r = child.getBoundingClientRect();
+    const box = el.getBoundingClientRect();
+    const y = (r.top + r.bottom) / 2;
+    if (y <= box.top || y >= box.bottom) return true;
+    return el.contains(document.elementFromPoint((r.left + r.right) / 2, y));
+  }))).toBe(true);
+  await page.screenshot({ path: testInfo.outputPath('goalie-workload-info.png') });
+  await page.keyboard.press('Escape');
+  await expect(info).toBeFocused();
+  await expect(history).not.toBeVisible();
+  expect(await layout()).toEqual(before);
+  await info.press('Space'); await expect(dialog).toBeVisible();
+  await close.click(); await expect(info).toBeFocused();
+  await page.setViewportSize({ width: 1024, height: 768 });
+  await expect(page.locator('[data-goalie-cell]').first()).toBeVisible();
+  await expect.poll(() => page.locator('[class*="masterTableScroll"]').evaluate(el => el.getBoundingClientRect().width)).toBeLessThan(1024);
+  const narrowBefore = await layout();
+  await info.press('Enter'); await expect(dialog).toBeVisible();
+  expect(await layout()).toEqual(narrowBefore);
+  await fits(dialog, 1024);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(dialog).toHaveCount(0);
+  await expect(page.locator('[data-goalie-cell]').first()).toBeVisible();
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await expect(dialog).toHaveCount(0);
+  await expect(page.locator('[data-goalie-cell]').first()).toBeVisible();
+});
+
+test('Date Range goalie cells retain schedule structure, equal widths and contained scrolling', async ({ page }, testInfo) => {
+  await page.clock.install({ time: new Date('2026-10-07T16:00:00Z') });
+  await page.route('**/*', route => new URL(route.request().url()).hostname === '127.0.0.1' ? route.continue() : route.abort());
+  for (const width of [1440, 390]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/?date-range&goalie-long-name');
+    const table = page.locator('table');
+    await expect(table.locator('tbody tr')).toHaveCount(32);
+    const shape = await table.locator('thead th').allTextContents();
+    const originalCellWidth = await table.locator('tbody tr').first().locator('td').nth(5).evaluate(el => el.getBoundingClientRect().width);
+    const group = page.getByRole('group', { name: 'Player view' });
+    await group.getByRole('button', { name: 'Goalie', exact: true }).click();
+    const cell = page.locator('[data-goalie-id="847001"]').first();
+    await expect(cell).toContainText('Win 57%');
+    await expect(cell).toContainText('Start 70%');
+    const innerFits = await cell.evaluate(el => {
+      const box = el.closest('td')!.getBoundingClientRect();
+      return [...el.querySelectorAll('span')].every(span => { const r = span.getBoundingClientRect(); return r.left >= box.left && r.right <= box.right; });
+    });
+    expect(innerFits).toBe(true);
+    expect(await table.locator('thead th').allTextContents()).toEqual(shape);
+    const boxes = await table.locator('tbody tr').first().locator('td').evaluateAll(nodes => nodes.slice(1).map(el => ({ width: el.getBoundingClientRect().width, height: el.getBoundingClientRect().height })));
+    expect(Math.max(...boxes.map(b => b.width)) - Math.min(...boxes.map(b => b.width))).toBeLessThan(.25);
+    expect(boxes.every(b => b.width >= 79.9 && b.height >= 48.9)).toBe(true);
+    const scroll = page.getByRole('region', { name: 'Goalie Date Range grid' });
+    expect(await scroll.evaluate(el => el.scrollWidth > el.clientWidth)).toBe(true);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+    await cell.locator('..').focus(); await page.keyboard.press('Enter');
+    const dialog = page.getByRole('dialog', { name: 'Goalie matchup details', exact: true });
+    await expect(dialog).toContainText('Alexandre Gauthier-Desjardins');
+    await fits(dialog, width);
+    await page.keyboard.press('Escape');
+    await page.screenshot({ path: testInfo.outputPath(`date-range-goalie-${width}.png`) });
+    await group.getByRole('button', { name: 'Skater', exact: true }).click();
+    await expect(page.locator('[data-goalie-cell]')).toHaveCount(0);
+    expect(await table.locator('tbody tr').first().locator('td').nth(5).evaluate(el => el.getBoundingClientRect().width)).toBe(originalCellWidth);
+  }
+});
+
+test('transposed goalie grid centers between equal rails and four-week Info supports mobile workload', async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.clock.install({ time: new Date('2026-10-07T16:00:00Z') });
+  await page.route('**/*', route => new URL(route.request().url()).hostname === '127.0.0.1' ? route.continue() : route.abort());
+  await page.goto('/?view=goalies');
+  await page.getByRole('button', { name: 'Open grid controls' }).click();
+  await page.getByRole('button', { name: 'Toggle orientation' }).click();
+  const region = page.getByRole('region', { name: 'Transposed goalie schedule, horizontally scrollable' });
+  await expect(region.locator('[data-goalie-id="847001"]').first()).toContainText('Win 57%');
+  const columns = await region.locator('thead th').evaluateAll(nodes => nodes.map(n => n.getBoundingClientRect().width));
+  expect(Math.min(...columns)).toBeGreaterThanOrEqual(79.9);
+  expect(Math.max(...columns) - Math.min(...columns)).toBeLessThan(.25);
+  const rails = await page.locator('[data-grid-layout="legacy-vertical"]').evaluate(el => ['leftRail', 'centerGrid', 'rightRail'].map(name => {
+    const r = el.querySelector(`[class*="${name}"]`)!.getBoundingClientRect(); return { x: r.x, width: r.width };
+  }));
+  expect(rails[0].width).toBeCloseTo(rails[2].width, 1);
+  expect(rails[1].x + rails[1].width / 2).toBeCloseTo(720, 0);
+  expect(await region.evaluate(el => el.scrollWidth > el.clientWidth)).toBe(true);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+  await page.getByRole('button', { name: 'Expand opponent details', exact: true }).click();
+  await page.getByRole('button', { name: 'Expand four-week columns', exact: true }).click();
+  await page.getByRole('button', { name: '10-Day', exact: true }).click();
+  for (const width of [1024, 1440, 1920]) {
+    await page.setViewportSize({ width, height: 1000 });
+    const widths = await page.locator('[data-grid-layout="legacy-vertical"]').evaluate(el => ['leftRail', 'rightRail'].map(name => el.querySelector(`[class*="${name}"]`)!.getBoundingClientRect().width));
+    expect(widths[0]).toBeCloseTo(widths[1], 1);
+    expect(await region.locator('thead th').evaluateAll(nodes => nodes.every(n => n.getBoundingClientRect().width >= 79.9))).toBe(true);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+    for (const name of ['Opponent source statistics', 'Four-week schedule statistics']) {
+      const scroller = page.getByRole('region', { name, exact: true });
+      expect(await scroller.evaluate(el => el.scrollWidth > el.clientWidth)).toBe(true);
+      expect(await scroller.locator('thead button').evaluateAll(nodes => nodes.every(node => node.scrollWidth <= node.clientWidth + 1))).toBe(true);
+    }
+    if (width === 1440) await page.screenshot({ path: testInfo.outputPath('transposed-expanded-goalies-1440.png') });
+  }
+  await page.setViewportSize({ width: 390, height: 844 });
+  const info = page.getByLabel('Info about four-week forecast');
+  await info.click();
+  const dialog = page.getByRole('dialog', { name: 'four-week forecast', exact: true });
+  await expect(dialog.getByRole('region', { name: 'Historical goalie workload' })).toContainText('5 resolved starts; 1 unresolved');
+  await fits(dialog, 390);
+  await page.screenshot({ path: testInfo.outputPath('four-week-goalie-info-390.png') });
+  await page.keyboard.press('Escape'); await expect(info).toBeFocused();
+});
+
+test('public goalie readers keep percentages withheld, load history lazily and discard obsolete team responses', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.clock.install({ time: new Date('2026-10-07T16:00:00Z') });
+  await page.route('**/*', route => new URL(route.request().url()).hostname === '127.0.0.1' ? route.continue() : route.abort());
+  const calls: string[] = [];
+  let releaseSecond: (() => void) | undefined;
+  const history = (teamId: number) => ({ version: 'goalie-workload-view-v1', seasonId: 20262027, seasonStartsOn: '2026-07-01', teamId,
+    source: 'Synthetic stored schedule and official-start labels', revision: 'fixture', observedAt: '2026-10-07T15:00:00Z', dataThrough: '2026-10-06',
+    basis: 'current_recorded_results', coverageBasis: 'stored_regular_season_schedule', scheduleVerifiedThrough: '2026-10-07', scheduleComplete: true, appearancesComplete: true,
+    games: [{ gameId: 99, team: `F${teamId}`, date: '2026-10-06', seasonId: 20262027, state: 'final', completedAt: null,
+      finality: { basis: 'single_stored_game_end', observedAt: '2026-10-07T15:00:00Z' } }],
+    appearances: [{ goalieId: 847001, name: 'Samuel Montembeault', gameId: 99, team: `F${teamId}`, date: '2026-10-06', opponent: 'F4', home: true, started: true,
+      wins: null, losses: null, otLosses: null, saves: null, shotsAgainst: null, goalsAgainst: null, toiSeconds: null, shutouts: null, qualityStart: null }],
+  });
+  await page.route('**/api/v1/forge/goalies?*', async route => {
+    const query = new URL(route.request().url()).searchParams, view = query.get('view'); calls.push(view!);
+    if (view === 'game-grid') return route.fulfill({ json: { version: 'goalie-grid-v1', boards: [{ gameId: 103, seasonId: 20262027, teamId: 1, opponentId: 2,
+      startsAt: '2026-10-08T23:00:00Z', selectionRevision: 'issued-run', selectedPlayerId: 847001, candidateCoverage: 'unknown', candidates: [{
+        playerId: 847001, name: 'Samuel Montembeault', surname: 'Montembeault', status: 'projected', start: null, winIfStarting: null,
+        source: { source: 'FORGE candidate fixture', artifactId: 'issued-run', revision: 'issued-run', basis: 'model_issuance',
+          observedAt: null, availableAt: null, cutoffAt: null, issuedAt: '2026-10-07T15:00:00Z', expiresAt: '2026-10-08T23:00:00Z' },
+      }] }] } });
+    const teamId = Number(query.get('teamId'));
+    if (teamId === 2) await new Promise<void>(resolve => { releaseSecond = resolve; });
+    if (teamId === 3) return route.fulfill({ status: 503, json: { error: 'fixture unavailable' } });
+    await route.fulfill({ json: history(teamId) }).catch(() => {}); // An aborted old-team request may already be gone.
+  });
+  await page.goto('/?view=goalies&goalie-http');
+  const cell = page.locator('[data-goalie-id="847001"]').first();
+  await expect(cell).toContainText('Win —'); await expect(cell).toContainText('Start —');
+  expect(calls).toEqual(['game-grid']);
+  await page.getByLabel('Info about Game Grid metrics').click();
+  const panel = page.getByRole('region', { name: 'Historical goalie workload' });
+  await expect(panel).toContainText('1 resolved starts; 0 unresolved');
+  await expect(panel).toContainText('Exact game completion times are unavailable');
+  await panel.getByLabel('Team', { exact: true }).selectOption('F2');
+  await expect(panel).toContainText('Loading historical goalie workload');
+  await expect(panel).not.toContainText('1 resolved starts');
+  await expect.poll(() => !!releaseSecond).toBe(true);
+  await panel.getByLabel('Team', { exact: true }).selectOption('F3');
+  await expect(panel).toContainText('Historical workload unavailable');
+  releaseSecond!();
+  await expect(panel).not.toContainText('1 resolved starts');
+  await page.keyboard.press('Escape');
+  const beforeMobile = calls.length;
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator('td [data-goalie-id="847001"]').first()).toContainText('Start —');
+  expect(calls).toHaveLength(beforeMobile);
+  calls.length = 0;
+  await page.goto('/?view=goalies&goalie-http');
+  await expect(page.locator('table[class*="mobileCompactTable"]')).toBeVisible();
+  await expect(page.locator('td [data-goalie-id="847001"]').first()).toContainText('Win —');
+  expect(calls).toEqual(['game-grid']);
+});
+
 test('24-team keyboard disclosures survive sorting, refresh, mode and orientation; a new week resets', async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1920, height: 1080 });
   await fixture(page);
@@ -133,11 +525,12 @@ for (const width of [320, 390, 430, 479]) test(`mobile grid fits all summary col
   expect(afterSort).not.toEqual(beforeSort);
   await expect(teamLinks.first()).toHaveAttribute('href', /\/stats\/team\/F\d+/);
   await page.screenshot({ path: testInfo.outputPath(`mobile-${width}-compact.png`), fullPage: false });
-  await page.getByRole('button', { name: '7-Day', exact: true }).click();
-  await expect(page.getByRole('button', { name: '10-Day', exact: true })).toBeVisible();
+  // The current mobile mode selector is a radio group, not the retired toggle button.
+  await page.getByRole('radio', { name: '10 days', exact: true }).check();
+  await expect(page.getByRole('radio', { name: '10 days', exact: true })).toBeChecked();
   await expect(trigger(page)).toHaveCount(0);
   await expect(page.locator('[id^="game-grid-team-details-"]')).toHaveCount(0);
-  await page.getByRole('button', { name: '10-Day', exact: true }).click();
+  await page.getByRole('radio', { name: '7 days', exact: true }).check();
   await expect(teamLinks).toHaveCount(24);
 });
 
@@ -601,7 +994,6 @@ for (const width of [1920, 1440, 1024, 520, 390, 320]) for (const dayCount of wi
   await page.goto('/?teams=32&opportunity=1');
   await page.addStyleTag({ content: '* { box-sizing: border-box; }' });
   if (dayCount === 10) await page.getByRole('button', { name: '10-Day', exact: true }).click();
-  let gridWidths: number[] | undefined;
   const opponent = page.getByRole('button', { name: 'Expand opponent details' }).first();
   const fourWeek = page.getByRole('button', { name: 'Expand four-week columns' }).first();
   await expect(opponent).toHaveAttribute('aria-expanded', 'false');
@@ -612,10 +1004,21 @@ for (const width of [1920, 1440, 1024, 520, 390, 320]) for (const dayCount of wi
       const expected = 2 + (left ? 7 : 0) + 1 + dayCount + 3 + (right ? 5 : 2);
       await expect(table.locator('col')).toHaveCount(expected);
       const widths = await table.locator('col').evaluateAll(cols => cols.map(col => col.getBoundingClientRect().width));
-      // Team and day columns keep one width in every expansion state.
-      const grid = widths.slice(left ? 9 : 2, (left ? 9 : 2) + 1 + dayCount);
-      if (!gridWidths) gridWidths = grid;
-      else grid.forEach((gridWidth, index) => expect(gridWidth).toBeCloseTo(gridWidths![index], 0));
+      // The completion goal replaces pinned days with equal days and balanced side groups.
+      const leftCount = left ? 9 : 2;
+      const grid = widths.slice(leftCount, leftCount + 1 + dayCount);
+      // Chromium distributes subpixel remainders at colspan boundaries (under 0.25 CSS px).
+      grid.slice(1).forEach(dayWidth => expect(Math.abs(dayWidth - grid[1])).toBeLessThan(.25));
+      const sum = (values: number[]) => values.reduce((a, b) => a + b, 0);
+      expect(Math.abs(sum(widths.slice(0, leftCount)) - sum(widths.slice(leftCount + 1 + dayCount + 3)))).toBeLessThan(.25);
+      const summary = widths.slice(leftCount + 1 + dayCount, leftCount + 1 + dayCount + 3);
+      if (!left && !right) widths.filter((_, index) => index !== leftCount)
+        .forEach(value => expect(Math.abs(value - widths[0])).toBeLessThan(.25));
+      else {
+        expect(summary[0]).toBeCloseTo(44, 0);
+        expect(summary[1]).toBeCloseTo(44, 0);
+        expect(summary[2]).toBeCloseTo(64, 0);
+      }
       const geometry = await table.evaluate(node => ({ width: node.getBoundingClientRect().width, container: node.parentElement!.clientWidth, center: (node.getBoundingClientRect().left + node.getBoundingClientRect().right) / 2, parentCenter: (node.parentElement!.getBoundingClientRect().left + node.parentElement!.getBoundingClientRect().right) / 2 }));
       if (geometry.width <= geometry.container) expect(geometry.center).toBeCloseTo(geometry.parentCenter, 0);
       // Collapsed groups fit everywhere; fully expanded groups fit once the container holds their minimums.
