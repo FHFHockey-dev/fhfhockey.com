@@ -216,8 +216,10 @@ export type ForgeTeamProjectionRow = Pick<
   | "horizon_games"
   | "proj_shots_es"
   | "proj_shots_pp"
+  | "proj_shots_pk"
   | "proj_goals_es"
   | "proj_goals_pp"
+  | "proj_goals_pk"
   | "updated_at"
 >;
 
@@ -1313,11 +1315,15 @@ function buildForgeTeamProjectionFeatures(
   const goalsPp = toNumber(row.proj_goals_pp);
   const shotsEs = toNumber(row.proj_shots_es);
   const shotsPp = toNumber(row.proj_shots_pp);
+  // FORGE rows are exclusive ES + PP + PK buckets (decision 24); a null PK head means unknown team PK exposure,
+  // so the all-situation total is unknown too, never an ES + PP partial sum.
+  const goalsPk = toNumber(row.proj_goals_pk);
+  const shotsPk = toNumber(row.proj_shots_pk);
   return {
     runId: row.run_id,
     updatedAt: row.updated_at ?? null,
-    projectedGoals: sumModeledHeads(goalsEs, goalsPp),
-    projectedShots: sumModeledHeads(shotsEs, shotsPp),
+    projectedGoals: goalsPk == null ? null : sumModeledHeads(goalsEs, goalsPp, goalsPk),
+    projectedShots: shotsPk == null ? null : sumModeledHeads(shotsEs, shotsPp, shotsPk),
     proofStatus: statusOf(row.run_id),
     proofBasis: proof.get(row.run_id)?.proof?.basis ?? null,
   };
@@ -2984,7 +2990,7 @@ export async function fetchGamePredictionFeatureInputs(
     client
       .from("forge_team_projections")
       .select(
-        "run_id,game_id,team_id,horizon_games,proj_shots_es,proj_shots_pp,proj_goals_es,proj_goals_pp,updated_at",
+        "run_id,game_id,team_id,horizon_games,proj_shots_es,proj_shots_pp,proj_shots_pk,proj_goals_es,proj_goals_pp,proj_goals_pk,updated_at",
       )
       .eq("game_id", gameId)
       .in("team_id", teamIds)

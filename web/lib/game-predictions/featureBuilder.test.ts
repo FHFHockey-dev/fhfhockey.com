@@ -635,16 +635,20 @@ describe("game prediction feature builder", () => {
     await expect(fetchRequestedTeamPowerHistory(client, Array.from({ length: 23 }, (_, index) => ({ teamAbbreviation: `TEAM${index}`, beforeDate: "2026-01-06" })))).rejects.toThrow("exceeds 22");
   });
 
+  // FORGE team rows are exclusive ES + PP + PK buckets (decision 24, L9a 9cf384ff4): the all-situation total
+  // includes PK, and an unknown PK head (null) leaves the total unknown rather than an ES + PP partial sum.
   it.each([
-    [null, 0.3, 24, 4, null, 28],
-    [2.5, null, null, 4, null, null],
-    [null, null, 24, null, null, null],
-    [0, 0, 0, 0, 0, 0],
-    [2.5, 0.3, 24, 4, 2.8, 28],
-  ])("preserves modeled-head completeness for goals %s/%s and shots %s/%s", (goalsEs, goalsPp, shotsEs, shotsPp, goals, shots) => {
+    [null, 0.3, 0.1, 24, 4, 1, null, 29],
+    [2.5, null, 0.1, null, 4, 1, null, null],
+    [null, null, 0.1, 24, null, 1, null, null],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [2.5, 0.3, 0.1, 24, 4, 1, 2.9, 29],
+    [2.5, 0.3, null, 24, 4, null, null, null],
+  ])("preserves modeled-head completeness for goals %s/%s/%s and shots %s/%s/%s", (goalsEs, goalsPp, goalsPk, shotsEs, shotsPp, shotsPk, goals, shots) => {
     const payload = buildGamePredictionFeatureSnapshotPayload(createInputs({ forgeTeamProjectionRows: [{
       run_id: "fixture", game_id: 2025020001, team_id: 1, horizon_games: 1,
-      proj_goals_es: goalsEs, proj_goals_pp: goalsPp, proj_shots_es: shotsEs, proj_shots_pp: shotsPp,
+      proj_goals_es: goalsEs, proj_goals_pp: goalsPp, proj_goals_pk: goalsPk,
+      proj_shots_es: shotsEs, proj_shots_pp: shotsPp, proj_shots_pk: shotsPk,
       updated_at: "2026-01-10T15:00:00+00:00",
     }] }));
     expect(payload.home.forgeProjection).toMatchObject({ projectedGoals: goals, projectedShots: shots });
@@ -653,7 +657,7 @@ describe("game prediction feature builder", () => {
 
   describe("FORGE team projection provenance (Astra F4)", () => {
     const row = (run_id: string, updated_at: string, goals: number) => ({ run_id, game_id: 2025020001, team_id: 1, horizon_games: 1,
-      proj_goals_es: goals, proj_goals_pp: 0, proj_shots_es: 25, proj_shots_pp: 3, updated_at });
+      proj_goals_es: goals, proj_goals_pp: 0, proj_goals_pk: 0, proj_shots_es: 25, proj_shots_pp: 3, proj_shots_pk: 0, updated_at });
     const rows = [row("run-contradicted", "2026-01-10T16:00:00+00:00", 9), row("run-unproven", "2026-01-10T15:00:00+00:00", 3),
       row("run-proven", "2026-01-10T14:00:00+00:00", 2)];
     const proof = new Map([
@@ -1212,8 +1216,10 @@ describe("game prediction feature builder", () => {
             horizon_games: 1,
             proj_goals_es: 2.4,
             proj_goals_pp: 0.6,
+            proj_goals_pk: 0,
             proj_shots_es: 26,
             proj_shots_pp: 5,
+            proj_shots_pk: 0,
             updated_at: "2026-01-10T15:00:00+00:00",
           },
           {
@@ -1223,8 +1229,10 @@ describe("game prediction feature builder", () => {
             horizon_games: 1,
             proj_goals_es: 1.9,
             proj_goals_pp: 0.3,
+            proj_goals_pk: 0,
             proj_shots_es: 24,
             proj_shots_pp: 4,
+            proj_shots_pk: 0,
             updated_at: "2026-01-10T15:00:00+00:00",
           },
         ],
