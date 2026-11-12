@@ -1761,6 +1761,12 @@ def baseline_issuance_fixture(tmp_path):
         "outcomes": {"toi": "20:00", "GOALS": 1, "ASSISTS": 1, "PP_POINTS": 1, "SHOTS_ON_GOAL": 3, "HITS": 2, "BLOCKED_SHOTS": 1}}
         for day in (1, 3, 5) for player in (1, 2, 11, 12)]
     freeze_history(rows, freeze, "2025-10-01", "2025-10-05")
+    # Pin the freeze time before the tests' fixed issuance clock; the real
+    # wall clock made these tests fail once it passed 2026-10-10 (date rot).
+    from modeling.player_forecasts.io import read_json
+    manifest = read_json(freeze / "manifest.json")
+    manifest["createdAt"] = "2026-10-01T00:00:00+00:00"
+    write_json(freeze / "manifest.json", manifest)
     return freeze, candidate
 
 

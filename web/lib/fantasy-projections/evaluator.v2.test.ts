@@ -21,7 +21,7 @@ import {
   type PortableSeasonArtifact,
   type SeasonGameContext,
 } from "./evaluator";
-import { buildRuntimeNewcomerPrior, teamDeployment } from "./seasonJobs";
+import { buildRuntimeNewcomerPrior, nhlScheduleDay, teamDeployment } from "./seasonJobs";
 
 const FIXTURE_PATH = path.join(__dirname, "__fixtures__", "season-evaluator-parity-v2.json");
 
@@ -373,5 +373,16 @@ describe("season page labels (decisions 122, 123)", () => {
     expect(prior.deployment.roleProbabilities).toBeUndefined();
     expect(prior.deployment.mostLikelyRole).toBeUndefined();
     expect("TAKEAWAYS" in prior.conditionalRates).toBe(false);
+  });
+});
+
+describe("rest days use the NHL schedule date (W2-7 D4b, rule 19)", () => {
+  it("dates a late Pacific puck drop on its Eastern schedule day, not the UTC day", () => {
+    const day = (iso: string) => Date.UTC(Number(iso.slice(0, 4)), Number(iso.slice(5, 7)) - 1, Number(iso.slice(8, 10))) / 86_400_000;
+    // 7:30 pm PT on Oct 9 is 02:30Z on Oct 10.
+    expect(nhlScheduleDay({ scheduled_start_at: "2026-10-10T02:30:00Z" })).toBe(day("2026-10-09"));
+    expect(nhlScheduleDay({ scheduled_start_at: "2026-10-10T23:00:00Z" })).toBe(day("2026-10-10"));
+    // Schedule's own date wins when present.
+    expect(nhlScheduleDay({ game_date: "2026-10-09", scheduled_start_at: "2026-10-10T04:00:00Z" })).toBe(day("2026-10-09"));
   });
 });

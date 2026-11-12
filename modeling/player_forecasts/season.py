@@ -2786,20 +2786,26 @@ def _roster_adjusted_team_contexts(
             )
             for player in skaters
         )
-        defense_suppression = sum(
-            float(player["playProbability"])
-            * float(player.get("ratingSignals", {}).get("defenseSuppressionPer60", 0.0))
-            * float(player["conditionalRates"].get("TOTAL_TOI", 0.0))
-            / 3600.0
-            for player in skaters
-        )
-        pk_suppression = sum(
-            float(player["playProbability"])
-            * float(player.get("ratingSignals", {}).get("defenseSuppressionPer60", 0.0))
-            * float(player["conditionalRates"].get("PK_TOI", 0.0))
-            / 3600.0
-            for player in skaters
-        )
+        # W2-7 D5: an on-ice suppression rate credits the same team event to
+        # every skater on the ice, so a roster sum counts it ~5x. Use the
+        # (play probability x TOI)-weighted average rate per 60, which is the
+        # team's per-game suppression with no assumed skaters-on-ice count.
+        def weighted_suppression(toi_target: str) -> float:
+            weights = [
+                float(player["playProbability"])
+                * float(player["conditionalRates"].get(toi_target) or 0.0)
+                for player in skaters
+            ]
+            total_weight = sum(weights)
+            if total_weight <= 0:
+                return 0.0
+            return sum(
+                weight * float(player.get("ratingSignals", {}).get("defenseSuppressionPer60", 0.0))
+                for weight, player in zip(weights, skaters)
+            ) / total_weight
+
+        defense_suppression = weighted_suppression("TOTAL_TOI")
+        pk_suppression = weighted_suppression("PK_TOI")
         start_weight = sum(float(player.get("startProbability") or 0.0) for player in goalies)
         goalie_ga = (
             sum(
@@ -3060,6 +3066,52 @@ def _deployment_evidence(
     return evidence
 
 
+def _participation_summary(
+    rows_by_population: dict[str, list[dict[str, Any]]],
+) -> dict[tuple[str, int], dict[int, dict[str, float]]]:
+    """Appearances and credited starts per player-season with their own
+    opportunity counts (W2-8 D9, rule 13).
+
+    Opportunities = completed games of the player's team in that season, seen
+    in the freeze (max over his teams, so a traded player is not counted
+    twice). Start opportunities subtract his appearances whose credited-start
+    label is unknown, so an unknown start is neither a start nor a non-start.
+    """
+    team_games: dict[tuple[int, int], set[int]] = defaultdict(set)
+    for rows in rows_by_population.values():
+        for row in rows:
+            if row.get("team_id") is not None:
+                team_games[(int(row["season_id"]), int(row["team_id"]))].add(int(row["game_id"]))
+    summary: dict[tuple[str, int], dict[int, dict[str, float]]] = defaultdict(
+        lambda: defaultdict(lambda: {
+            "appearances": 0.0, "starts": 0.0, "unknownStarts": 0.0,
+            "opportunities": 0.0, "startOpportunities": 0.0,
+        })
+    )
+    player_teams: dict[tuple[str, int, int], set[int]] = defaultdict(set)
+    for population, rows in rows_by_population.items():
+        for row in rows:
+            season = int(row["season_id"])
+            player_id = int(row["nhl_player_id"])
+            values = summary[(population, player_id)][season]
+            values["appearances"] += float(row.get("GAMES_PLAYED") or 0)
+            started = _finite_or_none(row.get("GAMES_STARTED"))
+            if population == "goalie" and started is None and float(row.get("GAMES_PLAYED") or 0) > 0:
+                values["unknownStarts"] += 1
+            values["starts"] += started or 0.0
+            if row.get("team_id") is not None:
+                player_teams[(population, player_id, season)].add(int(row["team_id"]))
+    for (population, player_id, season), teams in player_teams.items():
+        values = summary[(population, player_id)][season]
+        values["opportunities"] = float(max(len(team_games[(season, team)]) for team in teams))
+    for seasons in summary.values():
+        for values in seasons.values():
+            # No known team => no known opportunities: the season is left out
+            # (opportunities 0), never scored as 100% participation.
+            values["startOpportunities"] = max(0.0, values["opportunities"] - values["unknownStarts"])
+    return summary
+
+
 def train_season_artifact(
     freeze: Path,
     output: Path,
@@ -3271,32 +3323,22 @@ def train_season_artifact(
                     "seasonTotalOutcomeRows": observed_rows,
                 }
 
-    participation: dict[tuple[str, int], dict[int, dict[str, float]]] = defaultdict(
-        lambda: defaultdict(lambda: {"appearances": 0.0, "starts": 0.0})
-    )
-    for population, rows in rows_by_population.items():
-        for row in rows:
-            season = int(row["season_id"])
-            player_id = int(row["nhl_player_id"])
-            participation[(population, player_id)][season]["appearances"] += float(
-                row.get("GAMES_PLAYED") or 0
-            )
-            participation[(population, player_id)][season]["starts"] += float(
-                row.get("GAMES_STARTED") or 0
-            )
+    participation = _participation_summary(rows_by_population)
     population_participation_priors: dict[str, tuple[float, float]] = {}
     for population in rows_by_population:
         appearance_rates = [
-            min(1.0, values["appearances"] / 82)
+            min(1.0, values["appearances"] / values["opportunities"])
             for (row_population, _), seasons in participation.items()
             if row_population == population
             for values in seasons.values()
+            if values["opportunities"] > 0
         ]
         start_rates = [
-            min(1.0, values["starts"] / 82)
+            min(1.0, values["starts"] / values["startOpportunities"])
             for (row_population, _), seasons in participation.items()
             if row_population == population
             for values in seasons.values()
+            if values["startOpportunities"] > 0
         ]
         population_participation_priors[population] = (
             median(appearance_rates) if appearance_rates else (0.8 if population != "goalie" else 0.4),
@@ -3557,16 +3599,21 @@ def train_season_artifact(
         sample_games = max(supports or [0.0])
         appearance_prior, start_prior = population_participation_priors[population]
         seasons = participation.get((population, int(nhl_id)), {}) if nhl_id is not None else {}
-        appearance_total = sum(values["appearances"] for values in seasons.values())
-        start_total = sum(values["starts"] for values in seasons.values())
-        schedule_opportunities = 82.0 * len(seasons)
+        known_seasons = [values for values in seasons.values() if values["opportunities"] > 0]
+        appearance_total = sum(values["appearances"] for values in known_seasons)
+        start_total = sum(values["starts"] for values in known_seasons if values["startOpportunities"] > 0)
+        # W2-8 D9: opportunities are the games the player's team completed in
+        # each season of the freeze (partial current season, 84-game seasons),
+        # not a fixed 82; starts use only games with a known credited label.
+        schedule_opportunities = sum(values["opportunities"] for values in known_seasons)
+        start_opportunities = sum(values["startOpportunities"] for values in known_seasons)
         availability_shrinkage = policies[population]["GAMES_PLAYED"]["shrinkage"]
         play_probability = (
             appearance_total + availability_shrinkage * appearance_prior
         ) / (schedule_opportunities + availability_shrinkage) if schedule_opportunities else appearance_prior
         start_probability = (
             start_total + availability_shrinkage * start_prior
-        ) / (schedule_opportunities + availability_shrinkage) if schedule_opportunities else start_prior
+        ) / (start_opportunities + availability_shrinkage) if start_opportunities else start_prior
         play_probability = min(0.995, max(0.05, play_probability))
         start_probability = min(play_probability, max(0.0, start_probability))
         if (

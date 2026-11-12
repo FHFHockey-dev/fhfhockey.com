@@ -250,3 +250,175 @@ def test_unknown_actual_makes_the_season_total_unknown(tmp_path):
     assert aggregate["means"]["SHOTS_ON_GOAL"] == pytest.approx(
         5 + sum(c["unconditionalMeans"]["SHOTS_ON_GOAL"] for c in components)
     )
+
+
+# --- decision 66: starter-board baseline issuer -----------------------------
+
+def _issuer_setup(tmp_path, monkeypatch):
+    from datetime import datetime, timezone
+
+    from modeling.player_forecasts import daily_board_baseline_issuance as module
+    from tests.test_harness import baseline_issuance_fixture
+
+    freeze, candidate = baseline_issuance_fixture(tmp_path)
+
+    class Clock:
+        @staticmethod
+        def now(tz):
+            return datetime(2026, 10, 10, 20, tzinfo=timezone.utc)
+
+    monkeypatch.setattr(module, "datetime", Clock)
+    return module, freeze, candidate
+
+
+def test_issuer_labels_the_fixed_policy_when_no_selection_artifact(tmp_path, monkeypatch):
+    module, freeze, candidate = _issuer_setup(tmp_path, monkeypatch)
+    manifest = module.issue_baselines(freeze, candidate, tmp_path / "issued")
+    assert manifest["selection"]["status"] == "no_selected_artifact"
+    assert manifest["selection"]["policyRole"] == "separately_named_fixed_baseline"
+    assert manifest["trainingCutoff"] == "2025-10-05"
+    assert manifest["version"] == "starter-board-prospective-baselines-v1"  # issued policy unchanged
+    module.verify_issued_baselines(tmp_path / "issued")
+
+
+def test_issuer_consumes_only_the_exact_selected_artifact(tmp_path, monkeypatch):
+    from modeling.player_forecasts.io import write_json
+
+    module, freeze, candidate = _issuer_setup(tmp_path, monkeypatch)
+    selection = tmp_path / "selection.json"
+    write_json(selection, {
+        "selectedPolicyVersion": module.POLICY["version"], "selectedPolicy": module.POLICY,
+        "trainingCutoffAt": "2026-09-30T00:00:00+00:00", "selectionEvidence": {"heldOutGames": 10},
+    })
+    manifest = module.issue_baselines(freeze, candidate, tmp_path / "issued", selection)
+    assert manifest["selection"]["status"] == "selected_artifact"
+    assert manifest["selection"]["selectionEvidence"] == {"heldOutGames": 10}
+    # A different policy, a stale/future artifact or a missing file is refused.
+    write_json(selection, {"selectedPolicyVersion": "other-v9", "selectedPolicy": {}, "trainingCutoffAt": "2026-09-30T00:00:00+00:00"})
+    with pytest.raises(ValueError, match="exact policy"):
+        module.issue_baselines(freeze, candidate, tmp_path / "issued-2", selection)
+    write_json(selection, {"selectedPolicyVersion": module.POLICY["version"], "selectedPolicy": module.POLICY,
+        "trainingCutoffAt": "2026-12-01T00:00:00+00:00"})
+    with pytest.raises(ValueError, match="stale"):
+        module.issue_baselines(freeze, candidate, tmp_path / "issued-3", selection)
+    with pytest.raises(ValueError, match="missing"):
+        module.issue_baselines(freeze, candidate, tmp_path / "issued-4", tmp_path / "absent.json")
+    assert not (tmp_path / "issued-2").exists() and not (tmp_path / "issued-4").exists()
+
+
+# --- W2-7 D2 / decision 65: proper-score selection (new experiment) ----------
+
+def test_squared_error_selection_prefers_the_true_mean_where_mae_prefers_zero():
+    from modeling.player_forecasts.forge_walk_forward import PROPER_SCORE_SELECTION, select_method
+
+    # Exact Poisson(0.2) frequencies on 1000 player-games (frozen fixture).
+    outcomes = [0] * 819 + [1] * 164 + [2] * 16 + [3] * 1
+    rows, labels = [], []
+    for index, value in enumerate(outcomes):
+        rows.append({"playerId": index, "gameId": 1, "teamId": 1, "membershipValid": True, "onTime": True,
+                     "issuedAt": "2026-10-14T10:00:00-04:00",
+                     "estimates": {"A": {"mean": 0.2}, "B": {"mean": 0.0}, "C": {"mean": 0.5}}})
+        labels.append({"playerId": index, "gameId": 1, "teamId": 1, "gameDate": "2026-10-14",
+                       "status": "positive_TOI", "availableAt": "2026-10-15T10:00:00-04:00", "value": value})
+    cutoff = "2026-10-19T10:00:00-04:00"
+    # The issued pilot rule (MAE) picks the zero forecast: .200 < .327.
+    assert select_method(rows, labels, cutoff)["selected"] == "B"
+    proper = select_method(rows, labels, cutoff, score="squared_error")
+    assert proper["selected"] == "A"
+    assert proper["methods"]["A"]["mse"] < proper["methods"]["B"]["mse"]
+    assert proper["selectionPolicy"] == PROPER_SCORE_SELECTION
+
+
+def test_participation_uses_completed_team_games_not_82():
+    from modeling.player_forecasts.season import _participation_summary
+
+    def row(game: int, player: int, team: int, played: int = 1, started=None) -> dict:
+        return {"season_id": 20262027, "game_id": game, "team_id": team, "nhl_player_id": player,
+                "GAMES_PLAYED": played, "GAMES_STARTED": started}
+
+    skaters = [row(game, 1, 10) for game in range(1, 21)]  # every one of 20 team games
+    skaters += [row(game, 2, 10) for game in range(1, 11)]  # half of them
+    goalies = [row(game, 30, 10, 1, 1 if game <= 12 else (None if game <= 14 else 0)) for game in range(1, 21)]
+    summary = _participation_summary({"forward": skaters, "goalie": goalies})
+    full = summary[("forward", 1)][20262027]
+    assert full["appearances"] / full["opportunities"] == 1.0  # HEAD: 20 / 82 = .24
+    assert summary[("forward", 2)][20262027]["opportunities"] == 20
+    goalie = summary[("goalie", 30)][20262027]
+    # Two games with an unknown credited start leave both counts.
+    assert goalie["starts"] == 12 and goalie["startOpportunities"] == 18
+
+
+def test_roster_adjusted_goals_against_counts_each_on_ice_event_once():
+    from modeling.player_forecasts.season import _roster_adjusted_team_contexts
+
+    def context() -> dict:
+        return {"projectedGoalsFor": 3.0, "projectedGoalsAgainst": 3.0, "ratings": {}}
+
+    def skater(player_id: int, team: int, suppression: float) -> dict:
+        return {"teamId": team, "population": "forward", "playProbability": 1.0,
+                "conditionalRates": {"GOALS": 0.2, "TOTAL_TOI": 1200.0},
+                "ratingSignals": {"defenseSuppressionPer60": suppression}}
+
+    def goalie(team: int) -> dict:
+        return {"teamId": team, "population": "goalie", "playProbability": 1.0, "startProbability": 1.0,
+                "conditionalRates": {"GOALS_AGAINST_GOALIE": 3.0}, "ratingSignals": {"goalieSaveRate": 0.9}}
+
+    players = {}
+    for index in range(5):
+        players[str(index)] = skater(index, 1, 0.5)
+        players[str(10 + index)] = skater(10 + index, 2, 0.0)
+    players["98"], players["99"] = goalie(1), goalie(2)
+    adjusted = _roster_adjusted_team_contexts({"1": context(), "2": context()}, players)
+    gap = adjusted["2"]["projectedGoalsAgainst"] - adjusted["1"]["projectedGoalsAgainst"]
+    # Five skaters sharing a 0.5/60 on-ice suppression save 0.5 goals per game,
+    # not 5 x 0.5 x 20/60 = 0.833 (HEAD).
+    assert gap == pytest.approx(0.5)
+
+
+def test_unavailable_assist_split_is_not_zero_split_history(tmp_path):
+    """M-PFC-110 (Astra fixture): game 1 has two official assists with no
+    A1/A2 split; game 2 has one verified A1. At game 2's cutoff the A1 history
+    must not contain a 0 from game 1, while total assists keep game 1."""
+    from modeling.player_forecasts.challenger_features import build_validation_features
+    from modeling.player_forecasts.contract import VALIDATION_CONTRACT_SHA256
+    from modeling.player_forecasts.io import write_json
+
+    def jsonl(path, rows):
+        path.write_text("".join(json.dumps(row) + "\n" for row in rows))
+
+    write_json(tmp_path / "manifest.json", {"contractChecksum": VALIDATION_CONTRACT_SHA256, "targetSeason": 20252026})
+    jsonl(tmp_path / "games.jsonl", [
+        {"id": game, "date": f"2025-10-0{2 * game - 1}", "season_id": 20252026,
+         "start_time": f"2025-10-0{2 * game - 1}T23:00:00+00:00", "home_team_id": 1, "away_team_id": 2}
+        for game in (1, 2, 3)
+    ])
+    common = {"season_id": 20252026, "player_id": 10, "position": "C", "team_id": 1, "goals": 0,
+              "shots_on_goal": 2, "blocked_shots": 0, "hits": 1, "penalty_minutes": 0, "toi": "18:00"}
+    jsonl(tmp_path / "skaters.jsonl", [
+        {**common, "game_date": "2025-10-01", "start_time": "2025-10-01T23:00:00+00:00", "game_id": 1,
+         "assists": 2, "primary_assists": 0, "secondary_assists": 0, "official_assist_decomposition_complete": False},
+        {**common, "game_date": "2025-10-03", "start_time": "2025-10-03T23:00:00+00:00", "game_id": 2,
+         "assists": 1, "primary_assists": 1, "secondary_assists": 0, "official_assist_decomposition_complete": True},
+    ])
+    result = build_validation_features(tmp_path)
+    rows = [json.loads(line) for line in (tmp_path / result["path"]).read_text().splitlines()]
+    at_game_2 = {row["target_key"]: row for row in rows
+                 if row["game_id"] == 2 and row["vintage_kind"] == "horizon_checkpoint" and row["team_game_horizon"] == 1}
+    assert at_game_2["assists"]["features"]["career_rate"] == 2
+    # HEAD: A1 career_rate 0 with history_count 1 (the unavailable split as 0).
+    assert at_game_2["assists"]["features"].get("decomposed_sum_career_rate") is None
+    assert at_game_2["primary_assists"]["features"]["history_count"] == 0
+    assert result["assistSplitHistoryPolicy"] == "complete_official_decomposition_only_v2"
+
+
+def test_back_to_back_uses_the_nhl_schedule_date_not_the_utc_day():
+    from modeling.player_forecasts.season import _schedule_contexts_by_team
+
+    schedule = [
+        # Oct 9, 7:30 pm PT (02:30Z on Oct 10), then Oct 10 at 7 pm ET.
+        {"game_id": 1, "scheduled_start_at": "2026-10-10T02:30:00Z", "home_team_id": 1, "away_team_id": 2},
+        {"game_id": 2, "scheduled_start_at": "2026-10-10T23:00:00Z", "home_team_id": 3, "away_team_id": 1},
+    ]
+    games = _schedule_contexts_by_team(schedule)[1]
+    # HEAD (UTC days): rest 0, not a back-to-back.
+    assert games[1]["rest_days"] == 1 and games[1]["is_back_to_back"] is True
