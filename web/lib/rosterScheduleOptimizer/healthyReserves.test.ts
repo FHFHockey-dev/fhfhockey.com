@@ -185,6 +185,29 @@ describe("healthy reserve players", () => {
     expect(dtdReserves(final)).toEqual(["d"]);
   });
 
+  // Astra PR4: isolated gains C-A 6, C-B 5 and D 4 summed picked A + B (11), but A and B share the one C slot, so together
+  // they add 6 points and 1 start; A + D adds 10 points and 2 starts. The set is priced as one lineup.
+  it("chooses the activation set by its joint gain, not the sum of isolated gains", () => {
+    const data = snapshot();
+    const players = [member("p", "P", ["C"]), member("q", "Q", ["C"]), member("r", "R", ["D"])];
+    const value: Record<string, number> = { p: 6, q: 5, r: 4 };
+    data.players = players;
+    data.games = players.map(player => ({ id: `${player.teamAbbreviation}-2026-10-05`, scheduleRevision: `schedule-${player.id}`, date: "2026-10-05",
+      startsAt: "2026-10-05T23:00:00Z", teamAbbreviation: player.teamAbbreviation!, opponent: "X", home: true, status: "scheduled" as const }));
+    data.roster = players.map(player => ({ playerId: player.id, position: "IR" as const }));
+    data.rules = { ...data.rules, rosterSlots: { C: 1, D: 1, BN: 0, IR: 3 } };
+    const template = snapshot().forecasts[0];
+    data.forecasts = players.map((player, index) => ({ ...template, playerId: player.id, gameId: data.games[index].id, stats: { pts: value[player.id] },
+      expiresAt: data.games[index].startsAt, issuedContext: { ...template.issuedContext!, playerId: player.id, gameId: data.games[index].id,
+        nhlPlayerId: player.nhlId!, teamId: player.nhlTeamId!, scheduledAt: data.games[index].startsAt!, scheduleRevision: data.games[index].scheduleRevision!,
+        rosterRevision: player.rosterRevision! } }));
+    const result = healthyReserves(data, intent);
+    const activated = result.filter(row => row.activation).map(row => row.playerId).sort();
+    expect(activated).toEqual(["p", "r"]);
+    expect(result.find(row => row.playerId === "q")!.activation).toBeNull();
+    expect(result.find(row => row.playerId === "p")!.together).toEqual({ projectedPoints: 10, activeGames: 2 });
+  });
+
   // C7 H1: greedy by direct-spot gain gave f the spot and left d nothing, though f could swap with e and d take the spot.
   it("activates as many players as the spots and swap partners allow before maximising gain", () => {
     const data = snapshot();
@@ -192,9 +215,11 @@ describe("healthy reserve players", () => {
     data.roster = [...data.roster, { playerId: "e", position: "active" }];
     withF(data, "IR+");
     injured(data, "e", "O", ["IR+"]);
+    // f and d share the one D slot, so together they add f's 10 and 2 starts, not 10 + 6 (Astra PR4).
+    const together = { projectedPoints: 10, activeGames: 2 };
     expect(healthyReserves(data, intent)).toEqual([
-      { playerId: "f", position: "IR+", slotEligible: false, activation: { swapPlayerId: "e", projectedPoints: 10, activeGames: 2 } },
-      { playerId: "d", position: "IR", slotEligible: false, activation: { swapPlayerId: null, projectedPoints: 6, activeGames: 2 } }]);
+      { playerId: "f", position: "IR+", slotEligible: false, activation: { swapPlayerId: "e", projectedPoints: 10, activeGames: 2 }, together },
+      { playerId: "d", position: "IR", slotEligible: false, activation: { swapPlayerId: null, projectedPoints: 6, activeGames: 2 }, together }]);
   });
 
   // C7 H2: equal gains keep roster order, for both the spot and the listing.

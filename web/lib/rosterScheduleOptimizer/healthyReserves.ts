@@ -14,6 +14,9 @@ export type HealthyReserve = {
    * reserve slot. Null when neither exists (a drop must make room). Gains compare against him staying out of the
    * lineup; null when the planner can't price both lineups (points gain is points leagues only). */
   activation: Activation | null;
+  /** With two or more chosen activations, the set priced together (Astra PR4): the same on every activated row. Its
+   * players can share a slot, so this is not the sum of the per-player gains, which are each "if activated alone". */
+  together?: { projectedPoints: number | null; activeGames: number | null };
 };
 /** `nextWindow`: the current weekly lineup has locked, so the gain counts only from the next weekly window. */
 type Activation = { swapPlayerId: string | null; projectedPoints: number | null; activeGames: number | null; nextWindow?: true };
@@ -89,9 +92,25 @@ export function healthyReserves(snapshot: PlanningSnapshot, intent: PlanIntent):
   const options = healthy.map(entry => [...(openSpots > 0 ? [activate(entry, null)] : []),
     ...base.filter(row => !RESERVE_POSITIONS.has(row.position) && players.get(row.playerId)?.reserveEligibility.includes(entry.position))
       .map(row => row.playerId).sort().map(id => activate(entry, id)).sort(byGain)]);
+  // The whole set of activations priced in one lineup (Astra PR4): isolated gains can compete for one slot, so they
+  // never add up. One evaluation per distinct set.
+  const joint = new Map<string, { projectedPoints: number | null; activeGames: number | null }>();
+  const together = (pick: Array<Activation | null>) => {
+    const chosen = pick.flatMap((option, index) => option ? [{ entry: healthy[index], option }] : []);
+    const key = chosen.map(({ entry, option }) => `${entry.playerId}:${option.swapPlayerId ?? ""}`).join("|");
+    if (!joint.has(key)) {
+      const swaps = new Map(chosen.flatMap(({ entry, option }) => option.swapPlayerId ? [[option.swapPlayerId, entry.position] as const] : []));
+      const roster = [...base.map(row => swaps.has(row.playerId) ? { ...row, position: swaps.get(row.playerId)! } : row),
+        ...chosen.map(({ entry }) => ({ playerId: entry.playerId, position: "bench" as const }))];
+      const locks = lockedDates.flatMap(date => chosen.map(({ entry }) => ({ date, playerId: entry.playerId, slotId: null })));
+      joint.set(key, chosen.length ? gain(run(roster, locks)) : { projectedPoints: 0, activeGames: 0 });
+    }
+    return joint.get(key)!;
+  };
   // TJ 2026-10-25 (C7 H1): each open spot or swap partner activates one flagged player. Choose the assignment that
-  // activates the most players, then the most projected points, then active games (unknown gains count as 0). Brute
-  // force: only a handful of reserve slots. Ties keep the first assignment found, so earlier roster players win.
+  // activates the most players, then the most projected points of the whole set, then its active games (an unknown joint
+  // gain counts as 0). Brute force: only a handful of reserve slots. Ties keep the first assignment found, so earlier
+  // roster players win.
   const better = (left: number[], right: number[]) => {
     const at = left.findIndex((value, index) => value !== right[index]);
     return at >= 0 && left[at] > right[at];
@@ -99,19 +118,23 @@ export function healthyReserves(snapshot: PlanningSnapshot, intent: PlanIntent):
   let best: { score: number[]; pick: Array<Activation | null> } = { score: [-1, 0, 0], pick: [] };
   const search = (index: number, spots: number, taken: Set<string>, score: number[], pick: Array<Activation | null>) => {
     if (index === healthy.length) {
-      if (better(score, best.score)) best = { score, pick };
+      const set = together(pick), total = [score[0], set.projectedPoints ?? 0, set.activeGames ?? 0];
+      if (better(total, best.score)) best = { score: total, pick };
       return;
     }
     for (const option of options[index]) {
       if (option.swapPlayerId === null ? spots === 0 : taken.has(option.swapPlayerId)) continue;
       search(index + 1, option.swapPlayerId === null ? spots - 1 : spots, option.swapPlayerId === null ? taken : new Set([...taken, option.swapPlayerId]),
-        [score[0] + 1, score[1] + (option.projectedPoints ?? 0), score[2] + (option.activeGames ?? 0)], [...pick, option]);
+        [score[0] + 1, 0, 0], [...pick, option]);
     }
     search(index + 1, spots, taken, score, [...pick, null]);
   };
   search(0, openSpots, new Set(), [0, 0, 0], []);
   // Listed best gain first (unknown gains, then players left without an activation, last); ties keep roster order.
+  // Only a set of two or more needs its own total: one activation's joint gain is its own gain.
+  const set = best.pick.filter(Boolean).length > 1 ? together(best.pick) : null;
   return healthy.map((entry, index) => ({ playerId: entry.playerId, position: entry.position,
-    slotEligible: players.get(entry.playerId)!.reserveEligibility.includes(entry.position), activation: best.pick[index] }))
+    slotEligible: players.get(entry.playerId)!.reserveEligibility.includes(entry.position), activation: best.pick[index],
+    ...(set && best.pick[index] ? { together: set } : {}) }))
     .sort((a, b) => !a.activation || !b.activation ? Number(!a.activation) - Number(!b.activation) : byGain(a.activation, b.activation));
 }

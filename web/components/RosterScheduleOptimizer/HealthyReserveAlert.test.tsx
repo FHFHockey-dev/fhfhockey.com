@@ -46,12 +46,14 @@ describe("Healthy reserve alert", () => {
     expect(screen.getByText("Only one can be activated: best is Fresh Legs (+10 pts).")).toBeTruthy();
     const g = { playerId: "g", position: "IR" as const, slotEligible: true, activation: { swapPlayerId: "e", projectedPoints: null, activeGames: null } };
     rerender(<HealthyReserveAlert nameOf={nameOf} reserves={[f, g, d]} />);
-    expect(screen.getByText("Can be activated: Fresh Legs (+10 pts) and Third Man.")).toBeTruthy();
+    expect(screen.getByText("Can be activated: Fresh Legs (+10 pts alone) and Third Man.")).toBeTruthy();
     expect(screen.queryByText(/best/)).toBeNull();
     expect(screen.getByText("Gain unknown until the lineup passes the rule check")).toBeTruthy();
-    const h = { ...g, activation: { swapPlayerId: "e", projectedPoints: 4, activeGames: 1 } };
-    rerender(<HealthyReserveAlert nameOf={nameOf} reserves={[f, h, d]} />);
-    expect(screen.getByText("Only 2 can be activated: best are Fresh Legs (+10 pts) and Third Man (+4 pts).")).toBeTruthy();
+    // Each figure is that player's gain alone; the set's joint gain is its own total, not their sum (Astra PR4).
+    const together = { projectedPoints: 12, activeGames: 3 };
+    const h = { ...g, activation: { swapPlayerId: "e", projectedPoints: 4, activeGames: 1 }, together };
+    rerender(<HealthyReserveAlert nameOf={nameOf} reserves={[{ ...f, together }, h, d]} />);
+    expect(screen.getByText("Only 2 can be activated: best are Fresh Legs (+10 pts alone) and Third Man (+4 pts alone); together +12 pts.")).toBeTruthy();
     rerender(<HealthyReserveAlert nameOf={nameOf} reserves={[f, g]} />);
     expect(screen.queryByText(/can be activated/i)).toBeNull();
     rerender(<HealthyReserveAlert nameOf={nameOf} reserves={[d]} />);

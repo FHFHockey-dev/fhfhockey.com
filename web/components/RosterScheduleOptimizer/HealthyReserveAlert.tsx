@@ -22,12 +22,17 @@ function gainText({ projectedPoints, activeGames, nextWindow }: NonNullable<Heal
 function contestText(reserves: HealthyReserve[], nameOf: (id: string) => string) {
   const activated = reserves.filter(reserve => reserve.activation);
   if (!activated.length || activated.length === reserves.length) return null;
-  const best = activated.map(({ playerId, activation }) => `${nameOf(playerId)}${activation!.projectedPoints !== null ? ` (${signed(activation!.projectedPoints)} pts)`
-    : activation!.activeGames !== null ? ` (${signed(activation!.activeGames)} active games)` : ""}`);
+  // Several activations can share a slot, so each player's figure is his gain alone and the set gets its own total (PR4).
+  const alone = activated.length > 1 ? " alone" : "";
+  const best = activated.map(({ playerId, activation }) => `${nameOf(playerId)}${activation!.projectedPoints !== null ? ` (${signed(activation!.projectedPoints)} pts${alone})`
+    : activation!.activeGames !== null ? ` (${signed(activation!.activeGames)} active games${alone})` : ""}`);
   const list = best.length === 1 ? best[0] : `${best.slice(0, -1).join(", ")} and ${best[best.length - 1]}`;
   // An unknown gain can't be called "best" (C7 H3).
   if (activated.some(({ activation }) => activation!.projectedPoints === null && activation!.activeGames === null)) return `Can be activated: ${list}.`;
-  return `Only ${best.length === 1 ? "one" : best.length} can be activated: best ${best.length === 1 ? "is" : "are"} ${list}.`;
+  const together = activated[0].together;
+  const total = activated.length > 1 && together ? together.projectedPoints !== null ? `; together ${signed(together.projectedPoints)} pts`
+    : together.activeGames !== null ? `; together ${signed(together.activeGames)} active games` : "" : "";
+  return `Only ${best.length === 1 ? "one" : best.length} can be activated: best ${best.length === 1 ? "is" : "are"} ${list}${total}.`;
 }
 
 /** Healthy players still in IR/IR+ (Yahoo lists no injury), with the gain from activating each, then a soft note for
