@@ -21,8 +21,8 @@ describe("PlayerStatsTable", () => {
   it.each<[PlayerStatsTableFamily, string, string, string]>([
     ["individualCounts", "Goals", "Sort by Total Points", "Sort by SH%"],
     ["individualRates", "Goals/60", "Sort by Total Points/60", "Sort by SH%"],
-    ["onIceCounts", "CF", "Sort by xGF%", "Sort by HDGF%"],
-    ["onIceRates", "CF/60", "Sort by xGF%", "Sort by HDGF%"],
+    ["onIceCounts", "CF", "Sort by CF%", "Sort by FHFH HDGF%"],
+    ["onIceRates", "CF/60", "Sort by CF%", "Sort by FHFH HDGF%"],
     [
       "goalieCounts",
       "Shots Against",
@@ -209,7 +209,7 @@ describe("PlayerStatsTable", () => {
             ? { sortKey: "totalPointsPer60", direction: "desc" as const }
             : family === "goalieCounts" || family === "goalieRates"
               ? { sortKey: "savePct", direction: "desc" as const }
-              : { sortKey: "xgfPct", direction: "desc" as const };
+              : { sortKey: "cfPct", direction: "desc" as const };
 
       render(
         <PlayerStatsTable family={family} rows={[row]} sortState={sortState} />,
@@ -409,7 +409,8 @@ describe("PlayerStatsTable", () => {
     );
 
     expect(screen.getByText("1,211")).toBeTruthy();
-    expect(screen.getByText("19.44")).toBeTruthy();
+    // ixG (bucket heuristic) is hidden on the page (decision 12).
+    expect(screen.queryByText("19.44")).toBeNull();
     expect(screen.getAllByText("52.3%").length).toBeGreaterThan(0);
 
     rerender(
@@ -460,7 +461,8 @@ describe("PlayerStatsTable", () => {
     );
 
     expect(screen.getByText("3.16")).toBeTruthy();
-    expect(screen.getByText("0.94")).toBeTruthy();
+    // ixG/60 (bucket heuristic) is hidden on the page (decision 12).
+    expect(screen.queryByText("0.94")).toBeNull();
 
     rerender(
       <PlayerStatsTable

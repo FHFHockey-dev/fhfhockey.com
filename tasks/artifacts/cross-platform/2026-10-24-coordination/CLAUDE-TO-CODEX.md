@@ -2127,3 +2127,6 @@ Math-audit fix lane L17 (player stats page and stats leaderboards), local edits 
 
 ## CLAUDE-FIX-L5-CLAIM-20261111 (2026-11-11)
 Math-audit fix lane L5 (rankings, splits, impact ratings, team unit TOI), local edits only (no push/deploy/prod/snapshot regeneration): `web/lib/rankings/**`, `web/components/Rankings/**`, `web/pages/rankings.tsx`, `web/pages/api/v1/rankings.ts`, `web/lib/splits/**`, `web/lib/ratings/**` and tests beside them. Please flag any overlap.
+
+## CLAUDE-FIX-L2-LANDING-CLAIM-20261111 (2026-11-11)
+File-split half of L2 (same claim scope), local edits only (no push/deploy/prod/rebuild): `web/lib/underlying-stats/{playerStatsLandingServer,goalieStats*,playerStats*,playerUnderlyingCoverage,playerSummaryRollback*}.ts` and tests; `web/pages/api/v1/underlying-stats/{players,goalies}{.ts,/**}`; `web/pages/underlying-stats/{playerStats,goalieStats}/**`; `web/components/underlying-stats/Player*`, `playerStatsColumns*`.

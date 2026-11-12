@@ -21,10 +21,16 @@ import type {
 import { buildNstParityMetrics } from "lib/supabase/Upserts/nhlNstParityMetrics";
 import { buildShotFeatureRows } from "lib/supabase/Upserts/nhlShotFeatureBuilder";
 import {
-  classifyTeamStrengthState,
+  classifyTeamManpowerById,
   getEventOwnerSide,
   parseSituationCode,
 } from "lib/supabase/Upserts/nhlStrengthState";
+import {
+  buildRunningScoreByEventKey,
+  getSideScoreDiff,
+  matchesScoreState,
+  runningScoreEventKey,
+} from "lib/supabase/Upserts/nhlScoreState";
 import {
   buildLandingTradeDisplay,
   matchesPlayerStatsPositionGroup,
@@ -345,7 +351,6 @@ type PlayerStatsLandingOnIceContext = PlayerStatsLandingGameContextBase & {
 type PlayerStatsLandingGoalieContext = PlayerStatsLandingGameContextBase & {
   kind: "goalies";
   counts: GoalieCountsRow;
-  shotFeatures: ReturnType<typeof buildShotFeatureRows>;
 };
 
 type PlayerStatsLandingAppearanceContext =
@@ -1641,281 +1646,29 @@ function isSupportedLandingStrength(
   ].includes(strength);
 }
 
-function resolveSkaterSplitKey(
+/**
+ * Every landing strength has its own parity split (W2-P0-4: 5v4 PP, 4v5 PK,
+ * 3v3, with EN and against EN used to fall through to "pk").
+ */
+function resolveNativeSplitKey(
   strength: PlayerStatsSupportedStrength
-): PlayerStatsNativeSkaterSplitKey {
-  if (strength === "allStrengths") {
-    return "all";
+): PlayerStatsNativeSkaterSplitKey & PlayerStatsNativeGoalieSplitKey {
+  switch (strength) {
+    case "allStrengths":
+      return "all";
+    case "evenStrength":
+      return "ev";
+    case "powerPlay":
+      return "pp";
+    case "penaltyKill":
+      return "pk";
+    default:
+      return strength;
   }
-
-  if (strength === "evenStrength") {
-    return "ev";
-  }
-
-  if (strength === "fiveOnFive") {
-    return "fiveOnFive";
-  }
-
-  if (strength === "powerPlay") {
-    return "pp";
-  }
-
-  return "pk";
 }
 
-function resolveGoalieSplitKey(
-  strength: PlayerStatsSupportedStrength
-): PlayerStatsNativeGoalieSplitKey {
-  if (strength === "allStrengths") {
-    return "all";
-  }
-
-  if (strength === "evenStrength") {
-    return "ev";
-  }
-
-  if (strength === "fiveOnFive") {
-    return "fiveOnFive";
-  }
-
-  if (strength === "powerPlay") {
-    return "pp";
-  }
-
-  if (strength === "penaltyKill") {
-    return "pk";
-  }
-
-  if (strength === "fiveOnFourPP") {
-    return "fiveOnFourPP";
-  }
-
-  if (strength === "fourOnFivePK") {
-    return "fourOnFivePK";
-  }
-
-  if (strength === "threeOnThree") {
-    return "threeOnThree";
-  }
-
-  if (strength === "withEmptyNet") {
-    return "withEmptyNet";
-  }
-
-  return "againstEmptyNet";
-}
-
-function parseStrengthExactCounts(
-  strengthExact: string | null
-): { homeSkaters: number | null; awaySkaters: number | null } {
-  const match = strengthExact?.match(/^(\d+)v(\d+)$/);
-  if (!match) {
-    return { homeSkaters: null, awaySkaters: null };
-  }
-
-  return {
-    homeSkaters: Number(match[1]),
-    awaySkaters: Number(match[2]),
-  };
-}
-
-function getTeamScoreDiffBucket(diff: number): Exclude<PlayerStatsSupportedScoreState, "allScores"> {
-  if (diff === 0) {
-    return "tied";
-  }
-
-  if (diff === 1) {
-    return "upOne";
-  }
-
-  if (diff === -1) {
-    return "downOne";
-  }
-
-  return diff > 0 ? "leading" : "trailing";
-}
-
-function matchesPlayerStatsScoreState(
-  scoreState: PlayerStatsSupportedScoreState,
-  teamScoreDiff: number | null
-): boolean {
-  if (scoreState === "allScores") {
-    return true;
-  }
-
-  if (teamScoreDiff == null) {
-    return false;
-  }
-
-  if (scoreState === "withinOne") {
-    return Math.abs(teamScoreDiff) <= 1;
-  }
-
-  return getTeamScoreDiffBucket(teamScoreDiff) === scoreState;
-}
-
-function matchesPlayerStatsStrengthForTeam(args: {
-  strength: PlayerStatsSupportedStrength;
-  teamSkaters: number | null;
-  opponentSkaters: number | null;
-  teamGoalieOnIce: boolean | null;
-  opponentGoalieOnIce: boolean | null;
-}): boolean {
-  const {
-    strength,
-    teamSkaters,
-    opponentSkaters,
-    teamGoalieOnIce,
-    opponentGoalieOnIce,
-  } = args;
-
-  if (strength === "allStrengths") {
-    return true;
-  }
-
-  if (teamSkaters == null || opponentSkaters == null) {
-    return false;
-  }
-
-  if (strength === "evenStrength") {
-    return teamSkaters === opponentSkaters;
-  }
-
-  if (strength === "fiveOnFive") {
-    return (
-      teamGoalieOnIce === true &&
-      opponentGoalieOnIce === true &&
-      teamSkaters === 5 &&
-      opponentSkaters === 5
-    );
-  }
-
-  if (strength === "powerPlay") {
-    return teamSkaters > opponentSkaters;
-  }
-
-  if (strength === "penaltyKill") {
-    return teamSkaters < opponentSkaters;
-  }
-
-  if (strength === "fiveOnFourPP") {
-    return (
-      teamGoalieOnIce === true &&
-      opponentGoalieOnIce === true &&
-      teamSkaters === 5 &&
-      opponentSkaters === 4
-    );
-  }
-
-  if (strength === "fourOnFivePK") {
-    return (
-      teamGoalieOnIce === true &&
-      opponentGoalieOnIce === true &&
-      teamSkaters === 4 &&
-      opponentSkaters === 5
-    );
-  }
-
-  if (strength === "threeOnThree") {
-    return (
-      teamGoalieOnIce === true &&
-      opponentGoalieOnIce === true &&
-      teamSkaters === 3 &&
-      opponentSkaters === 3
-    );
-  }
-
-  if (strength === "withEmptyNet") {
-    return teamGoalieOnIce === false;
-  }
-
-  return opponentGoalieOnIce === false;
-}
-
-function getTeamScoreDiffBeforeEvent(args: {
-  event: Pick<
-    ParsedNhlPbpEvent,
-    "type_desc_key" | "event_owner_team_id" | "home_score" | "away_score"
-  >;
-  teamId: number;
-  homeTeamId: number;
-  awayTeamId: number;
-}): number | null {
-  let homeScore = args.event.home_score;
-  let awayScore = args.event.away_score;
-
-  if (
-    args.event.type_desc_key === "goal" &&
-    args.event.event_owner_team_id != null
-  ) {
-    if (args.event.event_owner_team_id === args.homeTeamId && homeScore != null) {
-      homeScore -= 1;
-    } else if (
-      args.event.event_owner_team_id === args.awayTeamId &&
-      awayScore != null
-    ) {
-      awayScore -= 1;
-    }
-  }
-
-  if (homeScore == null || awayScore == null) {
-    return null;
-  }
-
-  if (args.teamId === args.homeTeamId) {
-    return homeScore - awayScore;
-  }
-
-  if (args.teamId === args.awayTeamId) {
-    return awayScore - homeScore;
-  }
-
-  return null;
-}
-
-function filterGoalieShotFeaturesForState(args: {
-  shotFeatures: ReturnType<typeof buildShotFeatureRows>;
-  goalieId: number;
-  isHome: boolean;
-  strength: PlayerStatsSupportedStrength;
-  scoreState: PlayerStatsSupportedScoreState;
-}): ReturnType<typeof buildShotFeatureRows> {
-  return args.shotFeatures.filter((shot) => {
-    if (shot.goalieInNetId !== args.goalieId) {
-      return false;
-    }
-
-    const { homeSkaters, awaySkaters } = parseStrengthExactCounts(shot.strengthExact);
-    const teamSkaters = args.isHome ? homeSkaters : awaySkaters;
-    const opponentSkaters = args.isHome ? awaySkaters : homeSkaters;
-    const teamGoalieOnIce =
-      args.isHome === (shot.eventOwnerSide === "home")
-        ? shot.ownerGoalieOnIce
-        : shot.opponentGoalieOnIce;
-    const opponentGoalieOnIce =
-      args.isHome === (shot.eventOwnerSide === "home")
-        ? shot.opponentGoalieOnIce
-        : shot.ownerGoalieOnIce;
-    const ownerScoreDiff = shot.ownerScoreDiffBeforeEvent;
-    const teamScoreDiff =
-      ownerScoreDiff == null
-        ? null
-        : args.isHome === (shot.eventOwnerSide === "home")
-          ? ownerScoreDiff
-          : ownerScoreDiff * -1;
-
-    return (
-      matchesPlayerStatsStrengthForTeam({
-        strength: args.strength,
-        teamSkaters,
-        opponentSkaters,
-        teamGoalieOnIce,
-        opponentGoalieOnIce,
-      }) &&
-      matchesPlayerStatsScoreState(args.scoreState, teamScoreDiff)
-    );
-  });
-}
+const resolveSkaterSplitKey = resolveNativeSplitKey;
+const resolveGoalieSplitKey = resolveNativeSplitKey;
 
 function canUsePlayerStatsSeasonAggregateCache(
   state: PlayerStatsLandingFilterState
@@ -2358,6 +2111,11 @@ function getPbpOnlyApproximateXgValue(
   return Math.min(value, 0.95);
 }
 
+/**
+ * PBP-only fallback strength predicate: the same manpower / net-state rule as
+ * parity (decision 70, L1 `classifyTeamManpower`). The stored `strength_exact`
+ * is away-first, so it is never compared literally here (W2-P0-2).
+ */
 function matchesPbpOnlyStrengthForTeam(args: {
   strength: PlayerStatsSupportedStrength;
   event: ParsedNhlPbpEvent;
@@ -2368,55 +2126,71 @@ function matchesPbpOnlyStrengthForTeam(args: {
     return true;
   }
 
-  const parsedSituation = parseSituationCode(args.event.situation_code);
-  const teamStrengthState = classifyTeamStrengthState(
-    parsedSituation,
+  const context = classifyTeamManpowerById(
+    parseSituationCode(args.event.situation_code),
     args.teamId,
     args.game.homeTeamId,
     args.game.awayTeamId
   );
-
-  if (args.strength === "evenStrength") {
-    return teamStrengthState === "EV";
+  if (!context || context.manpowerState == null) {
+    return false;
   }
 
-  if (args.strength === "fiveOnFive") {
-    return teamStrengthState === "EV" && args.event.strength_exact === "5v5";
+  const bothGoaliesIn = !context.ownNetEmpty && !context.opponentNetEmpty;
+  const { teamSkaters, opponentSkaters, manpowerState } = context;
+
+  switch (args.strength) {
+    case "evenStrength":
+      return manpowerState === "ES";
+    case "powerPlay":
+      return manpowerState === "PP";
+    case "penaltyKill":
+      return manpowerState === "PK";
+    case "fiveOnFive":
+      return bothGoaliesIn && teamSkaters === 5 && opponentSkaters === 5;
+    case "fiveOnFourPP":
+      return manpowerState === "PP" && bothGoaliesIn && teamSkaters === 5 && opponentSkaters === 4;
+    case "fourOnFivePK":
+      return manpowerState === "PK" && bothGoaliesIn && teamSkaters === 4 && opponentSkaters === 5;
+    case "threeOnThree":
+      return bothGoaliesIn && teamSkaters === 3 && opponentSkaters === 3;
+    case "withEmptyNet":
+      return context.ownNetEmpty;
+    case "againstEmptyNet":
+      return context.opponentNetEmpty;
+  }
+}
+
+/**
+ * PBP-only fallback score state: an event is classified by the running score
+ * before it (L1 `buildRunningScoreTimeline`; decision 11). Unknown scores
+ * match only "allScores" (W2-P0-5, W1-2 A).
+ */
+function matchesPbpOnlyScoreStateForTeam(args: {
+  scoreState: PlayerStatsSupportedScoreState;
+  event: ParsedNhlPbpEvent;
+  teamId: number | null;
+  game: Pick<PlayerStatsSourceGameRow, "id" | "homeTeamId" | "awayTeamId">;
+  runningScoreByEventKey: ReturnType<typeof buildRunningScoreByEventKey>;
+}): boolean {
+  if (args.scoreState === "allScores") {
+    return true;
   }
 
-  if (args.strength === "powerPlay") {
-    return teamStrengthState === "PP";
+  if (args.teamId == null) {
+    return false;
   }
 
-  if (args.strength === "penaltyKill") {
-    return teamStrengthState === "SH";
-  }
-
-  if (args.strength === "fiveOnFourPP") {
-    return teamStrengthState === "PP" && args.event.strength_exact === "5v4";
-  }
-
-  if (args.strength === "fourOnFivePK") {
-    return teamStrengthState === "SH" && args.event.strength_exact === "4v5";
-  }
-
-  if (args.strength === "threeOnThree") {
-    return teamStrengthState === "EV" && args.event.strength_exact === "3v3";
-  }
-
-  const isHomeTeam = args.teamId === args.game.homeTeamId;
-  const teamGoalieOnIce = isHomeTeam
-    ? parsedSituation?.homeGoalie != null && parsedSituation.homeGoalie > 0
-    : parsedSituation?.awayGoalie != null && parsedSituation.awayGoalie > 0;
-  const opponentGoalieOnIce = isHomeTeam
-    ? parsedSituation?.awayGoalie != null && parsedSituation.awayGoalie > 0
-    : parsedSituation?.homeGoalie != null && parsedSituation.homeGoalie > 0;
-
-  if (args.strength === "withEmptyNet") {
-    return teamGoalieOnIce === false;
-  }
-
-  return opponentGoalieOnIce === false;
+  const before = args.runningScoreByEventKey.get(
+    runningScoreEventKey(args.event.game_id, args.event.event_id)
+  )?.before;
+  return matchesScoreState(
+    args.scoreState,
+    getSideScoreDiff(
+      before,
+      getEventOwnerSide(args.teamId, args.game.homeTeamId, args.game.awayTeamId)
+    )
+  );
 }
 
 function addPbpOnlyPlayerMetric(
@@ -2536,22 +2310,25 @@ function buildPbpOnlyIndividualContextsForGame(args: {
     number,
     PlayerStatsLandingAggregateMetrics["individual"]
   >();
+  const runningScoreByEventKey = buildRunningScoreByEventKey(parsedEvents);
+  const matchesScoreStateForEvent = (
+    event: ParsedNhlPbpEvent,
+    teamId: number | null
+  ) =>
+    matchesPbpOnlyScoreStateForTeam({
+      scoreState: args.state.primary.scoreState,
+      event,
+      teamId,
+      game: args.game,
+      runningScoreByEventKey,
+    });
 
   for (const event of parsedEvents) {
     const ownerTeamId = event.event_owner_team_id ?? null;
     const opponentTeamId =
       ownerTeamId == null ? null : resolveOpponentTeamId(args.game, ownerTeamId);
     const matchesScoreStateForTeam = (teamId: number | null) =>
-      teamId != null &&
-      matchesPlayerStatsScoreState(
-        args.state.primary.scoreState,
-        getTeamScoreDiffBeforeEvent({
-          event,
-          teamId,
-          homeTeamId: args.game.homeTeamId,
-          awayTeamId: args.game.awayTeamId,
-        })
-      );
+      matchesScoreStateForEvent(event, teamId);
 
     const eventMatchesStrength = (teamId: number | null) =>
       teamId != null &&
@@ -2737,7 +2514,8 @@ function buildPbpOnlyIndividualContextsForGame(args: {
         event,
         teamId: rosterSpot.team_id,
         game: args.game,
-      })
+      }) ||
+      !matchesScoreStateForEvent(event, rosterSpot.team_id)
     ) {
       continue;
     }
@@ -2981,13 +2759,6 @@ function buildGoalieContextsForGame(args: {
         isHome,
         hasReliableToi: true,
         counts: row,
-        shotFeatures: filterGoalieShotFeaturesForState({
-          shotFeatures: gameParity.shotFeatures,
-          goalieId: row.player_id,
-          isHome,
-          strength: state.primary.strength,
-          scoreState: state.primary.scoreState,
-        }),
       };
 
       return [context];
@@ -3417,53 +3188,6 @@ function defaultAggregateMetrics(): PlayerStatsLandingAggregateMetrics {
   };
 }
 
-function accumulateGoalieShotFeatureBucketMetrics(
-  metrics: PlayerStatsLandingAggregateMetrics["goalies"],
-  context: PlayerStatsLandingGoalieContext
-) {
-  for (const shot of context.shotFeatures) {
-    if (shot.goalieInNetId !== context.playerId) {
-      continue;
-    }
-
-    if (!["goal", "shot-on-goal"].includes(shot.shotEventType ?? "")) {
-      continue;
-    }
-
-    const distance = shot.shotDistanceFeet ?? null;
-    const angle = shot.shotAngleDegrees ?? null;
-    const dangerBucket =
-      distance == null || angle == null
-        ? null
-        : distance <= 20 && angle <= 35
-          ? "high"
-          : distance <= 40 && angle <= 50
-            ? "medium"
-            : "low";
-    const xgValue =
-      dangerBucket === "high"
-        ? shot.isGoal
-          ? 0.25
-          : 0.18
-        : dangerBucket === "medium"
-          ? 0.08
-          : dangerBucket === "low"
-            ? 0.02
-            : null;
-
-    if (dangerBucket === "high") {
-      metrics.hdGoalsAgainst += shot.isGoal ? 1 : 0;
-      metrics.hdXgAgainst = addNullable(metrics.hdXgAgainst, xgValue);
-    } else if (dangerBucket === "medium") {
-      metrics.mdGoalsAgainst += shot.isGoal ? 1 : 0;
-      metrics.mdXgAgainst = addNullable(metrics.mdXgAgainst, xgValue);
-    } else if (dangerBucket === "low") {
-      metrics.ldGoalsAgainst += shot.isGoal ? 1 : 0;
-      metrics.ldXgAgainst = addNullable(metrics.ldXgAgainst, xgValue);
-    }
-  }
-}
-
 function accumulateLandingMetrics(
   metrics: PlayerStatsLandingAggregateMetrics,
   context: PlayerStatsLandingAppearanceContext
@@ -3545,23 +3269,23 @@ function accumulateLandingMetrics(
   metrics.goalies.hdSaves += context.counts.hd_saves ?? 0;
   metrics.goalies.mdShotsAgainst += context.counts.md_shots_against ?? 0;
   metrics.goalies.mdSaves += context.counts.md_saves ?? 0;
-  metrics.goalies.mdGoalsAgainst += context.counts.md_goals_against ?? 0;
   metrics.goalies.ldShotsAgainst += context.counts.ld_shots_against ?? 0;
   metrics.goalies.ldSaves += context.counts.ld_saves ?? 0;
+  // One danger-GA path (W2-P0-3): parity's own bucket counts. A bucket goal is
+  // a bucket shot that was not saved; own goals and goals without geometry are
+  // left to the served residual (GA − HD − MD − LD).
+  metrics.goalies.hdGoalsAgainst +=
+    (context.counts.hd_shots_against ?? 0) - (context.counts.hd_saves ?? 0);
+  metrics.goalies.mdGoalsAgainst += context.counts.md_goals_against ?? 0;
   metrics.goalies.ldGoalsAgainst += context.counts.ld_goals_against ?? 0;
   metrics.goalies.rushAttemptsAgainst += context.counts.rush_attempts_against;
   metrics.goalies.reboundAttemptsAgainst += context.counts.rebound_attempts_against;
-  if (context.counts.avg_shot_distance != null && context.counts.shots_against > 0) {
-    metrics.goalies.shotDistanceTotal +=
-      context.counts.avg_shot_distance * context.counts.shots_against;
-    metrics.goalies.shotDistanceCount += context.counts.shots_against;
-  }
-  if (context.counts.avg_goal_distance != null && context.counts.goals_against > 0) {
-    metrics.goalies.goalDistanceTotal +=
-      context.counts.avg_goal_distance * context.counts.goals_against;
-    metrics.goalies.goalDistanceCount += context.counts.goals_against;
-  }
-  accumulateGoalieShotFeatureBucketMetrics(metrics.goalies, context);
+  // Distance = Σ measured distance ÷ Σ measured count (W2-2 PR-U3, W2-3 A1),
+  // never the game average reweighted by all shots or goals against.
+  metrics.goalies.shotDistanceTotal += context.counts.shot_distance_total ?? 0;
+  metrics.goalies.shotDistanceCount += context.counts.shot_distance_count ?? 0;
+  metrics.goalies.goalDistanceTotal += context.counts.goal_distance_total ?? 0;
+  metrics.goalies.goalDistanceCount += context.counts.goal_distance_count ?? 0;
 }
 
 const PLAYER_STATS_SUMMARY_SUPPORTED_STRENGTHS: readonly PlayerStatsSupportedStrength[] = [
@@ -4519,10 +4243,16 @@ function filterLandingAggregationRowsForState(
 function buildLandingApiResultFromAggregationRows(args: {
   state: PlayerStatsLandingFilterState;
   rows: readonly PlayerStatsLandingAggregationRow[];
+  goalieBaseline?: GoalieLeagueBaseline | null;
 }): PlayerStatsLandingAggregationResult {
   const family = resolveLandingTableFamily(args.state);
   const apiRows = filterLandingAggregationRowsForState(args.state, args.rows).map((row) =>
-    mapLandingAggregationRowToApiRow(row, family, args.state.primary.displayMode)
+    mapLandingAggregationRowToApiRow(
+      row,
+      family,
+      args.state.primary.displayMode,
+      args.goalieBaseline ?? null
+    )
   );
 
   const sortedRows = sortLandingApiRows(
@@ -4775,6 +4505,7 @@ function buildDetailApiResultFromAggregationRows(args: {
   playerId: number;
   state: PlayerStatsDetailFilterState;
   rows: readonly PlayerStatsDetailAggregationRow[];
+  goalieBaselinesBySeason?: ReadonlyMap<number, GoalieLeagueBaseline>;
 }): PlayerStatsDetailAggregationResult {
   const family = resolveLandingTableFamily(args.state);
   const filteredRows = filterLandingAggregationRowsForState(
@@ -4785,7 +4516,8 @@ function buildDetailApiResultFromAggregationRows(args: {
     const baseRow = mapLandingAggregationRowToApiRow(
       row,
       family,
-      args.state.primary.displayMode
+      args.state.primary.displayMode,
+      args.goalieBaselinesBySeason?.get(row.seasonId) ?? null
     );
     return {
       ...baseRow,
@@ -4828,6 +4560,7 @@ function buildLandingChartApiResultFromSummaryRows(args: {
   state: PlayerStatsLandingFilterState;
   games: readonly PlayerStatsSourceGameRow[];
   rows: readonly PlayerStatsLandingSummaryRow[];
+  goalieBaseline?: GoalieLeagueBaseline | null;
 }): PlayerStatsLandingChartResult {
   const family = resolveLandingTableFamily(args.state);
   const filteredRows = args.rows.filter((row) => {
@@ -4873,7 +4606,8 @@ function buildLandingChartApiResultFromSummaryRows(args: {
         ...mapLandingAggregationRowToApiRow(
           baseRow,
           family,
-          args.state.primary.displayMode
+          args.state.primary.displayMode,
+          args.goalieBaseline ?? null
         ),
         gameId: row.gameId,
         gameDate: row.gameDate,
@@ -4890,10 +4624,161 @@ function buildLandingChartApiResultFromSummaryRows(args: {
   };
 }
 
+/**
+ * League save-percentage baselines for GSAA (decision 10): pooled saves ÷
+ * shots against over every goalie in the same season(s), strength, score
+ * state and date window, before team, venue, position or TOI filters. Each
+ * danger bucket has its own baseline (W1-2 A).
+ */
+export type GoalieLeagueBaseline = {
+  shotsAgainst: number;
+  saves: number;
+  hdShotsAgainst: number;
+  hdSaves: number;
+  mdShotsAgainst: number;
+  mdSaves: number;
+  ldShotsAgainst: number;
+  ldSaves: number;
+};
+
+function buildGoalieLeagueBaseline(
+  metricsList: Iterable<PlayerStatsLandingAggregateMetrics>
+): GoalieLeagueBaseline {
+  const baseline: GoalieLeagueBaseline = {
+    shotsAgainst: 0,
+    saves: 0,
+    hdShotsAgainst: 0,
+    hdSaves: 0,
+    mdShotsAgainst: 0,
+    mdSaves: 0,
+    ldShotsAgainst: 0,
+    ldSaves: 0,
+  };
+
+  for (const metrics of metricsList) {
+    baseline.shotsAgainst += metrics.goalies.shotsAgainst;
+    baseline.saves += metrics.goalies.saves;
+    baseline.hdShotsAgainst += metrics.goalies.hdShotsAgainst;
+    baseline.hdSaves += metrics.goalies.hdSaves;
+    baseline.mdShotsAgainst += metrics.goalies.mdShotsAgainst;
+    baseline.mdSaves += metrics.goalies.mdSaves;
+    baseline.ldShotsAgainst += metrics.goalies.ldShotsAgainst;
+    baseline.ldSaves += metrics.goalies.ldSaves;
+  }
+
+  return baseline;
+}
+
+function isLeagueGoalieSummaryRow(
+  state: PlayerStatsFilterState,
+  row: PlayerStatsLandingSummaryRow
+): boolean {
+  return (
+    row.mode === "goalies" &&
+    row.strength === state.primary.strength &&
+    getSummaryRowScoreState(row) === state.primary.scoreState
+  );
+}
+
+function buildGoalieLeagueBaselineFromSummaryRows(
+  state: PlayerStatsFilterState,
+  rows: readonly PlayerStatsLandingSummaryRow[]
+): GoalieLeagueBaseline | null {
+  if (state.primary.statMode !== "goalies") {
+    return null;
+  }
+
+  return buildGoalieLeagueBaseline(
+    rows.filter((row) => isLeagueGoalieSummaryRow(state, row)).map((row) => row.metrics)
+  );
+}
+
+function buildGoalieLeagueBaselinesBySeason(
+  state: PlayerStatsFilterState,
+  rows: readonly PlayerStatsLandingSummaryRow[]
+): Map<number, GoalieLeagueBaseline> {
+  const rowsBySeason = new Map<number, PlayerStatsLandingSummaryRow[]>();
+  if (state.primary.statMode !== "goalies") {
+    return new Map();
+  }
+
+  for (const row of rows) {
+    if (!isLeagueGoalieSummaryRow(state, row)) {
+      continue;
+    }
+    const seasonRows = rowsBySeason.get(row.seasonId) ?? [];
+    seasonRows.push(row);
+    rowsBySeason.set(row.seasonId, seasonRows);
+  }
+
+  return new Map(
+    [...rowsBySeason.entries()].map(([seasonId, seasonRows]) => [
+      seasonId,
+      buildGoalieLeagueBaseline(seasonRows.map((row) => row.metrics)),
+    ])
+  );
+}
+
+/**
+ * The league baseline for a landing or chart state. A team filter narrows the
+ * fetched games to that team's games, so the league rows are read for the
+ * same seasons and date window without the team and venue filter.
+ */
+async function resolveGoalieLeagueBaselineForLandingState(args: {
+  state: PlayerStatsLandingFilterState;
+  rows: readonly PlayerStatsLandingSummaryRow[];
+  client: PlayerStatsSupabaseClient;
+  allowLiveSummaryBuild?: boolean;
+}): Promise<GoalieLeagueBaseline | null> {
+  if (args.state.primary.statMode !== "goalies") {
+    return null;
+  }
+
+  if (args.state.expandable.teamId == null) {
+    return buildGoalieLeagueBaselineFromSummaryRows(args.state, args.rows);
+  }
+
+  const leagueState: PlayerStatsLandingFilterState = {
+    ...args.state,
+    expandable: { ...args.state.expandable, teamId: null, venue: "all" },
+  };
+  const leagueGames = await fetchPlayerStatsLandingSourceGames(leagueState, args.client);
+  const { persistedSummaryRows, liveSummaryRows } =
+    await fetchPlayerStatsSummaryRowsForFilterState({
+      games: leagueGames,
+      state: leagueState,
+      client: args.client,
+      allowLiveSummaryBuild: args.allowLiveSummaryBuild,
+    });
+
+  return buildGoalieLeagueBaselineFromSummaryRows(leagueState, [
+    ...persistedSummaryRows,
+    ...liveSummaryRows,
+  ]);
+}
+
+function toLeagueSavePct(saves: number, shotsAgainst: number): number | null {
+  return shotsAgainst > 0 ? saves / shotsAgainst : null;
+}
+
+/** GSAA = SA × (1 − league SV%) − GA, at the aggregate (decision 10). */
+function toGsaa(
+  shotsAgainst: number,
+  goalsAgainst: number,
+  leagueSavePct: number | null
+): number | null {
+  if (leagueSavePct == null) {
+    return null;
+  }
+
+  return shotsAgainst * (1 - leagueSavePct) - goalsAgainst;
+}
+
 function mapLandingAggregationRowToApiRow(
   row: PlayerStatsLandingAggregationRow,
   family: PlayerStatsTableFamily,
-  displayMode: PlayerStatsDisplayMode
+  displayMode: PlayerStatsDisplayMode,
+  goalieBaseline: GoalieLeagueBaseline | null = null
 ): PlayerStatsLandingApiRow {
   const base = {
     rowKey: row.rowKey,
@@ -5072,58 +4957,80 @@ function mapLandingAggregationRowToApiRow(
     };
   }
 
-  const hdGoalsAgainst = row.metrics.goalies.hdGoalsAgainst;
-  const mdGoalsAgainst = row.metrics.goalies.mdGoalsAgainst;
-  const ldGoalsAgainst = row.metrics.goalies.ldGoalsAgainst;
+  const goalies = row.metrics.goalies;
+  // Bucket GA = bucket shots not saved. Reading it from the parity counts keeps
+  // stored summaries written before the W2-P0-3 fix (MD/LD GA added twice)
+  // from leaking the doubled goal totals.
+  const hdGoalsAgainst = goalies.hdShotsAgainst - goalies.hdSaves;
+  const mdGoalsAgainst = goalies.mdShotsAgainst - goalies.mdSaves;
+  const ldGoalsAgainst = goalies.ldShotsAgainst - goalies.ldSaves;
+  const gsaa = toGsaa(
+    goalies.shotsAgainst,
+    goalies.goalsAgainst,
+    goalieBaseline == null
+      ? null
+      : toLeagueSavePct(goalieBaseline.saves, goalieBaseline.shotsAgainst)
+  );
+  const hdGsaa = toGsaa(
+    goalies.hdShotsAgainst,
+    hdGoalsAgainst,
+    goalieBaseline == null
+      ? null
+      : toLeagueSavePct(goalieBaseline.hdSaves, goalieBaseline.hdShotsAgainst)
+  );
+  const mdGsaa = toGsaa(
+    goalies.mdShotsAgainst,
+    mdGoalsAgainst,
+    goalieBaseline == null
+      ? null
+      : toLeagueSavePct(goalieBaseline.mdSaves, goalieBaseline.mdShotsAgainst)
+  );
+  const ldGsaa = toGsaa(
+    goalies.ldShotsAgainst,
+    ldGoalsAgainst,
+    goalieBaseline == null
+      ? null
+      : toLeagueSavePct(goalieBaseline.ldSaves, goalieBaseline.ldShotsAgainst)
+  );
+  // Heuristic xG goals saved above expected: GSAx, its own column, hidden
+  // while the bucket heuristic is the only xG here (decisions 6, 10, 12).
+  const gsax =
+    goalies.xgAgainst != null ? goalies.xgAgainst - goalies.goalsAgainst : null;
   const payload = {
     ...base,
-    shotsAgainst: row.metrics.goalies.shotsAgainst,
-    saves: row.metrics.goalies.saves,
-    goalsAgainst: row.metrics.goalies.goalsAgainst,
-    savePct: toPctDecimal(row.metrics.goalies.saves, row.metrics.goalies.shotsAgainst),
-    gaa: toGaa(row.metrics.goalies.goalsAgainst, row.toiSeconds),
-    gsaa:
-      row.metrics.goalies.xgAgainst != null
-        ? row.metrics.goalies.xgAgainst - row.metrics.goalies.goalsAgainst
-        : null,
-    xgAgainst: row.metrics.goalies.xgAgainst,
-    hdShotsAgainst: row.metrics.goalies.hdShotsAgainst,
-    hdSaves: row.metrics.goalies.hdSaves,
+    shotsAgainst: goalies.shotsAgainst,
+    saves: goalies.saves,
+    goalsAgainst: goalies.goalsAgainst,
+    savePct: toPctDecimal(goalies.saves, goalies.shotsAgainst),
+    gaa: toGaa(goalies.goalsAgainst, row.toiSeconds),
+    gsaa,
+    gsax,
+    xgAgainst: goalies.xgAgainst,
+    hdShotsAgainst: goalies.hdShotsAgainst,
+    hdSaves: goalies.hdSaves,
     hdGoalsAgainst,
-    hdSavePct: toPctDecimal(row.metrics.goalies.hdSaves, row.metrics.goalies.hdShotsAgainst),
+    hdSavePct: toPctDecimal(goalies.hdSaves, goalies.hdShotsAgainst),
     hdGaa: toGaa(hdGoalsAgainst, row.toiSeconds),
-    hdGsaa:
-      row.metrics.goalies.hdXgAgainst != null
-        ? row.metrics.goalies.hdXgAgainst - hdGoalsAgainst
-        : null,
-    mdShotsAgainst: row.metrics.goalies.mdShotsAgainst,
-    mdSaves: row.metrics.goalies.mdSaves,
+    hdGsaa,
+    mdShotsAgainst: goalies.mdShotsAgainst,
+    mdSaves: goalies.mdSaves,
     mdGoalsAgainst,
-    mdSavePct: toPctDecimal(row.metrics.goalies.mdSaves, row.metrics.goalies.mdShotsAgainst),
+    mdSavePct: toPctDecimal(goalies.mdSaves, goalies.mdShotsAgainst),
     mdGaa: toGaa(mdGoalsAgainst, row.toiSeconds),
-    mdGsaa:
-      row.metrics.goalies.mdXgAgainst != null
-        ? row.metrics.goalies.mdXgAgainst - mdGoalsAgainst
-        : null,
-    ldShotsAgainst: row.metrics.goalies.ldShotsAgainst,
-    ldSaves: row.metrics.goalies.ldSaves,
+    mdGsaa,
+    ldShotsAgainst: goalies.ldShotsAgainst,
+    ldSaves: goalies.ldSaves,
     ldGoalsAgainst,
-    ldSavePct: toPctDecimal(row.metrics.goalies.ldSaves, row.metrics.goalies.ldShotsAgainst),
+    ldSavePct: toPctDecimal(goalies.ldSaves, goalies.ldShotsAgainst),
     ldGaa: toGaa(ldGoalsAgainst, row.toiSeconds),
-    ldGsaa:
-      row.metrics.goalies.ldXgAgainst != null
-        ? row.metrics.goalies.ldXgAgainst - ldGoalsAgainst
-        : null,
-    rushAttemptsAgainst: row.metrics.goalies.rushAttemptsAgainst,
-    reboundAttemptsAgainst: row.metrics.goalies.reboundAttemptsAgainst,
-    avgShotDistance: toAverage(
-      row.metrics.goalies.shotDistanceTotal,
-      row.metrics.goalies.shotDistanceCount
-    ),
-    avgGoalDistance: toAverage(
-      row.metrics.goalies.goalDistanceTotal,
-      row.metrics.goalies.goalDistanceCount
-    ),
+    ldGsaa,
+    // Own goals and goals without shot geometry: the explicit residual.
+    unclassifiedGoalsAgainst:
+      goalies.goalsAgainst - hdGoalsAgainst - mdGoalsAgainst - ldGoalsAgainst,
+    rushAttemptsAgainst: goalies.rushAttemptsAgainst,
+    reboundAttemptsAgainst: goalies.reboundAttemptsAgainst,
+    avgShotDistance: toAverage(goalies.shotDistanceTotal, goalies.shotDistanceCount),
+    avgGoalDistance: toAverage(goalies.goalDistanceTotal, goalies.goalDistanceCount),
   } satisfies PlayerStatsLandingApiRow;
 
   if (displayMode === "counts") {
@@ -5132,66 +5039,29 @@ function mapLandingAggregationRowToApiRow(
 
   return {
     ...payload,
-    shotsAgainstPer60: toPer60(row.metrics.goalies.shotsAgainst, row.toiSeconds),
-    savesPer60: toPer60(row.metrics.goalies.saves, row.toiSeconds),
-    gsaaPer60: toPer60(
-      row.metrics.goalies.xgAgainst != null
-        ? row.metrics.goalies.xgAgainst - row.metrics.goalies.goalsAgainst
-        : null,
-      row.toiSeconds
-    ),
-    xgAgainstPer60: toPer60(row.metrics.goalies.xgAgainst, row.toiSeconds),
-    hdShotsAgainstPer60: toPer60(row.metrics.goalies.hdShotsAgainst, row.toiSeconds),
-    hdSavesPer60: toPer60(row.metrics.goalies.hdSaves, row.toiSeconds),
-    hdGsaaPer60: toPer60(
-      row.metrics.goalies.hdXgAgainst != null
-        ? row.metrics.goalies.hdXgAgainst - hdGoalsAgainst
-        : null,
-      row.toiSeconds
-    ),
-    mdShotsAgainstPer60: toPer60(row.metrics.goalies.mdShotsAgainst, row.toiSeconds),
-    mdSavesPer60: toPer60(row.metrics.goalies.mdSaves, row.toiSeconds),
-    mdGsaaPer60: toPer60(
-      row.metrics.goalies.mdXgAgainst != null
-        ? row.metrics.goalies.mdXgAgainst - mdGoalsAgainst
-        : null,
-      row.toiSeconds
-    ),
-    ldShotsAgainstPer60: toPer60(row.metrics.goalies.ldShotsAgainst, row.toiSeconds),
-    ldSavesPer60: toPer60(row.metrics.goalies.ldSaves, row.toiSeconds),
-    ldGsaaPer60: toPer60(
-      row.metrics.goalies.ldXgAgainst != null
-        ? row.metrics.goalies.ldXgAgainst - ldGoalsAgainst
-        : null,
-      row.toiSeconds
-    ),
-    rushAttemptsAgainstPer60: toPer60(
-      row.metrics.goalies.rushAttemptsAgainst,
-      row.toiSeconds
-    ),
+    shotsAgainstPer60: toPer60(goalies.shotsAgainst, row.toiSeconds),
+    savesPer60: toPer60(goalies.saves, row.toiSeconds),
+    gsaaPer60: toPer60(gsaa, row.toiSeconds),
+    gsaxPer60: toPer60(gsax, row.toiSeconds),
+    xgAgainstPer60: toPer60(goalies.xgAgainst, row.toiSeconds),
+    hdShotsAgainstPer60: toPer60(goalies.hdShotsAgainst, row.toiSeconds),
+    hdSavesPer60: toPer60(goalies.hdSaves, row.toiSeconds),
+    hdGsaaPer60: toPer60(hdGsaa, row.toiSeconds),
+    mdShotsAgainstPer60: toPer60(goalies.mdShotsAgainst, row.toiSeconds),
+    mdSavesPer60: toPer60(goalies.mdSaves, row.toiSeconds),
+    mdGsaaPer60: toPer60(mdGsaa, row.toiSeconds),
+    ldShotsAgainstPer60: toPer60(goalies.ldShotsAgainst, row.toiSeconds),
+    ldSavesPer60: toPer60(goalies.ldSaves, row.toiSeconds),
+    ldGsaaPer60: toPer60(ldGsaa, row.toiSeconds),
+    rushAttemptsAgainstPer60: toPer60(goalies.rushAttemptsAgainst, row.toiSeconds),
     reboundAttemptsAgainstPer60: toPer60(
-      row.metrics.goalies.reboundAttemptsAgainst,
+      goalies.reboundAttemptsAgainst,
       row.toiSeconds
     ),
   };
 }
 
-function compareNullable(
-  left: unknown,
-  right: unknown
-): number {
-  if (left == null && right == null) {
-    return 0;
-  }
-
-  if (left == null) {
-    return 1;
-  }
-
-  if (right == null) {
-    return -1;
-  }
-
+function compareNonNull(left: unknown, right: unknown): number {
   if (typeof left === "number" && typeof right === "number") {
     return left - right;
   }
@@ -5199,37 +5069,52 @@ function compareNullable(
   return String(left).localeCompare(String(right));
 }
 
+/**
+ * Nulls (unknown values) sort last in both directions, then a stable
+ * ascending tie-break, all before pagination (W2-P0-7, rule 20).
+ */
 function sortLandingApiRows<TRow extends PlayerStatsLandingApiRow>(
   rows: readonly TRow[],
   sortKey: string | null,
   direction: PlayerStatsSortDirection
 ): TRow[] {
   const resolvedSortKey = sortKey ?? "playerName";
+  const fallbacks: readonly string[] = [
+    "playerName",
+    "teamLabel",
+    "positionCode",
+    "gamesPlayed",
+    "toiSeconds",
+    "rowKey"
+  ];
 
-  return [...rows].sort((left, right) => {
-    const primary = compareNullable(
-      left[resolvedSortKey],
-      right[resolvedSortKey]
-    );
-    if (primary !== 0) {
-      return direction === "asc" ? primary : -primary;
+  const compareKey = (left: TRow, right: TRow, key: string, sign: 1 | -1) => {
+    const leftValue = left[key];
+    const rightValue = right[key];
+    if (leftValue == null || rightValue == null) {
+      return leftValue == null && rightValue == null ? 0 : leftValue == null ? 1 : -1;
     }
 
-    const fallbacks: readonly string[] = [
-      "playerName",
-      "teamLabel",
-      "positionCode",
-      "gamesPlayed",
-      "toiSeconds",
-      "rowKey"
-    ];
+    return sign * compareNonNull(leftValue, rightValue);
+  };
+
+  return [...rows].sort((left, right) => {
+    const primary = compareKey(
+      left,
+      right,
+      resolvedSortKey,
+      direction === "asc" ? 1 : -1
+    );
+    if (primary !== 0) {
+      return primary;
+    }
 
     for (const fallbackKey of fallbacks) {
       if (fallbackKey === resolvedSortKey) {
         continue;
       }
 
-      const fallback = compareNullable(left[fallbackKey], right[fallbackKey]);
+      const fallback = compareKey(left, right, fallbackKey, 1);
       if (fallback !== 0) {
         return fallback;
       }
@@ -5264,6 +5149,16 @@ export function buildPlayerStatsLandingAggregation(args: {
   }
 
   const family = resolveLandingTableFamily(args.state);
+  const goalieBaseline =
+    args.state.primary.statMode === "goalies"
+      ? buildGoalieLeagueBaseline(
+          contexts.map((context) => {
+            const metrics = defaultAggregateMetrics();
+            accumulateLandingMetrics(metrics, context);
+            return metrics;
+          })
+        )
+      : null;
   const rows = [...grouped.values()]
     .map((groupContexts) => {
       const metrics = defaultAggregateMetrics();
@@ -5287,7 +5182,12 @@ export function buildPlayerStatsLandingAggregation(args: {
     })
     .filter((row): row is PlayerStatsLandingAggregationRow => row != null)
     .map((row) =>
-      mapLandingAggregationRowToApiRow(row, family, args.state.primary.displayMode)
+      mapLandingAggregationRowToApiRow(
+        row,
+        family,
+        args.state.primary.displayMode,
+        goalieBaseline
+      )
     );
   const sortedRows = sortLandingApiRows(
     rows,
@@ -5326,9 +5226,14 @@ export async function buildPlayerStatsLandingAggregationFromState(
   const cacheCheckedAt = Date.now();
 
   if (cachedAggregateRows != null) {
+    // Cached rows are the unfiltered season aggregate: the league population.
     const result = buildLandingApiResultFromAggregationRows({
       state,
       rows: cachedAggregateRows,
+      goalieBaseline:
+        state.primary.statMode === "goalies"
+          ? buildGoalieLeagueBaseline(cachedAggregateRows.map((row) => row.metrics))
+          : null,
     });
 
     if (process.env.NODE_ENV !== "test") {
@@ -5408,9 +5313,16 @@ export async function buildPlayerStatsLandingAggregationFromState(
     setCachedPlayerStatsSeasonAggregateRows(aggregateCacheKey, aggregationRows);
   }
 
+  const goalieBaseline = await resolveGoalieLeagueBaselineForLandingState({
+    state,
+    rows: [...persistedSummaryRows, ...liveSummaryRows],
+    client,
+    allowLiveSummaryBuild: !canUseAggregateCache,
+  });
   const aggregation = buildLandingApiResultFromAggregationRows({
     state,
     rows: aggregationRows,
+    goalieBaseline,
   });
 
   if (process.env.NODE_ENV !== "test") {
@@ -5456,12 +5368,19 @@ export async function buildPlayerStatsLandingChartFromState(args: {
     client,
   });
 
+  const rows = [...persistedSummaryRows, ...liveSummaryRows];
+
   return buildLandingChartApiResultFromSummaryRows({
     playerId: args.playerId,
     splitTeamId: args.splitTeamId,
     state: args.state,
     games,
-    rows: [...persistedSummaryRows, ...liveSummaryRows],
+    rows,
+    goalieBaseline: await resolveGoalieLeagueBaselineForLandingState({
+      state: args.state,
+      rows,
+      client,
+    }),
   });
 }
 
@@ -5499,6 +5418,10 @@ export async function buildPlayerStatsDetailAggregationFromState(
     playerId,
     state,
     rows: aggregationRows,
+    goalieBaselinesBySeason: buildGoalieLeagueBaselinesBySeason(state, [
+      ...persistedSummaryRows,
+      ...liveSummaryRows,
+    ]),
   });
 
   if (process.env.NODE_ENV !== "test") {
