@@ -41,6 +41,7 @@ const goaliePayload: GoalieMatrixResponse = {
     season: 20252026,
     asOfDate: null,
     window: "season",
+    strength: "all",
     metric: "save_percentage",
     sortDirection: "desc",
     role: "all",
@@ -144,6 +145,13 @@ const goaliePayload: GoalieMatrixResponse = {
           rank: 5,
           percentile: 80,
           lowerIsBetter: true,
+        }),
+        fhfh_5v5_bad_start_rate: goalieCell("fhfh_5v5_bad_start_rate", {
+          rawValue: null,
+          formattedValue: null,
+          rank: null,
+          percentile: null,
+          qualifiedPeerCount: 0,
         }),
         steal_rate: goalieCell("steal_rate"),
         start_share: goalieCell("start_share"),
@@ -550,6 +558,50 @@ describe("GoalieMatrixTable and TeamMatrixTable", () => {
     expect(selectGoalie.getAttribute("aria-pressed")).toBe("true");
     fireEvent.click(selectGoalie);
     expect(onSelectGoalie).toHaveBeenCalledWith(31);
+  });
+
+  it("labels a row below the visible sample floor as insufficient, not source pending (decision 98)", () => {
+    const row = goaliePayload.rows[0];
+    render(
+      <GoalieMatrixTable
+        payload={{
+          ...goaliePayload,
+          rows: [{
+            ...row,
+            sample: { ...row.sample, gamesStarted: 3, minimumSampleMet: false, confidence: "low" },
+            sort: { ...row.sort, rank: null, percentile: null },
+            metrics: {
+              ...row.metrics,
+              save_percentage: goalieCell("save_percentage", {
+                rank: null, percentile: null, qualifiedPeerCount: 0,
+              }),
+            },
+            warnings: ["sample_below_minimum"],
+          }],
+          meta: {
+            ...goaliePayload.meta,
+            sampleFloor: {
+              minStarts: 5,
+              minShots: 100,
+              label: 'Ranked at 5+ starts and 100+ shots against; lower rows show "Insufficient sample".',
+            },
+          },
+        }}
+        isLoading={false}
+        selectedGoalieId={null}
+        onSelectGoalie={vi.fn()}
+        onSortMetric={vi.fn()}
+        onPageChange={vi.fn()}
+        onPageSizeChange={vi.fn()}
+      />,
+    );
+
+    expect(screen.getAllByLabelText("Insufficient sample").length).toBeGreaterThan(0);
+    expect(screen.queryAllByLabelText("Source pending")).toHaveLength(0);
+    expect(screen.queryAllByLabelText("No sample")).toHaveLength(0);
+    // The raw value stays visible; only rank and percentile are withheld.
+    expect(screen.getByText(".925")).toBeTruthy();
+    expect(screen.getByText(/Ranked at 5\+ starts and 100\+ shots against/)).toBeTruthy();
   });
 
   it("renders goalie stale-source state from matrix freshness metadata", () => {

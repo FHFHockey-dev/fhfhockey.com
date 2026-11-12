@@ -3,7 +3,12 @@ import type { NextApiRequest } from "next";
 import supabase from "lib/supabase/server";
 
 import {
+  calculateLeagueSavePct,
+  classifyVollmanQualityStart,
+  classifyVollmanReallyBadStart,
   formatGoalieDeploymentBucket,
+  FHFH_5V5_BAD_START_GSAX,
+  FHFH_5V5_STEAL_GSAX,
   getGoalieDeploymentBucket,
   GOALIE_ROLE_FILTER_OPTIONS,
   isGoalieReallyBadStart,
@@ -32,8 +37,13 @@ export type GoalieMatrixMetricKey =
   | "high_danger_save_percentage"
   | "quality_start_pct"
   | "really_bad_start_rate"
+  | "fhfh_5v5_bad_start_rate"
   | "steal_rate"
   | "start_share";
+
+/** Decision 104: one strength per goalie matrix view. */
+export type GoalieMatrixStrength = "5v5" | "all";
+export const GOALIE_MATRIX_STRENGTHS = ["5v5", "all"] as const;
 
 export type GoalieMatrixWindow = "season" | "last5" | "last10" | "last20";
 export type GoalieMatrixSortDirection = "asc" | "desc";
@@ -43,6 +53,7 @@ export type GoalieMatrixRequest = {
   season: number;
   asOfDate: string | null;
   window: GoalieMatrixWindow;
+  strength: GoalieMatrixStrength;
   metric: GoalieMatrixMetricKey;
   sortDirection: GoalieMatrixSortDirection;
   role: GoalieMatrixRoleFilter;
@@ -88,18 +99,26 @@ type GoalieAggregate = {
   goalsAgainst: number;
   shotsAgainst: number;
   toiSeconds: number;
+  /** Vollman Quality Starts over credited starts (decision 40). */
   qualityStarts: number;
+  /** Vollman Really Bad Starts over credited starts (decision 106). */
   reallyBadStarts: number;
+  /** FHFH 5v5 bad starts: credited start with 5v5 GSAx at or below -2. */
+  fhfhBadStarts: number;
   stealGames: number;
-  nst5v5ToiSeconds: number;
-  nst5v5Gsaa: number | null;
-  nst5v5Gsax: number | null;
-  nst5v5XgAgainst: number | null;
-  nst5v5ShotQualityShotsAgainst: number;
-  nst5v5Saves: number;
-  nst5v5ShotsAgainst: number;
-  nst5v5HighDangerSaves: number;
-  nst5v5HighDangerShotsAgainst: number;
+  /** NST counts below are for `nstStrength` only (decision 104). */
+  nstStrength: GoalieMatrixStrength;
+  /** NST goalie TOI is published in minutes (declared unit, rule 17). */
+  nstToiMinutes: number;
+  /** Aggregate GSAA: SA x league goals-per-shot over the window - GA (decision 10). */
+  nstGsaa: number | null;
+  nstGsax: number | null;
+  nstXgAgainst: number | null;
+  nstShotQualityShotsAgainst: number;
+  nstSaves: number;
+  nstShotsAgainst: number;
+  nstHighDangerSaves: number;
+  nstHighDangerShotsAgainst: number;
   unavailableMetrics: GoalieMatrixMetricKey[];
   sourceWarnings: string[];
 };
@@ -198,6 +217,8 @@ export type GoalieMatrixResponse = {
       lowerIsBetter: boolean;
       source: string;
     }>;
+    strength?: GoalieMatrixStrength;
+    sampleFloor?: { minStarts: number; minShots: number; label: string };
     sourceWarnings: string[];
     sourcePendingMetricContracts: Array<{
       metricKey: string;
@@ -224,96 +245,180 @@ export function clearGoalieMatrixSurfaceCachesForTests() {
   goalieMatrixResponseCache.clear();
 }
 
-const METRIC_COLUMNS: GoalieMatrixResponse["meta"]["metricColumns"] = [
-  {
-    metricKey: "save_percentage",
-    label: "SV%",
-    description: "Window save percentage from WGO goalie game logs.",
-    lowerIsBetter: false,
-    source: "goalie_stats_unified.saves / shots_against",
-  },
-  {
-    metricKey: "relative_save_percentage",
-    label: "Rel SV%",
-    description:
-      "5v5 save percentage versus other goalies on the latest verified team, over the same regular-season team-game window.",
-    lowerIsBetter: false,
-    source:
-      "goalie_stats_unified.nst_5v5_counts_saves / shots against minus same-team other-goalie baseline",
-  },
-  {
-    metricKey: "gsax",
-    label: "GSAx",
-    description: "5v5 expected goals against minus 5v5 goals against.",
-    lowerIsBetter: false,
-    source:
-      "goalie_stats_unified.nst_5v5_counts_xg_against - nst_5v5_counts_goals_against",
-  },
-  {
-    metricKey: "gsaa_per_60",
-    label: "GSAA/60",
-    description: "5v5 goals saved above average per 60.",
-    lowerIsBetter: false,
-    source: "goalie_stats_unified.nst_5v5_counts_gsaa / nst_5v5_counts_toi",
-  },
-  {
-    metricKey: "xga_per_shot_against",
-    label: "xGA/Shot",
-    description:
-      "5v5 expected goals against per 5v5 shot against; higher values indicate a tougher shot-quality workload.",
-    lowerIsBetter: false,
-    source:
-      "goalie_stats_unified.nst_5v5_counts_xg_against / nst_5v5_counts_shots_against",
-  },
-  {
-    metricKey: "goalie_value_signal",
-    label: "Value Signal",
-    description:
-      "Saved-goals value signal averaging cumulative 5v5 GSAx and GSAA when both sources cover the complete window.",
-    lowerIsBetter: false,
-    source:
-      "average of goalie_stats_unified 5v5 GSAx and nst_5v5_counts_gsaa when both are present",
-  },
-  {
-    metricKey: "high_danger_save_percentage",
-    label: "HD SV%",
-    description: "5v5 high-danger save percentage from NST goalie counts.",
-    lowerIsBetter: false,
-    source: "goalie_stats_unified.nst_5v5_counts_hd_sv_percentage",
-  },
-  {
-    metricKey: "quality_start_pct",
-    label: "QS%",
-    description: "Quality starts divided by starts.",
-    lowerIsBetter: false,
-    source: "goalie_stats_unified.quality_start / games_started",
-  },
-  {
-    metricKey: "really_bad_start_rate",
-    label: "RBS%",
-    description:
-      "Really bad starts divided by starts; lower rates are better.",
-    lowerIsBetter: true,
-    source:
-      "goalieMethodology.isGoalieReallyBadStart over goalie_stats_unified rows",
-  },
-  {
-    metricKey: "steal_rate",
-    label: "Steal Rate",
-    description: "Starts won with modern GSAx at or above the steal threshold.",
-    lowerIsBetter: false,
-    source: "goalieMethodology.isGoalieStealGame over goalie_stats_unified rows",
-  },
-  {
-    metricKey: "start_share",
-    label: "Start Share",
-    description:
-      "Role start share from a matching-team projection when available, otherwise verified starts in the latest team's regular-season game window.",
-    lowerIsBetter: false,
-    source:
-      "matching-team goalie_start_projections.season_start_pct or verified selected-window team starts",
-  },
+type GoalieMetricColumn = GoalieMatrixResponse["meta"]["metricColumns"][number];
+
+const START_SHARE_COLUMN: GoalieMetricColumn = {
+  metricKey: "start_share",
+  label: "Start Share",
+  description:
+    "Role start share from a matching-team projection when available, otherwise verified starts in the latest team's regular-season game window.",
+  lowerIsBetter: false,
+  source:
+    "matching-team goalie_start_projections.season_start_pct or verified selected-window team starts",
+};
+
+const GSAA_DESCRIPTION =
+  "NST-labelled GSAA per 60, computed once over the window: shots against x (1 - league SV% at the same strength over the same dates) - goals against, per 60 NST minutes (decision 10).";
+
+// Decision 104: each view is one strength. Value Signal (5v5 GSAx and GSAA
+// average) is hidden until it is defined; its helper stays for reference.
+const METRIC_COLUMNS_BY_STRENGTH: Record<GoalieMatrixStrength, GoalieMetricColumn[]> = {
+  "5v5": [
+    {
+      metricKey: "save_percentage",
+      label: "5v5 SV%",
+      description: "5v5 save percentage from NST goalie counts.",
+      lowerIsBetter: false,
+      source: "goalie_stats_unified.nst_5v5_counts_saves / nst_5v5_counts_shots_against",
+    },
+    {
+      metricKey: "relative_save_percentage",
+      label: "5v5 Rel SV%",
+      description:
+        "5v5 save percentage versus other goalies on the latest verified team, over the same regular-season team-game window.",
+      lowerIsBetter: false,
+      source:
+        "goalie_stats_unified.nst_5v5_counts_saves / shots against minus same-team other-goalie baseline",
+    },
+    {
+      metricKey: "gsax",
+      label: "5v5 GSAx",
+      description: "5v5 expected goals against minus 5v5 goals against (NST xG).",
+      lowerIsBetter: false,
+      source:
+        "goalie_stats_unified.nst_5v5_counts_xg_against - nst_5v5_counts_goals_against",
+    },
+    {
+      metricKey: "gsaa_per_60",
+      label: "5v5 GSAA/60",
+      description: GSAA_DESCRIPTION,
+      lowerIsBetter: false,
+      source:
+        "nst_5v5_counts_shots_against, nst_5v5_counts_goals_against, league 5v5 SV% over the window, nst_5v5_counts_toi (minutes)",
+    },
+    {
+      metricKey: "xga_per_shot_against",
+      label: "5v5 xGA/Shot",
+      description:
+        "5v5 expected goals against per 5v5 shot against; higher values indicate a tougher shot-quality workload.",
+      lowerIsBetter: false,
+      source:
+        "goalie_stats_unified.nst_5v5_counts_xg_against / nst_5v5_counts_shots_against",
+    },
+    {
+      metricKey: "high_danger_save_percentage",
+      label: "5v5 HD SV%",
+      description: "5v5 high-danger save percentage from NST goalie counts.",
+      lowerIsBetter: false,
+      source: "goalie_stats_unified.nst_5v5_counts_hd_saves / nst_5v5_counts_hd_shots_against",
+    },
+    {
+      metricKey: "fhfh_5v5_bad_start_rate",
+      label: "FHFH Bad Start% (5v5)",
+      description:
+        `FHFH measure, not Vollman's RBS: credited starts with 5v5 GSAx at or below ${FHFH_5V5_BAD_START_GSAX}, divided by credited starts; lower is better.`,
+      lowerIsBetter: true,
+      source: "credited starts (wgo_goalie_stats.games_started) and 5v5 GSAx from NST counts",
+    },
+    {
+      metricKey: "steal_rate",
+      label: "FHFH Steal% (5v5)",
+      description:
+        `FHFH measure: credited starts won with 5v5 GSAx at or above ${FHFH_5V5_STEAL_GSAX}, divided by credited starts.`,
+      lowerIsBetter: false,
+      source: "credited starts and wins (wgo_goalie_stats) and 5v5 GSAx from NST counts",
+    },
+    START_SHARE_COLUMN,
+  ],
+  all: [
+    {
+      metricKey: "save_percentage",
+      label: "SV%",
+      description: "All-situations save percentage from official goalie game logs.",
+      lowerIsBetter: false,
+      source: "wgo_goalie_stats.saves / shots_against",
+    },
+    {
+      metricKey: "relative_save_percentage",
+      label: "All Rel SV%",
+      description:
+        "All-situations save percentage versus other goalies on the latest verified team, over the same regular-season team-game window.",
+      lowerIsBetter: false,
+      source:
+        "goalie_stats_unified.nst_all_counts_saves / shots against minus same-team other-goalie baseline",
+    },
+    {
+      metricKey: "gsax",
+      label: "All GSAx",
+      description: "All-situations expected goals against minus goals against (NST xG).",
+      lowerIsBetter: false,
+      source:
+        "goalie_stats_unified.nst_all_counts_xg_against - nst_all_counts_goals_against",
+    },
+    {
+      metricKey: "gsaa_per_60",
+      label: "All GSAA/60",
+      description: GSAA_DESCRIPTION,
+      lowerIsBetter: false,
+      source:
+        "nst_all_counts_shots_against, nst_all_counts_goals_against, league all-situations SV% over the window, nst_all_counts_toi (minutes)",
+    },
+    {
+      metricKey: "xga_per_shot_against",
+      label: "All xGA/Shot",
+      description:
+        "All-situations expected goals against per shot against; higher values indicate a tougher shot-quality workload.",
+      lowerIsBetter: false,
+      source:
+        "goalie_stats_unified.nst_all_counts_xg_against / nst_all_counts_shots_against",
+    },
+    {
+      metricKey: "high_danger_save_percentage",
+      label: "All HD SV%",
+      description: "All-situations high-danger save percentage from NST goalie counts.",
+      lowerIsBetter: false,
+      source: "goalie_stats_unified.nst_all_counts_hd_saves / nst_all_counts_hd_shots_against",
+    },
+    {
+      metricKey: "quality_start_pct",
+      label: "QS% (Vollman)",
+      description:
+        "Vollman Quality Starts divided by credited starts: start SV% above the league-average SV% for the season through the as-of date, or SV% of .885 or better while allowing 2 or fewer goals.",
+      lowerIsBetter: false,
+      source:
+        "goalieMethodology.classifyVollmanQualityStart over wgo_goalie_stats credited starts; league SV% pooled from official regular-season appearances",
+    },
+    {
+      metricKey: "really_bad_start_rate",
+      label: "RBS% (Vollman)",
+      description:
+        "Vollman Really Bad Starts (start SV% below .850) divided by credited starts; lower is better.",
+      lowerIsBetter: true,
+      source:
+        "goalieMethodology.classifyVollmanReallyBadStart over wgo_goalie_stats credited starts",
+    },
+    START_SHARE_COLUMN,
+  ],
+};
+
+const ALL_GOALIE_METRIC_KEYS: GoalieMatrixMetricKey[] = [
+  "save_percentage",
+  "relative_save_percentage",
+  "gsax",
+  "gsaa_per_60",
+  "xga_per_shot_against",
+  "goalie_value_signal",
+  "high_danger_save_percentage",
+  "quality_start_pct",
+  "really_bad_start_rate",
+  "fhfh_5v5_bad_start_rate",
+  "steal_rate",
+  "start_share",
 ];
+
+export function goalieMetricColumnsForStrength(strength: GoalieMatrixStrength) {
+  return METRIC_COLUMNS_BY_STRENGTH[strength];
+}
 
 export const GOALIE_SOURCE_PENDING_METRIC_CONTRACTS: GoalieMatrixResponse["meta"]["sourcePendingMetricContracts"] = [
   {
@@ -411,9 +516,33 @@ function parseGoalieRole(value: string | string[] | undefined): GoalieMatrixRole
     : "all";
 }
 
+const DEFAULT_GOALIE_METRIC: GoalieMatrixMetricKey = "save_percentage";
+/** Decision 98: visible, user-lowerable default floor (5 starts). */
+export const DEFAULT_GOALIE_MIN_STARTS = 5;
+export const DEFAULT_GOALIE_MIN_SHOTS = 100;
+
 export function parseGoalieMatrixRequest(
   query: NextApiRequest["query"],
 ): GoalieMatrixRequest {
+  const strength = parseEnum(
+    query.strength,
+    "strength",
+    GOALIE_MATRIX_STRENGTHS,
+    "5v5",
+  );
+  const requestedMetric = parseEnum(
+    query.metric,
+    "metric",
+    ALL_GOALIE_METRIC_KEYS,
+    DEFAULT_GOALIE_METRIC,
+  );
+  // A known metric outside this strength's view (or the hidden Value Signal)
+  // sorts by the view's default instead of failing the request.
+  const metric = METRIC_COLUMNS_BY_STRENGTH[strength].some(
+    (column) => column.metricKey === requestedMetric,
+  )
+    ? requestedMetric
+    : DEFAULT_GOALIE_METRIC;
   return {
     season:
       parseInteger(query.season, "season", {
@@ -428,12 +557,8 @@ export function parseGoalieMatrixRequest(
       ["season", "last5", "last10", "last20"] as const,
       "season",
     ),
-    metric: parseEnum(
-      query.metric,
-      "metric",
-      METRIC_COLUMNS.map((column) => column.metricKey) as GoalieMatrixMetricKey[],
-      "save_percentage",
-    ),
+    strength,
+    metric,
     sortDirection: parseEnum(
       query.sort_direction,
       "sort_direction",
@@ -442,13 +567,13 @@ export function parseGoalieMatrixRequest(
     ),
     role: parseGoalieRole(query.role ?? query.goalie_role),
     minStarts: parseInteger(query.min_starts, "min_starts", {
-      defaultValue: 3,
+      defaultValue: DEFAULT_GOALIE_MIN_STARTS,
       min: 0,
-    }) ?? 3,
+    }) ?? DEFAULT_GOALIE_MIN_STARTS,
     minShots: parseInteger(query.min_shots, "min_shots", {
-      defaultValue: 100,
+      defaultValue: DEFAULT_GOALIE_MIN_SHOTS,
       min: 0,
-    }) ?? 100,
+    }) ?? DEFAULT_GOALIE_MIN_SHOTS,
     team: parseSearch(query.team),
     search: parseSearch(query.search),
     page: parseInteger(query.page, "page", {
@@ -506,6 +631,7 @@ function formatMetricValue(metricKey: GoalieMatrixMetricKey, value: number | nul
     metricKey === "relative_save_percentage" ||
     metricKey === "quality_start_pct" ||
     metricKey === "really_bad_start_rate" ||
+    metricKey === "fhfh_5v5_bad_start_rate" ||
     metricKey === "steal_rate" ||
     metricKey === "start_share" ||
     metricKey === "high_danger_save_percentage"
@@ -566,6 +692,20 @@ export function calculateGoalieRelativeSavePercentage(args: {
   );
 }
 
+/** Declared unit adapter (rule 17): NST goalie TOI is decimal minutes. */
+export function goalieGsaaPer60FromNstMinutes(args: {
+  gsaa: number | null;
+  nstToiMinutes: number;
+}) {
+  return args.gsaa != null && args.nstToiMinutes > 0
+    ? round((args.gsaa * 60) / args.nstToiMinutes)
+    : null;
+}
+
+function startRate(count: number, starts: number) {
+  return starts > 0 ? round(count / starts) : null;
+}
+
 function metricValue(
   aggregate: GoalieAggregate,
   projection: GoalieStartProjectionRow | null,
@@ -580,48 +720,47 @@ function metricValue(
   }
   if (aggregate.unavailableMetrics.includes(metricKey)) return null;
   if (metricKey === "save_percentage") {
+    // One strength per view (decision 104): 5v5 reads NST 5v5 counts, the
+    // all-situations view reads the official game log.
+    if (aggregate.nstStrength === "5v5") {
+      return aggregate.nstShotsAgainst > 0
+        ? round(aggregate.nstSaves / aggregate.nstShotsAgainst)
+        : null;
+    }
     return aggregate.shotsAgainst > 0
       ? round(aggregate.saves / aggregate.shotsAgainst)
       : null;
   }
   if (metricKey === "quality_start_pct") {
-    return aggregate.gamesStarted > 0
-      ? round(aggregate.qualityStarts / aggregate.gamesStarted)
-      : null;
+    return startRate(aggregate.qualityStarts, aggregate.gamesStarted);
   }
   if (metricKey === "steal_rate") {
-    return aggregate.gamesStarted > 0
-      ? round(aggregate.stealGames / aggregate.gamesStarted)
-      : null;
+    return startRate(aggregate.stealGames, aggregate.gamesStarted);
   }
   if (metricKey === "really_bad_start_rate") {
-    return aggregate.gamesStarted > 0
-      ? round(aggregate.reallyBadStarts / aggregate.gamesStarted)
-      : null;
+    return startRate(aggregate.reallyBadStarts, aggregate.gamesStarted);
   }
-  if (metricKey === "gsax") return aggregate.nst5v5Gsax;
+  if (metricKey === "fhfh_5v5_bad_start_rate") {
+    return startRate(aggregate.fhfhBadStarts, aggregate.gamesStarted);
+  }
+  if (metricKey === "gsax") return aggregate.nstGsax;
   if (metricKey === "xga_per_shot_against") {
     return calculateGoalieXgaPerShotAgainst({
-      xgAgainst: aggregate.nst5v5XgAgainst,
-      shotsAgainst: aggregate.nst5v5ShotQualityShotsAgainst,
-    });
-  }
-  if (metricKey === "goalie_value_signal") {
-    return calculateGoalieValueSignal({
-      gsax: aggregate.nst5v5Gsax,
-      gsaa: aggregate.nst5v5Gsaa,
+      xgAgainst: aggregate.nstXgAgainst,
+      shotsAgainst: aggregate.nstShotQualityShotsAgainst,
     });
   }
   if (metricKey === "high_danger_save_percentage") {
     return calculateGoalieHighDangerSavePercentage({
-      saves: aggregate.nst5v5HighDangerSaves,
-      shotsAgainst: aggregate.nst5v5HighDangerShotsAgainst,
+      saves: aggregate.nstHighDangerSaves,
+      shotsAgainst: aggregate.nstHighDangerShotsAgainst,
     });
   }
   if (metricKey === "gsaa_per_60") {
-    return aggregate.nst5v5Gsaa != null && aggregate.nst5v5ToiSeconds > 0
-      ? round((aggregate.nst5v5Gsaa / aggregate.nst5v5ToiSeconds) * 3600)
-      : null;
+    return goalieGsaaPer60FromNstMinutes({
+      gsaa: aggregate.nstGsaa,
+      nstToiMinutes: aggregate.nstToiMinutes,
+    });
   }
   if (metricKey === "start_share") {
     return (
@@ -655,10 +794,98 @@ function roleMatchesFilter(
   return filter === "all" || bucket === filter;
 }
 
+type NstStrengthCounts = {
+  toiMinutes: number | null | undefined;
+  xgAgainst: number | null | undefined;
+  goalsAgainst: number | null | undefined;
+  saves: number | null | undefined;
+  shotsAgainst: number | null | undefined;
+  hdSaves: number | null | undefined;
+  hdShotsAgainst: number | null | undefined;
+};
+
+/** One strength's NST counts. TOI is NST decimal minutes (declared unit). */
+function nstCountsForStrength(
+  row: GoalieGameSourceRow,
+  strength: GoalieMatrixStrength,
+): NstStrengthCounts {
+  if (strength === "all") {
+    return {
+      toiMinutes: row.nst_all_counts_toi,
+      xgAgainst: row.nst_all_counts_xg_against,
+      goalsAgainst: row.nst_all_counts_goals_against,
+      saves: row.nst_all_counts_saves,
+      shotsAgainst: row.nst_all_counts_shots_against,
+      hdSaves: row.nst_all_counts_hd_saves,
+      hdShotsAgainst: row.nst_all_counts_hd_shots_against,
+    };
+  }
+  return {
+    toiMinutes: row.nst_5v5_counts_toi,
+    xgAgainst: row.nst_5v5_counts_xg_against,
+    goalsAgainst: row.nst_5v5_counts_goals_against,
+    saves: row.nst_5v5_counts_saves,
+    shotsAgainst: row.nst_5v5_counts_shots_against,
+    hdSaves: row.nst_5v5_counts_hd_saves,
+    hdShotsAgainst: row.nst_5v5_counts_hd_shots_against,
+  };
+}
+
+/**
+ * League goals per shot at one strength over an inclusive date range
+ * (decision 10: same season, strength and dates). Uses appearances with both
+ * NST counts; the coverage travels with the value (rule 13).
+ */
+export function leagueGoalsPerShotForWindow(args: {
+  leagueRows: readonly GoalieGameSourceRow[];
+  strength: GoalieMatrixStrength;
+  fromDate: string;
+  toDate: string;
+}) {
+  let goals = 0;
+  let shots = 0;
+  let coveredRows = 0;
+  let totalRows = 0;
+  for (const row of args.leagueRows) {
+    if (row.date < args.fromDate || row.date > args.toDate) continue;
+    totalRows += 1;
+    const counts = nstCountsForStrength(row, args.strength);
+    const rowGoals = nonnegative(counts.goalsAgainst);
+    const rowShots = nonnegative(counts.shotsAgainst);
+    if (rowGoals == null || rowShots == null || rowGoals > rowShots) continue;
+    goals += rowGoals;
+    shots += rowShots;
+    coveredRows += 1;
+  }
+  return {
+    goalsPerShot: shots > 0 ? goals / shots : null,
+    coveredRows,
+    totalRows,
+  };
+}
+
+/** League-average official all-situations SV% for Vollman QS (decision 40). */
+export function leagueOfficialSavePct(leagueRows: readonly GoalieGameSourceRow[]) {
+  return calculateLeagueSavePct(
+    leagueRows.map((row) => ({
+      saves: nonnegative(row.saves),
+      shotsAgainst: nonnegative(row.shots_against),
+    })),
+  );
+}
+
 export function aggregateGoalieGameRows(
   rows: readonly GoalieGameSourceRow[],
   window: GoalieMatrixWindow,
+  options: {
+    strength?: GoalieMatrixStrength;
+    /** The league population for baselines; defaults to `rows`. */
+    leagueRows?: readonly GoalieGameSourceRow[];
+  } = {},
 ): GoalieAggregate[] {
+  const strength = options.strength ?? "5v5";
+  const leagueRows = options.leagueRows ?? rows;
+  const leagueSave = leagueOfficialSavePct(leagueRows);
   const rowsByGoalie = new Map<number, GoalieGameSourceRow[]>();
   for (const row of rows) {
     const current = rowsByGoalie.get(row.player_id) ?? [];
@@ -673,6 +900,7 @@ export function aggregateGoalieGameRows(
       .sort((a, b) => b.date.localeCompare(a.date) || (b.game_id ?? 0) - (a.game_id ?? 0))
       .slice(0, limit ?? undefined);
     const latestRow = selectedRows[0] ?? null;
+    const earliestRow = selectedRows[selectedRows.length - 1] ?? null;
     let gamesPlayed = 0;
     let gamesStarted = 0;
     let saves = 0;
@@ -681,25 +909,27 @@ export function aggregateGoalieGameRows(
     let toiSeconds = 0;
     let qualityStarts = 0;
     let reallyBadStarts = 0;
+    let fhfhBadStarts = 0;
     let stealGames = 0;
-    let nst5v5ToiSeconds = 0;
-    let nst5v5Gsaa = 0;
-    let nst5v5GsaaRows = 0;
-    let nst5v5Gsax = 0;
-    let nst5v5GsaxRows = 0;
-    let nst5v5XgAgainst = 0;
-    let nst5v5XgAgainstRows = 0;
-    let nst5v5ShotQualityShotsAgainst = 0;
-    let nst5v5Saves = 0;
-    let nst5v5ShotsAgainst = 0;
-    let nst5v5HighDangerSaves = 0;
-    let nst5v5HighDangerShotsAgainst = 0;
+    let nstToiMinutes = 0;
+    let nstGsaaShots = 0;
+    let nstGsaaGoals = 0;
+    let nstGsax = 0;
+    let nstGsaxRows = 0;
+    let nstXgAgainst = 0;
+    let nstXgAgainstRows = 0;
+    let nstShotQualityShotsAgainst = 0;
+    let nstSaves = 0;
+    let nstShotsAgainst = 0;
+    let nstHighDangerSaves = 0;
+    let nstHighDangerShotsAgainst = 0;
     const warnings = new Set<string>(selectedRows.flatMap((row) => row.populationWarnings ?? []));
     const unavailableMetrics = new Set<GoalieMatrixMetricKey>();
     const markUnavailable = (metrics: GoalieMatrixMetricKey[], warning: string) => {
       metrics.forEach((metric) => unavailableMetrics.add(metric));
       warnings.add(warning);
     };
+    const nstWarning = (part: string) => `partial_nst_${strength}_${part}_source`;
 
     // Values describe the entire selected window. Keep an incomplete metric
     // unavailable until a separate covered-sample contract can describe it.
@@ -710,72 +940,75 @@ export function aggregateGoalieGameRows(
       const starts = nonnegative(row.games_started);
       const officialSaves = nonnegative(row.saves);
       const officialShots = nonnegative(row.shots_against);
+      const officialGoalsAgainst = nonnegative(row.goals_against);
       gamesPlayed += nonnegative(row.games_played) ?? 0;
       gamesStarted += starts ?? 0;
       saves += officialSaves ?? 0;
-      goalsAgainst += nonnegative(row.goals_against) ?? 0;
+      goalsAgainst += officialGoalsAgainst ?? 0;
       shotsAgainst += officialShots ?? 0;
       toiSeconds += nonnegative(row.time_on_ice) ?? 0;
       if (
-        officialSaves == null ||
-        officialShots == null ||
-        officialSaves > officialShots
+        strength === "all" &&
+        (officialSaves == null ||
+          officialShots == null ||
+          officialSaves > officialShots)
       ) {
         markUnavailable(["save_percentage"], "partial_wgo_save_source");
       }
 
-      const gsaa = finite(row.nst_5v5_counts_gsaa);
-      const nstToi = nonnegative(row.nst_5v5_counts_toi);
-      if (gsaa != null && nstToi != null && (nstToi > 0 || gsaa === 0)) {
-        nst5v5Gsaa += gsaa;
-        nst5v5ToiSeconds += nstToi;
-        nst5v5GsaaRows += 1;
+      const counts = nstCountsForStrength(row, strength);
+      const nstToi = nonnegative(counts.toiMinutes);
+      const xgAgainst = nonnegative(counts.xgAgainst);
+      const nstGoalsAgainst = nonnegative(counts.goalsAgainst);
+      const nstShots = nonnegative(counts.shotsAgainst);
+
+      // GSAA needs this game's shots, goals and minutes; the league baseline
+      // is applied once over the window below, never per game (decision 10).
+      if (
+        nstToi != null &&
+        nstShots != null &&
+        nstGoalsAgainst != null &&
+        nstGoalsAgainst <= nstShots
+      ) {
+        nstToiMinutes += nstToi;
+        nstGsaaShots += nstShots;
+        nstGsaaGoals += nstGoalsAgainst;
+      } else {
+        markUnavailable(["gsaa_per_60"], nstWarning("gsaa"));
+      }
+
+      if (xgAgainst != null && nstShots != null) {
+        nstXgAgainst += xgAgainst;
+        nstShotQualityShotsAgainst += nstShots;
+        nstXgAgainstRows += 1;
+      } else {
+        markUnavailable(["xga_per_shot_against"], nstWarning("shot_quality"));
+      }
+
+      const nstRowSaves = nonnegative(counts.saves);
+      if (nstRowSaves != null && nstShots != null && nstRowSaves <= nstShots) {
+        nstSaves += nstRowSaves;
+        nstShotsAgainst += nstShots;
       } else {
         markUnavailable(
-          ["gsaa_per_60", "goalie_value_signal"],
-          "partial_nst_5v5_gsaa_source",
+          strength === "5v5"
+            ? ["relative_save_percentage", "save_percentage"]
+            : ["relative_save_percentage"],
+          nstWarning("relative_save"),
         );
       }
 
-      const xgAgainst = nonnegative(row.nst_5v5_counts_xg_against);
-      const nstGoalsAgainst = nonnegative(row.nst_5v5_counts_goals_against);
-      const nstShotsAgainst = nonnegative(row.nst_5v5_counts_shots_against);
-      if (xgAgainst != null && nstShotsAgainst != null) {
-        nst5v5XgAgainst += xgAgainst;
-        nst5v5ShotQualityShotsAgainst += nstShotsAgainst;
-        nst5v5XgAgainstRows += 1;
-      } else {
-        markUnavailable(
-          ["xga_per_shot_against"],
-          "partial_nst_5v5_shot_quality_source",
-        );
-      }
-
-      const nstSaves = nonnegative(row.nst_5v5_counts_saves);
-      if (nstSaves != null && nstShotsAgainst != null && nstSaves <= nstShotsAgainst) {
-        nst5v5Saves += nstSaves;
-        nst5v5ShotsAgainst += nstShotsAgainst;
-      } else {
-        markUnavailable(
-          ["relative_save_percentage"],
-          "partial_nst_5v5_relative_save_source",
-        );
-      }
-
-      const highDangerSaves = nonnegative(row.nst_5v5_counts_hd_saves);
-      const highDangerShots = nonnegative(row.nst_5v5_counts_hd_shots_against);
+      const highDangerSaves = nonnegative(counts.hdSaves);
+      const highDangerShots = nonnegative(counts.hdShotsAgainst);
       if (
         highDangerSaves != null &&
         highDangerShots != null &&
         highDangerSaves <= highDangerShots
       ) {
-        nst5v5HighDangerSaves += highDangerSaves;
-        nst5v5HighDangerShotsAgainst += highDangerShots;
+        nstHighDangerSaves += highDangerSaves;
+        nstHighDangerShotsAgainst += highDangerShots;
       } else {
-        markUnavailable(
-          ["high_danger_save_percentage"],
-          "partial_nst_5v5_high_danger_source",
-        );
+        markUnavailable(["high_danger_save_percentage"], nstWarning("high_danger"));
       }
 
       const gsax =
@@ -783,51 +1016,99 @@ export function aggregateGoalieGameRows(
           ? xgAgainst - nstGoalsAgainst
           : null;
       if (gsax != null) {
-        nst5v5Gsax += gsax;
-        nst5v5GsaxRows += 1;
+        nstGsax += gsax;
+        nstGsaxRows += 1;
       } else {
-        markUnavailable(
-          ["gsax", "goalie_value_signal"],
-          "partial_nst_5v5_gsax_source",
-        );
+        markUnavailable(["gsax"], nstWarning("gsax"));
       }
 
-      if (starts == null) {
+      if (starts == null || (starts !== 0 && starts !== 1)) {
         markUnavailable(
-          ["quality_start_pct", "really_bad_start_rate", "steal_rate"],
+          [
+            "quality_start_pct",
+            "really_bad_start_rate",
+            "fhfh_5v5_bad_start_rate",
+            "steal_rate",
+          ],
           "partial_goalie_start_source",
         );
-      } else if (starts > 0) {
-        const qualityStart = nonnegative(row.quality_start);
-        if (qualityStart != null && qualityStart <= starts) {
-          qualityStarts += qualityStart;
-        } else {
-          markUnavailable(["quality_start_pct"], "partial_quality_start_source");
-        }
-        const wins = nonnegative(row.wins);
-        if (wins == null) {
-          markUnavailable(["steal_rate"], "partial_goalie_steal_source");
-        }
-        if (gsax == null) {
-          markUnavailable(
-            ["really_bad_start_rate", "steal_rate"],
-            "partial_nst_5v5_start_quality_source",
-          );
-        } else {
-          const methodologyGame = {
-            goalieId: row.player_id,
-            date: row.date,
-            started: true,
-            shotsAgainst: officialShots,
-            saves: officialSaves,
-            goalsAgainst: nstGoalsAgainst,
-            goalsSavedAboveExpected: gsax,
-            won: wins != null && wins > 0,
-          };
-          if (isGoalieReallyBadStart(methodologyGame)) reallyBadStarts += 1;
-          if (isGoalieStealGame(methodologyGame)) stealGames += 1;
+        continue;
+      }
+      if (starts === 0) continue;
+
+      // Vollman QS and RBS: credited starts, official all-situations counts,
+      // season league-average SV% (decisions 40, 106).
+      const vollmanGame = {
+        started: true,
+        shotsAgainst: officialShots,
+        saves: officialSaves,
+        goalsAgainst: officialGoalsAgainst,
+      };
+      const qualityStart = classifyVollmanQualityStart(vollmanGame, leagueSave.savePct);
+      if (qualityStart == null) {
+        markUnavailable(["quality_start_pct"], "partial_quality_start_source");
+      } else if (qualityStart) {
+        qualityStarts += 1;
+      }
+      const reallyBadStart = classifyVollmanReallyBadStart(vollmanGame);
+      if (reallyBadStart == null) {
+        markUnavailable(["really_bad_start_rate"], "partial_really_bad_start_source");
+      } else if (reallyBadStart) {
+        reallyBadStarts += 1;
+      }
+
+      // FHFH measures always use 5v5 GSAx, whatever the view's strength.
+      const fiveOnFiveXga = nonnegative(row.nst_5v5_counts_xg_against);
+      const fiveOnFiveGa = nonnegative(row.nst_5v5_counts_goals_against);
+      const fiveOnFiveGsax =
+        fiveOnFiveXga != null && fiveOnFiveGa != null
+          ? fiveOnFiveXga - fiveOnFiveGa
+          : null;
+      const wins = nonnegative(row.wins);
+      if (wins == null) {
+        markUnavailable(["steal_rate"], "partial_goalie_steal_source");
+      }
+      if (fiveOnFiveGsax == null) {
+        markUnavailable(
+          ["fhfh_5v5_bad_start_rate", "steal_rate"],
+          "partial_nst_5v5_start_quality_source",
+        );
+      } else {
+        const methodologyGame = {
+          goalieId: row.player_id,
+          date: row.date,
+          started: true,
+          shotsAgainst: officialShots,
+          saves: officialSaves,
+          goalsAgainst: fiveOnFiveGa,
+          goalsSavedAboveExpected: fiveOnFiveGsax,
+          won: wins != null && wins > 0,
+        };
+        if (isGoalieReallyBadStart(methodologyGame)) fhfhBadStarts += 1;
+        if (isGoalieStealGame(methodologyGame)) stealGames += 1;
+      }
+    }
+
+    let nstGsaa: number | null = null;
+    if (!unavailableMetrics.has("gsaa_per_60") && latestRow && earliestRow) {
+      const baseline = leagueGoalsPerShotForWindow({
+        leagueRows,
+        strength,
+        fromDate: earliestRow.date,
+        toDate: latestRow.date,
+      });
+      if (baseline.goalsPerShot == null) {
+        markUnavailable(["gsaa_per_60"], "missing_league_save_baseline");
+      } else {
+        // SA x (1 - league SV%) - GA, with 1 - league SV% = league GA / SA.
+        nstGsaa = round(nstGsaaShots * baseline.goalsPerShot - nstGsaaGoals);
+        if (baseline.coveredRows < baseline.totalRows) {
+          warnings.add("partial_league_save_baseline");
         }
       }
+    }
+    if (leagueSave.savePct != null && leagueSave.coveredRows < leagueSave.totalRows) {
+      warnings.add("partial_league_official_save_baseline");
     }
 
     aggregates.push({
@@ -845,17 +1126,18 @@ export function aggregateGoalieGameRows(
       toiSeconds,
       qualityStarts,
       reallyBadStarts,
+      fhfhBadStarts,
       stealGames,
-      nst5v5ToiSeconds,
-      nst5v5Gsaa: nst5v5GsaaRows > 0 ? round(nst5v5Gsaa) : null,
-      nst5v5Gsax: nst5v5GsaxRows > 0 ? round(nst5v5Gsax) : null,
-      nst5v5XgAgainst:
-        nst5v5XgAgainstRows > 0 ? round(nst5v5XgAgainst) : null,
-      nst5v5ShotQualityShotsAgainst,
-      nst5v5Saves,
-      nst5v5ShotsAgainst,
-      nst5v5HighDangerSaves,
-      nst5v5HighDangerShotsAgainst,
+      nstStrength: strength,
+      nstToiMinutes,
+      nstGsaa,
+      nstGsax: nstGsaxRows > 0 ? round(nstGsax) : null,
+      nstXgAgainst: nstXgAgainstRows > 0 ? round(nstXgAgainst) : null,
+      nstShotQualityShotsAgainst,
+      nstSaves,
+      nstShotsAgainst,
+      nstHighDangerSaves,
+      nstHighDangerShotsAgainst,
       unavailableMetrics: [...unavailableMetrics],
       sourceWarnings: [
         ...warnings,
@@ -886,8 +1168,8 @@ export function buildGoalieRelativeSaveContexts(
     if (aggregate.unavailableMetrics.includes("relative_save_percentage")) {
       current.incompleteGoalieIds.push(aggregate.playerId);
     }
-    current.saves += aggregate.nst5v5Saves;
-    current.shotsAgainst += aggregate.nst5v5ShotsAgainst;
+    current.saves += aggregate.nstSaves;
+    current.shotsAgainst += aggregate.nstShotsAgainst;
     teamTotals.set(aggregate.teamId, current);
   }
 
@@ -896,11 +1178,11 @@ export function buildGoalieRelativeSaveContexts(
     const teamTotal =
       aggregate.teamId == null ? null : teamTotals.get(aggregate.teamId) ?? null;
     const teamWithoutGoalieSaves =
-      teamTotal == null ? 0 : teamTotal.saves - aggregate.nst5v5Saves;
+      teamTotal == null ? 0 : teamTotal.saves - aggregate.nstSaves;
     const teamWithoutGoalieShotsAgainst =
       teamTotal == null
         ? 0
-        : teamTotal.shotsAgainst - aggregate.nst5v5ShotsAgainst;
+        : teamTotal.shotsAgainst - aggregate.nstShotsAgainst;
     const ownSourceComplete = !aggregate.unavailableMetrics.includes(
       "relative_save_percentage",
     );
@@ -910,25 +1192,25 @@ export function buildGoalieRelativeSaveContexts(
     const relativeSavePercentage =
       ownSourceComplete && baselineSourceComplete
         ? calculateGoalieRelativeSavePercentage({
-            goalieSaves: aggregate.nst5v5Saves,
-            goalieShotsAgainst: aggregate.nst5v5ShotsAgainst,
+            goalieSaves: aggregate.nstSaves,
+            goalieShotsAgainst: aggregate.nstShotsAgainst,
             teamWithoutGoalieSaves,
             teamWithoutGoalieShotsAgainst,
           })
         : null;
     const warnings = [
-      ownSourceComplete ? null : "partial_nst_5v5_relative_save_source",
-      baselineSourceComplete ? null : "partial_team_without_goalie_5v5_save_source",
-      aggregate.nst5v5ShotsAgainst <= 0 ? "missing_goalie_5v5_save_sample" : null,
+      ownSourceComplete ? null : `partial_nst_${aggregate.nstStrength}_relative_save_source`,
+      baselineSourceComplete ? null : `partial_team_without_goalie_${aggregate.nstStrength}_save_source`,
+      aggregate.nstShotsAgainst <= 0 ? `missing_goalie_${aggregate.nstStrength}_save_sample` : null,
       teamWithoutGoalieShotsAgainst < MIN_RELATIVE_SAVE_BASELINE_SHOTS
-        ? "low_team_without_goalie_5v5_save_sample"
+        ? `low_team_without_goalie_${aggregate.nstStrength}_save_sample`
         : null,
     ].filter((warning): warning is string => typeof warning === "string");
 
     contexts.set(aggregate.playerId, {
       goalieSavePercentage:
-        ownSourceComplete && aggregate.nst5v5ShotsAgainst > 0
-          ? round(aggregate.nst5v5Saves / aggregate.nst5v5ShotsAgainst)
+        ownSourceComplete && aggregate.nstShotsAgainst > 0
+          ? round(aggregate.nstSaves / aggregate.nstShotsAgainst)
           : null,
       teamWithoutGoalieSavePercentage:
         baselineSourceComplete && teamWithoutGoalieShotsAgainst > 0
@@ -979,6 +1261,7 @@ function buildGoalieTeamContexts(
   rows: readonly GoalieGameSourceRow[],
   games: readonly GoalieScheduleRow[],
   window: GoalieMatrixWindow,
+  strength: GoalieMatrixStrength,
 ) {
   const gamesByTeam = new Map<number, GoalieScheduleRow[]>();
   const rowsByTeamGame = new Map<string, GoalieGameSourceRow[]>();
@@ -1030,7 +1313,10 @@ function buildGoalieTeamContexts(
     }
     // Filter by the team's calendar first, then pool all its appearances. Do
     // not combine each goalie's independent last-N games or reassign old stints.
-    const teamAggregates = aggregateGoalieGameRows(selectedRows, "season");
+    const teamAggregates = aggregateGoalieGameRows(selectedRows, "season", {
+      strength,
+      leagueRows: rows,
+    });
     const workload = buildTeamWorkloadContexts(teamAggregates).get(teamId);
     if (workload) workloads.set(teamId, workload);
     relativeSaves.set(teamId, buildGoalieRelativeSaveContexts(teamAggregates));
@@ -1155,12 +1441,18 @@ async function fetchAllGoalieGameRows(request: GoalieMatrixRequest) {
           "nst_5v5_counts_toi",
           "nst_5v5_counts_xg_against",
           "nst_5v5_counts_goals_against",
-          "nst_5v5_counts_gsaa",
           "nst_5v5_counts_saves",
           "nst_5v5_counts_shots_against",
           "nst_5v5_counts_hd_saves",
           "nst_5v5_counts_hd_shots_against",
           "nst_5v5_counts_hd_sv_percentage",
+          "nst_all_counts_toi",
+          "nst_all_counts_xg_against",
+          "nst_all_counts_goals_against",
+          "nst_all_counts_saves",
+          "nst_all_counts_shots_against",
+          "nst_all_counts_hd_saves",
+          "nst_all_counts_hd_shots_against",
         ].join(","),
       )
       .eq("season_id", request.season)
@@ -1333,7 +1625,10 @@ export async function buildGoalieMatrixSurface(
   const filterTeamIds = resolveGoalieTeamFilterIds(request.team, [...teamsById.values()]);
   // Team is a cohort filter on the latest verified team. Fetching only that
   // team's logs first would relabel departed goalies and truncate traded ones.
-  const aggregates = aggregateGoalieGameRows(gameRows, request.window).filter(
+  const aggregates = aggregateGoalieGameRows(gameRows, request.window, {
+    strength: request.strength,
+    leagueRows: gameRows,
+  }).filter(
     (aggregate) => filterTeamIds == null ||
       (aggregate.teamId != null && filterTeamIds.includes(aggregate.teamId)),
   );
@@ -1345,7 +1640,12 @@ export async function buildGoalieMatrixSurface(
     }) : Promise.resolve(new Map<number, GoalieStartProjectionRow>()),
     fetchPlayerMeta(playerIds),
   ]);
-  const teamContexts = buildGoalieTeamContexts(gameRows, teamGames, request.window);
+  const teamContexts = buildGoalieTeamContexts(
+    gameRows,
+    teamGames,
+    request.window,
+    request.strength,
+  );
   const workloadContexts = teamContexts.workloads;
   const relativeSaveContexts = new Map<number, GoalieRelativeSaveContext>();
   for (const aggregate of aggregates) {
@@ -1363,11 +1663,12 @@ export async function buildGoalieMatrixSurface(
     }
   }
 
+  const metricColumns = METRIC_COLUMNS_BY_STRENGTH[request.strength];
   const valuesByMetric = new Map<
     GoalieMatrixMetricKey,
     Map<number, { value: number | null; ranks: ReturnType<typeof rankGoalieMetricValues> }>
   >();
-  for (const column of METRIC_COLUMNS) {
+  for (const column of metricColumns) {
     const values = new Map<number, { value: number | null; ranks: ReturnType<typeof rankGoalieMetricValues> }>();
     const rankInput = aggregates
       .filter(
@@ -1441,19 +1742,24 @@ export async function buildGoalieMatrixSurface(
       aggregate.gamesStarted >= request.minStarts &&
       aggregate.shotsAgainst >= request.minShots;
     const metrics = Object.fromEntries(
-      METRIC_COLUMNS.map((column) => {
-        const value = valuesByMetric.get(column.metricKey)?.get(aggregate.playerId);
+      // Keys outside this strength's view (and hidden Value Signal) carry an
+      // empty cell; readers render only meta.metricColumns.
+      ALL_GOALIE_METRIC_KEYS.map((metricKey) => {
+        const column = metricColumns.find((entry) => entry.metricKey === metricKey);
+        const value = column
+          ? valuesByMetric.get(metricKey)?.get(aggregate.playerId)
+          : undefined;
         const rank = value?.ranks.get(aggregate.playerId) ?? null;
         return [
-          column.metricKey,
+          metricKey,
           {
-            metricKey: column.metricKey,
+            metricKey,
             rawValue: value?.value ?? null,
-            formattedValue: formatMetricValue(column.metricKey, value?.value ?? null),
+            formattedValue: formatMetricValue(metricKey, value?.value ?? null),
             rank: rank?.rank ?? null,
             percentile: rank?.percentile ?? null,
             qualifiedPeerCount: rank?.qualifiedPeerCount ?? 0,
-            lowerIsBetter: column.lowerIsBetter,
+            lowerIsBetter: column?.lowerIsBetter ?? false,
           },
         ];
       }),
@@ -1513,7 +1819,7 @@ export async function buildGoalieMatrixSurface(
       },
       metrics,
       warnings: [
-        ...aggregate.sourceWarnings.filter((warning) => warning !== "partial_nst_5v5_relative_save_source"),
+        ...aggregate.sourceWarnings.filter((warning) => warning !== `partial_nst_${request.strength}_relative_save_source`),
         ...(relativeSaveContext?.warnings ?? []),
         ...(roleContext.roleConfidence === "low" ? ["low_role_confidence"] : []),
         ...(aggregate.teamId == null ? []
@@ -1579,12 +1885,18 @@ export async function buildGoalieMatrixSurface(
         "goalie_start_projections",
         "games",
       ],
-      methodologyVersion: "goalie_rankings_v4_official_appearance_population",
-      methodologyUpdatedAt: "2026-11-09",
+      methodologyVersion: "goalie_rankings_v5_strength_views",
+      methodologyUpdatedAt: "2026-11-11",
       sourceQualityFlags: sourceWarnings.length
         ? ["partial_source_coverage"]
         : [],
-      metricColumns: METRIC_COLUMNS,
+      metricColumns,
+      strength: request.strength,
+      sampleFloor: {
+        minStarts: request.minStarts,
+        minShots: request.minShots,
+        label: `Ranked at ${request.minStarts}+ starts and ${request.minShots}+ shots against; lower rows show "Insufficient sample".`,
+      },
       sourceWarnings,
       sourcePendingMetricContracts: GOALIE_SOURCE_PENDING_METRIC_CONTRACTS,
     },

@@ -110,6 +110,93 @@ export function calculateGoalieGsax(game: {
   return round(xgAgainst - goalsAgainst);
 }
 
+export type VollmanStartGame = {
+  /** Credited starter flag from the official game log (WGO games_started). */
+  started: boolean | null;
+  shotsAgainst: number | null;
+  saves: number | null;
+  goalsAgainst: number | null;
+};
+
+const VOLLMAN_LOW_GOALS_SAVE_PCT = 0.885;
+const VOLLMAN_LOW_GOALS_MAX_GA = 2;
+const VOLLMAN_REALLY_BAD_SAVE_PCT = 0.85;
+
+function vollmanStartSavePct(game: VollmanStartGame) {
+  const shotsAgainst = finite(game.shotsAgainst);
+  const saves = finite(game.saves);
+  if (shotsAgainst == null || saves == null || shotsAgainst <= 0) return null;
+  if (saves < 0 || saves > shotsAgainst) return null;
+  return saves / shotsAgainst;
+}
+
+/**
+ * Vollman Quality Start (owner decision 40), the one implementation behind
+ * every column labelled "Quality Start". Only a credited start qualifies; a
+ * relief appearance returns null (not applicable). A start with missing or
+ * zero shots, missing saves or goals against, or a missing league average
+ * also returns null (unavailable), never false.
+ *
+ * Rule as written in decision 40: the start's all-situations SV% is ABOVE
+ * that season's league-average SV% (same scope), OR SV% >= .885 while
+ * allowing 2 or fewer goals.
+ * Original Vollman / Hockey-Reference wording, pending owner confirmation:
+ * SV% AT LEAST the league average, OR SV% >= .885 when facing 20 or fewer
+ * shots.
+ */
+export function classifyVollmanQualityStart(
+  game: VollmanStartGame,
+  leagueAverageSavePct: number | null | undefined,
+): boolean | null {
+  if (game.started !== true) return null;
+  const pct = vollmanStartSavePct(game);
+  const goalsAgainst = finite(game.goalsAgainst);
+  const leagueAverage = finite(leagueAverageSavePct);
+  if (pct == null || goalsAgainst == null || leagueAverage == null) return null;
+  if (pct > leagueAverage) return true;
+  return goalsAgainst <= VOLLMAN_LOW_GOALS_MAX_GA && pct >= VOLLMAN_LOW_GOALS_SAVE_PCT;
+}
+
+/**
+ * Vollman Really Bad Start (owner decision 106): a credited start with an
+ * all-situations SV% below .850. Relief returns null (not applicable);
+ * missing or zero shots or missing saves return null (unavailable).
+ */
+export function classifyVollmanReallyBadStart(game: VollmanStartGame): boolean | null {
+  if (game.started !== true) return null;
+  const pct = vollmanStartSavePct(game);
+  return pct == null ? null : pct < VOLLMAN_REALLY_BAD_SAVE_PCT;
+}
+
+/** League-average SV% pooled by shots (rule 26), or null with no shots. */
+export function calculateLeagueSavePct(
+  rows: ReadonlyArray<{ saves: number | null; shotsAgainst: number | null }>,
+) {
+  let saves = 0;
+  let shots = 0;
+  let coveredRows = 0;
+  for (const row of rows) {
+    const rowSaves = finite(row.saves);
+    const rowShots = finite(row.shotsAgainst);
+    if (rowSaves == null || rowShots == null || rowSaves < 0 || rowSaves > rowShots) continue;
+    saves += rowSaves;
+    shots += rowShots;
+    coveredRows += 1;
+  }
+  return {
+    savePct: shots > 0 ? saves / shots : null,
+    coveredRows,
+    totalRows: rows.length,
+  };
+}
+
+/**
+ * FHFH measures (decision 106): separately named, not Vollman. Their rules
+ * use 5v5 GSAx (NST xGA - GA) and are shown with the strength scope.
+ */
+export const FHFH_5V5_BAD_START_GSAX = DEFAULT_THRESHOLDS.reallyBadGsax;
+export const FHFH_5V5_STEAL_GSAX = DEFAULT_THRESHOLDS.stealGsax;
+
 export function isGoalieQualityStart(
   game: GoalieGameForMethodology,
   options?: {

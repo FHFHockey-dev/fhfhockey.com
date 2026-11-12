@@ -25,6 +25,14 @@ export type GoalieGameSourceRow = {
   nst_5v5_counts_hd_saves?: number | null;
   nst_5v5_counts_hd_shots_against?: number | null;
   nst_5v5_counts_hd_sv_percentage?: number | null;
+  // All-situations NST counts; TOI is NST decimal minutes like the 5v5 TOI.
+  nst_all_counts_toi?: number | null;
+  nst_all_counts_xg_against?: number | null;
+  nst_all_counts_goals_against?: number | null;
+  nst_all_counts_saves?: number | null;
+  nst_all_counts_shots_against?: number | null;
+  nst_all_counts_hd_saves?: number | null;
+  nst_all_counts_hd_shots_against?: number | null;
 };
 
 export type GoalieScheduleRow = {
@@ -81,6 +89,13 @@ const EMPTY_ADVANCED_SOURCE = {
   nst_5v5_counts_hd_saves: null,
   nst_5v5_counts_hd_shots_against: null,
   nst_5v5_counts_hd_sv_percentage: null,
+  nst_all_counts_toi: null,
+  nst_all_counts_xg_against: null,
+  nst_all_counts_goals_against: null,
+  nst_all_counts_saves: null,
+  nst_all_counts_shots_against: null,
+  nst_all_counts_hd_saves: null,
+  nst_all_counts_hd_shots_against: null,
 } as const;
 
 /** Official player/game appearances anchor eligibility; NST enrichment cannot

@@ -5,6 +5,9 @@ import {
   formatGoalieDeploymentBucket,
   getGoalieDeploymentBucket,
   calculateGoalieGsax,
+  calculateLeagueSavePct,
+  classifyVollmanQualityStart,
+  classifyVollmanReallyBadStart,
   getGoalieStartsShareBucket,
   isGoalieQualityStart,
   isGoalieReallyBadStart,
@@ -161,5 +164,55 @@ describe("goalieMethodology", () => {
     expect(result.excludedEmergencyStarts).toBe(0);
     expect(result.totalStarts).toBe(1);
     expect(result.adjustedCoreNetshare).toBe(0);
+  });
+
+  describe("Vollman Quality Start (decision 40)", () => {
+    const start = (saves: number, shotsAgainst: number, goalsAgainst = shotsAgainst - saves) => ({
+      started: true, saves, shotsAgainst, goalsAgainst,
+    });
+    const league = 0.905;
+
+    it("credits a start strictly above the league average and not one equal to it", () => {
+      // 20/22 = .9091 > .905 with 2 GA; 181/200 = .905 exactly, 19 GA.
+      expect(classifyVollmanQualityStart(start(20, 22), league)).toBe(true);
+      expect(classifyVollmanQualityStart(start(181, 200), league)).toBe(false);
+      expect(classifyVollmanQualityStart(start(182, 200), league)).toBe(true);
+    });
+
+    it("applies the .885 floor only when allowing two or fewer goals", () => {
+      // .885 exactly with 2 GA qualifies; .8846 with 2 GA does not.
+      expect(classifyVollmanQualityStart(start(177, 200, 2), league)).toBe(true);
+      expect(classifyVollmanQualityStart(start(23, 26, 2), league)).toBe(false);
+      // .8889 (24/27) with 3 GA is below league average and above two goals.
+      expect(classifyVollmanQualityStart(start(24, 27), league)).toBe(false);
+      // The .910 fixed threshold used by Splits would reject this start.
+      expect(classifyVollmanQualityStart(start(25, 28), 0.89)).toBe(true);
+    });
+
+    it("never classifies relief, missing shots or a missing league average", () => {
+      expect(classifyVollmanQualityStart({ ...start(10, 10), started: false }, league)).toBeNull();
+      expect(classifyVollmanQualityStart({ ...start(10, 10), started: null }, league)).toBeNull();
+      expect(classifyVollmanQualityStart(start(0, 0, 0), league)).toBeNull();
+      expect(classifyVollmanQualityStart({ ...start(20, 22), shotsAgainst: null }, league)).toBeNull();
+      expect(classifyVollmanQualityStart(start(20, 22), null)).toBeNull();
+    });
+
+    it("marks a Vollman really bad start below .850 only", () => {
+      expect(classifyVollmanReallyBadStart(start(84, 100))).toBe(true);
+      expect(classifyVollmanReallyBadStart(start(85, 100))).toBe(false);
+      expect(classifyVollmanReallyBadStart({ ...start(1, 4), started: false })).toBeNull();
+      expect(classifyVollmanReallyBadStart(start(0, 0, 0))).toBeNull();
+    });
+
+    it("pools league save percentage by shots and reports coverage", () => {
+      const result = calculateLeagueSavePct([
+        { saves: 9, shotsAgainst: 10 },
+        { saves: 95, shotsAgainst: 100 },
+        { saves: null, shotsAgainst: 30 },
+      ]);
+      // Pooled 104/110, not the mean of .90 and .95.
+      expect(result.savePct).toBeCloseTo(104 / 110, 12);
+      expect(result).toMatchObject({ coveredRows: 2, totalRows: 3 });
+    });
   });
 });
