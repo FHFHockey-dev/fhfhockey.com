@@ -492,6 +492,18 @@ type PlayerStatsLandingAggregationResult = {
   rows: PlayerStatsLandingApiRow[];
   pagination: PlayerStatsTablePaginationMeta;
   sort: PlayerStatsLandingFilterState["view"]["sort"];
+  summaryStatus?: PlayerStatsSummaryStatus;
+};
+
+/**
+ * Some games in the window have no current-revision summary and were not
+ * rebuilt in this request (decision 111: pre-fix goalie rows are never
+ * served). The page says the stats are being recalculated.
+ */
+export type PlayerStatsSummaryStatus = {
+  status: "recalculating";
+  pendingGameCount: number;
+  totalGameCount: number;
 };
 
 type PlayerStatsDetailAggregationRow = PlayerStatsLandingAggregationRow & {
@@ -5544,7 +5556,14 @@ export async function buildPlayerStatsLandingAggregationFromState(
   });
   const aggregationRowsBuiltAt = Date.now();
 
-  if (aggregateCacheKey != null) {
+  const pendingGameCount =
+    liveSummaryRows.length === 0 && state.primary.statMode === "goalies"
+      ? missingSummaryGames.length
+      : 0;
+
+  // A window with games still pending recalculation is not cached, so the
+  // note clears as soon as the rebuild lands.
+  if (aggregateCacheKey != null && pendingGameCount === 0) {
     setCachedPlayerStatsSeasonAggregateRows(aggregateCacheKey, aggregationRows);
   }
 
@@ -5554,11 +5573,22 @@ export async function buildPlayerStatsLandingAggregationFromState(
     client,
     allowLiveSummaryBuild: !canUseAggregateCache,
   });
-  const aggregation = buildLandingApiResultFromAggregationRows({
-    state,
-    rows: aggregationRows,
-    goalieBaseline,
-  });
+  const aggregation: PlayerStatsLandingAggregationResult = {
+    ...buildLandingApiResultFromAggregationRows({
+      state,
+      rows: aggregationRows,
+      goalieBaseline,
+    }),
+    ...(pendingGameCount > 0
+      ? {
+          summaryStatus: {
+            status: "recalculating" as const,
+            pendingGameCount,
+            totalGameCount: games.length,
+          },
+        }
+      : {}),
+  };
 
   if (process.env.NODE_ENV !== "test") {
     console.info("[player-stats] landing aggregation timing", {

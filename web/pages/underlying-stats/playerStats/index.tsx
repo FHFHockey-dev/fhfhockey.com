@@ -780,6 +780,14 @@ export default function PlayerUnderlyingStatsLandingPage({
     },
   ];
 
+  // Decision 111: stale (pre-fix) goalie summaries are never served; while
+  // they are rebuilt the page says so instead of showing an unexplained table.
+  const recalculatingStatus = landingData?.summaryStatus;
+  const recalculatingMessage = recalculatingStatus
+    ? `${variant === "goalie" ? "Goalie" : "Player"} stats are being recalculated with corrected formulas: ${recalculatingStatus.pendingGameCount} of ${recalculatingStatus.totalGameCount} games are pending. The table fills in once the rebuild finishes.`
+    : null;
+  const recalculatingTitle =
+    variant === "goalie" ? "Recalculating goalie stats" : "Recalculating player stats";
   const tableState =
     !router.isReady || !hasHydratedFromQueryRef.current
       ? {
@@ -806,9 +814,11 @@ export default function PlayerUnderlyingStatsLandingPage({
               ? null
               : {
                   kind: "empty" as const,
-                  message: landingData?.placeholder
-                    ? pageShell.placeholderMessage
-                    : pageShell.emptyRowsMessage,
+                  message:
+                    recalculatingMessage ??
+                    (landingData?.placeholder
+                      ? pageShell.placeholderMessage
+                      : pageShell.emptyRowsMessage),
                 };
 
   const pageStatusBanner = tableState
@@ -821,9 +831,11 @@ export default function PlayerUnderlyingStatsLandingPage({
               : tableState.kind === "error"
                 ? "Query error"
                 : tableState.kind === "empty"
-                  ? variant === "goalie"
-                    ? "No goalie rows"
-                    : "No landing rows"
+                  ? recalculatingMessage
+                    ? recalculatingTitle
+                    : variant === "goalie"
+                      ? "No goalie rows"
+                      : "No landing rows"
                   : variant === "goalie"
                     ? "Loading goalie rows"
                     : "Loading landing rows",
@@ -839,6 +851,12 @@ export default function PlayerUnderlyingStatsLandingPage({
           message: `${tableError} Showing the last successful result while the refresh failed.`,
           tone: "warning" as const,
         }
+      : recalculatingMessage
+        ? {
+            title: recalculatingTitle,
+            message: recalculatingMessage,
+            tone: "warning" as const,
+          }
       : canRenderStaleLandingData
         ? {
             title:

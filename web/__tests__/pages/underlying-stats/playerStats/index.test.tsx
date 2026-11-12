@@ -358,9 +358,11 @@ describe("PlayerUnderlyingStatsLandingPage", () => {
     expect(
       screen.getByPlaceholderText("Last X goalie appearances"),
     ).toBeTruthy();
-    expect(within(table).getByText("Rank")).toBeTruthy();
-    expect(within(table).getByText("xG Against")).toBeTruthy();
-    expect(within(table).getByText("HDSV%")).toBeTruthy();
+    // "#" is a position in the sort, not a rank (W2-3 D16); heuristic xG is
+    // hidden (decision 12); danger columns are FHFH house definitions (L1).
+    expect(within(table).getByText("#")).toBeTruthy();
+    expect(within(table).queryByText("xG Against")).toBeNull();
+    expect(within(table).getByText("FHFH HDSV%")).toBeTruthy();
     expect(within(table).getByText("Avg. Shot Distance")).toBeTruthy();
 
     const rows = within(table).getAllByRole("row");
@@ -941,12 +943,12 @@ describe("PlayerUnderlyingStatsLandingPage", () => {
     const cases = [
       {
         query: { statMode: "onIce", displayMode: "counts" },
-        expectedHeaders: ["CF", "xGF%", "LDCF"],
+        expectedHeaders: ["CF", "CF%", "FHFH LDCF"],
         expectsPositionColumn: true,
       },
       {
         query: { statMode: "onIce", displayMode: "rates" },
-        expectedHeaders: ["CF/60", "xGF/60", "MDCF/60"],
+        expectedHeaders: ["CF/60", "CF%", "FHFH MDCF/60"],
         expectsPositionColumn: true,
       },
       {
@@ -989,7 +991,8 @@ describe("PlayerUnderlyingStatsLandingPage", () => {
         screen.getByRole("button", { name: "Sort by Player" }),
       ).toBeTruthy();
       expect(screen.getByRole("button", { name: "Sort by Team" })).toBeTruthy();
-      expect(screen.getByRole("button", { name: "Sort by GP" })).toBeTruthy();
+      // The default strength is 5v5, a split: GP is "Split GP" (decision 94).
+      expect(screen.getByRole("button", { name: "Sort by Split GP" })).toBeTruthy();
       expect(screen.getByRole("button", { name: "Sort by TOI" })).toBeTruthy();
 
       for (const header of testCase.expectedHeaders) {
@@ -1019,7 +1022,7 @@ describe("PlayerUnderlyingStatsLandingPage", () => {
         json: async () => ({
           family: "onIceCounts",
           rows: buildMockLandingRows("onIceCounts", 2),
-          sort: { sortKey: "xgfPct", direction: "desc" },
+          sort: { sortKey: "cfPct", direction: "desc" },
           pagination: { page: 1, pageSize: 100, totalRows: 2, totalPages: 1 },
           placeholder: false,
           generatedAt: "2026-03-31T12:00:00.000Z",
@@ -1041,7 +1044,7 @@ describe("PlayerUnderlyingStatsLandingPage", () => {
 
     expect(
       screen.getByText(
-        "Expanded chart for player 8478401 using xgfPct via player",
+        "Expanded chart for player 8478401 using cfPct via player",
       ),
     ).toBeTruthy();
     expect(screen.getByText("1")).toBeTruthy();
@@ -1055,8 +1058,43 @@ describe("PlayerUnderlyingStatsLandingPage", () => {
 
     expect(
       screen.queryByText(
-        "Expanded chart for player 8478401 using xgfPct via player",
+        "Expanded chart for player 8478401 using cfPct via player",
       ),
     ).toBeNull();
+  });
+
+  it("says goalie stats are being recalculated when the served window has pending games (decision 111)", async () => {
+    routerMock.pathname = "/underlying-stats/goalieStats";
+    routerMock.query = {
+      fromSeasonId: "20252026",
+      throughSeasonId: "20252026",
+      statMode: "goalies",
+      displayMode: "counts",
+    };
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          family: "goalieCounts",
+          rows: [],
+          sort: { sortKey: "savePct", direction: "desc" },
+          pagination: { page: 1, pageSize: 100, totalRows: 0, totalPages: 0 },
+          placeholder: false,
+          generatedAt: "2026-03-31T12:00:00.000Z",
+          summaryStatus: { status: "recalculating", pendingGameCount: 12, totalGameCount: 12 },
+        }),
+      }),
+    );
+
+    render(<PlayerUnderlyingStatsLandingPage variant="goalie" />);
+
+    await waitFor(() => {
+      expect(screen.getAllByText("Recalculating goalie stats").length).toBeGreaterThan(0);
+    });
+    expect(
+      screen.getAllByText(/12 of 12 games are pending/).length,
+    ).toBeGreaterThan(0);
+    expect(screen.queryByText("No goalie rows")).toBeNull();
   });
 });

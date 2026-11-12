@@ -32,6 +32,12 @@ export type PlayerStatsLandingApiResponse = {
   pagination: PlayerStatsTablePaginationMeta;
   placeholder: boolean;
   generatedAt: string;
+  /** Games in the window still waiting for a current-revision summary (decision 111). */
+  summaryStatus?: {
+    status: "recalculating";
+    pendingGameCount: number;
+    totalGameCount: number;
+  };
 };
 
 export type PlayerStatsLandingApiError = {

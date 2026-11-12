@@ -147,6 +147,39 @@ describe("goalie readers serve goalie_underlying_summary_partitions (DR1, decisi
   });
 });
 
+describe("goalie landing while partitions are recalculated (decision 111)", () => {
+  it("serves no stale rows on the cached season path and says how many games are pending", async () => {
+    const tables = buildFixtureTables();
+    const snapshots = await buildSharedSnapshots(tables);
+    tables.goalie_underlying_summary_partitions.push(
+      ...goaliePartitionsFrom(snapshots).map((row) => staleCopy(row, 10))
+    );
+    tables.nhl_api_game_payloads_raw.push(
+      ...snapshots.map((row, index) => ({ ...staleCopy(row, 20), id: index + 1 }))
+    );
+    fake.client = createFakeSupabase(tables);
+
+    const body = (await callRoute(goaliesHandler, allQuery)) as Record<string, any>;
+    expect(body.rows).toEqual([]);
+    expect(body.summaryStatus).toEqual({
+      status: "recalculating",
+      pendingGameCount: 1,
+      totalGameCount: 1,
+    });
+  });
+
+  it("carries no recalculating status once the partitions are current", async () => {
+    const tables = buildFixtureTables();
+    const snapshots = await buildSharedSnapshots(tables);
+    tables.goalie_underlying_summary_partitions.push(...goaliePartitionsFrom(snapshots));
+    fake.client = createFakeSupabase(tables);
+
+    const body = (await callRoute(goaliesHandler, allQuery)) as Record<string, any>;
+    expect(body.rows.length).toBe(2);
+    expect(body).not.toHaveProperty("summaryStatus");
+  });
+});
+
 describe("goalie snapshot seeding never copies a stale shared partition (DR1)", () => {
   it("raw-builds a game whose shared goalie partitions are stale", async () => {
     const tables = buildFixtureTables();
