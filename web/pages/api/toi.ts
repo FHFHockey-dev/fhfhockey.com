@@ -28,17 +28,44 @@ export type Input = {
   PlayerId: number;
 };
 
-type Data = {
-  toi: number;
-  powerPlayToi: number;
-  powerPlayToiShare: number;
+type ToiPoint = {
+  /** Player TOI in minutes; null when the game row has no TOI. */
+  toi: number | null;
+  /**
+   * Observed PP minutes from a qualified, source-attributed PP clock
+   * (decision 71). Null until that clock is qualified: FORGE's split is a
+   * model input and is never served as observed PP time.
+   */
+  powerPlayToi: number | null;
+  /** Player PP share from the same qualified clock; null until qualified. */
+  powerPlayToiShare: number | null;
   date: DateString;
-}[];
+  /** FORGE's modelled PP split for this game, labelled as a model input. */
+  modelPowerPlay: {
+    source: "forge_player_game_strength.toi_pp_seconds";
+    /** FORGE player PP minutes; null when FORGE has no row or no value. */
+    playerPpMinutes: number | null;
+    /** The team's official NHL PP clock in minutes; null when unknown. */
+    teamPpClockMinutes: number | null;
+    /**
+     * True when the modelled player PP time exceeds the team clock: an
+     * impossible share that is flagged for investigation, never capped.
+     */
+    exceedsTeamClock: boolean | null;
+  };
+};
+
+type Data = ToiPoint[];
+
+export const PP_SHARE_UNAVAILABLE_REASON =
+  "PP share unavailable: no qualified PP clock yet. FORGE's PP split is a model input, not observed PP time.";
 
 type Response = {
   message: string;
   success: boolean;
   data?: Data;
+  /** Whether observed PP time/share can be served, and why not. */
+  powerPlayStatus?: { available: boolean; reason: string | null };
 };
 export async function getInterval(
   Season: string,
@@ -86,8 +113,10 @@ export default async function handler(
       player.position
     );
     const gameIds = playerData.map((data) => data.gameId);
-    // skatersGameStats.powerPlayToi is a "00:00" placeholder (the NHL boxscore
-    // has no PP TOI), so PP TOI comes from the FORGE shift-chart split.
+    // skatersGameStats.powerPlayToi is absent (null) or a legacy "00:00"
+    // placeholder (the NHL boxscore has no skater PP TOI). Observed PP time and
+    // share need a qualified PP clock (decision 71); FORGE's split is returned
+    // only as a labelled model input.
     const [forgeRows, teamData] = await Promise.all([
       getForgePowerPlayToi(PlayerId, gameIds),
       getTeamData(gameIds),
@@ -98,6 +127,7 @@ export default async function handler(
       success: true,
       message: "Success!",
       data: result,
+      powerPlayStatus: { available: false, reason: PP_SHARE_UNAVAILABLE_REASON },
     });
   } catch (e: any) {
     console.error(e);
@@ -112,15 +142,16 @@ export type ToiForgeGame = {
   toi_pp_seconds: number | null;
 };
 export type ToiTeamGame = {
-  powerPlayToi: string;
+  powerPlayToi: string | null;
   gameId: number;
   teamId: number;
 };
 
 /**
- * One point per player game, in date order. PP TOI is the player's FORGE
- * `toi_pp_seconds`; the share divides it by the PP TOI of the team the player
- * dressed for in that game (not the opponent's row for the same game).
+ * One point per player game, in date order. Observed PP time and share stay
+ * null until a qualified PP clock exists (decision 71). FORGE's PP seconds
+ * are reported as a model input next to the official clock of the team the
+ * player dressed for; a model value above that clock is flagged, not capped.
  */
 export function buildToiSeries(
   playerGames: ToiPlayerGame[],
@@ -135,22 +166,26 @@ export function buildToiSeries(
     .sort((a, b) => compareAsc(new Date(a.date), new Date(b.date)))
     .map((game) => {
       const forge = forgeByGame.get(game.gameId);
-      const powerPlayToi =
-        forge?.toi_pp_seconds != null && forge.toi_pp_seconds > 0
-          ? forge.toi_pp_seconds / 60
-          : 0;
+      const playerPpMinutes =
+        forge?.toi_pp_seconds != null ? forge.toi_pp_seconds / 60 : null;
       const teamPp = forge
         ? teamPpByGameTeam.get(`${game.gameId}:${forge.team_id}`)
         : undefined;
-      const teamPowerPlayToi = teamPp ? parseTime(teamPp) : 0;
+      const teamPpClockMinutes = teamPp ? parseTime(teamPp) : null;
       return {
-        toi: game.toi ? parseTime(game.toi) : 0,
-        powerPlayToi,
-        powerPlayToiShare:
-          teamPowerPlayToi > 0
-            ? Math.min((powerPlayToi / teamPowerPlayToi) * 100, 100)
-            : 0,
+        toi: game.toi ? parseTime(game.toi) : null,
+        powerPlayToi: null,
+        powerPlayToiShare: null,
         date: game.date,
+        modelPowerPlay: {
+          source: "forge_player_game_strength.toi_pp_seconds",
+          playerPpMinutes,
+          teamPpClockMinutes,
+          exceedsTeamClock:
+            playerPpMinutes != null && teamPpClockMinutes != null
+              ? playerPpMinutes > teamPpClockMinutes
+              : null,
+        },
       };
     });
 }
@@ -160,7 +195,8 @@ export function buildToiSeries(
  * @param timeString mm:ss
  * @returns The number of minutes.
  */
-function parseTime(timeString: string) {
+function parseTime(timeString: string): number | null {
+  if (!/^\d+:\d{2}$/.test(timeString.trim())) return null;
   try {
     const arr = timeString.split(":");
     const minutes = Number.parseInt(arr[0]) + Number(arr[1]) / 60; // converting

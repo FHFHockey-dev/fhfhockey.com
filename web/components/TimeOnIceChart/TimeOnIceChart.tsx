@@ -59,7 +59,11 @@ function TimeOnIceChart({
 
   const [loading, setLoading] = useState(false);
   const [TOI, setTOI] = useState<number[]>([]);
-  const [ppTOI, setPPTOI] = useState<number[]>([]);
+  const [ppTOI, setPPTOI] = useState<(number | null)[]>([]);
+  // Decision 71: no observed PP share is served until a qualified PP clock exists.
+  const [ppUnavailableReason, setPpUnavailableReason] = useState<string | null>(
+    null
+  );
   const [labels, setLabels] = useState<string[]>([]);
 
   // fetch data when season, player id, time option change
@@ -94,7 +98,7 @@ function TimeOnIceChart({
           throw new Error("This time option is not implemented.");
       }
 
-      const { data, success } = await fetch("/api/toi", {
+      const { data, success, powerPlayStatus } = await fetch("/api/toi", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -116,6 +120,11 @@ function TimeOnIceChart({
       if (mounted && success) {
         setTOI(data.map(({ toi }: any) => toi));
         setPPTOI(data.map(({ powerPlayToiShare }: any) => powerPlayToiShare));
+        setPpUnavailableReason(
+          powerPlayStatus && !powerPlayStatus.available
+            ? powerPlayStatus.reason ?? "PP share unavailable."
+            : null
+        );
         setLabels(data.map(({ date }: any) => date));
       }
     })();
@@ -314,8 +323,14 @@ function TimeOnIceChart({
       }
     >
       {loading && <Spinner className={styles.loading} />}
-      {/*  @ts-ignore */}
-      <Line ref={chartRef} options={CHART_OPTIONS} data={data} />
+      {chartType === "POWER_PLAY_TOI" && ppUnavailableReason ? (
+        <p className={styles.unavailable} role="status">
+          {ppUnavailableReason}
+        </p>
+      ) : (
+        // @ts-ignore
+        <Line ref={chartRef} options={CHART_OPTIONS} data={data} />
+      )}
     </Chart>
   );
 }

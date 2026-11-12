@@ -253,4 +253,78 @@ describe("PowerPlayCombos season and source ownership", () => {
     ).toBeTruthy();
     expect(fromMock).toHaveBeenCalledTimes(1);
   });
+
+  describe("FORGE PP exposure (W2-P0-13, decision 71)", () => {
+    const sourceGame = {
+      data: {
+        id: 2024020010,
+        startTime: "2024-10-20T00:00:00Z",
+        seasonId: 20242025,
+        homeTeamId: 59,
+        awayTeamId: 10,
+      },
+      error: null,
+    };
+    const comboRow = {
+      playerId: 1,
+      unit: 1,
+      PPTOI: 120,
+      players: { fullName: "Alpha One", firstName: "Alpha", lastName: "One", position: "C", sweater_number: 9 },
+    };
+    const nhlRows = [
+      { playerId: 1, gameId: 2024020009, powerPlayGoals: 1, powerPlayPoints: 2 },
+      { playerId: 1, gameId: 2024020010, powerPlayGoals: 0, powerPlayPoints: 0 },
+    ];
+
+    function renderWithForge(forge: QueryResult) {
+      useCurrentSeasonQueryMock.mockReturnValue(failedSeasonQuery());
+      installTableResults({
+        games: [sourceGame, { data: [], error: null }],
+        rosters: [{ data: [{ playerId: 1, sweaterNumber: 9 }], error: null }],
+        powerPlayCombinations: [{ data: [comboRow], error: null }],
+        skatersGameStats: [{ data: nhlRows, error: null }],
+        forge_player_game_strength: [forge],
+      });
+      render(
+        <PowerPlayCombos
+          teamId={59}
+          gameId={2024020010}
+          seasonId={20242025}
+          statsGameIds={[2024020009, 2024020010]}
+        />,
+      );
+    }
+
+    const cell = (label: string) =>
+      screen.getByText(label, { selector: "dt" }).nextElementSibling?.textContent;
+
+    it("shows unknown, not zero, PP SOG and TOI when the FORGE query fails", async () => {
+      renderWithForge({ data: null, error: new Error("forge down") });
+      await waitFor(() => expect(cell("PPP")).toBe("2"));
+      expect(cell("PP SOG")).toBe("—");
+      expect(cell("Model TOI/GP")).toBe("—");
+    });
+
+    it("leaves TOI unknown when FORGE covers only some of the games", async () => {
+      renderWithForge({
+        data: [{ player_id: 1, game_id: 2024020009, shots_pp: 2, toi_pp_seconds: 150 }],
+        error: null,
+      });
+      await waitFor(() => expect(cell("PPP")).toBe("2"));
+      expect(cell("Model TOI/GP")).toBe("—");
+      expect(cell("PP SOG")).toBe("—");
+    });
+
+    it("labels complete FORGE PP time as a model per-game value", async () => {
+      renderWithForge({
+        data: [
+          { player_id: 1, game_id: 2024020009, shots_pp: 2, toi_pp_seconds: 150 },
+          { player_id: 1, game_id: 2024020010, shots_pp: 1, toi_pp_seconds: 90 },
+        ],
+        error: null,
+      });
+      await waitFor(() => expect(cell("Model TOI/GP")).toBe("2:00"));
+      expect(cell("PP SOG")).toBe("3");
+    });
+  });
 });

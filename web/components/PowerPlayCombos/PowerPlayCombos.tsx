@@ -40,8 +40,18 @@ type UnitPlayer = {
 
 type UnitsMap = Record<number, UnitPlayer[]>;
 
-/** Power-play totals over a player's last PP_STATS_GAMES games with this team. */
-type PpStats = { games: number; goals: number; assists: number; shots: number; toiSeconds: number };
+/**
+ * Power-play totals over a player's last PP_STATS_GAMES games with this team.
+ * `shots` and `toiSeconds` come from FORGE (a model input, decision 71) and are
+ * null (unknown) when the FORGE query fails or does not cover every game.
+ */
+type PpStats = {
+  games: number;
+  goals: number;
+  assists: number;
+  shots: number | null;
+  toiSeconds: number | null;
+};
 
 type StrengthRow = {
   player_id: number;
@@ -436,7 +446,10 @@ export default function PowerPlayCombos({
   // Card stats over the even-strength cards' games (statsGameIds), so PPP agrees with
   // those cards: PPG / PPP from the NHL game stats (skatersGameStats, the same
   // source); PP SOG and PP TOI from forge_player_game_strength (the NHL rows carry no
-  // PP shots and their powerPlayToi is "00:00"). Without statsGameIds, the unit's last 10 team games up to the source game.
+  // PP shots and their powerPlayToi is null or a legacy "00:00"). FORGE's PP TOI is a
+  // model input (decision 71) and is labelled so; a failed or partial FORGE read
+  // leaves PP SOG and TOI unknown, never 0. Without statsGameIds, the unit's last 10
+  // team games up to the source game.
   const statsGameKey = statsGameIds?.join(",") ?? "";
   useEffect(() => {
     const unitPlayerIds = UNIT_ORDER.flatMap((unit) =>
@@ -483,6 +496,7 @@ export default function PowerPlayCombos({
         ]);
         if (nhl.error) throw nhl.error;
         const next: Record<number, PpStats> = {};
+        const nhlGamesByPlayer = new Map<number, Set<number>>();
         const entry = (playerId: number) =>
           (next[playerId] ??= { games: 0, goals: 0, assists: 0, shots: 0, toiSeconds: 0 });
         ((nhl.data ?? []) as SkaterPpRow[]).forEach((row) => {
@@ -491,13 +505,36 @@ export default function PowerPlayCombos({
           stats.games += 1;
           stats.goals += goals;
           stats.assists += (row.powerPlayPoints ?? 0) - goals;
+          const games = nhlGamesByPlayer.get(row.playerId) ?? new Set<number>();
+          games.add(row.gameId);
+          nhlGamesByPlayer.set(row.playerId, games);
         });
-        if (!forge.error) {
-          ((forge.data ?? []) as StrengthRow[]).forEach((row) => {
-            const stats = next[row.player_id];
-            if (!stats) return;
-            stats.shots += row.shots_pp ?? 0;
-            stats.toiSeconds += row.toi_pp_seconds ?? 0;
+        if (forge.error) {
+          console.error("Failed to load FORGE power play exposure", forge.error);
+          Object.values(next).forEach((stats) => {
+            stats.shots = null;
+            stats.toiSeconds = null;
+          });
+        } else {
+          const forgeRows = (forge.data ?? []) as StrengthRow[];
+          Object.entries(next).forEach(([key, stats]) => {
+            const playerId = Number(key);
+            const rows = forgeRows.filter(
+              (row) =>
+                row.player_id === playerId &&
+                nhlGamesByPlayer.get(playerId)?.has(row.game_id)
+            );
+            // A count and its exposure come from the same games (rule 13).
+            const shotsCovered = rows.filter((row) => row.shots_pp != null);
+            const toiCovered = rows.filter((row) => row.toi_pp_seconds != null);
+            stats.shots =
+              shotsCovered.length === stats.games
+                ? shotsCovered.reduce((sum, row) => sum + (row.shots_pp ?? 0), 0)
+                : null;
+            stats.toiSeconds =
+              toiCovered.length === stats.games
+                ? toiCovered.reduce((sum, row) => sum + (row.toi_pp_seconds ?? 0), 0)
+                : null;
           });
         }
         if (!cancelled) setPpStatsByPlayerId(next);
@@ -545,7 +582,8 @@ export default function PowerPlayCombos({
           Latest groupings from{" "}
           {describeGame(sourceGame?.startTime, sourceGame?.opponent)}. Card
           stats are power-play totals from the last {PP_STATS_GAMES} games; SH%
-          is the season share of the team&apos;s power-play shots.
+          is the season share of the team&apos;s power-play shots. Model TOI is
+          FORGE&apos;s modelled power-play time, not an observed PP clock.
         </p>
       </header>
 
@@ -720,15 +758,20 @@ function PowerPlayCard({
   // Same per-team ink rule as the even-strength cards (WCAG 4.5:1 on the team fill).
   const numberInk = readableInk(color.primary, [color.jersey, color.secondary]);
   const accentInk = readableInk(color.primary, [color.secondary, color.jersey]);
-  const count = (value: number | undefined) => (stats ? String(value ?? 0) : "—");
+  const count = (value: number | null | undefined) =>
+    stats && value != null ? String(value) : "—";
   const cells = [
     { label: "PPG", value: count(stats?.goals) },
     { label: "PPA", value: count(stats?.assists) },
     { label: "PPP", value: count(stats && stats.goals + stats.assists) },
     { label: "PP SOG", value: count(stats?.shots) },
     {
-      label: "TOI/GP",
-      value: stats?.games ? formatToi(stats.toiSeconds / stats.games) : "—"
+      label: "Model TOI/GP",
+      title: "FORGE's modelled power-play time per game (a model input, not an observed PP clock)",
+      value:
+        stats?.games && stats.toiSeconds != null
+          ? formatToi(stats.toiSeconds / stats.games)
+          : "—"
     },
     { label: "SH%", value: shotShare ?? "—" }
   ];
@@ -759,7 +802,12 @@ function PowerPlayCard({
       <dl className={styles.ppStats}>
         {cells.map((stat) => (
           <div key={stat.label} className={styles.ppStat}>
-            <dt className={styles.ppLabel}>{stat.label}</dt>
+            <dt
+              className={styles.ppLabel}
+              title={"title" in stat ? stat.title : undefined}
+            >
+              {stat.label}
+            </dt>
             <dd className={styles.ppValue} style={{ color: accentInk }}>
               {stat.value}
             </dd>

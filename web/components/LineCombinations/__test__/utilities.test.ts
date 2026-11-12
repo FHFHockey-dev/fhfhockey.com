@@ -165,3 +165,106 @@ describe("convertToLines", () => {
     expect(convertToLines(input)).toEqual(expectedResult);
   });
 });
+
+describe("getLineCombinations goalie card (W2-P0-12, decision 72)", () => {
+  type Rows = Record<string, any[]>;
+  function routeTables(rows: Rows, calls: { table: string; method: string; args: unknown[] }[]) {
+    fromMock.mockImplementation((table: string) => {
+      const own: { method: string; args: unknown[] }[] = [];
+      const query: Record<string, any> = {};
+      for (const method of ["select", "eq", "in", "order", "limit", "returns", "throwOnError", "not", "gt"]) {
+        query[method] = vi.fn((...args: unknown[]) => {
+          calls.push({ table, method, args });
+          own.push({ method, args });
+          return query;
+        });
+      }
+      // Honour top-level eq/in filters so each goalie query sees only its rows.
+      query.then = (resolve: (value: unknown) => unknown) => {
+        const filters = own.filter(
+          (call) => (call.method === "eq" || call.method === "in") && !String(call.args[0]).includes(".")
+        );
+        const data = (rows[table] ?? []).filter((row) =>
+          filters.every(({ method, args: [key, value] }) =>
+            !(String(key) in row)
+              ? true
+              : method === "eq"
+                ? row[String(key)] === value
+                : (value as unknown[]).includes(row[String(key)])
+          )
+        );
+        return resolve({ data, error: null });
+      };
+      return query;
+    });
+  }
+
+  const game = (id: number, startTime: string) => ({ id, seasonId: 20252026, startTime });
+  const lineRow = (gameId: number, startTime: string) => ({
+    gameId,
+    teamId: 22,
+    forwards: [],
+    defensemen: [],
+    goalies: ["1", "2"],
+    game: { startTime, seasonId: 20252026 }
+  });
+
+  const baseRows = (): Rows => ({
+    lineCombinations: [lineRow(102, "2026-11-10T00:00:00Z"), lineRow(101, "2026-11-08T00:00:00Z")],
+    rosters: [],
+    skatersGameStats: [],
+    goaliesGameStats: [
+      // Goalie 1: a 30-save shutout, then a 10-minute relief stint (1 save on 3 shots).
+      { playerId: 1, playerName: "Alpha One", saveShotsAgainst: "30/30", savePctg: 1, toi: "60:00", goalsAgainst: 0, game: game(101, "2026-11-08T00:00:00Z") },
+      { playerId: 1, playerName: "Alpha One", saveShotsAgainst: "1/3", savePctg: 1 / 3, toi: "10:00", goalsAgainst: 2, game: game(90, "2026-10-20T00:00:00Z") },
+      // Goalie 2: one appearance with no credited decision on record.
+      { playerId: 2, playerName: "Beta Two", saveShotsAgainst: "20/22", savePctg: 20 / 22, toi: "60:00", goalsAgainst: 2, game: game(102, "2026-11-10T00:00:00Z") }
+    ],
+    wgo_goalie_stats: [
+      { goalie_id: 1, game_id: 101, wins: 1, losses: 0, ot_losses: 0 },
+      { goalie_id: 1, game_id: 90, wins: 0, losses: 0, ot_losses: 0 }
+    ],
+    gameOutcomes: []
+  });
+
+  test("pools SV% and GAA over the goalie's own appearances and shows his credited record", async () => {
+    const calls: { table: string; method: string; args: unknown[] }[] = [];
+    routeTables(baseRows(), calls);
+    const result = await getLineCombinations(22, 20252026);
+    const alpha = result.goalies.line1[0];
+
+    // Pooled: 31 saves / 33 shots = .939; 2 GA x 3600 / 4200 s = 1.71 (not .667 / 6.00).
+    expect(alpha.season.SVPercentage).toBeCloseTo(31 / 33, 6);
+    expect(alpha.season.GAA).toBeCloseTo((2 * 3600) / 4200, 6);
+    expect(alpha.last10Games.SVPercentage).toBeCloseTo(31 / 33, 6);
+    expect(alpha.last10Games.GAA).toBeCloseTo((2 * 3600) / 4200, 6);
+    expect(alpha.season.GP).toBe(2);
+    expect(alpha.last10Games.SV).toBe(31);
+    // Credited decisions: the relief stint is a no-decision, not a team win.
+    expect(alpha.season.Record).toBe("1-0-0");
+
+    // The season window is the goalie's season, not the team's line-data games.
+    const goalieGameFilters = calls.filter(
+      (call) => call.table === "goaliesGameStats" && call.method === "in" && call.args[0] === "gameId"
+    );
+    expect(goalieGameFilters).toEqual([]);
+  });
+
+  test("an appearance without a credited decision leaves the record unknown", async () => {
+    routeTables(baseRows(), []);
+    const result = await getLineCombinations(22, 20252026);
+    const beta = result.goalies.line2[0];
+    expect(beta.season.Record).toBeNull();
+    expect(beta.last10Games.Record).toBeNull();
+  });
+
+  test("unknown goalie TOI leaves GAA unknown instead of dropping the game", async () => {
+    const rows = baseRows();
+    rows.goaliesGameStats[1] = { ...rows.goaliesGameStats[1], toi: null };
+    routeTables(rows, []);
+    const result = await getLineCombinations(22, 20252026);
+    const alpha = result.goalies.line1[0];
+    expect(alpha.season.GAA).toBeNull();
+    expect(alpha.season.SVPercentage).toBeCloseTo(31 / 33, 6);
+  });
+});
