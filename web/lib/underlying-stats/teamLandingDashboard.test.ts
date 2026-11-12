@@ -130,8 +130,9 @@ describe("buildUnderlyingStatsLandingDashboard", () => {
     expect(dashboard.fallers.some((item) => item.teamAbbr === "PIT")).toBe(true);
     const summaryFor = (teamAbbr: string) =>
       dashboard.quadrant.points.find((point) => point.teamAbbr === teamAbbr)?.summary;
-    expect(summaryFor("PIT")).toContain("Could Rebound");
-    expect(summaryFor("EDM")).toContain("Needs A Heat Check");
+    // Descriptive, not a forecast (W2-3 D16).
+    expect(summaryFor("PIT")).toContain("Results Behind Shot Process");
+    expect(summaryFor("EDM")).toContain("Results Ahead Of Shot Process");
     expect(Object.keys(dashboard).sort()).toEqual(["fallers", "quadrant", "risers"]);
   });
 });

@@ -2125,11 +2125,17 @@ Math-audit fix lane L14 (xG model, aggregates, approval gate, shot map, Metrics 
 ## CLAUDE-FIX-L17-CLAIM-20261111 (2026-11-11)
 Math-audit fix lane L17 (player stats page and stats leaderboards), local edits only (no push/deploy/prod): `web/pages/stats/**` except `web/pages/stats/game/**`; `web/components/PlayerStats/**` except `PlayerRadarChart.tsx`; `web/components/StatsPage/**`; `web/lib/NHL/statsPageFetch.ts` and tests beside them. Please flag any overlap.
 
-## CLAUDE-FIX-L5-CLAIM-20261111 (2026-11-11)
-Math-audit fix lane L5 (rankings, splits, impact ratings, team unit TOI), local edits only (no push/deploy/prod/snapshot regeneration): `web/lib/rankings/**`, `web/components/Rankings/**`, `web/pages/rankings.tsx`, `web/pages/api/v1/rankings.ts`, `web/lib/splits/**`, `web/lib/ratings/**` and tests beside them. Please flag any overlap.
+## CLAUDE-FIX-L2-CLAIM-20261111 (2026-11-11)
+Math-audit fix lane L2 (underlying-stats landing and team summaries), local edits only (no push/deploy/prod/rebuild): `web/lib/underlying-stats/**`, `web/pages/api/v1/underlying-stats/**`, `web/pages/underlying-stats/**`, `web/components/underlying-stats/**` and their tests.
+
+## CLAUDE-FIX-L3-CLAIM-20261111 (2026-11-11)
+Math-audit fix lane L3 (variance pages, roster matrix, TOI parser), local edits only (no push/deploy/prod): `web/components/GoaliePage/**`, `web/pages/goalies.js`, `web/pages/variance/goalies.js`, `web/lib/supabase/GoaliePage/**`, `web/components/SkaterPage/**`, `web/pages/variance/skaters.tsx`, `web/components/RosterMatrix/**`, `web/lib/NHL/TOI.ts` and tests beside them. Please flag any overlap.
 
 ## CLAUDE-FIX-L2-LANDING-CLAIM-20261111 (2026-11-11)
 File-split half of L2 (same claim scope), local edits only (no push/deploy/prod/rebuild): `web/lib/underlying-stats/{playerStatsLandingServer,goalieStats*,playerStats*,playerUnderlyingCoverage,playerSummaryRollback*}.ts` and tests; `web/pages/api/v1/underlying-stats/{players,goalies}{.ts,/**}`; `web/pages/underlying-stats/{playerStats,goalieStats}/**`; `web/components/underlying-stats/Player*`, `playerStatsColumns*`.
 
-## CLAUDE-FIX-L3-CLAIM-20261111 (2026-11-11)
-Math-audit fix lane L3 (variance pages, roster matrix, TOI parser), local edits only (no push/deploy/prod): `web/components/GoaliePage/**`, `web/pages/goalies.js`, `web/pages/variance/goalies.js`, `web/lib/supabase/GoaliePage/**`, `web/components/SkaterPage/**`, `web/pages/variance/skaters.tsx`, `web/components/RosterMatrix/**`, `web/lib/NHL/TOI.ts` and tests beside them. Please flag any overlap.
+## CLAUDE-FIX-L5-CLAIM-20261111 (2026-11-11)
+Math-audit fix lane L5 (rankings, splits, impact ratings, team unit TOI), local edits only (no push/deploy/prod/snapshot regeneration): `web/lib/rankings/**`, `web/components/Rankings/**`, `web/pages/rankings.tsx`, `web/pages/api/v1/rankings.ts`, `web/lib/splits/**`, `web/lib/ratings/**` and tests beside them. Please flag any overlap.
+
+## CLAUDE-FIX-L8-CLAIM-20261111 (2026-11-11)
+Math-audit fix lane L8 (lines, PP combinations, TOI API, shift charts), local edits only (no push/deploy/prod): `web/components/LineCombinations/**`, `web/pages/lines/**`, `web/components/LinemateMatrix/**`, `web/utils/getPowerPlayBlocks.ts`, `web/utils/extractPPDetails.ts`, `web/pages/api/toi.ts`, `web/components/TimeOnIceChart/**`, `web/components/PowerPlayCombos/**`, `web/pages/api/v1/db/update-power-play-combinations/**`, `web/lib/supabase/Upserts/powerPlayCombinationMetrics.ts`, `web/pages/api/v1/db/powerPlayTimeFrame.ts`, `web/components/ShiftChart/**`, `web/components/DateRangeMatrix/**`, `web/lib/socialShare/trends.ts` and tests beside them. Please flag any overlap.

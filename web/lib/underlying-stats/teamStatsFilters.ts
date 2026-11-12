@@ -193,9 +193,6 @@ const TEAM_STATS_COUNT_SORT_KEYS = [
   "gf",
   "ga",
   "gfPct",
-  "xgf",
-  "xga",
-  "xgfPct",
   "scf",
   "sca",
   "scfPct",
@@ -268,9 +265,6 @@ const TEAM_STATS_RATE_SORT_KEYS = [
   "gfPer60",
   "gaPer60",
   "gfPct",
-  "xgfPer60",
-  "xgaPer60",
-  "xgfPct",
   "scfPer60",
   "scaPer60",
   "scfPct",
@@ -329,8 +323,11 @@ export const TEAM_STATS_SORT_KEYS_BY_FAMILY: Record<
 };
 
 export const TEAM_STATS_DEFAULT_SORTS: Record<TeamStatsTableFamily, TeamStatsSortState> = {
-  counts: { sortKey: "points", direction: "desc" },
-  rates: { sortKey: "xgfPct", direction: "desc" },
+  // Record columns are hidden under the default 5v5 split (decision 92), so
+  // the counts default is a split metric too.
+  counts: { sortKey: "cfPct", direction: "desc" },
+  // Off xGF% while the bucket-heuristic xG is hidden (decision 12).
+  rates: { sortKey: "cfPct", direction: "desc" },
 };
 
 function getQueryParam(

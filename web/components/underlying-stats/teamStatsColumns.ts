@@ -96,9 +96,6 @@ const TEAM_COUNTS_COLUMNS: readonly PlayerStatsColumnDefinition[] = [
   metric("gf", "GF", "integer"),
   metric("ga", "GA", "integer"),
   metric("gfPct", "GF%", "percentage"),
-  metric("xgf", "xGF", "decimal"),
-  metric("xga", "xGA", "decimal"),
-  metric("xgfPct", "xGF%", "percentage"),
   metric("scf", "SCF", "integer"),
   metric("sca", "SCA", "integer"),
   metric("scfPct", "SCF%", "percentage"),
@@ -170,9 +167,6 @@ const TEAM_RATES_COLUMNS: readonly PlayerStatsColumnDefinition[] = [
   metric("gfPer60", "GF/60", "per60"),
   metric("gaPer60", "GA/60", "per60"),
   metric("gfPct", "GF%", "percentage"),
-  metric("xgfPer60", "xGF/60", "per60"),
-  metric("xgaPer60", "xGA/60", "per60"),
-  metric("xgfPct", "xGF%", "percentage"),
   metric("scfPer60", "SCF/60", "per60"),
   metric("scaPer60", "SCA/60", "per60"),
   metric("scfPct", "SCF%", "percentage"),
@@ -230,10 +224,28 @@ export const TEAM_STATS_COLUMN_DEFINITIONS: Record<
   rates: TEAM_RATES_COLUMNS,
 };
 
+const TEAM_STATS_RECORD_COLUMN_KEYS = new Set([
+  "wins",
+  "losses",
+  "otl",
+  "rowWins",
+  "points",
+  "pointPct",
+]);
+
+/**
+ * Record columns are game outcomes, so they are hidden outside all strengths
+ * and all score states (decision 92).
+ */
 export function getTeamStatsColumns(
-  family: TeamStatsTableFamily
+  family: TeamStatsTableFamily,
+  options: { showRecordColumns?: boolean } = {}
 ): readonly PlayerStatsColumnDefinition[] {
-  return TEAM_STATS_COLUMN_DEFINITIONS[family];
+  const columns = TEAM_STATS_COLUMN_DEFINITIONS[family];
+  if (options.showRecordColumns === false) {
+    return columns.filter((column) => !TEAM_STATS_RECORD_COLUMN_KEYS.has(column.key));
+  }
+  return columns;
 }
 
 export function getTeamStatsIdentityColumns(

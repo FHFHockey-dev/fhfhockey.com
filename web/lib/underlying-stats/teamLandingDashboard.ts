@@ -174,10 +174,11 @@ const buildQuadrantSummary = ({
     pieces.push("cooling off");
   }
 
+  // Descriptive only (W2-3 D16): the cuts are not validated forecasts.
   if (trustType === "heatCheck") {
-    pieces.push("needs a heat check");
+    pieces.push("results ahead of shot process");
   } else if (trustType === "buyLow") {
-    pieces.push("could rebound");
+    pieces.push("results behind shot process");
   }
 
   return pieces.length ? titleize(pieces.join(" • ")) : "Balanced profile";

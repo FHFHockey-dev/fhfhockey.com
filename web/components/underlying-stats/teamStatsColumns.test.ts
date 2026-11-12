@@ -36,9 +36,6 @@ const EXPECTED_FAMILY_COLUMN_KEYS: Record<TeamStatsTableFamily, string[]> = {
     "gf",
     "ga",
     "gfPct",
-    "xgf",
-    "xga",
-    "xgfPct",
     "scf",
     "sca",
     "scfPct",
@@ -109,9 +106,6 @@ const EXPECTED_FAMILY_COLUMN_KEYS: Record<TeamStatsTableFamily, string[]> = {
     "gfPer60",
     "gaPer60",
     "gfPct",
-    "xgfPer60",
-    "xgaPer60",
-    "xgfPct",
     "scfPer60",
     "scaPer60",
     "scfPct",
@@ -185,9 +179,6 @@ const EXPECTED_FAMILY_COLUMN_LABELS: Record<TeamStatsTableFamily, string[]> = {
     "GF",
     "GA",
     "GF%",
-    "xGF",
-    "xGA",
-    "xGF%",
     "SCF",
     "SCA",
     "SCF%",
@@ -258,9 +249,6 @@ const EXPECTED_FAMILY_COLUMN_LABELS: Record<TeamStatsTableFamily, string[]> = {
     "GF/60",
     "GA/60",
     "GF%",
-    "xGF/60",
-    "xGA/60",
-    "xGF%",
     "SCF/60",
     "SCA/60",
     "SCF%",
@@ -356,11 +344,12 @@ describe("teamStatsColumns", () => {
 
   it("keeps the default sorts aligned with the locked v1 assumptions", () => {
     expect(getTeamStatsDefaultSortForFamily("counts")).toEqual({
-      sortKey: "points",
+      sortKey: "cfPct",
       direction: "desc",
     });
+    // Decision 12: the default sort moves off xGF% while bucket xG is hidden.
     expect(getTeamStatsDefaultSortForFamily("rates")).toEqual({
-      sortKey: "xgfPct",
+      sortKey: "cfPct",
       direction: "desc",
     });
   });
@@ -377,11 +366,9 @@ describe("teamStatsColumns", () => {
       format: "percentage",
       sortKey: "pointPct",
     });
-    expect(getTeamStatsColumnByKey("counts", "xgf")).toMatchObject({
-      label: "xGF",
-      format: "decimal",
-      sortKey: "xgf",
-    });
+    // Decisions 6, 12: bucket-heuristic xG columns are hidden.
+    expect(getTeamStatsColumnByKey("counts", "xgf")).toBeUndefined();
+    expect(getTeamStatsColumnByKey("rates", "xgfPct")).toBeUndefined();
     expect(getTeamStatsColumnByKey("rates", "toiPerGameSeconds")).toMatchObject({
       label: "TOI/GP",
       format: "toiPerGame",

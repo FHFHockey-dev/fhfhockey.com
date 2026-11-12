@@ -1179,9 +1179,9 @@ export const TeamPowerRankingsPage: NextPage<PageProps> = ({
                         label: (
                           <abbr
                             className={styles.metricHeader}
-                            title="SoS Future = the same BCS-style schedule formula, but for upcoming opponents."
+                            title="Record SoS Future = upcoming opponents' point % (BCS-style: two-thirds opponents, one-third opponents' opponents). Record only; not adjusted for team ratings."
                           >
-                            SoS Future
+                            Record SoS Future
                           </abbr>
                         )
                       })}
@@ -1241,9 +1241,9 @@ export const TeamPowerRankingsPage: NextPage<PageProps> = ({
                         label: (
                           <abbr
                             className={styles.metricHeader}
-                            title="SoS Past = BCS-style schedule strength from games already played."
+                            title="Record SoS Past = point % of opponents already played (BCS-style: two-thirds opponents, one-third opponents' opponents). Record only; not adjusted for team ratings."
                           >
-                            SoS Past
+                            Record SoS Past
                           </abbr>
                         )
                       })}
@@ -1252,9 +1252,9 @@ export const TeamPowerRankingsPage: NextPage<PageProps> = ({
                         label: (
                           <abbr
                             className={styles.metricHeader}
-                            title="SoS Future = the same BCS-style schedule formula, but for upcoming opponents."
+                            title="Record SoS Future = upcoming opponents' point % (BCS-style: two-thirds opponents, one-third opponents' opponents). Record only; not adjusted for team ratings."
                           >
-                            SoS Future
+                            Record SoS Future
                           </abbr>
                         )
                       })}
@@ -1417,7 +1417,7 @@ export const TeamPowerRankingsPage: NextPage<PageProps> = ({
                           <td className={styles.sosCell}>
                             <span
                               className={`${styles.sosPill} ${getSosClass(team.sosFuture)}`}
-                              title={`SoS Future: ${formatSos(team.sosFuture)} (${formatRank(
+                              title={`Record SoS Future: ${formatSos(team.sosFuture)} (${formatRank(
                                 team.sosFutureRank
                               )}). Higher means a tougher remaining slate.`}
                             >
@@ -1465,7 +1465,7 @@ export const TeamPowerRankingsPage: NextPage<PageProps> = ({
                           <td className={styles.sosCell}>
                             <span
                               className={`${styles.sosPill} ${getSosClass(team.sosPast)}`}
-                              title={`SoS Past: ${formatSos(team.sosPast)} (${formatRank(
+                              title={`Record SoS Past: ${formatSos(team.sosPast)} (${formatRank(
                                 team.sosPastRank
                               )}). Higher means tougher opponents already faced.`}
                             >
@@ -1475,7 +1475,7 @@ export const TeamPowerRankingsPage: NextPage<PageProps> = ({
                           <td className={styles.sosCell}>
                             <span
                               className={`${styles.sosPill} ${getSosClass(team.sosFuture)}`}
-                              title={`SoS Future: ${formatSos(team.sosFuture)} (${formatRank(
+                              title={`Record SoS Future: ${formatSos(team.sosFuture)} (${formatRank(
                                 team.sosFutureRank
                               )}). Higher means a tougher remaining slate.`}
                             >

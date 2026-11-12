@@ -99,7 +99,7 @@ const buildRating = (
   luckPdoZ: 0.3,
   narrative: [
     "5v5 offense is rising as expected goals and shot volume improve.",
-    "Upcoming schedule looks softer than league average."
+    "Upcoming opponents have a weaker combined record than league average."
   ],
   scheduleTexture: {
     backToBacksNext14: 1,

@@ -385,7 +385,13 @@ export default function TeamUnderlyingStatsLandingRoute() {
   const activeFamily = landingData?.family ?? filterState.primary.displayMode;
   const rows = landingData?.rows ?? [];
   const coverage = landingData?.coverage ?? null;
-  const tableColumns = useMemo(() => getTeamStatsColumns(activeFamily), [activeFamily]);
+  const showRecordColumns =
+    filterState.primary.strength === "allStrengths" &&
+    filterState.primary.scoreState === "allScores";
+  const tableColumns = useMemo(
+    () => getTeamStatsColumns(activeFamily, { showRecordColumns }),
+    [activeFamily, showRecordColumns]
+  );
   const seasonOptions = useMemo(
     () =>
       buildSeasonOptions(defaultLandingState.primary.seasonRange.throughSeasonId),
@@ -643,6 +649,16 @@ export default function TeamUnderlyingStatsLandingRoute() {
             <div className={styles.explorerSummary}>
               Showing {rows.length} of {landingData?.pagination.totalRows ?? rows.length} teams.
             </div>
+            {showRecordColumns ? null : (
+              <p className={styles.explorerSummary}>
+                Records (W, L, OTL, points) show only for all strengths and all score states.
+              </p>
+            )}
+            <p className={styles.explorerSummary}>
+              HD, MD, LD and SC columns use FHFH house shot-location definitions (high danger
+              within 20 ft and 35°, medium within 40 ft and 50°), not Natural Stat Trick&apos;s.
+              Expected-goals columns are hidden until a validated model is approved.
+            </p>
             <PlayerStatsTable
               columns={tableColumns}
               rows={rows}
