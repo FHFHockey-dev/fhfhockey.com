@@ -2569,6 +2569,10 @@ export async function runPerGameSkaterStage(args: {
       canonicalTargetSeconds: targetSkaterSecondsCanonical,
       projectedSkaterCount,
       ppShare,
+      preAllocationTotalSeconds: Array.from(projected.values()).reduce(
+        (acc, p) => acc + p.toiEs + p.toiPp + (p.pkWeightSeconds ?? 0),
+        0,
+      ),
     });
     if (guardedTeamToiTarget.wasCapped) {
       metrics.data_quality.skater_pool_emergency_toi_target_caps_applied += 1;
@@ -3095,6 +3099,9 @@ export async function runPerGameSkaterStage(args: {
               pk_prior_basis: pkModeled ? "player_es_rates_with_es_prior_strengths_unfitted" : null,
               team_budget: {
                 total_seconds: teamBudget.totalSeconds,
+                // Exposure of absent skaters, unmodeled (D7); 0 for a complete pool.
+                unmodeled_residual_seconds: guardedTeamToiTarget.unmodeledResidualSeconds ?? 0,
+                projected_skater_count: projectedSkaterCount,
                 es_target_seconds: toiEsTarget,
                 pp_target_seconds: toiPpTarget,
                 pk_target_seconds: pkModeled ? teamBudget.toiPkTarget : null,

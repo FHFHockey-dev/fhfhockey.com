@@ -425,10 +425,17 @@ export function computeSkaterTeamToiTargetWithPoolGuard(args: {
   minValidSkaterCount?: number;
   maxSingleSkaterToiSeconds?: number;
   maxAvgToiPerProjectedSkaterSeconds?: number;
+  /**
+   * The projected skaters' own pre-allocation seconds (BC W1-7 D7). Below the minimum pool size the
+   * target is this exposure (never more than the canonical budget), so present players are not
+   * inflated to cover absent ones; the rest is reported as unmodeled residual exposure.
+   */
+  preAllocationTotalSeconds?: number;
 }): {
   targetSeconds: number;
   wasCapped: boolean;
   capReason: "undersized_projected_pool" | null;
+  unmodeledResidualSeconds?: number;
 } {
   const canonicalTarget = Math.max(
     0,
@@ -446,6 +453,19 @@ export function computeSkaterTeamToiTargetWithPoolGuard(args: {
       targetSeconds: canonicalTarget,
       wasCapped: false,
       capReason: null
+    };
+  }
+
+  // Completeness gate: an undersized pool keeps its own exposure, continuous in the pool size
+  // (no 15 -> 14 cliff), with the missing exposure explicit rather than reallocated.
+  const ownSeconds = Number(args.preAllocationTotalSeconds);
+  if (Number.isFinite(ownSeconds) && ownSeconds >= 0) {
+    const targetSeconds = Math.min(canonicalTarget, Math.round(ownSeconds));
+    return {
+      targetSeconds,
+      wasCapped: targetSeconds < canonicalTarget,
+      capReason: targetSeconds < canonicalTarget ? "undersized_projected_pool" : null,
+      unmodeledResidualSeconds: canonicalTarget - targetSeconds,
     };
   }
 

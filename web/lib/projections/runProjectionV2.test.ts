@@ -1432,6 +1432,16 @@ describe("skater pool recovery safeguards", () => {
     expect(constrained).toEqual([20, 21, 22]);
   });
 
+  it("keeps an undersized pool's own exposure without a 15 -> 14 cliff and reports the rest (D7)", () => {
+    const at = (count: number) => computeSkaterTeamToiTargetWithPoolGuard({
+      canonicalTargetSeconds: 18000, projectedSkaterCount: count, ppShare: 0.085, preAllocationTotalSeconds: count * 1150,
+    });
+    expect(at(15)).toMatchObject({ targetSeconds: 18000, wasCapped: false });
+    // Was 7,809 s at 14 skaters; now their own 16,100 s, with 1,900 s unmodeled.
+    expect(at(14)).toMatchObject({ targetSeconds: 16100, wasCapped: true, unmodeledResidualSeconds: 1900 });
+    expect(at(0)).toMatchObject({ targetSeconds: 0, unmodeledResidualSeconds: 18000 });
+  });
+
   it("caps team skater TOI target when projected pool is undersized", () => {
     const guarded = computeSkaterTeamToiTargetWithPoolGuard({
       canonicalTargetSeconds: 18000,
