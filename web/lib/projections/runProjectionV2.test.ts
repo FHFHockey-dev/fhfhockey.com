@@ -2102,7 +2102,7 @@ describe("goalie rest-split adjustments", () => {
     expect(toGoalieRestSplitBucket(2)).toBe("2");
     expect(toGoalieRestSplitBucket(3)).toBe("3");
     expect(toGoalieRestSplitBucket(4)).toBe("4_plus");
-    expect(toGoalieRestSplitBucket(null)).toBe("4_plus");
+    expect(toGoalieRestSplitBucket(null)).toBeNull();
   });
 
   it("applies sample-weighted positive adjustments and ignores low-sample buckets", () => {
