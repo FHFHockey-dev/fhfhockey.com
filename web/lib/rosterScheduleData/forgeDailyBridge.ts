@@ -88,7 +88,12 @@ type Context = { shotsAgainst: number; goalsAgainst: number; goalsFor: number };
 
 /** One prior per team: the latest date's season-to-date row, i.e. the row whose xGA total matches its games played.
  * The table holds several rows per team and date, so a row is used only when exactly one matches. */
-export function teamStrengthPriors(rows: Row[], lastSeason: Row[] = []): Map<string, TeamStrengthPrior> {
+export function teamStrengthPriors(rows: Row[], lastSeason: Row[] = [], seasonId?: number): Map<string, TeamStrengthPrior> {
+  // W2-1 C2 (migration 129): once rows carry `nst_season`, the season is an exact join key: only rows whose joined NST
+  // season is this season count, and the games-played inference below is not used for them (a null season is unknown).
+  // Before 129 the field is absent and the legacy inference stays, so the reader never errors on either shape.
+  const keyed = seasonId !== undefined && rows.some(row => Object.prototype.hasOwnProperty.call(row, "nst_season"));
+  if (keyed) rows = rows.filter(row => row.nst_season !== null && row.nst_season !== undefined && Number(row.nst_season) === seasonId);
   const latest = new Map<string, string>();
   for (const row of rows) if (typeof row.team_abbrev === "string" && typeof row.date === "string"
     && (latest.get(row.team_abbrev) ?? "") < row.date) latest.set(row.team_abbrev, row.date);
@@ -96,7 +101,7 @@ export function teamStrengthPriors(rows: Row[], lastSeason: Row[] = []): Map<str
   for (const [team, date] of latest) {
     const matches = rows.filter(row => row.team_abbrev === team && row.date === date).filter(row => {
       const xga = Number(row.xga), perGame = Number(row.xga_per_game), games = Number(row.games_played);
-      return Number.isFinite(xga) && perGame > 0 && games > 0 && Math.abs(xga / perGame - games) < 0.5;
+      return Number.isFinite(xga) && perGame > 0 && games > 0 && (keyed || Math.abs(xga / perGame - games) < 0.5);
     });
     if (matches.length !== 1) continue;
     const row = matches[0];
@@ -355,7 +360,7 @@ export function buildForgeDailyBridgeForecasts(inputs: ForgeDailyBridgeInputs, p
     latestShares.set(row.player_id, value); shareOrder.set(row.player_id, key);
   }
   const rates = inputs.seasonTotals ? seasonRates(inputs.seasonTotals, seasonId) : null;
-  const priors = teamStrengthPriors(inputs.teamPriors ?? [], inputs.lastSeasonTeams ?? []);
+  const priors = teamStrengthPriors(inputs.teamPriors ?? [], inputs.lastSeasonTeams ?? [], seasonId);
   const tilts = opponentTilts(inputs.positionAllowed ?? [], seasonId);
   const tiltBetween = (player: PlanningPlayer, from: string | undefined, to: string | undefined): Tilt | undefined => {
     const group = player.eligiblePositions.some(position => position.toUpperCase() === "D") ? "D" : "F";
@@ -824,7 +829,8 @@ export async function loadForgeDailyBridgeForecasts(db: SupabaseClient<any>, pla
     pages(() => db.from("wgo_skater_stats_totals").select("player_id,season,games_played,goals,gw_goals,penalty_minutes,plus_minus,sh_goals,sh_assists,sh_points,total_fow,total_fol", { count: "exact" })
       .in("season", [String(seasonId), previousSeason]).order("season").order("player_id"), readDeadline, 5000, row => [row.season, row.player_id]).catch(() => undefined),
     withinDeadline(readDeadline, () => loadDailyBoardEvidence(upcomingGameIds, now.toISOString(), db as never)).catch(() => undefined),
-    pages(() => db.from("nhl_team_data").select("team_abbrev,date,xga,xga_per_game,xgf_per_game,games_played", { count: "exact" })
+    // "*" keeps the read valid before and after migration 129 (which adds nst_season); the reader checks the field.
+    pages(() => db.from("nhl_team_data").select("*", { count: "exact" })
       .eq("season_id", seasonId).gte("date", from).lte("date", to).order("date", { ascending: false }).order("team_abbrev"),
     readDeadline, 2000, row => [row.team_abbrev, row.date, row.xga, row.xga_per_game]).catch(() => undefined),
     pages(() => db.from("nst_team_stats").select("team_abbreviation,season,situation,gp,xga,xgf", { count: "exact" })

@@ -848,6 +848,18 @@ describe("FORGE daily bridge", () => {
       .toBeCloseTo(STARTER_DECISION_SHARE * win("5", "MTL")!.probability, 4);
   });
 
+  it("joins nhl_team_data on its NST season once migration 129 adds it, and reads the old shape as before (W2-1 C2)", () => {
+    // Current season lags a game (xga / per-game = 49 vs 50 GP); an old season row matches GP exactly.
+    const current = { team_abbrev: "TOR", date: "2026-10-19", games_played: 50, xga: 147, xga_per_game: 3, xgf_per_game: 3.1, nst_season: 20262027 };
+    const old = { team_abbrev: "TOR", date: "2026-10-19", games_played: 50, xga: 125, xga_per_game: 2.5, xgf_per_game: 2.8, nst_season: 20252026 };
+    for (const rows of [[current, old], [old, current]]) expect(teamStrengthPriors(rows, [], 20262027).get("TOR")).toMatchObject({ xgaPerGame: 3, xgfPerGame: 3.1 });
+    // No row for this season (or a null NST season): no prior, never last season's row.
+    expect(teamStrengthPriors([old, { ...current, team_abbrev: "MTL", nst_season: null }], [], 20262027).size).toBe(0);
+    // Pre-129 rows have no nst_season: the games-played inference stays.
+    const legacy = [current, old].map(({ nst_season: _season, ...row }) => row);
+    expect(teamStrengthPriors(legacy, [], 20262027).get("TOR")).toMatchObject({ xgaPerGame: 2.5 });
+  });
+
   it("keeps the ledger's legacy xG win chance, which bridge forecasts no longer use", () => {
     const even = { source: "nhl_team_data" as const, sourceDate: null, xga: 90, xgaPerGame: 3, xgfPerGame: 3 };
     expect(ledgerTeamWin(even, even, true)).toBeGreaterThan(0.52);
