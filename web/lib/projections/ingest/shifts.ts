@@ -1,4 +1,7 @@
 import supabase from "lib/supabase/server";
+// W2-6 §1: ice time uses the same pulled-goalie-adjusted classifier as FORGE's event counts
+// (decision 70: 6v5 without a penalty is ES, 6v4 is PP for the team with the extra attacker).
+import { parseSituationDigits, strengthForTeam, type SituationDigits } from "../derived/situation";
 import type { TablesInsert } from "lib/supabase/database-generated.types";
 
 import {
@@ -85,42 +88,8 @@ export type ShiftRelationshipStrengthSegment = {
   strength: Strength;
 };
 
-type SituationDigits = {
-  awayGoalie: number;
-  awaySkaters: number;
-  homeSkaters: number;
-  homeGoalie: number;
-};
-
 function assertSupabase() {
   if (!supabase) throw new Error("Supabase server client not available");
-}
-
-function parseSituationDigits(
-  situationCode: string | null | undefined,
-): SituationDigits | null {
-  if (!situationCode) return null;
-  const s = situationCode.trim();
-  if (!/^[01][0-6][0-6][01]$/.test(s)) return null;
-  const awayGoalie = Number(s[0]);
-  const awaySkaters = Number(s[1]);
-  const homeSkaters = Number(s[2]);
-  const homeGoalie = Number(s[3]);
-  return { awayGoalie, awaySkaters, homeSkaters, homeGoalie };
-}
-
-function strengthForTeam(
-  digits: SituationDigits,
-  teamId: number,
-  homeTeamId: number,
-  awayTeamId: number,
-): Strength {
-  const isHome = teamId === homeTeamId;
-  const mySkaters = isHome ? digits.homeSkaters : digits.awaySkaters;
-  const oppSkaters = isHome ? digits.awaySkaters : digits.homeSkaters;
-  if (mySkaters > oppSkaters) return "pp";
-  if (mySkaters < oppSkaters) return "pk";
-  return "es";
 }
 
 type Segment = {
