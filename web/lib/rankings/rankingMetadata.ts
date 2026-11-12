@@ -63,6 +63,12 @@ export const CONTEXTUAL_RANKING_GLOSSARY = [
       "A peer context derived from verified even-strength line or special-teams usage.",
   },
   {
+    key: "dense_rank",
+    label: "Rank (dense)",
+    description:
+      "Dense rank among qualified peers after metric directionality is applied: tied values share a rank and the next distinct value takes the next rank (1, 1, 2). Ranks are computed once per cohort and do not change with the display sort.",
+  },
+  {
     key: "better_than_percentile",
     label: "Peer percentile",
     description:
