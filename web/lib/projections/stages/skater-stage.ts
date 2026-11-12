@@ -15,6 +15,8 @@ import { classifyStoredShiftChartStrengthGame } from "lib/projections/shiftChart
 // stay explicit while transitional routes are retired.
 import { reconcileTeamToPlayers } from "lib/projections/reconcile";
 import { buildReserveSkaterLine, buildReserveSkaterRow, forgeReservePassEnabled, selectReserveSkaters } from "lib/projections/reserveProjections";
+import { FORGE_LONG_ABSENCE_LOOKBACK_DAYS, buildTeamSkaterCoverage, recordTeamSkaterCoverage, skaterAvailabilityForGame, type SkaterCoverageUnknownReason } from "lib/projections/skaterCoverage";
+import { timeAwayDisclosure, timeAwayEvidence } from "lib/projections/timeAwayDecay";
 import {
   buildGoalieUncertainty,
   buildPlayerUncertainty,
@@ -1508,6 +1510,13 @@ export async function runPerGameSkaterStage(args: {
     }
     const activeRosterSkaterIds =
       activeRosterSkaterIdsByTeamId.get(teamId) ?? [];
+    // No lineup means no team environment for reserve lines: the whole roster is unknown, counted, never silent.
+    const recordTeamLineupUnavailable = async () => {
+      const meta = await fetchPlayerMetaByIds(activeRosterSkaterIds);
+      recordTeamSkaterCoverage(metrics, buildTeamSkaterCoverage({ gameId: game.id, teamId,
+        eligibleIds: activeRosterSkaterIds.filter((id) => meta.get(id)?.position !== "G"), lineupIds: [], reserveIds: [],
+        unknownReasonById: new Map(), defaultUnknownReason: "team_lineup_unavailable" }));
+    };
 
     let usedLineComboFallback = false;
     let lineComboFallbackReason: "missing" | "hard_stale" | "empty" | "season_bootstrap_roster" | null =
@@ -1547,6 +1556,7 @@ export async function runPerGameSkaterStage(args: {
         metrics.warnings.push(
           `lineCombinations hard-failure for game=${game.id} team=${teamId}; no usable line combos or fallback skaters`,
         );
+        await recordTeamLineupUnavailable();
         continue;
       }
     }
@@ -1844,6 +1854,7 @@ export async function runPerGameSkaterStage(args: {
       metrics.warnings.push(
         `lineCombinations fallback produced no active skaters for game=${game.id} team=${teamId}`,
       );
+      await recordTeamLineupUnavailable();
       continue;
     }
     metrics.data_quality.filtered_skater_team_or_position +=
@@ -1870,6 +1881,7 @@ export async function runPerGameSkaterStage(args: {
         `empty skaterIds for game=${game.id} team=${teamId}`,
       );
       metrics.data_quality.empty_skater_rosters += 1;
+      await recordTeamLineupUnavailable();
       continue;
     }
     const teamAbbrev = teamAbbreviationById.get(teamId) ?? null;
@@ -2377,11 +2389,11 @@ export async function runPerGameSkaterStage(args: {
       }
 
       const legacyAvailabilityMultiplier = playerAvailabilityMultiplier.get(playerId) ?? 1;
-      // Board production is conditional on playing. The legacy DTD/benched
-      // multipliers are not calibrated participation probabilities.
-      const eventAvailabilityMultiplier = starterBoardFlags().compute
-        ? (legacyAvailabilityMultiplier <= 0 ? 0 : 1) : legacyAvailabilityMultiplier;
-      if (eventAvailabilityMultiplier < 1) {
+      // The line is his line if he plays (decision 132.2/132.3). The legacy DTD/benched multipliers are not calibrated
+      // participation probabilities, so they never scale it: an uncertain player keeps his line and the row's
+      // availability state says participation is unqualified (skaterAvailabilityForGame).
+      const eventAvailabilityMultiplier = legacyAvailabilityMultiplier <= 0 ? 0 : 1;
+      if (legacyAvailabilityMultiplier < 1) {
         metrics.data_quality.skater_availability_penalties_applied += 1;
       }
       const latestMetricDate = latestMetricDateByPlayerId.get(playerId) ?? null;
@@ -2389,11 +2401,12 @@ export async function runPerGameSkaterStage(args: {
         latestMetricDate != null
           ? Math.max(0, daysBetweenDates(asOfDate, latestMetricDate))
           : null;
+      // Time away is evidence on the row (timeAwayDisclosure), not a fixed-rate decline of the line (decision 132.2):
+      // the soft-stale recency multiplier only reports what the old rule would have applied.
       const recencyMultiplier =
         activeSkaterFilter.recencyMultiplierByPlayerId.get(playerId) ?? 1;
       const availabilityMultiplier =
         eventAvailabilityMultiplier *
-        recencyMultiplier *
         roleStabilityMultiplier;
       if (availabilityMultiplier <= 0) continue;
       const trendAdjustment = trendAdjustmentByPlayerId.get(playerId) ?? null;
@@ -3183,6 +3196,7 @@ export async function runPerGameSkaterStage(args: {
               latest_metric_date: p.latestMetricDate,
               days_since_last_metric: p.daysSinceLastMetric,
               recency_multiplier: Number(p.recencyMultiplier.toFixed(4)),
+              recency_multiplier_applied: false,
             },
             trend_adjustment: {
               selected: Boolean(p.trendAdjustment),
@@ -3461,6 +3475,8 @@ export async function runPerGameSkaterStage(args: {
         uncertainty: {
           ...uncertaintyWithRole,
           native_goal_accounting: buildNativePlayerGoalAccounting(playerUpsert),
+          availability: skaterAvailabilityForGame({ gameId: game.id, event: p.availabilityEvent, inLineup: true }),
+          time_away: timeAwayDisclosure(timeAwayEvidence(p.latestMetricDate, asOfDate)),
         },
       });
 
@@ -3665,14 +3681,17 @@ export async function runPerGameSkaterStage(args: {
 
     // Reserve pass: every other current-roster skater gets an "if he dresses" line in its own table, after the team
     // row is written, so the lineup's TOI, goals and team totals above are untouched.
-    const reserveCandidates = !forgeReservePassEnabled() ? [] : selectReserveSkaters({
+    const reservePassEnabled = forgeReservePassEnabled();
+    const lineupPlayerIds = playerUpserts.map((row) => row.player_id);
+    const teamGoalieIds = currentTeamGoalieIdsCache.get(teamDateKey(teamId))!;
+    const nonLineupRosterIds = activeRosterSkaterIds.filter((id) => !lineupPlayerIds.includes(id) && !teamGoalieIds.has(id));
+    const nonLineupMeta = reservePassEnabled ? await fetchPlayerMetaByIds(nonLineupRosterIds) : new Map<number, PlayerTeamPositionRow>();
+    const reserveCandidates = !reservePassEnabled ? [] : selectReserveSkaters({
       teamId,
       rosterPlayerIds: activeRosterSkaterIds,
-      lineupPlayerIds: playerUpserts.map((row) => row.player_id),
-      goalieIds: currentTeamGoalieIdsCache.get(teamDateKey(teamId))!,
-      metaById: await fetchPlayerMetaByIds(
-        activeRosterSkaterIds.filter((id) => !projected.has(id)),
-      ),
+      lineupPlayerIds,
+      goalieIds: teamGoalieIds,
+      metaById: nonLineupMeta,
       ruledOutIds: [...playerAvailabilityMultiplier]
         .filter(([, multiplier]) => multiplier <= 0)
         .map(([id]) => id),
@@ -3680,6 +3699,14 @@ export async function runPerGameSkaterStage(args: {
       missingMetricIds:
         activeSkaterFilter.excludedSkaterIdsByReason.missingRecentMetrics,
     });
+    const reserveProjectedIds: number[] = [];
+    const coverageUnknownReasonById = new Map<number, SkaterCoverageUnknownReason>();
+    for (const id of nonLineupRosterIds) {
+      const meta = nonLineupMeta.get(id);
+      if (!reservePassEnabled) continue;
+      if (!meta) coverageUnknownReasonById.set(id, "missing_player_record");
+      else if (meta.team_id !== teamId) coverageUnknownReasonById.set(id, "roster_team_conflict");
+    }
     if (reserveCandidates.length > 0) {
       const reserveIds = reserveCandidates.map((c) => c.playerId);
       const [reserveEv, reservePp, reserveAll] = await Promise.all(
@@ -3689,6 +3716,23 @@ export async function runPerGameSkaterStage(args: {
           ),
         ),
       );
+      // Long absences (decision 132.2): no even-strength or power-play row in the lineup's 365-day scope. His line comes
+      // from his last active games, read from a wider but bounded window; the row discloses the time away.
+      const longAbsentIds = reserveIds.filter((id) => !reserveEv.has(id) && !reservePp.has(id));
+      if (longAbsentIds.length > 0) {
+        const [longEv, longPp, longAll] = await Promise.all(
+          (["ev", "pp", "all"] as const).map(async (strength) =>
+            pickLatestByPlayer(
+              await fetchRollingRows(longAbsentIds, strength, asOfDate, undefined, { lookbackDays: FORGE_LONG_ABSENCE_LOOKBACK_DAYS }),
+            ),
+          ),
+        );
+        for (const [target, source] of [[reserveEv, longEv], [reservePp, longPp], [reserveAll, longAll]] as const) {
+          for (const [id, row] of source) if (!target.has(id)) target.set(id, row);
+        }
+        metrics.data_quality.reserve_skaters_long_absence_reads =
+          (metrics.data_quality.reserve_skaters_long_absence_reads ?? 0) + longAbsentIds.length;
+      }
       const reserveRows = reserveCandidates.flatMap((candidate) => {
         const line = buildReserveSkaterLine({
           position: candidate.position,
@@ -3713,17 +3757,25 @@ export async function runPerGameSkaterStage(args: {
           },
           team: { ...assistTeam, assistScaleEs, assistScalePp },
         });
-        if (!line) return [];
+        if (!line) {
+          coverageUnknownReasonById.set(candidate.playerId, "no_nhl_usage_in_window");
+          return [];
+        }
         const latest = [reserveEv.get(candidate.playerId)?.game_date, reservePp.get(candidate.playerId)?.game_date]
           .filter((date): date is string => typeof date === "string").sort().at(-1) ?? null;
-        return [buildReserveSkaterRow({
+        const row = buildReserveSkaterRow({
           runId, asOfDate, horizonGames, gameId: game.id, playerId: candidate.playerId, teamId, opponentTeamId,
           reason: candidate.reason, line, horizonScalar: teamHorizonTotalScalar,
           evidence: {
             availabilityEventId: availabilityEventByPlayer.get(candidate.playerId)?.event_id ?? null,
             latestMetricDate: latest,
           },
-        })];
+        });
+        reserveProjectedIds.push(candidate.playerId);
+        // Availability and time away are states beside the if-plays line, never folded into it (decision 132.2/132.3).
+        return [{ ...row, uncertainty: { ...row.uncertainty,
+          availability: skaterAvailabilityForGame({ gameId: game.id, event: availabilityEventByPlayer.get(candidate.playerId), inLineup: false }),
+          time_away: timeAwayDisclosure(timeAwayEvidence(latest, asOfDate)) } }];
       });
       metrics.data_quality.reserve_skaters_projected =
         (metrics.data_quality.reserve_skaters_projected ?? 0) + reserveRows.length;
@@ -3732,6 +3784,13 @@ export async function runPerGameSkaterStage(args: {
         reserveCandidates.length - reserveRows.length;
       await persistForgeReserveProjectionRows(reserveRows);
     }
+    // Coverage (decision 132.4): every eligible skater of this team is a lineup row, a reserve row or unknown with a reason.
+    recordTeamSkaterCoverage(metrics, buildTeamSkaterCoverage({
+      gameId: game.id, teamId,
+      eligibleIds: [...lineupPlayerIds, ...nonLineupRosterIds.filter((id) => nonLineupMeta.get(id)?.position !== "G")],
+      lineupIds: lineupPlayerIds, reserveIds: reserveProjectedIds, unknownReasonById: coverageUnknownReasonById,
+      defaultUnknownReason: reservePassEnabled ? "no_nhl_usage_in_window" : "reserve_pass_disabled",
+    }));
 
     // Goalie: pick the highest probability starter from goalie_start_projections if available.
     const goalieOverride = goalieOverrideByTeamId.get(teamId);

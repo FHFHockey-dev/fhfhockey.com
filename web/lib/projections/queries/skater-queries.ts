@@ -247,18 +247,23 @@ export async function fetchRollingRows(
   playerIds: number[],
   strengthState: RollingStrength,
   cutoffDate: string,
-  db = supabase
+  db = supabase,
+  /** Lower bound on the latest row's age, in days before the cutoff. The default 365 is the lineup's scope; the coverage
+   * path (decision 132.2) reads long absences with a wider, still bounded, window. */
+  options: { lookbackDays?: number } = {}
 ): Promise<RollingRow[]> {
   assertSupabase();
   if (playerIds.length === 0) return [];
+  const lookbackDays = options.lookbackDays ?? 365;
 
   const ids = [...new Set(playerIds)].sort((a, b) => a - b);
   if (ids.length > 500 || ids.some(id => !Number.isSafeInteger(id) || id <= 0)
-    || !["ev", "pp", "pk", "all"].includes(strengthState) || !isIsoDate(cutoffDate)) {
+    || !["ev", "pp", "pk", "all"].includes(strengthState) || !isIsoDate(cutoffDate)
+    || !Number.isSafeInteger(lookbackDays) || lookbackDays < 1 || lookbackDays > 1100) {
     throw new SkaterRollingReadIncompleteError("invalid_scope");
   }
   const oneYearAgo = new Date(
-    new Date(cutoffDate).getTime() - 365 * 24 * 60 * 60 * 1000
+    new Date(cutoffDate).getTime() - lookbackDays * 24 * 60 * 60 * 1000
   ).toISOString().split("T")[0];
 
   // Read-only reconstruction refuses every RPC; read the same scope by table.
@@ -324,7 +329,7 @@ export async function fetchRollingRows(
     if (row.player_id !== entry.player_id || !isRollingRowInScope(row, requestedIds, strengthState, cutoffDate)) {
       throw new SkaterRollingReadIncompleteError("invalid_row");
     }
-    // The RPC has no lower bound; keep the legacy 365-day scope.
+    // The RPC has no lower bound; keep the requested scope (365 days by default).
     if (row.game_date <= oneYearAgo) continue;
     const support = entry.support_row;
     if (support !== null) {
