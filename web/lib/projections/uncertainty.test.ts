@@ -352,3 +352,16 @@ describe("opt-in negative binomial simulation", () => {
     );
   });
 });
+
+describe("assist bands follow on-ice goals (W1-7 N2)", () => {
+  it("keeps a positive assist band when the player's own goal mean is zero", () => {
+    const line = { toiEsSeconds: 1000, toiPpSeconds: 0, shotsEs: 0, shotsPp: 0, goalsEs: 0, goalsPp: 0,
+      assistsEs: 1, assistsPp: 0, hits: 0, blocks: 0 };
+    const zeroGoals = buildPlayerUncertainty(line);
+    const tinyGoals = buildPlayerUncertainty({ ...line, shotsEs: 1, goalsEs: 0.001 });
+    // Own goals 0 and 0.001 describe the same assist expectation (1 on-ice assist).
+    expect(zeroGoals.assists_es.p90).toBeGreaterThan(0);
+    expect(zeroGoals.assists_es.p50).toBe(tinyGoals.assists_es.p50);
+    expect(zeroGoals.a.p90).toBeGreaterThanOrEqual(1);
+  });
+});

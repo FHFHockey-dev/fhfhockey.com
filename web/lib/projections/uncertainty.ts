@@ -405,19 +405,15 @@ export function buildPlayerUncertainty(
         scenarioShotsPp > 0
           ? scenarioGoalsPp * scalar * (shotsPpMean / (scenarioShotsPp * scalar))
           : 0;
-      const assistsEsMean =
-        scenarioGoalsEs > 0
-          ? scenarioAssistsEs * scalar * (goalsEsMean / (scenarioGoalsEs * scalar))
-          : 0;
-      const assistsPpMean =
-        scenarioGoalsPp > 0
-          ? scenarioAssistsPp * scalar * (goalsPpMean / (scenarioGoalsPp * scalar))
-          : 0;
+      // Assists come from on-ice team goals, not the player's own goals (W1-7 N2): they follow the
+      // sampled ice time, so a zero own-goal mean no longer zeroes a positive assist mean.
+      const assistsEsMean = scenarioAssistsEs * scalar * toiScale;
+      const assistsPpMean = scenarioAssistsPp * scalar * toiScale;
 
       // NB: one gamma multiplier shared by ES and PP shots keeps total SOG NB(mu, alpha).
       const shotsPkMean = pk.shots * scalar * toiScale;
       const goalsPkMean = pk.shots > 0 ? pk.goals * scalar * (shotsPkMean / (pk.shots * scalar)) : 0;
-      const assistsPkMean = pk.goals > 0 ? pk.assists * scalar * (goalsPkMean / (pk.goals * scalar)) : 0;
+      const assistsPkMean = pk.assists * scalar * toiScale;
       const shotsAlpha = useNb
         ? normalizeAlpha(
             simulationAlpha("sog", countModel?.position, shotsEsMean + shotsPpMean + shotsPkMean, simToiCv)
