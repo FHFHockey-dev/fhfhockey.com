@@ -200,7 +200,7 @@ describe("healthy reserve players", () => {
     data.forecasts = players.map((player, index) => ({ ...template, playerId: player.id, gameId: data.games[index].id, stats: { pts: value[player.id] },
       expiresAt: data.games[index].startsAt, issuedContext: { ...template.issuedContext!, playerId: player.id, gameId: data.games[index].id,
         nhlPlayerId: player.nhlId!, teamId: player.nhlTeamId!, scheduledAt: data.games[index].startsAt!, scheduleRevision: data.games[index].scheduleRevision!,
-        rosterRevision: player.rosterRevision! } }));
+        rosterRevision: player.rosterRevision! } }) as GameForecast);
     const result = healthyReserves(data, intent);
     const activated = result.filter(row => row.activation).map(row => row.playerId).sort();
     expect(activated).toEqual(["p", "r"]);
