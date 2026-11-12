@@ -1007,7 +1007,7 @@ function evaluatePreparedPlan(prepared: ReturnType<typeof prepareEvaluation>, in
     : [...chosen.values()].reduce<number | null>((sum, play) => { const value = playValue(play, snapshot, opponent, applicability); return sum === null || value === null ? null : sum + value; }, 0);
   const inputEligible = legal && opportunitiesComplete && !unresolved.length && coverageKnown && assignmentValue !== null && !invalidLocks && !weeklyEvidenceMissing && !snapshot.rules.unsupported.length;
   const categoryMode = snapshot.rules.scoring.mode === "categories";
-  if (categoryMode) limitations.add("Category assignments use schedule capacity and supported componentwise changes. Incomparable tradeoffs have no approved overall utility; start/sit and acquisition recommendations need manager choice.");
+  if (categoryMode) limitations.add("Schedule-capacity estimate (not category-optimized): category assignments use schedule capacity and supported componentwise changes. Incomparable tradeoffs have no approved overall utility; start/sit and acquisition recommendations need manager choice.");
   // Complete per-category facts remain comparable without certifying a scalar
   // winner. This also bypasses scalar category bench-counterfactual certification.
   const recommendationEligible = inputEligible && !categoryMode;
@@ -1127,6 +1127,14 @@ function evaluatePreparedPlan(prepared: ReturnType<typeof prepareEvaluation>, in
     } });
 }
 
+/** Ratio categories (those with a denominator) in which `plan` is worse than `reference`, or unknown in either; exact,
+ * direction-aware and with no materiality threshold (decision 51). */
+function ratioCategoriesWorse(snapshot: PlanningSnapshot, plan: PlanEvaluation, reference: PlanEvaluation): string[] {
+  return snapshot.rules.scoring.categories.filter(category => category.denominator).flatMap(category => {
+    const own = plan.categoryResults.find(row => row.key === category.key)?.own, base = reference.categoryResults.find(row => row.key === category.key)?.own;
+    return !finite(own) || !finite(base) || (own - base) * (category.direction === "higher" ? 1 : -1) < 0 ? [category.key] : [];
+  });
+}
 function compareCategoryEvaluations(snapshot: PlanningSnapshot, a: PlanEvaluation, b: PlanEvaluation, target: number | null) {
   if (!a.comparisonEligible || !b.comparisonEligible || !a.legal || !b.legal || !a.budgetVerified || !b.budgetVerified
     || !a.forecastManifestId || a.forecastManifestId !== b.forecastManifestId) return "unknown";
@@ -1148,7 +1156,12 @@ function compareCategoryEvaluations(snapshot: PlanningSnapshot, a: PlanEvaluatio
     // Accepting risk does not assign a utility to different coverage scenarios.
     return "tradeoff";
   }
-  if (a.objective === b.objective && a.objective === "agp" && a.activeGames !== b.activeGames && !coveragePreferred) relation = a.activeGames > b.activeGames ? "better" : "worse";
+  // Decision 51: more starts never outranks a worse ratio (no materiality threshold): the plan with more games is only
+  // "better" when none of its ratio categories (GAA, SV%, SH%…) is worse; otherwise it is a tradeoff for the manager.
+  if (a.objective === b.objective && a.objective === "agp" && a.activeGames !== b.activeGames && !coveragePreferred) {
+    const [more, fewer] = a.activeGames > b.activeGames ? [a, b] : [b, a];
+    relation = ratioCategoriesWorse(snapshot, more, fewer).length ? "tradeoff" : a.activeGames > b.activeGames ? "better" : "worse";
+  }
   let lowerCost = false, higherCost = false;
   for (const period of new Set([...Object.keys(a.acquisitions), ...Object.keys(b.acquisitions)])) {
     const left = a.acquisitions[period] ?? 0, right = b.acquisitions[period] ?? 0;
@@ -1464,7 +1477,12 @@ export function planRoster(snapshot: PlanningSnapshot, intent: PlanIntent, optio
     const stableOrder = (a: State, b: State) => a.steps.map(step => step.id).join("|").localeCompare(b.steps.map(step => step.id).join("|"));
     const adds = (state: State) => state.steps.filter(step => step.type === "add").length;
     const drops = (state: State) => state.steps.filter(step => step.type === "drop" || step.dropPlayerId).length;
-    states.sort((a, b) => compareEvaluations(a.evaluation, b.evaluation, intent, preferred, coverageTarget, categoryMode, noMoveOutcome) || stableOrder(a, b));
+    // Decision 51: a category plan with a worse ratio than the no-move lineup is a tradeoff, listed after the rest and
+    // never ordered by its extra starts (deterministic id order among tradeoffs).
+    const tradeoff = (state: State) => categoryMode && state.steps.length > 0 && ratioCategoriesWorse(snapshot, state.evaluation, noMoveAgp).length > 0;
+    states.sort((a, b) => Number(tradeoff(a)) - Number(tradeoff(b))
+      || (tradeoff(a) && tradeoff(b) ? 0 : compareEvaluations(a.evaluation, b.evaluation, intent, preferred, coverageTarget, categoryMode, noMoveOutcome))
+      || stableOrder(a, b));
     // Reorder only exact supported equivalents in their existing positions.
     // Pairwise category tradeoffs are not a transitive global sort relation.
     const groups = new Map<string, number[]>();
@@ -1594,7 +1612,13 @@ export function planRoster(snapshot: PlanningSnapshot, intent: PlanIntent, optio
   }
   for (const state of retained) if (shown.size < intent.alternativeCount - 1) shown.add(state);
   const listed = [...retained.slice(0, 1), ...rest.filter(state => shown.has(state))];
-  const alternatives = [baseline, ...listed.map(state => state.evaluation)].slice(0, intent.alternativeCount);
+  // Decision 51: say which ratio categories a category tradeoff worsens; it is a choice for the manager, not a ranking.
+  const labelled = (evaluation: PlanEvaluation) => {
+    const worse = categoryMode && evaluation.steps.length ? ratioCategoriesWorse(snapshot, evaluation, noMoveAgp) : [];
+    return worse.length ? { ...evaluation, limitations: [...evaluation.limitations,
+      `Tradeoff: more starts with a worse or unknown ${worse.join(", ")} than holding; shown as a choice, not ranked above plans that keep every ratio.`] } : evaluation;
+  };
+  const alternatives = [baseline, ...listed.map(state => labelled(state.evaluation))].slice(0, intent.alternativeCount);
   const categoryLineupBounded = categoryMode && [noMoveAgp, noMoveOutcome, selected, ...alternatives]
     .some(plan => plan.limitations.some(text => text.startsWith("Category lineup analysis is bounded and incomplete")));
   // Only returned plans receive bench evidence. Counterfactuals never recursively
