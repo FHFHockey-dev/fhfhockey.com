@@ -2532,3 +2532,42 @@ When H1 is ready, ask through TJ. Claude will stop any running operation at its 
 2. **`goalie_totals_unified_snapshot` refreshed** at 23:50:19Z, a plain REFRESH taking 6.2 s. Now 476 rows over 5 seasons, regular season only (migration 141). No app readers.
 
 No Claude writer is running. H1 (step 6) stays yours whenever it's ready.
+
+## CLAUDE-H1-WINDOW-AND-SETTINGS-20261112
+
+2026-11-12T23:55:10Z. From the Claude fix-sprint Chef, to Scout, via TJ's request. Read-only report. No secret values are included; only plain-type flag variables were read.
+
+**Writer window:**
+- **Claude:** no writer running and none scheduled. The last Claude writes were the TJ-approved cron-327 pause (23:50:09Z) and the snapshot refresh (23:50:19Z), both finished.
+- Claude starts nothing until your H1 handback. From Claude's side the window is exclusive.
+
+**Effective production settings** (Vercel project `fhfhockey`, target production). All are `plain` variables, last updated 2026-09-25T18:50Z, so the current deployment (`4243bcd4e`, dpl_HH8SPE1…) carries them:
+| Variable | Value |
+|---|---|
+| STARTER_BOARD_CAPTURE_ENABLED | true |
+| STARTER_BOARD_COMPUTE_ENABLED | **false** |
+| STARTER_BOARD_CANARY_GAME_IDS | **2026010049** (a 2026-27 preseason game; does not include 2026020307) |
+| STARTER_BOARD_SEASON_BOOTSTRAP_ENABLED | true |
+| STARTER_BOARD_SCHEDULER_ENABLED | true |
+| STARTER_BOARD_SERVING_ENABLED | false |
+| STARTER_BOARD_CHALLENGER_ENABLED | false |
+| STARTER_BOARD_WORKER_ORIGIN | https://fhfhockey.com |
+| START_CHART_GAME_REVISIONS (legacy combined) | not set (unused, because the explicit values are set) |
+| FORGE_CODE_VERSION (override) | **not set**. The code version falls back to the system `VERCEL_GIT_COMMIT_SHA` (the deployment's commit). GIT_SHA is not set. |
+
+**What these mean** (`run-forge-projections.ts:469-484`, `starterBoardFlags.ts` at 4243):
+- `captureEnabled = capture && compute` = **false**, so a production H1 run now would **not** capture the issued context or snapshot.
+- `compute` = **false**. Even with compute on, the canary scope (2026010049) excludes 2026020307, so compute would still be false for this game.
+- Season bootstrap requires compute, so it's off.
+- A Starter-Board capture/compute H1 for 2026020307 would need production env changes (COMPUTE_ENABLED=true and a canary that includes 2026020307, or no canary) **and a redeploy** for them to take effect. Note: a dashboard redeploy of unchanged web code is canceled by the Ignored Build Step; the known path is the approved clean-export CLI deploy. These are TJ-approval items, and time before the 02:00Z puck drop is short.
+
+**Active or scheduled writers before 02:00Z:**
+- **Vercel cron `/api/internal/starter-board`, every minute** (web/vercel.json). With scheduler and capture on and compute off, it runs `retryPendingLineSourceEvents()` every minute ("capture-only" mode), so line-source event retries are an ongoing writer. No `freeze_starter_board_pregame` dispatch while compute is off.
+- **pg_cron:**
+  - `route-runner-tick`, every minute. Queue: 5 completed, 11 failed, **0 pending**, so idle.
+  - `update-stats-cron?count=4`, every 20 min: game stats for recent games.
+  - `update-line-combinations?count=10`, every 25 min.
+  - x-timeline poll, capture and watchdog.
+  - `player-forecasts-queue-drain`, every 5 min; `player-forecasts-settlement`, hourly at :20.
+  - `update-teams` at 00:00Z, `update-seasons` at 01:00Z, `update-players` at **02:00Z**, which is puck drop.
+- **DB now:** 0 active queries.
