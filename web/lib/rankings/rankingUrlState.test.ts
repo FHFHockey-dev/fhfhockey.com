@@ -331,7 +331,7 @@ describe("rankingUrlState", () => {
     }, { currentSeasonId: 20252026 });
 
     expect(buildSnapshotRequestPath(filters)).toBe(
-      "/api/v1/contextual-rankings/snapshot?entity=goalies&season=20252026&window=season&position=all&deployment=all&strength=5v5&min_gp=10&min_toi=300&sort_metric=points_per_60&goalie_metric=gsax&goalie_role=g1_workhorse&team_metric=off_rating&sort_direction=desc&team=DAL&search=DeSmith&selected_goalie=32",
+      "/api/v1/contextual-rankings/snapshot?entity=goalies&season=20252026&window=season&position=all&deployment=all&strength=5v5&min_gp=10&min_toi=300&sort_metric=points_per_60&goalie_metric=gsax&goalie_role=g1_workhorse&team_metric=off_rating&sort_direction=desc&min_starts=5&min_shots=100&team=DAL&search=DeSmith&selected_goalie=32",
     );
   });
 
@@ -364,5 +364,25 @@ describe("rankingUrlState", () => {
     expect(buildTeamMatrixRequestPath(lowered)).toContain("min_gp=2");
     // The skater Min GP default (10 for a season) is not the team floor.
     expect(buildTeamMatrixRequestPath(lowered)).not.toContain("min_gp=10");
+  });
+
+  it("sends the goalie view's own strength and floors to every goalie request (decisions 98, 104)", () => {
+    const goalies = normalizeRankingsFilters(
+      { entity: "goalies", strength: "ev", goalie_strength: "all", goalie_min_starts: "2", goalie_min_shots: "40", selected_goalie: "32" },
+      { currentSeasonId: 20262027 },
+    );
+    const matrix = new URL(buildGoalieMatrixRequestPath(goalies), "https://fhfh.test").searchParams;
+    expect(matrix.get("strength")).toBe("all");
+    expect(matrix.get("min_starts")).toBe("2");
+    expect(matrix.get("min_shots")).toBe("40");
+    // The skater strength (ev) never reaches the goalie parser through the snapshot.
+    const snapshot = new URL(buildSnapshotRequestPath(goalies)!, "https://fhfh.test").searchParams;
+    expect(snapshot.get("strength")).toBe("all");
+    expect(snapshot.get("min_starts")).toBe("2");
+    const defaults = normalizeRankingsFilters({ entity: "goalies" }, { currentSeasonId: 20262027 });
+    const defaultMatrix = new URL(buildGoalieMatrixRequestPath(defaults), "https://fhfh.test").searchParams;
+    // The old path sent the skater TOI floor (300 seconds) as min_shots.
+    expect(defaultMatrix.get("min_shots")).toBe("100");
+    expect(defaultMatrix.get("min_starts")).toBe("5");
   });
 });

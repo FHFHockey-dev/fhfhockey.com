@@ -5,6 +5,7 @@ import {
 import type {
   GoalieMatrixMetricKey,
   GoalieMatrixRoleFilter,
+  GoalieMatrixStrength,
 } from "./goalieMatrix";
 import type { TeamMatrixMetricKey } from "./teamMatrix";
 import {
@@ -44,6 +45,11 @@ export type RankingsFilterState = {
   matrixSortMetric: ContextualRankingMetricKey;
   goalieMetric: GoalieMatrixMetricKey;
   goalieRole: GoalieMatrixRoleFilter;
+  /** Decision 104: one strength per goalie view. */
+  goalieStrength: GoalieMatrixStrength;
+  /** Decision 98 goalie floors (starts and shots), separate from skater Min GP/TOI. */
+  goalieMinStarts: string;
+  goalieMinShots: string;
   teamMetric: TeamMatrixMetricKey;
   /** Team sample floor in games (decision 98), separate from skater Min GP. */
   teamMinGp: string;
@@ -120,6 +126,9 @@ export const DEFAULT_RANKINGS_FILTERS: RankingsFilterState = {
   matrixSortMetric: "points_per_60",
   goalieMetric: "save_percentage",
   goalieRole: "all",
+  goalieStrength: "5v5",
+  goalieMinStarts: "5",
+  goalieMinShots: "100",
   teamMetric: "off_rating",
   teamMinGp: DEFAULT_TEAM_MIN_GP,
   matrixSortDirection: "desc",
@@ -234,10 +243,10 @@ function parseGoalieMetric(value: string): GoalieMatrixMetricKey {
     value === "relative_save_percentage" ||
     value === "gsaa_per_60" ||
     value === "xga_per_shot_against" ||
-    value === "goalie_value_signal" ||
     value === "high_danger_save_percentage" ||
     value === "quality_start_pct" ||
     value === "really_bad_start_rate" ||
+    value === "fhfh_5v5_bad_start_rate" ||
     value === "steal_rate" ||
     value === "start_share"
     ? value
@@ -404,6 +413,13 @@ export function normalizeRankingsFilters(
     matrixSortMetric,
     goalieMetric: parseGoalieMetric(queryValue(query.goalie_metric)),
     goalieRole: parseGoalieRole(queryValue(query.goalie_role)),
+    goalieStrength: queryValue(query.goalie_strength) === "all" ? "all" : "5v5",
+    goalieMinStarts: /^\d+$/.test(queryValue(query.goalie_min_starts))
+      ? queryValue(query.goalie_min_starts)
+      : DEFAULT_RANKINGS_FILTERS.goalieMinStarts,
+    goalieMinShots: /^\d+$/.test(queryValue(query.goalie_min_shots))
+      ? queryValue(query.goalie_min_shots)
+      : DEFAULT_RANKINGS_FILTERS.goalieMinShots,
     teamMetric: parseTeamMetric(queryValue(query.team_metric)),
     teamMinGp: /^\d+$/.test(queryValue(query.team_min_gp))
       ? queryValue(query.team_min_gp)
@@ -609,11 +625,12 @@ export function buildGoalieMatrixRequestPath(filters: RankingsFilterState) {
   const params = new URLSearchParams({
     season: filters.season,
     window: filters.window,
+    strength: filters.goalieStrength,
     metric: filters.goalieMetric,
     role: filters.goalieRole,
     sort_direction: filters.matrixSortDirection,
-    min_starts: filters.minGp,
-    min_shots: filters.minToi,
+    min_starts: filters.goalieMinStarts,
+    min_shots: filters.goalieMinShots,
     page: filters.page,
     page_size: filters.pageSize,
   });
@@ -733,6 +750,15 @@ export function buildSnapshotRequestPath(filters: RankingsFilterState) {
     team_metric: filters.teamMetric,
     sort_direction: filters.matrixSortDirection,
   });
+  // The snapshot route hands this query to the entity's own parser, so goalies
+  // and teams carry their own strength and sample floors (decisions 98, 104).
+  if (filters.entity === "goalies") {
+    params.set("strength", filters.goalieStrength);
+    params.set("min_starts", filters.goalieMinStarts);
+    params.set("min_shots", filters.goalieMinShots);
+  } else if (filters.entity === "teams") {
+    params.set("min_gp", filters.teamMinGp);
+  }
   if (filters.team.trim() !== "") {
     params.set("team", filters.team.trim());
   }

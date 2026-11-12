@@ -9,7 +9,7 @@ const CAVEAT_LABELS: Record<string, string> = {
   rolling_window_counts_v1_fenwick: "ixG over unblocked shot attempts (Fenwick), same games",
   on_ice_shooting_context: "Includes on-ice shooting luck",
   fallback_rolling_player_game_metrics: "Built from rolling game data (snapshot unavailable)",
-  sample_below_minimum: "Below the selected minimum sample",
+  sample_below_minimum: "Insufficient sample (below the selected minimum)",
   small_peer_group: "Small peer group",
   raw_contextual_team_style: "Raw team style, not adjusted for score or venue",
   raw_contextual_5v5: "Raw 5v5 context, not adjusted",
@@ -23,7 +23,13 @@ const CAVEAT_LABELS: Record<string, string> = {
   team_style_using_dated_nst_5v5_fallback: "Team style uses an older Natural Stat Trick snapshot",
   partial_wgo_save_source: "Partial NHL.com save data",
   partial_team_without_goalie_5v5_save_source: "Partial team save data without this goalie",
-  partial_quality_start_source: "Partial quality-start data",
+  partial_quality_start_source:
+    "Quality Start unavailable for a start (missing shots or league average)",
+  partial_really_bad_start_source: "Really Bad Start unavailable for a start",
+  partial_league_save_baseline: "League save baseline uses appearances with NST counts only",
+  partial_league_official_save_baseline:
+    "League-average SV% uses appearances with official counts only",
+  missing_league_save_baseline: "League save baseline unavailable",
   partial_goalie_steal_source: "Partial steal data",
   partial_goalie_start_source: "Partial start data",
   partial_source_coverage: "Partial source coverage",
@@ -43,7 +49,7 @@ const CAVEAT_LABELS: Record<string, string> = {
   wins_above_replacement_source_pending: "WAR is not published yet",
 };
 
-// partial_nst_5v5_<part>_source → "Partial Natural Stat Trick 5v5 <part> data"
+// partial_nst_<5v5|all>_<part>_source → "Partial Natural Stat Trick <5v5|all-situations> <part> data"
 const NST_PARTS: Record<string, string> = {
   relative_save: "relative save",
   gsaa: "GSAA",
@@ -66,15 +72,19 @@ const TOKENS: Record<string, string> = {
   ev: "even-strength",
 };
 
+function nstStrengthLabel(strength: string) {
+  return strength === "all" ? "all-situations" : "5v5";
+}
+
 export function formatCaveat(key: string): string {
   const trimmed = key.trim();
   if (CAVEAT_LABELS[trimmed]) return CAVEAT_LABELS[trimmed];
   // Already a sentence (spaces or capitals): pass through untouched.
   if (!/^[a-z0-9_]+$/.test(trimmed)) return trimmed;
-  const nst = /^partial_nst_5v5_(.+)_source$/.exec(trimmed);
+  const nst = /^partial_nst_(5v5|all)_(.+)_source$/.exec(trimmed);
   if (nst) {
-    const part = NST_PARTS[nst[1]] ?? nst[1].replace(/_/g, " ");
-    return `Partial Natural Stat Trick 5v5 ${part} data`;
+    const part = NST_PARTS[nst[2]] ?? nst[2].replace(/_/g, " ");
+    return `Partial Natural Stat Trick ${nstStrengthLabel(nst[1])} ${part} data`;
   }
   // Unknown key: readable words, never raw snake_case.
   const words = trimmed
@@ -85,16 +95,22 @@ export function formatCaveat(key: string): string {
 }
 
 export function formatCaveats(keys: readonly string[], separator = "; "): string {
-  // Group the per-metric Natural Stat Trick gaps into one phrase instead of six.
-  const nstParts: string[] = [];
+  // Group the per-metric Natural Stat Trick gaps into one phrase per strength.
+  const nstParts = new Map<string, string[]>();
   const rest: string[] = [];
   for (const key of keys) {
-    const match = /^partial_nst_5v5_(.+)_source$/.exec(key.trim());
-    if (match) nstParts.push(NST_PARTS[match[1]] ?? match[1].replace(/_/g, " "));
-    else rest.push(formatCaveat(key));
+    const match = /^partial_nst_(5v5|all)_(.+)_source$/.exec(key.trim());
+    if (match) {
+      const parts = nstParts.get(match[1]) ?? [];
+      parts.push(NST_PARTS[match[2]] ?? match[2].replace(/_/g, " "));
+      nstParts.set(match[1], parts);
+    } else rest.push(formatCaveat(key));
   }
-  const labels = nstParts.length
-    ? [`Partial Natural Stat Trick 5v5 data (${Array.from(new Set(nstParts)).join(", ")})`, ...rest]
-    : rest;
+  const labels = [
+    ...Array.from(nstParts, ([strength, parts]) =>
+      `Partial Natural Stat Trick ${nstStrengthLabel(strength)} data (${Array.from(new Set(parts)).join(", ")})`,
+    ),
+    ...rest,
+  ];
   return Array.from(new Set(labels)).join(separator);
 }

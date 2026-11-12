@@ -524,8 +524,14 @@ export default function RankingsFilters({
             <input
               inputMode="numeric"
               pattern="[0-9]*"
-              value={value.minGp}
-              onChange={(event) => onChange({ minGp: event.target.value })}
+              value={value.entity === "goalies" ? value.goalieMinStarts : value.minGp}
+              onChange={(event) =>
+                onChange(
+                  value.entity === "goalies"
+                    ? { goalieMinStarts: event.target.value }
+                    : { minGp: event.target.value },
+                )
+              }
             />
             <ToolbarIcon name="chevron" />
           </div>
@@ -574,6 +580,29 @@ export default function RankingsFilters({
       ) : null}
 
       {value.entity === "goalies" ? (
+        <label className={`${styles.filterControl} ${styles.filterStrength}`}>
+          <span>Strength</span>
+          <div className={styles.controlField}>
+            <ToolbarIcon name="strength" />
+            <select
+              value={value.goalieStrength}
+              onChange={(event) =>
+                onChange({
+                  goalieStrength: event.target
+                    .value as RankingsFilterState["goalieStrength"],
+                  page: "1",
+                })
+              }
+            >
+              <option value="5v5">5v5</option>
+              <option value="all">All situations</option>
+            </select>
+            <ToolbarIcon name="chevron" />
+          </div>
+        </label>
+      ) : null}
+
+      {value.entity === "goalies" ? (
         <label className={`${styles.filterControl} ${styles.filterMinShots}`}>
           <span>Min Shots</span>
           <div className={styles.controlField}>
@@ -581,8 +610,8 @@ export default function RankingsFilters({
             <input
               inputMode="numeric"
               pattern="[0-9]*"
-              value={value.minToi}
-              onChange={(event) => onChange({ minToi: event.target.value })}
+              value={value.goalieMinShots}
+              onChange={(event) => onChange({ goalieMinShots: event.target.value })}
             />
           </div>
         </label>

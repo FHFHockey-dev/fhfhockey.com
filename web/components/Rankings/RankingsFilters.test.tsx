@@ -137,8 +137,9 @@ describe("RankingsFilters", () => {
       ...DEFAULT_RANKINGS_FILTERS,
       entity: "goalies",
       deployment: "all",
-      minGp: "3",
-      minToi: "100",
+      // Goalie floors are their own fields (decision 98), not skater Min GP/TOI.
+      goalieMinStarts: "3",
+      goalieMinShots: "150",
       team: "DAL",
     });
 
@@ -156,8 +157,15 @@ describe("RankingsFilters", () => {
       (screen.getByLabelText("Min Starts") as HTMLInputElement).value,
     ).toBe("3");
     expect((screen.getByLabelText("Min Shots") as HTMLInputElement).value).toBe(
-      "100",
+      "150",
     );
+    fireEvent.change(screen.getByLabelText("Min Shots"), { target: { value: "50" } });
+    expect(onChange).toHaveBeenCalledWith({ goalieMinShots: "50" });
+    // Decision 104: one strength per goalie view.
+    const strength = screen.getByLabelText("Strength") as HTMLSelectElement;
+    expect(strength.value).toBe("5v5");
+    fireEvent.change(strength, { target: { value: "all" } });
+    expect(onChange).toHaveBeenCalledWith({ goalieStrength: "all", page: "1" });
     fireEvent.click(screen.getByRole("button", { name: "More Filters" }));
     const dialog = screen.getByRole("dialog", { name: "More ranking filters" });
     const teamInput = within(dialog).getByLabelText("Team") as HTMLInputElement;

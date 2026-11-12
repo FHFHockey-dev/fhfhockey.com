@@ -128,6 +128,9 @@ function filtersToQuery(filters: RankingsFilterState) {
     sort_metric: filters.matrixSortMetric,
     goalie_metric: filters.goalieMetric,
     goalie_role: filters.goalieRole,
+    goalie_strength: filters.goalieStrength,
+    goalie_min_starts: filters.goalieMinStarts,
+    goalie_min_shots: filters.goalieMinShots,
     team_metric: filters.teamMetric,
     team_min_gp: filters.teamMinGp,
     sort_direction: filters.matrixSortDirection,
@@ -429,24 +432,35 @@ function activeMethodologySummary({
     const column = goalieMatrixData?.meta.metricColumns.find(
       (entry) => entry.metricKey === filters.goalieMetric,
     );
+    // Decision 104: the goalie view is one strength; wording follows it.
+    const strengthLabel =
+      filters.goalieStrength === "all" ? "all-situations" : "5v5";
     return {
       label: column?.label ?? filters.goalieMetric,
       denominator:
         filters.goalieMetric === "start_share"
           ? "team goalie starts in selected window"
           : filters.goalieMetric === "relative_save_percentage"
-            ? "same-team other-goalie 5v5 save percentage"
+            ? `same-team other-goalie ${strengthLabel} save percentage`
             : filters.goalieMetric === "xga_per_shot_against"
-              ? "5v5 NST shots against"
+              ? `${strengthLabel} NST shots against`
               : filters.goalieMetric === "high_danger_save_percentage"
-                ? "5v5 NST high-danger shots against"
-                : filters.goalieMetric === "goalie_value_signal"
-                  ? "available cumulative 5v5 saved-goals signals"
+                ? `${strengthLabel} NST high-danger shots against`
+                : filters.goalieMetric === "fhfh_5v5_bad_start_rate" ||
+                    filters.goalieMetric === "quality_start_pct" ||
+                    filters.goalieMetric === "really_bad_start_rate"
+                  ? "credited starts"
                   : filters.goalieMetric === "save_percentage"
-                    ? "shots against"
+                    ? filters.goalieStrength === "all"
+                      ? "shots against"
+                      : "5v5 NST shots against"
                     : "goalie starts / shots against where supported",
-      methodologyVersion: "goalie_rankings_v1",
-      sample: `Min ${filters.minGp} starts · Min ${filters.minToi} shots`,
+      methodologyVersion:
+        goalieMatrixData?.meta.methodologyVersion ??
+        "goalie_rankings_v5_strength_views",
+      sample:
+        goalieMatrixData?.meta.sampleFloor?.label ??
+        `Min ${filters.goalieMinStarts} starts · Min ${filters.goalieMinShots} shots`,
       source:
         column?.source ??
         goalieMatrixData?.meta.sourceTables.join(", ") ??
@@ -1159,11 +1173,12 @@ function buildComparisonRequestPath(args: {
       entity: "goalies",
       season: args.filters.season,
       window: args.filters.window,
+      strength: args.filters.goalieStrength,
       metric: args.filters.goalieMetric,
       role: args.filters.goalieRole,
       sort_direction: args.filters.matrixSortDirection,
-      min_starts: args.filters.minGp,
-      min_shots: args.filters.minToi,
+      min_starts: args.filters.goalieMinStarts,
+      min_shots: args.filters.goalieMinShots,
       goalie_ids: ids.join(","),
     });
     if (args.filters.team.trim() !== "")
