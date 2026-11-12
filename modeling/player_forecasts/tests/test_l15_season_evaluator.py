@@ -422,3 +422,36 @@ def test_back_to_back_uses_the_nhl_schedule_date_not_the_utc_day():
     games = _schedule_contexts_by_team(schedule)[1]
     # HEAD (UTC days): rest 0, not a back-to-back.
     assert games[1]["rest_days"] == 1 and games[1]["is_back_to_back"] is True
+
+
+# --- pp_shot_support: dependency pins verified at their commit ---------------
+
+def test_pp_support_pins_are_checked_at_their_commit_not_the_working_tree(tmp_path, monkeypatch):
+    import hashlib as _hashlib
+
+    from modeling.player_forecasts import pp_shot_support as support
+
+    root = support.repository_root()
+    # Later lanes edited these files; the working tree differs from the pins...
+    changed = [path for path, pin in support.BASELINE_DEPENDENCIES.items()
+               if _hashlib.sha256((root / path).read_bytes()).hexdigest() != pin]
+    assert changed, "fixture assumption: at least one pinned file has changed since the pin"
+    # ...yet the reproduction still verifies against the pinned commit.
+    support.verify_baseline_dependencies(root)
+    # Simulate an edit to the working tree copy: still verifies.
+    monkeypatch.setattr(support.Path, "read_bytes", lambda self: b"edited", raising=False)
+    support.verify_baseline_dependencies(root)
+
+
+def test_pp_support_pin_mismatch_and_missing_commit_fail_closed(monkeypatch):
+    from modeling.player_forecasts import pp_shot_support as support
+
+    root = support.repository_root()
+    first = next(iter(support.BASELINE_DEPENDENCIES))
+    with monkeypatch.context() as patch:
+        patch.setitem(support.BASELINE_DEPENDENCIES, first, "0" * 64)
+        with pytest.raises(ValueError, match="dependency changed"):
+            support.verify_baseline_dependencies(root)
+    monkeypatch.setattr(support, "DEPENDENCY_PIN_SHA", "f" * 40)
+    with pytest.raises(ValueError, match="unavailable"):
+        support.verify_baseline_dependencies(root)
