@@ -40,6 +40,19 @@ describe("team lines header", () => {
     expect(screen.getByRole("heading", { level: 2, name: "Florida Panthers" })).toBeTruthy();
   });
 
+  it("labels the lines as the all-strength legacy grouping (decision 107)", () => {
+    render(
+      <Header
+        teamName="Florida Panthers"
+        teamAbbreviation="FLA"
+        lastUpdated={null}
+        sourceUrl="https://example.invalid/source"
+        onSaveImage={vi.fn()}
+      />,
+    );
+    expect(screen.getByText(/grouped by all-strength shared ice time\s+\(legacy view\)/)).toBeTruthy();
+  });
+
   it("hides the updated line instead of inventing a fallback date", () => {
     render(
       <Header

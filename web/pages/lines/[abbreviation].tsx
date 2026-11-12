@@ -483,7 +483,9 @@ export function Header({
           </span>
         </h2>
         <p className={styles.subtitle}>
-          Last game&apos;s lines · stats from the last 10 games
+          Last game&apos;s lines, grouped by all-strength shared ice time
+          (legacy view) · skater stats from the team&apos;s last 10 games with
+          lines
         </p>
         {lastUpdated ? (
           <p className={styles.time}>
