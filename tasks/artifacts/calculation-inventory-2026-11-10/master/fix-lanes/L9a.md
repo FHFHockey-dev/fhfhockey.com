@@ -38,8 +38,8 @@ Readers: FORGE skater rows (`/api/v1/forge/players`, L12 serves), fantasy points
 ## Production steps (TJ approval)
 Reconcile held rolling/FORGE writes before any FORGE rerun; bounded `forge_roster_events` count; any column add for `proj_toi_pk_seconds` (migration via L4a's pattern); physical-totals migration (Q3); FORGE rerun after landing.
 
-## Tier B questions (Chef asks at start)
-Q3 physical-totals migration timing.
+## Tier B questions
+Answered: decision 119 (Q3). Migration `20261020211500` was **applied to production 2026-11-12** as is; FORGE now gets league rescaling. Write the prior-season cutoff guard (W2-1 C8) as a successor migration ticket to L4a via Chef, with a test, and confirm FORGE's reader handles the now-present RPC.
 
 ## Out of scope
 Goalie stage and starters (L9b); `run-projection-accuracy.ts` and `update-goalie-projections-v2.ts` (Codex: write proposals); ledger (L10).
