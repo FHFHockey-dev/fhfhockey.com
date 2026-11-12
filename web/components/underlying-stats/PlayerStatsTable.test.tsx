@@ -820,4 +820,38 @@ describe("PlayerStatsTableState", () => {
       screen.getByText("Try clearing the score-state or position filter."),
     ).toBeTruthy();
   });
+
+  it("labels the leading column as a row ordinal that continues across server pages (W2-3 D16)", () => {
+    render(
+      <PlayerStatsTable
+        family="goalieCounts"
+        rows={[
+          { rowKey: "g-1", playerId: 1, playerName: "Goalie One", teamLabel: "AAA", gamesPlayed: 1, toiSeconds: 3600, savePct: 0.9 },
+          { rowKey: "g-2", playerId: 2, playerName: "Goalie Two", teamLabel: "BBB", gamesPlayed: 1, toiSeconds: 3600, savePct: 0.9 },
+        ]}
+        sortState={{ sortKey: "savePct", direction: "desc" }}
+        pagination={{ page: 2, pageSize: 50, totalRows: 52, totalPages: 2 }}
+        showRankColumn
+      />,
+    );
+
+    expect(screen.queryByText("Rank")).toBeNull();
+    expect(screen.getByText("Row")).toBeTruthy();
+    const rows = screen.getAllByRole("row");
+    expect(within(rows[1] as HTMLElement).getAllByRole("cell")[0]?.textContent).toBe("51");
+    expect(within(rows[2] as HTMLElement).getAllByRole("cell")[0]?.textContent).toBe("52");
+  });
+
+  it("labels GP as split GP when a strength or score split is active (decision 94)", () => {
+    render(
+      <PlayerStatsTable
+        family="goalieCounts"
+        rows={[{ rowKey: "g-1", playerId: 1, playerName: "Goalie One", teamLabel: "AAA", gamesPlayed: 1, toiSeconds: 50 }]}
+        sortState={{ sortKey: "savePct", direction: "desc" }}
+        isSplitActive
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "Sort by Split GP" })).toBeTruthy();
+  });
 });

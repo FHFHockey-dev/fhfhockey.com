@@ -47,6 +47,14 @@ export const GAME_2: PlayerStatsSourceGameRow = {
   startTime: "2025-10-12T23:00:00.000Z",
 } as PlayerStatsSourceGameRow;
 
+/** A later game with the same script but no penalty: all 5v5. */
+export const GAME_3: PlayerStatsSourceGameRow = {
+  ...GAME_1,
+  id: 2025020003,
+  date: "2025-10-14",
+  startTime: "2025-10-14T23:00:00.000Z",
+} as PlayerStatsSourceGameRow;
+
 type EventSpec = {
   id: number;
   t: number;
@@ -212,7 +220,12 @@ export function buildRosterSpots(game: PlayerStatsSourceGameRow) {
 export function buildPlayers() {
   return [
     ...[HOME_GOALIE, AWAY_GOALIE].map((id) => ({ id, fullName: `Goalie ${id}`, position: "G" })),
-    ...[...HOME_SKATERS, ...AWAY_SKATERS].map((id) => ({ id, fullName: `Skater ${id}`, position: "C" })),
+    // 104 has no recorded position (decision 96).
+    ...[...HOME_SKATERS, ...AWAY_SKATERS].map((id) => ({
+      id,
+      fullName: `Skater ${id}`,
+      position: id === 104 ? null : "C",
+    })),
   ];
 }
 
@@ -276,12 +289,34 @@ export function createFakeSupabase(tables: Record<string, Row[]>) {
   };
 }
 
-export function buildFixtureTables(options: { pbpOnlyGame2?: boolean } = {}) {
-  const games = [GAME_1, ...(options.pbpOnlyGame2 ? [GAME_2] : [])];
+function buildEvenStrengthGameEvents(game: PlayerStatsSourceGameRow) {
+  return buildGameEvents(game)
+    .filter((event) => event.type_desc_key !== "penalty")
+    .map((event) => ({
+      ...event,
+      situation_code: "1551",
+      away_skaters: 5,
+      strength_exact: "5v5",
+    })) as PlayerStatsSourceEventRow[];
+}
+
+export function buildFixtureTables(
+  options: { pbpOnlyGame2?: boolean; evenStrengthGame3?: boolean } = {}
+) {
+  const games = [
+    GAME_1,
+    ...(options.pbpOnlyGame2 ? [GAME_2] : []),
+    ...(options.evenStrengthGame3 ? [GAME_3] : []),
+  ];
   return {
     games: games as unknown as Row[],
-    nhl_api_pbp_events: games.flatMap((game) => buildGameEvents(game)) as unknown as Row[],
-    nhl_api_shift_rows: buildGameShifts(GAME_1) as unknown as Row[],
+    nhl_api_pbp_events: games.flatMap((game) =>
+      game.id === GAME_3.id ? buildEvenStrengthGameEvents(game) : buildGameEvents(game)
+    ) as unknown as Row[],
+    nhl_api_shift_rows: [
+      ...buildGameShifts(GAME_1),
+      ...(options.evenStrengthGame3 ? buildGameShifts(GAME_3) : []),
+    ] as unknown as Row[],
     nhl_api_game_roster_spots: games.flatMap((game) => buildRosterSpots(game)) as Row[],
     nhl_api_game_payloads_raw: [] as Row[],
     players: buildPlayers() as Row[],

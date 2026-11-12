@@ -1229,6 +1229,10 @@ export default function PlayerUnderlyingStatsLandingPage({
           rows={landingData?.rows ?? []}
           sortState={landingData?.sort ?? filterState.view.sort}
           state={tableState}
+          isSplitActive={
+            filterState.primary.strength !== "allStrengths" ||
+            filterState.primary.scoreState !== "allScores"
+          }
           pagination={landingData?.pagination ?? null}
           renderingStrategy="load-more"
           showRankColumn

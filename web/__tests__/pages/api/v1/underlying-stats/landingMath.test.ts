@@ -315,3 +315,69 @@ describe("nulls sort last in both directions before pagination (W2-P0-7)", () =>
     expect(body.rows.map((row) => row.playerId)).toEqual([HOME_GOALIE, AWAY_GOALIE]);
   });
 });
+
+describe("players with no recorded position (W2-3 D14, decision 96)", () => {
+  it("serves them under all skaters with a null position and leaves them out of position groups", async () => {
+    const all = await callRoute(playersHandler, {
+      strength: "allStrengths",
+      scoreState: "allScores",
+      statMode: "onIce",
+      displayMode: "counts",
+    });
+    expect(rowFor(all.rows, 104)).toMatchObject({ positionCode: null, toiSeconds: 1200 });
+
+    const centers = await callRoute(playersHandler, {
+      strength: "allStrengths",
+      scoreState: "allScores",
+      statMode: "onIce",
+      displayMode: "counts",
+      positionGroup: "centers",
+    });
+    expect(rowFor(centers.rows, 104)).toBeUndefined();
+    expect(rowFor(centers.rows, 103)).toBeDefined();
+  });
+});
+
+describe("last N games on a split (W2-3 D8, decision 94)", () => {
+  beforeEach(async () => {
+    invalidatePlayerStatsSeasonAggregateCache();
+    await installFixture(buildFixtureTables({ evenStrengthGame3: true }));
+  });
+
+  it("selects the player's last N games played, then reads the split inside them", async () => {
+    // 102's last game played (game 3) had no power play, so the last-1 PP window is empty.
+    const lastOnePp = await callRoute(playersHandler, {
+      strength: "powerPlay",
+      scoreState: "allScores",
+      statMode: "individual",
+      displayMode: "counts",
+      scope: "gameRange",
+      gameRange: "1",
+    });
+    expect(rowFor(lastOnePp.rows, 102)).toBeUndefined();
+
+    // Over the last 2 games played the PP goal from game 1 is inside the window; split GP = 1.
+    const lastTwoPp = await callRoute(playersHandler, {
+      strength: "powerPlay",
+      scoreState: "allScores",
+      statMode: "individual",
+      displayMode: "counts",
+      scope: "gameRange",
+      gameRange: "2",
+    });
+    expect(rowFor(lastTwoPp.rows, 102)).toMatchObject({ goals: 1, gamesPlayed: 1, toiSeconds: 50 });
+
+    const goalieLastOneLeading = await callRoute(goaliesHandler, {
+      strength: "allStrengths",
+      scoreState: "leading",
+      displayMode: "counts",
+      scope: "gameRange",
+      gameRange: "1",
+    });
+    // Game 3 has the same score script: home led 350-700.
+    expect(rowFor(goalieLastOneLeading.rows, HOME_GOALIE)).toMatchObject({
+      gamesPlayed: 1,
+      toiSeconds: 350,
+    });
+  });
+});

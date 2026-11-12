@@ -4111,11 +4111,40 @@ function applyLandingScopeSelectionToSummaryRows(args: {
   state: PlayerStatsFilterState;
   games: readonly PlayerStatsSourceGameRow[];
   rows: readonly PlayerStatsLandingSummaryRow[];
+  /**
+   * All-strength, all-score rows for the same players and games. With a split
+   * active, "last N games" is the player's last N games played and the split
+   * numbers come from inside them (decision 94).
+   */
+  windowRows?: readonly PlayerStatsLandingSummaryRow[];
 }): PlayerStatsLandingSummaryRow[] {
   const scope = args.state.expandable.scope;
 
   if (scope.kind === "none" || scope.kind === "dateRange") {
     return [...args.rows];
+  }
+
+  if (scope.kind === "gameRange" && args.windowRows != null) {
+    const windowGameIdsByKey = new Map<string, Set<number>>();
+    const windowRowsByKey = new Map<string, PlayerStatsLandingSummaryRow[]>();
+
+    for (const row of args.windowRows) {
+      const key = getSummaryGroupingKey(args.state, row);
+      const existing = windowRowsByKey.get(key) ?? [];
+      existing.push(row);
+      windowRowsByKey.set(key, existing);
+    }
+
+    for (const [key, keyRows] of windowRowsByKey) {
+      windowGameIdsByKey.set(
+        key,
+        new Set(takeMostRecentSummaryRows(keyRows, scope.value).map((row) => row.gameId))
+      );
+    }
+
+    return args.rows.filter((row) =>
+      windowGameIdsByKey.get(getSummaryGroupingKey(args.state, row))?.has(row.gameId) ?? false
+    );
   }
 
   const rowsByGroupingKey = new Map<string, PlayerStatsLandingSummaryRow[]>();
@@ -4166,14 +4195,19 @@ function buildPlayerStatsLandingAggregationFromSummaryRows(args: {
   state: PlayerStatsLandingFilterState;
   games: readonly PlayerStatsSourceGameRow[];
   rows: readonly PlayerStatsLandingSummaryRow[];
+  windowRows?: readonly PlayerStatsLandingSummaryRow[] | null;
 }): PlayerStatsLandingAggregationRow[] {
   const filteredRows = args.rows.filter((row) =>
     matchesPlayerStatsSummaryRowForState(args.state, row)
   );
+  const windowState = toAllSituationState(args.state);
   const scopedRows = applyLandingScopeSelectionToSummaryRows({
     state: args.state,
     games: args.games,
     rows: filteredRows,
+    windowRows: args.windowRows?.filter((row) =>
+      matchesPlayerStatsSummaryRowForState(windowState, row)
+    ),
   });
   const grouped = new Map<string, PlayerStatsLandingSummaryRow[]>();
 
@@ -4362,6 +4396,46 @@ async function fetchPlayerStatsSummaryRowsForFilterState(args: {
   };
 }
 
+function toAllSituationState<TState extends PlayerStatsFilterState>(state: TState): TState {
+  return {
+    ...state,
+    primary: { ...state.primary, strength: "allStrengths", scoreState: "allScores" },
+  };
+}
+
+/**
+ * "Last N games" under a strength or score split selects the player's last N
+ * games played (all situations), then reads the split inside them (decision
+ * 94). The split GP is the games with time in the split.
+ */
+async function fetchLastNWindowRowsForSplit(args: {
+  state: PlayerStatsFilterState;
+  games: readonly PlayerStatsSourceGameRow[];
+  client: PlayerStatsSupabaseClient;
+  allowLiveSummaryBuild?: boolean;
+}): Promise<PlayerStatsLandingSummaryRow[] | null> {
+  const { scope } = args.state.expandable;
+  if (
+    scope.kind !== "gameRange" ||
+    scope.value == null ||
+    scope.value <= 0 ||
+    (args.state.primary.strength === "allStrengths" &&
+      args.state.primary.scoreState === "allScores")
+  ) {
+    return null;
+  }
+
+  const { persistedSummaryRows, liveSummaryRows } =
+    await fetchPlayerStatsSummaryRowsForFilterState({
+      games: args.games,
+      state: toAllSituationState(args.state),
+      client: args.client,
+      allowLiveSummaryBuild: args.allowLiveSummaryBuild,
+    });
+
+  return [...persistedSummaryRows, ...liveSummaryRows];
+}
+
 function formatPlayerStatsSeasonLabel(seasonId: number): string {
   const seasonString = String(seasonId);
   if (!/^\d{8}$/.test(seasonString)) {
@@ -4434,14 +4508,19 @@ function buildPlayerStatsDetailAggregationFromSummaryRows(args: {
   state: PlayerStatsDetailFilterState;
   games: readonly PlayerStatsSourceGameRow[];
   rows: readonly PlayerStatsLandingSummaryRow[];
+  windowRows?: readonly PlayerStatsLandingSummaryRow[] | null;
 }): PlayerStatsDetailAggregationRow[] {
   const filteredRows = args.rows.filter((row) =>
     matchesPlayerStatsSummaryRowForDetailState(args.playerId, args.state, row)
   );
+  const windowState = toAllSituationState(args.state);
   const scopedRows = applyLandingScopeSelectionToSummaryRows({
     state: args.state,
     games: args.games,
     rows: filteredRows,
+    windowRows: args.windowRows?.filter((row) =>
+      matchesPlayerStatsSummaryRowForDetailState(args.playerId, windowState, row)
+    ),
   });
   const grouped = new Map<string, PlayerStatsLandingSummaryRow[]>();
 
@@ -4561,6 +4640,7 @@ function buildLandingChartApiResultFromSummaryRows(args: {
   games: readonly PlayerStatsSourceGameRow[];
   rows: readonly PlayerStatsLandingSummaryRow[];
   goalieBaseline?: GoalieLeagueBaseline | null;
+  windowRows?: readonly PlayerStatsLandingSummaryRow[] | null;
 }): PlayerStatsLandingChartResult {
   const family = resolveLandingTableFamily(args.state);
   const filteredRows = args.rows.filter((row) => {
@@ -4578,10 +4658,17 @@ function buildLandingChartApiResultFromSummaryRows(args: {
 
     return true;
   });
+  const windowState = toAllSituationState(args.state);
   const scopedRows = applyLandingScopeSelectionToSummaryRows({
     state: args.state,
     games: args.games,
     rows: filteredRows,
+    windowRows: args.windowRows?.filter(
+      (row) =>
+        matchesPlayerStatsSummaryRowForState(windowState, row) &&
+        row.playerId === args.playerId &&
+        (args.splitTeamId == null || row.teamId === args.splitTeamId)
+    ),
   });
   const chronologicallySortedRows = [...scopedRows].sort((left, right) =>
     compareGamesAscending(
@@ -5306,6 +5393,12 @@ export async function buildPlayerStatsLandingAggregationFromState(
     state: aggregationState,
     games,
     rows: [...persistedSummaryRows, ...liveSummaryRows],
+    windowRows: await fetchLastNWindowRowsForSplit({
+      state: aggregationState,
+      games,
+      client,
+      allowLiveSummaryBuild: !canUseAggregateCache,
+    }),
   });
   const aggregationRowsBuiltAt = Date.now();
 
@@ -5381,6 +5474,11 @@ export async function buildPlayerStatsLandingChartFromState(args: {
       rows,
       client,
     }),
+    windowRows: await fetchLastNWindowRowsForSplit({
+      state: args.state,
+      games,
+      client,
+    }),
   });
 }
 
@@ -5412,6 +5510,7 @@ export async function buildPlayerStatsDetailAggregationFromState(
     state,
     games,
     rows: [...persistedSummaryRows, ...liveSummaryRows],
+    windowRows: await fetchLastNWindowRowsForSplit({ state, games, client }),
   });
   const aggregationRowsBuiltAt = Date.now();
   const aggregation = buildDetailApiResultFromAggregationRows({

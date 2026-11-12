@@ -272,7 +272,15 @@ export function matchesPlayerStatsPositionGroup(args: {
   }
 
   if (args.positionGroup === null || args.positionGroup === "skaters") {
-    return canonicalPosition === "C" || canonicalPosition === "LW" || canonicalPosition === "RW" || canonicalPosition === "D";
+    // A skater with no recorded position is shown, labelled "position unknown"
+    // (decision 96); only position-specific groups exclude him.
+    return (
+      canonicalPosition === null ||
+      canonicalPosition === "C" ||
+      canonicalPosition === "LW" ||
+      canonicalPosition === "RW" ||
+      canonicalPosition === "D"
+    );
   }
 
   if (args.positionGroup === "defensemen") {
