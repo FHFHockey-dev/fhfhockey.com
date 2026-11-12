@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 import { parseShareSettings } from "./contract";
 import { buildCreaseShift, colorDistance, CREASE_MIN_COLOR_DISTANCE, creaseColors, creaseShiftModule, creaseShiftShown, creaseShiftWords, editionCutoff, reconcileSchedule, type CreaseShiftData, type ScheduledGame } from "./creaseShift";
 import type { CompletedTeamGame, GoalieAppearance } from "./shared/goalieLedger";
+import { readScheduledGames } from "./creaseShift.sources";
 import { contrast, NEON_CARD } from "lib/socialShare/teamNeon";
 import { teamsInfo } from "lib/teamsInfo";
 
@@ -14,11 +15,11 @@ const game = (team: string, index: number, gameId = 1000 + index): CompletedTeam
 const row = (goalieId: number, team: string, index: number, started: boolean | null = true, gameId = 1000 + index): GoalieAppearance => ({
   goalieId, name: `G${goalieId}`, gameId, date: date(index), team, opponent: null, home: null, started, wins: 0, losses: 0, otLosses: 0, saves: 20, shotsAgainst: 22, goalsAgainst: 2, toiSeconds: 3600, shutouts: 0, qualityStart: 0,
 });
-const schedule = (games: readonly CompletedTeamGame[]): ScheduledGame[] => games.map(entry => ({ id: entry.gameId, date: entry.date, homeTeamId: teamsInfo[entry.team as "NJD"].id, awayTeamId: null })).map(entry => ({ ...entry, awayTeamId: entry.homeTeamId === NJD ? NYR : NJD }));
+const schedule = (games: readonly CompletedTeamGame[]): ScheduledGame[] => games.map(entry => ({ id: entry.gameId, date: entry.date, homeTeamId: teamsInfo[entry.team as "NJD"].id, awayTeamId: null, final: true })).map(entry => ({ ...entry, awayTeamId: entry.homeTeamId === NJD ? NYR : NJD }));
 /** NJD games only, with NYR's side reported too, so the schedule reconciles. */
 const reportBoth = (games: readonly CompletedTeamGame[]) => games.flatMap(entry => [entry, { ...entry, team: entry.team === "NJD" ? "NYR" : "NJD" }]);
 /** Each game against PHI, with PHI's side reported too, so every night reconciles and none reads as late. */
-const vsPhi = (games: readonly CompletedTeamGame[]) => ({ scheduled: games.map(entry => ({ id: entry.gameId, date: entry.date, homeTeamId: teamsInfo[entry.team as "NJD"].id, awayTeamId: teamsInfo.PHI.id })), reported: [...games, ...games.map(entry => ({ ...entry, team: "PHI" }))] });
+const vsPhi = (games: readonly CompletedTeamGame[]) => ({ scheduled: games.map(entry => ({ id: entry.gameId, date: entry.date, homeTeamId: teamsInfo[entry.team as "NJD"].id, awayTeamId: teamsInfo.PHI.id, final: true })), reported: [...games, ...games.map(entry => ({ ...entry, team: "PHI" }))] });
 const base = { teams: ["NJD"], window: 5, comparison: "previous" as const, minComparisonGames: 1, through: "2026-10-30" };
 const twenty = Array.from({ length: 10 }, (_, index) => game("NJD", index));
 
@@ -45,7 +46,7 @@ describe("crease shift", () => {
   it("binds a traded goalie's games to the team he played for", () => {
     const games = [game("NJD", 0), game("NJD", 1), game("NYR", 2, 2000), game("NYR", 3, 2001)];
     const appearances = [row(1, "NJD", 0), row(1, "NJD", 1), row(1, "NYR", 2, true, 2000), row(3, "NYR", 3, true, 2001)];
-    const scheduled = [{ id: 1000, date: date(0), homeTeamId: NJD, awayTeamId: teamsInfo.PHI.id }, { id: 1001, date: date(1), homeTeamId: NJD, awayTeamId: teamsInfo.PHI.id }, { id: 2000, date: date(2), homeTeamId: NYR, awayTeamId: teamsInfo.PHI.id }, { id: 2001, date: date(3), homeTeamId: NYR, awayTeamId: teamsInfo.PHI.id }];
+    const scheduled = [{ id: 1000, date: date(0), homeTeamId: NJD, awayTeamId: teamsInfo.PHI.id, final: true }, { id: 1001, date: date(1), homeTeamId: NJD, awayTeamId: teamsInfo.PHI.id, final: true }, { id: 2000, date: date(2), homeTeamId: NYR, awayTeamId: teamsInfo.PHI.id, final: true }, { id: 2001, date: date(3), homeTeamId: NYR, awayTeamId: teamsInfo.PHI.id, final: true }];
     const phi = scheduled.map(entry => ({ gameId: entry.id, date: entry.date, team: "PHI" }));
     const result = buildCreaseShift({ ...base, teams: ["NJD", "NYR"], window: 2, reported: [...games, ...phi], appearances, scheduled });
     const nyr = result.data!.teams.find(team => team.team === "NYR")!, njd = result.data!.teams.find(team => team.team === "NJD")!;
@@ -453,7 +454,7 @@ describe("picked teams", () => {
     const scheduled: ScheduledGame[] = [], reported: CompletedTeamGame[] = [], appearances: GoalieAppearance[] = [];
     pairs.forEach(([home, away, count], pair) => Array.from({ length: count }, (_, index) => {
       const gameId = 7000 + pair * 100 + index;
-      scheduled.push({ id: gameId, date: date(index), homeTeamId: teamsInfo[home].id, awayTeamId: teamsInfo[away].id });
+      scheduled.push({ id: gameId, date: date(index), homeTeamId: teamsInfo[home].id, awayTeamId: teamsInfo[away].id, final: true });
       for (const team of [home, away]) {
         const recent = index - (count - 5);
         reported.push(game(team, index, gameId));
@@ -582,5 +583,65 @@ describe("crease shift card", () => {
   });
   it("leaves the appearance pie alone: this post reads no appearance share", () => {
     expect(readFileSync("lib/socialShare/modules/creaseShift.ts", "utf8")).not.toMatch(/goalieWorkload|GoalieShareChart"/);
+  });
+});
+
+describe("schedule finality (rule 19: finality comes from a game state, not a date or a report)", () => {
+  const games = Array.from({ length: 20 }, (_, index) => game("NJD", index));
+  const notFinal = (ids: readonly number[]) => schedule(games).map(entry => ids.includes(entry.id) ? { ...entry, final: false } : entry);
+  const build = (scheduled: ScheduledGame[]) => buildCreaseShift({ ...base, window: 10, minComparisonGames: 1, reported: reportBoth(games), appearances: games.map((_, index) => row(1, "NJD", index)), scheduled });
+  it("counts a reported game as completed only with final-state evidence, and says how complete the schedule is", () => {
+    const four = games.slice(0, 4), scheduled = schedule(four).map(entry => entry.id === 1001 ? { ...entry, final: false } : entry);
+    const result = reconcileSchedule(scheduled, reportBoth(four));
+    expect(result.games.map(entry => entry.gameId)).not.toContain(1001);
+    expect(result).toMatchObject({ scheduledGames: 4, finalGames: 3, expected: 8, observed: 6, unreported: 0, notFinal: 2, missing: 2, complete: false });
+    expect(result.gaps.filter(gap => gap.gameId === 1001)).toEqual([{ team: "NJD", gameId: 1001, date: date(1), reason: "not_final" }, { team: "NYR", gameId: 1001, date: date(1), reason: "not_final" }]);
+    expect(reconcileSchedule(schedule(four), reportBoth(four))).toMatchObject({ finalGames: 4, observed: 8, missing: 0, complete: true });
+  });
+  it("keeps an older game with no final state out of LAST n and the share, and marks the post partial", () => {
+    const result = build(notFinal([1015])), njd = result.data!.teams[0];
+    expect(njd.series.find(point => point.gameId === 1015)).toMatchObject({ state: "missing", starterId: null });
+    expect(njd.series.filter(point => point.state !== "missing").map(point => point.gameId)).toEqual([1009, 1010, 1011, 1012, 1013, 1014, 1016, 1017, 1018, 1019]);
+    expect(result.state).toBe("partial");
+    expect(result.reasons).toContain("1 of 20 scheduled games has no final game state yet, so it is not counted as completed.");
+  });
+  it("ends the card at the last night whose games are all final when the newest night is not", () => {
+    const result = build(notFinal([1019]));
+    expect(result.data!.through).toBe(date(18));
+    expect(result.pageNotes![0]).toMatch(/is not fully reported yet, so this card ends Oct 19/);
+    expect(result.state).toBe("ready");
+  });
+});
+
+describe("readScheduledGames", () => {
+  /** Exact-count fake that records each table's filters. */
+  const recording = (tables: Record<string, unknown[]>) => {
+    const calls: { table: string; ops: unknown[][] }[] = [];
+    return { calls, client: { from: (table: string) => {
+      const call = { table, ops: [] as unknown[][] }; calls.push(call);
+      const chain: Record<string, unknown> = {};
+      for (const method of ["select", "eq", "gte", "lte", "in", "order"]) chain[method] = (...args: unknown[]) => { call.ops.push([method, ...args]); return chain; };
+      chain.range = async (start: number, end: number) => {
+        const ids = call.ops.find(([op]) => op === "in")?.[2] as number[] | undefined, rows = (tables[table] ?? []).filter(entry => !ids || ids.includes((entry as { gameid: number }).gameid));
+        return { data: rows.slice(start, end + 1), error: null, count: rows.length };
+      };
+      return chain;
+    } } };
+  };
+  it("marks a game final only when stored play-by-play holds exactly one game-end event", async () => {
+    const source = recording({
+      games: [10, 11, 12].map(id => ({ id, date: "2026-10-01", homeTeamId: NJD, awayTeamId: NYR })),
+      pbp_plays: [{ gameid: 10, id: 1 }, { gameid: 12, id: 2 }, { gameid: 12, id: 3 }],
+    });
+    const games = await readScheduledGames(source.client, { season: 20262027, from: "2026-07-01", through: "2026-10-30", limit: 100 });
+    expect(games.map(entry => [entry.id, entry.final])).toEqual([[10, true], [11, false], [12, false]]);
+    const pbp = source.calls.find(call => call.table === "pbp_plays")!;
+    expect(pbp.ops).toContainEqual(["eq", "typedesckey", "game-end"]);
+    expect(pbp.ops).toContainEqual(["in", "gameid", [10, 11, 12]]);
+  });
+  it("reads no play-by-play when nothing is scheduled", async () => {
+    const source = recording({ games: [] });
+    expect(await readScheduledGames(source.client, { season: 20262027, from: "2026-07-01", through: "2026-10-30", limit: 100 })).toEqual([]);
+    expect(source.calls.map(call => call.table)).toEqual(["games"]);
   });
 });

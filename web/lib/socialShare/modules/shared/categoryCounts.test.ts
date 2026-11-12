@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { calculateWeeklyRanking } from "components/GoaliePage/goalieCalculations";
+import { gradeGoalieWeek } from "components/GoaliePage/goalieCalculations";
 import type { GoalieWeeklyAggregate, LeagueWeeklyAverage, StatColumn } from "components/GoaliePage/goalieTypes";
 import { buildWeekLedger, buildWeekLedgers, categoryBaseline, cellOutcome, compareToBaseline, countCells, CATEGORIES, DEFAULT_CATEGORY_IDS, defaultMonth, defaultWeek, monthPeriod, partsOf, periodGoalies, rankPeriodGoalies, toMatchupWeeks, weekMonth, weekPeriod, type CategoryId, type MatchupWeek } from "./categoryCounts";
 import type { GoalieAppearance } from "./goalieLedger";
@@ -146,16 +146,16 @@ describe("TGV and Category Counts side by side", () => {
     { label: "SO", value: "shutouts", dbFieldGoalie: "weekly_so", dbFieldAverage: "avg_league_weekly_so" },
   ];
   const goalieWeek = { weekly_wins: 1, weekly_so: 0 } as GoalieWeeklyAggregate;
-  it("differs on a tie: TGV counts it as better, Category Counts as tied", () => {
-    const tgv = calculateWeeklyRanking(goalieWeek, { avg_league_weekly_wins: 1 } as LeagueWeeklyAverage, ["wins"], columns);
-    expect(tgv).toMatchObject({ percentage: 100, ranking: "Elite" });
+  it("differs on a tie: TGV gives half credit, Category Counts counts it tied", () => {
+    const tgv = gradeGoalieWeek(goalieWeek, { avg_league_weekly_wins: 1 } as LeagueWeeklyAverage, ["wins"], columns);
+    expect(tgv).toMatchObject({ percentage: 50, ranking: "Average" });
     const ledger = buildWeekLedger(week, [row(1, { wins: 1 }), row(2, { wins: 1 })], ["wins"]);
     expect(cell(ledger, 1, "wins")).toMatchObject({ result: "tied", outcome: "tied" });
     expect(countCells(ledger.goalies[0].gameCells)).toMatchObject({ better: 0, tied: 1 });
   });
-  it("differs on a zero baseline: TGV skips it, Category Counts keeps it", () => {
-    const tgv = calculateWeeklyRanking(goalieWeek, { avg_league_weekly_so: 0 } as LeagueWeeklyAverage, ["shutouts"], columns);
-    expect(tgv).toMatchObject({ percentage: 0, ranking: "Abysmal" });
+  it("differs on a zero baseline: TGV leaves the week unclassified, Category Counts keeps it", () => {
+    const tgv = gradeGoalieWeek(goalieWeek, { avg_league_weekly_so: 0 } as LeagueWeeklyAverage, ["shutouts"], columns);
+    expect(tgv).toBeNull();
     const ledger = buildWeekLedger(week, [row(1), row(2)], ["shutouts"]);
     expect(countCells(ledger.goalies[0].gameCells)).toMatchObject({ tied: 1, compared: 1 });
   });

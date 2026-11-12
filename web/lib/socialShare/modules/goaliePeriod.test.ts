@@ -15,7 +15,7 @@ const settings: GoaliePeriodSettings = { period: "week", week: 4, month: "", sta
 const stat = (goalieId: number, team: string, gameId: number, date: string, values: Partial<GoalieAppearance> = {}): GoalieAppearance => ({ goalieId, name: `G${goalieId}`, gameId, date, team, opponent: null, home: null, started: true, wins: 0, losses: 0, otLosses: 0, saves: 25, shotsAgainst: 28, goalsAgainst: 3, toiSeconds: 3600, shutouts: 0, qualityStart: 0, ...values });
 const NJD = teamsInfo.NJD.id, NYR = teamsInfo.NYR.id;
 const games = [{ id: 1, date: "2026-10-20" }, { id: 2, date: "2026-10-22" }];
-const scheduled = games.map(game => ({ ...game, homeTeamId: NJD, awayTeamId: NYR }));
+const scheduled = games.map(game => ({ ...game, homeTeamId: NJD, awayTeamId: NYR, final: true }));
 const reported = games.flatMap(game => [{ gameId: game.id, date: game.date, team: "NJD" }, { gameId: game.id, date: game.date, team: "NYR" }]);
 const appearances = [
   stat(1, "NJD", 1, "2026-10-20", { wins: 1, saves: 35, shotsAgainst: 36, goalsAgainst: 1, shutouts: 0 }), stat(1, "NJD", 2, "2026-10-22", { wins: 1, saves: 30, shotsAgainst: 30, goalsAgainst: 0, shutouts: 1 }),
@@ -89,6 +89,11 @@ describe("goalie of the period", () => {
     expect(older.pageNotes).toBeUndefined();
     expect(buildGoaliePeriod({ ...base, reported: [] })).toMatchObject({ state: "missing", data: null, reasons: ["No night in Week 4, 2026-10-19 to 2026-10-25 is fully reported yet."] });
   });
+  it("does not count a reported game with no final game state as completed (rule 19)", () => {
+    const result = buildGoaliePeriod({ ...base, scheduled: scheduled.map(game => game.id === 1 ? { ...game, final: false } : game) });
+    expect(result.state).toBe("partial");
+    expect(result.reasons).toEqual(["1 of 2 scheduled games in this period's weeks has no final game state yet, so it is not counted as completed."]);
+  });
   it("has nothing to export below the minimum starts", () => {
     const { data } = buildGoaliePeriod({ ...base, settings: { ...settings, minStartsWeek: 3 } });
     expect(data!.ranked).toBe(0);
@@ -145,13 +150,19 @@ describe("TGV beside Category Counts", () => {
     expect(tgvSeasonWeeks(later, weekPeriod(weeks[0], "2026-10-30")).map(week => week.week)).toEqual([3, 4]);
     expect(tgvSeasonWeeks(later, { cellWeeks: [] })).toEqual([]);
   });
-  it("can never give Average with the method's default three stats: 0, 33, 67 or 100% only", () => {
+  it("gives no Average without a tie on the default three stats: 0, 33, 67 or 100% only", () => {
     const seen = new Set<string>();
     for (const wins of [0, 2]) for (const saves of [0, 99]) for (const svPct of [0.5, 0.99]) {
       const week = { ...tgv.goalies[0], weekly_wins: wins, weekly_saves: saves, weekly_sv_pct: svPct };
       seen.add(buildGoaliePeriod({ ...base, tgv: { ...tgv, goalies: [week] } }).data!.rows.find(row => row.goalieId === 1)!.tgv.series[0].ranking!);
     }
     expect([...seen].sort()).toEqual(["Abysmal", "Bad", "Elite", "Good"]);
+  });
+  it("grades a week by the starter week bar with half credit for ties, and leaves a week with no comparable stat unclassified (decision 97)", () => {
+    const tied = { ...tgv.goalies[0], weekly_wins: 1, weekly_saves: 51.5, weekly_sv_pct: 0.92 };
+    expect(buildGoaliePeriod({ ...base, tgv: { ...tgv, goalies: [tied] } }).data!.rows.find(row => row.goalieId === 1)!.tgv).toMatchObject({ counts: { Elite: 0, Average: 1 }, points: 5, series: [{ week: 4, ranking: "Average" }] });
+    const noBar = { ...tgv, league: [{ week: 4, avg_league_weekly_wins: null, avg_league_weekly_saves: null, avg_league_weekly_sv_pct: null }] as LeagueWeeklyAverage[] };
+    expect(buildGoaliePeriod({ ...base, tgv: noBar }).data!.rows.find(row => row.goalieId === 1)!.tgv).toMatchObject({ counts: { Abysmal: 0 }, unclassified: 1, series: [{ week: 4, ranking: null, points: null }] });
   });
   it("keeps an unclassified week out of the counts and the points, as the existing method does", () => {
     const short = { ...tgv, goalies: [{ ...tgv.goalies[0], weekly_toi_seconds: 600 }, tgv.goalies[1]] };
@@ -170,7 +181,7 @@ describe("TGV beside Category Counts", () => {
   /** n goalies with two starts each, one game a side, better goalies first. */
   const pool = (n: number, values: (goalie: number) => Partial<GoalieAppearance> = goalie => ({ saves: 40 - goalie, shotsAgainst: 42 }), adp: GoalieAdpRows | null = base.adp) => {
     const games = Array.from({ length: n }, (_, index) => ({ id: index + 1, date: `2026-10-${String(19 + index % 7)}` }));
-    const sched = games.map(game => ({ ...game, homeTeamId: NJD, awayTeamId: NYR }));
+    const sched = games.map(game => ({ ...game, homeTeamId: NJD, awayTeamId: NYR, final: true }));
     const rep = games.flatMap(game => [{ gameId: game.id, date: game.date, team: "NJD" }, { gameId: game.id, date: game.date, team: "NYR" }]);
     const stats = rep.map((game, index) => stat(index % n + 1, game.team, game.gameId, game.date, values(index % n + 1)));
     return buildGoaliePeriod({ ...base, appearances: stats, reported: rep, scheduled: sched, adp });
@@ -270,7 +281,7 @@ describe("TGV beside Category Counts", () => {
       expect(root.querySelector("[data-selected-grade]")).not.toBeNull();
       expect(root.querySelector('[data-testid="board-worst"] h4')!.textContent).toContain(TGV_LABEL);
     }
-    expect(buildGoaliePeriod(base).evidence.cohort).toContain("Average cannot occur");
+    expect(buildGoaliePeriod(base).evidence.cohort).toContain("a tie with the week bar earns half credit");
   });
   it("keeps each goalie's selected grade, season points and line in the row", async () => {
     const root = await render(buildGoaliePeriod({ ...base, tgv: season }).data!), row = root.querySelector('[data-testid="goalie-period-row"]')!;
@@ -481,7 +492,7 @@ describe("TGV beside Category Counts", () => {
     const fixture = () => {
       const games = [{ id: 11, date: "2026-10-06" }, { id: 12, date: "2026-10-13" }];
       return {
-        scheduled: games.map(game => ({ ...game, homeTeamId: NJD, awayTeamId: NYR })),
+        scheduled: games.map(game => ({ ...game, homeTeamId: NJD, awayTeamId: NYR, final: true })),
         reported: games.flatMap(game => [{ gameId: game.id, date: game.date, team: "NJD" }, { gameId: game.id, date: game.date, team: "NYR" }]),
         appearances: [stat(1, "NJD", 11, "2026-10-06", { wins: 1, saves: 40, shotsAgainst: 41, goalsAgainst: 1 }), stat(2, "NYR", 11, "2026-10-06", { losses: 1, saves: 20, shotsAgainst: 25, goalsAgainst: 5 }), stat(1, "NJD", 12, "2026-10-13", { wins: 1, saves: 35, shotsAgainst: 36, goalsAgainst: 1 }), stat(3, "NYR", 12, "2026-10-13", { losses: 1, saves: 18, shotsAgainst: 24, goalsAgainst: 6 })],
       };
