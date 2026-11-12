@@ -122,8 +122,12 @@ export default function HomepagePulse({
     };
   }, [modelPath, visitorPath]);
 
+  // Either series can be absent (decision 109 hides the model series until a
+  // qualified model exists); show whichever one has a line.
   const path =
-    activeSeries === "visitors" && visitorPath ? visitorPath : modelPath;
+    activeSeries === "visitors"
+      ? visitorPath || modelPath
+      : modelPath || visitorPath;
 
   if (!path) return null;
 

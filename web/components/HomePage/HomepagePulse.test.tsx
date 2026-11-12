@@ -61,4 +61,30 @@ describe("HomepagePulse", () => {
     expect(container.querySelector("text, title, foreignObject")).toBeNull();
     expect(container.textContent).toBe("");
   });
+
+  // W3-2 D1 / decision 109: with the model series hidden, the visitor line
+  // still renders (the old render returned null with visitors only).
+  it("renders the daily visitor line alone when there is no model series", () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => new Promise(() => {})),
+    );
+    const { container } = render(
+      <HomepagePulse
+        initialPoints={[]}
+        initialVisitorPoints={[
+          { timestamp: "2026-11-09T00:00:00.000Z", value: 30 },
+          { timestamp: "2026-11-10T00:00:00.000Z", value: 18 },
+          { timestamp: "2026-11-11T00:00:00.000Z", value: 42 },
+        ]}
+      />,
+    );
+
+    const svg = container.querySelector("svg");
+    expect(svg).toBeTruthy();
+    expect(svg?.getAttribute("aria-hidden")).toBe("true");
+    expect(svg?.querySelector("path")?.getAttribute("d")).toMatch(/^M /);
+    vi.unstubAllGlobals();
+  });
 });
+

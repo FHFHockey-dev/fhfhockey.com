@@ -6,13 +6,22 @@ const MAX_PREDICTION_ROWS = 600;
 const MAX_MARKET_ROWS = 2400;
 const MAX_PULSE_POINTS = 64;
 const PULSE_BUCKET_MS = 15 * 60 * 1000;
+/** Bounded age: today's slate, or yesterday's when today has none. */
+const MAX_PULSE_SLATE_AGE_DAYS = 1;
 
 export type HomepagePulsePoint = {
   timestamp: string;
   value: number;
 };
 
-export type HomepagePulsePrediction = {
+/** A qualified (production) game model; nothing else feeds the pulse. */
+export type HomepagePulseModel = {
+  model_name: string;
+  model_version: string;
+  feature_set_version: string;
+};
+
+export type HomepagePulsePrediction = HomepagePulseModel & {
   game_id: number;
   snapshot_date: string;
   computed_at: string;
@@ -57,20 +66,33 @@ function embeddedMarketEdge(row: HomepagePulsePrediction): number | null {
   return edge == null ? null : Math.abs(edge);
 }
 
+const modelKey = (model: HomepagePulseModel) =>
+  `${model.model_name}|${model.model_version}|${model.feature_set_version}`;
+
+function shiftIsoDate(date: string, days: number): string {
+  const parsed = Date.parse(`${date}T00:00:00.000Z`);
+  if (!Number.isFinite(parsed)) return date;
+  return new Date(parsed + days * 86_400_000).toISOString().slice(0, 10);
+}
+
+/**
+ * The pulse slate: today's if it has rows, otherwise the most recent slate no
+ * more than MAX_PULSE_SLATE_AGE_DAYS old. An older slate is stale: [].
+ */
 export function selectHomepagePulseSlateDates(
   rows: HomepagePulsePrediction[],
   currentDate: string,
 ): string[] {
+  const oldestDate = shiftIsoDate(currentDate, -MAX_PULSE_SLATE_AGE_DAYS);
   const availableDates = Array.from(
     new Set(
       rows
         .map((row) => row.snapshot_date)
-        .filter((date) => date && date <= currentDate),
+        .filter((date) => date && date <= currentDate && date >= oldestDate),
     ),
   ).sort((left, right) => right.localeCompare(left));
 
-  if (availableDates.includes(currentDate)) return [currentDate];
-  return availableDates.slice(0, 2);
+  return availableDates.slice(0, 1);
 }
 
 function bucketObservations(
@@ -152,17 +174,25 @@ function buildSnapshotEdgeObservations(args: {
   });
 }
 
+/**
+ * One series meaning: |FHFH model − de-vigged market| for the production
+ * model's predictions on a bounded-age slate. With no production model, a
+ * stale slate or fewer than two market observations, there is no series
+ * (decision 109: nothing model-based until a qualified model exists).
+ */
 export function buildHomepagePulsePoints(args: {
   predictions: HomepagePulsePrediction[];
   marketSnapshots?: HomepagePulseMarketSnapshot[];
+  productionModels: HomepagePulseModel[];
   currentDate: string;
 }): HomepagePulsePoint[] {
-  const slateDates = selectHomepagePulseSlateDates(
-    args.predictions,
-    args.currentDate,
+  const productionKeys = new Set(args.productionModels.map(modelKey));
+  const qualified = args.predictions.filter((row) =>
+    productionKeys.has(modelKey(row)),
   );
+  const slateDates = selectHomepagePulseSlateDates(qualified, args.currentDate);
   const selectedDateSet = new Set(slateDates);
-  const predictions = args.predictions.filter((row) =>
+  const predictions = qualified.filter((row) =>
     selectedDateSet.has(row.snapshot_date),
   );
   const marketSnapshots = (args.marketSnapshots ?? []).filter((row) =>
@@ -184,32 +214,39 @@ export function buildHomepagePulsePoints(args: {
     ...snapshotEdgeObservations,
   ];
 
-  if (marketObservations.length >= 2) {
-    return bucketObservations(marketObservations);
-  }
-
-  // Historical rows predate market-snapshot persistence. Their changing
-  // distance from 50% keeps the offseason pulse real until market capture
-  // resumes, at which point the branch above takes over automatically.
-  return bucketObservations(
-    predictions.map((prediction) => ({
-      timestamp: prediction.computed_at,
-      value: Math.abs(prediction.home_win_probability - 0.5),
-    })),
-  );
+  return marketObservations.length >= 2
+    ? bucketObservations(marketObservations)
+    : [];
 }
 
 export async function fetchHomepagePulse(args: {
   supabase: SupabaseClient<Database>;
   currentDate: string;
 }): Promise<HomepagePulsePoint[]> {
+  // Decision 109: no qualified game model, no model series.
+  const modelsResult = await args.supabase
+    .from("game_prediction_model_versions")
+    .select("model_name,model_version,feature_set_version")
+    .eq("status", "production");
+  if (modelsResult.error) throw modelsResult.error;
+  const productionModels = (modelsResult.data ?? []) as HomepagePulseModel[];
+  if (productionModels.length === 0) return [];
+
   const predictionsResult = await args.supabase
     .from("game_prediction_history")
     .select(
-      "game_id,snapshot_date,computed_at,prediction_cutoff_at,home_win_probability,metadata,components",
+      "game_id,snapshot_date,computed_at,prediction_cutoff_at,home_win_probability,metadata,components,model_name,model_version,feature_set_version",
     )
     .eq("is_public", true)
     .eq("prediction_scope", "pregame")
+    .in(
+      "model_name",
+      Array.from(new Set(productionModels.map((model) => model.model_name))),
+    )
+    .gte(
+      "snapshot_date",
+      shiftIsoDate(args.currentDate, -MAX_PULSE_SLATE_AGE_DAYS),
+    )
     .lte("snapshot_date", args.currentDate)
     .order("snapshot_date", { ascending: false })
     .order("computed_at", { ascending: false })
@@ -217,8 +254,9 @@ export async function fetchHomepagePulse(args: {
   if (predictionsResult.error) throw predictionsResult.error;
 
   const predictions = (predictionsResult.data ?? []) as HomepagePulsePrediction[];
+  const productionKeys = new Set(productionModels.map(modelKey));
   const slateDates = selectHomepagePulseSlateDates(
-    predictions,
+    predictions.filter((row) => productionKeys.has(modelKey(row))),
     args.currentDate,
   );
   if (slateDates.length === 0) return [];
@@ -238,6 +276,7 @@ export async function fetchHomepagePulse(args: {
     predictions,
     marketSnapshots:
       (marketResult.data ?? []) as HomepagePulseMarketSnapshot[],
+    productionModels,
     currentDate: args.currentDate,
   });
 }

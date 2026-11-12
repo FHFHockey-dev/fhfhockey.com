@@ -2139,3 +2139,6 @@ Math-audit fix lane L5 (rankings, splits, impact ratings, team unit TOI), local 
 
 ## CLAUDE-FIX-L8-CLAIM-20261111 (2026-11-11)
 Math-audit fix lane L8 (lines, PP combinations, TOI API, shift charts), local edits only (no push/deploy/prod): `web/components/LineCombinations/**`, `web/pages/lines/**`, `web/components/LinemateMatrix/**`, `web/utils/getPowerPlayBlocks.ts`, `web/utils/extractPPDetails.ts`, `web/pages/api/toi.ts`, `web/components/TimeOnIceChart/**`, `web/components/PowerPlayCombos/**`, `web/pages/api/v1/db/update-power-play-combinations/**`, `web/lib/supabase/Upserts/powerPlayCombinationMetrics.ts`, `web/pages/api/v1/db/powerPlayTimeFrame.ts`, `web/components/ShiftChart/**`, `web/components/DateRangeMatrix/**`, `web/lib/socialShare/trends.ts` and tests beside them. Please flag any overlap.
+
+## CLAUDE-FIX-L16-CLAIM-20261111 (2026-11-11)
+Math-audit fix lane L16 (homepage game analytics and pulse), local edits only (no push/deploy/prod): `web/lib/homepageGameAnalytics.ts`, `web/lib/homepagePulse.ts`, `web/components/HomePage/**`, `web/pages/api/v1/homepage/**`, `web/pages/api/v1/games/index.js` and tests beside them. Please flag any overlap.

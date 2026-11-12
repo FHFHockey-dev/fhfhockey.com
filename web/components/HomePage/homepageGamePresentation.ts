@@ -1,5 +1,9 @@
 import type { HomepageGameAnalytics } from "lib/homepageGameAnalytics";
 import {
+  displayedWinPair,
+  type HomepageDisplayedWinPair,
+} from "./homepageWinPair";
+import {
   formatPeriodText,
   getDisplayGameState,
   isFinalGameState,
@@ -25,8 +29,12 @@ export type HomepageGamePresentation = {
   periodLabel: string | null;
   clock: string | null;
   analytics: HomepageGameAnalytics | null;
+  /** The displayed win pair and pick (decision 43); null when not shown. */
+  winPair: HomepageDisplayedWinPair | null;
   edgeAvailable: boolean;
   probabilitiesAvailable: boolean;
+  /** Scheduled game with no qualified FHFH prediction (decision 42). */
+  predictionUnavailable: boolean;
   projectedGoalsAvailable: boolean;
   xgAvailable: boolean;
   shotsAvailable: boolean;
@@ -55,6 +63,33 @@ export const compactHomepageMetric = (value: number) =>
 
 export const formatHomepageEdge = (percentagePoints: number) =>
   `${percentagePoints > 0 ? "+" : ""}${percentagePoints.toFixed(1)}pp`;
+
+/** The edge is the FHFH model's probability minus the de-vigged market's. */
+export const HOMEPAGE_EDGE_LABEL = "Model vs market";
+
+export const HOMEPAGE_PREDICTIONS_UNAVAILABLE_NOTICE =
+  "FHFH predictions unavailable while the model is developed and validated.";
+
+/**
+ * Decision 42 notice for a slate: the full notice when no scheduled game has
+ * a qualified prediction, a count when only some lack one, otherwise null.
+ */
+export const getHomepagePredictionNotice = (
+  presentations: Array<HomepageGamePresentation | null>,
+): string | null => {
+  const scheduled = presentations.filter(
+    (presentation): presentation is HomepageGamePresentation =>
+      presentation?.group === "scheduled",
+  );
+  const unavailable = scheduled.filter(
+    (presentation) => presentation.predictionUnavailable,
+  ).length;
+  if (unavailable === 0) return null;
+  if (unavailable === scheduled.length) {
+    return HOMEPAGE_PREDICTIONS_UNAVAILABLE_NOTICE;
+  }
+  return `FHFH predictions unavailable for ${unavailable} of ${scheduled.length} scheduled games.`;
+};
 
 const isFreshLiveMetric = (updatedAt?: string) => {
   if (!updatedAt) return false;
@@ -95,18 +130,20 @@ export const getHomepageGamePresentation = (
         ? "Final"
         : getDisplayGameState(game.gameState);
   const analytics = (game.analytics ?? null) as HomepageGameAnalytics | null;
+  const winPair =
+    group === "scheduled" && analytics?.predictionFreshness !== "stale"
+      ? displayedWinPair(
+          analytics?.awayWinProbability,
+          analytics?.homeWinProbability,
+        )
+      : null;
+  const probabilitiesAvailable = winPair != null;
   const edgeAvailable = Boolean(
-    group === "scheduled" &&
-      analytics?.predictionFreshness !== "stale" &&
+    probabilitiesAvailable &&
       analytics?.edgeTeamAbbreviation &&
       typeof analytics.edgePercentagePoints === "number",
   );
-  const probabilitiesAvailable = Boolean(
-    group === "scheduled" &&
-      analytics?.predictionFreshness !== "stale" &&
-      typeof analytics?.awayWinProbability === "number" &&
-      typeof analytics.homeWinProbability === "number",
-  );
+  const predictionUnavailable = group === "scheduled" && !probabilitiesAvailable;
   const projectedGoalsAvailable = Boolean(
     group === "scheduled" &&
       analytics?.projectedGoalsFreshness !== "stale" &&
@@ -129,15 +166,20 @@ export const getHomepageGamePresentation = (
     group !== "final" &&
       (analytics?.awayStarter?.name || analytics?.homeStarter?.name),
   );
-  const matchupLabel = `${awayTeam.abbrev} at ${homeTeam.abbrev}, ${stateLabel}${
-    probabilitiesAvailable
-      ? `, pregame win probability ${awayTeam.abbrev} ${Math.round(
-          analytics!.awayWinProbability! * 100,
-        )} percent, ${homeTeam.abbrev} ${Math.round(
-          analytics!.homeWinProbability! * 100,
-        )} percent`
-      : ""
-  }`;
+  const predictionLabel = winPair
+    ? `, pregame win probability ${awayTeam.abbrev} ${winPair.awayPercent} percent, ${homeTeam.abbrev} ${winPair.homePercent} percent${
+        winPair.pick === "tie" ? ", even" : ""
+      }${
+        edgeAvailable
+          ? `, model vs market edge ${analytics!.edgeTeamAbbreviation} ${
+              analytics!.edgePercentagePoints! > 0 ? "+" : ""
+            }${analytics!.edgePercentagePoints!.toFixed(1)} percentage points`
+          : ""
+      }`
+    : predictionUnavailable
+      ? ", FHFH prediction unavailable"
+      : "";
+  const matchupLabel = `${awayTeam.abbrev} at ${homeTeam.abbrev}, ${stateLabel}${predictionLabel}`;
 
   return {
     game,
@@ -149,8 +191,10 @@ export const getHomepageGamePresentation = (
     periodLabel,
     clock,
     analytics,
+    winPair,
     edgeAvailable,
     probabilitiesAvailable,
+    predictionUnavailable,
     projectedGoalsAvailable,
     xgAvailable,
     shotsAvailable,

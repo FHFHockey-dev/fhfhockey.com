@@ -2,6 +2,7 @@ import { act, renderHook, waitFor } from "@testing-library/react";
 import moment from "moment";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import Fetch from "lib/cors-fetch";
 import { useHomepageGames } from "./useHomepageGames";
 
 vi.mock("lib/cors-fetch", () => ({ default: vi.fn() }));
@@ -44,5 +45,48 @@ describe("useHomepageGames", () => {
       moment(today).add(1, "day").format("YYYY-MM-DD"),
     );
     expect(result.current.gamesHeaderText).toBe("Tomorrow's");
+  });
+
+  // W3-3 D5 / rule 23: official live SOG replaces the stored pair only as a
+  // pair; one official side never sits beside one stored side.
+  it.each([
+    ["only the home side is official", { homeTeam: { sog: 30 }, awayTeam: {} }, { home: 24, away: 20 }],
+    ["both sides are official", { homeTeam: { sog: 31 }, awayTeam: { sog: 29 } }, { home: 31, away: 29 }],
+  ])("overlays live SOG as a pair when %s", async (_label, landing, expected) => {
+    const today = moment().format("YYYY-MM-DD");
+    const storedAt = new Date().toISOString();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => [
+          {
+            id: 7,
+            gameState: "LIVE",
+            homeTeam: { abbrev: "BOS" },
+            awayTeam: { abbrev: "NYR" },
+            analytics: {
+              gameId: 7,
+              homeShotsOnGoal: 24,
+              awayShotsOnGoal: 20,
+              shotsUpdatedAt: storedAt,
+            },
+          },
+        ],
+      }),
+    );
+    vi.mocked(Fetch).mockImplementation((async (url: string) => ({
+      json: async () => (url.includes("/landing") ? landing : { standings: [] }),
+    })) as any);
+
+    const { result } = renderHook(() =>
+      useHomepageGames({ initialGames: [], nextGameDate: today }),
+    );
+
+    await waitFor(() => expect(result.current.games).toHaveLength(1));
+    const analytics = result.current.games[0].analytics;
+    expect(analytics.homeShotsOnGoal).toBe(expected.home);
+    expect(analytics.awayShotsOnGoal).toBe(expected.away);
   });
 });
