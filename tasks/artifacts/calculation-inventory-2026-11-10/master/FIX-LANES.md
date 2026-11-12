@@ -33,6 +33,7 @@ Every lane follows [fix-lanes/_COMMON.md](fix-lanes/_COMMON.md) (ownership, Code
 | L7 | Sustainability, trend bands, /charts | W1 #23, #24, #25 | 4 | L3, L9a | — | [L7](fix-lanes/L7.md) |
 | L19 | Misc legacy routes | — (dormant) | 4 | — | 50 | [L19](fix-lanes/L19.md) |
 | L20 | Legacy sKO | — | 4 | — | 50, 51 | [L20](fix-lanes/L20.md) |
+| L9c | FORGE coverage path (**new 2026-11-12**, decision 132) | W1 #27 root cause | 4 | L9a closed, L11 consumer | — | [L9c](fix-lanes/L9c.md) |
 | L21 | Sko Element contracts | — (dormant) | 4 | — | 55, 57 | [L21](fix-lanes/L21.md) |
 
 **P0 coverage (45 raw, 41 by root cause):** every Wave 1, Wave 2 and Wave 3 P0 row has an owning lane above. Partly blocked: W1 #16's accuracy-job component (`run-projection-accuracy.ts`, Codex-owned) goes to Codex as a proposal.
