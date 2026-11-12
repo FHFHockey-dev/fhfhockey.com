@@ -355,3 +355,4 @@ Source: `WAVE3-CONSOLIDATED.md`, "Owner decisions still open" Q42 and Q49. The 1
     2. FORGE builds a projection for **every eligible player**, including injured players and long absences, with a distinct "if he plays" line. A returning player is based on his last active games with a validated time-away decay that widens uncertainty (no fixed-rate decline).
     3. Availability is separate: a confirmed out shows 0.0 for that game (RSO) and keeps the if-active line; uncertain availability uses a qualified participation probability, shown as such; missing data is never a confirmed 0.
     4. Implement and validate the coverage path, including reserve projections. Any production migration or backfill is its own approval.
+133. **Legacy averages scale** (W3-3 A2, L19; TJ by pop-up in the L19 session, 2026-11-12): every share in the legacy averages routes is on 0–100 points, served under one versioned contract (`legacy-averages-v2`); xS% = ixG ÷ iFF (decision 17).
