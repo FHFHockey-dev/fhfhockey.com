@@ -14,8 +14,8 @@ type LandingDashboardSource = {
   narrative?: string[];
   offRating: number;
   paceRating: number;
-  pkTier: 1 | 2 | 3;
-  ppTier: 1 | 2 | 3;
+  pkTier: 1 | 2 | 3 | null;
+  ppTier: 1 | 2 | 3 | null;
   teamAbbr: string;
   trend10: number;
 };

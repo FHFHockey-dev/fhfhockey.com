@@ -89,8 +89,9 @@ const normalizeServingContract = (
 export type NormalizedTeamRatingRow = TeamPowerSnapshot & {
   teamAbbr: string;
   date: string;
-  ppTier: 1 | 2 | 3;
-  pkTier: 1 | 2 | 3;
+  /** Pooled special-teams tier; null when unknown (never tier 2, W1 P0 #13). */
+  ppTier: 1 | 2 | 3 | null;
+  pkTier: 1 | 2 | 3 | null;
   finishingRating: number | null;
   goalieRating: number | null;
   dangerRating: number | null;
@@ -99,10 +100,10 @@ export type NormalizedTeamRatingRow = TeamPowerSnapshot & {
   varianceFlag: number | null;
 };
 
-const toTier = (value: unknown): 1 | 2 | 3 => {
+const toTier = (value: unknown): 1 | 2 | 3 | null => {
   const n = toFiniteNumber(value);
   if (n === 1 || n === 2 || n === 3) return n;
-  return 2;
+  return null;
 };
 
 export const normalizeTeamRatings = (payload: unknown): NormalizedTeamRatingRow[] => {

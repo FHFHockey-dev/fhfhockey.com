@@ -339,6 +339,23 @@ describe("/underlying-stats landing page", () => {
     ]);
   });
 
+  it("shows an unknown PP/PK tier as — (never a tier) (W1 P0 #13)", () => {
+    render(
+      <TeamPowerRankingsPage
+        availableDates={["2026-04-05"]}
+        routeStatus={routeStatus}
+        initialSnapshot={buildSnapshot([
+          buildRating("TOR", { ppTier: null, pkTier: 1 }),
+          buildRating("VAN")
+        ])}
+      />
+    );
+
+    const unknown = screen.getAllByTitle("Tier unknown (pooled special teams unavailable)");
+    expect(unknown).toHaveLength(1);
+    expect(unknown[0].textContent).toBe("—");
+  });
+
   it("opens and closes real metric explanations independently through their focusable summaries", () => {
     render(
       <TeamPowerRankingsPage

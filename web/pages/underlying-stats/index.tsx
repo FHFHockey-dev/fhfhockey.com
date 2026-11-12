@@ -116,6 +116,9 @@ const tierLabels: Record<SpecialTeamTier, string> = {
   3: "Tier 3 · Subpar"
 };
 
+/** Pooled special-teams tier unknown (decision 20, W1 P0 #13): never tier 3. */
+const UNKNOWN_TIER_TITLE = "Tier unknown (pooled special teams unavailable)";
+
 const tierTableLabels: Record<SpecialTeamTier, string> = {
   1: "Tier 1",
   2: "Tier 2",
@@ -668,7 +671,8 @@ export const TeamPowerRankingsPage: NextPage<PageProps> = ({
     }
   };
 
-  const resolveTierClass = (tier: SpecialTeamTier): string => {
+  const resolveTierClass = (tier: SpecialTeamTier | null): string => {
+    if (tier == null) return "";
     switch (tier) {
       case 1:
         return styles.tier1;
@@ -1489,11 +1493,15 @@ export const TeamPowerRankingsPage: NextPage<PageProps> = ({
                           <td className={styles.specialTeamCell}>
                             <span
                               className={`${styles.tierBadge} ${resolveTierClass(team.ppTier)}`}
-                              title={`${tierLabels[team.ppTier]} · ${formatRank(
-                                team.ppRank
-                              )} · ${formatPct(team.ppPct)}`}
+                              title={
+                                team.ppTier == null
+                                  ? UNKNOWN_TIER_TITLE
+                                  : `${tierLabels[team.ppTier]} · ${formatRank(
+                                      team.ppRank
+                                    )} · ${formatPct(team.ppPct)}`
+                              }
                             >
-                              {tierTableLabels[team.ppTier]}
+                              {team.ppTier == null ? "—" : tierTableLabels[team.ppTier]}
                             </span>
                             <span className={styles.specialTeamMeta}>
                               {formatRank(team.ppRank)} ·{" "}
@@ -1503,11 +1511,15 @@ export const TeamPowerRankingsPage: NextPage<PageProps> = ({
                           <td className={styles.specialTeamCell}>
                             <span
                               className={`${styles.tierBadge} ${resolveTierClass(team.pkTier)}`}
-                              title={`${tierLabels[team.pkTier]} · ${formatRank(
-                                team.pkRank
-                              )} · ${formatPct(team.pkPct)}`}
+                              title={
+                                team.pkTier == null
+                                  ? UNKNOWN_TIER_TITLE
+                                  : `${tierLabels[team.pkTier]} · ${formatRank(
+                                      team.pkRank
+                                    )} · ${formatPct(team.pkPct)}`
+                              }
                             >
-                              {tierTableLabels[team.pkTier]}
+                              {team.pkTier == null ? "—" : tierTableLabels[team.pkTier]}
                             </span>
                             <span className={styles.specialTeamMeta}>
                               {formatRank(team.pkRank)} ·{" "}

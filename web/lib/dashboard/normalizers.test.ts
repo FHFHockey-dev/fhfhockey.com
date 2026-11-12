@@ -5,6 +5,7 @@ import {
   normalizeSkaterTrendResponse,
   normalizeStartChartResponse,
   normalizeSustainabilityResponse,
+  normalizeTeamRatings,
   toFiniteNumber
 } from "./normalizers";
 
@@ -246,6 +247,15 @@ describe("dashboard normalizers", () => {
         }
       ]
     });
+  });
+
+  it("keeps an unknown PP/PK tier unknown instead of tier 2 (W1 P0 #13)", () => {
+    const [row] = normalizeTeamRatings([
+      { team_abbreviation: "UTA", date: "2026-03-14", off_rating: 101, def_rating: 99,
+        pace_rating: 100, pp_tier: null, pk_tier: 3, trend10: 0 }
+    ]);
+    expect(row.ppTier).toBeNull();
+    expect(row.pkTier).toBe(3);
   });
 
   it("normalizes goalie projections with starter-selection detail", () => {
