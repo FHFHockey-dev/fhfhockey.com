@@ -986,6 +986,8 @@ async function runProjectionCalculations(
         teamStrengthPriorCache,
         teamStrengthCache,
         leaguePhysicalTotalsCache,
+        // One league save % read per run and date, shared with the goalie stage below.
+        leagueSavePctCache,
         teamFiveOnFiveProfileCache,
         teamNstExpectedGoalsCache,
         teamLineComboGoaliePriorCache,

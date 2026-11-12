@@ -1,4 +1,5 @@
 import supabase from "lib/supabase/server";
+import { fetchActiveXgModel } from "lib/xg/modelRegistry";
 import type {
   ForgeTeamGameStrengthRow,
   GoalieGameHistoryRow,
@@ -286,29 +287,34 @@ async function fetchInHouseTeamStrengthPrior(
   teamId: number,
   asOfDate: string
 ): Promise<TeamStrengthPrior | null> {
-  const modelVersion = resolveInHouseTeamXgModelVersion();
-  if (!modelVersion) return null;
-
-  const featureVersion = parseOptionalIntegerEnv(
-    TEAM_XG_AGGREGATE_FEATURE_VERSION_ENV_VAR
-  );
+  // The env model version is the opt-in gate; the rows read are pinned to the registry's single
+  // active approved model (model_version AND feature_version, L14 selector). No such model, or an
+  // env pin that disagrees with it, means in-house xG is unavailable (decision 99): null.
+  const envModelVersion = resolveInHouseTeamXgModelVersion();
+  if (!envModelVersion) return null;
+  const selection = await fetchActiveXgModel({ supabase: supabase as any, predictionType: "shot_goal" });
+  if (!selection.model) return null;
+  const envFeatureVersion = parseOptionalIntegerEnv(TEAM_XG_AGGREGATE_FEATURE_VERSION_ENV_VAR);
+  if (envModelVersion !== selection.model.modelVersion
+    || (envFeatureVersion != null && envFeatureVersion !== selection.model.featureVersion)) {
+    return null;
+  }
+  const modelVersion = selection.model.modelVersion;
+  const featureVersion = selection.model.featureVersion;
   const windowGames =
     parseOptionalIntegerEnv("NHL_XG_TEAM_AGGREGATE_WINDOW_GAMES") ??
     DEFAULT_TEAM_XG_AGGREGATE_WINDOW_GAMES;
 
-  let query = supabase
+  const query = supabase
     .from("nhl_xg_team_rolling_aggregates" as any)
     .select(
       "model_version,feature_version,as_of_game_date,window_games,games_count,xg_for,xg_against"
     )
     .eq("team_id", teamId)
     .eq("model_version", modelVersion)
+    .eq("feature_version", featureVersion)
     .eq("window_games", windowGames)
     .lt("as_of_game_date", asOfDate);
-
-  if (featureVersion != null) {
-    query = query.eq("feature_version", featureVersion);
-  }
 
   const { data, error } = await query
     .order("as_of_game_date", { ascending: false })

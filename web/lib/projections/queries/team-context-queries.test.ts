@@ -23,8 +23,33 @@ import {
   buildTeamStrengthPriorFromNhlTeamDataRows,
   fetchTeamNstExpectedGoalsProfile,
   fetchTeamOfficialPpUsage,
+  fetchTeamStrengthPrior,
   fetchTeamStrengthAverages
 } from "./team-context-queries";
+
+describe("FORGE in-house team xG prior selector (L14, decision 99)", () => {
+  const aggregate = { model_version: "xg-v2", feature_version: 2, as_of_game_date: "2026-10-20", window_games: 10, games_count: 10, xg_for: 30, xg_against: 25 };
+  const registry = (rows: Record<string, unknown>[]) => rows.map(row => ({ prediction_type: "shot_goal", model_approved: true,
+    approval_status: "approved", is_active: true, is_champion: true, ...row }));
+  it("reads aggregates pinned to the active model's version and feature version", async () => {
+    process.env.NHL_XG_MODEL_VERSION = "xg-v2";
+    db.calls.length = 0;
+    db.tables = { nhl_xg_model_registry: registry([{ model_version: "xg-v2", feature_version: 2 }]), nhl_xg_team_rolling_aggregates: aggregate };
+    expect(await fetchTeamStrengthPrior("EDM", "2026-10-21", 22)).toMatchObject({ source: "nhl_xg_team_rolling_aggregates", featureVersion: 2 });
+    expect(db.calls).toContainEqual(["nhl_xg_team_rolling_aggregates", "eq", ["feature_version", 2]]);
+    delete process.env.NHL_XG_MODEL_VERSION;
+  });
+  it("treats in-house xG as unavailable without an active approved model, or when the env pin disagrees", async () => {
+    process.env.NHL_XG_MODEL_VERSION = "xg-v2";
+    for (const active of [[], [{ model_version: "xg-v3", feature_version: 3 }]]) {
+      db.calls.length = 0;
+      db.tables = { nhl_xg_model_registry: registry(active), nhl_xg_team_rolling_aggregates: aggregate, nhl_team_data: [] };
+      expect(await fetchTeamStrengthPrior("EDM", "2026-10-21", 22)).toBeNull();
+      expect(db.calls.some(([table]) => table === "nhl_xg_team_rolling_aggregates")).toBe(false);
+    }
+    delete process.env.NHL_XG_MODEL_VERSION;
+  });
+});
 
 describe("fetchTeamNstExpectedGoalsProfile (BC W1-6 D6)", () => {
   it("converts NST team TOI seconds to xGA per 60: 3 xGA in 3,600 s is 3.0", async () => {
