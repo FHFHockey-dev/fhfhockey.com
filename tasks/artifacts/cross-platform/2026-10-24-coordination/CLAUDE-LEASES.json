@@ -1,6 +1,6 @@
 {
   "owner": "Claude orchestrator",
-  "as_of_utc": "2026-11-12T14:44:58Z",
+  "as_of_utc": "2026-11-12T15:11:02Z",
   "base_head": "2f2b432306b048f16bf48c2e274f21e55a7514d4",
   "status": "Claude lanes reclaimed per TJ 2026-10-25T16:24Z",
   "shared_resources": {
@@ -3402,10 +3402,10 @@
     {
       "lane": "FIX-SPRINT-2026-11-11-RETAINED",
       "owner": "Claude fix-sprint Chef",
-      "scope": "Unfinished sprint work: debrief and Astra prompt; migration 141 apply decision and authority bookkeeping; LEDGER_BASIS_SCHEMA_ENABLED flip; release of PR #430 (branch chef/fix-sprint-release-20261112 at 27edf8381), smoke and octoberBranch sync",
+      "scope": "Unfinished sprint work: debrief and Astra prompt (master sprint docs and master/production receipts); migration-authority bookkeeping for any further sprint applies; LEDGER_BASIS_SCHEMA_ENABLED flip",
       "authority": "TJ 2026-11-12 (keep leases needed for unfinished work, pending decisions or active operations)",
       "opened": "2026-11-12T14:44:58Z",
-      "status": "active 2026-11-12T14:44:58Z",
+      "status": "active 2026-11-12T15:11:02Z; narrowed: migration 141 applied (1aa886c92) and its files released; release resource released (PR #430 merged as master 631a00c19, production READY, smoke 5/5 GETs 200, octoberBranch synced c577225e2)",
       "write_paths": [
         {
           "path": "tasks/artifacts/calculation-inventory-2026-11-10/master/FIX-LANES.md",
@@ -3422,18 +3422,6 @@
         {
           "path": "tasks/artifacts/calculation-inventory-2026-11-10/master/ASTRA-SPRINT-AUDIT-PROMPT.md",
           "baseline_sha256": null
-        },
-        {
-          "path": "supabase/migrations/20261112130000_goalie_totals_unified_regular_season.sql",
-          "baseline_sha256": "733f9077d2f67991862f6e8c5a4bb83374f877c5be5dd745d5914a4c88c458c8"
-        },
-        {
-          "path": "supabase/tests/l4a_goalie_totals.py",
-          "baseline_sha256": "20a1c52e4fea25b38f308d4094f01982a01e8318ab53c09e5951b9dd02e17f01"
-        },
-        {
-          "path": "supabase/tests/l4a_goalie_totals_regular_season_rollback.sql",
-          "baseline_sha256": "72a5cca58a4dba151d2626fda7ce75d504940b67c2ef008e6a1cf35796d80c54"
         },
         {
           "path": "tasks/TASKS/repository-audit-remediation/migration-authority.json",
@@ -3576,12 +3564,23 @@
           "baseline_sha256": "6ffc7aae01d1dff17d9cca6e51a224681ae859ffaf45fef6569fc7808a8b08b1"
         }
       ],
-      "resources": [
-        "git ref refs/heads/chef/fix-sprint-release-20261112 (27edf83810bb78798125e5fce8d34dd145b3d4dc)",
-        "PR #430 merge to master",
-        "octoberBranch post-release sync"
-      ],
-      "receipt": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/fix-sprint/CLAUDE-FIX-SPRINT-LEASE-RELEASE-20261112.md"
+      "resources": [],
+      "receipt": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/fix-sprint/CLAUDE-FIX-SPRINT-LEASE-RELEASE-20261112.md",
+      "history": [
+        {
+          "at": "2026-11-12T15:11:02Z",
+          "released_paths": [
+            "supabase/migrations/20261112130000_goalie_totals_unified_regular_season.sql",
+            "supabase/tests/l4a_goalie_totals.py",
+            "supabase/tests/l4a_goalie_totals_regular_season_rollback.sql"
+          ],
+          "released_resources": [
+            "refs/heads/chef/fix-sprint-release-20261112",
+            "PR #430",
+            "octoberBranch sync"
+          ]
+        }
+      ]
     }
   ],
   "held_or_blocked": [],
