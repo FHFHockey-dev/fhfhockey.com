@@ -224,3 +224,20 @@ describe("W3-P0-1 chart pools its rolling window and season index", () => {
     expect(g60.data[4]).toBeCloseTo(expected);
   });
 });
+
+describe("penalty differential per 60 (NST has no such column)", () => {
+  it("is drawn minus taken over the same TOI, per game and pooled; unavailable without parts", () => {
+    const log = pageLog([
+      { date: "2026-10-10", goals: 0, toi: 600, extraCounts: { penalties_drawn: 1, total_penalties: 0 } },
+      { date: "2026-10-12", goals: 0, toi: 1200, extraCounts: { penalties_drawn: 0, total_penalties: 2 } }
+    ]);
+    expect(log[0].penalty_differential_per_60).toBeCloseTo(6);
+    expect(log[1].penalty_differential_per_60).toBeCloseTo(-6);
+    // (1 - 2) x 3600 / 1800 = -2 (the mean of game rates would be 0).
+    expect(aggregateSummaryStat(log, "penalty_differential_per_60")).toBeCloseTo(-2);
+
+    const [partless] = pageLog([{ date: "2026-10-10", goals: 0, toi: 600 }]);
+    expect(partless.penalty_differential_per_60).toBeNull();
+    expect(aggregateSummaryStat([partless], "penalty_differential_per_60")).toBeNull();
+  });
+});

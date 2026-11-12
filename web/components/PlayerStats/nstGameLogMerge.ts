@@ -112,6 +112,16 @@ export function mergeNstGameRow<T extends Record<string, any>>(
       ? gf / sf + (sa - ga) / sa
       : null;
 
+  // NST has no penalty-differential column: drawn minus taken (total
+  // penalties), per 60 of the same table's TOI.
+  const drawn = value(nstCounts, "penalties_drawn");
+  const taken = value(nstCounts, "total_penalties");
+  const individualToi = value(nstCounts, "toi");
+  const penaltyDifferentialPer60 =
+    drawn !== null && taken !== null && individualToi !== null && individualToi > 0
+      ? ((drawn - taken) * 3600) / individualToi
+      : null;
+
   const primitives: Record<string, number | null> = {};
   for (const column of NST_INDIVIDUAL_PRIMITIVES) {
     primitives[`nst_${column}`] = value(nstCounts, column);
@@ -166,7 +176,7 @@ export function mergeNstGameRow<T extends Record<string, any>>(
     pim_per_60: value(nstRates, "pim_per_60"),
     total_penalties_per_60: value(nstRates, "total_penalties_per_60"),
     penalties_drawn_per_60: value(nstRates, "penalties_drawn_per_60"),
-    penalty_differential_per_60: value(nstRates, "penalty_differential_per_60"),
+    penalty_differential_per_60: penaltyDifferentialPer60,
     giveaways_per_60: value(nstRates, "giveaways_per_60"),
     takeaways_per_60: value(nstRates, "takeaways_per_60"),
     hits_per_60: value(nstRates, "hits_per_60"),

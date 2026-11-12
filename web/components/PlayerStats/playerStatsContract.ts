@@ -285,6 +285,14 @@ export const POOLED_STATS: Record<string, PooledStat> = {
   giveaways_per_60: individualPer60("giveaways"),
   takeaways_per_60: individualPer60("takeaways"),
   hits_per_60: individualPer60("hits"),
+  // Drawn minus taken; may be negative, so it is not a plain per60().
+  penalty_differential_per_60: {
+    fields: ["nst_penalties_drawn", "nst_total_penalties", "nst_toi"],
+    pool: (s) =>
+      s.nst_toi > 0
+        ? ((s.nst_penalties_drawn - s.nst_total_penalties) * 3600) / s.nst_toi
+        : null
+  },
   // NST on-ice per 60
   hdca_per_60: onIcePer60("hdca"),
   sca_per_60: onIcePer60("sca"),
