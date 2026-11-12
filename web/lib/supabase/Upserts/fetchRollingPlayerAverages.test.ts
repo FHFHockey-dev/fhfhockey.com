@@ -694,6 +694,84 @@ describe("fetchRollingPlayerAverages main runtime budget", () => {
     expect(rows[0].shooting_pct_season ?? null).toBeNull();
   });
 
+  it("leaves OZ start % unknown when either zone-start count is unknown (rule 5)", async () => {
+    silenceConsole();
+    const games: Array<[string, number, number | null, number | null]> = [
+      ["2026-10-09", 2026020020, 6, null], // DZ unknown: not 100%
+      ["2026-10-15", 2026020100, 3, 1],
+      ["2026-10-19", 2026020150, 0, 0] // genuine 0 + 0: no denominator
+    ];
+    const history = (playerId: unknown) =>
+      games.map(([date, game_id]) => ({
+        player_id: playerId,
+        game_id,
+        date,
+        season_id: 20262027,
+        team_abbrev: "TOR",
+        goals: 0,
+        assists: 0,
+        shots: 1,
+        points: 0,
+        toi_per_game: 900
+      }));
+    const oiRows = games.map(([date, , off, def]) => ({
+      player_id: PLAYER_IDS[0],
+      date_scraped: date,
+      season: 20262027,
+      toi: 900,
+      off_zone_starts: off,
+      def_zone_starts: def,
+      neu_zone_starts: 2
+    }));
+    const byDate = new Map<string, Record<string, unknown>>();
+    const main = await importMainWithClient(
+      createWindowClient(history, [], undefined, undefined, {
+        nst_gamelog_as_counts_oi: oiRows
+      })
+    );
+    await main({
+      playerId: PLAYER_IDS[0],
+      strengths: ["all"],
+      dryRunUpsert: true,
+      skipDiagnostics: true,
+      dryRunBatchObserver: (batch) => {
+        for (const row of batch.rankingRows) {
+          byDate.set(String(row.game_date), { ...row });
+        }
+        for (const row of batch.supportRows) {
+          const merged = byDate.get(row.game_date) ?? {};
+          for (const [key, value] of Object.entries(
+            row.support_payload.historicalCompatibility ?? {}
+          )) {
+            if (value != null) merged[key] = value;
+          }
+          merged.windowCountSupport = row.support_payload.windowCountSupport;
+        }
+      }
+    });
+
+    const first = byDate.get("2026-10-09")!;
+    expect(first.oz_start_pct_last5 ?? null).toBeNull();
+    expect(first.oz_start_pct_season ?? null).toBeNull();
+    expect(
+      (first.windowCountSupport as any).game.ratio.oz_start_pct ?? null
+    ).toBeNull();
+
+    // Only the fully known game counts: 3 / (3 + 1) = 75, not 9 / 10 = 90.
+    const second = byDate.get("2026-10-15")!;
+    expect(second.oz_start_pct_last5).toBe(75);
+    expect(second.oz_start_pct_season).toBe(75);
+    expect((second.windowCountSupport as any).windows.last5.ratio.oz_start_pct)
+      .toEqual([3, 4, 1]);
+
+    // 0 + 0 adds no observation; the window stays at 75.
+    const third = byDate.get("2026-10-19")!;
+    expect(third.oz_start_pct_last5).toBe(75);
+    expect(
+      (third.windowCountSupport as any).game.ratio.oz_start_pct ?? null
+    ).toBeNull();
+  });
+
   it("keeps the incoming cursor when the budget is spent before any player is claimed", async () => {
     vi.spyOn(console, "info").mockImplementation(() => undefined);
     vi.spyOn(console, "warn").mockImplementation(() => undefined);

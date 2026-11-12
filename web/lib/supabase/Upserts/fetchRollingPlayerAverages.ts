@@ -1494,11 +1494,15 @@ const METRICS: MetricDefinition[] = [
     aggregation: "ratio",
     windowFamily: "ratio_performance",
     ratioSpec: ROLLING_RATIO_METRIC_SPECS.oz_start_pct,
-    getComponents: ({ countsOi }) => ({
-      numerator: countsOi?.off_zone_starts ?? null,
-      denominator:
-        (countsOi?.off_zone_starts ?? 0) + (countsOi?.def_zone_starts ?? 0)
-    })
+    // Rule 5: an unknown side makes the pair unknown (OZ with no DZ is not 100%).
+    getComponents: ({ countsOi }) => {
+      const off = countsOi?.off_zone_starts ?? null;
+      const def = countsOi?.def_zone_starts ?? null;
+      if (off == null || def == null) {
+        return { numerator: null, denominator: null };
+      }
+      return { numerator: off, denominator: off + def };
+    }
   },
   {
     key: "pp_share_pct",
